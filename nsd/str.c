@@ -313,15 +313,14 @@ Ns_StrToWideInt(const char *chars, Tcl_WideInt *intPtr)
 Ns_ReturnCode
 Ns_StrToMemUnit(const char *chars, Tcl_WideInt *intPtr)
 {
-    Tcl_WideInt   lval;
     Ns_ReturnCode status = NS_OK;
 
     if (chars[0] == '\0') {
-        lval = 0;
         *intPtr = (Tcl_WideInt) 0;
 
     } else {
-        char  *endPtr;
+        Tcl_WideInt lval;
+        char       *endPtr;
 
         /*
          * Parse the first part of the number.
@@ -383,7 +382,7 @@ Ns_StrToMemUnit(const char *chars, Tcl_WideInt *intPtr)
 
                 } else if (*endPtr == 'M' && *(endPtr+1) == 'i' && *(endPtr+2) == 'B') {
                     multiplier = 1024 * 1024;
-                } else if ((*endPtr == 'K') && *(endPtr+1) == 'i' && *(endPtr+1) == 'B') {
+                } else if ((*endPtr == 'K') && *(endPtr+1) == 'i' && *(endPtr+2) == 'B') {
                     multiplier = 1024;
                 } else if (*endPtr == 'G' && *(endPtr+1) == 'i' && *(endPtr+2) == 'B') {
                     multiplier = 1024 * 1024 * 1024;
