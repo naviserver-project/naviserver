@@ -1496,7 +1496,7 @@ NS_EXTERN void
 Ns_IndexDel(Ns_Index *indexPtr, const void *el) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void *
-Ns_IndexEl(const Ns_Index *indexPtr, size_t i) NS_GNUC_NONNULL(1);
+Ns_IndexEl(const Ns_Index *indexPtr, size_t i) NS_GNUC_PURE NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
 Ns_IndexStringInit(Ns_Index *indexPtr, size_t inc) NS_GNUC_NONNULL(1);
@@ -1902,55 +1902,55 @@ Ns_StopServer(char *server);
  * info.c:
  */
 NS_EXTERN char *
-Ns_InfoAddress(void);
+Ns_InfoAddress(void) NS_GNUC_CONST;
 
 NS_EXTERN time_t
-Ns_InfoBootTime(void);
+Ns_InfoBootTime(void) NS_GNUC_PURE;
 
 NS_EXTERN const char *
-Ns_InfoBuildDate(void);
+Ns_InfoBuildDate(void) NS_GNUC_PURE;
 
 NS_EXTERN const char *
-Ns_InfoConfigFile(void);
+Ns_InfoConfigFile(void) NS_GNUC_PURE;
 
 NS_EXTERN const char *
-Ns_InfoHomePath(void);
+Ns_InfoHomePath(void) NS_GNUC_PURE;
 
 NS_EXTERN char *
-Ns_InfoHostname(void);
+Ns_InfoHostname(void) NS_GNUC_PURE;
 
 NS_EXTERN bool
-Ns_InfoIPv6(void);
+Ns_InfoIPv6(void) NS_GNUC_CONST;
 
 NS_EXTERN const char *
-Ns_InfoNameOfExecutable(void);
+Ns_InfoNameOfExecutable(void) NS_GNUC_PURE;
 
 NS_EXTERN pid_t
-Ns_InfoPid(void);
+Ns_InfoPid(void) NS_GNUC_PURE;
 
 NS_EXTERN const char *
-Ns_InfoPlatform(void);
+Ns_InfoPlatform(void) NS_GNUC_CONST;
 
 NS_EXTERN const char *
-Ns_InfoServerName(void);
+Ns_InfoServerName(void) NS_GNUC_CONST;
 
 NS_EXTERN bool
 Ns_InfoServersStarted(void);
 
 NS_EXTERN const char *
-Ns_InfoServerVersion(void);
+Ns_InfoServerVersion(void) NS_GNUC_CONST;
 
 NS_EXTERN bool
 Ns_InfoShutdownPending(void);
 
 NS_EXTERN bool
-Ns_InfoSSL(void);
+Ns_InfoSSL(void) NS_GNUC_CONST;
 
 NS_EXTERN bool
 Ns_InfoStarted(void);
 
 NS_EXTERN const char *
-Ns_InfoTag(void);
+Ns_InfoTag(void) NS_GNUC_CONST;
 
 NS_EXTERN long
 Ns_InfoUptime(void);
@@ -2073,7 +2073,7 @@ Ns_ConnRedirect(Ns_Conn *conn, const char *url)
  */
 
 NS_EXTERN bool
-Ns_PathIsAbsolute(const char *path)
+Ns_PathIsAbsolute(const char *path) NS_GNUC_PURE
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
@@ -2284,7 +2284,7 @@ Ns_ConnFlushHeaders(Ns_Conn *conn, int status)
     NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED;
 
 NS_EXTERN Ns_ReturnCode
-Ns_ConnResetReturn(Ns_Conn *conn)
+Ns_ConnResetReturn(Ns_Conn *conn) NS_GNUC_CONST
     NS_GNUC_DEPRECATED;
 
 /*

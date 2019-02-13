@@ -1344,7 +1344,7 @@ NS_EXTERN void NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     NS_GNUC_NONNULL(1);
 NS_EXTERN void NsRegisterServerInit(Ns_ServerInitProc *proc)
     NS_GNUC_NONNULL(1);
-NS_EXTERN NsServer *NsGetInitServer(void);
+NS_EXTERN NsServer *NsGetInitServer(void) NS_GNUC_PURE;
 NS_EXTERN NsServer *NsGetServer(const char *server);
 NS_EXTERN void NsStartServers(void);
 NS_EXTERN void NsStopServers(const Ns_Time *toPtr) NS_GNUC_NONNULL(1);
@@ -1432,7 +1432,7 @@ NS_EXTERN Ns_ArgProc NsTclSockArgProc;
 NS_EXTERN Ns_ThreadProc NsConnThread;
 NS_EXTERN Ns_ArgProc NsConnArgProc;
 NS_EXTERN Ns_FilterProc NsTclFilterProc;
-NS_EXTERN Ns_FilterProc NsShortcutFilterProc;
+NS_EXTERN Ns_FilterProc NsShortcutFilterProc NS_GNUC_PURE;
 NS_EXTERN Ns_OpProc NsTclRequestProc;
 NS_EXTERN Ns_OpProc NsAdpPageProc;
 NS_EXTERN Ns_ArgProc NsAdpPageArgProc;

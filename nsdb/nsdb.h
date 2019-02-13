@@ -189,7 +189,7 @@ NS_EXTERN Ns_ReturnCode Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles,
 Ns_ReturnCode Ns_DbPoolCurrentHandles(int *countPtr, const char *pool)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-bool NsDbGetActive(Ns_DbHandle *handle)
+bool NsDbGetActive(Ns_DbHandle *handle) NS_GNUC_PURE
     NS_GNUC_NONNULL(1);
 
 void NsDbSetActive(const char *context, Ns_DbHandle *handle, bool active)
