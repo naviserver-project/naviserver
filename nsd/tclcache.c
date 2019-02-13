@@ -191,21 +191,21 @@ TclCacheCreate(const char *name, size_t maxEntry, size_t maxSize, Ns_Time *timeo
 int
 NsTclCacheCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    char    *name = NULL;
-    int      result = TCL_OK;
-    long     maxSize = 0, maxEntry = 0;
-    Ns_Time *timeoutPtr = NULL, *expPtr = NULL;
+    char        *name = NULL;
+    int         result = TCL_OK;
+    Tcl_WideInt maxSize = 0, maxEntry = 0;
+    Ns_Time    *timeoutPtr = NULL, *expPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
-        {"-timeout",  Ns_ObjvTime,  &timeoutPtr, NULL},
-        {"-expires",  Ns_ObjvTime,  &expPtr,     NULL},
-        {"-maxentry", Ns_ObjvLong,  &maxEntry,   NULL},
-        {"--",        Ns_ObjvBreak, NULL,        NULL},
+        {"-timeout",  Ns_ObjvTime,    &timeoutPtr, NULL},
+        {"-expires",  Ns_ObjvTime,    &expPtr,     NULL},
+        {"-maxentry", Ns_ObjvMemUnit, &maxEntry,   NULL},
+        {"--",        Ns_ObjvBreak,   NULL,        NULL},
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"cache",   Ns_ObjvString, &name,    NULL},
-        {"size",    Ns_ObjvLong,   &maxSize, NULL},
+        {"cache",   Ns_ObjvString,  &name,    NULL},
+        {"size",    Ns_ObjvMemUnit, &maxSize, NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
@@ -302,15 +302,15 @@ NsTclCacheExistsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 int
 NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int       result = TCL_OK, nargs = 0;
-    long      maxSize = 0, maxEntry = 0;
-    Ns_Time  *timeoutPtr = NULL, *expPtr = NULL;
-    TclCache *cPtr = NULL;
+    int         result = TCL_OK, nargs = 0;
+    Tcl_WideInt maxSize = 0, maxEntry = 0;
+    Ns_Time    *timeoutPtr = NULL, *expPtr = NULL;
+    TclCache   *cPtr = NULL;
     Ns_ObjvSpec opts[] = {
-        {"-timeout",  Ns_ObjvTime,  &timeoutPtr, NULL},
-        {"-expires",  Ns_ObjvTime,  &expPtr,     NULL},
-        {"-maxentry", Ns_ObjvLong,  &maxEntry,   NULL},
-        {"-maxsize",  Ns_ObjvLong,  &maxSize,    NULL},
+        {"-timeout",  Ns_ObjvTime,    &timeoutPtr, NULL},
+        {"-expires",  Ns_ObjvTime,    &expPtr,     NULL},
+        {"-maxentry", Ns_ObjvMemUnit, &maxEntry,   NULL},
+        {"-maxsize",  Ns_ObjvMemUnit, &maxSize,    NULL},
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -320,7 +320,7 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
     };
 
     /*
-     * We want to have to configure options after the cache name. So parse the
+     * We want to have to configure options AFTER the cache name. So parse the
      * argument vector in two parts.
      */
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {

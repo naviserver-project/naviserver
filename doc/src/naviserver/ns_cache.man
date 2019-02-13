@@ -59,9 +59,10 @@ up.
      [opt [option "-maxentry [arg s]"]] \
      [opt [option "-maxsize [arg s]"]] ]
 
-Query or change the parameters of a previously created cache.
-If none of the options are used, the current settings are returned in
-form of an attribute value list.
+Query or change the parameters of a previously created cache.  If none
+of the options are used, the current settings are returned in form of
+an attribute value list.  [option -maxentry] and [option -maxsize] can
+be specified in memory units (kB, MB, GB, KiB, MiB, GiB).
 
 [call [cmd ns_cache_create] \
      [opt [option "-timeout [arg t]"]] \
@@ -71,10 +72,12 @@ form of an attribute value list.
      [arg name] \
      [arg size]  ]
 
-Create a new Tcl cache identified by [arg name] with maximum size 
+Create a new Tcl cache identified by [arg name] with maximum size
 [arg size]. Optionally, one can specify a default [option -timeout]
-and a default [option -expires] and the maximum size of a single 
-entry (parameter [option -maxentry]).
+and a default [option -expires] and the maximum size of a single entry
+(parameter [option -maxentry]).  The values for [arg size] and [option
+-maxentry] can be specified in memory units (kB, MB, GB, KiB, MiB,
+GiB).
 
 [para] The function returns 1 when the cache is newly created. When
 the cache exists already, the function return 0 and leaves the

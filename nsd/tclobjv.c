@@ -729,34 +729,88 @@ SetMemUnitFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     return result;
 }
 
-int
-Ns_TclGetMemUnitsFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_WideInt *timeUnitPtr)
+static int
+Ns_TclGetMemUnitFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_WideInt *memUnitPtr)
 {
     int  result = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(objPtr != NULL);
-    NS_NONNULL_ASSERT(timeUnitPtr != NULL);
+    NS_NONNULL_ASSERT(memUnitPtr != NULL);
 
+    /*
+     * Many values come in already as int values. No need to convert
+     * these to memUnitType.
+     */
     if (objPtr->typePtr == intTypePtr) {
-        long longValue;
-        if (likely(Tcl_GetLongFromObj(interp, objPtr, &longValue) != TCL_OK)) {
+        int intValue;
+
+        if (likely(Tcl_GetIntFromObj(interp, objPtr, &intValue) != TCL_OK)) {
             result = TCL_ERROR;
         } else {
-            *timeUnitPtr = longValue;
+            *memUnitPtr = (Tcl_WideInt)intValue;
         }
     } else {
+        /*
+         * When the values are already in memUnitType, get the value
+         * directly, otherwise convert.
+         */
         if (objPtr->typePtr != &memUnitType) {
             if (unlikely(Tcl_ConvertToType(interp, objPtr, &memUnitType) != TCL_OK)) {
+                Ns_TclPrintfResult(interp, "invalid memory unit '%s'; "
+                                   "valid units kB, MB, GBB, KiB, MiB, and GiB",
+                                   Tcl_GetString(objPtr));
                 result = TCL_ERROR;
             }
         }
         if (likely(objPtr->typePtr == &memUnitType)) {
-            *timeUnitPtr =  (Tcl_WideInt) objPtr->internalRep.twoPtrValue.ptr1;
+            *memUnitPtr =  (Tcl_WideInt)objPtr->internalRep.twoPtrValue.ptr1;
         }
     }
+
     return result;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ObjvMemUnit --
+ *
+ *      Consume exactly one argument, returning a pointer to the
+ *      memUnit (Tcl_WideInt) into *spec->dest.
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *          None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Ns_ObjvMemUnit(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+            Tcl_Obj *const* objv)
+{
+    int result;
+
+    NS_NONNULL_ASSERT(spec != NULL);
+
+    if (likely(*objcPtr > 0)) {
+        Tcl_WideInt *dest = spec->dest;
+
+        result = Ns_TclGetMemUnitFromObj(interp, objv[0], dest);
+        if (likely(result == TCL_OK)) {
+            *objcPtr -= 1;
+        }
+    } else {
+        result = TCL_ERROR;
+    }
+
+    return result;
+}
+
 
 /*
  *----------------------------------------------------------------------

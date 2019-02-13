@@ -1709,13 +1709,14 @@ NS_EXTERN Ns_ObjvProc Ns_ObjvEval;
 NS_EXTERN Ns_ObjvProc Ns_ObjvFlags;
 NS_EXTERN Ns_ObjvProc Ns_ObjvIndex;
 NS_EXTERN Ns_ObjvProc Ns_ObjvInt;
-NS_EXTERN Ns_ObjvProc Ns_ObjvUShort;
 NS_EXTERN Ns_ObjvProc Ns_ObjvLong;
+NS_EXTERN Ns_ObjvProc Ns_ObjvMemUnit;
 NS_EXTERN Ns_ObjvProc Ns_ObjvObj;
 NS_EXTERN Ns_ObjvProc Ns_ObjvServer;
 NS_EXTERN Ns_ObjvProc Ns_ObjvSet;
 NS_EXTERN Ns_ObjvProc Ns_ObjvString;
 NS_EXTERN Ns_ObjvProc Ns_ObjvTime;
+NS_EXTERN Ns_ObjvProc Ns_ObjvUShort;
 NS_EXTERN Ns_ObjvProc Ns_ObjvWideInt;
 
 NS_EXTERN int
@@ -2380,7 +2381,7 @@ Ns_VarSet(const char *server, const char *array, const char *key,
 
 NS_EXTERN Ns_ReturnCode
 Ns_VarUnset(const char *server, const char *array, const char *key)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(2);
 
 NS_EXTERN Tcl_WideInt
 Ns_VarIncr(const char *server, const char *array, const char *key, int incr)

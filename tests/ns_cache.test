@@ -802,6 +802,31 @@ test ns_cache-12.5 {flush rollback explicit flushes} -body {
     unset -nocomplain cache
 } -result {keys-inside: {k1 k2 k3 k4} keys-inside-after-flush-k1: {k2 k3 k4} keys-inside-after-flush-k4: {k2 k3} keys-inside-after-glob-flush: {} keys-after-rollback: {}}
 
+test ns_cache-13.0 {test mem units - create} -body {
+    ns_cache_create foo 1kB
+    ns_cache_configure foo
+} -result {maxsize 1024 maxentry 0 expires {} timeout {}}
+
+test ns_cache-13.1 {test mem units - reconfigure} -body {
+    ns_cache_configure foo -maxsize 10kB
+    ns_cache_configure foo
+} -result {maxsize 10240 maxentry 0 expires {} timeout {}}
+
+test ns_cache-13.2 {test mem units - reconfigure with integer} -body {
+    ns_cache_configure foo -maxsize [expr {1024*10}]
+    ns_cache_configure foo
+} -result {maxsize 10240 maxentry 0 expires {} timeout {}}
+
+test ns_cache-13.3 {test mem units - reconfigure in loop (cached Tcl_Obj)} -body {
+    foreach i {1 2 3 4 5} {
+        ns_cache_configure foo -maxsize 100kB
+    }
+    ns_cache_configure foo
+} -result {maxsize 102400 maxentry 0 expires {} timeout {}}
+
+test ns_cache-13.1 {test mem units - reconfigure invalid value} -body {
+    ns_cache_configure foo -maxsize 10B
+} -returnCodes error -result {invalid memory unit '10B'; valid units kB, MB, GBB, KiB, MiB, and GiB}
 
 cleanupTests
 

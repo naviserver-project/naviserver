@@ -250,14 +250,17 @@ Ns_StrToInt(const char *chars, int *intPtr)
  *
  *      Attempt to convert the string value to an wide integer.
  *
+ *      The string may begin with an arbitrary amount of white space (as
+ *      determined by isspace(3)) followed by a single optional `+' or `-'
+ *      sign.  If string starts with `0x' prefix, the number will be read in
+ *      base 16, otherwise the number will be treated as decimal.
+ *
  * Results:
  *      NS_OK and *intPtr updated, NS_ERROR if the number cannot be
  *      parsed or overflows.
  *
  * Side effects:
- *      The string may begin with an arbitrary amount of white space (as determined by
- *      isspace(3)) followed by a  single  optional `+' or `-' sign.  If string starts with `0x' prefix,
- *      the number will be read in base 16, otherwise the number will be treated as decimal
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -284,14 +287,35 @@ Ns_StrToWideInt(const char *chars, Tcl_WideInt *intPtr)
     return status;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_StrToMemUnit --
+ *
+ *      Attempt to convert the string value to a memory unit value
+ *      (an integer followed by kB, MB, GB, KiB, MiB, GiB).
+ *
+ *      The string may begin an integer followed by an arbitrary amount of
+ *      white space (as determined by isspace(3)) followed by a single
+ *      optional `.' and integer fraction part.  If the reminder is one of the
+ *      accepted mem unit strings above, multiply the value with the
+ *      corresponding multiplier.
+ *
+ * Results:
+ *      NS_OK and *intPtr updated, NS_ERROR if the number cannot be
+ *      parsed or overflows.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
 Ns_ReturnCode
 Ns_StrToMemUnit(const char *chars, Tcl_WideInt *intPtr)
 {
     Tcl_WideInt   lval;
     Ns_ReturnCode status = NS_OK;
 
-
-    fprintf(stderr, "real parsing of memUnit <%s>\n", chars);
     if (chars[0] == '\0') {
         lval = 0;
         *intPtr = (Tcl_WideInt) 0;
@@ -299,23 +323,27 @@ Ns_StrToMemUnit(const char *chars, Tcl_WideInt *intPtr)
     } else {
         char  *endPtr;
 
+        /*
+         * Parse the first part of the number.
+         */
         errno = 0;
         lval = strtoll(chars, &endPtr, 10);
-        fprintf(stderr, "real parsing of <%s> number %lld reminder <%s>\n", chars, lval, endPtr);
-
         if (unlikely(errno == ERANGE && (lval == LLONG_MAX || lval == LLONG_MIN))) {
+            /*
+             * strtoll() parsing failed.
+             */
             status = NS_ERROR;
         } else {
-            int basis = 1;
+            int    multiplier = 1;
             double fraction = 0.0;
 
             if (*endPtr != '\0') {
                 /*
-                 * Check for decimal digits
+                 * We are not at the end of the string, check for decimal
+                 * digits.
                  */
                 if (*endPtr == '.') {
-                    long   decimal, i, digits;
-                    int    divisor = 1;
+                    long   decimal, i, digits, divisor = 1;
                     char  *ep;
 
                     endPtr++;
@@ -325,8 +353,6 @@ Ns_StrToMemUnit(const char *chars, Tcl_WideInt *intPtr)
                         divisor *= 10;
                     }
                     fraction = (double)decimal / (double)divisor;
-                    fprintf(stderr, "real parsing of <%s> decimal %ld divisor %d fraction %lf\n",
-                            chars, decimal, divisor, fraction);
                     endPtr = ep;
                 }
                 /*
@@ -345,35 +371,44 @@ Ns_StrToMemUnit(const char *chars, Tcl_WideInt *intPtr)
                  *
                  * For effective memory usage, multiple of 1024 are
                  * better. Therefore we follow the PostgreSQL conventions and
-                 * use 1024 as basis, but we allow as well the IEC abbreviations.
+                 * use 1024 as multiplier, but we allow as well the IEC
+                 * abbreviations.
                  */
                 if (*endPtr == 'M' && *(endPtr+1) == 'B') {
-                    basis = 1024 * 1024;
+                    multiplier = 1024 * 1024;
                 } else if ((*endPtr == 'K' || *endPtr == 'k') && *(endPtr+1) == 'B') {
-                    basis = 1024;
+                    multiplier = 1024;
                 } else if (*endPtr == 'G' && *(endPtr+1) == 'B') {
-                    basis = 1024 * 1024 * 1024;
+                    multiplier = 1024 * 1024 * 1024;
 
                 } else if (*endPtr == 'M' && *(endPtr+1) == 'i' && *(endPtr+2) == 'B') {
-                    basis = 1024 * 1024;
+                    multiplier = 1024 * 1024;
                 } else if ((*endPtr == 'K') && *(endPtr+1) == 'i' && *(endPtr+1) == 'B') {
-                    basis = 1024;
+                    multiplier = 1024;
                 } else if (*endPtr == 'G' && *(endPtr+1) == 'i' && *(endPtr+2) == 'B') {
-                    basis = 1024 * 1024 * 1024;
+                    multiplier = 1024 * 1024 * 1024;
                 } else {
                     status = NS_ERROR;
                 }
             }
             if (status == NS_OK) {
+                /*
+                 * The mem unit value was parsed correctly.
+                 */
                 if (fraction > 0.0) {
-                    double r = (double)(lval * basis) + fraction * basis;
-                    *intPtr = (Tcl_WideInt)r;
-                    fprintf(stderr, "real parsing of <%s> r %lf faction %lf\n", chars, r, fraction);
-                } else {
-                    *intPtr = (Tcl_WideInt) lval * basis;
-                }
-                fprintf(stderr, "real parsing of <%s> final number %lld\n", chars, *intPtr);
+                    /*
+                     * We have a fraction (e.g. 1.5MB). Compute the value as
+                     * floating point value and covert the result to integer.
+                     */
+                    double r = (double)(lval * multiplier) + fraction * multiplier;
 
+                    *intPtr = (Tcl_WideInt)r;
+                } else {
+                    /*
+                     * No need to compute with floating point values.
+                     */
+                    *intPtr = (Tcl_WideInt) lval * multiplier;
+                }
             }
         }
     }
