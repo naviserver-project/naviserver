@@ -15,7 +15,7 @@ Other filters that also match when+method+urlPattern will not run after this fil
 
 [list_end]
 
-[see_also nsd ns_schedule_filter]
+[see_also nsd ns_register_filter ns_register]
 
 [keywords "global built-in" NaviServer]
 [manpage_end]

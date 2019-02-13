@@ -142,7 +142,8 @@ will be called.
 [para]
 Be aware that executing the same [term ns_register_filter] statement more than once (as
 you might do when re-initializing Tcl) will add the filter more than once! You
-may want to have a shared variable set so that you don't do this.
+may want to have a shared variable set to avoid multiple
+registrations. Filters can be shortcutted via [cmd ns_shortcut_filter].
 
 
 
@@ -499,7 +500,7 @@ This example shows how to expire all HTML files after an hour:
 currently registered procs.
 
 
-[see_also ns_adp ns_conn ns_info]
+[see_also ns_adp ns_conn ns_info ns_shortcut_filter]
 [keywords "server built-in" ADP filter request callback fastpath]
 [manpage_end]
 

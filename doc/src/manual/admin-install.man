@@ -178,7 +178,7 @@ addresses, which are set in nsd-config.tcl as follows:
 
   [enum] Listen for HTTP connections on your computer's primary
         interface at port 8080.  To use another port and/or select
-        interfaces, you can set the [term port] and [port address]
+        interfaces, you can set the [term port] and [term address]
         parameters.
 
   [enum] Check security settings for [term nscp] (Control Port module)
