@@ -286,7 +286,6 @@ Tcl_WideInt
 Ns_ConfigMemUnitRange(const char *section, const char *key, Tcl_WideInt defaultValue,
                       Tcl_WideInt minValue, Tcl_WideInt maxValue)
 {
-    fprintf(stderr, "Ns_ConfigMemUnitRange %s.%s\n", section, key);
     return ConfigWideIntRange(section, key, defaultValue, minValue, maxValue, Ns_StrToMemUnit, "memory unit");
 }
 
