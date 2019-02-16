@@ -11,7 +11,7 @@
 #
 # The Original Code is AOLserver Code and related documentation
 # distributed by AOL.
-# 
+#
 # The Initial Developer of the Original Code is America Online,
 # Inc. Portions created by AOL are Copyright (C) 1999 America Online,
 # Inc. All Rights Reserved.
@@ -35,7 +35,7 @@
 #   o. DO NOT use this file as general purpose sink, if possible
 #
 #   o. THINK TWICE before naming the utility procedure with "ns_"
-#      prefix as this makes it a first class citizen in the API 
+#      prefix as this makes it a first class citizen in the API
 #      which means we will all have to maintain it for a long time.
 #
 #   o. DOCUMENT the procedure with a short header so we all know
@@ -129,7 +129,7 @@ proc ns_fileread {filename} {
 #
 
 proc ns_filewrite {filename data {mode w}} {
-    
+
     set fd [open $filename $mode]
     fconfigure $fd -translation binary
     puts -nonewline $fd $data
@@ -288,13 +288,13 @@ proc ns_formvalueput {htmlpiece dataname datavalue} {
                             }
                         }
                         append newhtml <$tag>
-                        
+
                     } else {
-                        
+
                         ## If it's an INPUT TYPE that hasn't been covered
                         #  (text, password, hidden, other (defaults to text))
                         ## then we add/replace the VALUE tag
-                        
+
                         set name [ns_tagelement $tag NAME]
                         if {$name eq $dataname} {
                             ns_tagelementset tag VALUE $datavalue
@@ -303,11 +303,11 @@ proc ns_formvalueput {htmlpiece dataname datavalue} {
                     }
                 }
                 {^TEXTAREA} {
-                    
+
                     ###
                     #   Fill in the middle of this tag
                     ###
-                    
+
                     set name [ns_tagelement $tag NAME]
                     if {$name eq $dataname} {
                         while {![regexp -nocase {^<( *)/TEXTAREA} $htmlpiece]} {
@@ -319,26 +319,26 @@ proc ns_formvalueput {htmlpiece dataname datavalue} {
                     }
                 }
                 {^SELECT} {
-                    
+
                     ### Set flags so OPTION and /SELECT know what to look for:
                     #   snam is the variable name, sflg is 1 if nothing's
                     ### been added, smul is 1 if it's MULTIPLE selection
-                    
+
                     if {[ns_tagelement $tag NAME] eq $dataname} {
                         set inkeyselect 1
                         set addoption 1
                     } else {
                         set inkeyselect 0
                         set addoption 0
-                    }   
+                    }
                     append newhtml <$tag>
                 }
                 {^OPTION} {
-                    
+
                     ###
                     #   Find the value for this
                     ###
-                    
+
                     if {$inkeyselect} {
                         regsub -all -nocase { *SELECTED} $tag {} tag
                         set value [ns_tagelement $tag VALUE]
@@ -356,11 +356,11 @@ proc ns_formvalueput {htmlpiece dataname datavalue} {
                     }
                 }
                 {^/SELECT} {
-                    
+
                     ###
                     #   Do we need to add to the end?
                     ###
-                    
+
                     if {$inkeyselect && $addoption} {
                         append newhtml "<option selected>$datavalue<$tag>"
                     } else {
@@ -390,7 +390,7 @@ proc ns_tagelement {tag key} {
 
     set qq {"([^\"]*)"}               ; # Matches what's in quotes
     set pp {([^ >]*)}                 ; # Matches a word (mind yer pp and qq)
-    
+
     if {[regexp -nocase -- "$key *= *$qq" $tag m name]} {
         # Do nothing
     } elseif {[regexp -nocase -- "$key *= *$pp" $tag m name]} {
@@ -414,7 +414,7 @@ proc ns_tagelementset {tagvar key value} {
 
     set qq {"([^\"]*)"}                ; # Matches what's in quotes
     set pp {([^ >]*)}                  ; # Matches a word (mind yer pp and qq)
-    
+
     regsub -all -nocase -- "$key=$qq" $tag {} tag
     regsub -all -nocase -- "$key *= *$pp" $tag {} tag
     append tag " value=\"$value\""
@@ -464,16 +464,16 @@ proc ns_htmlselect args {
             set args [lreplace $args 0 1]
         }
     }
-    
+
     set key [lindex $args 0]
     set values [lindex $args 1]
-    
+
     if {[llength $args] == 3} {
         set selecteddata [lindex $args 2]
     } else {
         set selecteddata ""
     }
-    
+
     set select "<SELECT NAME=$key"
     if {$multi == 1} {
         set size [llength $values]
