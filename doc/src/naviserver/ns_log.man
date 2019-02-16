@@ -266,7 +266,7 @@ Default: false.
 
 [section EXAMPLES]
 
-The example below is an excert of sample-config.tcl as
+The example below is a snippet taken from sample-config.tcl, which is
 included in the NaviServer distribution.
 
 [example_begin]
