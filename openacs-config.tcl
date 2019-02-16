@@ -131,13 +131,24 @@ ns_section ns/parameters {
     # ns_param        tmpdir          c:/tmp
 
     #
-    # ns_param	logroll		on
-    ns_param	logmaxbackup	100  ;# 10 is default
-    ns_param	logdebug	$debug
-    ns_param	logdev		$dev
-    ns_param	logcolorize	true
-    ns_param	logprefixcolor	green
+    # Configuration of error.log
+    #
+    # Rolling of logfile:
+    ns_param	logroll		on
+    ns_param	logmaxbackup	100      ;# 10 is default
     ns_param	logrollfmt	%Y-%m-%d ;# format appended to serverlog file name when rolled
+    #
+    # Format of log entries:
+    # ns_param  logusec         true     ;# add timestamps in microsecond (usec) resolution (default: false)
+    # ns_param  logusecdiff     true     ;# add timestamp diffs since in microsecond (usec) resolution (default: false)
+    ns_param	logcolorize	true     ;# colorize log file with ANSI colors (default: false)
+    ns_param	logprefixcolor	green    ;# black, red, green, yellow, blue, magenta, cyan, gray, default
+    # ns_param  logprefixintensity normal;# bright or normal
+    #
+    # Severities to be logged (can be controlled at runtime via ns_logctl)
+    ns_param	logdebug	$debug    ;# debug messages
+    ns_param	logdev		$dev      ;# development message
+    ns_param    lognotice       true      ;# informational messages
 
     # ns_param	mailhost	localhost
     # ns_param	jobsperthread	0
