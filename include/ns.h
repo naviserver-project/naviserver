@@ -95,8 +95,9 @@
 #define NS_COOKIE_SCRIPTABLE       0x02u  /* Available to JavaScript on the client. */
 #define NS_COOKIE_DISCARD          0x04u  /* Discard the cookie at the end of the current session. */
 #define NS_COOKIE_REPLACE          0x08u  /* Replace the cookie in the output headers. */
-#define NS_COOKIE_EXPIRENOW        0x10u  /* Replace the cookie in the output headers. */
-
+#define NS_COOKIE_EXPIRENOW        0x10u  /* Used for deletion of cookies. */
+#define NS_COOKIE_SAMESITE_STRICT  0x20u  /* Use SameSite=strict to protect against CSRF attacks */
+#define NS_COOKIE_SAMESITE_LAX     0x40u  /* Use SameSite=lax to protect against CSRF attacks */
 /*
  * The following are the valid attributes of a scheduled event. For NaviServer
  * and the current set of NaviServer modules, these constants would not be

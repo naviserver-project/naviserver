@@ -104,24 +104,16 @@ for the cookie to be deleted. If the provided domain is empty, it is ignored.
 If the discard option is true then the cookie will be automatically
 deleted at the end of the current session (when the user agent terminates).
 
-[opt_def -secure [arg boolean]]
-If the secure option is true then the cookie will only be sent back to the
-server when the client uses a secure ([term TLS]/[term SSL]) connection.
-
-[opt_def -replace [arg boolean]]
-If the replace option is true the cookie being set or deleted is as
-well deleted from the current output header set if provided there.
-The default value is false.
-
-[opt_def -scriptable [arg boolean]]
-If the scriptable option is false or not given the cookie is unavailable to
-javascript on the client. This can prevent cross site scripting attacks (XSS) on
-clients which support the [term HttpOnly] option. Set [option -scriptable] to true
-if you need to access the cookie via javascript.
-
 [opt_def -domain [arg domain]]
 Restrict the cookie to a domain name, such as [term example.com]. The
 current domain is implied if none is specified.
+
+[opt_def -expires [arg time]]
+The cookie will expire in [arg time] seconds, after which the client will no
+longer send the cookie back to the server. If [arg time] is large it is treated
+as the absolute time in the future when the cookie should expire. The special
+value [emph -1] may be used to indicate that the cookie should never
+expire.
 
 [opt_def -path [arg path]]
 Restrict the cookie to a URL path such as [term /foo/bar]. If no path is
@@ -129,11 +121,34 @@ specified then the cookie will be back sent to the server for all requests.
 If a path is specified the cookie will only be sent back for requests which
 match the specified path, or a sub-path.
 
-[opt_def -expires [arg time]]
-The cookie will expire in [arg time] seconds, after which the client will no
-longer send the cookie back to the server. If [arg time] is large it is treated
-as the absolute time in the future when the cookie should expire. The special
-value [emph -1] may be used to indicate that the cookie should never expire.
+[opt_def -replace [arg boolean]]
+If the replace option is true the cookie being set or deleted is as
+well deleted from the current output header set if provided there.
+The default value is false.
+
+[opt_def -samesite [arg strict|lax|none]]
+When the flag is set it prevents the browser from
+sending this cookie along with cross-site requests to mitigate cross site
+scripting attacks. Permissible values are [term strict], [term lax],
+or [term none] (default). While the value [term strict] prevents
+sending the cookie to the target site in all cross-site browsing
+context, the value of [term lax] allows sending the cookie when the
+user clicks on regular links. For details, see
+https://www.owasp.org/index.php/SameSite
+
+[opt_def -scriptable [arg boolean]]
+If the scriptable option is false or not given the cookie is unavailable to
+JavaScript on the client. This can prevent cross site scripting attacks (XSS) on
+clients which support the [term HttpOnly] option. Set [option -scriptable] to true
+if you need to access the cookie via JavaScript.
+
+[opt_def -secure [arg boolean]]
+If the secure option is true then the cookie will only be sent back to the
+server when the client uses a secure ([term TLS]/[term SSL]) connection.
+
+
+
+
 
 [para]
 The expiry time is valid across browser sessions.  If no expiry is
@@ -158,7 +173,7 @@ ns_register_filter preauth GET /* browser_tracking_filter
 [example_end]
 
 
-[see_also ns_cookiecharset Ns_Cookie(3)]
+[see_also ns_cookiecharset ]
 [keywords "server built-in" cookie session]
 
 [manpage_end]
