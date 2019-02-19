@@ -660,10 +660,8 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             flags |= NS_COOKIE_REPLACE;
         }
         if (samesite == INTCHAR('s')) {
-            fprintf(stderr, "setting SAMESITE_STRICT\n");
             flags |= NS_COOKIE_SAMESITE_STRICT;
         } else if (samesite == INTCHAR('l')) {
-            fprintf(stderr, "setting SAMESITE_LAX\n");
             flags |= NS_COOKIE_SAMESITE_LAX;
         }
 
