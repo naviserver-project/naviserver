@@ -706,7 +706,7 @@ Ns_DbPoolStats(Tcl_Interp *interp)
         } else {
             const Handle  *handlePtr;
             Tcl_Obj       *valuesObj;
-            int            unused = 0, len;
+            int            unused = 0, connected = 0, len;
             char           buf[100];
 
             /*
@@ -719,6 +719,9 @@ Ns_DbPoolStats(Tcl_Interp *interp)
             for (handlePtr = poolPtr->firstPtr; handlePtr != NULL; handlePtr = handlePtr->nextPtr) {
                 if (!handlePtr->used) {
                     unused ++;
+                }
+                if (handlePtr->connected) {
+                    connected ++;
                 }
             }
             Ns_MutexUnlock(&poolPtr->lock);
@@ -741,9 +744,16 @@ Ns_DbPoolStats(Tcl_Interp *interp)
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewIntObj(poolPtr->nhandles));
             }
             if (likely(result == TCL_OK)) {
+                result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("connected", 9));
+            }
+            if (likely(result == TCL_OK)) {
+                result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewIntObj(connected));
+            }
+            if (likely(result == TCL_OK)) {
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("used", 4));
             }
             if (likely(result == TCL_OK)) {
+                fprintf(stderr, "pool %s nhandles %d unused %d used %d\n",poolPtr->name, poolPtr->nhandles, unused, poolPtr->nhandles - unused);
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewIntObj(poolPtr->nhandles - unused));
             }
             if (likely(result == TCL_OK)) {
