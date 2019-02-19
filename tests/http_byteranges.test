@@ -408,7 +408,7 @@ test byteranges-5.2.6 {ns_writer range reply - wrong file} \
 
 
 #
-# Range requests on adp files are currently ignored
+# Range requests on ADP files are currently ignored
 #
 test byteranges-6.0 {ADP + byte range} \
     -constraints serverListen -setup {

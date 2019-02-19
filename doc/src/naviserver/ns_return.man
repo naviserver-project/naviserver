@@ -314,7 +314,7 @@ Example setting: "/usr/bin/yui-compressor --type js".  (string, defaults to "")
 [list_begin definitions]
 
 [def directoryadp]
-Name of an adp page to use to display directory listings.
+Name of an ADP page to use to display directory listings.
 One can either specify [const directoryadp],
 or [const directoryproc], but not both.
 (string, defaults to "")

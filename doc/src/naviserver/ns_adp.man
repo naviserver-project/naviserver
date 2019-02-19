@@ -81,7 +81,7 @@ stack to the underlying C-level request processing code.
 
 NaviServer can be configured to execute ADP's placed with other static
 files within a virtual server's pages directory via
-the  map  parameter in the  adp  server config
+the  map  parameter in the ADP server config
 section, for example:
 
 [example_begin]
@@ -355,7 +355,7 @@ Default: [cmd ns_adp_debuginit].
 [list_end]
 
 
-[see_also ns_adp_include ns_adp_puts ns_adp_ctl]
+[see_also ns_adp ns_adp_include ns_adp_puts ns_adp_ctl ns_adp_register ns_adp_parse ns_adp_abort]
 
 [keywords ADP gzip ns_conn configuration]
 

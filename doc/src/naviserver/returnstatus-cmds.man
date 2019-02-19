@@ -30,7 +30,7 @@ return one.
 
 [para]
 NOTE: The script does not end at the time these commands are invoked.
-When used in an adp page, [cmd ns_adp_abort] or [cmd ns_adp_return]
+When used in an ADP page, [cmd ns_adp_abort] or [cmd ns_adp_return]
 should be called to end script processing after ns_returnredirect. 
 
 

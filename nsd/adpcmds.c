@@ -509,7 +509,7 @@ NsTclAdpParseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             }
 
             /*
-             * Check the adp field in the nsInterp, and construct any support
+             * Check the ADP field in the nsInterp, and construct any support
              * Also, set the cwd.
              */
 

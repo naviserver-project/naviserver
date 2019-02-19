@@ -506,7 +506,7 @@ NsAdpFlush(NsInterp *itPtr, bool doStream)
 
     if (conn == NULL) {
         assert(itPtr->adp.chan == NULL);
-        Ns_TclPrintfResult(interp, "no adp output context");
+        Ns_TclPrintfResult(interp, "no ADP output context");
         return TCL_ERROR;
     }
     assert(conn != NULL);
@@ -543,13 +543,13 @@ NsAdpFlush(NsInterp *itPtr, bool doStream)
      * is the final flush call.
      *
      * Special case when has been sent via Writer thread, we just need to
-     * reset adp output and do not send anything
+     * reset ADP output and do not send anything
      */
 
     Tcl_ResetResult(interp);
 
     if (itPtr->adp.exception == ADP_ABORT) {
-        Ns_TclPrintfResult(interp, "adp flush disabled: adp aborted");
+        Ns_TclPrintfResult(interp, "ADP flush disabled: ADP aborted");
     } else
     if ((conn->flags & NS_CONN_SENT_VIA_WRITER) != 0u || (len == 0 && doStream)) {
         result = TCL_OK;

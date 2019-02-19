@@ -16,7 +16,8 @@
  such as ns_return or ns_write for example, were called before ns_adp_abort, then
  their output will already have been output also.
 
- The optional retval becomes the return value of the ADP if specified, otherwise an empty string is returned.
+ The optional retval becomes the return value of the ADP if specified,
+ otherwise an empty string is returned.
 
 [section {COMMANDS}]
 
@@ -40,8 +41,8 @@
 [section Notes]
 
 Because it's possible to catch the ns_adp_abort exception, it is
-possible for code to execute after an ns_adp_abort in the current adp
-block. However, all subsequent adp blocks are guaranteed to not get
+possible for code to execute after an ns_adp_abort in the current ADP
+block. However, all subsequent ADP blocks are guaranteed to not get
 evaluated. For example:
 
 [example_begin]

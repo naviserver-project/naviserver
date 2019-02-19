@@ -48,7 +48,7 @@ in place of the tag, end tag, and the enclosed content).
 
 [para]
 Note: Care must be taken when using this function from inside an ADP, because
-the  adpstring  is likely to contain script delimiters
+the ADP string  is likely to contain script delimiters
 ( <% ... %> ) which will prematurely terminate
 script fragments. It is probably easier to restrict use of
 this function to .tcl files.
@@ -61,7 +61,7 @@ this function to .tcl files.
    }
 [example_end]
 Once defined, typically in a startup script, you could simple include  <example> or
-<printdate> in adp pages.
+<printdate> in ADP pages.
 
 
 
@@ -117,22 +117,21 @@ The following is a simple way of handling conditional content in ADPs:
 [example_begin]
 
 proc remember {input tagset} {
-
-   global _adp_memory
+   
    set tagname [lb]ns_set iget $tagset name[rb]
    if {[lb]string match "" $tagname[rb]} {
-     set _adp_memory($tagname) $input
+     set ::_adp_memory($tagname) $input
      return ""
    } else {
      return $input
    }
 }
+ 
 proc recall {name} {
-
-   global _adp_memory
-   if {[lb]info exists _adp_memory($name)[rb]} {
+   
+   if {[lb]info exists ::_adp_memory($name)[rb]} {
      set parsecommand [lb]list ns_adp_parse -string[rb]
-     lappend parsecommand $_adp_memory($name)
+     lappend parsecommand $::_adp_memory($name)
      ns_puts -nonewline [lb]uplevel $parsecommand[rb]
    } else {
      ns_log Error "[lb]ns_adp_argv 0[rb]: Unable to recall"
@@ -158,13 +157,13 @@ result." if there are no rows:
   }
   ns_db releasehandle $db
 %>
-
+  
 <remember name="has-rows_header"> <table> </remember>
 <remember name="hasrows_rows"> <tr><td><%=$column%></td></tr> </remember>
 <remember name="hasrows_footer"> </table> </remember>
 No rows in result.
 <remember name="norows">
-
+  
 <%
 if {[lb]llength $rows[rb]  >  0}  {
   recall  "hasrows_header"
@@ -177,12 +176,11 @@ if {[lb]llength $rows[rb]  >  0}  {
   recall "norows"
 }
 %>
-
 [example_end]
 
 [list_end]
 
-[see_also ns_adp ns_adp_eval ns_adp_safeeval ns_adp_include]
+[see_also ns_adp ns_adp_include]
 [keywords "server built-in" ADP]
 
 [manpage_end]

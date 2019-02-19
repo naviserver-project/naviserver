@@ -35,7 +35,7 @@ enclosing script.
 
 [para]
 The option [opt  [option -cwd]] can be used to set the current working directory
-for this adp parse operation
+for this ADP parse operation
 
 [para]
 The option  [opt [option -file]] can be used to parse ADP contained in
@@ -44,7 +44,7 @@ except the result is returned by the command instead of automatically
 being appended to the output stream.
 
 [para]
-The option [opt [option -safe]] can be used to set the adp safe flag.
+The option [opt [option -safe]] can be used to set the ADP safe flag.
 
 [para]
 The option [opt [option -string]] is provided for backwards compatibility, but
@@ -53,9 +53,10 @@ does nothing since string mode is the default mode.
 [para]
 The option [opt [option -tcl]] can be provided to process a Tcl file.
 
-[para]
-Additional arguments can be provided, which are passed to the adp evaluation.  The arguments can be accessed within the
-ADP using the [cmd ns_adp_argc], [cmd ns_adp_argv], and [cmd ns_adp_bind_args] commands.
+[para] Additional arguments can be provided, which are passed to the
+ADP evaluation.  The arguments can be accessed within the ADP using
+the [cmd ns_adp_argc], [cmd ns_adp_argv], and [cmd ns_adp_bind_args]
+commands.
 
 [para]
 If this call is a nested ADP evaluation (where one ADP calls another), an error will
@@ -72,7 +73,7 @@ be thrown if the depth exceeds 256, the maximum number of nested ADP evaluations
    % ns_adp_parse -file foo.tcl
 [example_end]
 
-[see_also ns_adp_argc ns_adp_argv ns_adp_bind_args]
+[see_also ns_adp ns_adp_argc ns_adp_argv ns_adp_bind_args]
 [keywords "server built-in" ADP]
 
 [manpage_end]

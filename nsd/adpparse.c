@@ -49,7 +49,7 @@
 #define LENSZ       ((int)(sizeof(int)))
 
 /*
- * The following structure maintains proc and adp registered tags.
+ * The following structure maintains proc and ADP registered tags.
  * String bytes directly follow the Tag struct in the same allocated
  * block.
  */
