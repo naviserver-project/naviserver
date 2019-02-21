@@ -645,7 +645,9 @@ ns_runonce {
             variable nsplist
             lappend nsplist $top
             foreach nsp [namespace children $top] {
-                #if {$nsp in {"::tcl" "::msgcat"}} {continue}
+                if {![ns_config -bool ns/parameters blueprint_include_tcl 1]} {
+                    if {$nsp eq "::tcl"} continue
+                }
                 _namespaces $nsp
             }
         }
