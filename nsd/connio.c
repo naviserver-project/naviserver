@@ -950,32 +950,47 @@ Ns_ConnReadLine(const Ns_Conn *conn, Ns_DString *dsPtr, size_t *nreadPtr)
     Request      *reqPtr;
     const Driver *drvPtr;
     const char   *eol;
-    size_t        nread;
-    Ns_ReturnCode status = NS_OK;
+    Ns_ReturnCode status;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
     connPtr = (const Conn *) conn;
     reqPtr = connPtr->reqPtr;
-    drvPtr = connPtr->drvPtr;
+    assert(reqPtr != NULL);
 
-    if (connPtr->sockPtr == NULL
-        || (eol = strchr(reqPtr->next, INTCHAR('\n'))) == NULL
-        || (nread = (size_t)(eol - reqPtr->next)) > (size_t)drvPtr->maxline) {
+    drvPtr = connPtr->drvPtr;
+    eol = strchr(reqPtr->next, INTCHAR('\n'));
+
+    if ((connPtr->sockPtr == NULL) || (eol == NULL)) {
         status = NS_ERROR;
     } else {
-        size_t ncopy = nread;
-        ++nread;
-        if (nreadPtr != NULL) {
-            *nreadPtr = nread;
+        size_t nread = (size_t)(eol - reqPtr->next);
+
+        if (nread > (size_t)drvPtr->maxline) {
+            status = NS_ERROR;
+        } else {
+            size_t ncopy = nread;
+
+            ++nread;
+            if (nreadPtr != NULL) {
+                *nreadPtr = nread;
+            }
+
+            /*
+             * Read from the end of the buffer until we either reach
+             * ncopy == 0 (this means the start of the buffer), or
+             * until we fine a '\r'.
+             */
+            if (ncopy > 0u && *(eol-1) == '\r') {
+                --ncopy;
+            }
+            Ns_DStringNAppend(dsPtr, reqPtr->next, (int)ncopy);
+            reqPtr->next  += nread;
+            reqPtr->avail -= nread;
+
+            status = NS_OK;
         }
-        if (ncopy > 0u && *(eol-1) == '\r') {
-            --ncopy;
-        }
-        Ns_DStringNAppend(dsPtr, reqPtr->next, (int)ncopy);
-        reqPtr->next  += nread;
-        reqPtr->avail -= nread;
     }
     return status;
 }
