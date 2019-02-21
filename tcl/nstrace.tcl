@@ -644,10 +644,9 @@ ns_runonce {
         proc _namespaces {top} {
             variable nsplist
             lappend nsplist $top
+            set excluded_namespaces [ns_config ns/parameters blueprint_exclude ""]
             foreach nsp [namespace children $top] {
-                if {![ns_config -bool ns/parameters blueprint_include_tcl 1]} {
-                    if {$nsp eq "::tcl"} continue
-                }
+                if {$nsp in $excluded_namespaces} continue
                 _namespaces $nsp
             }
         }
