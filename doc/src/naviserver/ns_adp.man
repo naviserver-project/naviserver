@@ -66,7 +66,7 @@ can be used to control the eventual response type).
 
 An ADP can include additional ADP files with the  ns_adp_include
 command or evaluate ADP text/script code directly with
- ns_adp_eval . This capability enables are large degree
+[cmd ns_adp_parse]. This capability enables are large degree
 of reuse of presentation and code between applications. Each
 such included file or ADP string evaluation is performed in
 it's own  call frame  similar to a Tcl procedure

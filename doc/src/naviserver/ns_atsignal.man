@@ -13,8 +13,8 @@ be called during the different stages of the server processes lifetime.
 
 [para]
 You can find out which callbacks are already registered with the
-[cmd "ns_info callbacks"] command.
-
+[cmd "ns_info callbacks"] command. Further callbacks can be registered
+via [cmd "ns_ictl trace"].
 
 
 [section {COMMANDS}]
@@ -47,6 +47,16 @@ initialized and is listening for and processing connections.
 Signal procs are called in FIFO order whenever a [term HUP] signal is received
 by the server process.
 
+[para] The following example shows how to log the accumulated cache
+statistics and reset whenever the server is signalled.
+
+[example_begin]
+[cmd ns_atsignal] {
+    foreach cache [lb]ns_cache_names[rb] {
+        ns_log notice "cache\[lb]$cache\[rb]: [lb]ns_cache_stats -reset -- $cache[rb]"
+    }
+}
+[example_end]
 
 
 [call [cmd ns_atshutdown] \
@@ -61,8 +71,8 @@ Orderly shutdown is attempted within [term shutdowntimeout] seconds, as
 specified in the configuration file. Tcl shutdown procs are called before C
 shutdown tasks are waited on, so should be well-behaved.
 
-[para]
-Do not attempt to use other sub-systems, such as the [cmd ns_job] command.
+[para] Do not attempt to use other sub-systems for shutdown jobs, such
+as the [cmd ns_job] command.
 
 
 
@@ -79,20 +89,7 @@ basically the last code to run.
 [list_end]
 
 
-[section EXAMPLES]
-
-Log the accumulated cache statistics and reset whenever the server is signalled:
-
-[example_begin]
-[cmd ns_atsignal] {
-    foreach cache [lb]ns_cache_names[rb] {
-        ns_log notice "cache\[lb]$cache\[rb]: [lb]ns_cache_stats -reset -- $cache[rb]"
-    }
-}
-[example_end]
-
-
-[see_also ns_info ns_atclose]
+[see_also ns_info ns_atclose ns_ictl]
 [keywords "global built-in" signal startup shutdown exit callback]
 
 [manpage_end]
