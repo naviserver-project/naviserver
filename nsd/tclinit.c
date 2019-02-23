@@ -2179,7 +2179,7 @@ UpdateInterp(NsInterp *itPtr)
      * rare and likley expensive to evaluate if the virtual server
      * contains significant state.
      *
-     * In the codeblock blelow, we want to avoid running the blueprint update
+     * In the codeblock below, we want to avoid running the blueprint update
      * under the lock. Therefore we copy the blueprint script with ns_strdup.
      */
     Ns_RWLockRdLock(&servPtr->tcl.lock);
