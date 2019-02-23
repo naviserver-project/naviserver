@@ -41,17 +41,12 @@ NaviServer is reasonably portable and known to compile and run on the following 
 
 It's likely NaviServer can compile on other systems and/or higher or  lower
 numbered versions but this has not been extensively tested.  The primary
-development platforms for NaviServer at AOL are IRIX 6.4  and Solaris 7.
-We also use HP/UX 10.20/11.0, Solaris 2.6, and VA Linux 6.2.1 (Linux 2.2).
+development platforms for NaviServer is Linux.
 
-
-[para]
-
-
-You will need a [emph {C compiler}].  The best one to use is GNU GCC from
-[uri http://www.gnu.org] and its mirrors.  The versions
-we use are 2.95.2.  NaviServer (and the  included Tcl libraries) are written
-entirely in ANSI standard C.
+[para] You will need a [emph {C compiler}].  The best one to use is
+GNU GCC from [uri http://www.gnu.org] and its mirrors or clang.
+NaviServer (and the included Tcl libraries) are written entirely in
+ANSI standard C.
 
 [para]
 

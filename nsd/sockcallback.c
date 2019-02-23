@@ -248,7 +248,7 @@ CallbackTrigger(void)
  *      NS_OK or NS_ERROR on shutdown pending.
  *
  * Side effects:
- *      Socket thread may be created or signalled.
+ *      Socket thread may be created or signaled.
  *
  *----------------------------------------------------------------------
  */

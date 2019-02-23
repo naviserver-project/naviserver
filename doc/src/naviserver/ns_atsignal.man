@@ -48,7 +48,7 @@ Signal procs are called in FIFO order whenever a [term HUP] signal is received
 by the server process.
 
 [para] The following example shows how to log the accumulated cache
-statistics and reset whenever the server is signalled.
+statistics and reset whenever the server is signaled.
 
 [example_begin]
 [cmd ns_atsignal] {

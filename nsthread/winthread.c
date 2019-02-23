@@ -624,7 +624,7 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
     }
 
     /*
-     * Lock the condition and check if wakeup was signalled. Note
+     * Lock the condition and check if wakeup was signaled. Note
      * that the signal may have arrived as the event was timing
      * out so the return of WaitForSingleObject can't be relied on.
      * If there was no wakeup, remove this thread from the list.

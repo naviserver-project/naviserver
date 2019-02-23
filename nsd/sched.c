@@ -550,7 +550,7 @@ NsWaitSchedShutdown(const Ns_Time *toPtr)
  *  None.
  *
  * Side effects:
- *  SchedThread() may be created and/or signalled.
+ *  SchedThread() may be created and/or signaled.
  *
  *----------------------------------------------------------------------
  */

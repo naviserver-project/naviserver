@@ -58,7 +58,7 @@ Options:
 necessary when starting the server with a privileged port running with
 a non-root user-id.  Typically, the addresses are of the form
 ipaddr:port, where the IP address can be either an IPv4 address in the
-dottet notation or an IPv6 address between square brackets (IP-literal
+dotted notation or an IPv6 address between square brackets (IP-literal
 notation). When the IP address is followed by "#" and a positive
 number, the server binds the specified number of sockets to the same
 address. This is necessary, when multiple driver threads listen to the
@@ -113,7 +113,7 @@ To restart the server from the shell you can send the server the SIGINT.
 
 [list_begin itemized]
 
-[item] Builtin feature. No need to setup something else.
+[item] Built-in feature. No need to setup something else.
 [item] Ability to restart from within your application.
 
 [list_end]
@@ -188,7 +188,7 @@ and init does the job of restarting the server if it crashes.
 [list_begin itemized]
 
 [item] Very easy to configure.
-[item] Some kind of built in feature of your OS.
+[item] Some kind of built-in feature of your OS.
 
 [list_end]
 
@@ -275,7 +275,7 @@ Daemontools is a collection of software to control other processes.
 [emph {PLEASE NOTE THAT THIS IS NOT RECOMMENDED FOR WEBSERVER USAGE.}]
 
 The situations where you might want to run NaviServer as user root are rare to none.
-But NaviServer as a tool is so flexible that it can not only be used as webserver.
+But NaviServer as a tool is so flexible that it cannot only be used as webserver.
 It's possible (and has been done) to use it as some kind of application where serving
 webpages is not the primary target.
 
@@ -347,7 +347,7 @@ Use Novell AppArmor (http://www.novell.com/products/apparmor/) and create a Prof
 
 [subsection {Command (interactive) mode}]
 
-Usually you start the server and it waits for signals. With testing in mind a new mode was
+Usually you start the server and it waits for signals. With testing in mind, a new mode was
 added for developers: The interactive 'Command mode'.
 
 [para]
@@ -665,7 +665,7 @@ Files: .tcl files
 [subsection {/pages}]
 
 [para] Default directory where pages and images for the server are
-stored.  Users define typically variaious subdirectories of this
+stored.  Users define typically various subdirectories of this
 directory.
 
 [para]
@@ -676,7 +676,7 @@ Files: typically, .htm, .html, .shtml, and .adp files
 
 [para] Default directory for shared Tcl script library. Also contains
 subdirectories containing Tcl examples and Tcl scripts for various
-modules. The toplevel files of this directory are loaded into
+modules. The top-level files of this directory are loaded into
 NaviServer during startup.
 
 [para]
@@ -907,7 +907,7 @@ Command Line" section.
 [subsection {Restricted Content}]
 
 
-Determine whether any of the content available to an NaviServer in a
+Determine whether any of the content available to a NaviServer in a
 chroot() environment would be restricted. In general, NaviServer should
 be read-only and everything it can read should be world-readable. This
 allows the NaviServer administrator to ignore the nsperm module
@@ -987,21 +987,21 @@ This code example disables the open command:
 [example_end]
 
 
-[subsection {Stacksize}]
+[subsection {Stack Size}]
 
 Apart from the specific details of integration of your favored
-language you may have to take a look at the stacksize parameter of
+language you may have to take a look at the [term stacksize] parameter of
 your config file.
 
 [para]
-As a rule of thumb the default stacksize (in bytes)
+As a rule of thumb the default stack size (in bytes)
 
 [example_begin]
    #
    # Thread library (nsthread) parameters
    #
    ns_section "ns/threads"
-   ns_param   stacksize 64kB ;# Per-thread stack size.
+   ns_param   stacksize 64kB   ;# Per-thread stack size.
 [example_end]
 
 is almost always not enough. Use e.g. 512kB for the start:
@@ -1011,7 +1011,7 @@ is almost always not enough. Use e.g. 512kB for the start:
    # Thread library (nsthread) parameters
    #
    ns_section "ns/threads"
-   ns_param   stacksize 512kB;# Per-thread stack size.
+   ns_param   stacksize 512kB  ;# Per-thread stack size.
 [example_end]
 
 If the size of the stack is not enough you may encounter crashes without real explanation.

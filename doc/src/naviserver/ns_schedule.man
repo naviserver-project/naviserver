@@ -98,7 +98,7 @@ script from running at its next scheduled time.  Returns 1 on success,
 
 [call [cmd ns_resume] [arg id]]
 
-Resume a previously paused scheduled script, This command resumes
+Resume a previously paused scheduled script. This command resumes
 scheduling of a previously paused script via [cmd ns_pause].  Returns 1
 on success, 0 on failure.
 

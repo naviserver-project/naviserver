@@ -405,9 +405,9 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      * For watchdog mode, start the watchdog/server process pair.
      * The watchdog will monitor and restart the server unless the
      * server exits gracefully, either by calling exit(0) or get
-     * signalled by the SIGTERM signal.
+     * signaled by the SIGTERM signal.
      * The watchdog itself will exit when the server exits gracefully,
-     * or, when get signalled by the SIGTERM signal. In the latter
+     * or, when get signaled by the SIGTERM signal. In the latter
      * case, watchdog will pass the SIGTERM to the server, so both of
      * them will gracefully exit.
      */

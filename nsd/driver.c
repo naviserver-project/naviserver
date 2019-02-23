@@ -1836,7 +1836,7 @@ DriverThread(void *arg)
     Ns_MutexUnlock(&drvPtr->lock);
 
     /*
-     * Loop forever until signalled to shutdown and all
+     * Loop forever until signaled to shutdown and all
      * connections are complete and gracefully closed.
      */
 
@@ -3966,7 +3966,7 @@ SpoolerThread(void *arg)
     queuePtr->threadname = Ns_ThreadGetName();
 
     /*
-     * Loop forever until signalled to shutdown and all
+     * Loop forever until signaled to shutdown and all
      * connections are complete and gracefully closed.
      */
 
@@ -4667,7 +4667,7 @@ WriterThread(void *arg)
     queuePtr->threadname = Ns_ThreadGetName();
 
     /*
-     * Loop forever until signalled to shutdown and all
+     * Loop forever until signaled to shutdown and all
      * connections are complete and gracefully closed.
      */
 
@@ -6004,7 +6004,7 @@ AsyncWriterThread(void *arg)
     stopping = NS_FALSE;
 
     /*
-     * Loop forever until signalled to shutdown and all
+     * Loop forever until signaled to shutdown and all
      * connections are complete and gracefully closed.
      */
 

@@ -1025,7 +1025,7 @@ GetServiceName(Ns_DString *dsPtr, char *service)
  *      None.
  *
  * Side effects:
- *      Thread is created or signalled to stop and joined.
+ *      Thread is created or signaled to stop and joined.
  *
  *----------------------------------------------------------------------
  */

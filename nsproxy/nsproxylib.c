@@ -3297,7 +3297,7 @@ ReaperThread(void *UNUSED(arg))
         }
 
         /*
-         * Here we wait until signalled, or at most the
+         * Here we wait until signaled, or at most the
          * time we need to expire next slave or kill
          * some of them found on the close list.
          */
