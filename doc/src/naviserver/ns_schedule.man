@@ -153,10 +153,10 @@ doesn't represent a currently scheduled ID.
 When entries are written from scheduled procedures to the server log
 via [cmd ns_log] these entries can be identified by the string
 [example_begin]
-...[lb]-sched:THREAD_NR:JOB_IN_THREAD:THREAD_ID-[rb]...
+...[lb]-sched:THREAD_NR:COUNTER_IN_THREAD:SCHED_ID-[rb]...
 [example_end]
-where THREAD_NR refers to the nth thread, JOB_IN_THREAD is the nth job
-in this thread and the THREAD_ID refers to the ID of the scheduled
+where THREAD_NR refers to the nth thread, COUNTER_IN_THREAD is the nth
+job in this thread and the SCHED_ID refers to the ID of the scheduled
 script as returned by the ns_schedule* commands.
 
 
