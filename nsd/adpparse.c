@@ -939,7 +939,7 @@ AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *ae, char *se
         /*
          * String will be an ADP fragment to evaluate.
          */
-        Tcl_DStringAppend(&script, "ns_adp_eval ", -1);
+        Tcl_DStringAppend(&script, "ns_adp_parse -- ", -1);
     }
     Tcl_DStringAppendElement(&script, tagPtr->content);
     if (tagPtr->type == TAG_PROC) {
