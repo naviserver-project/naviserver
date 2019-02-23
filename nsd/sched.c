@@ -686,11 +686,13 @@ DeQueueEvent(int qid)
 static void
 EventThread(void *arg)
 {
-    time_t now;
-    Event *ePtr;
-    int jpt, njobs;
+    time_t    now;
+    Event    *ePtr;
+    int       jpt, njobs;
+    uintptr_t jobId;
 
     jpt = njobs = nsconf.sched.jobsperthread;
+    jobId = 0u;
 
     Ns_ThreadSetName("-sched:idle%" PRIdPTR "-", arg);
     Ns_Log(Notice, "starting");
@@ -711,7 +713,7 @@ EventThread(void *arg)
         --nIdleThreads;
         Ns_MutexUnlock(&lock);
 
-        Ns_ThreadSetName("-sched:%d-", ePtr->id);
+        Ns_ThreadSetName("-sched:%" PRIuPTR ":%d:%" PRIdPTR "-", arg, ++jobId, ePtr->id);
         (*ePtr->proc) (ePtr->arg, ePtr->id);
         Ns_ThreadSetName("-sched:idle%" PRIdPTR "-", arg);
         time(&now);
