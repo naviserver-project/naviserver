@@ -122,8 +122,11 @@ SchedObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, char cmd)
         bool ok;
 
         switch (cmd) {
-        case 'u':
         case 'c':
+            Ns_LogDeprecated(objv, 1, "ns_unschedule_proc ...", NULL);
+            ok = Ns_Cancel(id);            
+            break;
+        case 'u':
             ok = Ns_Cancel(id);
             break;
         case 'p':
