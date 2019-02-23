@@ -216,16 +216,18 @@ seconds and fractions of seconds) is reached.
 [example_begin]
    % ns_job create q1
    q1
+   
    % set j [lb]ns_job queue q1 {
       ns_log notice start
       ns_sleep 10
       ns_log notice stop
       set x "i am done"}[rb]
    job0
+   
    % ns_job wait q1 $j
    i am done
-
-   % ns_job queue q1 -detached {ns_log notice "a detached job"}
+   
+   % ns_job queue -detached q1 {ns_log notice "a detached job"}
 [example_end]
 
 [see_also nsd ns_schedule_proc]
