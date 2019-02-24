@@ -593,49 +593,13 @@ Ns_GetBinaryString(Tcl_Obj *obj, int *lengthPtr, Tcl_DString *dsPtr)
     NS_NONNULL_ASSERT(obj != NULL);
     NS_NONNULL_ASSERT(lengthPtr != NULL);
 
-#if 0
-    /*
-     * In earlier versions of Tcl 8.7, we had to do the following stunt.
-     * maybe, this was a bug in these Tcl versions...
-     */
-
-    if (NsTclObjIsByteArray(obj)) {
-        result = (char *)Tcl_GetByteArrayFromObj(obj, lengthPtr);
-
-    } else if (NsTclObjIsEncodedByteArray(obj)) {
-        /*
-         * This branch should be taken seldom, and is the only one, that
-         * requires the dsPtr. The need for dsPtr buffer is due to byte
-         * arrays, which have to be converted into external strings. This
-         * becomes necessary, when some code computes the string
-         * representation of a bytearray, which is then converted into the Tcl
-         * internal UCS-2 notation. In order to get a proper byte array back,
-         * we need the Tcl_DString as a temporary buffer.
-         *
-         * In most cases, the calls to Tcl_DStringInit() and Tcl_DStringFree()
-         * framing Ns_GetBinaryString() are dummy operations.
-         */
-# if (TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION < 7)
-        result = (char *)Tcl_GetByteArrayFromObj(obj, lengthPtr);
-# else
-        result = (char *)Tcl_GetByteArrayFromObj(obj, lengthPtr);
-        char *bytes = Tcl_GetStringFromObj(obj, lengthPtr);
-
-        Tcl_UtfToExternalDString(NULL, bytes, *lengthPtr, dsPtr);
-        result = dsPtr->string;
-        *lengthPtr = dsPtr->length;
-# endif
-    } else {
-        result = (char *)Tcl_GetByteArrayFromObj(obj, lengthPtr);
-    }
-#else
     /*
      * Just reference dsPtr for the time being, we should wait, until Tcl 8.7
      * is released an then maybe get tid of dsPtr.
      */
     (void)dsPtr;
+
     result = (char *)Tcl_GetByteArrayFromObj(obj, lengthPtr);
-#endif
 
     return result;
 }

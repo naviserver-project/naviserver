@@ -559,7 +559,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
         }
         break;
 
-    case STATS: {
+    case STATS:
         if (objc != 2) {
             Tcl_WrongNumArgs(interp, 2, objv, NULL);
             result = TCL_ERROR;
@@ -567,7 +567,6 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
             result = TCL_ERROR;
         }
         break;
-    }
 
     case POOLNAME:       /* fall through */
     case PASSWORD:       /* fall through */
@@ -721,13 +720,13 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
         }
         break;
 
-    case DML:
-    case GETROW:
-    case ONE_ROW:
-    case ZERO_OR_ONE_ROW:
-    case EXEC:
-    case SELECT:
-    case SP_START:
+    case DML:               /* fall through */
+    case GETROW:            /* fall through */
+    case ONE_ROW:           /* fall through */
+    case ZERO_OR_ONE_ROW:   /* fall through */
+    case EXEC:              /* fall through */
+    case SELECT:            /* fall through */
+    case SP_START:          /* fall through */
     case INTERPRETSQLFILE:
 
         /*

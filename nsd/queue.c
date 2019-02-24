@@ -1722,7 +1722,6 @@ NsConnThread(void *arg)
     ConnThreadSetName(servPtr->server, poolPtr->pool, threadId, 0);
 
     Ns_ThreadSelf(&joinThread);
-    /*fprintf(stderr, "### starting conn thread %p <%s>\n", (void *)joinThread, Ns_ThreadGetName());*/
 
     cpt     = poolPtr->threads.connsperthread;
     ncons   = cpt;
@@ -2085,9 +2084,6 @@ NsConnThread(void *arg)
     joinThread = servPtr->pools.joinThread;
     Ns_ThreadSelf(&servPtr->pools.joinThread);
     Ns_MutexUnlock(&servPtr->pools.lock);
-
-    /*fprintf(stderr, "###stopping joinThread %p, self %p\n",
-      joinThread, servPtr->pools.joinThread);*/
 
     if (joinThread != NULL) {
         Ns_ThreadJoin(&joinThread, NULL);

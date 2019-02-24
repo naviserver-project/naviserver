@@ -621,9 +621,9 @@ ValidateUserAddr(User *userPtr, const char *peer)
             char maskString[NS_IPADDR_SIZE];
 
             ns_inet_ntop(maskPtr, maskString, NS_IPADDR_SIZE);
-            /*fprintf(stderr, "### we have an entry, does it really match with saved mask <%s> <%s>\n",
-              (char *)Tcl_GetHashValue(entryPtr), maskString);*/
-
+            /*
+             * We have an entry, does it really match with saved mask?
+             */
             if (STREQ((char *)Tcl_GetHashValue(entryPtr), maskString)) {
                 if (userPtr->flags & USER_FILTER_ALLOW) {
                     success = NS_TRUE;

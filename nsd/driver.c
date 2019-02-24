@@ -5989,9 +5989,6 @@ AsyncWriterThread(void *arg)
     AsyncWriteData *curPtr, *nextPtr, *writePtr;
     PollData        pdata;
 
-    /*fprintf(stderr, "--- AsyncWriterThread started queuePtr %p asyncWriter %p asyncWriter->firstPtr %p\n",
-      queuePtr,
-      asyncWriter, asyncWriter->firstPtr);*/
     Ns_ThreadSetName("-asynclogwriter%d-", queuePtr->id);
     queuePtr->threadname = Ns_ThreadGetName();
 
