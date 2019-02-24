@@ -2,7 +2,8 @@
 NaviServer 4.99.18, released 2019-02-24
 =======================================
 
- 115 files changed, 2979 insertions(+), 1991 deletions(-)
+ 133 files changed, 3314 insertions(+), 2106 deletions(-)
+
 
 New Features:
 -------------
