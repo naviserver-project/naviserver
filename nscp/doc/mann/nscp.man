@@ -202,7 +202,7 @@ To use the control port interface, follow these steps:
 [example_begin]
 
      Welcome to servername running at /usr/local/ns/bin/nsd (pid 22413)
-     NaviServer/4.99.5 for linux built on May 25 2013 at 18:38:59
+     NaviServer/4.99.18 for linux built on Feb 25 2019 at 18:38:59
 
      servername:nscp 1>
 

@@ -1106,7 +1106,7 @@ program.
 [para]
 
 
-Example: [const NaviServer/4.99.6]
+Example: [const NaviServer/4.99.18]
 
 
 [para]
