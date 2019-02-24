@@ -6,7 +6,7 @@
 
 [description]
 
- This commands appends the string to the output buffer for the current connection.
+ This command appends the string to the output buffer for the current connection.
  If [option -nonewline] is specified, a line terminator is not appended after string.
 
 

@@ -95,7 +95,7 @@ requests.
 
 [para] When option [option -checkforproxy] is given, it tries to
 return the peer address from "X-Forwarded-For" header field. If this
-fails (not given, or empty, or having the value "unknown") it falls
+is not possible (not given, or empty, or having the value "unknown") it falls
 back to the physical peer address.
 
 [call [cmd  ns_server] \
@@ -228,7 +228,7 @@ The following example shows, how dynamic connection pool mapping can
 be implemented based on the "partialtimes" of a request: When a
 request is taking longer than a certain threshold, the combination of
 HTTP method and request path (the [arg mapspec]) is mapped dynamically
-to a pool named "slow". This means that later requests with the same
+to a pool named "slow". As a consequence later requests with the same
 HTTP method and path will be served from this connection pool.
 
 [example_begin]

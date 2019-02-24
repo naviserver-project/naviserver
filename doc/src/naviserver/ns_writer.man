@@ -47,7 +47,7 @@ Optionally the following arguments can be used:
 [para]
 [option -headers]
 Tells the writer to provide required HTTP headers, like content size,
-type and status. When this options is not used, make sure that the
+type and status. When this option is not used, make sure that the
 headers are provided (e.g. via [cmd ns_headers]) from your application.
 
 [para]

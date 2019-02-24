@@ -7,7 +7,7 @@
 [description]
 
 This command returns a handle to an [term ns_set] which contains all of the query data from the
-current HTTP request.  This includes query parameters passed in the URL as well as multipart
+current HTTP request.  The resulting data includes query parameters passed in the URL as well as multipart
 form data.  If there is no form data, an empty [term ns_set] is created.
 
 [para]

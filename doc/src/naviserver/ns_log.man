@@ -118,7 +118,7 @@ buffering. Future log messages will not be buffered.
 [call [cmd ns_logctl] \
 	  [method severities] ]
 
-Return a list of available severity-levels. This includes the 7 predefined
+Return a list of available severity-levels. The result includes the 7 predefined
 levels and those created with [cmd ns_logctl] or via C code.
 
 [call [cmd ns_logctl] \
@@ -153,7 +153,7 @@ Return statistics from calls to [cmd ns_log] by severity-level.
 	  [method truncate] \
 	  [arg count] ]
 
-Discard this threads buffered messages, leaving [arg count] untouched.
+Discard this thread's buffered messages, leaving [arg count] untouched.
 
 [call [cmd ns_logctl] \
       [method register] \
@@ -177,13 +177,11 @@ Unregister the previously registered log filter script identified by
 
 [call [cmd ns_logroll] ]
 
-Roll the server error log. This works whether the configuration parameter
-[emph logroll] is enabled or not. See [cmd ns_rollfile] for details of log
-rolling.
-
+Roll the server error log. The behavior is independent from the
+configuration parameter [emph logroll]. See [cmd ns_rollfile] for
+details of log rolling.
 
 [list_end]
-
 
 
 [section CONFIGURATION]

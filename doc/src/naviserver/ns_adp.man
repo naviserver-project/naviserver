@@ -140,9 +140,8 @@ individual ADP execution stream via the  ns_adp_ctl.
 [para]
 
 By default, each Tcl block is independent of other blocks and must be a
-complete script. In particular, this means that conditional
-code cannot span blocks, e.g., the following does not work
-by default:
+complete script. As a consequence, no conditional
+code can spanother ADP blocks. E.g., the following does not work:
 
 [example_begin]
 

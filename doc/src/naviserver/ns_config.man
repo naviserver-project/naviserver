@@ -77,8 +77,8 @@ Specifies case-sensitive parameter key matching. Not recommended.
 
 [opt_def -set]
 Specifies that the parameter is set to the default value,
-when this parameter was not provided earlier. This makes
-the default later retrievable via ns_config.
+when this parameter was not provided earlier. When this is done
+the default is later retrievable via ns_config.
 
 [list_end]
 

@@ -8,7 +8,7 @@
 This command is useful in case of uploading big files and giving users some
 progress statistics about the process. It works by creating special counter for
 the uploaded url and keeps updating it while the file is being uploaded. Once
-file is uploaded completely this statistics is removed from the local cache.
+file is uploaded completely these statistics are removed from the local cache.
 
 [section {COMMANDS}]
 

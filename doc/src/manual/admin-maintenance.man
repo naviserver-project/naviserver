@@ -499,14 +499,14 @@ access log for each virtual server is in the
 
 
 The access log can be configured to limit the number of old logs
-maintained (with the MaxBackup parameter). This sets an upper limit on
-the amount of disk space the access logs take. However, because old
-logs beyond the limit configured to be saved by the NaviServer are
-deleted automatically, you must back up old logs if you require a
-complete history of access to your site. For example, if the MaxBackup
-parameter in the configuration file is set to 5, only five old access
-log files will remain on disk. When a sixth log file needs to be
-opened, the oldest log is removed.
+maintained (with the MaxBackup parameter). This parameter sets an
+upper limit on the amount of disk space the access logs take. However,
+because old logs beyond the limit configured to be saved by the
+NaviServer are deleted automatically, you must back up old logs if you
+require a complete history of access to your site. For example, if the
+MaxBackup parameter in the configuration file is set to 5, only five
+old access log files will remain on disk. When a sixth log file needs
+to be opened, the oldest log is removed.
 
 
 [para]
@@ -909,9 +909,7 @@ Command Line" section.
 
 Determine whether any of the content available to a NaviServer in a
 chroot() environment would be restricted. In general, NaviServer should
-be read-only and everything it can read should be world-readable. This
-allows the NaviServer administrator to ignore the nsperm module
-altogether.
+be read-only and everything it can read should be world-readable. 
 
 
 [para]

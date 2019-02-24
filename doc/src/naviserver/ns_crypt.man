@@ -16,7 +16,7 @@ nscp and nsperm authentication.
 
 The algorithm used is a one-way cipher, which means that the original plain-text
 key cannot be derived knowing the encrypted string alone.  However, since only 
-up to the first 8 bytes of key are significant, this means only a 64-bit key, 
+up to the first 8 bytes of key are significant, only a 64-bit key is effectively used, 
 which is reasonably attacked with modern computers with ordinary brute-force attacks today.
 
 [section {COMMANDS}]

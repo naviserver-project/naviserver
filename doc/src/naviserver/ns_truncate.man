@@ -5,7 +5,7 @@
 [titledesc {Truncate file in size}]
 
 [description]
-This commands will truncate given file to the given length
+This command truncates a given file to the given length.
 
 [section {COMMANDS}]
 

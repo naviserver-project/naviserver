@@ -234,9 +234,9 @@ To use the control port interface, follow these steps:
 
 Type "lsort [lb]info commands[rb]" for a complete list of commands available
 to you.  You can type nearly any Tcl command available to NaviServer
-Tcl libraries and ADPs.  This includes the complete Tcl core and
-nearly any ns_* command.  Type "lsort [lb]info commands ns*[rb]" for a
-sorted list of NaviServer Tcl commands.
+Tcl libraries and ADPs, including the complete Tcl core and
+nearly any ns_* commands.  Type "lsort [lb]info commands ns*[rb]" for a
+sorted list of available NaviServer Tcl commands.
 
 
 [para]

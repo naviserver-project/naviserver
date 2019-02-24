@@ -28,7 +28,7 @@ matching requests. Otherwise, the [term ADP] page will be located at request
 time using [cmd ns_url2file].
 
 [para]
-This commands works similar as [cmd ns_register_tcl], but registers an
+This command works similar as [cmd ns_register_tcl], but registers an
 ADP file instead of a Tcl script.
 
 [para]

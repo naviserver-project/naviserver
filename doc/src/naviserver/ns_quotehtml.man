@@ -6,10 +6,9 @@
 
 [description]
 
-Returns the contents of html with certain characters that are special in HTML
-replaced with an escape code.  This allows text displayed in a webpage that
-might otherwise be interpreted as containing HTML markup instructions to be
-interpreted as literal characters to be displayed.  Specifically:
+Returns the contents of HTML with certain characters that are special in HTML
+replaced with an escape code.  The resulting text can be literally displayed
+in a webpage with an HTML renderer. Specifically:
 
 [list_begin definitions]
 [def] & becomes &amp;

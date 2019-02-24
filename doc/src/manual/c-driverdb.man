@@ -311,7 +311,7 @@ typedef struct ns_DbHandle {
 [para]
 
         The statement field is used as a pointer to your allocated
-             statement handles (hstmt). This allows you to pass a
+             statement handles (hstmt). It can be used to pass a
              DbHandle with a pointer to the statement handle to other
              driver functions to invoke cancels (e.g., SQLCancel())
              and error reporting (e.g., SQLError()).
@@ -1107,7 +1107,7 @@ message is printed to the syslog and the function returns.
 [para]
 
 
-     This sends an exception code and an exception message to the
+     The command sends an exception code and an exception message to the
              client.
 
 

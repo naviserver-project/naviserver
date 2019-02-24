@@ -28,7 +28,7 @@
 
 [item] mtime:  Time the file was last modified,
 
-[item] refcnt: Reference Count, the ADP will be removed from the cache if this reaches zero.
+[item] refcnt: Reference Count, the ADP will be removed from the cache if the reference count reaches zero.
 
 [item] evals: Number of times this ADP has been evaluated.
 

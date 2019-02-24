@@ -283,9 +283,9 @@ Figure: NaviServer Blueprint (per server)
 
 
 [para]
-   Note that there is no implicit locking between interpreters. This
-   means that one interpreter can be performing a gets command on the
-   shared file at the same time another interpreter performs a close on
+   Note that there is no implicit locking between interpreters. As a consequence
+   one interpreter can be performing a [cmd gets] command on the
+   shared file at the same time another interpreter performs a [cmd close] on
    the same file. The results are unpredictable, and could potentially
    cause a core dump. To avoid this situation, use a mutex to protect
    access to the file whenever it is accessed.

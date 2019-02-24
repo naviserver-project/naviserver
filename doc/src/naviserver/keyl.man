@@ -34,7 +34,7 @@ If key is omitted, then a list of all the keys in the keyed list is returned sim
 Delete key and value from keyed list
 
 [para]
-This command deletes the key specified by key from the keyed list in listvar.  This removes 
+This command deletes the key specified by key from the keyed list in listvar.  It removes 
 both the key and the value from the keyed list.
 
 [para]
