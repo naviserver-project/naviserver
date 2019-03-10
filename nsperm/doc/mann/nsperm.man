@@ -17,7 +17,7 @@ lists of hosts for a method and URL combination.
 
 [para]
 NaviServer requires one special user, nsadmin. This user is always
-allowed access to any URL on an NaviServer. The nsadmin user is similar
+allowed access to any URL on a NaviServer. The nsadmin user is similar
 to the Unix root user.
 
 [para]

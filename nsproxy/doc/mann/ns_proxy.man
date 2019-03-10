@@ -26,7 +26,7 @@ load [file /usr/local/lib/libnsproxy.so]
 
 [para]
 It is also possible to load the library into all interpreters of
-an NaviServer virtual server by specifying an [emph nsproxy.so] entry
+a NaviServer virtual server by specifying an [emph nsproxy.so] entry
 in the server's module config entry, for example:
 
 [example_begin]

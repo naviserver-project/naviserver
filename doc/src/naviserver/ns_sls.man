@@ -34,13 +34,13 @@ All the [cmd ns_sls] commands require an active connection.
 
 [call [cmd "ns_sls set"] [arg key] [arg value]]
 
-Set the string value of an sls key. Any old value will be freed. The new value
+Set the string value of an SLS key. Any old value will be freed. The new value
 will be freed automatically when the socket is closed.
 
 
 [call [cmd "ns_sls get"] [arg key] [opt [arg default]]]
 
-Get the current string value of an sls key. If the key does not exist and no
+Get the current string value of an SLS key. If the key does not exist and no
 default was given an error is raised, otherwise the default is returned.
 
 
@@ -52,7 +52,7 @@ ignored.
 
 [call [cmd "ns_sls array"]]
 
-Return a list of sls keys and values in array-get format.
+Return a list of SLS keys and values in array-get format.
 
 
 [list_end]
@@ -88,5 +88,5 @@ connection:
 
 
 [see_also Ns_Sls Ns_Cls]
-[keywords "global built-in" sls storage data ns_sls]
+[keywords "global built-in" SLS storage data ns_sls]
 [manpage_end]

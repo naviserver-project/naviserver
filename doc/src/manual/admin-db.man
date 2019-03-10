@@ -213,7 +213,7 @@ interface with a database via a remote database proxy daemon.
 [para]
 
 
-A database proxy daemon is created for each connection in an NaviServer
+A database proxy daemon is created for each connection in a NaviServer
 database pool. Like connections within a pool configured for an
 internal driver, the connections associated with proxy daemons are
 efficiently managed by the NaviServer on an ad hoc basis. Thus,

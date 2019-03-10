@@ -253,7 +253,7 @@ The path of an ADP page which is run before the requested ADP page.
 Default: none.
 
 [def errorpage]
-The path of an ADP page which is run when an code within an ADP raises an error
+The path of an ADP page which is run when a code within an ADP raises an error
 which is not caught. Default: none.
 
 [list_end]

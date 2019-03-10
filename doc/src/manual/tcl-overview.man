@@ -32,8 +32,7 @@ for that application.
 
 NaviServer supports the Tcl 8.* commands. When you write NaviServer
 extensions in Tcl, you use the core functionality of Tcl as well as a
-set of NaviServer-specific Tcl functions. For example, there is an
-NaviServer Tcl function called ns_conn that allows your Tcl script to
+set of NaviServer-specific Tcl functions. For example, there is a NaviServer Tcl function called ns_conn that allows your Tcl script to
 obtain information about the current connection. In addition,
 functions are available for returning results to Web clients,
 accessing databases, and managing the permissions (access control)
@@ -700,7 +699,7 @@ Verb: <input type='text' name='verb2'><br>
 
 [subsection {Example 4: redirect}]
 
-The following example script shows how to use an NaviServer simple
+The following example script shows how to use a NaviServer simple
 response command (in this case, ns_returnredirect) and the equivalent
 code when sending raw data to the client.
 
