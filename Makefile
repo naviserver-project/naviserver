@@ -285,6 +285,8 @@ dist: clean
 	fi;
 	find naviserver-$(NS_PATCH_LEVEL) -name '.[a-zA-Z_]*' -exec rm \{} \;
 	find naviserver-$(NS_PATCH_LEVEL) -name '*-original' -exec rm \{} \;
+	find naviserver-$(NS_PATCH_LEVEL) -name '*.orig' -exec rm \{} \;
+	find naviserver-$(NS_PATCH_LEVEL) -name '*-ok' -exec rm \{} \;
 	find naviserver-$(NS_PATCH_LEVEL) -name '*~' -exec rm \{} \;
 	tar czf naviserver-$(NS_PATCH_LEVEL).tar.gz --disable-copyfile --exclude="._*" naviserver-$(NS_PATCH_LEVEL)
 	$(RM) naviserver-$(NS_PATCH_LEVEL)
