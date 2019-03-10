@@ -308,7 +308,7 @@ Ns_LogDeprecated(Tcl_Obj *const* objv, int objc, const char *alternative, const 
  * Ns_SetNamedVar --
  *
  *      Set a variable by denoted by a name.  Convenience routine for
- *      tcl-commands, when var names are passed in (e.g ns_http).
+ *      tcl-commands, when var names are passed in (e.g. ns_http).
  *
  * Results:
  *      NS_TRUE on success, NS_FALSE otherwise.

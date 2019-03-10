@@ -51,7 +51,7 @@ static Ns_Callback CleanupKeyed;
  */
 
 static Ns_Callback **cleanupProcs; /* Array of slot cleanup callbacks. */
-static Ns_Sls        kslot;        /* Sls slot for keyed data. */
+static Ns_Sls        kslot;        /* SLS slot for keyed data. */
 
 
 
@@ -60,7 +60,7 @@ static Ns_Sls        kslot;        /* Sls slot for keyed data. */
  *
  * NsInitSls --
  *
- *      Allocate an sls slot for keyed data shared with the Tcl API.
+ *      Allocate an SLS slot for keyed data shared with the Tcl API.
  *
  * Results:
  *      None.
@@ -466,7 +466,7 @@ NsSlsCleanup(Sock *sockPtr)
  *
  * GetSlot --
  *
- *      Return the sls slot for the given key.
+ *      Return the SLS slot for the given key.
  *
  * Results:
  *      Pointer to slot.

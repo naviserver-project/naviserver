@@ -583,7 +583,7 @@ GetEckeyFromPem(Tcl_Interp *interp, char *pemFileName, bool private)
  *        Incremental command to initialize a HMAC context. This
  *        command is typically followed by a sequence of "add"
  *        subcommands until the content is read with the "get"
- *        subcommand an then freed.
+ *        subcommand and then freed.
  *
  * Results:
  *      Tcl Result Code.
@@ -940,7 +940,7 @@ NsTclCryptoHmacObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
  *        Incremental command to initialize a MD context. This
  *        command is typically followed by a sequence of "add"
  *        subcommands until the content is read with the "get"
- *        subcommand an then freed.
+ *        subcommand and then freed.
  *
  * Results:
  *      Tcl Result Code.

@@ -5750,7 +5750,7 @@ NsTclWriterObjCmd(ClientData clientData, Tcl_Interp *interp,
  *      None.
  *
  * Side effects:
- *      Potentially starting a thread an set stopped to 0.
+ *      Potentially starting a thread and set "stopped" to NS_FALSE.
  *
  *----------------------------------------------------------------------
  */

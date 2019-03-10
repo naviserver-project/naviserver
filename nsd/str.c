@@ -595,7 +595,7 @@ Ns_GetBinaryString(Tcl_Obj *obj, int *lengthPtr, Tcl_DString *dsPtr)
 
     /*
      * Just reference dsPtr for the time being, we should wait, until Tcl 8.7
-     * is released an then maybe get tid of dsPtr.
+     * is released and then maybe get tid of dsPtr.
      */
     (void)dsPtr;
 
