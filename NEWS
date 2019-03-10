@@ -957,7 +957,7 @@ New Features:
        listening on the default port.
     Old configurations (doing a-z manually) should continue to work
 
-  - Improved integration of NaviServer with e.g service files (systemd):
+  - Improved integration of NaviServer with e.g. service files (systemd):
     When the server is starting in a forking mode, return a non-zero
     return code, when initialization of the server went wrong (e.g.
     error in the config file)
@@ -1017,7 +1017,7 @@ New Features:
 
       When the parameter is specified, the thread name is placed as
       second field in the access.log. This eases debugging, since one
-      can now link the lines in error.log caused by an request with
+      can now link the lines in error.log caused by a request with
       the line in the access.log without the need of guessing via
       time-stamps. The thread name contains the name of the
       connection pool and a connection id.
@@ -2536,7 +2536,7 @@ Bug Fixes:
     (probably since a long time, due to a mix up of somewhat tricky casts)
   * Fixed warning in interaction between TCP_CORK and nsssl
   * Fixed bug, where one thread frees a nsv-array, but an internal
-    representation of an Tcl_Obj for this array was still active in
+    representation of a Tcl_Obj for this array was still active in
     another thread
   * Fixed bug where ns_imgsize returned an error where it should return
     success and width and height returned as 0 (according to documentation)
@@ -2814,7 +2814,7 @@ Changes in Modules worth to be noted:
   * WebSocket:
     New module implementing a WebSocket interface.  This is a Tcl-only
     module defined with two sample applications (chat and a file
-    watcher for e.g error.log and access.log).  It support ws://
+    watcher for e.g. error.log and access.log).  It support ws://
     (WebSocket over http) and wss:// (WebSocket over https).  For
     details and configuration, see the README file of the module.
 
@@ -3132,7 +3132,7 @@ New Features:
         from the OS (currently just Linux). This information is used by
         nsstats.tcl to report e.g. system time and user time per thread.
       - New subcommand "ns_conn clientdata" to query or set client data
-        (used e.g in ns_writer list)
+        (used e.g. in ns_writer list)
       - Added ns_fastpath_cache_stats to obtain usage info from the
         fastpath cache
 
@@ -3978,7 +3978,7 @@ Bug Fixes:
     * Call comm drivers DriverClose command when socket is released
     * Fix crash bug in nslog on NULL rollfmt
     * Fix URL decoding of '+' characters #1145277
-    * Report correct MIME type for xml documents #1145927
+    * Report correct MIME type for XML documents #1145927
     * Fix crash in channel detach code #1143586
     * Make ns_sendmail handle dropped connections
     * Fix crash on startup when resolving localhost
