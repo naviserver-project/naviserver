@@ -250,7 +250,7 @@ Ns_ConfigIntRange(const char *section, const char *key, int defaultValue,
  *
  * Ns_Configwide, Ns_ConfigWideRange --
  *
- *      Return an wide integer config file value, or the default if not
+ *      Return a wide integer config file value, or the default if not
  *      found. The returned value will be between the given minValue and maxValue.
  *
  * Results:

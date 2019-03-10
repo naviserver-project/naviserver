@@ -109,7 +109,7 @@ static void AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flag
  * NsTclAdpRegisterAdpObjCmd, NsTclAdpRegisterProcObjCmd,
  * NsTclAdpRegisterScriptObjCmd --
  *
- *      Register an proc, script, are ADP string tag.
+ *      Register a proc, script, are ADP string tag.
  *
  *
  * Results:
