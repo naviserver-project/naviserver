@@ -289,7 +289,7 @@ ns_inet_ntop(const struct sockaddr *saPtr, char *buffer, size_t size) {
 
                 /*
                  * When the last ':' in the converted string is further away
-                 * from the end as possible with an pure IPv6 notation, then
+                 * from the end as possible with a pure IPv6 notation, then
                  * assume the last portion is an IPv4 address.
                  */
                 if (tail != NULL) {

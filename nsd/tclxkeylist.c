@@ -419,7 +419,7 @@ typedef struct {
 #define KEYEDLIST_ARRAY_INCR_SIZE 16
 
 /*
- * Macros to validate an keyed list object or internal representation
+ * Macros to validate a keyed list object or internal representation
  */
 #ifdef TCLX_DEBUG
 #   define KEYL_OBJ_ASSERT(keylAPtr) {\

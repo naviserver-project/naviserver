@@ -538,7 +538,7 @@ HttpWaitObjCmd(
             } else {
                 Ns_TclPrintfResult(interp, "error during task: %s", httpPtr->error);
             }
-            Ns_Log(Ns_LogTaskDebug, "calling HttpCancel, since Ns_TaskWait returned an timeout");
+            Ns_Log(Ns_LogTaskDebug, "calling HttpCancel, since Ns_TaskWait returned a timeout");
             HttpCancel(httpPtr);
             result = TCL_ERROR;
 

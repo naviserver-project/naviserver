@@ -248,7 +248,7 @@ Ns_StrToInt(const char *chars, int *intPtr)
  *
  * Ns_StrToWideInt --
  *
- *      Attempt to convert the string value to an wide integer.
+ *      Attempt to convert the string value to a wide integer.
  *
  *      The string may begin with an arbitrary amount of white space (as
  *      determined by isspace(3)) followed by a single optional `+' or `-'

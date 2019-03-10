@@ -5190,7 +5190,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
 
         } else {
             /*
-             * Deliver an content from iovec. The lifetime of the
+             * Deliver a content from iovec. The lifetime of the
              * source is unknown, we have to copy the c.
              */
             for (i = 0, j=headerbufs; i < nbufs; i++, j++) {
@@ -6214,7 +6214,7 @@ LookupDriver(Tcl_Interp *interp, const char* protocol, const char *driverName)
  *
  * NSDriverClientOpen --
  *
- *      Open an client HTTP connection using the driver interface
+ *      Open a client HTTP connection using the driver interface
  *
  * Results:
  *      Tcl return code.
