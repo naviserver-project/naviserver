@@ -160,7 +160,7 @@ Returns a list of the queues. A queue has the following fields:
 
    [item] [term numrunning] - Number of currently running jobs in this queue.
 
-   [item] [term req] - Some request fired; e.g someone requested this
+   [item] [term req] - Some request fired; e.g. someone requested this
    queue be deleted. Queue will not be deleted until all the jobs on the queue are removed.
 [list_end]
 

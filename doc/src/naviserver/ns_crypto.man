@@ -14,7 +14,7 @@ are not supported.
 
 [para]
 For some higher level
-functions (e.g. performing e.g digest or HMAC operations of huge
+functions (e.g. performing e.g. digest or HMAC operations of huge
 amounts of data) see e.g.[cmd ns_md] and [cmd ns_hmac].
 
 [para]
