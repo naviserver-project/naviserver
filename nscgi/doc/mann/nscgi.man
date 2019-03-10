@@ -368,8 +368,8 @@ There are several ways a Web page can run a CGI program:
 
 [item] [emph {Form:}] You can create a form with multiple fields. Use forms to run
     CGI programs when your readers can choose or type values for one
-    or more variables.The [const METHOD] attribute of the HTML
-    form an be either [const GET] or [const POST].
+    or more variables. The [const METHOD] attribute of the HTML
+    form can be either [const GET] or [const POST].
 
     [list_begin itemized]
 
