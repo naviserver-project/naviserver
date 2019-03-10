@@ -74,7 +74,7 @@ result is a list of two or more elements.
 [para]
 Each element itself is a list which includes several keys: [emph handle],
 [emph slave], [emph start], [emph script] and their associated values.
-This format is suitable for filling in an Tcl array with the
+This format is suitable for filling in a Tcl array with the
 [cmd "array set"] Tcl command.
 The [emph handle] key contains the handle of the proxy.
 The [emph slave] key contains the process-id of the slave process.
@@ -429,7 +429,7 @@ set handle [lb][cmd ns_proxy] get myproxy[rb]
 [example_end]
 
 Alternatively, instead of using the scalar handle you can use
-the handle directly as an Tcl command:
+the handle directly as a Tcl command:
 
 [example_begin]
 set handle [lb][cmd ns_proxy] get myproxy[rb]
