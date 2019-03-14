@@ -177,7 +177,8 @@ cumulative times.
 	[cmd threads]]
 
 Returns a list of attribute value pairs containing information about the
-number of connection threads for the server and pool.
+number of connection threads for the server and pool, included how
+often a thread of this pool was started.
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
