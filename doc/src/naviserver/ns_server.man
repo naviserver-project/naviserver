@@ -169,7 +169,7 @@ and pool. The value must be between 1 and [arg maxthreads].
 
 Returns a list of attribute value pairs containing statistics for the
 server and pool, containing the number of requests, queued requests,
-cumulative times.
+cumulative times, and the number of thread starts.
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
@@ -177,8 +177,7 @@ cumulative times.
 	[cmd threads]]
 
 Returns a list of attribute value pairs containing information about the
-number of connection threads for the server and pool, included how
-often a thread of this pool was started.
+number of connection threads for the server and pool.
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \

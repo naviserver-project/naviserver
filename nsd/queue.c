@@ -333,7 +333,6 @@ NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
     if (create) {
         poolPtr->threads.current ++;
         poolPtr->threads.creating ++;
-        poolPtr->threads.started ++;
     }
 
     Ns_MutexUnlock(&poolPtr->threads.lock);
@@ -539,7 +538,6 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
         current = poolPtr->threads.current;
         poolPtr->threads.current ++;
         poolPtr->threads.creating ++;
-        poolPtr->threads.started ++;
         Ns_MutexUnlock(&poolPtr->threads.lock);
 
         Ns_Log(Notice, "NsQueueConn wantCreate %d waiting %d idle %d current %d",
@@ -1399,10 +1397,9 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
     case SThreadsIdx:
         Ns_TclPrintfResult(interp,
-                           "min %d max %d current %d idle %d started %d stopping 0",
+                           "min %d max %d current %d idle %d stopping 0",
                            poolPtr->threads.min, poolPtr->threads.max,
-                           poolPtr->threads.current, poolPtr->threads.idle,
-                           poolPtr->threads.started);
+                           poolPtr->threads.current, poolPtr->threads.idle);
         break;
 
     case SActiveIdx:
@@ -1473,7 +1470,6 @@ NsStartServer(const NsServer *servPtr)
         poolPtr->threads.idle = 0;
         poolPtr->threads.current = poolPtr->threads.min;
         poolPtr->threads.creating = poolPtr->threads.min;
-        poolPtr->threads.started = 0;
         for (n = 0; n < poolPtr->threads.min; ++n) {
             CreateConnThread(poolPtr);
         }

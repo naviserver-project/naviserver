@@ -737,7 +737,6 @@ typedef struct ConnPool {
         int       idle;
         int       connsperthread;
         int       creating;
-        int       started;
     } threads;
 
     /*

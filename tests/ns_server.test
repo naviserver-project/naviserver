@@ -167,7 +167,7 @@ test ns_server-2.5 {basic operation} -body {
 test ns_server-2.6 {basic operation} -body {
     array set threads [ns_server threads]
     array size threads
-} -match exact -result 6
+} -match exact -result 5
 
 test ns_server-2.7 {basic operation} -body {
     ns_server waiting
