@@ -212,7 +212,6 @@ void
 NsInitServer(const char *server, Ns_ServerInitProc *initProc)
 {
     Tcl_HashEntry     *hPtr;
-    Ns_DString         ds;
     NsServer          *servPtr;
     const ServerInit  *initPtr;
     const char        *path, *p;
@@ -250,7 +249,6 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
         initPtr = initPtr->nextPtr;
     }
 
-    Ns_DStringInit(&ds);
     path = Ns_ConfigGetPath(server, NULL, (char *)0L);
 
     /*
