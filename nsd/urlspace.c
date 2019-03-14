@@ -2185,8 +2185,17 @@ AllocTclUrlSpaceId(Tcl_Interp *interp,  int *idPtr)
     NS_NONNULL_ASSERT(idPtr != NULL);
 
     if (nextid < MAX_URLSPACES-1) {
+        Tcl_DString     ds;
+        const NsInterp *itPtr = NsGetInterpData(interp);
+
         *idPtr =  Ns_UrlSpecificAlloc();
         tclUrlSpaces[*idPtr] = NS_TRUE;
+
+        Tcl_DStringInit(&ds);
+        Ns_DStringPrintf(&ds, "nsd:urlspace:%d", (int)*idPtr);
+        Ns_MutexSetName2(&itPtr->servPtr->urlspace.idlocks[*idPtr], ds.string, itPtr->servPtr->server);
+        Tcl_DStringFree(&ds);
+
         result = TCL_OK;
     } else {
         Ns_TclPrintfResult(interp, "maximum number of urlspaces (%d) reached", MAX_URLSPACES);
@@ -2339,9 +2348,9 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 #ifdef DEBUG
         fprintf(stderr, "=== GET id %d key %s url %s op %d\n", id, key, url, op);
 #endif
-        Ns_MutexLock(&servPtr->urlspace.lock);
+        Ns_MutexLock(&servPtr->urlspace.idlocks[id]);
         data = NsUrlSpecificGet(servPtr, key, url, id, flags, op);
-        Ns_MutexUnlock(&servPtr->urlspace.lock);
+        Ns_MutexUnlock(&servPtr->urlspace.idlocks[id]);
 
         Tcl_SetObjResult(interp, Tcl_NewStringObj(data, -1));
     }
@@ -2385,9 +2394,9 @@ UrlSpaceListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 
         Ns_DStringInit(dsPtr);
 
-        Ns_MutexLock(&servPtr->urlspace.lock);
+        Ns_MutexLock(&servPtr->urlspace.idlocks[id]);
         Ns_UrlSpecificWalk(id, servPtr->server, WalkCallback, dsPtr);
-        Ns_MutexUnlock(&servPtr->urlspace.lock);
+        Ns_MutexUnlock(&servPtr->urlspace.idlocks[id]);
 
         Tcl_DStringResult(interp, dsPtr);
     }
@@ -2488,11 +2497,11 @@ UrlSpaceSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 #ifdef DEBUG
         fprintf(stderr, "=== SET use id %d\n", id);
 #endif
-        Ns_MutexLock(&servPtr->urlspace.lock);
+        Ns_MutexLock(&servPtr->urlspace.idlocks[id]);
         /* maybe add a non-string interface for first arg */
         Ns_UrlSpecificSet(servPtr->server, key, url, id, ns_strdup(data),
                           flags, ns_free);
-        Ns_MutexUnlock(&servPtr->urlspace.lock);
+        Ns_MutexUnlock(&servPtr->urlspace.idlocks[id]);
     }
     return result;
 }
@@ -2556,9 +2565,9 @@ UrlSpaceUnsetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             }
         }
 
-        Ns_MutexLock(&servPtr->urlspace.lock);
+        Ns_MutexLock(&servPtr->urlspace.idlocks[id]);
         data = Ns_UrlSpecificDestroy(servPtr->server, key, url, id, flags);
-        Ns_MutexUnlock(&servPtr->urlspace.lock);
+        Ns_MutexUnlock(&servPtr->urlspace.idlocks[id]);
 
         Tcl_SetObjResult(interp, Tcl_NewBooleanObj((data != NULL) || recurse));
     }

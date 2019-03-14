@@ -876,6 +876,7 @@ typedef struct NsServer {
     struct {
         struct Junction *junction[MAX_URLSPACES];
         Ns_Mutex lock;
+        Ns_Mutex idlocks[MAX_URLSPACES];
     } urlspace;
 
     /*
