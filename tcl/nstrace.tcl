@@ -34,17 +34,17 @@
 #     startup interpreter and collect definitions of some
 #     "known" things: loaded packages, created Tcl procs,
 #     namespaces and namespaced variables. Then stuff all
-#     this data in a (potentially large) script and run 
+#     this data in a (potentially large) script and run
 #     this script against virgin Tcl interp.
 #     This script is obtained by the [nstrace::statescript]
 #     command (see below).
 #
 #
 #  B. Register traces on selected Tcl commands and get state
-#     they create in a set of shared variables (the epoch). 
+#     they create in a set of shared variables (the epoch).
 #     Then start bootstraping the interp. This will trigger
 #     trace callbacks and they will start filling the epoch.
-#     After the bootstrapping is done, synthetize a script 
+#     After the bootstrapping is done, synthetize a script
 #     containing minimal fixed state (variables, modules) and
 #     a definition of [unknown] command which will on-demand
 #     load procedure definitions out of the epoch state.
@@ -52,8 +52,8 @@
 #     command (see below).
 #
 #
-# Which one of the above 2 strategies is currently used by the 
-# server, is controlled by the "lazyloader" parameter of the Tcl 
+# Which one of the above 2 strategies is currently used by the
+# server, is controlled by the "lazyloader" parameter of the Tcl
 # library, as defined in the server configuration file.
 # The A. strategy is selected by setting the parameter to false.
 # The B. strategy is selected by setting the parameter to true.
@@ -63,12 +63,12 @@
 # own tracing implementations. Tracers and other supporting
 # callbacks for the following Tcl commands are provided per
 # default:
-# 
+#
 #     load, namespace, variable, proc, rename
 #
 # For the information of how to add new tracers please look
 # into the source code of already provided callbacks.
-# 
+#
 #
 # Summary of commands:
 #
@@ -120,12 +120,12 @@ ns_runonce {
         variable enabled    0     ; # True if trace is enabled
         variable config           ; # Array with config options
         variable epoch     -1     ; # The initialization epoch
-        
+
         # Private namespaces
         namespace eval resolve "" ; # Commands for resolving commands
         namespace eval trace   "" ; # Commands registered for tracing
         namespace eval script  "" ; # Commands for generating scripts
-        
+
         # Exported commands
         namespace export unknown
 
@@ -134,7 +134,7 @@ ns_runonce {
             nsv_set nstrace lastepoch $epoch
             nsv_set nstrace epochlist ""
         }
-        
+
         # Allow creation of interp initialization epochs
         set config(-doepochs)  1
 
@@ -205,7 +205,7 @@ ns_runonce {
             set nsp [namespace current]
             set on  [enablecode]
             #
-            # Activate [rename] and [load] tracers so we can 
+            # Activate [rename] and [load] tracers so we can
             # catch renaming commands and loading packages.
             #
             foreach trace $tracers {
@@ -236,16 +236,16 @@ ns_runonce {
 
         #
         # Returns code to signal trace enable. This command is mainly
-        # used from trace callbacks as [enabletrace] will call each 
+        # used from trace callbacks as [enabletrace] will call each
         # callback with this code to signalize start of tracing.
-        # 
+        #
 
         proc enablecode {} {
             return 126
         }
 
         #
-        # Returns code to signal trace disable. This command is mainly 
+        # Returns code to signal trace disable. This command is mainly
         # used from trace callbacks as [disabletrace] will call each
         # callback with this code to signalize end of tracing.
         #
@@ -264,7 +264,7 @@ ns_runonce {
         }
 
         #
-        # This one synthetizes script used to pull state out of the 
+        # This one synthetizes script used to pull state out of the
         # shared variables filled in by the Tcl command tracing.
         #
 
@@ -310,7 +310,7 @@ ns_runonce {
             if {[string length $import]} {
                 append script $import \n
             }
-            
+
             #
             # Tell to use current initialization epoch
             #
@@ -332,7 +332,7 @@ ns_runonce {
         }
 
         #
-        # This one generates full-blown script with entire 
+        # This one generates full-blown script with entire
         # interpreter state.
         #
 
@@ -381,7 +381,7 @@ ns_runonce {
                 # NX, XOTcl 2
                 set xotcl 2
                 foreach n [namespaces] {
-                    if {$n eq "::nsf" 
+                    if {$n eq "::nsf"
                         || [string match "::nsf::*" $n]
                         || [::nsf::object::exists $n]} { continue }
                     lappend nsps $n
@@ -391,14 +391,14 @@ ns_runonce {
                 set xotcl 1
                 foreach n [namespaces] {
                     if {[string match "::xotcl*" $n]
-                        || [::xotcl::Object isobject $n]} { continue} 
+                        || [::xotcl::Object isobject $n]} { continue}
                     lappend nsps $n
                 }
             } else {
                 set xotcl 0
                 set nsps [namespaces]
             }
-            
+
             #puts stderr "remaining namespaces [join [lsort $nsps] \n]"
 
             # Serialize the remaining namespaces
@@ -430,13 +430,29 @@ ns_runonce {
             if {$xotcl > 0} {
                 #
                 # Serialize XOTcl/NX content
-                # 
+                #
                 if {[catch {::Serializer all} objects]} {
                     ns_log warning "NX/XOTcl extension not loaded; classes an objects will not be included in blueprint\
                       (error: $objects; $::errorInfo)."
                     set objects ""
                 } else {
-                    append script \n "namespace import -force ::xotcl::*" \n $objects \n
+                    #
+                    # Add the serialized objects after the namespace
+                    # imports and ensemble recreators, such that calls
+                    # from their constructors can use it.
+                    #
+                    append import \
+                        \n "namespace import -force ::xotcl::*" \n $objects \n
+
+                    if {$xotcl > 1} {
+                        #
+                        # The serialization of the objects redefines
+                        # the Serializer object, therefore we have to
+                        # repeat the namespace import.
+                        #
+                        append import \
+                            "namespace import -force ::nx::serializer::Serializer" \n
+                    }
                 }
             }
 
@@ -463,7 +479,7 @@ ns_runonce {
             # interactive debugging purposes. The first line
             # gives you always the latest version, the second
             # one is useful for debugging e.g. ns_eval.
-            
+
             #if {1} {_savescript /tmp/__ns_blueprint.tcl $script}
             #if {1} {_savescript /tmp/__ns_blueprint[clock format [clock seconds] -format %d-%b-%Y-%H:%M:%S].tcl $script}
 
@@ -477,7 +493,7 @@ ns_runonce {
         #
         # This is used to exclude Tcl namespace definition from the
         # inclusion in the blueprint script. Some Tcl extensions
-        # (mainly OO-type) handle their own namespaces which can't 
+        # (mainly OO-type) handle their own namespaces which can't
         # be easily handled by the generic serialization script.
         # Such namespaces may contain additional client data which
         # is not visible from the Tcl level thus can't be simply
@@ -520,7 +536,7 @@ ns_runonce {
         # [nstrace::statescript] to create blueprint script
         # used to initialize interp.
         #
-        
+
         proc addscript {cmd body} {
             variable scripts
             if {[lsearch $scripts $cmd] == -1} {
@@ -548,7 +564,7 @@ ns_runonce {
         }
 
         #
-        # Adds one item definition 
+        # Adds one item definition
         # to the named trace store
         #
 
@@ -568,13 +584,13 @@ ns_runonce {
         }
 
         #
-        # Get item definition from 
-        # the named trace store 
+        # Get item definition from
+        # the named trace store
         #
 
         proc getentry {store var} {
             variable epoch
-            
+
             if {[info exists ::errorInfo]} {set savedErrorInfo $::errorInfo}
             if {[info exists ::errorCode]} {set savedErrorCode $::errorCode}
 
@@ -604,10 +620,10 @@ ns_runonce {
         }
 
         #
-        # This command overlays the standard Tcl [unknown] 
+        # This command overlays the standard Tcl [unknown]
         # command. It is used to locate and re-generate
         # the item definition out of the state captured in
-        # thread shared variables. It invokes registered 
+        # thread shared variables. It invokes registered
         # resolver procedures one by one until the item
         # is located. If unable to locate the item, the
         # control is passed to the underlying Tcl [unknown].
@@ -624,7 +640,7 @@ ns_runonce {
         }
 
         #
-        # Returns the list of namespaces starting with the 
+        # Returns the list of namespaces starting with the
         # given namespace and working down the namespace tree.
         #
 
@@ -655,7 +671,7 @@ ns_runonce {
         # helper proc for ensembles
         # reconfigures rather than recreates existing ensembles
         # to prevent loss of bytecoding
-        # 
+        #
 
         proc _create_or_config_ensemble {cmd cfg} {
             if {[info commands $cmd] eq $cmd && [namespace ensemble exists $cmd]} {
@@ -674,7 +690,7 @@ ns_runonce {
         # basic properties with a Tcl 8.4 version, it should not break
         # due to this small change. So we guard the definition of the
         # ensemble serialization by checking Tcl's version number.
-        
+
         if {$::tcl_version >= 8.5} {
             proc _getensemble {cmd} {
                 if {[namespace ensemble exists $cmd]} {
@@ -693,7 +709,7 @@ ns_runonce {
 
         #
         # Generates scripts to re-generate namespace definition.
-        # Returns two scripts: first is used to re-generate 
+        # Returns two scripts: first is used to re-generate
         # namespace with all its procedures and variables
         # and second is used to import commands/procedures
         # from other namespaces.
@@ -714,12 +730,12 @@ ns_runonce {
             set script {}
             set import {}
 
-            # If $nsp is empty (no vars, no procs), we create at 
-            # least a 
+            # If $nsp is empty (no vars, no procs), we create at
+            # least a
             #    namespace eval $nsp {}
             # entry by adding the space.
             append script " "
-            
+
             #
             # Keep the variables of all namespaces except these of "::"
             #
@@ -748,8 +764,17 @@ ns_runonce {
                 if {[namespace qualifiers $cmd] eq $nsp} {
                     append script "interp alias {} $cmd {} [interp alias {} $cmd]" \n
                 }
-            }    
+            }
 
+            # Add exports
+            foreach ex [namespace eval $nsp [list namespace export]] {
+                append script "namespace export [list $ex]" \n
+            }
+
+            #
+            # Collect namespace imports and ensemble recreators to be
+            # loaded later, when the required commands are defined.
+            #
             foreach cn [info commands ${nsp}::*] {
                 set orig [namespace origin $cn]
                 if {[info procs $cn] eq {} &&
@@ -758,15 +783,13 @@ ns_runonce {
                 }
                 append import [_getensemble $cn]
             }
-            foreach ex [namespace eval $nsp [list namespace export]] {
-                append script "namespace export [list $ex]" \n
-            }
+
             return [list $script $import]
         }
 
         #
         # Helper to return a script to re-generate Tcl procedure.
-        # Caller must wrap this script into [namespace eval] 
+        # Caller must wrap this script into [namespace eval]
         # command as the procedure will not generate the procedure
         # under fully qualified name.
         #
@@ -904,7 +927,7 @@ ns_runonce {
         #
 
         proc _delepoch {epoch threads} {
-            set self [ns_thread id] 
+            set self [ns_thread id]
             foreach tid [nsv_set nstrace $epoch] {
                 if {$tid ne $self && [lsearch $threads $tid] >= 0} {
                     lappend alive $tid
@@ -922,8 +945,8 @@ ns_runonce {
         }
 
         #
-        # Procedure used to select one specific epoch. This is 
-        # normally part of the blueprint script generated by 
+        # Procedure used to select one specific epoch. This is
+        # normally part of the blueprint script generated by
         # the [nstrace::tracescript] procedure.
         #
 
@@ -934,13 +957,13 @@ ns_runonce {
                     nsv_lappend nstrace $epoch $tid
                 }
             }
-        }        
+        }
     }
 
     #
     # The code below provides implementation of tracing callbacks
     # for following Tcl commands:
-    # 
+    #
     #    [namespace]
     #    [variable]
     #    [load]
@@ -953,7 +976,7 @@ ns_runonce {
     #
 
     #
-    # Register the [load] trace. This will create 
+    # Register the [load] trace. This will create
     # the following key/value pair in the "load" store:
     #
     #  --- key ----              --- value ---
@@ -1005,7 +1028,7 @@ ns_runonce {
     }
 
     #
-    # Register the [namespace] trace. This will create 
+    # Register the [namespace] trace. This will create
     # the following key/value entry in "namespace" store:
     #
     #  --- key ----                   --- value ---
@@ -1017,7 +1040,7 @@ ns_runonce {
     #  --- key ----                   --- value ---
     #  ::fully::qualified::proc       [list <ns>  "" ""]
     #
-    # The <ns> is the name of the namespace where the 
+    # The <ns> is the name of the namespace where the
     # command or procedure is imported from.
     #
 
@@ -1086,7 +1109,7 @@ ns_runonce {
     }
 
     #
-    # Register the [variable] trace. This will create 
+    # Register the [variable] trace. This will create
     # the following key/value entry in the "variable" store:
     #
     #  --- key ----                   --- value ---
@@ -1131,7 +1154,7 @@ ns_runonce {
             if {[array exists $entry]} {
                 append script \n "array set [list $var] [list [array get $entry]]" \n
             } elseif {[info exists $entry]} {
-                append script " [list [set $entry]]" \n 
+                append script " [list [set $entry]]" \n
             } else {
                 append script \n
             }
@@ -1142,13 +1165,13 @@ ns_runonce {
 
 
     #
-    # Register the [rename] trace. It will create 
+    # Register the [rename] trace. It will create
     # the following key/value pair in "rename" store:
     #
     #  --- key ----              --- value ---
     #  ::fully::qualified::old  ::fully::qualified::new
     #
-    # The "new" value may be empty, for commands that 
+    # The "new" value may be empty, for commands that
     # have been deleted. In such cases we also remove
     # any traced procedure definitions.
     #
@@ -1199,15 +1222,15 @@ ns_runonce {
     }
 
     #
-    # Register the [proc] trace. This will create 
+    # Register the [proc] trace. This will create
     # the following key/value pair in the "proc" store:
     #
     #  --- key ----              --- value ---
     #  ::fully::qualified::proc  [list <epoch> <ns> <arglist> <body>]
     #
-    # The <epoch> changes anytime one (re)defines a proc. 
-    # The <ns> is the namespace where the command was imported 
-    # from. If empty, the <arglist> and <body> will hold the 
+    # The <epoch> changes anytime one (re)defines a proc.
+    # The <ns> is the namespace where the command was imported
+    # from. If empty, the <arglist> and <body> will hold the
     # actual procedure definition. See the "namespace" tracer
     # implementation also.
     #
@@ -1301,7 +1324,7 @@ ns_runonce {
     #
     # The proc resolver will try to resolve the command
     # in the current namespace first, and if not found,
-    # in global namespace. It also handles commands 
+    # in global namespace. It also handles commands
     # imported from other namespaces.
     #
 
