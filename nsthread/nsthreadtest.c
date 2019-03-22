@@ -235,7 +235,7 @@ AtExit(void)
  */
 
 #define NA 10000
-#define BS 1024*16
+#define BS (1024*16)
 
 int nthreads = 10;
 int memstart;

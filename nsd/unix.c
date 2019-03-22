@@ -323,10 +323,10 @@ NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
      */
     switch (mode) {
     case NS_MMAP_WRITE:
-        mapPtr->handle = ns_open(path, O_BINARY | O_RDWR, 0);
+        mapPtr->handle = ns_open(path, O_BINARY | O_RDWR | O_CLOEXEC, 0);
         break;
     case NS_MMAP_READ:
-        mapPtr->handle = ns_open(path, O_BINARY | O_RDONLY, 0);
+        mapPtr->handle = ns_open(path, O_BINARY | O_RDONLY | O_CLOEXEC, 0);
         break;
     default:
         return NS_ERROR;

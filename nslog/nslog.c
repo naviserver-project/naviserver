@@ -916,7 +916,7 @@ LogOpen(Log *logPtr)
 {
     int fd;
 
-    fd = ns_open(logPtr->file, O_APPEND|O_WRONLY|O_CREAT, 0644);
+    fd = ns_open(logPtr->file, O_APPEND | O_WRONLY | O_CREAT | O_CLOEXEC, 0644);
     if (fd == NS_INVALID_FD) {
         Ns_Log(Error, "nslog: error '%s' opening '%s'",
                strerror(errno), logPtr->file);

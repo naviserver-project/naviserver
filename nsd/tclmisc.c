@@ -440,9 +440,11 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
                      * the string.
                      */
                     outputPos++;
-                    if ( textString[inputPos] == '\n' ) {
-                        memcpy(&dsPtr->string[outputPos], prefixString, prefixLength);
-                        outputPos += prefixLength;
+                    if ( textString[inputPos] == '\n') {
+                        if (prefixLength > 0u) {
+                            memcpy(&dsPtr->string[outputPos], prefixString, prefixLength);
+                            outputPos += prefixLength;
+                        }
                         currentWidth = 0u;
                         processedPos = inputPos;
                     }

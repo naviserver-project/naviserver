@@ -859,7 +859,7 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
 
     interp = itPtr->interp;
 
-    fd = ns_open(file, O_RDONLY | O_BINARY, 0);
+    fd = ns_open(file, O_RDONLY | O_BINARY | O_CLOEXEC, 0);
     if (fd < 0) {
         Ns_TclPrintfResult(interp, "could not open \"%s\": %s",
                            file, Tcl_PosixError(interp));

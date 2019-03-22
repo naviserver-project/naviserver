@@ -1336,7 +1336,7 @@ Ns_HttpCheckSpool(
                      *   than the spool limit.
                      */
                     if (httpPtr->spoolFileName != NULL) {
-                        fd = ns_open(httpPtr->spoolFileName, O_WRONLY|O_CREAT, 0644);
+                        fd = ns_open(httpPtr->spoolFileName, O_WRONLY | O_CREAT | O_CLOEXEC, 0644);
                     } else {
                         /*
                          * Create a temporary spool file and remember its fd
@@ -1868,7 +1868,7 @@ HttpConnect(
             }
             bodyFileSize = bodyStat.st_size;
 
-            bodyFileFd = ns_open(bodyFileName, O_RDONLY, 0);
+            bodyFileFd = ns_open(bodyFileName, O_RDONLY | O_CLOEXEC, 0);
             if (unlikely(bodyFileFd == NS_INVALID_FD)) {
                 Ns_TclPrintfResult(interp, "cannot open file %s", bodyFileName);
                 goto fail;

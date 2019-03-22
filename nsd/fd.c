@@ -100,15 +100,15 @@ NsInitFd(void)
      * Ensure fd 0, 1, and 2 are open on at least /dev/null.
      */
 
-    fd = ns_open(DEVNULL, O_RDONLY, 0);
+    fd = ns_open(DEVNULL, O_RDONLY | O_CLOEXEC, 0);
     if (fd > 0) {
         (void) ns_close(fd);
     }
-    fd = ns_open(DEVNULL, O_WRONLY, 0);
+    fd = ns_open(DEVNULL, O_WRONLY | O_CLOEXEC, 0);
     if (fd > 0 && fd != 1) {
         (void) ns_close(fd);
     }
-    fd = ns_open(DEVNULL, O_WRONLY, 0);
+    fd = ns_open(DEVNULL, O_WRONLY | O_CLOEXEC, 0);
     if (fd > 0 && fd != 2) {
         (void) ns_close(fd);
     }
@@ -166,7 +166,7 @@ NsInitFd(void)
      * Open a fd on /dev/null which can be later re-used.
      */
 
-    devNull = ns_open(DEVNULL, O_RDWR, 0);
+    devNull = ns_open(DEVNULL, O_RDWR | O_CLOEXEC, 0);
     if (devNull < 0) {
         Ns_Fatal("fd: ns_open(%s) failed: %s", DEVNULL, strerror(errno));
     }

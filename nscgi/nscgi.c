@@ -169,14 +169,14 @@ Ns_ModuleInit(const char *server, const char *module)
      */
 
     if (!initialized) {
-        devNull = ns_open(DEVNULL, O_RDONLY, 0);
+        devNull = ns_open(DEVNULL, O_RDONLY | O_CLOEXEC, 0);
         if (devNull < 0) {
             Ns_Log(Error, "nscgi: ns_open(%s) failed: %s",
                    DEVNULL, strerror(errno));
             return NS_ERROR;
         }
         (void)Ns_DupHigh(&devNull);
-        (void) Ns_CloseOnExec(devNull);
+        (void)Ns_CloseOnExec(devNull);
 
         Ns_LogCGIDebug = Ns_CreateLogSeverity("Debug(cgi)");
 

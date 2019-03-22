@@ -889,7 +889,7 @@ PrebindSockets(const char *spec)
     char                  *next, *str, *line, *lines;
     long                   l;
     Ns_ReturnCode          status = NS_OK;
-    struct NS_SOCKADDR_STORAGE  sa;
+    struct NS_SOCKADDR_STORAGE sa;
     struct sockaddr       *saPtr = (struct sockaddr *)&sa;
 
     NS_NONNULL_ASSERT(spec != NULL);
