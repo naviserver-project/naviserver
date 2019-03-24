@@ -46,6 +46,7 @@
 #endif
 
 #include <nscheck.h>
+#include <fcntl.h>
 
 #define UCHAR(c)                   ((unsigned char)(c))
 #define INTCHAR(c)                 ((int)UCHAR((c)))
@@ -187,6 +188,8 @@ MSVC++ 15.0 _MSC_VER == 1910 (Visual Studio 2017)
 #  define access                      _access
 #  define chsize                      _chsize
 #  define close                       _close
+#  define dup                         _dup
+#  define dup2                        _dup2
 #  define fileno                      _fileno
 #  define mktemp                      _mktemp
 #  define open                        _open
@@ -347,30 +350,30 @@ typedef struct DIR_ *DIR;
  * mostly Unix style OSes, including macOS
  *
  ***************************************************************/
-#include <sys/types.h>
-#include <dirent.h>
-#include <sys/time.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <sys/uio.h>
-#include <poll.h>
-#include <sys/resource.h>
-#include <sys/wait.h>
-#include <sys/ioctl.h>
-#include <ctype.h>
-#include <grp.h>
-#include <pthread.h>
-#include <sys/mman.h>
-#include <poll.h>
+# include <sys/types.h>
+# include <dirent.h>
+# include <sys/time.h>
+# include <netinet/in.h>
+# include <arpa/inet.h>
+# include <string.h>
+# include <unistd.h>
+# include <sys/socket.h>
+# include <netdb.h>
+# include <sys/uio.h>
+# include <poll.h>
+# include <sys/resource.h>
+# include <sys/wait.h>
+# include <sys/ioctl.h>
+# include <ctype.h>
+# include <grp.h>
+# include <pthread.h>
+# include <sys/mman.h>
+# include <poll.h>
 
-#define NS_SOCKET	      int
-#define NS_INVALID_SOCKET     (-1)
-#define NS_INVALID_PID        (-1)
-#define NS_INVALID_FD         (-1)
+# define NS_SOCKET	      int
+# define NS_INVALID_SOCKET     (-1)
+# define NS_INVALID_PID        (-1)
+# define NS_INVALID_FD         (-1)
 
 /*
  * Many modules use SOCKET and not NS_SOCKET; don't force updates for
@@ -480,8 +483,6 @@ typedef int ns_sockerrno_t;
 # define ns_close		    close
 # define ns_read                    read
 # define ns_write                   write
-# define ns_dup		    	    dup
-# define ns_dup2	    	    dup2
 # define ns_lseek		    lseek
 
 # if __GNUC__
@@ -512,7 +513,6 @@ typedef int ns_sockerrno_t;
 #include <tcl.h>
 #include <limits.h>
 #include <time.h>
-#include <fcntl.h>
 #include <signal.h>
 #include <errno.h>
 #include <ctype.h>
@@ -873,6 +873,14 @@ typedef int bool;
 # define NSSOCK2PTR(p) INT2PTR(p)
 #endif
 
+
+#if defined(F_DUPFD_CLOEXEC)
+# define ns_dup(fd)	    	    fcntl((fd), F_DUPFD_CLOEXEC)
+#else
+# define ns_dup(fd)	    	    dup((fd))
+#endif
+# define ns_dup2	    	    dup2
+
 #ifdef __cplusplus
 # define NS_EXTERN                   extern "C" NS_STORAGE_CLASS
 #else
@@ -1106,8 +1114,6 @@ NS_EXTERN int     ns_close(int fildes);
 NS_EXTERN ssize_t ns_write(int fildes, const void *buf, size_t nbyte);
 NS_EXTERN ssize_t ns_read(int fildes, void *buf, size_t nbyte);
 NS_EXTERN off_t   ns_lseek(int fildes, off_t offset, int whence);
-NS_EXTERN int     ns_dup(int fildes);
-NS_EXTERN int     ns_dup2(int fildes, int fildes2);
 NS_EXTERN ssize_t ns_recv(NS_SOCKET socket, void *buffer, size_t length, int flags);
 NS_EXTERN ssize_t ns_send(NS_SOCKET socket, const void *buffer, size_t length, int flags);
 NS_EXTERN int     ns_snprintf(char *buf, size_t len, const char *fmt, ...);
