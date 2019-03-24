@@ -56,7 +56,6 @@ typedef struct Tmp {
 
 static Tmp      *firstTmpPtr = NULL;
 static Ns_Mutex  lock;
-static int       devNull;
 
 /*
  * The following constants are defined for this file
@@ -91,7 +90,7 @@ NsInitFd(void)
 #ifndef _WIN32
     struct rlimit  rl;
 #endif
-    int fd;
+    int fd, devNull;
 
     Ns_MutexInit(&lock);
     Ns_MutexSetName(&lock, "ns:fd");
@@ -109,7 +108,7 @@ NsInitFd(void)
         (void) ns_close(fd);
     }
     fd = ns_open(DEVNULL, O_WRONLY | O_CLOEXEC, 0);
-    if (fd > 0 && fd != 2) {
+    if ((fd > 0) && (fd != 2)) {
         (void) ns_close(fd);
     }
 
@@ -171,7 +170,6 @@ NsInitFd(void)
         Ns_Fatal("fd: ns_open(%s) failed: %s", DEVNULL, strerror(errno));
     }
     (void) Ns_DupHigh(&devNull);
-    (void) Ns_CloseOnExec(devNull);
 }
 
 

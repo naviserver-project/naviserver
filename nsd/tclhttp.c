@@ -172,12 +172,6 @@ static Tcl_ObjCmdProc HttpQueueObjCmd;
 static Tcl_ObjCmdProc HttpRunObjCmd;
 static Tcl_ObjCmdProc HttpWaitObjCmd;
 
-
-/*
- * Static variables defined in this file.
- */
-static Ns_TaskQueue *session_queue;
-
 
 /*
  *----------------------------------------------------------------------
@@ -993,6 +987,7 @@ HttpQueueCmd(
             HttpClose(httpPtr);
 
         } else {
+            static Ns_TaskQueue *session_queue;
 
             /*
              * Enqueue the task and return the id of the queued item.
