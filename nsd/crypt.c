@@ -29,12 +29,17 @@
 
 #include "nsd.h"
 
-#if !defined(HAVE_CRYPTR) && defined(__linux)
+/*
+ * If there is no HAVE_CRYPT_R defined, and we have a Linux with crypt()
+ * defined, use this with a mutex lock to ensure correct behavior under
+ * concurrency.
+ */
+#if !defined(HAVE_CRYPT_R) && defined(__linux) && defined(NS_HAVE_CRYPT)
 static Ns_Mutex lock = NULL;
 #endif
 
 
-#if defined(HAVE_CRYPTR)
+#if defined(HAVE_CRYPT_R)
 
 char *
 Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
@@ -58,7 +63,7 @@ Ns_Encrypt(const char *pw, const char *salt, char iobuf[])
     return iobuf;
 }
 
-#elif defined(__linux)
+#elif defined(__linux) && defined(NS_HAVE_CRYPT)
 /*
  * It seems that not every version of crypt() is compatible. We see different
  * results e.g. when we use crypt under macOS for the crypted strings in

@@ -335,7 +335,7 @@ AC_CHECK_MEMBERS([struct sockaddr_in.sin_len],,,[
 
 AC_CHECK_LIB([crypt], [crypt],
   [
-    AC_DEFINE([HAVE_CRYPT], [],
+    AC_DEFINE([NS_HAVE_CRYPT], [],
               [Define to 1 if the native crypt library should be used])
     CRYPT_LIBS="-lcrypt"
   ],

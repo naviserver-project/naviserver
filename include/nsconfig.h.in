@@ -18,9 +18,6 @@
 /* Define to 1 if Tcl was compiled with Core Foundation support. */
 #undef HAVE_COREFOUNDATION
 
-/* Define to 1 if the native crypt library should be used */
-#undef HAVE_CRYPT
-
 /* Define to 1 if crypt_r is available. */
 #undef HAVE_CRYPT_R
 
@@ -275,6 +272,9 @@
 
 /* Do we have <values.h>? */
 #undef NO_VALUES_H
+
+/* Define to 1 if the native crypt library should be used */
+#undef NS_HAVE_CRYPT
 
 /* type of second ns_poll() argument */
 #undef NS_POLL_NFDS_TYPE
