@@ -875,7 +875,7 @@ typedef int bool;
 
 
 #if defined(F_DUPFD_CLOEXEC)
-# define ns_dup(fd)	    	    fcntl((fd), F_DUPFD_CLOEXEC)
+# define ns_dup(fd)	    	    fcntl((fd), F_DUPFD_CLOEXEC, 0)
 #else
 # define ns_dup(fd)	    	    dup((fd))
 #endif
