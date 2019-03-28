@@ -5439,7 +5439,10 @@ WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
         fd = NS_INVALID_FD;
         if (likely( result == TCL_OK )) {
 
-            fd = ns_open(fileNameString, O_RDONLY, 0);
+            /*
+             * Try to open the file and check offset and size parameters.
+             */
+            fd = ns_open(fileNameString, O_RDONLY | O_CLOEXEC, 0);
             if (unlikely(fd == NS_INVALID_FD)) {
                 Ns_TclPrintfResult(interp, "could not open file '%s'", fileNameString);
                 result = TCL_ERROR;
