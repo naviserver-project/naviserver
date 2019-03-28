@@ -43,6 +43,10 @@
  */
 #define CHUNK_SIZE 16384
 
+static const char *contentEncodingString  = "Content-Encoding";
+static const char *contentTypeString      = "Content-Type";
+static const char *errorCodeTimeoutString = "NS_TIMEOUT";
+
 /*
  * Local functions defined in this file
  */
@@ -272,7 +276,7 @@ GetResultObj(
         bool binary = NS_TRUE;
 
         if (httpPtr->replyHeaders != NULL) {
-            const char *contentEncoding = Ns_SetIGet(httpPtr->replyHeaders, "Content-Encoding");
+            const char *contentEncoding = Ns_SetIGet(httpPtr->replyHeaders, contentEncodingString);
 
             /*
              * Is the content gzipped encoded? If so, it is binary. If not
@@ -280,7 +284,7 @@ GetResultObj(
              */
 
             if (contentEncoding == NULL || strncmp(contentEncoding, "gzip", 4u) != 0) {
-                const char *contentType = Ns_SetIGet(httpPtr->replyHeaders, "Content-Type");
+                const char *contentType = Ns_SetIGet(httpPtr->replyHeaders, contentTypeString);
 
                 if (contentType != NULL) {
                     /*
@@ -528,7 +532,7 @@ HttpWaitObjCmd(
              */
             if (status == NS_TIMEOUT) {
                 Ns_TclPrintfResult(interp, "timeout waiting for task");
-                Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+                Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
             } else {
                 Ns_TclPrintfResult(interp, "error during task: %s", httpPtr->error);
             }
@@ -549,7 +553,7 @@ HttpWaitObjCmd(
             if (httpPtr->error != NULL) {
                 Ns_TclPrintfResult(interp, "ns_http failed: %s", httpPtr->error);
                 if (httpPtr->finalSockState == NS_SOCK_TIMEOUT) {
-                    Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+                    Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
                 }
                 result = TCL_ERROR;
             } else {
@@ -961,7 +965,7 @@ HttpQueueCmd(
             if (httpPtr->error != NULL) {
                 Ns_TclPrintfResult(interp, "ns_http failed: %s", httpPtr->error);
                 if (httpPtr->finalSockState == NS_SOCK_TIMEOUT) {
-                    Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+                    Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
                 }
                 result = TCL_ERROR;
             } else {
@@ -987,7 +991,7 @@ HttpQueueCmd(
             HttpClose(httpPtr);
 
         } else {
-            static Ns_TaskQueue *session_queue;
+            static Ns_TaskQueue *session_queue = NULL;
 
             /*
              * Enqueue the task and return the id of the queued item.
@@ -1159,7 +1163,7 @@ ProcessReplyHeaderFields(
 
     Ns_Log(Ns_LogTaskDebug, "ProcessReplyHeaderFields %p", (void *)httpPtr->replyHeaders);
 
-    encString = Ns_SetIGet(httpPtr->replyHeaders, "Content-Encoding");
+    encString = Ns_SetIGet(httpPtr->replyHeaders, contentEncodingString);
 
     if (encString != NULL && strncmp("gzip", encString, 4u) == 0) {
       httpPtr->flags |= NS_HTTP_FLAG_GZIP_ENCODING;
@@ -1682,7 +1686,7 @@ EnsureWritable(
     if (rc != NS_OK) {
         if (rc == NS_TIMEOUT) {
             Ns_TclPrintfResult(interp, "ns_http failed: timeout");
-            Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+            Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
         } else {
             Ns_TclPrintfResult(interp, "connect to \"%s\" failed: %s",
                                url, ns_sockstrerror(ns_sockerrno));
@@ -1832,7 +1836,7 @@ HttpConnect(
         }
 
         if (hdrPtr != NULL) {
-            contentType = Ns_SetIGet(hdrPtr, "Content-Type");
+            contentType = Ns_SetIGet(hdrPtr, contentTypeString);
         }
         if (contentType == NULL) {
             /*
@@ -2561,7 +2565,7 @@ CallDoneCallback(
 
     if (httpPtr->finalSockState == NS_SOCK_TIMEOUT) {
         Ns_Log(Ns_LogTaskDebug, "CallDoneCallback -> NS_SOCK_TIMEOUT (error <%s>)", httpPtr->error);
-        Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+        Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
         resultObj = Tcl_NewStringObj(httpPtr->error, -1);
         result = TCL_ERROR;
     } else {
