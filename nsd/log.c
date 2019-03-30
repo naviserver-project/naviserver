@@ -1437,6 +1437,12 @@ Ns_LogRoll(void)
          */
 
         NsAsyncWriterQueueDisable(NS_FALSE);
+#ifdef _WIN32
+        /* On Windows you MUST close stdout and stderr now, or
+           Tcl_FSRenameFile() will fail with "Permission denied". */
+        ns_close(STDOUT_FILENO);
+        ns_close(STDERR_FILENO);
+#endif
 
         pathObj = Tcl_NewStringObj(file, -1);
         Tcl_IncrRefCount(pathObj);
@@ -1451,8 +1457,10 @@ Ns_LogRoll(void)
         }
         Tcl_DecrRefCount(pathObj);
 
-        Ns_Log(Notice, "log: re-opening log file '%s'", file);
         status = LogOpen();
+        /* On Windows, calling Ns_Log() BEFORE LogOpen() crashes the server
+           with a Microsoft assertion failure:  (_osfile(fh) & FOPEN) */
+        Ns_Log(Notice, "log: re-opening log file '%s'", file);
 
         NsAsyncWriterQueueEnable();
     }
