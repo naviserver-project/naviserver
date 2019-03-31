@@ -91,7 +91,7 @@ executed, when the requests is finished (successfully or running into
 an error). The provided [arg call] is appended with two arguments, a
 flag indicating a Tcl error or not (integer value 1 or 0), and the
 result as retuned by [cmd "ns_http run"]. When this option is used,
-the request ist executed in the background and finishes typically in a
+the request is executed in the background and finishes typically in a
 different thread. In these cases, [cmd "ns_http run"] returns empty,
 the request is not automatically canceled at the end of e.g. a
 connection request (as in other cases).

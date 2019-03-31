@@ -3721,7 +3721,7 @@ ReapProxies(void)
  *
  *      Returns time difference in milliseconds between current time
  *      and time given in passed structure. If the current time is
- *      later then the passed time, the result is negative.
+ *      later than the passed time, the result is negative.
  *
  * Results:
  *      Number of milliseconds (may be negative!)

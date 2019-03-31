@@ -57,7 +57,7 @@ The argument [arg method] is restricted to GET, POST or HEAD
 	[opt [arg args]]]
 
 [term ns_register_filter] registers a Tcl filter script for the specified method/URL combination
-on a virtual server. When [option -first] ist used, it is added to the
+on a virtual server. When [option -first] is used, it is added to the
 front of the filter list, otherwise to the end.
 
 [para] The [term when] argument specifies, when the filter script is
