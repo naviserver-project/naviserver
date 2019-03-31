@@ -1060,7 +1060,6 @@ GetSet(Tcl_Interp *interp, const char *flist, int write, fd_set **setPtrPtr,
        fd_set *setPtr, int *const maxPtr)
 {
     int          fargc, result;
-    NS_SOCKET    sock;
     const char **fargv = NULL;
 
     NS_NONNULL_ASSERT(interp != NULL);
@@ -1089,6 +1088,8 @@ GetSet(Tcl_Interp *interp, const char *flist, int write, fd_set **setPtrPtr,
          */
 
         while (fargc-- > 0) {
+            NS_SOCKET sock = NS_INVALID_SOCKET;
+
             if (Ns_TclGetOpenFd(interp, fargv[fargc],
                                 write, (int *) &sock) != TCL_OK) {
                 result = TCL_ERROR;
@@ -1100,6 +1101,8 @@ GetSet(Tcl_Interp *interp, const char *flist, int write, fd_set **setPtrPtr,
                 *maxPtr = sock;
             }
 #endif
+            assert(sock != NS_INVALID_SOCKET);
+
             FD_SET(sock, setPtr);
         }
         Tcl_Free((char *) fargv);
