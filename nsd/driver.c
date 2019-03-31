@@ -69,9 +69,9 @@ static const SpoolerStateMap spoolerStateMap[] = {
  */
 
 typedef struct PollData {
-    unsigned int nfds;          /* Number of fd's being monitored. */
-    unsigned int maxfds;        /* Max fd's (will grow as needed). */
-    struct pollfd *pfds;        /* Dynamic array of poll struct's. */
+    unsigned int nfds;          /* Number of fds being monitored. */
+    unsigned int maxfds;        /* Max fds (will grow as needed). */
+    struct pollfd *pfds;        /* Dynamic array of poll structs. */
     Ns_Time timeout;            /* Min timeout, if any, for next spin. */
 } PollData;
 
@@ -221,7 +221,7 @@ Ns_LogSeverity Ns_LogConnchanDebug;
 
 static Ns_LogSeverity   DriverDebug;        /* Severity at which to log verbose debugging. */
 static Tcl_HashTable    hosts;              /* Host header to server table */
-static const ServerMap *defMapPtr   = NULL; /* Default srv when not found in table */
+static const ServerMap *defMapPtr   = NULL; /* Default server map when not found in table */
 static Ns_Mutex         reqLock     = NULL; /* Lock for allocated Request structure pool */
 static Ns_Mutex         writerlock  = NULL; /* Lock updating streaming information in the writer */
 static Request         *firstReqPtr = NULL; /* Allocated request structures kept in a pool */
@@ -585,7 +585,7 @@ void NsDriverMapVirtualServers(void)
         if (defserver == NULL) {
             /*
              * The local (server-specific) driver definition has no default
-             * server. Therefore try the global driver definition.
+             * server. Therefore, try the global driver definition.
              */
             const char *modulePath = Ns_ConfigGetPath(NULL, moduleName, (char *)0L);
 
@@ -808,7 +808,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
         drvPtr->reuseport = NS_FALSE;
 #else
         /*
-         * When driver threads > 1, reuseport has to be active
+         * When driver threads > 1, "reuseport" has to be active.
          */
         drvPtr->reuseport = NS_TRUE;
 #endif
@@ -828,8 +828,8 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     drvPtr->uploadpath = ns_strdup(Ns_ConfigString(path, "uploadpath", nsconf.tmpDir));
 
     /*
-     * If activated, maxupload has to be at least readahead bytes. Tell the
-     * user in case the config values are overruled.
+     * If activated, "maxupload" has to be at least "readahead" bytes. Tell
+     * the user in case the config values are overruled.
      */
     if ((drvPtr->maxupload > 0) &&
         (drvPtr->maxupload < drvPtr->readahead)) {
@@ -1361,8 +1361,8 @@ NsWakeupDriver(const Driver *drvPtr) {
  *
  * NsWaitDriversShutdown --
  *
- *      Wait for exit of DriverThread.  This callback is invoke later by
- *      the timed shutdown thread.
+ *      Wait for exit of DriverThread.  This callback is invoked later
+ *      by the timed shutdown thread.
  *
  * Results:
  *      None.
@@ -1836,7 +1836,7 @@ DriverThread(void *arg)
     Ns_MutexUnlock(&drvPtr->lock);
 
     /*
-     * Loop forever until signaled to shutdown and all
+     * Loop forever until signaled to shut down and all
      * connections are complete and gracefully closed.
      */
 
@@ -1887,7 +1887,7 @@ DriverThread(void *arg)
                  * The resolution of pollto is ms, therefore, we round
                  * up. If we would round down (e.g. found 500
                  * microseconds to 0 ms), the time comparison later
-                 * would determine that it is to early.
+                 * would determine that it is too early.
                  */
                 pollto = (int)(diff.sec * 1000 + diff.usec / 1000 + 1);
 
@@ -1907,7 +1907,7 @@ DriverThread(void *arg)
         }
         /*
          * Check whether we should re-animate some connection threads,
-         * when e.g. the number of current threads dropped blow the
+         * when e.g. the number of current threads dropped below the
          * minimal value.  Perform this test on timeouts (n == 0;
          * just for safety reasons) or on explicit wakeup calls.
          */
@@ -2169,7 +2169,7 @@ DriverThread(void *arg)
         }
 
         /*
-         * Check for shutdown and get the list of any closing or
+         * Check for shut down and get the list of any closing or
          * keep-alive sockets.
          */
 
@@ -2318,9 +2318,9 @@ PollWait(const PollData *pdata, int waittime)
  *
  * RequestNew
  *
- *      Prepares for reading from the socket, allocates a Request struct for
- *      the given socket. It might be reused from the pool or freshly
- *      allocated. Counterpart of RequestFree.
+ *      Prepares for reading from the socket, allocates a "Request"
+ *      struct for the given socket. It might be reused from the pool
+ *      or freshly allocated. Counterpart of RequestFree().
  *
  * Results:
  *      None
@@ -2369,7 +2369,7 @@ RequestNew(Sock *sockPtr)
  *
  *      Free/clean a socket request structure.  This routine is called
  *      at the end of connection processing or on a socket which
- *      times out during async read-ahead. Counterpart of RequestNew.
+ *      times out during async read-ahead. Counterpart of RequestNew().
  *
  * Results:
  *      None.
@@ -2401,8 +2401,8 @@ RequestFree(Sock *sockPtr)
 
         Ns_Log(DriverDebug, "setting leftover to %" PRIuz " bytes", leftover);
         /*
-         * Here it is save to move the data in the buffer, although the
-         * reqPtr->content might point to it, since we reinit the content. In
+         * Here it is safe to move the data in the buffer, although the
+         * reqPtr->content might point to it, since we re-init the content. In
          * case the terminating null character was written to the end of the
          * previous buffer, we have to restore the first character.
          */
@@ -2648,7 +2648,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
             } else {
 
                 /*
-                 * Queue this socket without reading, NsGetRequest in the
+                 * Queue this socket without reading, NsGetRequest() in the
                  * connection thread will perform actual reading of the
                  * request.
                  */
@@ -2657,9 +2657,9 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
         } else if (status == NS_DRIVER_ACCEPT_QUEUE) {
 
             /*
-             *  We need to call RequestNew to make sure socket has
-             *  request structure allocated, otherwise NsGetRequest will call
-             *  SockRead which is not what this driver wants.
+             *  We need to call RequestNew() to make sure socket has request
+             *  structure allocated, otherwise NsGetRequest() will call
+             *  SockRead() which is not what this driver wants.
              */
             if (sockPtr->reqPtr == NULL) {
                 RequestNew(sockPtr);
@@ -2682,7 +2682,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
  * SockNew --
  *
  *      Allocate and/or initialize a Sock structure. Counterpart of
- *      SockRelease;
+ *      SockRelease().
  *
  * Results:
  *      SockPtr
@@ -2971,7 +2971,7 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
  *      None.
  *
  * Side effects:
- *      DriversThread will wakeup.
+ *      DriversThread will wake up.
  *
  *----------------------------------------------------------------------
  */
@@ -3064,7 +3064,7 @@ SockClose(Sock *sockPtr, int keep)
  *      to decode chunked encoding parts. The function can be called
  *      repeatedly and with incomplete input and overwrites the buffer
  *      with the decoded data optionally. The decoded data is always
- *      shorter then the encoded one.
+ *      shorter than the encoded one.
  *
  * Results:
  *      NS_TRUE when chunk was complete, NS_FALSE otherwise
@@ -3131,7 +3131,7 @@ ChunkedDecode(Request *reqPtr, bool update)
  *      Read content from the given Sock, processing the input as
  *      necessary.  This is the core callback routine designed to
  *      either be called repeatedly within the DriverThread during
- *      an async read-ahead or in a blocking loop in NsGetRequest
+ *      an async read-ahead or in a blocking loop in NsGetRequest()
  *      at the start of connection processing.
  *
  * Results:
@@ -3173,8 +3173,8 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     tbuf[0] = '\0';
 
     /*
-     * In case of keepwait, the accept time is not meaningful and
-     * reset to 0. In such cases, update acceptTime to the actual
+     * In case of "keepwait", the accept time is not meaningful and
+     * reset to 0. In such cases, update "acceptTime" to the actual
      * begin of a request. This part is intended for async drivers.
      */
     if (sockPtr->acceptTime.sec == 0) {
@@ -3183,14 +3183,14 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     }
 
     /*
-     * Initialize Request structure if needed
+     * Initialize request structure if needed.
      */
     if (sockPtr->reqPtr == NULL) {
         RequestNew(sockPtr);
     }
 
     /*
-     * On the first read, attempt to read-ahead bufsize bytes.
+     * On the first read, attempt to read-ahead "bufsize" bytes.
      * Otherwise, read only the number of bytes left in the
      * content.
      */
@@ -3220,7 +3220,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     }
 
     /*
-     * Use temp file for content larger than readahead bytes.
+     * Use temp file for content larger than "readahead" bytes.
      */
 #ifndef _WIN32
     if (reqPtr->coff > 0u                     /* We are in the content part (after the header) */
@@ -3244,7 +3244,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
         }
 
         /*
-         * If maxupload is specified and content size exceeds the configured
+         * If "maxupload" is specified and content size exceeds the configured
          * values, spool uploads into normal temp file (not deleted).  We do
          * not want to map such large files into memory.
          */
@@ -3423,8 +3423,9 @@ EndOfHeader(Sock *sockPtr)
                 reqPtr->chunkWriteOff = reqPtr->chunkStartOff;
                 reqPtr->contentLength = 0u;
 
-                /* We need expectedLength for safely terminating read loop */
-
+                /*
+                 * We need reqPtr->expectedLength for safely terminating read loop.
+                 */
                 s = Ns_SetIGet(reqPtr->headers, "X-Expected-Entity-Length");
 
                 if ((s != NULL)
@@ -3441,14 +3442,14 @@ EndOfHeader(Sock *sockPtr)
         Tcl_WideInt length;
 
         /*
-         * Content-length was provided. We honor just meaningful
-         * content-length hints only.
+         * "Content-length" was provided. We honor just meaningful
+         * "Content-length" hints only.
          */
 
         if ((Ns_StrToWideInt(s, &length) == NS_OK) && (length > 0)) {
             reqPtr->length = (size_t)length;
             /*
-             * Handle too large input requests
+             * Handle too large input requests.
              */
             if (reqPtr->length > (size_t)sockPtr->drvPtr->maxinput) {
                 Ns_Log(Warning, "SockParse: request too large, length=%"
@@ -3460,7 +3461,7 @@ EndOfHeader(Sock *sockPtr)
                  * server might close the connection *before* it has
                  * received full request with its body. Such a
                  * premature close leads to an error message in
-                 * clients like firefox. Therefore we do not return
+                 * clients like Firefox. Therefore, we do not return
                  * SOCK_ENTITYTOOLARGE here, but just flag the
                  * condition. ...
                  *
@@ -3693,13 +3694,13 @@ SockParse(Sock *sockPtr)
     if (unlikely(reqPtr->request.line == NULL)) {
         /*
          * We are at end of headers, but we have not parsed a request line
-         * (maybe just two line feeds).
+         * (maybe just two linefeeds).
          */
         return SOCK_BADREQUEST;
     }
 
     /*
-     * We are in the request body
+     * We are in the request body.
      */
     assert(reqPtr->coff > 0u);
     assert(reqPtr->request.line != NULL);
@@ -3709,11 +3710,12 @@ SockParse(Sock *sockPtr)
      */
     Ns_Log(Dev, "=== length < avail (length %" PRIuz
            ", avail %" PRIuz ") tfd %d tfile %p chunkStartOff %" PRIuz,
-           reqPtr->length, reqPtr->avail, sockPtr->tfd, (void *)sockPtr->tfile, reqPtr->chunkStartOff);
+           reqPtr->length, reqPtr->avail, sockPtr->tfd,
+           (void *)sockPtr->tfile, reqPtr->chunkStartOff);
 
     if (reqPtr->chunkStartOff != 0u) {
         /*
-         * Chunked encoding was provided
+         * Chunked encoding was provided.
          */
         bool   complete;
         size_t currentContentLength;
@@ -3725,18 +3727,18 @@ SockParse(Sock *sockPtr)
          * A chunk might be complete, but it might not be the last
          * chunk from the client. The best thing would be to be able
          * to read until EOF here. In cases, where the (optional)
-         * expectedLength was provided by the client, we terminate
+         * "expectedLength" was provided by the client, we terminate
          * depending on that information
          */
         if ((!complete)
             || (reqPtr->expectedLength != 0u && currentContentLength < reqPtr->expectedLength)) {
             /*
-             * ChunkedDecode wants more data
+             * ChunkedDecode wants more data.
              */
             return SOCK_MORE;
         }
         /*
-         * ChunkedDecode has enough data
+         * ChunkedDecode has enough data.
          */
         reqPtr->length = (size_t)currentContentLength;
     }
@@ -3757,9 +3759,9 @@ SockParse(Sock *sockPtr)
     /*
      * We have all required data in the receive buffer or in a temporary file.
      *
-     * - Uploads > drvPtr->readahead: these are put into temporary files.
+     * - Uploads > "readahead": these are put into temporary files.
      *
-     * - Uploads > drvPtr->maxupload: these are put into temporary files
+     * - Uploads > "maxupload": these are put into temporary files
      *   without mmapping, no content parsing will be performed in memory.
      */
     if (sockPtr->tfile != NULL) {
@@ -3773,7 +3775,7 @@ SockParse(Sock *sockPtr)
     }
 
     /*
-     * Uploads < maxupload are spooled to files and mmapped in order to
+     * Uploads < "maxupload" are spooled to files and mmapped in order to
      * provide the usual interface via [ns_conn content].
      */
     if (sockPtr->tfd > 0) {
@@ -3818,7 +3820,7 @@ SockParse(Sock *sockPtr)
 
     /*
      * Add a terminating null character. The content might be from the receive
-     * buffer (DString) or from the mmapped file. Non-mmapped files are handled
+     * buffer (Tcl_DString) or from the mmapped file. Non-mmapped files are handled
      * above.
      */
     if (reqPtr->length > 0u) {
@@ -3966,7 +3968,7 @@ SpoolerThread(void *arg)
     queuePtr->threadname = Ns_ThreadGetName();
 
     /*
-     * Loop forever until signaled to shutdown and all
+     * Loop forever until signaled to shut down and all
      * connections are complete and gracefully closed.
      */
 
@@ -4240,7 +4242,7 @@ SockSpoolerQueue(Driver *drvPtr, Sock *sockPtr)
  *
  *       Provide an API for locking and unlocking context information
  *       for streaming asynchronous writer jobs.  The locks are just
- *       needed for managing linkage between connPtr and a writer
+ *       needed for managing linkage between "connPtr" and a writer
  *       entry. The lock operations are rather infrequent and the
  *       lock duration is very short, such that at a single global
  *       appears sufficient.
@@ -4269,7 +4271,7 @@ void NsWriterUnlock(void) {
  *
  *      Management functions for WriterSocks. WriterSockRequire() and
  *      WriterSockRelease() are responsible for obtaining and
- *      freeing WriterSock structures. When a SockStructure is finally
+ *      freeing "WriterSock" structures. When shuch a structure is finally
  *      released, it is removed from the queue, the socket is
  *      closed and the memory is freed.
  *
@@ -4356,7 +4358,8 @@ WriterSockRelease(WriterSock *wrSockPtr) {
         int i;
         /*
          * Lookup the matching sockState from the spooler state. The array has
-         * just 5 elements, on average, just 2 comparisons are needed (since OK ist at the end)
+         * just 5 elements, on average, just 2 comparisons are needed (since
+         * OK is at the end).
          */
         for (i = 0; i < Ns_NrElements(spoolerStateMap); i++) {
             if (spoolerStateMap[i].spoolerState == wrSockPtr->status) {
@@ -4405,7 +4408,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
  *
  *      Utility function of the WriterThread to read blocks from a
  *      file into the output buffer of the writer. It handles
- *      leftovers from previous send attempts and takes care for
+ *      left overs from previous send attempts and takes care for
  *      locking in case simultaneous reading and writing from the
  *      same file.
  *
@@ -4440,9 +4443,9 @@ WriterReadFromSpool(WriterSock *curPtr) {
     bufPtr  = curPtr->c.file.buf;
 
     /*
-     * When bufsize > 0 we have leftover from previous send. In such
+     * When bufsize > 0 we have lef tover from previous send. In such
      * cases, move the leftover to the front, and fill the reminder of
-     * the buffer with new c.
+     * the buffer with new data from curPtr->c.
      */
 
     if (curPtr->c.file.bufsize > 0u) {
@@ -4474,7 +4477,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
             /*
              * In streaming mode, the connection thread writes to the
              * spool file and the writer thread reads from the same
-             * file.  Therefore we have to re-adjust the current
+             * file.  Therefore, we have to re-adjust the current
              * read/writer position, which might be changed by the
              * other thread. These positions have to be locked, since
              * seeking might be subject to race conditions. Here we
@@ -4639,14 +4642,14 @@ WriterSend(WriterSock *curPtr, int *err) {
  *
  * WriterThread --
  *
- *      Thread that writes files to clients
+ *      Thread that writes files to clients.
  *
  * Results:
  *      None.
  *
  * Side effects:
  *      Connections are accepted and their SockPtr is set to NULL
- *      so closing actual connection does not close the socket
+ *      such that closing actual connection does not close the socket.
  *
  *----------------------------------------------------------------------
  */
@@ -4667,7 +4670,7 @@ WriterThread(void *arg)
     queuePtr->threadname = Ns_ThreadGetName();
 
     /*
-     * Loop forever until signaled to shutdown and all
+     * Loop forever until signaled to shut down and all
      * connections are complete and gracefully closed.
      */
 
@@ -5900,7 +5903,7 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
         /*
          * Allocate a writer cmd and initialize it. In order to provide an
          * interface compatible to ns_write(), we copy the provided data,
-         * such it can be freed by the caller. Wen we would give up the
+         * such it can be freed by the caller. When we would give up the
          * interface, we could free the memory block after writing, and
          * save a malloc/free operation on the data.
          */
@@ -6174,7 +6177,7 @@ AsyncWriterThread(void *arg)
  *      Driver pointer or NULL on failure.
  *
  * Side effects:
- *      When no driver is found, an error ist left int the interp result.
+ *      When no driver is found, an error is left int the interp result.
  *
  *----------------------------------------------------------------------
  */
