@@ -870,12 +870,14 @@ NsClosePreBound(void)
  *          0/icmp[/count]
  *          /path[|mode]
  *
+ *       mode: mode bits as used by "chmod" specified as octal value
+ *
  * Results:
  *      None.
  *
  * Side effects:
  *      Sockets are left in bound state for later listen
- *      in Ns_SockListenXXX.
+ *      in Ns_SockListen*().
  *
  *----------------------------------------------------------------------
  */
@@ -950,7 +952,7 @@ PrebindSockets(const char *spec)
          * Parse protocol; a line starting with a '/' means: path, which
          * implies a unix-domain socket.
          */
-        if (*line != '/' && (str = strchr(line, INTCHAR('/')))) {
+        if (*line != '/' && (str = strchr(line, INTCHAR('/'))) != NULL) {
             *str++ = '\0';
             proto = str;
         }
@@ -1045,12 +1047,14 @@ PrebindSockets(const char *spec)
             unsigned short mode = 0u;
             /* Parse mode */
 
-            str = strchr(str, INTCHAR('|'));
+            str = strchr(line, INTCHAR('|'));
             if (str != NULL) {
                 *(str++) = '\0';
-                l = strtol(str, NULL, 10);
+                l = strtol(str, NULL, 8);
                 if (l > 0) {
                     mode = (unsigned short)l;
+                } else {
+                    Ns_Log(Error, "prebind: unix: ignore invalid mode value: %s",line);
                 }
             }
             hPtr = Tcl_CreateHashEntry(&preboundUnix, (char *) line, &isNew);
