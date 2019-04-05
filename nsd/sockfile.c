@@ -153,7 +153,7 @@ Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
 
 #ifdef HAVE_SYS_SENDFILE_H  /* Linux */
 
-#include <sys/sendfile.h>
+# include <sys/sendfile.h>
 
 static ssize_t
 Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t toSend, const Ns_Time *timeoutPtr);
@@ -232,6 +232,9 @@ Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t toSend, const Ns_Time *time
 
     if (sent == -1) {
         if ((errno == EAGAIN) || (errno == NS_EWOULDBLOCK)) {
+            /*
+             * OS is overly busy, retry after timeout.
+             */
             if (Ns_SockTimedWait(sock->sock, NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
                 sent = sendfile(sock->sock, fd, &offset, toSend);
             }
@@ -246,14 +249,27 @@ Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t toSend, const Ns_Time *time
     return sent;
 }
 
-#else /* Default implementation */
+#else /* Default implementation, no HAVE_SYS_SENDFILE_H available */
 
 ssize_t
 Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
                     const Ns_Time *timeoutPtr, unsigned int flags)
 {
-    return NsSockSendFileBufsIndirect(sock, bufs, nbufs, timeoutPtr, flags,
-                                      SendBufs);
+    ssize_t sent;
+
+    sent = NsSockSendFileBufsIndirect(sock, bufs, nbufs, timeoutPtr, flags, SendBufs);
+    if (sent == -1) {
+        if ((errno == EAGAIN) || (errno == NS_EWOULDBLOCK)) {
+            /*
+             * OS is overly busy, retry after timeout.
+             */
+            if (Ns_SockTimedWait(sock->sock, NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
+                sent = NsSockSendFileBufsIndirect(sock, bufs, nbufs, timeoutPtr, flags, SendBufs);
+            }
+        }
+    }
+    
+    return sent;
 }
 
 #endif
