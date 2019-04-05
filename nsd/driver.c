@@ -511,8 +511,8 @@ ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host, const char *moduleName,
         memcpy(mapPtr->location, dsPtr->string, (size_t)dsPtr->length + 1u);
 
         Tcl_SetHashValue(hPtr, mapPtr);
-        Ns_Log(Notice, "%s: adding virtual host entry for host <%s> location: %s",
-               moduleName, host, mapPtr->location);
+        Ns_Log(Notice, "%s: adding virtual host entry for host <%s> location: %s mapped to server: %s",
+               moduleName, host, mapPtr->location, servPtr->server);
 
         if (defMapPtrPtr != NULL && *defMapPtrPtr == NULL) {
             *defMapPtrPtr = mapPtr;
@@ -600,7 +600,7 @@ void NsDriverMapVirtualServers(void)
 
         if (defserver == NULL) {
             Ns_Fatal("%s: virtual servers configured,"
-                     " but %s has no defaultserver defined", moduleName, path);
+                     " but '%s' has no defaultserver defined", moduleName, path);
         }
         assert(defserver != NULL);
 
@@ -684,7 +684,9 @@ void NsDriverMapVirtualServers(void)
         Ns_DStringFree(dsPtr);
 
         if (defMapPtr == NULL) {
-            Ns_Fatal("%s: default server %s not defined in %s", moduleName, defserver, path);
+            fprintf(stderr, "--- Server Map: ---\n");
+            Ns_SetPrint(lset);
+            Ns_Fatal("%s: default server '%s' not defined in '%s'", moduleName, defserver, path);
         }
     }
     Tcl_DeleteHashTable(&names);
@@ -3882,6 +3884,7 @@ SockSetServer(Sock *sockPtr)
                reqPtr->request.line);
         bad_request = NS_TRUE;
     }
+
     if (sockPtr->servPtr == NULL) {
         const ServerMap *mapPtr = NULL;
 
@@ -3898,7 +3901,12 @@ SockSetServer(Sock *sockPtr)
             }
             hPtr = Tcl_FindHashEntry(&hosts, host);
             if (hPtr != NULL) {
+                /*
+                 * Request with provide host header field could be resolved
+                 * against a certain server.
+                 */
                 mapPtr = Tcl_GetHashValue(hPtr);
+
             } else {
                 Ns_Log(DriverDebug,
                        "cannot locate host header content '%s' in virtual hosts table, fall back to default '%s'",
