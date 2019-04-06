@@ -473,7 +473,7 @@ typedef int ns_sockerrno_t;
 # define ns_recv                    recv
 # define ns_send                    send
 # define ns_sockclose               close
-# define ns_sockdup                 dup
+# define ns_sockdup(fd)             ns_dup((fd))
 # define ns_sockerrno               errno
 # define ns_sockioctl               ioctl
 # define ns_socknbclose             close
