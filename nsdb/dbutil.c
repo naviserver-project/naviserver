@@ -210,7 +210,12 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
     NS_NONNULL_ASSERT(handle != NULL);
     NS_NONNULL_ASSERT(filename != NULL);
 
-    fp = fopen(filename, "rt");
+    fp = fopen(filename,
+               "rt"
+#ifdef NS_FOPEN_SUPPORTS_MODE_E
+               "e"
+#endif
+               );
     if (fp == NULL) {
         Ns_DbSetException(handle, NS_SQLERRORCODE,
             "Could not read file");
