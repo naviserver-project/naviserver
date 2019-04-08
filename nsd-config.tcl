@@ -201,7 +201,7 @@ ns_section "ns/server/default/module/nssock" {
 
 ns_section "ns/server/default/module/nscp" {
     ns_param   port     4080
-    ns_param   address  $address
+    #ns_param   address  0.0.0.0
 }
 
 ns_section "ns/server/default/module/nscp/users" {
