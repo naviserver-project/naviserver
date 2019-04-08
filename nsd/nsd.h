@@ -85,6 +85,8 @@ typedef enum {
 } NsWriterStreamState;
 
 #define MAX_URLSPACES                  16
+#define MAX_LISTEN_ADDR_PER_DRIVER     16
+
 #define NS_SET_SIZE                    ((unsigned)TCL_INTEGER_SPACE + 2u)
 #define NS_MAX_RANGES                  32
 
@@ -428,7 +430,7 @@ typedef struct Driver {
     const char  *moduleName;            /* Module name, e.g. "nssock1" */
     const char  *threadName;            /* Thread name, e.g. "nssock1:1" */
     const char  *location;              /* Location, e.g, "http://foo:9090" */
-    const char  *address;               /* Address in location, e.g. "foo" */
+    const char  *address;               /* Tcl list of IP addresses to bind to */
     const char  *protocol;              /* Protocol in location, e.g, "http" */
     long         sendwait;              /* send() I/O timeout */
     long         recvwait;              /* recv() I/O timeout */
@@ -457,9 +459,8 @@ typedef struct Driver {
     size_t keepmaxdownloadsize;         /* When set, allow keepalive only for download requests up to this size */
     size_t keepmaxuploadsize;           /* When set, allow keepalive only for upload requests up to this size */
     Ns_Mutex lock;                      /* Lock to protect lists below. */
-    NS_SOCKET sock;                     /* Listening socket */
-    NS_POLL_NFDS_TYPE pidx;             /* poll() index */
-    const char *bindaddr;               /* Numerical listen address */
+    NS_SOCKET listenfd[MAX_LISTEN_ADDR_PER_DRIVER];  /* Listening sockets */
+    NS_POLL_NFDS_TYPE pidx[MAX_LISTEN_ADDR_PER_DRIVER]; /* poll() index */
     unsigned int opts;                  /* NS_DRIVER_* options */
     int backlog;                        /* listen() backlog */
     Tcl_WideInt maxinput;               /* Maximum request bytes to read */

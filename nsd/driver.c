@@ -119,9 +119,9 @@ static Tcl_ObjCmdProc WriterSubmitFileObjCmd;
 static DrvWriter *DriverWriterFromObj(Tcl_Obj *driverObj)
     NS_GNUC_NONNULL(1);
 
-static NS_SOCKET DriverListen(Driver *drvPtr)
-    NS_GNUC_NONNULL(1);
-static NS_DRIVER_ACCEPT_STATUS DriverAccept(Sock *sockPtr)
+static NS_SOCKET DriverListen(Driver *drvPtr, const char *bindaddr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static NS_DRIVER_ACCEPT_STATUS DriverAccept(Sock *sockPtr, NS_SOCKET sock)
     NS_GNUC_NONNULL(1);
 static ssize_t DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
     NS_GNUC_NONNULL(1);
@@ -131,16 +131,17 @@ static void    DriverClose(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static Ns_ReturnCode DriverInit(const char *server, const char *moduleName, const char *threadName,
                                 const Ns_DriverInitData *init,
-                                NsServer *servPtr, const char *path, const char *bindaddr,
-                                const char *defserver, const char *address, const char *host)
+                                NsServer *servPtr, const char *path,
+                                const char *bindaddrs,
+                                const char *defserver, const char *host)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(6)
-    NS_GNUC_NONNULL(7) NS_GNUC_NONNULL(9) NS_GNUC_NONNULL(10);
+    NS_GNUC_NONNULL(7) NS_GNUC_NONNULL(9);
 static bool DriverModuleInitialized(const char *module)
     NS_GNUC_NONNULL(1);
 
 static void  SockSetServer(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
-static SockState SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
+static SockState SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1);
 static Ns_ReturnCode SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
@@ -367,27 +368,26 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
     }
 
     if (!alreadyInitialized && status == NS_OK) {
-        const char *path, *host, *address, *bindaddr, *defserver;
+        const char *path, *host, *address, *defserver;
         bool        noHostNameGiven;
-        int         nrDrivers;
+        int         nrDrivers, nrBindaddrs = 0, result;
         Ns_Set     *set;
+        Tcl_Obj    *bindaddrsObj, **objv;
 
         path = ((init->path != NULL) ? init->path : Ns_ConfigGetPath(server, module, (char *)0L));
 
         set = Ns_ConfigCreateSection(path);
 
         /*
-         * Determine the hostname used for the local address to bind
-         * to and/or the HTTP location string.
+         * Determine the defaultserver. hostname used for the local address to
+         * bind to and/or the HTTP location string.
          */
+        defserver = Ns_ConfigGetValue(path, "defaultserver");
 
         host = Ns_ConfigGetValue(path, "hostname");
         noHostNameGiven = (host == NULL);
-        bindaddr = address = Ns_ConfigGetValue(path, "address");
-        if (bindaddr == NULL) {
-            bindaddr = address = NS_IP_UNSPECIFIED;
-        }
-        defserver = Ns_ConfigGetValue(path, "defaultserver");
+
+        address = Ns_ConfigGetValue(path, "address");
 
         /*
          * If the listen address was not specified, attempt to determine it
@@ -401,12 +401,13 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             Tcl_DStringInit(&ds);
             hostName = noHostNameGiven ? Ns_InfoHostname() : host;
 
-            if (Ns_GetAddrByHost(&ds, hostName) == NS_TRUE) {
+            if (Ns_GetAllAddrByHost(&ds, hostName) == NS_TRUE) {
                 if (path != NULL) {
                     address = ns_strdup(Tcl_DStringValue(&ds));
                     Ns_SetUpdate(set, "address", address);
                 }
             }
+            Tcl_DStringFree(&ds);
 
             /*
              * Finally, if no hostname was specified, set it to the hostname
@@ -414,28 +415,38 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
              */
 
             if (host == NULL) {
-                Tcl_DStringSetLength(&ds, 0);
-
-                if (Ns_GetHostByAddr(&ds, address) == NS_TRUE) {
-                    host = ns_strdup(Tcl_DStringValue(&ds));
-                }
+                host = hostName;
             }
-            Tcl_DStringFree(&ds);
         }
+
+        if (address == NULL) {
+            address = NS_IP_UNSPECIFIED;
+        }
+
+        bindaddrsObj = Tcl_NewStringObj(address, -1);
+        result = Tcl_ListObjGetElements(NULL, bindaddrsObj, &nrBindaddrs, &objv);
+        if (result != TCL_OK || nrBindaddrs < 1 || nrBindaddrs >= MAX_LISTEN_ADDR_PER_DRIVER) {
+            Ns_Fatal("%s: bindaddrs '%s' is not a valid Tcl list containing addresses",
+                     module, address);
+        }
+        Tcl_IncrRefCount(bindaddrsObj);
 
         /*
          * If the hostname was not specified and not determined by the lookup
-         * above, set it to the specified or derived IP address string.
+         * above, set it to the first specified or derived IP address string.
          */
-
         if (host == NULL) {
-            host = address;
+            host = ns_strdup(Tcl_GetString(objv[0]));
         }
 
         if (noHostNameGiven && host != NULL && path != NULL) {
             Ns_SetUpdate(set, "hostname", host);
         }
+        Tcl_DecrRefCount(bindaddrsObj);
 
+        /*
+         * Get configured number of driver threads.
+         */
         nrDrivers = Ns_ConfigIntRange(path, "driverthreads", 1, 1, 64);
         if (nrDrivers > 1) {
 #if !defined(SO_REUSEPORT)
@@ -458,7 +469,8 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             for (i = 0; i < nrDrivers; i++) {
                 snprintf(moduleName, maxModuleNameLength, "%s:%d", module, i);
                 status = DriverInit(server, module, moduleName, init,
-                                    servPtr, path, bindaddr, defserver, address, host);
+                                    servPtr, path,
+                                    address, defserver, host);
                 if (status != NS_OK) {
                     break;
                 }
@@ -713,8 +725,8 @@ void NsDriverMapVirtualServers(void)
 static Ns_ReturnCode
 DriverInit(const char *server, const char *moduleName, const char *threadName,
            const Ns_DriverInitData *init,
-           NsServer *servPtr, const char *path, const char *bindaddr,
-           const char *defserver, const char *address, const char *host)
+           NsServer *servPtr, const char *path,
+           const char *bindaddrs, const char *defserver, const char *host)
 {
     const char     *defproto;
     Driver         *drvPtr;
@@ -726,8 +738,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     NS_NONNULL_ASSERT(threadName != NULL);
     NS_NONNULL_ASSERT(init != NULL);
     NS_NONNULL_ASSERT(path != NULL);
-    NS_NONNULL_ASSERT(bindaddr != NULL);
-    NS_NONNULL_ASSERT(address != NULL);
+    NS_NONNULL_ASSERT(bindaddrs != NULL);
     NS_NONNULL_ASSERT(host != NULL);
 
     /*
@@ -849,11 +860,10 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
      * protocol, hostname and port.
      */
 
-    drvPtr->bindaddr = bindaddr;
-    drvPtr->protocol = ns_strdup(defproto);
-    drvPtr->address  = ns_strdup(address);
-    drvPtr->port     = (unsigned short)Ns_ConfigIntRange(path, "port", (int)defport, 0, 65535);
-    drvPtr->location = Ns_ConfigGetValue(path, "location");
+    drvPtr->protocol     = ns_strdup(defproto);
+    drvPtr->address      = ns_strdup(bindaddrs);
+    drvPtr->port         = (unsigned short)Ns_ConfigIntRange(path, "port", (int)defport, 0, 65535);
+    drvPtr->location     = Ns_ConfigGetValue(path, "location");
 
     if (drvPtr->location != NULL && (strstr(drvPtr->location, "://") != NULL)) {
         drvPtr->location = ns_strdup(drvPtr->location);
@@ -1546,20 +1556,21 @@ NsSockClose(Sock *sockPtr, int keep)
  */
 
 static NS_SOCKET
-DriverListen(Driver *drvPtr)
+DriverListen(Driver *drvPtr, const char *bindaddr)
 {
     NS_SOCKET sock;
 
     NS_NONNULL_ASSERT(drvPtr != NULL);
+    NS_NONNULL_ASSERT(bindaddr != NULL);
 
     sock = (*drvPtr->listenProc)((Ns_Driver *) drvPtr,
-                                 drvPtr->bindaddr,
+                                 bindaddr,
                                  drvPtr->port,
                                  drvPtr->backlog,
                                  drvPtr->reuseport);
     if (sock == NS_INVALID_SOCKET) {
         Ns_Log(Error, "%s: failed to listen on [%s]:%d: %s",
-               drvPtr->threadName, drvPtr->address, drvPtr->port,
+               drvPtr->threadName, bindaddr, drvPtr->port,
                ns_sockstrerror(ns_sockerrno));
     } else {
         Ns_Log(Notice,
@@ -1568,8 +1579,9 @@ DriverListen(Driver *drvPtr)
 #else
                "%s: listening on %s:%d",
 #endif
-               drvPtr->threadName, drvPtr->address, drvPtr->port);
+               drvPtr->threadName, bindaddr, drvPtr->port);
     }
+
     return sock;
 }
 
@@ -1595,14 +1607,14 @@ DriverListen(Driver *drvPtr)
  */
 
 static NS_DRIVER_ACCEPT_STATUS
-DriverAccept(Sock *sockPtr)
+DriverAccept(Sock *sockPtr, NS_SOCKET sock)
 {
     socklen_t n = (socklen_t)sizeof(struct NS_SOCKADDR_STORAGE);
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
     return (*sockPtr->drvPtr->acceptProc)((Ns_Sock *) sockPtr,
-                                          sockPtr->drvPtr->sock,
+                                          sock,
                                           (struct sockaddr *) &(sockPtr->sa), &n);
 }
 
@@ -1811,23 +1823,41 @@ DriverThread(void *arg)
     Driver        *drvPtr = (Driver*)arg;
     Ns_Time        now, diff;
     char           charBuffer[1], drain[1024];
-    int            pollto, accepted;
+    int            pollto, accepted, nrBindaddrs = 0;
     bool           stopping;
     unsigned int   flags;
     Sock          *sockPtr, *closePtr, *nextPtr, *waitPtr, *readPtr;
     PollData       pdata;
 
-    assert(arg != NULL);
-
     Ns_ThreadSetName("-driver:%s-", drvPtr->threadName);
     Ns_Log(Notice, "starting");
 
     flags = DRIVER_STARTED;
-    drvPtr->sock = DriverListen(drvPtr);
 
-    if (drvPtr->sock == NS_INVALID_SOCKET) {
-        flags |= (DRIVER_FAILED | DRIVER_SHUTDOWN);
-    } else {
+    {
+        Tcl_Obj *bindaddrsObj, **objv;
+        int      i, result;
+
+        bindaddrsObj = Tcl_NewStringObj(drvPtr->address, -1);
+        Tcl_IncrRefCount(bindaddrsObj);
+
+        result = Tcl_ListObjGetElements(NULL, bindaddrsObj, &nrBindaddrs, &objv);
+        /*
+         * "result" was ok during startup, it has still to be ok.
+         */
+        assert(result == TCL_OK);
+
+        for (i = 0; i < nrBindaddrs; i++) {
+            drvPtr->listenfd[i] = DriverListen(drvPtr, Tcl_GetString(objv[i]));
+            if (drvPtr->listenfd[i] == NS_INVALID_SOCKET) {
+                flags |= (DRIVER_FAILED | DRIVER_SHUTDOWN);
+                break;
+            }
+        }
+        Tcl_DecrRefCount(bindaddrsObj);
+    }
+
+    if ((flags & (DRIVER_FAILED | DRIVER_SHUTDOWN)) == 0u) {
         SpoolerQueueStart(drvPtr->spooler.firstPtr, SpoolerThread);
         SpoolerQueueStart(drvPtr->writer.firstPtr, WriterThread);
     }
@@ -1863,7 +1893,11 @@ DriverThread(void *arg)
         (void)PollSet(&pdata, drvPtr->trigger[0], (short)POLLIN, NULL);
 
         if (likely(waitPtr == NULL)) {
-            drvPtr->pidx = PollSet(&pdata, drvPtr->sock, (short)POLLIN, NULL);
+
+            for (n = 0; n < nrBindaddrs; n++) {
+                drvPtr->pidx[n] = PollSet(&pdata, drvPtr->listenfd[n],
+                                          (short)POLLIN, NULL);
+            }
         }
 
         /*
@@ -1886,10 +1920,10 @@ DriverThread(void *arg)
 
             if (Ns_DiffTime(&pdata.timeout, &now, &diff) > 0)  {
                 /*
-                 * The resolution of pollto is ms, therefore, we round
-                 * up. If we would round down (e.g. found 500
-                 * microseconds to 0 ms), the time comparison later
-                 * would determine that it is too early.
+                 * The resolution of "pollto" is ms, therefore, we round
+                 * up. If we would round down (e.g. 500 microseconds to 0 ms),
+                 * the time comparison later would determine that it is too
+                 * early.
                  */
                 pollto = (int)(diff.sec * 1000 + diff.usec / 1000 + 1);
 
@@ -2114,56 +2148,74 @@ DriverThread(void *arg)
              * this helps to process more requests
              */
             SockState s;
+            bool      acceptMore = NS_TRUE;
 
             accepted = 0;
-            while (accepted < drvPtr->acceptsize
-                   && drvPtr->queuesize < drvPtr->maxqueuesize
-                   && PollIn(&pdata, drvPtr->pidx)
-                   && (s = SockAccept(drvPtr, &sockPtr, &now)) != SOCK_ERROR) {
+            while (acceptMore &&
+                   accepted < drvPtr->acceptsize
+                   && drvPtr->queuesize < drvPtr->maxqueuesize ) {
+                bool gotRequests = NS_FALSE;
 
-                switch (s) {
-                case SOCK_SPOOL:
-                    sockPtr->drvPtr->stats.spooled++;
-                    if (SockSpoolerQueue(sockPtr->drvPtr, sockPtr) == 0) {
-                        Push(sockPtr, readPtr);
-                    }
-                    break;
-
-                case SOCK_MORE:
-                    sockPtr->drvPtr->stats.partial++;
-                    SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
-                    Push(sockPtr, readPtr);
-                    break;
-
-                case SOCK_READY:
-                    if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
-                        Push(sockPtr, waitPtr);
-                    }
-                    break;
-
-                case SOCK_BADHEADER:
-                case SOCK_BADREQUEST:
-                case SOCK_CLOSE:
-                case SOCK_CLOSETIMEOUT:
-                case SOCK_ENTITYTOOLARGE:
-                case SOCK_ERROR:
-                case SOCK_READERROR:
-                case SOCK_READTIMEOUT:
-                case SOCK_SHUTERROR:
-                case SOCK_TOOMANYHEADERS:
-                case SOCK_WRITEERROR:
-                case SOCK_WRITETIMEOUT:
-                default:
-                    Ns_Fatal("driver: SockAccept returned: %d", s);
-                }
-                accepted++;
-#ifdef __APPLE__
                 /*
-                 * On Darwin, the first accept() succeeds typically, but it is
-                 * useless to try, since this leads always to an EAGAIN
+                 * Check for input data on all bind adresses. Stop checking,
+                 * when one round of checking on all adresses fails.
                  */
-                break;
+                for (n = 0; n < nrBindaddrs; n++) {
+
+                    if (
+                        PollIn(&pdata, drvPtr->pidx[n])
+                        && (s = SockAccept(drvPtr, pdata.pfds[drvPtr->pidx[n]].fd, &sockPtr, &now)) != SOCK_ERROR) {
+
+                        switch (s) {
+                        case SOCK_SPOOL:
+                            sockPtr->drvPtr->stats.spooled++;
+                            if (SockSpoolerQueue(sockPtr->drvPtr, sockPtr) == 0) {
+                                Push(sockPtr, readPtr);
+                            }
+                            break;
+
+                        case SOCK_MORE:
+                            sockPtr->drvPtr->stats.partial++;
+                            SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
+                            Push(sockPtr, readPtr);
+                            break;
+
+                        case SOCK_READY:
+                            if (SockQueue(sockPtr, &now) == NS_TIMEOUT) {
+                                Push(sockPtr, waitPtr);
+                            }
+                            break;
+
+                        case SOCK_BADHEADER:
+                        case SOCK_BADREQUEST:
+                        case SOCK_CLOSE:
+                        case SOCK_CLOSETIMEOUT:
+                        case SOCK_ENTITYTOOLARGE:
+                        case SOCK_ERROR:
+                        case SOCK_READERROR:
+                        case SOCK_READTIMEOUT:
+                        case SOCK_SHUTERROR:
+                        case SOCK_TOOMANYHEADERS:
+                        case SOCK_WRITEERROR:
+                        case SOCK_WRITETIMEOUT:
+                        default:
+                            Ns_Fatal("driver: SockAccept returned: %d", s);
+                        }
+                        accepted++;
+                        gotRequests = NS_TRUE;
+#ifdef __APPLE__
+                        /*
+                         * On Darwin, the first accept() succeeds typically, but it is
+                         * useless to try, since this leads always to an EAGAIN
+                         */
+                        acceptMore = NS_FALSE;
+                        break;
 #endif
+                    }
+                }
+                if (!gotRequests) {
+                    acceptMore = NS_FALSE;
+                }
             }
             if (accepted > 1) {
                 Ns_Log(Notice, "... sockAccept accepted %d connections", accepted);
@@ -2227,8 +2279,10 @@ DriverThread(void *arg)
          */
 
         if (stopping) {
-            ns_sockclose(drvPtr->sock);
-            drvPtr->sock = NS_INVALID_SOCKET;
+            for (n = 0; n < nrBindaddrs; n++) {
+                ns_sockclose(drvPtr->listenfd[n]);
+                drvPtr->listenfd[n] = NS_INVALID_SOCKET;
+            }
         }
     }
 
@@ -2596,7 +2650,7 @@ SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, long timeout)
  */
 
 static SockState
-SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
+SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *nowPtr)
 {
     Sock    *sockPtr;
     SockState sockStatus;
@@ -2610,7 +2664,7 @@ SockAccept(Driver *drvPtr, Sock **sockPtrPtr, const Ns_Time *nowPtr)
      * Accept the new connection.
      */
 
-    status = DriverAccept(sockPtr);
+    status = DriverAccept(sockPtr, sock);
 
     if (unlikely(status == NS_DRIVER_ACCEPT_ERROR)) {
         sockStatus = SOCK_ERROR;
@@ -3908,6 +3962,9 @@ SockSetServer(Sock *sockPtr)
                 mapPtr = Tcl_GetHashValue(hPtr);
 
             } else {
+                /*
+                 * Host header field content is not found in the mapping table.
+                 */
                 Ns_Log(DriverDebug,
                        "cannot locate host header content '%s' in virtual hosts table, fall back to default '%s'",
                        host, defMapPtr->location);
