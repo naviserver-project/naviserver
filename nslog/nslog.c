@@ -128,6 +128,15 @@ Ns_ModuleInit(const char *server, const char *module)
     NS_NONNULL_ASSERT(module != NULL);
 
     /*
+     * Sanity check to provide a meaningful error instead of a
+     * crash. Currently, we do not allow one to register this module globally.
+     */
+    if (server == NULL) {
+        Ns_Fatal("Module %s: requires a concrete server (cannot be used as a global module)",
+                 module);
+    }
+
+    /*
      * Register the info callbacks just once. This assumes we are
      * called w/o locking from within the server startup.
      */
