@@ -783,7 +783,7 @@ describes the columns of a database table using the NaviServer
 #
 #       /example/describetable/nsdbpool/ns_users
 #
-# Note: You must have the ns_db module loaded into your virtual
+# Note: You must have the nsdb module loaded into your virtual
 #       server for this example to work.
 #
 # Things to notice:
@@ -846,7 +846,7 @@ database.
 # in the employees table.  It assumes a table called
 # employees exists with the column emp_name. 
 #
-# Note: You must have the ns_db module loaded into your virtual
+# Note: You must have the nsdb module loaded into your virtual
 #       server for this example to work.
 #
 # Things to notice:
@@ -1068,6 +1068,6 @@ Content File=$inp"
 
 [example_end]
 
-[keywords ns_set]
+[keywords ns_set nsdb]
 
 [manpage_end]

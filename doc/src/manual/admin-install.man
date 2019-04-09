@@ -174,7 +174,9 @@ addresses, which are set in nsd-config.tcl as follows:
   [enum] Listen for HTTP connections on your computer's primary
         interface at port 8080.  To use another port and/or select
         interfaces, you can set the [term port] and [term address]
-        parameters.
+        parameters. For details how to configure the networking setup
+	of NaviServer, see [term nssock] (for HTTP) and [term nsssl]
+        (for HTTPS).
 
   [enum] Check security settings for [term nscp] (Control Port module)
   and listen on localhost:4080 if they are set.
@@ -196,12 +198,15 @@ the instructions in the NaviServer documentation.
 
 [para]
 
-Although  you must be root to start NaviServer on port 80,  the server itself must
-change to a  regular user shortly after initialization.   You either
-need to start the  server as a non-root user (in which case you  will
-not be able to listen  for connections on privileged ports such as port
-80)  or you must include a [emph {-u user}] command line flag to which the
-server will  setuid(2) after startup.
+Although you must be root to start NaviServer on port 80, the server
+itself must change to a regular user shortly after initialization.
+You either need to start the server as a non-root user (in which case
+you will not be able to listen for connections on privileged ports
+such as port 80) or you must include a [emph {-u user}] command line
+flag to which the server will setuid(2) after startup. We assume in
+the following sections that a user [emph nsadmin] and a group
+[emph nsadmin] were already created on the system, where NaviServer
+is installed.
 
 [para]
 
@@ -216,7 +221,7 @@ and it will be started in the background listening on port 8080.
 
 You may either specify a Unix username or numeric uid, e.g.:
 [example_begin]
-  bin/nsd -t conf/nsd-config.tcl -u user
+  bin/nsd -t conf/nsd-config.tcl -u [emph nsadmin]
 [example_end]
 
 [para]
@@ -228,7 +233,7 @@ For the mode  of operation, there are four choices:
 
 [item] Foreground mode:
 [example_begin]
-  bin/nsd  -f -t conf/nsd-config.tcl -u user -g group
+  bin/nsd  -f -t conf/nsd-config.tcl -u [emph nsadmin]-g [emph nsadmin]
 [example_end]
 
 [para]
@@ -245,7 +250,7 @@ initiate shutdown.
 [item] Background mode:
 
 [example_begin]
-  bin/nsd -t conf/nsd-config.tcl -u user -g group
+  bin/nsd -t conf/nsd-config.tcl -u [emph nsadmin]-g [emph nsadmin]
 [example_end]
 
 [para]
@@ -263,7 +268,7 @@ file, send the signal and wait for shutdown, e.g.:
 [item] Background mode with built-in watchdog:
 
 [example_begin]
- /usr/local/ns/bin/nsd  -w -t /usr/local/ns/nsd-config.tcl -u user -g group
+ /usr/local/ns/bin/nsd  -w -t /usr/local/ns/nsd-config.tcl -u [emph nsadmin] -g [emph nsadmin]
 [example_end]
 
 [para]
@@ -276,13 +281,13 @@ it crashes independent from the respawn support from the operating system.
 [para]
 
 [example_begin]
-  w1:23:respawn:/usr/local/ns/bin/nsd  -i -t /usr/local/ns/nsd-config.tcl -u user -g group
+  w1:23:respawn:/usr/local/ns/bin/nsd  -i -t /usr/local/ns/nsd-config.tcl -u [emph nsadmin] -g [emph nsadmin]
 [example_end]
 
 [para]
 In [emph {Inittab}] mode, the server runs in the foreground  but opens the
 log file as with background mode.  This mode is used  when the server is
-started from an entry in the /etc/inittab file.   The benefit of this mode
+started from an entry in the "/etc/inittab" file.   The benefit of this mode
 is that init will restart the server automatically.
 
 [para]
@@ -302,6 +307,6 @@ You can also telnet to the control port and type "ns_info pid".
 
 [see_also admin-maintenance]
 
-[keywords nsd command-line-options]
+[keywords nsd command-line-options nscp nssock nsssl]
 
 [manpage_end]

@@ -355,5 +355,6 @@ Defines absolute path to server's home directory.
 	ns_register ns_adp_puts ns_conn ns_writer]
 
 [keywords "server built-in" return response status charset encoding configuration \
-	fastpath mmap cache gzip brotli serverdir pagedir writer minify]
+	fastpath mmap cache gzip brotli serverdir pagedir writer \
+	minify]
 [manpage_end]

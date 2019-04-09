@@ -173,7 +173,7 @@ ns_section "ns/server/default/module/nslog" {
 
 ns_section "ns/server/default/module/nssock" {
     ns_param    port                     $port
-    ns_param    address                  $address
+    ns_param    address                  $address     ;# Space separated list of IP addresses
     ns_param    hostname                 [ns_info hostname]
     ns_param    maxinput                 10MB         ;# default: 1MB, maximum size for inputs (uploads)
     #ns_param   readahead                1MB          ;# default: 16384; size of readahead for requests

@@ -269,7 +269,7 @@ Query a certain mapping:
 [example_end]
 
 [see_also ns_conn ns_register]
-[keywords "server built-in" configuration pools]
+[keywords "server built-in" configuration pools pagedir]
 
 [manpage_end]
 

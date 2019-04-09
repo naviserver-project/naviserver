@@ -6,12 +6,12 @@
 
 [description]
 
-This module [term nssock] is used for the socket communication over HTTP. For
+This module [emph nssock] is used for the socket communication over HTTP. For
 the communication over HTTPS, the module [term nsssl] is used, which shares
 the configuration parameters presented here and adds additional parameters.
 
 [para]
-The module [term nssock] is typically loaded per server, e.g. for
+The module [emph nssock] is typically loaded per server, e.g. for
 [term server1]:
 
 [example_begin]
@@ -29,7 +29,7 @@ permissions for starting).
 
 [section CONFIGURATION]
 
-The module [term nssock] provides a rich set of configuration options, which
+The module [emph nssock] provides a rich set of configuration options, which
 are important for large installation. However, all parameters are
 equipped with sensible default values, such that none of these are required.
 
@@ -39,8 +39,10 @@ equipped with sensible default values, such that none of these are required.
 Maximum number of requests accepted at once (integer, defaults to
 the value [term backlog])
 
-[def address]
-IP-Address on which the server should listen (default: 0.0.0.0)
+[def address] Space separated list of one or more IP addresses on
+which the server should listen. If no address is given it obtain the
+address from the host name (either the specified host name or the host
+name reported by the OS).
 
 [def backlog]
 Maximum number of entries for waiting listen connections (integer,
@@ -197,7 +199,7 @@ Number of writer threads. (integer, default: 0)
 
 In case, one requires for one server (here [term server1]) to listen
 on several ports, it is possible to load the nssock driver twice with
-different names, here [term nssock1] and [term nssock2].
+different names, here [emph nssock1] and [emph nssock2].
 
 [example_begin]
    ns_section ns/server/server1/modules
@@ -227,15 +229,17 @@ Assume for the IP address of the server the DNS names [term foo.com],
 "s1" and "s2" such that "s1" should receive requests from
 [term foo.com], and "s2" should receive requests from [term bar.com]
 and [term baz.com]. Servers "s1" and "s2" have different
-[term pagedir] definitions. For requests with missing/invalid host
-header fields, we have to define a [term defaultserver] to handle such
-requests.
+[term pagedir] definitions.
 
-[para]
+[para] For definging virtual servers, the drivers (e.g. [term nssock]
+or [term nsssl] have to be loaded globally (i.e. under
+[const ns/module/nssock].  For requests with missing/invalid host header
+fields, we have to define a [term defaultserver] to handle such
+requests in the global definition.
 
-In the section [term ns/module/nssock/servers] we define the
-mapping between the host names and the defined servers. Note that one
-can define multiple DNS names also for a single server.
+In the section [const ns/module/nssock/servers] we define the mapping
+between the host names and the defined servers. Note that one can
+define multiple DNS names also for a single server (here for [const s2]).
 
 [example_begin]
    #
@@ -274,9 +278,11 @@ can define multiple DNS names also for a single server.
 More to come here...
 
 
-[see_also ns_log ns_write ns_http ns_ssl]
-[keywords module performance tuning configuration \
-SO_REUSEPORT TCP TCP_FASTOPEN nssock \
-nsssl driver prebind]
+[see_also ns_log ns_write ns_http nsssl]
+
+[keywords module nssock \
+	performance tuning configuration \
+	SO_REUSEPORT TCP TCP_FASTOPEN \
+	nsssl driver prebind pagedir]
 
 [manpage_end]

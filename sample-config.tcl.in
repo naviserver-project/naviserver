@@ -446,7 +446,7 @@ ns_section	"ns/server/${servername}/module/nssock" {
     # TCP port server will listen on
     ns_param	port			$port
 
-    # IP address for listener to bind on
+    # Space separated list of IP addresses (listen addresses)
     ns_param	address			$address
 
     # Hostname to use in redirects
@@ -577,7 +577,7 @@ ns_section "ns/interps/CGIinterps" {
 #  To enable:
 #
 #  1. Define an address and port to listen on. For security
-#     reasons listening on any port other then 127.0.0.1 is
+#     reasons listening on any port other than 127.0.0.1 is
 #     not recommended.
 #
 #  2. Decided whether or not you wish to enable features such
@@ -632,7 +632,7 @@ ns_section	"ns/server/${servername}/module/nscp/users" {
 ns_section	"ns/module/nssock" {
     ns_param	port			$port
     ns_param	hostname		$hostname
-    ns_param	address			$address
+    ns_param	address			$address     ;# Space separated list of IP addresses
     ns_param	defaultserver		$servername
 }
 ns_section	"ns/module/nssock/servers" {

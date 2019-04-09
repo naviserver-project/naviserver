@@ -392,10 +392,12 @@ and [cmd "ns_server requestprocs"].
    [lb]-main-[rb] Notice: nssock: listening on 10.0.0.100:8000
    [lb]-driver-[rb] Notice: starting
    [lb]-driver-[rb] Notice: driver: accepting connections
+   
    % ns_info threads
    {-driver- -main- 1084140464 0 1119862183 p:0x40037cfb a:0x0}
    {-sched- -main- 1082039216 0 1119862183 p:0x4004a09a a:0x0}
    {-main- {} 1076887680 1 1119862183 p:0x0 a:0x0}
+   
    % ns_server requestprocs
    {GET / * inherit ns:fastget a:0x0} {HEAD / * inherit ns:fastget a:0x0} {POST / * inherit ns:fastget a:0x0}
    %
@@ -640,7 +642,7 @@ Files:
 
 [para]
 Contains directories for each configured module that operates across
-servers, such as the "tcl" or "nsperm" module.
+servers, such as the "tcl" or "nsperm" folders.
 
 
 [subsection {/modules/nsperm}]
@@ -744,8 +746,8 @@ Users" section.
 [para]
 
 
-It is more secure to avoid using the nsperm module and use file-level
-security for ADPs. If you must use the nsperm module, set appropriate
+It is more secure to avoid using the [term nsperm] module and use file-level
+security for ADPs. If you must use the [term nsperm] module, set appropriate
 permissions records as follows:
 
 
@@ -825,7 +827,7 @@ NaviServer.
      because NaviServer opens and reads the configuration file before
      running chroot().
 
-[item] The nscp module, which allows connections only from localhost,
+[item] The [term nscp] module, which allows connections only from localhost,
      provides a secure control port interface that allows ad hoc Tcl
      evaluation and other server administration features. For more
      information about the control port interface, see the "NaviServer's
@@ -917,7 +919,7 @@ be read-only and everything it can read should be world-readable.
 
 If any of the content available to NaviServer is restricted, the
 NaviServer administrator needs to define the appropriate permissions
-with the nsperm module. The administrator should be very clear which
+with the [term nsperm] module. The administrator should be very clear which
 areas are blocked off and know both the URL and METHOD for the
 restricted areas.
 
@@ -1019,26 +1021,15 @@ If the size of the stack is not enough you may encounter crashes without real ex
 Database access should be restricted with read-only logins to the
 server and queries through stored procedures.
 
-
-[para]
-
-
-For more information about the Tcl functions for stored procedures,
-see the [term ns_db] section of the NaviServer Tcl Developer's Guide. For
-more information about the C functions for stored procedures, see the
-"Stored Procedure Functions" section of the NaviServer C Developer's
-Guide.
-
-
 [para]
 
 
 [subsection {Control Port Interface}]
 
-The control port interface should not be used unless absolutely
-necessary. Although it is more secure than the /NS/Admin interface
-from earlier NaviServer versions because it only allows connections
-from localhost, it still poses a risk potential.
+The control port interface (module [term nscp]) should not be used unless absolutely
+necessary. A user connected to his interface can issue arbitrary
+commands. When the module is activated, it is recommended to accept
+only commands via the loopback interface.
 
 
 [para]
@@ -1048,6 +1039,6 @@ documentation of the [term nscp] ("NaviServer's Control Port") module.
 
 [see_also admin-install ns_server commandlist]
 
-[keywords nsd command-line-options nscp ns_db prebind]
+[keywords nsd command-line-options nscp nsdb nsperm prebind]
 
 [manpage_end]

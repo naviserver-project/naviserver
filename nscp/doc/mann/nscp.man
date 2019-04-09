@@ -1,5 +1,6 @@
 [include version_include.man]
 [manpage_begin {nscp} n [vset version]]
+[moddesc   {NaviServer Modules}]
 
 [titledesc {NaviServer Control Port Guide}]
 
@@ -135,8 +136,9 @@ To use the control port interface, follow these steps:
 
 [para]
 
-
+[example_begin]
      telnet localhost 9999
+[example_end]
 
 
 [para]
@@ -146,12 +148,10 @@ To use the control port interface, follow these steps:
 
 
 [example_begin]
-
      Trying 127.0.0.1...
      Connected to localhost.
      Escape character is '^]'.
      login:
-
 [example_end]
 
 

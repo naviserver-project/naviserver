@@ -29,5 +29,5 @@ upon startup for all files with the extension .tcl in the directory
 methods GET, POST and HEAD.
 
 [see_also nsd adp-overview]
-[keywords NaviServer configuration fastpath]
+[keywords NaviServer configuration fastpath pagedir]
 [manpage_end]

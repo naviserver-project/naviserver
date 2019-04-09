@@ -99,8 +99,8 @@ optional but necessary perfect forward secrecy.
 [example_end]
 
 
-[see_also ns_log ns_write ns_http nssock]
-[keywords performance tuning configuration TCP_FASTOPEN nssock \
-module nsssl HTTPS driver]
+[see_also ns_log ns_write ns_http]
+[keywords module nsssl \
+	performance tuning configuration TCP_FASTOPEN HTTPS driver]
 
 [manpage_end]
