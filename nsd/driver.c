@@ -395,28 +395,20 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
          * primary hostname.
          */
         if (address == NULL) {
-            const char  *hostName;
             Tcl_DString  ds;
 
             Tcl_DStringInit(&ds);
-            hostName = noHostNameGiven ? Ns_InfoHostname() : host;
+            if (noHostNameGiven) {
+                host = Ns_InfoHostname();
+            }
 
-            if (Ns_GetAllAddrByHost(&ds, hostName) == NS_TRUE) {
+            if (Ns_GetAllAddrByHost(&ds, host) == NS_TRUE) {
                 if (path != NULL) {
                     address = ns_strdup(Tcl_DStringValue(&ds));
                     Ns_SetUpdate(set, "address", address);
                 }
             }
             Tcl_DStringFree(&ds);
-
-            /*
-             * Finally, if no hostname was specified, set it to the hostname
-             * derived from the lookup(s) above.
-             */
-
-            if (host == NULL) {
-                host = hostName;
-            }
         }
 
         if (address == NULL) {
@@ -426,8 +418,8 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         bindaddrsObj = Tcl_NewStringObj(address, -1);
         result = Tcl_ListObjGetElements(NULL, bindaddrsObj, &nrBindaddrs, &objv);
         if (result != TCL_OK || nrBindaddrs < 1 || nrBindaddrs >= MAX_LISTEN_ADDR_PER_DRIVER) {
-            Ns_Fatal("%s: bindaddrs '%s' is not a valid Tcl list containing addresses",
-                     module, address);
+            Ns_Fatal("%s: bindaddrs '%s' is not a valid Tcl list containing addresses (max %d)",
+                     module, address, MAX_LISTEN_ADDR_PER_DRIVER);
         }
         Tcl_IncrRefCount(bindaddrsObj);
 
