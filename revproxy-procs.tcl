@@ -203,8 +203,14 @@ namespace eval ::revproxy {
         } else {
             set tospool ???
         }
-        log notice "cleanup channel $chan, spooled $::revproxy::spooled($chan) bytes (to spool $tospool)"
-        unset -nocomplain ::revproxy::spooled($chan) ::revproxy::suspended($chan)
+        if {[info exists ::revproxy::spooled($chan)]} {
+            set spooled $::revproxy::spooled($chan)
+            unset ::revproxy::spooled($chan)
+        } else {
+            set spooled 0
+        }
+        log notice "cleanup channel $chan, spooled $spooled bytes (to spool $tospool)"
+        unset -nocomplain ::revproxy::suspended($chan)
     }
 
     #
