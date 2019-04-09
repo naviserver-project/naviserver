@@ -2149,8 +2149,8 @@ DriverThread(void *arg)
                 bool gotRequests = NS_FALSE;
 
                 /*
-                 * Check for input data on all bind adresses. Stop checking,
-                 * when one round of checking on all adresses fails.
+                 * Check for input data on all bind addresses. Stop checking,
+                 * when one round of checking on all addresses fails.
                  */
                 for (n = 0; n < nrBindaddrs; n++) {
 
