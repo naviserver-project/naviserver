@@ -101,9 +101,13 @@ append nsssl_extraheaders $nssock_extraheaders
 ns_logctl severity "Debug(ns:driver)" $debug
 
 set addresses {}
-set suffixes {}
-if {[info exists address_v4]} {lappend addresses $address_v4; lappend suffixes v4}
-if {[info exists address_v6]} {lappend addresses $address_v6; lappend suffixes v6}
+if {[info exists address_v4]} {lappend addresses $address_v4}
+if {[info exists address_v6]} {lappend addresses $address_v6}
+
+if {[llength $addresses] == 0} {
+    ns_log error "Either an IPv4 or IPv6 address must be specified"
+    exit
+}
 
 #---------------------------------------------------------------------
 #
@@ -215,14 +219,11 @@ ns_section ns/servers {
 #---------------------------------------------------------------------
 ns_section "ns/modules" {
     #
-    # Load networking modules named nssock_v4, nssock_v6, nsssl_v4,
-    # and nsssl_v6 depending on existence of Tcl variables
-    # "address_v4", "address_v6", "httpport", and "httpsport".
+    # Load networking modules named "nssock" and/or "nsssl" depending
+    # on existence of Tcl variables "httpport" and "httpsport".
     #
-    if {[info exists address_v4] && [info exists httpport]}  { ns_param nssock_v4 ${bindir}/nssock }
-    if {[info exists address_v6] && [info exists httpport]}  { ns_param nssock_v6 ${bindir}/nssock }
-    if {[info exists address_v4] && [info exists httpsport]} { ns_param nsssl_v4 ${bindir}/nsssl }
-    if {[info exists address_v6] && [info exists httpsport]} { ns_param nsssl_v6 ${bindir}/nsssl }
+    if {[info exists httpport]}  { ns_param nssock ${bindir}/nssock }
+    if {[info exists httpsport]} { ns_param nsssl  ${bindir}/nsssl }
 }
 
 #---------------------------------------------------------------------
@@ -232,57 +233,55 @@ if {[info exists httpport]} {
     #
     # We have an "httpport" configured, so configure this module.
     #
-    foreach address $addresses suffix $suffixes {
-	ns_section ns/module/nssock_$suffix {
-	    ns_param	defaultserver      $server
-	    ns_param	address		$address
-	    ns_param	hostname	$hostname
-	    ns_param	port		$httpport                ;# default 80
-	    ns_param	maxinput	${max_file_upload_mb}MB  ;# 1MB, maximum size for inputs (uploads)
-	    ns_param	recvwait	[expr {$max_file_upload_min * 60}] ;# 30, timeout for receive operations
-	    # ns_param	maxline		8192	;# 8192, max size of a header line
-	    # ns_param	maxheaders	128	;# 128, max number of header lines
-	    # ns_param	uploadpath	/tmp	;# directory for uploads
-	    # ns_param	backlog		256	;# 256, backlog for listen operations
-	    # ns_param	maxqueuesize	256	;# 1024, maximum size of the queue
-	    # ns_param	acceptsize	10	;# Maximum number of requests accepted at once.
-	    # ns_param	deferaccept     true    ;# false, Performance optimization, may cause recvwait to be ignored
-	    # ns_param	bufsize		16kB	;# 16kB, buffersize
-	    # ns_param	readahead	16kB	;# value of bufsize, size of readahead for requests
-	    # ns_param	sendwait	30	;# 30, timeout in seconds for send operations
-	    # ns_param	closewait	2	;# 2, timeout in seconds for close on socket
-	    # ns_param	keepwait	2	;# 5, timeout in seconds for keep-alive
-	    # ns_param  nodelay         false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted
-	    # ns_param	keepalivemaxuploadsize	  500kB  ;# 0, don't allow keep-alive for upload content larger than this
-	    # ns_param	keepalivemaxdownloadsize  1MB    ;# 0, don't allow keep-alive for download content larger than this
-	    # ns_param	spoolerthreads	1	;# 0, number of upload spooler threads
-	    ns_param	maxupload	100kB	;# 0, when specified, spool uploads larger than this value to a temp file
-	    ns_param	writerthreads	2	;# 0, number of writer threads
-	    ns_param	writersize	1kB	;# 1MB, use writer threads for files larger than this value
-	    # ns_param	writerbufsize	8kB	;# 8kB, buffer size for writer threads
-	    # ns_param	writerstreaming	true	;# false;  activate writer for streaming HTML output (when using ns_write)
+    ns_section ns/module/nssock {
+	ns_param	defaultserver	$server
+	ns_param	address		$addresses
+	ns_param	hostname	$hostname
+	ns_param	port		$httpport                ;# default 80
+	ns_param	maxinput	${max_file_upload_mb}MB  ;# 1MB, maximum size for inputs (uploads)
+	ns_param	recvwait	[expr {$max_file_upload_min * 60}] ;# 30, timeout for receive operations
+	# ns_param	maxline		8192	;# 8192, max size of a header line
+	# ns_param	maxheaders	128	;# 128, max number of header lines
+	# ns_param	uploadpath	/tmp	;# directory for uploads
+	# ns_param	backlog		256	;# 256, backlog for listen operations
+	# ns_param	maxqueuesize	256	;# 1024, maximum size of the queue
+	# ns_param	acceptsize	10	;# Maximum number of requests accepted at once.
+	# ns_param	deferaccept     true    ;# false, Performance optimization, may cause recvwait to be ignored
+	# ns_param	bufsize		16kB	;# 16kB, buffersize
+	# ns_param	readahead	16kB	;# value of bufsize, size of readahead for requests
+	# ns_param	sendwait	30	;# 30, timeout in seconds for send operations
+	# ns_param	closewait	2	;# 2, timeout in seconds for close on socket
+	# ns_param	keepwait	2	;# 5, timeout in seconds for keep-alive
+	# ns_param	nodelay         false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted
+	# ns_param	keepalivemaxuploadsize	  500kB  ;# 0, don't allow keep-alive for upload content larger than this
+	# ns_param	keepalivemaxdownloadsize  1MB    ;# 0, don't allow keep-alive for download content larger than this
+	# ns_param	spoolerthreads	1	;# 0, number of upload spooler threads
+	ns_param	maxupload	100kB	;# 0, when specified, spool uploads larger than this value to a temp file
+	ns_param	writerthreads	2	;# 0, number of writer threads
+	ns_param	writersize	1kB	;# 1MB, use writer threads for files larger than this value
+	# ns_param	writerbufsize	8kB	;# 8kB, buffer size for writer threads
+	# ns_param	writerstreaming	true	;# false;  activate writer for streaming HTML output (when using ns_write)
 
-	    #
-	    # Options for port reuse (see https://lwn.net/Articles/542629/)
-	    # These options require proper OS support.
-	    #
-	    # ns_param  reuseport       true    ;# false;  normally not needed to be set, set by driverthreads when necessary
-	    # ns_param	driverthreads	2	;# 1; use multiple driver threads; activates "reuseport"
+	#
+	# Options for port reuse (see https://lwn.net/Articles/542629/)
+	# These options require proper OS support.
+	#
+	# ns_param  reuseport       true    ;# false;  normally not needed to be set, set by driverthreads when necessary
+	# ns_param	driverthreads	2	;# 1; use multiple driver threads; activates "reuseport"
 
-	    #
-	    # Extra request headers fields to be added for every request.
-	    #
-	    ns_param    extraheaders    $nssock_extraheaders
-	}
 	#
-	# Define, which "host" (as supplied by the "host:" header
-	# field) accepted over this driver should be associated with
-	# which server.
+	# Extra request headers fields to be added for every request.
 	#
-	ns_section ns/module/nssock_$suffix/servers {
-	    ns_param $server $hostname
-	    ns_param $server $address
-	}
+	ns_param    extraheaders    $nssock_extraheaders
+    }
+    #
+    # Define, which "host" (as supplied by the "host:" header
+    # field) accepted over this driver should be associated with
+    # which server.
+    #
+    ns_section ns/module/nssock/servers {
+	ns_param $server $hostname
+	ns_param $server $address
     }
 }
 
@@ -294,34 +293,32 @@ if {[info exists httpsport]} {
     #
     # We have an "httpsport" configured, so configure this module.
     #
-    foreach address $addresses suffix $suffixes {
-	ns_section ns/module/nsssl_$suffix {
-	    ns_param defaultserver      $server
-	    ns_param address		$address
-	    ns_param port		$httpsport
-	    ns_param hostname		$hostname
-	    ns_param ciphers		"ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!RC4"
-	    ns_param protocols	"!SSLv2:!SSLv3"
-	    ns_param certificate	$serverroot/etc/certfile.pem
-	    ns_param verify		0
-	    ns_param writerthreads	2
-	    ns_param writersize		1kB
-	    ns_param writerbufsize	16kB	;# 8kB, buffer size for writer threads
-	    #ns_param nodelay		false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted
-	    #ns_param writerstreaming	true	;# false
-	    #ns_param deferaccept	true    ;# false, Performance optimization
-	    ns_param maxinput		${max_file_upload_mb}MB   ;# Maximum file size for uploads in bytes
-	    ns_param extraheaders	$nsssl_extraheaders
-	}
-	#
-	# Define, which "host" (as supplied by the "host:" header
-	# field) accepted over this driver should be associated with
-	# which server.
-	#
-	ns_section ns/module/nsssl_$suffix/servers {
-	    ns_param $server $hostname
-	    ns_param $server $address
-	}
+    ns_section ns/module/nsssl {
+	ns_param defaultserver	$server
+	ns_param address	$addresses
+	ns_param port		$httpsport
+	ns_param hostname	$hostname
+	ns_param ciphers	"ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!RC4"
+	ns_param protocols	"!SSLv2:!SSLv3"
+	ns_param certificate	$serverroot/etc/certfile.pem
+	ns_param verify		0
+	ns_param writerthreads	2
+	ns_param writersize	1kB
+	ns_param writerbufsize	16kB	;# 8kB, buffer size for writer threads
+	#ns_param nodelay	false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted
+	#ns_param writerstreaming	true	;# false
+	#ns_param deferaccept	true    ;# false, Performance optimization
+	ns_param maxinput	${max_file_upload_mb}MB   ;# Maximum file size for uploads in bytes
+	ns_param extraheaders	$nsssl_extraheaders
+    }
+    #
+    # Define, which "host" (as supplied by the "host:" header
+    # field) accepted over this driver should be associated with
+    # which server.
+    #
+    ns_section ns/module/nsssl/servers {
+	ns_param $server $hostname
+	ns_param $server $address
     }
 }
 
