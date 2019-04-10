@@ -164,7 +164,7 @@ matching nsvs are in use returns the empty string.
 	[opt [arg value]]]
 
 Set the value for a key in an nsv array. Returns the value the key is
-set to. The various options are expecially useful to implement atomic
+set to. The various options are especially useful to implement atomic
 operations.
 
 [list_begin options]
@@ -181,7 +181,7 @@ This operation is similar to GETSET in REDIS (get the old value and
 set it new).
 
 [para] When this flag is specified but no [arg value] is
-provided, the command retuns the value for [arg key] and unsets resets it.
+provided, the command returns the value for [arg key] and unsets resets it.
 
 
 [list_end]
