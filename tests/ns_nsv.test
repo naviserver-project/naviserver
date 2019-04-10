@@ -25,7 +25,7 @@ test ns_nsv-1.5 {basic syntax nsv_lappend} -body {
 
 test ns_nsv-1.6 {basic syntax nsv_incr} -body {
     nsv_incr
-} -returnCodes error -result {wrong # args: should be "nsv_incr array key ?count?"}
+} -returnCodes error -result {wrong # args: should be "nsv_incr array key ?increment?"}
 
 test ns_nsv-1.7 {basic syntax nsv_unset} -body {
     nsv_unset
