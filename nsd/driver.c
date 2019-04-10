@@ -1831,7 +1831,7 @@ DriverThread(void *arg)
 
     {
         Tcl_Obj *bindaddrsObj, **objv;
-        int      i, j, result;
+        int      i, j = 0, result;
 
         bindaddrsObj = Tcl_NewStringObj(drvPtr->address, -1);
         Tcl_IncrRefCount(bindaddrsObj);
@@ -1842,17 +1842,17 @@ DriverThread(void *arg)
          */
         assert(result == TCL_OK);
 
-        j = 0;
-        for (i = 0; i < nrBindaddrs; i++) {
+        if (result == TCL_OK) {
+            for (i = 0; i < nrBindaddrs; i++) {
 
-            drvPtr->listenfd[j] = DriverListen(drvPtr, Tcl_GetString(objv[i]));
-            fprintf(stderr, "BIND on %s -> %d\n", Tcl_GetString(objv[i]), drvPtr->listenfd[j] );
-            if (drvPtr->listenfd[j] != NS_INVALID_SOCKET) {
-                j ++;
+                drvPtr->listenfd[j] = DriverListen(drvPtr, Tcl_GetString(objv[i]));
+                if (drvPtr->listenfd[j] != NS_INVALID_SOCKET) {
+                    j ++;
+                }
             }
-        }
-        if (j > 0 && j < nrBindaddrs) {
-            Ns_Log(Warning, "could only bind to %d out of %d addresses", j, nrBindaddrs);
+            if (j > 0 && j < nrBindaddrs) {
+                Ns_Log(Warning, "could only bind to %d out of %d addresses", j, nrBindaddrs);
+            }
         }
         nrBindaddrs = j;
         Tcl_DecrRefCount(bindaddrsObj);
