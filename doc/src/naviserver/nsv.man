@@ -156,10 +156,35 @@ matching nsvs are in use returns the empty string.
 [example_end]
 
 
-[call [cmd nsv_set] [arg array] [arg key] [arg value]]
+[call [cmd nsv_set] \
+	[opt [option -default]] \
+	[opt [option -reset]] \
+	[arg array] \
+	[arg key] \
+	[opt [arg value]]]
+
+Set the value for a key in an nsv array. Returns the value the key is
+set to. The various options are expecially useful to implement atomic
+operations.
+
+[list_begin options]
+[opt_def -default] When this flag is specified nothing is changed in case
+the key [arg key] of [arg array] has already an
+value. Otherwise it sets the value.
+This operation is similar to SETNX in REDIS (set if no exists).
+
+[opt_def -reset]
+
+When this flag is specified and a [arg value] is given, the command
+resets the value for [arg key] and returns the [emph old] value.
+This operation is similar to GETSET in REDIS (get the old value and
+set it new).
+
+[para] When this flag is specified but no [arg value] is
+provided, the command retuns the value for [arg key] and unsets resets it.
 
 
-Set the value for a key in an nsv array. Returns the value the key is set to.
+[list_end]
 
 [example_begin]
    % nsv_set shared_array key1 value1
