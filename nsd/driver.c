@@ -403,16 +403,19 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             }
 
             if (Ns_GetAllAddrByHost(&ds, host) == NS_TRUE) {
+                address = ns_strdup(Tcl_DStringValue(&ds));
                 if (path != NULL) {
-                    address = ns_strdup(Tcl_DStringValue(&ds));
                     Ns_SetUpdate(set, "address", address);
                 }
+                Ns_Log(Notice, "no address given, obtained address '%s' from host name %s", address, host);
+
             }
             Tcl_DStringFree(&ds);
         }
 
         if (address == NULL) {
             address = NS_IP_UNSPECIFIED;
+            Ns_Log(Notice, "no address given, set address to unspecified address %s", address);
         }
 
         bindaddrsObj = Tcl_NewStringObj(address, -1);
@@ -1828,7 +1831,7 @@ DriverThread(void *arg)
 
     {
         Tcl_Obj *bindaddrsObj, **objv;
-        int      i, result;
+        int      i, j, result;
 
         bindaddrsObj = Tcl_NewStringObj(drvPtr->address, -1);
         Tcl_IncrRefCount(bindaddrsObj);
@@ -1839,19 +1842,28 @@ DriverThread(void *arg)
          */
         assert(result == TCL_OK);
 
+        j = 0;
         for (i = 0; i < nrBindaddrs; i++) {
-            drvPtr->listenfd[i] = DriverListen(drvPtr, Tcl_GetString(objv[i]));
-            if (drvPtr->listenfd[i] == NS_INVALID_SOCKET) {
-                flags |= (DRIVER_FAILED | DRIVER_SHUTDOWN);
-                break;
+
+            drvPtr->listenfd[j] = DriverListen(drvPtr, Tcl_GetString(objv[i]));
+            fprintf(stderr, "BIND on %s -> %d\n", Tcl_GetString(objv[i]), drvPtr->listenfd[j] );
+            if (drvPtr->listenfd[j] != NS_INVALID_SOCKET) {
+                j ++;
             }
         }
+        if (j > 0 && j < nrBindaddrs) {
+            Ns_Log(Warning, "could only bind to %d out of %d addresses", j, nrBindaddrs);
+        }
+        nrBindaddrs = j;
         Tcl_DecrRefCount(bindaddrsObj);
     }
 
-    if ((flags & (DRIVER_FAILED | DRIVER_SHUTDOWN)) == 0u) {
+    if (nrBindaddrs > 0) {
         SpoolerQueueStart(drvPtr->spooler.firstPtr, SpoolerThread);
         SpoolerQueueStart(drvPtr->writer.firstPtr, WriterThread);
+    } else {
+        Ns_Log(Warning, "could no bind any of the folloing adresses, stopping this driver: %s", drvPtr->address);
+        flags |= (DRIVER_FAILED | DRIVER_SHUTDOWN);
     }
 
     Ns_MutexLock(&drvPtr->lock);
@@ -6331,13 +6343,13 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
 
         } else if (portString != NULL) {
             portNr = (unsigned short) strtol(portString, NULL, 10);
-        } else if (STREQ(drvPtr->protocol, "http")) {
+
+        } else if (drvPtr->defport != 0u) {
             /*
-             * The default port should be in the driver structure.
+             * Get the default port from the driver structure;
              */
-            portNr = 80u;
-        } else if (STREQ(drvPtr->protocol, "https")) {
-            portNr = 443u;
+            portNr = drvPtr->defport;
+
         } else {
             Ns_TclPrintfResult(interp, "no default port for protocol '%s' defined", protocol);
             result = TCL_ERROR;
