@@ -414,7 +414,7 @@ NsTclNsvIncrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     int  result, count = 1;
 
     if (unlikely(objc != 3 && objc != 4)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "array key ?count?");
+        Tcl_WrongNumArgs(interp, 1, objv, "array key ?increment?");
         result = TCL_ERROR;
 
     } else if (unlikely(objc == 4 && Tcl_GetIntFromObj(interp, objv[3], &count) != TCL_OK)) {
