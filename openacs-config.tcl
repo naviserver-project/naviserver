@@ -405,6 +405,9 @@ ns_section ns/server/${server} {
     # ns_param	compressminsize	512	;# Compress responses larger than this
     # ns_param	compresspreinit true	;# false, if true then initialize and allocate buffers at startup
 
+    # Enable nicer directory listing (as handled by the OpenACS request processor)
+    # ns_param	directorylisting	fancy	;# Can be simple or fancy
+
     #
     # Configuration of replies
     #
