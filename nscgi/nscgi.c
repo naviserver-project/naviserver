@@ -28,9 +28,6 @@
  */
 
 #include "ns.h"
-#include <sys/stat.h>
-#include <ctype.h>
-#include <stdlib.h>	/* environ */
 
 #define BUFSIZE          4096
 #define NDSTRINGS        5
@@ -1135,15 +1132,24 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
     hdrs = conn->outputheaders;
     while ((n = CgiReadLine(cgiPtr, &ds)) > 0) {
 
-        if (CHARTYPE(space, *ds.string) != 0) {   /* NB: Continued header. */
+        if (CHARTYPE(space, *ds.string) != 0) {
+            /*
+             * Continued header.
+             */
             if (last == -1) {
-                continue;	/* NB: Silently ignore bad header. */
+                /*
+                 * Silently ignore bad header.
+                 */
+                continue;
             }
             SetAppend(hdrs, last, "\n", ds.string);
         } else {
             value = strchr(ds.string, INTCHAR(':'));
             if (value == NULL) {
-                continue;	/* NB: Silently ignore bad header. */
+                /*
+                 * Silently ignore bad header.
+                 */
+                continue;
             }
             *value++ = '\0';
             while (CHARTYPE(space, *value) != 0) {
