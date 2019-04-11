@@ -190,7 +190,7 @@ Ns_ModuleInit(const char *server, const char *module)
     modPtr->server = server;
     Ns_MutexInit(&modPtr->lock);
     Ns_MutexSetName2(&modPtr->lock, "nscgi", server);
-    modPtr->maxInput = (int)Ns_ConfigMemUnitRange(path, "maxinput", 1024*1024, 1024, LLONG_MAX);
+    modPtr->maxInput = (int)Ns_ConfigMemUnitRange(path, "maxinput", 1024*1024, 0, LLONG_MAX);
     modPtr->maxCgi = Ns_ConfigInt(path, "limit", 0);
     modPtr->maxWait = Ns_ConfigInt(path, "maxwait", 30);
     if (Ns_ConfigBool(path, "gethostbyaddr", NS_FALSE)) {
