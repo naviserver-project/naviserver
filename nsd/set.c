@@ -35,7 +35,14 @@
  */
 
 #include "nsd.h"
-#
+
+/*
+ * Local functions defined in this file
+ */
+static void
+MergeSet(Ns_Set *high, const Ns_Set *low, int (*findProc)(const Ns_Set *set, const char *key))
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 
 /*
  *----------------------------------------------------------------------
@@ -858,7 +865,7 @@ Ns_SetListFree(Ns_Set **sets)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SetMerge --
+ * Ns_SetMerge, NS_SetIMerge --
  *
  *      Combine the 'low' set into the 'high' set.
  *
@@ -870,9 +877,11 @@ Ns_SetListFree(Ns_Set **sets)
  *
  *----------------------------------------------------------------------
  */
+static void
+MergeSet(Ns_Set *high, const Ns_Set *low, int (*findProc)(const Ns_Set *set, const char *key));
 
-void
-Ns_SetMerge(Ns_Set *high, const Ns_Set *low)
+static void
+MergeSet(Ns_Set *high, const Ns_Set *low, int (*findProc)(const Ns_Set *set, const char *key))
 {
     size_t i;
 
@@ -880,11 +889,30 @@ Ns_SetMerge(Ns_Set *high, const Ns_Set *low)
     NS_NONNULL_ASSERT(low != NULL);
 
     for (i = 0u; i < low->size; ++i) {
-        int j = Ns_SetFind(high, low->fields[i].name);
+        int j = (*findProc)(high, low->fields[i].name);
         if (j == -1) {
             (void)Ns_SetPut(high, low->fields[i].name, low->fields[i].value);
         }
     }
+}
+
+
+void
+Ns_SetMerge(Ns_Set *high, const Ns_Set *low)
+{
+    NS_NONNULL_ASSERT(high != NULL);
+    NS_NONNULL_ASSERT(low != NULL);
+
+    MergeSet(high, low, Ns_SetFind);
+}
+
+void
+Ns_SetIMerge(Ns_Set *high, const Ns_Set *low)
+{
+    NS_NONNULL_ASSERT(high != NULL);
+    NS_NONNULL_ASSERT(low != NULL);
+
+    MergeSet(high, low, Ns_SetIFind);
 }
 
 

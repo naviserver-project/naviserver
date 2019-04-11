@@ -228,17 +228,18 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
     int                  opt, result = TCL_OK;
 
     static const char *const opts[] = {
-        "array", "cleanup", "copy", "cput", "create", "delete",
-        "delkey", "find", "free", "get", "icput",
-        "idelkey", "ifind", "iget", "isnull", "iunique", "key",
-        "list", "merge", "move", "name", "new", "print",
-        "put", "size", "split", "truncate", "unique", "update",
+        "array", "cleanup", "copy", "cput", "create",
+        "delete", "delkey", "find", "free", "get",
+        "icput", "idelkey", "ifind", "iget", "imerge",
+        "isnull", "iunique", "key", "list", "merge",
+        "move", "name", "new", "print", "put",
+        "size", "split", "truncate", "unique", "update",
         "value", NULL,
     };
     enum {
         SArrayIdx, SCleanupIdx, SCopyIdx, SCPutIdx, SCreateidx,
         SDeleteIdx, SDelkeyIdx, SFindIdx, SFreeIdx, SGetIdx,
-        SICPutIdx, SIDelkeyIdx, SIFindIdx, SIGetIdx,
+        SICPutIdx, SIDelkeyIdx, SIFindIdx, SIGetIdx, SIMergeIdx,
         SIsNullIdx, SIUniqueIdx, SKeyIdx, SListIdx, SMergeIdx,
         SMoveIdx, sINameIdx, SNewIdx, SPrintIdx, SPutIdx,
         SSizeIdx, SSplitIdx, STruncateIdx, SUniqueIdx, SUpdateIdx,
@@ -289,8 +290,8 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
         }
         break;
 
-    case SNewIdx:
-    case SCopyIdx:
+    case SNewIdx:   /* fall through */
+    case SCopyIdx:  /* fall through */
     case SSplitIdx: {
         int           offset = 2;
         const char   *name;
@@ -372,10 +373,10 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
             Tcl_Obj *objPtr;
 
             switch (opt) {
-            case SArrayIdx:
-            case SSizeIdx:
-            case sINameIdx:
-            case SPrintIdx:
+            case SArrayIdx:  /* fall through */
+            case SSizeIdx:   /* fall through */
+            case sINameIdx:  /* fall through */
+            case SPrintIdx:  /* fall through */
             case SFreeIdx:
                 /*
                  * These commands require only the set.
@@ -426,7 +427,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                 }
                 break;
 
-            case SGetIdx:
+            case SGetIdx:  /* fall through */
             case SIGetIdx:
                 if (unlikely(objc < 4)) {
                     Tcl_WrongNumArgs(interp, 2, objv, "setId key ?default?");
@@ -453,11 +454,11 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                 }
                 break;
 
-            case SFindIdx:
-            case SIFindIdx:
-            case SDelkeyIdx:
-            case SIDelkeyIdx:
-            case SUniqueIdx:
+            case SFindIdx:    /* fall through */
+            case SIFindIdx:   /* fall through */
+            case SDelkeyIdx:  /* fall through */
+            case SIDelkeyIdx: /* fall through */
+            case SUniqueIdx:  /* fall through */
             case SIUniqueIdx:
                 /*
                  * These commands require a set and string key.
@@ -507,10 +508,10 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                 }
                 break;
 
-            case SValueIdx:
-            case SIsNullIdx:
-            case SKeyIdx:
-            case SDeleteIdx:
+            case SValueIdx:   /* fall through */
+            case SIsNullIdx:  /* fall through */
+            case SKeyIdx:     /* fall through */
+            case SDeleteIdx:  /* fall through */
             case STruncateIdx: {
                 /*
                  * These commands require a set and key/value index.
@@ -567,9 +568,9 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                 break;
             }
 
-            case SPutIdx:
-            case SUpdateIdx:
-            case SCPutIdx:
+            case SPutIdx:     /* fall through */
+            case SUpdateIdx:  /* fall through */
+            case SCPutIdx:    /* fall through */
             case SICPutIdx:
                 /*
                  * These commands require a set, key, and value.
@@ -619,7 +620,8 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                 }
                 break;
 
-            case SMergeIdx:
+            case SIMergeIdx: /* fall through */
+            case SMergeIdx:  /* fall through */
             case SMoveIdx:
                 /*
                  * These commands require two sets.
@@ -635,7 +637,9 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                         result = TCL_ERROR;
                     } else {
                         assert (set2Ptr != NULL);
-                        if (opt == SMergeIdx) {
+                        if (opt == SIMergeIdx) {
+                            Ns_SetIMerge(set, set2Ptr);
+                        } else if (opt == SMergeIdx) {
                             Ns_SetMerge(set, set2Ptr);
                         } else {
                             Ns_SetMove(set, set2Ptr);

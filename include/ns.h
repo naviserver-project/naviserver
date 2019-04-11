@@ -2545,6 +2545,10 @@ NS_EXTERN void
 Ns_SetMerge(Ns_Set *high, const Ns_Set *low)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+NS_EXTERN void
+Ns_SetIMerge(Ns_Set *high, const Ns_Set *low)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 NS_EXTERN Ns_Set *
 Ns_SetCopy(const Ns_Set *old);
 
