@@ -478,7 +478,6 @@ SetUrl(Ns_Request *request, char *url)
     /*
      * Decode and normalize the URL (remove ".", "..").
      */
-    //Ns_Log(Notice, "call DECODE on <%s>", url);
     encodedPath = url;
     encoding = Ns_GetUrlEncoding(NULL);
     p = Ns_UrlPathDecode(&ds1, encodedPath, encoding);
