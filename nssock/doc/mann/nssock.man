@@ -120,10 +120,9 @@ for virtual servers.
 Maximum number of header lines (integer, 128)
 
 [def maxinput]
-Maximum size in bytes (octets) for content loaded into the server, such as upload of
-files.
-The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB);
-(default: 1MB)
+Maximum size in bytes (octets) for content loaded into the server,
+such as upload of files.  The value can be specified in memory units
+(kB, MB, GB, KiB, MiB, GiB); (default: 1MB)
 
 [def maxline]
 Maximum size in bytes (octets) of a single header line (integer,
@@ -143,7 +142,8 @@ The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB);
 (default: 0)
 
 [def nodelay]
-TCP Performance option; use TCP_NODELAY to disable Nagle algorithm (boolean, default: true)
+TCP Performance option; use TCP_NODELAY to disable Nagle algorithm
+(boolean, default: true)
 
 [def port]
 Port, on which the server listens. When the port is specified as 0,
@@ -197,12 +197,69 @@ Number of writer threads. (integer, default: 0)
 
 [section EXAMPLES]
 
-In case, one requires for one server (here [term server1]) to listen
-on several ports, it is possible to load the nssock driver twice with
-different names, here [emph nssock1] and [emph nssock2].
+In the most simple case, one defines in a configuration file a single
+server [emph s1] with single network driver [emph nssock]. In the
+example below the server is listening on port 8000.
 
 [example_begin]
-   ns_section ns/server/server1/modules
+   ns_section "ns/servers"
+   ns_param    s1 "NaviServer Instance 1"
+
+   ns_section "ns/server/s1/modules"
+   ns_param    nssock        nssock.so
+
+   ns_section "ns/server/s1/module/nssock"
+   ns_param    address        0.0.0.0
+   ns_param    port           8000
+[example_end]
+
+It is as well possible to define multiple servers in the same
+configuration file (here [emph s1] and [emph s2]). These servers
+use the same driver [emph nsock] but with different ports.
+In this case it is sufficient to load the driver once.
+
+[example_begin]
+   ns_section "ns/servers"
+   ns_param    s1 "NaviServer Instance 1"
+   ns_param    s2 "NaviServer Instance 1"
+
+   ns_section "ns/server/s1/modules"
+   ns_param    nssock        nssock.so
+
+   ns_section "ns/server/s1/module/nssock"
+   ns_param    address        0.0.0.0
+   ns_param    port           8000
+
+   ns_section "ns/server/s2/modules"
+   ns_param    nssock        nssock.so
+
+   ns_section "ns/server/s2/module/nssock"
+   ns_param    address        0.0.0.0
+   ns_param    port           8001
+[example_end]
+
+When the config file above is named e.g. two-server-config.tcl,
+the tow servers can be started with a command line like:
+
+[example_begin]
+/usr/local/ns/bin/nsd -u nsadmin -t two-server-config.tcl -f
+[example_end]
+
+When it is the goal to start only one of these servers, one can use
+e.g. the following command:
+
+[example_begin]
+/usr/local/ns/bin/nsd -u nsadmin -t two-server-config.tcl -f -server s2
+[example_end]
+
+Similarly, we can define a single server, listening on multiple
+ports. In this case, one can load multiple instances of the driver
+where each of the driver listens on a different port. In the following
+example we name the different instances of the network driver
+[emph nssock1] and [emph nssock2].
+
+[example_begin]
+   ns_section ns/server/s1/modules
    ns_param   nssock1   nssock.so
    ns_param   nssock2   nssock.so
  
@@ -213,14 +270,15 @@ different names, here [emph nssock1] and [emph nssock2].
    ns_param   port    8001
 [example_end]
 
-The second example shows how to define two web servers "s1" and "s2",
-which receive requests from three virtual servers "foo.com", "bar.com"
-and "baz.com".  Using virtual servers is a common technique, where
+Now assume, we want to define two web servers "s1" and "s2", which
+should act as virtual servers. This means, we want to define one
+network driver, which listens on a single port, but which should
+direct requests to the server based on the content of the [term host]
+header field.  Using such virtual servers is a common technique, where
 e.g. for the same IP address, multiple DNS names are
-registered. According to HTTP/1.1, clients send the host name in the
-host header field to the server, which can behave differently
-depending on contents of this field. This is called a "virtual web
-server".
+registered. According to HTTP/1.1, clients have to send the host name
+in the host header field to the server, which can behave differently
+depending on contents of this field.
 
 [para]
 
