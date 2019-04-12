@@ -384,10 +384,9 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
          */
         defserver = Ns_ConfigGetValue(path, "defaultserver");
 
+        address = Ns_ConfigGetValue(path, "address");
         host = Ns_ConfigGetValue(path, "hostname");
         noHostNameGiven = (host == NULL);
-
-        address = Ns_ConfigGetValue(path, "address");
 
         /*
          * If the listen address was not specified, attempt to determine it
@@ -578,37 +577,67 @@ void NsDriverMapVirtualServers(void)
         moduleName = drvPtr->moduleName;
         defserver  = drvPtr->defserver;
 
+        /*
+         * Check for a "/servers" section for this driver module.
+         */
         path = Ns_ConfigGetPath(NULL, moduleName, "servers", (char *)0L);
         lset = Ns_ConfigGetSection(path);
 
         if (lset == NULL || Ns_SetSize(lset) == 0u) {
             /*
-             * The driver module has no ".../servers" section or an empty
-             * section, there are no virtual servers for this driver defined.
+             * The driver module has no (or empty) ".../servers" section.
+             * There is no mapping from host name to virtual server defined.
              */
+            if (drvPtr->server == NULL) {
+
+                /*
+                 * We have a global driver module. If there is at least a
+                 * default server configured, we can use this for the mapping
+                 * to the default server.
+                 */
+                if (defserver != NULL) {
+                    NsServer   *servPtr = NsGetServer(defserver);
+
+                    Tcl_DStringInit(dsPtr);
+                    ServerMapEntryAdd(dsPtr, Ns_InfoHostname(), moduleName, servPtr, drvPtr, &defMapPtr);
+                    Tcl_DStringFree(dsPtr);
+                    Ns_Log(Notice, "Global driver has no mapping from host to server (section '%s' missing)",
+                           moduleName);
+                } else {
+                    /*
+                     * Global driver, which has no default server, and no servers section.
+                     */
+                    Ns_Fatal("%s: virtual servers configured,"
+                             " but '%s' has no defaultserver defined", moduleName, path);
+                }
+            }
+
             continue;
         }
 
+        /*
+         * We have a ".../servers" section, the driver might be global or
+         * local. It is not clear, why we need the server map for the local
+         * driver, but for compatibility, we keep this.
+         *
+         */
         if (defserver == NULL) {
-            /*
-             * The local (server-specific) driver definition has no default
-             * server. Therefore, try the global driver definition.
-             */
-            const char *modulePath = Ns_ConfigGetPath(NULL, moduleName, (char *)0L);
-
-            defserver = Ns_ConfigGetValue(modulePath, "defaultserver");
-            if (defserver != NULL) {
+            if (drvPtr->server != NULL) {
                 /*
-                 * Keep the global definition in the server settings.
+                 * We have a local (server specific) driver.  Since the code
+                 * below assumes that we have a "defserver" set, we take the
+                 * actual server as defserver.
                  */
-                drvPtr->defserver = defserver;
+                defserver = drvPtr->server;
+            } else {
+                /*
+                 * We have a global driver, but no defserver.
+                 */
+                Ns_Fatal("%s: virtual servers configured,"
+                         " but '%s' has no defaultserver defined", moduleName, path);
             }
         }
 
-        if (defserver == NULL) {
-            Ns_Fatal("%s: virtual servers configured,"
-                     " but '%s' has no defaultserver defined", moduleName, path);
-        }
         assert(defserver != NULL);
 
         defMapPtr = NULL;
@@ -874,38 +903,13 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     firstDrvPtr = drvPtr;
 
     /*
-     * Add extra headers, which have to be of the form of
-     * attribute/value pairs.
+     * Add driver specific extra headers.
      */
-    {
-        const char *extraHeaders = Ns_ConfigGetValue(path, "extraheaders");
-
-        if (extraHeaders != NULL) {
-            int       objc;
-            Tcl_Obj **objv, *headers = Tcl_NewStringObj(extraHeaders, -1);
-            int       result = Tcl_ListObjGetElements(NULL, headers, &objc, &objv);
-
-            if (result != TCL_OK || objc % 2 != 0) {
-                Ns_Log(Warning, "Ignoring invalid value for extraheaders: %s", extraHeaders);
-            } else {
-                Tcl_DString ds, *dsPtr = &ds;
-
-                Ns_DStringInit(dsPtr);
-                for (i = 0; i < objc; i +=2) {
-                    (void) Ns_DStringVarAppend(dsPtr,
-                                               Tcl_GetString(objv[i]), ": ",
-                                               Tcl_GetString(objv[i+1]), "\r\n",
-                                               (char *)0L);
-                }
-                drvPtr->extraHeaders = Ns_DStringExport(dsPtr);
-            }
-        }
-    }
+    drvPtr->extraHeaders = Ns_ConfigSet(path, "extraheaders");
 
     /*
      * Check if upload spooler are enabled
      */
-
     spPtr = &drvPtr->spooler;
     spPtr->threads = Ns_ConfigIntRange(path, "spoolerthreads", 0, 0, 32);
 
@@ -1147,7 +1151,16 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewLongObj(drvPtr->sendwait));
 
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("extraheaders", 12));
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->extraHeaders, -1));
+                if (drvPtr->extraHeaders != NULL) {
+                    Tcl_DString ds;
+
+                    Tcl_DStringInit(&ds);
+                    Ns_DStringAppendSet(&ds, drvPtr->extraHeaders);
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(ds.string, ds.length));
+                    Tcl_DStringFree(&ds);
+                } else {
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("", 0));
+                }
 
                 Tcl_ListObjAppendElement(interp, resultObj, listObj);
             }
@@ -1862,7 +1875,7 @@ DriverThread(void *arg)
         SpoolerQueueStart(drvPtr->spooler.firstPtr, SpoolerThread);
         SpoolerQueueStart(drvPtr->writer.firstPtr, WriterThread);
     } else {
-        Ns_Log(Warning, "could no bind any of the folloing adresses, stopping this driver: %s", drvPtr->address);
+        Ns_Log(Warning, "could no bind any of the following addresses, stopping this driver: %s", drvPtr->address);
         flags |= (DRIVER_FAILED | DRIVER_SHUTDOWN);
     }
 
@@ -3957,7 +3970,10 @@ SockSetServer(Sock *sockPtr)
             if (host[hostLength] == '.') {
                 host[hostLength] = '\0';
             }
+
             hPtr = Tcl_FindHashEntry(&hosts, host);
+            Ns_Log(DriverDebug, "SockSetServer host '%s' => %p", host, (void*)hPtr);
+
             if (hPtr != NULL) {
                 /*
                  * Request with provide host header field could be resolved
@@ -3975,6 +3991,9 @@ SockSetServer(Sock *sockPtr)
             }
         }
         if (mapPtr == NULL) {
+            /*
+             * TODO: The defMapPtr should come from the driver.
+             */
             mapPtr = defMapPtr;
         }
         if (mapPtr != NULL) {

@@ -435,7 +435,7 @@ typedef struct Driver {
     long         sendwait;              /* send() I/O timeout */
     long         recvwait;              /* recv() I/O timeout */
     size_t       bufsize;               /* Conn bufsize (0 for SSL) */
-    const char  *extraHeaders;          /* Extra header fields added for every request */
+    const Ns_Set *extraHeaders;         /* Extra header fields added for every request */
 
     /*
      * Private to Driver.
@@ -798,6 +798,7 @@ typedef struct NsServer {
 
     struct {
         const char *realm;
+        const Ns_Set *extraHeaders;
         int  errorminsize;
         Ns_HeaderCaseDisposition hdrcase;
         bool flushcontent;

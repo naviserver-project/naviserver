@@ -126,7 +126,7 @@ Ns_TclGetSet(Tcl_Interp *interp, const char *setId)
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(setId != NULL);
-    
+
     if (LookupInterpSet(interp, setId, NS_FALSE, &set) != TCL_OK) {
         set = NULL;
     }
@@ -196,6 +196,63 @@ Ns_TclFreeSet(Tcl_Interp *interp, const char *setId)
         }
     }
     return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SetCreateFromDict --
+ *
+ *      Create a set based on the data provided in form of a Tcl dict (flat
+ *      list of attribute value pairs).
+ *
+ * Results:
+ *      Created set or NULL on errors
+ *
+ * Side effects:
+ *      When an interpreter is provided and an error occurs, the error message
+ *      is set in the interpreter.
+ *
+ *----------------------------------------------------------------------
+ */
+Ns_Set *
+Ns_SetCreateFromDict(Tcl_Interp *interp, const char *name, Tcl_Obj *listObj)
+{
+    int       result, objc;
+    Tcl_Obj **objv;
+    Ns_Set   *setPtr;
+
+    NS_NONNULL_ASSERT(listObj != NULL);
+
+    result = Tcl_ListObjGetElements(interp, listObj, &objc, &objv);
+
+    if (result != TCL_OK) {
+        /*
+         * Assume, that Tcl has provided an error msg.
+         */
+        setPtr = NULL;
+
+    } else if (objc % 2 != 0) {
+        /*
+         * Set an error, if we can.
+         */
+        if (interp != NULL) {
+            Ns_TclPrintfResult(interp, "list '%s' has to consist of an even number of elements",
+                               Tcl_GetString(listObj));
+        }
+        setPtr = NULL;
+
+    } else {
+        int i;
+
+        setPtr = Ns_SetCreate(name);
+        for (i = 0; i < objc; i += 2) {
+            Ns_SetPut(setPtr, Tcl_GetString(objv[i]), Tcl_GetString(objv[i+1]));
+        }
+    }
+
+    return setPtr;
 }
 
 
@@ -391,13 +448,8 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                     switch (opt) {
                     case SArrayIdx:
                         {
-                            size_t i;
-
                             Tcl_DStringInit(&ds);
-                            for (i = 0u; i < Ns_SetSize(set); ++i) {
-                                Tcl_DStringAppendElement(&ds, Ns_SetKey(set, i));
-                                Tcl_DStringAppendElement(&ds, Ns_SetValue(set, i));
-                            }
+                            Ns_DStringAppendSet(&ds, set);
                             Tcl_DStringResult(interp, &ds);
                             break;
                         }
@@ -656,10 +708,10 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
             }
         }
     }
-    
+
     return result;
 }
-    
+
 
 /*
  *----------------------------------------------------------------------
@@ -762,7 +814,7 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, Ns_TclSetType type)
      * Allocate a new set IDs until we find an unused one.
      */
     for (next = (uint32_t)tablePtr->numEntries; ; ++ next) {
-        len = ns_uint32toa(buf+1, next); 
+        len = ns_uint32toa(buf+1, next);
         hPtr = Tcl_CreateHashEntry(tablePtr, buf, &isNew);
         if (isNew != 0) {
             break;

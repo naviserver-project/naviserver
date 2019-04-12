@@ -269,9 +269,13 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     }
 
     /*
+     * Add server specific extra headers.
+     */
+    servPtr->opts.extraHeaders = Ns_ConfigSet(path, "extraheaders");
+
+    /*
      * Initialize on-the-fly compression support.
      */
-
     servPtr->compress.enable = Ns_ConfigBool(path, "compressenable", NS_FALSE);
     servPtr->compress.level = Ns_ConfigIntRange(path, "compresslevel", 4, 1, 9);
     servPtr->compress.minsize = (int)Ns_ConfigMemUnitRange(path, "compressminsize", 512, 0, INT_MAX);

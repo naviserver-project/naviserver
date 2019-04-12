@@ -75,7 +75,8 @@ set env(HOME) $homedir
 set env(LANG) en_US.UTF-8
 
 #---------------------------------------------------------------------
-# Set headers that should be included in every reply from the server
+# Set headers that should be included in every response from the
+# server.
 #
 set nssock_extraheaders {
     X-Frame-Options            "SAMEORIGIN"
@@ -202,7 +203,7 @@ ns_section ns/parameters {
     ns_param dnscachemaxsize 500kB  ;# max size of DNS cache in memory units; default: 500kB
 
     # Running behind proxy? Used by OpenACS...
-    ns_param	ReverseProxyMode	$proxy_mode
+    ns_param ReverseProxyMode	$proxy_mode
 }
 
 #---------------------------------------------------------------------
@@ -270,7 +271,8 @@ if {[info exists httpport]} {
 	# ns_param	driverthreads	2	;# 1; use multiple driver threads; activates "reuseport"
 
 	#
-	# Extra request headers fields to be added for every request.
+	# Extra driver-specific response headers fields to be added for
+	# every request.
 	#
 	ns_param    extraheaders    $nssock_extraheaders
     }
@@ -412,10 +414,16 @@ ns_section ns/server/${server} {
     # Configuration of replies
     #
     # ns_param	realm		yourrealm	;# Default realm for Basic authentication
-    # ns_param	noticedetail	false	;# true, return detail information in server reply
-    # ns_param	errorminsize	0	;# 514, fill-up reply to at least specified bytes (for ?early? MSIE)
-    # ns_param	headercase	preserve;# preserve, might be "tolower" or "toupper"
+    # ns_param	noticedetail	false		;# true, return detail information in server reply
+    # ns_param	errorminsize	0		;# 514, fill-up reply to at least specified bytes (for ?early? MSIE)
+    # ns_param	headercase	preserve	;# preserve, might be "tolower" or "toupper"
     # ns_param	checkmodifiedsince	false	;# true, check modified-since before returning files from cache. Disable for speedup
+
+    #
+    # Extra server-specific response headers fields to be added for
+    # every response on this server
+    #
+    #ns_param    extraheaders    {...}
 }
 
 #---------------------------------------------------------------------

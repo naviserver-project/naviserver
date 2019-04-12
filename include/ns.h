@@ -470,7 +470,7 @@ typedef struct Ns_Driver {
     long        sendwait;      /* send() I/O timeout in seconds */
     long        recvwait;      /* recv() I/O timeout in seconds */
     size_t      bufsize;       /* Conn bufsize (0 for SSL) */
-    const char *extraHeaders;  /* Extra header fields added for every request */
+    const Ns_Set *extraHeaders;  /* Extra header fields added for every request */
 } Ns_Driver;
 
 /*
@@ -1054,6 +1054,10 @@ Ns_ConfigCreateSection(const char *section)
 
 NS_EXTERN void
 Ns_GetVersion(int *majorV, int *minorV, int *patchLevelV, int *type);
+
+NS_EXTERN const Ns_Set *
+Ns_ConfigSet(const char *section, const char *key)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * conn.c:
@@ -2568,6 +2572,9 @@ NS_EXTERN const char *
 Ns_SetIGetValue(const Ns_Set *set, const char *key, const char *def)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+NS_EXTERN void
+Ns_DStringAppendSet(Ns_DString *dsPtr, const Ns_Set *set)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * see macros above for:
@@ -3146,16 +3153,19 @@ Ns_TclRequest(Ns_Conn *conn, const char *name)
  */
 
 NS_EXTERN int Ns_TclEnterSet(Tcl_Interp *interp, Ns_Set *set, Ns_TclSetType type)
-     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_Set *Ns_TclGetSet(Tcl_Interp *interp, const char *setId)
-     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int Ns_TclGetSet2(Tcl_Interp *interp, const char *setId, Ns_Set **setPtr)
-     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int Ns_TclFreeSet(Tcl_Interp *interp, const char *setId)
-     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN Ns_Set *Ns_SetCreateFromDict(Tcl_Interp *interp, const char *name, Tcl_Obj *listObj)
+    NS_GNUC_NONNULL(3);
 
 /*
  * httptime.c:

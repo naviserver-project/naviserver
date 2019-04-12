@@ -39,8 +39,8 @@
 /*
  * Local functions defined in this file
  */
-static void
-MergeSet(Ns_Set *high, const Ns_Set *low, int (*findProc)(const Ns_Set *set, const char *key))
+
+static void MergeSet(Ns_Set *high, const Ns_Set *low, int (*findProc)(const Ns_Set *set, const char *key))
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
@@ -833,6 +833,38 @@ Ns_SetSplit(const Ns_Set *set, char sep)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_DStringAppendSet --
+ *
+ *      Add the content (not including the name) to the
+ *      provided Ns_DString, which has to be initialized.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Update Ns_DString.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_DStringAppendSet(Ns_DString *dsPtr, const Ns_Set *set)
+{
+    size_t i;
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(set != NULL);
+
+    for (i = 0u; i < Ns_SetSize(set); ++i) {
+        Tcl_DStringAppendElement(dsPtr, Ns_SetKey(set, i));
+        Tcl_DStringAppendElement(dsPtr, Ns_SetValue(set, i));
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_SetListFree --
  *
  *      Free a null-terminated array of sets.
@@ -878,9 +910,6 @@ Ns_SetListFree(Ns_Set **sets)
  *----------------------------------------------------------------------
  */
 static void
-MergeSet(Ns_Set *high, const Ns_Set *low, int (*findProc)(const Ns_Set *set, const char *key));
-
-static void
 MergeSet(Ns_Set *high, const Ns_Set *low, int (*findProc)(const Ns_Set *set, const char *key))
 {
     size_t i;
@@ -914,6 +943,7 @@ Ns_SetIMerge(Ns_Set *high, const Ns_Set *low)
 
     MergeSet(high, low, Ns_SetIFind);
 }
+
 
 
 /*

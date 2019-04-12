@@ -469,7 +469,8 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
      * specification.
      *
      * For full backwards compatibility, a MIME-Version header could be added
-     * for a site via nssocket/nsssl driver parameter "extraheaders".
+     * via configuration parameter "extraheaders" (from network driver or
+     * server config).
      */
 
     Ns_DStringVarAppend(dsPtr,
@@ -479,60 +480,87 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
     Ns_DStringNAppend(dsPtr, "\r\n", 2);
 
     /*
-     * Add extra headers from config file, if available.
+     * Header processing. Merge possibly the output headers as provided by the
+     * application with the extra headers (per-server and per-drivet) from the
+     * configuration file.
      */
-    sockPtr = Ns_ConnSockPtr(conn);
-    if (sockPtr != NULL) {
-        value = sockPtr->driver->extraHeaders;
-        if (value != NULL) {
-            Ns_DStringNAppend(dsPtr, value, -1);
+    {
+        const Ns_Set *outputHeaders;
+        Ns_Set       *headers = conn->outputheaders;
+
+        /*
+         * We have always output headers, this is assured by ConnRun().
+         */
+        assert(conn->outputheaders != NULL);
+
+        sockPtr = Ns_ConnSockPtr(conn);
+        if (sockPtr != NULL) {
+            NsServer *servPtr = ((Sock *)sockPtr)->servPtr;
+
+            if (servPtr->opts.extraHeaders != NULL) {
+                /*
+                 * We have server-specific extra headers. Merge these into the
+                 * output headers. Output headers have the higher priority: if
+                 * there is already shuch a header field, it is kept.
+                 */
+                Ns_SetIMerge(headers, servPtr->opts.extraHeaders);
+            }
+
+            if (sockPtr->driver->extraHeaders != NULL) {
+                /*
+                 * We have driver-specific output headers. Fields already in
+                 * the output headers have the higher priority.
+                 */
+                Ns_SetIMerge(headers, sockPtr->driver->extraHeaders);
+            }
         }
-    }
+        outputHeaders = headers;
 
-    /*
-     * Output any extra headers.
-     */
+        /*
+         * Add the (potentially merged) header set in a sanitized form into
+         * the resulting DString (dsPtr).
+         */
+        if (outputHeaders != NULL) {
+            for (i = 0u; i < Ns_SetSize(outputHeaders); i++) {
+                const char *key;
 
-    if (conn->outputheaders != NULL) {
-        for (i = 0u; i < Ns_SetSize(conn->outputheaders); i++) {
-            const char *key;
+                key = Ns_SetKey(outputHeaders, i);
+                value = Ns_SetValue(outputHeaders, i);
+                if (key != NULL && value != NULL) {
+                    const char *lineBreak = strchr(value, INTCHAR('\n'));
 
-            key = Ns_SetKey(conn->outputheaders, i);
-            value = Ns_SetValue(conn->outputheaders, i);
-            if (key != NULL && value != NULL) {
-                const char *lineBreak = strchr(value, INTCHAR('\n'));
+                    if (lineBreak == NULL) {
+                        Ns_DStringVarAppend(dsPtr, key, ": ", value, "\r\n", (char *)0L);
+                    } else {
+                        Ns_DString sanitize, *sanitizePtr = &sanitize;
+                        /*
+                         * We have to sanititize the header field to avoid
+                         * a HTTP response splitting attack. After each
+                         * newline in the value, we insert a TAB character
+                         * (see Section 4.2 in RFC 2616)
+                         */
 
-                if (lineBreak == NULL) {
-                    Ns_DStringVarAppend(dsPtr, key, ": ", value, "\r\n", (char *)0L);
-                } else {
-                    Ns_DString sanitize, *sanitizePtr = &sanitize;
-                    /*
-                     * We have to sanititize the header field to avoid
-                     * a HTTP response splitting attack. After each
-                     * newline in the value, we insert a TAB character
-                     * (see Section 4.2 in RFC 2616)
-                     */
+                        Ns_DStringInit(&sanitize);
 
-                    Ns_DStringInit(&sanitize);
+                        do {
+                            size_t offset = (size_t)(lineBreak - value);
 
-                    do {
-                        size_t offset = (size_t)(lineBreak - value);
+                            if (offset > 0u) {
+                                Tcl_DStringAppend(sanitizePtr, value, (int)offset);
+                            }
+                            Tcl_DStringAppend(sanitizePtr, "\n\t", 2);
 
-                        if (offset > 0u) {
-                            Tcl_DStringAppend(sanitizePtr, value, (int)offset);
-                        }
-                        Tcl_DStringAppend(sanitizePtr, "\n\t", 2);
+                            offset ++;
+                            value += offset;
+                            lineBreak = strchr(value, INTCHAR('\n'));
 
-                        offset ++;
-                        value += offset;
-                        lineBreak = strchr(value, INTCHAR('\n'));
+                        } while (lineBreak != NULL);
 
-                    } while (lineBreak != NULL);
+                        Tcl_DStringAppend(sanitizePtr, value, -1);
 
-                    Tcl_DStringAppend(sanitizePtr, value, -1);
-
-                    Ns_DStringVarAppend(dsPtr, key, ": ", Tcl_DStringValue(sanitizePtr), "\r\n", (char *)0L);
-                    Ns_DStringFree(sanitizePtr);
+                        Ns_DStringVarAppend(dsPtr, key, ": ", Tcl_DStringValue(sanitizePtr), "\r\n", (char *)0L);
+                        Ns_DStringFree(sanitizePtr);
+                    }
                 }
             }
         }
