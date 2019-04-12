@@ -32,7 +32,7 @@ package require tcltest 2.2
 namespace import -force ::tcltest::*
 
 
-# "-constraints {notDarwin}" in the followng two tests does not seem
+# "-constraints {notDarwin}" in the following two tests does not seem
 # necessary in newest macOS installations.  On macOS 10.8
 # (Darwin 12.*), everything seems fine, on 10.7 (Darwin 11.*), the
 # first test does not hold.
