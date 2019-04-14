@@ -170,8 +170,9 @@ MSVC++ 9.0  _MSC_VER == 1500 (Visual Studio 2008)
 MSVC++ 10.0 _MSC_VER == 1600 (Visual Studio 2010)
 MSVC++ 11.0 _MSC_VER == 1700 (Visual Studio 2012)
 MSVC++ 12.0 _MSC_VER == 1800 (Visual Studio 2013)
-MSVC++ 14.0 _MSC_VER == 1900 (Visual Studio 2015)
-MSVC++ 15.0 _MSC_VER == 1910 (Visual Studio 2017)
+MSVC++ 14.0 _MSC_VER == 1900 (Visual Studio 2015 version 14.0)
+MSVC++ 14.1 _MSC_VER == 1910 (Visual Studio 2017 version 15.0)
+MSVC++ 14.2 _MSC_VER == 1920 (Visual Studio 2019 version 16.0)
 */
 
 /* 
