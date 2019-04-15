@@ -1630,18 +1630,20 @@ DriverAccept(Sock *sockPtr, NS_SOCKET sock)
 static ssize_t
 DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
 {
-    Ns_Time timeout;
-    ssize_t result;
+    Ns_Time       timeout;
+    ssize_t       result;
+    const Driver *drvPtr;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
-    timeout.sec = sockPtr->drvPtr->recvwait;
+    drvPtr = sockPtr->drvPtr;
+    timeout.sec = drvPtr->recvwait;
     timeout.usec = 0;
 
-    if (likely(sockPtr->drvPtr->recvProc != NULL)) {
-        result = (*sockPtr->drvPtr->recvProc)((Ns_Sock *) sockPtr, bufs, nbufs, &timeout, 0u);
+    if (likely(drvPtr->recvProc != NULL)) {
+        result = (*drvPtr->recvProc)((Ns_Sock *) sockPtr, bufs, nbufs, &timeout, 0u);
     } else {
-        Ns_Log(Warning, "driver: no recvProc registered for driver %s", sockPtr->drvPtr->threadName);
+        Ns_Log(Warning, "driver: no recvProc registered for driver %s", drvPtr->threadName);
         result = -1;
     }
 
@@ -1668,13 +1670,15 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
 ssize_t
 NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flags)
 {
-    Ns_Time timeout;
-    ssize_t result;
+    Ns_Time       timeout;
+    ssize_t       result;
+    const Driver *drvPtr;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
     assert(sockPtr->drvPtr != NULL);
 
-    timeout.sec = sockPtr->drvPtr->sendwait;
+    drvPtr = sockPtr->drvPtr;
+    timeout.sec = drvPtr->sendwait;
     timeout.usec = 0;
 
 #if 0
@@ -1689,11 +1693,11 @@ NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int fl
     }
 #endif
 
-    if (likely(sockPtr->drvPtr->sendProc != NULL)) {
-        result = (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
-                                              &timeout, flags);
+    if (likely(drvPtr->sendProc != NULL)) {
+        result = (*drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
+                                     &timeout, flags);
     } else {
-        Ns_Log(Warning, "connchan: no sendProc registered for driver %s", sockPtr->drvPtr->threadName);
+        Ns_Log(Warning, "connchan: no sendProc registered for driver %s", drvPtr->threadName);
         result = -1;
     }
 
@@ -1842,6 +1846,9 @@ DriverThread(void *arg)
         if (result == TCL_OK) {
             int i;
 
+            /*
+             * Bind all provided addresses.
+             */
             for (i = 0; i < nrBindaddrs; i++) {
 
                 drvPtr->listenfd[j] = DriverListen(drvPtr, Tcl_GetString(objv[i]));
@@ -1853,6 +1860,10 @@ DriverThread(void *arg)
                 Ns_Log(Warning, "could only bind to %d out of %d addresses", j, nrBindaddrs);
             }
         }
+
+        /*
+         * "j" refers to the number of successful listen() operations.
+         */
         nrBindaddrs = j;
         Tcl_DecrRefCount(bindaddrsObj);
     }
@@ -2050,6 +2061,7 @@ DriverThread(void *arg)
                  * Got some data.
                  * If enabled, perform read-ahead now.
                  */
+                assert(drvPtr == sockPtr->drvPtr);
                 if (likely((sockPtr->drvPtr->opts & NS_DRIVER_ASYNC) != 0u)) {
                     SockState s = SockRead(sockPtr, 0, &now);
 
@@ -2174,6 +2186,8 @@ DriverThread(void *arg)
                         PollIn(&pdata, drvPtr->pidx[n])
                         && (s = SockAccept(drvPtr, pdata.pfds[drvPtr->pidx[n]].fd, &sockPtr, &now)) != SOCK_ERROR) {
 
+                        assert(drvPtr == sockPtr->drvPtr);
+
                         switch (s) {
                         case SOCK_SPOOL:
                             sockPtr->drvPtr->stats.spooled++;
@@ -2251,6 +2265,9 @@ DriverThread(void *arg)
         while (sockPtr != NULL) {
             nextPtr = sockPtr->nextPtr;
             if (sockPtr->keep) {
+
+                assert(drvPtr == sockPtr->drvPtr);
+
                 Ns_Log(DriverDebug, "setting keepwait %ld for socket %d",
                        sockPtr->drvPtr->keepwait,  sockPtr->sock);
 
@@ -2263,6 +2280,8 @@ DriverThread(void *arg)
                  * NS_INVALID_SOCKET. Since we cannot "shutdown" an UDP-socket
                  * for writing, we bypass this call.
                  */
+                assert(drvPtr == sockPtr->drvPtr);
+
                 if (sockPtr->sock == NS_INVALID_SOCKET) {
                     SockRelease(sockPtr, SOCK_CLOSE, errno);
 
