@@ -434,9 +434,8 @@ void
 Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
 {
     const Conn    *connPtr = (const Conn *) conn;
-    const Ns_Sock *sockPtr;
     size_t         i;
-    const char    *reason, *value;
+    const char    *reason;
 
     /*
      * Construct the HTTP response status line.
@@ -485,8 +484,9 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
      * configuration file.
      */
     {
-        const Ns_Set *outputHeaders;
-        Ns_Set       *headers = conn->outputheaders;
+        const Ns_Sock *sockPtr;
+        const Ns_Set  *outputHeaders;
+        Ns_Set        *headers = conn->outputheaders;
 
         /*
          * We have always output headers, this is assured by ConnRun().
@@ -522,7 +522,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
          */
         if (outputHeaders != NULL) {
             for (i = 0u; i < Ns_SetSize(outputHeaders); i++) {
-                const char *key;
+                const char *key, *value;
 
                 key = Ns_SetKey(outputHeaders, i);
                 value = Ns_SetValue(outputHeaders, i);

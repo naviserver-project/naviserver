@@ -1828,7 +1828,7 @@ DriverThread(void *arg)
 
     {
         Tcl_Obj *bindaddrsObj, **objv;
-        int      i, j = 0, result;
+        int      j = 0, result;
 
         bindaddrsObj = Tcl_NewStringObj(drvPtr->address, -1);
         Tcl_IncrRefCount(bindaddrsObj);
@@ -1840,6 +1840,8 @@ DriverThread(void *arg)
         assert(result == TCL_OK);
 
         if (result == TCL_OK) {
+            int i;
+
             for (i = 0; i < nrBindaddrs; i++) {
 
                 drvPtr->listenfd[j] = DriverListen(drvPtr, Tcl_GetString(objv[i]));
