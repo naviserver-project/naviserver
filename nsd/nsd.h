@@ -454,6 +454,7 @@ typedef struct Driver {
     Ns_DriverClientInitProc *clientInitProc; /* Optional - initialization of client connections */
 
     const char *defserver;              /* default server, might be NULL */
+    Tcl_HashTable hosts;                /* Virtual hosts mapping to server */
     long closewait;                     /* Graceful close timeout */
     long keepwait;                      /* Keepalive timeout */
     size_t keepmaxdownloadsize;         /* When set, allow keepalive only for download requests up to this size */

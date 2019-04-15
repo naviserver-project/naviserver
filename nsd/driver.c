@@ -221,7 +221,6 @@ Ns_LogSeverity Ns_LogRequestDebug;
 Ns_LogSeverity Ns_LogConnchanDebug;
 
 static Ns_LogSeverity   DriverDebug;        /* Severity at which to log verbose debugging. */
-static Tcl_HashTable    hosts;              /* Host header to server table */
 static const ServerMap *defMapPtr   = NULL; /* Default server map when not found in table */
 static Ns_Mutex         reqLock     = NULL; /* Lock for allocated Request structure pool */
 static Ns_Mutex         writerlock  = NULL; /* Lock updating streaming information in the writer */
@@ -260,7 +259,6 @@ WriteError(const char *msg, int fd, size_t wantWrite, ssize_t written)
 void
 NsInitDrivers(void)
 {
-    Tcl_InitHashTable(&hosts, TCL_STRING_KEYS);
     DriverDebug = Ns_CreateLogSeverity("Debug(ns:driver)");
     Ns_LogTaskDebug = Ns_CreateLogSeverity("Debug(task)");
     Ns_LogRequestDebug = Ns_CreateLogSeverity("Debug(request)");
@@ -507,7 +505,7 @@ ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host, const char *moduleName,
     NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(drvPtr != NULL);
 
-    hPtr = Tcl_CreateHashEntry(&hosts, host, &isNew);
+    hPtr = Tcl_CreateHashEntry(&drvPtr->hosts, host, &isNew);
     if (isNew != 0) {
         ServerMap *mapPtr;
 
@@ -838,6 +836,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
                                                             0, 0, INT_MAX);
     drvPtr->keepmaxdownloadsize = (size_t)Ns_ConfigMemUnitRange(path, "keepalivemaxdownloadsize",
                                                             0, 0, INT_MAX);
+    Tcl_InitHashTable(&drvPtr->hosts, TCL_STRING_KEYS);
 
     if (drvPtr->driverthreads > 1) {
 #if !defined(SO_REUSEPORT)
@@ -1052,7 +1051,7 @@ NsStopDrivers(void)
         SockTrigger(drvPtr->trigger[1]);
     }
 
-    hPtr = Tcl_FirstHashEntry(&hosts, &search);
+    hPtr = Tcl_FirstHashEntry(&drvPtr->hosts, &search);
     while (hPtr != NULL) {
         Tcl_DeleteHashEntry(hPtr);
         hPtr = Tcl_NextHashEntry(&search);
@@ -1969,7 +1968,7 @@ DriverThread(void *arg)
                 NsEnsureRunningConnectionThreads(drvPtr->servPtr, NULL);
             } else {
                 Tcl_HashSearch       search;
-                const Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&hosts, &search);
+                const Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&drvPtr->hosts, &search);
                 /*
                  * In case, we have a "global" driver, we have to
                  * check all associated servers.
@@ -3971,7 +3970,7 @@ SockSetServer(Sock *sockPtr)
                 host[hostLength] = '\0';
             }
 
-            hPtr = Tcl_FindHashEntry(&hosts, host);
+            hPtr = Tcl_FindHashEntry(&sockPtr->drvPtr->hosts, host);
             Ns_Log(DriverDebug, "SockSetServer host '%s' => %p", host, (void*)hPtr);
 
             if (hPtr != NULL) {
