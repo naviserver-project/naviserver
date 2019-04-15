@@ -418,6 +418,15 @@ typedef struct {
     NsWriterStreamState doStream;       /* Activate writer for HTML streaming */
 } DrvWriter;
 
+/*
+ * ServerMap maintains Host header to server mappings, but is upaque for nsd.h
+ */
+struct ServerMap;
+
+/*
+ * Driver data structure
+ */
+
 typedef struct Driver {
 
     /*
@@ -455,6 +464,7 @@ typedef struct Driver {
 
     const char *defserver;              /* default server, might be NULL */
     Tcl_HashTable hosts;                /* Virtual hosts mapping to server */
+    const struct ServerMap *defMapPtr;  /* Default for virtual host entry */
     long closewait;                     /* Graceful close timeout */
     long keepwait;                      /* Keepalive timeout */
     size_t keepmaxdownloadsize;         /* When set, allow keepalive only for download requests up to this size */
