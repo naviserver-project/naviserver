@@ -37,11 +37,20 @@
 #include "nsd.h"
 
 /*
+ * Typedefs of functions
+ */
+typedef int (*StringCmpProc) (const char *s1, const char *s2);
+typedef int (*SetFindProc)(const Ns_Set *set, const char *key);
+
+/*
  * Local functions defined in this file
  */
 
-static void MergeSet(Ns_Set *high, const Ns_Set *low, int (*findProc)(const Ns_Set *set, const char *key))
+static void MergeSet(Ns_Set *high, const Ns_Set *low, SetFindProc findProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static const char *SetGetValueCmp(const Ns_Set *set, const char *key, const char *def, StringCmpProc cmp)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 
 /*
@@ -230,8 +239,7 @@ Ns_SetPut(Ns_Set *set, const char *key, const char *value)
  */
 
 bool
-Ns_SetUniqueCmp(const Ns_Set *set, const char *key,
-                int (*cmp) (const char *s1, const char *s2))
+Ns_SetUniqueCmp(const Ns_Set *set, const char *key, StringCmpProc cmp)
 {
     size_t i;
     bool   found, result = NS_TRUE;
@@ -276,8 +284,7 @@ Ns_SetUniqueCmp(const Ns_Set *set, const char *key,
  */
 
 int
-Ns_SetFindCmp(const Ns_Set *set, const char *key,
-              int (*cmp) (const char *s1, const char *s2))
+Ns_SetFindCmp(const Ns_Set *set, const char *key, StringCmpProc cmp)
 {
     size_t i;
     int    result = -1;
@@ -325,8 +332,7 @@ Ns_SetFindCmp(const Ns_Set *set, const char *key,
  */
 
 char *
-Ns_SetGetCmp(const Ns_Set *set, const char *key,
-             int (*cmp) (const char *s1, const char *s2))
+Ns_SetGetCmp(const Ns_Set *set, const char *key, StringCmpProc cmp)
 {
     char *result;
     int   i;
@@ -367,8 +373,7 @@ Ns_SetUnique(const Ns_Set *set, const char *key)
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    return Ns_SetUniqueCmp(set, key,
-                           (int (*) (const char *left, const char *right)) strcmp);
+    return Ns_SetUniqueCmp(set, key, strcmp);
 }
 
 
@@ -394,8 +399,7 @@ Ns_SetIUnique(const Ns_Set *set, const char *key)
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    return Ns_SetUniqueCmp(set, key,
-                           (int (*) (const char *s1, const char *s2)) strcasecmp);
+    return Ns_SetUniqueCmp(set, key, strcasecmp);
 }
 
 
@@ -421,8 +425,7 @@ Ns_SetFind(const Ns_Set *set, const char *key)
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    return Ns_SetFindCmp(set, key,
-                         (int (*) (const char *s1, const char *s2)) strcmp);
+    return Ns_SetFindCmp(set, key, strcmp);
 }
 
 
@@ -448,8 +451,7 @@ Ns_SetIFind(const Ns_Set *set, const char *key)
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    return Ns_SetFindCmp(set, key,
-                         (int (*) (const char *s1, const char *s2)) strcasecmp);
+    return Ns_SetFindCmp(set, key, strcasecmp);
 }
 
 
@@ -475,8 +477,7 @@ Ns_SetGet(const Ns_Set *set, const char *key)
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    return Ns_SetGetCmp(set, key,
-                        (int (*) (const char *s1, const char *s2)) strcmp);
+    return Ns_SetGetCmp(set, key, strcmp);
 }
 
 
@@ -502,17 +503,17 @@ Ns_SetIGet(const Ns_Set *set, const char *key)
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    return Ns_SetGetCmp(set, key,
-                        (int (*) (const char *s1, const char *s2)) strcasecmp);
+    return Ns_SetGetCmp(set, key, strcasecmp);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SetGetValue --
+ * Ns_SetGetValue, Ns_SetIGetValue --
  *
- *      Return the value associated with a key, case sensitive.
- *      If no value found or it is empty, return provided default value
+ *      Return the value associated with a key. The variant SetIGetValue is
+ *      not case sensitive.  If no value found or it is empty, return provided
+ *      default value
  *
  * Results:
  *      A value or NULL if key not found or default is NULL
@@ -522,54 +523,41 @@ Ns_SetIGet(const Ns_Set *set, const char *key)
  *
  *----------------------------------------------------------------------
  */
+
+static const char *
+SetGetValueCmp(const Ns_Set *set, const char *key, const char *def, StringCmpProc cmp)
+{
+    const char *value;
+
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(def != NULL);
+    NS_NONNULL_ASSERT(cmp != NULL);
+
+    value = Ns_SetGetCmp(set, key, cmp);
+
+    if (value == NULL || *value == '\0') {
+        value = def;
+    }
+    return value;
+}
 
 const char *
 Ns_SetGetValue(const Ns_Set *set, const char *key, const char *def)
 {
-    const char *value;
-
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    value = Ns_SetGet(set, key);
-
-    if (value == NULL || *value == '\0') {
-        value = def;
-    }
-    return value;
+    return SetGetValueCmp(set, key, def, strcmp);
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_SetIGetValue --
- *
- *      Return the value associated with a key, case insensitive.
- *      If no value found or it is empty, return provided default value
- *
- * Results:
- *      A value or NULL if key not found or default is NULL
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
 
 const char *
 Ns_SetIGetValue(const Ns_Set *set, const char *key, const char *def)
 {
-    const char *value;
-
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    value = Ns_SetIGet(set, key);
-
-    if (value == NULL || *value == '\0') {
-        value = def;
-    }
-    return value;
+    return SetGetValueCmp(set, key, def, strcasecmp);
 }
 
 
@@ -910,7 +898,7 @@ Ns_SetListFree(Ns_Set **sets)
  *----------------------------------------------------------------------
  */
 static void
-MergeSet(Ns_Set *high, const Ns_Set *low, int (*findProc)(const Ns_Set *set, const char *key))
+MergeSet(Ns_Set *high, const Ns_Set *low, SetFindProc findProc)
 {
     size_t i;
 
