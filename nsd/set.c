@@ -50,7 +50,7 @@ static void MergeSet(Ns_Set *high, const Ns_Set *low, SetFindProc findProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static const char *SetGetValueCmp(const Ns_Set *set, const char *key, const char *def, StringCmpProc cmp)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 
 /*
@@ -531,7 +531,6 @@ SetGetValueCmp(const Ns_Set *set, const char *key, const char *def, StringCmpPro
 
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
-    NS_NONNULL_ASSERT(def != NULL);
     NS_NONNULL_ASSERT(cmp != NULL);
 
     value = Ns_SetGetCmp(set, key, cmp);
