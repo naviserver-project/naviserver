@@ -2062,7 +2062,7 @@ DriverThread(void *arg)
                  * If enabled, perform read-ahead now.
                  */
                 assert(drvPtr == sockPtr->drvPtr);
-                if (likely((sockPtr->drvPtr->opts & NS_DRIVER_ASYNC) != 0u)) {
+                if (likely((drvPtr->opts & NS_DRIVER_ASYNC) != 0u)) {
                     SockState s = SockRead(sockPtr, 0, &now);
 
                     /*
@@ -2071,15 +2071,15 @@ DriverThread(void *arg)
 
                     switch (s) {
                     case SOCK_SPOOL:
-                        sockPtr->drvPtr->stats.spooled++;
-                        if (SockSpoolerQueue(sockPtr->drvPtr, sockPtr) == 0) {
+                        drvPtr->stats.spooled++;
+                        if (SockSpoolerQueue(drvPtr, sockPtr) == 0) {
                             Push(sockPtr, readPtr);
                         }
                         break;
 
                     case SOCK_MORE:
-                        sockPtr->drvPtr->stats.partial++;
-                        SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
+                        drvPtr->stats.partial++;
+                        SockTimeout(sockPtr, &now, drvPtr->recvwait);
                         Push(sockPtr, readPtr);
                         break;
 
@@ -2111,7 +2111,7 @@ DriverThread(void *arg)
                     case SOCK_WRITEERROR:
                     case SOCK_WRITETIMEOUT:
                     default:
-                        sockPtr->drvPtr->stats.errors++;
+                        drvPtr->stats.errors++;
                         Ns_Log(Warning,
                                "sockread returned unexpected result %d (err %s); close socket (%d)",
                                s, ((errno != 0) ? strerror(errno) : ""), sockPtr->sock);
@@ -2123,7 +2123,7 @@ DriverThread(void *arg)
                      * Potentially blocking driver, NS_DRIVER_ASYNC is not defined
                      */
                     if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
-                        sockPtr->drvPtr->stats.errors++;
+                        drvPtr->stats.errors++;
                         Ns_Log(Notice, "read-ahead has some data, no async sock read ===== diff time %ld",
                                Ns_DiffTime(&sockPtr->timeout, &now, &diff));
                         sockPtr->keep = NS_FALSE;
@@ -2186,19 +2186,19 @@ DriverThread(void *arg)
                         PollIn(&pdata, drvPtr->pidx[n])
                         && (s = SockAccept(drvPtr, pdata.pfds[drvPtr->pidx[n]].fd, &sockPtr, &now)) != SOCK_ERROR) {
 
-                        assert(drvPtr == sockPtr->drvPtr);
+                        assert(drvPtr == drvPtr);
 
                         switch (s) {
                         case SOCK_SPOOL:
-                            sockPtr->drvPtr->stats.spooled++;
-                            if (SockSpoolerQueue(sockPtr->drvPtr, sockPtr) == 0) {
+                            drvPtr->stats.spooled++;
+                            if (SockSpoolerQueue(drvPtr, sockPtr) == 0) {
                                 Push(sockPtr, readPtr);
                             }
                             break;
 
                         case SOCK_MORE:
-                            sockPtr->drvPtr->stats.partial++;
-                            SockTimeout(sockPtr, &now, sockPtr->drvPtr->recvwait);
+                            drvPtr->stats.partial++;
+                            SockTimeout(sockPtr, &now, drvPtr->recvwait);
                             Push(sockPtr, readPtr);
                             break;
 
@@ -2269,9 +2269,9 @@ DriverThread(void *arg)
                 assert(drvPtr == sockPtr->drvPtr);
 
                 Ns_Log(DriverDebug, "setting keepwait %ld for socket %d",
-                       sockPtr->drvPtr->keepwait,  sockPtr->sock);
+                       drvPtr->keepwait,  sockPtr->sock);
 
-                SockTimeout(sockPtr, &now, sockPtr->drvPtr->keepwait);
+                SockTimeout(sockPtr, &now, drvPtr->keepwait);
                 Push(sockPtr, readPtr);
             } else {
 
@@ -2285,16 +2285,16 @@ DriverThread(void *arg)
                 if (sockPtr->sock == NS_INVALID_SOCKET) {
                     SockRelease(sockPtr, SOCK_CLOSE, errno);
 
-                    Ns_Log(DriverDebug, "DRIVER SockRelease: errno %d sockPtr->drvPtr->closewait %ld",
-                           errno, sockPtr->drvPtr->closewait);
+                    Ns_Log(DriverDebug, "DRIVER SockRelease: errno %d drvPtr->closewait %ld",
+                           errno, drvPtr->closewait);
 
                 } else if (shutdown(sockPtr->sock, SHUT_WR) != 0) {
                     SockRelease(sockPtr, SOCK_SHUTERROR, errno);
 
                 } else {
                     Ns_Log(DriverDebug, "setting closewait %ld for socket %d",
-                           sockPtr->drvPtr->closewait,  sockPtr->sock);
-                    SockTimeout(sockPtr, &now, sockPtr->drvPtr->closewait);
+                           drvPtr->closewait,  sockPtr->sock);
+                    SockTimeout(sockPtr, &now, drvPtr->closewait);
                     Push(sockPtr, closePtr);
                 }
             }
