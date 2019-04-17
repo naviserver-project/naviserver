@@ -136,13 +136,7 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
     int         rangeCount = 0;
     off_t       start, end;
     size_t      len, responseLength;
-#ifdef NS_HAVE_C99
     Range       ranges[NS_MAX_RANGES];
-#else
-    Range      *ranges;
-
-    ranges = alloca(sizeof(Range) * (size_t)NS_MAX_RANGES);
-#endif
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(type != NULL);
