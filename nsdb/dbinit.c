@@ -651,6 +651,7 @@ NsDbInitPools(void)
         const char    *pool = Ns_SetKey(pools, i);
         Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&poolsTable, pool, &isNew);
 
+        Ns_Log(Ns_LogSqlDebug, "nsdb: Add DB pool: %s", pool);
         if (isNew == 0) {
             Ns_Log(Error, "dbinit: duplicate pool: %s", pool);
             continue;

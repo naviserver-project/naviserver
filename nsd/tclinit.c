@@ -267,6 +267,8 @@ ConfigServerTcl(const char *server)
         int         n;
         Ns_Set     *set;
 
+        Ns_ThreadSetName("-main:%s-", server);
+
         path = Ns_ConfigGetPath(server, NULL, "tcl", (char *)0L);
         set = Ns_ConfigCreateSection(path);
 
