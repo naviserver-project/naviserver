@@ -476,7 +476,6 @@ ns_section ns/server/${server}/adp/parsers {
 #
 ns_section ns/server/${server}/tcl {
     ns_param	library		${serverroot}/tcl
-    ns_param	autoclose	on
     ns_param	debug		$debug
     # ns_param	nsvbuckets	16       ;# default: 8
 }
