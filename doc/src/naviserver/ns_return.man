@@ -6,10 +6,10 @@
 
 [description]
 
-These commands are used to construct a complete HTTP response and return
-it to the requesting client. The response may be transcoded into a different
-encoding, compressed and/or sent in chunks as automatically negotiated by
-the client and server settings.
+These are the lower elevel commands are used to construct a complete
+HTTP response and return it to the requesting client. The response may
+be transcoded into a different encoding, compressed and/or sent in
+chunks as automatically negotiated by the client and server settings.
 
 [para]
 Unless otherwise noted, these commands return [const true] if the command
@@ -23,6 +23,9 @@ by the [const fastpath] settings, that define, how static files are
 served. The fastpath settings are described in the [sectref CONFIGURATION]
 section at the end of this page.
 
+[para] Note that there are additional higher level commands are
+designed to ease consistent behavior in common succes, redirect or
+error situations (see [cmd returnstatus-cmds]).
 
 [section {COMMANDS}]
 [list_begin definitions]

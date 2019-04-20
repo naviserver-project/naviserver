@@ -7,8 +7,12 @@
 [description]
 
 These commands return a complete response to the client using a variety of
-different HTTP status codes. Any queued headers, such as those set by
-[cmd ns_setcookie] or manually using [cmd "ns_conn outputheaders"] and
+different HTTP status codes. On contrary to the lower level commands
+like [cmd ns_return] these commands are designed to ease consistent
+behavior in common succes, redirect or error situations.
+
+Like with [cmd ns_return] all queued headers, such as those set by
+[cmd ns_setcookie] (see [cmd ns_cookie]) or via [cmd "ns_conn"] [cmd "outputheaders"] and 
 [cmd "ns_set put"], are added to the default headers and sent in the response.
 
 [para]
@@ -205,7 +209,7 @@ ns_register_proc GET /service {
 [example_end]
 
 
-[see_also ns_return ns_internalredirect]
+[see_also ns_return ns_internalredirect ns_conn ns_cookie]
 [keywords "server built-in" return redirect response status configuration]
 
 [manpage_end]
