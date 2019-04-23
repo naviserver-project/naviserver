@@ -80,23 +80,25 @@ ConfigServerRedirects(const char *server)
     const char   *path;
     size_t        i;
 
-    Tcl_InitHashTable(&servPtr->request.redirect, TCL_ONE_WORD_KEYS);
+    if (servPtr != NULL) {
+        Tcl_InitHashTable(&servPtr->request.redirect, TCL_ONE_WORD_KEYS);
 
-    path = Ns_ConfigGetPath(server, NULL, "redirects", (char *)0L);
-    set = Ns_ConfigGetSection(path);
+        path = Ns_ConfigGetPath(server, NULL, "redirects", (char *)0L);
+        set = Ns_ConfigGetSection(path);
 
-    for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
-        const char *key, *map;
-        int statusCode;
+        for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
+            const char *key, *map;
+            int statusCode;
 
-        key = Ns_SetKey(set, i);
-        map = Ns_SetValue(set, i);
-        statusCode = (int)strtol(key, NULL, 10);
-        if (statusCode <= 0 || *map == '\0') {
-            Ns_Log(Error, "redirects[%s]: invalid redirect '%s=%s'",
-                   server, key, map);
-        } else {
-            Ns_RegisterReturn(statusCode, map);
+            key = Ns_SetKey(set, i);
+            map = Ns_SetValue(set, i);
+            statusCode = (int)strtol(key, NULL, 10);
+            if (statusCode <= 0 || *map == '\0') {
+                Ns_Log(Error, "redirects[%s]: invalid redirect '%s=%s'",
+                       server, key, map);
+            } else {
+                Ns_RegisterReturn(statusCode, map);
+            }
         }
     }
 
