@@ -728,7 +728,7 @@ Ns_SetIDeleteKey(Ns_Set *set, const char *key)
  */
 
 Ns_Set *
-Ns_SetListFind(Ns_Set *const*sets, const char *name)
+Ns_SetListFind(Ns_Set *const *sets, const char *name)
 {
     Ns_Set *result = NULL;
 
