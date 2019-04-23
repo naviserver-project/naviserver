@@ -870,6 +870,9 @@ Ns_ConnGets(char *buf, size_t bufsize, const Ns_Conn *conn)
 {
     char *p, *result = buf;
 
+    NS_NONNULL_ASSERT(buf != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
+
     p = buf;
     while (bufsize > 1u) {
         if (Ns_ConnRead(conn, p, 1u) != 0u) {
