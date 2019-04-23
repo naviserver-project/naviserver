@@ -210,6 +210,8 @@ static void ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
                               NsServer *servPtr, Driver *drvPtr, bool addDefaultMapEntry)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
+static Driver *LookupDriver(Tcl_Interp *interp, const char* protocol, const char *driverName)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * Static variables defined in this file.
@@ -455,6 +457,10 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             size_t maxModuleNameLength = strlen(module) + (size_t)TCL_INTEGER_SPACE + 1u;
             char  *moduleName = ns_malloc(maxModuleNameLength);
             int    i;
+
+            if (host == NULL) {
+                host = Ns_InfoHostname();
+            }
 
             for (i = 0; i < nrDrivers; i++) {
                 snprintf(moduleName, maxModuleNameLength, "%s:%d", module, i);
@@ -6296,10 +6302,14 @@ AsyncWriterThread(void *arg)
  *
  *----------------------------------------------------------------------
  */
+
 static Driver *
 LookupDriver(Tcl_Interp *interp, const char* protocol, const char *driverName)
 {
     Driver *drvPtr;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(protocol != NULL);
 
     for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
         Ns_Log(DriverDebug, "... check Driver proto <%s> server %s name %s location %s",
