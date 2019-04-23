@@ -78,7 +78,8 @@ static void Flush(Array *arrayPtr)
     NS_GNUC_NONNULL(1);
 
 static Array *LockArray(const NsServer *servPtr, const char *arrayName, bool create)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)
+    NS_GNUC_RETURNS_NONNULL;
 
 static void UnlockArray(const Array *arrayPtr)
     NS_GNUC_NONNULL(1);
@@ -87,7 +88,8 @@ static Array *LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, bool create)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static Array *GetArray(Bucket *bucketPtr, const char *arrayName, bool create)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)
+    NS_GNUC_RETURNS_NONNULL;
 
 static unsigned int BucketIndex(const char *arrayName)
     NS_GNUC_NONNULL(1) NS_GNUC_PURE;
@@ -1472,12 +1474,13 @@ LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, bool create)
         const NsInterp *itPtr = NsGetInterpData(interp);
 
         arrayPtr = LockArray(itPtr->servPtr, arrayName, create);
-        if (likely(arrayPtr != NULL)) {
-            Ns_TclSetOpaqueObj(arrayObj, arrayType, arrayPtr->bucketPtr);
-        }
+        Ns_TclSetOpaqueObj(arrayObj, arrayType, arrayPtr->bucketPtr);
     }
 
-    if (arrayPtr == NULL && !create) {
+    /*
+     * Both, GetArray() and LockArray() return always nonnull.
+     */
+    if (!create) {
         Ns_TclPrintfResult(interp, "no such array: %s", arrayName);
     }
 
