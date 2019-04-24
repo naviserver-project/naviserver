@@ -149,7 +149,7 @@
 #define NS_NONNULL_ASSERT(assertion) assert((assertion))
 
 #if defined(__GLIBC__) && defined(__GLIBC_MINOR__)
-# if (__GLIBC__ > 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 6)
+# if (__GLIBC__ > 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 6))
 #  define NS_FOPEN_SUPPORTS_MODE_E 1
 # endif
 #endif
