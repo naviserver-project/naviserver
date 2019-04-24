@@ -284,7 +284,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
     }
     rangestr += 6; /* Skip "bytes=" */
 
-    while (*rangestr != '\0' && rangeCount < maxRanges) {
+    while (*rangestr != '\0' && rangeCount < (maxRanges-1)) {
         Range *thisPtr;
 
         thisPtr = &ranges[rangeCount];

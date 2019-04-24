@@ -419,6 +419,59 @@ test byteranges-6.0 {ADP + byte range} \
     } -result {200 {Hello World!}}
 
 
+test byteranges-7.0 {Many contiguous ranges} \
+    -constraints {serverListen} -body {
+        nstest::http -setheaders {Range bytes=0-1,2-3,3-4} \
+            -getheaders {Content-length Content-range} \
+            GET /16480bytes
+    } -result {206 5 {bytes 0-4/16480}}
+
+test byteranges-7.1 {Many contiguous ranges} \
+    -constraints {serverListen} -body {
+        nstest::http -setheaders {Range bytes=0-1,1-2,2-3} \
+            -getheaders {Content-length Content-range} \
+            GET /16480bytes
+    } -result {206 4 {bytes 0-3/16480}}
+
+test byteranges-7.2 {Many contiguous ranges} \
+    -constraints {serverListen} -body {
+        for {set i 0} {$i < 60} {incr i} {
+            lappend ranges $i-$i
+        }
+        nstest::http -setheaders [list Range bytes=[join $ranges ,]] \
+            -getheaders {Content-length Content-range} \
+            GET /16480bytes
+    } -result {206 60 {bytes 0-59/16480}}
+
+test byteranges-7.3 {Many non-contiguous ranges} \
+    -constraints {serverListen} -body {
+        set ranges {}
+        for {set i 0} {$i < 32} {incr i} {
+            set j [expr {$i*2}]
+            lappend ranges $j-$j
+        }
+
+        nstest::http -setheaders [list Range bytes=[join $ranges ,]] \
+            -getbody 0 \
+            -getheaders {Content-length Content-range} \
+            GET /16480bytes
+    } -result {206 2878 {}}
+
+test byteranges-7.4 {Too Many non-contiguous ranges (more than NS_MAX_RANGES)} \
+    -constraints {serverListen} -body {
+        set ranges {}
+        for {set i 0} {$i < 60} {incr i} {
+            set j [expr {$i*2}]
+            lappend ranges $j-$j
+        }
+
+        nstest::http -setheaders [list Range bytes=[join $ranges ,]] \
+            -getbody 0 \
+            -getheaders {Content-length Content-range} \
+            GET /16480bytes
+    } -result {206 2878 {}}
+
+
 cleanupTests
 
 # Local variables:
