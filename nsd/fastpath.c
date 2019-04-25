@@ -730,7 +730,6 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
     if (compressedFileName != NULL) {
         fileName = compressedFileName;
     }
-    //fprintf(stderr, "==== static delivery <%s> useBrotli %d useGzip %d\n", fileName, useBrotli, useGzip);
 
     /*
      * For no output (i.e., HEAD request), just send required
