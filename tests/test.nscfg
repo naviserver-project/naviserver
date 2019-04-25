@@ -141,7 +141,7 @@ switch $v {
     cache {
 	ns_param   cache           true
 	ns_param   cachemaxsize    2055
-	ns_param   cachemaxentry   32
+	ns_param   cachemaxentry   3200
 	ns_param   mmap            false
     }
     mmap {

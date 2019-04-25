@@ -181,7 +181,7 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
 
         /*
          * We have multiple ranges; Construct the MIME headers for a
-         * multipart range against a 0 base and rebase after we've
+         * multipart range against a 0-base and rebase after we've
          * finished resizing the string.
          */
 
@@ -197,7 +197,9 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
             len += (size_t)AppendMultipartRangeHeader(dsPtr, type, start, end, objLength);
             dsbase += (off_t)Ns_SetFileVec(bufs, v, -1, NULL, dsbase, len);
 
-            /* Combine the footer with the next header. */
+            /*
+             * Combine the footer with the next header.
+             */
             Ns_DStringAppend(dsPtr, "\r\n");
             len = 2u;
         }
@@ -223,7 +225,9 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
             responseLength += Ns_SetFileVec(bufs, v + 1, fd, data, start, len);
         }
 
-        /* Rebase the trailer. */
+        /*
+         * Rebase the trailer.
+         */
         responseLength += Ns_SetFileVec(bufs, v, -1, dsPtr->string,
                                         bufs[v].offset, bufs[v].length);
         *nbufsPtr = (rangeCount * 2) + 1;
@@ -284,7 +288,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
     }
     rangestr += 6; /* Skip "bytes=" */
 
-    while (*rangestr != '\0' && rangeCount < (maxRanges-1)) {
+    while (*rangestr != '\0' && rangeCount < maxRanges) {
         Range *thisPtr;
 
         thisPtr = &ranges[rangeCount];

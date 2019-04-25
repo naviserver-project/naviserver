@@ -45,7 +45,7 @@ static Ns_ReturnCode ReturnOpen(Ns_Conn *conn, int status, const char *mimeType,
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 static Ns_ReturnCode ReturnRange(Ns_Conn *conn, const char *mimeType,
-                                 int fd, const void *data, size_t len)
+                                 int fd, const void *data, size_t dataLength)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
@@ -962,53 +962,59 @@ ReturnOpen(Ns_Conn *conn, int status, const char *mimeType, Tcl_Channel chan,
 
 static Ns_ReturnCode
 ReturnRange(Ns_Conn *conn, const char *mimeType,
-            int fd, const void *data, size_t len)
+            int fd, const void *data, size_t dataLength)
 {
     Ns_DString    ds;
-    Ns_FileVec    bufs[NS_MAX_RANGES*2];
-    int           nbufs = NS_MAX_RANGES*2, rangeCount;
+    Ns_FileVec    bufs[NS_MAX_RANGES * 2 + 1];
+    int           nbufs = NS_MAX_RANGES * 2, rangeCount;
     Ns_ReturnCode result = NS_ERROR;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(mimeType != NULL);
 
     Ns_DStringInit(&ds);
-    rangeCount = NsConnParseRange(conn, mimeType, fd, data, len,
-                                  bufs, &nbufs, &ds);
 
+    /*
+     * NsConnParseRange() returns in the provided bufs the content plus the
+     * separating (chunked) multipart headers and the multipart trailer. For
+     * this, it needs (NS_MAX_RANGES * 2 + 1) bufs.
+     */
+    rangeCount = NsConnParseRange(conn, mimeType, fd, data, dataLength,
+                                  bufs, &nbufs, &ds);
     /*
      * Don't use writer when only headers are returned
      */
     if ((conn->flags & NS_CONN_SKIPBODY) == 0u) {
-
         /*
+         * Return range based content.
+         *
          * We are able to handle the following cases via writer:
-         * - iovec based requests: all range request up to 32 ranges.
+         * - iovec based requests: all range request up to NS_MAX_RANGES ranges.
          * - fd based requests: 0 or 1 range requests
          */
         if (fd == NS_INVALID_FD) {
-            int nvbufs;
-            struct iovec vbuf[32];
+            struct iovec vbuf[NS_MAX_RANGES * 2 + 1];
 
             if (rangeCount == 0) {
-                nvbufs = 1;
+                nbufs = 1;
                 vbuf[0].iov_base = (void *)data;
-                vbuf[0].iov_len  = len;
+                vbuf[0].iov_len  = dataLength;
             } else {
                 int i;
 
-                nvbufs = rangeCount;
-                len = 0u;
-                for (i = 0; i < rangeCount; i++) {
+                dataLength = 0u;
+                for (i = 0; i < nbufs; i++) {
                     vbuf[i].iov_base = INT2PTR(bufs[i].offset);
                     vbuf[i].iov_len  = bufs[i].length;
-                    len += bufs[i].length;
+                    dataLength += bufs[i].length;
                 }
             }
 
-            if (NsWriterQueue(conn, len, NULL, NULL, fd, &vbuf[0], nvbufs, NS_FALSE) == NS_OK) {
+            if (NsWriterQueue(conn, dataLength, NULL, NULL, NS_INVALID_FD,
+                              vbuf, nbufs, NS_FALSE) == NS_OK) {
                 Ns_DStringFree(&ds);
                 return NS_OK;
+
             }
         } else if (rangeCount < 2) {
             if (rangeCount == 1) {
@@ -1016,9 +1022,9 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
                     Ns_Log(Warning, "seek operation with offset %" PROTd " failed: %s",
                            bufs[0].offset, strerror(errno));
                 }
-                len = bufs[0].length;
+                dataLength = bufs[0].length;
             }
-            if (NsWriterQueue(conn, len, NULL, NULL, fd, NULL, 0, NS_FALSE) == NS_OK) {
+            if (NsWriterQueue(conn, dataLength, NULL, NULL, fd, NULL, 0, NS_FALSE) == NS_OK) {
                 Ns_DStringFree(&ds);
                 return NS_OK;
             }
@@ -1027,19 +1033,20 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
 
     if (rangeCount >= 0) {
         if (rangeCount == 0) {
-            Ns_ConnSetLengthHeader(conn, len, NS_FALSE);
+            Ns_ConnSetLengthHeader(conn, dataLength, NS_FALSE);
 
             if ((conn->flags & NS_CONN_SKIPBODY) != 0u) {
-              len = 0u;
+              dataLength = 0u;
             }
 
-            (void) Ns_SetFileVec(bufs, 0, fd, data, 0, len);
+            (void) Ns_SetFileVec(bufs, 0, fd, data, 0, dataLength);
             nbufs = 1;
         }
         /*
          * Flush Headers and send file contents.
          */
         result = Ns_ConnWriteVData(conn, NULL, 0, NS_CONN_STREAM);
+
         if (result == NS_OK) {
             result = Ns_ConnSendFileVec(conn, bufs, nbufs);
         }
