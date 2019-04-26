@@ -65,6 +65,9 @@ static int AppendMultipartRangeTrailer(Ns_DString *dsPtr)
 static bool MatchRange(const Ns_Conn *conn, time_t mtime)
         NS_GNUC_NONNULL(1);
 
+static void InvalidSyntax(const char *rangeString, const char *headerString)
+        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 
 /*
  *----------------------------------------------------------------------
@@ -245,25 +248,36 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
  * ParseRangeOffsets --
  *
  *      Checks for presence of "Range:" header, parses it and fills-in
- *      the parsed range offsets.
+ *      the parsed range offsets. In case the syntax of the range
+ *      string specification is invalid, the range specification is
+ *      ignored.
  *
  * Results:
- *      -1 on error, otherwise number of valid ranges parsed.
+ *       -1 on syntactically correct but not satisfiable range requests,
+ *        otherwise number of valid ranges parsed.
  *
  * Side effects:
  *      May send error response if invalid range-spec.
  *
  *----------------------------------------------------------------------
  */
+static void
+InvalidSyntax(const char *rangeString, const char *headerString) {
+    Ns_Log(Warning, "invalid syntax (character %d, '%c' position %ld) in "
+           "range specification '%s'; ignore range",
+           *rangeString, *rangeString, rangeString - headerString, headerString);
+}
+
 
 static int
 ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
                   Range *ranges, int maxRanges)
 {
-    char   *rangestr;
-    off_t   start, end;
-    int     rangeCount = 0;
-    Range  *prevPtr = NULL;
+    char       *rangeString;
+    const char *rangeHeaderString;
+    off_t       start, end;
+    int         rangeCount = 0;
+    Range      *prevPtr = NULL;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(ranges != NULL);
@@ -272,40 +286,62 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
      * Check for valid "Range:" header
      */
 
-    rangestr = Ns_SetIGet(conn->headers, "Range");
-    if (rangestr == NULL) {
+    rangeString = Ns_SetIGet(conn->headers, "Range");
+    if (rangeString == NULL) {
         return 0;
     }
+    rangeHeaderString = rangeString;
 
     /*
      * Parse the header value and fill-in ranges.
      * See RFC 2616 "14.35.1 Byte Ranges" for the syntax.
      */
 
-    rangestr = strstr(rangestr, "bytes=");
-    if (rangestr == NULL) {
+    rangeString = strstr(rangeString, "bytes=");
+    if (rangeString == NULL) {
+        /*
+         * Syntactically incorrect range specifications are ignored:
+         *
+         * RFC 2626, 14.35: The recipient of a byte-range-set that
+         * includes one or more syntactically invalid byte-range-spec
+         * values MUST ignore the header field that includes that
+         * byte-range-set.
+         */
+        Ns_Log(Warning, "range specification does not start with 'bytes=': '%s'; ignore.",
+               rangeHeaderString);
         return 0;
     }
-    rangestr += 6; /* Skip "bytes=" */
+    rangeString += 6; /* Skip "bytes=" */
 
-    while (*rangestr != '\0' && rangeCount < maxRanges) {
+    while (*rangeString != '\0') {
         Range *thisPtr;
 
+        if (rangeCount == maxRanges) {
+            Ns_Log(Warning, "maximum number of ranges per request (%d) reached; "
+                   "truncate at maximum",
+                   maxRanges);
+            break;
+        }
+
         thisPtr = &ranges[rangeCount];
-        if (CHARTYPE(digit, *rangestr) != 0) {
+        if (CHARTYPE(digit, *rangeString) != 0) {
 
             /*
              * Parse: first-byte-pos "-" last-byte-pos
              */
 
-            start = (off_t)strtoll(rangestr, &rangestr, 10);
-            if (*rangestr != '-') {
-                return 0; /* Invalid syntax? */
+            start = (off_t)strtoll(rangeString, &rangeString, 10);
+            if (*rangeString != '-') {
+                /*
+                 * Invalid syntax.
+                 */
+                InvalidSyntax(rangeString, rangeHeaderString);
+                return 0;
             }
-            rangestr++; /* Skip '-' */
+            rangeString++; /* Skip '-' */
 
-            if (CHARTYPE(digit, *rangestr) != 0) {
-                end = (off_t)strtoll(rangestr, &rangestr, 10);
+            if (CHARTYPE(digit, *rangeString) != 0) {
+                end = (off_t)strtoll(rangeString, &rangeString, 10);
                 if (end >= (off_t)objLength) {
                   end = (off_t)objLength - 1;
                 }
@@ -313,18 +349,22 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
               end = (off_t)objLength - 1;
             }
 
-        } else if (*rangestr == '-') {
+        } else if (*rangeString == '-') {
 
             /*
              * Parse: "-" suffix-length
              */
 
-            rangestr++; /* Skip '-' */
-            if (CHARTYPE(digit, *rangestr) == 0) {
-                return 0; /* Invalid syntax? */
+            rangeString++; /* Skip '-' */
+            if (CHARTYPE(digit, *rangeString) == 0) {
+                /*
+                 * Invalid syntax.
+                 */
+                InvalidSyntax(rangeString, rangeHeaderString);
+                return 0;
             }
 
-            end = (off_t)strtoll(rangestr, &rangestr, 10);
+            end = (off_t)strtoll(rangeString, &rangeString, 10);
             if (end >= (off_t)objLength) {
               end = (off_t)objLength;
             }
@@ -341,7 +381,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
             /*
              * Not a digit and not a '-': invalid syntax.
              */
-
+            InvalidSyntax(rangeString, rangeHeaderString);
             return 0;
         }
 
@@ -349,14 +389,18 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
          * Check end of range_spec
          */
 
-        switch (*rangestr) {
+        switch (*rangeString) {
         case ',':
-            rangestr++;
+            rangeString++;
             break;
         case '\0':
             break;
         default:
-            return 0; /* Invalid syntax? */
+            /*
+             * Invalid syntax
+             */
+            InvalidSyntax(rangeString, rangeHeaderString);
+            return 0;
         }
 
         /*
@@ -396,8 +440,11 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
          *   or the byte-range-spec is syntactically invalid."
          *
          */
-
         if (end < start) {
+            Ns_Log(Warning, "invalid syntax: last byte position is smaller "
+                   "than first byte position in range specification '%s'; "
+                   "ignore range",
+                   rangeHeaderString);
             rangeCount = 0;
             break;
         }
@@ -414,11 +461,15 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
         if ((prevPtr == NULL)
             || (thisPtr->start > (prevPtr->end + 1))
             || (prevPtr->start != 0 && thisPtr->end < (prevPtr->start - 1))) {
-            /* a. */
+            /*
+             * case a.
+             */
             prevPtr = thisPtr;
             rangeCount++; /* One more valid range */
         } else {
-            /* b. */
+            /*
+             * case b.
+             */
             prevPtr->start = MIN(prevPtr->start, thisPtr->start);
             prevPtr->end   = MAX(prevPtr->end,   thisPtr->end);
         }
