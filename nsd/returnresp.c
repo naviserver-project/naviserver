@@ -76,11 +76,12 @@ static Ns_ReturnCode
 ConfigServerRedirects(const char *server)
 {
     NsServer     *servPtr = NsGetServer(server);
-    const Ns_Set *set;
-    const char   *path;
-    size_t        i;
 
     if (servPtr != NULL) {
+        const Ns_Set *set;
+        const char   *path;
+        size_t        i;
+
         Tcl_InitHashTable(&servPtr->request.redirect, TCL_ONE_WORD_KEYS);
 
         path = Ns_ConfigGetPath(server, NULL, "redirects", (char *)0L);
