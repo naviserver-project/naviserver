@@ -228,10 +228,11 @@ Ns_SockSendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
                 const Ns_Time *timeoutPtr, unsigned int flags)
 {
     int           sbufLen, sbufIdx = 0, nsbufs = 0, bufIdx = 0;
-    size_t        toWrite = 0u, nWrote = 0u;
+    size_t        toWrite = 0u;
+    ssize_t       nWrote = 0;
     struct iovec  sbufs[UIO_MAXIOV], *sbufPtr;
 
-    NS_NONNULL_ASSERT(sockPtr != NULL);
+    NS_NONNULL_ASSERT(sock != NULL);
     NS_NONNULL_ASSERT(bufs != NULL);
 
     assert(nbufs < 1);
@@ -276,7 +277,7 @@ Ns_SockSendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
         }
 
         toWrite -= (size_t)sent;
-        nWrote  += (size_t)sent;
+        nWrote  += sent;
 
         if (toWrite == 0u) {
             nsbufs = 0;
@@ -302,7 +303,7 @@ Ns_SockSendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
         sbufIdx = 0;
     }
 
-    return (ssize_t)nWrote;
+    return nWrote;
 }
 
 
