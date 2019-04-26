@@ -1393,11 +1393,6 @@ NS_EXTERN int NSDriverSockNew(Tcl_Interp *interp, NS_SOCKET sock,
                               Sock **sockPtrPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
 
-NS_EXTERN ssize_t NsSockSendFileBufsIndirect(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
-                                             const Ns_Time *timeoutPtr, unsigned int flags,
-                                             Ns_DriverSendProc *sendProc)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6);
-
 NS_EXTERN bool NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 

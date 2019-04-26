@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,7 +27,7 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
+/*
  * nssock.c --
  *
  *      Call internal Ns_DriverInit.
@@ -164,7 +164,7 @@ SockListen(Ns_Driver *driver, const char *address, unsigned short port, int back
  *
  *----------------------------------------------------------------------
  */
- 
+
 static NS_DRIVER_ACCEPT_STATUS
 SockAccept(Ns_Sock *sock, NS_SOCKET listensock,
            struct sockaddr *sockaddrPtr, socklen_t *socklenPtr)
@@ -176,7 +176,7 @@ SockAccept(Ns_Sock *sock, NS_SOCKET listensock,
     if (sock->sock != NS_INVALID_SOCKET) {
 
 #ifdef __APPLE__
-        /* 
+        /*
          * Darwin's poll returns per default writable in situations,
          * where nothing can be written.  Setting the socket option for
          * the send low watermark to 1 fixes this problem.
@@ -214,10 +214,10 @@ SockRecv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
          Ns_Time *timeoutPtr, unsigned int flags)
 {
     ssize_t n;
-    
+
     n = Ns_SockRecvBufs(sock->sock, bufs, nbufs, timeoutPtr, flags);
     if (n == 0) {
-        /* 
+        /*
          * n == 0 this means usually eof (peer closed connection), return
          * value of 0 means in the driver SOCK_MORE. In order to cause a close
          * of the socket, return -1, but clear the errno. This might not be
@@ -236,62 +236,65 @@ SockRecv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
  *
  * SockSend --
  *
- *      Send data from given buffers. There is no timeout handling in this
- *      function, the timoutvalue is ignored. In case of a EWOULDBOCK the
- *      error is passed to the caller, who has to handle this.
+ *      Send data from given buffers.
  *
  * Results:
- *      Total number of bytes sent or -1 on error.
+ *      Number of bytes sent, -1 on error.
+ *      May return 0 (zero) if socket is not writable.
  *
  * Side effects:
- *      Never blocks.
+ *      Timeout value and handling are ignored.
  *
  *----------------------------------------------------------------------
  */
 
 static ssize_t
-SockSend(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
+SockSend(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
          const Ns_Time *UNUSED(timeoutPtr), unsigned int flags)
 {
-    ssize_t   n;
+    ssize_t   sent = -1;
     bool      decork;
-    NS_SOCKET sock = sockPtr->sock;
 
-    decork = Ns_SockCork(sockPtr, NS_TRUE);
+    decork = Ns_SockCork(sock, NS_TRUE);
 
     {
 #ifdef _WIN32
-        DWORD bytesReceived;
+        DWORD bytesSent;
         int   rc;
 
-        rc = WSASend(sock, (LPWSABUF)bufs, nbufs, &bytesReceived, flags,
+        rc = WSASend(sock->sock, (LPWSABUF)bufs, nbufs, &bytesSent, flags,
                      NULL, NULL);
-        
-        if (rc == 0) {
-            n = bytesReceived;
+        if (rc == -1) {
+            if (GetLastError() == WSAEWOULDBLOCK) {
+                sent = 0;
+            }
         } else {
-            n = -1;
+            sent = (ssize_t)bytesSent;
         }
 #else
         struct msghdr msg;
-      
+
         memset(&msg, 0, sizeof(msg));
         msg.msg_iov = (struct iovec *)bufs;
-        msg.msg_iovlen = (NS_MSG_IOVLEN_T)nbufs;    
-
-        n = sendmsg(sock, &msg, (int)flags);
-    
-        if (n < 0) {
-            Ns_Log(Debug, "SockSend: %s",
-                   ns_sockstrerror(ns_sockerrno));
+        msg.msg_iovlen = (NS_MSG_IOVLEN_T)nbufs;
+        sent = sendmsg(sock->sock, &msg, (int)flags);
+        if (sent == -1) {
+            if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+               sent = 0;
+            }
         }
 #endif
     }
 
     if (decork) {
-        Ns_SockCork(sockPtr, NS_FALSE);
+        Ns_SockCork(sock, NS_FALSE);
     }
-    return n;
+
+    if (sent == -1) {
+        Ns_Log(Debug, "SockSend: %s", ns_sockstrerror(ns_sockerrno));
+    }
+
+    return sent;
 }
 
 
@@ -303,21 +306,22 @@ SockSend(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
  *      Send given file buffers directly to socket.
  *
  * Results:
- *      Total number of bytes sent or -1 on error or timeout.
+ *      Total number of bytes sent, -1 on error.
+ *      May return 0 (zero) if socket is not writable.
+ *
  *
  * Side effects:
- *      May block once for driver sendwait timeout seconds if first
- *      attempt would block.
- *      May block 1 or more times due to disk IO.
+ *      May block on disk IO.
+ *      Timeout value and handling are ignored.
  *
  *----------------------------------------------------------------------
  */
 
 static ssize_t
 SendFile(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs,
-         Ns_Time *timeoutPtr, unsigned int flags)
+         Ns_Time *UNUSED(timeoutPtr), unsigned int UNUSED(flags))
 {
-    return Ns_SockSendFileBufs(sock, bufs, nbufs, timeoutPtr, flags);
+    return Ns_SockSendFileBufs(sock, bufs, nbufs);
 }
 
 
@@ -364,7 +368,7 @@ static void
 SockClose(Ns_Sock *sock)
 {
     NS_NONNULL_ASSERT(sock != NULL);
-    
+
     if (sock->sock != NS_INVALID_SOCKET) {
         ns_sockclose(sock->sock);
         sock->sock = NS_INVALID_SOCKET;
@@ -379,7 +383,7 @@ SetNodelay(Ns_Driver *driver, NS_SOCKET sock)
     Config *cfg;
 
     NS_NONNULL_ASSERT(driver != NULL);
-    
+
     cfg = driver->arg;
     if (cfg->nodelay != 0) {
         int value = 1;

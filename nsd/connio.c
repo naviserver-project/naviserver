@@ -262,7 +262,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
     struct iovec  sbufs[32], *sbufPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
-    assert(nbufs < 1 || bufs != NULL);
+    NS_NONNULL_ASSERT(bufs != NULL);
 
     Ns_DStringInit(&ds);
 
@@ -496,8 +496,8 @@ ConnSend(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd)
  *
  * Ns_ConnSendFileVec --
  *
- *      Send a vector of file ranges/buffers. It promises to send all
- *      of it.
+ *      Send a vector of file buffers directly to the connection socket.
+ *      Promises to send all of the data.
  *
  * Results:
  *      NS_OK if all data sent, NS_ERROR otherwise.
@@ -511,37 +511,55 @@ ConnSend(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd)
 Ns_ReturnCode
 Ns_ConnSendFileVec(Ns_Conn *conn, Ns_FileVec *bufs, int nbufs)
 {
-    Conn        *connPtr = (Conn *) conn;
+    Conn        *connPtr;
+    Sock        *sockPtr;
     int          i;
-    size_t       toWrite, nwrote;
+    size_t       nwrote = 0, towrite = 0;
+    Ns_Time      tout;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(bufs != NULL);
 
-    nwrote = 0u;
-    toWrite = 0u;
+    connPtr = (Conn *)conn;
+    sockPtr = (Sock *)connPtr->sockPtr;
+
+    NS_NONNULL_ASSERT(sockPtr != NULL);
+    NS_NONNULL_ASSERT(sockPtr->drvPtr != NULL);
+
+    tout.sec  = sockPtr->drvPtr->sendwait;
+    tout.usec = 0;
 
     for (i = 0; i < nbufs; i++) {
-        toWrite += bufs[i].length;
+        towrite += bufs[i].length;
     }
 
-    while (toWrite > 0u) {
-        ssize_t sent = NsDriverSendFile(connPtr->sockPtr, bufs, nbufs, 0u);
+    while (towrite > 0u) {
+        ssize_t sent;
 
-        if (sent < 1) {
+        sent = NsDriverSendFile(sockPtr, bufs, nbufs, 0u);
+        if (sent == -1) {
             break;
         }
-        if ((size_t)sent < toWrite) {
-            (void)Ns_ResetFileVec(bufs, nbufs, (size_t)sent);
+        nwrote  += (size_t)sent;
+        towrite -= (size_t)sent;
+        if (towrite > 0u) {
+            Ns_Sock *sock = (Ns_Sock *)sockPtr;
+
+            if (sent > 0) {
+                (void)Ns_ResetFileVec(bufs, nbufs, (size_t)sent);
+            }
+            if (Ns_SockTimedWait(sock->sock, (unsigned int)NS_SOCK_WRITE,
+                                 &tout) != NS_OK) {
+                break;
+            }
         }
-        nwrote += (size_t)sent;
-        toWrite -= (size_t)sent;
     }
-    if (nwrote > 0u) {
+
+    if (likely(nwrote > 0u)) {
         connPtr->nContentSent += nwrote;
     }
 
-    return nwrote < toWrite ? NS_ERROR : NS_OK;
+    return (nwrote != towrite) ? NS_ERROR : NS_OK;
 }
 
 
@@ -614,16 +632,14 @@ Ns_ConnSendDString(Ns_Conn *conn, const Ns_DString *dsPtr)
  *
  * Ns_ConnSend --
  *
- *      Send buffers to client efficiently.
- *      It promises to send all of it.
+ *      Send buffers to the connection socket efficiently.
+ *      It promises to send all data.
  *
  * Results:
- *      Number of bytes of given buffers written, otherwise
- *      -1 on error from first send.
+ *      Number of bytes sent, -1 on error.
  *
  * Side effects:
- *      - Will update connPtr->nContentSent.
- *      - Also depends on configured comm driver, i.e. nssock, nsssl.
+ *      Will update connPtr->nContentSent.
  *
  *----------------------------------------------------------------------
  */
@@ -631,53 +647,46 @@ Ns_ConnSendDString(Ns_Conn *conn, const Ns_DString *dsPtr)
 ssize_t
 Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 {
-    Conn    *connPtr = (Conn *) conn;
-    ssize_t  result;
+    Conn    *connPtr;
+    ssize_t  sent = -1;
+    int      i;
+    size_t   towrite = 0u;
 
-    if (connPtr->sockPtr == NULL) {
-        result = -1;
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(bufs != NULL);
 
+    connPtr = (Conn *)conn;
+
+    for (i = 0; i < nbufs; i++) {
+        towrite += bufs[i].iov_len;
+    }
+
+    if (towrite == 0u) {
+        sent = 0;
+    } else if (NsWriterQueue(conn, towrite, NULL, NULL, NS_INVALID_FD,
+                             bufs, nbufs, NS_FALSE) == NS_OK) {
+        Ns_Log(Debug, "==== writer sent %" PRIuz " bytes\n", towrite);
+        sent = (ssize_t)towrite;
     } else {
-        int    i;
-        size_t toWrite = 0u;
+        Ns_Time  tout;
+        Sock    *sockPtr;
 
-        assert(nbufs <= 0 || bufs != NULL);
+        sockPtr = connPtr->sockPtr;
 
-        for (i = 0; i < nbufs; i++) {
-            toWrite += bufs[i].iov_len;
-        }
+        NS_NONNULL_ASSERT(sockPtr != NULL);
+        NS_NONNULL_ASSERT(sockPtr->drvPtr != NULL);
 
-        if (toWrite == 0u) {
-            /*
-             * Nothing to do.
-             */
-            result = 0;
+        tout.sec  = sockPtr->drvPtr->sendwait;
+        tout.usec = 0;
 
-        } else if (NsWriterQueue(conn, toWrite, NULL, NULL, -1, bufs, nbufs, NS_FALSE) == NS_OK) {
-            Ns_Log(Debug, "==== writer sent %" PRIuz " bytes\n", toWrite);
-            result = (ssize_t)toWrite;
+        sent = Ns_SockSendBufs((Ns_Sock*)sockPtr, bufs, nbufs, &tout, 0u);
 
-        } else {
-            Ns_Time timeout;
-            ssize_t  sent;
-
-            /*
-             * Perform the actual send operation.
-             */
-            timeout.sec = connPtr->sockPtr->drvPtr->sendwait;
-            timeout.usec = 0;
-
-            sent = Ns_SockSendBufs((Ns_Sock*)connPtr->sockPtr, bufs, nbufs, &timeout, 0u);
-            if (likely(sent > 0)) {
-                /*
-                 * Update counters.
-                 */
-                connPtr->nContentSent += (size_t)sent;
-            }
-            result = sent;
+        if (likely(sent > 0)) {
+            connPtr->nContentSent += (size_t)sent;
         }
     }
-    return result;
+
+    return sent;
 }
 
 

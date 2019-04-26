@@ -955,8 +955,6 @@ ReturnOpen(Ns_Conn *conn, int status, const char *mimeType, Tcl_Channel chan,
  * Side effects:
  *      May send various HTTP error responses.
  *
- *      Will close the connection.
- *
  *----------------------------------------------------------------------
  */
 
@@ -981,19 +979,31 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
      */
     rangeCount = NsConnParseRange(conn, mimeType, fd, data, dataLength,
                                   bufs, &nbufs, &ds);
+
+    if (rangeCount == -1) {
+        Ns_DStringFree(&ds);
+        return NS_ERROR;
+    }
+
     /*
-     * Don't use writer when only headers are returned
+     * Don't use writer thread when only headers are returned.
      */
+
     if ((conn->flags & NS_CONN_SKIPBODY) == 0u) {
+
         /*
          * Return range based content.
          *
          * We are able to handle the following cases via writer:
-         * - iovec based requests: all range request up to NS_MAX_RANGES ranges.
-         * - fd based requests: 0 or 1 range requests
+         *
+         * - iovec based requests: up to NS_MAX_RANGES ranges
+         * - fd based requests: 0 (= whole file) or 1 range(s)
+         *
+         * All other cases: default to the Ns_ConnSendFileVec().
          */
-        if (fd == NS_INVALID_FD) {
-            struct iovec vbuf[NS_MAX_RANGES * 2 + 1];
+
+        if (fd == NS_INVALID_FD && rangeCount < NS_MAX_RANGES) {
+            struct iovec vbuf[NS_MAX_RANGES *2 + 1];
 
             if (rangeCount == 0) {
                 nbufs = 1;
@@ -1009,48 +1019,55 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
                     dataLength += bufs[i].length;
                 }
             }
-
             if (NsWriterQueue(conn, dataLength, NULL, NULL, NS_INVALID_FD,
                               vbuf, nbufs, NS_FALSE) == NS_OK) {
                 Ns_DStringFree(&ds);
                 return NS_OK;
 
             }
-        } else if (rangeCount < 2) {
+        } else if (fd != NS_INVALID_FD && rangeCount < 2) {
             if (rangeCount == 1) {
                 if (ns_lseek(fd, bufs[0].offset, SEEK_SET) == -1) {
-                    Ns_Log(Warning, "seek operation with offset %" PROTd " failed: %s",
-                           bufs[0].offset, strerror(errno));
+
+                    /*
+                     * TODO:
+                     * What is with error string on Windows?
+                     */
+
+                    Ns_Log(Warning, "seek operation with offset %" PROTd
+                           " failed: %s", bufs[0].offset, strerror(errno));
+                    Ns_DStringFree(&ds);
+                    return NS_ERROR;
                 }
                 dataLength = bufs[0].length;
             }
-            if (NsWriterQueue(conn, dataLength, NULL, NULL, fd, NULL, 0, NS_FALSE) == NS_OK) {
+            if (NsWriterQueue(conn, dataLength, NULL, NULL, fd, NULL, 0,
+                              NS_FALSE) == NS_OK) {
                 Ns_DStringFree(&ds);
                 return NS_OK;
             }
         }
     }
 
-    if (rangeCount >= 0) {
-        if (rangeCount == 0) {
-            Ns_ConnSetLengthHeader(conn, dataLength, NS_FALSE);
-
-            if ((conn->flags & NS_CONN_SKIPBODY) != 0u) {
-              dataLength = 0u;
-            }
-
-            (void) Ns_SetFileVec(bufs, 0, fd, data, 0, dataLength);
-            nbufs = 1;
+    if (rangeCount == 0) {
+        Ns_ConnSetLengthHeader(conn, dataLength, NS_FALSE);
+        if ((conn->flags & NS_CONN_SKIPBODY) != 0u) {
+            dataLength = 0u;
         }
-        /*
-         * Flush Headers and send file contents.
-         */
-        result = Ns_ConnWriteVData(conn, NULL, 0, NS_CONN_STREAM);
-
-        if (result == NS_OK) {
-            result = Ns_ConnSendFileVec(conn, bufs, nbufs);
-        }
+        (void) Ns_SetFileVec(bufs, 0, fd, data, 0, dataLength);
+        nbufs = 1;
     }
+
+    /*
+     * Flush Headers and send file contents.
+     */
+
+    result = Ns_ConnWriteVData(conn, NULL, 0, NS_CONN_STREAM);
+
+    if (result == NS_OK) {
+        result = Ns_ConnSendFileVec(conn, bufs, nbufs);
+    }
+
     Ns_DStringFree(&ds);
 
     return result;

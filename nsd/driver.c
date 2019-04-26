@@ -1665,10 +1665,11 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
  *      Write a vector of buffers to the socket via the driver callback.
  *
  * Results:
- *      Number of bytes written, or -1 on error.
+ *      Number of bytes written or -1 on error.
+ *      May not send all the data.
  *
  * Side effects:
- *      Depends on driver.
+ *      Depends on the driver.
  *
  *----------------------------------------------------------------------
  */
@@ -1676,16 +1677,14 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
 ssize_t
 NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flags)
 {
-    Ns_Time       timeout;
-    ssize_t       result;
+    ssize_t       sent = -1;
     const Driver *drvPtr;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
-    assert(sockPtr->drvPtr != NULL);
 
     drvPtr = sockPtr->drvPtr;
-    timeout.sec = drvPtr->sendwait;
-    timeout.usec = 0;
+
+    NS_NONNULL_ASSERT(drvPtr != NULL);
 
 #if 0
     fprintf(stderr, "NsDriverSend: nbufs %d\n", nbufs);
@@ -1700,14 +1699,19 @@ NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int fl
 #endif
 
     if (likely(drvPtr->sendProc != NULL)) {
-        result = (*drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
-                                     &timeout, flags);
+        Ns_Time time = {0, 0};
+
+        /*
+         * The Ns_DriverSendProc signature should be modified
+         * to omit the timeout argument.
+         */
+
+        sent = (*drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs, &time, flags);
     } else {
-        Ns_Log(Warning, "connchan: no sendProc registered for driver %s", drvPtr->threadName);
-        result = -1;
+        Ns_Log(Warning, "no sendProc registered for driver %s", drvPtr->threadName);
     }
 
-    return result;
+    return sent;
 }
 
 
@@ -1717,14 +1721,14 @@ NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int fl
  * NsDriverSendFile --
  *
  *      Write a vector of file buffers to the socket via the driver
- *      callback. Fallback to default implementation if driver does
- *      not supply one.
+ *      callback.
  *
  * Results:
- *      Number of bytes written, or -1 on error.
+ *      Number of bytes written, -1 on error.
+ *      May not send all the data.
  *
  * Side effects:
- *      May block on disk I/O.
+ *      May block on disk read.
  *
  *----------------------------------------------------------------------
  */
@@ -1732,22 +1736,30 @@ NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int fl
 ssize_t
 NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
 {
-    const Driver *drvPtr = sockPtr->drvPtr;
-    ssize_t       n;
-    Ns_Time       timeout;
+    ssize_t       sent = -1;
+    const Driver *drvPtr;
 
-    timeout.sec = drvPtr->sendwait;
-    timeout.usec = 0;
+    NS_NONNULL_ASSERT(sockPtr != NULL);
+
+    drvPtr = sockPtr->drvPtr;
+
+    NS_NONNULL_ASSERT(drvPtr != NULL);
+
 
     if (drvPtr->sendFileProc != NULL) {
-        n = (*drvPtr->sendFileProc)((Ns_Sock *) sockPtr, bufs, nbufs,
-                                    &timeout, flags);
+        Ns_Time time = {0, 0};
+
+        /*
+         * The Ns_DriverSendFileProc signature should be modified
+         * to omit the timeout argument.
+         */
+
+        sent = (*drvPtr->sendFileProc)((Ns_Sock *)sockPtr, bufs, nbufs, &time, flags);
     } else {
-        n = NsSockSendFileBufsIndirect((Ns_Sock *) sockPtr, bufs, nbufs,
-                                       &timeout, flags,
-                                       drvPtr->sendProc);
+        sent = Ns_SockSendFileBufs((Ns_Sock *)sockPtr, bufs, nbufs);
     }
-    return n;
+
+    return sent;
 }
 
 
@@ -2973,7 +2985,8 @@ SockError(Sock *sockPtr, SockState reason, int err)
  *      None.
  *
  * Side effects:
- *      FIXME: This may block the driver thread.
+ *      May not sent the complete response to the client
+ *      if encountering non-writable connection socket.
  *
  *----------------------------------------------------------------------
  */
@@ -2983,33 +2996,23 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
 {
     struct iovec iov[3];
     char         header[32];
-    ssize_t      sent;
-    const char  *response;
+    ssize_t      sent, tosend;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
+    NS_NONNULL_ASSERT(errMsg != NULL);
 
-    switch (code) {
-    case 413:
-        response = "Request Entity Too Large";
-        break;
-    case 414:
-        response = "Request-URI Too Long";
-        break;
-    case 400: /* fall through */
-    default:
-        response = "Bad Request";
-        break;
-    }
     snprintf(header, sizeof(header), "HTTP/1.0 %d ", code);
     iov[0].iov_base = header;
     iov[0].iov_len  = strlen(header);
-    iov[1].iov_base = (void *)response;
-    iov[1].iov_len  = strlen(response);
+    iov[1].iov_base = (void *)errMsg;
+    iov[1].iov_len  = strlen(errMsg);
     iov[2].iov_base = (void *)"\r\n\r\n";
     iov[2].iov_len  = 4u;
+    tosend = (ssize_t)(iov[0].iov_len + iov[1].iov_len + iov[2].iov_len);
     sent = NsDriverSend(sockPtr, iov, 3, 0u);
-    if (sent < (ssize_t)(iov[0].iov_len + iov[1].iov_len + iov[2].iov_len)) {
-        Ns_Log(Warning, "Driver: partial write while sending error reply");
+    if (sent < tosend) {
+        Ns_Log(Warning, "Driver: partial write while sending response;"
+               " %" PRIdz " < %" PRIdz, sent, tosend);
     }
 
     if (sockPtr->reqPtr != NULL) {
@@ -4636,14 +4639,14 @@ WriterReadFromSpool(WriterSock *curPtr) {
  * WriterSend --
  *
  *      Utility function of the WriterThread to send content to the
- *      client. It handles partial reads from the lower level
+ *      client. It handles partial reads from the lower level driver
  *      infrastructure.
  *
  * Results:
  *      either NS_OK or SOCK_ERROR;
  *
  * Side effects:
- *      sends data, might reshuffle iovec.
+ *      Sends data, might reshuffle iovec.
  *
  *----------------------------------------------------------------------
  */
@@ -4716,12 +4719,12 @@ WriterSend(WriterSock *curPtr, int *err) {
 
     n = NsDriverSend(curPtr->sockPtr, bufs, nbufs, 0u);
 
-    if (n < 0) {
-        *err = errno;
+    if (n == -1) {
+        *err = ns_sockerrno;
         status = SPOOLER_WRITEERROR;
     } else {
         /*
-         * We have sent something.
+         * We have sent zero or more bytes.
          */
         if (curPtr->doStream != NS_WRITER_STREAM_NONE) {
             Ns_MutexLock(&curPtr->c.file.fdlock);
@@ -5498,7 +5501,8 @@ WriterSubmitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             vbuf.iov_base = (void *)data;
             vbuf.iov_len = (size_t)size;
 
-            status = NsWriterQueue(conn, (size_t)size, NULL, NULL, -1, &vbuf, 1, NS_TRUE);
+            status = NsWriterQueue(conn, (size_t)size, NULL, NULL, NS_INVALID_FD,
+                                   &vbuf, 1, NS_TRUE);
             Tcl_SetObjResult(interp, Tcl_NewBooleanObj(status == NS_OK ? 1 : 0));
         }
     }

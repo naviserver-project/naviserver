@@ -403,7 +403,7 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int backlog,
 
         (void) Ns_SockSetNonBlocking(sock);
         if (cfg->deferaccept) {
-          Ns_SockSetDeferAccept(sock, driver->recvwait);
+            Ns_SockSetDeferAccept(sock, driver->recvwait);
         }
     }
     return sock;
@@ -487,7 +487,8 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
  */
 
 static ssize_t
-Recv(Ns_Sock *sock, struct iovec *bufs, int UNUSED(nbufs), Ns_Time *UNUSED(timeoutPtr), unsigned int UNUSED(flags))
+Recv(Ns_Sock *sock, struct iovec *bufs, int UNUSED(nbufs),
+     Ns_Time *UNUSED(timeoutPtr), unsigned int UNUSED(flags))
 {
     SSLDriver *drvPtr = sock->driver->arg;
     SSLContext *sslPtr = sock->arg;
@@ -505,13 +506,15 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int UNUSED(nbufs), Ns_Time *UNUSED(timeo
              if (SSL_get_verify_result(sslPtr->ssl) != X509_V_OK) {
                  char ipString[NS_IPADDR_SIZE];
                  Ns_Log(Error, "nsssl: client certificate not valid by %s",
-                        ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString, sizeof(ipString)));
+                        ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString,
+                                     sizeof(ipString)));
                  return NS_ERROR;
              }
         } else {
             char ipString[NS_IPADDR_SIZE];
             Ns_Log(Error, "nsssl: no client certificate provided by %s",
-                   ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString, sizeof(ipString)));
+                   ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString,
+                                sizeof(ipString)));
             return NS_ERROR;
         }
         sslPtr->verified = 1;
@@ -562,7 +565,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int UNUSED(nbufs), Ns_Time *UNUSED(timeo
  *      Send data from given buffers.
  *
  * Results:
- *      Total number of bytes sent or -1 on error or timeout.
+ *      Total number of bytes sent, -1 on error.
  *
  * Side effects:
  *      None
@@ -575,32 +578,27 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
      const Ns_Time *UNUSED(timeoutPtr), unsigned int UNUSED(flags))
 {
     SSLContext *sslPtr = sock->arg;
-    int         rc, size;
+    ssize_t     sent = 0;
     bool        decork;
 
-    size = 0;
     decork = Ns_SockCork(sock, NS_TRUE);
+
     while (nbufs > 0) {
         if (bufs->iov_len > 0) {
+            int rc;
             ERR_clear_error();
             rc = SSL_write(sslPtr->ssl, bufs->iov_base, (int)bufs->iov_len);
-
-            if (rc < 0) {
-                if (SSL_get_error(sslPtr->ssl, rc) == SSL_ERROR_WANT_WRITE) {
-                    Ns_Time timeout = { sock->driver->sendwait, 0 };
-                    if (Ns_SockTimedWait(sock->sock, NS_SOCK_WRITE, &timeout) == NS_OK) {
-                        continue;
-                    }
+            if (rc <= 0) {
+                if (SSL_get_error(sslPtr->ssl, rc) != SSL_ERROR_WANT_WRITE) {
+                    SSL_set_shutdown(sslPtr->ssl, SSL_RECEIVED_SHUTDOWN);
+                    sent = -1;
                 }
-                if (decork) {
-                    Ns_SockCork(sock, NS_FALSE);
-                }
-                SSL_set_shutdown(sslPtr->ssl, SSL_RECEIVED_SHUTDOWN);
-                return -1;
+                break;
             }
-            size += rc;
+            sent += (ssize_t)rc;
             if (rc < (int)bufs->iov_len) {
-                Ns_Log(Debug, "SSL: partial write, wanted %" PRIuz " wrote %d", bufs->iov_len, rc);
+                Ns_Log(Debug, "SSL: partial write, wanted %" PRIuz " wrote %d",
+                       bufs->iov_len, rc);
                 break;
             }
         }
@@ -611,7 +609,8 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
     if (decork) {
         Ns_SockCork(sock, NS_FALSE);
     }
-    return size;
+
+    return sent;
 }
 
 
