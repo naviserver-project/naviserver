@@ -228,9 +228,12 @@ CheckCompress(const Conn *connPtr, const struct iovec *bufs, int nbufs, unsigned
  *
  * Ns_ConnWriteData, Ns_ConnWriteVData --
  *
- *      Send one or more buffers of raw bytes to the client, possibly
+ *      Send zero or more buffers of raw bytes to the client, possibly
  *      using the HTTP chunked encoding if flags includes
  *      NS_CONN_STREAM.
+ *
+ *      Ns_ConnWriteVData() is called with (nbufs == 0) to flush
+ *      headers.
  *
  * Results:
  *      NS_OK if all data written, NS_ERROR otherwise.
@@ -262,7 +265,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
     struct iovec  sbufs[32], *sbufPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
-    NS_NONNULL_ASSERT(bufs != NULL);
+    //NS_NONNULL_ASSERT(bufs != NULL);
 
     Ns_DStringInit(&ds);
 
@@ -653,7 +656,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
     size_t   towrite = 0u;
 
     NS_NONNULL_ASSERT(conn != NULL);
-    NS_NONNULL_ASSERT(bufs != NULL);
+    //NS_NONNULL_ASSERT(bufs != NULL);
 
     connPtr = (Conn *)conn;
 

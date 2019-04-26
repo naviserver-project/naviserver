@@ -235,7 +235,7 @@ Ns_SockSendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
     NS_NONNULL_ASSERT(sock != NULL);
     NS_NONNULL_ASSERT(bufs != NULL);
 
-    assert(nbufs < 1);
+    assert(nbufs >= 1);
 
     sbufPtr = sbufs;
     sbufLen = UIO_MAXIOV;
