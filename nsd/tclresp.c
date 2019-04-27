@@ -74,7 +74,7 @@ int
 NsTclHeadersObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Ns_Conn    *conn = NULL;
-    int         httpStatus, length = -1, binary = (int)NS_FALSE, result;
+    int         httpStatus = 0, length = -1, binary = (int)NS_FALSE, result;
     char       *mimeType = NULL;
 
     Ns_ObjvSpec opts[] = {
@@ -340,7 +340,7 @@ NsTclReturnObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     Ns_Conn    *conn = NULL;
     Tcl_Obj    *dataObj;
     char       *type;
-    int         result, httpStatus, len, binary = (int)NS_FALSE;
+    int         result, httpStatus = 0, len, binary = (int)NS_FALSE;
 
     Ns_ObjvSpec opts[] = {
         {"-binary",  Ns_ObjvBool, &binary, INT2PTR(NS_TRUE)},
@@ -547,7 +547,7 @@ NsTclReturnFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 int
 NsTclReturnFpObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int           len, httpStatus, result;
+    int           len = 0, httpStatus = 0, result;
     char         *mimeType, *channelName;
     Ns_Conn      *conn = NULL;
     Tcl_Channel   chan = NULL;
@@ -597,7 +597,7 @@ NsTclConnSendFpObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 {
     Ns_Conn     *conn = NULL;
     Tcl_Channel  chan = NULL;
-    int          len, result;
+    int          len = 0, result;
     char        *channelName;
     Ns_ObjvSpec  args[] = {
         {"channel", Ns_ObjvString,  &channelName, NULL},
@@ -759,7 +759,7 @@ NsTclReturnTooLargeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
 int
 NsTclReturnErrorObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int          httpStatus, result;
+    int          httpStatus = 0, result;
     Ns_Conn     *conn = NULL;
     char        *message;
     Ns_ObjvSpec  args[] = {

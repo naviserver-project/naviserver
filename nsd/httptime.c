@@ -340,7 +340,7 @@ NsTclParseHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int 
 int
 NsTclHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int         result = TCL_OK, itime;
+    int         result = TCL_OK, itime = 0;
     Ns_ObjvSpec args[] = {
         {"time", Ns_ObjvInt,  &itime, NULL},
         {NULL, NULL, NULL, NULL}

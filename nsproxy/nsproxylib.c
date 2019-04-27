@@ -1345,7 +1345,7 @@ SendBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr)
 static bool
 RecvBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr)
 {
-    uint32       ulen;
+    uint32       ulen = 0u;
     ssize_t      n;
     size_t       avail;
     struct iovec iov[2];

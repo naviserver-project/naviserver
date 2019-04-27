@@ -333,7 +333,7 @@ NsTclSockListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 {
     char          *addr;
     int            result;
-    unsigned short port;
+    unsigned short port = 0u;
     Ns_ObjvSpec    args[] = {
         {"address", Ns_ObjvString, &addr, NULL},
         {"port",    Ns_ObjvUShort, &port, NULL},
@@ -486,7 +486,7 @@ int
 NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char          *lhost = NULL, *host;
-    unsigned short lport = 0u, port;
+    unsigned short lport = 0u, port = 0u;
     int            nonblock = 0, async = 0, msec = -1, result;
     Ns_Time       *timeoutPtr = NULL;
 
@@ -901,7 +901,7 @@ int
 NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char           *addr, *script;
-    unsigned short  port;
+    unsigned short  port = 0u;
     int             result = TCL_OK;
     Ns_ObjvSpec     args[] = {
         {"address", Ns_ObjvString, &addr, NULL},

@@ -697,7 +697,7 @@ UpdateStringOfMemUnit(Tcl_Obj *objPtr)
 static int
 SetMemUnitFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 {
-    Tcl_WideInt memUnit;
+    Tcl_WideInt memUnit = 0;
     int         result = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);

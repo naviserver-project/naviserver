@@ -579,7 +579,7 @@ NsTclAdpPutsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 {
     NsInterp   *itPtr = clientData;
     char       *s;
-    int         length, nonewline = 0, result = TCL_OK;
+    int         length = 0, nonewline = 0, result = TCL_OK;
     Ns_ObjvSpec opts[] = {
         {"-nonewline", Ns_ObjvBool,  &nonewline, INT2PTR(NS_TRUE)},
         {"--",         Ns_ObjvBreak, NULL,       NULL},

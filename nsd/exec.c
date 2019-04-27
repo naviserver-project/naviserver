@@ -486,7 +486,7 @@ ExecProc(const char *exec, const char *dir, int fdin, int fdout, char **argv,
          char **envp)
 {
     struct iovec iov[2];
-    int    errpipe[2], errnum, result;
+    int    errpipe[2], errnum = 0, result = 0;
     pid_t  pid;
 
     /*

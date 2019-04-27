@@ -295,7 +295,7 @@ NsTclMkTempObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 int
 NsTclKillObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int         pid, sig, nocomplain = (int)NS_FALSE, result = TCL_OK;
+    int         pid = 0, sig = 0, nocomplain = (int)NS_FALSE, result = TCL_OK;
     Ns_ObjvSpec opts[] = {
         {"-nocomplain", Ns_ObjvBool,  &nocomplain, INT2PTR(NS_TRUE)},
         {NULL, NULL,  NULL, NULL}

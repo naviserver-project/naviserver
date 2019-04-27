@@ -1051,7 +1051,7 @@ static int
 ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int            result, doBind = (int)NS_FALSE;
-    unsigned short port;
+    unsigned short port = 0u;
     char          *driverName = NULL, *serverName = NULL, *addr, *script;
     Ns_ObjvSpec    lopts[] = {
         {"-driver",  Ns_ObjvString, &driverName, NULL},
@@ -1385,7 +1385,7 @@ static int
 ConnChanCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int      result = TCL_OK;
-    char    *name, *script, *whenString;
+    char    *name, *script, *whenString = (char *)"";
     Ns_Time *pollTimeoutPtr = NULL, *recvTimeoutPtr = NULL, *sendTimeoutPtr = NULL;
 
     Ns_ObjvSpec lopts[] = {
