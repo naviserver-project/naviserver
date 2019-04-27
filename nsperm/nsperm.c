@@ -381,6 +381,10 @@ static Ns_ReturnCode AuthProc(const char *server, const char *method, const char
     const char *auth = NULL;
     Ns_Conn       *conn = Ns_GetConn();
 
+    if (conn == NULL) {
+        Ns_Log(Error, "nsperm: authProc called without connection");
+        return NS_ERROR;
+    }
     if (user == NULL) {
         user = "";
     }

@@ -368,7 +368,7 @@ int
 NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK, lineWidth = 80, offset = 0;
-    char        *textString = NULL, *prefixString = NULL;
+    char        *textString = (char *)NS_EMPTY_STRING, *prefixString = NULL;
     Ns_ObjvSpec opts[] = {
         {"-width",  Ns_ObjvInt,     &lineWidth,    NULL},
         {"-offset", Ns_ObjvInt,     &offset,       NULL},
@@ -529,7 +529,7 @@ int
 NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
-    char        *htmlString = NULL;
+    char        *htmlString = (char *)NS_EMPTY_STRING;
     Ns_ObjvSpec  args[] = {
         {"html", Ns_ObjvString,  &htmlString, NULL},
         {NULL, NULL, NULL, NULL}
@@ -550,8 +550,6 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         /*
          * Make a copy of the input and point the moving and output ptrs to it.
          */
-        assert(htmlString != NULL);
-
         inString   = ns_strdup(htmlString);
         inPtr      = inString;
         outPtr     = inString;
@@ -933,7 +931,7 @@ int
 NsTclHrefsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
-    char        *htmlString = NULL;
+    char        *htmlString = (char *)NS_EMPTY_STRING;
     Ns_ObjvSpec  args[] = {
         {"html", Ns_ObjvString,  &htmlString, NULL},
         {NULL, NULL, NULL, NULL}
@@ -946,8 +944,6 @@ NsTclHrefsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         char       *s, *e;
         const char *p;
         Tcl_Obj    *listObj = Tcl_NewListObj(0, NULL);
-
-        assert(htmlString != NULL);
 
         p = htmlString;
         while (((s = strchr(p, INTCHAR('<'))) != NULL) && ((e = strchr(s, INTCHAR('>'))) != NULL)) {

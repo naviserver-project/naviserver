@@ -250,7 +250,7 @@ int
 NsTclMkTempObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
-    char        *templateString = NULL;
+    char        *templateString = (char *)NS_EMPTY_STRING;
     Ns_ObjvSpec  args[] = {
         {"?template", Ns_ObjvString, &templateString, NULL},
         {NULL, NULL, NULL, NULL}

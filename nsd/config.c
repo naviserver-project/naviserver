@@ -876,7 +876,7 @@ static int
 ParamObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
-    char       *paramName = NULL, *paramValue = NULL;
+    char       *paramName = (char *)NS_EMPTY_STRING, *paramValue = (char *)NS_EMPTY_STRING;
     Ns_ObjvSpec args[] = {
         {"name",  Ns_ObjvString,  &paramName, NULL},
         {"value", Ns_ObjvString,  &paramValue, NULL},

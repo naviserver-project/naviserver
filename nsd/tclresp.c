@@ -505,7 +505,7 @@ int
 NsTclReturnFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Ns_Conn      *conn = NULL;
-    int           httpStatus, result;
+    int           httpStatus = 0, result;
     char         *mimeType, *fileName;
     Ns_ObjvSpec   args[] = {
         {"status",   Ns_ObjvInt,    &httpStatus,   NULL},
@@ -838,7 +838,7 @@ int
 NsTclReturnNoticeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Ns_Conn      *conn = NULL;
-    int           httpStatus, result;
+    int           httpStatus = 0, result;
     char         *title, *message;
     Ns_ObjvSpec   args[] = {
         {"status",   Ns_ObjvInt,    &httpStatus,   NULL},

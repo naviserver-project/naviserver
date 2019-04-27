@@ -451,7 +451,7 @@ void
 Ns_UrlSpecificSet(const char *server, const char *method, const char *url, int id,
                   void *data, unsigned int flags, void (*deletefunc) (void *data))
 {
-    NsServer   *servPtr;
+    NsServer *servPtr;
 
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(method != NULL);
@@ -499,16 +499,23 @@ Ns_UrlSpecificSet(const char *server, const char *method, const char *url, int i
 void *
 Ns_UrlSpecificGet(const char *server, const char *method, const char *url, int id)
 {
+    NsServer *servPtr;
+
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(method != NULL);
     NS_NONNULL_ASSERT(url != NULL);
 
-    return NsUrlSpecificGet(NsGetServer(server), method, url, id, 0u, NS_URLSPACE_DEFAULT);
+    servPtr = NsGetServer(server);
+    return (likely(servPtr != NULL)) ?
+        NsUrlSpecificGet(servPtr, method, url, id, 0u, NS_URLSPACE_DEFAULT)
+        : NULL;
 }
 
 void *
 Ns_UrlSpecificGetFast(const char *server, const char *method, const char *url, int id)
 {
+    NsServer *servPtr;
+
    /*
     * Deprecated Function. Use Ns_UrlSpecificGet()
     */
@@ -516,18 +523,26 @@ Ns_UrlSpecificGetFast(const char *server, const char *method, const char *url, i
     NS_NONNULL_ASSERT(method != NULL);
     NS_NONNULL_ASSERT(url != NULL);
 
-    return NsUrlSpecificGet(NsGetServer(server), method, url, id, 0u, NS_URLSPACE_FAST);
+    servPtr = NsGetServer(server);
+    return likely(servPtr != NULL) ?
+        NsUrlSpecificGet(servPtr, method, url, id, 0u, NS_URLSPACE_FAST)
+        : NULL;
 }
 
 void *
 Ns_UrlSpecificGetExact(const char *server, const char *method, const char *url,
                        int id, unsigned int flags)
 {
+    NsServer *servPtr;
+
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(method != NULL);
     NS_NONNULL_ASSERT(url != NULL);
 
-    return NsUrlSpecificGet(NsGetServer(server), method, url, id, flags, NS_URLSPACE_EXACT);
+    servPtr = NsGetServer(server);
+    return likely(servPtr != NULL) ?
+        NsUrlSpecificGet(servPtr, method, url, id, flags, NS_URLSPACE_EXACT)
+        : NULL;
 }
 
 
@@ -672,28 +687,32 @@ Ns_UrlSpecificDestroy(const char *server, const char *method, const char *url,
 void
 Ns_UrlSpecificWalk(int id, const char *server, Ns_ArgProc func, Tcl_DString *dsPtr)
 {
-    const Junction *juncPtr;
-    const Channel  *channelPtr;
-    size_t          n, i;
-    char           *stack[STACK_SIZE];
+    NsServer *servPtr;
 
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(func != NULL);
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
-    juncPtr = JunctionGet(NsGetServer(server), id);
-    memset(stack, 0, sizeof(stack));
+    servPtr = NsGetServer(server);
+    if (likely(servPtr != NULL)) {
+        size_t          n, i;
+        char           *stack[STACK_SIZE];
+        const Channel  *channelPtr;
+        const Junction *juncPtr = JunctionGet(servPtr, id);
+
+        memset(stack, 0, sizeof(stack));
 
 #ifndef __URLSPACE_OPTIMIZE__
-    n = Ns_IndexCount(&juncPtr->byuse);
-    for (i = 0u; i < n; i++) {
-        channelPtr = Ns_IndexEl(&juncPtr->byuse, i);
+        n = Ns_IndexCount(&juncPtr->byuse);
+        for (i = 0u; i < n; i++) {
+            channelPtr = Ns_IndexEl(&juncPtr->byuse, i);
 #else
-    n = Ns_IndexCount(&juncPtr->byname);
-    for (i = n; i > 0u; i--) {
-        channelPtr = Ns_IndexEl(&juncPtr->byname, i - 1u);
+        n = Ns_IndexCount(&juncPtr->byname);
+        for (i = n; i > 0u; i--) {
+            channelPtr = Ns_IndexEl(&juncPtr->byname, i - 1u);
 #endif
-        WalkTrie(&channelPtr->trie, func, dsPtr, stack, channelPtr->filter);
+            WalkTrie(&channelPtr->trie, func, dsPtr, stack, channelPtr->filter);
+        }
     }
 }
 

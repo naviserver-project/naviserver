@@ -1467,7 +1467,7 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 static int
 CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int                result, outLength;
+    int                result, outLength = 0;
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL, *infoObj = NULL;
     char              *digestName = (char *)"sha256", *outputEncodingString = NULL;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;

@@ -786,7 +786,11 @@ Ns_ReturnCode
 NsDbOpen(Ns_DbHandle *handle)
 {
     Ns_ReturnCode   status = NS_OK;
-    const DbDriver *driverPtr = NsDbGetDriver(handle);
+    const DbDriver *driverPtr;
+
+    NS_NONNULL_ASSERT(handle != NULL);
+
+    driverPtr = NsDbGetDriver(handle);
 
     Ns_Log(Notice, "dbdrv: opening database '%s:%s'", handle->driver,
            handle->datasource);
@@ -825,13 +829,19 @@ Ns_ReturnCode
 NsDbClose(Ns_DbHandle *handle)
 {
     const DbDriver *driverPtr = NsDbGetDriver(handle);
-    Ns_ReturnCode   status = NS_OK;
+    Ns_ReturnCode   status;
 
-    if (handle->connected
-        && driverPtr != NULL
-        && driverPtr->closeProc != NULL) {
+    if (unlikely(handle == NULL)) {
+        status = NS_ERROR;
+    } else {
+        if (handle->connected
+            && driverPtr != NULL
+            && driverPtr->closeProc != NULL) {
 
-        status = (*driverPtr->closeProc)(handle);
+            status = (*driverPtr->closeProc)(handle);
+        } else {
+            status = NS_OK;
+        }
     }
     return status;
 }
