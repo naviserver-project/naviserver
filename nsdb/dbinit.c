@@ -906,8 +906,11 @@ NsDbInitServer(const char *server)
 void
 NsDbDisconnect(Ns_DbHandle *handle)
 {
-    Handle *handlePtr = (Handle *) handle;
+    Handle *handlePtr;
 
+    NS_NONNULL_ASSERT(handle != NULL);
+
+    handlePtr = (Handle *) handle;
     (void)NsDbClose(handle);
 
     handlePtr->connected = NS_FALSE;
