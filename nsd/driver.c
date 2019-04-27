@@ -153,7 +153,7 @@ static void  SockRelease(Sock *sockPtr, SockState reason, int err)
 static void  SockError(Sock *sockPtr, SockState reason, int err)
     NS_GNUC_NONNULL(1);
 static void  SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 static void  SockTrigger(NS_SOCKET sock);
 static void  SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, long timeout)
     NS_GNUC_NONNULL(1);
