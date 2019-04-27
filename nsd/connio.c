@@ -651,7 +651,7 @@ ssize_t
 Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 {
     Conn    *connPtr;
-    ssize_t  sent = -1;
+    ssize_t  sent;
     int      i;
     size_t   towrite = 0u;
 

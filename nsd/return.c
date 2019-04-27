@@ -965,7 +965,7 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
     Ns_DString    ds;
     Ns_FileVec    bufs[NS_MAX_RANGES * 2 + 1];
     int           nbufs = NS_MAX_RANGES * 2, rangeCount;
-    Ns_ReturnCode result = NS_ERROR;
+    Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(mimeType != NULL);

@@ -156,7 +156,7 @@ Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
 ssize_t
 Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs)
 {
-    ssize_t       sent = -1, towrite = 0, nwrote = 0;
+    ssize_t       towrite = 0, nwrote = 0;
     struct iovec  sbufs[UIO_MAXIOV], *sbufPtr;
     int           nsbufs = 0, i;
 
@@ -189,7 +189,7 @@ Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs)
              * Flush pending memory buffers.
              */
 
-            sent = NsDriverSend((Sock *)sock, sbufPtr, nsbufs, 0u);
+            ssize_t sent = NsDriverSend((Sock *)sock, sbufPtr, nsbufs, 0u);
             if (sent == -1) {
                 nwrote = -1;
                 break;
@@ -208,7 +208,7 @@ Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs)
          */
 
         if (fd != NS_INVALID_FD) {
-            sent = SendFile(sock, fd, offset, length);
+            ssize_t sent = SendFile(sock, fd, offset, length);
             if (sent == -1) {
                 nwrote = -1;
                 break;
@@ -339,7 +339,7 @@ Ns_SockCork(const Ns_Sock *sock, bool cork)
 static ssize_t
 SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length)
 {
-    ssize_t sent = -1;
+    ssize_t sent;
 
     NS_NONNULL_ASSERT(sock != NULL);
 
@@ -395,7 +395,7 @@ _SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length)
 {
     char               buf[16384];
     struct iovec       iov;
-    ssize_t            sent = -1, nwrote = 0, toread = (ssize_t)length;
+    ssize_t            nwrote = 0, toread = (ssize_t)length;
     bool               decork;
     Sock              *sockPtr;
     Ns_DriverSendProc *sendProc;
@@ -417,7 +417,7 @@ _SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length)
     decork = Ns_SockCork(sock, NS_TRUE);
 
     while (toread > 0) {
-        ssize_t nread;
+        ssize_t nread, sent;
         Ns_Time tbuf = {0,0};
 
         nread = pread(fd, buf, MIN((size_t)toread, sizeof(buf)), offset);

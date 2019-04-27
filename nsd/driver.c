@@ -1736,7 +1736,7 @@ NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int fl
 ssize_t
 NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
 {
-    ssize_t       sent = -1;
+    ssize_t       sent;
     const Driver *drvPtr;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);

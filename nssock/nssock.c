@@ -252,7 +252,7 @@ static ssize_t
 SockSend(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
          const Ns_Time *UNUSED(timeoutPtr), unsigned int flags)
 {
-    ssize_t   sent = -1;
+    ssize_t   sent;
     bool      decork;
 
     decork = Ns_SockCork(sock, NS_TRUE);
@@ -267,6 +267,8 @@ SockSend(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
         if (rc == -1) {
             if (GetLastError() == WSAEWOULDBLOCK) {
                 sent = 0;
+            } else {
+                sent = -1;
             }
         } else {
             sent = (ssize_t)bytesSent;
