@@ -112,6 +112,8 @@ typedef struct ServData {
     const char *allowed;
 } ServData;
 
+const char *NS_EMPTY_STRING = "";
+
 /*
  * Local functions defined in this file
  */
@@ -469,7 +471,7 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
     if (ngot > 0) {
         Ns_Log(Error, "dbinit: db handle limit exceeded: "
                "thread already owns %d handle%s from pool '%s'",
-               ngot, ngot == 1 ? "" : "s", pool);
+               ngot, ngot == 1 ? NS_EMPTY_STRING : "s", pool);
         (void) IncrCount("Ns_DbPoolTimedGetMultipleHandles fail", poolPtr, -nwant);
         return NS_ERROR;
     }
@@ -842,7 +844,7 @@ NsDbInitServer(const char *server)
      * Construct the allowed list and call the server-specific init.
      */
 
-    sdataPtr->allowed = "";
+    sdataPtr->allowed = NS_EMPTY_STRING;
     pool = Ns_ConfigGetValue(path, "pools");
     if (pool != NULL && poolsTable.numEntries > 0) {
         const Pool *poolPtr;

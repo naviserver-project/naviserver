@@ -398,7 +398,7 @@ Ns_TriggerEventQueue(const Ns_EventQueue *queue)
     NS_NONNULL_ASSERT(queue != NULL);
     queuePtr = (const EventQueue *) queue;
 
-    if (send(queuePtr->trigger[1], "", 1, 0) != 1) {
+    if (send(queuePtr->trigger[1], NS_EMPTY_STRING, 1, 0) != 1) {
         Ns_Fatal("event queue: trigger send() failed: %s",
                  ns_sockstrerror(ns_sockerrno));
     }

@@ -515,7 +515,7 @@ GetPkeyFromPem(Tcl_Interp *interp, char *pemFileName, bool private)
     EVP_PKEY   *result;
     PW_CB_DATA  cb_data;
 
-    cb_data.password = "";
+    cb_data.password = NS_EMPTY_STRING;
     bio = BIO_new_file(pemFileName, "r");
     if (bio == NULL) {
         Ns_TclPrintfResult(interp, "could not open pem file '%s' for reading", pemFileName);
@@ -546,7 +546,7 @@ GetEckeyFromPem(Tcl_Interp *interp, char *pemFileName, bool private)
     EC_KEY     *result;
     PW_CB_DATA  cb_data;
 
-    cb_data.password = "";
+    cb_data.password = NS_EMPTY_STRING;
     bio = BIO_new_file(pemFileName, "r");
     if (bio == NULL) {
         Ns_TclPrintfResult(interp, "could not open pem file '%s' for reading", pemFileName);
@@ -2401,7 +2401,7 @@ CryptoAeadStringGetArguments(
             *aadStringPtr = Ns_GetBinaryString(aadObj, aadLengthPtr, aadDsPtr);
         } else {
             *aadLengthPtr = 0;
-            *aadStringPtr = "";
+            *aadStringPtr = NS_EMPTY_STRING;
         }
 
         /*

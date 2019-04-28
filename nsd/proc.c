@@ -226,7 +226,7 @@ Ns_StringArgProc(Tcl_DString *dsPtr, const void *arg)
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     
-    Tcl_DStringAppendElement(dsPtr, (str != NULL) ? str : "");
+    Tcl_DStringAppendElement(dsPtr, (str != NULL) ? str : NS_EMPTY_STRING);
 }
 
 
@@ -251,7 +251,7 @@ ServerArgProc(Tcl_DString *dsPtr, const void *arg)
 {
     const NsServer *servPtr = arg;
 
-    Tcl_DStringAppendElement(dsPtr, (servPtr != NULL) ? servPtr->server : "");
+    Tcl_DStringAppendElement(dsPtr, (servPtr != NULL) ? servPtr->server : NS_EMPTY_STRING);
 }
 
 

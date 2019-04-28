@@ -188,7 +188,7 @@ Ns_WaitForProcessStatus(pid_t pid, int *exitcodePtr, int *waitstatusPtr)
         status = NS_ERROR;
 
     } else if (WIFSIGNALED(waitstatus)) {
-        const char *coredump = "";
+        const char *coredump = NS_EMPTY_STRING;
 #ifdef WCOREDUMP
         if (WCOREDUMP(waitstatus)) {
             coredump = " - core dumped";
@@ -445,9 +445,9 @@ Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout,
         for (i = 0u; i < Ns_SetSize(env); ++i) {
             Ns_DStringVarAppend(&eds,
                                 Ns_SetKey(env, i), "=", Ns_SetValue(env, i), (char *)0L);
-            Ns_DStringNAppend(&eds, "", 1);
+            Ns_DStringNAppend(&eds, NS_EMPTY_STRING, 1);
         }
-        Ns_DStringNAppend(&eds, "", 1);
+        Ns_DStringNAppend(&eds, NS_EMPTY_STRING, 1);
         envp = Ns_DStringAppendArgv(&eds);
     }
     if (fdin < 0) {
@@ -627,9 +627,9 @@ Set2Argv(Ns_DString *dsPtr, const Ns_Set *env)
     for (i = 0u; i < Ns_SetSize(env); ++i) {
         Ns_DStringVarAppend(dsPtr,
                             Ns_SetKey(env, i), "=", Ns_SetValue(env, i), (char *)0L);
-        Ns_DStringNAppend(dsPtr, "", 1);
+        Ns_DStringNAppend(dsPtr, NS_EMPTY_STRING, 1);
     }
-    Ns_DStringNAppend(dsPtr, "", 1);
+    Ns_DStringNAppend(dsPtr, NS_EMPTY_STRING, 1);
     (void )Ns_DStringAppendArgv(dsPtr);
 }
 

@@ -233,7 +233,7 @@ ConfigServerFastpath(const char *server)
             Ns_Log(Error, "fastpath[%s]: directoryfile is not a list: %s", server, p);
         }
 
-        servPtr->fastpath.serverdir = Ns_ConfigString(path, "serverdir", "");
+        servPtr->fastpath.serverdir = Ns_ConfigString(path, "serverdir", NS_EMPTY_STRING);
         if (!Ns_PathIsAbsolute(servPtr->fastpath.serverdir)) {
             (void)Ns_HomePath(&ds, servPtr->fastpath.serverdir, (char *)0L);
             servPtr->fastpath.serverdir = Ns_DStringExport(&ds);
@@ -738,7 +738,7 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
 
     if ((conn->flags & NS_CONN_SKIPBODY) != 0u) {
         Ns_DStringFree(dsPtr);
-        return Ns_ConnReturnData(conn, statusCode, "",
+        return Ns_ConnReturnData(conn, statusCode, NS_EMPTY_STRING,
                                  (ssize_t)connPtr->fileInfo.st_size, mimeType);
     }
 

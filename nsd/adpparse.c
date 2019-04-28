@@ -312,7 +312,7 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
     unsigned int         scriptFlags;
     const Tcl_HashEntry *hPtr;
     const Tag           *tagPtr = NULL;
-    const char          *script = "", *ae = "";
+    const char          *script = NS_EMPTY_STRING, *ae = NS_EMPTY_STRING;
     char                *s, *e, *n, *a, *text, null = '\0', *as = &null;
     Tcl_DString          tag;
     bool                 scriptStreamDone;

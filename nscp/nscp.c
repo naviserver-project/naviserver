@@ -99,6 +99,8 @@ static const unsigned char dont_echo[]  = {TN_IAC, TN_DONT, TN_ECHO};
 static const unsigned char will_echo[]  = {TN_IAC, TN_WILL, TN_ECHO};
 static const unsigned char wont_echo[]  = {TN_IAC, TN_WONT, TN_ECHO};
 
+static const char *NS_EMPTY_STRING = "";
+
 /*
  * Define the version of the module (usually 1).
  */
@@ -453,7 +455,7 @@ retry:
         while (ds.length > 0 && ds.string[ds.length-1] == '\n') {
             Tcl_DStringSetLength(&ds, ds.length-1);
         }
-        if (STREQ(ds.string, "")) {
+        if (STREQ(ds.string, NS_EMPTY_STRING)) {
             goto retry; /* Empty command - try again. */
         }
 

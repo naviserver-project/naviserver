@@ -231,7 +231,7 @@ NsWaitSockShutdown(const Ns_Time *toPtr)
 static void
 CallbackTrigger(void)
 {
-    if (ns_send(trigPipe[1], "", 1u, 0) != 1) {
+    if (ns_send(trigPipe[1], NS_EMPTY_STRING, 1u, 0) != 1) {
         Ns_Fatal("trigger send() failed: %s", ns_sockstrerror(ns_sockerrno));
     }
 }

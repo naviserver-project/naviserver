@@ -845,7 +845,7 @@ TriggerQueue(const TaskQueue *queuePtr)
 
     Ns_Log(Ns_LogTaskDebug, "trigger queue");
 
-    if (send(queuePtr->trigger[1], "", 1, 0) != 1) {
+    if (send(queuePtr->trigger[1], NS_EMPTY_STRING, 1, 0) != 1) {
         Ns_Fatal("task queue: trigger send() failed: %s",
                  ns_sockstrerror(ns_sockerrno));
     }

@@ -108,6 +108,8 @@ static Ns_LogSeverity Ns_LogCGIDebug;
 NS_EXPORT const int Ns_ModuleVersion = 1;
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 
+static const char *NS_EMPTY_STRING = "";
+
 /*
  * Functions defined in this file.
  */
@@ -471,7 +473,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
             cgiPtr->path = Ns_DStringVarAppend(CgiDs(cgiPtr),
                                               mapPtr->path, "/", s, (char *)0L);
             if (e == NULL) {
-                cgiPtr->pathinfo = "";
+                cgiPtr->pathinfo = NS_EMPTY_STRING;
             } else {
                 *e = '/';
                 cgiPtr->pathinfo = e;
@@ -826,7 +828,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         Ns_DStringFree(&tmp);
         Ns_DStringSetLength(dsPtr, 0);
     } else {
-         Ns_SetUpdate(cgiPtr->env, "PATH_INFO", "");
+         Ns_SetUpdate(cgiPtr->env, "PATH_INFO", NS_EMPTY_STRING);
     }
     Ns_SetUpdate(cgiPtr->env, "GATEWAY_INTERFACE", "CGI/1.1");
     Ns_DStringVarAppend(dsPtr, Ns_InfoServerName(), "/", Ns_InfoServerVersion(), (char *)0L);
@@ -898,13 +900,13 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         if (STREQ("POST", conn->request.method)) {
             value = "application/x-www-form-urlencoded";
         } else {
-            value = "";
+            value = NS_EMPTY_STRING;
         }
     }
     Ns_SetUpdate(cgiPtr->env, "CONTENT_TYPE", value);
 
     if (conn->contentLength == 0u) {
-        Ns_SetUpdate(cgiPtr->env, "CONTENT_LENGTH", "");
+        Ns_SetUpdate(cgiPtr->env, "CONTENT_LENGTH", NS_EMPTY_STRING);
     } else {
         Ns_DStringPrintf(dsPtr, "%u", (unsigned) conn->contentLength);
         Ns_SetUpdate(cgiPtr->env, "CONTENT_LENGTH", dsPtr->string);
@@ -960,14 +962,14 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
                     *e = '\0';
                 }
                 (void) Ns_UrlQueryDecode(dsPtr, s, NULL);
-                Ns_DStringNAppend(dsPtr, "", 1);
+                Ns_DStringNAppend(dsPtr, NS_EMPTY_STRING, 1);
                 if (e != NULL) {
                     *e++ = '+';
                 }
                 s = e;
             } while (s != NULL);
         }
-        Ns_DStringNAppend(dsPtr, "", 1);
+        Ns_DStringNAppend(dsPtr, NS_EMPTY_STRING, 1);
     }
 
     /*
@@ -1295,8 +1297,8 @@ CgiRegister(Mod *modPtr, const char *map)
     mapPtr->url = ns_strdup(url);
     mapPtr->path = ns_strcopy(path);
     Ns_Log(Notice, "nscgi: %s %s%s%s", method, url,
-           (path != NULL) ? " -> " : "",
-           (path != NULL) ? path : "");
+           (path != NULL) ? " -> " : NS_EMPTY_STRING,
+           (path != NULL) ? path : NS_EMPTY_STRING);
     Ns_RegisterRequest(modPtr->server, method, url,
                        CgiRequest, CgiFreeMap, mapPtr, 0u);
 

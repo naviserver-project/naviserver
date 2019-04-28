@@ -368,7 +368,7 @@ MatchFiles(Tcl_Obj *pathObj, File **files)
         pattern = Tcl_GetString(patternObj);
     } else {
         Ns_Log(Notice, "filename '%s' does not contain a path", Tcl_GetString(pathObj));
-        pattern = "";
+        pattern = NS_EMPTY_STRING;
     }
 
     /*

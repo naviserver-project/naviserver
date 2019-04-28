@@ -88,8 +88,8 @@ Ns_ConfigString(const char *section, const char *key, const char *defaultValue)
     value = ConfigGet(section, key, NS_FALSE, defaultValue);
     Ns_Log(Dev, "config: %s:%s value=\"%s\" default=\"%s\" (string)",
            section, key,
-           (value != NULL) ? value : "",
-           (defaultValue != NULL) ? defaultValue : "");
+           (value != NULL) ? value : NS_EMPTY_STRING,
+           (defaultValue != NULL) ? defaultValue : NS_EMPTY_STRING);
 
     return (value != NULL) ? value : defaultValue;
 }
@@ -123,8 +123,8 @@ Ns_ConfigSet(const char *section, const char *key)
     value = ConfigGet(section, key, NS_FALSE, NULL);
     Ns_Log(Dev, "config: %s:%s value=\"%s\" default=\"%s\" (string)",
            section, key,
-           (value != NULL) ? value : "",
-           "");
+           (value != NULL) ? value : NS_EMPTY_STRING,
+           NS_EMPTY_STRING);
 
     if (value != NULL) {
         Tcl_Obj *valueObj = Tcl_NewStringObj(value, -1);
@@ -412,7 +412,7 @@ Ns_ConfigGetValue(const char *section, const char *key)
 
     value = ConfigGet(section, key, NS_FALSE, NULL);
     Ns_Log(Dev, "config: %s:%s value=%s (string)",
-           section, key, (value != NULL) ? value : "");
+           section, key, (value != NULL) ? value : NS_EMPTY_STRING);
 
     return value;
 }
@@ -445,7 +445,7 @@ Ns_ConfigGetValueExact(const char *section, const char *key)
     value = ConfigGet(section, key, NS_TRUE, NULL);
     Ns_Log(Dev, "config: %s:%s value=%s (string, exact match)",
            section, key,
-           (value != NULL) ? value : "");
+           (value != NULL) ? value : NS_EMPTY_STRING);
 
     return value;
 }

@@ -1609,7 +1609,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         {
             const char *addr = Ns_ConnCurrentAddr(conn);
 
-            Tcl_SetObjResult(interp, Tcl_NewStringObj((addr != NULL ? addr : ""), -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj((addr != NULL ? addr : NS_EMPTY_STRING), -1));
         }
         break;
 

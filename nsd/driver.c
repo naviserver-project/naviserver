@@ -1123,7 +1123,7 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->type, -1));
 
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("server", 6));
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->server != NULL ? drvPtr->server : "", -1));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->server != NULL ? drvPtr->server : NS_EMPTY_STRING, -1));
 
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("location", 8));
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->location, -1));
@@ -2132,7 +2132,7 @@ DriverThread(void *arg)
                         drvPtr->stats.errors++;
                         Ns_Log(Warning,
                                "sockread returned unexpected result %d (err %s); close socket (%d)",
-                               s, ((errno != 0) ? strerror(errno) : ""), sockPtr->sock);
+                               s, ((errno != 0) ? strerror(errno) : NS_EMPTY_STRING), sockPtr->sock);
                         SockRelease(sockPtr, s, errno);
                         break;
                     }
@@ -2965,11 +2965,11 @@ SockError(Sock *sockPtr, SockState reason, int err)
 
         Ns_Log(DriverDebug, "SockError: %s (%d: %s), sock: %d, peer: [%s]:%d, request: %.99s",
                errMsg,
-               err, (err != 0) ? strerror(err) : "",
+               err, (err != 0) ? strerror(err) : NS_EMPTY_STRING,
                sockPtr->sock,
                ns_inet_ntop((struct sockaddr *)&(sockPtr->sa), ipString, sizeof(ipString)),
                Ns_SockaddrGetPort((struct sockaddr *)&(sockPtr->sa)),
-               (sockPtr->reqPtr != NULL) ? sockPtr->reqPtr->buffer.string : "");
+               (sockPtr->reqPtr != NULL) ? sockPtr->reqPtr->buffer.string : NS_EMPTY_STRING);
     }
 }
 
@@ -3017,7 +3017,7 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
 
     if (sockPtr->reqPtr != NULL) {
         Request     *reqPtr = sockPtr->reqPtr;
-        const char  *requestLine = (reqPtr->request.line != NULL) ? reqPtr->request.line : "";
+        const char  *requestLine = (reqPtr->request.line != NULL) ? reqPtr->request.line : NS_EMPTY_STRING;
 
         (void)ns_inet_ntop((struct sockaddr *)&(sockPtr->sa), sockPtr->reqPtr->peer, NS_IPADDR_SIZE);
 
@@ -3071,7 +3071,7 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
 static void
 SockTrigger(NS_SOCKET sock)
 {
-    if (send(sock, "", 1, 0) != 1) {
+    if (send(sock, NS_EMPTY_STRING, 1, 0) != 1) {
         const char *errstr = ns_sockstrerror(ns_sockerrno);
 
         Ns_Log(Error, "driver: trigger send() failed: %s", errstr);
@@ -5698,7 +5698,7 @@ WriterListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
                     (void) Ns_DStringPrintf(dsPtr, " %d %" PRIdz " %" TCL_LL_MODIFIER "d ",
                                             wrSockPtr->fd, wrSockPtr->size, wrSockPtr->nsent);
                     (void) Ns_DStringAppendElement(dsPtr,
-                                                   (wrSockPtr->clientData != NULL) ? wrSockPtr->clientData : "");
+                                                   (wrSockPtr->clientData != NULL) ? wrSockPtr->clientData : NS_EMPTY_STRING);
                     (void) Ns_DStringNAppend(dsPtr, "} ", 2);
                     wrSockPtr = wrSockPtr->nextPtr;
                 }

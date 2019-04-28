@@ -1614,7 +1614,7 @@ NsConnArgProc(Tcl_DString *dsPtr, const void *arg)
         AppendConn(dsPtr, argPtr->connPtr, "running", NS_FALSE);
         Ns_MutexUnlock(&poolPtr->tqueue.lock);
     } else {
-        Tcl_DStringAppendElement(dsPtr, "");
+        Tcl_DStringAppendElement(dsPtr, NS_EMPTY_STRING);
     }
 }
 

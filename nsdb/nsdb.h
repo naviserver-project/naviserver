@@ -129,6 +129,8 @@ NS_EXTERN Ns_LogSeverity Ns_LogSqlDebug;
 
 
 typedef Ns_ReturnCode (NsDb_DriverInitProc)(const char *driver, const char *configPath);
+NS_EXTERN const char *NS_EMPTY_STRING;
+
 
 /*
  * dbdrv.c:

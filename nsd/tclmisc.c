@@ -174,7 +174,7 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
     }
     errorInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
     if (errorInfo == NULL) {
-        errorInfo = "";
+        errorInfo = NS_EMPTY_STRING;
     }
     if (itPtr != NULL && itPtr->conn != NULL) {
         const Ns_Conn *conn = itPtr->conn;
@@ -846,7 +846,7 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                                 {"yen",      3, "\xc2\xa5",     2},    /* "¥" */
                                 {"yuml",     4, "\xc3\xbf",     2},    /* "ÿ" */
                                 {"zeta",     4, "\xce\xb6",     2},    /* "ζ" */
-                                {NULL,       0, "", 0}
+                                {NULL,       0, "",             0}
                             };
 
                             inPtr ++;
@@ -1772,7 +1772,7 @@ NsTclFileStatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 #ifdef S_ISSOCK
                                   S_ISSOCK(st.st_mode) ? "socket" :
 #endif
-                   ""), -1), 0);
+                   NS_EMPTY_STRING), -1), 0);
         }
         Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
     }

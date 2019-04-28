@@ -467,7 +467,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
           Ns_TclPrintfResult(interp,
                              "could not allocate %d handle%s from pool \"%s\"",
                              nhandles,
-                             nhandles > 1 ? "s" : "",
+                             nhandles > 1 ? "s" : NS_EMPTY_STRING,
                              pool);
           result = TCL_ERROR;
         }

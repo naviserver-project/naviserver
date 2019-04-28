@@ -47,6 +47,8 @@
 
 #include "nsproxy.h"
 
+static const char * NS_EMPTY_STRING = "";
+
 #ifdef _WIN32
 # define SIGKILL 9
 # define SIGTERM 15
@@ -612,7 +614,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
                 int n = (int)len;
 
                 if (n < max) {
-                    dots = "";
+                    dots = NS_EMPTY_STRING;
                 } else {
                     dots = " ...";
                     n = max;
@@ -1141,7 +1143,7 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script)
 
     if (err != ENone) {
         Ns_TclPrintfResult(interp, "could not send script \"%s\" to proxy \"%s\": %s",
-                           script == NULL ? "" : script,
+                           script == NULL ? NS_EMPTY_STRING : script,
                            proxyPtr->id, errMsg[err]);
         ProxyError(interp, err);
     }

@@ -1291,7 +1291,7 @@ ConnChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
                              connChanPtr->wBytes,
                              connChanPtr->rBytes);
             Ns_DStringAppendElement(dsPtr,
-                                    (connChanPtr->clientData != NULL) ? connChanPtr->clientData : "");
+                                    (connChanPtr->clientData != NULL) ? connChanPtr->clientData : NS_EMPTY_STRING);
             /*
              * If we have a callback, write the cmd name. Rationale:
              * next arguments might contain already binary

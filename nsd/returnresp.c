@@ -248,7 +248,7 @@ Ns_ConnReturnMoved(Ns_Conn *conn, const char *url)
         Tcl_DStringFree(&msgDs);
         Tcl_DStringFree(&urlDs);
     } else {
-        result = Ns_ConnReturnNotice(conn, 204, "No Content", "");
+        result = Ns_ConnReturnNotice(conn, 204, "No Content", NS_EMPTY_STRING);
     }
 
     return result;
@@ -327,7 +327,7 @@ Ns_ConnReturnRedirect(Ns_Conn *conn, const char *url)
         Tcl_DStringFree(&urlDs);
 
     } else {
-        result = Ns_ConnReturnNotice(conn, 204, "No Content", "");
+        result = Ns_ConnReturnNotice(conn, 204, "No Content", NS_EMPTY_STRING);
     }
 
     return result;
