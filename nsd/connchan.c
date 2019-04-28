@@ -1052,7 +1052,7 @@ ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
 {
     int            result, doBind = (int)NS_FALSE;
     unsigned short port = 0u;
-    char          *driverName = NULL, *serverName = NULL, *addr = NULL, *script;
+    char          *driverName = NULL, *serverName = NULL, *addr = (char*)NS_EMPTY_STRING, *script;
     Ns_ObjvSpec    lopts[] = {
         {"-driver",  Ns_ObjvString, &driverName, NULL},
         {"-server",  Ns_ObjvString, &serverName, NULL},

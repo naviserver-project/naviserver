@@ -322,6 +322,7 @@ ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, int
     NS_NONNULL_ASSERT(idxPtr != NULL);
 
     valueString = Ns_ConfigString(path, param, NS_EMPTY_STRING);
+    assert(valueString != NULL);
 
     len = strlen(valueString);
     if (len > 0u) {

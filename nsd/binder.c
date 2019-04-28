@@ -943,6 +943,7 @@ PrebindSockets(const char *spec)
             l = strtol(str, NULL, 10);
             line = str;
         } else {
+            assert(addr != NULL);
             l = strtol(addr, NULL, 10);
             addr = (char *)NS_IP_UNSPECIFIED;
         }

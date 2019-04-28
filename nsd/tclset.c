@@ -757,16 +757,20 @@ NsTclParseHeaderObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 
     } else if (objc < 4) {
         disp = ToLower;
-    } else if (STREQ(dispositionString, "toupper")) {
-        disp = ToUpper;
-    } else if (STREQ(dispositionString, "tolower")) {
-        disp = ToLower;
-    } else if (STREQ(dispositionString, "preserve")) {
-        disp = Preserve;
+    } else if (dispositionString != NULL) {
+        if (STREQ(dispositionString, "toupper")) {
+            disp = ToUpper;
+        } else if (STREQ(dispositionString, "tolower")) {
+            disp = ToLower;
+        } else if (STREQ(dispositionString, "preserve")) {
+            disp = Preserve;
+        } else {
+            Ns_TclPrintfResult(interp, "invalid disposition \"%s\": should be toupper, tolower, or preserve",
+                               dispositionString);
+            result = TCL_ERROR;
+        }
     } else {
-        Ns_TclPrintfResult(interp, "invalid disposition \"%s\": should be toupper, tolower, or preserve",
-                           dispositionString);
-        result = TCL_ERROR;
+        Ns_Fatal("error in argument parser: dispositionString should never be NULL");
     }
 
     if (result == TCL_OK) {
