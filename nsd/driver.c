@@ -1123,7 +1123,8 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->type, -1));
 
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("server", 6));
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->server != NULL ? drvPtr->server : NS_EMPTY_STRING, -1));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->server != NULL ?
+                                                                           drvPtr->server : NS_EMPTY_STRING, -1));
 
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("location", 8));
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->location, -1));
@@ -1699,14 +1700,14 @@ NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int fl
 #endif
 
     if (likely(drvPtr->sendProc != NULL)) {
-        Ns_Time time = {0, 0};
+        Ns_Time timeOut = {0, 0};
 
         /*
          * The Ns_DriverSendProc signature should be modified
          * to omit the timeout argument.
          */
 
-        sent = (*drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs, &time, flags);
+        sent = (*drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs, &timeOut, flags);
     } else {
         Ns_Log(Warning, "no sendProc registered for driver %s", drvPtr->threadName);
     }
@@ -1747,14 +1748,14 @@ NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
 
 
     if (drvPtr->sendFileProc != NULL) {
-        Ns_Time time = {0, 0};
+        Ns_Time timeOut = {0, 0};
 
         /*
          * The Ns_DriverSendFileProc signature should be modified
          * to omit the timeout argument.
          */
 
-        sent = (*drvPtr->sendFileProc)((Ns_Sock *)sockPtr, bufs, nbufs, &time, flags);
+        sent = (*drvPtr->sendFileProc)((Ns_Sock *)sockPtr, bufs, nbufs, &timeOut, flags);
     } else {
         sent = Ns_SockSendFileBufs((Ns_Sock *)sockPtr, bufs, nbufs);
     }
