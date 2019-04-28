@@ -581,6 +581,8 @@ NsTclCacheIncrObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
     };
     args[0].arg = clientData; /* pass non-constant clientData for "cache" */
 
+    NS_NONNULL_ASSERT(clientData != NULL);
+
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {

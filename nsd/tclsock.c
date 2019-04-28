@@ -331,7 +331,7 @@ NsTclSockNReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclSockListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    char          *addr;
+    char          *addr = (char*)NS_EMPTY_STRING;
     int            result;
     unsigned short port = 0u;
     Ns_ObjvSpec    args[] = {
@@ -485,7 +485,7 @@ NsTclSockCheckObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 int
 NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    char          *lhost = NULL, *host;
+    char          *lhost = NULL, *host = (char*)NS_EMPTY_STRING;
     unsigned short lport = 0u, port = 0u;
     int            nonblock = 0, async = 0, msec = -1, result;
     Ns_Time       *timeoutPtr = NULL;
@@ -788,7 +788,7 @@ NsTclSocketPairObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNU
 int
 NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    char           *script, *sockId, *whenString;
+    char           *script, *sockId, *whenString = (char*)NS_EMPTY_STRING;
     NS_SOCKET       sock;
     int             result = TCL_OK;
     size_t          scriptLength;
@@ -900,7 +900,7 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
 int
 NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    char           *addr, *script;
+    char           *addr =  (char*)NS_EMPTY_STRING, *script = (char*)NS_EMPTY_STRING;
     unsigned short  port = 0u;
     int             result = TCL_OK;
     Ns_ObjvSpec     args[] = {

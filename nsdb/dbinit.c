@@ -1221,12 +1221,7 @@ static void
 CheckPool(void *arg)
 {
     Pool         *poolPtr = arg;
-    Handle       *handlePtr, *nextPtr;
-    Handle       *checkedPtr;
-    time_t        now;
-
-    time(&now);
-    checkedPtr = NULL;
+    Handle       *handlePtr;
 
     /*
      * Grab the entire list of handles from the pool.
@@ -1244,8 +1239,14 @@ CheckPool(void *arg)
      */
 
     if (handlePtr != NULL) {
+        Handle *checkedPtr = NULL;
+        time_t  now;
+
+        time(&now);
+
         while (handlePtr != NULL) {
-            nextPtr = handlePtr->nextPtr;
+            Handle *nextPtr = handlePtr->nextPtr;
+
             if (IsStale(handlePtr, now) == NS_TRUE) {
                 NsDbDisconnect((Ns_DbHandle *) handlePtr);
             }
@@ -1257,7 +1258,8 @@ CheckPool(void *arg)
         Ns_MutexLock(&poolPtr->lock);
         handlePtr = checkedPtr;
         while (handlePtr != NULL) {
-            nextPtr = handlePtr->nextPtr;
+            Handle *nextPtr = handlePtr->nextPtr;
+
             ReturnHandle(handlePtr);
             handlePtr = nextPtr;
         }

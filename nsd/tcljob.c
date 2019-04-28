@@ -1115,7 +1115,7 @@ JobQueuesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 static int
 JobJobListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    Queue        *queue;
+    Queue        *queue = NULL;
     int           result = TCL_OK;
     Ns_ObjvSpec   args[] = {
         {"queueId", ObjvQueue, &queue,   NULL},
@@ -1130,6 +1130,7 @@ JobJobListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         const Tcl_HashEntry  *hPtr;
         Tcl_HashSearch        search;
 
+        assert(queue != NULL);
         /*
          * Create a Tcl List to hold the list of jobs.
          */

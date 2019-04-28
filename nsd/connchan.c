@@ -1052,7 +1052,7 @@ ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
 {
     int            result, doBind = (int)NS_FALSE;
     unsigned short port = 0u;
-    char          *driverName = NULL, *serverName = NULL, *addr, *script;
+    char          *driverName = NULL, *serverName = NULL, *addr = NULL, *script;
     Ns_ObjvSpec    lopts[] = {
         {"-driver",  Ns_ObjvString, &driverName, NULL},
         {"-server",  Ns_ObjvString, &serverName, NULL},
@@ -1339,7 +1339,7 @@ ConnChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 static int
 ConnChanCloseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    char        *name;
+    char        *name = (char*)NS_EMPTY_STRING;
     int          result = TCL_OK;
     Ns_ObjvSpec  args[] = {
         {"channel", Ns_ObjvString, &name, NULL},
@@ -1361,6 +1361,7 @@ ConnChanCloseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         } else {
             result = TCL_ERROR;
         }
+
     }
     Ns_Log(Ns_LogConnchanDebug, "ns_connchan close %s returns %d", name, result);
     return result;
@@ -1385,7 +1386,9 @@ static int
 ConnChanCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int      result = TCL_OK;
-    char    *name, *script, *whenString = (char *)"";
+    char    *name = (char*)NS_EMPTY_STRING,
+            *script = (char*)NS_EMPTY_STRING,
+            *whenString = (char*)NS_EMPTY_STRING;
     Ns_Time *pollTimeoutPtr = NULL, *recvTimeoutPtr = NULL, *sendTimeoutPtr = NULL;
 
     Ns_ObjvSpec lopts[] = {
@@ -1486,7 +1489,7 @@ ConnChanCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 static int
 ConnChanExistsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    char         *name;
+    char         *name = (char*)NS_EMPTY_STRING;
     int           result = TCL_OK;
     Ns_ObjvSpec   args[] = {
         {"channel", Ns_ObjvString, &name, NULL},
@@ -1527,7 +1530,7 @@ ConnChanExistsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
 static int
 ConnChanReadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    char        *name;
+    char        *name = (char*)NS_EMPTY_STRING;
     int          result = TCL_OK;
     Ns_ObjvSpec  args[] = {
         {"channel", Ns_ObjvString, &name, NULL},
@@ -1601,7 +1604,7 @@ ConnChanReadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 static int
 ConnChanWriteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    char       *name;
+    char       *name = (char*)NS_EMPTY_STRING;
     int         result = TCL_OK;
     Tcl_Obj    *msgObj;
     Ns_ObjvSpec args[] = {

@@ -891,7 +891,7 @@ ServerMappedObjCmd(const ClientData UNUSED(clientData), Tcl_Interp *interp, int 
                   NsServer *servPtr, int nargs)
 {
     int          result = TCL_OK, noinherit = 0, exact = 0;
-    Tcl_Obj     *mapspecObj;
+    Tcl_Obj     *mapspecObj = NULL;
     char        *method, *url;
     Ns_ObjvSpec  lopts[] = {
         {"-exact",     Ns_ObjvBool,   &exact, INT2PTR(NS_TRUE)},
@@ -960,7 +960,7 @@ ServerUnmapObjCmd(const ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 {
     int          result = TCL_OK, noinherit = 0;
     char        *method, *url;
-    Tcl_Obj     *mapspecObj;
+    Tcl_Obj     *mapspecObj = NULL;
     Ns_ObjvSpec  lopts[] = {
         {"-noinherit", Ns_ObjvBool, &noinherit, INT2PTR(NS_TRUE)},
         {NULL, NULL, NULL, NULL}

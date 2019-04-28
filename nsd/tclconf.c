@@ -56,7 +56,7 @@
 int
 NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    char       *section, *key;
+    char       *section, *key = (char *)NS_EMPTY_STRING;
     Tcl_Obj    *defObj = NULL;
     int         status, isBool = 0, isInt = 0, exact = 0, doSet = 0;
     Tcl_WideInt minValue = LLONG_MIN, maxValue = LLONG_MAX;

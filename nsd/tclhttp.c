@@ -1736,7 +1736,7 @@ HttpConnect(
     int              result, uaFlag = -1, bodyFileFd = 0;
     off_t            bodyFileSize = 0;
     unsigned short   defaultPort, portNr;
-    char            *url2, *protocol, *host, *portString, *path, *tail;
+    char            *url2, *protocol, *host, *portString = (char*)NS_EMPTY_STRING, *path, *tail;
     const char      *contentType = NULL;
     Tcl_DString     *dsPtr;
     static uint64_t  httpClientRequestCount = 0u;

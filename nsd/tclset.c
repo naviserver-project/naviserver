@@ -737,7 +737,9 @@ NsTclParseHeaderObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
     int          result = TCL_OK;
     Ns_Set      *set = NULL;
     Ns_HeaderCaseDisposition disp = Preserve;
-    char        *setString, *headerString, *dispositionString;
+    char        *setString = (char *)NS_EMPTY_STRING,
+                *headerString = (char *)NS_EMPTY_STRING,
+                *dispositionString = NULL;
     Ns_ObjvSpec  args[] = {
         {"set", Ns_ObjvString, &setString, NULL},
         {"header", Ns_ObjvString, &headerString, NULL},
