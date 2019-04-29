@@ -4027,7 +4027,8 @@ SockSetServer(Sock *sockPtr)
 
                     hPtr2 = Tcl_FirstHashEntry(&drvPtr->hosts, &search);
                     while (hPtr != NULL) {
-                        Ns_Log(Notice, "... host entry: '%s'\n", Tcl_GetHashKey(&drvPtr->hosts, hPtr2));
+                        Ns_Log(Notice, "... host entry: '%s'\n",
+                               (char *)Tcl_GetHashKey(&drvPtr->hosts, hPtr2));
                         hPtr2 = Tcl_NextHashEntry(&search);
                     }
                 }
