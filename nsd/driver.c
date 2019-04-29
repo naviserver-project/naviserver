@@ -3994,9 +3994,15 @@ SockSetServer(Sock *sockPtr)
             if (host[hostLength] == '.') {
                 host[hostLength] = '\0';
             }
+            /*
+             * Convert provided host header field to lower case before hash
+             * lookup.
+             */
+            Ns_StrToLower(host);
 
             hPtr = Tcl_FindHashEntry(&drvPtr->hosts, host);
-            Ns_Log(DriverDebug, "SockSetServer driver '%s' host '%s' => %p", drvPtr->moduleName, host, (void*)hPtr);
+            Ns_Log(DriverDebug, "SockSetServer driver '%s' host '%s' => %p",
+                   drvPtr->moduleName, host, (void*)hPtr);
 
             if (hPtr != NULL) {
                 /*
@@ -4010,11 +4016,12 @@ SockSetServer(Sock *sockPtr)
                  * Host header field content is not found in the mapping table.
                  */
                 Ns_Log(DriverDebug,
-                       "cannot locate host header content '%s' in virtual hosts table of driver '%s', fall back to default '%s'",
+                       "cannot locate host header content '%s' in virtual hosts "
+                       "table of driver '%s', fall back to default '%s'",
                        host, drvPtr->moduleName,
                        drvPtr->defMapPtr->location);
-#if 0
-                {
+
+                if (Ns_LogSeverityEnabled(DriverDebug)) {
                     Tcl_HashEntry  *hPtr2;
                     Tcl_HashSearch  search;
 
@@ -4024,12 +4031,11 @@ SockSetServer(Sock *sockPtr)
                         hPtr2 = Tcl_NextHashEntry(&search);
                     }
                 }
-#endif
             }
         }
         if (mapPtr == NULL) {
             /*
-             * Could not lookup the vritual host, Get the default mapping from the driver.
+             * Could not lookup the virtual host, Get the default mapping from the driver.
              */
             mapPtr = drvPtr->defMapPtr;
         }
