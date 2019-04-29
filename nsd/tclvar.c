@@ -370,21 +370,28 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         result = TCL_ERROR;
 
     } else {
-        const Tcl_HashEntry *hPtr;
 
         /*
          * This is the undocumented but used (e.g. in nstrace.tcl) variant of
          * "ns_set" behaving like "nsv_get".
          */
+
         arrayPtr = LockArrayObj(interp, objv[1], NS_FALSE);
-        hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, NULL);
-        if (likely(hPtr != NULL)) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1));
-        } else {
-            Ns_TclPrintfResult(interp, "no such key: %s", key);
+        if (arrayPtr == NULL) {
             result = TCL_ERROR;
+        } else {
+            const Tcl_HashEntry *hPtr = NULL;
+
+            hPtr = Tcl_FindHashEntry(&arrayPtr->vars, key);
+            if (likely(hPtr != NULL)) {
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1));
+            }
+            UnlockArray(arrayPtr);
+            if (hPtr == NULL) {
+                Ns_TclPrintfResult(interp, "no such key: %s", key);
+                result = TCL_ERROR;
+            }
         }
-        UnlockArray(arrayPtr);
     }
 
     return result;
