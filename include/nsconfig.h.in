@@ -9,6 +9,9 @@
 /* Define to 1 if arc4random is available. */
 #undef HAVE_ARC4RANDOM
 
+/* Define to 1 for BSD-type sendfile */
+#undef HAVE_BSD_SENDFILE
+
 /* Defined when compiler supports casting to union type. */
 #undef HAVE_CAST_TO_UNION
 
@@ -108,6 +111,9 @@
 
 /* Do we have <limits.h>? */
 #undef HAVE_LIMITS_H
+
+/* Define to 1 for Linux-type sendfile */
+#undef HAVE_LINUX_SENDFILE
 
 /* Define to 1 if you have the `localtime_r' function. */
 #undef HAVE_LOCALTIME_R
