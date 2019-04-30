@@ -2471,6 +2471,10 @@ NsConnRequire(Tcl_Interp *interp, Ns_Conn **connPtr)
         Tcl_SetObjResult(interp, Tcl_NewStringObj("connection already closed", -1));
         status = NS_ERROR;
 
+    } else if (Ns_ConnSockPtr(conn) == NULL) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("connection socket is detached", -1));
+        status = NS_ERROR;
+
     } else {
         if (connPtr != NULL) {
             *connPtr = conn;

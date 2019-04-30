@@ -659,29 +659,20 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
     //NS_NONNULL_ASSERT(bufs != NULL);
 
     connPtr = (Conn *)conn;
+    assert(connPtr->sockPtr != NULL);
 
     for (i = 0; i < nbufs; i++) {
         towrite += bufs[i].iov_len;
     }
 
-    if (connPtr->sockPtr == NULL) {
-        /*
-         * Ns_ConnSend is curretly called in situations, where the
-         * WriterThread has already taken over connPtr->sockPtr and
-         * set it to NULL to flag, that it can't be used anymore.
-         *
-         * TODO: It is probably better to avoid such calls to
-         * Ns_ConnSend() at all, maybe we can then activate the
-         * non-null assert of bufs again.
-         */
-        sent = -1;
-
-    } else if (towrite == 0u) {
+    if (towrite == 0u) {
         sent = 0;
+
     } else if (NsWriterQueue(conn, towrite, NULL, NULL, NS_INVALID_FD,
                              bufs, nbufs, NS_FALSE) == NS_OK) {
         Ns_Log(Debug, "==== writer sent %" PRIuz " bytes\n", towrite);
         sent = (ssize_t)towrite;
+
     } else {
         Ns_Time  tout;
         Sock    *sockPtr;

@@ -133,7 +133,7 @@ test ns_connchan-1.5 {detach connection, return error from ns_write via "ns_conn
     nstest::http -getbody 1 -- GET /conn
 } -cleanup {
     ns_unregister_op GET /conn
-} -result {200 {connection channels is detached}}
+} -result {200 {connection socket is detached}}
 
 
 cleanupTests

@@ -5384,6 +5384,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         Ns_Log(DriverDebug, "NsWriterQueue NS_CONN_SENT_VIA_WRITER connPtr %p clear sockPtr %p",
                (void*)connPtr, (void*)connPtr->sockPtr);
         connPtr->sockPtr = NULL;
+        connPtr->flags |= NS_CONN_CLOSED;
         connPtr->nContentSent = nsend - headerSize;
     }
 

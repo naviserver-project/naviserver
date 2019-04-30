@@ -234,10 +234,6 @@ NsTclWriteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *c
     } else if (NsConnRequire(interp, &conn) != NS_OK) {
         result = TCL_ERROR;
 
-    } else if (Ns_ConnSockPtr(conn) == NULL) {
-        Ns_TclPrintfResult(interp, "connection channels is detached");
-        result = TCL_ERROR;
-
     } else {
         objv++;
         objc--;
