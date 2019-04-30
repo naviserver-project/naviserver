@@ -339,8 +339,8 @@ NsTclReturnObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 {
     Ns_Conn    *conn = NULL;
     Tcl_Obj    *dataObj;
-    char       *type;
-    int         result, httpStatus = 0, len, binary = (int)NS_FALSE;
+    char       *mimeType;
+    int         result, httpStatus = 0, binary = (int)NS_FALSE;
 
     Ns_ObjvSpec opts[] = {
         {"-binary",  Ns_ObjvBool, &binary, INT2PTR(NS_TRUE)},
@@ -348,7 +348,7 @@ NsTclReturnObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     };
     Ns_ObjvSpec args[] = {
         {"status",   Ns_ObjvInt,    &httpStatus,  NULL},
-        {"type",     Ns_ObjvString, &type,    NULL},
+        {"type",     Ns_ObjvString, &mimeType,    NULL},
         {"data",     Ns_ObjvObj,    &dataObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -360,13 +360,14 @@ NsTclReturnObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
     } else {
         const char *data;
+        int         len;
 
         if (binary == (int)NS_TRUE || NsTclObjIsByteArray(dataObj)) {
             data = (const char *) Tcl_GetByteArrayFromObj(dataObj, &len);
-            result = Result(interp, Ns_ConnReturnData(conn, httpStatus, data, len, type));
+            result = Result(interp, Ns_ConnReturnData(conn, httpStatus, data, len, mimeType));
         } else {
             data = Tcl_GetStringFromObj(dataObj, &len);
-            result = Result(interp, Ns_ConnReturnCharData(conn, httpStatus, data, len, type));
+            result = Result(interp, Ns_ConnReturnCharData(conn, httpStatus, data, len, mimeType));
         }
     }
 
