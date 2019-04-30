@@ -339,33 +339,36 @@ Ns_SockCork(const Ns_Sock *sock, bool cork)
 static ssize_t
 SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length)
 {
-    ssize_t sent;
+    ssize_t sent = -1;
 
     NS_NONNULL_ASSERT(sock != NULL);
 
-#ifndef HAVE_SYS_SENDFILE_H
-    sent = _SendFile(sock, fd, offset, length);
-#else
+    assert(fd != NS_INVALID_FD);
+    assert(offset >= 0);
+
+#if defined(HAVE_LINUX_SENDFILE)
     sent = sendfile(sock->sock, fd, &offset, length);
     if (sent == -1) {
-        if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
-
-            /*
-             * Signalize caller to eventually wait/repeat.
-             */
-
+        if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
             sent = 0;
-
-        } else if ((errno == EINVAL) || (errno == ENOSYS)) {
-
-            /*
-             * File system does not support sendfile().
-             * Fallback to our own user-space version.
-             */
-
+        } else if (errno == EINVAL || errno == ENOSYS) {
             sent = _SendFile(sock, fd, offset, length);
         }
     }
+#elif defined(HAVE_BSD_SENDFILE)
+    {
+        int rc, flags = 0;
+        off_t sbytes = 0;
+
+        rc = sendfile(fd, sock->sock, offset, length, NULL, &sbytes, flags);
+        if (rc == 0 || errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
+            sent = sbytes;
+        } else if (errno == EOPNOTSUPP) {
+            sent = _SendFile(sock, fd, offset, length);
+        }
+    }
+#else
+    sent = _SendFile(sock, fd, offset, length);
 #endif
 
     return sent;
