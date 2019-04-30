@@ -1384,7 +1384,7 @@ NS_EXTERN void *NsUrlSpecificGet(NsServer *servPtr, const char *method,
 NS_EXTERN ssize_t NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flags)
     NS_GNUC_NONNULL(1);
 NS_EXTERN ssize_t NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN int NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
                                  const char *url, const char *httpMethod, const char *version,
                                  const Ns_Time *timeoutPtr, Sock **sockPtrPtr)

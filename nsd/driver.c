@@ -1700,14 +1700,12 @@ NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int fl
 #endif
 
     if (likely(drvPtr->sendProc != NULL)) {
-        Ns_Time timeOut = {0, 0};
-
         /*
-         * The Ns_DriverSendProc signature should be modified
+         * TODO: The Ns_DriverSendProc signature should be modified
          * to omit the timeout argument.
          */
 
-        sent = (*drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs, &timeOut, flags);
+        sent = (*drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs, NULL, flags);
     } else {
         Ns_Log(Warning, "no sendProc registered for driver %s", drvPtr->threadName);
     }
@@ -1741,6 +1739,7 @@ NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
     const Driver *drvPtr;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
+    NS_NONNULL_ASSERT(bufs != NULL);
 
     drvPtr = sockPtr->drvPtr;
 
@@ -1748,14 +1747,12 @@ NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
 
 
     if (drvPtr->sendFileProc != NULL) {
-        Ns_Time timeOut = {0, 0};
-
         /*
-         * The Ns_DriverSendFileProc signature should be modified
+         * TODO: The Ns_DriverSendFileProc signature should be modified
          * to omit the timeout argument.
          */
 
-        sent = (*drvPtr->sendFileProc)((Ns_Sock *)sockPtr, bufs, nbufs, &timeOut, flags);
+        sent = (*drvPtr->sendFileProc)((Ns_Sock *)sockPtr, bufs, nbufs, NULL, flags);
     } else {
         sent = Ns_SockSendFileBufs((Ns_Sock *)sockPtr, bufs, nbufs);
     }
@@ -5243,7 +5240,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         Tcl_DString    ds;
 
         Ns_DStringInit(&ds);
-        Ns_Log(DriverDebug, "add header (fd %d)\n", fd);
+        Ns_Log(DriverDebug, "add header (fd %d)", fd);
         conn->flags |= NS_CONN_SENTHDRS;
         (void)Ns_CompleteHeaders(conn, nsend, 0u, &ds);
 
@@ -5378,11 +5375,14 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
      */
 
     connPtr->flags |= NS_CONN_SENT_VIA_WRITER;
-
     wrSockPtr->keep = connPtr->keep > 0 ? NS_TRUE : NS_FALSE;
     wrSockPtr->size = nsend;
+    Ns_Log(DriverDebug, "NsWriterQueue NS_CONN_SENT_VIA_WRITER connPtr %p",
+           (void*)connPtr);
 
     if ((wrSockPtr->flags & NS_CONN_STREAM) == 0u) {
+        Ns_Log(DriverDebug, "NsWriterQueue NS_CONN_SENT_VIA_WRITER connPtr %p clear sockPtr %p",
+               (void*)connPtr, (void*)connPtr->sockPtr);
         connPtr->sockPtr = NULL;
         connPtr->nContentSent = nsend - headerSize;
     }

@@ -418,7 +418,6 @@ _SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length)
 
     while (toread > 0) {
         ssize_t nread, sent;
-        Ns_Time tbuf = {0,0};
 
         nread = pread(fd, buf, MIN((size_t)toread, sizeof(buf)), offset);
 
@@ -428,7 +427,7 @@ _SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length)
         }
 
         (void) Ns_SetVec(&iov, 0, buf, (size_t)nread);
-        sent = (*sendProc)(sock, &iov, 1, &tbuf, 0);
+        sent = (*sendProc)(sock, &iov, 1, NULL, 0);
 
         if (sent == -1) {
             nwrote = -1;

@@ -756,7 +756,7 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                    bufs->iov_len, (ssize_t)Ns_SumVec(bufs, nbufs));*/
 
             result = (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
-                                                  timeoutPtr, flags);
+                                                  NULL, flags);
             if (result == -1 && ((errno == EAGAIN) || (errno == NS_EWOULDBLOCK))) {
                 /*
                  * The error is recoverable, we can retry, when the
@@ -786,7 +786,7 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                        connChanPtr->channelName, timeoutPtr->sec, timeoutPtr->usec);
                 if (Ns_SockTimedWait(sockPtr->sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
                     result = (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
-                                                          timeoutPtr, flags);
+                                                          NULL, flags);
                 } else {
                     Ns_Log(Ns_LogConnchanDebug, "DriverSend %s: timeout occurred",
                            connChanPtr->channelName);
