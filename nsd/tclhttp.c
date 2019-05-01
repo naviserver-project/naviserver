@@ -1605,7 +1605,7 @@ WaitState(
           pollfd.fd = sock;
 
           for (;;) {
-              int pollto = 1000;
+              int pollTimeout = 1000;
               /* fprintf(stderr, "##### WaitState: timeout %p events %.4x\n", (void*)timeout, pollfd.events);*/
 
               if (timeout != NULL) {
@@ -1618,12 +1618,12 @@ WaitState(
                   Ns_GetTime(&now);
 
                   if (Ns_DiffTime(timeout, &now, &diff) > 0) {
-                      pollto = (int)(diff.sec * 1000 + diff.usec / 1000 + 1);
+                      pollTimeout = (int)(diff.sec * 1000 + diff.usec / 1000 + 1);
                   }
-                  //fprintf(stderr, "##### WaitState: pollto %d events %.4x\n", pollto, pollfd.events);
-                  retval = ns_poll(&pollfd, 1, pollto);
-                  /*fprintf(stderr, "##### call poll on %d %" PRId64 ".%06ld events %.4x pollto %d => %d revents %.4x\n",
-                    sock, (int64_t) timeout->sec, timeout->usec, pollfd.events, pollto, retval, pollfd.revents);*/
+                  //fprintf(stderr, "##### WaitState: pollTimeout %d events %.4x\n", pollTimeout, pollfd.events);
+                  retval = ns_poll(&pollfd, 1, pollTimeout);
+                  /*fprintf(stderr, "##### call poll on %d %" PRId64 ".%06ld events %.4x pollTimeout %d => %d revents %.4x\n",
+                    sock, (int64_t) timeout->sec, timeout->usec, pollfd.events, pollTimeout, retval, pollfd.revents);*/
                   // ns_http run http://naviserver.sourceforge.net/n/naviserver/files/commandlist.htmlx
                   // ns_http run https://naviserver.sourceforge.net/n/naviserver/files/commandlist.html
                   // ns_http run https://naviserver.sourceforge.io/n/naviserver/files/commandlist.html
@@ -1637,7 +1637,7 @@ WaitState(
                    * No timeout is specified. Retry, until we run into an
                    * error or success.
                    */
-                  retval = ns_poll(&pollfd, 1, pollto);
+                  retval = ns_poll(&pollfd, 1, pollTimeout);
                   if (retval != 0) {
                       break;
                   }

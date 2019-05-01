@@ -365,7 +365,7 @@ SockCallbackThread(void *UNUSED(arg))
     pfds[0].events = (short)POLLIN;
 
     for (;;) {
-        long              pollto;
+        long              pollTimeout;
         NS_POLL_NFDS_TYPE nfds;
         bool              stop;
         Ns_Time           now, diff = {0, 0};
@@ -430,7 +430,7 @@ SockCallbackThread(void *UNUSED(arg))
          * Wake up every 30 seconds to process expired sockets
          */
 
-        pollto = 30000;
+        pollTimeout = 30000;
         Ns_GetTime(&now);
 
         /*
@@ -468,11 +468,11 @@ SockCallbackThread(void *UNUSED(arg))
                 if (cbPtr->timeout.sec != 0 || cbPtr->timeout.usec != 0) {
                     long to = diff.sec * -1000 + diff.usec / 1000 + 1;
 
-                    if (to < pollto)  {
+                    if (to < pollTimeout)  {
                         /*
                          * Reduce poll timeout to smaller value.
                          */
-                        pollto = to;
+                        pollTimeout = to;
                     }
                 }
             }
@@ -488,7 +488,7 @@ SockCallbackThread(void *UNUSED(arg))
         }
         pfds[0].revents = 0;
         do {
-            n = ns_poll(pfds, nfds, pollto);
+            n = ns_poll(pfds, nfds, pollTimeout);
         } while (n < 0  && errno == NS_EINTR);
 
         if (n < 0) {

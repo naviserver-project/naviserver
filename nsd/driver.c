@@ -179,7 +179,7 @@ static void PollReset(PollData *pdata)
     NS_GNUC_NONNULL(1);
 static NS_POLL_NFDS_TYPE PollSet(PollData *pdata, NS_SOCKET sock, short type, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
-static int PollWait(const PollData *pdata, int waittime)
+static int PollWait(const PollData *pdata, int timeout)
     NS_GNUC_NONNULL(1);
 static bool ChunkedDecode(Request *reqPtr, bool update)
     NS_GNUC_NONNULL(1);
@@ -1835,7 +1835,7 @@ DriverThread(void *arg)
     Driver        *drvPtr = (Driver*)arg;
     Ns_Time        now, diff;
     char           charBuffer[1], drain[1024];
-    int            pollto, accepted, nrBindaddrs = 0;
+    int            pollTimeout, accepted, nrBindaddrs = 0;
     bool           stopping;
     unsigned int   flags;
     Sock          *sockPtr, *closePtr, *nextPtr, *waitPtr, *readPtr;
@@ -1938,7 +1938,7 @@ DriverThread(void *arg)
          */
 
         if (readPtr == NULL && closePtr == NULL) {
-            pollto = 10 * 1000;
+            pollTimeout = 10 * 1000;
         } else {
 
             for (sockPtr = readPtr; sockPtr != NULL; sockPtr = sockPtr->nextPtr) {
@@ -1950,19 +1950,19 @@ DriverThread(void *arg)
 
             if (Ns_DiffTime(&pdata.timeout, &now, &diff) > 0)  {
                 /*
-                 * The resolution of "pollto" is ms, therefore, we round
+                 * The resolution of "pollTimeout" is ms, therefore, we round
                  * up. If we would round down (e.g. 500 microseconds to 0 ms),
                  * the time comparison later would determine that it is too
                  * early.
                  */
-                pollto = (int)(diff.sec * 1000 + diff.usec / 1000 + 1);
+                pollTimeout = (int)(diff.sec * 1000 + diff.usec / 1000 + 1);
 
             } else {
-                pollto = 0;
+                pollTimeout = 0;
             }
         }
 
-        n = PollWait(&pdata, pollto);
+        n = PollWait(&pdata, pollTimeout);
 
         Ns_Log(DriverDebug, "=== PollWait returned %d, trigger[0] %d", n, PollIn(&pdata, 0));
 
@@ -2396,14 +2396,14 @@ PollSet(PollData *pdata, NS_SOCKET sock, short type, const Ns_Time *timeoutPtr)
 }
 
 static int
-PollWait(const PollData *pdata, int waittime)
+PollWait(const PollData *pdata, int timeout)
 {
     int n;
 
     NS_NONNULL_ASSERT(pdata != NULL);
 
     do {
-        n = ns_poll(pdata->pfds, pdata->nfds, waittime);
+        n = ns_poll(pdata->pfds, pdata->nfds, timeout);
     } while (n < 0  && errno == NS_EINTR);
 
     if (n < 0) {
@@ -4086,7 +4086,7 @@ SpoolerThread(void *arg)
 {
     SpoolerQueue  *queuePtr = (SpoolerQueue*)arg;
     char           charBuffer[1];
-    int            pollto;
+    int            pollTimeout;
     bool           stopping;
     Sock          *sockPtr, *nextPtr, *waitPtr, *readPtr;
     Ns_Time        now, diff;
@@ -4119,21 +4119,21 @@ SpoolerThread(void *arg)
         (void)PollSet(&pdata, queuePtr->pipe[0], (short)POLLIN, NULL);
 
         if (readPtr == NULL) {
-            pollto = 30 * 1000;
+            pollTimeout = 30 * 1000;
         } else {
             sockPtr = readPtr;
             while (sockPtr != NULL) {
                 SockPoll(sockPtr, (short)POLLIN, &pdata);
                 sockPtr = sockPtr->nextPtr;
             }
-            pollto = -1;
+            pollTimeout = -1;
         }
 
         /*
          * Select and drain the trigger pipe if necessary.
          */
 
-        /*n =*/ (void) PollWait(&pdata, pollto);
+        /*n =*/ (void) PollWait(&pdata, pollTimeout);
 
         if (PollIn(&pdata, 0) && unlikely(ns_recv(queuePtr->pipe[0], charBuffer, 1u, 0) != 1)) {
             Ns_Fatal("spooler: trigger ns_recv() failed: %s",
@@ -4787,7 +4787,7 @@ static void
 WriterThread(void *arg)
 {
     SpoolerQueue   *queuePtr = (SpoolerQueue*)arg;
-    int             err, pollto;
+    int             err, pollTimeout;
     bool            stopping;
     Ns_Time         now;
     Sock           *sockPtr;
@@ -4821,17 +4821,17 @@ WriterThread(void *arg)
         (void)PollSet(&pdata, queuePtr->pipe[0], (short)POLLIN, NULL);
 
         if (writePtr == NULL) {
-            pollto = 30 * 1000;
+            pollTimeout = 30 * 1000;
         } else {
-            pollto = 1 * 1000;
+            pollTimeout = 1 * 1000;
             for (curPtr = writePtr; curPtr != NULL; curPtr = curPtr->nextPtr) {
                 Ns_Log(DriverDebug, "### Writer poll collect %p size %" PRIdz " streaming %d",
                        (void *)curPtr, curPtr->size, curPtr->doStream);
                 if (likely(curPtr->size > 0u)) {
                     SockPoll(curPtr->sockPtr, (short)POLLOUT, &pdata);
-                    pollto = -1;
+                    pollTimeout = -1;
                 } else if (unlikely(curPtr->doStream == NS_WRITER_STREAM_FINISH)) {
-                    pollto = -1;
+                    pollTimeout = -1;
                 }
             }
         }
@@ -4839,7 +4839,7 @@ WriterThread(void *arg)
         /*
          * Select and drain the trigger pipe if necessary.
          */
-        (void) PollWait(&pdata, pollto);
+        (void) PollWait(&pdata, pollTimeout);
 
         if (PollIn(&pdata, 0) && unlikely(ns_recv(queuePtr->pipe[0], charBuffer, 1u, 0) != 1)) {
             Ns_Fatal("writer: trigger ns_recv() failed: %s",
@@ -6123,7 +6123,7 @@ AsyncWriterThread(void *arg)
 {
     SpoolerQueue   *queuePtr = (SpoolerQueue*)arg;
     char            charBuffer[1];
-    int             pollto;
+    int             pollTimeout;
     Ns_ReturnCode   status;
     bool            stopping;
     AsyncWriteData *curPtr, *nextPtr, *writePtr;
@@ -6159,15 +6159,15 @@ AsyncWriterThread(void *arg)
         (void)PollSet(&pdata, queuePtr->pipe[0], (short)POLLIN, NULL);
 
         if (writePtr == NULL) {
-            pollto = 30 * 1000;
+            pollTimeout = 30 * 1000;
         } else {
-            pollto = 0;
+            pollTimeout = 0;
         }
 
         /*
          * Wait for data
          */
-        /*n =*/ (void) PollWait(&pdata, pollto);
+        /*n =*/ (void) PollWait(&pdata, pollTimeout);
 
         /*
          * Select and drain the trigger pipe if necessary.
