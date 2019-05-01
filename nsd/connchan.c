@@ -750,6 +750,9 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
         bool    haveTimeout = NS_FALSE, partial;
         ssize_t nSent = 0, toSend = (ssize_t)Ns_SumVec(bufs, nbufs), origLength = toSend;
 
+        Ns_Log(Ns_LogConnchanDebug, "DriverSend %s: try to send %" PRIdz " bytes",
+               connChanPtr->channelName, toSend);
+
         do {
             /*Ns_Log(Ns_LogConnchanDebug, "DriverSend %s: try to send [0] %" PRIdz " bytes (total %"  PRIdz ")",
                    connChanPtr->channelName,
@@ -757,14 +760,15 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
 
             result = (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
                                                   NULL, flags);
-            if (result == -1 && ((errno == EAGAIN) || (errno == NS_EWOULDBLOCK))) {
+            Ns_Log(Ns_LogConnchanDebug, "DriverSend %s: sendProc returned result %d errno %d",
+                   connChanPtr->channelName, result, err);
+
+            if (result == 0) {
                 /*
-                 * The error is recoverable, we can retry, when the
-                 * socket is writeable.
+                 * The resource is temporarily unavailable, we can an
+                 * retry, when the socket is writable.
                  *
-                 * If there is no timeout provided, return POSIX
-                 * EWOULDBLOCK as error code (along with other POSIX
-                 * errors).
+                 * If there is no timeout provided, return the bytes sent so far.
                  */
                 if (timeoutPtr->sec == 0 && timeoutPtr->usec == 0) {
                     Ns_Log(Ns_LogConnchanDebug, "DriverSend %s: would block, no timeout configured, "
@@ -828,9 +832,9 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
 
             }
 
-            /*Ns_Log(Notice, "### check result %ld == -1 || %ld == %ld (%d && %d) == %d",
+            Ns_Log(Ns_LogConnchanDebug, "### check result %ld == -1 || %ld == %ld (%d && %d) == %d",
                    result, toSend, nSent,
-                   (result != -1), (nSent < toSend), ((result != -1) && (nSent < toSend)));*/
+                   (result != -1), (nSent < toSend), ((result != -1) && (nSent < toSend)));
 
         } while (partial && (result != -1));
 
