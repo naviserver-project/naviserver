@@ -669,7 +669,6 @@ Ns_SockBindRaw(int proto)
     if (sock == NS_INVALID_SOCKET) {
         ns_sockerrno_t err = ns_sockerrno;
 
-        ns_sockclose(sock);
         Ns_SetSockErrno(err);
     }
 
