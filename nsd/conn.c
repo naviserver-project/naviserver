@@ -83,7 +83,7 @@ Ns_ConnHeaders(const Ns_Conn *conn)
  *      Get the output headers
  *
  * Results:
- *      A writeable Ns_Set containing headers to send back to the client
+ *      A writable Ns_Set containing headers to send back to the client
  *
  * Side effects:
  *      None
