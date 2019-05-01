@@ -2389,7 +2389,7 @@ CreateConnThread(ConnPool *poolPtr)
 #if !defined(NDEBUG)
     { const char *threadName = Ns_ThreadGetName();
       assert(strncmp("-driver:", threadName, 8u) == 0
-             || strncmp("-main:", threadName, 6u) == 0
+             || strncmp("-main", threadName, 5u) == 0
              || strncmp("-spooler", threadName, 8u) == 0
              || strncmp("-service-", threadName, 9u) == 0
              );
