@@ -44,6 +44,13 @@
 
 #define IOBUFSZ 8192
 
+/*
+ * The chunked encoding header consists of a hex number followed by
+ * CRLF (see e.g. RFC 2616 section 3.6.1). It has to fit the maximum
+ * number of digits of a 64 byte number is 8, plus CRLF + NULL.
+ */
+#define MAX_CHARS_CHUNK_HEADER 12
+
 
 /*
  * Local functions defined in this file
@@ -316,6 +323,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
     if ((conn->flags & NS_CONN_SKIPBODY) == 0u) {
 
         if ((conn->flags & NS_CONN_CHUNK) == 0u) {
+
             /*
              * Output content without chunking header/trailers.
              */
@@ -332,17 +340,21 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
 
         } else {
 
+            /*
+             * Output content with chunking header/trailers.
+             */
+
             if (bodyLength > 0u) {
-                char hdr[32];
+                char   hdr[MAX_CHARS_CHUNK_HEADER];
                 size_t len;
 
                 assert(nbufs > 0);
                 assert(bufs != NULL);
+
                 /*
                  * Output length header followed by content and then
                  * trailer.
                  */
-
                 len = (size_t)snprintf(hdr, sizeof(hdr), "%lx\r\n", (unsigned long)bodyLength);
                 toWrite += Ns_SetVec(sbufPtr, sbufIdx++, hdr, len);
 
