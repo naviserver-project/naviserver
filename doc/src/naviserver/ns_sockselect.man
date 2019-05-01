@@ -5,14 +5,14 @@
 [titledesc {Determine readable file id's}]
 
 [description]
-[cmd ns_sockselect] uses a select() call to determine which file id's re readable, writeable,
+[cmd ns_sockselect] uses a select() call to determine which file id's re readable, writable,
 or have exceptional conditions. [cmd ns_sockselect] returns a list of three lists of:
-readable file id's, writeable file id's, and file id's with exceptions.
+readable file id's, writable file id's, and file id's with exceptions.
 
 The [option -timeout] option specifies the length of time to wait in seconds for ns_sockselect
 to return before timing out.
 
-The rfds, wfds, and efds arguments are lists of readable file id's, writeable
+The rfds, wfds, and efds arguments are lists of readable file id's, writable
 file id's, and file id's with exceptions, respectively.
 
 [section {COMMANDS}]

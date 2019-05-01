@@ -137,7 +137,7 @@ typedef enum {
  */
 typedef enum {
     NS_SOCK_READ =              0x01u, /* Socket is readable */
-    NS_SOCK_WRITE =             0x02u, /* Socket is writeable */
+    NS_SOCK_WRITE =             0x02u, /* Socket is writable */
     NS_SOCK_EXCEPTION =         0x04u, /* Socket has OOB data */
     NS_SOCK_EXIT =              0x08u, /* The server is shutting down */
     NS_SOCK_DONE =              0x10u, /* Task processing is done */
