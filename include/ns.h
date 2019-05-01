@@ -2020,10 +2020,13 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
  */
 
 NS_EXTERN void
-Ns_SetThreadServer(const char *server) NS_GNUC_PRINTF(1, 0);
+Ns_SetThreadServer(const char *server)
+    NS_GNUC_PRINTF(1, 0)
+    NS_GNUC_DEPRECATED_FOR(Ns_ThreadSetName);
 
 NS_EXTERN const char *
-Ns_GetThreadServer(void);
+Ns_GetThreadServer(void)
+    NS_GNUC_DEPRECATED_FOR(Ns_ThreadGetName);
 
 /*
  * op.c:
