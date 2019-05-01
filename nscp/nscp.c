@@ -410,7 +410,7 @@ EvalThread(void *arg)
     Tcl_DStringInit(&ds);
     Tcl_DStringInit(&unameDS);
     Ns_DStringPrintf(&ds, "-nscp:%d-", sessPtr->id);
-    Ns_ThreadSetName(ds.string);
+    Ns_ThreadSetName("%s", ds.string);
     Tcl_DStringSetLength(&ds, 0);
     Ns_Log(Notice, "nscp: %s connected",
            ns_inet_ntop((struct sockaddr *)&(sessPtr->sa), ipString, sizeof(ipString)));

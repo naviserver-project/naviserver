@@ -248,7 +248,7 @@ NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
         case TNameIdx:
             if (objc > 2) {
-                Ns_ThreadSetName(Tcl_GetString(objv[2]));
+                Ns_ThreadSetName("%s", Tcl_GetString(objv[2]));
             }
             Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ThreadGetName(), -1));
             break;

@@ -157,10 +157,8 @@ WorkThread(void *arg)
     intptr_t       *ip;
     time_t          now;
     Ns_Thread       self;
-    char            name[32];
 
-    snprintf(name, 32u, "-work:%" PRIdPTR "-", i);
-    Ns_ThreadSetName(name);
+    Ns_ThreadSetName("-work:%" PRIdPTR "-", i);
 
     if (i == 2) {
         Ns_RWLockWrLock(&rwlock);
@@ -333,7 +331,7 @@ DumperThread(void *UNUSED(arg))
     Tcl_DString     ds;
 
     Tcl_DStringInit(&ds);
-    Ns_ThreadSetName("-dumper-");
+    Ns_ThreadSetName("%s", "-dumper-");
     Ns_MutexLock(&block);
     Ns_MutexLock(&dlock);
     while (dstop == 0) {
@@ -429,7 +427,7 @@ int main(int argc, char *argv[])
     Tcl_FindExecutable(argv[0]);
     Nsthreads_LibInit();
 
-    Ns_ThreadSetName("-main-");
+    Ns_ThreadSetName("%s", "-main-");
 
     /*
      * Jump directly to memory test if requested.

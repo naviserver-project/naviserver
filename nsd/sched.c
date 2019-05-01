@@ -694,7 +694,7 @@ EventThread(void *arg)
     jpt = njobs = nsconf.sched.jobsperthread;
     jobId = 0u;
 
-    Ns_ThreadSetName("-sched:idle%" PRIdPTR "-", arg);
+    Ns_ThreadSetName("-sched:idle%" PRIuPTR "-", (uintptr_t)arg);
     Ns_Log(Notice, "starting");
 
     Ns_MutexLock(&lock);
@@ -713,9 +713,9 @@ EventThread(void *arg)
         --nIdleThreads;
         Ns_MutexUnlock(&lock);
 
-        Ns_ThreadSetName("-sched:%" PRIuPTR ":%d:%" PRIdPTR "-", arg, ++jobId, ePtr->id);
+        Ns_ThreadSetName("-sched:%" PRIuPTR ":%" PRIuPTR ":%d-", (uintptr_t)arg, ++jobId, ePtr->id);
         (*ePtr->proc) (ePtr->arg, ePtr->id);
-        Ns_ThreadSetName("-sched:idle%" PRIdPTR "-", arg);
+        Ns_ThreadSetName("-sched:idle%" PRIuPTR "-", (uintptr_t)arg);
         time(&now);
 
         Ns_MutexLock(&lock);
