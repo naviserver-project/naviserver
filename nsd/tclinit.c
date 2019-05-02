@@ -1066,7 +1066,7 @@ ICtlAddTrace(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const
             if (when == NS_TCL_TRACE_NONE) {
                 when  = (Ns_TclTraceType)flags;
             }
-            cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclTraceProc,
+            cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclTraceProc,
                                       scriptObj, remain, objv + (objc - remain));
             if (Ns_TclRegisterTrace(servPtr->server, NsTclTraceProc, cbPtr, when) != NS_OK) {
                 result = TCL_ERROR;

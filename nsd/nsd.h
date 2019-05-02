@@ -857,7 +857,7 @@ typedef struct NsServer {
         Ns_ServerRootProc   *serverRootProc;
         void                *serverRootArg;
         Ns_ConnLocationProc *connLocationProc;
-        void                *connLocationArg;
+        Ns_TclCallback      *connLocationArg;
         Ns_LocationProc     *locationProc; /* Depreciated */
         bool                 enabled;
     } vhost;

@@ -1288,7 +1288,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
                 Tcl_WrongNumArgs(interp, 2, objv, "script ?arg?");
                 result = TCL_ERROR;
             } else {
-                cbPtr = Ns_TclNewCallback(interp, Ns_TclCallbackProc,
+                cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)Ns_TclCallbackProc,
                                           objv[2], objc - 3, objv + 3);
                 Ns_AddLogFilter(LogToTcl, cbPtr, Ns_TclFreeCallback);
                 Ns_TclSetAddrObj(Tcl_GetObjResult(interp), filterType, cbPtr);

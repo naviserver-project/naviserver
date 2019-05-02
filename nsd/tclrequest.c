@@ -69,7 +69,7 @@ Ns_TclRequest(Ns_Conn *conn, const char *name)
 {
     Ns_TclCallback cb;
 
-    cb.cbProc = (Ns_Callback *) NsTclRequestProc;
+    cb.cbProc = (ns_funcptr_t) NsTclRequestProc;
     cb.server = Ns_ConnServer(conn);
     cb.script = name;
     cb.argc   = 0;
@@ -125,7 +125,7 @@ NsTclRegisterProcObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
         if (noinherit != 0) {
             flags |= NS_OP_NOINHERIT;
         }
-        cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclRequestProc, scriptObj,
+        cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclRequestProc, scriptObj,
                                   remain, objv + (objc - remain));
         Ns_RegisterRequest(itPtr->servPtr->server, method, url,
                            NsTclRequestProc, Ns_TclFreeCallback, cbPtr, flags);
@@ -174,7 +174,7 @@ NsTclRegisterProxyObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tc
     } else {
         Ns_TclCallback *cbPtr;
 
-        cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclRequestProc,
+        cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclRequestProc,
                                   scriptObj, remain, objv + (objc - remain));
         Ns_RegisterProxyRequest(itPtr->servPtr->server, method, protocol,
                                 NsTclRequestProc, Ns_TclFreeCallback, cbPtr);
@@ -321,7 +321,7 @@ NsTclRegisterFilterObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
         const NsInterp  *itPtr = clientData;
         Ns_TclCallback  *cbPtr;
 
-        cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclFilterProc,
+        cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclFilterProc,
                                   scriptObj, remain, objv + (objc - remain));
         (void)Ns_RegisterFilter(itPtr->servPtr->server, method, urlPattern,
                                 NsTclFilterProc, (Ns_FilterType)when, cbPtr, (bool)first);
@@ -409,7 +409,7 @@ NsTclRegisterTraceObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tc
         const NsInterp *itPtr = clientData;
         Ns_TclCallback *cbPtr;
 
-        cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclFilterProc,
+        cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclFilterProc,
                                   scriptObj, remain, objv + (objc - remain));
         (void)Ns_RegisterFilter(itPtr->servPtr->server, method, urlPattern,
                                 NsTclFilterProc, NS_FILTER_VOID_TRACE, cbPtr, NS_FALSE);

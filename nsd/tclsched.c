@@ -79,7 +79,7 @@ NsTclAfterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 
     } else {
         int             id;
-        Ns_TclCallback *cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclSchedProc,
+        Ns_TclCallback *cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclSchedProc,
                                                   objv[2], objc - 3, objv + 3);
         id = Ns_After(seconds, NsTclSchedProc, cbPtr, (Ns_SchedProc*)Ns_TclFreeCallback);
         result = ReturnValidId(interp, id, cbPtr);
@@ -231,7 +231,7 @@ NsTclSchedDailyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             int             id;
             Ns_TclCallback *cbPtr;
 
-            cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *) NsTclSchedProc,
+            cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclSchedProc,
                                       scriptObj, remain, objv + (objc - remain));
             id = Ns_ScheduleDaily(NsTclSchedProc, cbPtr, flags, hour, minute,
                                   FreeSched);
@@ -304,7 +304,7 @@ NsTclSchedWeeklyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
             Ns_TclCallback *cbPtr;
             int             id;
 
-            cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *) NsTclSchedProc,
+            cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclSchedProc,
                                       scriptObj, remain, objv + (objc - remain));
             id = Ns_ScheduleWeekly(NsTclSchedProc, cbPtr, flags, day, hour, minute,
                                    FreeSched);
@@ -370,7 +370,7 @@ NsTclSchedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
             Ns_TclCallback *cbPtr;
             int             id;
 
-            cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *) NsTclSchedProc,
+            cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclSchedProc,
                                       scriptObj, remain, objv + (objc - remain));
             id = Ns_ScheduleProcEx(NsTclSchedProc, cbPtr, flags, interval, FreeSched);
 
