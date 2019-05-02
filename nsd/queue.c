@@ -2559,6 +2559,8 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool chec
         Ns_DStringPrintf(dsPtr, " %" PRIuz, connPtr->nContentSent);
 
         Tcl_DStringEndSublist(dsPtr);
+    } else {
+        Tcl_DStringAppendElement(dsPtr, NS_EMPTY_STRING);
     }
 }
 
