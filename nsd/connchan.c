@@ -656,7 +656,7 @@ SockCallbackRegister(NsConnChan *connChanPtr, const char *script,
     if (result == NS_OK) {
         connChanPtr->cbPtr = cbPtr;
 
-        Ns_RegisterProcInfo((Ns_Callback *)NsTclConnChanProc, "ns_connchan", ArgProc);
+        Ns_RegisterProcInfo((ns_funcptr_t)NsTclConnChanProc, "ns_connchan", ArgProc);
     } else {
         /*
          * The callback could not be registered, maybe the socket is

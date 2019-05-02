@@ -285,10 +285,10 @@ Ns_ModuleInit(const char *server, const char *module)
 
 #ifndef PCLINT_BUG
         if (result == NS_OK) {
-            Ns_RegisterProcInfo((Ns_Callback *)AcceptProc, "nscp", ArgProc);
+            Ns_RegisterProcInfo((ns_funcptr_t)AcceptProc, "nscp", ArgProc);
         }
 #else
-        if (result == NS_OK) Ns_RegisterProcInfo((Ns_Callback *)AcceptProc, "nscp", ArgProc);
+        if (result == NS_OK) Ns_RegisterProcInfo((ns_funcptr_t)AcceptProc, "nscp", ArgProc);
 #endif
     }
 

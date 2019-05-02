@@ -1480,7 +1480,7 @@ ICtlGetTracesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
              (tracePtr != NULL);
              tracePtr = tracePtr->nextPtr) {
             if (tracePtr->when == when) {
-                Ns_GetProcInfo(&ds, (Ns_Callback *)tracePtr->proc, tracePtr->arg);
+                Ns_GetProcInfo(&ds, (ns_funcptr_t)tracePtr->proc, tracePtr->arg);
             }
         }
         Tcl_DStringResult(interp, &ds);
@@ -2302,7 +2302,7 @@ LogTrace(const NsInterp *itPtr, const TclTrace *tracePtr, Ns_TclTraceType why)
         Ns_DStringInit(&ds);
         Ns_DStringNAppend(&ds, GetTraceLabel(why), -1);
         Ns_DStringNAppend(&ds, " ", 1);
-        Ns_GetProcInfo(&ds, (Ns_Callback *)tracePtr->proc, tracePtr->arg);
+        Ns_GetProcInfo(&ds, (ns_funcptr_t)tracePtr->proc, tracePtr->arg);
         Ns_Log(Debug, "ns:interptrace[%s]: %s",
                itPtr->servPtr->server, Ns_DStringValue(&ds));
         Ns_DStringFree(&ds);

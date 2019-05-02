@@ -667,7 +667,7 @@ NsDbInitPools(void)
             Tcl_SetHashValue(hPtr, poolPtr);
         }
     }
-    Ns_RegisterProcInfo(CheckPool, "nsdb:check", CheckArgProc);
+    Ns_RegisterProcInfo((ns_funcptr_t)CheckPool, "nsdb:check", CheckArgProc);
 }
 
 

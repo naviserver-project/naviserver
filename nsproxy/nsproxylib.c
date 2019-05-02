@@ -409,7 +409,7 @@ Nsproxy_LibInit(void)
         Tcl_InitHashTable(&pools, TCL_STRING_KEYS);
 
         Ns_RegisterAtShutdown(Shutdown, NULL);
-        Ns_RegisterProcInfo((Ns_Callback *)Shutdown, "nsproxy:shutdown", NULL);
+        Ns_RegisterProcInfo((ns_funcptr_t)Shutdown, "nsproxy:shutdown", NULL);
 
         Ns_LogNsProxyDebug = Ns_CreateLogSeverity("Debug(nsproxy)");
     }
