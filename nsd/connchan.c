@@ -760,8 +760,8 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
 
             result = (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
                                                   NULL, flags);
-            Ns_Log(Ns_LogConnchanDebug, "DriverSend %s: sendProc returned result %d errno %d",
-                   connChanPtr->channelName, result, err);
+            Ns_Log(Ns_LogConnchanDebug, "DriverSend %s: sendProc returned result %" PRIdz,
+                   connChanPtr->channelName, result);
 
             if (result == 0) {
                 /*
