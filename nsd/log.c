@@ -321,7 +321,8 @@ ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, int
     NS_NONNULL_ASSERT(tablePtr != NULL);
     NS_NONNULL_ASSERT(idxPtr != NULL);
 
-    valueString = Ns_ConfigString(path, param, "");
+    valueString = Ns_ConfigString(path, param, NS_EMPTY_STRING);
+    assert(valueString != NULL);
 
     len = strlen(valueString);
     if (len > 0u) {
@@ -426,7 +427,7 @@ NsConfigLog(void)
         Ns_SetUpdate(set, "serverlog", file);
     }
 
-    rollfmt = Ns_ConfigString(path, "logrollfmt", "");
+    rollfmt = Ns_ConfigString(path, "logrollfmt", NS_EMPTY_STRING);
 
 }
 
@@ -691,7 +692,7 @@ Ns_Log(Ns_LogSeverity severity, const char *fmt, ...)
     NS_NONNULL_ASSERT(fmt != NULL);
 
     va_start(ap, fmt);
-    Ns_VALog(severity, fmt, &ap);
+    Ns_VALog(severity, fmt, ap);
     va_end(ap);
 }
 
@@ -713,7 +714,7 @@ Ns_Log(Ns_LogSeverity severity, const char *fmt, ...)
  */
 
 void
-Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
+Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list apSrc)
 {
     LogCache *cachePtr;
 
@@ -755,7 +756,7 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
         cachePtr->count++;
 
         offset = (size_t)Ns_DStringLength(&cachePtr->buffer);
-        Ns_DStringVPrintf(&cachePtr->buffer, fmt, *vaPtr);
+        Ns_DStringVPrintf(&cachePtr->buffer, fmt, apSrc);
         length = (size_t)Ns_DStringLength(&cachePtr->buffer) - offset;
 
         entryPtr->severity = severity;
@@ -895,7 +896,7 @@ Ns_Fatal(const char *fmt, ...)
     NS_NONNULL_ASSERT(fmt != NULL);
 
     va_start(ap, fmt);
-    Ns_VALog(Fatal, fmt, &ap);
+    Ns_VALog(Fatal, fmt, ap);
     va_end(ap);
 
     if (nsconf.state.pipefd[1] != 0) {
@@ -921,7 +922,7 @@ Panic(const char *fmt, ...)
     va_list ap;
 
     va_start(ap, fmt);
-    Ns_VALog(Fatal, fmt, &ap);
+    Ns_VALog(Fatal, fmt, ap);
     va_end(ap);
 
     abort();
@@ -1287,7 +1288,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
                 Tcl_WrongNumArgs(interp, 2, objv, "script ?arg?");
                 result = TCL_ERROR;
             } else {
-                cbPtr = Ns_TclNewCallback(interp, Ns_TclCallbackProc,
+                cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)Ns_TclCallbackProc,
                                           objv[2], objc - 3, objv + 3);
                 Ns_AddLogFilter(LogToTcl, cbPtr, Ns_TclFreeCallback);
                 Ns_TclSetAddrObj(Tcl_GetObjResult(interp), filterType, cbPtr);

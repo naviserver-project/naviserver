@@ -47,6 +47,8 @@
 
 #include "nsproxy.h"
 
+static const char * NS_EMPTY_STRING = "";
+
 #ifdef _WIN32
 # define SIGKILL 9
 # define SIGTERM 15
@@ -407,7 +409,7 @@ Nsproxy_LibInit(void)
         Tcl_InitHashTable(&pools, TCL_STRING_KEYS);
 
         Ns_RegisterAtShutdown(Shutdown, NULL);
-        Ns_RegisterProcInfo((Ns_Callback *)Shutdown, "nsproxy:shutdown", NULL);
+        Ns_RegisterProcInfo((ns_funcptr_t)Shutdown, "nsproxy:shutdown", NULL);
 
         Ns_LogNsProxyDebug = Ns_CreateLogSeverity("Debug(nsproxy)");
     }
@@ -612,7 +614,7 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
                 int n = (int)len;
 
                 if (n < max) {
-                    dots = "";
+                    dots = NS_EMPTY_STRING;
                 } else {
                     dots = " ...";
                     n = max;
@@ -1141,7 +1143,7 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script)
 
     if (err != ENone) {
         Ns_TclPrintfResult(interp, "could not send script \"%s\" to proxy \"%s\": %s",
-                           script == NULL ? "" : script,
+                           script == NULL ? NS_EMPTY_STRING : script,
                            proxyPtr->id, errMsg[err]);
         ProxyError(interp, err);
     }
@@ -1345,7 +1347,7 @@ SendBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr)
 static bool
 RecvBuf(Slave *slavePtr, int ms, Tcl_DString *dsPtr)
 {
-    uint32       ulen;
+    uint32       ulen = 0u;
     ssize_t      n;
     size_t       avail;
     struct iovec iov[2];

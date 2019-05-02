@@ -485,7 +485,7 @@ test byteranges-7.4 {Too Many non-contiguous ranges (more than NS_MAX_RANGES)} \
 
 #
 # The question whether or not the fd is used internally depends on
-# the config file. Make sure, that caching is activated, and the
+# the config file. Make sure that caching is activated, and the
 # cachemaxentry is larger than 2048.
 #
 test byteranges-7.5a {larger byte ranges, no fd, writer} -constraints serverListen -body {

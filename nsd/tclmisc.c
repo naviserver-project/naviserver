@@ -174,7 +174,7 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
     }
     errorInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
     if (errorInfo == NULL) {
-        errorInfo = "";
+        errorInfo = NS_EMPTY_STRING;
     }
     if (itPtr != NULL && itPtr->conn != NULL) {
         const Ns_Conn *conn = itPtr->conn;
@@ -368,7 +368,7 @@ int
 NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK, lineWidth = 80, offset = 0;
-    char        *textString = NULL, *prefixString = NULL;
+    char        *textString = (char *)NS_EMPTY_STRING, *prefixString = NULL;
     Ns_ObjvSpec opts[] = {
         {"-width",  Ns_ObjvInt,     &lineWidth,    NULL},
         {"-offset", Ns_ObjvInt,     &offset,       NULL},
@@ -529,7 +529,7 @@ int
 NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
-    char        *htmlString = NULL;
+    char        *htmlString = (char *)NS_EMPTY_STRING;
     Ns_ObjvSpec  args[] = {
         {"html", Ns_ObjvString,  &htmlString, NULL},
         {NULL, NULL, NULL, NULL}
@@ -550,8 +550,6 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         /*
          * Make a copy of the input and point the moving and output ptrs to it.
          */
-        assert(htmlString != NULL);
-
         inString   = ns_strdup(htmlString);
         inPtr      = inString;
         outPtr     = inString;
@@ -848,7 +846,7 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                                 {"yen",      3, "\xc2\xa5",     2},    /* "¥" */
                                 {"yuml",     4, "\xc3\xbf",     2},    /* "ÿ" */
                                 {"zeta",     4, "\xce\xb6",     2},    /* "ζ" */
-                                {NULL,       0, "", 0}
+                                {NULL,       0, "",             0}
                             };
 
                             inPtr ++;
@@ -933,7 +931,7 @@ int
 NsTclHrefsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
-    char        *htmlString = NULL;
+    char        *htmlString = (char *)NS_EMPTY_STRING;
     Ns_ObjvSpec  args[] = {
         {"html", Ns_ObjvString,  &htmlString, NULL},
         {NULL, NULL, NULL, NULL}
@@ -946,8 +944,6 @@ NsTclHrefsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         char       *s, *e;
         const char *p;
         Tcl_Obj    *listObj = Tcl_NewListObj(0, NULL);
-
-        assert(htmlString != NULL);
 
         p = htmlString;
         while (((s = strchr(p, INTCHAR('<'))) != NULL) && ((e = strchr(s, INTCHAR('>'))) != NULL)) {
@@ -1776,7 +1772,7 @@ NsTclFileStatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 #ifdef S_ISSOCK
                                   S_ISSOCK(st.st_mode) ? "socket" :
 #endif
-                   ""), -1), 0);
+                   NS_EMPTY_STRING), -1), 0);
         }
         Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
     }
@@ -2371,7 +2367,7 @@ int
 NsTclHashObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
-    char        *inputString;
+    char        *inputString = (char*)"";
     Ns_ObjvSpec  args[] = {
         {"string", Ns_ObjvString,  &inputString, NULL},
         {NULL, NULL, NULL, NULL}

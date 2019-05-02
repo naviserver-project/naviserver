@@ -33,26 +33,30 @@
  *
  *      Use the native OS sendfile-like implementation to send a file
  *      to an Ns_Sock if possible. Otherwise just use read/write etc.
+ *
+ *      Functions in this file never block on non-writable socket.
+ *      It is the caller responsibility to retry/repeat operation.
+ *      This should be done every time the calls return less bytes
+ *      written than requested (including zero).
  */
 
 #include "nsd.h"
 
+#ifdef HAVE_SYS_SENDFILE_H
+#include <sys/sendfile.h>
+#endif
 
 #ifdef _WIN32
-# include <io.h>
+#include <io.h>
 ssize_t pread(int fd, char *buf, size_t count, off_t offset);
-# endif
+#endif
 
 /*
  * Local functions defined in this file
  */
 
-static ssize_t SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
-                      const Ns_Time *timeoutPtr, unsigned int flags,
-                      Ns_DriverSendProc *sendProc);
-
-static Ns_DriverSendProc SendBufs;
-
+static ssize_t _SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length);
+static ssize_t SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length);
 
 
 /*
@@ -130,6 +134,7 @@ Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
     return i;
 }
 
+
 
 /*
  *----------------------------------------------------------------------
@@ -137,79 +142,77 @@ Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
  * Ns_SockSendFileBufs --
  *
  *      Send a vector of buffers/files on a non-blocking socket.
- *      Not all data may be sent.
  *
  * Results:
- *      Number of bytes sent, -1 on error or timeout.
+ *      Number of bytes sent, -1 on error.
+ *      Not all data may be sent.
  *
  * Side effects:
  *      May block reading data from disk.
  *
- *      May wait for given timeout if first attempt to write to socket
- *      would block.
- *
  *----------------------------------------------------------------------
  */
 
-#ifdef HAVE_SYS_SENDFILE_H  /* Linux */
-
-# include <sys/sendfile.h>
-
-static ssize_t
-Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t toSend, const Ns_Time *timeoutPtr);
-
 ssize_t
-Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
-                    const Ns_Time *timeoutPtr, unsigned int UNUSED(flags))
+Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs)
 {
-
-    ssize_t       sent, towrite, nwrote;
-    struct iovec  sbufs[UIO_MAXIOV];
+    ssize_t       towrite = 0, nwrote = 0;
+    struct iovec  sbufs[UIO_MAXIOV], *sbufPtr;
     int           nsbufs = 0, i;
 
-    towrite = nwrote = 0;
-    sent = -1;
+    sbufPtr = sbufs;
 
     for (i = 0; i < nbufs; i++) {
         size_t   length = bufs[i].length;
-        off_t    offset = bufs[i].offset;
         int      fd     = bufs[i].fd;
+        off_t    offset = bufs[i].offset;
 
-        if (length < 1) {
+        if (length == 0) {
             continue;
         }
 
         towrite += (ssize_t)length;
 
-        if (fd < 0) {
+        if (fd == NS_INVALID_FD) {
+
             /*
-             * Coalesce runs of memory bufs into fixed-sized iovec.
+             * Coalesce runs of memory buffers into fixed-sized iovec.
              */
-            (void) Ns_SetVec(sbufs, nsbufs++, INT2PTR(offset), length);
+
+            (void) Ns_SetVec(sbufPtr, nsbufs++, INT2PTR(offset), length);
         }
 
-        /* Flush pending memory bufs. */
+        if (   (fd == NS_INVALID_FD && (nsbufs == UIO_MAXIOV || i == nbufs-1))
+            || (fd != NS_INVALID_FD && (nsbufs > 0))) {
 
-        if ((fd < 0
-             && (nsbufs == UIO_MAXIOV || i == nbufs -1))
-            || (fd >= 0
-                && nsbufs > 0)) {
+            /*
+             * Flush pending memory buffers.
+             */
 
-            sent = NsDriverSend((Sock *)sock, sbufs, nsbufs, 0u);
-
-            nsbufs = 0;
+            ssize_t sent = NsDriverSend((Sock *)sock, sbufPtr, nsbufs, 0u);
+            if (sent == -1) {
+                nwrote = -1;
+                break;
+            }
             if (sent > 0) {
                 nwrote += sent;
             }
             if (sent < towrite) {
                 break;
             }
+            nsbufs = 0; /* All pending buffers flushed */
         }
 
-        /* Send a single file range. */
+        /*
+         * Send a single file range.
+         */
 
-        if (fd >= 0) {
-            sent = Sendfile(sock, fd, offset, length, timeoutPtr);
+        if (fd != NS_INVALID_FD) {
+            ssize_t sent = SendFile(sock, fd, offset, length);
+            if (sent == -1) {
+                nwrote = -1;
+                break;
+            }
             if (sent > 0) {
                 nwrote += sent;
             }
@@ -220,164 +223,8 @@ Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
         }
     }
 
-    return (nwrote != 0) ? nwrote : sent;
+    return nwrote;
 }
-
-static ssize_t
-Sendfile(Ns_Sock *sock, int fd, off_t offset, size_t toSend, const Ns_Time *timeoutPtr)
-{
-    ssize_t sent;
-
-    sent = sendfile(sock->sock, fd, &offset, toSend);
-
-    if (sent == -1) {
-        if ((errno == EAGAIN) || (errno == NS_EWOULDBLOCK)) {
-            /*
-             * OS is overly busy, retry after timeout.
-             */
-            if (Ns_SockTimedWait(sock->sock, NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
-                sent = sendfile(sock->sock, fd, &offset, toSend);
-            }
-        } else if ((errno == EINVAL) || (errno == ENOSYS)) {
-            /*
-             * File system does not support sendfile?
-             */
-            sent = SendFd(sock, fd, offset, toSend, timeoutPtr, 0, SendBufs);
-        }
-    }
-
-    return sent;
-}
-
-#else /* Default implementation, no HAVE_SYS_SENDFILE_H available */
-
-ssize_t
-Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
-                    const Ns_Time *timeoutPtr, unsigned int flags)
-{
-    ssize_t sent;
-
-    sent = NsSockSendFileBufsIndirect(sock, bufs, nbufs, timeoutPtr, flags, SendBufs);
-    if (sent == -1) {
-        if ((errno == EAGAIN) || (errno == NS_EWOULDBLOCK)) {
-            /*
-             * OS is overly busy, retry after timeout.
-             */
-            if (Ns_SockTimedWait(sock->sock, NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
-                sent = NsSockSendFileBufsIndirect(sock, bufs, nbufs, timeoutPtr, flags, SendBufs);
-            }
-        }
-    }
-    
-    return sent;
-}
-
-#endif
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsSockSendFileBufsIndirect --
- *
- *      Send a vector of buffers/files on a non-blocking socket using
- *      the given callback for socekt IO.  Not all data may be sent.
- *
- * Results:
- *      Number of bytes sent, -1 on error or timeout.
- *
- * Side effects:
- *      May block reading data from disk.
- *
- *      May wait for given timeout if first attempt to write to socket
- *      would block.
- *
- *----------------------------------------------------------------------
- */
-
-ssize_t
-NsSockSendFileBufsIndirect(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
-                           const Ns_Time *timeoutPtr, unsigned int flags,
-                           Ns_DriverSendProc *sendProc)
-{
-    ssize_t       sent, nwrote;
-    struct iovec  iov;
-    int           i;
-
-    nwrote = 0;
-    sent = -1;
-
-    for (i = 0; i < nbufs; i++) {
-        size_t  toSend = bufs[i].length;
-        int     fd     = bufs[i].fd;
-        off_t   offset = bufs[i].offset;
-
-        if (toSend > 0u) {
-            if (fd < 0) {
-                (void) Ns_SetVec(&iov, 0, INT2PTR(offset), toSend);
-                sent = (*sendProc)(sock, &iov, 1, timeoutPtr, flags);
-            } else {
-                sent = SendFd(sock, fd, offset, toSend,
-                              timeoutPtr, flags, sendProc);
-            }
-            if (sent > 0) {
-                nwrote += sent;
-            }
-            if (sent != (ssize_t)toSend) {
-                break;
-            }
-        }
-    }
-
-    return nwrote > 0 ? nwrote : sent;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * pread --
- *
- *      The pread() function is used in SendFd to read N bytes from a
- *      stream/file from a given offset point. It is natively present
- *      on linux/unix but not on windows.
- *
- * Results:
- *      On success, number of bytes read, -1 on error
- *
- * Side effects:
- *      Advancing the file pointer.
- *
- *----------------------------------------------------------------------
- */
-#ifdef _WIN32
-
-
-ssize_t pread(int fd, char *buf, size_t count, off_t offset)
-{
-    HANDLE   fh = (HANDLE)_get_osfhandle(fd);
-    ssize_t  result;
-
-    if (fh == INVALID_HANDLE_VALUE) {
-        errno = EBADF;
-        result = -1;
-    } else {
-        DWORD      ret, c = (DWORD)count;
-        OVERLAPPED overlapped = { 0u };
-
-        overlapped.Offset = (DWORD)offset;
-        overlapped.OffsetHigh = (DWORD)(((uint64_t)offset) >> 32);
-
-        if (ReadFile(fh, buf, c, &ret, &overlapped) == FALSE) {
-            result = -1;
-        } else {
-            result = (ssize_t)ret;
-        }
-    }
-
-    return result;
-}
-#endif
 
 
 
@@ -391,7 +238,7 @@ ssize_t pread(int fd, char *buf, size_t count, off_t offset)
  *      able to handle nesting calls.
  *
  * Results:
- *      success (NS_TRUE or NS_FALSE)
+ *      NS_TRUE or NS_FALSE
  *
  * Side effects:
  *      Switch TCP send state, potentially update sockPtr->flags
@@ -441,8 +288,8 @@ Ns_SockCork(const Ns_Sock *sock, bool cork)
 # if defined(UDP_CORK)
         if ((sockPtr->drvPtr->opts & NS_DRIVER_UDP) != 0) {
             if ((sockPtr->sock != NS_INVALID_SOCKET)
-                && setsockopt(sockPtr->sock, IPPROTO_UDP, UDP_CORK, &corkInt, sizeof(corkInt)) == -1)
-                ) {
+                && setsockopt(sockPtr->sock, IPPROTO_UDP, UDP_CORK, &corkInt, sizeof(corkInt)) == -1) {
+
                 Ns_Log(Error, "socket(%d): setsockopt(UDP_CORK) %d: %s",
                        sockPtr->sock, corkInt, ns_sockstrerror(ns_sockerrno));
             } else {
@@ -468,100 +315,187 @@ Ns_SockCork(const Ns_Sock *sock, bool cork)
     return success;
 }
 
+
 
 /*
  *----------------------------------------------------------------------
  *
- * SendFd --
+ * SendFile --
  *
- *      Send the given range of bytes from fd to sock using the given
- *      callback. Not all data may be sent.
+ *      Custom wrapper for sendfile() that handles the case
+ *      where the source file system does not support it,
+ *      or when it is not defined for the platform.
  *
  * Results:
- *      Number of bytes sent, -1 on error or timeout.
+ *      Number of bytes sent, -1 on error.
+ *      Not all data may be sent.
  *
  * Side effects:
  *      May block reading data from disk.
- *
- *      May wait for given timeout if first attempt to write to socket
- *      would block.
  *
  *----------------------------------------------------------------------
  */
 
 static ssize_t
-SendFd(Ns_Sock *sock, int fd, off_t offset, size_t length,
-       const Ns_Time *timeoutPtr, unsigned int flags,
-       Ns_DriverSendProc *sendProc)
+SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length)
 {
-    char          buf[16384];
-    struct iovec  iov;
-    ssize_t       nwrote = 0, toRead = (ssize_t)length, result;
-    bool          decork;
+    ssize_t sent = -1;
 
-    // Ns_Log(Notice, "SendFd offset %ld length %lu", offset, length);
+    NS_NONNULL_ASSERT(sock != NULL);
+
+    assert(fd != NS_INVALID_FD);
+    assert(offset >= 0);
+
+#if defined(HAVE_LINUX_SENDFILE)
+    sent = sendfile(sock->sock, fd, &offset, length);
+    if (sent == -1) {
+        if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
+            sent = 0;
+        } else if (errno == EINVAL || errno == ENOSYS) {
+            sent = _SendFile(sock, fd, offset, length);
+        }
+    }
+#elif defined(HAVE_BSD_SENDFILE)
+    {
+        int rc, flags = 0;
+        off_t sbytes = 0;
+
+        rc = sendfile(fd, sock->sock, offset, length, NULL, &sbytes, flags);
+        if (rc == 0 || errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
+            sent = sbytes;
+        } else if (errno == EOPNOTSUPP) {
+            sent = _SendFile(sock, fd, offset, length);
+        }
+    }
+#else
+    sent = _SendFile(sock, fd, offset, length);
+#endif
+
+    return sent;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * _SendFile
+ *
+ *      Emulates the operation of kernel-based sendfile().
+ *
+ * Results:
+ *      Number of bytes sent, -1 on error
+ *      Not all data may be sent.
+ *
+ * Side effects:
+ *      May block reading data from disk.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ssize_t
+_SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length)
+{
+    char               buf[16384];
+    struct iovec       iov;
+    ssize_t            nwrote = 0, toread = (ssize_t)length;
+    bool               decork;
+    Sock              *sockPtr;
+    Ns_DriverSendProc *sendProc;
+
+    NS_NONNULL_ASSERT(sock != NULL);
+
+    sockPtr = (Sock *)sock;
+
+    NS_NONNULL_ASSERT(sockPtr->drvPtr != NULL);
+
+    sendProc = sockPtr->drvPtr->sendProc;
+
+    if (sendProc == NULL) {
+        Ns_Log(Warning, "no sendProc registered for driver %s",
+               sockPtr->drvPtr->threadName);
+        return -1;
+    }
 
     decork = Ns_SockCork(sock, NS_TRUE);
-    while (toRead > 0) {
-        ssize_t sent, nread;
 
-        nread = pread(fd, buf, MIN((size_t)toRead, sizeof(buf)), offset);
+    while (toread > 0) {
+        ssize_t nread, sent;
 
-        // Ns_Log(Notice, "... pread toread %lu offset %ld => read %ld", MIN((size_t)toRead, sizeof(buf)), offset, nread);
+        nread = pread(fd, buf, MIN((size_t)toread, sizeof(buf)), offset);
+
         if (nread <= 0) {
+            nwrote = -1;
             break;
         }
-        toRead -= nread;
-        offset += (off_t)nread;
 
         (void) Ns_SetVec(&iov, 0, buf, (size_t)nread);
-        sent = (*sendProc)(sock, &iov, 1, timeoutPtr, flags);
+        sent = (*sendProc)(sock, &iov, 1, NULL, 0);
+
+        if (sent == -1) {
+            nwrote = -1;
+            break;
+        }
         if (sent > 0) {
             nwrote += sent;
         }
-
         if (sent != nread) {
             break;
         }
+        toread -= nread;
+        offset += (off_t)nread;
     }
 
     if (decork) {
         (void) Ns_SockCork(sock, NS_FALSE);
     }
 
-    if (nwrote > 0) {
-        result = nwrote;
-    } else {
-        result = -1;
-    }
-
-    return result;
+    return nwrote;
 }
+
 
 
 /*
  *----------------------------------------------------------------------
  *
- * SendBufs --
+ * pread --
  *
- *      Implements the driver send interface to send bufs directly
- *      to a OS socket.
+ *      The pread() syscall emulation for Windows.
  *
  * Results:
- *      Number of bytes sent, -1 on error or timeout.
+ *      Number of bytes read, -1 on error
  *
  * Side effects:
- *      See Ns_SockSendBufs.
+ *      Advancing the file pointer.
  *
  *----------------------------------------------------------------------
  */
-
-static ssize_t
-SendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
-         const Ns_Time *timeoutPtr, unsigned int flags)
+#ifdef _WIN32
+ssize_t pread(int fd, char *buf, size_t count, off_t offset)
 {
-    return Ns_SockSendBufs(sock, bufs, nbufs, timeoutPtr, flags);
+    HANDLE   fh = (HANDLE)_get_osfhandle(fd);
+    ssize_t  result;
+
+    if (fh == INVALID_HANDLE_VALUE) {
+        errno = EBADF;
+        result = -1;
+    } else {
+        DWORD      ret, c = (DWORD)count;
+        OVERLAPPED overlapped = { 0u };
+
+        overlapped.Offset = (DWORD)offset;
+        overlapped.OffsetHigh = (DWORD)(((uint64_t)offset) >> 32);
+
+        if (ReadFile(fh, buf, c, &ret, &overlapped) == FALSE) {
+            result = -1;
+        } else {
+            result = (ssize_t)ret;
+        }
+    }
+
+    return result;
 }
+#endif /* _WIN32 */
 
 /*
  * Local Variables:

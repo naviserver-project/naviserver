@@ -26,7 +26,7 @@ The value of the reported [arg condition] will be as follows:
 [list_begin itemized]
 
 [item] r - the socket is readable
-[item] w - the socket is writeable
+[item] w - the socket is writable
 [item] e - the socket has an exceptional condition
 [item] x - the server is shutting down
 [item] t - timeout received

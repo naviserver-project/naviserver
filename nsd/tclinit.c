@@ -1066,7 +1066,7 @@ ICtlAddTrace(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const
             if (when == NS_TCL_TRACE_NONE) {
                 when  = (Ns_TclTraceType)flags;
             }
-            cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclTraceProc,
+            cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclTraceProc,
                                       scriptObj, remain, objv + (objc - remain));
             if (Ns_TclRegisterTrace(servPtr->server, NsTclTraceProc, cbPtr, when) != NS_OK) {
                 result = TCL_ERROR;
@@ -1480,7 +1480,7 @@ ICtlGetTracesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
              (tracePtr != NULL);
              tracePtr = tracePtr->nextPtr) {
             if (tracePtr->when == when) {
-                Ns_GetProcInfo(&ds, (Ns_Callback *)tracePtr->proc, tracePtr->arg);
+                Ns_GetProcInfo(&ds, (ns_funcptr_t)tracePtr->proc, tracePtr->arg);
             }
         }
         Tcl_DStringResult(interp, &ds);
@@ -1692,6 +1692,7 @@ NsTclInitServer(const char *server)
         }
         Ns_TclDeAllocateInterp(interp);
     }
+    Ns_ThreadSetName("-main-");
 }
 
 /*
@@ -2301,7 +2302,7 @@ LogTrace(const NsInterp *itPtr, const TclTrace *tracePtr, Ns_TclTraceType why)
         Ns_DStringInit(&ds);
         Ns_DStringNAppend(&ds, GetTraceLabel(why), -1);
         Ns_DStringNAppend(&ds, " ", 1);
-        Ns_GetProcInfo(&ds, (Ns_Callback *)tracePtr->proc, tracePtr->arg);
+        Ns_GetProcInfo(&ds, (ns_funcptr_t)tracePtr->proc, tracePtr->arg);
         Ns_Log(Debug, "ns:interptrace[%s]: %s",
                itPtr->servPtr->server, Ns_DStringValue(&ds));
         Ns_DStringFree(&ds);

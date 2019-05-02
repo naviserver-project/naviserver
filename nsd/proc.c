@@ -61,26 +61,26 @@ static void AppendAddr(Tcl_DString *dsPtr, const char *prefix, const void *addr)
 static Tcl_HashTable infoHashTable;
 
 static const struct proc {
-    Ns_Callback *procAddr;
+    ns_funcptr_t    procAddr;
     const char  *desc;
     Ns_ArgProc  *argProc;
 } procs[] = {
-    { (Ns_Callback *)NsTclThread,          "ns:tclthread",        NsTclThreadArgProc},
-    {                Ns_TclCallbackProc,   "ns:tclcallback",      Ns_TclCallbackArgProc},
-    { (Ns_Callback *)NsTclConnLocation,    "ns:tclconnlocation",  Ns_TclCallbackArgProc},
-    { (Ns_Callback *)NsTclSchedProc,       "ns:tclschedproc",     Ns_TclCallbackArgProc},
-    { (Ns_Callback *)NsTclServerRoot,      "ns:tclserverroot",    Ns_TclCallbackArgProc},
-    { (Ns_Callback *)NsTclSockProc,        "ns:tclsockcallback",  NsTclSockArgProc},
-    { (Ns_Callback *)NsConnThread,         "ns:connthread",       NsConnArgProc},
-    { (Ns_Callback *)NsTclFilterProc,      "ns:tclfilter",        Ns_TclCallbackArgProc},
-    { (Ns_Callback *)NsShortcutFilterProc, "ns:shortcutfilter",   NULL},
-    { (Ns_Callback *)NsTclRequestProc,     "ns:tclrequest",       Ns_TclCallbackArgProc},
-    { (Ns_Callback *)NsAdpPageProc,        "ns:adppage",          NsAdpPageArgProc},
-    { (Ns_Callback *)Ns_FastPathProc,      "ns:fastget",          NULL},
-    { (Ns_Callback *)NsTclTraceProc,       "ns:tcltrace",         Ns_TclCallbackArgProc},
-    { (Ns_Callback *)NsTclUrl2FileProc,    "ns:tclurl2file",      Ns_TclCallbackArgProc},
-    { (Ns_Callback *)NsMountUrl2FileProc,  "ns:mounturl2file",    NsMountUrl2FileArgProc},
-    { (Ns_Callback *)Ns_FastUrl2FileProc,  "ns:fasturl2file",     ServerArgProc},
+    { (ns_funcptr_t)NsTclThread,          "ns:tclthread",        NsTclThreadArgProc},
+    { (ns_funcptr_t)Ns_TclCallbackProc,   "ns:tclcallback",      Ns_TclCallbackArgProc},
+    { (ns_funcptr_t)NsTclConnLocation,    "ns:tclconnlocation",  Ns_TclCallbackArgProc},
+    { (ns_funcptr_t)NsTclSchedProc,       "ns:tclschedproc",     Ns_TclCallbackArgProc},
+    { (ns_funcptr_t)NsTclServerRoot,      "ns:tclserverroot",    Ns_TclCallbackArgProc},
+    { (ns_funcptr_t)NsTclSockProc,        "ns:tclsockcallback",  NsTclSockArgProc},
+    { (ns_funcptr_t)NsConnThread,         "ns:connthread",       NsConnArgProc},
+    { (ns_funcptr_t)NsTclFilterProc,      "ns:tclfilter",        Ns_TclCallbackArgProc},
+    { (ns_funcptr_t)NsShortcutFilterProc, "ns:shortcutfilter",   NULL},
+    { (ns_funcptr_t)NsTclRequestProc,     "ns:tclrequest",       Ns_TclCallbackArgProc},
+    { (ns_funcptr_t)NsAdpPageProc,        "ns:adppage",          NsAdpPageArgProc},
+    { (ns_funcptr_t)Ns_FastPathProc,      "ns:fastget",          NULL},
+    { (ns_funcptr_t)NsTclTraceProc,       "ns:tcltrace",         Ns_TclCallbackArgProc},
+    { (ns_funcptr_t)NsTclUrl2FileProc,    "ns:tclurl2file",      Ns_TclCallbackArgProc},
+    { (ns_funcptr_t)NsMountUrl2FileProc,  "ns:mounturl2file",    NsMountUrl2FileArgProc},
+    { (ns_funcptr_t)Ns_FastUrl2FileProc,  "ns:fasturl2file",     ServerArgProc},
     {NULL, NULL, NULL}
 };
 
@@ -135,7 +135,7 @@ NsInitProcInfo(void)
  */
 
 void
-Ns_RegisterProcInfo(Ns_Callback procAddr, const char *desc, Ns_ArgProc *argProc)
+Ns_RegisterProcInfo(ns_funcptr_t procAddr, const char *desc, Ns_ArgProc *argProc)
 {
     Tcl_HashEntry *hPtr;
     Info          *infoPtr;
@@ -174,7 +174,7 @@ Ns_RegisterProcInfo(Ns_Callback procAddr, const char *desc, Ns_ArgProc *argProc)
  */
 
 void
-Ns_GetProcInfo(Tcl_DString *dsPtr, Ns_Callback procAddr, const void *arg)
+Ns_GetProcInfo(Tcl_DString *dsPtr, ns_funcptr_t procAddr, const void *arg)
 {
     const Tcl_HashEntry  *hPtr;
     const Info           *infoPtr;
@@ -226,7 +226,7 @@ Ns_StringArgProc(Tcl_DString *dsPtr, const void *arg)
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     
-    Tcl_DStringAppendElement(dsPtr, (str != NULL) ? str : "");
+    Tcl_DStringAppendElement(dsPtr, (str != NULL) ? str : NS_EMPTY_STRING);
 }
 
 
@@ -251,7 +251,7 @@ ServerArgProc(Tcl_DString *dsPtr, const void *arg)
 {
     const NsServer *servPtr = arg;
 
-    Tcl_DStringAppendElement(dsPtr, (servPtr != NULL) ? servPtr->server : "");
+    Tcl_DStringAppendElement(dsPtr, (servPtr != NULL) ? servPtr->server : NS_EMPTY_STRING);
 }
 
 

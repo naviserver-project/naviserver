@@ -99,6 +99,8 @@ static const unsigned char dont_echo[]  = {TN_IAC, TN_DONT, TN_ECHO};
 static const unsigned char will_echo[]  = {TN_IAC, TN_WILL, TN_ECHO};
 static const unsigned char wont_echo[]  = {TN_IAC, TN_WONT, TN_ECHO};
 
+static const char *NS_EMPTY_STRING = "";
+
 /*
  * Define the version of the module (usually 1).
  */
@@ -283,10 +285,10 @@ Ns_ModuleInit(const char *server, const char *module)
 
 #ifndef PCLINT_BUG
         if (result == NS_OK) {
-            Ns_RegisterProcInfo((Ns_Callback *)AcceptProc, "nscp", ArgProc);
+            Ns_RegisterProcInfo((ns_funcptr_t)AcceptProc, "nscp", ArgProc);
         }
 #else
-        if (result == NS_OK) Ns_RegisterProcInfo((Ns_Callback *)AcceptProc, "nscp", ArgProc);
+        if (result == NS_OK) Ns_RegisterProcInfo((ns_funcptr_t)AcceptProc, "nscp", ArgProc);
 #endif
     }
 
@@ -408,7 +410,7 @@ EvalThread(void *arg)
     Tcl_DStringInit(&ds);
     Tcl_DStringInit(&unameDS);
     Ns_DStringPrintf(&ds, "-nscp:%d-", sessPtr->id);
-    Ns_ThreadSetName(ds.string);
+    Ns_ThreadSetName("%s", ds.string);
     Tcl_DStringSetLength(&ds, 0);
     Ns_Log(Notice, "nscp: %s connected",
            ns_inet_ntop((struct sockaddr *)&(sessPtr->sa), ipString, sizeof(ipString)));
@@ -453,7 +455,7 @@ retry:
         while (ds.length > 0 && ds.string[ds.length-1] == '\n') {
             Tcl_DStringSetLength(&ds, ds.length-1);
         }
-        if (STREQ(ds.string, "")) {
+        if (STREQ(ds.string, NS_EMPTY_STRING)) {
             goto retry; /* Empty command - try again. */
         }
 

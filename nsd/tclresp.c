@@ -74,7 +74,7 @@ int
 NsTclHeadersObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Ns_Conn    *conn = NULL;
-    int         httpStatus, length = -1, binary = (int)NS_FALSE, result;
+    int         httpStatus = 0, length = -1, binary = (int)NS_FALSE, result;
     char       *mimeType = NULL;
 
     Ns_ObjvSpec opts[] = {
@@ -234,10 +234,6 @@ NsTclWriteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *c
     } else if (NsConnRequire(interp, &conn) != NS_OK) {
         result = TCL_ERROR;
 
-    } else if (Ns_ConnSockPtr(conn) == NULL) {
-        Ns_TclPrintfResult(interp, "connection channels is detached");
-        result = TCL_ERROR;
-
     } else {
         objv++;
         objc--;
@@ -339,8 +335,8 @@ NsTclReturnObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 {
     Ns_Conn    *conn = NULL;
     Tcl_Obj    *dataObj;
-    char       *type;
-    int         result, httpStatus, len, binary = (int)NS_FALSE;
+    char       *mimeType;
+    int         result, httpStatus = 0, binary = (int)NS_FALSE;
 
     Ns_ObjvSpec opts[] = {
         {"-binary",  Ns_ObjvBool, &binary, INT2PTR(NS_TRUE)},
@@ -348,7 +344,7 @@ NsTclReturnObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     };
     Ns_ObjvSpec args[] = {
         {"status",   Ns_ObjvInt,    &httpStatus,  NULL},
-        {"type",     Ns_ObjvString, &type,    NULL},
+        {"type",     Ns_ObjvString, &mimeType,    NULL},
         {"data",     Ns_ObjvObj,    &dataObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -360,13 +356,14 @@ NsTclReturnObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
     } else {
         const char *data;
+        int         len;
 
         if (binary == (int)NS_TRUE || NsTclObjIsByteArray(dataObj)) {
             data = (const char *) Tcl_GetByteArrayFromObj(dataObj, &len);
-            result = Result(interp, Ns_ConnReturnData(conn, httpStatus, data, len, type));
+            result = Result(interp, Ns_ConnReturnData(conn, httpStatus, data, len, mimeType));
         } else {
             data = Tcl_GetStringFromObj(dataObj, &len);
-            result = Result(interp, Ns_ConnReturnCharData(conn, httpStatus, data, len, type));
+            result = Result(interp, Ns_ConnReturnCharData(conn, httpStatus, data, len, mimeType));
         }
     }
 
@@ -505,7 +502,7 @@ int
 NsTclReturnFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Ns_Conn      *conn = NULL;
-    int           httpStatus, result;
+    int           httpStatus = 0, result;
     char         *mimeType, *fileName;
     Ns_ObjvSpec   args[] = {
         {"status",   Ns_ObjvInt,    &httpStatus,   NULL},
@@ -547,7 +544,7 @@ NsTclReturnFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 int
 NsTclReturnFpObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int           len, httpStatus, result;
+    int           len = 0, httpStatus = 0, result;
     char         *mimeType, *channelName;
     Ns_Conn      *conn = NULL;
     Tcl_Channel   chan = NULL;
@@ -597,7 +594,7 @@ NsTclConnSendFpObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 {
     Ns_Conn     *conn = NULL;
     Tcl_Channel  chan = NULL;
-    int          len, result;
+    int          len = 0, result;
     char        *channelName;
     Ns_ObjvSpec  args[] = {
         {"channel", Ns_ObjvString,  &channelName, NULL},
@@ -759,7 +756,7 @@ NsTclReturnTooLargeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
 int
 NsTclReturnErrorObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int          httpStatus, result;
+    int          httpStatus = 0, result;
     Ns_Conn     *conn = NULL;
     char        *message;
     Ns_ObjvSpec  args[] = {
@@ -838,7 +835,7 @@ int
 NsTclReturnNoticeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Ns_Conn      *conn = NULL;
-    int           httpStatus, result;
+    int           httpStatus = 0, result;
     char         *title, *message;
     Ns_ObjvSpec   args[] = {
         {"status",   Ns_ObjvInt,    &httpStatus,   NULL},

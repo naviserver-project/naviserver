@@ -993,7 +993,7 @@ NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                      int objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK, part = INTCHAR('q');
-    char        *charset = NULL, *chars = NULL;
+    char        *charset = NULL, *chars = (char *)NS_EMPTY_STRING;
     Ns_ObjvTable parts[] = {
         {"query",    UCHAR('q')},
         {"path",     UCHAR('p')},
@@ -1016,8 +1016,6 @@ NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     } else {
         Ns_DString    ds;
         Tcl_Encoding  encoding;
-
-        assert(chars != NULL);
 
         Ns_DStringInit(&ds);
         if (charset != NULL) {

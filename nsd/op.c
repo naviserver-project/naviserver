@@ -596,7 +596,7 @@ WalkCallback(Tcl_DString *dsPtr, const void *arg)
      NS_NONNULL_ASSERT(arg != NULL);
      reqPtr = arg;
 
-     Ns_GetProcInfo(dsPtr, (Ns_Callback *)reqPtr->proc, reqPtr->arg);
+     Ns_GetProcInfo(dsPtr, (ns_funcptr_t)reqPtr->proc, reqPtr->arg);
 }
 
 

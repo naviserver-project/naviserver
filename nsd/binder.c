@@ -669,7 +669,6 @@ Ns_SockBindRaw(int proto)
     if (sock == NS_INVALID_SOCKET) {
         ns_sockerrno_t err = ns_sockerrno;
 
-        ns_sockclose(sock);
         Ns_SetSockErrno(err);
     }
 
@@ -943,6 +942,7 @@ PrebindSockets(const char *spec)
             l = strtol(str, NULL, 10);
             line = str;
         } else {
+            assert(addr != NULL);
             l = strtol(addr, NULL, 10);
             addr = (char *)NS_IP_UNSPECIFIED;
         }
@@ -1107,7 +1107,7 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
 {
     NS_SOCKET     sock = NS_INVALID_SOCKET;
 #ifndef _WIN32
-    ns_sockerrno_t err;
+    ns_sockerrno_t err = 0;
     ssize_t       n;
     char          data[NS_IPADDR_SIZE];
     struct msghdr msg;
@@ -1349,6 +1349,8 @@ Binder(void)
         memset(&msg, 0, sizeof(msg));
         msg.msg_iov = iov;
         msg.msg_iovlen = 4;
+        options = 0;
+        port = 0u;
         type = '\0';
         err = 0;
         do {

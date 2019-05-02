@@ -697,7 +697,7 @@ UpdateStringOfMemUnit(Tcl_Obj *objPtr)
 static int
 SetMemUnitFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 {
-    Tcl_WideInt memUnit;
+    Tcl_WideInt memUnit = 0;
     int         result = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
@@ -1624,7 +1624,7 @@ WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *inter
     if (argSpec != NULL) {
         for (specPtr = argSpec; specPtr->key != NULL; ++specPtr) {
             Ns_DStringPrintf(&ds, "%s%s ", specPtr->key,
-                             (*specPtr->key == '?') ? "?" : "");
+                             (*specPtr->key == '?') ? "?" : NS_EMPTY_STRING);
         }
     }
     if (ds.length > 0) {
@@ -1763,7 +1763,7 @@ GetOptIndexSubcmdSpec(Tcl_Interp *interp, Tcl_Obj *obj, const char *msg, const N
             entryPtr++;
             while (entryPtr->key != NULL) {
                 if ((entryPtr+1)->key == NULL) {
-                    Tcl_AppendStringsToObj(resultPtr, (count > 0 ? "," : ""),
+                    Tcl_AppendStringsToObj(resultPtr, (count > 0 ? "," : NS_EMPTY_STRING),
                                            " or ", entryPtr->key, (char *)0L);
                 } else if (entryPtr->key != NULL) {
                     Tcl_AppendStringsToObj(resultPtr, ", ", entryPtr->key, (char *)0L);

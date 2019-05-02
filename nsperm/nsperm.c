@@ -50,6 +50,7 @@
 
 
 NS_EXPORT const int Ns_ModuleVersion = 1;
+static const char *NS_EMPTY_STRING = "";
 
 /*
  * The following structure is allocated for each instance of the module.
@@ -378,14 +379,18 @@ static Ns_ReturnCode AuthProc(const char *server, const char *method, const char
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     char           buf[NS_ENCRYPT_BUFSIZE], *group;
-    const char *auth = NULL;
+    const char    *auth = NULL;
     Ns_Conn       *conn = Ns_GetConn();
 
+    if (conn == NULL) {
+        Ns_Log(Error, "nsperm: authProc called without connection");
+        return NS_ERROR;
+    }
     if (user == NULL) {
-        user = "";
+        user = NS_EMPTY_STRING;
     }
     if (pwd == NULL) {
-        pwd = "";
+        pwd = NS_EMPTY_STRING;
     }
 
     hPtr = Tcl_FindHashEntry(&serversTable, server);
@@ -1776,7 +1781,7 @@ static int CreateHeader(Server *servPtr, Ns_Conn *conn, bool stale)
     Ns_DString  ds;
     char       *nonce = 0;
 
-    if (CreateNonce(usdigest, &nonce, "") == NS_ERROR) {
+    if (CreateNonce(usdigest, &nonce, NS_EMPTY_STRING) == NS_ERROR) {
         return NS_ERROR;
     }
 

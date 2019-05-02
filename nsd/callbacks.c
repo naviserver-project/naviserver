@@ -44,7 +44,7 @@
 
 typedef struct Callback {
     struct Callback *nextPtr;
-    Ns_Callback     *proc;
+    ns_funcptr_t        proc;
     void            *arg;
 } Callback;
 
@@ -54,7 +54,7 @@ typedef struct Callback {
 
 static Ns_ThreadProc ShutdownThread;
 
-static void *RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg, bool fifo)
+static void *RegisterAt(Callback **firstPtrPtr, ns_funcptr_t proc, void *arg, bool fifo)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void RunCallbacks(const char *list, const Callback *cbPtr)
@@ -105,7 +105,7 @@ void *
 Ns_RegisterAtPreStartup(Ns_Callback *proc, void *arg)
 {
     NS_NONNULL_ASSERT(proc != NULL);
-    return RegisterAt(&firstPreStartup, proc, arg, NS_TRUE);
+    return RegisterAt(&firstPreStartup, (ns_funcptr_t)proc, arg, NS_TRUE);
 }
 
 
@@ -131,7 +131,7 @@ void *
 Ns_RegisterAtStartup(Ns_Callback *proc, void *arg)
 {
     NS_NONNULL_ASSERT(proc != NULL);
-    return RegisterAt(&firstStartup, proc, arg, NS_TRUE);
+    return RegisterAt(&firstStartup, (ns_funcptr_t)proc, arg, NS_TRUE);
 }
 
 
@@ -156,7 +156,7 @@ void *
 Ns_RegisterAtSignal(Ns_Callback *proc, void *arg)
 {
     NS_NONNULL_ASSERT(proc != NULL);
-    return RegisterAt(&firstSignal, proc, arg, NS_TRUE);
+    return RegisterAt(&firstSignal, (ns_funcptr_t)proc, arg, NS_TRUE);
 }
 
 
@@ -180,7 +180,7 @@ void *
 Ns_RegisterAtReady(Ns_Callback *proc, void *arg)
 {
     NS_NONNULL_ASSERT(proc != NULL);
-    return RegisterAt(&firstReady, proc, arg, NS_FALSE);
+    return RegisterAt(&firstReady, (ns_funcptr_t)proc, arg, NS_FALSE);
 }
 
 
@@ -204,7 +204,7 @@ void *
 Ns_RegisterAtShutdown(Ns_ShutdownProc *proc, void *arg)
 {
     NS_NONNULL_ASSERT(proc != NULL);
-    return RegisterAt(&firstShutdown, (Ns_Callback *)proc, arg, NS_FALSE);
+    return RegisterAt(&firstShutdown, (ns_funcptr_t)proc, arg, NS_FALSE);
 }
 
 
@@ -228,7 +228,7 @@ void *
 Ns_RegisterAtExit(Ns_Callback *proc, void *arg)
 {
     NS_NONNULL_ASSERT(proc != NULL);
-    return RegisterAt(&firstExit, proc, arg, NS_FALSE);
+    return RegisterAt(&firstExit, (ns_funcptr_t)proc, arg, NS_FALSE);
 }
 
 
@@ -463,7 +463,7 @@ AppendList(Tcl_DString *dsPtr, const char *list, const Callback *cbPtr)
  */
 
 static void *
-RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg, bool fifo)
+RegisterAt(Callback **firstPtrPtr, ns_funcptr_t proc, void *arg, bool fifo)
 {
     Callback   *cbPtr, *nextPtr;
     static bool first = NS_TRUE;
@@ -472,7 +472,7 @@ RegisterAt(Callback **firstPtrPtr, Ns_Callback *proc, void *arg, bool fifo)
     NS_NONNULL_ASSERT(proc != NULL);
 
     cbPtr = ns_malloc(sizeof(Callback));
-    cbPtr->proc = proc;
+    cbPtr->proc = (ns_funcptr_t)proc;
     cbPtr->arg = arg;
 
     Ns_MutexLock(&lock);
@@ -534,7 +534,7 @@ RunCallbacks(const char *list, const Callback *cbPtr)
             Ns_Log(Debug, "ns:callback: %s: %s", list, Ns_DStringValue(&ds));
             Ns_DStringFree(&ds);
         }
-        proc = cbPtr->proc;
+        proc = (Ns_Callback *)cbPtr->proc;
        (*proc)(cbPtr->arg);
 
         cbPtr = cbPtr->nextPtr;

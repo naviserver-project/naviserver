@@ -75,6 +75,8 @@ extern void NsthreadsInit();
 extern void NsdInit();
 #endif
 
+const char *NS_EMPTY_STRING = "";
+
 
 /*
  *----------------------------------------------------------------------

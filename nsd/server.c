@@ -310,7 +310,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
      * Load modules and initialize Tcl.  The order is significant.
      */
 
-    CreatePool(servPtr, "");
+    CreatePool(servPtr, NS_EMPTY_STRING);
     path = Ns_ConfigGetPath(server, NULL, "pools", (char *)0L);
     set = Ns_ConfigGetSection(path);
     for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {

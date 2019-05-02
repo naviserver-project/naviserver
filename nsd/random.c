@@ -198,7 +198,7 @@ GenSeeds(unsigned long seeds[], int nseeds)
     Ns_Thread thr;
 
     Ns_Log(Notice, "random: generating %d seed%s", nseeds,
-        nseeds == 1 ? "" : "s");
+        nseeds == 1 ? NS_EMPTY_STRING : "s");
     Ns_CsEnter(&lock);
     Ns_SemaInit(&sema, 0);
     fRun = NS_TRUE;

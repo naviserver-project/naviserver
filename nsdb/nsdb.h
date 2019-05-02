@@ -129,6 +129,8 @@ NS_EXTERN Ns_LogSeverity Ns_LogSqlDebug;
 
 
 typedef Ns_ReturnCode (NsDb_DriverInitProc)(const char *driver, const char *configPath);
+NS_EXTERN const char *NS_EMPTY_STRING;
+
 
 /*
  * dbdrv.c:
@@ -138,20 +140,22 @@ NS_EXTERN Ns_ReturnCode Ns_DbRegisterDriver(const char *driver, const Ns_DbProc 
 NS_EXTERN char         *Ns_DbDriverName(Ns_DbHandle *handle);
 NS_EXTERN char         *Ns_DbDriverDbType(Ns_DbHandle *handle);
 NS_EXTERN int           Ns_DbDML(Ns_DbHandle *handle, const char *sql);
-NS_EXTERN Ns_Set       *Ns_DbSelect(Ns_DbHandle *handle, const char *sql);
-NS_EXTERN int           Ns_DbExec(Ns_DbHandle *handle, const char *sql);
-NS_EXTERN Ns_Set       *Ns_DbBindRow(Ns_DbHandle *handle);
-NS_EXTERN int           Ns_DbGetRow(Ns_DbHandle *handle, Ns_Set *row);
-NS_EXTERN int           Ns_DbGetRowCount(Ns_DbHandle *handle);
-NS_EXTERN Ns_ReturnCode Ns_DbFlush(Ns_DbHandle *handle);
-NS_EXTERN Ns_ReturnCode Ns_DbCancel(Ns_DbHandle *handle);
-NS_EXTERN Ns_ReturnCode Ns_DbResetHandle(Ns_DbHandle *handle);
-NS_EXTERN Ns_ReturnCode Ns_DbSpStart(Ns_DbHandle *handle, const char *procname);
+NS_EXTERN Ns_Set       *Ns_DbSelect(Ns_DbHandle *handle, const char *sql) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN int           Ns_DbExec(Ns_DbHandle *handle, const char *sql)   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN Ns_Set       *Ns_DbBindRow(Ns_DbHandle *handle)                 NS_GNUC_NONNULL(1);
+NS_EXTERN int           Ns_DbGetRow(Ns_DbHandle *handle, Ns_Set *row)     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN int           Ns_DbGetRowCount(Ns_DbHandle *handle)             NS_GNUC_NONNULL(1);
+NS_EXTERN Ns_ReturnCode Ns_DbFlush(Ns_DbHandle *handle)                   NS_GNUC_NONNULL(1);
+NS_EXTERN Ns_ReturnCode Ns_DbCancel(Ns_DbHandle *handle)                  NS_GNUC_NONNULL(1);
+NS_EXTERN Ns_ReturnCode Ns_DbResetHandle(Ns_DbHandle *handle)             NS_GNUC_NONNULL(1);
+NS_EXTERN Ns_ReturnCode Ns_DbSpStart(Ns_DbHandle *handle, const char *procname) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN Ns_ReturnCode Ns_DbSpSetParam(Ns_DbHandle *handle, const char *paramname,
-                                        const char *paramtype, const char *inout, const char *value);
-NS_EXTERN int           Ns_DbSpExec(Ns_DbHandle *handle);
-NS_EXTERN Ns_ReturnCode Ns_DbSpReturnCode(Ns_DbHandle *handle, const char *returnCode, int bufsize);
-NS_EXTERN Ns_Set       *Ns_DbSpGetParams(Ns_DbHandle *handle);
+                                        const char *paramtype, const char *inout, const char *value)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+NS_EXTERN int           Ns_DbSpExec(Ns_DbHandle *handle)                 NS_GNUC_NONNULL(1);
+NS_EXTERN Ns_ReturnCode Ns_DbSpReturnCode(Ns_DbHandle *handle, const char *returnCode, int bufsize)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN Ns_Set       *Ns_DbSpGetParams(Ns_DbHandle *handle)            NS_GNUC_NONNULL(1);
 
 /*
  * dbinit.c:

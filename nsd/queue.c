@@ -891,7 +891,7 @@ ServerMappedObjCmd(const ClientData UNUSED(clientData), Tcl_Interp *interp, int 
                   NsServer *servPtr, int nargs)
 {
     int          result = TCL_OK, noinherit = 0, exact = 0;
-    Tcl_Obj     *mapspecObj;
+    Tcl_Obj     *mapspecObj = NULL;
     char        *method, *url;
     Ns_ObjvSpec  lopts[] = {
         {"-exact",     Ns_ObjvBool,   &exact, INT2PTR(NS_TRUE)},
@@ -960,7 +960,7 @@ ServerUnmapObjCmd(const ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 {
     int          result = TCL_OK, noinherit = 0;
     char        *method, *url;
-    Tcl_Obj     *mapspecObj;
+    Tcl_Obj     *mapspecObj = NULL;
     Ns_ObjvSpec  lopts[] = {
         {"-noinherit", Ns_ObjvBool, &noinherit, INT2PTR(NS_TRUE)},
         {NULL, NULL, NULL, NULL}
@@ -1614,7 +1614,7 @@ NsConnArgProc(Tcl_DString *dsPtr, const void *arg)
         AppendConn(dsPtr, argPtr->connPtr, "running", NS_FALSE);
         Ns_MutexUnlock(&poolPtr->tqueue.lock);
     } else {
-        Tcl_DStringAppendElement(dsPtr, "");
+        Tcl_DStringAppendElement(dsPtr, NS_EMPTY_STRING);
     }
 }
 
@@ -2145,10 +2145,9 @@ ConnRun(Conn *connPtr)
     connPtr->request = connPtr->reqPtr->request;
     memset(&(connPtr->reqPtr->request), 0, sizeof(struct Ns_Request));
 
-    /*{ConnPool *poolPtr = argPtr->poolPtr;
-      Ns_Log(Notice, "ConnRun [%d] connPtr %p req %p %s", ThreadNr(poolPtr, argPtr), connPtr, connPtr->request, connPtr->request.line);
-      } */
-    //connPtr->headers = Ns_SetRecreate2(&connPtr->headers, connPtr->reqPtr->headers);
+    /*
+      Ns_Log(Notice, "ConnRun connPtr %p req %p %s", connPtr, connPtr->request, connPtr->request.line);
+    */
     (void) Ns_SetRecreate2(&connPtr->headers, connPtr->reqPtr->headers);
 
     /*
@@ -2389,7 +2388,7 @@ CreateConnThread(ConnPool *poolPtr)
 #if !defined(NDEBUG)
     { const char *threadName = Ns_ThreadGetName();
       assert(strncmp("-driver:", threadName, 8u) == 0
-             || strncmp("-main:", threadName, 6u) == 0
+             || strncmp("-main", threadName, 5u) == 0
              || strncmp("-spooler", threadName, 8u) == 0
              || strncmp("-service-", threadName, 9u) == 0
              );

@@ -435,7 +435,7 @@ NsTclRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
         unsigned int    flags;
         Ns_TclCallback *cbPtr;
 
-        cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *) NsTclUrl2FileProc,
+        cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclUrl2FileProc,
                                   scriptObj, remain, objv + (objc - remain));
         flags = (noinherit != 0) ? NS_OP_NOINHERIT : 0u;
         Ns_RegisterUrl2FileProc(itPtr->servPtr->server, url,
@@ -681,7 +681,7 @@ WalkCallback(Ns_DString *dsPtr, const void *arg)
 {
     const Url2File *u2fPtr = arg;
 
-    Ns_GetProcInfo(dsPtr, (Ns_Callback *)u2fPtr->proc, u2fPtr->arg);
+    Ns_GetProcInfo(dsPtr, (ns_funcptr_t)u2fPtr->proc, u2fPtr->arg);
 }
 
 

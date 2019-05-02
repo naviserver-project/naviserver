@@ -808,8 +808,8 @@ int
 NsTclLibraryObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
-    char        *kindString, *moduleString = NULL;
-    const char  *lib = "";
+    char        *kindString = (char *)NS_EMPTY_STRING, *moduleString = NULL;
+    const char  *lib = NS_EMPTY_STRING;
     const NsInterp *itPtr = clientData;
     Ns_ObjvSpec  args[] = {
         {"kind",    Ns_ObjvString,  &kindString, NULL},
@@ -834,7 +834,11 @@ NsTclLibraryObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         Ns_DString ds;
 
         Ns_DStringInit(&ds);
-        Ns_MakePath(&ds, lib, moduleString, (char *)0L);
+        if (moduleString != NULL) {
+            Ns_MakePath(&ds, lib, moduleString, (char *)0L);
+        } else {
+            Ns_MakePath(&ds, lib, (char *)0L);
+        }
         Tcl_DStringResult(interp, &ds);
     }
     return result;
@@ -844,7 +848,7 @@ NsTclLibraryObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 static void
 ThreadArgProc(Tcl_DString *dsPtr, Ns_ThreadProc proc, const void *arg)
 {
-    Ns_GetProcInfo(dsPtr, (Ns_Callback *)proc, arg);
+    Ns_GetProcInfo(dsPtr, (ns_funcptr_t)proc, arg);
 }
 
 /*

@@ -83,7 +83,7 @@ Ns_ConnHeaders(const Ns_Conn *conn)
  *      Get the output headers
  *
  * Results:
- *      A writeable Ns_Set containing headers to send back to the client
+ *      A writable Ns_Set containing headers to send back to the client
  *
  * Side effects:
  *      None
@@ -643,20 +643,20 @@ Ns_ConnPeerPort(const Ns_Conn *conn)
  */
 
 Ns_ReturnCode
-Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, void *arg)
+Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, Ns_TclCallback *cbPtr)
 {
     Ns_ReturnCode status = NS_OK;
     NsServer     *servPtr = NsGetInitServer();
 
     NS_NONNULL_ASSERT(proc != NULL);
-    NS_NONNULL_ASSERT(arg != NULL);
+    NS_NONNULL_ASSERT(cbPtr != NULL);
 
     if (servPtr == NULL) {
         Ns_Log(Error, "Ns_SetConnLocationProc: no initializing server");
         status = NS_ERROR;
     } else {
         servPtr->vhost.connLocationProc = proc;
-        servPtr->vhost.connLocationArg = arg;
+        servPtr->vhost.connLocationArg = cbPtr;
     }
 
     return status;
@@ -774,8 +774,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
          * Prefer the new style Ns_ConnLocationProc.
          */
 
-        location = (*servPtr->vhost.connLocationProc)
-            (conn, dest, servPtr->vhost.connLocationArg);
+        location = (*servPtr->vhost.connLocationProc)(conn, dest, servPtr->vhost.connLocationArg);
 
     } else if (servPtr->vhost.locationProc != NULL) {
 
@@ -1609,7 +1608,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         {
             const char *addr = Ns_ConnCurrentAddr(conn);
 
-            Tcl_SetObjResult(interp, Tcl_NewStringObj((addr != NULL ? addr : ""), -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj((addr != NULL ? addr : NS_EMPTY_STRING), -1));
         }
         break;
 
@@ -2153,7 +2152,7 @@ NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
         Ns_TclPrintfResult(interp, "no initializing server");
         result = TCL_ERROR;
     } else {
-        Ns_TclCallback *cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclConnLocation,
+        Ns_TclCallback *cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclConnLocation,
                                                   objv[1], objc - 2, objv + 2);
         if (Ns_SetConnLocationProc(NsTclConnLocation, cbPtr) != NS_OK) {
             result = TCL_ERROR;
@@ -2249,9 +2248,8 @@ NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
  */
 
 char *
-NsTclConnLocation(Ns_Conn *conn, Ns_DString *dest, const void *arg)
+NsTclConnLocation(Ns_Conn *conn, Ns_DString *dest, const Ns_TclCallback *cbPtr)
 {
-    const Ns_TclCallback *cbPtr = arg;
     Tcl_Interp           *interp = Ns_GetConnInterp(conn);
     char                 *result;
 
@@ -2469,6 +2467,10 @@ NsConnRequire(Tcl_Interp *interp, Ns_Conn **connPtr)
 
     } else if ((conn->flags & NS_CONN_CLOSED) != 0u && nsconf.reject_already_closed_connection) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj("connection already closed", -1));
+        status = NS_ERROR;
+
+    } else if (Ns_ConnSockPtr(conn) == NULL) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("connection socket is detached", -1));
         status = NS_ERROR;
 
     } else {

@@ -137,7 +137,7 @@ typedef enum {
  */
 typedef enum {
     NS_SOCK_READ =              0x01u, /* Socket is readable */
-    NS_SOCK_WRITE =             0x02u, /* Socket is writeable */
+    NS_SOCK_WRITE =             0x02u, /* Socket is writable */
     NS_SOCK_EXCEPTION =         0x04u, /* Socket has OOB data */
     NS_SOCK_EXIT =              0x08u, /* The server is shutting down */
     NS_SOCK_DONE =              0x10u, /* Task processing is done */
@@ -335,6 +335,8 @@ typedef int   (Ns_ObjvProc) (struct Ns_ObjvSpec *spec, Tcl_Interp *interp,
                              int *objcPtr, Tcl_Obj *const* objv)
     NS_GNUC_NONNULL(1);
 
+typedef void (*ns_funcptr_t)(void);
+
 /*
  * The field of a key-value data structure.
  */
@@ -447,7 +449,7 @@ typedef struct Ns_SubCmdSpec {
  */
 
 typedef struct Ns_TclCallback {
-    Ns_Callback    *cbProc;
+    ns_funcptr_t    cbProc;
     const char     *server;
     const char     *script;
     int             argc;
@@ -636,7 +638,7 @@ typedef const char* (Ns_ServerRootProc)
     (Ns_DString  *dest, const char *host, const void *arg);
 
 typedef char* (Ns_ConnLocationProc)
-    (Ns_Conn *conn, Ns_DString *dest, const void *arg);
+    (Ns_Conn *conn, Ns_DString *dest, const Ns_TclCallback *cbPtr);
 
 typedef int (Ns_LogProc)               /* Deprecated */
     (Ns_DString *dsPtr, Ns_LogSeverity severity, const char *fmt, va_list ap);
@@ -1113,7 +1115,7 @@ NS_EXTERN void           Ns_ConnTimeSpans(
 NS_EXTERN Ns_Time *      Ns_ConnTimeout(Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 NS_EXTERN bool           Ns_ConnUnmodifiedSince(const Ns_Conn *conn, time_t since) NS_GNUC_NONNULL(1);
 
-NS_EXTERN Ns_ReturnCode  Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, void *arg) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN Ns_ReturnCode  Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, Ns_TclCallback *cbPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN void           Ns_SetLocationProc(const char *server, Ns_LocationProc *proc) NS_GNUC_DEPRECATED_FOR(Ns_SetConnLocationProc);
 
 
@@ -1817,8 +1819,8 @@ Ns_Log(Ns_LogSeverity severity, const char *fmt, ...)
     NS_GNUC_PRINTF(2, 3);
 
 NS_EXTERN void
-Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list *const vaPtr)
-    NS_GNUC_NONNULL(2)  NS_GNUC_PRINTF(2, 0);
+Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list apSrc)
+    NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
 Ns_Fatal(const char *fmt, ...)
@@ -2020,10 +2022,13 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
  */
 
 NS_EXTERN void
-Ns_SetThreadServer(const char *server) NS_GNUC_PRINTF(1, 0);
+Ns_SetThreadServer(const char *server)
+    NS_GNUC_PRINTF(1, 0)
+    NS_GNUC_DEPRECATED_FOR(Ns_ThreadSetName);
 
 NS_EXTERN const char *
-Ns_GetThreadServer(void);
+Ns_GetThreadServer(void)
+    NS_GNUC_DEPRECATED_FOR(Ns_ThreadGetName);
 
 /*
  * op.c:
@@ -2129,11 +2134,11 @@ Ns_SetServerRootProc(Ns_ServerRootProc *proc, void *arg);
  */
 
 NS_EXTERN void
-Ns_RegisterProcInfo(Ns_Callback procAddr, const char *desc, Ns_ArgProc *argProc)
+Ns_RegisterProcInfo(ns_funcptr_t procAddr, const char *desc, Ns_ArgProc *argProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_GetProcInfo(Tcl_DString *dsPtr, Ns_Callback procAddr, const void *arg)
+Ns_GetProcInfo(Tcl_DString *dsPtr, ns_funcptr_t procAddr, const void *arg)
     NS_GNUC_NONNULL(1);
 
 
@@ -2669,8 +2674,7 @@ Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN ssize_t
-Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs,
-                    const Ns_Time *timeoutPtr, unsigned int flags)
+Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN bool
@@ -2716,7 +2720,7 @@ Ns_SockRecvBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
                 const Ns_Time *timeoutPtr, unsigned int flags);
 
 NS_EXTERN ssize_t
-Ns_SockSendBufs(Ns_Sock *sockPtr, const struct iovec *bufs, int nbufs,
+Ns_SockSendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
                 const Ns_Time *timeoutPtr, unsigned int flags)
     NS_GNUC_NONNULL(1);
 
@@ -2935,7 +2939,7 @@ Ns_GetBinaryString(Tcl_Obj *obj, int *lengthPtr, Tcl_DString *dsPtr)
  */
 
 NS_EXTERN Ns_TclCallback *
-Ns_TclNewCallback(Tcl_Interp *interp, Ns_Callback *cbProc, Tcl_Obj *scriptObjPtr, int objc,
+Ns_TclNewCallback(Tcl_Interp *interp, ns_funcptr_t cbProc, Tcl_Obj *scriptObjPtr, int objc,
                   Tcl_Obj *const* objv)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 

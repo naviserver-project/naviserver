@@ -78,7 +78,7 @@ TclX_WrongArgs(Tcl_Interp *interp, Tcl_Obj *commandNameObj, const char *msg)
 
     Ns_TclPrintfResult(interp, "wrong # args: %s %s",
                        commandName,
-                       (*msg != '\0') ? msg : "");
+                       (*msg != '\0') ? msg : NS_EMPTY_STRING);
     return TCL_ERROR;
 }
 

@@ -737,7 +737,9 @@ NsTclParseHeaderObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
     int          result = TCL_OK;
     Ns_Set      *set = NULL;
     Ns_HeaderCaseDisposition disp = Preserve;
-    char        *setString, *headerString, *dispositionString;
+    char        *setString = (char *)NS_EMPTY_STRING,
+                *headerString = (char *)NS_EMPTY_STRING,
+                *dispositionString = NULL;
     Ns_ObjvSpec  args[] = {
         {"set", Ns_ObjvString, &setString, NULL},
         {"header", Ns_ObjvString, &headerString, NULL},
@@ -755,16 +757,20 @@ NsTclParseHeaderObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 
     } else if (objc < 4) {
         disp = ToLower;
-    } else if (STREQ(dispositionString, "toupper")) {
-        disp = ToUpper;
-    } else if (STREQ(dispositionString, "tolower")) {
-        disp = ToLower;
-    } else if (STREQ(dispositionString, "preserve")) {
-        disp = Preserve;
+    } else if (dispositionString != NULL) {
+        if (STREQ(dispositionString, "toupper")) {
+            disp = ToUpper;
+        } else if (STREQ(dispositionString, "tolower")) {
+            disp = ToLower;
+        } else if (STREQ(dispositionString, "preserve")) {
+            disp = Preserve;
+        } else {
+            Ns_TclPrintfResult(interp, "invalid disposition \"%s\": should be toupper, tolower, or preserve",
+                               dispositionString);
+            result = TCL_ERROR;
+        }
     } else {
-        Ns_TclPrintfResult(interp, "invalid disposition \"%s\": should be toupper, tolower, or preserve",
-                           dispositionString);
-        result = TCL_ERROR;
+        Ns_Fatal("error in argument parser: dispositionString should never be NULL");
     }
 
     if (result == TCL_OK) {

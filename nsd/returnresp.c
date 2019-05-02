@@ -230,25 +230,25 @@ Ns_ConnReturnMoved(Ns_Conn *conn, const char *url)
     if (url != NULL) {
         Ns_DString urlDs, msgDs;
 
-        Ns_DStringInit(&urlDs);
-        Ns_DStringInit(&msgDs);
+        Tcl_DStringInit(&urlDs);
+        Tcl_DStringInit(&msgDs);
 
         if (*url == '/') {
             (void) Ns_ConnLocationAppend(conn, &urlDs);
         }
-        Ns_DStringAppend(&urlDs, url);
+        Tcl_DStringAppend(&urlDs, url, -1);
         Ns_ConnSetHeaders(conn, "Location", urlDs.string);
 
-        Ns_DStringAppend(&msgDs, "<a href=\"");
+        Tcl_DStringAppend(&msgDs, "<a href=\"", 9);
         Ns_QuoteHtml(&msgDs, urlDs.string);
-        Ns_DStringAppend(&msgDs, "\">The requested URL has moved permanently here.</a>");
+        Tcl_DStringAppend(&msgDs, "\">The requested URL has moved permanently here.</a>", -1);
 
         result = Ns_ConnReturnNotice(conn, 301, "Redirection", msgDs.string);
 
-        Ns_DStringFree(&msgDs);
-        Ns_DStringFree(&urlDs);
+        Tcl_DStringFree(&msgDs);
+        Tcl_DStringFree(&urlDs);
     } else {
-        result = Ns_ConnReturnNotice(conn, 204, "No Content", "");
+        result = Ns_ConnReturnNotice(conn, 204, "No Content", NS_EMPTY_STRING);
     }
 
     return result;
@@ -304,30 +304,30 @@ Ns_ConnReturnRedirect(Ns_Conn *conn, const char *url)
     NS_NONNULL_ASSERT(conn != NULL);
 
     if (url != NULL) {
-        Ns_DString urlDs, msgDs;
+        Tcl_DString urlDs, msgDs;
 
-        Ns_DStringInit(&urlDs);
-        Ns_DStringInit(&msgDs);
+        Tcl_DStringInit(&urlDs);
+        Tcl_DStringInit(&msgDs);
 
         if (*url == '/') {
             (void) Ns_ConnLocationAppend(conn, &urlDs);
         }
-        Ns_DStringAppend(&urlDs, url);
+        Tcl_DStringAppend(&urlDs, url, -1);
 
         Ns_UrlEncodingWarnUnencoded("header field location", urlDs.string);
         Ns_ConnSetHeaders(conn, "Location", urlDs.string);
 
-        Ns_DStringAppend(&msgDs, "<a href=\"");
+        Tcl_DStringAppend(&msgDs, "<a href=\"", 9);
         Ns_QuoteHtml(&msgDs, urlDs.string);
-        Ns_DStringAppend(&msgDs, "\">The requested URL has moved here.</a>");
+        Tcl_DStringAppend(&msgDs, "\">The requested URL has moved here.</a>", -1);
 
         result = Ns_ConnReturnNotice(conn, 302, "Redirection", msgDs.string);
 
-        Ns_DStringFree(&msgDs);
-        Ns_DStringFree(&urlDs);
+        Tcl_DStringFree(&msgDs);
+        Tcl_DStringFree(&urlDs);
 
     } else {
-        result = Ns_ConnReturnNotice(conn, 204, "No Content", "");
+        result = Ns_ConnReturnNotice(conn, 204, "No Content", NS_EMPTY_STRING);
     }
 
     return result;

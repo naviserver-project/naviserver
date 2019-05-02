@@ -897,7 +897,7 @@ NsTclServerRootProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
     } else {
         Ns_TclCallback *cbPtr;
 
-        cbPtr = Ns_TclNewCallback(interp, (Ns_Callback *)NsTclServerRoot, objv[1],
+        cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclServerRoot, objv[1],
                                   objc - 2, objv + 2);
         if (unlikely(Ns_SetServerRootProc(NsTclServerRoot, cbPtr) != NS_OK)) {
             result = TCL_ERROR;

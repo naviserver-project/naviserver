@@ -112,6 +112,8 @@ typedef struct ServData {
     const char *allowed;
 } ServData;
 
+const char *NS_EMPTY_STRING = "";
+
 /*
  * Local functions defined in this file
  */
@@ -469,7 +471,7 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
     if (ngot > 0) {
         Ns_Log(Error, "dbinit: db handle limit exceeded: "
                "thread already owns %d handle%s from pool '%s'",
-               ngot, ngot == 1 ? "" : "s", pool);
+               ngot, ngot == 1 ? NS_EMPTY_STRING : "s", pool);
         (void) IncrCount("Ns_DbPoolTimedGetMultipleHandles fail", poolPtr, -nwant);
         return NS_ERROR;
     }
@@ -665,7 +667,7 @@ NsDbInitPools(void)
             Tcl_SetHashValue(hPtr, poolPtr);
         }
     }
-    Ns_RegisterProcInfo(CheckPool, "nsdb:check", CheckArgProc);
+    Ns_RegisterProcInfo((ns_funcptr_t)CheckPool, "nsdb:check", CheckArgProc);
 }
 
 
@@ -842,7 +844,7 @@ NsDbInitServer(const char *server)
      * Construct the allowed list and call the server-specific init.
      */
 
-    sdataPtr->allowed = "";
+    sdataPtr->allowed = NS_EMPTY_STRING;
     pool = Ns_ConfigGetValue(path, "pools");
     if (pool != NULL && poolsTable.numEntries > 0) {
         const Pool *poolPtr;
@@ -906,8 +908,11 @@ NsDbInitServer(const char *server)
 void
 NsDbDisconnect(Ns_DbHandle *handle)
 {
-    Handle *handlePtr = (Handle *) handle;
+    Handle *handlePtr;
 
+    NS_NONNULL_ASSERT(handle != NULL);
+
+    handlePtr = (Handle *) handle;
     (void)NsDbClose(handle);
 
     handlePtr->connected = NS_FALSE;
@@ -1218,12 +1223,7 @@ static void
 CheckPool(void *arg)
 {
     Pool         *poolPtr = arg;
-    Handle       *handlePtr, *nextPtr;
-    Handle       *checkedPtr;
-    time_t        now;
-
-    time(&now);
-    checkedPtr = NULL;
+    Handle       *handlePtr;
 
     /*
      * Grab the entire list of handles from the pool.
@@ -1241,8 +1241,14 @@ CheckPool(void *arg)
      */
 
     if (handlePtr != NULL) {
+        Handle *checkedPtr = NULL;
+        time_t  now;
+
+        time(&now);
+
         while (handlePtr != NULL) {
-            nextPtr = handlePtr->nextPtr;
+            Handle *nextPtr = handlePtr->nextPtr;
+
             if (IsStale(handlePtr, now) == NS_TRUE) {
                 NsDbDisconnect((Ns_DbHandle *) handlePtr);
             }
@@ -1254,7 +1260,8 @@ CheckPool(void *arg)
         Ns_MutexLock(&poolPtr->lock);
         handlePtr = checkedPtr;
         while (handlePtr != NULL) {
-            nextPtr = handlePtr->nextPtr;
+            Handle *nextPtr = handlePtr->nextPtr;
+
             ReturnHandle(handlePtr);
             handlePtr = nextPtr;
         }

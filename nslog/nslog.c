@@ -121,7 +121,7 @@ Ns_ModuleInit(const char *server, const char *module)
 {
     const char   *path, *file;
     Log          *logPtr;
-    Tcl_DString    ds;
+    Tcl_DString   ds;
     static bool   first = NS_TRUE;
     Ns_ReturnCode result;
 
@@ -143,10 +143,10 @@ Ns_ModuleInit(const char *server, const char *module)
 
     if (first) {
         first = NS_FALSE;
-        Ns_RegisterProcInfo((Ns_Callback *)LogRollCallback, "nslog:roll", LogArg);
-        Ns_RegisterProcInfo((Ns_Callback *)LogCloseCallback, "nslog:close", LogArg);
-        Ns_RegisterProcInfo((Ns_Callback *)LogTrace, "nslog:conntrace", LogArg);
-        Ns_RegisterProcInfo((Ns_Callback *)AddCmds, "nslog:initinterp", LogArg);
+        Ns_RegisterProcInfo((ns_funcptr_t)LogRollCallback, "nslog:roll", LogArg);
+        Ns_RegisterProcInfo((ns_funcptr_t)LogCloseCallback, "nslog:close", LogArg);
+        Ns_RegisterProcInfo((ns_funcptr_t)LogTrace, "nslog:conntrace", LogArg);
+        Ns_RegisterProcInfo((ns_funcptr_t)AddCmds, "nslog:initinterp", LogArg);
     }
 
     Tcl_DStringInit(&ds);
@@ -842,13 +842,13 @@ LogTrace(void *arg, Ns_Conn *conn)
         Tcl_DStringAppend(dsPtr, "\"", 1);
     }
 
-    for (i = 0; i < ds.length; i++) {
+    for (i = 0; i < dsPtr->length; i++) {
         /*
          * Quick fix to disallow terminal escape characters in the log
          * file. See e.g. http://www.securityfocus.com/bid/37712/info
          */
-        if (unlikely(ds.string[i] == 0x1b)) {
-            ds.string[i] = 7; /* bell */
+        if (unlikely(dsPtr->string[i] == 0x1b)) {
+            dsPtr->string[i] = 7; /* bell */
         }
     }
 
@@ -860,18 +860,18 @@ LogTrace(void *arg, Ns_Conn *conn)
     Tcl_DStringAppend(dsPtr, "\n", 1);
 
     if (logPtr->maxlines == 0) {
-        bufferSize = (size_t)ds.length;
+        bufferSize = (size_t)dsPtr->length;
         if (bufferSize < PIPE_BUF) {
           /*
            * Only ns_write() operations < PIPE_BUF are guaranteed to be atomic
            */
-            bufferPtr = ds.string;
+            bufferPtr = dsPtr->string;
             status = NS_OK;
         } else {
             status = LogFlush(logPtr, dsPtr);
         }
     } else {
-        Tcl_DStringAppend(&logPtr->buffer, ds.string, ds.length);
+        Tcl_DStringAppend(&logPtr->buffer, dsPtr->string, dsPtr->length);
         if (++logPtr->curlines > logPtr->maxlines) {
             bufferSize = (size_t)logPtr->buffer.length;
             if (bufferSize < PIPE_BUF) {

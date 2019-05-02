@@ -56,7 +56,7 @@
 void
 Ns_SetThreadServer(const char *server)
 {
-    Ns_ThreadSetName(server);
+    Ns_ThreadSetName("%s", server);
 }
 
 
@@ -79,5 +79,14 @@ Ns_SetThreadServer(const char *server)
 const char *
 Ns_GetThreadServer(void)
 {
-    return Ns_ThreadGetName();
+  return Ns_ThreadGetName();
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

@@ -213,12 +213,10 @@ void
 NsThreadMain(void *arg)
 {
     Thread  *thrPtr = (Thread *) arg;
-    char     name[NS_THREAD_NAMESIZE];
 
     thrPtr->tid = Ns_ThreadId();
     Ns_TlsSet(&key, thrPtr);
-    snprintf(name, sizeof(name), "-thread:%" PRIxPTR "-", thrPtr->tid);
-    Ns_ThreadSetName(name);
+    Ns_ThreadSetName("-thread:%" PRIxPTR "-", thrPtr->tid);
     SetBottomOfStack(&thrPtr);
 
 #ifdef HAVE_GETTID

@@ -250,7 +250,7 @@ int
 NsTclMkTempObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
-    char        *templateString = NULL;
+    char        *templateString = (char *)NS_EMPTY_STRING;
     Ns_ObjvSpec  args[] = {
         {"?template", Ns_ObjvString, &templateString, NULL},
         {NULL, NULL, NULL, NULL}
@@ -295,7 +295,7 @@ NsTclMkTempObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 int
 NsTclKillObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int         pid, sig, nocomplain = (int)NS_FALSE, result = TCL_OK;
+    int         pid = 0, sig = 0, nocomplain = (int)NS_FALSE, result = TCL_OK;
     Ns_ObjvSpec opts[] = {
         {"-nocomplain", Ns_ObjvBool,  &nocomplain, INT2PTR(NS_TRUE)},
         {NULL, NULL,  NULL, NULL}
