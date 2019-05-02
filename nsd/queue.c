@@ -2145,10 +2145,9 @@ ConnRun(Conn *connPtr)
     connPtr->request = connPtr->reqPtr->request;
     memset(&(connPtr->reqPtr->request), 0, sizeof(struct Ns_Request));
 
-    /*{ConnPool *poolPtr = argPtr->poolPtr;
-      Ns_Log(Notice, "ConnRun [%d] connPtr %p req %p %s", ThreadNr(poolPtr, argPtr), connPtr, connPtr->request, connPtr->request.line);
-      } */
-    //connPtr->headers = Ns_SetRecreate2(&connPtr->headers, connPtr->reqPtr->headers);
+    /*
+      Ns_Log(Notice, "ConnRun connPtr %p req %p %s", connPtr, connPtr->request, connPtr->request.line);
+    */
     (void) Ns_SetRecreate2(&connPtr->headers, connPtr->reqPtr->headers);
 
     /*
