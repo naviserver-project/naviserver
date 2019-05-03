@@ -896,6 +896,14 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
                                      connPtr->clientData);
         Ns_Log(Ns_LogConnchanDebug, "ConnChanDetachObjCmd sock %d", connPtr->sockPtr->sock);
         connPtr->sockPtr = NULL;
+        /*
+         * All commands responding the client via this connection
+         * can't work now, since response handling is delegated to the
+         * connchan machinery. Make this situation detectable at the
+         * script level via "ns_conn isconnected" by setting the close
+         * flag.
+         */
+        connPtr->flags |= NS_CONN_CLOSED;
 
         Tcl_SetObjResult(interp, Tcl_NewStringObj(connChanPtr->channelName, -1));
         Ns_Log(Ns_LogConnchanDebug, "ns_connchan detach %s returns %d", connChanPtr->channelName, result);
