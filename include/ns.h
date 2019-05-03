@@ -68,6 +68,15 @@
  */
 
 #define NS_CONN_CLOSED               0x001u /* The underlying socket is closed */
+
+/*
+ * This is defined as a macro for cases where we need to check
+ * if connection is still writable (was not closed implicitly
+ * by some call to Ns_ConnSendData et al.).
+ */
+
+#define Ns_ConnIsClosed(conn) (((conn)->flags & NS_CONN_CLOSED) != 0u)
+
 #define NS_CONN_SKIPHDRS             0x002u /* Client is HTTP/0.9, do not send HTTP headers  */
 #define NS_CONN_SKIPBODY             0x004u /* HTTP HEAD request, do not send body */
 #define NS_CONN_READHDRS             0x008u /* Unused */
@@ -86,8 +95,9 @@
 #define NS_CONN_LINETOOLONG       0x040000u /* request Header line too long */
 #define NS_CONN_CONFIGURED        0x100000u /* the connection is fully configured */
 
+
 /*
- * Coockie creation options.  For NaviServer and the current set of NaviServer
+ * Cookie creation options.  For NaviServer and the current set of NaviServer
  * modules, these constants would not be needed here. As long we have
  * Ns_ConnSetCookieEx() in the public interface, we these flags here as well.
  */
@@ -386,7 +396,7 @@ typedef struct Ns_Conn {
     Ns_Set      *outputheaders;
     Ns_Set      *auth;
     size_t       contentLength;
-    unsigned int flags;		/* Currently, only NS_CONN_CLOSED. */
+    unsigned int flags;
 } Ns_Conn;
 
 /*
