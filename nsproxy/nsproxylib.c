@@ -694,7 +694,7 @@ Ns_ProxyCleanup(Tcl_Interp *interp, const void *UNUSED(arg))
  */
 
 void
-Shutdown(const Ns_Time *toutPtr, void *UNUSED(arg))
+Shutdown(const Ns_Time *timeoutPtr, void *UNUSED(arg))
 {
     Pool           *poolPtr;
     Proxy          *proxyPtr, *tmpPtr;
@@ -710,7 +710,7 @@ Shutdown(const Ns_Time *toutPtr, void *UNUSED(arg))
      * the whole pool will be left un-freed).
      */
 
-    if (toutPtr == NULL) {
+    if (timeoutPtr == NULL) {
         Tcl_HashEntry *hPtr;
 
         Ns_MutexLock(&plock);
@@ -764,7 +764,7 @@ Shutdown(const Ns_Time *toutPtr, void *UNUSED(arg))
     status = NS_OK;
     Ns_CondSignal(&pcond);
     while (reaperState != Stopped && status == NS_OK) {
-        status = Ns_CondTimedWait(&pcond, &plock, toutPtr);
+        status = Ns_CondTimedWait(&pcond, &plock, timeoutPtr);
         if (status != NS_OK) {
             Ns_Log(Warning, "nsproxy: timeout waiting for reaper exit");
         }
@@ -2535,20 +2535,20 @@ PopProxy(Pool *poolPtr, Proxy **proxyPtrPtr, int nwant, int ms)
     Proxy        *proxyPtr;
     Err           err;
     Ns_ReturnCode status = NS_OK;
-    Ns_Time       tout;
+    Ns_Time       waitTimeout;
 
     NS_NONNULL_ASSERT(poolPtr != NULL);
     NS_NONNULL_ASSERT(proxyPtrPtr != NULL);
 
     if (ms > 0) {
-        Ns_GetTime(&tout);
-        Ns_IncrTime(&tout, ms/1000, (ms/1000) * 1000);
+        Ns_GetTime(&waitTimeout);
+        Ns_IncrTime(&waitTimeout, ms/1000, (ms/1000) * 1000);
     }
 
     Ns_MutexLock(&poolPtr->lock);
     while (status == NS_OK && poolPtr->waiting > 0) {
         if (ms > 0) {
-            status = Ns_CondTimedWait(&poolPtr->cond, &poolPtr->lock, &tout);
+            status = Ns_CondTimedWait(&poolPtr->cond, &poolPtr->lock, &waitTimeout);
         } else {
             Ns_CondWait(&poolPtr->cond, &poolPtr->lock);
         }
@@ -2561,7 +2561,7 @@ PopProxy(Pool *poolPtr, Proxy **proxyPtrPtr, int nwant, int ms)
                && poolPtr->nfree < nwant && poolPtr->maxslaves >= nwant) {
             if (ms > 0) {
                 status = Ns_CondTimedWait(&poolPtr->cond, &poolPtr->lock,
-                                          &tout);
+                                          &waitTimeout);
             } else {
                 Ns_CondWait(&poolPtr->cond, &poolPtr->lock);
             }
@@ -3074,7 +3074,7 @@ ReaperThread(void *UNUSED(arg))
     Proxy          *proxyPtr, *prevPtr, *nextPtr;
     Pool           *poolPtr;
     Slave           *slavePtr, *tmpSlavePtr;
-    Ns_Time         tout, now, diff;
+    Ns_Time         timeout, now, diff;
     int             ms, ntotal;
 
     Ns_ThreadSetName("-nsproxy:reap-");
@@ -3091,8 +3091,8 @@ ReaperThread(void *UNUSED(arg))
 
         Ns_GetTime(&now);
 
-        tout.sec  = TIME_T_MAX;
-        tout.usec = 0;
+        timeout.sec  = TIME_T_MAX;
+        timeout.usec = 0;
 
         Ns_Log(Ns_LogNsProxyDebug, "reaper run");
 
@@ -3119,10 +3119,10 @@ ReaperThread(void *UNUSED(arg))
                 diff = now;
                 ms = poolPtr->conf.tidle;
                 Ns_IncrTime(&diff, ms/1000, (ms%1000) * 1000);
-                if (Ns_DiffTime(&diff, &tout, NULL) < 0) {
-                    tout = diff;
+                if (Ns_DiffTime(&diff, &timeout, NULL) < 0) {
+                    timeout = diff;
                     Ns_Log(Ns_LogNsProxyDebug, "reaper sets timeout based on idle diff %ld.%06ld of pool %s",
-                           tout.sec, tout.usec, poolPtr->name);
+                           timeout.sec, timeout.usec, poolPtr->name);
                 }
             }
 
@@ -3144,10 +3144,10 @@ ReaperThread(void *UNUSED(arg))
                     Ns_Log(Ns_LogNsProxyDebug, "pool %s slave %ld expired %d",
                            poolPtr->name, (long)slavePtr->pid, expired);
 
-                    if (!expired && Ns_DiffTime(&slavePtr->expire, &tout, NULL) <= 0) {
-                        tout = slavePtr->expire;
+                    if (!expired && Ns_DiffTime(&slavePtr->expire, &timeout, NULL) <= 0) {
+                        timeout = slavePtr->expire;
                         Ns_Log(Ns_LogNsProxyDebug, "reaper sets timeout based on expire %ld.%06ld pool %s slave %ld",
-                               tout.sec, tout.usec, poolPtr->name, (long)slavePtr->pid);
+                               timeout.sec, timeout.usec, poolPtr->name, (long)slavePtr->pid);
                     }
                 } else {
                     expired = NS_FALSE;
@@ -3278,10 +3278,10 @@ ReaperThread(void *UNUSED(arg))
                  * this one again.
                  */
 
-                if (Ns_DiffTime(&slavePtr->expire, &tout, NULL) < 0) {
+                if (Ns_DiffTime(&slavePtr->expire, &timeout, NULL) < 0) {
                     Ns_Log(Ns_LogNsProxyDebug, "reaper shortens timeout to %ld.%06ld based on expire in pool %s slave %ld kill %d",
-                           tout.sec, tout.usec, slavePtr->poolPtr->name, (long)slavePtr->pid, slavePtr->signal);
-                    tout = slavePtr->expire;
+                           timeout.sec, timeout.usec, slavePtr->poolPtr->name, (long)slavePtr->pid, slavePtr->signal);
+                    timeout = slavePtr->expire;
                 }
                 if (slavePtr->signal != slavePtr->sigsent) {
                     Ns_Log(Warning, "[%s]: pid %ld won't die, send signal %d",
@@ -3304,16 +3304,16 @@ ReaperThread(void *UNUSED(arg))
          * some of them found on the close list.
          */
 
-        if (Ns_DiffTime(&tout, &now, &diff) > 0) {
+        if (Ns_DiffTime(&timeout, &now, &diff) > 0) {
             reaperState = Sleeping;
             Ns_CondBroadcast(&pcond);
-            if (tout.sec == TIME_T_MAX && tout.usec == 0) {
+            if (timeout.sec == TIME_T_MAX && timeout.usec == 0) {
                 Ns_Log(Ns_LogNsProxyDebug, "reaper waits unlimited for cond");
                 Ns_CondWait(&pcond, &plock);
             } else {
                 Ns_Log(Ns_LogNsProxyDebug, "reaper waits for cond with timeout %ld.%06ld",
-                       tout.sec, tout.usec);
-                (void) Ns_CondTimedWait(&pcond, &plock, &tout);
+                       timeout.sec, timeout.usec);
+                (void) Ns_CondTimedWait(&pcond, &plock, &timeout);
             }
             if (reaperState == Stopping) {
                 break;

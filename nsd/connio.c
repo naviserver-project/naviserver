@@ -471,7 +471,7 @@ ConnSend(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd)
         status = NS_OK;
         while (status == NS_OK && nsend > 0u) {
             ssize_t nread;
-            size_t toRead = nsend;
+            size_t  toRead = nsend;
 
             if (toRead > sizeof(buf)) {
                 toRead = sizeof(buf);
@@ -529,8 +529,8 @@ Ns_ConnSendFileVec(Ns_Conn *conn, Ns_FileVec *bufs, int nbufs)
     Conn        *connPtr;
     Sock        *sockPtr;
     int          i;
-    size_t       nwrote = 0, towrite = 0;
-    Ns_Time      tout;
+    size_t       nwrote = 0u, towrite = 0u;
+    Ns_Time      waitTimeout;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(bufs != NULL);
@@ -541,8 +541,8 @@ Ns_ConnSendFileVec(Ns_Conn *conn, Ns_FileVec *bufs, int nbufs)
     NS_NONNULL_ASSERT(sockPtr != NULL);
     NS_NONNULL_ASSERT(sockPtr->drvPtr != NULL);
 
-    tout.sec  = sockPtr->drvPtr->sendwait;
-    tout.usec = 0;
+    waitTimeout.sec  = sockPtr->drvPtr->sendwait;
+    waitTimeout.usec = 0;
 
     for (i = 0; i < nbufs; i++) {
         towrite += bufs[i].length;
@@ -563,8 +563,8 @@ Ns_ConnSendFileVec(Ns_Conn *conn, Ns_FileVec *bufs, int nbufs)
             if (sent > 0) {
                 (void)Ns_ResetFileVec(bufs, nbufs, (size_t)sent);
             }
-            if (Ns_SockTimedWait(sock->sock, (unsigned int)NS_SOCK_WRITE,
-                                 &tout) != NS_OK) {
+            if (Ns_SockTimedWait(sock->sock, NS_SOCK_WRITE,
+                                 &waitTimeout) != NS_OK) {
                 break;
             }
         }
@@ -686,7 +686,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
         sent = (ssize_t)towrite;
 
     } else {
-        Ns_Time  tout;
+        Ns_Time  waitTimeout;
         Sock    *sockPtr;
 
         sockPtr = connPtr->sockPtr;
@@ -694,10 +694,10 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
         NS_NONNULL_ASSERT(sockPtr != NULL);
         NS_NONNULL_ASSERT(sockPtr->drvPtr != NULL);
 
-        tout.sec  = sockPtr->drvPtr->sendwait;
-        tout.usec = 0;
+        waitTimeout.sec  = sockPtr->drvPtr->sendwait;
+        waitTimeout.usec = 0;
 
-        sent = Ns_SockSendBufs((Ns_Sock*)sockPtr, bufs, nbufs, &tout, 0u);
+        sent = Ns_SockSendBufs((Ns_Sock*)sockPtr, bufs, nbufs, &waitTimeout, 0u);
 
         if (likely(sent > 0)) {
             connPtr->nContentSent += (size_t)sent;
