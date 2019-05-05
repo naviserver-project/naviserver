@@ -135,6 +135,32 @@ test ns_connchan-1.5 {detach connection, return error from ns_write via "ns_conn
     ns_unregister_op GET /conn
 } -result {200 {connection socket is detached}}
 
+test ns_connchan-1.6 {detach connection, return error from ns_write via "ns_connchan write"} -setup {
+    ns_register_proc GET /conn {
+        set handle [ns_connchan detach]
+        catch {ns_return 200 text/plain ok?} errorMsg
+        ns_connchan write $handle "HTTP/1.0 200 OK\r\n\r\n$errorMsg"
+        ns_connchan close $handle
+    }
+} -body {
+    nstest::http -getbody 1 -- GET /conn
+} -cleanup {
+    ns_unregister_op GET /conn
+} -result {200 {connection socket is detached}}
+
+test ns_connchan-1.7 {detach connection, return error from ns_write via "ns_connchan write"} -setup {
+    ns_register_proc GET /conn {
+        set handle [ns_connchan detach]
+        catch {ns_returnredirect /foo} errorMsg
+        ns_connchan write $handle "HTTP/1.0 200 OK\r\n\r\n$errorMsg"
+        ns_connchan close $handle
+    }
+} -body {
+    nstest::http -getbody 1 -- GET /conn
+} -cleanup {
+    ns_unregister_op GET /conn
+} -result {200 {connection socket is detached}}
+
 
 cleanupTests
 
