@@ -1943,8 +1943,7 @@ NsConnThread(void *arg)
          */
         Ns_MutexLock(tqueueLockPtr);
         connPtr->flags &= ~NS_CONN_CONFIGURED;
-        //Ns_SetFree(connPtr->headers);
-        //connPtr->headers = NULL;
+
         Ns_SetTrunc(connPtr->headers, 0);
 
         argPtr->state = connThread_ready;
