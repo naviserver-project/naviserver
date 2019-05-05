@@ -123,8 +123,8 @@ static const int pr2six_url[256] = {
  *
  * Side effects:
  *      Encoded characters are placed in output which must be
- *    large enough for the result, i.e., (1 + (len * 4) / 2)
- *    bytes, minimum outout buffer size is 4 bytes.
+ *      large enough for the result, i.e., (1 + (len * 4) / 2)
+ *      bytes, minimum output buffer size is 4 bytes.
  *
  *----------------------------------------------------------------------
  */
