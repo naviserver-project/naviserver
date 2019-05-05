@@ -2439,9 +2439,16 @@ MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
  *
  * NsConnRequire --
  *
- *      Return the conn for the given interp. In case that interp is not
- *      connected, or when the connection is already closed, return NS_ERROR.
- *      If connPtr is given, it sets the conn to that address on success.
+ *      Return the conn for the given interp, in case it is fully functioning.
+ *      In case that interp is
+ *
+ *      - not connected at all, or
+ *      - when the sockPtr of the connection was detachted, or
+ *      - when the connection is already closed,
+ *
+ *      return NS_ERROR and set an appropriate error message, If connPtr is
+ *      valid, the function return NS_OK and returns the connPtr in its second
+ *      argument.
  *
  * Results:
  *      NaviServer result code
