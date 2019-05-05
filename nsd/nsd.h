@@ -99,6 +99,14 @@ typedef enum {
 #define CONN_TCLHTTP                   0x10u  /* HTTP headers requested by ns_headers */
 
 /*
+ * Flags for 2nd arg of NsConnRequire()
+ */
+#define NS_CONN_REQUIRE_CONNECTED   0x0001u
+#define NS_CONN_REQUIRE_OPEN        0x0002u
+#define NS_CONN_REQUIRE_CONFIGURED  0x0004u
+#define NS_CONN_REQUIRE_ALL         0x0007u
+
+/*
  * The following is the default text/html content type
  * sent to the browser for html/adp etc. requests.
  */
@@ -1560,7 +1568,7 @@ NS_EXTERN void NsConnTimeStatsUpdate(Ns_Conn *conn)
 NS_EXTERN void NsConnTimeStatsFinalize(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN Ns_ReturnCode NsConnRequire(Tcl_Interp *interp, Ns_Conn **connPtr)
+NS_EXTERN Ns_ReturnCode NsConnRequire(Tcl_Interp *interp, unsigned int flags, Ns_Conn **connPtr)
     NS_GNUC_NONNULL(1);
 
 /*

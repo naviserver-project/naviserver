@@ -396,7 +396,7 @@ NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
     };
 
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK
-        || NsConnRequire(interp, NULL) != NS_OK) {
+        || NsConnRequire(interp, NS_CONN_REQUIRE_ALL, NULL) != NS_OK) {
         result = TCL_ERROR;
 
     } else if (Ns_TclGetOpenChannel(interp, fileidString, 0, NS_TRUE, &chan) != TCL_OK) {

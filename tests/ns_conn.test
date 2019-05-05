@@ -65,7 +65,7 @@ test ns_conn-1.3.6 {content} -setup {
 
 test ns_conn-2.1 {basic operation} -body {
      ns_conn close
-} -returnCodes error -result {no current connection}
+} -returnCodes error -result {no connection}
 
 #
 # ns_connchan
@@ -104,7 +104,7 @@ test ns_connchan-1.3 {detach connection} -setup {
     ns_unregister_op GET /conn
 } -result {conn0-1-10}
 
-test ns_connchan-1.4 {detach connection, return result via "ns_connchan write"} -setup {
+test ns_connchan-1.4 {detached connection, return result via "ns_connchan write"} -setup {
     ns_register_proc GET /conn {
         set handle [ns_connchan detach]
         set list [ns_connchan list]
@@ -122,7 +122,8 @@ test ns_connchan-1.4 {detach connection, return result via "ns_connchan write"} 
     ns_unregister_op GET /conn
 } -result {200 {Handle = conn1, lengths 1-10}}
 
-test ns_connchan-1.5 {detach connection, return error from ns_write via "ns_connchan write"} -setup {
+
+test ns_connchan-1.5 {detached connection, return error from ns_write via "ns_connchan write"} -setup {
     ns_register_proc GET /conn {
         set handle [ns_connchan detach]
         catch {ns_write foo} errorMsg
@@ -135,7 +136,8 @@ test ns_connchan-1.5 {detach connection, return error from ns_write via "ns_conn
     ns_unregister_op GET /conn
 } -result {200 {connection socket is detached}}
 
-test ns_connchan-1.6 {detach connection, return error from ns_write via "ns_connchan write"} -setup {
+
+test ns_connchan-1.6 {detach connection, return error from "ns_return"} -setup {
     ns_register_proc GET /conn {
         set handle [ns_connchan detach]
         catch {ns_return 200 text/plain ok?} errorMsg
@@ -148,7 +150,8 @@ test ns_connchan-1.6 {detach connection, return error from ns_write via "ns_conn
     ns_unregister_op GET /conn
 } -result {200 {connection socket is detached}}
 
-test ns_connchan-1.7 {detach connection, return error from ns_write via "ns_connchan write"} -setup {
+
+test ns_connchan-1.7 {detach connection, return error "ns_returnredirect"} -setup {
     ns_register_proc GET /conn {
         set handle [ns_connchan detach]
         catch {ns_returnredirect /foo} errorMsg
@@ -161,6 +164,86 @@ test ns_connchan-1.7 {detach connection, return error from ns_write via "ns_conn
     ns_unregister_op GET /conn
 } -result {200 {connection socket is detached}}
 
+test ns_connchan-1.8.1 {detach connection, return error "ns_conn channel"} -setup {
+    ns_register_proc GET /conn {
+        set handle [ns_connchan detach]
+        catch {ns_conn channel} errorMsg
+        ns_connchan write $handle "HTTP/1.0 200 OK\r\n\r\n$errorMsg"
+        ns_connchan close $handle
+    }
+} -body {
+    nstest::http -getbody 1 -- GET /conn
+} -cleanup {
+    ns_unregister_op GET /conn
+} -result {200 {connection already closed}}
+
+
+test ns_connchan-1.8.1 {detach connection, return success "ns_conn url"} -setup {
+    ns_register_proc GET /conn {
+        set handle [ns_connchan detach]
+        catch {ns_conn url} errorMsg
+        ns_connchan write $handle "HTTP/1.0 200 OK\r\n\r\n$errorMsg"
+        ns_connchan close $handle
+    }
+} -body {
+    nstest::http -getbody 1 -- GET /conn
+} -cleanup {
+    ns_unregister_op GET /conn
+} -result {200 /conn}
+
+test ns_connchan-1.8.2 {detach connection, return success "ns_conn headers"} -setup {
+    ns_register_proc GET /conn {
+        set handle [ns_connchan detach]
+        catch {ns_set iget [ns_conn headers] User-Agent} errorMsg
+        ns_connchan write $handle "HTTP/1.0 200 OK\r\n\r\n$errorMsg"
+        ns_connchan close $handle
+    }
+} -body {
+    nstest::http -getbody 1 -- GET /conn
+} -cleanup {
+    ns_unregister_op GET /conn
+} -match glob -result {200 NaviServer*}
+
+test ns_connchan-1.8.3 {detach connection, return success "ns_conn method"} -setup {
+    ns_register_proc GET /conn {
+        set handle [ns_connchan detach]
+        catch {ns_conn method} errorMsg
+        ns_connchan write $handle "HTTP/1.0 200 OK\r\n\r\n$errorMsg"
+        ns_connchan close $handle
+    }
+} -body {
+    nstest::http -getbody 1 -- GET /conn
+} -cleanup {
+    ns_unregister_op GET /conn
+} -result {200 GET}
+
+
+test ns_connchan-1.8.4 {detach connection, return success "ns_conn proto"} -setup {
+    ns_register_proc GET /conn {
+        set handle [ns_connchan detach]
+        catch {ns_conn proto} errorMsg
+        ns_connchan write $handle "HTTP/1.0 200 OK\r\n\r\n$errorMsg"
+        ns_connchan close $handle
+    }
+} -body {
+    nstest::http -getbody 1 -- GET /conn
+} -cleanup {
+    ns_unregister_op GET /conn
+} -result {200 http}
+
+
+test ns_connchan-1.8.5 {detach connection, return success "ns_conn driver"} -setup {
+    ns_register_proc GET /conn {
+        set handle [ns_connchan detach]
+        catch {ns_conn driver} errorMsg
+        ns_connchan write $handle "HTTP/1.0 200 OK\r\n\r\n$errorMsg"
+        ns_connchan close $handle
+    }
+} -body {
+    nstest::http -getbody 1 -- GET /conn
+} -cleanup {
+    ns_unregister_op GET /conn
+} -result {200 nssock}
 
 cleanupTests
 

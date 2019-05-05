@@ -1449,8 +1449,8 @@ int
 NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     NsInterp            *itPtr = clientData;
-    Ns_Conn             *conn = itPtr->conn;
-    Conn                *connPtr = (Conn *) conn;
+    Conn                *connPtr;
+    Ns_Conn             *conn;
     const Ns_Request    *request = NULL;
     Tcl_Encoding         encoding;
     Tcl_Channel          chan;
@@ -1483,6 +1483,30 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         "zipaccepted",
         NULL
     };
+    static const unsigned int required_flags[] = {
+        NS_CONN_REQUIRE_CONFIGURED, NS_CONN_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
+        NS_CONN_REQUIRE_OPEN, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_OPEN, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
+        NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_OPEN, NS_CONN_REQUIRE_OPEN,
+        NS_CONN_REQUIRE_CONNECTED, NS_CONN_REQUIRE_CONNECTED,
+        NS_CONN_REQUIRE_CONFIGURED,
+        NS_CONN_REQUIRE_CONFIGURED,
+        NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
+        NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
+        NS_CONN_REQUIRE_CONFIGURED, 0u,
+        NS_CONN_REQUIRE_CONNECTED,
+        NS_CONN_REQUIRE_CONFIGURED,
+        NS_CONN_REQUIRE_CONFIGURED,
+        NS_CONN_REQUIRE_CONFIGURED,
+        NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONNECTED, NS_CONN_REQUIRE_CONFIGURED,
+        NS_CONN_REQUIRE_CONFIGURED,
+        NS_CONN_REQUIRE_CONFIGURED,
+        NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONNECTED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONNECTED,
+        NS_CONN_REQUIRE_CONFIGURED,
+        NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
+        NS_CONN_REQUIRE_CONFIGURED,
+        NS_CONN_REQUIRE_CONFIGURED,
+        0u
+    };
     enum ISubCmdIdx {
         CAacceptedcompressionIdx, CAuthIdx, CAuthPasswordIdx, CAuthUserIdx,
         CChannelIdx, CClientdataIdx, CCloseIdx, CCompressIdx, CContentIdx,
@@ -1507,37 +1531,29 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         CZipacceptedIdx
     };
 
+    assert(itPtr != NULL);
+    conn = itPtr->conn;
+    connPtr = (Conn *)conn;
+
     if (unlikely(objc < 2)) {
         Tcl_WrongNumArgs(interp, 1, objv, "option");
         opt = (int)CIsConnectedIdx; /* silence static checker */
         result = TCL_ERROR;
 
     } else if (unlikely(Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-                                     &opt) != TCL_OK)) {
+                                            &opt) != TCL_OK)) {
         result = TCL_ERROR;
-    }
-
-    if (likely(result == TCL_OK)) {
+    } else if (required_flags[opt] != 0u) {
         /*
-         * Only the "isconnected" option operates without a conn.
+         * We have to check the conncection requirements.
          */
-        if (unlikely(opt == (int)CIsConnectedIdx)) {
-            /*
-             * Handle "isconnected" subcommand here.
-             */
-            bool connected = ((connPtr != NULL) ? ((connPtr->flags & NS_CONN_CLOSED) == 0u) : NS_FALSE);
-            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(connected));
-        } else if (unlikely(connPtr == NULL)) {
-            /*
-             * Other subcommands require connPtr
-             */
-            Tcl_SetObjResult(interp,
-                             Tcl_NewStringObj("no current connection", -1));
+        if (NsConnRequire(interp, required_flags[opt], NULL) != NS_OK) {
             result = TCL_ERROR;
         } else {
             /*
-             * We know, connPtr != NULL
+             * We know that connPtr can't be NULL.
              */
+            assert(conn != NULL);
             request = &connPtr->request;
         }
     }
@@ -1549,9 +1565,12 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
     switch (opt) {
     case CIsConnectedIdx:
         /*
-         * This case is handled above. We keep this entry to keep static
-         * checkers happy about completeness of case enumeration.
+         * We report true, when we have a connection and the connection is not
+         * closed.
          */
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj((connPtr != NULL)
+                                                   ? ((connPtr->flags & NS_CONN_CLOSED) == 0u)
+                                                   : NS_FALSE));
         break;
 
     case CKeepAliveIdx:
@@ -2201,7 +2220,7 @@ NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
         {NULL,       NULL,          NULL,      NULL}
     };
 
-    if (NsConnRequire(interp, NULL) != NS_OK
+    if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, NULL) != NS_OK
         || Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
@@ -2442,7 +2461,7 @@ MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
  *      Return the conn for the given interp, in case it is fully functioning.
  *      In case that interp is
  *
- *      - not connected at all, or
+ *      - not connected at all (e.g. no connection thread), or
  *      - when the sockPtr of the connection was detachted, or
  *      - when the connection is already closed,
  *
@@ -2460,7 +2479,7 @@ MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
  */
 
 Ns_ReturnCode
-NsConnRequire(Tcl_Interp *interp, Ns_Conn **connPtr)
+NsConnRequire(Tcl_Interp *interp, unsigned int flags, Ns_Conn **connPtr)
 {
     Ns_Conn      *conn;
     Ns_ReturnCode status;
@@ -2472,12 +2491,20 @@ NsConnRequire(Tcl_Interp *interp, Ns_Conn **connPtr)
         Tcl_SetObjResult(interp, Tcl_NewStringObj("no connection", -1));
         status = NS_ERROR;
 
-    } else if (Ns_ConnSockPtr(conn) == NULL) {
+    } else if (((flags & NS_CONN_REQUIRE_CONNECTED) != 0u)
+               && Ns_ConnSockPtr(conn) == NULL) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj("connection socket is detached", -1));
         status = NS_ERROR;
 
-    } else if ((conn->flags & NS_CONN_CLOSED) != 0u && nsconf.reject_already_closed_connection) {
+    } else if (((flags & NS_CONN_REQUIRE_OPEN) != 0u)
+               && ((conn->flags & NS_CONN_CLOSED) != 0u)
+               && nsconf.reject_already_closed_connection) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj("connection already closed", -1));
+        status = NS_ERROR;
+
+    } else if (((flags & NS_CONN_REQUIRE_CONFIGURED) != 0u)
+               && ((conn->flags & NS_CONN_CONFIGURED) == 0u)) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("connection is not configured", -1));
         status = NS_ERROR;
 
     } else {

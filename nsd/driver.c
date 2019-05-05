@@ -5496,7 +5496,7 @@ WriterSubmitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     };
 
     if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK
-        || NsConnRequire(interp, &conn) != NS_OK) {
+        || NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
@@ -5554,7 +5554,7 @@ WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     };
 
     if (unlikely(Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK)
-        || NsConnRequire(interp, &conn) != NS_OK) {
+        || NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK) {
         result = TCL_ERROR;
 
     } else if (unlikely( Ns_ConnSockPtr(conn) == NULL )) {

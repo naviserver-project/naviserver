@@ -1606,7 +1606,7 @@ NsTclAtCloseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         Tcl_WrongNumArgs(interp, 1, objv, "script ?args?");
         result = TCL_ERROR;
 
-    } else if (NsConnRequire(interp, NULL) != NS_OK) {
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, NULL) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
