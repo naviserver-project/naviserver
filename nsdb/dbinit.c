@@ -133,7 +133,7 @@ static ServData *GetServer(const char *server)                NS_GNUC_NONNULL(1)
  */
 
 static Ns_TlsCleanup FreeTable;
-static Ns_Callback CheckPool;
+static Ns_SchedProc CheckPool;
 static Ns_ArgProc CheckArgProc;
 
 static Tcl_HashTable poolsTable;
@@ -600,7 +600,7 @@ Ns_DbBouncePool(const char *pool)
             handlePtr = handlePtr->nextPtr;
         }
         Ns_MutexUnlock(&poolPtr->lock);
-        CheckPool(poolPtr);
+        CheckPool(poolPtr, 0);
     }
     return status;
 }
@@ -1220,7 +1220,7 @@ CheckArgProc(Tcl_DString *dsPtr, const void *arg)
  */
 
 static void
-CheckPool(void *arg)
+CheckPool(void *arg, int UNUSED(id))
 {
     Pool         *poolPtr = arg;
     Handle       *handlePtr;
@@ -1386,7 +1386,7 @@ CreatePool(const char *pool, const char *path, const char *driver)
             handlePtr->poolname = pool;
             ReturnHandle(handlePtr);
         }
-        (void) Ns_ScheduleProc((Ns_SchedProc*)CheckPool, poolPtr, 0,
+        (void) Ns_ScheduleProc(CheckPool, poolPtr, 0,
                                Ns_ConfigIntRange(path, "checkinterval", 600, 0, INT_MAX));
     }
     return poolPtr;

@@ -212,7 +212,7 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
                 status = NS_ERROR;
             }
             if (status == NS_OK) {
-                Ns_ModuleInitProc *initProc   = (Ns_ModuleInitProc *) tclInitProc;
+                Ns_ModuleInitProc *initProc   = (Ns_ModuleInitProc *)tclInitProc;
                 const int         *versionPtr = (const int *) moduleVersionAddr;
 
                 /*

@@ -81,7 +81,7 @@ NsTclAfterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         int             id;
         Ns_TclCallback *cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclSchedProc,
                                                   objv[2], objc - 3, objv + 3);
-        id = Ns_After(seconds, NsTclSchedProc, cbPtr, (Ns_SchedProc*)Ns_TclFreeCallback);
+        id = Ns_After(seconds, NsTclSchedProc, cbPtr, (ns_funcptr_t)Ns_TclFreeCallback);
         result = ReturnValidId(interp, id, cbPtr);
     }
 

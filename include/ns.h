@@ -345,6 +345,10 @@ typedef int   (Ns_ObjvProc) (struct Ns_ObjvSpec *spec, Tcl_Interp *interp,
                              int *objcPtr, Tcl_Obj *const* objv)
     NS_GNUC_NONNULL(1);
 
+/*
+ * Generic function pointer type, can be used for recasting between different
+ * function types.
+ */
 typedef void (*ns_funcptr_t)(void);
 
 /*
@@ -2417,7 +2421,7 @@ Ns_VarAppend(const char *server, const char *array, const char *key,
  */
 
 NS_EXTERN int
-Ns_After(int delay, Ns_SchedProc *proc, void *arg, Ns_SchedProc *deleteProc)
+Ns_After(int delay, Ns_SchedProc *proc, void *arg, ns_funcptr_t deleteProc)
     NS_GNUC_NONNULL(2);
 
 NS_EXTERN bool
@@ -2430,23 +2434,23 @@ NS_EXTERN bool
 Ns_Resume(int id);
 
 NS_EXTERN int
-Ns_ScheduleProc(Ns_SchedProc *proc, void *arg, int thread, int interval)
+Ns_ScheduleProc(Ns_SchedProc proc, void *arg, int thread, int interval)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_ScheduleDaily(Ns_SchedProc *proc, void *clientData, unsigned int flags,
-                 int hour, int minute, Ns_SchedProc *cleanupProc)
+Ns_ScheduleDaily(Ns_SchedProc proc, void *clientData, unsigned int flags,
+                 int hour, int minute, Ns_SchedProc cleanupProc)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
 Ns_ScheduleWeekly(Ns_SchedProc *proc, void *clientData, unsigned int flags,
                   int day, int hour, int minute,
-                  Ns_SchedProc *cleanupProc)
+                  Ns_SchedProc cleanupProc)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
 Ns_ScheduleProcEx(Ns_SchedProc *proc, void *clientData, unsigned int flags,
-                  int interval, Ns_SchedProc *cleanupProc)
+                  int interval, Ns_SchedProc cleanupProc)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void

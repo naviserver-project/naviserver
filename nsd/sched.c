@@ -169,7 +169,7 @@ NsInitSched(void)
  */
 
 int
-Ns_After(int delay, Ns_SchedProc *proc, void *arg, Ns_SchedProc *deleteProc)
+Ns_After(int delay, Ns_SchedProc *proc, void *arg, ns_funcptr_t deleteProc)
 {
     int result;
 
@@ -178,7 +178,7 @@ Ns_After(int delay, Ns_SchedProc *proc, void *arg, Ns_SchedProc *deleteProc)
     if (delay < 0) {
         result = (int)NS_ERROR;
     } else {
-        result = Ns_ScheduleProcEx(proc, arg, NS_SCHED_ONCE, delay, deleteProc);
+        result = Ns_ScheduleProcEx(proc, arg, NS_SCHED_ONCE, delay, (Ns_SchedProc *)deleteProc);
     }
     return result;
 }

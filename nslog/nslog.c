@@ -78,7 +78,7 @@ typedef struct {
  * Local functions defined in this file
  */
 
-static Ns_Callback     LogRollCallback;
+static Ns_SchedProc    LogRollCallback;
 static Ns_ShutdownProc LogCloseCallback;
 static Ns_TraceProc    LogTrace;
 static Ns_ArgProc      LogArg;
@@ -264,11 +264,11 @@ Ns_ModuleInit(const char *server, const char *module)
 
     if (Ns_ConfigBool(path, "rolllog", NS_TRUE)) {
         int hour = Ns_ConfigIntRange(path, "rollhour", 0, 0, 23);
-        Ns_ScheduleDaily((Ns_SchedProc *) LogRollCallback, logPtr,
+        Ns_ScheduleDaily(LogRollCallback, logPtr,
                          0, hour, 0, NULL);
     }
     if (Ns_ConfigBool(path, "rollonsignal", NS_FALSE)) {
-        Ns_RegisterAtSignal(LogRollCallback, logPtr);
+        Ns_RegisterAtSignal((Ns_Callback *)(ns_funcptr_t)LogRollCallback, logPtr);
     }
 
     /*
@@ -1106,7 +1106,7 @@ LogCloseCallback(const Ns_Time *toPtr, void *arg)
 }
 
 static void
-LogRollCallback(void *arg)
+LogRollCallback(void *arg, int UNUSED(id))
 {
     LogCallback(LogRoll, arg, "roll");
 }

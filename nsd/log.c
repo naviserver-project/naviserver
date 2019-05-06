@@ -1500,7 +1500,8 @@ NsLogOpen(void)
                  file, strerror(errno));
     }
     if ((flags & LOG_ROLL) != 0u) {
-        (void) Ns_RegisterAtSignal((Ns_Callback *) Ns_LogRoll, NULL);
+        Ns_Callback *proc = (Ns_Callback *)(ns_funcptr_t)Ns_LogRoll;
+        (void) Ns_RegisterAtSignal(proc, NULL);
     }
     logOpenCalled = NS_TRUE;
 }
