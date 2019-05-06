@@ -88,7 +88,7 @@ typedef enum {
 
 typedef struct Ns_DbProc {
     Ns_DbProcId  id;
-    Ns_Callback *func;
+    ns_funcptr_t func;
 } Ns_DbProc;
 
 /*
