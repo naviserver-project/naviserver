@@ -56,20 +56,24 @@ control port.
 #
 # Control port -- nscp
 #
-ns_section "ns/server/${servername}/module/nscp"
-ns_param   port            9999        ;# Control port listens on port 9999
-ns_param   address         "127.0.0.1" ;# For security, use 127.0.0.1 only
-
+ns_section "ns/server/${servername}/module/nscp" {
+    ns_param   port            9999        ;# Control port listens on port 9999
+    ns_param   address         "127.0.0.1" ;# For security, use 127.0.0.1 only
+}
+ 
 # Control port users
-ns_section "ns/server/${servername}/module/nscp/users"
-# The default password for nsadmin is "x". You should change it.
-# type "ns_crypt newpassword salt" and put the encrypted string below.
-ns_param user "nsadmin:t2GqvvaiIUbF2:" ;# sample user="nsadmin", pw="x".
-
+ns_section "ns/server/${servername}/module/nscp/users" {
+    #
+    # The default password for nsadmin is "x". You should change it.
+    # type "ns_crypt newpassword salt" and put the encrypted string
+    # below.
+    
+    ns_param user "nsadmin:t2GqvvaiIUbF2:" ;# sample user="nsadmin", pw="x".
+}
+ 
 ns_section "ns/server/${servername}/modules"
 # ...
-ns_param   nscp               nscp.so
-
+ns_param nscp nscp.so
 [example_end]
 
 
