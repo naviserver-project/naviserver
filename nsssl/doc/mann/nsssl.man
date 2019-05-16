@@ -91,10 +91,9 @@ certificate in PEM format.  The last line with the DH parameters is
 optional but necessary perfect forward secrecy.
 
 [example_begin]
-    openssl genrsa 1024 > host.key
-    openssl req -new -x509 -nodes -sha1 -days 365 -key host.key > host.cert
-    cat host.cert host.key > server.pem
-    rm -rf host.cert host.key
+    openssl req -new -x509 -sha256 -newkey rsa:2048 -days 365 -nodes  -keyout host.key.pem -out host.cert.pem
+    cat host.cert.pem host.key.pem > server.pem
+    rm host.cert.pem host.key.pem
     openssl dhparam 2048 >> server.pem
 [example_end]
 
