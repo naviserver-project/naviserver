@@ -548,16 +548,15 @@ Ns_ConnSendFileVec(Ns_Conn *conn, Ns_FileVec *bufs, int nbufs)
         towrite += bufs[i].length;
     }
 
-    while (towrite > 0u) {
+    while (nwrote < towrite) {
         ssize_t sent;
 
         sent = NsDriverSendFile(sockPtr, bufs, nbufs, 0u);
         if (sent == -1) {
             break;
         }
-        nwrote  += (size_t)sent;
-        towrite -= (size_t)sent;
-        if (towrite > 0u) {
+        nwrote += (size_t)sent;
+        if (nwrote < towrite) {
             Ns_Sock *sock = (Ns_Sock *)sockPtr;
 
             if (sent > 0) {
@@ -662,16 +661,9 @@ Ns_ConnSendDString(Ns_Conn *conn, const Ns_DString *dsPtr)
 ssize_t
 Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 {
-    Conn    *connPtr;
-    ssize_t  sent;
+    ssize_t  sent = -1;
     int      i;
     size_t   towrite = 0u;
-
-    NS_NONNULL_ASSERT(conn != NULL);
-    //NS_NONNULL_ASSERT(bufs != NULL);
-
-    connPtr = (Conn *)conn;
-    assert(connPtr->sockPtr != NULL);
 
     for (i = 0; i < nbufs; i++) {
         towrite += bufs[i].iov_len;
@@ -687,8 +679,12 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 
     } else {
         Ns_Time  waitTimeout;
+	Conn    *connPtr;
         Sock    *sockPtr;
 
+	NS_NONNULL_ASSERT(conn != NULL);
+
+	connPtr = (Conn *)conn;
         sockPtr = connPtr->sockPtr;
 
         NS_NONNULL_ASSERT(sockPtr != NULL);
