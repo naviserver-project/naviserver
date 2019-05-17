@@ -58,22 +58,22 @@ The registration of the folter might me happening e.g.
 
     ns_section "ns/server/${server}/module/revproxy"
        ns_param filters {
-	  ns_register_filter postauth GET  /shiny/* ::revproxy::upstream -target https://my.backend.com/ -regsubs {{/shiny ""}}
-	  ns_register_filter postauth POST /shiny/* ::revproxy::upstream -target https://my.backend.com/ -regsubs {{/shiny ""}}
+         ns_register_filter postauth GET  /shiny/* ::revproxy::upstream -target https://my.backend.com/ -regsubs {{/shiny ""}}
+         ns_register_filter postauth POST /shiny/* ::revproxy::upstream -target https://my.backend.com/ -regsubs {{/shiny ""}}
        }
 
 The registration of ::revproxy::upstream filter can be configured with
 the following callbacks (see above) for a tailored behavior, more
 flexible than the regsub approach sketched above:
 
-  -exception_callback (default "::revproxy::exception")
-      nsf::proc exception { -error -url } { ...}
+    -exception_callback (default "::revproxy::exception")
+        nsf::proc exception { -error -url } { ...}
 
-  -url_rewrite_callback (default "::revproxy::rewrite_url")
-      nsf::proc rewrite_url { -target -url {-query ""}} {....}
+    -url_rewrite_callback (default "::revproxy::rewrite_url")
+        nsf::proc rewrite_url { -target -url {-query ""}} {....}
 
-  -backend_reply_callback (default "")
-      nsf::proc backend_reply_callback { -url -replyHeaders -status } {...}
+    -backend_reply_callback (default "")
+        nsf::proc backend_reply_callback { -url -replyHeaders -status } {...}
 
 
 Installation:

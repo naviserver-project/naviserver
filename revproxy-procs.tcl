@@ -319,11 +319,11 @@ namespace eval ::revproxy {
             incr ::revproxy::spooled($to) $nrBytesSent
             if {$nrBytesSent < $toSend} {
                 #
-                # A partial send operation happend
+                # A partial send operation happened
                 #
                 set remaining [string range $data $nrBytesSent end]
                 log notice "spool to $to: register write callback for $to with remaining [string length $remaining] bytes\
-                            (sofar $::revproxy::spooled($to)), setting callback on $to to ::revproxy::write_once"
+                            (sofar $::revproxy::spooled($to)), setting callback on to $to -> ::revproxy::write_once"
                 ns_connchan callback \
                     -timeout [dict get $timeouts -timeout] \
                     $to [list ::revproxy::write_once $from $to $url $remaining $timeouts] wex
@@ -482,7 +482,7 @@ namespace eval ::revproxy {
                     log notice "backendReply: from $url\n$reply"
                     set l [ns_set iget $replyHeaders Content-Length ""]
                     if {$l ne ""} {
-                        #log notice "backendReply: set tospool on $to to $l"
+                        #log notice "backendReply: set tospool($to) -> $l"
                         set ::revproxy::tospool($to) $l
                     }
                     set headerLength [string length $reply]
