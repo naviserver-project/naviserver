@@ -51,11 +51,16 @@ static int ConfigServerVhost(const char *server)
 
 static int PathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, char cmd)
     NS_GNUC_NONNULL(2);
+
 static char *MakePath(Ns_DString *dest, va_list *pap)
     NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
+
 static const char *ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)
     NS_GNUC_RETURNS_NONNULL;
+
+static char *NormalizePath(Ns_DString *dsPtr, const char *path, bool url)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_RETURNS_NONNULL;
 
 
 
@@ -165,9 +170,12 @@ Ns_PathIsAbsolute(const char *path)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_NormalizePath --
+ * Ns_NormalizePath, Ns_NormalizeUrl --
  *
- *  Remove "..", "." from paths.
+ *  Remove "..", ".", multiple consecutive slashes from paths.
+ *  While Ns_NormalizePath is designed for file system paths
+ *  including special treatment for windows, the latter is defined
+ *  for normalizing URLs.
  *
  * Results:
  *  dsPtr->string
@@ -177,9 +185,20 @@ Ns_PathIsAbsolute(const char *path)
  *
  *----------------------------------------------------------------------
  */
-
 char *
 Ns_NormalizePath(Ns_DString *dsPtr, const char *path)
+{
+    return NormalizePath(dsPtr, path, NS_FALSE);
+}
+
+char *
+Ns_NormalizeUrl(Ns_DString *dsPtr, const char *path)
+{
+    return NormalizePath(dsPtr, path, NS_TRUE);
+}
+
+char *
+NormalizePath(Ns_DString *dsPtr, const char *path, bool url)
 {
     char                 end;
     register char       *src;
@@ -191,24 +210,27 @@ Ns_NormalizePath(Ns_DString *dsPtr, const char *path)
 
     Ns_DStringInit(&tmp);
     src = Ns_DStringAppend(&tmp, path);
+
+    if (!url) {
 #ifdef _WIN32
-    if (CHARTYPE(alpha, *src) != 0 && src[1] == ':') {
-        if (CHARTYPE(upper, *src) != 0) {
-          *src = CHARCONV(lower, *src);
+        if (CHARTYPE(alpha, *src) != 0 && src[1] == ':') {
+            if (CHARTYPE(upper, *src) != 0) {
+                *src = CHARCONV(lower, *src);
+            }
+            Ns_DStringNAppend(dsPtr, src, 2);
+            src += 2;
+        } else if (ISSLASH(src[0]) && ISSLASH(src[1])) {
+            /*
+             * We have TWO leading slashes as in the Windows pathname
+             * "//machine/foo/bar".  The code further below will write 1
+             * slash, so here, add just 1 slash so that we will end up
+             * with 2 total: --atp@piskorski.com, 2005/03/14 06:34 EST
+             */
+            Ns_DStringNAppend(dsPtr, src, 1);
+            src += 2;
         }
-        Ns_DStringNAppend(dsPtr, src, 2);
-        src += 2;
-    } else if (ISSLASH(src[0]) && ISSLASH(src[1])) {
-        /*
-         * We have TWO leading slashes as in the Windows pathname
-         * "//machine/foo/bar".  The code further below will write 1
-         * slash, so here, add just 1 slash so that we will end up
-         * with 2 total: --atp@piskorski.com, 2005/03/14 06:34 EST
-         */
-        Ns_DStringNAppend(dsPtr, src, 1);
-        src += 2;
-    }
 #endif
+    }
 
     /*
      * Move past leading slash(es)

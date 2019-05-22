@@ -2105,6 +2105,10 @@ Ns_NormalizePath(Ns_DString *dsPtr, const char *path)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_RETURNS_NONNULL;
 
 NS_EXTERN char *
+Ns_NormalizeUrl(Ns_DString *dsPtr, const char *path)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_RETURNS_NONNULL;
+
+NS_EXTERN char *
 Ns_MakePath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL
     NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 

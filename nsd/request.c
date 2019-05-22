@@ -484,7 +484,7 @@ SetUrl(Ns_Request *request, char *url)
     if (p == NULL) {
         p = url;
     }
-    (void)Ns_NormalizePath(&ds2, p);
+    (void)Ns_NormalizeUrl(&ds2, p);
     Tcl_DStringSetLength(&ds1, 0);
 
     /*

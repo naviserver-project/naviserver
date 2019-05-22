@@ -1335,7 +1335,7 @@ static int AllowDenyObjCmd(
      */
 
     Ns_DStringInit(&base);
-    Ns_NormalizePath(&base, url);
+    Ns_NormalizeUrl(&base, url);
 
     /*
      * Locate and verify the exact record.
@@ -1428,7 +1428,7 @@ static int DelPermObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
      */
 
     Ns_DStringInit(&base);
-    Ns_NormalizePath(&base, url);
+    Ns_NormalizeUrl(&base, url);
 
     /*
      * Locate and verify the exact record.
