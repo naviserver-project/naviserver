@@ -1451,7 +1451,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
     NsInterp            *itPtr = clientData;
     Conn                *connPtr;
     Ns_Conn             *conn;
-    const Ns_Request    *request = NULL;
+    const Ns_Request    *request;
     Tcl_Encoding         encoding;
     Tcl_Channel          chan;
     const Tcl_HashEntry *hPtr;
@@ -1561,6 +1561,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
     if (result == TCL_ERROR) {
         return result;
     }
+    assert(request != NULL);
 
     switch (opt) {
     case CIsConnectedIdx:
