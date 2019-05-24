@@ -2136,7 +2136,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         {
             /*
              * Steps as recommended from OpenSSL wiki page. However,
-             * the code based on the low level EC_POINT_oct2point()
+             * the code based on the low-level EC_POINT_oct2point()
              * appears to be correct.
              */
 

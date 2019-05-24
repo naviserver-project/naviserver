@@ -470,7 +470,7 @@ ns_section	"ns/server/${servername}/module/nssock" {
     # Number of requests to accept at once
     ns_param	acceptsize		1
 
-    # Max numbrer of sockets in the driver queue
+    # Max number of sockets in the driver queue
     ns_param	maxqueuesize            256
 
     # Performance optimization, may cause recvwait to be ignored if no data sent (default false)

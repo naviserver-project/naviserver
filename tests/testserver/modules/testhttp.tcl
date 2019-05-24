@@ -397,7 +397,7 @@ namespace eval ::nstest {
 return
 #
 # Below is an implementation of nstest::http based on "ns_http"
-# instead of the low level socket commands above. The only difference
+# instead of the low-level socket commands above. The only difference
 # is that the version below does not support modified encodings for
 # sending an http requests (the importance is questionable).
 #
