@@ -318,7 +318,18 @@ Ns_GetProcInfo(Tcl_DString *dsPtr, ns_funcptr_t procAddr, const void *arg)
     if (infoPtr->desc != NULL) {
         Tcl_DStringAppendElement(dsPtr, infoPtr->desc);
     } else {
-        AppendAddr(dsPtr, "p", (void *)procAddr);
+        /*
+         * The following is a rather crude approach obtaining a hex print
+         * string from a function pointer. For our purposes, this should be
+         * good enough.
+         */
+        union {
+            ns_funcptr_t funcptr;
+            void        *ptr;
+        } data;
+
+        data.funcptr = procAddr;
+        AppendAddr(dsPtr, "p", data.ptr);
     }
     /*Ns_Log(Notice, "Ns_GetProcInfo: infoPtr->proc %p", infoPtr->proc);*/
     if (infoPtr->proc != NULL) {
