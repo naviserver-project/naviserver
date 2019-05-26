@@ -1556,12 +1556,24 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
             assert(conn != NULL);
             request = &connPtr->request;
         }
+    } else {
+        /*
+         * The only success case, where we do not call NsConnRequire().
+         */
+        request = NULL;
     }
 
     if (result == TCL_ERROR) {
         return result;
     }
-    assert(request != NULL);
+
+    /*
+     * Each time, when NsConnRequire was call and succeeded, the request must
+     * be not NULL.
+     */
+    if (required_flags[opt] != 0u) {
+        assert(request != NULL);
+    }
 
     switch (opt) {
     case CIsConnectedIdx:
@@ -1675,7 +1687,6 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         {
             int         binary = (int)NS_FALSE, offset = 0, length = -1, requiredLength;
             Tcl_DString encDs;
-
             Ns_ObjvSpec lopts[] = {
                 {"-binary",    Ns_ObjvBool,  &binary, INT2PTR(NS_TRUE)},
                 {NULL, NULL, NULL, NULL}
@@ -1717,8 +1728,11 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
             if (result == TCL_OK
                 && length == -1) {
                 length = (int)connPtr->reqPtr->length - offset;
+
             } else if (result == TCL_OK
-                       && length > -1 && ((size_t)length + (size_t)offset > connPtr->reqPtr->length)) {
+                       && length > -1
+                       && ((size_t)length + (size_t)offset > connPtr->reqPtr->length)
+                       ) {
                 Ns_TclPrintfResult(interp, "offset + length exceeds available content length");
                 result = TCL_ERROR;
             }
