@@ -40,7 +40,7 @@
  * Local functions defined in this file
  */
 
-static Ns_SchedProc FreeSched;
+static Ns_SchedProc FreeSchedCallback;
 static int SchedObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, char cmd);
 static int ReturnValidId(Tcl_Interp *interp, int id, Ns_TclCallback *cbPtr)
     NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(3);
@@ -234,7 +234,7 @@ NsTclSchedDailyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclSchedProc,
                                       scriptObj, remain, objv + (objc - remain));
             id = Ns_ScheduleDaily(NsTclSchedProc, cbPtr, flags, hour, minute,
-                                  FreeSched);
+                                  FreeSchedCallback);
 
             result = ReturnValidId(interp, id, cbPtr);
         }
@@ -307,7 +307,7 @@ NsTclSchedWeeklyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
             cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclSchedProc,
                                       scriptObj, remain, objv + (objc - remain));
             id = Ns_ScheduleWeekly(NsTclSchedProc, cbPtr, flags, day, hour, minute,
-                                   FreeSched);
+                                   FreeSchedCallback);
 
             result = ReturnValidId(interp, id, cbPtr);
         }
@@ -372,7 +372,7 @@ NsTclSchedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 
             cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclSchedProc,
                                       scriptObj, remain, objv + (objc - remain));
-            id = Ns_ScheduleProcEx(NsTclSchedProc, cbPtr, flags, interval, FreeSched);
+            id = Ns_ScheduleProcEx(NsTclSchedProc, cbPtr, flags, interval, FreeSchedCallback);
 
             result = ReturnValidId(interp, id, cbPtr);
         }
@@ -447,7 +447,7 @@ ReturnValidId(Tcl_Interp *interp, int id, Ns_TclCallback *cbPtr)
 /*
  *----------------------------------------------------------------------
  *
- * FreeSched --
+ * FreeSchedCallback --
  *
  *      Free a callback used for scheduled commands.
  *
@@ -461,7 +461,7 @@ ReturnValidId(Tcl_Interp *interp, int id, Ns_TclCallback *cbPtr)
  */
 
 static void
-FreeSched(void *arg, int UNUSED(id))
+FreeSchedCallback(void *arg, int UNUSED(id))
 {
     Ns_TclFreeCallback(arg);
 }
