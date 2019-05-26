@@ -212,17 +212,34 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
                 status = NS_ERROR;
             }
             if (status == NS_OK) {
-                Ns_ModuleInitProc *initProc   = (Ns_ModuleInitProc *)tclInitProc;
-                const int         *versionPtr = (const int *) moduleVersionAddr;
+                Ns_ModuleInitProc *initProc = (Ns_ModuleInitProc *)(ns_funcptr_t)tclInitProc;
 
                 /*
                  * Calling Ns_ModuleInit()
                  */
                 status = (*initProc)(server, module);
+#if 0
+                /*
+                 * All modules of the NaviServer modules family have
+                 * Ns_ModuleVersion == 1. The way, how AOLserver performed the
+                 * version checking (via casting a function pointer to an
+                 * integer pointer) does not conform with ISO C which forbids
+                 * conversions of function pointers to object pointer
+                 * types. The intention was probably to allow results from the
+                 * initProc != NS_OK for modules with versions < 1.
+                 *
+                 * Since the test is practically useless und unclean, we
+                 * deactivate it here.
+                 */
+                {
+                    const int *versionPtr = (const int *) moduleVersionAddr;
 
-                if (*versionPtr < 1) {
-                    status = NS_OK;
-                } else if (status != NS_OK) {
+                    if (*versionPtr < 1) {
+                        status = NS_OK;
+                    }
+                }
+#endif
+                if (status != NS_OK) {
                     Ns_Log(Error, "modload: %s: %s returned: %d", file, init, status);
                 }
             }
