@@ -124,7 +124,14 @@ AllocFuncptrEntry(Tcl_HashTable *UNUSED(tablePtr), void *keyPtr) {
   Tcl_HashEntry  *hPtr;
   ns_funcptr_t    value = ((funcptrEntry_t *)keyPtr)->funcptr;
 
-  hPtr = (Tcl_HashEntry *) ns_malloc(sizeof(Tcl_HashEntry) + sizeof(funcptrEntry_t));
+  /*
+   * The size of the function pointer might be larger than the data pointer.
+   * since we store the value starting with the oneWordValue, we have to
+   * allocate on some architectures a more than the Tcl_HashEntry, namely the
+   * differences of the sizes of these pointer types.
+   */
+  hPtr = (Tcl_HashEntry *)ns_malloc(sizeof(Tcl_HashEntry) +
+                                    MAX(sizeof(ns_funcptr_t), sizeof(char*)) - sizeof(char*));
   hPtr->clientData = NULL;
 
   memcpy(&hPtr->key.oneWordValue, &value, sizeof(value));
