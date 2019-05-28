@@ -478,7 +478,13 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
  *      Receive data into given buffers.
  *
  * Results:
- *      Total number of bytes received or -1 on error or timeout.
+ *      Total number of bytes received or -1 on error. The return
+ *      value will be 0 when the peer has performed an orderly shutdown. The
+ *      resulting sockstate has one of the following codes:
+ *
+ *      NS_SOCK_READ, NS_SOCK_DONE, NS_SOCK_AGAIN, NS_SOCK_EXCEPTION
+ *
+ *      No NS_SOCK_TIMEOUT handling
  *
  * Side effects:
  *      None
@@ -490,10 +496,11 @@ static ssize_t
 Recv(Ns_Sock *sock, struct iovec *bufs, int UNUSED(nbufs),
      Ns_Time *UNUSED(timeoutPtr), unsigned int UNUSED(flags))
 {
-    SSLDriver *drvPtr = sock->driver->arg;
-    SSLContext *sslPtr = sock->arg;
-    int got = 0;
-    char *p = (char *)bufs->iov_base;
+    SSLDriver   *drvPtr = sock->driver->arg;
+    SSLContext  *sslPtr = sock->arg;
+    char        *p = (char *)bufs->iov_base;
+    Ns_SockState sockState = NS_SOCK_READ;
+    ssize_t      nRead = 0;
 
     /*
      * Verify client certificate, driver may require valid cert
@@ -501,59 +508,81 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int UNUSED(nbufs),
 
     if (drvPtr->verify && sslPtr->verified == 0) {
         X509 *peer;
+
         if ((peer = SSL_get_peer_certificate(sslPtr->ssl))) {
              X509_free(peer);
              if (SSL_get_verify_result(sslPtr->ssl) != X509_V_OK) {
                  char ipString[NS_IPADDR_SIZE];
+
                  Ns_Log(Error, "nsssl: client certificate not valid by %s",
                         ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString,
                                      sizeof(ipString)));
-                 return NS_ERROR;
+                 nRead = -1;
              }
         } else {
             char ipString[NS_IPADDR_SIZE];
+
             Ns_Log(Error, "nsssl: no client certificate provided by %s",
                    ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString,
                                 sizeof(ipString)));
-            return NS_ERROR;
+            nRead = -1;
         }
         sslPtr->verified = 1;
     }
 
-    while (1) {
-        int err, n;
+    if (nRead > -1) {
+        int  got = 0;
 
-        ERR_clear_error();
-        n = SSL_read(sslPtr->ssl, p + got, (int)bufs->iov_len - got);
-        err = SSL_get_error(sslPtr->ssl, n);
+        while (1) {
+            int err, n;
 
-        switch (err) {
-        case SSL_ERROR_NONE:
-            if (n < 0) {
-                fprintf(stderr, "### SSL_read should not happen\n");
-                return n;
+            ERR_clear_error();
+            n = SSL_read(sslPtr->ssl, p + got, (int)bufs->iov_len - got);
+            err = SSL_get_error(sslPtr->ssl, n);
+
+            switch (err) {
+            case SSL_ERROR_NONE:
+                if (n < 0) {
+                    fprintf(stderr, "### SSL_read should not happen\n");
+                    nRead = n;
+                } else {
+                    /*fprintf(stderr, "### SSL_read %d pending %d\n", n, SSL_pending(sslPtr->ssl));*/
+                    got += n;
+                    if (n == 1 && got < (int)bufs->iov_len) {
+                        /*fprintf(stderr, "### SSL retry after read of %d bytes\n", n);*/
+                        continue;
+                    }
+                    /*Ns_Log(Notice, "### SSL_read %d got <%s>", got, p);*/
+                    nRead = got;
+                }
+                break;
+            case SSL_ERROR_ZERO_RETURN:
+                nRead = got;
+                sockState = NS_SOCK_DONE;
+                break;
+
+            case SSL_ERROR_WANT_READ:
+                /*fprintf(stderr, "### SSL_read WANT_READ returns %d\n", got);*/
+                nRead = got;
+                sockState = NS_SOCK_AGAIN;
+                break;
+
+            default:
+                /*fprintf(stderr, "### SSL_read error\n");*/
+                SSL_set_shutdown(sslPtr->ssl, SSL_RECEIVED_SHUTDOWN);
+                nRead = -1;
+                break;
             }
-            /*fprintf(stderr, "### SSL_read %d pending %d\n", n, SSL_pending(sslPtr->ssl));*/
-            got += n;
-            if (n == 1 && got < (int)bufs->iov_len) {
-                /*fprintf(stderr, "### SSL retry after read of %d bytes\n", n);*/
-                continue;
-            }
-            /*Ns_Log(Notice, "### SSL_read %d got <%s>", got, p);*/
-            return got;
-
-        case SSL_ERROR_WANT_READ:
-            /*fprintf(stderr, "### SSL_read WANT_READ returns %d\n", got);*/
-            return got;
-
-        default:
-            /*fprintf(stderr, "### SSL_read error\n");*/
-            SSL_set_shutdown(sslPtr->ssl, SSL_RECEIVED_SHUTDOWN);
-            return -1;
+            break;
         }
     }
 
-    return -1;
+    if (nRead < 0) {
+        sockState = NS_SOCK_EXCEPTION;
+    }
+    Ns_SockSetReceiveState(sock, sockState);
+
+    return nRead;
 }
 
 

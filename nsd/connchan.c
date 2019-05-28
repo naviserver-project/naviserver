@@ -92,9 +92,6 @@ static NsConnChan *ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char
 static Ns_ReturnCode SockCallbackRegister(NsConnChan *connChanPtr, const char *script, unsigned int when, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static ssize_t DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
-
 static ssize_t DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                           struct iovec *bufs, int nbufs, unsigned int flags, const Ns_Time *timeoutPtr
 ) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6);
@@ -665,52 +662,6 @@ SockCallbackRegister(NsConnChan *connChanPtr, const char *script,
         (void) CallbackFree(connChanPtr->sockPtr->sock, cbPtr, (unsigned int)NS_SOCK_CANCEL);
         connChanPtr->cbPtr = NULL;
     }
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * DriverRecv --
- *
- *      Read data from the socket into the given vector of buffers.
- *
- * Results:
- *      Number of bytes read, or -1 on error.
- *
- * Side effects:
- *      Depends on driver.
- *
- *----------------------------------------------------------------------
- */
-
-static ssize_t
-DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
-{
-    Ns_Time timeout;
-    ssize_t result;
-
-    NS_NONNULL_ASSERT(sockPtr != NULL);
-    NS_NONNULL_ASSERT(bufs != NULL);
-    NS_NONNULL_ASSERT(timeoutPtr != NULL);
-
-    if (timeoutPtr->sec == 0 && timeoutPtr->usec == 0) {
-        /*
-         * Use configured receivewait as timeout.
-         */
-        timeout.sec = sockPtr->drvPtr->recvwait;
-        timeout.usec = 0;
-        timeoutPtr = &timeout;
-    }
-    if (likely(sockPtr->drvPtr->recvProc != NULL)) {
-        Ns_Log(Ns_LogConnchanDebug, "ns_connchan DriverRecv: read timeout (%ld:%ld)",
-               timeoutPtr->sec, timeoutPtr->usec);
-        result = (*sockPtr->drvPtr->recvProc)((Ns_Sock *) sockPtr, bufs, nbufs, timeoutPtr, 0u);
-    } else {
-        Ns_Log(Warning, "ns_connchan: no recvProc registered for driver %s", sockPtr->drvPtr->moduleName);
-        result = -1;
-    }
-
     return result;
 }
 
@@ -1554,6 +1505,7 @@ ConnChanReadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
     } else {
         const NsInterp *itPtr = clientData;
         NsServer       *servPtr = itPtr->servPtr;
+        Ns_Time         timeout, *timeoutPtr;
         NsConnChan     *connChanPtr = ConnChanGet(interp, servPtr, name);
 
         if (unlikely(connChanPtr == NULL)) {
@@ -1576,7 +1528,18 @@ ConnChanReadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
              */
             buf.iov_base = buffer;
             buf.iov_len = sizeof(buffer);
-            nRead = DriverRecv(connChanPtr->sockPtr, &buf, 1, &connChanPtr->recvTimeout);
+
+            timeoutPtr = &connChanPtr->recvTimeout;
+            if (timeoutPtr->sec == 0 && timeoutPtr->usec == 0) {
+                /*
+                 * No timeout was specified, use the configured receivewait of
+                 * the driver as timeout.
+                 */
+                timeout.sec = connChanPtr->sockPtr->drvPtr->recvwait;
+                timeout.usec = 0;
+                timeoutPtr = &timeout;
+            }
+            nRead = NsDriverRecv(connChanPtr->sockPtr, &buf, 1, timeoutPtr);
 
             if (nRead > -1) {
                 connChanPtr->rBytes += (size_t)nRead;

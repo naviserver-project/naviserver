@@ -200,7 +200,13 @@ SockAccept(Ns_Sock *sock, NS_SOCKET listensock,
  *      Receive data into given buffers.
  *
  * Results:
- *      Total number of bytes received or -1 on error or timeout.
+ *      Total number of bytes received or -1 on error, EOF or timeout.
+ *      potential SockState values:
+ *          success: NS_SOCK_READ
+ *          eof:     NS_SOCK_DONE
+ *          again:   NS_SOCK_AGAIN
+ *          error:   NS_SOCK_EXCEPTION
+ *          timeout: NS_SOCK_TIMEOUT
  *
  * Side effects:
  *      May block once for driver recvwait timeout seconds if no data
@@ -213,20 +219,21 @@ static ssize_t
 SockRecv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
          Ns_Time *timeoutPtr, unsigned int flags)
 {
-    ssize_t n;
+    ssize_t      n;
 
-    n = Ns_SockRecvBufs(sock->sock, bufs, nbufs, timeoutPtr, flags);
+    n = Ns_SockRecvBufs(sock, bufs, nbufs, timeoutPtr, flags);
     if (n == 0) {
         /*
-         * n == 0 this means usually eof (peer closed connection), return
-         * value of 0 means in the driver SOCK_MORE. In order to cause a close
-         * of the socket, return -1, but clear the errno. This might not be
-         * the cleanest solution, but lets us to perform a proper close
-         * operation without logging an error.
+         * The return value will be 0 when the peer has performed an orderly
+         * shutdown.  However, the return value of 0 means in the driver
+         * SOCK_MORE. In order to cause a close of the socket, return -1, but
+         * clear the errno. This might not be the cleanest solution, but lets
+         * us to perform a proper close operation without logging an error.
          */
         errno = 0;
         n = -1;
     }
+
     return n;
 }
 

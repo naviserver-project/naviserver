@@ -146,14 +146,15 @@ typedef enum {
  * The following define socket events for the Ns_Sock* APIs.
  */
 typedef enum {
-    NS_SOCK_READ =              0x01u, /* Socket is readable */
-    NS_SOCK_WRITE =             0x02u, /* Socket is writable */
-    NS_SOCK_EXCEPTION =         0x04u, /* Socket has OOB data */
-    NS_SOCK_EXIT =              0x08u, /* The server is shutting down */
-    NS_SOCK_DONE =              0x10u, /* Task processing is done */
-    NS_SOCK_CANCEL =            0x20u, /* Remove event from sock callback thread */
-    NS_SOCK_TIMEOUT =           0x40u, /* Timeout waiting for socket event. */
-    NS_SOCK_INIT =              0x80u /* Initialise a Task callback. */
+    NS_SOCK_READ =            0x0001u, /* Socket is readable */
+    NS_SOCK_WRITE =           0x0002u, /* Socket is writable */
+    NS_SOCK_EXCEPTION =       0x0004u, /* Socket has OOB data */
+    NS_SOCK_EXIT =            0x0008u, /* The server is shutting down */
+    NS_SOCK_DONE =            0x0010u, /* Task processing is done */
+    NS_SOCK_CANCEL =          0x0020u, /* Remove event from sock callback thread */
+    NS_SOCK_TIMEOUT =         0x0040u, /* Timeout waiting for socket event. */
+    NS_SOCK_AGAIN =           0x0080u, /* Try AGAIN */
+    NS_SOCK_INIT =            0x0100u  /* Initialise a Task callback. */
 } Ns_SockState;
 
 /*
@@ -2733,8 +2734,12 @@ NS_EXTERN ssize_t
 Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(2);
 
+NS_EXTERN void
+Ns_SockSetReceiveState(Ns_Sock *sock, Ns_SockState sockState)
+    NS_GNUC_NONNULL(1);
+
 NS_EXTERN ssize_t
-Ns_SockRecvBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
+Ns_SockRecvBufs(Ns_Sock *sock, struct iovec *bufs, int nbufs,
                 const Ns_Time *timeoutPtr, unsigned int flags);
 
 NS_EXTERN ssize_t

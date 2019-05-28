@@ -175,32 +175,99 @@ Ns_SumVec(const struct iovec *bufs, int nbufs)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_SockSetReceiveState --
+ *
+ *      Set the sockState of the last receive operation in the Sock structure.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Ns_SockSetReceiveState(Ns_Sock *sock, Ns_SockState sockState)
+{
+    NS_NONNULL_ASSERT(sock != NULL);
+
+    ((Sock *)sock)->recvSockState = sockState;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_SockRecvBufs --
  *
  *      Read data from a non-blocking socket into a vector of buffers.
+ *      When the timeoutPtr is given, wait max the given time until
+ *      the data is readable.
  *
  * Results:
- *      Number of bytes read or -1 on error.
+ *      Number of bytes read or -1 on error (including timeout).  The return
+ *      value will be 0 when the peer has performed an orderly shutdown. The
+ *      resulting sockstate has one of the following codes:
+ *
+ *      NS_SOCK_READ, NS_SOCK_DONE, NS_SOCK_AGAIN, NS_SOCK_EXCEPTION,
+ *      NS_SOCK_TIMEOUT
  *
  * Side effects:
  *      May wait for given timeout if first attempt would block.
  *
  *----------------------------------------------------------------------
  */
-
 ssize_t
-Ns_SockRecvBufs(NS_SOCKET sock, struct iovec *bufs, int nbufs,
+Ns_SockRecvBufs(Ns_Sock *sock, struct iovec *bufs, int nbufs,
                 const Ns_Time *timeoutPtr, unsigned int flags)
 {
-    ssize_t n;
+    ssize_t      n;
+    Ns_SockState sockState = NS_SOCK_READ;
+    Sock        *sockPtr = (Sock *)sock;
 
-    n = SockRecv(sock, bufs, nbufs, flags);
-    if (n == -1
-        && ns_sockerrno == NS_EWOULDBLOCK
-        && Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_READ,
-                            timeoutPtr) == NS_OK) {
-        n = SockRecv(sock, bufs, nbufs, flags);
+    NS_NONNULL_ASSERT(sock != NULL);
+
+    n = SockRecv(sock->sock, bufs, nbufs, flags);
+    if (unlikely(n == -1)) {
+        /*
+         * Check, if the resource is temporarily unavailable
+         */
+        if ((ns_sockerrno == EAGAIN) || (ns_sockerrno == NS_EWOULDBLOCK)) {
+            /*
+             * If a timeoutPtr was provided, perform timeout handling.
+             */
+            if (timeoutPtr != NULL) {
+                Ns_ReturnCode status;
+
+                status = Ns_SockTimedWait(sock->sock, (unsigned int)NS_SOCK_READ,
+                                          timeoutPtr);
+                if (status == NS_OK) {
+                    n = SockRecv(sock->sock, bufs, nbufs, flags);
+                } else if (status == NS_TIMEOUT) {
+                    sockState = NS_SOCK_TIMEOUT;
+                } else {
+                    sockState = NS_SOCK_EXCEPTION;
+                }
+            } else {
+                /*
+                 * No timeout provided, return AGAIN status back.
+                 */
+                sockState = NS_SOCK_AGAIN;
+            }
+        } else {
+            /*
+             * Some other error.
+             */
+            sockState = NS_SOCK_EXCEPTION;
+        }
+    } else if (unlikely(n == 0)) {
+        /*
+         * Read value 0 means that peer has performed an orderly shutdown.
+         */
+        sockState = NS_SOCK_DONE;
     }
+    sockPtr->recvSockState = sockState;
 
     return n;
 }
@@ -1446,7 +1513,9 @@ SockSetup(NS_SOCKET sock)
  *      Read data from a non-blocking socket into a vector of buffers.
  *
  * Results:
- *      Number of bytes read or -1 on error.
+ *
+ *      Number of bytes read or -1 on error.  The return value will be 0 when
+ *      the peer has performed an orderly shutdown (as defined by POSIX).
  *
  * Side effects:
  *      None.

@@ -546,16 +546,17 @@ typedef struct Sock {
 
     const char         *location;
     NS_POLL_NFDS_TYPE   pidx;            /* poll() index */
-    unsigned int        flags;           /* state flags used by driver */
+    unsigned int        flags;           /* State flags used by driver */
     Ns_Time             timeout;
     Request            *reqPtr;
 
     Ns_Time             acceptTime;
 
     char               *taddr;           /* mmap-ed temporary file */
-    size_t              tsize;           /* size of mmap region */
-    char               *tfile;           /* name of regular temporary file */
-    int                 tfd;             /* file descriptor with request contents */
+    size_t              tsize;           /* Size of mmap region */
+    char               *tfile;           /* Name of regular temporary file */
+    Ns_SockState        recvSockState;   /* Results from the last recv operation */
+    int                 tfd;             /* File descriptor with request contents */
     bool                keep;
 
     void               *sls[1];          /* Slots for sls storage */
@@ -1389,6 +1390,9 @@ NS_EXTERN void *NsUrlSpecificGet(NsServer *servPtr, const char *method,
  * Socket driver callbacks.
  */
 
+NS_EXTERN ssize_t NsDriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+
 NS_EXTERN ssize_t NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int flags)
     NS_GNUC_NONNULL(1);
 NS_EXTERN ssize_t NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
@@ -1396,7 +1400,8 @@ NS_EXTERN ssize_t NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, u
 NS_EXTERN int NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
                                  const char *url, const char *httpMethod, const char *version,
                                  const Ns_Time *timeoutPtr, Sock **sockPtrPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6) NS_GNUC_NONNULL(7);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5)
+    NS_GNUC_NONNULL(6) NS_GNUC_NONNULL(7);
 
 NS_EXTERN int NSDriverSockNew(Tcl_Interp *interp, NS_SOCKET sock,
                               const char *protocol, const char *driverName, const char *methodName,

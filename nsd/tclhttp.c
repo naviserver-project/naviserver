@@ -2862,6 +2862,11 @@ HttpProc(
     case NS_SOCK_EXCEPTION:
         httpPtr->error = "exception";
         break;
+
+    case NS_SOCK_AGAIN:
+        httpPtr->error = "again";
+        break;
+
     }
     httpPtr->finalSockState = why;
 

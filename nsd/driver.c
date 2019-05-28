@@ -1638,7 +1638,6 @@ static ssize_t
 DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
 {
     Ns_Time       timeout;
-    ssize_t       result;
     const Driver *drvPtr;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
@@ -1647,8 +1646,25 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
     timeout.sec = drvPtr->recvwait;
     timeout.usec = 0;
 
+    return NsDriverRecv(sockPtr,  bufs, nbufs, &timeout);
+}
+
+/*
+ * next step: the handling of default timeouts in DriverRecv can be probably
+ * improved.
+ */
+ssize_t
+NsDriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
+{
+    ssize_t       result;
+    const Driver *drvPtr;
+
+    NS_NONNULL_ASSERT(sockPtr != NULL);
+
+    drvPtr = sockPtr->drvPtr;
+
     if (likely(drvPtr->recvProc != NULL)) {
-        result = (*drvPtr->recvProc)((Ns_Sock *) sockPtr, bufs, nbufs, &timeout, 0u);
+        result = (*drvPtr->recvProc)((Ns_Sock *) sockPtr, bufs, nbufs, timeoutPtr, 0u);
     } else {
         Ns_Log(Warning, "driver: no recvProc registered for driver %s", drvPtr->threadName);
         result = -1;
@@ -1667,7 +1683,8 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
  *
  * Results:
  *      Number of bytes written or -1 on error.
- *      May not send all the data.
+ *      May not send all the data. In particular,
+ *      it may 0 when socket is not writable.
  *
  * Side effects:
  *      Depends on the driver.
@@ -3386,7 +3403,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
         Ns_Log(DriverDebug, "SockRead receive from leftover %" PRIdz " bytes", n);
     } else {
         n = DriverRecv(sockPtr, &buf, 1);
-        Ns_Log(DriverDebug, "SockRead receive from network %" PRIdz " bytes", n);
+        Ns_Log(Notice, "SockRead receive from network %" PRIdz " bytes", n);
     }
 
     if (n < 0) {
