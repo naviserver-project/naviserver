@@ -349,7 +349,7 @@ SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length)
 #if defined(HAVE_LINUX_SENDFILE)
     sent = sendfile(sock->sock, fd, &offset, length);
     if (sent == -1) {
-        if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
+        if (errno == EINTR || errno == EAGAIN || errno == NS_EWOULDBLOCK) {
             sent = 0;
         } else if (errno == EINVAL || errno == ENOSYS) {
             sent = _SendFile(sock, fd, offset, length);
@@ -361,7 +361,7 @@ SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length)
         off_t sbytes = 0;
 
         rc = sendfile(fd, sock->sock, offset, length, NULL, &sbytes, flags);
-        if (rc == 0 || errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
+        if (rc == 0 || errno == EINTR || errno == EAGAIN || errno == NS_EWOULDBLOCK) {
             sent = sbytes;
         } else if (errno == EOPNOTSUPP) {
             sent = _SendFile(sock, fd, offset, length);
