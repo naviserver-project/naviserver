@@ -507,6 +507,7 @@ typedef struct Driver {
 
     DrvSpooler spooler;                 /* Tracks upload spooler threads */
     DrvWriter  writer;                  /* Tracks writer threads */
+    Ns_Time    recvTimeout;             /* recvwait in form of Ns_Time to avoid frequent mappings */
 
     struct {
         Tcl_WideInt spooled;            /* Spooled incoming requests .. */

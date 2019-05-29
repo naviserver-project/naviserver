@@ -146,6 +146,7 @@ typedef enum {
  * The following define socket events for the Ns_Sock* APIs.
  */
 typedef enum {
+    NS_SOCK_NONE =            0x0000u, /* No value provided */
     NS_SOCK_READ =            0x0001u, /* Socket is readable */
     NS_SOCK_WRITE =           0x0002u, /* Socket is writable */
     NS_SOCK_EXCEPTION =       0x0004u, /* Socket has OOB data */
