@@ -175,7 +175,7 @@ MSVC++ 14.1 _MSC_VER == 1910 (Visual Studio 2017 version 15.0)
 MSVC++ 14.2 _MSC_VER == 1920 (Visual Studio 2019 version 16.0)
 */
 
-/* 
+/*
  * Cope with changes in Universal CRT in Visual Studio 2015 where
  * e.g. vsnprintf() is no longer identical to _vsnprintf()
  */
@@ -639,7 +639,7 @@ typedef int bool;
  *     EWOULDBLOCK != WSAEWOULDBLOCK
  *     EINPROGRESS != WSAEINPROGRESS
  *     EINTR       != WSAEINTR
- * 
+ *
  * However, winsock2 continues to return the WSA values, but defined as well
  * the names without the "WSA" prefix.  So we have to abstract to NS_* to cope
  * with earlier versions and to provide cross_platform support.
@@ -648,6 +648,7 @@ typedef int bool;
  * https://lists.gnu.org/archive/html/bug-gnulib/2011-10/msg00256.html
  */
 # define NS_EWOULDBLOCK              WSAEWOULDBLOCK
+# define NS_EAGAIN                   WSAEWOULDBLOCK
 # define NS_EINPROGRESS              WSAEINPROGRESS
 # define NS_EINTR                    WSAEINTR
 # ifndef ETIMEDOUT
@@ -660,6 +661,7 @@ typedef int bool;
 # define NS_EWOULDBLOCK              EWOULDBLOCK
 # define NS_EINPROGRESS              EINPROGRESS
 # define NS_EINTR                    EINTR
+# define NS_EAGAIN                   EAGAIN
 #endif
 
 #ifndef S_ISREG
