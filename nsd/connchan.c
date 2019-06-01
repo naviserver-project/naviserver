@@ -1505,7 +1505,6 @@ ConnChanReadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
     } else {
         const NsInterp *itPtr = clientData;
         NsServer       *servPtr = itPtr->servPtr;
-        Ns_Time         timeout, *timeoutPtr;
         NsConnChan     *connChanPtr = ConnChanGet(interp, servPtr, name);
 
         if (unlikely(connChanPtr == NULL)) {
@@ -1517,6 +1516,7 @@ ConnChanReadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
             ssize_t      nRead;
             struct iovec buf;
             char         buffer[16384];
+            Ns_Time     *timeoutPtr, timeout;
 
             if (!connChanPtr->binary) {
                 Ns_Log(Warning, "ns_connchan: only binary channels are currently supported. "
