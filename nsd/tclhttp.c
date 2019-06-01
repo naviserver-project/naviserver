@@ -133,8 +133,9 @@ static ssize_t HttpTaskSend(
 static ssize_t HttpTaskRecv(
     const Ns_HttpTask *httpPtr,
     char *buffer,
-    size_t length
-) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    size_t length,
+    Ns_SockState *sockStatePtr
+) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 #if 0
 static void HttpTaskShutdown(
@@ -2329,55 +2330,41 @@ HttpTaskSend(
     const void *buffer,
     size_t length
 ) {
-    ssize_t       sent;
+    ssize_t      sent;
+    struct iovec bufs[1];
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(buffer != NULL);
 
+    (void) Ns_SetVec(bufs, 0, buffer, length);
+
     if (httpPtr->ssl == NULL) {
-        sent = ns_send(httpPtr->sock, buffer, length, 0);
+
+        sent = Ns_SockSendBufs2(httpPtr->sock, bufs, 1, 0);
+
     } else {
 #ifdef HAVE_OPENSSL_EVP_H
-        struct iovec  iov;
-        (void) Ns_SetVec(&iov, 0, buffer, length);
-
-        sent = 0;
-        for (;;) {
-            int     err;
-            ssize_t n;
-
-            /*fprintf(stderr, "### HttpTaskSend wants to send %ld\n", iov.iov_len);*/
-            n = SSL_write(httpPtr->ssl, iov.iov_base, (int)iov.iov_len);
-            err = SSL_get_error(httpPtr->ssl, (int)n);
-            /*fprintf(stderr, "### HttpTaskSend n %ld err %d\n", n, err);*/
-            if (err == SSL_ERROR_WANT_WRITE) {
-                Ns_Time timeout = { 0, 10000 }; /* 10ms */
-
-                (void) Ns_SockTimedWait(httpPtr->sock, NS_SOCK_WRITE, &timeout);
-                continue;
-            } else if (err != 0) {
-                Ns_Log(Ns_LogTaskDebug, "HttpTaskSend %d: got unexpected reply %d (url %s)",
-                       httpPtr->sock, err, httpPtr->url);
-            }
-            if (likely(n > -1)) {
-                sent += n;
-
-                if (((size_t)n < iov.iov_len)) {
-                    (void)Ns_ResetVec(&iov, 1, (size_t)n);
-                    continue;
-                }
-            }
-            break;
-        }
+        sent = Ns_SSLSendBufs2(httpPtr->ssl, bufs, 1);
 #else
         sent = -1;
 #endif
     }
 
-    Ns_Log(Ns_LogTaskDebug, "HttpTaskSend sent %" PRIuz " bytes (of %" PRIdz ")",
-           sent, length);
+    if (sent == -1) {
+        Ns_Log(Ns_LogTaskDebug, "HttpTaskSend: error on sock %d (url %s)",
+               httpPtr->sock, httpPtr->url);
+    } else {
+        Ns_Log(Ns_LogTaskDebug, "HttpTaskSend sent %" PRIuz " bytes (of %" PRIdz ")",
+               sent, length);
 #if 0
-    hexPrint("send", buffer, MIN(length,500));
+        hexPrint("send", buffer, MIN(length,500));
+#endif
+    }
+
+#if 0
+    if (((size_t)n < iov.iov_len)) {
+        (void)Ns_ResetVec(&iov, 1, (size_t)n);
+    }
 #endif
     return sent;
 }
@@ -2404,77 +2391,44 @@ static ssize_t
 HttpTaskRecv(
     const Ns_HttpTask *httpPtr,
     char *buffer,
-    size_t length
+    size_t length,
+    Ns_SockState *sockStatePtr
 ) {
-    ssize_t       received;
+    ssize_t      received;
+    Ns_SockState sockState;
+    struct iovec bufs[1];
+    const char  *what;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(buffer != NULL);
 
+    (void) Ns_SetVec(bufs, 0, buffer, length);
+
     if (httpPtr->ssl == NULL) {
-        received = ns_recv(httpPtr->sock, buffer, length, 0);
+        received = Ns_SockRecvBufs2(httpPtr->sock, bufs, 1, 0, &sockState);
+        what = "http";
+
     } else {
 #ifdef HAVE_OPENSSL_EVP_H
-        //fprintf(stderr, "### HttpTaskRecv SSL_read want %lu\n", length);
+        received = Ns_SSLRecvBufs2(httpPtr->ssl, bufs, 1, &sockState);
+        what = "https";
 
-        received = 0;
-        for (;;) {
-            int n, err;
-
-            n = SSL_read(httpPtr->ssl, buffer+received, (int)(length - (size_t)received));
-            err = SSL_get_error(httpPtr->ssl, n);
-            //fprintf(stderr, "### HttpTaskRecv SSL_read n %d err %d (pending %d)\n", n, err, SSL_pending(httpPtr->ssl));
-            switch (err) {
-            case SSL_ERROR_NONE:
-                if (n < 0) {
-                    Ns_Log(Error, "HttpTaskRecv SSL_read failed but no error, should not happen");
-                    break;
-                }
-                received += n;
-                break;
-
-            case SSL_ERROR_WANT_READ: {
-                Ns_Time timeout = { 0, 10000 }; /* 10ms */
-
-                //fprintf(stderr, "### HttpTaskRecv partial read, n %d\n", (int)n);
-                if (n > 0) {
-                    received += n;
-                }
-                (void) Ns_SockTimedWait(httpPtr->sock, NS_SOCK_READ, &timeout);
-                continue;
-            }
-
-            case SSL_ERROR_ZERO_RETURN:
-                /*
-                 * The TLS/SSL connection has been closed.
-                 */
-                break;
-
-            case SSL_ERROR_SYSCALL:
-                /*
-                 * The TLS/SSL connection has been closed.
-                 */
-                Ns_Log(Notice, "HttpTaskRecv: connection probably closed by server (url %s)",
-                       httpPtr->url);
-                break;
-
-            default: {
-                char errorBuffer[256];
-
-                Ns_Log(Warning, "HttpTaskRecv got unexpected error code %d message %s (url %s)", err,
-                       ERR_error_string((unsigned long)err, errorBuffer), httpPtr->url);
-                break;
-            }
-            }
-            break;
+        if (sockState == NS_SOCK_EXCEPTION) {
+            /*
+             * The TLS/SSL connection returned an error
+             */
+            Ns_Log(Notice, "HttpTaskRecv(https): connection returned an error (url %s)",
+                   httpPtr->url);
         }
 #else
         received = -1;
 #endif
     }
 
-    Ns_Log(Ns_LogTaskDebug, "HttpTaskRecv received %" PRIdz " bytes (buffer size %" PRIuz ")",
-           received, length);
+    Ns_Log(Ns_LogTaskDebug, "HttpTaskRecv(%s) received %" PRIdz " bytes (buffer size %" PRIuz ")",
+           what, received, length);
+    *sockStatePtr = sockState;
+
     return received;
 }
 
@@ -2632,6 +2586,7 @@ HttpProc(
     char         buf[CHUNK_SIZE];
     ssize_t      n;
     bool         taskDone = NS_TRUE;
+    Ns_SockState sockState;
 
     NS_NONNULL_ASSERT(task != NULL);
     NS_NONNULL_ASSERT(arg != NULL);
@@ -2729,8 +2684,8 @@ HttpProc(
                         }
                     } else if (sent < toSend) {
                         Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sendSpoolMode "
-                               "partial write on chunk (remaining %ld)",
-                               (long)(toSend-sent));
+                               "partial write (%" PRIdz " of %" PRIdz ") on chunk (remaining %ld)",
+                               sent, toSend, (long)(toSend-sent));
                         httpPtr->next += sent;
                     } else {
                         Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sendSpoolMode "
@@ -2740,6 +2695,10 @@ HttpProc(
                 }
             }
         } else {
+
+            /*
+             * Sending data from a DString
+             */
             Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE will send dsptr %p next %p len %" PRIuz,
                    (void*)httpPtr->ds.string, (void*)httpPtr->next,
                    httpPtr->requestLength - httpPtr->sent);
@@ -2786,7 +2745,7 @@ HttpProc(
         if (httpPtr->sent == 0u) {
             n = -1;
         } else {
-            n = HttpTaskRecv(httpPtr, buf, sizeof(buf));
+            n = HttpTaskRecv(httpPtr, buf, sizeof(buf), &sockState);
         }
         Ns_Log(Ns_LogTaskDebug, "HttpTaskRecv got %d bytes", (int)n);
 
@@ -2820,9 +2779,11 @@ HttpProc(
                 /*Ns_Log(Ns_LogTaskDebug, "Task got %d bytes, header = %d", (int)n, httpPtr->replyHeaderSize);*/
             }
             taskDone = NS_FALSE;
-        }
-
-        if (n < 0) {
+        } else if (sockState == NS_SOCK_DONE) {
+            taskDone = NS_TRUE;
+        } else if (sockState == NS_SOCK_AGAIN) {
+            taskDone = NS_FALSE;
+        } else if (n < 0) {
             Ns_Log(Warning, "client HTTP request: receive failed, error: %s", strerror(errno));
             httpPtr->error = "recv failed";
         }
@@ -2865,6 +2826,10 @@ HttpProc(
 
     case NS_SOCK_AGAIN:
         httpPtr->error = "again";
+        break;
+
+    case NS_SOCK_NONE:
+        httpPtr->error = "unexpected NONE";
         break;
 
     }

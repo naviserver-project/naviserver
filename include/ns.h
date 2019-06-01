@@ -2742,11 +2742,20 @@ Ns_SockSetReceiveState(Ns_Sock *sock, Ns_SockState sockState)
 NS_EXTERN ssize_t
 Ns_SockRecvBufs(Ns_Sock *sock, struct iovec *bufs, int nbufs,
                 const Ns_Time *timeoutPtr, unsigned int flags);
+NS_EXTERN ssize_t
+Ns_SockRecvBufs2(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags,
+                 Ns_SockState *sockStatePtr)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
 
 NS_EXTERN ssize_t
 Ns_SockSendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
                 const Ns_Time *timeoutPtr, unsigned int flags)
     NS_GNUC_NONNULL(1);
+
+NS_EXTERN ssize_t
+Ns_SockSendBufs2(NS_SOCKET sock, const struct iovec *bufs, int nbufs,
+                 unsigned int flags)
+    NS_GNUC_NONNULL(2);
 
 NS_EXTERN NS_SOCKET
 Ns_BindSock(const struct sockaddr *saPtr)
@@ -2834,6 +2843,7 @@ ns_sockdup(NS_SOCKET sock);
 NS_EXTERN int
 ns_socknbclose(NS_SOCKET sock);
 #endif
+
 
 /*
  * sockaddr.c:
@@ -3471,6 +3481,18 @@ NS_EXTERN int
 Ns_TLS_SSLAccept(Tcl_Interp *interp, NS_SOCKET sock,
                  NS_TLS_SSL_CTX *ctx, NS_TLS_SSL **sslPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+
+#ifdef HAVE_OPENSSL_EVP_H
+NS_EXTERN ssize_t
+Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs), Ns_SockState *sockStatePtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+
+NS_EXTERN ssize_t
+Ns_SSLSendBufs2(SSL *ssl, const struct iovec *bufs, int nbufs)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+#endif
+
+
 #endif /* NS_H */
 
 /*

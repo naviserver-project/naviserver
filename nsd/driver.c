@@ -122,8 +122,6 @@ static NS_SOCKET DriverListen(Driver *drvPtr, const char *bindaddr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static NS_DRIVER_ACCEPT_STATUS DriverAccept(Sock *sockPtr, NS_SOCKET sock)
     NS_GNUC_NONNULL(1);
-static ssize_t DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
-    NS_GNUC_NONNULL(1);
 static bool    DriverKeep(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static void    DriverClose(Sock *sockPtr)
@@ -1620,6 +1618,8 @@ DriverAccept(Sock *sockPtr, NS_SOCKET sock)
                                           (struct sockaddr *) &(sockPtr->sa), &n);
 }
 
+#if 0
+// TODO: cleanup
 
 /*
  *----------------------------------------------------------------------
@@ -1644,6 +1644,7 @@ DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
 
     return NsDriverRecv(sockPtr, bufs, nbufs, &(sockPtr->drvPtr->recvTimeout));
 }
+#endif
 
 /*
  * next step: the handling of default timeouts in DriverRecv can be probably
@@ -3399,8 +3400,9 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
         buflen = 0u;
         Ns_Log(DriverDebug, "SockRead receive from leftover %" PRIdz " bytes", n);
     } else {
-        n = DriverRecv(sockPtr, &buf, 1);
-        Ns_Log(Notice, "SockRead receive from network %" PRIdz " bytes", n);
+        n = NsDriverRecv(sockPtr, &buf, 1, NULL);
+        Ns_Log(DriverDebug, "SockRead receive from network %" PRIdz " bytes sockState %.2x",
+               n, (int)sockPtr->recvSockState);
     }
 
     {

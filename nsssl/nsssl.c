@@ -35,6 +35,7 @@
  */
 
 #include "ns.h"
+
 NS_EXPORT int Ns_ModuleVersion = 1;
 
 #ifdef HAVE_OPENSSL_EVP_H
@@ -286,7 +287,7 @@ Ns_ModuleInit(const char *server, const char *module)
      * Parse SSL protocols
      */
     {
-        long unsigned n = SSL_OP_ALL;
+        long n = SSL_OP_ALL;
 
         value = Ns_ConfigGetValue(path, "protocols");
         if (value != NULL) {
@@ -493,13 +494,12 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
  */
 
 static ssize_t
-Recv(Ns_Sock *sock, struct iovec *bufs, int UNUSED(nbufs),
+Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
      Ns_Time *UNUSED(timeoutPtr), unsigned int UNUSED(flags))
 {
     SSLDriver   *drvPtr = sock->driver->arg;
     SSLContext  *sslPtr = sock->arg;
-    char        *p = (char *)bufs->iov_base;
-    Ns_SockState sockState = NS_SOCK_READ;
+    Ns_SockState sockState;
     ssize_t      nRead = 0;
 
     /*
@@ -509,16 +509,21 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int UNUSED(nbufs),
     if (drvPtr->verify && sslPtr->verified == 0) {
         X509 *peer;
 
-        if ((peer = SSL_get_peer_certificate(sslPtr->ssl))) {
-             X509_free(peer);
-             if (SSL_get_verify_result(sslPtr->ssl) != X509_V_OK) {
-                 char ipString[NS_IPADDR_SIZE];
+        peer = SSL_get_peer_certificate(sslPtr->ssl);
 
-                 Ns_Log(Error, "nsssl: client certificate not valid by %s",
-                        ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString,
-                                     sizeof(ipString)));
-                 nRead = -1;
-             }
+        if (peer != NULL) {
+            X509_free(peer);
+            if (SSL_get_verify_result(sslPtr->ssl) != X509_V_OK) {
+                char ipString[NS_IPADDR_SIZE];
+
+                Ns_Log(Error, "nsssl: client certificate not valid by %s",
+                       ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString,
+                                    sizeof(ipString)));
+                nRead = -1;
+                sockState = NS_SOCK_EXCEPTION;
+            } else {
+                sockState = NS_SOCK_NONE;
+            }
         } else {
             char ipString[NS_IPADDR_SIZE];
 
@@ -526,60 +531,15 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int UNUSED(nbufs),
                    ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString,
                                 sizeof(ipString)));
             nRead = -1;
+            sockState = NS_SOCK_EXCEPTION;
         }
         sslPtr->verified = 1;
     }
 
     if (nRead > -1) {
-        int  got = 0;
-
-        while (1) {
-            int err, n;
-
-            ERR_clear_error();
-            n = SSL_read(sslPtr->ssl, p + got, (int)bufs->iov_len - got);
-            err = SSL_get_error(sslPtr->ssl, n);
-
-            switch (err) {
-            case SSL_ERROR_NONE:
-                if (n < 0) {
-                    fprintf(stderr, "### SSL_read should not happen\n");
-                    nRead = n;
-                } else {
-                    /*fprintf(stderr, "### SSL_read %d pending %d\n", n, SSL_pending(sslPtr->ssl));*/
-                    got += n;
-                    if (n == 1 && got < (int)bufs->iov_len) {
-                        /*fprintf(stderr, "### SSL retry after read of %d bytes\n", n);*/
-                        continue;
-                    }
-                    /*Ns_Log(Notice, "### SSL_read %d got <%s>", got, p);*/
-                    nRead = got;
-                }
-                break;
-            case SSL_ERROR_ZERO_RETURN:
-                nRead = got;
-                sockState = NS_SOCK_DONE;
-                break;
-
-            case SSL_ERROR_WANT_READ:
-                /*fprintf(stderr, "### SSL_read WANT_READ returns %d\n", got);*/
-                nRead = got;
-                sockState = NS_SOCK_AGAIN;
-                break;
-
-            default:
-                /*fprintf(stderr, "### SSL_read error\n");*/
-                SSL_set_shutdown(sslPtr->ssl, SSL_RECEIVED_SHUTDOWN);
-                nRead = -1;
-                break;
-            }
-            break;
-        }
+        nRead = Ns_SSLRecvBufs2(sslPtr->ssl, bufs, nbufs, &sockState);
     }
 
-    if (nRead < 0) {
-        sockState = NS_SOCK_EXCEPTION;
-    }
     Ns_SockSetReceiveState(sock, sockState);
 
     return nRead;
