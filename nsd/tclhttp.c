@@ -2580,7 +2580,7 @@ HttpProc(
     char         buf[CHUNK_SIZE];
     ssize_t      n;
     bool         taskDone = NS_TRUE;
-    Ns_SockState sockState;
+    Ns_SockState sockState = NS_SOCK_NONE;
 
     NS_NONNULL_ASSERT(task != NULL);
     NS_NONNULL_ASSERT(arg != NULL);
