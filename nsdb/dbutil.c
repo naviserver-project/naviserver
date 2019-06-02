@@ -326,7 +326,8 @@ Ns_DbSetException(Ns_DbHandle *handle, const char *code, const char *msg)
     NS_NONNULL_ASSERT(code != NULL);
     NS_NONNULL_ASSERT(msg != NULL);
 
-    strncpy(handle->cExceptionCode, code, sizeof(handle->cExceptionCode) - 1);
+    handle->cExceptionCode[0] = '\0';
+    strncat(handle->cExceptionCode, code, sizeof(handle->cExceptionCode) - 1);
     Ns_DStringFree(&(handle->dsExceptionMsg));
     Ns_DStringAppend(&(handle->dsExceptionMsg), msg);
 }
