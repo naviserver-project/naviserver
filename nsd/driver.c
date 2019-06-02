@@ -6597,7 +6597,7 @@ NSDriverSockNew(Tcl_Interp *interp, NS_SOCKET sock,
         reqPtr->request.protocol = ns_strdup(protocol);
         reqPtr->request.host = NULL;
         reqPtr->request.query = NULL;
-        Ns_Log(Notice, "REQUEST LINE <%s> query <%s>", reqPtr->request.line, reqPtr->request.query);
+        /* Ns_Log(Notice, "REQUEST LINE <%s>", reqPtr->request.line);*/
 
         *sockPtrPtr = sockPtr;
     }
