@@ -2532,6 +2532,11 @@ CallDoneCallback(
         }
     }
 
+    /*
+     * Get completion time.
+     */
+    Ns_GetTime(&httpPtr->etime);
+
     Tcl_DStringInit(&script);
     Tcl_DStringAppend(&script, httpPtr->doneCallback, -1);
     Ns_DStringPrintf(&script, " %d ", result);
@@ -2586,7 +2591,7 @@ HttpProc(
     NS_NONNULL_ASSERT(arg != NULL);
 
     httpPtr = arg;
-    Ns_Log(Ns_LogTaskDebug, "HttpProc operation %.2x", why);
+    Ns_Log(Ns_LogTaskDebug, "HttpProc operation 0x%.2x", why);
 
     switch (why) {
     case NS_SOCK_INIT:
@@ -2789,6 +2794,13 @@ HttpProc(
 
         if (httpPtr->doneCallback != NULL) {
             CallDoneCallback(httpPtr);
+            /*
+             * CallDoneCallback closes the connection and frees the
+             * task. Therefore, we have to set "taskDone" to NS_FALSE to
+             * avoid double freeing the task via Ns_TaskDone() below.
+             */
+            taskDone = NS_FALSE;
+
         } else {
             Ns_Log(Ns_LogTaskDebug, "NS_SOCK_DONE no sock callback");
         }
