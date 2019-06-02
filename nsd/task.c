@@ -592,6 +592,8 @@ Ns_TaskDone(Ns_Task *task)
 {
     NS_NONNULL_ASSERT(task != NULL);
 
+    Ns_Log(Ns_LogTaskDebug, "Ns_TaskDone(%p)", (void*)task);
+
     ((Task *) task)->flags |= TASK_DONE;
 }
 
@@ -623,7 +625,9 @@ Ns_TaskFree(Ns_Task *task)
     NS_NONNULL_ASSERT(task != NULL);
 
     sock = ((Task *) task)->sock;
+    Ns_Log(Ns_LogTaskDebug, "Ns_TaskFreex(%p)", (void*)task);
     ns_free(task);
+
     return sock;
 }
 
