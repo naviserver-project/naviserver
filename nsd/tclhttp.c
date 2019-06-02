@@ -1901,12 +1901,6 @@ HttpConnect(
         Ns_IncrTime(&httpPtr->timeout, 2, 0);
     }
 
-    /*
-     * Prevent sockclose attempts in fail cases.
-     */
-    sock = NS_INVALID_SOCKET;
-
-
     dsPtr = &httpPtr->ds;
     Tcl_DStringInit(dsPtr);
 
