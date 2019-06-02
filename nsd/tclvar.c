@@ -751,7 +751,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         Tcl_Obj  **lobjv;
 
         switch (opt) {
-        case CSetIdx:   /* fall through */
+        case CSetIdx:   NS_FALL_THROUGH; /* fall through */
         case CResetIdx:
             if (objc != 4) {
                 Tcl_WrongNumArgs(interp, 2, objv, "array valueList");
@@ -816,7 +816,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             }
             break;
 
-        case CGetIdx:   /* fall through */
+        case CGetIdx:   NS_FALL_THROUGH; /* fall through */
         case CNamesIdx:
             if (objc != 3 && objc != 4) {
                 Tcl_WrongNumArgs(interp, 2, objv, "array ?pattern?");

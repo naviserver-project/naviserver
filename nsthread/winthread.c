@@ -159,7 +159,7 @@ DllMain(HANDLE hModule, DWORD why, LPVOID lpReserved)
     case DLL_PROCESS_ATTACH:
         Nsthreads_LibInit();
 
-        /* fall through */
+        NS_FALL_THROUGH; /* fall through */
     case DLL_THREAD_ATTACH:
         wPtr = ns_calloc(1u, sizeof(WinThread));
         wPtr->event = CreateEvent(NULL, TRUE, FALSE, NULL);

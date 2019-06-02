@@ -946,10 +946,10 @@ Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost,
             errno = ETIMEDOUT;
             break;
 
-        case NS_ERROR:         /* fall through */
-        case NS_FILTER_BREAK:  /* fall through */
-        case NS_FILTER_RETURN: /* fall through */
-        case NS_FORBIDDEN:     /* fall through */
+        case NS_ERROR:         NS_FALL_THROUGH; /* fall through */
+        case NS_FILTER_BREAK:  NS_FALL_THROUGH; /* fall through */
+        case NS_FILTER_RETURN: NS_FALL_THROUGH; /* fall through */
+        case NS_FORBIDDEN:     NS_FALL_THROUGH; /* fall through */
         case NS_UNAUTHORIZED:
             break;
         }

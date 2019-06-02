@@ -347,8 +347,8 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
         }
         break;
 
-    case SNewIdx:   /* fall through */
-    case SCopyIdx:  /* fall through */
+    case SNewIdx:   NS_FALL_THROUGH; /* fall through */
+    case SCopyIdx:  NS_FALL_THROUGH; /* fall through */
     case SSplitIdx: {
         int           offset = 2;
         const char   *name;
@@ -430,10 +430,10 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
             Tcl_Obj *objPtr;
 
             switch (opt) {
-            case SArrayIdx:  /* fall through */
-            case SSizeIdx:   /* fall through */
-            case sINameIdx:  /* fall through */
-            case SPrintIdx:  /* fall through */
+            case SArrayIdx:  NS_FALL_THROUGH; /* fall through */
+            case SSizeIdx:   NS_FALL_THROUGH; /* fall through */
+            case sINameIdx:  NS_FALL_THROUGH; /* fall through */
+            case SPrintIdx:  NS_FALL_THROUGH; /* fall through */
             case SFreeIdx:
                 /*
                  * These commands require only the set.
@@ -479,7 +479,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                 }
                 break;
 
-            case SGetIdx:  /* fall through */
+            case SGetIdx:  NS_FALL_THROUGH; /* fall through */
             case SIGetIdx:
                 if (unlikely(objc < 4)) {
                     Tcl_WrongNumArgs(interp, 2, objv, "setId key ?default?");
@@ -506,11 +506,11 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                 }
                 break;
 
-            case SFindIdx:    /* fall through */
-            case SIFindIdx:   /* fall through */
-            case SDelkeyIdx:  /* fall through */
-            case SIDelkeyIdx: /* fall through */
-            case SUniqueIdx:  /* fall through */
+            case SFindIdx:    NS_FALL_THROUGH; /* fall through */
+            case SIFindIdx:   NS_FALL_THROUGH; /* fall through */
+            case SDelkeyIdx:  NS_FALL_THROUGH; /* fall through */
+            case SIDelkeyIdx: NS_FALL_THROUGH; /* fall through */
+            case SUniqueIdx:  NS_FALL_THROUGH; /* fall through */
             case SIUniqueIdx:
                 /*
                  * These commands require a set and string key.
@@ -560,10 +560,10 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                 }
                 break;
 
-            case SValueIdx:   /* fall through */
-            case SIsNullIdx:  /* fall through */
-            case SKeyIdx:     /* fall through */
-            case SDeleteIdx:  /* fall through */
+            case SValueIdx:   NS_FALL_THROUGH; /* fall through */
+            case SIsNullIdx:  NS_FALL_THROUGH; /* fall through */
+            case SKeyIdx:     NS_FALL_THROUGH; /* fall through */
+            case SDeleteIdx:  NS_FALL_THROUGH; /* fall through */
             case STruncateIdx: {
                 /*
                  * These commands require a set and key/value index.
@@ -620,9 +620,9 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                 break;
             }
 
-            case SPutIdx:     /* fall through */
-            case SUpdateIdx:  /* fall through */
-            case SCPutIdx:    /* fall through */
+            case SPutIdx:     NS_FALL_THROUGH; /* fall through */
+            case SUpdateIdx:  NS_FALL_THROUGH; /* fall through */
+            case SCPutIdx:    NS_FALL_THROUGH; /* fall through */
             case SICPutIdx:
                 /*
                  * These commands require a set, key, and value.
@@ -672,8 +672,8 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                 }
                 break;
 
-            case SIMergeIdx: /* fall through */
-            case SMergeIdx:  /* fall through */
+            case SIMergeIdx: NS_FALL_THROUGH; /* fall through */
+            case SMergeIdx:  NS_FALL_THROUGH; /* fall through */
             case SMoveIdx:
                 /*
                  * These commands require two sets.

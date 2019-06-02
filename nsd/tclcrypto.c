@@ -219,7 +219,7 @@ EncodedObj(unsigned char *octects, size_t octectLength,
         resultObj = Tcl_NewStringObj(outputBuffer, (int)strlen(outputBuffer));
         break;
 
-    case RESULT_ENCODING_HEX: /* fall through */
+    case RESULT_ENCODING_HEX: NS_FALL_THROUGH; /* fall through */
     default:
         Ns_HexString(octects, outputBuffer, (int)octectLength, NS_FALSE);
         resultObj = Tcl_NewStringObj(outputBuffer, (int)octectLength*2);

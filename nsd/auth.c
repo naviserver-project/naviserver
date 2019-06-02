@@ -171,8 +171,8 @@ NsTclRequestAuthorizeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
             Tcl_SetObjResult(interp, Tcl_NewStringObj("UNAUTHORIZED", -1));
             break;
 
-        case NS_FILTER_BREAK:  /* fall through */
-        case NS_FILTER_RETURN: /* fall through */
+        case NS_FILTER_BREAK:  NS_FALL_THROUGH; /* fall through */
+        case NS_FILTER_RETURN: NS_FALL_THROUGH; /* fall through */
         case NS_TIMEOUT:
             Ns_TclPrintfResult(interp, "could not authorize \"%s %s\"",
                                Tcl_GetString(objv[1]), Tcl_GetString(objv[2]));

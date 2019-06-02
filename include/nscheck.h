@@ -148,6 +148,12 @@
  */
 #define NS_NONNULL_ASSERT(assertion) assert((assertion))
 
+#if __GNUC_PREREQ(7, 0)
+# define NS_FALL_THROUGH __attribute__((fallthrough))
+#else
+# define NS_FALL_THROUGH ((void)0)
+#endif
+
 /*
  * We include here limits.h, since this file includes <features.h>,
  * which should not be included directly by applications, but which is

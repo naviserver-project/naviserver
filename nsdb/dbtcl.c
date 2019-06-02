@@ -568,22 +568,22 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
         }
         break;
 
-    case POOLNAME:       /* fall through */
-    case PASSWORD:       /* fall through */
-    case USER:           /* fall through */
-    case DATASOURCE:     /* fall through */
-    case DISCONNECT:     /* fall through */
-    case DBTYPE:         /* fall through */
-    case DRIVER:         /* fall through */
-    case CANCEL:         /* fall through */
-    case BINDROW:        /* fall through */
-    case FLUSH:          /* fall through */
-    case RELEASEHANDLE:  /* fall through */
-    case RESETHANDLE:    /* fall through */
-    case CONNECTED:      /* fall through */
-    case SP_EXEC:        /* fall through */
-    case SP_GETPARAMS:   /* fall through */
-    case SP_RETURNCODE:  /* fall through */
+    case POOLNAME:       NS_FALL_THROUGH; /* fall through */
+    case PASSWORD:       NS_FALL_THROUGH; /* fall through */
+    case USER:           NS_FALL_THROUGH; /* fall through */
+    case DATASOURCE:     NS_FALL_THROUGH; /* fall through */
+    case DISCONNECT:     NS_FALL_THROUGH; /* fall through */
+    case DBTYPE:         NS_FALL_THROUGH; /* fall through */
+    case DRIVER:         NS_FALL_THROUGH; /* fall through */
+    case CANCEL:         NS_FALL_THROUGH; /* fall through */
+    case BINDROW:        NS_FALL_THROUGH; /* fall through */
+    case FLUSH:          NS_FALL_THROUGH; /* fall through */
+    case RELEASEHANDLE:  NS_FALL_THROUGH; /* fall through */
+    case RESETHANDLE:    NS_FALL_THROUGH; /* fall through */
+    case CONNECTED:      NS_FALL_THROUGH; /* fall through */
+    case SP_EXEC:        NS_FALL_THROUGH; /* fall through */
+    case SP_GETPARAMS:   NS_FALL_THROUGH; /* fall through */
+    case SP_RETURNCODE:  NS_FALL_THROUGH; /* fall through */
     case SESSIONID:
 
         if (objc < 3) {
@@ -720,13 +720,13 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
         }
         break;
 
-    case DML:               /* fall through */
-    case GETROW:            /* fall through */
-    case ONE_ROW:           /* fall through */
-    case ZERO_OR_ONE_ROW:   /* fall through */
-    case EXEC:              /* fall through */
-    case SELECT:            /* fall through */
-    case SP_START:          /* fall through */
+    case DML:               NS_FALL_THROUGH; /* fall through */
+    case GETROW:            NS_FALL_THROUGH; /* fall through */
+    case ONE_ROW:           NS_FALL_THROUGH; /* fall through */
+    case ZERO_OR_ONE_ROW:   NS_FALL_THROUGH; /* fall through */
+    case EXEC:              NS_FALL_THROUGH; /* fall through */
+    case SELECT:            NS_FALL_THROUGH; /* fall through */
+    case SP_START:          NS_FALL_THROUGH; /* fall through */
     case INTERPRETSQLFILE:
 
         /*

@@ -479,7 +479,7 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs), Ns_SockState
                 nRead = got;
                 break;
             }
-            /* fall through */
+            NS_FALL_THROUGH; /* fall through */
 
         default:
             Ns_Log(Debug, "### SSL_read error (reveived %d, got %d, rc %d, get_error %lu)", n, got, rc, ERR_get_error());

@@ -3412,7 +3412,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
      *      NS_SOCK_TIMEOUT
      */
         switch (sockState) {
-        case NS_SOCK_TIMEOUT: /* fall through */
+        case NS_SOCK_TIMEOUT: NS_FALL_THROUGH; /* fall through */
         case NS_SOCK_EXCEPTION:
             return SOCK_READERROR;
         case NS_SOCK_AGAIN:
