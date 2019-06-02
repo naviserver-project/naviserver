@@ -71,13 +71,13 @@ CFLAGS_WARNING   = @CFLAGS_WARNING@
 CFLAGS_INCLUDE   = -I$(INCDIR) @TCL_INCLUDES@
 CFLAGS_EXTRA     = @SHLIB_CFLAGS@ @TCL_EXTRA_CFLAGS@
 DEFS             = @DEFS@
-CFLAGS_CONVERSION= -Wconversion -Wsign-conversion -Wsign-compare
-CFLAGS_DEFINITION = -Wwrite-strings -Wextra -Wdeclaration-after-statement -Wendif-labels -Wshadow -Wmissing-prototypes -Wstrict-prototypes 
-CFLAGS_TIDY      = -Wno-missing-braces -Wundef -Wunreachable-code -Wswitch-enum -Wpointer-arith -Wold-style-definition -Wmissing-format-attribute -Wformat-security 
-CFLAGS_DEFAULT   = @CFLAGS_DEFAULT@
-#CFLAGS_DEFAULT   = -pedantic -g -std=c99 -DTCL_NO_DEPRECATED  
-#CFLAGS_DEFAULT   = -pedantic -g -std=c99 -DTCL_NO_DEPRECATED $(CFLAGS_CONVERSION) $(CFLAGS_DEFINITION) $(CFLAGS_TIDY)
-#CFLAGS_DEFAULT   = -pedantic -g -O3 -std=c99 -DTCL_NO_DEPRECATED $(CFLAGS_CONVERSION) $(CFLAGS_DEFINITION) $(CFLAGS_TIDY)  -fipa-pure-const -Wsuggest-attribute=pure  -Wsuggest-attribute=const
+CFLAGS_CONVERSION = -Wconversion -Wsign-conversion -Wsign-compare
+CFLAGS_DEFINITION = -Wwrite-strings -Wdeclaration-after-statement -Wendif-labels -Wshadow -Wmissing-prototypes -Wstrict-prototypes
+CFLAGS_TIDY       = -Wno-missing-braces -Wundef -Wunreachable-code -Wswitch-enum -Wpointer-arith -Wold-style-definition -Wmissing-format-attribute -Wformat-security
+CFLAGS_DEFAULT    = @CFLAGS_DEFAULT@
+#CFLAGS_DEFAULT   = -pedantic -g -Wextra std=c99 -DTCL_NO_DEPRECATED
+#CFLAGS_DEFAULT   = -pedantic -g -Wextra std=c99 -DTCL_NO_DEPRECATED $(CFLAGS_CONVERSION) $(CFLAGS_DEFINITION) $(CFLAGS_TIDY)
+#CFLAGS_DEFAULT   = -pedantic -g -O3 -Wextra -std=c99 -DTCL_NO_DEPRECATED $(CFLAGS_CONVERSION) $(CFLAGS_DEFINITION) $(CFLAGS_TIDY)  -fipa-pure-const -Wsuggest-attribute=pure  -Wsuggest-attribute=const -Wstringop-truncation  -Wattribute-alias
 
 CFLAGS          += $(CFLAGS_DEFAULT) $(CFLAGS_WARNING) $(CFLAGS_EXTRA) $(CFLAGS_INCLUDE) @CPPFLAGS@ $(DEFS)
 LIBS		 = @LIBS@
