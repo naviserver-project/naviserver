@@ -2216,8 +2216,6 @@ DriverThread(void *arg)
                         PollIn(&pdata, drvPtr->pidx[n])
                         && (s = SockAccept(drvPtr, pdata.pfds[drvPtr->pidx[n]].fd, &sockPtr, &now)) != SOCK_ERROR) {
 
-                        assert(drvPtr == drvPtr);
-
                         switch (s) {
                         case SOCK_SPOOL:
                             drvPtr->stats.spooled++;
