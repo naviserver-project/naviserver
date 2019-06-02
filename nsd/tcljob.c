@@ -235,11 +235,11 @@ static bool   AnyDone(Queue *queue)
 static void   SetupJobDefaults(void);
 
 static const char* GetJobCodeStr(int code);
-static const char* GetJobStateStr(JobStates state);
-static const char* GetJobTypeStr(JobTypes type);
-static const char* GetJobReqStr(JobRequests req);
-static const char* GetQueueReqStr(QueueRequests req);
-static const char* GetTpReqStr(ThreadPoolRequests req);
+static const char* GetJobStateStr(JobStates state) NS_GNUC_PURE;
+static const char* GetJobTypeStr(JobTypes type) NS_GNUC_PURE;
+static const char* GetJobReqStr(JobRequests req) NS_GNUC_PURE;
+static const char* GetQueueReqStr(QueueRequests req) NS_GNUC_PURE;
+static const char* GetTpReqStr(ThreadPoolRequests req) NS_GNUC_PURE;
 
 static int AppendField(Tcl_Interp *interp, Tcl_Obj *list,
                        const char *name, const char *value)
