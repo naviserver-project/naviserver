@@ -1105,7 +1105,7 @@ typedef struct {
     const char        *url;              /* request URL */
     const char        *error;            /* holds error string */
     char              *next;             /* write buffer */
-    size_t             requestLength;    /* size of request */
+    size_t             requestLength;    /* size of the request */
     size_t             sent;             /* amount of data sent */
     size_t             replyLength;      /* size of the reply */
     size_t             received;         /* amount data received */
@@ -1115,7 +1115,7 @@ typedef struct {
     int                spoolFd;          /* fd of spool file */
     char              *spoolFileName;    /* filename of the spool file */
     Tcl_Channel        spoolChan;        /* channel where to spool */
-    Ns_Mutex           lock;             /* switch modes (spool file/memory) */
+    Ns_Mutex           lock;             /* sync with task thread */
     unsigned int       flags;            /* */
     Ns_CompressStream *compress;         /* flag, toggle content decompression */
     Ns_Time            timeout;          /* wait for the task to complete */
