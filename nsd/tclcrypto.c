@@ -113,7 +113,7 @@ static Tcl_ObjCmdProc CryptoMdNewObjCmd;
 static Tcl_ObjCmdProc CryptoMdStringObjCmd;
 
 # ifndef OPENSSL_NO_EC
-#  ifndef HAVE_OPENSSL_PRE_1_1
+#  ifdef HAVE_OPENSSL_EC_PRIV2OCT
 static Tcl_ObjCmdProc CryptoEckeyPrivObjCmd;
 static Tcl_ObjCmdProc CryptoEckeyImportObjCmd;
 #  endif
@@ -1444,7 +1444,7 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 }
 # endif /* OPENSSL_NO_EC */
 
-# ifndef HAVE_OPENSSL_PRE_1_1
+# ifdef HAVE_OPENSSL_HKDF
 /*
  *----------------------------------------------------------------------
  *
@@ -1649,7 +1649,7 @@ NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 # ifndef OPENSSL_NO_EC
         {"vapidsign", CryptoMdVapidSignObjCmd},
 # endif
-# ifndef HAVE_OPENSSL_PRE_1_1
+# ifdef HAVE_OPENSSL_HKDF
         {"hkdf",      CryptoMdHkdfObjCmd},
 # endif
         {NULL, NULL}
@@ -1664,7 +1664,7 @@ NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 
 
 # ifndef OPENSSL_NO_EC
-#  ifndef HAVE_OPENSSL_PRE_1_1
+#  ifdef HAVE_OPENSSL_EC_PRIV2OCT
 /*
  *----------------------------------------------------------------------
  *
@@ -1860,7 +1860,7 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 }
 
 
-#  ifndef HAVE_OPENSSL_PRE_1_1
+#  ifdef HAVE_OPENSSL_EC_PRIV2OCT
 /*
  *----------------------------------------------------------------------
  *
@@ -2290,9 +2290,11 @@ NsTclCryptoEckeyObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"generate",     CryptoEckeyGenerateObjCmd},
-#  ifndef HAVE_OPENSSL_PRE_1_1
+#  ifdef HAVE_OPENSSL_EC_PRIV2OCT
         {"import",       CryptoEckeyImportObjCmd},
         {"priv",         CryptoEckeyPrivObjCmd},
+#  endif
+#  ifndef HAVE_OPENSSL_PRE_1_1
         {"sharedsecret", CryptoEckeySharedsecretObjCmd},
 #  endif
         {"pub",          CryptoEckeyPubObjCmd},
