@@ -1107,7 +1107,8 @@ typedef struct {
     char              *next;             /* write buffer */
     size_t             requestLength;    /* size of the request */
     size_t             sent;             /* amount of data sent */
-    size_t             replyLength;      /* size of the reply */
+    size_t             replyLength;      /* content-length of the reply */
+    size_t             replySize;        /* amount of content received */
     size_t             received;         /* amount data received */
     int                replyHeaderSize;  /* size of response/headers */
     Ns_Set            *replyHeaders;     /* ns_set for response headers */
@@ -1121,10 +1122,11 @@ typedef struct {
     Ns_Time            timeout;          /* wait for the task to complete */
     Ns_Time            stime;            /* task starting time */
     Ns_Time            etime;            /* task ending time */
-    bool               sendSpoolMode;    /* flag, spool to file/channel */
+    bool               sendSpoolMode;    /* flag, spool from file/channel */
+    bool               recvSpoolMode;    /* flag, spool to file/channel */
     int                bodyFileFd;       /* fd of the file to read the body */
     Tcl_Channel        bodyChan;         /* channel to read the body */
-    size_t             bodySize;         /* size of the body */
+    size_t             bodySize;         /* size of the body to read */
     Ns_SockState       finalSockState;   /* state of the socket at completion */
     Tcl_Obj           *infoObj;          /* ancilliary attr/value info */
     char              *doneCallback;     /* Tcl script run at task completion */
