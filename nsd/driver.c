@@ -122,8 +122,6 @@ static NS_SOCKET DriverListen(Driver *drvPtr, const char *bindaddr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static NS_DRIVER_ACCEPT_STATUS DriverAccept(Sock *sockPtr, NS_SOCKET sock)
     NS_GNUC_NONNULL(1);
-static ssize_t DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
-    NS_GNUC_NONNULL(1);
 static bool    DriverKeep(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static void    DriverClose(Sock *sockPtr)
@@ -825,6 +823,9 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
                                                             0, 0, INT_MAX);
     drvPtr->keepmaxdownloadsize = (size_t)Ns_ConfigMemUnitRange(path, "keepalivemaxdownloadsize",
                                                             0, 0, INT_MAX);
+    drvPtr->recvTimeout.sec = drvPtr->recvwait;
+    drvPtr->recvTimeout.usec = 0;
+
     Tcl_InitHashTable(&drvPtr->hosts, TCL_STRING_KEYS);
 
     if (drvPtr->driverthreads > 1) {
@@ -1617,6 +1618,8 @@ DriverAccept(Sock *sockPtr, NS_SOCKET sock)
                                           (struct sockaddr *) &(sockPtr->sa), &n);
 }
 
+#if 0
+// TODO: cleanup
 
 /*
  *----------------------------------------------------------------------
@@ -1637,17 +1640,11 @@ DriverAccept(Sock *sockPtr, NS_SOCKET sock)
 static ssize_t
 DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
 {
-    Ns_Time       timeout;
-    const Driver *drvPtr;
-
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
-    drvPtr = sockPtr->drvPtr;
-    timeout.sec = drvPtr->recvwait;
-    timeout.usec = 0;
-
-    return NsDriverRecv(sockPtr,  bufs, nbufs, &timeout);
+    return NsDriverRecv(sockPtr, bufs, nbufs, &(sockPtr->drvPtr->recvTimeout));
 }
+#endif
 
 /*
  * next step: the handling of default timeouts in DriverRecv can be probably
@@ -2218,8 +2215,6 @@ DriverThread(void *arg)
                     if (
                         PollIn(&pdata, drvPtr->pidx[n])
                         && (s = SockAccept(drvPtr, pdata.pfds[drvPtr->pidx[n]].fd, &sockPtr, &now)) != SOCK_ERROR) {
-
-                        assert(drvPtr == drvPtr);
 
                         switch (s) {
                         case SOCK_SPOOL:
@@ -2833,6 +2828,7 @@ SockNew(Driver *drvPtr)
         sockPtr->keep   = NS_FALSE;
         sockPtr->flags  = 0u;
         sockPtr->arg    = NULL;
+        sockPtr->recvSockState = NS_SOCK_NONE;
     }
     return sockPtr;
 }
@@ -3402,25 +3398,61 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
         buflen = 0u;
         Ns_Log(DriverDebug, "SockRead receive from leftover %" PRIdz " bytes", n);
     } else {
-        n = DriverRecv(sockPtr, &buf, 1);
-        Ns_Log(Notice, "SockRead receive from network %" PRIdz " bytes", n);
+        n = NsDriverRecv(sockPtr, &buf, 1, NULL);
+        Ns_Log(DriverDebug, "SockRead receive from network %" PRIdz " bytes sockState %.2x",
+               n, (int)sockPtr->recvSockState);
     }
 
-    if (n < 0) {
-        Tcl_DStringSetLength(bufPtr, (int)buflen);
-        /*
-         * The driver returns -1 when the peer closed the connection, but
-         * clears the errno such we can distinguish from error conditions.
-         */
-        if (errno == 0) {
+    {
+        Ns_SockState sockState = sockPtr->recvSockState;
+    /*
+     * The sockState has one of the following values, when provied:
+     *
+     *      NS_SOCK_READ, NS_SOCK_DONE, NS_SOCK_AGAIN, NS_SOCK_EXCEPTION,
+     *      NS_SOCK_TIMEOUT
+     */
+        switch (sockState) {
+        case NS_SOCK_TIMEOUT: NS_FALL_THROUGH; /* fall through */
+        case NS_SOCK_EXCEPTION:
+            return SOCK_READERROR;
+        case NS_SOCK_AGAIN:
+            Tcl_DStringSetLength(bufPtr, (int)buflen);
+            return SOCK_MORE;
+        case NS_SOCK_DONE:
             return SOCK_CLOSE;
-        }
-        return SOCK_READERROR;
-    }
+        case NS_SOCK_READ:
+            break;
+        case NS_SOCK_CANCEL:
+        case NS_SOCK_EXIT:
+        case NS_SOCK_INIT:
+        case NS_SOCK_WRITE:
+            Ns_Log(Warning, "SockRead received unexpected state %.2x from driver", sockState);
+            return SOCK_READERROR;
+            break;
+        case NS_SOCK_NONE:
+            /*
+             * Old style state management based on "n" and "errno", which is
+             * more fragile. We keep there for old-style drivers.
+             */
+            if (n < 0) {
+                Tcl_DStringSetLength(bufPtr, (int)buflen);
+                /*
+                 * The driver returns -1 when the peer closed the connection, but
+                 * clears the errno such we can distinguish from error conditions.
+                 */
+                if (errno == 0) {
+                    return SOCK_CLOSE;
+                }
+                return SOCK_READERROR;
+            }
 
-    if (n == 0) {
-        Tcl_DStringSetLength(bufPtr, (int)buflen);
-        return SOCK_MORE;
+            if (n == 0) {
+                Tcl_DStringSetLength(bufPtr, (int)buflen);
+                return SOCK_MORE;
+            }
+            break;
+
+        }
     }
 
     if (sockPtr->tfd > 0) {
@@ -4589,7 +4621,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
     bufPtr  = curPtr->c.file.buf;
 
     /*
-     * When bufsize > 0 we have lef tover from previous send. In such
+     * When bufsize > 0 we have left tover from previous send. In such
      * cases, move the leftover to the front, and fill the reminder of
      * the buffer with new data from curPtr->c.
      */
@@ -6565,7 +6597,7 @@ NSDriverSockNew(Tcl_Interp *interp, NS_SOCKET sock,
         reqPtr->request.protocol = ns_strdup(protocol);
         reqPtr->request.host = NULL;
         reqPtr->request.query = NULL;
-        Ns_Log(Notice, "REQUEST LINE <%s> query <%s>", reqPtr->request.line, reqPtr->request.query);
+        /* Ns_Log(Notice, "REQUEST LINE <%s>", reqPtr->request.line);*/
 
         *sockPtrPtr = sockPtr;
     }

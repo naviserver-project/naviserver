@@ -1923,8 +1923,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         }
         break;
 
-    case CFileOffIdx: /* fall through */
-    case CFileLenIdx: /* fall through */
+    case CFileOffIdx: NS_FALL_THROUGH; /* fall through */
+    case CFileLenIdx: NS_FALL_THROUGH; /* fall through */
     case CFileHdrIdx:
         if (objc != 3) {
             Tcl_WrongNumArgs(interp, 2, objv, NULL);

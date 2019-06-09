@@ -386,10 +386,10 @@ Ns_ConnRedirect(Ns_Conn *conn, const char *url)
     case NS_UNAUTHORIZED:
         status = Ns_ConnReturnUnauthorized(conn);
         break;
-    case NS_ERROR:          /* fall through */
-    case NS_FILTER_BREAK:   /* fall through */
-    case NS_FILTER_RETURN:  /* fall through */
-    case NS_TIMEOUT:        /* fall through */
+    case NS_ERROR:          NS_FALL_THROUGH; /* fall through */
+    case NS_FILTER_BREAK:   NS_FALL_THROUGH; /* fall through */
+    case NS_FILTER_RETURN:  NS_FALL_THROUGH; /* fall through */
+    case NS_TIMEOUT:        NS_FALL_THROUGH; /* fall through */
     default:
         status = Ns_ConnReturnInternalError(conn);
         break;

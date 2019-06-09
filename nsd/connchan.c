@@ -467,7 +467,9 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
             int             result;
             Tcl_DString     script;
             Tcl_Interp     *interp;
-            const char     *w;
+            const char     *w, *channelName;
+            bool            logEnabled;
+            size_t          scriptCmdNameLength;
 
             /*
              * In all remaining cases, the Tcl callback is executed.
@@ -489,6 +491,16 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
                 w = "x";
             }
 
+            if (Ns_LogSeverityEnabled(Ns_LogConnchanDebug)) {
+                logEnabled = NS_TRUE;
+                channelName = ns_strdup(cbPtr->connChanPtr->channelName);
+                scriptCmdNameLength = cbPtr->scriptCmdNameLength;
+            } else {
+                logEnabled = NS_FALSE;
+                channelName = NULL;
+                scriptCmdNameLength = 0u;
+            }
+
             Tcl_DStringAppendElement(&script, w);
             interp = NsTclAllocateInterp(cbPtr->connChanPtr->sockPtr->servPtr);
             result = Tcl_EvalEx(interp, script.string, script.length, 0);
@@ -499,14 +511,15 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
                 Tcl_Obj    *objPtr = Tcl_GetObjResult(interp);
                 int         ok = 1;
 
-                if (Ns_LogSeverityEnabled(Ns_LogConnchanDebug)) {
+                if (logEnabled) {
                     Tcl_DString ds;
 
                     Tcl_DStringInit(&ds);
-                    Ns_DStringNAppend(&ds, script.string, (int)cbPtr->scriptCmdNameLength);
+                    Ns_DStringNAppend(&ds, script.string, (int)scriptCmdNameLength);
                     Ns_Log(Ns_LogConnchanDebug, "NsTclConnChanProc: Tcl eval <%s> on %s returned <%s>",
-                           ds.string, cbPtr->connChanPtr->channelName, Tcl_GetString(objPtr));
+                           ds.string, channelName, Tcl_GetString(objPtr));
                     Tcl_DStringFree(&ds);
+
                 }
 
                 /*
@@ -520,8 +533,11 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
                     if (ok == 0) {
                         result = TCL_ERROR;
                     } else if (ok == 2) {
-                        Ns_Log(Ns_LogConnchanDebug, "NsTclConnChanProc: client requested to CANCEL callback %p channel %s",
-                               (void*)cbPtr, cbPtr->connChanPtr->channelName);
+                        if (logEnabled) {
+                            Ns_Log(Ns_LogConnchanDebug, "NsTclConnChanProc: client "
+                                   "requested to CANCEL callback %p channel %s",
+                                   (void*)cbPtr, channelName);
+                        }
                         /*
                          * We use here the "raw"
                          * Ns_SockCancelCallbackEx to just stop socket
@@ -533,6 +549,9 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
                         //cbPtr->when = 0;
                     }
                 }
+            }
+            if (channelName != NULL) {
+                ns_free((char *)channelName);
             }
             Ns_TclDeAllocateInterp(interp);
             Tcl_DStringFree(&script);
@@ -1505,7 +1524,6 @@ ConnChanReadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
     } else {
         const NsInterp *itPtr = clientData;
         NsServer       *servPtr = itPtr->servPtr;
-        Ns_Time         timeout, *timeoutPtr;
         NsConnChan     *connChanPtr = ConnChanGet(interp, servPtr, name);
 
         if (unlikely(connChanPtr == NULL)) {
@@ -1517,6 +1535,7 @@ ConnChanReadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
             ssize_t      nRead;
             struct iovec buf;
             char         buffer[16384];
+            Ns_Time     *timeoutPtr, timeout;
 
             if (!connChanPtr->binary) {
                 Ns_Log(Warning, "ns_connchan: only binary channels are currently supported. "

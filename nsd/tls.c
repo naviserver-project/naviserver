@@ -581,6 +581,172 @@ Ns_SSLSendBufs2(SSL *ssl, const struct iovec *bufs, int nbufs)
     return sent;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SSLRecvBufs2 --
+ *
+ *      Read data from a non-blocking socket into a vector of buffers.
+ *      Ns_SockRecvBufs2() is similar to Ns_SockRecvBufs() with the following
+ *      differences:
+ *        a) the first argument is a SSL *
+ *        b) it performs no timeout handliong
+ *        c) it returns the sockstate in its last argument
+ *
+ * Results:
+ *      Number of bytes read or -1 on error.  The return
+ *      value will be 0 when the peer has performed an orderly shutdown. The
+ *      resulting sockstate has one of the following codes:
+ *
+ *      NS_SOCK_READ, NS_SOCK_DONE, NS_SOCK_AGAIN, NS_SOCK_EXCEPTION
+ *
+ * Side effects:
+ *      May wait for given timeout if first attempt would block.
+ *
+ *----------------------------------------------------------------------
+ */
+ssize_t
+Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs), Ns_SockState *sockStatePtr)
+{
+    ssize_t      nRead;
+    int          got = 0;
+    Ns_SockState sockState = NS_SOCK_READ;
+    char        *p;
+
+    NS_NONNULL_ASSERT(sslPtr != NULL);
+    NS_NONNULL_ASSERT(bufs != NULL);
+    NS_NONNULL_ASSERT(sockStatePtr != NULL);
+
+    p = (char *)bufs->iov_base;
+
+    while (1) {
+        int rc, n;
+
+        ERR_clear_error();
+        n = SSL_read(sslPtr, p + got, (int)bufs->iov_len - got);
+        rc = SSL_get_error(sslPtr, n);
+
+        switch (rc) {
+        case SSL_ERROR_NONE:
+            if (n < 0) {
+                fprintf(stderr, "### SSL_read should not happen\n");
+                nRead = n;
+            } else {
+                Ns_Log(Debug, "### SSL_read %d pending %d", n, SSL_pending(sslPtr));
+                got += n;
+                if (n == 1 && got < (int)bufs->iov_len) {
+                    fprintf(stderr, "### SSL retry after read of %d bytes\n", n);
+                    continue;
+                }
+                Ns_Log(Debug, "### SSL_read %d got <%s>", got, p);
+                nRead = got;
+            }
+            break;
+
+        case SSL_ERROR_ZERO_RETURN:
+            nRead = got;
+            sockState = NS_SOCK_DONE;
+            break;
+
+        case SSL_ERROR_WANT_READ:
+            Ns_Log(Debug, "### SSL_read WANT_READ returns %d", got);
+            nRead = got;
+            sockState = NS_SOCK_AGAIN;
+            break;
+
+        case SSL_ERROR_SYSCALL:
+            if (ERR_get_error() == 0) {
+                sockState = NS_SOCK_DONE;
+                Ns_Log(Debug, "### strange end of file");
+                nRead = got;
+                break;
+            }
+            NS_FALL_THROUGH; /* fall through */
+
+        default:
+            Ns_Log(Debug, "### SSL_read error (reveived %d, got %d, rc %d, get_error %lu)", n, got, rc, ERR_get_error());
+            SSL_set_shutdown(sslPtr, SSL_RECEIVED_SHUTDOWN);
+            nRead = -1;
+            break;
+        }
+        break;
+    }
+
+    if (nRead < 0) {
+        sockState = NS_SOCK_EXCEPTION;
+    }
+    *sockStatePtr = sockState;
+
+    Ns_Log(Debug, "### SSL_read returns %ld state %.2x", nRead, sockState);
+    return nRead;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SSLSendBufs2 --
+ *
+ *      Send a vector of buffers on a non-blocking TLS socket.
+ *      It is similar to Ns_SockSendBufs() except that it
+ *        a) receives a SSL * as first argument
+ *        b) it does not care about partial writes,
+ *           it simply returns the number of bytes sent.
+ *        c) it never blocks
+ *        d) it does not try corking
+ *
+ * Results:
+ *      Number of bytes sent (which might be also 0 on EAGAIN cases)
+ *      or -1 on error.
+ *
+ * Side effects:
+ *      none
+ *
+ *----------------------------------------------------------------------
+ */
+ssize_t
+Ns_SSLSendBufs2(SSL *ssl, const struct iovec *bufs, int nbufs)
+{
+    ssize_t sent;
+
+    NS_NONNULL_ASSERT(ssl != NULL);
+    NS_NONNULL_ASSERT(bufs != NULL);
+
+    if (nbufs > 1) {
+        Ns_Fatal("Ns_SSLSendBufs2: can handle at most one buffer at the time");
+    } else {
+        int  rc;
+
+        /*fprintf(stderr, "### HttpTaskSend wants to send %ld\n", iov.iov_len);*/
+        sent = SSL_write(ssl, bufs[0].iov_base, (int)bufs[0].iov_len);
+        rc = SSL_get_error(ssl, (int)sent);
+        /*fprintf(stderr, "### HttpTaskSend n %ld err %d\n", sent, rc);*/
+
+        if (rc == SSL_ERROR_WANT_WRITE) {
+            sent = 0;
+        } else if (rc != SSL_ERROR_NONE) {
+            Ns_Log(Notice, "Ns_SSLSendBufs2 sent %ld returned errror %d", sent, rc);
+        }
+#if 0
+        /*
+         * TODO: make sure that the Ns_ResetVec (or similar) happens
+         * everywhere on partial writes - not only in the TLS cases
+         */
+        if (likely(n > -1)) {
+            sent += n;
+
+            if (((size_t)n < iov.iov_len)) {
+                (void)Ns_ResetVec(&iov, 1, (size_t)n);
+                continue;
+            }
+        }
+#endif
+    }
+    return sent;
+}
+
+
+
 #else
 
 void NsInitOpenSSL(void)

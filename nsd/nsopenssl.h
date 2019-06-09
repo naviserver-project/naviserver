@@ -39,6 +39,9 @@
  *    0x10101005L OpenSSL 1.1.1-pre5 (beta)
  *    0x1010007fL OpenSSL 1.1.0g
  *    0x1000200fL OpenSSL 1.0.2-fips
+ *
+ * LibreSSL
+ *    OPENSSL_VERSION_NUMBER 0x20000000L + LIBRESSL_VERSION_NUMBER 0x2090200fL
  */
 
 /*
@@ -52,8 +55,11 @@
 # endif
 
 # if defined(LIBRESSL_VERSION_NUMBER)
-#  if LIBRESSL_VERSION_NUMBER >= 0x2060300fL
+#  if LIBRESSL_VERSION_NUMBER >= 0x2060300fL && LIBRESSL_VERSION_NUMBER < 0x2090000fL
 #   define LIBRESSL_1_0_2
+#  endif
+#  if LIBRESSL_VERSION_NUMBER >= 0x2090000fL
+#   define LIBRESSL_2_9_0
 #  endif
 # endif
 
@@ -67,6 +73,11 @@
 
 # if OPENSSL_VERSION_NUMBER < 0x10000000L
 #  define HAVE_OPENSSL_PRE_1_0
+# endif
+
+# if !defined(HAVE_OPENSSL_PRE_1_1) && !defined(LIBRESSL_VERSION_NUMBER)
+#  define HAVE_OPENSSL_HKDF
+#  define HAVE_OPENSSL_EC_PRIV2OCT
 # endif
 
 # include <openssl/ssl.h>

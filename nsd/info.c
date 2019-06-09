@@ -741,7 +741,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
                  * All following cases are deprecated.
                  */
 
-            case IPageDirIdx: /* fall through */
+            case IPageDirIdx: NS_FALL_THROUGH; /* fall through */
             case IPageRootIdx:
                 Ns_LogDeprecated(objv, 2, "ns_server ?-server s? pagedir", NULL);
                 NsPageRoot(&ds, itPtr->servPtr, NULL);

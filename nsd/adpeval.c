@@ -1186,13 +1186,13 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *const* objv, const char *file,
         break;
     case ADP_RETURN:
         itPtr->adp.exception = ADP_OK;
-        /* fall through */
+        NS_FALL_THROUGH; /* fall through */
     case ADP_ABORT:
-        /* fall through */
+        NS_FALL_THROUGH; /* fall through */
     case ADP_BREAK:
-        /* fall through */
+        NS_FALL_THROUGH; /* fall through */
     case ADP_TIMEOUT:
-        /* fall through */
+        NS_FALL_THROUGH; /* fall through */
     default:
         result = TCL_OK;
         break;

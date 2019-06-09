@@ -182,9 +182,9 @@ NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         switch (opt) {
         case TCreateIdx:
             Ns_LogDeprecated(objv, 2, "ns_thread begin ...", NULL);
-            /* fall through */
+            NS_FALL_THROUGH; /* fall through */
         case TBeginIdx:
-            /* fall through */
+            NS_FALL_THROUGH; /* fall through */
         case TBeginDetachedIdx:
             {
                 char       *threadName = (char *)"nsthread", *script;
@@ -211,7 +211,7 @@ NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
         case TJoinIdx:
             Ns_LogDeprecated(objv, 2, "ns_thread wait ...", NULL);
-            /* fall through */
+            NS_FALL_THROUGH; /* fall through */
         case TWaitIdx:
             if (objc != 3) {
                 Tcl_WrongNumArgs(interp, 2, objv, "tid");
@@ -232,7 +232,7 @@ NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
         case TGetIdx:
             Ns_LogDeprecated(objv, 2, "ns_thread handle ...", NULL);
-            /* fall through */
+            NS_FALL_THROUGH; /* fall through */
         case THandleIdx:
             Ns_ThreadSelf(&tid);
             Ns_TclSetAddrObj(Tcl_GetObjResult(interp), threadType, tid);
@@ -241,7 +241,7 @@ NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
         case TGetIdIdx:
             Ns_LogDeprecated(objv, 2, "ns_thread id ...", NULL);
-            /* fall through */
+            NS_FALL_THROUGH; /* fall through */
         case TIdIdx:
             Ns_TclPrintfResult(interp, "%" PRIxPTR, Ns_ThreadId());
             break;
@@ -590,7 +590,7 @@ NsTclCondObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         break;
 
     case EAbsWaitIdx:
-        /* fall through */
+        NS_FALL_THROUGH; /* fall through */
     case EWaitIdx:
         if (objc != 4 && objc != 5) {
             Tcl_WrongNumArgs(interp, 2, objv, "condId mutexId ?timeout?");
@@ -652,7 +652,7 @@ NsTclCondObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         break;
 
     case ESetIdx:
-        /* fall through */
+        NS_FALL_THROUGH; /* fall through */
     case ESignalIdx:
         Ns_CondSignal(condPtr);
         break;
@@ -730,9 +730,9 @@ NsTclRWLockObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
             break;
 
         case RReadUnlockIdx:
-            /* fall through */
+            NS_FALL_THROUGH; /* fall through */
         case RWriteUnlockIdx:
-            /* fall through */
+            NS_FALL_THROUGH; /* fall through */
         case RUnlockIdx:
             Ns_RWLockUnlock(rwlockPtr);
             break;

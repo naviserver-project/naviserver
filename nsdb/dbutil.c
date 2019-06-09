@@ -121,9 +121,9 @@ Ns_Db0or1Row(Ns_DbHandle *handle, const char *sql, int *nrows)
                     Ns_DbSetException(handle, NS_SQLERRORCODE,
                         "Query returned more than one row.");
                     (void) Ns_DbFlush(handle);
-                    /* fall through */
+                    NS_FALL_THROUGH; /* fall through */
                 case NS_ERROR:
-                    /* fall through */
+                    NS_FALL_THROUGH; /* fall through */
                 default:
                     success = NS_FALSE;
                     row = NULL;
@@ -326,7 +326,8 @@ Ns_DbSetException(Ns_DbHandle *handle, const char *code, const char *msg)
     NS_NONNULL_ASSERT(code != NULL);
     NS_NONNULL_ASSERT(msg != NULL);
 
-    strncpy(handle->cExceptionCode, code, sizeof(handle->cExceptionCode) - 1);
+    handle->cExceptionCode[0] = '\0';
+    strncat(handle->cExceptionCode, code, sizeof(handle->cExceptionCode) - 1);
     Ns_DStringFree(&(handle->dsExceptionMsg));
     Ns_DStringAppend(&(handle->dsExceptionMsg), msg);
 }

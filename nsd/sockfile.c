@@ -339,7 +339,7 @@ Ns_SockCork(const Ns_Sock *sock, bool cork)
 static ssize_t
 SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length)
 {
-    ssize_t sent = -1;
+    ssize_t sent;
 
     NS_NONNULL_ASSERT(sock != NULL);
 

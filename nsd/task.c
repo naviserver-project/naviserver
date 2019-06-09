@@ -656,6 +656,42 @@ Ns_TaskDone(Ns_Task *task)
     ((Task *) task)->flags |= TASK_DONE;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TaskFree --
+ *
+ *      Free task structure.  The caller is responsible for
+ *      ensuring the task is no longer being run or monitored
+ *      a task queue.
+ *
+ * Results:
+ *      The task NS_SOCKET which the caller is responsible for closing
+ *      or reusing.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+NS_SOCKET
+Ns_TaskFree(Ns_Task *task)
+{
+    NS_SOCKET  sock;
+
+    NS_NONNULL_ASSERT(task != NULL);
+
+    sock = ((Task *) task)->sock;
+    Ns_Log(Ns_LogTaskDebug, "Ns_TaskFreex(%p)", (void*)task);
+    ns_free(task);
+
+    return sock;
+}
+
+
+>>>>>>> merge rev
 /*
  *----------------------------------------------------------------------
  *

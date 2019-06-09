@@ -131,13 +131,16 @@ the connection has been totally processed and closed. If the procedure returns:
 
 [list_end]
 
-[term ns_register_filter] and [term ns_register_proc] are similar, but significantly different.
-With [term ns_register_proc], the specified URL is used to match that URL and any URL below
-it in the hierarchy. Wildcards such as "*" are meaningful only for the final part of
-the URL, such as /scripts/*.tcl. With [term ns_register_filter], the URL is used to
-match URLs as a string with standard string-matching characters. [term ns_register_proc]
-results in a single match, whereas multiple [term ns_register_filters] can be matched and
-will be called.
+[term ns_register_filter]/[term ns_register_trace] and
+[term ns_register_proc] are similar, but significantly different.  With
+[term ns_register_proc], the specified URL is used to match that URL
+and any URL below it in the hierarchy. Wildcards such as "*" are
+meaningful only for the final part of the URL, such as
+/scripts/*.tcl. With [term ns_register_filter], the URL is used to
+match URLs as a string with standard string-matching characters.
+[term ns_register_proc] results in a single match, whereas multiple
+[term ns_register_filters]/[term ns_register_trace] can be matched
+and will be called.
 
 [para]
 Be aware that executing the same [term ns_register_filter] statement more than once (as
@@ -273,11 +276,18 @@ Use [cmd ns_unregister_op] to unregister a Tcl request handler.
 	[arg script] \
 	[opt [arg args]]]
 
-[term ns_register_trace] registers a Tcl script as a trace for the
+[term ns_register_trace] registers a Tcl script as a special filter for the
 specified method/URL combination. After the server handles the request
 for the specified method on a URL that matches the URL, it calls the
 trace script with the connection id and any arguments (args)
 specified.
+
+[term ns_register_trace] is very similar to
+[term "ns_register_filter trace"] (known internally as void_traces).
+The script registered by this command fires after the scripts
+registered by [term "ns_register_filter trace"] and differ by the fact
+that they only execute if a response was successfully sent to the
+client (i.e. not a Server Error). In addition, their return value is ignored.
 
 [para]
 

@@ -69,7 +69,7 @@ typedef struct Server {
 
 typedef struct {
     int flags;
-    char pwd[32];
+    char pwd[NS_ENCRYPT_BUFSIZE];
     Tcl_HashTable groups;
     Tcl_HashTable nets;
     Tcl_HashTable masks;

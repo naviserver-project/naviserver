@@ -232,33 +232,71 @@ Ns_SockRecvBufs(Ns_Sock *sock, struct iovec *bufs, int nbufs,
 
     NS_NONNULL_ASSERT(sock != NULL);
 
-    n = SockRecv(sock->sock, bufs, nbufs, flags);
+    n = Ns_SockRecvBufs2(sock->sock, bufs, nbufs, flags, &sockState);
+    if (sockState == NS_SOCK_AGAIN) {
+        /*
+         * If a timeoutPtr was provided, perform timeout handling.
+         */
+        if (timeoutPtr != NULL) {
+            Ns_ReturnCode status;
+
+            status = Ns_SockTimedWait(sock->sock,
+                                      (unsigned int)NS_SOCK_READ,
+                                      timeoutPtr);
+            if (status == NS_OK) {
+                n = SockRecv(sock->sock, bufs, nbufs, flags);
+            } else if (status == NS_TIMEOUT) {
+                sockState = NS_SOCK_TIMEOUT;
+            } else {
+                sockState = NS_SOCK_EXCEPTION;
+            }
+        }
+    }
+    sockPtr->recvSockState = sockState;
+
+    return n;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockRecvBufs2 --
+ *
+ *      Read data from a non-blocking socket into a vector of buffers.
+ *      Ns_SockRecvBufs2() is similar to Ns_SockRecvBufs() with the following
+ *      differences:
+ *        a) the first argument is a NS_SOCKET
+ *        b) it performs no timeout handliong
+ *        c) it returns the sockstate in its last argument
+ *
+ * Results:
+ *      Number of bytes read or -1 on error.  The return
+ *      value will be 0 when the peer has performed an orderly shutdown. The
+ *      resulting sockstate has one of the following codes:
+ *
+ *      NS_SOCK_READ, NS_SOCK_DONE, NS_SOCK_AGAIN, NS_SOCK_EXCEPTION
+ *
+ * Side effects:
+ *      May wait for given timeout if first attempt would block.
+ *
+ *----------------------------------------------------------------------
+ */
+ssize_t
+Ns_SockRecvBufs2(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags, Ns_SockState *sockStatePtr)
+{
+    ssize_t      n;
+    Ns_SockState sockState = NS_SOCK_READ;
+
+    NS_NONNULL_ASSERT(bufs != NULL);
+
+    n = SockRecv(sock, bufs, nbufs, flags);
     if (unlikely(n == -1)) {
         /*
          * Check, if the resource is temporarily unavailable
          */
-        if ((ns_sockerrno == NS_EAGAIN) || (ns_sockerrno == NS_EWOULDBLOCK)) {
-            /*
-             * If a timeoutPtr was provided, perform timeout handling.
-             */
-            if (timeoutPtr != NULL) {
-                Ns_ReturnCode status;
-
-                status = Ns_SockTimedWait(sock->sock, (unsigned int)NS_SOCK_READ,
-                                          timeoutPtr);
-                if (status == NS_OK) {
-                    n = SockRecv(sock->sock, bufs, nbufs, flags);
-                } else if (status == NS_TIMEOUT) {
-                    sockState = NS_SOCK_TIMEOUT;
-                } else {
-                    sockState = NS_SOCK_EXCEPTION;
-                }
-            } else {
-                /*
-                 * No timeout provided, return AGAIN status back.
-                 */
-                sockState = NS_SOCK_AGAIN;
-            }
+        if ((ns_sockerrno == EAGAIN) || (ns_sockerrno == NS_EWOULDBLOCK)) {
+            sockState = NS_SOCK_AGAIN;
         } else {
             /*
              * Some other error.
@@ -271,7 +309,7 @@ Ns_SockRecvBufs(Ns_Sock *sock, struct iovec *bufs, int nbufs,
          */
         sockState = NS_SOCK_DONE;
     }
-    sockPtr->recvSockState = sockState;
+    *sockStatePtr = sockState;
 
     return n;
 }
@@ -433,6 +471,74 @@ Ns_SockSendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
     }
 
     return nWrote;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockSendBufs2 --
+ *
+ *      Send a vector of buffers on a non-blocking socket.
+ *      It is similar to Ns_SockSendBufs() except that it
+ *        a) receives a NS_SOCK as first argument
+ *        b) it does not care about partial writes,
+ *           it simply returns the number of bytes sent.
+ *        c) it never blocks
+ *        d) it does not try corking
+ *
+ * Results:
+ *      Number of bytes sent (which might be also 0 on EAGAIN cases)
+ *      or -1 on error.
+ *
+ * Side effects:
+ *      none
+ *
+ *----------------------------------------------------------------------
+ */
+ssize_t
+Ns_SockSendBufs2(NS_SOCKET sock, const struct iovec *bufs, int nbufs,
+                 unsigned int flags)
+{
+    ssize_t sent;
+
+#ifdef _WIN32
+    {
+        DWORD bytesSent;
+        int   rc;
+
+        rc = WSASend(sock, (LPWSABUF)bufs, nbufs, &bytesSent, flags,
+                     NULL, NULL);
+        if (rc == -1) {
+            if (GetLastError() == WSAEWOULDBLOCK) {
+                sent = 0;
+            } else {
+                sent = -1;
+            }
+        } else {
+            sent = (ssize_t)bytesSent;
+        }
+    }
+#else
+    {
+        struct msghdr msg;
+
+        memset(&msg, 0, sizeof(msg));
+        msg.msg_iov = (struct iovec *)bufs;
+        msg.msg_iovlen = (NS_MSG_IOVLEN_T)nbufs;
+        sent = sendmsg(sock, &msg, (int)flags);
+        if (sent == -1) {
+            if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+               sent = 0;
+            }
+        }
+    }
+#endif
+
+    if (sent == -1) {
+        Ns_Log(Debug, "Ns_SockSendBufs2: %s", ns_sockstrerror(ns_sockerrno));
+    }
+
+    return sent;
 }
 
 
@@ -933,10 +1039,10 @@ Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost,
             errno = ETIMEDOUT;
             break;
 
-        case NS_ERROR:         /* fall through */
-        case NS_FILTER_BREAK:  /* fall through */
-        case NS_FILTER_RETURN: /* fall through */
-        case NS_FORBIDDEN:     /* fall through */
+        case NS_ERROR:         NS_FALL_THROUGH; /* fall through */
+        case NS_FILTER_BREAK:  NS_FALL_THROUGH; /* fall through */
+        case NS_FILTER_RETURN: NS_FALL_THROUGH; /* fall through */
+        case NS_FORBIDDEN:     NS_FALL_THROUGH; /* fall through */
         case NS_UNAUTHORIZED:
             break;
         }
