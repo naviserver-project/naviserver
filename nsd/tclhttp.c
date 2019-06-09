@@ -2704,7 +2704,7 @@ HttpDoneCallback(
  *----------------------------------------------------------------------
  */
 
-static int
+static void
 HttpProc(
     Ns_Task *task,
     NS_SOCKET UNUSED(sock),
@@ -2714,7 +2714,7 @@ HttpProc(
     NsHttpTask  *httpPtr;
     Ns_Time     *toutPtr;
     ssize_t      n = 0;
-    bool         taskDone = NS_TRUE, taskAlive = NS_TRUE;
+    bool         taskDone = NS_TRUE;
 
     NS_NONNULL_ASSERT(task != NULL);
     NS_NONNULL_ASSERT(arg != NULL);
@@ -3135,39 +3135,24 @@ HttpProc(
         if (httpPtr->spoolChan != NULL) {
             HttpCutChannel(NULL, httpPtr->spoolChan);
         }
-
         if (httpPtr->doneCallback != NULL) {
-
-            /*
-             * HttpDoneCallback frees the complete task.
-             * Therefore, make sure to avoid trampling
-             * over free'd memory below.
-             */
             HttpDoneCallback(httpPtr);
-            taskDone = NS_FALSE;
-            taskAlive = NS_FALSE;
+            taskDone = NS_FALSE; /* Because it is already done! */
         }
 
         break;
     }
 
-    Ns_Log(Ns_LogTaskDebug, "HttpProc exit taskDone:%d, taskAlive:%d",
-           taskDone, taskAlive);
+    httpPtr->finalSockState = why;
 
-    if (likely(taskAlive == NS_TRUE)) {
-        httpPtr->finalSockState = why;
+    Ns_Log(Ns_LogTaskDebug, "HttpProc exit taskDone:%d, finalSockState:%.2x,"
+           " error:%s", taskDone, httpPtr->finalSockState,
+           httpPtr->error != NULL ? httpPtr->error : "");
 
-        Ns_Log(Ns_LogTaskDebug, "HttpProc exit finalSockState:%.2x, error:%s",
-               httpPtr->finalSockState,
-               httpPtr->error != NULL ? httpPtr->error : "");
-
-        if (taskDone == NS_TRUE) {
-            Ns_GetTime(&httpPtr->etime);
-            Ns_TaskDone(httpPtr->task);
-        }
+    if (taskDone == NS_TRUE) {
+        Ns_GetTime(&httpPtr->etime);
+        Ns_TaskDone(httpPtr->task);
     }
-
-    return taskAlive;
 }
 
 

@@ -77,6 +77,7 @@ typedef struct Task {
     NS_POLL_NFDS_TYPE  idx;           /* Poll index. */
     short              events;        /* Poll events. */
     Ns_Time            timeout;       /* Non-null timeout data. */
+    int                refCount;      /* For reserve/release purposes*/
     unsigned int       signalFlags;   /* Signal bits sent to/from queue thread. */
     unsigned int       flags;         /* Flags private to queue. */
 } Task;
@@ -89,12 +90,15 @@ static void TriggerQueue(const TaskQueue *queuePtr)      NS_GNUC_NONNULL(1);
 static void JoinQueue(TaskQueue *queuePtr)               NS_GNUC_NONNULL(1);
 static void StopQueue(TaskQueue *queuePtr)               NS_GNUC_NONNULL(1);
 static bool SignalQueue(Task *taskPtr, unsigned int bit) NS_GNUC_NONNULL(1);
+static void FreeTask(Task *taskPtr);
 static void RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 static Ns_ThreadProc TaskThread;
 
 #define Call(tp,w) ((*((tp)->proc))((Ns_Task *)(tp),(tp)->sock,(tp)->arg,(w)))
+#define Reserve(tp) (tp)->refCount++;Ns_Log(Notice, "ADDTASK:%d", (tp)->refCount)
+#define Release(tp) Ns_Log(Notice, "REMTASK:%d", (tp)->refCount); if (--(tp)->refCount <= 0) FreeTask(tp)
 
 /*
  * Static variables defined in this file
@@ -267,7 +271,45 @@ Ns_TaskCreate(NS_SOCKET sock, Ns_TaskProc *proc, void *arg)
     taskPtr->proc = proc;
     taskPtr->arg = arg;
 
+    Reserve(taskPtr);
+
     return (Ns_Task *) taskPtr;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TaskFree --
+ *
+ *      Free task structure.  The caller is responsible for
+ *      ensuring the task is no longer being run or monitored
+ *      by a task queue.
+ *
+ * Results:
+ *      The NS_SOCKET which the caller is responsible
+ *      for closing or reusing.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+NS_SOCKET
+Ns_TaskFree(Ns_Task *task)
+{
+    NS_SOCKET  sock;
+    Task      *taskPtr;
+
+    NS_NONNULL_ASSERT(task != NULL);
+
+    taskPtr = (Task *)task;
+    sock = taskPtr->sock;
+
+    Release(taskPtr);
+
+    return sock;
 }
 
 
@@ -335,7 +377,6 @@ Ns_TaskRun(Ns_Task *task)
     NS_SOCKET      sock;
     Ns_Time        now;
     Ns_ReturnCode status = NS_OK;
-    bool           taskAlive = NS_TRUE;
 
     NS_NONNULL_ASSERT(task != NULL);
 
@@ -344,9 +385,9 @@ Ns_TaskRun(Ns_Task *task)
     pfd.fd = sock;
 
     Ns_Log(Ns_LogTaskDebug, "Ns_TaskRun(%d) NS_SOCK_INIT", sock);
-    taskAlive = Call(taskPtr, NS_SOCK_INIT);
+    Call(taskPtr, NS_SOCK_INIT);
 
-    while (taskAlive == NS_TRUE && (taskPtr->flags & TASK_DONE) == 0u) {
+    while ((taskPtr->flags & TASK_DONE) == 0u) {
         if ((taskPtr->flags & TASK_TIMEOUT) != 0u) {
             timeoutPtr = &taskPtr->timeout;
         } else {
@@ -360,7 +401,7 @@ Ns_TaskRun(Ns_Task *task)
              * A timeout occurred, notify the task
              */
             Ns_Log(Ns_LogTaskDebug, "Ns_TaskRun(%d) timeout", sock);
-            taskAlive = Call(taskPtr, NS_SOCK_TIMEOUT);
+            Call(taskPtr, NS_SOCK_TIMEOUT);
             status = NS_TIMEOUT;
             break;
         }
@@ -370,18 +411,15 @@ Ns_TaskRun(Ns_Task *task)
         RunTask(taskPtr, pfd.revents, &now);
     }
 
-    if (status == NS_OK && taskAlive == NS_TRUE) {
+    if (status == NS_OK) {
 
         /*
          * If everything went well, tell the task that we are done.
          */
 
         Ns_Log(Ns_LogTaskDebug, "Ns_TaskRun(%d) NS_SOCK_DONE", sock);
-        taskAlive = Call(taskPtr, NS_SOCK_DONE);
-
-        if (taskAlive == NS_TRUE) {
-            taskPtr->signalFlags |= TASK_DONE;
-        }
+        Call(taskPtr, NS_SOCK_DONE);
+        taskPtr->signalFlags |= TASK_DONE;
     }
 }
 
@@ -618,41 +656,6 @@ Ns_TaskDone(Ns_Task *task)
     ((Task *) task)->flags |= TASK_DONE;
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * Ns_TaskFree --
- *
- *      Free task structure.  The caller is responsible for
- *      ensuring the task is no longer being run or monitored
- *      by a task queue.
- *
- * Results:
- *      The NS_SOCKET which the caller is responsible
- *      for closing or reusing.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-NS_SOCKET
-Ns_TaskFree(Ns_Task *task)
-{
-    NS_SOCKET sock;
-
-    NS_NONNULL_ASSERT(task != NULL);
-
-    sock = ((Task *) task)->sock;
-    Ns_Log(Ns_LogTaskDebug, "Ns_TaskFree(%p)", (void *)task);
-    ns_free(task);
-
-    return sock;
-}
-
-
 /*
  *----------------------------------------------------------------------
  *
@@ -762,8 +765,6 @@ NsWaitTaskQueueShutdown(const Ns_Time *toPtr)
 static void
 RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
 {
-    bool taskAlive = NS_TRUE;
-
     NS_NONNULL_ASSERT(taskPtr != NULL);
     NS_NONNULL_ASSERT(nowPtr != NULL);
 
@@ -780,9 +781,9 @@ RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
     if (revents != 0) {
         int i;
 
-        for (i = 0; taskAlive == NS_TRUE && i < Ns_NrElements(map); ++i) {
+        for (i = 0; i < Ns_NrElements(map); ++i) {
             if ((revents & map[i].event) != 0) {
-                taskAlive = Call(taskPtr, map[i].when);
+                Call(taskPtr, map[i].when);
             }
         }
     } else if ((taskPtr->flags & TASK_TIMEOUT) != 0u) {
@@ -790,7 +791,7 @@ RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
             taskPtr->flags &= ~ TASK_WAIT;
             Ns_Log(Ns_LogTaskDebug, "RunTask: Call NS_SOCK_TIMEOUT"
                    " for flags %.4x", taskPtr->flags);
-            taskAlive = Call(taskPtr, NS_SOCK_TIMEOUT);
+            Call(taskPtr, NS_SOCK_TIMEOUT);
         }
     }
 }
@@ -962,6 +963,32 @@ JoinQueue(TaskQueue *queuePtr)
 /*
  *----------------------------------------------------------------------
  *
+ * FreeTask --
+ *
+ *      Free's task memory.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FreeTask(Task *taskPtr)
+{
+    NS_NONNULL_ASSERT(taskPtr != NULL);
+
+    Ns_Log(Ns_LogTaskDebug, "FreeTask(%p)", (void *)taskPtr);
+    ns_free(taskPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TaskThread --
  *
  *      Run a task queue.
@@ -982,7 +1009,6 @@ TaskThread(void *arg)
     size_t         maxFds = 100u /* To start with */;
     Task          *taskPtr, *nextPtr, *firstWaitPtr;
     struct pollfd *pFds;
-    bool           taskAlive = NS_TRUE;
 
     Ns_ThreadSetName("task:%s", queuePtr->name);
     Ns_Log(Notice, "Taskthread: starting");
@@ -1026,6 +1052,7 @@ TaskThread(void *arg)
                 if (taskPtr != firstWaitPtr) {
                     taskPtr->nextWaitPtr = firstWaitPtr;
                     firstWaitPtr = taskPtr;
+                    Reserve(taskPtr); /* Task acquired for the wait queue */
                 }
             }
             if ((taskPtr->signalFlags & TASK_INIT) != 0u) {
@@ -1069,56 +1096,52 @@ TaskThread(void *arg)
 
         taskPtr = firstWaitPtr;
         firstWaitPtr = NULL;
-        taskAlive = NS_TRUE;
 
         while (taskPtr != NULL) {
 
             assert(taskPtr != taskPtr->nextWaitPtr);
+
             nextPtr = taskPtr->nextWaitPtr;
 
             Ns_Log(Ns_LogTaskDebug, "TaskThread: task %p next %p flags %.6x",
                    (void*)taskPtr, (void*)nextPtr, taskPtr->flags);
 
-            if (taskAlive == NS_TRUE && (taskPtr->flags & TASK_INIT) != 0u) {
+            if ((taskPtr->flags & TASK_INIT) != 0u) {
 
                 Ns_Log(Ns_LogTaskDebug, "TaskThread: TASK_INIT task %p"
                        "  flags %.6x", (void*)taskPtr, taskPtr->flags);
 
                 taskPtr->flags &= ~TASK_INIT;
-                taskAlive = Call(taskPtr, NS_SOCK_INIT);
+                Call(taskPtr, NS_SOCK_INIT);
 
                 Ns_Log(Ns_LogTaskDebug, "TaskThread: TASK_INIT task %p"
-                       " flags %.6x DONE", (void*)taskPtr,
-                       taskAlive == NS_TRUE ? taskPtr->flags : 0);
+                       " flags %.6x DONE", (void*)taskPtr, taskPtr->flags);
             }
 
-            if (taskAlive == NS_TRUE && (taskPtr->flags & TASK_CANCEL) != 0u) {
+            if ((taskPtr->flags & TASK_CANCEL) != 0u) {
 
                 Ns_Log(Ns_LogTaskDebug, "TaskThread: TASK_CANCEL task %p"
                        "  flags %.6x", (void*)taskPtr, taskPtr->flags);
 
                 taskPtr->flags &= ~(TASK_CANCEL|TASK_WAIT);
                 taskPtr->flags |= TASK_DONE;
-                taskAlive = Call(taskPtr, NS_SOCK_CANCEL);
+                Call(taskPtr, NS_SOCK_CANCEL);
 
                 Ns_Log(Ns_LogTaskDebug, "TaskThread: TASK_CANCEL task %p"
-                       " flags %.6x DONE", (void*)taskPtr,
-                       taskAlive == NS_TRUE ? taskPtr->flags : 0);
+                       " flags %.6x DONE", (void*)taskPtr, taskPtr->flags);
             }
 
-            if (taskAlive == NS_TRUE && (taskPtr->flags & TASK_DONE) != 0u) {
+            if ((taskPtr->flags & TASK_DONE) != 0u) {
 
                 Ns_Log(Ns_LogTaskDebug, "TaskThread: TASK_DONE task %p"
                        " flags %.6x", (void*)taskPtr, taskPtr->flags);
 
                 taskPtr->flags &= ~(TASK_DONE|TASK_WAIT);
-                taskAlive = Call(taskPtr, NS_SOCK_DONE);
+                Call(taskPtr, NS_SOCK_DONE);
 
-                if (taskAlive == NS_TRUE) {
-                    Ns_MutexLock(&queuePtr->lock);
-                    taskPtr->signalFlags |= TASK_DONE;
-                    Ns_MutexUnlock(&queuePtr->lock);
-                }
+                Ns_MutexLock(&queuePtr->lock);
+                taskPtr->signalFlags |= TASK_DONE;
+                Ns_MutexUnlock(&queuePtr->lock);
 
                 broadcast = NS_TRUE;
 
@@ -1126,7 +1149,7 @@ TaskThread(void *arg)
                        " DONE", (void*)taskPtr);
             }
 
-            if (taskAlive == NS_TRUE && (taskPtr->flags & TASK_WAIT) != 0u) {
+            if ((taskPtr->flags & TASK_WAIT) != 0u) {
 
                 /*
                  * Arrange poll descriptor for this task
@@ -1135,10 +1158,12 @@ TaskThread(void *arg)
                     maxFds  = (size_t)nFds + 100u;
                     pFds = (struct pollfd *)ns_realloc(pFds, maxFds);
                 }
+
                 taskPtr->idx = nFds;
                 pFds[nFds].fd = taskPtr->sock;
                 pFds[nFds].events = taskPtr->events;
                 pFds[nFds].revents = 0;
+                nFds++;
 
                 /*
                  * Figure out minimum timeout for NsPoll()
@@ -1155,12 +1180,13 @@ TaskThread(void *arg)
                  */
                 taskPtr->nextWaitPtr = firstWaitPtr;
                 firstWaitPtr = taskPtr;
-                nFds++;
+                Reserve(taskPtr); /* Task acquired for the wait queue */
 
                 Ns_Log(Ns_LogTaskDebug, "TaskThread: TASK_WAIT task %p"
                        " flags %.6x", (void*)taskPtr, taskPtr->flags);
             }
 
+            Release(taskPtr); /* Task released from the wait queue */
             taskPtr = nextPtr;
         }
 
@@ -1223,7 +1249,7 @@ TaskThread(void *arg)
         }
     }
 
-    Ns_Log(Notice, "TaskiThread: shutdown pending");
+    Ns_Log(Notice, "TaskThread: shutdown pending");
 
     /*
      * Call exit for all remaining tasks.
@@ -1236,13 +1262,14 @@ TaskThread(void *arg)
     }
 
     /*
-     * Signal all tasks done and shutdown complete.
+     * Mark all tasks done and complete shutdown.
      */
 
     Ns_MutexLock(&queuePtr->lock);
     taskPtr = firstWaitPtr;
     while (taskPtr != NULL) {
         taskPtr->signalFlags |= TASK_DONE;
+        Release(taskPtr); /* Task released from the wait queue */
         taskPtr = taskPtr->nextWaitPtr;
     }
     queuePtr->stopped = NS_TRUE;
