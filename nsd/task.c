@@ -97,8 +97,8 @@ static void RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
 static Ns_ThreadProc TaskThread;
 
 #define Call(tp,w) ((*((tp)->proc))((Ns_Task *)(tp),(tp)->sock,(tp)->arg,(w)))
-#define Reserve(tp) (tp)->refCount++;Ns_Log(Notice, "ADDTASK:%d", (tp)->refCount)
-#define Release(tp) Ns_Log(Notice, "REMTASK:%d", (tp)->refCount); if (--(tp)->refCount <= 0) FreeTask(tp)
+#define Reserve(tp) (tp)->refCount++
+#define Release(tp) if (--(tp)->refCount <= 0) FreeTask(tp)
 
 /*
  * Static variables defined in this file
@@ -657,41 +657,6 @@ Ns_TaskDone(Ns_Task *task)
 }
 
 
-/*
- *----------------------------------------------------------------------
- *
- * Ns_TaskFree --
- *
- *      Free task structure.  The caller is responsible for
- *      ensuring the task is no longer being run or monitored
- *      a task queue.
- *
- * Results:
- *      The task NS_SOCKET which the caller is responsible for closing
- *      or reusing.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-NS_SOCKET
-Ns_TaskFree(Ns_Task *task)
-{
-    NS_SOCKET  sock;
-
-    NS_NONNULL_ASSERT(task != NULL);
-
-    sock = ((Task *) task)->sock;
-    Ns_Log(Ns_LogTaskDebug, "Ns_TaskFreex(%p)", (void*)task);
-    ns_free(task);
-
-    return sock;
-}
-
-
->>>>>>> merge rev
 /*
  *----------------------------------------------------------------------
  *

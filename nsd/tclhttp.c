@@ -1189,8 +1189,8 @@ HttpQueue(
     if (result == TCL_OK && bodyFileName != NULL) {
         struct stat bodyStat;
 
-        if (Ns_Stat(bodyFileName, &bodyStat) == NS_OK) {
-            if (bodySize == -1) {
+        if (Ns_Stat(bodyFileName, &bodyStat) == NS_TRUE) {
+            if (bodySize == 0) {
                 bodySize = (Tcl_WideInt)bodyStat.st_size;
             }
         } else {
@@ -1200,8 +1200,8 @@ HttpQueue(
     }
 
     if (result == TCL_OK && bodyChanName != NULL) {
-        if (bodySize == -1) {
-            Ns_TclPrintfResult(interp, "-body_chan requires -body_size option");
+        if (bodySize == 0) {
+            Ns_TclPrintfResult(interp, "option -body_chan requires -body_size>0");
             result = TCL_ERROR;
         } else if (Ns_TclGetOpenChannel(interp, bodyChanName, /* write */ 0,
                                         /* check */ 1, &bodyChan) != TCL_OK) {
@@ -2560,7 +2560,7 @@ HttpTaskSend(
 #ifndef HAVE_OPENSSL_EVP_H
         sent = -1;
 #else
-        sent = Ns_SSLSendBufs2(httpPtr->ssl, bufs, nbufs, 0);
+        sent = Ns_SSLSendBufs2(httpPtr->ssl, bufs, nbufs);
 #endif
     }
 
@@ -2596,7 +2596,6 @@ HttpTaskRecv(
 ) {
     ssize_t recv = 0;
     int     nbufs = 1;
-    int     flags = 0;
     struct  iovec iov, *bufs = &iov;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
@@ -2606,12 +2605,12 @@ HttpTaskRecv(
     iov.iov_len  = length;
 
     if (httpPtr->ssl == NULL) {
-        recv = Ns_SockRecvBufs2(httpPtr->sock, bufs, nbufs, flags, statePtr);
+        recv = Ns_SockRecvBufs2(httpPtr->sock, bufs, nbufs, 0u, statePtr);
     } else {
 #ifndef HAVE_OPENSSL_EVP_H
         recv = -1;
 #else
-        recv = Ns_SSLRecvBufs2(httpPtr->ssl, bufs, nbufs, flags, statePtr);
+        recv = Ns_SSLRecvBufs2(httpPtr->ssl, bufs, nbufs, statePtr);
 #endif
     }
 
@@ -2818,21 +2817,18 @@ HttpProc(
             }
 
         } else {
+            size_t toRead = CHUNK_SIZE;
 
             /*
              * Send the request body from a file or from a Tcl channel.
              */
 
-            Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE spool mode"
-                   " buffer size %d dsPtr %p next %p"
-                   " (sent %" PRIuz " requestLength %" PRIuz ")",
-                   Tcl_DStringLength(&httpPtr->ds),
-                   (void *)httpPtr->ds.string,
-                   (void *)httpPtr->next,
-                   httpPtr->sent, httpPtr->requestLength);
+            Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sendSpoolMode"
+                   " buffersize:%d buffer:%p next:%p sent:%" PRIuz,
+                   httpPtr->ds.length, (void *)httpPtr->ds.string,
+                   (void *)httpPtr->next, httpPtr->sent);
 
             if (httpPtr->next == NULL) {
-                size_t toRead = CHUNK_SIZE;
 
                 /*
                  * Read remaining body data in chunks
@@ -2840,7 +2836,7 @@ HttpProc(
                 Tcl_DStringSetLength(&httpPtr->ds, (int)toRead);
                 httpPtr->next = httpPtr->ds.string;
                 if (httpPtr->bodySize < toRead) {
-                    toRead = httpPtr->bodySize;
+                    toRead = httpPtr->bodySize; /* At end of body! */
                 }
 
                 /*
@@ -2854,8 +2850,8 @@ HttpProc(
                     n = -1; /* Impossible case? */
                 }
 
-                Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE spool mode"
-                       " got %" PRIdz " bytes (wanted %" PRIuz ")", n, toRead);
+                Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sendSpoolMode"
+                       " got:%" PRIdz " wanted:%" PRIuz " bytes", n, toRead);
 
                 if (n > -1 && n < (ssize_t)toRead) {
 
@@ -2885,12 +2881,12 @@ HttpProc(
                 n = httpPtr->ds.length - (httpPtr->next - httpPtr->ds.string);
 
                 Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE"
-                       " remaining buffer content %" PRIdz " bytes", n);
+                       " remaining buffersize:%" PRIdz, n);
             }
 
             /*
              * We got some bytes from file/channel/memory
-             * so send them to remote
+             * so send them to the remote.
              */
 
             if (unlikely(n == -1)) {
@@ -2913,7 +2909,7 @@ HttpProc(
 
                     /*
                      * We have send partial chunk,
-                     * more is left in memory
+                     * more is left in buffer.
                      */
 
                     httpPtr->next += sent;
@@ -2922,7 +2918,7 @@ HttpProc(
                     Ns_MutexUnlock(&httpPtr->lock);
 
                     Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE"
-                           " chunk partially written (remain %ld)",
+                           " chunk partially written (remain:%ld)",
                            (long)(toSend - sent));
 
                     taskDone = NS_FALSE;
@@ -2941,15 +2937,13 @@ HttpProc(
                     }
 
                     /*
-                     * This condition is true on the last chunk
-                     * or for special case where we sent zero
-                     * out of zero bytes.
-                     * Therefre assume end of body and switch
+                     * This condition is true on the last chunk.
+                     * Therefore assume end of body and switch
                      * to the socket read state.
                      */
-                    if (sent == 0 || httpPtr->ds.length < CHUNK_SIZE) {
-                        httpPtr->next = NULL;
+                    if (toRead < CHUNK_SIZE) {
                         Tcl_DStringSetLength(&httpPtr->ds, 0);
+                        httpPtr->next = NULL;
                         Ns_TaskCallback(task, NS_SOCK_READ, toutPtr);
                     }
 
@@ -3140,6 +3134,13 @@ HttpProc(
             taskDone = NS_FALSE; /* Because it is already done! */
         }
 
+        break;
+
+    case NS_SOCK_NONE:
+
+        Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_NONE");
+
+        httpPtr->error = "unexpected NONE";
         break;
     }
 
