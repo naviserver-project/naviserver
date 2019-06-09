@@ -330,7 +330,7 @@ typedef int   (Ns_TclInterpInitProc) (Tcl_Interp *interp, const void *arg);
 typedef int   (Ns_TclTraceProc) (Tcl_Interp *interp, const void *arg);
 typedef void  (Ns_TclDeferProc) (Tcl_Interp *interp, void *arg);
 typedef bool  (Ns_SockProc) (NS_SOCKET sock, void *arg, unsigned int why);
-typedef int   (Ns_TaskProc) (Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why);
+typedef void  (Ns_TaskProc) (Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why);
 typedef void  (Ns_EventProc) (Ns_Event *event, NS_SOCKET sock, void *arg, Ns_Time *now, Ns_SockState why);
 typedef void  (Ns_SchedProc) (void *arg, int id);
 typedef Ns_ReturnCode (Ns_ServerInitProc) (const char *server);
