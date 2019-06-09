@@ -2838,16 +2838,12 @@ HttpProc(
                 if (httpPtr->bodySize < toRead) {
                     toRead = httpPtr->bodySize; /* At end of body! */
                 }
-
-                /*
-                 * At this place only from file or Tcl channel
-                 */
                 if (httpPtr->bodyFileFd != NS_INVALID_FD) {
                     n = ns_read(httpPtr->bodyFileFd, httpPtr->next, toRead);
                 } else if (httpPtr->bodyChan != NULL) {
                     n = Tcl_Read(httpPtr->bodyChan, httpPtr->next, (int)toRead);
                 } else {
-                    n = -1; /* Impossible case? */
+                    n = -1; /* Here we could read only from file or chan! */
                 }
 
                 Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sendSpoolMode"
@@ -2917,9 +2913,8 @@ HttpProc(
                     httpPtr->sent += (size_t)sent;
                     Ns_MutexUnlock(&httpPtr->lock);
 
-                    Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE"
-                           " chunk partially written (remain:%ld)",
-                           (long)(toSend - sent));
+                    Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE partial"
+                           " send, remain:%ld", (long)(toSend - sent));
 
                     taskDone = NS_FALSE;
 
@@ -2932,8 +2927,8 @@ HttpProc(
                         Ns_MutexLock(&httpPtr->lock);
                         httpPtr->sent += (size_t)sent;
                         Ns_MutexUnlock(&httpPtr->lock);
-                        Ns_Log(Ns_LogTaskDebug,
-                               "HttpProc NS_SOCK_WRITE chunk fully written");
+                        Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sent"
+                               " full chunk, bytes:%" PRIdz, sent);
                     }
 
                     /*
