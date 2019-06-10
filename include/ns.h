@@ -468,8 +468,8 @@ typedef struct Ns_TclCallback {
     ns_funcptr_t    cbProc;
     const char     *server;
     const char     *script;
-    int             argc;
     char          **argv;
+    int             argc;
 } Ns_TclCallback;
 
 /*

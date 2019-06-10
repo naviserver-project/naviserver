@@ -1133,7 +1133,7 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
     memset(&msg, 0, sizeof(msg));
     msg.msg_iov = iov;
     msg.msg_iovlen = 4;
-    n = sendmsg(binderRequest[1], (struct msghdr *) &msg, 0);
+    n = sendmsg(binderRequest[1], &msg, 0);
     if (n != REQUEST_SIZE) {
         Ns_Log(Error, "Ns_SockBinderListen: sendmsg() failed: sent %" PRIdz " bytes, '%s'",
                n, strerror(errno));
@@ -1155,7 +1155,7 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
     msg.msg_accrights = (void*) &sock;
     msg.msg_accrightslen = sizeof(sock);
 #endif
-    n = recvmsg(binderResponse[0], (struct msghdr *) &msg, 0);
+    n = recvmsg(binderResponse[0], &msg, 0);
     if (n != RESPONSE_SIZE) {
         Ns_Log(Error, "Ns_SockBinderListen: recvmsg() failed: recv %" PRIdz " bytes, '%s'",
                n, strerror(errno));
@@ -1354,7 +1354,7 @@ Binder(void)
         type = '\0';
         err = 0;
         do {
-            n = recvmsg(binderRequest[0], (struct msghdr *) &msg, 0);
+            n = recvmsg(binderRequest[0], &msg, 0);
         } while (n == -1 && errno == NS_EINTR);
         if (n == 0) {
             break;
@@ -1417,7 +1417,7 @@ Binder(void)
         }
 
         do {
-            n = sendmsg(binderResponse[1], (struct msghdr *) &msg, 0);
+            n = sendmsg(binderResponse[1], &msg, 0);
         } while (n == -1 && errno == NS_EINTR);
         if (n != RESPONSE_SIZE) {
             Ns_Fatal("binder: sendmsg() failed: sent %" PRIdz " bytes, '%s'", n, strerror(errno));

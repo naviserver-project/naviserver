@@ -2162,7 +2162,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
                     result = TCL_ERROR;
                     goto err;
                 }
-                switch ((int) flag) {
+                switch (flag) {
                 case CGetIdx:
                     poolPtr->conf.tget = n;
                     break;

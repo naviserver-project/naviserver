@@ -641,10 +641,10 @@ SockCallbackRegister(NsConnChan *connChanPtr, const char *script,
      * callbacks registered for the associated socket.
      */
     if (connChanPtr->cbPtr != NULL) {
-        cbPtr = ns_realloc(connChanPtr->cbPtr, sizeof(Callback) + (size_t)scriptLength);
+        cbPtr = ns_realloc(connChanPtr->cbPtr, sizeof(Callback) + scriptLength);
 
     } else {
-        cbPtr = ns_malloc(sizeof(Callback) + (size_t)scriptLength);
+        cbPtr = ns_malloc(sizeof(Callback) + scriptLength);
     }
     memcpy(cbPtr->script, script, scriptLength + 1u);
     cbPtr->scriptLength = scriptLength;

@@ -1568,8 +1568,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
     }
 
     /*
-     * Each time, when NsConnRequire was call and succeeded, the request must
-     * be not NULL.
+     * Each time, when NsConnRequire was called and succeeded, the request
+     * must be not NULL.
      */
     if (required_flags[opt] != 0u) {
         assert(request != NULL);

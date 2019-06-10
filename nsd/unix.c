@@ -798,7 +798,7 @@ Ns_GetUid(const char *user)
     if (ptr != NULL) {
         ns_free(ptr);
     }
-    return (long)retcode;
+    return retcode;
 }
 
 

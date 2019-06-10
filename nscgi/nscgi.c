@@ -423,7 +423,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
 
     ulen = strlen(url);
     plen = strlen(mapPtr->url);
-    if ((strncmp(mapPtr->url, url, (size_t)plen) == 0) &&
+    if ((strncmp(mapPtr->url, url, plen) == 0) &&
         (ulen == plen || url[plen] == '/')) {
 
         if (mapPtr->path == NULL) {
