@@ -1241,7 +1241,6 @@ HttpQueue(
             httpPtr->bodyChan = bodyChan;
         }
     }
-
     if (result == TCL_OK && spoolChan != NULL) {
         if (HttpCutChannel(interp, spoolChan) != TCL_OK) {
             result = TCL_ERROR;
@@ -1283,9 +1282,7 @@ HttpQueue(
              * The task is executed in the current thread.
              */
             Ns_TaskRun(httpPtr->task);
-
             result = HttpGetResult(interp, httpPtr);
-
             HttpSpliceChannels(interp, httpPtr);
             HttpClose(httpPtr);
 
@@ -1383,10 +1380,10 @@ HttpGetResult(
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
     if (httpPtr->error != NULL) {
+        Ns_TclPrintfResult(interp, "ns_http failed: %s", httpPtr->error);
         if (httpPtr->finalSockState == NS_SOCK_TIMEOUT) {
             Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
         }
-        Ns_TclPrintfResult(interp, "ns_http failed: %s", httpPtr->error);
         result = TCL_ERROR;
         goto err;
     }
@@ -1718,14 +1715,49 @@ HttpCheckSpool(
      * since we now know where to put it (spool file, channel).
      */
     if (result == NS_OK) {
-        int   cSize = 0;
-        char *cData = NULL;
+        size_t cSize = 0;
 
-        cSize = httpPtr->ds.length - httpPtr->replyHeaderSize;
-        cData = httpPtr->ds.string + httpPtr->replyHeaderSize;
+        cSize = (size_t)(httpPtr->ds.length - httpPtr->replyHeaderSize);
+        assert(cSize < CHUNK_SIZE);
 
-        if (HttpAppendBuffer(httpPtr, cData, (size_t)cSize) != TCL_OK) {
-            result = NS_ERROR;
+        if (cSize > 0) {
+            char *cData = NULL;
+
+            cData = httpPtr->ds.string + httpPtr->replyHeaderSize;
+
+            if (httpPtr->recvSpoolMode == NS_TRUE) {
+
+                /*
+                 * The content-part will be spooled into file
+                 * or channel, so pass it unchanged.
+                 */
+                if (HttpAppendBuffer(httpPtr, cData, cSize) != TCL_OK) {
+                    result = NS_ERROR;
+                }
+
+            } else if (httpPtr->compress != NULL) {
+                char buf[CHUNK_SIZE];
+
+                /*
+                 * Copy the content-part into our private buffer
+                 * because the HttpAppendBuffer will decompress.
+                 * Make sure to adjust the memory buffer prior
+                 * calling since we must place it right behind
+                 * the headers.
+                 */
+                memcpy(buf, cData, cSize);
+                Ns_DStringSetLength(&httpPtr->ds, httpPtr->replyHeaderSize);
+                if (HttpAppendBuffer(httpPtr, buf, cSize) != TCL_OK) {
+                    result = NS_ERROR;
+                }
+
+            } else {
+
+                /*
+                 * Do nothing, as the content is alreardy in
+                 * the memory, where it belongs.
+                 */
+            }
         }
     }
 
@@ -1999,43 +2031,15 @@ HttpConnect(
     }
 
     /*
-     * For request body, calculate the content type
-     * and optionally open the backing file.
+     * For request body optionally open the backing file.
      */
-    if (bodySize > 0) {
-        if (hdrPtr != NULL) {
-            contentType = Ns_SetIGet(hdrPtr, contentTypeHeader);
-        }
-        if (contentType == NULL) {
-
-            /*
-             * Previously, we required a content-type when a body is provided,
-             * which was too strong due to the following paragraph in RFC 7231:
-             *
-             *    A sender that generates a message containing a payload body
-             *    SHOULD generate a Content-Type header field in that message
-             *    unless the intended media type of the enclosed
-             *    representation is unknown to the sender.  If a Content-Type
-             *    header field is not present, the recipient MAY either assume
-             *    a media type of "application/octet-stream" ([RFC2046],
-             *    Section 4.5.1) or examine the data to determine its type.
-             */
-
-            if (bodyFileName != NULL) {
-                contentType = Ns_GetMimeType(bodyFileName);
-            } else {
-                contentType = "application/octet-stream";
-            }
-        }
-        if (bodyFileName != NULL) {
-            httpPtr->bodyFileFd = ns_open(bodyFileName, O_RDONLY|O_CLOEXEC, 0);
-            if (unlikely(httpPtr->bodyFileFd == NS_INVALID_FD)) {
-                Ns_TclPrintfResult(interp, "cannot open file %s", bodyFileName);
-                goto fail;
-            }
+    if (bodySize > 0 && bodyFileName != NULL) {
+        httpPtr->bodyFileFd = ns_open(bodyFileName, O_RDONLY|O_CLOEXEC, 0);
+        if (unlikely(httpPtr->bodyFileFd == NS_INVALID_FD)) {
+            Ns_TclPrintfResult(interp, "cannot open file %s", bodyFileName);
+            goto fail;
         }
     }
-
 
     /*
      * Now we are ready to attempt the connection.
@@ -2170,51 +2174,82 @@ HttpConnect(
     /*
      * Calculate Content-Length header, handle in-memory body
      */
-    if (bodyObj != NULL) {
-        int   bodyLen = 0;
-        char *bodyStr = NULL;
-        bool  isbin = NS_FALSE;
-
-        isbin = NsTclObjIsByteArray(bodyObj);
+    if (bodyObj == NULL && bodySize == 0) {
 
         /*
-         * Append in-memory body to the requests string
-         * and calculate correct Content-Length header.
-         * We do not anticipate in-memory body to be
-         * 2GB+ hence the signed int type suffices.
-         */
-        if (contentType != NULL && isbin == NS_FALSE) {
-            isbin = Ns_IsBinaryMimeType(contentType);
-        }
-        if (isbin) {
-            bodyStr = (char *)Tcl_GetByteArrayFromObj(bodyObj, &bodyLen);
-        } else {
-            bodyStr = Tcl_GetStringFromObj(bodyObj, &bodyLen);
-        }
-
-        httpPtr->bodySize = (size_t)bodyLen;
-        Ns_DStringPrintf(dsPtr, "%s: %d\r\n\r\n", contentLengthHeader,
-                         bodyLen);
-
-        Ns_DStringNAppend(dsPtr, bodyStr, bodyLen);
-
-    } else if (bodySize > 0) {
-
-        /*
-         * Body will be passed over file/channel and the caller
-         * has already determined the correct content size.
-         * Note: body size may be way over 2GB!
-         */
-        httpPtr->bodySize = (size_t)bodySize;
-        Ns_DStringPrintf(dsPtr, "%s: %" PRIdz "\r\n\r\n", contentLengthHeader,
-                         bodySize);
-    } else {
-
-        /*
-         * No body provided, close request/headers request part
+         * No body provided, close request/headers part
          */
         httpPtr->bodySize = 0u;
         Ns_DStringNAppend(dsPtr, "\r\n", 2);
+
+    } else {
+
+        if (hdrPtr != NULL) {
+            contentType = Ns_SetIGet(hdrPtr, contentTypeHeader);
+        }
+
+        if (contentType == NULL) {
+
+            /*
+             * Previously, we required a content-type when a body is provided,
+             * which was too strong due to the following paragraph in RFC 7231:
+             *
+             *    A sender that generates a message containing a payload body
+             *    SHOULD generate a Content-Type header field in that message
+             *    unless the intended media type of the enclosed
+             *    representation is unknown to the sender.  If a Content-Type
+             *    header field is not present, the recipient MAY either assume
+             *    a media type of "application/octet-stream" ([RFC2046],
+             *    Section 4.5.1) or examine the data to determine its type.
+             */
+
+            if (bodyFileName != NULL) {
+                contentType = Ns_GetMimeType(bodyFileName);
+            } else {
+                contentType = "application/octet-stream";
+            }
+        }
+
+        if (bodyObj != NULL) {
+            int   bodyLen = 0;
+            char *bodyStr = NULL;
+            bool  isbin = NS_FALSE;
+
+            /*
+             * Append in-memory body to the requests string
+             * and calculate correct Content-Length header.
+             * We do not anticipate in-memory body to be
+             * 2GB+ hence the signed int type suffices.
+             */
+            isbin = NsTclObjIsByteArray(bodyObj);
+            if (isbin == NS_FALSE) {
+                if (contentType != NULL) {
+                    isbin = Ns_IsBinaryMimeType(contentType);
+                }
+            }
+            if (isbin == NS_TRUE) {
+                bodyStr = (char *)Tcl_GetByteArrayFromObj(bodyObj, &bodyLen);
+            } else {
+                bodyStr = Tcl_GetStringFromObj(bodyObj, &bodyLen);
+            }
+
+            httpPtr->bodySize = (size_t)bodyLen;
+            Ns_DStringPrintf(dsPtr, "%s: %d\r\n\r\n",
+                             contentLengthHeader, bodyLen);
+
+            Ns_DStringNAppend(dsPtr, bodyStr, bodyLen);
+
+        } else if (bodySize > 0) {
+
+            /*
+             * Body will be passed over file/channel and the caller
+             * has already determined the correct content size.
+             * Note: body size may be way over 2GB!
+             */
+            httpPtr->bodySize = (size_t)bodySize;
+            Ns_DStringPrintf(dsPtr, "%s: %" PRIdz "\r\n\r\n",
+                             contentLengthHeader, bodySize);
+        }
     }
 
     httpPtr->requestLength = (size_t)dsPtr->length;
@@ -2319,7 +2354,7 @@ HttpAppendBuffer(
     Ns_Log(Ns_LogTaskDebug, "HttpAppendBuffer: got: %" PRIdz " bytes flags:%.6x",
            size, httpPtr->flags);
 
-    if (likely((httpPtr->flags & NS_HTTP_FLAG_GUNZIP) != NS_HTTP_FLAG_GUNZIP)) {
+    if (likely(httpPtr->compress == NULL)) {
 
         /*
          * Output raw content

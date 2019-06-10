@@ -30,6 +30,8 @@ and process replies from web servers.
 	[opt [option "-keep_host_header"]] \
 	[opt [option "-method [arg M]"]] \
 	[opt [option "-spoolsize [arg int]"]] \
+	[opt [option "-outputfile [arg fn]"]] \
+	[opt [option "-outputchan [arg chan]"]] \
 	[opt [option "-timeout [arg T]"]] \
 	[opt [option "-verify"]] \
 	[arg url] \
@@ -53,16 +55,29 @@ or from a named file.
 
 [opt_def -body [arg body]]
 trasmit the content of the passed string as the request body.
-This option is mutual exclusive with [option -body_file] and [option -body_chan].
+This option is mutualy exclusive with [option -body_file] and [option -body_chan].
+Implementation will try to guess the "Content-Type" of the body by checking
+the type of the passed [option body]. 
 
 [opt_def -body_file [arg fn]]
 transmit the file specified via filename as the request body.
-This option is mutual exclusive with [option -body] and [option -body_chan].
+This option is mutualy exclusive with [option -body] and [option -body_chan].
+Implementation will try to guess the "Content-Type" of the body by checking
+the extenstion of the passed [option fn]. 
 
 [opt_def -body_chan [arg chan]]
-transmit the content specified via Tcl channel as the request body.
-It requires specifying the expected size via [opton -body_size].
-This option is mutual exclusive with [option -body] and [option -body_file].
+transmit the content specified via Tcl channel, which must be opened for
+reading, as the request body.
+This option is mutualy exclusive with [option -body] and [option -body_file].
+It requires specifying the expected content size via [option -body_size].
+Caller should put "Content-Type" header in passed [option -headers] set
+since the implementation cannot guess the correct value. If none found,
+the "application/octet-stream" will be assumed.
+For [cmd "ns_http queue"] command, the [option -body_chan] channel will be
+dissociated from the current interpreter/thread and the ownership will be 
+transfered to the thread that runs the request. Upon [cmd "ns_http wait"]
+the channel is tossed back to the running interpreter and can be manipulated
+(read/written/closed).
 
 [opt_def "-cafile" [arg CA]]
 used for HTTPS URIs to specify the locations, at which CA
@@ -116,8 +131,23 @@ Standard HTTP/HTTPS request method such as GET, POST, HEAD, PUT etc.
 
 [opt_def -spoolsize [arg int]]
 In case the result is larger than given value, it will be spooled to a
-temporary file or a Tcl channel (see [option -body_file] and [option -body_chan].
+temporary file, an named file (see [option -outputfile]) or the Tcl
+channel (see [option -outputchan]).
 The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB).
+
+[opt_def -outputfile [arg fn]]
+receive the response content into the specified filename.
+This option is mutualy exclusive with [option -outputchan].
+
+[opt_def -outputchan [arg chan]]
+receive the response content into the specified Tcl channel, which must be
+opened for writing.
+This option is mutualy exclusive with [option -outputfile].
+For [cmd "ns_http queue"] command, the [option -outputchan] channel will be
+dissociated from the current interpreter/thread and the ownership will be 
+transfered to the thread that runs the request. Upon [cmd "ns_http wait"]
+the channel is tossed back to the running interpreter and can be manipulated
+(read/written/closed).
 
 [opt_def -timeout [arg T]]
 time to wait for the whole request to complete. The time can be specified
@@ -147,6 +177,8 @@ anonymous cipher is used, this option is ignored.
 	[opt [option "-keep_host_header"]] \
 	[opt [option "-method [arg M]"]] \
 	[opt [option "-spoolsize [arg int]"]] \
+	[opt [option "-outputfile [arg fn]"]] \
+	[opt [option "-outputchan [arg chan]"]] \
 	[opt [option "-timeout [arg T]"]] \
 	[opt [option "-verify"]] \
 	[arg url] \
@@ -174,33 +206,34 @@ Waits for the queued command specified by the [term id] returned from
 [cmd "ns_http queue"] to complete. Returns a Tcl dictionary with the
 following keys: [term status], [term time], [term headers].
 The [term status] contains HTTP/HTTPS status code (200, 201, 400, etc).
-The [term time] contains request/response elapsed ns_time.
+The [term time] contains elapsed request/response ns_time.
 The [term headers] contains name of the set with response headers.
 If the request body was given over an Tcl channel, it will add key 
 [term body_chan] in the passed result dictionary. 
-If the response was not spooled in the file, it will return [term body]
-key with the response data. Otherwise it will return either [term file]
-if the response was spooled into the named (or temporary) file or 
-[term outputchan] if the request was spooled into a Tcl channel.
+If the response was not spooled in the file nor channel, it will return
+[term body] key with the response data. Otherwise it will return either
+[term file] if the response was spooled into the named (or temporary) file
+or [term outputchan] if the request was spooled into a Tcl channel.
 For HTTPS requests it will add [term https] with some low-level TLS
 parameters in a Tcl dictionary format.
 
 [para]
-All options of this command are considered deprecated.
+All options of this command are considered deprecated but are still
+supported, possibly in a limited fashion, for the sake of backward
+compatibility. 
 
 [para]
 The reason is, at the time when [cmd "ns_http wait"] is executed,
 the request may have been processed and completed already, so some of
 the above option have no meaning any more. Furthermore, the returned
 Tcl dictionary contains all information otherwise pushed into the
-optional Tcl variables, so all those are not strictly required
-(but are all still supported for the backwards compatiblity).
+optional Tcl variables, so all those are not strictly required.
 
 [para]
 On success [cmd "ns_http wait"] returns the same dictionary as the
 [cmd "ns_http run"]. On timeout it sets the Tcl [variable ::errorCode]
-to NS_TIMEOUT in addition to leaving descriptive error message in the
-interpreter result.
+variable to NS_TIMEOUT in addition to leaving descriptive error message
+in the interpreter result.
 
 [list_begin arguments]
 [arg_def "" id]

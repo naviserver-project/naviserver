@@ -1,5 +1,6 @@
 # -*- Tcl -*-
 #
+#
 # The contents of this file are subject to the Mozilla Public License
 # Version 1.1 (the "License"); you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at
@@ -834,7 +835,6 @@ test http-8.0.2q {ns_http with body_file queue} -constraints {serverListen} -set
     unset -nocomplain r
 } -result {200 {utf-8 <text/plain> <123>}}
 
-
 test http-8.0.2r {ns_http with body_file run} -constraints {serverListen} -setup {
     ns_register_proc PUT /put {
         set contentType [ns_set iget [ns_conn headers] content-type]
@@ -850,6 +850,84 @@ test http-8.0.2r {ns_http with body_file run} -constraints {serverListen} -setup
     ns_unregister_op PUT /put
 } -result {200 {utf-8 <text/plain> <123>}}
 
+test http-8.0.2s {ns_http with body_chan queue} -constraints {serverListen} -setup {
+    ns_register_proc PUT /put {
+        set contentType [ns_set iget [ns_conn headers] content-type]
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> <[ns_getcontent -as_file false]>"
+    }
+    set fn [ns_mktemp]
+    set ch [open $fn w]  
+    puts $ch 123
+    close $ch
+} -body {
+    set ch [open $fn r]
+    set queryHeaders [ns_set create]
+    ns_set update $queryHeaders Content-Type text/plain
+    if {[catch {set h [ns_http queue -headers $queryHeaders -body_size 3 -body_chan $ch -method PUT \
+                           [ns_config test listenurl]/put]} errorMsg]} {
+        puts stderr ERROR-$errorMsg
+    }
+    set d [ns_http wait -result R -status S $h]
+    close [dict get $d body_chan]
+    return [list $S $R]
+} -cleanup {
+    file delete $fn
+    ns_unregister_op PUT /put
+    unset -nocomplain d
+} -result {200 {utf-8 <text/plain> <123>}}
+
+test http-8.0.2t {ns_http with body_chan run} -constraints {serverListen} -setup {
+    ns_register_proc PUT /put {
+        set contentType [ns_set iget [ns_conn headers] content-type]
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> <[ns_getcontent -as_file false]>"
+    }
+    set fn [ns_mktemp]
+    set ch [open $fn w]  
+    puts $ch 123
+    close $ch
+} -body {
+    set ch [open $fn r]  
+    set queryHeaders [ns_set create]
+    ns_set update $queryHeaders Content-Type text/plain
+    set d [ns_http run -headers $queryHeaders -body_size 3 -body_chan $ch -method PUT \
+               [ns_config test listenurl]/put]
+    close [dict get $d body_chan]
+    return [list [dict get $d status] [dict get $d body]]
+} -cleanup {
+    file delete $fn
+    ns_unregister_op PUT /put
+    unset -nocomplain d
+} -result {200 {utf-8 <text/plain> <123>}}
+
+test http-8.0.2u {ns_http with body_chan and outputchan run} -constraints {serverListen} -setup {
+    ns_register_proc PUT /put {
+        set contentType [ns_set iget [ns_conn headers] content-type]
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> <[ns_getcontent -as_file false]>"
+    }
+    set fn [ns_mktemp]
+    set fo [ns_mktemp]
+    set ch [open $fn w]  
+    puts $ch 123
+    close $ch
+} -body {
+    set ch [open $fn r] 
+    set co [open $fo w]
+    set queryHeaders [ns_set create]
+    ns_set update $queryHeaders Content-Type text/plain
+    set d [ns_http run -headers $queryHeaders -body_size 3 -body_chan $ch -spoolsize 0 -outputchan $co -method PUT \
+               [ns_config test listenurl]/put]
+    close [dict get $d body_chan]
+    close [dict get $d outputchan]
+    set co [open $fo r]
+    set bo [read $co]
+    close $co
+    return [list [dict get $d status] $bo]
+} -cleanup {
+    file delete $fn
+    file delete $fo
+    ns_unregister_op PUT /put
+    unset -nocomplain d
+} -result {200 {utf-8 <text/plain> <123>}}
 
 #
 # Tests with funny chars
@@ -1020,7 +1098,7 @@ test http-8.5.1 {ns_http queue + donecallback + timeout} -constraints {serverLis
 } -cleanup {
     ns_unregister_op GET /slow
     nsv_unset result
-} -result {1 timeout}
+} -result {1 {ns_http failed: timeout}}
 
 
 
