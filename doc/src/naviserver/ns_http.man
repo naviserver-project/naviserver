@@ -275,7 +275,7 @@ task ID will be reported.
 Optional ID of the HTTP request to list.
 [list_end]
 
-[call [cmd "ns_http stats" ?[arg id]?]]
+[call [cmd "ns_http stats"] ?[arg id]?]
 
 Returns statistics from the currently running request in the form of
 a list of Tcl dictionares. One returned dictionary contains following
@@ -288,6 +288,7 @@ task cannot be found. Otherwise a list of dictionaries is returned.
 [list_begin arguments]
 [arg_def "" id]
 Optional ID of the HTTP request to get statistics for.
+[list_end]
 [list_end]
 
 [section EXAMPLES]
@@ -356,7 +357,7 @@ returns reply-headers.
      -headers $requestHeaders \
      -timeout 10.0 \
      -body $post_data https://duckduckgo.com/[rb]
- set r [ns_http wait $h]
+ set r [lb]ns_http wait $h[rb]
  
  #######################
  # output results
