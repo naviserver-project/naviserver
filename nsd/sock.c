@@ -65,6 +65,9 @@ static NS_SOCKET SockSetup(NS_SOCKET sock);
 static ssize_t SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs,
                         unsigned int flags);
 
+static ssize_t SockSend(NS_SOCKET sock, struct iovec *bufs, int nbufs,
+                        unsigned int flags);
+
 static NS_SOCKET BindToSameFamily(struct sockaddr *saPtr,
                                   struct sockaddr *lsaPtr,
                                   const char *lhost, unsigned short lport)
@@ -195,6 +198,7 @@ Ns_SockSetReceiveState(Ns_Sock *sock, Ns_SockState sockState)
     ((Sock *)sock)->recvSockState = sockState;
 }
 
+
 
 /*
  *----------------------------------------------------------------------
@@ -279,7 +283,8 @@ Ns_SockRecvBufs(Ns_Sock *sock, struct iovec *bufs, int nbufs,
  *----------------------------------------------------------------------
  */
 ssize_t
-Ns_SockRecvBufs2(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags, Ns_SockState *sockStatePtr)
+Ns_SockRecvBufs2(NS_SOCKET sock, struct iovec *bufs, int nbufs,
+                 unsigned int flags, Ns_SockState *sockStatePtr)
 {
     ssize_t      n;
     Ns_SockState sockState = NS_SOCK_READ;
@@ -411,6 +416,7 @@ Ns_SockSendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
     return nWrote;
 }
 
+
 /*
  *----------------------------------------------------------------------
  *
@@ -433,50 +439,12 @@ Ns_SockSendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
  *
  *----------------------------------------------------------------------
  */
+
 ssize_t
 Ns_SockSendBufs2(NS_SOCKET sock, const struct iovec *bufs, int nbufs,
                  unsigned int flags)
 {
-    ssize_t sent;
-
-#ifdef _WIN32
-    {
-        DWORD bytesSent;
-        int   rc;
-
-        rc = WSASend(sock, (LPWSABUF)bufs, nbufs, &bytesSent, flags,
-                     NULL, NULL);
-        if (rc == -1) {
-            if (GetLastError() == WSAEWOULDBLOCK) {
-                sent = 0;
-            } else {
-                sent = -1;
-            }
-        } else {
-            sent = (ssize_t)bytesSent;
-        }
-    }
-#else
-    {
-        struct msghdr msg;
-
-        memset(&msg, 0, sizeof(msg));
-        msg.msg_iov = (struct iovec *)bufs;
-        msg.msg_iovlen = (NS_MSG_IOVLEN_T)nbufs;
-        sent = sendmsg(sock, &msg, (int)flags);
-        if (sent == -1) {
-            if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
-               sent = 0;
-            }
-        }
-    }
-#endif
-
-    if (sent == -1) {
-        Ns_Log(Debug, "Ns_SockSendBufs2: %s", ns_sockstrerror(ns_sockerrno));
-    }
-
-    return sent;
+    return SockSend(sock, (struct iovec *)bufs, nbufs, flags);
 }
 
 
@@ -602,7 +570,7 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
         pfd.revents = 0;
         n = ns_poll(&pfd, (NS_POLL_NFDS_TYPE)1, msec);
         /* Ns_Log(Notice, "Ns_SockTimedWait events %.4x revents %.4x n %d", pfd.events, pfd.revents, n);*/
-        if (n < 0 && (errno == NS_EINTR || errno == EAGAIN)) {
+        if (n < 0 && (errno == NS_EINTR || errno == NS_EAGAIN)) {
             count ++;
             continue;
         }
@@ -711,7 +679,7 @@ Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr)
 
     if (likely(sock != NS_INVALID_SOCKET)) {
         sock = SockSetup(sock);
-    } else if (errno != 0 && errno != EAGAIN) {
+    } else if (errno != 0 && errno != NS_EAGAIN) {
         Ns_Log(Notice, "accept() fails, reason: %s", strerror(errno));
     }
 
@@ -1632,16 +1600,16 @@ SockSetup(NS_SOCKET sock)
 static ssize_t
 SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
 {
-    ssize_t n;
+    ssize_t numBytes = 0;
 
 #ifdef _WIN32
-    DWORD RecvBytes, Flags = (DWORD)flags;
+    DWORD RecvBytes = 0, Flags = (DWORD)flags;
 
     if (WSARecv(sock, (LPWSABUF)bufs, (unsigned long)nbufs, &RecvBytes,
                 &Flags, NULL, NULL) != 0) {
-        n = -1;
+        numBytes = -1;
     } else {
-        n = (ssize_t)RecvBytes;
+        numBytes = (ssize_t)RecvBytes;
     }
 #else
     struct msghdr msg;
@@ -1649,16 +1617,64 @@ SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
     memset(&msg, 0, sizeof(msg));
     msg.msg_iov = bufs;
     msg.msg_iovlen = (NS_MSG_IOVLEN_T)nbufs;
-    n = recvmsg(sock, &msg, (int)flags);
+    numBytes = recvmsg(sock, &msg, (int)flags);
 #endif
 
-    if (n == -1) {
+    if (numBytes == -1) {
         Ns_Log(Debug, "SockRecv: %s", ns_sockstrerror(ns_sockerrno));
     }
 
-    return n;
+    return numBytes;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SockSend --
+ *
+ *      Send data to a non-blocking socket from a vector of buffers.
+ *
+ * Results:
+ *
+ *      Number of bytes written
+ *      -1 on error, partial write or write to non-writable socket
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static ssize_t
+SockSend(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
+{
+    ssize_t numBytes = 0;
+
+#ifdef _WIN32
+    DWORD SendBytes = 0, Flags = (DWORD)flags;
+
+    if (WSASend(sock, (LPWSABUF)bufs, (unsigned long)nbufs, &SendBytes,
+                &Flags, NULL, NULL) == -1) {
+        numBytes = -1;
+    } else {
+        numBytes = (ssize_t)SendBytes;
+    }
+#else
+    struct msghdr msg;
+
+    memset(&msg, 0, sizeof(msg));
+    msg.msg_iov = bufs;
+    msg.msg_iovlen = (NS_MSG_IOVLEN_T)nbufs;
+    numBytes = sendmsg(sock, &msg, (int)flags);
+#endif
+
+    if (numBytes == -1) {
+        Ns_Log(Debug, "SockSend: %d, %s", sock, ns_sockstrerror(ns_sockerrno));
+    }
+
+    return numBytes;
+}
 
 /*
  * Local Variables:

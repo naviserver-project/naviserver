@@ -679,12 +679,12 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
 
     } else {
         Ns_Time  waitTimeout;
-	Conn    *connPtr;
+        Conn    *connPtr;
         Sock    *sockPtr;
 
-	NS_NONNULL_ASSERT(conn != NULL);
+        NS_NONNULL_ASSERT(conn != NULL);
 
-	connPtr = (Conn *)conn;
+        connPtr = (Conn *)conn;
         sockPtr = connPtr->sockPtr;
 
         NS_NONNULL_ASSERT(sockPtr != NULL);

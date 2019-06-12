@@ -287,7 +287,7 @@ Ns_ModuleInit(const char *server, const char *module)
      * Parse SSL protocols
      */
     {
-        long n = SSL_OP_ALL;
+        unsigned long n = SSL_OP_ALL;
 
         value = Ns_ConfigGetValue(path, "protocols");
         if (value != NULL) {

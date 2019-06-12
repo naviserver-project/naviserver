@@ -955,47 +955,6 @@ Ns_InflateEnd(Ns_CompressStream *cStream)
     NS_GNUC_NONNULL(1);
 
 /*
- * For HTTP tasks (in ns_http and ns_https)
- */
-typedef struct {
-    Ns_Task           *task;
-    NS_SOCKET          sock;
-    int                status;
-    const char        *url;
-    const char        *error;
-    char              *next;             /* write to client */
-    size_t             requestLength;    /* size of request */
-    size_t             sent;             /* amount of data sent */
-    size_t             replyLength;      /* size of the reply */
-    size_t             received;         /* amount data in the body received */
-    int                replyHeaderSize;
-    Ns_Set            *replyHeaders;     /* ns_set for header fields of the reply */
-    int                spoolLimit;       /* spool to file, when this body > this size */
-    int                spoolFd;          /* fd of spool file */
-    const char        *spoolFileName;    /* filename of spoolfile */
-    Ns_Mutex           lock;             /* needed for switching modes (spooling to file/memory) */
-    unsigned int       flags;
-    Ns_CompressStream *compress;
-    Ns_Time            timeout;
-    Ns_Time            stime;
-    Ns_Time            etime;
-    bool               sendSpoolMode;    /* flag, whether a file is to be transmitted via bodyFileFd */
-    int                bodyFileFd;       /* fd of a file which is sent as body */
-    Ns_SockState       finalSockState;
-    Tcl_Obj           *infoObj;
-    const char        *doneCallback;
-    NS_TLS_SSL_CTX    *ctx;
-    NS_TLS_SSL        *ssl;
-    Tcl_DString        ds;
-} Ns_HttpTask;
-
-#define NS_HTTP_FLAG_DECOMPRESS    0x0001u
-#define NS_HTTP_FLAG_GZIP_ENCODING 0x0002u
-#define NS_HTTP_FLAG_GUNZIP        (NS_HTTP_FLAG_DECOMPRESS|NS_HTTP_FLAG_GZIP_ENCODING)
-
-
-
-/*
  * config.c:
  */
 
@@ -3099,23 +3058,12 @@ Ns_TclRegisterDeferred(Tcl_Interp *interp, Ns_TclDeferProc *proc, void *arg)
  * tclhttp.c
  */
 NS_EXTERN void
-Ns_HttpCheckHeader(Ns_HttpTask *httpPtr)
-    NS_GNUC_NONNULL(1);
-
-NS_EXTERN void
-Ns_HttpCheckSpool(Ns_HttpTask *httpPtr)
-    NS_GNUC_NONNULL(1);
-
-NS_EXTERN int
-Ns_HttpAppendBuffer(Ns_HttpTask *httpPtr, const char *buffer, size_t inSize)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
-NS_EXTERN void
 Ns_HttpParseHost(char *hostString, char **hostStart, char **portStart)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN char *
-Ns_HttpLocationString(Tcl_DString *dsPtr, const char *protoString, const char *hostString,
+Ns_HttpLocationString(Tcl_DString *dsPtr, const char *protoString,
+                      const char *hostString,
                       unsigned short port, unsigned short defPort)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 

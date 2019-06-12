@@ -1097,6 +1097,51 @@ typedef struct NsInterp {
 } NsInterp;
 
 /*
+ * Structure handling HTTP tasks
+ */
+typedef struct {
+    Ns_Task           *task;             /* Task handle */
+    NS_SOCKET          sock;             /* socket to the remote peer */
+    int                status;           /* HTTP response status */
+    const char        *url;              /* request URL */
+    const char        *error;            /* holds error string */
+    char              *next;             /* write buffer */
+    size_t             requestLength;    /* size of the request */
+    size_t             sent;             /* amount of data sent */
+    size_t             replyLength;      /* content-length of the reply */
+    size_t             replySize;        /* amount of content received */
+    size_t             received;         /* amount data received */
+    int                replyHeaderSize;  /* size of response/headers */
+    Ns_Set            *replyHeaders;     /* ns_set for response headers */
+    int                spoolLimit;       /* spool content above this limit */
+    int                spoolFd;          /* fd of spool file */
+    char              *spoolFileName;    /* filename of the spool file */
+    Tcl_Channel        spoolChan;        /* channel where to spool */
+    Ns_Mutex           lock;             /* sync with task thread */
+    unsigned int       flags;            /* */
+    Ns_CompressStream *compress;         /* flag, toggle content decompression */
+    Ns_Time            timeout;          /* wait for the task to complete */
+    Ns_Time            stime;            /* task starting time */
+    Ns_Time            etime;            /* task ending time */
+    bool               sendSpoolMode;    /* flag, spool from file/channel */
+    bool               recvSpoolMode;    /* flag, spool to file/channel */
+    int                bodyFileFd;       /* fd of the file to read the body */
+    Tcl_Channel        bodyChan;         /* channel to read the body */
+    size_t             bodySize;         /* size of the body to read */
+    Ns_SockState       finalSockState;   /* state of the socket at completion */
+    Tcl_Obj           *infoObj;          /* ancilliary attr/value info */
+    char              *doneCallback;     /* Tcl script run at task completion */
+    NS_TLS_SSL_CTX    *ctx;              /* SSL context handle */
+    NS_TLS_SSL        *ssl;              /* SSL connection handle */
+    Tcl_DString        ds;               /* for assembling request string */
+} NsHttpTask;
+
+#define NS_HTTP_FLAG_DECOMPRESS    0x0001u
+#define NS_HTTP_FLAG_GZIP_ENCODING 0x0002u
+#define NS_HTTP_FLAG_GUNZIP        (NS_HTTP_FLAG_DECOMPRESS|NS_HTTP_FLAG_GZIP_ENCODING)
+
+
+/*
  * Tcl object and string commands.
  */
 
