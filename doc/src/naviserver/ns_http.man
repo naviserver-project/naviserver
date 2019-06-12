@@ -63,7 +63,7 @@ the type of the passed [option body].
 transmit the file specified via filename as the request body.
 This option is mutualy exclusive with [option -body] and [option -body_chan].
 Implementation will try to guess the "Content-Type" of the body by checking
-the extenstion of the passed [option fn]. 
+the extension of the passed [option fn]. 
 
 [opt_def -body_chan [arg chan]]
 transmit the content specified via Tcl channel, which must be opened for
@@ -75,7 +75,7 @@ since the implementation cannot guess the correct value. If none found,
 the "application/octet-stream" will be assumed.
 For [cmd "ns_http queue"] command, the [option -body_chan] channel will be
 dissociated from the current interpreter/thread and the ownership will be 
-transfered to the thread that runs the request. Upon [cmd "ns_http wait"]
+transferred to the thread that runs the request. Upon [cmd "ns_http wait"]
 the channel is tossed back to the running interpreter and can be manipulated
 (read/written/closed).
 
@@ -131,7 +131,7 @@ Standard HTTP/HTTPS request method such as GET, POST, HEAD, PUT etc.
 
 [opt_def -spoolsize [arg int]]
 In case the result is larger than given value, it will be spooled to a
-temporary file, an named file (see [option -outputfile]) or the Tcl
+temporary file, a named file (see [option -outputfile]) or the Tcl
 channel (see [option -outputchan]).
 The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB).
 
@@ -145,7 +145,7 @@ opened for writing.
 This option is mutualy exclusive with [option -outputfile].
 For [cmd "ns_http queue"] command, the [option -outputchan] channel will be
 dissociated from the current interpreter/thread and the ownership will be 
-transfered to the thread that runs the request. Upon [cmd "ns_http wait"]
+transferred to the thread that runs the request. Upon [cmd "ns_http wait"]
 the channel is tossed back to the running interpreter and can be manipulated
 (read/written/closed).
 
@@ -208,7 +208,7 @@ following keys: [term status], [term time], [term headers].
 The [term status] contains HTTP/HTTPS status code (200, 201, 400, etc).
 The [term time] contains elapsed request/response ns_time.
 The [term headers] contains name of the set with response headers.
-If the request body was given over an Tcl channel, it will add key 
+If the request body was given over a Tcl channel, it will add key 
 [term body_chan] in the passed result dictionary. 
 If the response was not spooled in the file nor channel, it will return
 [term body] key with the response data. Otherwise it will return either
