@@ -985,6 +985,7 @@ test http-8.4.1r {ns_http run, timeout specified, without timeout} -constraints 
 test http-8.5.0 {ns_http queue + donecallback} -constraints {serverListen} -setup {
     ns_register_proc GET /get { ns_return 200 text/plain OK }
 } -body {
+    #ns_logctl severity Debug(task) on
     nsv_set result . ""
     try {
         ns_http queue -donecallback "nsv_lappend result . " [ns_config test listenurl]/get
