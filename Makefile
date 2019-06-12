@@ -250,8 +250,12 @@ cppcheck:
 	$(CPPCHECK) --verbose --inconclusive -j4 --enable=all nscp/*.c nscgi/*.c nsd/*.c nsdb/*.c nsproxy/*.c nssock/*.c nsperm/*.c \
 		-I./include -I/usr/include -D__x86_64__ -DNDEBUG $(DEFS)
 
+#CLANG_TIDY_CHECKS=-checks=-*,performance-*,portability-*,cert-*,modernize-*
+CLANG_TIDY_CHECKS=
+#CLANG_TIDY_CHECKS=-checks=-*,bugprone-*
 clang-tidy:
-	clang-tidy-mp-devel nscp/*.c nscgi/*.c nsd/*.c nsdb/*.c nsproxy/*.c nssock/*.c nsperm/*.c -- \
+	clang-tidy-mp-devel nscp/*.c nscgi/*.c nsd/*.c nsdb/*.c nsproxy/*.c nssock/*.c nsperm/*.c \
+		$(CLANG_TIDY_CHECKS) -- \
 		-I./include -I/usr/include $(DEFS)
 
 checkexports: all
