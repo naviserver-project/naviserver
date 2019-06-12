@@ -2110,7 +2110,7 @@ static void MD5Transform(uint32_t buf[4], const uint8_t block[64])
 int
 NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int            result = TCL_OK;
+    int result = TCL_OK;
 
     if (objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "string");
