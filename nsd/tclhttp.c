@@ -1123,7 +1123,7 @@ HttpQueue(
 ) {
     Tcl_Interp *interp;
     int         result = TCL_OK, decompress = 0, spoolLimit = -1;
-    int         verifyCert, keepHostHdr;
+    int         verifyCert = 0, keepHostHdr = 0;
     NsHttpTask *httpPtr = NULL;
     char       *cert = NULL,
                *caFile = NULL,
