@@ -115,6 +115,10 @@ static Tcl_ObjCmdProc WriterStreamingObjCmd;
 static Tcl_ObjCmdProc WriterSubmitObjCmd;
 static Tcl_ObjCmdProc WriterSubmitFileObjCmd;
 
+static Tcl_ObjCmdProc AsyncLogfileWriteObjCmd;
+static Tcl_ObjCmdProc AsyncLogfileOpenObjCmd;
+static Tcl_ObjCmdProc AsyncLogfileCloseObjCmd;
+
 static DrvWriter *DriverWriterFromObj(Tcl_Obj *driverObj)
     NS_GNUC_NONNULL(1);
 
@@ -5950,8 +5954,8 @@ NsAsyncWriterQueueEnable(void)
         SpoolerQueue  *queuePtr;
 
         /*
-         * In case, the async writer is not allocated started, the static
-         * variable asyncWriter is NULL.
+         * In case, the async writer has not started, the static variable
+         * asyncWriter is NULL.
          */
         if (asyncWriter == NULL) {
             Ns_MutexLock(&reqLock);
@@ -6064,18 +6068,38 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
     NS_NONNULL_ASSERT(buffer != NULL);
 
     /*
-     * If the async writer has not started or is deactivated, behave
-     * like a ns_write() command. If the ns_write() fails, we can't do much,
-     * since writing of an error message to the log might bring us
-     * into an infinite loop.
+     * If the async writer has not started or is deactivated, behave like a
+     * ns_write() command. If the ns_write() fails, we can't do much, since
+     * the writing of an error message to the log might bring us into an
+     * infinite loop. So we print simple to stderr.
      */
     if (asyncWriter == NULL || asyncWriter->firstPtr->stopped) {
         ssize_t written = ns_write(fd, buffer, nbyte);
 
         if (unlikely(written != (ssize_t)nbyte)) {
-            WriteError("sync write", fd, nbyte, written);
+            int retries = 100;
+
+            /*
+             * Don't go into an infinite loop when multiple subsequent disk
+             * write operations return 0 (maybe disk full).
+             */
+            returnCode = NS_ERROR;
+            do {
+                if (written < 0) {
+                    fprintf(stderr, "error during async write (fd %d): %s", fd, strerror(errno));
+                    break;
+                } if (written >= 0) {
+                    WriteError("partial write", fd, nbyte, written);
+                    nbyte -= (size_t)written;
+                    buffer += written;
+                    written = ns_write(fd, buffer, nbyte);
+                    if (written == (ssize_t)nbyte) {
+                        returnCode = NS_OK;
+                        break;
+                    }
+                }
+            } while (retries-- > 0);
         }
-        returnCode = NS_ERROR;
 
     } else {
         SpoolerQueue         *queuePtr;
@@ -6346,6 +6370,218 @@ AsyncWriterThread(void *arg)
     Ns_Log(Notice, "exiting");
 
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AsyncLogfileWriteObjCmd -
+ *
+ *      Implements "ns_asynclogfile write" command.  Write to a file
+ *      descriptor via async writer thread.  The command handles partial write
+ *      operations internally.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+AsyncLogfileWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK, binary = (int)NS_FALSE;
+    Tcl_Obj    *stringObj;
+    int         fd = 0;
+    Ns_ObjvSpec opts[] = {
+        {"-binary",  Ns_ObjvBool, &binary, INT2PTR(NS_TRUE)},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"fd", Ns_ObjvInt, &fd, NULL},
+        {"buffer", Ns_ObjvObj, &stringObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (unlikely(Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK)) {
+        result = TCL_ERROR;
+
+    } else {
+        const char   *buffer;
+        int           length;
+        Ns_ReturnCode rc;
+
+        if (binary == (int)NS_TRUE || NsTclObjIsByteArray(stringObj)) {
+            buffer = (const char *) Tcl_GetByteArrayFromObj(stringObj, &length);
+        } else {
+            buffer = Tcl_GetStringFromObj(stringObj, &length);
+        }
+        rc = NsAsyncWrite(fd, buffer, (size_t)length);
+
+        if (rc != NS_OK) {
+            Ns_TclPrintfResult(interp, "ns_asynclogfile: error during write operation on fd %d: %s",
+                               fd, Tcl_PosixError(interp));
+            result = TCL_ERROR;
+        }
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AsyncLogfileOpenObjCmd -
+ *
+ *      Implements "ns_asynclogfile open" command.  Open a write-only log file
+ *      and return a thread-shareable handle (actually a numeric file
+ *      descriptor) which can be used in subsequent "write" or "close"
+ *      operations.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+AsyncLogfileOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int          result = TCL_OK;
+    unsigned int flags = O_APPEND;
+    char        *fileNameString;
+    Tcl_Obj     *flagsObj = NULL;
+    Ns_ObjvTable flagTable[] = {
+        {"APPEND", O_APPEND},
+        {"EXCL",   O_EXCL},
+#ifdef O_DSYNC
+        {"DSYNC",  O_DSYNC},
+#endif
+#ifdef O_SYNC
+        {"SYNC",   O_SYNC},
+#endif
+        {"TRUNC",  O_TRUNC},
+        {NULL,     0u}
+    };
+    Ns_ObjvSpec args[] = {
+        {"filename", Ns_ObjvString, &fileNameString, NULL},
+        {"?flags", Ns_ObjvObj, &flagsObj, NULL},
+        //{"mode", Ns_ObjvString, &mode, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (unlikely(Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK)) {
+        result = TCL_ERROR;
+
+    } else if (flagsObj != NULL) {
+        Tcl_Obj **ov;
+        int       oc;
+
+        result = Tcl_ListObjGetElements(interp, flagsObj, &oc, &ov);
+        if (result == TCL_OK && oc > 0) {
+            int i, opt;
+
+            flags = 0u;
+            for (i = 0; i < oc; i++) {
+                result = Tcl_GetIndexFromObjStruct(interp, ov[i], flagTable,
+                                                   (int)sizeof(flagTable[0]),
+                                                   "flag", 0, &opt);
+                if (result != TCL_OK) {
+                    break;
+                } else {
+                    flags = flagTable[opt].value;
+                }
+            }
+        }
+    }
+
+    if (result == TCL_OK) {
+        int fd;
+
+        fd = ns_open(fileNameString, (int)(O_CREAT | O_WRONLY | O_CLOEXEC | flags), 0644);
+
+        if (unlikely(fd == NS_INVALID_FD)) {
+            Ns_TclPrintfResult(interp, "could not open file '%s': %s",
+                               fileNameString, Tcl_PosixError(interp));
+            result = TCL_ERROR;
+        } else {
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(fd));
+        }
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AsyncLogfileOpenObjCmd -
+ *
+ *      Implements "ns_asynclogfile close" command.  Close the logfile
+ *      previously created via "ns_asynclogfile open".
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+AsyncLogfileCloseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    int         fd;
+    Ns_ObjvSpec args[] = {
+        {"fd", Ns_ObjvInt, &fd, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (unlikely(Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK)) {
+        result = TCL_ERROR;
+
+    } else {
+        int rc = ns_close(fd);
+
+        if (rc != 0) {
+            Ns_TclPrintfResult(interp, "could not close fd %d: %s",
+                               fd, Tcl_PosixError(interp));
+            result = TCL_ERROR;
+        }
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclAsyncLogfileObjCmd -
+ *
+ *      Wrapper for "ns_asynclogfile open|write|close" commands.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclAsyncLogfileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    const Ns_SubCmdSpec subcmds[] = {
+        {"open",  AsyncLogfileOpenObjCmd},
+        {"write", AsyncLogfileWriteObjCmd},
+        {"close", AsyncLogfileCloseObjCmd},
+        {NULL, NULL}
+    };
+
+    return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
+}
+
 
 
 /*

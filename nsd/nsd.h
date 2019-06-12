@@ -1133,6 +1133,7 @@ NS_EXTERN Tcl_ObjCmdProc
     NsTclAdpTellObjCmd,
     NsTclAdpTruncObjCmd,
     NsTclAfterObjCmd,
+    NsTclAsyncLogfileObjCmd,
     NsTclAtCloseObjCmd,
     NsTclAtExitObjCmd,
     NsTclAtPreStartupObjCmd,

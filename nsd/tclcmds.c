@@ -59,6 +59,7 @@ static const Cmd basicCmds[] = {
     {"ns_absoluteurl",           NULL, NsTclAbsoluteUrlObjCmd},
     {"ns_addrbyhost",            NULL, NsTclGetAddrObjCmd},
     {"ns_after",                 NULL, NsTclAfterObjCmd},
+    {"ns_asynclogfile",          NULL, NsTclAsyncLogfileObjCmd},
     {"ns_atexit",                NULL, NsTclAtExitObjCmd},
     {"ns_atprestartup",          NULL, NsTclAtPreStartupObjCmd},
     {"ns_atshutdown",            NULL, NsTclAtShutdownObjCmd},
@@ -158,7 +159,6 @@ static const Cmd basicCmds[] = {
     {"ns_uudecode",              NULL, NsTclBase64DecodeObjCmd},
     {"ns_uuencode",              NULL, NsTclBase64EncodeObjCmd},
     {"ns_writefp",               NULL, NsTclWriteFpObjCmd},
-
     /*
      * Add more basic Tcl commands here.
      */
