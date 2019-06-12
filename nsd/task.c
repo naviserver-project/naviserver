@@ -832,7 +832,7 @@ SignalQueue(Task *taskPtr, unsigned int bit)
 
     /*
      * Task which is already marked as completed
-     * should not be signalled any more
+     * should not be signaled any more
      * An example is cancelling a completed task.
      */
     taskDone = ((taskPtr->signalFlags & TASK_DONE) != 0u);
@@ -1033,7 +1033,7 @@ TaskThread(void *arg)
         queueShutdown = queuePtr->shutdown;
 
         /*
-         * Collect all signalled tasks in the waiting list
+         * Collect all signaled tasks in the waiting list
          */
 
         while ((taskPtr = queuePtr->firstSignalPtr) != NULL) {

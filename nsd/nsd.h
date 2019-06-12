@@ -1129,7 +1129,7 @@ typedef struct {
     Tcl_Channel        bodyChan;         /* channel to read the body */
     size_t             bodySize;         /* size of the body to read */
     Ns_SockState       finalSockState;   /* state of the socket at completion */
-    Tcl_Obj           *infoObj;          /* ancilliary attr/value info */
+    Tcl_Obj           *infoObj;          /* ancillary attr/value info */
     char              *doneCallback;     /* Tcl script run at task completion */
     NS_TLS_SSL_CTX    *ctx;              /* SSL context handle */
     NS_TLS_SSL        *ssl;              /* SSL connection handle */
