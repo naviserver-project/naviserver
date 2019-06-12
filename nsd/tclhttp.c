@@ -132,7 +132,7 @@ static Ns_ReturnCode HttpWaitForSocketEvent(
 
 static void HttpAddInfo(
     NsHttpTask *httpPtr,
-    const char *attribute,
+    const char *key,
     const char *value
 )  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(2);
 
@@ -556,7 +556,7 @@ HttpQueueObjCmd(
  *          this value may have no real effect (any more).
  *
  *      -outputfile
- *          This, in conjuction with -spoolsize instructs the task
+ *          This, in conjunction with -spoolsize instructs the task
  *          to store response content in a given file. But again, at
  *          the time this command is called, the task may have been
  *          completely done and the content may already sit in a
@@ -694,7 +694,7 @@ HttpWaitObjCmd(
          */
         if (result == TCL_OK) {
             int      ii;
-            Tcl_Obj *rObj, *kObj, *vObj, *oObj[8];
+            Tcl_Obj *rObj, *vObj, *oObj[8];
 
             /*
              * Pick up corresponding dictionary elements
@@ -725,7 +725,8 @@ HttpWaitObjCmd(
             }
 
             if (replyHeaders != NULL) {
-                Ns_Set *headers = NULL;
+                Ns_Set  *headers = NULL;
+                Tcl_Obj *kObj;
 
                 /*
                  * Merge reply headers into the user-passed set.
@@ -788,7 +789,7 @@ HttpCancelObjCmd(
     } else {
         NsHttpTask *httpPtr = NULL;
 
-        if (HttpGet(itPtr, Tcl_GetString(objv[2]), &httpPtr, NS_TRUE) == NS_FALSE) {
+        if (HttpGet(itPtr, idString, &httpPtr, NS_TRUE) == NS_FALSE) {
             result = TCL_ERROR;
         } else {
             HttpCancel(httpPtr);
@@ -2787,7 +2788,7 @@ HttpProc(
              * Send (next part of) the request from memory.
              * This may not include the request body, as it may have
              * to be spooled from the passed file or Tcl channel.
-             * Decision wether to do this or not is done when we have
+             * Decision whether to do this or not is done when we have
              * finished sending request line + all of the headers.
              */
             remain = (size_t)(httpPtr->requestLength - httpPtr->sent);
@@ -3086,7 +3087,7 @@ HttpProc(
 
                 /*
                  * Received zero bytes on a readable socket
-                 * EOD signalled on the socket.
+                 * EOD signaled on the socket.
                  */
                 taskDone = NS_TRUE; /* Just for illustrative purposes */
 
