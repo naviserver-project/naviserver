@@ -48,10 +48,10 @@ in a dedicated per-queue thread.
 [list_begin options]
 
 [opt_def -body_size [arg size]]
-specifies the expected size of the data which will be sent 
-as the HTTP request body. This option must be used when sending body data
-via Tcl channels. It is optional if sending body data from memory
-or from a named file.
+specifies the expected size of the data which will be sent as the HTTP 
+request body. This option must be used when sending body data via Tcl 
+channels which are not capable of seeking. It is optional if sending
+body data from memory or from a named file.
 
 [opt_def -body [arg body]]
 trasmit the content of the passed string as the request body.
@@ -67,17 +67,18 @@ the extension of the passed [option fn].
 
 [opt_def -body_chan [arg chan]]
 transmit the content specified via Tcl channel, which must be opened for
-reading, as the request body.
+reading, as the request body. The channel must be in blocking mode and
+should be seekable (unless the [option -body_size] is specified).
 This option is mutualy exclusive with [option -body] and [option -body_file].
-It requires specifying the expected content size via [option -body_size].
 Caller should put "Content-Type" header in passed [option -headers] set
 since the implementation cannot guess the correct value. If none found,
 the "application/octet-stream" will be assumed.
 For [cmd "ns_http queue"] command, the [option -body_chan] channel will be
 dissociated from the current interpreter/thread and the ownership will be 
 transferred to the thread that runs the request. Upon [cmd "ns_http wait"]
-the channel is tossed back to the running interpreter and can be manipulated
-(read/written/closed).
+the channel is tossed back to the running interpreter and can be manipulated.
+It is the caller responsibility to close the channel when not needed any more.
+The implementation will not do that (see [cmd "ns_http cleanup"] for exception).
 
 [opt_def "-cafile" [arg CA]]
 used for HTTPS URIs to specify the locations, at which CA
@@ -141,13 +142,14 @@ This option is mutualy exclusive with [option -outputchan].
 
 [opt_def -outputchan [arg chan]]
 receive the response content into the specified Tcl channel, which must be
-opened for writing.
+opened for writing. The channel must be in blocking mode.
 This option is mutualy exclusive with [option -outputfile].
 For [cmd "ns_http queue"] command, the [option -outputchan] channel will be
 dissociated from the current interpreter/thread and the ownership will be 
 transferred to the thread that runs the request. Upon [cmd "ns_http wait"]
-the channel is tossed back to the running interpreter and can be manipulated
-(read/written/closed).
+the channel is tossed back to the running interpreter and can be manipulated.
+It is the caller responsibility to close the channel when not needed any more.
+The implementation will not do that (see [cmd "ns_http cleanup"] for exception).
 
 [opt_def -timeout [arg T]]
 time to wait for the whole request to complete. The time can be specified
@@ -388,13 +390,23 @@ results to a file if the result is larger than 1000 bytes.
  }
 [example_end]
 
-Example for downloading a file from the web:
+Example for downloading a file from the web into a named file
+or passed Tcl channel. Note the [option -spoolsize] of zero
+which will redirect all received data into the file/channel.
+Without the [option -spoolsize] set, all the data would be
+otherwise stored in memory.
 
 [example_begin]
- % ns_http run -outputfile /tmp/reply.html http://www.google.com
+ % ns_http run -outputfile /tmp/reply.html -spoolsize 0 http://www.google.com
  status 302 time 0:132577 headers d2 file /tmp/reply.html
 [example_end]
 
+[example_begin]
+ % set chan [lb]open /tmp/file.dat w[rb]
+ % ns_http run -outputchan $chan -spoolsize 0 http://www.google.com
+ status 302 time 0:132577 headers d2 outputchan file22
+ % close $chan 
+[example_end]
 [see_also ns_httptime ns_set ns_urlencode]
 [keywords "global built-in" http-client HTTP HTTPS POST GET nssock spooling SNI]
 

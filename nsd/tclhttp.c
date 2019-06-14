@@ -1174,7 +1174,7 @@ HttpQueue(
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else if (run == NS_TRUE && doneCallback != NULL) {
-        Ns_TclPrintfResult(interp, "doneCallback option allowed only"
+        Ns_TclPrintfResult(interp, "option -doneCallback allowed only"
                            " for [ns_http_queue]");
         result = TCL_ERROR;
     } else if (outputFileName != NULL && outputChanName != NULL) {
@@ -1184,6 +1184,9 @@ HttpQueue(
     } else if (((bodyFileName != NULL) + (bodyChanName != NULL) + (bodyObj != NULL)) > 1) {
         Ns_TclPrintfResult(interp, "only one of -body, -body_chan or -body_file"
                            " options are allowed");
+        result = TCL_ERROR;
+    } else if (bodySize < 0) {
+        Ns_TclPrintfResult(interp, "option -body_size must have a positive value");
         result = TCL_ERROR;
     }
 
@@ -1201,12 +1204,16 @@ HttpQueue(
     }
 
     if (result == TCL_OK && bodyChanName != NULL) {
-        if (bodySize == 0) {
-            Ns_TclPrintfResult(interp, "option -body_chan requires -body_size>0");
+        if (Ns_TclGetOpenChannel(interp, bodyChanName, /* write */ 0,
+                                 /* check */ 1, &bodyChan) != TCL_OK) {
             result = TCL_ERROR;
-        } else if (Ns_TclGetOpenChannel(interp, bodyChanName, /* write */ 0,
-                                        /* check */ 1, &bodyChan) != TCL_OK) {
-            result = TCL_ERROR;
+        } else if (bodySize == 0) {
+            bodySize = Tcl_Seek(bodyChan, 0, SEEK_END);
+            if (bodySize == -1) {
+                Ns_TclPrintfResult(interp, "can't seek channel: %s",
+                                   Tcl_ErrnoMsg(Tcl_GetErrno()));
+                result = TCL_ERROR;
+            }
         }
     }
 
