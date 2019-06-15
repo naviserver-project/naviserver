@@ -62,8 +62,8 @@ static const char *hostHeader             = "Host";
 static const char *userAgentHeader        = "User-Agent";
 
 /*
- * Attempt to maintan Tcl errorCode variable.
- * This is still not done thoroughly thru the code.
+ * Attempt to maintain Tcl errorCode variable.
+ * This is still not done thoroughly through the code.
  */
 static const char *errorCodeTimeoutString = "NS_TIMEOUT";
 
@@ -1599,7 +1599,7 @@ HttpCheckSpool(
      *     1. HTTP response line (delimited by CR/LF)
      *     2. Response header(s) (each delimited by CR/LF)
      *     3. Terminating zero byte (see HttpCheckHeader())
-     *     4. Lone "\n" charcter (see HttpCheckHeader())
+     *     4. Lone "\n" character (see HttpCheckHeader())
      *     5. Content (or part of it) up to the end of the DString
      *
      * The size of 1.-4. is stored in httpPtr->replyHeaderSize.
