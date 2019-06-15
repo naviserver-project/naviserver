@@ -260,6 +260,44 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
 /*
  *----------------------------------------------------------------------
  *
+ * CheckWideRange --
+ *
+ *      Helper function for range checking based on Tcl_WideInt specification.
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR;
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+CheckWideRange(Tcl_Interp *interp, Ns_ObjvValueRange *r, Tcl_WideInt value)
+{
+    int result;
+
+    if (r == NULL || (value >= r->minValue && value <= r->maxValue)) {
+        /*
+         * No range or valid range.
+         */
+        result = TCL_OK;
+    } else {
+        /*
+         * Invalid range.
+         */
+        Ns_TclPrintfResult(interp, "expected integer in range [%"
+                           TCL_LL_MODIFIER "d,%" TCL_LL_MODIFIER
+                           "d] but got %" TCL_LL_MODIFIER "d",
+                           r->minValue, r->maxValue,  value);
+        result = TCL_ERROR;
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_ObjvInt,
  * Ns_ObjvUShort,
  * Ns_ObjvLong,
@@ -277,7 +315,6 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
  *
  *----------------------------------------------------------------------
  */
-
 int
 Ns_ObjvInt(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
            Tcl_Obj *const* objv)
@@ -291,21 +328,9 @@ Ns_ObjvInt(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 
         result = Tcl_GetIntFromObj(interp, objv[0], dest);
         if (likely(result == TCL_OK)) {
-            Ns_ObjvValueRange *r = spec->arg;
-
-            if (r == NULL || (*dest >= r->minValue && *dest <= r->maxValue)) {
-                /*
-                 * No range or valid range.
-                 */
+            if (CheckWideRange(interp, spec->arg, (Tcl_WideInt)*dest) == TCL_OK) {
                 *objcPtr -= 1;
             } else {
-                /*
-                 * Invalid range.
-                 */
-                Ns_TclPrintfResult(interp, "expected integer in range [%"
-                                   TCL_LL_MODIFIER "d,%" TCL_LL_MODIFIER
-                                   "d] but got %d",
-                                   r->minValue, r->maxValue,  *dest);
                 result = TCL_ERROR;
             }
         }
@@ -349,8 +374,6 @@ Ns_ObjvUShort(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
     return result;
 }
 
-
-
 int
 Ns_ObjvLong(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
             Tcl_Obj *const* objv)
@@ -363,8 +386,12 @@ Ns_ObjvLong(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
         long *dest = spec->dest;
 
         result = Tcl_GetLongFromObj(interp, objv[0], dest);
-        if (result == TCL_OK) {
-            *objcPtr -= 1;
+        if (likely(result == TCL_OK)) {
+            if (CheckWideRange(interp, spec->arg, (Tcl_WideInt)*dest) == TCL_OK) {
+                *objcPtr -= 1;
+            } else {
+                result = TCL_ERROR;
+            }
         }
     } else {
         result = TCL_ERROR;
@@ -386,7 +413,11 @@ Ns_ObjvWideInt(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 
         result = Tcl_GetWideIntFromObj(interp, objv[0], dest);
         if (likely(result == TCL_OK)) {
-            *objcPtr -= 1;
+            if (CheckWideRange(interp, spec->arg, *dest) == TCL_OK) {
+                *objcPtr -= 1;
+            } else {
+                result = TCL_ERROR;
+            }
         }
     } else {
         result = TCL_ERROR;
@@ -1635,7 +1666,10 @@ WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *inter
                 }
                 Ns_DStringPrintf(&ds, "?%s %s", specPtr->key, p);
 
-                if (specPtr->proc == Ns_ObjvInt && specPtr->arg != NULL) {
+                if ((specPtr->proc == Ns_ObjvInt
+                     || specPtr->proc == Ns_ObjvLong
+                     || specPtr->proc == Ns_ObjvWideInt
+                     ) && specPtr->arg != NULL) {
                     Ns_ObjvValueRange *r = specPtr->arg;
 
                     Ns_DStringPrintf(&ds,
@@ -1649,7 +1683,11 @@ WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *inter
     if (argSpec != NULL) {
         for (specPtr = argSpec; specPtr->key != NULL; ++specPtr) {
             Tcl_DStringAppend(&ds, specPtr->key, -1);
-            if (specPtr->proc == Ns_ObjvInt && specPtr->arg != NULL) {
+
+            if ((specPtr->proc == Ns_ObjvInt
+                 || specPtr->proc == Ns_ObjvLong
+                 || specPtr->proc == Ns_ObjvWideInt
+                 ) && specPtr->arg != NULL) {
                 Ns_ObjvValueRange *r = specPtr->arg;
 
                 Ns_DStringPrintf(&ds,
