@@ -46,10 +46,6 @@ static Ns_ObjvValueRange posintRange1 = {1, INT_MAX};
 static int GetChan(Tcl_Interp *interp, const char *id, Tcl_Channel *chanPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static int GetIndices(Tcl_Interp *interp, const Conn *connPtr,
-                      Tcl_Obj *const* objv, int *offPtr, int *lenPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
 static Tcl_Channel MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -1459,7 +1455,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
     Tcl_Channel          chan;
     const Tcl_HashEntry *hPtr;
     Tcl_HashSearch       search;
-    int                  setNameLength, idx, off, len, opt = 0, n, result = TCL_OK;
+    int                  setNameLength, opt = 0, result = TCL_OK;
     const char          *setName;
 
     static const char *const opts[] = {
@@ -1590,11 +1586,17 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         break;
 
     case CKeepAliveIdx:
-        if (objc > 2 && Tcl_GetIntFromObj(interp, objv[2],
-                                          &connPtr->keep) != TCL_OK) {
-            result = TCL_ERROR;
-        } else {
-            Tcl_SetObjResult(interp, Tcl_NewIntObj(connPtr->keep));
+        {
+            Ns_ObjvValueRange keepRange = {0, 1};
+            int          oc = 1;
+            Ns_ObjvSpec spec = {"?size", Ns_ObjvInt, &connPtr->keep, &keepRange};
+
+            if (objc > 2 && Ns_ObjvInt(&spec, interp, &oc, &objv[2]) != TCL_OK) {
+                result = TCL_ERROR;
+            }
+            if (result == TCL_OK) {
+                Tcl_SetObjResult(interp, Tcl_NewIntObj(connPtr->keep));
+            }
         }
         break;
 
@@ -1611,11 +1613,15 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
 
     case CCompressIdx:
         if (objc > 2) {
-            if (Tcl_GetIntFromObj(interp, objv[2], &n) != TCL_OK
-                    && Tcl_GetBooleanFromObj(interp, objv[2], &n) != TCL_OK) {
+            Ns_ObjvValueRange compressRange = {0, 9};
+            int               oc = 1, level = 0;
+            Ns_ObjvSpec       spec = {"?level", Ns_ObjvInt, &level, &compressRange};
+
+            if (Ns_ObjvInt(&spec, interp, &oc, &objv[2]) != TCL_OK) {
                 result = TCL_ERROR;
+
             } else {
-                Ns_ConnSetCompression(conn, n);
+                Ns_ConnSetCompression(conn, level);
             }
         }
         if (result == TCL_OK) {
@@ -1627,15 +1633,21 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
     case CUrlvIdx:
         if (objc == 2) {
             Tcl_SetObjResult(interp, Tcl_NewStringObj(request->urlv, request->urlv_len));
-        } else if (Tcl_GetIntFromObj(interp, objv[2], &idx) != TCL_OK) {
-            result = TCL_ERROR;
-        } else if (idx >= 0 && idx < request->urlc) {
-            const char **elements;
-            int          length;
+        } else {
+            Ns_ObjvValueRange idxRange = {0, request->urlc - 1};
+            int               oc = 1, idx = 0;
+            Ns_ObjvSpec       spec = {"?idx", Ns_ObjvInt, &idx, &idxRange};
 
-            Tcl_SplitList(NULL, request->urlv, &length, &elements);
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(elements[idx], -1));
-            Tcl_Free((char *) elements);
+            if (Ns_ObjvInt(&spec, interp, &oc, &objv[2]) != TCL_OK) {
+                result = TCL_ERROR;
+            } else {
+                const char **elements;
+                int          length;
+
+                Tcl_SplitList(NULL, request->urlv, &length, &elements);
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(elements[idx], -1));
+                Tcl_Free((char *) elements);
+            }
         }
         break;
 
@@ -1951,16 +1963,33 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
             Tcl_WrongNumArgs(interp, 2, objv, "off len chan");
             result = TCL_ERROR;
 
-        } else if (GetIndices(interp, connPtr, objv+2, &off, &len) != TCL_OK ||
-                   GetChan(interp, Tcl_GetString(objv[4]), &chan) != TCL_OK) {
-            result = TCL_ERROR;
+        } else {
+            int               oc = 3, offset;
+            Ns_ObjvValueRange offsetRange = {0, (Tcl_WideInt)connPtr->reqPtr->length};
+            Ns_ObjvSpec       specOffset = {"offset", Ns_ObjvInt, &offset, &offsetRange};
 
-        } else if (Tcl_Write(chan, connPtr->reqPtr->content + off, len) != len) {
-            Ns_TclPrintfResult(interp, "could not write %s bytes to %s: %s",
-                               Tcl_GetString(objv[3]),
-                               Tcl_GetString(objv[4]),
-                               Tcl_PosixError(interp));
-            result = TCL_ERROR;
+            if (Ns_ObjvInt(&specOffset, interp, &oc, &objv[2]) != TCL_OK) {
+                result = TCL_ERROR;
+
+            } else {
+                int               length;
+                Ns_ObjvValueRange lengthRange = {1, ((Tcl_WideInt)connPtr->reqPtr->length - offset)};
+                Ns_ObjvSpec       specLength = {"length", Ns_ObjvInt, &length, &lengthRange};
+
+                if (Ns_ObjvInt(&specLength, interp, &oc, &objv[3]) != TCL_OK) {
+                    result = TCL_ERROR;
+
+                } else if (GetChan(interp, Tcl_GetString(objv[4]), &chan) != TCL_OK) {
+                    result = TCL_ERROR;
+
+                } else if (Tcl_Write(chan, connPtr->reqPtr->content + offset, length) != length) {
+                    Ns_TclPrintfResult(interp, "could not write %s bytes to %s: %s",
+                                       Tcl_GetString(objv[3]),
+                                       Tcl_GetString(objv[4]),
+                                       Tcl_PosixError(interp));
+                    result = TCL_ERROR;
+                }
+            }
         }
         break;
 
@@ -2058,11 +2087,12 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
             result = TCL_ERROR;
 
         } else if (objc == 3) {
-            int status;
+            Ns_ObjvValueRange statusRange = {100, 599};
+            int               oc = 2, status;
+            Ns_ObjvSpec       spec = {"?status", Ns_ObjvInt, &status, &statusRange};
 
-            if (Tcl_GetIntFromObj(interp, objv[2], &status) != TCL_OK) {
+            if (Ns_ObjvInt(&spec, interp, &oc, &objv[2]) != TCL_OK) {
                 result = TCL_ERROR;
-
             } else {
                 Tcl_SetObjResult(interp,Tcl_NewIntObj(Ns_ConnResponseStatus(conn)));
                 Ns_ConnSetResponseStatus(conn, status);
@@ -2334,53 +2364,6 @@ GetChan(Tcl_Interp *interp, const char *id, Tcl_Channel *chanPtr)
 
     } else {
         *chanPtr = chan;
-    }
-
-    return result;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * GetIndices --
- *
- *      Return offset and length from given Tcl_Obj's.
- *
- * Results:
- *      TCL_OK if objects are valid offsets, TCL_ERROR otherwise.
- *
- * Side effects:
- *      Given offPtr and lenPtr are updated with indices or error
- *      message is left in the interp.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-GetIndices(Tcl_Interp *interp, const Conn *connPtr, Tcl_Obj *const* objv, int *offPtr,
-           int *lenPtr)
-{
-    int off, len, result = TCL_OK;
-
-    NS_NONNULL_ASSERT(interp != NULL);
-    NS_NONNULL_ASSERT(connPtr != NULL);
-
-    if (Tcl_GetIntFromObj(interp, objv[0], &off) != TCL_OK
-        || Tcl_GetIntFromObj(interp, objv[1], &len) != TCL_OK) {
-        result = TCL_ERROR;
-
-    } else if (off < 0 || (size_t)off > connPtr->reqPtr->length) {
-        Ns_TclPrintfResult(interp, "invalid offset: %s", Tcl_GetString(objv[0]));
-        result = TCL_ERROR;
-
-    } else if (len < 0 || (size_t)len > (connPtr->reqPtr->length - (size_t)off)) {
-        Ns_TclPrintfResult(interp, "invalid length: %s", Tcl_GetString(objv[1]));
-        result = TCL_ERROR;
-
-    } else {
-        *offPtr = off;
-        *lenPtr = len;
     }
 
     return result;

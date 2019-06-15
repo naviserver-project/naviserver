@@ -25,7 +25,7 @@ test ns_schedule-1.4 {basic syntax} -body {
 
 test ns_schedule-1.5 {basic syntax} -body {
     ns_after
-} -returnCodes error -result {wrong # args: should be "ns_after seconds script ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_after seconds[0,2147483647] script ?args?"}
 
 test ns_schedule-1.6 {basic syntax} -body {
     ns_pause

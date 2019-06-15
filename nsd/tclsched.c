@@ -77,19 +77,23 @@ static int ReturnValidId(Tcl_Interp *interp, int id, Ns_TclCallback *cbPtr)
 int
 NsTclAfterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int result, seconds;
+    Tcl_Obj          *scriptObj;
+    int               seconds, remain = 0, result = TCL_OK;
+    Ns_ObjvValueRange range = {0, INT_MAX};
+    Ns_ObjvSpec       args[] = {
+        {"seconds", Ns_ObjvInt,  &seconds,   &range},
+        {"script",  Ns_ObjvObj,  &scriptObj, NULL},
+        {"?args",   Ns_ObjvArgs, &remain,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (objc < 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "seconds script ?args?");
-        result = TCL_ERROR;
-
-    } else if (Tcl_GetIntFromObj(interp, objv[1], &seconds) != TCL_OK) {
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
         int             id;
         Ns_TclCallback *cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclSchedProc,
-                                                  objv[2], objc - 3, objv + 3);
+                                                  scriptObj, objc - 3, objv + 3);
         id = Ns_After(seconds, NsTclSchedProc, cbPtr, (ns_funcptr_t)Ns_TclFreeCallback);
         result = ReturnValidId(interp, id, cbPtr);
     }

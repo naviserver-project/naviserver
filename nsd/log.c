@@ -1313,7 +1313,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
         case CPeekIdx:
         case CGetIdx:
-            memset(filterPtr, 0, sizeof *filterPtr);
+            memset(filterPtr, 0, sizeof(*filterPtr));
             filterPtr->proc = LogToDString;
             filterPtr->arg  = &ds;
             Ns_DStringInit(&ds);
@@ -1334,10 +1334,17 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
         case CTruncIdx:
             count = 0;
-            if (objc > 2 && Tcl_GetIntFromObj(interp, objv[2], &count) != TCL_OK) {
-                result = TCL_ERROR;
-            } else {
-                memset(filterPtr, 0, sizeof *filterPtr);
+            if (objc > 2) {
+                Ns_ObjvValueRange countRange = {0, INT_MAX};
+                int               oc = 1;
+                Ns_ObjvSpec       spec = {"?count", Ns_ObjvInt, &count, &countRange};
+
+                if (Ns_ObjvInt(&spec, interp, &oc, &objv[2]) != TCL_OK) {
+                    result = TCL_ERROR;
+                }
+            }
+            if (result == TCL_OK) {
+                memset(filterPtr, 0, sizeof(*filterPtr));
                 LogFlush(cachePtr, filterPtr, count, NS_TRUE, NS_FALSE);
             }
             break;

@@ -569,20 +569,15 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                  * These commands require a set and key/value index.
                  */
                 int i;
+                Ns_ObjvValueRange idxRange = {0, (Tcl_WideInt)Ns_SetSize(set)};
+                int               oc = 1;
+                Ns_ObjvSpec       spec = {"?idx", Ns_ObjvInt, &i, &idxRange};
 
                 if (unlikely(objc != 4)) {
                     Tcl_WrongNumArgs(interp, 2, objv, "setId index");
                     result = TCL_ERROR;
 
-                } else if (unlikely(Tcl_GetIntFromObj(interp, objv[3], &i) != TCL_OK)) {
-                    result = TCL_ERROR;
-
-                } else if (unlikely(i < 0)) {
-                    Ns_TclPrintfResult(interp, "invalid index %d: must be >= 0", i);
-                    result = TCL_ERROR;
-
-                } else if (unlikely((size_t)i >= Ns_SetSize(set))) {
-                    Ns_TclPrintfResult(interp, "invalid index %d: beyond range of set fields", i);
+                } else if (Ns_ObjvInt(&spec, interp, &oc, &objv[3]) != TCL_OK) {
                     result = TCL_ERROR;
 
                 } else {

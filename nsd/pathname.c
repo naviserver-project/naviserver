@@ -735,21 +735,23 @@ NsPageRoot(Ns_DString *dsPtr, const NsServer *servPtr, const char *host)
 int
 NsTclHashPathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    Ns_DString  path;
-    int         levels, result = TCL_OK;
+    int               levels, result = TCL_OK;
+    char             *inputString;
+    Ns_ObjvValueRange range = {1, INT_MAX};
+    Ns_ObjvSpec       args[] = {
+        {"string", Ns_ObjvString, &inputString, NULL},
+        {"levels", Ns_ObjvInt,    &levels,     &range},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "string levels");
-        result = TCL_ERROR;
-
-    } else if (Tcl_GetIntFromObj(interp, objv[2], &levels) != TCL_OK
-        || levels <= 0) {
-        Ns_TclPrintfResult(interp, "levels must be an integer greater than zero");
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
+        Ns_DString  path;
+
         Ns_DStringInit(&path);
-        Ns_HashPath(&path, Tcl_GetString(objv[1]), levels);
+        Ns_HashPath(&path, inputString, levels);
         Tcl_DStringResult(interp, &path);
     }
     return result;
@@ -836,9 +838,8 @@ NsTclPagePathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 static int
 PathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, char cmd)
 {
-    char *host = NULL;
-    int   npaths = 0, result = TCL_OK;
-
+    char       *host = NULL;
+    int         npaths = 0, result = TCL_OK;
     Ns_ObjvSpec opts[] = {
         {"-host", Ns_ObjvString, &host, NULL},
         {"--",    Ns_ObjvBreak,  NULL,  NULL},

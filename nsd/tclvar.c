@@ -1507,6 +1507,8 @@ LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, bool create)
  *      with no arguments, it returns a list of every bucket (list of
  *      lists).
  *
+ *      Implementation of nsv_bucket.
+ *
  * Results:
  *      Tcl result code
  *
@@ -1519,26 +1521,24 @@ LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, bool create)
 int
 NsTclNsvBucketObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    const NsInterp *itPtr = clientData;
-    const NsServer *servPtr = itPtr->servPtr;
-    int             bucketNr = -1, i, result = TCL_OK;
+    const NsInterp   *itPtr = clientData;
+    const NsServer   *servPtr = itPtr->servPtr;
+    int               bucketNr = -1, i, result = TCL_OK;
+    Ns_ObjvValueRange bucketRange = {0, servPtr->nsv.nbuckets};
+    Ns_ObjvSpec       args[] = {
+        {"?bucket-number", Ns_ObjvInt,  &bucketNr, &bucketRange},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (objc > 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "?bucket-number?");
-        result = TCL_ERROR;
-
-    } else if (objc == 2 &&
-        (Tcl_GetIntFromObj(interp, objv[1], &bucketNr) != TCL_OK
-         || bucketNr < 0
-         || bucketNr >= servPtr->nsv.nbuckets
-         )) {
-        Ns_TclPrintfResult(interp, "bucket number is not a valid integer");
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
         Tcl_Obj *resultObj;
 
-        /* LOCK for servPtr->nsv ? */
+        /* 
+         * LOCK for servPtr->nsv ? 
+         */
         resultObj = Tcl_GetObjResult(interp);
         for (i = 0; i < servPtr->nsv.nbuckets; i++) {
             const Tcl_HashEntry *hPtr;
