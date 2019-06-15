@@ -36,6 +36,9 @@
 
 #include "nsd.h"
 
+static Ns_ObjvValueRange posintRange0 = {0, INT_MAX};
+static Ns_ObjvValueRange posintRange1 = {1, INT_MAX};
+
 /*
  * Static functions defined in this file.
  */
@@ -1692,8 +1695,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
                 {NULL, NULL, NULL, NULL}
             };
             Ns_ObjvSpec args[] = {
-                {"?offset", Ns_ObjvInt, &offset, NULL},
-                {"?length", Ns_ObjvInt, &length, NULL},
+                {"?offset", Ns_ObjvInt, &offset, &posintRange0},
+                {"?length", Ns_ObjvInt, &length, &posintRange1},
                 {NULL, NULL, NULL, NULL}
             };
 
@@ -1712,10 +1715,6 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
                  */
                 Ns_TclPrintfResult(interp, "connection already closed, can't get content");
                 result = TCL_ERROR;
-
-            } else if (offset < 0 || length < -1) {
-                Ns_TclPrintfResult(interp, "invalid offset and/or length specified");
-                result = TCL_ERROR;
             }
 
             requiredLength = length;
@@ -1725,8 +1724,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
                 result = TCL_ERROR;
             }
 
-            if (result == TCL_OK
-                && length == -1) {
+            if (result == TCL_OK && length == -1) {
                 length = (int)connPtr->reqPtr->length - offset;
 
             } else if (result == TCL_OK
@@ -2216,17 +2214,17 @@ NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 int
 NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    const NsInterp *itPtr = clientData;
-    int             toCopy = 0, result = TCL_OK;
-    char           *chanName;
-    Tcl_Channel     chan;
+    const NsInterp   *itPtr = clientData;
+    int               toCopy = 0, result = TCL_OK;
+    char             *chanName;
+    Tcl_Channel       chan;
 
     /*
      * Syntax: ns_conncptofp ?-bytes tocopy? channel
      */
 
     Ns_ObjvSpec opts[] = {
-        {"-bytes",   Ns_ObjvInt,   &toCopy, NULL},
+        {"-bytes",   Ns_ObjvInt,   &toCopy, &posintRange0},
         {"--",       Ns_ObjvBreak, NULL,    NULL},
         {NULL,       NULL,         NULL,    NULL}
     };
@@ -2252,7 +2250,9 @@ NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
     } else {
         const Request *reqPtr = ((Conn *)itPtr->conn)->reqPtr;
 
-        if (toCopy > (int)reqPtr->avail || toCopy <= 0) {
+        Ns_LogDeprecated(objv, 1, "ns_conn copy ...", NULL);
+
+        if (toCopy > (int)reqPtr->avail || toCopy == 0) {
             toCopy = (int)reqPtr->avail;
         }
         if (Ns_ConnCopyToChannel(itPtr->conn, (size_t)toCopy, chan) != NS_OK) {

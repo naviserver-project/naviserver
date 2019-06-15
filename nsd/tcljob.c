@@ -391,11 +391,12 @@ NsWaitJobsShutdown(const Ns_Time *toPtr)
 static int
 JobConfigureObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int            result = TCL_OK;
-    int            jpt = -1;
-    Ns_Time       *timeoutPtr = NULL;
+    int               result = TCL_OK;
+    int               jpt = -1;
+    Ns_Time          *timeoutPtr = NULL;
+    Ns_ObjvValueRange jptRange = {0, INT_MAX};
     Ns_ObjvSpec    lopts[] = {
-        {"-jobsperthread",  Ns_ObjvInt,  &jpt,        NULL},
+        {"-jobsperthread",  Ns_ObjvInt,  &jpt,        &jptRange},
         {"-timeout",        Ns_ObjvTime, &timeoutPtr, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -440,16 +441,17 @@ JobConfigureObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 static int
 JobCreateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int          result = TCL_OK, maxThreads = NS_JOB_DEFAULT_MAXTHREADS;
-    Tcl_Obj     *queueIdObj;
-    char        *descString  = (char *)"";
-    Ns_ObjvSpec  lopts[] = {
+    int               result = TCL_OK, maxThreads = NS_JOB_DEFAULT_MAXTHREADS;
+    Tcl_Obj          *queueIdObj;
+    char             *descString  = (char *)"";
+    Ns_ObjvValueRange maxThreadsRange = {1, INT_MAX};
+    Ns_ObjvSpec       lopts[] = {
         {"-desc",   Ns_ObjvString,   &descString,   NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
         {"queueId",     Ns_ObjvObj,  &queueIdObj,  NULL},
-        {"?maxThreads", Ns_ObjvInt,  &maxThreads,  NULL},
+        {"?maxThreads", Ns_ObjvInt,  &maxThreads,  &maxThreadsRange},
         {NULL, NULL, NULL, NULL}
     };
 

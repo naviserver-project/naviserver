@@ -291,7 +291,23 @@ Ns_ObjvInt(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 
         result = Tcl_GetIntFromObj(interp, objv[0], dest);
         if (likely(result == TCL_OK)) {
-            *objcPtr -= 1;
+            Ns_ObjvValueRange *r = spec->arg;
+
+            if (r == NULL || (*dest >= r->minValue && *dest <= r->maxValue)) {
+                /*
+                 * No range or valid range.
+                 */
+                *objcPtr -= 1;
+            } else {
+                /*
+                 * Invalid range.
+                 */
+                Ns_TclPrintfResult(interp, "expected integer in range [%"
+                                   TCL_LL_MODIFIER "d,%" TCL_LL_MODIFIER
+                                   "d] but got %d",
+                                   r->minValue, r->maxValue,  *dest);
+                result = TCL_ERROR;
+            }
         }
     } else {
         result = TCL_ERROR;
@@ -1617,14 +1633,33 @@ WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *inter
                 if (*specPtr->key == '-') {
                     ++p;
                 }
-                Ns_DStringPrintf(&ds, "?%s %s? ", specPtr->key, p);
+                Ns_DStringPrintf(&ds, "?%s %s", specPtr->key, p);
+
+                if (specPtr->proc == Ns_ObjvInt && specPtr->arg != NULL) {
+                    Ns_ObjvValueRange *r = specPtr->arg;
+
+                    Ns_DStringPrintf(&ds,
+                                     "[%" TCL_LL_MODIFIER "d,%" TCL_LL_MODIFIER "d]",
+                                     r->minValue, r->maxValue);
+               }
+                Tcl_DStringAppend(&ds, "? ", 2);
             }
         }
     }
     if (argSpec != NULL) {
         for (specPtr = argSpec; specPtr->key != NULL; ++specPtr) {
-            Ns_DStringPrintf(&ds, "%s%s ", specPtr->key,
-                             (*specPtr->key == '?') ? "?" : NS_EMPTY_STRING);
+            Tcl_DStringAppend(&ds, specPtr->key, -1);
+            if (specPtr->proc == Ns_ObjvInt && specPtr->arg != NULL) {
+                Ns_ObjvValueRange *r = specPtr->arg;
+
+                Ns_DStringPrintf(&ds,
+                                 "[%" TCL_LL_MODIFIER "d,%" TCL_LL_MODIFIER "d]",
+                                 r->minValue, r->maxValue);
+            }
+            if (*specPtr->key == '?') {
+                Tcl_DStringAppend(&ds, "?", 1);
+            }
+            Tcl_DStringAppend(&ds, " ", 1);
         }
     }
     if (ds.length > 0) {

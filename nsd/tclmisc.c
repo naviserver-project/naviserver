@@ -367,11 +367,13 @@ InsertFreshNewline(Tcl_DString *dsPtr, const char *prefixString, size_t prefixLe
 int
 NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int          result = TCL_OK, lineWidth = 80, offset = 0;
-    char        *textString = (char *)NS_EMPTY_STRING, *prefixString = NULL;
-    Ns_ObjvSpec opts[] = {
-        {"-width",  Ns_ObjvInt,     &lineWidth,    NULL},
-        {"-offset", Ns_ObjvInt,     &offset,       NULL},
+    int               result = TCL_OK, lineWidth = 80, offset = 0;
+    char             *textString = (char *)NS_EMPTY_STRING, *prefixString = NULL;
+    Ns_ObjvValueRange widthRange = {5, INT_MAX};
+    Ns_ObjvValueRange offsetRange = {0, INT_MAX};
+    Ns_ObjvSpec       opts[] = {
+        {"-width",  Ns_ObjvInt,     &lineWidth,    &widthRange},
+        {"-offset", Ns_ObjvInt,     &offset,       &offsetRange},
         {"-prefix", Ns_ObjvString,  &prefixString, NULL},
         {"--",      Ns_ObjvBreak,    NULL,         NULL},
         {NULL, NULL, NULL, NULL}

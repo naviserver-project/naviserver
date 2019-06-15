@@ -5792,12 +5792,13 @@ WriterListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 static int
 WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int          intValue = -1, result = TCL_OK;
-    Tcl_Obj     *driverObj;
-    DrvWriter   *wrPtr;
+    int               intValue = -1, result = TCL_OK;
+    Tcl_Obj          *driverObj;
+    DrvWriter        *wrPtr;
+    Ns_ObjvValueRange range = {1024, INT_MAX};
     Ns_ObjvSpec  args[] = {
         {"driver", Ns_ObjvObj, &driverObj, NULL},
-        {"?value", Ns_ObjvInt, &intValue, NULL},
+        {"?value", Ns_ObjvInt, &intValue, &range},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -5820,14 +5821,7 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
             /*
              * The optional argument was provided.
              */
-            if (intValue < 1024) {
-                Ns_TclPrintfResult(interp,
-                                   "argument is not an integer in valid range: %d (min 1024)",
-                                   intValue);
-                result = TCL_ERROR;
-            } else {
-                wrPtr->maxsize = (size_t)intValue;
-            }
+            wrPtr->maxsize = (size_t)intValue;
         }
         if (result == TCL_OK) {
             Tcl_SetObjResult(interp, Tcl_NewIntObj((int)wrPtr->maxsize));
@@ -6391,15 +6385,16 @@ AsyncWriterThread(void *arg)
 static int
 AsyncLogfileWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int         result = TCL_OK, binary = (int)NS_FALSE;
-    Tcl_Obj    *stringObj;
-    int         fd = 0;
+    int               result = TCL_OK, binary = (int)NS_FALSE;
+    Tcl_Obj          *stringObj;
+    int               fd = 0;
+    Ns_ObjvValueRange range = {0, INT_MAX};
     Ns_ObjvSpec opts[] = {
         {"-binary",  Ns_ObjvBool, &binary, INT2PTR(NS_TRUE)},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"fd", Ns_ObjvInt, &fd, NULL},
+        {"fd",     Ns_ObjvInt, &fd,        &range},
         {"buffer", Ns_ObjvObj, &stringObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -6532,10 +6527,10 @@ AsyncLogfileOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
 static int
 AsyncLogfileCloseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int         result = TCL_OK;
-    int         fd;
+    int               fd, result = TCL_OK;
+    Ns_ObjvValueRange range = {0, INT_MAX};
     Ns_ObjvSpec args[] = {
-        {"fd", Ns_ObjvInt, &fd, NULL},
+        {"fd", Ns_ObjvInt, &fd, &range},
         {NULL, NULL, NULL, NULL}
     };
 

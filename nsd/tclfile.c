@@ -37,6 +37,11 @@
 #include "nsd.h"
 
 /*
+ * Static variables defined in this file.
+ */
+static Ns_ObjvValueRange posintRange0 = {0, INT_MAX};
+
+/*
  * Structure handling one registered channel for the [ns_chan] command
  */
 
@@ -171,20 +176,17 @@ Ns_TclGetOpenFd(Tcl_Interp *interp, const char *chanId, int write, int *fdPtr)
 static int
 FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, const char *cmd)
 {
-    int           maxFiles, result;
+    int               maxFiles, result;
+    Ns_ObjvValueRange range = {0, 1000};
+    Ns_ObjvSpec args[] = {
+        {"maxbackups",  Ns_ObjvInt, &maxFiles, &range},
+        {NULL, NULL, NULL, NULL}
+    };
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(cmd != NULL);
 
-    if (objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "file backupMax");
-        result = TCL_ERROR;
-
-    } else if (Tcl_GetIntFromObj(interp, objv[2], &maxFiles) != TCL_OK) {
-        result = TCL_ERROR;
-
-    } else if (maxFiles <= 0 || maxFiles > 1000) {
-        Ns_TclPrintfResult(interp, "invalid max %d: should be > 0 and <= 1000.", maxFiles);
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
@@ -301,8 +303,8 @@ NsTclKillObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"pid",  Ns_ObjvInt, &pid,    NULL},
-        {"sig",  Ns_ObjvInt, &sig,    NULL},
+        {"pid",  Ns_ObjvInt, &pid, NULL},
+        {"sig",  Ns_ObjvInt, &sig, &posintRange0},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -386,12 +388,12 @@ NsTclSymlinkObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 int
 NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    Tcl_Channel     chan;
-    int             nbytes = INT_MAX, result = TCL_OK;
-    char           *fileidString;
-    Ns_ObjvSpec     args[] = {
+    Tcl_Channel       chan;
+    int               nbytes = INT_MAX, result = TCL_OK;
+    char             *fileidString;
+    Ns_ObjvSpec       args[] = {
         {"fileid", Ns_ObjvString, &fileidString, NULL},
-        {"nbytes", Ns_ObjvInt,    &nbytes, NULL},
+        {"nbytes", Ns_ObjvInt,    &nbytes,       &posintRange0},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -437,20 +439,18 @@ NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 int
 NsTclTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    char    *fileString;
-    off_t    length = 0;
-    int      result = TCL_OK;
-
+    char             *fileString;
+    int               length = 0, result = TCL_OK;
     Ns_ObjvSpec args[] = {
         {"file",      Ns_ObjvString, &fileString, NULL},
-        {"?length",   Ns_ObjvInt,    &length,  NULL},
+        {"?length",   Ns_ObjvInt,    &length, &posintRange0},
         {NULL, NULL, NULL, NULL}
     };
 
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
-    } else if (truncate(fileString, length) != 0) {
+    } else if (truncate(fileString, (off_t)length) != 0) {
         Ns_TclPrintfResult(interp, "truncate (\"%s\", %s) failed: %s",
                            fileString,
                            length == 0 ? "0" : Tcl_GetString(objv[2]),
@@ -480,12 +480,11 @@ NsTclTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 int
 NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int         fd, result = TCL_OK;
-    off_t       length = 0;
-    char       *fileIdString;
+    int               fd, length = 0, result = TCL_OK;
+    char             *fileIdString;
     Ns_ObjvSpec args[] = {
         {"fileId",    Ns_ObjvString, &fileIdString, NULL},
-        {"?length",   Ns_ObjvInt,    &length,  NULL},
+        {"?length",   Ns_ObjvInt,    &length,       &posintRange0},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -495,7 +494,7 @@ NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     } else if (Ns_TclGetOpenFd(interp, fileIdString, 1, &fd) != TCL_OK) {
         result = TCL_ERROR;
 
-    } else if (ftruncate(fd, length) != 0) {
+    } else if (ftruncate(fd, (off_t)length) != 0) {
         Ns_TclPrintfResult(interp, "ftruncate (\"%s\", %s) failed: %s",
                            fileIdString,
                            length == 0 ? "0" : Tcl_GetString(objv[2]),

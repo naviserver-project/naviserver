@@ -35,7 +35,7 @@ namespace import -force ::tcltest::*
 
 test ns_reflow_text-1.1 {syntax} -body {
     ns_reflow_text
-} -returnCodes error -result {wrong # args: should be "ns_reflow_text ?-width width? ?-offset offset? ?-prefix prefix? ?--? text"}
+} -returnCodes error -result {wrong # args: should be "ns_reflow_text ?-width width[5,2147483647]? ?-offset offset[0,2147483647]? ?-prefix prefix? ?--? text"}
 
 test ns_reflow_text-1.2 {empty content} -body {
     ns_reflow_text {}

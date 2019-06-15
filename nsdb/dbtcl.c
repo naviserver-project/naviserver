@@ -388,11 +388,12 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
         break;
 
     case GETHANDLE: {
-        int            nhandles = 1;
-        Ns_Time       *timeoutPtr = NULL;
-        Ns_DbHandle  **handlesPtrPtr;
-        Ns_ReturnCode  status;
-        char          *poolString = NULL;
+        int               nhandles = 1;
+        Ns_Time          *timeoutPtr = NULL;
+        Ns_DbHandle     **handlesPtrPtr;
+        Ns_ReturnCode     status;
+        char             *poolString = NULL;
+        Ns_ObjvValueRange handlesRange = {1, INT_MAX};
         Ns_ObjvSpec    opts[] = {
             {"-timeout", Ns_ObjvTime,  &timeoutPtr, NULL},
             {"--",       Ns_ObjvBreak,  NULL,       NULL},
@@ -400,7 +401,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
         };
         Ns_ObjvSpec    args[] = {
             {"?pool",       Ns_ObjvString, &poolString, NULL},
-            {"?nhandles",   Ns_ObjvInt,    &nhandles,  NULL},
+            {"?nhandles",   Ns_ObjvInt,    &nhandles,  &handlesRange},
             {NULL, NULL, NULL, NULL}
         };
 
@@ -425,10 +426,6 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
 
         if (Ns_DbPoolAllowable(idataPtr->server, pool) == NS_FALSE) {
             Ns_TclPrintfResult(interp, "no access to pool: \"%s\"", pool);
-            return TCL_ERROR;
-        }
-        if (nhandles <= 0) {
-            Ns_TclPrintfResult(interp, "invalid nhandles %d: should be greater than 0.", nhandles);
             return TCL_ERROR;
         }
 

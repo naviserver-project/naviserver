@@ -596,9 +596,10 @@ static int
 ServerMaxThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv,
                        ConnPool *poolPtr, int nargs)
 {
-    int             result = TCL_OK, value = 0;
-    Ns_ObjvSpec args[] = {
-        {"?value",   Ns_ObjvInt, &value, NULL},
+    int               result = TCL_OK, value = 0;
+    Ns_ObjvValueRange range = {poolPtr->threads.min, poolPtr->wqueue.maxconns};
+    Ns_ObjvSpec       args[] = {
+        {"?value",   Ns_ObjvInt, &value, &range},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -609,14 +610,9 @@ ServerMaxThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     if (Ns_ParseObjv(NULL, args, interp, objc-nargs, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else if (nargs == 1) {
-        if (value < poolPtr->threads.min || value > poolPtr->wqueue.maxconns) {
-            Ns_TclPrintfResult(interp, "argument is not an integer in valid range: %s", Tcl_GetString(objv[objc-1]));
-            result = TCL_ERROR;
-        } else {
-            Ns_MutexLock(&poolPtr->threads.lock);
-            poolPtr->threads.max = value;
-            Ns_MutexUnlock(&poolPtr->threads.lock);
-        }
+        Ns_MutexLock(&poolPtr->threads.lock);
+        poolPtr->threads.max = value;
+        Ns_MutexUnlock(&poolPtr->threads.lock);
     } else {
         /*
          * Called without an argument, just return the current setting.
@@ -650,9 +646,10 @@ static int
 ServerMinThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv,
                        ConnPool *poolPtr, int nargs)
 {
-    int             result = TCL_OK, value = 0;
-    Ns_ObjvSpec args[] = {
-        {"?value",   Ns_ObjvInt, &value, NULL},
+    int               result = TCL_OK, value = 0;
+    Ns_ObjvValueRange range = {1, poolPtr->threads.max};
+    Ns_ObjvSpec       args[] = {
+        {"?value",   Ns_ObjvInt, &value, &range},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -663,14 +660,9 @@ ServerMinThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     if (Ns_ParseObjv(NULL, args, interp, objc-nargs, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else if (nargs == 1) {
-        if (value < 1 || value > poolPtr->threads.max) {
-            Ns_TclPrintfResult(interp, "argument is not an integer in valid range: %d", value);
-            result = TCL_ERROR;
-        } else {
-            Ns_MutexLock(&poolPtr->threads.lock);
-            poolPtr->threads.min = value;
-            Ns_MutexUnlock(&poolPtr->threads.lock);
-        }
+        Ns_MutexLock(&poolPtr->threads.lock);
+        poolPtr->threads.min = value;
+        Ns_MutexUnlock(&poolPtr->threads.lock);
     } else {
         /*
          * Called without an argument, just return the current setting.

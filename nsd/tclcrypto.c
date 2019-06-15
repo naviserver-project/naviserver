@@ -1471,7 +1471,7 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL, *infoObj = NULL;
     char              *digestName = (char *)"sha256", *outputEncodingString = NULL;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
-
+    Ns_ObjvValueRange  outLengthRange = {0, INT_MAX};
     Ns_ObjvSpec lopts[] = {
         {"-digest",   Ns_ObjvString, &digestName, NULL},
         {"-salt",     Ns_ObjvObj,    &saltObj,    NULL},
@@ -1481,7 +1481,7 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"length", Ns_ObjvInt, &outLength, NULL},
+        {"length", Ns_ObjvInt, &outLength, &outLengthRange},
         {NULL, NULL, NULL, NULL}
     };
     /*
@@ -1525,10 +1525,6 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 
     } else if (infoObj == NULL) {
         Ns_TclPrintfResult(interp, "no -info specified");
-        result = TCL_ERROR;
-
-    } else if (outLength < 1) {
-        Ns_TclPrintfResult(interp, "the specified length must be a positive value");
         result = TCL_ERROR;
 
     } else if (outputEncodingString != NULL
@@ -2720,13 +2716,13 @@ NsTclCryptoRandomBytesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
     int                result, nrBytes = 0;
     char              *outputEncodingString = NULL;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
-
+    Ns_ObjvValueRange  lengthRange = {1, INT_MAX};
     Ns_ObjvSpec lopts[] = {
-        {"-encoding", Ns_ObjvString,  &outputEncodingString, NULL},
+        {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"bytes", Ns_ObjvInt, &nrBytes, NULL},
+        {"bytes", Ns_ObjvInt, &nrBytes, &lengthRange},
         {NULL, NULL, NULL, NULL}
     };
 

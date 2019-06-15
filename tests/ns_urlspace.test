@@ -18,13 +18,13 @@ test ns_urlspace-1.1 {basic operation} -body {
 
 test ns_urlspace-1.2 {basic operation get} -body {
      ns_urlspace get
-} -returnCodes error -result {wrong # args: should be "ns_urlspace get ?-exact? ?-id id? ?-key key? ?-noinherit? URL"}
+} -returnCodes error -result {wrong # args: should be "ns_urlspace get ?-exact? ?-id id[-1,16]? ?-key key? ?-noinherit? URL"}
 test ns_urlspace-1.3 {basic operation set} -body {
      ns_urlspace set
-} -returnCodes error -result {wrong # args: should be "ns_urlspace set ?-id id? ?-key key? ?-noinherit? URL data"}
+} -returnCodes error -result {wrong # args: should be "ns_urlspace set ?-id id[-1,16]? ?-key key? ?-noinherit? URL data"}
 test ns_urlspace-1.4 {basic operation unset} -body {
      ns_urlspace unset
-} -returnCodes error -result {wrong # args: should be "ns_urlspace unset ?-id id? ?-key key? ?-noinherit? ?-recurse? URL"}
+} -returnCodes error -result {wrong # args: should be "ns_urlspace unset ?-id id[-1,16]? ?-key key? ?-noinherit? ?-recurse? URL"}
 test ns_urlspace-1.5 {nothing set} -body {
      ns_urlspace get /
 } -result {}

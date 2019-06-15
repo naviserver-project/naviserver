@@ -394,6 +394,7 @@ static Ns_ArgProc WalkCallback;
 
 static int nextid = 0, defaultTclUrlSpaceId = -1;
 static bool tclUrlSpaces[MAX_URLSPACES] = {NS_FALSE};
+static Ns_ObjvValueRange idRange = {-1, MAX_URLSPACES};
 
 
 
@@ -2325,7 +2326,7 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
     int             exact = (int)NS_FALSE, noinherit = (int)NS_FALSE;
     Ns_ObjvSpec     lopts[] = {
         {"-exact",     Ns_ObjvBool,   &exact,     INT2PTR(NS_TRUE)},
-        {"-id",        Ns_ObjvInt,    &id,        NULL},
+        {"-id",        Ns_ObjvInt,    &id,        &idRange},
         {"-key",       Ns_ObjvString, &key,       NULL},
         {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_TRUE)},
         {NULL, NULL, NULL, NULL}
@@ -2398,7 +2399,7 @@ UrlSpaceListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
     NsServer       *servPtr = itPtr->servPtr;
     int             result = TCL_OK, id = -1;
     Ns_ObjvSpec     lopts[] = {
-        {"-id",  Ns_ObjvInt, &id, NULL},
+        {"-id",  Ns_ObjvInt, &id, &idRange},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -2486,7 +2487,7 @@ UrlSpaceSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
     int             result = TCL_OK, id = -1, noinherit = 0;
     char           *key = (char *)".", *url = (char*)NS_EMPTY_STRING, *data = (char*)NS_EMPTY_STRING;
     Ns_ObjvSpec     lopts[] = {
-        {"-id",        Ns_ObjvInt,    &id,        NULL},
+        {"-id",        Ns_ObjvInt,    &id,        &idRange},
         {"-key",       Ns_ObjvString, &key,       NULL},
         {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_TRUE)},
         {NULL, NULL, NULL, NULL}
@@ -2549,7 +2550,7 @@ UrlSpaceUnsetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     char           *key = (char *)".", *url;
     int             recurse = (int)NS_FALSE, noinherit = (int)NS_FALSE;
     Ns_ObjvSpec     lopts[] = {
-        {"-id",        Ns_ObjvInt,    &id,        NULL},
+        {"-id",        Ns_ObjvInt,    &id,        &idRange},
         {"-key",       Ns_ObjvString, &key,       NULL},
         {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_TRUE)},
         {"-recurse",   Ns_ObjvBool,   &recurse,   INT2PTR(NS_TRUE)},

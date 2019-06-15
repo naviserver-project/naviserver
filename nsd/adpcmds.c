@@ -36,6 +36,11 @@
 #include "nsd.h"
 
 /*
+ * Static variables defined in this file.
+ */
+static Ns_ObjvValueRange posintRange0 = {0, INT_MAX};
+
+/*
  * Local functions defined in this file.
  */
 
@@ -758,10 +763,10 @@ NsTclAdpTellObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 int
 NsTclAdpTruncObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    Tcl_DString *dsPtr;
-    int          length = 0, result = TCL_OK;
+    Tcl_DString      *dsPtr;
+    int               length = 0, result = TCL_OK;
     Ns_ObjvSpec  args[] = {
-        {"?length",  Ns_ObjvInt, &length, NULL},
+        {"?length",  Ns_ObjvInt, &length, &posintRange0},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -925,11 +930,11 @@ NsTclAdpArgcObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 int
 NsTclAdpArgvObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    AdpFrame    *framePtr = NULL;
-    Tcl_Obj     *defaultObj = NULL;
-    int          idx = 0, result = TCL_OK;
-    Ns_ObjvSpec  args[] = {
-        {"?index",   Ns_ObjvInt, &idx,        NULL},
+    AdpFrame         *framePtr = NULL;
+    Tcl_Obj          *defaultObj = NULL;
+    int               idx = 0, result = TCL_OK;
+    Ns_ObjvSpec       args[] = {
+        {"?index",   Ns_ObjvInt, &idx,        &posintRange0},
         {"?default", Ns_ObjvObj, &defaultObj, NULL},
         {NULL, NULL, NULL, NULL}
     };

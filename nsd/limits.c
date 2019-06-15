@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -27,7 +27,7 @@
  * version of this file under either the License or the GPL.
  */
 
-/* 
+/*
  * limits.c --
  *
  *      Routines to manage request resource limits.
@@ -111,7 +111,7 @@ NsGetRequestLimits(NsServer *servPtr, const char *method, const char *url)
     NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(method != NULL);
     NS_NONNULL_ASSERT(url != NULL);
-    
+
     Ns_MutexLock(&lock);
     limitsPtr = NsUrlSpecificGet(servPtr, method, url, limid, 0u, NS_URLSPACE_DEFAULT);
     Ns_MutexUnlock(&lock);
@@ -145,7 +145,7 @@ NsTclGetLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         {"limits", ObjvLimits, &limitsPtr, INT2PTR(NS_FALSE)},
         {NULL, NULL, NULL, NULL}
     };
-    
+
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
@@ -185,12 +185,12 @@ NsTclListLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         Tcl_HashSearch       search;
         const char          *pattern = (objc == 2 ? Tcl_GetString(objv[1]) : NULL);
         Tcl_Obj             *listObj = Tcl_NewListObj(0, NULL);
-        
+
         Ns_MutexLock(&lock);
         hPtr = Tcl_FirstHashEntry(&limtable, &search);
         while (hPtr != NULL) {
             const char *limits = Tcl_GetHashKey(&limtable, hPtr);
-            
+
             if (pattern == NULL || Tcl_StringMatch(limits, pattern) != 0) {
                 Tcl_ListObjAppendElement(interp, listObj,
                                          Tcl_NewStringObj(limits, -1));
@@ -225,15 +225,15 @@ NsTclListLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 int
 NsTclSetLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    NsLimits *limitsPtr;
-    int       maxrun = -1, maxwait = -1, maxupload = -1, timeout = -1, result = TCL_OK;
-
+    NsLimits         *limitsPtr;
+    int               maxrun = -1, maxwait = -1, maxupload = -1, timeout = -1, result = TCL_OK;
+    Ns_ObjvValueRange range = {0, INT_MAX};
     Ns_ObjvSpec opts[] = {
-        {"-maxrun",    Ns_ObjvInt,   &maxrun,    NULL},
-        {"-maxwait",   Ns_ObjvInt,   &maxwait,   NULL},
-        {"-maxupload", Ns_ObjvInt,   &maxupload, NULL},
-        {"-timeout",   Ns_ObjvInt,   &timeout,   NULL},
-        {"--",         Ns_ObjvBreak, NULL,       NULL},
+        {"-maxrun",    Ns_ObjvInt,   &maxrun,    &range},
+        {"-maxwait",   Ns_ObjvInt,   &maxwait,   &range},
+        {"-maxupload", Ns_ObjvInt,   &maxupload, &range},
+        {"-timeout",   Ns_ObjvInt,   &timeout,   &range},
+        {"--",         Ns_ObjvBreak, NULL,       &range},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -342,7 +342,7 @@ FindLimits(const char *limits, int create)
     int            isNew;
 
     NS_NONNULL_ASSERT(limits != NULL);
-    
+
     Ns_MutexLock(&lock);
     if (create == 0) {
         hPtr = Tcl_FindHashEntry(&limtable, limits);
@@ -378,7 +378,7 @@ FindLimits(const char *limits, int create)
  * Side effects:
  *      Will update limitsPtrPtr with pointer to NsLimits or leave
  *      an error message in given interp if no limits found and
- *      create is zero. 
+ *      create is zero.
  *
  *----------------------------------------------------------------------
  */
@@ -391,14 +391,14 @@ ObjvLimits(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *const* 
 
     if (*objcPtr < 1) {
         result = TCL_ERROR;
-        
+
     } else {
         static const char *const limitsType = "ns:limits";
-        
+
         if (Ns_TclGetOpaqueFromObj(objv[0], limitsType, (void **) limitsPtrPtr)
             != TCL_OK) {
             const char *limits = Tcl_GetString(objv[0]);
-            
+
             *limitsPtrPtr = FindLimits(limits, create);
             if (*limitsPtrPtr == NULL) {
                 Ns_TclPrintfResult(interp, "no such limits: %s", limits);
@@ -438,7 +438,7 @@ LimitsResult(Tcl_Interp *interp, const NsLimits *limitsPtr)
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(limitsPtr != NULL);
-    
+
     Ns_DStringInit(&ds);
     Ns_DStringPrintf(&ds, "nrunning %u nwaiting %u"
                      " ntimeout %u ndropped %u noverflow %u"

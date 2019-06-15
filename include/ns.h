@@ -440,6 +440,12 @@ typedef struct Ns_ObjvSpec {
     void            *arg;
 } Ns_ObjvSpec;
 
+typedef struct Ns_ObjvValueRange {
+    Tcl_WideInt minValue;
+    Tcl_WideInt maxValue;
+} Ns_ObjvValueRange;
+
+
 /*
  * The following struct is used to validate options from
  * a choice of values.
