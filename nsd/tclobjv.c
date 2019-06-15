@@ -65,6 +65,12 @@ static void UpdateStringOfMemUnit(Tcl_Obj *objPtr)
 static int SetMemUnitFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static int CheckWideRange(Tcl_Interp *interp, const char *name, Ns_ObjvValueRange *r, Tcl_WideInt value)
+    NS_GNUC_NONNULL(1);
+
+static void AppendRange(Ns_DString *dsPtr, Ns_ObjvValueRange *r)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 /*
  * Static variables defined in this file.
  */
@@ -273,7 +279,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
  *----------------------------------------------------------------------
  */
 static int
-CheckWideRange(Tcl_Interp *interp, Ns_ObjvValueRange *r, Tcl_WideInt value)
+CheckWideRange(Tcl_Interp *interp, const char *name, Ns_ObjvValueRange *r, Tcl_WideInt value)
 {
     int result;
 
@@ -286,10 +292,14 @@ CheckWideRange(Tcl_Interp *interp, Ns_ObjvValueRange *r, Tcl_WideInt value)
         /*
          * Invalid range.
          */
-        Ns_TclPrintfResult(interp, "expected integer in range [%"
-                           TCL_LL_MODIFIER "d,%" TCL_LL_MODIFIER
-                           "d] but got %" TCL_LL_MODIFIER "d",
-                           r->minValue, r->maxValue,  value);
+        Tcl_DString ds, *dsPtr = &ds;
+
+        Tcl_DStringInit(dsPtr);
+        Tcl_DStringAppend(dsPtr, "expected integer in range ", 26);
+        AppendRange(dsPtr, r);
+        Ns_DStringPrintf(dsPtr, " for '%s', but got %" TCL_LL_MODIFIER "d", name, value);
+        Tcl_DStringResult(interp, dsPtr);
+
         result = TCL_ERROR;
     }
     return result;
@@ -328,7 +338,7 @@ Ns_ObjvInt(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 
         result = Tcl_GetIntFromObj(interp, objv[0], dest);
         if (likely(result == TCL_OK)) {
-            if (CheckWideRange(interp, spec->arg, (Tcl_WideInt)*dest) == TCL_OK) {
+            if (CheckWideRange(interp, spec->key, spec->arg, (Tcl_WideInt)*dest) == TCL_OK) {
                 *objcPtr -= 1;
             } else {
                 result = TCL_ERROR;
@@ -387,7 +397,7 @@ Ns_ObjvLong(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 
         result = Tcl_GetLongFromObj(interp, objv[0], dest);
         if (likely(result == TCL_OK)) {
-            if (CheckWideRange(interp, spec->arg, (Tcl_WideInt)*dest) == TCL_OK) {
+            if (CheckWideRange(interp, spec->key, spec->arg, (Tcl_WideInt)*dest) == TCL_OK) {
                 *objcPtr -= 1;
             } else {
                 result = TCL_ERROR;
@@ -413,7 +423,7 @@ Ns_ObjvWideInt(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 
         result = Tcl_GetWideIntFromObj(interp, objv[0], dest);
         if (likely(result == TCL_OK)) {
-            if (CheckWideRange(interp, spec->arg, *dest) == TCL_OK) {
+            if (CheckWideRange(interp, spec->key, spec->arg, *dest) == TCL_OK) {
                 *objcPtr -= 1;
             } else {
                 result = TCL_ERROR;
@@ -1646,8 +1656,24 @@ SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
  *----------------------------------------------------------------------
  */
 
+static void AppendRange(Ns_DString *dsPtr, Ns_ObjvValueRange *r)
+{
+    if (r->minValue == LLONG_MIN) {
+        Tcl_DStringAppend(dsPtr, "[MIN,", 5);
+    } else {
+        Ns_DStringPrintf(dsPtr, "[%" TCL_LL_MODIFIER "d,", r->minValue);
+    }
+
+    if (r->maxValue == LLONG_MAX) {
+        Tcl_DStringAppend(dsPtr, "MAX]", 4);
+    } else {
+        Ns_DStringPrintf(dsPtr, "%" TCL_LL_MODIFIER "d]", r->maxValue);
+    }
+}
+
 static void
-WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
+             int objc, Tcl_Obj *const* objv)
 {
     const Ns_ObjvSpec *specPtr;
     Ns_DString         ds;
@@ -1670,12 +1696,8 @@ WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *inter
                      || specPtr->proc == Ns_ObjvLong
                      || specPtr->proc == Ns_ObjvWideInt
                      ) && specPtr->arg != NULL) {
-                    Ns_ObjvValueRange *r = specPtr->arg;
-
-                    Ns_DStringPrintf(&ds,
-                                     "[%" TCL_LL_MODIFIER "d,%" TCL_LL_MODIFIER "d]",
-                                     r->minValue, r->maxValue);
-               }
+                    AppendRange(&ds, specPtr->arg);
+                }
                 Tcl_DStringAppend(&ds, "? ", 2);
             }
         }
@@ -1688,11 +1710,7 @@ WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *inter
                  || specPtr->proc == Ns_ObjvLong
                  || specPtr->proc == Ns_ObjvWideInt
                  ) && specPtr->arg != NULL) {
-                Ns_ObjvValueRange *r = specPtr->arg;
-
-                Ns_DStringPrintf(&ds,
-                                 "[%" TCL_LL_MODIFIER "d,%" TCL_LL_MODIFIER "d]",
-                                 r->minValue, r->maxValue);
+                AppendRange(&ds, specPtr->arg);
             }
             if (*specPtr->key == '?') {
                 Tcl_DStringAppend(&ds, "?", 1);

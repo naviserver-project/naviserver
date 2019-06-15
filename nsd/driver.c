@@ -5595,10 +5595,12 @@ WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     char       *fileNameString;
     int         headers = 0;
     Tcl_WideInt offset = 0, size = 0;
+    Ns_ObjvValueRange offsetRange = {0, LLONG_MAX};
+    Ns_ObjvValueRange sizeRange = {1, LLONG_MAX};
     Ns_ObjvSpec lopts[] = {
         {"-headers",  Ns_ObjvBool,    &headers, INT2PTR(NS_TRUE)},
-        {"-offset",   Ns_ObjvWideInt, &offset,  NULL},
-        {"-size",     Ns_ObjvWideInt, &size,    NULL},
+        {"-offset",   Ns_ObjvWideInt, &offset,  &offsetRange},
+        {"-size",     Ns_ObjvWideInt, &size,    &sizeRange},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -5637,11 +5639,7 @@ WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
                 Ns_TclPrintfResult(interp, "could not open file '%s'", fileNameString);
                 result = TCL_ERROR;
 
-            } else if (unlikely(size < 0 || size > st.st_size)) {
-                Ns_TclPrintfResult(interp, "size must be a positive value less or equal filesize");
-                result = TCL_ERROR;
-
-            } else if (unlikely(offset < 0 || offset > st.st_size)) {
+            } else if (unlikely(offset > st.st_size)) {
                 Ns_TclPrintfResult(interp, "offset must be a positive value less or equal filesize");
                 result = TCL_ERROR;
 

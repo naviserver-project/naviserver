@@ -1141,10 +1141,11 @@ HttpQueue(
     Ns_Time    *timeoutPtr = NULL;
     Tcl_WideInt bodySize = 0;
     Tcl_Channel bodyChan = NULL, spoolChan = NULL;
+    Ns_ObjvValueRange sizeRange = {0, LLONG_MAX};
 
     Ns_ObjvSpec opts[] = {
         {"-body",             Ns_ObjvObj,     &bodyObj,        NULL},
-        {"-body_size",        Ns_ObjvWideInt, &bodySize,       NULL},
+        {"-body_size",        Ns_ObjvWideInt, &bodySize,       &sizeRange},
         {"-body_file",        Ns_ObjvString,  &bodyFileName,   NULL},
         {"-body_chan",        Ns_ObjvString,  &bodyChanName,   NULL},
         {"-cafile",           Ns_ObjvString,  &caFile,         NULL},
@@ -1184,9 +1185,6 @@ HttpQueue(
     } else if (((bodyFileName != NULL) + (bodyChanName != NULL) + (bodyObj != NULL)) > 1) {
         Ns_TclPrintfResult(interp, "only one of -body, -body_chan or -body_file"
                            " options are allowed");
-        result = TCL_ERROR;
-    } else if (bodySize < 0) {
-        Ns_TclPrintfResult(interp, "option -body_size must have a positive value");
         result = TCL_ERROR;
     }
 

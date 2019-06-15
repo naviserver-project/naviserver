@@ -568,9 +568,8 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                 /*
                  * These commands require a set and key/value index.
                  */
-                int i;
                 Ns_ObjvValueRange idxRange = {0, (Tcl_WideInt)Ns_SetSize(set)};
-                int               oc = 1;
+                int               i, oc = 1;
                 Ns_ObjvSpec       spec = {"?idx", Ns_ObjvInt, &i, &idxRange};
 
                 if (unlikely(objc != 4)) {

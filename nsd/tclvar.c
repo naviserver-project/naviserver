@@ -1523,7 +1523,7 @@ NsTclNsvBucketObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
 {
     const NsInterp   *itPtr = clientData;
     const NsServer   *servPtr = itPtr->servPtr;
-    int               bucketNr = -1, i, result = TCL_OK;
+    int               bucketNr = -1, result = TCL_OK;
     Ns_ObjvValueRange bucketRange = {0, servPtr->nsv.nbuckets};
     Ns_ObjvSpec       args[] = {
         {"?bucket-number", Ns_ObjvInt,  &bucketNr, &bucketRange},
@@ -1535,6 +1535,7 @@ NsTclNsvBucketObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
 
     } else {
         Tcl_Obj *resultObj;
+        int      i;
 
         /* 
          * LOCK for servPtr->nsv ? 

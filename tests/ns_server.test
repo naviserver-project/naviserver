@@ -116,7 +116,7 @@ test ns_server-2.3.2 {query modified minthreads} -body {
 
 test ns_server-2.3.3 {provided too large minthreads value} -body {
     ns_server minthreads 100
-} -returnCodes error -result {expected integer in range [1,10] but got 100}
+} -returnCodes error -result {expected integer in range [1,10] for '?minthreads', but got 100}
 
 test ns_server-2.3.4.1 {query alternate pool from default server} -body {
     ns_server -pool emergency maxthreads

@@ -2141,9 +2141,12 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
             Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)connPtr->nContentSent));
 
         } else if (objc == 3) {
-            Tcl_WideInt sent;
+            Tcl_WideInt       sent;
+            Ns_ObjvValueRange sentRange = {0, LLONG_MAX};
+            Ns_ObjvSpec       spec = {"?idx", Ns_ObjvWideInt, &sent, &sentRange};
+            int               oc = 1;
 
-            if (Tcl_GetWideIntFromObj(interp, objv[2], &sent) != TCL_OK) {
+            if (Ns_ObjvWideInt(&spec, interp, &oc, &objv[2]) != TCL_OK) {
                 result = TCL_ERROR;
             } else {
                 connPtr->nContentSent = (size_t)sent;

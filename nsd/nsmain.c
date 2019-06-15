@@ -1018,14 +1018,15 @@ NsTclShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 {
     int         sig = NS_SIGTERM, result = TCL_OK;
     long        timeout = 0;
+    Ns_ObjvValueRange timeoutRange = {0, LONG_MAX};
     Ns_ObjvSpec opts[] = {
         {"-restart", Ns_ObjvBool,  &sig, INT2PTR(NS_SIGINT)},
         {"--",       Ns_ObjvBreak, NULL, NULL},
         {NULL,       NULL,         NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"?timeout", Ns_ObjvLong, &timeout, NULL},
-        {NULL,       NULL,       NULL,     NULL}
+        {"?timeout", Ns_ObjvLong, &timeout, &timeoutRange},
+        {NULL,       NULL,        NULL,     NULL}
     };
 
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {

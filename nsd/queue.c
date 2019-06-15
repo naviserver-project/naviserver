@@ -599,7 +599,7 @@ ServerMaxThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     int               result = TCL_OK, value = 0;
     Ns_ObjvValueRange range = {poolPtr->threads.min, poolPtr->wqueue.maxconns};
     Ns_ObjvSpec       args[] = {
-        {"?value",   Ns_ObjvInt, &value, &range},
+        {"?maxthreads",   Ns_ObjvInt, &value, &range},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -649,7 +649,7 @@ ServerMinThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     int               result = TCL_OK, value = 0;
     Ns_ObjvValueRange range = {1, poolPtr->threads.max};
     Ns_ObjvSpec       args[] = {
-        {"?value",   Ns_ObjvInt, &value, &range},
+        {"?minthreads", Ns_ObjvInt, &value, &range},
         {NULL, NULL, NULL, NULL}
     };
 

@@ -372,7 +372,7 @@ test byteranges-5.2.1 {ns_writer range reply - wrong offset} \
     }} -body {
         nstest::http -getbody 1 \
             GET /tclresp
-    } -result {200 {offset must be a positive value less or equal filesize}}
+    } -result {200 {expected integer in range [0,MAX] for '-offset', but got -1}}
 
 test byteranges-5.2.2 {ns_writer range reply - wrong offset} \
     -constraints serverListen -setup { ns_register_proc GET /tclresp {
@@ -390,7 +390,7 @@ test byteranges-5.2.3 {ns_writer range reply - wrong size} \
     }} -body {
         nstest::http -getbody 1 \
             GET /tclresp
-    } -result {200 {size must be a positive value less or equal filesize}}
+    } -result {200 {offset + size must be less or equal filesize}}
 
 test byteranges-5.2.4 {ns_writer range reply - wrong size} \
     -constraints serverListen -setup { ns_register_proc GET /tclresp {
@@ -399,7 +399,7 @@ test byteranges-5.2.4 {ns_writer range reply - wrong size} \
     }} -body {
         nstest::http -getbody 1 \
             GET /tclresp
-    } -result {200 {size must be a positive value less or equal filesize}}
+    } -result {200 {expected integer in range [1,MAX] for '-size', but got -1}}
 
 test byteranges-5.2.5 {ns_writer range reply - wrong offset + size} \
     -constraints serverListen -setup { ns_register_proc GET /tclresp {

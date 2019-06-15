@@ -69,6 +69,7 @@ static Tcl_ObjType timeType = {
 };
 
 static const Tcl_ObjType *intTypePtr;
+static Ns_ObjvValueRange poslongRange0 = {0, LONG_MAX};
 
 
 
@@ -306,8 +307,8 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     case TMakeIdx:
         {
             Ns_ObjvSpec   largs[] = {
-                {"sec",   Ns_ObjvLong, &resultTime.sec, NULL},
-                {"?usec", Ns_ObjvLong, &resultTime.usec, NULL},
+                {"sec",   Ns_ObjvLong, &resultTime.sec,  &poslongRange0},
+                {"?usec", Ns_ObjvLong, &resultTime.usec, &poslongRange0},
                 {NULL, NULL, NULL, NULL}
             };
 
@@ -325,8 +326,8 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
             Ns_Time       *tPtr;
             Ns_ObjvSpec    largs[] = {
                 {"time",  Ns_ObjvTime, &tPtr,  NULL},
-                {"sec",   Ns_ObjvLong, &t2.sec,  NULL},
-                {"?usec", Ns_ObjvLong, &t2.usec, NULL},
+                {"sec",   Ns_ObjvLong, &t2.sec,  &poslongRange0},
+                {"?usec", Ns_ObjvLong, &t2.usec, &poslongRange0},
                 {NULL, NULL, NULL, NULL}
             };
 
@@ -555,38 +556,36 @@ NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 int
 NsTclStrftimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    long        sec;
-    int         rc = TCL_OK;
+    int               result = TCL_OK;
+    long              sec;
+    char             *fmt = (char *)"%c";
+    Ns_ObjvValueRange range = {0, LONG_MAX};
+    Ns_ObjvSpec  args[] = {
+        {"time", Ns_ObjvLong, &sec, &range},
+        {"?fmt", Ns_ObjvInt,  &fmt, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (objc != 2 && objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "time ?fmt?");
-        rc = TCL_ERROR;
-    } else if (Tcl_GetLongFromObj(interp, objv[1], &sec) != TCL_OK) {
-        rc = TCL_ERROR;
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
     } else {
-        const char *fmt;
         char        buf[200];
         size_t      bufLength;
         time_t      t;
 
         t = sec;
-        if (objc > 2) {
-            fmt = Tcl_GetString(objv[2]);
-        } else {
-            fmt = "%c";
-        }
-
         bufLength = strftime(buf, sizeof(buf), fmt, ns_localtime(&t));
         if (unlikely(bufLength == 0u)) {
             Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "invalid time: ",
                                    Tcl_GetString(objv[1]), (char *)0L);
-            rc = TCL_ERROR;
+            result = TCL_ERROR;
         } else {
             Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, (int)bufLength));
         }
     }
 
-    return rc;
+    return result;
 }
 
 
