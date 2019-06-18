@@ -2833,19 +2833,21 @@ HttpProc(
                      * body if any expected, or switch to the next
                      * socket state (read stuff from the remote).
                      */
-                    logMsg = "HttpProc NS_SOCK_WRITE all data sent";
+                    logMsg = "HttpProc NS_SOCK_WRITE headers sent";
                     httpPtr->next = NULL;
                     Tcl_DStringSetLength(&httpPtr->ds, 0);
 
                     if (httpPtr->bodyFileFd != NS_INVALID_FD) {
                         httpPtr->sendSpoolMode = NS_TRUE;
-                        Ns_Log(Ns_LogTaskDebug, "%s, spool using fd:%d",
-                               logMsg, httpPtr->bodyFileFd);
+                        Ns_Log(Ns_LogTaskDebug, "%s, spool using fd:%d, size:%"
+                               PRIuz, logMsg, httpPtr->bodyFileFd,
+                               httpPtr->bodySize);
 
                     } else if (httpPtr->bodyChan != NULL) {
                         httpPtr->sendSpoolMode = NS_TRUE;
-                        Ns_Log(Ns_LogTaskDebug, "%s, spool using chan:%s",
-                               logMsg, Tcl_GetChannelName(httpPtr->bodyChan));
+                        Ns_Log(Ns_LogTaskDebug, "%s, spool using chan:%s, size:%"
+                               PRIuz, logMsg, Tcl_GetChannelName(httpPtr->bodyChan),
+                               httpPtr->bodySize);
 
                     } else {
                         httpPtr->sendSpoolMode = NS_FALSE;
@@ -2972,14 +2974,29 @@ HttpProc(
                                " full chunk, bytes:%" PRIdz, sent);
                     }
 
+                    Tcl_DStringSetLength(&httpPtr->ds, 0);
+                    httpPtr->next = NULL;
+
                     /*
-                     * This condition is true on the last chunk.
+                     * This condition is true on the last chunk,
+                     * or on the EOF.
                      * Therefore assume end of body and switch
                      * to the socket read state.
                      */
-                    if (toRead < CHUNK_SIZE) {
-                        Tcl_DStringSetLength(&httpPtr->ds, 0);
-                        httpPtr->next = NULL;
+                    if (toRead < CHUNK_SIZE || toSend == 0) {
+                        if (httpPtr->bodySize > 0) {
+
+                            /*
+                             * We read less then expected from the source
+                             * so what to do?
+                             * We cannot rectify Content-Length any more.
+                             * This situation can only happen WHEN fed with
+                             * the wrong (too large) bodySize OR when the
+                             * file got truncated while we read it.
+                             */
+                            Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE"
+                                   " short read, left:%" PRIuz, httpPtr->bodySize);
+                        }
                         Ns_TaskCallback(task, NS_SOCK_READ, toutPtr);
                     }
 
