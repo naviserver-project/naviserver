@@ -508,12 +508,17 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
                 nRead = got;
                 sockState = NS_SOCK_DONE;
                 break;
+            } else {
+                const char *ioerr;
+
+                ioerr = ns_sockstrerror(ns_sockerrno);
+                Ns_Log(Debug, "SSL_read ERROR_SYSCALL %s", ioerr);
             }
             /* FALL-THROUGH */
 
         default:
-            Ns_Log(Debug, "SSL_read error (received:%d, got:%d, err:%d,"
-                   " get_error:%lu)", n, got, err, ERR_get_error());
+            Ns_Log(Debug, "SSL_read error received:%d, got:%d, err:%d,"
+                   " get_error:%lu", n, got, err, ERR_get_error());
             SSL_set_shutdown(sslPtr, SSL_RECEIVED_SHUTDOWN);
             nRead = -1;
             break;
@@ -565,6 +570,8 @@ Ns_SSLSendBufs2(SSL *ssl, const struct iovec *bufs, int nbufs)
 
     if (nbufs > 1) {
         Ns_Fatal("Ns_SSLSendBufs2: can handle at most one buffer at the time");
+    } else if (bufs[0].iov_len == 0) {
+        sent = 0;
     } else {
         int  err;
 
@@ -573,8 +580,13 @@ Ns_SSLSendBufs2(SSL *ssl, const struct iovec *bufs, int nbufs)
 
         if (err == SSL_ERROR_WANT_WRITE) {
             sent = 0;
+        } else if (err == SSL_ERROR_SYSCALL) {
+            const char *ioerr;
+
+            ioerr = ns_sockstrerror(ns_sockerrno);
+            Ns_Log(Debug, "SSL_write ERROR_SYSCALL %s", ioerr);
         } else if (err != SSL_ERROR_NONE) {
-            Ns_Log(Notice, "Ns_SSLSendBufs2 sent %ld, error %d", sent, err);
+            Ns_Log(Debug, "SSL_write: sent:%ld, error:%d", sent, err);
         }
     }
 
