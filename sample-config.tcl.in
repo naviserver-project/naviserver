@@ -696,6 +696,18 @@ ns_section	"ns/server/${servername}/vhost" {
 #  3. Map method/URL combinations to the pools
 #
 #  All unmapped method/URL's will go to the default server pool.
+#
+# The following parameters can be configured per pool:
+#
+#       map
+#       maxconnections
+#       connsperthread
+#       maxthreads
+#       minthreads
+#       threadtimeout
+#       highwatermark
+#       lowwatermark
+#
 ########################################################################
 
 ns_section	"ns/server/server1/pools" {

@@ -426,6 +426,69 @@ ns_section ns/server/${server} {
     #ns_param    extraheaders    {...}
 }
 
+########################################################################
+# Connection thread pools.
+#
+#  Per default, NaviServer uses a "default" connection pool, which
+#  needs no extra configuration.  Optionally, multiple connection
+#  thread pools can be configured using the following parameters.
+#
+#       map
+#       maxconnections
+#       connsperthread
+#       maxthreads
+#       minthreads
+#       threadtimeout
+#       highwatermark
+#	lowwatermark
+#
+# In order to define thread pools, do the following:
+#
+#  1. Add pool names to "ns/server/${server}/pools"
+#  2. Configure pools with the noted parameters
+#  3. Map method/URL combinations for these pools
+#
+#  All unmapped method/URL's will go to the default server pool of the
+#  server.
+#
+########################################################################
+
+ns_section "ns/server/${server}/pools" {
+    #
+    # To activate connection thread pools, uncomment one of the
+    # following lines and/or add other pool.
+
+    #ns_param   monitor	"Monitoring actions to check heathiness of the system"
+    #ns_param   fast	"Fast requests, e.g. less than 10ms"
+}
+
+ns_section "ns/server/${server}/pool/monitor" {
+    ns_param   minthreads 2
+    ns_param   maxthreads 2
+
+    ns_param   map "GET /admin/nsstats"
+    ns_param   map "GET /SYSTEM"
+    ns_param   map "GET /ds"
+    ns_param   map "POST /ds"
+    ns_param   map "GET /request-monitor"
+}
+
+ns_section "ns/server/${server}/pool/fast" {
+    ns_param   minthreads 2
+    ns_param   maxthreads 2
+
+    ns_param   map "GET /*.png"
+    ns_param   map "GET /*.PNG"
+    ns_param   map "GET /*.jpg"
+    ns_param   map "GET /*.pdf"
+    ns_param   map "GET /*.gif"
+    ns_param   map "GET /*.mp4"
+    ns_param   map "GET /*.ts"
+    ns_param   map "GET /*.m3u8"
+}
+
+
+
 #---------------------------------------------------------------------
 # Special HTTP pages
 #---------------------------------------------------------------------
