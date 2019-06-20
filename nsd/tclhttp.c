@@ -2833,19 +2833,21 @@ HttpProc(
                      * body if any expected, or switch to the next
                      * socket state (read stuff from the remote).
                      */
-                    logMsg = "HttpProc NS_SOCK_WRITE all data sent";
+                    logMsg = "HttpProc NS_SOCK_WRITE headers sent";
                     httpPtr->next = NULL;
                     Tcl_DStringSetLength(&httpPtr->ds, 0);
 
                     if (httpPtr->bodyFileFd != NS_INVALID_FD) {
                         httpPtr->sendSpoolMode = NS_TRUE;
-                        Ns_Log(Ns_LogTaskDebug, "%s, spool using fd:%d",
-                               logMsg, httpPtr->bodyFileFd);
+                        Ns_Log(Ns_LogTaskDebug, "%s, spool using fd:%d, size:%"
+                               PRIuz, logMsg, httpPtr->bodyFileFd,
+                               httpPtr->bodySize);
 
                     } else if (httpPtr->bodyChan != NULL) {
                         httpPtr->sendSpoolMode = NS_TRUE;
-                        Ns_Log(Ns_LogTaskDebug, "%s, spool using chan:%s",
-                               logMsg, Tcl_GetChannelName(httpPtr->bodyChan));
+                        Ns_Log(Ns_LogTaskDebug, "%s, spool using chan:%s, size:%"
+                               PRIuz, logMsg, Tcl_GetChannelName(httpPtr->bodyChan),
+                               httpPtr->bodySize);
 
                     } else {
                         httpPtr->sendSpoolMode = NS_FALSE;
@@ -2859,6 +2861,7 @@ HttpProc(
 
         } else {
             size_t toRead = CHUNK_SIZE;
+            bool   onEof = NS_FALSE;
 
             /*
              * Send the request body from a file or from a Tcl channel.
@@ -2876,10 +2879,12 @@ HttpProc(
                  */
                 Tcl_DStringSetLength(&httpPtr->ds, (int)toRead);
                 httpPtr->next = httpPtr->ds.string;
-                if (httpPtr->bodySize < toRead) {
-                    toRead = httpPtr->bodySize; /* At end of body! */
+                if (toRead > httpPtr->bodySize) {
+                    toRead = httpPtr->bodySize; /* At end of the body! */
                 }
-                if (httpPtr->bodyFileFd != NS_INVALID_FD) {
+                if (toRead == 0) {
+                    n = 0;
+                } else if (httpPtr->bodyFileFd != NS_INVALID_FD) {
                     n = ns_read(httpPtr->bodyFileFd, httpPtr->next, toRead);
                 } else if (httpPtr->bodyChan != NULL) {
                     n = Tcl_Read(httpPtr->bodyChan, httpPtr->next, (int)toRead);
@@ -2887,28 +2892,24 @@ HttpProc(
                     n = -1; /* Here we could read only from file or chan! */
                 }
 
-                Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sendSpoolMode"
-                       " got:%" PRIdz " wanted:%" PRIuz " bytes", n, toRead);
-
-                if (n > -1 && n < (ssize_t)toRead) {
+                if (toRead == 0 || (n > -1 && n < (ssize_t)toRead)) {
 
                     /*
-                     * We have either a partial read from disk or end of file.
-                     * For the time being, we can't distinguish (should
-                     * probably add total file size to httpPtr) and we assume
-                     * that we have EOF (partial reads on disk reads with
-                     * relatively small chunk sizes are unlikely).
-                     *
-                     * Note that this works as well, when the last buffer is
-                     * equals to CHUNK_SIZE, since the following read will be
-                     * with 0 bytes, causing proper termination.
+                     * We have a short file/chan read which can only mean
+                     * we are at the EOF (we are reading in blocking mode!).
                      */
+                    onEof = NS_TRUE;
                     Tcl_DStringSetLength(&httpPtr->ds, (int)n);
                 }
 
                 if (n > 0) {
+                    assert((size_t)n <= httpPtr->bodySize);
                     httpPtr->bodySize -= (size_t)n;
                 }
+
+                Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sendSpoolMode"
+                       " got:%" PRIdz " wanted:%" PRIuz " bytes, eof:%d",
+                       n, toRead, onEof);
 
             } else {
 
@@ -2931,9 +2932,11 @@ HttpProc(
                 Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE read failed");
 
             } else {
-                ssize_t toSend = n, sent;
+                ssize_t toSend = n, sent = 0;
 
-                sent = HttpTaskSend(httpPtr, httpPtr->next, (size_t)toSend);
+                if (toSend > 0) {
+                    sent = HttpTaskSend(httpPtr, httpPtr->next, (size_t)toSend);
+                }
 
                 Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sent"
                        " %" PRIdz " of %" PRIuz " bytes", sent, toSend);
@@ -2945,15 +2948,20 @@ HttpProc(
                 } else if (sent < toSend) {
 
                     /*
-                     * We have send partial chunk,
-                     * more is left in buffer.
+                     * We have sent less bytes than available
+                     * in the buffer. At this point we may have
+                     * sent zero bytes as well but this is very
+                     * unlikely and would mean we were somehow
+                     * wrongly signalled from the task handler
+                     * (we wrote nothing to a writable sink?).
                      */
 
-                    httpPtr->next += sent;
-                    Ns_MutexLock(&httpPtr->lock);
-                    httpPtr->sent += (size_t)sent;
-                    Ns_MutexUnlock(&httpPtr->lock);
-
+                    if (likely(sent > 0)) {
+                        httpPtr->next += sent;
+                        Ns_MutexLock(&httpPtr->lock);
+                        httpPtr->sent += (size_t)sent;
+                        Ns_MutexUnlock(&httpPtr->lock);
+                    }
                     Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE partial"
                            " send, remain:%ld", (long)(toSend - sent));
 
@@ -2962,7 +2970,7 @@ HttpProc(
                 } else if (sent == toSend) {
 
                     /*
-                     * We have send the complete chunk
+                     * We have sent the whole buffer
                      */
                     if (sent > 0) {
                         Ns_MutexLock(&httpPtr->lock);
@@ -2972,24 +2980,55 @@ HttpProc(
                                " full chunk, bytes:%" PRIdz, sent);
                     }
 
-                    /*
-                     * This condition is true on the last chunk.
-                     * Therefore assume end of body and switch
-                     * to the socket read state.
-                     */
-                    if (toRead < CHUNK_SIZE) {
-                        Tcl_DStringSetLength(&httpPtr->ds, 0);
-                        httpPtr->next = NULL;
-                        Ns_TaskCallback(task, NS_SOCK_READ, toutPtr);
-                    }
+                    Tcl_DStringSetLength(&httpPtr->ds, 0);
+                    httpPtr->next = NULL;
 
                     taskDone = NS_FALSE;
+
+                    /*
+                     * Check if on the last chunk,
+                     * or on the premature EOF.
+                     */
+                    if (toRead < CHUNK_SIZE || onEof == NS_TRUE) {
+                        if (httpPtr->bodySize == 0) {
+
+                            /*
+                             * That was the last chunk.
+                             * All of the body was sent, switch state
+                             */
+                            Ns_TaskCallback(task, NS_SOCK_READ, toutPtr);
+
+                        } else {
+
+                            /*
+                             * We read less then chunksize bytes, the source
+                             * is on EOF, so what to do?  Since we can't
+                             * rectify Content-Length, receiver expects us
+                             * to send more...
+                             * This situation can only happen:
+                             * WHEN fed with the wrong (too large) bodySize
+                             * OR when the file got truncated while we read it
+                             * OR somebody tossed wrongly positioned channel.
+                             * What can we do?
+                             * We can pretend all is fine and go to reading
+                             * state, expecting that either the peer's or
+                             * our own timeout expires.
+                             * Or, we can trigger the error immediately.
+                             * We opt for the latter.
+                             */
+                            httpPtr->error = "read failed";
+                            taskDone = NS_TRUE;
+                            Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE"
+                                   " short read, left:%" PRIuz, httpPtr->bodySize);
+                        }
+                    }
 
                 } else {
 
                     /*
                      * This is completely unexpected: we have send more
                      * then requested? There is something entirely wrong!
+                     * I have no idea what would be the best to do here (ZV).
                      */
                     Ns_Log(Error, "HttpProc NS_SOCK_WRITE bad state?");
                 }

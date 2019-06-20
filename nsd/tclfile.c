@@ -177,8 +177,11 @@ static int
 FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, const char *cmd)
 {
     int               maxFiles, result;
+    Tcl_Obj          *fileObj = NULL;
     Ns_ObjvValueRange range = {0, 1000};
+
     Ns_ObjvSpec args[] = {
+        {"path",        Ns_ObjvObj, &fileObj,  NULL},
         {"maxbackups",  Ns_ObjvInt, &maxFiles, &range},
         {NULL, NULL, NULL, NULL}
     };
@@ -194,15 +197,16 @@ FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, const char *cmd)
          * All parameters are ok.
          */
         Ns_ReturnCode status;
+        const char   *path = Tcl_GetString(fileObj);
 
         if (*cmd == 'p' /* "purge" */ ) {
-            status = Ns_PurgeFiles(Tcl_GetString(objv[1]), maxFiles);
+            status = Ns_PurgeFiles(path, maxFiles);
         } else /* must be "roll" */ {
-            status = Ns_RollFile(Tcl_GetString(objv[1]), maxFiles);
+            status = Ns_RollFile(path, maxFiles);
         }
         if (status != NS_OK) {
             Ns_TclPrintfResult(interp, "could not %s \"%s\": %s",
-                               cmd, Tcl_GetString(objv[1]), Tcl_PosixError(interp));
+                               cmd, path, Tcl_PosixError(interp));
             result = TCL_ERROR;
         } else {
             result = TCL_OK;
