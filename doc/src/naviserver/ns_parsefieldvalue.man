@@ -1,0 +1,55 @@
+[include version_include.man]
+[manpage_begin ns_parsefieldvalue n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Parse the content of a HTTP request or reply header field into its components}]
+
+[description]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_parsefieldvalue] \
+     [opt [option "-lower"]] \
+     [opt [option "-single"]] \
+     [opt [option "-strict"]] \
+     [opt [arg fieldvalue]]
+
+[para] This function parses the provided field value (from an HTTP
+request or reply header field) into its parts and returns these in the
+form of a list of Tcl dicts or a single Tcl dict, when
+[option "-single"] was specified. The syntax for the contents of
+these header fields is specified in RFC 7230 section 3.2.6.
+
+[para] Per default, the command assumes a comma separated list of
+elements, where every element might consist of multiple parts
+separated by a semicolon. When the [option "-lower"] is specified, the
+keys of the returned dicts are converted to lower case.  When the
+[option "-single"] is specified, only the first element of the
+(potentially) comma separated list of elements is returned. When
+[option "-strict"] is specified, then the command is expected to parse
+the full string, otherwise it will just parse as far as possible (when
+e.g. [option "-single"] is used.
+
+[list_end]
+
+[section EXAMPLES]
+
+The following examples are from RFC 7239:
+[example_begin]
+   % ns_parsefieldvalue -lower {For="[lb]2001:db8:cafe::17[lrb]:4711"}
+   {for {[lb]2001:db8:cafe::17[rb]:4711}}
+   
+   % ns_parsefieldvalue {for=192.0.2.43, for=198.51.100.17}
+   {for 192.0.2.43} {for 198.51.100.17}
+   
+   % ns_parsefieldvalue {for=192.0.2.60;proto=http;by=203.0.113.43}
+   {for 192.0.2.60 proto http by 203.0.113.43}
+[example_end]
+
+[see_also ns_parseurl ns_parseheader]
+[keywords "global built-in" parse]
+[manpage_end]
+
+

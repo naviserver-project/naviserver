@@ -1,0 +1,173 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+#######################################################################################
+#  test ns_parsefieldvalue
+#######################################################################################
+
+test ns_parsefieldvalue-1.0 {basic syntax: plain call} -body {
+    ns_parsefieldvalue
+} -returnCodes error -result {wrong # args: should be "ns_parsefieldvalue ?-lower? ?-single? ?-strict? ?--? fieldvalue"}
+
+
+test ns_parsefieldvalue-1.1 {single attribute value pair} -body {
+    ns_parsefieldvalue a=test
+} -result {{a test}}
+
+test ns_parsefieldvalue-1.2 {single attribute value pair with whitespace} -body {
+    ns_parsefieldvalue { a = test }
+} -result {{a test}}
+
+test ns_parsefieldvalue-1.3 {single attribute value pair with quoted string} -body {
+    ns_parsefieldvalue {a="hello world"}
+} -result {{a {hello world}}}
+
+test ns_parsefieldvalue-1.4 {
+    Single attribute value pair with quoted string and surrounding whites space.
+} -body {
+    ns_parsefieldvalue { a = "hello world"    }
+} -result {{a {hello world}}}
+
+test ns_parsefieldvalue-1.5 {
+    single attribute value pair with quoted string containing quote and
+    surrounding whites space.
+} -body {
+    ns_parsefieldvalue { a = "doublequote (\") in string"}
+} -result "{a {doublequote (\") in string}}" ;# written in a style suitable for syntax highlighting
+
+test ns_parsefieldvalue-1.5 {
+    single element with subelements
+} -body {
+    ns_parsefieldvalue {a=1;b=2}
+} -result {{a 1 b 2}}
+
+test ns_parsefieldvalue-1.6 {
+    two elements
+} -body {
+    ns_parsefieldvalue {a=1,b=2}
+} -result {{a 1} {b 2}}
+
+test ns_parsefieldvalue-1.6 {
+    two elements with subvalues
+} -body {
+    ns_parsefieldvalue {a=1;x="aa",b=2;x="bb"}
+} -result {{a 1 x aa} {b 2 x bb}}
+
+test ns_parsefieldvalue-1.7 {
+    two elements, token without value
+} -body {
+    ns_parsefieldvalue {x,y}
+} -result {{x {}} {y {}}}
+
+test ns_parsefieldvalue-1.8 {
+    Strange elements, probably erroneous input, we could as well
+    raise an error.
+} -body {
+    ns_parsefieldvalue {x,,,y}
+} -result {{x {}} {y {}}}
+
+test ns_parsefieldvalue-1.9 {
+    Strange sub-elements, probably erroneous input, we could as well
+    raise an error.
+} -body {
+    ns_parsefieldvalue {x;;;y}
+} -result {{x {} y {}}}
+
+#######################################################################################
+#  test ns_parsefieldvalue with "-single
+#######################################################################################
+
+
+test ns_parsefieldvalue-2.1 {single-option, single attribute value pair} -body {
+    ns_parsefieldvalue -single a=test
+} -result {a test}
+
+test ns_parsefieldvalue-2.2 {single-option, single attribute value pair with whitespace} -body {
+    ns_parsefieldvalue -single { a = test }
+} -result {a test}
+
+
+test ns_parsefieldvalue-2.5 {
+    single-option, single element with sub-elements
+} -body {
+    ns_parsefieldvalue -single {a=1;b=2}
+} -result {a 1 b 2}
+
+test ns_parsefieldvalue-2.6 {
+    single-option, two elements
+} -body {
+    ns_parsefieldvalue -single {a=1,b=2}
+} -result {a 1}
+
+test ns_parsefieldvalue-2.7 {
+    single-option, two elements with subvalues
+} -body {
+    ns_parsefieldvalue -single  {a=1;x="aa",b=2;x="bb"}
+} -result {a 1 x aa}
+
+test ns_parsefieldvalue-2.8 {
+    single-option, two elements, token without value
+} -body {
+    ns_parsefieldvalue -single {x,y}
+} -result {x {}}
+
+test ns_parsefieldvalue-2.9 {
+    single-option, two elements
+} -body {
+    ns_parsefieldvalue -single -strict {a=1,b=2}
+} -returnCodes error -result {unparsed content ',b=2'}
+
+
+#######################################################################################
+#  test ns_parsefieldvalue with application examples
+#######################################################################################
+
+test ns_parsefieldvalue-3.1 {
+    example from https://tools.ietf.org/html/rfc7239#section-4
+} -body {
+    ns_parsefieldvalue {For="[2001:db8:cafe::17]:4711"}
+} -result {{For {[2001:db8:cafe::17]:4711}}}
+
+test ns_parsefieldvalue-3.1l {
+    example from https://tools.ietf.org/html/rfc7239#section-4
+} -body {
+    ns_parsefieldvalue -lower {For="[2001:db8:cafe::17]:4711"}
+} -result {{for {[2001:db8:cafe::17]:4711}}}
+
+test ns_parsefieldvalue-3.2 {
+    example from https://tools.ietf.org/html/rfc7239#section-4
+} -body {
+    ns_parsefieldvalue {for=192.0.2.43, for=198.51.100.17}
+} -result {{for 192.0.2.43} {for 198.51.100.17}}
+
+test ns_parsefieldvalue-3.3 {
+    example from https://tools.ietf.org/html/rfc7239#section-4
+} -body {
+    ns_parsefieldvalue {for=192.0.2.60;proto=http;by=203.0.113.43}
+} -result {{for 192.0.2.60 proto http by 203.0.113.43}}
+
+test ns_parsefieldvalue-3.4 {
+    example from https://tools.ietf.org/html/rfc7239#section-4
+} -body {
+    ns_parsefieldvalue {for=192.0.2.60;proto=http;by=203.0.113.43, for=137.208.51.1}
+} -result {{for 192.0.2.60 proto http by 203.0.113.43} {for 137.208.51.1}}
+
+test ns_parsefieldvalue-4.1 {
+    cookie example (no comma list, just semicolons
+} -body {
+    set fields [ns_parsefieldvalue -single {ad_session_id="3172357147%2c143022%2c1%2c1560966742%20{136%200%2002728CD09ABBAAE5B4A2CEF236E268AB8BBCD3DB}"; RT="r=https%3A%2F%2Fopenacs.org%2Fhttps%3A%2F%2Fopenacs.org%2Fxowiki%2F%3F291d3a13cc8dc5b62fef09e4c483f682&ul=1560966855299"; cookieconsent_status-2449=dismiss; ad_user_login_secure="143022%2c1560965833%2c958C876D0%2c1560965833%2c1%20{250%200%20F88FCA6CF15B2E0480594D4E33C9EF143EDFF6AE}"; ad_user_login="143022%2c1560965833%2c958C876D0%2c1%20{622%200%2044B1436DAE9AEFEE4DDDE788A9AAB5612DFBAE79}"; ad_secure_token="3172357147%2c1560965833%2c62.46.166.29%20{135%201561570633%20FB936D953E7CD4B965FFA3530EB805590A811692}"}]
+    return [dict keys $fields]
+} -result {ad_session_id RT cookieconsent_status-2449 ad_user_login_secure ad_user_login ad_secure_token}
+
+
+
+#
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

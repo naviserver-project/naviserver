@@ -1278,6 +1278,7 @@ NS_EXTERN Tcl_ObjCmdProc
     NsTclNsvUnsetObjCmd,
     NsTclPagePathObjCmd,
     NsTclParseArgsObjCmd,
+    NsTclParseFieldvalue,
     NsTclParseHeaderObjCmd,
     NsTclParseHttpTimeObjCmd,
     NsTclParseQueryObjCmd,

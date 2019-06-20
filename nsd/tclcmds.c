@@ -115,6 +115,7 @@ static const Cmd basicCmds[] = {
     {"ns_normalizepath",         NULL, NsTclNormalizePathObjCmd},
     {"ns_pagepath",              NULL, NsTclPagePathObjCmd},
     {"ns_parseargs",             NULL, NsTclParseArgsObjCmd},
+    {"ns_parsefieldvalue",       NULL, NsTclParseFieldvalue},
     {"ns_parseheader",           NULL, NsTclParseHeaderObjCmd},
     {"ns_parsehttptime",         NULL, NsTclParseHttpTimeObjCmd},
     {"ns_parsequery",            NULL, NsTclParseQueryObjCmd},
@@ -159,6 +160,7 @@ static const Cmd basicCmds[] = {
     {"ns_uudecode",              NULL, NsTclBase64DecodeObjCmd},
     {"ns_uuencode",              NULL, NsTclBase64EncodeObjCmd},
     {"ns_writefp",               NULL, NsTclWriteFpObjCmd},
+
     /*
      * Add more basic Tcl commands here.
      */

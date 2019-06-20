@@ -41,8 +41,8 @@ following elements: [term proto], [term host], [term port],
    path foo tail bar.html
 [example_end]
 
-[see_also ns_absoluteurl]
-[keywords "global built-in" url]
+[see_also ns_absoluteurl ns_parsefieldvalue ns_parseheader]
+[keywords "global built-in" url parse]
 [manpage_end]
 
 

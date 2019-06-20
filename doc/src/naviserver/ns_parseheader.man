@@ -30,8 +30,8 @@ This function parses the HTTP header specified by header into an ns_set specifie
 [example_end]
 
 
-[see_also nsd]
-[keywords "global built-in" NaviServer]
+[see_also nsd ns_parseurl ns_parsefieldvalue]
+[keywords "global built-in" NaviServer parse]
 [manpage_end]
 
 

@@ -393,6 +393,7 @@ List of all currently available NaviServer commands.
 [call [cmd ns_urldecode]]
 [call [cmd ns_urlencode]]
 [call [cmd ns_parseurl]]
+[call [cmd ns_parsefieldvalue]]
 [call [cmd ns_absoluteurl]]
 [list_end]
 
