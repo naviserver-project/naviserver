@@ -1,0 +1,27 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+#######################################################################################
+#  test ns_parsefieldvalue
+#######################################################################################
+
+test ns_random-1.0 {ns_rand with 1 arg - integer} -body {
+    set rand [ns_rand 10]
+    return [list [expr {$rand < 10}] [string is integer -strict $rand] ]
+} -result {1 1}
+
+test ns_random-1.1 {ns_rand with 0 arg - float} -body {
+    set rand [ns_rand]
+    return [list [expr {$rand < 1}] [string is double -strict $rand] ]
+} -result {1 1}
+
+#
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:
