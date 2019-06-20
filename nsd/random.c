@@ -99,18 +99,17 @@ NsTclRandObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     int               maxValue = -1, result = TCL_OK;
     Ns_ObjvValueRange range = {1, INT_MAX};
     Ns_ObjvSpec       args[] = {
-        {"?maximum", Ns_ObjvInt, &maxValue,&range},
+        {"?maximum", Ns_ObjvInt, &maxValue, &range},
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
         double d = Ns_DRand();
 
         if (maxValue != -1) {
-
             Tcl_SetObjResult(interp, Tcl_NewIntObj((int) (d * (double)maxValue)));
         }  else {
             Tcl_SetObjResult(interp, Tcl_NewDoubleObj(d));
