@@ -1973,7 +1973,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
 
             } else {
                 int               length;
-                Ns_ObjvValueRange lengthRange = {1, ((Tcl_WideInt)connPtr->reqPtr->length - offset)};
+                Ns_ObjvValueRange lengthRange = {0, ((Tcl_WideInt)connPtr->reqPtr->length - offset)};
                 Ns_ObjvSpec       specLength = {"length", Ns_ObjvInt, &length, &lengthRange};
 
                 if (Ns_ObjvInt(&specLength, interp, &oc, &objv[3]) != TCL_OK) {
