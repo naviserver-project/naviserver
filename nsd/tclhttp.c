@@ -2952,7 +2952,7 @@ HttpProc(
                      * in the buffer. At this point we may have
                      * sent zero bytes as well but this is very
                      * unlikely and would mean we were somehow
-                     * wrongly signalled from the task handler
+                     * wrongly signaled from the task handler
                      * (we wrote nothing to a writable sink?).
                      */
 
