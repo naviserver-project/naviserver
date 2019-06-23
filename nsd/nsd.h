@@ -112,43 +112,7 @@ typedef enum {
  */
 
 #define NSD_TEXTHTML                   "text/html"
-/*
- * Constants for SockState return and reason codes.
- */
 
-typedef enum {
-    SOCK_READY =               0,
-    SOCK_MORE =                1,
-    SOCK_SPOOL =               2,
-    SOCK_ERROR =              -1,
-    SOCK_CLOSE =              -2,
-    SOCK_CLOSETIMEOUT =       -3,
-    SOCK_READTIMEOUT =        -4,
-    SOCK_WRITETIMEOUT =       -5,
-    SOCK_READERROR =          -6,
-    SOCK_WRITEERROR =         -7,
-    SOCK_SHUTERROR =          -8,
-    SOCK_BADREQUEST =         -9,
-    SOCK_ENTITYTOOLARGE =     -10,
-    SOCK_BADHEADER =          -11,
-    SOCK_TOOMANYHEADERS =     -12
-} SockState;
-
-/*
- * Subset for spooler states
- */
-typedef enum {
-    SPOOLER_CLOSE =             SOCK_CLOSE,
-    SPOOLER_OK =                SOCK_READY,
-    SPOOLER_READERROR =         SOCK_READERROR,
-    SPOOLER_WRITEERROR =        SOCK_WRITEERROR,
-    SPOOLER_CLOSETIMEOUT =      SOCK_CLOSETIMEOUT
-} SpoolerState;
-
-typedef struct {
-    SpoolerState spoolerState;
-    SockState    sockState;
-} SpoolerStateMap;
 
 /*
  * Types definitions.
@@ -156,6 +120,7 @@ typedef struct {
 
 struct Sock;
 struct NsServer;
+typedef struct NsWriterSock NsWriterSock;
 
 struct nsconf {
     const char *argv0;
@@ -248,52 +213,6 @@ typedef struct FileMap {
     void *mapobj;               /* Mapping object (Win32 only) */
 #endif
 } FileMap;
-
-/*
- * The following structure maintains writer socket
- */
-typedef struct WriterSock {
-    struct WriterSock   *nextPtr;
-    struct Sock         *sockPtr;
-    struct SpoolerQueue *queuePtr;
-    struct Conn         *connPtr;
-    SpoolerState         status;
-    int                  err;
-    int                  refCount;
-    unsigned int         flags;
-    Tcl_WideInt          nsent;
-    size_t               size;
-    NsWriterStreamState  doStream;
-    int                  fd;
-    char                *headerString;
-
-    union {
-        struct {
-            struct iovec      *bufs;                 /* incoming bufs to be sent */
-            int                nbufs;
-            int                bufIdx;
-            struct iovec       sbufs[UIO_SMALLIOV];  /* scratch bufs for handling partial sends */
-            int                nsbufs;
-            int                sbufIdx;
-            struct iovec       preallocated_bufs[UIO_SMALLIOV];
-            struct FileMap     fmap;
-        } mem;
-
-        struct {
-            size_t             maxsize;
-            size_t             bufsize;
-            off_t              bufoffset;
-            size_t             toRead;
-            unsigned char     *buf;
-            Ns_Mutex           fdlock;
-        } file;
-    } c;
-
-    char              *clientData;
-    Ns_Time            startTime;
-    bool               keep;
-
-} WriterSock;
 
 /*
  * The following structure maintains a queue of sockets for
@@ -673,7 +592,7 @@ typedef struct Conn {
     int keep;                /* bool or -1 if undefined */
 
     int fd;
-    WriterSock *strWriter;
+    NsWriterSock *strWriter;
 
     Ns_CompressStream cStream;
     int requestCompress;
@@ -1476,7 +1395,7 @@ NS_EXTERN Request *NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
 NS_EXTERN void NsWriterLock(void);
 NS_EXTERN void NsWriterUnlock(void);
 
-NS_EXTERN void NsWriterFinish(WriterSock *wrSockPtr)
+NS_EXTERN void NsWriterFinish(NsWriterSock *wrSockPtr)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode NsWriterQueue(

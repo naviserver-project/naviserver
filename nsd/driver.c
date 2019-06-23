@@ -44,6 +44,44 @@
 #define DRIVER_SHUTDOWN          4u
 #define DRIVER_FAILED            8u
 
+
+/*
+ * Constants for SockState return and reason codes.
+ */
+
+typedef enum {
+    SOCK_READY =               0,
+    SOCK_MORE =                1,
+    SOCK_SPOOL =               2,
+    SOCK_ERROR =              -1,
+    SOCK_CLOSE =              -2,
+    SOCK_CLOSETIMEOUT =       -3,
+    SOCK_READTIMEOUT =        -4,
+    SOCK_WRITETIMEOUT =       -5,
+    SOCK_READERROR =          -6,
+    SOCK_WRITEERROR =         -7,
+    SOCK_SHUTERROR =          -8,
+    SOCK_BADREQUEST =         -9,
+    SOCK_ENTITYTOOLARGE =     -10,
+    SOCK_BADHEADER =          -11,
+    SOCK_TOOMANYHEADERS =     -12
+} SockState;
+
+/*
+ * Subset for spooler states
+ */
+typedef enum {
+    SPOOLER_CLOSE =             SOCK_CLOSE,
+    SPOOLER_OK =                SOCK_READY,
+    SPOOLER_READERROR =         SOCK_READERROR,
+    SPOOLER_WRITEERROR =        SOCK_WRITEERROR,
+    SPOOLER_CLOSETIMEOUT =      SOCK_CLOSETIMEOUT
+} SpoolerState;
+
+typedef struct {
+    SpoolerState spoolerState;
+    SockState    sockState;
+} SpoolerStateMap;
 /*
  * ServerMap maintains Host header to server mappings.
  */
@@ -79,6 +117,52 @@ typedef struct PollData {
 #define PollHup(ppd, i)          (((ppd)->pfds[(i)].revents & POLLHUP) == POLLHUP)
 
 /*
+ * The following structure maintains writer socket
+ */
+typedef struct WriterSock {
+    struct WriterSock   *nextPtr;
+    struct Sock         *sockPtr;
+    struct SpoolerQueue *queuePtr;
+    struct Conn         *connPtr;
+    SpoolerState         status;
+    int                  err;
+    int                  refCount;
+    unsigned int         flags;
+    Tcl_WideInt          nsent;
+    size_t               size;
+    NsWriterStreamState  doStream;
+    int                  fd;
+    char                *headerString;
+
+    union {
+        struct {
+            struct iovec      *bufs;                 /* incoming bufs to be sent */
+            int                nbufs;
+            int                bufIdx;
+            struct iovec       sbufs[UIO_SMALLIOV];  /* scratch bufs for handling partial sends */
+            int                nsbufs;
+            int                sbufIdx;
+            struct iovec       preallocated_bufs[UIO_SMALLIOV];
+            struct FileMap     fmap;
+        } mem;
+
+        struct {
+            size_t             maxsize;
+            size_t             bufsize;
+            off_t              bufoffset;
+            size_t             toRead;
+            unsigned char     *buf;
+            Ns_Mutex           fdlock;
+        } file;
+    } c;
+
+    char              *clientData;
+    Ns_Time            startTime;
+    bool               keep;
+
+} WriterSock;
+
+/*
  * Async writer definitions
  */
 
@@ -87,7 +171,9 @@ typedef struct AsyncWriter {
     SpoolerQueue *firstPtr;    /* List of writer threads */
 } AsyncWriter;
 
-/* AsyncWriteData is similar to WriterSock */
+/*
+ * AsyncWriteData is similar to WriterSock
+ */
 typedef struct AsyncWriteData {
     struct AsyncWriteData *nextPtr;
     char                  *data;
@@ -198,6 +284,7 @@ static void AsyncWriterRelease(AsyncWriteData *wdPtr)
 
 static void WriteError(const char *msg, int fd, size_t wantWrite, ssize_t written)
     NS_GNUC_NONNULL(1);
+static const char *GetSockStateName(SockState sockState);
 
 static size_t EndOfHeader(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
@@ -239,7 +326,51 @@ WriteError(const char *msg, int fd, size_t wantWrite, ssize_t written)
             " bytes, wrote %ld to file descriptor %d\n",
             msg, wantWrite, (long)written, fd);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetSockStateName --
+ *
+ *      Return human readable names for StockState values.
+ *
+ * Results:
+ *      string
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static const char *
+GetSockStateName(SockState sockState)
+{
+    int sockStateInt = (int)sockState;
+    static const char *sockStateStrings[] = {
+        "SOCK_READY",
+        "SOCK_MORE",
+        "SOCK_SPOOL",
+        "SOCK_ERROR",
+        "SOCK_CLOSE",
+        "SOCK_CLOSETIMEOUT",
+        "SOCK_READTIMEOUT",
+        "SOCK_WRITETIMEOUT",
+        "SOCK_READERROR",
+        "SOCK_WRITEERROR",
+        "SOCK_SHUTERROR",
+        "SOCK_BADREQUEST",
+        "SOCK_ENTITYTOOLARGE",
+        "SOCK_BADHEADER",
+        "SOCK_TOOMANYHEADERS",
+        NULL
+    };
 
+    if (sockStateInt < 0) {
+        sockStateInt = (- sockStateInt) + 2;
+    }
+    assert(sockStateInt < Ns_NrElements(sockStateStrings));
+    return sockStateStrings[sockStateInt];
+}
 
 
 /*
@@ -1479,7 +1610,8 @@ NsGetRequest(Sock *sockPtr, const Ns_Time *nowPtr)
                 reqPtr = NULL;
             }
         } else {
-            Ns_Log(DriverDebug, "NsGetRequest found driver specific request Proc, probably from a non-HTTP driver");
+            Ns_Log(DriverDebug, "NsGetRequest found driver specific request Proc, "
+                   "probably from a non-HTTP driver");
         }
     } else {
         Ns_Log(DriverDebug, "NsGetRequest has reqPtr NULL");
@@ -1622,13 +1754,11 @@ DriverAccept(Sock *sockPtr, NS_SOCKET sock)
                                           (struct sockaddr *) &(sockPtr->sa), &n);
 }
 
-#if 0
-// TODO: cleanup
 
 /*
  *----------------------------------------------------------------------
  *
- * DriverRecv --
+ * NsDriverRecv --
  *
  *      Read data from the socket into the given vector of buffers.
  *
@@ -1641,19 +1771,6 @@ DriverAccept(Sock *sockPtr, NS_SOCKET sock)
  *----------------------------------------------------------------------
  */
 
-static ssize_t
-DriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs)
-{
-    NS_NONNULL_ASSERT(sockPtr != NULL);
-
-    return NsDriverRecv(sockPtr, bufs, nbufs, &(sockPtr->drvPtr->recvTimeout));
-}
-#endif
-
-/*
- * next step: the handling of default timeouts in DriverRecv can be probably
- * improved.
- */
 ssize_t
 NsDriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
 {
@@ -1720,7 +1837,7 @@ NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int fl
     if (likely(drvPtr->sendProc != NULL)) {
         /*
          * TODO: The Ns_DriverSendProc signature should be modified
-         * to omit the timeout argument.
+         * to omit the timeout argument. Same with recvProc().
          */
 
         sent = (*drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs, NULL, flags);
@@ -2082,7 +2199,7 @@ DriverThread(void *arg)
             } else if (unlikely(!PollIn(&pdata, sockPtr->pidx))
                        && ((sockPtr->reqPtr == NULL) || (sockPtr->reqPtr->leftover == 0u))) {
                 /*
-                 * Got no data
+                 * Got no data for this sockPtr.
                  */
                 if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
                     SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
@@ -2092,10 +2209,11 @@ DriverThread(void *arg)
 
             } else {
                 /*
-                 * Got some data.
+                 * Got some data for this sockPtr.
                  * If enabled, perform read-ahead now.
                  */
                 assert(drvPtr == sockPtr->drvPtr);
+
                 if (likely((drvPtr->opts & NS_DRIVER_ASYNC) != 0u)) {
                     SockState s = SockRead(sockPtr, 0, &now);
 
@@ -2147,8 +2265,10 @@ DriverThread(void *arg)
                     default:
                         drvPtr->stats.errors++;
                         Ns_Log(Warning,
-                               "sockread returned unexpected result %d (err %s); close socket (%d)",
-                               s, ((errno != 0) ? strerror(errno) : NS_EMPTY_STRING), sockPtr->sock);
+                               "sockread returned unexpected result %s (err %s); close socket (%d)",
+                               GetSockStateName(s),
+                               ((errno != 0) ? strerror(errno) : NS_EMPTY_STRING),
+                               sockPtr->sock);
                         SockRelease(sockPtr, s, errno);
                         break;
                     }
@@ -2253,7 +2373,7 @@ DriverThread(void *arg)
                         case SOCK_WRITEERROR:
                         case SOCK_WRITETIMEOUT:
                         default:
-                            Ns_Fatal("driver: SockAccept returned: %d", s);
+                            Ns_Fatal("driver: SockAccept returned: %s", GetSockStateName(s));
                         }
                         accepted++;
                         gotRequests = NS_TRUE;
@@ -2754,7 +2874,8 @@ SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *now
             if ((drvPtr->opts & NS_DRIVER_ASYNC) != 0u) {
                 sockStatus = SockRead(sockPtr, 0, nowPtr);
                 if ((int)sockStatus < 0) {
-                    Ns_Log(DriverDebug, "SockRead returned error %d", sockStatus);
+                    Ns_Log(DriverDebug, "SockRead returned error %s",
+                           GetSockStateName(sockStatus));
 
                     SockRelease(sockPtr, sockStatus, errno);
                     sockStatus = SOCK_ERROR;
@@ -2862,7 +2983,8 @@ SockRelease(Sock *sockPtr, SockState reason, int err)
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
-    Ns_Log(DriverDebug, "SockRelease reason %d err %d (sock %d)", reason, err, sockPtr->sock);
+    Ns_Log(DriverDebug, "SockRelease reason %s err %d (sock %d)",
+           GetSockStateName(reason), err, sockPtr->sock);
 
     drvPtr = sockPtr->drvPtr;
     assert(drvPtr != NULL);
@@ -3228,7 +3350,6 @@ ChunkedDecode(Request *reqPtr, bool update)
     return success;
 }
 
-
 
 /*
  *----------------------------------------------------------------------
@@ -3397,25 +3518,32 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     }
 
     if (reqPtr->leftover > 0u) {
+        /*
+         * There is some leftover in the buffer, don't read but take the
+         * leftover instead as input.
+         */
         n = (ssize_t)reqPtr->leftover;
         reqPtr->leftover = 0u;
         buflen = 0u;
         Ns_Log(DriverDebug, "SockRead receive from leftover %" PRIdz " bytes", n);
     } else {
+        /*
+         * Receive actually some data from the driver.
+         */
         n = NsDriverRecv(sockPtr, &buf, 1, NULL);
         Ns_Log(DriverDebug, "SockRead receive from network %" PRIdz " bytes sockState %.2x",
                n, (int)sockPtr->recvSockState);
     }
 
     {
-        Ns_SockState sockState = sockPtr->recvSockState;
+        Ns_SockState nsSockState = sockPtr->recvSockState;
     /*
-     * The sockState has one of the following values, when provied:
+     * The nsSockState has one of the following values, when provied:
      *
      *      NS_SOCK_READ, NS_SOCK_DONE, NS_SOCK_AGAIN, NS_SOCK_EXCEPTION,
      *      NS_SOCK_TIMEOUT
      */
-        switch (sockState) {
+        switch (nsSockState) {
         case NS_SOCK_TIMEOUT: NS_FALL_THROUGH; /* fall through */
         case NS_SOCK_EXCEPTION:
             return SOCK_READERROR;
@@ -3430,7 +3558,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
         case NS_SOCK_EXIT:
         case NS_SOCK_INIT:
         case NS_SOCK_WRITE:
-            Ns_Log(Warning, "SockRead received unexpected state %.2x from driver", sockState);
+            Ns_Log(Warning, "SockRead received unexpected state %.2x from driver", nsSockState);
             return SOCK_READERROR;
             break;
         case NS_SOCK_NONE:
@@ -3675,7 +3803,7 @@ EndOfHeader(Sock *sockPtr)
  * SockParse --
  *
  *      Construct the given conn by parsing input buffer until end of
- *      headers.  Return NS_SOCK_READY when finished parsing.
+ *      headers.  Return SOCK_READY when finished parsing.
  *
  * Results:
  *      SOCK_READY:  Conn is ready for processing.
@@ -4474,7 +4602,7 @@ WriterSockRequire(const Conn *connPtr) {
     NS_NONNULL_ASSERT(connPtr != NULL);
 
     NsWriterLock();
-    wrSockPtr = connPtr->strWriter;
+    wrSockPtr = (WriterSock *)connPtr->strWriter;
     if (wrSockPtr != NULL) {
         wrSockPtr->refCount ++;
     }
@@ -5064,13 +5192,14 @@ WriterThread(void *arg)
  */
 
 void
-NsWriterFinish(WriterSock *wrSockPtr) {
+NsWriterFinish(NsWriterSock *wrSockPtr) {
+    WriterSock *writerSockPtr = (WriterSock *)wrSockPtr;
 
     NS_NONNULL_ASSERT(wrSockPtr != NULL);
 
-    Ns_Log(DriverDebug, "NsWriterFinish: %p", (void *)wrSockPtr);
-    wrSockPtr->doStream = NS_WRITER_STREAM_FINISH;
-    SockTrigger(wrSockPtr->queuePtr->pipe[1]);
+    Ns_Log(DriverDebug, "NsWriterFinish: %p", (void *)writerSockPtr);
+    writerSockPtr->doStream = NS_WRITER_STREAM_FINISH;
+    SockTrigger(writerSockPtr->queuePtr->pipe[1]);
 }
 
 
@@ -5224,6 +5353,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
              * Fall through to register stream writer with temp file
              */
         } else {
+            WriterSock *writerSockPtr;
             /*
              * This is a later streaming operation, where the writer
              * job (strWriter) was previously established. Update
@@ -5232,8 +5362,9 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
              * to notify it about the change.
              */
             assert(wrSockPtr1 != NULL);
-            connPtr->strWriter->size += wrote;
-            connPtr->strWriter->c.file.toRead += wrote;
+            writerSockPtr = (WriterSock *)connPtr->strWriter;
+            writerSockPtr->size += wrote;
+            writerSockPtr->c.file.toRead += wrote;
             Ns_MutexUnlock(&wrSockPtr1->c.file.fdlock);
 
             connPtr->nContentSent += wrote;
@@ -5418,7 +5549,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
          * writer in case the writer is deleted. No locks are needed,
          * since nobody can share this structure yet.
          */
-        connPtr->strWriter = wrSockPtr;
+        connPtr->strWriter = (NsWriterSock *)wrSockPtr;
         wrSockPtr->connPtr = connPtr;
     }
 

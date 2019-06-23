@@ -2315,7 +2315,7 @@ ConnRun(Conn *connPtr)
         connPtr->fd = 0;
     }
     if (connPtr->strWriter != NULL) {
-        WriterSock *wrPtr;
+        void *wrPtr;
 
         NsWriterLock();
         wrPtr = connPtr->strWriter;
