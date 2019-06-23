@@ -1997,7 +1997,7 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
         result = TCL_ERROR;
 
     } else if (pemFileName == NULL) {
-        Ns_TclPrintfResult(interp, "no pem file name provied");
+        Ns_TclPrintfResult(interp, "no pem file name provided");
         result = TCL_ERROR;
 
     } else {

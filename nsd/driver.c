@@ -3538,7 +3538,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
     {
         Ns_SockState nsSockState = sockPtr->recvSockState;
     /*
-     * The nsSockState has one of the following values, when provied:
+     * The nsSockState has one of the following values, when provided:
      *
      *      NS_SOCK_READ, NS_SOCK_DONE, NS_SOCK_AGAIN, NS_SOCK_EXCEPTION,
      *      NS_SOCK_TIMEOUT
