@@ -198,6 +198,36 @@ Ns_SockSetReceiveState(Ns_Sock *sock, Ns_SockState sockState)
     ((Sock *)sock)->recvSockState = sockState;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockInErrorState --
+ *
+ *      Check the error State of a ns_sock structure.
+ *
+ *      Background: SSL_shutdown() must not be called if a previous fatal error
+ *      has occurred on a connection i.e. if SSL_get_error() has returned
+ *      SSL_ERROR_SYSCALL or SSL_ERROR_SSL.
+ *
+ *      Note: For the time being, we have just the read error state.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+bool
+Ns_SockInErrorState(Ns_Sock *sock)
+{
+    NS_NONNULL_ASSERT(sock != NULL);
+
+    return (((Sock *)sock)->recvSockState == NS_SOCK_EXCEPTION);
+}
+
+
 
 
 /*

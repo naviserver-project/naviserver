@@ -116,7 +116,8 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
     ctx = SSL_CTX_new(SSLv23_client_method());
     *ctxPtr = ctx;
     if (ctx == NULL) {
-        Ns_TclPrintfResult(interp, "ctx init failed: %s", ERR_error_string(ERR_get_error(), NULL));
+        char errorBuffer[256];
+        Ns_TclPrintfResult(interp, "ctx init failed: %s", ERR_error_string(ERR_get_error(), errorBuffer));
         return TCL_ERROR;
     }
 
@@ -130,7 +131,9 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
 
     if (cert != NULL) {
         if (SSL_CTX_use_certificate_chain_file(ctx, cert) != 1) {
-            Ns_TclPrintfResult(interp, "certificate load error: %s", ERR_error_string(ERR_get_error(), NULL));
+            char errorBuffer[256];
+            Ns_TclPrintfResult(interp, "certificate load error: %s",
+                               ERR_error_string(ERR_get_error(), errorBuffer));
             goto fail;
         }
 
@@ -361,9 +364,9 @@ Ns_TLS_SSLAccept(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
     ssl = SSL_new(ctx);
     *sslPtr = ssl;
     if (ssl == NULL) {
-        char *errMsg;
+        char *errMsg, errorBuffer[256];
 
-        errMsg = ERR_error_string(ERR_get_error(), NULL);
+        errMsg = ERR_error_string(ERR_get_error(), errorBuffer);
         Ns_TclPrintfResult(interp, "SSLAccept failed: %s", errMsg);
         Ns_Log(Debug, "SSLAccept failed: %s", errMsg);
         result = TCL_ERROR;
@@ -391,9 +394,9 @@ Ns_TLS_SSLAccept(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
         }
 
         if (!SSL_is_init_finished(ssl)) {
-            char *errMsg;
+            char *errMsg, errorBuffer[256];
 
-            errMsg = ERR_error_string(ERR_get_error(), NULL);
+            errMsg = ERR_error_string(ERR_get_error(), errorBuffer);
             Ns_TclPrintfResult(interp, "ssl accept failed: %s", errMsg);
             Ns_Log(Debug, "SSLAccept failed: %s", errMsg);
 
@@ -437,7 +440,7 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
                 Ns_SockState *sockStatePtr)
 {
     ssize_t      nRead = 0;
-    int          got = 0;
+    int          got = 0, sock, n = 0, err = SSL_ERROR_NONE;
     char        *buf = NULL;
     Ns_SockState sockState = NS_SOCK_READ;
 
@@ -446,84 +449,72 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
     NS_NONNULL_ASSERT(sockStatePtr != NULL);
 
     buf = (char *)bufs->iov_base;
+    sock = SSL_get_fd(sslPtr);
 
-    /*
-     * Reason for looping here is that sometimes the OpenSSL may return
-     * less bytes than it is actually available (see SSL_pending below).
-     */
-    while (1) {
-        int n = 0, err = SSL_ERROR_NONE;
+    ERR_clear_error();
+    n = SSL_read(sslPtr, buf + got, (int)bufs->iov_len - got);
+    err = SSL_get_error(sslPtr, n);
+    //Ns_Log(Notice, "=== SSL_read(%d) received:%d, err:%d", sock, n, err);
 
-        ERR_clear_error();
-        n = SSL_read(sslPtr, buf + got, (int)bufs->iov_len - got);
-        err = SSL_get_error(sslPtr, n);
+    switch (err) {
+    case SSL_ERROR_NONE:
+        if (n < 0) {
+            Ns_Log(Debug, "SSL_read(%d) received:%d, but have not SSL_ERROR", sock, n);
+            nRead = n;
+        } else {
+            got += n;
+            Ns_Log(Debug, "SSL_read(%d) got:%d", sock, got);
+            nRead = got;
+        }
+        break;
 
-        switch (err) {
-        case SSL_ERROR_NONE:
-            if (n < 0) {
-                Ns_Log(Debug, "SSL_read received:%d ?", n);
-                nRead = n;
-            } else {
-                int p = 0;
+    case SSL_ERROR_ZERO_RETURN:
 
-                p = SSL_pending(sslPtr);
-                got += n;
-                Ns_Log(Debug, "SSL_read received:%d, pending:%d", n, p);
+        Ns_Log(Debug, "SSL_read(%d) ERROR_ZERO_RETURN got:%d", sock, got);
 
-                /*
-                 * For whatever reason, at least some versions of OpenSSL
-                 * return 1 byte results, where an immediate following
-                 * read returns some reasonable amount.
-                 * It is yet not clear if this is due to not checking
-                 * the SSL_pending() status or some other cause.
-                 * Whatever the reason, we might want to repeat reading.
-                 */
-                if (((n == 1) || (p > 0)) && got < (int)bufs->iov_len) {
-                    continue;
-                }
-                Ns_Log(Debug, "SSL_read got:%d", got);
-                nRead = got;
-            }
-            break;
+        nRead = got;
+        sockState = NS_SOCK_DONE;
+        break;
 
-        case SSL_ERROR_ZERO_RETURN:
+    case SSL_ERROR_WANT_READ:
 
-            Ns_Log(Debug, "SSL_read ERROR_ZERO_RETURN got:%d", got);
+        Ns_Log(Debug, "SSL_read(%d) ERROR_WANT_READ got:%d", sock, got);
 
+        nRead = got;
+        sockState = NS_SOCK_AGAIN;
+        break;
+
+    case SSL_ERROR_SYSCALL:
+        if (ERR_get_error() == 0) {
+            Ns_Log(Debug, "SSL_read(%d) ERROR_SYSCALL (eod?), got:%d", sock, got);
             nRead = got;
             sockState = NS_SOCK_DONE;
             break;
+        } else {
+            const char *ioerr;
 
-        case SSL_ERROR_WANT_READ:
+            ioerr = ns_sockstrerror(ns_sockerrno);
+            Ns_Log(Debug, "SSL_read(%d) ERROR_SYSCALL %s", sock, ioerr);
+        }
+        NS_FALL_THROUGH; /* fall through */
 
-            Ns_Log(Debug, "SSL_read ERROR_WANT_READ got:%d", got);
+    default:
+        {
+            char errorBuffer[256];
+            unsigned long sslError;
 
-            nRead = got;
-            sockState = NS_SOCK_AGAIN;
-            break;
+            //Ns_Log(Notice, "SSL_read(%d) error handler err %d", sock, err);
 
-        case SSL_ERROR_SYSCALL:
-            if (ERR_get_error() == 0) {
-                Ns_Log(Debug, "SSL_read ERROR_SYSCALL (eod?), got:%d", got);
-                nRead = got;
-                sockState = NS_SOCK_DONE;
-                break;
-            } else {
-                const char *ioerr;
-
-                ioerr = ns_sockstrerror(ns_sockerrno);
-                Ns_Log(Debug, "SSL_read ERROR_SYSCALL %s", ioerr);
+            for(sslError = ERR_get_error(); sslError != 0u; sslError = ERR_get_error()) {
+                Ns_Log(Notice, "SSL_read(%d) error received:%d, got:%d, err:%d,"
+                       " get_error:%lu, %s", sock, n, got, err, sslError,
+                       ERR_error_string(sslError, errorBuffer));
             }
-            /* FALL-THROUGH */
-
-        default:
-            Ns_Log(Debug, "SSL_read error received:%d, got:%d, err:%d,"
-                   " get_error:%lu", n, got, err, ERR_get_error());
             SSL_set_shutdown(sslPtr, SSL_RECEIVED_SHUTDOWN);
+            //Ns_Log(Notice, "SSL_read(%d) error after shutdown", sock);
             nRead = -1;
             break;
         }
-        break;
     }
 
     if (nRead < 0) {
@@ -531,7 +522,7 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
     }
 
     *sockStatePtr = sockState;
-    Ns_Log(Debug, "### SSL_read return:%ld sockState:%.2x", nRead, sockState);
+    Ns_Log(Debug, "### SSL_read(%d) return:%ld sockState:%.2x", sock, nRead, sockState);
 
     return nRead;
 }

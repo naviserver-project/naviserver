@@ -149,7 +149,7 @@ typedef enum {
     NS_SOCK_NONE =            0x0000u, /* No value provided */
     NS_SOCK_READ =            0x0001u, /* Socket is readable */
     NS_SOCK_WRITE =           0x0002u, /* Socket is writable */
-    NS_SOCK_EXCEPTION =       0x0004u, /* Socket has OOB data */
+    NS_SOCK_EXCEPTION =       0x0004u, /* Socket is in an error state */
     NS_SOCK_EXIT =            0x0008u, /* The server is shutting down */
     NS_SOCK_DONE =            0x0010u, /* Task processing is done */
     NS_SOCK_CANCEL =          0x0020u, /* Remove event from sock callback thread */
@@ -2702,6 +2702,10 @@ Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length, const Ns_Time *ti
 
 NS_EXTERN void
 Ns_SockSetReceiveState(Ns_Sock *sock, Ns_SockState sockState)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN bool
+Ns_SockInErrorState(Ns_Sock *sock)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN ssize_t

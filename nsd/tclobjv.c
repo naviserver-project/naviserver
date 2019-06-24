@@ -815,7 +815,7 @@ Ns_TclGetMemUnitFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_WideInt *memUni
         if (objPtr->typePtr != &memUnitType) {
             if (unlikely(Tcl_ConvertToType(interp, objPtr, &memUnitType) != TCL_OK)) {
                 Ns_TclPrintfResult(interp, "invalid memory unit '%s'; "
-                                   "valid units kB, MB, GBB, KiB, MiB, and GiB",
+                                   "valid units kB, MB, GB, KiB, MiB, and GiB",
                                    Tcl_GetString(objPtr));
                 result = TCL_ERROR;
             }
