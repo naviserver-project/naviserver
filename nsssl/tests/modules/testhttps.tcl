@@ -83,12 +83,16 @@ namespace eval ::nstest {
         }
 
         log url https://$host:$port/$url
-        set r [ns_http queue -timeout $timeout -method $method -headers $hdrs https://$host:$port/$url]
+        set result [ns_http run -timeout $timeout -method $method -headers $hdrs https://$host:$port/$url]
 
-        ns_set cleanup $hdrs
-        set hdrs [ns_set create]
+        #ns_set cleanup $hdrs
+        #set hdrs [ns_set create]
 
-        ns_http wait {*}$binaryFlag -result body -status status  -headers $hdrs $r
+        #ns_http wait {*}$binaryFlag -result body -status status  -headers $hdrs $r
+        #ns_log notice result=$result
+        set body [dict get $result body]
+        set status [dict get $result status]
+        set hdrs [dict get $result headers]
         log status $status
 
         set response [list $status]
