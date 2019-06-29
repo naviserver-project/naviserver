@@ -25,7 +25,7 @@ ns_param   port            8443
 ns_param   hostname        localhost
 ns_param   address         [expr {[ns_info ipv6] ? "::1" : "127.0.0.1"}]
 ns_param   ciphers         "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!RC4"
-ns_param   protocols	   "!SSLv2"
+ns_param   protocols	   "!SSLv2:!SSLv3"
 ns_param   certificate	   $homedir/etc/server.pem
 ns_param   verify     	   0
 ns_param   writerthreads   2
