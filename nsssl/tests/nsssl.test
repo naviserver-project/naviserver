@@ -10,7 +10,7 @@
 # under the License.
 #
 # Copyright 2006 (C) Stephen Deasey <sdeasey@gmail.com>
-# Copyright 2015 (C) Gustaf Neumann <neumann@wu-wien.ac.at>
+# Copyright 2015-2019 (C) Gustaf Neumann <neumann@wu-wien.ac.at>
 #
 # Alternatively, the contents of this file may be used under the terms
 # of the GNU General Public License (the "GPL"), in which case the
@@ -103,6 +103,13 @@ test nsssl-1.6 {with query} -constraints {serverListen} -setup {
 } -cleanup {
     ns_unregister_op GET /get/foo
 } -result "200 q=1"
+
+
+
+test http-2.0 {ns_http for small file} -constraints {serverListen} -body {
+    nstest::https -http 1.1 -getbody 1 GET /123
+} -result {200 123}
+
 
 test http-7.0 {ns_http with body and text datatype} -constraints {serverListen} -setup {
     ns_register_proc POST /post {
@@ -222,6 +229,8 @@ test http-8.0 {ns_http with body_file} -constraints {serverListen} -setup {
     ns_unregister_op PUT /put
     unset -nocomplain r
 } -result {200 {utf-8 <text/plain> <123>}}
+
+
 
 
 cleanupTests

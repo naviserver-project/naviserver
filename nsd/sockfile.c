@@ -340,37 +340,48 @@ static ssize_t
 SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length)
 {
     ssize_t sent;
+    Sock *sockPtr = (Sock *)sock;
 
     NS_NONNULL_ASSERT(sock != NULL);
 
     assert(fd != NS_INVALID_FD);
     assert(offset >= 0);
 
+    /*
+     * Only, when the current driver supports sendfile(), try to use the
+     * native implementation. When we are using e.g. HTTPS, using sendfile
+     * does not work, since it would write plain data to the encrypted
+     * channel. The sendfile emulation _SendFile() uses always the right
+     * driver I/O.
+     */
+    if (sockPtr->drvPtr->sendFileProc == NULL) {
+        sent = _SendFile(sock, fd, offset, length);
+    } else {
 #if defined(HAVE_LINUX_SENDFILE)
-    sent = sendfile(sock->sock, fd, &offset, length);
-    if (sent == -1) {
-        if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
-            sent = 0;
-        } else if (errno == EINVAL || errno == ENOSYS) {
-            sent = _SendFile(sock, fd, offset, length);
+        sent = sendfile(sock->sock, fd, &offset, length);
+        if (sent == -1) {
+            if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
+                sent = 0;
+            } else if (errno == EINVAL || errno == ENOSYS) {
+                sent = _SendFile(sock, fd, offset, length);
+            }
         }
-    }
 #elif defined(HAVE_BSD_SENDFILE)
-    {
-        int rc, flags = 0;
-        off_t sbytes = 0;
+        {
+            int rc, flags = 0;
+            off_t sbytes = 0;
 
-        rc = sendfile(fd, sock->sock, offset, length, NULL, &sbytes, flags);
-        if (rc == 0 || errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
-            sent = sbytes;
-        } else if (errno == EOPNOTSUPP) {
-            sent = _SendFile(sock, fd, offset, length);
+            rc = sendfile(fd, sock->sock, offset, length, NULL, &sbytes, flags);
+            if (rc == 0 || errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
+                sent = sbytes;
+            } else if (errno == EOPNOTSUPP) {
+                sent = _SendFile(sock, fd, offset, length);
+            }
         }
-    }
 #else
-    sent = _SendFile(sock, fd, offset, length);
+        sent = _SendFile(sock, fd, offset, length);
 #endif
-
+    }
     return sent;
 }
 
