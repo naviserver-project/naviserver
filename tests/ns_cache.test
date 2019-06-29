@@ -826,7 +826,7 @@ test ns_cache-13.3 {test mem units - reconfigure in loop (cached Tcl_Obj)} -body
 
 test ns_cache-13.1 {test mem units - reconfigure invalid value} -body {
     ns_cache_configure foo -maxsize 10B
-} -returnCodes error -result {invalid memory unit '10B'; valid units kB, MB, GBB, KiB, MiB, and GiB}
+} -returnCodes error -result {invalid memory unit '10B'; valid units kB, MB, GB, KiB, MiB, and GiB}
 
 cleanupTests
 
