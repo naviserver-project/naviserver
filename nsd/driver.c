@@ -1880,7 +1880,6 @@ NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
 
     NS_NONNULL_ASSERT(drvPtr != NULL);
 
-
     if (drvPtr->sendFileProc != NULL) {
         /*
          * TODO: The Ns_DriverSendFileProc signature should be modified
@@ -1889,7 +1888,7 @@ NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
 
         sent = (*drvPtr->sendFileProc)((Ns_Sock *)sockPtr, bufs, nbufs, NULL, flags);
     } else {
-        sent = Ns_SockSendFileBufs((Ns_Sock *)sockPtr, bufs, nbufs);
+        sent = Ns_SockSendFileBufs((Ns_Sock *)sockPtr, bufs, nbufs, flags);
     }
 
     return sent;

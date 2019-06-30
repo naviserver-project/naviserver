@@ -181,6 +181,7 @@ typedef enum {
 #define NS_DRIVER_SSL              0x02u /* Use SSL port, protocol defaults. */
 #define NS_DRIVER_NOPARSE          0x04u /* Do not parse request */
 #define NS_DRIVER_UDP              0x08u /* UDP, can't use stream socket options */
+#define NS_DRIVER_CAN_USE_SENDFILE 0x10u /* Allow to send clear text via sendfile */
 
 #define NS_DRIVER_VERSION_1        1    /* Obsolete. */
 #define NS_DRIVER_VERSION_2        2    /* IPv4 only */
@@ -2659,7 +2660,7 @@ Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN ssize_t
-Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs)
+Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN bool

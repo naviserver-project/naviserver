@@ -56,7 +56,7 @@ ssize_t pread(int fd, char *buf, size_t count, off_t offset);
  */
 
 static ssize_t _SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length);
-static ssize_t SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length);
+static ssize_t SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length, unsigned int flags);
 
 
 /*
@@ -154,7 +154,7 @@ Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
  */
 
 ssize_t
-Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs)
+Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs, unsigned int flags)
 {
     ssize_t       towrite = 0, nwrote = 0;
     struct iovec  sbufs[UIO_MAXIOV], *sbufPtr;
@@ -208,7 +208,7 @@ Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs)
          */
 
         if (fd != NS_INVALID_FD) {
-            ssize_t sent = SendFile(sock, fd, offset, length);
+            ssize_t sent = SendFile(sock, fd, offset, length, flags);
             if (sent == -1) {
                 nwrote = -1;
                 break;
@@ -323,8 +323,7 @@ Ns_SockCork(const Ns_Sock *sock, bool cork)
  * SendFile --
  *
  *      Custom wrapper for sendfile() that handles the case
- *      where the source file system does not support it,
- *      or when it is not defined for the platform.
+ *      where it is not defined for the platform.
  *
  * Results:
  *      Number of bytes sent, -1 on error.
@@ -337,10 +336,9 @@ Ns_SockCork(const Ns_Sock *sock, bool cork)
  */
 
 static ssize_t
-SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length)
+SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length, unsigned int flags)
 {
     ssize_t sent;
-    Sock *sockPtr = (Sock *)sock;
 
     NS_NONNULL_ASSERT(sock != NULL);
 
@@ -354,7 +352,7 @@ SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length)
      * channel. The sendfile emulation _SendFile() uses always the right
      * driver I/O.
      */
-    if (sockPtr->drvPtr->sendFileProc == NULL) {
+    if ( (flags & NS_DRIVER_CAN_USE_SENDFILE) == 0u) {
         sent = _SendFile(sock, fd, offset, length);
     } else {
 #if defined(HAVE_LINUX_SENDFILE)
