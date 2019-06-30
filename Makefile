@@ -216,11 +216,18 @@ NS_LD_LIBRARY_PATH	= \
    LD_LIBRARY_PATH="$(srcdir)/nsd:$(srcdir)/nsthread:$(srcdir)/nsdb:$(srcdir)/nsproxy:$$LD_LIBRARY_PATH" \
    DYLD_LIBRARY_PATH="$(srcdir)/nsd:$(srcdir)/nsthread:$(srcdir)/nsdb:$(srcdir)/nsproxy:$$DYLD_LIBRARY_PATH"
 
+EXTRA_TEST_DIRS =
+ifneq ($(OPENSSL_LIBS),)
+  EXTRA_TEST_DIRS += nsssl
+endif
+
 check: test
 
 test: all
 	$(NS_LD_LIBRARY_PATH) ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
-	(cd nsssl; $(MAKE) test)
+	for i in $(EXTRA_TEST_DIRS); do \
+		( cd $$i && $(MAKE) test ) || exit 1; \
+	done
 
 runtest: all
 	$(NS_LD_LIBRARY_PATH) ./nsd/nsd $(NS_TEST_CFG)
