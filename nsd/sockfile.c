@@ -55,8 +55,11 @@ ssize_t pread(int fd, char *buf, size_t count, off_t offset);
  * Local functions defined in this file
  */
 
-static ssize_t _SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length);
-static ssize_t SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length, unsigned int flags);
+static ssize_t _SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length)
+    NS_GNUC_NONNULL(1);
+
+static ssize_t SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length, unsigned int flags)
+    NS_GNUC_NONNULL(1);
 
 
 /*
