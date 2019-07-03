@@ -5019,7 +5019,7 @@ WriterThread(void *arg)
                         targetTimeMs = (int)(sentKBT/(Tcl_WideInt)curPtr->rateLimit);
                         sleepTimeMs = 1 + targetTimeMs - currentMs;
                         Ns_Log(Notice, "### Writer(%d)"
-                               " byte sent %llu secs %" PRId64
+                               " byte sent %" TCL_LL_MODIFIER "d secs %" PRId64
                                ".%06ld rate %d KB/s"
                                " targetTime %d sleep %d",
                                curPtr->sockPtr->sock,
