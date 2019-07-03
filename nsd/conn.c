@@ -1474,7 +1474,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         "outputheaders",
         "partialtimes", "peeraddr", "peerport", "pool", "port", "protocol",
         "query",
-        "request",
+        "ratelimit", "request",
         "server", "sock", "start", "status",
         "timeout",
         "url", "urlc", "urlencoding", "urlv",
@@ -1498,7 +1498,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         NS_CONN_REQUIRE_CONFIGURED,
         NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONNECTED, NS_CONN_REQUIRE_CONFIGURED,
         NS_CONN_REQUIRE_CONFIGURED,
-        NS_CONN_REQUIRE_CONFIGURED,
+        NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
         NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONNECTED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONNECTED,
         NS_CONN_REQUIRE_CONFIGURED,
         NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
@@ -1522,7 +1522,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         COutputHeadersIdx,
         CPartialTimesIdx, CPeerAddrIdx, CPeerPortIdx, CPoolIdx, CPortIdx, CProtocolIdx,
         CQueryIdx,
-        CRequestIdx,
+        CRatelimitIdx, CRequestIdx,
         CServerIdx, CSockIdx, CStartIdx, CStatusIdx,
         CTimeoutIdx,
         CUrlIdx, CUrlcIdx, CUrlEncodingIdx, CUrlvIdx,
@@ -1990,6 +1990,22 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
                     result = TCL_ERROR;
                 }
             }
+        }
+        break;
+
+    case CRatelimitIdx:
+        if (objc > 2) {
+            int               rateLimit, oc = 2;
+            Ns_ObjvSpec       specLength = {"ratelimit", Ns_ObjvInt, &rateLimit, &posintRange0};
+
+            if (Ns_ObjvInt(&specLength, interp, &oc, &objv[2]) != TCL_OK) {
+                result = TCL_ERROR;
+            } else {
+                connPtr->rateLimit = rateLimit;
+            }
+        }
+        if (result == TCL_OK) {
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(connPtr->rateLimit));
         }
         break;
 

@@ -181,6 +181,12 @@ Buffer size in bytes (octets) for writer threads.
 The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB);
 (default: 8kB)
 
+[def writerlimitrate]
+Limit the rate of the data transferred via writer threads.
+The value can be specified in KB/s (kilobytes per second) and
+can be refined per connection pool or per single connection
+(default: 0, meaning unlimited)
+
 [def writersize]
 Use writer threads for replies above this size.
 The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB);

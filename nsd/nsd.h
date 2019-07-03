@@ -338,12 +338,13 @@ typedef struct {
 } DrvSpooler;
 
 typedef struct {
-    size_t              maxsize;        /* Max content size to use writer thread */
+    size_t              writersize;     /* Use writer thread above this size */
     size_t              bufsize;        /* Size of the output buffer */
     Ns_Mutex            lock;           /* Lock around writer queues */
     SpoolerQueue       *firstPtr;       /* List of writer threads */
     SpoolerQueue       *curPtr;         /* Current writer thread */
     int                 threads;        /* Number of writer threads to run */
+    int                 rateLimit;      /* Limit transmission rate in KB/s for a writer job */
     NsWriterStreamState doStream;       /* Activate writer for HTML streaming */
 } DrvWriter;
 
@@ -593,6 +594,7 @@ typedef struct Conn {
 
     int fd;
     NsWriterSock *strWriter;
+    int rateLimit;          /* -1 undefined, 0 unlimited, otherwise KB/s */
 
     Ns_CompressStream cStream;
     int requestCompress;
@@ -710,6 +712,8 @@ typedef struct ConnPool {
         Ns_Time runTime;             /* cumulated run times */
         Ns_Time traceTime;           /* cumulated trace times */
     } stats;
+
+    int defaultRateLimit;            /* default rate limit per pool */
 
 } ConnPool;
 

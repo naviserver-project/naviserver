@@ -700,13 +700,14 @@ ns_section	"ns/server/${servername}/vhost" {
 # The following parameters can be configured per pool:
 #
 #       map
-#       maxconnections
 #       connsperthread
-#       maxthreads
-#       minthreads
-#       threadtimeout
 #       highwatermark
 #       lowwatermark
+#       maxconnections
+#       maxthreads
+#       minthreads
+#       ratelimit
+#       threadtimeout
 #
 ########################################################################
 

@@ -168,7 +168,8 @@ KillMode=process
 [subsection {Other approaches}]
 
 There are several ways to keep your server running. Depending on your particular
-requirements the watchdog may not be the right thing for you. Common approaches are listed below.
+requirements the watchdog may not be the right thing for you.
+Common approaches are listed below.
 
 [emph {Using init with /etc/inittab}]
 
@@ -601,7 +602,7 @@ Files:
 
 [para]
 Directory containing header files for NaviServer. These files are
-primarlily needed for compiling additional C modules.
+primarily needed for compiling additional C modules.
 
 [para]
 Files: .h files

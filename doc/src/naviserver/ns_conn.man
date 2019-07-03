@@ -247,6 +247,16 @@ during running of filters) and "runtime" (time spent so far during the
 main request).
 
 
+[call [cmd  "ns_conn ratelimit"] [opt limit]]
+
+Query or set rate limit for the current connetion. The value is
+provided in KB/s (kilobytes per second). A value of 0 means unlimited.
+Default values can be provided per connection pool
+(parameter [term ratelimit]) or on the driver level
+(parameter [term writerratelimit]).
+The limit is only enforced on connections using writer threads.
+
+
 [call [cmd  "ns_conn request"]]
 
 Returns the HTTP request line as presented by the client, e.g. GET / HTTP/1.1.
@@ -260,7 +270,6 @@ Returns the name of the server handling the request.
 [call [cmd  "ns_conn sock"]]
 
 Returns the socket id (integer fd) of current connection.
-
 
 
 [call [cmd  "ns_conn start"]]

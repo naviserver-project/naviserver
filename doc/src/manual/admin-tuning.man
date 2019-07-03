@@ -37,6 +37,9 @@ has a DNS cache that can be tweaked -- see [term dnscache] and
 
 In the ns/server/servername/adp section, the parameters are
 [term cache], [term cachesize], and [term threadcache].
+Use the appropriate [term servername]
+for you installation (maybe the name [term default]).
+
 NaviServer defaults to a 10 MB ADP cache. This cache
 is used to store parsed ADP pages -- as a consequence such ADP scripts are only
 parsed once and every subsequent time they are run directly out of memory.
@@ -64,23 +67,68 @@ without checking to see if the file has changed each time a cache entry
 is hit.
 
 
-[subsection {Tune the Threads}]
+[subsection {Tune the Connection Threads}]
 
 Thread settings are sometimes helpful, sometimes not. In
 ns/server/servername, the options are
 [term connsperthread],
-[term flushcontent],
+[term highwatermark], 
+[term lowwatermark], 
 [term maxconnections],
 [term maxthreads],
-[term minthreads] and
-[term threadtimeout]. In nearly all cases the defaults are optimal, with
-the exception of
+[term minthreads],
+[term ratelimit] and
+[term threadtimeout].
+
+In nearly all cases the defaults are optimal, with the exception of
 [term minthreads] and
 [term maxthreads] which should be
 carefully adjusted based on your load. Along with
 [term maxthreads], the
 [term maxconnections] setting can be tricky, since making it too large can
 cause your system to thrash.
+
+On busy machines, one can define multiple connection thread pools
+and use the configuration option [term map] to map HTTP method and URL
+patterns to certain pools. By default, the settings are for the
+default connection threads pool. Additional connection thread pools
+can be created via [term pools].
+
+[example_begin]
+   ns_section "ns/server/servername/pools" {
+     #
+     # To activate connection thread pools, uncomment one of the
+     # following lines and/or add other pools.
+     
+     ns_param   monitor	"Monitoring actions to check heathiness of the system"
+     ns_param   fast	"Fast requests, e.g. less than 10ms"
+   }
+   
+   ns_section "ns/server/servername/pool/monitor" {
+     ns_param   minthreads 2
+     ns_param   maxthreads 2
+     
+     ns_param   map "GET /admin/nsstats"
+     ns_param   map "GET /SYSTEM"
+     ns_param   map "GET /ds"
+     ns_param   map "POST /ds"
+     ns_param   map "GET /request-monitor"
+   }
+
+   ns_section "ns/server/servername/pool/fast" {
+     ns_param   minthreads 2
+     ns_param   maxthreads 2
+     
+     ns_param   map "GET /*.png"
+     ns_param   map "GET /*.PNG"
+     ns_param   map "GET /*.jpg"
+     ns_param   map "GET /*.pdf"
+     ns_param   map "GET /*.gif"
+     ns_param   map "GET /*.mp4"
+     ns_param   map "GET /*.ts"
+     ns_param   map "GET /*.m3u8"
+   }
+[example_end]
 
 [subsection {Monitor the Memory}]
 
@@ -127,8 +175,9 @@ interpreter creation helped. Probably it is possible to allow
 concurrent interpreter create operations in Tcl 8.6.
 
 [example_begin]
-   ns_section ns/parameters 
+   ns_section ns/parameters {
       ns_param        concurrentinterpcreate false   ; default false
+   }
 [example_end]
 
 [manpage_end]

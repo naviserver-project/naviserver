@@ -436,6 +436,7 @@ CreatePool(NsServer *servPtr, const char *pool)
             && servPtr->compress.preinit) {
             (void) Ns_CompressInit(&connPtr->cStream);
         }
+        connPtr->rateLimit = poolPtr->defaultRateLimit;
     }
     connBufPtr[n].nextPtr = NULL;
     poolPtr->wqueue.freePtr = &connBufPtr[0];
@@ -454,6 +455,8 @@ CreatePool(NsServer *servPtr, const char *pool)
         Ns_ConfigIntRange(path, "minthreads", 1, 1, poolPtr->threads.max);
     poolPtr->threads.timeout =
         Ns_ConfigIntRange(path, "threadtimeout", 120, 0, INT_MAX);
+    poolPtr->defaultRateLimit =
+        Ns_ConfigIntRange(path, "ratelimit", 0, 0, INT_MAX);
 
     queueLength = maxconns - poolPtr->threads.max;
 

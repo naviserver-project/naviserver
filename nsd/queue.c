@@ -437,6 +437,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
                 connPtr->acceptTime       = sockPtr->acceptTime;
             }
             sockPtr->acceptTime.sec       = 0; /* invalidate time */
+            connPtr->rateLimit            = poolPtr->defaultRateLimit;
 
             /*
              * Try to get an entry from the connection thread queue,

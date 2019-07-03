@@ -398,7 +398,8 @@ ns_section ns/server/${server} {
 
     # ns_param	lowwatermark	10      ;# 10; create additional threads above this queue-full percentage
     ns_param	highwatermark	100     ;# 80; allow concurrent creates above this queue-is percentage
-    ;# 100 means to disable concurrent creates
+                                        ;# 100 means to disable concurrent creates
+    #ns_param    ratelimit       200    ;# 0; limit rate to this amount (KB/s); 0 means unlimited
 
     # Compress response character data: ns_return, ADP etc.
     #
@@ -434,13 +435,14 @@ ns_section ns/server/${server} {
 #  thread pools can be configured using the following parameters.
 #
 #       map
-#       maxconnections
 #       connsperthread
+#       highwatermark
+#       lowwatermark
+#       maxconnections
 #       maxthreads
 #       minthreads
+#       ratelimit
 #       threadtimeout
-#       highwatermark
-#	lowwatermark
 #
 # In order to define thread pools, do the following:
 #
@@ -456,7 +458,7 @@ ns_section ns/server/${server} {
 ns_section "ns/server/${server}/pools" {
     #
     # To activate connection thread pools, uncomment one of the
-    # following lines and/or add other pool.
+    # following lines and/or add other pools.
 
     #ns_param   monitor	"Monitoring actions to check heathiness of the system"
     #ns_param   fast	"Fast requests, e.g. less than 10ms"

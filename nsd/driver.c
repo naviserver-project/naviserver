@@ -158,6 +158,7 @@ typedef struct WriterSock {
 
     char              *clientData;
     Ns_Time            startTime;
+    int                rateLimit;
     bool               keep;
 
 } WriterSock;
@@ -1064,15 +1065,16 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     wrPtr->threads = Ns_ConfigIntRange(path, "writerthreads", 0, 0, 32);
 
     if (wrPtr->threads > 0) {
-        wrPtr->maxsize = (size_t)Ns_ConfigMemUnitRange(path, "writersize",
-                                                   1024*1024, 1024, INT_MAX);
+        wrPtr->writersize = (size_t)Ns_ConfigMemUnitRange(path, "writersize",
+                                                          1024*1024, 1024, INT_MAX);
         wrPtr->bufsize = (size_t)Ns_ConfigMemUnitRange(path, "writerbufsize",
                                                    8192, 512, INT_MAX);
+        wrPtr->rateLimit = Ns_ConfigIntRange(path, "writerratelimit", -1, 0, INT_MAX);
         wrPtr->doStream = Ns_ConfigBool(path, "writerstreaming", NS_FALSE)
             ? NS_WRITER_STREAM_ACTIVE : NS_WRITER_STREAM_NONE;
         Ns_Log(Notice, "%s: enable %d writer thread(s) "
                "for downloads >= %" PRIdz " bytes, bufsize=%" PRIdz " bytes, HTML streaming %d",
-               threadName, wrPtr->threads, wrPtr->maxsize, wrPtr->bufsize, wrPtr->doStream);
+               threadName, wrPtr->threads, wrPtr->writersize, wrPtr->bufsize, wrPtr->doStream);
 
         for (i = 0; i < wrPtr->threads; i++) {
             SpoolerQueue *queuePtr = ns_calloc(1u, sizeof(SpoolerQueue));
@@ -4986,12 +4988,13 @@ WriterThread(void *arg)
     Ns_Log(Notice, "writer%d: accepting connections", queuePtr->id);
 
     PollCreate(&pdata);
-    Ns_GetTime(&now);
     writePtr = NULL;
     stopping = NS_FALSE;
 
     while (!stopping) {
         char charBuffer[1];
+
+        Ns_GetTime(&now);
 
         /*
          * If there are any write sockets, set the bits.
@@ -5003,18 +5006,55 @@ WriterThread(void *arg)
         if (writePtr == NULL) {
             pollTimeout = 30 * 1000;
         } else {
+            /*
+             * There are writers active. Determine on which writers we poll
+             * and the maximal poll wait time.
+             */
             pollTimeout = 1 * 1000;
             for (curPtr = writePtr; curPtr != NULL; curPtr = curPtr->nextPtr) {
-                Ns_Log(DriverDebug, "### Writer poll collect %p size %" PRIdz " streaming %d",
-                       (void *)curPtr, curPtr->size, curPtr->doStream);
+                int sleepTimeMs = 0;
+
+                Ns_Log(DriverDebug, "### Writer poll collect %p size %" PRIdz
+                       " streaming %d rateLimit %d",
+                       (void *)curPtr, curPtr->size, curPtr->doStream, curPtr->rateLimit);
+
+                if (curPtr->rateLimit > 0 && curPtr->nsent > 0) {
+                    int     currentMs;
+                    Ns_Time diff;
+
+                    Ns_DiffTime(&now, &curPtr->startTime, &diff);
+                    currentMs = (int)(diff.sec*1000 + diff.usec/1000);
+
+                    if (currentMs > 0) {
+                        int targetTimeMs, currentRate;
+                        Tcl_WideInt sentKBT = (curPtr->nsent*1000/1024);
+
+                        currentRate = (int)(sentKBT/(Tcl_WideInt)currentMs);
+                        targetTimeMs = (int)(sentKBT/(Tcl_WideInt)curPtr->rateLimit);
+                        sleepTimeMs = 1 + targetTimeMs - currentMs;
+                        Ns_Log(Notice, "### Writer(%d)"
+                               " byte sent %llu secs %" PRId64
+                               ".%06ld rate %d KB/s"
+                               " targetTime %d sleep %d",
+                               curPtr->sockPtr->sock,
+                               curPtr->nsent, (int64_t)diff.sec, diff.usec,
+                               currentRate,
+                               targetTimeMs, sleepTimeMs);
+                    }
+                }
                 if (likely(curPtr->size > 0u)) {
-                    SockPoll(curPtr->sockPtr, (short)POLLOUT, &pdata);
-                    pollTimeout = -1;
+                    if (sleepTimeMs <= 0) {
+                        SockPoll(curPtr->sockPtr, (short)POLLOUT, &pdata);
+                        pollTimeout = -1;
+                    } else {
+                        pollTimeout = MIN(sleepTimeMs, pollTimeout);
+                    }
                 } else if (unlikely(curPtr->doStream == NS_WRITER_STREAM_FINISH)) {
                     pollTimeout = -1;
                 }
             }
         }
+        Ns_Log(DriverDebug, "### Writer final pollTimeout %d", pollTimeout);
 
         /*
          * Select and drain the trigger pipe if necessary.
@@ -5030,7 +5070,6 @@ WriterThread(void *arg)
          * Write to all available sockets
          */
 
-        Ns_GetTime(&now);
         curPtr = writePtr;
         writePtr = NULL;
 
@@ -5223,8 +5262,10 @@ NsWriterFinish(NsWriterSock *wrSockPtr) {
  */
 
 Ns_ReturnCode
-NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
-              struct iovec *bufs, int nbufs, bool everysize)
+NsWriterQueue(Ns_Conn *conn, size_t nsend,
+              Tcl_Channel chan, FILE *fp, int fd,
+              struct iovec *bufs, int nbufs,
+              bool everysize)
 {
     Conn          *connPtr;
     WriterSock    *wrSockPtr;
@@ -5257,9 +5298,9 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
             Ns_Log(DriverDebug, "NsWriterQueue: no writer threads configured");
             status = NS_ERROR;
 
-        } else if (nsend < (size_t)wrPtr->maxsize && !everysize && connPtr->fd == 0) {
+        } else if (nsend < (size_t)wrPtr->writersize && !everysize && connPtr->fd == 0) {
             Ns_Log(DriverDebug, "NsWriterQueue: file is too small(%" PRIdz " < %" PRIdz ")",
-                   nsend, wrPtr->maxsize);
+                   nsend, wrPtr->writersize);
             status = NS_ERROR;
         }
     }
@@ -5396,19 +5437,25 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd,
         }
     }
 
-    Ns_Log(DriverDebug, "NsWriterQueue: writer threads %d nsend %" PRIdz " maxsize %" PRIdz,
-           wrPtr->threads, nsend, wrPtr->maxsize);
+    Ns_Log(DriverDebug, "NsWriterQueue: writer threads %d nsend %" PRIdz " writersize %" PRIdz,
+           wrPtr->threads, nsend, wrPtr->writersize);
 
     assert(connPtr->poolPtr != NULL);
-    /* Ns_MutexLock(&connPtr->poolPtr->threads.lock); */
     connPtr->poolPtr->stats.spool++;
-    /* Ns_MutexUnlock(&connPtr->poolPtr->threads.lock); */
 
     wrSockPtr = (WriterSock *)ns_calloc(1u, sizeof(WriterSock));
     wrSockPtr->sockPtr = connPtr->sockPtr;
     wrSockPtr->sockPtr->timeout.sec = 0;
     wrSockPtr->flags = connPtr->flags;
     wrSockPtr->refCount = 1;
+    /*
+     * Take the rate limit from the connection. If it is not set, use the
+     * driver default.
+     */
+    wrSockPtr->rateLimit = connPtr->rateLimit;
+    if (wrSockPtr->rateLimit == -1) {
+        wrSockPtr->rateLimit = wrPtr->rateLimit;
+    }
 
     /*
      * Make sure we have proper content length header for keep-alives
@@ -5907,7 +5954,7 @@ WriterListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  * WriterSizeObjCmd - subcommand of NsTclWriterObjCmd --
  *
  *      Implements "ns_writer size" command.
- *      Sets or queries lower limit for sending via writer.
+ *      Sets or queries size limit for sending via writer.
  *
  * Results:
  *      Standard Tcl result.
@@ -5940,7 +5987,6 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
             Ns_TclPrintfResult(interp, "no writer configured for a driver with name %s",
                                Tcl_GetString(driverObj));
             result = TCL_ERROR;
-
         }
     }
     if (result == TCL_OK) {
@@ -5949,10 +5995,10 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
             /*
              * The optional argument was provided.
              */
-            wrPtr->maxsize = (size_t)intValue;
+            wrPtr->writersize = (size_t)intValue;
         }
         if (result == TCL_OK) {
-            Tcl_SetObjResult(interp, Tcl_NewIntObj((int)wrPtr->maxsize));
+            Tcl_SetObjResult(interp, Tcl_NewIntObj((int)wrPtr->writersize));
         }
     }
     return result;
