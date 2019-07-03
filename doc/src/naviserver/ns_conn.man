@@ -102,8 +102,8 @@ Returns or sets the number of bytes in the content to be sent.
 
 [call [cmd  "ns_conn copy"] [arg off] [arg len] [arg chan]]
 
-Copies data from the current connection to chan starting at byte off
-for len bytes.
+Copies number of bytes from the current connection starting
+at the given offset to a Tcl channel.
 
 
 [call [cmd  "ns_conn driver"]]

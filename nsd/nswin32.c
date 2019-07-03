@@ -1280,7 +1280,7 @@ ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, long timo)
         }
     }
 
-    return rc;
+    return (rc != SOCKET_ERROR) ? rc : -1;
 }
 
 /*

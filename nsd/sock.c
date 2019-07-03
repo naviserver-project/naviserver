@@ -51,6 +51,7 @@
 # include <AvailabilityMacros.h>
 #endif
 
+#define Retry(a) ((a) == NS_EAGAIN || (a) == NS_EINTR || (a) == NS_EWOULDBLOCK)
 
 /*
  * Local functions defined in this file
@@ -322,11 +323,12 @@ Ns_SockRecvBufs2(NS_SOCKET sock, struct iovec *bufs, int nbufs,
     NS_NONNULL_ASSERT(bufs != NULL);
 
     n = SockRecv(sock, bufs, nbufs, flags);
+
     if (unlikely(n == -1)) {
-        /*
-         * Check, if the resource is temporarily unavailable
-         */
-        if ((ns_sockerrno == EAGAIN) || (ns_sockerrno == NS_EWOULDBLOCK)) {
+        if (Retry(ns_sockerrno)) {
+            /*
+             * Resource is temporarily unavailable.
+             */
             sockState = NS_SOCK_AGAIN;
         } else {
             /*
@@ -336,10 +338,11 @@ Ns_SockRecvBufs2(NS_SOCKET sock, struct iovec *bufs, int nbufs,
         }
     } else if (unlikely(n == 0)) {
         /*
-         * Read value 0 means that peer has performed an orderly shutdown.
+         * Peer has performed an orderly shutdown.
          */
         sockState = NS_SOCK_DONE;
     }
+
     *sockStatePtr = sockState;
 
     return n;
@@ -474,7 +477,22 @@ ssize_t
 Ns_SockSendBufs2(NS_SOCKET sock, const struct iovec *bufs, int nbufs,
                  unsigned int flags)
 {
-    return SockSend(sock, (struct iovec *)bufs, nbufs, flags);
+    ssize_t sent = 0;
+
+    NS_NONNULL_ASSERT(bufs != NULL);
+
+    sent = SockSend(sock, (struct iovec *)bufs, nbufs, flags);
+
+    if (unlikely(sent == -1)) {
+        if (Retry(ns_sockerrno)) {
+            /*
+             * Resource is temporarily unavailable.
+             */
+            sent = 0;
+        }
+    }
+
+    return sent;
 }
 
 
@@ -504,11 +522,13 @@ Ns_SockRecv(NS_SOCKET sock, void *buffer, size_t length,
 
     nread = ns_recv(sock, buffer, length, 0);
 
-    if (nread == -1
-        && ns_sockerrno == NS_EWOULDBLOCK
-        && Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_READ,
-                            timeoutPtr) == NS_OK) {
-        nread = ns_recv(sock, buffer, length, 0);
+    if (unlikely(nread == -1)) {
+        if (Retry(ns_sockerrno)) {
+            if (Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_READ,
+                                 timeoutPtr) == NS_OK) {
+                nread = ns_recv(sock, buffer, length, 0);
+            }
+        }
     }
 
     return nread;
@@ -542,11 +562,13 @@ Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length,
 
     nwrote = ns_send(sock, buffer, length, 0);
 
-    if (nwrote == -1
-        && ns_sockerrno == NS_EWOULDBLOCK
-        && Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_WRITE,
-                             timeoutPtr) == NS_OK) {
-        nwrote = ns_send(sock, buffer, length, 0);
+    if (unlikely(nwrote == -1)) {
+        if (Retry(ns_sockerrno)) {
+            if (Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_WRITE,
+                                 timeoutPtr) == NS_OK) {
+                nwrote = ns_send(sock, buffer, length, 0);
+            }
+        }
     }
 
     return nwrote;
@@ -595,16 +617,12 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
     requestedEvents = pfd.events;
 
     for (;;) {
-
-        errno = 0;
         pfd.revents = 0;
         n = ns_poll(&pfd, (NS_POLL_NFDS_TYPE)1, msec);
-        /* Ns_Log(Notice, "Ns_SockTimedWait events %.4x revents %.4x n %d", pfd.events, pfd.revents, n);*/
-        if (n < 0 && (errno == NS_EINTR || errno == NS_EAGAIN)) {
+        if (n == -1 && Retry(ns_sockerrno)) {
             count ++;
             continue;
         }
-
         break;
     };
 
@@ -705,12 +723,15 @@ NS_SOCKET
 Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr)
 {
     sock = accept(sock, saPtr, lenPtr);
-    Ns_Log(Debug, "Ns_SockAccept returns sock %d, err %s", sock, (errno == 0) ? "NONE" : strerror(errno));
+
+    Ns_Log(Debug, "Ns_SockAccept returns sock %d, err %s", sock,
+           (ns_sockerrno == 0) ? "NONE" : ns_sockstrerror(ns_sockerrno));
 
     if (likely(sock != NS_INVALID_SOCKET)) {
         sock = SockSetup(sock);
-    } else if (errno != 0 && errno != NS_EAGAIN) {
-        Ns_Log(Notice, "accept() fails, reason: %s", strerror(errno));
+    } else if (ns_sockerrno != 0 && ns_sockerrno != NS_EAGAIN) {
+        Ns_Log(Warning, "accept() fails, reason: %s",
+               ns_sockstrerror(ns_sockerrno));
     }
 
     return sock;
