@@ -1798,11 +1798,11 @@ NsDriverRecv(Sock *sockPtr, struct iovec *bufs, int nbufs, Ns_Time *timeoutPtr)
  * NsDriverSend --
  *
  *      Write a vector of buffers to the socket via the driver callback.
+ *      May not send all of the data.
  *
  * Results:
  *      Number of bytes written or -1 on error.
- *      May not send all the data. In particular,
- *      it may 0 when socket is not writable.
+ *      May return 0 (zero) when socket is not writable.
  *
  * Side effects:
  *      Depends on the driver.
@@ -1822,24 +1822,11 @@ NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int fl
 
     NS_NONNULL_ASSERT(drvPtr != NULL);
 
-#if 0
-    fprintf(stderr, "NsDriverSend: nbufs %d\n", nbufs);
-    fprintf(stderr, "NsDriverSend: bufs[0] %d '%s'\n", bufs[0].iov_len, (char *)bufs[0].iov_base);
-    {int i; char *p= (char *)bufs[0].iov_base;
-        for (i=0; i<bufs[0].iov_len; i++) {
-            char c = *(p+i);
-            fprintf(stderr, "[%d] '%c' %d, ", i+1, c<32 ? 32 : c, c);
-        }
-        fprintf(stderr, "\n");
-    }
-#endif
-
     if (likely(drvPtr->sendProc != NULL)) {
         /*
          * TODO: The Ns_DriverSendProc signature should be modified
          * to omit the timeout argument. Same with recvProc().
          */
-
         sent = (*drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs, NULL, flags);
     } else {
         Ns_Log(Warning, "no sendProc registered for driver %s", drvPtr->threadName);
@@ -1870,7 +1857,7 @@ NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int fl
 ssize_t
 NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
 {
-    ssize_t       sent;
+    ssize_t       sent = -1;
     const Driver *drvPtr;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
@@ -1885,7 +1872,6 @@ NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
          * TODO: The Ns_DriverSendFileProc signature should be modified
          * to omit the timeout argument.
          */
-
         sent = (*drvPtr->sendFileProc)((Ns_Sock *)sockPtr, bufs, nbufs, NULL, flags);
     } else {
         sent = Ns_SockSendFileBufs((Ns_Sock *)sockPtr, bufs, nbufs, flags);
