@@ -1730,10 +1730,10 @@ SockSend(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
     ssize_t numBytes = 0;
 
 #ifdef _WIN32
-    DWORD nrBytesSent = 0, Flags = (DWORD)flags;
+    DWORD nrBytesSent = 0;
 
     if (WSASend(sock, (LPWSABUF)bufs, (unsigned long)nbufs, &nrBytesSent,
-                &Flags, NULL, NULL) == -1) {
+                (DWORD)flags, NULL, NULL) == -1) {
         numBytes = -1;
     } else {
         numBytes = (ssize_t)nrBytesSent;
