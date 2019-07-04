@@ -51,7 +51,6 @@
 # include <AvailabilityMacros.h>
 #endif
 
-#define Retry(a) ((a) == NS_EAGAIN || (a) == NS_EINTR || (a) == NS_EWOULDBLOCK)
 
 /*
  * Local functions defined in this file
@@ -74,7 +73,35 @@ static NS_SOCKET BindToSameFamily(struct sockaddr *saPtr,
                                   const char *lhost, unsigned short lport)
                                   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static inline bool Retry(int errorCode) NS_GNUC_CONST;
+
 static Ns_SockProc CloseLater;
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Retry --
+ *
+ *      Boolean function to check whether the provided error code entails a
+ *      retry. This is defined as an inline function rathen than a macro to
+ *      avoid potentially multiple calls to GetLastError(), used for
+ *      "ns_sockerrno" under windows.
+ *
+ * Results:
+ *      Boolean value
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline bool Retry(int errorCode)
+{
+    return (errorCode == NS_EAGAIN || errorCode == NS_EINTR || errorCode == NS_EWOULDBLOCK);
+}
 
 
 /*
