@@ -1529,7 +1529,8 @@ CmpChannelsAsStrings(const Channel *const*leftPtrPtr, const Channel *const*right
 
 #ifdef DEBUG
     fprintf(stderr, "CmpChannelsAsStrings '%s' with '%s' -> %d\n",
-            (*leftPtrPtr)->filter, (*rightPtrPtr)->filter, NS_strcmp((*leftPtrPtr)->filter, (*rightPtrPtr)->filter));
+            (*leftPtrPtr)->filter, (*rightPtrPtr)->filter,
+            NS_strcmp((*leftPtrPtr)->filter, (*rightPtrPtr)->filter));
 #endif
     return NS_strcmp((*leftPtrPtr)->filter, (*rightPtrPtr)->filter);
 }
