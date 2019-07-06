@@ -218,12 +218,23 @@ NS_LD_LIBRARY_PATH	= \
 
 EXTRA_TEST_DIRS =
 ifneq ($(OPENSSL_LIBS),)
-  EXTRA_TEST_DIRS += nsssl
+  #EXTRA_TEST_DIRS += nsssl
+  PEM_FILE        = tests/testserver/etc/server.pem
+  SSLCONFIG       = tests/testserver/etc/openssl.cnf
+  EXTRA_TEST_REQ  = $(PEM_FILE)
 endif
+
+$(PEM_FILE):
+	openssl genrsa 1024 > host.key
+	openssl req -new -config $(SSLCONFIG) -x509 -nodes -sha1 -days 365 -key host.key > host.cert
+	cat host.cert host.key > server.pem
+	rm -rf host.cert host.key
+	openssl dhparam 1024 >> server.pem
+	mv server.pem $(PEM_FILE)
 
 check: test
 
-test: all
+test: all $(EXTRA_TEST_REQ)
 	$(NS_LD_LIBRARY_PATH) ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
 	for i in $(EXTRA_TEST_DIRS); do \
 		( cd $$i && $(MAKE) test ) || exit 1; \

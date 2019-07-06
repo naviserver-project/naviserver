@@ -1,0 +1,220 @@
+# -*- Tcl -*-
+# The contents of this file are subject to the Mozilla Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://mozilla.org/
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+# the License for the specific language governing rights and limitations
+# under the License.
+#
+# Copyright 2006 (C) Stephen Deasey <sdeasey@gmail.com>
+# Copyright 2015-2019 (C) Gustaf Neumann <neumann@wu-wien.ac.at>
+#
+# Alternatively, the contents of this file may be used under the terms
+# of the GNU General Public License (the "GPL"), in which case the
+# provisions of GPL are applicable instead of those above.  If you wish
+# to allow use of your version of this file only under the terms of the
+# GPL and not to allow others to use your version of this file under the
+# License, indicate your decision by deleting the provisions above and
+# replace them with the notice and other provisions required by the GPL.
+# If you do not delete the provisions above, a recipient may use your
+# version of this file under either the License or the GPL.
+#
+#
+
+
+#
+# Test the https module
+#
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+if {[ns_info ssl] ne ""} {
+    testConstraint serverListen true
+}
+
+test nsssl-1.1 {short request 1.0} -constraints {serverListen} -setup {
+    ns_register_proc GET /get {
+	ns_return 200 text/plain "Hello World"
+    }
+} -body {
+    nstest::https -http 1.0 -getbody 1 GET /get
+} -cleanup {
+    ns_unregister_op GET /get
+} -result "200 {Hello World}"
+
+
+test nsssl-1.2 {short request 1.1} -constraints {serverListen} -setup {
+    ns_register_proc GET /get {
+	ns_return 200 text/plain "Hello World"
+    }
+} -body {
+    nstest::https -http 1.1 -getbody 1 GET /get
+} -cleanup {
+    ns_unregister_op GET /get
+} -result "200 {Hello World}"
+
+
+test nsssl-1.3 {longer request} -constraints {serverListen} -setup {
+    ns_register_proc GET /get {
+	ns_return 200 text/plain [string repeat "0123456789" 100]
+    }
+} -body {
+    nstest::https -getbody 0 -getheaders {Content-Length} GET /get
+} -cleanup {
+    ns_unregister_op GET /get
+} -result "200 1000"
+
+
+test nsssl-1.4 {via writer} -constraints {serverListen} -setup {
+    ns_register_proc GET /get {
+	ns_return 200 text/plain [string repeat "0123456789" 500]
+    }
+} -body {
+    nstest::https -http 1.1 -getbody 0 -getheaders {Content-Length} GET /get
+} -cleanup {
+    ns_unregister_op GET /get
+} -result "200 5000"
+
+
+test nsssl-1.5 {via writer 500k} -constraints {serverListen} -setup {
+    ns_register_proc GET /get {
+	ns_return 200 text/plain [string repeat "0123456789" 50000]
+    }
+} -body {
+    nstest::https -http 1.1 -getbody 0 -getheaders {Content-Length} GET /get
+} -cleanup {
+    ns_unregister_op GET /get
+} -result "200 500000"
+
+
+test nsssl-1.6 {with query} -constraints {serverListen} -setup {
+    ns_register_proc GET /get/foo {
+	ns_return 200 text/plain [ns_conn query]
+    }
+} -body {
+    nstest::https -http 1.1 -getbody 1 GET /get/foo?q=1
+} -cleanup {
+    ns_unregister_op GET /get/foo
+} -result "200 q=1"
+
+
+
+test http-2.0 {ns_http for small file} -constraints {serverListen} -body {
+    nstest::https -http 1.1 -getbody 1 GET /123
+} -result {200 123}
+
+
+test http-7.0 {ns_http with body and text datatype} -constraints {serverListen} -setup {
+    ns_register_proc POST /post {
+	set contentType [ns_set iget [ns_conn headers] content-type]
+	ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA[ns_conn content]ZÜZ"
+    }
+} -body {
+    set string "Testing 'äöüß'"
+    set queryHeaders [ns_set create]
+    ns_set update $queryHeaders Content-Type text/plain
+    #ns_log notice "queueing request for [ns_config test listenurl]/post"
+    set result [ns_http run -headers $queryHeaders -body $string -method POST \
+		    [ns_config test listenurl]/post]
+    return [list [dict get $result status] [dict get $result body]]
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain r
+} -result {200 {utf-8 <text/plain> AÄATesting 'äöüß'ZÜZ}}
+
+test http-7.1 {ns_http with body and text datatype with encoding} -constraints {serverListen} -setup {
+    ns_register_proc POST /post {
+	set contentType [ns_set iget [ns_conn headers] content-type]
+	#ns_log notice "post receives content-type '$contentType'"
+	ns_return 200 $contentType "<$contentType> AÄA[ns_conn content]ZÜZ"
+    }
+} -body {
+    set encoding iso8859-1
+    set string [encoding convertto $encoding "Testing 'äöüß'"]
+    set queryHeaders [ns_set create]
+    ns_set update $queryHeaders Content-Type "text/plain; $encoding"
+    set result [ns_http run -headers $queryHeaders -body $string -method POST \
+		    [ns_config test listenurl]/post]
+    return [list [dict get $result status] [dict get $result body]]
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain r
+} -result {200 {<text/plain; iso8859-1> AÄATesting 'äöüß'ZÜZ}}
+
+test http-7.2a {ns_http with body and binary datataype} -constraints {serverListen} -setup {
+    ns_register_proc POST /post {
+	set contentType [ns_set iget [ns_conn headers] content-type]
+	ns_return 200 application/octet-stream [ns_conn content -binary]
+    }
+} -body {
+    set string "\x00\x01\x02\r"
+    set queryHeaders [ns_set create]
+    ns_set update $queryHeaders Content-Type application/octet-stream
+    set result [ns_http run -headers $queryHeaders -body $string -method POST \
+		    [ns_config test listenurl]/post]
+    set R [dict get $result body]
+    set status [dict get $result status]
+    set R1 {}; foreach c [split [encoding convertto utf-8 $R] ""] {lappend R1 [format %4.4X [scan $c %c]]}
+    return [list $status $R1]
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain r
+} -result {200 {0000 0001 0002 000D}}
+
+test http-7.2b {ns_http with body and binary datataype} -constraints {serverListen} -setup {
+    ns_register_proc POST /post {
+	set contentType [ns_set iget [ns_conn headers] content-type]
+	set content [ns_conn content -binary]
+	#
+	# The following command has the sole purpose to convert
+	# "content" to a different obj type than bytearray.
+	#
+	if { $content ne "" } {set x 1}
+	ns_return -binary 200 application/octet-stream $content
+    }
+} -body {
+    set string "\x00\x01\x02\r"
+    set queryHeaders [ns_set create]
+    ns_set update $queryHeaders Content-Type application/octet-stream
+    set result [ns_http run -headers $queryHeaders -body $string \
+		    -method POST [ns_config test listenurl]/post]
+    set R [dict get $result body]
+    set status [dict get $result status]
+    set R1 {}
+    foreach c [split [encoding convertto utf-8 $R] ""] {
+	lappend R1 [format %4.4X [scan $c %c]]
+    }
+    return [list $status $R1]
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain result R R1
+} -result {200 {0000 0001 0002 000D}}
+
+
+test http-8.0 {ns_http with body_file} -constraints {serverListen} -setup {
+    ns_register_proc PUT /put {
+	set contentType [ns_set iget [ns_conn headers] content-type]
+	ns_return 200 text/plain "[ns_conn encoding] <$contentType> <[ns_getcontent -as_file false]>"
+    }
+} -body {
+    set queryHeaders [ns_set create]
+    ns_set update $queryHeaders Content-Type text/plain
+    #ns_log notice "queueing request for [ns_config test listenurl]/put in dir [pwd]"
+    set result [ns_http run -headers $queryHeaders -body_file testserver/pages/123 -method PUT \
+		    [ns_config test listenurl]/put]
+    return [list [dict get $result status] [dict get $result body]]
+} -cleanup {
+    ns_unregister_op PUT /put
+    unset -nocomplain result
+} -result {200 {utf-8 <text/plain> <123>}}
+#-returnCodes error 
+
+
+
+cleanupTests
