@@ -32,17 +32,17 @@ test ns_driver-1.3d {basic syntax: key but too many arguments} -body {
 test ns_driver-1.4a {result of ns_driver info} -body {
     set info [ns_driver info]
     list [llength $info]-[llength [lindex $info 0]]
-} -result "1-18"
+} -result "2-18"
 test ns_driver-1.4b {result of ns_driver names} -body {
-    set info [ns_driver names]
-} -result "nssock"
+    set info [lsort [ns_driver names]]
+} -result "nssock nsssl"
 test ns_driver-1.4c {result of ns_driver threads} -body {
-    set info [ns_driver threads]
-} -result "nssock:0"
+    set info [lsort [ns_driver threads]]
+} -result "nssock:0 nsssl:0"
 test ns_driver-1.4d {result of ns_driver stats} -body {
     set info [ns_driver stats]
     list [llength $info]-[llength [lindex $info 0]]
-} -result "1-12"
+} -result "2-12"
 
 
 
