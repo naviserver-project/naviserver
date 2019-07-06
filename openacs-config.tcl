@@ -399,7 +399,8 @@ ns_section ns/server/${server} {
     # ns_param	lowwatermark	10      ;# 10; create additional threads above this queue-full percentage
     ns_param	highwatermark	100     ;# 80; allow concurrent creates above this queue-is percentage
                                         ;# 100 means to disable concurrent creates
-    #ns_param    ratelimit       200    ;# 0; limit rate to this amount (KB/s); 0 means unlimited
+    #ns_param    ratelimit       200    ;# 0; limit rate per connection to this amount (KB/s); 0 means unlimited
+    #ns_param    poolratelimit   200    ;# 0; limit rate for pool to this amount (KB/s); 0 means unlimited
 
     # Compress response character data: ns_return, ADP etc.
     #
@@ -441,6 +442,7 @@ ns_section ns/server/${server} {
 #       maxconnections
 #       maxthreads
 #       minthreads
+#       poolratelimit
 #       ratelimit
 #       threadtimeout
 #

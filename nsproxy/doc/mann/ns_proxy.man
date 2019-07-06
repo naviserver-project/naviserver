@@ -452,6 +452,6 @@ foreach h $handles {
 
 
 [see_also ns_job]
-[keywords module nsproxy "server built-in" proxy exec pool]
+[keywords module nsproxy "server built-in" proxy exec pools]
 
 [manpage_end]

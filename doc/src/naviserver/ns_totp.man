@@ -94,7 +94,7 @@ If no time is specified, the current time is used.
 
 
 [see_also nsd ns_hmac ns_hotp ns_md ns_sha1 ns_crypt ns_rand]
-[keywords TOTP encoding crypt nsf]
+[keywords TOTP encoding crypto nsf]
 
 [manpage_end]
 

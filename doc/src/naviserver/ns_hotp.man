@@ -69,7 +69,7 @@ specifies the secret used for creating one time passwords.
 [example_end]
 
 [see_also nsd ns_totp ns_hmac ns_md ns_sha1 ns_crypt ns_rand]
-[keywords HOTP encoding crypt nsf]
+[keywords HOTP encoding crypto nsf]
 
 [manpage_end]
 

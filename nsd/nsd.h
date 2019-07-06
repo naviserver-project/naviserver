@@ -229,7 +229,7 @@ typedef struct SpoolerQueue {
     Ns_Thread            thread;      /* Running WriterThread/Spoolerthread */
     int                  id;          /* Queue id */
     int                  queuesize;   /* Number of active sockets in the queue */
-    const char          *threadname;  /* name of the thread working on this queue */
+    const char          *threadName;  /* Name of the thread working on this queue */
     bool                 stopped;     /* Flag to indicate thread stopped */
     bool                 shutdown;    /* Flag to indicate shutdown */
 } SpoolerQueue;
@@ -278,6 +278,18 @@ typedef struct AdpCode {
 #define AdpCodeText(cp)     ((cp)->text.string)
 #define AdpCodeBlocks(cp)   ((cp)->nblocks)
 #define AdpCodeScripts(cp)  ((cp)->nscripts)
+
+/*
+ * Dynamic list structures. These are an alternative to e.g. double linked
+ * lists, but are more local in memory pages and are therefore better for
+ * cache hits.
+ */
+typedef struct Ns_DList {
+    void   **data;
+    size_t   size;
+    size_t   avail;
+    void    *static_data[30];
+} Ns_DList;
 
 
 /*
@@ -713,7 +725,13 @@ typedef struct ConnPool {
         Ns_Time traceTime;           /* cumulated trace times */
     } stats;
 
-    int defaultRateLimit;            /* default rate limit per pool */
+    struct {
+        int defaultConnectionLimit;  /* default rate limit for single connections */
+        int poolLimit;               /* rate limit for pool */
+        int currentRate;             /* actual rate tor pool */
+        Ns_Mutex lock;
+        Ns_DList writerRates;
+    } rate;
 
 } ConnPool;
 
@@ -1019,6 +1037,7 @@ typedef struct NsInterp {
 
 } NsInterp;
 
+
 /*
  * Structure handling HTTP tasks
  */
@@ -1296,6 +1315,7 @@ NS_EXTERN Tcl_ObjCmdProc
 
 NS_EXTERN Ns_LogSeverity Ns_LogRequestDebug;
 NS_EXTERN Ns_LogSeverity Ns_LogConnchanDebug;
+NS_EXTERN bool NsWriterBandwidthManagement;
 
 /*
  * Libnsd initialization routines.
@@ -1387,6 +1407,15 @@ NS_EXTERN void NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPoo
 
 NS_EXTERN void NsMapPool(ConnPool *poolPtr, const char *map, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+
+NS_EXTERN size_t NsPoolAllocateThreadSlot(ConnPool *poolPtr, uintptr_t threadID)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN int NsPoolTotalRate(ConnPool *poolPtr, size_t slot, int rate, int *writerThreadCount)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
+
+
 
 NS_EXTERN void NsSockClose(Sock *sockPtr, int keep)
     NS_GNUC_NONNULL(1);
@@ -1637,6 +1666,19 @@ NS_EXTERN void NsTclRunAtClose(NsInterp *itPtr)              NS_GNUC_NONNULL(1);
 
 NS_EXTERN void NsConfigProgress(void);
 NS_EXTERN void NsUpdateProgress(Ns_Sock *sock) NS_GNUC_NONNULL(1);
+
+/*
+ * dlist.c
+ */
+
+NS_EXTERN void Ns_DListInit(Ns_DList *dlPtr)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void Ns_DListAppend(Ns_DList *dlPtr, void *element)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void Ns_DListFree(Ns_DList *dlPtr)
+    NS_GNUC_NONNULL(1);
 
 /*
  * watchdog.c

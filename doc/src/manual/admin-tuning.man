@@ -69,18 +69,26 @@ is hit.
 
 [subsection {Tune the Connection Threads}]
 
-Thread settings are sometimes helpful, sometimes not. In
-ns/server/servername, the options are
+Thread settings are sometimes helpful, sometimes not. If one is
+runnint a small configuration (e.g. 100K requests per day), the
+default settings provided by the sample config files are typically
+sufficient.
+For larger or very constraint setups the paramamter for the
+connection theads can and should be tuned. The followin parameters can be
+altered in the section "ns/server/servername"
+(for a server named "servername"):
 [term connsperthread],
 [term highwatermark], 
 [term lowwatermark], 
 [term maxconnections],
 [term maxthreads],
 [term minthreads],
+[term poolratelimit],
 [term ratelimit] and
-[term threadtimeout].
+[term threadtimeout]. See also
+[term "connection thread pools"].
 
-In nearly all cases the defaults are optimal, with the exception of
+[para] As mentioned, in most cases the defaults are fine, with the exception of
 [term minthreads] and
 [term maxthreads] which should be
 carefully adjusted based on your load. Along with
@@ -88,7 +96,7 @@ carefully adjusted based on your load. Along with
 [term maxconnections] setting can be tricky, since making it too large can
 cause your system to thrash.
 
-On busy machines, one can define multiple connection thread pools
+[para] On busy machines, one can define multiple connection thread pools
 and use the configuration option [term map] to map HTTP method and URL
 patterns to certain pools. By default, the settings are for the
 default connection threads pool. Additional connection thread pools
@@ -129,6 +137,11 @@ can be created via [term pools].
      ns_param   map "GET /*.m3u8"
    }
 [example_end]
+
+Different pools can be configured with different parameters. It is for
+example possible to specify the maximum outgoing traffic rate per for
+every connection of the pool, or for the total of currently running
+connections of a pool.
 
 [subsection {Monitor the Memory}]
 
@@ -180,4 +193,23 @@ concurrent interpreter create operations in Tcl 8.6.
    }
 [example_end]
 
+Sample documented configuration files:
+[list_begin itemized]
+[item] [uri \
+	https://bitbucket.org/naviserver/naviserver/raw/default/nsd-config.tcl \
+	nsd-config.tcl]
+[item] [uri \
+	https://bitbucket.org/naviserver/naviserver/raw/default/simple-config.tcl \
+	simple-config.tcl]
+[item] [uri \
+	https://bitbucket.org/naviserver/naviserver/raw/default/openacs-config.tcl \
+	openacs-config.tcl]
+[list_end]
+
+
+[keywords module nssock \
+	performance tuning configuration \
+	SO_REUSEPORT TCP TCP_FASTOPEN \
+	"connection thread pools" \
+	nsssl driver prebind pagedir]
 [manpage_end]

@@ -305,7 +305,7 @@ Returns the number of elements (delimited by `/') in the URL of the HTTP request
 Query or set the url encoding for the current connection.
 
 
-[call [cmd  "ns_conn urlv"] [opt [arg idx]]
+[call [cmd  "ns_conn urlv"] [opt [arg idx]]]
 
 Returns a list containing the pieces of the URL delimited by `/'.
 When [arg idx] is provided, return the nth element of the URL vector.

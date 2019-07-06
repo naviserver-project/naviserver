@@ -43,7 +43,7 @@ HDRS	= nsd.h
 LIBOBJS = adpcmds.o adpeval.o adpparse.o adprequest.o auth.o binder.o \
 	  cache.o callbacks.o cls.o compress.o config.o conn.o connio.o \
 	  cookies.o connchan.o \
-	  crypt.o dns.o driver.o dstring.o encoding.o event.o exec.o \
+	  crypt.o dlist.o dns.o driver.o dstring.o encoding.o event.o exec.o \
 	  fastpath.o fd.o filter.o form.o httptime.o index.o info.o \
 	  init.o limits.o lisp.o listen.o log.o mimetypes.o modload.o nsconf.o \
 	  nsmain.o nsthread.o op.o pathname.o pidfile.o proc.o progress.o queue.o \

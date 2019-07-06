@@ -14,7 +14,7 @@
      [opt [option "-lower"]] \
      [opt [option "-single"]] \
      [opt [option "-strict"]] \
-     [opt [arg fieldvalue]]
+     [opt [arg fieldvalue]]]
 
 [para] This function parses the provided field value (from an HTTP
 request or reply header field) into its parts and returns these in the
@@ -38,7 +38,7 @@ e.g. [option "-single"] is used.
 
 The following examples are from RFC 7239:
 [example_begin]
-   % ns_parsefieldvalue -lower {For="[lb]2001:db8:cafe::17[lrb]:4711"}
+   % ns_parsefieldvalue -lower {For="[lb]2001:db8:cafe::17[rb]:4711"}
    {for {[lb]2001:db8:cafe::17[rb]:4711}}
    
    % ns_parsefieldvalue {for=192.0.2.43, for=198.51.100.17}

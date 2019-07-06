@@ -1992,7 +1992,7 @@ Bug Fixes:
   * Fix ns_set management of headers (which was broken since the
     introduction of the leftover management when requests are
     pipelined in 4.99.11). The problem was that the "static" ns_set for headers is
-    was freed to early in the pipelined case.
+    was freed too early in the pipelined case.
 
   * Fix for a serious bug in cookie management which could lead to false
     positives in ns_getcookie:
@@ -3825,7 +3825,7 @@ Code Changes:
      naviserver statistics.
 
    * Use poll() as well under Darwin. Per default, poll() returns
-     writeable even when the socket is not. However, setting
+     writable even when the socket is not. However, setting
      SO_SNDLOWAT fixes this (added by this patch). The change makes it
      possible to quer POLLHUP for all platforms.
 

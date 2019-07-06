@@ -706,6 +706,7 @@ ns_section	"ns/server/${servername}/vhost" {
 #       maxconnections
 #       maxthreads
 #       minthreads
+#       poolratelimit
 #       ratelimit
 #       threadtimeout
 #

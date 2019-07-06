@@ -58,8 +58,7 @@ static void CreatePool(NsServer *servPtr, const char *pool)
  * Static variables defined in this file.
  */
 
-static NsServer   *initServPtr;  /* Currently initializing server. */
-
+static NsServer         *initServPtr;  /* Currently initializing server. */
 static const ServerInit *firstInitPtr; /* First in list of server config callbacks. */
 static ServerInit       *lastInitPtr;  /* Last in list of server config callbacks. */
 
@@ -429,18 +428,6 @@ CreatePool(NsServer *servPtr, const char *pool)
     poolPtr->wqueue.maxconns = maxconns;
     connBufPtr = ns_calloc((size_t) maxconns, sizeof(Conn));
 
-    for (n = 0; n < maxconns - 1; ++n) {
-        connPtr = &connBufPtr[n];
-        connPtr->nextPtr = &connBufPtr[n+1];
-        if (servPtr->compress.enable
-            && servPtr->compress.preinit) {
-            (void) Ns_CompressInit(&connPtr->cStream);
-        }
-        connPtr->rateLimit = poolPtr->defaultRateLimit;
-    }
-    connBufPtr[n].nextPtr = NULL;
-    poolPtr->wqueue.freePtr = &connBufPtr[0];
-
     /*
      * Setting connsperthread to > 0 will cause the thread to graceously exit,
      * after processing that many requests, thus initiating kind-of Tcl-level
@@ -455,8 +442,26 @@ CreatePool(NsServer *servPtr, const char *pool)
         Ns_ConfigIntRange(path, "minthreads", 1, 1, poolPtr->threads.max);
     poolPtr->threads.timeout =
         Ns_ConfigIntRange(path, "threadtimeout", 120, 0, INT_MAX);
-    poolPtr->defaultRateLimit =
-        Ns_ConfigIntRange(path, "ratelimit", 0, 0, INT_MAX);
+    poolPtr->rate.defaultConnectionLimit =
+        Ns_ConfigIntRange(path, "ratelimit", -1, -1, INT_MAX);
+    poolPtr->rate.poolLimit =
+        Ns_ConfigIntRange(path, "poolratelimit", -1, -1, INT_MAX);
+
+    if (poolPtr->rate.poolLimit != -1) {
+        NsWriterBandwidthManagement = NS_TRUE;
+    }
+    for (n = 0; n < maxconns - 1; ++n) {
+        connPtr = &connBufPtr[n];
+        connPtr->nextPtr = &connBufPtr[n+1];
+        if (servPtr->compress.enable
+            && servPtr->compress.preinit) {
+            (void) Ns_CompressInit(&connPtr->cStream);
+        }
+        connPtr->rateLimit = poolPtr->rate.defaultConnectionLimit;
+    }
+
+    connBufPtr[n].nextPtr = NULL;
+    poolPtr->wqueue.freePtr = &connBufPtr[0];
 
     queueLength = maxconns - poolPtr->threads.max;
 
@@ -476,6 +481,8 @@ CreatePool(NsServer *servPtr, const char *pool)
      * sufficient.
      */
     poolPtr->tqueue.args = ns_calloc((size_t)maxconns, sizeof(ConnThreadArg));
+
+    Ns_DListInit(&(poolPtr->rate.writerRates));
 
     /*
      * The Pools are never freed before exit, so there is apparently no need
@@ -510,6 +517,10 @@ CreatePool(NsServer *servPtr, const char *pool)
 
         Ns_MutexInit(&poolPtr->threads.lock);
         Ns_MutexSetName2(&poolPtr->threads.lock, ds.string, "threads");
+
+        Ns_MutexInit(&poolPtr->rate.lock);
+        Ns_MutexSetName2(&poolPtr->rate.lock, ds.string, "ratelimit");
+
         Tcl_DStringFree(&ds);
     }
 }

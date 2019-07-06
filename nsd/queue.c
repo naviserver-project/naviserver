@@ -215,6 +215,86 @@ NsMapPool(ConnPool *poolPtr, const char *map, unsigned int flags)
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsPoolAllocateThreadSlot --
+ *
+ *      Allocate a thread slot for this pool. When bandwidth management is
+ *      activated for a pool, one has to aggregate the pool data from multiple
+ *      writer threads. This happens via slots allocated to the
+ *      threads. Currently, writer threads only exit when the server goes
+ *      down, so there is no need to reuse slots from writer thread, and the
+ *      associated slots are stable once allocated. This function will be
+ *      called only once per writer thread and pool. The thread ID will become
+ *      necessary, when the writer threads are dynamic.
+ *
+ * Results:
+ *      Allocated slot id for this thread.
+ *
+ * Side effects:
+ *      Maybe the DList allocates additional memory.
+ *
+ *----------------------------------------------------------------------
+ */
+size_t
+NsPoolAllocateThreadSlot(ConnPool *poolPtr, uintptr_t UNUSED(threadID))
+{
+    Ns_DList *dlPtr;
+
+
+    dlPtr = &(poolPtr->rate.writerRates);
+
+    /*
+     * Appending must be locked, since in rare cases, a realloc might happen
+     * under the hood when appending
+     */
+    Ns_MutexLock(&poolPtr->rate.lock);
+    Ns_DListAppend(dlPtr, 0u);
+    Ns_MutexUnlock(&poolPtr->rate.lock);
+
+    return dlPtr->size;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsPoolTotalRate --
+ *
+ *      Calculate the total rate form all writer threads. The function simply
+ *      adds the data from all allocated slots and reports the number of
+ *      associated writer threads for estimating rates per writer threads.
+ *
+ * Results:
+ *      actual total rate for a pool (sum of rates per writer thread)
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsPoolTotalRate(ConnPool *poolPtr, size_t slot, int rate, int *writerThreadCount)
+{
+    Ns_DList *dlPtr;
+    size_t    i;
+    uintptr_t totalRate = 0;
+
+    dlPtr = &(poolPtr->rate.writerRates);
+    dlPtr->data[slot] = (void*)(uintptr_t)rate;
+
+    Ns_MutexLock(&poolPtr->rate.lock);
+    for (i = 0u; i < dlPtr->size; i ++) {
+        totalRate = totalRate + (uintptr_t)dlPtr->data[slot];
+    }
+    poolPtr->rate.currentRate = (int)totalRate;
+    Ns_MutexUnlock(&poolPtr->rate.lock);
+
+    *writerThreadCount = (int)dlPtr->size;
+
+    return (int)totalRate;
+}
+
 
 
 /*
@@ -437,7 +517,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
                 connPtr->acceptTime       = sockPtr->acceptTime;
             }
             sockPtr->acceptTime.sec       = 0; /* invalidate time */
-            connPtr->rateLimit            = poolPtr->defaultRateLimit;
+            connPtr->rateLimit            = poolPtr->rate.defaultConnectionLimit;
 
             /*
              * Try to get an entry from the connection thread queue,

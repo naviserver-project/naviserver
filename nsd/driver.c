@@ -117,6 +117,16 @@ typedef struct PollData {
 #define PollHup(ppd, i)          (((ppd)->pfds[(i)].revents & POLLHUP) == POLLHUP)
 
 /*
+ * Collected informationof writer threads for per pool rates, necessary for
+ * per pool bandwidth management.
+ */
+typedef struct ConnPoolInfo {
+    size_t threadSlot;
+    int currentPoolRate;
+    int deltaPercentage;
+} ConnPoolInfo;
+
+/*
  * The following structure maintains writer socket
  */
 typedef struct WriterSock {
@@ -133,6 +143,7 @@ typedef struct WriterSock {
     NsWriterStreamState  doStream;
     int                  fd;
     char                *headerString;
+    struct ConnPool     *poolPtr;
 
     union {
         struct {
@@ -159,6 +170,8 @@ typedef struct WriterSock {
     char              *clientData;
     Ns_Time            startTime;
     int                rateLimit;
+    int                currentRate;
+    ConnPoolInfo      *infoPtr;
     bool               keep;
 
 } WriterSock;
@@ -303,13 +316,18 @@ static void ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
 static Driver *LookupDriver(Tcl_Interp *interp, const char* protocol, const char *driverName)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static void WriterPerPoolRates(WriterSock *writePtr, Tcl_HashTable *pools)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 /*
- * Static variables defined in this file.
+ * Global variables defined in this file.
  */
 
 Ns_LogSeverity Ns_LogTaskDebug;
 Ns_LogSeverity Ns_LogRequestDebug;
 Ns_LogSeverity Ns_LogConnchanDebug;
+bool NsWriterBandwidthManagement = NS_FALSE;
+
 
 static Ns_LogSeverity   DriverDebug;        /* Severity at which to log verbose debugging. */
 static Ns_Mutex         reqLock     = NULL; /* Lock for allocated Request structure pool */
@@ -1240,9 +1258,9 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
     } else {
         const Driver *drvPtr;
         Tcl_Obj      *resultObj = Tcl_NewListObj(0, NULL);
-        Tcl_HashTable names;     /* names of the driver modules without duplicates */
+        Tcl_HashTable driverNames;     /* names of the driver modules without duplicates */
 
-        Tcl_InitHashTable(&names, TCL_STRING_KEYS);
+        Tcl_InitHashTable(&driverNames, TCL_STRING_KEYS);
 
         /*
          * Iterate over all modules, not necessarily all driver threads
@@ -1250,7 +1268,7 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
             int isNew = 0;
 
-            (void)Tcl_CreateHashEntry(&names, drvPtr->moduleName, &isNew);
+            (void)Tcl_CreateHashEntry(&driverNames, drvPtr->moduleName, &isNew);
             if (isNew == 1) {
                 Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
@@ -1295,7 +1313,7 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
             }
         }
         Tcl_SetObjResult(interp, resultObj);
-        Tcl_DeleteHashTable(&names);
+        Tcl_DeleteHashTable(&driverNames);
     }
 
     return result;
@@ -1431,9 +1449,9 @@ DriverNamesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     } else {
         const Driver *drvPtr;
         Tcl_Obj      *resultObj = Tcl_NewListObj(0, NULL);
-        Tcl_HashTable names;     /* names of the drivers without duplicates */
+        Tcl_HashTable driverNames;     /* names of the drivers without duplicates */
 
-        Tcl_InitHashTable(&names, TCL_STRING_KEYS);
+        Tcl_InitHashTable(&driverNames, TCL_STRING_KEYS);
 
         /*
          * Iterate over all drivers and collect results.
@@ -1441,13 +1459,13 @@ DriverNamesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
             int            isNew;
 
-            (void)Tcl_CreateHashEntry(&names, drvPtr->moduleName, &isNew);
+            (void)Tcl_CreateHashEntry(&driverNames, drvPtr->moduleName, &isNew);
             if (isNew == 1) {
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(drvPtr->moduleName, -1));
             }
         }
         Tcl_SetObjResult(interp, resultObj);
-        Tcl_DeleteHashTable(&names);
+        Tcl_DeleteHashTable(&driverNames);
     }
 
     return result;
@@ -4262,7 +4280,7 @@ SpoolerThread(void *arg)
     PollData       pdata;
 
     Ns_ThreadSetName("-spooler%d-", queuePtr->id);
-    queuePtr->threadname = Ns_ThreadGetName();
+    queuePtr->threadName = Ns_ThreadGetName();
 
     /*
      * Loop forever until signaled to shut down and all
@@ -4811,8 +4829,8 @@ WriterReadFromSpool(WriterSock *curPtr) {
  *
  * WriterSend --
  *
- *      Utility function of the WriterThread to send content to the
- *      client. It handles partial reads from the lower level driver
+ *      Utility function of the WriterThread to send content to the client. It
+ *      handles partial write operations from the lower level driver
  *      infrastructure.
  *
  * Results:
@@ -4933,6 +4951,143 @@ WriterSend(WriterSock *curPtr, int *err) {
     return status;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriterPerPoolRates --
+ *
+ *      Compute current bandwidths per pool and writer.
+ *
+ *      Since we have potentially multiple writer threads running, all these
+ *      might have writer threads of the same pool. In order to minimize
+ *      locking, we compute first writer thread specific subresults and combine
+ *      these later with with the results of the other threads.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Connections are accepted and their SockPtr is set to NULL
+ *      such that closing actual connection does not close the socket.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+WriterPerPoolRates(WriterSock *writePtr,  Tcl_HashTable *pools)
+{
+    WriterSock     *curPtr;
+    Tcl_HashSearch  search;
+    Tcl_HashEntry  *hPtr;
+
+    NS_NONNULL_ASSERT(writePtr != NULL);
+    NS_NONNULL_ASSERT(pools != NULL);
+
+    /*
+     * First reset pool total rate.  We keep the bandwidth managed pools in a
+     * thread-local memory. Before, we accumulate the data, we reset it.
+     */
+    hPtr = Tcl_FirstHashEntry(pools, &search);
+    while (hPtr != NULL) {
+        ConnPoolInfo *infoPtr = (ConnPoolInfo *)Tcl_GetHashValue(hPtr);
+        infoPtr->currentPoolRate = 0;
+        hPtr = Tcl_NextHashEntry(&search);
+    }
+
+    /*
+     * Sum the actual rates per bandwidth limited pool for all active writer
+     * jobs.
+     */
+    for (curPtr = writePtr; curPtr != NULL; curPtr = curPtr->nextPtr) {
+        /*
+         * Does the writer come form a badwidth limited pool?
+         */
+        if (curPtr->poolPtr->rate.poolLimit > 0 && curPtr->currentRate > 0) {
+
+            /*
+             * Do we have for this writer already an infoPtr?
+             */
+            if (curPtr->infoPtr == NULL) {
+                ConnPoolInfo  *infoPtr;
+                int            isNew;
+
+                hPtr = Tcl_CreateHashEntry(pools, curPtr->poolPtr, &isNew);
+                if (isNew == 1) {
+                    /*
+                     * This is a pool, we have not seen yet.
+                     */
+                    infoPtr = ns_malloc(sizeof(ConnPoolInfo));
+                    infoPtr->currentPoolRate = 0;
+                    infoPtr->threadSlot =
+                        NsPoolAllocateThreadSlot(curPtr->poolPtr, Ns_ThreadId());
+                    Tcl_SetHashValue(hPtr, infoPtr);
+                    Ns_Log(DriverDebug, "poollimit: pool '%s' allocate infoPtr with slot %lu poolLimit %d",
+                           curPtr->poolPtr->pool,
+                           infoPtr->threadSlot,
+                           curPtr->poolPtr->rate.poolLimit);
+                } else {
+                    infoPtr = (ConnPoolInfo *)Tcl_GetHashValue(hPtr);
+                }
+                /*
+                 * Cache the infoPtr in the current writer sock to avoid
+                 * later hash lookups.
+                 */
+                curPtr->infoPtr = infoPtr;
+            }
+
+            /*
+             * Add the actual rate to the writer specific pool rate.
+             */
+            curPtr->infoPtr->currentPoolRate += curPtr->currentRate;
+            Ns_Log(DriverDebug, "poollimit pool '%s' added rate poolLimit %d poolRate %d",
+                   curPtr->poolPtr->pool,
+                   curPtr->poolPtr->rate.poolLimit,
+                   curPtr->infoPtr->currentPoolRate);
+        }
+    }
+
+    /*
+     * Now iterate over the pools used by this thread and sum the specific
+     * pool rates from all writer threads.
+     */
+    hPtr = Tcl_FirstHashEntry(pools, &search);
+    while (hPtr != NULL) {
+        ConnPool     *poolPtr = Tcl_GetHashKey(pools, hPtr);
+        int           totalPoolRate, writerThreadCount, threadDeltaRate;
+        ConnPoolInfo *infoPtr;
+
+        /*
+         * Compute the following indicators:
+         *   - totalPoolRate: accumulated pool rates from all writer threads.
+         *
+         *   - threadDeltaRate: how much of the available bandwidth can i used
+         *     the current thread. We assume that the distribution of writers
+         *     between all writer threads is even, so we can split the
+         *     available rate by the number of writer threads working on this
+         *     pool.
+         *
+         *  - deltaPercentage: adjust in a single iteration just a fraction
+         *    (e.g. 10 percent) of the potential change. This function is
+         *    called often enough to justify delayed adjustments.
+         */
+        infoPtr = (ConnPoolInfo *)Tcl_GetHashValue(hPtr);
+        totalPoolRate = NsPoolTotalRate(poolPtr,
+                                        infoPtr->threadSlot,
+                                        infoPtr->currentPoolRate,
+                                        &writerThreadCount);
+
+        threadDeltaRate = (poolPtr->rate.poolLimit - totalPoolRate) / writerThreadCount;
+        infoPtr->deltaPercentage = threadDeltaRate / 10;
+
+        Ns_Log(Notice, "... pool '%s' actual %d limit %d (#%d writer threads) -> computed delta %d (%d%%) ",
+               poolPtr->pool, infoPtr->currentPoolRate, poolPtr->rate.poolLimit,
+               writerThreadCount, threadDeltaRate,
+               infoPtr->deltaPercentage
+               );
+
+        hPtr = Tcl_NextHashEntry(&search);
+    }
+}
 
 /*
  *----------------------------------------------------------------------
@@ -4962,9 +5117,12 @@ WriterThread(void *arg)
     const Driver   *drvPtr;
     WriterSock     *curPtr, *nextPtr, *writePtr;
     PollData        pdata;
+    Tcl_HashTable   pools;     /* used for accumulating bandwidth per pool */
 
     Ns_ThreadSetName("-writer%d-", queuePtr->id);
-    queuePtr->threadname = Ns_ThreadGetName();
+    queuePtr->threadName = Ns_ThreadGetName();
+
+    Tcl_InitHashTable(&pools, TCL_ONE_WORD_KEYS);
 
     /*
      * Loop forever until signaled to shut down and all
@@ -4980,8 +5138,6 @@ WriterThread(void *arg)
     while (!stopping) {
         char charBuffer[1];
 
-        Ns_GetTime(&now);
-
         /*
          * If there are any write sockets, set the bits.
          */
@@ -4992,11 +5148,21 @@ WriterThread(void *arg)
         if (writePtr == NULL) {
             pollTimeout = 30 * 1000;
         } else {
+
+            /*
+             * If per-pool bandwidth management is requested, compute the base
+             * data for the adjustment. If there is no bandwidth management
+             * requested, there is no slowdow.
+             */
+            if (NsWriterBandwidthManagement) {
+                WriterPerPoolRates(writePtr, &pools);
+            }
+
             /*
              * There are writers active. Determine on which writers we poll
-             * and the maximal poll wait time.
+             * and compute the maximal poll wait time.
              */
-            pollTimeout = 1 * 1000;
+            pollTimeout = 1000;
             for (curPtr = writePtr; curPtr != NULL; curPtr = curPtr->nextPtr) {
                 int sleepTimeMs = 0;
 
@@ -5004,30 +5170,71 @@ WriterThread(void *arg)
                        " streaming %d rateLimit %d",
                        (void *)curPtr, curPtr->size, curPtr->doStream, curPtr->rateLimit);
 
-                if (curPtr->rateLimit > 0 && curPtr->nsent > 0) {
-                    int     currentMs;
-                    Ns_Time diff;
+                if (curPtr->rateLimit > 0
+                    && curPtr->nsent > 0
+                    && curPtr->currentRate > 0
+                    ) {
+                    int  currentMs, targetTimeMs;
 
-                    Ns_DiffTime(&now, &curPtr->startTime, &diff);
-                    currentMs = (int)(diff.sec*1000 + diff.usec/1000);
+                    /*
+                     * Perform per-pool rate management, when
+                     *  - a poolLimit is provided,
+                     *  - we have performance data of thee pool, and
+                     *  - changes are possible (as flagged by deltaPercentage).
+                     */
+                    if (NsWriterBandwidthManagement
+                        && curPtr->poolPtr->rate.poolLimit > 0
+                        && curPtr->infoPtr != NULL
+                        && curPtr->infoPtr->deltaPercentage != 0
+                        ) {
+                        /*
+                         * Only adjust data for busy writer jobs, which
+                         * are close to their limits.
+                         */
+                        bool onLimit = (curPtr->currentRate*100 / curPtr->rateLimit) > 90;
 
-                    if (currentMs > 0) {
-                        int targetTimeMs, currentRate;
-                        Tcl_WideInt sentKBT = (curPtr->nsent*1000/1024);
-
-                        currentRate = (int)(sentKBT/(Tcl_WideInt)currentMs);
-                        targetTimeMs = (int)(sentKBT/(Tcl_WideInt)curPtr->rateLimit);
-                        sleepTimeMs = 1 + targetTimeMs - currentMs;
-                        Ns_Log(Notice, "### Writer(%d)"
-                               " byte sent %" TCL_LL_MODIFIER "d secs %" PRId64
-                               ".%06ld rate %d KB/s"
-                               " targetTime %d sleep %d",
-                               curPtr->sockPtr->sock,
-                               curPtr->nsent, (int64_t)diff.sec, diff.usec,
-                               currentRate,
-                               targetTimeMs, sleepTimeMs);
+                        Ns_Log(DriverDebug, "we allowed %d we use %d on limit %d (%d) , we can do %d",
+                               curPtr->rateLimit,  curPtr->currentRate,
+                               (int)onLimit, curPtr->currentRate*100/curPtr->rateLimit,
+                               curPtr->infoPtr->deltaPercentage);
+                        if (onLimit) {
+                            /*
+                             * Compute new rate limit based on
+                             * positive/negative delta percentage.
+                             */
+                            int newRate = curPtr->currentRate +
+                                (curPtr->currentRate * curPtr->infoPtr->deltaPercentage / 100);
+                            /*
+                             * Sanity checks:
+                             *  - never allow more than poolLimit
+                             *  - never kill connections completely (e.g. minRate 5KB/s)
+                             */
+                            if (newRate > curPtr->poolPtr->rate.poolLimit) {
+                                newRate = curPtr->poolPtr->rate.poolLimit;
+                            } else if (newRate < 5) {
+                                newRate = 5;
+                            }
+                            Ns_Log(Notice, "... pool '%s' new rate limit is %d",
+                                   curPtr->poolPtr->pool, newRate);
+                            curPtr->rateLimit = newRate;
+                        }
                     }
+
+                    /*
+                     * Adjust rate to the rate limit.
+                     */
+                    currentMs    = (int)(curPtr->nsent/(Tcl_WideInt)curPtr->currentRate);
+                    targetTimeMs = (int)(curPtr->nsent/(Tcl_WideInt)curPtr->rateLimit);
+                    sleepTimeMs = 1 + targetTimeMs - currentMs;
+                    Ns_Log(Notice, "### Writer(%d)"
+                           " byte sent %" TCL_LL_MODIFIER "d msecs %d rate %d KB/s"
+                           " targetTime %d sleep %d",
+                           curPtr->sockPtr->sock,
+                           curPtr->nsent, currentMs,
+                           curPtr->currentRate,
+                           targetTimeMs, sleepTimeMs);
                 }
+
                 if (likely(curPtr->size > 0u)) {
                     if (sleepTimeMs <= 0) {
                         SockPoll(curPtr->sockPtr, (short)POLLOUT, &pdata);
@@ -5052,10 +5259,11 @@ WriterThread(void *arg)
                      ns_sockstrerror(ns_sockerrno));
         }
 
+
         /*
          * Write to all available sockets
          */
-
+        Ns_GetTime(&now);
         curPtr = writePtr;
         writePtr = NULL;
 
@@ -5067,7 +5275,10 @@ WriterThread(void *arg)
             sockPtr = curPtr->sockPtr;
             err = 0;
 
-            /* the truth value of doStream does not change through concurrency */
+            /*
+             * The truth value of doStream does not change through
+             * concurrency.
+             */
             doStream = curPtr->doStream;
 
             if (unlikely(PollHup(&pdata, sockPtr->pidx))) {
@@ -5076,6 +5287,27 @@ WriterThread(void *arg)
                 err = 0;
 
             } else if (likely(PollOut(&pdata, sockPtr->pidx)) || (doStream == NS_WRITER_STREAM_FINISH)) {
+                /*
+                 * The socket is writable, we can compute the rate, when
+                 * something was sent already and some kind of rate limiting
+                 * is in place.
+                 */
+                Ns_Log(DriverDebug, "Socket of pool '%s' is writable, writer limit %d nsent %ld",
+                       curPtr->poolPtr->pool, curPtr->rateLimit, (long)curPtr->nsent);
+
+                if (curPtr->rateLimit > 0 && curPtr->nsent > 0)  {
+                    Ns_Time diff;
+                    int     currentMs;
+
+                    Ns_DiffTime(&now, &curPtr->startTime, &diff);
+                    currentMs = (int)(diff.sec*1000 + diff.usec/1000);
+                    if (currentMs > 0) {
+                        curPtr->currentRate = (int)((curPtr->nsent)/(Tcl_WideInt)currentMs);
+                        Ns_Log(DriverDebug,
+                               "Socket of pool '%s' is writable, currentMs %d has updated current rate %d",
+                               curPtr->poolPtr->pool, currentMs,curPtr->currentRate);
+                    }
+                }
                 Ns_Log(DriverDebug,
                        "### Writer %p can write to client fd %d (trigger %d) streaming %.6x"
                        " size %" PRIdz " nsent %" TCL_LL_MODIFIER "d bufsize %" PRIdz,
@@ -5185,6 +5417,24 @@ WriterThread(void *arg)
         stopping = queuePtr->shutdown;
     }
     PollFree(&pdata);
+
+    {
+        /*
+         * Free ConnPoolInfo
+         */
+        Tcl_HashSearch  search;
+        Tcl_HashEntry  *hPtr = Tcl_FirstHashEntry(&pools, &search);
+        while (hPtr != NULL) {
+            ConnPoolInfo *infoPtr = (ConnPoolInfo *)Tcl_GetHashValue(hPtr);
+            ns_free(infoPtr);
+            hPtr = Tcl_NextHashEntry(&search);
+        }
+        /*
+         * Delete the hash table for pools.
+         */
+        Tcl_DeleteHashTable(&pools);
+    }
+
 
     Ns_Log(Notice, "exiting");
 
@@ -5431,17 +5681,32 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
 
     wrSockPtr = (WriterSock *)ns_calloc(1u, sizeof(WriterSock));
     wrSockPtr->sockPtr = connPtr->sockPtr;
+    wrSockPtr->poolPtr = connPtr->poolPtr;  /* just for begin able to trace back the origin, e.g. list */
     wrSockPtr->sockPtr->timeout.sec = 0;
     wrSockPtr->flags = connPtr->flags;
     wrSockPtr->refCount = 1;
     /*
-     * Take the rate limit from the connection. If it is not set, use the
-     * driver default.
+     * Take the rate limit from the connection. 
      */
     wrSockPtr->rateLimit = connPtr->rateLimit;
     if (wrSockPtr->rateLimit == -1) {
-        wrSockPtr->rateLimit = wrPtr->rateLimit;
+        /*
+         * The value was not specified via connection. Use either the pool
+         * limit as a base for the computation or fall back to the driver
+         * default value.
+         */
+        if (connPtr->poolPtr->rate.poolLimit > 0) {
+            /*
+             * Very optimistic start value, but values will float through via
+             * bandwidth management.
+             */
+            wrSockPtr->rateLimit = connPtr->poolPtr->rate.poolLimit / 2;
+        } else {
+            wrSockPtr->rateLimit = wrPtr->rateLimit;
+        }
     }
+    Ns_Log(DriverDebug, "### Writer(%d): rate limit %d KB/s",
+           wrSockPtr->sockPtr->sock, wrSockPtr->rateLimit);
 
     /*
      * Make sure we have proper content length header for keep-alives
@@ -5892,7 +6157,7 @@ WriterListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
             const DrvWriter *wrPtr;
 
             /*
-             * if server was specified, list only results from this server.
+             * If server was specified, list only results from this server.
              */
             if (servPtr != NULL && servPtr != drvPtr->servPtr) {
                 continue;
@@ -5907,21 +6172,29 @@ WriterListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
                 wrSockPtr = queuePtr->curPtr;
                 while (wrSockPtr != NULL) {
                     char ipString[NS_IPADDR_SIZE];
+                    ns_inet_ntop((struct sockaddr *)&(wrSockPtr->sockPtr->sa),
+                                 ipString,sizeof(ipString));
 
                     (void) Ns_DStringNAppend(dsPtr, "{", 1);
                     (void) Ns_DStringAppendTime(dsPtr, &wrSockPtr->startTime);
                     (void) Ns_DStringNAppend(dsPtr, " ", 1);
-                    (void) Ns_DStringAppend(dsPtr, queuePtr->threadname);
+                    (void) Ns_DStringAppend(dsPtr, queuePtr->threadName);
                     (void) Ns_DStringNAppend(dsPtr, " ", 1);
                     (void) Ns_DStringAppend(dsPtr, drvPtr->threadName);
                     (void) Ns_DStringNAppend(dsPtr, " ", 1);
-                    (void) Ns_DStringAppend(dsPtr, ns_inet_ntop((struct sockaddr *)&(wrSockPtr->sockPtr->sa),
-                                                                ipString,
-                                                                sizeof(ipString)));
-                    (void) Ns_DStringPrintf(dsPtr, " %d %" PRIdz " %" TCL_LL_MODIFIER "d ",
-                                            wrSockPtr->fd, wrSockPtr->size, wrSockPtr->nsent);
+                    (void) Ns_DStringAppend(dsPtr, wrSockPtr->poolPtr->pool);
+                    (void) Ns_DStringNAppend(dsPtr, " ", 1);
+                    (void) Ns_DStringAppend(dsPtr, ipString);
+                    (void) Ns_DStringPrintf(dsPtr, " %d %" PRIdz " %" TCL_LL_MODIFIER "d %d %d ",
+                                            wrSockPtr->fd,
+                                            wrSockPtr->size,
+                                            wrSockPtr->nsent,
+                                            wrSockPtr->currentRate,
+                                            wrSockPtr->rateLimit);
                     (void) Ns_DStringAppendElement(dsPtr,
-                                                   (wrSockPtr->clientData != NULL) ? wrSockPtr->clientData : NS_EMPTY_STRING);
+                                                   (wrSockPtr->clientData != NULL)
+                                                   ? wrSockPtr->clientData
+                                                   : NS_EMPTY_STRING);
                     (void) Ns_DStringNAppend(dsPtr, "} ", 2);
                     wrSockPtr = wrSockPtr->nextPtr;
                 }
@@ -6357,7 +6630,7 @@ AsyncWriterThread(void *arg)
     PollData        pdata;
 
     Ns_ThreadSetName("-asynclogwriter%d-", queuePtr->id);
-    queuePtr->threadname = Ns_ThreadGetName();
+    queuePtr->threadName = Ns_ThreadGetName();
 
     /*
      * Allocate and initialize controlling variables
