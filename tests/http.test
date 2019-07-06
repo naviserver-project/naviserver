@@ -673,14 +673,9 @@ test http-7.0 {ns_http with body and text datatype} -constraints {serverListen} 
     set string "Testing 'äöüß'"
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type text/plain
-    if {[catch {set h [ns_http queue -headers $queryHeaders -body $string -method POST \
-                           [ns_config test listenurl]/post]} errorMsg]} {
-        set S ???
-        set R "ERROR-$errorMsg during POST to [ns_config test listenurl]/post]"
-    } else {
-        set r [ns_http wait -result R -status S $h]
-    }
-    return [list $S $R]
+    set result [ns_http run -headers $queryHeaders -body $string -method POST \
+                    [ns_config test listenurl]/post]
+    return [list [dict get $result status] [dict get $result body]]
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
@@ -697,12 +692,9 @@ test http-7.1a {ns_http with body and text datatype with encoding} -constraints 
     set string [encoding convertto $encoding "Testing 'äöüß'"]
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type "text/plain; $encoding"
-    if {[catch {set h [ns_http queue -headers $queryHeaders -body $string -method POST \
-                           [ns_config test listenurl]/post]} errorMsg]} {
-        puts stderr ERROR-$errorMsg
-    }
-    set r [ns_http wait -result R -status S $h]
-    return [list $S $R]
+    set result [ns_http run -headers $queryHeaders -body $string -method POST \
+                    [ns_config test listenurl]/post]
+    return [list [dict get $result status] [dict get $result body]]
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
@@ -723,12 +715,9 @@ test http-7.1b {ns_http with body and text datatype with encoding, no bytearray}
     set string [encoding convertto $encoding "Testing 'äöüß'"]
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type "text/plain; $encoding"
-    if {[catch {set h [ns_http queue -headers $queryHeaders -body $string -method POST \
-                           [ns_config test listenurl]/post]} errorMsg]} {
-        puts stderr ERROR-$errorMsg
-    }
-    set r [ns_http wait -result R -status S $h]
-    return [list $S $R]
+    set result [ns_http run -headers $queryHeaders -body $string -method POST \
+                    [ns_config test listenurl]/post]
+    return [list [dict get $result status] [dict get $result body]]
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
@@ -744,12 +733,11 @@ test http-7.2a {ns_http with body and binary datataype} -constraints {serverList
     set string "\x00\x01\x02\r"
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type application/octet-stream
-    if {[catch {set h [ns_http queue -headers $queryHeaders -body $string -method POST [ns_config test listenurl]/post]} errorMsg]} {
-        puts stderr ERROR-$errorMsg
-    }
-    set r [ns_http wait -result R -status S $h]
+    set result [ns_http run -headers $queryHeaders -body $string -method POST \
+                    [ns_config test listenurl]/post]
+    set R [dict get $result body]
     set R1 {}; foreach c [split [encoding convertto utf-8 $R] ""] {lappend R1 [format %4.4X [scan $c %c]]}
-    return [list $S $R1]
+    return [list [dict get $result status] $R1]
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
@@ -768,12 +756,11 @@ test http-7.2b {ns_http with body and binary datataype, no bytearray} -constrain
     set string "\x00\x01\x02\r"
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type application/octet-stream
-    if {[catch {set h [ns_http queue -headers $queryHeaders -body $string -method POST [ns_config test listenurl]/post]} errorMsg]} {
-        puts stderr ERROR-$errorMsg
-    }
-    set r [ns_http wait -result R -status S $h]
+    set result [ns_http run -headers $queryHeaders -body $string -method POST \
+                    [ns_config test listenurl]/post]
+    set R [dict get $result body]
     set R1 {}; foreach c [split [encoding convertto utf-8 $R] ""] {lappend R1 [format %4.4X [scan $c %c]]}
-    return [list $S $R1]
+    return [list [dict get $result status] $R1]
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
@@ -793,8 +780,8 @@ test http-8.0.1q {ns_http no body_file queue} -constraints {serverListen} -setup
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type text/plain
     set h [ns_http queue -headers $queryHeaders -method GET [ns_config test listenurl]/get]
-    set r [ns_http wait -result R -status S $h]
-    return [list $S $R]
+    set result [ns_http wait $h]
+    return [list [dict get $result status] [dict get $result body]]
 } -cleanup {
     ns_unregister_op GET /get
 } -result {200 {hello world}}
@@ -828,8 +815,8 @@ test http-8.0.2q {ns_http with body_file queue} -constraints {serverListen} -set
                            [ns_config test listenurl]/put]} errorMsg]} {
         puts stderr ERROR-$errorMsg
     }
-    set r [ns_http wait -result R -status S $h]
-    return [list $S $R]
+    set result [ns_http wait $h]
+    return [list [dict get $result status] [dict get $result body]]
 } -cleanup {
     ns_unregister_op PUT /put
     unset -nocomplain r
@@ -856,7 +843,7 @@ test http-8.0.2s {ns_http with body_chan queue} -constraints {serverListen} -set
         ns_return 200 text/plain "[ns_conn encoding] <$contentType> <[ns_getcontent -as_file false]>"
     }
     set fn [ns_mktemp]
-    set ch [open $fn w]  
+    set ch [open $fn w]
     puts $ch 123
     close $ch
 } -body {
@@ -867,9 +854,9 @@ test http-8.0.2s {ns_http with body_chan queue} -constraints {serverListen} -set
                            [ns_config test listenurl]/put]} errorMsg]} {
         puts stderr ERROR-$errorMsg
     }
-    set d [ns_http wait -result R -status S $h]
+    set d [ns_http wait $h]
     close [dict get $d body_chan]
-    return [list $S $R]
+    return [list [dict get $d status] [dict get $d body]]
 } -cleanup {
     file delete $fn
     ns_unregister_op PUT /put
@@ -882,11 +869,11 @@ test http-8.0.2t {ns_http with body_chan run} -constraints {serverListen} -setup
         ns_return 200 text/plain "[ns_conn encoding] <$contentType> <[ns_getcontent -as_file false]>"
     }
     set fn [ns_mktemp]
-    set ch [open $fn w]  
+    set ch [open $fn w]
     puts $ch 123
     close $ch
 } -body {
-    set ch [open $fn r]  
+    set ch [open $fn r]
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type text/plain
     set d [ns_http run -headers $queryHeaders -body_size 3 -body_chan $ch -method PUT \
@@ -906,11 +893,11 @@ test http-8.0.2u {ns_http with body_chan and outputchan run} -constraints {serve
     }
     set fn [ns_mktemp]
     set fo [ns_mktemp]
-    set ch [open $fn w]  
+    set ch [open $fn w]
     puts $ch 123
     close $ch
 } -body {
-    set ch [open $fn r] 
+    set ch [open $fn r]
     set co [open $fo w]
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type text/plain
