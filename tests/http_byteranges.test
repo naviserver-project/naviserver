@@ -131,7 +131,7 @@ test byteranges-2.2 {Multiple contiguous ranges} -constraints serverListen -body
 # The following test lead to a crash in earlier versions
 #
 test byteranges-2.2.1 {Multiple contiguous ranges, single bytes} -constraints serverListen -body {
-    nstest::http -getbody 1 -setheaders {Range bytes=1-1,3-3,5-5,7-7,9-9} \
+    nstest::http-0.9 -getbody 1 -setheaders {Range bytes=1-1,3-3,5-5,7-7,9-9} \
         -getheaders {Content-length Content-range} \
         GET /10bytes
 } -result {206 471 {} {--NaviServerNaviServerNaviServer
@@ -164,7 +164,7 @@ Content-range: bytes 9-9/10
 
 
 test byteranges-2.3 {Multiple non-contiguous ranges} -constraints serverListen -body {
-    nstest::http -getbody 1 -setheaders {Range bytes=0-2,7-9} \
+    nstest::http-0.9 -getbody 1 -setheaders {Range bytes=0-2,7-9} \
         -getheaders {Content-type Content-range Content-length} \
         GET /10bytes
 } -result [list 206 {multipart/byteranges; boundary=NaviServerNaviServerNaviServer} {} 214 \
@@ -182,7 +182,7 @@ Content-range: bytes 7-9/10
 }]
 
 test byteranges-2.4 {Multiple ranges, out of order} -constraints serverListen -body {
-    nstest::http -getbody 1 -setheaders {Range bytes=7-9,0-2} \
+    nstest::http-0.9 -getbody 1 -setheaders {Range bytes=7-9,0-2} \
         -getheaders {Content-type Content-range Content-length} \
         GET /10bytes
 } -result [list 206 {multipart/byteranges; boundary=NaviServerNaviServerNaviServer} {} 214 \
@@ -215,7 +215,7 @@ test byteranges-2.6 {Multiple overlapping ranges} -constraints serverListen -bod
 
 test byteranges-2.8.1 {Multiple non-contiguous ranges, fd} \
     -constraints {serverListen} -body {
-    nstest::http -getbody 1 -setheaders {Range bytes=0-2,7-9} \
+    nstest::http-0.9 -getbody 1 -setheaders {Range bytes=0-2,7-9} \
         -getheaders {Content-type Content-range Content-length} \
         GET /16480bytes
 } -result [list 206 {multipart/byteranges; boundary=NaviServerNaviServerNaviServer} {} 220 \

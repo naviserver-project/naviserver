@@ -15,7 +15,7 @@ set this_is_a_test_gzip "1f 8b 08 00 00 00 00 00 04 03 2b c9 c8 2c 56 00 a2 44 8
 set this_is_a_test_gzip_stream "1f 8b 08 00 00 00 00 00 04 03 2a c9 c8 2c 56 c8 2c 06 00 00 00 ff ff 52 48 54 28 49 2d 2e e1 02 00 00 00 ff ff 03 00 12 13 05 72 0f 00 00 00"
 
 test compress-1.1 {HTTP 1.0: no Accept-Encoding} -body {
-    nstest::http \
+    nstest::http-0.9 \
         -http 1.0 \
         -getbinary 1 \
         -encoding binary \
@@ -24,7 +24,7 @@ test compress-1.1 {HTTP 1.0: no Accept-Encoding} -body {
 } -result "200 {} Accept-Encoding {$this_is_a_test}"
 
 test compress-1.2 {HTTP 1.0: Accept-Encoding gzip} -body {
-    set b [nstest::http \
+    set b [nstest::http-0.9 \
                -http 1.0 \
                -getbinary 1 \
                -encoding binary \
@@ -35,7 +35,7 @@ test compress-1.2 {HTTP 1.0: Accept-Encoding gzip} -body {
 } -result "200 gzip Accept-Encoding 33 {[lrange $this_is_a_test_gzip end-10 end]}"
 
 test compress-1.2.1 {HTTP 1.0: Accept-Encoding "gzip ; q = 1"} -body {
-    set b [nstest::http \
+    set b [nstest::http-0.9 \
                -http 1.0 \
                -getbinary 1 \
                -encoding binary \
@@ -46,7 +46,7 @@ test compress-1.2.1 {HTTP 1.0: Accept-Encoding "gzip ; q = 1"} -body {
 } -result "200 gzip Accept-Encoding {[lrange $this_is_a_test_gzip end-20 end]}"
 
 test compress-1.2.2 {HTTP 1.0: Accept-Encoding "gzip;q=1,"} -body {
-    set b [nstest::http \
+    set b [nstest::http-0.9 \
                -http 1.0 \
                -getbinary 1 \
                -encoding binary \
@@ -57,7 +57,7 @@ test compress-1.2.2 {HTTP 1.0: Accept-Encoding "gzip;q=1,"} -body {
 } -result "200 gzip Accept-Encoding 33 {[lrange $this_is_a_test_gzip end-10 end]}"
 
 test compress-1.2.3 {HTTP 1.0: Accept-Encoding "gzip;q=1a" - ignore invalid qvalue} -body {
-    set b [nstest::http \
+    set b [nstest::http-0.9 \
                -http 1.0 \
                -getbinary 1 \
                -encoding binary \
@@ -68,7 +68,7 @@ test compress-1.2.3 {HTTP 1.0: Accept-Encoding "gzip;q=1a" - ignore invalid qval
 } -result "200 gzip Accept-Encoding 33 {[lrange $this_is_a_test_gzip end-10 end]}"
 
 test compress-1.2.4 {HTTP 1.0: Accept-Encoding "gzip;q=0"} -body {
-    nstest::http \
+    nstest::http-0.9 \
         -http 1.0 \
         -getbinary 1 \
         -encoding binary \
@@ -78,7 +78,7 @@ test compress-1.2.4 {HTTP 1.0: Accept-Encoding "gzip;q=0"} -body {
 } -result "200 {} Accept-Encoding {$this_is_a_test}"
 
 test compress-1.2.5 {HTTP 1.0: Accept-Encoding "gzip;q=0."} -body {
-    nstest::http \
+    nstest::http-0.9 \
         -http 1.0 \
         -getbinary 1 \
         -encoding binary \
@@ -88,7 +88,7 @@ test compress-1.2.5 {HTTP 1.0: Accept-Encoding "gzip;q=0."} -body {
 } -result "200 {} Accept-Encoding {$this_is_a_test}"
 
 test compress-1.2.6 {HTTP 1.0: Accept-Encoding "gzip;q=0.0"} -body {
-    nstest::http \
+    nstest::http-0.9 \
         -http 1.0 \
         -getbinary 1 \
         -encoding binary \
@@ -98,7 +98,7 @@ test compress-1.2.6 {HTTP 1.0: Accept-Encoding "gzip;q=0.0"} -body {
 } -result "200 {} Accept-Encoding {$this_is_a_test}"
 
 test compress-1.2.7 {HTTP 1.0: Accept-Encoding "gzip;q=0.00"} -body {
-    nstest::http \
+    nstest::http-0.9 \
         -http 1.0 \
         -getbinary 1 \
         -encoding binary \
@@ -108,7 +108,7 @@ test compress-1.2.7 {HTTP 1.0: Accept-Encoding "gzip;q=0.00"} -body {
 } -result "200 {} Accept-Encoding {$this_is_a_test}"
 
 test compress-1.2.8 {HTTP 1.0: Accept-Encoding "gzip;q=0.000"} -body {
-    nstest::http \
+    nstest::http-0.9 \
         -http 1.0 \
         -getbinary 1 \
         -encoding binary \
@@ -118,7 +118,7 @@ test compress-1.2.8 {HTTP 1.0: Accept-Encoding "gzip;q=0.000"} -body {
 } -result "200 {} Accept-Encoding {$this_is_a_test}"
 
 test compress-1.2.9 {HTTP 1.0: Accept-Encoding "gzip;q=0.001"} -body {
-    set b [nstest::http \
+    set b [nstest::http-0.9 \
                -http 1.0 \
                -getbinary 1 \
                -encoding binary \
@@ -131,7 +131,7 @@ test compress-1.2.9 {HTTP 1.0: Accept-Encoding "gzip;q=0.001"} -body {
 
 
 test compress-1.3 {HTTP 1.0: Accept-Encoding gzip (again, checking reset)} -body {
-    set b [nstest::http \
+    set b [nstest::http-0.9 \
                -http 1.0 \
                -getbinary 1 \
                -encoding binary \
@@ -142,7 +142,7 @@ test compress-1.3 {HTTP 1.0: Accept-Encoding gzip (again, checking reset)} -body
 } -result "200 gzip Accept-Encoding 33 {[lrange $this_is_a_test_gzip end-10 end]}"
 
 test compress-1.4 {HTTP 1.0: Accept-Encoding *} -body {
-    nstest::http \
+    nstest::http-0.9 \
         -http 1.0 \
         -getbinary 1 \
         -encoding binary \
@@ -152,7 +152,7 @@ test compress-1.4 {HTTP 1.0: Accept-Encoding *} -body {
 } -result "200 {} Accept-Encoding {$this_is_a_test}"
 
 test compress-1.5 {HTTP 1.0: Accept-Encoding qvalue=0} -body {
-    nstest::http \
+    nstest::http-0.9 \
         -http 1.0 \
         -getbinary 1 \
         -encoding binary \
@@ -162,7 +162,7 @@ test compress-1.5 {HTTP 1.0: Accept-Encoding qvalue=0} -body {
 } -result "200 {} Accept-Encoding {$this_is_a_test}"
 
 test compress-1.6 {HTTP 1.0: Accept-Encoding gzip and identity} -body {
-    set b [nstest::http \
+    set b [nstest::http-0.9 \
                -http 1.0 \
                -getbinary 1 \
                -encoding binary \
@@ -173,7 +173,7 @@ test compress-1.6 {HTTP 1.0: Accept-Encoding gzip and identity} -body {
 } -result "200 gzip Accept-Encoding 33 {[lrange $this_is_a_test_gzip end-10 end]}"
 
 test compress-1.8 {HTTP 1.0: Accept-Encoding gzip and identity} -body {
-    nstest::http \
+    nstest::http-0.9 \
         -http 1.0 \
         -getbinary 1 \
         -encoding binary \
@@ -193,7 +193,7 @@ test compress-1.8 {HTTP 1.0: Accept-Encoding gzip and identity} -body {
 # } -result "200 gzip Accept-Encoding {$this_is_a_test_gzip}"
 
 test compress-1.10 {HTTP 1.0: Accept-Encoding gzip and *} -body {
-    set b [nstest::http \
+    set b [nstest::http-0.9 \
                -http 1.0 \
                -getbinary 1 \
                -encoding binary \
@@ -204,7 +204,7 @@ test compress-1.10 {HTTP 1.0: Accept-Encoding gzip and *} -body {
 } -result "200 gzip Accept-Encoding 33 {[lrange $this_is_a_test_gzip end-10 end]}"
 
 test compress-1.11 {HTTP 1.0: Accept-Encoding gzip and identity and *} -body {
-    set b [nstest::http \
+    set b [nstest::http-0.9 \
                -http 1.0 \
                -getbinary 1 \
                -encoding binary \
@@ -215,7 +215,7 @@ test compress-1.11 {HTTP 1.0: Accept-Encoding gzip and identity and *} -body {
 } -result "200 gzip Accept-Encoding 33 {[lrange $this_is_a_test_gzip end-10 end]}"
 
 test compress-1.11 {HTTP 1.0: Accept-Encoding gzip and identity and *} -body {
-    nstest::http \
+    nstest::http-0.9 \
         -http 1.0 \
         -getbinary 1 \
         -encoding binary \
@@ -225,7 +225,7 @@ test compress-1.11 {HTTP 1.0: Accept-Encoding gzip and identity and *} -body {
 } -result "200 {} Accept-Encoding {$this_is_a_test}"
 
 test compress-1.12 {HTTP 1.0: Accept-Encoding identity and *} -body {
-    nstest::http \
+    nstest::http-0.9 \
         -http 1.0 \
         -getbinary 1 \
         -encoding binary \
@@ -235,7 +235,7 @@ test compress-1.12 {HTTP 1.0: Accept-Encoding identity and *} -body {
 } -result "200 {} Accept-Encoding {$this_is_a_test}"
 
 test compress-1.13 {HTTP 1.0: Accept-Encoding identity and *} -body {
-    nstest::http \
+    nstest::http-0.9 \
         -http 1.0 \
         -getbinary 1 \
         -encoding binary \
@@ -246,7 +246,7 @@ test compress-1.13 {HTTP 1.0: Accept-Encoding identity and *} -body {
 
 
 test compress-2.1 {HTTP 1.1: no Accept-Encoding} -body {
-    nstest::http \
+    nstest::http-0.9 \
         -http 1.1 \
         -getbinary 1 \
         -encoding binary \
@@ -255,7 +255,7 @@ test compress-2.1 {HTTP 1.1: no Accept-Encoding} -body {
 } -result "200 {} Accept-Encoding {$this_is_a_test}"
 
 test compress-2.2 {HTTP 1.1: Accept-Encoding *} -body {
-    set b [nstest::http \
+    set b [nstest::http-0.9 \
                -http 1.1 \
                -getbinary 1 \
                -encoding binary \
@@ -266,7 +266,7 @@ test compress-2.2 {HTTP 1.1: Accept-Encoding *} -body {
 } -result "200 gzip Accept-Encoding 33 {[lrange $this_is_a_test_gzip  end-10 end]}"
 
 test compress-2.3 {HTTP 1.1: Accept-Encoding *, qvalue 0} -body {
-    nstest::http \
+    nstest::http-0.9 \
         -http 1.1 \
         -getbinary 1 \
         -encoding binary \
@@ -276,7 +276,7 @@ test compress-2.3 {HTTP 1.1: Accept-Encoding *, qvalue 0} -body {
 } -result "200 {} Accept-Encoding {$this_is_a_test}"
 
 test compress-2.4 {HTTP 1.1: Accept-Encoding gzip and identity} -body {
-    set b [nstest::http \
+    set b [nstest::http-0.9 \
                -http 1.1 \
                -getbinary 1 \
                -encoding binary \
@@ -287,7 +287,7 @@ test compress-2.4 {HTTP 1.1: Accept-Encoding gzip and identity} -body {
 } -result "200 gzip Accept-Encoding 33 {[lrange $this_is_a_test_gzip end-10 end]}"
 
 test compress-2.5 {HTTP 1.1: Accept-Encoding gzip and identity} -body {
-    nstest::http \
+    nstest::http-0.9 \
         -http 1.1 \
         -getbinary 1 \
         -encoding binary \
@@ -307,7 +307,7 @@ test compress-2.5 {HTTP 1.1: Accept-Encoding gzip and identity} -body {
 # } -result "200 {} Accept-Encoding {$this_is_a_test}"
 
 test compress-2.7 {HTTP 1.1: Accept-Encoding gzip and *} -body {
-    set b [nstest::http \
+    set b [nstest::http-0.9 \
                -http 1.1 \
                -getbinary 1 \
                -encoding binary \
@@ -318,7 +318,7 @@ test compress-2.7 {HTTP 1.1: Accept-Encoding gzip and *} -body {
 } -result "200 gzip Accept-Encoding {[lrange $this_is_a_test_gzip end-20 end]}"
 
 test compress-2.9 {HTTP 1.1: Accept-Encoding gzip and identity and *} -body {
-    set b [nstest::http \
+    set b [nstest::http-0.9 \
                -http 1.1 \
                -getbinary 1 \
                -encoding binary \
@@ -329,7 +329,7 @@ test compress-2.9 {HTTP 1.1: Accept-Encoding gzip and identity and *} -body {
 } -result "200 gzip Accept-Encoding 33 {[lrange $this_is_a_test_gzip end-10 end]}"
 
 test compress-2.10 {HTTP 1.1: Accept-Encoding identity and *} -body {
-    nstest::http \
+    nstest::http-0.9 \
         -http 1.1 \
         -getbinary 1 \
         -encoding binary \
@@ -339,7 +339,7 @@ test compress-2.10 {HTTP 1.1: Accept-Encoding identity and *} -body {
 } -result "200 {} Accept-Encoding {$this_is_a_test}"
 
 test compress-2.11 {HTTP 1.1: Accept-Encoding identity and *} -body {
-    set b [nstest::http \
+    set b [nstest::http-0.9 \
                -http 1.1 \
                -getbinary 1 \
                -encoding binary \
@@ -357,7 +357,7 @@ test compress-3.1 {ns_return, compressed} -setup {
         ns_return 200 text/plain "this is a test\n"
     }
 }  -body {
-    set b [nstest::http \
+    set b [nstest::http-0.9 \
                -http 1.1 \
                -getbinary 1 \
                -encoding binary \
@@ -375,7 +375,7 @@ test compress-3.2 {ns_return, too small to compress} -setup {
         ns_return 200 text/plain "ab"
     }
 }  -body {
-    nstest::http \
+    nstest::http-0.9 \
         -http 1.1 \
         -getbinary 1 \
         -encoding binary \
@@ -394,7 +394,7 @@ test compress-3.3 {ns_write streaming, compressed} -setup {
         ns_write " a test\n"
     }
 }  -body {
-    set b [nstest::http \
+    set b [nstest::http-0.9 \
                -http 1.0 \
                -getbinary 1 \
                -encoding binary \
@@ -413,7 +413,7 @@ test compress-3.3 {ns_write streaming, compressed} -setup {
 #
 
 test compress-3.4 {streaming adp, compressed} -body {
-    set b [nstest::http \
+    set b [nstest::http-0.9 \
                -http 1.0 \
                -getbinary 1 \
                -encoding binary \
@@ -445,7 +445,7 @@ test compress-3.5 {ns_write streaming + HTTP 1.1 chunking, compressed} -setup {
         ns_write " a test\n"
     }
 }  -body {
-    set b [nstest::http \
+    set b [nstest::http-0.9 \
                -http 1.1 \
                -getbinary 1 \
                -encoding binary \

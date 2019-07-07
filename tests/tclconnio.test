@@ -21,7 +21,7 @@ test tclconnio-1.1 {ns_connsendfp} -setup {
         ns_connsendfp [open [ns_pagepath 10bytes]] 5
     }
 } -body {
-    nstest::http -getbody 1 GET /tclconnio
+    nstest::http-0.9 -getbody 1 GET /tclconnio
 } -cleanup {
     ns_unregister_op GET /tclconnio
 } -result 01234
@@ -107,7 +107,7 @@ test tclconnio-2.4 {ns_conn channel w/length, 1.1} -setup {
         flush $chan
     }
 } -body {
-    nstest::http -http 1.1 -getbody 1 -getheaders {Content-Length Connection} \
+    nstest::http-0.9 -http 1.1 -getbody 1 -getheaders {Content-Length Connection} \
         GET /tclconnio
 } -cleanup {
     ns_unregister_op GET /tclconnio
@@ -124,7 +124,7 @@ test tclconnio-2.5 {ns_conn channel, raw} -setup {
         flush $chan
     }
 } -body {
-    nstest::http -getbody 1 -getheaders {Content-Length Connection} \
+    nstest::http-0.9 -getbody 1 -getheaders {Content-Length Connection} \
         GET /tclconnio
 } -cleanup {
     ns_unregister_op GET /tclconnio
@@ -153,7 +153,7 @@ test tclconnio-3.1 {thread detach, raw} -constraints Thread -setup {
         thread::release $tid
     }
 } -body {
-    nstest::http -getbody 1 -getheaders {Content-Length Connection} \
+    nstest::http-0.9 -getbody 1 -getheaders {Content-Length Connection} \
         GET /tclconnio
 } -cleanup {
     ns_unregister_op GET /tclconnio

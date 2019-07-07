@@ -55,25 +55,25 @@ catch {set curl [exec curl -V]}
 testConstraint curl [expr {$curl ne "" ? "true" : "false" }]
 
 test http-1.1 {bad request} -constraints serverListen -body {
-    nstest::http -getbody 1 bogus
-} -result {400}
+    nstest::http bogus
+} -result {405}
 
 
 
 test http-1.2 {HTTP/0.9 GET} -constraints serverListen -body {
-    nstest::http -http "" -getbody 1 GET /noexist
+    nstest::http-0.9 -http "" -getbody 1 GET /noexist
 } -match glob -result {*Not Found*}
 
 test http-1.2a {HTTP/0.9 no url} -constraints serverListen -body {
-    nstest::http -http "" -getbody 1 GET a
+    nstest::http-0.9 -http "" GET a
 } -result {400}
 
 test http-1.2b {strange request starting with GET (no http-version)} -constraints serverListen -body {
-    nstest::http -http "" -getbody 1 GET "a b"
+    nstest::http-0.9 -http "" GET "a b"
 } -result {400}
 
 test http-1.2c {strange request starting with GET + three tokens} -constraints serverListen -body {
-    nstest::http -http "" -getbody 1 GET "a b c"
+    nstest::http-0.9 -http "" GET "a b c"
 } -result {400}
 
 
@@ -90,11 +90,11 @@ test http-1.5a {bad method} -constraints serverListen -body {
 } -match glob -result {405 *Not Allowed*}
 
 test http-1.5b {bad method 0.9} -constraints serverListen -body {
-    nstest::http -http "" -getbody 1 a b
+    nstest::http-0.9 -http "" -getbody 1 a b
 } -result {400}
 
 test http-1.5c {bad method 3 args} -constraints serverListen -body {
-    nstest::http -http "" -getbody 1 a "b c"
+    nstest::http-0.9 -http "" -getbody 1 a "b c"
 } -result {400}
 
 
@@ -114,7 +114,7 @@ test http-2.3 {HTTP/1.1 GET file larger than IOBUFSZ (connio.c)} -body {
 } -result {200 16480}
 
 test http-2.4 {HTTP/0.9 GET small} -constraints serverListen -body {
-    nstest::http -http "" -getbody 1 GET /10bytes
+    nstest::http-0.9 -http "" -getbody 1 GET /10bytes
 } -result {0123456789}
 
 
@@ -157,7 +157,22 @@ test http-3.2b {long header line and long body} -constraints {serverListen} -set
     unset -nocomplain r
 } -result {413 0}
 
-test http-3.3 {limits: too many headers} -constraints serverListen -setup {
+
+test http-3.3old {limits: too many headers} -constraints serverListen -setup {
+    ns_register_proc GET /limits {
+        set h [ns_conn headers]
+        ns_return 200 text/plain \
+            "maxheaders: [ns_config ns/module/nssock maxheaders] nheaders: [ns_set size $h]"
+    }
+} -body {
+    nstest::http-0.9 -http 1.1 -getbody 1 \
+        -setheaders [split [string repeat xy 1024] ""] \
+        GET /limits
+} -cleanup {
+    ns_unregister_op GET /limits
+} -result 414
+
+test http-3.3new {limits: too many headers} -constraints serverListen -setup {
     ns_register_proc GET /limits {
         set h [ns_conn headers]
         ns_return 200 text/plain \
@@ -169,7 +184,7 @@ test http-3.3 {limits: too many headers} -constraints serverListen -setup {
         GET /limits
 } -cleanup {
     ns_unregister_op GET /limits
-} -result 414
+} -returnCodes error -result 414
 
 
 
@@ -252,7 +267,9 @@ test http-4.7 {HTTP/1.1 PUT one more large file} -setup {
     unset -nocomplain l
 } -result [list 200 100000]
 
+#
 # size is larger than maxinput
+#
 test http-4.8 {HTTP/1.1 PUT file larger than maxinput} -constraints {} -setup {
     ns_register_proc PUT /put {
         ns_return 200 text/plain [ns_conn content]
@@ -265,7 +282,9 @@ test http-4.8 {HTTP/1.1 PUT file larger than maxinput} -constraints {} -setup {
     unset -nocomplain r
 } -result {413 0}
 
+#
 # another test, file is 10 times larger
+#
 test http-4.9 {HTTP/1.1 PUT file much larger than maxinput} -constraints {} -setup {
     ns_register_proc PUT /put {
         ns_return 200 text/plain [ns_conn content]

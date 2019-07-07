@@ -36,7 +36,15 @@
 namespace eval ::nstest {
 
     proc https {args} {
+        return [request -proto https {*}$args]
+    }
+    proc http {args} {
+        return [request -proto http {*}$args]
+    }
+
+    proc request {args} {
         ns_parseargs {
+            {-proto http}
             {-http 1.0}
             -setheaders
             -getheaders
@@ -45,11 +53,24 @@ namespace eval ::nstest {
             {-getbinary 0}
             {-verbose 0}
             --
-            method {url ""} {body ""}
+            method
+            {url ""}
+            {body ""}
         } $args
 
         set host localhost
-        set port [ns_config "ns/module/nsssl" port]
+        switch $proto {
+            "https" {
+                set port [ns_config "ns/module/nsssl" port]
+                set defaultPort 443
+            }
+            "http" {
+                set port [ns_config "ns/module/nssock" port]
+                set defaultPort 80
+            }
+            default {error "protocol $proto not supported"}
+        }
+
         set timeout 3
         set ::nstest::verbose $verbose
 
@@ -71,7 +92,7 @@ namespace eval ::nstest {
             ns_set icput $hdrs Connection close
         }
 
-        if {$port eq "80"} {
+        if {$port eq $defaultPort} {
             ns_set icput $hdrs Host $host
         } else {
             ns_set icput $hdrs Host $host:$port
@@ -82,8 +103,13 @@ namespace eval ::nstest {
             set binaryFlag ""
         }
 
-        log url https://$host:$port/$url
-        set result [ns_http run -timeout $timeout -method $method -headers $hdrs https://$host:$port/$url]
+        log url $proto://$host:$port/$url
+        set result [ns_http run \
+                        -timeout $timeout \
+                        -method $method \
+                        -headers $hdrs \
+                        -body $body \
+                        $proto://$host:$port/$url]
 
         #ns_set cleanup $hdrs
         #set hdrs [ns_set create]

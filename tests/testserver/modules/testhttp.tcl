@@ -35,7 +35,7 @@
 
 namespace eval ::nstest {
 
-    proc http {args} {
+    proc http-0.9 {args} {
         ns_parseargs {
             {-encoding "utf-8"}
             {-http 1.0}

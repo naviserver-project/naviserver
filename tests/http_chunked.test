@@ -42,7 +42,7 @@ if {[ns_config test listenport]} {
 test http_chunked-1.1 {
     ADP streaming w/chunks to HTTP/1.1 client
 } -constraints serverListen -body {
-    nstest::http -http 1.1 -setheaders {Connection keep-alive} \
+    nstest::http-0.9 -http 1.1 -setheaders {Connection keep-alive} \
                 -getbody 1 -getheaders {Transfer-Encoding Connection Content-Length} \
         GET /http_chunked.adp?stream=1
 } -result "200 chunked keep-alive {} {a\n0123456789\n5\n01234\n0\n\n}"
@@ -50,7 +50,7 @@ test http_chunked-1.1 {
 test http_chunked-1.2 {
     ADP with short buffered response
 } -constraints serverListen -body {
-    nstest::http -http 1.1 -setheaders {Connection keep-alive} \
+    nstest::http-0.9 -http 1.1 -setheaders {Connection keep-alive} \
                 -getheaders {Transfer-Encoding Connection Content-Length} -getbody t \
         GET /http_chunked.adp?stream=0
 } -result "200 {} keep-alive 15 012345678901234"
@@ -58,7 +58,7 @@ test http_chunked-1.2 {
 test http_chunked-1.3 {
     ADP with longer partly-buffered response and auto-streaming
 } -constraints serverListen -body {
-    nstest::http -http 1.1 -setheaders {Connection keep-alive} \
+    nstest::http-0.9 -http 1.1 -setheaders {Connection keep-alive} \
                 -getheaders {Transfer-Encoding Connection Content-Length} -getbody t \
         GET /http_chunked.adp?stream=0&bufsize=8
 } -result "200 chunked keep-alive {} {a\n0123456789\n5\n01234\n0\n\n}"
@@ -82,7 +82,7 @@ test http_chunked-2.1 {
         ns_write 01234
     }
 } -body {
-    nstest::http -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
+    nstest::http-0.9 -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
         GET /tclchunked
 } -cleanup {
     ns_unregister_op GET /tclchunked
@@ -98,7 +98,7 @@ test http_chunked-2.1.1 {
         ns_write [binary format a5 01234]
     }
 } -body {
-    nstest::http -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
+    nstest::http-0.9 -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
         GET /tclchunked
 } -cleanup {
     ns_unregister_op GET /tclchunked
@@ -144,7 +144,7 @@ test http_chunked-3-1 {
         ns_return 200 text/plain $content
     }
 } -body {
-    nstest::http -http 1.1 \
+    nstest::http-0.9 -http 1.1 \
         -omitcontentlength 1 \
         -setheaders {Transfer-Encoding Chunked X-Expected-Entity-Length 13} \
         -getheaders {Transfer-Encoding Content-Length} -getbody 1 \

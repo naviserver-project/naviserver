@@ -26,7 +26,7 @@
 
 
 #
-# Test the https module
+# Test the https requests
 #
 
 package require tcltest 2.2
@@ -38,7 +38,7 @@ if {[ns_info ssl] ne ""} {
     testConstraint serverListen true
 }
 
-test nsssl-1.1 {short request 1.0} -constraints {serverListen} -setup {
+test https-1.1 {short request 1.0} -constraints {serverListen} -setup {
     ns_register_proc GET /get {
 	ns_return 200 text/plain "Hello World"
     }
@@ -49,7 +49,7 @@ test nsssl-1.1 {short request 1.0} -constraints {serverListen} -setup {
 } -result "200 {Hello World}"
 
 
-test nsssl-1.2 {short request 1.1} -constraints {serverListen} -setup {
+test https-1.2 {short request 1.1} -constraints {serverListen} -setup {
     ns_register_proc GET /get {
 	ns_return 200 text/plain "Hello World"
     }
@@ -60,7 +60,7 @@ test nsssl-1.2 {short request 1.1} -constraints {serverListen} -setup {
 } -result "200 {Hello World}"
 
 
-test nsssl-1.3 {longer request} -constraints {serverListen} -setup {
+test https-1.3 {longer request} -constraints {serverListen} -setup {
     ns_register_proc GET /get {
 	ns_return 200 text/plain [string repeat "0123456789" 100]
     }
@@ -71,7 +71,7 @@ test nsssl-1.3 {longer request} -constraints {serverListen} -setup {
 } -result "200 1000"
 
 
-test nsssl-1.4 {via writer} -constraints {serverListen} -setup {
+test https-1.4 {via writer} -constraints {serverListen} -setup {
     ns_register_proc GET /get {
 	ns_return 200 text/plain [string repeat "0123456789" 500]
     }
@@ -82,7 +82,7 @@ test nsssl-1.4 {via writer} -constraints {serverListen} -setup {
 } -result "200 5000"
 
 
-test nsssl-1.5 {via writer 500k} -constraints {serverListen} -setup {
+test https-1.5 {via writer 500k} -constraints {serverListen} -setup {
     ns_register_proc GET /get {
 	ns_return 200 text/plain [string repeat "0123456789" 50000]
     }
@@ -93,7 +93,7 @@ test nsssl-1.5 {via writer 500k} -constraints {serverListen} -setup {
 } -result "200 500000"
 
 
-test nsssl-1.6 {with query} -constraints {serverListen} -setup {
+test https-1.6 {with query} -constraints {serverListen} -setup {
     ns_register_proc GET /get/foo {
 	ns_return 200 text/plain [ns_conn query]
     }
@@ -105,12 +105,12 @@ test nsssl-1.6 {with query} -constraints {serverListen} -setup {
 
 
 
-test http-2.0 {ns_http for small file} -constraints {serverListen} -body {
+test https-2.0 {ns_http for small file} -constraints {serverListen} -body {
     nstest::https -http 1.1 -getbody 1 GET /123
 } -result {200 123}
 
 
-test http-7.0 {ns_http with body and text datatype} -constraints {serverListen} -setup {
+test https-7.0 {ns_http with body and text datatype} -constraints {serverListen} -setup {
     ns_register_proc POST /post {
 	set contentType [ns_set iget [ns_conn headers] content-type]
 	ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA[ns_conn content]ZÜZ"
@@ -128,7 +128,7 @@ test http-7.0 {ns_http with body and text datatype} -constraints {serverListen} 
     unset -nocomplain r
 } -result {200 {utf-8 <text/plain> AÄATesting 'äöüß'ZÜZ}}
 
-test http-7.1 {ns_http with body and text datatype with encoding} -constraints {serverListen} -setup {
+test https-7.1 {ns_http with body and text datatype with encoding} -constraints {serverListen} -setup {
     ns_register_proc POST /post {
 	set contentType [ns_set iget [ns_conn headers] content-type]
 	#ns_log notice "post receives content-type '$contentType'"
@@ -147,7 +147,7 @@ test http-7.1 {ns_http with body and text datatype with encoding} -constraints {
     unset -nocomplain r
 } -result {200 {<text/plain; iso8859-1> AÄATesting 'äöüß'ZÜZ}}
 
-test http-7.2a {ns_http with body and binary datataype} -constraints {serverListen} -setup {
+test https-7.2a {ns_http with body and binary datataype} -constraints {serverListen} -setup {
     ns_register_proc POST /post {
 	set contentType [ns_set iget [ns_conn headers] content-type]
 	ns_return 200 application/octet-stream [ns_conn content -binary]
@@ -167,7 +167,7 @@ test http-7.2a {ns_http with body and binary datataype} -constraints {serverList
     unset -nocomplain r
 } -result {200 {0000 0001 0002 000D}}
 
-test http-7.2b {ns_http with body and binary datataype} -constraints {serverListen} -setup {
+test https-7.2b {ns_http with body and binary datataype} -constraints {serverListen} -setup {
     ns_register_proc POST /post {
 	set contentType [ns_set iget [ns_conn headers] content-type]
 	set content [ns_conn content -binary]
@@ -197,7 +197,7 @@ test http-7.2b {ns_http with body and binary datataype} -constraints {serverList
 } -result {200 {0000 0001 0002 000D}}
 
 
-test http-8.0 {ns_http with body_file} -constraints {serverListen} -setup {
+test https-8.0 {ns_http with body_file} -constraints {serverListen} -setup {
     ns_register_proc PUT /put {
 	set contentType [ns_set iget [ns_conn headers] content-type]
 	ns_return 200 text/plain "[ns_conn encoding] <$contentType> <[ns_getcontent -as_file false]>"
