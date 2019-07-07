@@ -73,6 +73,7 @@ namespace eval ::nstest {
 
         set timeout 3
         set ::nstest::verbose $verbose
+        set extraFlags {}
 
         set hdrs [ns_set create]
         if {[info exists setheaders]} {
@@ -92,11 +93,20 @@ namespace eval ::nstest {
             ns_set icput $hdrs Connection close
         }
 
-        if {$port eq $defaultPort} {
-            ns_set icput $hdrs Host $host
+        #
+        # Add "Host:" header filed only, when not provided
+        #
+        if {[ns_set iget $hdrs host ""] eq ""} {
+            if {$port eq $defaultPort} {
+                ns_set icput $hdrs Host $host
+            } else {
+                ns_set icput $hdrs Host $host:$port
+            }
         } else {
-            ns_set icput $hdrs Host $host:$port
+            lappend extraFlags "-keep_host_header"
         }
+        #ns_log notice "HEADERS [ns_set array $hdrs]"
+
         if {[string is true $getbinary]} {
             set binaryFlag "-binary"
         } else {
@@ -105,6 +115,7 @@ namespace eval ::nstest {
 
         log url $proto://$host:$port/$url
         set result [ns_http run \
+                        {*}$extraFlags \
                         -timeout $timeout \
                         -method $method \
                         -headers $hdrs \
