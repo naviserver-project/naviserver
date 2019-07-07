@@ -1495,7 +1495,7 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
         struct sockaddr *saPtr = (struct sockaddr *)&sa, *lsaPtr = (struct sockaddr *)&lsa;
 
         if (multipleIPs) {
-            Ns_Log(Notice, "SockConnect: target host <%s> has associated multiple IP addresses <%s>",
+            Ns_Log(Debug, "SockConnect: target host <%s> has associated multiple IP addresses <%s>",
                    host, addresses);
         }
         sock = NS_INVALID_SOCKET;
@@ -1558,7 +1558,7 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
                                 Ns_Log(Debug, "async connect to %s on sock %d returned NS_EWOULDBLOCK",
                                        address, sock);
                             } else {
-                                Ns_Log(Notice, "async connect to %s on sock %d returned EINPROGRESS",
+                                Ns_Log(Debug, "async connect to %s on sock %d returned EINPROGRESS",
                                        address, sock);
                             }
                             sockfd.events = POLLOUT;
