@@ -5076,10 +5076,17 @@ WriterPerPoolRates(WriterSock *writePtr,  Tcl_HashTable *pools)
                                         infoPtr->currentPoolRate,
                                         &writerThreadCount);
 
-        threadDeltaRate = (poolPtr->rate.poolLimit - totalPoolRate) / writerThreadCount;
+        /*
+         * If nothing is going on, allow a thread the full rate.
+         */
+        if (infoPtr->currentPoolRate == 0) {
+            threadDeltaRate = (poolPtr->rate.poolLimit - totalPoolRate) / writerThreadCount;
+        } else {
+            threadDeltaRate = (poolPtr->rate.poolLimit - totalPoolRate);
+        }
         infoPtr->deltaPercentage = threadDeltaRate / 10;
 
-        Ns_Log(Notice, "... pool '%s' actual %d limit %d (#%d writer threads) -> computed delta %d (%d%%) ",
+        Ns_Log(Notice, "... pool '%s' actual %d limit %d (#%d writer threads) -> computed rate %d (%d%%) ",
                poolPtr->pool, infoPtr->currentPoolRate, poolPtr->rate.poolLimit,
                writerThreadCount, threadDeltaRate,
                infoPtr->deltaPercentage
@@ -5692,7 +5699,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
     wrSockPtr->flags = connPtr->flags;
     wrSockPtr->refCount = 1;
     /*
-     * Take the rate limit from the connection. 
+     * Take the rate limit from the connection.
      */
     wrSockPtr->rateLimit = connPtr->rateLimit;
     if (wrSockPtr->rateLimit == -1) {
