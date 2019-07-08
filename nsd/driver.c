@@ -5214,8 +5214,8 @@ WriterThread(void *arg)
                             } else if (newRate < 5) {
                                 newRate = 5;
                             }
-                            Ns_Log(Notice, "... pool '%s' new rate limit is %d",
-                                   curPtr->poolPtr->pool, newRate);
+                            Ns_Log(Notice, "... pool '%s' new rate limit changed from %d to %d KB/s",
+                                   curPtr->poolPtr->pool, curPtr->rateLimit, newRate);
                             curPtr->rateLimit = newRate;
                         }
                     }
@@ -5227,7 +5227,7 @@ WriterThread(void *arg)
                     targetTimeMs = (int)(curPtr->nsent/(Tcl_WideInt)curPtr->rateLimit);
                     sleepTimeMs = 1 + targetTimeMs - currentMs;
                     Ns_Log(Notice, "### Writer(%d)"
-                           " byte sent %" TCL_LL_MODIFIER "d msecs %d rate %dKB/s"
+                           " byte sent %" TCL_LL_MODIFIER "d msecs %d rate %d KB/s"
                            " targetRate %d KB/s sleep %d",
                            curPtr->sockPtr->sock,
                            curPtr->nsent, currentMs,
