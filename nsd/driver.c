@@ -5080,11 +5080,14 @@ WriterPerPoolRates(WriterSock *writePtr,  Tcl_HashTable *pools)
          * If nothing is going on, allow a thread the full rate.
          */
         if (infoPtr->currentPoolRate == 0) {
-            threadDeltaRate = (poolPtr->rate.poolLimit - totalPoolRate) / writerThreadCount;
-        } else {
             threadDeltaRate = (poolPtr->rate.poolLimit - totalPoolRate);
+        } else {
+            threadDeltaRate = (poolPtr->rate.poolLimit - totalPoolRate) / writerThreadCount;
         }
         infoPtr->deltaPercentage = threadDeltaRate / 10;
+        if (infoPtr->deltaPercentage < -50) {
+            infoPtr->deltaPercentage = -50;
+        }
 
         Ns_Log(Notice, "... pool '%s' actual %d limit %d (#%d writer threads) -> computed rate %d (%d%%) ",
                poolPtr->pool, infoPtr->currentPoolRate, poolPtr->rate.poolLimit,
@@ -5200,7 +5203,7 @@ WriterThread(void *arg)
                          */
                         bool onLimit = (curPtr->currentRate*100 / curPtr->rateLimit) > 90;
 
-                        Ns_Log(DriverDebug, "we allowed %d we use %d on limit %d (%d) , we can do %d",
+                        Ns_Log(DriverDebug, "we allowed %d we use %d on limit %d (%d) , we can do %d%%",
                                curPtr->rateLimit,  curPtr->currentRate,
                                (int)onLimit, curPtr->currentRate*100/curPtr->rateLimit,
                                curPtr->infoPtr->deltaPercentage);
