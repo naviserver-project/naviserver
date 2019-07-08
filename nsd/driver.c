@@ -5214,8 +5214,9 @@ WriterThread(void *arg)
                             } else if (newRate < 5) {
                                 newRate = 5;
                             }
-                            Ns_Log(Notice, "... pool '%s' new rate limit changed from %d to %d KB/s",
-                                   curPtr->poolPtr->pool, curPtr->rateLimit, newRate);
+                            Ns_Log(Notice, "... pool '%s' new rate limit changed from %d to %d KB/s (delta %d%%)",
+                                   curPtr->poolPtr->pool, curPtr->rateLimit, newRate,
+                                   curPtr->infoPtr->deltaPercentage);
                             curPtr->rateLimit = newRate;
                         }
                     }
