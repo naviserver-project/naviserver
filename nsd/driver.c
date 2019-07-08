@@ -5292,12 +5292,16 @@ WriterThread(void *arg)
                 /*
                  * The socket is writable, we can compute the rate, when
                  * something was sent already and some kind of rate limiting
-                 * is in place.
+                 * is in place ... and we have sent enough data to make a good
+                 * estimate (just after the 2nd send, so more than driver
+                 * buffer size.
                  */
                 Ns_Log(DriverDebug, "Socket of pool '%s' is writable, writer limit %d nsent %ld",
                        curPtr->poolPtr->pool, curPtr->rateLimit, (long)curPtr->nsent);
 
-                if (curPtr->rateLimit > 0 && curPtr->nsent > 0)  {
+                if (curPtr->rateLimit > 0
+                    && (size_t)curPtr->nsent > curPtr->sockPtr->drvPtr->bufsize
+                    )  {
                     Ns_Time diff;
                     int     currentMs;
 
