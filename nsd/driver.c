@@ -5227,12 +5227,13 @@ WriterThread(void *arg)
                     targetTimeMs = (int)(curPtr->nsent/(Tcl_WideInt)curPtr->rateLimit);
                     sleepTimeMs = 1 + targetTimeMs - currentMs;
                     Ns_Log(Notice, "### Writer(%d)"
-                           " byte sent %" TCL_LL_MODIFIER "d msecs %d rate %d KB/s"
-                           " targetTime %d sleep %d",
+                           " byte sent %" TCL_LL_MODIFIER "d msecs %d rate %dKB/s"
+                           " targetRate %d KB/s sleep %d",
                            curPtr->sockPtr->sock,
                            curPtr->nsent, currentMs,
                            curPtr->currentRate,
-                           targetTimeMs, sleepTimeMs);
+                           curPtr->rateLimit,
+                           sleepTimeMs);
                 }
 
                 if (likely(curPtr->size > 0u)) {
