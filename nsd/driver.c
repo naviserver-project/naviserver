@@ -121,9 +121,9 @@ typedef struct PollData {
  * per pool bandwidth management.
  */
 typedef struct ConnPoolInfo {
-    size_t threadSlot;
-    int currentPoolRate;
-    int deltaPercentage;
+    size_t    threadSlot;
+    int       currentPoolRate;
+    int       deltaPercentage;
 } ConnPoolInfo;
 
 /*
@@ -317,6 +317,9 @@ static Driver *LookupDriver(Tcl_Interp *interp, const char* protocol, const char
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void WriterPerPoolRates(WriterSock *writePtr, Tcl_HashTable *pools)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static ConnPoolInfo *WriterGetInfoPtr(WriterSock *curPtr, Tcl_HashTable *pools)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
@@ -4637,6 +4640,8 @@ WriterSockRelease(WriterSock *wrSockPtr) {
            wrSockPtr->status, wrSockPtr->err,
            wrSockPtr->nsent, wrSockPtr->flags);
 
+    NsPoolAddBytesSent(wrSockPtr->poolPtr, wrSockPtr->nsent);
+
     if (wrSockPtr->doStream != NS_WRITER_STREAM_NONE) {
         Conn *connPtr;
 
@@ -4954,6 +4959,57 @@ WriterSend(WriterSock *curPtr, int *err) {
 /*
  *----------------------------------------------------------------------
  *
+ * WriterGetInfoPtr --
+ *
+ *      Helper function to obtain ConnPoolInfo structure for a WriterSock.
+ *
+ *      The connInfoPtr is allocated only once per pool and cached in the
+ *      WriterSock. Only the first time, a writer thread "sees" a pool, it
+ *      allocates the structure for it.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Can allocate memory
+ *
+ *----------------------------------------------------------------------
+ */
+static ConnPoolInfo *
+WriterGetInfoPtr(WriterSock *curPtr, Tcl_HashTable *pools)
+{
+    NS_NONNULL_ASSERT(curPtr != NULL);
+    NS_NONNULL_ASSERT(pools != NULL);
+
+    if (curPtr->infoPtr == NULL) {
+        int            isNew;
+        Tcl_HashEntry  *hPtr;
+
+        hPtr = Tcl_CreateHashEntry(pools, curPtr->poolPtr, &isNew);
+        if (isNew == 1) {
+            /*
+             * This is a pool that we have not seen yet.
+             */
+            curPtr->infoPtr = ns_malloc(sizeof(ConnPoolInfo));
+            curPtr->infoPtr->currentPoolRate = 0;
+            curPtr->infoPtr->threadSlot =
+                NsPoolAllocateThreadSlot(curPtr->poolPtr, Ns_ThreadId());
+            Tcl_SetHashValue(hPtr, curPtr->infoPtr);
+            Ns_Log(DriverDebug, "poollimit: pool '%s' allocate infoPtr with slot %lu poolLimit %d",
+                   curPtr->poolPtr->pool,
+                   curPtr->infoPtr->threadSlot,
+                   curPtr->poolPtr->rate.poolLimit);
+        } else {
+            curPtr->infoPtr = (ConnPoolInfo *)Tcl_GetHashValue(hPtr);
+        }
+    }
+
+    return curPtr->infoPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * WriterPerPoolRates --
  *
  *      Compute current bandwidths per pool and writer.
@@ -4974,7 +5030,7 @@ WriterSend(WriterSock *curPtr, int *err) {
  */
 
 static void
-WriterPerPoolRates(WriterSock *writePtr,  Tcl_HashTable *pools)
+WriterPerPoolRates(WriterSock *writePtr, Tcl_HashTable *pools)
 {
     WriterSock     *curPtr;
     Tcl_HashSearch  search;
@@ -5003,46 +5059,16 @@ WriterPerPoolRates(WriterSock *writePtr,  Tcl_HashTable *pools)
          * Does the writer come form a badwidth limited pool?
          */
         if (curPtr->poolPtr->rate.poolLimit > 0 && curPtr->currentRate > 0) {
-
-            /*
-             * Do we have for this writer already an infoPtr?
-             */
-            if (curPtr->infoPtr == NULL) {
-                ConnPoolInfo  *infoPtr;
-                int            isNew;
-
-                hPtr = Tcl_CreateHashEntry(pools, curPtr->poolPtr, &isNew);
-                if (isNew == 1) {
-                    /*
-                     * This is a pool, we have not seen yet.
-                     */
-                    infoPtr = ns_malloc(sizeof(ConnPoolInfo));
-                    infoPtr->currentPoolRate = 0;
-                    infoPtr->threadSlot =
-                        NsPoolAllocateThreadSlot(curPtr->poolPtr, Ns_ThreadId());
-                    Tcl_SetHashValue(hPtr, infoPtr);
-                    Ns_Log(DriverDebug, "poollimit: pool '%s' allocate infoPtr with slot %lu poolLimit %d",
-                           curPtr->poolPtr->pool,
-                           infoPtr->threadSlot,
-                           curPtr->poolPtr->rate.poolLimit);
-                } else {
-                    infoPtr = (ConnPoolInfo *)Tcl_GetHashValue(hPtr);
-                }
-                /*
-                 * Cache the infoPtr in the current writer sock to avoid
-                 * later hash lookups.
-                 */
-                curPtr->infoPtr = infoPtr;
-            }
-
             /*
              * Add the actual rate to the writer specific pool rate.
              */
-            curPtr->infoPtr->currentPoolRate += curPtr->currentRate;
+            ConnPoolInfo *infoPtr = WriterGetInfoPtr(curPtr, pools);
+
+            infoPtr->currentPoolRate += curPtr->currentRate;
             Ns_Log(DriverDebug, "poollimit pool '%s' added rate poolLimit %d poolRate %d",
                    curPtr->poolPtr->pool,
                    curPtr->poolPtr->rate.poolLimit,
-                   curPtr->infoPtr->currentPoolRate);
+                   infoPtr->currentPoolRate);
         }
     }
 
@@ -5270,7 +5296,6 @@ WriterThread(void *arg)
             Ns_Fatal("writer: trigger ns_recv() failed: %s",
                      ns_sockstrerror(ns_sockerrno));
         }
-
 
         /*
          * Write to all available sockets
@@ -5721,7 +5746,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
             wrSockPtr->rateLimit = wrPtr->rateLimit;
         }
     }
-    Ns_Log(DriverDebug, "### Writer(%d): rate limit %d KB/s",
+    Ns_Log(DriverDebug, "### Writer(%d): initial rate limit %d KB/s",
            wrSockPtr->sockPtr->sock, wrSockPtr->rateLimit);
 
     /*
@@ -5898,10 +5923,13 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
     wrPtr->curPtr = wrPtr->curPtr->nextPtr;
     Ns_MutexUnlock(&wrPtr->lock);
 
-    Ns_Log(DriverDebug, "Writer: %d: started sock=%d, fd=%d: "
-           "size=%" PRIdz ", flags=%X: %s",
-           queuePtr->id, wrSockPtr->sockPtr->sock, wrSockPtr->fd,
-           nsend, wrSockPtr->flags, connPtr->reqPtr->request.url);
+    Ns_Log(Notice, "Writer(%d): started: id=%d fd=%d, "
+           "size=%" PRIdz ", flags=%X, rate %d KB/s: %s",
+           wrSockPtr->sockPtr->sock,
+           queuePtr->id, wrSockPtr->fd,
+           nsend, wrSockPtr->flags,
+           wrSockPtr->rateLimit,
+           connPtr->request.line);
 
     /*
      * Now add new writer socket to the writer thread's queue

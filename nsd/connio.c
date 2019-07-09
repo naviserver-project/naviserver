@@ -698,6 +698,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
         if (likely(sent > 0)) {
             connPtr->nContentSent += (size_t)sent;
         }
+         NsPoolAddBytesSent(((Conn *)conn)->poolPtr,  (Tcl_WideInt)connPtr->nContentSent);
     }
 
     return sent;

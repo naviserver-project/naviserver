@@ -729,6 +729,7 @@ typedef struct ConnPool {
         int defaultConnectionLimit;  /* default rate limit for single connections */
         int poolLimit;               /* rate limit for pool */
         int currentRate;             /* actual rate tor pool */
+        Tcl_WideInt bytesSent;
         Ns_Mutex lock;
         Ns_DList writerRates;
     } rate;
@@ -1372,6 +1373,7 @@ NS_EXTERN void NsWakeupDriver(const Driver *drvPtr) NS_GNUC_NONNULL(1);
 /*
  * Url-specific data routines.
  */
+typedef bool  (NsUrlSpaceContextFilterProc) (void *spec, void *context);
 
 NS_EXTERN void *NsUrlSpecificGet(NsServer *servPtr, const char *method,
                                  const char *url, int id, unsigned int flags, NsUrlSpaceOp op)
@@ -1414,8 +1416,8 @@ NS_EXTERN size_t NsPoolAllocateThreadSlot(ConnPool *poolPtr, uintptr_t threadID)
 
 NS_EXTERN int NsPoolTotalRate(ConnPool *poolPtr, size_t slot, int rate, int *writerThreadCount)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
-
-
+NS_EXTERN void NsPoolAddBytesSent(ConnPool *poolPtr, Tcl_WideInt bytesSent)
+    NS_GNUC_NONNULL(1);
 
 NS_EXTERN void NsSockClose(Sock *sockPtr, int keep)
     NS_GNUC_NONNULL(1);

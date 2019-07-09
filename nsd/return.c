@@ -1068,6 +1068,8 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
         result = Ns_ConnSendFileVec(conn, bufs, nbufs);
     }
 
+    NsPoolAddBytesSent(((Conn *)conn)->poolPtr,  (Tcl_WideInt)Ns_ConnContentSent(conn));
+
     Ns_DStringFree(&ds);
 
     return result;

@@ -295,6 +295,14 @@ NsPoolTotalRate(ConnPool *poolPtr, size_t slot, int rate, int *writerThreadCount
     return (int)totalRate;
 }
 
+void
+NsPoolAddBytesSent(ConnPool *poolPtr, Tcl_WideInt bytesSent)
+{
+    Ns_MutexLock(&poolPtr->rate.lock);
+    poolPtr->rate.bytesSent += bytesSent;
+    Ns_MutexUnlock(&poolPtr->rate.lock);
+}
+
 
 
 /*
@@ -1233,7 +1241,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
     int             subcmd = 0, result = TCL_OK, nargs = 0;
     NsServer       *servPtr = NULL;
     ConnPool       *poolPtr;
-    char           *pool = NULL, *optArg = NULL, buf[100];
+    char           *pool = NULL, *optArg = NULL;
     Tcl_DString     ds, *dsPtr = &ds;
 
     enum {
@@ -1434,21 +1442,11 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
     case SStatsIdx:
         Tcl_DStringInit(dsPtr);
 
-        Tcl_DStringAppendElement(dsPtr, "requests");
-        snprintf(buf, sizeof(buf), "%lu", poolPtr->stats.processed);
-        Tcl_DStringAppendElement(dsPtr, buf);
-
-        Tcl_DStringAppendElement(dsPtr, "spools");
-        snprintf(buf, sizeof(buf), "%lu", poolPtr->stats.spool);
-        Tcl_DStringAppendElement(dsPtr, buf);
-
-        Tcl_DStringAppendElement(dsPtr, "queued");
-        snprintf(buf, sizeof(buf), "%lu", poolPtr->stats.queued);
-        Tcl_DStringAppendElement(dsPtr, buf);
-
-        Tcl_DStringAppendElement(dsPtr, "connthreads");
-        snprintf(buf, sizeof(buf), "%lu", poolPtr->stats.connthreads);
-        Tcl_DStringAppendElement(dsPtr, buf);
+        Ns_DStringPrintf(dsPtr, "requests %lu ", poolPtr->stats.processed);
+        Ns_DStringPrintf(dsPtr, "spools %lu ", poolPtr->stats.spool);
+        Ns_DStringPrintf(dsPtr, "queued %lu ", poolPtr->stats.queued);
+        Ns_DStringPrintf(dsPtr, "sent %" TCL_LL_MODIFIER "d ", poolPtr->rate.bytesSent);
+        Ns_DStringPrintf(dsPtr,  "connthreads %lu", poolPtr->stats.connthreads);
 
         Ns_DStringAppend(dsPtr, " accepttime ");
         Ns_DStringAppendTime(dsPtr, &poolPtr->stats.acceptTime);
