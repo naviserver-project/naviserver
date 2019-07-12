@@ -756,7 +756,6 @@ Ns_DbPoolStats(Tcl_Interp *interp)
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("used", 4));
             }
             if (likely(result == TCL_OK)) {
-                fprintf(stderr, "pool %s nhandles %d unused %d used %d\n",poolPtr->name, poolPtr->nhandles, unused, poolPtr->nhandles - unused);
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewIntObj(poolPtr->nhandles - unused));
             }
             if (likely(result == TCL_OK)) {
