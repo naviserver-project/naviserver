@@ -771,15 +771,14 @@ FreeUserInfo(User *userPtr, char *name)
 
 static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *const* objv)
 {
-    Server *servPtr = data;
-    User *userPtr;
-    Tcl_HashEntry *hPtr;
+    Server             *servPtr = data;
+    User               *userPtr;
+    Tcl_HashEntry      *hPtr;
     struct NS_SOCKADDR_STORAGE ip, mask;
-    struct sockaddr     *ipPtr = (struct sockaddr *)&ip, *maskPtr = (struct sockaddr *)&mask;
+    struct sockaddr    *ipPtr = (struct sockaddr *)&ip, *maskPtr = (struct sockaddr *)&mask;
     char buf[NS_ENCRYPT_BUFSIZE];
-    char *name, *slash, *net, *pwd;
-    char *field = NULL, *salt = NULL;
-    int isNew, i, nargs = 0, allow = 0, deny = 0, clear = 0;
+    char               *name, *pwd, *field = NULL, *salt = NULL;
+    int                 isNew, i, nargs = 0, allow = 0, deny = 0, clear = 0;
 
     Ns_ObjvSpec opts[] = {
         {"-allow", Ns_ObjvBool, &allow, INT2PTR(NS_TRUE)},
@@ -836,80 +835,35 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
      */
 
     for (i = objc - nargs; i < objc; ++i) {
-        int validIp;
-        net = Tcl_GetString(objv[i]);
+        Ns_ReturnCode status;
+        char         *net = Tcl_GetString(objv[i]);
 
-        memset(ipPtr, 0, sizeof(struct NS_SOCKADDR_STORAGE));
-        memset(maskPtr, 0, sizeof(struct NS_SOCKADDR_STORAGE));
-
-        slash = strchr(net, INTCHAR('/'));
-        if (slash == NULL) {
-            /*
-             * No mask is given
-             */
-            validIp = ns_inet_pton(ipPtr, net);
-            if (validIp > 0) {
-                maskPtr->sa_family = ipPtr->sa_family;
-                Ns_SockaddrMaskBits(maskPtr, (maskPtr->sa_family == AF_INET6) ? 128 :32);
-            }
-        } else {
-            int validMask;
-            /*
-             * Mask is given, try to convert the masked address into
-             * binary values.
-             */
-
-            *slash = '\0';
-            slash++;
-
-            validIp = ns_inet_pton(ipPtr, net);
-            if (strchr(slash, INTCHAR('.')) == NULL && strchr(slash, INTCHAR(':')) == NULL) {
-                maskPtr->sa_family = ipPtr->sa_family;
-                Ns_SockaddrMaskBits(maskPtr, (unsigned int)strtol(slash, NULL, 10));
-                validMask = 1;
-            } else {
-                validMask = ns_inet_pton(maskPtr, slash);
-            }
-
-            if (validIp <= 0 || validMask <= 0) {
-                Ns_TclPrintfResult(interp, "invalid address or hostname \"%s\". "
-                                   "Should be ipaddr/netmask or hostname", net);
-                goto fail;
-            }
-
-            /*
-             * Do a bitwise AND of the ip address with the netmask
-             * to make sure that all non-network bits are 0. That
-             * saves us from doing this operation every time a
-             * connection comes in.
-             */
-            Ns_SockaddrMask(ipPtr, maskPtr, ipPtr);
-            /*Ns_LogSockaddr(Notice, "NSPERM: maskedAddress", ipPtr);*/
+        status = Ns_SockaddrParseIPMask(interp, net, ipPtr, maskPtr);
+        if (status != NS_OK) {
+            goto fail;
         }
 
-        if (validIp > 0) {
-            /*
-             * Is this a new netmask? If so, add it to the list.
-             * A list of netmasks is maintained and every time a
-             * new connection comes in, the peer address is ANDed with
-             * each of them and a lookup on that address is done
-             * on the hash table of networks.
-             */
-            (void) Tcl_CreateHashEntry(&userPtr->masks, (char *)maskPtr, &isNew);
+        /*
+         * Is this a new netmask? If so, add it to the list.
+         * A list of netmasks is maintained and every time a
+         * new connection comes in, the peer address is ANDed with
+         * each of them and a lookup on that address is done
+         * on the hash table of networks.
+         */
+        (void) Tcl_CreateHashEntry(&userPtr->masks, (char *)maskPtr, &isNew);
 
-            /*
-             * Add the potentially masked IpAddress to the nets table.
-             */
-            hPtr = Tcl_CreateHashEntry(&userPtr->nets,  (char *)ipPtr, &isNew);
-            if (hPtr != NULL) {
-                char ipString[NS_IPADDR_SIZE];
-                Tcl_SetHashValue(hPtr,
-                                 (ClientData)ns_strdup(ns_inet_ntop(maskPtr, ipString, sizeof(ipString))));
-            }
-            if (isNew == 0) {
-                Ns_TclPrintfResult(interp, "duplicate entry: %s", net);
-                goto fail;
-            }
+        /*
+         * Add the potentially masked IpAddress to the nets table.
+         */
+        hPtr = Tcl_CreateHashEntry(&userPtr->nets,  (char *)ipPtr, &isNew);
+        if (hPtr != NULL) {
+            char ipString[NS_IPADDR_SIZE];
+            Tcl_SetHashValue(hPtr,
+                             (ClientData)ns_strdup(ns_inet_ntop(maskPtr, ipString, sizeof(ipString))));
+        }
+        if (isNew == 0) {
+            Ns_TclPrintfResult(interp, "duplicate entry: %s", net);
+            goto fail;
         }
     }
 

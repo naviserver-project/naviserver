@@ -249,6 +249,96 @@ Ns_SockaddrMaskBits(const struct sockaddr *mask, unsigned int nrBits)
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockaddrParseIPMask --
+ *
+ *      Build a mask and IPv4 or IpV6 address from an IP string notation,
+ *      potentially containing a '/' for denoting the number of bits.
+ *      Example: "137.208.1.10/16"
+ *
+ * Results:
+ *      Binary IP address and mask are filled into last arguments,
+ *      returns Ns_ReturnCode.
+ *
+ * Side effects:
+ *      Memory pointed to by ipPtr and maskPtr is modified.
+ *
+ *----------------------------------------------------------------------
+ */
+Ns_ReturnCode
+Ns_SockaddrParseIPMask(Tcl_Interp *interp, const char *ipString,
+                     struct sockaddr *ipPtr, struct sockaddr *maskPtr)
+{
+    char         *slash;
+    int           validIP;
+    Ns_ReturnCode status = NS_OK;
+
+    NS_NONNULL_ASSERT(ipString != NULL);
+    NS_NONNULL_ASSERT(ipPtr != NULL);
+    NS_NONNULL_ASSERT(maskPtr != NULL);
+
+    memset(ipPtr, 0, sizeof(struct NS_SOCKADDR_STORAGE));
+    memset(maskPtr, 0, sizeof(struct NS_SOCKADDR_STORAGE));
+
+    slash = strchr(ipString, INTCHAR('/'));
+    fprintf(stderr, "Ns_SockaddrParseIPMask: <%s> has slash %d\n",
+            ipString, (slash != NULL));
+
+    if (slash == NULL) {
+        /*
+         * No mask is given
+         */
+        validIP = ns_inet_pton(ipPtr, ipString);
+        if (validIP > 0) {
+            maskPtr->sa_family = ipPtr->sa_family;
+            Ns_SockaddrMaskBits(maskPtr, (maskPtr->sa_family == AF_INET6) ? 128 :32);
+        } else {
+            status = NS_ERROR;
+        }
+    } else {
+        int   validMask;
+        char *dupIpString = ns_strdup(ipString);
+        /*
+         * Mask is given, try to convert the masked address into
+         * binary values.
+         */
+
+        *(dupIpString + (slash-ipString)) = '\0';
+        slash++;
+
+        validIP = ns_inet_pton(ipPtr, dupIpString);
+        if (strchr(slash, INTCHAR('.')) == NULL && strchr(slash, INTCHAR(':')) == NULL) {
+            maskPtr->sa_family = ipPtr->sa_family;
+            Ns_SockaddrMaskBits(maskPtr, (unsigned int)strtol(slash, NULL, 10));
+            validMask = 1;
+        } else {
+            validMask = ns_inet_pton(maskPtr, slash);
+        }
+
+        if (validIP <= 0 || validMask <= 0) {
+            if (interp != NULL) {
+                Ns_TclPrintfResult(interp, "invalid address or hostname \"%s\". "
+                                   "Should be ipaddr/netmask or hostname", dupIpString);
+            }
+            status = NS_ERROR;
+        }
+        ns_free(dupIpString);
+        /*
+         * Do a bitwise AND of the ip address with the netmask
+         * to make sure that all non-network bits are 0. That
+         * saves us from doing this operation every time a
+         * connection comes in.
+         */
+        Ns_SockaddrMask(ipPtr, maskPtr, ipPtr);
+        /*Ns_LogSockaddr(Notice, "NSPERM: maskedAddress", ipPtr);*/
+    }
+
+    return status;
+}
+
+
 
 /*
  *----------------------------------------------------------------------
