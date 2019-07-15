@@ -245,21 +245,24 @@ HTTP method and path will be served from this connection pool.
 The connection thread pools can be defined as usual in the config
 file:
 [example_begin]
-   ns_section "ns/server/${server}/pools"
-   ns_param fast "Fast lane pool"
-   ns_param slow "Slow lane pool"
+   ns_section "ns/server/${server}/pools" {
+      ns_param fast "Fast lane pool"
+      ns_param slow "Slow lane pool"
+   }
    
-   ns_section "ns/server/${server}/pool/fast"
-   ns_param minthreads 4
-   ns_param maxthreads 4
-   ns_param map "GET /*.png"
-   ns_param map "GET /*.jpg"
-   ns_param map "GET /*.pdf"
+   ns_section "ns/server/${server}/pool/fast" {
+      ns_param minthreads 4
+      ns_param maxthreads 4
+      ns_param map "GET /*.png"
+      ns_param map "GET /*.jpg"
+      ns_param map "GET /*.pdf"
+   }
    
-   ns_section "ns/server/${server}/pool/slow"
-   ns_param minthreads 5
-   ns_param maxthreads 15
-   ns_param maxconnections 200
+   ns_section "ns/server/${server}/pool/slow" {
+      ns_param minthreads 5
+      ns_param maxthreads 15
+      ns_param maxconnections 200
+   }
 [example_end]
 
 Query a certain mapping:
