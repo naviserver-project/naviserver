@@ -1362,10 +1362,23 @@ NsTclGuessTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 bool
 Ns_IsBinaryMimeType(const char *contentType) {
     size_t length;
+    bool   result;
 
     NS_NONNULL_ASSERT(contentType != NULL);
 
-    return ((strncmp("text/", contentType, 5u) != 0) && (NsFindCharset(contentType, &length) == NULL)) ;
+    if (strncmp("text/", contentType, 5u) == 0) {
+        result = NS_FALSE;
+    } else if (NsFindCharset(contentType, &length) != NULL) {
+        result = NS_FALSE;
+    } else if (strstr(contentType, "xml") != NULL) {
+        result = NS_FALSE;
+    } else if (strstr(contentType, "json") != NULL) {
+        result = NS_FALSE;
+    } else {
+        result = NS_TRUE;
+    }
+
+    return result;
 }
 
 /*
