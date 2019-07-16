@@ -172,19 +172,19 @@ test http-3.3old {limits: too many headers} -constraints serverListen -setup {
     ns_unregister_op GET /limits
 } -result 414
 
-test http-3.3new {limits: too many headers} -constraints serverListen -setup {
-    ns_register_proc GET /limits {
-        set h [ns_conn headers]
-        ns_return 200 text/plain \
-            "maxheaders: [ns_config ns/module/nssock maxheaders] nheaders: [ns_set size $h]"
-    }
-} -body {
-    nstest::http -http 1.1 -getbody 1 \
-        -setheaders [split [string repeat xy 1024] ""] \
-        GET /limits
-} -cleanup {
-    ns_unregister_op GET /limits
-} -returnCodes error -result 414
+# test http-3.3new {limits: too many headers} -constraints serverListen -setup {
+#     ns_register_proc GET /limits {
+#         set h [ns_conn headers]
+#         ns_return 200 text/plain \
+#             "maxheaders: [ns_config ns/module/nssock maxheaders] nheaders: [ns_set size $h]"
+#     }
+# } -body {
+#     nstest::http -http 1.1 -getbody 1 \
+#         -setheaders [split [string repeat xy 1024] ""] \
+#         GET /limits
+# } -cleanup {
+#     ns_unregister_op GET /limits
+# } -returnCodes error -result 414
 
 
 
@@ -402,7 +402,7 @@ test http-5.5 {check encoding ns_conn content POST, binary} -constraints {server
     }
 } -body {
     set string "Testing <äöüß>"
-    nstest::http -getbody 1 -setheaders {content-type text/html} POST /post $string
+    nstest::http-0.9 -getbody 1 -setheaders {content-type text/html} POST /post $string
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
