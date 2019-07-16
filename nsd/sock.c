@@ -73,7 +73,7 @@ static NS_SOCKET BindToSameFamily(struct sockaddr *saPtr,
                                   const char *lhost, unsigned short lport)
                                   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static inline bool Retry(int errorCode) NS_GNUC_CONST;
+static NS_INLINE bool Retry(int errorCode) NS_GNUC_CONST;
 
 static Ns_SockProc CloseLater;
 
@@ -98,7 +98,7 @@ static Ns_SockProc CloseLater;
  *----------------------------------------------------------------------
  */
 
-static inline bool Retry(int errorCode)
+static NS_INLINE bool Retry(int errorCode)
 {
     return (errorCode == NS_EAGAIN || errorCode == NS_EINTR || errorCode == NS_EWOULDBLOCK);
 }

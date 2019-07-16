@@ -167,4 +167,11 @@
 # endif
 #endif
 
+
+#ifdef _MSC_VER
+# define NS_INLINE __forceinline
+#else
+# define NS_INLINE inline
+#endif
+
 #endif /* NSCHECK_H */
