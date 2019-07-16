@@ -230,7 +230,7 @@ Possible encodings are [term hex], [term base64url],
 [list_end]
 
 [see_also nsd ns_md ns_hmac]
-[keywords crypto HMAC HKDF AEAD]
+[keywords crypto HMAC HKDF AEAD random]
 
 [manpage_end]
 
