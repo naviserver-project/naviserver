@@ -465,7 +465,7 @@ Ns_ObjvDouble(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  *
  * Ns_ObjvBool --
  *
- *      If spec->arg is 0 consume exactly one argument and attempt
+ *      If spec->arg is NULL consume exactly one argument and attempt
  *      conversion to a boolean value.  Otherwise, spec->arg is
  *      treated as an int and placed into spec->dest with zero args
  *      consumed.
