@@ -2863,7 +2863,7 @@ NS_EXTERN void
 Ns_SockaddrSetPort(struct sockaddr *saPtr, unsigned short port)
     NS_GNUC_NONNULL(1);
 
-socklen_t
+NS_EXTERN socklen_t
 Ns_SockaddrGetSockLen(const struct sockaddr *saPtr)
         NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
@@ -2871,7 +2871,7 @@ NS_EXTERN void
 Ns_LogSockaddr(Ns_LogSeverity severity, const char *prefix, const struct sockaddr *saPtr)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-Ns_ReturnCode
+NS_EXTERN  Ns_ReturnCode
 Ns_SockaddrParseIPMask(Tcl_Interp *interp, const char *ipString,
                        struct sockaddr *ipPtr, struct sockaddr *maskPtr,
                        unsigned int *nrBitsPtr)
