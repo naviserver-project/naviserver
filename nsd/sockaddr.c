@@ -217,7 +217,7 @@ Ns_SockaddrMaskedMatch(const struct sockaddr *addr, const struct sockaddr *mask,
         }
 #else
         for (i = 0; i < 8; i++) {
-            if ((addrBits->u.Word[i] & maskBits->u.Word[i]) != masedkBits->u.Word[i]) {
+            if ((addrBits->u.Word[i] & maskBits->u.Word[i]) != maskedBits->u.Word[i]) {
                 success = NS_FALSE;
                 break;
             }
