@@ -838,7 +838,7 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
         Ns_ReturnCode status;
         char         *net = Tcl_GetString(objv[i]);
 
-        status = Ns_SockaddrParseIPMask(interp, net, ipPtr, maskPtr);
+        status = Ns_SockaddrParseIPMask(interp, net, ipPtr, maskPtr, NULL);
         if (status != NS_OK) {
             goto fail;
         }

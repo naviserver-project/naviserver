@@ -77,6 +77,16 @@ typedef enum {
     NS_URLSPACE_EXACT =          2
 } NsUrlSpaceOp;
 
+
+typedef bool (NsUrlSpaceContextFilterProc) (void *contextSpec, void *context);
+
+typedef struct NsUrlSpaceContext {
+    const Ns_Set *headers;
+    struct sockaddr *saPtr;
+} NsUrlSpaceContext;
+
+typedef struct _NsUrlSpaceContextSpec  NsUrlSpaceContextSpec;
+
 /*
  * Managing streaming output via writer
  */
@@ -115,7 +125,7 @@ typedef enum {
 
 
 /*
- * Types definitions.
+ * Type definitions.
  */
 
 struct Sock;
@@ -1316,6 +1326,7 @@ NS_EXTERN Tcl_ObjCmdProc
 
 NS_EXTERN Ns_LogSeverity Ns_LogRequestDebug;
 NS_EXTERN Ns_LogSeverity Ns_LogConnchanDebug;
+NS_EXTERN Ns_LogSeverity Ns_LogUrlspaceDebug;
 NS_EXTERN bool NsWriterBandwidthManagement;
 
 /*
@@ -1371,13 +1382,23 @@ NS_EXTERN void NsWaitServer(NsServer *servPtr, const Ns_Time *toPtr) NS_GNUC_NON
 NS_EXTERN void NsWakeupDriver(const Driver *drvPtr) NS_GNUC_NONNULL(1);
 
 /*
- * Url-specific data routines.
+ * URL-specific data routines.
  */
-typedef bool  (NsUrlSpaceContextFilterProc) (void *spec, void *context);
-
-NS_EXTERN void *NsUrlSpecificGet(NsServer *servPtr, const char *method,
-                                 const char *url, int id, unsigned int flags, NsUrlSpaceOp op)
+NS_EXTERN void *
+NsUrlSpecificGet(NsServer *servPtr, const char *method,
+                 const char *url, int id, unsigned int flags, NsUrlSpaceOp op,
+                 NsUrlSpaceContextFilterProc proc, void *context)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+NS_EXTERN NsUrlSpaceContextSpec *
+NsUrlSpaceContextSpecNew(const char *field, const char *patternString)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN const char *
+NsUrlSpaceContextSpecAppend(Tcl_DString *dsPtr, NsUrlSpaceContextSpec *spec)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+    
+NS_EXTERN NsUrlSpaceContextFilterProc NsUrlSpaceContextFilter;
 
 /*
  * Socket driver callbacks.
@@ -1407,7 +1428,7 @@ NS_EXTERN bool NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 NS_EXTERN void NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN void NsMapPool(ConnPool *poolPtr, const char *map, unsigned int flags)
+NS_EXTERN void NsMapPool(ConnPool *poolPtr, const char *mapString, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 

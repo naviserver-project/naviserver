@@ -179,7 +179,7 @@ Ns_GetRequest(const char *server, const char *method, const char *url,
 
     Ns_MutexLock(&ulock);
     reqPtr = NsUrlSpecificGet(NsGetServer(server), method, url, uid,
-                              0u, NS_URLSPACE_DEFAULT);
+                              0u, NS_URLSPACE_DEFAULT, NULL, NULL);
     if (reqPtr != NULL) {
         *procPtr = reqPtr->proc;
         *deletePtr = reqPtr->deleteCallback;
@@ -309,7 +309,7 @@ Ns_ConnRunRequest(Ns_Conn *conn)
             Ns_MutexLock(&ulock);
             reqPtr = NsUrlSpecificGet(connPtr->poolPtr->servPtr,
                                       conn->request.method, conn->request.url, uid,
-                                      0u, NS_URLSPACE_DEFAULT);
+                                      0u, NS_URLSPACE_DEFAULT, NULL, NULL);
             if (reqPtr == NULL) {
                 Ns_MutexUnlock(&ulock);
                 if (STREQ(conn->request.method, "BAD")) {

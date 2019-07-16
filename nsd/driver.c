@@ -329,6 +329,7 @@ static ConnPoolInfo *WriterGetInfoPtr(WriterSock *curPtr, Tcl_HashTable *pools)
 Ns_LogSeverity Ns_LogTaskDebug;
 Ns_LogSeverity Ns_LogRequestDebug;
 Ns_LogSeverity Ns_LogConnchanDebug;
+Ns_LogSeverity Ns_LogUrlspaceDebug;
 bool NsWriterBandwidthManagement = NS_FALSE;
 
 
@@ -418,6 +419,7 @@ NsInitDrivers(void)
     Ns_LogTaskDebug = Ns_CreateLogSeverity("Debug(task)");
     Ns_LogRequestDebug = Ns_CreateLogSeverity("Debug(request)");
     Ns_LogConnchanDebug = Ns_CreateLogSeverity("Debug(connchan)");
+    Ns_LogUrlspaceDebug = Ns_CreateLogSeverity("Debug(urlspace)");
     Ns_MutexInit(&reqLock);
     Ns_MutexInit(&writerlock);
     Ns_MutexSetName2(&reqLock, "ns:driver", "requestpool");
@@ -5322,6 +5324,9 @@ WriterThread(void *arg)
                 Ns_Log(DriverDebug, "### Writer %p reached POLLHUP fd %d", (void *)curPtr, sockPtr->sock);
                 spoolerState = SPOOLER_CLOSE;
                 err = 0;
+                curPtr->infoPtr = WriterGetInfoPtr(curPtr, &pools);
+                curPtr->infoPtr->currentPoolRate += curPtr->currentRate;
+
 
             } else if (likely(PollOut(&pdata, sockPtr->pidx)) || (doStream == NS_WRITER_STREAM_FINISH)) {
                 /*

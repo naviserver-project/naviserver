@@ -57,8 +57,9 @@ static bool neededAdditionalConnectionThreads(const ConnPool *poolPtr)
 static void WakeupConnThreads(ConnPool *poolPtr)
     NS_GNUC_NONNULL(1);
 
-static Ns_ReturnCode MapspecParse(Tcl_Interp *interp, Tcl_Obj *mapspecObj, char **method, char **url)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+static Ns_ReturnCode MapspecParse(Tcl_Interp *interp, Tcl_Obj *mapspecObj, char **method, char **url,
+                                  NsUrlSpaceContextSpec **specPtr)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 static int ServerMaxThreadsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv,
                                   ConnPool *poolPtr, int nargs)
@@ -195,24 +196,30 @@ Ns_GetConn(void)
  */
 
 void
-NsMapPool(ConnPool *poolPtr, const char *map, unsigned int flags)
+NsMapPool(ConnPool *poolPtr, const char *mapString, unsigned int flags)
 {
-    const char **mv, *server;
-    int          mc;
+    const char            *server;
+    char                  *method, *url;
+    Tcl_Obj               *mapspecObj;
+    NsUrlSpaceContextSpec *specPtr;
 
     NS_NONNULL_ASSERT(poolPtr != NULL);
-    NS_NONNULL_ASSERT(map != NULL);
+    NS_NONNULL_ASSERT(mapString != NULL);
 
+    mapspecObj = Tcl_NewStringObj(mapString, -1);
     server = poolPtr->servPtr->server;
 
-    if (Tcl_SplitList(NULL, map, &mc, &mv) == TCL_OK) {
-        if (mc == 2) {
-            Ns_UrlSpecificSet(server, mv[0], mv[1], poolid, poolPtr, flags, NULL);
-            Ns_Log(Notice, "pool[%s]: mapped %s %s -> %s",
-                   server, mv[0], mv[1], poolPtr->pool);
-        }
-        Tcl_Free((char *) mv);
+    Tcl_IncrRefCount(mapspecObj);
+    if (MapspecParse(NULL, mapspecObj, &method, &url, &specPtr) == NS_OK) {
+        Ns_UrlSpecificSet2(server, method, url, poolid, poolPtr, flags, NULL, specPtr);
+
+    } else {
+        Ns_Log(Warning,
+               "invalid mapspec '%s'; must be 2- or 3-element list "
+               "containing HTTP method, URL, and optionally a filtercontext",
+               mapString);
     }
+    Tcl_DecrRefCount(mapspecObj);
 }
 
 /*
@@ -475,10 +482,15 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
      */
 
     if ((sockPtr->reqPtr != NULL) && (sockPtr->reqPtr->request.method != NULL)) {
+        NsUrlSpaceContext ctx;
+
+        ctx.headers = sockPtr->reqPtr->headers;
+        ctx.saPtr = (struct sockaddr *)&(sockPtr->sa);
         poolPtr = NsUrlSpecificGet(servPtr,
                                    sockPtr->reqPtr->request.method,
                                    sockPtr->reqPtr->request.url,
-                                   poolid, 0u, NS_URLSPACE_DEFAULT);
+                                   poolid, 0u, NS_URLSPACE_DEFAULT,
+                                   NsUrlSpaceContextFilter, &ctx);
     }
     if (poolPtr == NULL) {
         poolPtr = servPtr->pools.defaultPtr;
@@ -785,25 +797,43 @@ ServerMinThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
  */
 
 static Ns_ReturnCode
-MapspecParse( Tcl_Interp *interp, Tcl_Obj *mapspecObj, char **method, char **url) {
-    Ns_ReturnCode status;
+MapspecParse(Tcl_Interp *interp, Tcl_Obj *mapspecObj, char **method, char **url,
+             NsUrlSpaceContextSpec **specPtr) {
+    Ns_ReturnCode status = NS_ERROR;
     int           oc;
     Tcl_Obj     **ov;
 
-    NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(mapspecObj != NULL);
     NS_NONNULL_ASSERT(method != NULL);
     NS_NONNULL_ASSERT(url != NULL);
+    NS_NONNULL_ASSERT(specPtr != NULL);
 
-    if (Tcl_ListObjGetElements(NULL, mapspecObj, &oc, &ov) == TCL_OK && oc == 2) {
-        *method = Tcl_GetString(ov[0]);
-        *url = Tcl_GetString(ov[1]);
-        status = NS_OK;
-    } else {
+    if (Tcl_ListObjGetElements(NULL, mapspecObj, &oc, &ov) == TCL_OK) {
+        if (oc == 2 || oc == 3) {
+            status = NS_OK;
+            *method = Tcl_GetString(ov[0]);
+            *url = Tcl_GetString(ov[1]);
+            if (oc == 3) {
+                int        oc2;
+                Tcl_Obj  **ov2;
+
+                if (Tcl_ListObjGetElements(NULL, ov[2], &oc2, &ov2) == TCL_OK && oc2 == 2) {
+                    *specPtr = NsUrlSpaceContextSpecNew(Tcl_GetString(ov2[0]),
+                                                        Tcl_GetString(ov2[1]));
+
+                } else {
+                    status = NS_ERROR;
+                }
+            } else {
+                *specPtr = NULL;
+            }
+        }
+    }
+    if (unlikely(status == NS_ERROR) && interp != NULL) {
         Ns_TclPrintfResult(interp,
-                           "invalid mapspec '%s'; must be 2-element list containing HTTP method and URL",
+                           "invalid mapspec '%s'; must be 2- or 3-element list "
+                           "containing HTTP method, URL, and optionally a filtercontext",
                            Tcl_GetString(mapspecObj));
-        status = NS_ERROR;
     }
 
     return status;
@@ -849,22 +879,28 @@ ServerMapObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         result = TCL_ERROR;
     } else if (mapspecObj != NULL) {
         char *method, *url;
+        NsUrlSpaceContextSpec *specPtr = NULL;
 
-        if (MapspecParse(interp, mapspecObj, &method, &url) != NS_OK) {
+        if (MapspecParse(interp, mapspecObj, &method, &url, &specPtr) != NS_OK) {
             result = TCL_ERROR;
         } else {
             unsigned int flags = 0u;
+            Tcl_DString ds;
 
             if (noinherit != 0) {
                 flags |= NS_OP_NOINHERIT;
             }
 
             Ns_MutexLock(&servPtr->urlspace.lock);
-            Ns_UrlSpecificSet(servPtr->server, method, url, poolid, poolPtr, flags, NULL);
+            Ns_UrlSpecificSet2(servPtr->server, method, url, poolid, poolPtr, flags, NULL, specPtr);
             Ns_MutexUnlock(&servPtr->urlspace.lock);
 
-            Ns_Log(Notice, "pool[%s]: mapped %s %s -> %s",
-                   servPtr->server, method, url, poolPtr->pool);
+            Tcl_DStringInit(&ds);
+            Ns_Log(Notice, "pool[%s]: mapped %s %s%s -> %s",
+                   servPtr->server, method, url,
+                   (specPtr == NULL ? "" : NsUrlSpaceContextSpecAppend(&ds, specPtr)),
+                   poolPtr->pool);
+            Tcl_DStringFree(&ds);
         }
 
     } else {
@@ -974,6 +1010,7 @@ ServerMappedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     int          result = TCL_OK, noinherit = 0, exact = 0;
     Tcl_Obj     *mapspecObj = NULL;
     char        *method, *url;
+    NsUrlSpaceContextSpec *specPtr;
     Ns_ObjvSpec  lopts[] = {
         {"-exact",     Ns_ObjvBool,   &exact, INT2PTR(NS_TRUE)},
         {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_TRUE)},
@@ -990,7 +1027,7 @@ ServerMappedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 
     if (Ns_ParseObjv(lopts, args, interp, objc-nargs, objc, objv) != NS_OK) {
         result = TCL_ERROR;
-    } else if (MapspecParse(interp, mapspecObj, &method, &url) != NS_OK) {
+    } else if (MapspecParse(interp, mapspecObj, &method, &url, &specPtr) != NS_OK) {
         result = TCL_ERROR;
     } else {
         unsigned int    flags = 0u;
@@ -1008,7 +1045,8 @@ ServerMappedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         }
 
         Ns_MutexLock(&servPtr->urlspace.lock);
-        mappedPoolPtr = (ConnPool *)NsUrlSpecificGet(servPtr,  method, url, poolid, flags, op);
+        mappedPoolPtr = (ConnPool *)NsUrlSpecificGet(servPtr,  method, url, poolid, flags, op,
+                                                     NULL, NULL);
         Ns_MutexUnlock(&servPtr->urlspace.lock);
 
         if (mappedPoolPtr != NULL) {
@@ -1042,6 +1080,7 @@ ServerUnmapObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     int          result = TCL_OK, noinherit = 0;
     char        *method, *url;
     Tcl_Obj     *mapspecObj = NULL;
+    NsUrlSpaceContextSpec *specPtr;
     Ns_ObjvSpec  lopts[] = {
         {"-noinherit", Ns_ObjvBool, &noinherit, INT2PTR(NS_TRUE)},
         {NULL, NULL, NULL, NULL}
@@ -1057,7 +1096,7 @@ ServerUnmapObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
     if (Ns_ParseObjv(lopts, args, interp, objc-nargs, objc, objv) != NS_OK) {
         result = TCL_ERROR;
-    } else if (MapspecParse(interp, mapspecObj, &method, &url) != NS_OK) {
+    } else if (MapspecParse(interp, mapspecObj, &method, &url, &specPtr) != NS_OK) {
         result = TCL_ERROR;
     } else {
         bool          success;
@@ -1067,17 +1106,20 @@ ServerUnmapObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         if (noinherit != 0) {
             flags |= NS_OP_NOINHERIT;
         }
+        // TODO: for the time being
+        flags |= NS_OP_ALLFILTERS;
 
         Ns_MutexLock(&servPtr->urlspace.lock);
         data = Ns_UrlSpecificDestroy(servPtr->server,  method, url, poolid, flags);
         Ns_MutexUnlock(&servPtr->urlspace.lock);
 
         success = (data != NULL);
-        if (success) {
-            Ns_Log(Notice, "pool[%s]: unmapped %s %s", servPtr->server, method, url);
-        } else {
-            Ns_Log(Warning, "pool[%s]: could not unmap %s %s", servPtr->server, method, url);
-        }
+        // TODO: data is no good indicator when (all) context constraints are deleted.
+        //if (success) {
+        //    Ns_Log(Notice, "pool[%s]: unmapped %s %s", servPtr->server, method, url);
+        //} else {
+        //    Ns_Log(Warning, "pool[%s]: could not unmap %s %s", servPtr->server, method, url);
+        //}
         Tcl_SetObjResult(interp, Tcl_NewBooleanObj(success));
     }
 
@@ -1724,7 +1766,7 @@ ConnThreadSetName(const char *server, const char *pool, uintptr_t threadId, uint
         /*
          * Empty pool name.
          */
-        Ns_ThreadSetName("-conn:%s:%" PRIuPTR ":%" PRIuPTR "-",
+        Ns_ThreadSetName("-conn:%s:default:%" PRIuPTR ":%" PRIuPTR "-",
                          server, threadId, connId);
     }
 }

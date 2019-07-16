@@ -18,13 +18,13 @@ test ns_urlspace-1.1 {basic operation} -body {
 
 test ns_urlspace-1.2 {basic operation get} -body {
      ns_urlspace get
-} -returnCodes error -result {wrong # args: should be "ns_urlspace get ?-exact? ?-id id[-1,16]? ?-key key? ?-noinherit? URL"}
+} -returnCodes error -result {wrong # args: should be "ns_urlspace get ?-context context? ?-exact? ?-id id[-1,16]? ?-key key? ?-noinherit? URL"}
 test ns_urlspace-1.3 {basic operation set} -body {
      ns_urlspace set
-} -returnCodes error -result {wrong # args: should be "ns_urlspace set ?-id id[-1,16]? ?-key key? ?-noinherit? URL data"}
+} -returnCodes error -result {wrong # args: should be "ns_urlspace set ?-contextfilter contextfilter? ?-id id[-1,16]? ?-key key? ?-noinherit? URL data"}
 test ns_urlspace-1.4 {basic operation unset} -body {
      ns_urlspace unset
-} -returnCodes error -result {wrong # args: should be "ns_urlspace unset ?-id id[-1,16]? ?-key key? ?-noinherit? ?-recurse? URL"}
+} -returnCodes error -result {wrong # args: should be "ns_urlspace unset ?-allfilters? ?-id id[-1,16]? ?-key key? ?-noinherit? ?-recurse? URL"}
 test ns_urlspace-1.5 {nothing set} -body {
      ns_urlspace get /
 } -result {}
@@ -44,7 +44,37 @@ test ns_urlspace-2.1 {flat set/get/unset/list} -setup {
     unset -nocomplain _
 } -result {foo 1 0 {} {}}
 
-test ns_urlspace-2.2 {flat noinherit set/list/unset/list} -setup {
+
+
+test ns_urlspace-2.2.0 {flat noinherit set/list/unset/list} -setup {
+    #ns_log notice "BEFORE <[ns_urlspace list]>"
+    ns_urlspace set /x foo
+    ns_urlspace set -noinherit /y bar
+} -body {
+    lappend _ [ns_urlspace list]
+} -cleanup {
+    ns_urlspace unset /x
+    ns_urlspace unset -noinherit /y
+    unset -nocomplain _
+} -result {{{. /x * inherit foo} {. /y * noinherit bar}}}
+
+
+test ns_urlspace-2.2.1 {flat noinherit set/list/unset/list} -setup {
+    ns_urlspace set / foo
+    ns_urlspace set /x foo
+    ns_urlspace set -noinherit /y bar
+} -body {
+    lappend _ [ns_urlspace list]
+} -cleanup {
+    unset -nocomplain _
+    ns_urlspace unset /
+    ns_urlspace unset /x
+    ns_urlspace unset -noinherit /y
+} -result {{{. /x * inherit foo} {. /y * noinherit bar} {. / * inherit foo}}}
+
+
+test ns_urlspace-2.2.2 {flat noinherit set/list/unset/list} -setup {
+    #ns_log notice "BEFORE <[ns_urlspace list]>"
     ns_urlspace set /x foo
     ns_urlspace set -noinherit /y bar
 } -body {
@@ -55,9 +85,12 @@ test ns_urlspace-2.2 {flat noinherit set/list/unset/list} -setup {
         [ns_urlspace list] \
         [ns_urlspace unset -noinherit /y] \
         [ns_urlspace list]
-    } -cleanup {
-        unset -nocomplain _
-    } -result {{{. /x * inherit foo} {. /y * noinherit bar}} 1 0 {{. /y * noinherit bar}} 1 {}}
+} -cleanup {
+    #ns_log notice "ns_urlspace-2.2 DONE"
+    unset -nocomplain _
+} -result {{{. /x * inherit foo} {. /y * noinherit bar}} 1 0 {{. /y * noinherit bar}} 1 {}}
+
+
 
 test ns_urlspace-2.3 {tree set/get/unset/list} -setup {
     ns_urlspace set /x foo
@@ -292,7 +325,9 @@ test ns_urlspace-4.1 {id set/list/unset/list} -setup {
         unset ID
     } -result {foo bar 1 1 {} {}}
 
-
+#
+# test with differen orderings
+#
 test ns_urlspace-5.1 {wild-card-filter with ordering} -setup {
     ns_urlspace set -key 5.1 /*        ADP
     ns_urlspace set -key 5.1 /*.adp    ADP
@@ -339,6 +374,522 @@ test ns_urlspace-5.2 {wild-card-filter with different ordering} -setup {
     ns_urlspace unset -key 5.2 /*.*
     ns_urlspace unset -key 5.2 /static/*
 } -result {ADP FILE TCL ADP FILE FILE FILE FILE}
+
+test ns_urlspace-5.3 {wild-card-filter with different ordering} -setup {
+    ns_urlspace set -key 5.3 /*.adp    ADP
+    ns_urlspace set -key 5.3 /*.tcl    TCL
+    ns_urlspace set -key 5.3 /static/* FILE
+    ns_urlspace set -key 5.3 /*.*      FILE
+    ns_urlspace set -key 5.3 /*        ADP
+} -body {
+    foreach url {
+        /test.adp /test.txt /test.tcl /test
+        /static/test.adp /static/test.txt /static/test.tcl /static/test
+    } {
+        lappend _ [ns_urlspace get -key 5.3 $url]
+    }
+    set _
+} -cleanup {
+    unset -nocomplain _
+    ns_urlspace unset -key 5.3 /*
+    ns_urlspace unset -key 5.3 /*.adp
+    ns_urlspace unset -key 5.3 /*.tcl
+    ns_urlspace unset -key 5.3 /*.*
+    ns_urlspace unset -key 5.3 /static/*
+} -result {ADP FILE TCL ADP FILE FILE FILE FILE}
+
+
+##############################################################
+# context filter
+##############################################################
+
+test ns_urlspace-6.1.0 {
+
+    Context filters: constraint definition (for bots) on generic
+    filter (/*), but no context provided.
+
+} -setup {
+    ns_urlspace set -key 6.1 /*.adp    A
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *bot*} /* C
+    #ns_urlspace set -key 6.1 /*        A
+    ns_urlspace set -key 6.1 /static/* B
+    #ns_log notice "\n[ns_urlspace list]"
+} -body {
+    foreach url {
+        /test.adp /test.txt /test
+        /static/test.adp /static/test.tcl /static/test
+    } {
+        lappend _ [ns_urlspace get -key 6.1 $url]
+    }
+    set _
+} -cleanup {
+    unset -nocomplain _
+    ns_urlspace unset -key 6.1 /*.adp
+    ns_urlspace unset -key 6.1 /*
+    ns_urlspace unset -key 6.1 /static/*
+} -result {A {} {} B B B}
+
+
+test ns_urlspace-6.1.1 {
+
+    Context filters: constraint definition (for bots) on generic
+    filter (/*), matching context provided.
+
+} -setup {
+    ns_urlspace set -key 6.1 /*.adp    A
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *bot*} /* C
+    #ns_urlspace set -key 6.1 /*        A
+    ns_urlspace set -key 6.1 /static/* B
+    #ns_log notice "\n[ns_urlspace list]"
+} -body {
+    set c1 [ns_set create filter1]
+    ns_set put $c1 "user-agent" "googlebot"
+    foreach url {
+        /test.adp /test.txt /test
+        /static/test.adp /static/test.tcl /static/test
+    } {
+        lappend _ [ns_urlspace get -key 6.1 -context $c1 $url]
+    }
+    set _
+} -cleanup {
+    unset -nocomplain _
+    ns_urlspace unset -key 6.1 /*.adp
+    ns_urlspace unset -key 6.1 /*
+    ns_urlspace unset -key 6.1 /static/*
+} -result {A C C B B B}
+
+
+test ns_urlspace-6.1.2 {
+
+    Context filters: same setup as in next tests, but without context
+    filters (as a reference).
+
+} -setup {
+    ns_urlspace set -key 6.1 /*.adp    A
+    ns_urlspace set -key 6.1 /*        D
+    ns_urlspace set -key 6.1 /static/* B
+} -body {
+    foreach url {
+        /test.adp /test.txt /test
+        /static/test.adp /static/test.tcl /static/test
+    } {
+        lappend _ [ns_urlspace get -key 6.1 $url]
+    }
+    set _
+} -cleanup {
+    unset -nocomplain _
+    ns_urlspace unset -key 6.1 /*.adp
+    ns_urlspace unset -key 6.1 /*
+    ns_urlspace unset -key 6.1 /static/*
+} -result {A D D B B B}
+
+
+test ns_urlspace-6.1.3.1 {
+
+    Context filters: like 6.1.2, but a context filter for bots added
+    additionally to generic rule for "/*".  We call without a context
+    and expect same results as in 6.1.2.
+
+} -setup {
+    ns_urlspace set -key 6.1 /*.adp    A
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *bot*} /* C
+    ns_urlspace set -key 6.1 /*        D
+    ns_urlspace set -key 6.1 /static/* B
+} -body {
+    foreach url {
+        /test.adp /test.txt /test
+        /static/test.adp /static/test.tcl /static/test
+    } {
+        lappend _ [ns_urlspace get -key 6.1 $url]
+    }
+    set _
+} -cleanup {
+    unset -nocomplain _
+    ns_urlspace unset -key 6.1 /*.adp
+    ns_urlspace unset -key 6.1 /*
+    ns_urlspace unset -key 6.1 /static/*
+} -result {A D D B B B}
+
+
+test ns_urlspace-6.1.3.2 {
+
+    Context filters: same setup as in 6.1.3, but we call with a
+    provided context that matches the filter. We expect the filter to
+    kick in, since this is more specific than the plain "/*" rule.
+
+
+} -setup {
+    ns_urlspace set -key 6.1 /*.adp    A
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *bot*} /* C
+    ns_urlspace set -key 6.1 /*        D
+    ns_urlspace set -key 6.1 /static/* B
+} -body {
+    set c1 [ns_set create filter1]
+    ns_set put $c1 "user-agent" "googlebot"
+    foreach url {
+        /test.adp /test.txt /test
+        /static/test.adp /static/test.tcl /static/test
+    } {
+        lappend _ [ns_urlspace get -key 6.1 -context $c1 $url]
+    }
+    set _
+} -cleanup {
+    unset -nocomplain _
+    ns_urlspace unset -key 6.1 /*.adp
+    ns_urlspace unset -key 6.1 /*
+    ns_urlspace unset -key 6.1 /static/*
+} -result {A C C B B B}
+
+
+test ns_urlspace-6.1.4 {
+
+    Context filters: same setup as in 6.1.3, but we call with a
+    provided context that DOES NOT match the filter. We expect the
+    same behavior an in 6.1.2.
+
+} -setup {
+    ns_urlspace set -key 6.1 /*.adp    A
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *bot*} /* C
+    ns_urlspace set -key 6.1 /*        D
+    ns_urlspace set -key 6.1 /static/* B
+} -body {
+    set c1 [ns_set create filter1]
+    ns_set put $c1 "user-agent" "chrome"
+    foreach url {
+        /test.adp /test.txt /test
+        /static/test.adp /static/test.tcl /static/test
+    } {
+        lappend _ [ns_urlspace get -key 6.1 -context $c1 $url]
+    }
+    set _
+} -cleanup {
+    unset -nocomplain _
+    ns_urlspace unset -key 6.1 /*.adp
+    ns_urlspace unset -key 6.1 -allfilters /*
+    ns_urlspace unset -key 6.1 /static/*
+} -result {A D D B B B}
+
+
+test ns_urlspace-6.1.5.1 {
+
+    Context filters: same setup as in 6.1.3 with additionally one more
+    rule for /* with a different filter (we have no two different
+    filters for the same pattern. With a context matching the first
+    pattern, we expect the same results as in 6.1.3.
+
+
+} -setup {
+    ns_urlspace set -key 6.1 /*.adp    A
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *bot*} /* C1
+    ns_urlspace set -key 6.1 -contextfilter {host foo.org} /* C2
+    ns_urlspace set -key 6.1 /*        D
+    ns_urlspace set -key 6.1 /static/* B
+} -body {
+    set c1 [ns_set create filter1]
+    ns_set put $c1 "user-agent" "googlebot"
+    foreach url {
+        /test.adp /test.txt /test
+        /static/test.adp /static/test.tcl /static/test
+    } {
+        lappend _ [ns_urlspace get -key 6.1 -context $c1 $url]
+    }
+    set _
+} -cleanup {
+    unset -nocomplain _
+    ns_urlspace unset -key 6.1 /*.adp
+    ns_urlspace unset -key 6.1 -allfilters /*
+    ns_urlspace unset -key 6.1 /static/*
+} -result {A C1 C1 B B B}
+
+test ns_urlspace-6.1.5.2 {
+
+    Context filters: same setup as in 6.1.3 with additionally one more
+    rule for /* with a different filter (we have no two different
+    filters for the same pattern. With a context matching the first
+    pattern, we expect the same results as in 6.1.3.
+
+
+} -setup {
+    ns_urlspace set -key 6.1 /*.adp    A
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *bot*} /* C1
+    ns_urlspace set -key 6.1 -contextfilter {host foo.org} /* C2
+    ns_urlspace set -key 6.1 /*        D
+    ns_urlspace set -key 6.1 /static/* B
+} -body {
+    set c1 [ns_set create filter1]
+    ns_set put $c1 "host" "foo.org"
+    foreach url {
+        /test.adp /test.txt /test
+        /static/test.adp /static/test.tcl /static/test
+    } {
+        lappend _ [ns_urlspace get -key 6.1 -context $c1 $url]
+    }
+    set _
+} -cleanup {
+    unset -nocomplain _
+    ns_urlspace unset -key 6.1 /*.adp
+    ns_urlspace unset -key 6.1 -allfilters /*
+    ns_urlspace unset -key 6.1 /static/*
+} -result {A C2 C2 B B B}
+
+
+test ns_urlspace-6.1.5.3 {
+
+    Context filters: same setup as in 6.1.3 with additionally one more
+    rule for /* with a multiple filter (we have no two different
+    filters for the same pattern). It shows that the order of the
+    context pattern is not significant. Always the more specific url
+    path pattern have the higher weight.
+
+} -setup {
+    ns_urlspace set -key 6.1 /*.adp    A
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *bot*} /* C1
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *crawl*} /* C2
+    ns_urlspace set -key 6.1 /*        D
+    ns_urlspace set -key 6.1 /static/* B
+} -body {
+    set c1 [ns_set create filter1]
+    ns_set put $c1 "user-agent" "googlebot"
+    set c2 [ns_set create filter1]
+    ns_set put $c2 "user-agent" "megaindex.com/crawler"
+    foreach url {
+        /test.adp /test.txt /test
+        /static/test.adp /static/test
+    } {
+        lappend _ $url \
+            [ns_urlspace get -key 6.1 $url] \
+            [ns_urlspace get -key 6.1 -context $c1 $url] \
+            [ns_urlspace get -key 6.1 -context $c2 $url]
+    }
+    set _
+} -cleanup {
+    unset -nocomplain _
+    ns_urlspace unset -key 6.1 /*.adp
+    ns_urlspace unset -key 6.1 -allfilters /*
+    ns_urlspace unset -key 6.1 /static/*
+} -result {/test.adp A A A /test.txt D C1 C2 /test D C1 C2 /static/test.adp B B B /static/test B B B}
+
+
+test ns_urlspace-6.1.5.4 {
+
+    Context filters: same setup as in 6.1.5.3 with multiple patterns
+    matching the context.
+
+} -setup {
+    ns_urlspace set -key 6.1 /*.adp    A
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *bot*} /* C1
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *crawl*} /* C2
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *googlebot*} /* C3
+    ns_urlspace set -key 6.1 -contextfilter {user-agent "googlebot v1"} /* C4
+    ns_urlspace set -key 6.1 /*        D
+    ns_urlspace set -key 6.1 /static/* B
+} -body {
+    set c1 [ns_set create filter1]
+    ns_set put $c1 "user-agent" "googlebot"
+    set c2 [ns_set create filter1]
+    ns_set put $c2 "user-agent" "megaindex.com/crawler"
+    set c3 [ns_set create filter1]
+    ns_set put $c3 "user-agent" "googlebot v1"
+    foreach url {
+        /test.adp /test.txt /test
+        /static/test.adp /static/test
+    } {
+        lappend _ $url \
+            [ns_urlspace get -key 6.1 $url] \
+            [ns_urlspace get -key 6.1 -context $c1 $url] \
+            [ns_urlspace get -key 6.1 -context $c2 $url] \
+            [ns_urlspace get -key 6.1 -context $c3 $url]
+    }
+    set _
+} -cleanup {
+    unset -nocomplain _
+    ns_urlspace unset -key 6.1 /*.adp
+    ns_urlspace unset -key 6.1 -allfilters /*
+    ns_urlspace unset -key 6.1 /static/*
+} -result {/test.adp A A A A /test.txt D C3 C2 C4 /test D C3 C2 C4 /static/test.adp B B B B /static/test B B B B}
+
+test ns_urlspace-6.1.5.5 {
+
+    Context filters and "list" subcmd: same setup as in 6.1.5.4 with multiple patterns.
+    matching the context patterns but defined in a different order.
+
+} -setup {
+    ns_urlspace set -key 6.1 /*.adp    A
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *bot*} /* C1
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *crawl*} /* C2
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *googlebot*} /* C3
+    ns_urlspace set -key 6.1 -contextfilter {user-agent "googlebot v1"} /* C4
+    ns_urlspace set -key 6.1 /*        D
+    ns_urlspace set -key 6.1 /static/* B
+} -body {
+    set c1 [ns_set create filter1]
+    ns_set put $c1 "user-agent" "googlebot"
+    set c2 [ns_set create filter1]
+    ns_set put $c2 "user-agent" "megaindex.com/crawler"
+    set c3 [ns_set create filter1]
+    ns_set put $c3 "user-agent" "googlebot v1"
+    foreach url {
+        /test.adp /test.txt /test
+        /static/test.adp /static/test
+    } {
+        lappend _ $url \
+            [ns_urlspace get -key 6.1 $url] \
+            [ns_urlspace get -key 6.1 -context $c1 $url] \
+            [ns_urlspace get -key 6.1 -context $c2 $url] \
+            [ns_urlspace get -key 6.1 -context $c3 $url]
+    }
+    set _
+} -cleanup {
+    unset -nocomplain _
+    ns_urlspace unset -key 6.1 /*.adp
+    ns_urlspace unset -key 6.1 -allfilters /*
+    ns_urlspace unset -key 6.1 /static/*
+} -result {/test.adp A A A A /test.txt D C3 C2 C4 /test D C3 C2 C4 /static/test.adp B B B B /static/test B B B B}
+
+test ns_urlspace-6.1.6 {
+
+    Context filters and "list" subcmd: same setup as in 6.1.5.4 with
+    multiple patterns.
+
+} -setup {
+    ns_urlspace set -key 6.1 /*.adp    A
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *bot*} /* C1
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *crawl*} /* C2
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *googlebot*} /* C3
+    ns_urlspace set -key 6.1 -contextfilter {user-agent "googlebot v1"} /* C4
+    ns_urlspace set -key 6.1 /*        D
+    ns_urlspace set -key 6.1 /static/* B
+} -body {
+    join [ns_urlspace list] \n
+} -cleanup {
+    ns_urlspace unset -key 6.1 /*.adp
+    ns_urlspace unset -key 6.1 -allfilters /*
+    ns_urlspace unset -key 6.1 /static/*
+} -result {6.1 / *.adp inherit A
+6.1 /static * inherit B
+6.1 / * inherit D
+6.1 / * inherit {user-agent {googlebot v1}} C4
+6.1 / * inherit {user-agent *googlebot*} C3
+6.1 / * inherit {user-agent *crawl*} C2
+6.1 / * inherit {user-agent *bot*} C1}
+
+test ns_urlspace-6.2.0 {
+
+    Context filters with IP address and filter: order: IPv6 before
+    IPv4 before header based context filters, for every category more concrete
+    before less concrete.
+
+} -setup {
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *bot*} /* C1
+    ns_urlspace set -key 6.1 -contextfilter {X-NS-ip 137.208.1.0/16} /* C2
+    ns_urlspace set -key 6.1 -contextfilter {X-NS-ip 137.208.116.31/24} /* C3
+    ns_urlspace set -key 6.1 -contextfilter {X-NS-ip 137.208.1.1} /* C4
+    ns_urlspace set -key 6.1 -contextfilter {user-agent "googlebot v1"} /* C5
+    ns_urlspace set -key 6.1 -contextfilter {user-agent "*googlebot*"} /* C6
+    ns_urlspace set -key 6.1 -contextfilter {X-NS-ip 2a03:2880:f107:83:face:b00c:0:25de} /* C7
+    ns_urlspace set -key 6.1 -contextfilter {X-NS-ip 2a03:2880::/29} /* C8
+    ns_urlspace set -key 6.1 -contextfilter {X-NS-ip 137.208.116.31} /* C9
+    ns_urlspace set -key 6.1 -contextfilter {X-NS-ip 137.208.116.33} /* C10
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *mozilla*6*} /* C11
+
+} -body {
+    join [ns_urlspace list] \n
+} -cleanup {
+    #ns_log notice "===== cleanup of 6.2.0"
+    ns_urlspace unset -key 6.1 -allfilters /*
+    #ns_log notice "===== cleanup of 6.2.0 DONE"
+} -result {6.1 / * inherit {X-NS-ip 2a03:2880:f107:83:face:b00c:0:25de} C7
+6.1 / * inherit {X-NS-ip 2a03:2880::/29} C8
+6.1 / * inherit {X-NS-ip 137.208.116.33} C10
+6.1 / * inherit {X-NS-ip 137.208.116.31} C9
+6.1 / * inherit {X-NS-ip 137.208.1.1} C4
+6.1 / * inherit {X-NS-ip 137.208.116.31/24} C3
+6.1 / * inherit {X-NS-ip 137.208.1.0/16} C2
+6.1 / * inherit {user-agent {googlebot v1}} C5
+6.1 / * inherit {user-agent *googlebot*} C6
+6.1 / * inherit {user-agent *mozilla*6*} C11
+6.1 / * inherit {user-agent *bot*} C1}
+
+
+
+test ns_urlspace-6.2.1 {
+
+    Context filters with IP address and filter: test lookups
+
+} -setup {
+    ns_urlspace set -key 6.1 /* C0
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *bot*} /* C1
+    ns_urlspace set -key 6.1 -contextfilter {X-NS-ip 137.208.1.0/16} /* C2
+    ns_urlspace set -key 6.1 -contextfilter {X-NS-ip 137.208.116.31/24} /* C3
+    ns_urlspace set -key 6.1 -contextfilter {X-NS-ip 137.208.1.1} /* C4
+    ns_urlspace set -key 6.1 -contextfilter {user-agent "googlebot v1"} /* C5
+    ns_urlspace set -key 6.1 -contextfilter {user-agent "*googlebot*"} /* C6
+    ns_urlspace set -key 6.1 -contextfilter {X-NS-ip 2a03:2880:f107:83:face:b00c:0:25de} /* C7
+    ns_urlspace set -key 6.1 -contextfilter {X-NS-ip 2a03:2880::/29} /* C8
+    ns_urlspace set -key 6.1 -contextfilter {X-NS-ip 137.208.116.31} /* C9
+    ns_urlspace set -key 6.1 -contextfilter {X-NS-ip 137.208.116.33} /* C10
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *mozilla*6*} /* C11
+
+} -body {
+    set url /robots.txt
+    set c1 [ns_set create filter1]
+    ns_set put $c1 "X-NS-ip" "137.208.116.31"
+    set c2 [ns_set create filter1]
+    ns_set put $c2 "X-NS-ip" "137.208.116.32"
+    set c3 [ns_set create filter1]
+    ns_set put $c3 "X-NS-ip" "2a03:2880:f007:1:face:b00c:0:1"
+
+    lappend _ \
+        [ns_urlspace get -key 6.1 $url] \
+        [ns_urlspace get -key 6.1 -context $c1 $url] \
+        [ns_urlspace get -key 6.1 -context $c2 $url] \
+        [ns_urlspace get -key 6.1 -context $c3 $url]
+    set _
+} -cleanup {
+    unset -nocomplain _
+    #ns_log notice "===== cleanup of 6.2.0"
+    ns_urlspace unset -key 6.1 -allfilters /*
+    #ns_log notice "===== cleanup of 6.2.0 DONE"
+
+} -result {C0 C9 C3 C8}
+
+
+test ns_urlspace-6.3.1 {
+
+    Context filters: constraint definition (for bots) on generic
+    filter (/*) fires only when context is provided and context filter
+    returns success.
+
+} -setup {
+    #ns_log notice "===== setup of 6.3.1"
+    #ns_log notice "Start 6.3.1:\n<[ns_urlspace list]>"
+    ns_urlspace set -key 6.1 /*.adp    A
+    ns_urlspace set -key 6.1 -contextfilter {user-agent *bot*} /* C
+    ns_urlspace set -key 6.1 /*        D
+    ns_urlspace set -key 6.1 /static/* B
+    #ns_log notice "===== setup of 6.3.1 DONE"
+} -body {
+    set c1 [ns_set create filter1]
+    ns_set put $c1 "user-agent" "googlebot"
+    set c2 [ns_set create filter2]
+    ns_set put $c2 "user-agent" "Chrome"
+    #ns_log notice "c1: [ns_set array $c1]"
+    #ns_log notice "c2: [ns_set array $c2]"
+    foreach url {
+        /test.adp /test.txt /test
+        /static/test.adp /static/test.tcl /static/test
+    } {
+        lappend _ [ns_urlspace get -key 6.1 $url]
+        lappend _ [ns_urlspace get -key 6.1 -context $c1 $url]
+        lappend _ [ns_urlspace get -key 6.1 -context $c2 $url]
+    }
+    set _
+} -cleanup {
+    unset -nocomplain _
+    ns_urlspace unset -key 6.1 /*.adp
+    ns_urlspace unset -key 6.1 /*
+} -result {A A A D C D D C D B B B B B B B B B}
+# -returnCodes error
 
 
 cleanupTests

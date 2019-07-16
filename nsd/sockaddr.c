@@ -111,7 +111,7 @@ Ns_SockaddrMask(const struct sockaddr *addr, const struct sockaddr *mask, struct
  *      (for IPv4 and IPv6 addresses).
  *
  * Results:
- *      None.
+ *      Boolean expressing success.
  *
  * Side effects:
  *      None.
@@ -157,6 +157,76 @@ Ns_SockaddrSameIP(const struct sockaddr *addr1, const struct sockaddr *addr2)
     } else if (addr1->sa_family == AF_INET && addr2->sa_family == AF_INET) {
         success = (((struct sockaddr_in *)addr1)->sin_addr.s_addr
                   == ((struct sockaddr_in *)addr2)->sin_addr.s_addr);
+    } else {
+        /*
+         * Family mismatch.
+         */
+        success = NS_FALSE;
+    }
+
+    return success;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockaddrMaskedMatch --
+ *
+ *      Check, the provided IPv4 or IPv6 address matches the provided mask and
+ *      masked addreess.
+ *
+ * Results:
+ *      Boolean expressing success.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+bool
+Ns_SockaddrMaskedMatch(const struct sockaddr *addr, const struct sockaddr *mask,
+                       const struct sockaddr *masked)
+{
+    bool success;
+
+    NS_NONNULL_ASSERT(addr != NULL);
+    NS_NONNULL_ASSERT(mask != NULL);
+
+    if (addr == mask) {
+        success = NS_TRUE;
+
+    } else if (addr->sa_family == AF_INET6 && mask->sa_family == AF_INET6) {
+        const struct in6_addr *addrBits   = &(((struct sockaddr_in6 *)addr)->sin6_addr);
+        const struct in6_addr *maskBits   = &(((struct sockaddr_in6 *)mask)->sin6_addr);
+        const struct in6_addr *maskedBits = &(((struct sockaddr_in6 *)masked)->sin6_addr);
+
+        int i;
+
+        success = NS_TRUE;
+        /*
+         * Perform bitwise comparison. Maybe something special is needed for
+         * comparing IPv4 address with IN6_IS_ADDR_V4MAPPED
+         */
+#ifndef _WIN32
+        for (i = 0; i < 4; i++) {
+            if ((addrBits->s6_addr32[i] & maskBits->s6_addr32[i]) != maskedBits->s6_addr32[i]) {
+                success = NS_FALSE;
+                break;
+            }
+        }
+#else
+        for (i = 0; i < 8; i++) {
+            if ((addrBits->u.Word[i] & maskBits->u.Word[i]) != masedkBits->u.Word[i]) {
+                success = NS_FALSE;
+                break;
+            }
+        }
+#endif
+    } else if (addr->sa_family == AF_INET && mask->sa_family == AF_INET) {
+        success = ((((struct sockaddr_in *)addr)->sin_addr.s_addr
+                    & ((struct sockaddr_in *)mask)->sin_addr.s_addr) ==
+                   (((struct sockaddr_in *)masked)->sin_addr.s_addr));
     } else {
         /*
          * Family mismatch.
@@ -269,10 +339,12 @@ Ns_SockaddrMaskBits(const struct sockaddr *mask, unsigned int nrBits)
  */
 Ns_ReturnCode
 Ns_SockaddrParseIPMask(Tcl_Interp *interp, const char *ipString,
-                     struct sockaddr *ipPtr, struct sockaddr *maskPtr)
+                       struct sockaddr *ipPtr, struct sockaddr *maskPtr,
+                       unsigned int *nrBitsPtr)
 {
     char         *slash;
     int           validIP;
+    unsigned int  nrBits;
     Ns_ReturnCode status = NS_OK;
 
     NS_NONNULL_ASSERT(ipString != NULL);
@@ -283,8 +355,6 @@ Ns_SockaddrParseIPMask(Tcl_Interp *interp, const char *ipString,
     memset(maskPtr, 0, sizeof(struct NS_SOCKADDR_STORAGE));
 
     slash = strchr(ipString, INTCHAR('/'));
-    fprintf(stderr, "Ns_SockaddrParseIPMask: <%s> has slash %d\n",
-            ipString, (slash != NULL));
 
     if (slash == NULL) {
         /*
@@ -293,7 +363,8 @@ Ns_SockaddrParseIPMask(Tcl_Interp *interp, const char *ipString,
         validIP = ns_inet_pton(ipPtr, ipString);
         if (validIP > 0) {
             maskPtr->sa_family = ipPtr->sa_family;
-            Ns_SockaddrMaskBits(maskPtr, (maskPtr->sa_family == AF_INET6) ? 128 :32);
+            nrBits = (maskPtr->sa_family == AF_INET6) ? 128 : 32;
+            Ns_SockaddrMaskBits(maskPtr, nrBits);
         } else {
             status = NS_ERROR;
         }
@@ -311,9 +382,11 @@ Ns_SockaddrParseIPMask(Tcl_Interp *interp, const char *ipString,
         validIP = ns_inet_pton(ipPtr, dupIpString);
         if (strchr(slash, INTCHAR('.')) == NULL && strchr(slash, INTCHAR(':')) == NULL) {
             maskPtr->sa_family = ipPtr->sa_family;
-            Ns_SockaddrMaskBits(maskPtr, (unsigned int)strtol(slash, NULL, 10));
+            nrBits = (unsigned int)strtol(slash, NULL, 10);
+            Ns_SockaddrMaskBits(maskPtr, nrBits);
             validMask = 1;
         } else {
+            nrBits = (maskPtr->sa_family == AF_INET6) ? 128 : 32;
             validMask = ns_inet_pton(maskPtr, slash);
         }
 
@@ -334,7 +407,9 @@ Ns_SockaddrParseIPMask(Tcl_Interp *interp, const char *ipString,
         Ns_SockaddrMask(ipPtr, maskPtr, ipPtr);
         /*Ns_LogSockaddr(Notice, "NSPERM: maskedAddress", ipPtr);*/
     }
-
+    if (status == NS_OK && nrBitsPtr != NULL) {
+        *nrBitsPtr = nrBits;
+    }
     return status;
 }
 

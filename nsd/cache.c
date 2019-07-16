@@ -68,7 +68,7 @@ typedef struct Cache {
     int            keys;
     size_t         maxSize;
     size_t         currentSize;
-    Ns_Callback   *freeProc;
+    Ns_FreeProc   *freeProc;
     Ns_Mutex       lock;
     Ns_Cond        cond;
     Tcl_HashTable  entriesTable;
@@ -124,7 +124,7 @@ CacheTransaction(Cache *cachePtr, uintptr_t epoch, bool commit)
  */
 
 Ns_Cache *
-Ns_CacheCreateSz(const char *name, int keys, size_t maxSize, Ns_Callback *freeProc)
+Ns_CacheCreateSz(const char *name, int keys, size_t maxSize, Ns_FreeProc *freeProc)
 {
     Cache *cachePtr;
     size_t nameLength;

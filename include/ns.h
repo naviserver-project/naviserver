@@ -128,7 +128,7 @@
 #define NS_OP_NOINHERIT            0x02u /* Match URL exactly */
 #define NS_OP_NODELETE             0x04u /* Do call previous procs Ns_OpDeleteProc */
 #define NS_OP_RECURSE              0x08u /* Also destroy registered procs below given URL */
-
+#define NS_OP_ALLFILTERS           0x10u /* Also destroy all filters for this node */
 
 
 /*
@@ -320,13 +320,18 @@ NS_EXTERN Tcl_Encoding   NS_utf8Encoding;   /* Cached UTF-8 encoding */
  * Typedefs of functions
  */
 
-typedef int   (Ns_IndexCmpProc) (const void *left, const void *right);
+typedef int   (Ns_IndexCmpProc) (const void *left, const void *right)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+typedef int   (Ns_IndexKeyCmpProc) (const void *key, const void *elemPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 typedef int   (Ns_SortProc) (void *left, void *right);
 typedef bool  (Ns_EqualProc) (void *left, void *right);
 typedef void  (Ns_ElemVoidProc) (void *elem);
 typedef void *(Ns_ElemValProc) (void *elem);
 typedef bool  (Ns_ElemTestProc) (void *elem);
 typedef void  (Ns_Callback) (void *arg);
+typedef void  (Ns_FreeProc) (void *arg);
 typedef void  (Ns_ShutdownProc) (const Ns_Time *toPtr, void *arg);
 typedef int   (Ns_TclInterpInitProc) (Tcl_Interp *interp, const void *arg);
 typedef int   (Ns_TclTraceProc) (Tcl_Interp *interp, const void *arg);
@@ -357,6 +362,7 @@ typedef void (*ns_funcptr_t)(void);
 /*
  * The field of a key-value data structure.
  */
+
 
 typedef struct Ns_SetField {
     char *name;
@@ -418,6 +424,12 @@ typedef struct Ns_Index {
     size_t            max;
     size_t            inc;
 } Ns_Index;
+
+typedef struct Ns_IndexContextSpec {
+    Ns_FreeProc *freeProc;
+    void        *data;
+    Ns_FreeProc *dataFreeProc;
+} Ns_IndexContextSpec;
 
 /*
  * A linked list data structure.
@@ -727,16 +739,16 @@ Ns_AuthorizeUser(const char *user, const char *passwd)
  */
 
 NS_EXTERN Ns_Cache *
-Ns_CacheCreate(const char *name, int keys, time_t ttl, Ns_Callback *freeProc)
+Ns_CacheCreate(const char *name, int keys, time_t ttl, Ns_FreeProc *freeProc)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_Cache *
-Ns_CacheCreateSz(const char *name, int keys, size_t maxSize, Ns_Callback *freeProc)
+Ns_CacheCreateSz(const char *name, int keys, size_t maxSize, Ns_FreeProc *freeProc)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_Cache *
 Ns_CacheCreateEx(const char *name, int keys, time_t ttl, size_t maxSize,
-                 Ns_Callback *freeProc)
+                 Ns_FreeProc *freeProc)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
@@ -1826,7 +1838,7 @@ Ns_SetNsLogProc(Ns_LogProc *procPtr)
     NS_GNUC_DEPRECATED_FOR(Ns_AddLogFilter);
 
 NS_EXTERN void
-Ns_AddLogFilter(Ns_LogFilter *procPtr, void *arg, Ns_Callback *freeProc)
+Ns_AddLogFilter(Ns_LogFilter *procPtr, void *arg, Ns_FreeProc *freeProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
@@ -2859,7 +2871,17 @@ NS_EXTERN void
 Ns_LogSockaddr(Ns_LogSeverity severity, const char *prefix, const struct sockaddr *saPtr)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
+Ns_ReturnCode
+Ns_SockaddrParseIPMask(Tcl_Interp *interp, const char *ipString,
+                       struct sockaddr *ipPtr, struct sockaddr *maskPtr,
+                       unsigned int *nrBitsPtr)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
+NS_EXTERN bool
+Ns_SockaddrMaskedMatch(const struct sockaddr *addr,
+                       const struct sockaddr *mask,
+                       const struct sockaddr *masked)
+        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 /*
  * sockcallback.c:
@@ -3299,11 +3321,21 @@ Ns_UrlSpecificWalk(int id, const char *server, Ns_ArgProc func, Tcl_DString *dsP
 
 NS_EXTERN void
 Ns_UrlSpecificSet(const char *server, const char *method, const char *url, int id,
-                  void *data, unsigned int flags, void (*deletefunc)(void *data))
+                  void *data, unsigned int flags, Ns_Callback freeProc)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
+
+NS_EXTERN void
+Ns_UrlSpecificSet2(const char *server, const char *method, const char *url, int id,
+                   void *data, unsigned int flags, Ns_Callback freeProc,
+                   void *contextSpec)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
 
 NS_EXTERN void *
 Ns_UrlSpecificGet(const char *server, const char *method, const char *url, int id)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+NS_EXTERN void *
+Ns_UrlSpecificGet2(const char *server, const char *method, const char *url, int id, void *context)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void *

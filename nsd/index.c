@@ -45,10 +45,11 @@ static ssize_t BinSearch(void *const*elPtrPtr, void *const* listPtrPtr, ssize_t 
 static ssize_t BinSearchKey(const void *key, void *const*listPtrPtr, ssize_t n, Ns_IndexCmpProc *cmpProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
-static int CmpStr(const char *const*leftPtr, const char *const*rightPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static int CmpKeyWithStr(const char *key, const char *const*elPtr)       NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static int CmpInts(const int *leftPtr, const int *rightPtr)    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static int CmpKeyWithInt(const int *keyPtr, const int *elPtr)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static Ns_IndexCmpProc CmpStr;
+static Ns_IndexKeyCmpProc CmpKeyWithStr;
+
+static Ns_IndexCmpProc CmpInts;
+static Ns_IndexKeyCmpProc CmpKeyWithInt;
 
 #ifdef _MSC_VER_VERY_OLD
 static void *
@@ -539,12 +540,12 @@ Ns_IndexEl(const Ns_Index *indexPtr, size_t i)
  */
 
 static int
-CmpStr(const char *const*leftPtr, const char *const*rightPtr)
+CmpStr(const void *leftPtr, const void *rightPtr)
 {
     NS_NONNULL_ASSERT(leftPtr != NULL);
     NS_NONNULL_ASSERT(rightPtr != NULL);
 
-    return strcmp(*leftPtr, *rightPtr);
+    return strcmp(*(const char**)leftPtr, *((const char**)rightPtr));
 }
 
 
@@ -565,12 +566,12 @@ CmpStr(const char *const*leftPtr, const char *const*rightPtr)
  */
 
 static int
-CmpKeyWithStr(const char *key, const char *const*elPtr)
+CmpKeyWithStr(const void *key, const void *elPtr)
 {
     NS_NONNULL_ASSERT(key != NULL);
     NS_NONNULL_ASSERT(elPtr != NULL);
 
-    return strcmp(key, *elPtr);
+    return strcmp((const char *)key, *(const char *const*)elPtr);
 }
 
 
@@ -596,9 +597,7 @@ Ns_IndexStringInit(Ns_Index *indexPtr, size_t inc)
 {
     NS_NONNULL_ASSERT(indexPtr != NULL);
 
-    Ns_IndexInit(indexPtr, inc,
-                 (int (*) (const void *left, const void *right)) CmpStr,
-                 (int (*) (const void *left, const void *right)) CmpKeyWithStr);
+    Ns_IndexInit(indexPtr, inc, CmpStr, CmpKeyWithStr);
 }
 
 
@@ -748,17 +747,20 @@ Ns_IndexStringTrunc(Ns_Index *indexPtr)
  */
 
 static int
-CmpInts(const int *leftPtr, const int *rightPtr)
+CmpInts(const void *leftPtr, const void *rightPtr)
 {
-    int result;
+    int result, left, right;
 
     NS_NONNULL_ASSERT(leftPtr != NULL);
     NS_NONNULL_ASSERT(rightPtr != NULL);
 
-    if (*leftPtr == *rightPtr) {
+    left = *(const int *)leftPtr;
+    right = *(const int *)rightPtr;
+
+    if (left == right) {
         result = 0;
     } else {
-        result = (*leftPtr < *rightPtr) ? -1 : 1;
+        result = (left < right) ? -1 : 1;
     }
     return result;
 }
@@ -781,17 +783,20 @@ CmpInts(const int *leftPtr, const int *rightPtr)
  */
 
 static int
-CmpKeyWithInt(const int *keyPtr, const int *elPtr)
+CmpKeyWithInt(const void *keyPtr, const void *elPtr)
 {
-    int result;
+    int result, key, element;
 
     NS_NONNULL_ASSERT(keyPtr != NULL);
     NS_NONNULL_ASSERT(elPtr != NULL);
 
-    if (*keyPtr == *elPtr) {
+    key = *(const int *)keyPtr;
+    element = *(const int *)elPtr;
+
+    if (key == element) {
         result = 0;
     } else {
-        result = *keyPtr < *elPtr ? -1 : 1;
+        result = key < element ? -1 : 1;
     }
     return result;
 }
@@ -818,9 +823,7 @@ Ns_IndexIntInit(Ns_Index *indexPtr, size_t inc)
 {
     NS_NONNULL_ASSERT(indexPtr != NULL);
 
-    Ns_IndexInit(indexPtr, inc,
-                 (int (*) (const void *left, const void *right)) CmpInts,
-                 (int (*) (const void *left, const void *right)) CmpKeyWithInt);
+    Ns_IndexInit(indexPtr, inc, CmpInts, CmpKeyWithInt);
 }
 
 #ifdef _MSC_VER_VERY_OLD

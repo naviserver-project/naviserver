@@ -162,7 +162,7 @@ test ns_server-2.4.2 {basic operation} -body {
 test ns_server-2.5 {basic operation} -body {
     array set stats [ns_server stats]
     array size stats
-} -match exact -result 9
+} -match exact -result 10
 
 test ns_server-2.6 {basic operation} -body {
     array set threads [ns_server threads]
@@ -230,7 +230,7 @@ test ns_server-2.14.1a {basic operation with invalid pool} -body {
 
 test ns_server-2.14.1b {basic operation with invalid mapspec} -body {
     ns_server -pool emergency map "XXX"
-} -returnCodes error -result {invalid mapspec 'XXX'; must be 2-element list containing HTTP method and URL}
+} -returnCodes error -result {invalid mapspec 'XXX'; must be 2- or 3-element list containing HTTP method, URL, and optionally a filtercontext}
 
 
 #
@@ -256,6 +256,7 @@ test ns_server-2.14.3 {check, if cleanup of last test was successful} -body {
 #
 test ns_server-2.14.4 {mapping and unmapping of requests, return mapping} -setup {
     ns_server -pool emergency map "GET /foo"
+    ns_server -pool emergency map "GET /* {X-NS-ip 127.0.0.1}"
 } -body {
     ns_server mapped "GET /foo"
 } -cleanup {

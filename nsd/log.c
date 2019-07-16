@@ -72,7 +72,7 @@ typedef struct LogEntry {
 
 typedef struct LogFilter {
     Ns_LogFilter      *proc;        /* User-given function for generating logs */
-    Ns_Callback       *freeArgProc; /* User-given function to free passed arg */
+    Ns_FreeProc       *freeArgProc; /* User-given function to free passed arg */
     void              *arg;         /* Argument passed to proc and free */
     int                refcnt;      /* Number of current consumers */
     struct LogFilter  *nextPtr;      /* Maintains double linked list */
@@ -791,7 +791,7 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list apSrc)
  */
 
 void
-Ns_AddLogFilter(Ns_LogFilter *procPtr, void *arg, Ns_Callback *freeProc)
+Ns_AddLogFilter(Ns_LogFilter *procPtr, void *arg, Ns_FreeProc *freeProc)
 {
     LogFilter *filterPtr = ns_calloc(1u, sizeof *filterPtr);
 
