@@ -148,6 +148,7 @@ struct nsconf {
     long        shutdowntimeout;  /* same type as seconds in Ns_Time */
     int         backlog;
     bool        reject_already_closed_connection;
+    bool        sanitize_logfiles;
 
     /*
      * Slot IDs for socket local storage.

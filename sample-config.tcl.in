@@ -176,6 +176,7 @@ ns_section	"ns/parameters" {
     # ns_param	logcolorize	true     ;# colorize log file with ANSI colors (default: false)
     # ns_param	logprefixcolor	green    ;# black, red, green, yellow, blue, magenta, cyan, gray, default
     # ns_param  logprefixintensity normal;# bright or normal
+    # ns_param  sanitizelogfiles false   ;# default true
     #
     # Severities to be logged (can also be controlled at runtime via ns_logctl)_
     # ns_param	logdebug	false    ;# debug messages

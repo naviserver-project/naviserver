@@ -1787,7 +1787,11 @@ LogToDString(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     if (len == 0u) {
         len = strlen(msg);
     }
-    Ns_DStringNAppend(dsPtr, msg, (int)len);
+    if (nsconf.sanitize_logfiles) {
+        Ns_DStringAppendPrintable(dsPtr, msg, len);
+    } else {
+        Ns_DStringNAppend(dsPtr, msg, (int)len);
+    }
     if ((flags & LOG_COLORIZE) != 0u) {
         Ns_DStringNAppend(dsPtr, (const char *)LOG_COLOREND, 4);
     }

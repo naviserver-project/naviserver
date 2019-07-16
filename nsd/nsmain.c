@@ -655,6 +655,8 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     nsconf.home = SetCwd(nsconf.home);
     nsconf.reject_already_closed_connection =
         Ns_ConfigBool(NS_CONFIG_PARAMETERS, "rejectalreadyclosedconn", NS_TRUE);
+    nsconf.sanitize_logfiles =
+        Ns_ConfigBool(NS_CONFIG_PARAMETERS, "sanitizelogfiles", NS_TRUE);
 
     /*
      * Make the result queryable.

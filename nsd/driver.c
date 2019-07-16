@@ -6867,12 +6867,13 @@ AsyncWriterThread(void *arg)
 static int
 AsyncLogfileWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int               result = TCL_OK, binary = (int)NS_FALSE;
+    int               result = TCL_OK, binary = (int)NS_FALSE, sanitize;
     Tcl_Obj          *stringObj;
     int               fd = 0;
     Ns_ObjvValueRange range = {0, INT_MAX};
     Ns_ObjvSpec opts[] = {
-        {"-binary",  Ns_ObjvBool, &binary, INT2PTR(NS_TRUE)},
+        {"-binary",    Ns_ObjvBool, &binary,   INT2PTR(NS_TRUE)},
+        {"-sanitize",  Ns_ObjvBool, &sanitize, NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -6880,6 +6881,12 @@ AsyncLogfileWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
         {"buffer", Ns_ObjvObj, &stringObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
+
+    /*
+     * Take the config value as default for "-sanitize", but let the used
+     * override it on a per-case basis.
+     */
+    sanitize = nsconf.sanitize_logfiles;
 
     if (unlikely(Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK)) {
         result = TCL_ERROR;
@@ -6894,12 +6901,33 @@ AsyncLogfileWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
         } else {
             buffer = Tcl_GetStringFromObj(stringObj, &length);
         }
-        rc = NsAsyncWrite(fd, buffer, (size_t)length);
+        if (length > 0) {
+            if (sanitize) {
+                Tcl_DString ds;
+                bool        lastCharNewline = (buffer[length-1] == '\n');
 
-        if (rc != NS_OK) {
-            Ns_TclPrintfResult(interp, "ns_asynclogfile: error during write operation on fd %d: %s",
-                               fd, Tcl_PosixError(interp));
-            result = TCL_ERROR;
+                Tcl_DStringInit(&ds);
+                if (lastCharNewline) {
+                    length --;
+                }
+                Ns_DStringAppendPrintable(&ds, buffer, (size_t)length);
+                if (lastCharNewline) {
+                    Tcl_DStringAppend(&ds, "\n", 1);
+                }
+                rc = NsAsyncWrite(fd, ds.string, (size_t)ds.length);
+                Tcl_DStringFree(&ds);
+
+            } else {
+                rc = NsAsyncWrite(fd, buffer, (size_t)length);
+            }
+
+            if (rc != NS_OK) {
+                Ns_TclPrintfResult(interp, "ns_asynclogfile: error during write operation on fd %d: %s",
+                                   fd, Tcl_PosixError(interp));
+                result = TCL_ERROR;
+            }
+        } else {
+            result = TCL_OK;
         }
     }
     return result;
