@@ -338,7 +338,7 @@ test http-5.1 {HTTP/1.1 GET with "ns_conn content" after return} -constraints {}
 } -result {401 0}
 
 
-test http-5.2.1 {
+test http-5.2.0 {
 
     check encoding  ns_conn content PUT,
     no provided content type
@@ -347,7 +347,10 @@ test http-5.2.1 {
     ns_register_proc PUT /put {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType [ns_set iget [ns_conn headers] content-type]
-        ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA[ns_conn content]ZÜZ"
+        set contentLength [ns_set iget [ns_conn headers] content-length]
+        set content [ns_conn content]
+        set stringLength [string length $content]
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA${content}ZÜZ ($contentLength $stringLength)"
     }
 } -body {
     set string "Testing <äöüß☀>"
@@ -355,7 +358,30 @@ test http-5.2.1 {
 } -cleanup {
     ns_unregister_op PUT /put
     unset -nocomplain r
-} -result {200 {utf-8 <> AÄATesting <äöüß☀>ZÜZ}}
+} -result {200 {utf-8 <> AÄATesting <äöüß☀>ZÜZ (21 15)}}
+
+
+test http-5.2.1 {
+
+    check encoding  ns_conn content PUT,
+    binary content type application/octet-stream
+
+} -constraints {serverListen broken} -setup {
+    ns_register_proc PUT /put {
+        #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
+        set contentType [ns_set iget [ns_conn headers] content-type]
+        set contentLength [ns_set iget [ns_conn headers] content-length]
+        set content [ns_conn content]
+        set stringLength [string length $content]
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA${content}ZÜZ ($contentLength $stringLength)"
+    }
+} -body {
+    set string "Testing <äöüß☀>"
+    nstest::http -getbody 1 -setheaders {content-type application/octet-stream} PUT /put $string
+} -cleanup {
+    ns_unregister_op PUT /put
+    unset -nocomplain r
+} -result {200 {utf-8 <application/octet-stream> AÄATesting <äöüß☀>ZÜZ (21 15)}}
 
 
 test http-5.2.2 {
@@ -367,7 +393,10 @@ test http-5.2.2 {
     ns_register_proc PUT /put {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType [ns_set iget [ns_conn headers] content-type]
-        ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA[ns_conn content]ZÜZ"
+        set contentLength [ns_set iget [ns_conn headers] content-length]
+        set content [ns_conn content]
+        set stringLength [string length $content]
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA${content}ZÜZ ($contentLength $stringLength)"
     }
 } -body {
     set string "Testing <äöüß☀>"
@@ -375,7 +404,7 @@ test http-5.2.2 {
 } -cleanup {
     ns_unregister_op PUT /put
     unset -nocomplain r
-} -result {200 {utf-8 <text/html> AÄATesting <äöüß☀>ZÜZ}}
+} -result {200 {utf-8 <text/html> AÄATesting <äöüß☀>ZÜZ (21 15)}}
 
 
 test http-5.2.3 {
@@ -387,15 +416,17 @@ test http-5.2.3 {
     ns_register_proc PUT /put {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType [ns_set iget [ns_conn headers] content-type]
-        ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA[ns_conn content]ZÜZ"
-    }
+        set contentLength [ns_set iget [ns_conn headers] content-length]
+        set content [ns_conn content]
+        set stringLength [string length $content]
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA${content}ZÜZ ($contentLength $stringLength)"    }
 } -body {
     set string "Testing <äöüß☀>"
     nstest::http -getbody 1 -setheaders {content-type text/html;charset=utf-8} PUT /put $string
 } -cleanup {
     ns_unregister_op PUT /put
     unset -nocomplain r
-} -result {200 {utf-8 <text/html;charset=utf-8> AÄATesting <äöüß☀>ZÜZ}}
+} -result {200 {utf-8 <text/html;charset=utf-8> AÄATesting <äöüß☀>ZÜZ (21 15)}}
 
 
 
