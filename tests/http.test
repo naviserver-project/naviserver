@@ -50,6 +50,9 @@ if {$tcl_version >= 8.6} {
     testConstraint tcl86 true
 }
 
+# testConstraint binaryMismatch true
+# testConstraint broken true
+
 set curl ""
 catch {set curl [exec curl -V]}
 testConstraint curl [expr {$curl ne "" ? "true" : "false" }]
@@ -335,36 +338,94 @@ test http-5.1 {HTTP/1.1 GET with "ns_conn content" after return} -constraints {}
 } -result {401 0}
 
 
-test http-5.2 {check encoding  ns_conn content PUT} -constraints {serverListen} -setup {
+test http-5.2.1 {
+
+    check encoding  ns_conn content PUT,
+    no provided content type
+
+} -constraints {serverListen broken} -setup {
     ns_register_proc PUT /put {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType [ns_set iget [ns_conn headers] content-type]
         ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA[ns_conn content]ZÜZ"
     }
 } -body {
-    set string "Testing <äöüß>"
+    set string "Testing <äöüß☀>"
     nstest::http -getbody 1 PUT /put $string
 } -cleanup {
     ns_unregister_op PUT /put
     unset -nocomplain r
-} -result {200 {utf-8 <> AÄATesting <äöüß>ZÜZ}}
+} -result {200 {utf-8 <> AÄATesting <äöüß☀>ZÜZ}}
 
 
-test http-5.3a {check encoding ns_conn content POST, complete content-type} -constraints {serverListen} -setup {
+test http-5.2.2 {
+
+    check encoding  ns_conn content PUT,
+    content type text/html
+
+} -constraints {serverListen} -setup {
+    ns_register_proc PUT /put {
+        #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
+        set contentType [ns_set iget [ns_conn headers] content-type]
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA[ns_conn content]ZÜZ"
+    }
+} -body {
+    set string "Testing <äöüß☀>"
+    nstest::http -getbody 1 -setheaders {content-type text/html} PUT /put $string
+} -cleanup {
+    ns_unregister_op PUT /put
+    unset -nocomplain r
+} -result {200 {utf-8 <text/html> AÄATesting <äöüß☀>ZÜZ}}
+
+
+test http-5.2.3 {
+
+    check encoding  ns_conn content PUT,
+    content type text/html;charset=utf-8
+
+} -constraints {serverListen} -setup {
+    ns_register_proc PUT /put {
+        #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
+        set contentType [ns_set iget [ns_conn headers] content-type]
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA[ns_conn content]ZÜZ"
+    }
+} -body {
+    set string "Testing <äöüß☀>"
+    nstest::http -getbody 1 -setheaders {content-type text/html;charset=utf-8} PUT /put $string
+} -cleanup {
+    ns_unregister_op PUT /put
+    unset -nocomplain r
+} -result {200 {utf-8 <text/html;charset=utf-8> AÄATesting <äöüß☀>ZÜZ}}
+
+
+
+test http-5.3a {
+
+    check encoding ns_conn content POST,
+    complete content-type "text/html;charset=utf-8"
+
+} -constraints {serverListen} -setup {
     ns_register_proc POST /post {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType [ns_set iget [ns_conn headers] content-type]
         ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA[ns_conn content]ZÜZ"
     }
 } -body {
-    set string "Testing <äöüß>"
+    set string "Testing <äöüß☀>"
     nstest::http -getbody 1 -setheaders {content-type text/html;charset=utf-8} POST /post $string
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
-} -result {200 {utf-8 <text/html;charset=utf-8> AÄATesting <äöüß>ZÜZ}}
+} -result {200 {utf-8 <text/html;charset=utf-8> AÄATesting <äöüß☀>ZÜZ}}
 
-test http-5.3b {check encoding ns_conn content POST, complete content-type} -constraints {curl serverListen} -setup {
+
+test http-5.3b {
+
+    check encoding ns_conn content POST,
+    content-type application/x-www-form-urlencoded,
+    test via curl
+
+} -constraints {curl serverListen} -setup {
     ns_register_proc POST /post {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType [ns_set iget [ns_conn headers] content-type]
@@ -372,55 +433,131 @@ test http-5.3b {check encoding ns_conn content POST, complete content-type} -con
         ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA[ns_conn content]ZÜZ"
     }
 } -body {
-    set string "Testing <äöüß>"
+    set string "Testing <äöüß☀>"
     exec curl -g -s --data $string [ns_config test listenurl]/post 2> /dev/null
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
-} -result {utf-8 <application/x-www-form-urlencoded> AÄATesting <äöüß>ZÜZ}
+} -result {utf-8 <application/x-www-form-urlencoded> AÄATesting <äöüß☀>ZÜZ}
 
 
-test http-5.4 {check encoding ns_conn content POST, incomplete content-type} -constraints {serverListen} -setup {
+test http-5.4.1 {
+
+    check encoding ns_conn content POST,
+    content-type text/html (without charset)
+    access content via [ns_conn content]
+
+} -constraints {serverListen} -setup {
     ns_register_proc POST /post {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType [ns_set iget [ns_conn headers] content-type]
-        ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA[ns_conn content]ZÜZ"
+        set content [ns_conn content]
+        set contentLength [string length $content]
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA${content}ZÜZ ($contentLength)"
     }
 } -body {
-    set string "Testing <äöüß>"
+    set string "Testing <äöüß☀>"
     nstest::http -getbody 1 -setheaders {content-type text/html} POST /post $string
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
-} -result {200 {utf-8 <text/html> AÄATesting <äöüß>ZÜZ}}
+} -result {200 {utf-8 <text/html> AÄATesting <äöüß☀>ZÜZ (15)}}
 
-test http-5.5 {check encoding ns_conn content POST, binary} -constraints {serverListen} -setup {
+
+test http-5.4.2 {
+
+    check encoding ns_conn content POST,
+    content-type text/html;charset="utf-8"
+    access content via [ns_conn content]
+
+} -constraints {serverListen} -setup {
     ns_register_proc POST /post {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType [ns_set iget [ns_conn headers] content-type]
-        ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA[ns_conn content -binary]ZÜZ"
+        set content [ns_conn content]
+        set contentLength [string length $content]
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA${content}ZÜZ ($contentLength)"
     }
 } -body {
-    set string "Testing <äöüß>"
+    set string "Testing <äöüß☀>"
+    nstest::http -getbody 1 -setheaders {content-type "text/html;charset=utf-8"} POST /post $string
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain r
+} -result {200 {utf-8 <text/html;charset=utf-8> AÄATesting <äöüß☀>ZÜZ (15)}}
+
+
+
+test http-5.5.1 {
+
+    check encoding ns_conn content POST,
+    content-type text/html (without charset)
+    access content via [ns_conn content -binary]
+    old testing infrastructure
+
+} -constraints {serverListen binaryMismatch} -setup {
+    ns_register_proc POST /post {
+        #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
+        ns_log notice "5.5.1: system encoding: [encoding system]"
+        set contentType [ns_set iget [ns_conn headers] content-type]
+        set content [ns_conn content -binary]
+        set contentLength [string length $content]
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA${content}ZÜZ ($contentLength)"
+    }
+} -body {
+    set string "Testing <äöüß☀>"
     nstest::http-0.9 -getbody 1 -setheaders {content-type text/html} POST /post $string
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
-} -result {200 {utf-8 <text/html> AÄATesting <äöüß>ZÜZ}}
+} -result {200 {utf-8 <text/html> AÄATesting <äöüß☀>ZÜZ (15)}}
 
-test http-5.6 {check encoding ns_conn content POST, offset} -constraints {serverListen} -setup {
+
+test http-5.5.2 {
+
+    check encoding ns_conn content POST,
+    content-type text/html (without charset)
+    access content via [ns_conn content -binary]
+
+} -constraints {serverListen binaryMismatch} -setup {
+    ns_register_proc POST /post {
+        #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
+        ns_log notice "5.5.2: system encoding: [encoding system]"
+        set contentType [ns_set iget [ns_conn headers] content-type]
+        set content [ns_conn content -binary]
+        set contentLength [string length $content]
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA${content}ZÜZ ($contentLength)"
+    }
+} -body {
+    set string "Testing <äöüß☀>"
+    nstest::http -getbody 1 -setheaders {content-type text/html} POST /post $string
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain r
+} -result {200 {utf-8 <text/html> AÄATesting <äöüß☀>ZÜZ} (15)}
+
+
+
+
+test http-5.6 {
+
+    check encodings ns_conn content POST,
+    content-type text/html (without charset)
+    access content with offset a range [ns_conn content 0 4]
+
+} -constraints {serverListen} -setup {
     ns_register_proc POST /post {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType [ns_set iget [ns_conn headers] content-type]
         ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA[ns_conn content 0 4]/[ns_conn content 11 3]ZÜZ"
     }
 } -body {
-    set string "Testing <äöüß>"
+    set string "Testing <äöüß☀>"
     nstest::http -getbody 1 -setheaders {content-type text/html} POST /post $string
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
-} -result {200 {utf-8 <text/html> AÄATest/üß>ZÜZ}}
+} -result {200 {utf-8 <text/html> AÄATest/üß☀ZÜZ}}
 
 
 #
@@ -689,7 +826,7 @@ test http-7.0 {ns_http with body and text datatype} -constraints {serverListen} 
         ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA[ns_conn content]ZÜZ"
     }
 } -body {
-    set string "Testing 'äöüß'"
+    set string "Testing 'äöüß☀'"
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type text/plain
     set result [ns_http run -headers $queryHeaders -body $string -method POST \
@@ -698,9 +835,15 @@ test http-7.0 {ns_http with body and text datatype} -constraints {serverListen} 
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
-} -result {200 {utf-8 <text/plain> AÄATesting 'äöüß'ZÜZ}}
+} -result {200 {utf-8 <text/plain> AÄATesting 'äöüß☀'ZÜZ}}
 
-test http-7.1a {ns_http with body and text datatype with encoding} -constraints {serverListen} -setup {
+test http-7.1a {
+
+    ns_http with body
+    text datatype
+    encoding iso8859-1
+
+} -constraints {serverListen} -setup {
     ns_register_proc POST /post {
         set contentType [ns_set iget [ns_conn headers] content-type]
         #ns_log notice "post receives content-type '$contentType'"
@@ -708,7 +851,7 @@ test http-7.1a {ns_http with body and text datatype with encoding} -constraints 
     }
 } -body {
     set encoding iso8859-1
-    set string [encoding convertto $encoding "Testing 'äöüß'"]
+    set string [encoding convertto $encoding "Testing 'äöüß☀'"]
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type "text/plain; $encoding"
     set result [ns_http run -headers $queryHeaders -body $string -method POST \
@@ -717,9 +860,17 @@ test http-7.1a {ns_http with body and text datatype with encoding} -constraints 
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
-} -result {200 {<text/plain; iso8859-1> AÄATesting 'äöüß'ZÜZ}}
+} -result {200 {<text/plain; iso8859-1> AÄATesting 'äöüß?'ZÜZ}}
 
-test http-7.1b {ns_http with body and text datatype with encoding, no bytearray} -constraints {serverListen} -setup {
+
+test http-7.1b {
+
+    ns_http with body
+    text datatype
+    with encoding iso8859-
+    no bytearray
+
+} -constraints {serverListen} -setup {
     ns_register_proc POST /post {
         set contentType [ns_set iget [ns_conn headers] content-type]
         set content [ns_conn content]
@@ -731,7 +882,7 @@ test http-7.1b {ns_http with body and text datatype with encoding, no bytearray}
     }
 } -body {
     set encoding iso8859-1
-    set string [encoding convertto $encoding "Testing 'äöüß'"]
+    set string [encoding convertto $encoding "Testing 'äöüß☀'"]
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type "text/plain; $encoding"
     set result [ns_http run -headers $queryHeaders -body $string -method POST \
@@ -740,7 +891,7 @@ test http-7.1b {ns_http with body and text datatype with encoding, no bytearray}
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
-} -result {200 {<text/plain; iso8859-1> AÄATesting 'äöüß'ZÜZ}}
+} -result {200 {<text/plain; iso8859-1> AÄATesting 'äöüß?'ZÜZ}}
 
 
 test http-7.2a {ns_http with body and binary datataype} -constraints {serverListen} -setup {
