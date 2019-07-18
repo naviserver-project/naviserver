@@ -428,38 +428,36 @@ test http-5.2.3 {
     unset -nocomplain r
 } -result {200 {utf-8 <text/html;charset=utf-8> AÄATesting <äöüß☀>ZÜZ (21 15)}}
 
-
-
-
-proc bytes {u} {
-    foreach byte [split [encoding convertto utf-8 $u] ""] { lappend bytes [format %02X [scan $byte %c]] }
-    return $bytes
-}
-
 test http-5.2.0-b {
 
     check encoding  ns_conn content PUT,
     no provided content type
     binary data
 
-} -constraints {serverListen broken} -setup {
+} -constraints {serverListen} -setup {
     ns_register_proc PUT /put {
-        proc bytes {u} {
-            foreach byte [split [encoding convertto utf-8 $u] ""] { lappend bytes [format %02X [scan $byte %c]] }
-            return $bytes
-        }
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType [ns_set iget [ns_conn headers] content-type]
         set contentLength [ns_set iget [ns_conn headers] content-length]
         set content [ns_conn content -binary]
-        set bytes [bytes $content]
+        foreach byte [split $content ""] { lappend bytes [format %02X [scan $byte %c]] }
         set bytesLength [llength $bytes]
-        ns_return 200 text/plain "[ns_conn encoding] <$contentType> $bytes> ($contentLength $bytesLength)"
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> $bytes ($contentLength $bytesLength)"
     }
 } -body {
     set string "\u0000\u0001\u0002\u0003☀"
-    ns_log notice "length in bytes of string [llength [bytes $string]]: [bytes $string]"
-    nstest::http -getbody 1 PUT /put $string
+    set a [encoding convertto utf-8 $string]
+    if {[info commands nsf::__db_get_obj] ne ""} {
+        set F [open testserver/pages/binary ]; fconfigure $F -encoding binary -translation binary; set b [read $F]; close $F
+        ns_log notice "l(a)=[llength [split $a {}]] ... Tcl_Obj from string notation"
+        ns_log notice "l(b)=[llength [split $b {}]] ... Tcl_Obj from binary file"
+        ns_log notice "obj(string) [nsf::__db_get_obj $string]"
+        ns_log notice "obj(a) [nsf::__db_get_obj $a]"
+        ns_log notice "obj(b) [nsf::__db_get_obj $b]"
+        foreach byte [split $a ""] { lappend bytes [format %02X [scan $byte %c]] }
+        ns_log notice "string length [string length $string], #bytes [llength $bytes] - $bytes"
+    }
+    nstest::http -getbody 1 PUT /put $a
 } -cleanup {
     ns_unregister_op PUT /put
     unset -nocomplain r
@@ -472,27 +470,23 @@ test http-5.2.1-b {
     binary content type application/octet-stream
     binary data
 
-} -constraints {serverListen broken} -setup {
+} -constraints {serverListen} -setup {
     ns_register_proc PUT /put {
-        proc bytes {u} {
-            foreach byte [split [encoding convertto utf-8 $u] ""] { lappend bytes [format %02X [scan $byte %c]] }
-            return $bytes
-        }
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType [ns_set iget [ns_conn headers] content-type]
         set contentLength [ns_set iget [ns_conn headers] content-length]
         set content [ns_conn content -binary]
-        set bytes [bytes $content]
+        foreach byte [split $content ""] { lappend bytes [format %02X [scan $byte %c]] }
         set bytesLength [llength $bytes]
-        ns_return 200 text/plain "[ns_conn encoding] <$contentType> $bytes> ($contentLength $bytesLength)"
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> $bytes ($contentLength $bytesLength)"
     }
 } -body {
-    set string "\u0000\u0001\u0002\u0003☀"
+    set string [encoding convertto utf-8 "\u0000\u0001\u0002\u0003☀"]
     nstest::http -getbody 1 -setheaders {content-type application/octet-stream} PUT /put $string
 } -cleanup {
     ns_unregister_op PUT /put
     unset -nocomplain r
-} -result {200 {utf-8 <<application/octet-stream> 00 01 02 03 E2 98 80 (7 7)}}
+} -result {200 {utf-8 <application/octet-stream> 00 01 02 03 E2 98 80 (7 7)}}
 
 
 test http-5.2.2-b {
@@ -503,25 +497,21 @@ test http-5.2.2-b {
 
 } -constraints {serverListen broken} -setup {
     ns_register_proc PUT /put {
-        proc bytes {u} {
-            foreach byte [split [encoding convertto utf-8 $u] ""] { lappend bytes [format %02X [scan $byte %c]] }
-            return $bytes
-        }
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType [ns_set iget [ns_conn headers] content-type]
         set contentLength [ns_set iget [ns_conn headers] content-length]
         set content [ns_conn content -binary]
-        set bytes [bytes $content]
+        foreach byte [split $content ""] { lappend bytes [format %02X [scan $byte %c]] }
         set bytesLength [llength $bytes]
-        ns_return 200 text/plain "[ns_conn encoding] <$contentType> $bytes> ($contentLength $bytesLength)"
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> $bytes ($contentLength $bytesLength)"
     }
 } -body {
-    set string "\u0000\u0001\u0002\u0003☀"
+    set string [encoding convertto utf-8 "\u0000\u0001\u0002\u0003☀"]
     nstest::http -getbody 1 -setheaders {content-type text/html} PUT /put $string
 } -cleanup {
     ns_unregister_op PUT /put
     unset -nocomplain r
-} -result {200 {utf-8 <<text/html> 00 01 02 03 E2 98 80 (7 7)}}
+} -result {200 {utf-8 <text/html> 00 01 02 03 E2 98 80 (7 7)}}
 
 
 test http-5.2.3-b {
@@ -532,25 +522,21 @@ test http-5.2.3-b {
 
 } -constraints {serverListen broken} -setup {
     ns_register_proc PUT /put {
-        proc bytes {u} {
-            foreach byte [split [encoding convertto utf-8 $u] ""] { lappend bytes [format %02X [scan $byte %c]] }
-            return $bytes
-        }
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType [ns_set iget [ns_conn headers] content-type]
         set contentLength [ns_set iget [ns_conn headers] content-length]
         set content [ns_conn content -binary]
-        set bytes [bytes $content]
+        foreach byte [split $content ""] { lappend bytes [format %02X [scan $byte %c]] }
         set bytesLength [llength $bytes]
-        ns_return 200 text/plain "[ns_conn encoding] <$contentType> $bytes> ($contentLength $bytesLength)"
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> $bytes ($contentLength $bytesLength)"
     }
 } -body {
-    set string "\u0000\u0001\u0002\u0003☀"
+    set string [encoding convertto utf-8 "\u0000\u0001\u0002\u0003☀"]
     nstest::http -getbody 1 -setheaders {content-type text/html;charset=utf-8} PUT /put $string
 } -cleanup {
     ns_unregister_op PUT /put
     unset -nocomplain r
-} -result {200 {utf-8 <<text/html;charset=utf-8> 00 01 02 03 E2 98 80 (7 7)}}
+} -result {200 {utf-8 <text/html;charset=utf-8> 00 01 02 03 E2 98 80 (7 7)}}
 
 
 
