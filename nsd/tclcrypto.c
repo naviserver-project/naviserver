@@ -126,6 +126,9 @@ static Tcl_ObjCmdProc CryptoEckeyImportObjCmd;
 static const char * const mdCtxType  = "ns:mdctx";
 static const char * const hmacCtxType  = "ns:hmacctx";
 
+static Ns_ObjvValueRange posIntRange0 = {0, INT_MAX};
+static Ns_ObjvValueRange posIntRange1 = {1, INT_MAX};
+
 /*
  *----------------------------------------------------------------------
  *
@@ -412,8 +415,8 @@ GetCipher(Tcl_Interp *interp, const char *cipherName, unsigned long flags, const
         Ns_TclPrintfResult(interp, "Unknown cipher \"%s\"", cipherName);
         result = TCL_ERROR;
     } else if (flags != 0u) {
-        unsigned long mode = EVP_CIPHER_mode(*cipherPtr);
-        if ((mode && flags) == 0u) {
+        int mode = EVP_CIPHER_mode(*cipherPtr);
+        if (((unsigned)mode && flags) == 0u) {
             Ns_TclPrintfResult(interp, "cipher \"%s\" does not support require mode: %s", cipherName, modeMsg);
             result = TCL_ERROR;
         }
@@ -1471,7 +1474,6 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL, *infoObj = NULL;
     char              *digestName = (char *)"sha256", *outputEncodingString = NULL;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
-    Ns_ObjvValueRange  outLengthRange = {0, INT_MAX};
     Ns_ObjvSpec lopts[] = {
         {"-digest",   Ns_ObjvString, &digestName, NULL},
         {"-salt",     Ns_ObjvObj,    &saltObj,    NULL},
@@ -1481,7 +1483,7 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"length", Ns_ObjvInt, &outLength, &outLengthRange},
+        {"length", Ns_ObjvInt, &outLength, &posIntRange0},
         {NULL, NULL, NULL, NULL}
     };
     /*
@@ -1655,7 +1657,151 @@ NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 }
 
 
+# ifdef HAVE_OPENSSL_3
+int
+NsCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int                result, n = 1024, r = 8, p = 16;
+    Tcl_Obj           *saltObj = NULL, *secretObj = NULL;
+    char              *outputEncodingString = NULL;
+    Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
+    Ns_ObjvSpec lopts[] = {
+        {"-salt",     Ns_ObjvObj,    &saltObj,    NULL},
+        {"-secret",   Ns_ObjvObj,    &secretObj,  NULL},
+        {"-n",        Ns_ObjvInt,    &n,          &posIntRange1},
+        {"-p",        Ns_ObjvInt,    &p,          &posIntRange1},
+        {"-r",        Ns_ObjvInt,    &r,          &posIntRange1},
+        {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {NULL, NULL, NULL, NULL}
+    };
+    /*
+      ############################################################################
+      # Test Case 1: RFC 7914 (example 2 in sect 12)
+      ############################################################################
+      ::ns_crypto::scrypt -secret "password" -salt NaCl -n 1024 -r 8 -p 16
 
+      fdbabe1c9d3472007856e7190d01e9fe7c6ad7cbc8237830e77376634b373162
+      2eaf30d92e22a3886ff109279d9830dac727afb94a83ee6d8360cbdfa2cc0640
+
+      % time {::ns_crypto::scrypt -secret "password" -salt NaCl -n 1024 -r 8 -p 16}
+      42011 microseconds per iteration
+
+      ############################################################################
+      # Test Case 2: RFC 7914 (example 3 in sect 12)
+      ############################################################################
+      ::ns_crypto::scrypt -secret "pleaseletmein" -salt SodiumChloride -n 16384 -r 8 -p 1
+
+      7023bdcb3afd7348461c06cd81fd38ebfda8fbba904f8e3ea9b543f6545da1f2
+      d5432955613f0fcf62d49705242a9af9e61e85dc0d651e40dfcf017b45575887
+
+      % time {::ns_crypto::scrypt -secret "pleaseletmein" -salt SodiumChloride -n 16384 -r 8 -p 1}
+      47901 microseconds per iteration
+
+      ############################################################################
+      # Test Case 3: RFC 7914 (example 4 in sect 12)
+      ############################################################################
+      ::ns_crypto::scrypt -secret "pleaseletmein" -salt SodiumChloride -n 1048576 -r 8 -p 1
+
+      2101cb9b6a511aaeaddbbe09cf70f881ec568d574a2ffd4dabe5ee9820adaa47
+      8e56fd8f4ba5d09ffa1c6d927c40f4c337304049e8a952fbcbf45c6fa77a41a4
+
+      % time {::ns_crypto::scrypt -secret "pleaseletmein" -salt SodiumChloride -n 1048576 -r 8 -p 1}
+      3095741 microseconds per iteration
+    */
+
+    if (Ns_ParseObjv(lopts, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (outputEncodingString != NULL
+               && GetResultEncoding(interp, outputEncodingString, &encoding) != TCL_OK) {
+        /*
+         * Function cares about error message
+         */
+        result = TCL_ERROR;
+
+    } else if (saltObj == NULL) {
+        Ns_TclPrintfResult(interp, "no -salt specified");
+        result = TCL_ERROR;
+
+    } else if (secretObj == NULL) {
+        Ns_TclPrintfResult(interp, "no -secret specified");
+        result = TCL_ERROR;
+
+    } else {
+
+        EVP_KDF_CTX  *kctx;
+        unsigned char out[64];
+        Tcl_DString    saltDs, secretDs;
+        int            saltLength, secretLength;
+        const char    *saltString, *secretString;
+
+        /*
+         * All input parameters are valid, get key and data.
+         */
+        Tcl_DStringInit(&saltDs);
+        Tcl_DStringInit(&secretDs);
+        //keyString = ns_malloc((size_t)outLength);
+
+        saltString   = Ns_GetBinaryString(saltObj,   &saltLength,   &saltDs);
+        secretString = Ns_GetBinaryString(secretObj, &secretLength, &secretDs);
+
+        kctx = EVP_KDF_CTX_new_id(EVP_KDF_SCRYPT);
+
+        if (EVP_KDF_ctrl(kctx, EVP_KDF_CTRL_SET_PASS, secretString, (size_t)secretLength) <= 0) {
+            Ns_TclPrintfResult(interp, "could not set secret");
+            result = TCL_ERROR;
+
+        } else if (EVP_KDF_ctrl(kctx, EVP_KDF_CTRL_SET_SALT, saltString, (size_t)saltLength) <= 0) {
+            Ns_TclPrintfResult(interp, "could not set salt");
+            result = TCL_ERROR;
+
+        } else if (EVP_KDF_ctrl(kctx, EVP_KDF_CTRL_SET_SCRYPT_N, (uint64_t)n) <= 0) {
+            Ns_TclPrintfResult(interp, "could not set scrypt N (work factor, positive power of 2)");
+            result = TCL_ERROR;
+
+        } else if (EVP_KDF_ctrl(kctx, EVP_KDF_CTRL_SET_SCRYPT_R, (uint32_t)r) <= 0) {
+            Ns_TclPrintfResult(interp, "could not set scrypt r (block size)");
+            result = TCL_ERROR;
+
+        } else if (EVP_KDF_ctrl(kctx, EVP_KDF_CTRL_SET_SCRYPT_P, (uint32_t)p) <= 0) {
+            Ns_TclPrintfResult(interp, "could not set scrypt p (parallelization function)");
+            result = TCL_ERROR;
+
+        } else if (EVP_KDF_derive(kctx, out, sizeof(out)) <= 0) {
+            Ns_TclPrintfResult(interp, "could not derive scrypt value from parameters");
+            result = TCL_ERROR;
+
+        } else {
+            /*
+             * Convert the result to the output format and set the interp
+             * result.
+             */
+            Tcl_SetObjResult(interp, EncodedObj(out, sizeof(out), NULL, encoding));
+            result = TCL_OK;
+        }
+
+        /*
+         * Clean up.
+         */
+        Tcl_DStringFree(&saltDs);
+        Tcl_DStringFree(&secretDs);
+
+        EVP_KDF_CTX_free(kctx);
+    }
+
+    return result;
+}
+# else
+int
+NsCryptoScryptObjCmd (ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
+{
+    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 3.0 built into NaviServer");
+    return TCL_ERROR;
+}
+# endif
 
 
 
@@ -2808,6 +2954,13 @@ int
 NsTclCryptoEckeyObjCmd (ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
+    return TCL_ERROR;
+}
+
+int
+NsCryptoScryptObjCmd (ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
+{
+    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 3.0 built into NaviServer");
     return TCL_ERROR;
 }
 #endif

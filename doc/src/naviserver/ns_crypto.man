@@ -206,6 +206,41 @@ Return the specified number of random bytes in the specified encoding
 [example_end]
 
 
+[call [cmd "ns_crypto::scrypt"] \
+     [opt [option "-secret [arg secret]"]] \
+     [opt [option "-salt [arg salt]"]] \
+     [opt [option "-n [arg n]"]] \
+     [opt [option "-n [arg r]"]] \
+     [opt [option "-n [arg p]"]] \
+     [opt [option "-encoding [arg encoding]"]] \
+     [arg nrbytes]]
+
+Compute a password has based on the scrypt Password-Based Key
+Derivation Function (RFC 7914) and return the specified number of
+random bytes in the specified encoding (default hex).
+
+[para]
+The scrypt function is a modern replacement for crypt and bcrypt and
+derives more secret keys from a secret string.  It is based on memory-hard
+functions, which offer added protection against attacks using custom hardware
+and GPU arrays. The functions requires the compilation of NaviServer against
+OpenSSL 3.0 or newer.
+
+[para]
+The scrypt function is as well used in many cryptocurrencies as a
+proof-of-work algorithm.
+
+[para] Colin Percival. 2009. Stronger key derivation via
+sequential memory-hard functions. In BSDCan ’09: The Technical BSD
+Conference.
+
+[example_begin]
+% ns_crypto::randombytes 20
+3191eb4360a3dc9b5ef667641b264d43aa1019aa
+[example_end]
+
+
+
 [list_end]
 [section OPTIONS]
 [list_begin options]

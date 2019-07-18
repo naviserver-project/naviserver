@@ -82,6 +82,7 @@ static const Cmd basicCmds[] = {
     {"ns_crypto::hmac",          NULL, NsTclCryptoHmacObjCmd},
     {"ns_crypto::md",            NULL, NsTclCryptoMdObjCmd},
     {"ns_crypto::randombytes",   NULL, NsTclCryptoRandomBytesObjCmd},
+    {"ns_crypto::scrypt",        NULL, NsCryptoScryptObjCmd},
     {"ns_encodingforcharset",    NULL, NsTclEncodingForCharsetObjCmd},
     {"ns_env",                   NULL, NsTclEnvObjCmd},
     {"ns_fastpath_cache_stats",  NULL, NsTclFastPathCacheStatsObjCmd},

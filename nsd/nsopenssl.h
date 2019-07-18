@@ -75,6 +75,10 @@
 #  define HAVE_OPENSSL_PRE_1_0
 # endif
 
+# if OPENSSL_VERSION_MAJOR >= 3
+#  define HAVE_OPENSSL_3 1
+# endif
+
 # if !defined(HAVE_OPENSSL_PRE_1_1) && !defined(LIBRESSL_VERSION_NUMBER)
 #  define HAVE_OPENSSL_HKDF
 #  define HAVE_OPENSSL_EC_PRIV2OCT
