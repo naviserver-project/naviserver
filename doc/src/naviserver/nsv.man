@@ -425,7 +425,7 @@ The number of buckets to be used can be configured by setting the
     ns_section  ns/server/${servername}/tcl {
  
        # Number of buckets in Tcl hash table for nsv vars
-       ns_param        nsvbuckets              16
+       ns_param nsvbuckets 16
     }
 [example_end]
 
@@ -437,8 +437,8 @@ time.  The nsv locks all have names of the form "nsv:##".  If you find
 many lock attempts which did not succeeded immediately, try increasing
 nsvbuckets.
 
-[see_also nsd ns_cache ns_urlspace]
-[keywords "server built-in" nsv shared variables mutex]
+[see_also nsd ns_cache ns_urlspace ns_set]
+[keywords "server built-in" nsv shared variables mutex "data structure"]
 
 [manpage_end]
 

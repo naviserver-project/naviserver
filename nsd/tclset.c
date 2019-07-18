@@ -288,7 +288,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
         "array", "cleanup", "copy", "cput", "create",
         "delete", "delkey", "find", "free", "get",
         "icput", "idelkey", "ifind", "iget", "imerge",
-        "isnull", "iunique", "key", "list", "merge",
+        "isnull", "iunique", "iupdate", "key", "list", "merge",
         "move", "name", "new", "print", "put",
         "size", "split", "truncate", "unique", "update",
         "value", NULL,
@@ -297,7 +297,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
         SArrayIdx, SCleanupIdx, SCopyIdx, SCPutIdx, SCreateidx,
         SDeleteIdx, SDelkeyIdx, SFindIdx, SFreeIdx, SGetIdx,
         SICPutIdx, SIDelkeyIdx, SIFindIdx, SIGetIdx, SIMergeIdx,
-        SIsNullIdx, SIUniqueIdx, SKeyIdx, SListIdx, SMergeIdx,
+        SIsNullIdx, SIUniqueIdx, SIUpdateIdx, SKeyIdx, SListIdx, SMergeIdx,
         SMoveIdx, sINameIdx, SNewIdx, SPrintIdx, SPutIdx,
         SSizeIdx, SSplitIdx, STruncateIdx, SUniqueIdx, SUpdateIdx,
         SValueIdx
@@ -616,6 +616,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
 
             case SPutIdx:     NS_FALL_THROUGH; /* fall through */
             case SUpdateIdx:  NS_FALL_THROUGH; /* fall through */
+            case SIUpdateIdx:  NS_FALL_THROUGH; /* fall through */
             case SCPutIdx:    NS_FALL_THROUGH; /* fall through */
             case SICPutIdx:
                 /*
@@ -634,6 +635,10 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                     switch (opt) {
                     case SUpdateIdx:
                         Ns_SetDeleteKey(set, key);
+                        i = (int)Ns_SetPut(set, key, val);
+                        break;
+                    case SIUpdateIdx:
+                        Ns_SetIDeleteKey(set, key);
                         i = (int)Ns_SetPut(set, key, val);
                         break;
 

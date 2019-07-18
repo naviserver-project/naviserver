@@ -377,6 +377,17 @@ test ns_set-2.29 {basic operation ns_set} -body {
     ns_set cleanup
 }
 
+test ns_set-2.30 {ns_set iupdate} -body {
+    set x [ns_set create firstset a 1]
+    set _ [list [ns_set array $x]]
+    ns_set update $x b 2
+    lappend _ [ns_set array $x]
+    ns_set iupdate $x B 4
+    lappend _ [ns_set array $x]
+} -returnCodes {ok error} -result {{a 1} {a 1 b 2} {a 1 B 4}} -cleanup {
+    unset -nocomplain _
+    ns_set cleanup
+}
 
 cleanupTests
 

@@ -91,19 +91,19 @@ the default or an empty string is returned.
 
 [call [cmd "ns_set icput"] [arg setId] [arg key] [arg value]]
 
-Case-insensitive counterpart of ns_set cput.
+Case-insensitive counterpart of [cmd "ns_set cput"].
 
 [call [cmd "ns_set idelkey"] [arg setId] [arg key]]
 
-Case-insensitive counterpart of ns_set delkey.
+Case-insensitive counterpart of [cmd "ns_set delkey"].
 
 [call [cmd "ns_set ifind"] [arg setId] [arg key]]
 
-Case-insensitive counterpart of ns_set find.
+Case-insensitive counterpart of [cmd "ns_set find"].
 
 [call [cmd "ns_set iget"] [arg setId] [arg key] [opt [arg default]]]
 
-Case-insensitive counterpart of ns_set get.
+Case-insensitive counterpart of [cmd "ns_set get"].
 
 [call [cmd "ns_set imerge"] [arg high] [arg low]]
 
@@ -119,7 +119,12 @@ string.
 
 [call [cmd "ns_set iunique"] [arg setId] [arg key]]
 
-Case-insensitive counterpart of [cmd " ns_set unique"].
+Case-insensitive counterpart of [cmd "ns_set unique"].
+
+[call [cmd "ns_set iupdate"] [arg setId] [arg key] [arg value]]
+
+Case-insensitive counterpart of [cmd "ns_set update"].
+
 
 [call [cmd "ns_set key"] [arg setId] [arg fieldNumber]]
 
@@ -148,13 +153,14 @@ Returns the name of the set.  Returns an empty string if no name has been set.
 [call [cmd "ns_set print"] [arg setId]]
 
 Prints the specified set to stderr which should go to the server log.  This
-is useful for debugging, but ns_set array may be more useful in actual code.
+is useful for debugging, but [cmd "ns_set array"] may be more useful in actual code.
 
 [call [cmd "ns_set put"] [arg setId] [arg key] [arg value]]
 
 Appends a new field to the set with key and value.  Note that the field is
 appended so if a previous field has the same key as the new field, the previous
-field will be returned by ns_set get.  The field number of the new field is returned.
+field will be returned by [cmd "ns_set get"].
+The field number of the new field is returned.
 
 [call [cmd "ns_set size"] [arg setId]]
 
@@ -184,7 +190,8 @@ is performed case-sensitively.
 [call [cmd "ns_set update"] [arg setId] [arg key] [arg value]]
 
 Updates the first field in the specified set whose key is key and replaces its value
-with value.  This is equivalent to ns_set delkey followed by ns_set put if there is
+with value.  This is equivalent to [cmd "ns_set delkey"] followed by
+[cmd "ns_set put"] if there is
 only one field with the key of key.
 
 [call [cmd "ns_set value"] [arg setId] [arg fieldNumber]]
@@ -393,7 +400,7 @@ Tcl Array or a Tcl dict instead.
 
 
 [see_also ns_findset ns_ictl ns_cleanup]
-[keywords "global built-in" ns_set]
+[keywords "global built-in" ns_set "data structure"]
 
 [manpage_end]
 
