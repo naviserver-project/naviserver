@@ -2875,10 +2875,8 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
     } else {
         NsUrlSpaceOp    op;
         unsigned int    flags = 0u;
-        const char     *data;
         NsUrlSpaceContext ctx, *ctxPtr;
         struct NS_SOCKADDR_STORAGE ip;
-        struct sockaddr *ipPtr = (struct sockaddr *)&ip;
 
         if (noinherit == (int)NS_TRUE) {
             exact = (int)NS_TRUE;
@@ -2895,7 +2893,9 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         if (context != NULL) {
             const char *ipString = Ns_SetIGet(context, "X-NS-ip");
             if (ipString != NULL) {
+                struct sockaddr *ipPtr = (struct sockaddr *)&ip;
                 int validIP = ns_inet_pton(ipPtr, ipString);
+
                 if (validIP > 0) {
                     ctx.saPtr = ipPtr;
                     if (Ns_SetSize(context) > 1) {
@@ -2916,6 +2916,8 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         }
 
         if (likely(result == TCL_OK)) {
+            const char *data;
+
 #ifdef DEBUG
             fprintf(stderr, "=== GET id %d key %s url %s op %d\n", id, key, url, op);
 #endif
