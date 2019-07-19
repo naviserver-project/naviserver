@@ -54,10 +54,12 @@
 /*
  * String equivalents of some header keys
  */
+static const char *transferEncodingHeader = "Transfer-Encoding";
 static const char *contentEncodingHeader  = "Content-Encoding";
 static const char *contentTypeHeader      = "Content-Type";
 static const char *contentLengthHeader    = "Content-Length";
 static const char *connectionHeader       = "Connection";
+static const char *trailersHeader         = "Trailers";
 static const char *hostHeader             = "Host";
 static const char *userAgentHeader        = "User-Agent";
 
@@ -111,6 +113,18 @@ static void HttpClose(
 static void HttpCancel(
     NsHttpTask *httpPtr
 ) NS_GNUC_NONNULL(1);
+
+static int HttpAppendContent(
+    NsHttpTask *httpPtr,
+    const char *buffer,
+    size_t size
+) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static int HttpAppendChunked(
+    NsHttpTask *httpPtr,
+    const char *buffer,
+    size_t size
+) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static int HttpAppendBuffer(
     NsHttpTask *httpPtr,
@@ -183,6 +197,9 @@ static void HttpDoneCallback(
 
 static Ns_TaskProc HttpProc;
 
+/*
+ * Function implementing the Tcl interface.
+ */
 static Tcl_ObjCmdProc HttpCancelObjCmd;
 static Tcl_ObjCmdProc HttpCleanupObjCmd;
 static Tcl_ObjCmdProc HttpListObjCmd;
@@ -190,6 +207,51 @@ static Tcl_ObjCmdProc HttpStatsObjCmd;
 static Tcl_ObjCmdProc HttpQueueObjCmd;
 static Tcl_ObjCmdProc HttpRunObjCmd;
 static Tcl_ObjCmdProc HttpWaitObjCmd;
+
+static NsHttpParseProc ParseCRProc;
+static NsHttpParseProc ParseLFProc;
+static NsHttpParseProc ParseLengthProc;
+static NsHttpParseProc ChunkInitProc;
+static NsHttpParseProc ParseBodyProc;
+static NsHttpParseProc TrailerInitProc;
+static NsHttpParseProc ParseTrailerProc;
+
+/*
+ * Callbacks for the chunked-encoding state machine
+ * to parse variable number of chunks.
+ */
+static NsHttpParseProc* ChunkParsers[] = {
+    &ChunkInitProc,
+    &ParseLengthProc,
+    &ParseCRProc,
+    &ParseLFProc,
+    &ParseBodyProc,
+    &ParseCRProc,
+    &ParseLFProc,
+    NULL
+};
+
+/*
+ * Callbacks for the chunked-encoding parse machine
+ * to parse variable number of optional trailers.
+ */
+static NsHttpParseProc* TrailerParsers[] = {
+    &TrailerInitProc,
+    &ParseTrailerProc,
+    &ParseCRProc,
+    &ParseLFProc,
+    NULL
+};
+
+/*
+ * Callbacks for the chunked-encoding parse machine
+ * to parse terminating frame (CRLF sequence).
+ */
+static NsHttpParseProc* EndParsers[] = {
+    &ParseCRProc,
+    &ParseLFProc,
+    NULL
+};
 
 
 /*
@@ -1072,6 +1134,10 @@ HttpStatsObjCmd(
                  Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->replyLength));
 
             (void) Tcl_DictObjPut
+                (interp, entryObj, Tcl_NewStringObj("contentlength", 13),
+                 Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->contentLength));
+
+            (void) Tcl_DictObjPut
                 (interp, entryObj, Tcl_NewStringObj("replysize", 9),
                  Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->replySize));
 
@@ -1394,34 +1460,48 @@ HttpGetResult(
         goto err;
     }
 
-    if (httpPtr->spoolFd == NS_INVALID_FD && httpPtr->spoolChan == NULL) {
-        bool   binary = NS_TRUE;
+    if (httpPtr->recvSpoolMode == NS_FALSE) {
+        bool   binary = NS_FALSE;
         int    cSize;
-        char  *cData, *cEnc;
+        char  *cData;
 
         /*
-         * Request body was served from the memory.
-         * Obtain the value of the response content.
-         *
-         * Was the content gzipped?
-         * If so, it is binary type response.
-         * If not, determine it's type from the Content-type.
+         * Determine type (binary/text) of the received data
+         * and decide what kind of object we should create
+         * to return the content to the Tcl.
+         * We have a choice between binary and string objects.
+         * Unfortunately, this is mostly whole lotta guess-work...
          */
+        if ((httpPtr->flags & NS_HTTP_FLAG_GZIP_ENCODING) != 0u) {
+            if ((httpPtr->flags & NS_HTTP_FLAG_DECOMPRESS) == 0) {
 
-        cEnc = Ns_SetIGet(httpPtr->replyHeaders, contentEncodingHeader);
-        if (cEnc == NULL || strncmp(cEnc, "gzip", 4u) != 0) {
-            char *cType;
+                /*
+                 * Gziped but not inflated content
+                 * is automatically of a binary-type.
+                 * This is pretty straight-forward.
+                 */
+                binary = NS_TRUE;
+            }
+        }
+        if (binary == NS_FALSE) {
+            char  *cType = NULL;
 
             cType = Ns_SetIGet(httpPtr->replyHeaders, contentTypeHeader);
             if (cType != NULL) {
+
+                /*
+                 * Caveat Emptor:
+                 * This call may return true even for
+                 * completely regular text formats!
+                 */
                 binary = Ns_IsBinaryMimeType(cType);
             }
         }
 
         cData = httpPtr->ds.string + httpPtr->replyHeaderSize;
-        cSize = httpPtr->ds.length - httpPtr->replyHeaderSize;
+        cSize = (int)httpPtr->contentLength;
 
-        if (binary)  {
+        if (binary == NS_TRUE)  {
             replyBodyObj = Tcl_NewByteArrayObj((unsigned char *)cData, cSize);
         } else {
             replyBodyObj = Tcl_NewStringObj(cData, cSize);
@@ -1596,8 +1676,8 @@ HttpCheckSpool(
      *
      *     1. HTTP response line (delimited by CR/LF)
      *     2. Response header(s) (each delimited by CR/LF)
-     *     3. Terminating zero byte (see HttpCheckHeader())
-     *     4. Lone "\n" character (see HttpCheckHeader())
+     *     3. Terminating zero byte (was \r; see HttpCheckHeader())
+     *     4. Lone \n character (see HttpCheckHeader())
      *     5. Content (or part of it) up to the end of the DString
      *
      * The size of 1.-4. is stored in httpPtr->replyHeaderSize.
@@ -1636,32 +1716,45 @@ HttpCheckSpool(
                 replyLength = 0;
             }
 
-            Ns_Log(Ns_LogTaskDebug, "HttpCheckSpool: %s: %s",
-                   contentLengthHeader, header);
+            Ns_Log(Ns_LogTaskDebug, "HttpCheckSpool: %s: %" PRIdz,
+                   contentLengthHeader, replyLength);
+        } else {
+
+            /*
+             * If none, see if we have Transfer-Encoding.
+             * For now, we support "chunked" encoding only.
+             */
+            header = Ns_SetIGet(httpPtr->replyHeaders, transferEncodingHeader);
+            if (header != NULL && Ns_Match(header, "chunked") != NULL) {
+                httpPtr->chunk->parsers = ChunkParsers;
+                Ns_Log(Ns_LogTaskDebug, "HttpCheckSpool: %s: %s",
+                       transferEncodingHeader, header);
+            }
         }
 
         /*
-         * See if we are handling compressed content
+         * See if we are handling compressed content.
+         * Turn-on auto-decompress if requested.
          */
         header = Ns_SetIGet(httpPtr->replyHeaders, contentEncodingHeader);
-        if (header != NULL && strncmp("gzip", header, 4u) == 0) {
+        if (header != NULL && Ns_Match(header, "gzip") != NULL) {
             httpPtr->flags |= NS_HTTP_FLAG_GZIP_ENCODING;
-            if ((httpPtr->flags & NS_HTTP_FLAG_GUNZIP) == NS_HTTP_FLAG_GUNZIP) {
+            if ((httpPtr->flags & NS_HTTP_FLAG_GUNZIP) != 0u) {
                 httpPtr->compress = ns_calloc(1u, sizeof(Ns_CompressStream));
                 (void) Ns_InflateInit(httpPtr->compress);
+                Ns_Log(Ns_LogTaskDebug, "HttpCheckSpool: %s: %s",
+                       contentEncodingHeader, header);
             }
         }
 
         Ns_MutexLock(&httpPtr->lock);
+        httpPtr->contentLength = 0;
         httpPtr->replyLength = (size_t)replyLength;
         Ns_MutexUnlock(&httpPtr->lock);
 
         /*
          * See if we need to spool the response content
-         * to disk or leave it in the memory.
-         * In some cases, remote simply forgets to set
-         * correct content-length, in which case we
-         * slurp all the incoming content in file/channel.
+         * to file/channel or leave it in the memory.
          */
         if (httpPtr->spoolLimit > -1
             && (replyLength == 0 || replyLength >= httpPtr->spoolLimit)) {
@@ -1716,53 +1809,26 @@ HttpCheckSpool(
         }
     }
 
-    /*
-     * This (part of) content should now be treated accordingly
-     * since we now know where to put it (spool file, channel).
-     */
     if (result == NS_OK) {
         size_t cSize = 0;
 
         cSize = (size_t)(httpPtr->ds.length - httpPtr->replyHeaderSize);
-        assert(cSize < CHUNK_SIZE);
-
         if (cSize > 0) {
-            char *cData = NULL;
+            char buf[CHUNK_SIZE], *cData = NULL;
 
+            /*
+             * There is (a part of the) content, past headers.
+             * At this point, it is important to note that we may
+             * be encountering chunked or compressed content...
+             * Hence we copy this part into the private buffer,
+             * erase it from the memory and let the HttpAppendContent
+             * do the "right thing".
+             */
             cData = httpPtr->ds.string + httpPtr->replyHeaderSize;
-
-            if (httpPtr->recvSpoolMode == NS_TRUE) {
-
-                /*
-                 * The content-part will be spooled into file
-                 * or channel, so pass it unchanged.
-                 */
-                if (HttpAppendBuffer(httpPtr, cData, cSize) != TCL_OK) {
-                    result = NS_ERROR;
-                }
-
-            } else if (httpPtr->compress != NULL) {
-                char buf[CHUNK_SIZE];
-
-                /*
-                 * Copy the content-part into our private buffer
-                 * because the HttpAppendBuffer will decompress.
-                 * Make sure to adjust the memory buffer prior
-                 * calling since we must place it right behind
-                 * the headers.
-                 */
-                memcpy(buf, cData, cSize);
-                Ns_DStringSetLength(&httpPtr->ds, httpPtr->replyHeaderSize);
-                if (HttpAppendBuffer(httpPtr, buf, cSize) != TCL_OK) {
-                    result = NS_ERROR;
-                }
-
-            } else {
-
-                /*
-                 * Do nothing, as the content is alreardy in
-                 * the memory, where it belongs.
-                 */
+            memcpy(buf, cData, cSize);
+            Ns_DStringSetLength(&httpPtr->ds, httpPtr->replyHeaderSize);
+            if (HttpAppendContent(httpPtr, buf, cSize) != TCL_OK) {
+                result = NS_ERROR;
             }
         }
     }
@@ -1948,6 +2014,7 @@ HttpConnect(
      * if something goes wrong, we must HttpClose().
      */
     httpPtr = ns_calloc(1u, sizeof(NsHttpTask));
+    httpPtr->chunk = ns_calloc(1u, sizeof(NsHttpChunk));
     httpPtr->bodyFileFd = NS_INVALID_FD;
     httpPtr->spoolFd = NS_INVALID_FD;
     httpPtr->spoolLimit = -1;
@@ -1964,7 +2031,8 @@ HttpConnect(
     }
 
     dsPtr = &httpPtr->ds;
-    Ns_DStringInit(dsPtr);
+    Tcl_DStringInit(&httpPtr->ds);
+    Tcl_DStringInit(&httpPtr->chunk->ds);
 
     Ns_MasterLock();
     requestCount = ++httpClientRequestCount;
@@ -2127,7 +2195,7 @@ HttpConnect(
         Ns_DStringNAppend(dsPtr, "/", 1);
     }
     Ns_DStringNAppend(dsPtr, tail, -1);
-    Ns_DStringNAppend(dsPtr, " HTTP/1.0\r\n", 11);
+    Ns_DStringNAppend(dsPtr, " HTTP/1.1\r\n", 11);
 
     /*
      * Add provided headers, remove headers we are providing explicitly,
@@ -2219,7 +2287,7 @@ HttpConnect(
         if (bodyObj != NULL) {
             int   bodyLen = 0;
             char *bodyStr = NULL;
-            bool  isbin = NS_FALSE;
+            bool  binary = NS_FALSE;
 
             /*
              * Append in-memory body to the requests string
@@ -2227,21 +2295,27 @@ HttpConnect(
              * We do not anticipate in-memory body to be
              * 2GB+ hence the signed int type suffices.
              */
-            isbin = NsTclObjIsByteArray(bodyObj);
-            if (isbin == NS_FALSE) {
+            binary = NsTclObjIsByteArray(bodyObj);
+            if (binary == NS_FALSE) {
                 if (contentType != NULL) {
-                    isbin = Ns_IsBinaryMimeType(contentType);
+
+                    /*
+                     * Caveat Emptor:
+                     * This call may return true even for
+                     * completely regular text formats.
+                     */
+                    binary = Ns_IsBinaryMimeType(contentType);
                 }
             }
-            if (isbin == NS_TRUE) {
+            if (binary == NS_TRUE) {
                 bodyStr = (char *)Tcl_GetByteArrayFromObj(bodyObj, &bodyLen);
             } else {
                 bodyStr = Tcl_GetStringFromObj(bodyObj, &bodyLen);
             }
 
             httpPtr->bodySize = (size_t)bodyLen;
-            Ns_DStringPrintf(dsPtr, "%s: %d\r\n\r\n",
-                             contentLengthHeader, bodyLen);
+            Ns_DStringPrintf(dsPtr, "%s: %d\r\n\r\n", contentLengthHeader,
+                             bodyLen);
 
             Ns_DStringNAppend(dsPtr, bodyStr, bodyLen);
 
@@ -2281,8 +2355,7 @@ HttpConnect(
  *
  * HttpAppendRawBuffer --
  *
- *        Append data (w/o compression) to a spool file
- *        or to a Tcl channel or to memory.
+ *        Append data to a spool file, a Tcl channel or memory.
  *
  * Results:
  *        Tcl result code.
@@ -2314,8 +2387,8 @@ HttpAppendRawBuffer(
             written = -1;
         }
     } else {
-        written = (ssize_t)size;
         Tcl_DStringAppend(&httpPtr->ds, buffer, (int)size);
+        written = (ssize_t)size;
     }
 
     if (written > -1) {
@@ -2341,7 +2414,7 @@ HttpAppendRawBuffer(
  *        Tcl result code
  *
  * Side effects:
- *        May uncompress passed data buffer.
+ *        May uncompress datat in the passed buffer.
  *
  *----------------------------------------------------------------------
  */
@@ -2352,7 +2425,8 @@ HttpAppendBuffer(
     const char *buffer,
     size_t size
 ) {
-    int result = TCL_OK;
+    int    result = TCL_OK;
+    size_t contentLength = 0u;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(buffer != NULL);
@@ -2360,12 +2434,15 @@ HttpAppendBuffer(
     Ns_Log(Ns_LogTaskDebug, "HttpAppendBuffer: got: %" PRIdz " bytes flags:%.6x",
            size, httpPtr->flags);
 
-    if (likely(httpPtr->compress == NULL)) {
+    if (likely((httpPtr->flags & NS_HTTP_FLAG_GUNZIP) == 0u)) {
 
         /*
          * Output raw content
          */
         result = HttpAppendRawBuffer(httpPtr, buffer, size);
+        if (result == TCL_OK) {
+            contentLength = size;
+        }
 
     } else {
         char out[CHUNK_SIZE];
@@ -2373,14 +2450,16 @@ HttpAppendBuffer(
         out[0] = '\0';
 
         /*
-         * Output decompressed content
+         * Decompress content
          */
         (void) Ns_InflateBufferInit(httpPtr->compress, buffer, size);
         do {
             size_t ul = 0u;
 
             result = Ns_InflateBuffer(httpPtr->compress, out, CHUNK_SIZE, &ul);
-            if (HttpAppendRawBuffer(httpPtr, out, ul) != TCL_OK) {
+            if (HttpAppendRawBuffer(httpPtr, out, ul) == TCL_OK) {
+                contentLength += ul;
+            } else {
                 result = TCL_ERROR;
             }
         } while(result == TCL_CONTINUE);
@@ -2392,14 +2471,109 @@ HttpAppendBuffer(
             /*
              * Headers and status have been parsed so all the
              * data coming from this point are counted up as
-             * being the reply body/content. We calculate this
-             * number as to be able to check when we have
-             * received so much data as content-length implied.
+             * being the (uncompressed, decoded) reply content.
              */
             Ns_MutexLock(&httpPtr->lock);
+            httpPtr->contentLength += contentLength;
             httpPtr->replySize += size;
             Ns_MutexUnlock(&httpPtr->lock);
         }
+    }
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HttpAppendContent
+ *
+ *        Append reply content to where it belongs,
+ *        potentially decoding the chunked reply format.
+ *
+ * Results:
+ *        Tcl result code
+ *
+ * Side effects:
+ *        None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+HttpAppendContent(
+    NsHttpTask *httpPtr,
+    const char *buffer,
+    size_t size
+) {
+    int          result = TCL_OK;
+    NsHttpChunk *chunkPtr = NULL;
+
+    NS_NONNULL_ASSERT(httpPtr != NULL);
+    chunkPtr = httpPtr->chunk;
+    NS_NONNULL_ASSERT(chunkPtr != NULL);
+
+    if (chunkPtr->parsers == NULL) {
+        result = HttpAppendBuffer(httpPtr, buffer, size);
+    } else {
+        result = HttpAppendChunked(httpPtr, buffer, size);
+    }
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HttpAppendChunked
+ *
+ *        Parse chunked content.
+ *
+ * Results:
+ *        Tcl result code
+ *
+ * Side effects:
+ *        None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+HttpAppendChunked(
+    NsHttpTask *httpPtr,
+    const char *buffer,
+    size_t size
+) {
+    int          result = TCL_OK;
+    char        *buf = (char *)buffer;
+    size_t       len = size;
+    NsHttpChunk *chunkPtr = NULL;
+
+    NS_NONNULL_ASSERT(httpPtr != NULL);
+    chunkPtr = httpPtr->chunk;
+    NS_NONNULL_ASSERT(chunkPtr != NULL);
+
+    while (len > 0 && result != TCL_ERROR) {
+        NsHttpParseProc *parseProcPtr = NULL;
+
+        parseProcPtr = *(chunkPtr->parsers + chunkPtr->callx);
+        while (len > 0 && parseProcPtr != NULL) {
+            result = (*parseProcPtr)(httpPtr, &buf, &len);
+            if (result != TCL_OK) {
+                break;
+            }
+            chunkPtr->callx++;
+            parseProcPtr = *(chunkPtr->parsers + chunkPtr->callx);
+        }
+        if (parseProcPtr == NULL) {
+            chunkPtr->callx = 0;
+        }
+    }
+
+    if (result != TCL_ERROR) {
+        result = TCL_OK;
     }
 
     return result;
@@ -2479,6 +2653,11 @@ HttpClose(
     ns_free((void *)httpPtr->url);
     Ns_MutexDestroy(&httpPtr->lock); /* Should not be held locked here! */
     Tcl_DStringFree(&httpPtr->ds);
+
+    if (httpPtr->chunk != NULL) {
+        Tcl_DStringFree(&httpPtr->chunk->ds);
+        ns_free((void *)httpPtr->chunk);
+    }
 
     ns_free((void *)httpPtr);
 }
@@ -3072,8 +3251,10 @@ HttpProc(
                 ssize_t extraSize = 0;
 
                 /*
-                 * Most likely case, we got some bytes.
-                 * Watch: read up to content-length.
+                 * Most likely case: we got some bytes.
+                 * For non-chunked content, read only
+                 * up to the replyLength (== Content-Length)
+                 * and discard the (eventual) extra data.
                  */
                 if (httpPtr->replyLength > 0) {
                     extraSize = (ssize_t)(httpPtr->replySize - httpPtr->replyLength) + n;
@@ -3084,7 +3265,7 @@ HttpProc(
                 Ns_MutexLock(&httpPtr->lock);
                 httpPtr->received += (size_t)n;
                 Ns_MutexUnlock(&httpPtr->lock);
-                result = HttpAppendBuffer(httpPtr, buf, (size_t)n);
+                result = HttpAppendContent(httpPtr, buf, (size_t)n);
                 if (unlikely(result != TCL_OK)) {
                     httpPtr->error = "recv failed";
                     Ns_Log(Warning, "HttpProc: NS_SOCK_READ append failed");
@@ -3364,6 +3545,369 @@ HttpCutChannel(
     }
 
     return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseCProcR --
+ *
+ *        Handler for chunked-encoding state machine that parses
+ *        the chunk framing element CR.
+ *
+ * Results:
+ *        TCL_OK: CR element parsed OK
+ *        TCL_ERROR: error in chunked format
+ *
+ * Side effects:
+ *        None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ParseCRProc(
+    NsHttpTask *UNUSED(httpPtr),
+    char **buffer,
+    size_t *size
+) {
+    char  *buf = *buffer;
+    int    result = TCL_OK;
+    size_t len = *size;
+
+    if (*(buf) == '\r') {
+        len--;
+        buf++;
+    } else if (len > 0) {
+        result = TCL_ERROR;
+    }
+
+    if (result != TCL_ERROR) {
+        *buffer = buf;
+        *size = len;
+    }
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseLFProc
+ *
+ *        Handler for chunked-encoding state machine that parses
+ *        the chunk framing element LF.
+ *
+ * Results:
+ *        TCL_OK: CR element parsed OK
+ *        TCL_ERROR: error in chunked format
+ *
+ * Side effects:
+ *        None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ParseLFProc(
+    NsHttpTask *UNUSED(httpPtr),
+    char **buffer,
+    size_t *size
+) {
+    char  *buf  = *buffer;
+    int    result = TCL_OK;
+    size_t len = *size;
+
+    if (*(buf) == '\n') {
+        len--;
+        buf++;
+    } else if (len > 0) {
+        result = TCL_ERROR;
+    }
+
+    if (result != TCL_ERROR) {
+        *buffer = buf;
+        *size = len;
+    }
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseLengthProc --
+ *
+ *        Handler for chunked-encoding state machine that parses
+ *        the chunk length/size element.
+ *
+ * Results:
+ *        TCL_OK: size element parsed OK
+ *        TCL_ERROR: error in chunked format
+ *
+ * Side effects:
+ *        None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ParseLengthProc(
+    NsHttpTask *httpPtr,
+    char **buffer,
+    size_t *size
+) {
+    char        *buf = *buffer;
+    int          result = TCL_OK;
+    size_t       len = *size;
+    NsHttpChunk *chunkPtr = httpPtr->chunk;
+    Tcl_DString *dsPtr = &chunkPtr->ds;
+
+    /*
+     * Collect all that looks as a hex digit
+     */
+    while (len > 0 && *(buf) > 0 && isxdigit(*(buf))) {
+        Tcl_DStringAppend(dsPtr, buf, 1);
+        len--;
+        buf++;
+    }
+
+    if (len > 0) {
+        Tcl_WideInt cl = 0;
+        if (Ns_StrToWideInt(dsPtr->string, &cl) != NS_OK || cl < 0) {
+            result = TCL_ERROR;
+        } else {
+            chunkPtr->length = (size_t)cl;
+
+            /*
+             * According to the RFC, the chunk size may be followed
+             * by a variable number of chunk extensions, separated
+             * by a semicolon up to the terminating frame delimiter.
+             * For the time being, we simply discard extensions.
+             * We might possibly declare a special parser proc for this.
+             */
+            while (len > 0 && *(buf) > 0 && *(buf) != '\r') {
+                len--;
+                buf++;
+            }
+        }
+    }
+
+    if (result != TCL_ERROR) {
+        *buffer = buf;
+        *size = len;
+    }
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseBodyProc --
+ *
+ *        Handler for chunked-encoding state machine that parses
+ *        the chunk body.
+ *
+ * Results:
+ *        TCL_OK: body parsed OK
+ *        TCL_ERROR: error in chunked format
+ *        TCL_BREAK: stop/reset state machine (last chunk encountered)
+ *
+ * Side effects:
+ *        May change state of the parsing state machine.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ParseBodyProc(
+    NsHttpTask *httpPtr,
+    char **buffer,
+    size_t *size
+) {
+    char        *buf = *buffer;
+    int          result = TCL_OK;
+    size_t       len = *size;
+    NsHttpChunk *chunkPtr = httpPtr->chunk;
+
+    if (chunkPtr->length == 0) {
+        Ns_Set *headersPtr = NULL;
+        char *trailer = NULL;
+
+        /*
+         * We are on the last chunk. Check if we will get some
+         * trailers and switch the state accordingly.
+         */
+        headersPtr = httpPtr->replyHeaders;
+        trailer = Ns_SetIGet(headersPtr, trailersHeader);
+        if (trailer != NULL) {
+            chunkPtr->parsers = TrailerParsers;
+        } else {
+            chunkPtr->parsers = EndParsers;
+        }
+
+        chunkPtr->callx = 0;
+        result = TCL_BREAK;
+
+    } else if (len > 0) {
+        size_t remain = 0u, append = 0u;
+
+        remain = chunkPtr->length - chunkPtr->got;
+        append = remain < len ? remain : len;
+
+        if (append > 0) {
+            HttpAppendBuffer(httpPtr, (const char*)buf, append);
+            chunkPtr->got += append;
+            len -= append;
+            buf += append;
+        }
+    }
+
+    if (result != TCL_ERROR) {
+        *buffer = buf;
+        *size = len;
+    }
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseTrailerProc --
+ *
+ *        Handler for chunked-encoding state machine that parses
+ *        optional trailers. Trailers look like regular headers
+ *        (string)(crlf).
+ *
+ *
+ * Results:
+ *        TCL_OK: trailer parsed OK
+ *        TCL_ERROR: error in chunked format
+ *        TCL_BREAK: stop state machine, last trailer encountered
+ *
+ * Side effects:
+ *        None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ParseTrailerProc(
+    NsHttpTask *httpPtr,
+    char **buffer,
+    size_t *size
+) {
+    char        *buf = *buffer;
+    int          result = TCL_OK;
+    size_t       len = *size;
+    NsHttpChunk *chunkPtr = httpPtr->chunk;
+    Tcl_DString *dsPtr = &chunkPtr->ds;
+
+    while (len > 0 && *(buf) > 0 && *(buf) != '\r') {
+        Tcl_DStringAppend(dsPtr, buf, 1);
+        len--;
+        buf++;
+    }
+
+    if (*(buf) == '\r') {
+        if (dsPtr->length == 0) {
+            chunkPtr->parsers = EndParsers;
+            chunkPtr->callx = 0;
+            result = TCL_BREAK;
+        } else {
+            Ns_Set *headersPtr = NULL;
+            char   *trailer = NULL;
+
+            headersPtr = httpPtr->replyHeaders;
+            trailer = dsPtr->string;
+            if (Ns_ParseHeader(headersPtr, trailer, ToLower) != NS_OK) {
+                result = TCL_ERROR;
+            }
+        }
+    } else if (len > 0) {
+        result = TCL_ERROR;
+    }
+
+    if (result != TCL_ERROR) {
+        *buffer = buf;
+        *size = len;
+    }
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ChunkInitProc --
+ *
+ *        Handler for chunked-encoding state machine that initializes
+ *        chunk parsing state.
+ *
+ * Results:
+ *        TCL_OK
+ *
+ * Side effects:
+ *        None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ChunkInitProc(
+    NsHttpTask *httpPtr,
+    char **UNUSED(buffer),
+    size_t *UNUSED(size)
+) {
+    NsHttpChunk *chunkPtr = httpPtr->chunk;
+    Tcl_DString *dsPtr = &chunkPtr->ds;
+
+    chunkPtr->length = 0;
+    chunkPtr->got = 0;
+    Tcl_DStringTrunc(dsPtr, 0);
+    Tcl_DStringAppend(dsPtr, "0x", 2);
+
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TrailerInitProc --
+ *
+ *        Handler for chunked-encoding state machine that initializes
+ *        trailers parsing
+ *
+ * Results:
+ *        TCL_OK always
+ *
+ * Side effects:
+ *        None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TrailerInitProc(
+    NsHttpTask *httpPtr,
+    char **UNUSED(buffer),
+    size_t *UNUSED(size)
+) {
+    NsHttpChunk *chunkPtr = httpPtr->chunk;
+    Tcl_DString *dsPtr = &chunkPtr->ds;
+
+    Tcl_DStringTrunc(dsPtr, 0);
+
+    return TCL_OK;
 }
 
 /*
