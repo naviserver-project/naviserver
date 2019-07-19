@@ -589,12 +589,14 @@ test tclresp-12.4 {
 } -constraints serverListen -setup {
 
     ns_register_proc GET /tclresp {
+        ns_logctl severity Debug(task) on
         ns_headers 200
         eval ns_write [split [string repeat x 750][string repeat y 750][string repeat z 750] ""]
     }
 } -body {
     nstest::http -getbody 1 GET /tclresp
 } -cleanup {
+    ns_logctl severity Debug(task) off
     ns_unregister_op GET /tclresp
 } -result "200 [string repeat x 750][string repeat y 750][string repeat z 750]"
 

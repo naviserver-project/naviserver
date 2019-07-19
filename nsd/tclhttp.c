@@ -2555,12 +2555,18 @@ HttpAppendChunked(
     chunkPtr = httpPtr->chunk;
     NS_NONNULL_ASSERT(chunkPtr != NULL);
 
+    Ns_Log(Ns_LogTaskDebug, "HttpAppendChunked free httpPtr:%p, task:%p",
+           (void*)httpPtr, (void*)httpPtr->task);
+
     while (len > 0 && result != TCL_ERROR) {
         NsHttpParseProc *parseProcPtr = NULL;
+
+        Ns_Log(Ns_LogTaskDebug, "... len %lu ", len);
 
         parseProcPtr = *(chunkPtr->parsers + chunkPtr->callx);
         while (len > 0 && parseProcPtr != NULL) {
             result = (*parseProcPtr)(httpPtr, &buf, &len);
+            Ns_Log(Ns_LogTaskDebug, "... parseproc %p returns %d ", (void*)parseProcPtr, result);
             if (result != TCL_OK) {
                 break;
             }
@@ -3576,6 +3582,8 @@ ParseCRProc(
     int    result = TCL_OK;
     size_t len = *size;
 
+    Ns_Log(Ns_LogTaskDebug, "--- ParseCRProc char %c len %lu", *buf, len);
+
     if (*(buf) == '\r') {
         len--;
         buf++;
@@ -3619,6 +3627,8 @@ ParseLFProc(
     char  *buf  = *buffer;
     int    result = TCL_OK;
     size_t len = *size;
+
+    Ns_Log(Ns_LogTaskDebug, "--- ParseLFProc");
 
     if (*(buf) == '\n') {
         len--;
@@ -3665,6 +3675,8 @@ ParseLengthProc(
     size_t       len = *size;
     NsHttpChunk *chunkPtr = httpPtr->chunk;
     Tcl_DString *dsPtr = &chunkPtr->ds;
+
+    Ns_Log(Ns_LogTaskDebug, "--- ParseLengthProc");
 
     /*
      * Collect all that looks as a hex digit
@@ -3734,6 +3746,8 @@ ParseBodyProc(
     int          result = TCL_OK;
     size_t       len = *size;
     NsHttpChunk *chunkPtr = httpPtr->chunk;
+
+    Ns_Log(Ns_LogTaskDebug, "--- ParseBodyProc");
 
     if (chunkPtr->length == 0) {
         Ns_Set *headersPtr = NULL;
@@ -3869,6 +3883,8 @@ ChunkInitProc(
 ) {
     NsHttpChunk *chunkPtr = httpPtr->chunk;
     Tcl_DString *dsPtr = &chunkPtr->ds;
+
+    Ns_Log(Ns_LogTaskDebug, "--- ChunkInitProc");
 
     chunkPtr->length = 0;
     chunkPtr->got = 0;
