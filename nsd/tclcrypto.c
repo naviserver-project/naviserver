@@ -127,8 +127,9 @@ static const char * const mdCtxType  = "ns:mdctx";
 static const char * const hmacCtxType  = "ns:hmacctx";
 
 static Ns_ObjvValueRange posIntRange0 = {0, INT_MAX};
+# ifdef HAVE_OPENSSL_3
 static Ns_ObjvValueRange posIntRange1 = {1, INT_MAX};
-
+# endif
 /*
  *----------------------------------------------------------------------
  *

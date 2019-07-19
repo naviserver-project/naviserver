@@ -75,7 +75,7 @@
 #  define HAVE_OPENSSL_PRE_1_0
 # endif
 
-# if OPENSSL_VERSION_MAJOR >= 3
+# if defined(OPENSSL_VERSION_MAJOR) && OPENSSL_VERSION_MAJOR >= 3
 #  define HAVE_OPENSSL_3 1
 # endif
 
