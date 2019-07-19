@@ -1051,8 +1051,11 @@ typedef struct NsInterp {
 
 
 /*
- * Structure handling HTTP tasks
+ * Structures handling HTTP tasks
  */
+
+struct _NsHttpChunk;
+
 typedef struct {
     Ns_Task           *task;             /* Task handle */
     NS_SOCKET          sock;             /* socket to the remote peer */
@@ -1063,6 +1066,7 @@ typedef struct {
     size_t             requestLength;    /* size of the request */
     size_t             sent;             /* amount of data sent */
     size_t             replyLength;      /* content-length of the reply */
+    size_t             contentLength;    /* replyLength uncopressed */
     size_t             replySize;        /* amount of content received */
     size_t             received;         /* amount data received */
     int                replyHeaderSize;  /* size of response/headers */
@@ -1088,7 +1092,21 @@ typedef struct {
     NS_TLS_SSL_CTX    *ctx;              /* SSL context handle */
     NS_TLS_SSL        *ssl;              /* SSL connection handle */
     Tcl_DString        ds;               /* for assembling request string */
+    struct _NsHttpChunk *chunk;          /* for parsing chunked encodings */
 } NsHttpTask;
+
+/*
+ * Callback for the Http chunked-encoding parse state machine
+ */
+typedef int (NsHttpParseProc)(NsHttpTask*, char**, size_t*);
+
+typedef struct _NsHttpChunk {
+    size_t             length;           /* Length of the chunk */
+    size_t             got;              /* Received so many chunk bytes */
+    Tcl_DString        ds;               /* For various parsing purposes */
+    int                callx;            /* Next state-machine parser */
+    NsHttpParseProc  **parsers;          /* Array of chunked encoding parsers */
+} NsHttpChunk;
 
 #define NS_HTTP_FLAG_DECOMPRESS    0x0001u
 #define NS_HTTP_FLAG_GZIP_ENCODING 0x0002u
@@ -1399,7 +1417,7 @@ NsUrlSpaceContextSpecNew(const char *field, const char *patternString)
 NS_EXTERN const char *
 NsUrlSpaceContextSpecAppend(Tcl_DString *dsPtr, NsUrlSpaceContextSpec *spec)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-    
+
 NS_EXTERN NsUrlSpaceContextFilterProc NsUrlSpaceContextFilter;
 
 /*
