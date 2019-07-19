@@ -1658,6 +1658,24 @@ NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 
 
 # ifdef HAVE_OPENSSL_3
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsCryptoScryptObjCmd --
+ *
+ *      Compute a "password hash" using the scrypt Password-Based
+ *      Key Derivation Function (RFC 7914) as defined in OpenSSL 3
+ *
+ *      Implementation of ::ns_crypto::scrypt
+ *
+ * Results:
+ *      Tcl result code
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
 int
 NsCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
