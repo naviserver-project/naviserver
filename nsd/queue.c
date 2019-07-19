@@ -69,6 +69,17 @@ static int ServerMinThreadsObjCmd(ClientData clientData, Tcl_Interp *interp, int
                                   ConnPool *poolPtr, int nargs)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
+
+static int ServerConnectionRateLimitObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv,
+                                           ConnPool *poolPtr, int nargs)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+
+
+static int ServerPoolRateLimitObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv,
+                                     ConnPool *poolPtr, int nargs)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+
+
 static int ServerMapObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv,
                            NsServer  *servPtr, ConnPool *poolPtr, int nargs)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
@@ -96,9 +107,12 @@ static int ServerListQueuedCmd(Tcl_DString *dsPtr, Tcl_Interp *interp, int objc,
 
 static void ServerListActive(Tcl_DString *dsPtr, ConnPool *poolPtr, bool checkforproxy)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 static void ServerListQueued(Tcl_DString *dsPtr, ConnPool *poolPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static int SetPoolAttribute(Tcl_Interp *interp, int nargs, ConnPool *poolPtr, int *valuePtr, int value)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 static Ns_ArgProc WalkCallback;
 
@@ -681,6 +695,41 @@ WalkCallback(Ns_DString *dsPtr, const void *arg)
 /*
  *----------------------------------------------------------------------
  *
+ * SetPoolAttribute --
+ *
+ *    Helper function to factor out common code when modifying integer
+ *    attributes in the pools structure.
+ *
+ * Results:
+ *    Tcl result.
+ *
+ * Side effects:
+ *    Sets interp result.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+SetPoolAttribute(Tcl_Interp *interp, int nargs, ConnPool *poolPtr, int *valuePtr, int value) {
+
+    if (nargs == 1) {
+        Ns_MutexLock(&poolPtr->threads.lock);
+        *valuePtr = value;
+        Ns_MutexUnlock(&poolPtr->threads.lock);
+    } else {
+        /*
+         * Called without an argument, just return the current setting.
+         */
+        assert(nargs == 0);
+    }
+
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(*valuePtr));
+    return TCL_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ServerMaxThreadsObjCmd, subcommand of NsTclServerObjCmd --
  *
  *    Implements the "ns_server ... maxthreads ..." command.
@@ -693,6 +742,7 @@ WalkCallback(Ns_DString *dsPtr, const void *arg)
  *
  *----------------------------------------------------------------------
  */
+
 static int
 ServerMaxThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv,
                        ConnPool *poolPtr, int nargs)
@@ -710,19 +760,8 @@ ServerMaxThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
 
     if (Ns_ParseObjv(NULL, args, interp, objc-nargs, objc, objv) != NS_OK) {
         result = TCL_ERROR;
-    } else if (nargs == 1) {
-        Ns_MutexLock(&poolPtr->threads.lock);
-        poolPtr->threads.max = value;
-        Ns_MutexUnlock(&poolPtr->threads.lock);
     } else {
-        /*
-         * Called without an argument, just return the current setting.
-         */
-        assert(nargs == 0);
-    }
-
-    if (result == TCL_OK) {
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->threads.max));
+        result = SetPoolAttribute(interp, nargs, poolPtr, &poolPtr->threads.max, value);
     }
     return result;
 }
@@ -760,19 +799,53 @@ ServerMinThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
 
     if (Ns_ParseObjv(NULL, args, interp, objc-nargs, objc, objv) != NS_OK) {
         result = TCL_ERROR;
-    } else if (nargs == 1) {
-        Ns_MutexLock(&poolPtr->threads.lock);
-        poolPtr->threads.min = value;
-        Ns_MutexUnlock(&poolPtr->threads.lock);
     } else {
-        /*
-         * Called without an argument, just return the current setting.
-         */
-        assert(nargs == 0);
+        result = SetPoolAttribute(interp, nargs, poolPtr, &poolPtr->threads.min, value);
     }
+    return result;
+}
 
-    if (result == TCL_OK) {
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->threads.min));
+static int
+ServerPoolRateLimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv,
+                       ConnPool *poolPtr, int nargs)
+{
+    int               result = TCL_OK, value = 0;
+    Ns_ObjvValueRange range = {1, poolPtr->threads.max};
+    Ns_ObjvSpec       args[] = {
+        {"?poolratelimit", Ns_ObjvInt, &value, &range},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(objv != NULL);
+    NS_NONNULL_ASSERT(poolPtr != NULL);
+
+    if (Ns_ParseObjv(NULL, args, interp, objc-nargs, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        result = SetPoolAttribute(interp, nargs, poolPtr, &poolPtr->rate.poolLimit, value);
+    }
+    return result;
+}
+static int
+ServerConnectionRateLimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv,
+                                ConnPool *poolPtr, int nargs)
+{
+    int               result = TCL_OK, value = 0;
+    Ns_ObjvValueRange range = {1, poolPtr->threads.max};
+    Ns_ObjvSpec       args[] = {
+        {"?connectionratelimit", Ns_ObjvInt, &value, &range},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(objv != NULL);
+    NS_NONNULL_ASSERT(poolPtr != NULL);
+
+    if (Ns_ParseObjv(NULL, args, interp, objc-nargs, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        result = SetPoolAttribute(interp, nargs, poolPtr, &poolPtr->rate.defaultConnectionLimit, value);
     }
     return result;
 }
@@ -1287,12 +1360,14 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
     Tcl_DString     ds, *dsPtr = &ds;
 
     enum {
-        SActiveIdx, SAllIdx, SConnectionsIdx,
+        SActiveIdx, SAllIdx,
+        SConnectionsIdx, SConnectionRateLimitIdx,
         SFiltersIdx,
         SKeepaliveIdx,
         SMapIdx, SMappedIdx,
         SMaxthreadsIdx, SMinthreadsIdx,
-        SPagedirIdx, SPoolsIdx, SQueuedIdx,
+        SPagedirIdx, SPoolRateLimitIdx, SPoolsIdx,
+        SQueuedIdx,
         SRequestprocsIdx,
         SServerdirIdx, SStatsIdx,
         STcllibIdx, SThreadsIdx, STracesIdx,
@@ -1301,28 +1376,30 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
     };
 
     static Ns_ObjvTable subcmds[] = {
-        {"active",       (unsigned int)SActiveIdx},
-        {"all",          (unsigned int)SAllIdx},
-        {"connections",  (unsigned int)SConnectionsIdx},
-        {"filters",      (unsigned int)SFiltersIdx},
-        {"keepalive",    (unsigned int)SKeepaliveIdx},
-        {"map",          (unsigned int)SMapIdx},
-        {"mapped",       (unsigned int)SMappedIdx},
-        {"maxthreads",   (unsigned int)SMaxthreadsIdx},
-        {"minthreads",   (unsigned int)SMinthreadsIdx},
-        {"pagedir",      (unsigned int)SPagedirIdx},
-        {"pools",        (unsigned int)SPoolsIdx},
-        {"queued",       (unsigned int)SQueuedIdx},
-        {"requestprocs", (unsigned int)SRequestprocsIdx},
-        {"serverdir",    (unsigned int)SServerdirIdx},
-        {"stats",        (unsigned int)SStatsIdx},
-        {"tcllib",       (unsigned int)STcllibIdx},
-        {"threads",      (unsigned int)SThreadsIdx},
-        {"traces",       (unsigned int)STracesIdx},
-        {"unmap",        (unsigned int)SUnmapIdx},
-        {"url2file",     (unsigned int)SUrl2fileIdx},
-        {"waiting",      (unsigned int)SWaitingIdx},
-        {NULL,           0u}
+        {"active",              (unsigned int)SActiveIdx},
+        {"all",                 (unsigned int)SAllIdx},
+        {"connectionratelimit", (unsigned int)SConnectionRateLimitIdx},
+        {"connections",         (unsigned int)SConnectionsIdx},
+        {"filters",             (unsigned int)SFiltersIdx},
+        {"keepalive",           (unsigned int)SKeepaliveIdx},
+        {"map",                 (unsigned int)SMapIdx},
+        {"mapped",              (unsigned int)SMappedIdx},
+        {"maxthreads",          (unsigned int)SMaxthreadsIdx},
+        {"minthreads",          (unsigned int)SMinthreadsIdx},
+        {"pagedir",             (unsigned int)SPagedirIdx},
+        {"poolratelimit",       (unsigned int)SPoolRateLimitIdx},
+        {"pools",               (unsigned int)SPoolsIdx},
+        {"queued",              (unsigned int)SQueuedIdx},
+        {"requestprocs",        (unsigned int)SRequestprocsIdx},
+        {"serverdir",           (unsigned int)SServerdirIdx},
+        {"stats",               (unsigned int)SStatsIdx},
+        {"tcllib",              (unsigned int)STcllibIdx},
+        {"threads",             (unsigned int)SThreadsIdx},
+        {"traces",              (unsigned int)STracesIdx},
+        {"unmap",               (unsigned int)SUnmapIdx},
+        {"url2file",            (unsigned int)SUrl2fileIdx},
+        {"waiting",             (unsigned int)SWaitingIdx},
+        {NULL,                  0u}
     };
     Ns_ObjvSpec opts[] = {
         {"-server", Ns_ObjvServer,  &servPtr, NULL},
@@ -1471,6 +1548,14 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
     case SMaxthreadsIdx:
         result = ServerMaxThreadsObjCmd(clientData, interp, objc, objv, poolPtr, nargs);
+        break;
+
+    case SPoolRateLimitIdx:
+        result = ServerPoolRateLimitObjCmd(clientData, interp, objc, objv, poolPtr, nargs);
+        break;
+
+    case SConnectionRateLimitIdx:
+        result = ServerConnectionRateLimitObjCmd(clientData, interp, objc, objv, poolPtr, nargs);
         break;
 
     case SMinthreadsIdx:

@@ -149,8 +149,8 @@ ns_section "ns/server/default" {
     ns_param    threadtimeout       120   ;# default: 120; timeout for idle threads
     #ns_param   concurrentcreatethreshold 100 ;# default: 80; perform concurrent creates when queue is fully beyond this percentage
     ;# 100 is a conservative value, disabling concurrent creates
-    #ns_param    ratelimit       200    ;# 0; limit rate per connection to this amount (KB/s); 0 means unlimited
-    #ns_param    poolratelimit   200    ;# 0; limit rate for pool to this amount (KB/s); 0 means unlimited
+    #ns_param    connectionratelimit 200  ;# 0; limit rate per connection to this amount (KB/s); 0 means unlimited
+    #ns_param    poolratelimit       200  ;# 0; limit rate for pool to this amount (KB/s); 0 means unlimited
 
     # Extra server-specific response header fields
     #ns_param   extraheaders  {Referrer-Policy "strict-origin"}

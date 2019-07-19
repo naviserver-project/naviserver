@@ -84,7 +84,7 @@ altered in the section "ns/server/servername"
 [term maxthreads],
 [term minthreads],
 [term poolratelimit],
-[term ratelimit] and
+[term connectionratelimit] and
 [term threadtimeout]. See also
 [term "connection thread pools"].
 

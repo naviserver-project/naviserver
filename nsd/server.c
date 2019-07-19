@@ -443,7 +443,7 @@ CreatePool(NsServer *servPtr, const char *pool)
     poolPtr->threads.timeout =
         Ns_ConfigIntRange(path, "threadtimeout", 120, 0, INT_MAX);
     poolPtr->rate.defaultConnectionLimit =
-        Ns_ConfigIntRange(path, "ratelimit", -1, -1, INT_MAX);
+        Ns_ConfigIntRange(path, "connectionratelimit", -1, -1, INT_MAX);
     poolPtr->rate.poolLimit =
         Ns_ConfigIntRange(path, "poolratelimit", -1, -1, INT_MAX);
 

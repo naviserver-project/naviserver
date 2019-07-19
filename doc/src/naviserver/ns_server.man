@@ -165,6 +165,28 @@ and pool. The value must be between 1 and [arg maxthreads].
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[opt [option "-pool [arg p]"]] \
+	[cmd connectionratelimit] \
+	[opt [arg value]]]
+
+Query or set the maximum transmission rate per connection when data is sent via
+writer threads. The value is provided as KB/s. 0 means no rate limit.
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[opt [option "-pool [arg p]"]] \
+	[cmd poolratelimit] \
+	[opt [arg value]]]
+
+Query or set the maximum transmission rate for the pool when data is sent via
+writer threads. The value is provided as KB/s. 0 means no rate
+limit. When the pool rate limit is set, all connections in this pool
+are managed.
+
+
+
+[call [cmd  ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[opt [option "-pool [arg p]"]] \
 	[cmd stats]]
 
 Returns a list of attribute value pairs containing statistics for the
