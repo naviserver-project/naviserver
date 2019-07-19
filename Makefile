@@ -225,7 +225,7 @@ ifneq ($(OPENSSL_LIBS),)
 endif
 
 $(PEM_FILE):
-	openssl genrsa 1024 > host.key
+	openssl genrsa 2048 > host.key
 	openssl req -new -config $(SSLCONFIG) -x509 -nodes -sha1 -days 365 -key host.key > host.cert
 	cat host.cert host.key > server.pem
 	rm -rf host.cert host.key
