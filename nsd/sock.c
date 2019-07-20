@@ -1744,7 +1744,7 @@ SockSend(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
     memset(&msg, 0, sizeof(msg));
     msg.msg_iov = bufs;
     msg.msg_iovlen = (NS_MSG_IOVLEN_T)nbufs;
-    numBytes = sendmsg(sock, &msg, (int)flags);
+    numBytes = sendmsg(sock, &msg, (int)flags|MSG_NOSIGNAL);
 #endif
 
     if (numBytes == -1) {

@@ -536,6 +536,10 @@ typedef int ns_sockerrno_t;
 # define SOCK_CLOEXEC (0)
 #endif
 
+#ifndef MSG_NOSIGNAL
+# define MSG_NOSIGNAL 0
+#endif
+
 #if TCL_MAJOR_VERSION<8 && TCL_MINOR_VERSION<5
 # define NS_TCL_PRE85
 #endif
