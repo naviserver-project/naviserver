@@ -587,13 +587,13 @@ Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length,
 
     NS_NONNULL_ASSERT(buffer != NULL);
 
-    nwrote = ns_send(sock, buffer, length, 0);
+    nwrote = ns_send(sock, buffer, length, MSG_NOSIGNAL);
 
     if (unlikely(nwrote == -1)) {
         if (Retry(ns_sockerrno)) {
             if (Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_WRITE,
                                  timeoutPtr) == NS_OK) {
-                nwrote = ns_send(sock, buffer, length, 0);
+                nwrote = ns_send(sock, buffer, length, MSG_NOSIGNAL);
             }
         }
     }
