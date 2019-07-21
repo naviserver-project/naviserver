@@ -587,13 +587,13 @@ Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length,
 
     NS_NONNULL_ASSERT(buffer != NULL);
 
-    nwrote = ns_send(sock, buffer, length, MSG_NOSIGNAL);
+    nwrote = ns_send(sock, buffer, length, MSG_NOSIGNAL|MSG_DONTWAIT);
 
     if (unlikely(nwrote == -1)) {
         if (Retry(ns_sockerrno)) {
             if (Ns_SockTimedWait(sock, (unsigned int)NS_SOCK_WRITE,
                                  timeoutPtr) == NS_OK) {
-                nwrote = ns_send(sock, buffer, length, MSG_NOSIGNAL);
+                nwrote = ns_send(sock, buffer, length, MSG_NOSIGNAL|MSG_DONTWAIT);
             }
         }
     }
@@ -1742,7 +1742,7 @@ SockSend(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
     memset(&msg, 0, sizeof(msg));
     msg.msg_iov = bufs;
     msg.msg_iovlen = (NS_MSG_IOVLEN_T)nbufs;
-    numBytes = sendmsg(sock, &msg, (int)flags|MSG_NOSIGNAL);
+    numBytes = sendmsg(sock, &msg, (int)flags|MSG_NOSIGNAL|MSG_DONTWAIT);
 #endif
 
     if (numBytes == -1) {
