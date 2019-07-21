@@ -1421,8 +1421,7 @@ BindToSameFamily(struct sockaddr *saPtr, struct sockaddr *lsaPtr,
         sock = Ns_SockBind(lsaPtr, NS_FALSE);
         if (sock != NS_INVALID_SOCKET) {
 
-#if defined(__APPLE__) && defined(__MACH__)
-# if defined(MAC_OS_X_VERSION_10_13)
+#ifdef SO_NOSIGPIPE
             {
                 /*
                  * macOS High Sierra raises "Broken pipe: 13" errors
@@ -1437,7 +1436,6 @@ BindToSameFamily(struct sockaddr *saPtr, struct sockaddr *lsaPtr,
                 int set = 1;
                 setsockopt(sock, SOL_SOCKET, SO_NOSIGPIPE, (void *)&set, sizeof(int));
             }
-# endif
 #endif
         }
     }
