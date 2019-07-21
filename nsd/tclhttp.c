@@ -2566,7 +2566,7 @@ HttpAppendChunked(
         parseProcPtr = *(chunkPtr->parsers + chunkPtr->callx);
         while (len > 0 && parseProcPtr != NULL) {
             result = (*parseProcPtr)(httpPtr, &buf, &len);
-            Ns_Log(Ns_LogTaskDebug, "... parseproc %p returns %d ", (void*)parseProcPtr, result);
+            Ns_Log(Ns_LogTaskDebug, "... parseproc returns %d ", result);
             if (result != TCL_OK) {
                 break;
             }
