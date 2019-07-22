@@ -488,11 +488,16 @@ test byteranges-7.4 {Too Many non-contiguous ranges (more than NS_MAX_RANGES)} \
 # the config file. Make sure that caching is activated, and the
 # cachemaxentry is larger than 2048.
 #
-test byteranges-7.5a {larger byte ranges, no fd, writer} -constraints serverListen -body {
-    nstest::http -getbody 0 -setheaders {Range bytes=0-100,200-300,400-1300,1600-1699} \
-        -getheaders {Content-length Content-range Content-Type} \
-        GET /2048bytes
-} -result {206 1608 {} {multipart/byteranges; boundary=NaviServerNaviServerNaviServer}}
+test byteranges-7.5a {larger byte ranges, no fd, writer} -constraints serverListen \
+    -setup {
+        ns_logctl severity Debug(task) on
+    } -body {
+        nstest::http -getbody 0 -setheaders {Range bytes=0-100,200-300,400-1300,1600-1699} \
+            -getheaders {Content-length Content-range Content-Type} \
+            GET /2048bytes
+    } -cleanup {
+        ns_logctl severity Debug(task) off
+    } -result {206 1608 {} {multipart/byteranges; boundary=NaviServerNaviServerNaviServer}}
 
 #
 # The following test returns 4 bytes more than byteranges-7.5a, since
