@@ -3557,7 +3557,7 @@ HttpCutChannel(
 /*
  *----------------------------------------------------------------------
  *
- * ParseCProcR --
+ * ParseCRProc --
  *
  *        Handler for chunked-encoding state machine that parses
  *        the chunk framing element CR.
@@ -3565,6 +3565,7 @@ HttpCutChannel(
  * Results:
  *        TCL_OK: CR element parsed OK
  *        TCL_ERROR: error in chunked format
+ *        TCL_BREAK; not enough data (stop parsing but remain in state)
  *
  * Side effects:
  *        None.
@@ -3584,10 +3585,12 @@ ParseCRProc(
 
     Ns_Log(Ns_LogTaskDebug, "--- ParseCRProc char %c len %lu", *buf, len);
 
-    if (*(buf) == '\r') {
+    if (len == 0) {
+        result = TCL_BREAK;
+    } else if (*(buf) == '\r') {
         len--;
         buf++;
-    } else if (len > 0) {
+    } else {
         result = TCL_ERROR;
     }
 
@@ -3611,6 +3614,7 @@ ParseCRProc(
  * Results:
  *        TCL_OK: CR element parsed OK
  *        TCL_ERROR: error in chunked format
+ *        TCL_BREAK; not enough data (stop parsing but remain in state)
  *
  * Side effects:
  *        None.
@@ -3630,10 +3634,12 @@ ParseLFProc(
 
     Ns_Log(Ns_LogTaskDebug, "--- ParseLFProc");
 
-    if (*(buf) == '\n') {
+    if (len == 0) {
+        result = TCL_BREAK;
+    } else if (*(buf) == '\n') {
         len--;
         buf++;
-    } else if (len > 0) {
+    } else {
         result = TCL_ERROR;
     }
 
@@ -3657,6 +3663,7 @@ ParseLFProc(
  * Results:
  *        TCL_OK: size element parsed OK
  *        TCL_ERROR: error in chunked format
+ *        TCL_BREAK; not enough data (stop parsing but remain in state)
  *
  * Side effects:
  *        None.
@@ -3687,7 +3694,9 @@ ParseLengthProc(
         buf++;
     }
 
-    if (len > 0) {
+    if (len == 0) {
+        result = TCL_BREAK;
+    } else {
         Tcl_WideInt cl = 0;
         if (Ns_StrToWideInt(dsPtr->string, &cl) != NS_OK || cl < 0) {
             result = TCL_ERROR;
@@ -3697,7 +3706,7 @@ ParseLengthProc(
             /*
              * According to the RFC, the chunk size may be followed
              * by a variable number of chunk extensions, separated
-             * by a semicolon up to the terminating frame delimiter.
+             * by a semicolon, up to the terminating frame delimiter.
              * For the time being, we simply discard extensions.
              * We might possibly declare a special parser proc for this.
              */
@@ -3728,7 +3737,7 @@ ParseLengthProc(
  * Results:
  *        TCL_OK: body parsed OK
  *        TCL_ERROR: error in chunked format
- *        TCL_BREAK: stop/reset state machine (last chunk encountered)
+ *        TCL_BREAK: stop/reset state machine (no data or on last chunk)
  *
  * Side effects:
  *        May change state of the parsing state machine.
@@ -3768,7 +3777,9 @@ ParseBodyProc(
         chunkPtr->callx = 0;
         result = TCL_BREAK;
 
-    } else if (len > 0) {
+    } else if (len == 0) {
+        result = TCL_BREAK;
+    } else {
         size_t remain = 0u, append = 0u;
 
         remain = chunkPtr->length - chunkPtr->got;
@@ -3779,6 +3790,18 @@ ParseBodyProc(
             chunkPtr->got += append;
             len -= append;
             buf += append;
+            remain -= append;
+        }
+
+        if (remain > 0 && len == 0) {
+
+            /*
+             * Not enough data in the passed buffer to
+             * consume whole chunk, break state parsing
+             * but remain in the current state and go
+             * and get new blocks from the source.
+             */
+            result = TCL_BREAK;
         }
     }
 
@@ -3830,8 +3853,14 @@ ParseTrailerProc(
         buf++;
     }
 
-    if (*(buf) == '\r') {
+    if (len == 0) {
+        result = TCL_BREAK;
+    } else if (*(buf) == '\r') {
         if (dsPtr->length == 0) {
+
+            /*
+             * This was the last header (== o header, zero-size)
+             */
             chunkPtr->parsers = EndParsers;
             chunkPtr->callx = 0;
             result = TCL_BREAK;
@@ -3845,7 +3874,7 @@ ParseTrailerProc(
                 result = TCL_ERROR;
             }
         }
-    } else if (len > 0) {
+    } else {
         result = TCL_ERROR;
     }
 
