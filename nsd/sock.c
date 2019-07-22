@@ -680,7 +680,7 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
         result = NS_TIMEOUT;
     } else {
         Ns_Log(Debug, "Ns_SockTimedWait on sock %d errno %d <%s>",
-               errno, strerror(errno));
+               sock, errno, strerror(errno));
         result = NS_ERROR;
     }
 
