@@ -2431,7 +2431,7 @@ HttpAppendBuffer(
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(buffer != NULL);
 
-    Ns_Log(Ns_LogTaskDebug, "HttpAppendBuffer: got: %" PRIdz " bytes flags:%.6x",
+    Ns_Log(Ns_LogTaskDebug, "HttpAppendBuffer: got: %" PRIuz " bytes flags:%.6x",
            size, httpPtr->flags);
 
     if (likely((httpPtr->flags & NS_HTTP_FLAG_GUNZIP) == 0u)) {
@@ -3262,15 +3262,19 @@ HttpProc(
                  * up to the replyLength (== Content-Length)
                  * and discard the (eventual) extra data.
                  */
+                Ns_Log(Ns_LogTaskDebug,"NS_SOCK_READ Reply-Length %ld n %ld", httpPtr->replyLength, n);
+
                 if (httpPtr->replyLength > 0) {
                     extraSize = (ssize_t)(httpPtr->replySize - httpPtr->replyLength) + n;
                     if (extraSize > 0) {
                         n = (ssize_t)(httpPtr->replyLength - httpPtr->replySize);
+                        Ns_Log(Ns_LogTaskDebug,"NS_SOCK_READ Reply-Length %ld UPDATED n %ld", httpPtr->replyLength, n);
                     }
                 }
                 Ns_MutexLock(&httpPtr->lock);
                 httpPtr->received += (size_t)n;
                 Ns_MutexUnlock(&httpPtr->lock);
+                Ns_Log(Ns_LogTaskDebug, "NS_SOCK_READ calls HttpAppendContent with size %ld",n);
                 result = HttpAppendContent(httpPtr, buf, (size_t)n);
                 if (unlikely(result != TCL_OK)) {
                     httpPtr->error = "recv failed";
