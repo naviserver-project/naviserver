@@ -623,7 +623,7 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
 {
     int           n, msec = -1;
     struct pollfd pfd;
-    Ns_ReturnCode result;
+    Ns_ReturnCode result = NS_OK;
     short         requestedEvents, count = 0;
 
     if (timeoutPtr != NULL) {
@@ -654,26 +654,33 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
     };
 
     if (count > 1) {
-        Ns_Log(Warning, "Ns_SockTimedWait on sock %d tried %d times, returns n %d",
+        Ns_Log(Debug, "Ns_SockTimedWait on sock %d tried %d times, returns n %d",
                sock, count, n);
     }
 
     if (likely(n > 0)) {
         if ((pfd.revents & requestedEvents) == 0) {
-            socklen_t len = sizeof(errno);
-
-            getsockopt(sock, SOL_SOCKET, SO_ERROR, &errno, &len);
-            /*Ns_Log(Warning, "Ns_SockTimedWait on sock %d returns events %.4x (errno %d <%s>)",
-              sock, pfd.revents, errno, strerror(errno));*/
-
+            Ns_Log(Debug, "Ns_SockTimedWait on sock %d event mismatch, expected"
+                   " %.4x received %.4x", sock, requestedEvents, pfd.revents);
             result = NS_ERROR;
         } else {
-            result = NS_OK;
+            int       err = 0;
+            socklen_t len = sizeof(errno);
+
+            err = getsockopt(sock, SOL_SOCKET, SO_ERROR, &errno, &len);
+            if (err == -1 || errno != 0) {
+                Ns_Log(Debug, "Ns_SockTimedWait on sock %d received events"
+                       " %.4x, errno %d <%s>",
+                       sock, pfd.revents, errno, strerror(errno));
+
+                result = NS_ERROR;
+            }
         }
     } else if (n == 0) {
         result = NS_TIMEOUT;
     } else {
-        /*Ns_Log(Warning, "Ns_SockTimedWait on sock %d returns error", sock);*/
+        Ns_Log(Debug, "Ns_SockTimedWait on sock %d errno %d <%s>",
+               errno, strerror(errno));
         result = NS_ERROR;
     }
 
