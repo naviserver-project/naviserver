@@ -561,8 +561,8 @@ NsTclStrftimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     char             *fmt = (char *)"%c";
     Ns_ObjvValueRange range = {0, LONG_MAX};
     Ns_ObjvSpec  args[] = {
-        {"time", Ns_ObjvLong, &sec, &range},
-        {"?fmt", Ns_ObjvInt,  &fmt, NULL},
+        {"time", Ns_ObjvLong,   &sec, &range},
+        {"?fmt", Ns_ObjvString, &fmt, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
