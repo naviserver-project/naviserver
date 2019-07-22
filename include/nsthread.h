@@ -332,6 +332,13 @@ struct pollfd {
 # endif
 
 /*
+ * Provide compatibility for MSG_DONTWAIT
+ */
+# ifndef MSG_DONTWAIT
+#  define MSG_DONTWAIT 0
+# endif
+
+/*
  * The following is for supporting opendir/readdir functionality
  */
 
