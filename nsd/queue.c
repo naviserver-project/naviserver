@@ -274,7 +274,7 @@ NsPoolAllocateThreadSlot(ConnPool *poolPtr, uintptr_t UNUSED(threadID))
     Ns_DListAppend(dlPtr, 0u);
     Ns_MutexUnlock(&poolPtr->rate.lock);
 
-    return dlPtr->size;
+    return (dlPtr->size -1u);
 }
 
 /*
@@ -287,7 +287,7 @@ NsPoolAllocateThreadSlot(ConnPool *poolPtr, uintptr_t UNUSED(threadID))
  *      associated writer threads for estimating rates per writer threads.
  *
  * Results:
- *      actual total rate for a pool (sum of rates per writer thread)
+ *      Actual total rate for a pool (sum of rates per writer thread).
  *
  * Side effects:
  *      None.
@@ -299,14 +299,14 @@ NsPoolTotalRate(ConnPool *poolPtr, size_t slot, int rate, int *writerThreadCount
 {
     Ns_DList *dlPtr;
     size_t    i;
-    uintptr_t totalRate = 0;
+    uintptr_t totalRate = 0u;
 
     dlPtr = &(poolPtr->rate.writerRates);
     dlPtr->data[slot] = (void*)(uintptr_t)rate;
 
     Ns_MutexLock(&poolPtr->rate.lock);
     for (i = 0u; i < dlPtr->size; i ++) {
-        totalRate = totalRate + (uintptr_t)dlPtr->data[slot];
+        totalRate = totalRate + (uintptr_t)dlPtr->data[i];
     }
     poolPtr->rate.currentRate = (int)totalRate;
     Ns_MutexUnlock(&poolPtr->rate.lock);
