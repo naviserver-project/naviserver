@@ -1640,8 +1640,7 @@ AC_DEFUN([TEA_CONFIG_CFLAGS], [
 	    # This configuration from FreeBSD Ports.
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="${CC} -shared"
-	    TCL_SHLIB_LD_EXTRAS="-Wl,-soname=\$[@]"
-	    TK_SHLIB_LD_EXTRAS="-Wl,-soname,\$[@]"
+	    SHLIB_LD_LIBS="${SHLIB_LD_LIBS} -Wl,-soname,\$[@]"
 	    SHLIB_SUFFIX=".so"
 	    LDFLAGS=""
 	    AS_IF([test $doRpath = yes], [
@@ -1655,9 +1654,9 @@ AC_DEFUN([TEA_CONFIG_CFLAGS], [
 	    case $system in
 	    FreeBSD-3.*)
 		# Version numbers are dot-stripped by system policy.
-		TCL_TRIM_DOTS=`echo ${VERSION} | tr -d .`
+		TCL_TRIM_DOTS=`echo ${PACKAGE_VERSION} | tr -d .`
 		UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so'
+		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so.1'
 		TCL_LIB_VERSIONS_OK=nodots
 		;;
 	    esac
@@ -1723,10 +1722,6 @@ AC_DEFUN([TEA_CONFIG_CFLAGS], [
 	    vers=`echo ${PACKAGE_VERSION} | sed -e 's/^\([[0-9]]\{1,5\}\)\(\(\.[[0-9]]\{1,3\}\)\{0,2\}\).*$/\1\2/p' -e d`
 	    SHLIB_LD="${SHLIB_LD} -current_version ${vers:-0} -compatibility_version ${vers:-0}"
 	    SHLIB_SUFFIX=".dylib"
-	    # Don't use -prebind when building for macOS 10.4 or later only:
-	    AS_IF([test "`echo "${MACOSX_DEPLOYMENT_TARGET}" | awk -F '10\\.' '{print int([$]2)}'`" -lt 4 -a \
-		"`echo "${CPPFLAGS}" | awk -F '-mmacosx-version-min=10\\.' '{print int([$]2)}'`" -lt 4], [
-		LDFLAGS="$LDFLAGS -prebind"])
 	    LDFLAGS="$LDFLAGS -headerpad_max_install_names"
 	    AC_CACHE_CHECK([if ld accepts -search_paths_first flag],
 		    tcl_cv_ld_search_paths_first, [
