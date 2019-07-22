@@ -5117,9 +5117,14 @@ WriterPerPoolRates(WriterSock *writePtr, Tcl_HashTable *pools)
             infoPtr->deltaPercentage = -50;
         }
 
-        Ns_Log(Notice, "... pool '%s' actual %d limit %d (#%d writer threads) -> computed rate %d (%d%%) ",
-               poolPtr->pool, infoPtr->currentPoolRate, poolPtr->rate.poolLimit,
-               writerThreadCount, threadDeltaRate,
+        Ns_Log(Notice, "... pool '%s' thread's pool rate %d total pool rate %d limit %d "
+               "(#%d writer threads) -> computed rate %d (%d%%) ",
+               poolPtr->pool,
+               infoPtr->currentPoolRate,
+               totalPoolRate,
+               poolPtr->rate.poolLimit,
+               writerThreadCount,
+               threadDeltaRate,
                infoPtr->deltaPercentage
                );
 
