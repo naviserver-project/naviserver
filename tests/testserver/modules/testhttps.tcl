@@ -58,7 +58,7 @@ namespace eval ::nstest {
             {body ""}
         } $args
 
-        set host localhost
+        set host [ns_config "test" loopback]
         switch $proto {
             "https" {
                 set port [ns_config "ns/module/nsssl" port]
@@ -100,7 +100,11 @@ namespace eval ::nstest {
             if {$port eq $defaultPort} {
                 ns_set icput $hdrs Host $host
             } else {
-                ns_set icput $hdrs Host $host:$port
+                if {[string match *:* $host]} {
+                    ns_set icput $hdrs Host \[$host\]:$port
+                } else {
+                    ns_set icput $hdrs Host $host:$port
+                }
             }
         } else {
             lappend extraFlags "-keep_host_header"
@@ -113,14 +117,15 @@ namespace eval ::nstest {
             set binaryFlag ""
         }
 
-        log url $proto://$host:$port/$url
+        set fullUrl $proto://\[$host\]:$port/$url
+        log url $fullUrl
         set result [ns_http run \
                         {*}$extraFlags \
                         -timeout $timeout \
                         -method $method \
                         -headers $hdrs \
                         -body $body \
-                        $proto://$host:$port/$url]
+                        $fullUrl]
 
         #ns_set cleanup $hdrs
         #set hdrs [ns_set create]
