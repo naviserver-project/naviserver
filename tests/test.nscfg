@@ -33,7 +33,7 @@ foreach loopback [expr {[ns_info ipv6] ? [list ::1 "127.0.0.1"] : "127.0.0.1"}] 
 ns_param   listenport	    [expr {$port < 8100 ? $port : 0}]
 ns_param   loopback	    $loopback
 
-if {[ns_info ipv6]} {
+if {[string match *:* $loopback]} {
     ns_param   listenurl    http://\[$loopback\]:[ns_config test listenport]
 } else {
     ns_param   listenurl    http://$loopback:[ns_config test listenport]
