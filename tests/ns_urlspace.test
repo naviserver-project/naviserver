@@ -305,6 +305,32 @@ test ns_urlspace-3.2 {tree+wild-card-filter key-with-spaces set/list/unset/list}
         unset -nocomplain _
     } -result {{{{a b c} /x *.html inherit {d e f}}} 1 {}}
 
+test ns_urlspace-3.3 {tree+wild-card-filter key set/list/unset/list} -setup {
+    ns_urlspace set -key . /x/*.html foo
+    ns_urlspace set -key a /x/*.html bar
+    ns_urlspace set -key b /x/*.tcl baz
+} -body {
+    lappend _ \
+        ":" \
+        [ns_urlspace get /x/a.tcl] \
+        [ns_urlspace get /x/a.html] \
+        [ns_urlspace get /x/y/a.html] \
+        "a:" \
+        [ns_urlspace get -key a /x/a.tcl] \
+        [ns_urlspace get -key a /x/a.html] \
+        [ns_urlspace get -key a /x/y/a.html] \
+        "*:" \
+        [ns_urlspace get -key * /x/a.tcl] \
+        [ns_urlspace get -key * /x/a.html] \
+        [ns_urlspace get -key * /x/y/a.html]
+    } -cleanup {
+        unset -nocomplain _
+        ns_urlspace unset -key . /x/*.html
+        ns_urlspace unset -key a /x/*.html
+        ns_urlspace unset -key b /x/*.tcl
+    } -result {: {} foo foo a: {} bar bar *: {} {} {}}
+
+
 #
 # id
 #
