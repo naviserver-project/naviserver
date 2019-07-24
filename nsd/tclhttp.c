@@ -1825,6 +1825,9 @@ HttpCheckSpool(
              * do the "right thing".
              */
             cData = httpPtr->ds.string + httpPtr->replyHeaderSize;
+            if (httpPtr->replyLength > 0 && cSize > httpPtr->replyLength) {
+                cSize = httpPtr->replyLength;
+            }
             memcpy(buf, cData, cSize);
             Ns_DStringSetLength(&httpPtr->ds, httpPtr->replyHeaderSize);
             if (HttpAppendContent(httpPtr, buf, cSize) != TCL_OK) {
@@ -2431,7 +2434,7 @@ HttpAppendBuffer(
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(buffer != NULL);
 
-    Ns_Log(Ns_LogTaskDebug, "HttpAppendBuffer: got: %" PRIdz " bytes flags:%.6x",
+    Ns_Log(Ns_LogTaskDebug, "HttpAppendBuffer: got: %" PRIuz " bytes flags:%.6x",
            size, httpPtr->flags);
 
     if (likely((httpPtr->flags & NS_HTTP_FLAG_GUNZIP) == 0u)) {
