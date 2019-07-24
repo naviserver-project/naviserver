@@ -19,6 +19,18 @@ test ns_random-1.1 {ns_rand with 0 arg - float} -body {
     return [list [expr {$rand < 1}] [string is double -strict $rand] ]
 } -result {1 1}
 
+#######################################################################################
+#  test ns_fmttime
+#######################################################################################
+
+test ns_fmttime-1.0 {ns_fmttime without format} -body {
+    return [ns_fmttime 1563812758]
+} -result {Mon Jul 22 18:25:58 2019}
+    
+test ns_fmttime-1.1 {ns_rand with 0 arg - float} -body {
+    return [ns_fmttime 1563812758 "%Y-%m-%d 00:00"]
+} -result {2019-07-22 00:00}
+
 #
 # Local variables:
 #    mode: tcl
