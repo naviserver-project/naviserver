@@ -133,7 +133,12 @@ ns_section ns/parameters {
     # specified either, a system specific constant us used
     # (compile time macro P_tmpdir)
     #
-    # ns_param        tmpdir          c:/tmp
+    # ns_param        tmpdir    c:/tmp
+
+    # Timeout for shutdown in seconds to let existing connections and
+    # background jobs finish.  When this time limit is exceeded the
+    # server shuts down immediately.
+    # ns_param    shutdowntimeout 20       ;# 20 secs is the default
 
     #
     # Configuration of error.log
