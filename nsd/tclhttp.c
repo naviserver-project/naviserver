@@ -3358,7 +3358,8 @@ HttpProc(
 
             } else if (len == 0 /* Consumed all of the replyLength bytes */
                        || sockState == NS_SOCK_DONE /* EOD on read */
-                       || (httpPtr->flags & NS_HTTP_FLAG_CHUNKED_END) != 0u) {
+                       || (httpPtr->flags & (NS_HTTP_FLAG_CHUNKED
+                                             | NS_HTTP_FLAG_CHUNKED_END) != 0u)) {
 
                 taskDone = NS_TRUE; /* Just for illustrative purposes */
 
