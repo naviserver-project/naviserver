@@ -215,6 +215,7 @@ static NsHttpParseProc ChunkInitProc;
 static NsHttpParseProc ParseBodyProc;
 static NsHttpParseProc TrailerInitProc;
 static NsHttpParseProc ParseTrailerProc;
+static NsHttpParseProc ParseEndProc;
 
 /*
  * Callbacks for the chunked-encoding state machine
@@ -250,6 +251,7 @@ static NsHttpParseProc* TrailerParsers[] = {
 static NsHttpParseProc* EndParsers[] = {
     &ParseCRProc,
     &ParseLFProc,
+    &ParseEndProc,
     NULL
 };
 
@@ -1726,6 +1728,7 @@ HttpCheckSpool(
              */
             header = Ns_SetIGet(httpPtr->replyHeaders, transferEncodingHeader);
             if (header != NULL && Ns_Match(header, "chunked") != NULL) {
+                httpPtr->flags |= NS_HTTP_FLAG_CHUNKED;
                 httpPtr->chunk->parsers = ChunkParsers;
                 Ns_Log(Ns_LogTaskDebug, "HttpCheckSpool: %s: %s",
                        transferEncodingHeader, header);
@@ -1825,6 +1828,9 @@ HttpCheckSpool(
              * do the "right thing".
              */
             cData = httpPtr->ds.string + httpPtr->replyHeaderSize;
+            if (httpPtr->replyLength > 0 && cSize > httpPtr->replyLength) {
+                cSize = httpPtr->replyLength;
+            }
             memcpy(buf, cData, cSize);
             Ns_DStringSetLength(&httpPtr->ds, httpPtr->replyHeaderSize);
             if (HttpAppendContent(httpPtr, buf, cSize) != TCL_OK) {
@@ -2507,14 +2513,11 @@ HttpAppendContent(
     const char *buffer,
     size_t size
 ) {
-    int          result = TCL_OK;
-    NsHttpChunk *chunkPtr = NULL;
+    int result;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
-    chunkPtr = httpPtr->chunk;
-    NS_NONNULL_ASSERT(chunkPtr != NULL);
 
-    if (chunkPtr->parsers == NULL) {
+    if ((httpPtr->flags & NS_HTTP_FLAG_CHUNKED) == 0u) {
         result = HttpAppendBuffer(httpPtr, buffer, size);
     } else {
         result = HttpAppendChunked(httpPtr, buffer, size);
@@ -2530,6 +2533,47 @@ HttpAppendContent(
  * HttpAppendChunked
  *
  *        Parse chunked content.
+ *
+ *        This impements a simple state machine that parses data
+ *        delivered blockwise. As the chunked-format may be
+ *        sliced on an arbitrary point between the blocks, we must
+ *        operate character-wise and maintain the internal state.
+ *        In order not to write yet-another completely closed and
+ *        fixed parser for the format, here is the implementation
+ *        of a simple state machine that can be easily programmed
+ *        to oarse any character sequencer, including the chunked.
+ *
+ *        The machine consists of a set of callbacks. Each callback
+ *        operates on the passed buffer and size of data in the
+ *        buffer. Callbacks are invoked in the order how they are
+ *        specified in the array. Each callback returns signals
+ *        that influence the order of callback invocation.
+ *        Also each callback can replace the callback-set during
+ *        its operation and adjust the pointer to the next in row.
+ *        The signals returned by each callback include:
+ *
+ *            TCL_OK      done regularily, go to the next one
+ *            TCL_BREAK   re-start from the first callback
+ *            TCL_ERROR   stops parsing
+ *
+ *        Callbacks are invoked one after another until there is
+ *        unrocessed data in the buffer.
+ *        The last callback is marked as NULL. After reaching it
+ *        all is repeated from the beginning. When all data is
+ *        consumed the callback that encountered that state
+ *        usually returns TCL_BREAK which stops the machine and
+ *        gives the control back to the user.
+ *        Each callback adjusts the number of bytes left in the
+ *        buffer and repositions the buffer to skip consumed
+ *        characters.
+ *
+ *        Writing a parser consist of writing one or more
+ *        HttpParserProcs, stuffing them in an array
+ *        terminated by the NULL parser and starting the
+ *        machine by simply invoking the registered procs.
+ *
+ *        Due to it' universal nature, this code can be made
+ *        independet from NsHttp and re-used elsewhere.
  *
  * Results:
  *        Tcl result code
@@ -2574,7 +2618,7 @@ HttpAppendChunked(
             parseProcPtr = *(chunkPtr->parsers + chunkPtr->callx);
         }
         if (parseProcPtr == NULL) {
-            chunkPtr->callx = 0;
+            chunkPtr->callx = 0; /* Repeat from the first proc */
         }
     }
 
@@ -3230,7 +3274,8 @@ HttpProc(
             Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_READ nothing sent?");
 
         } else {
-            char buf[CHUNK_SIZE];
+            char         buf[CHUNK_SIZE];
+            size_t       len = CHUNK_SIZE;
             Ns_SockState sockState;
 
             /*
@@ -3240,7 +3285,20 @@ HttpProc(
              * directly into DString instead in the stack buffer.
              */
 
-            n = HttpTaskRecv(httpPtr, buf, CHUNK_SIZE, &sockState);
+            if (httpPtr->replyLength > 0) {
+                size_t remain;
+
+                remain = httpPtr->replyLength - httpPtr->replySize;
+                if (len > remain)  {
+                    len = remain;
+                }
+            }
+
+            if (len > 0) {
+                n = HttpTaskRecv(httpPtr, buf, len, &sockState);
+            } else {
+                n = 0;
+            }
 
             if (unlikely(n == -1)) {
 
@@ -3253,33 +3311,18 @@ HttpProc(
                 Ns_Log(Warning, "HttpProc: NS_SOCK_READ receive failed");
 
             } else if (n > 0) {
-                int     result = TCL_OK;
-                ssize_t extraSize = 0;
+                int result = TCL_OK;
 
                 /*
                  * Most likely case: we got some bytes.
-                 * For non-chunked content, read only
-                 * up to the replyLength (== Content-Length)
-                 * and discard the (eventual) extra data.
                  */
-                Ns_Log(Ns_LogTaskDebug,"NS_SOCK_READ Reply-Length %ld n %ld", httpPtr->replyLength, n);
-
-                if (httpPtr->replyLength > 0) {
-                    extraSize = (ssize_t)(httpPtr->replySize - httpPtr->replyLength) + n;
-                    if (extraSize > 0) {
-                        n = (ssize_t)(httpPtr->replyLength - httpPtr->replySize);
-                        Ns_Log(Ns_LogTaskDebug,"NS_SOCK_READ Reply-Length %ld UPDATED n %ld", httpPtr->replyLength, n);
-                    }
-                }
                 Ns_MutexLock(&httpPtr->lock);
                 httpPtr->received += (size_t)n;
                 Ns_MutexUnlock(&httpPtr->lock);
-                Ns_Log(Ns_LogTaskDebug, "NS_SOCK_READ calls HttpAppendContent with size %ld",n);
                 result = HttpAppendContent(httpPtr, buf, (size_t)n);
                 if (unlikely(result != TCL_OK)) {
                     httpPtr->error = "recv failed";
                     Ns_Log(Warning, "HttpProc: NS_SOCK_READ append failed");
-
                 } else {
                     Ns_ReturnCode rc = NS_OK;
                     if (httpPtr->replyHeaderSize == 0) {
@@ -3297,20 +3340,15 @@ HttpProc(
                          */
                         rc = HttpCheckSpool(httpPtr);
                     }
-                    if (likely(rc == NS_OK)) {
-
-                        /*
-                         * Having read anything past content-length
-                         * implies we have to stop receiving.
-                         */
-                        taskDone = (extraSize > 0);
-                    } else {
+                    if (unlikely(rc != NS_OK)) {
                         httpPtr->error = "recv failed";
                         Ns_Log(Warning, "HttpProc: NS_SOCK_READ spool failed");
+                    } else {
+                        taskDone = NS_FALSE;
                     }
                 }
 
-            } else if (sockState == NS_SOCK_AGAIN) {
+            } else if (len > 0 && sockState == NS_SOCK_AGAIN) {
 
                 /*
                  * Received zero bytes on a readable socket
@@ -3318,12 +3356,10 @@ HttpProc(
                  */
                 taskDone = NS_FALSE;
 
-            } else if (sockState == NS_SOCK_DONE) {
+            } else if (len == 0 /* Consumed all of the replyLength bytes */
+                       || sockState == NS_SOCK_DONE /* EOD on read */
+                       || (httpPtr->flags & NS_HTTP_FLAG_CHUNKED_END) != 0u) {
 
-                /*
-                 * Received zero bytes on a readable socket
-                 * EOD signaled on the socket.
-                 */
                 taskDone = NS_TRUE; /* Just for illustrative purposes */
 
             } else {
@@ -3888,6 +3924,36 @@ ParseTrailerProc(
     }
 
     return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseEndProc --
+ *
+ *        Handler for chunked-encoding state machine that terminates
+ *        chunk parsing state.
+ *
+ * Results:
+ *        TCL_BREAK
+ *
+ * Side effects:
+ *        None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ParseEndProc(
+    NsHttpTask *httpPtr,
+    char **UNUSED(buffer),
+    size_t *size
+) {
+    *size = 0;
+    httpPtr->flags |= NS_HTTP_FLAG_CHUNKED_END;
+
+    return TCL_BREAK;
 }
 
 
