@@ -1732,6 +1732,7 @@ HttpCheckSpool(
                 httpPtr->chunk->parsers = ChunkParsers;
                 Ns_Log(Ns_LogTaskDebug, "HttpCheckSpool: %s: %s",
                        transferEncodingHeader, header);
+                Ns_SetIDeleteKey(httpPtr->replyHeaders, transferEncodingHeader);
             }
         }
 
