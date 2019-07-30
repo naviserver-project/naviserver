@@ -1101,7 +1101,7 @@ HttpStatsObjCmd(
 
             /*
              * Following are not being changed by the task thread
-             * so we need no extra sync here.
+             * so we need no extra lock here.
              */
 
             (void) Tcl_DictObjPut
@@ -1118,27 +1118,57 @@ HttpStatsObjCmd(
 
             /*
              * Following may be subject to change by the task thread
-             * so we sync-up on the mutex
+             * so we sync-up on the mutex.
              */
 
             Ns_MutexLock(&httpPtr->lock);
 
-            (void) Tcl_DictObjPut
-                (interp, entryObj, Tcl_NewStringObj("sent", 4),
-                 Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->sent));
-
-            (void) Tcl_DictObjPut
-                (interp, entryObj, Tcl_NewStringObj("received", 8),
-                 Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->received));
-
+            /*
+             * This element is a misnomer, but we leave it for the
+             * sake of backwards compatibility. Actually, this is
+             * the value of the returned Content-Length header.
+             */
             (void) Tcl_DictObjPut
                 (interp, entryObj, Tcl_NewStringObj("replylength", 11),
                  Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->replyLength));
 
+            /*
+             * Counter of bytes of the request sent so far.
+             * It includes all of the request (status line, headers, body).
+             */
             (void) Tcl_DictObjPut
-                (interp, entryObj, Tcl_NewStringObj("contentlength", 13),
-                 Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->contentLength));
+                (interp, entryObj, Tcl_NewStringObj("sent", 4),
+                 Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->sent));
 
+            /*
+             * Counter of bytes of the reply received so far.
+             * It includes all of the reply (status line, headers, body).
+             */
+            (void) Tcl_DictObjPut
+                (interp, entryObj, Tcl_NewStringObj("received", 8),
+                 Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->received));
+
+            /*
+             * Counter of the request body sent so far.
+             */
+            (void) Tcl_DictObjPut
+                (interp, entryObj, Tcl_NewStringObj("sendbodysize", 12),
+                 Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->sendBodySize));
+
+            /*
+             * Counter of processed (potentially deflated)
+             * reply body received so far.
+             */
+            (void) Tcl_DictObjPut
+                (interp, entryObj, Tcl_NewStringObj("replybodysize", 13),
+                 Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->replyBodySize));
+
+            /*
+             * Counter of the non-processed (potentially compressed)
+             * reply body received so far.
+             * For compressed but not deflated reply content
+             * the replybodysize and replysize will be equal.
+             */
             (void) Tcl_DictObjPut
                 (interp, entryObj, Tcl_NewStringObj("replysize", 9),
                  Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->replySize));
@@ -1501,7 +1531,7 @@ HttpGetResult(
         }
 
         cData = httpPtr->ds.string + httpPtr->replyHeaderSize;
-        cSize = (int)httpPtr->contentLength;
+        cSize = (int)httpPtr->replyBodySize;
 
         if (binary == NS_TRUE)  {
             replyBodyObj = Tcl_NewByteArrayObj((unsigned char *)cData, cSize);
@@ -1752,7 +1782,6 @@ HttpCheckSpool(
         }
 
         Ns_MutexLock(&httpPtr->lock);
-        httpPtr->contentLength = 0;
         httpPtr->replyLength = (size_t)replyLength;
         Ns_MutexUnlock(&httpPtr->lock);
 
@@ -2262,6 +2291,7 @@ HttpConnect(
          */
         httpPtr->bodySize = 0u;
         Ns_DStringNAppend(dsPtr, "\r\n", 2);
+        httpPtr->requestHeaderSize = (size_t)dsPtr->length;
 
     } else {
 
@@ -2324,6 +2354,7 @@ HttpConnect(
             Ns_DStringPrintf(dsPtr, "%s: %d\r\n\r\n", contentLengthHeader,
                              bodyLen);
 
+            httpPtr->requestHeaderSize = (size_t)dsPtr->length;
             Ns_DStringNAppend(dsPtr, bodyStr, bodyLen);
 
         } else if (bodySize > 0) {
@@ -2336,6 +2367,7 @@ HttpConnect(
             httpPtr->bodySize = (size_t)bodySize;
             Ns_DStringPrintf(dsPtr, "%s: %" PRIdz "\r\n\r\n",
                              contentLengthHeader, bodySize);
+            httpPtr->requestHeaderSize = (size_t)dsPtr->length;
         }
     }
 
@@ -2433,7 +2465,7 @@ HttpAppendBuffer(
     size_t size
 ) {
     int    result = TCL_OK;
-    size_t contentLength = 0u;
+    size_t bodySize = 0u;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(buffer != NULL);
@@ -2448,7 +2480,7 @@ HttpAppendBuffer(
          */
         result = HttpAppendRawBuffer(httpPtr, buffer, size);
         if (result == TCL_OK) {
-            contentLength = size;
+            bodySize = size;
         }
 
     } else {
@@ -2465,7 +2497,7 @@ HttpAppendBuffer(
 
             result = Ns_InflateBuffer(httpPtr->compress, out, CHUNK_SIZE, &ul);
             if (HttpAppendRawBuffer(httpPtr, out, ul) == TCL_OK) {
-                contentLength += ul;
+                bodySize += ul;
             } else {
                 result = TCL_ERROR;
             }
@@ -2481,7 +2513,7 @@ HttpAppendBuffer(
              * being the (uncompressed, decoded) reply content.
              */
             Ns_MutexLock(&httpPtr->lock);
-            httpPtr->contentLength += contentLength;
+            httpPtr->replyBodySize += bodySize;
             httpPtr->replySize += size;
             Ns_MutexUnlock(&httpPtr->lock);
         }
@@ -3040,9 +3072,15 @@ HttpProc(
                 Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE send failed");
 
             } else {
+                ssize_t nb = 0;
+
                 httpPtr->next += n;
+                nb = (ssize_t)(httpPtr->sent - httpPtr->requestHeaderSize);
                 Ns_MutexLock(&httpPtr->lock);
                 httpPtr->sent += (size_t)n;
+                if (nb > 0) {
+                    httpPtr->sendBodySize = (size_t)nb;
+                }
                 Ns_MutexUnlock(&httpPtr->lock);
                 remain = (size_t)(httpPtr->requestLength - httpPtr->sent);
                 if (remain > 0) {
@@ -3187,9 +3225,15 @@ HttpProc(
                      */
 
                     if (likely(sent > 0)) {
+                        ssize_t nb = 0;
+
                         httpPtr->next += sent;
+                        nb = (ssize_t)(httpPtr->sent - httpPtr->requestHeaderSize);
                         Ns_MutexLock(&httpPtr->lock);
                         httpPtr->sent += (size_t)sent;
+                        if (nb > 0) {
+                            httpPtr->sendBodySize = (size_t)nb;
+                        }
                         Ns_MutexUnlock(&httpPtr->lock);
                     }
                     Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE partial"
@@ -3203,8 +3247,14 @@ HttpProc(
                      * We have sent the whole buffer
                      */
                     if (sent > 0) {
+                        ssize_t nb = 0;
+
+                        nb = (ssize_t)(httpPtr->sent - httpPtr->requestHeaderSize);
                         Ns_MutexLock(&httpPtr->lock);
                         httpPtr->sent += (size_t)sent;
+                        if (nb > 0) {
+                            httpPtr->sendBodySize = (size_t)nb;
+                        }
                         Ns_MutexUnlock(&httpPtr->lock);
                         Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sent"
                                " full chunk, bytes:%" PRIdz, sent);
