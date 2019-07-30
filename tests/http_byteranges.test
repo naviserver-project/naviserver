@@ -490,13 +490,13 @@ test byteranges-7.4 {Too Many non-contiguous ranges (more than NS_MAX_RANGES)} \
 #
 test byteranges-7.5a {larger byte ranges, no fd, writer} -constraints serverListen \
     -setup {
-        ns_logctl severity Debug(task) on
+        #ns_logctl severity Debug(task) on
     } -body {
         nstest::http -getbody 0 -setheaders {Range bytes=0-100,200-300,400-1300,1600-1699} \
             -getheaders {Content-length Content-range Content-Type} \
             GET /2048bytes
     } -cleanup {
-        ns_logctl severity Debug(task) off
+        #ns_logctl severity Debug(task) off
     } -result {206 1608 {} {multipart/byteranges; boundary=NaviServerNaviServerNaviServer}}
 
 #
