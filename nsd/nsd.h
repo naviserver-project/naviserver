@@ -1063,13 +1063,15 @@ typedef struct {
     const char        *url;              /* request URL */
     const char        *error;            /* holds error string */
     char              *next;             /* write buffer */
-    size_t             requestLength;    /* size of the request */
-    size_t             sent;             /* amount of data sent */
+    size_t             requestLength;    /* size of the complete request */
     size_t             replyLength;      /* content-length of the reply */
-    size_t             contentLength;    /* replyLength uncopressed */
-    size_t             replySize;        /* amount of content received */
-    size_t             received;         /* amount data received */
-    int                replyHeaderSize;  /* size of response/headers */
+    size_t             requestHeaderSize;/* size of the request header */
+    int                replyHeaderSize;  /* size of reply header */
+    size_t             sent;             /* total amount of data sent */
+    size_t             received;         /* total amount data received */
+    size_t             sendBodySize;     /* amount of request body sent */
+    size_t             replyBodySize;    /* amount of reply body received */
+    size_t             replySize;        /* amount of reply body received */
     Ns_Set            *replyHeaders;     /* ns_set for response headers */
     int                spoolLimit;       /* spool content above this limit */
     int                spoolFd;          /* fd of spool file */
