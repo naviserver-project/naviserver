@@ -2600,13 +2600,13 @@ HttpAppendContent(
  *        buffer and repositions the buffer to skip consumed
  *        characters.
  *
- *        Writing a parser consist of writing one or more
+ *        Writing a parser requires writing one or more
  *        HttpParserProcs, stuffing them in an array
  *        terminated by the NULL parser and starting the
  *        machine by simply invoking the registered procs.
  *
- *        Due to it' universal nature, this code can be made
- *        independet from NsHttp and re-used elsewhere.
+ *        Due to its universal nature, this code can be made
+ *        independent from NsHttp and re-used elsewhere.
  *
  * Results:
  *        Tcl result code
