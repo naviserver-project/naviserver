@@ -1,0 +1,75 @@
+[include version_include.man]
+[manpage_begin ns_asynclogfile n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Manage connection channels.}]
+
+[description] The command [cmd ns_asynclogfile] can be used to write
+ application specific log file entries in an asynchronous fashion. It
+ is based on the same infrastructure as the systemlog
+ (see [cmd ns_log]) or the access log (see [cmd ns_accesslog]).
+ This command is designed for small write operations in a
+ multi-threaded environment, where potentially
+ multiple writers perform concurrent operations.
+ 
+[section {COMMANDS}]
+
+[list_begin definitions]
+[call [cmd "ns_asynclogfile open"] \
+	[arg filename] \
+	[opt [arg mode]]]
+
+ The command [cmd "ns_asynclogfile open"] opens a write-only log file
+ and returns a thread-shareable handle (actually a numeric file
+ descriptor) which can be used in subsequent
+ [cmd "ns_asynclogfile write"] or
+ [cmd "ns_asynclogfile close"] operations.
+ 
+ [para]
+ The specified [arg filename] names the file to be opened, the
+ optional [arg mode] is a list of entries limited to 
+ [verb "APPEND"], [verb "EXCL"],  [verb "DSYNC"],
+ [verb "SYNC"],  [verb "TRUNC"]. The modes [verb "DSYNC"] and
+ [verb "SYNC"] are only allowed, when supported by the
+ used operating systems. For details on the meaning of these
+ flags, consult the [verb open] manual page of section (2)
+ of standard Unix manuals.
+
+[call [cmd "ns_asynclogfile write"] \
+	[opt [option -binary]] \
+	[opt [option -sanitize sanitize]] \
+	[arg handle] \
+	[arg line]]
+
+Write the provided [arg line] to an opened logfile denoted by the
+[arg handle]. If the line should be terminated by a new-line
+character, the caller has to provide this character.
+
+The option [option -binary] should be provided for binary data.
+The optional parameter [option -sanitize] can be used to sanitize the
+input. The default is taken from the global parameter
+[verb sanitizelogfiles].
+
+[list_begin itemized]
+[item] The value of [verb 0] means that no sanitize should happen.
+[item] The value [verb 1] means that full sanitizing is in place,
+which means that non-printable characters are written as hex values.
+[item] The a sanitize value of [verb 2] means that sanitizing happens
+in a human friendly fashion: newlines are preserved, but sanitizing
+makes sure that multiline content cannot not confused with different
+log file entries. After a new-line character a continuation character
+starts the new line followed by 4 spaces.
+[list_end]
+
+[call [cmd "ns_asynclogfile close"] \
+	[arg handle]]
+
+ Close the logfile.
+
+[list_end]
+
+[see_also ns_log ns_write ns_accesslog]
+[keywords "server built-in" log]
+
+[manpage_end]
+

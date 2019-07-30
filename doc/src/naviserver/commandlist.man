@@ -7,11 +7,6 @@
 [description]
 List of all currently available NaviServer commands.
 
-[section {Access logfile}]
-[list_begin definitions]
-[call [cmd ns_accesslog]]
-[list_end]
-
 [section {ADP commands}]
 [list_begin definitions]
 
@@ -228,6 +223,17 @@ List of all currently available NaviServer commands.
 [call [cmd ns_imgsize]]
 [list_end]
 
+[section {Logfile Management}]
+[list_begin definitions]
+[call [cmd ns_accesslog]]
+[call [cmd ns_asynclogfile]]
+[call [cmd ns_log]]
+[list_begin definitions]
+[call [cmd ns_logctl]]
+[call [cmd ns_logroll]]
+[list_end]
+[list_end]
+
 [section {Mail commands}]
 [list_begin definitions]
 [call [cmd ns_sendmail]]
@@ -366,15 +372,6 @@ List of all currently available NaviServer commands.
 [list_begin definitions]
 [call [cmd ns_shutdown]]
 [call [cmd ns_crash]]
-[list_end]
-
-[section {Server logfile}]
-[list_begin definitions]
-[call [cmd ns_log]]
-[list_begin definitions]
-[call [cmd ns_logctl]]
-[call [cmd ns_logroll]]
-[list_end]
 [list_end]
 
 [section {Socket commands}]

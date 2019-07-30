@@ -31,7 +31,7 @@ ns_section "ns/parameters" {
     #ns_param	logrollfmt	    %Y-%m-%d           ;# format appended to log file name
     #ns_param    logusec            true     ;# add timestamps in microsecond (usec) resolution (default: false)
     #ns_param    logusecdiff        true     ;# add timestamp diffs since in microsecond (usec) resolution (default: false)
-    #ns_param   sanitizelogfiles false    ;# default: true
+    #ns_param   sanitizelogfiles    2                  ;# default: 2; 0: none, 1: full, 2: human-friendly
 
     #ns_param   dbcloseonexit       off                ;# default: off; from nsdb
     ns_param    jobsperthread       1000               ;# default: 0

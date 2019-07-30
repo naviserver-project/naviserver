@@ -147,8 +147,8 @@ struct nsconf {
     char        address[NS_IPADDR_SIZE];
     long        shutdowntimeout;  /* same type as seconds in Ns_Time */
     int         backlog;
+    int         sanitize_logfiles;
     bool        reject_already_closed_connection;
-    bool        sanitize_logfiles;
 
     /*
      * Slot IDs for socket local storage.

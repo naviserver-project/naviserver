@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -28,10 +28,10 @@
  */
 
 
-/* 
+/*
  * dstring.c --
  *
- *      Ns_DString routines.  Ns_DString's are now compatible 
+ *      Ns_DString routines.  Ns_DString's are now compatible
  *      with Tcl_DString's.
  */
 
@@ -100,7 +100,7 @@ Ns_DStringExport(Ns_DString *dsPtr)
         dsPtr->string = dsPtr->staticSpace;
     } else {
         s = ns_malloc((size_t)dsPtr->length + 1u);
-        memcpy(s, dsPtr->string, (size_t)dsPtr->length + 1u);  
+        memcpy(s, dsPtr->string, (size_t)dsPtr->length + 1u);
     }
     Ns_DStringFree(dsPtr);
 
@@ -128,7 +128,7 @@ Ns_DStringAppendArg(Ns_DString *dsPtr, const char *bytes)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(bytes != NULL);
-    
+
     return Ns_DStringNAppend(dsPtr, bytes, (int) strlen(bytes) + 1);
 }
 
@@ -190,7 +190,7 @@ Ns_DStringVPrintf(Ns_DString *dsPtr, const char *fmt, va_list apSrc)
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(fmt != NULL);
-    
+
     origLength = dsPtr->length;
 
     /*
@@ -277,12 +277,12 @@ Ns_DStringAppendArgv(Ns_DString *dsPtr)
     char *s, **argv;
     int   i, argc, len, size;
 
-    /* 
+    /*
      * Determine the number of strings.
      */
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
-    
+
     argc = 0;
     s = dsPtr->string;
     while (*s != '\0') {
@@ -382,17 +382,19 @@ Ns_DStringPush(Ns_DString *dsPtr)
  *----------------------------------------------------------------------
  */
 char *
-Ns_DStringAppendPrintable(Tcl_DString *dsPtr, const char *buffer, size_t len)
+Ns_DStringAppendPrintable(Tcl_DString *dsPtr, bool indentMode, const char *buffer, size_t len)
 {
     size_t i;
-    
+
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(buffer != NULL);
-    
+
     for (i = 0; i < len; i++) {
         unsigned char c = UCHAR(buffer[i]);
-            
-        if ((CHARTYPE(print, c) == 0) || (c > UCHAR(127))) {
+
+        if (c == '\n' && indentMode) {
+            Tcl_DStringAppend(dsPtr, "\n:    ", 6);
+        } else if ((CHARTYPE(print, c) == 0) || (c > UCHAR(127))) {
             Ns_DStringPrintf(dsPtr, "\\x%.2x", (c & 0xffu));
         } else {
             Ns_DStringPrintf(dsPtr, "%c", c);
@@ -418,13 +420,13 @@ Ns_DStringAppendPrintable(Tcl_DString *dsPtr, const char *buffer, size_t len)
  */
 char *
 Ns_DStringAppendTime(Tcl_DString *dsPtr, const Ns_Time *timePtr)
-{    
+{
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(timePtr != NULL);
 
     return Ns_DStringPrintf(dsPtr, "%" PRId64 ".%06ld", (int64_t)timePtr->sec, timePtr->usec);
 }
- 
+
 
 
 /*
@@ -445,7 +447,7 @@ Ns_DStringAppendTime(Tcl_DString *dsPtr, const Ns_Time *timePtr)
 #undef Ns_DStringInit
 
 NS_EXTERN void Ns_DStringInit(Ns_DString *dsPtr) NS_GNUC_DEPRECATED_FOR(Tcl_DStringInit);
- 
+
 void
 Ns_DStringInit(Ns_DString *dsPtr)
 {
@@ -455,7 +457,7 @@ Ns_DStringInit(Ns_DString *dsPtr)
 #undef Ns_DStringFree
 
 NS_EXTERN void Ns_DStringFree(Ns_DString *dsPtr) NS_GNUC_DEPRECATED_FOR(Tcl_DStringFree);
- 
+
 void
 Ns_DStringFree(Ns_DString *dsPtr)
 {

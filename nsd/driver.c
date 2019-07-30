@@ -3183,7 +3183,7 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
                    " write %" PRIuz " content %" PRIuz " avail %" PRIuz,
                    code, errMsg,
                    reqPtr->peer,
-                   Ns_DStringAppendPrintable(&dsReqLine, requestLine, strlen(requestLine)),
+                   Ns_DStringAppendPrintable(&dsReqLine, NS_FALSE, requestLine, strlen(requestLine)),
                    reqPtr->roff,
                    reqPtr->woff,
                    reqPtr->coff,
@@ -3651,7 +3651,7 @@ LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buffer, size_t l
         Tcl_DStringInit(&ds);
         Tcl_DStringAppend(&ds, msg, -1);
         Tcl_DStringAppend(&ds, ": ", 2);
-        (void)Ns_DStringAppendPrintable(&ds, buffer, len);
+        (void)Ns_DStringAppendPrintable(&ds, NS_FALSE, buffer, len);
 
         Ns_Log(severity, "%s", ds.string);
         Tcl_DStringFree(&ds);
@@ -6875,14 +6875,15 @@ AsyncLogfileWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
     int               result = TCL_OK, binary = (int)NS_FALSE, sanitize;
     Tcl_Obj          *stringObj;
     int               fd = 0;
-    Ns_ObjvValueRange range = {0, INT_MAX};
+    Ns_ObjvValueRange fd_range = {0, INT_MAX};
+    Ns_ObjvValueRange sanitize_range = {0, 2};
     Ns_ObjvSpec opts[] = {
         {"-binary",    Ns_ObjvBool, &binary,   INT2PTR(NS_TRUE)},
-        {"-sanitize",  Ns_ObjvBool, &sanitize, NULL},
+        {"-sanitize",  Ns_ObjvInt,  &sanitize, &sanitize_range},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"fd",     Ns_ObjvInt, &fd,        &range},
+        {"fd",     Ns_ObjvInt, &fd,        &fd_range},
         {"buffer", Ns_ObjvObj, &stringObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -6907,7 +6908,7 @@ AsyncLogfileWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
             buffer = Tcl_GetStringFromObj(stringObj, &length);
         }
         if (length > 0) {
-            if (sanitize) {
+            if (sanitize > 0) {
                 Tcl_DString ds;
                 bool        lastCharNewline = (buffer[length-1] == '\n');
 
@@ -6915,7 +6916,7 @@ AsyncLogfileWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
                 if (lastCharNewline) {
                     length --;
                 }
-                Ns_DStringAppendPrintable(&ds, buffer, (size_t)length);
+                Ns_DStringAppendPrintable(&ds, sanitize == 2, buffer, (size_t)length);
                 if (lastCharNewline) {
                     Tcl_DStringAppend(&ds, "\n", 1);
                 }
@@ -6943,10 +6944,10 @@ AsyncLogfileWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
  *
  * AsyncLogfileOpenObjCmd -
  *
- *      Implements "ns_asynclogfile open" command.  Open a write-only log file
- *      and return a thread-shareable handle (actually a numeric file
- *      descriptor) which can be used in subsequent "write" or "close"
- *      operations.
+ *      Implements "ns_asynclogfile open" command.  The command opens a
+ *      write-only log file and return a thread-shareable handle (actually a
+ *      numeric file descriptor) which can be used in subsequent "write" or
+ *      "close" operations.
  *
  * Results:
  *      Standard Tcl result.
@@ -7026,7 +7027,7 @@ AsyncLogfileOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
 /*
  *----------------------------------------------------------------------
  *
- * AsyncLogfileOpenObjCmd -
+ * AsyncLogfileCloseObjCmd -
  *
  *      Implements "ns_asynclogfile close" command.  Close the logfile
  *      previously created via "ns_asynclogfile open".

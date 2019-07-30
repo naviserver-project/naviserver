@@ -376,7 +376,7 @@ nscp:6> [cmd ns_log] my:debug "a debug message"
 [example_end]
 
 
-[see_also ns_accesslog ns_info ns_rollfile]
+[see_also ns_accesslog ns_info ns_rollfile ns_asynclogfile]
 [keywords "global built-in" log path error configuration]
 
 
