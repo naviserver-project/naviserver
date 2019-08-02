@@ -342,8 +342,9 @@ test http-5.2.0 {
 
     check encoding  ns_conn content PUT,
     no provided content type
+    derive unkown content type (per default "application/octet-stream" per RFC2046)
 
-} -constraints {serverListen broken} -setup {
+} -constraints {serverListen} -setup {
     ns_register_proc PUT /put {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType [ns_set iget [ns_conn headers] content-type]
@@ -354,19 +355,18 @@ test http-5.2.0 {
     }
 } -body {
     set string "Testing <äöüß☀>"
-    nstest::http -getbody 1 PUT /put $string
+    nstest::http -getbody 1 PUT /put [encoding convertto utf-8 $string]
 } -cleanup {
     ns_unregister_op PUT /put
     unset -nocomplain r
 } -result {200 {utf-8 <> AÄATesting <äöüß☀>ZÜZ (21 15)}}
-
 
 test http-5.2.1 {
 
     check encoding  ns_conn content PUT,
     binary content type application/octet-stream
 
-} -constraints {serverListen broken} -setup {
+} -constraints {serverListen} -setup {
     ns_register_proc PUT /put {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType [ns_set iget [ns_conn headers] content-type]
@@ -377,7 +377,8 @@ test http-5.2.1 {
     }
 } -body {
     set string "Testing <äöüß☀>"
-    nstest::http -getbody 1 -setheaders {content-type application/octet-stream} PUT /put $string
+    nstest::http -getbody 1 -setheaders {content-type application/octet-stream} \
+        PUT /put [encoding convertto utf-8 $string]
 } -cleanup {
     ns_unregister_op PUT /put
     unset -nocomplain r
@@ -495,7 +496,7 @@ test http-5.2.2-b {
     content type text/html
     binary data
 
-} -constraints {serverListen broken} -setup {
+} -constraints {serverListen} -setup {
     ns_register_proc PUT /put {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType [ns_set iget [ns_conn headers] content-type]
@@ -520,7 +521,7 @@ test http-5.2.3-b {
     content type text/html;charset=utf-8
     binary data
 
-} -constraints {serverListen broken} -setup {
+} -constraints {serverListen} -setup {
     ns_register_proc PUT /put {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType [ns_set iget [ns_conn headers] content-type]

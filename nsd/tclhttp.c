@@ -2317,6 +2317,10 @@ HttpConnect(
             if (bodyFileName != NULL) {
                 contentType = Ns_GetMimeType(bodyFileName);
             } else {
+                /*
+                 * We could call Ns_GetMimeType(tail), but this does not seem
+                 * to be the intention of RFC2046.
+                 */
                 contentType = "application/octet-stream";
             }
         }
@@ -2324,7 +2328,7 @@ HttpConnect(
         if (bodyObj != NULL) {
             int   bodyLen = 0;
             char *bodyStr = NULL;
-            bool  binary = NS_FALSE;
+            bool  binary;
 
             /*
              * Append in-memory body to the requests string
