@@ -2589,7 +2589,7 @@ HttpAppendContent(
  *        its operation and adjust the pointer to the next in row.
  *        The signals returned by each callback include:
  *
- *            TCL_OK      done regularily, go to the next one
+ *            TCL_OK      done regularly, go to the next one
  *            TCL_BREAK   re-start from the first callback
  *            TCL_ERROR   stops parsing
  *
