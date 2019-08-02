@@ -346,8 +346,8 @@ ns_section ns/mimetypes {
     #  see: /usr/local/src/naviserver/nsd/mimetypes.c
     #  but in case something is missing you can add it here.
 
-    #ns_param	Default		*/*
-    #ns_param	NoExtension	*/*
+    #ns_param	default		*/*
+    #ns_param	noextension	*/*
     #ns_param	.pcd		image/x-photo-cd
     #ns_param	.prc		application/x-pilot
 }
