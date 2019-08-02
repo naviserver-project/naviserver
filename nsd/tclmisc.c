@@ -1028,7 +1028,7 @@ NsTclHrefsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  */
 
 #if 0
-static void hexPrint(const char *msg, unsigned char *octects, size_t octectLength)
+static void hexPrint(const char *msg, const unsigned char *octects, size_t octectLength)
 {
     size_t i;
     fprintf(stderr, "%s octectLength %zu:", msg, octectLength);
@@ -1040,7 +1040,8 @@ static void hexPrint(const char *msg, unsigned char *octects, size_t octectLengt
 #endif
 
 static int
-Base64EncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, int encoding)
+Base64EncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv,
+                   int encoding)
 {
     int result = TCL_OK;
 
@@ -1053,15 +1054,15 @@ Base64EncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         int                  nbytes = 0;
         Tcl_DString          ds;
         const unsigned char *bytes;
-        // const unsigned char *bytes = Tcl_GetByteArrayFromObj(objv[1], &nbytes);
 
         Tcl_DStringInit(&ds);
         bytes = (const unsigned char*)Ns_GetBinaryString(objv[1], &nbytes, &ds);
-        //hexPrint("source ", bytes, nbytes);
+        //hexPrint("source ", bytes,  (size_t)nbytes);
 
         size = (size_t)nbytes;
         buffer = ns_malloc(1u + (4u * MAX(size,2u)) / 2u);
         (void)Ns_HtuuEncode2(bytes, size, buffer, encoding);
+
         Tcl_SetResult(interp, buffer, (Tcl_FreeProc *) ns_free);
         Tcl_DStringFree(&ds);
     }
@@ -1110,13 +1111,19 @@ Base64DecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         size_t         size;
         const char    *chars = Tcl_GetStringFromObj(objv[1], &len);
         unsigned char *decoded;
+        Tcl_DString    ds, *dsPtr = &ds;
 
+        Tcl_DStringInit(dsPtr);
         size = (size_t)len + 3u;
         decoded = (unsigned char *)ns_malloc(size);
         size = Ns_HtuuDecode2(chars, decoded, size, encoding);
         //hexPrint("decoded", decoded, size);
+
         decoded[size] = UCHAR('\0');
-        Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, (int)size));
+        Tcl_ExternalToUtfDString(NS_utf8Encoding, (char *)decoded, (int)size, dsPtr);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(dsPtr->string, dsPtr->length));
+
+        Tcl_DStringFree(dsPtr);
         ns_free(decoded);
     }
 
@@ -1692,14 +1699,16 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         unsigned char  digest[20];
         char           digestChars[41];
         Ns_CtxSHA1     ctx;
-        int            length;
-        const char    *str;
+        int            nbytes;
+        const unsigned char *bytes;
         Tcl_DString    ds;
 
         Tcl_DStringInit(&ds);
-        str = Ns_GetBinaryString(objv[1], &length, &ds);
+        bytes = (const unsigned char *)Ns_GetBinaryString(objv[1], &nbytes, &ds);
+        //hexPrint("source ", bytes, (size_t)nbytes);
+
         Ns_CtxSHAInit(&ctx);
-        Ns_CtxSHAUpdate(&ctx, (const unsigned char *) str, (size_t) length);
+        Ns_CtxSHAUpdate(&ctx, bytes, (size_t) nbytes);
         Ns_CtxSHAFinal(&ctx, digest);
 
         Ns_HexString(digest, digestChars, 20, NS_TRUE);

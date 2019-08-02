@@ -594,13 +594,70 @@ Ns_GetBinaryString(Tcl_Obj *obj, int *lengthPtr, Tcl_DString *dsPtr)
     NS_NONNULL_ASSERT(lengthPtr != NULL);
 
     /*
-     * Just reference dsPtr for the time being, we should wait, until Tcl 8.7
-     * is released and then maybe get tid of dsPtr.
+     * Obtain the binary data from an obj. If the Tcl_Obj is not a bytecode
+     * obj, produce it on the fly to avoid puting the burden to the user.
+     *
+     * Tcl requires the user to convert UTF-8 characters into bytearrays on
+     * the scripting level, as the following example illustrates. The UTF-8
+     * character "ü" requires 2 bytes:
+     *
+     * % binary encode hex ü
+     * fc
+     * % binary encode hex [encoding convertto utf-8 ü]
+     * c3bc
+     *
+     * When doing a base64 encoding, the casual user expect the same behavior
+     * as in a shell, e.g. for transforming "ü" into a based64 encoded string:
+     *
+     * $ echo -n "ü" |base64
+     * w7w=
+     *
+     * % ns_base64encode ü
+     * w7w=
+     *
+     * But Tcl requires this interaction "manually":
+     *
+     * % binary encode base64 ü
+     * /A==
+     *
+     * % binary encode base64 [encoding convertto utf-8 ü]
+     * w7w=
+     *
+     * The same principle should as well apply for the crypto commands, where
+     * the NaviServer user should not have to care for converting chars to
+     * bytestrings manually.
+     *
+     * $ echo -n "ü" |openssl sha1
+     * (stdin)= 94a759fd37735430753c7b6b80684306d80ea16e
+     *
+     * % ns_sha1 "ü"
+     * 94A759FD37735430753C7B6B80684306D80EA16E
+     *
+     * % ns_md string -digest sha1 ü
+     * 94a759fd37735430753c7b6b80684306d80ea16e
+     *
+     * The same should hold as well for 3-byte UTF-8 characters
+     *
+     * $ echo -n "☀" |openssl sha1
+     * (stdin)= d5b6c20ee0b3f6dafa632a63eafe3fd0db26752d
+     *
+     * % ns_sha1 ☀
+     * D5B6C20EE0B3F6DAFA632A63EAFE3FD0DB26752D
+     *
+     * % ns_md string -digest sha1 ☀
+     * d5b6c20ee0b3f6dafa632a63eafe3fd0db26752d
+     *
      */
-    (void)dsPtr;
+    if (!NsTclObjIsByteArray(obj)) {
+        int stringLength;
+        const char *charInput = Tcl_GetStringFromObj(obj, &stringLength);
 
-    result = (char *)Tcl_GetByteArrayFromObj(obj, lengthPtr);
-
+        Tcl_UtfToExternalDString(NS_utf8Encoding, charInput, stringLength, dsPtr);
+        result = dsPtr->string;
+        *lengthPtr = dsPtr->length;
+    } else {
+        result = (char *)Tcl_GetByteArrayFromObj(obj, lengthPtr);
+    }
     return result;
 }
 
