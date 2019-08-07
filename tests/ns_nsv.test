@@ -109,20 +109,37 @@ test ns_nsv-2.10 {"nsv_set -reset" no pre-existing value} -body {
     nsv_unset -nocomplain a
 } -result {{} 0}
 
-test ns_nsv-2.11 {"nsv_set -default" no pre-existing value} -body {
+test ns_nsv-2.11.0 {"nsv_set -default" no pre-existing value} -body {
     set r [nsv_set -default a k 456]  ;# set default for a(k) if it does not exist
     list $r [nsv_exists a k]          ;# check if a(k) exists
 } -cleanup {
     nsv_unset -nocomplain a
 } -result {456 1}
 
-test ns_nsv-2.12 {"nsv_set -default" with pre-existing value} -body {
+test ns_nsv-2.11.1 {"nsv_set -default" with pre-existing value} -body {
     nsv_set a k 123                   ;# set a(k)
     set r [nsv_set -default a k 456]  ;# set default if not exists for a(k)
     list $r [nsv_exists a k]          ;# check if a(k) exists
 } -cleanup {
     nsv_unset -nocomplain a
 } -result {123 1}
+
+test ns_nsv-2.11.2 {"nsv_set -default" check full live-cylce} -body {
+    set key k0
+    set r0 [nsv_exists a $key]
+    set r1 [nsv_set -default a $key ""] ;# set empty value for a(k) when it does does not exist
+    set r2 [nsv_exists a $key]
+    set r3 [nsv_get a $key]
+    set r4 [nsv_set a $key 2]
+    set r5 [nsv_get a $key]
+    set r6 [nsv_set -default a $key ""]
+    set r7 [nsv_get a $key]
+    list $r0 $r1 $r2 $r3 r4=$r4 r5=$r5 r6=$r6 $r7
+} -cleanup {
+    nsv_unset -nocomplain a
+} -result {0 {} 1 {} r4=2 r5=2 r6=2 2}
+
+
 
 test ns_nsv_2.13 {"nsv_set a b" no key nor array} -body {
     catch {nsv_set a b} _errMsg

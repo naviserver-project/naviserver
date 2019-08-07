@@ -328,6 +328,7 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                  */
                 if (didExist) {
                     returnNewValue = NS_FALSE;
+                    setArrayValue = NS_FALSE;
                 } else {
                     /*
                      * It is a new array element, so set it.
@@ -345,7 +346,6 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         UnlockArray(arrayPtr);
 
         if (returnNewValue) {
-            //fprintf(stderr, "Setting new value <%s>\n", Tcl_GetString(valueObj));
             Tcl_SetObjResult(interp, valueObj);
         }
 
