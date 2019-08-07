@@ -2436,7 +2436,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  * NsTclCryptoEckeyObjCmd --
  *
  *      Provide subcommands to handle EC (elliptic curve) cryptography
- *      related commands.w
+ *      related commands.
  *
  * Results:
  *      Tcl Return code.

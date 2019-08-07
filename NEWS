@@ -33,7 +33,7 @@ New Features:
    ".dll" under windows.
 
  
- - new API call: ns_db currenthandles
+ - New API call: ns_db currenthandles
 
    Return information about handles currently allocated to the thread
    performing this call. The result contains a dict with the pools,
@@ -106,16 +106,17 @@ Bug Fixes:
       timeout, use timeout of queue operation)
       
     * Improved client connect() operations with half-configured IPv6
-      installations.  This change addresses especially a problem, where
+      installations.  
+      This change addresses especially a problem, where
       IPv6 is activated on a server, but it cannot be used to connect
       to the outside world.  In these situations, connect operations to
       hosts with domain names having both IPv4 and IPv6 addresses
       would fail, although IPv4 connections are possible. In this
       cases, one should actually either deactivate IPv6 on the machine
       or probably deactivate IPv6 name lookups in bind (option "-4",
-      filter-aaaa-on-v4 yes;). With this change, this should be
-      necessary. This change fixes also a memory and socket leak in
-      this situation.
+      filter-aaaa-on-v4 yes;). With the new features, such configurations
+      should not be necessary anymore. This change fixes also a
+      memory and socket leak in this situation.
 
   - Cache transactions: make "ns_cache flush $cache" behave like
     "ns_cache_flush -glob $cache *" on "ns_cache_transaction_rollback".
@@ -123,10 +124,10 @@ Bug Fixes:
     performed properly.
   
   - tcl_crypto:
-    * align code with documentation (provide a default for option "-digest")
+    Align code with documentation (provide a default for option "-digest")
 
   - nscgi:
-    * fixed potential memory leak
+    Fixed potential memory leak
 
   - ns_sourceproc: fix deprecated function in cases in error cases,
     make clear in documentation that ns_register_procns_register_tcl

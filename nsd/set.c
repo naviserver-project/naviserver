@@ -39,7 +39,7 @@
 /*
  * Typedefs of functions
  */
-typedef int (*StringCmpProc) (const char *s1, const char *s2);
+typedef int (*StringCmpProc)(const char *s1, const char *s2);
 typedef int (*SetFindProc)(const Ns_Set *set, const char *key);
 
 /*
