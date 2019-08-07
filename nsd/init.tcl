@@ -88,7 +88,7 @@ proc __ns_sourcelibs {{modname ""}} {
         set lib [set $name]
         if {![file isdirectory $lib] || ![file readable $lib]} {
             set level [expr {$modname eq "" ? "warning" : "notice"}]
-            ns_log $level "$lib is not a readable directory (ignored)"
+            ns_log $level "$name $lib is not a readable directory (ignored)"
         }
     }
 
