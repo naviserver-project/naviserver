@@ -130,6 +130,7 @@ static Ns_ObjvValueRange posIntRange0 = {0, INT_MAX};
 # ifdef HAVE_OPENSSL_3
 static Ns_ObjvValueRange posIntRange1 = {1, INT_MAX};
 # endif
+
 /*
  *----------------------------------------------------------------------
  *
@@ -137,17 +138,22 @@ static Ns_ObjvValueRange posIntRange1 = {1, INT_MAX};
  *
  *----------------------------------------------------------------------
  */
-# if 0
 static void hexPrint(const char *msg, const unsigned char *octects, size_t octectLength)
 {
-    size_t i;
-    fprintf(stderr, "%s (len %zu): ", msg, octectLength);
-    for (i=0; i<octectLength; i++) {
-        fprintf(stderr, "%.2x ",octects[i] & 0xff);
+    if (Ns_LogSeverityEnabled(Debug)) {
+        size_t i;
+        Tcl_DString ds;
+
+        Tcl_DStringInit(&ds);;
+        Ns_DStringPrintf(&ds, "%s (len %zu): ", msg, octectLength);
+        for (i=0; i<octectLength; i++) {
+            Ns_DStringPrintf(&ds, "%.2x ",octects[i] & 0xff);
+         }
+         Ns_Log(Debug, "%s", ds.string);
+         Tcl_DStringFree(&ds);
     }
-    fprintf(stderr, "\n");
 }
-# endif
+
 
 /*
  *----------------------------------------------------------------------
@@ -213,7 +219,7 @@ EncodedObj(unsigned char *octects, size_t octectLength,
         break;
 
     case RESULT_ENCODING_BASE64URL:
-        //hexPrint("result", octects, octectLength);
+        hexPrint("result", octects, octectLength);
         (void)Ns_HtuuEncode2(octects, octectLength, outputBuffer, 1);
         resultObj = Tcl_NewStringObj(outputBuffer, (int)strlen(outputBuffer));
         break;
@@ -871,8 +877,8 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
             Tcl_DStringInit(&messageDs);
             keyString = Ns_GetBinaryString(keyObj, &keyLength, &keyDs);
             messageString = Ns_GetBinaryString(messageObj, &messageLength, &messageDs);
-            // hexPrint("hmac key", keyString, keyLength);
-            // hexPrint("hmac message", messageString, messageLength);
+            hexPrint("hmac key", (const unsigned char *)keyString, (size_t)keyLength);
+            hexPrint("hmac message", (const unsigned char *)messageString, (size_t)messageLength);
 
             /*
              * Call the HMAC computation.
@@ -1236,6 +1242,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
              */
             Tcl_DStringInit(&messageDs);
             messageString = Ns_GetBinaryString(messageObj, &messageLength, &messageDs);
+            hexPrint("md", (const unsigned char *)messageString, (size_t)messageLength);
 
             /*
              * Call the Digest or Signature computation
@@ -1424,9 +1431,9 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
             assert(rawSig != NULL);
 
             BN_bn2bin(r, rawSig);
-            //hexPrint("r", rawSig, rLen);
+            hexPrint("r", rawSig, rLen);
             BN_bn2bin(s, &rawSig[rLen]);
-            //hexPrint("s", &rawSig[rLen], sLen);
+            hexPrint("s", &rawSig[rLen], sLen);
 
             /*
              * Convert the result to the output format and set the interp
@@ -2084,7 +2091,7 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
         rawKeyString = (const unsigned char *)Ns_GetBinaryString(importObj, &rawKeyLength, &keyDs);
 
         Ns_Log(Notice, "import: raw key length %d", rawKeyLength);
-        //hexPrint("key", rawKeyString, (size_t)rawKeyLength);
+        hexPrint("key", rawKeyString, (size_t)rawKeyLength);
 
         if (EC_KEY_oct2key(eckey, rawKeyString, (size_t)rawKeyLength, NULL) != 1) {
             Ns_TclPrintfResult(interp, "could not import string to ec key");

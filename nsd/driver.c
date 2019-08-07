@@ -330,6 +330,7 @@ Ns_LogSeverity Ns_LogTaskDebug;
 Ns_LogSeverity Ns_LogRequestDebug;
 Ns_LogSeverity Ns_LogConnchanDebug;
 Ns_LogSeverity Ns_LogUrlspaceDebug;
+Ns_LogSeverity Ns_LogCryptoDebug;
 bool NsWriterBandwidthManagement = NS_FALSE;
 
 
