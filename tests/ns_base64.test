@@ -310,14 +310,18 @@ test ns_base64encode-2.6r {ns_base64encode identity mass encoding} -body {
 } -result 300000
 
 
-test ns_base64encode-3.0 {ns_base64encode identity mass encoding} -body {
+test ns_base64encode-3.0 {
+    UTF-8 data, from string or file,
+    binary or not,
+    convert everything via I/O to bytearray
+} -body {
     set fn testserver/pages/utf-8-chars
     set a "äüö☀"
     set F [open $fn]; fconfigure $F -encoding binary -translation binary; set b [read $F]; close $F
     set F [open $fn]; set c [read $F]; close $F
     ns_log notice "obj(a) [nsf::__db_get_obj $a]"
     ns_log notice "obj(b) [nsf::__db_get_obj $b]"
-    ns_log notice "obj(b) [nsf::__db_get_obj $c]"
+    ns_log notice "obj(c) [nsf::__db_get_obj $c]"
 
     set r [list $a $b $c]
     lappend r [list \
@@ -327,6 +331,9 @@ test ns_base64encode-3.0 {ns_base64encode identity mass encoding} -body {
     #ns_log notice $r
     lappend r [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
     ns_log notice [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
+    ns_log notice [list [ns_md string -digest sha1 $a] [ns_md string -digest sha1 $b] [ns_md string -digest sha1 $c]]
+    ns_log notice [list [ns_sha1 $a] [ns_sha1 $b] [ns_sha1 $c]]
+    ns_log notice [list [ns_md5 $a] [ns_md5 $b] [ns_md5 $c]]
 
     set F [::open [ns_mktemp] w]; ::fconfigure $F -translation binary
     ::puts -nonewline $F $a
@@ -336,7 +343,7 @@ test ns_base64encode-3.0 {ns_base64encode identity mass encoding} -body {
 
     ns_log notice "obj(a) [nsf::__db_get_obj $a]"
     ns_log notice "obj(b) [nsf::__db_get_obj $b]"
-    ns_log notice "obj(b) [nsf::__db_get_obj $c]"
+    ns_log notice "obj(c) [nsf::__db_get_obj $c]"
     lappend r [list \
                    [lindex [nsf::__db_get_obj $a] 1] \
                    [lindex [nsf::__db_get_obj $b] 1] \
@@ -346,6 +353,136 @@ test ns_base64encode-3.0 {ns_base64encode identity mass encoding} -body {
     lappend r [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
 
 }  -result {äüö☀ Ã¤Ã¼Ã¶â äüö☀ {{} bytearray string} {w6TDvMO24piA w6TDvMO24piA w6TDvMO24piA} {bytearray bytearray bytearray} {w6TDvMO24piA w6TDvMO24piA w6TDvMO24piA}}
+
+
+test ns_base64encode-3.1 {
+    euro-sign, in unicode-notation,
+    literally and
+    converted to a bytearray
+} -body {
+    set a "\u20ac"
+    set b "€"
+    set c [encoding convertto utf-8 $a]
+
+    set r [list \
+               [lindex [nsf::__db_get_obj $a] 1] \
+               [lindex [nsf::__db_get_obj $b] 1] \
+               [lindex [nsf::__db_get_obj $c] 1] ]
+    #ns_log notice $r
+    lappend r [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
+
+    #
+    # expected result
+    # % echo -n "€"| base64
+    # 4oKs
+
+    set F [::open [ns_mktemp] w]; ::fconfigure $F -translation binary
+    ::puts -nonewline $F $a
+    ::puts -nonewline $F $b
+    ::close $F
+
+    lappend r [list \
+                   [lindex [nsf::__db_get_obj $a] 1] \
+                   [lindex [nsf::__db_get_obj $b] 1] \
+                   [lindex [nsf::__db_get_obj $c] 1]]
+
+
+    ns_log notice [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
+    lappend r [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
+
+} -returnCodes {error ok} -result {{} {} bytearray {4oKs 4oKs 4oKs} {bytearray bytearray bytearray} {4oKs 4oKs 4oKs}}
+
+
+test ns_base64encode-3.2 {
+    mathematical symbols in UTF-8, from forums,
+    literally and
+    converted to a bytearray
+} -body {
+    set a "äöüʃɪbəlɛθ"
+    set b [encoding convertto utf-8 $a]
+
+    set r [list \
+               [lindex [nsf::__db_get_obj $a] 1] \
+               [lindex [nsf::__db_get_obj $b] 1] \
+              ]
+    #ns_log notice $r
+    lappend r [list [ns_base64encode $a] [ns_base64encode $b] ]
+
+    #
+    # expected result
+    # % echo -n "äöüʃɪbəlɛθ"| base64
+    # w6TDtsO8yoPJqmLJmWzJm864
+
+    set F [::open [ns_mktemp] w]; ::fconfigure $F -translation binary
+    ::puts -nonewline $F $a
+    ::puts -nonewline $F $b
+    ::close $F
+
+    lappend r [list \
+                   [lindex [nsf::__db_get_obj $a] 1] \
+                   [lindex [nsf::__db_get_obj $b] 1] \
+                  ]
+
+
+    ns_log notice [list [ns_base64encode $a] [ns_base64encode $b] ]
+    lappend r [list [ns_base64encode $a] [ns_base64encode $b] ]
+
+} -returnCodes {error ok} -result {{} bytearray {w6TDtsO8yoPJqmLJmWzJm864 w6TDtsO8yoPJqmLJmWzJm864} {bytearray bytearray} {w6TDtsO8yoPJqmLJmWzJm864 w6TDtsO8yoPJqmLJmWzJm864}}
+
+
+test ns_base64encode-3.3 {binary data, from file or memory} -body {
+    set fn testserver/pages/binary
+    set _ "\u0000\u0001\u0002\u0003☀"       ;# incorrect encoded binary string
+    set a [encoding convertto utf-8 $_]     ;# correct encoded binary string
+    set F [open $fn]; fconfigure $F -encoding binary -translation binary; set b [read $F]; close $F
+    set F [open $fn]; set c [read $F]; close $F
+    ns_log notice "obj(_) [nsf::__db_get_obj $_]"
+    ns_log notice "obj(a) [nsf::__db_get_obj $a]"
+    ns_log notice "obj(b) [nsf::__db_get_obj $b]"
+    ns_log notice "obj(c) [nsf::__db_get_obj $c]"
+
+    set r [list \
+               [lindex [nsf::__db_get_obj $_] 1] \
+               [lindex [nsf::__db_get_obj $a] 1] \
+               [lindex [nsf::__db_get_obj $b] 1] \
+               [lindex [nsf::__db_get_obj $c] 1]]
+    #ns_log notice $r
+    lappend r [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
+
+    #
+    # expected result
+    # % cat tests/testserver/pages/binary | base64
+    # AAECA+KYgA==
+
+    ns_log notice [list [ns_base64encode $_] [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
+    #ns_log notice [list [ns_md string -digest sha1 $a] [ns_md string -digest sha1 $b] [ns_md string -digest sha1 $c]]
+    #ns_log notice [list [ns_sha1 $a] [ns_sha1 $b] [ns_sha1 $c]]
+    #ns_log notice [list [ns_md5 $a] [ns_md5 $b] [ns_md5 $c]]
+
+    set F [::open [ns_mktemp] w]; ::fconfigure $F -translation binary
+    ::puts -nonewline $F $_
+    ::puts -nonewline $F $a
+    ::puts -nonewline $F $b
+    ::puts -nonewline $F $c
+    ::close $F
+
+    ns_log notice "obj(_) [nsf::__db_get_obj $_]"
+    ns_log notice "obj(a) [nsf::__db_get_obj $a]"
+    ns_log notice "obj(b) [nsf::__db_get_obj $b]"
+    ns_log notice "obj(c) [nsf::__db_get_obj $c]"
+    lappend r [list \
+                   [lindex [nsf::__db_get_obj $a] 1] \
+                   [lindex [nsf::__db_get_obj $b] 1] \
+                   [lindex [nsf::__db_get_obj $c] 1]]
+
+    ns_log notice [list [ns_base64encode $_] [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
+    lappend r [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
+
+} -returnCodes {error ok} -result {{} bytearray bytearray string {AAECA+KYgA== AAECA+KYgA== AAECA+KYgA==} {bytearray bytearray bytearray} {AAECA+KYgA== AAECA+KYgA== AAECA+KYgA==}}
+
+
+
+
 
 
 cleanupTests
