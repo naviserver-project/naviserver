@@ -836,6 +836,7 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     Ns_ObjvSpec    lopts[] = {
         {"-digest",   Ns_ObjvString, &digestName, NULL},
         {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
+        {"--",        Ns_ObjvBreak,  NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec    args[] = {
@@ -1183,15 +1184,15 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 
     Ns_ObjvSpec lopts[] = {
         {"-digest",   Ns_ObjvString, &digestName, NULL},
-        {"-sign",     Ns_ObjvString, &keyFile, NULL},
+        {"-sign",     Ns_ObjvString, &keyFile,    NULL},
         {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
+        {"--",        Ns_ObjvBreak,  NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
         {"message", Ns_ObjvObj, &messageObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
-
 
     if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
@@ -1330,8 +1331,9 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 
     Ns_ObjvSpec lopts[] = {
         {"-digest",   Ns_ObjvString, &digestName, NULL},
-        {"-pem",      Ns_ObjvString, &pemFile, NULL},
+        {"-pem",      Ns_ObjvString, &pemFile,    NULL},
         {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
+        {"--",        Ns_ObjvBreak,  NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -1488,6 +1490,7 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         {"-secret",   Ns_ObjvObj,    &secretObj,  NULL},
         {"-info",     Ns_ObjvObj,    &infoObj,    NULL},
         {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
+        {"--",        Ns_ObjvBreak,  NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -2234,6 +2237,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     Ns_ObjvSpec lopts[] = {
         {"-pem",      Ns_ObjvString, &pemFileName, NULL},
         {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
+        {"--",        Ns_ObjvBreak,  NULL,         NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -2523,6 +2527,7 @@ CryptoAeadStringGetArguments(
         {"-encoding", Ns_ObjvString,  &outputEncodingString, NULL},
         {"-iv",       Ns_ObjvObj,     &ivObj,      NULL},
         {"-key",      Ns_ObjvObj,     &keyObj,     NULL},
+        {"--",        Ns_ObjvBreak,   NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec lopts_decrypt[] = {
@@ -2531,7 +2536,8 @@ CryptoAeadStringGetArguments(
         {"-encoding", Ns_ObjvString,  &outputEncodingString, NULL},
         {"-iv",       Ns_ObjvObj,     &ivObj,      NULL},
         {"-key",      Ns_ObjvObj,     &keyObj,     NULL},
-        {"-tag",      Ns_ObjvObj,     tagObjPtr,     NULL},
+        {"-tag",      Ns_ObjvObj,     tagObjPtr,   NULL},
+        {"--",        Ns_ObjvBreak,   NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
