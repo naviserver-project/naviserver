@@ -119,7 +119,7 @@ This function requires OpenSSL compiled with EC support enabled.
      [opt [option "-encoding [arg encoding]"]] \
      [arg pubkey]]
 
-This function requires OpenSSL compiled with EC support enabled.
+This function requires OpenSSL 1.1 or newer, compiled with EC support enabled.
 
 [call [cmd "ns_crypto::eckey pub"] \
      [opt [option "-pem [arg pem]"]] \
