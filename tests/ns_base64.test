@@ -310,6 +310,44 @@ test ns_base64encode-2.6r {ns_base64encode identity mass encoding} -body {
 } -result 300000
 
 
+test ns_base64encode-3.0 {ns_base64encode identity mass encoding} -body {
+    set fn testserver/pages/utf-8-chars
+    set a "äüö☀"
+    set F [open $fn]; fconfigure $F -encoding binary -translation binary; set b [read $F]; close $F
+    set F [open $fn]; set c [read $F]; close $F
+    ns_log notice "obj(a) [nsf::__db_get_obj $a]"
+    ns_log notice "obj(b) [nsf::__db_get_obj $b]"
+    ns_log notice "obj(b) [nsf::__db_get_obj $c]"
+
+    set r [list $a $b $c]
+    lappend r [list \
+                   [lindex [nsf::__db_get_obj $a] 1] \
+                   [lindex [nsf::__db_get_obj $b] 1] \
+                   [lindex [nsf::__db_get_obj $c] 1]]
+    #ns_log notice $r
+    lappend r [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
+    ns_log notice [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
+
+    set F [::open [ns_mktemp] w]; ::fconfigure $F -translation binary
+    ::puts -nonewline $F $a
+    ::puts -nonewline $F $b
+    ::puts -nonewline $F $c
+    ::close $F
+
+    ns_log notice "obj(a) [nsf::__db_get_obj $a]"
+    ns_log notice "obj(b) [nsf::__db_get_obj $b]"
+    ns_log notice "obj(b) [nsf::__db_get_obj $c]"
+    lappend r [list \
+                   [lindex [nsf::__db_get_obj $a] 1] \
+                   [lindex [nsf::__db_get_obj $b] 1] \
+                   [lindex [nsf::__db_get_obj $c] 1]]
+
+    ns_log notice [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
+    lappend r [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
+
+}  -result {äüö☀ Ã¤Ã¼Ã¶â äüö☀ {{} bytearray string} {w6TDvMO24piA w6TDvMO24piA w6TDvMO24piA} {bytearray bytearray bytearray} {w6TDvMO24piA w6TDvMO24piA w6TDvMO24piA}}
+
+
 cleanupTests
 
 #
