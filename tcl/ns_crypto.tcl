@@ -50,8 +50,8 @@ nx::Class create ::ns_crypto::HashFunctions {
 #
 nx::Class create ns_md -superclass ::ns_crypto::HashFunctions {
 
-    :public object method string {{-digest sha256} message} {
-        ::ns_crypto::md string -digest $digest $message
+    :public object method string {{-digest sha256} {-encoding hex} message} {
+        ::ns_crypto::md string -digest $digest -encoding $encoding $message
     }
 
     :public object method file {{-digest sha256} filename} {
@@ -92,8 +92,8 @@ nx::Class create ns_md -superclass ::ns_crypto::HashFunctions {
 nx::Class create ns_hmac -superclass ::ns_crypto::HashFunctions {
     :property key:required
 
-    :public object method string {{-digest sha256} key message} {
-        ::ns_crypto::hmac string -digest $digest $key $message
+    :public object method string {{-digest sha256} {-encoding hex} key message} {
+        ::ns_crypto::hmac string -digest $digest -encoding $encoding $key $message
     }
 
     :public object method file {{-digest sha256} key filename} {
