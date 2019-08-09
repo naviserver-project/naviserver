@@ -2975,7 +2975,7 @@ CloseSlave(Slave *slavePtr, int ms)
      * Set the time to kill the slave. Reaper thread will
      * use passed time to wait for the slave to exit gracefully.
      * Otherwise, it will start attempts to stop the slave
-     * by sending singnals to it (polite and unpolite).
+     * by sending signals to it (polite and unpolite).
      */
 
     SetExpire(slavePtr, ms);

@@ -70,11 +70,11 @@ is hit.
 [subsection {Tune the Connection Threads}]
 
 Thread settings are sometimes helpful, sometimes not. If one is
-runnint a small configuration (e.g. 100K requests per day), the
+running a small configuration (e.g. 100K requests per day), the
 default settings provided by the sample config files are typically
 sufficient.
 For larger or very constraint setups the paramamter for the
-connection theads can and should be tuned. The followin parameters can be
+connection theads can and should be tuned. The following parameters can be
 altered in the section "ns/server/servername"
 (for a server named "servername"):
 [term connsperthread],
@@ -148,7 +148,8 @@ connections of a pool.
 
 Memory considerations are paramount on heavily-used servers. Use the "ps
 -leaf" on most systems to look at the "nsd" processes. Nearly all the memory
-used by nsd should be in RSS (resident set size). If the nsd process' RSS
+used by nsd should be in RSS (resident set size). If the RSS size of
+the nsd process
 is less than 2/3 its SZ, then it's a good chance that your operating system
 is thrashing, meaning it's spending more time managing memory than allowing
 the system to work to its capacity. Some operating systems actually limit

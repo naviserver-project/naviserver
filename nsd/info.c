@@ -142,7 +142,7 @@ Ns_InfoConfigFile(void)
  *      Returns server's PID
  *
  * Results:
- *      PID (tread like pid_t)
+ *      PID (thread like pid_t)
  *
  * Side effects:
  *      None.

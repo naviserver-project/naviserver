@@ -848,7 +848,7 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
     Tcl_Encoding  encoding;
     Tcl_DString   utf;
     char         *buf;
-    int           fd, trys;
+    int           fd, tries;
     ssize_t       n;
     size_t        size;
     Page         *pagePtr;
@@ -868,7 +868,7 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
 
     pagePtr = NULL;
     buf = NULL;
-    trys = 0;
+    tries = 0;
     do {
         /*
          * fstat the open file to ensure it has not changed or been
@@ -905,7 +905,7 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
             }
             Ns_ThreadYield();
         }
-    } while ((size_t)n != size && ++trys < 10);
+    } while ((size_t)n != size && ++tries < 10);
 
     if ((size_t)n != size) {
         Ns_TclPrintfResult(interp, "inconsistent file: %s", file);

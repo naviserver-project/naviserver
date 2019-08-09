@@ -30,7 +30,7 @@
 /*
  * sema.c --
  *
- *      Couting semaphore routines.  Semaphores differ from ordinary mutex
+ *      Counting semaphore routines.  Semaphores differ from ordinary mutex
  *      locks in that they maintain a count instead of a simple locked/unlocked
  *      state.  Threads block if the semaphore count is less than one.
  *

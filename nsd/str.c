@@ -595,7 +595,7 @@ Ns_GetBinaryString(Tcl_Obj *obj, int *lengthPtr, Tcl_DString *dsPtr)
 
     /*
      * Obtain the binary data from an obj. If the Tcl_Obj is not a bytecode
-     * obj, produce it on the fly to avoid puting the burden to the user.
+     * obj, produce it on the fly to avoid putting the burden to the user.
      *
      * Tcl requires the user to convert UTF-8 characters into bytearrays on
      * the scripting level, as the following example illustrates. The UTF-8

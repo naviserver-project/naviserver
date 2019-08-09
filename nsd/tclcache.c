@@ -512,7 +512,7 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
                  *
                  * The remaining status codes are TCL_BREAK, TCL_CONTINUE
                  * and TCL_ERROR. Regarding TCL_BREAK and TCL_CONTINUE as
-                 * signals for not cacheing is used e.g. in
+                 * signals for not caching is used e.g. in
                  * OpenACS. Therefore we want to return TCL_BREAK or
                  * TCL_CONTINUE as well.
                  *
@@ -958,7 +958,7 @@ NsTclCacheFlushObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
  *
  *      Return an entry from the cache. This function behaves similar to
  *      nsv_get; if the optional varname is passed, it returns on the Tcl
- *      level 0 or 1 depending on succes and bind the variable on success. If
+ *      level 0 or 1 depending on success and bind the variable on success. If
  *      no varName is provided, it returns the value or an error.
  *
  * Results:

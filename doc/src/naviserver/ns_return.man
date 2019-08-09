@@ -24,7 +24,7 @@ served. The fastpath settings are described in the [sectref CONFIGURATION]
 section at the end of this page.
 
 [para] Note that there are additional higher level commands are
-designed to ease consistent behavior in common succes, redirect or
+designed to ease consistent behavior in common success, redirect or
 error situations (see [cmd returnstatus-cmds]).
 
 [section {COMMANDS}]
@@ -342,7 +342,7 @@ Hide files starting with a dot in directory listings
 
 [def pagedir]
 Defines absolute or relative path for serving content files. Relative
-names are relativ to the [const serverdir]
+names are relative to the [const serverdir]
 (string, defaults to serverdir/pages)
 
 [def serverdir]

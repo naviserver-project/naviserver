@@ -361,7 +361,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
                 /*
                  * Read the status from the child process. We expect as result
-                 * either 'O' (when initialzation went OK) or 'F' (for Fatal).
+                 * either 'O' (when initialization went OK) or 'F' (for Fatal).
                  */
                 nread = ns_read(nsconf.state.pipefd[0], &buf, 1);
                 if (nread < 0) {

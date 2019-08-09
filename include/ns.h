@@ -511,7 +511,7 @@ typedef struct Ns_Driver {
 } Ns_Driver;
 
 /*
- * The following structure defins the public
+ * The following structure defines the public
  * parts of the driver socket connection.
  */
 

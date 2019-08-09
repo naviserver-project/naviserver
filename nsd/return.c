@@ -865,7 +865,7 @@ Ns_ConnReturnHtml(Ns_Conn *conn, int status, const char *html, ssize_t len)
  *
  * Side effects:
  *      Will set a length header, so 'len' must describe the complete
- *      length of the entitiy.
+ *      length of the entity.
  *
  *      May send various HTTP error responses.
  *

@@ -342,7 +342,7 @@ test http-5.2.0 {
 
     check encoding  ns_conn content PUT,
     no provided content type
-    derive unkown content type (per default "application/octet-stream" per RFC2046)
+    derive unknown content type (per default "application/octet-stream" per RFC2046)
 
 } -constraints {serverListen} -setup {
     ns_register_proc PUT /put {

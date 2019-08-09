@@ -194,9 +194,9 @@ NsCleanupTls(void **slots)
         NS_finalshutdown != 1
 #endif
         ) {
-        int trys, retry;
+        int tries, retry;
 
-        trys = 0;
+        tries = 0;
         do {
             int i;
 
@@ -212,7 +212,7 @@ NsCleanupTls(void **slots)
                     retry = 1;
                 }
             }
-        } while (retry && trys++ < 5);
+        } while (retry && tries++ < 5);
     }
 }
 

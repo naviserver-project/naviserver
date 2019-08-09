@@ -352,7 +352,7 @@ test ns_urlspace-4.1 {id set/list/unset/list} -setup {
     } -result {foo bar 1 1 {} {}}
 
 #
-# test with differen orderings
+# Test with different orderings
 #
 test ns_urlspace-5.1 {wild-card-filter with ordering} -setup {
     ns_urlspace set -key 5.1 /*        ADP

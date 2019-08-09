@@ -440,11 +440,11 @@ void
 NsSlsCleanup(Sock *sockPtr)
 {
     void *arg;
-    int   trys, retry;
+    int   tries, retry;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
     
-    trys = 0;
+    tries = 0;
     do {
         uintptr_t i = nsconf.nextSlsId;
 
@@ -457,7 +457,7 @@ NsSlsCleanup(Sock *sockPtr)
                 retry = 1;
             }
         }
-    } while ((retry != 0) && trys++ < 5);
+    } while ((retry != 0) && tries++ < 5);
 }
 
 

@@ -334,7 +334,7 @@ AddCmds(const Cmd *cmdPtr, NsInterp *itPtr)
 
     while (cmdPtr->name != NULL) {
         /*
-         * One has to provide wither an objProc or a proc.
+         * One has to provide either an objProc or a proc.
          */
         if (cmdPtr->objProc != NULL) {
             (void)Tcl_CreateObjCommand(itPtr->interp, cmdPtr->name, cmdPtr->objProc, itPtr, NULL);

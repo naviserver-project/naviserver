@@ -945,7 +945,7 @@ SpliceChannel(Tcl_Interp *interp, Tcl_Channel chan)
  *      None.
  *
  * Side effects:
- *      Channel is not accesible by Tcl scripts any more.
+ *      Channel is not accessible by Tcl scripts any more.
  *
  *----------------------------------------------------------------------
  */

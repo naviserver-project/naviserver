@@ -194,7 +194,7 @@ Ns_DStringVPrintf(Ns_DString *dsPtr, const char *fmt, va_list apSrc)
     origLength = dsPtr->length;
 
     /*
-     * Extend the dstring, trying first to firt everything in the
+     * Extend the dstring, trying first to fit everything in the
      * static space (unless it is unreasonably small), or if
      * we already have an allocated buffer just bump it up by 1k.
      */

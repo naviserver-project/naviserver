@@ -636,7 +636,7 @@ UpdateStringOfTime(Tcl_Obj *objPtr)
  * GetTimeFromString --
  *
  *      Try to fill ns_Time struct from a string based on a specified
- *      separator (':' or '.'). The colon separater is for the classical
+ *      separator (':' or '.'). The colon separator is for the classical
  *      NaviServer time format "sec:usec", whereas the dot is used for the
  *      floating point format.
  *

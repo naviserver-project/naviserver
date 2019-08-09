@@ -1508,7 +1508,7 @@ HttpGetResult(
             if ((httpPtr->flags & NS_HTTP_FLAG_DECOMPRESS) == 0) {
 
                 /*
-                 * Gziped but not inflated content
+                 * Gzipped but not inflated content
                  * is automatically of a binary-type.
                  * This is pretty straight-forward.
                  */
@@ -2571,7 +2571,7 @@ HttpAppendContent(
  *
  *        Parse chunked content.
  *
- *        This impements a simple state machine that parses data
+ *        This implements a simple state machine that parses data
  *        delivered blockwise. As the chunked-format may be
  *        sliced on an arbitrary point between the blocks, we must
  *        operate character-wise and maintain the internal state.

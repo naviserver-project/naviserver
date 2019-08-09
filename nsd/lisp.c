@@ -281,7 +281,7 @@ Ns_ListPrint(const Ns_List *lPtr, Ns_ElemVoidProc *printProc)
  *      Make a copy of a list.
  *
  * Results:
- *      A ponter to the head of the new list.
+ *      A pointer to the head of the new list.
  *
  * Side effects:
  *      None.

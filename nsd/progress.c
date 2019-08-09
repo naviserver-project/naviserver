@@ -71,7 +71,7 @@ static Ns_Mutex      lock;            /* Lock around table and Progress struct. 
  *
  * NsConfigProgress --
  *
- *      Initialise the progress susbsystem at server startup.
+ *      Initialise the progress subsystem at server startup.
  *
  * Results:
  *      None.

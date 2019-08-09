@@ -149,12 +149,12 @@ Ns_ClsGet(const Ns_Cls *clsPtr, Ns_Conn *conn)
 void
 NsClsCleanup(Conn *connPtr)
 {
-    int trys, retry;
+    int tries, retry;
     void *arg;
 
     NS_NONNULL_ASSERT(connPtr != NULL);
 
-    trys = 0;
+    tries = 0;
     do {
       unsigned int i;
 
@@ -168,7 +168,7 @@ NsClsCleanup(Conn *connPtr)
                 retry = 1;
             }
         }
-    } while ((retry != 0) && (trys++ < 5));
+    } while ((retry != 0) && (tries++ < 5));
 }
 
 

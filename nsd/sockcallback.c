@@ -554,7 +554,7 @@ SockCallbackThread(void *UNUSED(arg))
     Ns_Log(Notice, "socks: shutdown complete");
 
     /*
-     * Tell others tht shutdown is complete.
+     * Tell others that shutdown is complete.
      */
     Ns_MutexLock(&lock);
     running = NS_FALSE;

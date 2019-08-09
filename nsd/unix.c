@@ -298,7 +298,7 @@ NsSendSignal(int sig)
  * NsMemMap --
  *
  *      Maps a file to memory. The file will be mapped as shared
- *      and read or write, depeding on the passed mode.
+ *      and read or write, depending on the passed mode.
  *
  * Results:
  *      NS_OK - file was mapped OK; details of the mapped address

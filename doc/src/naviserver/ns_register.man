@@ -41,7 +41,7 @@ Use [cmd ns_unregister_op] to unregister an ADP request.
 	[arg URL]]
 
 This command register given [arg URL] to be processed by fast path subsystem, i.e.
-all requestes that match will be served by corresponding .adp files if resolved. This
+all requests that match will be served by corresponding .adp files if resolved. This
 can be used when there is no global fast path handler installed.
 
 [para]

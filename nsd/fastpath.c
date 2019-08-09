@@ -184,7 +184,7 @@ NormalizePath(const char **pathPtr) {
              * values from the ns_set. We do not want to free *pathPtr
              * here, but we overwrite it with a freshly allocated
              * string. When this function is used from other contexts,
-             * not freeing the old value could be a protential memory
+             * not freeing the old value could be a potential memory
              * leak.
              *
              */

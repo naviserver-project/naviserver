@@ -616,7 +616,7 @@ Ns_SockBindUnix(const char *path, int socktype, unsigned short mode)
     pathLength = strlen(path);
 
     if (pathLength >= sizeof(addr.sun_path)) {
-        Ns_Log(Error, "provided path exeeds maximum length: %s\n", path);
+        Ns_Log(Error, "provided path exceeds maximum length: %s\n", path);
         return NS_INVALID_SOCKET;
     }
 
@@ -734,7 +734,7 @@ NsPreBind(const char *args, const char *file)
 
     /*
      * Check, if the bind options were provided via file. If so, parse
-     * and interprete it.
+     * and interpret it.
      */
     if (status == NS_OK && file != NULL) {
         Tcl_Channel chan = Tcl_OpenFileChannel(NULL, file, "r", 0);
@@ -1141,7 +1141,7 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
     }
 
     /*
-     * Reveive reply.
+     * Revive reply.
      */
     iov[0].iov_base = (void*) &err;
     iov[0].iov_len = sizeof(int);

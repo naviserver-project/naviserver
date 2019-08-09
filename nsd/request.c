@@ -784,7 +784,7 @@ GetEncodingFormat(const char *encodingString, const char *encodingFormat, double
  *      identy or default rules.
  *
  * Results:
- *      boolen
+ *      boolean
  *
  * Side effects:
  *      None.

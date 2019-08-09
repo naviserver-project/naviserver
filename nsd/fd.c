@@ -346,7 +346,7 @@ Ns_GetTemp(void)
         /*
          * Create a new temp file
          */
-        int         flags, trys;
+        int         flags, tries;
         char       *path, buf[64];
         Ns_DString  ds;
 
@@ -357,7 +357,7 @@ Ns_GetTemp(void)
         flags |= _O_SHORT_LIVED|_O_NOINHERIT|_O_TEMPORARY|_O_BINARY;
 #endif
 
-        trys = 0;
+        tries = 0;
         do {
             Ns_Time     now;
 
@@ -369,7 +369,7 @@ Ns_GetTemp(void)
 #else
             fd = ns_open(path, flags, 0600);
 #endif
-        } while (fd < 0 && trys++ < 10 && errno == EEXIST);
+        } while (fd < 0 && tries++ < 10 && errno == EEXIST);
 
         if (fd < 0) {
             Ns_Log(Error, "tmp: could not open temp file %s: %s",

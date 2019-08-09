@@ -109,7 +109,7 @@ If true, log the time in common-log-format. Otherwise log seconds since the
 epoch. Default: true.
 
 [def logcombined]
-If true, log the referer and user-agent HTTP headers (NCSA combined
+If true, log the referrer and user-agent HTTP headers (NCSA combined
 format). Default: true.
 
 [def maxbuffer]

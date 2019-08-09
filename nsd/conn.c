@@ -1544,7 +1544,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         result = TCL_ERROR;
     } else if (required_flags[opt] != 0u) {
         /*
-         * We have to check the conncection requirements.
+         * We have to check the connection requirements.
          */
         if (NsConnRequire(interp, required_flags[opt], NULL) != NS_OK) {
             result = TCL_ERROR;

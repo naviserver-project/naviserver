@@ -613,7 +613,7 @@ Ns_IndexStringInit(Ns_Index *indexPtr, size_t inc)
  *      A new index.
  *
  * Side effects:
- *      Wil make memory copies of the elements.
+ *      Will make memory copies of the elements.
  *
  *----------------------------------------------------------------------
  */

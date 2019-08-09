@@ -1094,7 +1094,7 @@ GetPool(const char *pool)
  * ReturnHandle --
  *
  *      Return a handle to its pool.  Connected handles are pushed on
- *      the front of the list, disconnected handles are appened to the
+ *      the front of the list, disconnected handles are appended to the
  *      end.
  *
  * Results:

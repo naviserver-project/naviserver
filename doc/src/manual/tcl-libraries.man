@@ -99,7 +99,7 @@ NaviServer distinguishes between global (shared) and per-server
 
 [list_begin itemized]
 
-[item] The [emph "global (shared)"] Tcl libray directory is specified by the
+[item] The [emph "global (shared)"] Tcl library directory is specified by the
 parameter [term tcllibrary] in the [term ns/parameters] section and it
 defaults to [term tcl] under NaviServer [term home] directory.
 
@@ -177,7 +177,7 @@ directories and then the specified Tcl-only modules:
 [list_end]
 
 If the [term tcl] section of the server configuration contains the
-parameter [term initcmds] then thest commands are executed after the
+parameter [term initcmds] then these commands are executed after the
 initialization of the Tcl-only modules. This feature is useful e.g.
 for simple server configurations, where the full code of the
 server-initialization can be put into the config file. So only one

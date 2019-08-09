@@ -13,7 +13,7 @@ We cover here just the .tcl files.
 [para] By default requests to files with the extension .tcl are served
 as plain files (i.e. showing the source code of the .tcl files). By
 setting the flag [term enabletclpages] in the configuration file,
-NaviServer can be instructed to interprete such files when these are
+NaviServer can be instructed to interpret such files when these are
 requested (Tcl pages).  Notice the entries in your sample-config.tcl
 configuration file:
 

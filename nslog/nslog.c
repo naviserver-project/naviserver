@@ -779,13 +779,13 @@ LogTrace(void *arg, Ns_Conn *conn)
     Ns_DStringPrintf(dsPtr, "%d %" PRIdz, (n != 0) ? n : 200, Ns_ConnContentSent(conn));
 
     /*
-     * Append the referer and user-agent headers (if any)
+     * Append the referrer and user-agent headers (if any)
      */
 
     if ((logPtr->flags & LOG_COMBINED)) {
 
         Tcl_DStringAppend(dsPtr, " \"", 2);
-        p = Ns_SetIGet(conn->headers, "referer");
+        p = Ns_SetIGet(conn->headers, "referrer");
         if (p != NULL) {
             AppendEscaped(dsPtr, p);
         }

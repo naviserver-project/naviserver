@@ -174,7 +174,7 @@ Ns_SockaddrSameIP(const struct sockaddr *addr1, const struct sockaddr *addr2)
  * Ns_SockaddrMaskedMatch --
  *
  *      Check, the provided IPv4 or IPv6 address matches the provided mask and
- *      masked addreess.
+ *      masked address.
  *
  * Results:
  *      Boolean expressing success.

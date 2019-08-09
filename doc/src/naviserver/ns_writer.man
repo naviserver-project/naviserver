@@ -72,7 +72,7 @@ If specified, file will be returned starting with this offset.
 
 [para]
 [option -size]
-If not specified, the whole file will be retuned, otherwise only given
+If not specified, the whole file will be returned, otherwise only given
 part. Can be combined with [option -offset].
 
 
