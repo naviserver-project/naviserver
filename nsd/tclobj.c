@@ -427,6 +427,8 @@ Ns_TclSetOpaqueObj(Tcl_Obj *objPtr, const char *type, void *addr)
 bool
 NsTclObjIsByteArray(const Tcl_Obj *objPtr)
 {
+    bool result;
+
     NS_NONNULL_ASSERT(objPtr != NULL);
 
     /*
@@ -436,17 +438,24 @@ NsTclObjIsByteArray(const Tcl_Obj *objPtr)
      * 8.7a1, Tcl has introduced the properByteArrayTypePtr, which allows as
      * well a string rep.
      */
-#if 0
-    fprintf(stderr, "NsTclObjIsByteArray type %p proper %d old %d bytes %p name %s\n",
-            (void*)(objPtr->typePtr), (objPtr->typePtr == properByteArrayTypePtr),
-            (objPtr->typePtr == byteArrayTypePtr),
-            (void*)(objPtr->bytes),
-            objPtr->typePtr == NULL ? "string" : objPtr->typePtr->name);
+#ifdef NS_TCL_PRE87
+    result = ((objPtr->typePtr == byteArrayTypePtr) && (objPtr->bytes == NULL));
+#else
+    result = (objPtr->typePtr == properByteArrayTypePtr);
 #endif
 
-    return ((objPtr->typePtr == properByteArrayTypePtr) ||
-            ((objPtr->typePtr == byteArrayTypePtr) && (objPtr->bytes == NULL))
-            ) ? NS_TRUE : NS_FALSE;
+#if 0
+    fprintf(stderr, "NsTclObjIsByteArray? %p type %p proper %d old %d bytes %p name %s => %d\n",
+            (void*)objPtr,
+            (void*)(objPtr->typePtr),
+            (objPtr->typePtr == properByteArrayTypePtr),
+            (objPtr->typePtr == byteArrayTypePtr),
+            (void*)(objPtr->bytes),
+            objPtr->typePtr == NULL ? "string" : objPtr->typePtr->name,
+            result);
+#endif
+
+    return result;
 }
 
 

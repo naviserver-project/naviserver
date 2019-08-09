@@ -215,6 +215,22 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
             Tcl_Obj *obj = objv[objc - remain];
             int      result;
 
+#ifdef NS_TCL_PRE87
+            /*
+             * In case a Tcl_Obj has no stringrep (e.g. a pure/proper
+             * byte array), it is assumed that this cannot be an
+             * option flag (starting with a '-'). Since
+             * GetOptIndexObjvSpec() and Tcl_GetIndexFromObjStruct()
+             * create on demand string representations, the "pure"
+             * property will be lost and Tcl cannot distinguish later
+             * whether it can use the string representation as byte
+             * array or not. Fortuantely, this dangerous fragility is
+             * gone in Tcl 8.7.
+             */
+            if (obj->bytes == NULL) {
+                break;
+            }
+#endif
             result = Tcl_IsShared(obj) ?
                 GetOptIndexObjvSpec(obj, optSpec, &optIndex) :
                 Tcl_GetIndexFromObjStruct(NULL, obj, optSpec,

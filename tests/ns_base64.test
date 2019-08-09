@@ -330,10 +330,10 @@ test ns_base64encode-3.0 {
                    [lindex [nsf::__db_get_obj $c] 1]]
     #ns_log notice $r
     lappend r [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
-    ns_log notice [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
+    #ns_log notice [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
     ns_log notice [list [ns_md string -digest sha1 $a] [ns_md string -digest sha1 $b] [ns_md string -digest sha1 $c]]
-    ns_log notice [list [ns_sha1 $a] [ns_sha1 $b] [ns_sha1 $c]]
-    ns_log notice [list [ns_md5 $a] [ns_md5 $b] [ns_md5 $c]]
+    #ns_log notice [list [ns_sha1 $a] [ns_sha1 $b] [ns_sha1 $c]]
+    #ns_log notice [list [ns_md5 $a] [ns_md5 $b] [ns_md5 $c]]
 
     set F [::open [ns_mktemp] w]; ::fconfigure $F -translation binary
     ::puts -nonewline $F $a
@@ -344,13 +344,16 @@ test ns_base64encode-3.0 {
     ns_log notice "obj(a) [nsf::__db_get_obj $a]"
     ns_log notice "obj(b) [nsf::__db_get_obj $b]"
     ns_log notice "obj(c) [nsf::__db_get_obj $c]"
+    #ns_logctl severity Debug on
+    #set md [ns_md string -digest sha1 $a]
+    #ns_log notice "====== WQ [string equal 7e32f884eaf0cbdf8c2df9e481ea9bef3ddbc4cf $md]==========================="
     lappend r [list \
                    [lindex [nsf::__db_get_obj $a] 1] \
                    [lindex [nsf::__db_get_obj $b] 1] \
                    [lindex [nsf::__db_get_obj $c] 1]]
-
-    ns_log notice [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
-    lappend r [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
+    set l [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
+    ns_log notice $l
+    lappend r $l
 
 }  -result {äüö☀ Ã¤Ã¼Ã¶â äüö☀ {{} bytearray string} {w6TDvMO24piA w6TDvMO24piA w6TDvMO24piA} {bytearray bytearray bytearray} {w6TDvMO24piA w6TDvMO24piA w6TDvMO24piA}}
 
@@ -379,6 +382,7 @@ test ns_base64encode-3.1 {
     set F [::open [ns_mktemp] w]; ::fconfigure $F -translation binary
     ::puts -nonewline $F $a
     ::puts -nonewline $F $b
+    ::puts -nonewline $F $c
     ::close $F
 
     lappend r [list \
@@ -479,9 +483,6 @@ test ns_base64encode-3.3 {binary data, from file or memory} -body {
     lappend r [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
 
 } -returnCodes {error ok} -result {{} bytearray bytearray string {AAECA+KYgA== AAECA+KYgA== AAECA+KYgA==} {bytearray bytearray bytearray} {AAECA+KYgA== AAECA+KYgA== AAECA+KYgA==}}
-
-
-
 
 
 

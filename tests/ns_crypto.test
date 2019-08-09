@@ -187,6 +187,50 @@ if {[string match "*hkdf*" $errorMsg]} {
 
 }
 
+
+#######################################################################################
+#  Working with "funny" UTF-8 characters
+#######################################################################################
+test md-utf-1.0 {plain umlaut, 16 bits UTF-8} -body {
+    ns_md string ü
+} -result 607474ca475a9724d7360aba71a56d5df77e61350e3f724cfa1f46e857e2d85f
+
+test md-utf-1.1 {character outside 16bit range, 24 bits UTF-8} -body {
+    ns_md string ☀
+} -result d0f6163cbf68c300eb17b4e538651099d95afaaab84fa7b283f56face0ca643c
+
+#######################################################################################
+#  Real world example including hmac and md
+#######################################################################################
+test hmac-md-1.0 {test results of hmac passed to ns_crypto::md} -body {
+    ns_crypto::md string [ns_crypto::hmac string \
+                              -digest sha256 \
+                              -encoding binary \
+                              "AWS4LfongAfJ2Y2L1y5M1R1sd6fk1csV1ttRXQACnpzI" \
+                              20190808]
+} -result 4e4beb75ada15a19223adff1a57d7f11964b2209d3513ad51c7227fdc109b963
+
+test hmac-md-1.0.1 {test results of hmac passed to ns_crypto::md} -body {
+    set h [ns_crypto::hmac string \
+               -digest sha256 \
+               -encoding binary \
+               "AWS4LfongAfJ2Y2L1y5M1R1sd6fk1csV1ttRXQACnpzI" \
+               20190808]
+    ns_log notice "obj(h) [nsf::__db_get_obj $h]"
+    ns_crypto::md string $h
+} -result 4e4beb75ada15a19223adff1a57d7f11964b2209d3513ad51c7227fdc109b963
+
+
+test hmac-md-1.1 {test results of ns_crypto::hmac passed to ns_md} -body {
+    ns_md string [ns_crypto::hmac string \
+                      -digest sha256 \
+                      -encoding binary \
+                      "AWS4LfongAfJ2Y2L1y5M1R1sd6fk1csV1ttRXQACnpzI" \
+                      20190808]
+} -result 4e4beb75ada15a19223adff1a57d7f11964b2209d3513ad51c7227fdc109b963
+
+
+
 #
 # Local variables:
 #    mode: tcl

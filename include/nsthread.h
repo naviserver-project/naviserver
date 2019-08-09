@@ -547,10 +547,13 @@ typedef int ns_sockerrno_t;
 # define MSG_NOSIGNAL 0
 #endif
 
-#if TCL_MAJOR_VERSION<8 && TCL_MINOR_VERSION<5
+#if TCL_MAJOR_VERSION<=8 && TCL_MINOR_VERSION<5
 # define NS_TCL_PRE85
 #endif
 
+#if TCL_MAJOR_VERSION<=8 && TCL_MINOR_VERSION<7
+# define NS_TCL_PRE87
+#endif
 
 #if !defined(NS_POLL_NFDS_TYPE)
 # define NS_POLL_NFDS_TYPE unsigned int

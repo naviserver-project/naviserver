@@ -648,16 +648,26 @@ Ns_GetBinaryString(Tcl_Obj *obj, int *lengthPtr, Tcl_DString *dsPtr)
      * d5b6c20ee0b3f6dafa632a63eafe3fd0db26752d
      *
      */
-    if (!NsTclObjIsByteArray(obj)) {
+
+    if (NsTclObjIsByteArray(obj)) {
+        //fprintf(stderr, "NsTclObjIsByteArray\n");
+        result = (char *)Tcl_GetByteArrayFromObj(obj, lengthPtr);
+    } else {
         int stringLength;
-        const char *charInput = Tcl_GetStringFromObj(obj, &stringLength);
+        const char *charInput;
+        charInput = Tcl_GetStringFromObj(obj, &stringLength);
+
+        //if (NsTclObjIsEncodedByteArray(obj)) {
+        //    fprintf(stderr, "NsTclObjIsEncodedByteArray\n");
+        //} else {
+        //    //fprintf(stderr, "some other obj\n");
+        //}
 
         Tcl_UtfToExternalDString(NS_utf8Encoding, charInput, stringLength, dsPtr);
         result = dsPtr->string;
         *lengthPtr = dsPtr->length;
-    } else {
-        result = (char *)Tcl_GetByteArrayFromObj(obj, lengthPtr);
     }
+
     return result;
 }
 
