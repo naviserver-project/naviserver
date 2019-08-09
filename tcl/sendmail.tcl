@@ -598,7 +598,7 @@ proc _ns_smtp_send {mode sock string} {
 #   The list of lines if any.
 #
 # Side effects:
-#   Depeding on the "error" flag, may or may not throw
+#   Depending on the "error" flag, may or may not throw
 #   Tcl error on constraint test failure. Regardless
 #   of that, it always logs the failure to the server log.
 #

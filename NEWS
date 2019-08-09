@@ -149,7 +149,7 @@ Documentation improvements:
    - All documentation: use memory units when appropriate
    
    - doc/src/naviserver/ns_job.man: aligned documentation with
-     implementaton; use itemized list for describing entries in the
+     implementation; use itemized list for describing entries in the
      result lists.
      
    - doc/src/manual/admin-maintenance.man:
