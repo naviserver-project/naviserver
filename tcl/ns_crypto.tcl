@@ -75,8 +75,8 @@ nx::Class create ns_md -superclass ::ns_crypto::HashFunctions {
     :public method add {message} {
         ::ns_crypto::md add ${:ctx} $message
     }
-    :public method get {} {
-        ::ns_crypto::md get ${:ctx}
+    :public method get {{-encoding hex}} {
+        ::ns_crypto::md get -encoding $encoding ${:ctx}
     }
 }
 
@@ -117,8 +117,8 @@ nx::Class create ns_hmac -superclass ::ns_crypto::HashFunctions {
     :public method add {message} {
         ::ns_crypto::hmac add ${:ctx} $message
     }
-    :public method get {} {
-        ::ns_crypto::hmac get ${:ctx}
+    :public method get {{-encoding hex}} {
+        ::ns_crypto::hmac get -encoding $encoding ${:ctx}
     }
 }
 
@@ -201,7 +201,7 @@ nsf::proc ns_totp {
     #
     if {![info exists key]} {
         set secret [ns_config "ns/server/[ns_info server]" serversecret ""];
-        set key [binary format H* [::ns_crypto::md string -digest sha224 $secret-$user_id]]
+        set key [::ns_crypto::md string -digest sha224 -encoding binary $secret-$user_id]
     }
     #
     # If no time is provided, take the current time
