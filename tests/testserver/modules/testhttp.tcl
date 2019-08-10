@@ -68,7 +68,7 @@ namespace eval ::nstest {
         }
 
         #
-        # Force network line ending symantics.
+        # Force network line ending semantics.
         #
 
         fconfigure $rfd -translation crlf -blocking 0

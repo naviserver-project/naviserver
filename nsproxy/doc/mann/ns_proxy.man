@@ -67,7 +67,7 @@ the given [arg pool].
 The output is one or more lists, depending on the optional
 [opt handle] argument. If the optional argument is
 given, only the status of the proxy for the given handle is
-returned and the result is a one-element list. Otherwise, stati of
+returned and the result is a one-element list. Otherwise, statuses of
 all active proxies for the given [arg pool] are returned and the
 result is a list of two or more elements.
 

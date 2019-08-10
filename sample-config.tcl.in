@@ -515,7 +515,7 @@ ns_section	"ns/server/${servername}/module/nslog" {
     # Include high-res start time and partial request durations (accept, queue, filter, run; default: false)
     ns_param	logpartialtimes		false
 
-    # Include thread name as second token in the log entires (default: false)
+    # Include thread name as second token in the log entries (default: false)
     ns_param	logthreadname		false
 
     # Max # of lines in the buffer, 0 == no limit (default: 0)
@@ -590,7 +590,7 @@ ns_section "ns/interps/CGIinterps" {
 #  2. Decided whether or not you wish to enable features such
 #     as password echoing at login time, and command logging.
 #
-#  3. Add a list of authorized users and passwords. The entires
+#  3. Add a list of authorized users and passwords. The entries
 #     take the following format:
 #
 #     <user>:<encryptedPassword>:

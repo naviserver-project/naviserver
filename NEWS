@@ -1429,7 +1429,7 @@ Modules:
     . New module for managing server certificates via Let's Encrypt
 
  - WebSocket:
-    . Varius small updates (links, spelling errors, ...)
+    . Various small updates (links, spelling errors, ...)
 
 
 
@@ -2146,7 +2146,7 @@ New Features:
       sources, fixes potential encoding problems.  Similarly, the new
       function [ns_getcontent] returns the unparsed content either
       binary or encoded as file or as string. These new features makes
-      it easer to use upload spooling to avoid memory bloats.
+      it easier to use upload spooling to avoid memory bloats.
 
     - Furthermore, (spooled) files can be sent from disk to some http
       server via ns_http (or ns_ssl) without the need to load the
@@ -3518,12 +3518,12 @@ New Features:
       around.
 
     * Improved cache statistics: added "saved", expressing cumulative
-      saved time from "ns_cache_eval". The reporting of theses
+      saved time from "ns_cache_eval". The reporting of these
       statistics as updated as well in the add-on package nsstats.
 
     * Improved locking statistics: added "total_waiting_time" and
       "max_waiting_time" to the mutex monitoring statistics. The
-      reporting of theses statistics as updated as well in the add-on
+      reporting of these statistics as updated as well in the add-on
       package nsstats.
 
     * Made upload progress management compatible with usual
