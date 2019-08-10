@@ -295,7 +295,7 @@ including header line, all of the headers plus optional request body.
 The [term replylength] returns the value of the Content-Length as
 returned by the remote. This can be zero if the length of returned data
 is not known in advance.
-The [ŧerm sent] returns number of bytes sent to the remote. This includes
+The [term sent] returns number of bytes sent to the remote. This includes
 the header line, all of the headers plus optional request body.
 The [term received] returns number of bytes received from the remote. This
 includes status line, all of the headers plus the optional reply body.
@@ -303,12 +303,12 @@ The [term sendbodysize] returns number of bytes of the request body sent
 to the remote so far.
 The [term replybodysize] returns number of bvtes of the reply body received
 from the remote so far.
-The [ŧerm replysize] returns number of bytes of the body received from the
+The [term replysize] returns number of bytes of the body received from the
 remote so far. Difference to the [term replybodysize] is that this element
 tracks number of body bytes prior optional deflate step for compressed contents,
 whereas the [term replybodysize] tracks the number of body bytes of the
 deflated contents.  For uncompressed reply content, both [term replysize]
-and [ŧerm replybodysize] will have the same value.
+and [term replybodysize] will have the same value.
 
 [list_begin arguments]
 [arg_def "" id]

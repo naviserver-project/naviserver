@@ -28,16 +28,16 @@
  [para]
  The specified [arg filename] names the file to be opened, the
  optional [arg mode] is a list of entries limited to 
- [verb "APPEND"], [verb "EXCL"],  [verb "DSYNC"],
- [verb "SYNC"],  [verb "TRUNC"]. The modes [verb "DSYNC"] and
- [verb "SYNC"] are only allowed, when supported by the
+ [term "APPEND"], [term "EXCL"],  [term "DSYNC"],
+ [term "SYNC"],  [term "TRUNC"]. The modes [term "DSYNC"] and
+ [term "SYNC"] are only allowed, when supported by the
  used operating systems. For details on the meaning of these
- flags, consult the [verb open] manual page of section (2)
+ flags, consult the [term open] manual page of section (2)
  of standard Unix manuals.
 
 [call [cmd "ns_asynclogfile write"] \
 	[opt [option -binary]] \
-	[opt [option -sanitize sanitize]] \
+	[opt [option "-sanitize sanitize"]] \
 	[arg handle] \
 	[arg line]]
 
@@ -48,13 +48,13 @@ character, the caller has to provide this character.
 The option [option -binary] should be provided for binary data.
 The optional parameter [option -sanitize] can be used to sanitize the
 input. The default is taken from the global parameter
-[verb sanitizelogfiles].
+[term sanitizelogfiles].
 
 [list_begin itemized]
-[item] The value of [verb 0] means that no sanitize should happen.
-[item] The value [verb 1] means that full sanitizing is in place,
+[item] The value of [term 0] means that no sanitize should happen.
+[item] The value [term 1] means that full sanitizing is in place,
 which means that non-printable characters are written as hex values.
-[item] The a sanitize value of [verb 2] means that sanitizing happens
+[item] The a sanitize value of [term 2] means that sanitizing happens
 in a human friendly fashion: newlines are preserved, but sanitizing
 makes sure that multiline content cannot not confused with different
 log file entries. After a new-line character a continuation character
