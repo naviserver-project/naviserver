@@ -498,7 +498,14 @@ New Features:
     has the advantage over e.g. "ns_atserverstart" that it is
     executed in a state when the server is fully initialized.
 
-
+    #
+    # Parameters of the "tcl" section of the server "myserver"
+    #
+    ns_section ns/server/myserver/tcl {
+      ns_param initcmds {
+        ns_log notice "=== Hello World from server: [ns_info server]"
+      }
+    }
 
   - Improved readability for config files
     -------------------------------------
