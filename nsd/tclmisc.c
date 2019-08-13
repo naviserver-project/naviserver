@@ -1111,19 +1111,15 @@ Base64DecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         size_t         size;
         const char    *chars = Tcl_GetStringFromObj(objv[1], &len);
         unsigned char *decoded;
-        Tcl_DString    ds, *dsPtr = &ds;
 
-        Tcl_DStringInit(dsPtr);
         size = (size_t)len + 3u;
         decoded = (unsigned char *)ns_malloc(size);
         size = Ns_HtuuDecode2(chars, decoded, size, encoding);
-        //hexPrint("decoded", decoded, size);
+        // hexPrint("decoded", decoded, size);
 
         decoded[size] = UCHAR('\0');
-        Tcl_ExternalToUtfDString(NS_utf8Encoding, (char *)decoded, (int)size, dsPtr);
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(dsPtr->string, dsPtr->length));
+        Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, (int)size));
 
-        Tcl_DStringFree(dsPtr);
         ns_free(decoded);
     }
 
