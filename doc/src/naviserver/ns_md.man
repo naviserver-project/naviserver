@@ -27,6 +27,7 @@ set of cryptogrphic algorithms and provides the incremental interface.
 
 [call [cmd "ns_md string"] \
 	[opt [option "-digest [arg digest]"]] \
+	[opt [option "-encoding [arg encoding]"]] \
 	[arg message]]
 
 [para]
@@ -54,7 +55,9 @@ Method to add [arg data] incrementally to the MD object, which was created
 previously with [cmd "ns_md new"].
 
 
-[call [arg \$md_object] [cmd "get"]]
+[call [arg \$md_object] [cmd "get"] \
+	[opt [option "-encoding [arg encoding]"]] \
+]
 
 Method to return the current digest value from the MD object, to which data was
 added previously with the method [cmd "add"].
@@ -78,6 +81,13 @@ supports the following message digest algorithms: "blake2b512
 blake2s256 md4 md5 md5-sha1 mdc2 ripemd160 sha1 sha224 sha256 sha3-224
 sha3-256 sha3-384 sha3-512 sha384 sha512 sha512-224 sha512-256
 shake128 shake256 sm3 whirlpool".  The default value is "sha256"
+
+[opt_def -encoding [arg encoding]]
+
+The option [option "-encoding [arg encoding]"] specifies the
+output encoding used for the resulting values of the dict.
+Possible encodings are [term hex], [term base64url],
+[term base64], or [term binary]. Default is [term hex].
 
 [list_end]
 
