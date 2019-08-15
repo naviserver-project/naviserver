@@ -600,7 +600,7 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                      */
                     inentity = WordEndsInSemi(inPtr, &length);
                     /*
-                     * Interprete numeric entities between 33 and 255.
+                     * Handle numeric entities between 33 and 255.
                      */
                     if (inentity) {
                         if (CHARTYPE(digit, *(inPtr + 1u)) != 0) {
@@ -1099,27 +1099,50 @@ NsTclBase64UrlEncodeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, 
  */
 
 static int
-Base64DecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, int encoding)
+Base64DecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv,
+                   int encoding)
 {
-    int result = TCL_OK;
+    int      result = TCL_OK, isBinary = 0;
+    Tcl_Obj *charsObj;
+    Ns_ObjvSpec opts[] = {
+        {"-binary", Ns_ObjvBool, &isBinary, INT2PTR(NS_TRUE)},
+        {"--",      Ns_ObjvBreak, NULL,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"string", Ns_ObjvObj, &charsObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "string");
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
+
     } else {
         int            len;
         size_t         size;
-        const char    *chars = Tcl_GetStringFromObj(objv[1], &len);
         unsigned char *decoded;
-
+        const char    *chars = Tcl_GetStringFromObj(charsObj, &len);
+        
         size = (size_t)len + 3u;
         decoded = (unsigned char *)ns_malloc(size);
         size = Ns_HtuuDecode2(chars, decoded, size, encoding);
-        // hexPrint("decoded", decoded, size);
 
-        decoded[size] = UCHAR('\0');
-        Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, (int)size));
+        if (isBinary) {
+            // hexPrint("decoded", decoded, size);
 
+            Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, (int)size));
+        } else {
+            Tcl_DString    ds, *dsPtr = &ds;
+
+            Tcl_DStringInit(dsPtr);
+            Tcl_ExternalToUtfDString(NS_utf8Encoding, (char *)decoded, (int)size, dsPtr);
+
+            //Tcl_SetObjResult(interp, TclDStringToObj(&ds));
+            Tcl_DStringResult(interp, dsPtr);
+            //Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(dsPtr->string, dsPtr->length));
+            //Tcl_DStringFree(dsPtr);
+        }
+        
         ns_free(decoded);
     }
 
