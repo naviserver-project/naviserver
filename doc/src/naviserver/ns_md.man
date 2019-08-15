@@ -57,7 +57,8 @@ The resulting message digest is calculated cumulatively.
     [opt [option "-digest [arg digest]"]] \
 ]
 
-Create and return a new MD object for incremental operations. 
+Create and return a new MD object for incremental operations.
+The option [option "-digest"] defaults to "sha256".
 
 [call [arg \$md_object] [cmd "add"] \
     [arg data] \

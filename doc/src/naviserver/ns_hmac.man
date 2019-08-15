@@ -60,12 +60,13 @@ The resulting HMAC is calculated cumulatively.
 
 [call [cmd "ns_hmac new"] \
     [opt [option "-digest [arg digest]"]] \
-    [opt [option "-key [arg key]"]] \
+    [option "-key [arg key]"] \
 ]
 
-Create and return a new HMAC object for incremental operations. 
-NOTE: the [option "-digest"] and [option "-key"] are not really
-optional. They are both mandatory.
+Create and return a new HMAC object for incremental operations.
+The option [option "-digest"] defaults to "sha256"
+the option [option "-key"] has to be always specified.
+
 
 [call [arg \$hmac_object] [cmd "add"] [arg data]]
 
