@@ -148,7 +148,7 @@ Type=forking
 PIDFile=/usr/local/ns/logs/nsd.pid
 Environment="LANG=en_US.UTF-8"
 # In case, a site is using Google Perfortools malloc with the system-malloc patch for Tcl:
-# Environment="LD_PRELOAD=/usr/lib64/libtcmalloc.so"
+# Environment="LD_PRELOAD=/usr/lib/libtcmalloc.so"
 ExecStartPre=/bin/rm -f /usr/local/ns/logs/nsd.pid
  
 # Standard startup with a non-privileged port (like 8000)
