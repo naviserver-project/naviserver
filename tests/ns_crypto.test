@@ -230,6 +230,40 @@ test hmac-md-1.1 {test results of ns_crypto::hmac passed to ns_md} -body {
 } -result 4e4beb75ada15a19223adff1a57d7f11964b2209d3513ad51c7227fdc109b963
 
 
+test base64-md5.1 {ns_base64encode and decode with 2 byte UTF-8 character "ü"} -body {
+    set string "ü"
+    set m0 [ns_md5 $string]
+    ns_log notice "obj(str0) [nsf::__db_get_obj $string] $m0 $string"
+    set encoded [ns_base64encode $string]
+    set m1 [ns_md5 $string]
+    ns_log notice "obj(str1) [nsf::__db_get_obj $string] $m1 $string"
+    set decoded [ns_base64decode $encoded]
+    set m2 [ns_md5 $string]
+    ns_log notice "obj(dec1) [nsf::__db_get_obj $decoded] $m2 $decoded"
+    set decoded [encoding convertfrom utf-8 $decoded]
+    set m3 [ns_md5 $string]
+    ns_log notice "obj(dec2) [nsf::__db_get_obj $decoded] $m3 $decoded"
+    list $m1 $m2 $m3
+} -result {C03410A5204B21CD8229FF754688D743 C03410A5204B21CD8229FF754688D743 C03410A5204B21CD8229FF754688D743}
+
+test base64-md5.2 {ns_base64encode and decode with 2 byte UTF-8 character "ü"} -body {
+    set encoded {I+w+Yr+CXWGVsk2ZbqqzZlKcTuEM8TCMLOYjBv1h8xo2txA0Q5UX7v5gd5j6e8x1eIWGcfd3ORH2Vgt2HcDURw==}
+    set ns_dec  [ns_base64decode -binary $encoded]
+    set tcl_dec [binary decode base64 $encoded]
+    set m0 [ns_md5 $ns_dec]
+    set m1 [ns_md5 $tcl_dec]
+    ns_log notice "obj(ns_dec) [nsf::__db_get_obj $ns_dec] $m0"
+    ns_log notice "obj(tcl_de) [nsf::__db_get_obj $tcl_dec] $m1"
+
+    binary scan $ns_dec H* ns_hex
+    binary scan $tcl_dec H* tcl_hex
+    ns_log notice "ns_dec  <$ns_hex>"
+    ns_log notice "tcl_dec <$tcl_hex>"
+
+    list $m0 $m1 [string equal $ns_hex $tcl_hex]
+} -result {E50C2BFEF5ABE4D1004C192DFFA769ED E50C2BFEF5ABE4D1004C192DFFA769ED 1}
+
+
 
 #
 # Local variables:

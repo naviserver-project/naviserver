@@ -11,7 +11,7 @@ test ns_base64encode-0.1 {basic syntax: plain call} -body {
 
 test ns_base64decode-0.1 {basic syntax: plain call} -body {
      ns_base64decode
-} -returnCodes error -result {wrong # args: should be "ns_base64decode string"}
+} -returnCodes error -result {wrong # args: should be "ns_base64decode ?-binary? ?--? string"}
 
 
 test ns_base64encode-1.1 {ns_base64encode basic functionality} -body {
@@ -163,7 +163,7 @@ test ns_base64encode-2.3.2 {ns_base64encode and decode with 2 byte UTF-8 charact
     set string "ü"
     set encoded [ns_base64encode $string]
     set decoded [ns_base64decode $encoded]
-    set decoded [encoding convertfrom utf-8 $decoded]
+    #set decoded [encoding convertfrom utf-8 $decoded]
     list [string length $string] [string equal $string $decoded] [string length $decoded] \
         $encoded $decoded
 } -result {1 1 1 w7w= ü}
@@ -172,7 +172,7 @@ test ns_base64encode-2.3.3 {ns_base64encode and decode with 3 byte UTF-8 charact
     set string "☀"
     set encoded [ns_base64encode $string]
     set decoded [ns_base64decode $encoded]
-    set decoded [encoding convertfrom utf-8 $decoded]
+    #set decoded [encoding convertfrom utf-8 $decoded]
     list [string length $string] [string equal $string $decoded] [string length $decoded] \
         $encoded $decoded
 } -result {1 1 1 4piA ☀}
@@ -186,7 +186,7 @@ test ns_base64encode-2.3.3 {ns_base64encode and decode with 3 byte UTF-8 charact
 #         $encoded $decoded
 # } -result {1 1 1 4piA ☀}
 
-test tcl_base64encode-2.3.4.1 {tcl base64 encode and decode with 3 byte UTF-8 character "☀"} -body {
+test tcl_base64encode-2.3.4.1 {tcl base64 encode and decode with 2 byte UTF-8 character "ü"} -body {
     set string "ü"
     set encoded [ns_base64encode [encoding convertto utf-8 $string]]
     set decoded [encoding convertfrom utf-8 [ns_base64decode $encoded]]
@@ -486,13 +486,17 @@ test ns_base64encode-3.3 {binary data, from file or memory} -body {
 
 } -returnCodes {error ok} -result {{} bytearray bytearray string {AAECA+KYgA== AAECA+KYgA== AAECA+KYgA==} {bytearray bytearray bytearray} {AAECA+KYgA== AAECA+KYgA== AAECA+KYgA==}}
 
-test ns_base64decode-4.0 {binary data, from file or memory} -body {
-    set decoded [ns_base64decode {I+w+Yr+CXWGVsk2ZbqqzZlKcTuEM8TCMLOYjBv1h8xo2txA0Q5UX7v5gd5j6e8x1eIWGcfd3ORH2Vgt2HcDURw==}]
+
+test ns_base64decode-4.0 {
+    base64decoded from provided string + binary scan
+} -body {
+    set decoded [ns_base64decode -binary {I+w+Yr+CXWGVsk2ZbqqzZlKcTuEM8TCMLOYjBv1h8xo2txA0Q5UX7v5gd5j6e8x1eIWGcfd3ORH2Vgt2HcDURw==}]
     ns_log notice "obj(key) [nsf::__db_get_obj $decoded]"
     binary scan $decoded H* var
     list [string length $decoded] [string length $var] \
         [string equal $var 23ec3e62bf825d6195b24d996eaab366529c4ee10cf1308c2ce62306fd61f31a36b71034439517eefe607798fa7bcc7578858671f7773911f6560b761dc0d447]
 } -result {64 128 1}
+
 
 
 cleanupTests

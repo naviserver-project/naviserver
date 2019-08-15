@@ -37,7 +37,7 @@ test ns_uuencode-0.1 {basic syntax: plain call} -body {
 
 test ns_uudecode-0.2 {basic syntax: plain call} -body {
      ns_uudecode
-} -returnCodes error -result {wrong # args: should be "ns_uudecode string"}
+} -returnCodes error -result {wrong # args: should be "ns_uudecode ?-binary? ?--? string"}
 
 test ns_uuencode-1.1 {long string} -body {
     ns_uuencode 1234567890

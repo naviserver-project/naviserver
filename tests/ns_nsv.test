@@ -307,6 +307,7 @@ test ns_nsv-5.2.2 {nsv_get nonexisting key} -setup {
 test ns_nsv-5.2.3 {nsv_get nonexisting key} -setup {
     nsv_set a k1 v1
 } -body {
+    unset -nocomplain var
     nsv_get a k2 var
     info exists var
 } -cleanup {
