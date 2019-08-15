@@ -2,24 +2,23 @@
 [manpage_begin ns_hmac n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {Returns a hex-encoded string containing a keyed-hash
+[titledesc {Returns a string containing a keyed-hash
 message authentication code (HMAC)}]
 
 [description] These functions return a keyed-hash message authentication
-code (HMAC) for the specified key and message using the specified
+code (HMAC) for the specified key and message, using the specified
 message digest algorithm. An HMAC is a message authentication code of
 a key (secret) with a message. It may be used to simultaneously verify
 both the data integrity and the authentication of a message. For
 details of HMAC, consult RFC 4231.
 
 [para] The provided commands provide a one-step interface and an
-incremental interface, where the latter one can be used to
-e.g. incrementally compute a HMAC by reading data from a file. This is
-especially important for computing a HMAC on content which is too large
-to be kept in memory.
+incremental interface, where the latter one can be used to incrementally
+compute a HMAC e.g. by reading data from a file. This is especially important
+for computing a HMAC on content which is too large to be kept in memory.
 
 [para] The listed commands are available in installations when
-NaviServer is compiled with OpenSSL support and where the nsf package
+NaviServer is compiled with OpenSSL support and where the NSF package
 is installed.
 
 [section {COMMANDS}]
@@ -34,50 +33,56 @@ is installed.
 
 [para]
 [arg key]
-is used as secret in the HMAC computation
+Secret in the HMAC computation.
 
 [para]
 [arg message]
-is the text from which the HMAC is to be computed.
+Data from which the HMAC is to be computed.
 
-
-[call [cmd "ns_hmac file"] [opt [option "-digest [arg digest]"]] [arg key] [arg filename]]
+[call [cmd "ns_hmac file"] \
+    [opt [option "-digest [arg digest]"]] \
+    [opt [option "-encoding [arg encoding]"]] \
+    [arg key] [arg filename] [arg args] \
+]
 
 [para]
 [arg key]
-is used as secret in the HMAC computation
+Secret in the HMAC computation
 
 [para]
 [arg filename]
-points to a file containing the text from which the HMAC is to be
-computed. The file is read incrementally.
+Path of a file containing the data from which the HMAC
+is to be computed. The file is read incrementally.
+ 
+[arg args]
+Optional paths to other files to be processed.
+The resulting HMAC is calculated cumulatively.
 
 [call [cmd "ns_hmac new"] \
-	[opt [option "-digest [arg digest]"]] \
-	[opt [option "-key [arg key]"]] \
-	]
+    [opt [option "-digest [arg digest]"]] \
+    [opt [option "-key [arg key]"]] \
+]
 
 Create and return a new HMAC object for incremental operations. 
+NOTE: the [option "-digest"] and [option "-key"] are not really
+optional. They are both mandatory.
 
 [call [arg \$hmac_object] [cmd "add"] [arg data]]
 
-Method to add [arg data] incrementally to the HMAC object, which was created
+Add [arg data] incrementally to the HMAC object, which was created
 previously with [cmd "ns_hmac new"].
-
 
 [call [arg \$hmac_object] \
 	[cmd "get"] \
 	[opt [option "-encoding [arg encoding]"]] \
 ]
 
-Method to return the current HMAC value from the HMAC object, to which data was
-added previously with the method [cmd "add"].
-
+Return the current HMAC value from the HMAC object, 
+to which data was added previously with the method [cmd "add"].
 
 [call [arg \$hmac_object] [cmd "destroy"]]
 
-Method to delete the HMAC object (used for incremental operations).
-
+Delete the HMAC object (used for incremental operations).
 
 [list_end]
 

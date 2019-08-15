@@ -20,7 +20,7 @@ nx::Class create ::ns_crypto::HashFunctions {
     :property {digest sha256}
     :variable ctx
 
-    :public method readfile {filename} {
+    :public method readfile {{-encoding hex} filename} {
         #
         # Read a file blockwise and call the incremental crypto
         # function on every block.
@@ -38,7 +38,7 @@ nx::Class create ::ns_crypto::HashFunctions {
         #
         # Return the hash sum
         #
-        return [:get]
+        return [:get -encoding $encoding]
     }
 }
 
@@ -54,12 +54,16 @@ nx::Class create ns_md -superclass ::ns_crypto::HashFunctions {
         ::ns_crypto::md string -digest $digest -encoding $encoding $message
     }
 
-    :public object method file {{-digest sha256} filename} {
-        if {![file readable $filename]} {
-            return -code error "file $filename is not readable"
-        }
+    :public object method file {{-digest sha256} {-encoding hex} filename args} {
         set m [:new -digest $digest]
-        set r [$m readfile $filename]
+        set r ""
+        foreach path [concat $filename $args] {
+            if {![file readable $path]} {
+                $m destroy
+                return -code error "file $path is not readable"
+            }
+            set r [$m readfile -encoding $encoding $path]
+        }
         $m destroy
         return $r
     }
@@ -96,12 +100,16 @@ nx::Class create ns_hmac -superclass ::ns_crypto::HashFunctions {
         ::ns_crypto::hmac string -digest $digest -encoding $encoding $key $message
     }
 
-    :public object method file {{-digest sha256} key filename} {
-        if {![file readable $filename]} {
-            return -code error "file $filename is not readable"
-        }
+    :public object method file {{-digest sha256} {-encoding hex} key filename args} {
         set m [:new -digest $digest -key $key]
-        set r [$m readfile $filename]
+        set r ""
+        foreach path [concat $filename $args] {
+            if {![file readable $path]} {
+                $m destroy
+                return -code error "file $path is not readable"
+            }
+            set r [$m readfile -encoding $encoding $path]
+        }
         $m destroy
         return $r
     }
