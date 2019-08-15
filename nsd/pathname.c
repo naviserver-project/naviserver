@@ -46,8 +46,6 @@
  */
 
 static Ns_ServerInitProc ConfigServerVhost;
-static int ConfigServerVhost(const char *server)
-    NS_GNUC_NONNULL(1);
 
 static int PathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, char cmd)
     NS_GNUC_NONNULL(2);
