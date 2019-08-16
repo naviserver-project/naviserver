@@ -1122,27 +1122,23 @@ Base64DecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         size_t         size;
         unsigned char *decoded;
         const char    *chars = Tcl_GetStringFromObj(charsObj, &len);
-        
+
         size = (size_t)len + 3u;
         decoded = (unsigned char *)ns_malloc(size);
         size = Ns_HtuuDecode2(chars, decoded, size, encoding);
+        // hexPrint("decoded", decoded, size);
 
         if (isBinary) {
-            // hexPrint("decoded", decoded, size);
 
             Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, (int)size));
         } else {
-            Tcl_DString    ds, *dsPtr = &ds;
+            Tcl_DString ds, *dsPtr = &ds;
 
             Tcl_DStringInit(dsPtr);
             Tcl_ExternalToUtfDString(NS_utf8Encoding, (char *)decoded, (int)size, dsPtr);
-
-            //Tcl_SetObjResult(interp, TclDStringToObj(&ds));
             Tcl_DStringResult(interp, dsPtr);
-            //Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(dsPtr->string, dsPtr->length));
-            //Tcl_DStringFree(dsPtr);
         }
-        
+
         ns_free(decoded);
     }
 

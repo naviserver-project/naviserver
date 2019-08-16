@@ -21,11 +21,12 @@
 
 [para] Encode the potentially binary argument to classical base64 encoding.
 
-[call [cmd ns_base64decode] [arg string]]
+[call [cmd ns_base64decode] [opt [option -binary]] [arg string]]
 
 [para] Decode the argument containing only characters of the classical
-base64 alphabet to a potentially binary result.
-
+base64 alphabet. In case, the result might contain binary content,
+it is recommend to use the option [option -binary], which causes the
+result to be a Tcl byte array.
 
 [call [cmd ns_base64urlencode] [arg string]]
 
@@ -33,10 +34,13 @@ base64 alphabet to a potentially binary result.
 URL and filename safe alphabet. No padding with "=" signs is
 performed, no line breaks are inserted in the text.
 
-[call [cmd ns_base64urldecode] [arg string]]
+[call [cmd ns_base64urldecode] [opt [option -binary]]  [arg string]]
 
 [para] Decode the argument containing only characters of the URL and
-filename safe alphabet to a potentially binary result.
+filename safe alphabet.
+In case, the result might contain binary content,
+it is recommend to use the option [option -binary], which causes the
+result to be a Tcl byte array.
 
 [list_end]
 
