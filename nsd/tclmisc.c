@@ -1135,7 +1135,7 @@ Base64DecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             Tcl_DString ds, *dsPtr = &ds;
 
             Tcl_DStringInit(dsPtr);
-            Tcl_ExternalToUtfDString(NS_utf8Encoding, (char *)decoded, (int)size, dsPtr);
+            Tcl_ExternalToUtfDString(NULL, (char *)decoded, (int)size, dsPtr);
             Tcl_DStringResult(interp, dsPtr);
         }
 
