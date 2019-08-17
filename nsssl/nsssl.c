@@ -47,13 +47,6 @@ NS_EXPORT int Ns_ModuleVersion = 1;
 
 #define NSSSL_VERSION  "2.1"
 
-/*
- * The maximum chunk size from TLS is 2^14 => 16384 (see RFC 5246). OpenSSL
- * can't send more than this number of bytes in one attempt.
- */
-#define CHUNK_SIZE 16384
-
-
 NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *objPtr);
 
 typedef struct {
@@ -398,7 +391,7 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int backlog,
 {
     NS_SOCKET sock;
 
-    sock = Ns_SockListenEx((char*)address, port, backlog, reuseport);
+    sock = Ns_SockListenEx(address, port, backlog, reuseport);
     if (sock != NS_INVALID_SOCKET) {
         SSLDriver *cfg = driver->arg;
 
@@ -499,7 +492,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
 {
     SSLDriver   *drvPtr = sock->driver->arg;
     SSLContext  *sslCtx = sock->arg;
-    Ns_SockState sockState;
+    Ns_SockState sockState = NS_SOCK_NONE;
     ssize_t      nRead = 0;
 
     /*
@@ -521,8 +514,6 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
                                     sizeof(ipString)));
                 nRead = -1;
                 sockState = NS_SOCK_EXCEPTION;
-            } else {
-                sockState = NS_SOCK_NONE;
             }
         } else {
             char ipString[NS_IPADDR_SIZE];
