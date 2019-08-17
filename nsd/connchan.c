@@ -605,7 +605,7 @@ ArgProc(Tcl_DString *dsPtr, const void *arg)
 
     Tcl_DStringStartSublist(dsPtr);
     Ns_DStringNAppend(dsPtr, cbPtr->connChanPtr->channelName, -1);
-    Ns_DStringNAppend(dsPtr, " ", 1),
+    Ns_DStringNAppend(dsPtr, " ", 1);
     Ns_DStringNAppend(dsPtr, cbPtr->script, (int)cbPtr->scriptCmdNameLength);
     Tcl_DStringEndSublist(dsPtr);
 }
