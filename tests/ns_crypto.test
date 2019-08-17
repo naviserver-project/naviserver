@@ -10,6 +10,7 @@ namespace import -force ::tcltest::*
 #
 tcltest::testConstraint crypto [ns_info ssl]
 tcltest::testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
+tcltest::testConstraint tcl86 [expr {$tcl_version >= 8.6}]
 
 #######################################################################################
 #  Message digests: sha1, sha224, sha256, sha512
@@ -246,7 +247,9 @@ test base64-md5.1 {ns_base64encode and decode with 2 byte UTF-8 character "ü"} 
     list $m1 $m2 $m3
 } -result {C03410A5204B21CD8229FF754688D743 C03410A5204B21CD8229FF754688D743 C03410A5204B21CD8229FF754688D743}
 
-test base64-md5.2 {ns_base64encode and decode with 2 byte UTF-8 character "ü"} -body {
+test base64-md5.2 {
+    ns_base64encode and decode with 2 byte UTF-8 character "ü"
+} -constraints tcl86 -body {
     set encoded {I+w+Yr+CXWGVsk2ZbqqzZlKcTuEM8TCMLOYjBv1h8xo2txA0Q5UX7v5gd5j6e8x1eIWGcfd3ORH2Vgt2HcDURw==}
     set ns_dec  [ns_base64decode -binary $encoded]
     set tcl_dec [binary decode base64 $encoded]
