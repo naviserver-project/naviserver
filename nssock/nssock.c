@@ -134,7 +134,7 @@ SockListen(Ns_Driver *driver, const char *address, unsigned short port, int back
 {
     NS_SOCKET sock;
 
-    sock = Ns_SockListenEx((char*)address, port, backlog, reuseport);
+    sock = Ns_SockListenEx(address, port, backlog, reuseport);
     if (sock != NS_INVALID_SOCKET) {
         Config *cfg = driver->arg;
 
