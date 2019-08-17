@@ -595,7 +595,6 @@ typedef int
  */
 
 typedef struct Ns_DriverInitData {
-    int                      version;          /* Version 4. */
     const char              *name;             /* This will show up in log file entries */
     Ns_DriverListenProc     *listenProc;       /* Open listening socket for conns. */
     Ns_DriverAcceptProc     *acceptProc;       /* Accept a new non-blocking socket. */
@@ -606,11 +605,12 @@ typedef struct Ns_DriverInitData {
     Ns_DriverRequestProc    *requestProc;      /* First proc to be called by a connection thread. */
     Ns_DriverCloseProc      *closeProc;        /* Close a connection socket. */
     Ns_DriverClientInitProc *clientInitProc;   /* Initialize a client connection*/
+    int                      version;          /* Version 4. */
     unsigned int             opts;             /* NS_DRIVER_ASYNC | NS_DRIVER_SSL  */
     void                    *arg;              /* Module's driver callback data */
     const char              *path;             /* Path to find config parameter such as port, address, etc. */
-    unsigned short           defaultPort;      /* Default port */
     const char              *protocol;         /* Protocol */
+    unsigned short           defaultPort;      /* Default port */
 } Ns_DriverInitData;
 
 
