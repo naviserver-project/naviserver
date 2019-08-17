@@ -328,9 +328,9 @@ AddCmds(Tcl_Interp *interp, const void *arg)
 static int
 LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    const char    *strarg, **hdrs;
-    int            rc, intarg, cmd;
-    Tcl_DString     ds;
+    const char    *strarg;
+    int            rc, cmd, result = TCL_OK;
+    Tcl_DString    ds;
     Log           *logPtr = clientData;
 
     enum {
@@ -369,63 +369,81 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
         break;
 
     case MAXBACKUP:
-        if (objc > 2) {
-            if (Tcl_GetIntFromObj(interp, objv[2], &intarg) != TCL_OK) {
-                return TCL_ERROR;
+        {
+            int intarg = 0;
+
+            if (objc > 2) {
+                if (Tcl_GetIntFromObj(interp, objv[2], &intarg) != TCL_OK) {
+                    result = TCL_ERROR;
+                } else {
+                    if (intarg < 1) {
+                        intarg = 100;
+                    }
+                }
             }
-            if (intarg < 1) {
-                intarg = 100;
+            if (result == TCL_OK) {
+                Ns_MutexLock(&logPtr->lock);
+                if (objc > 2) {
+                    logPtr->maxbackup = intarg;
+                } else {
+                    intarg = logPtr->maxbackup;
+                }
+                Ns_MutexUnlock(&logPtr->lock);
+                Tcl_SetObjResult(interp, Tcl_NewIntObj(intarg));
             }
         }
-        Ns_MutexLock(&logPtr->lock);
-        if (objc > 2) {
-            logPtr->maxbackup = intarg;
-        } else {
-            intarg = logPtr->maxbackup;
-        }
-        Ns_MutexUnlock(&logPtr->lock);
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(intarg));
         break;
 
     case MAXBUFFER:
-        if (objc > 2) {
-            if (Tcl_GetIntFromObj(interp, objv[2], &intarg) != TCL_OK) {
-                return TCL_ERROR;
+        {
+            int intarg = 0;
+
+            if (objc > 2) {
+                if (Tcl_GetIntFromObj(interp, objv[2], &intarg) != TCL_OK) {
+                    result = TCL_ERROR;
+                } else {
+                    if (intarg < 0) {
+                        intarg = 0;
+                    }
+                }
             }
-            if (intarg < 0) {
-                intarg = 0;
+            if (result == TCL_OK) {
+                Ns_MutexLock(&logPtr->lock);
+                if (objc > 2) {
+                    logPtr->maxlines = intarg;
+                } else {
+                    intarg = logPtr->maxlines;
+                }
+                Ns_MutexUnlock(&logPtr->lock);
+                Tcl_SetObjResult(interp, Tcl_NewIntObj(intarg));
             }
         }
-        Ns_MutexLock(&logPtr->lock);
-        if (objc > 2) {
-            logPtr->maxlines = intarg;
-        } else {
-            intarg = logPtr->maxlines;
-        }
-        Ns_MutexUnlock(&logPtr->lock);
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(intarg));
         break;
 
     case EXTHDRS:
         {
-            int n;
+            int          n = 0;
+            const char **hdrs = NULL;
+
             if (objc > 2) {
                 strarg = Tcl_GetString(objv[2]);
                 if (Tcl_SplitList(interp, strarg, &n, &hdrs) != TCL_OK) {
-                    return TCL_ERROR;
+                    result = TCL_ERROR;
                 }
             }
-            Ns_MutexLock(&logPtr->lock);
-            if (objc > 2) {
-                if (logPtr->extheaders != NULL) {
-                    Tcl_Free((char*)logPtr->extheaders);
+            if (result == TCL_OK) {
+                Ns_MutexLock(&logPtr->lock);
+                if (objc > 2) {
+                    if (logPtr->extheaders != NULL) {
+                        Tcl_Free((char*)logPtr->extheaders);
+                    }
+                    logPtr->extheaders = hdrs;
+                    logPtr->numheaders = n;
                 }
-                logPtr->extheaders = hdrs;
-                logPtr->numheaders = n;
+                strarg = Tcl_Merge(logPtr->numheaders, logPtr->extheaders);
+                Ns_MutexUnlock(&logPtr->lock);
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(strarg, -1));
             }
-            strarg = Tcl_Merge(logPtr->numheaders, logPtr->extheaders);
-            Ns_MutexUnlock(&logPtr->lock);
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(strarg, -1));
         }
         break;
 
@@ -539,13 +557,13 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
             }
             Ns_MutexUnlock(&logPtr->lock);
             if (status != NS_OK) {
-                return TCL_ERROR;
+                result = TCL_ERROR;
             }
         }
         break;
     }
 
-    return TCL_OK;
+    return result;
 }
 
 /*
