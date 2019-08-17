@@ -2381,7 +2381,15 @@ HttpConnect(
     *httpPtrPtr = httpPtr;
     ns_free((void *)url2);
 
-    Ns_Log(Ns_LogRequestDebug, "full request <%s>", dsPtr->string);
+    if (Ns_LogSeverityEnabled(Ns_LogRequestDebug)) {
+        Tcl_DString d;
+
+        Tcl_DStringInit(&d);
+        Ns_Log(Ns_LogRequestDebug, "full request (len %d) <%s>",
+               dsPtr->length,
+               Ns_DStringAppendPrintable(&d, NS_TRUE,dsPtr->string, (size_t)dsPtr->length));
+        Tcl_DStringFree(&d);
+    }
 
     return TCL_OK;
 
