@@ -870,6 +870,8 @@ LogTrace(void *arg, Ns_Conn *conn)
         }
     }
 
+    Ns_Log(Ns_LogAccessDebug, "%s", dsPtr->string);
+
     /*
      * Append the trailing newline and optionally
      * flush the buffer
@@ -911,8 +913,6 @@ LogTrace(void *arg, Ns_Conn *conn)
     }
     Ns_MutexUnlock(&logPtr->lock);
     (void)(status); /* ignore status */
-
-    Ns_Log(Ns_LogAccessDebug, "%s", dsPtr->string);
 
     if (likely(bufferPtr != NULL) && likely(logPtr->fd >= 0) && likely(bufferSize > 0)) {
         (void)NsAsyncWrite(logPtr->fd, bufferPtr, bufferSize);
