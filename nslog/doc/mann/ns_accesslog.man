@@ -67,10 +67,18 @@ configuration parameters.
 [call [cmd "ns_accesslog extendedheaders"] \
 	[opt [arg new-headers]]]
 
-Return a list of the HTTP headers which will be appended to each entry in the
+Return a list of the HTTP header fields which will be appended to each entry in the
 access log. If [opt [arg new-headers]] is given it replaces the existing
 setting.
 
+[para] By default, all specified header fields are request header
+fields (like e.g. "Referer X-Forwarded-For"). Optionally one can
+specify the request header fields with a prefix "request:" or "reply"
+to denote request or reply header fields. The prefix can be
+abbreviated to 3 characters (example: "req:Host reply:Content-Type").
+Note that always the request header fields are reported before the
+reply header fields. Caveat: certain reply header fields (e.g. "Date"
+or "Server" are not accessible this way).
 
 
 [call [cmd "ns_accesslog maxbuffer"] \

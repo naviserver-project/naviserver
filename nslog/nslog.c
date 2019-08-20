@@ -58,8 +58,11 @@ typedef struct {
     const char  *module;
     const char  *file;
     const char  *rollfmt;
-    const char **extheaders;
-    int          numheaders;
+    const char  *extendedHeaders;
+    const char **requestHeaders;
+    const char **replyHeaders;
+    int          nrRequestHeaders;
+    int          nrReplyHeaders;
     int          fd;
     unsigned int flags;
     int          maxbackup;
@@ -95,7 +98,11 @@ static Ns_ReturnCode LogClose(Log *logPtr);
 static void AppendEscaped(Tcl_DString *dsPtr, const char *toProcess)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-
+static Ns_ReturnCode ParseExtendedHeaders(Log *logPtr, const char *str)
+    NS_GNUC_NONNULL(1);
+static void
+AppendExtHeaders(Tcl_DString *dsPtr, const char **argv, const Ns_Set *set)
+    NS_GNUC_NONNULL(1);
 
 
 /*
@@ -274,15 +281,7 @@ Ns_ModuleInit(const char *server, const char *module)
     /*
      * Parse extended headers; it is just a list of names
      */
-
-    Tcl_DStringInit(&ds);
-    Ns_DStringVarAppend(&ds, Ns_ConfigGetValue(path, "extendedheaders"), (char *)0L);
-    if (Tcl_SplitList(NULL, ds.string, &logPtr->numheaders,
-                      &logPtr->extheaders) != TCL_OK) {
-        Ns_Log(Error, "nslog: invalid %s/extendedHeaders parameter: '%s'",
-               path, ds.string);
-    }
-    Tcl_DStringFree(&ds);
+    (void)ParseExtendedHeaders(logPtr, Ns_ConfigGetValue(path, "extendedheaders"));
 
     /*
      *  Open the log and register the trace
@@ -308,6 +307,117 @@ AddCmds(Tcl_Interp *interp, const void *arg)
     return NS_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseExtendedHeaders --
+ *
+ *      Parse a string specifying the extended parameters.
+ *      The string might be:
+ *
+ *       - a list of plain request header fields, like e.g.
+ *         "Referer X-Forwarded-For"
+ *
+ *       - a tagged list of header fields, which might be request
+ *          or reply header fields, like e.g.
+ *         "req:Referer reply:Content-Type"
+ *
+ * Results:
+ *      None
+ *
+ * Side effects:
+ *      Upadating fields in logPtr
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+ParseExtendedHeaders(Log *logPtr, const char *str)
+{
+    Ns_ReturnCode result = NS_OK;
+
+    NS_NONNULL_ASSERT(logPtr != NULL);
+
+    if (str != NULL) {
+        int    argc;
+        char **argv;
+
+        if (Tcl_SplitList(NULL, str, &argc, &argv) != TCL_OK) {
+            Ns_Log(Error, "nslog: invalid 'extendedHeaders' parameter: '%s'", str);
+            result = NS_ERROR;
+
+        } else {
+            int i, tagged = 0;
+
+            if (logPtr->extendedHeaders != NULL) {
+                ns_free((char *)logPtr->extendedHeaders);
+            }
+            if (logPtr->requestHeaders != NULL) {
+                ns_free((char *)logPtr->requestHeaders);
+            }
+            if (logPtr->replyHeaders != NULL) {
+                ns_free((char *)logPtr->replyHeaders);
+            }
+            logPtr->extendedHeaders = ns_strdup(str);
+
+            for (i = 0; i < argc; i++) {
+                char *fieldName = argv[i];
+
+                if (strchr(fieldName, ':') != NULL) {
+                    tagged ++;
+                }
+            }
+            if (tagged == 0) {
+                logPtr->requestHeaders = (const char **)argv;
+                logPtr->nrRequestHeaders = argc;
+                logPtr->replyHeaders = NULL;
+                logPtr->nrReplyHeaders = 0;
+            } else {
+                Tcl_DString requestHeaderFields, replyHeaderFields;
+                int nrRequestsHeaderFields = 0, nrReplyHeaderFields = 0;
+
+                Tcl_DStringInit(&requestHeaderFields);
+                Tcl_DStringInit(&replyHeaderFields);
+
+                for (i = 0; i < argc; i++) {
+                    char *fieldName = argv[i];
+                    char *suffix = strchr(fieldName, ':');
+
+                    if (suffix != NULL) {
+                        *suffix = '\0';
+                        suffix ++;
+                        if (strncmp(fieldName, "request", 3) == 0) {
+                            Tcl_DStringAppendElement(&requestHeaderFields,suffix);
+                            nrRequestsHeaderFields++;
+                        } else if (strncmp(fieldName, "reply", 3) == 0) {
+                            Tcl_DStringAppendElement(&replyHeaderFields,suffix);
+                            nrReplyHeaderFields++;
+                        } else {
+                            Ns_Log(Error, "nslog: ignore invalid entry prefix '%s' in extendedHeaders parameter",
+                                   fieldName);
+                        }
+                    } else {
+                        /*
+                         * No prefix, assume request header field
+                         */
+                        Tcl_DStringAppendElement(&requestHeaderFields,suffix);
+                        nrRequestsHeaderFields++;
+                    }
+                }
+                (void) Tcl_SplitList(NULL, requestHeaderFields.string,
+                                     &logPtr->nrRequestHeaders,
+                                     &logPtr->requestHeaders);
+                (void) Tcl_SplitList(NULL, replyHeaderFields.string,
+                                     &logPtr->nrReplyHeaders,
+                                     &logPtr->replyHeaders);
+
+                Tcl_DStringFree(&requestHeaderFields);
+                Tcl_DStringFree(&replyHeaderFields);
+                Tcl_Free((char*)argv);
+            }
+        }
+    }
+    return result;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -422,28 +532,17 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
 
     case EXTHDRS:
         {
-            int          n = 0;
-            const char **hdrs = NULL;
-
+            Ns_MutexLock(&logPtr->lock);
             if (objc > 2) {
-                strarg = Tcl_GetString(objv[2]);
-                if (Tcl_SplitList(interp, strarg, &n, &hdrs) != TCL_OK) {
-                    result = TCL_ERROR;
-                }
+                result = ParseExtendedHeaders(logPtr, Tcl_GetString(objv[2]));
             }
             if (result == TCL_OK) {
-                Ns_MutexLock(&logPtr->lock);
-                if (objc > 2) {
-                    if (logPtr->extheaders != NULL) {
-                        Tcl_Free((char*)logPtr->extheaders);
-                    }
-                    logPtr->extheaders = hdrs;
-                    logPtr->numheaders = n;
-                }
-                strarg = Tcl_Merge(logPtr->numheaders, logPtr->extheaders);
-                Ns_MutexUnlock(&logPtr->lock);
-                Tcl_SetObjResult(interp, Tcl_NewStringObj(strarg, -1));
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(logPtr->extendedHeaders, -1));
+            } else {
+                Ns_TclPrintfResult(interp, "invalid value: %s",
+                                   Tcl_GetString(objv[2]));
             }
+            Ns_MutexUnlock(&logPtr->lock);
         }
         break;
 
@@ -635,6 +734,43 @@ AppendEscaped(Tcl_DString *dsPtr, const char *toProcess)
     } while (breakChar != NULL);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * AppendExtHeaders --
+ *
+ *      Append named extended header fields from provided set to log entry.
+ *
+ * Results:
+ *      None
+ *
+ * Side effects:
+ *      Append to Tcl_DString
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AppendExtHeaders(Tcl_DString *dsPtr, const char **argv, const Ns_Set *set)
+{
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+
+    if (set != NULL && argv != NULL) {
+        const char **h;
+
+        for (h = argv; *h != NULL; h++) {
+            const char *p;
+
+            Tcl_DStringAppend(dsPtr, " \"", 2);
+            p = Ns_SetIGet(set, *h);
+            if (p != NULL) {
+                AppendEscaped(dsPtr, p);
+            }
+            Tcl_DStringAppend(dsPtr, "\"", 1);
+        }
+    }
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -657,7 +793,7 @@ static void
 LogTrace(void *arg, Ns_Conn *conn)
 {
     Log          *logPtr = arg;
-    const char  **h, *user, *p;
+    const char   *user, *p;
     char          buffer[PIPE_BUF], *bufferPtr = NULL;
     int           n, i;
     Ns_ReturnCode status;
@@ -850,15 +986,8 @@ LogTrace(void *arg, Ns_Conn *conn)
     /*
      * Append the extended headers (if any)
      */
-
-    for (h = logPtr->extheaders; *h != NULL; h++) {
-        Tcl_DStringAppend(dsPtr, " \"", 2);
-        p = Ns_SetIGet(conn->headers, *h);
-        if (p != NULL) {
-            AppendEscaped(dsPtr, p);
-        }
-        Tcl_DStringAppend(dsPtr, "\"", 1);
-    }
+    AppendExtHeaders(dsPtr, logPtr->requestHeaders, conn->headers);
+    AppendExtHeaders(dsPtr, logPtr->replyHeaders, conn->outputheaders);
 
     for (i = 0; i < dsPtr->length; i++) {
         /*

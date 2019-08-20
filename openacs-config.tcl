@@ -659,7 +659,7 @@ ns_section ns/server/${server}/module/nslog {
     ns_param	maskipv6        ff:ff:ff:ff::  ;# mask for IPv6 addresses
 
     #
-    # Add extra entries to the access log via specifying a comma delimited
+    # Add extra entries to the access log via specifying a Tcl
     # list of request header fields in "extendedheaders"
     #
     if {[ns_config "ns/server/${server}/acs" LogIncludeUserId 0]} {
