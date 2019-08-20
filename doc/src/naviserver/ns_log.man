@@ -65,7 +65,18 @@ Something occurred that implies that there is a bug in the code.
 This condition could never happen when the code is behaving correctly.
 
 [def Debug]
-This logging level is typically just activated during debugging. 
+General debugging.
+
+[def Debug(access)] Mirror access log entries in system log.
+[def Debug(cgi)] Debugging for the [cmd nscgi] module.
+[def Debug(connchan)] Debugging for [cmd ns_connchan] interactions.
+[def Debug(ns:driver)] Debugging for driver (low-level network IO).
+[def Debug(nsproxy)] Debugging for [cmd nsproxy] module.
+[def Debug(request)] Debugging for request live cycle.
+[def Debug(sql)] Debugging for SQL ([cmd nsdb] module).
+[def Debug(task)] Debugging for task interface (e.g. [cmd ns_http]).
+[def Debug(urlspace)] Debugging for [cmd ns_urlspace] interactions.
+
 
 [def Dev]
 This logging level is typically just activated during development
@@ -376,8 +387,8 @@ nscp:6> [cmd ns_log] my:debug "a debug message"
 [example_end]
 
 
-[see_also ns_accesslog ns_info ns_rollfile ns_asynclogfile]
-[keywords "global built-in" log path error configuration]
+[see_also ns_accesslog ns_info ns_rollfile ns_asynclogfile ns_http ns_connchan]
+[keywords "global built-in" log path error configuration nscgi nsdb nsproxy]
 
 
 [manpage_end]
