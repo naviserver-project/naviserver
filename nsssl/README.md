@@ -33,7 +33,7 @@ adds new ns_ssl command.
 
 * New in Version 0.6:
     - Ability to load the module without listening to socket by specifying 0 as port.
-      This is ueful for e.g. just using the HTTPS client command ns_ssl.
+      This is useful for e.g. just using the HTTPS client command ns_ssl.
 
 * New in Version 0.7:
     - Fixed a bug with in https client commands (ns_ssl) when paths and parameters
