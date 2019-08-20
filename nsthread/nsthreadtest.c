@@ -235,9 +235,9 @@ AtExit(void)
 #define NA 10000
 #define BS (1024*16)
 
-int nthreads = 10;
-int memstart;
-int nrunning;
+static int nthreads = 10;
+static int memstart;
+static int nrunning;
 
 static void
 MemThread(void *arg)
@@ -441,7 +441,6 @@ int main(int argc, char *argv[])
             case 'm':
                 nthreads = (int)strtol(p + 1, NULL, 10);
                 goto mem;
-                break;
         }
     }
 
