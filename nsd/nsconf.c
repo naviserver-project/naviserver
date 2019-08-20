@@ -58,8 +58,6 @@ struct nsconf nsconf;
 void
 NsInitConf(void)
 {
-    extern char *nsBuildDate; /* NB: Declared in stamp.c */
-
     Ns_ThreadSetName("-main-");
 
     /*

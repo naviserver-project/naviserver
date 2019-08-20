@@ -1354,6 +1354,8 @@ NS_EXTERN Ns_LogSeverity Ns_LogConnchanDebug;
 NS_EXTERN Ns_LogSeverity Ns_LogUrlspaceDebug;
 NS_EXTERN bool NsWriterBandwidthManagement;
 
+NS_EXTERN const char *nsBuildDate;
+
 /*
  * Libnsd initialization routines.
  */

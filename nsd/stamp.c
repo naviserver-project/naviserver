@@ -27,6 +27,8 @@
  * version of this file under either the License or the GPL.
  */
 
+#include "nsd.h"
+
 /*
  * stamp.c --
  *
