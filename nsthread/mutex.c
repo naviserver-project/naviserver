@@ -48,15 +48,7 @@
  * #define NS_NO_MUTEX_TIMING 1
  */
 
-#ifdef _WIN32
-# define NS_THREAD_ID GetCurrentThreadId()
-NS_EXTERN bool NS_mutexlocktrace;
-#else
-# define NS_THREAD_ID (void*)pthread_self()
-#endif
-
 bool NS_mutexlocktrace = NS_FALSE;
-
 
 
 /*
