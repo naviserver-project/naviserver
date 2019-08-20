@@ -1897,7 +1897,7 @@ HttpGet(
     bool remove
 ) {
     Tcl_HashEntry *hPtr = NULL;
-    Ns_ReturnCode  status = NS_TRUE;
+    bool           status = NS_TRUE;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
     NS_NONNULL_ASSERT(taskID != NULL);
