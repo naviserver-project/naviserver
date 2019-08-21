@@ -347,6 +347,6 @@ More to come here...
 [keywords module nssock \
 	performance tuning configuration \
 	SO_REUSEPORT TCP TCP_FASTOPEN \
-	nsssl driver prebind pagedir]
+	nsssl driver prebind pagedir redirect]
 
 [manpage_end]

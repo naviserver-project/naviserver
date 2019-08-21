@@ -32,7 +32,7 @@ location string.
 
 
 [see_also ns_serverrootproc ns_conn]
-[keywords "global built-in" virtual hosting]
+[keywords "global built-in" virtual hosting redirect]
 [manpage_end]
 
 

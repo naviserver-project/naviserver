@@ -65,7 +65,10 @@ instead of the old one in the future.
         [arg url] ]
 
 Return a response with status code [term 302], [term Found]. The [term Location]
-header will be set to the [arg url] if given.
+header will be set to the [arg url] if given. For non-fully qualified
+target adresses, the URL is completed with either the location
+configured via [cmd ns_locationproc] or via the [term location] configured in the
+network driver module (see [cmd nssock]).
 
 [para]
 Use this response to signal that the resource identified by the requested URL has
@@ -209,7 +212,7 @@ ns_register_proc GET /service {
 [example_end]
 
 
-[see_also ns_return ns_internalredirect ns_conn ns_cookie]
-[keywords "server built-in" return redirect response status configuration]
+[see_also ns_return ns_internalredirect ns_conn ns_cookie ns_locationproc]
+[keywords "server built-in" return redirect response status configuration nssock]
 
 [manpage_end]
