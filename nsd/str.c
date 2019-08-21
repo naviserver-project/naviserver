@@ -586,7 +586,7 @@ Ns_StrIsHost(const char *chars)
  *----------------------------------------------------------------------
  */
 const char *
-Ns_GetBinaryString(Tcl_Obj *obj, int *lengthPtr, Tcl_DString *dsPtr)
+Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *dsPtr)
 {
     const char *result;
 
@@ -649,7 +649,7 @@ Ns_GetBinaryString(Tcl_Obj *obj, int *lengthPtr, Tcl_DString *dsPtr)
      *
      */
 
-    if (NsTclObjIsByteArray(obj)) {
+    if (forceBinary || NsTclObjIsByteArray(obj)) {
         //fprintf(stderr, "NsTclObjIsByteArray\n");
         result = (char *)Tcl_GetByteArrayFromObj(obj, lengthPtr);
     } else {
