@@ -46,7 +46,7 @@ static void SHAByteSwap(uint32_t *dest, const uint8_t *src, unsigned int words)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void SHATransform(Ns_CtxSHA1 *sha)
     NS_GNUC_NONNULL(1);
-static void MD5Transform(uint32_t buf[4], const uint8_t block[64])
+static void MD5Transform(uint32_t buf[4], const uint32_t block[16])
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static int Base64EncodeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, int encoding);
@@ -1898,7 +1898,7 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, const unsigned char *buf, size_t len)
         }
         memcpy(p, buf, t);
         byteReverse(ctx->in, 16);
-        MD5Transform(ctx->buf, (uint8_t *) ctx->in);
+        MD5Transform(ctx->buf, (uint32_t *) ctx->in);
         buf += t;
         len -= t;
     }
@@ -1909,7 +1909,7 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, const unsigned char *buf, size_t len)
     while (len >= 64u) {
         memcpy(ctx->in, buf, 64u);
         byteReverse(ctx->in, 16);
-        MD5Transform(ctx->buf, (uint8_t *) ctx->in);
+        MD5Transform(ctx->buf, (uint32_t *) ctx->in);
         buf += 64;
         len -= 64u;
     }
@@ -1961,7 +1961,7 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
          */
         memset(p, 0, count);
         byteReverse(ctx->in, 16);
-        MD5Transform(ctx->buf, (uint8_t *) ctx->in);
+        MD5Transform(ctx->buf, (uint32_t *) ctx->in);
 
         /*
          * Now fill the next block with 56 bytes
@@ -1981,7 +1981,7 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
     words[14] = ctx->bits[0];
     words[15] = ctx->bits[1];
 
-    MD5Transform(ctx->buf, (uint8_t *) ctx->in);
+    MD5Transform(ctx->buf, (uint32_t *) ctx->in);
     byteReverse((unsigned char *) ctx->buf, 4);
     memcpy(digest, ctx->buf, 16u);
     /*
@@ -2014,12 +2014,12 @@ void Ns_CtxMD5Final(Ns_CtxMD5 *ctx, unsigned char digest[16])
  * the addition of 16 32-bit words (64 bytes) of new data.  MD5Update blocks the
  * data and converts bytes into longwords for this routine.
  */
-static void MD5Transform(uint32_t buf[4], const uint8_t block[64])
+static void MD5Transform(uint32_t buf[4], const uint32_t block[16])
 {
     register uint32_t a, b, c, d;
 
 #ifndef HIGHFIRST
-    const uint32_t *in = (const uint32_t *)block;
+    const uint32_t *in = block;
 #else
     uint32_t in[16];
 
