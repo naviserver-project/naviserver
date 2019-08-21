@@ -287,7 +287,7 @@ static const char *errCode[] = {
     NULL
 };
 
-Ns_LogSeverity Ns_LogNsProxyDebug = 0;
+static Ns_LogSeverity Ns_LogNsProxyDebug = 0;
 
 
 /*
@@ -366,7 +366,7 @@ static Tcl_Obj* StringObj(const char* chars);
 
 static Tcl_HashTable pools;     /* Tracks proxy pools */
 
-ReaperState reaperState = Stopped;
+static ReaperState reaperState = Stopped;
 
 static Ns_Cond  pcond = NULL;          /* Those are used to control access to */
 static Ns_Mutex plock = NULL;          /* the list of Slave structures of slave */
@@ -595,13 +595,15 @@ Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
     Tcl_DStringInit(&out);
 
     while (RecvBuf(&proc, -1, &in) == NS_TRUE) {
-        Req *reqPtr;
+        Req      req, *reqPtr = &req;
         uint32_t len;
 
         if (Tcl_DStringLength(&in) < (int)sizeof(Req)) {
             break;
         }
-        reqPtr = (Req *) Tcl_DStringValue(&in);
+
+        memcpy(&req, in.string, sizeof(req));
+
         if (reqPtr->major != major || reqPtr->minor != minor) {
             Ns_Fatal("nsproxy: version mismatch");
         }
@@ -1609,9 +1611,11 @@ Import(Tcl_Interp *interp, Tcl_DString *dsPtr, int *resultPtr)
         result = TCL_ERROR;
 
     } else {
-        Res        *resPtr = (Res *) dsPtr->string;
+        Res         res, *resPtr = &res;
         const char *str    = dsPtr->string + sizeof(Res);
         size_t      rlen, clen, ilen;
+
+        memcpy(&res, dsPtr->string, sizeof(Res));
 
         clen = ntohl(resPtr->clen);
         ilen = ntohl(resPtr->ilen);
@@ -1852,7 +1856,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
     Pool          *poolPtr;
     Proxy         *proxyPtr;
     Err            err;
-    int            ms, opt, result = TCL_OK;
+    int            opt, result = TCL_OK;
     const char    *proxyId;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
@@ -1939,14 +1943,14 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
             Tcl_WrongNumArgs(interp, 2, objv, "handle ?timeout?");
             result = TCL_ERROR;
         } else {
+            int ms = -1;
+
             proxyId = Tcl_GetString(objv[2]);
             proxyPtr = GetProxy(proxyId, idataPtr);
             if (proxyPtr == NULL) {
                 Ns_TclPrintfResult(interp, "no such handle: %s", proxyId);
                 result = TCL_ERROR;
-            } else if (objc == 3) {
-                ms = -1;
-            } else if (Tcl_GetIntFromObj(interp, objv[3], &ms) != TCL_OK) {
+            } else if (objc > 3 && Tcl_GetIntFromObj(interp, objv[3], &ms) != TCL_OK) {
                 result = TCL_ERROR;
             }
             if (result == TCL_OK) {
@@ -1981,14 +1985,14 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
             Tcl_WrongNumArgs(interp, 2, objv, "handle script");
             result = TCL_ERROR;
         } else {
+            int ms = -1;
+
             proxyId = Tcl_GetString(objv[2]);
             proxyPtr = GetProxy(proxyId, idataPtr);
             if (proxyPtr == NULL) {
                 Ns_TclPrintfResult(interp, "no such handle: %s", proxyId);
                 result = TCL_ERROR;
-            } else if (objc == 4) {
-                ms = -1;
-            } else if (Tcl_GetIntFromObj(interp, objv[4], &ms) != TCL_OK) {
+            } else if (objc > 4 && Tcl_GetIntFromObj(interp, objv[4], &ms) != TCL_OK) {
                 result = TCL_ERROR;
             }
             if (result == TCL_OK) {
@@ -2106,7 +2110,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
     InterpData *idataPtr = data;
     Pool       *poolPtr;
     Proxy      *proxyPtr;
-    int         flag, n, result = TCL_OK, reap = 0;
+    int         flag = 0, n, result = TCL_OK, reap = 0;
 
     static const char *flags[] = {
         "-init", "-reinit", "-maxslaves", "-exec", "-env",
