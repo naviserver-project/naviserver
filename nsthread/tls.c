@@ -42,7 +42,7 @@
  * this value has no effect.
  */
 
-uintptr_t nsThreadMaxTls = NS_THREAD_MAXTLS;
+static uintptr_t nsThreadMaxTls = NS_THREAD_MAXTLS;
 
 /*
  * Static functions defined in this file.
