@@ -105,7 +105,9 @@ typedef struct Map {
 static int devNull;
 static Ns_LogSeverity Ns_LogCGIDebug;
 
+NS_EXTERN const int Ns_ModuleVersion;
 NS_EXPORT const int Ns_ModuleVersion = 1;
+
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 
 static const char *NS_EMPTY_STRING = "";

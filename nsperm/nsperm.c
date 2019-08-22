@@ -48,8 +48,9 @@
 
 #define PERM_IMPLICIT_ALLOW   1
 
-
+NS_EXTERN const int Ns_ModuleVersion;
 NS_EXPORT const int Ns_ModuleVersion = 1;
+
 static const char *NS_EMPTY_STRING = "";
 
 /*

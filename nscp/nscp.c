@@ -105,6 +105,7 @@ static const char *NS_EMPTY_STRING = "";
  * Define the version of the module (usually 1).
  */
 
+NS_EXTERN const int Ns_ModuleVersion;
 NS_EXPORT const int Ns_ModuleVersion = 1;
 
 

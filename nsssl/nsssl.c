@@ -36,7 +36,8 @@
 
 #include "ns.h"
 
-NS_EXPORT int Ns_ModuleVersion = 1;
+NS_EXTERN const int Ns_ModuleVersion;
+NS_EXPORT const int Ns_ModuleVersion = 1;
 
 #ifdef HAVE_OPENSSL_EVP_H
 

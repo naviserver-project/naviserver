@@ -36,6 +36,7 @@
 
 #include "nsproxy.h"
 
+NS_EXTERN const int Ns_ModuleVersion;
 NS_EXPORT const int Ns_ModuleVersion = 1;
 
 typedef struct {

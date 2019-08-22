@@ -31,6 +31,7 @@
 
 #include "../nsdb/nsdb.h"
 
+NS_EXTERN const int Ns_ModuleVersion;
 NS_EXPORT const int Ns_ModuleVersion = 1;
 
 NS_EXPORT NsDb_DriverInitProc Ns_DbDriverInit;
