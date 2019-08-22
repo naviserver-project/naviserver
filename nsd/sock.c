@@ -651,7 +651,7 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
             continue;
         }
         break;
-    };
+    }
 
     if (count > 1) {
         Ns_Log(Debug, "Ns_SockTimedWait on sock %d tried %d times, returns n %d",

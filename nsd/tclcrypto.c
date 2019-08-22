@@ -144,7 +144,7 @@ static void hexPrint(const char *msg, const unsigned char *octects, size_t octec
         size_t i;
         Tcl_DString ds;
 
-        Tcl_DStringInit(&ds);;
+        Tcl_DStringInit(&ds);
         Ns_DStringPrintf(&ds, "%s (len %zu): ", msg, octectLength);
         for (i=0; i<octectLength; i++) {
             Ns_DStringPrintf(&ds, "%.2x ",octects[i] & 0xff);

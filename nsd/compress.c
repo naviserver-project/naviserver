@@ -284,7 +284,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
 
             z->next_in  = (void *)bufs[i].iov_base;
             z->avail_in = (uInt)bufs[i].iov_len;
-            nCompressed += (size_t)z->avail_in;;
+            nCompressed += (size_t)z->avail_in;
 
             if (z->avail_in == 0 && i < nbufs -1) {
                 continue;
