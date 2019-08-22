@@ -51,7 +51,9 @@
 # define PIPE_BUF 512
 #endif
 
+NS_EXTERN const int Ns_ModuleVersion;
 NS_EXPORT const int Ns_ModuleVersion = 1;
+
 
 typedef struct {
     Ns_Mutex     lock;
@@ -60,9 +62,9 @@ typedef struct {
     const char  *rollfmt;
     const char  *extendedHeaders;
     const char **requestHeaders;
-    const char **replyHeaders;
+    const char **responseHeaders;
     int          nrRequestHeaders;
-    int          nrReplyHeaders;
+    int          nrResponseHeaders;
     int          fd;
     unsigned int flags;
     int          maxbackup;
@@ -319,8 +321,8 @@ AddCmds(Tcl_Interp *interp, const void *arg)
  *         "Referer X-Forwarded-For"
  *
  *       - a tagged list of header fields, which might be request
- *          or reply header fields, like e.g.
- *         "req:Referer reply:Content-Type"
+ *          or response header fields, like e.g.
+ *         "req:Referer response:Content-Type"
  *
  * Results:
  *      None
@@ -354,8 +356,8 @@ ParseExtendedHeaders(Log *logPtr, const char *str)
             if (logPtr->requestHeaders != NULL) {
                 ns_free((char *)logPtr->requestHeaders);
             }
-            if (logPtr->replyHeaders != NULL) {
-                ns_free((char *)logPtr->replyHeaders);
+            if (logPtr->responseHeaders != NULL) {
+                ns_free((char *)logPtr->responseHeaders);
             }
             logPtr->extendedHeaders = ns_strdup(str);
 
@@ -369,14 +371,14 @@ ParseExtendedHeaders(Log *logPtr, const char *str)
             if (tagged == 0) {
                 logPtr->requestHeaders = (const char **)argv;
                 logPtr->nrRequestHeaders = argc;
-                logPtr->replyHeaders = NULL;
-                logPtr->nrReplyHeaders = 0;
+                logPtr->responseHeaders = NULL;
+                logPtr->nrResponseHeaders = 0;
             } else {
-                Tcl_DString requestHeaderFields, replyHeaderFields;
-                int nrRequestsHeaderFields = 0, nrReplyHeaderFields = 0;
+                Tcl_DString requestHeaderFields, responseHeaderFields;
+                int nrRequestsHeaderFields = 0, nrResponseHeaderFields = 0;
 
                 Tcl_DStringInit(&requestHeaderFields);
-                Tcl_DStringInit(&replyHeaderFields);
+                Tcl_DStringInit(&responseHeaderFields);
 
                 for (i = 0; i < argc; i++) {
                     char *fieldName = argv[i];
@@ -388,9 +390,9 @@ ParseExtendedHeaders(Log *logPtr, const char *str)
                         if (strncmp(fieldName, "request", 3) == 0) {
                             Tcl_DStringAppendElement(&requestHeaderFields,suffix);
                             nrRequestsHeaderFields++;
-                        } else if (strncmp(fieldName, "reply", 3) == 0) {
-                            Tcl_DStringAppendElement(&replyHeaderFields,suffix);
-                            nrReplyHeaderFields++;
+                        } else if (strncmp(fieldName, "response", 3) == 0) {
+                            Tcl_DStringAppendElement(&responseHeaderFields,suffix);
+                            nrResponseHeaderFields++;
                         } else {
                             Ns_Log(Error, "nslog: ignore invalid entry prefix '%s' in extendedHeaders parameter",
                                    fieldName);
@@ -406,12 +408,12 @@ ParseExtendedHeaders(Log *logPtr, const char *str)
                 (void) Tcl_SplitList(NULL, requestHeaderFields.string,
                                      &logPtr->nrRequestHeaders,
                                      &logPtr->requestHeaders);
-                (void) Tcl_SplitList(NULL, replyHeaderFields.string,
-                                     &logPtr->nrReplyHeaders,
-                                     &logPtr->replyHeaders);
+                (void) Tcl_SplitList(NULL, responseHeaderFields.string,
+                                     &logPtr->nrResponseHeaders,
+                                     &logPtr->responseHeaders);
 
                 Tcl_DStringFree(&requestHeaderFields);
-                Tcl_DStringFree(&replyHeaderFields);
+                Tcl_DStringFree(&responseHeaderFields);
                 Tcl_Free((char*)argv);
             }
         }
@@ -987,7 +989,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      * Append the extended headers (if any)
      */
     AppendExtHeaders(dsPtr, logPtr->requestHeaders, conn->headers);
-    AppendExtHeaders(dsPtr, logPtr->replyHeaders, conn->outputheaders);
+    AppendExtHeaders(dsPtr, logPtr->responseHeaders, conn->outputheaders);
 
     for (i = 0; i < dsPtr->length; i++) {
         /*

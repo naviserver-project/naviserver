@@ -73,11 +73,11 @@ setting.
 
 [para] By default, all specified header fields are request header
 fields (like e.g. "Referer X-Forwarded-For"). Optionally one can
-specify the request header fields with a prefix "request:" or "reply"
-to denote request or reply header fields. The prefix can be
-abbreviated to 3 characters (example: "req:Host reply:Content-Type").
+specify the request header fields with a prefix "request:" or "response"
+to denote request or response header fields. The prefix can be
+abbreviated to 3 characters (example: "req:Host response:Content-Type").
 Note that always the request header fields are reported before the
-reply header fields. Caveat: certain reply header fields (e.g. "Date"
+response header fields. Caveat: certain response header fields (e.g. "Date"
 or "Server" are not accessible this way).
 
 
