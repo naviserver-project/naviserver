@@ -6301,17 +6301,16 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
             Ns_TclPrintfResult(interp, "no writer configured for a driver with name %s",
                                Tcl_GetString(driverObj));
             result = TCL_ERROR;
-        }
-    }
-    if (result == TCL_OK) {
-        assert(wrPtr != NULL);
-        if (objc == 4) {
-            /*
-             * The optional argument was provided.
-             */
-            wrPtr->writersize = (size_t)intValue;
-        }
-        if (result == TCL_OK) {
+
+        } else {
+
+            if (objc == 4) {
+                /*
+                 * The optional argument was provided.
+                 */
+                wrPtr->writersize = (size_t)intValue;
+            }
+
             Tcl_SetObjResult(interp, Tcl_NewIntObj((int)wrPtr->writersize));
         }
     }
