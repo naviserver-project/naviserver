@@ -1192,8 +1192,6 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *const* objv, const char *file,
     case ADP_BREAK:
         NS_FALL_THROUGH; /* fall through */
     case ADP_TIMEOUT:
-        NS_FALL_THROUGH; /* fall through */
-    default:
         result = TCL_OK;
         break;
     }

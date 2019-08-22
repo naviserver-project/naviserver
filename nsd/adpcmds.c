@@ -1065,9 +1065,6 @@ NsTclAdpExceptionObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
             case ADP_TIMEOUT:
                 exception = "timeout";
                 break;
-            default:
-                exception = "unknown";
-                break;
             }
             if (Tcl_ObjSetVar2(interp, varnameObj, NULL, Tcl_NewStringObj(exception, -1),
                                TCL_LEAVE_ERR_MSG) == NULL) {

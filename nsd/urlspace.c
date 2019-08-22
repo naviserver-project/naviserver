@@ -845,12 +845,6 @@ NsUrlSpecificGet(NsServer *servPtr, const char *method, const char *url, int id,
         data = JunctionFind(junction, dsPtr->string, proc, context);
         break;
 
-    default:
-        /*
-         * should never happen
-         */
-        data = NULL;
-        break;
     }
 
     Ns_DStringFree(dsPtr);

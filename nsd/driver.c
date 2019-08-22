@@ -2256,10 +2256,10 @@ DriverThread(void *arg)
                         /*
                          * Already handled or normal cases
                          */
-                    case SOCK_ENTITYTOOLARGE:
-                    case SOCK_BADREQUEST:
-                    case SOCK_BADHEADER:
-                    case SOCK_TOOMANYHEADERS:
+                    case SOCK_ENTITYTOOLARGE:  NS_FALL_THROUGH; /* fall through */
+                    case SOCK_BADREQUEST:      NS_FALL_THROUGH; /* fall through */
+                    case SOCK_BADHEADER:       NS_FALL_THROUGH; /* fall through */
+                    case SOCK_TOOMANYHEADERS:  NS_FALL_THROUGH; /* fall through */
                     case SOCK_CLOSE:
                         SockRelease(sockPtr, s, errno);
                         break;
@@ -2267,14 +2267,13 @@ DriverThread(void *arg)
                         /*
                          * Exceptions
                          */
-                    case SOCK_READERROR:
-                    case SOCK_CLOSETIMEOUT:
-                    case SOCK_ERROR:
-                    case SOCK_READTIMEOUT:
-                    case SOCK_SHUTERROR:
-                    case SOCK_WRITEERROR:
+                    case SOCK_READERROR:    NS_FALL_THROUGH; /* fall through */
+                    case SOCK_CLOSETIMEOUT: NS_FALL_THROUGH; /* fall through */
+                    case SOCK_ERROR:        NS_FALL_THROUGH; /* fall through */
+                    case SOCK_READTIMEOUT:  NS_FALL_THROUGH; /* fall through */
+                    case SOCK_SHUTERROR:    NS_FALL_THROUGH; /* fall through */
+                    case SOCK_WRITEERROR:   NS_FALL_THROUGH; /* fall through */
                     case SOCK_WRITETIMEOUT:
-                    default:
                         drvPtr->stats.errors++;
                         Ns_Log(Warning,
                                "sockread returned unexpected result %s (err %s); close socket (%d)",
@@ -2372,19 +2371,18 @@ DriverThread(void *arg)
                             }
                             break;
 
-                        case SOCK_BADHEADER:
-                        case SOCK_BADREQUEST:
-                        case SOCK_CLOSE:
-                        case SOCK_CLOSETIMEOUT:
-                        case SOCK_ENTITYTOOLARGE:
-                        case SOCK_ERROR:
-                        case SOCK_READERROR:
-                        case SOCK_READTIMEOUT:
-                        case SOCK_SHUTERROR:
-                        case SOCK_TOOMANYHEADERS:
-                        case SOCK_WRITEERROR:
+                        case SOCK_BADHEADER:      NS_FALL_THROUGH; /* fall through */
+                        case SOCK_BADREQUEST:     NS_FALL_THROUGH; /* fall through */
+                        case SOCK_CLOSE:          NS_FALL_THROUGH; /* fall through */
+                        case SOCK_CLOSETIMEOUT:   NS_FALL_THROUGH; /* fall through */
+                        case SOCK_ENTITYTOOLARGE: NS_FALL_THROUGH; /* fall through */
+                        case SOCK_ERROR:          NS_FALL_THROUGH; /* fall through */
+                        case SOCK_READERROR:      NS_FALL_THROUGH; /* fall through */
+                        case SOCK_READTIMEOUT:    NS_FALL_THROUGH; /* fall through */
+                        case SOCK_SHUTERROR:      NS_FALL_THROUGH; /* fall through */
+                        case SOCK_TOOMANYHEADERS: NS_FALL_THROUGH; /* fall through */
+                        case SOCK_WRITEERROR:     NS_FALL_THROUGH; /* fall through */
                         case SOCK_WRITETIMEOUT:
-                        default:
                             Ns_Fatal("driver: SockAccept returned: %s", GetSockStateName(s));
                         }
                         accepted++;
@@ -3103,6 +3101,7 @@ SockError(Sock *sockPtr, SockState reason, int err)
         errMsg = "Request Entity Too Large";
         SockSendResponse(sockPtr, 413, errMsg);
         break;
+        
     case SOCK_ERROR:
         errMsg = "Unknown Error";
         SockSendResponse(sockPtr, 400, errMsg);
@@ -3556,7 +3555,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
      *      NS_SOCK_TIMEOUT
      */
         switch (nsSockState) {
-        case NS_SOCK_TIMEOUT: NS_FALL_THROUGH; /* fall through */
+        case NS_SOCK_TIMEOUT:  NS_FALL_THROUGH; /* fall through */
         case NS_SOCK_EXCEPTION:
             return SOCK_READERROR;
         case NS_SOCK_AGAIN:
@@ -3566,9 +3565,9 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
             return SOCK_CLOSE;
         case NS_SOCK_READ:
             break;
-        case NS_SOCK_CANCEL:
-        case NS_SOCK_EXIT:
-        case NS_SOCK_INIT:
+        case NS_SOCK_CANCEL:  NS_FALL_THROUGH; /* fall through */
+        case NS_SOCK_EXIT:    NS_FALL_THROUGH; /* fall through */
+        case NS_SOCK_INIT:    NS_FALL_THROUGH; /* fall through */
         case NS_SOCK_WRITE:
             Ns_Log(Warning, "SockRead received unexpected state %.2x from driver", nsSockState);
             return SOCK_READERROR;
@@ -4377,20 +4376,19 @@ SpoolerThread(void *arg)
                     Push(sockPtr, waitPtr);
                     break;
 
-                case SOCK_BADHEADER:
-                case SOCK_BADREQUEST:
-                case SOCK_CLOSE:
-                case SOCK_CLOSETIMEOUT:
-                case SOCK_ENTITYTOOLARGE:
-                case SOCK_ERROR:
-                case SOCK_READERROR:
-                case SOCK_READTIMEOUT:
-                case SOCK_SHUTERROR:
-                case SOCK_SPOOL:
-                case SOCK_TOOMANYHEADERS:
-                case SOCK_WRITEERROR:
+                case SOCK_BADHEADER:      NS_FALL_THROUGH; /* fall through */
+                case SOCK_BADREQUEST:     NS_FALL_THROUGH; /* fall through */
+                case SOCK_CLOSE:          NS_FALL_THROUGH; /* fall through */
+                case SOCK_CLOSETIMEOUT:   NS_FALL_THROUGH; /* fall through */
+                case SOCK_ENTITYTOOLARGE: NS_FALL_THROUGH; /* fall through */
+                case SOCK_ERROR:          NS_FALL_THROUGH; /* fall through */
+                case SOCK_READERROR:      NS_FALL_THROUGH; /* fall through */
+                case SOCK_READTIMEOUT:    NS_FALL_THROUGH; /* fall through */
+                case SOCK_SHUTERROR:      NS_FALL_THROUGH; /* fall through */
+                case SOCK_SPOOL:          NS_FALL_THROUGH; /* fall through */
+                case SOCK_TOOMANYHEADERS: NS_FALL_THROUGH; /* fall through */
+                case SOCK_WRITEERROR:     NS_FALL_THROUGH; /* fall through */
                 case SOCK_WRITETIMEOUT:
-                default:
                     SockRelease(sockPtr, n, errno);
                     queuePtr->queuesize--;
                     break;

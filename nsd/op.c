@@ -389,8 +389,7 @@ Ns_ConnRedirect(Ns_Conn *conn, const char *url)
     case NS_ERROR:          NS_FALL_THROUGH; /* fall through */
     case NS_FILTER_BREAK:   NS_FALL_THROUGH; /* fall through */
     case NS_FILTER_RETURN:  NS_FALL_THROUGH; /* fall through */
-    case NS_TIMEOUT:        NS_FALL_THROUGH; /* fall through */
-    default:
+    case NS_TIMEOUT:
         status = Ns_ConnReturnInternalError(conn);
         break;
     }

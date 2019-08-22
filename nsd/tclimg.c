@@ -118,7 +118,6 @@ NsTclImgTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             case png:     type = "png";     break;
             case gif:     type = "gif";     break;
             case unknown: type = "unknown"; break;
-            default: /*should not happen */ assert(0); type = "unknown"; break;
             }
             result = Tcl_Close(interp, chan);
             Tcl_SetObjResult(interp, Tcl_NewStringObj(type, -1));
@@ -169,7 +168,6 @@ NsTclImgMimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             case png:     mime = "image/png";     break;
             case gif:     mime = "image/gif";     break;
             case unknown: mime = "image/unknown"; break;
-            default: /*should not happen */ assert(0); mime = "image/unknown"; break;
             }
 
             result = Tcl_Close(interp, chan);
@@ -222,7 +220,6 @@ NsTclImgSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             case png:     result = PngSize (chan, &w, &h); break;
             case gif:     result = GifSize (chan, &w, &h); break;
             case unknown: result = TCL_ERROR; break;
-            default: /*should not happen */ result = TCL_ERROR; assert(0); break;
             }
 
             if (Tcl_Close(interp, chan) != TCL_OK) {

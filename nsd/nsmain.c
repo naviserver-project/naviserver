@@ -1073,20 +1073,21 @@ StatusMsg(runState state)
     const char *what;
 
     switch (state) {
+
     case starting:
         what = "starting";
         break;
+
     case running:
         what = "running";
         break;
+
     case stopping:
         what = "stopping";
         break;
+
     case exiting:
         what = "exiting";
-        break;
-    default:
-        what = "unknown";
         break;
     }
     Ns_Log(Notice, "nsmain: %s/%s (%s) %s",

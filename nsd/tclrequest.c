@@ -517,10 +517,6 @@ NsTclFilterProc(const void *arg, Ns_Conn *conn, Ns_FilterType why)
     case NS_FILTER_VOID_TRACE:
         /* Registered with ns_register_trace; always type VOID TRACE, so don't append. */
         break;
-    default:
-        /* unexpected value */
-        assert(why && 0);
-        break;
     }
 
     /*

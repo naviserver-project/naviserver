@@ -242,9 +242,6 @@ Ns_DbRegisterDriver(const char *driver, const Ns_DbProc *procs)
             UnsupProcId("BestRowId");
             break;
 
-        default:
-            Ns_Log(Error, "dbdrv: unknown driver id '%d'", procs->id);
-            return NS_ERROR;
         }
         ++procs;
     }
