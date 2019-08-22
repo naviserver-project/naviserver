@@ -3565,13 +3565,14 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
             return SOCK_CLOSE;
         case NS_SOCK_READ:
             break;
+
         case NS_SOCK_CANCEL:  NS_FALL_THROUGH; /* fall through */
         case NS_SOCK_EXIT:    NS_FALL_THROUGH; /* fall through */
         case NS_SOCK_INIT:    NS_FALL_THROUGH; /* fall through */
         case NS_SOCK_WRITE:
             Ns_Log(Warning, "SockRead received unexpected state %.2x from driver", nsSockState);
             return SOCK_READERROR;
-            break;
+
         case NS_SOCK_NONE:
             /*
              * Old style state management based on "n" and "errno", which is

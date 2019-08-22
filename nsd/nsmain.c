@@ -172,7 +172,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         switch (argv[optionIndex][1]) {
         case 'h':
             UsageMsg(0);
-            break;
+
         case 'c':
         case 'f':
         case 'V':
@@ -261,7 +261,6 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 #endif
         default:
             UsageError("invalid option: -%c", argv[optionIndex][1]);
-            break;
         }
     }
     if (mode == 'V') {
