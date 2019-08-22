@@ -1499,11 +1499,11 @@ NS_EXTERN Ns_ReturnCode NsWriterQueue(
 NS_EXTERN Ns_ConnLocationProc NsTclConnLocation;
 NS_EXTERN Ns_SchedProc NsTclSchedProc;
 NS_EXTERN Ns_ServerRootProc NsTclServerRoot;
-NS_EXTERN Ns_ThreadProc NsTclThread;
+NS_EXTERN Ns_ThreadProc NsTclThread NS_GNUC_NORETURN;
 NS_EXTERN Ns_ArgProc NsTclThreadArgProc;
 NS_EXTERN Ns_SockProc NsTclSockProc;
 NS_EXTERN Ns_ArgProc NsTclSockArgProc;
-NS_EXTERN Ns_ThreadProc NsConnThread;
+NS_EXTERN Ns_ThreadProc NsConnThread NS_GNUC_NORETURN;
 NS_EXTERN Ns_ArgProc NsConnArgProc;
 NS_EXTERN Ns_FilterProc NsTclFilterProc;
 NS_EXTERN Ns_FilterProc NsShortcutFilterProc NS_GNUC_PURE;

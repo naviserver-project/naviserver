@@ -73,6 +73,9 @@ static void MemThread(void *arg);
 static void Msg(const char *fmt,...)
     NS_GNUC_PRINTF(1, 2);
 
+static void CheckStackThread(void *UNUSED(arg)) NS_GNUC_NORETURN;
+static void WorkThread(void *arg)               NS_GNUC_NORETURN;
+
 /*
  * Msg -
  *

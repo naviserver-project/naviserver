@@ -1832,11 +1832,11 @@ Ns_LogTime2(char *timeBuf, bool gmt)
 
 NS_EXTERN void
 Ns_SetLogFlushProc(Ns_LogFlushProc *procPtr)
-    NS_GNUC_DEPRECATED_FOR(Ns_AddLogFilter);
+    NS_GNUC_DEPRECATED_FOR(Ns_AddLogFilter) NS_GNUC_NORETURN;
 
 NS_EXTERN void
 Ns_SetNsLogProc(Ns_LogProc *procPtr)
-    NS_GNUC_DEPRECATED_FOR(Ns_AddLogFilter);
+    NS_GNUC_DEPRECATED_FOR(Ns_AddLogFilter) NS_GNUC_NORETURN;
 
 NS_EXTERN void
 Ns_AddLogFilter(Ns_LogFilter *procPtr, void *arg, Ns_FreeProc *freeProc)

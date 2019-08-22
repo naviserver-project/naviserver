@@ -51,7 +51,7 @@ typedef enum {
 static int Pipe(int *fds, int sockpair)
     NS_GNUC_NONNULL(1);
 
-static void Abort(int signal);
+static void Abort(int signal) NS_GNUC_NORETURN;
 
 static bool GetPwNam(const char *user, PwElement elem, long *longResult, Ns_DString *dsPtr, char **freePtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(5);

@@ -63,8 +63,8 @@ typedef enum {
 
 static Ns_ThreadProc CmdThread;
 
-static void UsageError(const char *msg, ...) NS_GNUC_NONNULL(1) NS_GNUC_PRINTF(1, 2);
-static void UsageMsg(int exitCode);
+static void UsageError(const char *msg, ...) NS_GNUC_NONNULL(1) NS_GNUC_PRINTF(1, 2) NS_GNUC_NORETURN;
+static void UsageMsg(int exitCode)           NS_GNUC_NORETURN;
 static void StatusMsg(runState state);
 static void LogTclVersion(void);
 static const char *MakePath(const char *file) NS_GNUC_NONNULL(1);

@@ -1072,7 +1072,7 @@ NS_EXTERN int ns_signal(int sig, void (*proc)(int));
 
 NS_EXTERN void Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, ssize_t stackSize,
 			       Ns_Thread *resultPtr) NS_GNUC_NONNULL(1);
-NS_EXTERN void Ns_ThreadExit(void *arg);
+NS_EXTERN void Ns_ThreadExit(void *arg)              NS_GNUC_NORETURN;
 NS_EXTERN void Ns_ThreadJoin(Ns_Thread *threadPtr, void **argPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_ThreadYield(void);
 NS_EXTERN void Ns_ThreadSetName(const char *name, ...) NS_GNUC_NONNULL(1) NS_GNUC_PRINTF(1, 2);
