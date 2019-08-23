@@ -344,7 +344,7 @@ Ns_SockaddrParseIPMask(Tcl_Interp *interp, const char *ipString,
 {
     char         *slash;
     int           validIP;
-    unsigned int  nrBits;
+    unsigned int  nrBits = 0u;
     Ns_ReturnCode status = NS_OK;
 
     NS_NONNULL_ASSERT(ipString != NULL);

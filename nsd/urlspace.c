@@ -3035,7 +3035,7 @@ UrlSpaceSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
     NsServer       *servPtr = itPtr->servPtr;
     int             result = TCL_OK, id = -1, noinherit = 0, oc = 0;
     char           *key = (char *)".", *url = (char*)NS_EMPTY_STRING, *data = (char*)NS_EMPTY_STRING;
-    Tcl_Obj        *headerFilterObj = NULL, **ov;
+    Tcl_Obj        *headerFilterObj = NULL, **ov = NULL;
     Ns_ObjvSpec     lopts[] = {
         {"-contextfilter", Ns_ObjvObj,    &headerFilterObj, NULL},
         {"-id",            Ns_ObjvInt,    &id,        &idRange},
