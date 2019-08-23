@@ -490,6 +490,7 @@ typedef struct Ns_TclCallback {
     const char     *script;
     char          **argv;
     int             argc;
+    char           *args[1];
 } Ns_TclCallback;
 
 /*
