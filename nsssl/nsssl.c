@@ -358,7 +358,7 @@ Ns_ModuleInit(const char *server, const char *module)
 
         Ns_Log(Notice, "nsssl: Seeding OpenSSL's PRNG");
         for (n = 0; n < 1024; n++) {
-            ds.string[n] = (char)Ns_DRand();
+            ds.string[n] = (char)(Ns_DRand()*255);
         }
         RAND_seed(ds.string, 1024);
     }

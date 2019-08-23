@@ -372,7 +372,9 @@ static void
 PthreadTlsCleanup(void *arg)
 {
     intptr_t i = (intptr_t) arg;
-    printf("pthread[%" PRIxPTR "]: log: %" PRIdPTR"\n", (uintptr_t) pthread_self(), i);
+    pthread_t self = pthread_self();
+
+    printf("pthread[%" PRIxPTR "]: log: %" PRIdPTR"\n", (uintptr_t)self, i);
 }
 
 static void *

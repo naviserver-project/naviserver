@@ -845,6 +845,8 @@ SchedThread(void *UNUSED(arg))
          */
 
         while ((ePtr = readyPtr) != NULL) {
+            double diffTime;
+
             readyPtr = ePtr->nextPtr;
             ePtr->laststart = now;
             ePtr->flags |= NS_SCHED_RUNNING;
@@ -852,7 +854,8 @@ SchedThread(void *UNUSED(arg))
             (*ePtr->proc) (ePtr->arg, ePtr->id);
 
             time(&now);
-            elapsed = (long) difftime(now, ePtr->laststart);
+            diffTime = difftime(now, ePtr->laststart);
+            elapsed = (long) diffTime;
             if (elapsed > nsconf.sched.maxelapsed) {
                 Ns_Log(Warning, "sched: excessive time taken by proc %d (%ld seconds)",
                        ePtr->id, elapsed);

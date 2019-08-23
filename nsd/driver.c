@@ -3249,7 +3249,8 @@ SockClose(Sock *sockPtr, int keep)
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
     if (keep != 0) {
-        keep = (int)DriverKeep(sockPtr);
+        bool driverKeep = DriverKeep(sockPtr);
+        keep = (int)driverKeep;
     }
     if (keep == (int)NS_FALSE) {
         DriverClose(sockPtr);

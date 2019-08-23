@@ -253,7 +253,9 @@ Ns_InfoPlatform(void)
 long
 Ns_InfoUptime(void)
 {
-    return (long)difftime(time(NULL), nsconf.boot_t);
+    double diff = difftime(time(NULL), nsconf.boot_t);
+
+    return (long)diff;
 }
 
 
