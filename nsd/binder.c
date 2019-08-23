@@ -1166,7 +1166,11 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
     {
       struct cmsghdr *c = CMSG_FIRSTHDR(&msg);
       if ((c != NULL) && c->cmsg_type == SCM_RIGHTS) {
-          int *ptr = (int*)CMSG_DATA(c);
+          int *ptr;
+          /*
+           * Use memcpy to avoid alignment problems.
+           */
+          memcpy(&ptr, CMSG_DATA(c), sizeof(int*));
           sock = *ptr;
       }
     }
@@ -1406,7 +1410,11 @@ Binder(void)
             c = CMSG_FIRSTHDR(&msg);
             c->cmsg_level = SOL_SOCKET;
             c->cmsg_type  = SCM_RIGHTS;
-            pfd = (int*)CMSG_DATA(c);
+            /*
+             * Use memcpy to avoid alignment problems.
+             */
+            memcpy(&pfd, CMSG_DATA(c), sizeof(int*));
+
             *pfd = sock;
             c->cmsg_len = CMSG_LEN(sizeof(int));
             msg.msg_controllen = c->cmsg_len;
