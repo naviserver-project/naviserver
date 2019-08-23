@@ -525,7 +525,9 @@ Ns_ThreadYield(void)
 uintptr_t
 Ns_ThreadId(void)
 {
-    return (uintptr_t) pthread_self();
+    pthread_t result = pthread_self();
+
+    return (uintptr_t) result;
 }
 
 
@@ -548,9 +550,11 @@ Ns_ThreadId(void)
 void
 Ns_ThreadSelf(Ns_Thread *threadPtr)
 {
+    pthread_t result = pthread_self();
+
     NS_NONNULL_ASSERT(threadPtr != NULL);
 
-    *threadPtr = (Ns_Thread) (uintptr_t)pthread_self();
+    *threadPtr = (Ns_Thread)result;
 }
 
 
