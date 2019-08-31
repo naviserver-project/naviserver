@@ -66,7 +66,7 @@ instead of the old one in the future.
 
 Return a response with status code [term 302], [term Found]. The [term Location]
 header will be set to the [arg url] if given. For non-fully qualified
-target adresses, the URL is completed with either the location
+target addresses, the URL is completed with either the location
 configured via [cmd ns_locationproc] or via the [term location] configured in the
 network driver module (see [cmd nssock]).
 
