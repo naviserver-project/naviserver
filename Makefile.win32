@@ -94,7 +94,7 @@ NMAKE	= nmake /nologo TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG
 # However, include/nsthread.h sets WINVERSION to Vista to allow usage of InetNtop().
 
 
-# Note our use below of nmake's macro string substition feature:
+# Note our use below of nmake's macro string substitution feature:
 #   http://msdn.microsoft.com/en-us/library/bsd42ets%28v=vs.110%29.aspx
 #
 # Our use of $(build_targets) below expands into a separate target for
