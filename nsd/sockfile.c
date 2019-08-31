@@ -369,14 +369,16 @@ SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length, unsigned int flags)
         }
 #elif defined(HAVE_BSD_SENDFILE)
         {
-            int rc, flags = 0;
+            int rc, opt_flags = 0;
             off_t sbytes = 0;
 
-            rc = sendfile(fd, sock->sock, offset, length, NULL, &sbytes, flags);
+            rc = sendfile(fd, sock->sock, offset, length, NULL, &sbytes, opt_flags);
             if (rc == 0 || errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK) {
                 sent = sbytes;
             } else if (errno == EOPNOTSUPP) {
                 sent = _SendFile(sock, fd, offset, length);
+            } else {
+                sent = 0;
             }
         }
 #else
