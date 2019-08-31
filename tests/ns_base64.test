@@ -3,6 +3,8 @@
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
+tcltest::testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
+
 ::tcltest::configure {*}$argv
 
 test ns_base64encode-0.1 {basic syntax: plain call} -body {
@@ -316,7 +318,7 @@ test ns_base64encode-3.0 {
     UTF-8 data, from string or file,
     binary or not,
     convert everything via I/O to bytearray
-} -body {
+} -constraints {nsf} -body {
     set fn testserver/pages/utf-8-chars
     set a "äüö☀"
     set F [open $fn]; fconfigure $F -encoding binary -translation binary; set b [read $F]; close $F
@@ -364,7 +366,7 @@ test ns_base64encode-3.1 {
     euro-sign, in unicode-notation,
     literally and
     converted to a bytearray
-} -body {
+} -constraints {nsf} -body {
     set a "\u20ac"
     set b "€"
     set c [encoding convertto utf-8 $a]
@@ -403,7 +405,7 @@ test ns_base64encode-3.2 {
     mathematical symbols in UTF-8, from forums,
     literally and
     converted to a bytearray
-} -body {
+} -constraints {nsf}  -body {
     set a "äöüʃɪbəlɛθ"
     set b [encoding convertto utf-8 $a]
 
@@ -436,7 +438,7 @@ test ns_base64encode-3.2 {
 } -returnCodes {error ok} -result {{} bytearray {w6TDtsO8yoPJqmLJmWzJm864 w6TDtsO8yoPJqmLJmWzJm864} {bytearray bytearray} {w6TDtsO8yoPJqmLJmWzJm864 w6TDtsO8yoPJqmLJmWzJm864}}
 
 
-test ns_base64encode-3.3 {binary data, from file or memory} -body {
+test ns_base64encode-3.3 {binary data, from file or memory} -constraints {nsf} -body {
     set fn testserver/pages/binary
     set _ "\u0000\u0001\u0002\u0003☀"       ;# incorrect encoded binary string
     set a [encoding convertto utf-8 $_]     ;# correct encoded binary string
@@ -489,9 +491,9 @@ test ns_base64encode-3.3 {binary data, from file or memory} -body {
 
 test ns_base64decode-4.0 {
     base64decoded from provided string + binary scan
-} -body {
+} -constraints {nsf} -body {
     set decoded [ns_base64decode -binary {I+w+Yr+CXWGVsk2ZbqqzZlKcTuEM8TCMLOYjBv1h8xo2txA0Q5UX7v5gd5j6e8x1eIWGcfd3ORH2Vgt2HcDURw==}]
-    ns_log notice "obj(key) [nsf::__db_get_obj $decoded]"
+    #ns_log notice "obj(key) [nsf::__db_get_obj $decoded]"
     binary scan $decoded H* var
     list [string length $decoded] [string length $var] \
         [string equal $var 23ec3e62bf825d6195b24d996eaab366529c4ee10cf1308c2ce62306fd61f31a36b71034439517eefe607798fa7bcc7578858671f7773911f6560b761dc0d447]
