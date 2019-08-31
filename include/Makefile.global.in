@@ -175,3 +175,11 @@ ifneq (,$(findstring Darwin,$(uname)))
         endif
     endif
 endif
+
+#
+# FreeBSD (at least 12) needs the POSIX thread library mentioned
+# explicitly.
+#
+ifneq (,$(findstring FreeBSD,$(uname)))
+    NSLIBS += -lthr
+endif
