@@ -1094,7 +1094,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
                                                           1024*1024, 1024, INT_MAX);
         wrPtr->bufsize = (size_t)Ns_ConfigMemUnitRange(path, "writerbufsize",
                                                    8192, 512, INT_MAX);
-        wrPtr->rateLimit = Ns_ConfigIntRange(path, "writerratelimit", -1, 0, INT_MAX);
+        wrPtr->rateLimit = Ns_ConfigIntRange(path, "writerratelimit", 0, 0, INT_MAX);
         wrPtr->doStream = Ns_ConfigBool(path, "writerstreaming", NS_FALSE)
             ? NS_WRITER_STREAM_ACTIVE : NS_WRITER_STREAM_NONE;
         Ns_Log(Notice, "%s: enable %d writer thread(s) "
