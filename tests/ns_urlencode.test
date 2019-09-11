@@ -33,7 +33,7 @@ test ns_urlencode-2.1.1a {basic operation} -body {
 
 test ns_urlencode-2.1.1b {basic operation} -body {
     ns_urlencode --
-} -returnCodes error -result {wrong # args: should be "ns_urlencode ?-charset charset? ?-part part? ?-uppercase? ?--? args"}
+} -returnCodes {error ok} -result {--}
 
 test ns_urlencode-2.1.1c {basic operation} -body {
     ns_urlencode -- --
@@ -41,7 +41,7 @@ test ns_urlencode-2.1.1c {basic operation} -body {
 
 test ns_urlencode-2.1.1d {basic operation} -body {
     ns_urldecode --
-} -returnCodes error -result {wrong # args: should be "ns_urldecode ?-charset charset? ?-part part? ?--? string"}
+} -returnCodes {error ok} -result {--}
 
 test ns_urlencode-2.1.1e {basic operation} -body {
     ns_urldecode -- --
