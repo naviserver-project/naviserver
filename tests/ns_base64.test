@@ -9,7 +9,7 @@ tcltest::testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
 
 test ns_base64encode-0.1 {basic syntax: plain call} -body {
      ns_base64encode
-} -returnCodes error -result {wrong # args: should be "ns_base64encode string"}
+} -returnCodes error -result {wrong # args: should be "ns_base64encode ?-binary? ?--? string"}
 
 test ns_base64decode-0.1 {basic syntax: plain call} -body {
      ns_base64decode

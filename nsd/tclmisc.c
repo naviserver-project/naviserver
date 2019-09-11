@@ -1043,11 +1043,21 @@ static int
 Base64EncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv,
                    int encoding)
 {
-    int result = TCL_OK;
+    int         result = TCL_OK, isBinary = 0;
+    Tcl_Obj    *charsObj;
+    Ns_ObjvSpec opts[] = {
+        {"-binary", Ns_ObjvBool, &isBinary, INT2PTR(NS_TRUE)},
+        {"--",      Ns_ObjvBreak, NULL,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"string", Ns_ObjvObj, &charsObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "string");
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
+
     } else {
         char                *buffer;
         size_t               size;
@@ -1056,7 +1066,7 @@ Base64EncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         const unsigned char *bytes;
 
         Tcl_DStringInit(&ds);
-        bytes = (const unsigned char*)Ns_GetBinaryString(objv[1], NS_FALSE, &nbytes, &ds);
+        bytes = (const unsigned char*)Ns_GetBinaryString(charsObj, isBinary == 1, &nbytes, &ds);
         //hexPrint("source ", bytes,  (size_t)nbytes);
 
         size = (size_t)nbytes;
@@ -1704,10 +1714,19 @@ char *Ns_HexString(const unsigned char *digest, char *buf, int size, bool isUppe
 int
 NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int result = TCL_OK;
+    int         result = TCL_OK, isBinary = 0;
+    Tcl_Obj    *charsObj;
+    Ns_ObjvSpec opts[] = {
+        {"-binary", Ns_ObjvBool, &isBinary, INT2PTR(NS_TRUE)},
+        {"--",      Ns_ObjvBreak, NULL,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"string", Ns_ObjvObj, &charsObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "string");
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
@@ -1719,7 +1738,7 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         Tcl_DString    ds;
 
         Tcl_DStringInit(&ds);
-        bytes = (const unsigned char *)Ns_GetBinaryString(objv[1], NS_FALSE, &nbytes, &ds);
+        bytes = (const unsigned char *)Ns_GetBinaryString(charsObj, isBinary == 1, &nbytes, &ds);
         //hexPrint("source ", bytes, (size_t)nbytes);
 
         Ns_CtxSHAInit(&ctx);
@@ -2136,10 +2155,19 @@ static void MD5Transform(uint32_t buf[4], const uint32_t block[16])
 int
 NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int result = TCL_OK;
+    int         result = TCL_OK, isBinary = 0;
+    Tcl_Obj    *charsObj;
+    Ns_ObjvSpec opts[] = {
+        {"-binary", Ns_ObjvBool, &isBinary, INT2PTR(NS_TRUE)},
+        {"--",      Ns_ObjvBreak, NULL,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"string", Ns_ObjvObj, &charsObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "string");
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
@@ -2151,7 +2179,7 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
         const char    *str;
 
         Tcl_DStringInit(&ds);
-        str = Ns_GetBinaryString(objv[1], NS_FALSE, &length, &ds);
+        str = Ns_GetBinaryString(charsObj, isBinary == 1, &length, &ds);
         Ns_CtxMD5Init(&ctx);
         Ns_CtxMD5Update(&ctx, (const unsigned char *) str, (size_t)length);
         Ns_CtxMD5Final(&ctx, digest);

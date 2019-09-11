@@ -12,11 +12,17 @@ MD5 generates an almost-unique 128-bit signature for a text.
 
 [list_begin definitions]
 
-[call [cmd ns_md5] [arg string]]
+[call [cmd ns_md5] \
+	[opt [option -binary]] \
+	[opt [option --]] \
+	[arg string]]
 
 [para]
-[arg string]
-String from which hash should be produced
+
+Compute an MD5 checksum from the provided [arg string]
+When the option [option -binary] is used, the Tcl byte array value
+of the provided input argument is used and no UTF-8 interpretation
+is performed.
 
 [list_end]
 

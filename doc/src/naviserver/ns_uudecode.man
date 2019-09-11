@@ -18,9 +18,17 @@
 
 [list_begin definitions]
 
- [call [cmd ns_uudecode] [arg string]]
+ [call [cmd ns_uudecode] \
+  	[opt [option -binary]] \
+	[opt [option --]] \
+	[arg string]]
+
+In case, the result might contain binary content,
+it is recommend to use the option [option -binary], which causes the
+result to be a Tcl byte array.
 
 [list_end]
+
 
 [section EXAMPLES]
 
