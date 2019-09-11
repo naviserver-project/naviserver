@@ -205,9 +205,34 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
              int offset, int objc, Tcl_Obj *const* objv)
 {
     Ns_ObjvSpec  *specPtr;
-    int           optIndex, remain = (objc - offset);
+    int           optIndex, requiredArgs = 0, remain = (objc - offset);
 
     NS_NONNULL_ASSERT(interp != NULL);
+
+    /*
+     * In case, the number of actual arguments is equal to the number
+     * of required arguments, skip option processing and use the
+     * provided argument for the required arguments. This way,
+     * e.g. "ns_md5 --" will compute the checksum of "--" instead of
+     * spitting out an error message about a missing input string.
+     */
+    if (likely(argSpec != NULL) && likely(optSpec != NULL)) {
+        /*
+         * Count required args.
+         */
+        for (specPtr = argSpec; specPtr != NULL && specPtr->key != NULL; specPtr++) {
+            if (unlikely(specPtr->key[0] == '?')) {
+                break;
+            }
+            requiredArgs++;
+        }
+        if (requiredArgs+offset == objc) {
+            /*
+             * No need to process optional parameters.
+             */
+            optSpec = NULL;
+        }
+    }
 
     if (likely(optSpec != NULL) && likely(optSpec->key != NULL)) {
 
@@ -259,6 +284,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
         }
         return NS_OK;
     }
+
     for (specPtr = argSpec; specPtr != NULL && specPtr->key != NULL; specPtr++) {
         if (unlikely(remain == 0)) {
             if (unlikely(specPtr->key[0] != '?')) {
