@@ -605,16 +605,21 @@ GetEckeyFromPem(Tcl_Interp *interp, char *pemFileName, bool private)
 static int
 CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int            result;
+    int            result, isBinary = 0;
     const char    *digestName = "sha256";
     Tcl_Obj       *keyObj;
+    Ns_ObjvSpec opts[] = {
+        {"-binary", Ns_ObjvBool, &isBinary, INT2PTR(NS_TRUE)},
+        {"--",      Ns_ObjvBreak, NULL,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
     Ns_ObjvSpec    args[] = {
         {"digest",  Ns_ObjvString, &digestName, NULL},
         {"key",     Ns_ObjvObj,    &keyObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
@@ -631,7 +636,7 @@ CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
             Tcl_DString keyDs;
 
             Tcl_DStringInit(&keyDs);
-            keyString = Ns_GetBinaryString(keyObj, NS_FALSE, &keyLength, &keyDs);
+            keyString = Ns_GetBinaryString(keyObj, isBinary == 1, &keyLength, &keyDs);
             ctx = HMAC_CTX_new();
             HMAC_Init_ex(ctx, keyString, keyLength, md, NULL);
             Ns_TclSetAddrObj(Tcl_GetObjResult(interp), hmacCtxType, ctx);
@@ -662,18 +667,23 @@ CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 static int
 CryptoHmacAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int            result = TCL_OK;
+    int            result = TCL_OK, isBinary = 0;
     HMAC_CTX      *ctx;
     const Tcl_Obj *ctxObj;
     Tcl_Obj       *messageObj;
     int            messageLength;
+    Ns_ObjvSpec opts[] = {
+        {"-binary", Ns_ObjvBool, &isBinary, INT2PTR(NS_TRUE)},
+        {"--",      Ns_ObjvBreak, NULL,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
     Ns_ObjvSpec    args[] = {
         {"ctx",      Ns_ObjvObj, &ctxObj, NULL},
         {"message",  Ns_ObjvObj, &messageObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else if (Ns_TclGetOpaqueFromObj(ctxObj, hmacCtxType, (void **)&ctx) != TCL_OK) {
@@ -685,7 +695,7 @@ CryptoHmacAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         Tcl_DString          messageDs;
 
         Tcl_DStringInit(&messageDs);
-        message = (const unsigned char *)Ns_GetBinaryString(messageObj, NS_FALSE, &messageLength, &messageDs);
+        message = (const unsigned char *)Ns_GetBinaryString(messageObj, isBinary == 1, &messageLength, &messageDs);
         HMAC_Update(ctx, message, (size_t)messageLength);
         Tcl_DStringFree(&messageDs);
     }
@@ -826,13 +836,14 @@ CryptoHmacFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 static int
 CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int                result;
+    int                result, isBinary = 0;
     Tcl_Obj           *keyObj, *messageObj;
     const char        *digestName = "sha256";
     char              *outputEncodingString = NULL;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
 
     Ns_ObjvSpec    lopts[] = {
+        {"-binary",   Ns_ObjvBool,   &isBinary,   INT2PTR(NS_TRUE)},
         {"-digest",   Ns_ObjvString, &digestName, NULL},
         {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
         {"--",        Ns_ObjvBreak,  NULL,        NULL},
@@ -875,8 +886,8 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
              */
             Tcl_DStringInit(&keyDs);
             Tcl_DStringInit(&messageDs);
-            keyString = Ns_GetBinaryString(keyObj, NS_FALSE, &keyLength, &keyDs);
-            messageString = Ns_GetBinaryString(messageObj, NS_FALSE, &messageLength, &messageDs);
+            keyString = Ns_GetBinaryString(keyObj, isBinary == 1, &keyLength, &keyDs);
+            messageString = Ns_GetBinaryString(messageObj, isBinary == 1, &messageLength, &messageDs);
             hexPrint("hmac key", (const unsigned char *)keyString, (size_t)keyLength);
             hexPrint("hmac message", (const unsigned char *)messageString, (size_t)messageLength);
 
@@ -1012,17 +1023,22 @@ CryptoMdNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 static int
 CryptoMdAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int            result = TCL_OK;
+    int            result = TCL_OK, isBinary = 0;
     EVP_MD_CTX    *mdctx;
     const Tcl_Obj *ctxObj;
     Tcl_Obj       *messageObj;
+    Ns_ObjvSpec    opts[] = {
+        {"-binary", Ns_ObjvBool, &isBinary, INT2PTR(NS_TRUE)},
+        {"--",      Ns_ObjvBreak, NULL,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
     Ns_ObjvSpec    args[] = {
         {"ctx",      Ns_ObjvObj, &ctxObj, NULL},
         {"message",  Ns_ObjvObj, &messageObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else if (Ns_TclGetOpaqueFromObj(ctxObj, mdCtxType, (void **)&mdctx) != TCL_OK) {
@@ -1035,7 +1051,7 @@ CryptoMdAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         Tcl_DString    messageDs;
 
         Tcl_DStringInit(&messageDs);
-        message = Ns_GetBinaryString(messageObj, NS_FALSE, &messageLength, &messageDs);
+        message = Ns_GetBinaryString(messageObj, isBinary == 1, &messageLength, &messageDs);
         EVP_DigestUpdate(mdctx, message, (size_t)messageLength);
         Tcl_DStringFree(&messageDs);
     }
@@ -1176,12 +1192,13 @@ CryptoMdFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 static int
 CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int                result;
+    int                result, isBinary = 0;
     Tcl_Obj           *messageObj;
     char              *digestName = (char *)"sha256", *keyFile = NULL, *outputEncodingString = NULL;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
 
     Ns_ObjvSpec lopts[] = {
+        {"-binary",   Ns_ObjvBool,   &isBinary,  INT2PTR(NS_TRUE)},
         {"-digest",   Ns_ObjvString, &digestName, NULL},
         {"-sign",     Ns_ObjvString, &keyFile,    NULL},
         {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
@@ -1241,7 +1258,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
              * All input parameters are valid, get key and data.
              */
             Tcl_DStringInit(&messageDs);
-            messageString = Ns_GetBinaryString(messageObj, NS_FALSE, &messageLength, &messageDs);
+            messageString = Ns_GetBinaryString(messageObj, isBinary == 1, &messageLength, &messageDs);
             hexPrint("md", (const unsigned char *)messageString, (size_t)messageLength);
 
             /*
@@ -1323,12 +1340,13 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 static int
 CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int                result;
+    int                result, isBinary = 0;
     Tcl_Obj           *messageObj;
     char              *digestName = (char *)"sha256", *pemFile = NULL, *outputEncodingString = NULL;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
 
     Ns_ObjvSpec lopts[] = {
+        {"-binary",   Ns_ObjvBool,   &isBinary,  INT2PTR(NS_TRUE)},
         {"-digest",   Ns_ObjvString, &digestName, NULL},
         {"-pem",      Ns_ObjvString, &pemFile,    NULL},
         {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
@@ -1410,7 +1428,7 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
              * All input parameters are valid, get key and data.
              */
             Tcl_DStringInit(&messageDs);
-            messageString = Ns_GetBinaryString(messageObj, NS_FALSE, &messageLength, &messageDs);
+            messageString = Ns_GetBinaryString(messageObj, isBinary == 1, &messageLength, &messageDs);
 
             /*
              * Call the Digest or Signature computation
@@ -1479,11 +1497,12 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 static int
 CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int                result, outLength = 0;
+    int                result, isBinary = 0, outLength = 0;
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL, *infoObj = NULL;
     char              *digestName = (char *)"sha256", *outputEncodingString = NULL;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
     Ns_ObjvSpec lopts[] = {
+        {"-binary",   Ns_ObjvBool,   &isBinary,  INT2PTR(NS_TRUE)},
         {"-digest",   Ns_ObjvString, &digestName, NULL},
         {"-salt",     Ns_ObjvObj,    &saltObj,    NULL},
         {"-secret",   Ns_ObjvObj,    &secretObj,  NULL},
@@ -1585,9 +1604,9 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             Tcl_DStringInit(&infoDs);
             keyString = ns_malloc((size_t)outLength);
 
-            saltString   = Ns_GetBinaryString(saltObj,   NS_FALSE, &saltLength,   &saltDs);
-            secretString = Ns_GetBinaryString(secretObj, NS_FALSE, &secretLength, &secretDs);
-            infoString   = Ns_GetBinaryString(infoObj,   NS_FALSE, &infoLength,   &infoDs);
+            saltString   = Ns_GetBinaryString(saltObj,   isBinary == 1, &saltLength,   &saltDs);
+            secretString = Ns_GetBinaryString(secretObj, isBinary == 1, &secretLength, &secretDs);
+            infoString   = Ns_GetBinaryString(infoObj,   isBinary == 1, &infoLength,   &infoDs);
 
             // hexPrint("salt  ", (const unsigned char *)saltString,   (size_t)saltLength);
             // hexPrint("secret", (const unsigned char *)secretString, (size_t)secretLength);
@@ -1689,11 +1708,12 @@ NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 int
 NsCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int                result, n = 1024, r = 8, p = 16;
+    int                result, isBinary = 0, n = 1024, r = 8, p = 16;
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL;
     char              *outputEncodingString = NULL;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
     Ns_ObjvSpec lopts[] = {
+        {"-binary",   Ns_ObjvBool,   &isBinary,  INT2PTR(NS_TRUE)},
         {"-salt",     Ns_ObjvObj,    &saltObj,    NULL},
         {"-secret",   Ns_ObjvObj,    &secretObj,  NULL},
         {"-n",        Ns_ObjvInt,    &n,          &posIntRange1},
@@ -1773,8 +1793,8 @@ NsCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         Tcl_DStringInit(&secretDs);
         //keyString = ns_malloc((size_t)outLength);
 
-        saltString   = Ns_GetBinaryString(saltObj,   NS_FALSE, &saltLength,   &saltDs);
-        secretString = Ns_GetBinaryString(secretObj, NS_FALSE, &secretLength, &secretDs);
+        saltString   = Ns_GetBinaryString(saltObj,   isBinary == 1, &saltLength,   &saltDs);
+        secretString = Ns_GetBinaryString(secretObj, isBinary == 1, &secretLength, &secretDs);
 
         kctx = EVP_KDF_CTX_new_id(EVP_KDF_SCRYPT);
 
@@ -2051,12 +2071,12 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 static int
 CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int                result;
+    int                result, isBinary = 0;
     char              *outputEncodingString = NULL;
     Tcl_Obj           *importObj = NULL;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
-
     Ns_ObjvSpec lopts[] = {
+        {"-binary",   Ns_ObjvBool,   &isBinary, INT2PTR(NS_TRUE)},
         {"-string",   Ns_ObjvObj,    &importObj, NULL},
         {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
         {NULL, NULL, NULL, NULL}
@@ -2090,7 +2110,7 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
         Tcl_DString          keyDs;
 
         Tcl_DStringInit(&keyDs);
-        rawKeyString = (const unsigned char *)Ns_GetBinaryString(importObj, NS_FALSE, &rawKeyLength, &keyDs);
+        rawKeyString = (const unsigned char *)Ns_GetBinaryString(importObj, isBinary == 1, &rawKeyLength, &keyDs);
 
         Ns_Log(Notice, "import: raw key length %d", rawKeyLength);
         hexPrint("key", rawKeyString, (size_t)rawKeyLength);
@@ -2227,13 +2247,14 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
 static int
 CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int                result;
+    int                result, isBinary = 0;
     char              *outputEncodingString = NULL, *pemFileName = NULL;
     Tcl_Obj           *pubkeyObj = NULL;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
     EC_KEY            *eckey = NULL;
 
     Ns_ObjvSpec lopts[] = {
+        {"-binary",   Ns_ObjvBool,   &isBinary, INT2PTR(NS_TRUE)},
         {"-pem",      Ns_ObjvString, &pemFileName, NULL},
         {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
         {"--",        Ns_ObjvBreak,  NULL,         NULL},
@@ -2291,7 +2312,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
          */
 
         Tcl_DStringInit(&importDs);
-        pubkeyString = (const unsigned char *)Ns_GetBinaryString(pubkeyObj, NS_FALSE, &pubkeyLength, &importDs);
+        pubkeyString = (const unsigned char *)Ns_GetBinaryString(pubkeyObj, isBinary == 1, &pubkeyLength, &importDs);
 
         //pubkeyString = Tcl_GetByteArrayFromObj(pubkeyObj, &pubkeyLength);
         //Ns_Log(Notice, "pub key length %d", pubkeyLength);
@@ -2506,21 +2527,23 @@ NsTclCryptoEckeyObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 static int
 CryptoAeadStringGetArguments(
     Tcl_Interp        *interp, int objc, Tcl_Obj *const* objv, bool encrypt,
-    Tcl_Obj          **tagObjPtr,
     Tcl_DString       *ivDsPtr, Tcl_DString *keyDsPtr, Tcl_DString *aadDsPtr,
-    const char       **keyStringPtr, int *keyLengthPtr,
-    const char       **ivStringPtr, int *ivLengthPtr,
-    const char       **aadStringPtr, int *aadLengthPtr,
-    const char       **inputStringPtr,  int *inputLengthPtr,
+    Tcl_DString       *tagDsPtr,
+    const char       **keyStringPtr,   int *keyLengthPtr,
+    const char       **ivStringPtr,    int *ivLengthPtr,
+    const char       **aadStringPtr,   int *aadLengthPtr,
+    char             **tagStringPtr,   int *tagLengthPtr,
+    const char       **inputStringPtr, int *inputLengthPtr,
     const EVP_CIPHER **cipherPtr, Ns_ResultEncoding *encodingPtr, EVP_CIPHER_CTX **ctxPtr
 ) {
-    Tcl_Obj      *ivObj = NULL, *keyObj = NULL, *aadObj = NULL, *inputObj;
-    int           result;
+    Tcl_Obj      *ivObj = NULL, *keyObj = NULL, *aadObj = NULL, *tagObj = NULL, *inputObj;
+    int           result, isBinary = 0;
     char         *cipherName = (char *)"aes-128-gcm";
     Tcl_DString   ivDs, inputDs;
     char         *outputEncodingString = NULL;
 
     Ns_ObjvSpec lopts_encrypt[] = {
+        {"-binary",   Ns_ObjvBool,    &isBinary,   INT2PTR(NS_TRUE)},
         {"-aad",      Ns_ObjvObj,     &aadObj,     NULL},
         {"-cipher",   Ns_ObjvString,  &cipherName, NULL},
         {"-encoding", Ns_ObjvString,  &outputEncodingString, NULL},
@@ -2530,12 +2553,13 @@ CryptoAeadStringGetArguments(
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec lopts_decrypt[] = {
+        {"-binary",   Ns_ObjvBool,    &isBinary,   INT2PTR(NS_TRUE)},
         {"-aad",      Ns_ObjvObj,     &aadObj,     NULL},
         {"-cipher",   Ns_ObjvString,  &cipherName, NULL},
         {"-encoding", Ns_ObjvString,  &outputEncodingString, NULL},
         {"-iv",       Ns_ObjvObj,     &ivObj,      NULL},
         {"-key",      Ns_ObjvObj,     &keyObj,     NULL},
-        {"-tag",      Ns_ObjvObj,     tagObjPtr,   NULL},
+        {"-tag",      Ns_ObjvObj,     &tagObj,     NULL},
         {"--",        Ns_ObjvBreak,   NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -2544,7 +2568,6 @@ CryptoAeadStringGetArguments(
         {NULL, NULL, NULL, NULL}
     };
 
-    *tagObjPtr = NULL;
     *encodingPtr = RESULT_ENCODING_HEX;
     *ctxPtr = NULL;
 
@@ -2567,13 +2590,13 @@ CryptoAeadStringGetArguments(
     } else if ((result = GetCipher(interp, cipherName, EVP_CIPH_GCM_MODE, "gcm", cipherPtr)) == TCL_OK) {
 
         *ctxPtr = EVP_CIPHER_CTX_new();
-        *keyStringPtr = Ns_GetBinaryString(keyObj, NS_FALSE, keyLengthPtr, keyDsPtr);
+        *keyStringPtr = Ns_GetBinaryString(keyObj, isBinary == 1, keyLengthPtr, keyDsPtr);
 
         /*
          * Get optional additional authenticated data (AAD)
          */
         if (aadObj != NULL) {
-            *aadStringPtr = Ns_GetBinaryString(aadObj, NS_FALSE, aadLengthPtr, aadDsPtr);
+            *aadStringPtr = Ns_GetBinaryString(aadObj, isBinary == 1, aadLengthPtr, aadDsPtr);
         } else {
             *aadLengthPtr = 0;
             *aadStringPtr = NS_EMPTY_STRING;
@@ -2583,10 +2606,17 @@ CryptoAeadStringGetArguments(
          * Get sometimes optional initialization vector (IV)
          */
         if (ivObj != NULL) {
-            *ivStringPtr = Ns_GetBinaryString(ivObj, NS_FALSE, ivLengthPtr, ivDsPtr);
+            *ivStringPtr = Ns_GetBinaryString(ivObj, isBinary == 1, ivLengthPtr, ivDsPtr);
         } else {
             *ivStringPtr = NULL;
             *ivLengthPtr = 0;
+        }
+
+        if (tagObj != NULL) {
+            *tagStringPtr = (char *)Ns_GetBinaryString(tagObj, isBinary == 1, tagLengthPtr, tagDsPtr);
+        } else {
+            *tagStringPtr = NULL;
+            *tagLengthPtr = 0;
         }
 
         if (*ivLengthPtr > EVP_MAX_IV_LENGTH
@@ -2601,7 +2631,7 @@ CryptoAeadStringGetArguments(
             result = TCL_ERROR;
 
         } else {
-            *inputStringPtr = Ns_GetBinaryString(inputObj, NS_FALSE, inputLengthPtr, &inputDs);
+            *inputStringPtr = Ns_GetBinaryString(inputObj, isBinary == 1, inputLengthPtr, &inputDs);
             result = TCL_OK;
         }
     }
@@ -2632,11 +2662,12 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     int                  result;
     Tcl_Obj             *tagObj = NULL;
     const EVP_CIPHER    *cipher = NULL;
-    Tcl_DString          ivDs, keyDs, aadDs, inputDs;
+    Tcl_DString          ivDs, keyDs, aadDs, tagDs, inputDs;
     Ns_ResultEncoding    encoding = RESULT_ENCODING_HEX;
     EVP_CIPHER_CTX      *ctx;
     const char          *inputString = NULL, *ivString, *aadString, *keyString = NULL;
-    int                  inputLength, keyLength, ivLength, aadLength;
+    char                *tagString;
+    int                  inputLength, keyLength, ivLength, aadLength, tagLength;
 
     /*
       ::ns_crypto::aead::encrypt string -cipher aes-128-gcm -iv 123456789 -key secret "hello world"
@@ -2650,12 +2681,14 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     Tcl_DStringInit(&aadDs);
     Tcl_DStringInit(&keyDs);
     Tcl_DStringInit(&ivDs);
+    Tcl_DStringInit(&tagDs);
 
     result = CryptoAeadStringGetArguments(interp, objc, objv, encrypt,
-                                          &tagObj, &ivDs, &keyDs, &aadDs,
+                                          &ivDs, &keyDs, &aadDs, &tagDs,
                                           &keyString,   &keyLength,
                                           &ivString,    &ivLength,
                                           &aadString,   &aadLength,
+                                          &tagString,   &tagLength,
                                           &inputString, &inputLength,
                                           &cipher, &encoding, &ctx);
     if (result == TCL_OK) {
@@ -2685,10 +2718,9 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
             } else {
                 int          cipherBlockSize = EVP_CIPHER_block_size(cipher), outputLength;
                 Tcl_Obj     *listObj;
-                Tcl_DString  outputDs, tagDs;
+                Tcl_DString  outputDs;
 
                 Tcl_DStringInit(&outputDs);
-                Tcl_DStringInit(&tagDs);
 
                 /*
                  * Everything is set up successfully, now do the "real" encryption work.
@@ -2733,7 +2765,6 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
                 Tcl_SetObjResult(interp, listObj);
                 assert(result == TCL_OK);
                 Tcl_DStringFree(&outputDs);
-                Tcl_DStringFree(&tagDs);
             }
 
         } else {
@@ -2766,12 +2797,10 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
                 result = TCL_ERROR;
 
             } else {
-                int          tagLength, outputLength;
-                Tcl_DString  outputDs, tagDs;
-                char        *tagString;
+                int          outputLength;
+                Tcl_DString  outputDs;
 
                 Tcl_DStringInit(&outputDs);
-                Tcl_DStringInit(&tagDs);
 
                 /*
                  * Everything is set up successfully, now do the "real" decryption work.
@@ -2788,8 +2817,6 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
                 /*
                  * Set expected tag value. Works in OpenSSL 1.0.1d and later
                  */
-                tagString = (char *)Ns_GetBinaryString(tagObj, NS_FALSE, &tagLength, &tagDs);
-
                 if(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, tagLength, tagString) != 1) {
                     Ns_TclPrintfResult(interp, "could not set tag value");
                     result = TCL_ERROR;
@@ -2805,7 +2832,6 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
                     assert(result == TCL_OK);
                 }
                 Tcl_DStringFree(&outputDs);
-                Tcl_DStringFree(&tagDs);
             }
 
         }
@@ -2817,6 +2843,7 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     Tcl_DStringFree(&aadDs);
     Tcl_DStringFree(&keyDs);
     Tcl_DStringFree(&ivDs);
+    Tcl_DStringFree(&tagDs);
 
     return result;
 }
