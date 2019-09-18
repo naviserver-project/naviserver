@@ -111,7 +111,7 @@ NsTclImgTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             result = TCL_ERROR;
 
         } else {
-            const char  *type;
+            const char  *type = "unknown"; /* Just to make compiler silent, we have a complete enumeration of switch values */
 
             switch (GetImageType(chan)) {
             case jpeg:    type = "jpeg";    break;
@@ -161,7 +161,7 @@ NsTclImgMimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         if (chan == NULL) {
             result = TCL_ERROR;
         } else {
-            const char  *mime;
+            const char  *mime = "image/unknown"; /* Just to make compiler silent, we have a complete enumeration of switch values */
 
             switch (GetImageType(chan)) {
             case jpeg:    mime = "image/jpeg";    break;
@@ -198,7 +198,7 @@ int
 NsTclImgSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char       *file = NULL;
-    int         result;
+    int         result = TCL_OK;
     Ns_ObjvSpec args[] = {
         {"file",  Ns_ObjvString, &file, NULL},
         {NULL, NULL, NULL, NULL}
