@@ -811,7 +811,7 @@ NsUrlSpecificGet(NsServer *servPtr, const char *method, const char *url, int id,
                  NsUrlSpaceContextFilterProc proc, void *context)
 {
     Ns_DString      ds, *dsPtr = &ds;
-    void           *data;
+    void           *data = NULL; /* Just to make compiler silent, we have a complete enumeration of switch values */
     const Junction *junction;
 
     NS_NONNULL_ASSERT(servPtr != NULL);

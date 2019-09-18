@@ -1047,7 +1047,7 @@ NsTclAdpExceptionObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
         Tcl_SetObjResult(interp, Tcl_NewBooleanObj((itPtr->adp.exception == ADP_OK)));
 
         if (varnameObj != NULL) {
-            const char *exception;
+            const char *exception = "NONE"; /* Just to make compiler silent, we have a complete enumeration of switch values */
 
             switch (itPtr->adp.exception) {
             case ADP_OK:

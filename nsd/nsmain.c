@@ -1069,7 +1069,7 @@ NsTclShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 static void
 StatusMsg(runState state)
 {
-    const char *what;
+    const char *what = ""; /* Just to make compiler silent, we have a complete enumeration of switch values */
 
     switch (state) {
 
