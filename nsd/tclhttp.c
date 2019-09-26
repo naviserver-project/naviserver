@@ -2276,7 +2276,7 @@ HttpConnect(
      * Optionally, add our own Host header
      */
     if (keepHostHdr == NS_FALSE) {
-        (void)Ns_DStringVarAppend(dsPtr, hostHeader, ": ", NULL);
+        (void)Ns_DStringVarAppend(dsPtr, hostHeader, ": ", (char *)0L);
         (void)Ns_HttpLocationString(dsPtr, NULL, host, portNr, defPortNr);
         Ns_DStringNAppend(dsPtr, "\r\n", 2);
     }
