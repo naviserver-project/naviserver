@@ -4217,7 +4217,7 @@ SockSetServer(Sock *sockPtr)
                     Tcl_HashSearch  search;
 
                     hPtr2 = Tcl_FirstHashEntry(&drvPtr->hosts, &search);
-                    while (hPtr != NULL) {
+                    while (hPtr2 != NULL) {
                         Ns_Log(Notice, "... host entry: '%s'\n",
                                (char *)Tcl_GetHashKey(&drvPtr->hosts, hPtr2));
                         hPtr2 = Tcl_NextHashEntry(&search);
