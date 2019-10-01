@@ -799,6 +799,11 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                     partial = NS_TRUE;
                 }
             } else if (!haveTimeout) {
+                /*
+                 * errno might be 0 here (at least in https cases),
+                 * leading to weird looking exceptions.... not sure,
+                 * why this happens.
+                 */
                 const char *errorMsg = Tcl_ErrnoMsg(errno);
                 /*
                  * Timeout is handled above, all other errors ar
@@ -807,7 +812,6 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                 Ns_TclPrintfResult(interp, "channel %s send operation failed: %s",
                                    connChanPtr->channelName, errorMsg);
                 Tcl_SetErrorCode(interp, "POSIX", Tcl_ErrnoId(), errorMsg, (char *)0L);
-
             }
 
             Ns_Log(Ns_LogConnchanDebug, "%s ### check result %ld == -1 || %ld == %ld "
