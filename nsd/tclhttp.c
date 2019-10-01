@@ -2857,7 +2857,7 @@ HttpTaskSend(
     const void *buffer,
     size_t length
 ) {
-    ssize_t sent = 0;
+    ssize_t sent;
     struct  iovec iov, *bufs = &iov;
     int     nbufs = 1;
 
@@ -2867,9 +2867,7 @@ HttpTaskSend(
     iov.iov_base = (char*)buffer;
     iov.iov_len = length;
 
-    if (length == 0) {
-        sent = 0;
-    } else if (httpPtr->ssl == NULL) {
+    if (httpPtr->ssl == NULL) {
         sent = Ns_SockSendBufs2(httpPtr->sock, bufs, nbufs, 0);
     } else {
 #ifndef HAVE_OPENSSL_EVP_H
@@ -3077,7 +3075,12 @@ HttpProc(
                    (void*)httpPtr->ds.string,
                    (void*)httpPtr->next, remain);
 
-            n = HttpTaskSend(httpPtr, httpPtr->next, remain);
+            if (remain > 0) {
+                n = HttpTaskSend(httpPtr, httpPtr->next, remain);
+            } else {
+                n = 0;
+            }
+
 
             if (n == -1) {
                 httpPtr->error = "send failed";
