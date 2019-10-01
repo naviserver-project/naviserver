@@ -2696,12 +2696,14 @@ HttpClose(
     NsHttpTask *httpPtr
 ) {
     NS_NONNULL_ASSERT(httpPtr != NULL);
+    NS_NONNULL_ASSERT(httpPtr->task != NULL);
 
     Ns_Log(Ns_LogTaskDebug, "HttpClose free httpPtr:%p, task:%p",
            (void*)httpPtr, (void*)httpPtr->task);
 
     if (httpPtr->task != NULL) {
         (void) Ns_TaskFree(httpPtr->task);
+        httpPtr->task = NULL
     }
 #ifdef HAVE_OPENSSL_EVP_H
     if (httpPtr->ssl != NULL) {
