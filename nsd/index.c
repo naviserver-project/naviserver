@@ -439,7 +439,7 @@ Ns_IndexAdd(Ns_Index *indexPtr, void *el)
         indexPtr->el = (void **) ns_realloc(indexPtr->el,
                                             indexPtr->max * sizeof(void *));
     } else if (indexPtr->max == 0u) {
-        indexPtr->max += indexPtr->inc;
+        indexPtr->max = indexPtr->inc;
         indexPtr->el = (void **) ns_malloc(indexPtr->max * sizeof(void *));
     }
     if (indexPtr->n > 0u) {
