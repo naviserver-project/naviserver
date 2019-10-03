@@ -2703,7 +2703,7 @@ HttpClose(
 
     if (httpPtr->task != NULL) {
         (void) Ns_TaskFree(httpPtr->task);
-        httpPtr->task = NULL
+        httpPtr->task = NULL;
     }
 #ifdef HAVE_OPENSSL_EVP_H
     if (httpPtr->ssl != NULL) {
