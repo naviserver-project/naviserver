@@ -810,7 +810,7 @@ ServerPoolRateLimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
                        ConnPool *poolPtr, int nargs)
 {
     int               result = TCL_OK, value = 0;
-    Ns_ObjvValueRange range = {1, poolPtr->threads.max};
+    Ns_ObjvValueRange range = {-1, INT_MAX};
     Ns_ObjvSpec       args[] = {
         {"?poolratelimit", Ns_ObjvInt, &value, &range},
         {NULL, NULL, NULL, NULL}
@@ -832,7 +832,7 @@ ServerConnectionRateLimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *inter
                                 ConnPool *poolPtr, int nargs)
 {
     int               result = TCL_OK, value = 0;
-    Ns_ObjvValueRange range = {1, poolPtr->threads.max};
+    Ns_ObjvValueRange range = {-1, INT_MAX};
     Ns_ObjvSpec       args[] = {
         {"?connectionratelimit", Ns_ObjvInt, &value, &range},
         {NULL, NULL, NULL, NULL}
@@ -1435,6 +1435,8 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         && subcmd != SActiveIdx
         && subcmd != SQueuedIdx
         && subcmd != SAllIdx
+        && subcmd != SPoolRateLimitIdx
+        && subcmd != SConnectionRateLimitIdx
         ) {
         /*
          * Just for backwards compatibility
