@@ -80,6 +80,13 @@
 ]
 
 Register a Tcl callback for the names connection [arg channel].
+[option -timeout] is the poll timeout, [option -receivetimeout] is a
+timeout for incoming packets, [option -sendtimeout] is the timeout for
+outgoing packets.  When [option -sendtimeout] has the value of 0, a
+read operation might return the empty string. A value larger than 0
+might block the event processing for the specified time.
+
+[para]
 The argument [arg when] consist of one or more characters
 of r, w, e, or x, specifying, when the callback should fire.
 All timeouts are specified in the form [arg secs[opt :microsecs]] or
@@ -98,7 +105,7 @@ follows:
 [item] t - timeout received
 [list_end]
 
-[para] When the callback exists, its return value determines, whether
+[para] When the callback exits, its return value determines, whether
 the callback should be canceled or not. The return value is
 interpreted as follows:
 [list_begin itemized]
