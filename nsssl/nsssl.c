@@ -454,7 +454,7 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
             }
             sock->arg = sslCtx;
             SSL_set_fd(sslCtx->ssl, sock->sock);
-            SSL_set_mode(sslCtx->ssl, SSL_MODE_ENABLE_PARTIAL_WRITE);
+            SSL_set_mode(sslCtx->ssl, SSL_MODE_ENABLE_PARTIAL_WRITE|SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
             SSL_set_accept_state(sslCtx->ssl);
             SSL_set_app_data(sslCtx->ssl, drvPtr);
             SSL_set_tmp_dh_callback(sslCtx->ssl, SSL_dhCB);
@@ -570,9 +570,15 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
             ERR_clear_error();
             rc = SSL_write(sslCtx->ssl, bufs->iov_base, (int)bufs->iov_len);
             if (rc <= 0) {
+                fprintf(stderr, "### SSL_write %p len %d rc %d SSL_get_error => %d: %s\n",
+                        (void*)bufs->iov_base, (int)bufs->iov_len,
+                        rc, SSL_get_error(sslCtx->ssl, rc),
+                        ERR_error_string(ERR_get_error(), NULL));
                 if (SSL_get_error(sslCtx->ssl, rc) != SSL_ERROR_WANT_WRITE) {
                     SSL_set_shutdown(sslCtx->ssl, SSL_RECEIVED_SHUTDOWN);
                     sent = -1;
+                } else {
+                    sent = 0;
                 }
                 break;
             }

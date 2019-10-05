@@ -127,7 +127,7 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
     }
     SSL_CTX_set_verify(ctx, verify ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, NULL);
     SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
-    SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
+    SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE|SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
     if (cert != NULL) {
         if (SSL_CTX_use_certificate_chain_file(ctx, cert) != 1) {
@@ -308,7 +308,7 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
     SSL_CTX_load_verify_locations(ctx, caFile, caPath);
     SSL_CTX_set_verify(ctx, verify ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, NULL);
     SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
-    SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE);
+    SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE|SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
     if (cert != NULL) {
         if (SSL_CTX_use_certificate_chain_file(ctx, cert) != 1) {

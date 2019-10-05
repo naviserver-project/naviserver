@@ -92,7 +92,7 @@ static NsConnChan *ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char
 static Ns_ReturnCode SockCallbackRegister(NsConnChan *connChanPtr, const char *script, unsigned int when, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static ssize_t DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
+static ssize_t ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                           struct iovec *bufs, int nbufs, unsigned int flags, const Ns_Time *timeoutPtr
 ) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6);
 
@@ -542,7 +542,7 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
                     } else if (ok == 2) {
                         if (logEnabled) {
                             Ns_Log(Ns_LogConnchanDebug, "%s NsTclConnChanProc client "
-                                   "requested to CANCEL callback %p",
+                                   "requested to CANCEL (suspend) callback %p",
                                    channelName, (void*)cbPtr);
                         }
                         /*
@@ -695,7 +695,7 @@ SockCallbackRegister(NsConnChan *connChanPtr, const char *script,
 /*
  *----------------------------------------------------------------------
  *
- * DriverSend --
+ * ConnchanDriverSend --
  *
  *      Write a vector of buffers to the socket via the driver callback.
  *
@@ -709,7 +709,7 @@ SockCallbackRegister(NsConnChan *connChanPtr, const char *script,
  */
 
 static ssize_t
-DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
+ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
            struct iovec *bufs, int nbufs, unsigned int flags,
            const Ns_Time *timeoutPtr)
 {
@@ -724,22 +724,34 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
     assert(sockPtr != NULL);
     assert(sockPtr->drvPtr != NULL);
 
+    /*
+     * Call the driver's sendProc, but handle also partial write
+     * operations.
+     *
+     * In principle, we could call here simply
+     *
+     *     result = Ns_SockSendBufs((Ns_Sock *)sockPtr, bufs, nbufs, timeoutPtr, flags);
+     *
+     * but this operation can block the thread in cases where not all
+     * of the buffer was sent. Therefore, the following block defines
+     * a logic, where on partial operations, the remaining data is
+     * passed to the caller, when no send timeout is specified.
+     */
     if (likely(sockPtr->drvPtr->sendProc != NULL)) {
         bool    haveTimeout = NS_FALSE, partial;
         ssize_t nSent = 0, toSend = (ssize_t)Ns_SumVec(bufs, nbufs), origLength = toSend;
 
-        Ns_Log(Ns_LogConnchanDebug, "%s DriverSend try to send %" PRIdz " bytes",
+        Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend try to send %" PRIdz " bytes",
                connChanPtr->channelName, toSend);
 
         do {
-            /*Ns_Log(Ns_LogConnchanDebug, "%s DriverSend try to send [0] %" PRIdz " bytes (total %"  PRIdz ")",
+            /*Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend try to send [0] %" PRIdz " bytes (total %"  PRIdz ")",
                    connChanPtr->channelName,
                    bufs->iov_len, (ssize_t)Ns_SumVec(bufs, nbufs));*/
 
-            result = (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
-                                                  NULL, flags);
-            Ns_Log(Ns_LogConnchanDebug, "%s DriverSend sendProc returned result %" PRIdz,
-                   connChanPtr->channelName, result);
+            result = NsDriverSend(sockPtr, bufs, nbufs,flags);
+            Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend NsDriverSend returned result %" PRIdz " --- %s",
+                   connChanPtr->channelName, result, Tcl_ErrnoMsg(errno));
 
             if (result == 0) {
                 /*
@@ -749,28 +761,54 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                  * If there is no timeout provided, return the bytes sent so far.
                  */
                 if (timeoutPtr->sec == 0 && timeoutPtr->usec == 0) {
-                    Ns_Log(Ns_LogConnchanDebug, "%s DriverSend would block, no timeout configured, "
+                    Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend would block, no timeout configured, "
                            "origLength %" PRIdz" still to send %" PRIdz " already sent %" PRIdz,
                            connChanPtr->channelName, origLength, toSend, nSent);
                     /*
-                     * The result might be between 0 and toSend.
+                     * The result might be between "0" and "toSend".
                      */
                     result = nSent;
-                    break;
+                    /*
+                     * For OpenSSL, we have here a special situation:
+                     * In case a write operation ends in an
+                     * SSL_ERROR_WANT_WRITE, we see a behavior similar
+                     * to a partial write, where no data was written at
+                     * all. However, the subsequent write operation
+                     * has to be performed with the identical C
+                     * buffer, otherwise we receive a
+                     * "ssl3_write_pending:bad write retry".
+                     *
+                     * - One option for a "result == 0" is to avoid
+                     *   the "break" and proceed to the TimedWait.
+                     *
+                     * - One other option is to set
+                     *   SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER which
+                     *   simply avoids the sanity check in OpenSSL
+                     *   triggering the error above.
+                     */
+                    //if (result != 0) {
+                    //    break;
+                    //}
 
+                    if (result == 0) {
+                        Ns_Log(Ns_LogConnchanDebug,
+                               "ConnchanDriverSend ZERO byte write operation. "
+                               "SSL should call SSL_write with same buffer");
+                        break;
+                    }
+                    break;
                 }
                 /*
                  * A timeout was provided. Be aware that the timeout
                  * will suspend all sock-callback handlings for this
                  * time period.
                  */
-                Ns_Log(Ns_LogConnchanDebug, "%s DriverSend recoverable error before timeout (%ld:%ld)",
+                Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend recoverable error before timeout (%ld:%ld)",
                        connChanPtr->channelName, timeoutPtr->sec, timeoutPtr->usec);
                 if (Ns_SockTimedWait(sockPtr->sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
-                    result = (*sockPtr->drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs,
-                                                          NULL, flags);
+                    result = NsDriverSend(sockPtr, bufs, nbufs,flags);
                 } else {
-                    Ns_Log(Ns_LogConnchanDebug, "%s DriverSend timeout occurred",
+                    Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend timeout occurred",
                            connChanPtr->channelName);
                     haveTimeout = NS_TRUE;
                     Ns_TclPrintfResult(interp, "channel %s timeout on send operation (%ld:%ld)",
@@ -792,7 +830,7 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                      * headers, which is a one-time operation.
                      */
                     Ns_Log(Ns_LogConnchanDebug,
-                           "%s DriverSend partial write operation, sent %" PRIdz " instead of %" PRIdz " bytes",
+                           "%s ConnchanDriverSend partial write operation, sent %" PRIdz " instead of %" PRIdz " bytes",
                            connChanPtr->channelName, nSent, toSend);
                     (void) Ns_ResetVec(bufs, nbufs, (size_t)nSent);
                     toSend -= result;
@@ -800,9 +838,16 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                 }
             } else if (!haveTimeout) {
                 /*
-                 * errno might be 0 here (at least in https cases),
-                 * leading to weird looking exceptions.... not sure,
-                 * why this happens.
+                 * The "errno" variable might be 0 here (at least in
+                 * https cases), when there are OpenSSL error cases
+                 * not caused by the OS socket states. This can lead
+                 * to weird looking exceptions, stating "Success"
+                 * (errno == 0). Such errors happened e.g. before
+                 * setting SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER. Hopefully,
+                 * such error cases are eliminated already.  In case
+                 * we see such errors again, we should look for a way
+                 * to get the error message directly from the driver
+                 * (e.g. from OpenSSL) and not from the OS.
                  */
                 const char *errorMsg = Tcl_ErrnoMsg(errno);
                 /*
@@ -821,7 +866,6 @@ DriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                    partial, (result != -1), (partial && (result != -1)));
 
         } while (partial && (result != -1));
-
 
     } else {
         Ns_TclPrintfResult(interp, "channel %s: no sendProc registered for driver %s",
@@ -1013,8 +1057,8 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
                 buf[3].iov_base = (void *)"\r\n";
                 buf[3].iov_len  = 2u;
 
-                nSent = DriverSend(interp, connChanPtr, buf, 4, 0u, &connChanPtr->sendTimeout);
-                Ns_Log(Ns_LogConnchanDebug, "%s DriverSend sent %" PRIdz " bytes state %s",
+                nSent = ConnchanDriverSend(interp, connChanPtr, buf, 4, 0u, &connChanPtr->sendTimeout);
+                Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend sent %" PRIdz " bytes state %s",
                        connChanPtr->channelName,
                        nSent, errno != 0 ? strerror(errno) : "ok");
 
@@ -1659,7 +1703,7 @@ ConnChanWriteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
              */
             buf.iov_base = (void *)msgString;
             buf.iov_len = (size_t)msgLen;
-            nSent = DriverSend(interp, connChanPtr, &buf, 1, 0u, &connChanPtr->sendTimeout);
+            nSent = ConnchanDriverSend(interp, connChanPtr, &buf, 1, 0u, &connChanPtr->sendTimeout);
             if (nSent > -1) {
                 connChanPtr->wBytes += (size_t)nSent;
                 Tcl_SetObjResult(interp, Tcl_NewLongObj((long)nSent));
