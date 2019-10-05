@@ -95,7 +95,7 @@ test ns_server-2.0.6 {get all values from an active connection with -checkforpro
 #
 
 test ns_server-2.1 {basic operation} -body {
-    string is int -strict [ns_server connections]
+    string is integer -strict [ns_server connections]
 } -match exact -result 1
 
 test ns_server-2.2 {basic operation} -body {

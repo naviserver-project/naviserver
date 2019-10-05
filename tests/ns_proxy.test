@@ -74,7 +74,7 @@ test ns_proxy-3.4 {put handle} -body {
 test ns_proxy-3.5 {get/put using command interface} -body {
     set cmd [ns_proxy get testpool]
     set res ""
-    lappend res [expr {[info command $cmd] == $cmd}]
+    lappend res [expr {[info commands $cmd] == $cmd}]
     lappend res [expr {[lsearch [ns_proxy handles] $cmd] >= 0}]
     rename $cmd ""
     lappend res [expr {[lsearch [ns_proxy handles] $cmd] == -1}]

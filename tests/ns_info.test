@@ -23,7 +23,7 @@ test ns_info-2.2.1 {basic operation} -body {
 } -match glob -result *nsd*
 
 test ns_info-2.3.1 {basic operation} -body {
-    string is int -strict [ns_info boottime]
+    string is integer -strict [ns_info boottime]
 } -result 1
 
 test ns_info-2.4.1 {basic operation builddate: positive if builddate = day of test} -body {
@@ -32,7 +32,7 @@ test ns_info-2.4.1 {basic operation builddate: positive if builddate = day of te
 } -result 1
 
 test ns_info-2.5.1 {basic operation} -body {
-    string is int -strict [llength [ns_info callbacks]]
+    string is integer -strict [llength [ns_info callbacks]]
 } -result 1
 
 test ns_info-2.6.1 {basic operation} -body {
@@ -95,7 +95,7 @@ test ns_info-2.19.1 {basic operation} -body {
 } -result 1
 
 test ns_info-2.20.1 {basic operation} -body {
-    string is int -strict [llength [ns_info scheduled]]
+    string is integer -strict [llength [ns_info scheduled]]
 } -result 1
 
 test ns_info-2.21.1 {basic operation} -body {
@@ -141,7 +141,7 @@ test ns_info-2.29.1 {basic operation} -body {
 } -result "4.99"
 
 #test ns_info-2.30.1 {basic operation} -body {
-#     string is int -strict [ns_info winnt]
+#     string is integer -strict [ns_info winnt]
 #} -result 1
 
 
