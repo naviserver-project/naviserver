@@ -908,7 +908,7 @@ Ns_VarGet(const char *server, const char *array, const char *key, Ns_DString *ds
  *
  * Ns_VarExists
  *
- *      Return 1 if the key exists int the given array.
+ *      Return 1 if the key exists in the given array.
  *
  * Results:
  *      NS_TRUE or NS_FALSE.

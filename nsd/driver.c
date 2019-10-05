@@ -7108,7 +7108,7 @@ NsTclAsyncLogfileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
  *      Driver pointer or NULL on failure.
  *
  * Side effects:
- *      When no driver is found, an error is left int the interp result.
+ *      When no driver is found, an error is left in the interp result.
  *
  *----------------------------------------------------------------------
  */
