@@ -306,6 +306,10 @@ namespace eval ::revproxy {
             #
             set result 0
 
+        } trap {POSIX {unknown error}} {} {
+            ns_log warning "revproxy: strange 0 byte write occurred"
+            set result 0
+
         } on error {errorMsg} {
             #
             # all other errors
@@ -319,11 +323,19 @@ namespace eval ::revproxy {
             incr ::revproxy::spooled($to) $nrBytesSent
             if {$nrBytesSent < $toSend} {
                 #
-                # A partial send operation happened
+                # A partial send operation happened.
                 #
+                #log notice "partial write (send) operation, could only send $nrBytesSent of $toSend bytes"
                 set remaining [string range $data $nrBytesSent end]
-                log notice "spool to $to: register write callback for $to with remaining [string length $remaining] bytes\
-                            (sofar $::revproxy::spooled($to)), setting callback on to $to -> ::revproxy::write_once"
+                log notice "spool to $to: PARTIAL WRITE ($nrBytesSent of $toSend) \
+                            register write callback for $to with remaining [string length $remaining] bytes\
+                            (sofar $::revproxy::spooled($to)), setting callback on $to ::revproxy::write_once"
+                #
+                # On revproxy::write_once, we do not want to set the
+                # sendtimeout for the time being (it would block), the
+                # receivetimeout is not necessary; so set just the
+                # polltimeout.
+                #
                 ns_connchan callback \
                     -timeout [dict get $timeouts -timeout] \
                     $to [list ::revproxy::write_once $from $to $url $remaining $timeouts] wex
