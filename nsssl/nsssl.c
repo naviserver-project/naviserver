@@ -570,10 +570,10 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
             ERR_clear_error();
             rc = SSL_write(sslCtx->ssl, bufs->iov_base, (int)bufs->iov_len);
             if (rc <= 0) {
-                fprintf(stderr, "### SSL_write %p len %d rc %d SSL_get_error => %d: %s\n",
+                /*fprintf(stderr, "### SSL_write %p len %d rc %d SSL_get_error => %d: %s\n",
                         (void*)bufs->iov_base, (int)bufs->iov_len,
                         rc, SSL_get_error(sslCtx->ssl, rc),
-                        ERR_error_string(ERR_get_error(), NULL));
+                        ERR_error_string(ERR_get_error(), NULL));*/
                 if (SSL_get_error(sslCtx->ssl, rc) != SSL_ERROR_WANT_WRITE) {
                     SSL_set_shutdown(sslCtx->ssl, SSL_RECEIVED_SHUTDOWN);
                     sent = -1;
