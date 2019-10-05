@@ -369,7 +369,7 @@ Ns_StrToMemUnit(const char *chars, Tcl_WideInt *intPtr)
                  *    KiB, MiB and GiB as 1024, 1024^2, 1024^3 bytes.
                  *
                  * For effective memory usage, multiple of 1024 are
-                 * better. Therefore we follow the PostgreSQL conventions and
+                 * better. Therefore, we follow the PostgreSQL conventions and
                  * use 1024 as multiplier, but we allow as well the IEC
                  * abbreviations.
                  */

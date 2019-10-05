@@ -2183,7 +2183,7 @@ UpdateInterp(NsInterp *itPtr)
      * contains significant state.
      *
      * In the codeblock below, we want to avoid running the blueprint update
-     * under the lock. Therefore we copy the blueprint script with ns_strdup.
+     * under the lock. Therefore, we copy the blueprint script with ns_strdup.
      */
     Ns_RWLockRdLock(&servPtr->tcl.lock);
     if (itPtr->epoch != servPtr->tcl.epoch) {

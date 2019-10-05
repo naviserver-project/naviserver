@@ -408,7 +408,7 @@ test compress-3.3 {ns_write streaming, compressed} -setup {
 
 #
 # The output of the following test is slightly surprising because it
-# is in streaming mode with only one chunk. Therefore only the gzip
+# is in streaming mode with only one chunk. Therefore, only the gzip
 # trailer appears in the second segment.
 #
 

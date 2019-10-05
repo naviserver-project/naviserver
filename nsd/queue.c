@@ -1999,7 +1999,7 @@ NsConnThread(void *arg)
             /*
              * We put an entry into the thread queue. However, we must
              * take care, that signals are not sent, before this thread
-             * is waiting for it. Therefore we lock the connection
+             * is waiting for it. Therefore, we lock the connection
              * thread specific lock right here, also the signal sending
              * code uses the same lock.
              */
@@ -2664,7 +2664,7 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool chec
     /*
      * An annoying race condition can be lethal here.
      *
-     * In the state "waiting", we have never a connPtr->reqPtr, therefore we
+     * In the state "waiting", we have never a connPtr->reqPtr, therefore, we
      * can't even determine the peer address, nor the request method or the
      * request URL. Furthermore, there is no way to honor the "checkforproxy"
      * flag.

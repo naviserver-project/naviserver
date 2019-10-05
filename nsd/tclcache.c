@@ -513,7 +513,7 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
                  * The remaining status codes are TCL_BREAK, TCL_CONTINUE
                  * and TCL_ERROR. Regarding TCL_BREAK and TCL_CONTINUE as
                  * signals for not caching is used e.g. in
-                 * OpenACS. Therefore we want to return TCL_BREAK or
+                 * OpenACS. Therefore, we want to return TCL_BREAK or
                  * TCL_CONTINUE as well.
                  *
                  * Certainly, we could map unknown error codes to TCL_ERROR

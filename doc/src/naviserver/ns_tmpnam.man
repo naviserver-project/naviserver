@@ -7,7 +7,7 @@
 [description]
 
 This command generates a filename that can safely be used for a
-temporary file.  [cmd ns_tmpnam] uses the tmpnam() function, therefore
+temporary file.  [cmd ns_tmpnam] uses the tmpnam() function, therefore,
 the behavior will depend on the operating system.
 
 [section {COMMANDS}]

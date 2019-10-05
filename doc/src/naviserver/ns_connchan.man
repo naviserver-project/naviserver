@@ -17,7 +17,7 @@
  network drivers (such as plain HTTP channels and from SSL/TLS
  connections). It can be used to implement e.g. WebSockets or
  asynchronous deliveries (e.g. h264 streams) including secure
- connections. Therefore this command is more general than the
+ connections. Therefore, this command is more general than the
  approaches based on [cmd "ns_conn channel"] using plain Tcl channels.
 
 [para]

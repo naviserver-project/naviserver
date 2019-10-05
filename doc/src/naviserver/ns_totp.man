@@ -63,7 +63,7 @@ The default value is 30.
 the secret can be either be provided via [arg key], or via
 [arg user_id] and a config parameter [term serversecret]. For testing
 purposes, the [arg key] is preferable. For usage scenarios,
-the secret should be personalized to the user. Therefore
+the secret should be personalized to the user. Therefore,
 the implementation uses the user_id and the per-server configured
 password value (see configuration section).
 

@@ -447,7 +447,7 @@ ns_runonce {
                     if {$xotcl > 1} {
                         #
                         # The serialization of the objects redefines
-                        # the Serializer object, therefore we have to
+                        # the Serializer object, therefore, we have to
                         # repeat the namespace import.
                         #
                         append import \

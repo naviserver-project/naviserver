@@ -178,7 +178,7 @@ proc __ns_sourcemodule {modname} {
 #     This results in a very small script which is quick
 #     to load and consume far less memory as "things" are
 #     loaded on as-needed basis by the Tcl [unknown] command.
-#     However this mode may pose compatibility problems by
+#     However, this mode may pose compatibility problems by
 #     some init scripts doing "weird" things during the
 #     interp initialization.
 #
