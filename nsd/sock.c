@@ -436,6 +436,14 @@ Ns_SockSendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
 
         sent = NsDriverSend((Sock *)sock, sbufPtr, nsbufs, flags);
 
+        if (unlikely(Ns_LogSeverityEnabled(Debug)
+                     && sent != -1
+                     && sent != (ssize_t)toWrite)
+            ) {
+            Ns_Log(Debug, "Ns_SockSendBufs partial write: want to send %" PRIdz
+                   " bytes, sent %" PRIdz " timeoutPtr %p",
+                   toWrite, sent, (void*)timeoutPtr);
+        }
         if (sent == 0
             && Ns_SockTimedWait(sock->sock, (unsigned int)NS_SOCK_WRITE,
                                 timeoutPtr) == NS_OK) {
@@ -621,13 +629,21 @@ Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length,
 Ns_ReturnCode
 Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
 {
-    int           n, msec = -1;
+    int           n, pollTimeout;
     struct pollfd pfd;
     Ns_ReturnCode result = NS_OK;
     short         requestedEvents, count = 0;
 
+    /*
+     * If there is no timeout specified, set pollTimeout to "-1", meaning an
+     * infinite poll timeout. Otherwise compute the milliseconds from the
+     * specified timeout values. Note that the timeout might be "0",
+     * meaning that the poll() call will return immediately.
+     */
     if (timeoutPtr != NULL) {
-        msec = (int)(timeoutPtr->sec * 1000 + timeoutPtr->usec / 1000);
+        pollTimeout = (int)(timeoutPtr->sec * 1000 + timeoutPtr->usec / 1000);
+    } else {
+        pollTimeout = -1;
     }
     pfd.fd = sock;
     pfd.events = 0;
@@ -645,7 +661,7 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
 
     for (;;) {
         pfd.revents = 0;
-        n = ns_poll(&pfd, (NS_POLL_NFDS_TYPE)1, msec);
+        n = ns_poll(&pfd, (NS_POLL_NFDS_TYPE)1, pollTimeout);
         if (n == -1 && Retry(ns_sockerrno)) {
             count ++;
             continue;
