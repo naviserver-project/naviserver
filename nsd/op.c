@@ -390,7 +390,7 @@ Ns_ConnRedirect(Ns_Conn *conn, const char *url)
     case NS_FILTER_BREAK:   NS_FALL_THROUGH; /* fall through */
     case NS_FILTER_RETURN:  NS_FALL_THROUGH; /* fall through */
     case NS_TIMEOUT:
-        status = Ns_ConnReturnInternalError(conn);
+        status = Ns_ConnTryReturnInternalError(conn, status, "redirect, after authorize request");
         break;
     }
 

@@ -2361,6 +2361,10 @@ Ns_ConnReturnNotImplemented(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode
+Ns_ConnTryReturnInternalError(Ns_Conn *conn, Ns_ReturnCode status, const char *causeString)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+
+NS_EXTERN Ns_ReturnCode
 Ns_ConnReturnInternalError(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 

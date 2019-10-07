@@ -455,7 +455,7 @@ NsTclRequestProc(const void *arg, Ns_Conn *conn)
             status = Ns_ConnReturnUnavailable(conn);
         } else {
             (void) Ns_TclLogErrorInfo(interp, "\n(context: request proc)");
-            if ((conn->flags & NS_CONN_CLOSED) == 0u) {
+            if (!Ns_ConnIsClosed(conn)) {
                 status = Ns_ConnReturnInternalError(conn);
             }
         }

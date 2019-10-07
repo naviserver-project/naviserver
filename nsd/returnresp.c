@@ -658,6 +658,46 @@ Ns_ConnReturnNotImplemented(Ns_Conn *conn)
     return result;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnTryReturnInternalError --
+ *
+ *      Call Ns_ConnReturnInternalError() in case the connection is not closed
+ *      yet. We could handle this case also in Ns_ConnReturnInternalError()
+ *      but we want to provide log entries with the calling context for such
+ *      unexpected cases.
+ *
+ * Results:
+ *      Ns_ReturnCode (when the connection is not closed, the result of the
+ *      send operation).
+ *
+ * Side effects:
+ *      Potentially sending message to the client.
+ *
+ *----------------------------------------------------------------------
+ */
+Ns_ReturnCode
+Ns_ConnTryReturnInternalError(Ns_Conn *conn, Ns_ReturnCode status, const char *causeString)
+{
+    Ns_ReturnCode result;
+
+    if (Ns_ConnIsClosed(conn)) {
+        /*
+         * When the connection is already closed, we cannot return
+         * the internal error to the client.
+         */
+        Ns_Log(Warning, "internal error (HTTP status 500) with already closed connection "
+               "(%s, return code %d)",
+               causeString, (int)status);
+        result = status;
+    } else {
+        result = Ns_ConnReturnInternalError(conn);
+    }
+    return result;
+}
+
 
 /*
  *----------------------------------------------------------------------

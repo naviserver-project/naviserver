@@ -273,7 +273,7 @@ CgiRequest(const void *arg, Ns_Conn *conn)
     const Map      *mapPtr;
     Mod            *modPtr;
     Cgi             cgi;
-    Ns_ReturnCode   status;
+    Ns_ReturnCode   status = NS_OK;
 
     mapPtr = arg;
     modPtr = mapPtr->modPtr;
@@ -315,7 +315,7 @@ CgiRequest(const void *arg, Ns_Conn *conn)
         if ((cgi.flags & CGI_ECONTENT) != 0u) {
             status = Ns_ConnReturnBadRequest(conn, "Insufficient Content");
         } else {
-            status = Ns_ConnReturnInternalError(conn);
+            Ns_ConnTryReturnInternalError(conn, NS_ERROR, "nscgi: cannot spool data");
         }
         goto done;
     }
@@ -348,8 +348,9 @@ CgiRequest(const void *arg, Ns_Conn *conn)
      * Execute the CGI and copy output.
      */
 
-    if (CgiExec(&cgi, conn) != NS_OK) {
-        status = Ns_ConnReturnInternalError(conn);
+    status = CgiExec(&cgi, conn);
+    if (status != NS_OK) {
+        status = Ns_ConnTryReturnInternalError(conn, status, "nscgi: cgi exec failed");
     } else {
         status = CgiCopy(&cgi, conn);
     }
@@ -1180,7 +1181,7 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
     }
     Ns_DStringFree(&ds);
     if (n < 0) {
-        status = Ns_ConnReturnInternalError(conn);
+        status = Ns_ConnTryReturnInternalError(conn, NS_ERROR, "nscgi: reading client data failed");
     } else {
 
         /*

@@ -2452,18 +2452,21 @@ ConnRun(Conn *connPtr)
             case NS_FILTER_BREAK:   NS_FALL_THROUGH; /* fall through */
             case NS_FILTER_RETURN:  NS_FALL_THROUGH; /* fall through */
             case NS_TIMEOUT:
-                (void) Ns_ConnReturnInternalError(conn);
+                (void)Ns_ConnTryReturnInternalError(conn, status, "after authorize request");
                 break;
             }
         } else if (status != NS_FILTER_RETURN) {
             /*
-             * If not ok or filter_return, then the pre-auth filter coughed
+             * If not ok or filter_return, then the pre-auth filter caught
              * an error.  We are not going to proceed, but also we
              * can't count on the filter to have sent a response
              * back to the client.  So, send an error response.
              */
-            (void) Ns_ConnReturnInternalError(conn);
-            status = NS_FILTER_RETURN; /* to allow tracing to happen */
+            (void)Ns_ConnTryReturnInternalError(conn, status, "after pre_auth filter");
+            /*
+             * Set the status so that NS_FILTER_TRACE can still run.
+             */
+            status = NS_FILTER_RETURN;
         }
     }
 
