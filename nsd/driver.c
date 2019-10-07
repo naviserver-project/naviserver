@@ -6238,7 +6238,7 @@ WriterListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
                     (void) Ns_DStringNAppend(dsPtr, " ", 1);
                     (void) Ns_DStringAppend(dsPtr, drvPtr->threadName);
                     (void) Ns_DStringNAppend(dsPtr, " ", 1);
-                    (void) Ns_DStringAppend(dsPtr, wrSockPtr->poolPtr->pool);
+                    (void) Ns_DStringAppend(dsPtr, NsPoolName(wrSockPtr->poolPtr->pool));
                     (void) Ns_DStringNAppend(dsPtr, " ", 1);
                     (void) Ns_DStringAppend(dsPtr, ipString);
                     (void) Ns_DStringPrintf(dsPtr, " %d %" PRIdz " %" TCL_LL_MODIFIER "d %d %d ",

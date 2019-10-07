@@ -239,6 +239,41 @@ NsMapPool(ConnPool *poolPtr, const char *mapString, unsigned int flags)
 /*
  *----------------------------------------------------------------------
  *
+ * NsPoolName --
+ *
+ *      Return a printable pool name. In essence, it translates the empty pool
+ *      name (the default pool) to the string "defaullr" for printing
+ *      purposes.
+ *
+ * Results:
+ *      Printable string.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+const char *
+NsPoolName(const char *poolName)
+{
+    const char *result;
+
+    NS_NONNULL_ASSERT(poolName != NULL);
+
+    if (*poolName == '\0') {
+        result = "default";
+    } else {
+        result = poolName;
+    }
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsPoolAllocateThreadSlot --
  *
  *      Allocate a thread slot for this pool. When bandwidth management is
@@ -262,7 +297,6 @@ size_t
 NsPoolAllocateThreadSlot(ConnPool *poolPtr, uintptr_t UNUSED(threadID))
 {
     Ns_DList *dlPtr;
-
 
     dlPtr = &(poolPtr->rate.writerRates);
 
@@ -1843,19 +1877,8 @@ ConnThreadSetName(const char *server, const char *pool, uintptr_t threadId, uint
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(pool != NULL);
 
-    if (*pool != '\0') {
-        /*
-         * Non-Empty pool name.
-         */
-        Ns_ThreadSetName("-conn:%s:%s:%" PRIuPTR ":%" PRIuPTR "-",
-                         server, pool, threadId, connId);
-    } else {
-        /*
-         * Empty pool name.
-         */
-        Ns_ThreadSetName("-conn:%s:default:%" PRIuPTR ":%" PRIuPTR "-",
-                         server, threadId, connId);
-    }
+    Ns_ThreadSetName("-conn:%s:%s:%" PRIuPTR ":%" PRIuPTR "-",
+                     server, NsPoolName(pool), threadId, connId);
 }
 
 

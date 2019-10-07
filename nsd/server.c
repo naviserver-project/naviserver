@@ -471,7 +471,7 @@ CreatePool(NsServer *servPtr, const char *pool)
     poolPtr->wqueue.lowwatermark  = (queueLength * lowwatermark) / 100;
 
     Ns_Log(Notice, "pool %s: queueLength %d low water %d high water %d",
-           *pool == '\0' ? "default" : pool,
+           NsPoolName(pool),
            queueLength, poolPtr->wqueue.lowwatermark,
            poolPtr->wqueue.highwatermark);
 
@@ -493,14 +493,11 @@ CreatePool(NsServer *servPtr, const char *pool)
         Tcl_DString ds;
         int         j;
 
-        if (*pool == '\0') {
-            pool = "default";
-        }
         Tcl_DStringInit(&ds);
         Tcl_DStringAppend(&ds, "nsd:", 4);
         Tcl_DStringAppend(&ds, servPtr->server, -1);
         Tcl_DStringAppend(&ds, ":", 1);
-        Tcl_DStringAppend(&ds, pool, -1);
+        Tcl_DStringAppend(&ds, NsPoolName(pool), -1);
 
         for (j = 0; j < maxconns; j++) {
             char suffix[64];

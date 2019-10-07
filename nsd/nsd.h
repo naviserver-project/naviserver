@@ -1458,6 +1458,8 @@ NS_EXTERN void NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPoo
 NS_EXTERN void NsMapPool(ConnPool *poolPtr, const char *mapString, unsigned int flags)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+NS_EXTERN const char *NsPoolName(const char *poolName)
+        NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 NS_EXTERN size_t NsPoolAllocateThreadSlot(ConnPool *poolPtr, uintptr_t threadID)
     NS_GNUC_NONNULL(1);
