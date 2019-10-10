@@ -306,6 +306,17 @@ namespace eval ::revproxy {
             #
             set result 0
 
+        } trap {POSIX ECONNRESET} {} {
+            #
+            # The other side has closed the connected
+            # unexpectedly. This happens when e.g. a browser page is
+            # not fully rendered yet, but the user clicked already to
+            # some other page. Do not raise an error entry in such
+            # cases.
+            #
+            log notice "spool: ECONNRESET during send to $to ($url) "
+            set result 0
+
         } trap {POSIX {unknown error}} {} {
             ns_log warning "revproxy: strange 0 byte write occurred"
             set result 0
