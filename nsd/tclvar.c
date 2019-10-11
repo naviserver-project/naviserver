@@ -1530,15 +1530,15 @@ NsTclNsvBucketObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
         Tcl_Obj *resultObj;
         int      i;
 
-        /* 
-         * LOCK for servPtr->nsv ? 
+        /*
+         * LOCK for servPtr->nsv ?
          */
         resultObj = Tcl_GetObjResult(interp);
         for (i = 0; i < servPtr->nsv.nbuckets; i++) {
