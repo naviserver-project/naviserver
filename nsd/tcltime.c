@@ -789,7 +789,7 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
  * Ns_GetTimeFromString --
  *
  *      Convert string to time structure.  Check, if the string contains the
- *      classical NaviServer separator for sec:usec and interprete the string
+ *      classical NaviServer separator for sec:usec and interpret the string
  *      in this format.  If not, check if this has a "." as separator, and use
  *      a floating point notation.
  *
@@ -820,7 +820,7 @@ Ns_GetTimeFromString(Tcl_Interp *interp, const char *str, Ns_Time *tPtr)
         long sec;
 
         /*
-         * No separator found, so try to interprete the string as integer
+         * No separator found, so try to interpret the string as integer
          */
         sec = strtol(str, &ptr, 10);
 

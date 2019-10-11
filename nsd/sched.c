@@ -294,7 +294,7 @@ Ns_ScheduleWeekly(Ns_SchedProc * proc, void *clientData, unsigned int flags,
  *  by QueueEvent.
  *
  * Results:
- *  Event id ot NS_ERROR if interval is out of range.
+ *  Event ID or NS_ERROR when interval is out of range.
  *
  * Side effects:
  *  Event is allocated, hashed, and queued.
