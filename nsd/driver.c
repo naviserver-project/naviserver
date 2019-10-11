@@ -333,7 +333,7 @@ Ns_LogSeverity Ns_LogUrlspaceDebug;
 Ns_LogSeverity Ns_LogAccessDebug;
 bool NsWriterBandwidthManagement = NS_FALSE;
 
-
+static Ns_LogSeverity   WriterDebug;        /* Severity at which to log verbose debugging. */
 static Ns_LogSeverity   DriverDebug;        /* Severity at which to log verbose debugging. */
 static Ns_Mutex         reqLock     = NULL; /* Lock for allocated Request structure pool */
 static Ns_Mutex         writerlock  = NULL; /* Lock updating streaming information in the writer */
@@ -417,6 +417,7 @@ void
 NsInitDrivers(void)
 {
     DriverDebug = Ns_CreateLogSeverity("Debug(ns:driver)");
+    WriterDebug = Ns_CreateLogSeverity("Debug(writer)");
     Ns_LogTaskDebug = Ns_CreateLogSeverity("Debug(task)");
     Ns_LogRequestDebug = Ns_CreateLogSeverity("Debug(request)");
     Ns_LogConnchanDebug = Ns_CreateLogSeverity("Debug(connchan)");
@@ -3101,7 +3102,7 @@ SockError(Sock *sockPtr, SockState reason, int err)
         errMsg = "Request Entity Too Large";
         SockSendResponse(sockPtr, 413, errMsg);
         break;
-        
+
     case SOCK_ERROR:
         errMsg = "Unknown Error";
         SockSendResponse(sockPtr, 400, errMsg);
@@ -5272,7 +5273,7 @@ WriterThread(void *arg)
                     currentMs    = (int)(curPtr->nsent/(Tcl_WideInt)curPtr->currentRate);
                     targetTimeMs = (int)(curPtr->nsent/(Tcl_WideInt)curPtr->rateLimit);
                     sleepTimeMs = 1 + targetTimeMs - currentMs;
-                    Ns_Log(Notice, "### Writer(%d)"
+                    Ns_Log(WriterDebug, "### Writer(%d)"
                            " byte sent %" TCL_LL_MODIFIER "d msecs %d rate %d KB/s"
                            " targetRate %d KB/s sleep %d",
                            curPtr->sockPtr->sock,
@@ -5758,7 +5759,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
             wrSockPtr->rateLimit = wrPtr->rateLimit;
         }
     }
-    Ns_Log(DriverDebug, "### Writer(%d): initial rate limit %d KB/s",
+    Ns_Log(WriterDebug, "### Writer(%d): initial rate limit %d KB/s",
            wrSockPtr->sockPtr->sock, wrSockPtr->rateLimit);
 
     /*
@@ -5935,7 +5936,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
     wrPtr->curPtr = wrPtr->curPtr->nextPtr;
     Ns_MutexUnlock(&wrPtr->lock);
 
-    Ns_Log(Notice, "Writer(%d): started: id=%d fd=%d, "
+    Ns_Log(WriterDebug, "Writer(%d): started: id=%d fd=%d, "
            "size=%" PRIdz ", flags=%X, rate %d KB/s: %s",
            wrSockPtr->sockPtr->sock,
            queuePtr->id, wrSockPtr->fd,
