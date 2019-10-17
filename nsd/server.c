@@ -276,6 +276,10 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
      * Initialize on-the-fly compression support.
      */
     servPtr->compress.enable = Ns_ConfigBool(path, "compressenable", NS_FALSE);
+#ifndef HAVE_ZLIB_H
+    Ns_Log(Warning, "init server %s: compress is enabled, but no zlib support built in",
+           server);
+#endif
     servPtr->compress.level = Ns_ConfigIntRange(path, "compresslevel", 4, 1, 9);
     servPtr->compress.minsize = (int)Ns_ConfigMemUnitRange(path, "compressminsize", 512, 0, INT_MAX);
     servPtr->compress.preinit = Ns_ConfigBool(path, "compresspreinit", NS_FALSE);
