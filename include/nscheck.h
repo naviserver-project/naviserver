@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -29,7 +29,7 @@
 
 /*
  * nscheck.h --
- *      
+ *
  *      Stronger compile time error checking when using GCC.
  *
  */
@@ -143,7 +143,7 @@
  * here as a reference in case other compilers take similar roads.
  *
  * #if __GNUC_PREREQ(6, 0)
- * # define NS_NONNULL_ASSERT(assertion) 
+ * # define NS_NONNULL_ASSERT(assertion)
  * #endif
  */
 #define NS_NONNULL_ASSERT(assertion) assert((assertion))
@@ -160,6 +160,18 @@
  * needed for the *GLIBC* macros.
  */
 #include <limits.h>
+
+/*
+ * On Solaris, the above might have defined _STRICT_STDC
+ * but this makes problems with <signal.h> which does not
+ * define "struct sigaction" any more. Quick and dirty
+ * "solution" is simply to undef this thing. I do not know
+ * what side-effects this brings and I do not care.
+ */
+
+#if defined(__sun__) && defined(_STRICT_STDC)
+# undef _STRICT_STDC
+#endif
 
 #if defined(__GLIBC__) && defined(__GLIBC_MINOR__)
 # if (__GLIBC__ > 2) || ((__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 6))
