@@ -3506,6 +3506,11 @@ HttpProc(
         }
         if (httpPtr->doneCallback != NULL) {
             HttpDoneCallback(httpPtr);
+            /*
+             * During HttpDoneCallback(), httpPtr is freed. Signal this to the
+             * reminder of the code by setting httpPtr to NULL.
+             */
+            httpPtr = NULL;
             taskDone = NS_FALSE; /* Because it is already done! */
         }
 
@@ -3519,15 +3524,17 @@ HttpProc(
         break;
     }
 
-    httpPtr->finalSockState = why;
+    if (httpPtr != NULL) {
+        httpPtr->finalSockState = why;
 
-    Ns_Log(Ns_LogTaskDebug, "HttpProc exit taskDone:%d, finalSockState:%.2x,"
-           " error:%s", taskDone, httpPtr->finalSockState,
-           httpPtr->error != NULL ? httpPtr->error : "");
+        Ns_Log(Ns_LogTaskDebug, "HttpProc exit taskDone:%d, finalSockState:%.2x,"
+               " error:%s", taskDone, httpPtr->finalSockState,
+               httpPtr->error != NULL ? httpPtr->error : "");
 
-    if (taskDone == NS_TRUE) {
-        Ns_GetTime(&httpPtr->etime);
-        Ns_TaskDone(httpPtr->task);
+        if (taskDone == NS_TRUE) {
+            Ns_GetTime(&httpPtr->etime);
+            Ns_TaskDone(httpPtr->task);
+        }
     }
 }
 
