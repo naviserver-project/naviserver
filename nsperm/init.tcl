@@ -227,7 +227,7 @@ proc ns_permpasswd { targetuser oldpass newpass } {
 
     while {![eof $file]} {
         set line [gets $file]
-        set aline $line
+        set entryLine $line
         if {[string index $line 0] != "#"} {
             if {$line ne ""} {
                 set list [split $line :]
@@ -236,12 +236,12 @@ proc ns_permpasswd { targetuser oldpass newpass } {
                 } else {
                     set user [lindex $list 0]
                     if {$user == $targetuser} {
-                        set aline "[lindex $list 0]:[ns_crypt $newpass CU]:[lindex $list 2]:[lindex $list 3]:[lindex $list 4]:[lindex $list 5]:[lindex $list 6]"
+                        set entryLine "[lindex $list 0]:[ns_crypt $newpass CU]:[lindex $list 2]:[lindex $list 3]:[lindex $list 4]:[lindex $list 5]:[lindex $list 6]"
                     }
                 }
             }
         }
-        lappend oldfile $aline
+        lappend oldfile $entryLine
     }
     close $file
 
