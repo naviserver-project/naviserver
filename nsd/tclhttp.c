@@ -2696,10 +2696,14 @@ HttpClose(
     NsHttpTask *httpPtr
 ) {
     NS_NONNULL_ASSERT(httpPtr != NULL);
-    NS_NONNULL_ASSERT(httpPtr->task != NULL);
 
     Ns_Log(Ns_LogTaskDebug, "HttpClose free httpPtr:%p, task:%p",
            (void*)httpPtr, (void*)httpPtr->task);
+
+    /*
+     * When HttpConnect runs into a failure, it might not have httpPtr->task
+     * set. We cannot be sure, the task is always set.
+     */
 
     if (httpPtr->task != NULL) {
         (void) Ns_TaskFree(httpPtr->task);
