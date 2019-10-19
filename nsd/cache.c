@@ -96,7 +96,7 @@ typedef struct Cache {
 static bool Expired(const Entry *ePtr, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1);
 
-static void Delink(Entry *ePtr)
+static void Remove(Entry *ePtr)
     NS_GNUC_NONNULL(1);
 
 static void Push(Entry *ePtr)
@@ -265,7 +265,7 @@ Ns_CacheFindEntryT(Ns_Cache *cache, const char *key, const Ns_CacheTransactionSt
                  * Entry is valid.
                  */
                 ++cachePtr->stats.nhit;
-                Delink(ePtr);
+                Remove(ePtr);
                 ePtr->count ++;
                 Push(ePtr);
                 result = (Ns_Entry *) ePtr;
@@ -324,7 +324,7 @@ Ns_CacheCreateEntry(Ns_Cache *cache, const char *key, int *newPtr)
             ePtr->count ++;
             ++cachePtr->stats.nhit;
         }
-        Delink(ePtr);
+        Remove(ePtr);
     }
     Push(ePtr);
     *newPtr = isNew;
@@ -752,7 +752,7 @@ Ns_CacheDeleteEntry(Ns_Entry *entry)
 
     ePtr = (Entry *) entry;
     Ns_CacheUnsetValue(entry);
-    Delink(ePtr);
+    Remove(ePtr);
     Tcl_DeleteHashEntry(ePtr->hPtr);
 
     hPtr = Tcl_FindHashEntry(&ePtr->cachePtr->uncommittedTable, (const char *)ePtr);
@@ -1337,7 +1337,7 @@ Expired(const Entry *ePtr, const Ns_Time *nowPtr)
 /*
  *----------------------------------------------------------------------
  *
- * Delink --
+ * Remove --
  *
  *      Remove a cache entry from the linked list of entries; this
  *      is used for maintaining the LRU list as well as removing entries
@@ -1353,7 +1353,7 @@ Expired(const Entry *ePtr, const Ns_Time *nowPtr)
  */
 
 static void
-Delink(Entry *ePtr)
+Remove(Entry *ePtr)
 {
     NS_NONNULL_ASSERT(ePtr != NULL);
 
