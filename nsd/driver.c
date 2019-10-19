@@ -5765,7 +5765,8 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
            wrSockPtr->sockPtr->sock, wrSockPtr->rateLimit);
 
     /*
-     * Make sure we have proper content length header for keep-alives
+     * Make sure we have proper content length header for
+     * keep-alive/pipelining.
      */
     Ns_ConnSetLengthHeader(conn, nsend, (wrSockPtr->flags & NS_CONN_STREAM) != 0u);
 
