@@ -4990,7 +4990,7 @@ WriterGetInfoPtr(WriterSock *curPtr, Tcl_HashTable *pools)
         int            isNew;
         Tcl_HashEntry  *hPtr;
 
-        hPtr = Tcl_CreateHashEntry(pools, curPtr->poolPtr, &isNew);
+        hPtr = Tcl_CreateHashEntry(pools, (void*)curPtr->poolPtr, &isNew);
         if (isNew == 1) {
             /*
              * This is a pool that we have not seen yet.
@@ -5083,7 +5083,7 @@ WriterPerPoolRates(WriterSock *writePtr, Tcl_HashTable *pools)
      */
     hPtr = Tcl_FirstHashEntry(pools, &search);
     while (hPtr != NULL) {
-        ConnPool     *poolPtr = Tcl_GetHashKey(pools, hPtr);
+        ConnPool     *poolPtr = (ConnPool *)Tcl_GetHashKey(pools, hPtr);
         int           totalPoolRate, writerThreadCount, threadDeltaRate;
         ConnPoolInfo *infoPtr;
 
