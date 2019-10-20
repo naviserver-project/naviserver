@@ -126,7 +126,9 @@ static Tcl_ObjCmdProc CryptoEckeyImportObjCmd;
 static const char * const mdCtxType  = "ns:mdctx";
 static const char * const hmacCtxType  = "ns:hmacctx";
 
+# ifdef HAVE_OPENSSL_HKDF
 static Ns_ObjvValueRange posIntRange0 = {0, INT_MAX};
+# endif
 # ifdef HAVE_OPENSSL_3
 static Ns_ObjvValueRange posIntRange1 = {1, INT_MAX};
 # endif
@@ -201,14 +203,14 @@ static Tcl_Obj*
 EncodedObj(unsigned char *octects, size_t octectLength,
               char *outputBuffer, Ns_ResultEncoding encoding) {
     char    *origOutputBuffer = outputBuffer;
-    Tcl_Obj *resultObj;
+    Tcl_Obj *resultObj = NULL; /* enumeration is complete, quiet some older compilers */
 
     NS_NONNULL_ASSERT(octects != NULL);
 
     if (outputBuffer == NULL && encoding != RESULT_ENCODING_BINARY) {
         /*
          * It is a safe assumption to double the size, since the hex
-         * encoding needs to most space.
+         * encoding needs the most space.
          */
         outputBuffer = ns_malloc(octectLength * 2u + 1u);
     }

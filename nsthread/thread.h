@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -56,7 +56,11 @@ extern void **NsGetTls(void)               NS_GNUC_RETURNS_NONNULL;
 extern void   NsThreadMain(void *arg)      NS_GNUC_NORETURN;
 extern void   NsCreateThread(void *arg, ssize_t stacksize, Ns_Thread *threadPtr);
 extern void   NsThreadExit(void *arg)      NS_GNUC_NORETURN;
-extern void   NsThreadFatal(const char *func, const char *osfunc, int err) NS_GNUC_NORETURN;
+extern void   NsThreadFatal(const char *func, const char *osfunc, int err)
+#ifndef NS_TCL_PRE86
+  NS_GNUC_NORETURN
+#endif
+  ;
 extern void   NsThreadShutdownStarted(void);
 extern const char *NsThreadLibName(void)   NS_GNUC_CONST;
 extern pid_t  Ns_Fork(void);
