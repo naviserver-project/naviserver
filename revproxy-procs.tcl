@@ -68,6 +68,15 @@ namespace eval ::revproxy {
                      -target $target \
                      -url $url \
                      -query [ns_conn query]]
+        #
+        # When the callback decides, we have to cancel this request,
+        # it can send back an empty URL. The callback can
+        # e.g. terminate the connection via a ns_returnforbidden
+        # before returning the empty string.
+        #
+        if {$url eq ""} {
+            return
+        }
 
         #
         # Get header fields from request, add X-Forwarded-For.
