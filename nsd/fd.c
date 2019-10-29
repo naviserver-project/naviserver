@@ -385,6 +385,7 @@ Ns_GetTemp(void)
         }
         Ns_DStringFree(&ds);
     }
+    Ns_Log(Debug, "Ns_GetTemp returns %d", fd);
 
     return fd;
 }
@@ -411,9 +412,13 @@ Ns_ReleaseTemp(int fd)
 {
     Tmp *tmpPtr;
 
+    assert(fd != NS_INVALID_FD);
+
     if (ns_lseek(fd, 0, SEEK_SET) != 0 || ftruncate(fd, 0) != 0) {
         (void) ns_close(fd);
     } else {
+        Ns_Log(Debug, "Ns_ReleaseTemp pushes %d", fd);
+
         tmpPtr = ns_malloc(sizeof(Tmp));
         tmpPtr->fd = fd;
         Ns_MutexLock(&lock);
