@@ -6096,8 +6096,8 @@ WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     Ns_ObjvValueRange sizeRange = {1, LLONG_MAX};
     Ns_ObjvSpec lopts[] = {
         {"-headers",  Ns_ObjvBool,    &headers, INT2PTR(NS_TRUE)},
-        {"-offset",   Ns_ObjvWideInt, &offset,  &offsetRange},
-        {"-size",     Ns_ObjvWideInt, &size,    &sizeRange},
+        {"-offset",   Ns_ObjvMemUnit, &offset,  &offsetRange},
+        {"-size",     Ns_ObjvMemUnit, &size,    &sizeRange},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -6301,7 +6301,7 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
     Ns_ObjvValueRange range = {1024, INT_MAX};
     Ns_ObjvSpec  args[] = {
         {"driver", Ns_ObjvObj, &driverObj, NULL},
-        {"?value", Ns_ObjvInt, &intValue, &range},
+        {"?value", Ns_ObjvMemUnit, &intValue, &range},
         {NULL, NULL, NULL, NULL}
     };
 

@@ -900,8 +900,13 @@ Ns_ObjvMemUnit(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
         Tcl_WideInt *dest = spec->dest;
 
         result = Ns_TclGetMemUnitFromObj(interp, objv[0], dest);
+
         if (likely(result == TCL_OK)) {
-            *objcPtr -= 1;
+            if (CheckWideRange(interp, spec->key, spec->arg, (Tcl_WideInt)*dest) == TCL_OK) {
+                *objcPtr -= 1;
+            } else {
+                result = TCL_ERROR;
+            }
         }
     } else {
         result = TCL_ERROR;

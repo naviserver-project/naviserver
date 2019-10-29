@@ -69,12 +69,13 @@ headers are provided (e.g. via [cmd ns_headers]) from your application.
 [para]
 [option -offset]
 If specified, file will be returned starting with this offset.
+The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB).
 
 [para]
 [option -size]
 If not specified, the whole file will be returned, otherwise only given
 part. Can be combined with [option -offset].
-
+The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB).
 
 
 [call [cmd "ns_writer size"] \
@@ -83,7 +84,8 @@ part. Can be combined with [option -offset].
 
 [para]
 Query or set configuration parameter [term writersize] of the writer(s) of
-the specified driver.
+the specified driver. When the size is the, the value can be
+specified in memory units (kB, MB, GB, KiB, MiB, GiB).
 
 [call [cmd "ns_writer streaming"] \
 	[arg driver] \
