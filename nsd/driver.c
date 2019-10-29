@@ -4656,6 +4656,15 @@ WriterSockRelease(WriterSock *wrSockPtr) {
             connPtr->strWriter = NULL;
         }
         NsWriterUnlock();
+
+        /*
+         * In case, writer streams are activated for this wrSockPtr, make sure
+         * to release the tmp file. See thread Naviserver Open Files on the
+         * sourceforge mailing list (starting July 2019).
+         */
+        if (wrSockPtr->doStream == NS_WRITER_STREAM_FINISH) {
+            Ns_ReleaseTemp(wrSockPtr->fd);
+        }
     }
 
     /*
@@ -5371,7 +5380,7 @@ WriterThread(void *arg)
                        curPtr->size, curPtr->nsent, curPtr->c.file.bufsize);
                 if (unlikely(curPtr->size < 1u)) {
                     /*
-                     * Size < 0 means that everything was sent.
+                     * Size < 1 means that everything was sent.
                      */
                     if (doStream != NS_WRITER_STREAM_ACTIVE) {
                         if (doStream == NS_WRITER_STREAM_FINISH) {
