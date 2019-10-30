@@ -3841,6 +3841,7 @@ SockParse(Sock *sockPtr)
     const Driver       *drvPtr;
     Request            *reqPtr;
     char                save;
+    SockState           result;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
     drvPtr = sockPtr->drvPtr;
@@ -4049,77 +4050,82 @@ SockParse(Sock *sockPtr)
      * - Uploads > "maxupload": these are put into temporary files
      *   without mmapping, no content parsing will be performed in memory.
      */
+    result = SOCK_READY;
+
     if (sockPtr->tfile != NULL) {
         reqPtr->content = NULL;
         reqPtr->next = NULL;
         reqPtr->avail = 0u;
         Ns_Log(DriverDebug, "content spooled to file: size %" PRIdz ", file %s",
                reqPtr->length, sockPtr->tfile);
-
-        return SOCK_READY;
-    }
-
-    /*
-     * Uploads < "maxupload" are spooled to files and mmapped in order to
-     * provide the usual interface via [ns_conn content].
-     */
-    if (sockPtr->tfd > 0) {
-#ifdef _WIN32
         /*
-         * For _WIN32, tfd should never be set, since tfd-spooling is not
-         * implemented for windows.
+         * Nothing more to do, return via SOCK_READY;
          */
-        assert(0);
-#else
-        int prot = PROT_READ | PROT_WRITE;
-        /*
-         * Add a byte to make sure, the string termination with \0 below falls
-         * always into the mmapped area. On some older OSes this might lead to
-         * crashes when we hitting page boundaries.
-         */
-        ssize_t result = ns_write(sockPtr->tfd, "\0", 1);
-        if (result == -1) {
-            Ns_Log(Error, "socket: could not append terminating 0-byte");
-        }
-        sockPtr->tsize = reqPtr->length + 1;
-        sockPtr->taddr = mmap(0, sockPtr->tsize, prot, MAP_PRIVATE,
-                              sockPtr->tfd, 0);
-        if (sockPtr->taddr == MAP_FAILED) {
-            sockPtr->taddr = NULL;
-            return SOCK_ERROR;
-        }
-        reqPtr->content = sockPtr->taddr;
-        Ns_Log(Debug, "content spooled to mmapped file: readahead=%"
-               TCL_LL_MODIFIER "d, filesize=%" PRIdz,
-               drvPtr->readahead, sockPtr->tsize);
-#endif
     } else {
+
         /*
-         * Set the content the begin of the remaining buffer (content offset).
-         * This happens as well when reqPtr->contentLength is 0, but it is
-         * needed for chunked input processing.
+         * Uploads < "maxupload" are spooled to files and mmapped in order to
+         * provide the usual interface via [ns_conn content].
          */
-        reqPtr->content = bufPtr->string + reqPtr->coff;
-    }
-    reqPtr->next = reqPtr->content;
+        if (sockPtr->tfd > 0) {
+#ifdef _WIN32
+            /*
+             * For _WIN32, tfd should never be set, since tfd-spooling is not
+             * implemented for windows.
+             */
+            assert(0);
+#else
+            int prot = PROT_READ | PROT_WRITE;
+            /*
+             * Add a byte to make sure, the string termination with \0 below falls
+             * always into the mmapped area. On some older OSes this might lead to
+             * crashes when we hitting page boundaries.
+             */
+            ssize_t rc = ns_write(sockPtr->tfd, "\0", 1);
+            if (rc == -1) {
+                Ns_Log(Error, "socket: could not append terminating 0-byte");
+            }
+            sockPtr->tsize = reqPtr->length + 1;
+            sockPtr->taddr = mmap(0, sockPtr->tsize, prot, MAP_PRIVATE,
+                                  sockPtr->tfd, 0);
+            if (sockPtr->taddr == MAP_FAILED) {
+                sockPtr->taddr = NULL;
+                result = SOCK_ERROR;
 
-    /*
-     * Add a terminating null character. The content might be from the receive
-     * buffer (Tcl_DString) or from the mmapped file. Non-mmapped files are handled
-     * above.
-     */
-    if (reqPtr->length > 0u) {
-        assert(sockPtr->tfile == NULL);
-        Ns_Log(DriverDebug, "SockRead adds null terminating character at content[%" PRIuz "]", reqPtr->length);
+            } else {
+                reqPtr->content = sockPtr->taddr;
+                Ns_Log(Debug, "content spooled to mmapped file: readahead=%"
+                       TCL_LL_MODIFIER "d, filesize=%" PRIdz,
+                       drvPtr->readahead, sockPtr->tsize);
+            }
+#endif
+        } else {
+            /*
+             * Set the content the begin of the remaining buffer (content offset).
+             * This happens as well when reqPtr->contentLength is 0, but it is
+             * needed for chunked input processing.
+             */
+            reqPtr->content = bufPtr->string + reqPtr->coff;
+        }
+        reqPtr->next = reqPtr->content;
 
-        reqPtr->savedChar = reqPtr->content[reqPtr->length];
-        reqPtr->content[reqPtr->length] = '\0';
-        if (sockPtr->taddr == NULL) {
-            LogBuffer(DriverDebug, "UPDATED BUFFER", sockPtr->reqPtr->buffer.string, (size_t)reqPtr->buffer.length);
+        /*
+         * Add a terminating null character. The content might be from the receive
+         * buffer (Tcl_DString) or from the mmapped file. Non-mmapped files are handled
+         * above.
+         */
+        if (reqPtr->length > 0u) {
+            Ns_Log(DriverDebug, "SockRead adds null terminating character at content[%" PRIuz "]", reqPtr->length);
+
+            reqPtr->savedChar = reqPtr->content[reqPtr->length];
+            reqPtr->content[reqPtr->length] = '\0';
+            if (sockPtr->taddr == NULL) {
+                LogBuffer(DriverDebug, "UPDATED BUFFER", sockPtr->reqPtr->buffer.string, (size_t)reqPtr->buffer.length);
+            }
         }
     }
 
-    return SOCK_READY;
+    return result;
 }
 
 /*
