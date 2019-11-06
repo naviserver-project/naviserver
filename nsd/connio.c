@@ -1347,7 +1347,7 @@ CheckKeep(const Conn *connPtr)
                     if ( (connPtr->drvPtr->keepmaxuploadsize > 0u)
                          && (connPtr->contentLength > connPtr->drvPtr->keepmaxuploadsize) ) {
                         Ns_Log(Notice,
-                               "Disallow keep-alive, content-Length %" PRIdz
+                               "Disallow keep-alive: content-Length %" PRIdz
                                " larger keepmaxuploadsize %" PRIdz ": %s",
                                connPtr->contentLength, connPtr->drvPtr->keepmaxuploadsize,
                                connPtr->request.line);
@@ -1356,7 +1356,7 @@ CheckKeep(const Conn *connPtr)
                                 && (connPtr->responseLength > 0)
                                 && ((size_t)connPtr->responseLength > connPtr->drvPtr->keepmaxdownloadsize) ) {
                         Ns_Log(Notice,
-                               "Disallow keep-alive response length %" PRIdz " "
+                               "Disallow keep-alive: response length %" PRIdz " "
                                "larger keepmaxdownloadsize %" PRIdz ": %s",
                                connPtr->responseLength, connPtr->drvPtr->keepmaxdownloadsize,
                                connPtr->request.line);
