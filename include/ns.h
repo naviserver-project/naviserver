@@ -87,13 +87,13 @@
 #define NS_CONN_CHUNK                0x100u /* Streamed data is to be chunked. */
 #define NS_CONN_SENT_LAST_CHUNK      0x200u /* Marks that the last chunk was sent in chunked mode */
 #define NS_CONN_SENT_VIA_WRITER      0x400u /* Response data has been sent via writer thread */
-#define NS_CONN_SOCK_CORKED          0x800u /* underlying socket is corked */
-#define NS_CONN_ZIPACCEPTED         0x1000u /* the request accepts zip compression */
-#define NS_CONN_BROTLIACCEPTED      0x2000u /* the request accept brotli compression */
-#define NS_CONN_ENTITYTOOLARGE    0x010000u /* the sent Entity was too large */
-#define NS_CONN_REQUESTURITOOLONG 0x020000u /* request-URI too long */
-#define NS_CONN_LINETOOLONG       0x040000u /* request Header line too long */
-#define NS_CONN_CONFIGURED        0x100000u /* the connection is fully configured */
+#define NS_CONN_SOCK_CORKED          0x800u /* Underlying socket is corked */
+#define NS_CONN_ZIPACCEPTED         0x1000u /* The request accepts zip compression */
+#define NS_CONN_BROTLIACCEPTED      0x2000u /* The request accept brotli compression */
+#define NS_CONN_ENTITYTOOLARGE    0x010000u /* The sent entity was too large */
+#define NS_CONN_REQUESTURITOOLONG 0x020000u /* Request-URI too long */
+#define NS_CONN_LINETOOLONG       0x040000u /* Request header line too long */
+#define NS_CONN_CONFIGURED        0x100000u /* The connection is fully configured */
 
 
 /*
