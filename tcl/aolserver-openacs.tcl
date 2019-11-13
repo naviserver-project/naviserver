@@ -1,6 +1,6 @@
 #
-# This is a small compatibility layer for OpenACS when used with 
-# NaviServer 4.99.3 or newer.  
+# This is a small compatibility layer for OpenACS when used with
+# NaviServer 4.99.3 or newer.
 #
 # WARNING: The procs defined in this file are not intended to be a
 # fully AOLserver 4.* compliant implementation of these commands, but
@@ -10,7 +10,7 @@
 #  * ns_share (obsolete, but called from OpenACS)
 #  * ns_cache (the NaviServer implementation for ns cache
 #    has a different interface)
-#  * ns_cache_size 
+#  * ns_cache_size
 #
 # Install this file as /usr/local/ns/tcl/aolserver-openacs.tcl
 #
@@ -47,12 +47,15 @@ if {1} {
             ns_log notice "nx::serializer version [package require nx::serializer]"
             namespace import -force ::xotcl::*
             ns_log notice "XOTcl [package require XOTcl 2] loaded featuring: [array get ::nsf::config]"
-        }]} {
-            # We could not load XOTcl 2; fall back and try to load XOTcl 1
+        } errorMsg]} {
+            # We could not load XOTcl 2:
+            ns_log warning "could not load XOTcl 2: $errorMsg"
+
+            # fall back and try to load XOTcl 1
             set xotcl 1
         }
     }
-    
+
     if {$xotcl == 1} {
         catch {
             package require XOTcl 1
@@ -84,7 +87,7 @@ if {[info commands ::nx::Object] ne "" && [::nx::Object info lookup method objec
         #
         proc ::ad_log {level message} {ns_log $level $message}
     }
-    
+
     #
     # Minimal ns_cache implementation based on NX
     #
@@ -97,9 +100,9 @@ if {[info commands ::nx::Object] ne "" && [::nx::Object info lookup method objec
         :public object alias flush ::ns_cache_flush
 
         :public object method create {cache_name {-size 1024000} {-timeout}} {
-            # expire in NS means timeout in AOLserver 
+            # expire in NS means timeout in AOLserver
             if {[info exists timeout]} {
-                set create_cmd "ns_cache_create -expires $timeout $cache_name $size"  
+                set create_cmd "ns_cache_create -expires $timeout $cache_name $size"
             } else {
                 set create_cmd "ns_cache_create $cache_name $size"
             }
@@ -142,7 +145,7 @@ if {[info commands ::nx::Object] ne "" && [::nx::Object info lookup method objec
         }
 
     }
-    
+
 } else {
     ns_log notice "Using ns_cache implemented as a Tcl proc"
     #
@@ -159,13 +162,13 @@ if {[info commands ::nx::Object] ne "" && [::nx::Object info lookup method objec
                     # no -size given, using AOLServer's default value
                     set size [expr {1024 * 1000}]
                 }
-                # expire in NS means timeout in AOLserver 
+                # expire in NS means timeout in AOLserver
                 if {[info exists args_array(-timeout)]} {
                     set args_array(-expires) $args_array(-timeout)
                     unset args_array(-timeout)
                 }
                 if {[llength [array get args_array]]} {
-                    set create_cmd "ns_cache_$cmd [array get args_array] $cache_name $size"  
+                    set create_cmd "ns_cache_$cmd [array get args_array] $cache_name $size"
                 } else {
                     set create_cmd "ns_cache_$cmd $cache_name $size"
                 }
@@ -220,10 +223,10 @@ if {[info commands ::nx::Object] ne "" && [::nx::Object info lookup method objec
                 return -code $rc $result
             }
         }
-    } 
+    }
 }
 
-# Managing ns_cache_size as in AOLServer 
+# Managing ns_cache_size as in AOLServer
 # vguerra@wu.ac.at
 
 proc ns_cache_size { cache_name } {
