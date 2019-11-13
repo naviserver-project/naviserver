@@ -1231,6 +1231,9 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
          *
          * ::ns_crypto::md string -digest sha256 -sign /usr/local/src/naviserver/private.pem "hello\n"
          *
+         * Example from https://medium.com/@bn121rajesh/rsa-sign-and-verify-using-openssl-behind-the-scene-bf3cac0aade2
+         * ::ns_crypto::md string -digest sha1 -sign /usr/local/src/naviserver/myprivate.pem "abcdefghijklmnopqrstuvwxyz\n"
+         *
          */
         result = GetDigest(interp, digestName, &md);
         if (result != TCL_ERROR && keyFile != NULL) {
@@ -1281,7 +1284,16 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 
                     (void)EVP_DigestSignUpdate(mdctx, messageString, (size_t)messageLength);
                     (void)EVP_DigestSignFinal(mdctx, digest, &mdSize);
-                    //fprintf(stderr, "final signature length %u\n",mdLength);
+                    /*
+                     * It seems that the EVP_DigestSignFinal()
+                     * function automatically cleans up the
+                     * mdctx. Since there is no
+                     * EVP_DigestSignFinal_ex() variant (similar to
+                     * EVP_DigestFinal_ex()), we clean the value here
+                     * manually.
+                     */
+                    mdctx = NULL;
+                    /* fprintf(stderr, "final signature length %zu\n", mdSize);*/
                     outputBuffer = ns_malloc(mdSize * 2u + 1u);
                     mdLength = (unsigned int)mdSize;
                 }
@@ -1296,7 +1308,9 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                 EVP_DigestFinal_ex(mdctx, digest, &mdLength);
             }
 
-            NS_EVP_MD_CTX_free(mdctx);
+            if (mdctx != NULL) {
+                NS_EVP_MD_CTX_free(mdctx);
+            }
 
             if (result == TCL_OK) {
                 /*
