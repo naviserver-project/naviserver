@@ -1195,16 +1195,21 @@ static int
 CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int                result, isBinary = 0;
-    Tcl_Obj           *messageObj;
-    char              *digestName = (char *)"sha256", *keyFile = NULL, *outputEncodingString = NULL;
+    Tcl_Obj           *messageObj, *signatureObj = NULL, *resultObj = NULL;
+    char              *digestName = (char *)"sha256",
+                      *signKeyFile = NULL,
+                      *verifyKeyFile = NULL,
+                      *outputEncodingString = NULL;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
 
     Ns_ObjvSpec lopts[] = {
-        {"-binary",   Ns_ObjvBool,   &isBinary,  INT2PTR(NS_TRUE)},
-        {"-digest",   Ns_ObjvString, &digestName, NULL},
-        {"-sign",     Ns_ObjvString, &keyFile,    NULL},
-        {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
-        {"--",        Ns_ObjvBreak,  NULL,        NULL},
+        {"-binary",    Ns_ObjvBool,   &isBinary,             INT2PTR(NS_TRUE)},
+        {"-digest",    Ns_ObjvString, &digestName,           NULL},
+        {"-sign",      Ns_ObjvString, &signKeyFile,          NULL},
+        {"-verify",    Ns_ObjvString, &verifyKeyFile,        NULL},
+        {"-signature", Ns_ObjvObj,    &signatureObj,         NULL},
+        {"-encoding",  Ns_ObjvString, &outputEncodingString, NULL},
+        {"--",         Ns_ObjvBreak,  NULL,                  NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -1222,12 +1227,23 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
          */
         result = TCL_ERROR;
 
+    } else if (signKeyFile != NULL && verifyKeyFile != NULL) {
+        Ns_TclPrintfResult(interp, "the options '-sign' and '-verify' are mutually exclusive");
+        result = TCL_ERROR;
+
+    } else if ((verifyKeyFile != NULL && signatureObj == NULL)
+               || (verifyKeyFile == NULL && signatureObj != NULL)
+               ) {
+        Ns_TclPrintfResult(interp, "the options '-verify' requires '-signature' and vice versa");
+        result = TCL_ERROR;
+
     } else {
         const EVP_MD *md;
         EVP_PKEY     *pkey = NULL;
+        char         *keyFile = NULL;
 
         /*
-         * Look up the Message Digest from OpenSSL
+         * Compute Message Digest or sign or validate signature via OpenSSL.
          *
          * ::ns_crypto::md string -digest sha256 -sign /usr/local/src/naviserver/private.pem "hello\n"
          *
@@ -1236,6 +1252,11 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
          *
          */
         result = GetDigest(interp, digestName, &md);
+        if (signKeyFile != NULL) {
+            keyFile = signKeyFile;
+        } else if (verifyKeyFile != NULL) {
+            keyFile = verifyKeyFile;
+        }
         if (result != TCL_ERROR && keyFile != NULL) {
 #if 0
             sigkey  = load_key(keyFile, OPT_FMT_ANY, 0,
@@ -1256,11 +1277,11 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
             EVP_MD_CTX    *mdctx;
             const char    *messageString;
             int            messageLength;
-            unsigned int   mdLength;
+            unsigned int   mdLength = 0u;
             Tcl_DString    messageDs;
 
             /*
-             * All input parameters are valid, get key and data.
+             * All input parameters are valid, get data.
              */
             Tcl_DStringInit(&messageDs);
             messageString = Ns_GetBinaryString(messageObj, isBinary == 1, &messageLength, &messageDs);
@@ -1270,32 +1291,81 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
              * Call the Digest or Signature computation
              */
             mdctx = NS_EVP_MD_CTX_new();
-            if (pkey != NULL) {
+            if (signKeyFile != NULL || verifyKeyFile != NULL) {
                 EVP_PKEY_CTX  *pctx;
-                int            r = EVP_DigestSignInit(mdctx, &pctx, md, NULL /*engine*/, pkey);
+                int            r;
+
+                if (signKeyFile != NULL) {
+                    r =  EVP_DigestSignInit(mdctx, &pctx, md, NULL /*engine*/, pkey);
+                } else {
+                    r =  EVP_DigestVerifyInit(mdctx, &pctx, md, NULL /*engine*/, pkey);
+                }
 
                 if (r == 0) {
                     Ns_TclPrintfResult(interp, "could not initialize signature context");
                     result = TCL_ERROR;
                     pctx = NULL;
-                    mdLength = 0u;
                 } else {
                     size_t mdSize;
 
-                    (void)EVP_DigestSignUpdate(mdctx, messageString, (size_t)messageLength);
-                    (void)EVP_DigestSignFinal(mdctx, digest, &mdSize);
-                    /*
-                     * It seems that the EVP_DigestSignFinal()
-                     * function automatically cleans up the
-                     * mdctx. Since there is no
-                     * EVP_DigestSignFinal_ex() variant (similar to
-                     * EVP_DigestFinal_ex()), we clean the value here
-                     * manually.
-                     */
-                    mdctx = NULL;
-                    /* fprintf(stderr, "final signature length %zu\n", mdSize);*/
-                    outputBuffer = ns_malloc(mdSize * 2u + 1u);
-                    mdLength = (unsigned int)mdSize;
+                    if (signKeyFile != NULL) {
+
+                        /*
+                         * A sign operation was requested.
+                         */
+                        r = EVP_DigestSignUpdate(mdctx, messageString, (size_t)messageLength);
+                        if (r == 1) {
+                            r = EVP_DigestSignFinal(mdctx, digest, &mdSize);
+                            if (r == 1) {
+                                /*
+                                 * Everything was fine.
+                                 */
+                                outputBuffer = ns_malloc(mdSize * 2u + 1u);
+                                mdLength = (unsigned int)mdSize;
+                                mdctx = NULL;
+                            }
+                        }
+                        if (r != 1) {
+                            Ns_TclPrintfResult(interp, "error while signing input");
+                            result = TCL_ERROR;
+                        }
+                    } else {
+                        /*
+                         * A signature verification was requested.
+                         */
+                        r = EVP_DigestVerifyUpdate(mdctx, (const unsigned char*)messageString, (size_t)messageLength);
+
+                        if (r == 1) {
+                            Tcl_DString  signatureDs;
+                            int          signatureLength;
+                            const char  *signatureString;
+
+                            Tcl_DStringInit(&signatureDs);
+                            signatureString = Ns_GetBinaryString(signatureObj, 1, &signatureLength, &signatureDs);
+                            r = EVP_DigestVerifyFinal(mdctx, (const unsigned char *)signatureString, (size_t)signatureLength);
+                            Tcl_DStringFree(&signatureDs);
+
+                            if (r == 1) {
+                                /*
+                                 * The signature was successfully verified.
+                                 */
+                                resultObj = Tcl_NewIntObj(1);
+                                mdctx = NULL;
+                            } else if (r == 0) {
+                                /*
+                                 * Signature verification failure.
+                                 */
+                                resultObj = Tcl_NewIntObj(0);
+                                mdctx = NULL;
+                            } else {
+                                Ns_TclPrintfResult(interp, "error while verifying signature");
+                                result = TCL_ERROR;
+                            }
+                        } else {
+                            Ns_TclPrintfResult(interp, "error while updating verify digest");
+                            result = TCL_ERROR;
+                        }
+                    }
                 }
                 if (pctx != NULL) {
                     EVP_PKEY_CTX_free(pctx);
@@ -1314,10 +1384,14 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 
             if (result == TCL_OK) {
                 /*
-                 * Convert the result to the output format and set the interp
-                 * result.
+                 * Convert the result to the requested output format,
+                 * unless we have already some resultObj.
                  */
-                Tcl_SetObjResult(interp, EncodedObj(digest, mdLength, outputBuffer, encoding));
+                if (resultObj == NULL) {
+                    resultObj = EncodedObj(digest, mdLength, outputBuffer, encoding);
+                }
+
+                Tcl_SetObjResult(interp, resultObj);
             }
             if (outputBuffer != digestChars) {
                 ns_free(outputBuffer);

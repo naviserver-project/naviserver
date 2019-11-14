@@ -44,6 +44,49 @@ test ns_crypto_sha2-2.4 {basic operation} -constraints crypto -body {
 } -result "f7fbba6e0636f890e56fbbf3283e524c6fa3204ae298382d624741d0dc6638326e282c41be5e4254d8820772c5518a2c5a8c0c7f7eda19594a7eb539453e1ed7"
 
 #######################################################################################
+#  Signing text using a fixed private key, using SHA1.
+#  The operation is roughly equivalent to
+#
+#     openssl dgst -sha1 -sign myprivate.pem -out sha1.sign myfile.txt
+#
+#  Example from:
+#  https://medium.com/@bn121rajesh/rsa-sign-and-verify-using-openssl-behind-the-scene-bf3cac0aade2
+#######################################################################################
+test ns_crypto_sign-1.0 {basic operation} -constraints crypto -body {
+    set path [ns_config "test" home]/testserver/etc/
+    ::ns_crypto::md string -digest sha1 -sign $path/myprivate.pem "abcdefghijklmnopqrstuvwxyz\n"
+} -result "9139be98f16cf53d22da63cb559bb06a93338da6a344e28a4285c2da33facb7080d26e7a09483779a016eebc207602fc3f90492c2f2fb8143f0fe30fd855593d"
+
+#######################################################################################
+#  verify signature using a fixed private key, using SHA1.
+#  The operation is roughly equivalent to
+#
+#     openssl dgst -sha1 -verify mypublic.pem -signature sha1.sign myfile.txt
+#
+#######################################################################################
+
+test ns_crypto_signature_verify-1.0 {basic operation} -constraints crypto -body {
+    set path [ns_config "test" home]/testserver/etc/
+    set sig [::ns_crypto::md string \
+                 -digest sha1 \
+                 -encoding binary \
+                 -sign $path/myprivate.pem \
+                 "abcdefghijklmnopqrstuxvwxyz\n"]
+    set vfy_ok [::ns_crypto::md string \
+                    -digest sha1 \
+                    -verify $path//myprivate.pem \
+                    -signature $sig \
+                    "abcdefghijklmnopqrstuxvwxyz\n"]
+    set vfy_nok [::ns_crypto::md string \
+                     -digest sha1 \
+                     -verify $path//myprivate.pem \
+                     -signature $sig \
+                     "abcdefghijklmnopqrstuxvwxyz"]
+    return [list $vfy_ok $vfy_nok]
+} -result {1 0}
+
+
+#######################################################################################
 #  HMAC: Keyed-Hashing for Message Authentication
 #  based on sha1, sha224, sha256, sha512
 #  RFC 2104 https://tools.ietf.org/html/rfc2104
@@ -270,8 +313,8 @@ test base64-md5.2 {
 
     binary scan $ns_dec H* ns_hex
     binary scan $tcl_dec H* tcl_hex
-    ns_log notice "ns_dec  <$ns_hex>"
-    ns_log notice "tcl_dec <$tcl_hex>"
+    #ns_log notice "ns_dec  <$ns_hex>"
+    #ns_log notice "tcl_dec <$tcl_hex>"
 
     list $m0 $m1 [string equal $ns_hex $tcl_hex]
 } -result {E50C2BFEF5ABE4D1004C192DFFA769ED E50C2BFEF5ABE4D1004C192DFFA769ED 1}

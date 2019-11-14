@@ -139,7 +139,14 @@ Ns_FreeRequest(Ns_Request *request)
  *
  * Ns_ParseRequests --
  *
- *    Parse a request from a browser into an Ns_Request structure.
+ *    Parse a request from the client into an Ns_Request structure.
+ *    On success, it fills the following Ns_Request members:
+ *      - line
+ *      - method
+ *      - version
+ *      - protocol
+ *      - host
+ *      - port
  *
  * Results:
  *    NS_OK on success, NS_ERROR on error

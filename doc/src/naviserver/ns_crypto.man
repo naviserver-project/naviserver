@@ -190,14 +190,15 @@ be in memory). In order to compute HMACs on large data, use
      [opt [option -binary]] \
      [opt [option "-digest [arg digest]"]] \
      [opt [option "-sign [arg pemfile]"]] \
+     [opt [option "-verify [arg pemfile]"]] \
+     [opt [option "-signature [arg signatureString]"]] \     
      [opt [option "-encoding [arg encoding]"]] \
      [arg message]]
 
 [para] Return a message digest for the provided [arg message] and
 return it in the specified encoding. Optionally, this function can
-encrypt the message digest with the privated key form the
-provided .pem file to obtain a digital signature based on
-https://www.openssl.org/docs/man1.1.0/crypto/EVP_DigestSignInit.html).
+return a signature based on the provided private key, or it can
+verify such an signature.
 
 [para]
 When the option [option -binary] is specified, it applies to
@@ -211,6 +212,36 @@ b381e7fec653fc3ab9b178272366b8ac87fed8d31cb25ed1d0e1f3318644c89c
 [para] This low-level function operates just on an input string (which has to
 be in memory). In order to compute digests on large data, use
 [cmd ns_md].
+
+[para] The option [option "-sign [arg pemfile]"] can be used to sign
+the given message.
+
+[para] The options [option "-verify [arg pemfile]"] and
+[option "-signature [arg signatureString]"] can be used to
+verify a signature using the private key from provided PEM file.
+The [arg signatureString] is required to be a binary string
+(e.g. produced with the output option [option "-encoding binary"]).
+
+[example_begin]
+% set sig [lb]::ns_crypto::md string \
+	     -digest sha1 \
+	     -encoding binary \
+	     -sign /usr/local/src/naviserver/myprivate.pem \
+	     "abcdefghijklmnopqrstuxvwxyz\n"[rb]
+  
+% set vfy [lb]::ns_crypto::md string \
+	     -digest sha1 \
+	     -verify /usr/local/src/naviserver/myprivate.pem \
+	     -signature $sig \
+	     "abcdefghijklmnopqrstuxvwxyz\n"[rb]
+1
+[example_end]
+
+[para] The PEM files provided to [option "-sign"] and
+[option "-verify"] are private keys that can have
+the following key types: CMAC, DSA, ECDSA, HMAC and RSA.
+
+
 
 [call [cmd "ns_crypto::md hkdf"] \
      [opt [option -binary]] \
