@@ -31,14 +31,14 @@
  * uuencode.c --
  *
  *      Uuencoding and decoding routines which map 8-bit binary bytes
- *      into 6-bit ascii characters.
+ *      into 6-bit ASCII characters.
  *
  */
 
 #include "nsd.h"
 
 /*
- * The following array specify the output ascii character for each
+ * The following array specify the output ASCII character for each
  * of the 64 6-bit characters.
  */
 
@@ -51,7 +51,7 @@ static const char six2pr[64] = {
 };
 
 /*
- * The following array maps all 256 8-bit ascii characters to
+ * The following array maps all 256 8-bit ASCII characters to
  * either the corresponding 6-bit value or -1 for invalid character.
  */
 
