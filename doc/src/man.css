@@ -144,6 +144,9 @@ b.const {
     font-family: "Courier New", Courier, monospace;
     font-weight: normal;
 }
+ul.doctools_syntax li a {
+    text-decoration: none;
+}
 
 span.logo {
     background-image: url('//naviserver.sourceforge.io/ns-icon-16.png');
@@ -156,3 +159,4 @@ pre.doctools_example {
     padding: 10px;
     width: 100%;
 }
+
