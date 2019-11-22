@@ -102,7 +102,7 @@ The current [option maxupload] configuration option, which may be adjusted by a 
 to [cmd ns_limits_set] with the [option -maxupload] option.
 
 [def timeout]
-The current [option timout] configuration option, which may be adjusted by a call
+The current [option timeout] configuration option, which may be adjusted by a call
 to [cmd ns_limits_set] with the [option -timeout] option.
 
 
