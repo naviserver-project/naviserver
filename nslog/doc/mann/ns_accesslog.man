@@ -115,6 +115,14 @@ If true then the value of the X-Forwarded-For HTTP header is logged as the IP
 address of the client. Otherwise, the TCP peer address is logged. Only enable
 this if you run your own, trusted proxy server. Default: false.
 
+[def driver]
+Name of the driver initiating the requests. This option can be used
+to produce different access logs for requests submitted via
+different drivers to sort out e.g. local server talk.  Per default,
+every request is logged. When a value is provided, only requests are
+logged in this log file when the request comes from a driver matching
+the provided glob pattern.
+
 [def file]
 String: path to the log file. Default: access.log
 
@@ -144,7 +152,7 @@ milliseconds.  Default: false.
 Mask IP address in log file for GDPR (similar to the "anonip" IP anonymizer of the
 Swiss privacy foundation). When this parameter is set, all IP
 addresses are masked in the log file, such that the host-specific (=
-person-specific) information is masked out and the IP-address does not
+person-specific) information is masked out and the IP address does not
 match a particular individual anymore.  Still, with the masking turned
 on, reverse DNS lookup and/or geolocation is possible. Default: false.
 

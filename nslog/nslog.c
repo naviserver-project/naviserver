@@ -63,6 +63,7 @@ typedef struct {
     const char  *extendedHeaders;
     const char **requestHeaders;
     const char **responseHeaders;
+    const char  *driverPattern;
     int          nrRequestHeaders;
     int          nrResponseHeaders;
     int          fd;
@@ -236,6 +237,8 @@ Ns_ModuleInit(const char *server, const char *module)
         logPtr->flags |= LOG_CHECKFORPROXY;
     }
 
+    logPtr->driverPattern = Ns_ConfigString(path, "driver", NULL);
+
     logPtr->ipv4maskPtr = NULL;
 #ifdef HAVE_IPV6
     logPtr->ipv6maskPtr = NULL;
@@ -273,6 +276,7 @@ Ns_ModuleInit(const char *server, const char *module)
 
     if (Ns_ConfigBool(path, "rolllog", NS_TRUE)) {
         int hour = Ns_ConfigIntRange(path, "rollhour", 0, 0, 23);
+
         Ns_ScheduleDaily(LogRollCallback, logPtr,
                          0, hour, 0, NULL);
     }
@@ -807,6 +811,14 @@ LogTrace(void *arg, Ns_Conn *conn)
         *ipPtr     = (struct sockaddr *)&ipStruct,
         *maskedPtr = (struct sockaddr *)&maskedStruct;
 
+    if (logPtr->driverPattern != NULL
+        && Tcl_StringMatch(Ns_ConnDriverName(conn), logPtr->driverPattern) == 0
+        ) {
+        /*
+         * This is not for us.
+         */
+        return;
+    }
 
     Tcl_DStringInit(dsPtr);
     Ns_MutexLock(&logPtr->lock);
