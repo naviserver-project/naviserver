@@ -191,7 +191,7 @@ be in memory). In order to compute HMACs on large data, use
      [opt [option "-digest [arg digest]"]] \
      [opt [option "-sign [arg pemfile]"]] \
      [opt [option "-verify [arg pemfile]"]] \
-     [opt [option "-signature [arg signatureString]"]] \     
+     [opt [option "-signature [arg signatureString]"]] \
      [opt [option "-encoding [arg encoding]"]] \
      [arg message]]
 
