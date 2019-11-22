@@ -97,11 +97,12 @@ log file.
 The nslog module is loaded per-server.
 
 [example_begin]
-ns_section "ns/server/server1/modules"
-ns_param   nslog   nslog.so
-
-ns_section "ns/server/server1/module/nslog"
-ns_param   ...
+ns_section "ns/server/server1/modules" {
+    ns_param   nslog   nslog.so
+}
+ns_section "ns/server/server1/module/nslog" {
+    ns_param   ...
+}
 [example_end]
 
 
@@ -109,8 +110,17 @@ The following are valid configuration parameters:
 
 [list_begin definitions]
 
+[def checkforproxy]
+If true then the value of the X-Forwarded-For HTTP header is logged as the IP
+address of the client. Otherwise, the TCP peer address is logged. Only enable
+this if you run your own, trusted proxy server. Default: false.
+
 [def file]
-String: path to the log file.
+String: path to the log file. Default: access.log
+
+[def extendedheaders]
+A space separated list of additional HTTP headers whos value should be logged.
+Default: no extra headers are logged.
 
 [def formattedtime]
 If true, log the time in common-log-format. Otherwise log seconds since the
@@ -119,6 +129,32 @@ epoch. Default: true.
 [def logcombined]
 If true, log the referrer and user-agent HTTP headers (NCSA combined
 format). Default: true.
+
+[def logpartialtimes]
+If true then include the high-resolution start time of the request
+together with partial request durations (accept, queue, filter,
+run) in the access log.
+Default: false.
+
+[def logreqtime]
+If true then log the total amount of time the request took to run in seconds and
+milliseconds.  Default: false.
+
+[def masklogaddr]
+Mask IP address in log file for GDPR (similar to the "anonip" IP anonymizer of the
+Swiss privacy foundation). When this parameter is set, all IP
+addresses are masked in the log file, such that the host-specific (=
+person-specific) information is masked out and the IP-address does not
+match a particular individual anymore.  Still, with the masking turned
+on, reverse DNS lookup and/or geolocation is possible. Default: false.
+
+[def maskipv4]
+Mask to be used for IPv4 addresses, when [term masklogaddr] is true.
+Default: 255.255.255.0
+
+[def maskipv6]
+Mask to be used for IPv6 addresses, when [term masklogaddr] is true.
+Default: ff:ff:ff:ff::
 
 [def maxbuffer]
 The number of log entries to buffer before flushing to the log file. Default: 0.
@@ -140,41 +176,6 @@ signal. Default: false.
 [def suppressquery]
 If true then the query (everything after the ? in the URL) is not logged.
 Default: false.
-
-[def checkforproxy]
-If true then the value of the X-Forwarded-For HTTP header is logged as the IP
-address of the client. Otherwise, the TCP peer address is logged. Only enable
-this if you run your own, trusted proxy server. Default: false.
-
-[def logpartialtimes]
-If true then include the high-resolution start time of the request
-together with partial request durations (accept, queue, filter,
-run) in the access log.
-Default: false.
-
-[def logreqtime]
-If true then log the total amount of time the request took to run in seconds and
-milliseconds.  Default: false.
-
-[def extendedheaders]
-A space separated list of additional HTTP headers whos value should be logged.
-Default: no extra headers are logged.
-
-[def masklogaddr]
-Mask IP address in log file for GDPR (similar to the "anonip" IP anonymizer of the
-Swiss privacy foundation). When this parameter is set, all IP
-addresses are masked in the log file, such that the host-specific (=
-person-specific) information is masked out and the IP-address does not
-match a particular individual anymore.  Still, with the masking turned
-on, reverse DNS lookup and/or geolocation is possible. Default: false.
-
-[def maskipv4]
-Mask to be used for IPv4 addresses, when [term masklogaddr] is true.
-Default: 255.255.255.0
-
-[def maskipv6]
-Mask to be used for IPv6 addresses, when [term masklogaddr] is true.
-Default: ff:ff:ff:ff::
 
 [list_end]
 
