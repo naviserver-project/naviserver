@@ -72,7 +72,7 @@ tables or columns.
 
 
 [see_also ns_db]
-[keywords database sql quote escape]
+[keywords database SQL quote escape]
 
 [manpage_end]
 

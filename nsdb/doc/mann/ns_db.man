@@ -149,7 +149,7 @@ receiving "0" on the previous call, an error is returned.
 
 [call [cmd "ns_db logminduration"] [arg pool] [opt [arg duration]]]
 
-Query or set a threshold for logging of sql statements. Log only
+Query or set a threshold for logging of SQL statements. Log only
 statements in the error.log, when sql logging is turned on in general
 (via "ns_logctl severity Debug(sql) ...") and the statement took
 at least the specified duration (specified in seconds, e.g. "0.1").
@@ -470,7 +470,7 @@ ns_section ns/db/pool/pool2
 
 
 [see_also ns_buildsqldate ns_dbquotevalue]
-[keywords "server built-in" module nsdb database sql pools]
+[keywords "server built-in" module nsdb database SQL pools]
 
 
 [manpage_end]

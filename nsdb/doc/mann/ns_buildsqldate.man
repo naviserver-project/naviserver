@@ -73,7 +73,7 @@ This command is equivalent to the following:
 
 
 [see_also ns_db ns_fmttime]
-[keywords database sql date time]
+[keywords database SQL date time]
 
 [manpage_end]
 
