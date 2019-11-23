@@ -33,7 +33,7 @@ is performed.
    
 [example_end]
 
-[see_also nsd ns_md ns_uuencode ns_uudecode ns_crypt ns_sha1 ns_rand ns_hmac]
+[see_also nsd ns_md ns_base64 ns_crypt ns_sha1 ns_rand ns_hmac]
 [keywords "global built-in" encoding crypto]
 
 [manpage_end]

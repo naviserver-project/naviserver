@@ -6,9 +6,13 @@
 
 [description]
 
- This command performs a binary-to-text encoding on string.  The encoded string will
- be approximately 33% longer than the original.
+ This command performs a binary-to-text encoding on string.  The
+ encoded string will be approximately 33% longer than the original by
+ using he base64 encoding scheme. The command is kept
+ for backward compatibility, the command [cmd ns_base64encode]
+ should be used instead.
 
+[para]
  NOTE: This stype of encodeing is sometimes called "htuu". This
  command converts the specified argument to RFC 1113 printable
  encoding format. This technique is similar to the familiar Unix

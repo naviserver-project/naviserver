@@ -7,7 +7,11 @@
 [description]
 
  This command performs a text to potentially binary conversion,
+ based on the base64 encoding scheme. The command is kept
+ for backward compatibility, the command [cmd ns_base64decode]
+ should be used instead.
 
+[para]
  NOTE: This stype of encoding is sometimes called "htuu". This command
  converts the specified argument from RFC 1113 printable encoding
  format to its native representation. This technique is similar to the
@@ -42,7 +46,7 @@ test
 
 [example_end]
 
-[see_also ns_uuencode]
+[see_also ns_uuencode ns_base64]
 [keywords "global built-in" encoding]
 [manpage_end]
 
