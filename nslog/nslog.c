@@ -812,8 +812,8 @@ LogTrace(void *arg, Ns_Conn *conn)
         *maskedPtr = (struct sockaddr *)&maskedStruct;
 
     driverName = Ns_ConnDriverName(conn);
-    Ns_Log(Debug, "nslog called with driver pattern '%s' via driver '%s'",
-           logPtr->driverPattern, driverName);
+    Ns_Log(Debug, "nslog called with driver pattern '%s' via driver '%s' req: %s",
+           logPtr->driverPattern, driverName, conn->request.line);
 
     if (logPtr->driverPattern != NULL
         && Tcl_StringMatch(driverName, logPtr->driverPattern) == 0
