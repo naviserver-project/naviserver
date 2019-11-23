@@ -799,7 +799,7 @@ static void
 LogTrace(void *arg, Ns_Conn *conn)
 {
     Log          *logPtr = arg;
-    const char   *user, *p;
+    const char   *user, *p, *driverName;
     char          buffer[PIPE_BUF], *bufferPtr = NULL;
     int           n, i;
     Ns_ReturnCode status;
@@ -811,8 +811,12 @@ LogTrace(void *arg, Ns_Conn *conn)
         *ipPtr     = (struct sockaddr *)&ipStruct,
         *maskedPtr = (struct sockaddr *)&maskedStruct;
 
+    driverName = Ns_ConnDriverName(conn);
+    Ns_Log(Debug, "nslog called with driver pattern '%s' via driver '%s'",
+           logPtr->driverPattern, driverName);
+
     if (logPtr->driverPattern != NULL
-        && Tcl_StringMatch(Ns_ConnDriverName(conn), logPtr->driverPattern) == 0
+        && Tcl_StringMatch(driverName, logPtr->driverPattern) == 0
         ) {
         /*
          * This is not for us.
