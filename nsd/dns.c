@@ -294,11 +294,15 @@ GetHost(Ns_DString *dsPtr, const char *addr)
                           NULL, 0, NI_NAMEREQD);
         if (err != 0) {
             if (err == EAI_SYSTEM) {
-                Ns_Log(Notice, "dns: getnameinfo failed for addr <%s>: %s", addr,
+                Ns_Log(Warning, "dns: getnameinfo failed for addr <%s>: %s", addr,
                        strerror(errno));
-            } else {
-                Ns_Log(Notice, "dns: getnameinfo failed for addr <%s>: %s", addr,
+            } else if (err != EAI_NONAME) {
+                Ns_Log(Warning, "dns: getnameinfo failed for addr <%s>: %s", addr,
                        gai_strerror(err));
+            } else {
+                /*
+                 * EAI_NONAME: The name does not resolve for the supplied arguments
+                 */
             }
         } else {
             Ns_DStringAppend(dsPtr, buf);
@@ -355,11 +359,15 @@ GetAddr(Ns_DString *dsPtr, const char *host)
         freeaddrinfo(res);
 
     } else if (result == EAI_SYSTEM) {
-        Ns_Log(Error, "dns: getaddrinfo failed for %s: %s", host,
+        Ns_Log(Warning, "dns: getaddrinfo failed for %s: %s", host,
                strerror(errno));
-    } else {
-        Ns_Log(Error, "dns: getaddrinfo failed for %s: %s", host,
+    } else if (result != EAI_NONAME){
+        Ns_Log(Warning, "dns: getaddrinfo failed for %s: %s", host,
                gai_strerror(result));
+    } else {
+        /*
+         * EAI_NONAME: The name does not resolve for the supplied arguments
+         */
     }
 
     return success;
@@ -530,10 +538,10 @@ GetAddr(Ns_DString *dsPtr, const char *host)
         }
         freeaddrinfo(res);
     } else if (result == EAI_SYSTEM) {
-        Ns_Log(Error, "dns: getaddrinfo failed for %s: %s", host,
+        Ns_Log(Warning, "dns: getaddrinfo failed for %s: %s", host,
                strerror(errno));
     } else if (result != EAI_NONAME) {
-        Ns_Log(Error, "dns: getaddrinfo failed for %s: %s", host,
+        Ns_Log(Warning, "dns: getaddrinfo failed for %s: %s", host,
                gai_strerror(result));
     } else {
         /*
