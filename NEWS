@@ -963,7 +963,7 @@ New Features:
      b) complain, when driver is not listening on the specified port
      c) add automatically an entry without the port, when the driver
        listening on the default port.
-    Old configurations (doing a-z manually) should continue to work
+    Old configurations (doing a-c manually) should continue to work
 
   - Improved integration of NaviServer with e.g. service files (systemd):
     When the server is starting in a forking mode, return a non-zero
