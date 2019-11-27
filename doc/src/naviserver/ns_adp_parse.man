@@ -39,8 +39,8 @@ for this ADP parse operation
 
 [para]
 The option  [opt [option -file]] can be used to parse ADP contained in
-the given file.  This use is similar to that of ns_adp_include
-except the result is returned by the command instead of automatically
+the given file.  This use is similar to that of
+[cmd ns_adp_include] except the result is returned by the command instead of automatically
 being appended to the output stream.
 
 [para]
@@ -73,7 +73,7 @@ be thrown if the depth exceeds 256, the maximum number of nested ADP evaluations
    % ns_adp_parse -file foo.tcl
 [example_end]
 
-[see_also ns_adp ns_adp_argc ns_adp_argv ns_adp_bind_args]
+[see_also ns_adp ns_adp_argc ns_adp_argv ns_adp_include ns_adp_bind_args]
 [keywords "server built-in" ADP]
 
 [manpage_end]
