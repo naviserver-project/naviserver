@@ -387,6 +387,7 @@ Ns_ObjvInt(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
             }
         }
     } else {
+        Ns_TclPrintfResult(interp, "missing argument to %s", spec->key);
         result = TCL_ERROR;
     }
 
@@ -420,6 +421,7 @@ Ns_ObjvUShort(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
             }
         }
     } else {
+        Ns_TclPrintfResult(interp, "missing argument to %s", spec->key);
         result = TCL_ERROR;
     }
 
@@ -446,6 +448,7 @@ Ns_ObjvLong(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
             }
         }
     } else {
+        Ns_TclPrintfResult(interp, "missing argument to %s", spec->key);
         result = TCL_ERROR;
     }
 
@@ -472,6 +475,7 @@ Ns_ObjvWideInt(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
             }
         }
     } else {
+        Ns_TclPrintfResult(interp, "missing argument to %s", spec->key);
         result = TCL_ERROR;
     }
 
@@ -540,6 +544,7 @@ Ns_ObjvBool(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *const*
                 *objcPtr -= 1;
             }
         } else {
+            Ns_TclPrintfResult(interp, "missing argument to %s", spec->key);
             result = TCL_ERROR;
         }
     }
@@ -568,7 +573,7 @@ Ns_ObjvBool(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *const*
  */
 
 int
-Ns_ObjvString(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp), int *objcPtr,
+Ns_ObjvString(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
               Tcl_Obj *const* objv)
 {
     int result;
@@ -582,6 +587,7 @@ Ns_ObjvString(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp), int *objcPtr,
         *objcPtr -= 1;
         result = TCL_OK;
     } else {
+        Ns_TclPrintfResult(interp, "missing argument to %s", spec->key);
         result = TCL_ERROR;
     }
 
@@ -625,6 +631,7 @@ Ns_ObjvEval(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
             *objcPtr -= 1;
         }
     } else {
+        Ns_TclPrintfResult(interp, "missing argument to %s", spec->key);
         result = TCL_ERROR;
     }
     return result;
@@ -652,7 +659,7 @@ Ns_ObjvEval(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  */
 
 int
-Ns_ObjvByteArray(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp), int *objcPtr,
+Ns_ObjvByteArray(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
               Tcl_Obj *const* objv)
 {
     int result;
@@ -666,6 +673,7 @@ Ns_ObjvByteArray(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp), int *objcPtr,
         *objcPtr -= 1;
         result = TCL_OK;
     } else {
+        Ns_TclPrintfResult(interp, "missing argument to %s", spec->key);
         result = TCL_ERROR;
     }
     return result;
@@ -690,7 +698,7 @@ Ns_ObjvByteArray(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp), int *objcPtr,
  */
 
 int
-Ns_ObjvObj(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp), int *objcPtr,
+Ns_ObjvObj(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
            Tcl_Obj *const* objv)
 {
     int result;
@@ -704,6 +712,7 @@ Ns_ObjvObj(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp), int *objcPtr,
         *objcPtr -= 1;
         result = TCL_OK;
     } else {
+        Ns_TclPrintfResult(interp, "missing argument to %s", spec->key);
         result = TCL_ERROR;
     }
 
@@ -744,6 +753,7 @@ Ns_ObjvTime(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
             *objcPtr -= 1;
         }
     } else {
+        Ns_TclPrintfResult(interp, "missing argument to %s", spec->key);
         result = TCL_ERROR;
     }
 
@@ -909,6 +919,7 @@ Ns_ObjvMemUnit(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
             }
         }
     } else {
+        Ns_TclPrintfResult(interp, "missing argument to %s", spec->key);
         result = TCL_ERROR;
     }
 
@@ -949,6 +960,7 @@ Ns_ObjvSet(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
             *objcPtr -= 1;
         }
     } else {
+        Ns_TclPrintfResult(interp, "missing argument to %s", spec->key);
         result = TCL_ERROR;
     }
 
@@ -996,6 +1008,7 @@ Ns_ObjvIndex(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
             *objcPtr -= 1;
         }
     } else {
+        Ns_TclPrintfResult(interp, "missing argument to %s", spec->key);
         result = TCL_ERROR;
     }
 
@@ -1580,6 +1593,7 @@ ObjvTcl(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *const* obj
             spec->dest = VALUE_SUPPLIED;
         }
     } else {
+        Ns_TclPrintfResult(interp, "missing argument to %s", spec->key);
         result = TCL_ERROR;
     }
 
