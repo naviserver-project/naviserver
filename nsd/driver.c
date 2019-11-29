@@ -6302,20 +6302,59 @@ static int
 WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int               intValue = -1, result = TCL_OK;
-    Tcl_Obj          *driverObj;
+    Tcl_Obj          *driverObj = NULL;
     DrvWriter        *wrPtr;
+    Ns_Conn          *conn;
+    const char       *firstArgString;
     Ns_ObjvValueRange range = {1024, INT_MAX};
-    Ns_ObjvSpec  args[] = {
-        {"driver", Ns_ObjvObj, &driverObj, NULL},
+    Ns_ObjvSpec opts[] = {
+        {"-driver", Ns_ObjvObj, &driverObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec   *args, argsNew[] = {
+        {"?value", Ns_ObjvMemUnit, &intValue, &range},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec  argsLegacy[] = {
+        {"driver", Ns_ObjvObj,     &driverObj, NULL},
         {"?value", Ns_ObjvMemUnit, &intValue, &range},
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+    firstArgString = objc > 2 ? Tcl_GetString(objv[2]) : NULL;
+    if (firstArgString != NULL) {
+        if (*firstArgString != '-'
+            && ((objc == 3 && CHARTYPE(digit, *firstArgString) == 0) ||
+                objc == 4)) {
+            args = argsLegacy;
+            Ns_LogDeprecated(objv, objc, "ns_writer size ?-driver drv? ?size?", NULL);
+        } else {
+            args = argsNew;
+        }
+    } else {
+        args = argsNew;
+    }
+
+    if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if ((driverObj == NULL)
+               && NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
+        /*
+         * If no driver is provided, take the current driver. We made above
+         * sure that in cases, where no driver is specified, the command is
+         * run in a connection thread.
+         */
+        if (driverObj == NULL) {
+            driverObj = Tcl_NewStringObj(Ns_ConnDriverName(conn), -1);
+        }
+
+        Tcl_IncrRefCount(driverObj);
         wrPtr = DriverWriterFromObj(driverObj);
+        Tcl_DecrRefCount(driverObj);
 
         if (unlikely(wrPtr == NULL)) {
             Ns_TclPrintfResult(interp, "no writer configured for a driver with name %s",
@@ -6324,7 +6363,7 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 
         } else {
 
-            if (objc == 4) {
+            if (intValue != -1) {
                 /*
                  * The optional argument was provided.
                  */
