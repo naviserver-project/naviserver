@@ -41,7 +41,7 @@ If [option {-server}] is
 specified, only the submitted file entries from the specified server
 are returned.
 
-[call [cmd ns_writer] [arg submit] [arg data]]
+[call [cmd "ns_writer submit"] [arg data]]
 
 [para]
 Submit arbitrary data to be returned via writer thread, data can be
@@ -79,13 +79,17 @@ The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB).
 
 
 [call [cmd "ns_writer size"] \
-	[arg driver] \
-	[opt [arg value]]]
+	[opt [option "-driver driver"]] \
+	[opt [arg size]]]
+
 
 [para]
-Query or set configuration parameter [term writersize] of the writer(s) of
-the specified driver. When the size is the, the value can be
-specified in memory units (kB, MB, GB, KiB, MiB, GiB).
+Query or set configuration parameter [term writersize] of the
+writer(s) of the current or specified driver. When [option "-driver"]
+is not specified the driver of the current connection thread is used.
+When the [arg size] is not provided, the actual setting is returned.
+When the [arg size] is provided, it can be specified in memory units
+(kB, MB, GB, KiB, MiB, GiB).
 
 [call [cmd "ns_writer streaming"] \
 	[arg driver] \
