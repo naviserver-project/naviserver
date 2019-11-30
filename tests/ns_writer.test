@@ -5,6 +5,10 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
+if {[ns_config test listenport]} {
+    testConstraint serverListen true
+}
+
 test ns_writer-1.1 {basic syntax: plain call} -body {
      ns_writer
 } -returnCodes error -result {wrong # args: should be "ns_writer command ?args?"}
@@ -35,6 +39,54 @@ test ns_writer-2.3 {basic operation} -body {
     catch {expr {[ns_writer list -server foo] eq ""}} errorMsg
     set _ $errorMsg
 } -match exact -result {invalid server: 'foo'}
+
+
+#
+# ns_writer size
+#  - with and without connection
+#  - with and without "-driver" argument
+#
+test ns_writer-3.1.0 {basic operation} -body {
+    ns_writer size
+} -returnCodes error -match exact -result {no connection}
+
+test ns_writer-3.1.1 {basic operation} -body {
+    ns_writer size -driver nssock
+} -returnCodes {ok error} -match exact -result {1026}
+
+test ns_writer-3.1.2 {basic operation} -constraints serverListen -setup {
+    ns_register_proc GET /foo {
+        ns_return 200 text/plain [ns_writer size]
+    }
+} -body {
+    nstest::http -getbody 1 GET /foo
+} -cleanup {
+    ns_unregister_op GET /foo
+} -returnCodes {error ok} -match exact -result {200 1026}
+
+
+#
+# ns_writer streaming
+#  - with and without connection
+#  - with and without "-driver" argument
+#
+test ns_writer-3.2.0 {basic operation} -body {
+    ns_writer streaming
+} -returnCodes error -match exact -result {no connection}
+
+test ns_writer-3.2.1 {basic operation} -body {
+    ns_writer streaming -driver nssock
+} -returnCodes {ok error} -match exact -result {0}
+
+test ns_writer-3.2.2 {basic operation} -constraints serverListen -setup {
+    ns_register_proc GET /foo {
+        ns_return 200 text/plain [ns_writer streaming]
+    }
+} -body {
+    nstest::http -getbody 1 GET /foo
+} -cleanup {
+    ns_unregister_op GET /foo
+} -returnCodes {error ok} -match exact -result {200 0}
 
 
 cleanupTests

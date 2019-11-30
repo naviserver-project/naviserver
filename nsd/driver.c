@@ -219,8 +219,9 @@ static Tcl_ObjCmdProc AsyncLogfileWriteObjCmd;
 static Tcl_ObjCmdProc AsyncLogfileOpenObjCmd;
 static Tcl_ObjCmdProc AsyncLogfileCloseObjCmd;
 
-static DrvWriter *DriverWriterFromObj(Tcl_Obj *driverObj)
-    NS_GNUC_NONNULL(1);
+static Ns_ReturnCode DriverWriterFromObj(Tcl_Interp *interp, Tcl_Obj *driverObj,
+                                         Ns_Conn *conn, DrvWriter **wrPtrPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 static NS_SOCKET DriverListen(Driver *drvPtr, const char *bindaddr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -5991,36 +5992,60 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
  *
  * DriverWriterFromObj --
  *
- *      Lookup driver by name and return its DrvWriter.
+ *      Lookup driver by name and return its DrvWriter. When driverObj is
+ *      NULL, get the driver from the conn.
  *
  * Results:
- *      DrvWriter or NULL
+ *      Ns_ReturnCode
  *
  * Side effects:
- *      None.
+ *      Set error message in interp in case of failure.
  *
  *----------------------------------------------------------------------
  */
-static DrvWriter *
-DriverWriterFromObj(Tcl_Obj *driverObj) {
-    Driver     *drvPtr;
-    const char *driverName;
-    int         driverNameLen;
-    DrvWriter  *wrPtr = NULL;
+static Ns_ReturnCode
+DriverWriterFromObj( Tcl_Interp *interp, Tcl_Obj *driverObj, Ns_Conn *conn, DrvWriter **wrPtrPtr) {
+    Driver       *drvPtr;
+    const char   *driverName = NULL;
+    int           driverNameLen = 0;
+    DrvWriter    *wrPtr = NULL;
+    Ns_ReturnCode result;
 
-    NS_NONNULL_ASSERT(driverObj != NULL);
+    /*
+     * If no driver is provided, take the current driver. The caller has
+     * to make sure that in cases, where no driver is specified, the
+     * command is run in a connection thread.
+     */
+    if (driverObj == NULL) {
+        if (conn != NULL) {
+            driverName = Ns_ConnDriverName(conn);
+            driverNameLen = (int)strlen(driverName);
+        }
+    } else {
+        driverName = Tcl_GetStringFromObj(driverObj, &driverNameLen);
+    }
 
-    driverName = Tcl_GetStringFromObj(driverObj, &driverNameLen);
+    if (driverName != NULL) {
 
-    for (drvPtr = firstDrvPtr; drvPtr != NULL; drvPtr = drvPtr->nextPtr) {
-        if (strncmp(driverName, drvPtr->threadName, (size_t)driverNameLen) == 0) {
-            if (drvPtr->writer.firstPtr != NULL) {
-                wrPtr = &drvPtr->writer;
+        for (drvPtr = firstDrvPtr; drvPtr != NULL; drvPtr = drvPtr->nextPtr) {
+            if (strncmp(driverName, drvPtr->threadName, (size_t)driverNameLen) == 0) {
+                if (drvPtr->writer.firstPtr != NULL) {
+                    wrPtr = &drvPtr->writer;
+                }
+                break;
             }
-            break;
         }
     }
-    return wrPtr;
+    if (unlikely(wrPtr == NULL)) {
+        Ns_TclPrintfResult(interp, "no writer configured for a driver with name %s",
+                           driverName);
+        result = NS_ERROR;
+    } else {
+        *wrPtrPtr = wrPtr;
+        result = NS_OK;
+    }
+
+    return result;
 }
 
 
@@ -6303,11 +6328,10 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 {
     int               intValue = -1, result = TCL_OK;
     Tcl_Obj          *driverObj = NULL;
-    DrvWriter        *wrPtr;
-    Ns_Conn          *conn;
+    Ns_Conn          *conn = NULL;
     const char       *firstArgString;
     Ns_ObjvValueRange range = {1024, INT_MAX};
-    Ns_ObjvSpec opts[] = {
+    Ns_ObjvSpec   *opts, optsNew[] = {
         {"-driver", Ns_ObjvObj, &driverObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -6315,7 +6339,7 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         {"?value", Ns_ObjvMemUnit, &intValue, &range},
         {NULL, NULL, NULL, NULL}
     };
-    Ns_ObjvSpec  argsLegacy[] = {
+    Ns_ObjvSpec   argsLegacy[] = {
         {"driver", Ns_ObjvObj,     &driverObj, NULL},
         {"?value", Ns_ObjvMemUnit, &intValue, &range},
         {NULL, NULL, NULL, NULL}
@@ -6327,12 +6351,15 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
             && ((objc == 3 && CHARTYPE(digit, *firstArgString) == 0) ||
                 objc == 4)) {
             args = argsLegacy;
+            opts = NULL;
             Ns_LogDeprecated(objv, objc, "ns_writer size ?-driver drv? ?size?", NULL);
         } else {
             args = argsNew;
+            opts = optsNew;
         }
     } else {
         args = argsNew;
+        opts = optsNew;
     }
 
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
@@ -6343,36 +6370,23 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         result = TCL_ERROR;
 
     } else {
-        /*
-         * If no driver is provided, take the current driver. We made above
-         * sure that in cases, where no driver is specified, the command is
-         * run in a connection thread.
-         */
-        if (driverObj == NULL) {
-            driverObj = Tcl_NewStringObj(Ns_ConnDriverName(conn), -1);
-        }
+        DrvWriter *wrPtr;
 
-        Tcl_IncrRefCount(driverObj);
-        wrPtr = DriverWriterFromObj(driverObj);
-        Tcl_DecrRefCount(driverObj);
-
-        if (unlikely(wrPtr == NULL)) {
-            Ns_TclPrintfResult(interp, "no writer configured for a driver with name %s",
-                               Tcl_GetString(driverObj));
+        if (DriverWriterFromObj(interp, driverObj, conn, &wrPtr) != NS_OK) {
             result = TCL_ERROR;
 
-        } else {
+        } else if (intValue != -1) {
+            /*
+             * The optional argument was provided.
+             */
+            wrPtr->writersize = (size_t)intValue;
+        }
 
-            if (intValue != -1) {
-                /*
-                 * The optional argument was provided.
-                 */
-                wrPtr->writersize = (size_t)intValue;
-            }
-
+        if (result == TCL_OK) {
             Tcl_SetObjResult(interp, Tcl_NewIntObj((int)wrPtr->writersize));
         }
     }
+
     return result;
 }
 
@@ -6396,26 +6410,56 @@ static int
 WriterStreamingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                       int objc, Tcl_Obj *const* objv)
 {
-    int          boolValue, result = TCL_OK;
-    Tcl_Obj     *driverObj;
-    Ns_ObjvSpec  args[] = {
+    int          boolValue = -1, result = TCL_OK;
+    Tcl_Obj     *driverObj = NULL;
+    Ns_Conn     *conn = NULL;
+    const char  *firstArgString;
+    Ns_ObjvSpec *opts, optsNew[] = {
+        {"-driver", Ns_ObjvObj, &driverObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec *args, argsNew[] = {
+        {"?value", Ns_ObjvBool, &boolValue, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec  argsLegacy[] = {
         {"driver", Ns_ObjvObj,  &driverObj, NULL},
         {"?value", Ns_ObjvBool, &boolValue, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+    firstArgString = objc > 2 ? Tcl_GetString(objv[2]) : NULL;
+    if (firstArgString != NULL) {
+        int argValue;
+        if (*firstArgString != '-'
+            && ((objc == 3 &&  Tcl_ExprBoolean(interp, firstArgString, &argValue) == TCL_OK) ||
+                objc == 4)) {
+            args = argsLegacy;
+            opts = NULL;
+            Ns_LogDeprecated(objv, objc, "ns_writer streaming ?-driver drv? ?value?", NULL);
+        } else {
+            args = argsNew;
+            opts = optsNew;
+        }
+    } else {
+        args = argsNew;
+        opts = optsNew;
+    }
+
+    if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if ((driverObj == NULL)
+               && NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
-        DrvWriter *wrPtr = DriverWriterFromObj(driverObj);
+        DrvWriter *wrPtr;
 
-        if (unlikely(wrPtr == NULL)) {
-            Ns_TclPrintfResult(interp, "no writer configured for driver '%s'",
-                               Tcl_GetString(driverObj));
+        if (DriverWriterFromObj(interp, driverObj, conn, &wrPtr) != NS_OK) {
             result = TCL_ERROR;
 
-        } else if (objc == 4) {
+        } else if (boolValue != -1) {
             /*
              * The optional argument was provided.
              */

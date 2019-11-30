@@ -92,13 +92,15 @@ When the [arg size] is provided, it can be specified in memory units
 (kB, MB, GB, KiB, MiB, GiB).
 
 [call [cmd "ns_writer streaming"] \
-	[arg driver] \
+	[opt [option "-driver driver"]] \
 	[opt [arg value]]]
 
 [para]
-Query or set configuration parameter [term writerstreaming] of the writer(s) of
-the specified driver.
-
+Query or set configuration parameter [term writerstreaming] of the
+writer(s) of the current or specified driver.  When [option "-driver"]
+is not specified the driver of the current connection thread is used.
+When the value is specified, it has to be of the form of a valid
+Boolean value.
 
 [list_end]
 
