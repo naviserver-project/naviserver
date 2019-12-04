@@ -1272,18 +1272,20 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
             }
         }
         if (result != TCL_ERROR) {
-            unsigned char  digest[EVP_MAX_MD_SIZE];
+            unsigned char  digestBuffer[EVP_MAX_MD_SIZE], *digest = digestBuffer;
             char           digestChars[EVP_MAX_MD_SIZE*2 + 1], *outputBuffer = digestChars;
             EVP_MD_CTX    *mdctx;
             const char    *messageString;
             int            messageLength;
             unsigned int   mdLength = 0u;
-            Tcl_DString    messageDs;
+            Tcl_DString    messageDs, signatureDs;
 
             /*
              * All input parameters are valid, get data.
              */
             Tcl_DStringInit(&messageDs);
+            Tcl_DStringInit(&signatureDs);
+
             messageString = Ns_GetBinaryString(messageObj, isBinary == 1, &messageLength, &messageDs);
             hexPrint("md", (const unsigned char *)messageString, (size_t)messageLength);
 
@@ -1309,19 +1311,33 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                     size_t mdSize;
 
                     if (signKeyFile != NULL) {
-
                         /*
                          * A sign operation was requested.
                          */
                         r = EVP_DigestSignUpdate(mdctx, messageString, (size_t)messageLength);
+
                         if (r == 1) {
-                            r = EVP_DigestSignFinal(mdctx, digest, &mdSize);
+                            r = EVP_DigestSignFinal(mdctx, NULL, &mdSize);
                             if (r == 1) {
                                 /*
-                                 * Everything was fine.
+                                 * Everything was fine, get a buffer
+                                 * with the requested size and use
+                                 * this as "digest".
                                  */
+                                Tcl_DStringSetLength(&signatureDs, (int)mdSize);
+                                digest = (unsigned char*)signatureDs.string;
+
+                                r = EVP_DigestSignFinal(mdctx, digest, &mdSize);
+
                                 outputBuffer = ns_malloc(mdSize * 2u + 1u);
                                 mdLength = (unsigned int)mdSize;
+                                mdctx = NULL;
+                            } else {
+                                char errorBuffer[256];
+
+                                Ns_TclPrintfResult(interp, "error while signing input: %s",
+                                                   ERR_error_string(ERR_get_error(), errorBuffer));
+                                result = TCL_ERROR;
                                 mdctx = NULL;
                             }
                         }
@@ -1333,17 +1349,20 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                         /*
                          * A signature verification was requested.
                          */
-                        r = EVP_DigestVerifyUpdate(mdctx, (const unsigned char*)messageString, (size_t)messageLength);
+                        r = EVP_DigestVerifyUpdate(mdctx,
+                                                   (const unsigned char*)messageString,
+                                                   (size_t)messageLength);
 
                         if (r == 1) {
-                            Tcl_DString  signatureDs;
                             int          signatureLength;
                             const char  *signatureString;
 
-                            Tcl_DStringInit(&signatureDs);
-                            signatureString = Ns_GetBinaryString(signatureObj, 1, &signatureLength, &signatureDs);
-                            r = EVP_DigestVerifyFinal(mdctx, (const unsigned char *)signatureString, (size_t)signatureLength);
-                            Tcl_DStringFree(&signatureDs);
+                            signatureString = Ns_GetBinaryString(signatureObj, 1,
+                                                                 &signatureLength,
+                                                                 &signatureDs);
+                            r = EVP_DigestVerifyFinal(mdctx,
+                                                      (const unsigned char *)signatureString,
+                                                      (size_t)signatureLength);
 
                             if (r == 1) {
                                 /*
@@ -1379,6 +1398,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
             }
 
             if (mdctx != NULL) {
+                fprintf(stderr, "calling NS_EVP_MD_CTX_free on %p\n", (void*)mdctx);
                 NS_EVP_MD_CTX_free(mdctx);
             }
 
@@ -1397,6 +1417,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                 ns_free(outputBuffer);
             }
             Tcl_DStringFree(&messageDs);
+            Tcl_DStringFree(&signatureDs);
         }
     }
 
