@@ -121,24 +121,29 @@ This function requires OpenSSL compiled with EC support enabled.
 [para] This function requires OpenSSL compiled with EC support enabled.
 
 [call [cmd "ns_crypto::eckey priv"] \
-     [opt [option "-pem [arg pem]"]] \
      [opt [option "-encoding [arg encoding]"]] \
+     [opt [option "-pem [arg pem]"]] \
+     [opt [option "-passphrase [arg passphrase]"]] \
      ]
 
 Obtain the private key in various encodings from an elliptic curves
-PEM file.
+PEM file. When the .pem-file is secured by a passphrase, this has
+to be provided via [option "-passphrase"].
 
-[para] This function requires OpenSSL compiled with EC support enabled.
+[para] This function requires OpenSSL compiled with EC support
+enabled.
 
 
 [call [cmd "ns_crypto::eckey sharedsecret"] \
-     [opt [option -binary]] \
-     [opt [option "-pem [arg pem]"]] \
+     [opt [option "-binary"]] \
      [opt [option "-encoding [arg encoding]"]] \
+     [opt [option "-passphrase [arg passphrase]"]] \
+     [opt [option "-pem [arg pem]"]] \
      [arg pubkey]]
 
 Generate a shared secret based on the private key from the .pem file
-and the provided public key.
+and the provided public key. When the .pem file is secured by a
+passphrase, this has to be provided via [option "-passphrase"].
 
 [para] When the option [option -binary] is specified, it applies to
 [arg pubkey].
@@ -149,11 +154,13 @@ support enabled.
 
 [call [cmd "ns_crypto::eckey pub"] \
      [opt [option "-pem [arg pem]"]] \
+     [opt [option "-passphrase [arg passphrase]"]] \
      [opt [option "-encoding [arg encoding]"]] \
     ]
 
 Obtain the public key in various encodings from an elliptic curves PEM
-file.
+file. When the .pem file is secured by a passphrase, this has to be
+provided via [option "-passphrase"].
 
 [para] This function requires OpenSSL compiled with EC support enabled.
 
@@ -265,10 +272,11 @@ This function requires OpenSSL 1.1.0.
 
 
 [call [cmd "ns_crypto::md vapidsign"] \
-     [opt [option -binary]] \
      [opt [option "-digest [arg digest]"]] \
-     [opt [option "-pem [arg pem]"]] \
      [opt [option "-encoding [arg encoding]"]] \
+     [opt [option "-passphrase [arg passphrase]"]] \
+     [opt [option "-pem [arg pem]"]] \
+     [opt [option -binary]] \
      [arg message]]
 
 Sign a message according to the Voluntary Application Server
@@ -279,6 +287,10 @@ https://tools.ietf.org/id/draft-ietf-webpush-vapid-03.html
 digest based on elliptic curve cryptography.
 See also: Generic Event Delivery Using HTTP Push
 https://tools.ietf.org/html/rfc8030
+
+[para] The signing key is taken from the provided .pem file.
+When the .pem file is secured by a passphrase, this has to be
+provided via [option "-passphrase"].
 
 [para]
 When the option [option -binary] is specified, it applies to

@@ -491,7 +491,7 @@ GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
 /*
  *----------------------------------------------------------------------
  *
- * GetPkeyFromPem, GetEckeyFromPem, password_callback --
+ * GetPkeyFromPem, GetEckeyFromPem --
  *
  *      Helper function for reading .pem-files
  *
@@ -503,43 +503,22 @@ GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
  *
  *----------------------------------------------------------------------
  */
-typedef struct PW_CB_DATA {
-    const void *password;
-} PW_CB_DATA;
-
-static int
-password_callback(char *UNUSED(buf), int bufsiz, int UNUSED(verify), PW_CB_DATA *UNUSED(cb_tmp))
-{
-    int result = 0;
-    //PW_CB_DATA *cb_data = (PW_CB_DATA *)cb_tmp;
-
-    fprintf(stderr, "password_callback called with bufsize %d\n", bufsiz);
-
-    return result;
-}
-
 
 static EVP_PKEY *
-GetPkeyFromPem(Tcl_Interp *interp, char *pemFileName, bool private)
+GetPkeyFromPem(Tcl_Interp *interp, char *pemFileName, const char *passPhrase, bool private)
 {
     BIO        *bio;
     EVP_PKEY   *result;
-    PW_CB_DATA  cb_data;
 
-    cb_data.password = NS_EMPTY_STRING;
     bio = BIO_new_file(pemFileName, "r");
     if (bio == NULL) {
         Ns_TclPrintfResult(interp, "could not open pem file '%s' for reading", pemFileName);
         result = NULL;
     } else {
         if (private) {
-            result = PEM_read_bio_PrivateKey(bio, NULL,
-                                             (pem_password_cb *)password_callback,
-                                             &cb_data);
+            result = PEM_read_bio_PrivateKey(bio, NULL, NULL, (char*)passPhrase);
         } else {
-            result = PEM_read_bio_PUBKEY(bio, NULL,
-                                         (pem_password_cb *)password_callback,
-                                         &cb_data);
+            result = PEM_read_bio_PUBKEY(bio, NULL, NULL, (char*)passPhrase);
         }
         BIO_free(bio);
         if (result == NULL) {
@@ -551,26 +530,20 @@ GetPkeyFromPem(Tcl_Interp *interp, char *pemFileName, bool private)
 
 # ifndef OPENSSL_NO_EC
 static EC_KEY *
-GetEckeyFromPem(Tcl_Interp *interp, char *pemFileName, bool private)
+GetEckeyFromPem(Tcl_Interp *interp, char *pemFileName, const char *passPhrase, bool private)
 {
     BIO        *bio;
     EC_KEY     *result;
-    PW_CB_DATA  cb_data;
 
-    cb_data.password = NS_EMPTY_STRING;
     bio = BIO_new_file(pemFileName, "r");
     if (bio == NULL) {
         Ns_TclPrintfResult(interp, "could not open pem file '%s' for reading", pemFileName);
         result = NULL;
     } else {
         if (private) {
-            result = PEM_read_bio_ECPrivateKey(bio, NULL,
-                                           (pem_password_cb *)password_callback,
-                                           &cb_data);
+            result = PEM_read_bio_ECPrivateKey(bio, NULL, NULL, (char*)passPhrase);
         } else {
-            result = PEM_read_bio_EC_PUBKEY(bio, NULL,
-                                         (pem_password_cb *)password_callback,
-                                         &cb_data);
+            result = PEM_read_bio_EC_PUBKEY(bio, NULL, NULL, (char*)passPhrase);
         }
         BIO_free(bio);
         if (result == NULL) {
@@ -1197,19 +1170,21 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     int                result, isBinary = 0;
     Tcl_Obj           *messageObj, *signatureObj = NULL, *resultObj = NULL;
     char              *digestName = (char *)"sha256",
+                      *passPhrase = (char *)NS_EMPTY_STRING,
                       *signKeyFile = NULL,
                       *verifyKeyFile = NULL,
                       *outputEncodingString = NULL;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
 
     Ns_ObjvSpec lopts[] = {
-        {"-binary",    Ns_ObjvBool,   &isBinary,             INT2PTR(NS_TRUE)},
-        {"-digest",    Ns_ObjvString, &digestName,           NULL},
-        {"-sign",      Ns_ObjvString, &signKeyFile,          NULL},
-        {"-verify",    Ns_ObjvString, &verifyKeyFile,        NULL},
-        {"-signature", Ns_ObjvObj,    &signatureObj,         NULL},
-        {"-encoding",  Ns_ObjvString, &outputEncodingString, NULL},
-        {"--",         Ns_ObjvBreak,  NULL,                  NULL},
+        {"-binary",     Ns_ObjvBool,   &isBinary,             INT2PTR(NS_TRUE)},
+        {"-digest",     Ns_ObjvString, &digestName,           NULL},
+        {"-encoding",   Ns_ObjvString, &outputEncodingString, NULL},
+        {"-passphrase", Ns_ObjvString, &passPhrase,           NULL},
+        {"-sign",       Ns_ObjvString, &signKeyFile,          NULL},
+        {"-signature",  Ns_ObjvObj,    &signatureObj,         NULL},
+        {"-verify",     Ns_ObjvString, &verifyKeyFile,        NULL},
+        {"--",          Ns_ObjvBreak,  NULL,                  NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -1258,15 +1233,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
             keyFile = verifyKeyFile;
         }
         if (result != TCL_ERROR && keyFile != NULL) {
-#if 0
-            sigkey  = load_key(keyFile, OPT_FMT_ANY, 0,
-                               NULL /*pass phrase*/,
-                               NULL /*engine, maybe hardware*/,
-                               "key file");
-            key = bio_open_default(file, 'r', format);
-
-#endif
-            pkey = GetPkeyFromPem(interp, keyFile, NS_TRUE);
+            pkey = GetPkeyFromPem(interp, keyFile, passPhrase, NS_TRUE);
             if (pkey == NULL) {
                 result = TCL_ERROR;
             }
@@ -1398,7 +1365,6 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
             }
 
             if (mdctx != NULL) {
-                fprintf(stderr, "calling NS_EVP_MD_CTX_free on %p\n", (void*)mdctx);
                 NS_EVP_MD_CTX_free(mdctx);
             }
 
@@ -1453,15 +1419,17 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 {
     int                result, isBinary = 0;
     Tcl_Obj           *messageObj;
-    char              *digestName = (char *)"sha256", *pemFile = NULL, *outputEncodingString = NULL;
+    char              *digestName = (char *)"sha256", *pemFile = NULL, *outputEncodingString = NULL,
+                      *passPhrase = (char *)NS_EMPTY_STRING;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
 
     Ns_ObjvSpec lopts[] = {
-        {"-binary",   Ns_ObjvBool,   &isBinary,  INT2PTR(NS_TRUE)},
-        {"-digest",   Ns_ObjvString, &digestName, NULL},
-        {"-pem",      Ns_ObjvString, &pemFile,    NULL},
-        {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
-        {"--",        Ns_ObjvBreak,  NULL,        NULL},
+        {"-binary",     Ns_ObjvBool,   &isBinary,   INT2PTR(NS_TRUE)},
+        {"-digest",     Ns_ObjvString, &digestName, NULL},
+        {"-encoding",   Ns_ObjvString, &outputEncodingString, NULL},
+        {"-passphrase", Ns_ObjvString, &passPhrase, NULL},
+        {"-pem",        Ns_ObjvString, &pemFile,    NULL},
+        {"--",          Ns_ObjvBreak,  NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -1516,7 +1484,7 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
         result = GetDigest(interp, digestName, &md);
         if (result != TCL_ERROR) {
 
-            eckey = GetEckeyFromPem(interp, pemFile, NS_TRUE);
+            eckey = GetEckeyFromPem(interp, pemFile, passPhrase, NS_TRUE);
             if (eckey == NULL) {
                 /*
                  * GetEckeyFromPem handles error message
@@ -1986,12 +1954,14 @@ static int
 CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int                result;
-    char              *pemFile = NULL, *outputEncodingString = NULL;
+    char              *pemFile = NULL, *outputEncodingString = NULL,
+                      *passPhrase = (char *)NS_EMPTY_STRING;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
 
     Ns_ObjvSpec lopts[] = {
-        {"-pem",      Ns_ObjvString, &pemFile, NULL},
-        {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
+        {"-encoding",   Ns_ObjvString, &outputEncodingString, NULL},
+        {"-passphrase", Ns_ObjvString, &passPhrase,           NULL},
+        {"-pem",        Ns_ObjvString, &pemFile,              NULL},
         {NULL, NULL, NULL, NULL}
     };
     /*
@@ -2017,7 +1987,7 @@ CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         EVP_PKEY *pkey;
         EC_KEY   *eckey = NULL;
 
-        pkey = GetPkeyFromPem(interp, pemFile, NS_TRUE);
+        pkey = GetPkeyFromPem(interp, pemFile, passPhrase, NS_TRUE);
         if (pkey == NULL) {
             /*
              * GetPkeyFromPem handles error message
@@ -2095,12 +2065,14 @@ static int
 CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int                result;
-    char              *pemFile = NULL, *outputEncodingString = NULL;
+    char              *pemFile = NULL, *outputEncodingString = NULL,
+                      *passPhrase = (char *)NS_EMPTY_STRING;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
 
     Ns_ObjvSpec lopts[] = {
-        {"-pem",      Ns_ObjvString, &pemFile, NULL},
         {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
+        {"-passphrase", Ns_ObjvString, &passPhrase,         NULL},
+        {"-pem",      Ns_ObjvString, &pemFile,              NULL},
         {NULL, NULL, NULL, NULL}
     };
     /*
@@ -2131,7 +2103,7 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
          * but we get the pub-key grom the priv-key in form of an
          * EC_POINT.
          */
-        eckey = GetEckeyFromPem(interp, pemFile, NS_TRUE);
+        eckey = GetEckeyFromPem(interp, pemFile, passPhrase, NS_TRUE);
         if (eckey != NULL) {
             ecpoint = EC_KEY_get0_public_key(eckey);
             if (ecpoint == NULL) {
@@ -2359,15 +2331,17 @@ static int
 CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int                result, isBinary = 0;
-    char              *outputEncodingString = NULL, *pemFileName = NULL;
+    char              *outputEncodingString = NULL, *pemFileName = NULL,
+                      *passPhrase = (char *)NS_EMPTY_STRING;
     Tcl_Obj           *pubkeyObj = NULL;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
     EC_KEY            *eckey = NULL;
 
     Ns_ObjvSpec lopts[] = {
         {"-binary",   Ns_ObjvBool,   &isBinary, INT2PTR(NS_TRUE)},
-        {"-pem",      Ns_ObjvString, &pemFileName, NULL},
         {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
+        {"-passphrase", Ns_ObjvString, &passPhrase,           NULL},
+        {"-pem",      Ns_ObjvString, &pemFileName, NULL},
         {"--",        Ns_ObjvBreak,  NULL,         NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -2397,7 +2371,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
     } else {
 
-        eckey = GetEckeyFromPem(interp, pemFileName, NS_TRUE);
+        eckey = GetEckeyFromPem(interp, pemFileName, passPhrase, NS_TRUE);
         if (eckey == NULL) {
             /*
              * GetEckeyFromPem handles error message
@@ -2459,7 +2433,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             EVP_PKEY            *peerKey, *params = NULL;
             EVP_PKEY            *pkey;
 
-            pkey = GetPkeyFromPem(interp, pemFileName, NS_TRUE);
+            pkey = GetPkeyFromPem(interp, pemFileName, NS_EMPTY_STRING, NS_TRUE);
             peerKeyEC = EC_KEY_new_by_curve_name(EC_GROUP_get_curve_name(group));
             peerKey = EVP_PKEY_new();
 
