@@ -2053,6 +2053,7 @@ HttpConnect(
     httpPtr->chunk = ns_calloc(1u, sizeof(NsHttpChunk));
     httpPtr->bodyFileFd = NS_INVALID_FD;
     httpPtr->spoolFd = NS_INVALID_FD;
+    httpPtr->sock = NS_INVALID_SOCKET;
     httpPtr->spoolLimit = -1;
     httpPtr->url = ns_strdup(url);
     httpPtr->replyHeaders = Ns_SetCreate("replyHeaders");
