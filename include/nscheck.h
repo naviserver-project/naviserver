@@ -182,8 +182,16 @@
 
 #ifdef _MSC_VER
 # define NS_INLINE __forceinline
+# define NS_THREAD_LOCAL __declspec(thread)
 #else
 # define NS_INLINE inline
+#endif
+
+#if defined __GNUC__
+# define NS_THREAD_LOCAL __thread
+#elif defined NS_HAVE_C11
+# include <threads.h>
+# define NS_THREAD_LOCAL thread_local
 #endif
 
 #endif /* NSCHECK_H */

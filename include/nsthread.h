@@ -609,6 +609,9 @@ typedef int ns_sockerrno_t;
 # if __STDC_VERSION__ >= 199901L
 #  define NS_HAVE_C99
 # endif
+# if __STDC_VERSION__ >= 201112L
+#  define NS_HAVE_C11
+# endif
 #endif
 
 /*

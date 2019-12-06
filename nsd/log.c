@@ -1972,6 +1972,14 @@ LogToTcl(void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
 static LogCache *
 GetCache(void)
 {
+#if defined(NS_THREAD_LOCAL)
+    static NS_THREAD_LOCAL LogCache *cachePtr = NULL;
+
+    if (cachePtr == NULL) {
+        cachePtr = ns_calloc(1u, sizeof(LogCache));
+        Ns_DStringInit(&cachePtr->buffer);
+    }
+#else
     LogCache *cachePtr;
 
     cachePtr = Ns_TlsGet(&tls);
@@ -1980,7 +1988,7 @@ GetCache(void)
         Ns_DStringInit(&cachePtr->buffer);
         Ns_TlsSet(&tls, cachePtr);
     }
-
+#endif
     return cachePtr;
 }
 
