@@ -293,16 +293,23 @@ GetHost(Ns_DString *dsPtr, const char *addr)
                           buf, sizeof(buf),
                           NULL, 0, NI_NAMEREQD);
         if (err != 0) {
-            if (err == EAI_SYSTEM) {
+            switch (err) {
+#if defined(EAI_SYSTEM)
+            case EAI_SYSTEM:
                 Ns_Log(Warning, "dns: getnameinfo failed for addr <%s>: %s", addr,
                        strerror(errno));
-            } else if (err != EAI_NONAME) {
+                break;
+#endif
+            case EAI_NONAME:
+                    /*
+                     * EAI_NONAME: The name does not resolve for the
+                     * supplied arguments. No need to report this as
+                     * an error.
+                     */
+                break;
+            default:
                 Ns_Log(Warning, "dns: getnameinfo failed for addr <%s>: %s", addr,
                        gai_strerror(err));
-            } else {
-                /*
-                 * EAI_NONAME: The name does not resolve for the supplied arguments
-                 */
             }
         } else {
             Ns_DStringAppend(dsPtr, buf);
@@ -328,7 +335,8 @@ GetAddr(Ns_DString *dsPtr, const char *host)
     hints.ai_socktype = SOCK_STREAM;
 
     result = getaddrinfo(host, NULL, &hints, &res);
-    if (result == 0) {
+    switch (result) {
+    case 0:
         ptr = res;
         while (ptr != NULL) {
 
@@ -357,17 +365,24 @@ GetAddr(Ns_DString *dsPtr, const char *host)
             }
         }
         freeaddrinfo(res);
+        break;
 
-    } else if (result == EAI_SYSTEM) {
-        Ns_Log(Warning, "dns: getaddrinfo failed for %s: %s", host,
-               strerror(errno));
-    } else if (result != EAI_NONAME){
-        Ns_Log(Warning, "dns: getaddrinfo failed for %s: %s", host,
-               gai_strerror(result));
-    } else {
+#if defined(EAI_SYSTEM)
+        case EAI_SYSTEM:
+            Ns_Log(Warning, "dns: getaddrinfo failed for %s: %s", host,
+                   strerror(errno));
+            break;
+#endif
+    case EAI_NONAME:
         /*
          * EAI_NONAME: The name does not resolve for the supplied arguments
          */
+        break;
+
+    default:
+        Ns_Log(Warning, "dns: getaddrinfo failed for %s: %s", host,
+               gai_strerror(result));
+        break;
     }
 
     return success;
