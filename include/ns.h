@@ -314,7 +314,6 @@ typedef enum {
  */
 
 NS_EXTERN Ns_LogSeverity Ns_LogTaskDebug;   /* Severity at which to log verbose. */
-NS_EXTERN Ns_LogSeverity Ns_LogAccessDebug; /* Severtity to control mirroring access log entries to system log */
 NS_EXTERN Tcl_Encoding   NS_utf8Encoding;   /* Cached UTF-8 encoding */
 
 /*
