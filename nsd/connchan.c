@@ -364,6 +364,7 @@ ConnChanFree(NsConnChan *connChanPtr) {
         }
 
         NsSockClose(connChanPtr->sockPtr, (int)NS_FALSE);
+        connChanPtr->sockPtr = NULL;
         ns_free((char *)connChanPtr);
     } else {
         Ns_Log(Bug, "ns_connchan: could not delete hash entry for channel '%s'",
@@ -433,9 +434,8 @@ ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name) {
 static bool
 NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
 {
-
-    const Callback *cbPtr;
-    bool            success = NS_TRUE;
+    Callback *cbPtr;
+    bool      success = NS_TRUE;
 
     NS_NONNULL_ASSERT(arg != NULL);
 
@@ -454,12 +454,11 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
 
         /*
          * We should have a valid callback structure that we test
-         * with asserts.
+         * with asserts (cbPtr->connChanPtr != NULL):
          */
         Ns_Log(Ns_LogConnchanDebug, "%s NsTclConnChanProc why %s (%u)",
                cbPtr->connChanPtr->channelName, WhenToString(whenBuffer, why), why);
 
-        assert(cbPtr->connChanPtr != NULL);
         assert(cbPtr->connChanPtr->sockPtr != NULL);
 
         if (why == (unsigned int)NS_SOCK_EXIT) {
@@ -517,6 +516,9 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
                 Tcl_Obj    *objPtr = Tcl_GetObjResult(interp);
                 int         ok = 1;
 
+                assert(cbPtr->connChanPtr != NULL);
+                assert(cbPtr->connChanPtr->sockPtr != NULL);
+
                 if (logEnabled) {
                     Tcl_DString ds;
 
@@ -526,7 +528,6 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
                            "%s NsTclConnChanProc Tcl eval <%s> returned <%s>",
                            channelName, ds.string, Tcl_GetString(objPtr));
                     Tcl_DStringFree(&ds);
-
                 }
 
                 /*
@@ -552,6 +553,8 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
                          * specific structures alive (postponing
                          * cleanup to a "close" operation).
                          */
+                        assert(cbPtr->connChanPtr != NULL);
+                        assert(cbPtr->connChanPtr->sockPtr != NULL);
                         (void) Ns_SockCancelCallbackEx(cbPtr->connChanPtr->sockPtr->sock, NULL, NULL, NULL);
                         //cbPtr->when = 0;
                     }
@@ -573,6 +576,7 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
                 Ns_Log(Ns_LogConnchanDebug, "%s NsTclConnChanProc free channel",
                        cbPtr->connChanPtr->channelName);
                 ConnChanFree(cbPtr->connChanPtr);
+                cbPtr->connChanPtr = NULL;
             }
         }
     }
@@ -687,6 +691,7 @@ SockCallbackRegister(NsConnChan *connChanPtr, const char *script,
          * not valid anymore. Free the callback.
          */
         (void) CallbackFree(connChanPtr->sockPtr->sock, cbPtr, (unsigned int)NS_SOCK_CANCEL);
+        connChanPtr->sockPtr = NULL;
         connChanPtr->cbPtr = NULL;
     }
     return result;
