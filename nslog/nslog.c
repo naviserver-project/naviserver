@@ -38,6 +38,7 @@
 #include "ns.h"
 #include <ctype.h>  /* isspace */
 
+NS_EXTERN Ns_LogSeverity Ns_LogAccessDebug;
 NS_EXPORT Ns_LogSeverity Ns_LogAccessDebug;
 
 #define LOG_COMBINED      0x01u
