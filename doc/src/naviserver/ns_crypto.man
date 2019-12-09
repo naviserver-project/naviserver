@@ -194,12 +194,13 @@ be in memory). In order to compute HMACs on large data, use
 
 
 [call [cmd "ns_crypto::md string"] \
-     [opt [option -binary]] \
      [opt [option "-digest [arg digest]"]] \
-     [opt [option "-sign [arg pemfile]"]] \
-     [opt [option "-verify [arg pemfile]"]] \
-     [opt [option "-signature [arg signatureString]"]] \
      [opt [option "-encoding [arg encoding]"]] \
+     [opt [option "-passphrase [arg passphrase]"]] \
+     [opt [option "-sign [arg pemfile]"]] \
+     [opt [option "-signature [arg signatureString]"]] \
+     [opt [option "-verify [arg pemfile]"]] \
+     [opt [option -binary]] \
      [arg message]]
 
 [para] Return a message digest for the provided [arg message] and
@@ -216,18 +217,25 @@ When the option [option -binary] is specified, it applies to
 b381e7fec653fc3ab9b178272366b8ac87fed8d31cb25ed1d0e1f3318644c89c
 [example_end]
 
-[para] This low-level function operates just on an input string (which has to
-be in memory). In order to compute digests on large data, use
-[cmd ns_md].
+[para] This low-level function operates just on an input string (which
+has to be in memory). In order to compute digests on large data (such
+as from files), use [cmd ns_md].
 
-[para] The option [option "-sign [arg pemfile]"] can be used to sign
+[para] The [cmd "ns_crypto::md string"] interface can be as well used
+for digital signing and verification of the signature, when the
+respective keys are passed in as PEM files. When the PEM file is secured
+by a passphrase, the option [option "-passphrase [arg ...]"] has
+to be used to decypher the key.
+
+[para] The option [option "-sign [arg pemfile]"] is used to sign
 the given message.
 
 [para] The options [option "-verify [arg pemfile]"] and
 [option "-signature [arg signatureString]"] can be used to
 verify a signature using the private key from provided PEM file.
-The [arg signatureString] is required to be a binary string
-(e.g. produced with the output option [option "-encoding binary"]).
+The [arg signatureString] is required to be a binary string,
+therefore, produced with the output option [option "-encoding binary"]
+in the example below:
 
 [example_begin]
 % set sig [lb]::ns_crypto::md string \
