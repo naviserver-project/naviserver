@@ -412,7 +412,7 @@ NsTclCritSecObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
                                   &servPtr->tcl.synch.csId,
                                   (Ns_Callback *) Ns_CsInit,
                                   csType,
-                                  (objc == 3) ? objv[2] : NULL, -1);
+                                  (objc >= 3) ? objv[2] : NULL, -1);
         switch (opt) {
         case CCreateIdx:
             /* Handled above. */
