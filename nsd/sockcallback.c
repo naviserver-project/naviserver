@@ -301,8 +301,8 @@ Queue(NS_SOCKET sock, Ns_SockProc *proc, void *arg, unsigned int when,
 
     if (threadNamePtr != NULL) {
         /*
-         * threadName is currently just a constant, but when
-         * implementing multiple socks threads, threadNamePtr should
+         * The thread name is currently just a constant, but when
+         * implementing multiple "-socks-" threads, threadNamePtr should
          * return the associated queue. This way, we can keep the
          * interface constant.
          */
