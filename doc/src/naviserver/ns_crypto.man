@@ -225,7 +225,7 @@ as from files), use [cmd ns_md].
 for digital signing and verification of the signature, when the
 respective keys are passed in as PEM files. When the PEM file is secured
 by a passphrase, the option [option "-passphrase [arg ...]"] has
-to be used to decypher the key.
+to be used to decipher the key.
 
 [para] The option [option "-sign [arg pemfile]"] is used to sign
 the given message.
