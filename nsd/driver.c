@@ -163,6 +163,9 @@ typedef struct WriterSock {
             off_t              bufoffset;
             size_t             toRead;
             unsigned char     *buf;
+            Ns_FileVec        *bufs;
+            int                nbufs;
+            int                currentbuf;
             Ns_Mutex           fdlock;
         } file;
     } c;
@@ -294,6 +297,15 @@ static SpoolerState WriterReadFromSpool(WriterSock *curPtr)
     NS_GNUC_NONNULL(1);
 static SpoolerState WriterSend(WriterSock *curPtr, int *err)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static Ns_ReturnCode WriterSetupStreamingMode(Conn *connPtr, struct iovec *bufs, int nbufs, int *fdPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+static void WriterSockFileVecCleanup(WriterSock *wrSockPtr)
+    NS_GNUC_NONNULL(1);
+static int WriterGetMemunitFromDict(Tcl_Interp *interp, Tcl_Obj *dictObj, Tcl_Obj *keyObj, Ns_ObjvValueRange *rangePtr,
+                                    Tcl_WideInt *valuePtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
+
 static void AsyncWriterRelease(AsyncWriteData *wdPtr)
     NS_GNUC_NONNULL(1);
 
@@ -326,12 +338,14 @@ static ConnPoolInfo *WriterGetInfoPtr(WriterSock *curPtr, Tcl_HashTable *pools)
 /*
  * Global variables defined in this file.
  */
+//NS_EXTERN Ns_LogSeverity Ns_LogAccessDebug;
 
 Ns_LogSeverity Ns_LogTaskDebug;
 Ns_LogSeverity Ns_LogRequestDebug;
 Ns_LogSeverity Ns_LogConnchanDebug;
 Ns_LogSeverity Ns_LogUrlspaceDebug;
 Ns_LogSeverity Ns_LogAccessDebug;
+NS_EXPORT Ns_LogSeverity Ns_LogAccessDebug;
 bool NsWriterBandwidthManagement = NS_FALSE;
 
 static Ns_LogSeverity   WriterDebug;        /* Severity at which to log verbose debugging. */
@@ -4593,6 +4607,49 @@ void NsWriterUnlock(void) {
     Ns_MutexUnlock(&writerlock);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriterSockFileVecCleanup --
+ *
+ *      Cleanup function for FileVec array in WriterSock structure.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Closing potentially file descriptors, freeing Ns_FileVec memory.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+WriterSockFileVecCleanup(WriterSock *wrSockPtr) {
+
+    NS_NONNULL_ASSERT(wrSockPtr != NULL);
+
+    if ( wrSockPtr->c.file.nbufs > 0) {
+        int i;
+
+        Ns_Log(DriverDebug, "WriterSockRelease nbufs %d", wrSockPtr->c.file.nbufs);
+
+        for (i = 0; i < wrSockPtr->c.file.nbufs; i++) {
+            /*
+             * The fd of c.file.currentbuf is always the same as
+             * wrSockPtr->fd and therefore already closed at this point.
+             */
+            if ( (i != wrSockPtr->c.file.currentbuf)
+                 && (wrSockPtr->c.file.bufs[i].fd != NS_INVALID_FD) ) {
+
+                Ns_Log(DriverDebug, "WriterSockRelease must close fd %d",
+                       wrSockPtr->c.file.bufs[i].fd);
+                ns_close(wrSockPtr->c.file.bufs[i].fd);
+            }
+        }
+        ns_free(wrSockPtr->c.file.bufs);
+    }
+    ns_free(wrSockPtr->c.file.buf);
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -4719,7 +4776,8 @@ WriterSockRelease(WriterSock *wrSockPtr) {
         if (wrSockPtr->doStream != NS_WRITER_STREAM_FINISH) {
             (void) ns_close(wrSockPtr->fd);
         }
-        ns_free(wrSockPtr->c.file.buf);
+        WriterSockFileVecCleanup(wrSockPtr);
+
     } else if (wrSockPtr->c.mem.bufs != NULL) {
         if (wrSockPtr->c.mem.fmap.addr != NULL) {
             NsMemUmap(&wrSockPtr->c.mem.fmap);
@@ -4778,20 +4836,23 @@ WriterReadFromSpool(WriterSock *curPtr) {
         Ns_MutexUnlock(&curPtr->c.file.fdlock);
     } else {
         toRead = curPtr->c.file.toRead;
+
+        Ns_Log(DriverDebug, "### WriterReadFromSpool [%d]: fd %d tosend %lu files %d",
+                curPtr->c.file.currentbuf, curPtr->fd, toRead, curPtr->c.file.nbufs);
     }
 
     maxsize = curPtr->c.file.maxsize;
     bufPtr  = curPtr->c.file.buf;
 
     /*
-     * When bufsize > 0 we have left tover from previous send. In such
+     * When bufsize > 0 we have a leftover from previous send. In such
      * cases, move the leftover to the front, and fill the reminder of
      * the buffer with new data from curPtr->c.
      */
 
     if (curPtr->c.file.bufsize > 0u) {
         Ns_Log(DriverDebug,
-               "### Writer %p %.6x leftover %" PRIdz " offset %ld",
+               "### WriterReadFromSpool %p %.6x leftover %" PRIdz " offset %ld",
                (void *)curPtr,
                curPtr->flags,
                curPtr->c.file.bufsize,
@@ -4829,14 +4890,61 @@ WriterReadFromSpool(WriterSock *curPtr) {
             (void) ns_lseek(curPtr->fd, (off_t)curPtr->nsent, SEEK_SET);
         }
 
-        n = ns_read(curPtr->fd, bufPtr, toRead);
+        if (curPtr->c.file.nbufs == 0) {
+            /*
+             * Working on a single fd.
+             */
+            n = ns_read(curPtr->fd, bufPtr, toRead);
+
+        } else {
+            /*
+             * Working on a Ns_FileVec.
+             */
+            int    currentbuf = curPtr->c.file.currentbuf;
+            size_t wantRead = curPtr->c.file.bufs[currentbuf].length;
+
+            n = ns_read(curPtr->fd, bufPtr, wantRead);
+
+            Ns_Log(DriverDebug, "### WriterReadFromSpool [%d] (nbufs %d): read from fd %d want %lu got %ld",
+                   currentbuf, curPtr->c.file.nbufs, curPtr->fd,  wantRead, n);
+
+            if (n > 0) {
+                /*
+                 * Reduce the remaining length in the Ns_FileVec for the
+                 * next iteration.
+                 */
+                curPtr->c.file.bufs[currentbuf].length -= (size_t)n;
+
+                if ((size_t)n < wantRead) {
+                    /*
+                     * Partial read on a segment.
+                     */
+                    Ns_Log(DriverDebug, "### WriterReadFromSpool [%d] (nbufs %d): partial read on fd %d (got %ld)",
+                           currentbuf, curPtr->c.file.nbufs,
+                           curPtr->fd, n);
+
+                } else if (currentbuf < curPtr->c.file.nbufs - 1 /* && (n == wantRead) */) {
+                    /*
+                     * All read from this segment, setup next read.
+                     */
+                    ns_close(curPtr->fd);
+                    curPtr->c.file.bufs[currentbuf].fd = NS_INVALID_FD;
+
+                    curPtr->c.file.currentbuf ++;
+                    curPtr->fd = curPtr->c.file.bufs[curPtr->c.file.currentbuf].fd;
+
+                    Ns_Log(DriverDebug, "### WriterReadFromSpool switch to [%d] fd %d",
+                           curPtr->c.file.currentbuf, curPtr->fd);
+                }
+            }
+        }
 
         if (n <= 0) {
             status = SPOOLER_READERROR;
         } else {
             /*
-             * curPtr->c.file.toRead is still protected by curPtr->c.file.fdlock when
-             * needed.
+             * curPtr->c.file.toRead is still protected by
+             * curPtr->c.file.fdlock when needed (in streaming mode).
              */
             curPtr->c.file.toRead -= (size_t)n;
             curPtr->c.file.bufsize += (size_t)n;
@@ -4885,8 +4993,10 @@ WriterSend(WriterSock *curPtr, int *err) {
      */
     if (curPtr->fd != NS_INVALID_FD) {
         /*
-         * Send a single buffer with curPtr->c.file.bufsize bytes from the
-         * curPtr->c.file.buf to the client.
+         * We have a valid file descriptor, send data from file.
+         *
+         * Prepare sending a single buffer with curPtr->c.file.bufsize bytes
+         * from the curPtr->c.file.buf to the client.
          */
         vbuf.iov_len = curPtr->c.file.bufsize;
         vbuf.iov_base = (void *)curPtr->c.file.buf;
@@ -4897,8 +5007,8 @@ WriterSend(WriterSock *curPtr, int *err) {
         int i;
 
         /*
-         * Send multiple buffers.
-         * Get length of remaining buffers
+         * Prepare sending multiple memory buffers.  Get length of remaining
+         * buffers.
          */
         toWrite = 0u;
         for (i = 0; i < curPtr->c.mem.nsbufs; i ++) {
@@ -4934,6 +5044,9 @@ WriterSend(WriterSock *curPtr, int *err) {
                nbufs, toWrite);
     }
 
+    /*
+     * Perform the actual send operation.
+     */
     n = NsDriverSend(curPtr->sockPtr, bufs, nbufs, 0u);
 
     if (n == -1) {
@@ -4954,9 +5067,15 @@ WriterSend(WriterSock *curPtr, int *err) {
         curPtr->sockPtr->timeout.sec = 0;
 
         if (curPtr->fd != NS_INVALID_FD) {
+            /*
+             * File-descriptor based send operation. Reduce the (remainig)
+             * buffer size the amount of data sent and adjust the buffer
+             * offset. For partial send operations, this will lead to a
+             * remaining buffer size > 0.
+             */
             curPtr->c.file.bufsize -= (size_t)n;
             curPtr->c.file.bufoffset = (off_t)n;
-            /* for partial transmits bufsize is now > 0 */
+
         } else {
             if (n < (ssize_t)toWrite) {
                 /*
@@ -5536,7 +5655,6 @@ WriterThread(void *arg)
  *
  *----------------------------------------------------------------------
  */
-
 void
 NsWriterFinish(NsWriterSock *wrSockPtr) {
     WriterSock *writerSockPtr = (WriterSock *)wrSockPtr;
@@ -5546,6 +5664,140 @@ NsWriterFinish(NsWriterSock *wrSockPtr) {
     Ns_Log(DriverDebug, "NsWriterFinish: %p", (void *)writerSockPtr);
     writerSockPtr->doStream = NS_WRITER_STREAM_FINISH;
     SockTrigger(writerSockPtr->queuePtr->pipe[1]);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriterSetupStreamingMode --
+ *
+ *      In streaming mode, setup a temporary fd which is used as input and
+ *      output. Streaming i/o will append to the file, while the write will
+ *      read from it.
+ *
+ * Results:
+ *      Ns_ReturnCode (NS_OK, NS_ERROR, NS_FILTER_BREAK). In the last case
+ *      signals that all processing was already performed and the caller can
+ *      stop handling more data. On success, the function returns an fd as
+ *      last argument.
+ *
+ * Side effects:
+ *      Potentially allocating temp file and updating connPtr members.
+ *
+ *----------------------------------------------------------------------
+ */
+Ns_ReturnCode
+WriterSetupStreamingMode(Conn *connPtr, struct iovec *bufs, int nbufs, int *fdPtr)
+{
+    bool           first;
+    size_t         wrote = 0u;
+    WriterSock    *wrSockPtr1;
+    Ns_ReturnCode  status = NS_OK;
+
+    NS_NONNULL_ASSERT(connPtr != NULL);
+    NS_NONNULL_ASSERT(bufs != NULL);
+    NS_NONNULL_ASSERT(fdPtr != NULL);
+
+    Ns_Log(DriverDebug, "NsWriterQueue: streaming writer job");
+
+    if (connPtr->fd == 0) {
+        /*
+         * Create a new temporary spool file and provide the fd to the
+         * connection thread via connPtr.
+         */
+        first = NS_TRUE;
+        wrSockPtr1 = NULL;
+
+        *fdPtr = Ns_GetTemp();
+        connPtr->fd = *fdPtr;
+
+        Ns_Log(DriverDebug, "NsWriterQueue: new tmp file has fd %d", *fdPtr);
+
+    } else {
+        /*
+         * Reuse previously created spool file.
+         */
+        first = NS_FALSE;
+        wrSockPtr1 = WriterSockRequire(connPtr);
+
+        if (wrSockPtr1 == NULL) {
+            Ns_Log(Notice,
+                   "NsWriterQueue: writer job was already canceled (fd %d); maybe user dropped connection",
+                   connPtr->fd);
+            return NS_ERROR;
+
+        } else {
+            /*
+             * lock only, when first == NS_FALSE.
+             */
+            Ns_MutexLock(&wrSockPtr1->c.file.fdlock);
+            (void)ns_lseek(connPtr->fd, 0, SEEK_END);
+        }
+    }
+
+    /*
+     * For the time being, handle just "string data" in streaming
+     * output (iovec bufs). Write the content to the spool file.
+     */
+    {
+        int i;
+
+        for (i = 0; i < nbufs; i++) {
+            ssize_t j = ns_write(connPtr->fd, bufs[i].iov_base, bufs[i].iov_len);
+
+            if (j > 0) {
+                wrote += (size_t)j;
+                Ns_Log(Debug, "NsWriterQueue: fd %d [%d] spooled %" PRIdz " of %" PRIiovlen " OK %d",
+                       connPtr->fd, i, j, bufs[i].iov_len, (j == (ssize_t)bufs[i].iov_len));
+            } else {
+                Ns_Log(Warning, "NsWriterQueue: spool to fd %d write operation failed",
+                       connPtr->fd);
+            }
+        }
+    }
+
+    if (first) {
+        //bufs = NULL;
+        connPtr->nContentSent = wrote;
+#ifndef _WIN32
+        /*
+         * sock_set_blocking can't be used under windows, since sockets
+         * are under windows no file descriptors.
+         */
+        (void)ns_sock_set_blocking(connPtr->fd, NS_FALSE);
+#endif
+        /*
+         * Fall through to register stream writer with temp file
+         */
+    } else {
+        WriterSock *writerSockPtr;
+
+        /*
+         * This is a later streaming operation, where the writer job
+         * (strWriter) was previously established.
+         */
+        assert(wrSockPtr1 != NULL);
+        /*
+         * Update the controlling variables (size and toread) in the connPtr,
+         * and the length info for the access log, and trigger the writer to
+         * notify it about the change.
+         */
+
+        writerSockPtr = (WriterSock *)connPtr->strWriter;
+        writerSockPtr->size += wrote;
+        writerSockPtr->c.file.toRead += wrote;
+        Ns_MutexUnlock(&wrSockPtr1->c.file.fdlock);
+
+        connPtr->nContentSent += wrote;
+        if (likely(wrSockPtr1->queuePtr != NULL)) {
+            SockTrigger(wrSockPtr1->queuePtr->pipe[1]);
+        }
+        WriterSockRelease(wrSockPtr1);
+        status = NS_FILTER_BREAK;
+    }
+
+    return status;
 }
 
 
@@ -5573,6 +5825,7 @@ Ns_ReturnCode
 NsWriterQueue(Ns_Conn *conn, size_t nsend,
               Tcl_Channel chan, FILE *fp, int fd,
               struct iovec *bufs, int nbufs,
+              const Ns_FileVec *filebufs, int nfilebufs,
               bool everysize)
 {
     Conn          *connPtr;
@@ -5582,6 +5835,8 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
     bool           trigger = NS_FALSE;
     size_t         headerSize;
     Ns_ReturnCode  status = NS_OK;
+    Ns_FileVec    *fbufs = NULL;
+    int            nfbufs = 0;
 
     NS_NONNULL_ASSERT(conn != NULL);
     connPtr = (Conn *)conn;
@@ -5618,110 +5873,35 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
 
     assert(wrPtr != NULL);
 
+    /*
+     * In streaming mode, setup a temporary fd which is used as input and
+     * output. Streaming i/o will append to the file, while the write will
+     * read from it.
+     */
     if (((connPtr->flags & NS_CONN_STREAM) != 0u) || connPtr->fd > 0) {
-        bool        first = NS_FALSE;
-        size_t      wrote = 0u;
-        WriterSock *wrSockPtr1 = NULL;
 
         if (wrPtr->doStream == NS_WRITER_STREAM_NONE) {
             status = NS_ERROR;
-
         } else if (unlikely(fp != NULL || fd != NS_INVALID_FD)) {
             Ns_Log(DriverDebug, "NsWriterQueue: does not stream from this source via writer");
             status = NS_ERROR;
-
         } else {
-
-            Ns_Log(DriverDebug, "NsWriterQueue: streaming writer job");
-
-            if (connPtr->fd == 0) {
-                /*
-                 * Create a new temporary spool file.
-                 */
-                first = NS_TRUE;
-                fd = Ns_GetTemp();
-                connPtr->fd = fd;
-
-                Ns_Log(DriverDebug, "NsWriterQueue: new tmp file has fd %d", fd);
-
-            } else {
-                /*
-                 * Reuse previously created spool file.
-                 */
-                wrSockPtr1 = WriterSockRequire(connPtr);
-                if (wrSockPtr1 == NULL) {
-                    Ns_Log(Notice,
-                           "NsWriterQueue: writer job was already canceled (fd %d); maybe user dropped connection",
-                           connPtr->fd);
-                    status = NS_ERROR;
-
-                } else {
-                    Ns_MutexLock(&wrSockPtr1->c.file.fdlock);
-                    (void)ns_lseek(connPtr->fd, 0, SEEK_END);
-                }
-            }
+            status = WriterSetupStreamingMode(connPtr, bufs, nbufs, &fd);
         }
-        if (status != NS_OK) {
+
+        if (unlikely(status != NS_OK)) {
+            if (status == NS_FILTER_BREAK) {
+                status = NS_OK;
+            }
             return status;
         }
 
         /*
-         * For the time being, handle just "string data" in streaming
-         * output (iovec bufs). Write the content to the spool file.
+         * As a result of successful WriterSetupStreamingMode(), we have fd
+         * set.
          */
-        {
-            int i;
+        assert(fd != NS_INVALID_FD);
 
-            assert(bufs != NULL);
-            for (i = 0; i < nbufs; i++) {
-                ssize_t j = ns_write(connPtr->fd, bufs[i].iov_base, bufs[i].iov_len);
-
-                if (j > 0) {
-                    wrote += (size_t)j;
-                    Ns_Log(Debug, "NsWriterQueue: fd %d [%d] spooled %" PRIdz " of %" PRIiovlen " OK %d",
-                           connPtr->fd, i, j, bufs[i].iov_len, (j == (ssize_t)bufs[i].iov_len));
-                } else {
-                    Ns_Log(Warning, "NsWriterQueue: spool to fd %d write operation failed",
-                           connPtr->fd);
-                }
-            }
-        }
-
-        if (first) {
-            bufs = NULL;
-            connPtr->nContentSent = wrote;
-#ifndef _WIN32
-            /*
-             * sock_set_blocking can't be used under windows, since sockets
-             * are under windows no file descriptors.
-             */
-            (void)ns_sock_set_blocking(connPtr->fd, NS_FALSE);
-#endif
-            /*
-             * Fall through to register stream writer with temp file
-             */
-        } else {
-            WriterSock *writerSockPtr;
-            /*
-             * This is a later streaming operation, where the writer
-             * job (strWriter) was previously established. Update
-             * the controlling variables (size and toread), and the
-             * length info for the access log, and trigger the writer
-             * to notify it about the change.
-             */
-            assert(wrSockPtr1 != NULL);
-            writerSockPtr = (WriterSock *)connPtr->strWriter;
-            writerSockPtr->size += wrote;
-            writerSockPtr->c.file.toRead += wrote;
-            Ns_MutexUnlock(&wrSockPtr1->c.file.fdlock);
-
-            connPtr->nContentSent += wrote;
-            if (likely(wrSockPtr1->queuePtr != NULL)) {
-                SockTrigger(wrSockPtr1->queuePtr->pipe[1]);
-            }
-            WriterSockRelease(wrSockPtr1);
-            return NS_OK;
-        }
     } else {
         if (fp != NULL) {
             /*
@@ -5742,6 +5922,32 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
                 return NS_ERROR;
             }
             fd = ns_dup(PTR2INT(clientData));
+        } else if (filebufs != NULL && nfilebufs > 0) {
+            /*
+             * The client provided Ns_FileVec with open files. The client is
+             * responsible for closing it, like in all other cases.
+             */
+            size_t i;
+
+            /*
+             * This is the only case, where fbufs will be != NULL,
+             * i.e. keeping a duplicate of the passed-in Ns_FileVec structure
+             * for which the client is responsible.
+             */
+            fbufs = (Ns_FileVec *)ns_calloc((size_t)nfilebufs, sizeof(Ns_FileVec));
+            nfbufs = nfilebufs;
+
+            for (i = 0u; i < (size_t)nfilebufs; i++) {
+                fbufs[i].fd = ns_dup(filebufs[i].fd);
+                fbufs[i].length = filebufs[i].length;
+                fbufs[i].offset = filebufs[i].offset;
+            }
+            /*
+             * Place the fd of the first Ns_FileVec to fd.
+             */
+            fd = fbufs[0].fd;
+
+            Ns_Log(DriverDebug, "NsWriterQueue: filevec mode, take first fd %d tosend %lu", fd, nsend);
         }
     }
 
@@ -5753,7 +5959,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
 
     wrSockPtr = (WriterSock *)ns_calloc(1u, sizeof(WriterSock));
     wrSockPtr->sockPtr = connPtr->sockPtr;
-    wrSockPtr->poolPtr = connPtr->poolPtr;  /* just for begin able to trace back the origin, e.g. list */
+    wrSockPtr->poolPtr = connPtr->poolPtr;  /* just for being able to trace back the origin, e.g. list */
     wrSockPtr->sockPtr->timeout.sec = 0;
     wrSockPtr->flags = connPtr->flags;
     wrSockPtr->refCount = 1;
@@ -5794,7 +6000,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
         Tcl_DString    ds;
 
         Ns_DStringInit(&ds);
-        Ns_Log(DriverDebug, "add header (fd %d)", fd);
+        Ns_Log(DriverDebug, "### Writer(%d): add header", fd);
         conn->flags |= NS_CONN_SENTHDRS;
         (void)Ns_CompleteHeaders(conn, nsend, 0u, &ds);
 
@@ -5811,6 +6017,11 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
         /* maybe add mmap support for files (fd != NS_INVALID_FD) */
 
         wrSockPtr->fd = fd;
+        wrSockPtr->c.file.bufs = fbufs;
+        wrSockPtr->c.file.nbufs = nfbufs;
+
+        Ns_Log(DriverDebug, "### Writer(%d) tosend %" PRIdz " files %d", fd, nsend, nfbufs);
+
         if (unlikely(headerSize >= wrPtr->bufsize)) {
             /*
              * We have a header which is larger than bufsize; place it
@@ -6092,10 +6303,98 @@ WriterSubmitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             vbuf.iov_len = (size_t)size;
 
             status = NsWriterQueue(conn, (size_t)size, NULL, NULL, NS_INVALID_FD,
-                                   &vbuf, 1, NS_TRUE);
+                                   &vbuf, 1,  NULL, 0, NS_TRUE);
             Tcl_SetObjResult(interp, Tcl_NewBooleanObj(status == NS_OK ? 1 : 0));
         }
     }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriterCheckInputParams -
+ *
+ *      Helper command for WriterSubmitFileObjCmd and WriterSubmitFilesObjCmd
+ *      to check validity of filename, offset and size.
+ *
+ * Results:
+ *      Standard Tcl result. Returns on success also fd and nrbytes.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+WriterCheckInputParams(Tcl_Interp *interp, const char *filenameString,
+                       size_t size, off_t offset,
+                       int *fdPtr, size_t *nrbytesPtr)
+{
+    int         result = TCL_OK, rc;
+    struct stat st;
+
+    Ns_Log(DriverDebug, "WriterCheckInputParams %s offset %lld size %lu", filenameString, offset, size);
+
+    /*
+     * Use stat() call to obtain information about the actual file to check
+     * later the plausibility of the parameters.
+     */
+    rc = stat(filenameString, &st);
+    if (unlikely(rc != 0)) {
+        Ns_TclPrintfResult(interp, "file does not exist '%s'", filenameString);
+        result = TCL_ERROR;
+
+    } else {
+        size_t nrbytes = 0u;
+        int    fd;
+
+        /*
+         * Try to open the file and check offset and size parameters.
+         */
+        fd = ns_open(filenameString, O_RDONLY | O_CLOEXEC, 0);
+
+        if (unlikely(fd == NS_INVALID_FD)) {
+            Ns_TclPrintfResult(interp, "could not open file '%s'", filenameString);
+            result = TCL_ERROR;
+
+        } else if (unlikely(offset > st.st_size) || offset < 0) {
+            Ns_TclPrintfResult(interp, "offset must be a positive value less or equal filesize");
+            result = TCL_ERROR;
+
+        } else if (size > 0) {
+            if (unlikely((off_t)size + offset > st.st_size)) {
+                Ns_TclPrintfResult(interp, "offset + size must be less or equal filesize");
+                result = TCL_ERROR;
+            } else {
+                nrbytes = (size_t)size;
+            }
+        } else {
+            nrbytes = (size_t)st.st_size - (size_t)offset;
+        }
+
+        /*
+         * When an offset is provide, jump to this offset.
+         */
+        if (offset > 0 && result == TCL_OK) {
+            if (ns_lseek(fd, (off_t)offset, SEEK_SET) == -1) {
+                Ns_TclPrintfResult(interp, "cannot seek to position %ld", (long)offset);
+                result = TCL_ERROR;
+            }
+        }
+
+        if (result == TCL_OK) {
+            *fdPtr = fd;
+            *nrbytesPtr = nrbytes;
+
+        } else if (fd != NS_INVALID_FD) {
+            /*
+             * On invalid parameters, close the fd.
+             */
+            ns_close(fd);
+        }
+    }
+
     return result;
 }
 
@@ -6148,47 +6447,11 @@ WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
 
     } else {
         size_t      nrbytes = 0u;
-        struct stat st;
-        int         fd, rc = stat(fileNameString, &st);
+        int         fd = NS_INVALID_FD;
 
-        if (unlikely(rc != 0)) {
-            Ns_TclPrintfResult(interp, "file does not exist '%s'", fileNameString);
-            result = TCL_ERROR;
-        }
-
-        fd = NS_INVALID_FD;
-        if (likely( result == TCL_OK )) {
-
-            /*
-             * Try to open the file and check offset and size parameters.
-             */
-            fd = ns_open(fileNameString, O_RDONLY | O_CLOEXEC, 0);
-            if (unlikely(fd == NS_INVALID_FD)) {
-                Ns_TclPrintfResult(interp, "could not open file '%s'", fileNameString);
-                result = TCL_ERROR;
-
-            } else if (unlikely(offset > st.st_size)) {
-                Ns_TclPrintfResult(interp, "offset must be a positive value less or equal filesize");
-                result = TCL_ERROR;
-
-            } else if (size > 0) {
-                if (unlikely(size + offset > st.st_size)) {
-                    Ns_TclPrintfResult(interp, "offset + size must be less or equal filesize");
-                    result = TCL_ERROR;
-                } else {
-                    nrbytes = (size_t)size;
-                }
-            } else {
-                nrbytes = (size_t)st.st_size - (size_t)offset;
-            }
-        }
-
-        if (offset > 0 && result == TCL_OK) {
-            if (ns_lseek(fd, (off_t)offset, SEEK_SET) == -1) {
-                Ns_TclPrintfResult(interp, "cannot seek to position %ld", (long)offset);
-                result = TCL_ERROR;
-            }
-        }
+        result = WriterCheckInputParams(interp, fileNameString,
+                                        (size_t)size, offset,
+                                        &fd, &nrbytes);
 
         if (likely(result == TCL_OK)) {
             Ns_ReturnCode status;
@@ -6200,7 +6463,7 @@ WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
             if (headers != 0) {
                 Ns_ConnSetTypeHeader(conn, Ns_GetMimeType(fileNameString));
             }
-            status = NsWriterQueue(conn, nrbytes, NULL, NULL, fd, NULL, 0, NS_TRUE);
+            status = NsWriterQueue(conn, nrbytes, NULL, NULL, fd, NULL, 0,  NULL, 0, NS_TRUE);
             Tcl_SetObjResult(interp, Tcl_NewBooleanObj(status == NS_OK ? 1 : 0));
 
             if (fd != NS_INVALID_FD) {
@@ -6216,6 +6479,214 @@ WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
 
     return result;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriterGetMemunitFromDict --
+ *
+ *      Helper function to obtain a memory unit from a dict structure,
+ *      optionally checking the value range.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      On errors, an error message is left in the interpreter.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+WriterGetMemunitFromDict(Tcl_Interp *interp, Tcl_Obj *dictObj, Tcl_Obj *keyObj, Ns_ObjvValueRange *rangePtr,
+                         Tcl_WideInt *valuePtr)
+{
+    Tcl_Obj *intObj = NULL;
+    int      result;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(dictObj != NULL);
+    NS_NONNULL_ASSERT(keyObj != NULL);
+    NS_NONNULL_ASSERT(valuePtr != NULL);
+
+    result = Tcl_DictObjGet(interp, dictObj, keyObj, &intObj);
+    if (result == TCL_OK && intObj != NULL) {
+        result = Ns_TclGetMemUnitFromObj(interp, intObj, valuePtr);
+        if (result == TCL_OK && rangePtr != NULL) {
+            result = Ns_CheckWideRange(interp, Tcl_GetString(keyObj), rangePtr, *valuePtr);
+        }
+    }
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriterSubmitFilesObjCmd - subcommand of NsTclWriterObjCmd --
+ *
+ *      Implements "ns_writer submitfiles" command.  Send the provided files
+ *      to the client. "files" are provided as a list of dicts, where every
+ *      dict must contain a "filename" element and can contain an "-offset"
+ *      and/or a "-length" element.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+WriterSubmitFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    Ns_Conn    *conn;
+    int         headers = 0, nrFiles;
+    Tcl_Obj    *filesObj = NULL, **fileObjv;
+    Ns_ObjvSpec lopts[] = {
+        {"-headers",  Ns_ObjvBool,    &headers, INT2PTR(NS_TRUE)},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"files",     Ns_ObjvObj, &filesObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (unlikely(Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK)
+        || NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (unlikely( Ns_ConnSockPtr(conn) == NULL )) {
+        Ns_Log(Warning,
+               "NsWriterQueue: called without valid sockPtr, "
+               "maybe connection already closed");
+        Ns_TclPrintfResult(interp, "0");
+        result = TCL_OK;
+
+    } else if (Tcl_ListObjGetElements(interp, filesObj, &nrFiles, &fileObjv) != TCL_OK) {
+        Ns_TclPrintfResult(interp, "not a valid list of files: '%s'", Tcl_GetString(filesObj));
+        result = TCL_ERROR;
+
+    } else if (nrFiles == 0) {
+        Ns_TclPrintfResult(interp, "The provided list has to contain at least one file spec");
+        result = TCL_ERROR;
+
+    } else {
+        size_t      totalbytes = 0u, i;
+        Tcl_Obj    *keys[3], *filenameObj = NULL;
+        Ns_FileVec *filebufs;
+        const char *firstFilenameString = NULL;
+        Ns_ObjvValueRange offsetRange = {0, LLONG_MAX};
+        Ns_ObjvValueRange sizeRange = {1, LLONG_MAX};
+
+        filebufs = (Ns_FileVec *)ns_calloc((size_t)nrFiles, sizeof(Ns_FileVec));
+        keys[0] = Tcl_NewStringObj("filename", 8);
+        keys[1] = Tcl_NewStringObj("-offset", 7);
+        keys[2] = Tcl_NewStringObj("-size", 5);
+
+        Tcl_IncrRefCount(keys[0]);
+        Tcl_IncrRefCount(keys[1]);
+        Tcl_IncrRefCount(keys[2]);
+
+        for (i = 0u; i < (size_t)nrFiles; i++) {
+            filebufs[i].fd = NS_INVALID_FD;
+        }
+
+        /*
+         * Iterate over the list of dicts.
+         */
+        for (i = 0u; i < (size_t)nrFiles; i++) {
+            Tcl_WideInt offset = 0, size = 0;
+            int         rc, fd = NS_INVALID_FD;
+            const char *filenameString;
+            size_t      nrbytes;
+
+            /*
+             * Get required "filename" element.
+             */
+            filenameObj = NULL;
+            rc = Tcl_DictObjGet(interp, fileObjv[i], keys[0], &filenameObj);
+            if (rc != TCL_OK || filenameObj == NULL) {
+                Ns_TclPrintfResult(interp, "missing filename in dict '%s'",
+                                   Tcl_GetString(fileObjv[i]));
+                result = TCL_ERROR;
+                break;
+            }
+
+            filenameString = Tcl_GetString(filenameObj);
+            if (firstFilenameString == NULL) {
+                firstFilenameString = filenameString;
+            }
+
+            /*
+             * Get optional "-offset" and "-size" elements.
+             */
+            if (WriterGetMemunitFromDict(interp, fileObjv[i], keys[1], &offsetRange, &offset) != TCL_OK) {
+                result = TCL_ERROR;
+                break;
+            }
+            if (WriterGetMemunitFromDict(interp, fileObjv[i], keys[2], &sizeRange, &size) != TCL_OK) {
+                result = TCL_ERROR;
+                break;
+            }
+
+            /*
+             * Check validity of the provided values
+             */
+            result = WriterCheckInputParams(interp, Tcl_GetString(filenameObj),
+                                            (size_t)size, (off_t)offset,
+                                            &fd, &nrbytes);
+            if (result != TCL_OK) {
+                break;
+            }
+
+            filebufs[i].fd = fd;
+            filebufs[i].offset = offset;
+            filebufs[i].length = nrbytes;
+
+            totalbytes = totalbytes + (size_t)nrbytes;
+        }
+        Tcl_DecrRefCount(keys[0]);
+        Tcl_DecrRefCount(keys[1]);
+        Tcl_DecrRefCount(keys[2]);
+
+        /*
+         * If everything is ok, submit the request to the writer queue.
+         */
+        if (result == TCL_OK) {
+            Ns_ReturnCode status;
+
+            if (headers != 0) {
+                Ns_ConnSetTypeHeader(conn, Ns_GetMimeType(firstFilenameString));
+            }
+            status = NsWriterQueue(conn, totalbytes, NULL, NULL, NS_INVALID_FD, NULL, 0,
+                                   filebufs, nrFiles, NS_TRUE);
+            /*
+             * Provide a soft error like for "ns_writer submitfile".
+             */
+            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(status == NS_OK ? 1 : 0));
+        }
+
+        /*
+         * The NsWriterQueue() API makes the usual duplicates of the file
+         * descriptors and the Ns_FileVec structure, so we have to cleanup
+         * here.
+         */
+        for (i = 0u; i < (size_t)nrFiles; i++) {
+            if (filebufs[i].fd != NS_INVALID_FD) {
+                (void) ns_close(filebufs[i].fd);
+            }
+        }
+        ns_free(filebufs);
+
+    }
+
+    return result;
+}
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -6502,6 +6973,7 @@ NsTclWriterObjCmd(ClientData clientData, Tcl_Interp *interp,
         {"streaming",  WriterStreamingObjCmd},
         {"submit",     WriterSubmitObjCmd},
         {"submitfile", WriterSubmitFileObjCmd},
+        {"submitfiles",WriterSubmitFilesObjCmd},
         {NULL, NULL}
     };
 

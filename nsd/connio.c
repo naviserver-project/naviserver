@@ -673,7 +673,7 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
         sent = 0;
 
     } else if (NsWriterQueue(conn, towrite, NULL, NULL, NS_INVALID_FD,
-                             bufs, nbufs, NS_FALSE) == NS_OK) {
+                             bufs, nbufs, NULL, 0, NS_FALSE) == NS_OK) {
         Ns_Log(Debug, "==== writer sent %" PRIuz " bytes\n", towrite);
         sent = (ssize_t)towrite;
 

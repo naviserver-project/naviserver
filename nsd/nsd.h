@@ -1491,6 +1491,8 @@ NS_EXTERN Ns_ReturnCode NsWriterQueue(
     int fd,
     struct iovec *bufs,
     int nbufs,
+    const Ns_FileVec *filebufs,
+    int nfilebufs,
     bool everysize
 ) NS_GNUC_NONNULL(1);
 

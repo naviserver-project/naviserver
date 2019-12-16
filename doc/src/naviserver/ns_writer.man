@@ -52,7 +52,7 @@ binary. On success the function returns 1, otherwise 0.
 	[opt [option -headers]] \
 	[opt [option {-offset offset}]] \
 	[opt [option {-size size}]] \
-	[arg file]]
+	[arg filename]]
 
 [para]
 Submits file to be returned via writer thread. For partial requests,
@@ -76,6 +76,29 @@ The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB).
 If not specified, the whole file will be returned, otherwise only given
 part. Can be combined with [option -offset].
 The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB).
+
+
+[call [cmd "ns_writer submitfiles"] \
+	[opt [option -headers]] \
+	[arg filespecs]]
+
+[para]
+Submits multiple files to be submitted in a single chunk. This call is
+quite similar to [cmd "ns_writer submitfile"], butit accepts a list of
+dicts as argument. Every dict element has to contain a [term filename]
+element and optionally an [term -offset] element and/or a [term -size]
+element.
+
+[para] This function is e.g. useful for video streaming applications,
+where multiple video file chunks should be transferred (sometimes)
+concatenated in a single chunk. Therefore, this function avoids the
+necessity to concatenate these files in advance (causing increased
+latency and disk usage).
+
+
+[example_begin]
+ns_writer submitfiles {{filename /tmp/f1} {filename /tmp/f2 -offset 10}}
+[example_end]
 
 
 [call [cmd "ns_writer size"] \
