@@ -472,9 +472,11 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
             int             result;
             Tcl_DString     script;
             Tcl_Interp     *interp;
+            NsServer       *servPtr;
             const char     *w, *channelName;
             bool            logEnabled;
             size_t          scriptCmdNameLength;
+            NS_SOCKET       sock;
 
             /*
              * In all remaining cases, the Tcl callback is executed.
@@ -505,9 +507,11 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
                 channelName = NULL;
                 scriptCmdNameLength = 0u;
             }
-
             Tcl_DStringAppendElement(&script, w);
-            interp = NsTclAllocateInterp(cbPtr->connChanPtr->sockPtr->servPtr);
+
+            sock = cbPtr->connChanPtr->sockPtr->sock;
+            servPtr = cbPtr->connChanPtr->sockPtr->servPtr;
+            interp = NsTclAllocateInterp(servPtr);
             result = Tcl_EvalEx(interp, script.string, script.length, 0);
 
             if (result != TCL_OK) {
@@ -516,8 +520,11 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
                 Tcl_Obj    *objPtr = Tcl_GetObjResult(interp);
                 int         ok = 1;
 
-                assert(cbPtr->connChanPtr != NULL);
-                assert(cbPtr->connChanPtr->sockPtr != NULL);
+                /*
+                 * Here we cannot trust the cbPtr structure anymore,
+                 * since the call to Tcl_EvalEx might have deleted it
+                 * via some script.
+                 */
 
                 if (logEnabled) {
                     Tcl_DString ds;
@@ -547,16 +554,13 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
                                    channelName, (void*)cbPtr);
                         }
                         /*
-                         * We use here the "raw"
-                         * Ns_SockCancelCallbackEx to just stop socket
-                         * handling, while keeping the connchan
-                         * specific structures alive (postponing
-                         * cleanup to a "close" operation).
+                         * Use the "raw" Ns_SockCancelCallbackEx() API
+                         * call to just stop socket handling, while
+                         * keeping the connchan specific structures
+                         * alive (postponing cleanup to a "close"
+                         * operation).
                          */
-                        assert(cbPtr->connChanPtr != NULL);
-                        assert(cbPtr->connChanPtr->sockPtr != NULL);
-                        (void) Ns_SockCancelCallbackEx(cbPtr->connChanPtr->sockPtr->sock, NULL, NULL, NULL);
-                        //cbPtr->when = 0;
+                        (void) Ns_SockCancelCallbackEx(sock, NULL, NULL, NULL);
                     }
                 }
             }
