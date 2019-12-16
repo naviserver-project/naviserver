@@ -315,6 +315,7 @@ typedef enum {
 
 NS_EXTERN Ns_LogSeverity Ns_LogTaskDebug;   /* Severity at which to log verbose. */
 NS_EXTERN Tcl_Encoding   NS_utf8Encoding;   /* Cached UTF-8 encoding */
+NS_EXTERN Ns_LogSeverity Ns_LogAccessDebug;
 
 /*
  * Typedefs of functions
@@ -1720,6 +1721,12 @@ NS_EXTERN Ns_ObjvProc Ns_ObjvString;
 NS_EXTERN Ns_ObjvProc Ns_ObjvTime;
 NS_EXTERN Ns_ObjvProc Ns_ObjvUShort;
 NS_EXTERN Ns_ObjvProc Ns_ObjvWideInt;
+
+NS_EXTERN int Ns_TclGetMemUnitFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_WideInt *memUnitPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+NS_EXTERN int Ns_CheckWideRange(Tcl_Interp *interp, const char *name, Ns_ObjvValueRange *r, Tcl_WideInt value)
+    NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
 Ns_SubcmdObjv(const Ns_SubCmdSpec *subcmdSpec, ClientData clientData,

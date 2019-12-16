@@ -65,9 +65,6 @@ static void UpdateStringOfMemUnit(Tcl_Obj *objPtr)
 static int SetMemUnitFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static int CheckWideRange(Tcl_Interp *interp, const char *name, Ns_ObjvValueRange *r, Tcl_WideInt value)
-    NS_GNUC_NONNULL(1);
-
 static void AppendRange(Ns_DString *dsPtr, Ns_ObjvValueRange *r)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -308,9 +305,10 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
 /*
  *----------------------------------------------------------------------
  *
- * CheckWideRange --
+ * Ns_CheckWideRange --
  *
  *      Helper function for range checking based on Tcl_WideInt specification.
+ *      In error cases, the function leaves an error message in the interpreter.
  *
  * Results:
  *      TCL_OK or TCL_ERROR;
@@ -320,8 +318,8 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
  *
  *----------------------------------------------------------------------
  */
-static int
-CheckWideRange(Tcl_Interp *interp, const char *name, Ns_ObjvValueRange *r, Tcl_WideInt value)
+int
+Ns_CheckWideRange(Tcl_Interp *interp, const char *name, Ns_ObjvValueRange *r, Tcl_WideInt value)
 {
     int result;
 
@@ -380,7 +378,7 @@ Ns_ObjvInt(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 
         result = Tcl_GetIntFromObj(interp, objv[0], dest);
         if (likely(result == TCL_OK)) {
-            if (CheckWideRange(interp, spec->key, spec->arg, (Tcl_WideInt)*dest) == TCL_OK) {
+            if (Ns_CheckWideRange(interp, spec->key, spec->arg, (Tcl_WideInt)*dest) == TCL_OK) {
                 *objcPtr -= 1;
             } else {
                 result = TCL_ERROR;
@@ -441,7 +439,7 @@ Ns_ObjvLong(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 
         result = Tcl_GetLongFromObj(interp, objv[0], dest);
         if (likely(result == TCL_OK)) {
-            if (CheckWideRange(interp, spec->key, spec->arg, (Tcl_WideInt)*dest) == TCL_OK) {
+            if (Ns_CheckWideRange(interp, spec->key, spec->arg, (Tcl_WideInt)*dest) == TCL_OK) {
                 *objcPtr -= 1;
             } else {
                 result = TCL_ERROR;
@@ -468,7 +466,7 @@ Ns_ObjvWideInt(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 
         result = Tcl_GetWideIntFromObj(interp, objv[0], dest);
         if (likely(result == TCL_OK)) {
-            if (CheckWideRange(interp, spec->key, spec->arg, *dest) == TCL_OK) {
+            if (Ns_CheckWideRange(interp, spec->key, spec->arg, *dest) == TCL_OK) {
                 *objcPtr -= 1;
             } else {
                 result = TCL_ERROR;
@@ -838,7 +836,24 @@ SetMemUnitFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     return result;
 }
 
-static int
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TclGetMemUnitFromObj --
+ *
+ *      Convert a tcl obj with a string value of a memory unit into a Tcl_WideInt.
+ *      It has the same interface as e.g. Tcl_GetWideIntFromObj().
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR if not a valid memory unit string.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
 Ns_TclGetMemUnitFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_WideInt *memUnitPtr)
 {
     int  result = TCL_OK;
@@ -865,6 +880,7 @@ Ns_TclGetMemUnitFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_WideInt *memUni
          * directly, otherwise convert.
          */
         if (objPtr->typePtr != &memUnitType) {
+
             if (unlikely(Tcl_ConvertToType(interp, objPtr, &memUnitType) != TCL_OK)) {
                 Ns_TclPrintfResult(interp, "invalid memory unit '%s'; "
                                    "valid units kB, MB, GB, KiB, MiB, and GiB",
@@ -912,7 +928,7 @@ Ns_ObjvMemUnit(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
         result = Ns_TclGetMemUnitFromObj(interp, objv[0], dest);
 
         if (likely(result == TCL_OK)) {
-            if (CheckWideRange(interp, spec->key, spec->arg, (Tcl_WideInt)*dest) == TCL_OK) {
+            if (Ns_CheckWideRange(interp, spec->key, spec->arg, (Tcl_WideInt)*dest) == TCL_OK) {
                 *objcPtr -= 1;
             } else {
                 result = TCL_ERROR;
