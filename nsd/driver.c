@@ -6334,7 +6334,8 @@ WriterCheckInputParams(Tcl_Interp *interp, const char *filenameString,
     int         result = TCL_OK, rc;
     struct stat st;
 
-    Ns_Log(DriverDebug, "WriterCheckInputParams %s offset %lld size %lu", filenameString, offset, size);
+    Ns_Log(DriverDebug, "WriterCheckInputParams %s offset %" PROTd " size %" PRIdz,
+           filenameString, offset, size);
 
     /*
      * Use stat() call to obtain information about the actual file to check
