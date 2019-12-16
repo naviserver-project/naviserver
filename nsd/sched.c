@@ -233,7 +233,7 @@ Ns_ScheduleProc(Ns_SchedProc *proc, void *arg, int thread, int interval)
  */
 
 int
-Ns_ScheduleDaily(Ns_SchedProc * proc, void *clientData, unsigned int flags,
+Ns_ScheduleDaily(Ns_SchedProc *proc, void *clientData, unsigned int flags,
                  int hour, int minute, Ns_SchedProc *cleanupProc)
 {
     int result;
@@ -267,7 +267,7 @@ Ns_ScheduleDaily(Ns_SchedProc * proc, void *clientData, unsigned int flags,
  */
 
 int
-Ns_ScheduleWeekly(Ns_SchedProc * proc, void *clientData, unsigned int flags,
+Ns_ScheduleWeekly(Ns_SchedProc *proc, void *clientData, unsigned int flags,
     int day, int hour, int minute, Ns_SchedProc *cleanupProc)
 {
     int result;

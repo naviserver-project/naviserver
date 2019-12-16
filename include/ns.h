@@ -315,7 +315,12 @@ typedef enum {
 
 NS_EXTERN Ns_LogSeverity Ns_LogTaskDebug;   /* Severity at which to log verbose. */
 NS_EXTERN Tcl_Encoding   NS_utf8Encoding;   /* Cached UTF-8 encoding */
+
+#if defined(_MSC_VER)
+extern NS_IMPORT  Ns_LogSeverity Ns_LogAccessDebug;
+#else
 NS_EXTERN Ns_LogSeverity Ns_LogAccessDebug;
+#endif
 
 /*
  * Typedefs of functions
@@ -2430,23 +2435,23 @@ NS_EXTERN bool
 Ns_Resume(int id);
 
 NS_EXTERN int
-Ns_ScheduleProc(Ns_SchedProc proc, void *arg, int thread, int interval)
+Ns_ScheduleProc(Ns_SchedProc *proc, void *arg, int thread, int interval)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
-Ns_ScheduleDaily(Ns_SchedProc proc, void *clientData, unsigned int flags,
-                 int hour, int minute, Ns_SchedProc cleanupProc)
+Ns_ScheduleDaily(Ns_SchedProc *proc, void *clientData, unsigned int flags,
+                 int hour, int minute, Ns_SchedProc *cleanupProc)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
 Ns_ScheduleWeekly(Ns_SchedProc *proc, void *clientData, unsigned int flags,
                   int day, int hour, int minute,
-                  Ns_SchedProc cleanupProc)
+                  Ns_SchedProc *cleanupProc)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
 Ns_ScheduleProcEx(Ns_SchedProc *proc, void *clientData, unsigned int flags,
-                  int interval, Ns_SchedProc cleanupProc)
+                  int interval, Ns_SchedProc *cleanupProc)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
