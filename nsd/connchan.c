@@ -476,7 +476,7 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
             const char     *w, *channelName;
             bool            logEnabled;
             size_t          scriptCmdNameLength;
-            NS_SOCKET       sock;
+            NS_SOCKET       localsock;
 
             /*
              * In all remaining cases, the Tcl callback is executed.
@@ -509,7 +509,7 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
             }
             Tcl_DStringAppendElement(&script, w);
 
-            sock = cbPtr->connChanPtr->sockPtr->sock;
+            localsock = cbPtr->connChanPtr->sockPtr->sock;
             servPtr = cbPtr->connChanPtr->sockPtr->servPtr;
             interp = NsTclAllocateInterp(servPtr);
             result = Tcl_EvalEx(interp, script.string, script.length, 0);
@@ -560,7 +560,7 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
                          * alive (postponing cleanup to a "close"
                          * operation).
                          */
-                        (void) Ns_SockCancelCallbackEx(sock, NULL, NULL, NULL);
+                        (void) Ns_SockCancelCallbackEx(localsock, NULL, NULL, NULL);
                     }
                 }
             }
