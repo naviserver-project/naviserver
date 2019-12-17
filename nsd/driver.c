@@ -4903,6 +4903,10 @@ WriterReadFromSpool(WriterSock *curPtr) {
             int    currentbuf = curPtr->c.file.currentbuf;
             size_t wantRead = curPtr->c.file.bufs[currentbuf].length;
 
+            if (wantRead > toRead) {
+                wantRead = toRead;
+            }
+
             n = ns_read(curPtr->fd, bufPtr, wantRead);
 
             Ns_Log(DriverDebug, "### WriterReadFromSpool [%d] (nbufs %d): read from fd %d want %lu got %ld",
