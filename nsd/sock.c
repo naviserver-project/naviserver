@@ -100,7 +100,18 @@ static Ns_SockProc CloseLater;
 
 static NS_INLINE bool Retry(int errorCode)
 {
-    return (errorCode == NS_EAGAIN || errorCode == NS_EINTR || errorCode == NS_EWOULDBLOCK);
+    return (errorCode == NS_EAGAIN
+            || errorCode == NS_EINTR
+#if defined(__APPLE__)
+            /*
+             * Due to a possible kernel bug at least in OS X 10.10 "Yosemite",
+             * EPROTOTYPE can be returned while trying to write to a socket
+             * that is shutting down. If we retry the write, we should get
+             * the expected EPIPE instead.
+             */
+            || errorCode == EPROTOTYPE
+#endif
+            || errorCode == NS_EWOULDBLOCK);
 }
 
 
