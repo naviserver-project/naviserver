@@ -6021,7 +6021,8 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
         wrSockPtr->c.file.bufs = fbufs;
         wrSockPtr->c.file.nbufs = nfbufs;
 
-        Ns_Log(DriverDebug, "### Writer(%d) tosend %" PRIdz " files %d", fd, nsend, nfbufs);
+        Ns_Log(DriverDebug, "### Writer(%d) tosend %" PRIdz " files %d bufsize %" PRIdz,
+               fd, nsend, nfbufs, wrPtr->bufsize);
 
         if (unlikely(headerSize >= wrPtr->bufsize)) {
             /*

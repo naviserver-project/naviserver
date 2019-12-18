@@ -209,6 +209,21 @@ test ns_writer-4.2.3 {two file chunks with offset and size} -constraints serverL
     ns_unregister_op GET /file
 } -returnCodes {error ok} -match exact -result {200 34563456}
 
+
+test ns_writer-4.2.4 {10 file chunks larger than writerbufsize} -constraints serverListen -setup {
+    ns_register_proc GET /file {
+        set entry [list filename [ns_pagepath 16480bytes]]
+        set segments [list $entry $entry $entry $entry $entry $entry $entry $entry $entry $entry]
+        ns_writer submitfiles $segments
+    }
+} -body {
+    nstest::http -getheaders {Content-Length} GET /file
+} -cleanup {
+    ns_unregister_op GET /file
+} -returnCodes {error ok} -match exact -result {200 164800}
+
+
+
 cleanupTests
 
 # Local variables:
