@@ -944,13 +944,22 @@ HttpCleanupObjCmd(
                  * been Tcl_Cut'ed) nor interp (must have been
                  * Tcl_Unregister'ed). Failure to do so may
                  * wreak havoc with our memory.
+                 * As with the current design, the channel must
+                 * have a refcount of 1 at this place, since we
+                 * reserved it in the HttpCutChannel() call.
+                 * Now we must do the reverse here, but do the
+                 * unregister with NULL interp just to reduce
+                 * the refcount. This should also implicitly
+                 * close the channel. If not, there is a leak.
                  */
                 if (httpPtr->bodyChan != NULL) {
-                    Tcl_Close(NULL, httpPtr->bodyChan);
+                    Tcl_SpliceChannel(httpPtr->bodyChan);
+                    Tcl_UnregisterChannel((Tcl_Interp *)NULL, httpPtr->bodyChan);
                     httpPtr->bodyChan = NULL;
                 }
                 if (httpPtr->spoolChan != NULL) {
-                    Tcl_Close(NULL, httpPtr->spoolChan);
+                    Tcl_SpliceChannel(httpPtr->spoolChan);
+                    Tcl_UnregisterChannel((Tcl_Interp *)NULL, httpPtr->spoolChan);
                     httpPtr->spoolChan = NULL;
                 }
 
