@@ -6661,7 +6661,7 @@ WriterSubmitFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
         if (result == TCL_OK) {
             Ns_ReturnCode status;
 
-            if (headers != 0) {
+            if (headers != 0 && firstFilenameString != NULL) {
                 Ns_ConnSetTypeHeader(conn, Ns_GetMimeType(firstFilenameString));
             }
             status = NsWriterQueue(conn, totalbytes, NULL, NULL, NS_INVALID_FD, NULL, 0,

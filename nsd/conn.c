@@ -1555,6 +1555,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
             assert(conn != NULL);
             request = &connPtr->request;
         }
+    } else {
+        request = &connPtr->request;
     }
 
     if (result == TCL_ERROR) {
