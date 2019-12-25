@@ -49,7 +49,7 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 
-# ifndef HAVE_OPENSSL_PRE_1_1
+# if !defined(HAVE_OPENSSL_PRE_1_1) && !defined(LIBRESSL_2_7)
 #  include <openssl/kdf.h>
 # endif
 

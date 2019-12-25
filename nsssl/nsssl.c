@@ -118,9 +118,9 @@ SSL_infoCB(const SSL *ssl, int where, int UNUSED(ret)) {
 static DH *get_dh512(void);
 static DH *get_dh1024(void);
 
-#if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x030000000
+#if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L
 /*
- * Compatibility function for libressl < 3; DH_set0_pqg is used just by the
+ * Compatibility function for libressl < 2.7; DH_set0_pqg is used just by the
  * Diffie-Hellman parameters in dhparams.h.
  */
 static int
