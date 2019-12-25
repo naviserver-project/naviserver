@@ -1818,7 +1818,7 @@ HttpCheckSpool(
                      */
                     Ns_MutexLock(&httpPtr->lock);
                     httpPtr->spoolFileName = ns_malloc(tmpLen);
-                    sprintf(httpPtr->spoolFileName, "%s/%s", tmpDir, tmpFile);
+                    snprintf(httpPtr->spoolFileName, tmpLen, "%s/%s", tmpDir, tmpFile);
                     Ns_MutexUnlock(&httpPtr->lock);
 
                     fd = ns_mkstemp(httpPtr->spoolFileName);
