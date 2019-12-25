@@ -187,7 +187,7 @@
 # define NS_INLINE inline
 #endif
 
-#if defined __GNUC__
+#if defined(__GNUC__) && !defined(__OpenBSD__)
 # define NS_THREAD_LOCAL __thread
 #elif defined NS_HAVE_C11
 # include <threads.h>
