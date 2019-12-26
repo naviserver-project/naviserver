@@ -144,8 +144,19 @@ b.const {
     font-family: "Courier New", Courier, monospace;
     font-weight: normal;
 }
+ul.doctools_syntax li a span.opt b {
+    font-weight: normal;
+}
+
+#see-also a,
+#keywords a,
 ul.doctools_syntax li a {
     text-decoration: none;
+    color: darkslateblue;
+}
+
+ul.doctools_syntax li {
+    margin: 0px 0px 6px 0px;
 }
 
 span.logo {
