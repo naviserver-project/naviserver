@@ -112,14 +112,14 @@ openssl_32 = C:\P\OpenSSL-Win32
 # NaviServer with /MDd, so presumably we need the corresponding
 # *MDd.lib libraries here.  (TODO: How to autodetect this correctly?)
 
+# Same sort of code as for TCLPATH in naviserver/Makefile.win32:
+!if "x86" == "$(TARGET_CPU)"
 #openssl_libs = ssleay32.lib libeay32.lib
 #openssl_libs = ssleay32MDd.lib libeay32MDd.lib
 openssl_libs = libssl32MDd.lib libcrypto32MDd.lib
-
-# Same sort of code as for TCLPATH in naviserver/Makefile.win32:
-!if "x86" == "$(TARGET_CPU)"
 openssl_dir = $(openssl_32)
 !elseif "x64" == "$(TARGET_CPU)"
+openssl_libs = libssl64MDd.lib libcrypto64MDd.lib
 openssl_dir = $(openssl_64)
 !else
 !message Warning: Unexpected TARGET_CPU:  $(TARGET_CPU)

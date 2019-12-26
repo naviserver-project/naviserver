@@ -16,17 +16,22 @@
 #
 #
 
-tcl_64 = C:\P\Tcl-64
+tcl_64 = C:\P\Tcl-64-8.6
 tcl_32 = C:\P\Tcl-32
-TCLLIB  = tcl85.lib
+
+tcllib_64 = tcl86t.lib
+tcllib_32 = tcl85.lib
 
 !if "x86" == "$(TARGET_CPU)"
 TCLPATH = $(tcl_32)
+TCLLIB  = $(tcllib_32)
 !elseif "x64" == "$(TARGET_CPU)"
 TCLPATH = $(tcl_64)
+TCLLIB  = $(tcllib_64)
 !else
 !message Warning: Unexpected TARGET_CPU:  $(TARGET_CPU)
 TCLPATH = $(tcl_64)
+TCLLIB  = $(tcllib_64)
 !endif
 
 # I should be able to implicitly use these environment variable mappings:
