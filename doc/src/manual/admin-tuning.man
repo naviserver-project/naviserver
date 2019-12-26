@@ -96,11 +96,16 @@ carefully adjusted based on your load. Along with
 [term maxconnections] setting can be tricky, since making it too large can
 cause your system to thrash.
 
-[para] On busy machines, one can define multiple connection thread pools
-and use the configuration option [term map] to map HTTP method and URL
-patterns to certain pools. By default, the settings are for the
-default connection threads pool. Additional connection thread pools
-can be created via [term pools].
+[para] On busy machines, one can define multiple connection thread
+pools and use the configuration option [term map] to map HTTP method,
+URL and context filter patterns to certain pools (for details about
+the mapping specs, the documentation of
+[term "connection thread pools"] and the command
+[cmd ns_server].
+
+By default, the settings are for the default connection threads
+pool. Additional connection thread pools can be created via
+[term pools].
 
 [example_begin]
    ns_section "ns/server/servername/pools" {
@@ -135,6 +140,17 @@ can be created via [term pools].
      ns_param   map "GET /*.mp4"
      ns_param   map "GET /*.ts"
      ns_param   map "GET /*.m3u8"
+   }
+   
+   ns_section "ns/server/servername/pool/bots" {
+     ns_param   map "GET  /* {user-agent *bot*}"
+     ns_param   map "GET  /* {user-agent *rawl*}"
+     ns_param   map "GET  /* {user-agent *pider*}"
+     ns_param   map "GET  /* {user-agent *baidu*}"
+     ns_param   map "GET  /* {user-agent *Knowledge*}"
+     ns_param   minthreads 2
+     ns_param   maxthreads 2
+     ns_param   poolratelimit 1000    ;# 0; limit rate for pool to this amount (KB/s); 0 means unlimited
    }
 [example_end]
 
@@ -171,8 +187,7 @@ NaviServer has a built-in statistics-gathering system that collects data on
 the caches, Tcl interps, threads, and other interesting data. We use these
 at AOL to gather an immense amount of data on how the systems are working
 and where they need to be improved (more cache, less cache, more memory,
-more threads, etc).  The module
-[term nsstats] can be dropped into any
+more threads, etc).  The module [term nsstats] can be dropped into any
 running server to get a snapshot of how it's doing. The module is available
 in the modules repository.
 
@@ -190,7 +205,7 @@ concurrent interpreter create operations in Tcl 8.6.
 
 [example_begin]
    ns_section ns/parameters {
-      ns_param        concurrentinterpcreate false   ; default false
+      ns_param concurrentinterpcreate false   ; default false
    }
 [example_end]
 
