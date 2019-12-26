@@ -2377,7 +2377,7 @@ New Features:
     in "ns_return" man page.
 
   * New statistics from nsdb interface: "ns_db stats" returns
-    number and time of handle and sql operations (can be used
+    number and time of handle and SQL operations (can be used
     in connection with e.g. munin for monitoring db health)
 
   * Added ability to pass env to ns_proxy (for details see
@@ -2631,7 +2631,7 @@ New Features:
       at which time at which server what kind of
       servers/warnings/... were produced
 
-    - Allow to modify logging of sql statements via
+    - Allow to modify logging of SQL statements via
          ns_logctl severity Debug(sql) on
       at runtime
 
@@ -2862,7 +2862,7 @@ New Features/Performance Improvements:
       NaviServer allows now deliver gzipped content for static files
       in cases the client requests for this. The gzipped files
       are stored
-      statically in the file system like the unzipped content. Therefore
+      statically in the file system like the unzipped content. Therefore,
       the file delivery of gzipped content can be performed without
       runtime penalty. NaviServer compares the time stamps of the
       compressed and uncompressed content. If the time-stamp of the
