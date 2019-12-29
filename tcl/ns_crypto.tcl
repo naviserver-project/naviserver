@@ -57,7 +57,7 @@ nx::Class create ns_md -superclass ::ns_crypto::HashFunctions {
     :public object method file {{-digest sha256} {-encoding hex} filename args} {
         set m [:new -digest $digest]
         set r ""
-        foreach path [concat $filename $args] {
+        foreach path [concat [list $filename] $args] {
             if {![file readable $path]} {
                 $m destroy
                 return -code error "file $path is not readable"
@@ -103,7 +103,7 @@ nx::Class create ns_hmac -superclass ::ns_crypto::HashFunctions {
     :public object method file {{-digest sha256} {-encoding hex} key filename args} {
         set m [:new -digest $digest -key $key]
         set r ""
-        foreach path [concat $filename $args] {
+        foreach path [concat [list $filename] $args] {
             if {![file readable $path]} {
                 $m destroy
                 return -code error "file $path is not readable"
