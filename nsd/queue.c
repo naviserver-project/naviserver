@@ -2446,8 +2446,18 @@ ConnRun(Conn *connPtr)
         /*
          * Run classical HTTP requests
          */
+
         status = NsRunFilters(conn, NS_FILTER_PRE_AUTH);
         Ns_GetTime(&connPtr->filterDoneTime);
+
+        if (status == NS_OK && (connPtr->sockPtr == NULL)) {
+            /*
+             * If - for what-ever reason - a filter has closed the connection,
+             * treat the result as NS_FILTER_RETURN. Other feedback to this
+             * connection can not work anymore.
+             */
+            status = NS_FILTER_RETURN;
+        }
 
         if (status == NS_OK) {
             status = Ns_AuthorizeRequest(servPtr->server,
@@ -2460,7 +2470,7 @@ ConnRun(Conn *connPtr)
             case NS_OK:
                 status = NsRunFilters(conn, NS_FILTER_POST_AUTH);
                 Ns_GetTime(&connPtr->filterDoneTime);
-                if (status == NS_OK) {
+                if (status == NS_OK && (connPtr->sockPtr != NULL)) {
                     /*
                      * Run the actual request
                      */
