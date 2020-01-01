@@ -2450,12 +2450,14 @@ ConnRun(Conn *connPtr)
         status = NsRunFilters(conn, NS_FILTER_PRE_AUTH);
         Ns_GetTime(&connPtr->filterDoneTime);
 
-        if (status == NS_OK && (connPtr->sockPtr == NULL)) {
+        if (connPtr->sockPtr == NULL) {
             /*
              * If - for what-ever reason - a filter has closed the connection,
              * treat the result as NS_FILTER_RETURN. Other feedback to this
              * connection can not work anymore.
              */
+            Ns_Log(Debug, "Filter closed connection; cancel further request processing");
+
             status = NS_FILTER_RETURN;
         }
 
