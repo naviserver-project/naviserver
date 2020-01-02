@@ -2036,7 +2036,7 @@ SetResultFromEC_POINT(
     size_t   octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint,
                                             POINT_CONVERSION_UNCOMPRESSED, NULL, 0, NULL);
 
-    Ns_Log(Notice, "import: octet length %" PRIuz, octLength);
+    Ns_Log(Debug, "import: octet length %" PRIuz, octLength);
 
     Tcl_DStringSetLength(dsPtr, (int)octLength);
     octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint, POINT_CONVERSION_UNCOMPRESSED,
@@ -2195,7 +2195,7 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
         Tcl_DStringInit(&keyDs);
         rawKeyString = (const unsigned char *)Ns_GetBinaryString(importObj, isBinary == 1, &rawKeyLength, &keyDs);
 
-        Ns_Log(Notice, "import: raw key length %d", rawKeyLength);
+        Ns_Log(Debug, "import: raw key length %d", rawKeyLength);
         hexPrint("key", rawKeyString, (size_t)rawKeyLength);
 
         if (EC_KEY_oct2key(eckey, rawKeyString, (size_t)rawKeyLength, NULL) != 1) {
@@ -2398,9 +2398,6 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
         Tcl_DStringInit(&importDs);
         pubkeyString = (const unsigned char *)Ns_GetBinaryString(pubkeyObj, isBinary == 1, &pubkeyLength, &importDs);
-
-        //pubkeyString = Tcl_GetByteArrayFromObj(pubkeyObj, &pubkeyLength);
-        //Ns_Log(Notice, "pub key length %d", pubkeyLength);
 
         /*
           ns_crypto::eckey generate -name prime256v1 -pem /tmp/prime256v1_key.pem
@@ -2745,13 +2742,12 @@ static int
 CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, bool encrypt)
 {
     int                  result;
-    Tcl_Obj             *tagObj = NULL;
     const EVP_CIPHER    *cipher = NULL;
     Tcl_DString          ivDs, keyDs, aadDs, tagDs, inputDs;
     Ns_ResultEncoding    encoding = RESULT_ENCODING_HEX;
     EVP_CIPHER_CTX      *ctx;
     const char          *inputString = NULL, *ivString, *aadString, *keyString = NULL;
-    char                *tagString;
+    char                *tagString = NULL;
     int                  inputLength, keyLength, ivLength, aadLength, tagLength;
 
     /*
@@ -2858,7 +2854,7 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
              */
             assert(!encrypt);
 
-            if (tagObj == NULL) {
+            if (tagString == NULL) {
                 Ns_TclPrintfResult(interp, "option '-tag' has to be provided for decryption");
                 result = TCL_ERROR;
 
