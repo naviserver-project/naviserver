@@ -309,7 +309,7 @@ static int WriterGetMemunitFromDict(Tcl_Interp *interp, Tcl_Obj *dictObj, Tcl_Ob
 static void AsyncWriterRelease(AsyncWriteData *wdPtr)
     NS_GNUC_NONNULL(1);
 
-static void WriteError(const char *msg, int fd, size_t wantWrite, ssize_t written)
+static void WriteWarningRaw(const char *msg, int fd, size_t wantWrite, ssize_t written)
     NS_GNUC_NONNULL(1);
 static const char *GetSockStateName(SockState sockState);
 
@@ -358,13 +358,31 @@ static Driver          *firstDrvPtr = NULL; /* First in list of all drivers */
 #define Push(x, xs) ((x)->nextPtr = (xs), (xs) = (x))
 
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * WriteWarningRaw --
+ *
+ *      Write a warning message to stderr. This function is for cases, where
+ *      writing to Ns_Log can't be used (e.g. in the AsyncWriter, which is
+ *      used for writing als to the system log).
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Line to stderr.
+ *
+ *----------------------------------------------------------------------
+ */
 static void
-WriteError(const char *msg, int fd, size_t wantWrite, ssize_t written)
+WriteWarningRaw(const char *msg, int fd, size_t wantWrite, ssize_t written)
 {
     fprintf(stderr, "%s: Warning: wanted to write %" PRIuz
             " bytes, wrote %ld to file descriptor %d\n",
             msg, wantWrite, (long)written, fd);
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -7145,17 +7163,20 @@ NsAsyncWrite(int fd, const char *buffer, size_t nbyte)
             returnCode = NS_ERROR;
             do {
                 if (written < 0) {
-                    fprintf(stderr, "error during async write (fd %d): %s", fd, strerror(errno));
+                    fprintf(stderr, "error during async write (fd %d): %s\n",
+                           fd, strerror(errno));
                     break;
-                } if (written >= 0) {
-                    WriteError("partial write", fd, nbyte, written);
-                    nbyte -= (size_t)written;
-                    buffer += written;
-                    written = ns_write(fd, buffer, nbyte);
-                    if (written == (ssize_t)nbyte) {
-                        returnCode = NS_OK;
-                        break;
-                    }
+                }
+                /*
+                 * All partial writes (written >= 0)
+                 */
+                WriteWarningRaw("partial write", fd, nbyte, written);
+                nbyte -= (size_t)written;
+                buffer += written;
+                written = ns_write(fd, buffer, nbyte);
+                if (written == (ssize_t)nbyte) {
+                    returnCode = NS_OK;
+                    break;
                 }
             } while (retries-- > 0);
         }
@@ -7316,7 +7337,7 @@ AsyncWriterThread(void *arg)
                 for (curPtr = writePtr; curPtr != NULL;  curPtr = curPtr->nextPtr) {
                     ssize_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
                     if (unlikely(written != (ssize_t)curPtr->bufsize)) {
-                        WriteError("drain writer", curPtr->fd, curPtr->bufsize, written);
+                        WriteWarningRaw("drain writer", curPtr->fd, curPtr->bufsize, written);
                     }
                 }
                 writePtr = NULL;
@@ -7324,7 +7345,7 @@ AsyncWriterThread(void *arg)
                 for (curPtr = queuePtr->sockPtr; curPtr != NULL;  curPtr = curPtr->nextPtr) {
                     ssize_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
                     if (unlikely(written != (ssize_t)curPtr->bufsize)) {
-                        WriteError("drain queue", curPtr->fd, curPtr->bufsize, written);
+                        WriteWarningRaw("drain queue", curPtr->fd, curPtr->bufsize, written);
                     }
                 }
                 queuePtr->sockPtr = NULL;
@@ -7397,7 +7418,7 @@ AsyncWriterThread(void *arg)
             while (curPtr != NULL) {
                 ssize_t written = ns_write(curPtr->fd, curPtr->buf, curPtr->bufsize);
                 if (unlikely(written != (ssize_t)curPtr->bufsize)) {
-                    WriteError("shutdown", curPtr->fd, curPtr->bufsize, written);
+                    WriteWarningRaw("shutdown", curPtr->fd, curPtr->bufsize, written);
                 }
                 curPtr = curPtr->nextPtr;
             }
