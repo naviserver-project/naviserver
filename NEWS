@@ -1,4 +1,696 @@
 =======================================
+NaviServer 4.99.19, released 2020-01-06
+=======================================
+
+ 247 files changed, 19527 insertions(+), 8275 deletions(-)
+
+New Features:
+-------------
+
+ - Bandwidth management: limit download rate to a maximum (specified
+   in kilobytes per second)
+
+   On servers with bad internet connections, it is possible that a few
+   eager downloaders can use up all available bandwidth.  NaviServer
+   allows now admins and developers to specify the maximum outgoing
+   bandwidth per connection or the total rate per connection pool. The
+   rate limit can be specified per connection (highest weight) or per
+   connection thread pool (second highest weight) or per network
+   driver. The rate limitation is only active, when writer threads are
+   used. Per default, the rate limitation is turned off (value 0).
+
+   By using this option together with the context filters, one can now
+   define e.g. a pool for bots and limit the bandwidth for all bots.
+
+   The query the per-connection limit, ns_conn has a new option:
+      ns_conn ratelimit ?limit?
+   Introspecton "ns_writer list" returns the current
+   transfer rates per writer job.
+
+   Configuration option for connection pools:
+      ns_param connectionratelimit ...
+      ns_param poolratelimit ...
+   Configuration option for network drivers:
+      ns_param writerratelimit ...
+
+   Commands for changing the rate limits dynamically:
+       ns_server ?-server s? ?-pool p? connectionratelimit ?value?
+       ns_server ?-server s? ?-pool p? poolratelimit ?value?
+
+
+ - Context filter for urlspace:
+
+   NaviServer's urlspace trie data structure used for various purposes
+   such as registering methods/URL pairs for procs or for mapping of
+   requests to connection thread pools. The classical trie mapping for
+   e.g. "GET /foo/bar/*.html" is based on method + path + string match
+   pattern, where the last part "*.html" is used as a "filter".
+
+   The new version of NaviServer allows in addition to the string
+   based glob pattern so-called "context filter", which includes the
+   IP-address or header fields in the matching process. The context
+   filters are applied after the classical urlspace processing, such
+   that the behavior is fully backwards compatible. The context
+   filters are kept in a stable order (IP before header-based filters,
+   specific before less specific) such that the behavior is not order
+   dependent.
+
+   The new feature can be used map e.g. bots or certain IP ranges to
+   the specified connection pools. When connection pools named "bots"
+   and "local" are defined, one can use the following mapping commands
+   to map incoming requests to the specified pools. Examples for
+   adding urlspace mappings at runtime:
+
+	 ns_server -pool bots map "GET /* {user-agent *bot*}"
+	 ns_server -pool bots map "GET /* {user-agent *crawl*}"
+	 ns_server -pool bots map "GET /* {user-agent *baidu*}"
+	 ns_server -pool bots map "GET /* {X-NS-ip 2a03:2880::/29}"
+
+	 ns_server -pool local map "GET /* {X-NS-ip 127.0.0.1}"
+	 ns_server -pool local map "GET /* {X-NS-ip 137.208.1.0/16}"
+
+   Note that arbitrary header fields can be used for the mapping,
+   containing potentially some glob style match characters. The
+   special header field "X-NS-ip" denotes IP based filters, which can
+   be provided fully qualified or in CIDR notation (denoting
+   significant bits) for IPv4 and IPv6.
+
+
+ - Allow a single driver to listen on multiple IP addresses:
+
+   This feature greatly simplifies setups, where a single server is
+   listening on multiple IP addresses (e.g. IPv4 and
+   IPv6). Previously, it was necessary to define separate drivers for
+   these, which need different names but which are often
+   configured identically.  Furthermore, when the address is omitted,
+   the server performs a lookup from the hostname to determine the IP
+   address. Previously, it used the first one, now it can work with
+   all returned addresses.
+
+   To use this feature, simply specify the configure values of
+   "address" as a Tcl list containing multiple IP addresses. The
+   change is fully backwards compatible, old configuration files will
+   continue to work.
+
+
+ - Added support for sending of multiple file chunks in a
+   single connection:
+
+      ns_writer sendfiles /list of filespecs/
+
+   Every "filespec" is a dict which must contain a "filename" element
+   and can contain additionally an "-offset" and/or a "-size" element.
+
+      ns_writer submitfiles {{filename /tmp/f1} {filename /tmp/f2 -offset 10}}
+
+   This function is e.g. useful for video streaming applications,
+   where multiple video file chunks should be transferred (sometimes)
+   concatenated in a single chunk. Therefore, this function avoids the
+   necessity to concatenate these files in advance (causing increased
+   latency and disk usage).
+
+
+ - Added per-server "extraheaders". These extra headers fields are
+   merged with the following precedence (the earlier ones have more
+   weight)
+     1) application specific headers
+     2) per-server extra headers
+     3) per-driver extra headers
+
+   This change makes it possible to provide in the config files
+   defaults, which can be overwritten by certain pages in the
+   applications. Furthermore, one can e.g. common header fields to all
+   requests of a virtual server (e.g.  Strict-Transport-Security, ...)
+
+
+ - Logging improvements:
+
+   * Support separate access logs for requests sent via
+     different drivers.
+
+     The nslog module accepts now an additional parameter named
+     "driver".  This option can be used to produce different access
+     logs for requests submitted via different drivers to sort out
+     e.g. local server talk.  Per default, every request is
+     logged. When a value is provided for "driver", only
+     requests are logged in this log file when these come from a
+     driver matching the provided glob pattern.
+
+   * log-file sanitizer:
+     When data entered into a log file contains special characters
+     (e.g.  end line characters), these could alter the appearance of
+     content within the log file. Single entries may appear as
+     multiple entries.  Attackers may leverage log forging to insert
+     fake entries to that obfuscate malicious acts, or these can
+     confuse log-file analyzers to avoid analysis.
+
+     The new global parameter "sanitizelogfiles" can control this
+     behavior (values 0: none, 1: full, 2: human-friendly; default:
+     2);
+
+   * Additional debugging flag "Debug(access)": When activated, entries
+     of the access log are mirrored in the system log
+     (error.log). This option eases tracking the end of requests in
+     the system log.
+
+   * Additional debugging flag "Debug(writer)" for debugging of writer.
+
+   * Provided access to request AND reply header fields via
+     "extendedheaders" specification (in "ns_accesslog" and "nslog"
+     configuration section):
+
+     It is now optionally possible to specify the header fields in the
+     provided "extendedheaders" list with a prefix "request:" or
+     "response:" to denote request and reply header fields. In case,
+     no tag is provided, field names are interpreted as request header
+     fields (like before). The change is fully backwards compatible,
+
+
+  - ns_set:
+
+    * Added sucommand "ns_set imerge", a is the case insignificant
+      version of "ns_set merge". This option is useful especially for
+      working with header fields.
+
+    * Added subcommand "ns_set iupdate": this command is the case
+      insenstive counterpart of "ns_set update".
+
+    * Fixed "nsv_set a b" when neither a key nor the array exists.
+
+ - ns_http:
+   * Revamp of ns_http and related supportive code.
+   * Added chunked-encoding parser
+   * Tcl channel support for body (PUT, POST) and for result.
+     This makes it possible to use e.g. reflected Tcl channels
+     in "ns_http".
+     New Options for "ns_http run"
+       - ?-body_size size?
+       - ?-body_chan chan?
+       - ?-outputfile fn?
+       - ?-outputchan chan?
+   * "ns_http run" is now the preferred interface
+     (rather than "queue" + "wait")
+   * Deprecated output variables of "ns_http wait" (since everything
+     is included in the resulting dict)
+
+
+ - New commands:
+
+   * ns_asynclogfile:
+     Facility for thread-safe writing async
+     log files of various kinds using the AsyncWriterThread.
+     Usage example:
+	# ... at startup
+	set fd [ns_asynclogfile open /tmp/test.log]
+	# ... during run
+	ns_asynclogfile write $fd hello\n
+	# ... at shutdown
+	ns_asynclogfile close $fd
+
+   * ns_parsefieldvalue:
+
+     This function parses the provided field value (from an HTTP
+     request or reply header field) into its parts and returns these
+     in the form of a list of Tcl dicts or a single Tcl dict depending
+     on parameters. The syntax of the contents of these header fields
+     is specified in RFC 7230 section 3.2.6.
+
+ - New features for existing commands/subcommands
+
+    * Binary reform: Some NaviServer commands accepted previously
+      implicitly binary or non-binary input, some commands used
+      the flag "-binary" to denote the differences (e.g. ns_return).
+      For a more uniform and expectable behavior binary input the
+      explicit option "-binary" flag to the following commands:
+
+	ns_base64decode
+	ns_base64encode
+	ns_base64urldecode
+	ns_base64urlencode
+	ns_md5
+	ns_sha1
+	ns_uudecode
+	ns_uuencode
+	ns_crypto::aead::decrypt string (for "-key", "-aad", "-iv", "input")
+	ns_crypto::aead::encrypt string (for "-key", "-aad", "-iv", "input")
+	ns_crypto::eckey import ("-string")
+	ns_crypto::eckey sharedsecret ("pubkey")
+	ns_crypto::hmac add (for "message")
+	ns_crypto::hmac new (for "key")
+	ns_crypto::hmac string (for "key", "message")
+	ns_crypto::md add (for "message")
+	ns_crypto::md hkdf (for "-salt" "-secret" "-info")
+	ns_crypto::md string (for "message")
+	ns_crypto::md vapidsign (for "message")
+	ns_crypto::scrypt (for "-salt" "-secret")
+
+    Note that this option is not fully backward compatible. Early
+    versions of "ns_sha1" were expecting always non-binary input, some
+    new version assumed binary input. The new version is now more
+    compatible with AOLserver and older NaviServer versions.
+
+    * "ns_server threads" reports now how often a thread of this pool
+      was started.  This statistic can help to identify
+      installations, where threads are started and stopped in a too
+      eager fashion.
+    * "ns_server.... stats": added "sendbodysize" and "replybodysize"
+      to the dict of the per-pool statistics.
+    * "ns_server ... connectionratelimit ?value?": Query or set
+       the default per-connection rate limit.
+    * "ns_server ... poolratelimit ?value?": Query or set
+       the pool connection rate limit.
+    * "ns_writer list" returns now the current transferrates per
+      writer job.
+
+    * "ns_writer submitfile -offset X -size Y" and "ns_writer size X"
+      accept now memory units, the option ?-driver driver? was added
+      to the "ns_writer" subcommands "size", and "streaming"
+      (defaulting to the current driver).
+
+      One can now write
+	   ns_writer size 150KB
+       instead of
+	   ns_writer size nssock [expr 150*1024]
+
+Bug Fixes:
+----------
+
+  - Blueprint serializer: moved serialized objects in the blueprint
+    after the namespace imports and ensemble recreators since
+    constructors can call functions depending on it.
+
+  - Include *xml* and *json* in non-binary MIME types. Note that
+    there is no exact definition, what MIME types are exactly.
+
+  - nslog:
+    * Abort in error situation with an error message instead of crashing
+    * Added server name in log entries to make it easier to distinguish
+      messages per-server during bootup
+
+  - Range requests:
+    * Fixed potential problem with too many non-contiguous byte ranges
+    * Don't silently ignore invalid syntax of range requests
+
+  - Improved handling of already closed connections (data delivery was
+    already delegated to writer threads, but driver still wants to
+    return data directly; this could happen in error situations)
+
+  - connchan:
+    * Fixed potential invalid reads in (error) cases, where
+      LogConnchanDebug is enabled and the callback is deleted during a
+      Tcl_Eval().
+    * Fixed potential problem, where call to Tcl_Eval() might clean
+      structures used in the callback handler
+
+  - Made sure, memory allocated by Tcl is returned by Tcl (important,
+    when NaviServer is compiled with -DSYSTEM_MALLOC)
+
+  - Fixed Tcl argument parsing of "ns_roll", "ns_fmttime",
+    "nsv_bucket" and "ns_critsec eval".
+
+  - Fixed bug in "nsv_set -default" overwriting pre-existing values
+
+  - Fixed potential crashes in (desperate) error situations, where the
+    connection was already closed.
+
+  - Fixed leaking tmp file, when writerstraming is activated and
+    streaming HTML output is used. This bug could appear, when
+    "writerstreaming" is turned on in the config file (default off).
+    See also: https://sourceforge.net/p/naviserver/mailman/naviserver-
+	devel/thread/dd508519-1262-bd91-288a-fa30a7634224%40digital-
+	concepts.com/#msg36794472
+
+  - Made table used for enumeration values for Ns_ObjvIndex static.
+    Background: This is a fix for a tricky Tcl_Obj sharing bug
+    triggered by the usage of C-level IndexObjs based on volatile
+    tables. Consider the following example:
+
+       proc foo {x} {
+	  return [bar -value x ...]
+       }
+
+    The Tcl_Obj "x" is shared as name of argument and as a value of
+    the non-positional parameter "-value". When bar
+    (e.g. C-implemented) uses Tcl_GetIndexFromObj*() to lookup "x" in
+    a table of options, which is volatile, the involved Tcl_Obj will
+    be converted to an indexObj.
+
+    On a call with wrong number of arguments( e.g."foo 1 2 3"), Tcl
+    will try to give a nice error message, saying that "foo x" can be
+    called only with one argument. When printing argument "x", it sees
+    that "x" is an indexObj, and for these kinds of objects, "x" might
+    be an abbreviated version of a full name. Since the table behind
+    the indexObj is in the case above volatile, a crash might happen.
+
+  - Added API call Ns_SockInErrorState() since SSL_shutdown() must not
+    be called if a previous fatal error has occurred on a connection
+    i.e. if SSL_get_error() has returned SSL_ERROR_SYSCALL or
+    SSL_ERROR_SSL.
+
+  - Provided local buffers for OpenSSL ERR_error_string handling to
+    avoid potential race conditions (OpenSSL keeps otherwise error
+    messages in static memory).
+
+  - Crypto support:
+    * New feature: scrypt Password-Based Key Derivation Function (RFC 7914)
+
+      The scrypt function is a modern replacement for crypt and bcrypt
+      and derives secret keys from a secret string. It is based on
+      memory- hard functions, which offer added protection against
+      attacks using custom hardware and GPU arrays.
+
+      The function requires the compilation of NaviServer against
+      OpenSSL 3.0 or newer (not yet released)
+
+      Example from RFC 7914:
+	% ::ns_crypto::scrypt -secret "password" -salt NaCl -n 1024 -r 8 -p 16
+	fdbabe1c9d3472007856e7190d01e9fe7c6ad7cbc8237830e77376634b373162
+	2eaf30d92e22a3886ff109279d9830dac727afb94a83ee6d8360cbdfa2cc0640
+
+     * "ns_md" and "ns_hmac": added flag "-encoding"
+
+     * Added options "-passphrase" to all "ns_crypto" commands
+       accepting a PEM file. In principle, every PEM file can be
+       protected by a pass phrase.
+
+     * Signing and verifying signatures: "::ns_crypto::md string" can
+       be used for signing and verifying of cryptgraphic signatures:
+
+	% set sig [::ns_crypto::md string \
+		     -digest sha1 \
+		     -encoding binary \
+		     -sign /usr/local/src/naviserver/myprivate.pem \
+		     "abcdefghijklmnopqrstuxvwxyz\n"]
+
+	% set vfy [::ns_crypto::md string \
+		     -digest sha1 \
+		     -verify /usr/local/src/naviserver/myprivate.pem \
+		     -signature $sig \
+		     "abcdefghijklmnopqrstuxvwxyz\n"]
+
+
+Documentation improvements:
+---------------------------
+
+ - Improved cross references between man pages
+ - Added documentation to undocumented flags
+ - Added more example
+ - Improved spelling
+
+ - The following 48 man pages were updated since the last release:
+
+	admin-db.man, admin-install.man, admin-maintenance.man,
+	admin-tuning.man, commandlist.man, ns_adp.man, ns_adp_ctl.man,
+	ns_adp_info.man, ns_adp_parse.man, ns_asynclogfile.man,
+	ns_base64.man, ns_conn.man, ns_connchan.man, ns_crypt.man,
+	ns_crypto.man, ns_driver.man, ns_filestat.man, ns_hmac.man,
+	ns_hotp.man, ns_http.man, ns_job.man, ns_locationproc.man,
+	ns_log.man, ns_md.man, ns_md5.man, ns_parsefieldvalue.man,
+	ns_parseheader.man, ns_parseurl.man, ns_rand.man,
+	ns_register.man, ns_return.man, ns_server.man, ns_set.man,
+	ns_sha1.man, ns_sls.man, ns_sockcallback.man,
+	ns_sockselect.man, ns_tmpnam.man, ns_totp.man,
+	ns_urlspace.man, ns_uudecode.man, ns_uuencode.man,
+	ns_writer.man, nsv.man, returnstatus-cmds.man,
+	tcl-lib-file.man, tcl-libraries.man, tcl-overview.man
+
+
+Configuration Changes:
+----------------------
+
+ - Output warning to system log, when NaviServer was compiled without
+   zlib support, but the config file request compression.  Before, the
+   compress enable request was silently ignored, giving no hint, why
+   compression attempts of a developer were ignored.
+
+ - Sample configurations:
+
+    * Documented usage of connection pools in sample config files.
+
+    * Added sample entries for new features (e.g. rate limits, log
+      file sanitizer)
+
+    * openacs-config.tcl:
+
+       . Changed driver installation to "global" in sample configuration
+	 file. This change makes it easier for site admins to add
+	 further servers (e.g. for virtual hosting).
+
+       . Simplified sample config file by using multiple IP addresses
+	 per driver
+
+   * nsd-config.tcl:
+
+       . Changed driver installation to "global" in sample configuration
+	 file. This change makes it easier for site admins to add
+
+
+Code Changes:
+-------------
+
+ - Improved scalability: provided different mutex locks variables per
+   urlspace IDs.
+
+ - Improved range checking for Ns_ObjvInt, Ns_ObjvLong, Ns_ObjvWideInt
+   and MemUnits:
+
+   * built-in range checkingsupport for objv parser: This eases
+     specification of the C API, makes accepted ranges clear and
+     provides consistent error messages. These change fixes several
+     potential crashes, when e.g.  passed-in values are used as
+     array-indices (crash on negative numbers) or where the values
+     were casted to unsigned types (very high unsigned values,
+     potential memory alloc problems).
+
+    * Fixed all cases, where Tcl_GetIntFromObj(), Tcl_GetLongFromObj,
+      and Tcl_GetWideintFromObj was used without a range check.
+
+ - Argument parser: skip processing of optional arguments when the
+   number of provided arguments is equal to the number of required
+   parameters.
+
+   Background: This change allows a fully backward compatible version
+   of e.g. "ns_md5 $foo", no matter what the value of "$foo" is,
+   although the new version of "ns_md5" has now a "-binary" option.
+
+
+ - Refactored low-level socket I/O:
+   * All driver operations are now strictly non-blocking
+   * Use same infrastructure for all network I/O operations
+     (driver, connchan, ns_http, ...)
+   * Rewritten socketfile/sendfile handling (including *BSD support)
+   * Improved handling of closed and detached channels, e.g.delegated
+     to writers (new macros NS_CONN_REQUIRE_CONNECTED,
+     NS_CONN_REQUIRE_OPEN, NS_CONN_REQUIRE_CONFIGURED,
+     NS_CONN_REQUIRE_ALL)
+   * Improved protection for SIGPIPE signals.
+
+ - New API infrastructure: Ns_DList
+
+   The Ns_DList is similar to Tcl_DString, but operates on pointers
+   instead of characters. Like Tcl_DString, Ns_DList pre-allocates
+   some data and extends it when necessary. Ns_DList structures are
+   especially useful alternative to linked lists, when usually data
+   is added to the end. Since the data is kept as a dense
+   (potentially growing) array, the memory locality is much better
+   than with linked lists, resulting in better CPU cache hit rates.
+
+ - Distinguish between Ns_NormalizePath() and Ns_NormalizeUrl(),
+   where the first is for the file system and the latter for URLs.
+   Previously, both cases were handled identically.
+
+  - Function pointer handling:
+    * Created a Tcl hash type for function pointers, since ANSI/ISO C
+      forbids casting/comparison of data and function pointers. The
+      new type is used whenever a hash lookup is performed for a
+      function pointer.
+    * Fixed all other occurrences of such comparisons.
+
+ - Regressions testing:
+   * Removed false positive
+   * Switch to testing via ns_http in regression tests
+     (this makes it as well possible for testing https connections)
+   * Extended tests:
+     + Added regression tests for "ns_rand"
+     + Added nsssl tests
+     + Added automatic certificate generation for test-server
+
+    * The following 35 tests were added or extended since the last release
+
+	adp.test, encoding.test, http.test, http_byteranges.test,
+	http_chunked.test, http_keep.test, https.test, misc.test,
+	ns_adp_compress.test, ns_base64.test, ns_cache.test,
+	ns_conn.test, ns_conn_host.test, ns_crypto.test,
+	ns_driver.test, ns_hashpath.test, ns_hostbyaddr.test,
+	ns_info.test, ns_limits.test, ns_md5.test, ns_nsv.test,
+	ns_pagepath.test, ns_parsefieldvalue.test, ns_proxy.test,
+	ns_reflow_text.test, ns_schedule.test, ns_server.test,
+	ns_serverpath.test, ns_set.test, ns_sha1.test,
+	ns_urlencode.test, ns_urlspace.test, ns_uuencode.test,
+	ns_writer.test, tclconnio.test, tclresp.test
+
+ - Improved portability:
+   * improved compatibility with LibreSSL (2.7 and 2.9)
+   * Windows changes (Many thanks to Andrew Piskorski):
+     + Fixed Ns_LogRoll() to work on Windows.
+     + WSASend receives as 5th argument flags, but not a pointer to flags.
+     + Improved makefiles
+     + Updated _MSC_VER version numbers to include Visual Studio 2019
+     + Added macro NS_INLINE to achieve higher portability with (older?)
+       Microsoft compilers.
+
+ - Added warnings about potential misconfiguration of NaviServer "tcllib"
+   setting (Tcl written NaviServer modules)
+
+ - Marked compatibility wrappers Ns_SetThreadServer() and
+   Ns_SetThreadServer() explicitly as deprecated. Use
+   Ns_ThreadSetName() and Ns_ThreadGetName() instead.
+
+ - Build-system
+   * Added -DSYSTEM_MALLOC to default compile flags.
+   * Added nsssl to the default test target.
+   * Require RSA keys of size 2048: newer versions of OpenSSL refuse to work
+     with RSA keys of size 1024.
+   * Improved alignment with Tcl's current .m4 file to get rid of
+     "-prebind" deprecated message under macOS.
+   * Improved handling of posix thread library for FreeBSD and OpenBSD
+
+ - Use native thread_local storage for log handling when available
+   (experimental).
+
+ - Improved type cleanness for function pointers
+ - Improved code locality
+ - Improved error messages
+ - Improved structure packing
+ - Reduced variable scopes
+ - Added missing "extern" declarations
+ - Aligned function prototypes
+ - Dropped potentially dangerous call to alloca()
+ - Added typedefs for commonly used functions
+ - Reduce potential dangling pointer dereferences
+ - Aligned names of arguments in prototype with function definition
+ - Introduced use attribute-based approach for denoting
+   fall through in case statements
+ - Added more declarations for PURE and CONST functions
+ - Improved configurability for clang-tidy
+ - Fixed macro name-clash with PostgreSQL
+ - Improved spelling
+
+
+
+Modules:
+--------
+ 24 files changed, 1638 insertions(+), 2395 deletions(-)
+
+nsdbpg:
+- Fixed loading when multiple servers are used
+- C Code cleanup (reduced warnings)
+
+nsdbmysql:
+- Fixed compatibility with current versions of NaviServer
+- C Code cleanup (reduced warnings, improved spelling)
+
+nssmtpd:
+- Removed deprecated calls
+- fix compilation with TCL_NO_DEPRECATED
+- C Code cleanup (reduced implicit conversions, improved spelling)
+
+nsdns:
+- C Code cleanup (reduced warnings)
+
+nsudp:
+- Made code compilable with TCL_NO_DEPRECATED
+- C Code cleanup (reduced warnings, improved spelling)
+
+nszlib:
+- Made code compile cleanly
+
+nsimap:
+- C Code cleanup (improved spelling)
+
+nsphp:
+- Upgraded module to PHP 7
+- Fixed memory leaks
+- extended regression test
+- C Code cleanup (improved spelling)
+- This is a major overhaul of nsphp, which makes it possible to use
+  PHP 7 (tested with PHP 7.3.5). PHP 5 reached it EOL by jan 2019. PHP
+  7 has substantial changes e.g. in memory and thread management
+  compared to PHP 5, several interfaces and API calls have changed,
+  such that it is not possible to compile the new version of nsphp
+  with still PHP 5. In case, someone wants to use nsphp with PHP 5,
+  please checkout versions before this commit from the repository.
+
+nsstats:
+- Added link to process page from mecurial hash to version
+  details on Bitbucket
+- Included "ns_driver info" in the reported values
+- Include number of started thread per pools in reported statistics
+
+nsdbi:
+- C Code cleanup (don't shadow variables, clean compilation, improved spelling)
+
+nsdbipg:
+- C Code cleanup (clean compilation, improved spelling)
+
+nsoracle:
+- C Code cleanup (clean compilation)
+
+nswebsocket:
+- Compatibility with Tcl 8.7, which has no "identity" encoding anymore
+- fixed startup messages
+- C Code cleanup (improved spelling)
+
+revproxy:
+- Support for request cancellation via url_rewrite_callback (when it
+  returns an empty URL)
+- Don't raise error on ECONNRESET during spooling
+- Improved logging
+- Improved documentation
+- Made channelCleanup more robust
+
+letsencrypt:
+- Major overhaul of the letsencrypt module to support ACME v2
+
+  ACME (the Automated Certificate Management Environment, [1]) is the
+  protocol used for certificate mamagement on letsencrypt.org. The API
+  version v was released on 2016 but was updated in 2018 by ACME v2,
+  is not backwards compatible with v1. Letsencrypt announced in march
+  2018 to drop the support of ACME v1 in several steps:
+
+   - Nov 2019: End of account registrations via ACME v1
+   - Jun 2020: End of new domain registrations via ACME v1
+   - Jun 2021: EOL ACME v1 certificate issuing
+
+  The new version is based on its crypto requirements solely on
+  OpenSSL, it uses the NaviServer builtins and as well the "openssl"
+  binary (the usage of tcllib pki was dropped). To avoid potential
+  troubles, use this with a recent version of NaviServer (currently
+  the tip version form BitBucket) or with NaviServer 4.99.19 when this
+  is released.
+- Improved logging and documentation
+- Add documentation for obtaining multi-domain attributes (SAN).
+
+nswebpush:
+ - Added parameter "dopadding" to improve compatibility with Firefox on
+   Android. It does not support padding. Many thanks to Wolfgang
+   Winkler for reporting.
+ - Added compatibility with current version of NaviServer
+ - Always use binary format for appending (it does not seem necessary
+   here, but it is used for consistency)
+ - Code cleanup (improved spelling)
+
+nsladp:
+ - Adapted changes from Malte Sussdorf for the AOLserver version
+   (from before 2008)
+   https://www.mail-	archive.com/aolserver@listserv.aol.com/msg12073.html
+  - Added compile flag to force LDAP v3
+  - Rebind with original credentials after bind auth try
+  - Incorporated changes from Andreas Parschalk (Univ. Innsbruck)
+    including better documentation
+  - Provided clean compilation on recent versions of NaviServer and Tcl
+
+=======================================
 NaviServer 4.99.18, released 2019-02-24
 =======================================
 
@@ -32,7 +724,7 @@ New Features:
    this fails, it tries to append either ".so" in unixoid platforms or
    ".dll" under windows.
 
- 
+
  - New API call: ns_db currenthandles
 
    Return information about handles currently allocated to the thread
@@ -101,12 +793,12 @@ Bug Fixes:
   - ns_http
     * Fixed potential problem with partial writes on HTTP requests
       with large bodies (e.g. POST of larger files)
-      
+
     * Aligned implementation with documentation (if "wait" operation has no
       timeout, use timeout of queue operation)
-      
+
     * Improved client connect() operations with half-configured IPv6
-      installations.  
+      installations.
       This change addresses especially a problem, where
       IPv6 is activated on a server, but it cannot be used to connect
       to the outside world.  In these situations, connect operations to
@@ -122,7 +814,7 @@ Bug Fixes:
     "ns_cache_flush -glob $cache *" on "ns_cache_transaction_rollback".
     Previously, when the full cache was flushed, the rollback was not
     performed properly.
-  
+
   - tcl_crypto:
     Align code with documentation (provide a default for option "-digest")
 
@@ -147,17 +839,17 @@ Documentation improvements:
 ---------------------------
 
    - All documentation: use memory units when appropriate
-   
+
    - doc/src/naviserver/ns_job.man: aligned documentation with
      implementation; use itemized list for describing entries in the
      result lists.
-     
+
    - doc/src/manual/admin-maintenance.man:
      Improved sample service file
-     
+
    - nsssl/doc/mann/nsssl.man:
      Improved sample service file
-     
+
    - doc/src/naviserver/ns_log.man
      Added sample configuration for configuring logging behavior
 
@@ -171,7 +863,7 @@ Documentation improvements:
 
    - doc/src/naviserver/ns_job.man:
      Fix wrong argument order in example command.
-     
+
    - Made markup in documentation more consistent
 	doc/src/naviserver/commandlist.man,
 	doc/src/naviserver/ns_adp_ctl.man, doc/src/naviserver/ns_cond.man,
@@ -179,11 +871,11 @@ Documentation improvements:
 	doc/src/naviserver/ns_event.man, doc/src/naviserver/ns_info.man,
 	doc/src/naviserver/ns_rwlock.man, doc/src/naviserver/ns_sema.man,
 	doc/src/naviserver/ns_writer.man, nslog/doc/mann/ns_accesslog.man
-	
+
    - Various improvements on several other man pages:
    - Removed man page for non-existing command "ns_cookietime"
-     
-	
+
+
 Tcl API Changes:
 ----------------
 
@@ -211,13 +903,13 @@ Configuration Changes:
   - sample-config.tcl:
     * Added sample for DNS configuration
     * Added sample server log configuration
-    
+
   - openacs-config.tcl:
     * Deactivated SSLv3 by default
     * Adjusted comments to values from source code
     * Add sorting to use always pick the library with the highest
       version number
-	
+
 
 Code Changes:
 -------------
@@ -227,22 +919,22 @@ Code Changes:
     * Extended tests: http.test, ns_striphtml.test, ns_cache.test
     * Replaced deprecated "ns_adp_eval" in test by "ns_adp_parse"
 
-    
+
   - Improved portability:
     * fixed compilation issues for versions of OpenSSL before 1.0.2
     * Windows changes (Many thanks to Andrew Piskorski):
       + Fixed compilation issues with nsssl under windows
       + Improved makefiles
       + use "I64u" or "I32u" instead of c99 conventions, since
-        these seem to be broken in many (all?) MSC versions.
-    
+	these seem to be broken in many (all?) MSC versions.
+
   - Reduced code security smells: add *CLOEXEC to file descriptor open
     operation. This fixes no real issue (forks are very limited in
     nsd), but silences static analyzers.
 
   - Replaced UTF-8 string literals by hexadecimal-escape-sequences to
     avoid potential encoding limitations from older compilers
-	
+
   - Improved code locality
   - Removed unused macro
   - Adding more declarations for PURE and CONST functions
@@ -264,7 +956,7 @@ Modules:
 
  - nsloopctl:
    * Fixed compilation with current versions
-   
+
 
 =======================================
 NaviServer 4.99.17, released 2018-11-04
@@ -319,7 +1011,7 @@ New Features:
 
     * Obtain (old) value from nsv ARRAY and set it to a new value set foo
 
-        set foo [nsv_set -reset ARRAY KEY NEWVALUE]
+	set foo [nsv_set -reset ARRAY KEY NEWVALUE]
 
       After the operation, ARRAY(KEY) has a new value.
       The operation is similar to "nsv_set ARRAY KEY NEWVALUE",
@@ -328,14 +1020,14 @@ New Features:
 
    * Obtain a value from nsv ARRAY and unset it (no new value is provided).
 
-        set foo [nsv_set -reset ARRAY KEY]
+	set foo [nsv_set -reset ARRAY KEY]
 
      The operations returns the old value of ARRAY(KEY) or empty, if
      it does not exist.  After the operation, the ARRAY(KEY) is unset.
 
    * Set a default value for a nsv ARRAY
 
-        nsv_set -default ARRAY KEY DEFAULTVALUE
+	nsv_set -default ARRAY KEY DEFAULTVALUE
 
       Do nothing when ARRAY(KEY) has already a value.
       Return an error, when DEFAULTVALUE is not provided.
@@ -351,11 +1043,11 @@ New Features:
       depending on the options
 
       - "ns_http run" returned the name of the queued command (which
-        was completely useless, this the queued command was already
-        terminated)
+	was completely useless, this the queued command was already
+	terminated)
       - "ns_http wait" returned sometimes the body of the reply (when
-        the reply was not spooled) or empty (spooled) or "1", when the
-        option "-R" was specified
+	the reply was not spooled) or empty (spooled) or "1", when the
+	option "-R" was specified
 
       Now the result is always a dict containing "status" (HTTP status
       code), "time" (elapsed time), "headers" (ns_set of the reply
@@ -379,15 +1071,15 @@ New Features:
       returned otherwise from e.g. “ns_http run”.
 
       As a consequence, requests of the form
-         ns_http queue … -donecallback …
+	 ns_http queue … -donecallback …
       differ from client requests without the callback
       in the following points:
 
       a) the command does not return a handle for “ns_http wait”
       b) The command is not automatically cleaned up (canceled)
-         at the end of a connection requests
+	 at the end of a connection requests
       c) Typically, donecallbacks are executed in a different
-         thread than it was started.
+	 thread than it was started.
 
       Some more options, which were previously only valid on
       “ns_http wait” (such as e.g. spoolsize) are now valid
@@ -430,37 +1122,37 @@ New Features:
     -----------------------------
 
      * Added HMAC-based Extract-and-Expand Key Derivation Function (HKDF)
-          ::ns_crypto::md hkdf -digest sha256 ....
+	  ::ns_crypto::md hkdf -digest sha256 ....
        (requires OpenSSL 1.1.0 or newer)
 
      * Added support for elliptic curve cryptography
-        . ns_crypto::eckey import ?-string string? ?-encoding encoding?
-        . ns_crypto::eckey priv ?-pem pem? ?-encoding encoding?
-        . ns_crypto::eckey pub ?-pem pem? ?-encoding encoding?
-        . ns_crypto::eckey sharedsecret ?-pem pem? ?-encoding encoding? pubkey
-        . ns_crypto::eckey generate ?-name name? ?-pem pem?
+	. ns_crypto::eckey import ?-string string? ?-encoding encoding?
+	. ns_crypto::eckey priv ?-pem pem? ?-encoding encoding?
+	. ns_crypto::eckey pub ?-pem pem? ?-encoding encoding?
+	. ns_crypto::eckey sharedsecret ?-pem pem? ?-encoding encoding? pubkey
+	. ns_crypto::eckey generate ?-name name? ?-pem pem?
 
      * Added support for getting an arbitrary number of random bytes
        based on crypto support on OpenSSL:
-        . ns_crypto::randombytes ?-encoding encoding? bytes
+	. ns_crypto::randombytes ?-encoding encoding? bytes
 
      * Added support for Authenticated Encryption with Associated Data
        (AEAD) scheme, which provides confidentiality, integrity, and authenticity.
 
-        . ns_crypto::aead::encrypt string ?-aad aad? ?-cipher cipher? ?-encoding encoding? ?-iv iv? ?-key key? input"
-        . ns_crypto::aead::decrypt string ?-aad aad? ?-cipher cipher? ?-encoding encoding? ?-iv iv? ?-key key? ?-tag tag? input"
+	. ns_crypto::aead::encrypt string ?-aad aad? ?-cipher cipher? ?-encoding encoding? ?-iv iv? ?-key key? input"
+	. ns_crypto::aead::decrypt string ?-aad aad? ?-cipher cipher? ?-encoding encoding? ?-iv iv? ?-key key? ?-tag tag? input"
 
      * Added "-encoding hex|base64url|base64" option for output encoding
-        for the crypto functions. Previously, all these functions returned the
-        result in "hex" format. If the option is not specified, the result
-        is the same as before (hex). The encoding option was added to the
-        following functions:
-        - ns_crypto::hmac string
-        - ns_crypto::hmac get
-        - ns_crypto::md string
-        - ns_crypto::md get
-        - ns_crypto::md vapidsign
-        - ns_crypto::enc
+	for the crypto functions. Previously, all these functions returned the
+	result in "hex" format. If the option is not specified, the result
+	is the same as before (hex). The encoding option was added to the
+	following functions:
+	- ns_crypto::hmac string
+	- ns_crypto::hmac get
+	- ns_crypto::md string
+	- ns_crypto::md get
+	- ns_crypto::md vapidsign
+	- ns_crypto::enc
 
 
   - "ns_connchan" improvements
@@ -503,7 +1195,7 @@ New Features:
     #
     ns_section ns/server/myserver/tcl {
       ns_param initcmds {
-        ns_log notice "=== Hello World from server: [ns_info server]"
+	ns_log notice "=== Hello World from server: [ns_info server]"
       }
     }
 
@@ -522,10 +1214,10 @@ New Features:
     one can write now
 
        ns_section ns/parameters {
-           ns_param serverlog   $logroot/error.log
-           ns_param pidfile     $logroot/nsd.pid
-           ns_param home        $homedir
-           #...
+	   ns_param serverlog   $logroot/error.log
+	   ns_param pidfile     $logroot/nsd.pid
+	   ns_param home        $homedir
+	   #...
        }
 
     This block notation has two advantages: a) it shows clearly, where
@@ -542,7 +1234,7 @@ New Features:
       (very useful for e.g. cache partitioning)
 
     * "ns_reflow_text".
-          ns_reflow_text ?-width width? ?-offset offset? ?-prefix prefix? ?--? text
+	  ns_reflow_text ?-width width? ?-offset offset? ?-prefix prefix? ?--? text
       Tcl-based solutions are surprisingly slow on largish input.
 
     * "ns_base64urlendcode", "ns_base64urldedcode": URL-save variants of base64,
@@ -725,14 +1417,14 @@ Configuration Changes:
        . Added parameter for "gzip" and "brotli" static delivery
        . Added parameter for "initcmds"
        . Added setting for recommended environment variables
-         HOME, LANG and RANDFILE. RANDFILE is sometimes needed 
-          to avoid surprises with permissions, when OpenSSL 
-          crypto functions are called from the server
+	 HOME, LANG and RANDFILE. RANDFILE is sometimes needed
+	  to avoid surprises with permissions, when OpenSSL
+	  crypto functions are called from the server
 
     * openacs-config.tcl
        . Switched to PostgreSQL's conninfo notation in the datasource
-         to hint that more such parameters are possible as well
-         (e.g. connections via SSL)
+	 to hint that more such parameters are possible as well
+	 (e.g. connections via SSL)
        . Added comments and examples for configuring OpenACS caches
        . Added comments how to configure EmailDeliveryMode via config file
        . Added comments how to configure IncludeCallingInfo of OpenACS API browser
@@ -757,19 +1449,19 @@ Code Changes:
 -------------
 
   - Extended regression test:
-        * tests/adp.test
-        * tests/compat.test
-        * tests/http.test
-        * tests/ns_base64.test
-        * tests/ns_base64encode.test
-        * tests/ns_cache.test
-        * tests/ns_conn.test
-        * tests/ns_crypto.test
-        * tests/ns_nsv.test
-        * tests/ns_parseurl.test
-        * tests/ns_reflow_text.test
-        * tests/ns_server.test
-        * tests/ns_striphtml.test
+	* tests/adp.test
+	* tests/compat.test
+	* tests/http.test
+	* tests/ns_base64.test
+	* tests/ns_base64encode.test
+	* tests/ns_cache.test
+	* tests/ns_conn.test
+	* tests/ns_crypto.test
+	* tests/ns_nsv.test
+	* tests/ns_parseurl.test
+	* tests/ns_reflow_text.test
+	* tests/ns_server.test
+	* tests/ns_striphtml.test
 
 
  - Added version tag of NaviServer to "starting" message in log file
@@ -783,15 +1475,15 @@ Code Changes:
   - Improved Platform support:
     * Extended list of platforms for manual provisioning of __PRIPTR_PREFIX
       in case it is not defined.
-    * Do not rely on implementation defined print/scan format "%p", 
+    * Do not rely on implementation defined print/scan format "%p",
       but use instead standardized integer types.
     * Windows:
       . Improved type-cleanness (many thanks to Oleg Oleinik)
       . Support to compile with MSVC 2017 (many thanks to Oleg Oleinik)
       . When compiling with VS 2012, use built-in support for
-        intptr_t and uintptr_t.
-      . Added support to run regression test under Windows 
-        (many thanks to Oleg Oleinik)
+	intptr_t and uintptr_t.
+      . Added support to run regression test under Windows
+	(many thanks to Oleg Oleinik)
 
   - Changed preset encodings (when not specified in config file) for
     files with extensions .htm, .html, and .adp from iso8859-1 to
@@ -834,7 +1526,7 @@ Modules:
  - nsdbbdb (many thanks to Brendan Graves):
    * Changed to work with FreeTDS 1.00.86
    * Updated outdated paths.
-   
+
  - nsdbpg:
    * Added sample configuration to include hints how to use SSL
      connections to the database
@@ -851,7 +1543,7 @@ Modules:
 
  - nsstats:
    * Added results to "ns_connchan list" to per-server info
-   * Added optional query parameter "raw=0|1" to switch between 
+   * Added optional query parameter "raw=0|1" to switch between
      raw and prettified numbers
    * Improved number prettification
    * Added optional query parameter "max=..." for controlling the number of
@@ -859,7 +1551,7 @@ Modules:
    * Improved cache statistics: added hits/req, saved/req, saved/hit; dropped saved/KB
    * Improved mutex statistics: added locks/req, potential locks/req, potential locks per second
    * Added summative statistics to mutex locks page
-   * Made background locks (locks, not included in per-request statistics) 
+   * Made background locks (locks, not included in per-request statistics)
      configurable via NaviServer config file
    * Various other small changes and beautifications (use more CSS)
    * Bumped version to 1.8
@@ -868,14 +1560,14 @@ Modules:
    * Fixed potential crash when oci_error_p is called with dbh == NULL
      (many thanks to Oleg Oleinik)
    * Some more code cleanup and improved spellings.
-   
+
  - websocket:
    * Fixed potential bug: make sure that upgrade header is sent as a single block.
    * More minor code cleanup.
 
  - revproxy:
    * Fixed potential blocking conditions when send buffer of OS overflows.
-     With "-sendtimeout 0" a call to "ns_connchan write" might write less 
+     With "-sendtimeout 0" a call to "ns_connchan write" might write less
      bytes than desired; In this case, callbacks are suspended and continue
      when the situation improves.
    * Added new switches "-sendtimeout" and "-receivetimeout" to revproxy::upstream
@@ -920,35 +1612,35 @@ New Features:
       The new cache transaction semantics is implemented via the three
       commands
 
-         - ns_cache_transaction_begin
-         - ns_cache_transaction_commit
-         - ns_cache_transaction_rollback
+	 - ns_cache_transaction_begin
+	 - ns_cache_transaction_commit
+	 - ns_cache_transaction_rollback
 
-        When no ns_cache_transaction* commands are used, the behavior is
-        exactly as before.
+	When no ns_cache_transaction* commands are used, the behavior is
+	exactly as before.
 
-        When ns_cache_transaction* commands are in use, the following
-        functionalities become available
+	When ns_cache_transaction* commands are in use, the following
+	functionalities become available
 
-         - The ability to rollback of the values since the matching
-           ns_cache_transaction_begin
+	 - The ability to rollback of the values since the matching
+	   ns_cache_transaction_begin
 
-         - Isolation of behavior: cached values from incomplete cache
-           transactions are just visible from the current thread, but
-           not from other threads.
+	 - Isolation of behavior: cached values from incomplete cache
+	   transactions are just visible from the current thread, but
+	   not from other threads.
 
-         - Nesting: transactions can be nested
-           (up to a compile time constant, per default: 16)
+	 - Nesting: transactions can be nested
+	   (up to a compile time constant, per default: 16)
 
-         - Introspection: the statistics about cache commits and
-           rollbacks are included in the cache statistics.
+	 - Introspection: the statistics about cache commits and
+	   rollbacks are included in the cache statistics.
 
     * Support caches sizes larger than 2GB
 
     * Summary of new ns_cache* commands
       . ns_cache_configure to change cache parameters at runtime
       .        ns_cache_exists: This command is more than an order of
-        magnitude faster than [expr {"foo" in [ns_cache_names]]
+	magnitude faster than [expr {"foo" in [ns_cache_names]]
       . ns_cache_transaction_begin
       . ns_cache_transaction_commit
       . ns_cache_transaction_rollback
@@ -1271,7 +1963,7 @@ Tcl API Changes:
 
    * ns_connchan:
       New (experimental) subcommand
-         ns_connchan listen ?-driver d? ?-server s? ?-bind? address port script
+	 ns_connchan listen ?-driver d? ?-server s? ?-bind? address port script
       Start a listening connection for the ns_connchan interface;
       Still missing: https variant via specifying "-driver" +
       handling of "-server" (and obtaining defaultserver)
@@ -1295,7 +1987,7 @@ C API Changes:
       . Ns_HttpMessageParse(): parse a (potentially incomplete) HTTP message
       . ns_uint32toa()
       . ns_uint64toa(): substantially faster conversion of integer to
-        string than snprintf()
+	string than snprintf()
 
   - Ns_SockListenCallback: alter interface to (a) return the listening
     socket and (b) to be able to bind to the fresh socket. This is
@@ -1324,7 +2016,7 @@ Configuration Changes:
     * openacs-config.tcl
        . Added configuration for strict-transport-security (HSTS)
        . Added setting of OpenACS kernel parameter
-         "NsShutdownWithNonZeroExitCode" in sample config file
+	 "NsShutdownWithNonZeroExitCode" in sample config file
        . Eased configuration for nsssl by simply setting https port
        . Added new nslog parameter "logthreadname"
        . Added new global parameter "rejectalreadyclosedconn"
@@ -1685,7 +2377,7 @@ Modules:
     * Added statistics for driver usage
     * Added Page for showing URLs mapped to connection threads pools
     * Added information about driver threads
-
+ 
 
 =======================================
 NaviServer 4.99.14, released 2016-11-18
@@ -1864,14 +2556,14 @@ New Features:
   - New Tcl functions:
 
       * ns_parseurl /url/
-        Parse the provided URL into its parts and
-        returns these in the form of a Tcl dict. The function supports
-        IP-literal notation as specified in RFC 3986.
+	Parse the provided URL into its parts and
+	returns these in the form of a Tcl dict. The function supports
+	IP-literal notation as specified in RFC 3986.
 
       * ns_absoluteurl /incompleteurl/ /baseurl/
-        Construct a completed URL from a incomplete (e.g. relative)
-        URL by taking as many parts as possible from the provided base
-        URL.
+	Construct a completed URL from a incomplete (e.g. relative)
+	URL by taking as many parts as possible from the provided base
+	URL.
 
   - ns_striphtml: The function honors now numeric entities between 33
     and 255 instead of ignoring it.
@@ -1935,14 +2627,14 @@ Code Changes:
      deprecated by Tcl. Code can be compiled now with -DTCL_NO_DEPRECATED
 
    * Converted all remaining Tcl_CmdProc to Tcl_ObjCmdProc
-        NsTclAdpStatsCmd    -> NsTclAdpStatsObjCmd
-        NsTclCrashCmd       -> NsTclCrashObjCmd
-        NsTclHrefsCmd       -> NsTclHrefsObjCmd
-        NsTclLibraryCmd     -> NsTclLibraryObjCmd
-        NsTclMkTempCmd      -> NsTclMkTempObjCmd
-        NsTclParseHeaderCmd -> NsTclParseHeaderObjCmd
-        NsTclQuoteHtmlCmd   -> NsTclQuoteHtmlObjCmd
-        NsTclStripHtmlCmd   -> NsTclStripHtmlObjCmd
+	NsTclAdpStatsCmd    -> NsTclAdpStatsObjCmd
+	NsTclCrashCmd       -> NsTclCrashObjCmd
+	NsTclHrefsCmd       -> NsTclHrefsObjCmd
+	NsTclLibraryCmd     -> NsTclLibraryObjCmd
+	NsTclMkTempCmd      -> NsTclMkTempObjCmd
+	NsTclParseHeaderCmd -> NsTclParseHeaderObjCmd
+	NsTclQuoteHtmlCmd   -> NsTclQuoteHtmlObjCmd
+	NsTclStripHtmlCmd   -> NsTclStripHtmlObjCmd
 
  - Tcl-Code
    * tcl/aolserver-openacs.tcl:
@@ -1968,14 +2660,14 @@ New Features:
     New commands:
       - ns_hmac
       - ns_md (generalization of ns_md5 and ns_sha1,
-        but supports by default 14 different digest algorithms)
+	but supports by default 14 different digest algorithms)
       - ns_hotp (one-time passwords as defined in RFC 4226)
       - ns_totp (time-based one-time passwords as defined in RFC 6238)
 
     StartTLS support (contributed by Constantin Șerban-Rădoi)
      - "ns_sendmail" is now able to connect to servers via StartTLS
-        (requires the Tcl "tls" package, since ns_sendmail is
-        implemented in Tcl)
+	(requires the Tcl "tls" package, since ns_sendmail is
+	implemented in Tcl)
       - Client and server support for StartTLS in the nssmtpd module.
 
   * New Command "ns_rlimit" to get/set various resource limits from
@@ -1989,7 +2681,7 @@ New Features:
 
   * Improvements for "ns_connchan":
      - Supports now client functionality via
-          ns_connchan open ...
+	  ns_connchan open ...
        (works for http:// and https:// URLs)
      - New subcommand "ns_connchan exists /channel/"
      - Added runtime switchable debug severity "Debug(connchan)"
@@ -2006,19 +2698,19 @@ Bug Fixes:
     positives in ns_getcookie:
 
       - Previous versions of NaviServer searched the "Cookie" and
-        "Set-Cookie" header files for a string "NAME=" and returned
-        the value provided after this string, when found.
+	"Set-Cookie" header files for a string "NAME=" and returned
+	the value provided after this string, when found.
 
       - However, the "Cookie" and "Set-Cookie" header fields have
-        contents in a different a different syntax (see
-        https://tools.ietf.org/html/rfc6265 section 4.1.1 vs. 4.2.1),
-        such as e.g. Cookie: cookie1="value1"; cookie2="value2";
-        style=null; ... Set-Cookie: cookie1="new- value"; Expires=Fri,
-        01-Jan-2035 01:00:00 GMT; Path=/; HttpOnly
+	contents in a different a different syntax (see
+	https://tools.ietf.org/html/rfc6265 section 4.1.1 vs. 4.2.1),
+	such as e.g. Cookie: cookie1="value1"; cookie2="value2";
+	style=null; ... Set-Cookie: cookie1="new- value"; Expires=Fri,
+	01-Jan-2035 01:00:00 GMT; Path=/; HttpOnly
 
       - Therefore, searching in the "Cookie" header field e.g. for a
-        cookie named "tyle" lead to a success as well as a search in
-        "Set-Cookies" for e.g. a cookie named "Expires".
+	cookie named "tyle" lead to a success as well as a search in
+	"Set-Cookies" for e.g. a cookie named "Expires".
 
   * Improved handling of erroneous requests (some where treated as
     HTTP/0.9 requests before, leading to strange behavior/error
@@ -2221,9 +2913,9 @@ Tcl API Changes:
     following functions return for the specified name potentially a
     list of values
 
-        [ns_conn fileoffset $name]
-        [ns_conn filelength $name]
-        [ns_conn fileheaders $name]
+	[ns_conn fileoffset $name]
+	[ns_conn filelength $name]
+	[ns_conn fileheaders $name]
 
     and the ns_set returned by [ns_getform] will contain multiple
     entries for the file (and $name.tmpfile and $name.content-type).
@@ -2232,7 +2924,7 @@ Tcl API Changes:
       * ns_sha2 ?-length ...? data
       * ns_hmac_sha2 ?-length ...? key message
       * ns_getcontent (obtain body of request either from memory
-        of from spoolfile without memory bloat on huge files)
+	of from spoolfile without memory bloat on huge files)
 
   - new option "-body_file" for ns_http and ns_ssl. By using this
     parameter one can send huge files without memory bloat
@@ -2246,8 +2938,8 @@ Tcl API Changes:
   - interface change:
       * old interface of ns_sendmail based on positional arguments is deprecated
       * new interface of ns_sendmail is
-          ns_sendmail ?-to ...?  ?-from ...? ?-subject ...? ?-body ...? \
-                      ?-headers ...? ?-bcc ...? ?-cc ...?
+	  ns_sendmail ?-to ...?  ?-from ...? ?-subject ...? ?-body ...? \
+		      ?-headers ...? ?-bcc ...? ?-cc ...?
 
 C API Changes:
   - New functions:
@@ -2264,9 +2956,9 @@ C API Changes:
 
     * New IP version agnostic functions for manipulating sockets,
       addresses and ports:
-        Ns_LogSockaddr(), Ns_SockaddrGetPort(), Ns_SockaddrGetSockLen(),
-        Ns_SockaddrMask(), Ns_SockaddrMaskBits(), Ns_SockaddrSetPort(),
-        Ns_SockaddrSameIP(), ns_inet_ntop(), ns_inet_pton()
+	Ns_LogSockaddr(), Ns_SockaddrGetPort(), Ns_SockaddrGetSockLen(),
+	Ns_SockaddrMask(), Ns_SockaddrMaskBits(), Ns_SockaddrSetPort(),
+	Ns_SockaddrSameIP(), ns_inet_ntop(), ns_inet_pton()
 
     * New function Ns_ConnReturnInvalidMethod() to report that the provided
       method is invalid (was returning "not found" before)
@@ -2307,8 +2999,8 @@ Code Changes:
   * Improve reusability: The new version exports the low-level I/O functions
     of nssock to make it reusable in other driver modules. The following
     functions are now exported to a library:
-        Ns_DriverSockAccept(), Ns_DriverSockRecv(), Ns_DriverSockSend(),
-        Ns_DriverSockClose()
+	Ns_DriverSockAccept(), Ns_DriverSockRecv(), Ns_DriverSockSend(),
+	Ns_DriverSockClose()
 
   * Code cleanup:
     - used clean approach to obtain hex string from function pointer
@@ -2395,8 +3087,8 @@ New Features:
       config file. Fine-tuning is possible via "logprefixcolor",
       "logprefixintensity" and per severity via
 
-          ns_logctl severity severity-level ?-color color? \
-             ?-intensity intensity? ?bool?
+	  ns_logctl severity severity-level ?-color color? \
+	     ?-intensity intensity? ?bool?
 
       When viewing a colorized error.log with less, use "less -r".
 
@@ -2598,10 +3290,10 @@ New Features:
     uses the internal socketcallback infrastructure and allows one to
 
       - detach the currently open connection channel from a
-        connection thread, to
+	connection thread, to
       - read/write/close the channel from other threads, and to
       - query the states to then currently detached channels
-        (similar to "ns_writer list")
+	(similar to "ns_writer list")
 
     By accessing the driver infrastructure, "ns_connchan" makes it
     possible to read/write from/to SSL/TLS channels. The new command
@@ -2612,7 +3304,7 @@ New Features:
     Summary of Advantages:
       * use the same interface for http and https (and other drivers)
       * no (potential) problems with select() in Tcl when using
-        many (>1024) file descriptors
+	many (>1024) file descriptors
       * less potential problems with Tcl-Sockets (buffering, translations)
       * lower resource consumption
 
@@ -2632,7 +3324,7 @@ New Features:
       servers/warnings/... were produced
 
     - Allow to modify logging of SQL statements via
-         ns_logctl severity Debug(sql) on
+	 ns_logctl severity Debug(sql) on
       at runtime
 
     - Add debugging severity for tasks "Debug(task)"
@@ -2805,8 +3497,8 @@ Code Changes:
 
   * Use of modern-style argument parser Ns_ParseObjv() on several places
     instead of manual argv parsing
-        ns_job interface, ns_truncate, ns_ftruncate,
-        ns_addrbyhost, ns_hostbyaddr
+	ns_job interface, ns_truncate, ns_ftruncate,
+	ns_addrbyhost, ns_hostbyaddr
 
   * Make mutex timings configurable via #define NS_NO_MUTEX_TIMING
 
@@ -2872,35 +3564,35 @@ New Features/Performance Improvements:
       The static gzip delivery is controlled over the following
       configuration parameters:
 
-        - parameter "gzip_static" for "ns/fastpath" (default false)
+	- parameter "gzip_static" for "ns/fastpath" (default false)
 
-          Send the gzipped version of the file if available and the
-          client accepts gzipped content. When a file path/foo.ext is
-          requested, and there exists a file path/foo.ext.gz, and the
-          timestamp of the gzipped file is equal or newer than the
-          source file, use the gzipped file for delivery.
+	  Send the gzipped version of the file if available and the
+	  client accepts gzipped content. When a file path/foo.ext is
+	  requested, and there exists a file path/foo.ext.gz, and the
+	  timestamp of the gzipped file is equal or newer than the
+	  source file, use the gzipped file for delivery.
 
-        - parameter "gzip_cmd" for "ns/fastpath" (default "")
+	- parameter "gzip_cmd" for "ns/fastpath" (default "")
 
-          Command for zipping files in case the (static) gzipped
-          version of the file is older than the source. The command is
-          just used for re- gzipping outdated files, it does not
-          actively compress files, which were previously not
-          compressed (this would be wasteful for e.g.  large tmp
-          files, there is not cleanup, etc.). If this parameter is not
-          defined, outdated gzipped files are ignored, and a warning
-          is written to the error.log. Example setting:
-          "/usr/bin/gzip -9".
+	  Command for zipping files in case the (static) gzipped
+	  version of the file is older than the source. The command is
+	  just used for re- gzipping outdated files, it does not
+	  actively compress files, which were previously not
+	  compressed (this would be wasteful for e.g.  large tmp
+	  files, there is not cleanup, etc.). If this parameter is not
+	  defined, outdated gzipped files are ignored, and a warning
+	  is written to the error.log. Example setting:
+	  "/usr/bin/gzip -9".
 
-        - parameter "gzip_refresh" (default false)
+	- parameter "gzip_refresh" (default false)
 
-          When the parameter is set to true and the modification time
-          of the compressed file is older than the modification time
-          of the source then refresh the compressed file automatically
-          with the command "::ns_gzipfile source target". When this
-          parameter is not defined (or the refresh cmd fails),
-          outdated gzip-ed files are ignored, a warning is written to
-          the error.log and the content is delivered uncompressed.
+	  When the parameter is set to true and the modification time
+	  of the compressed file is older than the modification time
+	  of the source then refresh the compressed file automatically
+	  with the command "::ns_gzipfile source target". When this
+	  parameter is not defined (or the refresh cmd fails),
+	  outdated gzip-ed files are ignored, a warning is written to
+	  the error.log and the content is delivered uncompressed.
 
       The content is never delivered gzipped on range requests.
 
@@ -2909,30 +3601,30 @@ New Features/Performance Improvements:
     * Security improvements:
 
       - Prevent potential HTTP response splitting attack: all response
-        header fields are sanitized to avoid injection of header file
-        contents potentially leading to HTTP response splitting attacks.
+	header fields are sanitized to avoid injection of header file
+	contents potentially leading to HTTP response splitting attacks.
 
       - Improved nsssl driver
-        * provide forward secrecy and DH key exchange with precompiled
-          defaults
-        * support elliptic curve cryptography (ECDH)
-        * deactivated SSLv2
+	* provide forward secrecy and DH key exchange with precompiled
+	  defaults
+	* support elliptic curve cryptography (ECDH)
+	* deactivated SSLv2
 
       - By using parameter "extraheaders" (see below) in nsssl one can
-        activate HTTP Strict Transport Security (HSTS) for nsssl (see
-        https://bitbucket.org/naviserver/nsssl/)
+	activate HTTP Strict Transport Security (HSTS) for nsssl (see
+	https://bitbucket.org/naviserver/nsssl/)
 
       - The sample configuration of nsssl leads to a "A+" rating from
-        SSL labs.
+	SSL labs.
 
 
     * Mime-types overhaul:
 
       - NaviServer supports now the all mimetypes as defined via RFCs,
-        W3C and IANA
+	W3C and IANA
       - Some incorrect mimetypes are fixed
       - scripted mimetype definitions produce warnings on overwriting
-        of mimetypes and on useless definitions.
+	of mimetypes and on useless definitions.
 
 
    * Modules update:
@@ -2941,7 +3633,7 @@ New Features/Performance Improvements:
       - extended options in ns_dbi for dbi_rows
       - added compatibility to nsdns for new versions of DiG (9.10.*)
       - fixes for nsudp (HTTP over UDP), nsdbpg, nszlib,
-        nssmtpd, nsstats
+	nssmtpd, nsstats
 
 
 Bug Fixes:
@@ -3018,28 +3710,28 @@ Tcl API Changes:
     * ns_setcookie, ns_getcookie ns_deletecookie:
 
       - ns_setcookie, ns_deletecookie: added flag "-replace" to
-        replace already issued cookie requests in output headers; the
-        same option is used in OpenACS.
+	replace already issued cookie requests in output headers; the
+	same option is used in OpenACS.
 
       - ns_setcookie: added option "-discard" as specified in RFC 2965
 
       - ns_getcookie: added option ?-include_set_cookies bool? to
-        search cookies being set as well (from output headers); the
-        same option is used in OpenACS.
+	search cookies being set as well (from output headers); the
+	same option is used in OpenACS.
 
     * ns_http:
 
       - Added flags "-file /varName/" and "-spoolsize /int/" to
-        "ns_http wait". If the content of the obtained file is larger
-        or equal than spoolsize, it is spooled to temp file,
-        and the name of the temp file is returned in the
-        variable provided by "-file". These options make it
-        possible to retrieve also large
-        content (e.g. video files) via ns_http without bloating memory
+	"ns_http wait". If the content of the obtained file is larger
+	or equal than spoolsize, it is spooled to temp file,
+	and the name of the temp file is returned in the
+	variable provided by "-file". These options make it
+	possible to retrieve also large
+	content (e.g. video files) via ns_http without bloating memory
 
       - Additional parameter "-decompress" for "ns_http wait" to
-        compress the result on the fly (incrementally) in
-        case it is content encoding is "gzip"
+	compress the result on the fly (incrementally) in
+	case it is content encoding is "gzip"
 
     * ns_time: add option "ns_time format" to print a time
       in the sec:usec format in secs in a decimal dot notation
@@ -3081,20 +3773,20 @@ Code Changes:
       - reduce variable scopes to improve locality
       - Get rid of CVS variables
       - make test for byte-array safe for changes introduced in
-        Tcl 8.6 and back-ported to Tcl 8.5
-        (see e.g. http://core.tcl.tk/tcl/info/91be696bf3)
+	Tcl 8.6 and back-ported to Tcl 8.5
+	(see e.g. http://core.tcl.tk/tcl/info/91be696bf3)
       - defined new macro NS_GNUC_DEPRECATED_FOR() to be able to provide
-        replacement hint and use it where appropriate
+	replacement hint and use it where appropriate
       - improve error message
 
     * Test environment:
       - nstest::http: added flag "-getmultiheaders" to return all
-        header fields (multiset) with the specified name
+	header fields (multiset) with the specified name
 
     * Build environment:
       - use recommended autoconf constants quoting
       - deactivate AM_* macros (get rid of warnings), since
-        these are not used by autogen.sh
+	these are not used by autogen.sh
       - replace obsolete macro AC_TRY_RUN, AC_TRY_LINK
       - use recent version of install-sh and tcl.m4
       - additional make target: cppcheck
@@ -3109,40 +3801,40 @@ New Features:
 
     * New connection thread architecture:
       - Introduced connection thread queues for better control over
-        connection threads and to reduce queuing operations for
-        handing requests from the driver to the connection threads.
+	connection threads and to reduce queuing operations for
+	handing requests from the driver to the connection threads.
 
     * Support for improved TCP socket option handling
       (when supported by the OS);
        - use TCP_FASTOPEN (when deferaccept is configured)
        - Adding TCP option "nodelay" for nssock on operating
-         systems that do not use this by default (such as Linux)
+	 systems that do not use this by default (such as Linux)
        - Use TCP_CORK to optimize TCP_PACKAGE size on machines where
-         this is available.
+	 this is available.
 
     * Improved asynchronous request handling and log file writing to
       reduce latencies and improve robustness
 
        - Asynchronous HTML streaming via writer threads to reduce
-         connection thread blocking time for slow delivery lines.
+	 connection thread blocking time for slow delivery lines.
        - New asynchronous log file writer to write access.log
-         and error.log without blocking - configurable
+	 and error.log without blocking - configurable
 
     * Better scalability by reducing busiest lock contention and
       finer lock granularity (see below).
 
     * Improved introspection commands:
       - Report more detailed timing information and request statistics
-        via "ns_server ?-server s? ?-pool p? stats". The command
-        returns accept-times, queue-times, filter-times and run-times
-        per server and pool.
+	via "ns_server ?-server s? ?-pool p? stats". The command
+	returns accept-times, queue-times, filter-times and run-times
+	per server and pool.
       - Report OS-level thread ID via "ns_info threads" when supported
-        from the OS (currently just Linux). This information is used by
-        nsstats.tcl to report e.g. system time and user time per thread.
+	from the OS (currently just Linux). This information is used by
+	nsstats.tcl to report e.g. system time and user time per thread.
       - New subcommand "ns_conn clientdata" to query or set client data
-        (used e.g. in ns_writer list)
+	(used e.g. in ns_writer list)
       - Added ns_fastpath_cache_stats to obtain usage info from the
-        fastpath cache
+	fastpath cache
 
     * Support for marking scripted and C-implemented Tcl-commands
       as deprecated.
@@ -3212,113 +3904,113 @@ Tcl API Changes:
     * New and modified commands/subcommands:
 
       - nsv_get: added optional argument ?varName? to nsv_get to
-        obtain compatibility with tsv::get in the Tcl thread
-        library. This option allows an atomic test + get operation,
-        avoiding unsafe nsv_exists following by nsv_get.
+	obtain compatibility with tsv::get in the Tcl thread
+	library. This option allows an atomic test + get operation,
+	avoiding unsafe nsv_exists following by nsv_get.
 
-          nsv_get /array/ /key/ ?/varName/?
+	  nsv_get /array/ /key/ ?/varName/?
 
       - Obtain a value from the cache
-        (similar to nsv_get)
+	(similar to nsv_get)
 
-          ns_cache_get /cache/ /key/ ?/varName/?
+	  ns_cache_get /cache/ /key/ ?/varName/?
 
       - Write a notice to the error.log when this command
-        is used
+	is used
 
-          ns_deprecated ?/alternative/? ?/explanation/?
+	  ns_deprecated ?/alternative/? ?/explanation/?
 
       - Change server settings on the fly:
 
-          ns_server ?-server /server/? ?-pool /p/? maxthreads ?/value/?
-          ns_server ?-server /server/? ?-pool /p/? minthreads ?/value/?
+	  ns_server ?-server /server/? ?-pool /p/? maxthreads ?/value/?
+	  ns_server ?-server /server/? ?-pool /p/? minthreads ?/value/?
 
       - The following commands can return now server-specific
-        results, when "-server ..." is used:
+	results, when "-server ..." is used:
 
-          ns_server ?-server /server/? filters
-          ns_server ?-server /server/? pagedir
-          ns_server ?-server /server/? requestprocs
-          ns_server ?-server /server/? tcllib
-          ns_server ?-server /server/? traces
-          ns_server ?-server /server/? url2file
+	  ns_server ?-server /server/? filters
+	  ns_server ?-server /server/? pagedir
+	  ns_server ?-server /server/? requestprocs
+	  ns_server ?-server /server/? tcllib
+	  ns_server ?-server /server/? traces
+	  ns_server ?-server /server/? url2file
 
 
       - The following commands can return now server-specific
-        and pool-specific results:
+	and pool-specific results:
 
-          ns_server ?-server /server/? ?-pool p? active
-          ns_server ?-server /server/? ?-pool p? all
-          ns_server ?-server /server/? ?-pool p? queued
-          ns_server ?-server /server/? ?-pool p? connections
-          ns_server ?-server /server/? ?-pool p? maxthreads ?value?
-          ns_server ?-server /server/? ?-pool p? minthreads ?value?
-          ns_server ?-server /server/? ?-pool p? stats
-          ns_server ?-server /server/? ?-pool p? threads
-          ns_server ?-server /server/? ?-pool p? waiting
+	  ns_server ?-server /server/? ?-pool p? active
+	  ns_server ?-server /server/? ?-pool p? all
+	  ns_server ?-server /server/? ?-pool p? queued
+	  ns_server ?-server /server/? ?-pool p? connections
+	  ns_server ?-server /server/? ?-pool p? maxthreads ?value?
+	  ns_server ?-server /server/? ?-pool p? minthreads ?value?
+	  ns_server ?-server /server/? ?-pool p? stats
+	  ns_server ?-server /server/? ?-pool p? threads
+	  ns_server ?-server /server/? ?-pool p? waiting
 
       - Return number of requests, number of spools and number of
-        requests added to the waiting queue plus cumulative times to
-        serve requests.
+	requests added to the waiting queue plus cumulative times to
+	serve requests.
 
-          ns_server ?-server /server/? ?-pool /p/? stats
+	  ns_server ?-server /server/? ?-pool /p/? stats
 
       - Query for the current connection, whether
-        the requestor accepts zipped results
+	the requestor accepts zipped results
 
-          ns_conn zipaccepted
+	  ns_conn zipaccepted
 
       - Return for the current connection the
-        connection pool
+	connection pool
 
-          ns_conn pool
+	  ns_conn pool
 
       - Query or set for the current connection the client data.  The
-        client data is provided by the application and is potentially
-        passed to different threads and can be used to establish the
-        context with the connection thread. For example, the writer
-        thread outputs the client data when listing running connections
-        (one can determine e.g. which user has initiated the delivery,
-        etc.).
+	client data is provided by the application and is potentially
+	passed to different threads and can be used to establish the
+	context with the connection thread. For example, the writer
+	thread outputs the client data when listing running connections
+	(one can determine e.g. which user has initiated the delivery,
+	etc.).
 
-          ns_conn clientdata
+	  ns_conn clientdata
 
       - Query or modify the size limit of files being delivered
-        via the writer threads
+	via the writer threads
 
-          ns_writer size /driver/ ?/value/?
+	  ns_writer size /driver/ ?/value/?
 
       - Query or modify the configuration parameter
-        writerstreaming that controls streaming HTML
-        output via writer threads
+	writerstreaming that controls streaming HTML
+	output via writer threads
 
-          ns_writer streaming /driver/ ?/value/?
+	  ns_writer streaming /driver/ ?/value/?
 
       - Allow to restrict the output of "ns_writer list"
-        to list only requests from a particular (virtual) server
+	to list only requests from a particular (virtual) server
 
-          ns_writer list ?-server /server/?
+	  ns_writer list ?-server /server/?
 
       - The output of "ns_writer list" now contains the start time of
-        the initiating request, the name of the thread, driver, the
-        ip-address of the requestor, the file descriptor, the
-        remaining size and the bytes already sent, and the client data
-        as provided via [ns_conn clientdata].
+	the initiating request, the name of the thread, driver, the
+	ip-address of the requestor, the file descriptor, the
+	remaining size and the bytes already sent, and the client data
+	as provided via [ns_conn clientdata].
 
       - Determine the section in the configuration for a driver
-        in the configuration file
+	in the configuration file
 
-          ns_driversection ?-driver /drv/? ?-server /server/?
+	  ns_driversection ?-driver /drv/? ?-server /server/?
 
 
     * Deprecated commands/subcommands:
 
 
       - ns_httpget, ns_httppost and ns_httpopen are deprecated (use
-        ns_http instead)
+	ns_http instead)
 
       - "ns_info platform" is deprecated; use $::tcl_platform(platform) instead.
-        "ns_info winnt" is deprecated; use $::tcl_platform(platform) instead.
+	"ns_info winnt" is deprecated; use $::tcl_platform(platform) instead.
 
       - ns_register_adptag is deprecated - use ns_adp_registerscript instead.
 
@@ -3326,30 +4018,30 @@ Tcl API Changes:
 
       - The following commands are deprecated
 
-          ns_info filters
-          ns_info pagedir
-          ns_info pageroot
-          ns_info requestprocs
-          ns_info tcllib
-          ns_info traces
-          ns_info url2file
+	  ns_info filters
+	  ns_info pagedir
+	  ns_info pageroot
+	  ns_info requestprocs
+	  ns_info tcllib
+	  ns_info traces
+	  ns_info url2file
 
-        and defined the following commands instead:
+	and defined the following commands instead:
 
-          ns_server ?-server /server/? filters
-          ns_server ?-server /server/? pagedir
-          ns_server ?-server /server/? requestprocs
-          ns_server ?-server /server/? tcllib
-          ns_server ?-server /server/? traces
-          ns_server ?-server /server/? url2file
+	  ns_server ?-server /server/? filters
+	  ns_server ?-server /server/? pagedir
+	  ns_server ?-server /server/? requestprocs
+	  ns_server ?-server /server/? tcllib
+	  ns_server ?-server /server/? traces
+	  ns_server ?-server /server/? url2file
 
       - ns_server - passing pool as 2nd argument is deprecated.
-        new option serverdir returns the base directory. Using
-        instead the explicit options
-          "ns_server ?-server /server/? serverdir"
+	new option serverdir returns the base directory. Using
+	instead the explicit options
+	  "ns_server ?-server /server/? serverdir"
 
       - "ns_server keepalive" is deprecated;
-        use "ns_conn keepalive" instead
+	use "ns_conn keepalive" instead
 
 
 C API Changes:
@@ -3384,11 +4076,11 @@ Configuration Changes:
       section ns/server/${server} for controlling connection thread
       creation:
 
-        ns_param lowwatermark 10  ;# Create additional threads when
-                                  ;# the queue is more than 10% full
-        ns_param highwatermark 80 ;# Allow concurrent when queue is
-                                  ;# more than 80% full. Specifying
-                                  ;# 100% effectively disables this.
+	ns_param lowwatermark 10  ;# Create additional threads when
+				  ;# the queue is more than 10% full
+	ns_param highwatermark 80 ;# Allow concurrent when queue is
+				  ;# more than 80% full. Specifying
+				  ;# 100% effectively disables this.
 
     * New Boolean parameter asynclogwriter under ns/parameter to
       turn on/off asynchronous writes to access log and error log
@@ -3399,14 +4091,14 @@ Command Line Changes:
 
     * Allow calls for "nsd -c" without config files.
 
-        $ /usr/local/ns/bin/nsd  -c
+	$ /usr/local/ns/bin/nsd  -c
 
     * Allow specification of environment variable NAVISERVER to point
       to the naviserver home directory (for e.g. log file
       directories), otherwise determined by the location of the nsd
       binary. Examples:
 
-        $ NAVISERVER=/usr/local/ns/ ./nsd/nsd  -c
+	$ NAVISERVER=/usr/local/ns/ ./nsd/nsd  -c
 
 
 Code Changes:
@@ -3429,26 +4121,26 @@ Code Changes:
       writes at the driver level.
 
       - The old SockSend() is now implemented using of nssock.sendProc
-        and performs partial writes on non-blocking sockets.
+	and performs partial writes on non-blocking sockets.
 
       - Ns_SockSendBufs() delivers all iovec bufs like before but now
-        calls NsDriverSend() instead of the direct SockSend().
+	calls NsDriverSend() instead of the direct SockSend().
 
       - Ns_ConnSend() calls Ns_SockSendBufs() instead of NsDriverSend() in
-        cases, where the writer thread is not used.
+	cases, where the writer thread is not used.
 
       - Ns_SockSendBufs() calls NsDriverSend() instead of SockSend()
 
       - Ns_SockSendFileBufs() calls NsDriverSend() instead of
-        Ns_SockSendBufs()
+	Ns_SockSendBufs()
 
       Further changes:
 
       - Group fields in WriterSock to separate concern of file-spooling and
-        memory based requests.
+	memory based requests.
 
       - Factor out WriterSend() from DriverThread() to improve readability
-        and locality
+	and locality
 
     * use scatter/gather interface for writer instead of the char* interface
 
@@ -3684,7 +4376,7 @@ Bug Fixes:
       - placed nstest into a namespace
       - added parameter "-verbose" to nstest::http to trace communication
       - added parameter -omitcontentlength to nstest::http to test
-        requests without content length
+	requests without content length
 
     * Fixed early closes from the server on too-large content (looked like
       a server crash to clients like firefox, google chrome, etc.). This
@@ -3897,18 +4589,18 @@ Code Changes:
    IMPORTANT API changes: (length, nsend) parameters are now Tcl_WideInt, so it requires
    to recompile all modules that use those functions:
 
-        int Ns_ConnSendChannel(Ns_Conn *conn, Tcl_Channel chan, Tcl_WideInt nsend)
-        int Ns_ConnSendFp(Ns_Conn *conn, FILE *fp, Tcl_WideInt nsend)
-        int Ns_ConnSendFd(Ns_Conn *conn, int fd, Tcl_WideInt nsend)
+	int Ns_ConnSendChannel(Ns_Conn *conn, Tcl_Channel chan, Tcl_WideInt nsend)
+	int Ns_ConnSendFp(Ns_Conn *conn, FILE *fp, Tcl_WideInt nsend)
+	int Ns_ConnSendFd(Ns_Conn *conn, int fd, Tcl_WideInt nsend)
 
-        void Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, Tcl_WideInt length)
-        void Ns_ConnSetLengthHeader(Ns_Conn *conn, Tcl_WideInt length)
-        int Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, CONST char *type,
-                         Tcl_Channel chan, Tcl_WideInt length)
-        int Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, CONST char *type,
-                                  FILE *fp, Tcl_WideInt length)
-        int Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, CONST char *type,
-                                int fd, Tcl_WideInt length)
+	void Ns_ConnSetRequiredHeaders(Ns_Conn *conn, CONST char *type, Tcl_WideInt length)
+	void Ns_ConnSetLengthHeader(Ns_Conn *conn, Tcl_WideInt length)
+	int Ns_ConnReturnOpenChannel(Ns_Conn *conn, int status, CONST char *type,
+			 Tcl_Channel chan, Tcl_WideInt length)
+	int Ns_ConnReturnOpenFile(Ns_Conn *conn, int status, CONST char *type,
+				  FILE *fp, Tcl_WideInt length)
+	int Ns_ConnReturnOpenFd(Ns_Conn *conn, int status, CONST char *type,
+				int fd, Tcl_WideInt length)
 
 
 ======================================
