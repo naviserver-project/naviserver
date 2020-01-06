@@ -502,9 +502,9 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
             status = NS_TIMEOUT;
         }
     } else {
-        if (timeoutPtr != NULL) {
-            Ns_Time atime;
+        Ns_Time atime;
 
+        if (timeoutPtr != NULL) {
             timeoutPtr = Ns_AbsoluteTime(&atime, timeoutPtr);
         }
 
