@@ -361,7 +361,7 @@ Ns_StrToMemUnit(const char *chars, Tcl_WideInt *intPtr)
                     endPtr++;
                 }
                 /*
-                 * Parse units.
+                 * Parse memory units.
                  *
                  * The International System of Units (SI) defines
                  *    kB, MB, GB as 1000, 1000^2, 1000^3 bytes,
