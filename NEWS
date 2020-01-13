@@ -653,7 +653,7 @@ letsencrypt:
 - Major overhaul of the letsencrypt module to support ACME v2
 
   ACME (the Automated Certificate Management Environment, [1]) is the
-  protocol used for certificate mamagement on letsencrypt.org. The API
+  protocol used for certificate management on letsencrypt.org. The API
   version v was released on 2016 but was updated in 2018 by ACME v2,
   is not backwards compatible with v1. Letsencrypt announced in march
   2018 to drop the support of ACME v1 in several steps:
