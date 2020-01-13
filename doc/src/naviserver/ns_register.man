@@ -371,8 +371,9 @@ Specifies for how long to keep result in the cache, in seconds or absolute time.
 
 [opt_def -expires [arg t]]
 Specifies that the result of evaluating the [term ADP] page should be cached
-for [arg t] seconds, or until [arg t] time in the future (expressed as
-seconds after the [term epoch]) if [arg t] is large.
+for [arg t] seconds (or some other specified time unit such as ms, s, m, d).
+If  [arg t] is large, it expresses a time in the
+future (expressed as seconds after the [term epoch]).
 
 [opt_def -noinherit]
 Specifies that the directory portion of the request URL should match

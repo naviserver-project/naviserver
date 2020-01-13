@@ -108,8 +108,12 @@ Restrict the cookie to a domain name, such as [term example.com]. The
 current domain is implied if none is specified.
 
 [opt_def -expires [arg time]]
-The cookie will expire in [arg time] seconds, after which the client will no
-longer send the cookie back to the server. If [arg time] is large it is treated
+The cookie will expire the given [arg time], after which the client will no
+longer send the cookie back to the server.
+The [arg time] value can be specified in the form
+[arg secs[opt :microsecs]], or [arg secs.fraction],
+or as a number with the time units ms, s, m, d.
+If [arg time] is large it is treated
 as the absolute time in the future when the cookie should expire. The special
 value [emph -1] may be used to indicate that the cookie should never
 expire.

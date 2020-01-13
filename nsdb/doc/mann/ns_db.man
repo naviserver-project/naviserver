@@ -137,7 +137,9 @@ wait indefinitely (perhaps forever) for the requested number of handles to
 become available. If timeout is greater than zero, ns_db gethandle will either
 return with the handles within that time period, or return "" if the time period
 was exceeded, or generate a Tcl error. See the examples for [cmd "ns_db gethandle"], below.
-The argument [arg t] can be specified in the form [arg sec[opt :microseconds]].
+The argument [arg t] can be specified in the form
+[arg secs[opt :microsecs]], or [arg secs.fraction],
+or as a number with the time units ms, s, m, d.
 
 [call [cmd "ns_db getrow"] [arg handle] [arg setId]]
 

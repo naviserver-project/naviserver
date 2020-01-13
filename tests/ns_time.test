@@ -1,0 +1,108 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+test ns_time-1.0 {basic syntax: plain call} -body {
+    string is integer -strict [ns_time]
+} -result {1}
+
+#
+# incr
+#
+test ns_time-1.0 {ns_time incr int} -body {
+    ns_time incr 1 1
+} -result {2}
+
+test ns_time-1.1 {ns_time incr float int} -body {
+    ns_time incr 1.0 0
+} -result 1
+
+
+#
+# incr float with time units
+#
+test ns_time-1.2s {ns_time incr timeunit float+s int} -body {
+    ns_time incr 1.0s 0
+} -result 1
+test ns_time-1.2m {ns_time incr timeunit float+m int} -body {
+    ns_time incr 1.0m 0
+} -result 60
+test ns_time-1.2h {ns_time incr timeunit float+h int} -body {
+    ns_time incr 1.0h 0
+} -result 3600
+test ns_time-1.2d {ns_time incr timeunit float+d int} -body {
+    ns_time incr 1.0d 0
+} -result 86400
+test ns_time-1.2ms {ns_time incr timeunit float+ms int} -body {
+    ns_time incr 1.0ms 0
+} -result 0:1000
+
+#
+# incr int with time units
+#
+
+test ns_time-1.3s {ns_time incr timeunit int+s int} -body {
+    ns_time incr 1s 0
+} -result 1
+test ns_time-1.3m {ns_time incr timeunit int+m int} -body {
+    ns_time incr 1m 0
+} -result 60
+test ns_time-1.3h {ns_time incr timeunit int+h int} -body {
+    ns_time incr 1h 0
+} -result 3600
+test ns_time-1.3d {ns_time incr timeunit int+d int} -body {
+    ns_time incr 1d 0
+} -result 86400
+test ns_time-1.3ms {ns_time incr timeunit int+ms int} -body {
+    ns_time incr 1ms 0
+} -result 0:1000
+test ns_time-1.3μs {ns_time incr timeunit int+ms int} -body {
+    ns_time incr 1μs 0
+} -result 0:1
+
+#
+# incr float time units with magnitudes
+#
+test ns_time-1.4-10000ms {ns_time incr timeunit 10000ms int} -body {
+    ns_time incr 10000.0ms 0
+} -result 10
+test ns_time-1.4-1000ms {ns_time incr timeunit 1000ms int} -body {
+    ns_time incr 1000.0ms 0
+} -result 1
+test ns_time-1.4-100ms {ns_time incr timeunit 100ms int} -body {
+    ns_time incr 100.0ms 0
+} -result 0:100000
+test ns_time-1.4-10ms {ns_time incr timeunit 10ms int} -body {
+    ns_time incr 10.0ms 0
+} -result 0:10000
+test ns_time-1.4-1ms {ns_time incr timeunit 1ms int} -body {
+    ns_time incr 1.0ms 0
+} -result 0:1000
+test ns_time-1.4-0.1ms {ns_time incr timeunit 0.1ms int} -body {
+    ns_time incr 0.1ms 0
+} -result 0:100
+test ns_time-1.4-0.01ms {ns_time incr timeunit 0.01ms int} -body {
+    ns_time incr 0.01ms 0
+} -result 0:10
+test ns_time-1.4-0.001ms {ns_time incr timeunit 0.001ms int} -body {
+    ns_time incr 0.001ms 0
+} -result 0:1
+test ns_time-1.4-0.0001ms {ns_time incr timeunit 0.0001ms int} -body {
+    ns_time incr 0.0001ms 0
+} -result 0
+test ns_time-1.4-0.00001ms {ns_time incr timeunit 0.00001ms int (under resolution)} -body {
+    ns_time incr 0.00001ms 0
+} -result 0
+
+
+cleanupTests
+
+#
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

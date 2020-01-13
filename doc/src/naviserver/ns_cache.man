@@ -31,19 +31,20 @@ The following options are used for several commands below.
 [list_begin options]
 
 [opt_def -timeout [arg t]]
-The time in seconds to wait for some other thread to compute the cache value.
+The time to wait for some other thread to compute the cache value.
+The value [arg t] can be specified in the form
+[arg secs[opt :microsecs]], or [arg secs.fraction],
+or as a number with the time units ms, s, m, d.
 
 [opt_def -expires [arg t]]
 A time in the future when the cache value expires. The expired value will be
 deleted only when retrieved, e.g. via [cmd ns_cache_eval].
 
 [para]
-The [option -expires] time can be expressed either as an absolute time in
-the future (the number of seconds since 190), or as an offset from the current
-time. Small values are treated as offsets, large values as absolute time. It is
-slightly less efficient to specify an offset as the current time must be looked
-up.
-
+The value [arg t] can be specified in the form
+[arg secs[opt :microsecs]], or [arg secs.fraction],
+or as a number with the time units ms, s, m, d.
+Small values of [arg t] are treated as offsets, large values as absolute times.
 
 [list_end]
 

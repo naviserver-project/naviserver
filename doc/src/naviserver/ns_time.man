@@ -9,9 +9,12 @@
 This command provides various time-related functions.
 Times might be of the form "sec" (integer value),
 "sec:usec" (NaviServer internal format) or "sec.fraction"
-(such as the result of [const "ns_time format"]).
 
-The allowed options of ns_time are:
+[para]
+All [arg "time"] arguments
+can be specified in the form
+[arg secs[opt :microsecs]], or [arg secs.fraction],
+or as a number with the time units ms, s, m, d.
 
 [section {COMMANDS}]
 
@@ -61,14 +64,13 @@ If [term sec] is zero, however, it is returned as part of the time string.
 
 [call [cmd  {ns_time seconds}] [arg time]]
 
-Parses a time in "sec:usec" format and returns the seconds portion.
+Parses a time and returns the seconds portion.
 
 
 [call [cmd  {ns_time microseconds}] [arg time]]
 
-Parses a time in "sec:usec" format and returns the microseconds portion.
+Parses a time and returns the microseconds portion.
 It assumes zero microseconds if time only contains seconds.
-All times are relative to 00:00:00 UTC, January 1, 1970 a.k.a. the Unix epoch.
 
 [list_end]
 

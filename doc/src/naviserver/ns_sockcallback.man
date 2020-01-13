@@ -16,10 +16,13 @@ ns_sockcallback registers a socket callback script.
 The optional argument [arg when] can consist of one or more characters
 of r, w, e, or x, specifying, when the callback should fire.
 
-The optional argument [arg timeout] can be of the form
+The optional argument [arg "timeout"]
+can be specified in the form
+[arg secs[opt :microsecs]], or [arg secs.fraction],
+or as a number with the time units ms, s, m, d.
 [arg secs[opt :microsecs]].
-[para]
 
+[para]
 When the callback is fired, the specified [arg script] will be called
 with additional arguments [arg sockid] and [arg condition].
 The value of the reported [arg condition] will be as follows:
@@ -57,7 +60,7 @@ proc newconn {sock when} {
 [example_end]
 
 
-[see_also ns_chan ns_connchan ns_socklisten ns_sockaccept]
+[see_also ns_sockopen ns_chan ns_connchan ns_socklisten ns_sockaccept]
 [keywords "global built-in" NaviServer socket callback]
 [manpage_end]
 

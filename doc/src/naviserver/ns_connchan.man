@@ -85,12 +85,12 @@ timeout for incoming packets, [option -sendtimeout] is the timeout for
 outgoing packets.  When [option -sendtimeout] has the value of 0, a
 read operation might return the empty string. A value larger than 0
 might block the event processing for the specified time.
+All timeouts values are specified in the form [arg secs[opt :microsecs]], or
+[arg secs.fraction] or as a number with the time units ms, s, m, d.
 
 [para]
 The argument [arg when] consist of one or more characters
 of r, w, e, or x, specifying, when the callback should fire.
-All timeouts are specified in the form [arg secs[opt :microsecs]] or
-[arg secs.fraction].
 
 [para] When the callback is fired, the specified Tcl command will be
 called with an additional argument, which is an indicator for the
@@ -146,6 +146,9 @@ The URL might be an HTTP or an HTTPS URL.
 [option -timeout] is the timeout for establishing the connection
 (default 1 second), and
 [option -version] specifies the HTTP version (default 1.0)
+The timeout value [arg t] is specified in the form
+[arg secs[opt :microsecs]], or [arg secs.fraction],
+or as a number with the time units ms, s, m, d.
 
 [call [cmd "ns_connchan read"] \
 	[arg channel] \

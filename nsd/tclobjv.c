@@ -813,7 +813,7 @@ SetMemUnitFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     if (objPtr->typePtr == intTypePtr) {
         long longValue;
         /*
-         * When the type is "int", usec is 0.
+         * When the type is "int", the memory unit is in bytes.
          */
         if (Tcl_GetLongFromObj(interp, objPtr, &longValue) != TCL_OK) {
             result = TCL_ERROR;
