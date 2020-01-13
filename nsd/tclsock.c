@@ -774,7 +774,7 @@ NsTclSocketPairObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNU
  * NsTclSockCallbackCmd --
  *
  *      Register a Tcl callback to be run when a certain state exists
- *      on a socket.
+ *      on a socket. Implements "ns_sockcallback".
  *
  * Results:
  *      Tcl result.
