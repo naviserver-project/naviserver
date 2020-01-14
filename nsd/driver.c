@@ -365,7 +365,7 @@ static Driver          *firstDrvPtr = NULL; /* First in list of all drivers */
  *
  *      Write a warning message to stderr. This function is for cases, where
  *      writing to Ns_Log can't be used (e.g. in the AsyncWriter, which is
- *      used for writing als to the system log).
+ *      used for writing also to the system log).
  *
  * Results:
  *      None.
