@@ -292,10 +292,11 @@ Ns_ConfigIntRange(const char *section, const char *key, int defaultValue,
 /*
  *----------------------------------------------------------------------
  *
- * Ns_Configwide, Ns_ConfigWideRange --
+ * Ns_Configwide, Ns_ConfigWideRange, Ns_ConfigMemUnitRange --
  *
  *      Return a wide integer config file value, or the default if not
- *      found. The returned value will be between the given minValue and maxValue.
+ *      found. The returned value will be between the given minValue and
+ *      maxValue.
  *
  * Results:
  *      An Tcl_WideInt integer.
