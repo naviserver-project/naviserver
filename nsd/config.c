@@ -386,6 +386,86 @@ ConfigWideIntRange(const char *section, const char *key, Tcl_WideInt defaultValu
     return value;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConfigTimeUnitRange --
+ *
+ *      Convert a string with a time unit value to the Ns_Time structure in
+ *      the last value. For convenience, minValue, maxValue and defaultValue
+ *      are specified as a double value representing seconds.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Updating the timePtr specified in the last argument.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Ns_ConfigTimeUnitRange(const char *section, const char *key, double defaultValue,
+                       double minValue, double maxValue, Ns_Time *timePtr)
+{
+    const char *s;
+    double      dblValue = 0.0;
+    bool        haveValue;
+
+    NS_NONNULL_ASSERT(section != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(timePtr != NULL);
+
+    s = ConfigGet(section, key, NS_FALSE, NULL);
+    if (s != NULL && Ns_GetTimeFromString(NULL, s, timePtr) == TCL_OK) {
+        /*
+         * Found and parsed parameter.
+         */
+        Ns_Log(Dev, "config: %s:%s value=%ld.%06ld secs "
+               "min=%.6f max=%.6f default=%.6f",
+               section, key, timePtr->sec, timePtr->usec,
+               minValue, maxValue, defaultValue);
+
+        dblValue = (double)timePtr->sec + ((double)timePtr->usec)/1000000.0;
+        haveValue = NS_TRUE;
+
+    } else if (s != NULL) {
+        /*
+         * Parse of parameter failed.
+         */
+        Ns_Log(Warning,
+               "config parameter %s:%s: cannot parse '%s' as time value; fall back to default %.6f",
+               section, key, s, defaultValue);
+        dblValue = defaultValue;
+        haveValue = NS_FALSE;
+
+    } else {
+        /*
+         * No such parameter.
+         */
+        Ns_Log(Dev, "config: %s:%s value=(null) min=%.6f max=%.6f default=%.6f",
+               section, key, minValue, maxValue, defaultValue);
+        dblValue = defaultValue;
+        haveValue = NS_FALSE;
+    }
+    if (dblValue < minValue) {
+        Ns_Log(Warning, "config: %s:%s value=%.6f rounded up to %.6f",
+               section, key, dblValue, minValue);
+        dblValue = minValue;
+        haveValue = NS_FALSE;
+    }
+    if (dblValue > maxValue) {
+        Ns_Log(Warning, "config: %s:%s value=%.6f rounded down to %.6f",
+               section, key, dblValue, maxValue);
+        dblValue = maxValue;
+        haveValue = NS_FALSE;
+    }
+
+    if (!haveValue) {
+        timePtr->sec = (long)(dblValue);
+        timePtr->usec = (long)((dblValue - (double)timePtr->sec) * 1000000.0);
+    }
+}
+
 
 /*
  *----------------------------------------------------------------------

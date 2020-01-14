@@ -1062,6 +1062,12 @@ NS_EXTERN const Ns_Set *
 Ns_ConfigSet(const char *section, const char *key)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+NS_EXTERN void
+Ns_ConfigTimeUnitRange(const char *section, const char *key,
+                       double defaultValue, double minValue, double maxValue,
+                       Ns_Time *timePtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(6);
+
 /*
  * conn.c:
  */

@@ -879,11 +879,12 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
     Ns_MutexLock(&nsconf.state.lock);
     nsconf.state.stopping = NS_TRUE;
-    if (sig == NS_SIGQUIT || nsconf.shutdowntimeout < 0) {
-        nsconf.shutdowntimeout = 0;
+    if (sig == NS_SIGQUIT) {
+        nsconf.shutdowntimeout.sec = 0;
+        nsconf.shutdowntimeout.usec = 0;
     }
     Ns_GetTime(&timeout);
-    Ns_IncrTime(&timeout, nsconf.shutdowntimeout, 0);
+    Ns_IncrTime(&timeout, nsconf.shutdowntimeout.sec, nsconf.shutdowntimeout.usec);
     Ns_MutexUnlock(&nsconf.state.lock);
 
     /*
@@ -1001,8 +1002,8 @@ Ns_StopServer(char *server)
  *
  * NsTclShutdownObjCmd --
  *
- *      Shutdown the server, waiting at most timeout seconds for threads
- *      to exit cleanly before giving up.
+ *      Shutdown the server, waiting at most timeout seconds for threads to
+ *      exit cleanly before giving up. Implements "ns_shutdown".
  *
  * Results:
  *      Tcl result.
@@ -1018,32 +1019,37 @@ int
 NsTclShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int         sig = NS_SIGTERM, result = TCL_OK;
-    long        timeout = 0;
-    Ns_ObjvValueRange timeoutRange = {0, LONG_MAX};
+    Ns_Time    *timeoutPtr = NULL;
     Ns_ObjvSpec opts[] = {
         {"-restart", Ns_ObjvBool,  &sig, INT2PTR(NS_SIGINT)},
         {"--",       Ns_ObjvBreak, NULL, NULL},
         {NULL,       NULL,         NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"?timeout", Ns_ObjvLong, &timeout, &timeoutRange},
-        {NULL,       NULL,        NULL,     NULL}
+        {"?timeout", Ns_ObjvTime, &timeoutPtr, NULL},
+        {NULL,       NULL,        NULL,        NULL}
     };
 
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
+
+    } else if (timeoutPtr != NULL && timeoutPtr->sec < 0) {
+        Ns_TclPrintfResult(interp, "timeout must be >= 0");
+        result = TCL_ERROR;
+
     } else {
 
         Ns_MutexLock(&nsconf.state.lock);
-        if (timeout > 0) {
-            nsconf.shutdowntimeout = timeout;
+        if (timeoutPtr != NULL) {
+            nsconf.shutdowntimeout.sec = timeoutPtr->sec;
+            nsconf.shutdowntimeout.usec = timeoutPtr->usec;
         } else {
-            timeout = nsconf.shutdowntimeout;
+            timeoutPtr = &nsconf.shutdowntimeout;
         }
         Ns_MutexUnlock(&nsconf.state.lock);
 
         NsSendSignal(sig);
-        Tcl_SetObjResult(interp, Tcl_NewLongObj(timeout));
+        Tcl_SetObjResult(interp, Ns_TclNewTimeObj(timeoutPtr));
     }
     return result;
 }

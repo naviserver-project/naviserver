@@ -122,7 +122,7 @@ ns_section	"ns/parameters" {
     # Timeout for shutdown in seconds to let existing connections and
     # background jobs finish.  When this time limit is exceeded the server
     # shuts down immediately.
-    ns_param    shutdowntimeout         20
+    ns_param    shutdowntimeout         20s
 
     # Min size of the uploaded file to enable progress tracking
     ns_param	progressminsize		0
@@ -293,16 +293,11 @@ ns_section	"ns/server/${servername}" {
     ns_param	minthreads		1
 
     # Connection thread lifetime management
-    ns_param	connsperthread  10000   ;# Number of connections (requests) handled per thread
-    ns_param	threadtimeout   120     ;# Timeout for idle threads
-
-    # Connection thread lifetime management
     ns_param	connsperthread  10000   ;# Number of connections (requests) handled per thread.
 					;# Setting connsperthread to > 0 will cause the thread to
 					;# graceously exit, after processing that many
 					;# requests, thus initiating kind-of Tcl-level
 					;# garbage collection.
-
     ns_param	threadtimeout   120     ;# Timeout for idle threads. In case, minthreads < maxthreads,
 					;# threads are shutdown after this idle time until
 					;# minthreads are reached

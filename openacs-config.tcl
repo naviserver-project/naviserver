@@ -138,7 +138,7 @@ ns_section ns/parameters {
     # Timeout for shutdown in seconds to let existing connections and
     # background jobs finish.  When this time limit is exceeded the
     # server shuts down immediately.
-    # ns_param    shutdowntimeout 20       ;# 20 secs is the default
+    # ns_param    shutdowntimeout 20s      ;# 20s is the default
 
     #
     # Configuration of error.log

@@ -145,7 +145,7 @@ struct nsconf {
     time_t      boot_t;
     char        hostname[255];
     char        address[NS_IPADDR_SIZE];
-    long        shutdowntimeout;  /* same type as seconds in Ns_Time */
+    Ns_Time     shutdowntimeout;
     int         backlog;
     int         sanitize_logfiles;
     bool        reject_already_closed_connection;

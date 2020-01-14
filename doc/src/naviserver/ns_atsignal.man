@@ -67,7 +67,7 @@ At-shutdown procs are called in LIFO order when the server performs a controlled
 shutdown after all other subsystem have been stopped.
 
 [para]
-Orderly shutdown is attempted within [term shutdowntimeout] seconds, as
+Orderly shutdown is attempted within [term shutdowntimeout], as
 specified in the configuration file. Tcl shutdown procs are called before C
 shutdown tasks are waited on, so should be well-behaved.
 

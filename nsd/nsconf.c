@@ -177,9 +177,8 @@ NsConfUpdate(void)
     /*
      * nsmain.c
      */
-
-    nsconf.shutdowntimeout =
-        Ns_ConfigIntRange(path, "shutdowntimeout", 20, 0, INT_MAX);
+    Ns_ConfigTimeUnitRange(path, "shutdowntimeout", 20.0, 0.0, 1000000.0,
+                           &nsconf.shutdowntimeout);
 
     /*
      * sched.c

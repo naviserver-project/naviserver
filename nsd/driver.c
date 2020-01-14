@@ -1264,7 +1264,7 @@ NsStopSpoolers(void)
             continue;
         }
         Ns_GetTime(&timeout);
-        Ns_IncrTime(&timeout, nsconf.shutdowntimeout, 0);
+        Ns_IncrTime(&timeout, nsconf.shutdowntimeout.sec, nsconf.shutdowntimeout.usec);
 
         SpoolerQueueStop(drvPtr->writer.firstPtr, &timeout, "writer");
         SpoolerQueueStop(drvPtr->spooler.firstPtr, &timeout, "spooler");
@@ -7095,7 +7095,7 @@ NsAsyncWriterQueueDisable(bool shutdown)
         assert(queuePtr != NULL);
 
         Ns_GetTime(&timeout);
-        Ns_IncrTime(&timeout, nsconf.shutdowntimeout, 0);
+        Ns_IncrTime(&timeout, nsconf.shutdowntimeout.sec, nsconf.shutdowntimeout.usec);
 
         Ns_MutexLock(&queuePtr->lock);
         queuePtr->stopped = NS_TRUE;
