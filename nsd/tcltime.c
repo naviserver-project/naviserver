@@ -762,8 +762,6 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
              */
             tPtr->sec = 0L;
         } else {
-            int result;
-
             /*
              * Overwrite the separator with a null-byte to make the
              * first part null-terminated.
@@ -791,16 +789,16 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
                 double dblValue;
 
                 if (Tcl_GetDouble(interp, sep, &dblValue) != TCL_OK) {
-                    char *ptr = NULL, *str = sep;
+                    char *ptr = NULL, *p = sep;
                     long  fraction;
 
                     /*
                      * Skip separator
                      */
-                    str ++;
+                    p ++;
 
-                    fraction = strtol(str, &ptr, 10);
-                    if (likely(str != ptr)) {
+                    fraction = strtol(p, &ptr, 10);
+                    if (likely(p != ptr)) {
                         /*
                          * We could parse at least a part of the string as
                          * integer.
@@ -812,16 +810,16 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
                          * Shift fraction value to right of the fraction
                          * point.
                          */
-                        while (str != ptr) {
+                        while (p != ptr) {
                             dblFraction /= 10.0;
-                            str ++;
+                            p ++;
                         }
                         DblValueToNstime(tPtr, multiplier * ((double)tPtr->sec + dblFraction));
 
                         result = TCL_OK;
 
                     } else {
-                        fprintf(stderr, "Tcl_GetDouble of <%s> failed hopless\n", sep);
+                        //fprintf(stderr, "Tcl_GetDouble of <%s> failed hopless\n", sep);
                         result = TCL_ERROR;
                     }
                 } else {
