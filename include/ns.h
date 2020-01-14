@@ -1064,11 +1064,11 @@ Ns_ConfigSet(const char *section, const char *key)
 
 NS_EXTERN void
 Ns_ConfigTimeUnitRange(const char *section, const char *key,
-                       long defaultSec, long defaultUsec,
+                       const char *defaultString,
                        long minSec, long minUsec,
                        long maxSec, long maxUsec,
                        Ns_Time *timePtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(9);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(8);
 
 /*
  * conn.c:

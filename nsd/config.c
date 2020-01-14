@@ -405,7 +405,7 @@ ConfigWideIntRange(const char *section, const char *key, Tcl_WideInt defaultValu
  */
 void
 Ns_ConfigTimeUnitRange(const char *section, const char *key,
-                       long defaultSec, long defaultUsec,
+                       const char *defaultString,
                        long minSec, long minUsec,
                        long maxSec, long maxUsec,
                        Ns_Time *timePtr)
@@ -415,6 +415,7 @@ Ns_ConfigTimeUnitRange(const char *section, const char *key,
 
     NS_NONNULL_ASSERT(section != NULL);
     NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(defaultString != NULL);
     NS_NONNULL_ASSERT(timePtr != NULL);
 
     minTime.sec  = minSec;
@@ -422,36 +423,43 @@ Ns_ConfigTimeUnitRange(const char *section, const char *key,
     maxTime.sec  = maxSec;
     maxTime.usec = maxUsec;
 
-    s = ConfigGet(section, key, NS_FALSE, NULL);
+    s = ConfigGet(section, key, NS_FALSE, defaultString);
     if (s != NULL && Ns_GetTimeFromString(NULL, s, timePtr) == TCL_OK) {
         /*
          * Found and parsed parameter.
          */
         Ns_Log(Dev, "config: %s:%s value=%ld.%06ld secs "
-               "min=%ld.%06ld max=%ld.%06ld default=%ld.%06ld",
+               "min=%ld.%06ld max=%ld.%06ld default=%s",
                section, key, timePtr->sec, timePtr->usec,
-               minSec, minUsec, maxSec, maxUsec, defaultSec, defaultUsec);
-
-    } else if (s != NULL) {
-        /*
-         * Parse of parameter failed.
-         */
-        Ns_Log(Warning,
-               "config parameter %s:%s: cannot parse '%s' as time value; "
-               "fall back to default %ld.%06ld",
-               section, key, s, defaultSec, defaultUsec);
-        timePtr->sec = defaultSec;
-        timePtr->usec = defaultUsec;
+               minSec, minUsec, maxSec, maxUsec, defaultString);
 
     } else {
-        /*
-         * No such parameter.
-         */
-        Ns_Log(Dev, "config: %s:%s value=(null) min=%ld.%06ld max=%ld.%06ld default=%ld.%06ld",
-               section, key,
-               minSec, minUsec, maxSec, maxUsec, defaultSec, defaultUsec);
-        timePtr->sec = defaultSec;
-        timePtr->usec = defaultUsec;
+
+        if (Ns_GetTimeFromString(NULL, defaultString, timePtr) != TCL_OK) {
+            /*
+             * Parse of default parameter failed.
+             */
+            Ns_Log(Error,
+                   "config parameter %s:%s: cannot parse default value '%s' as time value",
+                   section, key, defaultString);
+            timePtr->sec = 0;
+            timePtr->usec = 0;
+        } else if (s != NULL) {
+            /*
+             * Parse of parameter failed.
+             */
+            Ns_Log(Warning,
+                   "config parameter %s:%s: cannot parse '%s' as time value; "
+                   "fall back to default %s",
+                   section, key, s, defaultString);
+        } else {
+            /*
+             * No such parameter configured.
+             */
+            Ns_Log(Dev, "config: %s:%s value=(null) min=%ld.%06ld max=%ld.%06ld default=%s",
+                   section, key,
+                   minSec, minUsec, maxSec, maxUsec, defaultString);
+        }
     }
     if (Ns_DiffTime(timePtr, &minTime, NULL) == -1) {
         Ns_Log(Warning, "config: %s:%s value=%ld.%06ld rounded up to %ld.%06ld",
