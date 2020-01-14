@@ -1309,7 +1309,7 @@ CreatePool(const char *pool, const char *path, const char *driver)
 
     } else {
         int          i;
-        const char  *source, *minDurationString;
+        const char  *source;
 
         /*
          * Load the configured values.
@@ -1339,16 +1339,16 @@ CreatePool(const char *pool, const char *path, const char *driver)
         poolPtr->nhandles = Ns_ConfigIntRange(path, "connections", 2, 0, INT_MAX);
         poolPtr->maxidle = Ns_ConfigIntRange(path, "maxidle", 600, 0, INT_MAX);
         poolPtr->maxopen = Ns_ConfigIntRange(path, "maxopen", 3600, 0, INT_MAX);
-        minDurationString = Ns_ConfigGetValue(path, "logminduration");
-        if (minDurationString != NULL) {
-            if (Ns_GetTimeFromString(NULL, minDurationString, &poolPtr->minDuration) != TCL_OK) {
-                Ns_Log(Error, "dbinit: invalid LogMinDuration '%s' specified", minDurationString);
-            } else {
-                Ns_Log(Notice, "dbinit: set LogMinDuration for pool %s over %s to %" PRId64 ".%06ld",
-                       pool, minDurationString,
-                       (int64_t)poolPtr->minDuration.sec,
-                       poolPtr->minDuration.usec);
-            }
+
+        Ns_ConfigTimeUnitRange(path, "logminduration",
+                           "0ms",
+                           0, 0,
+                           1000000, 0,
+                           &poolPtr->minDuration);
+        if (poolPtr->minDuration.sec != 0 || poolPtr->minDuration.sec != 0) {
+            Ns_Log(Notice, "dbinit: set LogMinDuration for pool %s to %" PRId64 ".%06ld",
+                   pool, (int64_t)poolPtr->minDuration.sec,
+                   poolPtr->minDuration.usec);
         }
 
         /*

@@ -165,7 +165,7 @@ Postgres or Solid driver.
 [example_begin]
    ns_section ns/db/pool/mypool {
        ns_param	  connections        15
-       ns_param   LogMinDuration     0.01   ;# when SQL logging is on, log only statements above this duration
+       ns_param   LogMinDuration     10ms  ;# when SQL logging is on, log only statements above this duration
        ns_param	  logsqlerrors       true
        ns_param	  driver             postgres
        ns_param	  datasource         "${db_host}:${db_port}:dbname=${db_name}  sslmode=require"

@@ -756,7 +756,7 @@ ns_section ns/db/pool/pool1 {
     # ns_param	maxidle            0
     # ns_param	maxopen            0
     ns_param	connections        15
-    ns_param    LogMinDuration     0.01   ;# when SQL logging is on, log only statements above this duration
+    ns_param    LogMinDuration     10ms  ;# when SQL logging is on, log only statements above this duration
     ns_param	logsqlerrors       $debug
     if { $database eq "oracle" } {
 	ns_param	driver             ora8
@@ -775,14 +775,14 @@ ns_section ns/db/pool/pool1 {
 # consider the two commands (e.g. entered over ds/shell)
 #
 #    ns_logctl severity "Debug(sql)" on
-#    ns_db logminduration pool1  0.01
+#    ns_db logminduration pool1  10ms
 #
 
 ns_section ns/db/pool/pool2 {
     # ns_param	maxidle            0
     # ns_param	maxopen            0
     ns_param	connections        5
-    ns_param    LogMinDuration     0.01   ;# when SQL logging is on, log only statements above this duration
+    ns_param    LogMinDuration     10ms  ;# when SQL logging is on, log only statements above this duration
     ns_param	logsqlerrors       $debug
     if { $database eq "oracle" } {
 	ns_param	driver             ora8
@@ -801,7 +801,7 @@ ns_section ns/db/pool/pool3 {
     # ns_param	maxidle            0
     # ns_param	maxopen            0
     ns_param	connections        5
-    # ns_param  LogMinDuration     0.00   ;# when SQL logging is on, log only statements above this duration
+    # ns_param  LogMinDuration     0ms  ;# when SQL logging is on, log only statements above this duration
     ns_param	logsqlerrors       $debug
     if { $database eq "oracle" } {
 	ns_param	driver             ora8

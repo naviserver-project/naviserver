@@ -21,7 +21,8 @@ one row is returned.
 
 [call [cmd "ns_db 0or1row"] [arg handle] [arg sql]]
 
-This command expects the SQL to be a select statement that returns exactly zero
+This command expects the provided SQL command
+to be a select statement that returns exactly zero
 or one row. On zero rows, a null string is returned. On one row, a newly
 allocated ns_set is returned. An error is thrown if more then one row
 is returned.
@@ -86,8 +87,9 @@ Returns the database type for the database pool.
 
 [call [cmd "ns_db dml"] [arg handle] [arg sql]]
 
-ns_db dml executes SQL that should be data manipulation language such as an
-insert or update, or data definition language such as a create table.
+ns_db dml executes the provided SQL DML statement that should be data
+manipulation language such as an insert or update, or data definition
+language such as a create table.
 
 
 [call [cmd "ns_db driver"] [arg handle]]
@@ -136,7 +138,8 @@ If [option -timeout] is not specified or timeout is zero, [cmd "ns_db gethandle"
 wait indefinitely (perhaps forever) for the requested number of handles to
 become available. If timeout is greater than zero, ns_db gethandle will either
 return with the handles within that time period, or return "" if the time period
-was exceeded, or generate a Tcl error. See the examples for [cmd "ns_db gethandle"], below.
+was exceeded, or generate a Tcl error.
+See the examples for [cmd "ns_db gethandle"], below.
 The argument [arg t] can be specified in the form
 [arg secs[opt :microsecs]], or [arg secs.fraction],
 or as a number with the time units ms, s, m, d.
@@ -152,9 +155,12 @@ receiving "0" on the previous call, an error is returned.
 [call [cmd "ns_db logminduration"] [arg pool] [opt [arg duration]]]
 
 Query or set a threshold for logging of SQL statements. Log only
-statements in the error.log, when sql logging is turned on in general
-(via "ns_logctl severity Debug(sql) ...") and the statement took
-at least the specified duration (specified in seconds, e.g. "0.1").
+statements in the error.log, when SQL logging is turned on in general
+(via "ns_logctl severity Debug(sql) ...") and the statement took at
+least the specified duration. The [arg duration] can be specified in
+the form [arg secs[opt :microsecs]], or [arg secs.fraction], or as a
+number with the time units ms, s, m, d.
+
 
 [call [cmd "ns_db open"] [arg driver] [arg datasource] [arg user] [arg password]]
 
@@ -184,7 +190,8 @@ handles to the pool after a page has finished executing.
 
 [call [cmd "ns_db rowcount"] [arg handle]]
 
-Returns number of processed records by the last SQL statements, this is useful with INSERT/UPDATE/DELETE
+Returns number of processed records by the last SQL statements,
+this is useful with INSERT/UPDATE/DELETE
 statements to know how many records updated.
 
 
@@ -453,7 +460,7 @@ variables have to be set earlier to appropriate values.
 [example_begin]
 ns_section ns/db/pool/pool1
         ns_param	Connections        15
-        ns_param        LogMinDuration     0.01   
+        ns_param        LogMinDuration     10ms
 	ns_param	LogSQLerrors       $debug
 	ns_param	driver             postgres 
 	ns_param	DataSource         ${db_host}:${db_port}:${db_name}
@@ -462,7 +469,7 @@ ns_section ns/db/pool/pool1
  
 ns_section ns/db/pool/pool2
 	ns_param	Connections        5
-        ns_param        LogMinDuration     0.01
+        ns_param        LogMinDuration     10ms
         ns_param	LogSQLerrors       $debug
 	ns_param	driver             postgres 
 	ns_param	DataSource         ${db_host}:${db_port}:${db_name}
