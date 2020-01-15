@@ -678,7 +678,7 @@ static double ParseTimeUnit(const char *str)
     } else if (*str == '\xce' && *(str+1) == '\xbc' && *(str+2) == 's' && *(str+3) == '\0') {
         /* μ */
         multiplier = 0.000001;
-    } else {
+    } else if (*str != '\0') {
         Ns_Log(Warning, "ignoring time unit '%s'", str);
     }
 
@@ -706,12 +706,9 @@ DblValueToNstime( Ns_Time *tPtr, double dblValue)
 {
     NS_NONNULL_ASSERT(tPtr != NULL);
 
-    //fprintf(stderr, "dblvalue is %.6f\n", dblValue);
-
     tPtr->sec = (long)(dblValue);
     tPtr->usec = (long)((dblValue - (double)tPtr->sec) * 1000000.0);
 
-    //fprintf(stderr, "parsed time: %" PRId64 ".%06ld secs\n", (int64_t)tPtr->sec, tPtr->usec);
 }
 
 
@@ -745,6 +742,8 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
 
     NS_NONNULL_ASSERT(str != NULL);
     NS_NONNULL_ASSERT(tPtr != NULL);
+
+    //fprintf(stderr, "GetTimeFromString<%s>\n",str);
 
     sep = strchr(str, INTCHAR(separator));
 
