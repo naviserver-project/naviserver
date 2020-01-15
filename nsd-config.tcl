@@ -35,7 +35,7 @@ ns_section "ns/parameters" {
 
     #ns_param   dbcloseonexit       off                ;# default: off; from nsdb
     ns_param    jobsperthread       1000               ;# default: 0
-    ns_param    jobtimeout          0                  ;# default: 300
+    #ns_param    jobtimeout         0s                 ;# default: 5m
     ns_param    schedsperthread     10                 ;# default: 0
     ns_param    progressminsize     1MB                ;# default: 0
     #ns_param   concurrentinterpcreate true            ;# default: false

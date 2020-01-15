@@ -178,15 +178,11 @@ NsConfUpdate(void)
      * nsmain.c
      */
     Ns_ConfigTimeUnitRange(path, "shutdowntimeout",
-                           "20s",
-                           0, 0,
-                           1000000, 0,
+                           "20s", 0, 0, INT_MAX, 0,
                            &nsconf.shutdowntimeout);
-
     /*
      * sched.c
      */
-
     nsconf.sched.jobsperthread = Ns_ConfigIntRange(path, "schedsperthread", 0, 0, INT_MAX);
     nsconf.sched.maxelapsed = Ns_ConfigIntRange(path, "schedmaxelapsed", 2, 0, INT_MAX);
 
@@ -199,9 +195,10 @@ NsConfUpdate(void)
     /*
      * tcljob.c
      */
-
     nsconf.job.jobsperthread = Ns_ConfigIntRange(path, "jobsperthread", 0, 0, INT_MAX);
-    nsconf.job.timeout = Ns_ConfigIntRange(path, "jobtimeout", 300, 0, INT_MAX);
+    Ns_ConfigTimeUnitRange(path, "jobtimeout",
+                           "5m", 0, 0, INT_MAX, 0,
+                           &nsconf.job.timeout);
 
     /*
      * tclinit.c

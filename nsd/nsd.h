@@ -203,7 +203,7 @@ struct nsconf {
 
     struct {
         int jobsperthread;
-        int timeout;
+        Ns_Time timeout;
     } job;
 };
 

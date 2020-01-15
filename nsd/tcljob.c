@@ -2450,7 +2450,8 @@ SetupJobDefaults(void)
        tp.jobsPerThread = nsconf.job.jobsperthread;
     }
     if (tp.timeout.sec == 0 && tp.timeout.usec == 0) {
-        tp.timeout.sec = nsconf.job.timeout;
+        tp.timeout.sec = nsconf.job.timeout.sec;
+        tp.timeout.usec = nsconf.job.timeout.usec;
     }
 }
 

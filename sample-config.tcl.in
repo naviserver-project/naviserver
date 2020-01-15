@@ -131,6 +131,9 @@ ns_section	"ns/parameters" {
     # to reclaim thread memory back to the system if memory allocator supports it
     ns_param	jobsperthread		0
 
+    # Timeout for adding Tcl jobs to the job queue.
+    ns_param    jobtimeout             0s      ;# default: 5m
+
     # How many Tcl tasks to run in any schedule thread before thread exit
     ns_param	schedsperthread		0
 

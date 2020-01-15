@@ -163,7 +163,7 @@ ns_section ns/parameters {
 
     # ns_param	mailhost	localhost
     # ns_param	jobsperthread	0
-    # ns_param	jobtimeout	300
+    # ns_param	jobtimeout	5m
     # ns_param	schedsperthread	0
 
     # Write asynchronously to log files (access log and error log)
