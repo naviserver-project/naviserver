@@ -397,7 +397,7 @@ ns_section ns/server/${server} {
     ;# requests, thus initiating kind-of Tcl-level
     ;# garbage collection.
 
-    # ns_param	threadtimeout	120	;# 120; timeout for idle threads.
+    # ns_param	threadtimeout	2m	;# 2m; timeout for idle threads.
     ;# In case, minthreads < maxthreads, threads
     ;# are shutdown after this idle time until
     ;# minthreads are reached.

@@ -1915,7 +1915,7 @@ NsConnThread(void *arg)
     bool           duringShutdown, fromQueue;
     int            cpt, ncons, current;
     Ns_ReturnCode  status = NS_OK;
-    long           timeout;
+    Ns_Time        timeout;
     const char    *exitMsg;
     Ns_Thread      joinThread;
     Ns_Mutex      *threadsLockPtr, *tqueueLockPtr, *wqueueLockPtr;
@@ -2043,7 +2043,7 @@ NsConnThread(void *arg)
             while (!servPtr->pools.shutdown) {
 
                 Ns_GetTime(timePtr);
-                Ns_IncrTime(timePtr, timeout, 0);
+                Ns_IncrTime(timePtr, timeout.sec, timeout.usec);
 
                 status = Ns_CondTimedWait(&argPtr->cond, &argPtr->lock, timePtr);
 

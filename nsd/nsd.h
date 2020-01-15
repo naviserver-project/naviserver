@@ -697,7 +697,7 @@ typedef struct ConnPool {
 
     struct {
         Ns_Mutex  lock;
-        long      timeout;
+        Ns_Time   timeout;
         uintptr_t nextid;
         int       min;
         int       max;
