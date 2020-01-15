@@ -511,8 +511,8 @@ typedef struct Ns_Driver {
     const char *location;      /* Location, e.g, "http://foo:9090" */
     const char *address;       /* Address in location, e.g. "foo" */
     const char *protocol;      /* Protocol in location, e.g, "http" */
-    long        sendwait;      /* send() I/O timeout in seconds */
-    long        recvwait;      /* recv() I/O timeout in seconds */
+    Ns_Time     sendwait;      /* send() I/O timeout in seconds */
+    Ns_Time     recvwait;      /* recv() I/O timeout in seconds */
     size_t      bufsize;       /* Conn bufsize (0 for SSL) */
     const Ns_Set *extraHeaders;  /* Extra header fields added for every request */
 } Ns_Driver;
