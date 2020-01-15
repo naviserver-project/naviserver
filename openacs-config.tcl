@@ -135,9 +135,10 @@ ns_section ns/parameters {
     #
     # ns_param        tmpdir    c:/tmp
 
-    # Timeout for shutdown in seconds to let existing connections and
-    # background jobs finish.  When this time limit is exceeded the
-    # server shuts down immediately.
+    # Timeout for shutdown to let existing connections and background
+    # jobs finish.  When this time limit is exceeded the server shuts
+    # down immediately.
+    #
     # ns_param    shutdowntimeout 20s      ;# 20s is the default
 
     #
