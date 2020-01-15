@@ -81,8 +81,8 @@ static void LogError(char *func, int h_errnop);
 
 static Ns_Cache *hostCache;
 static Ns_Cache *addrCache;
-static int       ttl;       /* Time in seconds each entry can live in the cache. */
-static int       timeout;   /* Time in seconds to wait for concurrent update.  */
+static Ns_Time   ttl;       /* Time in seconds each entry can live in the cache. */
+static Ns_Time   timeout;   /* Time in seconds to wait for concurrent update.  */
 
 
 
@@ -111,9 +111,12 @@ NsConfigDNS(void)
         size_t maxSize = (size_t)Ns_ConfigMemUnitRange(path, "dnscachemaxsize", 1024 * 500,
                                                        0, INT_MAX);
         if (maxSize > 0u) {
-            timeout = Ns_ConfigIntRange(path, "dnswaittimeout",  5, 0, INT_MAX);
-            ttl = Ns_ConfigIntRange(path, "dnscachetimeout", 60, 0, INT_MAX);
-            ttl *= 60; /* NB: Config specifies minutes, seconds used internally. */
+            Ns_ConfigTimeUnitRange(path, "dnswaittimeout",
+                                   "5s", 0, 0, INT_MAX, 0,
+                                   &timeout);
+            Ns_ConfigTimeUnitRange(path, "dnscachetimeout",
+                                   "60m", 0, 0, INT_MAX, 0,
+                                   &ttl);
 
             hostCache = Ns_CacheCreateSz("ns:dnshost", TCL_STRING_KEYS,
                                          maxSize, ns_free);
@@ -193,7 +196,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, bo
         Ns_Entry   *entry;
 
         Ns_GetTime(&t);
-        Ns_IncrTime(&t, timeout, 0);
+        Ns_IncrTime(&t, timeout.sec, timeout.usec);
 
         Ns_CacheLock(cache);
         entry = Ns_CacheWaitCreateEntry(cache, key, &isNew, &t);
@@ -214,7 +217,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, bo
 
                     Ns_GetTime(&endTime);
                     (void)Ns_DiffTime(&endTime, &t, &diffTime);
-                    Ns_IncrTime(&endTime, ttl, 0);
+                    Ns_IncrTime(&endTime, ttl.sec, ttl.usec);
                     Ns_CacheSetValueExpires(entry, ns_strdup(ds.string),
                                             (size_t)ds.length, &endTime,
                                             (int)(diffTime.sec * 1000000 + diffTime.usec),

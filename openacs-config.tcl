@@ -204,8 +204,8 @@ ns_section ns/parameters {
     # DNS configuration parameters
     #
     ns_param dnscache true          ;# default: true
-    ns_param dnswaittimeout 5       ;# time for waiting for a DNS reply in seconds; default: 5
-    ns_param dnscachetimeout 60     ;# time to keep entries in cache in minutes; default: 60
+    ns_param dnswaittimeout 5s      ;# time for waiting for a DNS reply; default: 5s
+    ns_param dnscachetimeout 1h     ;# time to keep entries in cache; default: 1h
     ns_param dnscachemaxsize 500kB  ;# max size of DNS cache in memory units; default: 500kB
 
     # Running behind proxy? Used by OpenACS...

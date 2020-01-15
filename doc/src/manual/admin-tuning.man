@@ -28,12 +28,12 @@ it your configuration has it turned off. Also, the nsperm module uses DNS
 lookups for access control -- turn this off if you don't use host access
 control rules with nsperm. The nscgi module also can use DNS but, again,
 it's off by default (gethostbyaddr setting). If you must use DNS, NaviServer
-has a DNS cache that can be tweaked -- see [term dnscache] and
+has a DNS cache that can be tweaked -- see [term dnscache],
+[term dnswaittimeout] and
 [term dnscachetimeout] in the config reference.
 
 
 [subsection {Experiment with the ADP cache}]
-
 
 In the ns/server/servername/adp section, the parameters are
 [term cache], [term cachesize], and [term threadcache].
