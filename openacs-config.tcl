@@ -246,7 +246,7 @@ if {[info exists httpport]} {
 	ns_param	hostname	$hostname
 	ns_param	port		$httpport                ;# default 80
 	ns_param	maxinput	${max_file_upload_mb}MB  ;# 1MB, maximum size for inputs (uploads)
-	ns_param	recvwait	[expr {$max_file_upload_min * 60}] ;# 30, timeout for receive operations
+	ns_param	recvwait	${max_file_upload_min}m  ;# 30s, timeout for receive operations
 	# ns_param	maxline		8192	;# 8192, max size of a header line
 	# ns_param	maxheaders	128	;# 128, max number of header lines
 	# ns_param	uploadpath	/tmp	;# directory for uploads
@@ -256,9 +256,9 @@ if {[info exists httpport]} {
 	# ns_param	deferaccept     true    ;# false, Performance optimization, may cause recvwait to be ignored
 	# ns_param	bufsize		16kB	;# 16kB, buffersize
 	# ns_param	readahead	16kB	;# value of bufsize, size of readahead for requests
-	# ns_param	sendwait	30	;# 30, timeout in seconds for send operations
-	# ns_param	closewait	2	;# 2, timeout in seconds for close on socket
-	# ns_param	keepwait	2	;# 5, timeout in seconds for keep-alive
+	# ns_param	sendwait	30s	;# 30s, timeout for send operations
+	# ns_param	closewait	2s	;# 2s, timeout for close on socket
+	# ns_param	keepwait	2s	;# 5s, timeout for keep-alive
 	# ns_param	nodelay         false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted
 	# ns_param	keepalivemaxuploadsize	  500kB  ;# 0, don't allow keep-alive for upload content larger than this
 	# ns_param	keepalivemaxdownloadsize  1MB    ;# 0, don't allow keep-alive for download content larger than this

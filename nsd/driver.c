@@ -261,7 +261,7 @@ static void  SockError(Sock *sockPtr, SockState reason, int err)
 static void  SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 static void  SockTrigger(NS_SOCKET sock);
-static void  SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, long timeout)
+static void  SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, const Ns_Time *timeout)
     NS_GNUC_NONNULL(1);
 static void  SockClose(Sock *sockPtr, int keep)
     NS_GNUC_NONNULL(1);
@@ -1005,10 +1005,20 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     drvPtr->maxline        = Ns_ConfigIntRange(path, "maxline",      8192, 256, INT_MAX);
     drvPtr->maxheaders     = Ns_ConfigIntRange(path, "maxheaders",    128,   8, INT_MAX);
     drvPtr->maxqueuesize   = Ns_ConfigIntRange(path, "maxqueuesize", 1024,   1, INT_MAX);
-    drvPtr->sendwait       = Ns_ConfigIntRange(path, "sendwait",       30,   1, INT_MAX);
-    drvPtr->recvwait       = Ns_ConfigIntRange(path, "recvwait",       30,   1, INT_MAX);
-    drvPtr->closewait      = Ns_ConfigIntRange(path, "closewait",       2,   0, INT_MAX);
-    drvPtr->keepwait       = Ns_ConfigIntRange(path, "keepwait",        5,   0, INT_MAX);
+
+    Ns_ConfigTimeUnitRange(path, "sendwait",
+                           "30s", 1, 0, INT_MAX, 0,
+                           &drvPtr->sendwait);
+    Ns_ConfigTimeUnitRange(path, "recvwait",
+                           "30s", 1, 0, INT_MAX, 0,
+                           &drvPtr->recvwait);
+    Ns_ConfigTimeUnitRange(path, "closewait",
+                           "2s", 0, 0, INT_MAX, 0,
+                           &drvPtr->closewait);
+    Ns_ConfigTimeUnitRange(path, "keepwait",
+                           "5s", 0, 0, INT_MAX, 0,
+                           &drvPtr->keepwait);
+
     drvPtr->backlog        = Ns_ConfigIntRange(path, "backlog",       256,   1, INT_MAX);
     drvPtr->driverthreads  = Ns_ConfigIntRange(path, "driverthreads",   1,   1, 32);
     drvPtr->reuseport      = Ns_ConfigBool(path,     "reuseport",       NS_FALSE);
@@ -1018,8 +1028,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
                                                             0, 0, INT_MAX);
     drvPtr->keepmaxdownloadsize = (size_t)Ns_ConfigMemUnitRange(path, "keepalivemaxdownloadsize",
                                                             0, 0, INT_MAX);
-    drvPtr->recvTimeout.sec = drvPtr->recvwait;
-    drvPtr->recvTimeout.usec = 0;
+    drvPtr->recvTimeout = drvPtr->recvwait;
 
     Tcl_InitHashTable(&drvPtr->hosts, TCL_STRING_KEYS);
 
@@ -1333,10 +1342,10 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->protocol, -1));
 
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("sendwait", 8));
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewLongObj(drvPtr->sendwait));
+                Tcl_ListObjAppendElement(interp, listObj, Ns_TclNewTimeObj(&drvPtr->sendwait));
 
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("recvwait", 8));
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewLongObj(drvPtr->sendwait));
+                Tcl_ListObjAppendElement(interp, listObj, Ns_TclNewTimeObj(&drvPtr->sendwait));
 
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("extraheaders", 12));
                 if (drvPtr->extraHeaders != NULL) {
@@ -2277,7 +2286,7 @@ DriverThread(void *arg)
 
                     case SOCK_MORE:
                         drvPtr->stats.partial++;
-                        SockTimeout(sockPtr, &now, drvPtr->recvwait);
+                        SockTimeout(sockPtr, &now, &drvPtr->recvwait);
                         Push(sockPtr, readPtr);
                         break;
 
@@ -2395,7 +2404,7 @@ DriverThread(void *arg)
 
                         case SOCK_MORE:
                             drvPtr->stats.partial++;
-                            SockTimeout(sockPtr, &now, drvPtr->recvwait);
+                            SockTimeout(sockPtr, &now, &drvPtr->recvwait);
                             Push(sockPtr, readPtr);
                             break;
 
@@ -2464,10 +2473,11 @@ DriverThread(void *arg)
 
                 assert(drvPtr == sockPtr->drvPtr);
 
-                Ns_Log(DriverDebug, "setting keepwait %ld for socket %d",
-                       drvPtr->keepwait,  sockPtr->sock);
+                Ns_Log(DriverDebug, "setting keepwait %ld.%6ld for socket %d",
+                       drvPtr->keepwait.sec, drvPtr->keepwait.usec,
+                       sockPtr->sock);
 
-                SockTimeout(sockPtr, &now, drvPtr->keepwait);
+                SockTimeout(sockPtr, &now, &drvPtr->keepwait);
                 Push(sockPtr, readPtr);
             } else {
 
@@ -2481,16 +2491,16 @@ DriverThread(void *arg)
                 if (sockPtr->sock == NS_INVALID_SOCKET) {
                     SockRelease(sockPtr, SOCK_CLOSE, errno);
 
-                    Ns_Log(DriverDebug, "DRIVER SockRelease: errno %d drvPtr->closewait %ld",
-                           errno, drvPtr->closewait);
+                    Ns_Log(DriverDebug, "DRIVER SockRelease: errno %d drvPtr->closewait %ld.%6ld",
+                           errno, drvPtr->closewait.sec, drvPtr->closewait.usec);
 
                 } else if (shutdown(sockPtr->sock, SHUT_WR) != 0) {
                     SockRelease(sockPtr, SOCK_SHUTERROR, errno);
 
                 } else {
-                    Ns_Log(DriverDebug, "setting closewait %ld for socket %d",
-                           drvPtr->closewait,  sockPtr->sock);
-                    SockTimeout(sockPtr, &now, drvPtr->closewait);
+                    Ns_Log(DriverDebug, "setting closewait %ld.%6ld for socket %d",
+                           drvPtr->closewait.sec,  drvPtr->closewait.usec, sockPtr->sock);
+                    SockTimeout(sockPtr, &now, &drvPtr->closewait);
                     Push(sockPtr, closePtr);
                 }
             }
@@ -2846,11 +2856,11 @@ SockPoll(Sock *sockPtr, short type, PollData *pdata)
  */
 
 static void
-SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, long timeout)
+SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, const Ns_Time *timeout)
 {
     NS_NONNULL_ASSERT(sockPtr != NULL);
     sockPtr->timeout = *nowPtr;
-    Ns_IncrTime(&sockPtr->timeout, timeout, 0);
+    Ns_IncrTime(&sockPtr->timeout, timeout->sec, timeout->usec);
 }
 
 
@@ -4408,7 +4418,7 @@ SpoolerThread(void *arg)
                 SockState n = SockRead(sockPtr, 1, &now);
                 switch (n) {
                 case SOCK_MORE:
-                    SockTimeout(sockPtr, &now, drvPtr->recvwait);
+                    SockTimeout(sockPtr, &now, &drvPtr->recvwait);
                     Push(sockPtr, readPtr);
                     break;
 
@@ -4473,7 +4483,7 @@ SpoolerThread(void *arg)
             while (sockPtr != NULL) {
                 nextPtr = sockPtr->nextPtr;
                 drvPtr  = sockPtr->drvPtr;
-                SockTimeout(sockPtr, &now, drvPtr->recvwait);
+                SockTimeout(sockPtr, &now, &drvPtr->recvwait);
                 Push(sockPtr, readPtr);
                 queuePtr->queuesize++;
                 sockPtr = nextPtr;
@@ -5554,9 +5564,11 @@ WriterThread(void *arg)
                  *  for too long and we need to stop this socket
                  */
                 if (sockPtr->timeout.sec == 0) {
-                    Ns_Log(DriverDebug, "Writer %p fd %d setting sendwait %ld",
-                           (void *)curPtr, sockPtr->sock, curPtr->sockPtr->drvPtr->sendwait);
-                    SockTimeout(sockPtr, &now, curPtr->sockPtr->drvPtr->sendwait);
+                    Ns_Log(DriverDebug, "Writer %p fd %d setting sendwait %ld.%6ld",
+                           (void *)curPtr, sockPtr->sock,
+                           curPtr->sockPtr->drvPtr->sendwait.sec,
+                           curPtr->sockPtr->drvPtr->sendwait.usec);
+                    SockTimeout(sockPtr, &now, &curPtr->sockPtr->drvPtr->sendwait);
                 } else if (Ns_DiffTime(&sockPtr->timeout, &now, NULL) <= 0) {
                     Ns_Log(DriverDebug, "Writer %p fd %d timeout", (void *)curPtr, sockPtr->sock);
                     err          = ETIMEDOUT;
@@ -5610,7 +5622,7 @@ WriterThread(void *arg)
                     nextPtr = curPtr->nextPtr;
                     sockPtr = curPtr->sockPtr;
                     drvPtr  = sockPtr->drvPtr;
-                    SockTimeout(sockPtr, &now, drvPtr->sendwait);
+                    SockTimeout(sockPtr, &now, &drvPtr->sendwait);
                     Push(curPtr, writePtr);
                     queuePtr->queuesize++;
                     curPtr = nextPtr;

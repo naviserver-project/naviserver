@@ -394,8 +394,8 @@ typedef struct Driver {
     const char  *location;              /* Location, e.g, "http://foo:9090" */
     const char  *address;               /* Tcl list of IP addresses to bind to */
     const char  *protocol;              /* Protocol in location, e.g, "http" */
-    long         sendwait;              /* send() I/O timeout */
-    long         recvwait;              /* recv() I/O timeout */
+    Ns_Time      sendwait;              /* send() I/O timeout */
+    Ns_Time      recvwait;              /* recv() I/O timeout */
     size_t       bufsize;               /* Conn bufsize (0 for SSL) */
     const Ns_Set *extraHeaders;         /* Extra header fields added for every request */
 
@@ -418,8 +418,8 @@ typedef struct Driver {
     const char *defserver;              /* default server, might be NULL */
     Tcl_HashTable hosts;                /* Virtual hosts mapping to server */
     const struct ServerMap *defMapPtr;  /* Default for virtual host entry */
-    long closewait;                     /* Graceful close timeout */
-    long keepwait;                      /* Keepalive timeout */
+    Ns_Time closewait;                  /* Graceful close timeout */
+    Ns_Time keepwait;                   /* Keepalive timeout */
     size_t keepmaxdownloadsize;         /* When set, allow keepalive only for download requests up to this size */
     size_t keepmaxuploadsize;           /* When set, allow keepalive only for upload requests up to this size */
     Ns_Mutex lock;                      /* Lock to protect lists below. */

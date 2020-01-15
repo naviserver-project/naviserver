@@ -1629,8 +1629,8 @@ ConnChanReadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
                  * No timeout was specified, use the configured receivewait of
                  * the driver as timeout.
                  */
-                timeout.sec = connChanPtr->sockPtr->drvPtr->recvwait;
-                timeout.usec = 0;
+                timeout.sec = connChanPtr->sockPtr->drvPtr->recvwait.sec;
+                timeout.usec = connChanPtr->sockPtr->drvPtr->recvwait.usec;
                 timeoutPtr = &timeout;
             }
             nRead = NsDriverRecv(connChanPtr->sockPtr, &buf, 1, timeoutPtr);

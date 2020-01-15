@@ -54,8 +54,8 @@ The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB);
 default: 16kB
 
 [def closewait]
-Timeout in seconds for close on socket to drain potential garbage if
-no keep alive is performed. (integer, default: 2)
+Timeout for close on socket to drain potential garbage if
+no keep alive is performed. (value with optional time unit, default: 2s)
 
 [def defaultserver] In a virtual server setup (when the driver module
 is loaded globally), this parameter is required and refers to the
@@ -110,7 +110,7 @@ The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB);
 (default: 0)
 
 [def keepwait]
-Timeout in seconds for keep-alive. (integer, default: 5)
+Timeout for keep-alive. (value with optional time unit, default: 5s)
 
 [def location]
 Provide a default for protocol://hostname[lb]:port[rb]. Useful
@@ -158,7 +158,7 @@ The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB);
 (default: value of [term bufsize])
 
 [def recvwait]
-Timeout in seconds for receive operations. (integer, default: 30)
+Timeout for receive operations. (value with optional time unit, default: 30s)
 
 [def reuseport] When the parameter is set and SO_REUSEPORT is
 supported by the os, NaviServer will allow multiple listen operations
@@ -166,7 +166,7 @@ on the same port (default: false)
 
 
 [def sendwait]
-Timeout in seconds for send operations. (integer, default: 30)
+Timeout for send operations. (value with optional time unit, default: 30s)
 
 [def spoolerthreads]
 Number of spooler threads used when content larger than

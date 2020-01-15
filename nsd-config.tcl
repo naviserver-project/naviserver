@@ -97,14 +97,14 @@ ns_section "ns/module/nssock" {
     ns_param    defaultserver            default
     ns_param    port                     $port
     ns_param    address                  $address     ;# Space separated list of IP addresses
-    #ns_param    hostname                 [ns_info hostname]
+    #ns_param    hostname                [ns_info hostname]
     ns_param    maxinput                 10MB         ;# default: 1MB, maximum size for inputs (uploads)
     #ns_param   readahead                1MB          ;# default: 16384; size of readahead for requests
     ns_param    backlog                  1024         ;# default: 256; backlog for listen operations
     ns_param    acceptsize               10           ;# default: value of "backlog"; max number of accepted (but unqueued) requests
-    ns_param    closewait                0            ;# default: 2; timeout in seconds for close on socket
+    ns_param    closewait                0s           ;# default: 2s; timeout for close on socket
     ns_param    maxqueuesize             1024         ;# default: 1024; maximum size of the queue
-    ns_param    keepwait		 5	      ;# 5, timeout in seconds for keep-alive
+    ns_param    keepwait		 5s	      ;# 5s, timeout for keep-alive
     ns_param    keepalivemaxuploadsize	 0.5MB	      ;# 0, don't allow keep-alive for upload content larger than this
     ns_param    keepalivemaxdownloadsize 1MB          ;# 0, don't allow keep-alive for download content larger than this
     #

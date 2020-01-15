@@ -89,10 +89,8 @@ configuration data, might be e.g. "http://localhost:8091"
 [item] [term address] is the IP address (IPv4 or IPv6), on which the server is
 listening, might be e.g. "0.0.0.0"
 [item] [term protocol] is the name of the protocol, such as e.g. "http"
-[item] [term sendwait] timeout for send operations in seconds, default
-is "30".
-[item] [term recvwait] timeout for receive operations in seconds, default
-is "30".
+[item] [term sendwait] timeout for send operations.
+[item] [term recvwait] timeout for receive operations.
 [item] [term extraheaders] are the extra response header fields to be returned
 on every request via this driver.
 [list_end]

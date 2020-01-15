@@ -541,8 +541,8 @@ Ns_ConnSendFileVec(Ns_Conn *conn, Ns_FileVec *bufs, int nbufs)
     NS_NONNULL_ASSERT(sockPtr != NULL);
     NS_NONNULL_ASSERT(sockPtr->drvPtr != NULL);
 
-    waitTimeout.sec  = sockPtr->drvPtr->sendwait;
-    waitTimeout.usec = 0;
+    waitTimeout.sec  = sockPtr->drvPtr->sendwait.sec;
+    waitTimeout.usec = sockPtr->drvPtr->sendwait.usec;
 
     for (i = 0; i < nbufs; i++) {
         towrite += bufs[i].length;
@@ -690,8 +690,8 @@ Ns_ConnSend(Ns_Conn *conn, struct iovec *bufs, int nbufs)
         NS_NONNULL_ASSERT(sockPtr != NULL);
         NS_NONNULL_ASSERT(sockPtr->drvPtr != NULL);
 
-        waitTimeout.sec  = sockPtr->drvPtr->sendwait;
-        waitTimeout.usec = 0;
+        waitTimeout.sec  = sockPtr->drvPtr->sendwait.sec;
+        waitTimeout.usec = sockPtr->drvPtr->sendwait.usec;
 
         sent = Ns_SockSendBufs((Ns_Sock*)sockPtr, bufs, nbufs, &waitTimeout, 0u);
 
@@ -1307,7 +1307,7 @@ CheckKeep(const Conn *connPtr)
     NS_NONNULL_ASSERT(connPtr != NULL);
 
     do {
-        if (connPtr->drvPtr->keepwait > 0) {
+        if (connPtr->drvPtr->keepwait.sec > 0 || connPtr->drvPtr->keepwait.usec > 0 ) {
             /*
              * Check for manual keep-alive override.
              */
