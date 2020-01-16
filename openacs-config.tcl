@@ -166,6 +166,7 @@ ns_section ns/parameters {
     # ns_param	jobsperthread	0
     # ns_param	jobtimeout	5m
     # ns_param	schedsperthread	0
+    # ns_param	schedmaxelapsed	2s        ;# print warnings when scheduled job takes longer than that
 
     # Write asynchronously to log files (access log and error log)
     # ns_param	asynclogwriter	true		;# false

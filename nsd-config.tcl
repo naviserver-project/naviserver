@@ -35,12 +35,13 @@ ns_section "ns/parameters" {
 
     #ns_param   dbcloseonexit       off                ;# default: off; from nsdb
     ns_param    jobsperthread       1000               ;# default: 0
-    #ns_param    jobtimeout         0s                 ;# default: 5m
+    #ns_param   jobtimeout          0s                 ;# default: 5m
     ns_param    schedsperthread     10                 ;# default: 0
+    # ns_param	schedmaxelapsed	    2s        ;        # print warnings when scheduled job takes longer than that
     ns_param    progressminsize     1MB                ;# default: 0
     #ns_param   concurrentinterpcreate true            ;# default: false
-    #ns_param   listenbacklog        256               ;# default: 32; backlog for ns_socket commands
-    #ns_param   mutexlocktrace       true              ;# default false; print durations of long mutex calls to stderr
+    #ns_param   listenbacklog       256                ;# default: 32; backlog for ns_socket commands
+    #ns_param   mutexlocktrace      true               ;# default false; print durations of long mutex calls to stderr
 
     # Reject output operations on already closed connections (e.g. subsequent ns_return statements)
     #ns_param   rejectalreadyclosedconn false ;# default: true

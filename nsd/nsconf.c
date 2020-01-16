@@ -184,8 +184,20 @@ NsConfUpdate(void)
      * sched.c
      */
     nsconf.sched.jobsperthread = Ns_ConfigIntRange(path, "schedsperthread", 0, 0, INT_MAX);
-    nsconf.sched.maxelapsed = Ns_ConfigIntRange(path, "schedmaxelapsed", 2, 0, INT_MAX);
+    {
+        Ns_Time maxelapsed;
 
+        Ns_ConfigTimeUnitRange(path, "schedmaxelapsed",
+                               "2s", 0, 0, INT_MAX, 0,
+                               &maxelapsed);
+        if (maxelapsed.sec == 0 && maxelapsed.usec != 0) {
+            /*
+             * Minimal granularity is 1 sec
+             */
+            maxelapsed.sec = 1;
+        }
+        nsconf.sched.maxelapsed = (int)maxelapsed.sec;
+    }
     /*
      * binder.c, win32.c
      */
