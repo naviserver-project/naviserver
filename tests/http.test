@@ -1279,8 +1279,7 @@ test http-8.3 {ns_return with UTF-8 3 byte char with impure bytearray} -constrai
     unset -nocomplain r
 } -result {200 3 ☃}
 
-
-test http-8.4.0w {ns_http queue + wait with timeout} -constraints {serverListen} -setup {
+test http-8.4.0 {ns_http queue + expire, ns_http wait + timeout, with timeout} -constraints {serverListen} -setup {
     ns_register_proc GET /slow {
         ns_sleep 2
         ns_return 200 text/plain OK
@@ -1288,8 +1287,8 @@ test http-8.4.0w {ns_http queue + wait with timeout} -constraints {serverListen}
     ns_register_proc GET /get {ns_return 200 text/plain OK}
 } -body {
     try {
-        set q [ns_http queue -timeout 1 [ns_config test listenurl]/slow]
-        ns_http wait -timeout 1 $q
+        set q [ns_http queue -expire 1 [ns_config test listenurl]/slow]
+        ns_http wait -timeout 2 $q
     } on error {errorMsg} {
         set r $::errorCode
     } on ok {result} {
@@ -1303,7 +1302,76 @@ test http-8.4.0w {ns_http queue + wait with timeout} -constraints {serverListen}
     unset r
 } -result {NS_TIMEOUT}
 
-test http-8.4.0r {ns_http run with timeout} -constraints {serverListen} -setup {
+test http-8.4.1 {ns_http queue + expire, ns_http wait, with timeout} -constraints {serverListen} -setup {
+    ns_register_proc GET /slow {
+        ns_sleep 2
+        ns_return 200 text/plain OK
+    }
+    ns_register_proc GET /get {ns_return 200 text/plain OK}
+} -body {
+    try {
+        set q [ns_http queue -expire 1 [ns_config test listenurl]/slow]
+        ns_http wait $q
+    } on error {errorMsg} {
+        set r $::errorCode
+    } on ok {result} {
+        set r "no timeout"
+    }
+    return $r
+} -cleanup {
+    ns_http run [ns_config test listenurl]/get
+    ns_unregister_op GET /slow
+    ns_unregister_op GET /get
+    unset r
+} -result {NS_TIMEOUT}
+
+test http-8.4.2 {ns_http queue + timeout, ns_http wait + timeout, with timeout} -constraints {serverListen} -setup {
+    ns_register_proc GET /slow {
+        ns_sleep 2
+        ns_return 200 text/plain OK
+    }
+    ns_register_proc GET /get {ns_return 200 text/plain OK}
+} -body {
+    try {
+        set q [ns_http queue -timeout 1 [ns_config test listenurl]/slow]
+        ns_http wait -timeout 2 $q
+    } on error {errorMsg} {
+        set r $::errorCode
+    } on ok {result} {
+        set r "no timeout"
+    }
+    return $r
+} -cleanup {
+    ns_http run [ns_config test listenurl]/get
+    ns_unregister_op GET /slow
+    ns_unregister_op GET /get
+    unset r
+} -result {NS_TIMEOUT}
+
+test http-8.4.3 {ns_http queue + timeout, ns_http wait, with timeout} -constraints {serverListen} -setup {
+    ns_register_proc GET /slow {
+        ns_sleep 2
+        ns_return 200 text/plain OK
+    }
+    ns_register_proc GET /get {ns_return 200 text/plain OK}
+} -body {
+    try {
+        set q [ns_http queue -timeout 1 [ns_config test listenurl]/slow]
+        ns_http wait $q
+    } on error {errorMsg} {
+        set r $::errorCode
+    } on ok {result} {
+        set r "no timeout"
+    }
+    return $r
+} -cleanup {
+    ns_http run [ns_config test listenurl]/get
+    ns_unregister_op GET /slow
+    ns_unregister_op GET /get
+    unset r
+} -result {NS_TIMEOUT}
+
+test http-8.4.4 {ns_http run + timeout, with timeout} -constraints {serverListen} -setup {
     ns_register_proc GET /slow {
         ns_sleep 2
         ns_return 200 text/plain OK
@@ -1319,7 +1387,28 @@ test http-8.4.0r {ns_http run with timeout} -constraints {serverListen} -setup {
     }
     return $r
 } -cleanup {
-    # make sure that the slow request is finished on the connection queue.
+    ns_http run [ns_config test listenurl]/get
+    ns_unregister_op GET /slow
+    ns_unregister_op GET /get
+    unset r
+} -result {NS_TIMEOUT}
+
+test http-8.4.5 {ns_http run + expire, with timeout} -constraints {serverListen} -setup {
+    ns_register_proc GET /slow {
+        ns_sleep 2
+        ns_return 200 text/plain OK
+    }
+    ns_register_proc GET /get {ns_return 200 text/plain OK}
+} -body {
+    try {
+        set r [ns_http run -expire 1 [ns_config test listenurl]/slow]
+    } on error {errorMsg} {
+        set r $::errorCode
+    } on ok {result} {
+        set r "no timeout"
+    }
+    return $r
+} -cleanup {
     ns_http run [ns_config test listenurl]/get
     ns_unregister_op GET /slow
     ns_unregister_op GET /get
@@ -1327,12 +1416,12 @@ test http-8.4.0r {ns_http run with timeout} -constraints {serverListen} -setup {
 } -result {NS_TIMEOUT}
 
 
-test http-8.4.1w {ns_http queue + wait, timeout specified, without timeout} -constraints {serverListen} -setup {
+test http-8.4.6 {ns_http queue, ns_http wait + timeout, no timeout} -constraints {serverListen} -setup {
     ns_register_proc GET /get { ns_return 200 text/plain OK }
 } -body {
     try {
-        set q [ns_http queue -timeout 1 [ns_config test listenurl]/get]
-        ns_http wait -timeout 2 $q
+        set q [ns_http queue [ns_config test listenurl]/get]
+        ns_http wait -timeout 1 $q
     } on error {errorMsg} {
         set r $::errorCode
     } on ok {result} {
@@ -1344,16 +1433,14 @@ test http-8.4.1w {ns_http queue + wait, timeout specified, without timeout} -con
     unset r
 } -result {no timeout 200}
 
-test http-8.4.1r {ns_http run, timeout specified, without timeout} -constraints {serverListen} -setup {
+test http-8.4.7 {ns_http run + timeout, no timeout} -constraints {serverListen} -setup {
     ns_register_proc GET /get { ns_return 200 text/plain OK }
 } -body {
     try {
-        set r [ns_http run -timeout 2 [ns_config test listenurl]/get]
+        set r [ns_http run -timeout 1 [ns_config test listenurl]/get]
     } on error {errorMsg} {
-        ns_log notice "ERROR"
         set r $::errorCode
     } on ok {result} {
-        ns_log notice "OK"
         set r "no timeout [dict get $result status]"
     }
     return $r
@@ -1366,7 +1453,6 @@ test http-8.4.1r {ns_http run, timeout specified, without timeout} -constraints 
 test http-8.5.0 {ns_http queue + donecallback} -constraints {serverListen} -setup {
     ns_register_proc GET /get { ns_return 200 text/plain OK }
 } -body {
-    #ns_logctl severity Debug(task) on
     nsv_set result . ""
     try {
         ns_http queue -donecallback "nsv_lappend result . " [ns_config test listenurl]/get
@@ -1396,15 +1482,11 @@ test http-8.5.1 {ns_http queue + donecallback + timeout} -constraints {serverLis
     # Sleep a little to let done-callback finish (max after 1 sec).
     #
     ns_sleep 2
-
-    #append  " " [dict get [lindex [nsv_get result .] 1] status]
     nsv_get result .
 } -cleanup {
     ns_unregister_op GET /slow
     nsv_unset result
-} -result {1 {ns_http failed: timeout}}
-
-
+} -result {1 {http request timeout}}
 
 test http-9.0 {GET for static compressed file via fastpath} -constraints {serverListen} -body {
     nstest::http \
@@ -1414,7 +1496,6 @@ test http-9.0 {GET for static compressed file via fastpath} -constraints {server
         GET /test.html
 } -cleanup {
 } -result {200 89 text/html gzip}
-
 
 
 cleanupTests

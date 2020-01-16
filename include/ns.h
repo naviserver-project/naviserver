@@ -1635,6 +1635,12 @@ Ns_TaskCreate(NS_SOCKET sock, Ns_TaskProc *proc, void *arg)
     NS_GNUC_RETURNS_NONNULL
     NS_GNUC_WARN_UNUSED_RESULT;
 
+NS_EXTERN Ns_Task *
+Ns_TaskTimedCreate(NS_SOCKET sock, Ns_TaskProc *proc, void *arg, Ns_Time *)
+    NS_GNUC_NONNULL(2)
+    NS_GNUC_RETURNS_NONNULL
+    NS_GNUC_WARN_UNUSED_RESULT;
+
 NS_EXTERN Ns_ReturnCode
 Ns_TaskEnqueue(Ns_Task *task, Ns_TaskQueue *queue)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);

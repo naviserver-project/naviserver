@@ -1080,9 +1080,9 @@ typedef struct {
     Ns_Mutex           lock;             /* sync with task thread */
     unsigned int       flags;            /* */
     Ns_CompressStream *compress;         /* flag, toggle content decompression */
-    Ns_Time            timeout;          /* wait for the task to complete */
-    Ns_Time            stime;            /* task starting time */
-    Ns_Time            etime;            /* task ending time */
+    Ns_Time           *timeout;          /* interval to wait for connect/data */
+    Ns_Time            stime;            /* wall-clock task starting time */
+    Ns_Time            etime;            /* wall-clock task ending time */
     bool               sendSpoolMode;    /* flag, spool from file/channel */
     bool               recvSpoolMode;    /* flag, spool to file/channel */
     int                bodyFileFd;       /* fd of the file to read the body */

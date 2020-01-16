@@ -14,7 +14,6 @@ and process replies from web servers.
 
 [list_begin definitions]
 
-
 [call [cmd "ns_http queue"] \
 	[opt [option "-body_size [arg size]"]] \
 	[opt [option "-body [arg B]"]] \
@@ -33,6 +32,7 @@ and process replies from web servers.
 	[opt [option "-outputfile [arg fn]"]] \
 	[opt [option "-outputchan [arg chan]"]] \
 	[opt [option "-timeout [arg T]"]] \
+	[opt [option "-expire [arg T]"]] \
 	[opt [option "-verify"]] \
 	[arg url] \
 	]
@@ -49,7 +49,7 @@ in a dedicated per-queue thread.
 
 [opt_def -body_size [arg size]]
 specifies the expected size of the data which will be sent as the HTTP
-request body. This option must be used when sending body data via Tcl 
+request body. This option must be used when sending body data via Tcl
 channels which are not capable of seeking. It is optional if sending
 body data from memory or from a named file.
 
@@ -57,13 +57,13 @@ body data from memory or from a named file.
 trasmit the content of the passed string as the request body.
 This option is mutualy exclusive with [option -body_file] and [option -body_chan].
 Implementation will try to guess the "Content-Type" of the body by checking
-the type of the passed [option body]. 
+the type of the passed [option body].
 
 [opt_def -body_file [arg fn]]
 transmit the file specified via filename as the request body.
 This option is mutualy exclusive with [option -body] and [option -body_chan].
 Implementation will try to guess the "Content-Type" of the body by checking
-the extension of the passed [option fn]. 
+the extension of the passed [option fn].
 
 [opt_def -body_chan [arg chan]]
 transmit the content specified via Tcl channel, which must be opened for
@@ -74,7 +74,7 @@ Caller should put "Content-Type" header in passed [option -headers] set
 since the implementation cannot guess the correct value. If none found,
 the "application/octet-stream" will be assumed.
 For [cmd "ns_http queue"] command, the [option -body_chan] channel will be
-dissociated from the current interpreter/thread and the ownership will be 
+dissociated from the current interpreter/thread and the ownership will be
 transferred to the thread that runs the request. Upon [cmd "ns_http wait"]
 the channel is tossed back to the running interpreter and can be manipulated.
 It is the caller responsibility to close the channel when not needed any more.
@@ -106,11 +106,11 @@ In opt_def the response has a content encoding of gzip, automatically
 decompress the result.
 
 [opt_def -donecallback [arg call]]
-this callback argument will be executed as Tcl script when the requests 
+this callback argument will be executed as Tcl script when the requests
 is completed.  The provided [arg call] is appended with two arguments,
-a flag indicating a Tcl error or not (integer value 1 or 0), and the 
+a flag indicating a Tcl error or not (integer value 1 or 0), and the
 dictionary as returned by [cmd "ns_http run"]. When this option is used,
-[cmd "ns_http queue"] returns empty so user has no further control 
+[cmd "ns_http queue"] returns empty so user has no further control
 (wait, cancel) on the task.
 
 [opt_def -headers [arg ns_set]]
@@ -151,9 +151,15 @@ the channel is tossed back to the running interpreter and can be manipulated.
 It is the caller responsibility to close the channel when not needed any more.
 The implementation will not do that (see [cmd "ns_http cleanup"] for exception).
 
-[opt_def -timeout [arg T]]
-time to wait for the whole request to complete. The time can be specified
-as a floating point number or in the sec:msec notation (default 5.0).
+[opt_def -expire T]]
+time to wait for the whole request to complete. Upon expiry of this timer,
+request processing is unconditionally stopped, regardless of wether the
+connection or some data to read/write is still pending. The time can be
+specified in any supported ns_time format.
+
+[opt_def -timeout T]]
+time to wait for connection setup and socket readable/writable state.
+The time can be specified in any supported ns_time format.
 
 [opt_def -verify]
 used for HTTPS URIs to specify that the server certificate should be
@@ -182,36 +188,30 @@ anonymous cipher is used, this option is ignored.
 	[opt [option "-outputfile [arg fn]"]] \
 	[opt [option "-outputchan [arg chan]"]] \
 	[opt [option "-timeout [arg T]"]] \
+	[opt [option "-expire [arg T]"]] \
 	[opt [option "-verify"]] \
 	[arg url] \
 	]
 
 [para]
 Send a HTTP request and wait for the result.  The command [cmd "ns_http run"]
-is similar to [cmd "ns_http queue"] followed by [cmd "ns_http wait"]. 
+is similar to [cmd "ns_http queue"] followed by [cmd "ns_http wait"].
 The http request is run in the same thread as the caller.
 
 [call [cmd "ns_http wait"] \
-	[opt [option "-decompress"]] \
-	[opt [option "-elapsed [arg varName]"]] \
-	[opt [option "-file [arg varName]"]] \
-	[opt [option "-headers [arg ns_set]"]] \
-	[opt [option "-outputfile [arg fn]"]] \
-	[opt [option "-result [arg varName]"]] \
-	[opt [option "-spoolsize [arg int]"]] \
-	[opt [option "-status [arg varName]"]] \
-	[opt [option "-timeout [arg t]"]] \
-	[arg id]]
+	[opt [option "-timeout [arg T]"]] \
+	[arg id] \
+    ]
 
 [para]
 Waits for the queued command specified by the [term id] returned from
 [cmd "ns_http queue"] to complete. Returns a Tcl dictionary with the
 following keys: [term status], [term time], [term headers].
 The [term status] contains HTTP/HTTPS status code (200, 201, 400, etc).
-The [term time] contains elapsed request/response ns_time.
+The [term time] contains elapsed request ns_time.
 The [term headers] contains name of the set with response headers.
-If the request body was given over a Tcl channel, it will add key 
-[term body_chan] in the passed result dictionary. 
+If the request body was given over a Tcl channel, it will add key
+[term body_chan] in the passed result dictionary.
 If the response was not spooled in the file nor channel, it will return
 [term body] key with the response data. Otherwise it will return either
 [term file] if the response was spooled into the named (or temporary) file
@@ -219,23 +219,15 @@ or [term outputchan] if the request was spooled into a Tcl channel.
 For HTTPS requests it will add [term https] with some low-level TLS
 parameters in a Tcl dictionary format.
 
-[para]
-All options of this command are considered deprecated but are still
-supported, possibly in a limited fashion, for the sake of backward
-compatibility. 
-
-[para]
-The reason is, at the time when [cmd "ns_http wait"] is executed,
-the request may have been processed and completed already, so some of
-the above option have no meaning any more. Furthermore, the returned
-Tcl dictionary contains all information otherwise pushed into the
-optional Tcl variables, so all those are not strictly required.
+[opt_def -timeout T]]
+time to wait for the request to complete. The time can be specified
+in any supported ns_time format.
 
 [para]
 On success [cmd "ns_http wait"] returns the same dictionary as the
-[cmd "ns_http run"]. On timeout it sets the Tcl [variable ::errorCode]
-variable to NS_TIMEOUT in addition to leaving descriptive error message
-in the interpreter result.
+[cmd "ns_http run"]. On error, leaves descriptive error message
+in the interpreter result. On timeout, sets the Tcl [variable ::errorCode]
+variable to NS_TIMEOUT in addition to leaving the error message.
 
 [list_begin arguments]
 [arg_def "" id]
@@ -246,8 +238,8 @@ ID of the HTTP request to wait for.
 
 Cancel queued HTTP/HTTPS request by the ID (of the request)
 as returned by [cmd "ns_http queue"] command. The command returns
-empty result. The sense behind this command is to be able to 
-terminate runaway requests or request that have been timed out. 
+empty result. The sense behind this command is to be able to
+terminate runaway requests or requests that have been timed out.
 Even completed requests can be cancelled if nobody is interested
 in the request result.
 
@@ -259,18 +251,16 @@ ID of the HTTP request to cancel.
 [call [cmd "ns_http cleanup"]]
 
 Cancel all pending HTTP/HTTPS requests issued in the current
-interpreter. All tasks are internally cancelled, then marked
-as completed and finally garbage collected. At this point, 
-any Tcl channels that have been optionally assigned to a task,
-will be automatically closed.
+interpreter. At this point, any Tcl channels that have been
+optionally assigned to a task, will be automatically closed.
 
-[call [cmd "ns_http list"] ?[arg id]?] 
+[call [cmd "ns_http list"] ?[arg id]?]
 
-Return the list of currently tracked requests in the form:
-"id1 url1 status2 id2 url2 status2 ... idN urlN statusN"
-where status can be one of: "done" or "running". 
-If optional [arg id] was specified, only the selected
-task ID will be reported.
+If [arg id] was specified, returns a single list in form
+of: "id url status".
+If [arg id] was not specified, returns a list of N elements
+where each element is in itself a list in form of: "id url status".
+The status can be one of: "done", "running", "error".
 
 [list_begin arguments]
 [arg_def "" id]
@@ -322,12 +312,12 @@ First, a minimal GET example:
 [example_begin]
    % ns_http queue http://www.google.com
    http0
- 
+
    % ns_http wait http0
    status 302 time 0:97095 headers d0 body { ... }
 [example_end]
 
-[para] 
+[para]
 The second example is a code snippet making a requests via HTTPS
 (note that HTTPS is supported only if the NaviServer was compiled
 with OpenSSL support.
@@ -339,7 +329,7 @@ with OpenSSL support.
 [example_end]
 
 If the returned data is too large to be retained in memory
-you can use the [option -spoolsize] to control when the 
+you can use the [option -spoolsize] to control when the
 content should be spooled to file. The spooled file name
 is contained in the resulting dict under the key [term file].
 
@@ -356,7 +346,7 @@ provide the option [option -hostname].
 [para]
 
 The third example is a code snippet making a POST requests via
-HTTPS and provides url-encoded POST data. The examples sets a 
+HTTPS and provides url-encoded POST data. The examples sets a
 larger timeout on the request, provides requests headers and
 returns reply-headers.
 
@@ -370,20 +360,20 @@ returns reply-headers.
      lappend post_data "[lb]ns_urlencode $key[rb]=[lb]ns_urlencode $value[rb]"
  }
  set post_data [lb]join $post_data &[rb]
- 
+
  #######################
  # submit POST request
  #######################
  set requestHeaders [lb]ns_set create[rb]
  set replyHeaders [lb]ns_set create[rb]
  ns_set update $requestHeaders "Content-type" "application/x-www-form-urlencoded"
- 
+
  set h [lb]ns_http queue -method POST \
      -headers $requestHeaders \
      -timeout 10.0 \
      -body $post_data https://duckduckgo.com/[rb]
  set r [lb]ns_http wait $h[rb]
- 
+
  #######################
  # output results
  #######################
@@ -393,7 +383,6 @@ returns reply-headers.
 
 [example_end]
 
-
 The forth example is a code snippet that sets a larger timeout on the
 request, provides a ns_set for the reply headers, and spools
 results to a file if the result is larger than 1000 bytes.
@@ -401,10 +390,10 @@ results to a file if the result is larger than 1000 bytes.
 [example_begin]
  set replyHeaders [lb]ns_set create[rb]
  ns_set update $requestHeaders Host localhost
- 
+
  set h [lb]ns_http queue -timeout 10.0 http://www.google.com[rb]
  ns_http wait -result R -headers $replyHeaders -status S -spoolsize 1Kb -file F $h
- 
+
  if {[lb]info exists F[rb]} {
    ns_log notice "Spooled [lb]file size $F[rb] bytes to $F"
    file delete -- $F
@@ -428,7 +417,7 @@ otherwise stored in memory.
  % set chan [lb]open /tmp/file.dat w[rb]
  % ns_http run -outputchan $chan -spoolsize 0 http://www.google.com
  status 302 time 0:132577 headers d2 outputchan file22
- % close $chan 
+ % close $chan
 [example_end]
 [see_also ns_httptime ns_set ns_urlencode]
 [keywords "global built-in" http-client HTTP HTTPS POST GET nssock spooling SNI]
