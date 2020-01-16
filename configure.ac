@@ -278,6 +278,8 @@ fi
 AC_MSG_CHECKING([package tag number from source control])
 if test -d ".hg" ; then
    ns_package_tag=`hg id -ibt`
+elif test -d ".git" ; then
+   ns_package_tag=`git describe --abbrev=12 --always --dirty=+`
 else
    ns_package_tag="tar-$PACKAGE_VERSION"
 fi
