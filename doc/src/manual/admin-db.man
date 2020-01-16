@@ -127,7 +127,7 @@ Postgres or Solid driver.
 
       ns_section "ns/db/drivers"
       ns_param postgres nsdbpg.so
-      ns_param solid nsdbtds.so
+      ns_param solid    nsdbtds.so
 
 [example_end]
 
@@ -142,7 +142,7 @@ Postgres or Solid driver.
 [example_begin]
 
       ns_section "ns/db/pools"
-      ns_param mypool "This pool will use Solid"
+      ns_param mypool "This pool will use PostgreSQL"
 
 [example_end]
 
@@ -151,10 +151,16 @@ Postgres or Solid driver.
       have named. For example:
 
 [example_begin]
-      ns_section "ns/db/pool/mypool"
-      ns_param Driver solid
-      ns_param Datasource "TCP/IP hostname 1313"
-      ns_param Connection 1
+   ns_section "ns/db/pool/mypool" {
+      ns_param driver postgres
+      ns_param datasource "..."
+      ns_param connections     1
+      # ns_param maxidle       0
+      # ns_param maxopen       0
+      # ns_param checkinterval 5m    ;# check pools for stale handles in this interval
+      # ns_param logsqlerrors  true
+      # ns_param LogMinDuration 10ms ;# when SQL logging is on, log only statements above this duration
+   }
 [example_end]
 
   [para] Note that the syntax provided to the datasource and the
@@ -180,21 +186,17 @@ Postgres or Solid driver.
 
 [example_begin]
 
-      ns_section "ns/server/servername/db"
+   ns_section "ns/server/servername/db" {
       ns_params Pools *
-
+   }
 [example_end]
 
 
 [list_end]
 
-
-
 [para]
-
-
-  The "*" designation means that this server can access any of the
- defined database pools.
+The "*" designation means that this server can access any of the
+defined database pools.
 
 
 [section {External Database Drivers}]

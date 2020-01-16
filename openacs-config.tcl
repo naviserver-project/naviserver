@@ -756,6 +756,7 @@ ns_section ns/db/pools {
 ns_section ns/db/pool/pool1 {
     # ns_param	maxidle            0
     # ns_param	maxopen            0
+    # ns_param  checkinterval      5m    ;# check pools for stale handles in this interval
     ns_param	connections        15
     ns_param    LogMinDuration     10ms  ;# when SQL logging is on, log only statements above this duration
     ns_param	logsqlerrors       $debug
@@ -782,6 +783,7 @@ ns_section ns/db/pool/pool1 {
 ns_section ns/db/pool/pool2 {
     # ns_param	maxidle            0
     # ns_param	maxopen            0
+    # ns_param  checkinterval      5m    ;# check pools for stale handles in this interval
     ns_param	connections        5
     ns_param    LogMinDuration     10ms  ;# when SQL logging is on, log only statements above this duration
     ns_param	logsqlerrors       $debug
@@ -801,6 +803,7 @@ ns_section ns/db/pool/pool2 {
 ns_section ns/db/pool/pool3 {
     # ns_param	maxidle            0
     # ns_param	maxopen            0
+    # ns_param  checkinterval      5m    ;# check pools for stale handles in this interval
     ns_param	connections        5
     # ns_param  LogMinDuration     0ms  ;# when SQL logging is on, log only statements above this duration
     ns_param	logsqlerrors       $debug

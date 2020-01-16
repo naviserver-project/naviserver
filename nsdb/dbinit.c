@@ -1293,6 +1293,7 @@ CreatePool(const char *pool, const char *path, const char *driver)
 {
     Pool            *poolPtr;
     struct DbDriver *driverPtr;
+    Ns_Time          checkinterval;
 
     NS_NONNULL_ASSERT(pool != NULL);
     NS_NONNULL_ASSERT(path != NULL);
@@ -1341,7 +1342,7 @@ CreatePool(const char *pool, const char *path, const char *driver)
         poolPtr->maxopen = Ns_ConfigIntRange(path, "maxopen", 3600, 0, INT_MAX);
 
         Ns_ConfigTimeUnitRange(path, "logminduration",
-                           "0ms", 0, 0, 1000000, 0,
+                           "0ms", 0, 0, INT_MAX, 0,
                            &poolPtr->minDuration);
         if (poolPtr->minDuration.sec != 0 || poolPtr->minDuration.sec != 0) {
             Ns_Log(Notice, "dbinit: set LogMinDuration for pool %s to %" PRId64 ".%06ld",
@@ -1383,8 +1384,19 @@ CreatePool(const char *pool, const char *path, const char *driver)
             handlePtr->poolname = pool;
             ReturnHandle(handlePtr);
         }
-        (void) Ns_ScheduleProc(CheckPool, poolPtr, 0,
-                               Ns_ConfigIntRange(path, "checkinterval", 600, 0, INT_MAX));
+
+        Ns_ConfigTimeUnitRange(path, "checkinterval",
+                               "5m", 0, 0, INT_MAX, 0,
+                               &checkinterval);
+        if (checkinterval.sec == 0 && checkinterval.usec > 0) {
+            /*
+             * Round up to one sec, since Ns_ScheduleProc() works on the
+             * second granularity.
+             */
+            checkinterval.sec = 1;
+        }
+
+        (void) Ns_ScheduleProc(CheckPool, poolPtr, 0, (int)checkinterval.sec);
     }
     return poolPtr;
 }
