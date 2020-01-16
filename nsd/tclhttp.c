@@ -98,7 +98,7 @@ static int HttpConnect(
     Ns_Time *timeoutPtr,
     Ns_Time *expirePtr,
     NsHttpTask **httpPtrPtr
-) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(15);
+) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(16);
 
 static bool HttpGet(
     NsInterp *itPtr,
