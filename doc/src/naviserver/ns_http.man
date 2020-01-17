@@ -153,7 +153,7 @@ The implementation will not do that (see [cmd "ns_http cleanup"] for exception).
 
 [opt_def -expire T]]
 time to wait for the whole request to complete. Upon expiry of this timer,
-request processing is unconditionally stopped, regardless of wether the
+request processing is unconditionally stopped, regardless of whether the
 connection or some data to read/write is still pending. The time can be
 specified in any supported ns_time format.
 
