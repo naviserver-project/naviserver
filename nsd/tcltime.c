@@ -56,7 +56,7 @@ static int TmObjCmd(ClientData isGmt, Tcl_Interp *interp, int objc, Tcl_Obj *con
 static int GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *tPtr)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
-static void DblValueToNstime( Ns_Time *tPtr, double dblValue)
+static void DblValueToNstime(Ns_Time *timePtr, double dblValue)
     NS_GNUC_NONNULL(1);
 
 static double ParseTimeUnit(const char *str)
@@ -690,7 +690,7 @@ static double ParseTimeUnit(const char *str)
  *
  * DblValueToNstime --
  *
- *      Covert double value (in seconds) to a NaviServer time value.
+ *      Convert double value (in seconds) to a NaviServer time value.
  *
  * Results:
  *      None.
@@ -702,15 +702,45 @@ static double ParseTimeUnit(const char *str)
  */
 
 static void
-DblValueToNstime( Ns_Time *tPtr, double dblValue)
+DblValueToNstime( Ns_Time *timePtr, double dblValue)
 {
-    NS_NONNULL_ASSERT(tPtr != NULL);
+    NS_NONNULL_ASSERT(timePtr != NULL);
 
-    tPtr->sec = (long)(dblValue);
-    tPtr->usec = (long)((dblValue - (double)tPtr->sec) * 1000000.0);
+    timePtr->sec = (long)(dblValue);
+    timePtr->usec = (long)((dblValue - (double)timePtr->sec) * 1000000.0);
 
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TimeToMilliseconds --
+ *
+ *      Convert Ns_Time to milliseconds. Make sure that in case the Ns_Time
+ *      value is not 0, the result is also not 0.
+ *
+ * Results:
+ *      Time in milliseconds.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+long
+Ns_TimeToMilliseconds(const Ns_Time *timePtr)
+{
+    long result;
+
+    NS_NONNULL_ASSERT(timePtr != NULL);
+
+    result = timePtr->sec*1000 + timePtr->usec/1000;
+    if (timePtr->sec == 0 && timePtr->sec != 0 && result == 0) {
+        result = 1;
+    }
+
+    return result;
+}
 
 /*
  *----------------------------------------------------------------------
