@@ -735,7 +735,7 @@ Ns_TimeToMilliseconds(const Ns_Time *timePtr)
     NS_NONNULL_ASSERT(timePtr != NULL);
 
     result = timePtr->sec*1000 + timePtr->usec/1000;
-    if (timePtr->sec == 0 && timePtr->sec != 0 && result == 0) {
+    if (timePtr->sec == 0 && timePtr->usec != 0 && result == 0) {
         result = 1;
     }
 
@@ -992,7 +992,7 @@ Ns_GetTimeFromString(Tcl_Interp *interp, const char *str, Ns_Time *tPtr)
          * We should not come here, since the GetTimeFromString() with
          * '.' handles also integers and sets error messages.
          */
-        Ns_TclPrintfResult(interp, "Invalid time value '%s'", str);
+        Ns_TclPrintfResult(interp, "expected time value but got \"%s\"", str);
         result = TCL_ERROR;
     }
     return result;
