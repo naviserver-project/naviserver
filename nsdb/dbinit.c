@@ -1344,7 +1344,7 @@ CreatePool(const char *pool, const char *path, const char *driver)
         Ns_ConfigTimeUnitRange(path, "logminduration",
                            "0ms", 0, 0, INT_MAX, 0,
                            &poolPtr->minDuration);
-        if (poolPtr->minDuration.sec != 0 || poolPtr->minDuration.sec != 0) {
+        if (poolPtr->minDuration.sec != 0 || poolPtr->minDuration.usec != 0) {
             Ns_Log(Notice, "dbinit: set LogMinDuration for pool %s to %" PRId64 ".%06ld",
                    pool, (int64_t)poolPtr->minDuration.sec,
                    poolPtr->minDuration.usec);
