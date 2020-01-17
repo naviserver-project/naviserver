@@ -142,7 +142,7 @@ static int HttpAppendRawBuffer(
 static Ns_ReturnCode HttpWaitForSocketEvent(
     NS_SOCKET sock,
     short events,
-    Ns_Time *timeout
+    Ns_Time *timeoutPtr
 );
 
 static void HttpAddInfo(
