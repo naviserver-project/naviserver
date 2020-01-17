@@ -587,43 +587,46 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
 {
     SSLContext *sslCtx = sock->arg;
     ssize_t     sent = 0;
-    bool        decork;
 
-    decork = Ns_SockCork(sock, NS_TRUE);
+    if (sslCtx == NULL) {
+        Ns_Log(Warning, "nsssl Send is called on an socket without sslCtx (sock %d)",
+               sock->sock);
+    } else {
+        bool decork = Ns_SockCork(sock, NS_TRUE);
 
-    while (nbufs > 0) {
-        if (bufs->iov_len > 0) {
-            int rc;
-            ERR_clear_error();
-            rc = SSL_write(sslCtx->ssl, bufs->iov_base, (int)bufs->iov_len);
-            if (rc <= 0) {
-                /*fprintf(stderr, "### SSL_write %p len %d rc %d SSL_get_error => %d: %s\n",
-                        (void*)bufs->iov_base, (int)bufs->iov_len,
-                        rc, SSL_get_error(sslCtx->ssl, rc),
-                        ERR_error_string(ERR_get_error(), NULL));*/
-                if (SSL_get_error(sslCtx->ssl, rc) != SSL_ERROR_WANT_WRITE) {
-                    SSL_set_shutdown(sslCtx->ssl, SSL_RECEIVED_SHUTDOWN);
-                    sent = -1;
-                } else {
-                    sent = 0;
+        while (nbufs > 0) {
+            if (bufs->iov_len > 0) {
+                int rc;
+                ERR_clear_error();
+                rc = SSL_write(sslCtx->ssl, bufs->iov_base, (int)bufs->iov_len);
+                if (rc <= 0) {
+                    /*fprintf(stderr, "### SSL_write %p len %d rc %d SSL_get_error => %d: %s\n",
+                      (void*)bufs->iov_base, (int)bufs->iov_len,
+                      rc, SSL_get_error(sslCtx->ssl, rc),
+                      ERR_error_string(ERR_get_error(), NULL));*/
+                    if (SSL_get_error(sslCtx->ssl, rc) != SSL_ERROR_WANT_WRITE) {
+                        SSL_set_shutdown(sslCtx->ssl, SSL_RECEIVED_SHUTDOWN);
+                        sent = -1;
+                    } else {
+                        sent = 0;
+                    }
+                    break;
                 }
-                break;
+                sent += (ssize_t)rc;
+                if (rc < (int)bufs->iov_len) {
+                    Ns_Log(Debug, "SSL: partial write, wanted %" PRIuz " wrote %d",
+                           bufs->iov_len, rc);
+                    break;
+                }
             }
-            sent += (ssize_t)rc;
-            if (rc < (int)bufs->iov_len) {
-                Ns_Log(Debug, "SSL: partial write, wanted %" PRIuz " wrote %d",
-                       bufs->iov_len, rc);
-                break;
-            }
+            nbufs--;
+            bufs++;
         }
-        nbufs--;
-        bufs++;
-    }
 
-    if (decork) {
-        Ns_SockCork(sock, NS_FALSE);
+        if (decork) {
+            Ns_SockCork(sock, NS_FALSE);
+        }
     }
-
     return sent;
 }
 

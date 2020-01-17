@@ -864,10 +864,10 @@ ns_section ns/server/${server}/modules {
 #
 ns_section ns/server/${server}/module/nsproxy {
     # ns_param	maxslaves          8
-    # ns_param	sendtimeout        5000
-    # ns_param	recvtimeout        5000
-    # ns_param	waittimeout        100
-    # ns_param	idletimeout        3000000
+    # ns_param	sendtimeout        5s
+    # ns_param	recvtimeout        5s
+    # ns_param	waittimeout        100ms
+    # ns_param	idletimeout        5m
 }
 
 #

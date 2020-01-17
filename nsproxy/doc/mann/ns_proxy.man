@@ -53,6 +53,12 @@ pool/s. One thread can obtain one or a bunch of proxies from a pool in one step.
 It cannot, however, repeatedly obtain proxy by proxy in a loop, as this may
 lead to difficult-to-trace deadlock situation (see [cmd "ns_proxy get"] command).
 
+[para]
+All the [arg timeout] values below (no matter if these are used
+in positional or arguments, or as parameters in the config file) can
+be specified with time units. If the [arg timeout] value time has no time
+unit, seconds are assumed.
+
 
 [section COMMANDS]
 
@@ -117,6 +123,8 @@ default options if it does not already exist. Default options for the
 section "ns/server/$servername/module/nsproxy". In case
 the library is loaded in plain Tcl shell, default configuration options
 are fixed and cannot be changed w/o recompiling the code.
+
+
 Configurable options include:
 
 
@@ -151,41 +159,41 @@ runtime. It is possible to create a custom program and enter the
 proxy event loop with the [emph Ns_ProxyMain] application startup
 routine; see the source code for details.
 
-[opt_def -gettimeout [arg ms]]
+[opt_def -gettimeout [arg timeout]]
 Specifies the maximum time to wait to allocate handles from the pool.
-The default is 5000 milliseconds.
+The default is 5 seconds.
 
-[opt_def -evaltimeout [arg ms]]
+[opt_def -evaltimeout [arg timeout]]
 Specifies the maximum time to wait for a script to be evaluated in
 a proxy. This parameter can be overridden on a per-call basis with
 the optional [opt timeout] parameter to [cmd "ns_proxy eval"].
 The default is 0 milliseconds i.e. infinite.
 
-[opt_def -sendtimeout [arg ms]]
-[opt_def -recvtimeout [arg ms]]
+[opt_def -sendtimeout [arg timeout]]
+[opt_def -recvtimeout [arg timeout]]
 Specifies the maximum time to wait to send a script and receive a
-result from a proxy.  The default is 1000 milliseconds which assumes
+result from a proxy.  The default is 1 second which assumes
 minimal delay sending and receiving reasonably sized scripts and 
 results over the connecting pipe.
 
-[opt_def -waittimeout [arg ms]]
+[opt_def -waittimeout [arg timeout]]
 Specifies the maximum time to wait for a proxy to exit. The wait
 is performed in a dedicated reaper thread. The reaper will close
 the connection pipe and wait the given timeout. If the timeout is
 exceeded, the reaper will send a SIGTERM signal and finally a SIGKILL
-signal to ensure the process eventually exits. The default is 100
-milliseconds which should be ample time for a graceful exit unless
+signal to ensure the process eventually exits. The default is 1
+second which should be ample time for a graceful exit unless
 the process is hung executing a very long, misbehaving script,
 resulting in a more disruptive SIGTERM or SIGKILL.
 
-[opt_def -idletimeout [arg ms]]
+[opt_def -idletimeout [arg timeout]]
 Specifies the maximum time for an idle slave process to live.
-Minimum value is 5000 milliseconds. After expiry of the idle
+Minimum value is 5 seconds. After expiry of the idle
 timeout, the reaper thread will close the connection pipe and
-wait [option -waittimeout] milliseconds for the process to die.
+wait [option -waittimeout] for the process to die.
 If the timeout is exceeded, the reaper will send a SIGTERM
 signal and finally a SIGKILL signal (waiting [option -waittimeout]
-milliseconds in between) to ensure the process eventually exits.
+in between) to ensure the process eventually exits.
 
 [opt_def -env [arg setname]]
 Initializes the slave's process environment with keys/values
@@ -204,10 +212,10 @@ or [cmd "ns_proxy cleanup"] command.
 
 [call [cmd "ns_proxy eval"] [arg handle] [arg script] [opt [arg timeout]]]
 
-Evaluates [arg script] in the proxy specified by [arg handle].
-The optional [opt timeout] argument specifies a maximum number of
-milliseconds to wait for the command to complete before raising an
-error (see ERROR HANDLING below for details on handling errors).
+Evaluates [arg script] in the proxy specified by [arg handle].  The
+optional [opt timeout] argument specifies a maximum time to wait for
+the command to complete before raising an error (see ERROR HANDLING
+below for details on handling errors).
 
 [para]
 Alternatively, the [arg handle] itself may be used as Tcl command like
@@ -235,7 +243,7 @@ as the proxy is requested by some thread.
 [call [cmd "ns_proxy get"] \
      [arg pool] \
      [opt [option "-handles [arg n]"]] \
-     [opt [option "-timeout [arg ms]"]] ]
+     [opt [option "-timeout [arg timeout]"]] ]
 
 Returns one or more handles to proxies from the specified [arg pool].
 
@@ -245,8 +253,8 @@ already exist. The optional [option -handle] can be used to
 specify the number of handles to allocate, the default being 1.
 
 [para]
-The optional [opt {-timeout ms}] arguments specifies the maximum
-amount of time in milliseconds to wait for the handles to become
+The optional [opt {-timeout timeout}] arguments specifies the maximum
+time to wait for the handles to become
 available before raising an error (see ERROR HANDLING below
 for details on handling errors).
 
@@ -342,8 +350,8 @@ that handle.
 [call [cmd "ns_proxy wait"] [arg handle] [opt [arg timeout]]]
 
 Waits for results from the proxy specified by [arg handle].
-The optional [arg timeout] argument specifies a maximum number of
-milliseconds to wait for the command to complete before raising an
+The optional [arg timeout] argument specifies a maximum time
+to wait for the command to complete before raising an
 error (see ERROR HANDLING below for details on handling errors).
 
 

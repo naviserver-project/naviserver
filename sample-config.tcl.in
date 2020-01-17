@@ -742,26 +742,26 @@ ns_section  "ns/server/${servername}/module/nsproxy" {
     # Proxy program to start
     ns_param	exec			${homedir}/bin/nsproxy
 
-    # Timeout (ms) when evaluating scripts
-    ns_param		evaltimeout		0
+    # Timeout when evaluating scripts
+    ns_param	evaltimeout		0s
 
-    # Timeout (ms) when getting proxy handles
-    ns_param		gettimeout		0
+    # Timeout when getting proxy handles
+    ns_param	gettimeout		0s
 
-    # Timeout (ms) to send data
-    ns_param		sendtimeout		5000
+    # Timeout to send data
+    ns_param	sendtimeout		5s
 
-    # Timeout (ms) to receive results
-    ns_param		recvtimeout		5000
+    # Timeout to receive results
+    ns_param	recvtimeout		5s
 
-    # Timeout (ms) to wait for slaveis to die
-    ns_param		waittimeout		1000
+    # Timeout to wait for slaves to die
+    ns_param	waittimeout		1s
 
-    # Timeout (ms) for a slave to live idle
-    ns_param		idletimeout		300000
+    # Timeout for a slave to live idle
+    ns_param	idletimeout		5m
 
     # Max number of allowed slaves alive
-    ns_param		maxslaves		8
+    ns_param	maxslaves		8
 }
 
 ########################################################################

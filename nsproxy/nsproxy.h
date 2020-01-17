@@ -74,10 +74,10 @@ NS_EXTERN Ns_TclTraceProc  Ns_ProxyCleanup;
 
 typedef void* PROXY;
 
-NS_EXTERN int  Ns_ProxyGet  (Tcl_Interp *interp, const char *poolName, PROXY *handlePtr,
-                             int ms);
-NS_EXTERN int  Ns_ProxyEval (Tcl_Interp *interp, PROXY handle, const char *script,
-                             int ms);
-NS_EXTERN void Ns_ProxyPut  (PROXY handle);
+NS_EXTERN int  Ns_ProxyGet(Tcl_Interp *interp, const char *poolName, PROXY *handlePtr,
+			   Ns_Time *timePtr);
+NS_EXTERN int  Ns_ProxyEval(Tcl_Interp *interp, PROXY handle, const char *script,
+                             Ns_Time *timeoutPtr);
+NS_EXTERN void Ns_ProxyPut(PROXY handle);
 
 #endif /* NSPROXY_H */
