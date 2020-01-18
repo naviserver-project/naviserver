@@ -286,7 +286,7 @@ Ns_TaskCreate(NS_SOCKET sock, Ns_TaskProc *proc, void *arg)
  *
  *      Create a new timed task.
  *      A timed task may live up to the given expiration time.
- *      After expiry time is reached, it is set als timed-out.
+ *      After expiry time is reached, it is set as timed-out.
  *
  * Results:
  *      Handle to the task.
