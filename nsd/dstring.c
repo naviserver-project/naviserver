@@ -424,7 +424,22 @@ Ns_DStringAppendTime(Tcl_DString *dsPtr, const Ns_Time *timePtr)
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(timePtr != NULL);
 
-    return Ns_DStringPrintf(dsPtr, "%" PRId64 ".%06ld", (int64_t)timePtr->sec, timePtr->usec);
+    if (timePtr->sec < 0 || (timePtr->sec == 0 && timePtr->usec < 0)) {
+        Ns_DStringNAppend(dsPtr, "-", 1);
+    }
+    if (timePtr->usec == 0) {
+        Ns_DStringPrintf(dsPtr, "%ld", labs(timePtr->sec));
+    } else {
+        Ns_DStringPrintf(dsPtr, "%ld.%06ld",
+                         labs(timePtr->sec), labs(timePtr->usec));
+        /*
+         * Strip trailing zeros after comma dot.
+         */
+        while (dsPtr->string[dsPtr->length-1] == '0') {
+            dsPtr->length --;
+        }
+    }
+    return dsPtr->string;
 }
 
 

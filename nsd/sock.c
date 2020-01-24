@@ -652,7 +652,7 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
      * meaning that the poll() call will return immediately.
      */
     if (timeoutPtr != NULL) {
-        pollTimeout = (int)(timeoutPtr->sec * 1000 + timeoutPtr->usec / 1000);
+        pollTimeout = (int)Ns_TimeToMilliseconds(timeoutPtr);
     } else {
         pollTimeout = -1;
     }
@@ -1385,7 +1385,7 @@ NsPoll(struct pollfd *pfds, NS_POLL_NFDS_TYPE nfds, const Ns_Time *timeoutPtr)
             if (Ns_DiffTime(timeoutPtr, &now, &diff) <= 0) {
                 ms = 0;
             } else {
-                ms = (int)(diff.sec * 1000 + diff.usec / 1000);
+                ms = (int)Ns_TimeToMilliseconds(&diff);
             }
         }
         n = ns_poll(pfds, nfds, ms);

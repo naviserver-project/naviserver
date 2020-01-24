@@ -592,11 +592,10 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
     } else {
         Ns_GetTime(&now);
         Ns_DiffTime(timePtr, &now, &wait);
-        wait.usec /= 1000;
-        if (wait.sec < 0 || (wait.sec == 0 && wait.usec <= 0)) {
+        msec = Ns_TimeToMilliseconds(&wait);
+        if (msec < 0) {
             return NS_TIMEOUT;
         }
-        msec = wait.sec * 1000 + wait.usec;
     }
 
     /*

@@ -1969,7 +1969,10 @@ HttpWaitForSocketEvent(
     if (timeoutPtr == NULL) {
         ms = -1;
     } else {
-        ms = (long)(timeoutPtr->sec*1000 + timeoutPtr->usec/1000 + 1);
+        ms = (long)Ns_TimeToMilliseconds(timeoutPtr);
+        if (ms == 0) {
+            ms = 1;
+        }
     }
 
     do {

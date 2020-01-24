@@ -43,7 +43,8 @@
 static Ns_ObjvValueRange dayRange    = {0, 6};
 static Ns_ObjvValueRange hourRange   = {0, 23};
 static Ns_ObjvValueRange minuteRange = {0, 59};
-static Ns_ObjvValueRange posintRange = {0, INT_MAX};
+static Ns_ObjvTimeRange posTimeRange = {{0, 1}, {LONG_MAX, 0}};
+static Ns_ObjvTimeRange nonnegTimeRange = {{0, 0}, {LONG_MAX, 0}};
 
 /*
  * Local functions defined in this file.
@@ -78,12 +79,12 @@ int
 NsTclAfterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Tcl_Obj          *scriptObj;
-    int               seconds, remain = 0, result = TCL_OK;
-    Ns_ObjvValueRange range = {0, INT_MAX};
+    Ns_Time          *interval;
+    int               remain = 0, result = TCL_OK;
     Ns_ObjvSpec       args[] = {
-        {"seconds", Ns_ObjvInt,  &seconds,   &range},
-        {"script",  Ns_ObjvObj,  &scriptObj, NULL},
-        {"?args",   Ns_ObjvArgs, &remain,    NULL},
+        {"interval", Ns_ObjvTime, &interval,  &nonnegTimeRange},
+        {"script",   Ns_ObjvObj,  &scriptObj, NULL},
+        {"?args",    Ns_ObjvArgs, &remain,    NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -94,7 +95,7 @@ NsTclAfterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         int             id;
         Ns_TclCallback *cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclSchedProc,
                                                   scriptObj, objc - 3, objv + 3);
-        id = Ns_After(seconds, NsTclSchedProc, cbPtr, (ns_funcptr_t)Ns_TclFreeCallback);
+        id = Ns_After(interval, NsTclSchedProc, cbPtr, (ns_funcptr_t)Ns_TclFreeCallback);
         result = ReturnValidId(interp, id, cbPtr);
     }
 
@@ -329,7 +330,8 @@ int
 NsTclSchedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Tcl_Obj        *scriptObj;
-    int             interval = 0, remain = 0, once = 0, thread = 0, result;
+    Ns_Time        *intervalPtr;
+    int             remain = 0, once = 0, thread = 0, result;
     Ns_ObjvSpec opts[] = {
         {"-once",    Ns_ObjvBool,  &once,   INT2PTR(NS_TRUE)},
         {"-thread",  Ns_ObjvBool,  &thread, INT2PTR(NS_TRUE)},
@@ -337,16 +339,18 @@ NsTclSchedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"interval", Ns_ObjvInt,    &interval,  &posintRange},
-        {"script",   Ns_ObjvObj,    &scriptObj, NULL},
-        {"?args",    Ns_ObjvArgs,   &remain,    NULL},
+        {"interval", Ns_ObjvTime,   &intervalPtr, &posTimeRange},
+        {"script",   Ns_ObjvObj,    &scriptObj,   NULL},
+        {"?args",    Ns_ObjvArgs,   &remain,      NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
-        unsigned int flags = 0u;
+        unsigned int    flags = 0u;
+        Ns_TclCallback *cbPtr;
+        int             id;
 
         if (once != 0) {
             flags |= NS_SCHED_ONCE;
@@ -354,20 +358,12 @@ NsTclSchedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         if (thread != 0) {
             flags |= NS_SCHED_THREAD;
         }
-        if (interval < 0) {
-            Ns_TclPrintfResult(interp, "interval should be >= 0");
-            result = TCL_ERROR;
 
-        } else {
-            Ns_TclCallback *cbPtr;
-            int             id;
+        cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclSchedProc,
+                                  scriptObj, remain, objv + (objc - remain));
+        id = Ns_ScheduleProcEx(NsTclSchedProc, cbPtr, flags, intervalPtr, FreeSchedCallback);
 
-            cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclSchedProc,
-                                      scriptObj, remain, objv + (objc - remain));
-            id = Ns_ScheduleProcEx(NsTclSchedProc, cbPtr, flags, interval, FreeSchedCallback);
-
-            result = ReturnValidId(interp, id, cbPtr);
-        }
+        result = ReturnValidId(interp, id, cbPtr);
     }
     return result;
 }

@@ -112,7 +112,7 @@
  * The following are the valid attributes of a scheduled event. For NaviServer
  * and the current set of NaviServer modules, these constants would not be
  * needed here. As long Ns_ScheduleProcEx() is in the public interface and
- * uses the flags, we these constants here as well.
+ * uses the flags, we need these constants here as well.
  */
 #define NS_SCHED_THREAD            0x01u /* Ns_SchedProc will run in detached thread */
 #define NS_SCHED_ONCE              0x02u /* Call cleanup proc after running once */
@@ -463,6 +463,11 @@ typedef struct Ns_ObjvValueRange {
     Tcl_WideInt minValue;
     Tcl_WideInt maxValue;
 } Ns_ObjvValueRange;
+
+typedef struct Ns_ObjvTimeRange {
+    Ns_Time minValue;
+    Ns_Time maxValue;
+} Ns_ObjvTimeRange;
 
 
 /*
@@ -1745,7 +1750,10 @@ NS_EXTERN int Ns_TclGetMemUnitFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_W
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int Ns_CheckWideRange(Tcl_Interp *interp, const char *name, Ns_ObjvValueRange *r, Tcl_WideInt value)
-    NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(2);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN int Ns_CheckTimeRange(Tcl_Interp *interp, const char *name, Ns_ObjvTimeRange *r, Ns_Time *value)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 NS_EXTERN int
 Ns_SubcmdObjv(const Ns_SubCmdSpec *subcmdSpec, ClientData clientData,
@@ -2440,8 +2448,8 @@ Ns_VarAppend(const char *server, const char *array, const char *key,
  */
 
 NS_EXTERN int
-Ns_After(int delay, Ns_SchedProc *proc, void *arg, ns_funcptr_t deleteProc)
-    NS_GNUC_NONNULL(2);
+Ns_After(Ns_Time *interval, Ns_SchedProc *proc, void *arg, ns_funcptr_t deleteProc)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN bool
 Ns_Cancel(int id);
@@ -2453,8 +2461,8 @@ NS_EXTERN bool
 Ns_Resume(int id);
 
 NS_EXTERN int
-Ns_ScheduleProc(Ns_SchedProc *proc, void *arg, int thread, int interval)
-    NS_GNUC_NONNULL(1);
+Ns_ScheduleProc(Ns_SchedProc *proc, void *arg, int thread, int secs)
+    NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED_FOR(Ns_ScheduleProcEx);
 
 NS_EXTERN int
 Ns_ScheduleDaily(Ns_SchedProc *proc, void *clientData, unsigned int flags,
@@ -2469,8 +2477,8 @@ Ns_ScheduleWeekly(Ns_SchedProc *proc, void *clientData, unsigned int flags,
 
 NS_EXTERN int
 Ns_ScheduleProcEx(Ns_SchedProc *proc, void *clientData, unsigned int flags,
-                  int interval, Ns_SchedProc *cleanupProc)
-    NS_GNUC_NONNULL(1);
+                  Ns_Time *interval, Ns_SchedProc *cleanupProc)
+    NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(4);
 
 NS_EXTERN void
 Ns_UnscheduleProc(int id);

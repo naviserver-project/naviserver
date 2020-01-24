@@ -74,27 +74,27 @@ test cache-3.1b {cache create} -body {
 
 test cache-3.2 {query configuration} -body {
     ns_cache_configure c3
-} -result {maxsize 1024 maxentry 0 expires 3.000000 timeout {}}
+} -result {maxsize 1024 maxentry 0 expires 3 timeout {}}
 
 test cache-3.3 {query configuration} -body {
     ns_cache_configure c3 -maxsize 1025
     ns_cache_configure c3
-} -result {maxsize 1025 maxentry 0 expires 3.000000 timeout {}}
+} -result {maxsize 1025 maxentry 0 expires 3 timeout {}}
 
 test cache-3.4 {query configuration} -body {
     ns_cache_configure c3 -maxentry 1000
     ns_cache_configure c3
-} -result {maxsize 1025 maxentry 1000 expires 3.000000 timeout {}}
+} -result {maxsize 1025 maxentry 1000 expires 3 timeout {}}
 
 test cache-3.5 {query configuration} -body {
     ns_cache_configure c3 -expires 4
     ns_cache_configure c3
-} -result {maxsize 1025 maxentry 1000 expires 4.000000 timeout {}}
+} -result {maxsize 1025 maxentry 1000 expires 4 timeout {}}
 
 test cache-3.6 {query configuration} -body {
     ns_cache_configure c3 -timeout 1
     ns_cache_configure c3
-} -result {maxsize 1025 maxentry 1000 expires 4.000000 timeout 1.000000}
+} -result {maxsize 1025 maxentry 1000 expires 4 timeout 1}
 
 test cache-3.6 {check cache existence} -body {
     ns_cache_exists c3

@@ -487,7 +487,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 {
     char          *lhost = NULL, *host = (char*)NS_EMPTY_STRING;
     unsigned short lport = 0u, port = 0u;
-    int            nonblock = 0, async = 0, msec = -1, result;
+    int            nonblock = 0, async = 0, result;
     Ns_Time       *timeoutPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
@@ -518,12 +518,13 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     } else {
         NS_SOCKET      sock;
         Ns_ReturnCode  status = NS_OK;
+        long           msec;
 
         /*
          * Provide error messages for invalid argument combinations.  Note that either
          *     -nonblock | -async
          * or
-         *     -timeout seconds?:microseconds?
+         *     -timeout time
          * are accepted as combinations.
          */
         if (nonblock != 0 || async != 0) {
@@ -535,7 +536,9 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         }
 
         if (timeoutPtr != NULL) {
-            msec = (int)(timeoutPtr->sec * 1000 + timeoutPtr->usec / 1000);
+            msec = Ns_TimeToMilliseconds(timeoutPtr);
+        } else {
+            msec = -1;
         }
 
         /*

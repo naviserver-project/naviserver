@@ -345,6 +345,66 @@ Ns_CheckWideRange(Tcl_Interp *interp, const char *name, Ns_ObjvValueRange *r, Tc
     return result;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_CheckTimeRange --
+ *
+ *      Helper function for time range checking based on Ns_Times.
+ *      In error cases, the function leaves an error message in the interpreter.
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR;
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Ns_CheckTimeRange(Tcl_Interp *interp, const char *name, Ns_ObjvTimeRange *r, Ns_Time *value)
+{
+    int result;
+    Tcl_DString ds0;
+
+    Tcl_DStringInit(&ds0);
+    //fprintf(stderr, "check time range '%s'\n", Ns_DStringAppendTime(&ds0, value));
+
+    if (r == NULL
+        || (Ns_DiffTime(value, &r->minValue, NULL) >= 0
+            && Ns_DiffTime(value, &r->maxValue, NULL) <= 0) ) {
+        /*
+         * No range or valid range.
+         */
+        result = TCL_OK;
+    } else {
+        /*
+         * Invalid range.
+         */
+        Tcl_DString ds, *dsPtr = &ds;
+
+        Tcl_DStringInit(dsPtr);
+        Tcl_DStringAppend(dsPtr, "expected time value in range [", -1);
+        if (r->maxValue.sec == LONG_MAX) {
+            Ns_DStringAppendTime(dsPtr, &r->minValue);
+            Tcl_DStringAppend(dsPtr, "s, MAX],", 8);
+        } else {
+            Ns_DStringAppendTime(dsPtr, &r->minValue);
+            Tcl_DStringAppend(dsPtr, "s , ", 5);
+            Ns_DStringAppendTime(dsPtr, &r->maxValue);
+            Tcl_DStringAppend(dsPtr, "],", 2);
+        }
+        Ns_DStringPrintf(dsPtr, " for '%s', but got ", name);
+        (void)Ns_DStringAppendTime(dsPtr, value);
+
+        Tcl_DStringResult(interp, dsPtr);
+
+        result = TCL_ERROR;
+    }
+    return result;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -748,6 +808,10 @@ Ns_ObjvTime(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 
         result = Ns_TclGetTimePtrFromObj(interp, objv[0], dest);
         if (likely(result == TCL_OK)) {
+            result = Ns_CheckTimeRange(interp, spec->key, spec->arg, *dest);
+        }
+
+        if (likely(result == TCL_OK)) {
             *objcPtr -= 1;
         }
     } else {
@@ -757,8 +821,6 @@ Ns_ObjvTime(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 
     return result;
 }
-
-
 
 
 /*

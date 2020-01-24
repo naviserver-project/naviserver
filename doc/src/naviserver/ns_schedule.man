@@ -6,8 +6,9 @@
 
 [description]
 
-These commands perform scheduling of Tcl scripts at various intervals. Script will run in
-separate thread as background procedures. This functionality is similar to Unix cron.
+These commands perform scheduling of Tcl scripts at various
+intervals. Script will run in separate thread as background
+procedures. This functionality is similar to Unix cron.
 
 [section {COMMANDS}]
 
@@ -20,13 +21,17 @@ separate thread as background procedures. This functionality is similar to Unix 
 	[arg interval] \
 	[arg script]]
 
-This command schedules a script to be run after a certain number of seconds.
-Returns the ID of the newly scheduled script.  If [option -once] is specified, then the
-script is run once and then unscheduled, otherwise it will continue to run every
-interval seconds.  If [option -thread] is specified, then the script will be run in its
-own thread, otherwise it will run in the scheduler's thread.  If the script is
-long-running, this may interfere with the running of other scheduled scripts,
-so long-running scripts should be run in their own threads.
+This command schedules a script to be run after a certain interval.
+Returns the ID of the newly scheduled script.  If
+[option -once] is specified, then the script is run once and then
+unscheduled, otherwise it will continue to run every interval
+time periods. The
+[arg interval] can be specified with time units (per default seconds).
+If [option -thread] is specified, then the script will be run in its
+own thread, otherwise it will run in the scheduler's thread.  If the
+script is long-running, this may interfere with the running of other
+scheduled scripts, so long-running scripts should be run in their own
+threads.
 
 [example_begin]
    % set id [lb]ns_schedule_proc -once 60 { ns_log notice "this should run in 60 seconds" }[rb]
@@ -125,23 +130,23 @@ on success, 0 on failure.
 
 
 [call [cmd ns_after] \
-	[arg seconds] \
+	[arg interval] \
 	[arg script]]
 
 Execute a command after a time delay.  This command executes a script
-in the background after a number of seconds time delay.  It does this
+in the background after [arg interval] time units.  It does this
 by scheduling a one-shot event in the scheduler.  Uncaught script
 errors will go to the server log.  It returns an ID which can be used
-to unschedule the execution of the script (if seconds hasn't elapsed)
+to unschedule the execution of the script (if interval hasn't elapsed)
 using [cmd ns_unschedule_proc].
 
 [para] The script when executed will run in the scheduler thread.  If
  the script is long-running, this may interfere with the execution of
  other scheduled scripts, in which case [cmd ns_schedule_proc] should
- be used instead of ns_after.
+ be used instead of [cmd ns_after].
 
 [example_begin]
-   % ns_after 5 { ns_log notice "ns_after script executed" }
+   % ns_after 5s { ns_log notice "ns_after script executed" }
    123
 [example_end]
 

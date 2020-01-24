@@ -38,6 +38,11 @@
 #include "nsd.h"
 
 /*
+ * math.h is only needed for round()
+ */
+#include <math.h>
+
+/*
  * Local functions defined in this file
  */
 
@@ -76,7 +81,8 @@ static Tcl_ObjType timeType = {
 
 static const Tcl_ObjType *intTypePtr;
 static Ns_ObjvValueRange poslongRange0 = {0, LONG_MAX};
-
+static Ns_ObjvTimeRange nonnegTimeRange = {{0, 0}, {LONG_MAX, 0}};
+static Ns_ObjvTimeRange posMsTimeRange = {{0, 1000}, {LONG_MAX, 0}};
 
 
 /*
@@ -331,7 +337,7 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
             Ns_Time        t2 = {0, 0};
             Ns_Time       *tPtr;
             Ns_ObjvSpec    largs[] = {
-                {"time",  Ns_ObjvTime, &tPtr,  NULL},
+                {"time",  Ns_ObjvTime, &tPtr,    &nonnegTimeRange},
                 {"sec",   Ns_ObjvLong, &t2.sec,  &poslongRange0},
                 {"?usec", Ns_ObjvLong, &t2.usec, &poslongRange0},
                 {NULL, NULL, NULL, NULL}
@@ -415,8 +421,8 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
                 Tcl_DString ds, *dsPtr = &ds;
 
                 Tcl_DStringInit(dsPtr);
-                Ns_DStringPrintf(dsPtr, " %" PRId64 ".%06ld",
-                                 (int64_t)tPtr->sec, tPtr->usec);
+                Ns_DStringAppendTime(dsPtr, tPtr);
+
                 Tcl_DStringResult(interp, dsPtr);
             }
         }
@@ -520,7 +526,7 @@ NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
     int          rc = TCL_OK;
     Ns_Time     *tPtr = NULL;
     Ns_ObjvSpec  args[] = {
-        {"timespec", Ns_ObjvTime, &tPtr, NULL},
+        {"timespec", Ns_ObjvTime, &tPtr, &posMsTimeRange},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -529,14 +535,7 @@ NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
     } else {
         assert(tPtr != NULL);
 
-        if (tPtr->sec < 0 || (tPtr->sec == 0 && tPtr->usec < 0)) {
-            Ns_TclPrintfResult(interp, "invalid timespec: %s", Tcl_GetString(objv[1]));
-            rc = TCL_ERROR;
-        } else {
-            int  ms = (int)(tPtr->sec * 1000 + tPtr->usec / 1000);
-
-            Tcl_Sleep(ms);
-        }
+        Tcl_Sleep((int)Ns_TimeToMilliseconds(tPtr));
     }
 
     return rc;
@@ -626,7 +625,8 @@ UpdateStringOfTime(Tcl_Obj *objPtr)
 
     timePtr = (Ns_Time *) (void *) &objPtr->internalRep;
     Ns_AdjTime(timePtr);
-    if (timePtr->usec == 0) {
+
+    if (timePtr->usec == 0 && timePtr->sec >= 0) {
         len = ns_uint64toa(buf, (uint64_t)timePtr->sec);
     } else {
         len = snprintf(buf, sizeof(buf), "%ld:%ld",
@@ -700,15 +700,39 @@ static double ParseTimeUnit(const char *str)
  *
  *----------------------------------------------------------------------
  */
-
 static void
 DblValueToNstime( Ns_Time *timePtr, double dblValue)
 {
     NS_NONNULL_ASSERT(timePtr != NULL);
 
-    timePtr->sec = (long)(dblValue);
-    timePtr->usec = (long)((dblValue - (double)timePtr->sec) * 1000000.0);
+    if (dblValue < 0.0) {
+        double posValue = -dblValue;
 
+        /*
+         * Calculate with the positive value.
+         */
+        timePtr->sec = (long)(posValue);
+        timePtr->usec = (long)round((posValue - (double)timePtr->sec) * 1000000.0);
+
+        /*
+         * Fill in the minus sign at the right place.
+         */
+        if (timePtr->sec == 0) {
+            timePtr->usec = -timePtr->usec;
+        } else {
+            timePtr->sec = -timePtr->sec;
+        }
+
+    } else {
+        timePtr->sec = (long)(dblValue);
+        timePtr->usec = (long)round((dblValue - (double)timePtr->sec) * 1000000.0);
+    }
+    /* fprintf(stderr, "gen dbltime %f final sec %ld usec %.06ld float %.10f %.10f long %ld\n",
+       dblValue, timePtr->sec, timePtr->usec,
+       (dblValue - (double)timePtr->sec),
+       round((dblValue - (double)timePtr->sec) * 1000000.0),
+       (long)((dblValue - (double)timePtr->sec)));
+    */
 }
 
 /*
@@ -734,13 +758,18 @@ Ns_TimeToMilliseconds(const Ns_Time *timePtr)
 
     NS_NONNULL_ASSERT(timePtr != NULL);
 
-    result = timePtr->sec*1000 + timePtr->usec/1000;
-    if (timePtr->sec == 0 && timePtr->usec != 0 && result == 0) {
+    if (likely(timePtr->sec >= 0)) {
+        result = timePtr->sec*1000 + timePtr->usec/1000;
+    } else {
+        result = timePtr->sec*1000 - timePtr->usec/1000;
+    }
+    if (result == 0 && timePtr->sec == 0 && timePtr->usec != 0) {
         result = 1;
     }
 
     return result;
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -769,18 +798,16 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
      */
     char *sep;
     int   result = TCL_CONTINUE;
+    bool  isNegative;
 
     NS_NONNULL_ASSERT(str != NULL);
     NS_NONNULL_ASSERT(tPtr != NULL);
 
-    //fprintf(stderr, "GetTimeFromString<%s>\n",str);
-
+    isNegative = (*str == '-');
     sep = strchr(str, INTCHAR(separator));
 
     if (sep != NULL) {
         int intValue;
-
-        //fprintf(stderr, "we have a sep <%s>\n", sep);
 
         /*
          * First get sec from the string.
@@ -790,6 +817,7 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
              * The first character was the separator, treat sec as 0.
              */
             tPtr->sec = 0L;
+
         } else {
             /*
              * Overwrite the separator with a null-byte to make the
@@ -843,12 +871,21 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
                             dblFraction /= 10.0;
                             p ++;
                         }
-                        DblValueToNstime(tPtr, multiplier * ((double)tPtr->sec + dblFraction));
+                        if (isNegative) {
+                            /*
+                            fprintf(stderr, "GetTimeFromString neg value\n");
+                            fprintf(stderr, "GetTimeFromString multiplier %.10f sec %ld dblFraction %.12f\n",
+                                  multiplier, tPtr->sec, dblFraction);
+                            */
+                            DblValueToNstime(tPtr, -1 *
+                                             multiplier * ((double)labs(tPtr->sec) + dblFraction));
+                        } else {
+                            DblValueToNstime(tPtr, multiplier * ((double)tPtr->sec + dblFraction));
+                        }
 
                         result = TCL_OK;
 
                     } else {
-                        //fprintf(stderr, "Tcl_GetDouble of <%s> failed hopless\n", sep);
                         result = TCL_ERROR;
                     }
                 } else {
@@ -879,7 +916,6 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
          * No separator found, so try to interpret the string as integer
          */
         sec = strtol(str, &ptr, 10);
-        //fprintf(stderr, "we have no sep %c in <%s>, next bytes <%s>\n", separator, str, ptr);
 
         if (likely(str != ptr)) {
             /*
@@ -946,7 +982,7 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     }
 
     if (result == TCL_OK) {
-        Ns_AdjTime(&t);
+        /* Ns_AdjTime(&t); */
         SetTimeInternalRep(objPtr, &t);
     }
 
@@ -983,7 +1019,6 @@ Ns_GetTimeFromString(Tcl_Interp *interp, const char *str, Ns_Time *tPtr)
     NS_NONNULL_ASSERT(tPtr != NULL);
 
     result = GetTimeFromString(interp, str, ':', tPtr);
-
     if (result == TCL_CONTINUE) {
         result = GetTimeFromString(interp, str, '.', tPtr);
     }
@@ -995,6 +1030,8 @@ Ns_GetTimeFromString(Tcl_Interp *interp, const char *str, Ns_Time *tPtr)
         Ns_TclPrintfResult(interp, "expected time value but got \"%s\"", str);
         result = TCL_ERROR;
     }
+    /* fprintf(stderr, "GetTimeFromString final %ld.%06ld -- %d\n", tPtr->sec, tPtr->usec, result);*/
+
     return result;
 }
 

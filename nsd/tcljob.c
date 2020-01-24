@@ -254,14 +254,6 @@ static int AppendFieldLong(Tcl_Interp *interp, Tcl_Obj *list,
                            const char *name, long value)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static int AppendFieldDouble(Tcl_Interp *interp, Tcl_Obj *list,
-                             const char *name, double value)
-    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
-
-static double ComputeDelta(const Ns_Time *start, const Ns_Time *end)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
-
 /*
  * Globals
  */
@@ -1139,10 +1131,11 @@ JobJobListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         jobList = Tcl_NewListObj(0, NULL);
         for (hPtr = Tcl_FirstHashEntry(&queue->jobs, &search);
              hPtr != NULL;
-             hPtr = Tcl_NextHashEntry(&search)) {
+             hPtr = Tcl_NextHashEntry(&search)
+             ) {
             const char *jobId1, *jobState, *jobCode, *jobType, *jobReq, *jobResults, *jobScript;
             Tcl_Obj    *jobFieldList;
-            double      delta;
+            Ns_Time     diff;
             char        threadId[32];
             Job        *jobPtr = (Job *)Tcl_GetHashValue(hPtr);
 
@@ -1157,7 +1150,8 @@ JobJobListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
             if ( jobPtr->state == JOB_SCHEDULED || jobPtr->state == JOB_RUNNING) {
                 Ns_GetTime(&jobPtr->endTime);
             }
-            delta = ComputeDelta(&jobPtr->startTime, &jobPtr->endTime);
+
+            (void)Ns_DiffTime(&jobPtr->startTime, &jobPtr->endTime, &diff);
             snprintf(threadId, sizeof(threadId), "%" PRIxPTR, jobPtr->tid);
 
             /*
@@ -1172,7 +1166,7 @@ JobJobListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
                 || AppendField(interp, jobFieldList, "type",   jobType) != TCL_OK
                 || AppendField(interp, jobFieldList, "req",    jobReq) != TCL_OK
                 || AppendField(interp, jobFieldList, "thread", threadId) != TCL_OK
-                || AppendFieldDouble(interp, jobFieldList, "time", delta) != TCL_OK
+                || AppendFieldLong(interp, jobFieldList, "time", Ns_TimeToMilliseconds(&diff)) != TCL_OK
                 || AppendFieldLong(interp, jobFieldList, "starttime", (long)jobPtr->startTime.sec) != TCL_OK
                 || AppendFieldLong(interp, jobFieldList, "endtime", (long)jobPtr->endTime.sec) != TCL_OK
                 ) {
@@ -2361,71 +2355,6 @@ AppendFieldLong(Tcl_Interp *interp, Tcl_Obj *list, const char *name,
     }
 
     return result;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * AppendFieldDouble --
- *
- *      Append the job field to the job field list.
- *
- * Results:
- *      Standard Tcl result.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-static int
-AppendFieldDouble(Tcl_Interp *interp, Tcl_Obj *list, const char *name,
-                  double value)
-{
-    Tcl_Obj *elObj;
-    int      result;
-
-    NS_NONNULL_ASSERT(list != NULL);
-    NS_NONNULL_ASSERT(name != NULL);
-
-    elObj = Tcl_NewStringObj(name, -1);
-    result = Tcl_ListObjAppendElement(interp, list, elObj);
-    if (likely( result == TCL_OK )) {
-        elObj = Tcl_NewDoubleObj(value);
-        result = Tcl_ListObjAppendElement(interp, list, elObj);
-    }
-
-    return result;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * ComputeDelta --
- *
- *      Compute the time difference.
- *
- * Results:
- *      Difference in milliseconds
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-static double
-ComputeDelta(const Ns_Time *start, const Ns_Time *end)
-{
-    Ns_Time diff;
-
-    NS_NONNULL_ASSERT(start != NULL);
-    NS_NONNULL_ASSERT(end != NULL);
-
-    (void)Ns_DiffTime(end, start, &diff);
-
-    return ((double)diff.sec * 1000.0) + ((double)diff.usec / 1000.0);
 }
 
 /*

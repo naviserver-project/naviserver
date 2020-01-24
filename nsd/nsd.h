@@ -185,8 +185,8 @@ struct nsconf {
     } state;
 
     struct {
+        Ns_Time maxelapsed;
         int jobsperthread;
-        int maxelapsed;
     } sched;
 
 #ifdef _WIN32

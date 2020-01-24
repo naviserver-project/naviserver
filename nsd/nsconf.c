@@ -178,26 +178,15 @@ NsConfUpdate(void)
      * nsmain.c
      */
     Ns_ConfigTimeUnitRange(path, "shutdowntimeout",
-                           "20s", 0, 0, INT_MAX, 0,
+                           "20s", 0, 0, LONG_MAX, 0,
                            &nsconf.shutdowntimeout);
     /*
      * sched.c
      */
     nsconf.sched.jobsperthread = Ns_ConfigIntRange(path, "schedsperthread", 0, 0, INT_MAX);
-    {
-        Ns_Time maxelapsed;
-
-        Ns_ConfigTimeUnitRange(path, "schedmaxelapsed",
-                               "2s", 0, 0, INT_MAX, 0,
-                               &maxelapsed);
-        if (maxelapsed.sec == 0 && maxelapsed.usec != 0) {
-            /*
-             * Minimal granularity is 1 sec
-             */
-            maxelapsed.sec = 1;
-        }
-        nsconf.sched.maxelapsed = (int)maxelapsed.sec;
-    }
+    Ns_ConfigTimeUnitRange(path, "schedmaxelapsed",
+                           "2s", 1, 0, LONG_MAX, 0,
+                           &nsconf.sched.maxelapsed);
     /*
      * binder.c, win32.c
      */
@@ -209,7 +198,7 @@ NsConfUpdate(void)
      */
     nsconf.job.jobsperthread = Ns_ConfigIntRange(path, "jobsperthread", 0, 0, INT_MAX);
     Ns_ConfigTimeUnitRange(path, "jobtimeout",
-                           "5m", 0, 0, INT_MAX, 0,
+                           "5m", 0, 0, LONG_MAX, 0,
                            &nsconf.job.timeout);
 
     /*

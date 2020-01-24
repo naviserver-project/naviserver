@@ -2145,7 +2145,7 @@ DriverThread(void *arg)
                  * the time comparison later would determine that it is too
                  * early.
                  */
-                pollTimeout = (int)(diff.sec * 1000 + diff.usec / 1000 + 1);
+                pollTimeout = (int)Ns_TimeToMilliseconds(&diff) + 1;
 
             } else {
                 pollTimeout = 0;
@@ -5517,14 +5517,14 @@ WriterThread(void *arg)
                     && (size_t)curPtr->nsent > curPtr->sockPtr->drvPtr->bufsize
                     )  {
                     Ns_Time diff;
-                    int     currentMs;
+                    long    currentMs;
 
                     Ns_DiffTime(&now, &curPtr->startTime, &diff);
-                    currentMs = (int)(diff.sec*1000 + diff.usec/1000);
+                    currentMs = Ns_TimeToMilliseconds(&diff);
                     if (currentMs > 0) {
                         curPtr->currentRate = (int)((curPtr->nsent)/(Tcl_WideInt)currentMs);
                         Ns_Log(DriverDebug,
-                               "Socket of pool '%s' is writable, currentMs %d has updated current rate %d",
+                               "Socket of pool '%s' is writable, currentMs %ld has updated current rate %d",
                                curPtr->poolPtr->pool, currentMs,curPtr->currentRate);
                     }
                 }

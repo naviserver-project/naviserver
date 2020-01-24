@@ -143,13 +143,15 @@ Ns_AdjTime(Ns_Time *timePtr)
 {
     NS_NONNULL_ASSERT(timePtr != NULL);
 
-    if (unlikely(timePtr->usec < 0)) {
+    //fprintf(stderr, "Ns_AdjTime call %ld.%06ld\n", timePtr->sec, timePtr->usec);
+    if (unlikely(timePtr->usec < 0) && unlikely(timePtr->sec > 0)) {
         timePtr->sec += (timePtr->usec / 1000000L) - 1;
         timePtr->usec = (timePtr->usec % 1000000L) + 1000000L;
     } else if (unlikely(timePtr->usec > 1000000L)) {
         timePtr->sec += timePtr->usec / 1000000L;
         timePtr->usec = timePtr->usec % 1000000L;
     }
+    //fprintf(stderr, "Ns_AdjTime done %ld.%06ld\n", timePtr->sec, timePtr->usec);
 }
 
 
@@ -173,7 +175,9 @@ Ns_AdjTime(Ns_Time *timePtr)
 long
 Ns_DiffTime(const Ns_Time *t1, const Ns_Time *t0, Ns_Time *diffPtr)
 {
-    Ns_Time diff;
+    Ns_Time diff, t0p, t1p, *t0Ptr, *t1Ptr;
+    bool    t0pos, t1pos, subtract, isNegative;
+
 
     NS_NONNULL_ASSERT(t0 != NULL);
     NS_NONNULL_ASSERT(t1 != NULL);
@@ -181,19 +185,135 @@ Ns_DiffTime(const Ns_Time *t1, const Ns_Time *t0, Ns_Time *diffPtr)
     if (diffPtr == NULL) {
         diffPtr = &diff;
     }
-    if (t1->usec >= t0->usec) {
-        diffPtr->sec = t1->sec - t0->sec;
-        diffPtr->usec = t1->usec - t0->usec;
+    if (t0->sec < 0) {
+        t0p.sec = -t0->sec;
+        t0p.usec = t0->usec;
+        t0pos = NS_FALSE;
+    } else if (t0->sec == 0 && t0->usec < 0) {
+        t0p.sec = -t0->sec;
+        t0p.usec = -t0->usec;
+        t0pos = NS_FALSE;
     } else {
-        diffPtr->sec = t1->sec - t0->sec - 1;
-        diffPtr->usec = 1000000L + t1->usec - t0->usec;
+        t0p.sec  = t0->sec;
+        t0p.usec = t0->usec;
+        t0pos = NS_TRUE;
     }
+
+    if (t1->sec < 0) {
+        t1p.sec = -t1->sec;
+        t1p.usec = t1->usec;
+        t1pos = NS_FALSE;
+    } else if (t1->sec == 0 && t1->usec < 0) {
+        t1p.sec = -t1->sec;
+        t1p.usec = -t1->usec;
+        t1pos = NS_FALSE;
+    } else {
+        t1p.sec  = t1->sec;
+        t1p.usec = t1->usec;
+        t1pos = NS_TRUE;
+    }
+
+    if (t1pos) {
+        if (t0pos) {
+            /*
+             * Subtract POS - POS
+             */
+            //fprintf(stderr, "sub POS - POS\n");
+            subtract = NS_TRUE;
+            isNegative = t1p.sec < t0p.sec
+                || (t1p.sec == t0p.sec && (t1p.usec < t0p.usec));
+            if (isNegative) {
+                t0Ptr = &t1p;
+                t1Ptr = &t0p;
+            } else {
+                t0Ptr = &t0p;
+                t1Ptr = &t1p;
+            }
+        } else {
+            /*
+             * Add POS - NEG
+             */
+            //fprintf(stderr, "add POS - NEG\n");
+            subtract = NS_FALSE;
+            isNegative = NS_FALSE;
+            t0Ptr = &t1p;
+            t1Ptr = &t0p;
+        }
+    } else {
+        if (t0pos) {
+            /*
+             * ADD NEG - POS
+             */
+            //fprintf(stderr, "add NEG - POS\n");
+            subtract = NS_FALSE;
+            isNegative = NS_TRUE;
+        } else {
+            /*
+             * Subtract NEG - NEG
+             */
+            //fprintf(stderr, "sub NEG - NEG\n");
+            subtract = NS_TRUE;
+            isNegative = t0p.sec < t1p.sec
+                || (t1p.sec == t0p.sec && (t0p.usec < t1p.usec));
+            if (isNegative) {
+                t0Ptr = &t0p;
+                t1Ptr = &t1p;
+            } else {
+                t0Ptr = &t1p;
+                t1Ptr = &t0p;
+            }
+        }
+    }
+
+
+    //fprintf(stderr, "%s t1pos %d t0pos %d isNegative %d\n",
+    //        subtract ? "subtract" : "add", t1pos, t0pos, isNegative);
+
+    if (subtract) {
+
+        if (t1Ptr->usec >= t0Ptr->usec) {
+            diffPtr->sec = t1Ptr->sec - t0Ptr->sec;
+            diffPtr->usec = t1Ptr->usec - t0Ptr->usec;
+        } else {
+            diffPtr->sec = t1Ptr->sec - t0Ptr->sec - 1;
+            if (diffPtr->sec < 0) {
+                diffPtr->sec = t0Ptr->sec - t1Ptr->sec;
+                diffPtr->usec = t0Ptr->usec - t1Ptr->usec;
+            } else {
+                diffPtr->usec = 1000000L + t1Ptr->usec - t0Ptr->usec;
+            }
+        }
+    } else {
+
+        diffPtr->sec = t0p.sec + t1p.sec;
+        diffPtr->usec = t0p.usec + t1p.usec;
+    }
+
+    if (isNegative) {
+        if (diffPtr->sec == 0) {
+            diffPtr->usec = -diffPtr->usec;
+        } else {
+            diffPtr->sec = -diffPtr->sec;
+        }
+    }
+
+    //fprintf(stderr, "Ns_DiffTime res %ld.%06ld - %ld.%06ld = %ld.%06ld\n",
+    //        t1->sec, t1->usec, t0->sec, t0->usec, diffPtr->sec, diffPtr->usec);
+
     Ns_AdjTime(diffPtr);
+
+    //fprintf(stderr, "Ns_DiffTime adj %ld.%06ld - %ld.%06ld = %ld.%06ld\n",
+    //        t1->sec, t1->usec, t0->sec, t0->usec, diffPtr->sec, diffPtr->usec);
+
     if (diffPtr->sec < 0) {
         return -1;
     }
-    if (diffPtr->sec == 0 && diffPtr->usec == 0) {
-        return 0;
+    if (diffPtr->sec == 0) {
+        if (diffPtr->usec == 0) {
+            return 0;
+        } else if (diffPtr->usec < 0) {
+            return -1;
+        }
     }
 
     return 1;
@@ -221,6 +341,8 @@ void
 Ns_IncrTime(Ns_Time *timePtr, long sec, long usec)
 {
     NS_NONNULL_ASSERT(timePtr != NULL);
+    assert(sec >= 0);
+    assert(usec >= 0);
 
     timePtr->sec += sec;
     timePtr->usec += usec;

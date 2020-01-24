@@ -3784,7 +3784,8 @@ GetTimeDiff(Ns_Time *timePtr)
     NS_NONNULL_ASSERT(timePtr != NULL);
 
     Ns_GetTime(&now);
-    return Ns_DiffTime(timePtr, &now, &diff) * (diff.sec/1000 + diff.usec*1000);
+    Ns_DiffTime(timePtr, &now, &diff);
+    return Ns_TimeToMilliseconds(&diff);
 }
 
 /*
