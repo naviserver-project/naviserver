@@ -207,7 +207,11 @@ ns_localtime(const time_t *clock)
 
     NS_NONNULL_ASSERT(clock != NULL);
 
-    errNum = localtime_s(&tlsPtr->ltbuf, clock);
+    if (sizeof(clock) == 4) {
+        errNum = _localtime32_s(&tlsPtr->ltbuf, clock);
+    } else {
+        errNum = _localtime64_s(&tlsPtr->ltbuf, clock);
+    }
     if (errNum != 0) {
         NsThreadFatal("ns_localtime", "localtime_s", errNum);
     }
@@ -221,8 +225,8 @@ ns_localtime(const time_t *clock)
     Tls *tlsPtr = GetTls();
 
     NS_NONNULL_ASSERT(clock != NULL);
-    return localtime_r(clock, &tlsPtr->ltbuf);
 
+    return localtime_r(clock, &tlsPtr->ltbuf);
 #endif
 }
 
