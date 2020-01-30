@@ -1608,7 +1608,7 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
                              * poll() finished - either with a timeout or
                              * success. Actually we don't care, since the
                              * getsockopt() for returning out the error helps
-                             * us to decide, whether to continiue with this IP
+                             * us to decide, whether to continue with this IP
                              * address or not.
                              */
                             len = sizeof(errno);
