@@ -1584,7 +1584,7 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
                          */
                         if (multipleIPs) {
                             struct pollfd sockfd;
-                            socklen_t len;
+                            socklen_t     len;
 
                             if (err == NS_EWOULDBLOCK) {
                                 Ns_Log(Debug, "async connect to %s on sock %d returned NS_EWOULDBLOCK",
@@ -1604,29 +1604,31 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
                              */
                             (void) ns_poll(&sockfd, 1, 100);
 
-                            /*
-                             * poll() finished - either with a timeout or
-                             * success. Actually we don't care, since the
-                             * getsockopt() for returning out the error helps
-                             * us to decide, whether to continue with this IP
-                             * address or not.
-                             */
-                            len = sizeof(errno);
-                            getsockopt(sock, SOL_SOCKET, SO_ERROR, &errno, &len);
+                            {
+                                int error;
+                                /*
+                                 * poll() finished - either with a timeout or
+                                 * success. Actually we don't care, since the
+                                 * getsockopt() for returning out the error helps
+                                 * us to decide, whether to continue with this IP
+                                 * address or not.
+                                 */
+                                len = sizeof(error);
+                                getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, &len);
 
-                            /*Ns_Log(Notice, "async connect on sock %d, poll returned %d revents %.4x, extraerr %d <%s>",
-                              sock, n, sockfd.revents, errno, ns_sockstrerror(errno));*/
-                            if (errno != 0) {
-                                Ns_Log(Notice, "multiple & async on connect to %s fails on sock %d err %d <%s>",
-                                       address, sock, errno, ns_sockstrerror(errno));
-                                ns_sockclose(sock);
-                                sock = NS_INVALID_SOCKET;
-                                continue;
-                            } else {
-                                Ns_Log(Debug, "async connect multipleIPs INPROGRESS sock %d continue", sock);
-                                break;
+                                /*Ns_Log(Notice, "async connect on sock %d, poll returned %d revents %.4x, extraerr %d <%s>",
+                                  sock, n, sockfd.revents, error, ns_sockstrerror(error));*/
+                                if (error != 0) {
+                                    Ns_Log(Notice, "multiple & async on connect to %s fails on sock %d err %d <%s>",
+                                           address, sock, error, ns_sockstrerror(error));
+                                    ns_sockclose(sock);
+                                    sock = NS_INVALID_SOCKET;
+                                    continue;
+                                } else {
+                                    Ns_Log(Debug, "async connect multipleIPs INPROGRESS sock %d continue", sock);
+                                    break;
+                                }
                             }
-
                         }
                     } else if (err != 0) {
                         Ns_Log(Notice, "close sock %d due to error err %d <%s>",
