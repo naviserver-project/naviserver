@@ -420,7 +420,8 @@ Default: 2
 
 [def Datasource] Name specific to the database management system that
 might be necessary for opening database connections. For PostgreSQL,
-datasousce has the form "${db_host}:${db_port}:${db_name}".
+datasource has the form "${db_host}:${db_port}:${db_name}". See also:
+https://www.postgresql.org/docs/12/libpq-connect.html#LIBPQ-PARAMKEYWORDS
 
 [def Driver] Name of the driver for this pool as specified in
 [term ns/db/drivers].
