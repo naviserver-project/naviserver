@@ -61,10 +61,10 @@ Released versions are available from
 
 [para]
 
-Latest development version is available from Mercurial repository
+Latest development version is available from the bitbucket repository
 
 [example_begin]
-hg clone http://bitbucket.org/naviserver/naviserver
+git clone https:/bitbucket.org/naviserver/naviserver.git
 cd naviserver
 ./autogen.sh
 make install

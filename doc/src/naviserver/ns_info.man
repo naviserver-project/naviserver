@@ -184,7 +184,8 @@ Returns 1 if the server is fully started, 0 otherwise.
 [call [cmd  "ns_info tag"]]
 
 Returns the most detailed revision info, which might be shipped with
-the tar file or obtained from mercurial. 
+the tar file or obtained from the source code management system (git
+or mercurial).
 
 [call [cmd  "ns_info threads"]]
 

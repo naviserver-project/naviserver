@@ -190,11 +190,11 @@ macOS 10.2+ and Windows. To compile and install:
     Alternatively, modules can be obtained from the code repository at
     Bitbucket via git. To get a module "nsfoo" via git
 
-        $ git clone http://bitbucket.org/naviserver/nsfoo/
+	$ git clone https://bitbucket.org/naviserver/nsfoo.git
         $ cd nsfoo
         $ make install NAVISERVER=/usr/local/ns
 
-    See: http://bitbucket.org/naviserver/ for a full list of modules.
+    See: https://bitbucket.org/naviserver/ for a full list of modules.
 
 
 3g. To compile for Windows, you need Msys + Mingw
