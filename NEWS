@@ -3774,7 +3774,7 @@ Code Changes:
       - Get rid of CVS variables
       - make test for byte-array safe for changes introduced in
 	Tcl 8.6 and back-ported to Tcl 8.5
-	(see e.g. http://core.tcl.tk/tcl/info/91be696bf3)
+	(see e.g. https://core.tcl-lang.org/tcl/info/91be696bf3)
       - defined new macro NS_GNUC_DEPRECATED_FOR() to be able to provide
 	replacement hint and use it where appropriate
       - improve error message
