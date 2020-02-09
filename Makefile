@@ -142,7 +142,7 @@ install-doc:
 		echo "\nNo documentation is installed locally; either generate the documentation with" ; \
 		echo "   make build-doc"; \
 		echo "(which requires tcllib to be installed, such that dtplite can be used for the generation)" ; \
-		echo "or use the online documentation from http://naviserver.sourceforge.net/n/toc.html" ; \
+		echo "or use the online documentation from https://naviserver.sourceforge.io/n/toc.html" ; \
 	fi;
 
 install-examples:

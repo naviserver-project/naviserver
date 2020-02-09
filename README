@@ -22,15 +22,15 @@ NaviServer is maintained, enhanced, and distributed freely by the
 open source community.  The home for NaviServer downloads and bug/patch
 database is located on the SourceForge site:
 
-    http://sourceforge.net/projects/naviserver
+    https://sourceforge.net/projects/naviserver
 
-Source code is available from the BitBucket site:
+Source code is available from the Bitbucket site:
 
-    http://bitbucket.org/naviserver/
+    https://bitbucket.org/naviserver/
 
 Another resource is the Tcl wiki:
 
-    http://wiki.tcl.tk/naviserver
+    https://wiki.tcl-lang.org/page/NaviServer
 
 NaviServer is a freely available open source package.  See the file
 "license.terms" for complete information.
@@ -47,7 +47,7 @@ for viewing with any HTML-compatible browser).
 
 The latest development version is available online:
 
-    http://naviserver.sourceforge.net/n/toc.html
+    https://naviserver.sourceforge.io/n/toc.html
 
 
 3. Compiling and installing
@@ -63,10 +63,11 @@ macOS 10.2+ and Windows. To compile and install:
     if it was built with threads enabled. The configure step below
     will complain if this is not the case.
 
-    You can download the latest Tcl release from http://tcl.tk and follow
-    the instructions in the included README. You may install Tcl within the
-    directory you intend to install the server (e.g., /usr/local/ns) or
-    in some other location. The following should work:
+    You can download the latest Tcl release from https://www.tcl-lang.org/
+    and follow the instructions in the included README. You may install
+    Tcl within the directory you intend to install the server
+    (e.g., /usr/local/ns) or in some other location.
+    The following should work:
 
     $ gunzip < tcl8.6.10-src.tar.gz | tar xvf -
     $ cd tcl8.6.10/unix
@@ -77,7 +78,7 @@ macOS 10.2+ and Windows. To compile and install:
 3b. If you don't have GNU make (Linux make is GNU make), install
     it, as the server's makefiles require it.  If you're not sure
     if you have GNU make, try "make -v" to check.  You can get
-    GNU make at http://www.gnu.org.
+    GNU make at https://www.gnu.org/
 
 
 3c. Download, configure, build, and install NaviServer.
@@ -88,7 +89,7 @@ macOS 10.2+ and Windows. To compile and install:
 
     Latest development source code:
 
-        http://bitbucket.org/naviserver/naviserver/
+	https://bitbucket.org/naviserver/naviserver/
 
     The following should work for official releases:
 
@@ -199,8 +200,7 @@ macOS 10.2+ and Windows. To compile and install:
 
 3g. To compile for Windows, you need Msys + Mingw
 
-    Info:     http://www.mingw.org/download.shtml
-    Download: http://prdownloads.sourceforge.net/tcl/msys_mingw8.zip
+    Download: https://sourceforge.net/projects/mingw/files/
 
     The Msys + Mingw download above is the minimal environment needed
     to build Naviserver under Windows. It includes a shell environment and
@@ -234,7 +234,7 @@ macOS 10.2+ and Windows. To compile and install:
 There are mailing lists for NaviServer to discuss anything from
 configuration, development, and future direction. To join visit:
 
-    http://sourceforge.net/projects/naviserver
+    https://sourceforge.net/projects/naviserver
 
 Thank you for your interest in NaviServer.  We hope you find it
 useful and look forward to hearing from you on our mailing list.

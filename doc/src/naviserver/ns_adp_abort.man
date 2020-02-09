@@ -34,7 +34,7 @@
    # The ns_adp_abort after ns_returnredirect ensures no further ADP
    # processing happens except the redirect itself.
    
-   ns_returnredirect http://next-scripting.org
+   ns_returnredirect https://next-scripting.org/
    ns_adp_abort
 [example_end]
 

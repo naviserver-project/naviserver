@@ -8,11 +8,11 @@
 
     <name>@PACKAGE_NAME@</name>
     <shortname>@PACKAGE_TARNAME@</shortname>
-    <homepage rdf:resource="http://sourceforge.net/projects/naviserver/" />
-    <wiki rdf:resource="http://naviserver.sourceforge.net" />
+    <homepage rdf:resource="https://sourceforge.net/projects/naviserver/" />
+    <wiki rdf:resource="https://wiki.tcl-lang.org/page/NaviServer" />
     <created>2005-02-05</created>
-    <license rdf:resource="http://usefulinc.com/doap/licenses/mpl" />
-    <license rdf:resource="http://usefulinc.com/doap/licenses/gpl" />
+    <license rdf:resource="https://spdx.org/licenses/MPL-1.1.html" />
+    <license rdf:resource="https://spdx.org/licenses/GPL-1.0-or-later.html" />
 
     <shortdesc xml:lang="en">
         NaviServer is a high performance web server written in C and Tcl.
@@ -32,14 +32,14 @@
     Er kann mit jeder der beiden Sprachen leicht erweitert werden
     um interessante Websites und -services zu entwickeln.</description>
 
-    <download-page rdf:resource="http://sourceforge.net/project/showfiles.php?group_id=130646" />
-    <mailing-list rdf:resource="http://sourceforge.net/mail/?group_id=130646" />
-    <bug-database rdf:resource="http://sourceforge.net/tracker/?group_id=130646&amp;atid=719006" />
+    <download-page rdf:resource="https://sourceforge.net/projects/naviserver/files/" />
+    <mailing-list rdf:resource="https://sourceforge.net/p/naviserver/mailman/" />
+    <bug-database rdf:resource="https://sourceforge.net/p/naviserver/bugs/" />
 
     <!-- SourceForge category: Internet :: WWW/HTTP :: HTTP Servers -->
-    <category rdf:resource="http://sourceforge.net/softwaremap/trove_list.php?form_cat=250" />
+    <category rdf:resource="https://sourceforge.net/directory/internet/www/" />
     <!-- Freshmeat category: Internet :: WWW/HTTP :: HTTP Servers -->
-    <category rdf:resource="http://freshmeat.net/browse/250/" />
+    <!-- <category rdf:resource="http://freshmeat.net/browse/250/" /> -->
 
     <release>
         <Version>
@@ -50,10 +50,10 @@
     </release>
 
     <repository>
-        <HgRepository>
+        <GitRepository>
             <browse rdf:resource="https://bitbucket.org/naviserver/naviserver/" />
             <anon-root rdf:resource="https://bitbucket.org/naviserver/naviserver/" />
-        </HgRepository>
+        </GitRepository>
     </repository>
 
 </Project>
