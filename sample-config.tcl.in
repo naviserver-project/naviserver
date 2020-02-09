@@ -487,7 +487,7 @@ ns_section	"ns/server/${servername}/module/nssock" {
     #ns_param	writerstreaming	true	;# false;  activate writer for streaming HTML output (e.g. ns_writer)
     #ns_param	driverthreads	2	;# 1, number of driver threads (requires support of SO_REUSEPORT)
 
-    # Tuning of keep-alives
+    # Tuning of parameters for persistent connections
     ns_param	keepwait		 5s	 ;# timeout for keep-alive
     ns_param	keepalivemaxuploadsize	 500kB	 ;# don't allow keep-alive for upload content larger than this
     ns_param	keepalivemaxdownloadsize 1MB     ;# don't allow keep-alive for download content larger than this

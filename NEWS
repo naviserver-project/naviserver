@@ -4454,9 +4454,9 @@ Configuration Changes:
       extinction and recreations.
 
     * New config parameters "keepalivemaxuploadsize" and
-      "keepalivemaxdownloadsize" for controlling keep-alives for largish
-      content. Use separate request instead of waiting until the large
-      content transfer has finished.
+      "keepalivemaxdownloadsize" for controlling persistent
+      connections with largish content. Use separate request instead
+      of waiting until the large content transfer has finished.
 
     * Fastpath static page configuration is now a global setting rather than
       per-server:
