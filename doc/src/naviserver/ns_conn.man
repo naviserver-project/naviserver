@@ -208,7 +208,7 @@ set of HTTP response header fields.
 [para]
 For example:
 [example_begin]
-ns_set put [ns_conn outputheaders] "Content-Disposition" "attachment;filename=export.xotcl"
+ns_set put [lb]ns_conn outputheaders[rb] "Content-Disposition" "attachment;filename=export.xotcl"
 [example_end]
 
 

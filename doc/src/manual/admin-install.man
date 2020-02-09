@@ -61,7 +61,7 @@ Released versions are available from
 
 [para]
 
-Latest development version is available from the bitbucket repository
+Latest development version is available from the Bitbucket repository
 
 [example_begin]
 git clone https:/bitbucket.org/naviserver/naviserver.git

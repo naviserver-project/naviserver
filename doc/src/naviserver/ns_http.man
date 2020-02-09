@@ -151,13 +151,13 @@ the channel is tossed back to the running interpreter and can be manipulated.
 It is the caller responsibility to close the channel when not needed any more.
 The implementation will not do that (see [cmd "ns_http cleanup"] for exception).
 
-[opt_def -expire T]]
+[opt_def -expire [arg T]]
 time to wait for the whole request to complete. Upon expiry of this timer,
 request processing is unconditionally stopped, regardless of whether the
 connection or some data to read/write is still pending. The time can be
 specified in any supported ns_time format.
 
-[opt_def -timeout T]]
+[opt_def -timeout [arg T]]
 time to wait for connection setup and socket readable/writable state.
 The time can be specified in any supported ns_time format.
 
@@ -219,8 +219,8 @@ or [term outputchan] if the request was spooled into a Tcl channel.
 For HTTPS requests it will add [term https] with some low-level TLS
 parameters in a Tcl dictionary format.
 
-[opt_def -timeout T]]
-time to wait for the request to complete. The time can be specified
+The specified [option -timeout] specified the maximum duration of
+the request to complete. The time can be specified
 in any supported ns_time format.
 
 [para]
