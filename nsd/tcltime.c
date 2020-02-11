@@ -82,7 +82,6 @@ static Tcl_ObjType timeType = {
 static const Tcl_ObjType *intTypePtr;
 static Ns_ObjvValueRange poslongRange0 = {0, LONG_MAX};
 static Ns_ObjvTimeRange nonnegTimeRange = {{0, 0}, {LONG_MAX, 0}};
-static Ns_ObjvTimeRange posMsTimeRange = {{0, 1000}, {LONG_MAX, 0}};
 
 
 /*
@@ -510,6 +509,7 @@ NsTclLocalTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  * NsTclSleepObjCmd --
  *
  *      Sleep with millisecond resolution.
+ *      Implementation of ns_sleep command.
  *
  * Results:
  *      Tcl Result.
@@ -526,16 +526,19 @@ NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
     int          rc = TCL_OK;
     Ns_Time     *tPtr = NULL;
     Ns_ObjvSpec  args[] = {
-        {"timespec", Ns_ObjvTime, &tPtr, &posMsTimeRange},
+        {"timespec", Ns_ObjvTime, &tPtr, &nonnegTimeRange},
         {NULL, NULL, NULL, NULL}
     };
 
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         rc = TCL_ERROR;
     } else {
-        assert(tPtr != NULL);
+        long ms = Ns_TimeToMilliseconds(tPtr);
 
-        Tcl_Sleep((int)Ns_TimeToMilliseconds(tPtr));
+        assert(tPtr != NULL);
+        if (ms > 0) {
+            Tcl_Sleep((int)ms);
+        }
     }
 
     return rc;
