@@ -13,7 +13,7 @@ list of two file ids: the first one for reads and the second one for writes.
 
 The [option -nonblock] option specifies that the command will return immediately,
 while the connect is still in progress by the operating system. If you
-use [option -nonblock], you then can call ns_sockcheck with the write file id to
+use [option -nonblock], you then can call [cmd ns_sockcheck] with the write file id to
 see if the connect was actually completed.
 
 [para]
@@ -49,7 +49,7 @@ close $wid
 [example_end]
 
 
-[see_also ns_sockcallback]
+[see_also ns_sockcallback ns_sockcheck]
 [keywords "global built-in" NaviServer socket]
 [manpage_end]
 

@@ -6,8 +6,8 @@
 
 [description]
 
-ns_perm adduser adds the user with the specified name and the encrypted password (encpass)
-and the specified user text (userfield) into the users database.
+[cmd ns_perm] implements a command set for simple password and group
+managment for NaviServer.
 
 [section {COMMANDS}]
 
@@ -23,6 +23,10 @@ and the specified user text (userfield) into the users database.
 	[arg userfield] \
 	[opt [arg host...]]]
 
+Adds the user with the specified name and the
+encrypted password (encpass) and the specified user text (userfield)
+into the users database.
+
 [para]
 [option -allow] and hostnames are specified, the user will be allowed on the specified hostnames.
 
@@ -36,14 +40,15 @@ The hostname must be specified as ipaddress/netmask or dnshostname.
 
 [para]
 [option -salt]
-By default password is assumed encrypted with ns_crypt command and salt CU:
+By default password is assumed encrypted with the [cmd ns_crypt]
+command and salt "CU":
 
 [example_begin]
    ns_crypt mypasswd CU
 [example_end]
 
 This argument tells command that password is clear text and it should be encrypted
-by the ns_perm command with specified salt.
+by the [cmd ns_perm] command with specified salt.
 
 [para]
 [option -clear]
@@ -53,7 +58,7 @@ Tells that we keep password in clear text
 [call [cmd "ns_perm deluser"] \
 	[arg name]]
 
-ns_perm deluser deletes user from the memory
+Delete user from the memory.
 
 
 [call [cmd "ns_perm addgroup"] \
@@ -61,20 +66,22 @@ ns_perm deluser deletes user from the memory
 	[arg user] \
 	[opt [arg user...]]]
 
-ns_perm addgroup creates a new group with the specified name that includes the users listed after the name.
+Create a new group with the specified name
+that includes the users listed after the name.
 
 
 [call [cmd "ns_perm delgroup"] \
 	[arg name]]
 
-ns_perm delgroup deletes group from the memory
+Delete group from the memory.
 
 
 [call [cmd "ns_perm allowuser"] \
 	[opt [option -noinherit]]]
 
-ns_perm allowuser allows the specified user access to the specified method and URL combination.
-If -noinherit is specified, only access to the exact URL is allowed; otherwise, URLs under that
+Allow the specified user to access the
+specified method and URL combination.  If [option -noinherit] is specified,
+only access to the exact URL is allowed; otherwise, URLs under that
 URL are allowed as well.
 
 [call [cmd "ns_perm denyuser"] \
@@ -83,9 +90,10 @@ URL are allowed as well.
 	[arg url] \
 	[arg user...]]
 
-ns_perm denyuser denies the specified user access to the specified method and URL combination.
-If -noinherit is specified, only access to the exact URL is denied; otherwise, URLs under that
-URL are denied as well.
+Deny the specified user access to the
+specified method and URL combination.  If [option -noinherit] is specified,
+only access to the exact URL is denied; otherwise, URLs under that URL
+are denied as well.
 
 [call [cmd "ns_perm allowgroup"] \
 	[opt [option -noinherit]] \
@@ -93,8 +101,9 @@ URL are denied as well.
 	[arg url] \
 	[arg group...]]
 
-ns_perm allowgroup allows the specified group access to the specified method and URL combination.
-If -noinherit is specified, only access to the exact URL is allowed; otherwise, URLs under that
+Allow the specified group access to the
+specified method and URL combination.  If [option -noinherit] is specified,
+only access to the exact URL is allowed; otherwise, URLs under that
 URL are allowed as well.
 
 [call [cmd "ns_perm denygroup"] \
@@ -103,19 +112,22 @@ URL are allowed as well.
 	[arg url] \
 	[arg group...]]
 
-ns_perm denygroup denies the specified group access to the specified method and URL combination.
-If -noinherit is specified, only access to the exact URL is denied; otherwise, URLs under that
-URL are denied as well.
+Deny the specified group access to the
+specified method and URL combination.  If [option -noinherit] is specified,
+only access to the exact URL is denied; otherwise, URLs under that URL
+are denied as well.
 
 [call [cmd "ns_perm checkpass"] [arg user] [arg passwd]]
 
-ns_perm checkpass checks that the specified plain-text password is correct for the specified user.
-A Tcl error is thrown if it does not match.
+Check if the specified plain-text
+password is correct for the specified user.  A Tcl error is thrown if
+it does not match.
 
 [call [cmd "ns_perm setpass"] [arg user] [arg encpass]]
 
-ns_perm setpass updates the specified user's password to the encrypted password encpass. The password
-should be encrypted using ns_encrypt.
+Updates the specified user's password to the
+encrypted password encpass. The password should be encrypted using
+ns_encrypt.
 
 [call [cmd "ns_perm listusers"]]
 
@@ -132,7 +144,7 @@ Produce Tcl list with all registered allow/deny statements for each url
 
 [call [cmd ns_permreload]]
 
-Reloads all ns_perm files, on very busy sites there could happen
+Reloads all nsperm files, on very busy sites there could happen
 authentication denies because this command clears the memory first and
 then loads files from the disk
 
@@ -141,7 +153,7 @@ then loads files from the disk
 	[arg oldpasswd] \
 	[arg newpassed]]
 
-ns_permpasswd updates an existing user's password, both in the running
+Update an existing user's password, both in the running
 server's memory as well as in the passwd file on disk. The user is the
 name of the user whose password is to be updated. The [arg oldpasswd]
 argument is the user's old password, or the nsadmin password, in plain

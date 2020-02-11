@@ -5,44 +5,45 @@
 [titledesc {Create, destroy, and manipulate read/write locks}]
 
 [description]
-ns_rwlock create initializes a read/write lock and returns an ID for it.
 
-[para]
-ns_rwlock destroy frees the resources associated with the specified read/write
-lock. The rwlockid argument is the read/write lock ID returned by ns_rwlock
-create when the lock was created.
-
-[para]
-ns_rwlock readlock acquires a read lock. Any number of read locks can be pending.
-If there's a write lock active, the read lock acquisition blocks until the write lock is released.
-
-[para]
-ns_rwlock readunlock releases a read lock.
-
-[para]
-ns_rwlock writelock acquires a write lock. Only one write lock can be in effect.
-If there are pending read locks active, the write lock acquisition blocks until
-all of the read locks drain. If a subsequent read lock acquisition attempt is made,
-the write lock has priority.
-
-[para]
-ns_rwlock writeunlock releases a write lock
-
+Create, destroy, and manipulate read/write locks.
+ 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 [call [cmd "ns_rwlock create"]]
+Initialize a read/write lock and returns an ID for it.
 
 [call [cmd "ns_rwlock destroy"] [arg rwlockid]]
 
+Free the resources associated with the specified read/write lock. The
+rwlockid argument is the read/write lock ID returned by
+[cmd ns_rwlock] create when the lock was created.
+
 [call [cmd "ns_rwlock readlock"] [arg rwlockid]]
+
+Acquire a read lock. Any number of read locks can be pending.  If
+there's a write lock active, the read lock acquisition blocks until
+the write lock is released.
+
 
 [call [cmd "ns_rwlock readunlock"] [arg rwlockid]]
 
+Release a read lock.
+
+
 [call [cmd "ns_rwlock writelock"] [arg rwlockid]]
 
+Acquire a write lock. Only one write lock can be in effect.
+If there are pending read locks active, the write lock acquisition blocks until
+all of the read locks drain. If a subsequent read lock acquisition attempt is made,
+the write lock has priority.
+
+
 [call [cmd "ns_rwlock writeunlock"] [arg rwlockid]] 
+
+Release a write lock.
 
 [list_end]
 

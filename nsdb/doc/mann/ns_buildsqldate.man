@@ -52,22 +52,18 @@ while executing ...
 [example_end]
 
 [example_begin]
-% set thedate
-[example_end]
-
-[example_begin]
 % ns_localsqltimestamp
-2004-06-22 23:00:27
+2020-02-11 11:23:38
 [example_end]
 
 This command is equivalent to the following:
 
 [example_begin]
-% ns_fmttime ns_time "%Y-%m-%d %H:%M:%S"
+% ns_fmttime [lb]clock seconds[rb] "%Y-%m-%d %H:%M:%S"
 [example_end]
 
 [example_begin]
-% clock format ns_time -format "%Y-%m-%d %H:%M:%S"
+% clock format [lb]clock seconds[rb] -format "%Y-%m-%d %H:%M:%S"
 [example_end]
 
 

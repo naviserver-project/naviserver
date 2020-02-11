@@ -26,7 +26,7 @@ ns_sockopen. This function is useful if you used the
 [example_end]
 
 
-[see_also ns_sockselect]
+[see_also ns_sockselect ns_sockopen]
 [keywords "global built-in" NaviServer socket connected]
 [manpage_end]
 

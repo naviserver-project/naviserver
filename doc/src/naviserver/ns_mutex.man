@@ -97,8 +97,8 @@ without the need for the [cmd catch] operation.
 
 [example_end]
 
-At shutdown (for example, in your shutdown procedure registered with ns_atshutdown),
-one can destroy the mutex (not strictly necessary).
+At shutdown (for example, in your shutdown procedure registered with
+[cmd ns_atshutdown]), one can destroy the mutex (not strictly necessary).
 
 [example_begin]
 
@@ -107,6 +107,7 @@ one can destroy the mutex (not strictly necessary).
 
 [example_end]
 
+[see_also ns_atsignal]
 [keywords "server built-in" mutex thread]
 
 [manpage_end]
