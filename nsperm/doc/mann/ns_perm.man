@@ -7,7 +7,7 @@
 [description]
 
 [cmd ns_perm] implements a command set for simple password and group
-managment for NaviServer.
+management for NaviServer.
 
 [section {COMMANDS}]
 
