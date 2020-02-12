@@ -230,7 +230,8 @@ registration time to the registered Tcl command:
 combination.
 
 [para]
-Example of HTTP proxy server:
+Example of a trivial HTTP proxy server (there is a much more elaborate
+reverse proxy server available as NaviServer module.
 
 [example_begin]
    ns_register_proxy GET http http_proxy_handler
@@ -242,7 +243,9 @@ Example of HTTP proxy server:
            set port 80
        }
        set url http://[lb]ns_conn host[rb]:$port[lb]ns_conn url[rb]?[lb]ns_conn query[rb]
-       ns_return 200 text/html [lb]ns_httpget $url[rb]]
+       set d [lb]ns_http $url[rb]
+       set content_type [lb]ns_set iget [lb]dict get $d headers[rb] content-type[rb]
+       ns_return [lb][lb]dict get $d status[rb] $content_type [lb]dict get $d body[rb][rb]
    }
    
 [example_end]
