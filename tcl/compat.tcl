@@ -452,7 +452,7 @@ proc ns_puts {args} {
 }
 
 #
-# ns_puts --
+# ns_returnadminnotice --
 #
 #   deprecated version of ns_returnnotice
 #   use "ns_returnnotice" instead
