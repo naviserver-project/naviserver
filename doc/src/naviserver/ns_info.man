@@ -217,11 +217,6 @@ Returns the version number of the server (major and minor version
 number combined with a dot).
 
 
-[call [cmd  "ns_info winnt"]]
-
-Returns boolean whether running under windows NT.
-
-
 [list_end]
 [keywords "global built-in" introspection]
 
