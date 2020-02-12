@@ -17,7 +17,7 @@ RFC-4226 defines HOTP as:
      C: counter (moving factor for one time passwd)
 [example_end]     
 
-The implemented function ns_hotp is a generalization over RFC by
+The implemented function [cmd ns_hotp] is a generalization over RFC by
 allowing to specify the message digest algorithm and the number of
 characters of the returned truncated value.
 
