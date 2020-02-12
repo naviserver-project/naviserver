@@ -451,38 +451,54 @@ List of all currently available NaviServer commands.
 
 [section {Deprecated}]
 [list_begin definitions]
-[call [cmd "env"]]
-[call [cmd "ns_adp_eval"]]
-[call [cmd "ns_adp_registertag"]]
-[call [cmd "ns_adp_safeeval"]]
-[call [cmd "ns_cancel"]]
-[call [cmd "ns_connsendfp"]]
-[call [cmd "ns_geturl"]]
-[call [cmd "ns_httpget"]]
-[call [cmd "ns_httpopen"]]
-[call [cmd "ns_httppost"]]
-[call [cmd "ns_info filters"]]
-[call [cmd "ns_info pagedir"]]
-[call [cmd "ns_info pageroot"]]
-[call [cmd "ns_info platform"]]
-[call [cmd "ns_info requestprocs"]]
-[call [cmd "ns_info tcllib"]]
-[call [cmd "ns_info traces"]]
-[call [cmd "ns_info url2file"]]
-[call [cmd "ns_info winnt"]]
-[call [cmd "ns_isformcached"]]
-[call [cmd "ns_passwordcheck"]]
-[call [cmd "ns_register_adptag"]]
-[call [cmd "ns_resetcachedform"]]
-[call [cmd "ns_returnadminnotice"]]
-[call [cmd "ns_server keepalive"]]
-[call [cmd "ns_startcontent"]]
-[call [cmd "ns_thread create"]]
-[call [cmd "ns_thread get"]]
-[call [cmd "ns_thread getid"]]
-[call [cmd "ns_thread join"]]
-[call [cmd "ns_tmpnam"]]
-[call [cmd "ns_updateheader"]]
+[call [cmd "env"]]                  Use [cmd "ns_env"] instead.
+[call [cmd "ns_adp_compress"]]      Use [cmd "ns_conn compress"] instead.
+[call [cmd "ns_adp_eval"]]          Use [cmd "ns_adp_parse"] instead.
+[call [cmd "ns_adp_registertag"]]   Use [cmd "ns_adp_registeradp"] instead.
+[call [cmd "ns_adp_safeeval"]]      Use [cmd "ns_adp_parse -safe"] instead.
+[call [cmd "ns_adp_stream"]]        Use [cmd "ns_adp_ctl stream"] instead.
+[call [cmd "ns_cancel"]]            Use [cmd "ns_unschedule_proc"] instead.
+[call [cmd "ns_chmod"]]             Use [cmd "file attributes"] instead.
+[call [cmd "ns_connsendfp"]]        Use [cmd "ns_writefp"] instead.
+[call [cmd "ns_cp"]]                Use [cmd "file copy"] instead.
+[call [cmd "ns_cpfp"]]              Use [cmd "fcopy"] instead.
+[call [cmd "ns_getchannels"]]       Use [cmd "file channels"] instead.
+[call [cmd "ns_geturl"]]            Use [cmd "ns_http"] instead.
+[call [cmd "ns_hmac_sha2"]]         Use [cmd "ns_crypto::hmac string"] instead.
+[call [cmd "ns_httpget"]]           Use [cmd "ns_http"] instead.
+[call [cmd "ns_httpopen"]]          Use [cmd "ns_http"] instead.
+[call [cmd "ns_httppost"]]          Use [cmd "ns_http"] instead.
+[call [cmd "ns_info filters"]]      Use [cmd "ns_server filters"] instead.
+[call [cmd "ns_info pagedir"]]      Use [cmd "ns_server pagedir"] instead.
+[call [cmd "ns_info pageroot"]]     Use [cmd "ns_server pagedir"] instead.
+[call [cmd "ns_info platform"]]     Use [cmd "$::tcl_platform(platform)"] instead.
+[call [cmd "ns_info requestprocs"]] Use [cmd "ns_server requestprocs"] instead.
+[call [cmd "ns_info tcllib"]]       Use [cmd "ns_server tcllib"] instead.
+[call [cmd "ns_info traces"]]       Use [cmd "ns_server traces"] instead.
+[call [cmd "ns_info url2file"]]     Use [cmd "ns_server url2file"] instead.
+[call [cmd "ns_info winnt"]]        Use [cmd "$::tcl_platform(platform)"] instead.
+[call [cmd "ns_isformcached"]]      Obsolete.
+[call [cmd "ns_link"]]              Use [cmd "file link -hard ..."] instead.
+[call [cmd "ns_mkdir"]]             Use [cmd "file mkdir"] instead.
+[call [cmd "ns_passwordcheck"]]     Use [cmd "ns_perm checkpass"] instead.
+[call [cmd "ns_puts"]]              Use [cmd "ns_adp_puts"] instead.
+[call [cmd "ns_register_adptag"]]   Use [cmd "ns_adp_registerscript"] instead.
+[call [cmd "ns_rename"]]            Use [cmd "file rename"] instead.
+[call [cmd "ns_resetcachedform"]]   Obsolete.
+[call [cmd "ns_returnadminnotice"]] Use [cmd "ns_returnnotice"] instead.
+[call [cmd "ns_rmdir"]]             Use [cmd "file delete"] instead.
+[call [cmd "ns_server keepalive"]]  Use [cmd "ns_conn keepalive"] instead.
+[call [cmd "ns_sha2"]]              Use [cmd "ns_crypto::md string"] instead.
+[call [cmd "ns_startcontent"]]      Use [cmd "ns_headers"] instead.
+[call [cmd "ns_thread create"]]     Use [cmd "ns_thread begin"] instead.
+[call [cmd "ns_thread get"]]        Use [cmd "ns_thread handle"] instead.
+[call [cmd "ns_thread getid"]]      Use [cmd "ns_thread id"] instead.
+[call [cmd "ns_thread join"]]       Use [cmd "ns_thread wait"] instead.
+[call [cmd "ns_tmpnam"]]            Use [cmd "ns_mktemp"] instead.
+[call [cmd "ns_unlink"]]            Use [cmd "file delete"] instead.
+[call [cmd "ns_unregister_proc"]]   Use [cmd "ns_unregister_op"] instead.
+[call [cmd "ns_updateheader"]]      Use [cmd "ns_set update"] [lb]ns_conn outputheaders[rb] instead.
+[call [cmd "ns_var"]]               Use [cmd "nsv_*"] instead.
 [list_end]
 
 [see_also nsd]
