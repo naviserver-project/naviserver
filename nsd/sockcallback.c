@@ -504,7 +504,7 @@ SockCallbackThread(void *UNUSED(arg))
             /*
              * Execute any ready callbacks.
              */
-            for (hPtr = Tcl_FirstHashEntry(&activeCallbacks, &search); n > 0 && hPtr != NULL;
+            for (hPtr = Tcl_FirstHashEntry(&activeCallbacks, &search); hPtr != NULL;
                  hPtr = Tcl_NextHashEntry(&search)) {
                 cbPtr = Tcl_GetHashValue(hPtr);
                 for (i = 0; i < Ns_NrElements(when); ++i) {
