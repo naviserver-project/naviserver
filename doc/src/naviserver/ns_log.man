@@ -240,7 +240,7 @@ Possible values are:
 Default: green.
 
 [def logprefixintensity]
-When logcolorize is true, provide a the intensity for the timestamp prefix.
+When logcolorize is true, provide the intensity for the timestamp prefix.
 Possible values are: [term "normal bright"].
 Default: normal.
 
