@@ -487,11 +487,11 @@ Ns_TaskCancel(Ns_Task *task)
     Task         *taskPtr;
     Ns_ReturnCode status = NS_OK;
 
-    NS_NONNULL_ASSERT(tas != NULL);
+    NS_NONNULL_ASSERT(task != NULL);
 
-    taskPtr = (Task *)task;
     Ns_Log(Ns_LogTaskDebug, "Ns_TaskCancel %p", (void*)task);
 
+    taskPtr = (Task *)task;
     if (taskPtr->queuePtr == NULL) {
         taskPtr->signalFlags |= TASK_CANCEL;
     } else if (unlikely(SignalQueue(taskPtr, TASK_CANCEL) == NS_FALSE)) {
@@ -532,9 +532,9 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
 
     NS_NONNULL_ASSERT(task != NULL);
 
-    taskPtr = (Task *) task;
     Ns_Log(Ns_LogTaskDebug, "Ns_TaskWait %p", (void*)task);
 
+    taskPtr = (Task *) task;
     queuePtr = taskPtr->queuePtr;
     if (queuePtr == NULL) {
         if ((taskPtr->signalFlags & TASK_DONE) == 0u) {
@@ -629,13 +629,13 @@ Ns_TaskCallback(Ns_Task *task, Ns_SockState when, const Ns_Time *timeoutPtr)
 
     NS_NONNULL_ASSERT(task != NULL);
 
-    taskPtr = (Task *) task;
     Ns_Log(Ns_LogTaskDebug, "Ns_TaskCallback task %p  when:%.2x",
            (void*)task, (int)when);
 
     /*
      * Map Ns_SockState bits to poll bits.
      */
+    taskPtr = (Task *) task;
     taskPtr->events = 0;
     for (i = 0; i < Ns_NrElements(map); i++) {
         if (when == map[i].when) {
