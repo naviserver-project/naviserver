@@ -180,14 +180,16 @@ NsTclProgressObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 void
 NsUpdateProgress(Ns_Sock *sock)
 {
-    const Sock       *sockPtr = (const Sock *) sock;
+    const Sock       *sockPtr;
     const Request    *reqPtr;
     const Ns_Request *request;
     Tcl_HashEntry    *hPtr;
     Ns_DString        ds;
     int               isNew;
 
-    assert(sockPtr != NULL);
+    NS_NONNULL_ASSERT(sock != NULL);
+
+    sockPtr = (const Sock *) sock;
     assert(sockPtr->reqPtr != NULL);
 
     reqPtr  = sockPtr->reqPtr;

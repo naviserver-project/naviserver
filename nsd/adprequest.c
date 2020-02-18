@@ -120,14 +120,15 @@ Ns_AdpRequestEx(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr)
 static Ns_ReturnCode
 PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned int aflags)
 {
-    const Conn     *connPtr = (const Conn *) conn;
+    const Conn     *connPtr;
     NsServer       *servPtr;
     bool            fileNotFound;
     Tcl_DString     ds, *dsPtr = NULL;
     Ns_ReturnCode   status;
 
-    NS_NONNULL_ASSERT(connPtr != NULL);
+    NS_NONNULL_ASSERT(conn != NULL);
 
+    connPtr = (const Conn *) conn;
     servPtr = connPtr->poolPtr->servPtr;
 
     /*

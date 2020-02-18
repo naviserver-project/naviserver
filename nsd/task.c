@@ -338,11 +338,12 @@ Ns_TaskTimedCreate(NS_SOCKET sock, Ns_TaskProc *proc, void *arg, Ns_Time *expPtr
 NS_SOCKET
 Ns_TaskFree(Ns_Task *task)
 {
-    Task      *taskPtr = (Task *) task;
+    Task      *taskPtr;
     NS_SOCKET  sock;
 
-    NS_NONNULL_ASSERT(taskPtr != NULL);
+    NS_NONNULL_ASSERT(task != NULL);
 
+    taskPtr = (Task *)task;
     sock = taskPtr->sock;
     Release(taskPtr);
 
@@ -369,12 +370,13 @@ Ns_TaskFree(Ns_Task *task)
 Ns_ReturnCode
 Ns_TaskEnqueue(Ns_Task *task, Ns_TaskQueue *queue)
 {
-    Task         *taskPtr = (Task *) task;
+    Task         *taskPtr;
     Ns_ReturnCode status = NS_OK;
 
-    NS_NONNULL_ASSERT(taskPtr != NULL);
+    NS_NONNULL_ASSERT(task != NULL);
     NS_NONNULL_ASSERT(queue != NULL);
 
+    taskPtr = (Task *)task;
     taskPtr->queuePtr = (TaskQueue *) queue;
 
     if (unlikely(SignalQueue(taskPtr, TASK_INIT) == NS_FALSE)) {
@@ -405,12 +407,13 @@ Ns_TaskEnqueue(Ns_Task *task, Ns_TaskQueue *queue)
 void
 Ns_TaskRun(Ns_Task *task)
 {
-    Task          *taskPtr = (Task *) task;
+    Task          *taskPtr;
     struct pollfd pfd;
     Ns_ReturnCode status = NS_OK;
 
-    NS_NONNULL_ASSERT(taskPtr != NULL);
+    NS_NONNULL_ASSERT(task != NULL);
 
+    taskPtr = (Task *)task;
     taskPtr->signalFlags &= ~TASK_DONE;
     taskPtr->flags &= ~TASK_DONE;
     taskPtr->flags |= TASK_WAIT;
@@ -481,11 +484,12 @@ Ns_TaskRun(Ns_Task *task)
 Ns_ReturnCode
 Ns_TaskCancel(Ns_Task *task)
 {
-    Task         *taskPtr = (Task *) task;
+    Task         *taskPtr;
     Ns_ReturnCode status = NS_OK;
 
-    NS_NONNULL_ASSERT(taskPtr != NULL);
+    NS_NONNULL_ASSERT(tas != NULL);
 
+    taskPtr = (Task *)task;
     Ns_Log(Ns_LogTaskDebug, "Ns_TaskCancel %p", (void*)task);
 
     if (taskPtr->queuePtr == NULL) {
@@ -522,12 +526,13 @@ Ns_TaskCancel(Ns_Task *task)
 Ns_ReturnCode
 Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
 {
-    Task          *taskPtr = (Task *) task;
+    Task          *taskPtr;
     TaskQueue     *queuePtr;
     Ns_ReturnCode  result = NS_OK;
 
-    NS_NONNULL_ASSERT(taskPtr != NULL);
+    NS_NONNULL_ASSERT(task != NULL);
 
+    taskPtr = (Task *) task;
     Ns_Log(Ns_LogTaskDebug, "Ns_TaskWait %p", (void*)task);
 
     queuePtr = taskPtr->queuePtr;
@@ -581,11 +586,12 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
 bool
 Ns_TaskCompleted(const Ns_Task *task)
 {
-    const Task *taskPtr = (Task *) task;
+    const Task *taskPtr;
     int         done;
 
-    NS_NONNULL_ASSERT(taskPtr != NULL);
+    NS_NONNULL_ASSERT(task != NULL);
 
+    taskPtr = (Task *) task;
     if (taskPtr->queuePtr == NULL) {
         done = taskPtr->signalFlags & TASK_DONE;
     } else {
@@ -618,11 +624,12 @@ Ns_TaskCompleted(const Ns_Task *task)
 void
 Ns_TaskCallback(Ns_Task *task, Ns_SockState when, const Ns_Time *timeoutPtr)
 {
-    Task *taskPtr = (Task *) task;
+    Task *taskPtr;
     int   i;
 
-    NS_NONNULL_ASSERT(taskPtr != NULL);
+    NS_NONNULL_ASSERT(task != NULL);
 
+    taskPtr = (Task *) task;
     Ns_Log(Ns_LogTaskDebug, "Ns_TaskCallback task %p  when:%.2x",
            (void*)task, (int)when);
 
@@ -695,12 +702,10 @@ Ns_TaskCallback(Ns_Task *task, Ns_SockState when, const Ns_Time *timeoutPtr)
 void
 Ns_TaskDone(Ns_Task *task)
 {
-    Task *taskPtr = (Task *) task;
-
-    NS_NONNULL_ASSERT(taskPtr != NULL);
+    NS_NONNULL_ASSERT(task != NULL);
 
     Ns_Log(Ns_LogTaskDebug, "Ns_TaskDone %p", (void *)task);
-    taskPtr->flags |= TASK_DONE;
+    ((Task *)task)->flags |= TASK_DONE;
 }
 
 
