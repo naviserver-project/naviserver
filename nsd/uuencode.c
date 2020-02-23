@@ -114,28 +114,28 @@ static const int pr2six_url[256] = {
 /*
  *----------------------------------------------------------------------
  *
- * Ns_HtuuEncode --
+ * Ns_Base64Encode --
  *
- *      Encode a string.
+ *      Encode a string with either base64 encoding or base64url encoding
+ *      (when "encoding" is set to 1). When maxLineLenth is larger than 0,
+ *      lines longer this value are wrapped by inserting a newline character.
  *
  * Results:
- *      Number of bytes placed in output.
+ *      Number of bytes placed in output buffer.
  *
  * Side effects:
- *      Encoded characters are placed in output which must be
- *      large enough for the result, i.e., (1 + (len * 4) / 2)
- *      bytes, minimum output buffer size is 4 bytes.
+ *      Encoded characters are placed into the output buffer which must be
+ *      large enough for the result, i.e., (1 + (len * 4) / 3) bytes; the
+ *      minimum output buffer size is 4 bytes.
  *
  *----------------------------------------------------------------------
  */
-
 size_t
-Ns_HtuuEncode2(const unsigned char *input, size_t inputSize, char *buf, int encoding)
+Ns_Base64Encode(const unsigned char *input, size_t inputSize, char *buf, size_t maxLineLength, int encoding)
 {
     register const unsigned char *p;
     register unsigned char       *q;
-    register int                  line = 0;
-    register size_t               n;
+    register size_t               lineLength = 0u, n;
     static const char            *encode_table;
 
     NS_NONNULL_ASSERT(input != NULL);
@@ -156,20 +156,18 @@ Ns_HtuuEncode2(const unsigned char *input, size_t inputSize, char *buf, int enco
     q = (unsigned char *) buf;
     for (n = inputSize / 3u; n > 0u; --n) {
         /*
-         * Add wrapping newline to be compatible with GNU uuencode
-         * if line length exceeds max line length - without adding
-         * extra newline character
+         * Add wrapping newline when line is longer than maxLineLength.
          */
-        if (line >= 60 && encoding == 0) {
+        if (maxLineLength > 0 && lineLength >= maxLineLength) {
             *q++ = UCHAR('\n');
-            line = 0;
+            lineLength = 0u;
         }
         *q++ = Encode(encode_table,p[0] >> 2);
         *q++ = Encode(encode_table,(UCHAR(p[0] << 4) & 0x30u) | ((p[1] >> 4) & 0x0Fu));
         *q++ = Encode(encode_table,(UCHAR(p[1] << 2) & 0x3CU) | ((p[2] >> 6) & 0x03u));
         *q++ = Encode(encode_table,p[2] & 0x3Fu);
         p += 3;
-        line += 4;
+        lineLength += 4u;
     }
 
     /*
@@ -196,11 +194,49 @@ Ns_HtuuEncode2(const unsigned char *input, size_t inputSize, char *buf, int enco
     return (size_t)((char *)q - buf);
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_HtuuEncode2, Ns_HtuuEncode --
+ *
+ *      Backward compatible functions for Ns_Base64Encode.
+ *
+ * Results:
+ *      Number of bytes placed in output buffer.
+ *
+ * Side effects:
+ *      Updated output buffer.
+ *
+ *----------------------------------------------------------------------
+ */
+
+size_t
+Ns_HtuuEncode2(const unsigned char *input, size_t inputSize, char *buf, int encoding)
+{
+    size_t result;
+
+    NS_NONNULL_ASSERT(input != NULL);
+    NS_NONNULL_ASSERT(buf != NULL);
+
+    if (encoding == 0) {
+        /*
+         * Add wrapping newline to be compatible with GNU uuencode
+         * if line length exceeds max line length - without adding
+         * extra newline character
+         */
+        result = Ns_Base64Encode(input, inputSize, buf, 60, encoding);
+    } else {
+        result = Ns_Base64Encode(input, inputSize, buf, 0u, encoding);
+    }
+    return result;
+}
+
 
 size_t
 Ns_HtuuEncode(const unsigned char *input, size_t inputSize, char *buf)
 {
-    return Ns_HtuuEncode2(input, inputSize, buf, 0);
+    return Ns_Base64Encode(input, inputSize, buf, 60, 0);
 }
 
 /*

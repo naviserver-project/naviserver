@@ -1468,6 +1468,10 @@ Ns_RegisterCleanup(Ns_TraceProc *proc, void *arg)
  */
 
 NS_EXTERN size_t
+Ns_Base64Encode(const unsigned char *input, size_t inputSize, char *buf, size_t maxLineLength, int encoding)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+
+NS_EXTERN size_t
 Ns_HtuuEncode(const unsigned char *input, size_t inputSize, char *buf)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
