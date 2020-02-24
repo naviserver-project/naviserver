@@ -188,7 +188,7 @@ Ns_ModuleInit(const char *server, const char *module)
             (void) Ns_HomePath(&ds, "logs", "/", file, (char *)0L);
         } else {
             Tcl_Obj *dirpath;
-            int rc;
+            int      rc;
 
             Tcl_DStringSetLength(&ds, 0);
             (void) Ns_ModulePath(&ds, server, module, (char *)0L);
