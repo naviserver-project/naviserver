@@ -48,6 +48,46 @@ verification process fails, the TLS/SSL handshake is immediately
 terminated with an alert message containing the reason for the
 verification failure.
 
+[def OCSPstapling]
+
+This parameter activates OCSP Stapling for TLS/SSL connections
+(default off).  OCSP Stapling allows a client to check during
+connection startup the state of the server certificate at the server
+of the issuer of the certificate (in particular, whether the
+certificate was revoked or not).
+
+[para] NaviServer performs two level of caching: in-memory caching and
+disk caching. When the server receives the first TLS request with OCSP
+stapling turned on, it checks for an already retieved OCSP
+response. The disk cache file is saved in the "log" directory of the
+server and uses the serial number of the certificate to be checked as
+file name with ".der" as extension.  When the disk cache file does
+not exist, an http/https request is made to the server issuing the
+servers certificate as defined by the Authority Information Access
+(AIA) Extension. The names of the file and the http/https request for
+the OCSP response can be obtained from the system log of the server:
+
+[example_begin]
+...
+... Warning: OCSP cache file does not exist: /usr/local/ns/logs/XXX.der
+...
+... Notice: OCSP command: ns_http run http://ocsp.int-x3.letsencrypt.org/YYYY
+...
+[example_end]
+
+Note that the .der file can be obtained as well by other means,
+e.g. via the program "curl". In case an application requires OCSP
+stapling and the server cannot make requests to the external server
+e.g. a cron tab can refresh the .der file regularly.
+
+[example_begin]
+curl http://ocsp.int-x3.letsencrypt.org/YYYY --output /usr/local/ns/logs/XXX.der
+[example_end]
+
+For more details about OCSP, see:
+[uri https://tools.ietf.org/html/rfc6960]
+
+
 [def extraheaders]
 can be used to specify additional header fields be sent on every
 request handled by this driver. The example above,

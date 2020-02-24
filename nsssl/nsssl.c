@@ -46,7 +46,11 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 
-#define NSSSL_VERSION  "2.1"
+#ifndef OPENSSL_NO_OCSP
+# include <openssl/ocsp.h>
+#endif
+
+#define NSSSL_VERSION  "2.2"
 
 NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *objPtr);
 
@@ -64,6 +68,20 @@ typedef struct {
     int          verified;
 } SSLContext;
 
+#ifndef OPENSSL_NO_OCSP
+/* Structure passed to cert status callback */
+typedef struct {
+    int timeout;
+    /* File to load OCSP Response from (or NULL if no file) */
+    char *respin;
+    int verbose;
+    OCSP_RESPONSE   *resp;
+} tlsextstatusctx;   // NAMING
+
+static tlsextstatusctx tlscstatp;
+
+#endif
+
 /*
  * Local functions defined in this file
  */
@@ -79,6 +97,22 @@ static Ns_DriverClientInitProc ClientInit;
 static int SSLPassword(char *buf, int num, int rwflag, void *userdata);
 
 static DH *SSL_dhCB(SSL *ssl, int isExport, int keyLength);
+
+#ifndef OPENSSL_NO_OCSP
+static int SSL_cert_statusCB(SSL *ssl, void *arg);
+
+static int OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+static OCSP_CERTID *OCSP_get_cert_id(SSL *ssl, X509 *cert)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static int OCSP_computeResponse(SSL *ssl, tlsextstatusctx *srctx, OCSP_RESPONSE **resp)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+static OCSP_RESPONSE *OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+#endif
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
 static void SSLLock(int mode, int n, const char *file, int line);
@@ -171,6 +205,477 @@ SSL_dhCB(SSL *ssl, int isExport, int keyLength) {
     return key;
 }
 
+#ifndef OPENSSL_NO_OCSP
+static int SSL_cert_statusCB(SSL *ssl, void *arg)
+{
+    tlsextstatusctx *srctx = arg;
+    int              result = SSL_TLSEXT_ERR_ALERT_FATAL;
+    OCSP_RESPONSE   *resp = NULL;
+    unsigned char   *rspder = NULL;
+    int              rspderlen;
+
+    if (srctx->verbose) {
+        Ns_Log(Notice, "cert_status: callback called");
+    }
+
+    /*
+     * If we have not in-memory cached the OCSP response yet, fetch the value
+     * either form the disk cache or from the URL provided via the DER encoded
+     * OCSP request.
+     */
+    if (srctx->resp == NULL) {
+
+        result = OCSP_computeResponse(ssl, srctx, &resp);
+        if (result != SSL_TLSEXT_ERR_OK) {
+            if (resp != NULL) {
+                OCSP_RESPONSE_free(resp);
+            }
+            goto err;
+        }
+        /*
+         * Perform in-memory caching of the OCSP_RESPONSE.
+         */
+        srctx->resp = resp;
+    } else {
+        resp = srctx->resp;
+    }
+
+    rspderlen = i2d_OCSP_RESPONSE(resp, &rspder);
+
+    Ns_Log(Notice, "cert_status: callback returns OCSP_RESPONSE with length %d", rspderlen);
+    if (rspderlen <= 0) {
+        if (resp != NULL) {
+            OCSP_RESPONSE_free(resp);
+            srctx->resp = NULL;
+        }
+        goto err;
+    }
+
+    SSL_set_tlsext_status_ocsp_resp(ssl, rspder, rspderlen);
+    if (srctx->verbose) {
+        Ns_Log(Notice, "cert_status: OCSP response sent to client");
+        //OCSP_RESPONSE_print(bio_err, resp, 2);
+    }
+    result = SSL_TLSEXT_ERR_OK;
+
+ err:
+    if (result != SSL_TLSEXT_ERR_OK) {
+        //ERR_print_errors(bio_err);
+    }
+
+    //OCSP_RESPONSE_free(resp);
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OCSP_get_cert_id --
+ *
+ *      Extract OCSP_CERTID from the provided certificate via the OpenSSL
+ *      certificate store. This function requires a properly initialiized
+ *      certificate store containing the full certificate chain.
+ *
+ * Results:
+ *      OCSP_CERTID pointer or NULL in cases of failure.
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+static OCSP_CERTID *
+OCSP_get_cert_id(SSL *ssl, X509 *cert)
+{
+    X509_STORE_CTX *store_ctx;
+    OCSP_CERTID    *result = NULL;
+
+    NS_NONNULL_ASSERT(ssl != NULL);
+    NS_NONNULL_ASSERT(cert != NULL);
+
+    store_ctx = X509_STORE_CTX_new();
+    if (store_ctx == NULL
+        || (!X509_STORE_CTX_init(store_ctx,
+                                 SSL_CTX_get_cert_store(SSL_get_SSL_CTX(ssl)),
+                                 NULL, NULL))) {
+        Ns_Log(Error, "cert_status: cannot initialize certificate storage context");
+
+    } else {
+        X509 *issuer;
+        X509_OBJECT *x509_obj;
+        int   rc = X509_STORE_CTX_get1_issuer(&issuer, store_ctx, cert);
+
+        if (rc == -1) {
+            Ns_Log(Warning, "cert_status: can't retrieve issuer of certificate");
+
+        } else if (rc == 0) {
+            Ns_Log(Warning, "cert_status: OCSP stapling ignored, "
+                   "issuer certificate not found");
+        }
+
+        x509_obj = X509_STORE_CTX_get_obj_by_subject(store_ctx, X509_LU_X509,
+                                            X509_get_issuer_name(cert));
+        if (x509_obj == NULL) {
+            Ns_Log(Warning, "cert_status: Can't retrieve issuer certificate");
+
+        } else {
+            result = OCSP_cert_to_id(NULL, cert, X509_OBJECT_get0_X509(x509_obj));
+            X509_OBJECT_free(x509_obj);
+        }
+    }
+
+    if (store_ctx != NULL) {
+        X509_STORE_CTX_free(store_ctx);
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OCSP_FromCacheFile --
+ *
+ *      Try to load OCSP_RESPONSE from cache file.
+ *
+ * Results:
+ *      Tcl result code (NS_OK, NS_CONTINUE, NS_ERROR).  NS_CONTINUE means
+ *      that there is no cache entry yet, but the file name of the cache file
+ *      is returned in the first argument.
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
+{
+    ASN1_INTEGER *pserial = NULL;
+    int           result = TCL_ERROR;
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(id != NULL);
+    NS_NONNULL_ASSERT(resp != NULL);
+
+    if (OCSP_id_get0_info(NULL, NULL, NULL, &pserial, id) != 0) {
+        Tcl_DString outputBuffer;
+
+        Tcl_DStringInit(&outputBuffer);
+        Tcl_DStringSetLength(&outputBuffer, pserial->length*1 + 1);
+
+        Ns_HexString(pserial->data, outputBuffer.string, pserial->length, NS_TRUE);
+        /*
+         *
+         */
+        if (Ns_HomePathExists("logs", (char *)0L)) {
+            struct stat fileInfo;
+            const char *fileName;
+
+            /*
+             * A result of TCL_CONTINUE or TCL_OK implies a computed filename
+             * of the cache file in dsPtr;
+             */
+            Tcl_DStringAppend(&outputBuffer, ".der", 4);
+            fileName = Ns_HomePath(dsPtr, "logs", "/", outputBuffer.string, (char *)0L);
+            result = TCL_CONTINUE;
+
+            if (Ns_Stat(dsPtr->string, &fileInfo)) {
+                BIO *derbio;
+
+                // we could/should check here a validity time based on mtime
+                /*fprintf(stderr, "... file %s exists (%ld bytes)\n",
+                  fileName, (long)fileInfo.st_size);*/
+
+                derbio = BIO_new_file(fileName, "rb");
+                if (derbio == NULL) {
+                    Ns_Log(Warning, "cert_status: Cannot open OCSP response file: %s", fileName);
+
+                } else {
+                    *resp = d2i_OCSP_RESPONSE_bio(derbio, NULL);
+                    BIO_free(derbio);
+                    if (*resp == NULL) {
+                        Ns_Log(Warning, "cert_status: Error reading OCSP response file: %s", fileName);
+                    } else {
+                        result = TCL_OK;
+                    }
+                }
+            } else {
+                Ns_Log(Warning, "OCSP cache file does not exist: %s", fileName);
+                result = TCL_CONTINUE;
+            }
+        }
+        Tcl_DStringFree(&outputBuffer);
+
+    } else {
+        Ns_Log(Warning, "cert_status: cannot obtain Serial Number from certificate");
+
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OCSP_computeResponse --
+ *
+ *      Get OCSP_RESPONSE either from a cache file or from the cerificate
+ *      issuing server via the DER encoded OCSP request. in case the disk
+ *      lookup fails, but the request to the AIA server succeeds, the result
+ *      is stored for caching in the file system.
+ *
+ * Results:
+ *      OpenSSL return code. On success (when result == SSL_TLSEXT_ERR_OK),
+ *      the OCSP_RESPONSE will be stored in the pointer passed-in as last
+ *      argument.
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+OCSP_computeResponse(SSL *ssl, tlsextstatusctx *srctx, OCSP_RESPONSE **resp)
+{
+    X509           *cert = NULL;
+    OCSP_CERTID    *id = NULL;
+    OCSP_REQUEST   *req = NULL;
+    int             rc, result = SSL_TLSEXT_ERR_NOACK;
+    Tcl_DString     cachedResponseFile;
+    STACK_OF(OPENSSL_STRING) *aia = NULL; /* Authority Information Access (AIA) Extension */
+
+    NS_NONNULL_ASSERT(ssl != NULL);
+    NS_NONNULL_ASSERT(srctx != NULL);
+    NS_NONNULL_ASSERT(resp != NULL);
+
+    Tcl_DStringInit(&cachedResponseFile);
+
+    cert = SSL_get_certificate(ssl);
+    id = OCSP_get_cert_id(ssl, cert);
+    if (id == NULL) {
+        goto err;
+    }
+
+    /*
+     * Try to get the OCSP_RESPONSE from a cache file.
+     */
+    rc = OCSP_FromCacheFile(&cachedResponseFile, id, resp);
+    if (rc == TCL_OK) {
+        result = SSL_TLSEXT_ERR_OK;
+        goto done;
+    }
+
+    req = OCSP_REQUEST_new();
+    if (req == NULL || !OCSP_request_add0_id(req, id)) {
+        goto err;
+
+    } else {
+        STACK_OF(X509_EXTENSION) *exts;
+        int i;
+
+        aia = X509_get1_ocsp(cert);
+        if (aia != NULL && srctx->verbose) {
+            Ns_Log(Notice, "cert_status: Authority Information Access (AIA) URL: %s",
+                   sk_OPENSSL_STRING_value(aia, 0));
+        }
+        id = NULL;
+
+        /*
+         * Add extensions to the request.
+         */
+        SSL_get_tlsext_status_exts(ssl, &exts);
+        for (i = 0; i < sk_X509_EXTENSION_num(exts); i++) {
+            X509_EXTENSION *ext = sk_X509_EXTENSION_value(exts, i);
+
+            if (!OCSP_REQUEST_add_ext(req, ext, -1)) {
+                goto err;
+            }
+        }
+        *resp = OCSP_FromAIA(req, sk_OPENSSL_STRING_value(aia, 0),
+                             srctx->timeout);
+        if (*resp == NULL) {
+            Ns_Log(Warning, "cert_status: error querying responder");
+        } else {
+            BIO        *derbio;
+            const char *fileName = cachedResponseFile.string;
+
+            /*
+             * We have a valid OCSP response, save it in a disk cache file.
+             */
+
+            derbio = BIO_new_file(fileName, "wb");
+            if (derbio == NULL) {
+                Ns_Log(Warning, "cert_status: Cannot write to OCSP response file: %s", fileName);
+            } else {
+                i2d_OCSP_RESPONSE_bio(derbio, *resp);
+                BIO_free(derbio);
+            }
+
+            result = SSL_TLSEXT_ERR_OK;
+        }
+        goto done;
+    }
+
+ err:
+    result = SSL_TLSEXT_ERR_ALERT_FATAL;
+ done:
+    /*
+     * If we parsed AIA we need to free
+     */
+    if (aia != NULL) {
+        X509_email_free(aia);
+    }
+    OCSP_CERTID_free(id);
+    OCSP_REQUEST_free(req);
+    Tcl_DStringFree(&cachedResponseFile);
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OCSP_FromAIA --
+ *
+ *      Get OCSP_RESPONSE from the cerificate issuing server (Authority
+ *      Information Access) via the DER encoded OCSP request.
+ *
+ * Results:
+ *      OCSP_RESPONSE * or NULL in case of failure.
+ *
+ * Side effects:
+ *      Issue http/https request to the AIA server.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static OCSP_RESPONSE *
+OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
+{
+    OCSP_RESPONSE *rsp = NULL;
+    int            derLength;
+
+    NS_NONNULL_ASSERT(req != NULL);
+    NS_NONNULL_ASSERT(aiaURL != NULL);
+
+    Ns_Log(Notice, "OCSP_FromAIA url <%s> timeout %d", aiaURL, req_timeout);
+
+    /*
+     * We have already the OCSP request int *req with the ID to be queried
+     * filled in.
+     */
+
+    derLength = i2d_OCSP_REQUEST(req, NULL);
+    if (derLength <= 0) {
+        Ns_Log(Error, "cert_status: invalid OCSP request size");
+
+    } else {
+        Tcl_DString dsBinary, dsBase64, dsCMD;
+        unsigned char *ppout;
+        size_t base64len;
+
+        Tcl_DStringInit(&dsBinary);
+        Tcl_DStringInit(&dsBase64);
+        Tcl_DStringInit(&dsCMD);
+
+        Tcl_DStringSetLength(&dsBinary, derLength + 1);
+        ppout = (unsigned char *)dsBinary.string;
+        derLength = i2d_OCSP_REQUEST(req, &ppout);
+
+        /*
+         * Append DER encoding of the OCSP request via URL-encoding of base64
+         * encoding, as defined in https://tools.ietf.org/html/rfc6960#appendix-A
+         */
+        base64len = MAX(4, ((size_t)derLength * 4/3) + 4);
+        Tcl_DStringSetLength(&dsBase64, (int)base64len);
+        base64len = Ns_Base64Encode((unsigned char *)dsBinary.string,
+                                    (size_t)derLength, dsBase64.string,
+                                    0, 0);
+        Tcl_DStringAppend(&dsCMD, "ns_http run ", -1);
+        Tcl_DStringAppend(&dsCMD, aiaURL, -1);
+
+        /*
+         * Append slash to URI if necessary.
+         */
+        if (dsCMD.string[dsCMD.length-1] != '/') {
+            Tcl_DStringAppend(&dsCMD, "/", 1);
+        }
+        /*
+         * Append URL encoded base64 encoding of OCSP.
+         */
+        Ns_UrlPathEncode(&dsCMD, dsBase64.string, NULL);
+
+        {
+            // maybe we can get an interpreter from SSLContext, depending of being
+            // able to pass Ns_Sock to callback, or to access it earlier an push
+            // into into the ocsp context
+            Tcl_Interp *interp = Ns_TclAllocateInterp(NULL);
+
+            if (interp != NULL) {
+                Tcl_DString dsResult;
+
+                Tcl_DStringInit(&dsResult);
+
+                Ns_Log(Notice, "OCSP command: %s\n", dsCMD.string);
+                if (Tcl_EvalEx(interp, dsCMD.string, dsCMD.length, 0) != TCL_OK) {
+                    Ns_Log(Error, "OCSP_REQUEST '%s' returned error", dsCMD.string);
+                } else {
+                    Tcl_Obj *resultObj;
+                    Tcl_Obj *statusObj = Tcl_NewStringObj("status", -1);
+                    Tcl_Obj *bodyObj = Tcl_NewStringObj("body", -1);
+                    Tcl_Obj *valueObj = NULL;
+                    Ns_ReturnCode status = NS_OK;
+
+                    resultObj = Tcl_GetObjResult(interp);
+                    Tcl_IncrRefCount(resultObj);
+
+                    if (Tcl_DictObjGet(interp, resultObj, statusObj, &valueObj) == TCL_OK
+                        && valueObj != NULL
+                        ) {
+                        const char *stringValue =  Tcl_GetString(valueObj);
+
+                        /*fprintf(stderr, "### OCSP_REQUEST status <%s>\n", stringValue);*/
+                        if (*stringValue != '2') {
+                            status = NS_ERROR;
+                        }
+                    } else {
+                        Ns_Log(Warning, "OCSP_REQUEST: dict has no 'status' %s",
+                               Tcl_GetString(resultObj));
+                        status = NS_ERROR;
+                    }
+                    if (status == NS_OK) {
+                        if (Tcl_DictObjGet(interp, resultObj, bodyObj, &valueObj) == TCL_OK) {
+                            int                  length;
+                            const unsigned char *bytes;
+
+                            bytes = Tcl_GetByteArrayFromObj(valueObj, &length);
+                            rsp = d2i_OCSP_RESPONSE(NULL, &bytes, length);
+                        }
+                    }
+                    Tcl_DecrRefCount(resultObj);
+                    Tcl_DecrRefCount(statusObj);
+                    Tcl_DecrRefCount(bodyObj);
+
+                }
+                Ns_TclDeAllocateInterp(interp);
+                Tcl_DStringFree(&dsResult);
+            }
+        }
+
+        Tcl_DStringFree(&dsBinary);
+        Tcl_DStringFree(&dsBase64);
+        Tcl_DStringFree(&dsCMD);
+    }
+
+    return rsp;
+}
+
+
+#endif
+
+
+
 NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
 {
@@ -240,6 +745,7 @@ Ns_ModuleInit(const char *server, const char *module)
     drvPtr->dhKey512 = get_dh512();
     drvPtr->dhKey1024 = get_dh1024();
 
+
     /*
      * Load certificate and private key
      */
@@ -256,6 +762,22 @@ Ns_ModuleInit(const char *server, const char *module)
     if (SSL_CTX_use_PrivateKey_file(drvPtr->ctx, value, SSL_FILETYPE_PEM) != 1) {
         Ns_Log(Error, "nsssl: private key load error: %s", ERR_error_string(ERR_get_error(), NULL));
         return NS_ERROR;
+    }
+
+    {
+        X509_STORE *storePtr;
+        int rc;
+        /*
+         * Initialize cert storage for the SSL_CTX; otherwise
+         * X509_STORE_CTX_get_* operations will fail.
+         */
+        if (SSL_CTX_build_cert_chain(drvPtr->ctx, 0) != 1) {
+            Ns_Log(Notice, "nsssl SSL_CTX_build_cert_chain failed");
+        }
+        storePtr = SSL_CTX_get_cert_store(drvPtr->ctx /*SSL_get_SSL_CTX(s)*/);
+        Ns_Log(Notice, "nsssl:SSL_CTX_get_cert_store %p", (void*)storePtr);
+        rc = X509_STORE_load_locations(storePtr, value, NULL);
+        Ns_Log(Notice, "nsssl:X509_STORE_load_locations %d", rc);
     }
 
     /*
@@ -375,6 +897,18 @@ Ns_ModuleInit(const char *server, const char *module)
     }
 
     SSL_CTX_set_tmp_dh_callback(drvPtr->ctx, SSL_dhCB);
+
+#ifndef OPENSSL_NO_OCSP
+    if (Ns_ConfigBool(path, "ocspstapling", NS_FALSE)) {
+
+        memset(&tlscstatp, 0, sizeof(tlscstatp));
+        tlscstatp.timeout = -1;
+        tlscstatp.verbose = 1;
+
+        SSL_CTX_set_tlsext_status_cb(drvPtr->ctx, SSL_cert_statusCB);
+        SSL_CTX_set_tlsext_status_arg(drvPtr->ctx, &tlscstatp);
+    }
+#endif
 
     /*
      * Seed the OpenSSL Pseudo-Random Number Generator.
@@ -684,7 +1218,6 @@ Close(Ns_Sock *sock)
     SSLContext *sslCtx = sock->arg;
 
     if (sslCtx != NULL) {
-        int r;
 
         /*
          * SSL_shutdown() must not be called if a previous fatal error has
@@ -693,8 +1226,8 @@ Close(Ns_Sock *sock)
          */
         if (!Ns_SockInErrorState(sock)) {
             int fd = SSL_get_fd(sslCtx->ssl);
+            int r  = SSL_shutdown(sslCtx->ssl);
 
-            r = SSL_shutdown(sslCtx->ssl);
             Ns_Log(Debug, "### SSL close(%d) err %d", fd, SSL_get_error(sslCtx->ssl, r));
 
             if (r == 0) {

@@ -320,6 +320,7 @@ if {[info exists httpsport]} {
 	#ns_param deferaccept	true    ;# false, Performance optimization
 	ns_param maxinput	${max_file_upload_mb}MB   ;# Maximum file size for uploads in bytes
 	ns_param extraheaders	$nsssl_extraheaders
+	ns_param OCSPstapling   on      ;# off; activate OCSP stapling
     }
     #
     # Define, which "host" (as supplied by the "host:" header
