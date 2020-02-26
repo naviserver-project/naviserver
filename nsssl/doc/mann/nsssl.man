@@ -58,7 +58,7 @@ certificate was revoked or not).
 
 [para] NaviServer performs two level of caching: in-memory caching and
 disk caching. When the server receives the first TLS request with OCSP
-stapling turned on, it checks for an already retieved OCSP
+stapling turned on, it checks for an already retrieved OCSP
 response. The disk cache file is saved in the "log" directory of the
 server and uses the serial number of the certificate to be checked as
 file name with ".der" as extension.  When the disk cache file does
