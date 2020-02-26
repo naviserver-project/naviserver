@@ -527,26 +527,31 @@ NsTclNsvAppendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     } else {
         Array         *arrayPtr;
         Tcl_HashEntry *hPtr;
-        const char    *value;
-        int            i, isNew, len;
-        Tcl_Obj       *resultObj;
+        int            i, isNew;
+        Tcl_DString    ds;
 
         arrayPtr = LockArrayObj(interp, objv[1], NS_TRUE);
         assert(arrayPtr != NULL);
 
+        Tcl_DStringInit(&ds);
+
         hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, Tcl_GetString(objv[2]), &isNew);
-        if (isNew == 0) {
-            resultObj = Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1);
-        } else {
-            resultObj = Tcl_NewStringObj("", 0);
+        if (unlikely(isNew == 0)) {
+            Tcl_DStringAppend(&ds, Tcl_GetHashValue(hPtr), -1);
         }
+
         for (i = 3; i < objc; ++i) {
-            Tcl_AppendObjToObj(resultObj,  objv[i]);
+            int          length;
+            const char *value = Tcl_GetStringFromObj(objv[i], &length);
+
+            Tcl_DStringAppend(&ds, value, length);
         }
-        value = Tcl_GetStringFromObj(resultObj, &len);
-        UpdateVar(hPtr, value, (size_t)len);
+
+        UpdateVar(hPtr, ds.string, (size_t)ds.length);
         UnlockArray(arrayPtr);
-        Tcl_SetObjResult(interp, resultObj);
+
+        Tcl_DStringResult(interp, &ds);
+
     }
     return result;
 }
