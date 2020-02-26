@@ -198,19 +198,19 @@ ns_readdir(DIR * dir)
  *----------------------------------------------------------------------
  */
 struct tm *
-ns_localtime(const time_t *clock)
+ns_localtime(const time_t *timep)
 {
 #ifdef _MSC_VER
 
     Tls *tlsPtr = GetTls();
     int errNum;
 
-    NS_NONNULL_ASSERT(clock != NULL);
+    NS_NONNULL_ASSERT(timep != NULL);
 
-    if (sizeof(clock) == 4) {
-        errNum = _localtime32_s(&tlsPtr->ltbuf, clock);
+    if (sizeof(time_t) == 4) {
+        errNum = _localtime32_s(&tlsPtr->ltbuf, timep);
     } else {
-        errNum = _localtime64_s(&tlsPtr->ltbuf, clock);
+        errNum = _localtime64_s(&tlsPtr->ltbuf, timep);
     }
     if (errNum != 0) {
         NsThreadFatal("ns_localtime", "localtime_s", errNum);
@@ -219,14 +219,14 @@ ns_localtime(const time_t *clock)
     return &tlsPtr->ltbuf;
 
 #elif defined(_WIN32)
-    NS_NONNULL_ASSERT(clock != NULL);
-    return localtime(clock);
+    NS_NONNULL_ASSERT(timep != NULL);
+    return localtime(timep);
 #else
     Tls *tlsPtr = GetTls();
 
-    NS_NONNULL_ASSERT(clock != NULL);
+    NS_NONNULL_ASSERT(timep != NULL);
 
-    return localtime_r(clock, &tlsPtr->ltbuf);
+    return localtime_r(timep, &tlsPtr->ltbuf);
 #endif
 }
 
@@ -239,15 +239,15 @@ ns_localtime(const time_t *clock)
  *----------------------------------------------------------------------
  */
 struct tm *
-ns_gmtime(const time_t *clock)
+ns_gmtime(const time_t *timep)
 {
 #ifdef _MSC_VER
 
     Tls *tlsPtr = GetTls();
     int errNum;
 
-    NS_NONNULL_ASSERT(clock != NULL);
-    errNum = gmtime_s(&tlsPtr->gtbuf, clock);
+    NS_NONNULL_ASSERT(timep != NULL);
+    errNum = gmtime_s(&tlsPtr->gtbuf, timep);
     if (errNum != 0) {
         NsThreadFatal("ns_gmtime", "gmtime_s", errNum);
     }
@@ -256,14 +256,14 @@ ns_gmtime(const time_t *clock)
 
 #elif defined(_WIN32)
 
-    NS_NONNULL_ASSERT(clock != NULL);
-    return gmtime(clock);
+    NS_NONNULL_ASSERT(timep != NULL);
+    return gmtime(timep);
 
 #else
 
     Tls *tlsPtr = GetTls();
-    NS_NONNULL_ASSERT(clock != NULL);
-    return gmtime_r(clock, &tlsPtr->gtbuf);
+    NS_NONNULL_ASSERT(timep != NULL);
+    return gmtime_r(timep, &tlsPtr->gtbuf);
 
 #endif
 }
@@ -277,15 +277,15 @@ ns_gmtime(const time_t *clock)
  *----------------------------------------------------------------------
  */
 char *
-ns_ctime(const time_t *clock)
+ns_ctime(const time_t *timep)
 {
 #ifdef _MSC_VER
 
     Tls *tlsPtr = GetTls();
     int errNum;
 
-    NS_NONNULL_ASSERT(clock != NULL);
-    errNum = ctime_s(tlsPtr->ctbuf, sizeof(tlsPtr->ctbuf), clock);
+    NS_NONNULL_ASSERT(timep != NULL);
+    errNum = ctime_s(tlsPtr->ctbuf, sizeof(tlsPtr->ctbuf), timep);
     if (errNum != 0) {
         NsThreadFatal("ns_ctime", "ctime_s", errNum);
     }
@@ -294,13 +294,13 @@ ns_ctime(const time_t *clock)
 
 #elif defined(_WIN32)
 
-    NS_NONNULL_ASSERT(clock != NULL);
-    return ctime(clock);
+    NS_NONNULL_ASSERT(timep != NULL);
+    return ctime(timep);
 
 #else
     Tls *tlsPtr = GetTls();
-    NS_NONNULL_ASSERT(clock != NULL);
-    return ctime_r(clock, tlsPtr->ctbuf);
+    NS_NONNULL_ASSERT(timep != NULL);
+    return ctime_r(timep, tlsPtr->ctbuf);
 #endif
 }
 

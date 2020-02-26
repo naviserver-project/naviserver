@@ -573,8 +573,9 @@ QueueEvent(Event *ePtr, const Ns_Time *nowPtr)
 
         if ((ePtr->flags & (NS_SCHED_DAILY | NS_SCHED_WEEKLY)) != 0u) {
             struct tm  *tp;
+            time_t      secs = nowPtr->sec;
 
-            tp = ns_localtime(&(nowPtr->sec));
+            tp = ns_localtime(&secs);
             tp->tm_sec = (int)ePtr->interval.sec;
             tp->tm_hour = 0;
             tp->tm_min = 0;
