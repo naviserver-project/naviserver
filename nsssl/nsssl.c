@@ -45,6 +45,11 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
 #include <openssl/err.h>
 #include <openssl/evp.h>
 #include <openssl/rand.h>
+#include "../nsd/nsopenssl.h"
+
+#ifdef HAVE_OPENSSL_PRE_1_1
+# define OPENSSL_NO_OCSP 1
+#endif
 
 #ifndef OPENSSL_NO_OCSP
 # include <openssl/ocsp.h>
