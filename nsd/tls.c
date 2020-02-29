@@ -439,10 +439,12 @@ ssize_t
 Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
                 Ns_SockState *sockStatePtr)
 {
-    ssize_t      nRead = 0;
-    int          got = 0, sock, n = 0, err = SSL_ERROR_NONE;
-    char        *buf = NULL;
-    Ns_SockState sockState = NS_SOCK_READ;
+    ssize_t       nRead = 0;
+    int           got = 0, sock, n = 0, err = SSL_ERROR_NONE;
+    char         *buf = NULL;
+    unsigned long sslError;
+    char          errorBuffer[256];
+    Ns_SockState  sockState = NS_SOCK_READ;
 
     NS_NONNULL_ASSERT(sslPtr != NULL);
     NS_NONNULL_ASSERT(bufs != NULL);
@@ -485,7 +487,12 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
         break;
 
     case SSL_ERROR_SYSCALL:
-        if (ERR_get_error() == 0) {
+
+        sslError = ERR_get_error();
+        Ns_Log(Debug, "SSL_read(%d) SSL_ERROR_SYSCALL got:%d sslError %lu: %s", sock, got,
+               sslError, ERR_error_string(sslError, errorBuffer));
+
+        if (sslError == 0) {
             Ns_Log(Debug, "SSL_read(%d) ERROR_SYSCALL (eod?), got:%d", sock, got);
             nRead = got;
             sockState = NS_SOCK_DONE;
@@ -499,22 +506,54 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
         NS_FALL_THROUGH; /* fall through */
 
     default:
-        {
-            char errorBuffer[256];
-            unsigned long sslError;
+        sslError = ERR_get_error();
 
-            //Ns_Log(Notice, "SSL_read(%d) error handler err %d", sock, err);
+        Ns_Log(Debug, "SSL_read(%d) error handler err %d sslError %lu",
+               sock, err, sslError);
+        /*
+         * Starting with the commit in OpenSSL 1.1.1 branch
+         * OpenSSL_1_1_1-stable below, at least https client requests
+         * answered without an explicit content length start to
+         * fail. This can be tested with:
+         *
+         *       ns_logctl severity Debug(task) on
+         *       ns_http run https://www.google.com/
+         *
+         * The fix below just triggers for exactly this condition to
+         * provide a graceful end for these requests.
+         *
+         * https://github.com/openssl/openssl/commit/db943f43a60d1b5b1277e4b5317e8f288e7a0a3a
+         */
+        if (err == SSL_ERROR_SSL) {
+            int reasonCode = ERR_GET_REASON(sslError);
 
-            for(sslError = ERR_get_error(); sslError != 0u; sslError = ERR_get_error()) {
-                Ns_Log(Notice, "SSL_read(%d) error received:%d, got:%d, err:%d,"
-                       " get_error:%lu, %s", sock, n, got, err, sslError,
-                       ERR_error_string(sslError, errorBuffer));
+            Ns_Log(Debug, "SSL_read(%d) error handler SSL_ERROR_SSL sslError %lu reason code %d",
+                   sock, sslError, reasonCode);
+#ifdef SSL_R_UNEXPECTED_EOF_WHILE_READING
+            if (reasonCode == SSL_R_UNEXPECTED_EOF_WHILE_READING) {
+                Ns_Log(Notice, "SSL_read(%d) ERROR_SYSCALL sees UNEXPECTED_EOF_WHILE_READING", sock);
+                nRead = got;
+                sockState = NS_SOCK_DONE;
+                break;
             }
-            SSL_set_shutdown(sslPtr, SSL_RECEIVED_SHUTDOWN);
-            //Ns_Log(Notice, "SSL_read(%d) error after shutdown", sock);
-            nRead = -1;
-            break;
+#endif
         }
+        /*
+         * Report all sslErrors from the OpenSSL error stack as
+         * "notices" in the system log file.
+         */
+        while (sslError != 0u) {
+            Ns_Log(Notice, "SSL_read(%d) error received:%d, got:%d, err:%d,"
+                   " get_error:%lu, %s", sock, n, got, err, sslError,
+                   ERR_error_string(sslError, errorBuffer));
+            sslError = ERR_get_error();
+        }
+
+        SSL_set_shutdown(sslPtr, SSL_RECEIVED_SHUTDOWN);
+        //Ns_Log(Notice, "SSL_read(%d) error after shutdown", sock);
+        nRead = -1;
+        break;
+
     }
 
     if (nRead < 0) {
