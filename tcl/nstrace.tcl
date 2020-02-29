@@ -100,8 +100,8 @@
 #
 # Limitations:
 #
-#   o. [namespace forget] is still not implemented
-#   o. [namespace origin cmd] breaks if cmd is not already defined
+#   o. [::namespace forget] is still not implemented
+#   o. [::namespace origin cmd] breaks if cmd is not already defined
 #   o. [info procs] does not return list of all cached procedures
 #
 
@@ -169,7 +169,7 @@ ns_runonce {
             if {$config(-doepochs) != 0} {
                 variable epoch [_newepoch]
             }
-            set nsp [namespace current]
+            set nsp [::namespace current]
             set on  [enablecode]
             foreach trace $tracers {
                 ${nsp}::trace::_$trace ${nsp}::trace::_$trace $on
@@ -188,7 +188,7 @@ ns_runonce {
             if {$enabled > 0} {
                 return
             }
-            set nsp [namespace current]
+            set nsp [::namespace current]
             set off [disablecode]
             foreach trace $tracers {
                 ${nsp}::trace::_$trace ${nsp}::trace::_$trace $off
@@ -202,7 +202,7 @@ ns_runonce {
 
         proc enablestate {} {
             variable tracers
-            set nsp [namespace current]
+            set nsp [::namespace current]
             set on  [enablecode]
             #
             # Activate [rename] and [load] tracers so we can
@@ -222,7 +222,7 @@ ns_runonce {
 
         proc disablestate {} {
             variable tracers
-            set nsp [namespace current]
+            set nsp [::namespace current]
             set off [disablecode]
             #
             # Disable activated [rename] / [load] tracers
@@ -280,7 +280,7 @@ ns_runonce {
             # as we need it loaded always.
             #
 
-            foreach n [namespaces [namespace current]] {
+            foreach n [namespaces [::namespace current]] {
                 foreach {s i} [_serializensp $n] {
                     if {[string length $s]} {
                         append script "namespace eval [list $n] {" \n
@@ -315,7 +315,7 @@ ns_runonce {
             # Tell to use current initialization epoch
             #
 
-            append script "namespace eval [list [namespace current]] {" \n
+            append script "namespace eval [list [::namespace current]] {" \n
             append script "_useepoch $epoch" \n
             append script "}" \n
 
@@ -517,7 +517,7 @@ ns_runonce {
             variable tracers
             if {[lsearch $tracers $cmd] == -1} {
                 lappend tracers $cmd
-                set tracer [namespace current]::trace::_$cmd
+                set tracer [::namespace current]::trace::_$cmd
                 proc $tracer $arglist $body
                 if {[isactive]} {
                     if {[info commands $cmd] ne {}} {
@@ -541,7 +541,7 @@ ns_runonce {
             variable scripts
             if {[lsearch $scripts $cmd] == -1} {
                 lappend scripts $cmd
-                set cmd [namespace current]::script::_$cmd
+                set cmd [::namespace current]::script::_$cmd
                 proc $cmd args $body
                 return $cmd
             }
@@ -557,7 +557,7 @@ ns_runonce {
             variable resolvers
             if {[lsearch $resolvers $cmd] == -1} {
                 lappend resolvers $cmd
-                set cmd [namespace current]::resolve::$cmd
+                set cmd [::namespace current]::resolve::$cmd
                 proc $cmd $arglist $body
                 return $cmd
             }
@@ -661,7 +661,7 @@ ns_runonce {
             variable nsplist
             lappend nsplist $top
             set excluded_namespaces [ns_config ns/parameters blueprint_exclude ""]
-            foreach nsp [namespace children $top] {
+            foreach nsp [::namespace children $top] {
                 if {$nsp in $excluded_namespaces} continue
                 _namespaces $nsp
             }
@@ -674,7 +674,7 @@ ns_runonce {
         #
 
         proc _create_or_config_ensemble {cmd cfg} {
-            if {[info commands $cmd] eq $cmd && [namespace ensemble exists $cmd]} {
+            if {[info commands $cmd] eq $cmd && [::namespace ensemble exists $cmd]} {
                 uplevel 1 [list ::namespace ensemble configure $cmd {*}$cfg]
             } else {
                 uplevel 1 [list ::namespace ensemble create -command $cmd {*}$cfg]
@@ -693,8 +693,8 @@ ns_runonce {
 
         if {$::tcl_version >= 8.5} {
             proc _getensemble {cmd} {
-                if {[namespace ensemble exists $cmd]} {
-                    set _cfg [namespace ensemble configure $cmd]
+                if {[::namespace ensemble exists $cmd]} {
+                    set _cfg [::namespace ensemble configure $cmd]
                     set _enns [dict get $_cfg -namespace]
                     dict unset _cfg -namespace
                     set _encmd [list ::nstrace::_create_or_config_ensemble $cmd $_cfg]
@@ -732,7 +732,7 @@ ns_runonce {
 
             # If $nsp is empty (no vars, no procs), we create at
             # least a
-            #    namespace eval $nsp {}
+            #    ::namespace eval $nsp {}
             # entry by adding the space.
             append script " "
 
@@ -749,11 +749,11 @@ ns_runonce {
             # Save procs and command of all namespaces
             #
             foreach pn [info procs ${nsp}::*] {
-                set orig [namespace origin $pn]
+                set orig [::namespace origin $pn]
                 if {
-                    $orig ne [namespace which -command $pn]
+                    $orig ne [::namespace which -command $pn]
                 } {
-                    append import "namespace import -force [list $orig]" \n
+                    append import "::namespace import -force [list $orig]" \n
                 } else {
                     append script [_procscript $pn]
                 }
@@ -761,14 +761,14 @@ ns_runonce {
 
             # Add aliases
             foreach cmd [interp aliases {}] {
-                if {[namespace qualifiers $cmd] eq $nsp} {
+                if {[::namespace qualifiers $cmd] eq $nsp} {
                     append script "interp alias {} $cmd {} [interp alias {} $cmd]" \n
                 }
             }
 
             # Add exports
-            foreach ex [namespace eval $nsp [list namespace export]] {
-                append script "namespace export [list $ex]" \n
+            foreach ex [::namespace eval $nsp [list ::namespace export]] {
+                append script "::namespace export [list $ex]" \n
             }
 
             #
@@ -776,10 +776,10 @@ ns_runonce {
             # loaded later, when the required commands are defined.
             #
             foreach cn [info commands ${nsp}::*] {
-                set orig [namespace origin $cn]
+                set orig [::namespace origin $cn]
                 if {[info procs $cn] eq {} &&
-                    $orig ne [namespace which -command $cn]} {
-                    append import "namespace import -force [list $orig]" \n
+                    $orig ne [::namespace which -command $cn]} {
+                    append import "::namespace import -force [list $orig]" \n
                 }
                 append import [_getensemble $cn]
             }
@@ -789,7 +789,7 @@ ns_runonce {
 
         #
         # Helper to return a script to re-generate Tcl procedure.
-        # Caller must wrap this script into [namespace eval]
+        # Caller must wrap this script into [::namespace eval]
         # command as the procedure will not generate the procedure
         # under fully qualified name.
         #
@@ -803,20 +803,20 @@ ns_runonce {
                     lappend pargs [list $arg $def]
                 }
             }
-            set pname [namespace tail $cmd]
+            set pname [::namespace tail $cmd]
             set pbody [info body $cmd]
             append script "proc [list $pname] [list $pargs] [list $pbody]" \n
         }
 
         #
         # Helper to return a script to re-generate Tcl variable.
-        # Caller must wrap this script into [namespace eval]
+        # Caller must wrap this script into [::namespace eval]
         # command as the procedure will not generate the variable
         # under fully qualified name.
         #
 
         proc _varscript {var} {
-            set vname [namespace tail $var]
+            set vname [::namespace tail $var]
             if {[array exists $var]} {
                 append script "variable [list $vname]" \n
                 append script "array set [list $vname] [list [array get $var]]" \n
@@ -964,7 +964,7 @@ ns_runonce {
     # The code below provides implementation of tracing callbacks
     # for following Tcl commands:
     #
-    #    [namespace]
+    #    [::namespace]
     #    [variable]
     #    [load]
     #    [proc]
@@ -1028,7 +1028,7 @@ ns_runonce {
     }
 
     #
-    # Register the [namespace] trace. This will create
+    # Register the [::namespace trace]. This will create
     # the following key/value entry in "namespace" store:
     #
     #  --- key ----                   --- value ---
@@ -1147,8 +1147,8 @@ ns_runonce {
     nstrace::addscript variable {
         append script \n
         foreach entry [nstrace::getentries variable] {
-            set nsp [namespace qual $entry]
-            set var [namespace tail $entry]
+            set nsp [::namespace qual $entry]
+            set var [::namespace tail $entry]
             append script "namespace eval [list $nsp] {" \n
             append script "variable [list $var]"
             if {[array exists $entry]} {
@@ -1307,10 +1307,10 @@ ns_runonce {
                     set fns [concat $fns [nstrace::getentries xotcl $pat]]
                 }
                 foreach entry $fns {
-                    if {$cns ne [namespace qual $entry]} {
+                    if {$cns ne [::namespace qual $entry]} {
                         set lazy($entry) 1
                     } else {
-                        set lazy([namespace tail $entry]) 1
+                        set lazy([::namespace tail $entry]) 1
                     }
                 }
                 foreach entry [uplevel ::tcl::info $args] {
@@ -1330,7 +1330,7 @@ ns_runonce {
 
     nstrace::addresolver resolveprocs {cmd {export 0}} {
         set cns [uplevel namespace current]
-        set name [namespace tail $cmd]
+        set name [::namespace tail $cmd]
         if {$cns eq {::}} {
             set cns {}
         }
@@ -1354,7 +1354,7 @@ ns_runonce {
         set epoch [lindex $pdef 0]
         set pnsp  [lindex $pdef 1]
         if {$pnsp ne {}} {
-            set nsp [namespace qual $cmd]
+            set nsp [::namespace qual $cmd]
             if {$nsp eq {}} {
                 set nsp ::
             }
@@ -1366,7 +1366,7 @@ ns_runonce {
         } else {
             uplevel 0 [list ::proc $cmd [lindex $pdef 2] [lindex $pdef 3]]
             if {$export} {
-                set nsp [namespace qual $cmd]
+                set nsp [::namespace qual $cmd]
                 if {$nsp eq {}} {
                     set nsp ::
                 }
