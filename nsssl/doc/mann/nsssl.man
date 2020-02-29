@@ -87,6 +87,7 @@ curl http://ocsp.int-x3.letsencrypt.org/YYYY --output /usr/local/ns/logs/XXX.der
 For more details about OCSP, see:
 [uri https://tools.ietf.org/html/rfc6960]
 
+OCSP support requires OpenSSL 1.1.0 or newer.
 
 [def extraheaders]
 can be used to specify additional header fields be sent on every
