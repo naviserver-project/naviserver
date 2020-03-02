@@ -783,16 +783,18 @@ Ns_SockListen(const char *address, unsigned short port)
 NS_SOCKET
 Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr)
 {
+    int sockerrno;
+
     sock = accept(sock, saPtr, lenPtr);
+    sockerrno = ns_sockerrno;
 
     Ns_Log(Debug, "Ns_SockAccept returns sock %d, err %s", sock,
-           (ns_sockerrno == 0) ? "NONE" : ns_sockstrerror(ns_sockerrno));
+           (sockerrno == 0) ? "NONE" : ns_sockstrerror(sockerrno));
 
     if (likely(sock != NS_INVALID_SOCKET)) {
         sock = SockSetup(sock);
-    } else if (ns_sockerrno != 0 && ns_sockerrno != NS_EAGAIN) {
-        Ns_Log(Warning, "accept() fails, reason: %s",
-               ns_sockstrerror(ns_sockerrno));
+    } else if (sockerrno != 0 && sockerrno != NS_EAGAIN) {
+        Ns_Log(Warning, "accept() fails, reason: %s", ns_sockstrerror(sockerrno));
     }
 
     return sock;
