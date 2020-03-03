@@ -69,6 +69,13 @@ if test "${ac_openssl}" = "yes" ; then
   AC_CHECK_LIB(ssl, OPENSSL_init_ssl, [FOUND_SSL_LIB="yes"])
   AC_CHECK_LIB(ssl, SSL_library_init, [FOUND_SSL_LIB="yes"])
   AC_CHECK_LIB([crypto], [PEM_read_bio_DHparams])
+  AC_CHECK_LIB([crypto], [X509_STORE_CTX_get_obj_by_subject])
+
+  if test ${ac_cv_lib_crypto_X509_STORE_CTX_get_obj_by_subject} != "yes"; then
+    AC_MSG_WARN([build without OCSP support, since X509_STORE_CTX_get_obj_by_subject not available])
+  else
+    AC_DEFINE([HAVE_X509_STORE_CTX_GET_OBJ_BY_SUBJECT], [1], [Define to X509_STORE_CTX_get_obj_by_subject])
+  fi
   
   dnl echo "OpenSSL headers found:    $ac_cv_header_openssl_evp_h"
   dnl echo "OpenSSL lib ssl found:    $ac_cv_lib_ssl_SSL_library_init"

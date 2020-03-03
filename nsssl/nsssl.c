@@ -47,7 +47,7 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
 #include <openssl/rand.h>
 #include "../nsd/nsopenssl.h"
 
-#ifdef HAVE_OPENSSL_PRE_1_1
+#ifndef HAVE_X509_STORE_CTX_GET_OBJ_BY_SUBJECT
 # define OPENSSL_NO_OCSP 1
 #endif
 
@@ -776,9 +776,11 @@ Ns_ModuleInit(const char *server, const char *module)
          * Initialize cert storage for the SSL_CTX; otherwise
          * X509_STORE_CTX_get_* operations will fail.
          */
+#ifdef SSL_CTX_build_cert_chain
         if (SSL_CTX_build_cert_chain(drvPtr->ctx, 0) != 1) {
             Ns_Log(Notice, "nsssl SSL_CTX_build_cert_chain failed");
         }
+#endif
         storePtr = SSL_CTX_get_cert_store(drvPtr->ctx /*SSL_get_SSL_CTX(s)*/);
         Ns_Log(Notice, "nsssl:SSL_CTX_get_cert_store %p", (void*)storePtr);
         rc = X509_STORE_load_locations(storePtr, value, NULL);
