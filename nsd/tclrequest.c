@@ -451,6 +451,7 @@ NsTclRequestProc(const void *arg, Ns_Conn *conn)
             Ns_DStringInit(&ds);
             Ns_GetProcInfo(&ds, (ns_funcptr_t)NsTclRequestProc, arg);
             Ns_Log(Dev, "%s: %s", ds.string, Tcl_GetStringResult(interp));
+            Ns_Log(Warning, "Tcl request %s lead to a timeout: %s", conn->request.line, ds.string);
             Ns_DStringFree(&ds);
             status = Ns_ConnReturnUnavailable(conn);
         } else {
