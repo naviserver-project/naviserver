@@ -305,7 +305,7 @@ Tcl_GetKeyedListField(Tcl_Interp *interp, const char *fieldName,
  *    recursively process sub-field names separated by `.'.
  *  - fieldValue (I) - The value to set for the field.
  *  - keyedList (I) - The keyed list to set a field value in, may be
- *    an NULL or an empty list to create a new keyed list.
+ *    a NULL or an empty list to create a new keyed list.
  * Returns:
  *   A pointer to a dynamically allocated string, or
  *   NULL if an error occurred.

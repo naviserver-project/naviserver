@@ -237,8 +237,8 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, bo
     if (success) {
         if (getProc == GetAddr && !all) {
             /*
-             * When "all" is not specified for an GetAddr, return just
-             * the first address.
+             * When "all" is not specified for a GetAddr() call,
+             * return just the first address.
              */
             const char *p = ds.string;
 
