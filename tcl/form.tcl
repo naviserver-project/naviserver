@@ -242,7 +242,9 @@ proc ns_getform {{charset ""}}  {
 #   Return a tempfile for a form file field.
 #
 # Result:
-#   Path of the temporary file or empty if no file found
+#   Path of the temporary file or empty if no file found.  When the
+#   INPUT element of the file contains the HTML5 attribute "multiple",
+#   a list of file names is potentially returned.
 #
 # Side effects:
 #   None.
@@ -252,7 +254,10 @@ proc ns_getformfile {name} {
 
     set form [ns_getform]
     if {[ns_set find $form $name.tmpfile] > -1} {
-        return [ns_set get $form $name.tmpfile]
+        return [lmap {k v} [ns_set array $form] {
+            if {$k ne "$name.tmpfile"} continue
+            set v
+        }]
     }
 }
 
