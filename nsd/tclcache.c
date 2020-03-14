@@ -1167,6 +1167,8 @@ CreateEntry(const NsInterp *itPtr, TclCache *cPtr, const char *key, int *newPtr,
     if (entry == NULL) {
         Ns_CacheUnlock(cache);
         Tcl_SetErrorCode(itPtr->interp, "NS_TIMEOUT", (char *)0L);
+        Ns_Log(Ns_LogTimeoutDebug, "cache entry creation for key '%s' runs into timeout", key);
+
         Ns_TclPrintfResult(itPtr->interp, "timeout waiting for concurrent update: %s", key);
     }
     return entry;

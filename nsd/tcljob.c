@@ -742,6 +742,9 @@ JobWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_O
                 if (timedOut == NS_TIMEOUT) {
                     Ns_TclPrintfResult(interp, "Wait timed out.");
                     Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+                    Ns_Log(Ns_LogTimeoutDebug, "ns_job %s runs into timeout: %s",
+                           jobIdString, Tcl_DStringValue(&jobPtr->script));
+
                     jobPtr->req = JOB_NONE;
                     result = TCL_ERROR;
                     goto releaseQueue;
@@ -959,15 +962,23 @@ JobWaitAnyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
          */
 
         if (deltaTimeoutPtr != NULL) {
-            while ((Tcl_FirstHashEntry(&queue->jobs, &search) != NULL)
-                   && (result == TCL_OK)
-                   && !AnyDone(queue)) {
+            const Tcl_HashEntry *hPtr;
+
+            for (hPtr = Tcl_FirstHashEntry(&queue->jobs, &search);
+                 hPtr != NULL && !AnyDone(queue);
+                 hPtr = Tcl_NextHashEntry(&search)) {
                 Ns_ReturnCode timedOut = Ns_CondTimedWait(&queue->cond,
                                                           &queue->lock, &timeout);
                 if (timedOut == NS_TIMEOUT) {
-                    Ns_TclPrintfResult(interp, "Wait timed out.");
+                    Job *jobPtr = Tcl_GetHashValue(hPtr);
+
                     Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+                    Ns_Log(Ns_LogTimeoutDebug, "ns_job %s runs into timeout: %s",
+                           Tcl_DStringValue(&jobPtr->id), Tcl_DStringValue(&jobPtr->script));
+
+                    Ns_TclPrintfResult(interp, "Wait timed out.");
                     result = TCL_ERROR;
+                    break;
                 }
             }
         } else {

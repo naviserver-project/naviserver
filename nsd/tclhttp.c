@@ -748,6 +748,7 @@ HttpWaitObjCmd(
             Tcl_SetObjResult(interp, Tcl_NewStringObj(httpPtr->error, -1));
             if (rc == NS_TIMEOUT) {
                 Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
+                Ns_Log(Ns_LogTimeoutDebug, "ns_http request '%s' runs into timeout", httpPtr->url);
             }
             HttpCancel(httpPtr);
             result = TCL_ERROR;
@@ -1503,6 +1504,7 @@ HttpGetResult(
     if (httpPtr->error != NULL) {
         if (httpPtr->finalSockState == NS_SOCK_TIMEOUT) {
             Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
+            Ns_Log(Ns_LogTimeoutDebug, "ns_http request '%s' runs into timeout", httpPtr->url);
         }
         Tcl_SetObjResult(interp, Tcl_NewStringObj(httpPtr->error, -1));
         result = TCL_ERROR;

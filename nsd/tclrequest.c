@@ -451,8 +451,9 @@ NsTclRequestProc(const void *arg, Ns_Conn *conn)
             Ns_DStringInit(&ds);
             Ns_GetProcInfo(&ds, (ns_funcptr_t)NsTclRequestProc, arg);
             Ns_Log(Dev, "%s: %s", ds.string, Tcl_GetStringResult(interp));
-            Ns_Log(Warning, "Tcl request %s lead to a timeout: %s", conn->request.line, ds.string);
+            Ns_Log(Ns_LogTimeoutDebug, "Tcl request %s lead to a timeout: %s", conn->request.line, ds.string);
             Ns_DStringFree(&ds);
+            Tcl_ResetResult(interp);
             status = Ns_ConnReturnUnavailable(conn);
         } else {
             (void) Ns_TclLogErrorInfo(interp, "\n(context: request proc)");
@@ -546,7 +547,9 @@ NsTclFilterProc(const void *arg, Ns_Conn *conn, Ns_FilterType why)
         if (NsTclTimeoutException(interp) == NS_TRUE) {
             Ns_GetProcInfo(&ds, (ns_funcptr_t)NsTclFilterProc, arg);
             Ns_Log(Dev, "%s: %s", ds.string, result);
+            Ns_Log(Ns_LogTimeoutDebug, "filter proc '%s' ends with timeout exception", ds.string);
             (void) Ns_ConnReturnUnavailable(conn);
+            Tcl_ResetResult(interp);
             status = NS_FILTER_RETURN;
         } else {
             (void) Ns_TclLogErrorInfo(interp, "\n(context: filter proc)");

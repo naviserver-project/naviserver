@@ -210,8 +210,9 @@ PageRequest(Ns_Conn *conn, const char *file, const Ns_Time *expiresPtr, unsigned
         Tcl_DecrRefCount(objv[1]);
 
         if (itPtr->adp.exception == ADP_TIMEOUT) {
-            Ns_Log(Warning, "ADP request %s lead to a timeout", conn->request.line);
+            Ns_Log(Ns_LogTimeoutDebug, "ADP request %s lead to a timeout", conn->request.line);
             status = Ns_ConnReturnUnavailable(conn);
+            Tcl_ResetResult(interp);
 
         } else if (NsAdpFlush(itPtr, NS_FALSE) != TCL_OK || result != TCL_OK) {
             status = NS_ERROR;

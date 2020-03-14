@@ -1083,6 +1083,7 @@ Ns_SockConnectError(Tcl_Interp *interp, const char *host, unsigned short portNr,
     if (status == NS_TIMEOUT) {
         Ns_TclPrintfResult(interp, "timeout while connecting to %s port %hu", host, portNr);
         Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+        Ns_Log(Ns_LogTimeoutDebug, "socket connect to %s port %hu runs into timeout", host, portNr);
     } else {
         /*
          * Tcl_PosixError() sets as well the Tcl error code.

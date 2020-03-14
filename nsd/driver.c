@@ -345,7 +345,10 @@ Ns_LogSeverity Ns_LogRequestDebug;
 Ns_LogSeverity Ns_LogConnchanDebug;
 Ns_LogSeverity Ns_LogUrlspaceDebug;
 Ns_LogSeverity Ns_LogAccessDebug;
+Ns_LogSeverity Ns_LogTimeoutDebug;
+
 NS_EXPORT Ns_LogSeverity Ns_LogAccessDebug;
+
 bool NsWriterBandwidthManagement = NS_FALSE;
 
 static Ns_LogSeverity   WriterDebug;        /* Severity at which to log verbose debugging. */
@@ -456,6 +459,7 @@ NsInitDrivers(void)
     Ns_LogConnchanDebug = Ns_CreateLogSeverity("Debug(connchan)");
     Ns_LogUrlspaceDebug = Ns_CreateLogSeverity("Debug(urlspace)");
     Ns_LogAccessDebug = Ns_CreateLogSeverity("Debug(access)");
+    Ns_LogTimeoutDebug = Ns_CreateLogSeverity("Debug(timeout)");
     Ns_MutexInit(&reqLock);
     Ns_MutexInit(&writerlock);
     Ns_MutexSetName2(&reqLock, "ns:driver", "requestpool");

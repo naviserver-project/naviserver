@@ -1352,6 +1352,7 @@ NS_EXTERN Tcl_ObjCmdProc
 NS_EXTERN Ns_LogSeverity Ns_LogRequestDebug;
 NS_EXTERN Ns_LogSeverity Ns_LogConnchanDebug;
 NS_EXTERN Ns_LogSeverity Ns_LogUrlspaceDebug;
+NS_EXTERN Ns_LogSeverity Ns_LogTimeoutDebug;
 NS_EXTERN bool NsWriterBandwidthManagement;
 
 NS_EXTERN const char *nsBuildDate;
