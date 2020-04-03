@@ -305,6 +305,10 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
     }
 #endif
 
+    /*
+     * In case we have no unsetenv(), we have to deal with the value==NULL
+     * case here.
+     */
     len = nameLength = strlen(name);
     if (value != NULL) {
         valueLength = strlen(value) + 1;

@@ -594,9 +594,9 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
          */
         base64len = MAX(4, ((size_t)derLength * 4/3) + 4);
         Tcl_DStringSetLength(&dsBase64, (int)base64len);
-        base64len = Ns_Base64Encode((unsigned char *)dsBinary.string,
-                                    (size_t)derLength, dsBase64.string,
-                                    0, 0);
+        (void) Ns_Base64Encode((unsigned char *)dsBinary.string,
+                               (size_t)derLength, dsBase64.string,
+                               0, 0);
         Tcl_DStringAppend(&dsCMD, "ns_http run ", -1);
         Tcl_DStringAppend(&dsCMD, aiaURL, -1);
 
@@ -630,7 +630,7 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
                     Tcl_Obj *statusObj = Tcl_NewStringObj("status", -1);
                     Tcl_Obj *bodyObj = Tcl_NewStringObj("body", -1);
                     Tcl_Obj *valueObj = NULL;
-                    Ns_ReturnCode status = NS_OK;
+                    Ns_ReturnCode status;
 
                     resultObj = Tcl_GetObjResult(interp);
                     Tcl_IncrRefCount(resultObj);
@@ -639,9 +639,13 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
                         && valueObj != NULL
                         ) {
                         const char *stringValue =  Tcl_GetString(valueObj);
-
-                        /*fprintf(stderr, "### OCSP_REQUEST status <%s>\n", stringValue);*/
-                        if (*stringValue != '2') {
+                        /*
+                         * Check, if the HTTP status code starts with a '2'.
+                         */
+                        if (*stringValue == '2') {
+                            status = NS_OK;
+                        } else {
+                            /*fprintf(stderr, "### OCSP_REQUEST status <%s>\n", stringValue);*/
                             status = NS_ERROR;
                         }
                     } else {
