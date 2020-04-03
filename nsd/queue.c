@@ -2568,6 +2568,9 @@ ConnRun(Conn *connPtr)
         void *wrPtr;
 
         NsWriterLock();
+        /*
+         * Avoid potential race conditions, so refetch inside the lock.
+         */
         wrPtr = connPtr->strWriter;
         if (wrPtr != NULL) {
             NsWriterFinish(wrPtr);
