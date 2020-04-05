@@ -295,6 +295,7 @@ Ns_ConnReturnFile(Ns_Conn *conn, int statusCode, const char *mimeType, const cha
     NS_NONNULL_ASSERT(fileName != NULL);
 
     if (Ns_Stat(fileName, &connPtr->fileInfo) == NS_FALSE) {
+        Ns_Log(Debug, "Ns_ConnReturnFile for '%s' returns 404", fileName);
         status = Ns_ConnReturnNotFound(conn);
     } else {
         status = FastReturn(conn, statusCode, mimeType, fileName);
@@ -397,6 +398,8 @@ Ns_FastPathProc(const void *UNUSED(arg), Ns_Conn *conn)
     } else {
 
     notfound:
+        Ns_Log(Debug, "Ns_FastPathProc for '%s' returns 404", ds.string);
+
         result = Ns_ConnReturnNotFound(conn);
     }
 
@@ -869,6 +872,8 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
     return status;
 
  notfound:
+
+    Ns_Log(Debug, "FastReturn for '%s' returns 404", fileName);
 
     Ns_DStringFree(dsPtr);
     return Ns_ConnReturnNotFound(conn);
