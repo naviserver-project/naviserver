@@ -1975,8 +1975,18 @@ NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
 static bool
 DriverKeep(Sock *sockPtr)
 {
+    Ns_DriverKeepProc *keepProc;
+    bool              result;
+
     NS_NONNULL_ASSERT(sockPtr != NULL);
-    return (*sockPtr->drvPtr->keepProc)((Ns_Sock *) sockPtr);
+
+    keepProc = sockPtr->drvPtr->keepProc;
+    if (keepProc == NULL)  {
+        result = NS_FALSE;
+    } else {
+        result = (keepProc)((Ns_Sock *) sockPtr);
+    }
+    return result;
 }
 
 
