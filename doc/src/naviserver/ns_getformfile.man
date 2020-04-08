@@ -29,7 +29,7 @@ Second file: <input name="file2" type="file">
 </form>
 [example_end]
 
-and the form is submitted, the sever access the submitted files
+and the form is submitted, the server access the submitted files
 [term file1] and [term file2] via the following snippet
 
 [example_begin]

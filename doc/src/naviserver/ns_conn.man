@@ -158,12 +158,21 @@ with a POST or appended to the URL in a GET request.
 upload widgets. Use [cmd ns_getform] instead.
 
 
+[call [cmd  "ns_conn headerlength"]]
+
+Returns the length of the header. Together with
+[cmd "ns_conn contentlength"] this can be used to
+determine the uncompressed request size,
+(not counting chunked overhead).
+
 [call [cmd  "ns_conn headers"]]
 
 Returns all the HTTP request header fields as an [cmd ns_set].
 The keys of the ns_set represent the field
-names. The case of the returned field names depends on the HeaderCase configuration
-parameter. By default, HeaderCase is "Preserve", which means case is preserved.
+names. The case of the returned field names depends
+on the "HeaderCase" configuration
+parameter. By default, HeaderCase is "Preserve",
+which means case is preserved.
 
 [call [cmd  "ns_conn host"]]
 
