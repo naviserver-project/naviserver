@@ -1103,6 +1103,8 @@ NS_EXTERN void Ns_IncrTime(Ns_Time *timePtr, long sec, long usec)  NS_GNUC_NONNU
 NS_EXTERN Ns_Time *Ns_AbsoluteTime(Ns_Time *absPtr, Ns_Time *adjPtr)  NS_GNUC_NONNULL(1);
 NS_EXTERN long Ns_DiffTime(const Ns_Time *t1, const Ns_Time *t0, Ns_Time *resultPtr)
   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN long Ns_TimeToMilliseconds(const Ns_Time *timePtr)  NS_GNUC_NONNULL(1);
+
 /*
  * tls.c:
  */
