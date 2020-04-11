@@ -41,8 +41,20 @@ test ns_schedule-1.8 {basic syntax} -body {
 
 
 
+test ns_schedule-2.0.1 {schedule proc: interval} -body {
+    ns_schedule_proc 0s {ns_log notice ok}
+} -returnCodes {error ok} -result {expected time value in range [0.000001s, MAX], for 'interval', but got 0}
+
+test ns_schedule-2.0.2 {schedule proc: interval} -body {
+    ns_schedule_proc -once 0 {nsv_set . . ns_schedule-2.0.2}
+    ns_sleep 1s
+    nsv_get . .
+} -cleanup {
+    nsv_unset . .
+} -returnCodes {error ok} -result {ns_schedule-2.0.2}
+
 test ns_schedule-2.1 {schedule proc: interval} -body {
-    set id [ns_schedule_proc 1 {nsv_lappend . . ns_schedule-2.1}]
+    set id [ns_schedule_proc 1s {nsv_lappend . . ns_schedule-2.1}]
     after 2500
     ns_unschedule_proc $id
     nsv_get . .
@@ -51,7 +63,7 @@ test ns_schedule-2.1 {schedule proc: interval} -body {
 } -match glob -result {ns_schedule-2.1 ns_schedule-2.1*}
 
 test ns_schedule-2.2 {schedule proc once} -body {
-    set id [ns_schedule_proc -once -- 1 {nsv_lappend . . ns_schedule-2.2}]
+    set id [ns_schedule_proc -once -- 1s {nsv_lappend . . ns_schedule-2.2}]
     after 2500
     ns_unschedule_proc $id
     nsv_get . .
