@@ -60,7 +60,7 @@ test cache-1.12 {basic syntax} -body {
 
 test cache-2.1 {cache names} -body {
     lsort [ns_cache_names]
-} -match glob -result {c1 c2 *}
+} -match glob -result {c0 c1 c2 *}
 
 
 

@@ -41,7 +41,7 @@ test filter-2.1 {correct order} -setup {
     ns_register_proc GET /filter-2.1 {ns_return 200 text/plain ok ;#}
 } -body {
     set result [nstest::http -getbody 1 GET /filter-2.1]
-    after 2000
+    ns_sleep 1s
     list $result [nsv_get . .]
 } -cleanup {
     ns_unregister_op GET /filter-2.1
@@ -96,7 +96,7 @@ test filter-2.3 {void trace always runs} -setup {
     ns_logctl severity Error off
     set result [nstest::http GET /filter-2.3]
     ns_logctl severity Error on
-    after 2000 ;# wait for conn thread to run trace code
+    ns_sleep 1s ;# wait for conn thread to run trace code
     list $result [nsv_get . .]
 } -cleanup {
     nsv_unset -nocomplain . .
@@ -230,7 +230,7 @@ test filter-6.3 {no trace scriptargs} -setup {
     ns_logctl severity Error on
     nstest::http -getbody 1 GET /trace-6.3
     ns_logctl severity Error on
-    after 2500
+    ns_sleep 1s
     nsv_get . .
 } -cleanup {
     nsv_unset -nocomplain . .
@@ -243,7 +243,7 @@ test filter-6.4 {trace scriptargs} -setup {
     ns_logctl severity Error on
     nstest::http -getbody 1 GET /trace-6.4
     ns_logctl severity Error on
-    after 2500
+    ns_sleep 1s
     nsv_get . .
 } -cleanup {
     nsv_unset -nocomplain . .
