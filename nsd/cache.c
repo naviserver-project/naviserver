@@ -313,6 +313,7 @@ Ns_CacheCreateEntry(Ns_Cache *cache, const char *key, int *newPtr)
         ePtr->hPtr = hPtr;
         ePtr->cachePtr = cachePtr;
         Tcl_SetHashValue(hPtr, ePtr);
+        cachePtr->currentSize += (sizeof(Entry) + sizeof(Tcl_HashEntry) + strlen(key));
         ++cachePtr->stats.nmiss;
     } else {
         ePtr = Tcl_GetHashValue(hPtr);
@@ -643,9 +644,10 @@ Ns_CacheSetValueExpires(Ns_Entry *entry, void *value, size_t size,
          * created.  There might be concurrent updates, since
          * e.g. nscache_eval releases its mutex.
          */
-        while (cachePtr->currentSize > maxSize &&
-               cachePtr->lastEntryPtr != ePtr &&
-               cachePtr->lastEntryPtr->value != NULL) {
+        while (cachePtr->currentSize > maxSize
+               && cachePtr->lastEntryPtr != ePtr
+               && cachePtr->lastEntryPtr->value != NULL
+               ) {
             Ns_CacheDeleteEntry((Ns_Entry *) cachePtr->lastEntryPtr);
             ++cachePtr->stats.npruned;
         }
@@ -747,10 +749,13 @@ Ns_CacheDeleteEntry(Ns_Entry *entry)
 {
     Entry         *ePtr;
     Tcl_HashEntry *hPtr;
+    const char    *key;
 
     NS_NONNULL_ASSERT(entry != NULL);
 
     ePtr = (Entry *) entry;
+    key = Tcl_GetHashKey(&ePtr->cachePtr->entriesTable, ePtr->hPtr);
+    ePtr->cachePtr->currentSize -= (sizeof(Entry) + sizeof(Tcl_HashEntry) + strlen(key));
     Ns_CacheUnsetValue(entry);
     Remove(ePtr);
     Tcl_DeleteHashEntry(ePtr->hPtr);
