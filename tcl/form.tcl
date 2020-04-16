@@ -193,13 +193,13 @@ proc ns_getform {{charset ""}}  {
 
     if {![info exists ::_ns_form]} {
 
+        set ::_ns_form [ns_conn form]
         set tmpfile [ns_conn contentfile]
         if { $tmpfile eq "" } {
             #
             # Get the content via memory (indirectly via [ns_conn
             # content], the command [ns_conn form] does this)
             #
-            set ::_ns_form [ns_conn form]
             foreach {file} [ns_conn files] {
                 set offs [ns_conn fileoffset $file]
                 set lens [ns_conn filelength $file]
@@ -226,7 +226,6 @@ proc ns_getform {{charset ""}}  {
             #
             # Get the content via external content file
             #
-            set ::_ns_form [ns_set create]
             ns_parseformfile $tmpfile $::_ns_form [ns_set iget [ns_conn headers] content-type]
             ns_atclose [list file delete -- $tmpfile]
         }
