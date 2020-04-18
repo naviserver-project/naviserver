@@ -69,7 +69,8 @@ static Tcl_ObjCmdProc
     DbObjCmd,
     GetCsvObjCmd,
     PoolDescriptionObjCmd,
-    QuoteListToListObjCmd;
+    QuoteListToListObjCmd,
+    QuoteValueObjCmd;
 static int ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, char cmd);
 
 
@@ -149,6 +150,7 @@ NsDbAddCmds(Tcl_Interp *interp, const void *arg)
     (void)Tcl_CreateObjCommand(interp, "ns_dberrormsg", DbErrorMsgObjCmd, idataPtr, NULL);
     (void)Tcl_CreateObjCommand(interp, "ns_dbconfigpath", DbConfigPathObjCmd, idataPtr, NULL);
     (void)Tcl_CreateObjCommand(interp, "ns_pooldescription", PoolDescriptionObjCmd, idataPtr, NULL);
+    (void)Tcl_CreateObjCommand(interp, "ns_dbquotevalue", QuoteValueObjCmd, idataPtr, NULL);
 
     return TCL_OK;
 }
@@ -1119,6 +1121,94 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         }
         Ns_DStringFree(&ds);
         Tcl_SetObjResult(interp, listObj);
+    }
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ * QuoteValueObjCmd --
+ *
+ *      Prepare a value string for inclusion in an SQL statement:
+ *      -  "" is translated into NULL.
+ *      -  All values of any numeric type are left alone.
+ *      -  All other values are surrounded by single quotes and any
+ *         single quotes included in the value are escaped (i.e. translated
+ *         into 2 single quotes).
+ *
+ * Results:
+ *      Tcl standard result codes.
+ *
+ * Side effects:
+ *      Modifing interp result.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+QuoteValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int         result, valueType = INTCHAR('q');
+    Tcl_Obj    *valueObj;
+    static Ns_ObjvTable valueTypes[] = {
+        {"decimal",  UCHAR('n')},
+        {"double",   UCHAR('n')},
+        {"integer",  UCHAR('n')},
+        {"int",      UCHAR('n')},
+        {"real",     UCHAR('n')},
+        {"smallint", UCHAR('n')},
+        {"bigint",   UCHAR('n')},
+        {"bit",      UCHAR('n')},
+        {"float",    UCHAR('n')},
+        {"numeric",  UCHAR('n')},
+        {"tinyint",  UCHAR('n')},
+        {"text",     UCHAR('q')},
+        {NULL,    0u}
+    };
+    Ns_ObjvSpec args[] = {
+        {"value",    Ns_ObjvObj,    &valueObj,  NULL},
+        {"?type",    Ns_ObjvIndex,  &valueType, valueTypes},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+
+    } else if (*Tcl_GetString(valueObj) == '\0') {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("NULL", 4));
+        result = TCL_OK;
+
+    } else if (valueType == INTCHAR('n')) {
+        Tcl_SetObjResult(interp, valueObj);
+        result = TCL_OK;
+
+    } else {
+        Tcl_DString ds;
+        const char *valueString;
+        int         valueLength;
+
+        valueString = Tcl_GetStringFromObj(valueObj, &valueLength);
+        Tcl_DStringInit(&ds);
+        Tcl_DStringAppend(&ds, "'", 1);
+
+        while (1) {
+            const char *p = strchr(valueString, INTCHAR('\''));
+            if (p == NULL) {
+                Tcl_DStringAppend(&ds, valueString, valueLength);
+                break;
+            } else {
+                int length = (p - valueString) + 1;
+                Tcl_DStringAppend(&ds, valueString, length);
+                Tcl_DStringAppend(&ds, "'", 1);
+                valueString = p+1;
+                valueLength -= length;
+            }
+        }
+        Tcl_DStringAppend(&ds, "'", 1);
+        Tcl_DStringResult(interp, &ds);
+        result = TCL_OK;
     }
     return result;
 }
