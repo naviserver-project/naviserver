@@ -85,8 +85,13 @@ DLL = $(MOD:.so=)
 !endif
 
 
-## To (I think) enable OpenSSL support, turn this on:
-#HAVE_OPENSSL_EVP_H=1
+# To enable OpenSSL (for both core nsd.exe and nsssl.dll), you must
+# define HAVE_OPENSSL_EVP_H in TWO files in "naviserver/include/":
+#   Makefile.win32 and nsconfig-win32.h
+# I tried many other approaches but could not get the build to work
+# any other way.  --atp@piskorski.com, 2020/05/01 12:17 EDT
+
+HAVE_OPENSSL_EVP_H=1
 
 # For past OpenSSL-related link problems, see:
 #   https://sourceforge.net/p/naviserver/mailman/message/36519758/
@@ -107,6 +112,9 @@ openssl_64 = C:\P\OpenSSL-Win64
 openssl_32 = C:\P\OpenSSL-Win32
 #openssl_64 = C:\P\openssl-indy_1.0.2q\64
 #openssl_32 = C:\P\openssl-indy_1.0.2q\32
+
+# Make sure you also add e.g. C:\P\OpenSSL-Win64\bin to your system PATH,
+# so that NaviServer finds the libssl*.dll it needs when it runs.
 
 # We have lots of flavors of the OpenSSL libraries.  I normally build
 # NaviServer with /MDd, so presumably we need the corresponding
