@@ -69,8 +69,10 @@ static Tcl_ObjCmdProc
     DbObjCmd,
     GetCsvObjCmd,
     PoolDescriptionObjCmd,
+    QuoteListObjCmd,
     QuoteListToListObjCmd,
     QuoteValueObjCmd;
+
 static int ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, char cmd);
 
 
@@ -79,6 +81,22 @@ static int ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
  */
 
 static const char *const datakey = "nsdb:data";
+
+static const Ns_ObjvTable valueTypes[] = {
+    {"decimal",  UCHAR('n')},
+    {"double",   UCHAR('n')},
+    {"integer",  UCHAR('n')},
+    {"int",      UCHAR('n')},
+    {"real",     UCHAR('n')},
+    {"smallint", UCHAR('n')},
+    {"bigint",   UCHAR('n')},
+    {"bit",      UCHAR('n')},
+    {"float",    UCHAR('n')},
+    {"numeric",  UCHAR('n')},
+    {"tinyint",  UCHAR('n')},
+    {"text",     UCHAR('q')},
+    {NULL,    0u}
+};
 
 
 /*
@@ -148,6 +166,7 @@ NsDbAddCmds(Tcl_Interp *interp, const void *arg)
     (void)Tcl_CreateObjCommand(interp, "ns_dberrorcode", DbErrorCodeObjCmd, idataPtr, NULL);
     (void)Tcl_CreateObjCommand(interp, "ns_dberrormsg", DbErrorMsgObjCmd, idataPtr, NULL);
     (void)Tcl_CreateObjCommand(interp, "ns_dbquotevalue", QuoteValueObjCmd, idataPtr, NULL);
+    (void)Tcl_CreateObjCommand(interp, "ns_dbquotelist", QuoteListObjCmd, idataPtr, NULL);
     (void)Tcl_CreateObjCommand(interp, "ns_getcsv", GetCsvObjCmd, idataPtr, NULL);
     (void)Tcl_CreateObjCommand(interp, "ns_pooldescription", PoolDescriptionObjCmd, idataPtr, NULL);
     (void)Tcl_CreateObjCommand(interp, "ns_quotelisttolist", QuoteListToListObjCmd, idataPtr, NULL);
@@ -1141,34 +1160,49 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *      Tcl standard result codes.
  *
  * Side effects:
- *      Modifing interp result.
+ *      Modifying interp result.
  *
  *----------------------------------------------------------------------
  */
+static void
+QuoteSqlValue(Tcl_DString *dsPtr, Tcl_Obj *valueObj, unsigned char valueType)
+{
+    int         valueLength;
+    const char *valueString;
+
+    valueString = Tcl_GetStringFromObj(valueObj, &valueLength);
+
+    if (valueType == INTCHAR('n')) {
+        Tcl_DStringAppend(dsPtr, valueString, valueLength);
+
+    } else {
+        Tcl_DStringAppend(dsPtr, "'", 1);
+
+        while (1) {
+            const char *p = strchr(valueString, INTCHAR('\''));
+            if (p == NULL) {
+                Tcl_DStringAppend(dsPtr, valueString, valueLength);
+                break;
+            } else {
+                int length = (p - valueString) + 1;
+                Tcl_DStringAppend(dsPtr, valueString, length);
+                Tcl_DStringAppend(dsPtr, "'", 1);
+                valueString = p+1;
+                valueLength -= length;
+            }
+        }
+        Tcl_DStringAppend(dsPtr, "'", 1);
+    }
+}
 
 static int
 QuoteValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int         result, valueType = INTCHAR('q');
     Tcl_Obj    *valueObj;
-    static Ns_ObjvTable valueTypes[] = {
-        {"decimal",  UCHAR('n')},
-        {"double",   UCHAR('n')},
-        {"integer",  UCHAR('n')},
-        {"int",      UCHAR('n')},
-        {"real",     UCHAR('n')},
-        {"smallint", UCHAR('n')},
-        {"bigint",   UCHAR('n')},
-        {"bit",      UCHAR('n')},
-        {"float",    UCHAR('n')},
-        {"numeric",  UCHAR('n')},
-        {"tinyint",  UCHAR('n')},
-        {"text",     UCHAR('q')},
-        {NULL,    0u}
-    };
     Ns_ObjvSpec args[] = {
-        {"value",    Ns_ObjvObj,    &valueObj,  NULL},
-        {"?type",    Ns_ObjvIndex,  &valueType, valueTypes},
+        {"value",    Ns_ObjvObj,   &valueObj,  NULL},
+        {"?type",    Ns_ObjvIndex, &valueType, (void*)valueTypes},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -1186,33 +1220,77 @@ QuoteValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 
     } else {
         Tcl_DString ds;
-        const char *valueString;
-        int         valueLength;
 
-        valueString = Tcl_GetStringFromObj(valueObj, &valueLength);
         Tcl_DStringInit(&ds);
-        Tcl_DStringAppend(&ds, "'", 1);
-
-        while (1) {
-            const char *p = strchr(valueString, INTCHAR('\''));
-            if (p == NULL) {
-                Tcl_DStringAppend(&ds, valueString, valueLength);
-                break;
-            } else {
-                int length = (p - valueString) + 1;
-                Tcl_DStringAppend(&ds, valueString, length);
-                Tcl_DStringAppend(&ds, "'", 1);
-                valueString = p+1;
-                valueLength -= length;
-            }
-        }
-        Tcl_DStringAppend(&ds, "'", 1);
+        QuoteSqlValue(&ds, valueObj, valueType);
         Tcl_DStringResult(interp, &ds);
+
         result = TCL_OK;
     }
     return result;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ * QuoteListObjCmd --
+ *
+ *      Prepare a value string for inclusion in an SQL statement:
+ *      -  "" is translated into NULL.
+ *      -  All values of any numeric type are left alone.
+ *      -  All other values are surrounded by single quotes and any
+ *         single quotes included in the value are escaped (i.e. translated
+ *         into 2 single quotes).
+ *
+ * Results:
+ *      Tcl standard result codes.
+ *
+ * Side effects:
+ *      Modifying interp result.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+QuoteListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int         result, valueType = INTCHAR('q');
+    Tcl_Obj    *listObj;
+    Ns_ObjvSpec args[] = {
+        {"list",  Ns_ObjvObj,   &listObj,   NULL},
+        {"?type", Ns_ObjvIndex, &valueType, (void*)valueTypes},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Tcl_DString ds;
+        int         objc;
+        Tcl_Obj   **objv;
+
+        Tcl_DStringInit(&ds);
+        if (Tcl_ListObjGetElements(interp, listObj, &objc, &objv) == TCL_OK) {
+            int i;
+
+            for (i = 0; i < objc; i++) {
+                QuoteSqlValue(&ds, objv[i], valueType);
+                if (i < objc-1) {
+                    Tcl_DStringAppend(&ds, ",", 1);
+                }
+            }
+            Tcl_DStringResult(interp, &ds);
+            result = TCL_OK;
+
+        } else {
+            result = TCL_ERROR;
+        }
+
+        result = TCL_OK;
+    }
+    return result;
+}
 
 /*
  *----------------------------------------------------------------------

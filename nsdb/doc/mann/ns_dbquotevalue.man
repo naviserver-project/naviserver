@@ -30,6 +30,12 @@ by single quotes, and any single quotes that it contains will be escaped by
 translation into two single quotes.
 
 
+[call [cmd ns_dbquotelist] [arg list] [opt [arg type]]]
+
+Prepare the provided [arg list] for inclusion in an SQL statement. The
+command calls essentially [cmd ns_dbquotevalue] for every element
+of the list and combined the result with a comma.
+
 
 [call [cmd ns_dbquotename] [arg name]]
 

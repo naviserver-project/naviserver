@@ -121,13 +121,14 @@ List of all currently available NaviServer commands.
 
 [section {Files and File system commands}]
 [list_begin definitions]
-[call [cmd ns_mktemp]]
+[call [cmd ns_filestat]]
 [call [cmd ns_ftruncate]]
+[call [cmd ns_hashpath]]
+[call [cmd ns_mktemp]]
 [call [cmd ns_normalizepath]]
+[call [cmd ns_rollfile]]
 [call [cmd ns_symlink]]
 [call [cmd ns_truncate]]
-[call [cmd ns_rollfile]]
-[call [cmd ns_filestat]]
 [list_end]
 
 [section {Hashing and Encryption commands}]
@@ -389,7 +390,6 @@ List of all currently available NaviServer commands.
 
 [section {Virtual Server commands}]
 [list_begin definitions]
-[call [cmd ns_hashpath]]
 [call [cmd ns_serverpath]]
 [call [cmd ns_pagepath]]
 [call [cmd ns_serverrootproc]]
