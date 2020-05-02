@@ -308,6 +308,10 @@ DLLOPTS	=
 #DLLOPTS = /EXPORT:Ns_ModuleInit
 !endif
 
+!if "$(DLL)" == "nsdb"
+DLLOPTS = $(DLLOPTS) /EXPORT:Ns_LogSqlDebug
+!endif
+
 !endif
 
 
