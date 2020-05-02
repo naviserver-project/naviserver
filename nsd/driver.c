@@ -1011,17 +1011,13 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     drvPtr->maxqueuesize   = Ns_ConfigIntRange(path, "maxqueuesize", 1024,   1, INT_MAX);
 
     Ns_ConfigTimeUnitRange(path, "sendwait",
-                           "30s", 1, 0, INT_MAX, 0,
-                           &drvPtr->sendwait);
+                           "30s", 1, 0, INT_MAX, 0, &drvPtr->sendwait);
     Ns_ConfigTimeUnitRange(path, "recvwait",
-                           "30s", 1, 0, INT_MAX, 0,
-                           &drvPtr->recvwait);
+                           "30s", 1, 0, INT_MAX, 0, &drvPtr->recvwait);
     Ns_ConfigTimeUnitRange(path, "closewait",
-                           "2s", 0, 0, INT_MAX, 0,
-                           &drvPtr->closewait);
+                           "2s", 0, 0, INT_MAX, 0, &drvPtr->closewait);
     Ns_ConfigTimeUnitRange(path, "keepwait",
-                           "5s", 0, 0, INT_MAX, 0,
-                           &drvPtr->keepwait);
+                           "5s", 0, 0, INT_MAX, 0, &drvPtr->keepwait);
 
     drvPtr->backlog        = Ns_ConfigIntRange(path, "backlog",       256,   1, INT_MAX);
     drvPtr->driverthreads  = Ns_ConfigIntRange(path, "driverthreads",   1,   1, 32);
@@ -2638,6 +2634,7 @@ static void
 RequestNew(Sock *sockPtr)
 {
     Request *reqPtr;
+    bool     reuseRequest = NS_TRUE;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
@@ -2647,10 +2644,15 @@ RequestNew(Sock *sockPtr)
     Ns_MutexLock(&reqLock);
     reqPtr = firstReqPtr;
     if (likely(reqPtr != NULL)) {
-        Ns_Log(DriverDebug, "RequestNew reuses a Request");
         firstReqPtr = reqPtr->nextPtr;
+    } else {
+        reuseRequest = NS_FALSE;
     }
     Ns_MutexUnlock(&reqLock);
+
+    if (reuseRequest) {
+        Ns_Log(DriverDebug, "RequestNew reuses a Request");
+    }
 
     /*
      * In case we failed, allocate a new Request.
@@ -3562,6 +3564,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
             /*
              * Get a temporary fd. These FDs are used for mmapping.
              */
+
             sockPtr->tfd = Ns_GetTemp();
         }
 
@@ -7062,7 +7065,7 @@ NsAsyncWriterQueueEnable(void)
          */
         if (asyncWriter == NULL) {
             Ns_MutexLock(&reqLock);
-            if (asyncWriter == NULL) {
+            if (likely(asyncWriter == NULL)) {
                 /*
                  * Allocate and initialize writer thread context.
                  */
