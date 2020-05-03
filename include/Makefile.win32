@@ -113,6 +113,9 @@ openssl_32 = C:\P\OpenSSL-Win32
 # *MDd.lib libraries here.  (TODO: How to autodetect this correctly?)
 
 # Same sort of code as for TCLPATH in naviserver/Makefile.win32:
+!if "" == "$(TARGET_CPU)"
+TARGET_CPU = $(VSCMD_ARG_TGT_ARCH)
+!endif
 !if "x86" == "$(TARGET_CPU)"
 #openssl_libs = ssleay32.lib libeay32.lib
 #openssl_libs = ssleay32MDd.lib libeay32MDd.lib

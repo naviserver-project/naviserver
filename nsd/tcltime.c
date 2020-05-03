@@ -40,10 +40,10 @@
 /*
  * math.h is only needed for round()
  *
- * But the older MS Windows compiler I am using does not include round() in
- * its math.h!  For now use this hack.  TODO: Add a check for newer math.h?
+ * But older Microsoft Windows compilers do not include round() in math.h!  So
+ * for them, use the hack below:
  */
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && _MSC_VER <= 1600
 static double round(double val) { return floor(val + 0.5); }
 #else
 #include <math.h>
