@@ -477,6 +477,17 @@ proc ns_adp_safeeval {args} {
     return [ns_adp_parse -safe -- {*}$args]
 }
 
+#
+# ns_adp_mime --
+#
+#   deprecated version of ns_adp_mimetype
+#   use "ns_adp_mimetype ..." instead
+#
+proc ns_adp_mime {args} {
+    ns_deprecated "ns_adp_mimetype"
+    return [ns_adp_mimetype {*}$args]
+}
+
 # Local variables:
 #    mode: tcl
 #    tcl-indent-level: 4
