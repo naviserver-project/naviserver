@@ -428,6 +428,52 @@ Proxy handle is currently busy with the evaluation.
 [list_end]
 
 
+[section CONFIGURATION]
+
+The default settings of the configuration parameters of [cmd ns_proxy]
+can be provided in the configuration file of NaviServer.
+
+[example_begin]
+# Loading the nxproxy module in the [term modules] section
+# of the server.
+ns_section	ns/server/${servername}/modules {
+    # ...
+    ns_param	nsproxy			${homedir}/bin/nsproxy
+    # ...
+}
+ 
+# Configuring the nsproxy module
+[cmd ns_section] ns/server/${servername}/module/nsproxy {
+
+    # Proxy program to start
+    ns_param	exec			${homedir}/bin/nsproxy
+
+    # Timeout when evaluating scripts
+    ns_param	evaltimeout		0s
+
+    # Timeout when getting proxy handles
+    ns_param	gettimeout		0s
+
+    # Timeout to send data
+    ns_param	sendtimeout		5s
+
+    # Timeout to receive results
+    ns_param	recvtimeout		5s
+
+    # Timeout to wait for slaves to die
+    ns_param	waittimeout		1s
+
+    # Timeout for a slave to live idle
+    ns_param	idletimeout		5m
+
+    # log eval operations longer than this to the system log
+    ns_param	logminduration		1s
+
+    # Max number of allowed slaves alive
+    ns_param	maxslaves		8
+}
+[example_end]
+
 
 [section EXAMPLES]
 
