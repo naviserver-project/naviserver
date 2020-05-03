@@ -409,8 +409,8 @@ For every pool the following configuration options might be used:
 
 [list_begin definitions]
 
-[def CheckInterval] Integer: Check after this number of seconds for
-stale connections. Default: 600.
+[def CheckInterval] Check after this time interval for
+stale connections. Default: 5m.
 
 [def Connections] Integer: The maximum number of connections that can
 be established at any one time. The server automatically makes
@@ -426,35 +426,44 @@ datasource has the form "${db_host}:${db_port}:${db_name}". See also:
 [def Driver] Name of the driver for this pool as specified in
 [term ns/db/drivers].
 
-[def LogMinDuration] Seconds in floating point format. When SQL
+[def LogMinDuration] Time interval for logging SQL statements. When SQL
 logging is turned on, log only SQL queries that take longer than the
-specified duration (similar to log_min_duration_statement in PostgreSQL)
+specified duration (similar to log_min_duration_statement in
+PostgreSQL). Setting [term LogMinDuration] to 0 causes all SQL
+statements to be logged.
 
 [def LogSQLErrors] Boolean value: If set to [term On], SQL errors are
 written to the server log along with the offending SQL statement(s).
 
-[def MaxIdle] Integer: The maximum time in seconds that a database
+[def MaxIdle] The maximum time interval that a database
 connection within this pool can remain open and idle.  The default
-setting of 600 causes connections that are idle for 10 minutes to be
+setting of "10m" causes connections that are idle for 10 minutes to be
 closed. Note that [term MaxIdle] will not have an effect if it is
 equal to [term MaxOpen]. Setting [term MaxIdle] to 0 deactivates the
 automatic closing feature on idle connections.
+Default: 5m
 
-[def MaxOpen] Integer: The maximum time in seconds that a database
+[def MaxOpen] The maximum time interval that a database
 connection within this pool can remain open.  The default setting of
-3600 causes connections to keep open for one hour regardless of
+"60m" causes connections to keep open for one hour regardless of
 activity level. Database connections will then be opened again as
 needed up to the value of the [term Connections] parameter.  It is
 recommended that [term MaxOpen] be a multiple of [term MaxIdle];
 otherwise, [term MaxOpen] may be off by as much as (MaxOpen mod MaxIdle).
 Setting [term MaxOpen] to 0 deactivates the automatic closing feature.
+Default: 60m
 
-[def Password] Password to log into the database.
+[def Password] Password to log in to the database.
 
-[def User] Username to log into the database. 
+[def User] Username to log in to the database.
 
 [list_end]
 
+All time intervals can be specified with and without a time unit
+suffix. Valid time units are "ms", "s", "m", "h", "d".
+If no time unit suffix is specified, seconds are assumed.
+
+[para]
 Below is a sample configuration for two pools. The referenced Tcl
 variables have to be set earlier to appropriate values.
 
