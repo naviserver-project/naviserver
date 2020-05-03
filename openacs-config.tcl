@@ -867,6 +867,7 @@ ns_section ns/server/${server}/module/nsproxy {
     # ns_param	recvtimeout        5s
     # ns_param	waittimeout        100ms
     # ns_param	idletimeout        5m
+    # ns_param	logminduration     1s
 }
 
 #

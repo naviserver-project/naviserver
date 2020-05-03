@@ -173,6 +173,11 @@ Specifies a script to evaluate when proxies are started.  This can
 be used to load additional libraries and/or source script files.
 The default is no script.
 
+[opt_def -logminduration [arg timeout]]
+Specifies a time limit for logging (long) eval operations to the system
+log (similar to "logminduration" in the db drivers). Set it to a high
+value to avoid logging (e.g. 1d). The default is 1s.
+
 [opt_def -maxruns [arg n]]
 Sets the maximum number of activation of the proxy slave process.
 When the limit it reached, the slave process is automatically restarted.

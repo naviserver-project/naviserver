@@ -174,6 +174,7 @@ typedef struct ProxyConf {
     Ns_Time        trecv;    /* Timeout to receive results over pipe */
     Ns_Time        twait;    /* Timeout to wait for slaves to die */
     Ns_Time        tidle;    /* Timeout for slave to be idle */
+    Ns_Time        logminduration;  /* Log commands taking longer than this duration */
     int            maxruns;  /* Max number of proxy uses */
 } ProxyConf;
 
@@ -1031,11 +1032,14 @@ SetExpire(Slave *slavePtr, Ns_Time *timePtr)
 static int
 Eval(Tcl_Interp *interp, Proxy *proxyPtr, const char *script, Ns_Time *timeoutPtr)
 {
-    Err err;
-    int status = TCL_ERROR;
+    Err     err;
+    int     status = TCL_ERROR;
+    Ns_Time startTime;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(proxyPtr != NULL);
+
+    Ns_GetTime(&startTime);
 
     err = Send(interp, proxyPtr, script);
     if (err == ENone) {
@@ -1047,6 +1051,15 @@ Eval(Tcl_Interp *interp, Proxy *proxyPtr, const char *script, Ns_Time *timeoutPt
          * Don't count check-proxy calls (script == NULL)
          */
         if (script != NULL) {
+            Ns_Time endTime, diffTime;
+
+            Ns_GetTime(&endTime);
+            (void)Ns_DiffTime(&endTime, &startTime, &diffTime);
+            if (Ns_DiffTime(&proxyPtr->conf.logminduration, &diffTime, NULL) < 1) {
+                Ns_Log(Notice, "nsproxy %s duration %" PRId64 ".%06ld secs: '%s'",
+                       proxyPtr->poolPtr->name, (int64_t)diffTime.sec, diffTime.usec, script);
+            }
+
             Ns_Log(Debug, "Eval calls GetStats <%s>", script);
             GetStats(proxyPtr);
         }
@@ -2138,12 +2151,12 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
     static const char *flags[] = {
         "-init", "-reinit", "-maxslaves", "-exec", "-env",
         "-gettimeout", "-evaltimeout", "-sendtimeout", "-recvtimeout",
-        "-waittimeout", "-idletimeout", "-maxruns", NULL
+        "-waittimeout", "-idletimeout", "-logminduration", "-maxruns", NULL
     };
     enum {
         CInitIdx, CReinitIdx, CMaxslaveIdx, CExecIdx, CEnvIdx,
         CGetIdx, CEvalIdx, CSendIdx, CRecvIdx,
-        CWaitIdx, CIdleIdx, CMaxrunsIdx
+        CWaitIdx, CIdleIdx, CLogmindurationIdx, CMaxrunsIdx
     };
 
     if (objc < 3) {
@@ -2175,6 +2188,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
             case CEvalIdx:
             case CGetIdx:
             case CIdleIdx:
+            case CLogmindurationIdx:
             case CRecvIdx:
             case CSendIdx:
             case CWaitIdx: {
@@ -2199,6 +2213,9 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
                     break;
                 case CGetIdx:
                     poolPtr->conf.tget = timeout;
+                    break;
+                case CLogmindurationIdx:
+                    poolPtr->conf.logminduration = timeout;
                     break;
                 case CIdleIdx:
                     {
@@ -2306,6 +2323,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
             AppendObj(listObj, flags[CRecvIdx],     Ns_TclNewTimeObj(&poolPtr->conf.trecv));
             AppendObj(listObj, flags[CWaitIdx],     Ns_TclNewTimeObj(&poolPtr->conf.twait));
             AppendObj(listObj, flags[CIdleIdx],     Ns_TclNewTimeObj(&poolPtr->conf.tidle));
+            AppendObj(listObj, flags[CLogmindurationIdx], Ns_TclNewTimeObj(&poolPtr->conf.logminduration));
             Tcl_SetObjResult(interp, listObj);
         }
 
@@ -2332,6 +2350,8 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
         case CWaitIdx:     Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&poolPtr->conf.twait));
             break;
         case CIdleIdx:     Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&poolPtr->conf.tidle));
+            break;
+        case CLogmindurationIdx: Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&poolPtr->conf.logminduration));
             break;
         case CEnvIdx:
             if (poolPtr->env) {
@@ -2736,6 +2756,10 @@ GetPool(const char *poolName, InterpData *idataPtr)
                                &poolPtr->conf.tidle);
 
         poolPtr->maxslaves  = Ns_ConfigInt(path, "maxslaves", 8);
+
+        Ns_ConfigTimeUnitRange(path, "logminduration",
+                               "1s", 0, 0, INT_MAX, 0,
+                               &poolPtr->conf.logminduration);
 
         for (i = 0; i < poolPtr->maxslaves; i++) {
             proxyPtr = CreateProxy(poolPtr);

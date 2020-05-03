@@ -760,6 +760,9 @@ ns_section  "ns/server/${servername}/module/nsproxy" {
     # Timeout for a slave to live idle
     ns_param	idletimeout		5m
 
+    # log eval operations longer than this to the system log
+    ns_param	logminduration		1s
+
     # Max number of allowed slaves alive
     ns_param	maxslaves		8
 }
