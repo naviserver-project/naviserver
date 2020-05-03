@@ -45,17 +45,17 @@ address from the host name (either the specified host name or the host
 name reported by the OS).
 
 [def backlog]
-Maximum number of entries for waiting listen connections (integer,
-default: 256)
+Maximum number of entries for waiting listen connections
+(integer, default: 256)
 
 [def bufsize]
 Maximum size in bytes (octets) for a single receive operation.
 The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB);
-default: 16kB
+(memory unit, default: 16kB)
 
 [def closewait]
 Timeout for close on socket to drain potential garbage if
-no keep alive is performed. (value with optional time unit, default: 2s)
+no keep alive is performed. (time unit, default: 2s)
 
 [def defaultserver] In a virtual server setup (when the driver module
 is loaded globally), this parameter is required and refers to the
@@ -100,17 +100,16 @@ Hostname of the server, can be looked up automatically if not specified.
 [def keepalivemaxdownloadsize]
 Don't allow keep-alive for downloads content larger than this size in
 bytes; a value of 0 means that this feature is deactivated.
-The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB);
-(default: 0)
+(memory unit, default: 0)
 
 [def keepalivemaxuploadsize]
 Don't allow keep-alive for upload content larger than this size in
 bytes; a value of 0 means that this feature is deactivated.
-The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB);
-(default: 0)
+(memory unit, default: 0)
 
 [def keepwait]
-Timeout for keep-alive. (value with optional time unit, default: 5s)
+Timeout for keep-alive.
+(time unit, default: 5s)
 
 [def location]
 Provide a default for protocol://hostname[lb]:port[rb]. Useful
@@ -120,26 +119,25 @@ for virtual servers.
 Maximum number of header lines (integer, 128)
 
 [def maxinput]
-Maximum size in bytes (octets) for content loaded into the server,
-such as upload of files.  The value can be specified in memory units
-(kB, MB, GB, KiB, MiB, GiB); (default: 1MB)
+Maximum size in for content loaded into the server,
+such as upload of files.
+(memory unit, default: 1MB)
 
 [def maxline]
-Maximum size in bytes (octets) of a single header line (integer,
-default: 8192)
+Maximum size in bytes (octets) of a single header line
+(integer, default: 8192)
 
 [def maxqueuesize]
 Size of the queue of accepted requests waiting for a connection thread
 (integer, default 1024).
 
-[def maxupload] Spool uploads to tmp-filesb for uploads larger than
-this size in bytes in order to keep the memory footprint small. This
+[def maxupload] Spool uploads to tmp-files for uploads larger than
+this size (in memory units) in order to keep the memory footprint small. This
 is especially important when large uploads are allowed via [term maxinput]. If
 this value is 0, this feature is deactivated. When spool-to-file is
 activated, the minimal size is the size of [term readahead]
 (see as well [term spoolerthreads]).
-The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB);
-(default: 0)
+(memory unit, default: 0)
 
 [def nodelay]
 TCP Performance option; use TCP_NODELAY to disable Nagle algorithm
@@ -153,9 +151,8 @@ loaded, but the driver will not be listening on any port.
 
 
 [def readahead]
-Maximum size in bytes (octets) for asynchronous read ahead operations.
-The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB);
-(default: value of [term bufsize])
+Maximum size in memory units for asynchronous read ahead operations.
+(memory unit, default: value of [term bufsize])
 
 [def recvwait]
 Timeout for receive operations. (value with optional time unit, default: 30s)
@@ -166,7 +163,7 @@ on the same port (default: false)
 
 
 [def sendwait]
-Timeout for send operations. (value with optional time unit, default: 30s)
+Timeout for send operations. (time unit, default: 30s)
 
 [def spoolerthreads]
 Number of spooler threads used when content larger than
@@ -177,20 +174,18 @@ threads handles upload-spooling as wellto memory; (integer, default: 0)
 Directory for uploads, defaults to the setting of [term "ns/parameter tmpdir"].
 
 [def writerbufsize]
-Buffer size in bytes (octets) for writer threads.
-The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB);
-(default: 8kB)
+Buffer size in memory units for writer threads.
+(memory unit, default: 8kB)
 
 [def writerratelimit]
 Limit the rate of the data transferred via writer threads.
-The value can be specified in KB/s (kilobytes per second) and
+The numeric value can be specified as KB/s (kilobytes per second) and
 can be refined per connection pool or per single connection
 (default: 0, meaning unlimited)
 
 [def writersize]
-Use writer threads for replies above this size.
-The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB);
-(default: 1MB)
+Use writer threads for replies above this memory amount.
+(memory unit, default: 1MB)
 
 [def writerstreaming]
 Use writer threads for streaming HTML output
@@ -200,6 +195,17 @@ Use writer threads for streaming HTML output
 Number of writer threads. (integer, default: 0)
 
 [list_end]
+
+All time units can be specified with and without a time unit
+suffix. Valid time units are "ms", "s", "m", "h", "d".
+If no time unit suffix is specified, seconds are assumed.
+
+[para]
+All memory sizes can be specified with and without a memory unit
+suffix. Valid memory units are kB, MB, GB, KiB, MiB, GiB.
+If no memory unit suffix is specified, bytes are assumed
+
+[para]
 
 [section EXAMPLES]
 

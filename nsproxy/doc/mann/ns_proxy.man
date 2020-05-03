@@ -208,8 +208,6 @@ or [cmd "ns_proxy cleanup"] command.
 
 [list_end]
 
-
-
 [call [cmd "ns_proxy eval"] [arg handle] [arg script] [opt [arg timeout]]]
 
 Evaluates [arg script] in the proxy specified by [arg handle].  The
@@ -354,12 +352,11 @@ The optional [arg timeout] argument specifies a maximum time
 to wait for the command to complete before raising an
 error (see ERROR HANDLING below for details on handling errors).
 
-
-
-
-
 [list_end]
 
+All time units can be specified with and without a time unit
+suffix. Valid time units are "ms", "s", "m", "h", "d".
+If no time unit suffix is specified, seconds are assumed.
 
 
 [section "ERROR HANDLING"]

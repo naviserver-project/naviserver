@@ -446,8 +446,7 @@ CreatePool(NsServer *servPtr, const char *pool)
         Ns_ConfigIntRange(path, "minthreads", 1, 1, poolPtr->threads.max);
 
     Ns_ConfigTimeUnitRange(path, "threadtimeout",
-                           "2m", 0, 0, INT_MAX, 0,
-                           &poolPtr->threads.timeout);
+                           "2m", 0, 0, INT_MAX, 0, &poolPtr->threads.timeout);
 
     poolPtr->rate.defaultConnectionLimit =
         Ns_ConfigIntRange(path, "connectionratelimit", -1, -1, INT_MAX);

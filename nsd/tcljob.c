@@ -1456,8 +1456,8 @@ JobThread(void *UNUSED(arg))
     SetupJobDefaults();
 
     /*
-     * Setting this parameter to > 0 will cause the thread to
-     * graciously exit after processing that many job requests,
+     * Setting parameter "jobsperthread" to > 0 will cause the thread
+     * to graciously exit after processing that many job requests,
      * thus initiating kind-of Tcl-level garbage collection.
      */
 
