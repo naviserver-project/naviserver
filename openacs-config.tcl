@@ -162,12 +162,14 @@ ns_section ns/parameters {
     ns_param    lognotice       true      ;# informational messages
     #ns_param   sanitizelogfiles 2        ;# default: 2; 0: none, 1: full, 2: human-friendly
 
-    # ns_param	mailhost	localhost
-    # ns_param	jobsperthread	0         ;# number of ns_jobs before thread exits
-    # ns_param	jobtimeout	5m        ;# default "ns_job wait" timeout
-    # ns_param	joblogminduration   1s                 ;# default: 1s
-    # ns_param	schedsperthread	0         ;# number of scheduled jobs before thread exits
-    # ns_param	schedmaxelapsed	2s        ;# print warnings when scheduled job takes longer than that
+    # ns_param	mailhost	    localhost
+
+    # ns_param	jobsperthread	    0     ;# number of ns_jobs before thread exits
+    # ns_param	jobtimeout	    5m    ;# default "ns_job wait" timeout
+    # ns_param	joblogminduration   1s    ;# default: 1s
+
+    # ns_param	schedsperthread	    0     ;# number of scheduled jobs before thread exits
+    # ns_param	schedlogminduration 2s    ;# print warnings when scheduled job takes longer than that
 
     # Write asynchronously to log files (access log and error log)
     # ns_param	asynclogwriter	true		;# false

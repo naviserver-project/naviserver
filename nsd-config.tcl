@@ -38,7 +38,7 @@ ns_section "ns/parameters" {
     #ns_param   jobtimeout          0s       ;# default: 5m
     #ns_param	joblogminduration   1s       ;# default: 1s
     ns_param    schedsperthread     10       ;# default: 0
-    #ns_param	schedmaxelapsed	    2s       ;# print warnings when scheduled job takes longer than that
+    #ns_param	schedlogminduration 2s       ;# print warnings when scheduled job takes longer than that
     ns_param    progressminsize     1MB      ;# default: 0
     #ns_param   concurrentinterpcreate true  ;# default: false
     #ns_param   listenbacklog       256      ;# default: 32; backlog for ns_socket commands

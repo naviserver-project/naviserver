@@ -164,6 +164,25 @@ the id doesn't represent a currently scheduled ID.
 
 [list_end]
 
+
+[section CONFIGURATION]
+
+The default settings of the configuration parameters for the
+scheduling commands can be provided in the global parameters of the
+NaviServer configuration file:
+
+[example_begin]
+[cmd ns_section] ns/parameters {
+   # ...
+   # How many jobs to run in any schedule thread before thread exit.
+   ns_param schedsperthread 1000
+   #
+   # Log the the systemlog when a scheduled job takes longer than this time period
+   ns_param schedlogminduration  2s
+   # ...
+}
+[example_end]
+
 [section {Logging}]
 
 
