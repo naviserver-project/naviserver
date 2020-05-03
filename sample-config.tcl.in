@@ -134,17 +134,20 @@ ns_section	"ns/parameters" {
     # Timeout for adding Tcl jobs to the job queue.
     ns_param    jobtimeout             0s      ;# default: 5m
 
+    # Log ns_job operations longer than this to the system log
+    ns_param	joblogminduration      1s      ;# default 1s
+
     # How many Tcl tasks to run in any schedule thread before thread exit.
     ns_param	schedsperthread		0
 
     # Print warnings when scheduled job takes longer than that,
-    ns_param	schedmaxelapsed	2s
+    ns_param	schedmaxelapsed	        2s
 
     # Write asynchronously to log files (access log and error log)
     ns_param	asynlogcwriter		true  ;# default: false
 
     # Print duractions of long mutex calls to stderr.
-    ns_param    mutexlocktrace           true  ;# default: false
+    ns_param    mutexlocktrace          true  ;# default: false
 
     # Reject output operations on already closed connections (e.g. subsequent ns_return statements)
     #ns_param    rejectalreadyclosedconn  false ;# default: true

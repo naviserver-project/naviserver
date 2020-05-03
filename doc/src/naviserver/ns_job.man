@@ -7,12 +7,13 @@
 
 [description]
 
-ns_job manages a thread pool and a set of named "queues". Queues have a max number of
-threads and when the current number of running thread reaches "max" then jobs are 
-queued.  New threads are created when there are less than maxthread number of idle threads.
+ns_job manages a thread pool and a set of named job queues. Job queues
+have a max number of threads and when the current number of running
+thread reaches this maximum number then jobs are queued.  New threads
+are created when there are less than maxthread number of idle threads.
 
-[para]
-This command provides a means for queueing Tcl scripts for evaluation by a pool of threads. 
+[para] This command provides a means for queueing Tcl scripts for
+evaluation by a pool of threads.
 
 [section {COMMANDS}]
 
@@ -33,6 +34,7 @@ can not be cancelled.
 
 [call [cmd "ns_job configure"] \
 	[opt [option {-jobsperthread N}]] \
+	[opt [option {-logminduration T}]] \
 	[opt [option {-timeout T}]]]
 
 Configures jobs system, parameters are:
@@ -49,6 +51,10 @@ job worker thread. When the timeout expires, the thread exits like
 when [option -jobsperthread] runs out. When the [option -timeout] is 0, the
 there will be no timeout.
 
+[para] The parameter [option -logminduration] defines a time limit for
+logging the system log. When a job takes longer the time limit
+it will be logged.
+
 [para] Without any arguments, the command just returns current
 settings values in form of a dict.
 
@@ -61,25 +67,25 @@ Create a new job queue called queueId. If maxthreads is not specified,
 then the default of 4 is used.
 
 
-[call [cmd  "ns_job delete"] [arg queueId]]
+[call [cmd "ns_job delete"] [arg queueId]]
 
 Request that the specified queue be deleted. The queue will only be
 deleted when all jobs are removed.
 
 
-[call [cmd  "ns_job exists"] [arg queueId] [arg jobId]]
+[call [cmd "ns_job exists"] [arg queueId] [arg jobId]]
 
 Returns 1 if such job is running the given queue, otherwise
 returns 0.
 
 
-[call [cmd  "ns_job genid"]]
+[call [cmd "ns_job genid"]]
 
 Generate a new unique ID. This new ID can be used as the queue ID
 without conflicting with any other queue ID.
 
 
-[call [cmd  "ns_job joblist"] [arg queueId]]
+[call [cmd "ns_job joblist"] [arg queueId]]
 
 Returns a list the jobs in the specified queue. Every returned job entry
 has the following fields:
@@ -116,12 +122,12 @@ has the following fields:
 
 
 
-[call [cmd  "ns_job jobs"] [arg queueId]]
+[call [cmd "ns_job jobs"] [arg queueId]]
 
 Return a list of the job IDs.
 
 
-[call [cmd  "ns_job queue"] \
+[call [cmd "ns_job queue"] \
 	[opt [option {-detached}]] \
 	[opt [option -head]] \
 	[opt [option {-jobid id}]] \
@@ -146,7 +152,7 @@ added to the end of the job list.
 [para] The new job's ID is returned.
 
 
-[call [cmd  "ns_job queuelist"]]
+[call [cmd "ns_job queuelist"]]
 
 Returns a list of the queues. A queue has the following fields:
 
@@ -165,12 +171,12 @@ Returns a list of the queues. A queue has the following fields:
 [list_end]
 
 
-[call [cmd  "ns_job queues"]]
+[call [cmd "ns_job queues"]]
 
 Returns a list of the queue IDs.
 
 
-[call [cmd  "ns_job threadlist"]]
+[call [cmd "ns_job threadlist"]]
 
 Returns a list of the thread pool's fields.
 
@@ -189,7 +195,7 @@ Returns a list of the thread pool's fields.
 [list_end]
 
 
-[call [cmd  "ns_job wait"] \
+[call [cmd "ns_job wait"] \
 	[opt [option {-timeout T}]] \
 	[arg queueId] [arg jobId]]
 
@@ -200,7 +206,7 @@ Wait for the specified queued or running job to finish.
 seconds and fractions of seconds) is reached.
 
 
-[call [cmd  "ns_job waitany"] \
+[call [cmd "ns_job waitany"] \
 	[opt [option {-timeout T}]] \
 	[arg queueId]]
 
@@ -211,23 +217,48 @@ seconds and fractions of seconds) is reached.
 
 [list_end]
 
-[section EXAMPLES]
+[section CONFIGURATION]
+
+The default settings of the configuration parameters of [cmd ns_job]
+can be provided in the global parameters of the NaviServer
+configuration file:
 
 [example_begin]
-   % ns_job create q1
-   q1
+[cmd ns_section] ns/parameters {
+   # ...
+   ns_param jobsperthread   1000
+   ns_param jobtimeout        5m
+   ns_param joblogminduration 1s
+   # ...
+}
+[example_end]
+
+
+[section EXAMPLES]
+
+Create a job queue, run a job in this queue and wait for the result.
+
+[example_begin]
+% [cmd "ns_job create"] q1
+q1
    
-   % set j [lb]ns_job queue q1 {
+% set j [lb][cmd "ns_job queue"] q1 {
       ns_log notice start
       ns_sleep 10
       ns_log notice stop
       set x "i am done"}[rb]
-   job0
+job0
    
-   % ns_job wait q1 $j
-   i am done
-   
-   % ns_job queue -detached q1 {ns_log notice "a detached job"}
+% [cmd "ns_job wait"] q1 $j
+i am done
+[example_end]
+
+
+Run a job in this queue in the background and do not wait for the
+result.
+
+[example_begin]
+% [cmd "ns_job queue"] -detached q1 {ns_log notice "a detached job"}
 [example_end]
 
 [see_also nsd ns_schedule_proc]

@@ -202,8 +202,9 @@ struct nsconf {
     } tcl;
 
     struct {
-        int jobsperthread;
         Ns_Time timeout;
+        Ns_Time logminduration;
+        int     jobsperthread;
     } job;
 };
 

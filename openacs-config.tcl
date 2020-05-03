@@ -165,6 +165,7 @@ ns_section ns/parameters {
     # ns_param	mailhost	localhost
     # ns_param	jobsperthread	0         ;# number of ns_jobs before thread exits
     # ns_param	jobtimeout	5m        ;# default "ns_job wait" timeout
+    # ns_param	joblogminduration   1s                 ;# default: 1s
     # ns_param	schedsperthread	0         ;# number of scheduled jobs before thread exits
     # ns_param	schedmaxelapsed	2s        ;# print warnings when scheduled job takes longer than that
 

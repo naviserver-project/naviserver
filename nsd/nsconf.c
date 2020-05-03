@@ -200,6 +200,9 @@ NsConfUpdate(void)
     Ns_ConfigTimeUnitRange(path, "jobtimeout",
                            "5m", 0, 0, LONG_MAX, 0,
                            &nsconf.job.timeout);
+    Ns_ConfigTimeUnitRange(path, "joblogminduration",
+                           "1s", 0, 0, LONG_MAX, 0,
+                           &nsconf.job.logminduration);
 
     /*
      * tclinit.c

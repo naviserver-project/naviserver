@@ -176,9 +176,10 @@ typedef struct ThreadPool {
     int                maxThreads;
     int                nthreads;
     int                nidle;
-    Job               *firstPtr;
     int                jobsPerThread;
+    Job               *firstPtr;
     Ns_Time            timeout;
+    Ns_Time            logminduration;
 } ThreadPool;
 
 
@@ -291,6 +292,8 @@ NsTclInitQueueType(void)
     tp.jobsPerThread = 0;
     tp.timeout.sec = 0;
     tp.timeout.usec = 0;
+    tp.logminduration.sec = 0;
+    tp.logminduration.usec = 0;
 }
 
 
@@ -385,11 +388,12 @@ JobConfigureObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 {
     int               result = TCL_OK;
     int               jpt = -1;
-    Ns_Time          *timeoutPtr = NULL;
+    Ns_Time          *timeoutPtr = NULL, *logminPtr = NULL;
     Ns_ObjvValueRange jptRange = {0, INT_MAX};
     Ns_ObjvSpec    lopts[] = {
         {"-jobsperthread",  Ns_ObjvInt,  &jpt,        &jptRange},
         {"-timeout",        Ns_ObjvTime, &timeoutPtr, NULL},
+        {"-logminduration", Ns_ObjvTime, &logminPtr,  NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -405,8 +409,13 @@ JobConfigureObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         if (timeoutPtr != NULL) {
             tp.timeout = *timeoutPtr;
         }
-        Ns_TclPrintfResult(interp, "jobsperthread %d timeout %ld:%06ld",
-                           tp.jobsPerThread, tp.timeout.sec, tp.timeout.usec);
+        if (logminPtr != NULL) {
+            tp.logminduration = *logminPtr;
+        }
+        Ns_TclPrintfResult(interp, "jobsperthread %d timeout %ld:%06ld logminduration %ld:%06ld",
+                           tp.jobsPerThread,
+                           tp.timeout.sec, tp.timeout.usec,
+                           tp.logminduration.sec, tp.logminduration.usec );
         Ns_MutexUnlock(&tp.queuelock);
     }
 
@@ -1548,6 +1557,16 @@ JobThread(void *UNUSED(arg))
         jobPtr->async  = NULL;
 
         Ns_GetTime(&jobPtr->endTime);
+        {
+            Ns_Time diffTime;
+
+            (void)Ns_DiffTime(&jobPtr->endTime, &jobPtr->startTime, &diffTime);
+            if (Ns_DiffTime(&tp.logminduration, &diffTime, NULL) < 1) {
+                Ns_Log(Notice, "ns_job %s duration %" PRId64 ".%06ld secs: '%s'",
+                       jobPtr->queueId, (int64_t)diffTime.sec, diffTime.usec,
+                       jobPtr->script.string);
+            }
+        }
 
         /*
          * Make sure we show error message for detached job, otherwise
@@ -2390,8 +2409,10 @@ SetupJobDefaults(void)
        tp.jobsPerThread = nsconf.job.jobsperthread;
     }
     if (tp.timeout.sec == 0 && tp.timeout.usec == 0) {
-        tp.timeout.sec = nsconf.job.timeout.sec;
-        tp.timeout.usec = nsconf.job.timeout.usec;
+        tp.timeout = nsconf.job.timeout;
+    }
+    if (tp.logminduration.sec == 0 && tp.logminduration.usec == 0) {
+        tp.logminduration = nsconf.job.logminduration;
     }
 }
 
