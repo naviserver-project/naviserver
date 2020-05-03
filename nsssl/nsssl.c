@@ -426,7 +426,7 @@ OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
  * OCSP_computeResponse --
  *
  *      Get OCSP_RESPONSE either from a cache file or from the cerificate
- *      issuing server via the DER encoded OCSP request. in case the disk
+ *      issuing server via the DER encoded OCSP request. In case the disk
  *      lookup fails, but the request to the AIA server succeeds, the result
  *      is stored for caching in the file system.
  *

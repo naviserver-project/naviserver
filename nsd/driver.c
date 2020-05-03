@@ -574,8 +574,8 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         set = Ns_ConfigCreateSection(path);
 
         /*
-         * Determine the defaultserver. hostname used for the local address to
-         * bind to and/or the HTTP location string.
+         * Determine the "defaultserver" the "hostname" / "address" for
+         * binding to and/or the HTTP location string.
          */
         defserver = Ns_ConfigGetValue(path, "defaultserver");
 
