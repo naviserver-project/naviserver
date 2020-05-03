@@ -130,27 +130,16 @@ Configurable options include:
 
 [list_begin options]
 
-[opt_def -init [arg script]]
-Specifies a script to evaluate when proxies are started.  This can
-be used to load additional libraries and/or source script files.
-The default is no script.
 
-[opt_def -reinit [arg script]]
-Specifies a script to evaluate after being allocated and before
-being returned to the caller. This can be used to re-initialize
-the slave state. The default is no script.
+[opt_def -env [arg setname]]
+Initializes the slave's process environment with keys/values
+passed in the named NaviServer set (see command [cmd ns_set]).
 
-[opt_def -maxslaves [arg n]]
-Sets the maximum number of proxy slave processes. Requests for
-proxies beyond the maximum will result in requesting threads
-waiting for existing proxies to be available instead of creating
-new proxy processes. Setting this value to 0 disables the pool,
-causing all subsequent allocation requests to fail immediately
-(currently allocated proxies, if any, remain valid).
-
-[opt_def -maxruns [arg n]]
-Sets the maximum number of activation of the proxy slave process.
-When the limit it reached, the slave process is automatically restarted.
+[opt_def -evaltimeout [arg timeout]]
+Specifies the maximum time to wait for a script to be evaluated in
+a proxy. This parameter can be overridden on a per-call basis with
+the optional [opt timeout] parameter to [cmd "ns_proxy eval"].
+The default is 0 milliseconds i.e. infinite.
 
 [opt_def -exec [arg program]]
 Specifies the filename of a slave proxy program.  The default is
@@ -163,11 +152,43 @@ routine; see the source code for details.
 Specifies the maximum time to wait to allocate handles from the pool.
 The default is 5 seconds.
 
-[opt_def -evaltimeout [arg timeout]]
-Specifies the maximum time to wait for a script to be evaluated in
-a proxy. This parameter can be overridden on a per-call basis with
-the optional [opt timeout] parameter to [cmd "ns_proxy eval"].
-The default is 0 milliseconds i.e. infinite.
+[opt_def -idletimeout [arg timeout]]
+Specifies the maximum time for an idle slave process to live.
+Minimum value is 5 seconds. After expiry of the idle
+timeout, the reaper thread will close the connection pipe and
+wait [option -waittimeout] for the process to die.
+If the timeout is exceeded, the reaper will send a SIGTERM
+signal and finally a SIGKILL signal (waiting [option -waittimeout]
+in between) to ensure the process eventually exits.
+
+[para]
+Slave processes whose handles are already attached to some Tcl
+interps by the means of the [cmd "ns_proxy get"] command) are not
+expired automatically. The idle timer starts to count at the moment
+their handles are put back to the pool by the [cmd "ns_proxy put"]
+or [cmd "ns_proxy cleanup"] command.
+
+[opt_def -init [arg script]]
+Specifies a script to evaluate when proxies are started.  This can
+be used to load additional libraries and/or source script files.
+The default is no script.
+
+[opt_def -maxruns [arg n]]
+Sets the maximum number of activation of the proxy slave process.
+When the limit it reached, the slave process is automatically restarted.
+
+[opt_def -maxslaves [arg n]]
+Sets the maximum number of proxy slave processes. Requests for
+proxies beyond the maximum will result in requesting threads
+waiting for existing proxies to be available instead of creating
+new proxy processes. Setting this value to 0 disables the pool,
+causing all subsequent allocation requests to fail immediately
+(currently allocated proxies, if any, remain valid).
+
+[opt_def -reinit [arg script]]
+Specifies a script to evaluate after being allocated and before
+being returned to the caller. This can be used to re-initialize
+the slave state. The default is no script.
 
 [opt_def -sendtimeout [arg timeout]]
 [opt_def -recvtimeout [arg timeout]]
@@ -186,25 +207,6 @@ second which should be ample time for a graceful exit unless
 the process is hung executing a very long, misbehaving script,
 resulting in a more disruptive SIGTERM or SIGKILL.
 
-[opt_def -idletimeout [arg timeout]]
-Specifies the maximum time for an idle slave process to live.
-Minimum value is 5 seconds. After expiry of the idle
-timeout, the reaper thread will close the connection pipe and
-wait [option -waittimeout] for the process to die.
-If the timeout is exceeded, the reaper will send a SIGTERM
-signal and finally a SIGKILL signal (waiting [option -waittimeout]
-in between) to ensure the process eventually exits.
-
-[opt_def -env [arg setname]]
-Initializes the slave's process environment with keys/values
-passed in the named NaviServer set (see command [cmd ns_set]).
-
-[para]
-Slave processes whose handles are already attached to some Tcl
-interps by the means of the [cmd "ns_proxy get"] command) are not
-expired automatically. The idle timer starts to count at the moment
-their handles are put back to the pool by the [cmd "ns_proxy put"]
-or [cmd "ns_proxy cleanup"] command.
 
 [list_end]
 
