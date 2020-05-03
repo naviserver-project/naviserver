@@ -52,7 +52,6 @@ List of all currently available NaviServer commands.
 [call [cmd ns_adp_bind_args]]
 [call [cmd ns_adp_debug]]
 [call [cmd ns_adp_include]]
-[call [cmd ns_adp_mime]]
 [call [cmd ns_adp_mimetype]]
 [call [cmd ns_adp_parse]]
 [call [cmd ns_adp_trunc]]
@@ -454,6 +453,7 @@ List of all currently available NaviServer commands.
 [call [cmd "env"]]                  Use [cmd "ns_env"] instead.
 [call [cmd "ns_adp_compress"]]      Use [cmd "ns_conn compress"] instead.
 [call [cmd "ns_adp_eval"]]          Use [cmd "ns_adp_parse"] instead.
+[call [cmd "ns_adp_mime"]]          Use [cmd "ns_adp_mimetype"] instead.
 [call [cmd "ns_adp_registertag"]]   Use [cmd "ns_adp_registeradp"] instead.
 [call [cmd "ns_adp_safeeval"]]      Use [cmd "ns_adp_parse -safe"] instead.
 [call [cmd "ns_adp_stream"]]        Use [cmd "ns_adp_ctl stream"] instead.
