@@ -975,7 +975,8 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
  *      Convert string to time structure.  Check, if the string contains the
  *      classical NaviServer separator for sec:usec and interpret the string
  *      in this format.  If not, check if this has a "." as separator, and use
- *      a floating point notation. an optional time unit can be specified.
+ *      a floating point notation. An optional time unit (ms, s, m, h, d) can
+ *      be specified immediately after the numeric part.
  *
  * Results:
  *      Tcl result code.
