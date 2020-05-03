@@ -168,6 +168,19 @@ span.logo {
 pre.doctools_example {
     background-color: #eeeeee;
     padding: 10px;
-    width: 100%;
+    margin-left: 2em;
+    margin-right: 2em;
 }
 
+div.doctools_section p {
+    margin-left: 2em;
+}
+div.doctools_section p {
+    margin-left: 2em;
+}
+div.doctools_section dl.doctools_definitions p {
+    margin-left: 0em;
+}
+div.doctools_section dl.doctools_definitions dd {
+    margin-left: 2em;
+}
