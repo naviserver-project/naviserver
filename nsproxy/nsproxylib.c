@@ -1920,8 +1920,8 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
     }
 
     switch (opt) {
-    case PReleaseIdx:
-    case PPutIdx:
+    case PReleaseIdx:   NS_FALL_THROUGH; /* fall through */
+    case PPutIdx:       NS_FALL_THROUGH; /* fall through */
     case PPingIdx:
         if (objc != 3) {
             Tcl_WrongNumArgs(interp, 2, objv, "handle");
@@ -2185,12 +2185,12 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
             ++i;
             str = Tcl_GetString(objv[i]);
             switch (flag) {
-            case CEvalIdx:
-            case CGetIdx:
-            case CIdleIdx:
-            case CLogmindurationIdx:
-            case CRecvIdx:
-            case CSendIdx:
+            case CEvalIdx:           NS_FALL_THROUGH; /* fall through */
+            case CGetIdx:            NS_FALL_THROUGH; /* fall through */
+            case CIdleIdx:           NS_FALL_THROUGH; /* fall through */
+            case CLogmindurationIdx: NS_FALL_THROUGH; /* fall through */
+            case CRecvIdx:           NS_FALL_THROUGH; /* fall through */
+            case CSendIdx:           NS_FALL_THROUGH; /* fall through */
             case CWaitIdx: {
                 Ns_Time timeout;
 
@@ -2238,7 +2238,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
                 }
                 break;
             }
-            case CMaxslaveIdx:
+            case CMaxslaveIdx: NS_FALL_THROUGH; /* fall through */
             case CMaxrunsIdx:
                 if (Tcl_GetIntFromObj(interp, objv[i], &n) != TCL_OK) {
                     result = TCL_ERROR;
