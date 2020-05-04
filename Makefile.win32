@@ -1,20 +1,20 @@
 # Emacs mode:  -*-Makefile-*-
-
 #
-# 1. Edit include/Makefile.build and replace Makefile.module with
-#    Makefile.win32
+# To build on Windows using the Microsoft Visual Studio command-line compiler:
 #
-# 2. Update TCLPATH and VC variables below to reflect actual path to
-#    Tcl and VicualC++ installations
+# 1. You no longer need to edit "include/Makefile.build", it now
+#    automatically picks between Makefile.module (for Unix via Gnu
+#    make) and Makefile.win32 (for Window via nmake).
+#
+# 2. Update Update the 'tcl_64' and 'tcllib_64' variables below for
+#    your system.  See also these settings in "include/Makefile.win32":
+#    'HAVE_OPENSSL_EVP_H', 'openssl_64'.
 #
 # 3. Run appropriate Microsoft build setup script.  E.g. one of these:
 #    "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
 #    "%ProgramFiles%\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.Cmd" /Debug /x64 /win7
 #
 # 4. nmake -f Makefile.win32
-#    or
-#    nmake -f Makefile.win32 TCLPATH=c:\tcl VC=c:\vc
-#
 #
 
 tcl_64 = C:\P\Tcl-64-8.6
@@ -67,8 +67,8 @@ INCLUDE = $(MSDK)\Include;$(VC)\include
 !endif
 !endif
 
-# If your call to SetEnv.Cmd is working correctly, you should only
-# need to append to LIB and INCLUDE like this:
+# If your call to vcvars64.bat (or SetEnv.Cmd) is working correctly,
+# you should only need to append to LIB and INCLUDE like this:
 !message Appending to LIB and INCLUDE.
 LIB     = $(LIB);$(TCLPATH)\lib
 INCLUDE = $(INCLUDE);$(TCLPATH)\include
@@ -85,9 +85,10 @@ NMAKE = nmake /nologo TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG
 
 
 # Note our use below of nmake's macro string substitution feature:
+#   https://docs.microsoft.com/en-us/cpp/build/reference/macro-substitution?view=vs-2019
 #   http://msdn.microsoft.com/en-us/library/bsd42ets%28v=vs.110%29.aspx
 #
-# Our use of $(build_targets) below expands into a separate target for
+# Our use of $(core_targets) below expands into a separate target for
 # each module, which is especially convenient when we only want to
 # build one or two of them at a time (e.g., for debugging).  But nmake
 # does not have anything like Gnu make's explicit ".PHONY" syntax, so

@@ -36,12 +36,22 @@
 
 NSBUILD=1
 
-# TODO: It sure would be nice to conditionalize this properly, but I
-# cannot figure out anyway way to write if statements that work in
-# both Gnu Make and Windows nmake.  --atp@piskorski.com, 2014/09/25
-#
-# For Windows using nmake, comment out the Makefile.module line below
-# and use the Makefile.win32 instead:
+# For Unix we must run Makefile.module below, for Windows we must
+# instead run Makefile.win32.  Unfortunately there is no normal way to
+# write if statements that work in both Gnu Make and Windows nmake.
+# But there is a clever hack, described by Bevan Collins here:
+#   https://stackoverflow.com/questions/8270391/use-the-same-makefile-for-make-linux-and-nmake-windows/30906085#30906085
+# Basically, Gnu make recognized line continuation on comment lines,
+# but nmake does not.  We use this below:
 
+# \
+!ifndef 0  # \
+## Microsoft nmake here, for compiling on Windows: \
+#!message Running Microsfot nmake in Makefile.build.  # \
+!include ../include/Makefile.win32  # \
+!else
+## Gnu make here, for compiling on Unix:
+#$(info 'Running Gnu make in Makefile.build')
 include ../include/Makefile.module
-#include ../include/Makefile.win32
+# \
+!endif
