@@ -130,7 +130,11 @@ all: all-core
 clean: clean-core
 install: all-core all-mod _install
 
-all-core: $(core_targets)
+# Actually only nsd needs nsversion-win32.h, but I do not see a good
+# way to make only that one target depend on it:
+
+include/nsversion-win32.h:  _nsversion
+all-core:  include/nsversion-win32.h  $(core_targets)
 all-mod:  $(module_targets)
 clean-core: $(tgts_core_clean)
 clean-mod:  $(tgts_modl_clean)
@@ -155,5 +159,7 @@ $(tgts_modl_clean):
 	@if not exist "..\$(@:C=)" (echo No such directory:  ..\$(@:C=)) else ( \
 	pushd "..\$(@:C=)" & $(NMAKE) -f Makefile.win32 clean & popd )
 
+_nsversion:
+	tclsh util/fake-configure.tcl
 _install:
-	tclsh util\win32-install-nsd.tcl -i 1
+	tclsh util/win32-install-nsd.tcl -i 1
