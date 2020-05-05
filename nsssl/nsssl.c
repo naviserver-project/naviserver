@@ -34,11 +34,17 @@
  *     Gustaf Neumann neumann@wu-wien.ac.at
  */
 
+/* Needed for SSL support on Windows: */
+#if defined(_MSC_VER) && !defined(HAVE_CONFIG_H)
+#  include "nsconfig-win32.h"
+#endif
+
 #include "ns.h"
 
 NS_EXTERN const int Ns_ModuleVersion;
 NS_EXPORT const int Ns_ModuleVersion = 1;
 
+/* Start:HAVE_OPENSSL_EVP_H: Big ifdef block that covers most of this file. */
 #ifdef HAVE_OPENSSL_EVP_H
 
 #include <openssl/ssl.h>
@@ -1365,6 +1371,7 @@ Ns_ModuleInit(const char *server, const char *module)
     return NS_ERROR;
 }
 #endif
+/* End: HAVE_OPENSSL_EVP_H: Big ifdef block that covers most of this file. */
 
 /*
  * Local Variables:
