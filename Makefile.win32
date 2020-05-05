@@ -128,14 +128,12 @@ tgts_modl_inst  = $(module_targets:_=I)
 
 all: all-core
 clean: clean-core
-install: install-core install-mod
+install: all-core all-mod _install
 
 all-core: $(core_targets)
 all-mod:  $(module_targets)
 clean-core: $(tgts_core_clean)
 clean-mod:  $(tgts_modl_clean)
-install-core: $(tgts_core_inst) I_tcl I_include
-install-mod:  $(tgts_modl_inst)
 
 # Bizarrely, from within nmake changing directories with "pushd" or
 # "popd" only takes effect for THAT ONE LINE, while using "cd" retains
@@ -157,17 +155,5 @@ $(tgts_modl_clean):
 	@if not exist "..\$(@:C=)" (echo No such directory:  ..\$(@:C=)) else ( \
 	pushd "..\$(@:C=)" & $(NMAKE) -f Makefile.win32 clean & popd )
 
-
-# TODO: I have not used nor debugged the install process here at all,
-# as I currently use a Tcl script for installing on Windows.
-# --atp@piskorski.com, 2014/10/10 12:14 EDT
-
-# Install to the NAVISERVER directory:
-$(tgts_core_inst):
-	pushd $(@:I=) & $(NMAKE) install & popd
-$(tgts_modl_inst):
-	pushd "..\$(@:I=)" & $(NMAKE) -f Makefile.win32 install & popd
-I_tcl:
-	pushd tcl & nmake -f ../include/Makefile.win32 install-tcl & popd
-I_include:
-	pushd include & nmake -f Makefile.win32 install-include & popd
+_install:
+	tclsh util\win32-install-nsd.tcl -i 1
