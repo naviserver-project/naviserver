@@ -37,13 +37,11 @@ is performed.
 [section EXAMPLES]
 
 [example_begin]
-
-oss2:nscp 7> ns_uuencode test
-dGVzdA==
-
-oss2:nscp 6> ns_uudecode dGVzdA==
-test
-
+ oss2:nscp 7> ns_uuencode test
+ dGVzdA==
+ 
+ oss2:nscp 6> ns_uudecode dGVzdA==
+ test
 [example_end]
 
 [see_also ns_uudecode ns_base64]

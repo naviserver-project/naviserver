@@ -19,23 +19,19 @@ library functions.  An internal random seed is generated the first time
 [section {COMMANDS}]
 
 [list_begin definitions]
-
-
  [call [cmd ns_rand] [opt [arg maximum]]]
-
-
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-   % ns_rand
-   0.39938485692
+ % ns_rand
+ 0.39938485692
 [example_end]
 
 [example_begin]
-   % ns_rand 10
-   7
+ % ns_rand 10
+ 7
 [example_end]
 
 [para]CAVEAT

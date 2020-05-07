@@ -204,179 +204,179 @@ when looping through all the key-value pairs in the set.
 [section EXAMPLES]
 
 [example_begin]
-% set mySet [lb]ns_set create mySetName a b c d e f A Joe B John C Jeff[rb]
-d0
+ % set mySet [lb]ns_set create mySetName a b c d e f A Joe B John C Jeff[rb]
+ d0
 [example_end]
 
 [example_begin]
-% ns_set size $mySet
-6
+ % ns_set size $mySet
+ 6
 [example_end]
 
 [example_begin]
-% ns_set name $mySet
-mySetName
+ % ns_set name $mySet
+ mySetName
 [example_end]
 
 [example_begin]
-% ns_set array $mySet
-a b c d e f A Joe B John C Jeff
+ % ns_set array $mySet
+ a b c d e f A Joe B John C Jeff
 [example_end]
 
 [example_begin]
-% ns_set get $mySet A
-Joe
+ % ns_set get $mySet A
+ Joe
 [example_end]
 
 [example_begin]
-% ns_set iget $mySet a
-b
+ % ns_set iget $mySet a
+ b
 [example_end]
 
 [example_begin]
-% ns_set unique $mySet a
-1
+ % ns_set unique $mySet a
+ 1
 [example_end]
 
 [example_begin]
-% ns_set iunique $mySet a
-0
+ % ns_set iunique $mySet a
+ 0
 [example_end]
 
 [example_begin]
-% ns_set truncate $mySet 3
-  
-% ns_set print $mySet
-mySetName:
-        a = b
-        c = d
-        e = f
+ % ns_set truncate $mySet 3
+ 
+ % ns_set print $mySet
+ mySetName:
+      a = b
+      c = d
+      e = f
 [example_end]
 
 [example_begin]
-% ns_set update $mySet c "Hello World!"
-2
+ % ns_set update $mySet c "Hello World!"
+ 2
 [example_end]
 
 [example_begin]
-% ns_set print $mySet
-mySetName:
-        a = b
-        e = f
-        c = Hello World!
+ % ns_set print $mySet
+ mySetName:
+      a = b
+      e = f
+      c = Hello World!
 [example_end]
 
 [example_begin]
-% ns_set find $mySet c
-2
+ % ns_set find $mySet c
+ 2
 [example_end]
 
 [example_begin]
-% ns_set find $mySet nokey
--1
+ % ns_set find $mySet nokey
+ -1
 [example_end]
 
 [example_begin]
-% ns_set delete $mySet 0
+ % ns_set delete $mySet 0
 [example_end]
 
 [example_begin]
-% ns_set array $mySet
-e f c {Hello World!}
-[example_end]
-
-[para]
-
-[example_begin]
-% set anotherSet [lb]ns_set create[rb]
-d1
-[example_end]
-
-[example_begin]
-% ns_set list
-d0 d1
-[example_end]
-
-[example_begin]
-% ns_set put $anotherSet dog.food "Yummy dog food!"
-0
-[example_end]
-
-[example_begin]
-% ns_set put $anotherSet cat.food "Yummy cat food!"
-1
-[example_end]
-
-[example_begin]
-% ns_set print $anotherSet
-        dog.food = Yummy dog food!
-        cat.food = Yummy cat food!
-[example_end]
-
-[example_begin]
-% set newSets [lb]ns_set split $anotherSet[rb]
-d2 d3
+ % ns_set array $mySet
+ e f c {Hello World!}
 [example_end]
 
 [para]
 
 [example_begin]
-% foreach s $newSets { ns_set print $s }
-dog:
-        food = Yummy dog food!
-cat:
-        food = Yummy cat food!
+ % set anotherSet [lb]ns_set create[rb]
+ d1
 [example_end]
 
 [example_begin]
-% ns_set key $anotherSet 0
-dog.food
+ % ns_set list
+ d0 d1
 [example_end]
 
 [example_begin]
-% ns_set value $anotherSet 1
-Yummy cat food!
+ % ns_set put $anotherSet dog.food "Yummy dog food!"
+ 0
 [example_end]
 
 [example_begin]
-% ns_set move $mySet $anotherSet
-d0
+ % ns_set put $anotherSet cat.food "Yummy cat food!"
+ 1
 [example_end]
 
 [example_begin]
-% ns_set array $mySet
-e f c {Hello World!} dog.food {Yummy dog food!} cat.food {Yummy cat food!}
+ % ns_set print $anotherSet
+      dog.food = Yummy dog food!
+      cat.food = Yummy cat food!
 [example_end]
 
 [example_begin]
-% ns_set array $anotherSet
+ % set newSets [lb]ns_set split $anotherSet[rb]
+ d2 d3
+[example_end]
+
+[para]
+
+[example_begin]
+ % foreach s $newSets { ns_set print $s }
+ dog:
+      food = Yummy dog food!
+ cat:
+      food = Yummy cat food!
 [example_end]
 
 [example_begin]
-% set thirdSet [lb]ns_set new[rb]
-d4
+ % ns_set key $anotherSet 0
+ dog.food
 [example_end]
 
 [example_begin]
-% ns_set move $thirdSet $mySet
-d4
+ % ns_set value $anotherSet 1
+ Yummy cat food!
 [example_end]
 
 [example_begin]
-% ns_set array $thirdSet
-e f c {Hello World!} dog.food {Yummy dog food!} cat.food {Yummy cat food!}
+ % ns_set move $mySet $anotherSet
+ d0
 [example_end]
 
 [example_begin]
-% array set testArray [lb]ns_set array $thirdSet[rb]
+ % ns_set array $mySet
+ e f c {Hello World!} dog.food {Yummy dog food!} cat.food {Yummy cat food!}
 [example_end]
 
 [example_begin]
-# to run through an ns_set
-for {set i 0} {$i < [lb]ns_set size $myset[rb]} {incr i} {
-    set key [lb]ns_set key $myset $i[rb]
-    set value [lb]ns_set value $myset $i[rb]
-}
+ % ns_set array $anotherSet
+[example_end]
+
+[example_begin]
+ % set thirdSet [lb]ns_set new[rb]
+ d4
+[example_end]
+
+[example_begin]
+ % ns_set move $thirdSet $mySet
+ d4
+[example_end]
+
+[example_begin]
+ % ns_set array $thirdSet
+ e f c {Hello World!} dog.food {Yummy dog food!} cat.food {Yummy cat food!}
+[example_end]
+
+[example_begin]
+ % array set testArray [lb]ns_set array $thirdSet[rb]
+[example_end]
+
+[example_begin]
+ # to run through an ns_set
+ for {set i 0} {$i < [lb]ns_set size $myset[rb]} {incr i} {
+   set key [lb]ns_set key $myset $i[rb]
+   set value [lb]ns_set value $myset $i[rb]
+ }
 [example_end]
 
 [section {NOTES}]
@@ -399,4 +399,5 @@ performance will be poor - use a Tcl Array or a Tcl dict instead.
 [keywords "global built-in" ns_set "data structure"]
 
 [manpage_end]
+
 

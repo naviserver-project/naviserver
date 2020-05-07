@@ -19,17 +19,14 @@
 [section {COMMANDS}]
 
 [list_begin definitions]
-
 [call [cmd ns_adp_mimetype] [opt [arg mimetype]]]
-
-
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-   ns_adp_mimetype
-   ns_adp_mimetype "text/plain"
+ ns_adp_mimetype
+ ns_adp_mimetype "text/plain"
 [example_end]
 
 

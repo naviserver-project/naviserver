@@ -26,16 +26,16 @@ Options:
 
 [item] [emph {-c}]
 [para]
-     Run in command (interactive) mode, when started Tcl shell will be provided
-     same way as tclsh
+   Run in command (interactive) mode, when started Tcl shell will be provided
+   same way as tclsh
 
 [item] [emph {-f}]
 [para]  Run NaviServer in the foreground.
 
 [item] [emph {-i}]
 [para]
-     Run NaviServer from /etc/inittab. This option is similar to -f except
-     that stdout goes to the server.log file.
+   Run NaviServer from /etc/inittab. This option is similar to -f except
+   that stdout goes to the server.log file.
 
 [item] [emph {-w}]
 [para]  Run under watchdog (restart a failed server)
@@ -71,12 +71,12 @@ multiple prebind addresses might be specified separated by a comma.
 
 [item] [emph {-s servername}]
 [para]
-     Specify the server to run, if the configuration file defines multiple
-     servers. The Server1 server will be run by default.
+   Specify the server to run, if the configuration file defines multiple
+   servers. The Server1 server will be run by default.
 
 [item] [emph {-t config}]
 [para]
-     Required. Specify the path to the configuration file.
+   Required. Specify the path to the configuration file.
 
 [list_end]
 
@@ -102,7 +102,7 @@ codes and signals caught during the watch and correspondingly restarts the secon
 To restart the server from within your Tcl code:
 
 [example_begin]
-   ns_shutdown -restart
+ ns_shutdown -restart
 [example_end]
 
 To restart the server from the shell you can send the server the SIGINT.
@@ -137,31 +137,31 @@ might be saved under [term /etc/systemd/system/nsd.service] or
 [term /usr/lib/systemd/system/nsd.service].
 
 [example_begin]
-[lb]Unit[rb]
-Description=NaviServer
-After=network.target
-# After=network.target postgresql.service
-# Wants=postgresql.service
+ [lb]Unit[rb]
+ Description=NaviServer
+ After=network.target
+ # After=network.target postgresql.service
+ # Wants=postgresql.service
  
-[lb]Service[rb]
-Type=forking
-PIDFile=/usr/local/ns/logs/nsd.pid
-Environment="LANG=en_US.UTF-8"
-# In case, a site is using Google Perfortools malloc with the system-malloc patch for Tcl:
-# Environment="LD_PRELOAD=/usr/lib/libtcmalloc.so"
-ExecStartPre=/bin/rm -f /usr/local/ns/logs/nsd.pid
+ [lb]Service[rb]
+ Type=forking
+ PIDFile=/usr/local/ns/logs/nsd.pid
+ Environment="LANG=en_US.UTF-8"
+ # In case, a site is using Google Perfortools malloc with the system-malloc patch for Tcl:
+ # Environment="LD_PRELOAD=/usr/lib/libtcmalloc.so"
+ ExecStartPre=/bin/rm -f /usr/local/ns/logs/nsd.pid
  
-# Standard startup with a non-privileged port (like 8000)
-ExecStart=/usr/local/ns/bin/nsd -u nsadmin -g nsadmin -t /usr/local/ns/conf/nsd-config.tcl
+ # Standard startup with a non-privileged port (like 8000)
+ ExecStart=/usr/local/ns/bin/nsd -u nsadmin -g nsadmin -t /usr/local/ns/conf/nsd-config.tcl
  
-# Startup for privileged port, like 80; the IPv6 address is bound to 2 sockets.
-# ExecStart=/usr/local/ns/bin/nsd -u nsadmin -g nsadmin -t /usr/local/ns/conf/nsd-config.tcl -b YOUR-IPv4-ADDRESS:80,YOUR-IPv6-ADDRESS:80#2
+ # Startup for privileged port, like 80; the IPv6 address is bound to 2 sockets.
+ # ExecStart=/usr/local/ns/bin/nsd -u nsadmin -g nsadmin -t /usr/local/ns/conf/nsd-config.tcl -b YOUR-IPv4-ADDRESS:80,YOUR-IPv6-ADDRESS:80#2
  
-Restart=on-abnormal
-KillMode=process
+ Restart=on-abnormal
+ KillMode=process
  
-[lb]Install[rb]
-#WantedBy=multi-user.target
+ [lb]Install[rb]
+ #WantedBy=multi-user.target
 [example_end]
 
 
@@ -179,7 +179,7 @@ Very easy to setup but with it's own limitations. [term init] is the parent of a
 It creates processes from the script [term /etc/inittab]. Add a line like
 
 [example_begin]
-   ns1:345:respawn:/usr/local/ns/bin/nsd -i -u nsadmin -g www -t /usr/local/ns/config.tcl
+ ns1:345:respawn:/usr/local/ns/bin/nsd -i -u nsadmin -g www -t /usr/local/ns/config.tcl
 [example_end]
 
 and init does the job of restarting the server if it crashes.
@@ -212,13 +212,13 @@ As you already have (or may have) a rc-script for starting your server during bo
 time you simply could run a cronjob that checks the status of something like
 
 [example_begin]
-   rcnaviserver status || rcnaviserver start
+ rcnaviserver status || rcnaviserver start
 [example_end]
 
 as part of a script every 5 minutes by adding a crontab line (crontab -e) like
 
 [example_begin]
-   */5 * * * *		/root/cronjobs/nsd_crontab
+ */5 * * * *		/root/cronjobs/nsd_crontab
 [example_end]
 
 
@@ -287,16 +287,16 @@ So it's possible to tell NaviServer to run as root using the -u switch at startu
 Of course, you have to be root to do that:
 
 [example_begin]
-   ./nsd -f -u root -g www -t ../sample-config.tcl
+ ./nsd -f -u root -g www -t ../sample-config.tcl
 [example_end]
 
 You can see the result in the security info:
 
 [example_begin]
-   ...
-   [lb]-main-[rb] Notice: nsmain: NaviServer/4.99.18 starting
-   [lb]-main-[rb] Notice: nsmain: security info: uid=0, euid=0, gid=8, egid=8
-   ...
+ ...
+ [lb]-main-[rb] Notice: nsmain: NaviServer/4.99.18 starting
+ [lb]-main-[rb] Notice: nsmain: security info: uid=0, euid=0, gid=8, egid=8
+ ...
 [example_end]
 
 It's simply a convenience for people that need it to not have to rewrite code to achieve this.
@@ -355,7 +355,7 @@ added for developers: The interactive 'Command mode'.
 If you start NaviServer with
 
 [example_begin]
-   ./nsd -c <other args>
+ ./nsd -c <other args>
 [example_end]
 
 it runs a Tcl shell and waits for commands. You are then able to do more comprehensive
@@ -377,38 +377,38 @@ issued, [cmd "ns_info threads"]
 and [cmd "ns_server requestprocs"].
 
 [example_begin]
-   buckel@tulpe:/usr/local/ns/bin> ./nsd -c -u nsadmin -g www -t ../sample-config.tcl
-   [lb]-main-[rb] Notice: encoding: loaded: iso8859-1
-   [lb]-main-[rb] Notice: nsmain: NaviServer/4.99.18 starting
-   [lb]-main-[rb] Notice: nsmain: security info: uid=500, euid=500, gid=100, egid=100
-   [lb]-main-[rb] Notice: nsmain: max files: FD_SETSIZE = 1024, rl_cur = 1024, rl_max = 1024
-   [lb]-main-[rb] Notice: adp[lb]server1[rb]: mapped /*.adp
-   [lb]-main-[rb] Notice: modload: loading '/usr/local/ns/bin/nssock.so'
-   [lb]-main-[rb] Notice: modload: loading '/usr/local/ns/bin/nslog.so'
-   [lb]-main-[rb] Notice: nslog: opened '/usr/local/ns/servers/server1/modules/nslog/access.log'
-   [lb]-main-[rb] Notice: conf: [lb]ns/server/server1[rb]enabletclpages = 0
-   [lb]-main-[rb] Notice: nsmain: NaviServer/4.95.0 running
-   [lb]-main-[rb] Notice: nsmain: security info: uid=500, euid=500, gid=100, egid=100
-   [lb]-sched-[rb] Notice: sched: starting
-   [lb]-main-[rb] Notice: nssock: listening on 10.0.0.100:8000
-   [lb]-driver-[rb] Notice: starting
-   [lb]-driver-[rb] Notice: driver: accepting connections
-   
-   % ns_info threads
-   {-driver- -main- 1084140464 0 1119862183 p:0x40037cfb a:0x0}
-   {-sched- -main- 1082039216 0 1119862183 p:0x4004a09a a:0x0}
-   {-main- {} 1076887680 1 1119862183 p:0x0 a:0x0}
-   
-   % ns_server requestprocs
-   {GET / * inherit ns:fastget a:0x0} {HEAD / * inherit ns:fastget a:0x0} {POST / * inherit ns:fastget a:0x0}
-   %
+ buckel@tulpe:/usr/local/ns/bin> ./nsd -c -u nsadmin -g www -t ../sample-config.tcl
+ [lb]-main-[rb] Notice: encoding: loaded: iso8859-1
+ [lb]-main-[rb] Notice: nsmain: NaviServer/4.99.18 starting
+ [lb]-main-[rb] Notice: nsmain: security info: uid=500, euid=500, gid=100, egid=100
+ [lb]-main-[rb] Notice: nsmain: max files: FD_SETSIZE = 1024, rl_cur = 1024, rl_max = 1024
+ [lb]-main-[rb] Notice: adp[lb]server1[rb]: mapped /*.adp
+ [lb]-main-[rb] Notice: modload: loading '/usr/local/ns/bin/nssock.so'
+ [lb]-main-[rb] Notice: modload: loading '/usr/local/ns/bin/nslog.so'
+ [lb]-main-[rb] Notice: nslog: opened '/usr/local/ns/servers/server1/modules/nslog/access.log'
+ [lb]-main-[rb] Notice: conf: [lb]ns/server/server1[rb]enabletclpages = 0
+ [lb]-main-[rb] Notice: nsmain: NaviServer/4.95.0 running
+ [lb]-main-[rb] Notice: nsmain: security info: uid=500, euid=500, gid=100, egid=100
+ [lb]-sched-[rb] Notice: sched: starting
+ [lb]-main-[rb] Notice: nssock: listening on 10.0.0.100:8000
+ [lb]-driver-[rb] Notice: starting
+ [lb]-driver-[rb] Notice: driver: accepting connections
+ 
+ % ns_info threads
+ {-driver- -main- 1084140464 0 1119862183 p:0x40037cfb a:0x0}
+ {-sched- -main- 1082039216 0 1119862183 p:0x4004a09a a:0x0}
+ {-main- {} 1076887680 1 1119862183 p:0x0 a:0x0}
+ 
+ % ns_server requestprocs
+ {GET / * inherit ns:fastget a:0x0} {HEAD / * inherit ns:fastget a:0x0} {POST / * inherit ns:fastget a:0x0}
+ %
 [example_end]
 
 [subsection {Examples}]
 
 
 [example_begin]
-   nsd -t nsd.tcl
+ nsd -t nsd.tcl
 [example_end]
 
 [para]
@@ -417,14 +417,14 @@ This is the simplest form of the command line.
 [para]
 
 [example_begin]
-   nsd -ft nsd.tcl
+ nsd -ft nsd.tcl
 [example_end]
 
 [para]
 NaviServer will be run in the foreground.
 
 [example_begin]
-   nsd -fkt nsd.tcl -r /newroot
+ nsd -fkt nsd.tcl -r /newroot
 [example_end]
 
 [para] NaviServer will be run in a chroot environment, and any
@@ -435,41 +435,30 @@ currently-running server will be killed.
 
 An NaviServer installation requires regular maintenance as follows:
 
-[para]
-
 [list_begin enum]
-
-
 [enum] Make regular backups of pages and associated files for each virtual server.
 
 [enum] Make regular backups of the access log.
 
 [enum] Make regular backups of the server log, especially if verbose
-       messages are enabled.
+     messages are enabled.
 
 [enum] Make regular backups of the Tcl directory(ies).
 
 [enum] Make regular backups of the bin directory, especially if you have
-       customized loadable modules.
+     customized loadable modules.
 
 [list_end]
 
 [para]
-
-
 Each of these maintenance tasks is described in the following sections.
 
-
-[para]
 
 
 [section {Maintain the Directories}]
 
 The NaviServer directories described below should be backed up
 regularly to ensure against file system failure.
-
-
-[para]
 
 
 [subsection {Back Up the Pages Directory}]
@@ -480,15 +469,9 @@ determined by the server-specific PageDir entry in the NaviServer
 configuration file. Normally, it is the /pages subdirectory under
 the NaviServer home directory.
 
-
 [para]
-
-
 Use whatever file system backup procedure you have in place at your
 site. To schedule nightly backups, use the Unix cron facility.
-
-
-[para]
 
 
 [subsection {Back Up the Access Log}]
@@ -497,10 +480,7 @@ The access log file needs to be backed up regularly. By default, the
 access log for each virtual server is in the
 /logs/access.log file under the NaviServer home directory.
 
-
 [para]
-
-
 The access log can be configured to limit the number of old logs
 maintained (with the MaxBackup parameter). This parameter sets an
 upper limit on the amount of disk space the access logs take. However,
@@ -510,9 +490,6 @@ require a complete history of access to your site. For example, if the
 MaxBackup parameter in the configuration file is set to 5, only five
 old access log files will remain on disk. When a sixth log file needs
 to be opened, the oldest log is removed.
-
-
-[para]
 
 
 [subsection {Back Up the Server Log}]
@@ -526,9 +503,6 @@ error log and causes the file to grow much more quickly. In this case
 you may want to back up the error log.
 
 
-[para]
-
-
 [subsection {Back Up the Tcl Scripts Directory}]
 
 The Tcl scripts directory contains the source to the Tcl scripts that
@@ -539,15 +513,10 @@ stored in the /modules/tcl subdirectory by default.
 
 
 [para]
-
-
 If you write new Tcl scripts or edit the existing ones, you must
 ensure your changes are saved regularly to a safe place. Also, be sure
 that any external files utilized by your Tcl scripts are backed up
 too, including files outside the NaviServer home directory.
-
-
-[para]
 
 
 [subsection {Back Up the bin Directory}]
@@ -560,10 +529,6 @@ avoid having to recompile them after a file system failure. Also, be
 sure to back up your module source code.
 
 
-
-[para]
-
-
 [section {Directory Map}]
 
 This table describes all of the directories that are created under the
@@ -573,18 +538,16 @@ configuration parameters that affect the directory or the files in the
 directory, and references to where you can find more information on
 the associated NaviServer features.
 
-
-[para]
-
 [subsection {/conf}]
 
 [para] Directory containing the NaviServer configuration files. This
 is convention and convenience, the config files can be located
 anywhere as nsd process requires path to config file.
 
-[para]
-Files:
-.tcl files nsd.tcl sample-config.tcl simple-config.tcl
+[para] Files:
+[example_begin]
+ .tcl files nsd.tcl sample-config.tcl simple-config.tcl
+[example_end]
 
 
 [subsection {/bin}]
@@ -593,9 +556,10 @@ Files:
 Directory containing the NaviServer binary and the default directory
 for any dynamically-loadable C modules.
 
-[para]
-Files:
+[para] Files:
+[example_begin]
  .so files, nsd, tclsh, ...
+[example_end]
 
 
 [subsection {/include}]
@@ -604,8 +568,10 @@ Files:
 Directory containing header files for NaviServer. These files are
 primarily needed for compiling additional C modules.
 
-[para]
-Files: .h files
+[para] Files:
+[example_begin]
+ .h files
+[example_end]
 
 
 [subsection {/lib}]
@@ -617,13 +583,14 @@ components to NaviServer. This directory currently only includes the
 libnspd.a file that can be used to build database proxy daemons
 (external database drivers).
 
-[para]
-Files:
+[para] Files:
+[example_begin]
  libnsd.so,
  libnsdb.so,
  libnsthread.so,
  libnsproxy.so,
  ...
+[example_end]
 
 
 [subsection {/logs}]
@@ -631,12 +598,12 @@ Files:
 [para]
 Directory containing log files and the server pid file.
 
-[para]
-Files:
-
+[para] Files:
+[example_begin]
  access.log,
  server.log,
  nsd.pid
+[example_end]
 
 
 [subsection {/modules}]
@@ -651,9 +618,10 @@ servers, such as the "tcl" or "nsperm" folders.
 [para] Directory containing user, group, and permissions files which
 is used to provide access control for NaviServer.
 
-[para]
-Files:
+[para] Files:
+[example_begin]
  passwd, group, hosts.allow, hosts.deny, perms
+[example_end]
 
 
 [subsection {/modules/tcl}]
@@ -661,8 +629,10 @@ Files:
 [para]
 Default directory for private Tcl script library for this server.
 
-[para]
-Files: .tcl files
+[para] Files:
+[example_begin]
+ .tcl
+[example_end]
 
 
 [subsection {/pages}]
@@ -671,8 +641,10 @@ Files: .tcl files
 stored.  Users define typically various subdirectories of this
 directory.
 
-[para]
-Files: typically, .htm, .html, .shtml, and .adp files
+[para] Files (typically):
+[example_begin]
+ .htm, .html, .shtml, and .adp
+[example_end]
 
 
 [subsection {/tcl}]
@@ -682,9 +654,10 @@ subdirectories containing Tcl examples and Tcl scripts for various
 modules. The top-level files of this directory are loaded into
 NaviServer during startup.
 
-[para]
-Files:
- .tcl files
+[para] Files:
+[example_begin]
+ .tcl 
+[example_end]
 
 
 
@@ -704,13 +677,12 @@ installations.
 to NULL or to a poor password. Set an acceptable password for nsadmin
 as described below.
 
-
 [para] Edit the nsadmin entry in the [file /modules/nsperm/passwd]
 file. For example, the default passwd file contains this nsadmin
 entry:
 
 [example_begin]
-   nsadmin:CUdnvgBYocLSI:::::
+ nsadmin:CUdnvgBYocLSI:::::
 [example_end]
 
 [para]
@@ -721,16 +693,16 @@ Substitute an alternate encrypted password in place of
 Command mode (using "nsd -c"):
 
 [example_begin]
-   % ns_crypt MyNewPassword xx
-   xxhR1Y2vt4OOY
+ % ns_crypt MyNewPassword xx
+ xxhR1Y2vt4OOY
 [example_end]
 
 Alternatively, the same hash can be produced from the command line
 using e.g. Perl:
 
 [example_begin]
-   $ perl -le 'print crypt("MyNewPassword","xx");'
-   xxhR1Y2vt4OOY
+ $ perl -le 'print crypt("MyNewPassword","xx");'
+ xxhR1Y2vt4OOY
 [example_end]
 
 
@@ -760,14 +732,14 @@ permissions records as follows:
 
 
 [enum] Maintain the same permission records for GET and POST; they
-     actually provide the same permissions.
+   actually provide the same permissions.
 
 [enum] Remove any permission records related to network publishing (PUT,
-     DELETE, MKDIR, and BROWSE) for all users except nsadmin.
+   DELETE, MKDIR, and BROWSE) for all users except nsadmin.
 
 [enum] Keep in mind the inheritance rules for permission records. In
-     general, a permission record for a directory also applies to the
-     directories underneath it.
+   general, a permission record for a directory also applies to the
+   directories underneath it.
 
 [list_end]
 
@@ -817,22 +789,22 @@ NaviServer.
 [item] NaviServer can be run in a chroot environment.
 
 [item] The configuration file, which has a new Tcl format, is executed in
-     a separate, temporary interpreter that is destroyed before startup
-     begins. The configuration file memory buffer is then zeroed after
-     parsing.
+   a separate, temporary interpreter that is destroyed before startup
+   begins. The configuration file memory buffer is then zeroed after
+   parsing.
 
 [item] The nsd binary can be stored outside the root directory because
-     NaviServer no longer locates and re-executes itself.
+   NaviServer no longer locates and re-executes itself.
 
 [item] The configuration file can be stored outside the root directory,
-     because NaviServer opens and reads the configuration file before
-     running chroot().
+   because NaviServer opens and reads the configuration file before
+   running chroot().
 
 [item] The [term nscp] module, which allows connections only from localhost,
-     provides a secure control port interface that allows ad hoc Tcl
-     evaluation and other server administration features. For more
-     information about the control port interface, see the "NaviServer's
-     Control Port Interface" section.
+   provides a secure control port interface that allows ad hoc Tcl
+   evaluation and other server administration features. For more
+   information about the control port interface, see the "NaviServer's
+   Control Port Interface" section.
 
 [list_end]
 
@@ -861,17 +833,17 @@ benefits:
 [list_begin itemized]
 
 [item] The chroot() system call updates the process such that all
-     absolute filenames are relative to a new root directory instead of
-     the actual mounted file system.
+   absolute filenames are relative to a new root directory instead of
+   the actual mounted file system.
 
 [item] The chroot() call is irrevocable. Once chroot() returns, the
-     server cannot access any file above the new root directory.
+   server cannot access any file above the new root directory.
 
 [item] Although it does not actually protect any of the underlying
-     content, scripts, or protected databases, chroot() is the single
-     most effective tool for protecting the server machine and
-     sensitive information, such as user passwords and configuration
-     files, from view.
+   content, scripts, or protected databases, chroot() is the single
+   most effective tool for protecting the server machine and
+   sensitive information, such as user passwords and configuration
+   files, from view.
 
 [list_end]
 
@@ -887,10 +859,10 @@ directories and copy the necessary files to them:
 
 
 [example_begin]
-   mkdir $root/dev $root/tmp $root/etc
-   chmod 1777 $root/tmp
-   $root/dev; /dev/MAKEDEV generic usema
-   cp /etc/passwd /etc/resolve.conf $root/etc
+ mkdir $root/dev $root/tmp $root/etc
+ chmod 1777 $root/tmp
+ $root/dev; /dev/MAKEDEV generic usema
+ cp /etc/passwd /etc/resolve.conf $root/etc
 [example_end]
 
 Then, you can run NaviServer with the -r option as in this example:
@@ -974,17 +946,17 @@ This code example disables the open command:
 
 
 [example_begin]
-   static int
-   AddCmds(Tcl_Interp, void *arg) {
-       Tcl_CreateCommand(interp, "open", BadCmd, NULL, NULL);
-       return TCL_OK;
-   }
-
-   static int
-   BadCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv) {
-       Tcl_AppendResult(interp, "disabled command: ", argv[lb]0[rb], NULL);
-       return TCL_ERROR;
-   }
+ static int
+ AddCmds(Tcl_Interp, void *arg) {
+     Tcl_CreateCommand(interp, "open", BadCmd, NULL, NULL);
+     return TCL_OK;
+ }
+ 
+ static int
+ BadCmd(ClientData dummy, Tcl_Interp *interp, int argc, char **argv) {
+     Tcl_AppendResult(interp, "disabled command: ", argv[lb]0[rb], NULL);
+     return TCL_ERROR;
+ }
 [example_end]
 
 
@@ -998,21 +970,21 @@ your config file.
 As a rule of thumb the default stack size (in bytes)
 
 [example_begin]
-   #
-   # Thread library (nsthread) parameters
-   #
-   ns_section "ns/threads"
-   ns_param   stacksize 64kB   ;# Per-thread stack size.
+ #
+ # Thread library (nsthread) parameters
+ #
+ ns_section "ns/threads"
+ ns_param   stacksize 64kB   ;# Per-thread stack size.
 [example_end]
 
 is almost always not enough. Use e.g. 512kB for the start:
 
 [example_begin]
-   #
-   # Thread library (nsthread) parameters
-   #
-   ns_section "ns/threads"
-   ns_param   stacksize 512kB  ;# Per-thread stack size.
+ #
+ # Thread library (nsthread) parameters
+ #
+ ns_section "ns/threads"
+ ns_param   stacksize 512kB  ;# Per-thread stack size.
 [example_end]
 
 If the size of the stack is not enough you may encounter crashes without real explanation.
@@ -1021,8 +993,6 @@ If the size of the stack is not enough you may encounter crashes without real ex
 
 Database access should be restricted with read-only logins to the
 server and queries through stored procedures.
-
-[para]
 
 
 [subsection {Control Port Interface}]
@@ -1034,7 +1004,6 @@ only commands via the loopback interface.
 
 
 [para]
-
 For more information about the control port interface, see the
 documentation of the [term nscp] ("NaviServer's Control Port") module.
 
@@ -1043,3 +1012,4 @@ documentation of the [term nscp] ("NaviServer's Control Port") module.
 [keywords nsd command-line-options nscp nsdb nsperm prebind]
 
 [manpage_end]
+

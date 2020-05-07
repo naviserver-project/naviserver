@@ -65,7 +65,7 @@
 	[item] sent bytes,
 	[item] received bytes,
 	[item] the client data as provided via [lb]ns_conn
-               clientdata[rb],
+             clientdata[rb],
 	[item] the cmd name of the callback, or "" when no callback is registered,
 	[item] the callback condition flags, or "" when no callback is registered.
  [list_end]
@@ -110,10 +110,10 @@ the callback should be canceled or not. The return value is
 interpreted as follows:
 [list_begin itemized]
 [item] 0 - the callback is canceled, and the channel is deleted
-           automatically (typically, when an error occurs)
+         automatically (typically, when an error occurs)
 [item] 1 - the callback will be used as well for further events
 [item] 2 - the callback will be suspended. No further events will
-           be fired, but the channel is not deleted.
+         be fired, but the channel is not deleted.
 [list_end]
 
 

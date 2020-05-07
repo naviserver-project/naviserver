@@ -77,14 +77,14 @@ For the next three quarters of an hour, the answer to the "meaning of life"
 will take no time at all to decide:
 
 [example_begin]
-set answer [lb][cmd ns_memoize] -expires 2520 deep_thought "meaning of life"[rb]
+ set answer [lb][cmd ns_memoize] -expires 2520 deep_thought "meaning of life"[rb]
 [example_end]
 
 
 Flush the cache of all thoughts which are deep:
 
 [example_begin]
-[cmd ns_memoize_flush] deep_*
+ [cmd ns_memoize_flush] deep_*
 [example_end]
 
 

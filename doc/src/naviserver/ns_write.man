@@ -84,17 +84,16 @@ in the [arg nbytes] argument. By default, the entire file is transmitted.
 Report results progressively:
 
 [example_begin]
-ns_register_proc GET /long-running-process {
-
-    [cmd ns_headers] 200 text/plain
-    [cmd ns_write] "Results: \n"
-
-    while {[lb]do_process result[rb]} {
-        [cmd ns_write] "$result\n"
-    }
-
-    [cmd ns_write] "Done."
-}
+ ns_register_proc GET /long-running-process {
+   [cmd ns_headers] 200 text/plain
+   [cmd ns_write] "Results: \n"
+ 
+   while {[lb]do_process result[rb]} {
+     [cmd ns_write] "$result\n"
+   }
+ 
+   [cmd ns_write] "Done."
+ }
 [example_end]
 
 
@@ -102,28 +101,26 @@ ns_register_proc GET /long-running-process {
 Sending binary data:
 
 [example_begin]
-ns_register_proc GET /blobs {
-    ...
-    [cmd ns_headers] -binary -- 200 application/x-whatever
-    [cmd ns_write] $blob1 $blob2
-    ...
-    [cmd ns_write] $blob3
-}
+ ns_register_proc GET /blobs {
+   ...
+   [cmd ns_headers] -binary -- 200 application/x-whatever
+   [cmd ns_write] $blob1 $blob2
+   ...
+   [cmd ns_write] $blob3
+ }
 [example_end]
 
 
 Sending data to the connection from a file:
 
 [example_begin]
-    [cmd ns_register_proc] GET /sampleWriteFp {
-        [cmd ns_headers] -- 200 text/plain
-        set file [lb]open "/usr/local/ns/copyright.txt" r[rb]
-        [cmd ns_writefp] $file
-        close $file
-    }
+ [cmd ns_register_proc] GET /sampleWriteFp {
+   [cmd ns_headers] -- 200 text/plain
+   set file [lb]open "/usr/local/ns/copyright.txt" r[rb]
+   [cmd ns_writefp] $file
+   close $file
+ }
 [example_end]
-
-
 
 [see_also ns_return ns_conn ns_register]
 [keywords "server built-in" "global built-in" return response status charset encoding writer]

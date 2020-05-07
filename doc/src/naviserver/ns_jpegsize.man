@@ -19,13 +19,13 @@ An error is generated if the file does not exist or if it is not a JPEG file.
 [section EXAMPLES]
 
 [example_begin]
-   % ns_jpegsize screenshot.jpg
-   1024 768
+ % ns_jpegsize screenshot.jpg
+ 1024 768
 [example_end]
 
 [example_begin]
-   % ns_jpegsize test.html
-   invalid JPEG file: "test.html"
+ % ns_jpegsize test.html
+ invalid JPEG file: "test.html"
 [example_end]
 
 [keywords "global built-in" images]

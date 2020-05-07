@@ -24,19 +24,19 @@ It is now recommended you use Tcl's file link command instead.
 
 
 [example_begin]
-   ns_symlink $file1 $file2
+ ns_symlink $file1 $file2
 [example_end]
 
 [para]is equivalent to:
 
 [example_begin]
-   file link -symbolic $file1 $file2
+ file link -symbolic $file1 $file2
 [example_end]
 
 [section EXAMPLES]
 
 [example_begin]
-   % ns_symlink 
+ % ns_symlink 
 [example_end]
 
 [keywords "global built-in" filesystem]

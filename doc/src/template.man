@@ -31,7 +31,7 @@ Description for arg1
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
+ Put some examples here to illustrate command usage.
 [example_end]
 
 

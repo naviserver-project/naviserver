@@ -22,22 +22,21 @@ a list of file names is potentially returned.
 For example, when the HTML page contains a form like the following
 
 [example_begin]
-<form enctype="multipart/form-data" action="url" method="post">
-First file: <input name="file1" type="file">
-Second file: <input name="file2" type="file">
-<input type="submit">
-</form>
+ <form enctype="multipart/form-data" action="url" method="post">
+ First file: <input name="file1" type="file">
+ Second file: <input name="file2" type="file">
+ <input type="submit">
+ </form>
 [example_end]
 
 and the form is submitted, the server access the submitted files
 [term file1] and [term file2] via the following snippet
 
 [example_begin]
-set tmpfile1 [lb]ns_getformfile file1[rb]
-set tmpfile2 [lb]ns_getformfile file2[rb]
-set fp1 [lb]open $tmpfile1[rb]
-...
+ set tmpfile1 [lb]ns_getformfile file1[rb]
+ set tmpfile2 [lb]ns_getformfile file2[rb]
+ set fp1 [lb]open $tmpfile1[rb]
+ ...
 [example_end]
 
 [manpage_end]
-

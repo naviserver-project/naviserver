@@ -201,7 +201,7 @@ The http request is run in the same thread as the caller.
 [call [cmd "ns_http wait"] \
 	[opt [option "-timeout [arg T]"]] \
 	[arg id] \
-    ]
+  ]
 
 [para]
 Waits for the queued command specified by the [term id] returned from
@@ -310,11 +310,11 @@ Optional ID of the HTTP request to get statistics for.
 
 First, a minimal GET example:
 [example_begin]
-   % ns_http queue http://www.google.com
-   http0
+ % ns_http queue http://www.google.com
+ http0
  
-   % ns_http wait http0
-   status 302 time 0:97095 headers d0 body { ... }
+ % ns_http wait http0
+ status 302 time 0:97095 headers d0 body { ... }
 [example_end]
 
 [para]
@@ -323,9 +323,9 @@ The second example is a code snippet making a requests via HTTPS
 with OpenSSL support.
 
 [example_begin]
-   % set result [lb]ns_http run https://www.google.com[rb]
-   % dict get $result status
-   302
+ % set result [lb]ns_http run https://www.google.com[rb]
+ % dict get $result status
+ 302
 [example_end]
 
 If the returned data is too large to be retained in memory
@@ -334,9 +334,9 @@ content should be spooled to file. The spooled file name
 is contained in the resulting dict under the key [term file].
 
 [example_begin]
-   % set result [lb]ns_http run -spoolsize 1kB https://www.google.com[rb]
-   % dict get $result file
-   /tmp/http.83Rfc5
+ % set result [lb]ns_http run -spoolsize 1kB https://www.google.com[rb]
+ % dict get $result file
+ /tmp/http.83Rfc5
 [example_end]
 
 If you are connecting to a server with virtual hosting that provides
@@ -351,13 +351,12 @@ larger timeout on the request, provides requests headers and
 returns reply-headers.
 
 [example_begin]
-
  #######################
  # construct POST data
  #######################
  set post_data {}
  foreach {key value} {q NaviServer} {
-     lappend post_data "[lb]ns_urlencode $key[rb]=[lb]ns_urlencode $value[rb]"
+   lappend post_data "[lb]ns_urlencode $key[rb]=[lb]ns_urlencode $value[rb]"
  }
  set post_data [lb]join $post_data &[rb]
  
@@ -369,9 +368,9 @@ returns reply-headers.
  ns_set update $requestHeaders "Content-type" "application/x-www-form-urlencoded"
  
  set h [lb]ns_http queue -method POST \
-     -headers $requestHeaders \
-     -timeout 10.0 \
-     -body $post_data https://duckduckgo.com/[rb]
+   -headers $requestHeaders \
+   -timeout 10.0 \
+   -body $post_data https://duckduckgo.com/[rb]
  set r [lb]ns_http wait $h[rb]
  
  #######################
@@ -380,7 +379,6 @@ returns reply-headers.
  ns_log notice "status [lb]dict get $r status[lb]"
  ns_log notice "reply "[lb]dict get $r [lb]
  ns_log notice "headers "[lb]dict get $r headers[lb]
-
 [example_end]
 
 The forth example is a code snippet that sets a larger timeout on the
@@ -423,3 +421,4 @@ otherwise stored in memory.
 [keywords "global built-in" http-client HTTP HTTPS POST GET nssock spooling SNI]
 
 [manpage_end]
+

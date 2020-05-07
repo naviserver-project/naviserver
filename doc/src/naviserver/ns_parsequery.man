@@ -23,13 +23,13 @@ based by the rules used for [cmd ns_urlencode].
 [section EXAMPLES]
 
 [example_begin]
-% set s [lb]ns_parsequery "msg=Hello+World%21&a=b&a=b&c=d"[rb]
-d0
+ % set s [lb]ns_parsequery "msg=Hello+World%21&a=b&a=b&c=d"[rb]
+ d0
 [example_end]
 
 [example_begin]
-% ns_set array $s
-msg {Hello World!} a b a b c d
+ % ns_set array $s
+ msg {Hello World!} a b a b c d
 [example_end]
 
 
@@ -39,4 +39,3 @@ msg {Hello World!} a b a b c d
 [keywords "global built-in" URL query]
 
 [manpage_end]
-

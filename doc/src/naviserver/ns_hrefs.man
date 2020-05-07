@@ -12,24 +12,22 @@ returns a list of the URLs in those elements' href attributes.
 [section {COMMANDS}]
 
 [list_begin definitions]
-
-
 [call [cmd ns_hrefs] [arg html]]
-
-
 [list_end]
 
 
 [section EXAMPLES]
 
 [example_begin]
-   % set html {One good website is <A href='http://google.com/'>Google</A>.
-              Another is <a href='http://www.yahoo.com'>Yahoo!</a>}
-
-   % ns_hrefs $html
-   http://google.com/ http://www.yahoo.com
+ % set html {One good website is <A href='http://google.com/'>Google</A>.
+            Another is <a href='http://www.yahoo.com'>Yahoo!</a>}
+ 
+ % ns_hrefs $html
+ http://google.com/ http://www.yahoo.com
 [example_end]
+
 [keywords "global built-in" HTML]
 
 [manpage_end]
+
 

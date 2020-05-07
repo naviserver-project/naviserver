@@ -138,79 +138,80 @@ See the excellent Tcl Standard Library smtp and mime packages.
 
 [section EXAMPLES]
 [emph "Log current configuration to server log:"]
+
 [example_begin]
-% ns_sendmail_config log
-smtpconfiguration:
-        smtphost = mail.domain.tld
-        smtpport = 25
-        smtptimeout = 60
-        smtplogmode = false
-        smtpmsgid = on
-        smtpmsgidhostname = host.domain.tld
-        smtpencodingmode = on
-        smtpencoding = iso8859-15
-        smtpauthmode = PLAIN
-        smtpauthuser = account--0123
-        smtpauthpassword = mysecret
+ % ns_sendmail_config log
+ smtpconfiguration:
+      smtphost = mail.domain.tld
+      smtpport = 25
+      smtptimeout = 60
+      smtplogmode = false
+      smtpmsgid = on
+      smtpmsgidhostname = host.domain.tld
+      smtpencodingmode = on
+      smtpencoding = iso8859-15
+      smtpauthmode = PLAIN
+      smtpauthuser = account--0123
+      smtpauthpassword = mysecret
 [example_end]
 
 [para]
 [emph "Default use:"]
 [example_begin]
-% ns_sendmail to@example.com from@example.com "My subject" "My body"
+ % ns_sendmail to@example.com from@example.com "My subject" "My body"
 [example_end]
 
 
 [para]
 [emph "Separate multiple recipients with a comma (to,cc,bcc):"]
 [example_begin]
-% ns_sendmail "to1@example.com,to2@example.com" \
-	from@example.com "My subject" "My body"
+ % ns_sendmail "to1@example.com,to2@example.com" \
+ 	from@example.com "My subject" "My body"
 [example_end]
 
 
 [para]
 [emph "You may give real names along with email address:"]
 [example_begin]
-% ns_sendmail "Jo Foo <to1@example.com>,Pete Bar <to2@example.com>" \
-	from@example.com "My subject" "My body"
+ % ns_sendmail "Jo Foo <to1@example.com>,Pete Bar <to2@example.com>" \
+ 	from@example.com "My subject" "My body"
 [example_end]
 
 
 [para]
 [emph "For cc and bcc, leave header field empty, if you don't need it anyway:"]
 [example_begin]
-% ns_sendmail "Jo Foo <to1@example.com>,Pete Bar <to2@example.com>" \
-	from@example.com "My subject" "My body" "" "Ben Care <bencare@example.com>"
+ % ns_sendmail "Jo Foo <to1@example.com>,Pete Bar <to2@example.com>" \
+ 	from@example.com "My subject" "My body" "" "Ben Care <bencare@example.com>"
 [example_end]
 
 
 [para]
 [emph "Header field is an ns_set array:"]
 [example_begin]
-% set SMTP_setid [lb]ns_set create SMTPHeaders "Reply-To" "marketing@example.com"[rb]
-% ns_sendmail "Jo Foo <to1@example.com>,Pete Bar <to2@example.com>" \
-	from@example.com "My subject" "My body" $SMTP_setid \
-	"Ben Care <bencare@example.com>"
+ % set SMTP_setid [lb]ns_set create SMTPHeaders "Reply-To" "marketing@example.com"[rb]
+ % ns_sendmail "Jo Foo <to1@example.com>,Pete Bar <to2@example.com>" \
+ 	from@example.com "My subject" "My body" $SMTP_setid \
+ 	"Ben Care <bencare@example.com>"
 [example_end]
 
 [para]
 [emph "Use smtplogmode to not send mail but watch transaction in server log:"]
 [example_begin]
-% ns_sendmail "Mr. White <white@example.com>" "Mr. Black <black@example.com>" "log" "this message"
-Notice: S: Helo sock12 HELO devserver 60
-Notice: S: Mail black@example.com sock12 MAIL FROM:<black@example.com> 60
-Notice: S: Rcpt white@example.com sock12 RCPT TO:<white@example.com> 60
-Notice: S: Data sock12 DATA 60
-Notice: S: Data sock12 To: Mr. White <white@example.com>
-From: Mr. Black <black@example.com>
-Subject: log
-Date: Mon, 23 Jan 2006 09:25:22 GMT
-
-this message
-
-. 60
-Notice: S: Quit sock12 QUIT 60
+ % ns_sendmail "Mr. White <white@example.com>" "Mr. Black <black@example.com>" "log" "this message"
+ Notice: S: Helo sock12 HELO devserver 60
+ Notice: S: Mail black@example.com sock12 MAIL FROM:<black@example.com> 60
+ Notice: S: Rcpt white@example.com sock12 RCPT TO:<white@example.com> 60
+ Notice: S: Data sock12 DATA 60
+ Notice: S: Data sock12 To: Mr. White <white@example.com>
+ From: Mr. Black <black@example.com>
+ Subject: log
+ Date: Mon, 23 Jan 2006 09:25:22 GMT
+ 
+ this message
+ 
+ . 60
+ Notice: S: Quit sock12 QUIT 60
 [example_end]
 
 

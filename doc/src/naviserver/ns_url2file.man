@@ -26,13 +26,13 @@
 This is especially useful when using the ns_adp_include command. 
 
 [example_begin]
-   <% ns_adp_include [lb]ns_url2file /include/myfile.inc[rb] %>
+ <% ns_adp_include [lb]ns_url2file /include/myfile.inc[rb] %>
 [example_end]
 
 
 [example_begin]
-   % ns_url2file /test.adp
-   /usr/local/ns/pages/test.adp
+ % ns_url2file /test.adp
+ /usr/local/ns/pages/test.adp
 [example_end]
 
 

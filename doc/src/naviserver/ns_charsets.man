@@ -22,8 +22,8 @@
 [section EXAMPLES]
 
 [example_begin]
-   % ns_charsets
-   windows-1258 iso-2022-kr macromania...
+ % ns_charsets
+ windows-1258 iso-2022-kr macromania...
 [example_end]
 
 

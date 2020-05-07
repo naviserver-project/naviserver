@@ -40,28 +40,25 @@ The value of the reported [arg condition] will be as follows:
 [section EXAMPLES]
 
 [example_begin]
-set sock [lb]ns_socklisten * 9000[rb]
-ns_sockcallback $sock newconn r
-
-# Keep $sock from closing after connection ends
-detach $sock
-
-# When a connection arrives, newconn will be called as:
-# newconn $sock r
-proc newconn {sock when} {
+ set sock [lb]ns_socklisten * 9000[rb]
+ ns_sockcallback $sock newconn r
+ 
+ # Keep $sock from closing after connection ends
+ detach $sock
+ 
+ # When a connection arrives, newconn will be called as:
+ # newconn $sock r
+ proc newconn {sock when} {
   set fds [lb]ns_sockaccept $sock[rb]
   set rfd [lb]lindex $fds 0[rb]
   set wfd [lb]lindex $fds 1[rb]
   puts $wfd "Hello!"
   close $rfd
   close $wfd
-}
-
+ }
 [example_end]
 
 
 [see_also ns_sockopen ns_chan ns_connchan ns_socklisten ns_sockaccept]
 [keywords "global built-in" NaviServer socket callback]
 [manpage_end]
-
-

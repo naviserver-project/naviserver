@@ -30,18 +30,18 @@ date and time representation for the current locale, which on some platforms sho
 [section EXAMPLES]
 
 [example_begin]
-   % ns_fmttime 0
-   Wed Dec 31 19:00:00 1969
+ % ns_fmttime 0
+ Wed Dec 31 19:00:00 1969
 [example_end]
 
 [example_begin]
-   % ns_fmttime 0 "%a %b %e %H:%M:%S %Z %Y"
-   Wed Dec 31 19:00:00 EST 1969
+ % ns_fmttime 0 "%a %b %e %H:%M:%S %Z %Y"
+ Wed Dec 31 19:00:00 EST 1969
 [example_end]
 
 [example_begin]
-   % ns_fmttime ns_time "%Y%m%d"
-   20040614
+ % ns_fmttime ns_time "%Y%m%d"
+ 20040614
 [example_end]
 
 

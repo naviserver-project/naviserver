@@ -25,21 +25,22 @@ appended as the last arg before it is executed
 [section EXAMPLES]
 
 [example_begin]
-  ns_serverrootproc nstest::serverroot arg
-
-  proc nstest::serverroot {{host ""} args} {
-      if {$host ne "" } {
-          set path [lb]eval file join testserverroot $host $args[rb]
-      } else {
-          set path [lb]eval file join testserverroot $args[rb]
-      }
-      return $path
-  }
+ ns_serverrootproc nstest::serverroot arg
+ 
+ proc nstest::serverroot {{host ""} args} {
+   if {$host ne "" } {
+     set path [lb]eval file join testserverroot $host $args[rb]
+   } else {
+     set path [lb]eval file join testserverroot $args[rb]
+   }
+   return $path
+ }
 [example_end]
 
 
 [see_also ns_locationproc]
 [keywords "global built-in" callback virtual hosting]
 [manpage_end]
+
 
 

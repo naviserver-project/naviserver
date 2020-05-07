@@ -57,53 +57,51 @@ Use this as a template for module makefiles:
 
 
 [example_begin]
-#
-# nsexample --
-#
-#      Example NaviServer module Makefile.
-#
-  
-#
-# NaviServer's location
-#
-#  Since your module probably doesn't live inside the "naviserver"
-#  directory, you can tell make where to find NaviServer.
-#
-#NAVISERVER   =  /usr/local/ns
-NAVISERVER    =  ../naviserver
+ #
+ # nsexample --
+ #
+ #      Example NaviServer module Makefile.
+ #
  
-#
-# File name of binary loadable module
-#
-MOD           =  nsexample.so
+ #
+ # NaviServer's location
+ #
+ #  Since your module probably doesn't live inside the "naviserver"
+ #  directory, you can tell make where to find NaviServer.
+ #
+ #NAVISERVER   =  /usr/local/ns
+ NAVISERVER    =  ../naviserver
  
-#
-# Object files for modules (required with MOD)
-#
-MODOBJS       =  nsexample.o
+ #
+ # File name of binary loadable module
+ #
+ MOD           =  nsexample.so
  
-#     MODNAME     Unique name of module
-#     TCL         List of module shared Tcl files
-#     LIBNM       Root name of dynamic library (without lib prefix or extension)
-#     LIBOBJS     List of library object files (required with LIBNM)
-#     LIBHDRS     List of public header files to install (required with module LIBNM)
-#     PGM         Name of executable program
-#     PGMOBJS     List of program object files (required with PGM)
-#     HDRS        Header files which objects depend on
-#     MODLIBS     Extra module link libraries
-#     LIBLIBS     Extra dynamic library link libraries
-#     PGMLIBS     Extra program link libraries
-#     INSTALL     Extra install directive(s)
-#     CLEAN       Extra clean directive(s)
-#     DESTDIR     Root directory for install
-#
-#     At least one of PGM, MOD, or LIBNM must be defined.  For backwards compatibility,
-#     MODOBJS will default to OBJS and MODINST can be used for module install.
-
-
-include  $(NSHOME)/include/Makefile.module
-
-
+ #
+ # Object files for modules (required with MOD)
+ #
+ MODOBJS       =  nsexample.o
+ 
+ #     MODNAME     Unique name of module
+ #     TCL         List of module shared Tcl files
+ #     LIBNM       Root name of dynamic library (without lib prefix or extension)
+ #     LIBOBJS     List of library object files (required with LIBNM)
+ #     LIBHDRS     List of public header files to install (required with module LIBNM)
+ #     PGM         Name of executable program
+ #     PGMOBJS     List of program object files (required with PGM)
+ #     HDRS        Header files which objects depend on
+ #     MODLIBS     Extra module link libraries
+ #     LIBLIBS     Extra dynamic library link libraries
+ #     PGMLIBS     Extra program link libraries
+ #     INSTALL     Extra install directive(s)
+ #     CLEAN       Extra clean directive(s)
+ #     DESTDIR     Root directory for install
+ #
+ #     At least one of PGM, MOD, or LIBNM must be defined.  For backwards compatibility,
+ #     MODOBJS will default to OBJS and MODINST can be used for module install.
+ 
+ 
+ include  $(NSHOME)/include/Makefile.module
 [example_end]
 
 
@@ -113,8 +111,7 @@ Use this as a template for all header files:
 
 
 [example_begin]
-
-/*
+ /*
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -136,37 +133,36 @@ Use this as a template for all header files:
  * version of this file under either the License or the GPL.
  */
  
-/*
+ /*
  * file.h --
  *
  * 	Description of file.
  *
  */
  
-#ifndef FILE_H
-#define FILE_H
+ #ifndef FILE_H
+ #define FILE_H
  
  
-/*
+ /*
  * The following constants...
  */
  
-#define ...
+ #define ...
  
-/*
+ /*
  * The following structure defines...
  */
  
-typedef struct ...
+ typedef struct ...
  
-/*
+ /*
  * Exported functions
  */
  
-extern ...
+ extern ...
  
-#endif /* FILE_H */
- 
+ #endif /* FILE_H */
 [example_end]
 
 
@@ -198,7 +194,7 @@ groups of functions can be separated like this:
 
 
 [example_begin]
-/*
+ /*
  *==========================================================================
  * This is where we torque the wingnut on the widget.
  *==========================================================================
@@ -212,7 +208,7 @@ Use this as a template for all code files:
 
 
 [example_begin]
-/*
+ /*
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.1 (the "License"); you may not use this file except in
  * compliance with the License. You may obtain a copy of the License at
@@ -234,40 +230,40 @@ Use this as a template for all code files:
  * version of this file under either the License or the GPL.
  */
  
-/*
+ /*
  * file.c --
  *
  * 	Description of file.
  */
  
-#include "file.h"
+ #include "file.h"
  
-/*
+ /*
  * The following constants...
  */
  
-#define ...
+ #define ...
  
-/*
+ /*
  * The following structure defines...
  */
  
-typedef struct ...
+ typedef struct ...
  
-/*
+ /*
  * Local functions defined in this file
  */
  
-static int FunctionName(int x);
+ static int FunctionName(int x);
  
-/*
+ /*
  * Static variables defined in this file
  */
  
-static int nsNumFooBar;     /* Number of foobars allocated */
-...
+ static int nsNumFooBar;     /* Number of foobars allocated */
+ ...
  
-/*
+ /*
  *==========================================================================
  * API functions
  *==========================================================================
@@ -275,7 +271,7 @@ static int nsNumFooBar;     /* Number of foobars allocated */
  
  (API function definitions go here)
  
-/*
+ /*
  *==========================================================================
  * Exported functions
  *==========================================================================
@@ -283,14 +279,13 @@ static int nsNumFooBar;     /* Number of foobars allocated */
  
  (Exported, non-api functions go here)
  
-/*
+ /*
  *==========================================================================
  * Static functions
  *==========================================================================
  */
  
-(Static functions go here)
- 
+ (Static functions go here)
 [example_end]
 
 
@@ -319,11 +314,11 @@ Function definitions should follow this template:
     *
     *----------------------------------------------------------------------
     */
-    
+ 
    static int
    FunctionName(int x)
    {
-	...
+ 	...
    }
 [example_end]
 
@@ -340,7 +335,7 @@ arguments, they should spill onto additional lines as such:
    FunctionThatTakesLotsOfParameters(int a, int b, int c, int d, int e,
                                      int f, int g)
    {
-	...
+ 	...
    }
 [example_end]
 
@@ -493,7 +488,6 @@ spaces):
    	(function (lambda ()
    		(setq c-basic-offset 4)
    		(setq c-indent-level 4))))
-
 [example_end]
 
 Try to follow these rules:
@@ -506,11 +500,11 @@ after, as such:
 
 [example_begin]
    foo();
-    
+ 
    /*
     * This is a comment.
     */
-    
+ 
    bar();
 [example_end]
 
@@ -541,11 +535,11 @@ and
    FooBar(void)
    {
        int blah;
-    
+ 
        ...
        if (blah != 0) {
            char *string;
-    
+ 
    	   ...
        }
    }
@@ -584,7 +578,7 @@ space in from the left margin.
    case ADP_OK:
        exception = "ok";
        break;
-       
+ 
    case ADP_BREAK:
        exception = "break";
        break;
@@ -599,9 +593,7 @@ expression:
 
 
 [example_begin]
-
    #define MIN(a,b) (((a) < (b)) ? (a) : (b))
-
 [example_end]
 
 
@@ -633,7 +625,7 @@ conditions from the code that follows.
     if (foo == bar &&
         baz == spoo &&
        ns_FooBarBaz() == NS_TRUE) {
-    
+ 
        ...
    }
 [example_end]
@@ -658,7 +650,7 @@ after the rightmost character of the longest type name.
        int              bar;
        unsigned int    *fooPtr;
        int          ****extremePtrPtrPtrPtr;  /* Just an example! */
-    
+ 
        ...
 [example_end]
 
@@ -671,7 +663,7 @@ or
        int          bar;
        unsigned int foo;
        char         baz;
-    
+ 
        ...
 [example_end]
 
@@ -699,12 +691,12 @@ statement in the function body and is not preceded by a label, an empty
 line should appear before it:
 
 [example_begin]
-static int
+ static int
     Foo(void)
    {
        ...
        FooBar();
-    
+ 
        return code;
    }
 [example_end]

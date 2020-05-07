@@ -26,16 +26,16 @@
 [section EXAMPLES]
 
 [example_begin]
-   # In a.adp:
-   <% ns_adp_include b.adp 1 2 3 %>
+ # In a.adp:
+ <% ns_adp_include b.adp 1 2 3 %>
 [example_end]
 
 [example_begin]
-   # In b.adp:
-   <%
-     ns_adp_bind_args x y z
-     list $x $y $z       ;# => {1 2 3}
-   %>
+ # In b.adp:
+ <%
+   ns_adp_bind_args x y z
+   list $x $y $z       ;# => {1 2 3}
+ %>
 [example_end]
 
 

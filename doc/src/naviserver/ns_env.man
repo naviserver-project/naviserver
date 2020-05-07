@@ -30,18 +30,17 @@ variables of the currently running nsd process.
 [section EXAMPLES]
 
 [example_begin]
-
  % ns_env names
  CONSOLE TERM INIT_VERSION PATH RUNLEVEL PWD PREVLEVEL SHLVL HOME
-
+ 
  % ns_env get PATH
  /usr/local/sbin:/sbin:/bin:/usr/sbin:/usr/bin
-
+ 
  % ns_env set USER nsd
-
+ 
  % ns_env get USER
  nsd
-
+ 
  % ns_env unset USER
 [example_end]
 
@@ -49,4 +48,5 @@ variables of the currently running nsd process.
 [see_also nsd]
 [keywords "global built-in" ]
 [manpage_end]
+
 

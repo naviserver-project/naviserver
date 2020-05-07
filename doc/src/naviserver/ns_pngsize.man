@@ -18,13 +18,13 @@
 [section EXAMPLES]
 
 [example_begin]
-   % ns_pngsize screenshot.png
-   1024 768
+ % ns_pngsize screenshot.png
+ 1024 768
 [example_end]
 
 [example_begin]
-   % ns_pngsize test.html
-   invalid PNG file: "test.html"
+ % ns_pngsize test.html
+ invalid PNG file: "test.html"
 [example_end]
 
 

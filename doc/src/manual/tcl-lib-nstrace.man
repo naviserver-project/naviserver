@@ -42,7 +42,7 @@ In order to influence script generation, users can add their own tracing impleme
 Tracers and other supporting callbacks for the following Tcl commands are provided per default:
 
 [example_begin]
-    load, namespace, variable, proc, rename
+ load, namespace, variable, proc, rename
 [example_end]
 
 For the information of how to add new tracers please look into the source code of already provided callbacks.

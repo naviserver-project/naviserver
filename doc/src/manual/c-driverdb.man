@@ -166,9 +166,7 @@ the Postgres95 db driver:
 
 
 [example_begin]
-
-
-static ns_DbProc PgProcs[] = {
+ static ns_DbProc PgProcs[] = {
     {DbFn_Name, (void *) ns_PgName},
     {DbFn_DbType, (void *) ns_PgDbType},
     {DbFn_OpenDb, (void *) ns_PgOpenDb},
@@ -184,11 +182,11 @@ static ns_DbProc PgProcs[] = {
     {DbFn_ServerInit, (void *) ns_PgServerInit},
     {DbFn_ResetHandle, (void *) NULL},
     {0, NULL}
-};
-
-DllExport int
-ns_DbDriverInit(char *hDriver, char *configPath)
-{
+ };
+ 
+ DllExport int
+ ns_DbDriverInit(char *hDriver, char *configPath)
+ {
     /*
      * Register the Postgres95 driver functions with nsdb.
      * Nsdb will later call the ns_PgServerInit() function
@@ -201,8 +199,7 @@ ns_DbDriverInit(char *hDriver, char *configPath)
     }
     ns_Log(Notice, "%s loaded.", pgName);
     return NS_OK;
-}
-
+ }
 [example_end]
 
 
@@ -282,8 +279,7 @@ In more detail, here's what each of these functions needs to do:
 
 
 [example_begin]
-
-typedef struct ns_DbHandle {
+ typedef struct ns_DbHandle {
     char       *driver;
     char       *datasource;
     char       *user;
@@ -302,8 +298,7 @@ typedef struct ns_DbHandle {
     void       *context;
     void       *statement; /* used by ODBC driver statements */
     int         fetchingRows;
-} ns_DbHandle;
-
+ } ns_DbHandle;
 [example_end]
 
 
@@ -447,13 +442,11 @@ typedef struct ns_DbHandle {
 
 
 [example_begin]
-
     set->name           = "column_name";
     set->field[lb]0[rb].name  = "column_type";
     set->field[lb]0[rb].value = "text";
     set->field[lb]1[rb].name  = "column_notnull";
     set->field[lb]1[rb].value = "t";
-
 [example_end]
 
 

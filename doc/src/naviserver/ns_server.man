@@ -244,7 +244,7 @@ and optionally a context filter.
 
 Example:
 [example_begin]
-GET /*.tcl
+ GET /*.tcl
 [example_end]
 
 When the [term mapspec] is used as three element list, the last
@@ -254,13 +254,13 @@ used for mapping requests from a certain IP address of from an IP
 range (in CIDR notation).  Examples:
 
 [example_begin]
-ns_server -pool bots map "GET /* {user-agent *bot*}"
-ns_server -pool bots map "GET /* {user-agent *crawl*}"
-ns_server -pool bots map "GET /* {user-agent *baidu*}"
-ns_server -pool bots map "GET /* {X-NS-ip 2a03:2880::/29}"
-  
-ns_server -pool local map "GET /* {X-NS-ip 127.0.0.1}"
-ns_server -pool local map "GET /* {X-NS-ip 137.208.1.0/16}"
+ ns_server -pool bots map "GET /* {user-agent *bot*}"
+ ns_server -pool bots map "GET /* {user-agent *crawl*}"
+ ns_server -pool bots map "GET /* {user-agent *baidu*}"
+ ns_server -pool bots map "GET /* {X-NS-ip 2a03:2880::/29}"
+ 
+ ns_server -pool local map "GET /* {X-NS-ip 127.0.0.1}"
+ ns_server -pool local map "GET /* {X-NS-ip 137.208.1.0/16}"
 [example_end]
 [list_end]
 
@@ -274,43 +274,44 @@ to a pool named "slow". As a consequence later requests with the same
 HTTP method and path will be served from this connection pool.
 
 [example_begin]
-   ns_register_trace GET /* {
-      set pt [lb]ns_conn partialtimes[rb]
-      set req [lb]list [lb]ns_conn method[rb] [lb]ns_conn url[rb][rb]
-      set ctime [lb]expr {[lb]dict get $pt runtime[rb] + [lb]dict get $pt filtertime[rb]}[rb]
-      if {$ctime > 3.0 && [lb]ns_server mapped $req[rb] eq ""} {
-         ns_server -pool slow map -noinherit $req
-      }
-   }
+ ns_register_trace GET /* {
+    set pt [lb]ns_conn partialtimes[rb]
+    set req [lb]list [lb]ns_conn method[rb] [lb]ns_conn url[rb][rb]
+    set ctime [lb]expr {[lb]dict get $pt runtime[rb] + [lb]dict get $pt filtertime[rb]}[rb]
+    if {$ctime > 3.0 && [lb]ns_server mapped $req[rb] eq ""} {
+       ns_server -pool slow map -noinherit $req
+    }
+ }
 [example_end]
 
 The connection thread pools can be defined as usual in the config
 file:
 [example_begin]
-   ns_section "ns/server/${server}/pools" {
-      ns_param fast "Fast lane pool"
-      ns_param slow "Slow lane pool"
-   }
-   
-   ns_section "ns/server/${server}/pool/fast" {
-      ns_param minthreads 4
-      ns_param maxthreads 4
-      ns_param map "GET /*.png"
-      ns_param map "GET /*.jpg"
-      ns_param map "GET /*.pdf"
-   }
-   
-   ns_section "ns/server/${server}/pool/slow" {
-      ns_param minthreads 5
-      ns_param maxthreads 15
-      ns_param maxconnections 200
-   }
+ ns_section "ns/server/${server}/pools" {
+    ns_param fast "Fast lane pool"
+    ns_param slow "Slow lane pool"
+ }
+ 
+ ns_section "ns/server/${server}/pool/fast" {
+    ns_param minthreads 4
+    ns_param maxthreads 4
+    ns_param map "GET /*.png"
+    ns_param map "GET /*.jpg"
+    ns_param map "GET /*.pdf"
+ }
+ 
+ ns_section "ns/server/${server}/pool/slow" {
+    ns_param minthreads 5
+    ns_param maxthreads 15
+    ns_param maxconnections 200
+ }
 [example_end]
 
 Query a certain mapping:
+
 [example_begin]
-   % ns_server mapped "GET /images/logo.png"
-   fast
+ % ns_server mapped "GET /images/logo.png"
+ fast
 [example_end]
 
 [see_also ns_conn ns_register]

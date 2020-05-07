@@ -224,13 +224,13 @@ can be provided in the global parameters of the NaviServer
 configuration file:
 
 [example_begin]
-[cmd ns_section] ns/parameters {
+ [cmd ns_section] ns/parameters {
    # ...
    ns_param jobsperthread   1000
    ns_param jobtimeout        5m
    ns_param joblogminduration 1s
    # ...
-}
+ } 
 [example_end]
 
 
@@ -239,18 +239,18 @@ configuration file:
 Create a job queue, run a job in this queue and wait for the result.
 
 [example_begin]
-% [cmd "ns_job create"] q1
-q1
-   
-% set j [lb][cmd "ns_job queue"] q1 {
+ % [cmd "ns_job create"] q1
+ q1
+ 
+ % set j [lb][cmd "ns_job queue"] q1 {
       ns_log notice start
       ns_sleep 10
       ns_log notice stop
       set x "i am done"}[rb]
-job0
-   
-% [cmd "ns_job wait"] q1 $j
-i am done
+ job0
+ 
+ % [cmd "ns_job wait"] q1 $j
+ i am done
 [example_end]
 
 
@@ -258,7 +258,7 @@ Run a job in this queue in the background and do not wait for the
 result.
 
 [example_begin]
-% [cmd "ns_job queue"] -detached q1 {ns_log notice "a detached job"}
+ % [cmd "ns_job queue"] -detached q1 {ns_log notice "a detached job"}
 [example_end]
 
 [see_also nsd ns_schedule_proc]
@@ -266,4 +266,5 @@ result.
 
 
 [manpage_end]
+
 

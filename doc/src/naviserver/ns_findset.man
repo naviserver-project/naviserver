@@ -23,18 +23,23 @@ of the first set whose name matches name, or returns an empty string if no set m
 [section EXAMPLES]
 
 [example_begin]
-   % set sets [lb]list[rb]
-   % lappend sets [lb]ns_set create foo[rb]
-   d0
-   % lappend sets [lb]ns_set create bar[rb]
-   d0 d1
-   % lappend sets [lb]ns_set create baz[rb]
-   d0 d1 d2
-   % ns_findset $sets bar
-   d1
-   % llength [lb]ns_findset $sets quux[rb]
-   0
-   % ns_set cleanup
+ % set sets [lb]list[rb]
+ % lappend sets [lb]ns_set create foo[rb]
+ d0
+ 
+ % lappend sets [lb]ns_set create bar[rb]
+ d0 d1
+ 
+ % lappend sets [lb]ns_set create baz[rb]
+ d0 d1 d2
+ 
+ % ns_findset $sets bar
+ d1
+ 
+ % llength [lb]ns_findset $sets quux[rb]
+ 0
+ 
+ % ns_set cleanup
 [example_end]
 
 [see_also ns_set]

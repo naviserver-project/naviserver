@@ -31,14 +31,14 @@ following elements: [term proto], [term host], [term port],
 [section EXAMPLES]
 
 [example_begin]
-   % ns_parseurl http://openacs.org//projects/openacs/download/
-   proto http host openacs.org path /projects/openacs/download tail {}
+ % ns_parseurl http://openacs.org//projects/openacs/download/
+ proto http host openacs.org path /projects/openacs/download tail {}
  
-   % ns_parseurl {http://[lb]::1[rb]:80/index.html}
-   proto http host ::1 port 80 path {} tail index.html
+ % ns_parseurl {http://[lb]::1[rb]:80/index.html}
+ proto http host ::1 port 80 path {} tail index.html
  
-   % ns_parseurl /foo/bar.html
-   path foo tail bar.html
+ % ns_parseurl /foo/bar.html
+ path foo tail bar.html
 [example_end]
 
 [see_also ns_absoluteurl ns_parsefieldvalue ns_parseheader]

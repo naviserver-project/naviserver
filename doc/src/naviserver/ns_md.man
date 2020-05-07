@@ -107,14 +107,13 @@ Possible encodings are [term hex], [term base64url],
 [list_end]
 
 [example_begin]
-  
   nscp 2> ns_md string -digest sha256 "what do ya want for nothing?"
   b381e7fec653fc3ab9b178272366b8ac87fed8d31cb25ed1d0e1f3318644c89c
-
 [example_end]
 
 [see_also nsd ns_hmac ns_crypt ns_crypto ns_md5 ns_rand ns_sha1 ns_sha]
 [keywords encoding crypto MD nsf]
 
 [manpage_end]
+
 

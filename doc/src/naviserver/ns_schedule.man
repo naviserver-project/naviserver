@@ -25,8 +25,12 @@ This command schedules a script to be run after a certain interval.
 Returns the ID of the newly scheduled script.  If
 [option -once] is specified, then the script is run once and then
 unscheduled, otherwise it will continue to run every interval
-time periods. The
+time periods.
+
+[para] The
 [arg interval] can be specified with time units (per default seconds).
+Valid time units are ms, s, m, d.
+
 If [option -thread] is specified, then the script will be run in its
 own thread, otherwise it will run in the scheduler's thread.  If the
 script is long-running, this may interfere with the running of other
@@ -172,7 +176,7 @@ scheduling commands can be provided in the global parameters of the
 NaviServer configuration file:
 
 [example_begin]
-[cmd ns_section] ns/parameters {
+ [cmd ns_section] ns/parameters {
  # ...
  # How many jobs to run in any schedule thread before thread exit.
  ns_param schedsperthread 1000
@@ -181,7 +185,7 @@ NaviServer configuration file:
  # this time period
  ns_param schedlogminduration  2s
  # ...
-}
+ }
 [example_end]
 
 [section {Logging}]
@@ -191,7 +195,7 @@ When entries are written from scheduled procedures to the server log
 via [cmd ns_log] these entries can be identified by the string
 
 [example_begin]
-...[lb]-sched:THREAD_NR:COUNTER_IN_THREAD:SCHED_ID-[rb]...
+ ...[lb]-sched:THREAD_NR:COUNTER_IN_THREAD:SCHED_ID-[rb]...
 [example_end]
 
 where THREAD_NR refers to the nth thread, COUNTER_IN_THREAD is the nth
@@ -204,4 +208,3 @@ script as returned by the ns_schedule* commands.
 [keywords "global built-in" background schedule]
 
 [manpage_end]
-

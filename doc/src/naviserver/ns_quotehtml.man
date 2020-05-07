@@ -32,22 +32,21 @@ in a webpage with an HTML renderer. Specifically:
 [section EXAMPLES]
 
 [example_begin]
-   % ns_quotehtml "Hello World!"
-   Hello World!
+ % ns_quotehtml "Hello World!"
+ Hello World!
 [example_end]
 
 [example_begin]
-   % ns_quotehtml "The <STRONG> tag is used to indicate strongly emphasized text."
-   The &lt;STRONG&gt; tag is used to indicate strongly emphasized text.
+ % ns_quotehtml "The <STRONG> tag is used to indicate strongly emphasized text."
+ The &lt;STRONG&gt; tag is used to indicate strongly emphasized text.
 [example_end]
 
 [example_begin]
-   % ns_quotehtml {<span class="foo">}
-   &lt;span class=&#34;foo&#34;&gt;
+ % ns_quotehtml {<span class="foo">}
+ &lt;span class=&#34;foo&#34;&gt;
 [example_end]
 
-[para]
-NOTES
+[section NOTES]
 
  The set of characters that are substituted and their replacements may
  be different in previous versions of NaviServer.  For example,

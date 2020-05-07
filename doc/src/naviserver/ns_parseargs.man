@@ -41,37 +41,39 @@ the arguments can't be parsed according to the spec, "ns_parseargs"
 raises an error.
 
 [example_begin]
-    #
-    # Define a function with two positional arguments
-    #
-    proc ns_getcontent {args} {
-        ns_parseargs {
-            {-as_file true}
-            {-binary true}
-        } $args
-    
-        if {![lb]string is boolean -strict $as_file[rb]} {
-           return -code error "value of '$as_file' is not boolean"
-        }
-        if {![lb]string is boolean -strict $binary[rb]} {
-           return -code error "value of '$binary' is not boolean"
-        }
-        # ...
-    }
+ #
+ # Define a function with two positional arguments
+ #
+ proc ns_getcontent {args} {
+   ns_parseargs {
+       {-as_file true}
+       {-binary true}
+   } $args
+ 
+   if {![lb]string is boolean -strict $as_file[rb]} {
+     return -code error "value of '$as_file' is not boolean"
+   }
+   if {![lb]string is boolean -strict $binary[rb]} {
+     return -code error "value of '$binary' is not boolean"
+   }
+   # ...
+ }
 [example_end]
 
 [para]
 The second example demonstrates non-positional and positional
 arguments with and without defaults.
+
 [example_begin]
-    % ns_parseargs {-a {-b 1} -- c {d x}} {-- 1 }
-    % lappend _ [lb]info exists a[rb] [lb]info exists b[rb] [lb]info exists c[rb] [lb]info exists d[rb]
-    0 1 1 1
+ % ns_parseargs {-a {-b 1} -- c {d x}} {-- 1 }
+ % lappend _ [lb]info exists a[rb] [lb]info exists b[rb] [lb]info exists c[rb] [lb]info exists d[rb]
+ 0 1 1 1
 [example_end]
 
 
 [see_also nsd]
 [keywords "global built-in" NaviServer]
 [manpage_end]
+
 
 

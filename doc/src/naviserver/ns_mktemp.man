@@ -8,7 +8,7 @@
 [description] This command is a wrapper around the mktemp(3) function
 in the C standard library.  This function generates a unique temporary
 filename from an optional template.  
-       
+
 [para]
 Note that some implementations of mktemp are not safe (creating
 predictable/only a small number of variations) against attacks and
@@ -35,7 +35,7 @@ commonly used to create temporary file names.
 If this command is called without the optional parameter it behaves
 like
 [example_begin]
-   ns_mktemp [lb]ns_config ns/parameters tmpdir[rb]/ns-XXXXXX
+ ns_mktemp [lb]ns_config ns/parameters tmpdir[rb]/ns-XXXXXX
 [example_end]
 
 
@@ -45,8 +45,8 @@ like
 [section EXAMPLES]
 
 [example_begin]
-   % ns_mktemp /tmp/aol-XXXXXX
-   /tmp/aol-rhaGGx
+ % ns_mktemp /tmp/aol-XXXXXX
+ /tmp/aol-rhaGGx
 [example_end]
 
 

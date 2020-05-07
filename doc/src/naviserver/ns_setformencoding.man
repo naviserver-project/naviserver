@@ -7,7 +7,9 @@
 
 [description]
 
- Set the form encoding of the current connection. If the connection's urlencoding value is being changed then flush any form set cached locally, ns_conn will do the same.
+ Set the form encoding of the current connection. If the connection's
+ urlencoding value is being changed then flush any form set cached
+ locally, ns_conn will do the same.
 
 [list_begin definitions]
 
@@ -21,8 +23,8 @@
 [section EXAMPLES]
 
 [example_begin]
-   % ns_setformencoding iso-8859-1
-   iso8859-1
+ % ns_setformencoding iso-8859-1
+ iso8859-1
 [example_end]
 
 

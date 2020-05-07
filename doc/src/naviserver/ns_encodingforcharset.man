@@ -11,19 +11,15 @@
 [section {COMMANDS}]
 
 [list_begin definitions]
-
-
 [call [cmd ns_encodingforcharset] [arg charset]]
-
-
 [list_end]
 
 
 [section EXAMPLES]
 
 [example_begin]
-   % ns_encodingforcharset windows-1258
-   cp1258
+ % ns_encodingforcharset windows-1258
+ cp1258
 [example_end]
 
 

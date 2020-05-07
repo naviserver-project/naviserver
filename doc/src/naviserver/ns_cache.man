@@ -366,10 +366,9 @@ first completes.
 
 
 [example_begin]
-
-set timeout [lb]ns_time incr [lb]ns_time get[rb] 5[rb]
-
-if {[lb]catch {
+ set timeout [lb]ns_time incr [lb]ns_time get[rb] 5[rb]
+ 
+ if {[lb]catch {
     set user [lb][cmd ns_cache_eval] [option -timeout] $timeout -- users $userid {
         db_query {
             select name, email
@@ -384,12 +383,11 @@ if {[lb]catch {
             where userid = :userid
         }
     }[rb]
-} errmsg[rb]} {
+ } errmsg[rb]} {
     ns_returnunavailable "Sorry, our web server is too busy."
-}
-
-ns_return 200 text/html [lb]example_personalized_page $user $ad[rb]
-
+ }
+ 
+ ns_return 200 text/html [lb]example_personalized_page $user $ad[rb]
 [example_end]
 
 

@@ -217,7 +217,7 @@ set of HTTP response header fields.
 [para]
 For example:
 [example_begin]
-ns_set put [lb]ns_conn outputheaders[rb] "Content-Disposition" "attachment;filename=export.xotcl"
+ ns_set put [lb]ns_conn outputheaders[rb] "Content-Disposition" "attachment;filename=export.xotcl"
 [example_end]
 
 
@@ -345,15 +345,12 @@ encoded response.
 [section EXAMPLES]
 
 [example_begin]
-
-if { [lb]string match /page/* [lb]ns_conn url[rb][rb] } {
+ if { [lb]string match /page/* [lb]ns_conn url[rb][rb] } {
   ns_returnnotfound
-}
-
+ }
 [example_end]
 
 [see_also ns_adp ns_getform ns_set ns_queryget ns_time]
 [keywords "server built-in" gzip connection]
 
 [manpage_end]
-

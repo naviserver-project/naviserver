@@ -19,15 +19,11 @@ pages for the current virtual server
 [section EXAMPLES]
 
 [example_begin]
-
-oss2:nscp 8> ns_pagepath
-/usr/local/ns/html
-
+ oss2:nscp 8> ns_pagepath
+ /usr/local/ns/html
 [example_end]
 
 
 [see_also nsd]
 [keywords "global built-in" NaviServer]
 [manpage_end]
-
-

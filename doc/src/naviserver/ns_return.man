@@ -60,9 +60,9 @@ continues to execute code.
 
 
 [call [cmd ns_returnfile] \
-     [arg status] \
-     [arg mime-type] \
-     [arg filepath] ]
+   [arg status] \
+   [arg mime-type] \
+   [arg filepath] ]
 
 Return the given file as the complete response body. Headers are constructed
 using [arg status], [arg mime-type] and any pending headers set using
@@ -153,9 +153,9 @@ Specifies the number of bytes to send from the channel.
 A traditional geek greeting:
 
 [example_begin]
-ns_register_proc GET /hello {
-    ns_return 200 text/plain "Hello World!"
-}
+ ns_register_proc GET /hello {
+   ns_return 200 text/plain "Hello World!"
+ }
 [example_end]
 
 
@@ -163,9 +163,9 @@ ns_register_proc GET /hello {
 A traditional Albanian greeting, using an explicit charset:
 
 [example_begin]
-ns_register_proc GET /hello {
-    ns_return 200 "text/plain; charset=iso-8859-2" "Përshëndetje të gjithëve!"
-}
+ ns_register_proc GET /hello {
+   ns_return 200 "text/plain; charset=iso-8859-2" "Përshëndetje të gjithëve!"
+ }
 [example_end]
 
 [section CONFIGURATION]
@@ -178,15 +178,15 @@ server [const server1] has a global part (general settings for all
 servers) and a per (virtual) server part:
 
 [example_begin]
-   ns_section ns/fastpath
-   # global configuration
-   ns_param  ...
-   ...
-
-   ns_section ns/server/server1/fastpath
-   # per-server configuration
-   ns_param  ...
-   ...
+ ns_section ns/fastpath
+ # global configuration
+ ns_param  ...
+ ...
+ 
+ ns_section ns/server/server1/fastpath
+ # per-server configuration
+ ns_param  ...
+ ...
 [example_end]
 
 
@@ -361,3 +361,4 @@ Defines absolute path to server's home directory.
 	fastpath mmap cache gzip brotli serverdir pagedir writer \
 	minify]
 [manpage_end]
+

@@ -61,35 +61,35 @@ the values for that key are returned instead.
 [section EXAMPLES]
 
 [example_begin]
-   % keylset mylist a b c d e f
+ % keylset mylist a b c d e f
 [example_end]
 
 [example_begin]
-   % keylkeys mylist
-   a c e
+ % keylkeys mylist
+ a c e
 [example_end]
 
 [example_begin]
-   % keyldel mylist c
+ % keyldel mylist c
 [example_end]
 
 [example_begin]
-   % keylkeys mylist
-   a e
+ % keylkeys mylist
+ a e
 [example_end]
 
 [example_begin]
-   % keylset mylist a 1 {b c} 2
+ % keylset mylist a 1 {b c} 2
 [example_end]
 
 [example_begin]
-   % keylkeys mylist
-   a {b c}
+ % keylkeys mylist
+ a {b c}
 [example_end]
 
 [example_begin]
-   % keylkeys mylist a
-   1
+ % keylkeys mylist a
+ 1
 [example_end]
 
 

@@ -14,17 +14,13 @@ to set the urlencoding for the current connection.
 [section {COMMANDS}]
 
 [list_begin definitions]
-
-
 [call [cmd  ns_formfieldcharset] [arg form-field-name]]
-
-
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-   % ns_formfieldcharset user_charset
+ % ns_formfieldcharset user_charset
 [example_end]
 
 

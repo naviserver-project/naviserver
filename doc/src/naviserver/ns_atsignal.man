@@ -51,11 +51,11 @@ by the server process.
 statistics and reset whenever the server is signaled.
 
 [example_begin]
-[cmd ns_atsignal] {
-    foreach cache [lb]ns_cache_names[rb] {
-        ns_log notice "cache\[lb]$cache\[rb]: [lb]ns_cache_stats -reset -- $cache[rb]"
-    }
-}
+ [cmd ns_atsignal] {
+   foreach cache [lb]ns_cache_names[rb] {
+      ns_log notice "cache\[lb]$cache\[rb]: [lb]ns_cache_stats -reset -- $cache[rb]"
+   }
+ }
 [example_end]
 
 
@@ -89,7 +89,7 @@ basically the last code to run.
 [list_end]
 
 
-[see_also ns_info ns_atclose ns_ictl]
+[see_also ns_info ns_atclose ns_ictl ns_runonce]
 [keywords "global built-in" signal startup shutdown exit callback]
 
 [manpage_end]

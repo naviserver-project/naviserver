@@ -67,8 +67,8 @@ encryption.
 [option -key], [option -aad], [option -iv], [arg input],
 
 [example_begin]
-% ns_crypto::aead::encrypt string -cipher aes-128-gcm -iv 123456789 -key secret "hello world"
-bytes fa260f97eae35e3e3df0b7 tag 93654f78fd189b559c091acb410a0040
+ % ns_crypto::aead::encrypt string -cipher aes-128-gcm -iv 123456789 -key secret "hello world"
+ bytes fa260f97eae35e3e3df0b7 tag 93654f78fd189b559c091acb410a0040
 [example_end]
 
 [call [cmd "ns_crypto::aead::decrypt string"] \
@@ -90,10 +90,10 @@ The result is a byte string of the decrypted input (no dict).
 [option -key], [option -aad], [option -iv], [option -tag], [arg input],
 
 [example_begin]
-% set d [lb]ns_crypto::aead::encrypt string -cipher aes-128-gcm -iv 123456789 \
+ % set d [lb]ns_crypto::aead::encrypt string -cipher aes-128-gcm -iv 123456789 \
     -key secret -encoding binary \
     "hello world"[rb]
-% ns_crypto::aead::decrypt string -cipher aes-128-gcm -iv 123456789 \
+ % ns_crypto::aead::decrypt string -cipher aes-128-gcm -iv 123456789 \
     -key secret -tag [lb]dict get $d tag[rb] \
     -encoding binary [lb]dict get $d bytes[rb]
 [example_end]
@@ -184,8 +184,8 @@ When the option [option -binary] is specified, it applies to
 [arg key] and [arg message].
 
 [example_begin]
-% ns_hmac string -digest sha256 "Jefe" "what do ya want for nothing?"
-5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843
+ % ns_hmac string -digest sha256 "Jefe" "what do ya want for nothing?"
+ 5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843
 [example_end]
 
 [para] This low-level function operates just on an input string (which has to
@@ -213,8 +213,8 @@ When the option [option -binary] is specified, it applies to
 [arg message].
 
 [example_begin]
-% ns_crypto::md string -digest sha256 "what do ya want for nothing?"
-b381e7fec653fc3ab9b178272366b8ac87fed8d31cb25ed1d0e1f3318644c89c
+ % ns_crypto::md string -digest sha256 "what do ya want for nothing?"
+ b381e7fec653fc3ab9b178272366b8ac87fed8d31cb25ed1d0e1f3318644c89c
 [example_end]
 
 [para] This low-level function operates just on an input string (which
@@ -238,18 +238,18 @@ therefore, produced with the output option [option "-encoding binary"]
 in the example below:
 
 [example_begin]
-% set sig [lb]::ns_crypto::md string \
-	     -digest sha1 \
-	     -encoding binary \
-	     -sign /usr/local/src/naviserver/myprivate.pem \
-	     "abcdefghijklmnopqrstuxvwxyz\n"[rb]
-  
-% set vfy [lb]::ns_crypto::md string \
-	     -digest sha1 \
-	     -verify /usr/local/src/naviserver/myprivate.pem \
-	     -signature $sig \
-	     "abcdefghijklmnopqrstuxvwxyz\n"[rb]
-1
+ % set sig [lb]::ns_crypto::md string \
+ 	     -digest sha1 \
+ 	     -encoding binary \
+ 	     -sign /usr/local/src/naviserver/myprivate.pem \
+ 	     "abcdefghijklmnopqrstuxvwxyz\n"[rb]
+ 
+ % set vfy [lb]::ns_crypto::md string \
+ 	     -digest sha1 \
+ 	     -verify /usr/local/src/naviserver/myprivate.pem \
+ 	     -signature $sig \
+ 	     "abcdefghijklmnopqrstuxvwxyz\n"[rb]
+ 1
 [example_end]
 
 [para] The PEM files provided to [option "-sign"] and
@@ -316,8 +316,8 @@ Return the specified number of random bytes in the specified encoding
 (default hex).
 
 [example_begin]
-% ns_crypto::randombytes 20
-3191eb4360a3dc9b5ef667641b264d43aa1019aa
+ % ns_crypto::randombytes 20
+ 3191eb4360a3dc9b5ef667641b264d43aa1019aa
 [example_end]
 
 
@@ -355,8 +355,8 @@ When the option [option -binary] is specified, it applies to
 [option -salt] and [option -secret].
 
 [example_begin]
-% ns_crypto::randombytes 20
-3191eb4360a3dc9b5ef667641b264d43aa1019aa
+ % ns_crypto::randombytes 20
+ 3191eb4360a3dc9b5ef667641b264d43aa1019aa
 [example_end]
 
 
@@ -398,4 +398,3 @@ is performed. When the type of the Tcl value is clearly a binary type
 [keywords crypto HMAC HKDF AEAD random]
 
 [manpage_end]
-

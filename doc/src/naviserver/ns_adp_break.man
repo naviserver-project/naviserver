@@ -26,9 +26,9 @@
 [section EXAMPLES]
 
 [example_begin]
-   if {$serveThisADP == 0} {
-       ns_adp_break
-   }
+ if {$serveThisADP == 0} {
+     ns_adp_break
+ }
 [example_end]
 
 

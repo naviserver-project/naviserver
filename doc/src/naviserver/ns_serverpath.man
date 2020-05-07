@@ -19,15 +19,11 @@ for current virtual server context
 [section EXAMPLES]
 
 [example_begin]
-
-oss2:nscp 6> ns_serverpath
-/usr/local/ns
-
+ oss2:nscp 6> ns_serverpath
+ /usr/local/ns
 [example_end]
 
 
 [see_also nsd]
 [keywords "global built-in" NaviServer]
 [manpage_end]
-
-

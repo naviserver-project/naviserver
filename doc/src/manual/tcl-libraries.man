@@ -23,13 +23,11 @@ function being used to bind the Tcl procedure [term hello] to handle a GET
 request for /example/hello, plus the [term hello] procedure itself:
 
 [example_begin]
-
  ns_register_proc GET /example/hello hello
  
  proc hello {} {
    ns_return 200 text/plain "Hello World"
  }
-
 [example_end]
 
 After the function is loaded (typically from a Tcl library directory)
@@ -229,15 +227,15 @@ the modules [term foo] and [term bar] are loaded,
  # Parameters of the "tcl" section of the server "myserver"
  #
  ns_section ns/server/myserver/tcl {
-     ns_param library /home/mydir/tcl/myserver-lib
+   ns_param library /home/mydir/tcl/myserver-lib
  }
  
  #
  # Parameters of the "modules" section of the server "myserver"
  #
  ns_section ns/server/myserver/modules {
-     ns_param foo tcl
-     ns_param bar tcl
+   ns_param foo tcl
+   ns_param bar tcl
  }
 [example_end]
 
@@ -273,10 +271,11 @@ For a loaded Tcl-only module [term foo] the paths of the actual files
 can by queried via [term ns_library] as shown in the following example.
 
 [example_begin]
-   set shared [lb]ns_library shared foo[rb]
-   set priv [lb]ns_library private foo[rb]
+ set shared [lb]ns_library shared foo[rb]
+ set priv [lb]ns_library private foo[rb]
 [example_end]
 
 [see_also ns_config ns_library]
 [keywords configuration paths resolution]
 [manpage_end]
+

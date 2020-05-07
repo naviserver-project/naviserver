@@ -23,31 +23,29 @@ ns_adp_puts  command can be used to add content to the
 output buffer. A simple ADP file could contain:
 
 [example_begin]
-
-<html>
-<head><title>Hello from <%=[lb]ns_info hostname[rb]%></title></head>
-<body>
-Time is: <%=[lb]clock format [lb]clock seconds[rb][rb]%>
-Four links:
-<% for {set i 0} {$i < 4} {incr i} { ns_adp_puts "<a href=/link/$i.htm>Link $i</a><br>" } %>
-</body>
-</html>
+ <html>
+ <head><title>Hello from <%=[lb]ns_info hostname[rb]%></title></head>
+ <body>
+ Time is: <%=[lb]clock format [lb]clock seconds[rb][rb]%>
+ Four links:
+ <% for {set i 0} {$i < 4} {incr i} { ns_adp_puts "<a href=/link/$i.htm>Link $i</a><br>" } %>
+ </body>
+ </html>
 [example_end]
 
 Accessing this page would generate output similar to:
 
 [example_begin]
-<html>
-<head><title>Hello from jgdavidson.local</title></head>
-<body>
-Time is: Mon Aug 01 22:15:18 EDT 2005
-Four links: <a href=/link/0.htm>Link 0</a><br>
-<a href=/link/1.htm>Link 1</a><br>
-<a href=/link/2.htm>Link 2</a><br>
-<a href=/link/3.htm>Link 3</a><br>
-</body>
-</html>
-
+ <html>
+ <head><title>Hello from jgdavidson.local</title></head>
+ <body>
+ Time is: Mon Aug 01 22:15:18 EDT 2005
+ Four links: <a href=/link/0.htm>Link 0</a><br>
+ <a href=/link/1.htm>Link 1</a><br>
+ <a href=/link/2.htm>Link 2</a><br>
+ <a href=/link/3.htm>Link 3</a><br>
+ </body>
+ </html>
 [example_end]
 
 ADP processing normally occurs in the context of an HTTP transaction when
@@ -85,10 +83,8 @@ the  map  parameter in the ADP server config
 section, for example:
 
 [example_begin]
-
-ns_section ns/server/server1/adp
-ns_param map /*.adp ns_param map {/stories/*.adp 60}
-
+ ns_section ns/server/server1/adp
+ ns_param map /*.adp ns_param map {/stories/*.adp 60}
 [example_end]
 
 The first map will evaluate all files which end in  .adp  and do not have
@@ -126,12 +122,10 @@ The default error handling behavior can be modified by settings one or more
 virtual-server configuration flags:
 
 [example_begin]
-
-ns_section ns/server/server1/adp
-ns_param stricterror false; # Interrupt execution on any error.
-ns_param displayerror false; # Include error message in output.
-ns_param detailerror true; # Include connection details messages.
-
+ ns_section ns/server/server1/adp
+ ns_param stricterror false; # Interrupt execution on any error.
+ ns_param displayerror false; # Include error message in output.
+ ns_param detailerror true; # Include connection details messages.
 [example_end]
 
 These flags, along with other options, can be queried or modified for an
@@ -144,9 +138,7 @@ complete script. As a consequence, no conditional
 code can spanother ADP blocks. E.g., the following does not work:
 
 [example_begin]
-
-<% foreach elem $list { %> Here is an <%=$elem%> element. <% } %>
-
+ <% foreach elem $list { %> Here is an <%=$elem%> element. <% } %>
 [example_end]
 
 This behavior can be changed with the  singlescript  config option or via
@@ -155,9 +147,8 @@ to converts all text/code blocks within an ADP into a single
 Tcl script block:
 
 [example_begin]
-ns_section ns/server/server1/adp
-ns_param singlescript false; # Combine code blocks into one scripts.
-
+ ns_section ns/server/server1/adp
+ ns_param singlescript false; # Combine code blocks into one scripts.
 [example_end]
 
 Setting this option would convert the script above into the following
@@ -165,15 +156,13 @@ equivalent:
 
 
 [example_begin]
-
-<%
+ <%
   foreach elem $list {
     ns_adp_puts -nonewline "\n Here is an"
     ns_adp_puts -nonewline $elem
     ns_adp_puts -nonewline " element.\n"
   }
-%>
-
+ %>
 [example_end]
 
 Note that this option combines scripts within a particular ADP file, it
@@ -209,11 +198,9 @@ virtual-server wide gzip and ADP gzip options must be
 enabled to support compression of ADP output.
 
 [example_begin]
-
-   ns_section ns/server/server1/adp
-   ns_param gzip true     ;# Enable ADP output compression.
-   ns_param bufsize 1MB   ;# Buffer size, 1MB default.
-
+ ns_section ns/server/server1/adp
+ ns_param gzip true     ;# Enable ADP output compression.
+ ns_param bufsize 1MB   ;# Buffer size, 1MB default.
 [example_end]
 
 The ADP interface uses the server's mimetype configuration
@@ -231,9 +218,9 @@ can be used to override the encoding if necessary.
 ADP pages can be enabled per-virtual-server in the configuration file.
 
 [example_begin]
-   [cmd ns_section] "ns/server/server1/adp"
-   [cmd ns_param]   map     /*.adp
-   ...
+ [cmd ns_section] "ns/server/server1/adp"
+ [cmd ns_param]   map     /*.adp
+ ...
 [example_end]
 
 

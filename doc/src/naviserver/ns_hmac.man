@@ -108,10 +108,8 @@ Possible encodings are [term hex], [term base64url],
 [list_end]
 
 [example_begin]
-  
   nscp 2> ns_hmac string -digest sha256 "Jefe" "what do ya want for nothing?"
   5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843
-
 [example_end]
 
 [see_also nsd ns_hotp ns_totp ns_md ns_md5 ns_sha1 ns_sha ns_crypt ns_crypto ns_rand]

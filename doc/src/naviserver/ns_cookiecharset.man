@@ -13,18 +13,14 @@
 [section {COMMANDS}]
 
 [list_begin definitions]
-
-
 [call [cmd ns_cookiecharset] [arg cookie-name]]
-
-
 [list_end]
 
 
 [section EXAMPLES]
 
 [example_begin]
-   % ns_cookiecharset user_charset
+ % ns_cookiecharset user_charset
 [example_end]
 
 

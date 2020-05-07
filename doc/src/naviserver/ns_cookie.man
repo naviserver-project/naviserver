@@ -149,10 +149,6 @@ if you need to access the cookie via JavaScript.
 If the secure option is true then the cookie will only be sent back to the
 server when the client uses a secure ([term TLS]/[term SSL]) connection.
 
-
-
-
-
 [para]
 The expiry time is valid across browser sessions.  If no expiry is
 specified then the cookie will expire when the browser session ends,
@@ -161,20 +157,18 @@ which is usually when the user closes their browser.
 [list_end]
 
 
-
 [section EXAMPLES]
 
 Track all user agents which ever vist out site:
 
 [example_begin]
-proc browser_tracking_filter {} {
-    if {![lb][cmd ns_getcookie] first_visit 0[rb]} {
-        [cmd ns_setcookie] -expires -1 -- first_visit [lb]clock seconds[rb]
-    }
-}
-ns_register_filter preauth GET /* browser_tracking_filter
+ proc browser_tracking_filter {} {
+   if {![lb][cmd ns_getcookie] first_visit 0[rb]} {
+     [cmd ns_setcookie] -expires -1 -- first_visit [lb]clock seconds[rb]
+   }
+ }
+ ns_register_filter preauth GET /* browser_tracking_filter
 [example_end]
-
 
 [see_also ns_cookiecharset ]
 [keywords "server built-in" cookie session]

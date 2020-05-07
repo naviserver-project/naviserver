@@ -108,50 +108,50 @@ pool. Additional connection thread pools can be created via
 [term pools].
 
 [example_begin]
-   ns_section "ns/server/servername/pools" {
-     #
-     # To activate connection thread pools, uncomment one of the
-     # following lines and/or add other pools.
-     
-     ns_param   monitor	"Monitoring actions to check heathiness of the system"
-     ns_param   fast	"Fast requests, e.g. less than 10ms"
-   }
-   
-   ns_section "ns/server/servername/pool/monitor" {
-     ns_param   minthreads 2
-     ns_param   maxthreads 2
-     
-     ns_param   map "GET /admin/nsstats"
-     ns_param   map "GET /SYSTEM"
-     ns_param   map "GET /ds"
-     ns_param   map "POST /ds"
-     ns_param   map "GET /request-monitor"
-   }
-
-   ns_section "ns/server/servername/pool/fast" {
-     ns_param   minthreads 2
-     ns_param   maxthreads 2
-     
-     ns_param   map "GET /*.png"
-     ns_param   map "GET /*.PNG"
-     ns_param   map "GET /*.jpg"
-     ns_param   map "GET /*.pdf"
-     ns_param   map "GET /*.gif"
-     ns_param   map "GET /*.mp4"
-     ns_param   map "GET /*.ts"
-     ns_param   map "GET /*.m3u8"
-   }
-   
-   ns_section "ns/server/servername/pool/bots" {
-     ns_param   map "GET  /* {user-agent *bot*}"
-     ns_param   map "GET  /* {user-agent *rawl*}"
-     ns_param   map "GET  /* {user-agent *pider*}"
-     ns_param   map "GET  /* {user-agent *baidu*}"
-     ns_param   map "GET  /* {user-agent *Knowledge*}"
-     ns_param   minthreads 2
-     ns_param   maxthreads 2
-     ns_param   poolratelimit 1000    ;# 0; limit rate for pool to this amount (KB/s); 0 means unlimited
-   }
+ ns_section "ns/server/servername/pools" {
+   #
+   # To activate connection thread pools, uncomment one of the
+   # following lines and/or add other pools.
+ 
+   ns_param   monitor	"Monitoring actions to check heathiness of the system"
+   ns_param   fast	"Fast requests, e.g. less than 10ms"
+ }
+ 
+ ns_section "ns/server/servername/pool/monitor" {
+   ns_param   minthreads 2
+   ns_param   maxthreads 2
+ 
+   ns_param   map "GET /admin/nsstats"
+   ns_param   map "GET /SYSTEM"
+   ns_param   map "GET /ds"
+   ns_param   map "POST /ds"
+   ns_param   map "GET /request-monitor"
+ }
+ 
+ ns_section "ns/server/servername/pool/fast" {
+   ns_param   minthreads 2
+   ns_param   maxthreads 2
+ 
+   ns_param   map "GET /*.png"
+   ns_param   map "GET /*.PNG"
+   ns_param   map "GET /*.jpg"
+   ns_param   map "GET /*.pdf"
+   ns_param   map "GET /*.gif"
+   ns_param   map "GET /*.mp4"
+   ns_param   map "GET /*.ts"
+   ns_param   map "GET /*.m3u8"
+ }
+ 
+ ns_section "ns/server/servername/pool/bots" {
+   ns_param   map "GET  /* {user-agent *bot*}"
+   ns_param   map "GET  /* {user-agent *rawl*}"
+   ns_param   map "GET  /* {user-agent *pider*}"
+   ns_param   map "GET  /* {user-agent *baidu*}"
+   ns_param   map "GET  /* {user-agent *Knowledge*}"
+   ns_param   minthreads 2
+   ns_param   maxthreads 2
+   ns_param   poolratelimit 1000    ;# 0; limit rate for pool to this amount (KB/s); 0 means unlimited
+ }
 [example_end]
 
 Different pools can be configured with different parameters. It is for
@@ -204,9 +204,9 @@ interpreter creation helped. Probably it is possible to allow
 concurrent interpreter create operations in Tcl 8.6.
 
 [example_begin]
-   ns_section ns/parameters {
-      ns_param concurrentinterpcreate false   ; default false
-   }
+ ns_section ns/parameters {
+    ns_param concurrentinterpcreate false   ; default false
+ }
 [example_end]
 
 Sample documented configuration files:
@@ -229,3 +229,4 @@ Sample documented configuration files:
 	"connection thread pools" \
 	nsssl driver prebind pagedir]
 [manpage_end]
+

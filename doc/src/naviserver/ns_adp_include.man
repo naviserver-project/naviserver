@@ -65,21 +65,21 @@ Given argument is a .tcl file and should be wrapped into ADP page.
 [section EXAMPLES]
 
 [example_begin]
-    ###
-    ### Example: ADP file a.adp includes adp-file b.adp
-    ###
-    
-    # In a.adp:
-    begin of a.adp<br>
-    <% ns_adp_include b.adp %>
-    end of a.adp<br>
-    
-    # In b.adp:
-    begin of b.adp<br>
-    ...<br>
-    <% ns_adp_puts "Hello, world!" %><br>
-    ...<br>    
-    end of b.adp<br>
+ ###
+ ### Example: ADP file a.adp includes adp-file b.adp
+ ###
+ 
+ # In a.adp:
+ begin of a.adp<br>
+ <% ns_adp_include b.adp %>
+ end of a.adp<br>
+ 
+ # In b.adp:
+ begin of b.adp<br>
+ ...<br>
+ <% ns_adp_puts "Hello, world!" %><br>
+ ...<br>    
+ end of b.adp<br>
 [example_end]
 
 
@@ -87,4 +87,5 @@ Given argument is a .tcl file and should be wrapped into ADP page.
 [keywords ADP]
 
 [manpage_end]
+
 

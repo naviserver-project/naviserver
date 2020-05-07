@@ -29,23 +29,23 @@ The optional module is simply concatenated to the path returned from ns_library.
 [section EXAMPLES]
 
 [example_begin]
-   % ns_library shared
-   /home/ns/modules/tcl
+ % ns_library shared
+ /home/ns/modules/tcl
 [example_end]
 
 [example_begin]
-   % file join [lb]ns_info home[rb] modules tcl
-   /home/ns/modules/tcl
+ % file join [lb]ns_info home[rb] modules tcl
+ /home/ns/modules/tcl
 [example_end]
 
 [example_begin]
-   % ns_library private exampleModule
-   /home/ns/servers/exampleServer/tcl/exampleModule
+ % ns_library private exampleModule
+ /home/ns/servers/exampleServer/tcl/exampleModule
 [example_end]
 
 [example_begin]
-   % file join [lb]ns_info tcllib[rb] exampleModule
-   /home/ns/servers/exampleServer/tcl/exampleModule
+ % file join [lb]ns_info tcllib[rb] exampleModule
+ /home/ns/servers/exampleServer/tcl/exampleModule
 [example_end]
 
 
