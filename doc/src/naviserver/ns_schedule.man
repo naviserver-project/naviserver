@@ -34,8 +34,8 @@ scheduled scripts, so long-running scripts should be run in their own
 threads.
 
 [example_begin]
-   % set id [lb]ns_schedule_proc -once 60 { ns_log notice "this should run in 60 seconds" }[rb]
-   123
+ % set id [lb]ns_schedule_proc -once 60 { ns_log notice "this should run in 60 seconds" }[rb]
+ 123
 [example_end]
 
 
@@ -62,10 +62,10 @@ NOTE: day, hour and minute are specified in local time.  Beware of Daylight Savi
 shifts affecting the time of day when the script will execute.
 
 [example_begin]
-   % set id [lb]ns_schedule_weekly -once 2 5 35 { ns_log notice "It is now Tuesday at 5:35 AM." }[rb]
-   123
-   
-   % ns_unschedule_proc $id
+ % set id [lb]ns_schedule_weekly -once 2 5 35 { ns_log notice "It is now Tuesday at 5:35 AM." }[rb]
+ 123
+ 
+ % ns_unschedule_proc $id
 [example_end]
 
 
@@ -88,10 +88,10 @@ NOTE: hour and minute are specified in local time.  Beware of Daylight Savings T
 shifts affecting the time of day when the script will execute.
 
 [example_begin]
-   % set id [lb]ns_schedule_daily -once 5 35 { ns_log notice "It is now 5:35 AM." }[rb]
-   123
-   
-   % ns_unschedule_proc $id
+ % set id [lb]ns_schedule_daily -once 5 35 { ns_log notice "It is now 5:35 AM." }[rb]
+ 123
+ 
+ % ns_unschedule_proc $id
 [example_end]
 
 
@@ -104,11 +104,11 @@ script from running at its next scheduled time.  Returns 1 on success,
 0 on failure.
 
 [example_begin]
-   % set id [lb]ns_schedule_daily 1 0 { ns_log notice "One AM and all is well.  *gong*" }[rb]
-   19
-   
-   % ns_pause $id
-   1
+ % set id [lb]ns_schedule_daily 1 0 { ns_log notice "One AM and all is well.  *gong*" }[rb]
+ 19
+ 
+ % ns_pause $id
+ 1
 [example_end]
 
 [call [cmd ns_resume] [arg id]]
@@ -118,14 +118,14 @@ scheduling of a previously paused script via [cmd ns_pause].  Returns 1
 on success, 0 on failure.
 
 [example_begin]
-   % set id [lb]ns_schedule_daily 1 0 { ns_log notice "One AM and all is well.  *gong*" }[rb]
-   19
-   
-   % ns_pause $id
-   1
-   
-   % ns_resume $id
-   1
+ % set id [lb]ns_schedule_daily 1 0 { ns_log notice "One AM and all is well.  *gong*" }[rb]
+ 19
+ 
+ % ns_pause $id
+ 1
+ 
+ % ns_resume $id
+ 1
 [example_end]
 
 
@@ -146,8 +146,8 @@ using [cmd ns_unschedule_proc].
  be used instead of [cmd ns_after].
 
 [example_begin]
-   % ns_after 5s { ns_log notice "ns_after script executed" }
-   123
+ % ns_after 5s { ns_log notice "ns_after script executed" }
+ 123
 [example_end]
 
 
@@ -159,7 +159,7 @@ Unschedules a  previous  scheduled  script.
 the id doesn't represent a currently scheduled ID.
 
 [example_begin]
-   % ns_unschedule_proc $id
+ % ns_unschedule_proc $id
 [example_end]
 
 [list_end]
@@ -173,13 +173,14 @@ NaviServer configuration file:
 
 [example_begin]
 [cmd ns_section] ns/parameters {
-   # ...
-   # How many jobs to run in any schedule thread before thread exit.
-   ns_param schedsperthread 1000
-   #
-   # Log the the systemlog when a scheduled job takes longer than this time period
-   ns_param schedlogminduration  2s
-   # ...
+ # ...
+ # How many jobs to run in any schedule thread before thread exit.
+ ns_param schedsperthread 1000
+ #
+ # Log the system log when a scheduled job takes longer than
+ # this time period
+ ns_param schedlogminduration  2s
+ # ...
 }
 [example_end]
 
