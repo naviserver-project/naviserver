@@ -321,12 +321,11 @@ AddCmds(Tcl_Interp *interp, const void *arg)
  *      Parse a string specifying the extended parameters.
  *      The string might be:
  *
- *       - a list of plain request header fields, like e.g.
- *         "Referer X-Forwarded-For"
+ *       - a Tcl list of plain request header fields, like e.g.
+ *         {Referer X-Forwarded-For}
  *
- *       - a tagged list of header fields, which might be request
- *          or response header fields, like e.g.
- *         "req:Referer response:Content-Type"
+ *       - a Tcl list of header fields with tags to denote request or response
+ *          header fields, like e.g. {req:Referer response:Content-Type}
  *
  * Results:
  *      None
