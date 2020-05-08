@@ -211,7 +211,7 @@ line to the per-server modules section in the configuration file:
  # Parameters of the "modules" section of the server "myserver"
  #
  ns_section ns/server/myserver/modules {
-     ns_param mymodule Tcl
+   ns_param mymodule Tcl
  }
 [example_end]
 
@@ -243,9 +243,9 @@ the modules [term foo] and [term bar] are loaded,
 directories will be initialized as server start-up:
 
 [example_begin]
-  /home/mydir/tcl/myserver-lib
-  /home/mydir/tcl/myserver-lib/foo
-  /home/mydir/tcl/myserver-lib/bar
+ /home/mydir/tcl/myserver-lib
+ /home/mydir/tcl/myserver-lib/foo
+ /home/mydir/tcl/myserver-lib/bar
 [example_end]
 
 
@@ -253,18 +253,18 @@ Assume the library directory for module [term foo] contains these
 files:
 
 [example_begin]
-  init.tcl
-  aa.tcl
-  zz.tcl
+ init.tcl
+ aa.tcl
+ zz.tcl
 [example_end]
 
 The Tcl files will be sourced in this order:
 
 [example_begin]
-  /home/mydir/tcl/myserver-lib/...
-  /home/mydir/tcl/myserver-lib/foo/init.tcl
-  /home/mydir/tcl/myserver-lib/foo/aa.tcl
-  /home/mydir/tcl/myserver-lib/foo/zz.tcl
+ /home/mydir/tcl/myserver-lib/...
+ /home/mydir/tcl/myserver-lib/foo/init.tcl
+ /home/mydir/tcl/myserver-lib/foo/aa.tcl
+ /home/mydir/tcl/myserver-lib/foo/zz.tcl
 [example_end]
 
 For a loaded Tcl-only module [term foo] the paths of the actual files

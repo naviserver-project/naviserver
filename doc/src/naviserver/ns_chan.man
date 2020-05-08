@@ -76,28 +76,28 @@
 [section EXAMPLES]
 
 [example_begin]
-  # In thread #1, create the shared entry.
-  ns_chan create [lb]open /tmp/ns_chan w[rb] test
+ # In thread #1, create the shared entry.
+ ns_chan create [lb]open /tmp/ns_chan w[rb] test
  
-  # Attach to it in thread #1, and write something to it.
-  set fd [lb]ns_chan get test[rb]
-  puts $fd "this is thread #1"
+ # Attach to it in thread #1, and write something to it.
+ set fd [lb]ns_chan get test[rb]
+ puts $fd "this is thread #1"
  
-  # Detach from it in thread #1.
-  ns_chan put test
+ # Detach from it in thread #1.
+ ns_chan put test
  
-  # Now, in thread #2, attach to the channel and write something to it.
-  set fd [lb]ns_chan get test[rb]
-  puts $fd "this is thread #2"
+ # Now, in thread #2, attach to the channel and write something to it.
+ set fd [lb]ns_chan get test[rb]
+ puts $fd "this is thread #2"
  
-  # See it in the attached state in thread #2.
-  ns_chan list ;# => test
+ # See it in the attached state in thread #2.
+ ns_chan list ;# => test
  
-  # Detach from it in thread #2.
-  ns_chan put test
+ # Detach from it in thread #2.
+ ns_chan put test
  
-  # See it back in the per-virtual-server private table.
-  ns_chan list -shared ;# => test
+ # See it back in the per-virtual-server private table.
+ ns_chan list -shared ;# => test
 [example_end]
 
 

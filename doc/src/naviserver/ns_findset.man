@@ -12,11 +12,7 @@ of the first set whose name matches name, or returns an empty string if no set m
 [section {COMMANDS}]
 
 [list_begin definitions]
-
-
 [call [cmd ns_findset] [arg sets] [arg name]]
-
-
 [list_end]
 
 

@@ -22,13 +22,13 @@ not exist.
 [section EXAMPLES]
 
 [example_begin]
-   % ns_imgmime screenshot.jpg
-   image/jpeg
+ % ns_imgmime screenshot.jpg
+ image/jpeg
 [example_end]
 
 [example_begin]
-   % ns_imgmime test.html
-   image/unknown
+ % ns_imgmime test.html
+ image/unknown
 [example_end]
 
 [example_begin]
