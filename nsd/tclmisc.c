@@ -599,10 +599,10 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                      * Starting an entity.
                      */
                     inentity = WordEndsInSemi(inPtr, &length);
-                    /*
-                     * Handle numeric entities between 33 and 255.
-                     */
                     if (inentity) {
+                        /*
+                         * Handle numeric entities between 33 and 255.
+                         */
                         if (CHARTYPE(digit, *(inPtr + 1u)) != 0) {
                             long value = strtol(inPtr + 1u, NULL, 10);
 
@@ -871,6 +871,8 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                                     } else {
                                         *outPtr++ = *entities[i].value;
                                     }
+                                    inPtr += length + 1;
+                                    inentity = NS_FALSE;
                                     break;
                                 }
 
@@ -899,8 +901,9 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 
         if (needEncode) {
             Tcl_DString ds;
-            (void)Tcl_ExternalToUtfDString(Ns_GetCharsetEncoding("utf-8"), inString, (int)strlen(inString),
-                                           &ds);
+
+            (void)Tcl_ExternalToUtfDString(Ns_GetCharsetEncoding("utf-8"),
+                                           inString, (int)strlen(inString), &ds);
             Tcl_DStringResult(interp, &ds);
         } else {
             Tcl_SetObjResult(interp, Tcl_NewStringObj(inString, -1));
@@ -1216,6 +1219,7 @@ static bool
 WordEndsInSemi(const char *word, size_t *lengthPtr)
 {
     const char *start;
+
     NS_NONNULL_ASSERT(word != NULL);
 
     /*
@@ -1230,6 +1234,7 @@ WordEndsInSemi(const char *word, size_t *lengthPtr)
         word++;
     }
     *lengthPtr = (size_t)(word - start);
+
     return (*word == ';');
 }
 
