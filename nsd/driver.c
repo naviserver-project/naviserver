@@ -4027,12 +4027,12 @@ SockParse(Sock *sockPtr)
                      */
                     Ns_Log(Ns_LogRequestDebug, "100-continue: reply CONTINUE");
 
-                    iov[0].iov_base = "HTTP/1.1 100 Continue\r\n\r\n";
+                    iov[0].iov_base = (char *)"HTTP/1.1 100 Continue\r\n\r\n";
                     iov[0].iov_len = strlen(iov[0].iov_base);
 
                     sent = Ns_SockSendBufs((Ns_Sock *)sockPtr, iov, 1,
                                            NULL, 0u);
-                    if (sent != iov[0].iov_len) {
+                    if (sent != (ssize_t)iov[0].iov_len) {
                         Ns_Log(Warning, "could not deliver response: 100 Continue");
                         /*
                          * Should we bail out here?

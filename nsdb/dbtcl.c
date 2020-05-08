@@ -51,10 +51,15 @@ typedef struct InterpData {
 
 static int DbFail(Tcl_Interp *interp, Ns_DbHandle *handle, const char *cmd)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
 static void EnterDbHandle(InterpData *idataPtr, Tcl_Interp *interp, Ns_DbHandle *handle, Tcl_Obj *listObj)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+
 static int DbGetHandle(InterpData *idataPtr, Tcl_Interp *interp, const char *handleId,
                        Ns_DbHandle **handle, Tcl_HashEntry **hPtrPtr);
+
+static void QuoteSqlValue(Tcl_DString *dsPtr, Tcl_Obj *valueObj, int valueType)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 #if !defined(NS_TCL_PRE85)
 static Ns_ReturnCode CurrentHandles( Tcl_Interp *interp, Tcl_HashTable *tablePtr, Tcl_Obj *dictObj)
@@ -1147,6 +1152,56 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 
 /*
  *----------------------------------------------------------------------
+ * QuoteSqlValue --
+ *
+ *      Helper function for QuoteValueObjCmd() and QuoteListObjCmd()
+ *      doing the actual quoting work.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Updates dsPtr by appending the value.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+QuoteSqlValue(Tcl_DString *dsPtr, Tcl_Obj *valueObj, int valueType)
+{
+    int         valueLength;
+    const char *valueString;
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(valueObj != NULL);
+
+    valueString = Tcl_GetStringFromObj(valueObj, &valueLength);
+
+    if (valueType == INTCHAR('n')) {
+        Tcl_DStringAppend(dsPtr, valueString, valueLength);
+
+    } else {
+        Tcl_DStringAppend(dsPtr, "'", 1);
+
+        while (1) {
+            const char *p = strchr(valueString, INTCHAR('\''));
+            if (p == NULL) {
+                Tcl_DStringAppend(dsPtr, valueString, valueLength);
+                break;
+            } else {
+                int length = (int)((p - valueString) + 1);
+
+                Tcl_DStringAppend(dsPtr, valueString, length);
+                Tcl_DStringAppend(dsPtr, "'", 1);
+                valueString = p+1;
+                valueLength -= length;
+            }
+        }
+        Tcl_DStringAppend(dsPtr, "'", 1);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
  * QuoteValueObjCmd --
  *
  *      Prepare a value string for inclusion in an SQL statement:
@@ -1164,37 +1219,6 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *
  *----------------------------------------------------------------------
  */
-static void
-QuoteSqlValue(Tcl_DString *dsPtr, Tcl_Obj *valueObj, unsigned char valueType)
-{
-    int         valueLength;
-    const char *valueString;
-
-    valueString = Tcl_GetStringFromObj(valueObj, &valueLength);
-
-    if (valueType == INTCHAR('n')) {
-        Tcl_DStringAppend(dsPtr, valueString, valueLength);
-
-    } else {
-        Tcl_DStringAppend(dsPtr, "'", 1);
-
-        while (1) {
-            const char *p = strchr(valueString, INTCHAR('\''));
-            if (p == NULL) {
-                Tcl_DStringAppend(dsPtr, valueString, valueLength);
-                break;
-            } else {
-                int length = (p - valueString) + 1;
-                Tcl_DStringAppend(dsPtr, valueString, length);
-                Tcl_DStringAppend(dsPtr, "'", 1);
-                valueString = p+1;
-                valueLength -= length;
-            }
-        }
-        Tcl_DStringAppend(dsPtr, "'", 1);
-    }
-}
-
 static int
 QuoteValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
@@ -1267,16 +1291,16 @@ QuoteListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 
     } else {
         Tcl_DString ds;
-        int         objc;
-        Tcl_Obj   **objv;
+        int         oc;
+        Tcl_Obj   **ov;
 
         Tcl_DStringInit(&ds);
-        if (Tcl_ListObjGetElements(interp, listObj, &objc, &objv) == TCL_OK) {
+        if (Tcl_ListObjGetElements(interp, listObj, &oc, &ov) == TCL_OK) {
             int i;
 
-            for (i = 0; i < objc; i++) {
-                QuoteSqlValue(&ds, objv[i], valueType);
-                if (i < objc-1) {
+            for (i = 0; i < oc; i++) {
+                QuoteSqlValue(&ds, ov[i], valueType);
+                if (i < oc-1) {
                     Tcl_DStringAppend(&ds, ",", 1);
                 }
             }
