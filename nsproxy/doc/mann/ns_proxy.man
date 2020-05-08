@@ -20,8 +20,8 @@ can be loaded into an interpreter via the Tcl [emph load] command,
 for example:
 
 [example_begin]
-load [file /usr/local/lib/libnsproxy.so]
-[cmd ns_proxy] ...
+ load [file /usr/local/lib/libnsproxy.so]
+ [cmd ns_proxy] ...
 [example_end]
 
 [para]
@@ -30,8 +30,8 @@ a NaviServer virtual server by specifying an [emph nsproxy.so] entry
 in the server's module config entry, for example:
 
 [example_begin]
-[cmd ns_section] "ns/server/server1/modules"
-[cmd ns_param] nsproxy  nsproxy.so
+ [cmd ns_section] "ns/server/server1/modules"
+ [cmd ns_param] nsproxy  nsproxy.so
 [example_end]
 
 [para]
@@ -227,9 +227,9 @@ Alternatively, the [arg handle] itself may be used as Tcl command like
 in the example below:
 
 [example_begin]
-set handle [lb][cmd ns_proxy] get mypool[rb]
-$handle "short_running_proc"
-$handle "long_running_proc" 20000
+ set handle [lb][cmd ns_proxy] get mypool[rb]
+ $handle "short_running_proc"
+ $handle "long_running_proc" 20000
 [example_end]
 
 
@@ -434,44 +434,44 @@ The default settings of the configuration parameters of [cmd ns_proxy]
 can be provided in the configuration file of NaviServer.
 
 [example_begin]
-# Loading the nxproxy module in the [term modules] section
-# of the server.
-ns_section	ns/server/${servername}/modules {
-    # ...
-    ns_param	nsproxy			${homedir}/bin/nsproxy
-    # ...
-}
+ # Loading the nxproxy module in the [term modules] section
+ # of the server.
+ ns_section	ns/server/${servername}/modules {
+   # ...
+   ns_param	nsproxy			${homedir}/bin/nsproxy
+   # ...
+ }
  
-# Configuring the nsproxy module
-[cmd ns_section] ns/server/${servername}/module/nsproxy {
-
-    # Proxy program to start
-    ns_param	exec			${homedir}/bin/nsproxy
-
-    # Timeout when evaluating scripts
-    ns_param	evaltimeout		0s
-
-    # Timeout when getting proxy handles
-    ns_param	gettimeout		0s
-
-    # Timeout to send data
-    ns_param	sendtimeout		5s
-
-    # Timeout to receive results
-    ns_param	recvtimeout		5s
-
-    # Timeout to wait for slaves to die
-    ns_param	waittimeout		1s
-
-    # Timeout for a slave to live idle
-    ns_param	idletimeout		5m
-
-    # log eval operations longer than this to the system log
-    ns_param	logminduration		1s
-
-    # Max number of allowed slaves alive
-    ns_param	maxslaves		8
-}
+ # Configuring the nsproxy module
+ [cmd ns_section] ns/server/${servername}/module/nsproxy {
+ 
+   # Proxy program to start
+   ns_param	exec			${homedir}/bin/nsproxy
+ 
+   # Timeout when evaluating scripts
+   ns_param	evaltimeout		0s
+ 
+   # Timeout when getting proxy handles
+   ns_param	gettimeout		0s
+ 
+   # Timeout to send data
+   ns_param	sendtimeout		5s
+ 
+   # Timeout to receive results
+   ns_param	recvtimeout		5s
+ 
+   # Timeout to wait for slaves to die
+   ns_param	waittimeout		1s
+ 
+   # Timeout for a slave to live idle
+   ns_param	idletimeout		5m
+ 
+   # log eval operations longer than this to the system log
+   ns_param	logminduration		1s
+ 
+   # Max number of allowed slaves alive
+   ns_param	maxslaves		8
+ }
 [example_end]
 
 
@@ -481,30 +481,30 @@ ns_section	ns/server/${servername}/modules {
 The following demonstrates sending a script to a remote proxy:
 
 [example_begin]
-set handle [lb][cmd ns_proxy] get myproxy[rb]
-[cmd ns_proxy] eval $handle {info patchlevel}
-[cmd ns_proxy] release $handle
+ set handle [lb][cmd ns_proxy] get myproxy[rb]
+ [cmd ns_proxy] eval $handle {info patchlevel}
+ [cmd ns_proxy] release $handle
 [example_end]
 
 Alternatively, instead of using the scalar handle you can use
 the handle directly as a Tcl command:
 
 [example_begin]
-set handle [lb][cmd ns_proxy] get myproxy[rb]
-$handle {info patchlevel}
-rename $handle ""
+ set handle [lb][cmd ns_proxy] get myproxy[rb]
+ $handle {info patchlevel}
+ rename $handle ""
 [example_end]
 
 
 The following demonstrates using multiple proxies:
 
 [example_begin]
-[cmd ns_proxy] configure myproxy -maxslaves 10
-set handles [lb][cmd ns_proxy] get myproxy -handle 10[rb]
-foreach h $handles {
-    $h {puts "alive: [lb]pid[rb]"}
-}
-[cmd ns_proxy] cleanup
+ [cmd ns_proxy] configure myproxy -maxslaves 10
+ set handles [lb][cmd ns_proxy] get myproxy -handle 10[rb]
+ foreach h $handles {
+   $h {puts "alive: [lb]pid[rb]"}
+ }
+ [cmd ns_proxy] cleanup
 [example_end]
 
 

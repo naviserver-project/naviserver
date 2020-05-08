@@ -102,23 +102,23 @@ The module is typically loaded per server (specified
 below in the variable "server"):
 
 [example_begin]
-   ns_section    ns/server/${server}/modules {
-      ns_param      nsssl            nsssl.so
-   }
-   ns_section    ns/server/${server}/module/nsssl {
-      ns_param   certificate   /usr/local/ns/modules/nsssl/server.pem
-      ns_param   address       0.0.0.0
-      ns_param   port          443
-      ns_param   ciphers      "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!RC4"
-      ns_param   protocols    "!SSLv2:!SSLv3"
-      ns_param   verify         0
-    
-      ns_param   extraheaders {
-         Strict-Transport-Security "max-age=31536000; includeSubDomains"
-         X-Frame-Options SAMEORIGIN
-         X-Content-Type-Options nosniff
-      }
-   }
+ ns_section    ns/server/${server}/modules {
+    ns_param      nsssl            nsssl.so
+ }
+ ns_section    ns/server/${server}/module/nsssl {
+    ns_param   certificate   /usr/local/ns/modules/nsssl/server.pem
+    ns_param   address       0.0.0.0
+    ns_param   port          443
+    ns_param   ciphers      "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!RC4"
+    ns_param   protocols    "!SSLv2:!SSLv3"
+    ns_param   verify         0
+  
+    ns_param   extraheaders {
+       Strict-Transport-Security "max-age=31536000; includeSubDomains"
+       X-Frame-Options SAMEORIGIN
+       X-Content-Type-Options nosniff
+    }
+ }
 [example_end]
 
 This amount of configuration is sufficient for many installations, but
@@ -132,10 +132,10 @@ certificate in PEM format.  The last line with the DH parameters is
 optional but necessary perfect forward secrecy.
 
 [example_begin]
-    openssl req -new -x509 -sha256 -newkey rsa:2048 -days 365 -nodes  -keyout host.key.pem -out host.cert.pem
-    cat host.cert.pem host.key.pem > server.pem
-    rm host.cert.pem host.key.pem
-    openssl dhparam 2048 >> server.pem
+ openssl req -new -x509 -sha256 -newkey rsa:2048 -days 365 -nodes  -keyout host.key.pem -out host.cert.pem
+ cat host.cert.pem host.key.pem > server.pem
+ rm host.cert.pem host.key.pem
+ openssl dhparam 2048 >> server.pem
 [example_end]
 
 

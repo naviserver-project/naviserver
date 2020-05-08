@@ -72,10 +72,10 @@ access log. If [opt [arg new-headers]] is given it replaces the existing
 setting.
 
 [para] By default, all specified header fields are request header
-fields (like e.g. "Referer X-Forwarded-For"). Optionally one can
+fields (like e.g. {Referer X-Forwarded-For}). Optionally one can
 specify the request header fields with a prefix "request:" or "response"
 to denote request or response header fields. The prefix can be
-abbreviated to 3 characters (example: "req:Host response:Content-Type").
+abbreviated to 3 characters (example: {req:Host response:Content-Type}).
 Note that always the request header fields are reported before the
 response header fields. Caveat: certain response header fields (e.g. "Date"
 or "Server" are not accessible this way).
@@ -98,10 +98,10 @@ The nslog module is loaded per-server.
 
 [example_begin]
 ns_section "ns/server/server1/modules" {
-    ns_param   nslog   nslog.so
+  ns_param   nslog   nslog.so
 }
 ns_section "ns/server/server1/module/nslog" {
-    ns_param   ...
+  ns_param   ...
 }
 [example_end]
 
@@ -236,33 +236,33 @@ log file.
 # Configure extra nssock driver for loopback traffic
 #
 ns_section "ns/modules" {
-    ns_param loopback  ${bindir}/nssock
+  ns_param loopback  ${bindir}/nssock
 }
  
 ns_section ns/module/loopback {
-    ns_param	defaultserver	$server
-    ns_param	address		127.0.0.1
-    ns_param	port		8888
+  ns_param	defaultserver	$server
+  ns_param	address		127.0.0.1
+  ns_param	port		8888
 }
  
 #
 # Load nslog modules twice with different names
 #
 ns_section ns/server/${server}/modules {
-    ns_param	nslog		${bindir}/nslog
-    ns_param	nslog2		${bindir}/nslog
+  ns_param	nslog		${bindir}/nslog
+  ns_param	nslog2		${bindir}/nslog
 }
  
 #
 # Configure driver patterns (default "*")
 #
 ns_section ns/server/${server}/module/nslog2 {
-    ns_param	file	  ${logroot}/access-loopback.log
-    ns_param	driver 	  "loopback"
+  ns_param	file	  ${logroot}/access-loopback.log
+  ns_param	driver 	  "loopback"
 }
 ns_section ns/server/${server}/module/nslog {
-    ns_param	file	  ${logroot}/access.log
-    ns_param	driver 	  "ns*"
+  ns_param	file	  ${logroot}/access.log
+  ns_param	driver 	  "ns*"
 }
 [example_end]
 

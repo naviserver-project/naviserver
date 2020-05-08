@@ -327,55 +327,52 @@ Return the description of the provided database pool name from the
 These are valid uses of ns_db gethandle:
 
 [example_begin]
-
-ns_db gethandle
-# 1 handle from default pool
+ ns_db gethandle
+ # 1 handle from default pool
  
-ns_db gethandle -timeout 2:500000
-# 1 handle from default pool, 2.5 sec timeout
+ ns_db gethandle -timeout 2:500000
+ # 1 handle from default pool, 2.5 sec timeout
  
-ns_db gethandle -timeout -1 poolname
-# 1 handle from poolname, error if not available
+ ns_db gethandle -timeout -1 poolname
+ # 1 handle from poolname, error if not available
  
-ns_db gethandle poolname
-# 1 handle from poolname
+ ns_db gethandle poolname
+ # 1 handle from poolname
  
-ns_db gethandle -timeout 23 poolname
-# 1 handle from poolname, 23 sec timeout
+ ns_db gethandle -timeout 23 poolname
+ # 1 handle from poolname, 23 sec timeout
  
-ns_db gethandle poolname 5
-# 5 handles from poolname
+ ns_db gethandle poolname 5
+ # 5 handles from poolname
  
-ns_db gethandle -timeout 23 poolname 5
-# 5 handles from poolname, 23 sec timeout
+ ns_db gethandle -timeout 23 poolname 5
+ # 5 handles from poolname, 23 sec timeout
 [example_end]
 
 
 
 [example_begin]
-
-set db [lb]ns_db gethandle $pool[rb]
-set ret [lb]ns_db sp_start $db "p_TestProc"[rb]
+ set db [lb]ns_db gethandle $pool[rb]
+ set ret [lb]ns_db sp_start $db "p_TestProc"[rb]
  
-#
-# Set the parameters for this stored procedure.  The SQL definition of this
-# procedure is:
-#
-#   CREATE PROCEDURE p_TestProc(@x int, @y varchar(16) out, @z int out)
-#
-# The arguments to ns_db sp_setparam are like this:
-#
-#   ns_db setparam $handle $varname, $vartype, in|out, $value
-#
-set ret [lb]ns_db sp_setparam $db "@x" int in 4[rb]
-set ret [lb]ns_db sp_setparam $db "@y" varchar out "varchar val"[rb]
-set ret [lb]ns_db sp_setparam $db "@z" int out 231[rb]
+ #
+ # Set the parameters for this stored procedure.  The SQL definition of this
+ # procedure is:
+ #
+ #   CREATE PROCEDURE p_TestProc(@x int, @y varchar(16) out, @z int out)
+ #
+ # The arguments to ns_db sp_setparam are like this:
+ #
+ #   ns_db setparam $handle $varname, $vartype, in|out, $value
+ #
+ set ret [lb]ns_db sp_setparam $db "@x" int in 4[rb]
+ set ret [lb]ns_db sp_setparam $db "@y" varchar out "varchar val"[rb]
+ set ret [lb]ns_db sp_setparam $db "@z" int out 231[rb]
  
-#
-# Execute the stored procedure now
-#
-set ret [lb]ns_db sp_exec $db[rb]
-
+ #
+ # Execute the stored procedure now
+ #
+ set ret [lb]ns_db sp_exec $db[rb]
 [example_end]
 
 
@@ -387,22 +384,22 @@ PostgreSQL using the [term nsdbpg] driver, using two database pools
 where [term pool1] is the default pool.
 
 [example_begin]
-ns_section "ns/db/drivers" 
-    ns_param	postgres        ${bindir}/nsdbpg.so
- 	
-ns_section ns/server/${server}/modules 
-    ns_param	nsdb		${bindir}/nsdb.so
+ ns_section "ns/db/drivers" 
+ ns_param	postgres        ${bindir}/nsdbpg.so
  
-ns_section ns/server/${server}/db
-    ns_param	pools           pool1,pool2
-    ns_param	defaultpool     pool1
+ ns_section ns/server/${server}/modules 
+ ns_param	nsdb		${bindir}/nsdb.so
  
-ns_section ns/db/pools 
-    ns_param	pool1           "Pool 1"
-    ns_param	pool2           "Pool 2"
+ ns_section ns/server/${server}/db
+ ns_param	pools           pool1,pool2
+ ns_param	defaultpool     pool1
  
-ns_section ns/db/pool/pool1
-    ns_param	...
+ ns_section ns/db/pools 
+ ns_param	pool1           "Pool 1"
+ ns_param	pool2           "Pool 2"
+ 
+ ns_section ns/db/pool/pool1
+ ns_param	...
 [example_end]
 
 For every pool the following configuration options might be used:
@@ -468,23 +465,24 @@ Below is a sample configuration for two pools. The referenced Tcl
 variables have to be set earlier to appropriate values.
 
 [example_begin]
-ns_section ns/db/pool/pool1
-        ns_param	Connections        15
-        ns_param        LogMinDuration     10ms
-	ns_param	LogSQLerrors       $debug
-	ns_param	driver             postgres 
-	ns_param	DataSource         ${db_host}:${db_port}:${db_name}
-	ns_param	user               $db_user
-	ns_param	password           ""
- 
-ns_section ns/db/pool/pool2
-	ns_param	Connections        5
-        ns_param        LogMinDuration     10ms
-        ns_param	LogSQLerrors       $debug
-	ns_param	driver             postgres 
-	ns_param	DataSource         ${db_host}:${db_port}:${db_name}
-	ns_param	user               $db_user
-	ns_param	password           ""
+ns_section ns/db/pool/pool1 {
+  ns_param	Connections        15
+  ns_param      LogMinDuration     10ms
+  ns_param	LogSQLerrors       $debug
+  ns_param	driver             postgres 
+  ns_param	DataSource         ${db_host}:${db_port}:${db_name}
+  ns_param	user               $db_user
+  ns_param	password           ""
+}
+ns_section ns/db/pool/pool2 {
+  ns_param	Connections        5
+  ns_param      LogMinDuration     10ms
+  ns_param	LogSQLerrors       $debug
+  ns_param	driver             postgres 
+  ns_param	DataSource         ${db_host}:${db_port}:${db_name}
+  ns_param	user               $db_user
+  ns_param	password           ""
+}
 [example_end]
 
 

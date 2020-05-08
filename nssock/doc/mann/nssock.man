@@ -15,12 +15,12 @@ The module [emph nssock] is typically loaded per server, e.g. for
 [term server1]:
 
 [example_begin]
-   ns_section ns/server/server1/modules
-   ns_param   nssock   nssock.so
+ ns_section ns/server/server1/modules
+ ns_param   nssock   nssock.so
  
-   ns_section ns/server/server1/module/nssock
-   ns_param port 8000
-   ...
+ ns_section ns/server/server1/module/nssock
+ ns_param port 8000
+ ...
 [example_end]
 
 This amount of configuration is sufficient for many installations, which
@@ -71,7 +71,7 @@ capabilities of the operating system are determined at compile time.
 If you want to use TCP_FASTOPEN (introduced by Linux kernel 3.7.0), 
 you might have to activate this option in your kernel, 
 by using [example {
-   sudo sysctl net.ipv4.tcp_fastopen=1
+ sudo sysctl net.ipv4.tcp_fastopen=1
 }] (boolean, default: false)
 
 [def driverthreads]
@@ -214,15 +214,15 @@ server [emph s1] with single network driver [emph nssock]. In the
 example below the server is listening on port 8000.
 
 [example_begin]
-   ns_section "ns/servers"
-   ns_param    s1 "NaviServer Instance 1"
-
-   ns_section "ns/server/s1/modules"
-   ns_param    nssock        nssock.so
-
-   ns_section "ns/server/s1/module/nssock"
-   ns_param    address        0.0.0.0
-   ns_param    port           8000
+ ns_section "ns/servers"
+ ns_param    s1 "NaviServer Instance 1"
+ 
+ ns_section "ns/server/s1/modules"
+ ns_param    nssock        nssock.so
+ 
+ ns_section "ns/server/s1/module/nssock"
+ ns_param    address        0.0.0.0
+ ns_param    port           8000
 [example_end]
 
 It is as well possible to define multiple servers in the same
@@ -231,23 +231,23 @@ use the same driver [emph nsock] but with different ports.
 In this case it is sufficient to load the driver once.
 
 [example_begin]
-   ns_section "ns/servers"
-   ns_param    s1 "NaviServer Instance 1"
-   ns_param    s2 "NaviServer Instance 1"
-
-   ns_section "ns/server/s1/modules"
-   ns_param    nssock        nssock.so
-
-   ns_section "ns/server/s1/module/nssock"
-   ns_param    address        0.0.0.0
-   ns_param    port           8000
-
-   ns_section "ns/server/s2/modules"
-   ns_param    nssock        nssock.so
-
-   ns_section "ns/server/s2/module/nssock"
-   ns_param    address        0.0.0.0
-   ns_param    port           8001
+ ns_section "ns/servers"
+ ns_param    s1           "NaviServer Instance 1"
+ ns_param    s2           "NaviServer Instance 1"
+ 
+ ns_section "ns/server/s1/modules"
+ ns_param    nssock        nssock.so
+ 
+ ns_section "ns/server/s1/module/nssock"
+ ns_param    address       0.0.0.0
+ ns_param    port          8000
+ 
+ ns_section "ns/server/s2/modules"
+ ns_param    nssock        nssock.so
+ 
+ ns_section "ns/server/s2/module/nssock"
+ ns_param    address       0.0.0.0
+ ns_param    port          8001
 [example_end]
 
 When the config file above is named e.g. two-server-config.tcl,
@@ -271,15 +271,15 @@ example we name the different instances of the network driver
 [emph nssock1] and [emph nssock2].
 
 [example_begin]
-   ns_section ns/server/s1/modules
-   ns_param   nssock1   nssock.so
-   ns_param   nssock2   nssock.so
+ ns_section ns/server/s1/modules
+ ns_param   nssock1   nssock.so
+ ns_param   nssock2   nssock.so
  
-   ns_section ns/server/server1/module/nssock1
-   ns_param   port    8000
-   
-   ns_section ns/server/server1/module/nssock2
-   ns_param   port    8001
+ ns_section ns/server/server1/module/nssock1
+ ns_param   port    8000
+ 
+ ns_section ns/server/server1/module/nssock2
+ ns_param   port    8001
 [example_end]
 
 Now assume, we want to define two web servers "s1" and "s2", which
@@ -312,36 +312,36 @@ between the host names and the defined servers. Note that one can
 define multiple DNS names also for a single server (here for [const s2]).
 
 [example_begin]
-   #
-   # Define two servers
-   #
-   ns_section ns/servers
-   ns_param   s1      "Virtual Server s1"
-   ns_param   s2      "Virtual Server s2 "
-   
-   ns_section ns/server/s1/fastpath
-   ns_param   pagedir  /var/www/s1
-   
-   ns_section ns/server/s2/fastpath
-   ns_param   pagedir  /var/www/s2
-   
-   #
-   # Define nssock driver, directing requests to the virtual servers
-   #
-   ns_section ns/modules
-   ns_param   nssock   nssock.so
-   
-   ns_section ns/module/nssock
-   ns_param   port     8000
-   ns_param   defaultserver s1
-   
-   #
-   # Define the mapping between the DNS names and the servers.
-   #
-   ns_section ns/module/nssock/servers
-   ns_param   s1      foo.com
-   ns_param   s2      bar.com
-   ns_param   s2      baz.com
+ #
+ # Define two servers
+ #
+ ns_section ns/servers
+ ns_param   s1      "Virtual Server s1"
+ ns_param   s2      "Virtual Server s2 "
+ 
+ ns_section ns/server/s1/fastpath
+ ns_param   pagedir  /var/www/s1
+ 
+ ns_section ns/server/s2/fastpath
+ ns_param   pagedir  /var/www/s2
+ 
+ #
+ # Define nssock driver, directing requests to the virtual servers
+ #
+ ns_section ns/modules
+ ns_param   nssock   nssock.so
+ 
+ ns_section ns/module/nssock
+ ns_param   port     8000
+ ns_param   defaultserver s1
+ 
+ #
+ # Define the mapping between the DNS names and the servers.
+ #
+ ns_section ns/module/nssock/servers
+ ns_param   s1      foo.com
+ ns_param   s2      bar.com
+ ns_param   s2      baz.com
 [example_end]
 
 

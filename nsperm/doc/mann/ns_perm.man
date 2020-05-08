@@ -35,7 +35,7 @@ into the users database.
 The hostname must be specified as ipaddress/netmask or dnshostname.
 
 [example_begin]
-   128.2.142.0/255.255.255.0 or www.microsoft.com or .microsoft.com.
+ 128.2.142.0/255.255.255.0 or www.microsoft.com or .microsoft.com.
 [example_end]
 
 [para]
@@ -44,7 +44,7 @@ By default password is assumed encrypted with the [cmd ns_crypt]
 command and salt "CU":
 
 [example_begin]
-   ns_crypt mypasswd CU
+ ns_crypt mypasswd CU
 [example_end]
 
 This argument tells command that password is clear text and it should be encrypted
@@ -180,8 +180,8 @@ current request directory and loads it if modified since the last
 read. The structure of the file is simple:
 
 [example_begin]
-   allow user ...
-   deny user ...
+ allow user ...
+ deny user ...
 [example_end]
 
 [def passwdfile]
@@ -194,19 +194,20 @@ ignored.
 [list_end]
 
 [example_begin]
-   ns_section "ns/server/servername/module/nsperm"
-   ns_param   htaccess   true
-   ns_param   passwdfile /usr/local/ns/modules/nsperm/passwd
+ ns_section "ns/server/servername/module/nsperm" {
+   ns_param htaccess   true
+   ns_param passwdfile /usr/local/ns/modules/nsperm/passwd
+ }
 [example_end]
 
 
 [section EXAMPLES]
 
 [example_begin]
-   ns_perm adduser test [lb]ns_crypt testpass ""[rb] TestUser
-   ns_perm adduser -salt CU test2 test TestUser2
-   
-   ns_perm allowuser GET /Documents test test2
+ ns_perm adduser test [lb]ns_crypt testpass ""[rb] TestUser
+ ns_perm adduser -salt CU test2 test TestUser2
+ 
+ ns_perm allowuser GET /Documents test test2
 [example_end]
 
 [see_also nsd ns_crypt]
