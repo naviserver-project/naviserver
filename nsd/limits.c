@@ -337,9 +337,7 @@ NsTclRegisterLimitsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
 static NsLimits *
 FindLimits(const char *limits, int create)
 {
-    NsLimits      *limitsPtr;
     Tcl_HashEntry *hPtr;
-    int            isNew;
 
     NS_NONNULL_ASSERT(limits != NULL);
 
@@ -347,8 +345,12 @@ FindLimits(const char *limits, int create)
     if (create == 0) {
         hPtr = Tcl_FindHashEntry(&limtable, limits);
     } else {
+        int isNew = 0;
+
         hPtr = Tcl_CreateHashEntry(&limtable, limits, &isNew);
         if (isNew != 0) {
+            NsLimits *limitsPtr;
+
             limitsPtr = ns_calloc(1u, sizeof(NsLimits));
             limitsPtr->name = Tcl_GetHashKey(&limtable, hPtr);
             Ns_MutexInit(&limitsPtr->lock);
