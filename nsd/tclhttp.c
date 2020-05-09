@@ -1378,6 +1378,7 @@ HttpQueue(
         }
 
     } else {
+        bool haveDoneCallback;
 
         /*
          * All is fine. Fill in the rest of the task options
@@ -1388,7 +1389,8 @@ HttpQueue(
         if (outputFileName != NULL) {
             httpPtr->spoolFileName =  ns_strdup(outputFileName);
         }
-        if (doneCallback != NULL) {
+        haveDoneCallback = (doneCallback != NULL);
+        if (haveDoneCallback) {
             httpPtr->doneCallback = ns_strdup(doneCallback);
         }
         if (decompress != 0) {
@@ -1429,7 +1431,7 @@ HttpQueue(
                 Ns_TclPrintfResult(interp, "could not queue HTTP task");
                 result = TCL_ERROR;
 
-            } else if (httpPtr->doneCallback != NULL) {
+            } else if (haveDoneCallback) {
 
                 /*
                  * There is nothing to wait on when the doneCallback
