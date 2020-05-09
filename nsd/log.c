@@ -477,7 +477,7 @@ Ns_CreateLogSeverity(const char *name)
 {
     Ns_LogSeverity  severity;
     Tcl_HashEntry  *hPtr;
-    int             isNew;
+    int             isNew = 0;
 
     NS_NONNULL_ASSERT(name != NULL);
 
