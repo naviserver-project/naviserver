@@ -6905,9 +6905,10 @@ WriterListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 static int
 WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int               intValue = -1, result = TCL_OK;
+    int               result = TCL_OK;
     Tcl_Obj          *driverObj = NULL;
     Ns_Conn          *conn = NULL;
+    Tcl_WideInt       intValue = -1;
     const char       *firstArgString;
     Ns_ObjvValueRange range = {1024, INT_MAX};
     Ns_ObjvSpec   *opts, optsNew[] = {

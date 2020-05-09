@@ -341,7 +341,7 @@ ConfigWideIntRange(const char *section, const char *key, Tcl_WideInt defaultValu
                    const char *kind)
 {
     const char *s;
-    char defstr[TCL_INTEGER_SPACE];
+    char        defstr[TCL_INTEGER_SPACE];
     Tcl_WideInt value;
 
     NS_NONNULL_ASSERT(section != NULL);

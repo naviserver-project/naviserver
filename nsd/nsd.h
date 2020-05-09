@@ -1074,7 +1074,7 @@ typedef struct {
     size_t             replyBodySize;    /* amount of reply body received */
     size_t             replySize;        /* amount of reply body received */
     Ns_Set            *replyHeaders;     /* ns_set for response headers */
-    int                spoolLimit;       /* spool content above this limit */
+    Tcl_WideInt        spoolLimit;       /* spool content above this limit */
     int                spoolFd;          /* fd of spool file */
     char              *spoolFileName;    /* filename of the spool file */
     Tcl_Channel        spoolChan;        /* channel where to spool */

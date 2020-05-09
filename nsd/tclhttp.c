@@ -658,13 +658,12 @@ HttpWaitObjCmd(
     NsHttpTask *httpPtr = NULL;
 
     char       *id = NULL, *outputFileName = NULL;
-    int         result = TCL_OK, decompress = 0, spoolLimit = -1;
-
+    int         result = TCL_OK, decompress = 0;
+    Tcl_WideInt spoolLimit = -1;
     Tcl_Obj    *elapsedVarObj = NULL,
                *resultVarObj = NULL,
                *statusVarObj = NULL,
                *fileVarObj = NULL;
-
     Ns_Set     *replyHeaders = NULL;
     Ns_Time    *timeoutPtr = NULL;
 
@@ -1235,7 +1234,8 @@ HttpQueue(
     bool run
 ) {
     Tcl_Interp *interp;
-    int         result = TCL_OK, decompress = 0, spoolLimit = -1;
+    int         result = TCL_OK, decompress = 0;
+    Tcl_WideInt spoolLimit = -1;
     int         verifyCert = 0, keepHostHdr = 0;
     NsHttpTask *httpPtr = NULL;
     char       *cert = NULL,
