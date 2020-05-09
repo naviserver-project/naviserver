@@ -270,6 +270,7 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
     size_t        bodyLength, toWrite, neededBufs;
     ssize_t       nwrote;
     struct iovec  sbufs[32], *sbufPtr;
+    char          hdr[MAX_CHARS_CHUNK_HEADER]; /* Address of this variable might be used in Ns_ConnSend() */
 
     NS_NONNULL_ASSERT(conn != NULL);
     //NS_NONNULL_ASSERT(bufs != NULL);
@@ -345,7 +346,6 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
              */
 
             if (bodyLength > 0u) {
-                char   hdr[MAX_CHARS_CHUNK_HEADER];
                 size_t len;
 
                 assert(nbufs > 0);
