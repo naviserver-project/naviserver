@@ -523,7 +523,7 @@ ssize_t
 Ns_SockSendBufs2(NS_SOCKET sock, const struct iovec *bufs, int nbufs,
                  unsigned int flags)
 {
-    ssize_t sent = 0;
+    ssize_t sent;
 
     NS_NONNULL_ASSERT(bufs != NULL);
 
