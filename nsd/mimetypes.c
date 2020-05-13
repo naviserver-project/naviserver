@@ -385,6 +385,8 @@ static const struct exttype {
     { ".gzip",    "application/gzip" },
     { ".h",       "text/plain" },
     { ".hal",     "application/vnd.hal+xml"},
+    { ".heic",    "image/heic"},
+    { ".heif",    "image/heif"},
     { ".hbci",    "application/vnd.hbci"},
     { ".hdf",     "application/x-hdf" },
     { ".hdt",     "application/vnd.hdt"},
