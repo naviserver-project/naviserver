@@ -385,11 +385,11 @@ static const struct exttype {
     { ".gzip",    "application/gzip" },
     { ".h",       "text/plain" },
     { ".hal",     "application/vnd.hal+xml"},
-    { ".heic",    "image/heic"},
-    { ".heif",    "image/heif"},
     { ".hbci",    "application/vnd.hbci"},
     { ".hdf",     "application/x-hdf" },
     { ".hdt",     "application/vnd.hdt"},
+    { ".heic",    "image/heic"},
+    { ".heif",    "image/heif"},
     { ".heldxml", "application/held+xml"},                   /* http://www.iana.org/go/rfc5985 */
     { ".help",    "application/x-helpfile" },
     { ".hgl",     "application/vnd.hp-hpgl" },
