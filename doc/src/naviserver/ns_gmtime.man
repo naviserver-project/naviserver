@@ -33,8 +33,8 @@ Time (GMT).
 [section EXAMPLES]
 
 [example_begin]
-   % ns_gmtime
-   40 31 2 12 5 104 6 163 0
+ % ns_gmtime
+ 40 31 2 12 5 104 6 163 0
 [example_end]
 
 

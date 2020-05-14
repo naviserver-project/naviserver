@@ -11,18 +11,14 @@
 [section {COMMANDS}]
 
 [list_begin definitions]
-
-
-[call [cmd ns_adp_dump]]
-
-
+ [call [cmd ns_adp_dump]]
 [list_end]
 
 
 [section EXAMPLES]
 
 [example_begin]
-   ns_adp_dump
+ ns_adp_dump
 [example_end]
 
 

@@ -39,8 +39,15 @@
 
 /*
  * math.h is only needed for round()
+ *
+ * But older Microsoft Windows compilers do not include round() in math.h!  So
+ * for them, use the hack below:
  */
+#if defined(_MSC_VER) && _MSC_VER <= 1600
+static double round(double val) { return floor(val + 0.5); }
+#else
 #include <math.h>
+#endif
 
 /*
  * Local functions defined in this file
@@ -738,40 +745,6 @@ DblValueToNstime( Ns_Time *timePtr, double dblValue)
     */
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * Ns_TimeToMilliseconds --
- *
- *      Convert Ns_Time to milliseconds. Make sure that in case the Ns_Time
- *      value is not 0, the result is also not 0.
- *
- * Results:
- *      Time in milliseconds.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-long
-Ns_TimeToMilliseconds(const Ns_Time *timePtr)
-{
-    long result;
-
-    NS_NONNULL_ASSERT(timePtr != NULL);
-
-    if (likely(timePtr->sec >= 0)) {
-        result = timePtr->sec*1000 + timePtr->usec/1000;
-    } else {
-        result = timePtr->sec*1000 - timePtr->usec/1000;
-    }
-    if (result == 0 && timePtr->sec == 0 && timePtr->usec != 0) {
-        result = 1;
-    }
-
-    return result;
-}
 
 
 /*
@@ -1002,7 +975,8 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
  *      Convert string to time structure.  Check, if the string contains the
  *      classical NaviServer separator for sec:usec and interpret the string
  *      in this format.  If not, check if this has a "." as separator, and use
- *      a floating point notation. an optional time unit can be specified.
+ *      a floating point notation. An optional time unit (ms, s, m, h, d) can
+ *      be specified immediately after the numeric part.
  *
  * Results:
  *      Tcl result code.

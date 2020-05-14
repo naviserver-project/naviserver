@@ -97,7 +97,7 @@ latency and disk usage).
 
 
 [example_begin]
-ns_writer submitfiles {{filename /tmp/f1} {filename /tmp/f2 -offset 10}}
+ ns_writer submitfiles {{filename /tmp/f1} {filename /tmp/f2 -offset 10}}
 [example_end]
 
 
@@ -128,16 +128,16 @@ Boolean value.
 [list_end]
 
 [section CONFIGURATION]
-        
+      
 [para]
 [emph {Basic configuration options:}]
-        
+      
 [example_begin]
-ns_section "ns/server/default/module/nssock" {
+ ns_section "ns/server/default/module/nssock" {
     ns_param writerthreads 1
     ns_param writersize 4kB
     ns_param writerstreaming true
-}
+ }
 [example_end]
 
 [para]
@@ -162,11 +162,9 @@ reduce the damage of slow-read attacks.
 [section EXAMPLES]
 
 [example_begin]
-ns_writer submitfile /tmp/biglist.txt
+ ns_writer submitfile /tmp/biglist.txt
 [example_end]
 
 [see_also ns_returnfile ns_conn ns_write ns_headers]
 [keywords "server built-in" writer configuration]
 [manpage_end]
-
-

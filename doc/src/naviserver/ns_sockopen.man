@@ -34,23 +34,20 @@ or as a number with the time units ms, s, m, d.
 [section EXAMPLES]
 
 [example_begin]
-set fds [lb]ns_sockopen www.aolserver.com 80[rb]
-set rid [lb]lindex $fds 0[rb]
-set wid [lb]lindex $fds 1[rb]
-puts $wid "GET /index.htm HTTP/1.0\r\n\r"
-flush $wid
-while {[lb]set line [lb]string trim [lb]gets $rid[rb][rb][rb] != ""} {
+ set fds [lb]ns_sockopen www.aolserver.com 80[rb]
+ set rid [lb]lindex $fds 0[rb]
+ set wid [lb]lindex $fds 1[rb]
+ puts $wid "GET /index.htm HTTP/1.0\r\n\r"
+ flush $wid
+ while {[lb]set line [lb]string trim [lb]gets $rid[rb][rb][rb] != ""} {
   lappend headers $line
-}
-set page [lb]read $rid[rb]
-close $rid
-close $wid
-
+ }
+ set page [lb]read $rid[rb]
+ close $rid
+ close $wid
 [example_end]
 
 
 [see_also ns_sockcallback ns_sockcheck]
 [keywords "global built-in" NaviServer socket]
 [manpage_end]
-
-

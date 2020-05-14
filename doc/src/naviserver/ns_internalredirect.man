@@ -28,10 +28,10 @@ the existing connection and using the same Tcl interp.
 [section EXAMPLES]
 
 [example_begin]
-  if { $login } {
-    ns_internalredirect /main
-    return
-  }
+ if { $login } {
+   ns_internalredirect /main
+   return
+ }
 [example_end]
 
 [see_also nsd ns_returnredirect]

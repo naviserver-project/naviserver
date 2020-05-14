@@ -162,11 +162,14 @@ ns_section ns/parameters {
     ns_param    lognotice       true      ;# informational messages
     #ns_param   sanitizelogfiles 2        ;# default: 2; 0: none, 1: full, 2: human-friendly
 
-    # ns_param	mailhost	localhost
-    # ns_param	jobsperthread	0
-    # ns_param	jobtimeout	5m
-    # ns_param	schedsperthread	0
-    # ns_param	schedmaxelapsed	2s        ;# print warnings when scheduled job takes longer than that
+    # ns_param	mailhost	    localhost
+
+    # ns_param	jobsperthread	    0     ;# number of ns_jobs before thread exits
+    # ns_param	jobtimeout	    5m    ;# default "ns_job wait" timeout
+    # ns_param	joblogminduration   1s    ;# default: 1s
+
+    # ns_param	schedsperthread	    0     ;# number of scheduled jobs before thread exits
+    # ns_param	schedlogminduration 2s    ;# print warnings when scheduled job takes longer than that
 
     # Write asynchronously to log files (access log and error log)
     # ns_param	asynclogwriter	true		;# false
@@ -396,14 +399,12 @@ ns_section ns/server/${server} {
 
     ns_param	connsperthread	1000	;# 10000; number of connections (requests) handled per thread
     ;# Setting connsperthread to > 0 will cause the thread to
-    ;# graciously exit, after processing that many
-    ;# requests, thus initiating kind-of Tcl-level
-    ;# garbage collection.
+    ;# graciously exit, after processing that many requests, thus
+    ;# initiating kind-of Tcl-level garbage collection.
 
     # ns_param	threadtimeout	2m	;# 2m; timeout for idle threads.
-    ;# In case, minthreads < maxthreads, threads
-    ;# are shutdown after this idle time until
-    ;# minthreads are reached.
+    ;# In case, minthreads < maxthreads, threads are shutdown after
+    ;# this idle time until minthreads are reached.
 
     # ns_param	lowwatermark	10       ;# 10; create additional threads above this queue-full percentage
     ns_param	highwatermark	100      ;# 80; allow concurrent creates above this queue-is percentage
@@ -419,7 +420,7 @@ ns_section ns/server/${server} {
     # ns_param	compresspreinit true	;# false, if true then initialize and allocate buffers at startup
 
     # Enable nicer directory listing (as handled by the OpenACS request processor)
-    # ns_param	directorylisting	fancy	;# Can be simple or fancy
+    # ns_param	directorylisting 	fancy	;# Can be simple or fancy
 
     #
     # Configuration of replies
@@ -756,8 +757,8 @@ ns_section ns/db/pools {
 }
 
 ns_section ns/db/pool/pool1 {
-    # ns_param	maxidle            0
-    # ns_param	maxopen            0
+    # ns_param	maxidle            0     ;# time interval for shut-down of idle connections; default: 5m
+    # ns_param	maxopen            0     ;# time interval for maximum time of open connections; default: 60m
     # ns_param  checkinterval      5m    ;# check pools for stale handles in this interval
     ns_param	connections        15
     ns_param    LogMinDuration     10ms  ;# when SQL logging is on, log only statements above this duration
@@ -869,6 +870,7 @@ ns_section ns/server/${server}/module/nsproxy {
     # ns_param	recvtimeout        5s
     # ns_param	waittimeout        100ms
     # ns_param	idletimeout        5m
+    # ns_param	logminduration     1s
 }
 
 #

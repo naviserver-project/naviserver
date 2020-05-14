@@ -177,17 +177,17 @@ The new resource may be a static, Tcl or ADP page, or a registered procedure
 or ADP.
 
 [example_begin]
-[cmd ns_section] "ns/server/server1/redirects"
-[cmd ns_param]   404    /notfound.adp
-[cmd ns_param]   503    /busy.html
+ [cmd ns_section] "ns/server/server1/redirects"
+ [cmd ns_param]   404    /notfound.adp
+ [cmd ns_param]   503    /busy.html
 [example_end]
 
 [para]
 The realm used for HTTP Basic authentication is set server-wide:
 
 [example_begin]
-[cmd ns_section] "ns/server"
-[cmd ns_param]   realm  "Example"
+ [cmd ns_section] "ns/server"
+ [cmd ns_param]   realm  "Example"
 [example_end]
 
 
@@ -198,17 +198,17 @@ Use a custom error message to notify users when the hamsters which turn the
 wheels that run the server are on lunch break:
 
 [example_begin]
-ns_register_proc GET /service {
-
-    set hour [lb]clock format [lb]clock seconds[rb] -format %H[rb]
-
-    if {$hour >= 12 && $hour <= 13} {
-        ns_returnerror 503 "Gone for lunch. Back at 2pm."
-        return
-    }
-
-    [cmd ns_returnok]
-}
+ ns_register_proc GET /service {
+ 
+   set hour [lb]clock format [lb]clock seconds[rb] -format %H[rb]
+ 
+   if {$hour >= 12 && $hour <= 13} {
+      ns_returnerror 503 "Gone for lunch. Back at 2pm."
+      return
+   }
+ 
+   [cmd ns_returnok]
+ }
 [example_end]
 
 

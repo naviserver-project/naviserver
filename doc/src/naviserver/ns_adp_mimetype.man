@@ -6,28 +6,27 @@
 
 [description]
 
- This command will either get or set the mime type returned to the client
- when the parsing of the page is complete. If called with no arguments, the
- current mime type will be returned. If called with one argument, the mime
- type will be set to the given mime type.
+ This command will either get or set the mime type returned to the
+ client when the parsing of the page is complete. If called with no
+ arguments, the current mime type will be returned. If called with one
+ argument, the mime type will be set to the given mime type. Updating
+ the mimetype will invoke code to adjust output encoding if necessary.
 
-[para]
- Note: This command should not be called outside an ADP page.
+[section {NOTES}]
+
+ This command should not be called outside an ADP page.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
-
 [call [cmd ns_adp_mimetype] [opt [arg mimetype]]]
-
-
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-   ns_adp_mimetype
-   ns_adp_mimetype "text/plain"
+ ns_adp_mimetype
+ ns_adp_mimetype "text/plain"
 [example_end]
 
 

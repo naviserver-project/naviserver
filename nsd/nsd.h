@@ -202,8 +202,9 @@ struct nsconf {
     } tcl;
 
     struct {
-        int jobsperthread;
         Ns_Time timeout;
+        Ns_Time logminduration;
+        int     jobsperthread;
     } job;
 };
 
@@ -1073,7 +1074,7 @@ typedef struct {
     size_t             replyBodySize;    /* amount of reply body received */
     size_t             replySize;        /* amount of reply body received */
     Ns_Set            *replyHeaders;     /* ns_set for response headers */
-    int                spoolLimit;       /* spool content above this limit */
+    Tcl_WideInt        spoolLimit;       /* spool content above this limit */
     int                spoolFd;          /* fd of spool file */
     char              *spoolFileName;    /* filename of the spool file */
     Tcl_Channel        spoolChan;        /* channel where to spool */
@@ -1352,6 +1353,7 @@ NS_EXTERN Tcl_ObjCmdProc
 NS_EXTERN Ns_LogSeverity Ns_LogRequestDebug;
 NS_EXTERN Ns_LogSeverity Ns_LogConnchanDebug;
 NS_EXTERN Ns_LogSeverity Ns_LogUrlspaceDebug;
+NS_EXTERN Ns_LogSeverity Ns_LogTimeoutDebug;
 NS_EXTERN bool NsWriterBandwidthManagement;
 
 NS_EXTERN const char *nsBuildDate;

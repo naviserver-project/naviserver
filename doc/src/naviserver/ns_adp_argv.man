@@ -24,17 +24,17 @@
 [section EXAMPLES]
 
 [example_begin]
-   # In a.adp:
-   <% ns_adp_include b.adp example a b c %>
+ # In a.adp:
+ <% ns_adp_include b.adp example a b c %>
 [example_end]
 
 [example_begin]
-   # In b.adp:
-   <%
-     ns_adp_argv      ;# => b.adp example a b c
-     ns_adp_argv 0    ;# => b.adp
-     ns_adp_argv 4    ;# => c
-   %>
+ # In b.adp:
+ <%
+   ns_adp_argv      ;# => b.adp example a b c
+   ns_adp_argv 0    ;# => b.adp
+   ns_adp_argv 4    ;# => c
+ %>
 [example_end]
 
 

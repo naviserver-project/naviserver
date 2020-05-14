@@ -2524,6 +2524,8 @@ ConnRun(Conn *connPtr)
              */
             NsRunTraces(conn);
         }
+    } else {
+        Ns_Log(Notice, "not running NS_FILTER_TRACE status %d", status);
     }
 
     /*
@@ -2568,6 +2570,9 @@ ConnRun(Conn *connPtr)
         void *wrPtr;
 
         NsWriterLock();
+        /*
+         * Avoid potential race conditions, so refetch inside the lock.
+         */
         wrPtr = connPtr->strWriter;
         if (wrPtr != NULL) {
             NsWriterFinish(wrPtr);

@@ -17,7 +17,7 @@ file will be loaded several times
 [para]
 [option -global]
 If specified run the command in global context
-otherwise in current virtual server
+otherwise in current virtual server.
 
 [para]
 [arg script]
@@ -27,17 +27,14 @@ Tcl script to run
 [section EXAMPLES]
 
 [example_begin]
-
-ns_runonce {
-
-    ns_cache_create mycache 0
-}
-
+ ns_runonce {
+   ns_cache_create mycache 0
+ }
 [example_end]
 
 
-[see_also nsd]
-[keywords "server built-in" NaviServer]
+[see_also nsd ns_atstartup]
+[keywords "server built-in" NaviServer callback]
 [manpage_end]
 
 

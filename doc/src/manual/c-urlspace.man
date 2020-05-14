@@ -73,68 +73,65 @@ ns_UrlSpecificSet("server1", "GET", "/foo/bar/*.html", myID, myData,
 
 
 [example_begin]
-
-
-------------------------------------------------------------------------------
-
-urlspace: JUNCTION
+ ------------------------------------------------------------------------------
+ 
+ urlspace: JUNCTION
   byname: INDEX [lb]*[rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]
                  |
   +--------------+
   |
   V
-CHANNEL
+ CHANNEL
   filter:  CHAR*   "*.html"
   trie:    TRIE
              indexnode: INDEX* (NULL)
-	     branches:  INDEX  [lb]*[rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]
-	                        |
+ 	     branches:  INDEX  [lb]*[rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]
+ 	                        |
   +-----------------------------+
   |
   V
-BRANCH
+ BRANCH
   word: CHAR* "server1"
   node: TRIE
           indexnode: INDEX* (NULL)
-	  branches:  INDEX  [lb]*[rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]
-	                     |
+ 	  branches:  INDEX  [lb]*[rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]
+ 	                     |
   +--------------------------+
   |
   V
-BRANCH
+ BRANCH
   word: CHAR* "GET"
   node: TRIE
           indexnode: INDEX* (NULL)
-	  branches:  INDEX  [lb]*[rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]
-	                     |
+ 	  branches:  INDEX  [lb]*[rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]
+ 	                     |
   +--------------------------+
   |
   V
-BRANCH
+ BRANCH
   word: CHAR* "foo"
   node: TRIE
           indexnode: INDEX* (NULL)
-	  branches:  INDEX  [lb]*[rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]
-	                     |
+ 	  branches:  INDEX  [lb]*[rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]
+ 	                     |
   +--------------------------+
   |
   V
-BRANCH
+ BRANCH
   word: CHAR* "*.html"
   node: TRIE
           indexnode: INDEX* -----------------> [lb]*[rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]
-	  branches:  INDEX  [lb] [rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]     |
-	                                        |
+ 	  branches:  INDEX  [lb] [rb][lb] [rb][lb] [rb][lb] [rb][lb] [rb]     |
+ 	                                        |
   +---------------------------------------------+
   |
   V
-NODE
+ NODE
   id:                  INT               myID
   dataInherit:         VOID*             myData
   dataNoInherit:       VOID*             0
   deleteFuncInherit:   VOID(*)(VOID*)    MyDeleteProc
   deleteFuncNoInherit: VOID(*)(VOID*)    0
-
 [example_end]
 
 

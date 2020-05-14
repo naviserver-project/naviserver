@@ -26,12 +26,12 @@ The server directory is a subdirectory of "servers" under the path returned from
 [section EXAMPLES]
 
 [example_begin]
-   % ns_modulepath exampleServer
-   /home/ns/servers/exampleServer
+ % ns_modulepath exampleServer
+ /home/ns/servers/exampleServer
 [example_end]
 
 [example_begin]
-   % file join 
+ % file join 
 [example_end]
 
 [keywords "global built-in" module]

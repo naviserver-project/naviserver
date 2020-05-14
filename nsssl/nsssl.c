@@ -47,7 +47,7 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
 #include <openssl/rand.h>
 #include "../nsd/nsopenssl.h"
 
-#ifdef HAVE_OPENSSL_PRE_1_1
+#ifndef HAVE_X509_STORE_CTX_GET_OBJ_BY_SUBJECT
 # define OPENSSL_NO_OCSP 1
 #endif
 
@@ -426,7 +426,7 @@ OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
  * OCSP_computeResponse --
  *
  *      Get OCSP_RESPONSE either from a cache file or from the cerificate
- *      issuing server via the DER encoded OCSP request. in case the disk
+ *      issuing server via the DER encoded OCSP request. In case the disk
  *      lookup fails, but the request to the AIA server succeeds, the result
  *      is stored for caching in the file system.
  *
@@ -594,9 +594,9 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
          */
         base64len = MAX(4, ((size_t)derLength * 4/3) + 4);
         Tcl_DStringSetLength(&dsBase64, (int)base64len);
-        base64len = Ns_Base64Encode((unsigned char *)dsBinary.string,
-                                    (size_t)derLength, dsBase64.string,
-                                    0, 0);
+        (void) Ns_Base64Encode((unsigned char *)dsBinary.string,
+                               (size_t)derLength, dsBase64.string,
+                               0, 0);
         Tcl_DStringAppend(&dsCMD, "ns_http run ", -1);
         Tcl_DStringAppend(&dsCMD, aiaURL, -1);
 
@@ -612,8 +612,8 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
         Ns_UrlPathEncode(&dsCMD, dsBase64.string, NULL);
 
         {
-            // maybe we can get an interpreter from SSLContext, depending of being
-            // able to pass Ns_Sock to callback, or to access it earlier an push
+            // maybe we can get an interpreter from the SSLContext, depending of being
+            // able to pass Ns_Sock to callback, or to access it earlier via a push
             // into into the ocsp context
             Tcl_Interp *interp = Ns_TclAllocateInterp(NULL);
 
@@ -630,7 +630,7 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
                     Tcl_Obj *statusObj = Tcl_NewStringObj("status", -1);
                     Tcl_Obj *bodyObj = Tcl_NewStringObj("body", -1);
                     Tcl_Obj *valueObj = NULL;
-                    Ns_ReturnCode status = NS_OK;
+                    Ns_ReturnCode status;
 
                     resultObj = Tcl_GetObjResult(interp);
                     Tcl_IncrRefCount(resultObj);
@@ -639,9 +639,13 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
                         && valueObj != NULL
                         ) {
                         const char *stringValue =  Tcl_GetString(valueObj);
-
-                        /*fprintf(stderr, "### OCSP_REQUEST status <%s>\n", stringValue);*/
-                        if (*stringValue != '2') {
+                        /*
+                         * Check, if the HTTP status code starts with a '2'.
+                         */
+                        if (*stringValue == '2') {
+                            status = NS_OK;
+                        } else {
+                            /*fprintf(stderr, "### OCSP_REQUEST status <%s>\n", stringValue);*/
                             status = NS_ERROR;
                         }
                     } else {
@@ -776,9 +780,11 @@ Ns_ModuleInit(const char *server, const char *module)
          * Initialize cert storage for the SSL_CTX; otherwise
          * X509_STORE_CTX_get_* operations will fail.
          */
+#ifdef SSL_CTX_build_cert_chain
         if (SSL_CTX_build_cert_chain(drvPtr->ctx, 0) != 1) {
             Ns_Log(Notice, "nsssl SSL_CTX_build_cert_chain failed");
         }
+#endif
         storePtr = SSL_CTX_get_cert_store(drvPtr->ctx /*SSL_get_SSL_CTX(s)*/);
         Ns_Log(Notice, "nsssl:SSL_CTX_get_cert_store %p", (void*)storePtr);
         rc = X509_STORE_load_locations(storePtr, value, NULL);

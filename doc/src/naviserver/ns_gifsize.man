@@ -19,13 +19,13 @@ An error is generated if the file does not exist or if it is not a GIF file.
 [section EXAMPLES]
 
 [example_begin]
-   % ns_gifsize screenshot.gif
-   1024 768
+ % ns_gifsize screenshot.gif
+ 1024 768
 [example_end]
 
 [example_begin]
-   % ns_gifsize test.html
-   invalid GIF file: "test.html"
+ % ns_gifsize test.html
+ invalid GIF file: "test.html"
 [example_end]
 
 [keywords "global built-in" images]

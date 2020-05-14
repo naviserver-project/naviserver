@@ -24,8 +24,8 @@
 [section EXAMPLES]
 
 [example_begin]
-   % ns_urlcharset iso-8859-1
-   iso8859-1
+ % ns_urlcharset iso-8859-1
+ iso8859-1
 [example_end]
 
 

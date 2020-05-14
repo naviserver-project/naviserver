@@ -384,6 +384,42 @@ Ns_AbsoluteTime(Ns_Time *absPtr, Ns_Time *adjPtr)
     return adjPtr;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TimeToMilliseconds --
+ *
+ *      Convert Ns_Time to milliseconds. Make sure that in case the Ns_Time
+ *      value is not 0, the result is also not 0.
+ *
+ * Results:
+ *      Time in milliseconds.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+long
+Ns_TimeToMilliseconds(const Ns_Time *timePtr)
+{
+    long result;
+
+    NS_NONNULL_ASSERT(timePtr != NULL);
+
+    if (likely(timePtr->sec >= 0)) {
+        result = timePtr->sec*1000 + timePtr->usec/1000;
+    } else {
+        result = timePtr->sec*1000 - timePtr->usec/1000;
+    }
+    if (result == 0 && timePtr->sec == 0 && timePtr->usec != 0) {
+        result = 1;
+    }
+
+    return result;
+}
+
 /*
  * Local Variables:
  * mode: c

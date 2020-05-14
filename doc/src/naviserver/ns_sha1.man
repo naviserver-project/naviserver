@@ -26,14 +26,13 @@ is performed.
 [list_end]
 
 [example_begin]
-   
    nscp 2> ns_sha1 test   
    A94A8FE5CCB19BA61C4C0873D391E987982FBBD3
-   
 [example_end]
 
 [see_also nsd ns_md ns_base64 ns_crypt ns_md5 ns_rand ns_hmac]
 [keywords "global built-in" encoding crypto]
 
 [manpage_end]
+
 

@@ -49,7 +49,7 @@
 #include <openssl/evp.h>
 #include <openssl/rand.h>
 
-# if !defined(HAVE_OPENSSL_PRE_1_1) && !defined(LIBRESSL_2_7)
+# ifdef HAVE_OPENSSL_HKDF
 #  include <openssl/kdf.h>
 # endif
 
@@ -325,7 +325,7 @@ static void ECDSA_SIG_get0(const ECDSA_SIG *sig, const BIGNUM **pr, const BIGNUM
  * GetDigest, ListMDfunc --
  *
  *      Converter from a digest string to internal OpenSSL
- *      representation.  ListMDfunc is a iterator usabel in OpenSSL
+ *      representation.  ListMDfunc is an iterator usable in OpenSSL
  *      1.0.0 or newer to obtain the names of all available digest
  *      functions to provide nicer error messages.
  *

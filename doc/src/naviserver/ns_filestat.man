@@ -36,14 +36,13 @@ If VarName is not specified, then ns_filestat behaves similar to file exists, ju
 [section EXAMPLES]
 
 [example_begin]
-
-   if { [lb]ns_filestat /tmp/info.txt stat[rb] } {
-     ns_log notice $stat(size)
-   }
-
+ if { [lb]ns_filestat /tmp/info.txt stat[rb] } {
+   ns_log notice $stat(size)
+ }
 [example_end]
+
 [keywords "global built-in" ]
 
-
 [manpage_end]
+
 

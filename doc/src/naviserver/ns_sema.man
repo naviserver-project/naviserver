@@ -52,7 +52,7 @@ This is what is commonly referred to as "semaphore down".
 [section EXAMPLES]
 
 [example_begin]
-   # need an example here
+ # need an example here
 [example_end]
 
 

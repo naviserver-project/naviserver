@@ -38,18 +38,19 @@ e.g. [option "-single"] is used.
 
 The following examples are from RFC 7239:
 [example_begin]
-   % ns_parsefieldvalue -lower {For="[lb]2001:db8:cafe::17[rb]:4711"}
-   {for {[lb]2001:db8:cafe::17[rb]:4711}}
-   
-   % ns_parsefieldvalue {for=192.0.2.43, for=198.51.100.17}
-   {for 192.0.2.43} {for 198.51.100.17}
-   
-   % ns_parsefieldvalue {for=192.0.2.60;proto=http;by=203.0.113.43}
-   {for 192.0.2.60 proto http by 203.0.113.43}
+ % ns_parsefieldvalue -lower {For="[lb]2001:db8:cafe::17[rb]:4711"}
+ {for {[lb]2001:db8:cafe::17[rb]:4711}}
+ 
+ % ns_parsefieldvalue {for=192.0.2.43, for=198.51.100.17}
+ {for 192.0.2.43} {for 198.51.100.17}
+ 
+ % ns_parsefieldvalue {for=192.0.2.60;proto=http;by=203.0.113.43}
+ {for 192.0.2.60 proto http by 203.0.113.43}
 [example_end]
 
 [see_also ns_parseurl ns_parseheader]
 [keywords "global built-in" parse]
 [manpage_end]
+
 
 

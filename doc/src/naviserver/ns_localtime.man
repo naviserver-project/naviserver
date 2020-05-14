@@ -37,8 +37,8 @@ system's current timezone.  The structure of the list corresponds to the Unix st
 [section EXAMPLES]
 
 [example_begin]
-   % ns_localtime
-   33 33 22 11 5 104 5 162 1
+ % ns_localtime
+ 33 33 22 11 5 104 5 162 1
 [example_end]
 
 

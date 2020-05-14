@@ -40,8 +40,8 @@ send an interrupt signal to the server, leading to a non-zero exit code.
 [section EXAMPLES]
 
 [example_begin]
-   ns_shutdown
-   ns_shutdown 30s
+ ns_shutdown
+ ns_shutdown 30s
 [example_end]
 
 

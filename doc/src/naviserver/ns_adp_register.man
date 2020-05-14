@@ -54,15 +54,15 @@ script fragments. It is probably easier to restrict use of
 this function to .tcl files.
 
 [example_begin]
-   ns_adp_registeradp example example.adp
-   
-   ns_adp_registeradp printdate {
-        The current date is: <% ns_adp_puts [lb]ns_httptime [lb]ns_time[rb][rb] %>
-   }
+ ns_adp_registeradp example example.adp
+ 
+ ns_adp_registeradp printdate {
+      The current date is: <% ns_adp_puts [lb]ns_httptime [lb]ns_time[rb][rb] %>
+ }
 [example_end]
+
 Once defined, typically in a startup script, you could simple include  <example> or
 <printdate> in ADP pages.
-
 
 
 [call [cmd ns_adp_registerproc] \
@@ -115,9 +115,8 @@ the tag, end tag, and the enclosed content).
 The following is a simple way of handling conditional content in ADPs:
 
 [example_begin]
-
-proc remember {input tagset} {
-   
+ proc remember {input tagset} {
+ 
    set tagname [lb]ns_set iget $tagset name[rb]
    if {[lb]string match "" $tagname[rb]} {
      set ::_adp_memory($tagname) $input
@@ -125,10 +124,10 @@ proc remember {input tagset} {
    } else {
      return $input
    }
-}
+ }
  
-proc recall {name} {
-   
+ proc recall {name} {
+ 
    if {[lb]info exists ::_adp_memory($name)[rb]} {
      set parsecommand [lb]list ns_adp_parse -string[rb]
      lappend parsecommand $::_adp_memory($name)
@@ -136,8 +135,7 @@ proc recall {name} {
    } else {
      ns_log Error "[lb]ns_adp_argv 0[rb]: Unable to recall"
    }
-}
-
+ }
 [example_end]
 
 If the preceding Tcl has been executed (perhaps during server startup),
@@ -146,8 +144,7 @@ database query in a table, or shows "No rows in
 result." if there are no rows:
 
 [example_begin]
-
-<%
+ <%
   set rows {}
   set db [lb]ns_db gethandle[rb]
   ns_db exec "select somecolumn from sometable"
@@ -156,26 +153,26 @@ result." if there are no rows:
       lappend rows [lb]ns_set get $row "somecolumn"[rb]
   }
   ns_db releasehandle $db
-%>
-  
-<remember name="has-rows_header"> <table> </remember>
-<remember name="hasrows_rows"> <tr><td><%=$column%></td></tr> </remember>
-<remember name="hasrows_footer"> </table> </remember>
-No rows in result.
-<remember name="norows">
-  
-<%
-if {[lb]llength $rows[rb]  >  0}  {
-  recall  "hasrows_header"
-  foreach row $rows {
-    set column $row
-    recall "hasrows_rows"
+ %>
+ 
+ <remember name="has-rows_header"> <table> </remember>
+ <remember name="hasrows_rows"> <tr><td><%=$column%></td></tr> </remember>
+ <remember name="hasrows_footer"> </table> </remember>
+ No rows in result.
+ <remember name="norows">
+ 
+ <%
+  if {[lb]llength $rows[rb]  >  0}  {
+    recall  "hasrows_header"
+    foreach row $rows {
+      set column $row
+      recall "hasrows_rows"
+    }
+    recall "hasrows_footer"
+  } else {
+    recall "norows"
   }
-  recall "hasrows_footer"
-} else {
-  recall "norows"
-}
-%>
+ %>
 [example_end]
 
 [list_end]
@@ -184,3 +181,4 @@ if {[lb]llength $rows[rb]  >  0}  {
 [keywords "server built-in" ADP]
 
 [manpage_end]
+

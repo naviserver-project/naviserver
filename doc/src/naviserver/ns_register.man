@@ -74,8 +74,8 @@ method/URL combination for the connection using glob style matching.
 The URL can contain standard string-matching characters. For example, these are valid URLs:
 
 [example_begin]
-   /employees/*.tcl
-   /accounts/*/out
+ /employees/*.tcl
+ /accounts/*/out
 [example_end]
 
 
@@ -86,17 +86,17 @@ combination matches) just before authorization. If the procedure returns with a 
 [list_begin itemized]
 
 [item] TCL_OK (using: return "filter_ok"): The server will continue to the next pre-authorization
-         filter for this connection, or, if there are no more pre-authorization filters, it will
-          continue on with authorization.
+       filter for this connection, or, if there are no more pre-authorization filters, it will
+        continue on with authorization.
 
 [item] TCL_BREAK (using: return "filter_break"): The server will not process any more pre-authorization
-         filters for this connection, and it will continue on with authorization.
+       filters for this connection, and it will continue on with authorization.
 
 [item] TCL_RETURN (using: return "filter_return"): The server will close the connection and will
-         not run any more pre-authorization filters. It will not authorize the request, and it will
-         not run the function registered for this METHOD/URL. It WILL run any trace functions
-         registered for this METHOD/URL, usually including logging. It is assumed that the filter
-         has sent a proper response (e.g., using [cmd ns_return]) to the client before returning TCL_RETURN.
+       not run any more pre-authorization filters. It will not authorize the request, and it will
+       not run the function registered for this METHOD/URL. It WILL run any trace functions
+       registered for this METHOD/URL, usually including logging. It is assumed that the filter
+       has sent a proper response (e.g., using [cmd ns_return]) to the client before returning TCL_RETURN.
 [list_end]
 
 Using post-authorization, the procedure will be called (assuming that the method/URL combination matches)
@@ -105,17 +105,17 @@ just after successful authorization. If the procedure returns:
 [list_begin itemized]
 
 [item] TCL_OK (using: return "filter_ok"): The server will continue to the next post-authorization
-         filter for this connection, or, if there are no more post-authorization filters, it will run
-         the function registered to handle this request.
+       filter for this connection, or, if there are no more post-authorization filters, it will run
+       the function registered to handle this request.
 
 [item] TCL_BREAK (using: return "filter_break"): The server will not process any more post-authorization
-         filters for this connection, and it will run the function registered to handle this request.
+       filters for this connection, and it will run the function registered to handle this request.
 
 [item] TCL_RETURN (using: return "filter_return"): The server will close the connection and will
-         not run any more post-authorization filters and it will not run the function registered for
-         this METHOD/URL. It WILL run any trace functions registered for this METHOD/URL, usually
-         including logging. It is assumed that the filter has returned a proper response (e.g.,
-          using [cmd ns_return]) to the client before returning TCL_RETURN.
+       not run any more post-authorization filters and it will not run the function registered for
+       this METHOD/URL. It WILL run any trace functions registered for this METHOD/URL, usually
+       including logging. It is assumed that the filter has returned a proper response (e.g.,
+        using [cmd ns_return]) to the client before returning TCL_RETURN.
 
 [list_end]
 
@@ -127,7 +127,7 @@ the connection has been totally processed and closed. If the procedure returns:
 [item] TCL_OK (using: return "filter_ok"): The server will continue to the next trace filter.
 
 [item] TCL_BREAK, TCL_RETURN (using: return "filter_break" or return "filter_return"): The rest
-         of the trace filters are ignored.
+       of the trace filters are ignored.
 
 [list_end]
 
@@ -178,7 +178,7 @@ Note that you must use a glob-style matching character if you want inheritance
 for file names.  For example, if you want /foo/bar to match /foo/bar.html, you must use:
 
 [example_begin]
-   ns_register_proc /foo/bar*
+ ns_register_proc /foo/bar*
 [example_end]
 
  You can register two procedures for any given method/URL combination
@@ -188,9 +188,9 @@ for file names.  For example, if you want /foo/bar to match /foo/bar.html, you m
  exact match or not.  For example:
 
 [example_begin]
-   ns_register_proc -noinherit GET /foo/bar Aproc
-   ns_register_proc GET /foo/bar Bproc
-   ns_register_proc GET /foo/bar/hmm Cproc
+ ns_register_proc -noinherit GET /foo/bar Aproc
+ ns_register_proc GET /foo/bar Bproc
+ ns_register_proc GET /foo/bar/hmm Cproc
 [example_end]
 
  Aproc will be called when the requested URL is exactly /foo/bar.  Bproc will be called when
@@ -202,26 +202,26 @@ for file names.  For example, if you want /foo/bar to match /foo/bar.html, you m
 registration time to the registered Tcl command:
 
 [example_begin]
-   ns_register_proc GET /noargs noargs
-   ns_register_proc GET /onearg onearg 1
-   ns_register_proc GET /twoargs twoargs 1 2
-   ns_register_proc GET /threeargs threeargs 1 2 3
-   
-   proc noargs { } {
-       ns_returnnotice 200 "testing" "noargs"
-    }
+ ns_register_proc GET /noargs noargs
+ ns_register_proc GET /onearg onearg 1
+ ns_register_proc GET /twoargs twoargs 1 2
+ ns_register_proc GET /threeargs threeargs 1 2 3
  
-   proc onearg { x } {
-       ns_returnnotice 200 "testing" "onearg gets $x"
-   }
-   
-   proc twoargs { x y } {
-       ns_returnnotice 200 "testing" "twoargs gets $x $y "
-   }
-
-   proc threeargs { x y z } {
-       ns_returnnotice 200 "testing" "threeargs gets $x $y $z"
-   }
+ proc noargs { } {
+     ns_returnnotice 200 "testing" "noargs"
+  }
+ 
+ proc onearg { x } {
+     ns_returnnotice 200 "testing" "onearg gets $x"
+ }
+ 
+ proc twoargs { x y } {
+     ns_returnnotice 200 "testing" "twoargs gets $x $y "
+ }
+ 
+ proc threeargs { x y z } {
+     ns_returnnotice 200 "testing" "threeargs gets $x $y $z"
+ }
 [example_end]
 
 [call [cmd ns_register_proxy] [arg method] [arg protocol] [arg script] [opt [arg args]]]
@@ -234,20 +234,19 @@ Example of a trivial HTTP proxy server (there is a much more elaborate
 reverse proxy server available as NaviServer module.
 
 [example_begin]
-   ns_register_proxy GET http http_proxy_handler
-   
-   proc http_proxy_handler { args } {
-
-       set port [lb]ns_conn port[rb]
-       if {$port == 0} {
-           set port 80
-       }
-       set url http://[lb]ns_conn host[rb]:$port[lb]ns_conn url[rb]?[lb]ns_conn query[rb]
-       set d [lb]ns_http $url[rb]
-       set content_type [lb]ns_set iget [lb]dict get $d headers[rb] content-type[rb]
-       ns_return [lb][lb]dict get $d status[rb] $content_type [lb]dict get $d body[rb][rb]
-   }
-   
+ ns_register_proxy GET http http_proxy_handler
+ 
+ proc http_proxy_handler { args } {
+ 
+     set port [lb]ns_conn port[rb]
+     if {$port == 0} {
+         set port 80
+     }
+     set url http://[lb]ns_conn host[rb]:$port[lb]ns_conn url[rb]?[lb]ns_conn query[rb]
+     set d [lb]ns_http $url[rb]
+     set content_type [lb]ns_set iget [lb]dict get $d headers[rb] content-type[rb]
+     ns_return [lb][lb]dict get $d status[rb] $content_type [lb]dict get $d body[rb][rb]
+ }
 [example_end]
 
 [call [cmd ns_register_tcl] \
@@ -297,8 +296,8 @@ client (i.e. not a Server Error). In addition, their return value is ignored.
 The URL can contain standard string-matching characters. For example, these are valid URLs:
 
 [example_begin]
-   /employees/*.tcl
-   /accounts/*/out
+ /employees/*.tcl
+ /accounts/*/out
 [example_end]
 
 [para]
@@ -337,11 +336,11 @@ is used to return full path to the requested URL.
 
 
 [call [cmd ns_unregister_op] \
-     [opt [option -noinherit]] \
-     [opt [option -recurse]] \
-     [opt --] \
-     [arg method] \
-     [arg URL]]
+   [opt [option -noinherit]] \
+   [opt [option -recurse]] \
+   [opt --] \
+   [arg method] \
+   [arg URL]]
 
 Unregister a Tcl or ADP request handler for the specified method/URL combination.
 
@@ -389,8 +388,8 @@ same [arg method] and [arg URL] if one uses the [opt -noinherit]
 option and the other does not.
 
 [example_begin]
-   [cmd ns_register_adp]            GET /a x.adp
-   [cmd ns_register_adp] -noinherit GET /b y.adp
+ [cmd ns_register_adp]            GET /a x.adp
+ [cmd ns_register_adp] -noinherit GET /b y.adp
 [example_end]
 
 In the previous example, a.adp will run for the requests /a, /a/b,
@@ -398,8 +397,8 @@ In the previous example, a.adp will run for the requests /a, /a/b,
 exactly /b. The request /b/c will result in a 404 Page Not Found error.
 
 [example_begin]
-   [cmd ns_register_adp]            GET /a x.adp
-   [cmd ns_register_adp] -noinherit GET /a y.adp
+ [cmd ns_register_adp]            GET /a x.adp
+ [cmd ns_register_adp] -noinherit GET /a y.adp
 [example_end]
 
 In this example, a request for the exact URL /a will run the y.adp page, while
@@ -425,9 +424,9 @@ The HTTP [arg method], such as [term HEAD], [term GET] or [term POST],
 which will be compared using exact string equality to the HTTP request.
 
 [example_begin]
-   foreach method {HEAD GET POST} {
-       [cmd ns_register_adp] $method /foo/bar [file hmm.adp]
-   }
+ foreach method {HEAD GET POST} {
+     [cmd ns_register_adp] $method /foo/bar [file hmm.adp]
+ }
 [example_end]
 
 
@@ -437,7 +436,7 @@ The [arg URL] patterm to match against the URL in each HTTP request. The last
 component of the URL may contain the globbing characters [term *] and [term ?].
 
 [example_begin]
-   [cmd ns_register_adp] GET /dynamic/*.htm?
+ [cmd ns_register_adp] GET /dynamic/*.htm?
 [example_end]
 
 In this example, a URL where the last component matches the pattern *.htm?,
@@ -455,9 +454,9 @@ The optional argument [arg file] is either an absolute path to a file in the fil
 or a path relative to the page root directory of the virtual server.
 
 [example_begin]
-   [cmd ns_register_adp] GET /a [file a.adp]    ; # relative to page root
-   [cmd ns_register_adp] GET /b [file b/b.adp]  ; # relative to page root
-   [cmd ns_register_adp] GET /c [file /c.adp]   ; # absolute in file-system root
+ [cmd ns_register_adp] GET /a [file a.adp]    ; # relative to page root
+ [cmd ns_register_adp] GET /b [file b/b.adp]  ; # relative to page root
+ [cmd ns_register_adp] GET /c [file /c.adp]   ; # absolute in file-system root
 [example_end]
 
 The first and second lines specify a file relative to the page
@@ -481,33 +480,32 @@ during the request.
 [term stricterror] and [term stream] enabled:
 
 [example_begin]
-   foreach method {GET HEAD POST} {
-       [cmd ns_register_adp] -options {stream stricterror} -- $method /big/*.adp
-   }
+ foreach method {GET HEAD POST} {
+     [cmd ns_register_adp] -options {stream stricterror} -- $method /big/*.adp
+ }
 [example_end]
 
 [para] In the following example, we return for every GET request
 for a .php file in the given path an info message.
 
 [example_begin]
-   ns_register_proc GET /foo/bar/*.php {
-	ns_return 200 text/plain "Server refuses to execute PHP scripts here"
-    }
+ ns_register_proc GET /foo/bar/*.php {
+ 	ns_return 200 text/plain "Server refuses to execute PHP scripts here"
+  }
 [example_end]
 
 [para]
 This example shows how to expire all HTML files after an hour:
 
 [example_begin]
-    if {![lb]nsv_exists filters installed[rb]} {
-      nsv_set filters installed 1
-      ns_register_filter postauth GET /*.html ExpireSoon 3600
-    }
-    
-    proc ExpireSoon {seconds why} {
-      ns_set update [lb]ns_conn outputheaders[rb] Expires [lb]ns_httptime [lb]expr {$seconds + [lb]ns_time[rb]}[rb][rb]
-    }
-    
+  if {![lb]nsv_exists filters installed[rb]} {
+    nsv_set filters installed 1
+    ns_register_filter postauth GET /*.html ExpireSoon 3600
+  }
+ 
+  proc ExpireSoon {seconds why} {
+    ns_set update [lb]ns_conn outputheaders[rb] Expires [lb]ns_httptime [lb]expr {$seconds + [lb]ns_time[rb]}[rb][rb]
+  }
 [example_end]
 
 [para] The command [cmd ns_info] [arg requestprocs] can be used to list the
@@ -517,4 +515,3 @@ currently registered procs.
 [see_also ns_adp ns_conn ns_info ns_shortcut_filter]
 [keywords "server built-in" ADP filter request callback fastpath]
 [manpage_end]
-

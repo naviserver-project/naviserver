@@ -6,7 +6,7 @@
 
 [description] The command [cmd ns_asynclogfile] can be used to write
  application specific log file entries in an asynchronous fashion. It
- is based on the same infrastructure as the systemlog
+ is based on the same infrastructure as the system log
  (see [cmd ns_log]) or the access log (see [cmd ns_accesslog]).
  This command is designed for small write operations in a
  multi-threaded environment, where potentially

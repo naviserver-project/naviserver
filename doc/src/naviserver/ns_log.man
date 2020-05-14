@@ -55,7 +55,7 @@ engineering guidelines are of such type.
 [def Error] Something bad occurred.  An [term error] is a malfunction, that
 must be investigated by a developer. An error is an unhandled
 exception.  The error.log file should be free of errors.
-   
+ 
 [def Fatal]
 Something extremely bad occurred. The server will shut down after
 logging this message.
@@ -200,8 +200,8 @@ details of log rolling.
 The error log is configured globally for the whole server process.
 
 [example_begin]
-[cmd ns_section] ns/parameters
-[cmd ns_param]   ...
+ [cmd ns_section] ns/parameters
+ [cmd ns_param]   ...
 [example_end]
 
 
@@ -279,64 +279,64 @@ The example below is a snippet taken from sample-config.tcl, which is
 included in the NaviServer distribution.
 
 [example_begin]
-ns_section ns/parameters {
-    # ...
-    
-    # Provide name for main server log file:
-    ns_param	serverlog       ${homedir}/logs/error.log
-    
-    #
-    # Configuration of serverlog
-    #
-    # Rolling of logfile:
-    
-    ns_param	logroll		on
-    ns_param	logmaxbackup	100      ;# (default: 10)
-    ns_param	logrollfmt	%Y-%m-%d ;# timestamp format appended to serverlog file name when rolled
-    
-    #
-    # Format of log entries:
-    
-    ns_param	logusec         true     ;# add timestamps in microsecond (usec) resolution (default: false)
-    ns_param	logusecdiff     true     ;# add timestamp diffs since in microsecond (usec) resolution (default: false)
-    ns_param	logcolorize	true     ;# colorize log file with ANSI colors (default: false)
-    ns_param	logprefixcolor	green    ;# black, red, green, yellow, blue, magenta, cyan, gray, default
-    ns_param	logprefixintensity normal;# bright or normal
-    
-    #
-    # Severities to be logged (can also be controlled at runtime via ns_logctl):
-    
-    ns_param	logdebug	false    ;# debug messages
-    ns_param	logdev		false    ;# development message
-    ns_param    lognotice       true     ;# informational messages
-    
-    # ...
-}
+ ns_section ns/parameters {
+   # ...
+ 
+   # Provide name for main server log file:
+   ns_param	serverlog       ${homedir}/logs/error.log
+ 
+   #
+   # Configuration of serverlog
+   #
+   # Rolling of logfile:
+ 
+   ns_param	logroll		on
+   ns_param	logmaxbackup	100      ;# (default: 10)
+   ns_param	logrollfmt	%Y-%m-%d ;# timestamp format appended to serverlog file name when rolled
+ 
+   #
+   # Format of log entries:
+ 
+   ns_param	logusec         true     ;# add timestamps in microsecond (usec) resolution (default: false)
+   ns_param	logusecdiff     true     ;# add timestamp diffs since in microsecond (usec) resolution (default: false)
+   ns_param	logcolorize	true     ;# colorize log file with ANSI colors (default: false)
+   ns_param	logprefixcolor	green    ;# black, red, green, yellow, blue, magenta, cyan, gray, default
+   ns_param	logprefixintensity normal;# bright or normal
+ 
+   #
+   # Severities to be logged (can also be controlled at runtime via ns_logctl):
+ 
+   ns_param	logdebug	false    ;# debug messages
+   ns_param	logdev		false    ;# development message
+   ns_param    lognotice       true     ;# informational messages
+ 
+   # ...
+ }
 [example_end]
 
 The logging behavior can be tailored at startup or at runtime as well
 via [cmd ns_logctl] commands, as show below.
 
 [example_begin]
-% [cmd ns_log] notice "Hello World!"
-[lb]21/May/1974:15:30:00[rb][lb]12257.40348b90[rb][lb]-command-[rb] Notice: Hello World!
-
-% [cmd ns_log] notice Hello World!
-[lb]21/May/1974:15:30:01[rb][lb]12257.40348b90[rb][lb]-command-[rb] Notice: Hello World!
+ % [cmd ns_log] notice "Hello World!"
+ [lb]21/May/1974:15:30:00[rb][lb]12257.40348b90[rb][lb]-command-[rb] Notice: Hello World!
+ 
+ % [cmd ns_log] notice Hello World!
+ [lb]21/May/1974:15:30:01[rb][lb]12257.40348b90[rb][lb]-command-[rb] Notice: Hello World!
 [example_end]
 
 
 Enable debug logging while the server is running.
 
 [example_begin]
-nscp:1> [cmd ns_log] debug testing...
+ nscp:1> [cmd ns_log] debug testing...
  
-nscp:2> [cmd ns_logctl] severity debug
-0
-nscp:3> [cmd ns_logctl] severity debug -color green true
-1
-nscp:4> [cmd ns_log] debug testing...
-[lb]01/April/1984:11:11:59[rb][lb]12257.40348b90[rb][lb]-nscp:1-[rb] testing...
+ nscp:2> [cmd ns_logctl] severity debug
+ 0
+ nscp:3> [cmd ns_logctl] severity debug -color green true
+ 1
+ nscp:4> [cmd ns_log] debug testing...
+ [lb]01/April/1984:11:11:59[rb][lb]12257.40348b90[rb][lb]-nscp:1-[rb] testing...
 [example_end]
 
 
@@ -345,22 +345,22 @@ Report log messages at the end of an ADP page, as well as log them to the error
 log file.
 
 [example_begin]
-<h1>An ADP Page</h1>
+ <h1>An ADP Page</h1>
  
-<%
+ <%
   [cmd ns_logctl] hold
   # ... do some stuff here ...
-%>
+ %>
  
-...
+ ...
  
-<%
+ <%
   if {[lb][cmd ns_logctl] count[rb] > 0} {
-      [cmd ns_adp_append] "Log messages:"
-      [cmd ns_adp_append] "<pre>[lb][cmd ns_logctl] peek[rb]</pre>"
+    [cmd ns_adp_append] "Log messages:"
+    [cmd ns_adp_append] "<pre>[lb][cmd ns_logctl] peek[rb]</pre>"
   }
   [cmd ns_logctl] release
-%>
+ %>
 [example_end]
 
 
@@ -368,22 +368,22 @@ log file.
 Create a new severity-level.
 
 [example_begin]
-nscp:1> [cmd ns_logctl] severities
-Notice Warning Error Fatal Bug Debug Dev
+ nscp:1> [cmd ns_logctl] severities
+ Notice Warning Error Fatal Bug Debug Dev
  
-nscp:2> [cmd ns_log] my:debug "a debug message"
-unknown severity: "my:debug": should be one of: Notice Warning Error Fatal Bug Debug Dev
+ nscp:2> [cmd ns_log] my:debug "a debug message"
+ unknown severity: "my:debug": should be one of: Notice Warning Error Fatal Bug Debug Dev
  
-nscp:3> [cmd ns_logctl] severity my:debug off
-0
+ nscp:3> [cmd ns_logctl] severity my:debug off
+ 0
  
-nscp:4> [cmd ns_log] my:debug "a debug message"
-
-nscp:5> [cmd ns_logctl] severity my:debug on
-0
+ nscp:4> [cmd ns_log] my:debug "a debug message"
  
-nscp:6> [cmd ns_log] my:debug "a debug message"
-[lb]22/Nov/1963:13:25:00[rb][lb]1899.40349b90[rb][lb]-nscp:1-[rb] my:debug: a debug message
+ nscp:5> [cmd ns_logctl] severity my:debug on
+ 0
+ 
+ nscp:6> [cmd ns_log] my:debug "a debug message"
+ [lb]22/Nov/1963:13:25:00[rb][lb]1899.40349b90[rb][lb]-nscp:1-[rb] my:debug: a debug message
 [example_end]
 
 

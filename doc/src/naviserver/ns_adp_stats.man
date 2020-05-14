@@ -44,13 +44,13 @@
 [section EXAMPLES]
 
 [example_begin]
-   % foreach {file stats} <strong>ns_adp_stats</strong> {
-         append output "\nFILE: ${file}\n"
-         foreach {key value} $stats {
-             append output "    ${key} ==> ${value}\n"
-         }
+ % foreach {file stats} <strong>ns_adp_stats</strong> {
+     append output "\nFILE: ${file}\n"
+     foreach {key value} $stats {
+         append output "    ${key} ==> ${value}\n"
      }
-     set output
+ }
+ set output
 [example_end]
 
  See stats.tcl in the standard NaviServer distribution for a more complicated example.

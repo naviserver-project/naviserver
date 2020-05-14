@@ -51,10 +51,15 @@ typedef struct InterpData {
 
 static int DbFail(Tcl_Interp *interp, Ns_DbHandle *handle, const char *cmd)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
 static void EnterDbHandle(InterpData *idataPtr, Tcl_Interp *interp, Ns_DbHandle *handle, Tcl_Obj *listObj)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+
 static int DbGetHandle(InterpData *idataPtr, Tcl_Interp *interp, const char *handleId,
                        Ns_DbHandle **handle, Tcl_HashEntry **hPtrPtr);
+
+static void QuoteSqlValue(Tcl_DString *dsPtr, Tcl_Obj *valueObj, int valueType)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 #if !defined(NS_TCL_PRE85)
 static Ns_ReturnCode CurrentHandles( Tcl_Interp *interp, Tcl_HashTable *tablePtr, Tcl_Obj *dictObj)
@@ -69,7 +74,10 @@ static Tcl_ObjCmdProc
     DbObjCmd,
     GetCsvObjCmd,
     PoolDescriptionObjCmd,
-    QuoteListToListObjCmd;
+    QuoteListObjCmd,
+    QuoteListToListObjCmd,
+    QuoteValueObjCmd;
+
 static int ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, char cmd);
 
 
@@ -78,6 +86,22 @@ static int ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
  */
 
 static const char *const datakey = "nsdb:data";
+
+static const Ns_ObjvTable valueTypes[] = {
+    {"decimal",  UCHAR('n')},
+    {"double",   UCHAR('n')},
+    {"integer",  UCHAR('n')},
+    {"int",      UCHAR('n')},
+    {"real",     UCHAR('n')},
+    {"smallint", UCHAR('n')},
+    {"bigint",   UCHAR('n')},
+    {"bit",      UCHAR('n')},
+    {"float",    UCHAR('n')},
+    {"numeric",  UCHAR('n')},
+    {"tinyint",  UCHAR('n')},
+    {"text",     UCHAR('q')},
+    {NULL,    0u}
+};
 
 
 /*
@@ -143,12 +167,14 @@ NsDbAddCmds(Tcl_Interp *interp, const void *arg)
     Tcl_SetAssocData(interp, datakey, FreeData, idataPtr);
 
     (void)Tcl_CreateObjCommand(interp, "ns_db", DbObjCmd, idataPtr, NULL);
-    (void)Tcl_CreateObjCommand(interp, "ns_quotelisttolist", QuoteListToListObjCmd, idataPtr, NULL);
-    (void)Tcl_CreateObjCommand(interp, "ns_getcsv", GetCsvObjCmd, idataPtr, NULL);
+    (void)Tcl_CreateObjCommand(interp, "ns_dbconfigpath", DbConfigPathObjCmd, idataPtr, NULL);
     (void)Tcl_CreateObjCommand(interp, "ns_dberrorcode", DbErrorCodeObjCmd, idataPtr, NULL);
     (void)Tcl_CreateObjCommand(interp, "ns_dberrormsg", DbErrorMsgObjCmd, idataPtr, NULL);
-    (void)Tcl_CreateObjCommand(interp, "ns_dbconfigpath", DbConfigPathObjCmd, idataPtr, NULL);
+    (void)Tcl_CreateObjCommand(interp, "ns_dbquotevalue", QuoteValueObjCmd, idataPtr, NULL);
+    (void)Tcl_CreateObjCommand(interp, "ns_dbquotelist", QuoteListObjCmd, idataPtr, NULL);
+    (void)Tcl_CreateObjCommand(interp, "ns_getcsv", GetCsvObjCmd, idataPtr, NULL);
     (void)Tcl_CreateObjCommand(interp, "ns_pooldescription", PoolDescriptionObjCmd, idataPtr, NULL);
+    (void)Tcl_CreateObjCommand(interp, "ns_quotelisttolist", QuoteListToListObjCmd, idataPtr, NULL);
 
     return TCL_OK;
 }
@@ -1123,6 +1149,172 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     return result;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ * QuoteSqlValue --
+ *
+ *      Helper function for QuoteValueObjCmd() and QuoteListObjCmd()
+ *      doing the actual quoting work.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Updates dsPtr by appending the value.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+QuoteSqlValue(Tcl_DString *dsPtr, Tcl_Obj *valueObj, int valueType)
+{
+    int         valueLength;
+    const char *valueString;
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(valueObj != NULL);
+
+    valueString = Tcl_GetStringFromObj(valueObj, &valueLength);
+
+    if (valueType == INTCHAR('n')) {
+        Tcl_DStringAppend(dsPtr, valueString, valueLength);
+
+    } else {
+        Tcl_DStringAppend(dsPtr, "'", 1);
+
+        while (1) {
+            const char *p = strchr(valueString, INTCHAR('\''));
+            if (p == NULL) {
+                Tcl_DStringAppend(dsPtr, valueString, valueLength);
+                break;
+            } else {
+                int length = (int)((p - valueString) + 1);
+
+                Tcl_DStringAppend(dsPtr, valueString, length);
+                Tcl_DStringAppend(dsPtr, "'", 1);
+                valueString = p+1;
+                valueLength -= length;
+            }
+        }
+        Tcl_DStringAppend(dsPtr, "'", 1);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ * QuoteValueObjCmd --
+ *
+ *      Prepare a value string for inclusion in an SQL statement:
+ *      -  "" is translated into NULL.
+ *      -  All values of any numeric type are left alone.
+ *      -  All other values are surrounded by single quotes and any
+ *         single quotes included in the value are escaped (i.e. translated
+ *         into 2 single quotes).
+ *
+ * Results:
+ *      Tcl standard result codes.
+ *
+ * Side effects:
+ *      Modifying interp result.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+QuoteValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int         result, valueType = INTCHAR('q');
+    Tcl_Obj    *valueObj;
+    Ns_ObjvSpec args[] = {
+        {"value",    Ns_ObjvObj,   &valueObj,  NULL},
+        {"?type",    Ns_ObjvIndex, &valueType, (void*)valueTypes},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+
+    } else if (*Tcl_GetString(valueObj) == '\0') {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("NULL", 4));
+        result = TCL_OK;
+
+    } else if (valueType == INTCHAR('n')) {
+        Tcl_SetObjResult(interp, valueObj);
+        result = TCL_OK;
+
+    } else {
+        Tcl_DString ds;
+
+        Tcl_DStringInit(&ds);
+        QuoteSqlValue(&ds, valueObj, valueType);
+        Tcl_DStringResult(interp, &ds);
+
+        result = TCL_OK;
+    }
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ * QuoteListObjCmd --
+ *
+ *      Prepare a value string for inclusion in an SQL statement:
+ *      -  "" is translated into NULL.
+ *      -  All values of any numeric type are left alone.
+ *      -  All other values are surrounded by single quotes and any
+ *         single quotes included in the value are escaped (i.e. translated
+ *         into 2 single quotes).
+ *
+ * Results:
+ *      Tcl standard result codes.
+ *
+ * Side effects:
+ *      Modifying interp result.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+QuoteListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int         result, valueType = INTCHAR('q');
+    Tcl_Obj    *listObj;
+    Ns_ObjvSpec args[] = {
+        {"list",  Ns_ObjvObj,   &listObj,   NULL},
+        {"?type", Ns_ObjvIndex, &valueType, (void*)valueTypes},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Tcl_DString ds;
+        int         oc;
+        Tcl_Obj   **ov;
+
+        Tcl_DStringInit(&ds);
+        if (Tcl_ListObjGetElements(interp, listObj, &oc, &ov) == TCL_OK) {
+            int i;
+
+            for (i = 0; i < oc; i++) {
+                QuoteSqlValue(&ds, ov[i], valueType);
+                if (i < oc-1) {
+                    Tcl_DStringAppend(&ds, ",", 1);
+                }
+            }
+            Tcl_DStringResult(interp, &ds);
+            result = TCL_OK;
+
+        } else {
+            result = TCL_ERROR;
+        }
+
+        result = TCL_OK;
+    }
+    return result;
+}
 
 /*
  *----------------------------------------------------------------------

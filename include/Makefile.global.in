@@ -69,17 +69,21 @@ CFLAGS_DEBUG     = @CFLAGS_DEBUG@
 CFLAGS_OPTIMIZE  = @CFLAGS_OPTIMIZE@
 CFLAGS_WARNING   = @CFLAGS_WARNING@
 CFLAGS_INCLUDE   = -I$(INCDIR) @TCL_INCLUDES@
-CFLAGS_EXTRA     = @SHLIB_CFLAGS@ @TCL_EXTRA_CFLAGS@
+CFLAGS_EXTRA     = @SHLIB_CFLAGS@ @TCL_EXTRA_CFLAGS@ -DSYSTEM_MALLOC -DTCL_NO_DEPRECATED -std=c99
 DEFS             = @DEFS@
+#SANITIZE          = -fsanitize=thread -fsanitize-recover=all
+SANITIZE          =
 CFLAGS_CONVERSION = -Wconversion -Wsign-conversion -Wsign-compare
 CFLAGS_DEFINITION = -Wwrite-strings -Wdeclaration-after-statement -Wendif-labels -Wshadow -Wmissing-prototypes -Wstrict-prototypes
 CFLAGS_TIDY       = -Wno-missing-braces -Wundef -Wunreachable-code -Wswitch-enum -Wpointer-arith -Wold-style-definition -Wmissing-format-attribute -Wformat-security
+#CFLAGS_FORTIFY    = -D_FORTIFY_SOURCE=2 -fstack-protector $(SANITIZE)
+CFLAGS_FORTIFY    = -fstack-protector $(SANITIZE)
 CFLAGS_DEFAULT    = @CFLAGS_DEFAULT@
-#CFLAGS_DEFAULT   = -pedantic -g -Wextra -std=c99 -DTCL_NO_DEPRECATED
-#CFLAGS_DEFAULT   = -pedantic -g -Wextra -std=c99 -DTCL_NO_DEPRECATED $(CFLAGS_CONVERSION) $(CFLAGS_DEFINITION) $(CFLAGS_TIDY)
+#CFLAGS_DEFAULT   = -pedantic -g -Wextra
+#CFLAGS_DEFAULT   = -pedantic -g -Wextra $(CFLAGS_CONVERSION) $(CFLAGS_DEFINITION) $(CFLAGS_TIDY) $(CFLAGS_FORTIFY)
 #CFLAGS_DEFAULT   = -pedantic -g -O3 -Wextra -std=c99 -DTCL_NO_DEPRECATED $(CFLAGS_CONVERSION) $(CFLAGS_DEFINITION) $(CFLAGS_TIDY)  -fipa-pure-const -Wsuggest-attribute=pure  -Wsuggest-attribute=const -Wstringop-truncation  -Wattribute-alias
-
 CFLAGS          += $(CFLAGS_DEFAULT) $(CFLAGS_WARNING) $(CFLAGS_EXTRA) $(CFLAGS_INCLUDE) @CPPFLAGS@ $(DEFS)
+LDFLAGS         += $(SANITIZE)
 LIBS		 = @LIBS@
 DL_LIBS		 = 
 MATH_LIBS	 = @MATH_LIBS@

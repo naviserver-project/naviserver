@@ -184,7 +184,7 @@ NsConfUpdate(void)
      * sched.c
      */
     nsconf.sched.jobsperthread = Ns_ConfigIntRange(path, "schedsperthread", 0, 0, INT_MAX);
-    Ns_ConfigTimeUnitRange(path, "schedmaxelapsed",
+    Ns_ConfigTimeUnitRange(path, "schedlogminduration",
                            "2s", 1, 0, LONG_MAX, 0,
                            &nsconf.sched.maxelapsed);
     /*
@@ -200,6 +200,9 @@ NsConfUpdate(void)
     Ns_ConfigTimeUnitRange(path, "jobtimeout",
                            "5m", 0, 0, LONG_MAX, 0,
                            &nsconf.job.timeout);
+    Ns_ConfigTimeUnitRange(path, "joblogminduration",
+                           "1s", 0, 0, LONG_MAX, 0,
+                           &nsconf.job.logminduration);
 
     /*
      * tclinit.c

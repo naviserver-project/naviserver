@@ -6,7 +6,7 @@
 
 [description]
 
-Sleeps for the number of seconds specified in seconds.
+Sleeps for a specified time period.
 
 
 [section {COMMANDS}]
@@ -14,19 +14,17 @@ Sleeps for the number of seconds specified in seconds.
 [list_begin definitions]
 
 
-[call [cmd ns_sleep] [arg seconds]]
+[call [cmd ns_sleep] [arg duration]]
 
-[arg seconds]
-The value of seconds can be any NaviServer time string, such as
-a positive integer (or  zero,  in  which case  the  function returns
-immediately), or the form sec:usec or sec.fraction.
+The [arg duration] can be specified with time units (per default seconds).
+Valid time units are ms, s, m, d.
 
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
-   % ns_sleep 2
+ % ns_sleep 2
 [example_end]
 
 

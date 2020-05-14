@@ -86,26 +86,16 @@ proc ns_dbquotename {name} {
 #        single quotes included in the value are escaped (i.e. translated
 #        into 2 single quotes). 
 
-proc ns_dbquotevalue {value {type text}} {
-    if {$value eq ""} {
-        return "NULL"
-    }
-    if {$type eq "decimal" \
-            || $type eq "double" \
-            || $type eq "integer" \
-            || $type eq "int" \
-            || $type eq "real" \
-            || $type eq "smallint" \
-            || $type eq "bigint" \
-            || $type eq "bit" \
-            || $type eq "float" \
-            || $type eq "numeric" \
-            || $type eq "tinyint"} {
-        return $value
-    }
-    regsub -all "'" $value "''" value
-    return "'$value'"
-}
+# proc ns_dbquotevalue {value {type text}} {
+#     if {$value eq ""} {
+#         return "NULL"
+#     }
+#     if {$type in {decimal double integer int real smallint bigint bit float numeric tinyint}} {
+#         return $value
+#     }
+#     regsub -all "'" $value "''" value
+#     return "'$value'"
+# }
 
 #
 # ns_localsqltimestamp -

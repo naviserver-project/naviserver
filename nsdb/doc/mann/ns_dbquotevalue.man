@@ -30,6 +30,12 @@ by single quotes, and any single quotes that it contains will be escaped by
 translation into two single quotes.
 
 
+[call [cmd ns_dbquotelist] [arg list] [opt [arg type]]]
+
+Prepare the provided [arg list] for inclusion in an SQL statement. The
+command calls essentially [cmd ns_dbquotevalue] for every element
+of the list and combined the result with a comma.
+
 
 [call [cmd ns_dbquotename] [arg name]]
 
@@ -37,37 +43,34 @@ Surround [arg name] with double quotes if it contains a space. The resulting
 name can then be used in SQL statements for names of database objects such as
 tables or columns.
 
-
 [list_end]
-
-
 
 
 [section EXAMPLES]
 
 [example_begin]
-   % ns_dbquotevalue ""
-   NULL
+ % ns_dbquotevalue ""
+ NULL
 [example_end]
 
 [example_begin]
-   % ns_dbquotevalue 45.3 float
-   45.3
+ % ns_dbquotevalue 45.3 float
+ 45.3
 [example_end]
 
 [example_begin]
-   % ns_dbquotevalue "John's Car"
-   'John''s Car'
+ % ns_dbquotevalue "John's Car"
+ 'John''s Car'
 [example_end]
 
 [example_begin]
-   % set company "John's Cheese Factory"
-   % ns_db dml $db "INSERT INTO companies (name) VALUES ([lb]ns_dbquotevalue $company[rb])"
+ % set company "John's Cheese Factory"
+ % ns_db dml $db "INSERT INTO companies (name) VALUES ([lb]ns_dbquotevalue $company[rb])"
 [example_end]
 
 [example_begin]
-   % ns_dbquotevalue "Column Name"
-   'Column Name'
+ % ns_dbquotevalue "Column Name"
+ 'Column Name'
 [example_end]
 
 

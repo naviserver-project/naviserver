@@ -109,33 +109,33 @@ passed as the callback argument.
 Log the number of connections handled by a single TCP socket:
 
 [example_begin]
-#include "ns.h"
-
-typedef struct Data {
+ #include "ns.h"
+ 
+ typedef struct Data {
     int counter;
-} Data;
-
-static Ns_Callback   Cleanup;
-static Ns_FilterProc Filter;
-
-static [type Ns_Sls] slot;
-
-int
-Ns_ModuleInit(CONST char *server, CONST char *module)
-{
+ } Data;
+ 
+ static Ns_Callback   Cleanup;
+ static Ns_FilterProc Filter;
+ 
+ static [type Ns_Sls] slot;
+ 
+ int
+ Ns_ModuleInit(CONST char *server, CONST char *module)
+ {
     [fun Ns_SlsAlloc](&slot, Cleanup);
     (void) Ns_RegisterFilter(server, "GET", "/*", Filter,
                              NS_FILTER_PRE_AUTH, NULL);
     return NS_OK;
-}
-
-static int
-Filter(void *arg, Ns_Conn *conn, int why)
-{
+ }
+ 
+ static int
+ Filter(void *arg, Ns_Conn *conn, int why)
+ {
     Ns_Sock *sock = Ns_ConnSockPtr(conn);
     [type Ns_Sls]  *slot;
     Data    *data;
-
+ 
     data = [fun Ns_SlsGet](&slot, sock);
     if (data == NULL) {
         data = ns_malloc(sizeof *data);
@@ -143,19 +143,18 @@ Filter(void *arg, Ns_Conn *conn, int why)
         [fun Ns_SlsSet](&slot, sock, data)
     }
     data->counter++;
-
+ 
     return NS_OK;
-}
-
-static int
-Cleanup(void *arg)
-{
+ }
+ 
+ static int
+ Cleanup(void *arg)
+ {
     Data *data = arg;
-
+ 
     Ns_Log(Notice, "Example: sls counter: %d", data->counter);
     ns_free(data);
-}
-
+ }
 [example_end]
 
 
@@ -163,3 +162,4 @@ Cleanup(void *arg)
 \[keywords "global command" sls storage data]
 
 [manpage_end]
+

@@ -677,8 +677,9 @@ NsTclReturnBadRequestObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, i
  *
  * ReturnObjCmd --
  *
- *      Implements ns_returnnotfound, ns_returnunauthorized and
- *      ns_returnforbidden.  Send an error response to client.
+ *      Implements ns_returnnotfound, ns_returnunauthorized,
+ *      ns_returnforbidden, and ns_returnunavailable.
+ *      Send an error response to client.
  *
  * Results:
  *      Standard Tcl result.

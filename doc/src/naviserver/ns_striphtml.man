@@ -25,8 +25,8 @@
 [section EXAMPLES]
 
 [example_begin]
-   % ns_striphtml "<MARQUEE direction='right'><BLINK>Hello World!</BLINK></MARQUEE>"
-   Hello World!
+ % ns_striphtml "<MARQUEE direction='right'><BLINK>Hello World!</BLINK></MARQUEE>"
+ Hello World!
 [example_end]
 
 

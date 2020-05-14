@@ -35,20 +35,25 @@ ordinary variables.
 
 
 [example_begin]
-   % nsv_array set shared_array { key1 value1 key2 value2 }
-
-   % nsv_array get shared_array
-   key1 value1 key2 value2
-   % nsv_array reset shared_array { key3 value3 }
-   % nsv_array exists shared_array
-   1
-   % nsv_array size shared_array
-   1
-   % nsv_array names shared_array
-   key3
-   % nsv_array set shared_array [lb]array get tmp_shared_array[rb]
-   % array set tmp_shared_array [lb]nsv_array get shared_array[rb]
-   % nsv_array reset shared_array [lb]array get tmp_shared_array[rb]
+ % nsv_array set shared_array { key1 value1 key2 value2 }
+ 
+ % nsv_array get shared_array
+ key1 value1 key2 value2
+ 
+ % nsv_array reset shared_array { key3 value3 }
+ 
+ % nsv_array exists shared_array
+ 1
+ 
+ % nsv_array size shared_array
+ 1
+ 
+ % nsv_array names shared_array
+ key3
+ 
+ % nsv_array set shared_array [lb]array get tmp_shared_array[rb]
+ % array set tmp_shared_array [lb]nsv_array get shared_array[rb]
+ % nsv_array reset shared_array [lb]array get tmp_shared_array[rb]
 [example_end]
 
 
@@ -61,12 +66,12 @@ the number of locks for a certain bucket is high one can use this
 command to determine the arrays with their usages from this bucket.
 
 [example_begin]
-   set buckets ""
-   set count -1
-   foreach b [lb]nsv_bucket[rb] {
-      append buckets "[lb]incr count[rb]: " [lb]lsort -integer -index 1 -decreasing $b[rb] \n
-   }
-   ns_log notice $buckets
+ set buckets ""
+ set count -1
+ foreach b [lb]nsv_bucket[rb] {
+    append buckets "[lb]incr count[rb]: " [lb]lsort -integer -index 1 -decreasing $b[rb] \n
+ }
+ ns_log notice $buckets
 [example_end]
 
 
@@ -77,10 +82,10 @@ command to determine the arrays with their usages from this bucket.
 Test whether a key exists in the nsv array.
 
 [example_begin]
-   % nsv_exists shared_array key1
-   1
-   % nsv_exists shared_array key2
-   0
+ % nsv_exists shared_array key1
+ 1
+ % nsv_exists shared_array key2
+ 0
 [example_end]
 
 
@@ -100,8 +105,8 @@ check for existence followed by a get operation.
 
 
 [example_begin]
-   % nsv_get shared_array key1
-   value1
+ % nsv_get shared_array key1
+ value1
 [example_end]
 
 
@@ -115,10 +120,10 @@ of the element specified by key. Internally interlocked so it is thread safe, no
 
 
 [example_begin]
-   % nsv_incr shared_array foo
-   1
-   % nsv_incr shared_array foo -1
-   0
+ % nsv_incr shared_array foo
+ 1
+ % nsv_incr shared_array foo -1
+ 0
 [example_end]
 
 [call [cmd nsv_append] [arg array] [arg key] [arg value] [opt [arg {value ...}]]]
@@ -127,8 +132,8 @@ Append all of the value arguments to the current value of variable key in the ar
 If key doesn't exist, it is given a value equal to the concatenation of all the value arguments
 
 [example_begin]
-   % nsv_append shared_array key1 foo
-   value1foo
+ % nsv_append shared_array key1 foo
+ value1foo
 [example_end]
 
 
@@ -140,8 +145,8 @@ If key doesn't exist, it is created as a list with elements given by the value a
 
 
 [example_begin]
-   % nsv_lappend shared_array key1 value2
-   value1 value2
+ % nsv_lappend shared_array key1 value2
+ value1 value2
 [example_end]
 
 
@@ -151,8 +156,8 @@ Return a list of all the nsvs in use, optionally only those matching pattern. If
 matching nsvs are in use returns the empty string.
 
 [example_begin]
-   % nsv_names
-   shared_array
+ % nsv_names
+ shared_array
 [example_end]
 
 
@@ -187,8 +192,8 @@ provided, the command returns the value for [arg key] and unsets resets it.
 [list_end]
 
 [example_begin]
-   % nsv_set shared_array key1 value1
-   value1
+ % nsv_set shared_array key1 value1
+ value1
 [example_end]
 
 
@@ -199,8 +204,8 @@ empty string. When [option -nocomplain] is specified the command does not
 complain when the specified array or key does not exist.
 
 [example_begin]
-   % nsv_unset shared_array key1
-   % nsv_unset shared_array
+ % nsv_unset shared_array key1
+ % nsv_unset shared_array
 [example_end]
 
 
@@ -211,68 +216,55 @@ complain when the specified array or key does not exist.
 Migrating from ns_share is straightforward.  If your init.tcl included commands such as:
 
 [example_begin]
-	ns_share myshare
-	set myshare(lock) [lb]ns_mutex create[rb]
-
+ 	ns_share myshare
+ 	set myshare(lock) [lb]ns_mutex create[rb]
 [example_end]
 
 use instead:
 
 [example_begin]
-
-	nsv_set myshare lock [lb]ns_mutex create[rb]
-
+ 	nsv_set myshare lock [lb]ns_mutex create[rb]
 [example_end]
 
 
 In your procedures, instead of:
 
 [example_begin]
-
-	proc myproc {} {
-		ns_share myshare
-		ns_mutex lock $myshare(lock)
-		...
-
-
+ 	proc myproc {} {
+ 		ns_share myshare
+ 		ns_mutex lock $myshare(lock)
+ 		...
 [example_end]
 
 use:
 
 [example_begin]
-
-	proc myproc {} {
-		ns_mutex lock [lb]nsv_get myshare lock[rb]
-		...
-
-
+ 	proc myproc {} {
+ 		ns_mutex lock [lb]nsv_get myshare lock[rb]
+ 		...
 [example_end]
 
 and within an ADP page, instead of:
 
 
 [example_begin]
-	<%
-	ns_share myshare
-	ns_puts $myshare(key1)
-	%>
-
-	<%=$myshare(key2)%>
-
-
+ 	<%
+ 	ns_share myshare
+ 	ns_puts $myshare(key1)
+ 	%>
+ 
+ 	<%=$myshare(key2)%>
 [example_end]
 
 use:
 
 
 [example_begin]
-	<%
-	ns_puts [lb]nsv_get myshare key1[rb]
-	%>
-
-	<%=[lb]nsv_get myshare key2[rb]%>
-
-
+ 	<%
+ 	ns_puts [lb]nsv_get myshare key1[rb]
+ 	%>
+ 
+ 	<%=[lb]nsv_get myshare key2[rb]%>
 [example_end]
 
 Notice that, unlike ns_share, no command is required to define the
@@ -284,21 +276,17 @@ perhaps just ".". For example, if you had:
 
 
 [example_begin]
-	ns_share mylock myfile
-	set myfile /tmp/some.file
-	set mylock [lb]ns_mutex create[rb]
-
+ 	ns_share mylock myfile
+ 	set myfile /tmp/some.file
+ 	set mylock [lb]ns_mutex create[rb]
 [example_end]
 
 
 you can use:
 
 [example_begin]
-
-	nsv_set . myfile /tmp/some.file
-	nsv_set . mylock [lb]ns_mutex create[rb]
-
-
+ 	nsv_set . myfile /tmp/some.file
+ 	nsv_set . mylock [lb]ns_mutex create[rb]
 [example_end]
 
 
@@ -310,19 +298,17 @@ Here's the ns_share solution:
 
 
 [example_begin]
-	ns_share ids
-	set ids(lock) [lb]ns_mutex create[rb]
-	set ids(next) 0
-
-	proc nextid {} {
-		ns_share ids
-		ns_mutex lock $ids(lock)
-		set next [lb]incr ids(next)[rb]
-		ns_mutex unlock $ids(lock)
-		return $next
-	}
-
-
+ 	ns_share ids
+ 	set ids(lock) [lb]ns_mutex create[rb]
+ 	set ids(next) 0
+ 
+ 	proc nextid {} {
+ 		ns_share ids
+ 		ns_mutex lock $ids(lock)
+ 		set next [lb]incr ids(next)[rb]
+ 		ns_mutex unlock $ids(lock)
+ 		return $next
+ 	}
 [example_end]
 
 
@@ -330,14 +316,11 @@ and here's an nsv solution:
 
 
 [example_begin]
-
-	nsv_set ids next 0
-
-	proc nextid {} {
-		return [lb]nsv_incr ids next[rb]
-	}
-
-
+ 	nsv_set ids next 0
+ 
+ 	proc nextid {} {
+ 		return [lb]nsv_incr ids next[rb]
+ 	}
 [example_end]
 
 
@@ -353,20 +336,14 @@ from ordinary Tcl arrays.  For example, to copy from Tcl use:
 
 
 [example_begin]
-
-	nsv_array set meta [lb]array get tmpmeta[rb]
-
+ 	nsv_array set meta [lb]array get tmpmeta[rb]
 [example_end]
 
 
 and to copy to Tcl use:
 
 [example_begin]
-
-
-	array set metacopy [lb]nsv_array get meta[rb]
-
-
+ 	array set metacopy [lb]nsv_array get meta[rb]
 [example_end]
 
 
@@ -380,14 +357,12 @@ complete nsv array in one step with "reset".  For example, instead of:
 
 
 [example_begin]
-
-	ns_share lock meta
-	set lock [lb]ns_mutex create[rb]
-	ns_mutex lock $lock
-	unset meta
-	array set meta [lb]array get tmpmeta[rb]
-	ns_mutex unlock $lock
-
+ 	ns_share lock meta
+ 	set lock [lb]ns_mutex create[rb]
+ 	ns_mutex lock $lock
+ 	unset meta
+ 	array set meta [lb]array get tmpmeta[rb]
+ 	ns_mutex unlock $lock
 [example_end]
 
 
@@ -395,11 +370,7 @@ you can simply use:
 
 
 [example_begin]
-
-
-	nsv_array reset meta [lb]array get tmpmeta[rb]
-
-
+ 	nsv_array reset meta [lb]array get tmpmeta[rb]
 [example_end]
 
 
@@ -422,11 +393,11 @@ The number of buckets to be used can be configured by setting the
 [const nsvbuckets] Tcl parameters, e.g.:
 
 [example_begin]
-    ns_section  ns/server/${servername}/tcl {
+ ns_section  ns/server/${servername}/tcl {
  
-       # Number of buckets in Tcl hash table for nsv vars
-       ns_param nsvbuckets 16
-    }
+    # Number of buckets in Tcl hash table for nsv vars
+    ns_param nsvbuckets 16
+ }
 [example_end]
 
 
@@ -441,4 +412,3 @@ nsvbuckets.
 [keywords "server built-in" nsv shared variables mutex "data structure"]
 
 [manpage_end]
-

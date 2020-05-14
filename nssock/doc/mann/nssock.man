@@ -15,12 +15,12 @@ The module [emph nssock] is typically loaded per server, e.g. for
 [term server1]:
 
 [example_begin]
-   ns_section ns/server/server1/modules
-   ns_param   nssock   nssock.so
+ ns_section ns/server/server1/modules
+ ns_param   nssock   nssock.so
  
-   ns_section ns/server/server1/module/nssock
-   ns_param port 8000
-   ...
+ ns_section ns/server/server1/module/nssock
+ ns_param port 8000
+ ...
 [example_end]
 
 This amount of configuration is sufficient for many installations, which
@@ -45,17 +45,17 @@ address from the host name (either the specified host name or the host
 name reported by the OS).
 
 [def backlog]
-Maximum number of entries for waiting listen connections (integer,
-default: 256)
+Maximum number of entries for waiting listen connections
+(integer, default: 256)
 
 [def bufsize]
 Maximum size in bytes (octets) for a single receive operation.
 The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB);
-default: 16kB
+(memory unit, default: 16kB)
 
 [def closewait]
 Timeout for close on socket to drain potential garbage if
-no keep alive is performed. (value with optional time unit, default: 2s)
+no keep alive is performed. (time unit, default: 2s)
 
 [def defaultserver] In a virtual server setup (when the driver module
 is loaded globally), this parameter is required and refers to the
@@ -71,7 +71,7 @@ capabilities of the operating system are determined at compile time.
 If you want to use TCP_FASTOPEN (introduced by Linux kernel 3.7.0), 
 you might have to activate this option in your kernel, 
 by using [example {
-   sudo sysctl net.ipv4.tcp_fastopen=1
+ sudo sysctl net.ipv4.tcp_fastopen=1
 }] (boolean, default: false)
 
 [def driverthreads]
@@ -100,17 +100,16 @@ Hostname of the server, can be looked up automatically if not specified.
 [def keepalivemaxdownloadsize]
 Don't allow keep-alive for downloads content larger than this size in
 bytes; a value of 0 means that this feature is deactivated.
-The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB);
-(default: 0)
+(memory unit, default: 0)
 
 [def keepalivemaxuploadsize]
 Don't allow keep-alive for upload content larger than this size in
 bytes; a value of 0 means that this feature is deactivated.
-The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB);
-(default: 0)
+(memory unit, default: 0)
 
 [def keepwait]
-Timeout for keep-alive. (value with optional time unit, default: 5s)
+Timeout for keep-alive.
+(time unit, default: 5s)
 
 [def location]
 Provide a default for protocol://hostname[lb]:port[rb]. Useful
@@ -120,26 +119,25 @@ for virtual servers.
 Maximum number of header lines (integer, 128)
 
 [def maxinput]
-Maximum size in bytes (octets) for content loaded into the server,
-such as upload of files.  The value can be specified in memory units
-(kB, MB, GB, KiB, MiB, GiB); (default: 1MB)
+Maximum size in for content loaded into the server,
+such as upload of files.
+(memory unit, default: 1MB)
 
 [def maxline]
-Maximum size in bytes (octets) of a single header line (integer,
-default: 8192)
+Maximum size in bytes (octets) of a single header line
+(integer, default: 8192)
 
 [def maxqueuesize]
 Size of the queue of accepted requests waiting for a connection thread
 (integer, default 1024).
 
-[def maxupload] Spool uploads to tmp-filesb for uploads larger than
-this size in bytes in order to keep the memory footprint small. This
+[def maxupload] Spool uploads to tmp-files for uploads larger than
+this size (in memory units) in order to keep the memory footprint small. This
 is especially important when large uploads are allowed via [term maxinput]. If
 this value is 0, this feature is deactivated. When spool-to-file is
 activated, the minimal size is the size of [term readahead]
 (see as well [term spoolerthreads]).
-The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB);
-(default: 0)
+(memory unit, default: 0)
 
 [def nodelay]
 TCP Performance option; use TCP_NODELAY to disable Nagle algorithm
@@ -153,9 +151,8 @@ loaded, but the driver will not be listening on any port.
 
 
 [def readahead]
-Maximum size in bytes (octets) for asynchronous read ahead operations.
-The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB);
-(default: value of [term bufsize])
+Maximum size in memory units for asynchronous read ahead operations.
+(memory unit, default: value of [term bufsize])
 
 [def recvwait]
 Timeout for receive operations. (value with optional time unit, default: 30s)
@@ -166,7 +163,7 @@ on the same port (default: false)
 
 
 [def sendwait]
-Timeout for send operations. (value with optional time unit, default: 30s)
+Timeout for send operations. (time unit, default: 30s)
 
 [def spoolerthreads]
 Number of spooler threads used when content larger than
@@ -177,20 +174,18 @@ threads handles upload-spooling as wellto memory; (integer, default: 0)
 Directory for uploads, defaults to the setting of [term "ns/parameter tmpdir"].
 
 [def writerbufsize]
-Buffer size in bytes (octets) for writer threads.
-The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB);
-(default: 8kB)
+Buffer size in memory units for writer threads.
+(memory unit, default: 8kB)
 
 [def writerratelimit]
 Limit the rate of the data transferred via writer threads.
-The value can be specified in KB/s (kilobytes per second) and
+The numeric value can be specified as KB/s (kilobytes per second) and
 can be refined per connection pool or per single connection
 (default: 0, meaning unlimited)
 
 [def writersize]
-Use writer threads for replies above this size.
-The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB);
-(default: 1MB)
+Use writer threads for replies above this memory amount.
+(memory unit, default: 1MB)
 
 [def writerstreaming]
 Use writer threads for streaming HTML output
@@ -201,6 +196,17 @@ Number of writer threads. (integer, default: 0)
 
 [list_end]
 
+All time units can be specified with and without a time unit
+suffix. Valid time units are "ms", "s", "m", "h", "d".
+If no time unit suffix is specified, seconds are assumed.
+
+[para]
+All memory sizes can be specified with and without a memory unit
+suffix. Valid memory units are kB, MB, GB, KiB, MiB, GiB.
+If no memory unit suffix is specified, bytes are assumed
+
+[para]
+
 [section EXAMPLES]
 
 In the most simple case, one defines in a configuration file a single
@@ -208,15 +214,15 @@ server [emph s1] with single network driver [emph nssock]. In the
 example below the server is listening on port 8000.
 
 [example_begin]
-   ns_section "ns/servers"
-   ns_param    s1 "NaviServer Instance 1"
-
-   ns_section "ns/server/s1/modules"
-   ns_param    nssock        nssock.so
-
-   ns_section "ns/server/s1/module/nssock"
-   ns_param    address        0.0.0.0
-   ns_param    port           8000
+ ns_section "ns/servers"
+ ns_param    s1 "NaviServer Instance 1"
+ 
+ ns_section "ns/server/s1/modules"
+ ns_param    nssock        nssock.so
+ 
+ ns_section "ns/server/s1/module/nssock"
+ ns_param    address        0.0.0.0
+ ns_param    port           8000
 [example_end]
 
 It is as well possible to define multiple servers in the same
@@ -225,23 +231,23 @@ use the same driver [emph nsock] but with different ports.
 In this case it is sufficient to load the driver once.
 
 [example_begin]
-   ns_section "ns/servers"
-   ns_param    s1 "NaviServer Instance 1"
-   ns_param    s2 "NaviServer Instance 1"
-
-   ns_section "ns/server/s1/modules"
-   ns_param    nssock        nssock.so
-
-   ns_section "ns/server/s1/module/nssock"
-   ns_param    address        0.0.0.0
-   ns_param    port           8000
-
-   ns_section "ns/server/s2/modules"
-   ns_param    nssock        nssock.so
-
-   ns_section "ns/server/s2/module/nssock"
-   ns_param    address        0.0.0.0
-   ns_param    port           8001
+ ns_section "ns/servers"
+ ns_param    s1           "NaviServer Instance 1"
+ ns_param    s2           "NaviServer Instance 1"
+ 
+ ns_section "ns/server/s1/modules"
+ ns_param    nssock        nssock.so
+ 
+ ns_section "ns/server/s1/module/nssock"
+ ns_param    address       0.0.0.0
+ ns_param    port          8000
+ 
+ ns_section "ns/server/s2/modules"
+ ns_param    nssock        nssock.so
+ 
+ ns_section "ns/server/s2/module/nssock"
+ ns_param    address       0.0.0.0
+ ns_param    port          8001
 [example_end]
 
 When the config file above is named e.g. two-server-config.tcl,
@@ -265,15 +271,15 @@ example we name the different instances of the network driver
 [emph nssock1] and [emph nssock2].
 
 [example_begin]
-   ns_section ns/server/s1/modules
-   ns_param   nssock1   nssock.so
-   ns_param   nssock2   nssock.so
+ ns_section ns/server/s1/modules
+ ns_param   nssock1   nssock.so
+ ns_param   nssock2   nssock.so
  
-   ns_section ns/server/server1/module/nssock1
-   ns_param   port    8000
-   
-   ns_section ns/server/server1/module/nssock2
-   ns_param   port    8001
+ ns_section ns/server/server1/module/nssock1
+ ns_param   port    8000
+ 
+ ns_section ns/server/server1/module/nssock2
+ ns_param   port    8001
 [example_end]
 
 Now assume, we want to define two web servers "s1" and "s2", which
@@ -306,36 +312,36 @@ between the host names and the defined servers. Note that one can
 define multiple DNS names also for a single server (here for [const s2]).
 
 [example_begin]
-   #
-   # Define two servers
-   #
-   ns_section ns/servers
-   ns_param   s1      "Virtual Server s1"
-   ns_param   s2      "Virtual Server s2 "
-   
-   ns_section ns/server/s1/fastpath
-   ns_param   pagedir  /var/www/s1
-   
-   ns_section ns/server/s2/fastpath
-   ns_param   pagedir  /var/www/s2
-   
-   #
-   # Define nssock driver, directing requests to the virtual servers
-   #
-   ns_section ns/modules
-   ns_param   nssock   nssock.so
-   
-   ns_section ns/module/nssock
-   ns_param   port     8000
-   ns_param   defaultserver s1
-   
-   #
-   # Define the mapping between the DNS names and the servers.
-   #
-   ns_section ns/module/nssock/servers
-   ns_param   s1      foo.com
-   ns_param   s2      bar.com
-   ns_param   s2      baz.com
+ #
+ # Define two servers
+ #
+ ns_section ns/servers
+ ns_param   s1      "Virtual Server s1"
+ ns_param   s2      "Virtual Server s2 "
+ 
+ ns_section ns/server/s1/fastpath
+ ns_param   pagedir  /var/www/s1
+ 
+ ns_section ns/server/s2/fastpath
+ ns_param   pagedir  /var/www/s2
+ 
+ #
+ # Define nssock driver, directing requests to the virtual servers
+ #
+ ns_section ns/modules
+ ns_param   nssock   nssock.so
+ 
+ ns_section ns/module/nssock
+ ns_param   port     8000
+ ns_param   defaultserver s1
+ 
+ #
+ # Define the mapping between the DNS names and the servers.
+ #
+ ns_section ns/module/nssock/servers
+ ns_param   s1      foo.com
+ ns_param   s2      bar.com
+ ns_param   s2      baz.com
 [example_end]
 
 

@@ -1281,7 +1281,7 @@ test http-8.3 {ns_return with UTF-8 3 byte char with impure bytearray} -constrai
 
 test http-8.4.0 {ns_http queue + expire, ns_http wait + timeout, with timeout} -constraints {serverListen} -setup {
     ns_register_proc GET /slow {
-        ns_sleep 2
+        ns_sleep 2s
         ns_return 200 text/plain OK
     }
     ns_register_proc GET /get {ns_return 200 text/plain OK}
@@ -1304,7 +1304,7 @@ test http-8.4.0 {ns_http queue + expire, ns_http wait + timeout, with timeout} -
 
 test http-8.4.1 {ns_http queue + expire, ns_http wait, with timeout} -constraints {serverListen} -setup {
     ns_register_proc GET /slow {
-        ns_sleep 2
+        ns_sleep 2s
         ns_return 200 text/plain OK
     }
     ns_register_proc GET /get {ns_return 200 text/plain OK}
@@ -1327,7 +1327,7 @@ test http-8.4.1 {ns_http queue + expire, ns_http wait, with timeout} -constraint
 
 test http-8.4.2 {ns_http queue + timeout, ns_http wait + timeout, with timeout} -constraints {serverListen} -setup {
     ns_register_proc GET /slow {
-        ns_sleep 2
+        ns_sleep 2s
         ns_return 200 text/plain OK
     }
     ns_register_proc GET /get {ns_return 200 text/plain OK}
@@ -1350,7 +1350,7 @@ test http-8.4.2 {ns_http queue + timeout, ns_http wait + timeout, with timeout} 
 
 test http-8.4.3 {ns_http queue + timeout, ns_http wait, with timeout} -constraints {serverListen} -setup {
     ns_register_proc GET /slow {
-        ns_sleep 2
+        ns_sleep 2s
         ns_return 200 text/plain OK
     }
     ns_register_proc GET /get {ns_return 200 text/plain OK}
@@ -1373,7 +1373,7 @@ test http-8.4.3 {ns_http queue + timeout, ns_http wait, with timeout} -constrain
 
 test http-8.4.4 {ns_http run + timeout, with timeout} -constraints {serverListen} -setup {
     ns_register_proc GET /slow {
-        ns_sleep 2
+        ns_sleep 2s
         ns_return 200 text/plain OK
     }
     ns_register_proc GET /get {ns_return 200 text/plain OK}
@@ -1395,7 +1395,7 @@ test http-8.4.4 {ns_http run + timeout, with timeout} -constraints {serverListen
 
 test http-8.4.5 {ns_http run + expire, with timeout} -constraints {serverListen} -setup {
     ns_register_proc GET /slow {
-        ns_sleep 2
+        ns_sleep 2s
         ns_return 200 text/plain OK
     }
     ns_register_proc GET /get {ns_return 200 text/plain OK}
@@ -1462,9 +1462,9 @@ test http-8.5.0 {ns_http queue + donecallback} -constraints {serverListen} -setu
         set r "no timeout"
     }
     #
-    # sleep a little to let done callback finish
+    # Sleep a little to let done-callback finish.
     #
-    ns_sleep 1
+    ns_sleep 1s
 
     append r " " [dict get [lindex [nsv_get result .] 1] status]
 } -cleanup {
@@ -1474,14 +1474,14 @@ test http-8.5.0 {ns_http queue + donecallback} -constraints {serverListen} -setu
 } -result {no timeout 200}
 
 test http-8.5.1 {ns_http queue + donecallback + timeout} -constraints {serverListen} -setup {
-    ns_register_proc GET /slow { ns_sleep 2; ns_return 200 text/plain OK }
+    ns_register_proc GET /slow { ns_sleep 2s; ns_return 200 text/plain OK }
 } -body {
     nsv_set result . ""
     ns_http queue -timeout 1 -donecallback "nsv_lappend result . " [ns_config test listenurl]/slow
     #
     # Sleep a little to let done-callback finish (max after 1 sec).
     #
-    ns_sleep 2
+    ns_sleep 2s
     nsv_get result .
 } -cleanup {
     ns_unregister_op GET /slow
@@ -1496,6 +1496,28 @@ test http-9.0 {GET for static compressed file via fastpath} -constraints {server
         GET /test.html
 } -cleanup {
 } -result {200 89 text/html gzip}
+
+
+test http-9.0 {
+
+    Test behavior with "100 continue" via curl, which is the client
+    having the longest time support for this. To see the difference
+    to normal requests, one has to turn on request debugging.
+
+} -constraints {curl serverListen} -setup {
+    #ns_logctl severity Debug(request) on
+    ns_register_proc POST /post {
+        set contentType [ns_set iget [ns_conn headers] content-type]
+        ns_log notice "encoding system [encoding system] conn charset [ns_conn encoding]"
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA[ns_conn content]ZÜZ"
+    }
+} -body {
+    set string "Testing <äöüß☀>"
+    exec curl -H "Expect: 100-continue" --data $string [ns_config test listenurl]/post 2> /dev/null
+} -cleanup {
+    ns_unregister_op POST /post
+} -result {utf-8 <application/x-www-form-urlencoded> AÄATesting <äöüß☀>ZÜZ}
+
 
 
 cleanupTests

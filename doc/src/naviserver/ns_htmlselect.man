@@ -46,7 +46,7 @@ selectedData is an optional list of the OPTIONs that will be selected by default
 [section EXAMPLES]
 
 [example_begin]
-   % set favoriteAnimal [lb][lb]ns_htmlselect_old -sort -labels [lb]list dog cat cow[rb][rb] "favoriteAnimal"[rb]
+ % set favoriteAnimal [lb][lb]ns_htmlselect_old -sort -labels [lb]list dog cat cow[rb][rb] "favoriteAnimal"[rb]
 [example_end]
 
 [manpage_end]

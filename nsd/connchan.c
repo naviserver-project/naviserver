@@ -823,6 +823,7 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                     Ns_TclPrintfResult(interp, "channel %s timeout on send operation (%ld:%ld)",
                                        connChanPtr->channelName, timeoutPtr->sec, timeoutPtr->usec);
                     Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+                    Ns_Log(Ns_LogTimeoutDebug, "connchan send on %s runs into timeout", connChanPtr->channelName);
                     result = -1;
                 }
             }

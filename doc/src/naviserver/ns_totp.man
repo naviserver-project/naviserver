@@ -12,10 +12,10 @@ password to a time window.
 [para]
 RFC-6238 defines TOTP as:
 [example_begin]
-     TOTP = HOTP(K, T), where T is an integer
-
-     K: key
-     T: time slice (moving factor for one time passwd)
+ TOTP = HOTP(K, T), where T is an integer
+ 
+ K: key
+ T: time slice (moving factor for one time passwd)
 [example_end]     
 
 The implemented function ns_totp is a generalization by allowing to
@@ -79,17 +79,15 @@ If no time is specified, the current time is used.
 [list_end]
 
 [example_begin]
-  
-  nscp 2> ns_totp -key "tweedie123" -time 1471107671
-  33888450
-
+ nscp 2> ns_totp -key "tweedie123" -time 1471107671
+ 33888450
 [example_end]
 
 [section CONFIGURATION]
 
 [example_begin]
-[cmd ns_section] "ns/server/server1"
-[cmd ns_param]   serversecret "swordfish"
+ [cmd ns_section] "ns/server/server1"
+ [cmd ns_param]   serversecret "swordfish"
 [example_end]
 
 
@@ -97,4 +95,3 @@ If no time is specified, the current time is used.
 [keywords TOTP encoding crypto nsf]
 
 [manpage_end]
-

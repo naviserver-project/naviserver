@@ -22,15 +22,15 @@ ns_jpegsize, ns_gifsize and ns_pngsize would generate an error).
 [section EXAMPLES]
 
 [example_begin]
-   % ns_imgsize screenshot.jpg
-   1024 768
+ % ns_imgsize screenshot.jpg
+ 1024 768
 [example_end]
 
 [example_begin]
-   % file exists test.html
-   1
-   % ns_imgsize test.html
-   0 0
+ % file exists test.html
+ 1
+ % ns_imgsize test.html
+ 0 0
 [example_end]
 
 [keywords "global built-in" images]

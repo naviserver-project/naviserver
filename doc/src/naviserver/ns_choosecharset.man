@@ -20,13 +20,16 @@
 [section EXAMPLES]
 
 [example_begin]
-   % ns_choosecharset
-   iso-8859-1
+ % ns_choosecharset
+ iso-8859-1
 [example_end]
 
 [example_begin]
-   % ns_choosecharset -preference
+ % ns_choosecharset -preference
 [example_end]
+
+[see_also ns_urldecode]
+[keywords charset]
 
 [manpage_end]
 

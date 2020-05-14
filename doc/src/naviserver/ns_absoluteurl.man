@@ -22,14 +22,14 @@ URLs into its components.
 [section EXAMPLES]
 
 [example_begin]
-   % ns_absoluteurl foo.html http://openacs.org//projects/openacs/download/
-   http://openacs.org//projects/openacs/download/foo.html
+ % ns_absoluteurl foo.html http://openacs.org//projects/openacs/download/
+ http://openacs.org//projects/openacs/download/foo.html
  
-   % ns_absoluteurl foo.html {http://[lb]::1[rb]:80/t.html}
-   http://[lb]::1[rb]:80/foo.html
+ % ns_absoluteurl foo.html {http://[lb]::1[rb]:80/t.html}
+ http://[lb]::1[rb]:80/foo.html
  
-   % ns_absoluteurl //google.com/ https://openacs.org/forums
-   https://google.com/
+ % ns_absoluteurl //google.com/ https://openacs.org/forums
+ https://google.com/
 [example_end]
 
 [see_also ns_parseurl]

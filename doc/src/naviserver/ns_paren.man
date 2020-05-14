@@ -23,8 +23,8 @@ string is the empty string, for which an empty string is returned.
 [section EXAMPLES]
 
 [example_begin]
-   % ns_paren "Hello World!"
-   (Hello World!)
+ % ns_paren "Hello World!"
+ (Hello World!)
 [example_end]
 
 

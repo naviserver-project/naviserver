@@ -176,9 +176,10 @@ typedef struct ThreadPool {
     int                maxThreads;
     int                nthreads;
     int                nidle;
-    Job               *firstPtr;
     int                jobsPerThread;
+    Job               *firstPtr;
     Ns_Time            timeout;
+    Ns_Time            logminduration;
 } ThreadPool;
 
 
@@ -291,6 +292,8 @@ NsTclInitQueueType(void)
     tp.jobsPerThread = 0;
     tp.timeout.sec = 0;
     tp.timeout.usec = 0;
+    tp.logminduration.sec = 0;
+    tp.logminduration.usec = 0;
 }
 
 
@@ -385,11 +388,12 @@ JobConfigureObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 {
     int               result = TCL_OK;
     int               jpt = -1;
-    Ns_Time          *timeoutPtr = NULL;
+    Ns_Time          *timeoutPtr = NULL, *logminPtr = NULL;
     Ns_ObjvValueRange jptRange = {0, INT_MAX};
     Ns_ObjvSpec    lopts[] = {
         {"-jobsperthread",  Ns_ObjvInt,  &jpt,        &jptRange},
         {"-timeout",        Ns_ObjvTime, &timeoutPtr, NULL},
+        {"-logminduration", Ns_ObjvTime, &logminPtr,  NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -405,8 +409,13 @@ JobConfigureObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         if (timeoutPtr != NULL) {
             tp.timeout = *timeoutPtr;
         }
-        Ns_TclPrintfResult(interp, "jobsperthread %d timeout %ld:%06ld",
-                           tp.jobsPerThread, tp.timeout.sec, tp.timeout.usec);
+        if (logminPtr != NULL) {
+            tp.logminduration = *logminPtr;
+        }
+        Ns_TclPrintfResult(interp, "jobsperthread %d timeout %ld:%06ld logminduration %ld:%06ld",
+                           tp.jobsPerThread,
+                           tp.timeout.sec, tp.timeout.usec,
+                           tp.logminduration.sec, tp.logminduration.usec );
         Ns_MutexUnlock(&tp.queuelock);
     }
 
@@ -742,6 +751,9 @@ JobWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_O
                 if (timedOut == NS_TIMEOUT) {
                     Ns_TclPrintfResult(interp, "Wait timed out.");
                     Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+                    Ns_Log(Ns_LogTimeoutDebug, "ns_job %s runs into timeout: %s",
+                           jobIdString, Tcl_DStringValue(&jobPtr->script));
+
                     jobPtr->req = JOB_NONE;
                     result = TCL_ERROR;
                     goto releaseQueue;
@@ -959,15 +971,23 @@ JobWaitAnyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
          */
 
         if (deltaTimeoutPtr != NULL) {
-            while ((Tcl_FirstHashEntry(&queue->jobs, &search) != NULL)
-                   && (result == TCL_OK)
-                   && !AnyDone(queue)) {
+            const Tcl_HashEntry *hPtr;
+
+            for (hPtr = Tcl_FirstHashEntry(&queue->jobs, &search);
+                 hPtr != NULL && !AnyDone(queue);
+                 hPtr = Tcl_NextHashEntry(&search)) {
                 Ns_ReturnCode timedOut = Ns_CondTimedWait(&queue->cond,
                                                           &queue->lock, &timeout);
                 if (timedOut == NS_TIMEOUT) {
-                    Ns_TclPrintfResult(interp, "Wait timed out.");
+                    Job *jobPtr = Tcl_GetHashValue(hPtr);
+
                     Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+                    Ns_Log(Ns_LogTimeoutDebug, "ns_job %s runs into timeout: %s",
+                           Tcl_DStringValue(&jobPtr->id), Tcl_DStringValue(&jobPtr->script));
+
+                    Ns_TclPrintfResult(interp, "Wait timed out.");
                     result = TCL_ERROR;
+                    break;
                 }
             }
         } else {
@@ -1445,8 +1465,8 @@ JobThread(void *UNUSED(arg))
     SetupJobDefaults();
 
     /*
-     * Setting this parameter to > 0 will cause the thread to
-     * graciously exit after processing that many job requests,
+     * Setting parameter "jobsperthread" to > 0 will cause the thread
+     * to graciously exit after processing that many job requests,
      * thus initiating kind-of Tcl-level garbage collection.
      */
 
@@ -1537,6 +1557,16 @@ JobThread(void *UNUSED(arg))
         jobPtr->async  = NULL;
 
         Ns_GetTime(&jobPtr->endTime);
+        {
+            Ns_Time diffTime;
+
+            (void)Ns_DiffTime(&jobPtr->endTime, &jobPtr->startTime, &diffTime);
+            if (Ns_DiffTime(&tp.logminduration, &diffTime, NULL) < 1) {
+                Ns_Log(Notice, "ns_job %s duration %" PRId64 ".%06ld secs: '%s'",
+                       jobPtr->queueId, (int64_t)diffTime.sec, diffTime.usec,
+                       jobPtr->script.string);
+            }
+        }
 
         /*
          * Make sure we show error message for detached job, otherwise
@@ -2379,8 +2409,10 @@ SetupJobDefaults(void)
        tp.jobsPerThread = nsconf.job.jobsperthread;
     }
     if (tp.timeout.sec == 0 && tp.timeout.usec == 0) {
-        tp.timeout.sec = nsconf.job.timeout.sec;
-        tp.timeout.usec = nsconf.job.timeout.usec;
+        tp.timeout = nsconf.job.timeout;
+    }
+    if (tp.logminduration.sec == 0 && tp.logminduration.usec == 0) {
+        tp.logminduration = nsconf.job.logminduration;
     }
 }
 

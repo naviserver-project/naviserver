@@ -23,16 +23,17 @@ location string.
 [section EXAMPLES]
 
 [example_begin]
-  ns_locationproc   nstest::location arg
-
-  proc nstest::location {args} {
-      return "testlocation.$args"
-  }
+ ns_locationproc   nstest::location arg
+ 
+ proc nstest::location {args} {
+    return "testlocation.$args"
+ }
 [example_end]
 
 
 [see_also ns_serverrootproc ns_conn]
 [keywords "global built-in" virtual hosting redirect]
 [manpage_end]
+
 
 

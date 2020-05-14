@@ -254,7 +254,7 @@ Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
     } else {
         int i;
         /*
-         * Produce an NULL terminated argv from a string containing '\0'
+         * Produce a NULL terminated argv from a string containing '\0'
          * characters as separators. We could make this dynamic, but the only
          * usage within the NaviServer source tree is nscgi, which uses always
          * exactly 2 or 0 arguments.

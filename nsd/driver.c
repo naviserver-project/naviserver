@@ -345,7 +345,10 @@ Ns_LogSeverity Ns_LogRequestDebug;
 Ns_LogSeverity Ns_LogConnchanDebug;
 Ns_LogSeverity Ns_LogUrlspaceDebug;
 Ns_LogSeverity Ns_LogAccessDebug;
+Ns_LogSeverity Ns_LogTimeoutDebug;
+
 NS_EXPORT Ns_LogSeverity Ns_LogAccessDebug;
+
 bool NsWriterBandwidthManagement = NS_FALSE;
 
 static Ns_LogSeverity   WriterDebug;        /* Severity at which to log verbose debugging. */
@@ -456,6 +459,7 @@ NsInitDrivers(void)
     Ns_LogConnchanDebug = Ns_CreateLogSeverity("Debug(connchan)");
     Ns_LogUrlspaceDebug = Ns_CreateLogSeverity("Debug(urlspace)");
     Ns_LogAccessDebug = Ns_CreateLogSeverity("Debug(access)");
+    Ns_LogTimeoutDebug = Ns_CreateLogSeverity("Debug(timeout)");
     Ns_MutexInit(&reqLock);
     Ns_MutexInit(&writerlock);
     Ns_MutexSetName2(&reqLock, "ns:driver", "requestpool");
@@ -570,8 +574,8 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         set = Ns_ConfigCreateSection(path);
 
         /*
-         * Determine the defaultserver. hostname used for the local address to
-         * bind to and/or the HTTP location string.
+         * Determine the "defaultserver" the "hostname" / "address" for
+         * binding to and/or the HTTP location string.
          */
         defserver = Ns_ConfigGetValue(path, "defaultserver");
 
@@ -1007,17 +1011,13 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     drvPtr->maxqueuesize   = Ns_ConfigIntRange(path, "maxqueuesize", 1024,   1, INT_MAX);
 
     Ns_ConfigTimeUnitRange(path, "sendwait",
-                           "30s", 1, 0, INT_MAX, 0,
-                           &drvPtr->sendwait);
+                           "30s", 1, 0, INT_MAX, 0, &drvPtr->sendwait);
     Ns_ConfigTimeUnitRange(path, "recvwait",
-                           "30s", 1, 0, INT_MAX, 0,
-                           &drvPtr->recvwait);
+                           "30s", 1, 0, INT_MAX, 0, &drvPtr->recvwait);
     Ns_ConfigTimeUnitRange(path, "closewait",
-                           "2s", 0, 0, INT_MAX, 0,
-                           &drvPtr->closewait);
+                           "2s", 0, 0, INT_MAX, 0, &drvPtr->closewait);
     Ns_ConfigTimeUnitRange(path, "keepwait",
-                           "5s", 0, 0, INT_MAX, 0,
-                           &drvPtr->keepwait);
+                           "5s", 0, 0, INT_MAX, 0, &drvPtr->keepwait);
 
     drvPtr->backlog        = Ns_ConfigIntRange(path, "backlog",       256,   1, INT_MAX);
     drvPtr->driverthreads  = Ns_ConfigIntRange(path, "driverthreads",   1,   1, 32);
@@ -1971,8 +1971,18 @@ NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
 static bool
 DriverKeep(Sock *sockPtr)
 {
+    Ns_DriverKeepProc *keepProc;
+    bool              result;
+
     NS_NONNULL_ASSERT(sockPtr != NULL);
-    return (*sockPtr->drvPtr->keepProc)((Ns_Sock *) sockPtr);
+
+    keepProc = sockPtr->drvPtr->keepProc;
+    if (keepProc == NULL)  {
+        result = NS_FALSE;
+    } else {
+        result = (keepProc)((Ns_Sock *) sockPtr);
+    }
+    return result;
 }
 
 
@@ -2624,6 +2634,7 @@ static void
 RequestNew(Sock *sockPtr)
 {
     Request *reqPtr;
+    bool     reuseRequest = NS_TRUE;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
@@ -2633,10 +2644,15 @@ RequestNew(Sock *sockPtr)
     Ns_MutexLock(&reqLock);
     reqPtr = firstReqPtr;
     if (likely(reqPtr != NULL)) {
-        Ns_Log(DriverDebug, "RequestNew reuses a Request");
         firstReqPtr = reqPtr->nextPtr;
+    } else {
+        reuseRequest = NS_FALSE;
     }
     Ns_MutexUnlock(&reqLock);
+
+    if (reuseRequest) {
+        Ns_Log(DriverDebug, "RequestNew reuses a Request");
+    }
 
     /*
      * In case we failed, allocate a new Request.
@@ -3207,6 +3223,10 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
                " %" PRIdz " < %" PRIdz, sent, tosend);
     }
 
+    /*
+     * In case we have a request structure, complain the system log about
+     * the bad request.
+     */
     if (sockPtr->reqPtr != NULL) {
         Request     *reqPtr = sockPtr->reqPtr;
         const char  *requestLine = (reqPtr->request.line != NULL) ? reqPtr->request.line : NS_EMPTY_STRING;
@@ -3548,6 +3568,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
             /*
              * Get a temporary fd. These FDs are used for mmapping.
              */
+
             sockPtr->tfd = Ns_GetTemp();
         }
 
@@ -3717,16 +3738,17 @@ LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buffer, size_t l
  *      None.
  *
  * Side effects:
- *      Update various reqPtr fields and signal error conditions via
- *      sockPtr->flags.
+ *      Update various reqPtr fields and signal certain facts and error
+ *      conditions via sockPtr->flags. In error conditions, sockPtr->keep is
+ *      set to NS_FALSE.
  *
  *----------------------------------------------------------------------
  */
 static size_t
 EndOfHeader(Sock *sockPtr)
 {
-    Request    *reqPtr;
-    const char *s;
+    Request      *reqPtr;
+    const char   *s;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
@@ -3736,8 +3758,28 @@ EndOfHeader(Sock *sockPtr)
     reqPtr->chunkStartOff = 0u;
 
     /*
-     * Handle content-length, which might be provided or not,
+     * Check for "expect: 100-continue" and clear flag in case we have
+     * pipelining.
      */
+    sockPtr->flags &= ~(NS_CONN_CONTINUE);
+    s = Ns_SetIGet(reqPtr->headers, "expect");
+    if (s != NULL) {
+        if (*s == '1' && *(s+1) == '0' && *(s+2) == '0' && *(s+3) == '-') {
+            char *dup = ns_strdup(s+4);
+
+            Ns_StrToLower(dup);
+            if (STREQ(dup, "continue")) {
+                sockPtr->flags |= NS_CONN_CONTINUE;
+            }
+            ns_free(dup);
+        }
+    }
+
+    /*
+     * Handle content-length, which might be provided or not.
+     * Clear length specific error flags.
+     */
+    sockPtr->flags &= ~(NS_CONN_ENTITYTOOLARGE);
     s = Ns_SetIGet(reqPtr->headers, "content-length");
     if (s == NULL) {
         s = Ns_SetIGet(reqPtr->headers, "Transfer-Encoding");
@@ -3766,13 +3808,12 @@ EndOfHeader(Sock *sockPtr)
         }
     }
 
+    /*
+     * In case a valid and meaningful was provided, the string with the
+     * content length ("s") is not NULL.
+     */
     if (s != NULL) {
         Tcl_WideInt length;
-
-        /*
-         * "Content-length" was provided. We honor just meaningful
-         * "Content-length" hints only.
-         */
 
         if ((Ns_StrToWideInt(s, &length) == NS_OK) && (length > 0)) {
             reqPtr->length = (size_t)length;
@@ -3780,29 +3821,13 @@ EndOfHeader(Sock *sockPtr)
              * Handle too large input requests.
              */
             if (reqPtr->length > (size_t)sockPtr->drvPtr->maxinput) {
+
                 Ns_Log(Warning, "SockParse: request too large, length=%"
                        PRIdz ", maxinput=%" TCL_LL_MODIFIER "d",
                        reqPtr->length, sockPtr->drvPtr->maxinput);
-                /*
-                 * We have to read the full request (although it is
-                 * too large) to drain the channel. Otherwise, the
-                 * server might close the connection *before* it has
-                 * received full request with its body. Such a
-                 * premature close leads to an error message in
-                 * clients like Firefox. Therefore, we do not return
-                 * SOCK_ENTITYTOOLARGE here, but just flag the
-                 * condition. ...
-                 *
-                 * Possible future improvements: Currently, the
-                 * content is really received and kept. We might
-                 * simply drain the input and ignore the read content,
-                 * but this requires handling for the various input
-                 * modes (spooling, chunked content, etc.). We should
-                 * make the same for the other reply-codes in
-                 * SockError().
-                 */
-                sockPtr->flags = NS_CONN_ENTITYTOOLARGE;
+
                 sockPtr->keep = NS_FALSE;
+                sockPtr->flags |= NS_CONN_ENTITYTOOLARGE;
 
             }
             reqPtr->contentLength = (size_t)length;
@@ -3958,14 +3983,63 @@ SockParse(Sock *sockPtr)
         }
 
         /*
-         * Check for end of headers.
+         * Check for end of headers in case we have not done it yet.
          */
-        if (unlikely(e == s)) {
+        if (unlikely(e == s) && (reqPtr->coff == 0u)) {
             /*
-             * We are at end of headers
+             * We are at end of headers.
              */
             reqPtr->coff = EndOfHeader(sockPtr);
 
+            /*
+             * In cases the client sent "expect: 100-continue", report back that
+             * everything is fine with the headers.
+             */
+            if ((sockPtr->flags & NS_CONN_CONTINUE) != 0u) {
+
+                Ns_Log(Ns_LogRequestDebug, "honoring 100-continue");
+
+                /*
+                 * In case, the request entity (body) was too large, we can
+                 * return immediately the error message, when the client has
+                 * flagged this via "Expect:". Otherwise we have to read the
+                 * full request (although it is too large) to drain the
+                 * channel. Otherwise, the server might close the connection
+                 * *before* it has received full request with its body from
+                 * the client. We just keep the flag and let
+                 * Ns_ConnRunRequest() handle the error message.
+                 */
+                if ((sockPtr->flags & NS_CONN_ENTITYTOOLARGE) != 0u) {
+                    Ns_Log(Ns_LogRequestDebug, "100-continue: entity too large");
+
+                    return SOCK_ENTITYTOOLARGE;
+
+                    /*
+                     * We have no other error message flagged (future ones
+                     * have to be handled here).
+                     */
+                } else {
+                    struct iovec iov[1];
+                    ssize_t      sent;
+
+                    /*
+                     * Reply with "100 continue".
+                     */
+                    Ns_Log(Ns_LogRequestDebug, "100-continue: reply CONTINUE");
+
+                    iov[0].iov_base = (char *)"HTTP/1.1 100 Continue\r\n\r\n";
+                    iov[0].iov_len = strlen(iov[0].iov_base);
+
+                    sent = Ns_SockSendBufs((Ns_Sock *)sockPtr, iov, 1,
+                                           NULL, 0u);
+                    if (sent != (ssize_t)iov[0].iov_len) {
+                        Ns_Log(Warning, "could not deliver response: 100 Continue");
+                        /*
+                         * Should we bail out here?
+                         */
+                    }
+                }
+            }
         } else {
             /*
              * We have the request-line or a header line to process.
@@ -4027,6 +4101,7 @@ SockParse(Sock *sockPtr)
          */
         return SOCK_BADREQUEST;
     }
+
 
     /*
      * We are in the request body.
@@ -6830,9 +6905,10 @@ WriterListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 static int
 WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int               intValue = -1, result = TCL_OK;
+    int               result = TCL_OK;
     Tcl_Obj          *driverObj = NULL;
     Ns_Conn          *conn = NULL;
+    Tcl_WideInt       intValue = -1;
     const char       *firstArgString;
     Ns_ObjvValueRange range = {1024, INT_MAX};
     Ns_ObjvSpec   *opts, optsNew[] = {
@@ -7048,7 +7124,7 @@ NsAsyncWriterQueueEnable(void)
          */
         if (asyncWriter == NULL) {
             Ns_MutexLock(&reqLock);
-            if (asyncWriter == NULL) {
+            if (likely(asyncWriter == NULL)) {
                 /*
                  * Allocate and initialize writer thread context.
                  */

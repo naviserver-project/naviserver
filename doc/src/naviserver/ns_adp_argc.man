@@ -11,26 +11,21 @@
 [section {COMMANDS}]
 
 [list_begin definitions]
-
-
 [call [cmd ns_adp_argc]]
-
-
 [list_end]
-
 
 [section EXAMPLES]
 
 [example_begin]
-   # In a.adp:
-   <% ns_adp_include b.adp example a b c %>
+ # In a.adp:
+ <% ns_adp_include b.adp example a b c %>
 [example_end]
 
 [example_begin]
-   # In b.adp:
-   <%
-     ns_adp_argc      ;# => 5
-   %>
+ # In b.adp:
+ <%
+   ns_adp_argc      ;# => 5
+ %>
 [example_end]
 
 [see_also ns_adp_include ns_adp_parse ns_adp_argv ns_adp_bind_args nsd]

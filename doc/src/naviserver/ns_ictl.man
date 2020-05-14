@@ -30,12 +30,12 @@ Cleanup and initialize the interpreter. This is used for long running detached
 threads to avoid resource leaks and/or missed state changes.
 
 [example_begin]
-ns_thread begin {
-    while {1} {
-        ns_reinit
-        # ... long running work ...
-    }
-}
+ ns_thread begin {
+   while {1} {
+      ns_reinit
+      # ... long running work ...
+   }
+ }
 [example_end]
 
 
@@ -183,15 +183,15 @@ interpreter was last initialized.
 [section EXAMPLES]
 
 [example_begin]
-% ns_ictl epoch
-1
+ % ns_ictl epoch
+ 1
 [example_end]
 
 
 
 [example_begin]
-% ns_ictl getmodules
-nsdb nslog nscp
+ % ns_ictl getmodules
+ nsdb nslog nscp
 [example_end]
 
 

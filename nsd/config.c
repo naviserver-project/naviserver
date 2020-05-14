@@ -341,7 +341,7 @@ ConfigWideIntRange(const char *section, const char *key, Tcl_WideInt defaultValu
                    const char *kind)
 {
     const char *s;
-    char defstr[TCL_INTEGER_SPACE];
+    char        defstr[TCL_INTEGER_SPACE];
     Tcl_WideInt value;
 
     NS_NONNULL_ASSERT(section != NULL);
@@ -356,6 +356,7 @@ ConfigWideIntRange(const char *section, const char *key, Tcl_WideInt defaultValu
         Ns_Log(Dev, "config: %s:%s value=%" TCL_LL_MODIFIER "d min=%" TCL_LL_MODIFIER
                "d max=%" TCL_LL_MODIFIER "d default=%" TCL_LL_MODIFIER "d (wide int)",
                section, key, value, minValue, maxValue, defaultValue);
+
     } else if (s != NULL) {
         /*
          * Parse of parameter failed.
@@ -373,6 +374,7 @@ ConfigWideIntRange(const char *section, const char *key, Tcl_WideInt defaultValu
                section, key, minValue, maxValue, defaultValue);
         value = defaultValue;
     }
+
     if (value < minValue) {
         Ns_Log(Warning, "config: %s:%s value=%" TCL_LL_MODIFIER "d, rounded up to %"
                TCL_LL_MODIFIER "d", section, key, value, minValue);
@@ -383,6 +385,7 @@ ConfigWideIntRange(const char *section, const char *key, Tcl_WideInt defaultValu
                TCL_LL_MODIFIER "d", section, key, value, maxValue);
         value = maxValue;
     }
+
     return value;
 }
 
@@ -1032,7 +1035,7 @@ SectionObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *cons
         *set = GetSection(sectionName, NS_TRUE);
 
         if (blockObj != NULL) {
-            Tcl_GlobalEvalObj(interp, blockObj);
+            result = Tcl_GlobalEvalObj(interp, blockObj);
         }
     }
 
@@ -1070,6 +1073,7 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defstr)
 
     if (set != NULL) {
         int  i;
+
         if (exact) {
             i = Ns_SetFind(set, key);
         } else {

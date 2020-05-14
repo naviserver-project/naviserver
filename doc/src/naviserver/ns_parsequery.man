@@ -6,13 +6,13 @@
 
 [description]
 
-This command parses the specified querystring into an ns_set, which is returned. 
-The keys and values will be decoded.
+This command parses the specified querystring into an [cmd ns_set],
+which is returned.  The keys and values will be decoded
+based by the rules used for [cmd ns_urlencode].
 
 [section {COMMANDS}]
 
 [list_begin definitions]
-
 
  [call [cmd ns_parsequery] [arg querystring]]
 
@@ -23,20 +23,19 @@ The keys and values will be decoded.
 [section EXAMPLES]
 
 [example_begin]
-   % set s [lb][lb]ns_parsequery "msg=Hello+World%21&amp;a=b&amp;a=b&amp;c=d"[rb][rb]
-   d0
+ % set s [lb]ns_parsequery "msg=Hello+World%21&a=b&a=b&c=d"[rb]
+ d0
 [example_end]
 
 [example_begin]
-   % ns_set array $s
-   msg {Hello World!} a b a b c d
+ % ns_set array $s
+ msg {Hello World!} a b a b c d
 [example_end]
 
 
 [para]
 
-[see_also ns_set ns_getform]
+[see_also ns_set ns_getform ns_urlencode]
 [keywords "global built-in" URL query]
 
 [manpage_end]
-

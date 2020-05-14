@@ -127,24 +127,27 @@ ns_section	"ns/parameters" {
     # Min size of the uploaded file to enable progress tracking
     ns_param	progressminsize		0
 
-    # How many Tcl jobs to run in any job thread before thread exit, this will allow
+    # How many jobs to run in any job thread before thread exits, this will allow
     # to reclaim thread memory back to the system if memory allocator supports it
     ns_param	jobsperthread		0
 
     # Timeout for adding Tcl jobs to the job queue.
     ns_param    jobtimeout             0s      ;# default: 5m
 
-    # How many Tcl tasks to run in any schedule thread before thread exit.
+    # Log ns_job operations longer than this to the system log
+    ns_param	joblogminduration      1s      ;# default 1s
+
+    # How many jobs to run in any schedule thread before thread exits.
     ns_param	schedsperthread		0
 
-    # Print warnings when scheduled job takes longer than that,
-    ns_param	schedmaxelapsed	2s
+    # Log warnings when scheduled job takes longer than this time period
+    ns_param	schedlogminduration     2s
 
     # Write asynchronously to log files (access log and error log)
     ns_param	asynlogcwriter		true  ;# default: false
 
     # Print duractions of long mutex calls to stderr.
-    ns_param    mutexlocktrace           true  ;# default: false
+    ns_param    mutexlocktrace          true  ;# default: false
 
     # Reject output operations on already closed connections (e.g. subsequent ns_return statements)
     #ns_param    rejectalreadyclosedconn  false ;# default: true
@@ -759,6 +762,9 @@ ns_section  "ns/server/${servername}/module/nsproxy" {
 
     # Timeout for a slave to live idle
     ns_param	idletimeout		5m
+
+    # log eval operations longer than this to the system log
+    ns_param	logminduration		1s
 
     # Max number of allowed slaves alive
     ns_param	maxslaves		8

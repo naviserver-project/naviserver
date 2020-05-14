@@ -60,15 +60,15 @@ typedef struct Pool {
     int              nhandles;
     struct Handle   *firstPtr;
     struct Handle   *lastPtr;
-    bool             fVerboseError;
-    time_t           maxidle;
-    time_t           maxopen;
-    int              stale_on_close;
+    Ns_Time          maxidle;
+    Ns_Time          maxopen;
     Tcl_WideInt      statementCount;
     Tcl_WideInt      getHandleCount;
     Ns_Time          waitTime;
     Ns_Time          sqlTime;
     Ns_Time          minDuration;
+    int              stale_on_close;
+    bool             fVerboseError;
 }  Pool;
 
 /*
@@ -1156,16 +1156,16 @@ IsStale(const Handle *handlePtr, time_t now)
     if (handlePtr->connected) {
         time_t    minAccess, minOpen;
 
-        minAccess = now - handlePtr->poolPtr->maxidle;
-        minOpen   = now - handlePtr->poolPtr->maxopen;
-        if ((handlePtr->poolPtr->maxidle > 0 && handlePtr->atime < minAccess) ||
-            (handlePtr->poolPtr->maxopen > 0 && (handlePtr->otime < minOpen)) ||
+        minAccess = now - handlePtr->poolPtr->maxidle.sec;
+        minOpen   = now - handlePtr->poolPtr->maxopen.sec;
+        if ((handlePtr->poolPtr->maxidle.sec > 0 && handlePtr->atime < minAccess) ||
+            (handlePtr->poolPtr->maxopen.sec > 0 && (handlePtr->otime < minOpen)) ||
             (handlePtr->stale) ||
             (handlePtr->poolPtr->stale_on_close > handlePtr->stale_on_close)) {
 
             Ns_Log(Notice, "nsdb: closing %s handle in pool '%s'",
-                   (handlePtr->poolPtr->maxidle > 0 && handlePtr->atime < minAccess) ? "idle"
-                   : (handlePtr->poolPtr->maxopen > 0 && (handlePtr->otime < minOpen) ? "old"
+                   (handlePtr->poolPtr->maxidle.sec > 0 && handlePtr->atime < minAccess) ? "idle"
+                   : (handlePtr->poolPtr->maxopen.sec > 0 && (handlePtr->otime < minOpen) ? "old"
                       : "stale"),
                    handlePtr->poolname);
 
@@ -1338,12 +1338,22 @@ CreatePool(const char *pool, const char *path, const char *driver)
         poolPtr->stale_on_close = 0;
         poolPtr->fVerboseError = Ns_ConfigBool(path, "logsqlerrors", NS_FALSE);
         poolPtr->nhandles = Ns_ConfigIntRange(path, "connections", 2, 0, INT_MAX);
-        poolPtr->maxidle = Ns_ConfigIntRange(path, "maxidle", 600, 0, INT_MAX);
-        poolPtr->maxopen = Ns_ConfigIntRange(path, "maxopen", 3600, 0, INT_MAX);
+
+        Ns_ConfigTimeUnitRange(path, "maxidle",
+                               "5m", 0, 0, INT_MAX, 0, &poolPtr->maxidle);
+        Ns_ConfigTimeUnitRange(path, "maxopen",
+                               "60m", 0, 0, INT_MAX, 0, &poolPtr->maxopen);
+        if (poolPtr->maxidle.usec != 0) {
+            Ns_Log(Warning, "maxidle is implemented based on seconds granularity. "
+                   "Fractions of seconds are ignored");
+        }
+        if (poolPtr->maxopen.usec != 0) {
+            Ns_Log(Warning, "maxopen is implemented based on seconds granularity. "
+                   "Fractions of seconds are ignored");
+        }
 
         Ns_ConfigTimeUnitRange(path, "logminduration",
-                           "0ms", 0, 0, INT_MAX, 0,
-                           &poolPtr->minDuration);
+                               "0ms", 0, 0, INT_MAX, 0, &poolPtr->minDuration);
         if (poolPtr->minDuration.sec != 0 || poolPtr->minDuration.usec != 0) {
             Ns_Log(Notice, "dbinit: set LogMinDuration for pool %s to %" PRId64 ".%06ld",
                    pool, (int64_t)poolPtr->minDuration.sec,
@@ -1386,8 +1396,7 @@ CreatePool(const char *pool, const char *path, const char *driver)
         }
 
         Ns_ConfigTimeUnitRange(path, "checkinterval",
-                               "5m", 1, 0, INT_MAX, 0,
-                               &checkinterval);
+                               "5m", 1, 0, INT_MAX, 0, &checkinterval);
 
         (void) Ns_ScheduleProcEx(CheckPool, poolPtr, 0, &checkinterval, NULL);
     }

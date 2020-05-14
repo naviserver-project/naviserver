@@ -1466,7 +1466,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         "driver",
         "encoding",
         "fileheaders", "filelength", "fileoffset", "files", "flags", "form",
-        "headers", "host",
+        "headerlength", "headers", "host",
         "id", "isconnected",
         "keepalive",
         "location",
@@ -1490,7 +1490,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         NS_CONN_REQUIRE_CONFIGURED,
         NS_CONN_REQUIRE_CONFIGURED,
         NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
-        NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
+        NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
         NS_CONN_REQUIRE_CONFIGURED, 0u,
         NS_CONN_REQUIRE_CONNECTED,
         NS_CONN_REQUIRE_CONFIGURED,
@@ -1514,7 +1514,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         CDriverIdx,
         CEncodingIdx,
         CFileHdrIdx, CFileLenIdx, CFileOffIdx, CFilesIdx, CFlagsIdx, CFormIdx,
-        CHeadersIdx, CHostIdx,
+        CHeaderLengthIdx, CHeadersIdx, CHostIdx,
         CIdIdx, CIsConnectedIdx,
         CKeepAliveIdx,
         CLocationIdx,
@@ -1858,6 +1858,10 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
 
     case CPeerPortIdx:
         Tcl_SetObjResult(interp, Tcl_NewIntObj((int)Ns_ConnPeerPort(conn)));
+        break;
+
+    case CHeaderLengthIdx:
+        Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)connPtr->reqPtr->coff));
         break;
 
     case CHeadersIdx:

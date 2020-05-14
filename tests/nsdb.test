@@ -11,7 +11,43 @@ test ns_db-1.1 {basic syntax} -body {
     ns_db
 } -returnCodes error -result {wrong # args: should be "ns_db option ?arg ...?"}
 
+test ns_dbquotevalue-1 {basic syntax} -body {
+    ns_dbquotevalue
+} -returnCodes error -result {wrong # args: should be "ns_dbquotevalue value ?type?"}
 
+test ns_dbquotevalue-2 {basic syntax} -body {
+    ns_dbquotevalue ""
+} -returnCodes {ok error} -result {NULL}
+test ns_dbquotevalue-3 {basic syntax} -body {
+    ns_dbquotevalue 10
+} -returnCodes {ok error} -result {'10'}
+test ns_dbquotevalue-3 {basic syntax} -body {
+    ns_dbquotevalue "hello world"
+} -returnCodes {ok error} -result {'hello world'}
+test ns_dbquotevalue-4 {basic syntax} -body {
+    ns_dbquotevalue "hello o'toole"
+} -returnCodes {ok error} -result {'hello o''toole'}
+
+
+test ns_dbquotelist-1 {basic syntax} -body {
+    ns_dbquotelist
+} -returnCodes error -result {wrong # args: should be "ns_dbquotelist list ?type?"}
+
+test ns_dbquotelist-2 {basic syntax} -body {
+    ns_dbquotelist ""
+} -returnCodes {ok error} -result {}
+test ns_dbquotelist-3.1 {basic syntax} -body {
+    ns_dbquotelist 10
+} -returnCodes {ok error} -result {'10'}
+test ns_dbquotelist-3.2 {basic syntax} -body {
+    ns_dbquotelist {1 2 3}
+} -returnCodes {ok error} -result {'1','2','3'}
+test ns_dbquotelist-3 {basic syntax} -body {
+    ns_dbquotelist "hello world"
+} -returnCodes {ok error} -result {'hello','world'}
+test ns_dbquotelist-4 {basic syntax} -body {
+    ns_dbquotelist "hello o'toole"
+} -returnCodes {ok error} -result {'hello','o''toole'}
 
 cleanupTests
 

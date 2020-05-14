@@ -20,8 +20,8 @@ can be loaded into an interpreter via the Tcl [emph load] command,
 for example:
 
 [example_begin]
-load [file /usr/local/lib/libnsproxy.so]
-[cmd ns_proxy] ...
+ load [file /usr/local/lib/libnsproxy.so]
+ [cmd ns_proxy] ...
 [example_end]
 
 [para]
@@ -30,8 +30,8 @@ a NaviServer virtual server by specifying an [emph nsproxy.so] entry
 in the server's module config entry, for example:
 
 [example_begin]
-[cmd ns_section] "ns/server/server1/modules"
-[cmd ns_param] nsproxy  nsproxy.so
+ [cmd ns_section] "ns/server/server1/modules"
+ [cmd ns_param] nsproxy  nsproxy.so
 [example_end]
 
 [para]
@@ -130,27 +130,16 @@ Configurable options include:
 
 [list_begin options]
 
-[opt_def -init [arg script]]
-Specifies a script to evaluate when proxies are started.  This can
-be used to load additional libraries and/or source script files.
-The default is no script.
 
-[opt_def -reinit [arg script]]
-Specifies a script to evaluate after being allocated and before
-being returned to the caller. This can be used to re-initialize
-the slave state. The default is no script.
+[opt_def -env [arg setname]]
+Initializes the slave's process environment with keys/values
+passed in the named NaviServer set (see command [cmd ns_set]).
 
-[opt_def -maxslaves [arg n]]
-Sets the maximum number of proxy slave processes. Requests for
-proxies beyond the maximum will result in requesting threads
-waiting for existing proxies to be available instead of creating
-new proxy processes. Setting this value to 0 disables the pool,
-causing all subsequent allocation requests to fail immediately
-(currently allocated proxies, if any, remain valid).
-
-[opt_def -maxruns [arg n]]
-Sets the maximum number of activation of the proxy slave process.
-When the limit it reached, the slave process is automatically restarted.
+[opt_def -evaltimeout [arg timeout]]
+Specifies the maximum time to wait for a script to be evaluated in
+a proxy. This parameter can be overridden on a per-call basis with
+the optional [opt timeout] parameter to [cmd "ns_proxy eval"].
+The default is 0 milliseconds i.e. infinite.
 
 [opt_def -exec [arg program]]
 Specifies the filename of a slave proxy program.  The default is
@@ -163,11 +152,48 @@ routine; see the source code for details.
 Specifies the maximum time to wait to allocate handles from the pool.
 The default is 5 seconds.
 
-[opt_def -evaltimeout [arg timeout]]
-Specifies the maximum time to wait for a script to be evaluated in
-a proxy. This parameter can be overridden on a per-call basis with
-the optional [opt timeout] parameter to [cmd "ns_proxy eval"].
-The default is 0 milliseconds i.e. infinite.
+[opt_def -idletimeout [arg timeout]]
+Specifies the maximum time for an idle slave process to live.
+Minimum value is 5 seconds. After expiry of the idle
+timeout, the reaper thread will close the connection pipe and
+wait [option -waittimeout] for the process to die.
+If the timeout is exceeded, the reaper will send a SIGTERM
+signal and finally a SIGKILL signal (waiting [option -waittimeout]
+in between) to ensure the process eventually exits.
+
+[para]
+Slave processes whose handles are already attached to some Tcl
+interps by the means of the [cmd "ns_proxy get"] command) are not
+expired automatically. The idle timer starts to count at the moment
+their handles are put back to the pool by the [cmd "ns_proxy put"]
+or [cmd "ns_proxy cleanup"] command.
+
+[opt_def -init [arg script]]
+Specifies a script to evaluate when proxies are started.  This can
+be used to load additional libraries and/or source script files.
+The default is no script.
+
+[opt_def -logminduration [arg timeout]]
+Specifies a time limit for logging (long) eval operations to the system
+log (similar to "logminduration" in the db drivers). Set it to a high
+value to avoid logging (e.g. 1d). The default is 1s.
+
+[opt_def -maxruns [arg n]]
+Sets the maximum number of activation of the proxy slave process.
+When the limit it reached, the slave process is automatically restarted.
+
+[opt_def -maxslaves [arg n]]
+Sets the maximum number of proxy slave processes. Requests for
+proxies beyond the maximum will result in requesting threads
+waiting for existing proxies to be available instead of creating
+new proxy processes. Setting this value to 0 disables the pool,
+causing all subsequent allocation requests to fail immediately
+(currently allocated proxies, if any, remain valid).
+
+[opt_def -reinit [arg script]]
+Specifies a script to evaluate after being allocated and before
+being returned to the caller. This can be used to re-initialize
+the slave state. The default is no script.
 
 [opt_def -sendtimeout [arg timeout]]
 [opt_def -recvtimeout [arg timeout]]
@@ -186,29 +212,8 @@ second which should be ample time for a graceful exit unless
 the process is hung executing a very long, misbehaving script,
 resulting in a more disruptive SIGTERM or SIGKILL.
 
-[opt_def -idletimeout [arg timeout]]
-Specifies the maximum time for an idle slave process to live.
-Minimum value is 5 seconds. After expiry of the idle
-timeout, the reaper thread will close the connection pipe and
-wait [option -waittimeout] for the process to die.
-If the timeout is exceeded, the reaper will send a SIGTERM
-signal and finally a SIGKILL signal (waiting [option -waittimeout]
-in between) to ensure the process eventually exits.
-
-[opt_def -env [arg setname]]
-Initializes the slave's process environment with keys/values
-passed in the named NaviServer set (see command [cmd ns_set]).
-
-[para]
-Slave processes whose handles are already attached to some Tcl
-interps by the means of the [cmd "ns_proxy get"] command) are not
-expired automatically. The idle timer starts to count at the moment
-their handles are put back to the pool by the [cmd "ns_proxy put"]
-or [cmd "ns_proxy cleanup"] command.
 
 [list_end]
-
-
 
 [call [cmd "ns_proxy eval"] [arg handle] [arg script] [opt [arg timeout]]]
 
@@ -222,9 +227,9 @@ Alternatively, the [arg handle] itself may be used as Tcl command like
 in the example below:
 
 [example_begin]
-set handle [lb][cmd ns_proxy] get mypool[rb]
-$handle "short_running_proc"
-$handle "long_running_proc" 20000
+ set handle [lb][cmd ns_proxy] get mypool[rb]
+ $handle "short_running_proc"
+ $handle "long_running_proc" 20000
 [example_end]
 
 
@@ -354,12 +359,11 @@ The optional [arg timeout] argument specifies a maximum time
 to wait for the command to complete before raising an
 error (see ERROR HANDLING below for details on handling errors).
 
-
-
-
-
 [list_end]
 
+All time units can be specified with and without a time unit
+suffix. Valid time units are "ms", "s", "m", "h", "d".
+If no time unit suffix is specified, seconds are assumed.
 
 
 [section "ERROR HANDLING"]
@@ -424,6 +428,52 @@ Proxy handle is currently busy with the evaluation.
 [list_end]
 
 
+[section CONFIGURATION]
+
+The default settings of the configuration parameters of [cmd ns_proxy]
+can be provided in the configuration file of NaviServer.
+
+[example_begin]
+ # Loading the nxproxy module in the [term modules] section
+ # of the server.
+ ns_section	ns/server/${servername}/modules {
+   # ...
+   ns_param	nsproxy			${homedir}/bin/nsproxy
+   # ...
+ }
+ 
+ # Configuring the nsproxy module
+ [cmd ns_section] ns/server/${servername}/module/nsproxy {
+ 
+   # Proxy program to start
+   ns_param	exec			${homedir}/bin/nsproxy
+ 
+   # Timeout when evaluating scripts
+   ns_param	evaltimeout		0s
+ 
+   # Timeout when getting proxy handles
+   ns_param	gettimeout		0s
+ 
+   # Timeout to send data
+   ns_param	sendtimeout		5s
+ 
+   # Timeout to receive results
+   ns_param	recvtimeout		5s
+ 
+   # Timeout to wait for slaves to die
+   ns_param	waittimeout		1s
+ 
+   # Timeout for a slave to live idle
+   ns_param	idletimeout		5m
+ 
+   # log eval operations longer than this to the system log
+   ns_param	logminduration		1s
+ 
+   # Max number of allowed slaves alive
+   ns_param	maxslaves		8
+ }
+[example_end]
+
 
 [section EXAMPLES]
 
@@ -431,30 +481,30 @@ Proxy handle is currently busy with the evaluation.
 The following demonstrates sending a script to a remote proxy:
 
 [example_begin]
-set handle [lb][cmd ns_proxy] get myproxy[rb]
-[cmd ns_proxy] eval $handle {info patchlevel}
-[cmd ns_proxy] release $handle
+ set handle [lb][cmd ns_proxy] get myproxy[rb]
+ [cmd ns_proxy] eval $handle {info patchlevel}
+ [cmd ns_proxy] release $handle
 [example_end]
 
 Alternatively, instead of using the scalar handle you can use
 the handle directly as a Tcl command:
 
 [example_begin]
-set handle [lb][cmd ns_proxy] get myproxy[rb]
-$handle {info patchlevel}
-rename $handle ""
+ set handle [lb][cmd ns_proxy] get myproxy[rb]
+ $handle {info patchlevel}
+ rename $handle ""
 [example_end]
 
 
 The following demonstrates using multiple proxies:
 
 [example_begin]
-[cmd ns_proxy] configure myproxy -maxslaves 10
-set handles [lb][cmd ns_proxy] get myproxy -handle 10[rb]
-foreach h $handles {
-    $h {puts "alive: [lb]pid[rb]"}
-}
-[cmd ns_proxy] cleanup
+ [cmd ns_proxy] configure myproxy -maxslaves 10
+ set handles [lb][cmd ns_proxy] get myproxy -handle 10[rb]
+ foreach h $handles {
+   $h {puts "alive: [lb]pid[rb]"}
+ }
+ [cmd ns_proxy] cleanup
 [example_end]
 
 

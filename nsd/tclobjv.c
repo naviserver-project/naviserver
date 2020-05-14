@@ -1995,7 +1995,7 @@ GetOptIndexSubcmdSpec(Tcl_Interp *interp, Tcl_Obj *obj, const char *msg, const N
                 if ((entryPtr+1)->key == NULL) {
                     Tcl_AppendStringsToObj(resultPtr, (count > 0 ? "," : NS_EMPTY_STRING),
                                            " or ", entryPtr->key, (char *)0L);
-                } else if (entryPtr->key != NULL) {
+                } else {
                     Tcl_AppendStringsToObj(resultPtr, ", ", entryPtr->key, (char *)0L);
                     count++;
                 }

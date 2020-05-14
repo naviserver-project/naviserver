@@ -22,35 +22,33 @@ not exist.
 [section EXAMPLES]
 
 [example_begin]
-% ns_imgtype screenshot.jpg
-jpeg
+ % ns_imgtype screenshot.jpg
+ jpeg
 [example_end]
 
 [example_begin]
-% ns_imgtype test.html
-unknown
+ % ns_imgtype test.html
+ unknown
 [example_end]
 
 [example_begin]
-% foreach f [lb]glob -nocomplain -types f /tmp/images/*[rb] {
-    if {[lb]ns_imgtype $f[rb][rb] ne "unknown"} {
-        puts -nonewline "supported image:  "
-    } else {
-        puts -nonewline "unsupported file: "
-    }
-    lassign [lb]ns_imgsize $f[rb] width height
-    set mimetype [lb]ns_imgmime $f[rb]
-    set f [lb]file tail $f[rb]
-    puts [lb]format "%30s width: %5i height: %5i MIME: %15s" \
-        $f $width $height $mimetype[rb]
-}
-unsupported file:   support.pdf width:     0 height:     0 MIME:   image/unknown
-supported image:  MARADONNA.jpg width:   294 height:   420 MIME:      image/jpeg
-
+ % foreach f [lb]glob -nocomplain -types f /tmp/images/*[rb] {
+     if {[lb]ns_imgtype $f[rb][rb] ne "unknown"} {
+       puts -nonewline "supported image:  "
+     } else {
+       puts -nonewline "unsupported file: "
+     }
+     lassign [lb]ns_imgsize $f[rb] width height
+     set mimetype [lb]ns_imgmime $f[rb]
+     set f [lb]file tail $f[rb]
+     puts [lb]format "%30s width: %5i height: %5i MIME: %15s" \
+         $f $width $height $mimetype[rb]
+ }
+ unsupported file:   support.pdf width:     0 height:     0 MIME:   image/unknown
+ supported image:  MARADONNA.jpg width:   294 height:   420 MIME:      image/jpeg
 [example_end]
 
 [see_also ns_gifsize ns_pngsize ns_imgsize ns_imgmime]
 [keywords "global built-in" images]
 
 [manpage_end]
-

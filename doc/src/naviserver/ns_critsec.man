@@ -51,39 +51,39 @@ Is this the right way to use this command? The example is contrived,
 but I wanted to call ns_critsec multiple times.
 
 [example_begin]
-   # If a thread is executing any of these procs, no other
-   # thread can execute any of these procs until the first
-   # thread has completely finished.
-
-   nsv_set . special_file_critsec [lb]ns_critsec create[rb]
-
-   proc write_special_file {data} {
-       set critsec [lb]nsv_get . special_file_critsec[rb]
-       ns_critsec enter $critsec
-       set handle [lb]open special_file w[rb]
-       puts $handle $data
-       close $handle
-       ns_critsec leave $critsec
-   }
-
-   proc read_special_file {} {
-       set critsec [lb]nsv_get . special_file_critsec[rb]
-       ns_critsec enter $critsec
-       set handle [lb]open special_file r[rb]
-       set result [lb]read $handle[rb]
-       close $handle
-       ns_critsec leave $critsec
-       return $result
-   }
-
-   proc change_special_file {data} {
-       set critsec [lb]nsv_get . special_file_critsec[rb]
-       ns_critsec enter $critsec
-       set result [lb]read_special_file[rb]
-       write_special_file $data
-       ns_critsec leave $critsec
-       return $result
-   }
+ # If a thread is executing any of these procs, no other
+ # thread can execute any of these procs until the first
+ # thread has completely finished.
+ 
+ nsv_set . special_file_critsec [lb]ns_critsec create[rb]
+ 
+ proc write_special_file {data} {
+     set critsec [lb]nsv_get . special_file_critsec[rb]
+     ns_critsec enter $critsec
+     set handle [lb]open special_file w[rb]
+     puts $handle $data
+     close $handle
+     ns_critsec leave $critsec
+ }
+ 
+ proc read_special_file {} {
+     set critsec [lb]nsv_get . special_file_critsec[rb]
+     ns_critsec enter $critsec
+     set handle [lb]open special_file r[rb]
+     set result [lb]read $handle[rb]
+     close $handle
+     ns_critsec leave $critsec
+     return $result
+ }
+ 
+ proc change_special_file {data} {
+     set critsec [lb]nsv_get . special_file_critsec[rb]
+     ns_critsec enter $critsec
+     set result [lb]read_special_file[rb]
+     write_special_file $data
+     ns_critsec leave $critsec
+     return $result
+ }
 [example_end]
 
 [see_also ns_cond ns_event ns_mutex ns_thread]
@@ -91,4 +91,5 @@ but I wanted to call ns_critsec multiple times.
 
 
 [manpage_end]
+
 

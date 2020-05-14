@@ -37,68 +37,73 @@ entry in the query data. See Example 3, below.
  Example 1:
 
 [example_begin]
-   set x [lb]ns_queryget name[rb]
-   
+ set x [lb]ns_queryget name[rb]
 [example_end]
 
- If "name" is a key in the query data, the variable x will be set to the value associated with the "name" key.     If "name" is not a key in the query data, "" will be returned.
+ If "name" is a key in the query data, the variable x will be set to
+ the value associated with the "name" key.  If "name" is not a key in
+ the query data, "" will be returned.
 
  Example 2: 
 
 [example_begin]
-   set x [lb]ns_queryget name Hoover[rb]
+ set x [lb]ns_queryget name Hoover[rb]
 [example_end]
 
- If "name" is a key in the query data, the variable x will be set to the value associated with the "name" key. If "name" is not a key in the query data, "Hoover" will be returned.
+ If "name" is a key in the query data, the variable x will be set to
+ the value associated with the "name" key. If "name" is not a key in
+ the query data, "Hoover" will be returned.
 
  Example 3: Given this HTML form: 
 
 [example_begin]
-   <form enctype=multipart/form-data method=POST
-      action=/formtest>
-   Local file: <input name=clientfile type=file>
-   To remote file: <INPUT TYPE=text NAME=path VALUE="" SIZE=80>
-   <input name=submit type=submit value=Upload>
-   </form>
-   
+ <form enctype=multipart/form-data method=POST
+    action=/formtest>
+ Local file: <input name=clientfile type=file>
+ To remote file: <INPUT TYPE=text NAME=path VALUE="" SIZE=80>
+ <input name=submit type=submit value=Upload>
+ </form>
 [example_end]
 
  and this POST handler: 
 
 [example_begin]
-   proc formtest { } {
-       set remotefile [lb]ns_queryget path[rb]
-       set localfile [lb]ns_queryget clientfile[rb]
-       set where_the_data_is [lb]ns_queryget clientfile.tmpfile[rb]
-   } ;# formtest
-   
+ proc formtest { } {
+     set remotefile [lb]ns_queryget path[rb]
+     set localfile [lb]ns_queryget clientfile[rb]
+     set where_the_data_is [lb]ns_queryget clientfile.tmpfile[rb]
+ } ;# formtest
 [example_end]
 
- Suppose the user specified "spoon.txt" as the Local File and "/oop/ack/tick.txt" as the Remote File, and then     submitted the form. The variable values in the formtest procedure will be: remotefile = "/oop/ack/tick.txt"
+ Suppose the user specified "spoon.txt" as the Local File and
+ "/oop/ack/tick.txt" as the Remote File, and then submitted the
+ form. The variable values in the formtest procedure will be:
+ remotefile = "/oop/ack/tick.txt"
 
 [example_begin]
-   localfile = "spoon.txt"
-   _the_data = something like: "/var/tmp/baaa29444"
-     
+ localfile = "spoon.txt"
+ _the_data = something like: "/var/tmp/baaa29444"
 [example_end]
 
  If you want to use the contents of the uploaded file, you can open it by executing: 
 
 [example_begin]
-   open [lb]ns_queryget clientfile.tmpfile[rb]
-   
+ open [lb]ns_queryget clientfile.tmpfile[rb]
 [example_end]
 
- You can then read it and manipulate it as you want. Note, however, that this tmp file will be deleted once the connection closes.
+ You can then read it and manipulate it as you want. Note, however,
+ that this tmp file will be deleted once the connection closes.
 
-[para]NOTES
 
- Note that despite it's name, ns_queryget works on POST form data as well as query string data.
+[section NOTES]
 
+ Note that despite it's name, ns_queryget works on POST form data as
+ well as query string data.
 
 [keywords  form query encoding]
 [see_also  ns_queryexists ns_querygetall ns_getform]
 
 
 [manpage_end]
+
 

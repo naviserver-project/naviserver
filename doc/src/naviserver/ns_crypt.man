@@ -31,8 +31,8 @@ which is reasonably attacked with modern computers with ordinary brute-force att
 [section EXAMPLES]
 
 [example_begin]
-   % ns_crypt password qy
-   qyz8eIFW3uJoo
+ % ns_crypt password qy
+ qyz8eIFW3uJoo
 [example_end]
 
 

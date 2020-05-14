@@ -64,11 +64,10 @@ Released versions are available from
 Latest development version is available from the Bitbucket repository
 
 [example_begin]
-git clone https:/bitbucket.org/naviserver/naviserver.git
-cd naviserver
-./autogen.sh
-make install
-
+ git clone https:/bitbucket.org/naviserver/naviserver.git
+ cd naviserver
+ ./autogen.sh
+ make install
 [example_end]
 
 [section {Building}]
@@ -77,10 +76,8 @@ We've tried to make building NaviServer as simple as possible.  On the supported
 platforms, simply type:
 
 [example_begin]
-
-./configure
-make
-
+ ./configure
+ make
 [example_end]
 
 [para]

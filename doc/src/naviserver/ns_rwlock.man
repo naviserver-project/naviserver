@@ -50,7 +50,7 @@ Release a write lock.
 [section EXAMPLES]
 
 [example_begin]
-Put some examples here to illustrate command usage.
+ Put some examples here to illustrate command usage.
 [example_end]
 
 [section NOTES]
@@ -77,5 +77,3 @@ made while a write lock is waiting to acquire, the write lock has priority.
 [see_also nsd]
 [keywords "server built-in" NaviServer]
 [manpage_end]
-
-

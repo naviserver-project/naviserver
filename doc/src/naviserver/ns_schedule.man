@@ -25,8 +25,12 @@ This command schedules a script to be run after a certain interval.
 Returns the ID of the newly scheduled script.  If
 [option -once] is specified, then the script is run once and then
 unscheduled, otherwise it will continue to run every interval
-time periods. The
+time periods.
+
+[para] The
 [arg interval] can be specified with time units (per default seconds).
+Valid time units are ms, s, m, d.
+
 If [option -thread] is specified, then the script will be run in its
 own thread, otherwise it will run in the scheduler's thread.  If the
 script is long-running, this may interfere with the running of other
@@ -34,8 +38,8 @@ scheduled scripts, so long-running scripts should be run in their own
 threads.
 
 [example_begin]
-   % set id [lb]ns_schedule_proc -once 60 { ns_log notice "this should run in 60 seconds" }[rb]
-   123
+ % set id [lb]ns_schedule_proc -once 60 { ns_log notice "this should run in 60 seconds" }[rb]
+ 123
 [example_end]
 
 
@@ -62,10 +66,10 @@ NOTE: day, hour and minute are specified in local time.  Beware of Daylight Savi
 shifts affecting the time of day when the script will execute.
 
 [example_begin]
-   % set id [lb]ns_schedule_weekly -once 2 5 35 { ns_log notice "It is now Tuesday at 5:35 AM." }[rb]
-   123
-   
-   % ns_unschedule_proc $id
+ % set id [lb]ns_schedule_weekly -once 2 5 35 { ns_log notice "It is now Tuesday at 5:35 AM." }[rb]
+ 123
+ 
+ % ns_unschedule_proc $id
 [example_end]
 
 
@@ -88,10 +92,10 @@ NOTE: hour and minute are specified in local time.  Beware of Daylight Savings T
 shifts affecting the time of day when the script will execute.
 
 [example_begin]
-   % set id [lb]ns_schedule_daily -once 5 35 { ns_log notice "It is now 5:35 AM." }[rb]
-   123
-   
-   % ns_unschedule_proc $id
+ % set id [lb]ns_schedule_daily -once 5 35 { ns_log notice "It is now 5:35 AM." }[rb]
+ 123
+ 
+ % ns_unschedule_proc $id
 [example_end]
 
 
@@ -104,11 +108,11 @@ script from running at its next scheduled time.  Returns 1 on success,
 0 on failure.
 
 [example_begin]
-   % set id [lb]ns_schedule_daily 1 0 { ns_log notice "One AM and all is well.  *gong*" }[rb]
-   19
-   
-   % ns_pause $id
-   1
+ % set id [lb]ns_schedule_daily 1 0 { ns_log notice "One AM and all is well.  *gong*" }[rb]
+ 19
+ 
+ % ns_pause $id
+ 1
 [example_end]
 
 [call [cmd ns_resume] [arg id]]
@@ -118,14 +122,14 @@ scheduling of a previously paused script via [cmd ns_pause].  Returns 1
 on success, 0 on failure.
 
 [example_begin]
-   % set id [lb]ns_schedule_daily 1 0 { ns_log notice "One AM and all is well.  *gong*" }[rb]
-   19
-   
-   % ns_pause $id
-   1
-   
-   % ns_resume $id
-   1
+ % set id [lb]ns_schedule_daily 1 0 { ns_log notice "One AM and all is well.  *gong*" }[rb]
+ 19
+ 
+ % ns_pause $id
+ 1
+ 
+ % ns_resume $id
+ 1
 [example_end]
 
 
@@ -146,8 +150,8 @@ using [cmd ns_unschedule_proc].
  be used instead of [cmd ns_after].
 
 [example_begin]
-   % ns_after 5s { ns_log notice "ns_after script executed" }
-   123
+ % ns_after 5s { ns_log notice "ns_after script executed" }
+ 123
 [example_end]
 
 
@@ -159,10 +163,30 @@ Unschedules a  previous  scheduled  script.
 the id doesn't represent a currently scheduled ID.
 
 [example_begin]
-   % ns_unschedule_proc $id
+ % ns_unschedule_proc $id
 [example_end]
 
 [list_end]
+
+
+[section CONFIGURATION]
+
+The default settings of the configuration parameters for the
+scheduling commands can be provided in the global parameters of the
+NaviServer configuration file:
+
+[example_begin]
+ [cmd ns_section] ns/parameters {
+ # ...
+ # How many jobs to run in any schedule thread before thread exit.
+ ns_param schedsperthread 1000
+ #
+ # Log the system log when a scheduled job takes longer than
+ # this time period
+ ns_param schedlogminduration  2s
+ # ...
+ }
+[example_end]
 
 [section {Logging}]
 
@@ -171,7 +195,7 @@ When entries are written from scheduled procedures to the server log
 via [cmd ns_log] these entries can be identified by the string
 
 [example_begin]
-...[lb]-sched:THREAD_NR:COUNTER_IN_THREAD:SCHED_ID-[rb]...
+ ...[lb]-sched:THREAD_NR:COUNTER_IN_THREAD:SCHED_ID-[rb]...
 [example_end]
 
 where THREAD_NR refers to the nth thread, COUNTER_IN_THREAD is the nth
@@ -184,4 +208,3 @@ script as returned by the ns_schedule* commands.
 [keywords "global built-in" background schedule]
 
 [manpage_end]
-

@@ -658,13 +658,12 @@ HttpWaitObjCmd(
     NsHttpTask *httpPtr = NULL;
 
     char       *id = NULL, *outputFileName = NULL;
-    int         result = TCL_OK, decompress = 0, spoolLimit = -1;
-
+    int         result = TCL_OK, decompress = 0;
+    Tcl_WideInt spoolLimit = -1;
     Tcl_Obj    *elapsedVarObj = NULL,
                *resultVarObj = NULL,
                *statusVarObj = NULL,
                *fileVarObj = NULL;
-
     Ns_Set     *replyHeaders = NULL;
     Ns_Time    *timeoutPtr = NULL;
 
@@ -748,6 +747,7 @@ HttpWaitObjCmd(
             Tcl_SetObjResult(interp, Tcl_NewStringObj(httpPtr->error, -1));
             if (rc == NS_TIMEOUT) {
                 Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
+                Ns_Log(Ns_LogTimeoutDebug, "ns_http request '%s' runs into timeout", httpPtr->url);
             }
             HttpCancel(httpPtr);
             result = TCL_ERROR;
@@ -1235,7 +1235,8 @@ HttpQueue(
     bool run
 ) {
     Tcl_Interp *interp;
-    int         result = TCL_OK, decompress = 0, spoolLimit = -1;
+    int         result = TCL_OK, decompress = 0;
+    Tcl_WideInt spoolLimit = -1;
     int         verifyCert = 0, keepHostHdr = 0;
     NsHttpTask *httpPtr = NULL;
     char       *cert = NULL,
@@ -1505,6 +1506,7 @@ HttpGetResult(
     if (httpPtr->error != NULL) {
         if (httpPtr->finalSockState == NS_SOCK_TIMEOUT) {
             Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
+            Ns_Log(Ns_LogTimeoutDebug, "ns_http request '%s' runs into timeout", httpPtr->url);
         }
         Tcl_SetObjResult(interp, Tcl_NewStringObj(httpPtr->error, -1));
         result = TCL_ERROR;

@@ -22,10 +22,10 @@ of the caller is root, the real UID and saved set-user-ID are also set.
 [section EXAMPLES]
 
 [example_begin]
-   % ns_setuser nobody
-   % ns_setuser 99
-   % ns_setgroup nogroup
-   % ns_setgroup 99
+ % ns_setuser nobody
+ % ns_setuser 99
+ % ns_setgroup nogroup
+ % ns_setgroup 99
 [example_end]
 
 [keywords "server built-in" UID GID user group permissions]

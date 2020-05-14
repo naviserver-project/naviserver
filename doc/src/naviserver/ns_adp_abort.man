@@ -31,11 +31,11 @@
 [section EXAMPLES]
 
 [example_begin]
-   # The ns_adp_abort after ns_returnredirect ensures no further ADP
-   # processing happens except the redirect itself.
-   
-   ns_returnredirect https://next-scripting.org/
-   ns_adp_abort
+ # The ns_adp_abort after ns_returnredirect ensures no further ADP
+ # processing happens except the redirect itself.
+ 
+ ns_returnredirect https://next-scripting.org/
+ ns_adp_abort
 [example_end]
 
 [section Notes]
@@ -47,12 +47,12 @@ evaluated. For example:
 
 [example_begin]
  <%
-    catch { ... some code that executes ns_adp_abort ... }
-    if {[lb]ns_adp_exception[rb] eq "abort"} {
-        ... some cleanup code
-    }
-   %>
-   <% ... this next block will NOT be evaluated even though ns_adp_abort is caught in the prior block %>
+  catch { ... some code that executes ns_adp_abort ... }
+  if {[lb]ns_adp_exception[rb] eq "abort"} {
+      ... some cleanup code
+  }
+ %>
+ <% ... this next block will NOT be evaluated even though ns_adp_abort is caught in the prior block %>
 [example_end]
 
 
@@ -62,4 +62,5 @@ evaluated. For example:
 	ns_adp_flush ns_adp_return ns_adp_stream]	
 [keywords "server built-in" ADP]
 [manpage_end]
+
 

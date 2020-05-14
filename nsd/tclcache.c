@@ -1164,9 +1164,11 @@ CreateEntry(const NsInterp *itPtr, TclCache *cPtr, const char *key, int *newPtr,
     }
     Ns_CacheLock(cache);
     entry = Ns_CacheWaitCreateEntryT(cache, key, newPtr, timeoutPtr, transactionStackPtr);
-    if (entry == NULL) {
+    if (unlikely(entry == NULL)) {
         Ns_CacheUnlock(cache);
         Tcl_SetErrorCode(itPtr->interp, "NS_TIMEOUT", (char *)0L);
+        Ns_Log(Ns_LogTimeoutDebug, "cache entry creation for key '%s' runs into timeout", key);
+
         Ns_TclPrintfResult(itPtr->interp, "timeout waiting for concurrent update: %s", key);
     }
     return entry;
@@ -1194,7 +1196,7 @@ SetEntry(NsInterp *itPtr, TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_T
 {
     const char *bytes;
     int         len;
-    size_t      length;
+    size_t      valueSize;
 
     NS_NONNULL_ASSERT(cPtr != NULL);
     NS_NONNULL_ASSERT(entry != NULL);
@@ -1202,17 +1204,17 @@ SetEntry(NsInterp *itPtr, TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_T
 
     bytes = Tcl_GetStringFromObj(valObj, &len);
     assert(len >= 0);
-    length = (size_t)len;
+    valueSize = (size_t)len;
 
-    if (cPtr->maxEntry > 0u && length > cPtr->maxEntry) {
+    if (cPtr->maxEntry > 0u && valueSize > cPtr->maxEntry) {
         Ns_CacheDeleteEntry(entry);
     } else {
         Ns_CacheTransactionStack *transactionStackPtr = &itPtr->cacheTransactionStack;
-        char    *value = ns_malloc(length + 1u);
+        char    *value = ns_malloc(valueSize + 1u);
         Ns_Time  t;
 
-        memcpy(value, bytes, length);
-        value[length] = '\0';
+        memcpy(value, bytes, valueSize);
+        value[valueSize] = '\0';
         if (expPtr == NULL
             && (cPtr->expires.sec > 0 || cPtr->expires.usec > 0)) {
             expPtr = Ns_AbsoluteTime(&t, &cPtr->expires);
@@ -1220,11 +1222,13 @@ SetEntry(NsInterp *itPtr, TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_T
             expPtr = Ns_AbsoluteTime(&t, expPtr);
         }
         if (transactionStackPtr->depth > 0) {
-            int uncommitted = Ns_CacheSetValueExpires(entry, value, length, expPtr, cost, cPtr->maxSize,
+            int uncommitted = Ns_CacheSetValueExpires(entry, value, valueSize,
+                                                      expPtr, cost, cPtr->maxSize,
                                                       transactionStackPtr->stack[transactionStackPtr->depth - 1]);
             transactionStackPtr->uncommitted[transactionStackPtr->depth - 1] += uncommitted;
         } else {
-            (void) Ns_CacheSetValueExpires(entry, value, length, expPtr, cost, cPtr->maxSize, 0u);
+            (void) Ns_CacheSetValueExpires(entry, value, valueSize,
+                                           expPtr, cost, cPtr->maxSize, 0u);
         }
 
     }

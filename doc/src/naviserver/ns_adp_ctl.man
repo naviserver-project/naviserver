@@ -115,7 +115,7 @@ nothing but include other ADPs in a way to reuse code
 with the unfortunate side effect of the training newline at
 the end of a
 [example_begin]
-<% ns_adp_include myfile.adp %>
+ <% ns_adp_include myfile.adp %>
 [example_end]
 ending up in the output stream.
 
@@ -128,5 +128,3 @@ ending up in the output stream.
 	ns_adp_flush ns_adp_return ns_adp_stream]
 [keywords "server built-in" ADP]
 [manpage_end]
-
-

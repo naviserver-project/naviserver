@@ -190,7 +190,6 @@ static const Cmd servCmds[] = {
     {"ns_adp_exception",         NULL, NsTclAdpExceptionObjCmd},
     {"ns_adp_flush",             NULL, NsTclAdpFlushObjCmd},
     {"ns_adp_info",              NULL, NsTclAdpInfoObjCmd},
-    {"ns_adp_mime",              NULL, NsTclAdpMimeTypeObjCmd},
     {"ns_adp_mimetype",          NULL, NsTclAdpMimeTypeObjCmd},
     {"ns_adp_parse",             NULL, NsTclAdpParseObjCmd},
     {"ns_adp_puts",              NULL, NsTclAdpPutsObjCmd},

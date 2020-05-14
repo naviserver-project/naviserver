@@ -7,7 +7,8 @@
 # 2. Update TCLPATH and VC variables below to reflect actual path to
 #    Tcl and VicualC++ installations
 #
-# 3. Run appropriate Microsoft build setup script.  E.g.:
+# 3. Run appropriate Microsoft build setup script.  E.g. one of these:
+#    "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
 #    "%ProgramFiles%\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.Cmd" /Debug /x64 /win7
 #
 # 4. nmake -f Makefile.win32
@@ -21,6 +22,10 @@ tcl_32 = C:\P\Tcl-32
 
 tcllib_64 = tcl86t.lib
 tcllib_32 = tcl85.lib
+
+!if "" == "$(TARGET_CPU)"
+TARGET_CPU = $(VSCMD_ARG_TGT_ARCH)
+!endif
 
 !if "x86" == "$(TARGET_CPU)"
 TCLPATH = $(tcl_32)
@@ -42,20 +47,9 @@ TCLLIB  = $(tcllib_64)
 # /x86 build shell!  So I do NOT use them here: --atp@piskorski.com,
 # 2014/10/12 14:25 EDT
 
-VC      = C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC
-MSDK    = C:\Program Files\Microsoft SDKs\Windows\v7.1
-
-# Note that I compile NaviServer (on Windows 7 x86-64) like so:
-#
-# "%ProgramFiles%\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.Cmd" /Debug /x64 /win7
-# cd C:\foo\naviserver
-# nmake -f Makefile.win32
-#
-# Running SetEnv.Cmd sets various important environment variables.
-# I do not run vcvars32.bat because it is intended for 32-bit builds only.
-# I believe I COULD run vcvarsall.bat instead of SetEnv.Cmd, but I'm
-# not clear on their real differences, except that vcvarsall.bat ships
-# with Visual Studio while SetEnv.Cmd ships with the Microsoft SDK.
+#VC      = C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC
+#MSDK    = C:\Program Files\Microsoft SDKs\Windows\v7.1
+#VC      = C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC
 
 smash_lib_include = 0
 # For reference and to help debugging, these are the full LIB and
@@ -90,15 +84,6 @@ DEBUG=1
 NMAKE	= nmake /nologo TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG=$(DEBUG)
 
 
-# To build for XP rather than a newer version of Windows, we would
-# need to set additional options as explained here:
-#
-# http://blogs.msdn.com/b/vcblog/archive/2012/10/08/windows-xp-targeting-with-c-in-visual-studio-2012.aspx
-# Windows XP Targeting with C++ in Visual Studio 2012; by Ibrahim Damlaj; 8 Oct 2012
-#
-# However, include/nsthread.h sets WINVERSION to Vista to allow usage of InetNtop().
-
-
 # Note our use below of nmake's macro string substitution feature:
 #   http://msdn.microsoft.com/en-us/library/bsd42ets%28v=vs.110%29.aspx
 #
@@ -121,7 +106,7 @@ NMAKE	= nmake /nologo TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG
 # For the core NaviServer modules, we use the same module/Makefile for
 # both make and nmake.  Unfortunately, it looks like that won't work
 # for add-on modules.  Their makefiles have more diversity, and even
-# if they are did NOT, there are still other stumbling blocks.  E.g.:
+# if they did NOT, there are still other stumbling blocks.  E.g.:
 #
 # Microsoft nmake supports an undocumented "include" command, but it
 # apparently ONLY allows hard-coded paths, it does NOT allow using
