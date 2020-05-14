@@ -3010,6 +3010,7 @@ SockNew(Driver *drvPtr)
     sockPtr = drvPtr->sockPtr;
     if (likely(sockPtr != NULL)) {
         drvPtr->sockPtr = sockPtr->nextPtr;
+        sockPtr->keep   = NS_FALSE;
     }
     Ns_MutexUnlock(&drvPtr->lock);
 
@@ -3020,7 +3021,6 @@ SockNew(Driver *drvPtr)
     } else {
         sockPtr->tfd    = 0;
         sockPtr->taddr  = NULL;
-        sockPtr->keep   = NS_FALSE;
         sockPtr->flags  = 0u;
         sockPtr->arg    = NULL;
         sockPtr->recvSockState = NS_SOCK_NONE;
@@ -3319,7 +3319,9 @@ SockClose(Sock *sockPtr, int keep)
     if (keep == (int)NS_FALSE) {
         DriverClose(sockPtr);
     }
+    Ns_MutexLock(&sockPtr->drvPtr->lock);
     sockPtr->keep = (bool)keep;
+    Ns_MutexUnlock(&sockPtr->drvPtr->lock);
 
     /*
      * Unconditionally remove temporary file, connection thread
