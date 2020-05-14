@@ -914,61 +914,40 @@ HttpCleanupObjCmd(
 
             taskName = Tcl_GetHashKey(&itPtr->httpRequests, hPtr);
 
-            Ns_Log(Ns_LogTaskDebug, "HttpCleanup: clean task:%s (doneCB:%s)",
-                   taskName,
-                   (httpPtr->doneCallback != NULL) ? httpPtr->doneCallback : "");
+            Ns_Log(Warning, "HttpCleanup: cancel task:%s", taskName);
 
-            if (httpPtr->doneCallback != NULL) {
+            HttpCancel(httpPtr);
 
-                /*
-                 * The callback should be doing all of the
-                 * necessary cleanup, including closing
-                 * the registered channels and finally
-                 * garbage-collecting the task.
-                 * So for now, just initiate the cancel
-                 * and let the callback do the rest.
-                 */
-
-                (void) Ns_TaskCancel(httpPtr->task);
-
-            } else {
-
-                Ns_Log(Warning, "HttpCleanup: cancel task:%s", taskName);
-
-                HttpCancel(httpPtr);
-
-                /*
-                 * Normally, channels should be re-integrated
-                 * into the running interp and [close]'d from
-                 * there. But our current cleanup semantics
-                 * does not allow that, so we simply and dirty
-                 * close the channels here. At this point they
-                 * should be not part of any thread (must have
-                 * been Tcl_Cut'ed) nor interp (must have been
-                 * Tcl_Unregister'ed). Failure to do so may
-                 * wreak havoc with our memory.
-                 * As with the current design, the channel must
-                 * have a refcount of 1 at this place, since we
-                 * reserved it in the HttpCutChannel() call.
-                 * Now we must do the reverse here, but do the
-                 * unregister with NULL interp just to reduce
-                 * the refcount. This should also implicitly
-                 * close the channel. If not, there is a leak.
-                 */
-                if (httpPtr->bodyChan != NULL) {
-                    Tcl_SpliceChannel(httpPtr->bodyChan);
-                    Tcl_UnregisterChannel((Tcl_Interp *)NULL, httpPtr->bodyChan);
-                    httpPtr->bodyChan = NULL;
-                }
-                if (httpPtr->spoolChan != NULL) {
-                    Tcl_SpliceChannel(httpPtr->spoolChan);
-                    Tcl_UnregisterChannel((Tcl_Interp *)NULL, httpPtr->spoolChan);
-                    httpPtr->spoolChan = NULL;
-                }
-
-                HttpClose(httpPtr);
+            /*
+             * Normally, channels should be re-integrated
+             * into the running interp and [close]'d from
+             * there. But our current cleanup semantics
+             * does not allow that, so we simply and dirty
+             * close the channels here. At this point they
+             * should be not part of any thread (must have
+             * been Tcl_Cut'ed) nor interp (must have been
+             * Tcl_Unregister'ed). Failure to do so may
+             * wreak havoc with our memory.
+             * As with the current design, the channel must
+             * have a refcount of 1 at this place, since we
+             * reserved it in the HttpCutChannel() call.
+             * Now we must do the reverse here, but do the
+             * unregister with NULL interp just to reduce
+             * the refcount. This should also implicitly
+             * close the channel. If not, there is a leak.
+             */
+            if (httpPtr->bodyChan != NULL) {
+                Tcl_SpliceChannel(httpPtr->bodyChan);
+                Tcl_UnregisterChannel((Tcl_Interp *)NULL, httpPtr->bodyChan);
+                httpPtr->bodyChan = NULL;
+            }
+            if (httpPtr->spoolChan != NULL) {
+                Tcl_SpliceChannel(httpPtr->spoolChan);
+                Tcl_UnregisterChannel((Tcl_Interp *)NULL, httpPtr->spoolChan);
+                httpPtr->spoolChan = NULL;
             }
 
+            HttpClose(httpPtr);
             Tcl_DeleteHashEntry(hPtr);
         }
     }
@@ -1212,17 +1191,18 @@ HttpStatsObjCmd(
  * HttpQueue --
  *
  *      Enqueues the HTTP task and optionally returns the taskID
- *      in the interp result. This ID can be used by other
+ *      in the interp result. This taskID can be used by other
  *      commands to cancel or wait for the task to finish.
+ *
+ *      The taskID is not returned if the "-doneCallback" option
+ *      is specified. In that case, the task is handled and
+ *      garbage collected by the thread executing the task.
  *
  * Results:
  *      Standard Tcl result.
  *
  * Side effects:
  *      May queue an HTTP request.
- *      The tasID is not returned if the -doneCallback" option
- *      is specified. In that case, the task is finished and
- *      garbage collected by the thread executing the task.
  *
  *----------------------------------------------------------------------
  */
@@ -3016,7 +2996,7 @@ HttpDoneCallback(
     Tcl_DStringFree(&script);
     Ns_TclDeAllocateInterp(interp);
 
-    HttpClose(httpPtr);
+    HttpClose(httpPtr); /* This frees the httpPtr! */
 }
 
 
@@ -3542,7 +3522,6 @@ HttpProc(
         if (httpPtr->doneCallback != NULL) {
             HttpDoneCallback(httpPtr); /* Does free on the httpPtr */
             httpPtr = NULL;
-            taskDone = NS_FALSE; /* Callback terminates the task */
         }
 
         break;
