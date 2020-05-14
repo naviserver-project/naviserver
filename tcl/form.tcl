@@ -249,6 +249,22 @@ proc ns_getform {{charset ""}}  {
 #   None.
 #
 
+if {[info command lmap] eq {}} {
+    proc lmap {vars list body} {
+        set _r {}
+        set _l {}
+        foreach _v $vars {
+            set _n v[incr _x]
+            lappend _l $_n
+            upvar 1 $_v $_n
+        }
+        foreach $_l $list {
+            lappend _r [uplevel 1 $body]
+        }
+        return $_r
+    }
+}
+
 proc ns_getformfile {name} {
 
     set form [ns_getform]
