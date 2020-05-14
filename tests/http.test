@@ -1498,7 +1498,7 @@ test http-9.0 {GET for static compressed file via fastpath} -constraints {server
 } -result {200 89 text/html gzip}
 
 
-test http-9.0 {
+test http-9.1 {
 
     Test behavior with "100 continue" via curl, which is the client
     having the longest time support for this. To see the difference
