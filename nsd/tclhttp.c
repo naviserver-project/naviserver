@@ -914,7 +914,7 @@ HttpCleanupObjCmd(
 
             taskName = Tcl_GetHashKey(&itPtr->httpRequests, hPtr);
 
-            Ns_Log(Ns_LogTaskDebug, "HttpCleanup cleans task %s (doneCB <%s>)",
+            Ns_Log(Ns_LogTaskDebug, "HttpCleanup: clean task:%s (doneCB:%s)",
                    taskName,
                    (httpPtr->doneCallback != NULL) ? httpPtr->doneCallback : "");
 
@@ -928,11 +928,12 @@ HttpCleanupObjCmd(
                  * So for now, just initiate the cancel
                  * and let the callback do the rest.
                  */
-                HttpCancel(httpPtr);
+
+                (void) Ns_TaskCancel(httpPtr->task);
 
             } else {
 
-                Ns_Log(Warning, "HttpCleanup: cancel task %s", taskName);
+                Ns_Log(Warning, "HttpCleanup: cancel task:%s", taskName);
 
                 HttpCancel(httpPtr);
 
@@ -1337,22 +1338,22 @@ HttpQueue(
     }
 
     if (result == TCL_OK) {
-        result  = HttpConnect(interp,
-                              method,
-                              url,
-                              requestHdrPtr,
-                              bodySize,
-                              bodyObj,
-                              bodyFileName,
-                              cert,
-                              caFile,
-                              caPath,
-                              sniHostname,
-                              (verifyCert  == 1) ? NS_TRUE : NS_FALSE,
-                              (keepHostHdr == 1) ? NS_TRUE : NS_FALSE,
-                              timeoutPtr,
-                              expirePtr,
-                              &httpPtr);
+        result = HttpConnect(interp,
+                             method,
+                             url,
+                             requestHdrPtr,
+                             bodySize,
+                             bodyObj,
+                             bodyFileName,
+                             cert,
+                             caFile,
+                             caPath,
+                             sniHostname,
+                             (verifyCert  == 1) ? NS_TRUE : NS_FALSE,
+                             (keepHostHdr == 1) ? NS_TRUE : NS_FALSE,
+                             timeoutPtr,
+                             expirePtr,
+                             &httpPtr);
     }
 
     if (result == TCL_OK && bodyChan != NULL) {
@@ -1362,6 +1363,7 @@ HttpQueue(
             httpPtr->bodyChan = bodyChan;
         }
     }
+
     if (result == TCL_OK && spoolChan != NULL) {
         if (HttpCutChannel(interp, spoolChan) != TCL_OK) {
             result = TCL_ERROR;
@@ -1428,14 +1430,14 @@ HttpQueue(
                 Ns_TclPrintfResult(interp, "could not queue HTTP task");
                 result = TCL_ERROR;
 
-            } else if (httpPtr->doneCallback != NULL) {
+            } else if (doneCallback != NULL) {
 
                 /*
                  * There is nothing to wait on when the doneCallback
                  * was declared, since the callback garbage-collects
                  * the task. Hence we do not create the taskID.
                  */
-                Ns_Log(Ns_LogTaskDebug, "no taskID returned");
+                Ns_Log(Ns_LogTaskDebug, "HttpQueue: no taskID returned");
 
             } else {
                 Tcl_HashEntry *hPtr = NULL;
@@ -2161,7 +2163,7 @@ HttpConnect(
         Ns_ReturnCode rc;
         Ns_Time       def = {10, 0}, *toPtr = NULL;
 
-        Ns_Log(Ns_LogTaskDebug, "connecting to [%s]:%hu", host, portNr);
+        Ns_Log(Ns_LogTaskDebug, "HttpConnect: connecting to [%s]:%hu", host, portNr);
 
         /*
          * Open the socket to remote, assure it's writable
@@ -2242,6 +2244,7 @@ HttpConnect(
         Ns_DStringNAppend(dsPtr, "/", 1);
     }
     Ns_DStringNAppend(dsPtr, tail, -1);
+    Ns_Log(Ns_LogTaskDebug, "HttpConnect: %s request: %s", proto, Ns_DStringValue(dsPtr));
     Ns_DStringNAppend(dsPtr, " HTTP/1.1\r\n", 11);
 
     /*
@@ -2457,7 +2460,7 @@ HttpAppendRawBuffer(
     if (written > -1) {
         result = TCL_OK;
     } else {
-        Ns_Log(Error, "task: spooling of received content failed");
+        Ns_Log(Error, "HttpAppendRawBuffer: spooling of received content failed");
         result = TCL_ERROR;
     }
 
@@ -2494,7 +2497,7 @@ HttpAppendBuffer(
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(buffer != NULL);
 
-    Ns_Log(Ns_LogTaskDebug, "HttpAppendBuffer: got: %" PRIuz " bytes flags:%.6x",
+    Ns_Log(Ns_LogTaskDebug, "HttpAppendBuffer: got %" PRIuz " bytes flags:%.6x",
            size, httpPtr->flags);
 
     if (likely((httpPtr->flags & NS_HTTP_FLAG_GUNZIP) == 0u)) {
@@ -2598,7 +2601,7 @@ HttpAppendContent(
  *        In order not to write yet-another completely closed and
  *        fixed parser for the format, here is the implementation
  *        of a simple state machine that can be easily programmed
- *        to oarse any character sequencer, including the chunked.
+ *        to parse any character sequence, including the chunked.
  *
  *        The machine consists of a set of callbacks. Each callback
  *        operates on the passed buffer and size of data in the
@@ -2656,7 +2659,7 @@ HttpAppendChunked(
     chunkPtr = httpPtr->chunk;
     NS_NONNULL_ASSERT(chunkPtr != NULL);
 
-    Ns_Log(Ns_LogTaskDebug, "HttpAppendChunked free httpPtr:%p, task:%p",
+    Ns_Log(Ns_LogTaskDebug, "HttpAppendChunked: http:%p, task:%p",
            (void*)httpPtr, (void*)httpPtr->task);
 
     while (len > 0 && result != TCL_ERROR) {
@@ -2709,7 +2712,7 @@ HttpClose(
 ) {
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
-    Ns_Log(Ns_LogTaskDebug, "HttpClose free httpPtr:%p, task:%p",
+    Ns_Log(Ns_LogTaskDebug, "HttpClose: http:%p, task:%p",
            (void*)httpPtr, (void*)httpPtr->task);
 
     /*
@@ -2802,14 +2805,9 @@ HttpCancel(
     NsHttpTask *httpPtr
 ) {
     NS_NONNULL_ASSERT(httpPtr != NULL);
+    NS_NONNULL_ASSERT(httpPtr->task != NULL);
 
     (void) Ns_TaskCancel(httpPtr->task);
-
-    /*
-     * Wait (potentially infinitely) on task to finish
-     * to make sure it cannot be referenced later.
-     */
-
     (void) Ns_TaskWait(httpPtr->task, NULL);
 }
 
@@ -2899,7 +2897,7 @@ HttpTaskSend(
 #endif
     }
 
-    Ns_Log(Ns_LogTaskDebug, "HttpTaskSend sent %" PRIdz
+    Ns_Log(Ns_LogTaskDebug, "HttpTaskSend: sent %" PRIdz
            " bytes (out of %" PRIuz ")", sent, length);
 
     return sent;
@@ -2985,9 +2983,9 @@ HttpDoneCallback(
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
-    Ns_Log(Ns_LogTaskDebug, "HttpDoneCallback finalSockState:%.2x, err:%s",
+    Ns_Log(Ns_LogTaskDebug, "HttpDoneCallback: finalSockState:%.2x, err:(%s)",
            httpPtr->finalSockState,
-           (httpPtr->error != NULL) ? httpPtr->error : "(none)");
+           (httpPtr->error != NULL) ? httpPtr->error : "none");
 
     servPtr = NsGetServer(nsconf.defaultServer); /* FIXME */
     interp = NsTclAllocateInterp(servPtr);
@@ -3055,12 +3053,12 @@ HttpProc(
 
     httpPtr = (NsHttpTask *)arg;
 
-    Ns_Log(Ns_LogTaskDebug, "HttpProc enter socketState %.2x", why);
+    Ns_Log(Ns_LogTaskDebug, "HttpProc: enter socket state %.2x", why);
 
     switch (why) {
     case NS_SOCK_INIT:
 
-        Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_INIT");
+        Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_INIT");
 
         if (httpPtr->bodyChan != NULL) {
             HttpSpliceChannel(NULL, httpPtr->bodyChan);
@@ -3077,7 +3075,7 @@ HttpProc(
 
         nextState = why; /* We may switch to read state below */
 
-        Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sendSpoolMode:%d,"
+        Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE sendSpoolMode:%d,"
                " fd:%d, chan:%s", httpPtr->sendSpoolMode, httpPtr->bodyFileFd,
                httpPtr->bodyChan ? Tcl_GetChannelName(httpPtr->bodyChan) : "(none)");
 
@@ -3093,7 +3091,7 @@ HttpProc(
              */
             remain = (size_t)(httpPtr->requestLength - httpPtr->sent);
 
-            Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE"
+            Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE"
                    " will send dsPtr:%p, next:%p, remain:%" PRIuz,
                    (void*)httpPtr->ds.string, (void*)httpPtr->next, remain);
 
@@ -3105,7 +3103,7 @@ HttpProc(
 
             if (n == -1) {
                 httpPtr->error = "http send failed";
-                Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE send failed");
+                Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE send failed");
 
             } else {
                 ssize_t nb = 0;
@@ -3125,7 +3123,7 @@ HttpProc(
                      * We still have something to be send
                      * left in memory.
                      */
-                    Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE"
+                    Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE"
                            " sent:%" PRIdz " bytes from memory,"
                            " remain:%" PRIuz, n, remain);
                 } else {
@@ -3137,7 +3135,7 @@ HttpProc(
                      * body if any expected, or switch to the next
                      * socket state (read stuff from the remote).
                      */
-                    logMsg = "HttpProc NS_SOCK_WRITE headers sent";
+                    logMsg = "HttpProc: NS_SOCK_WRITE headers sent";
                     httpPtr->next = NULL;
                     Tcl_DStringSetLength(&httpPtr->ds, 0);
 
@@ -3171,7 +3169,7 @@ HttpProc(
              * Send the request body from a file or from a Tcl channel.
              */
 
-            Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sendSpoolMode"
+            Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE sendSpoolMode"
                    " buffersize:%d buffer:%p next:%p sent:%" PRIuz,
                    httpPtr->ds.length, (void *)httpPtr->ds.string,
                    (void *)httpPtr->next, httpPtr->sent);
@@ -3211,7 +3209,7 @@ HttpProc(
                     httpPtr->bodySize -= (size_t)n;
                 }
 
-                Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sendSpoolMode"
+                Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE sendSpoolMode"
                        " got:%" PRIdz " wanted:%" PRIuz " bytes, eof:%d",
                        n, toRead, onEof);
 
@@ -3222,7 +3220,7 @@ HttpProc(
                  */
                 n = httpPtr->ds.length - (httpPtr->next - httpPtr->ds.string);
 
-                Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE"
+                Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE"
                        " remaining buffersize:%" PRIdz, n);
             }
 
@@ -3233,7 +3231,7 @@ HttpProc(
 
             if (unlikely(n == -1)) {
                 httpPtr->error = "http read failed";
-                Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE read failed");
+                Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE read failed");
 
             } else {
                 ssize_t toSend = n, sent = 0;
@@ -3242,12 +3240,12 @@ HttpProc(
                     sent = HttpTaskSend(httpPtr, httpPtr->next, (size_t)toSend);
                 }
 
-                Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sent"
+                Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE sent"
                        " %" PRIdz " of %" PRIuz " bytes", sent, toSend);
 
                 if (unlikely(sent == -1)) {
                     httpPtr->error = "http send failed";
-                    Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE send failed");
+                    Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE send failed");
 
                 } else if (sent < toSend) {
 
@@ -3272,7 +3270,7 @@ HttpProc(
                         }
                         Ns_MutexUnlock(&httpPtr->lock);
                     }
-                    Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE partial"
+                    Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE partial"
                            " send, remain:%ld", (long)(toSend - sent));
 
                     taskDone = NS_FALSE;
@@ -3292,7 +3290,7 @@ HttpProc(
                             httpPtr->sendBodySize = (size_t)nb;
                         }
                         Ns_MutexUnlock(&httpPtr->lock);
-                        Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE sent"
+                        Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE sent"
                                " full chunk, bytes:%" PRIdz, sent);
                     }
 
@@ -3312,7 +3310,7 @@ HttpProc(
                              * That was the last chunk.
                              * All of the body was sent, switch state
                              */
-                            Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE"
+                            Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE"
                                    " whole body sent, switch to read");
                             nextState = NS_SOCK_READ;
 
@@ -3336,7 +3334,7 @@ HttpProc(
                              */
                             httpPtr->error = "http read failed";
                             taskDone = NS_TRUE;
-                            Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_WRITE"
+                            Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE"
                                    " short read, left:%" PRIuz, httpPtr->bodySize);
                         }
                     }
@@ -3348,7 +3346,7 @@ HttpProc(
                      * then requested? There is something entirely wrong!
                      * I have no idea what would be the best to do here.
                      */
-                    Ns_Log(Error, "HttpProc NS_SOCK_WRITE bad state?");
+                    Ns_Log(Error, "HttpProc: NS_SOCK_WRITE bad state?");
                 }
             }
         }
@@ -3365,12 +3363,12 @@ HttpProc(
 
     case NS_SOCK_READ:
 
-        Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_READ");
+        Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_READ");
 
         nextState = why;
 
         if (httpPtr->sent == 0u) {
-            Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_READ nothing sent?");
+            Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_READ nothing sent?");
 
         } else {
             char         buf[CHUNK_SIZE];
@@ -3407,7 +3405,7 @@ HttpProc(
                  * what kind of error it was.
                  */
                 httpPtr->error = "http read failed";
-                Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_READ receive failed");
+                Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_READ receive failed");
 
             } else if (n > 0) {
                 int result = TCL_OK;
@@ -3421,7 +3419,7 @@ HttpProc(
                 result = HttpAppendContent(httpPtr, buf, (size_t)n);
                 if (unlikely(result != TCL_OK)) {
                     httpPtr->error = "http read failed";
-                    Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_READ append failed");
+                    Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_READ append failed");
                 } else {
                     Ns_ReturnCode rc = NS_OK;
                     if (httpPtr->replyHeaderSize == 0) {
@@ -3441,7 +3439,7 @@ HttpProc(
                     }
                     if (unlikely(rc != NS_OK)) {
                         httpPtr->error = "http read failed";
-                        Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_READ spool failed");
+                        Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_READ spool failed");
                     } else {
                         taskDone = NS_FALSE;
                     }
@@ -3467,7 +3465,7 @@ HttpProc(
                 /*
                  * Some terminal error state
                  */
-                Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_READ error,"
+                Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_READ error,"
                        " sockState:%.2x", sockState);
             }
         }
@@ -3484,7 +3482,7 @@ HttpProc(
 
     case NS_SOCK_TIMEOUT:
 
-        Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_TIMEOUT");
+        Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_TIMEOUT");
 
         /*
          * Without a doneCallback, NS_SOCK_DONE must be handled
@@ -3502,36 +3500,36 @@ HttpProc(
 
     case NS_SOCK_EXIT:
 
-        Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_EXIT");
+        Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_EXIT");
         httpPtr->error = "http task queue shutdown";
 
         break;
 
     case NS_SOCK_CANCEL:
 
-        Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_CANCEL");
+        Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_CANCEL");
         httpPtr->error = "http request cancelled";
 
         break;
 
     case NS_SOCK_EXCEPTION:
 
-        Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_EXCEPTION");
+        Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_EXCEPTION");
         httpPtr->error = "unexpected http socket exception";
 
         break;
 
     case NS_SOCK_AGAIN:
 
-        Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_AGAIN");
+        Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_AGAIN");
         httpPtr->error = "unexpected http EOD";
 
         break;
 
     case NS_SOCK_DONE:
 
-        Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_DONE doneCallback:%s",
-               httpPtr->doneCallback != NULL ? httpPtr->doneCallback : "(none)");
+        Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_DONE doneCallback:(%s)",
+               httpPtr->doneCallback != NULL ? httpPtr->doneCallback : "none");
 
         if (httpPtr->bodyChan != NULL) {
             HttpCutChannel(NULL, httpPtr->bodyChan);
@@ -3549,7 +3547,7 @@ HttpProc(
 
     case NS_SOCK_NONE:
 
-        Ns_Log(Ns_LogTaskDebug, "HttpProc NS_SOCK_NONE");
+        Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_NONE");
         httpPtr->error = "unexpected http socket state";
 
         break;
@@ -3557,9 +3555,9 @@ HttpProc(
 
     if (httpPtr != NULL) {
         httpPtr->finalSockState = why;
-        Ns_Log(Ns_LogTaskDebug, "HttpProc exit taskDone:%d, finalSockState:%.2x,"
-               " error:%s", taskDone, httpPtr->finalSockState,
-               httpPtr->error != NULL ? httpPtr->error : "(none)");
+        Ns_Log(Ns_LogTaskDebug, "HttpProc: exit taskDone:%d, finalSockState:%.2x,"
+               " error:(%s)", taskDone, httpPtr->finalSockState,
+               httpPtr->error != NULL ? httpPtr->error : "none");
         if (taskDone == NS_TRUE) {
             Ns_GetTime(&httpPtr->etime);
             Ns_TaskDone(httpPtr->task);

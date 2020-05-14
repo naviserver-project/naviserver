@@ -39,7 +39,7 @@ if {$::tcl_version eq "8.5"} {
 }
 
 ::tcltest::configure {*}$argv
-#ns_logctl severity Debug(task) on
+ns_logctl severity Debug(task) on
 #ns_logctl severity Debug(request) on
 
 
