@@ -567,7 +567,7 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
     while (result == NS_OK && (taskPtr->signalFlags & (flags|TASK_DONE)) == 0u) {
         result = Ns_CondTimedWait(&queuePtr->cond, &queuePtr->lock, toPtr);
     }
-    if ((taskPtr->signalFlags & flags) != 0u) {
+    if (result == NS_OK && (taskPtr->signalFlags & flags) != 0u) {
         result = NS_TIMEOUT;
     }
     taskPtr->signalFlags = 0;
@@ -1282,16 +1282,20 @@ TaskThread(void *arg)
 
             /*
              * At this place, we might wake-up the thread
-             * waiting in Ns_TaskWait() if the condvar
+             * waiting in Ns_TaskWait() if the cond-var
              * receives a spurious wakeup.
+             * Note we are blocking the thread here.
+             * Perhaps there is a better way to pass
+             * this signal back to the task?
              */
-            Ns_MutexLock(&queuePtr->lock);
-            if (signalFlags != 0u) {
+            if (signalFlags == 0u) {
+                Release(taskPtr);
+            } else {
+                Ns_MutexLock(&queuePtr->lock);
                 taskPtr->signalFlags |= signalFlags;
+                Release(taskPtr);
+                Ns_MutexUnlock(&queuePtr->lock);
             }
-            Release(taskPtr);
-            Ns_MutexUnlock(&queuePtr->lock);
-
             taskPtr = nextPtr; /* Advance to the next task in the wait list */
         }
 

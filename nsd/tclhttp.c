@@ -744,12 +744,12 @@ HttpWaitObjCmd(
         if (likely(rc == NS_OK)) {
             result = HttpGetResult(interp, httpPtr);
         } else {
+            HttpCancel(httpPtr);
             Tcl_SetObjResult(interp, Tcl_NewStringObj(httpPtr->error, -1));
             if (rc == NS_TIMEOUT) {
                 Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
                 Ns_Log(Ns_LogTimeoutDebug, "ns_http request '%s' runs into timeout", httpPtr->url);
             }
-            HttpCancel(httpPtr);
             result = TCL_ERROR;
         }
 
