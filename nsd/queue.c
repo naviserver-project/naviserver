@@ -2544,13 +2544,14 @@ ConnRun(Conn *connPtr)
      * process the remaining bytes.
      *
      */
-    { int keep;
+    {
+        bool wakeup;
 
         Ns_MutexLock(&sockPtr->drvPtr->lock);
-        keep = sockPtr->keep;
+        wakeup = (sockPtr->keep && (connPtr->reqPtr->leftover > 0u));
         Ns_MutexUnlock(&sockPtr->drvPtr->lock);
 
-        if (keep && (connPtr->reqPtr->leftover > 0u)) {
+        if (wakeup) {
             NsWakeupDriver(sockPtr->drvPtr);
         }
     }
