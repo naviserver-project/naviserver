@@ -160,6 +160,6 @@ $(tgts_modl_clean):
 	pushd "..\$(@:C=)" & $(NMAKE) -f Makefile.win32 clean & popd )
 
 _nsversion:
-	tclsh util/fake-configure.tcl
+	tclsh win32-util/configure.tcl
 _install:
-	tclsh util/win32-install-nsd.tcl -i 1
+	tclsh win32-util/install-nsd.tcl -i 1
