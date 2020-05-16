@@ -1635,10 +1635,12 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         break;
 
     case SThreadsIdx:
+        Ns_MutexLock(&poolPtr->threads.lock);
         Ns_TclPrintfResult(interp,
                            "min %d max %d current %d idle %d stopping 0",
                            poolPtr->threads.min, poolPtr->threads.max,
                            poolPtr->threads.current, poolPtr->threads.idle);
+        Ns_MutexUnlock(&poolPtr->threads.lock);
         break;
 
     case SActiveIdx:
@@ -2048,7 +2050,7 @@ NsConnThread(void *arg)
                 status = Ns_CondTimedWait(&argPtr->cond, &argPtr->lock, timePtr);
 
                 if (status == NS_TIMEOUT) {
-                    if (argPtr->connPtr != NULL) {
+                    if (unlikely(argPtr->connPtr != NULL)) {
                         /*
                          * This should not happen: we had a timeout, but there
                          * is a connection to be handled; when a connection
