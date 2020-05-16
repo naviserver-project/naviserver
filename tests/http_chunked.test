@@ -130,9 +130,11 @@ test http_chunked-2.3 {
     ns_unregister_op GET /tclchunked
 } -result {200 {} 5 01234}
 
-test http_chunked-2.4 {
 
-    POST request with invalid chunked content
+test http_chunked-2.4.0 {
+
+    PUT request with invalid chunked content.
+    providing a negative length
 
 } -constraints serverListen -setup {
     ns_register_proc PUT /tclchunked {
@@ -148,7 +150,83 @@ test http_chunked-2.4 {
         PUT /tclchunked "-1\r\nchunk\r\n0\r\n\r\n"
 } -cleanup {
     ns_unregister_op PUT /tclchunked
-} -match glob -result {200 {} 0 {HTTP/1.0 400 Bad Request*}}
+} -result {400 {} {}}
+
+
+test http_chunked-2.4.1 {
+
+    PUT request with chunked data and invalid length
+    (no hex encoded data)
+
+} -constraints serverListen -setup {
+    ns_register_proc PUT /tclchunked {
+        set content [ns_conn content]
+        #ns_log notice "PUT received <$content>"
+        ns_return 200 text/plain $content
+    }
+} -body {
+    nstest::http-0.9 -http 1.1 \
+        -omitcontentlength 1 \
+        -setheaders {Transfer-Encoding Chunked} \
+        -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
+        PUT /tclchunked "x\r\nD\r\n0\r\n\r\n"
+} -cleanup {
+    ns_unregister_op PUT /tclchunked
+} -result {400 {} {}}
+
+
+test http_chunked-2.4.2 {
+
+    PUT request with invalid chunked content. Server receives much
+    less data than announced via chunk lengthw. Server will wait for
+    more data, and runs after some time into a timeout.
+
+} -constraints serverListen -setup {
+    ns_register_proc PUT /tclchunked {
+        set content [ns_conn content]
+        #ns_log notice "PUT received <$content>"
+        ns_return 200 text/plain $content
+    }
+} -body {
+    set result {}
+    set errorMsg {}
+    try {
+        nstest::http-0.9 -http 1.1 \
+            -omitcontentlength 1 \
+            -setheaders {Transfer-Encoding Chunked Connections close} \
+            -getheaders {Transfer-Encoding Content-Length} \
+            PUT /tclchunked "ffffffff\r\nchunk\r\n0\r\n\r\n"
+    } on error {errorMsg} {
+    } on ok {result} {
+    }
+    list errorMsg $errorMsg result $result
+} -cleanup {
+    ns_unregister_op PUT /tclchunked
+    unset result errorMsg
+} -result {errorMsg {} result {}}
+
+
+test http_chunked-2.4.3 {
+
+    PUT request with chunked data and a chunk extension.
+
+} -constraints serverListen -setup {
+    ns_register_proc PUT /tclchunked {
+        set content [ns_conn content]
+        #ns_log notice "PUT received <$content>"
+        ns_return 200 text/plain $content
+    }
+} -body {
+    nstest::http-0.9 -http 1.1 \
+        -omitcontentlength 1 \
+        -setheaders {Transfer-Encoding Chunked} \
+        -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
+        PUT /tclchunked "1;last\r\nD\r\n0\r\n\r\n"
+} -cleanup {
+    ns_unregister_op PUT /tclchunked
+} -returnCodes {ok} -result {200 {} 1 D}
+
+
 
 test http_chunked-3.1 {
 

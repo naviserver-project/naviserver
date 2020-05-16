@@ -3389,7 +3389,7 @@ ChunkedDecode(Request *reqPtr, bool update)
 {
     const Tcl_DString *bufPtr;
     const char        *end, *chunkStart;
-    SockState         result = SOCK_READY;
+    SockState         result = SOCK_MORE;
 
     NS_NONNULL_ASSERT(reqPtr != NULL);
 
@@ -3398,7 +3398,7 @@ ChunkedDecode(Request *reqPtr, bool update)
     chunkStart = bufPtr->string + reqPtr->chunkStartOff;
 
     while (reqPtr->chunkStartOff <  (size_t)bufPtr->length) {
-        char   *p = strstr(chunkStart, "\r\n");
+        char   *p = strstr(chunkStart, "\r\n"), *numberEnd;
         long    chunkLength;
 
         if (p == NULL) {
@@ -3408,15 +3408,19 @@ ChunkedDecode(Request *reqPtr, bool update)
         }
 
         *p = '\0';
-        chunkLength = strtol(chunkStart, NULL, 16);
+        chunkLength = strtol(chunkStart, &numberEnd, 16);
+        Ns_Log(DriverDebug, "ChunkedDecode: chunkLength %ld, <%s>", chunkLength, chunkStart);
         *p = '\r';
         if (chunkLength < 0) {
             Ns_Log(Warning, "ChunkedDecode: negative chunk length");
             result = SOCK_BADREQUEST;
             break;
         }
-        *p = '\r';
-
+        if (chunkStart == numberEnd) {
+            Ns_Log(Warning, "ChunkedDecode: invalid chunk length");
+            result = SOCK_BADREQUEST;
+            break;
+        }
         if (p + 2 + chunkLength > end) {
             Ns_Log(DriverDebug, "ChunkedDecode: chunk length past end of buffer");
             result = SOCK_MORE;
@@ -3431,6 +3435,7 @@ ChunkedDecode(Request *reqPtr, bool update)
         }
         reqPtr->chunkStartOff += (size_t)(p - chunkStart) + 4u + (size_t)chunkLength;
         chunkStart = bufPtr->string + reqPtr->chunkStartOff;
+        result = SOCK_READY;
     }
 
     return result;
