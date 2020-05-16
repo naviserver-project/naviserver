@@ -1,20 +1,20 @@
 # Emacs mode:  -*-Makefile-*-
-
 #
-# 1. Edit include/Makefile.build and replace Makefile.module with
-#    Makefile.win32
+# To build on Windows using the Microsoft Visual Studio command-line compiler:
 #
-# 2. Update TCLPATH and VC variables below to reflect actual path to
-#    Tcl and VicualC++ installations
+# 1. You no longer need to edit "include/Makefile.build", it now
+#    automatically picks between Makefile.module (for Unix via Gnu
+#    make) and Makefile.win32 (for Window via nmake).
+#
+# 2. Update Update the 'tcl_64' and 'tcllib_64' variables below for
+#    your system.  See also these settings in "include/Makefile.win32":
+#    'HAVE_OPENSSL_EVP_H', 'openssl_64'.
 #
 # 3. Run appropriate Microsoft build setup script.  E.g. one of these:
 #    "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
 #    "%ProgramFiles%\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.Cmd" /Debug /x64 /win7
 #
 # 4. nmake -f Makefile.win32
-#    or
-#    nmake -f Makefile.win32 TCLPATH=c:\tcl VC=c:\vc
-#
 #
 
 tcl_64 = C:\P\Tcl-64-8.6
@@ -67,8 +67,8 @@ INCLUDE = $(MSDK)\Include;$(VC)\include
 !endif
 !endif
 
-# If your call to SetEnv.Cmd is working correctly, you should only
-# need to append to LIB and INCLUDE like this:
+# If your call to vcvars64.bat (or SetEnv.Cmd) is working correctly,
+# you should only need to append to LIB and INCLUDE like this:
 !message Appending to LIB and INCLUDE.
 LIB     = $(LIB);$(TCLPATH)\lib
 INCLUDE = $(INCLUDE);$(TCLPATH)\include
@@ -81,13 +81,14 @@ DEBUG=1
 !endif
 
 # nmake command to exec for each module:
-NMAKE	= nmake /nologo TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG=$(DEBUG)
+NMAKE = nmake /nologo TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG=$(DEBUG) NSBUILD=1
 
 
 # Note our use below of nmake's macro string substitution feature:
+#   https://docs.microsoft.com/en-us/cpp/build/reference/macro-substitution?view=vs-2019
 #   http://msdn.microsoft.com/en-us/library/bsd42ets%28v=vs.110%29.aspx
 #
-# Our use of $(build_targets) below expands into a separate target for
+# Our use of $(core_targets) below expands into a separate target for
 # each module, which is especially convenient when we only want to
 # build one or two of them at a time (e.g., for debugging).  But nmake
 # does not have anything like Gnu make's explicit ".PHONY" syntax, so
@@ -118,7 +119,7 @@ NMAKE	= nmake /nologo TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG
 # --atp@piskorski.com, 2014/10/10 17:25 EDT
 
 core_targets = _nsthread _nsd _nscgi _nscp _nsdb _nssock _nslog _nsperm _nsssl
-module_targets = _NONE-YET
+module_targets = _nsoracle
 
 tgts_core_clean = $(core_targets:_=C)
 tgts_modl_clean = $(module_targets:_=C)
@@ -127,14 +128,16 @@ tgts_modl_inst  = $(module_targets:_=I)
 
 all: all-core
 clean: clean-core
-install: install-core install-mod
+install: all-core all-mod _install
 
-all-core: $(core_targets)
+# Actually only nsd needs nsversion-win32.h, but I do not see a good
+# way to make only that one target depend on it:
+
+include/nsversion-win32.h:  _nsversion
+all-core:  include/nsversion-win32.h  $(core_targets)
 all-mod:  $(module_targets)
 clean-core: $(tgts_core_clean)
 clean-mod:  $(tgts_modl_clean)
-install-core: $(tgts_core_inst) I_tcl I_include
-install-mod:  $(tgts_modl_inst)
 
 # Bizarrely, from within nmake changing directories with "pushd" or
 # "popd" only takes effect for THAT ONE LINE, while using "cd" retains
@@ -156,17 +159,7 @@ $(tgts_modl_clean):
 	@if not exist "..\$(@:C=)" (echo No such directory:  ..\$(@:C=)) else ( \
 	pushd "..\$(@:C=)" & $(NMAKE) -f Makefile.win32 clean & popd )
 
-
-# TODO: I have not used nor debugged the install process here at all,
-# as I currently use a Tcl script for installing on Windows.
-# --atp@piskorski.com, 2014/10/10 12:14 EDT
-
-# Install to the NAVISERVER directory:
-$(tgts_core_inst):
-	pushd $(@:I=) & $(NMAKE) install & popd
-$(tgts_modl_inst):
-	pushd "..\$(@:I=)" & $(NMAKE) -f Makefile.win32 install & popd
-I_tcl:
-	pushd tcl & nmake -f ../include/Makefile.win32 install-tcl & popd
-I_include:
-	pushd include & nmake -f Makefile.win32 install-include & popd
+_nsversion:
+	tclsh util/fake-configure.tcl
+_install:
+	tclsh util/win32-install-nsd.tcl -i 1

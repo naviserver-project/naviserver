@@ -35,4 +35,5 @@ include/Makefile.global
 include/Makefile.module
 include/nsconfig.h*
 include/nsversion.h
+include/nsversion-win32.h
 include/stamp-h1

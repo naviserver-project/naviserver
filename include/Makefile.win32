@@ -64,6 +64,48 @@
 #	NSBUILD	    If set, build from sources.
 #
 
+!ifdef NAVISERVER
+!  if ("" == "$(NAVISERVER)" || "..\naviserver" == $(NAVISERVER))
+!    message Warning: Ignoring bogus value for NAVISERVER install dir:  $(NAVISERVER)
+!    undef NAVISERVER
+!  endif
+!endif
+
+!ifndef NSBUILD
+!  if defined(NAVISERVER)
+!    message Notice: Setting NSBUILD=0, linking against installed NAVISERVER in:  $(NAVISERVER)
+NSBUILD=0
+!  else
+!    message Notice: Setting NSBUILD=1 to build from source, NaviServer not yet installed.
+NSBUILD=1
+!  endif
+!endif
+
+!ifndef NS_CORE_P
+!if (0 == $(NSBUILD))
+#!    message Debug: Building non-core module against already installed NaviServer.
+NS_CORE_P=0
+!elseif exist("..\nsthread\winthread.c")
+#!    message Debug: Building core module.
+NS_CORE_P=1
+!else
+#!    message Debug: Building non-core module in source tree.
+NS_CORE_P=0
+!endif
+!endif
+
+!if (0 == $(NSBUILD))
+NS_DIR = $(NAVISERVER)
+!elseif (1 == $(NSBUILD) && (1 == $(NS_CORE_P)))
+  # Core module directory structure is always inside the naviserver
+  # source directory, e.g. "naviserver/nssock/".
+NS_DIR = ..
+!elseif (1 == $(NSBUILD) && (0 == $(NS_CORE_P)))
+  # We assume the typical non-core module source location, my-module/ located alongside naviserver/.
+NS_DIR = ..\naviserver
+!else
+!  error Error: Bug, cannot determine how to set NS_DIR.
+!endif
 
 !ifndef NAVISERVER
 NAVISERVER = C:\ns
@@ -77,16 +119,29 @@ NAVISERVER = C:\ns
 # If the module Makefile set DLL use that, but if not fall back to the
 # module name given in MOD:
 !ifndef DLL
-!ifdef MOD
+!  ifdef MOD
 # TODO: Unfortunately this removes the literal string ".so" from
 # ANYWHERE in the string, not solely at the end:
 DLL = $(MOD:.so=)
+!  endif
+!endif
+
+!ifndef NS_DB_P
+!if ("nsdbtest" == "$(DLL)")
+NS_DB_P=1
+!else
+NS_DB_P=0
 !endif
 !endif
 
 
-## To (I think) enable OpenSSL support, turn this on:
-#HAVE_OPENSSL_EVP_H=1
+# To enable OpenSSL (for both core nsd.exe and nsssl.dll), you must
+# define HAVE_OPENSSL_EVP_H in TWO files in "naviserver/include/":
+#   Makefile.win32 and nsconfig-win32.h
+# I tried many other approaches but could not get the build to work
+# any other way.  --atp@piskorski.com, 2020/05/01 12:17 EDT
+
+HAVE_OPENSSL_EVP_H=1
 
 # For past OpenSSL-related link problems, see:
 #   https://sourceforge.net/p/naviserver/mailman/message/36519758/
@@ -107,6 +162,9 @@ openssl_64 = C:\P\OpenSSL-Win64
 openssl_32 = C:\P\OpenSSL-Win32
 #openssl_64 = C:\P\openssl-indy_1.0.2q\64
 #openssl_32 = C:\P\openssl-indy_1.0.2q\32
+
+# Make sure you also add e.g. C:\P\OpenSSL-Win64\bin to your system PATH,
+# so that NaviServer finds the libssl*.dll it needs when it runs.
 
 # We have lots of flavors of the OpenSSL libraries.  I normally build
 # NaviServer with /MDd, so presumably we need the corresponding
@@ -130,37 +188,49 @@ openssl_dir = $(openssl_64)
 !endif
 !message openssl_dir is set to:  $(openssl_dir)
 
-
 #
 # Update options when building from sources or installed location.
 #
-#!message PGM:  $(PGM)   DLL:  $(DLL)
+#!message Debug:  PGM:  $(PGM)   DLL:  $(DLL)
+#!message Debug:  NSBUILD: $(NSBUILD)  NS_CORE_P: $(NS_CORE_P)  NS_DB_P: $(NS_DB_P)  NAVISERVER: $(NAVISERVER)
 
-!ifndef NSBUILD
-# We are linking a module against an already-installed NaviServer:
-INCDIR = $(NAVISERVER)\include
-LIBS = $(LIBS) /LIBPATH:"$(NAVISERVER)\lib" libnsd.lib nsthread.lib
+!if (0 == $(NSBUILD))
+!  message Debug: Building module against an already-installed NaviServer.  DLL: $(DLL)  NAVISERVER: $(NAVISERVER)
+LIBS = $(LIBS) /LIBPATH:"$(NS_DIR)\lib" libnsd.lib nsthread.lib
+
+!elseif (0 == $(NS_CORE_P))
+!  message Debug: Building non-core module against NaviServer source tree.  DLL: $(DLL)
+LIBS = $(LIBS) /LIBPATH:"$(NS_DIR)\nsd" libnsd.lib /LIBPATH:"$(NS_DIR)\nsthread" nsthread.lib
+!if (1 == $(NS_DB_P))
+DEFS = $(DEFS) /I "$(NS_DIR)\nsdb"
+!endif
+
 !else
-INCDIR = ..\include
+!  message Debug: Building NaviServer core.  DLL: $(DLL)  PGM: $(PGM)
 
-# Ok to link everything can against nsthread EXCEPT for nsthread itself:
-!if "$(DLL)" != "nsthread"
-LIBS = $(LIBS) /LIBPATH:"..\nsthread" nsthread.lib
+   # Ok to link everything against nsthread EXCEPT for nsthread itself:
+!  if "$(DLL)" != "nsthread"
+LIBS = $(LIBS) /LIBPATH:"$(NS_DIR)\nsthread" nsthread.lib
+!  endif
 
-# Same sort of thing for nsd:
-!if ("$(PGM)" != "nsd" && "$(DLL)" != "nsd" && "$(DLL)" != "libnsd")
-LIBS = $(LIBS) /LIBPATH:"..\nsd" libnsd.lib
-!else
-# Since c. 2016, nsd.exe needs to link against OpenSSL, otherwise you get
-# "unresolved external symbol" for _SSL_get_version and _SSL_get_cipher:
+   # nsd is built next, so it may link to nsthread, but NOT itself.
+   # Ok to link all later libraries to both nsthread and nsd:
+!  if ("$(PGM)" != "nsd" && "$(DLL)" != "nsd" && "$(DLL)" != "libnsd" && "$(DLL)" != "nsthread")
+LIBS = $(LIBS) /LIBPATH:"$(NS_DIR)\nsd" libnsd.lib
+!  endif
+
+!  if ("nsssl" == "$(DLL)" || "nsd" == "$(PGM)")
+   # Since c. 2016, nsd.exe needs to link against OpenSSL, otherwise you get
+   # "unresolved external symbol" for _SSL_get_version and _SSL_get_cipher:
 LIBS = $(LIBS) "/LIBPATH:$(openssl_dir)\lib\VC" $(openssl_libs)
+!  endif
+
 !endif
 
-# nsdbtest needs nsdb.lib
-!if "$(DLL)" == "nsdbtest"
-LIBS = $(LIBS) /LIBPATH:"..\nsdb" nsdb.lib
-!endif
-!endif
+#!message Debug: NS_DIR: $(NS_DIR)
+INCDIR = $(NS_DIR)\include
+!if (1 == $(NS_DB_P))
+LIBS = $(LIBS) /LIBPATH:"$(NS_DIR)\nsdb" nsdb.lib
 !endif
 
 
@@ -238,6 +308,10 @@ DLLOPTS	=
 # specified multiple times" warnings:  --atp@piskorski.com, 2014/10/02
 
 #DLLOPTS = /EXPORT:Ns_ModuleInit
+!endif
+
+!if "$(DLL)" == "nsdb"
+DLLOPTS = $(DLLOPTS) /EXPORT:Ns_LogSqlDebug
 !endif
 
 !endif

@@ -37,7 +37,12 @@
 #ifndef NS_H
 #define NS_H
 
+#if defined(_MSC_VER) && !defined(HAVE_CONFIG_H)
+#include "nsversion-win32.h"
+#else
 #include "nsversion.h"
+#endif
+
 #include "nsthread.h"
 
 #ifdef HAVE_ZLIB_H
