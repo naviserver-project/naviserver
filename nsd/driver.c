@@ -287,7 +287,7 @@ static NS_POLL_NFDS_TYPE PollSet(PollData *pdata, NS_SOCKET sock, short type, co
     NS_GNUC_NONNULL(1);
 static int PollWait(const PollData *pdata, int timeout)
     NS_GNUC_NONNULL(1);
-static bool ChunkedDecode(Request *reqPtr, bool update)
+static SockState ChunkedDecode(Request *reqPtr, bool update)
     NS_GNUC_NONNULL(1);
 static WriterSock *WriterSockRequire(const Conn *connPtr)
     NS_GNUC_NONNULL(1);
@@ -3374,20 +3374,22 @@ SockClose(Sock *sockPtr, int keep)
  *      shorter than the encoded one.
  *
  * Results:
- *      NS_TRUE when chunk was complete, NS_FALSE otherwise
+ *      SOCK_READY when chunk was complete, SOCK_MORE when more data is
+ *      requried, or some error condition.
  *
  * Side effects:
- *      updates the buffer if update is true (and adjusts reqPtr->chunkWriteOff)
- *      updates always reqPtr->chunkStartOff to allow incremental operations
+ *      Updates the buffer if update is true (and adjusts
+ *      reqPtr->chunkWriteOff).  Updates always reqPtr->chunkStartOff to allow
+ *      incremental operations.
  *
  *----------------------------------------------------------------------
  */
-static bool
+static SockState
 ChunkedDecode(Request *reqPtr, bool update)
 {
     const Tcl_DString *bufPtr;
     const char        *end, *chunkStart;
-    bool              success = NS_TRUE;
+    SockState         result = SOCK_READY;
 
     NS_NONNULL_ASSERT(reqPtr != NULL);
 
@@ -3397,35 +3399,41 @@ ChunkedDecode(Request *reqPtr, bool update)
 
     while (reqPtr->chunkStartOff <  (size_t)bufPtr->length) {
         char   *p = strstr(chunkStart, "\r\n");
-        size_t  chunk_length;
+        long    chunkLength;
 
         if (p == NULL) {
             Ns_Log(DriverDebug, "ChunkedDecode: chunk did not find end-of-line");
-            success = NS_FALSE;
+            result = SOCK_MORE;
             break;
         }
 
         *p = '\0';
-        chunk_length = (size_t)strtol(chunkStart, NULL, 16);
+        chunkLength = strtol(chunkStart, NULL, 16);
+        *p = '\r';
+        if (chunkLength < 0) {
+            Ns_Log(Warning, "ChunkedDecode: negative chunk length");
+            result = SOCK_BADREQUEST;
+            break;
+        }
         *p = '\r';
 
-        if (p + 2 + chunk_length > end) {
+        if (p + 2 + chunkLength > end) {
             Ns_Log(DriverDebug, "ChunkedDecode: chunk length past end of buffer");
-            success = NS_FALSE;
+            result = SOCK_MORE;
             break;
         }
         if (update) {
             char *writeBuffer = bufPtr->string + reqPtr->chunkWriteOff;
 
-            memmove(writeBuffer, p + 2, chunk_length);
-            reqPtr->chunkWriteOff += chunk_length;
-            *(writeBuffer + chunk_length) = '\0';
+            memmove(writeBuffer, p + 2, (size_t)chunkLength);
+            reqPtr->chunkWriteOff += (size_t)chunkLength;
+            *(writeBuffer + chunkLength) = '\0';
         }
-        reqPtr->chunkStartOff += (size_t)(p - chunkStart) + 4u + chunk_length;
+        reqPtr->chunkStartOff += (size_t)(p - chunkStart) + 4u + (size_t)chunkLength;
         chunkStart = bufPtr->string + reqPtr->chunkStartOff;
     }
 
-    return success;
+    return result;
 }
 
 
@@ -4114,7 +4122,7 @@ SockParse(Sock *sockPtr)
     /*
      * Check if all content has arrived.
      */
-    Ns_Log(Dev, "=== length < avail (length %" PRIuz
+    Ns_Log(Debug, "=== length < avail (length %" PRIuz
            ", avail %" PRIuz ") tfd %d tfile %p chunkStartOff %" PRIuz,
            reqPtr->length, reqPtr->avail, sockPtr->tfd,
            (void *)sockPtr->tfile, reqPtr->chunkStartOff);
@@ -4123,10 +4131,10 @@ SockParse(Sock *sockPtr)
         /*
          * Chunked encoding was provided.
          */
-        bool   complete;
-        size_t currentContentLength;
+        SockState chunkState;
+        size_t    currentContentLength;
 
-        complete = ChunkedDecode(reqPtr, NS_TRUE);
+        chunkState = ChunkedDecode(reqPtr, NS_TRUE);
         currentContentLength = reqPtr->chunkWriteOff - reqPtr->coff;
 
         /*
@@ -4136,12 +4144,15 @@ SockParse(Sock *sockPtr)
          * "expectedLength" was provided by the client, we terminate
          * depending on that information
          */
-        if ((!complete)
+        if ((chunkState == SOCK_MORE)
             || (reqPtr->expectedLength != 0u && currentContentLength < reqPtr->expectedLength)) {
             /*
              * ChunkedDecode wants more data.
              */
             return SOCK_MORE;
+
+        } else if (chunkState != SOCK_READY) {
+            return chunkState;
         }
         /*
          * ChunkedDecode has enough data.

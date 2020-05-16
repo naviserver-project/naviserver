@@ -130,8 +130,27 @@ test http_chunked-2.3 {
     ns_unregister_op GET /tclchunked
 } -result {200 {} 5 01234}
 
+test http_chunked-2.4 {
 
-test http_chunked-3-1 {
+    POST request with invalid chunked content
+
+} -constraints serverListen -setup {
+    ns_register_proc PUT /tclchunked {
+        set content [ns_conn content]
+        #ns_log notice "PUT received <$content>"
+        ns_return 200 text/plain $content
+    }
+} -body {
+    nstest::http-0.9 -http 1.1 \
+        -omitcontentlength 1 \
+        -setheaders {Transfer-Encoding Chunked} \
+        -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
+        PUT /tclchunked "-1\r\nchunk\r\n0\r\n\r\n"
+} -cleanup {
+    ns_unregister_op PUT /tclchunked
+} -match glob -result {200 {} 0 {HTTP/1.0 400 Bad Request*}}
+
+test http_chunked-3.1 {
 
     PUT with Transfer-Encoding Chunked and unknown Content-Length (but
     provided X-Expected-Entity-Length). This is the format that WebDAV
