@@ -207,11 +207,7 @@ ns_localtime(const time_t *timep)
 
     NS_NONNULL_ASSERT(timep != NULL);
 
-    if (sizeof(time_t) == 4) {
-        errNum = _localtime32_s(&tlsPtr->ltbuf, timep);
-    } else {
-        errNum = _localtime64_s(&tlsPtr->ltbuf, timep);
-    }
+    errNum = localtime_s(&tlsPtr->ltbuf, timep);
     if (errNum != 0) {
         NsThreadFatal("ns_localtime", "localtime_s", errNum);
     }
