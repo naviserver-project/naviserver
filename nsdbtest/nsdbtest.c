@@ -170,7 +170,7 @@ CloseDb(Ns_DbHandle *UNUSED(handle))
  *      Retrieve the column names of the current result.
  *
  * Results:
- *      An Ns_Set whos keys are the names of columns, or NULL on error.
+ *      An Ns_Set which keys are the names of columns, or NULL on error.
  *
  * Side effects:
  *      None.

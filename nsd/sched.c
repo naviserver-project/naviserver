@@ -294,7 +294,7 @@ Ns_ScheduleWeekly(Ns_SchedProc *proc, void *clientData, unsigned int flags,
  * Ns_ScheduleProcEx --
  *
  *  Schedule a proc to run at a given interval.  The interpretation
- *  of interval (whether interative, daily, or weekly) is handled
+ *  of interval (whether iterative, daily, or weekly) is handled
  *  by QueueEvent.
  *
  * Results:

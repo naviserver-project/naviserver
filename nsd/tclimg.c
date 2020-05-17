@@ -419,7 +419,7 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
 
     /*
      * Skip the magic as caller has already
-     * checked it allright.
+     * checked it alright.
      */
     do {
         if (Tcl_Read(chan, (char*)buf, 6) != 6) {

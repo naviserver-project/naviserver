@@ -1086,7 +1086,7 @@ Ns_VarAppend(const char *server, const char *array, const char *key,
  *
  * Ns_VarUnset
  *
- *      Resets given key inthe array, if key is NULL, flushes the whole array
+ *      Resets given key in the array, if key is NULL, flushes the whole array
  *
  * Results:
  *      Returns NS_OK if flushed, NS_ERROR if array not found

@@ -1304,7 +1304,7 @@ TaskThread(void *arg)
          * as some of the task above may have been completed already.
          * It is important to note that the condvar may have received
          * spurious wake-ups so some waiter threads may be already
-         * hanling the task even before we signal them explicitly.
+         * handling the task even before we signal them explicitly.
          */
         if (broadcast == NS_TRUE) {
             Ns_CondBroadcast(&queuePtr->cond);

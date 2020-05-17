@@ -127,7 +127,7 @@ the provided glob pattern.
 String: path to the log file. Default: access.log
 
 [def extendedheaders]
-A space separated list of additional HTTP headers whos value should be logged.
+A space separated list of additional HTTP headers whose values should be logged.
 Default: no extra headers are logged.
 
 [def formattedtime]

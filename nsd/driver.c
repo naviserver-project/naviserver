@@ -3375,7 +3375,7 @@ SockClose(Sock *sockPtr, int keep)
  *
  * Results:
  *      SOCK_READY when chunk was complete, SOCK_MORE when more data is
- *      requried, or some error condition.
+ *      required, or some error condition.
  *
  * Side effects:
  *      Updates the buffer if update is true (and adjusts

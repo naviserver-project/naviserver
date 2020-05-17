@@ -577,7 +577,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *
  * NsTclSelectObjCmd --
  *
- *      Imlements select: basically a Tcl version of select(2).
+ *      Implements select: basically a Tcl version of select(2).
  *
  * Results:
  *      Tcl result.

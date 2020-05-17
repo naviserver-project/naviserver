@@ -26,7 +26,7 @@ it is specified, it must be a value >= 0.
 
 [para]
 [arg timeout]
-Time to wait before shuting down the server.
+Time to wait before shutting down the server.
 The [arg timeout] can be specified in the form
 [arg secs[opt :microsecs]], or [arg secs.fraction],
 or as a number with the time units ms, s, m, d.
