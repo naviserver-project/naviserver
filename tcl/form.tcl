@@ -372,6 +372,11 @@ proc ns_parseformfile { file form contentType } {
         ns_log warning "ns_parseformfile could not open $file for reading"
         return
     }
+    if {[regexp {^(.*);\s*charset\s*=\s*(\S+)$} $contentType . contentType charset]} {
+        if {$charset ni {utf-8 UTF-8}} {
+            fconfigure $fp -encoding $charset
+        }
+    }
 
     if {[string match "*www-form-urlencoded" $contentType]} {
         #
