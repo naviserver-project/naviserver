@@ -118,7 +118,7 @@ NMAKE = nmake /nologo TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG
 # module/Makefile.win32 files.
 # --atp@piskorski.com, 2014/10/10 17:25 EDT
 
-core_targets = _nsthread _nsd _nscgi _nscp _nsdb _nssock _nslog _nsperm _nsssl
+core_targets = _nsthread _nsd _nscgi _nscp _nsdb _nssock _nslog _nsperm _nsssl _nsproxy
 module_targets = _nsoracle
 
 tgts_core_clean = $(core_targets:_=C)
