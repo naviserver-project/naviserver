@@ -1253,6 +1253,7 @@ NS_EXTERN Tcl_ObjCmdProc
     NsTclNsvAppendObjCmd,
     NsTclNsvArrayObjCmd,
     NsTclNsvBucketObjCmd,
+    NsTclNsvDictObjCmd,
     NsTclNsvExistsObjCmd,
     NsTclNsvGetObjCmd,
     NsTclNsvIncrObjCmd,

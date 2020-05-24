@@ -285,6 +285,7 @@ static const Cmd servCmds[] = {
     {"ns_writer",                NULL, NsTclWriterObjCmd},
     {"nsv_append",               NULL, NsTclNsvAppendObjCmd},
     {"nsv_array",                NULL, NsTclNsvArrayObjCmd},
+    {"nsv_dict",                 NULL, NsTclNsvDictObjCmd},
     {"nsv_bucket",               NULL, NsTclNsvBucketObjCmd},
     {"nsv_exists",               NULL, NsTclNsvExistsObjCmd},
     {"nsv_get",                  NULL, NsTclNsvGetObjCmd},

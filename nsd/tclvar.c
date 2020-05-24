@@ -62,16 +62,16 @@ typedef struct Array {
  * Local functions defined in this file.
  */
 
-static void SetVar(Array *arrayPtr, const char *key, const char *value, size_t len)
+static void SetVar(Array *arrayPtr, const char *keyString, const char *value, size_t len)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static void UpdateVar(Tcl_HashEntry *hPtr, const char *value, size_t len)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static int IncrVar(Array *arrayPtr, const char *key, int incr, Tcl_WideInt *valuePtr)
+static int IncrVar(Array *arrayPtr, const char *keyString, int incr, Tcl_WideInt *valuePtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
-static Ns_ReturnCode Unset(Array *arrayPtr, const char *key)
+static Ns_ReturnCode Unset(Array *arrayPtr, const char *keyString)
     NS_GNUC_NONNULL(1);
 
 static void Flush(Array *arrayPtr)
@@ -117,6 +117,8 @@ NsTclCreateBuckets(const char *server, int nbuckets)
     NS_NONNULL_ASSERT(server != NULL);
 
     buckets = ns_malloc(sizeof(Bucket) * (size_t)nbuckets);
+    /*fprintf(stderr, "=== %d buckets require %lu bytes, array needs %ld bytes\n",
+      nbuckets, sizeof(Bucket) * (size_t)nbuckets, sizeof(Array));*/
     memcpy(buf, "nsv:", 4);
     while (--nbuckets >= 0) {
         (void) ns_uint32toa(&buf[4], (uint32_t)nbuckets);
@@ -165,8 +167,9 @@ NsTclNsvGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         } else {
             Tcl_Obj             *resultObj;
             const Tcl_HashEntry *hPtr;
+            const char          *keyString = Tcl_GetString(objv[2]);
 
-            hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, Tcl_GetString(objv[2]), NULL);
+            hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, keyString, NULL);
             resultObj = likely(hPtr != NULL) ? Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1) : NULL;
             UnlockArray(arrayPtr);
 
@@ -174,7 +177,8 @@ NsTclNsvGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 if (likely(resultObj != NULL)) {
                     Tcl_SetObjResult(interp, resultObj);
                 } else {
-                    Ns_TclPrintfResult(interp, "no such key: %s", Tcl_GetString(objv[2]));
+                    Ns_TclPrintfResult(interp, "no such key: %s", keyString);
+                    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NSV", "KEY", keyString, NULL);
                     result = TCL_ERROR;
                 }
             } else /* (objc == 4) */ {
@@ -279,7 +283,7 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     int      result = TCL_OK, doReset = 0, doDefault = 0;
     Array   *arrayPtr;
     Tcl_Obj *arrayObj, *valueObj = NULL;
-    char    *key;
+    char    *keyString;
 
     Ns_ObjvSpec lopts[] = {
         {"-default", Ns_ObjvBool,   &doDefault, INT2PTR(NS_TRUE)},
@@ -288,9 +292,9 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"array",  Ns_ObjvObj,    &arrayObj, NULL},
-        {"key",    Ns_ObjvString, &key,      NULL},
-        {"?value",  Ns_ObjvObj,   &valueObj, NULL},
+        {"array",  Ns_ObjvObj,    &arrayObj,  NULL},
+        {"key",    Ns_ObjvString, &keyString, NULL},
+        {"?value",  Ns_ObjvObj,   &valueObj,  NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -313,7 +317,7 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
          * Handle special flags.
          */
         if (unlikely((doReset != 0) || (doDefault != 0))) {
-            bool didExist = SetResultToOldValue(interp, arrayPtr, key);
+            bool didExist = SetResultToOldValue(interp, arrayPtr, keyString);
 
             if (doReset != 0) {
                 /*
@@ -341,7 +345,7 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
          * Set the array to the provided value.
          */
         if (setArrayValue) {
-            SetVar(arrayPtr, key, value, (size_t)len);
+            SetVar(arrayPtr, keyString, value, (size_t)len);
         }
         UnlockArray(arrayPtr);
 
@@ -360,13 +364,13 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             result = TCL_ERROR;
 
         } else {
-            SetResultToOldValue(interp, arrayPtr, key);
-            (void) Unset(arrayPtr, key);
+            SetResultToOldValue(interp, arrayPtr, keyString);
+            (void) Unset(arrayPtr, keyString);
             UnlockArray(arrayPtr);
         }
 
     } else if (doDefault == (int)NS_TRUE) {
-        Ns_TclPrintfResult(interp, "can't use '-default' without providing a value for key %s", key);
+        Ns_TclPrintfResult(interp, "can't use '-default' without providing a value for key %s", keyString);
         result = TCL_ERROR;
 
     } else {
@@ -382,13 +386,14 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         } else {
             const Tcl_HashEntry *hPtr = NULL;
 
-            hPtr = Tcl_FindHashEntry(&arrayPtr->vars, key);
+            hPtr = Tcl_FindHashEntry(&arrayPtr->vars, keyString);
             if (likely(hPtr != NULL)) {
                 Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1));
             }
             UnlockArray(arrayPtr);
             if (hPtr == NULL) {
-                Ns_TclPrintfResult(interp, "no such key: %s", key);
+                Ns_TclPrintfResult(interp, "no such key: %s", keyString);
+                Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NSV", "KEY", keyString, NULL);
                 result = TCL_ERROR;
             }
         }
@@ -578,7 +583,7 @@ NsTclNsvUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                     int objc, Tcl_Obj *const* objv)
 {
     Tcl_Obj    *arrayObj;
-    char       *key = NULL;
+    char       *keyString = NULL;
     int         nocomplain = 0, result = TCL_OK;
     Ns_ObjvSpec opts[] = {
         {"-nocomplain", Ns_ObjvBool,  &nocomplain, INT2PTR(NS_TRUE)},
@@ -586,8 +591,8 @@ NsTclNsvUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"array", Ns_ObjvObj,    &arrayObj, NULL},
-        {"?key",  Ns_ObjvString, &key,      NULL},
+        {"array", Ns_ObjvObj,    &arrayObj,  NULL},
+        {"?key",  Ns_ObjvString, &keyString, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -604,8 +609,9 @@ NsTclNsvUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
             assert(arrayPtr != NULL);
 
-            if (Unset(arrayPtr, key) != NS_OK && key != NULL) {
-                Ns_TclPrintfResult(interp, "no such key: %s", key);
+            if (Unset(arrayPtr, keyString) != NS_OK && keyString != NULL) {
+                Ns_TclPrintfResult(interp, "no such key: %s", keyString);
+                Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NSV", "KEY", keyString, NULL);
                 result = TCL_ERROR;
             }
 
@@ -613,7 +619,7 @@ NsTclNsvUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
              * If everything went well and we have no key specified, delete
              * the array entry.
              */
-            if (result == TCL_OK && key == NULL) {
+            if (result == TCL_OK && keyString == NULL) {
                 /*
                  * Delete the hash-table of this array and the entry in the
                  * table of array names.
@@ -623,7 +629,7 @@ NsTclNsvUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             }
             UnlockArray(arrayPtr);
 
-            if (result == TCL_OK && key == NULL) {
+            if (result == TCL_OK && keyString == NULL) {
                 /*
                  * Free the actual array data structure and invalidate the
                  * Tcl_Obj.
@@ -690,11 +696,11 @@ NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             Ns_MutexLock(&bucketPtr->lock);
             hPtr = Tcl_FirstHashEntry(&bucketPtr->arrays, &search);
             while (hPtr != NULL) {
-                const char *key = Tcl_GetHashKey(&bucketPtr->arrays, hPtr);
+                const char *keyString = Tcl_GetHashKey(&bucketPtr->arrays, hPtr);
 
-                if ((pattern == NULL) || (Tcl_StringMatch(key, pattern) != 0)) {
+                if ((pattern == NULL) || (Tcl_StringMatch(keyString, pattern) != 0)) {
                     result = Tcl_ListObjAppendElement(interp, resultObj,
-                                                      Tcl_NewStringObj(key, -1));
+                                                      Tcl_NewStringObj(keyString, -1));
                     if (unlikely(result != TCL_OK)) {
                         break;
                     }
@@ -836,10 +842,10 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                     const char          *pattern = (objc > 3) ? Tcl_GetString(objv[3]) : NULL;
 
                     while (hPtr != NULL) {
-                        const char *key = Tcl_GetHashKey(&arrayPtr->vars, hPtr);
+                        const char *keyString = Tcl_GetHashKey(&arrayPtr->vars, hPtr);
 
-                        if ((pattern == NULL) || (Tcl_StringMatch(key, pattern) != 0)) {
-                            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(key, -1));
+                        if ((pattern == NULL) || (Tcl_StringMatch(keyString, pattern) != 0)) {
+                            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(keyString, -1));
                             if (opt == (int)CGetIdx) {
                                 Tcl_ListObjAppendElement(interp, listObj,
                                                          Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1));
@@ -856,6 +862,440 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         default:
             /* unexpected value */
             assert(opt && 0);
+            break;
+        }
+    }
+    return result;
+}
+
+static int
+GetArrayAndKey(Tcl_Interp *interp, Tcl_Obj *arrayObj, const char *keyString, Array  **arrayPtrPtr, Tcl_Obj **objPtr)
+{
+    int            result = TCL_OK;
+    Tcl_Obj       *obj = NULL;
+    Array         *arrayPtr;
+    Tcl_HashEntry *hPtr;
+
+    arrayPtr = LockArrayObj(interp, arrayObj, NS_FALSE);
+    if (arrayPtr != NULL) {
+        hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, keyString, NULL);
+        if (unlikely(hPtr == NULL)) {
+            Ns_TclPrintfResult(interp, "no such key: %s", keyString);
+            Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NSV", "KEY", keyString, NULL);
+            result = TCL_ERROR;
+        } else {
+            obj = Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1);
+        }
+    }
+    *arrayPtrPtr = arrayPtr;
+    *objPtr = obj;
+
+    return result;
+}
+
+
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * NsTclNsvDictObjCmd --
+ *
+ *      Implements nsv_dict as an obj command.
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *-----------------------------------------------------------------------------
+ */
+
+int
+NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                    int objc, Tcl_Obj *const* objv)
+{
+    int                      opt, result;
+    static const char *const opts[] = {
+        "append",
+        "exists",
+        "get",
+        "getdef",
+        "getwithdefault",
+        "incr",
+        "keys",
+        "lappend",
+        "set",
+        "size",
+        "unset",
+        NULL
+    };
+    enum ISubCmdIdx {
+        CAppendIdx,
+        CExistsIdx,
+        CGetIdx,
+        CGetdefIdx,
+        CGetdefwithdefaultIdx,
+        CIncrIdx,
+        CKeysIdx,
+        CLappendIdx,
+        CSetIdx,
+        CSizeIdx,
+        CUnsetIdx
+    };
+
+    if (objc < 2) {
+        Tcl_WrongNumArgs(interp, 1, objv, "option ...");
+        result = TCL_ERROR;
+
+    } else if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
+                            &opt) != TCL_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Array      *arrayPtr;
+        Tcl_Obj    *arrayObj, *keyObj, *dictKeyObj, *dictValueObj, *dictObj;
+
+        if (opt == CGetdefwithdefaultIdx) {
+            opt = CGetdefIdx;
+        }
+
+        switch (opt) {
+
+        case CKeysIdx:     NS_FALL_THROUGH; /* fall through */
+        case CSizeIdx: {
+            /*
+             * Operations on the full dict
+             */
+            char       *pattern = NULL;
+            Ns_ObjvSpec sizeArgs[] = {
+                {"array",     Ns_ObjvObj,  &arrayObj,     NULL},
+                {"key",       Ns_ObjvObj,  &keyObj,       NULL},
+                {NULL, NULL, NULL, NULL}
+            }, keysArgs [] =  {
+                {"array",     Ns_ObjvObj,    &arrayObj,   NULL},
+                {"key",       Ns_ObjvObj,    &keyObj,     NULL},
+                {"?pattern",  Ns_ObjvString, &pattern,    NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+
+            if (Ns_ParseObjv(NULL, (opt == CSizeIdx ? sizeArgs : keysArgs), interp, 2, objc, objv) != NS_OK) {
+                result = TCL_ERROR;
+
+            } else {
+                result = GetArrayAndKey(interp, arrayObj, Tcl_GetString(keyObj), &arrayPtr, &dictObj);
+                if (result == TCL_OK) {
+                    if (opt == CSizeIdx) {
+                        int size;
+
+                        result = Tcl_DictObjSize(interp, dictObj, &size);
+                        if (result == TCL_OK) {
+                            Tcl_SetObjResult(interp, Tcl_NewIntObj(size));
+                        }
+                    } else {
+                        Tcl_DictSearch search;
+                        Tcl_Obj       *listObj;
+                        int            done = 0;
+
+                        assert(opt == CKeysIdx);
+
+                        listObj = Tcl_NewListObj(0, NULL);
+                        Tcl_DictObjFirst(NULL, dictObj, &search, &dictKeyObj, NULL, &done);
+                        for (; done == 0; Tcl_DictObjNext(&search, &dictKeyObj, NULL, &done)) {
+                            if (!pattern || Tcl_StringMatch(Tcl_GetString(dictKeyObj), pattern)) {
+                                Tcl_ListObjAppendElement(NULL, listObj, dictKeyObj);
+                            }
+                        }
+                        Tcl_DictObjDone(&search);
+                        Tcl_SetObjResult(interp, listObj);
+                    }
+                }
+                if (arrayPtr != NULL) {
+                    UnlockArray(arrayPtr);
+                }
+            }
+            break;
+        }
+
+        case CExistsIdx:  NS_FALL_THROUGH; /* fall through */
+        case CGetIdx:     NS_FALL_THROUGH; /* fall through */
+        case CGetdefIdx:  NS_FALL_THROUGH; /* fall through */
+        case CUnsetIdx: {
+            /*
+             * Operations on a dict key
+             */
+            int nargs = 0;
+            Ns_ObjvSpec getArgs[] = {
+                {"array",     Ns_ObjvObj,  &arrayObj,     NULL},
+                {"key",       Ns_ObjvObj,  &keyObj,       NULL},
+                {"?dictkeys", Ns_ObjvArgs, &nargs,        NULL},
+                {NULL, NULL, NULL, NULL}
+            }, existsArgs[] = {
+                {"array",     Ns_ObjvObj,  &arrayObj,     NULL},
+                {"key",       Ns_ObjvObj,  &keyObj,       NULL},
+                {"dictkeys",  Ns_ObjvArgs, &nargs,        NULL},
+                {NULL, NULL, NULL, NULL}
+            }, getdefArgs[] = {
+                {"array",     Ns_ObjvObj,  &arrayObj,     NULL},
+                {"key",       Ns_ObjvObj,  &keyObj,       NULL},
+                {"args",      Ns_ObjvArgs, &nargs,       NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+
+            if (Ns_ParseObjv(NULL, (opt == CGetdefIdx ? getdefArgs
+                                    : (opt == CExistsIdx || opt == CUnsetIdx) ? existsArgs
+                                    : getArgs), interp, 2, objc, objv) != NS_OK) {
+                result = TCL_ERROR;
+            } else if (opt == CGetdefIdx && nargs == 1) {
+                Ns_TclPrintfResult(interp, "wrong # args: \"nsv_dict %s\" requires a key and a default",
+                                   Tcl_GetString(objv[1]));
+                result = TCL_ERROR;
+            } else {
+                result = GetArrayAndKey(interp, arrayObj, Tcl_GetString(keyObj), &arrayPtr, &dictObj);
+                if (result == TCL_OK) {
+                    if (opt == CUnsetIdx) {
+                        /*
+                         * dict unset
+                         *
+                         * "unset is silent, when dict key does not exist
+                         * in the dict.
+                         */
+                        if (nargs == 1) {
+                            result = Tcl_DictObjRemove(interp, dictObj,  objv[objc-1]);
+                        } else {
+                            /*
+                             * Nested dict
+                             */
+                            result = Tcl_DictObjRemoveKeyList(interp, dictObj, nargs, &objv[objc-nargs]);
+                        }
+                        if (result == TCL_OK) {
+                            Tcl_SetObjResult(interp, dictObj);
+                        }
+                    } else {
+                        int lastObjc = (opt == CGetdefIdx ? objc -1 : objc);
+
+                        if (nargs == 0) {
+                            /*
+                             * no keys
+                             */
+                            dictKeyObj = NULL;
+                            dictValueObj = NULL;
+                            Tcl_SetObjResult(interp, dictObj);
+
+                        } else if (nargs == 1) {
+                            /*
+                             * one key
+                             */
+                            dictKeyObj = objv[objc-1];
+                            result = Tcl_DictObjGet(interp, dictObj, dictKeyObj, &dictValueObj);
+                        } else {
+                            /*
+                             * nested keys
+                             */
+                            int i;
+
+                            for (i = objc - nargs; i < lastObjc; i++) {
+                                dictKeyObj = objv[i];
+                                result = Tcl_DictObjGet(interp, dictObj, dictKeyObj, &dictValueObj);
+                                if (dictValueObj != NULL) {
+                                    dictObj = dictValueObj;
+                                } else {
+                                    break;
+                                }
+                            }
+                        }
+                        if (dictValueObj != NULL) {
+                            /*
+                             * Dict value is available.
+                             */
+                            if (opt == CGetIdx || opt == CGetdefIdx) {
+                                /*
+                                 * dict get    dictkey:0..n
+                                 * dict getdef dictkey:0..n default
+                                 */
+                                Tcl_SetObjResult(interp, dictValueObj);
+                            } else if (opt == CExistsIdx) {
+                                /*
+                                 * dict exists dictkey:1..n
+                                 */
+                                Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
+                            } else {
+                                /* should not happen */
+                                assert(opt && 0);
+                            }
+                        } else if (nargs > 0 && result == TCL_OK) {
+                            /*
+                             * No dict value is available.
+                             */
+                            if (opt == CGetIdx) {
+                                /*
+                                 *  dict get dictkey:0..n
+                                 */
+                                Ns_TclPrintfResult(interp, "key \"%s\" not known in dictionary",
+                                                   Tcl_GetString(dictKeyObj));
+                                Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
+                                                 Tcl_GetString(dictKeyObj), NULL);
+                                result = TCL_ERROR;
+                            } else if (opt == CGetdefIdx) {
+                                /*
+                                 *  dict getdef dictkey:0..n default
+                                 */
+                                Tcl_SetObjResult(interp, objv[objc-1]);
+                            } else if (opt == CExistsIdx) {
+                                /*
+                                 *  dict exists dictkey:1..n
+                                 */
+                                Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+                            } else {
+                                /* should not happen */
+                                assert(opt && 0);
+                            }
+                        }
+                    }
+                }
+                if (arrayPtr != NULL) {
+                    UnlockArray(arrayPtr);
+                }
+            }
+            break;
+        }
+
+        case CAppendIdx:  NS_FALL_THROUGH; /* fall through */
+        case CIncrIdx:    NS_FALL_THROUGH; /* fall through */
+        case CLappendIdx: NS_FALL_THROUGH; /* fall through */
+        case CSetIdx: {
+            /*
+             * Operations on a dict key with a value
+             */
+            const Tcl_HashEntry *hPtr;
+            int         increment = 1, nargs = 0;
+            Ns_ObjvSpec setArgs[] = {
+                {"array",     Ns_ObjvObj,  &arrayObj,     NULL},
+                {"key",       Ns_ObjvObj,  &keyObj,       NULL},
+                {"dictkey",   Ns_ObjvObj,  &dictKeyObj,   NULL},
+                {"args",      Ns_ObjvArgs, &nargs,        NULL},
+                {NULL, NULL, NULL, NULL}
+            }, appendArgs[] = {
+                {"array",     Ns_ObjvObj,  &arrayObj,     NULL},
+                {"key",       Ns_ObjvObj,  &keyObj,       NULL},
+                {"dictkey",   Ns_ObjvObj,  &dictKeyObj,   NULL},
+                {"?args",     Ns_ObjvArgs, &nargs,        NULL},
+                {NULL, NULL, NULL, NULL}
+            }, incrArgs[] = {
+                {"array",      Ns_ObjvObj, &arrayObj,     NULL},
+                {"key",        Ns_ObjvObj, &keyObj,       NULL},
+                {"dictkey",    Ns_ObjvObj, &dictKeyObj,   NULL},
+                {"?increment", Ns_ObjvInt, &increment,    NULL},
+                {NULL, NULL, NULL, NULL}
+            }, *args;
+
+            if (opt == CIncrIdx) {
+                args = incrArgs;
+            } else if (opt == CSetIdx) {
+                args = setArgs;
+            } else {
+                /*
+                 * For set, append and lappend.
+                 */
+                args = appendArgs;
+            }
+            if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+                result = TCL_ERROR;
+
+            } else {
+                const char *keyString;
+                /*
+                 * Create array and key if it does not exist
+                 */
+                arrayPtr = LockArrayObj(interp, arrayObj, NS_TRUE);
+                assert(arrayPtr != NULL);
+
+                keyString = Tcl_GetString(keyObj);
+                hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, keyString, NULL);
+                if (likely(hPtr != NULL)) {
+                    dictObj = Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1);
+                } else {
+                    dictObj = Tcl_NewDictObj();
+                }
+                if (opt == CSetIdx) {
+                    /*
+                     * dict set dictkey:1..n dictvalue
+                     */
+                    dictValueObj = objv[objc - 1];
+                    if (nargs == 1) {
+                        result = Tcl_DictObjPut(interp, dictObj, dictKeyObj, dictValueObj);
+                    } else {
+                        /*
+                         * Nested dict
+                         */
+                        result = Tcl_DictObjPutKeyList(interp, dictObj, nargs,
+                                                       &objv[objc-(nargs+1)], dictValueObj);
+                    }
+                } else {
+                    Tcl_Obj *oldDictValueObj;
+
+                    result = Tcl_DictObjGet(interp, dictObj, dictKeyObj, &oldDictValueObj);
+                    if (opt == CIncrIdx) {
+                        if (oldDictValueObj != NULL) {
+                            int intValue;
+
+                            result = Tcl_GetIntFromObj(interp, oldDictValueObj, &intValue);
+                            if (result == TCL_OK) {
+                                increment += intValue;
+                            }
+                        }
+                        if (result == TCL_OK) {
+                            result = Tcl_DictObjPut(interp, dictObj, dictKeyObj, Tcl_NewIntObj(increment));
+                        }
+                    } else {
+                        Tcl_DString ds;
+                        int         i, objLength;
+                        const char *objString;
+
+                        /*
+                         * handling "append" and "lappend"
+                         */
+                        assert(opt == CAppendIdx || opt == CLappendIdx);
+
+                        Tcl_DStringInit(&ds);
+                        if (oldDictValueObj != NULL) {
+                            objString = Tcl_GetStringFromObj(oldDictValueObj, &objLength);
+                            Tcl_DStringAppend(&ds, objString, objLength);
+                        }
+
+                        for (i = objc - nargs; i < objc; i++) {
+                            objString = Tcl_GetStringFromObj(objv[i], &objLength);
+
+                            if (opt == CAppendIdx) {
+                                Tcl_DStringAppend(&ds, objString, objLength);
+                            } else {
+                                Tcl_DStringAppendElement(&ds, objString);
+                            }
+                        }
+                        if (result == TCL_OK) {
+                            result = Tcl_DictObjPut(interp, dictObj, dictKeyObj, Tcl_NewStringObj(ds.string, ds.length));
+                        }
+                        Tcl_DStringFree(&ds);
+                    }
+                }
+                if (result == TCL_OK) {
+                    const char *dictString;
+                    int         dictStringLength;
+
+                    dictString = Tcl_GetStringFromObj(dictObj, &dictStringLength);
+                    SetVar(arrayPtr, keyString, dictString, (size_t)dictStringLength);
+                    Tcl_SetObjResult(interp, dictObj);
+                } else {
+                    result = TCL_ERROR;
+                }
+                UnlockArray(arrayPtr);
+            }
+            break;
+        }
+
+        default:
+            /* unexpected value */
+            assert(opt && 0);
+            result = TCL_ERROR;
             break;
         }
     }
@@ -881,20 +1321,20 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  */
 
 Ns_ReturnCode
-Ns_VarGet(const char *server, const char *array, const char *key, Ns_DString *dsPtr)
+Ns_VarGet(const char *server, const char *array, const char *keyString, Ns_DString *dsPtr)
 {
     const NsServer *servPtr;
     Ns_ReturnCode   status = NS_ERROR;
 
     NS_NONNULL_ASSERT(array != NULL);
-    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(keyString != NULL);
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
     servPtr = NsGetServer(server);
     if (likely(servPtr != NULL)) {
         Array *arrayPtr = LockArray(servPtr, array, NS_FALSE);
         if (likely(arrayPtr != NULL)) {
-            const Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, NULL);
+            const Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, keyString, NULL);
             if (likely(hPtr != NULL)) {
                 Ns_DStringAppend(dsPtr, Tcl_GetHashValue(hPtr));
                 status = NS_OK;
@@ -923,20 +1363,20 @@ Ns_VarGet(const char *server, const char *array, const char *key, Ns_DString *ds
  */
 
 bool
-Ns_VarExists(const char *server, const char *array, const char *key)
+Ns_VarExists(const char *server, const char *array, const char *keyString)
 {
     const NsServer *servPtr;
     bool            exists = NS_FALSE;
 
     NS_NONNULL_ASSERT(array != NULL);
-    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(keyString != NULL);
 
     servPtr = NsGetServer(server);
     if (likely(servPtr != NULL)) {
         Array *arrayPtr = LockArray(servPtr, array, NS_FALSE);
 
         if (likely(arrayPtr != NULL)) {
-            if (Tcl_CreateHashEntry(&arrayPtr->vars, key, NULL) != NULL) {
+            if (Tcl_CreateHashEntry(&arrayPtr->vars, keyString, NULL) != NULL) {
                 exists = NS_TRUE;
             }
             UnlockArray(arrayPtr);
@@ -963,14 +1403,14 @@ Ns_VarExists(const char *server, const char *array, const char *key)
  */
 
 Ns_ReturnCode
-Ns_VarSet(const char *server, const char *array, const char *key,
+Ns_VarSet(const char *server, const char *array, const char *keyString,
           const char *value, ssize_t len)
 {
     const NsServer *servPtr;
     Ns_ReturnCode   status = NS_ERROR;
 
     NS_NONNULL_ASSERT(array != NULL);
-    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(keyString != NULL);
     NS_NONNULL_ASSERT(value != NULL);
 
     servPtr = NsGetServer(server);
@@ -978,7 +1418,7 @@ Ns_VarSet(const char *server, const char *array, const char *key,
         Array *arrayPtr = LockArray(servPtr, array, NS_TRUE);
 
         if (likely(arrayPtr != NULL)) {
-            SetVar(arrayPtr, key, value, (len > -1) ? (size_t)len : strlen(value));
+            SetVar(arrayPtr, keyString, value, (len > -1) ? (size_t)len : strlen(value));
             UnlockArray(arrayPtr);
             status = NS_OK;
         }
@@ -1004,20 +1444,20 @@ Ns_VarSet(const char *server, const char *array, const char *key,
  */
 
 Tcl_WideInt
-Ns_VarIncr(const char *server, const char *array, const char *key, int incr)
+Ns_VarIncr(const char *server, const char *array, const char *keyString, int incr)
 {
     const NsServer *servPtr;
     Tcl_WideInt     counter = -1;
 
     NS_NONNULL_ASSERT(array != NULL);
-    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(keyString != NULL);
 
     servPtr = NsGetServer(server);
     if (likely(servPtr != NULL)) {
         Array *arrayPtr = LockArray(servPtr, array, NS_TRUE);
 
         if (likely(arrayPtr != NULL)) {
-            (void) IncrVar(arrayPtr, key, incr, &counter);
+            (void) IncrVar(arrayPtr, keyString, incr, &counter);
             UnlockArray(arrayPtr);
         }
     }
@@ -1042,7 +1482,7 @@ Ns_VarIncr(const char *server, const char *array, const char *key, int incr)
  */
 
 Ns_ReturnCode
-Ns_VarAppend(const char *server, const char *array, const char *key,
+Ns_VarAppend(const char *server, const char *array, const char *keyString,
              const char *value, ssize_t len)
 {
     const NsServer *servPtr;
@@ -1050,7 +1490,7 @@ Ns_VarAppend(const char *server, const char *array, const char *key,
     Ns_ReturnCode   status = NS_ERROR;
 
     NS_NONNULL_ASSERT(array != NULL);
-    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(keyString != NULL);
     NS_NONNULL_ASSERT(value != NULL);
 
     servPtr = NsGetServer(server);
@@ -1061,7 +1501,7 @@ Ns_VarAppend(const char *server, const char *array, const char *key,
             size_t         oldLen, newLen;
             char          *oldString, *newString;
 
-            hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, &isNew);
+            hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, keyString, &isNew);
 
             oldString = Tcl_GetHashValue(hPtr);
             oldLen = (oldString != NULL) ? strlen(oldString) : 0u;
@@ -1098,7 +1538,7 @@ Ns_VarAppend(const char *server, const char *array, const char *key,
  */
 
 Ns_ReturnCode
-Ns_VarUnset(const char *server, const char *array, const char *key)
+Ns_VarUnset(const char *server, const char *array, const char *keyString)
 {
     const NsServer *servPtr;
     Ns_ReturnCode   status = NS_ERROR;
@@ -1112,10 +1552,10 @@ Ns_VarUnset(const char *server, const char *array, const char *key)
         if (unlikely(arrayPtr == NULL)) {
             /* Error */
         } else {
-            status = Unset(arrayPtr, key);
-            if (status != NS_OK && key != NULL) {
+            status = Unset(arrayPtr, keyString);
+            if (status != NS_OK && keyString != NULL) {
                 /* Error, no such key. */
-            } else if (status == NS_OK && key == NULL) {
+            } else if (status == NS_OK && keyString == NULL) {
                 /* Finish deleting the entire array, same as in NsTclNsvUnsetObjCmd(). */
                 Tcl_DeleteHashTable(&arrayPtr->vars);
                 Tcl_DeleteHashEntry(arrayPtr->entryPtr);
@@ -1301,16 +1741,16 @@ UpdateVar(Tcl_HashEntry *hPtr, const char *value, size_t len)
  */
 
 static void
-SetVar(Array *arrayPtr, const char *key, const char *value, size_t len)
+SetVar(Array *arrayPtr, const char *keyString, const char *value, size_t len)
 {
     Tcl_HashEntry *hPtr;
     int            isNew;
 
     NS_NONNULL_ASSERT(arrayPtr != NULL);
-    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(keyString != NULL);
     NS_NONNULL_ASSERT(value != NULL);
 
-    hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, &isNew);
+    hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, keyString, &isNew);
     UpdateVar(hPtr, value, len);
 }
 
@@ -1333,17 +1773,17 @@ SetVar(Array *arrayPtr, const char *key, const char *value, size_t len)
  */
 
 static int
-IncrVar(Array *arrayPtr, const char *key, int incr, Tcl_WideInt *valuePtr)
+IncrVar(Array *arrayPtr, const char *keyString, int incr, Tcl_WideInt *valuePtr)
 {
     Tcl_HashEntry *hPtr;
     int            isNew, status;
     Tcl_WideInt    counter = -1;
 
     NS_NONNULL_ASSERT(arrayPtr != NULL);
-    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(keyString != NULL);
     NS_NONNULL_ASSERT(valuePtr != NULL);
 
-    hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, &isNew);
+    hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, keyString, &isNew);
 
     if (isNew != 0) {
         counter = 0;
@@ -1387,14 +1827,14 @@ IncrVar(Array *arrayPtr, const char *key, int incr, Tcl_WideInt *valuePtr)
  */
 
 static Ns_ReturnCode
-Unset(Array *arrayPtr, const char *key)
+Unset(Array *arrayPtr, const char *keyString)
 {
     Ns_ReturnCode status = NS_ERROR;
 
     NS_NONNULL_ASSERT(arrayPtr != NULL);
 
-    if (key != NULL) {
-        Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, NULL);
+    if (keyString != NULL) {
+        Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, keyString, NULL);
 
         if (hPtr != NULL) {
             ns_free(Tcl_GetHashValue(hPtr));
@@ -1492,6 +1932,7 @@ LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, bool create)
      */
     if (arrayPtr == NULL && !create) {
         Ns_TclPrintfResult(interp, "no such array: %s", arrayName);
+        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NSV", "ARRAY", arrayName, NULL);
     }
 
     return arrayPtr;
@@ -1558,11 +1999,11 @@ NsTclNsvBucketObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
             Ns_MutexLock(&bucketPtr->lock);
             hPtr = Tcl_FirstHashEntry(&bucketPtr->arrays, &search);
             while (hPtr != NULL) {
-                const char  *key      = Tcl_GetHashKey(&bucketPtr->arrays, hPtr);
-                const Array *arrayPtr = Tcl_GetHashValue(hPtr);
-                Tcl_Obj     *elemObj  = Tcl_NewListObj(0, NULL);
+                const char  *keyString = Tcl_GetHashKey(&bucketPtr->arrays, hPtr);
+                const Array *arrayPtr  = Tcl_GetHashValue(hPtr);
+                Tcl_Obj     *elemObj   = Tcl_NewListObj(0, NULL);
 
-                result = Tcl_ListObjAppendElement(interp, elemObj, Tcl_NewStringObj(key, -1));
+                result = Tcl_ListObjAppendElement(interp, elemObj, Tcl_NewStringObj(keyString, -1));
                 if (likely(result == TCL_OK)) {
                     result = Tcl_ListObjAppendElement(interp, elemObj, Tcl_NewLongObj(arrayPtr->locks));
                 }

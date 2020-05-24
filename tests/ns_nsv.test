@@ -429,12 +429,431 @@ test ns_nsv-9.7 {nsv_incr by zero} -body {
 
 
 
-test ns_nsv-10.1 {nsv_names} -body {
+test nsv-names.1 {nsv_names} -body {
     nsv_set nsv-a1 k v
     nsv_set nsv-a2 k v
     lsort [nsv_names nsv-a*]
 } -result {nsv-a1 nsv-a2}
 
+#
+# nsv_dict set
+#
+test nsv-dict-set.0 {nsv_dict set - syntax test} -body {
+    nsv_dict set a1
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict set array key dictkey args"}
+
+test nsv-dict-set.1 {nsv_dict set new} -body {
+    # Create an array, a key and a dict entry in one command
+    nsv_dict set a4711 k1 x 1
+} -cleanup {
+    nsv_unset -nocomplain a4711
+} -result {x 1}
+
+test nsv-dict-set.2 {nsv_dict set} -body {
+    # set key k1 as usual
+    nsv_set a1 k1 {x 1}
+    # add a dict value for k1
+    nsv_dict set a1 k1 y 1
+    # overwrite a dict value for k1
+    nsv_dict set a1 k1 x 2
+    # set a new key with a dict value
+    nsv_dict set a1 k2 a b
+    nsv_array get a1
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -result {k1 {x 2 y 1} k2 {a b}}
+
+test nsv-dict-set.2 {nsv_dict set with nested dictionary} -body {
+    if {0} {
+        set d {}
+        dict set d l1 l2 v1
+        dict set d l1 l2 v2
+        dict set d l1 l3 v3
+        dict set d x v4
+        # l1 {l2 v2 l3 v3} x v4
+    }
+    nsv_dict set a1 k1 l1 l2 v1
+    nsv_dict set a1 k1 l1 l2 v2
+    nsv_dict set a1 k1 l1 l3 v3
+    nsv_dict set a1 k1 x v4
+    nsv_array get a1
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -result {k1 {l1 {l2 v2 l3 v3} x v4}}
+
+
+
+#
+# nsv_dict get
+#
+test nsv-dict-get.0 {nsv_dict get - syntax test} -body {
+    nsv_dict get a1
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict get array key ?dictkeys?"}
+
+test nsv-dict-get.1 {nsv_dict get} -body {
+    # add dict values for k1
+    nsv_dict set a1 k1 x 1
+    nsv_dict set a1 k1 y 2
+    try {
+        nsv_dict get a1 k1 z
+    } trap {TCL LOOKUP DICT} {r errorDict} {
+    } on error {errorMsg r} {
+    } on ok {r} {
+    }
+    list [nsv_dict get a1 k1 x] [nsv_dict get a1 k1 y] $r [nsv_dict get a1 k1]
+} -cleanup {
+    unset -nocomplain r
+    nsv_unset -nocomplain a1
+} -result {1 2 {key "z" not known in dictionary} {x 1 y 2}}
+
+test nsv-dict-get.2 {nsv_dict get with nested dicts} -body {
+    nsv_dict set a1 k1 l1 l2 v1
+    try {
+        nsv_dict get a1 k1 l1 l2 l3
+    } trap {TCL VALUE DICTIONARY} {r errorDict} {
+    } on error {errorMsg r} {
+    } on ok {r} {
+    }
+    list [nsv_dict get a1 k1] [nsv_dict get a1 k1 l1] [nsv_dict get a1 k1 l1 l2] $r
+} -cleanup {
+    unset -nocomplain r
+    nsv_unset -nocomplain a1
+} -result {{l1 {l2 v1}} {l2 v1} v1 {missing value to go with key}}
+
+
+
+#
+# nsv_dict getdef
+#
+test nsv-dict-getdef.0.1 {nsv_dict getdef - syntax test no key} -body {
+    nsv_dict getdef a1
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict getdef array key args"}
+
+test nsv-dict-getdef.0.2 {nsv_dict getdef - syntax test, key, no dict key, not default} -body {
+    nsv_dict getdef a1 k1
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict getdef array key args"}
+
+test nsv-dict-getdef.0.3 {nsv_dict getdef - syntax test, key, no dict key} -body {
+    nsv_dict getdef a1 k1 default1
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -returnCodes {error} -result {wrong # args: "nsv_dict getdef" requires a key and a default}
+
+test nsv-dict-getdef.1 {nsv_dict getdef} -body {
+    nsv_dict set a1 k1 x 1
+    list [nsv_dict getdef a1 k1 x defx] [nsv_dict getdef a1 k1 y defy]
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -result {1 defy}
+
+test nsv-dict-getdef.2 {nsv_dict getwithdefault} -body {
+    nsv_dict set a1 k1 x 1
+    list [nsv_dict getwithdefault a1 k1 x defx] [nsv_dict getwithdefault a1 k1 y defy]
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -result {1 defy}
+
+test nsv-dict-getdef.3 {nsv_dict getdef with nested dicts} -body {
+    nsv_dict set a1 k1 l1 l2 v1
+    nsv_dict set a1 k1 x2 v2
+    try {
+        # one level deeper than we have
+        nsv_dict getdef a1 k1 l1 l2 l3 d3
+    } trap {TCL VALUE DICTIONARY} {r1 errorDict} {
+    } on error {errorMsg r1} {
+    } on ok {r1} {
+    }
+    try {
+        # non-existing path in the middle
+        nsv_dict getdef a1 k12 l1 a b c d6
+    } trap {TCL LOOKUP NSV} {r2 errorDict} {
+    } on error {errorMsg r2} {
+    } on ok {r2} {
+    }
+    list \
+        [nsv_dict getdef a1 k1 l1 d1] \
+        [nsv_dict getdef a1 k1 l1 l2 d2] \
+        [nsv_dict getdef a1 k1 l1 l3 d3] \
+        [nsv_dict getdef a1 k1 l4 d4] \
+        [nsv_dict getdef a1 k1 a b c d5] \
+        [nsv_dict getdef a1 k1 l1 a b c d6] \
+        $r1 $r2
+} -cleanup {
+    unset -nocomplain r1 r2
+    nsv_unset -nocomplain a1
+} -result {{l2 v1} v1 d3 d4 d5 d6 {missing value to go with key} {no such key: k12}}
+
+
+
+#
+# nsv_dict exists
+#
+test nsv-dict-exists.0 {nsv_dict exists - syntax test} -body {
+    nsv_dict exists a1
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict exists array key dictkeys"}
+test nsv-dict-exists.1 {nsv_dict exists - syntax test, nos such nsv key} -body {
+    nsv_dict exists a1 k1
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict exists array key dictkeys"}
+
+test nsv-dict-exists.1 {nsv_dict exists} -body {
+    # add dict values for k1
+    nsv_dict set a1 k1 x 1
+    nsv_dict set a1 k1 y 2
+    list [nsv_dict exists a1 k1 x] [nsv_dict exists a1 k1 y] [nsv_dict exists a1 k1 z]
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -result {1 1 0}
+
+test nsv-dict-exists.2 {nsv_dict exists with nested dicts} -body {
+    nsv_dict set a1 k1 l1 l2 v1
+    list \
+        [nsv_dict exists a1 k1 l1] \
+        [nsv_dict exists a1 k1 l1 l2] \
+        [nsv_dict exists a1 k1 l1 l3] \
+        [nsv_dict exists a1 k1 l1 l3 l4] \
+        [nsv_dict exists a1 k1 l3]
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -result {1 1 0 0 0}
+
+
+#
+# nsv_dict unset
+#
+test nsv-dict-unset.0 {nsv_dict unset - syntax test} -body {
+    nsv_dict unset a1
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict unset array key dictkeys"}
+
+test nsv-dict-unset.1 {nsv_dict unset - syntax test} -body {
+    nsv_dict unset a1 k1
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict unset array key dictkeys"}
+
+test nsv-dict-unset.1 {nsv_dict unset} -body {
+    # add dict values for k1
+    nsv_dict set a1 k1 x 1
+    nsv_dict set a1 k1 y 2
+    nsv_dict unset a1 k1 x
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -result {y 2}
+
+test nsv-dict-unset.2 {nsv_dict unset non existing value} -body {
+    # add dict values for k1
+    nsv_dict set a1 k1 x 1
+    nsv_dict set a1 k1 y 2
+    nsv_dict unset a1 k1 z
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -result {x 1 y 2}
+
+test nsv-dict-unset.3 {nsv_dict unset with nested dicts} -body {
+    nsv_dict set a1 k1 l1 l2a v1
+    nsv_dict set a1 k1 l1 l2b v2
+    set _ ""
+    lappend _ [nsv_dict unset a1 k1 l1 l2a]
+
+    nsv_dict set a1 k1 l1 l2a v1
+    nsv_dict set a1 k1 l1 l2b v2
+    lappend _ [nsv_dict unset a1 k1 l1 l2c]
+
+    nsv_dict set a1 k1 l1 l2a v1
+    nsv_dict set a1 k1 l1 l2b v2
+    lappend _ [nsv_dict unset a1 k1 l1]
+
+    set _
+} -cleanup {
+    unset -nocomplain _
+    nsv_unset -nocomplain a1
+} -result {{l1 {l2b v2}} {l1 {l2a v1 l2b v2}} {}}
+
+#
+# nsv_dict incr
+#
+test nsv-dict-incr.0 {nsv_dict incr - syntax test} -body {
+    nsv_dict incr a1
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict incr array key dictkey ?increment?"}
+
+test nsv-dict-incr.1 {nsv_dict incr create new entry} -body {
+    # add dict values for k1
+    nsv_dict incr a1 k1 x
+    nsv_dict incr a1 k1 y 2
+    nsv_dict incr a1 k2 z 5
+    nsv_array get a1
+} -cleanup {
+    nsv_incr -nocomplain a1
+} -result {k1 {x 1 y 2} k2 {z 5}}
+
+test nsv-dict-incr.2 {nsv_dict incr} -body {
+    # add dict values for k1
+    nsv_dict set a1 k1 x 1
+    nsv_dict set a1 k1 y 2
+    nsv_dict incr a1 k1 x
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -result {x 2 y 2}
+
+test nsv-dict-incr.3 {nsv_dict incr non existing value} -body {
+    # add dict values for k1
+    nsv_dict set a1 k1 x 1
+    nsv_dict set a1 k1 y 2
+    nsv_dict incr a1 k1 z1
+    nsv_dict incr a1 k1 z2 2
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -result {x 1 y 2 z1 1 z2 2}
+
+#
+# nsv_dict append
+#
+test nsv-dict-append.0 {nsv_dict append - syntax test} -body {
+    nsv_dict append a1
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict append array key dictkey ?args?"}
+
+test nsv-dict-append.1 {nsv_dict append create new entry} -body {
+    nsv_dict append a1 k1 x a
+    nsv_dict append a1 k1 x b
+    nsv_dict append a1 k2 z c
+    nsv_array get a1
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -result {k1 {x ab} k2 {z c}}
+
+test nsv-dict-append.2 {nsv_dict append} -body {
+    nsv_dict set a1 k1 x 1
+    nsv_dict set a1 k1 y 2
+    nsv_dict append a1 k1 x "hello world"
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -result {x {1hello world} y 2}
+
+test nsv-dict-append.3 {nsv_dict append non existing value} -body {
+    nsv_dict append a1 k1 x 1
+    nsv_dict append a1 k1 y 2
+    nsv_dict append a1 k1 x "=one"
+    nsv_dict append a1 k1 y "=two"
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -result {x 1=one y 2=two}
+
+test nsv-dict-append.4 {nsv_dict append zero or more arguments} -body {
+    lappend _ [nsv_dict append a1 k1 x]
+    lappend _ [nsv_dict append a1 k1 x]
+    lappend _ [nsv_dict append a1 k1 y 2]
+    lappend _ [nsv_dict append a1 k1 x "a1" "a2"]
+} -cleanup {
+    unset -nocomplain _
+    nsv_unset -nocomplain a1
+} -result {{x {}} {x {}} {x {} y 2} {x a1a2 y 2}}
+
+#
+# nsv_dict lappend
+#
+test nsv-dict-lappend.0 {nsv_dict lappend - syntax test} -body {
+    nsv_dict lappend a1
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict lappend array key dictkey ?args?"}
+
+test nsv-dict-lappend.1 {nsv_dict lappend create new entry} -body {
+    # add dict values for k1
+    nsv_dict lappend a1 k1 x a
+    nsv_dict lappend a1 k1 x b
+    nsv_dict lappend a1 k2 z c
+    nsv_array get a1
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -result {k1 {x {a b}} k2 {z c}}
+
+test nsv-dict-lappend.2 {nsv_dict lappend} -body {
+    nsv_dict set a1 k1 x 1
+    nsv_dict set a1 k1 y 2
+    nsv_dict lappend a1 k1 x "hello world"
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -result {x {1 {hello world}} y 2}
+
+test nsv-dict-lappend.3 {nsv_dict lappend non existing value} -body {
+    nsv_dict lappend a1 k1 x 1
+    nsv_dict lappend a1 k1 y 2
+    nsv_dict lappend a1 k1 x "one"
+    nsv_dict lappend a1 k1 y "two"
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -result {x {1 one} y {2 two}}
+
+test nsv-dict-lappend.4 {nsv_dict lappend zero or more arguments} -body {
+    lappend _ [nsv_dict lappend a1 k1 x]
+    lappend _ [nsv_dict lappend a1 k1 x]
+    lappend _ [nsv_dict lappend a1 k1 y 2]
+    lappend _ [nsv_dict lappend a1 k1 x "a1" "a2"]
+} -cleanup {
+    unset -nocomplain _
+    nsv_unset -nocomplain a1
+} -result {{x {}} {x {}} {x {} y 2} {x {a1 a2} y 2}}
+
+#
+# nsv_dict size
+#
+test nsv-dict-size.0 {nsv_dict size - syntax test} -body {
+    nsv_dict size a1
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict size array key"}
+
+test nsv-dict-size.1 {nsv_dict size} -body {
+    nsv_dict set a1 k1 x 1
+    nsv_dict set a1 k1 y 2
+    nsv_dict size a1 k1
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -result {2}
+
+#
+# nsv_dict keys
+#
+test nsv-dict-keys.0 {nsv_dict keys - syntax test} -body {
+    nsv_dict keys a1
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict keys array key ?pattern?"}
+
+test nsv-dict-keys.1 {nsv_dict size} -body {
+    nsv_dict set a1 k1 x 1
+    nsv_dict set a1 k1 y 2
+    nsv_set a1 k2 {a 1 b 2}
+    list [nsv_dict keys a1 k1] [nsv_dict keys a1 k2]
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -result {{x y} {a b}}
+
+test nsv-dict-keys.2 {nsv_dict size} -body {
+    nsv_dict set a1 k1 xx 1
+    nsv_dict set a1 k1 yy 2
+    nsv_set a1 k2 {aa 1 bb 2}
+    list [nsv_dict keys a1 k1 x*] [nsv_dict keys a1 k2 b*]
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -result {xx bb}
 
 
 cleanupTests
