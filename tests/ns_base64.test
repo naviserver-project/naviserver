@@ -485,7 +485,8 @@ test ns_base64encode-3.3 {binary data, from file or memory} -constraints {nsf} -
 
     ns_log notice [list [ns_base64encode $_] [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
     lappend r [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
-
+} -cleanup {
+    unset -nocomplain _ r fn a b c F
 } -returnCodes {error ok} -result {{} bytearray bytearray string {AAECA+KYgA== AAECA+KYgA== AAECA+KYgA==} {bytearray bytearray bytearray} {AAECA+KYgA== AAECA+KYgA== AAECA+KYgA==}}
 
 
