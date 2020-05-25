@@ -9,7 +9,7 @@ test ns_set-1.1 {basic syntax ns_set} -body {
 
 test ns_set-1.2 {basic syntax ns_set} -body {
     ns_set 123
-} -returnCodes error -result {bad option "123": must be array, cleanup, copy, cput, create, delete, delkey, find, free, get, icput, idelkey, ifind, iget, imerge, isnull, iunique, iupdate, key, list, merge, move, name, new, print, put, size, split, truncate, unique, update, or value}
+} -returnCodes error -result {bad option "123": must be array, cleanup, copy, cput, create, delete, delkey, find, free, get, icput, idelkey, ifind, iget, imerge, isnull, iunique, iupdate, key, keys, list, merge, move, name, new, print, put, size, split, truncate, unique, update, value, or values}
 
 test ns_set-1.6 {basic syntax ns_set array} -body {
     ns_set array
@@ -386,6 +386,17 @@ test ns_set-2.30 {ns_set iupdate} -body {
     lappend _ [ns_set array $x]
 } -returnCodes {ok error} -result {{a 1} {a 1 b 2} {a 1 B 4}} -cleanup {
     unset -nocomplain _
+    ns_set cleanup
+}
+
+test ns_set-3.0 {test ns_set keys and values} -body {
+    set x [ns_set create testset1 . 0 a 1 b 2 c 3 d 4 e 5 f 6 e 7 g 8]
+    set y [ns_set create testset2]
+    list \
+        [ns_set keys $x] [ns_set values $x] \
+        [ns_set keys $x a] [ns_set values $x 1] \
+        [ns_set keys $y] [ns_set values $y]
+} -result {{. a b c d e f e g} {0 1 2 3 4 5 6 7 8} a 1 {} {}} -cleanup {
     ns_set cleanup
 }
 

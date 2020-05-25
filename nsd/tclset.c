@@ -288,19 +288,19 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
         "array", "cleanup", "copy", "cput", "create",
         "delete", "delkey", "find", "free", "get",
         "icput", "idelkey", "ifind", "iget", "imerge",
-        "isnull", "iunique", "iupdate", "key", "list", "merge",
-        "move", "name", "new", "print", "put",
+        "isnull", "iunique", "iupdate", "key", "keys", "list",
+        "merge", "move", "name", "new", "print", "put",
         "size", "split", "truncate", "unique", "update",
-        "value", NULL,
+        "value", "values", NULL,
     };
     enum {
         SArrayIdx, SCleanupIdx, SCopyIdx, SCPutIdx, SCreateidx,
         SDeleteIdx, SDelkeyIdx, SFindIdx, SFreeIdx, SGetIdx,
         SICPutIdx, SIDelkeyIdx, SIFindIdx, SIGetIdx, SIMergeIdx,
-        SIsNullIdx, SIUniqueIdx, SIUpdateIdx, SKeyIdx, SListIdx, SMergeIdx,
-        SMoveIdx, sINameIdx, SNewIdx, SPrintIdx, SPutIdx,
+        SIsNullIdx, SIUniqueIdx, SIUpdateIdx, SKeyIdx, SKeysIdx,SListIdx,
+        SMergeIdx, SMoveIdx, sINameIdx, SNewIdx, SPrintIdx, SPutIdx,
         SSizeIdx, SSplitIdx, STruncateIdx, SUniqueIdx, SUpdateIdx,
-        SValueIdx
+        SValueIdx, SValuesIdx
     };
 
     if (unlikely(objc < 2)) {
@@ -463,6 +463,26 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                         Tcl_SetObjResult(interp, Tcl_NewStringObj(set->name, -1));
                         break;
 
+                    case SKeysIdx: {
+                        if (unlikely(objc > 5)) {
+                            Tcl_WrongNumArgs(interp, 2, objv, "setId ?pattern?");
+                            result = TCL_ERROR;
+                        } else {
+                            size_t i;
+                            const char *pattern = (objc == 4 ? Tcl_GetString(objv[3]) : NULL);
+
+                            Tcl_DStringInit(&ds);
+                            for (i = 0u; i < set->size; ++i) {
+                                const char *value = (set->fields[i].name != NULL ? set->fields[i].name : "");
+                                if (pattern == NULL || (Tcl_StringMatch(value, pattern) != 0)) {
+                                    Tcl_DStringAppendElement(&ds, value);
+                                }
+                            }
+                            Tcl_DStringResult(interp, &ds);
+                        }
+                        break;
+                    }
+
                     case SPrintIdx:
                         Ns_SetPrint(set);
                         break;
@@ -478,6 +498,30 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                     }
                 }
                 break;
+
+            case SKeysIdx:   NS_FALL_THROUGH; /* fall through */
+            case SValuesIdx: {
+                if (unlikely(objc > 5)) {
+                    Tcl_WrongNumArgs(interp, 2, objv, "setId ?pattern?");
+                    result = TCL_ERROR;
+                } else {
+                    size_t i;
+                    const char *pattern = (objc == 4 ? Tcl_GetString(objv[3]) : NULL);
+
+                    Tcl_DStringInit(&ds);
+                    for (i = 0u; i < set->size; ++i) {
+                        const char *value = (opt == SKeysIdx ? set->fields[i].name : set->fields[i].value);
+                        if (value == NULL) {
+                            value = "";
+                        }
+                        if (pattern == NULL || (Tcl_StringMatch(value, pattern) != 0)) {
+                            Tcl_DStringAppendElement(&ds, value);
+                        }
+                    }
+                    Tcl_DStringResult(interp, &ds);
+                }
+                break;
+            }
 
             case SGetIdx:  NS_FALL_THROUGH; /* fall through */
             case SIGetIdx:

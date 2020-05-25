@@ -131,6 +131,15 @@ Case-insensitive counterpart of [cmd "ns_set update"].
 Returns the key for the field numbered fieldNumber.  This command is useful
 when looping through all the key-value pairs in the set in order.
 
+
+[call [cmd "ns_set keys"] [arg setId] [opt [arg pattern]]]
+
+Returns a list of all keys in the given ns_set.
+If a pattern is supplied, only those keys that match it
+(according to the Tcl rules of string match) will be returned.
+
+
+
 [call [cmd "ns_set list"] ]
 
 Returns the list of all ns_sets. 
@@ -199,6 +208,13 @@ only one field with the key of key.
 Returns the value of the set at field number fieldNumber.  This command is useful
 when looping through all the key-value pairs in the set.
 
+[call [cmd "ns_set values"] [arg setId] [opt [arg pattern]]]
+
+Returns a list of all values in the given ns_set.
+If a pattern is supplied, only those values that match it
+(according to the Tcl rules of string match) will be returned.
+
+
 [list_end]
 
 [section EXAMPLES]
@@ -222,6 +238,17 @@ when looping through all the key-value pairs in the set.
  % ns_set array $mySet
  a b c d e f A Joe B John C Jeff
 [example_end]
+
+[example_begin]
+ % ns_set keys $mySet
+ a c e A B C
+[example_end]
+
+[example_begin]
+ % ns_set values $mySet
+ b d f Joe John Jeff
+[example_end]
+
 
 [example_begin]
  % ns_set get $mySet A
