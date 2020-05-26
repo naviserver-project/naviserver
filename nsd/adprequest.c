@@ -170,6 +170,8 @@ PageRequest(Ns_Conn *conn, const char *fileName, const Ns_Time *expiresPtr, unsi
         Tcl_Obj        *objv[2];
         int             result;
 
+        Ns_Log(Debug, "AdpPageRequest for '%s' access ok", fileName);
+
         /*
          * Set the output type based on the file type.
          */
