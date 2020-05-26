@@ -80,6 +80,8 @@ INCLUDE = $(INCLUDE);$(TCLPATH)\include
 DEBUG=1
 !endif
 
+PWD = $(MAKEDIR)
+
 # nmake command to exec for each module:
 NMAKE = nmake /nologo TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG=$(DEBUG) NSBUILD=1
 
@@ -118,7 +120,7 @@ NMAKE = nmake /nologo TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG
 # module/Makefile.win32 files.
 # --atp@piskorski.com, 2014/10/10 17:25 EDT
 
-core_targets = _nsthread _nsd _nscgi _nscp _nsdb _nssock _nslog _nsperm _nsssl _nsproxy
+core_targets = _nsthread _nsd _nscgi _nscp _nsdb _nsdbtest _nssock _nslog _nsperm _nsssl _nsproxy
 module_targets = _nsoracle
 
 tgts_core_clean = $(core_targets:_=C)
@@ -163,3 +165,9 @@ _nsversion:
 	tclsh win32-util/configure.tcl
 _install:
 	tclsh win32-util/install-nsd.tcl -i 1
+
+# Nmake has NO GOOD WAY to save the output of a shell command into a variable!
+# Thus we use a static output filename here, rather than e.g. embedding the current date/time.
+# Fortunately command output redirection works essentially the same way as in Unix.
+_test:
+	PATH=$(PWD)\nsd;$(PWD)\nsthread;$(PWD)\nsdb;$(PWD)\nsproxy;$(PATH) & $(PWD)\nsd\nsd.exe -c -t $(PWD)/tests/test.nscfg $(PWD)/tests/all.tcl 1>> test-win-out-0.txt 2>&1
