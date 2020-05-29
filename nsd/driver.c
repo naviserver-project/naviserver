@@ -64,7 +64,8 @@ typedef enum {
     SOCK_BADREQUEST =         -9,
     SOCK_ENTITYTOOLARGE =     -10,
     SOCK_BADHEADER =          -11,
-    SOCK_TOOMANYHEADERS =     -12
+    SOCK_TOOMANYHEADERS =     -12,
+    SOCK_QUEUEFULL =          -13
 } SockState;
 
 /*
@@ -422,6 +423,7 @@ GetSockStateName(SockState sockState)
         "SOCK_ENTITYTOOLARGE",
         "SOCK_BADHEADER",
         "SOCK_TOOMANYHEADERS",
+        "SOCK_QUEUEFULL",
         NULL
     };
 
@@ -2313,6 +2315,7 @@ DriverThread(void *arg)
                     case SOCK_BADREQUEST:      NS_FALL_THROUGH; /* fall through */
                     case SOCK_BADHEADER:       NS_FALL_THROUGH; /* fall through */
                     case SOCK_TOOMANYHEADERS:  NS_FALL_THROUGH; /* fall through */
+                    case SOCK_QUEUEFULL:        NS_FALL_THROUGH; /* fall through */
                     case SOCK_CLOSE:
                         SockRelease(sockPtr, s, errno);
                         break;
@@ -2435,6 +2438,7 @@ DriverThread(void *arg)
                         case SOCK_SHUTERROR:      NS_FALL_THROUGH; /* fall through */
                         case SOCK_TOOMANYHEADERS: NS_FALL_THROUGH; /* fall through */
                         case SOCK_WRITEERROR:     NS_FALL_THROUGH; /* fall through */
+                        case SOCK_QUEUEFULL:      NS_FALL_THROUGH; /* fall through */
                         case SOCK_WRITETIMEOUT:
                             Ns_Fatal("driver: SockAccept returned: %s", GetSockStateName(s));
                         }
@@ -3165,6 +3169,11 @@ SockError(Sock *sockPtr, SockState reason, int err)
     case SOCK_ERROR:
         errMsg = "Unknown Error";
         SockSendResponse(sockPtr, 400, errMsg);
+        break;
+
+    case SOCK_QUEUEFULL:
+        errMsg = "Too many requests for this queue";
+        SockSendResponse(sockPtr, 503, errMsg);
         break;
     }
 
@@ -4533,6 +4542,7 @@ SpoolerThread(void *arg)
                 case SOCK_SPOOL:          NS_FALL_THROUGH; /* fall through */
                 case SOCK_TOOMANYHEADERS: NS_FALL_THROUGH; /* fall through */
                 case SOCK_WRITEERROR:     NS_FALL_THROUGH; /* fall through */
+                case SOCK_QUEUEFULL:      NS_FALL_THROUGH; /* fall through */
                 case SOCK_WRITETIMEOUT:
                     SockRelease(sockPtr, n, errno);
                     queuePtr->queuesize--;
