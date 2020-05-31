@@ -259,7 +259,7 @@ static void  SockRelease(Sock *sockPtr, SockState reason, int err)
 
 static void  SockError(Sock *sockPtr, SockState reason, int err)
     NS_GNUC_NONNULL(1);
-static void  SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
+static void  SockSendResponse(Sock *sockPtr, int code, const char *errMsg, const char *headers)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 static void  SockTrigger(NS_SOCKET sock);
 static void  SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, const Ns_Time *timeout)
@@ -2115,6 +2115,7 @@ DriverThread(void *arg)
 
     while (!stopping) {
         int n;
+        bool reanimation = NS_FALSE;
 
         /*
          * Set the bits for all active drivers if a connection
@@ -2124,8 +2125,8 @@ DriverThread(void *arg)
         PollReset(&pdata);
         (void)PollSet(&pdata, drvPtr->trigger[0], (short)POLLIN, NULL);
 
-        if (likely(waitPtr == NULL)) {
-
+        /* was peviously restricted to (waitPtr == NULL) */
+        {
             for (n = 0; n < nrBindaddrs; n++) {
                 drvPtr->pidx[n] = PollSet(&pdata, drvPtr->listenfd[n],
                                           (short)POLLIN, NULL);
@@ -2165,10 +2166,11 @@ DriverThread(void *arg)
         }
 
         n = PollWait(&pdata, pollTimeout);
+        reanimation = PollIn(&pdata, 0);
 
-        Ns_Log(DriverDebug, "=== PollWait returned %d, trigger[0] %d", n, PollIn(&pdata, 0));
+        Ns_Log(DriverDebug, "=== PollWait returned %d, trigger[0] %d", n, reanimation);
 
-        if (PollIn(&pdata, 0) && unlikely(ns_recv(drvPtr->trigger[0], charBuffer, 1u, 0) != 1)) {
+        if (reanimation && unlikely(ns_recv(drvPtr->trigger[0], charBuffer, 1u, 0) != 1)) {
             const char *errstr = ns_sockstrerror(ns_sockerrno);
 
             Ns_Fatal("driver: trigger ns_recv() failed: %s", errstr);
@@ -2179,7 +2181,7 @@ DriverThread(void *arg)
          * minimal value.  Perform this test on timeouts (n == 0;
          * just for safety reasons) or on explicit wakeup calls.
          */
-        if ((n == 0) || PollIn(&pdata, 0)) {
+        if ((n == 0) || reanimation) {
             NsServer *servPtr = drvPtr->servPtr;
 
             if (servPtr != NULL) {
@@ -2196,7 +2198,7 @@ DriverThread(void *arg)
                  * Reanimation check on all servers.
                  */
                 for (j = 0u; j < Ns_SetSize(servers); ++j) {
-                    const char *server  = Ns_SetKey(servers, j);
+                    const char *server = Ns_SetKey(servers, j);
 
                     servPtr = NsGetServer(server);
                     if (servPtr != NULL) {
@@ -2315,7 +2317,7 @@ DriverThread(void *arg)
                     case SOCK_BADREQUEST:      NS_FALL_THROUGH; /* fall through */
                     case SOCK_BADHEADER:       NS_FALL_THROUGH; /* fall through */
                     case SOCK_TOOMANYHEADERS:  NS_FALL_THROUGH; /* fall through */
-                    case SOCK_QUEUEFULL:        NS_FALL_THROUGH; /* fall through */
+                    case SOCK_QUEUEFULL:       NS_FALL_THROUGH; /* fall through */
                     case SOCK_CLOSE:
                         SockRelease(sockPtr, s, errno);
                         break;
@@ -2363,7 +2365,7 @@ DriverThread(void *arg)
          * Attempt to queue any pending connection after reversing the
          * list to ensure oldest connections are tried first.
          */
-        if (waitPtr != NULL) {
+        if (reanimation && waitPtr != NULL) {
             sockPtr = NULL;
             while ((nextPtr = waitPtr) != NULL) {
                 waitPtr = nextPtr->nextPtr;
@@ -2382,14 +2384,13 @@ DriverThread(void *arg)
         /*
          * If no connections are waiting, attempt to accept more.
          */
-
-        if (waitPtr == NULL) {
+        /* was peviously restricted to (waitPtr == NULL) */
+        {
             /*
              * If configured, try to accept more than one request, under heavy load
              * this helps to process more requests
              */
-            SockState s;
-            bool      acceptMore = NS_TRUE;
+            bool acceptMore = NS_TRUE;
 
             accepted = 0;
             while (acceptMore &&
@@ -2401,11 +2402,10 @@ DriverThread(void *arg)
                  * Check for input data on all bind addresses. Stop checking,
                  * when one round of checking on all addresses fails.
                  */
-                for (n = 0; n < nrBindaddrs; n++) {
 
-                    if (
-                        PollIn(&pdata, drvPtr->pidx[n])
-                        && (s = SockAccept(drvPtr, pdata.pfds[drvPtr->pidx[n]].fd, &sockPtr, &now)) != SOCK_ERROR) {
+                for (n = 0; n < nrBindaddrs; n++) {
+                    if (PollIn(&pdata, drvPtr->pidx[n])) {
+                        SockState s = SockAccept(drvPtr, pdata.pfds[drvPtr->pidx[n]].fd, &sockPtr, &now);
 
                         switch (s) {
                         case SOCK_SPOOL:
@@ -2427,12 +2427,15 @@ DriverThread(void *arg)
                             }
                             break;
 
+                        case SOCK_ERROR:
+                            Ns_Log(Warning, "sockAccept on fd %d returned error", drvPtr->listenfd[n]);
+                            break;
+
                         case SOCK_BADHEADER:      NS_FALL_THROUGH; /* fall through */
                         case SOCK_BADREQUEST:     NS_FALL_THROUGH; /* fall through */
                         case SOCK_CLOSE:          NS_FALL_THROUGH; /* fall through */
                         case SOCK_CLOSETIMEOUT:   NS_FALL_THROUGH; /* fall through */
                         case SOCK_ENTITYTOOLARGE: NS_FALL_THROUGH; /* fall through */
-                        case SOCK_ERROR:          NS_FALL_THROUGH; /* fall through */
                         case SOCK_READERROR:      NS_FALL_THROUGH; /* fall through */
                         case SOCK_READTIMEOUT:    NS_FALL_THROUGH; /* fall through */
                         case SOCK_SHUTERROR:      NS_FALL_THROUGH; /* fall through */
@@ -2440,10 +2443,16 @@ DriverThread(void *arg)
                         case SOCK_WRITEERROR:     NS_FALL_THROUGH; /* fall through */
                         case SOCK_QUEUEFULL:      NS_FALL_THROUGH; /* fall through */
                         case SOCK_WRITETIMEOUT:
+                            /*
+                             * These cases should never be returned ny SockAccept()
+                             */
                             Ns_Fatal("driver: SockAccept returned: %s", GetSockStateName(s));
                         }
-                        accepted++;
-                        gotRequests = NS_TRUE;
+
+                        if (s != SOCK_ERROR) {
+                            gotRequests = NS_TRUE;
+                            accepted++;
+                        }
 #ifdef __APPLE__
                         /*
                          * On Darwin, the first accept() succeeds typically, but it is
@@ -2453,9 +2462,9 @@ DriverThread(void *arg)
                         break;
 #endif
                     }
-                }
-                if (!gotRequests) {
-                    acceptMore = NS_FALSE;
+                    if (!gotRequests) {
+                        acceptMore = NS_FALSE;
+                    }
                 }
             }
             if (accepted > 1) {
@@ -2793,12 +2802,10 @@ RequestFree(Sock *sockPtr)
  *
  * SockQueue --
  *
- *      Puts socket into connection queue
+ *      Puts socket into connection queue and handle the NS_ERROR case.
  *
  * Results:
- *      NS_OK if queued,
- *      NS_ERROR if socket closed because of error
- *      NS_TIMEOUT if queue is full
+ *      Ns_ReturnCode, potential values NS_TRUE, NS_FALSE, NS_TIMEOUT
  *
  * Side effects:
  *      None.
@@ -2821,12 +2828,12 @@ SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
     assert(sockPtr->servPtr != NULL);
 
     /*
-     *  Actual queueing, if not ready spool to the waiting list.
+     *  Actual queueing. When we receive NS_ERROR or NS_TIMEOUT, the queuing
+     *  did not succeed.
      */
-    if (!NsQueueConn(sockPtr, timePtr)) {
-        result = NS_TIMEOUT;
-    } else {
-        result = NS_OK;
+    result = NsQueueConn(sockPtr, timePtr);
+    if (result == NS_ERROR) {
+        SockRelease(sockPtr, SOCK_QUEUEFULL, 0);
     }
 
     return result;
@@ -3023,10 +3030,11 @@ SockNew(Driver *drvPtr)
         sockPtr = ns_calloc(1u, sockSize);
         sockPtr->drvPtr = drvPtr;
     } else {
-        sockPtr->tfd    = 0;
-        sockPtr->taddr  = NULL;
-        sockPtr->flags  = 0u;
-        sockPtr->arg    = NULL;
+        sockPtr->tfd     = 0;
+        sockPtr->taddr   = NULL;
+        sockPtr->flags   = 0u;
+        sockPtr->arg     = NULL;
+        sockPtr->poolPtr = NULL;
         sockPtr->recvSockState = NS_SOCK_NONE;
     }
     return sockPtr;
@@ -3148,32 +3156,40 @@ SockError(Sock *sockPtr, SockState reason, int err)
 
     case SOCK_BADREQUEST:
         errMsg = "Bad Request";
-        SockSendResponse(sockPtr, 400, errMsg);
+        SockSendResponse(sockPtr, 400, errMsg, NULL);
         break;
 
     case SOCK_TOOMANYHEADERS:
         errMsg = "Too Many Request Headers";
-        SockSendResponse(sockPtr, 414, errMsg);
+        SockSendResponse(sockPtr, 414, errMsg, NULL);
         break;
 
     case SOCK_BADHEADER:
         errMsg = "Invalid Request Header";
-        SockSendResponse(sockPtr, 400, errMsg);
+        SockSendResponse(sockPtr, 400, errMsg, NULL);
         break;
 
     case SOCK_ENTITYTOOLARGE:
         errMsg = "Request Entity Too Large";
-        SockSendResponse(sockPtr, 413, errMsg);
+        SockSendResponse(sockPtr, 413, errMsg, NULL);
         break;
 
     case SOCK_ERROR:
         errMsg = "Unknown Error";
-        SockSendResponse(sockPtr, 400, errMsg);
+        SockSendResponse(sockPtr, 400, errMsg, NULL);
         break;
 
     case SOCK_QUEUEFULL:
-        errMsg = "Too many requests for this queue";
-        SockSendResponse(sockPtr, 503, errMsg);
+        errMsg = "Service Unavailable";
+        if (sockPtr->poolPtr != NULL && sockPtr->poolPtr->wqueue.retryafter.sec > 0) {
+            char headers[14 + TCL_INTEGER_SPACE];
+
+            snprintf(headers, sizeof(headers), "Retry-After: %ld",
+                     sockPtr->poolPtr->wqueue.retryafter.sec);
+            SockSendResponse(sockPtr, 503, errMsg, headers);
+        } else {
+            SockSendResponse(sockPtr, 503, errMsg, NULL);
+        }
         break;
     }
 
@@ -3209,24 +3225,36 @@ SockError(Sock *sockPtr, SockState reason, int err)
  */
 
 static void
-SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
+SockSendResponse(Sock *sockPtr, int statusCode, const char *errMsg, const char *headers)
 {
-    struct iovec iov[3];
-    char         header[32];
+    struct iovec iov[5];
+    char         firstline[32];
     ssize_t      sent, tosend;
+    int          nbufs;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
     NS_NONNULL_ASSERT(errMsg != NULL);
 
-    snprintf(header, sizeof(header), "HTTP/1.0 %d ", code);
-    iov[0].iov_base = header;
-    iov[0].iov_len  = strlen(header);
+    snprintf(firstline, sizeof(firstline), "HTTP/1.0 %d ", statusCode);
+    iov[0].iov_base = firstline;
+    iov[0].iov_len  = strlen(firstline);
     iov[1].iov_base = (void *)errMsg;
     iov[1].iov_len  = strlen(errMsg);
-    iov[2].iov_base = (void *)"\r\n\r\n";
-    iov[2].iov_len  = 4u;
+    if (headers == NULL) {
+        iov[2].iov_base = (void *)"\r\n\r\n";
+        iov[2].iov_len  = 4u;
+        nbufs = 3;
+    } else {
+        iov[2].iov_base = (void *)"\r\n";
+        iov[2].iov_len  = 2u;
+        iov[3].iov_base = (char *)headers;
+        iov[3].iov_len  = strlen(headers);
+        iov[4].iov_base = (void *)"\r\n\r\n";
+        iov[4].iov_len  = 4u;
+        nbufs = 5;
+    }
     tosend = (ssize_t)(iov[0].iov_len + iov[1].iov_len + iov[2].iov_len);
-    sent = NsDriverSend(sockPtr, iov, 3, 0u);
+    sent = NsDriverSend(sockPtr, iov, nbufs, 0u);
     if (sent < tosend) {
         Ns_Log(Warning, "Driver: partial write while sending response;"
                " %" PRIdz " < %" PRIdz, sent, tosend);
@@ -3248,14 +3276,19 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
          */
         if (requestLine[0] == (char)0x16 && requestLine[1] >= 3 && requestLine[2] == 1) {
             Ns_Log(Warning, "invalid request %d (%s) from peer %s: received TLS handshake on a non-TLS connection",
-                   code, errMsg, reqPtr->peer);
-        } else {
-            Tcl_DString  dsReqLine;
+                   statusCode, errMsg, reqPtr->peer);
 
+        } else if (statusCode == 400) {
+            Tcl_DString dsReqLine;
+
+            /*
+             * These are errors, which might have to be invested based on
+             * deails of the received buffer.
+             */
             Tcl_DStringInit(&dsReqLine);
             Ns_Log(Warning, "invalid request: %d (%s) from peer %s request '%s' offsets: read %" PRIuz
                    " write %" PRIuz " content %" PRIuz " avail %" PRIuz,
-                   code, errMsg,
+                   statusCode, errMsg,
                    reqPtr->peer,
                    Ns_DStringAppendPrintable(&dsReqLine, NS_FALSE, requestLine, strlen(requestLine)),
                    reqPtr->roff,
@@ -3265,10 +3298,12 @@ SockSendResponse(Sock *sockPtr, int code, const char *errMsg)
             Tcl_DStringFree(&dsReqLine);
 
             LogBuffer(Warning, "REQ BUFFER", reqPtr->buffer.string, (size_t)reqPtr->buffer.length);
+        } else if (statusCode >= 500) {
+            Ns_Log(Warning, "request returns %d (%s): %s", statusCode, errMsg, requestLine);
         }
     } else {
         Ns_Log(Warning, "invalid request: %d (%s) - no request information available",
-               code, errMsg);
+               statusCode, errMsg);
     }
 }
 
@@ -4566,7 +4601,7 @@ SpoolerThread(void *arg)
             }
             while (sockPtr != NULL) {
                 nextPtr = sockPtr->nextPtr;
-                if (!NsQueueConn(sockPtr, &now)) {
+                if (NsQueueConn(sockPtr, &now) == NS_TIMEOUT) {
                     Push(sockPtr, waitPtr);
                 } else {
                     queuePtr->queuesize--;

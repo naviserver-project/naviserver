@@ -296,6 +296,8 @@ ns_section	"ns/server/${servername}" {
 
     # Maximum number of connection structures
     ns_param	maxconnections		100	;# 100; determines queue size as well
+    ns_param    rejectoverrun           true    ;# false (send 503 when queue overruns)
+    #ns_param   retryafter              5s      ;# time for Retry-After in 503 cases
 
     # Minimal and maximal number of connection threads
     ns_param	maxthreads		10
@@ -705,6 +707,7 @@ ns_section	"ns/server/${servername}/vhost" {
 # The following parameters can be configured per pool:
 #
 #       map
+#       connectionratelimit
 #       connsperthread
 #       highwatermark
 #       lowwatermark
@@ -712,7 +715,8 @@ ns_section	"ns/server/${servername}/vhost" {
 #       maxthreads
 #       minthreads
 #       poolratelimit
-#       connectionratelimit
+#       rejectoverrun
+#       retryafter
 #       threadtimeout
 #
 ########################################################################

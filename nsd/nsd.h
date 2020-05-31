@@ -493,6 +493,7 @@ typedef struct Sock {
 
     struct Sock        *nextPtr;
     struct NsServer    *servPtr;
+    struct ConnPool    *poolPtr;
 
     const char         *location;
     NS_POLL_NFDS_TYPE   pidx;            /* poll() index */
@@ -689,7 +690,8 @@ typedef struct ConnPool {
         Ns_Mutex lock;
         int      lowwatermark;
         int      highwatermark;
-
+        Ns_Time  retryafter;
+        bool     rejectoverrun;
     } wqueue;
 
     /*
@@ -731,9 +733,10 @@ typedef struct ConnPool {
      */
 
     struct {
+        unsigned long processed;
         unsigned long spool;
         unsigned long queued;
-        unsigned long processed;
+        unsigned long dropped;
         unsigned long connthreads;
         Ns_Time acceptTime;          /* cumulated accept times */
         Ns_Time queueTime;           /* cumulated queue times */
@@ -1457,7 +1460,7 @@ NS_EXTERN int NSDriverSockNew(Tcl_Interp *interp, NS_SOCKET sock,
                               Sock **sockPtrPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
 
-NS_EXTERN bool NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
+NS_EXTERN Ns_ReturnCode NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr)

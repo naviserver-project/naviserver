@@ -445,8 +445,12 @@ CreatePool(NsServer *servPtr, const char *pool)
     poolPtr->threads.min =
         Ns_ConfigIntRange(path, "minthreads", 1, 1, poolPtr->threads.max);
 
-    Ns_ConfigTimeUnitRange(path, "threadtimeout",
-                           "2m", 0, 0, INT_MAX, 0, &poolPtr->threads.timeout);
+    Ns_ConfigTimeUnitRange(path, "threadtimeout", "2m", 0, 0, INT_MAX, 0,
+                           &poolPtr->threads.timeout);
+
+    poolPtr->wqueue.rejectoverrun = Ns_ConfigBool(path, "rejectoverrun", NS_FALSE);
+    Ns_ConfigTimeUnitRange(path, "retryafter", "5s", 0, 0, INT_MAX, 0,
+                           &poolPtr->wqueue.retryafter);
 
     poolPtr->rate.defaultConnectionLimit =
         Ns_ConfigIntRange(path, "connectionratelimit", -1, -1, INT_MAX);

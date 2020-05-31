@@ -295,6 +295,8 @@ file:
  ns_section "ns/server/${server}/pool/fast" {
     ns_param minthreads 4
     ns_param maxthreads 4
+    ns_param rejectoverrun true
+
     ns_param map "GET /*.png"
     ns_param map "GET /*.jpg"
     ns_param map "GET /*.pdf"
@@ -304,6 +306,7 @@ file:
     ns_param minthreads 5
     ns_param maxthreads 15
     ns_param maxconnections 200
+    ns_param rejectoverrun true
  }
 [example_end]
 

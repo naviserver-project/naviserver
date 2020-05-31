@@ -83,18 +83,43 @@ altered in the section "ns/server/servername"
 [term maxconnections],
 [term maxthreads],
 [term minthreads],
+[term rejectoverrun],
+[term retryafter],
 [term poolratelimit],
 [term connectionratelimit] and
-[term threadtimeout]. See also
+[term threadtimeout].
+See also
 [term "connection thread pools"].
 
 [para] As mentioned, in most cases the defaults are fine, with the exception of
 [term minthreads] and
 [term maxthreads] which should be
-carefully adjusted based on your load. Along with
-[term maxthreads], the
-[term maxconnections] setting can be tricky, since making it too large can
-cause your system to thrash.
+carefully adjusted based on your load. When
+[term minthreads] and [term maxthreads] are sent to different
+values, NaviServer tries to adjust the number of running threads
+according to the current load. When running applications with
+a large Tcl blueprint (e.g. OpenACS), starting of new threads
+can be costly, such that a frequent starting and stopping of threads
+might not be the best either. Therefore, it is sometimes better to
+set [term minthreads] equals to[term maxthreads].
+
+[para]
+The parameter [term maxconnections] defines the queue length of
+a connection pool. This means, requests are received in a situation
+where no connection thread is available, these requests are
+added to this queue. Since this queue has a limited
+size, it might as well overrun. In this situation,
+one can fine tune the behavior. When [term rejectoverrun]
+is set, NaviServer will send a 503 (service unavailable)
+reply to the client. When additionall the parameter
+[term retryafter] is set, NaviServer provides it value
+as a "Retry-After" hint to the client. When
+[term rejectoverrun] is false the NaviServer keeps
+an additional waiting list, causing eagerly to retry
+such requests automatically. The latter can lead to
+a memory bloat on flooding attacks. However, for internal
+servers (or connection pools), such behavior might be
+still favorable.
 
 [para] On busy machines, one can define multiple connection thread
 pools and use the configuration option [term map] to map HTTP method,
@@ -151,6 +176,7 @@ pool. Additional connection thread pools can be created via
    ns_param   minthreads 2
    ns_param   maxthreads 2
    ns_param   poolratelimit 1000    ;# 0; limit rate for pool to this amount (KB/s); 0 means unlimited
+   ns_param   rejectoverrun true
  }
 [example_end]
 

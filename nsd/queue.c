@@ -497,10 +497,12 @@ NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
  *
  * NsQueueConn --
  *
- *      Append a connection to the run queue.
+ *      Append a connection to the run queue of a connection pool when
+ *      possible (e.g. no shutdown, a free connection thread is available,
+ *      ...)
  *
  * Results:
- *      NS_TRUE if queued, NS_FALSE otherwise.
+ *      NS_OK (queued), NS_ERROR (return error), NS_TIMEOUT (try again)
  *
  * Side effects:
  *      Connection will run shortly.
@@ -508,14 +510,15 @@ NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
  *----------------------------------------------------------------------
  */
 
-bool
+Ns_ReturnCode
 NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 {
     ConnThreadArg *argPtr = NULL;
     NsServer      *servPtr;
     ConnPool      *poolPtr = NULL;
     Conn          *connPtr = NULL;
-    bool           create = NS_FALSE, queued = NS_TRUE;
+    bool           create = NS_FALSE;
+    int            queued = NS_OK;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
     NS_NONNULL_ASSERT(nowPtr != NULL);
@@ -525,11 +528,19 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
     servPtr = sockPtr->servPtr;
 
     /*
-     * Select server connection pool. For non-HTTP drivers, the request.method
+     * Perform no queuing on shutdown.
+     */
+    if (unlikely(servPtr->pools.shutdown)) {
+        return NS_ERROR;
+    }
+
+    /*
+     * Select connection pool. For non-HTTP drivers, the request.method
      * won't be provided.
      */
-
-    if ((sockPtr->reqPtr != NULL) && (sockPtr->reqPtr->request.method != NULL)) {
+    if ((sockPtr->poolPtr == NULL)
+        && (sockPtr->reqPtr != NULL)
+        && (sockPtr->reqPtr->request.method != NULL)) {
         NsUrlSpaceContext ctx;
 
         ctx.headers = sockPtr->reqPtr->headers;
@@ -539,125 +550,146 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
                                    sockPtr->reqPtr->request.url,
                                    poolid, 0u, NS_URLSPACE_DEFAULT,
                                    NsUrlSpaceContextFilter, &ctx);
+        sockPtr->poolPtr = poolPtr;
+    } else if (sockPtr->poolPtr != NULL) {
+        poolPtr = sockPtr->poolPtr;
     }
     if (poolPtr == NULL) {
         poolPtr = servPtr->pools.defaultPtr;
     }
 
    /*
-    * Queue connection if possible (e.g. no shutdown, a free Conn is
-    * available, ...)
+    * We know the pool. Try to add connection into the queue of this pool
+    * (either ino a free slot or into its waiting list, or, when everything
+    * fails signal an error or timeout (for retry attempts) to the caller.
     */
+    Ns_MutexLock(&poolPtr->wqueue.lock);
+    if (poolPtr->wqueue.freePtr != NULL) {
+        connPtr = poolPtr->wqueue.freePtr;
+        poolPtr->wqueue.freePtr = connPtr->nextPtr;
+        connPtr->nextPtr = NULL;
+    }
+    Ns_MutexUnlock(&poolPtr->wqueue.lock);
 
-    if (!servPtr->pools.shutdown) {
+    if (likely(connPtr != NULL)) {
+        /*
+         * We have got a free connPtr from the pool. Initialize the
+         * connPtr and copy flags from the socket.
+         */
 
-        Ns_MutexLock(&poolPtr->wqueue.lock);
-        if (poolPtr->wqueue.freePtr != NULL) {
-            connPtr = poolPtr->wqueue.freePtr;
-            poolPtr->wqueue.freePtr = connPtr->nextPtr;
-            connPtr->nextPtr = NULL;
+        /* ConnThreadQueuePrint(poolPtr, "driver");*/
+
+        Ns_MutexLock(&servPtr->pools.lock);
+        connPtr->id = servPtr->pools.nextconnid++;
+        poolPtr->stats.processed++;
+        Ns_MutexUnlock(&servPtr->pools.lock);
+
+        connPtr->requestQueueTime     = *nowPtr;
+        connPtr->sockPtr              = sockPtr;
+        connPtr->drvPtr               = sockPtr->drvPtr;
+        connPtr->poolPtr              = poolPtr;
+        connPtr->server               = servPtr->server;
+        connPtr->location             = sockPtr->location;
+        connPtr->flags                = sockPtr->flags;
+        if ((sockPtr->drvPtr->opts & NS_DRIVER_ASYNC) == 0u) {
+            connPtr->acceptTime       = *nowPtr;
+        } else {
+            connPtr->acceptTime       = sockPtr->acceptTime;
         }
-        Ns_MutexUnlock(&poolPtr->wqueue.lock);
+        connPtr->rateLimit            = poolPtr->rate.defaultConnectionLimit;
 
-        if (connPtr != NULL) {
-            /*
-             * We have got a free connPtr from the pool. Initialize the
-             * connPtr and copy flags from the socket.
-             */
+        /*
+         * Reset members of sockPtr, which have been passed to connPtr.
+         */
+        sockPtr->acceptTime.sec       = 0;
+        sockPtr->flags                = 0u;
 
-            /* ConnThreadQueuePrint(poolPtr, "driver");*/
-
-            Ns_MutexLock(&servPtr->pools.lock);
-            connPtr->id = servPtr->pools.nextconnid++;
-            poolPtr->stats.processed++;
-            Ns_MutexUnlock(&servPtr->pools.lock);
-
-            connPtr->requestQueueTime     = *nowPtr;
-            connPtr->sockPtr              = sockPtr;
-            connPtr->drvPtr               = sockPtr->drvPtr;
-            connPtr->poolPtr              = poolPtr;
-            connPtr->server               = servPtr->server;
-            connPtr->location             = sockPtr->location;
-            connPtr->flags                = sockPtr->flags;
-            if ((sockPtr->drvPtr->opts & NS_DRIVER_ASYNC) == 0u) {
-                connPtr->acceptTime       = *nowPtr;
-            } else {
-                connPtr->acceptTime       = sockPtr->acceptTime;
-            }
-            connPtr->rateLimit            = poolPtr->rate.defaultConnectionLimit;
-
-            /*
-             * Reset members of sockPtr, which have been passed to connPtr.
-             */
-            sockPtr->acceptTime.sec       = 0;
-            sockPtr->flags                = 0u;
-
-            /*
-             * Try to get an entry from the connection thread queue,
-             * and dequeue it when possible.
-             */
+        /*
+         * Try to get an entry from the connection thread queue,
+         * and dequeue it when possible.
+         */
+        if (poolPtr->tqueue.nextPtr != NULL) {
+            Ns_MutexLock(&poolPtr->tqueue.lock);
             if (poolPtr->tqueue.nextPtr != NULL) {
-                Ns_MutexLock(&poolPtr->tqueue.lock);
-                if (poolPtr->tqueue.nextPtr != NULL) {
-                  argPtr = poolPtr->tqueue.nextPtr;
-                  poolPtr->tqueue.nextPtr = argPtr->nextPtr;
-                }
-                Ns_MutexUnlock(&poolPtr->tqueue.lock);
+                argPtr = poolPtr->tqueue.nextPtr;
+                poolPtr->tqueue.nextPtr = argPtr->nextPtr;
             }
+            Ns_MutexUnlock(&poolPtr->tqueue.lock);
+        }
 
-            if (argPtr != NULL) {
-                /*
-                 * We could obtain an idle thread. Dequeue the entry,
-                 * such that no one else might grab it, and fill in the
-                 * connPtr that should be run by this thread.
-                 */
+        if (argPtr != NULL) {
+            /*
+             * We could obtain an idle thread. Dequeue the entry,
+             * such that no one else might grab it, and fill in the
+             * connPtr that should be run by this thread.
+             */
 
-                assert(argPtr->state == connThread_idle);
-                argPtr->connPtr = connPtr;
+            assert(argPtr->state == connThread_idle);
+            argPtr->connPtr = connPtr;
 
-                Ns_MutexLock(&poolPtr->wqueue.lock);
-                Ns_MutexLock(&poolPtr->threads.lock);
-                create = neededAdditionalConnectionThreads(poolPtr);
-                Ns_MutexUnlock(&poolPtr->threads.lock);
-                Ns_MutexUnlock(&poolPtr->wqueue.lock);
+            Ns_MutexLock(&poolPtr->wqueue.lock);
+            Ns_MutexLock(&poolPtr->threads.lock);
+            create = neededAdditionalConnectionThreads(poolPtr);
+            Ns_MutexUnlock(&poolPtr->threads.lock);
+            Ns_MutexUnlock(&poolPtr->wqueue.lock);
 
+        } else {
+            /*
+             * There is no connection thread ready, so we add the
+             * connection to the waiting queue.
+             */
+            Ns_MutexLock(&poolPtr->wqueue.lock);
+            if (poolPtr->wqueue.wait.firstPtr == NULL) {
+                poolPtr->wqueue.wait.firstPtr = connPtr;
             } else {
-              /*
-               * There is no connection thread ready, so we add the
-               * connection to the waiting queue.
-               */
-                Ns_MutexLock(&poolPtr->wqueue.lock);
-                if (poolPtr->wqueue.wait.firstPtr == NULL) {
-                    poolPtr->wqueue.wait.firstPtr = connPtr;
-                } else {
-                    poolPtr->wqueue.wait.lastPtr->nextPtr = connPtr;
-                }
-                poolPtr->wqueue.wait.lastPtr = connPtr;
-                poolPtr->wqueue.wait.num ++;
-                Ns_MutexLock(&poolPtr->threads.lock);
-                poolPtr->stats.queued++;
-                create = neededAdditionalConnectionThreads(poolPtr);
-                Ns_MutexUnlock(&poolPtr->threads.lock);
-                Ns_MutexUnlock(&poolPtr->wqueue.lock);
+                poolPtr->wqueue.wait.lastPtr->nextPtr = connPtr;
             }
+            poolPtr->wqueue.wait.lastPtr = connPtr;
+            poolPtr->wqueue.wait.num ++;
+            Ns_MutexLock(&poolPtr->threads.lock);
+            poolPtr->stats.queued++;
+            create = neededAdditionalConnectionThreads(poolPtr);
+            Ns_MutexUnlock(&poolPtr->threads.lock);
+            Ns_MutexUnlock(&poolPtr->wqueue.lock);
         }
     }
 
-    if (connPtr == NULL) {
-        Ns_Log(Notice, "[%s pool %s] All available connections are used, waiting %d idle %d current %d",
-               poolPtr->servPtr->server,
-               poolPtr->pool,
-               poolPtr->wqueue.wait.num,
-               poolPtr->threads.idle,
-               poolPtr->threads.current);
-        queued = NS_FALSE;
+    if (unlikely(connPtr == NULL)) {
+        /*
+         * The connection thread pool queue is full.  We can either keep the
+         * sockPtr in a waiting state, or we can reject the queue overrun with
+         * a 503 - depending on the configuration.
+         */
+        queued = NS_TIMEOUT;
         create = NS_FALSE;
+
+        if ((sockPtr->flags & NS_CONN_SOCK_WAITING) == 0u) {
+            /*
+             * The flag NS_CONN_SOCK_WAITING is just used to avalid reporting
+             * the same request multiple times as unsuccessful queing attempts
+             * (when rejectoverrun is false).
+             */
+            sockPtr->flags |= NS_CONN_SOCK_WAITING;
+            Ns_Log(Notice, "[%s pool %s] All available connections are used, waiting %d idle %d current %d",
+                   poolPtr->servPtr->server,
+                   poolPtr->pool,
+                   poolPtr->wqueue.wait.num,
+                   poolPtr->threads.idle,
+                   poolPtr->threads.current);
+
+            if (poolPtr->wqueue.rejectoverrun) {
+                Ns_MutexLock(&poolPtr->threads.lock);
+                poolPtr->stats.dropped++;
+                Ns_MutexUnlock(&poolPtr->threads.lock);
+                queued = NS_ERROR;
+            }
+        }
 
     } else if (argPtr != NULL) {
         /*
          * We have a connection thread ready.
          *
-         * Perform lock just at the "right" debug level.
+         * Perform lock just in the debugging case to avoid race condition.
          */
         if (Ns_LogSeverityEnabled(Debug)) {
             int idle;

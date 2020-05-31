@@ -36,7 +36,7 @@ ns_section "ns/parameters" {
     #ns_param   dbcloseonexit       off      ;# default: off; from nsdb
     ns_param    jobsperthread       1000     ;# default: 0
     #ns_param   jobtimeout          0s       ;# default: 5m
-    #ns_param	joblogminduration   1s       ;# default: 1s
+    ns_param	joblogminduration   100s       ;# default: 1s
     ns_param    schedsperthread     10       ;# default: 0
     #ns_param	schedlogminduration 2s       ;# print warnings when scheduled job takes longer than that
     ns_param    progressminsize     1MB      ;# default: 0
@@ -148,6 +148,7 @@ ns_section "ns/server/default" {
     ns_param    minthreads          5     ;# default: 1; minimal number of connection threads
     ns_param    maxthreads          100   ;# default: 10; maximal number of connection threads
     ns_param    maxconnections      100   ;# default: 100; number of allocated connection structures
+    ns_param    rejectoverrun       true  ;# default: false; send 503 when thread pool queue overruns
     ns_param    threadtimeout       2m    ;# default: 2m; timeout for idle threads
     #ns_param   concurrentcreatethreshold 100 ;# default: 80; perform concurrent creates when queue is fully beyond this percentage
     ;# 100 is a conservative value, disabling concurrent creates

@@ -394,6 +394,9 @@ ns_section ns/server/${server} {
     # Scaling and Tuning Options
     #
     # ns_param	maxconnections	100	;# 100; number of allocated connection structures
+    ns_param    rejectoverrun   true    ;# false (send 503 when queue overruns)
+    #ns_param   retryafter      5s      ;# time for Retry-After in 503 cases
+
     # ns_param	maxthreads	10	;# 10; maximal number of connection threads
     ns_param	minthreads	2	;# 1; minimal number of connection threads
 
@@ -408,7 +411,7 @@ ns_section ns/server/${server} {
 
     # ns_param	lowwatermark	10       ;# 10; create additional threads above this queue-full percentage
     ns_param	highwatermark	100      ;# 80; allow concurrent creates above this queue-is percentage
-                                         ;# 100 means to disable concurrent creates
+					 ;# 100 means to disable concurrent creates
     #ns_param    connectionratelimit 200 ;# 0; limit rate per connection to this amount (KB/s); 0 means unlimited
     #ns_param    poolratelimit   200     ;# 0; limit rate for pool to this amount (KB/s); 0 means unlimited
 
@@ -420,7 +423,7 @@ ns_section ns/server/${server} {
     # ns_param	compresspreinit true	;# false, if true then initialize and allocate buffers at startup
 
     # Enable nicer directory listing (as handled by the OpenACS request processor)
-    # ns_param	directorylisting 	fancy	;# Can be simple or fancy
+    # ns_param	directorylisting	fancy	;# Can be simple or fancy
 
     #
     # Configuration of replies
@@ -450,6 +453,8 @@ ns_section ns/server/${server} {
 #       highwatermark
 #       lowwatermark
 #       maxconnections
+#       rejectoverrun
+#       retryafter
 #       maxthreads
 #       minthreads
 #       poolratelimit
@@ -490,6 +495,7 @@ ns_section "ns/server/${server}/pool/monitor" {
 ns_section "ns/server/${server}/pool/fast" {
     ns_param   minthreads 2
     ns_param   maxthreads 2
+    ns_param   rejectoverrun true
 
     ns_param   map "GET /*.png"
     ns_param   map "GET /*.PNG"
