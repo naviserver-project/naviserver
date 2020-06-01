@@ -82,7 +82,7 @@ CFLAGS_DEFAULT    = @CFLAGS_DEFAULT@
 #CFLAGS_DEFAULT   = -pedantic -g -Wextra
 #CFLAGS_DEFAULT   = -pedantic -g -Wextra $(CFLAGS_CONVERSION) $(CFLAGS_DEFINITION) $(CFLAGS_TIDY) $(CFLAGS_FORTIFY)
 #CFLAGS_DEFAULT   = -pedantic -g -O3 -Wextra -std=c99 -DTCL_NO_DEPRECATED $(CFLAGS_CONVERSION) $(CFLAGS_DEFINITION) $(CFLAGS_TIDY)  -fipa-pure-const -Wsuggest-attribute=pure  -Wsuggest-attribute=const -Wstringop-truncation  -Wattribute-alias
-CFLAGS          += $(CFLAGS_DEFAULT) $(CFLAGS_WARNING) $(CFLAGS_EXTRA) $(CFLAGS_INCLUDE) @CPPFLAGS@ $(DEFS)
+CFLAGS          += $(CFLAGS_DEFAULT) $(CFLAGS_WARNING) $(CFLAGS_EXTRA) $(CFLAGS_INCLUDE) $(PTHREAD_CFLAGS) @CPPFLAGS@ $(DEFS)
 LDFLAGS         += $(SANITIZE)
 LIBS		 = @LIBS@
 DL_LIBS		 = 
@@ -131,7 +131,7 @@ endif
 # Add the OpenSSL libraries to the end to minimize interference of
 # load paths for other libraries
 #
-NSLIBS      += @TCL_LIB_SPEC@ @TCL_LIBS@ @LDFLAGS@ ${OPENSSL_LIBS}
+NSLIBS      += @TCL_LIB_SPEC@ @TCL_LIBS@ @LDFLAGS@ ${OPENSSL_LIBS} ${PTHREAD_LIBS}
 CCLIBS       = $(NSLIBS)
 
 # Install directories

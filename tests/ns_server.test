@@ -160,13 +160,11 @@ test ns_server-2.4.2 {basic operation} -body {
 } -match exact -result "{}"
 
 test ns_server-2.5 {basic operation} -body {
-    array set stats [ns_server stats]
-    array size stats
-} -match exact -result 10
+    dict size [ns_server stats]
+} -match exact -result 11
 
 test ns_server-2.6 {basic operation} -body {
-    array set threads [ns_server threads]
-    array size threads
+    dict size [ns_server threads]
 } -match exact -result 5
 
 test ns_server-2.7 {basic operation} -body {

@@ -27,7 +27,9 @@
  * version of this file under either the License or the GPL.
  */
 
-#ifndef _WIN32
+#include <nsconfig.h>
+
+#ifdef HAVE_PTHREAD
 
 /*
  * pthread.c --
@@ -877,7 +879,10 @@ CleanupTls(void *arg)
     pthread_setspecific(key, NULL);
     free(slots);
 }
-
+#else
+# ifndef _WIN32
+#  error "ptread support is required"
+# endif
 #endif
 
 /*

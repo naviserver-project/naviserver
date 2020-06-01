@@ -212,6 +212,29 @@ AX_HAVE_CRYPT_R
 AX_HAVE_BSD_SENDFILE
 AX_HAVE_LINUX_SENDFILE
 
+AX_PTHREAD([
+     AC_LINK_IFELSE([AC_LANG_PROGRAM([[
+         #include <pthread.h>
+      ]], [[
+         pthread_mutex_t mutex;
+	 pthread_rwlock_t rwlock;
+         pthread_mutex_lock(&mutex);
+         pthread_mutex_unlock(&mutex);
+         pthread_rwlock_rdlock(&rwlock);
+         pthread_rwlock_unlock(&rwlock);
+       ]]
+     )], [
+         AC_DEFINE([HAVE_PTHREAD], [1], [Define if you have POSIX threads libraries and header files])
+         with_threads="yes"
+         LIBS="$PTHREAD_LIBS $LIBS"
+         PKGCONFIG_LIBS_PRIVATE="$PTHREAD_LIBS $PTHREAD_CFLAGS $PKGCONFIG_LIBS_PRIVATE"
+         CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+         CC="$PTHREAD_CC"
+      ])
+  ],
+  [ AC_MSG_NOTICE(pthread is not available) ]
+)
+ 
 AC_MSG_CHECKING([need for dup high])
 AC_RUN_IFELSE([AC_LANG_SOURCE([[
   #include <stdio.h>

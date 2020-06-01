@@ -1018,6 +1018,9 @@ NS_EXTERN void Ns_RWLockDestroy(Ns_RWLock *lockPtr);
 NS_EXTERN void Ns_RWLockRdLock(Ns_RWLock *lockPtr)    NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_RWLockWrLock(Ns_RWLock *lockPtr)    NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_RWLockUnlock(Ns_RWLock *lockPtr)    NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_RWLockList(Tcl_DString *dsPtr)       NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_RWLockSetName2(Ns_RWLock *rwPtr, const char *prefix, const char *name)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * cslock.c;

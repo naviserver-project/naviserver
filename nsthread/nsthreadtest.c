@@ -454,6 +454,8 @@ int main(int argc, char *argv[])
     Ns_MutexSetName(&dlock, "dumplock");
     Ns_MutexSetName(&slock, "msglock");
     Ns_MutexSetName(&block, "busylock");
+    Ns_RWLockSetName2(&rwlock, "rwlock", NULL);
+
     Ns_ThreadStackSize(81920);
     Ns_SemaInit(&sema, 3);
     Msg("sema initialized to 3");

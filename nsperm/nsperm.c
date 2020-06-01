@@ -173,9 +173,9 @@ Ns_ModuleInit(const char *server, const char *module)
     NS_NONNULL_ASSERT(module != NULL);
 
     if (uskey < 0) {
-        double d;
-        char buf[TCL_INTEGER_SPACE];
-        Ns_CtxMD5 md5;
+        double        d;
+        char          buf[TCL_INTEGER_SPACE];
+        Ns_CtxMD5     md5;
         unsigned long bigRamdomNumber;
         unsigned char sig[16];
 
@@ -198,6 +198,7 @@ Ns_ModuleInit(const char *server, const char *module)
     Tcl_InitHashTable(&servPtr->users, TCL_STRING_KEYS);
     Tcl_InitHashTable(&servPtr->groups, TCL_STRING_KEYS);
     Ns_RWLockInit(&servPtr->lock);
+    Ns_RWLockSetName2(&servPtr->lock, "rw:nsperm", server);
     Ns_SetRequestAuthorizeProc(server, AuthProc);
 
     result = Ns_TclRegisterTrace(server, AddCmds, servPtr, NS_TCL_TRACE_CREATE);

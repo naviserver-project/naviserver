@@ -610,6 +610,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
 
     case ILocksIdx:
         Ns_MutexList(&ds);
+        Ns_RWLockList(&ds);
         Tcl_DStringResult(interp, &ds);
         break;
 

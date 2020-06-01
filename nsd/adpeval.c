@@ -164,11 +164,15 @@ ConfigServerAdp(const char *server)
      */
 
     Tcl_InitHashTable(&servPtr->adp.pages, TCL_STRING_KEYS);
-    Ns_MutexInit(&servPtr->adp.pagelock);
-    Ns_CondInit(&servPtr->adp.pagecond);
-    Ns_MutexSetName2(&servPtr->adp.pagelock, "nsadp:pages", server);
     Tcl_InitHashTable(&servPtr->adp.tags, TCL_STRING_KEYS);
+
+    Ns_CondInit(&servPtr->adp.pagecond);
+
+    Ns_MutexInit(&servPtr->adp.pagelock);
+    Ns_MutexSetName2(&servPtr->adp.pagelock, "ns:adp:pages", server);
+
     Ns_RWLockInit(&servPtr->adp.taglock);
+    Ns_RWLockSetName2(&servPtr->adp.taglock, "rw:adp:tags", server);
 
     /*
      * Initialise various ADP options.

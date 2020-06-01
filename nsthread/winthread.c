@@ -34,6 +34,10 @@
  *
  *  Interface routines for nsthreads using WIN32 functions.
  *
+ * TODO: since there there exists also a pthreads library for windows, this
+ * file should be split up into parts still required here, and other parts
+ * that can be replaced by the pthreads library.
+ *
  */
 
 #include "thread.h"
