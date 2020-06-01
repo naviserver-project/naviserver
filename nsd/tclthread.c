@@ -719,6 +719,7 @@ NsTclRWLockObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         switch (opt) {
         case RCreateIdx:
             /* Handled above. */
+            Ns_RWLockSetName2(rwlockPtr, "rw:ns_rwlock", servPtr->server);
             break;
 
         case RReadLockIdx:
