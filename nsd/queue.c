@@ -666,7 +666,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
         if ((sockPtr->flags & NS_CONN_SOCK_WAITING) == 0u) {
             /*
              * The flag NS_CONN_SOCK_WAITING is just used to avalid reporting
-             * the same request multiple times as unsuccessful queing attempts
+             * the same request multiple times as unsuccessful queueing attempts
              * (when rejectoverrun is false).
              */
             sockPtr->flags |= NS_CONN_SOCK_WAITING;
@@ -1645,8 +1645,9 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         Ns_DStringPrintf(dsPtr, "requests %lu ", poolPtr->stats.processed);
         Ns_DStringPrintf(dsPtr, "spools %lu ", poolPtr->stats.spool);
         Ns_DStringPrintf(dsPtr, "queued %lu ", poolPtr->stats.queued);
+        Ns_DStringPrintf(dsPtr, "dropped %lu ", poolPtr->stats.dropped);
         Ns_DStringPrintf(dsPtr, "sent %" TCL_LL_MODIFIER "d ", poolPtr->rate.bytesSent);
-        Ns_DStringPrintf(dsPtr,  "connthreads %lu", poolPtr->stats.connthreads);
+        Ns_DStringPrintf(dsPtr, "connthreads %lu", poolPtr->stats.connthreads);
 
         Ns_DStringAppend(dsPtr, " accepttime ");
         Ns_DStringAppendTime(dsPtr, &poolPtr->stats.acceptTime);

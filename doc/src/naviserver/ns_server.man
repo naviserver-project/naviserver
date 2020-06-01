@@ -191,7 +191,8 @@ are managed.
 
 Returns a list of attribute value pairs containing statistics for the
 server and pool, containing the number of requests, queued requests,
-cumulative times, and the number of thread starts.
+dropped requests (queue overruns), cumulative times,
+and the number of started threads.
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
