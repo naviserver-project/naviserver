@@ -379,7 +379,7 @@ proc ns_parseformfile { file form contentType } {
     #
     # Handle charset in options
     #
-    if {[regexp {charset\s*=\s*(\S+)} $options . charset]} {
+    if {[info exists options] && [regexp {charset\s*=\s*(\S+)} $options . charset]} {
         if {$charset ni {utf-8 UTF-8}} {
             fconfigure $fp -encoding $charset
         }
