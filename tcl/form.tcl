@@ -414,7 +414,7 @@ proc ns_parseformfile { file form contentType } {
     # type is neither *www-form-urlencoded nor it has boundaries
     # defined (multipart/form-data).
     #
-    if { ![regexp -nocase {boundary=(.*)$} $options . b] } {
+    if {[info exists options] && ![regexp -nocase {boundary=(.*)$} $options . b] } {
         ns_log warning "ns_parseformfile skips form processing: content-type $contentType"
         close $fp
         return
