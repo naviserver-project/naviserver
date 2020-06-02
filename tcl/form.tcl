@@ -375,11 +375,12 @@ proc ns_parseformfile { file form contentType } {
     #
     # Separate content-type and options
     #
+    set options ""
     regexp {^(.*)\s*;(.*)$} $contentType . contentType options
     #
     # Handle charset in options
     #
-    if {[info exists options] && [regexp {charset\s*=\s*(\S+)} $options . charset]} {
+    if {[regexp {charset\s*=\s*(\S+)} $options . charset]} {
         if {$charset ni {utf-8 UTF-8}} {
             fconfigure $fp -encoding $charset
         }
@@ -414,7 +415,7 @@ proc ns_parseformfile { file form contentType } {
     # type is neither *www-form-urlencoded nor it has boundaries
     # defined (multipart/form-data).
     #
-    if {[info exists options] && ![regexp -nocase {boundary=(.*)$} $options . b] } {
+    if {![regexp -nocase {boundary=(.*)$} $options . b] } {
         ns_log warning "ns_parseformfile skips form processing: content-type $contentType"
         close $fp
         return
