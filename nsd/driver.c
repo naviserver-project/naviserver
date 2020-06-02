@@ -2427,9 +2427,15 @@ DriverThread(void *arg)
                             }
                             break;
 
-                        case SOCK_ERROR:
-                            Ns_Log(Warning, "sockAccept on fd %d returned error", drvPtr->listenfd[n]);
+                        case SOCK_ERROR: {
+                            int sockerrno = ns_sockerrno;
+
+                            if (sockerrno != 0 && sockerrno != EAGAIN) {
+                                Ns_Log(Warning, "sockAccept on fd %d returned error: %s",
+                                       drvPtr->listenfd[n], ns_sockstrerror(ns_sockerrno));
+                            }
                             break;
+                        }
 
                         case SOCK_BADHEADER:      NS_FALL_THROUGH; /* fall through */
                         case SOCK_BADREQUEST:     NS_FALL_THROUGH; /* fall through */
