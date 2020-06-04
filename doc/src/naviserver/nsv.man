@@ -74,8 +74,41 @@ command to determine the arrays with their usages from this bucket.
  ns_log notice $buckets
 [example_end]
 
+[call [cmd "nsv_dict append"]  [arg array] [arg key] [arg dictkey] [opt [arg {value ...}]]]
+[call [cmd "nsv_dict lappend"] [arg array] [arg key] [arg dictkey] [opt [arg {value ...}]]]
+[call [cmd "nsv_dict exists"]  [opt "-var [arg varname]"] [arg array] [arg key] [arg dictkey] [opt [arg {dictkey ...}]]]
+[call [cmd "nsv_dict get"]     [arg array] [arg key] [opt [arg {dictkey ...}]]]
+[call [cmd "nsv_dict getdef"]  [arg array] [arg key] [opt [arg {dictkey ...}]] [arg default]]
+[call [cmd "nsv_dict incr"]    [arg array] [arg key] [opt [arg {increment}]]]
+[call [cmd "nsv_dict keys"]    [arg array] [arg key] [opt [arg {pattern}]]]
+[call [cmd "nsv_dict set"]     [arg array] [arg key] [arg dictkey] [opt [arg {dictkey ...}]] [arg value]]
+[call [cmd "nsv_dict size"]    [arg array] [arg key]]
+[call [cmd "nsv_dict unset"]   [arg array] [arg key] [arg dictkey] [opt [arg {dictkey ...}]]]
 
+Implementation of the Tcl [term dict] command for shared variables.
+The commands work similar as [cmd nsv_set] and [cmd nsv_get],
+except that the value of these commands are structure values in form
+of dicts.
 
+[para] The only differnce from Tcl is the [cmd "nsv_dict get"] which
+has an additional argument to return the value in case the command
+succeeds. This has the adavantage to test and get the value with a
+single locked command. This avoids race conditions and reduces the
+number of locks for the application.
+
+[example_begin]
+ % nsv_dict set personnel 4711 name gustaf
+ name gustaf
+ 
+ % nsv_dict set personnel 4711 sex m
+ name gustaf sex m
+ 
+ % nsv_dict get personnel 4711 name
+ gustaf
+ 
+ % nsv_dict get personnel 4711
+ name gustaf sex m
+[example_end]
 
 [call [cmd nsv_exists] [arg array] [arg key]]
 

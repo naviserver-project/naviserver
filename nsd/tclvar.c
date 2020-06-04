@@ -878,7 +878,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  * GetArrayAndKey --
  *
  *      Get access to array and dictionary object in one command.  Returns
- *      TCL_ERROR, when either the array or the the dict does not exist.
+ *      TCL_ERROR, when either the array or the dict does not exist.
  *
  * Results:
  *      Tcl result.
@@ -1045,7 +1045,8 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             /*
              * Operations on a dict key
              */
-            int nargs = 0;
+            int          nargs = 0;
+            Tcl_Obj     *varObj = NULL;
             Ns_ObjvSpec getArgs[] = {
                 {"array",     Ns_ObjvObj,  &arrayObj,     NULL},
                 {"key",       Ns_ObjvObj,  &keyObj,       NULL},
@@ -1059,13 +1060,19 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             }, getdefArgs[] = {
                 {"array",     Ns_ObjvObj,  &arrayObj,     NULL},
                 {"key",       Ns_ObjvObj,  &keyObj,       NULL},
-                {"args",      Ns_ObjvArgs, &nargs,       NULL},
+                {"args",      Ns_ObjvArgs, &nargs,        NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+            Ns_ObjvSpec existsOpts[] = {
+                {"-var",     Ns_ObjvObj,    &varObj,      NULL},
+                {"--",       Ns_ObjvBreak,  NULL,         NULL},
                 {NULL, NULL, NULL, NULL}
             };
 
-            if (Ns_ParseObjv(NULL, (opt == CGetdefIdx ? getdefArgs
-                                    : (opt == CExistsIdx || opt == CUnsetIdx) ? existsArgs
-                                    : getArgs), interp, 2, objc, objv) != NS_OK) {
+            if (Ns_ParseObjv((opt == CExistsIdx ? existsOpts : NULL),
+                              (opt == CGetdefIdx ? getdefArgs
+                               : (opt == CExistsIdx || opt == CUnsetIdx) ? existsArgs
+                               : getArgs), interp, 2, objc, objv) != NS_OK) {
                 result = TCL_ERROR;
             } else if (opt == CGetdefIdx && nargs == 1) {
                 Ns_TclPrintfResult(interp, "wrong # args: \"nsv_dict %s\" requires a key and a default",
@@ -1139,6 +1146,9 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                                 /*
                                  * dict exists dictkey:1..n
                                  */
+                                if (varObj != NULL) {
+                                    Tcl_ObjSetVar2(interp, varObj, NULL, dictValueObj, 0);
+                                }
                                 Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
                             } else {
                                 /* should not happen */

@@ -600,12 +600,12 @@ test nsv-dict-exists.0 {nsv_dict exists - syntax test} -body {
     nsv_dict exists a1
 } -cleanup {
     nsv_unset -nocomplain a1
-} -returnCodes {error} -result {wrong # args: should be "nsv_dict exists array key dictkeys"}
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict exists ?-var var? ?--? array key dictkeys"}
 test nsv-dict-exists.1 {nsv_dict exists - syntax test, nos such nsv key} -body {
     nsv_dict exists a1 k1
 } -cleanup {
     nsv_unset -nocomplain a1
-} -returnCodes {error} -result {wrong # args: should be "nsv_dict exists array key dictkeys"}
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict exists ?-var var? ?--? array key dictkeys"}
 
 test nsv-dict-exists.1 {nsv_dict exists} -body {
     # add dict values for k1
@@ -637,6 +637,14 @@ test nsv-dict-exists.3 {nsv_dict exists with noexisting array and key/value} -bo
     nsv_unset -nocomplain a1
 } -result {0 0}
 
+test nsv-dict-exists.4 {nsv_dict exists with existing array and key and output variable} -body {
+    nsv_dict set a1 k1 key value
+    set _ [nsv_dict exists -var result a1 k1 key]
+    list $_ $result
+} -cleanup {
+    unset -nocomplain _ result
+    nsv_unset -nocomplain a1
+} -result {1 value}
 
 #
 # nsv_dict unset
