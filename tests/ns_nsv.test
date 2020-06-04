@@ -589,7 +589,7 @@ test nsv-dict-getdef.3 {nsv_dict getdef with nested dicts} -body {
 } -cleanup {
     unset -nocomplain r1 r2
     nsv_unset -nocomplain a1
-} -result {{l2 v1} v1 d3 d4 d5 d6 {missing value to go with key} {no such key: k12}}
+} -result {{l2 v1} v1 d3 d4 d5 d6 {missing value to go with key} d6}
 
 
 
@@ -627,6 +627,15 @@ test nsv-dict-exists.2 {nsv_dict exists with nested dicts} -body {
 } -cleanup {
     nsv_unset -nocomplain a1
 } -result {1 1 0 0 0}
+
+test nsv-dict-exists.3 {nsv_dict exists with noexisting array and key/value} -body {
+    nsv_dict set a1 k1 l1 l2 v1
+    list \
+        [nsv_dict exists AAA k1 l1] \
+        [nsv_dict exists a1 key value]
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -result {0 0}
 
 
 #

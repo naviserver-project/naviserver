@@ -91,6 +91,10 @@ static Array *GetArray(Bucket *bucketPtr, const char *arrayName, bool create)
 
 static unsigned int BucketIndex(const char *arrayName)
     NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+
+static int GetArrayAndKey(Tcl_Interp *interp, Tcl_Obj *arrayObj, const char *keyString, Array  **arrayPtrPtr, Tcl_Obj **objPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+
 
 /*
  *-----------------------------------------------------------------------------
@@ -868,6 +872,22 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     return result;
 }
 
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * GetArrayAndKey --
+ *
+ *      Get access to array and dictionary object in one command.  Returns
+ *      TCL_ERROR, when either the array or the the dict does not exist.
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *-----------------------------------------------------------------------------
+ */
 static int
 GetArrayAndKey(Tcl_Interp *interp, Tcl_Obj *arrayObj, const char *keyString, Array  **arrayPtrPtr, Tcl_Obj **objPtr)
 {
@@ -886,6 +906,8 @@ GetArrayAndKey(Tcl_Interp *interp, Tcl_Obj *arrayObj, const char *keyString, Arr
         } else {
             obj = Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1);
         }
+    } else {
+        result = TCL_ERROR;
     }
     *arrayPtrPtr = arrayPtr;
     *objPtr = obj;
@@ -1150,6 +1172,19 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                                 assert(opt && 0);
                             }
                         }
+                    }
+                } else {
+                    /*
+                     * If array or dict does not exist, we can return in some
+                     * cases ("exists" or "getdef") non-error results.
+                     */
+                    if (opt == CExistsIdx) {
+                        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+                        result = TCL_OK;
+
+                    } else if (opt == CGetdefIdx) {
+                        Tcl_SetObjResult(interp, objv[objc-1]);
+                        result = TCL_OK;
                     }
                 }
                 if (arrayPtr != NULL) {
