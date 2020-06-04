@@ -235,6 +235,7 @@ NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
             NS_FALL_THROUGH; /* fall through */
         case THandleIdx:
             Ns_ThreadSelf(&tid);
+            assert(tid != NULL);
             Ns_TclSetAddrObj(Tcl_GetObjResult(interp), threadType, tid);
             break;
 
