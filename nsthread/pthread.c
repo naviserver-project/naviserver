@@ -27,6 +27,9 @@
  * version of this file under either the License or the GPL.
  */
 
+/* This WHOLE FILE is Unix only, do not compile on Windows. */
+#ifndef _WIN32
+
 #include <nsconfig.h>
 
 #ifdef HAVE_PTHREAD
@@ -884,6 +887,9 @@ CleanupTls(void *arg)
 #  error "ptread support is required"
 # endif
 #endif
+
+#endif
+/* This WHOLE FILE is Unix only, do not compile on Windows. */
 
 /*
  * Local Variables:
