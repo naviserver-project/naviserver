@@ -60,6 +60,16 @@ proc tcltest::test args {
 
 ns_logctl severity DriverDebug true
 
+set win32_p [expr {{windows} eq $::tcl_platform(platform)}]
+if {$win32_p} {
+   # Skip these for now, the features they test are known to be broken on
+   # Windows: --atp@piskorski.com, 2020/06/04 16:50 EDT
+   configure -notfile [list http_persistent.test ns_proxy.test]
+
+   # ONLY run these tests:
+   #configure -file [list ns_thread.test]
+}
+
 runAllTests
 
 #
