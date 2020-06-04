@@ -35,7 +35,7 @@ Options:
 
   -i 1       : Actually do the install if true.
   -h 1       : Show this help and exit.
-  -f PATH    : Copy files from this source diredtory.
+  -f PATH    : Copy files from this source directory.
                By default it is taken from your current working directory.
   -t PATH    : Install-to path name.  May be modified if using '-c 1'.
                You may rename or move it to anything you want after installing.
@@ -157,7 +157,7 @@ proc install_naviserver_core {core_dir install_dir} {
    foreach ff [list nsd-config.tcl simple-config.tcl openacs-config.tcl sample-config.tcl] {
       lappend cp_list $ff {conf/}
    }
-   foreach ff [list index.adp bitbucket-install.tcl] {
+   foreach ff [list index.adp bitbucket-install.tcl tests] {
       lappend cp_list $ff {pages/}
    }
    foreach [list from to] $cp_list {
