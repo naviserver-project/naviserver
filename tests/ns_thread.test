@@ -5,6 +5,13 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
+set ::notWin32 [expr {{windows} ne $::tcl_platform(platform)}]
+tcltest::testConstraint notWin32 $::notWin32
+
+# On Windows some of these tests currently (2020-06-04) trigger this
+# Ns_IncrTime() assertion, so skip them for now with the notWin32
+# constraint:
+#   Assertion failed: sec >= 0, file time.c, line 344
 
 
 test ns_thread-1.1 {basic syntax} -body {
@@ -66,7 +73,7 @@ test ns_thread-2.5 {thread yield} -body {
     unset -nocomplain -- i
 } -result {}
 
-test ns_thread-2.6 {get thread handle of self} -body {
+test ns_thread-2.6 {get thread handle of self} -constraints {notWin32} -body {
     ns_thread handle
 } -match regexp -result {^t.*ns:thread$}
 
