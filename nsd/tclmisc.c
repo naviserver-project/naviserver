@@ -2414,6 +2414,8 @@ NsTclRlimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *          this function *is* very cheap, even by comparison with
  *          industry-standard hashes like FNV.
  *
+ *       Implements the "ns_hash" command.
+ *
  * Results:
  *      Numeric hash value.
  *
