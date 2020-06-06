@@ -534,13 +534,13 @@ test nsv-dict-get.3 {nsv_dict get with existing array and key and output variabl
 } -result {1 value}
 
 test nsv-dict-get.4 {nsv_dict get with existing array and non-existing key and output variable} -body {
-    nsv_dict set a1 k1 l1 l2 v1;
+    nsv_dict set a1 k1 l1 l2 v1
     set _ [nsv_dict get -varname result a1 k1 x]
-    list $_ $result
+    list $_ [info exists result]
 } -cleanup {
     unset -nocomplain _ result
     nsv_unset -nocomplain a1
-} -result {1 value}
+} -result {0 0}
 
 
 #
