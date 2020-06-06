@@ -81,6 +81,8 @@ DEBUG=1
 !endif
 
 PWD = $(MAKEDIR)
+PEM_FILE  = tests/testserver/etc/server.pem
+SSLCONFIG = tests/testserver/etc/openssl.cnf
 
 # nmake command to exec for each module:
 NMAKE = nmake /nologo TCLPATH="$(TCLPATH)" TCLLIB="$(TCLLIB)" LIB="$(LIB)" DEBUG=$(DEBUG) NSBUILD=1
@@ -136,7 +138,7 @@ install: all-core all-mod _install
 # way to make only that one target depend on it:
 
 include/nsversion-win32.h:  _nsversion
-all-core:  include/nsversion-win32.h  $(core_targets)
+all-core:  include/nsversion-win32.h  $(core_targets) _cert
 all-mod:  $(module_targets)
 clean-core: $(tgts_core_clean)
 clean-mod:  $(tgts_modl_clean)
@@ -165,6 +167,11 @@ _nsversion:
 	tclsh win32-util/configure.tcl
 _install:
 	tclsh win32-util/install-nsd.tcl -i 1
+
+_cert: $(PEM_FILE)
+$(PEM_FILE):
+	openssl req -new -config $(SSLCONFIG) -x509 -nodes -sha1 -days 365 -keyout $(PEM_FILE) -out $(PEM_FILE)
+	openssl dhparam 1024 >> $(PEM_FILE)
 
 # Nmake has NO GOOD WAY to save the output of a shell command into a variable!
 # Thus we use a static output filename here, rather than e.g. embedding the current date/time.

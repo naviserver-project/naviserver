@@ -60,6 +60,18 @@ proc tcltest::test args {
 
 ns_logctl severity DriverDebug true
 
+# For temporary debugging, you can turn test files on/off here.  But
+# for committing public changes, you should instead use the tcltest
+# "-constraints" feature, NOT do it here:
+set win32_p [expr {{windows} eq $::tcl_platform(platform)}]
+if {$win32_p} {
+   #configure -verbose {pass skip start}
+   ## Temporarily (and silently!) SKIP these for now:
+   #configure -notfile [list]
+   ## ONLY run these tests:
+   #configure -file [list ns_thread.test]
+}
+
 runAllTests
 
 #

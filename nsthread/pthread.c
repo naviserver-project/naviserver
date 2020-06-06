@@ -27,7 +27,9 @@
  * version of this file under either the License or the GPL.
  */
 
+#ifndef _WIN32
 #include <nsconfig.h>
+#endif
 
 #ifdef HAVE_PTHREAD
 
@@ -884,6 +886,7 @@ CleanupTls(void *arg)
 #  error "ptread support is required"
 # endif
 #endif
+
 
 /*
  * Local Variables:

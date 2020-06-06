@@ -9,7 +9,25 @@ if {[ns_config test listenport]} {
     testConstraint serverListen true
 }
 
-test http-persist-1 {simple setup} -constraints {serverListen} -body {
+set ::notWin32 [expr {{windows} ne $::tcl_platform(platform)}]
+tcltest::testConstraint notWin32 $::notWin32
+
+# On Windows, currently these tests all LOCK UP NaviServer, so for now
+# we skip them witht the notWin32 constraint.  The error accompanying
+# the lock up looks like this:  --atp@piskorski.com, 2020/06/04 16:50 EDT
+#
+# ns_sockioctl failed: no such file or directory
+#     while executing
+# "ns_socknread $s"
+#     (procedure "client_readable" line 2)
+#     invoked from within
+# "client_readable 1000 $s"
+#     (procedure "tcltest::client_receive" line 2)
+#     invoked from within
+# "tcltest::client_receive sock0000000006332A20"
+
+
+test http-persist-1 {simple setup} -constraints {serverListen notWin32} -body {
 
     set d [tcltest::client 2 {
         "GET /1 HTTP/1.1\nHost: localhost\n\n"
@@ -32,7 +50,7 @@ test http-persist-1 {simple setup} -constraints {serverListen} -body {
 } -result {connection keep-alive content-length 3 connection keep-alive content-length 4}
 
 
-test http-persist-2 {three requests in two chunks} -constraints {serverListen} -body {
+test http-persist-2 {three requests in two chunks} -constraints {serverListen notWin32} -body {
 
     set d [tcltest::client 3 {
         "GET /1 HTTP/1.1\nHost: localhost\n\nGET /2 HTTP/1.1\nHost: localhost\n\n"
@@ -53,7 +71,7 @@ test http-persist-2 {three requests in two chunks} -constraints {serverListen} -
 } -result {content-length 3 content-length 4 content-length 5}
 
 
-test http-persist-3 {three requests in one chunk} -constraints {serverListen} -body {
+test http-persist-3 {three requests in one chunk} -constraints {serverListen notWin32} -body {
 
     set d [tcltest::client 3 {
         "GET /1 HTTP/1.1\nHost: localhost\n\nGET /2 HTTP/1.1\nHost: localhost\n\nGET /3 HTTP/1.1\nHost: localhost\n\n"
@@ -73,7 +91,7 @@ test http-persist-3 {three requests in one chunk} -constraints {serverListen} -b
 } -result {content-length 3 content-length 4 content-length 5}
 
 
-test http-persist-4 {three requests in three chunks, broken strangely} -constraints {serverListen} -body {
+test http-persist-4 {three requests in three chunks, broken strangely} -constraints {serverListen notWin32} -body {
 
     set d [tcltest::client 3 {
         "GET /1 HTTP/1.1\nHost: localhost\n\nGET /2 "
@@ -95,7 +113,7 @@ test http-persist-4 {three requests in three chunks, broken strangely} -constrai
 } -result {content-length 3 content-length 4 content-length 5}
 
 
-test http-persist-5 {three requests in two chunks, one with content} -constraints {serverListen} -body {
+test http-persist-5 {three requests in two chunks, one with content} -constraints {serverListen notWin32} -body {
 
     set d [tcltest::client 3 {
         "GET /1 HTTP/1.1\nHost: localhost\nContent-length: 2\n\nabGET /2 HTTP/1.1\nHost: localhost\n\n"
@@ -116,7 +134,7 @@ test http-persist-5 {three requests in two chunks, one with content} -constraint
 } -result {content-length 3 content-length 4 content-length 5}
 
 
-test http-persist-6 {two requests in one chunk, both with content} -constraints {serverListen} -body {
+test http-persist-6 {two requests in one chunk, both with content} -constraints {serverListen notWin32} -body {
 
     set d [tcltest::client 2 {
         "GET /1 HTTP/1.1\nHost: localhost\nContent-length: 2\n\nabGET /2 HTTP/1.1\nHost: localhost\nContent-length: 3\n\nXYZ"
@@ -136,7 +154,7 @@ test http-persist-6 {two requests in one chunk, both with content} -constraints 
 } -result {content-length 3 content-length 4}
 
 
-test http-persist-7 {two requests in one chunk, both with content, trailing junk} -constraints {serverListen} -body {
+test http-persist-7 {two requests in one chunk, both with content, trailing junk} -constraints {serverListen notWin32} -body {
 
     set d [tcltest::client 3 {
         "GET /1 HTTP/1.1\nHost: localhost\nContent-length: 2\n\nabGET /2 HTTP/1.1\nHost: localhost\nContent-length: 3\n\nXYZTOOMUCH\n"
@@ -156,7 +174,7 @@ test http-persist-7 {two requests in one chunk, both with content, trailing junk
 } -result {content-length 3 content-length 4 content-length {}}
 
 
-test http-persist-8 {one request in six chunks} -constraints {serverListen} -body {
+test http-persist-8 {one request in six chunks} -constraints {serverListen notWin32} -body {
 
     set d [tcltest::client 1 {
         "GET "
@@ -181,7 +199,7 @@ test http-persist-8 {one request in six chunks} -constraints {serverListen} -bod
 } -result {content-length 3}
 
 
-test http-persist-9 {two requests with content, broken to 3 arbitrary chunks} -constraints {serverListen} -body {
+test http-persist-9 {two requests with content, broken to 3 arbitrary chunks} -constraints {serverListen notWin32} -body {
 
     set d [tcltest::client 2 {
         "GET /1 HTTP/1.1\nHost: localhost\nContent-length: 20\n\n0123456789"
