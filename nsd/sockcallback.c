@@ -466,13 +466,13 @@ SockCallbackThread(void *UNUSED(arg))
                 ++nfds;
 
                 if (cbPtr->timeout.sec != 0 || cbPtr->timeout.usec != 0) {
-                    long to = diff.sec * -1000 + diff.usec / 1000 + 1;
+                    time_t to = diff.sec * -1000 + diff.usec / 1000 + 1;
 
                     if (to < pollTimeout)  {
                         /*
                          * Reduce poll timeout to smaller value.
                          */
-                        pollTimeout = to;
+                        pollTimeout = (long)to;
                     }
                 }
             }

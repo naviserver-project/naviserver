@@ -38,6 +38,7 @@
 #ifdef _WIN32
 
 # include <process.h>
+# include <VersionHelpers.h>
 static void Set2Argv(Ns_DString *dsPtr, const Ns_Set *env);
 
 #else
@@ -150,7 +151,7 @@ Ns_WaitForProcessStatus(pid_t pid, int *exitcodePtr, int *waitstatusPtr)
 {
     Ns_ReturnCode status = NS_OK;
 #ifdef _WIN32
-    HANDLE        process = (HANDLE) pid;
+    HANDLE        process = (HANDLE)pid;
     DWORD         exitcode = 0u;
 
     if ((WaitForSingleObject(process, INFINITE) == WAIT_FAILED) ||
@@ -285,10 +286,10 @@ Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
         return NS_INVALID_PID;
     }
     oinfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-    if (GetVersionEx(&oinfo) == TRUE && oinfo.dwPlatformId != VER_PLATFORM_WIN32_NT) {
-        cmd = "command.com";
-    } else {
+    if (IsWindowsXPOrGreater()) {
         cmd = "cmd.exe";
+    } else {
+        cmd = "command.com";
     }
 
     /*
@@ -367,7 +368,7 @@ Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
         pid = NS_INVALID_PID;
     } else {
         CloseHandle(pi.hThread);
-        pid = pi.hProcess;
+        pid = (pid_t)pi.hProcess;
     }
     Ns_DStringFree(&cds);
     Ns_DStringFree(&xds);

@@ -767,14 +767,16 @@ Ns_DbPoolStats(Tcl_Interp *interp)
              *  Tcl_ListObjAppendElement(interp, valuesObj, Ns_TclNewTimeObj(&poolPtr->waitTime));
             */
             if (likely(result == TCL_OK)) {
-                len = snprintf(buf, sizeof(buf), "%ld.%06ld", poolPtr->waitTime.sec, poolPtr->waitTime.usec);
+                len = snprintf(buf, sizeof(buf), "%" PRId64 ".%06ld",
+                               (int64_t)poolPtr->waitTime.sec, poolPtr->waitTime.usec);
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj(buf, len));
             }
             if (likely(result == TCL_OK)) {
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("sqltime", 7));
             }
             if (likely(result == TCL_OK)) {
-                len = snprintf(buf, sizeof(buf), "%ld.%06ld", poolPtr->sqlTime.sec, poolPtr->sqlTime.usec);
+                len = snprintf(buf, sizeof(buf), "%" PRId64 ".%06ld",
+                               (int64_t)poolPtr->sqlTime.sec, poolPtr->sqlTime.usec);
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj(buf, len));
             }
             if (likely(result == TCL_OK)) {
@@ -1617,8 +1619,8 @@ Ns_DbListMinDurations(Tcl_Interp *interp, const char *server)
 
             poolPtr = GetPool(pool);
             (void) Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(pool, -1));
-            len = snprintf(buffer, sizeof(buffer), "%ld.%06ld",
-                           poolPtr->minDuration.sec, poolPtr->minDuration.usec);
+            len = snprintf(buffer, sizeof(buffer), "%" PRId64 ".%06ld",
+                           (int64_t)poolPtr->minDuration.sec, poolPtr->minDuration.usec);
             (void) Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(buffer, len));
         }
     }

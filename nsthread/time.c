@@ -338,7 +338,7 @@ Ns_DiffTime(const Ns_Time *t1, const Ns_Time *t0, Ns_Time *diffPtr)
  */
 
 void
-Ns_IncrTime(Ns_Time *timePtr, long sec, long usec)
+Ns_IncrTime(Ns_Time *timePtr, time_t sec, long usec)
 {
     NS_NONNULL_ASSERT(timePtr != NULL);
     assert(sec >= 0);
@@ -401,10 +401,10 @@ Ns_AbsoluteTime(Ns_Time *absPtr, Ns_Time *adjPtr)
  *
  *----------------------------------------------------------------------
  */
-long
+time_t
 Ns_TimeToMilliseconds(const Ns_Time *timePtr)
 {
-    long result;
+    time_t result;
 
     NS_NONNULL_ASSERT(timePtr != NULL);
 

@@ -3190,8 +3190,8 @@ SockError(Sock *sockPtr, SockState reason, int err)
         if (sockPtr->poolPtr != NULL && sockPtr->poolPtr->wqueue.retryafter.sec > 0) {
             char headers[14 + TCL_INTEGER_SPACE];
 
-            snprintf(headers, sizeof(headers), "Retry-After: %ld",
-                     sockPtr->poolPtr->wqueue.retryafter.sec);
+            snprintf(headers, sizeof(headers), "Retry-After: %" PRId64,
+                     (int64_t)sockPtr->poolPtr->wqueue.retryafter.sec);
             SockSendResponse(sockPtr, 503, errMsg, headers);
         } else {
             SockSendResponse(sockPtr, 503, errMsg, NULL);
@@ -5661,7 +5661,7 @@ WriterThread(void *arg)
                     && (size_t)curPtr->nsent > curPtr->sockPtr->drvPtr->bufsize
                     )  {
                     Ns_Time diff;
-                    long    currentMs;
+                    time_t  currentMs;
 
                     Ns_DiffTime(&now, &curPtr->startTime, &diff);
                     currentMs = Ns_TimeToMilliseconds(&diff);
@@ -6627,7 +6627,7 @@ WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
         int         fd = NS_INVALID_FD;
 
         result = WriterCheckInputParams(interp, fileNameString,
-                                        (size_t)size, offset,
+                                        (size_t)size, (off_t)offset,
                                         &fd, &nrbytes);
 
         if (likely(result == TCL_OK)) {
@@ -6820,7 +6820,7 @@ WriterSubmitFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
             }
 
             filebufs[i].fd = fd;
-            filebufs[i].offset = offset;
+            filebufs[i].offset = (off_t)offset;
             filebufs[i].length = nrbytes;
 
             totalbytes = totalbytes + (size_t)nrbytes;

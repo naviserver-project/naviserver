@@ -374,10 +374,10 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
         Ns_MutexUnlock(&servPtr->tcl.cachelock);
 
         Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("maxsize", 7));
-        Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewLongObj(maxSize));
+        Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewWideIntObj(maxSize));
 
         Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("maxentry", 8));
-        Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewLongObj(maxEntry));
+        Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewWideIntObj(maxEntry));
 
         Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("expires", 7));
         if (cPtr->expires.sec != 0 || cPtr->expires.usec != 0) {

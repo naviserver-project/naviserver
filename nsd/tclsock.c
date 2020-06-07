@@ -518,7 +518,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     } else {
         NS_SOCKET      sock;
         Ns_ReturnCode  status = NS_OK;
-        long           msec;
+        time_t         msec;
 
         /*
          * Provide error messages for invalid argument combinations.  Note that either
@@ -617,7 +617,15 @@ NsTclSelectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         if (Ns_TclGetTimeFromObj(interp, objv[2], &timeout) != TCL_OK) {
             return TCL_ERROR;
         }
+#ifdef _WIN32
+        /*
+         * Unfortunately, windows defines tv_sec as long.
+         * https://docs.microsoft.com/en-us/windows/win32/api/winsock/ns-winsock-timeval
+         */
+        tv.tv_sec  = (long)timeout.sec;
+#else
         tv.tv_sec  = timeout.sec;
+#endif
         tv.tv_usec = (suseconds_t)timeout.usec;
         arg = 3;
     }

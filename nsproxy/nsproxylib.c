@@ -1212,7 +1212,7 @@ Wait(Tcl_Interp *interp, Proxy *proxyPtr, Ns_Time *timeoutPtr)
     } else if (proxyPtr->slavePtr == NULL) {
         err = EDead;
     } else if (proxyPtr->state != Done) {
-        long ms;
+        time_t ms;
 
         if (timeoutPtr != NULL) {
             ms = Ns_TimeToMilliseconds(timeoutPtr);
@@ -1225,7 +1225,7 @@ Wait(Tcl_Interp *interp, Proxy *proxyPtr, Ns_Time *timeoutPtr)
         if (ms <= 0) {
             ms = -1;
         }
-        if (WaitFd(proxyPtr->slavePtr->rfd, POLLIN, ms) == 0) {
+        if (WaitFd(proxyPtr->slavePtr->rfd, POLLIN, (long)ms) == 0) {
             err = EEvalTimeout;
         } else {
             proxyPtr->state = Done;
@@ -3809,7 +3809,7 @@ GetTimeDiff(Ns_Time *timePtr)
 
     Ns_GetTime(&now);
     Ns_DiffTime(timePtr, &now, &diff);
-    return Ns_TimeToMilliseconds(&diff);
+    return (long)Ns_TimeToMilliseconds(&diff);
 }
 
 /*

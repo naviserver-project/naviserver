@@ -225,8 +225,8 @@ Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr)
             }
         }
         if (likely(objPtr->typePtr == &timeType)) {
-            timePtr->sec =  (long) objPtr->internalRep.twoPtrValue.ptr1;
-            timePtr->usec = (long) objPtr->internalRep.twoPtrValue.ptr2;
+            timePtr->sec =  (time_t)objPtr->internalRep.twoPtrValue.ptr1;
+            timePtr->usec = PTR2LONG(objPtr->internalRep.twoPtrValue.ptr2);
         }
     }
     return result;
@@ -540,7 +540,7 @@ NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         rc = TCL_ERROR;
     } else {
-        long ms = Ns_TimeToMilliseconds(tPtr);
+        time_t ms = Ns_TimeToMilliseconds(tPtr);
 
         assert(tPtr != NULL);
         if (ms > 0) {
@@ -639,8 +639,8 @@ UpdateStringOfTime(Tcl_Obj *objPtr)
     if (timePtr->usec == 0 && timePtr->sec >= 0) {
         len = ns_uint64toa(buf, (uint64_t)timePtr->sec);
     } else {
-        len = snprintf(buf, sizeof(buf), "%ld:%ld",
-                       timePtr->sec, timePtr->usec);
+        len = snprintf(buf, sizeof(buf), "%" PRId64 ":%ld",
+                       (int64_t)timePtr->sec, timePtr->usec);
     }
     Ns_TclSetStringRep(objPtr, buf, len);
 }
@@ -854,7 +854,7 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
                                   multiplier, tPtr->sec, dblFraction);
                             */
                             DblValueToNstime(tPtr, -1 *
-                                             multiplier * ((double)labs(tPtr->sec) + dblFraction));
+                                             multiplier * ((double)llabs(tPtr->sec) + dblFraction));
                         } else {
                             DblValueToNstime(tPtr, multiplier * ((double)tPtr->sec + dblFraction));
                         }

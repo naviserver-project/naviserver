@@ -1186,7 +1186,7 @@ JobJobListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
                 || AppendField(interp, jobFieldList, "type",   jobType) != TCL_OK
                 || AppendField(interp, jobFieldList, "req",    jobReq) != TCL_OK
                 || AppendField(interp, jobFieldList, "thread", threadId) != TCL_OK
-                || AppendFieldLong(interp, jobFieldList, "time", Ns_TimeToMilliseconds(&diff)) != TCL_OK
+                || AppendFieldLong(interp, jobFieldList, "time", (long)Ns_TimeToMilliseconds(&diff)) != TCL_OK
                 || AppendFieldLong(interp, jobFieldList, "starttime", (long)jobPtr->startTime.sec) != TCL_OK
                 || AppendFieldLong(interp, jobFieldList, "endtime", (long)jobPtr->endTime.sec) != TCL_OK
                 ) {

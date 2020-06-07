@@ -330,6 +330,7 @@ Ns_RWLockRdLock(Ns_RWLock *rwPtr)
     if (unlikely(err == EBUSY)) {
         busy = NS_TRUE;
     } else if (unlikely(err != 0)) {
+        busy = NS_FALSE;
         NsThreadFatal("Ns_RWLockRdLock", "pthread_rwlock_tryrdlock", err);
     } else {
         busy = NS_FALSE;
@@ -399,6 +400,7 @@ Ns_RWLockWrLock(Ns_RWLock *rwPtr)
     if (unlikely(err == EBUSY)) {
         busy = NS_TRUE;
     } else if (unlikely(err != 0)) {
+        busy = NS_FALSE;
         NsThreadFatal("Ns_RWLockWrLock", "pthread_rwlock_trywrlock", err);
     } else {
         busy = NS_FALSE;

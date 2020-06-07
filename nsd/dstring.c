@@ -428,10 +428,10 @@ Ns_DStringAppendTime(Tcl_DString *dsPtr, const Ns_Time *timePtr)
         Ns_DStringNAppend(dsPtr, "-", 1);
     }
     if (timePtr->usec == 0) {
-        Ns_DStringPrintf(dsPtr, "%ld", labs(timePtr->sec));
+        Ns_DStringPrintf(dsPtr, "%lld", llabs(timePtr->sec));
     } else {
-        Ns_DStringPrintf(dsPtr, "%ld.%06ld",
-                         labs(timePtr->sec), labs(timePtr->usec));
+        Ns_DStringPrintf(dsPtr, "%lld.%06ld",
+                         llabs(timePtr->sec), labs(timePtr->usec));
         /*
          * Strip trailing zeros after comma dot.
          */
