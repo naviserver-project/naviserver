@@ -1810,10 +1810,6 @@ NS_EXTERN int
 Ns_GetTimeFromString(Tcl_Interp *interp, const char *str, Ns_Time *tPtr)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-NS_EXTERN long
-Ns_TimeToMilliseconds(const Ns_Time *timePtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
-
 /*
  * tclxkeylist.c:
  */

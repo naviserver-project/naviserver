@@ -492,7 +492,7 @@ test nsv-dict-get.0 {nsv_dict get - syntax test} -body {
     nsv_dict get a1
 } -cleanup {
     nsv_unset -nocomplain a1
-} -returnCodes {error} -result {wrong # args: should be "nsv_dict get array key ?dictkeys?"}
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict get ?-varname varname? ?--? array key ?dictkeys?"}
 
 test nsv-dict-get.1 {nsv_dict get} -body {
     # add dict values for k1
@@ -524,6 +524,23 @@ test nsv-dict-get.2 {nsv_dict get with nested dicts} -body {
     nsv_unset -nocomplain a1
 } -result {{l1 {l2 v1}} {l2 v1} v1 {missing value to go with key}}
 
+test nsv-dict-get.3 {nsv_dict get with existing array and key and output variable} -body {
+    nsv_dict set a1 k1 key value
+    set _ [nsv_dict get -varname result a1 k1 key]
+    list $_ $result
+} -cleanup {
+    unset -nocomplain _ result
+    nsv_unset -nocomplain a1
+} -result {1 value}
+
+test nsv-dict-get.4 {nsv_dict get with existing array and non-existing key and output variable} -body {
+    nsv_dict set a1 k1 l1 l2 v1
+    set _ [nsv_dict get -varname result a1 k1 x]
+    list $_ [info exists result]
+} -cleanup {
+    unset -nocomplain _ result
+    nsv_unset -nocomplain a1
+} -result {0 0}
 
 
 #
@@ -533,13 +550,13 @@ test nsv-dict-getdef.0.1 {nsv_dict getdef - syntax test no key} -body {
     nsv_dict getdef a1
 } -cleanup {
     nsv_unset -nocomplain a1
-} -returnCodes {error} -result {wrong # args: should be "nsv_dict getdef array key args"}
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict getdef ?-varname varname? ?--? array key args"}
 
 test nsv-dict-getdef.0.2 {nsv_dict getdef - syntax test, key, no dict key, not default} -body {
     nsv_dict getdef a1 k1
 } -cleanup {
     nsv_unset -nocomplain a1
-} -returnCodes {error} -result {wrong # args: should be "nsv_dict getdef array key args"}
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict getdef ?-varname varname? ?--? array key args"}
 
 test nsv-dict-getdef.0.3 {nsv_dict getdef - syntax test, key, no dict key} -body {
     nsv_dict getdef a1 k1 default1
@@ -589,8 +606,17 @@ test nsv-dict-getdef.3 {nsv_dict getdef with nested dicts} -body {
 } -cleanup {
     unset -nocomplain r1 r2
     nsv_unset -nocomplain a1
-} -result {{l2 v1} v1 d3 d4 d5 d6 {missing value to go with key} {no such key: k12}}
+} -result {{l2 v1} v1 d3 d4 d5 d6 {missing value to go with key} d6}
 
+test nsv-dict-getdef.4 {nsv_dict getdef with existing array and key and output variable} -body {
+    nsv_dict set a1 k1 key value
+    set r1 [nsv_dict getdef -varname result1 a1 k1 key default]
+    set r2 [nsv_dict getdef -varname result2 a1 k1 someotherkey default]
+    list $r1 $result1 $r2 $result2
+} -cleanup {
+    unset -nocomplain r1 r2 result1 result2
+    nsv_unset -nocomplain a1
+} -result {1 value 0 default}
 
 
 #
@@ -627,6 +653,15 @@ test nsv-dict-exists.2 {nsv_dict exists with nested dicts} -body {
 } -cleanup {
     nsv_unset -nocomplain a1
 } -result {1 1 0 0 0}
+
+test nsv-dict-exists.3 {nsv_dict exists with noexisting array and key/value} -body {
+    nsv_dict set a1 k1 l1 l2 v1
+    list \
+        [nsv_dict exists AAA k1 l1] \
+        [nsv_dict exists a1 key value]
+} -cleanup {
+    nsv_unset -nocomplain a1
+} -result {0 0}
 
 
 #

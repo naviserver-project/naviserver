@@ -694,7 +694,7 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
             int       err = 0;
             socklen_t len = sizeof(errno);
 
-            err = getsockopt(sock, SOL_SOCKET, SO_ERROR, &errno, &len);
+            err = getsockopt(sock, SOL_SOCKET, SO_ERROR, (void*)&errno, &len);
             if (err == -1 || errno != 0) {
                 Ns_Log(Debug, "Ns_SockTimedWait on sock %d received events"
                        " %.4x, errno %d <%s>",
@@ -1617,7 +1617,7 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
                                  * address or not.
                                  */
                                 len = sizeof(error);
-                                getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, &len);
+                                getsockopt(sock, SOL_SOCKET, SO_ERROR, (void*)&error, &len);
 
                                 /*Ns_Log(Notice, "async connect on sock %d, poll returned %d revents %.4x, extraerr %d <%s>",
                                   sock, n, sockfd.revents, error, ns_sockstrerror(error));*/

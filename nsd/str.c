@@ -342,8 +342,10 @@ Ns_StrToMemUnit(const char *chars, Tcl_WideInt *intPtr)
                  * digits.
                  */
                 if (*endPtr == '.') {
-                    long   decimal, i, digits, divisor = 1;
-                    char  *ep;
+                    long long decimal;
+                    long      i, digits;
+                    int       divisor = 1;
+                    char     *ep;
 
                     endPtr++;
                     decimal = strtoll(endPtr, &ep, 10);

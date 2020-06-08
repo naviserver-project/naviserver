@@ -613,7 +613,13 @@ Ns_ConfigGetInt64(const char *section, const char *key, int64_t *valuePtr)
     NS_NONNULL_ASSERT(valuePtr != NULL);
 
     s = Ns_ConfigGetValue(section, key);
-    if (s == NULL || sscanf(s, "%24" SCNd64, valuePtr) != 1) {
+    if (s == NULL || sscanf(s, "%24"
+#ifdef _WIN32
+                            "I64d"
+#else
+                            SCNd64
+#endif
+                            , valuePtr) != 1) {
         success = NS_FALSE;
     }
     return success;

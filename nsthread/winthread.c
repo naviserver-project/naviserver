@@ -585,7 +585,8 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
     Cond         *condPtr;
     WinThread    *wPtr;
     Ns_Time       now, wait;
-    DWORD         msec, w;
+    time_t        msec;
+    DWORD         w;
 
     /*
      * Convert to relative wait time and verify.
@@ -621,7 +622,7 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
      */
 
     Ns_MutexUnlock(mutex);
-    w = WaitForSingleObject(wPtr->event, msec);
+    w = WaitForSingleObject(wPtr->event, (DWORD)msec);
     if (w != WAIT_OBJECT_0 && w != WAIT_TIMEOUT) {
         NsThreadFatal("Ns_CondTimedWait", "WaitForSingleObject", GetLastError());
     }

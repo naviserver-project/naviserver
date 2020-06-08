@@ -883,7 +883,7 @@ CleanupTls(void *arg)
 }
 #else
 # ifndef _WIN32
-#  error "ptread support is required"
+#  error "pthread support is required"
 # endif
 #endif
 

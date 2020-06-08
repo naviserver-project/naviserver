@@ -70,6 +70,8 @@
 
 #define NS_NO_MUTEX_TIMING 1
 
+NS_EXTERN void Ns_RWLockList(Tcl_DString *dsPtr)      NS_GNUC_NONNULL(1);
+
 /*
  * The following structure defines a read/write lock including a mutex
  * to protect access to the structure and condition variables for waiting
@@ -328,6 +330,7 @@ Ns_RWLockRdLock(Ns_RWLock *rwPtr)
     if (unlikely(err == EBUSY)) {
         busy = NS_TRUE;
     } else if (unlikely(err != 0)) {
+        busy = NS_FALSE;
         NsThreadFatal("Ns_RWLockRdLock", "pthread_rwlock_tryrdlock", err);
     } else {
         busy = NS_FALSE;
@@ -397,6 +400,7 @@ Ns_RWLockWrLock(Ns_RWLock *rwPtr)
     if (unlikely(err == EBUSY)) {
         busy = NS_TRUE;
     } else if (unlikely(err != 0)) {
+        busy = NS_FALSE;
         NsThreadFatal("Ns_RWLockWrLock", "pthread_rwlock_trywrlock", err);
     } else {
         busy = NS_FALSE;

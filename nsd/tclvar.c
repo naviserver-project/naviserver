@@ -91,6 +91,10 @@ static Array *GetArray(Bucket *bucketPtr, const char *arrayName, bool create)
 
 static unsigned int BucketIndex(const char *arrayName)
     NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+
+static int GetArrayAndKey(Tcl_Interp *interp, Tcl_Obj *arrayObj, const char *keyString, Array  **arrayPtrPtr, Tcl_Obj **objPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+
 
 /*
  *-----------------------------------------------------------------------------
@@ -868,6 +872,22 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     return result;
 }
 
+/*
+ *-----------------------------------------------------------------------------
+ *
+ * GetArrayAndKey --
+ *
+ *      Get access to array and dictionary object in one command.  Returns
+ *      TCL_ERROR, when either the array or the dict does not exist.
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *-----------------------------------------------------------------------------
+ */
 static int
 GetArrayAndKey(Tcl_Interp *interp, Tcl_Obj *arrayObj, const char *keyString, Array  **arrayPtrPtr, Tcl_Obj **objPtr)
 {
@@ -886,6 +906,8 @@ GetArrayAndKey(Tcl_Interp *interp, Tcl_Obj *arrayObj, const char *keyString, Arr
         } else {
             obj = Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1);
         }
+    } else {
+        result = TCL_ERROR;
     }
     *arrayPtrPtr = arrayPtr;
     *objPtr = obj;
@@ -978,7 +1000,9 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 {NULL, NULL, NULL, NULL}
             };
 
-            if (Ns_ParseObjv(NULL, (opt == CSizeIdx ? sizeArgs : keysArgs), interp, 2, objc, objv) != NS_OK) {
+            if (Ns_ParseObjv(NULL,
+                             (opt == CSizeIdx ? sizeArgs : keysArgs),
+                             interp, 2, objc, objv) != NS_OK) {
                 result = TCL_ERROR;
 
             } else {
@@ -1023,7 +1047,8 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             /*
              * Operations on a dict key
              */
-            int nargs = 0;
+            int          nargs = 0;
+            Tcl_Obj     *varnameObj = NULL;
             Ns_ObjvSpec getArgs[] = {
                 {"array",     Ns_ObjvObj,  &arrayObj,     NULL},
                 {"key",       Ns_ObjvObj,  &keyObj,       NULL},
@@ -1037,13 +1062,19 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             }, getdefArgs[] = {
                 {"array",     Ns_ObjvObj,  &arrayObj,     NULL},
                 {"key",       Ns_ObjvObj,  &keyObj,       NULL},
-                {"args",      Ns_ObjvArgs, &nargs,       NULL},
+                {"args",      Ns_ObjvArgs, &nargs,        NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+            Ns_ObjvSpec getOpts[] = {
+                {"-varname", Ns_ObjvObj,    &varnameObj,  NULL},
+                {"--",       Ns_ObjvBreak,  NULL,         NULL},
                 {NULL, NULL, NULL, NULL}
             };
 
-            if (Ns_ParseObjv(NULL, (opt == CGetdefIdx ? getdefArgs
-                                    : (opt == CExistsIdx || opt == CUnsetIdx) ? existsArgs
-                                    : getArgs), interp, 2, objc, objv) != NS_OK) {
+            if (Ns_ParseObjv(((opt == CGetIdx || opt == CGetdefIdx) ? getOpts : NULL),
+                              (opt == CGetdefIdx ? getdefArgs
+                               : (opt == CExistsIdx || opt == CUnsetIdx) ? existsArgs
+                               : getArgs), interp, 2, objc, objv) != NS_OK) {
                 result = TCL_ERROR;
             } else if (opt == CGetdefIdx && nargs == 1) {
                 Ns_TclPrintfResult(interp, "wrong # args: \"nsv_dict %s\" requires a key and a default",
@@ -1112,7 +1143,12 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                                  * dict get    dictkey:0..n
                                  * dict getdef dictkey:0..n default
                                  */
-                                Tcl_SetObjResult(interp, dictValueObj);
+                                if (varnameObj != NULL) {
+                                    Tcl_ObjSetVar2(interp, varnameObj, NULL, dictValueObj, 0);
+                                    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
+                                } else {
+                                    Tcl_SetObjResult(interp, dictValueObj);
+                                }
                             } else if (opt == CExistsIdx) {
                                 /*
                                  * dict exists dictkey:1..n
@@ -1130,16 +1166,25 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                                 /*
                                  *  dict get dictkey:0..n
                                  */
-                                Ns_TclPrintfResult(interp, "key \"%s\" not known in dictionary",
-                                                   Tcl_GetString(dictKeyObj));
-                                Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
-                                                 Tcl_GetString(dictKeyObj), NULL);
-                                result = TCL_ERROR;
+                                if (varnameObj != NULL) {
+                                    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+                                } else {
+                                    Ns_TclPrintfResult(interp, "key \"%s\" not known in dictionary",
+                                                       Tcl_GetString(dictKeyObj));
+                                    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
+                                                     Tcl_GetString(dictKeyObj), NULL);
+                                    result = TCL_ERROR;
+                                }
                             } else if (opt == CGetdefIdx) {
                                 /*
                                  *  dict getdef dictkey:0..n default
                                  */
-                                Tcl_SetObjResult(interp, objv[objc-1]);
+                                if (varnameObj != NULL) {
+                                    Tcl_ObjSetVar2(interp, varnameObj, NULL, objv[objc-1], 0);
+                                    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+                                } else {
+                                    Tcl_SetObjResult(interp, objv[objc-1]);
+                                }
                             } else if (opt == CExistsIdx) {
                                 /*
                                  *  dict exists dictkey:1..n
@@ -1150,6 +1195,28 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                                 assert(opt && 0);
                             }
                         }
+                    }
+                } else {
+                    /*
+                     * If array or dict does not exist, we can return in some
+                     * cases ("exists" or "getdef") non-error results.
+                     */
+                    if (opt == CExistsIdx) {
+                        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+                        result = TCL_OK;
+
+                    } else if (opt == CGetIdx && varnameObj != NULL) {
+                        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+                        result = TCL_OK;
+
+                    } else if (opt == CGetdefIdx) {
+                        if (varnameObj != NULL) {
+                            Tcl_ObjSetVar2(interp, varnameObj, NULL, objv[objc-1], 0);
+                            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+                        } else {
+                            Tcl_SetObjResult(interp, objv[objc-1]);
+                        }
+                        result = TCL_OK;
                     }
                 }
                 if (arrayPtr != NULL) {

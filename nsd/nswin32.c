@@ -604,7 +604,7 @@ NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
 
         } else {
             mapPtr->mapobj = (void *) mobj;
-            mapPtr->handle = (int) hndl;
+            mapPtr->handle = hndl;
             mapPtr->addr   = (void *) addr;
             mapPtr->size   = size;
         }

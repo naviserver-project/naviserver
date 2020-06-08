@@ -74,8 +74,51 @@ command to determine the arrays with their usages from this bucket.
  ns_log notice $buckets
 [example_end]
 
+[call [cmd "nsv_dict append"]  [arg array] [arg key] [arg dictkey] [opt [arg {value ...}]]]
+[call [cmd "nsv_dict exists"]  [arg array] [arg key] [arg dictkey] [opt [arg {dictkey ...}]]]
+[call [cmd "nsv_dict get"]     [opt "-varname [arg varname]"] [arg array] [arg key] [opt [arg {dictkey ...}]]]
+[call [cmd "nsv_dict getdef"]  [opt "-varname [arg varname]"] [arg array] [arg key] [opt [arg {dictkey ...}]] [arg default]]
+[call [cmd "nsv_dict incr"]    [arg array] [arg key] [opt [arg {increment}]]]
+[call [cmd "nsv_dict keys"]    [arg array] [arg key] [opt [arg {pattern}]]]
+[call [cmd "nsv_dict lappend"] [arg array] [arg key] [arg dictkey] [opt [arg {value ...}]]]
+[call [cmd "nsv_dict set"]     [arg array] [arg key] [arg dictkey] [opt [arg {dictkey ...}]] [arg value]]
+[call [cmd "nsv_dict size"]    [arg array] [arg key]]
+[call [cmd "nsv_dict unset"]   [arg array] [arg key] [arg dictkey] [opt [arg {dictkey ...}]]]
+
+Implementation of the Tcl [term dict] command for shared variables.
+The commands work similar as [cmd nsv_set] and [cmd nsv_get],
+except that the value of these commands are structure values in form
+of dicts.
+
+[para]
+
+The main difference to plain Tcl is the option
+[opt "-varname [arg varname]"].
+
+When this option is provided, the function returns 0 or 1 depending
+on success and returns in the success case the value in the provided
+variable. When the varname option is provided, the behavior is
+similar to the optional last argument in [cmd nsv_get] or
+[cmd ns_cache_get]
+
+The option [opt "-varname [arg varname]"] has the adavantage
+to test and get the value with a single locked command. This avoids
+race conditions and reduces the number of locks for the application.
 
 
+[example_begin]
+ % nsv_dict set personnel 4711 name gustaf
+ name gustaf
+ 
+ % nsv_dict set personnel 4711 sex m
+ name gustaf sex m
+ 
+ % nsv_dict get personnel 4711 name
+ gustaf
+ 
+ % nsv_dict get personnel 4711
+ name gustaf sex m
+[example_end]
 
 [call [cmd nsv_exists] [arg array] [arg key]]
 
@@ -99,7 +142,7 @@ Get the value for the key from the nsv array.  If the optional
 [arg varName] is provided, the function returns on success 1 and on
 failure 0. On success, it binds the variable [arg varName]. If the
 variable name is not provided, it returns on success the value and
-raises on failure an error (similar to ns_cache_get).
+raises on failure an error (similar to [cmd ns_cache_get]).
 With the optional variable name, this function allows an atomic 
 check for existence followed by a get operation.
 
