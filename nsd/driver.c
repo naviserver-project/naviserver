@@ -33,7 +33,10 @@
  *      Connection I/O for loadable socket drivers.
  */
 
+
+#define Ns_LogAccessDebug_DEFINED_ALREADY
 #include "nsd.h"
+NS_EXPORT Ns_LogSeverity Ns_LogAccessDebug;
 
 /*
  * The following are valid driver state flags.
@@ -339,16 +342,13 @@ static ConnPoolInfo *WriterGetInfoPtr(WriterSock *curPtr, Tcl_HashTable *pools)
 /*
  * Global variables defined in this file.
  */
-//NS_EXTERN Ns_LogSeverity Ns_LogAccessDebug;
 
 Ns_LogSeverity Ns_LogTaskDebug;
 Ns_LogSeverity Ns_LogRequestDebug;
 Ns_LogSeverity Ns_LogConnchanDebug;
 Ns_LogSeverity Ns_LogUrlspaceDebug;
-Ns_LogSeverity Ns_LogAccessDebug;
 Ns_LogSeverity Ns_LogTimeoutDebug;
-
-NS_EXPORT Ns_LogSeverity Ns_LogAccessDebug;
+/* See also Ns_LogAccessDebug defined and exported above. */
 
 bool NsWriterBandwidthManagement = NS_FALSE;
 

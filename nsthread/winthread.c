@@ -128,7 +128,7 @@ Nsthreads_LibInit(void)
     if (!initialized) {
         initialized = NS_TRUE;
         tlskey = TlsAlloc();
-        if (tlskey == 0xFFFFFFFF) {
+        if (TLS_OUT_OF_INDEXES == tlskey) {
             return;
         }
         NsInitThreads();

@@ -323,8 +323,9 @@ typedef enum {
 NS_EXTERN Ns_LogSeverity Ns_LogTaskDebug;   /* Severity at which to log verbose. */
 NS_EXTERN Tcl_Encoding   NS_utf8Encoding;   /* Cached UTF-8 encoding */
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(Ns_LogAccessDebug_DEFINED_ALREADY)
 extern NS_IMPORT  Ns_LogSeverity Ns_LogAccessDebug;
+#elif defined(_MSC_VER)
 #else
 NS_EXTERN Ns_LogSeverity Ns_LogAccessDebug;
 #endif
