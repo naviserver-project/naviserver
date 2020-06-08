@@ -123,19 +123,22 @@ Ns_RWLockList(Tcl_DString *dsPtr)
         Tcl_DStringStartSublist(dsPtr);
         Tcl_DStringAppendElement(dsPtr, rwlockPtr->name);
         Tcl_DStringAppendElement(dsPtr, ""); /* unused? */
+#ifndef NS_NO_MUTEX_TIMING
         snprintf(buf, (int)sizeof(buf),
                  " %" PRIuPTR " %lu %lu %" PRId64 ".%06ld %" PRId64 ".%06ld %" PRId64 ".%06ld",
                  rwlockPtr->id, rwlockPtr->nlock, rwlockPtr->nbusy,
-#ifndef NS_NO_MUTEX_TIMING
                  (int64_t)rwlockPtr->total_waiting_time.sec, rwlockPtr->total_waiting_time.usec,
                  (int64_t)rwlockPtr->max_waiting_time.sec, rwlockPtr->max_waiting_time.usec,
-                 (int64_t)rwlockPtr->total_lock_time.sec, rwlockPtr->total_lock_time.usec
+                 (int64_t)rwlockPtr->total_lock_time.sec, rwlockPtr->total_lock_time.usec);
+
 #else
+        snprintf(buf, (int)sizeof(buf),
+                 " %" PRIuPTR " %lu %lu %" PRId64 ".%06ld %" PRId64 ".%06ld %" PRId64 ".%06ld",
+                 rwlockPtr->id, rwlockPtr->nlock, rwlockPtr->nbusy,
                  (int64_t)0, (long)0,
                  (int64_t)0, (long)0,
-                 (int64_t)0, (long)0
+                 (int64_t)0, (long)0);
 #endif
-                 );
         Tcl_DStringAppend(dsPtr, buf, -1);
         Tcl_DStringEndSublist(dsPtr);
     }
