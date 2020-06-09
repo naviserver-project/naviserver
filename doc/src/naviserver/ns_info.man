@@ -62,8 +62,13 @@ Returns information if the binary was compiled with IPv6 support.
 
 [call [cmd  "ns_info locks"]]
 
-Lists the mutexes that currently exist.  A 5-element list is returned
-for each mutex: : mutex name, {}, unique id, lock counter, busy counter.
+Lists lock information from mutexes and rwlocks with their statistics.
+The result is returned as a list with the following elements.
+For each lock, the following information is returned:
+name, {}, uniqe id, number of locks, number of busy locks, total wait
+time, max wait time, total lock time, number of read locks, number of write
+locks.
+Not all information is available for all types of locks.
 
 [call [cmd  "ns_info log"]]
 

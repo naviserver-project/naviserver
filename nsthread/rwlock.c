@@ -129,15 +129,17 @@ Ns_RWLockList(Tcl_DString *dsPtr)
                  rwlockPtr->id, rwlockPtr->nlock, rwlockPtr->nbusy,
                  (int64_t)rwlockPtr->total_waiting_time.sec, rwlockPtr->total_waiting_time.usec,
                  (int64_t)rwlockPtr->max_waiting_time.sec, rwlockPtr->max_waiting_time.usec,
-                 (int64_t)rwlockPtr->total_lock_time.sec, rwlockPtr->total_lock_time.usec);
-
+                 (int64_t)rwlockPtr->total_lock_time.sec, rwlockPtr->total_lock_time.usec,
+                 rwlockPtr->nrlock, rwlockPtr->nwlock);
 #else
         snprintf(buf, (int)sizeof(buf),
-                 " %" PRIuPTR " %lu %lu %" PRId64 ".%06ld %" PRId64 ".%06ld %" PRId64 ".%06ld",
+                 " %" PRIuPTR " %lu %lu %" PRId64 ".%06ld %" PRId64 ".%06ld %" PRId64 ".%06ld"
+                 " %lu %lu" ,
                  rwlockPtr->id, rwlockPtr->nlock, rwlockPtr->nbusy,
                  (int64_t)0, (long)0,
                  (int64_t)0, (long)0,
-                 (int64_t)0, (long)0);
+                 (int64_t)0, (long)0,
+                 rwlockPtr->nrlock, rwlockPtr->nwlock);
 #endif
         Tcl_DStringAppend(dsPtr, buf, -1);
         Tcl_DStringEndSublist(dsPtr);
