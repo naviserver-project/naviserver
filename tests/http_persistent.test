@@ -13,7 +13,7 @@ set ::notWin32 [expr {{windows} ne $::tcl_platform(platform)}]
 tcltest::testConstraint notWin32 $::notWin32
 
 # On Windows, currently these tests all LOCK UP NaviServer, so for now
-# we skip them witht the notWin32 constraint.  The error accompanying
+# we skip them with the notWin32 constraint.  The error accompanying
 # the lock up looks like this:  --atp@piskorski.com, 2020/06/04 16:50 EDT
 #
 # ns_sockioctl failed: no such file or directory
