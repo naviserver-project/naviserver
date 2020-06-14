@@ -18,6 +18,7 @@
 #
 
 tcl_64 = C:\P\Tcl-64-8.6
+#tcl_64 = C:\P\ActiveTcl
 tcl_32 = C:\P\Tcl-32
 
 tcllib_64 = tcl86t.lib
@@ -149,14 +150,14 @@ clean-mod:  $(tgts_modl_clean)
 # Why, I have no idea.  --atp@piskorski.com, 2014/10/11 05:54 EDT
 
 $(core_targets):
-	if exist "$(@:_=)\Makefile.win32" ( \
+	@if exist "$(@:_=)\Makefile.win32" ( \
 	pushd $(@:_=) & $(NMAKE) -f Makefile.win32 & popd ) else ( \
 	pushd $(@:_=) & $(NMAKE) & popd )
 $(module_targets):
-	if not exist "..\$(@:_=)" (echo No such directory:  ..\$(@:_=)) else ( \
+	@if not exist "..\$(@:_=)" (echo No such directory:  ..\$(@:_=)) else ( \
 	pushd "..\$(@:_=)" & $(NMAKE) -f Makefile.win32 & popd )
 $(tgts_core_clean):
-	if exist "$(@:C=)\Makefile.win32" ( \
+	@if exist "$(@:C=)\Makefile.win32" ( \
 	pushd $(@:C=) & $(NMAKE) -f Makefile.win32 clean & popd ) else ( \
 	pushd $(@:C=) & $(NMAKE) clean & popd )
 $(tgts_modl_clean):
@@ -178,3 +179,6 @@ $(PEM_FILE):
 # Fortunately command output redirection works essentially the same way as in Unix.
 _test:
 	PATH=$(PWD)\nsd;$(PWD)\nsthread;$(PWD)\nsdb;$(PWD)\nsproxy;$(PATH) & $(PWD)\nsd\nsd.exe -c -t $(PWD)/tests/test.nscfg $(PWD)/tests/all.tcl 1>> test-win-out-0.txt 2>&1
+
+_test_one:
+	PATH=$(PWD)\nsd;$(PWD)\nsthread;$(PWD)\nsdb;$(PWD)\nsproxy;$(PATH) & $(PWD)\nsd\nsd.exe -c -t $(PWD)/tests/test.nscfg $(PWD)/tests/all.tcl -verbose sp -file ns_thread.test
