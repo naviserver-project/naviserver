@@ -456,6 +456,31 @@ NsThreadExit(void *arg)
     pthread_exit(arg);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsThreadResult --
+ *
+ *      Stub function, which is not necessary when pthreads are used, since
+ *      pthread_exit passes a pointer values). However, the situation for
+ *      windows is different, and we keep this function here for symmetry with
+ *      the version using windows native threads. For background, see
+ *      winthread.c.
+ *
+ * Results:
+ *      Pointer value (can be NULL).
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+void *
+NsThreadResult(void *arg)
+{
+    return arg;
+}
+
 
 /*
  *----------------------------------------------------------------------

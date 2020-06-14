@@ -45,9 +45,9 @@ test ns_thread-2.1 {detached thread} -body {
 } -result {}
 
 test ns_thread-2.2 {wait for thread thread} -body {
-     set tid [ns_thread begin {return ok}]
-     set result [ns_thread wait $tid]
-     list $tid $result
+    set tid [ns_thread begin {return ok}]
+    set result [ns_thread wait $tid]
+    list $tid $result
 } -cleanup {
     unset -nocomplain -- tid result
 } -match regexp -result {t(0x)?[a-z0-9]+-a(0x)?[a-z0-9]+-ns:thread ok}
@@ -73,7 +73,7 @@ test ns_thread-2.5 {thread yield} -body {
     unset -nocomplain -- i
 } -result {}
 
-test ns_thread-2.6 {get thread handle of self} -constraints {notWin32} -body {
+test ns_thread-2.6 {get thread handle of self} -body {
     ns_thread handle
 } -match regexp -result {^t.*ns:thread$}
 

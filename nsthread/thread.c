@@ -431,6 +431,28 @@ Ns_ThreadExit(void *arg)
     NsThreadExit(arg);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ThreadResult --
+ *
+ *      Obtain the result of a terminating thread. The purpose of this
+ *      function is to make the symbol Ns_ThreadResult() piublic and to keep
+ *      the NsThreadResult() private, similar to Ns_ThreadExit and
+ *      NsThreadExit().
+ *
+ * Results:
+ *      Thread result, might be NULL.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+void *
+Ns_ThreadResult(void *arg) {
+    return NsThreadResult(arg);
+}
 
 /*
  *----------------------------------------------------------------------
