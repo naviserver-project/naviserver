@@ -186,7 +186,7 @@ openssl_dir = $(openssl_64)
 !message Warning: Unexpected TARGET_CPU:  $(TARGET_CPU)
 openssl_dir = $(openssl_64)
 !endif
-!message openssl_dir is set to:  $(openssl_dir)
+#!message openssl_dir is set to:  $(openssl_dir)
 
 #
 # Update options when building from sources or installed location.
@@ -269,7 +269,7 @@ LIBS	= $(LIBS) tcl84t.lib
 # Common compiler and linker options.
 #
 
-COPTS	= /W3 /nologo /c /EHsc
+COPTS	= /W3 /nologo /c /EHsc /DEBUG
 
 DEFS	= $(DEFS) /D "_WINDOWS" /D "TCL_THREADS=1" \
 		  /D "FD_SETSIZE=128" /D "_MBCS" \
