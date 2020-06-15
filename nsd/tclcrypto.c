@@ -131,6 +131,7 @@ static Ns_ObjvValueRange posIntRange0 = {0, INT_MAX};
 # endif
 # ifdef HAVE_OPENSSL_3
 static Ns_ObjvValueRange posIntRange1 = {1, INT_MAX};
+#include <openssl/core_names.h>
 # endif
 
 /*
@@ -1787,7 +1788,7 @@ NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 int
 NsCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int                result, isBinary = 0, n = 1024, r = 8, p = 16;
+    int                result, isBinary = 0, nValue = 1024, rValue = 8, pValue = 16;
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL;
     char              *outputEncodingString = NULL;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
@@ -1795,9 +1796,9 @@ NsCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         {"-binary",   Ns_ObjvBool,   &isBinary,  INT2PTR(NS_TRUE)},
         {"-salt",     Ns_ObjvObj,    &saltObj,    NULL},
         {"-secret",   Ns_ObjvObj,    &secretObj,  NULL},
-        {"-n",        Ns_ObjvInt,    &n,          &posIntRange1},
-        {"-p",        Ns_ObjvInt,    &p,          &posIntRange1},
-        {"-r",        Ns_ObjvInt,    &r,          &posIntRange1},
+        {"-n",        Ns_ObjvInt,    &nValue,     &posIntRange1},
+        {"-p",        Ns_ObjvInt,    &pValue,     &posIntRange1},
+        {"-r",        Ns_ObjvInt,    &rValue,     &posIntRange1},
         {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -1858,12 +1859,13 @@ NsCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         result = TCL_ERROR;
 
     } else {
-
+        EVP_KDF      *kdf;
         EVP_KDF_CTX  *kctx;
         unsigned char out[64];
-        Tcl_DString    saltDs, secretDs;
-        int            saltLength, secretLength;
-        const char    *saltString, *secretString;
+        Tcl_DString   saltDs, secretDs;
+        int           saltLength, secretLength;
+        const char   *saltString, *secretString;
+        OSSL_PARAM    params[6], *p = params;
 
         /*
          * All input parameters are valid, get key and data.
@@ -1875,30 +1877,25 @@ NsCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         saltString   = Ns_GetBinaryString(saltObj,   isBinary == 1, &saltLength,   &saltDs);
         secretString = Ns_GetBinaryString(secretObj, isBinary == 1, &secretLength, &secretDs);
 
-        kctx = EVP_KDF_CTX_new_id(EVP_KDF_SCRYPT);
+        kdf = EVP_KDF_fetch(NULL, "SCRYPT", NULL);
+        kctx = EVP_KDF_new_ctx(kdf);
+        EVP_KDF_free(kdf);
 
-        if (EVP_KDF_ctrl(kctx, EVP_KDF_CTRL_SET_PASS, secretString, (size_t)secretLength) <= 0) {
-            Ns_TclPrintfResult(interp, "could not set secret");
-            result = TCL_ERROR;
+        *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_PASSWORD,
+                                                 secretString, (size_t)secretLength);
+        *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_SALT,
+                                                 saltString, (size_t)saltLength);
+        *p++ = OSSL_PARAM_construct_uint64(OSSL_KDF_PARAM_SCRYPT_N, (uint64_t)nValue);
+        *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_SCRYPT_R, (uint32_t)rValue);
+        *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_SCRYPT_P, (uint32_t)pValue);
+        *p = OSSL_PARAM_construct_end();
 
-        } else if (EVP_KDF_ctrl(kctx, EVP_KDF_CTRL_SET_SALT, saltString, (size_t)saltLength) <= 0) {
-            Ns_TclPrintfResult(interp, "could not set salt");
-            result = TCL_ERROR;
-
-        } else if (EVP_KDF_ctrl(kctx, EVP_KDF_CTRL_SET_SCRYPT_N, (uint64_t)n) <= 0) {
-            Ns_TclPrintfResult(interp, "could not set scrypt N (work factor, positive power of 2)");
-            result = TCL_ERROR;
-
-        } else if (EVP_KDF_ctrl(kctx, EVP_KDF_CTRL_SET_SCRYPT_R, (uint32_t)r) <= 0) {
-            Ns_TclPrintfResult(interp, "could not set scrypt r (block size)");
-            result = TCL_ERROR;
-
-        } else if (EVP_KDF_ctrl(kctx, EVP_KDF_CTRL_SET_SCRYPT_P, (uint32_t)p) <= 0) {
-            Ns_TclPrintfResult(interp, "could not set scrypt p (parallelization function)");
+        if (EVP_KDF_set_ctx_params(kctx, params) <= 0) {
+            Ns_TclPrintfResult(interp, "could not set parameters");
             result = TCL_ERROR;
 
         } else if (EVP_KDF_derive(kctx, out, sizeof(out)) <= 0) {
-            Ns_TclPrintfResult(interp, "could not derive scrypt value from parameters");
+            Ns_TclPrintfResult(interp, "could not derive key");
             result = TCL_ERROR;
 
         } else {
@@ -1916,7 +1913,7 @@ NsCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         Tcl_DStringFree(&saltDs);
         Tcl_DStringFree(&secretDs);
 
-        EVP_KDF_CTX_free(kctx);
+        EVP_KDF_free_ctx(kctx);
     }
 
     return result;
