@@ -620,20 +620,26 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             Ns_Fatal("%s: bindaddrs '%s' is not a valid Tcl list containing addresses (max %d)",
                      module, address, MAX_LISTEN_ADDR_PER_DRIVER);
         }
-        Tcl_IncrRefCount(bindaddrsObj);
 
-        /*
-         * If the hostname was not specified and not determined by the lookup
-         * above, set it to the first specified or derived IP address string.
-         */
-        if (host == NULL) {
-            host = ns_strdup(Tcl_GetString(objv[0]));
-        }
+        {
+            bool hostDuplicated = NS_FALSE;
+            /*
+             * If the hostname was not specified and not determined by the
+             * lookup above, set it to the first specified or derived IP
+             * address string.
+             */
+            if (host == NULL) {
+                host = ns_strdup(Tcl_GetString(objv[0]));
+                hostDuplicated = NS_TRUE;
+            }
 
-        if (noHostNameGiven && host != NULL && path != NULL) {
-            Ns_SetUpdate(set, "hostname", host);
+            if (noHostNameGiven && host != NULL && path != NULL) {
+                Ns_SetUpdate(set, "hostname", host);
+            }
+            if (hostDuplicated) {
+                ns_free((char*)host);
+            }
         }
-        Tcl_DecrRefCount(bindaddrsObj);
 
         /*
          * Get configured number of driver threads.
@@ -713,7 +719,7 @@ ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
 
         (void) Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, (char *)0L);
         mapPtr = ns_malloc(sizeof(ServerMap) + (size_t)dsPtr->length);
-        mapPtr->servPtr  = servPtr;
+        mapPtr->servPtr = servPtr;
         memcpy(mapPtr->location, dsPtr->string, (size_t)dsPtr->length + 1u);
 
         Tcl_SetHashValue(hPtr, mapPtr);
@@ -1237,6 +1243,7 @@ NsStopDrivers(void)
     for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
         Tcl_HashEntry  *hPtr;
         Tcl_HashSearch  search;
+        Sock           *sockPtr, *nextPtr;;
 
         if ((drvPtr->flags & DRIVER_STARTED) == 0u) {
             continue;
@@ -1251,8 +1258,16 @@ NsStopDrivers(void)
 
         hPtr = Tcl_FirstHashEntry(&drvPtr->hosts, &search);
         while (hPtr != NULL) {
+            ns_free(Tcl_GetHashValue(hPtr));
             Tcl_DeleteHashEntry(hPtr);
             hPtr = Tcl_NextHashEntry(&search);
+        }
+
+        /*fprintf(stderr, "==== NsStopDrivers drv %p sock %p\n", (void*)drvPtr, (void*)(drvPtr->sockPtr));*/
+        for (sockPtr = drvPtr->sockPtr; sockPtr != NULL; sockPtr = nextPtr) {
+            nextPtr = sockPtr->nextPtr;
+            /*fprintf(stderr, "==== NsStopDrivers drv %p FREE sock %p\n", (void*)drvPtr, (void*)sockPtr);*/
+            ns_free(sockPtr);
         }
     }
 }
@@ -2549,13 +2564,22 @@ DriverThread(void *arg)
     }
 
     PollFree(&pdata);
+    Tcl_DeleteHashTable(&drvPtr->hosts);
+
+    /*fprintf(stderr, "==== driver exit %p closePtr %p waitPtr %p readPtr %p\n",
+      (void*)drvPtr, (void*)closePtr, (void*)waitPtr, (void*)readPtr);*/
+    for (sockPtr = readPtr; sockPtr != NULL; sockPtr = sockPtr->nextPtr) {
+        nextPtr = sockPtr->nextPtr;
+        /*fprintf(stderr, "==== driver exit read %p \n", (void*)sockPtr);*/
+        ns_free(sockPtr);
+    }
 
     Ns_Log(Notice, "exiting");
+
     Ns_MutexLock(&drvPtr->lock);
     drvPtr->flags |= DRIVER_STOPPED;
     Ns_CondBroadcast(&drvPtr->cond);
     Ns_MutexUnlock(&drvPtr->lock);
-
 }
 
 static void
@@ -2945,6 +2969,8 @@ SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *now
         sockPtr->nextPtr = drvPtr->sockPtr;
         drvPtr->sockPtr = sockPtr;
         Ns_MutexUnlock(&drvPtr->lock);
+        /*fprintf(stderr, "=== NS_DRIVER_ACCEPT_ERROR drv %p got %p\n", (void*)drvPtr, (void*)sockPtr);*/
+
         sockPtr = NULL;
 
     } else {
@@ -3028,12 +3054,15 @@ SockNew(Driver *drvPtr)
     if (likely(sockPtr != NULL)) {
         drvPtr->sockPtr = sockPtr->nextPtr;
         sockPtr->keep   = NS_FALSE;
+        /*fprintf(stderr, "=== SockNew drv %p got %p set %p\n", (void*)drvPtr, (void*)sockPtr,(void*)drvPtr->sockPtr);*/
+
     }
     Ns_MutexUnlock(&drvPtr->lock);
 
     if (sockPtr == NULL) {
         size_t sockSize = sizeof(Sock) + (nsconf.nextSlsId * sizeof(Ns_Callback *));
         sockPtr = ns_calloc(1u, sockSize);
+        /*fprintf(stderr, "=== SockNew %p\n", (void*)sockPtr);*/
         sockPtr->drvPtr = drvPtr;
     } else {
         sockPtr->tfd     = 0;
@@ -3074,6 +3103,8 @@ SockRelease(Sock *sockPtr, SockState reason, int err)
     Ns_Log(DriverDebug, "SockRelease reason %s err %d (sock %d)",
            GetSockStateName(reason), err, sockPtr->sock);
 
+    /*fprintf(stderr, "=== SockRelease %p\n", (void*)sockPtr);*/
+
     drvPtr = sockPtr->drvPtr;
     assert(drvPtr != NULL);
 
@@ -3097,6 +3128,8 @@ SockRelease(Sock *sockPtr, SockState reason, int err)
     sockPtr->nextPtr = drvPtr->sockPtr;
     drvPtr->sockPtr  = sockPtr;
     Ns_MutexUnlock(&drvPtr->lock);
+    /*fprintf(stderr, "=== SockRelease drv %p got %p\n", (void*)drvPtr, (void*)sockPtr);*/
+
 }
 
 
@@ -4912,6 +4945,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
         queuePtr->queuesize--;
     } else {
         WriterSock *curPtr, *lastPtr = queuePtr->curPtr;
+
         for (curPtr = (lastPtr != NULL) ? lastPtr->nextPtr : NULL;
              curPtr != NULL;
              lastPtr = curPtr, curPtr = curPtr->nextPtr
@@ -5801,6 +5835,12 @@ WriterThread(void *arg)
         Tcl_DeleteHashTable(&pools);
     }
 
+    /*fprintf(stderr, "==== writerthread exits queuePtr %p writePtr %p\n",
+            (void*)queuePtr->sockPtr,
+            (void*)writePtr);
+    for (sockPtr = queuePtr->sockPtr; sockPtr != NULL; sockPtr = sockPtr->nextPtr) {
+        fprintf(stderr, "==== writerthread exits queuePtr %p sockPtr %p\n", (void*)queuePtr, (void*)sockPtr);
+        }*/
 
     Ns_Log(Notice, "exiting");
 
