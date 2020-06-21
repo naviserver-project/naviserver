@@ -71,17 +71,28 @@
 void NsInitOpenSSL(void)
 {
 # ifdef HAVE_OPENSSL_EVP_H
+    static int initialized = 0;
+
+    if (!initialized) {
 #  if OPENSSL_VERSION_NUMBER < 0x10100000L
-    CRYPTO_set_mem_functions(ns_malloc, ns_realloc, ns_free);
+        CRYPTO_set_mem_functions(ns_malloc, ns_realloc, ns_free);
 #  endif
-    OpenSSL_add_all_algorithms();
-    SSL_load_error_strings();
-#  if OPENSSL_VERSION_NUMBER < 0x010100000 || defined(LIBRESSL_1_0_2)
-    SSL_library_init();
-#  else
-    OPENSSL_init_ssl(0, NULL);
+        /*
+         * With OpenSSL 1.1.0 or above the OpenSSL library initializes
+         * itself automatically.
+         */
+#  if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_1_0_2)
+        OpenSSL_add_all_algorithms();
+        SSL_load_error_strings();
+#   if OPENSSL_VERSION_NUMBER < 0x010100000 || defined(LIBRESSL_1_0_2)
+        SSL_library_init();
+#   else
+        OPENSSL_init_ssl(0, NULL);
+#   endif
 #  endif
-    Ns_Log(Notice, "%s initialized", SSLeay_version(SSLEAY_VERSION));
+        initialized = 1;
+        Ns_Log(Notice, "%s initialized", SSLeay_version(SSLEAY_VERSION));
+    }
 # endif
 }
 
@@ -117,6 +128,7 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
     *ctxPtr = ctx;
     if (ctx == NULL) {
         char errorBuffer[256];
+
         Ns_TclPrintfResult(interp, "ctx init failed: %s", ERR_error_string(ERR_get_error(), errorBuffer));
         return TCL_ERROR;
     }
@@ -132,6 +144,7 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
     if (cert != NULL) {
         if (SSL_CTX_use_certificate_chain_file(ctx, cert) != 1) {
             char errorBuffer[256];
+
             Ns_TclPrintfResult(interp, "certificate load error: %s",
                                ERR_error_string(ERR_get_error(), errorBuffer));
             goto fail;
