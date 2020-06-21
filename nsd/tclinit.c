@@ -266,6 +266,7 @@ ConfigServerTcl(const char *server)
         const char *path, *p, *initFileString;
         int         n;
         Ns_Set     *set;
+        bool        initFileStringCopied = NS_FALSE;
 
         Ns_ThreadSetName("-main:%s-", server);
 
@@ -286,8 +287,12 @@ ConfigServerTcl(const char *server)
             Ns_HomePath(&ds, initFileString, (char *)0L);
             initFileString = Ns_DStringExport(&ds);
             Ns_SetUpdate(set, "initfile", initFileString);
+            initFileStringCopied = NS_TRUE;
         }
         servPtr->tcl.initfile = Tcl_NewStringObj(initFileString, -1);
+        if (initFileStringCopied) {
+            ns_free((char *)initFileString);
+        }
         Tcl_IncrRefCount(servPtr->tcl.initfile);
 
         servPtr->tcl.modules = Tcl_NewObj();
