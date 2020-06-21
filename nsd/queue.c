@@ -553,6 +553,8 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
         sockPtr->poolPtr = poolPtr;
     } else if (sockPtr->poolPtr != NULL) {
         poolPtr = sockPtr->poolPtr;
+        Ns_Log(Notice , "=== NsQueueConn URL <%s> was already assinged to pool <%s>",
+               sockPtr->reqPtr->request.url, poolPtr->pool);
     }
     if (poolPtr == NULL) {
         poolPtr = servPtr->pools.defaultPtr;
