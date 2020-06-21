@@ -1768,6 +1768,16 @@ NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 
 # ifdef HAVE_OPENSSL_3
 /*
+ * We could provide SCRYPT as well via EVP_PKEY_CTX provided in
+ * OpenSSL 1.1.1:
+ *
+ *     https://www.openssl.org/docs/man1.1.1/man7/scrypt.html
+ *
+ * but the future interface is the OpenSSL 3.* way, via
+ * EVP_KDF_fetch() + OSSL_PARAM_*.  Not sure, whether LibreSSL and
+ * friends will follow.
+ */
+/*
  *----------------------------------------------------------------------
  *
  * NsCryptoScryptObjCmd --
