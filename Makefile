@@ -236,7 +236,7 @@ check: test
 
 test: all $(EXTRA_TEST_REQ)
 	$(NS_LD_LIBRARY_PATH) ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
-	for i in $(EXTRA_TEST_DIRS); do \
+	@for i in $(EXTRA_TEST_DIRS); do \
 		( cd $$i && $(MAKE) test ) || exit 1; \
 	done
 
