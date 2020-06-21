@@ -75,6 +75,12 @@ if {$win32_p} {
 runAllTests
 
 #
+# The "notice" messages during test shutdown are typically not very
+# interesting, so turn it off to make the outout shorter.
+#
+ns_logctl severity notice off
+
+#
 # Shutdown the server to let the cleanup handlers run
 #
 #foreach s [ns_info servers] {puts stderr "$s: [ns_server -server $s stats]"}
