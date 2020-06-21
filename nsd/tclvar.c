@@ -1065,6 +1065,7 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                         Tcl_DictObjDone(&search);
                         Tcl_SetObjResult(interp, listObj);
                     }
+                    Tcl_DecrRefCount(dictObj);
                 }
                 if (arrayPtr != NULL) {
                     UnlockArray(arrayPtr);
@@ -1153,6 +1154,7 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                              */
                             dictKeyObj = objv[objc-1];
                             result = Tcl_DictObjGet(interp, dictObj, dictKeyObj, &dictValueObj);
+
                         } else {
                             /*
                              * nested keys
@@ -1184,11 +1186,13 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                                 } else {
                                     Tcl_SetObjResult(interp, dictValueObj);
                                 }
+
                             } else if (opt == CExistsIdx) {
                                 /*
                                  * dict exists dictkey:1..n
                                  */
                                 Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
+                                Tcl_DecrRefCount(dictObj);
                             } else {
                                 /* should not happen */
                                 assert(opt && 0);
@@ -1210,6 +1214,8 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                                                      Tcl_GetString(dictKeyObj), NULL);
                                     result = TCL_ERROR;
                                 }
+                                Tcl_DecrRefCount(dictObj);
+
                             } else if (opt == CGetdefIdx) {
                                 /*
                                  *  dict getdef dictkey:0..n default
@@ -1220,11 +1226,13 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                                 } else {
                                     Tcl_SetObjResult(interp, objv[objc-1]);
                                 }
+                                Tcl_DecrRefCount(dictObj);
                             } else if (opt == CExistsIdx) {
                                 /*
                                  *  dict exists dictkey:1..n
                                  */
                                 Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+                                Tcl_DecrRefCount(dictObj);
                             } else {
                                 /* should not happen */
                                 assert(opt && 0);
@@ -1318,6 +1326,7 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 } else {
                     dictObj = Tcl_NewDictObj();
                 }
+
                 if (opt == CSetIdx) {
                     /*
                      * dict set dictkey:1..n dictvalue

@@ -1,0 +1,43 @@
+[include version_include.man]
+[manpage_begin ns_hash n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Compute a numeric hash value from a string}]
+
+[description]
+
+This command takes an arbitrary value and computes from the value a
+numeric value (integer). It uses for hashing the Tcl hash function,
+such it does not have cryptograthic strength.
+This function is very weak against malicious strings;
+it's very easy to generate multiple keys that have the same
+hashcode. On the other hand, that hardly ever actually occurs.
+This function is very cheap and computes
+an integer value suitable as input for various functions.
+
+[para]
+The command is useful in combination of the modulo function
+e.g. for hash-based patitioning.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_hash] [arg value]]
+
+[list_end]
+
+
+[section EXAMPLES]
+
+[example_begin]
+ % ns_hash "hello world"
+ 3255479292
+[example_end]
+
+
+[see_also nsd ns_crypto ns_md ns_hmac ns_sha1 ns_md5]
+[keywords "global built-in" encoding crypto]
+
+[manpage_end]
+
