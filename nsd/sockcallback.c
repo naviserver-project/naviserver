@@ -550,6 +550,7 @@ SockCallbackThread(void *UNUSED(arg))
         ns_free(Tcl_GetHashValue(hPtr));
     }
     Tcl_DeleteHashTable(&activeCallbacks);
+    ns_free(pfds);
 
     Ns_Log(Notice, "socks: shutdown complete");
 

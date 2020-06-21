@@ -1978,6 +1978,7 @@ GetCache(void)
     if (cachePtr == NULL) {
         cachePtr = ns_calloc(1u, sizeof(LogCache));
         Ns_DStringInit(&cachePtr->buffer);
+        Ns_TlsSet(&tls, cachePtr);
     }
 #else
     LogCache *cachePtr;
