@@ -1329,6 +1329,10 @@ CmdThread(void *arg)
     NsRestoreSignals();
     NsBlockSignal(NS_SIGPIPE);
 
+#if defined(__APPLE__) && defined(__MACH__)
+    signal(SIGPIPE, SIG_IGN);
+#endif
+
     Tcl_Main(cmd->argc, cmd->argv, NsTclAppInit);
 }
 
