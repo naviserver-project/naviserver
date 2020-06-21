@@ -42,7 +42,7 @@
 typedef struct Progress {
     size_t  current;          /* Uploaded so far. */
     size_t  size;             /* Total bytes to upload. */
-    Tcl_HashEntry *hPtr;      /* Our entry in the url table. */
+    Tcl_HashEntry *hPtr;      /* Our entry in the URL table. */
 } Progress;
 
 
@@ -217,7 +217,7 @@ NsUpdateProgress(Ns_Sock *sock)
               set = Ns_SetCreate(NULL);
               if (Ns_QueryToSet(request->query, set) == NS_OK) {
                 key = Ns_SetGet(set, "X-Progress-ID");
-                Ns_Log(Notice, "progress start url %s key '%s'", request->url, key);
+                Ns_Log(Notice, "progress start URL %s key '%s'", request->url, key);
               }
             }
 
@@ -230,7 +230,7 @@ NsUpdateProgress(Ns_Sock *sock)
                 Ns_DStringAppend(dsPtr, request->query);
               }
               key = Ns_DStringValue(dsPtr);
-              Ns_Log(Notice, "progress start url '%s'", key);
+              Ns_Log(Notice, "progress start URL '%s'", key);
             }
 
             /*
@@ -265,7 +265,7 @@ NsUpdateProgress(Ns_Sock *sock)
                 pPtr->current = reqPtr->avail;
                 Ns_MutexUnlock(&lock);
             } else {
-                Ns_Log(Notice, "progress end url '%s'", request->url);
+                Ns_Log(Notice, "progress end URL '%s'", request->url);
                 ResetProgress(pPtr);
             }
         }
