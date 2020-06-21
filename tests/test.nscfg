@@ -286,6 +286,20 @@ ns_section "ns/server/testvhost" {
     ns_param   minthreads 1
     ns_param   maxthreads 3
 }
+ns_section "ns/server/testvhost/redirects" {
+    #
+    # Provide custom error pages:
+    #
+    ns_param   404    /404.tcl
+    ns_param   405    /405.tcl
+}
+ns_section "ns/server/testvhost/modules" {
+    puts stderr ======[ns_config "test" home]/../nslog/nslog[sharedlibextension]
+    ns_param   nslog           [ns_config "test" home]/../nslog/nslog[sharedlibextension]
+}
+ns_section "ns/server/testvhost/module/nslog" {
+    ns_param   file            [ns_config "test" home]/testserver/access.log
+}
 ns_section "ns/server/testvhost/fastpath" {
     ns_param   serverdir       testserver
     ns_param   pagedir         pages

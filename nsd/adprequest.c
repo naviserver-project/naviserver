@@ -160,6 +160,9 @@ PageRequest(Ns_Conn *conn, const char *fileName, const Ns_Time *expiresPtr, unsi
     }
 
     if (fileNotFound) {
+        if (((Conn *)conn)->recursionCount == 1) {
+            Ns_Log(Warning, "AdpPageRequest for '%s' returns 404", fileName);
+        }
         Ns_Log(Debug, "AdpPageRequest for '%s' returns 404", fileName);
         status = Ns_ConnReturnNotFound(conn);
 

@@ -101,6 +101,90 @@ test http-1.5c {bad method 3 args} -constraints serverListen -body {
 } -result {400}
 
 
+#
+# HEAD requests for existing + non-existing page
+#
+test http-1.6.0 {HTTP/1.0 HEAD existing} -constraints serverListen -body {
+    nstest::http -getbody 1 -getheaders {Content-Length} HEAD /10bytes
+} -match glob -result {200 10}
+
+test http-1.6.1 {HTTP/1.0 HEAD not-existing} -constraints serverListen -body {
+    nstest::http -getbody 1 -getheaders {Content-Length} HEAD /noexist
+} -match glob -result {404 532}
+
+#
+# GET and HEAD request for non-existig page + custom error page
+#
+test http-1.6.2 { HTTP/1.0 GET not-existing vhost + custom error page} -constraints serverListen -body {
+    nstest::http -getbody 1 \
+        -setheaders [list Host testvhost:[ns_config test listenport]] \
+        -getheaders {Content-Length} \
+        GET /noexist
+} -match glob -result {404 15 {CUSTOM 404 page}}
+
+test http-1.6.3 { HTTP/1.0 HEAD not-existing vhost + custom error page} -constraints serverListen -body {
+    nstest::http -getbody 1 \
+        -setheaders [list Host testvhost:[ns_config test listenport]] \
+        -getheaders {Content-Length} \
+        HEAD /noexist
+} -match glob -result {404 15}
+
+#
+# GET + HEAD + POST with query parameter
+#
+test http-1.6.4 { HTTP/1.0 GET not-existing vhost + custom error page + query} -constraints serverListen -body {
+    nstest::http -getbody 1 \
+        -setheaders [list Host testvhost:[ns_config test listenport]] \
+        -getheaders {Content-Length} \
+        GET /noexist?x=1
+} -match glob -result {404 15 {CUSTOM 404 page}}
+
+test http-1.6.5 { HTTP/1.0 HEAD not-existing vhost + custom error page + query} -constraints serverListen -body {
+    nstest::http -getbody 1 \
+        -setheaders [list Host testvhost:[ns_config test listenport]] \
+        -getheaders {Content-Length} \
+        HEAD /noexist?x=1
+} -match glob -result {404 15}
+
+test http-1.6.6 { HTTP/1.0 POST not-existing vhost + custom error page + query} -constraints serverListen -body {
+    nstest::http -getbody 1 \
+        -setheaders [list Host testvhost:[ns_config test listenport]] \
+        -getheaders {Content-Length} \
+        POST /noexist x=1&y=2
+} -match glob -result {404 15 {CUSTOM 404 page}}
+
+test http-1.6.7 { HTTP/1.0 POST not-existing vhost + custom error page + huge query} -constraints serverListen -body {
+    for {set i 0} {$i < 5000} {incr i} {
+        lappend query "x$i=$i"
+    }
+    nstest::http -getbody 1 \
+        -setheaders [list Host testvhost:[ns_config test listenport]] \
+        -getheaders {Content-Length} \
+        POST /noexist [join $query]
+} -cleanup {
+    unset i query
+} -match glob -result {404 15 {CUSTOM 404 page}}
+
+
+#
+# PUT
+#   not allowed
+#   not allowed vhost + custom error page
+#
+test http-1.6.8 { HTTP/1.0 PUT not allowed} -constraints serverListen -body {
+    nstest::http -getbody 0 \
+        -getheaders {Content-Length} \
+        PUT /noexist
+} -match glob -result {405 534}
+
+test http-1.6.9 { HTTP/1.0 PUT not allowed vhost + custom error page} -constraints serverListen -body {
+    nstest::http -getbody 1 \
+        -setheaders [list Host testvhost:[ns_config test listenport]] \
+        -getheaders {Content-Length} \
+        PUT /noexist
+} -match glob -result {405 15 {CUSTOM 405 page}}
+
+
 test http-2.1 {HTTP/1.1 GET small file} -constraints serverListen -body {
     nstest::http -http 1.1 -getbody 1 GET /10bytes
 } -result {200 0123456789}
@@ -431,7 +515,7 @@ test http-5.2.3 {
 
 test http-5.2.0-b {
 
-    check encoding  ns_conn content PUT,
+    Check encoding  ns_conn content PUT,
     no provided content type
     binary data
 
@@ -467,7 +551,7 @@ test http-5.2.0-b {
 
 test http-5.2.1-b {
 
-    check encoding  ns_conn content PUT,
+    Check encoding  ns_conn content PUT,
     binary content type application/octet-stream
     binary data
 
