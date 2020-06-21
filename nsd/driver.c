@@ -570,6 +570,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         int         nrDrivers, nrBindaddrs = 0, result;
         Ns_Set     *set;
         Tcl_Obj    *bindaddrsObj, **objv;
+        bool        hostDuplicated = NS_FALSE;
 
         path = ((init->path != NULL) ? init->path : Ns_ConfigGetPath(server, module, (char *)0L));
 
@@ -621,24 +622,17 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
                      module, address, MAX_LISTEN_ADDR_PER_DRIVER);
         }
 
-        {
-            bool hostDuplicated = NS_FALSE;
-            /*
-             * If the hostname was not specified and not determined by the
-             * lookup above, set it to the first specified or derived IP
-             * address string.
-             */
-            if (host == NULL) {
-                host = ns_strdup(Tcl_GetString(objv[0]));
-                hostDuplicated = NS_TRUE;
-            }
+        /*
+         * If the hostname was not specified and not determined by the lookup
+         * above, set it to the first specified or derived IP address string.
+         */
+        if (host == NULL) {
+            host = ns_strdup(Tcl_GetString(objv[0]));
+            hostDuplicated = NS_TRUE;
+        }
 
-            if (noHostNameGiven && host != NULL && path != NULL) {
-                Ns_SetUpdate(set, "hostname", host);
-            }
-            if (hostDuplicated) {
-                ns_free((char*)host);
-            }
+        if (noHostNameGiven && host != NULL && path != NULL) {
+            Ns_SetUpdate(set, "hostname", host);
         }
 
         /*
@@ -677,6 +671,10 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
                 }
             }
             ns_free(moduleName);
+        }
+
+        if (hostDuplicated) {
+            ns_free((char*)host);
         }
     }
 
@@ -2568,7 +2566,7 @@ DriverThread(void *arg)
 
     /*fprintf(stderr, "==== driver exit %p closePtr %p waitPtr %p readPtr %p\n",
       (void*)drvPtr, (void*)closePtr, (void*)waitPtr, (void*)readPtr);*/
-    for (sockPtr = readPtr; sockPtr != NULL; sockPtr = sockPtr->nextPtr) {
+    for (sockPtr = readPtr; sockPtr != NULL; sockPtr = nextPtr) {
         nextPtr = sockPtr->nextPtr;
         /*fprintf(stderr, "==== driver exit read %p \n", (void*)sockPtr);*/
         ns_free(sockPtr);
