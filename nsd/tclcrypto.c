@@ -33,9 +33,21 @@
  *      Function callable from Tcl to use OpenSSL crypto support
  */
 
+/*
+ * We define for the time being that we want to use an API compatible
+ * with OpenSSL 1.1.0.  OpenSSL defines two versions, a hex version
+ *
+ *   #define OPENSSL_API_COMPAT 0x10100000L
+ *
+ * and a decimal variant, which should be apparently used in versions
+ * beyond OpenSSL 1.1.x.
+ */
+# define OPENSSL_API_COMPAT 10000
+
 #include "nsd.h"
 
 #ifdef HAVE_OPENSSL_EVP_H
+
 # include "nsopenssl.h"
 #endif
 
@@ -1876,6 +1888,9 @@ NsCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         int           saltLength, secretLength;
         const char   *saltString, *secretString;
         OSSL_PARAM    params[6], *p = params;
+        uint64_t      nValueSSL = (uint64_t)nValue;
+        uint32_t      pValueSSL = (uint32_t)pValue;
+        uint32_t      rValueSSL = (uint32_t)rValue;
 
         /*
          * All input parameters are valid, get key and data.
@@ -1892,12 +1907,12 @@ NsCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         EVP_KDF_free(kdf);
 
         *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_PASSWORD,
-                                                 secretString, (size_t)secretLength);
+                                                 (void*)secretString, (size_t)secretLength);
         *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_SALT,
-                                                 saltString, (size_t)saltLength);
-        *p++ = OSSL_PARAM_construct_uint64(OSSL_KDF_PARAM_SCRYPT_N, (uint64_t)nValue);
-        *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_SCRYPT_R, (uint32_t)rValue);
-        *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_SCRYPT_P, (uint32_t)pValue);
+                                                 (void*)saltString, (size_t)saltLength);
+        *p++ = OSSL_PARAM_construct_uint64(OSSL_KDF_PARAM_SCRYPT_N, &nValueSSL);
+        *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_SCRYPT_R, &pValueSSL);
+        *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_SCRYPT_P, &rValueSSL);
         *p = OSSL_PARAM_construct_end();
 
         if (EVP_KDF_set_ctx_params(kctx, params) <= 0) {
