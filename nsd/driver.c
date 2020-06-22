@@ -2734,6 +2734,18 @@ RequestFree(Sock *sockPtr)
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
+    /*
+     * Clear poolPtr assignment, since this is closely related to the request
+     * info. Otherwise, it might survive for persistent connections, and can
+     * lead to incorrect pool assignments.
+     */
+    sockPtr->poolPtr = NULL;
+
+    /*
+     * Cleanup the request info. When (true) pipelining is active, we have to
+     * perform leftover management for some requests which might be (partly)
+     * already read in.
+     */
     reqPtr = sockPtr->reqPtr;
     assert(reqPtr != NULL);
 
