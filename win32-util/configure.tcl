@@ -7,7 +7,7 @@ exec tclsh "$0" "$@"
 # To compile on Windows we need "include/nsversion.h", which is
 # auto-generated from "include/nsversion.h.in", but we do not have a
 # working autoconf/configure on Windows!  If you've run configure on
-# Linux, it does work fine to simply use the the "include/nsversion.h"
+# Linux, it does work fine to simply use the "include/nsversion.h"
 # it generates on Windows as well.  But if you can't (or don't want to)
 # do that, run this Tcl script on Windows instead.
 #
