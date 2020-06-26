@@ -934,6 +934,14 @@ typedef enum {
 } Ns_ReturnCode;
 
 /*
+ * The following are the possible values for specifying read/write operations.
+ */
+typedef enum {
+    NS_READ,
+    NS_WRITE
+} NS_RW;
+
+/*
  * Constants for nsthread
  */
 #define NS_THREAD_DETACHED          0x01u
