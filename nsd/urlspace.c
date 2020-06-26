@@ -2728,8 +2728,9 @@ AllocTclUrlSpaceId(Tcl_Interp *interp,  int *idPtr)
         tclUrlSpaces[*idPtr] = NS_TRUE;
 
         Tcl_DStringInit(&ds);
-        Ns_DStringPrintf(&ds, "nsd:urlspace:%d", (int)*idPtr);
-        Ns_MutexSetName2(&itPtr->servPtr->urlspace.idlocks[*idPtr], ds.string, itPtr->servPtr->server);
+        Ns_DStringPrintf(&ds, "ns:rw:urlspace:%d", (int)*idPtr);
+        Ns_RWLockInit(&itPtr->servPtr->urlspace.idlocks[*idPtr]);
+        Ns_RWLockSetName2(&itPtr->servPtr->urlspace.idlocks[*idPtr], ds.string, itPtr->servPtr->server);
         Tcl_DStringFree(&ds);
 
         result = TCL_OK;
@@ -2916,9 +2917,9 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
             fprintf(stderr, "=== GET id %d key %s url %s op %d\n", id, key, url, op);
 #endif
             //Ns_Log(Notice, "UrlSpaceGetObjCmd context %p context %p", (void*)context, (void*)ctxPtr);
-            Ns_MutexLock(&servPtr->urlspace.idlocks[id]);
+            Ns_RWLockRdLock(&servPtr->urlspace.idlocks[id]);
             data = NsUrlSpecificGet(servPtr, key, url, id, flags, op, NsUrlSpaceContextFilter, ctxPtr);
-            Ns_MutexUnlock(&servPtr->urlspace.idlocks[id]);
+            Ns_RWLockUnlock(&servPtr->urlspace.idlocks[id]);
 
             Tcl_SetObjResult(interp, Tcl_NewStringObj(data, -1));
         }
@@ -2963,9 +2964,9 @@ UrlSpaceListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 
         Ns_DStringInit(dsPtr);
 
-        Ns_MutexLock(&servPtr->urlspace.idlocks[id]);
+        Ns_RWLockRdLock(&servPtr->urlspace.idlocks[id]);
         Ns_UrlSpecificWalk(id, servPtr->server, WalkCallback, dsPtr);
-        Ns_MutexUnlock(&servPtr->urlspace.idlocks[id]);
+        Ns_RWLockUnlock(&servPtr->urlspace.idlocks[id]);
 
         Tcl_DStringResult(interp, dsPtr);
     }
@@ -3077,7 +3078,7 @@ UrlSpaceSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 #ifdef DEBUG
         fprintf(stderr, "=== SET use id %d\n", id);
 #endif
-        Ns_MutexLock(&servPtr->urlspace.idlocks[id]);
+        Ns_RWLockWrLock(&servPtr->urlspace.idlocks[id]);
 
         if (oc == 2) {
             contextSpec = NsUrlSpaceContextSpecNew(Tcl_GetString(ov[0]), Tcl_GetString(ov[1]));
@@ -3086,7 +3087,7 @@ UrlSpaceSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         //Ns_Log(Ns_LogUrlspaceDebug, "UrlSpaceSetObjCmd contextFilter %p", (void*)contextSpec);
         Ns_UrlSpecificSet2(servPtr->server, key, url, id, ns_strdup(data),
                            flags, ns_free, contextSpec);
-        Ns_MutexUnlock(&servPtr->urlspace.idlocks[id]);
+        Ns_RWLockUnlock(&servPtr->urlspace.idlocks[id]);
     }
     return result;
 }
@@ -3159,9 +3160,9 @@ UrlSpaceUnsetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 
         Ns_Log(Ns_LogUrlspaceDebug, "UrlSpaceUnsetObjCmd %s 0x%.6x", url, flags);
 
-        Ns_MutexLock(&servPtr->urlspace.idlocks[id]);
+        Ns_RWLockWrLock(&servPtr->urlspace.idlocks[id]);
         data = Ns_UrlSpecificDestroy(servPtr->server, key, url, id, flags);
-        Ns_MutexUnlock(&servPtr->urlspace.idlocks[id]);
+        Ns_RWLockUnlock(&servPtr->urlspace.idlocks[id]);
 
         Tcl_SetObjResult(interp, Tcl_NewBooleanObj((data != NULL) || recurse));
     }
