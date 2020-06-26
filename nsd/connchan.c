@@ -263,10 +263,10 @@ ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
      * connection.
      */
 
-    Ns_MutexLock(&servPtr->connchans.lock);
+    Ns_RWLockWrLock(&servPtr->connchans.lock);
     snprintf(name, sizeof(name), "conn%" PRIuPTR, connchanCount ++);
     hPtr = Tcl_CreateHashEntry(&servPtr->connchans.table, name, &isNew);
-    Ns_MutexUnlock(&servPtr->connchans.lock);
+    Ns_RWLockUnlock(&servPtr->connchans.lock);
 
     if (likely(isNew == 0)) {
         Ns_Log(Warning, "duplicate connchan name '%s'", name);
@@ -324,7 +324,7 @@ ConnChanFree(NsConnChan *connChanPtr) {
     /*
      * Remove entry from hash table.
      */
-    Ns_MutexLock(&servPtr->connchans.lock);
+    Ns_RWLockWrLock(&servPtr->connchans.lock);
     hPtr = Tcl_FindHashEntry(&servPtr->connchans.table, connChanPtr->channelName);
     if (hPtr != NULL) {
         Tcl_DeleteHashEntry(hPtr);
@@ -332,7 +332,7 @@ ConnChanFree(NsConnChan *connChanPtr) {
         Ns_Log(Error, "ns_connchan: could not delete hash entry for channel '%s'",
                connChanPtr->channelName);
     }
-    Ns_MutexUnlock(&servPtr->connchans.lock);
+    Ns_RWLockUnlock(&servPtr->connchans.lock);
 
 
     if (hPtr != NULL) {
@@ -397,12 +397,12 @@ ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name) {
     NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(name != NULL);
 
-    Ns_MutexLock(&servPtr->connchans.lock);
+    Ns_RWLockRdLock(&servPtr->connchans.lock);
     hPtr = Tcl_FindHashEntry(&servPtr->connchans.table, name);
     if (hPtr != NULL) {
         connChanPtr = (NsConnChan *)Tcl_GetHashValue(hPtr);
     }
-    Ns_MutexUnlock(&servPtr->connchans.lock);
+    Ns_RWLockUnlock(&servPtr->connchans.lock);
 
     if (connChanPtr == NULL && interp != NULL) {
         Ns_TclPrintfResult(interp, "channel \"%s\" does not exist", name);
@@ -1333,7 +1333,7 @@ ConnChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
          */
         Tcl_DStringInit(dsPtr);
 
-        Ns_MutexLock(&servPtr->connchans.lock);
+        Ns_RWLockRdLock(&servPtr->connchans.lock);
         hPtr = Tcl_FirstHashEntry(&servPtr->connchans.table, &search);
         while (hPtr != NULL) {
             NsConnChan *connChanPtr;
@@ -1372,7 +1372,7 @@ ConnChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
             Ns_DStringNAppend(dsPtr, "} ", 2);
             hPtr = Tcl_NextHashEntry(&search);
         }
-        Ns_MutexUnlock(&servPtr->connchans.lock);
+        Ns_RWLockUnlock(&servPtr->connchans.lock);
 
         Tcl_DStringResult(interp, dsPtr);
     }

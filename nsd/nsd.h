@@ -960,7 +960,7 @@ typedef struct NsServer {
      */
 
     struct {
-        Ns_Mutex lock;
+        Ns_RWLock lock;
         Tcl_HashTable table;
     } connchans;
 
