@@ -294,7 +294,6 @@ ns_section "ns/server/testvhost/redirects" {
     ns_param   405    /405.tcl
 }
 ns_section "ns/server/testvhost/modules" {
-    puts stderr ======[ns_config "test" home]/../nslog/nslog[sharedlibextension]
     ns_param   nslog           [ns_config "test" home]/../nslog/nslog[sharedlibextension]
 }
 ns_section "ns/server/testvhost/module/nslog" {
