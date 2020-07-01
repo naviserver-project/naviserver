@@ -362,7 +362,7 @@ ListMDfunc(const EVP_MD *m, const char *from, const char *UNUSED(to), void *arg)
 
         /* fprintf(stderr, "from %s to %to name <%s> type (nid) %d\n",from,to,mdName, EVP_MD_type(m)); */
         /*
-         * Apprarently, the list contains upper and lower case variants. Avoid
+         * Apprarently, the list contains upper and lowercase variants. Avoid
          * duplication.
          */
         if ((*from >= 'a') && (*from <= 'z')) {
@@ -2296,7 +2296,7 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
         result = TCL_ERROR;
 
     } else if (pemFileName == NULL) {
-        Ns_TclPrintfResult(interp, "no pem file name provided");
+        Ns_TclPrintfResult(interp, "no pem filename provided");
         result = TCL_ERROR;
 
     } else {

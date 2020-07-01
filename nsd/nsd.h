@@ -598,11 +598,11 @@ typedef struct Conn {
     uintptr_t id;
     char idstr[TCL_INTEGER_SPACE + 4];
 
-    Ns_Time acceptTime;          /* time stamp, when the request was accepted */
-    Ns_Time requestQueueTime;    /* time stamp, when the request was queued */
-    Ns_Time requestDequeueTime;  /* time stamp, when the request was dequeued */
-    Ns_Time filterDoneTime;      /* time stamp, after filters */
-    Ns_Time runDoneTime;         /* time stamp, after running main connection task */
+    Ns_Time acceptTime;          /* timestamp, when the request was accepted */
+    Ns_Time requestQueueTime;    /* timestamp, when the request was queued */
+    Ns_Time requestDequeueTime;  /* timestamp, when the request was dequeued */
+    Ns_Time filterDoneTime;      /* timestamp, after filters */
+    Ns_Time runDoneTime;         /* timestamp, after running main connection task */
 
     Ns_Time acceptTimeSpan;
     Ns_Time queueTimeSpan;

@@ -274,7 +274,7 @@ Ns_SockInErrorState(Ns_Sock *sock)
  *
  * Ns_SockRecvBufs --
  *
- *      Read data from a non-blocking socket into a vector of buffers.
+ *      Read data from a nonblocking socket into a vector of buffers.
  *      When the timeoutPtr is given, wait max the given time until
  *      the data is readable.
  *
@@ -332,7 +332,7 @@ Ns_SockRecvBufs(Ns_Sock *sock, struct iovec *bufs, int nbufs,
  *
  * Ns_SockRecvBufs2 --
  *
- *      Read data from a non-blocking socket into a vector of buffers.
+ *      Read data from a nonblocking socket into a vector of buffers.
  *      Ns_SockRecvBufs2() is similar to Ns_SockRecvBufs() with the following
  *      differences:
  *        a) the first argument is a NS_SOCKET
@@ -392,7 +392,7 @@ Ns_SockRecvBufs2(NS_SOCKET sock, struct iovec *bufs, int nbufs,
  *
  * Ns_SockSendBufs --
  *
- *      Send a vector of buffers on a non-blocking socket.
+ *      Send a vector of buffers on a nonblocking socket.
  *      Promises to send all of the data.
  *
  * Results:
@@ -501,7 +501,7 @@ Ns_SockSendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
  *
  * Ns_SockSendBufs2 --
  *
- *      Send a vector of buffers on a non-blocking socket.
+ *      Send a vector of buffers on a nonblocking socket.
  *      It is similar to Ns_SockSendBufs() except that it
  *        a) receives a NS_SOCK as first argument
  *        b) it does not care about partial writes,
@@ -547,7 +547,7 @@ Ns_SockSendBufs2(NS_SOCKET sock, const struct iovec *bufs, int nbufs,
  *
  * NsSockRecv --
  *
- *      Timed recv operation from a non-blocking socket.
+ *      Timed recv operation from a nonblocking socket.
  *
  * Results:
  *      Number of bytes read, -1 on error.
@@ -586,7 +586,7 @@ Ns_SockRecv(NS_SOCKET sock, void *buffer, size_t length,
  *
  * Ns_SockSend --
  *
- *      Timed send operation to a non-blocking socket.
+ *      Timed send operation to a nonblocking socket.
  *
  * Results:
  *      Number of bytes written, -1 for error
@@ -1699,7 +1699,7 @@ SockSetup(NS_SOCKET sock)
  *
  * SockRecv --
  *
- *      Read data from a non-blocking socket into a vector of buffers.
+ *      Read data from a nonblocking socket into a vector of buffers.
  *
  * Results:
  *
@@ -1748,7 +1748,7 @@ SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
  *
  * SockSend --
  *
- *      Send data to a non-blocking socket from a vector of buffers.
+ *      Send data to a nonblocking socket from a vector of buffers.
  *
  * Results:
  *

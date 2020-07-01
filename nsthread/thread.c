@@ -197,7 +197,7 @@ Ns_ThreadStackSize(ssize_t size)
  *
  * ThreadMain --
  *
- *      Thread startup routine.  Sets the given pre-allocated thread
+ *      Thread startup routine.  Sets the given preallocated thread
  *      structure and calls the user specified procedure.
  *
  * Results:

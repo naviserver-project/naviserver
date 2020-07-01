@@ -737,7 +737,7 @@ NsCreateThread(void *arg, ssize_t stacksize, Ns_Thread *threadPtr)
  * NsThreadExit --
  *
  *      Terminate a thread via _endthreadex(). The result of the thread is
- *      passed via (the 32bit) argument of _endthreadex(), which will be
+ *      passed via (the 32-bit) argument of _endthreadex(), which will be
  *      accessible after the join. We use the argument as a pointer to the
  *      threadExitResults table.
  *
@@ -796,8 +796,8 @@ NsThreadExit(void *arg)
  *      Access the result of an exiting thread available. The only reason for
  *      having this function is that the Windows function _endthreadex() just
  *      accepts an "unsigned" value, whele we can access via the pthread
- *      interface a pointer. This is cruical, since with 64bit windows,
- *      "unsigned" is just a 32bit value. Therefore, In the windows version of
+ *      interface a pointer. This is cruical, since with 64-bit windows,
+ *      "unsigned" is just a 32-bit value. Therefore, In the windows version of
  *      NaviServer we keep a table of results and pass just he index of this
  *      table via _endthreadex().
  *

@@ -456,7 +456,7 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  *      Tcl result.
  *
  * Side effects:
- *      ns_localtime depends on the time zone of the server process.
+ *      ns_localtime depends on the timezone of the server process.
  *
  *----------------------------------------------------------------------
  */
@@ -563,7 +563,7 @@ NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  *      Tcl result.
  *
  * Side effects:
- *      Depends on the time zone of the server process.
+ *      Depends on the timezone of the server process.
  *
  *----------------------------------------------------------------------
  */

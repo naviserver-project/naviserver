@@ -617,7 +617,7 @@ typedef int
 typedef struct Ns_DriverInitData {
     const char              *name;             /* This will show up in log file entries */
     Ns_DriverListenProc     *listenProc;       /* Open listening socket for conns. */
-    Ns_DriverAcceptProc     *acceptProc;       /* Accept a new non-blocking socket. */
+    Ns_DriverAcceptProc     *acceptProc;       /* Accept a new nonblocking socket. */
     Ns_DriverRecvProc       *recvProc;         /* Read bytes from conn into iovec. */
     Ns_DriverSendProc       *sendProc;         /* Write bytes to conn from iovec. */
     Ns_DriverSendFileProc   *sendFileProc;     /* Optional: write bytes from files/buffers. */

@@ -458,7 +458,7 @@ Each of these maintenance tasks is described in the following sections.
 [section {Maintain the Directories}]
 
 The NaviServer directories described below should be backed up
-regularly to ensure against file system failure.
+regularly to ensure against filesystem failure.
 
 
 [subsection {Back Up the Pages Directory}]
@@ -470,7 +470,7 @@ configuration file. Normally, it is the /pages subdirectory under
 the NaviServer home directory.
 
 [para]
-Use whatever file system backup procedure you have in place at your
+Use whatever filesystem backup procedure you have in place at your
 site. To schedule nightly backups, use the Unix cron facility.
 
 
@@ -525,7 +525,7 @@ The /bin subdirectory of the NaviServer home is the location of the
 NaviServer binary and the default location of any dynamically loadable
 C modules. If your site maintains several interesting loadable
 modules, you must make sure copies of the modules are backed up to
-avoid having to recompile them after a file system failure. Also, be
+avoid having to recompile them after a filesystem failure. Also, be
 sure to back up your module source code.
 
 
@@ -834,7 +834,7 @@ benefits:
 
 [item] The chroot() system call updates the process such that all
    absolute filenames are relative to a new root directory instead of
-   the actual mounted file system.
+   the actual mounted filesystem.
 
 [item] The chroot() call is irrevocable. Once chroot() returns, the
    server cannot access any file above the new root directory.

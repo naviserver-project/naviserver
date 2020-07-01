@@ -89,7 +89,7 @@ listed below are well-suited to the Tcl libraries approach.
 [section {Tcl Libraries}]
 
 Tcl libraries contain Tcl files, which are loaded at startup time. The
-functions defined in these Tcl files are available at runtime without
+functions defined in these Tcl files are available at run time without
 any function loading overhead. 
 
 NaviServer distinguishes between global (shared) and per-server

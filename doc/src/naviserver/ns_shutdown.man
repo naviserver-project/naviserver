@@ -33,7 +33,7 @@ or as a number with the time units ms, s, m, d.
 
 [para]
 [option -restart]
-send an interrupt signal to the server, leading to a non-zero exit code.
+send an interrupt signal to the server, leading to a nonzero exit code.
 
 [list_end]
 

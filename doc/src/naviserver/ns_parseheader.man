@@ -10,8 +10,8 @@ This function parses the HTTP header specified by header into an ns_set specifie
 [para]
  Optional argument [arg disposition] can be one of the following
  [list_begin itemized]
-	[item] toupper - convert header names to upper case
-	[item] tolower - convert header names to lower case
+	[item] toupper - convert header names to uppercase
+	[item] tolower - convert header names to lowercase
 	[item] preserve - preserve the existing case
  [list_end]
 

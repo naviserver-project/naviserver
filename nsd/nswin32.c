@@ -644,7 +644,7 @@ NsMemUmap(const FileMap *mapPtr)
  *
  * ns_socknbclose --
  *
- *      Perform a non-blocking socket close via the socket callback
+ *      Perform a nonblocking socket close via the socket callback
  *      thread.
  *      This is only called by a timeout in Ns_SockTimedConnect.
  *
@@ -710,7 +710,7 @@ ns_sockdup(NS_SOCKET sock)
  *----------------------------------------------------------------------
  * ns_sock_set_blocking --
  *
- *      Set a channel blocking or non-blocking
+ *      Set a channel blocking or nonblocking
  *
  * Results:
  *      None.

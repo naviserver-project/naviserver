@@ -40,7 +40,7 @@ Returns the decoded user password from the authorization data.
 
 [call [cmd  "ns_conn authuser"]]
 
-Returns the decoded user name from the authorization data.
+Returns the decoded username from the authorization data.
 
 
 
@@ -292,7 +292,7 @@ Returns the socket id (integer fd) of current connection.
 
 [call [cmd  "ns_conn start"]]
 
-Returns the time the connection request started in "sec:usec" (a.k.a.
+Returns the time the connection request started in "sec:usec" (aka
 ns_time) format.
 
 

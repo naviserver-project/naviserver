@@ -77,7 +77,7 @@ Create a new Tcl cache identified by [arg name] with maximum size
 [arg size]. The size determines the number of entries that can be kept in
 the cache. The size of a single entry is the size of the key plus the
 size of the value and the internal overhead per cache entry (about 126
-bytes on a 64bit machine).  Optionally, a [option -timeout], an
+bytes on a 64-bit machine).  Optionally, a [option -timeout], an
 [option -expires] time and the maximum size of the cache value of a
 single entry (parameter [option -maxentry]) can be specified.
 The values for [arg size] and [option -maxentry] can be specified in

@@ -1261,7 +1261,7 @@ NsForkBinder(void)
         Ns_Fatal("NsForkBinder: Ns_WaitForProcess(%d) failed: '%s'",
                  pid, strerror(errno));
     } else if (status != 0) {
-        Ns_Fatal("NsForkBinder: process %d exited with non-zero status: %d",
+        Ns_Fatal("NsForkBinder: process %d exited with nonzero status: %d",
                  pid, status);
     }
     binderRunning = NS_TRUE;

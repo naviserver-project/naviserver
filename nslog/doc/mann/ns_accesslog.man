@@ -39,7 +39,7 @@ configuration parameter 'file' as the new log file.
 [call [cmd "ns_accesslog rollfmt"] \
 	[opt [arg time-format]] ]
 
-Get the [opt [arg time-format]] which is appended to the log file name when
+Get the [opt [arg time-format]] which is appended to the log filename when
 rolling. The format string is as understood by the Tcl [cmd clock] command.
 If [opt [arg time-format]] is given then it replaces any existing value.
 

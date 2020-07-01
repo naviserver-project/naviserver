@@ -61,7 +61,7 @@ disk caching. When the server receives the first TLS request with OCSP
 stapling turned on, it checks for an already retrieved OCSP
 response. The disk cache file is saved in the "log" directory of the
 server and uses the serial number of the certificate to be checked as
-file name with ".der" as extension.  When the disk cache file does
+filename with ".der" as extension.  When the disk cache file does
 not exist, an http/https request is made to the server issuing the
 servers certificate as defined by the Authority Information Access
 (AIA) Extension. The names of the file and the http/https request for

@@ -1426,7 +1426,7 @@ SetSpecFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 
         /*
          * Arguments with default values must have their keys
-         * prepended with '?' for the runtime parser. Tcl 'args' are
+         * prepended with '?' for the run time parser. Tcl 'args' are
          * always optional.
          */
 

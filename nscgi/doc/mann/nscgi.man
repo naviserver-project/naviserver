@@ -727,7 +727,7 @@ request. Normally, the format is "browser name/version".
 
 [para]
 
-Example: [const "Mozilla/1.2N (Windows; I; 16bit)"]
+Example: [const "Mozilla/1.2N (Windows; I; 16-bit)"]
 
 [para]
 
@@ -1501,7 +1501,7 @@ from the CGI program.
       language can cause problems if the browser fails to encode
       them as hexadecimal values.
 
- [item]  Check for odd file names and directory paths in the input.
+ [item]  Check for odd filenames and directory paths in the input.
       For example, you should be careful about allow paths
       containing: ., ../, //, or the name of the directory that
       contains your CGI programs.

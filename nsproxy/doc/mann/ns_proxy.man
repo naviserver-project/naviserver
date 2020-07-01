@@ -144,7 +144,7 @@ The default is 0 milliseconds i.e. infinite.
 [opt_def -exec [arg program]]
 Specifies the filename of a slave proxy program.  The default is
 [emph nsproxy] in the [emph bin] subdirectory of the NaviServer
-runtime. It is possible to create a custom program and enter the
+run time. It is possible to create a custom program and enter the
 proxy event loop with the [emph Ns_ProxyMain] application startup
 routine; see the source code for details.
 

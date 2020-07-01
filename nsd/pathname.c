@@ -171,7 +171,7 @@ Ns_PathIsAbsolute(const char *path)
  * Ns_NormalizePath, Ns_NormalizeUrl --
  *
  *  Remove "..", ".", multiple consecutive slashes from paths.
- *  While Ns_NormalizePath is designed for file system paths
+ *  While Ns_NormalizePath is designed for filesystem paths
  *  including special treatment for windows, the latter is defined
  *  for normalizing URLs.
  *
@@ -1023,7 +1023,7 @@ MakePath(Ns_DString *dest, va_list *pap)
  *      dest->string.
  *
  * Side effects:
- *      Value of Host header may be bashed to lower case.
+ *      Value of Host header may be bashed to lowercase.
  *      Depends on registered Ns_ServerRootProc, if any.
  *
  *----------------------------------------------------------------------

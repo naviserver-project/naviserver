@@ -170,7 +170,7 @@ Ns_WaitForProcessStatus(pid_t pid, int *exitcodePtr, int *waitstatusPtr)
             *exitcodePtr = exitcode;
         }
         if (nsconf.exec.checkexit == TRUE && exitcode != 0u) {
-            Ns_Log(Error, "exec: process %d exited with non-zero status: %d",
+            Ns_Log(Error, "exec: process %d exited with nonzero status: %d",
                    pid, exitcode);
             status = NS_ERROR;
         }
@@ -205,7 +205,7 @@ Ns_WaitForProcessStatus(pid_t pid, int *exitcodePtr, int *waitstatusPtr)
         int exitcode = WEXITSTATUS(waitstatus);
 
         if (exitcode != 0) {
-            Ns_Log(Warning, "process %d exited with non-zero exit code: %d",
+            Ns_Log(Warning, "process %d exited with nonzero exit code: %d",
                    pid, exitcode);
         }
         if (exitcodePtr != NULL) {

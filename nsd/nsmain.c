@@ -320,10 +320,10 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         if (mode != 'w') {
             /*
              * Unless we are in watchdog mode, setup pipe for realizing
-             * non-zero return codes in case setup fails.
+             * nonzero return codes in case setup fails.
              *
              * Background: The pipe is used for communicating problems during
-             * startup from the child process to return non-zero return codes
+             * startup from the child process to return nonzero return codes
              * in case the server does not start up. However, the watchdog
              * mode restarts the child if necessary, so the pipe to the child
              * can't be used.
@@ -720,7 +720,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 #endif
 
     /*
-     * Open the log file now that the home directory and runtime
+     * Open the log file now that the home directory and run time
      * user id have been set.
      */
 
@@ -1247,7 +1247,7 @@ MakePath(const char *file)
             Tcl_DecrRefCount(obj);
 
             /*
-             * If file name was given, check if the file exists
+             * If filename was given, check if the file exists
              */
             if (path != NULL && *file != '\0' && access(path, F_OK) != 0) {
                 ckfree((void *)path);

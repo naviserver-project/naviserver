@@ -33,7 +33,7 @@ in this chapter.
 [section {Users and Groups}]
 
 [para]
-NaviServer users are identified by short user names. These user names
+NaviServer users are identified by short usernames. These usernames
 can be any name you choose; they are completely independent of the
 Unix login accounts. New users can be assigned subdirectories of the
 NaviServer pages directory where they can store content.
@@ -55,8 +55,7 @@ default passwd file contains:
 
 [para]
 The format is the same as the format for the /etc/passwd file.
-NaviServer ignores all but the first two fields, which are the user
-name and the encrypted password. The password itself is encrypted the
+NaviServer ignores all but the first two fields, which are the username and the encrypted password. The password itself is encrypted the
 same way as Unix passwords.
 
 [para]
@@ -192,11 +191,11 @@ specified in either of these forms:
  same as 10.0.0.0/255.0.0.0) matches any IP address
  that begins with 10.
 
-[item] a fully-qualified host name
+[item] a fully-qualified hostname
 [para]
 For example, foo.bar.com.
 
-[item] part of a host name
+[item] part of a hostname
 [para]
   For example, .bar.com, which would match anything ending in
  .bar.com.
@@ -252,11 +251,11 @@ specified in either of these forms:
  For example, a host specified as 10.0.0.0/8 matches any
  IP address that begins with 10.
 
-[item] a fully-qualified host name
+[item] a fully-qualified hostname
 [para]
   For example, foo.bar.com.
 
-[item] part of a host name
+[item] part of a hostname
 [para]
   For example, .bar.com, which would match anything ending in
  .bar.com.

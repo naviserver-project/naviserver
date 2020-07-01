@@ -1002,7 +1002,7 @@ NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
         }
     } else {
         /*
-         * No exception log entries, if SQL debug is enabled and runtime
+         * No exception log entries, if SQL debug is enabled and run time
          * is above threshold.
          */
         Ns_Time endTime, diffTime;

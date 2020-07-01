@@ -270,7 +270,7 @@ In more detail, here's what each of these functions needs to do:
      This function takes a pointer (typically known as the "handle")
              to the ns_DbHandle structure as an argument. The handle
              contains information such as the driver name, name of the
-             datasource, user name and password, name of the database
+             datasource, username and password, name of the database
              pool and some other parameters. The structure is as
              follows:
 
@@ -1156,7 +1156,7 @@ message is printed to the syslog and the function returns.
 
 
      This function frees a ns_PdRowInfo data structure. If fFreeData
-             is a non-zero value, then this function frees the data
+             is a nonzero value, then this function frees the data
              associated with the ns_PdRowData structure (encapsulated
              in ns_PdRowInfo) as well.
 

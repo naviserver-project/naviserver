@@ -604,7 +604,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
                 if (path != NULL) {
                     Ns_SetUpdate(set, "address", address);
                 }
-                Ns_Log(Notice, "no address given, obtained address '%s' from host name %s", address, host);
+                Ns_Log(Notice, "no address given, obtained address '%s' from hostname %s", address, host);
 
             }
             Tcl_DStringFree(&ds);
@@ -777,7 +777,7 @@ void NsDriverMapVirtualServers(void)
         if (lset == NULL || Ns_SetSize(lset) == 0u) {
             /*
              * The driver module has no (or empty) ".../servers" section.
-             * There is no mapping from host name to virtual server defined.
+             * There is no mapping from hostname to virtual server defined.
              */
             if (drvPtr->server == NULL) {
 
@@ -1812,7 +1812,7 @@ DriverListen(Driver *drvPtr, const char *bindaddr)
  *
  * DriverAccept --
  *
- *      Accept a new socket. It will be in non-blocking mode.
+ *      Accept a new socket. It will be in nonblocking mode.
  *
  * Results:
  *      _ACCEPT:       a socket was accepted, poll for data
@@ -4422,7 +4422,7 @@ SockSetServer(Sock *sockPtr)
                 host[hostLength] = '\0';
             }
             /*
-             * Convert provided host header field to lower case before hash
+             * Convert provided host header field to lowercase before hash
              * lookup.
              */
             Ns_StrToLower(host);
@@ -7181,7 +7181,7 @@ WriterStreamingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *
  *      Implements "ns_writer" command for submitting data to the writer
  *      threads and to configure and query the state of the writer threads at
- *      runtime.
+ *      run time.
  *
  * Results:
  *      Standard Tcl result.
@@ -7467,7 +7467,7 @@ AsyncWriterRelease(AsyncWriteData *wdPtr)
  *
  * AsyncWriterThread --
  *
- *      Thread that implements non-blocking write operations to files
+ *      Thread that implements nonblocking write operations to files
  *
  * Results:
  *      None.

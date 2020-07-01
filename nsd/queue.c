@@ -2548,7 +2548,7 @@ ConnRun(Conn *connPtr)
     }
 
     /*
-     * Update runtime statistics to make these usable for traces (e.g. access log).
+     * Update run time statistics to make these usable for traces (e.g. access log).
      */
     NsConnTimeStatsUpdate(conn);
 

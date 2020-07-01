@@ -15,7 +15,7 @@
 return the path of the temporary file uploaded via an HTML input field
 named [arg name], or empty when no such file was submitted. When the
 input element of the file contains the HTML5 attribute [term multiple],
-a list of file names is potentially returned.
+a list of filenames is potentially returned.
 
 [list_end]
 

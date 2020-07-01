@@ -262,7 +262,7 @@ Ns_SockaddrMaskBits(const struct sockaddr *mask, unsigned int nrBits)
         int i;
 
         if (nrBits > 128u) {
-            Ns_Log(Warning, "Invalid bitmask /%d: can be most 128 bits", nrBits);
+            Ns_Log(Warning, "Invalid bit mask /%d: can be most 128 bits", nrBits);
             nrBits = 128u;
         }
 #ifndef _WIN32
@@ -287,7 +287,7 @@ Ns_SockaddrMaskBits(const struct sockaddr *mask, unsigned int nrBits)
         }
 #else
         /*
-         * Windows does not have 32bit members, so process in 16bit
+         * Windows does not have 32-bit members, so process in 16-bit
          * chunks: Set the mask bits in the leading 16 bit Words to 1.
          */
         for (i = 0; i < 8 && nrBits >= 16u; i++, nrBits -= 16u) {
@@ -310,7 +310,7 @@ Ns_SockaddrMaskBits(const struct sockaddr *mask, unsigned int nrBits)
         /*fprintf(stderr, "#### FINAL mask %s\n",ns_inet_ntoa(mask));*/
     } else if (mask->sa_family == AF_INET) {
         if (nrBits > 32u) {
-            Ns_Log(Warning, "Invalid bitmask /%d: can be most 32 bits", nrBits);
+            Ns_Log(Warning, "Invalid bit mask /%d: can be most 32 bits", nrBits);
             nrBits = 32u;
         }
         ((struct sockaddr_in *)mask)->sin_addr.s_addr = htonl((~0u) << (32u - nrBits));

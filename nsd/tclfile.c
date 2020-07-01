@@ -238,7 +238,7 @@ NsTclPurgeFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *      temporary filename using optionally a template as argument.
  *
  *      In general, the function mktemp() is not recommended, since
- *      there is a time gap between the generation of a file name and
+ *      there is a time gap between the generation of a filename and
  *      the generation of a file or directory with the name. This can
  *      result in race conditions or attacks. However, using this
  *      function is still better than home-brewed solutions for the

@@ -41,8 +41,7 @@ the value [term backlog])
 
 [def address] Space separated list of one or more IP addresses on
 which the server should listen. If no address is given it obtain the
-address from the host name (either the specified host name or the host
-name reported by the OS).
+address from the hostname (either the specified hostname or the hostname reported by the OS).
 
 [def backlog]
 Maximum number of entries for waiting listen connections
@@ -288,7 +287,7 @@ network driver, which listens on a single port, but which should
 direct requests to the server based on the content of the [term host]
 header field.  Using such virtual servers is a common technique, where
 e.g. for the same IP address, multiple DNS names are
-registered. According to HTTP/1.1, clients have to send the host name
+registered. According to HTTP/1.1, clients have to send the hostname
 in the host header field to the server, which can behave differently
 depending on contents of this field.
 
@@ -308,7 +307,7 @@ fields, we have to define a [term defaultserver] to handle such
 requests in the global definition.
 
 In the section [const ns/module/nssock/servers] we define the mapping
-between the host names and the defined servers. Note that one can
+between the hostnames and the defined servers. Note that one can
 define multiple DNS names also for a single server (here for [const s2]).
 
 [example_begin]

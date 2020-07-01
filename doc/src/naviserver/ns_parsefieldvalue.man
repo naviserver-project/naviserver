@@ -25,7 +25,7 @@ these header fields is specified in RFC 7230 section 3.2.6.
 [para] Per default, the command assumes a comma separated list of
 elements, where every element might consist of multiple parts
 separated by a semicolon. When the [option "-lower"] is specified, the
-keys of the returned dicts are converted to lower case.  When the
+keys of the returned dicts are converted to lowercase.  When the
 [option "-single"] is specified, only the first element of the
 (potentially) comma separated list of elements is returned. When
 [option "-strict"] is specified, then the command is expected to parse

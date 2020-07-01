@@ -1007,7 +1007,7 @@ this is necessary).
  
     # Execute the WinCGI program.
     # NB:  "catch" the exec and open because a WinCGI
-    # program can be misbehaved, returning a non-zero
+    # program can be misbehaved, returning a nonzero
     # exit status or not creating the output file.
     catch {exec "$exec $ini $inp $out $args"}
     if [lb]catch {set fp [lb]open $out]}[rb] {

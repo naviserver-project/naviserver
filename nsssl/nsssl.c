@@ -351,7 +351,7 @@ OCSP_get_cert_id(SSL *ssl, X509 *cert)
  *
  * Results:
  *      Tcl result code (NS_OK, NS_CONTINUE, NS_ERROR).  NS_CONTINUE means
- *      that there is no cache entry yet, but the file name of the cache file
+ *      that there is no cache entry yet, but the filename of the cache file
  *      is returned in the first argument.
  *
  * Side effects:
@@ -434,7 +434,7 @@ OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
  *      Get OCSP_RESPONSE either from a cache file or from the cerificate
  *      issuing server via the DER encoded OCSP request. In case the disk
  *      lookup fails, but the request to the AIA server succeeds, the result
- *      is stored for caching in the file system.
+ *      is stored for caching in the filesystem.
  *
  * Results:
  *      OpenSSL return code. On success (when result == SSL_TLSEXT_ERR_OK),
@@ -954,7 +954,7 @@ Ns_ModuleInit(const char *server, const char *module)
  *
  * Listen --
  *
- *      Open a listening socket in non-blocking mode.
+ *      Open a listening socket in nonblocking mode.
  *
  * Results:
  *      The open socket or NS_INVALID_SOCKET on error.
@@ -988,7 +988,7 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int backlog,
  *
  * Accept --
  *
- *      Accept a new socket in non-blocking mode.
+ *      Accept a new socket in nonblocking mode.
  *
  * Results:
  *      NS_DRIVER_ACCEPT_DATA  - socket accepted, data present

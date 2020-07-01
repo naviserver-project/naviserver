@@ -832,7 +832,7 @@ NsTclAdpDumpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *
  * NsTclAdpInfoObjCmd --
  *
- *      Process the Tcl ns_adp_info commands to return the current file name,
+ *      Process the Tcl ns_adp_info commands to return the current filename,
  *      size and modification time
  *
  * Results:

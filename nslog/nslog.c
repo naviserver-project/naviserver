@@ -911,7 +911,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     }
 
     /*
-     * Append a common log format time stamp including GMT offset
+     * Append a common log format timestamp including GMT offset
      */
 
     if (!(logPtr->flags & LOG_FMTTIME)) {

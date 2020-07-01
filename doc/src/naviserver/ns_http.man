@@ -330,7 +330,7 @@ with OpenSSL support.
 
 If the returned data is too large to be retained in memory
 you can use the [option -spoolsize] to control when the
-content should be spooled to file. The spooled file name
+content should be spooled to file. The spooled filename
 is contained in the resulting dict under the key [term file].
 
 [example_begin]

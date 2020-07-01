@@ -108,7 +108,7 @@ QuoteHtml(Ns_DString *dsPtr, const char *breakChar, const char *htmlString)
     } while (breakChar != NULL);
 
     /*
-     * Append the last part if non-empty.
+     * Append the last part if nonempty.
      */
     if (toProcess != NULL) {
         Ns_DStringAppend(dsPtr, toProcess);

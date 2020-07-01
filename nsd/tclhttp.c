@@ -262,7 +262,7 @@ static NsHttpParseProc* EndParsers[] = {
  *
  * Ns_HttpParseHost --
  *
- *      Obtain the host name from a writable string
+ *      Obtain the hostname from a writable string
  *      using syntax as specified in RFC 3986 section 3.2.2.
  *
  *      Examples:
@@ -271,10 +271,10 @@ static NsHttpParseProc* EndParsers[] = {
  *          openacs.org:80                         (reg-name notation)
  *
  * Results:
- *      If a port is indicated after the host name, the "portStart"
+ *      If a port is indicated after the hostname, the "portStart"
  *      will contain a string starting with ":", otherwise NULL.
  *
- *      If "hostStart" is non-null, a pointer will point to the host name,
+ *      If "hostStart" is non-null, a pointer will point to the hostname,
  *      which will be terminated by '\0' in case of a IPv6 address in
  *      IP-literal notation.
  *

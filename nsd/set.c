@@ -1047,7 +1047,7 @@ Ns_SetRecreate(Ns_Set *set)
  * Ns_SetRecreate2 --
  *
  *      This is a faster version of Ns_SetRecreate() since it tries to reuse
- *      pre-allocated, but truncated Ns_Set structures. It saves potentially
+ *      preallocated, but truncated Ns_Set structures. It saves potentially
  *      three ns_malloc operations:
  *        1) the Ns_Set structure
  *        2) the set name (it preserves the old name)

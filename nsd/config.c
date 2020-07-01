@@ -672,7 +672,7 @@ Ns_ConfigGetBool(const char *section, const char *key, bool *valuePtr)
  *      Get the full name of a config file section if it exists.
  *
  * Results:
- *      A pointer to an ASCIIZ string of the full path name, or NULL
+ *      A pointer to an ASCIIZ string of the full pathname, or NULL
  *      if that path is not in the config file.
  *
  * Side effects:

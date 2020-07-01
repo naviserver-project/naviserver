@@ -144,7 +144,7 @@ Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
  *
  * Ns_SockSendFileBufs --
  *
- *      Send a vector of buffers/files on a non-blocking socket.
+ *      Send a vector of buffers/files on a nonblocking socket.
  *
  * Results:
  *      Number of bytes sent, -1 on error.

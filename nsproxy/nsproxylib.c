@@ -1074,13 +1074,13 @@ Eval(Tcl_Interp *interp, Proxy *proxyPtr, const char *script, Ns_Time *timeoutPt
  *
  * GetStats --
  *
- *      Obtain runtime statistics
+ *      Obtain run time statistics
  *
  * Results:
  *      None.
  *
  * Side effects:
- *      Update the pool's runtime
+ *      Update the pool's run time
  *
  *----------------------------------------------------------------------
  */

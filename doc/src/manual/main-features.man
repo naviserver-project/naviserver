@@ -79,7 +79,7 @@ specify users and groups who are allowed access to NaviServer.
 
      When defining permissions for the NaviServer, you can specify lists of
      users to allow or disallow, lists of groups to allow or disallow, and
-     hosts (specified either by host name or IP address) to allow or
+     hosts (specified either by hostname or IP address) to allow or
      disallow for each method/URL combination..
 
 

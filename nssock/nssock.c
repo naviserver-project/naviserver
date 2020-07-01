@@ -119,7 +119,7 @@ Ns_ModuleInit(const char *server, const char *module)
  *
  * SockListen --
  *
- *      Open a listening TCP socket in non-blocking mode.
+ *      Open a listening TCP socket in nonblocking mode.
  *
  * Results:
  *      The open socket or NS_INVALID_SOCKET on error.
@@ -153,7 +153,7 @@ SockListen(Ns_Driver *driver, const char *address, unsigned short port, int back
  *
  * SockAccept --
  *
- *      Accept a new TCP socket in non-blocking mode.
+ *      Accept a new TCP socket in nonblocking mode.
  *
  * Results:
  *      NS_DRIVER_ACCEPT       - socket accepted

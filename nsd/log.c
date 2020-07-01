@@ -272,7 +272,7 @@ NsInitLog(void)
     }
 
     /*
-     * Initialize the built-in severities and lower-case aliases.
+     * Initialize the built-in severities and lowercase aliases.
      */
     for (i = 0; i < PredefinedLogSeveritiesCount; i++) {
         size_t labelLength;
@@ -440,7 +440,7 @@ NsConfigLog(void)
  *      Returns the filename of the log file.
  *
  * Results:
- *      Log file name or NULL if none.
+ *      Log filename or NULL if none.
  *
  * Side effects:
  *      None.
@@ -1519,7 +1519,7 @@ NsLogOpen(void)
  *
  * LogOpen --
  *
- *      Open the log file name specified in the 'logFile' global. If
+ *      Open the log filename specified in the 'logFile' global. If
  *      it's successfully opened, make that file the sink for stdout
  *      and stderr too.
  *

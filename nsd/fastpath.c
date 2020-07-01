@@ -490,7 +490,7 @@ UrlIs(const char *server, const char *url, bool isDir)
  *
  * Ns_PageRoot --
  *
- *      Return path name of the server pages directory.
+ *      Return pathname of the server pages directory.
  *      Depreciated: Use Ns_PagePath() which is virtual host aware.
  *
  * Results:
@@ -576,7 +576,7 @@ CompressExternalFile(Tcl_Interp *interp, const char *cmdName, const char *fileNa
  *      Bame of the compressed file, when this is available and valid.
  *
  * Side effects:
- *      Potentially recompress file in the file system.
+ *      Potentially recompress file in the filesystem.
  *
  *----------------------------------------------------------------------
  */
@@ -710,7 +710,7 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
 
     /*
      * Determine the mime type if not given based on the requested
-     * file name (without a potential gz suffix).
+     * filename (without a potential gz suffix).
      */
     if (mimeType == NULL) {
         mimeType = Ns_GetMimeType(fileName);

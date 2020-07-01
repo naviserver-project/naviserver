@@ -438,7 +438,7 @@ Pipe(int *fds, int sockpair)
  *----------------------------------------------------------------------
  * ns_sock_set_blocking --
  *
- *      Set a channel blocking or non-blocking
+ *      Set a channel blocking or nonblocking
  *
  * Results:
  *      None.
@@ -635,7 +635,7 @@ GetPwUID(uid_t uid, PwElement elem, int *intResult, Ns_DString *dsPtr, char **fr
  *----------------------------------------------------------------------
  * Ns_GetNameForUid --
  *
- *      Get the user name given the id
+ *      Get the username given the id
  *
  * Results:
  *      NS_TRUE if id is found; NS_FALSE otherwise.
@@ -716,10 +716,10 @@ Ns_GetNameForGid(Ns_DString *dsPtr, gid_t gid)
  *----------------------------------------------------------------------
  * Ns_GetUserHome --
  *
- *      Get the home directory name for a user name
+ *      Get the home directory name for a username
  *
  * Results:
- *      Return NS_TRUE if user name is found in /etc/passwd file and
+ *      Return NS_TRUE if username is found in /etc/passwd file and
  *      NS_FALSE otherwise.
  *
  * Side effects:
@@ -748,7 +748,7 @@ Ns_GetUserHome(Ns_DString *dsPtr, const char *user)
  *----------------------------------------------------------------------
  * Ns_GetUserGid --
  *
- *      Get the group id for a user name
+ *      Get the group id for a username
  *
  * Results:
  *      Group id or -1 if not found.
@@ -779,7 +779,7 @@ Ns_GetUserGid(const char *user)
  *----------------------------------------------------------------------
  * Ns_GetUid --
  *
- *      Get user id for a user name.
+ *      Get user id for a username.
  *
  * Results:
  *      User id or -1 if not found.

@@ -16,7 +16,7 @@ limit. The specified value might be an integer or the constant
 [term unlimited].
 
 [para] A typical use case for this command is to query or set e.g. the
-coresize via the NaviServer config file or at runtime in a syntax
+coresize via the NaviServer config file or at run time in a syntax
 independent from the naming and conventions in the various startup
 scripts (e.g. upstart, systemd, ...).
 

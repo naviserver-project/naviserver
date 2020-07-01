@@ -175,7 +175,7 @@ provided there is not already another procedure registered for that exact URL or
 a URL with a closer match.
 
 Note that you must use a glob-style matching character if you want inheritance
-for file names.  For example, if you want /foo/bar to match /foo/bar.html, you must use:
+for filenames.  For example, if you want /foo/bar to match /foo/bar.html, you must use:
 
 [example_begin]
  ns_register_proc /foo/bar*
@@ -326,7 +326,7 @@ can be matched and will be called.
 	[arg URL] \
 	[opt [arg basepath]]]
 
-These commands are used to perform runtime resolving of the requested
+These commands are used to perform run time resolving of the requested
 URLs into corresponding files that will be served to the client. They
 use [cmd ns_url2file] interface which resolves file for current
 URL. [cmd ns_register_fasturl2file] register the default fast url2file
@@ -450,7 +450,7 @@ try using [cmd ns_register_filter].
 
 
 [arg_def string [opt file]]
-The optional argument [arg file] is either an absolute path to a file in the file system,
+The optional argument [arg file] is either an absolute path to a file in the filesystem,
 or a path relative to the page root directory of the virtual server.
 
 [example_begin]
@@ -465,7 +465,7 @@ requested using [cmd ns_pagepath], so [cmd ns_serverroot] and
 [cmd ns_register_url2file] callbacks will be taken into account.
 
 [para]
-In the third example, a specific [term ADP] file in the server's file system
+In the third example, a specific [term ADP] file in the server's filesystem
 is registered for a similarly named URL (and all URLs below
 it). There are no calls to [cmd ns_pagepath] or [cmd ns_url2file]
 during the request.

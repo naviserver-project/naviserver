@@ -428,7 +428,7 @@ Ns_TLS_SSLAccept(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
  *
  * Ns_SSLRecvBufs2 --
  *
- *      Read data from a non-blocking socket into a vector of buffers.
+ *      Read data from a nonblocking socket into a vector of buffers.
  *      Ns_SockRecvBufs2() is similar to Ns_SockRecvBufs() with the following
  *      differences:
  *        a) the first argument is a SSL *
@@ -585,7 +585,7 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
  *
  * Ns_SSLSendBufs2 --
  *
- *      Send a vector of buffers on a non-blocking TLS socket.
+ *      Send a vector of buffers on a nonblocking TLS socket.
  *      It is similar to Ns_SockSendBufs() except that it
  *        a) receives a SSL * as first argument
  *        b) it does not care about partial writes,

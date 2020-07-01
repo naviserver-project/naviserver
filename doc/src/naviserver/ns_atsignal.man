@@ -71,7 +71,7 @@ Orderly shutdown is attempted within [term shutdowntimeout], as
 specified in the configuration file. Tcl shutdown procs are called before C
 shutdown tasks are waited on, so should be well-behaved.
 
-[para] Do not attempt to use other sub-systems for shutdown jobs, such
+[para] Do not attempt to use other subsystems for shutdown jobs, such
 as the [cmd ns_job] command.
 
 

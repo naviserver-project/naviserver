@@ -247,7 +247,7 @@ Ns_ConnContentSize(const Ns_Conn *conn)
  *
  * Ns_ConnContentFile --
  *
- *      Return pointer of the file name with spooled content.
+ *      Return pointer of the filename with spooled content.
  *
  * Results:
  *      Pointer to string
@@ -1001,7 +1001,7 @@ Ns_ConnDriverName(const Ns_Conn *conn)
  *      accepted (this is maybe a kept open connection),
  *      Ns_ConnQueueTime() returns the time a request was queued,
  *      Ns_ConnDequeueTime() returns the time a request was taken out
- *      of the queue, and Ns_ConnFilterTime() is the time stampt after
+ *      of the queue, and Ns_ConnFilterTime() is the timestamp after
  *      the filters are executed.
  *
  * Results:

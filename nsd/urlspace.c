@@ -1343,7 +1343,7 @@ TrieInit(Trie *triePtr)
  *      seq is a null-delimited string of words, terminated with
  *      two nulls.
  *      id is allocated with Ns_UrlSpecificAlloc.
- *      flags is a bitmask of NS_OP_NODELETE, NS_OP_NOINHERIT for
+ *      flags is a bit mask of NS_OP_NODELETE, NS_OP_NOINHERIT for
  *      desired behavior.
  *
  * Results:

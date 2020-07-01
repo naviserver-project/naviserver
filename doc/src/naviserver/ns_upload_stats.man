@@ -2,7 +2,7 @@
 [manpage_begin ns_upload_stats n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {Return realtime statistic about being uploaded file}]
+[titledesc {Return real-time statistic about being uploaded file}]
 
 [description]
 This command is useful in case of uploading big files and giving users some

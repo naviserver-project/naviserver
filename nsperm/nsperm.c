@@ -1695,7 +1695,7 @@ static int CheckNonce(const char *privatekey, char *nonce, char *uri, int timeou
     Ns_CtxMD5Final(&md5, sig);
     Ns_HexString(sig, buf, 16, NS_TRUE);
 
-    /* Check for a stale time stamp. If the time stamp is stale we still check
+    /* Check for a stale timestamp. If the timestamp is stale we still check
      * to see if the user sent the proper digest password. The stale flag
      * is only set if the nonce is expired AND the credentials are OK, otherwise
      * the get a 401, but that happens elsewhere.
