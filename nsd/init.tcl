@@ -49,7 +49,7 @@ ns_log notice "nsd/init.tcl\[[ns_info server]\]: booting virtual server: " \
     "Tcl system encoding: \"[encoding system]\""
 
 
-package require Tcl 8.4
+package require Tcl 8.5
 
 
 #
