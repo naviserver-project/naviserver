@@ -68,7 +68,12 @@
  */
 #include <pthread.h>
 
-#define NS_NO_MUTEX_TIMING 1
+/*
+ * Use MUTEX_TIMING to activate/deactivate timing statistics from locks. for
+ * RWLOCKS, we measure just the write locks, which also guarantee exclusive
+ * access. The name MUTEX_TIMING is kept as it used as well in mutex.c.
+ */
+//#define NS_NO_MUTEX_TIMING 1
 
 NS_EXTERN void Ns_RWLockList(Tcl_DString *dsPtr)      NS_GNUC_NONNULL(1);
 
@@ -84,10 +89,14 @@ typedef struct RwLock {
     unsigned long    nrlock;
     unsigned long    nwlock;
     unsigned long    nbusy;
-    struct RwLock *nextPtr;
+    struct RwLock   *nextPtr;
     uintptr_t        id;
+    Ns_Time          start_time;
+    Ns_Time          total_waiting_time;
+    Ns_Time          max_waiting_time;
+    Ns_Time          total_lock_time;
+    NS_RW            rw;
     char             name[NS_THREAD_NAMESIZE+1];
-
 } RwLock;
 
 static RwLock *GetRwLock(Ns_RWLock *rwPtr)
@@ -125,7 +134,8 @@ Ns_RWLockList(Tcl_DString *dsPtr)
         Tcl_DStringAppendElement(dsPtr, ""); /* unused? */
 #ifndef NS_NO_MUTEX_TIMING
         snprintf(buf, (int)sizeof(buf),
-                 " %" PRIuPTR " %lu %lu %" PRId64 ".%06ld %" PRId64 ".%06ld %" PRId64 ".%06ld",
+                 " %" PRIuPTR " %lu %lu %" PRId64 ".%06ld %" PRId64 ".%06ld %" PRId64 ".%06ld"
+                 " %lu %lu" ,
                  rwlockPtr->id, rwlockPtr->nlock, rwlockPtr->nbusy,
                  (int64_t)rwlockPtr->total_waiting_time.sec, rwlockPtr->total_waiting_time.usec,
                  (int64_t)rwlockPtr->max_waiting_time.sec, rwlockPtr->max_waiting_time.usec,
@@ -187,9 +197,19 @@ Ns_RWLockInit(Ns_RWLock *rwPtr)
     (void) ns_uint64toa(&lockPtr->name[2], (uint64_t)lockPtr->id);
     Ns_MasterUnlock();
 
-    err = pthread_rwlock_init(&lockPtr->rwlock, NULL);
-    if (err != 0) {
-        NsThreadFatal("Ns_RWLockInit", "pthread_rwlock_init", err);
+    lockPtr->rw = NS_READ;
+    {
+#if (defined(_XOPEN_SOURCE) && _XOPEN_SOURCE >= 500) || (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 200809L)
+        pthread_rwlockattr_t attr;
+        pthread_rwlockattr_setkind_np(&attr,
+                                      PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP);
+        err = pthread_rwlock_init(&lockPtr->rwlock, &attr);
+#else
+        err = pthread_rwlock_init(&lockPtr->rwlock, NULL);
+#endif
+        if (err != 0) {
+            NsThreadFatal("Ns_RWLockInit", "pthread_rwlock_init", err);
+        }
     }
     *rwPtr = (Ns_RWLock) lockPtr;
 }
@@ -247,7 +267,6 @@ Ns_RWLockSetName2(Ns_RWLock *rwPtr, const char *prefix, const char *name)
         memcpy(p, name, nameLength + 1u);
     }
     Ns_MasterUnlock();
-    //fprintf(stderr, "=== Ns_RWLockSetName2 %p %s\n", (void*)lockPtr, lockPtr->name);
 }
 
 
@@ -319,17 +338,10 @@ Ns_RWLockRdLock(Ns_RWLock *rwPtr)
     RwLock *lockPtr;
     int     err;
     bool    busy;
-#ifndef NS_NO_MUTEX_TIMING
-    Ns_Time end, diff, startTime;
-#endif
 
     NS_NONNULL_ASSERT(rwPtr != NULL);
 
     lockPtr = GetRwLock(rwPtr);
-
-#ifndef NS_NO_MUTEX_TIMING
-    Ns_GetTime(&startTime);
-#endif
 
     err = pthread_rwlock_tryrdlock(&lockPtr->rwlock);
     if (unlikely(err == EBUSY)) {
@@ -347,20 +359,7 @@ Ns_RWLockRdLock(Ns_RWLock *rwPtr)
             NsThreadFatal("Ns_RWLockRdLock", "pthread_rwlock_rdlock", err);
         }
         lockPtr->nbusy++;
-#ifndef NS_NO_MUTEX_TIMING
-        /*
-         * Measure total and max waiting time for busy mutex locks.
-         */
-        Ns_GetTime(&end);
-        Ns_MutexLock(&lockPtr->tm);
-        Ns_DiffTime(&end, &startTime, &diff);
-        NsMutexIncr_WaitingTime(&lockPtr->mutex, &diff);
-        Ns_MutexUnlock(&lockPtr->tm);
-#endif
     }
-#ifndef NS_NO_MUTEX_TIMING
-    NsMutexSet_StartTime(&lockPtr->mutex, &startTime);
-#endif
     lockPtr->nlock++;
     lockPtr->nrlock++;
 }
@@ -423,14 +422,13 @@ Ns_RWLockWrLock(Ns_RWLock *rwPtr)
          * Measure total and max waiting time for busy rwlock locks.
          */
         Ns_GetTime(&end);
-        Ns_MutexLock(&lockPtr->tm);
         Ns_DiffTime(&end, &startTime, &diff);
-        NsMutexIncr_WaitingTime(&lockPtr->mutex, &diff);
-        Ns_MutexUnlock(&lockPtr->tm);
+        Ns_IncrTime(&lockPtr->total_waiting_time, diff.sec, diff.usec);
 #endif
     }
 #ifndef NS_NO_MUTEX_TIMING
-    NsMutexSet_StartTime(&lockPtr->mutex, &startTime);
+    lockPtr->rw = NS_WRITE;
+    lockPtr->start_time = startTime;
 #endif
     lockPtr->nlock ++;
     lockPtr->nwlock++;
@@ -458,13 +456,20 @@ Ns_RWLockUnlock(Ns_RWLock *rwPtr)
 {
     RwLock *lockPtr = (RwLock *) *rwPtr;
     int err;
-#ifndef NS_NO_MUTEX_TIMING
-    Ns_Time end;
 
-    Ns_GetTime(&end);
-    Ns_MutexLock(&lockPtr->tm);
-    NsMutexIncr_LockTime(&lockPtr->mutex, &end);
-    Ns_MutexUnlock(&lockPtr->tm);
+#ifndef NS_NO_MUTEX_TIMING
+    /*
+     * Measure block times etc only in writer case, which guarantees exclusive
+     * access and blocking).
+     */
+    if (lockPtr->rw == NS_WRITE) {
+        Ns_Time end, diff;
+
+        lockPtr->rw = NS_READ;
+        Ns_GetTime(&end);
+        Ns_DiffTime(&end, &lockPtr->start_time, &diff);
+        Ns_IncrTime(&lockPtr->total_lock_time, diff.sec, diff.usec);
+    }
 #endif
 
     err = pthread_rwlock_unlock(&lockPtr->rwlock);

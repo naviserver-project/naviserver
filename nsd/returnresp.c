@@ -814,7 +814,7 @@ ReturnRedirect(Ns_Conn *conn, int httpStatus, Ns_ReturnCode *resultPtr)
                     ns_free((char *)connPtr->request.method);
                     connPtr->request.method = ns_strdup("GET");
                 }
-                Ns_Log(Debug, "ReturnRedirect to '%s'", (const char *)Tcl_GetHashValue(hPtr));
+                Ns_Log(Debug, "ReturnRedirect '%s' to '%s'", connPtr->request.line, (const char *)Tcl_GetHashValue(hPtr));
                 *resultPtr = Ns_ConnRedirect(conn, Tcl_GetHashValue(hPtr));
                 result = NS_TRUE;
             }
