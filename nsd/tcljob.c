@@ -1457,7 +1457,7 @@ JobThread(void *UNUSED(arg))
     (void)Ns_WaitForStartup();
     Ns_MutexLock(&tp.queuelock);
     tid = tp.nextThreadId++;
-    Ns_ThreadSetName("-ns_job_%lx-", tid);
+    Ns_ThreadSetName("-nsjob:%lx-", tid);
     Ns_Log(Notice, "Starting thread: -ns_job_%" PRIxPTR "-", tid);
 
     async = Tcl_AsyncCreate(JobAbort, NULL);
@@ -1530,7 +1530,7 @@ JobThread(void *UNUSED(arg))
         /*
          * ... Rename the thread according to the job ...
          */
-        Ns_ThreadSetName("-%s:%lx", jobPtr->queueId, tid);
+        Ns_ThreadSetName("-nsjob:%s:%lx", jobPtr->queueId, tid);
         ++queue->nRunning;
 
         Ns_MutexUnlock(&queue->lock);
@@ -1549,7 +1549,7 @@ JobThread(void *UNUSED(arg))
         /*
          * Rename the job again to the generic name
          */
-        Ns_ThreadSetName("-ns_job_%lx-", tid);
+        Ns_ThreadSetName("-nsjob:%lx-", tid);
 
         jobPtr->state  = JOB_DONE;
         jobPtr->code   = code;
