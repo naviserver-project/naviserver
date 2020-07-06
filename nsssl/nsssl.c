@@ -36,7 +36,7 @@
 
 /* Needed for SSL support on Windows: */
 #if defined(_MSC_VER) && !defined(HAVE_CONFIG_H)
-#  include "nsconfig-win32.h"
+# include "nsconfig-win32.h"
 #endif
 
 #include "ns.h"
@@ -61,7 +61,7 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
 # include <openssl/ocsp.h>
 #endif
 
-#define NSSSL_VERSION  "2.2"
+#define NSSSL_VERSION  "2.3"
 
 NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *objPtr);
 
@@ -80,17 +80,17 @@ typedef struct {
 } SSLContext;
 
 #ifndef OPENSSL_NO_OCSP
-/* Structure passed to cert status callback */
+/*
+ * Structure passed to cert status callback
+ */
 typedef struct {
-    int timeout;
-    /* File to load OCSP Response from (or NULL if no file) */
-    char *respin;
-    int verbose;
-    OCSP_RESPONSE   *resp;
-} tlsextstatusctx;   // NAMING
+    int            timeout;
+    char          *respin;     /* File to load OCSP Response from (or NULL if no file) */
+    int            verbose;
+    OCSP_RESPONSE *resp;
+} SSLCertStatusArg;
 
-static tlsextstatusctx tlscstatp;
-
+static SSLCertStatusArg sslCertStatusArg;
 #endif
 
 /*
@@ -118,7 +118,7 @@ static int OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE
 static OCSP_CERTID *OCSP_get_cert_id(SSL *ssl, X509 *cert)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static int OCSP_computeResponse(SSL *ssl, tlsextstatusctx *srctx, OCSP_RESPONSE **resp)
+static int OCSP_computeResponse(SSL *ssl, SSLCertStatusArg *srctx, OCSP_RESPONSE **resp)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static OCSP_RESPONSE *OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
@@ -219,7 +219,7 @@ SSL_dhCB(SSL *ssl, int isExport, int keyLength) {
 #ifndef OPENSSL_NO_OCSP
 static int SSL_cert_statusCB(SSL *ssl, void *arg)
 {
-    tlsextstatusctx *srctx = arg;
+    SSLCertStatusArg *srctx = arg;
     int              result = SSL_TLSEXT_ERR_ALERT_FATAL;
     OCSP_RESPONSE   *resp = NULL;
     unsigned char   *rspder = NULL;
@@ -313,9 +313,9 @@ OCSP_get_cert_id(SSL *ssl, X509 *cert)
         Ns_Log(Error, "cert_status: cannot initialize certificate storage context");
 
     } else {
-        X509 *issuer;
+        X509        *issuer;
         X509_OBJECT *x509_obj;
-        int   rc = X509_STORE_CTX_get1_issuer(&issuer, store_ctx, cert);
+        int          rc = X509_STORE_CTX_get1_issuer(&issuer, store_ctx, cert);
 
         if (rc == -1) {
             Ns_Log(Warning, "cert_status: can't retrieve issuer of certificate");
@@ -447,7 +447,7 @@ OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
  *----------------------------------------------------------------------
  */
 static int
-OCSP_computeResponse(SSL *ssl, tlsextstatusctx *srctx, OCSP_RESPONSE **resp)
+OCSP_computeResponse(SSL *ssl, SSLCertStatusArg *srctx, OCSP_RESPONSE **resp)
 {
     X509           *cert = NULL;
     OCSP_CERTID    *id = NULL;
@@ -918,12 +918,12 @@ Ns_ModuleInit(const char *server, const char *module)
 #ifndef OPENSSL_NO_OCSP
     if (Ns_ConfigBool(path, "ocspstapling", NS_FALSE)) {
 
-        memset(&tlscstatp, 0, sizeof(tlscstatp));
-        tlscstatp.timeout = -1;
-        tlscstatp.verbose = 1;
+        memset(&sslCertStatusArg, 0, sizeof(sslCertStatusArg));
+        sslCertStatusArg.timeout = -1;
+        sslCertStatusArg.verbose = 1;
 
         SSL_CTX_set_tlsext_status_cb(drvPtr->ctx, SSL_cert_statusCB);
-        SSL_CTX_set_tlsext_status_arg(drvPtr->ctx, &tlscstatp);
+        SSL_CTX_set_tlsext_status_arg(drvPtr->ctx, &sslCertStatusArg);
     }
 #endif
 
