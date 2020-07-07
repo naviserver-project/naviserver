@@ -77,7 +77,7 @@ runAllTests
 
 #
 # The "notice" messages during test shutdown are typically not very
-# interesting, so turn it off to make the outout shorter.
+# interesting, so turn it off to make the output shorter.
 #
 ns_logctl severity notice off
 
