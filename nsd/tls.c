@@ -49,6 +49,92 @@
 #  define HAVE_SSL_set_tlsext_host_name 1
 # endif
 
+static int SSL_serverNameCB(SSL *ssl, int *al, void *arg);
+static int SSLPassword(char *buf, int num, int rwflag, void *userdata);
+
+#ifdef HAVE_OPENSSL_PRE_1_1
+/*
+ * The renegotiation issue was fixed in recent versions of OpenSSL,
+ * and the flag was removed.
+ */
+static void
+SSL_infoCB(const SSL *ssl, int where, int UNUSED(ret)) {
+    if ((where & SSL_CB_HANDSHAKE_DONE)) {
+
+        ssl->s3->flags |= SSL3_FLAGS_NO_RENEGOTIATE_CIPHERS;
+    }
+}
+#endif
+
+/*
+ * ServerNameCallback for SNI
+ */
+static int SSL_serverNameCB(SSL *ssl, int *al, void *UNUSED(arg))
+{
+    const char  *serverName;
+    int          result = SSL_TLSEXT_ERR_NOACK;
+
+    serverName = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
+
+    if (serverName != NULL) {
+        Ns_Sock       *sockPtr = (Ns_Sock*)SSL_get_app_data(ssl);
+        Driver        *drvPtr = (Driver *)(sockPtr->driver);
+        bool           doSNI = ((drvPtr->opts & NS_DRIVER_SNI) != 0u);
+
+        //ctx = SSL_get_SSL_CTX(ssl);
+        //cfgPtr = (NsSSLConfig *) SSL_CTX_get_app_data(ctx);
+
+        /*
+         * The default for *al is initialized by SSL_AD_UNRECOGNIZED_NAME = 112.
+         * Find info about these codes via:
+         *    fgrep -r --include=*.h 112 /usr/local/src/openssl/ | fgrep AD
+         */
+        Ns_Log(Notice, "SSL_serverNameCB got server name <%s> al %d sockPtr %p drv %p doSNI %d",
+               serverName,
+               (al != NULL ? *al : 0),
+               (void*)sockPtr,
+               (void*)(sockPtr != NULL ? sockPtr->driver : NULL),
+               doSNI);
+
+        /*
+         * Perform lookup from host table only, when doSNI is true
+         * (i.e. when per virtual server certificates were specified.
+         */
+        if (doSNI) {
+            Tcl_DString     ds;
+            unsigned short  port = Ns_SockGetPort(sockPtr);
+            NS_TLS_SSL_CTX *ctx;
+
+            /*
+             * The virtual host entries are specified canonically, via
+             * host:port. Since the provided "serverName" is specified by the
+             * client, we can't precompute the strings to save a few cycles.
+             */
+            Tcl_DStringInit(&ds);
+            Ns_DStringPrintf(&ds, "%s:%hu", serverName, port);
+
+            ctx = NsDriverLookupHostCtx(ds.string, sockPtr->driver);
+
+            Ns_Log(Notice, "SSL_serverNameCB lookup of <%s> location %s port %hu -> %p",
+                   serverName, ds.string, port, (void*)ctx);
+
+            /*
+             * When the lookup succeeds, we have the alternate SSL_CTX
+             * that we will use. Otherwise, do not acknowledge the
+             * servername request.  Return the same value as when not
+             * servername was provided (SSL_TLSEXT_ERR_NOACK).
+             */
+            if (ctx != NULL) {
+                Ns_Log(Notice, "SSL_serverNameCB switches server context");
+                SSL_set_SSL_CTX(ssl, ctx);
+                result = SSL_TLSEXT_ERR_OK;
+            }
+            Tcl_DStringFree(&ds);
+        }
+    }
+
+    return result;
+}
 
 
 /*
@@ -274,6 +360,139 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
 /*
  *----------------------------------------------------------------------
  *
+ * SSLPassword --
+ *
+ *      Get the SSL password from the console (used by the OpenSSLs
+ *      default_passwd_cb)
+ *
+ * Results:
+ *      Length of the password.
+ *
+ * Side effects:
+ *      Password passed back in buf.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+SSLPassword(char *buf, int num, int UNUSED(rwflag), void *UNUSED(userdata))
+{
+    const char *pwd;
+
+    fprintf(stdout, "Enter SSL password:");
+    pwd = fgets(buf, num, stdin);
+    return (pwd != NULL ? (int)strlen(buf) : 0);
+}
+
+static void
+ReportError(Tcl_Interp *interp, const char *fmt, ...)
+{
+    va_list     ap;
+    Tcl_DString ds;
+
+    NS_NONNULL_ASSERT(fmt != NULL);
+
+    Tcl_DStringInit(&ds);
+    va_start(ap, fmt);
+    Ns_DStringVPrintf(&ds, fmt, ap);
+    va_end(ap);
+    if (interp != NULL) {
+        Tcl_DStringResult(interp, &ds);
+    } else {
+        Ns_Log(Warning, "%s", ds.string);
+        Tcl_DStringFree(&ds);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TLS_CtxServerInit --
+ *
+ *   Read config information, vreate and initialize OpenSSL context.
+ *
+ * Results:
+ *   Result code.
+ *
+ * Side effects:
+ *  None
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
+                     unsigned int flags,
+                     void *app_data,
+                     NS_TLS_SSL_CTX **ctxPtr)
+{
+    int         result;
+    const char *cert;
+
+    cert = Ns_ConfigGetValue(path, "certificate");
+    Ns_Log(Notice, "=== load certificate from <%s>", path);
+
+    if (cert == NULL) {
+        Ns_Log(Error, "nsssl: certificate parameter must be specified in the config file under %s", path);
+        result = NS_ERROR;
+    } else {
+        const char *ciphers, *ciphersuites, *protocols;
+
+        ciphers      = Ns_ConfigGetValue(path, "ciphers");
+        ciphersuites = Ns_ConfigGetValue(path, "ciphersuites");
+        protocols    = Ns_ConfigGetValue(path, "protocols");
+
+        result = Ns_TLS_CtxServerCreate(interp, cert,
+                                        NULL /*caFile*/, NULL /*caPath*/,
+                                        Ns_ConfigBool(path, "verify", 0),
+                                        ciphers, ciphersuites, protocols,
+                                        ctxPtr);
+        if (result == TCL_OK) {
+            if (app_data != NULL) {
+                SSL_CTX_set_app_data(*ctxPtr, app_data);
+            }
+            SSL_CTX_set_session_id_context(*ctxPtr, (const unsigned char *)&nsconf.pid, sizeof(pid_t));
+            SSL_CTX_set_session_cache_mode(*ctxPtr, SSL_SESS_CACHE_SERVER);
+
+#ifdef HAVE_OPENSSL_PRE_1_1
+            SSL_CTX_set_info_callback(*ctxPtr, SSL_infoCB);
+#endif
+
+            SSL_CTX_set_options(*ctxPtr, SSL_OP_NO_SSLv2);
+            SSL_CTX_set_options(*ctxPtr, SSL_OP_SINGLE_DH_USE);
+            SSL_CTX_set_options(*ctxPtr, SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS);
+            SSL_CTX_set_options(*ctxPtr, SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
+
+            /*
+             * Prefer server ciphers to secure against BEAST attack.
+             */
+            SSL_CTX_set_options(*ctxPtr, SSL_OP_CIPHER_SERVER_PREFERENCE);
+            /*
+             * Disable compression to avoid CRIME attack.
+             */
+#ifdef SSL_OP_NO_COMPRESSION
+            SSL_CTX_set_options(*ctxPtr, SSL_OP_NO_COMPRESSION);
+#endif
+
+            /*
+             * Obsolete since 1.1.0 but also supported in 3.0
+             */
+            SSL_CTX_set_options(*ctxPtr, SSL_OP_SSLEAY_080_CLIENT_DH_BUG);
+            SSL_CTX_set_options(*ctxPtr, SSL_OP_TLS_D5_BUG);
+            SSL_CTX_set_options(*ctxPtr, SSL_OP_TLS_BLOCK_PADDING_BUG);
+
+            if ((flags & NS_DRIVER_SNI) != 0) {
+                SSL_CTX_set_tlsext_servername_callback(*ctxPtr, SSL_serverNameCB);
+                /* SSL_CTX_set_tlsext_servername_arg(cfgPtr->ctx, app_data); // not really needed */
+            }
+        }
+    }
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_TLS_CtxServerCreate --
  *
  *   Create and Initialize OpenSSL context
@@ -286,35 +505,80 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
  *
  *----------------------------------------------------------------------
  */
-
 int
 Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
-                       const char *cert, const char *caFile, const char *caPath, bool verify,
-                       const char *ciphers,
+                       const char *cert, const char *caFile, const char *caPath,
+                       bool verify, const char *ciphers, const char *ciphersuites,
+                       const char *protocols,
                        NS_TLS_SSL_CTX **ctxPtr)
 {
-    NS_TLS_SSL_CTX *ctx;
+    NS_TLS_SSL_CTX   *ctx;
+    const SSL_METHOD *server_method;
     int rc;
 
-    NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(ctxPtr != NULL);
 
-    ctx = SSL_CTX_new(SSLv23_server_method());
+#ifdef HAVE_OPENSSL_PRE_1_0_2
+    server_method = SSLv23_server_method();
+#else
+    server_method = TLS_server_method();
+#endif
+
+    ctx = SSL_CTX_new(server_method);
     *ctxPtr = ctx;
     if (ctx == NULL) {
-        Ns_TclPrintfResult(interp, "ctx init failed: %s", ERR_error_string(ERR_get_error(), NULL));
+        ReportError(interp, "ssl ctx init failed: %s", ERR_error_string(ERR_get_error(), NULL));
         return TCL_ERROR;
     }
 
-    rc = SSL_CTX_set_cipher_list(ctx, ciphers);
-    if (rc == 0) {
-        Ns_TclPrintfResult(interp, "ctx cipher list failed: %s", ERR_error_string(ERR_get_error(), NULL));
+    if (cert == NULL && caFile == NULL) {
+        ReportError(interp, "At least one of certificate or cafile must be specified!");
         goto fail;
     }
 
-    if (cert == NULL && caFile == NULL) {
-        Ns_TclPrintfResult(interp, "At least one of certificate or cafile must be specified!");
-        goto fail;
+    if (ciphers != NULL) {
+        rc = SSL_CTX_set_cipher_list(ctx, ciphers);
+        if (rc == 0) {
+            ReportError(interp, "ssl ctx invalid cipher list '%s': %s",
+                        ciphers, ERR_error_string(ERR_get_error(), NULL));
+            goto fail;
+        }
+    }
+
+    if (ciphersuites != NULL) {
+        rc = SSL_CTX_set_ciphersuites(ctx, ciphersuites);
+        if (rc == 0) {
+            ReportError(interp, "ssl ctx invalid ciphersuites specification '%s': %s",
+                        ciphersuites, ERR_error_string(ERR_get_error(), NULL));
+        }
+    }
+
+    /*
+     * Parse SSL protocols
+     */
+    {
+        unsigned long n = SSL_OP_ALL;
+
+        if (protocols != NULL) {
+            if (strstr(protocols, "!SSLv2") != NULL) {
+                n |= SSL_OP_NO_SSLv2;
+                Ns_Log(Notice, "nsssl: disabling SSLv2");
+            }
+            if (strstr(protocols, "!SSLv3") != NULL) {
+                n |= SSL_OP_NO_SSLv3;
+                Ns_Log(Notice, "nsssl: disabling SSLv3");
+            }
+            if (strstr(protocols, "!TLSv1") != NULL) {
+                /*
+                 * Currently, we can't deselect v1.1 or v1.2 or 1.3 using
+                 * SSL_OP_NO_TLSv1_1 etc., but just the full "TLSv1" block.
+                 */
+
+                n |= SSL_OP_NO_TLSv1;
+                Ns_Log(Notice, "nsssl: disabling TLSv1");
+            }
+        }
+        SSL_CTX_set_options(ctx, n);
     }
 
     SSL_CTX_set_default_verify_paths(ctx);
@@ -323,17 +587,25 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
     SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
     SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE|SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
+    SSL_CTX_set_default_passwd_cb(ctx, SSLPassword);
+
     if (cert != NULL) {
+        /*
+         * Load certificate and private key
+         */
         if (SSL_CTX_use_certificate_chain_file(ctx, cert) != 1) {
-            Ns_TclPrintfResult(interp, "certificate load error: %s", ERR_error_string(ERR_get_error(), NULL));
+            ReportError(interp, "certificate load error: %s", ERR_error_string(ERR_get_error(), NULL));
             goto fail;
         }
 
         if (SSL_CTX_use_PrivateKey_file(ctx, cert, SSL_FILETYPE_PEM) != 1) {
-            Ns_TclPrintfResult(interp, "private key load error: %s", ERR_error_string(ERR_get_error(), NULL));
+            ReportError(interp, "private key load error: %s", ERR_error_string(ERR_get_error(), NULL));
             goto fail;
         }
     }
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+    SSL_CTX_set_quiet_shutdown(ctx, 1);
+#endif
 
     return TCL_OK;
 
@@ -676,11 +948,12 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
 
 int
 Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
-                       const char *UNUSED(cert), const char *UNUSED(caFile), const char *UNUSED(caPath), bool UNUSED(verify),
-                       const char *UNUSED(ciphers),
+                       const char *UNUSED(cert), const char *UNUSED(caFile), const char *UNUSED(caPath),
+                       bool UNUSED(verify), const char *UNUSED(ciphers), const char *UNUSED(ciphersuites),
+                       const char *UNUSED(protocols),
                        NS_TLS_SSL_CTX **UNUSED(ctxPtr))
 {
-    Ns_TclPrintfResult(interp, "CtxServerCreate failed: no support for OpenSSL built in");
+    ReportError(interp, "CtxServerCreate failed: no support for OpenSSL built in");
     return TCL_ERROR;
 }
 

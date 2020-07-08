@@ -36,6 +36,13 @@ By default nsssl uses all ciphers; recommended cipher
 suites are published on various sources, such as e.g.:
 [uri https://wiki.mozilla.org/Security/Server_Side_TLS]
 
+[def ciphersuites]
+defines which ciphersuites for TLSv1.3 (and probably beyond).
+Due to the major differences between ciphersuites up to TLSv1.2
+OpenSSL has decided to configure ciphersuited for TLSv1.3
+differently, by using this parameter. For details, consult:
+[uri https://wiki.openssl.org/index.php/TLS1.3]
+
 [def protocols]
 defines which protocols are enabled; by default all protocols are
 enabled. It is recommended to deactivate SSLv2 and SSLv3 as shown
@@ -110,6 +117,7 @@ below in the variable "server"):
     ns_param   address       0.0.0.0
     ns_param   port          443
     ns_param   ciphers      "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!RC4"
+    ns_param   ciphersuites "TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256"
     ns_param   protocols    "!SSLv2:!SSLv3"
     ns_param   verify         0
   

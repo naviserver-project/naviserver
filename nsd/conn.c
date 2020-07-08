@@ -49,6 +49,9 @@ static int GetChan(Tcl_Interp *interp, const char *id, Tcl_Channel *chanPtr)
 static Tcl_Channel MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static const Ns_Driver* ConnGetDriver(const Ns_Conn *conn) NS_GNUC_PURE
+    NS_GNUC_NONNULL(1);
+
 
 /*
  *----------------------------------------------------------------------
@@ -524,15 +527,7 @@ Ns_ConnCurrentPort(const Ns_Conn *conn)
 
     connPtr = (const Conn *)conn;
     if (connPtr->sockPtr != NULL) {
-        struct NS_SOCKADDR_STORAGE sa;
-        socklen_t len = (socklen_t)sizeof(sa);
-        int       retVal = getsockname(connPtr->sockPtr->sock, (struct sockaddr *) &sa, &len);
-
-        if (retVal == -1) {
-            result = 0u;
-        } else {
-            result = Ns_SockaddrGetPort((struct sockaddr *)&sa);
-        }
+        result = Ns_SockGetPort((Ns_Sock *)(connPtr->sockPtr));
     } else {
         result = 0u;
     }
@@ -812,6 +807,28 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
     return location;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConnGetDriver --
+ *
+ *      Return the Driver for a connection
+ *
+ * Results:
+ *      configured driver
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+static const Ns_Driver*
+ConnGetDriver(const Ns_Conn *conn)
+{
+    return (Ns_Driver *)((const Conn *)conn)->drvPtr;
+}
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -832,11 +849,11 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
 const char *
 Ns_ConnHost(const Ns_Conn *conn)
 {
-    const Driver *drvPtr;
+    const Ns_Driver *drvPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    drvPtr = ((const Conn *)conn)->drvPtr;
+    drvPtr = ConnGetDriver(conn);
     assert(drvPtr != NULL);
 
     return drvPtr->address;
@@ -930,7 +947,7 @@ Ns_ConnSockPtr(const Ns_Conn *conn)
  *
  * Ns_ConnSockContent --
  *
- *      Returns read buffer for incoming requests
+ *      Returns read buffer for incoming requests.
  *
  * Results:
  *      NULL if no content have been read yet
@@ -978,11 +995,11 @@ Ns_ConnSockContent(const Ns_Conn *conn)
 const char *
 Ns_ConnDriverName(const Ns_Conn *conn)
 {
-    const Driver *drvPtr;
+    const Ns_Driver *drvPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    drvPtr = ((const Conn *)conn)->drvPtr;
+    drvPtr = ConnGetDriver(conn);
     assert(drvPtr != NULL);
 
     return drvPtr->moduleName;

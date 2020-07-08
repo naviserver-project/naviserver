@@ -119,6 +119,11 @@ ns_section "ns/module/nssock/servers" {
     ns_param   testvhost       testvhost
     ns_param   testvhost2      testvhost2
 }
+ns_section "ns/module/nsssl/servers" {
+    ns_param   test            test
+    ns_param   testvhost       testvhost
+    ns_param   testvhost2      testvhost2
+}
 
 ns_section     "ns/mimetypes" {
     ns_param    .utf_adp          "text/plain"
@@ -260,6 +265,10 @@ ns_section "ns/server/test/module/nslog" {
     ns_param   suppressquery   false
     ns_param   checkforproxy   true
     ns_param   extendedheaders "X-Test"
+}
+ns_section "ns/server/test/module/nsssl" {
+    ns_param   certificate     [ns_config "test" home]/testserver/etc/server.pem
+    #ns_param   certificate     [ns_config "test" home]/testserver/etc/openacs.org.pem
 }
 
 ns_section "ns/server/test/db" {

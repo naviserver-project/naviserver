@@ -182,13 +182,14 @@ typedef enum {
 #define NS_SOCK_ANY                ((unsigned int)NS_SOCK_READ|(unsigned int)NS_SOCK_WRITE|(unsigned int)NS_SOCK_EXCEPTION)
 
 /*
- * The following are valid comm driver options.
+ * The following are valid network driver options.
  */
 #define NS_DRIVER_ASYNC            0x01u /* Use async read-ahead. */
 #define NS_DRIVER_SSL              0x02u /* Use SSL port, protocol defaults. */
 #define NS_DRIVER_NOPARSE          0x04u /* Do not parse request */
 #define NS_DRIVER_UDP              0x08u /* UDP, can't use stream socket options */
 #define NS_DRIVER_CAN_USE_SENDFILE 0x10u /* Allow to send clear text via sendfile */
+#define NS_DRIVER_SNI              0x20u /* SNI - just used when NS_DRIVER_SSL is set as well */
 
 #define NS_DRIVER_VERSION_1        1    /* Obsolete. */
 #define NS_DRIVER_VERSION_2        2    /* IPv4 only */
@@ -2772,6 +2773,10 @@ NS_EXTERN bool
 Ns_SockInErrorState(Ns_Sock *sock)
     NS_GNUC_NONNULL(1);
 
+unsigned short
+Ns_SockGetPort(const Ns_Sock *sock)
+    NS_GNUC_NONNULL(1);
+
 NS_EXTERN ssize_t
 Ns_SockRecvBufs(Ns_Sock *sock, struct iovec *bufs, int nbufs,
                 const Ns_Time *timeoutPtr, unsigned int flags);
@@ -3504,10 +3509,17 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
 
 NS_EXTERN int
 Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
-                       const char *cert, const char *caFile, const char *caPath, bool verify,
-                       const char *ciphers,
+                       const char *cert, const char *caFile, const char *caPath,
+                       bool verify, const char *ciphers, const char *ciphersuites,
+                       const char *protocols,
                        NS_TLS_SSL_CTX **ctxPtr)
-        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(7);
+    NS_GNUC_NONNULL(9);
+
+
+NS_EXTERN int
+Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp, unsigned int flags, void* app_data,
+                     NS_TLS_SSL_CTX **ctxPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(5);
 
 NS_EXTERN void
 Ns_TLS_CtxFree(NS_TLS_SSL_CTX *ctx)

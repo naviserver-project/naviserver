@@ -237,6 +237,26 @@ Ns_SockSetReceiveState(Ns_Sock *sock, Ns_SockState sockState)
     ((Sock *)sock)->recvSockState = sockState;
 }
 
+
+unsigned short
+Ns_SockGetPort(const Ns_Sock *sock)
+{
+    unsigned short result;
+    struct NS_SOCKADDR_STORAGE sa;
+    socklen_t len = (socklen_t)sizeof(sa);
+    int       retVal;
+
+    NS_NONNULL_ASSERT(sock != NULL);
+
+    retVal = getsockname(sock->sock, (struct sockaddr *) &sa, &len);
+    if (retVal == -1) {
+        result = 0u;
+    } else {
+        result = Ns_SockaddrGetPort((struct sockaddr *)&sa);
+    }
+
+    return result;
+}
 /*
  *----------------------------------------------------------------------
  *

@@ -109,6 +109,13 @@ test https-2.0 {ns_http for small file} -constraints {serverListen} -body {
     nstest::https -http 1.1 -getbody 1 GET /123
 } -result {200 123}
 
+test https-2.1 {ns_http for small file} -constraints {serverListen} -body {
+    nstest::https -hostname foo -http 1.1 -getbody 1 GET /123
+} -result {200 123}
+
+test https-2.2 {ns_http for small file} -constraints {serverListen} -body {
+    nstest::https -hostname test -http 1.1 -getbody 1 GET /123
+} -result {200 123}
 
 test https-7.0 {ns_http with body and text datatype} -constraints {serverListen} -setup {
     ns_register_proc POST /post {

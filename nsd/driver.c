@@ -86,12 +86,14 @@ typedef struct {
     SpoolerState spoolerState;
     SockState    sockState;
 } SpoolerStateMap;
+
 /*
  * ServerMap maintains Host header to server mappings.
  */
 typedef struct ServerMap {
-    NsServer *servPtr;
-    char      location[1];
+    NsServer        *servPtr;
+    NS_TLS_SSL_CTX  *ctx;
+    char             location[1];
 } ServerMap;
 
 /*
@@ -110,10 +112,10 @@ static const SpoolerStateMap spoolerStateMap[] = {
  */
 
 typedef struct PollData {
-    unsigned int nfds;          /* Number of fds being monitored. */
-    unsigned int maxfds;        /* Max fds (will grow as needed). */
+    unsigned int   nfds;       /* Number of fds being monitored. */
+    unsigned int   maxfds;     /* Max fds (will grow as needed). */
     struct pollfd *pfds;        /* Dynamic array of poll structs. */
-    Ns_Time timeout;            /* Min timeout, if any, for next spin. */
+    Ns_Time        timeout;     /* Min timeout, if any, for next spin. */
 } PollData;
 
 #define PollIn(ppd, i)           (((ppd)->pfds[(i)].revents & POLLIN)  == POLLIN )
@@ -247,6 +249,8 @@ static Ns_ReturnCode DriverInit(const char *server, const char *moduleName, cons
     NS_GNUC_NONNULL(7) NS_GNUC_NONNULL(9);
 static bool DriverModuleInitialized(const char *module)
     NS_GNUC_NONNULL(1);
+static const ServerMap *DriverLookupHost(char *host, Driver *drvPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void  SockSetServer(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
@@ -327,7 +331,9 @@ static void LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buff
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static void ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
-                              NsServer *servPtr, Driver *drvPtr, bool addDefaultMapEntry)
+                              NsServer *servPtr, Driver *drvPtr,
+                              NS_TLS_SSL_CTX *ctx,
+                              bool addDefaultMapEntry)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 static Driver *LookupDriver(Tcl_Interp *interp, const char* protocol, const char *driverName)
@@ -702,7 +708,9 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
 
 static void
 ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
-                  NsServer *servPtr, Driver *drvPtr, bool addDefaultMapEntry) {
+                  NsServer *servPtr, Driver *drvPtr,
+                  NS_TLS_SSL_CTX *ctx,
+                  bool addDefaultMapEntry) {
     Tcl_HashEntry *hPtr;
     int            isNew;
 
@@ -718,11 +726,12 @@ ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
         (void) Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, (char *)0L);
         mapPtr = ns_malloc(sizeof(ServerMap) + (size_t)dsPtr->length);
         mapPtr->servPtr = servPtr;
+        mapPtr->ctx = ctx;
         memcpy(mapPtr->location, dsPtr->string, (size_t)dsPtr->length + 1u);
 
         Tcl_SetHashValue(hPtr, mapPtr);
-        Ns_Log(Notice, "%s: adding virtual host entry for host <%s> location: %s mapped to server: %s",
-               drvPtr->threadName, host, mapPtr->location, servPtr->server);
+        Ns_Log(Notice, "%s: adding virtual host entry for host <%s> location: %s mapped to server: %s ctx %p",
+               drvPtr->threadName, host, mapPtr->location, servPtr->server, (void*)ctx);
 
         if (addDefaultMapEntry) {
             drvPtr->defMapPtr = mapPtr;
@@ -787,10 +796,10 @@ void NsDriverMapVirtualServers(void)
                  * to the default server.
                  */
                 if (defserver != NULL) {
-                    NsServer   *servPtr = NsGetServer(defserver);
+                    NsServer *servPtr = NsGetServer(defserver);
 
                     Tcl_DStringInit(dsPtr);
-                    ServerMapEntryAdd(dsPtr, Ns_InfoHostname(), servPtr, drvPtr, NS_TRUE);
+                    ServerMapEntryAdd(dsPtr, Ns_InfoHostname(), servPtr, drvPtr, NULL, NS_TRUE);
                     Tcl_DStringFree(dsPtr);
                     Ns_Log(Notice, "Global driver has no mapping from host to server (section '%s' missing)",
                            moduleName);
@@ -835,9 +844,10 @@ void NsDriverMapVirtualServers(void)
 
         Ns_DStringInit(dsPtr);
         for (j = 0u; j < Ns_SetSize(lset); ++j) {
-            const char *server  = Ns_SetKey(lset, j);
-            const char *host    = Ns_SetValue(lset, j);
-            NsServer   *servPtr;
+            const char     *server  = Ns_SetKey(lset, j);
+            const char     *host    = Ns_SetValue(lset, j);
+            NsServer       *servPtr;
+            NS_TLS_SSL_CTX *ctx = NULL;
 
             /*
              * Perform an explicit lookup of the server.
@@ -851,6 +861,33 @@ void NsDriverMapVirtualServers(void)
                 writableHost = ns_strdup(host);
                 Ns_HttpParseHost(writableHost, &hostName, &portStart);
 
+                if ((drvPtr->opts & NS_DRIVER_SSL) != 0u) {
+                    Tcl_DString  ds1;
+                    const char  *cert;
+
+                    Tcl_DStringInit(&ds1);
+                    Ns_DStringPrintf(&ds1, "ns/server/%s/module/%s",
+                                     server, drvPtr->moduleName);
+                    cert = Ns_ConfigGetValue(ds1.string, "certificate");
+
+                    if (cert != NULL) {
+                        /*
+                         * A local (server-specific) certificate is configured.
+                         */
+                        Ns_Log(Notice, "=== certificate configured: server '%s' on path <%s> driver %s cert %s",
+                               server, ds1.string, drvPtr->moduleName,
+                               cert);
+
+                        if (Ns_TLS_CtxServerInit(ds1.string, NULL, 0u, NULL, &ctx) != TCL_OK) {
+                            Ns_Log(Error, "driver nsssl: init error: %s", strerror(errno));
+                        } else {
+                            assert(ctx != NULL);
+                            drvPtr->opts |= NS_DRIVER_SNI;
+                        }
+                    }
+                    Tcl_DStringFree(&ds1);
+                }
+
                 if (portStart == NULL) {
                     Tcl_DString hostDString;
 
@@ -862,7 +899,7 @@ void NsDriverMapVirtualServers(void)
                      * protocol.
                      */
                     if (drvPtr->port == drvPtr->defport) {
-                        ServerMapEntryAdd(dsPtr, host, servPtr, drvPtr,
+                        ServerMapEntryAdd(dsPtr, host, servPtr, drvPtr, ctx,
                                           STREQ(defserver, server));
                     }
 
@@ -874,7 +911,7 @@ void NsDriverMapVirtualServers(void)
                     Tcl_DStringAppend(&hostDString, host, -1);
                     (void) Ns_DStringPrintf(&hostDString, ":%hu", drvPtr->port);
 
-                    ServerMapEntryAdd(dsPtr, hostDString.string, servPtr, drvPtr,
+                    ServerMapEntryAdd(dsPtr, hostDString.string, servPtr, drvPtr, ctx,
                                       STREQ(defserver, server));
 
                     Tcl_DStringFree(&hostDString);
@@ -888,7 +925,7 @@ void NsDriverMapVirtualServers(void)
                     unsigned short providedPort = (unsigned short)strtol(portStart+1, NULL, 10);
 
                     if (providedPort == drvPtr->port) {
-                        ServerMapEntryAdd(dsPtr, host, servPtr, drvPtr,
+                        ServerMapEntryAdd(dsPtr, host, servPtr, drvPtr, ctx,
                                           STREQ(defserver, server));
                         /*
                          * In case, the provided port is equal to the default
@@ -896,7 +933,7 @@ void NsDriverMapVirtualServers(void)
                          * without the port.
                          */
                         if (providedPort == drvPtr->defport) {
-                            ServerMapEntryAdd(dsPtr, hostName, servPtr, drvPtr,
+                            ServerMapEntryAdd(dsPtr, hostName, servPtr, drvPtr, ctx,
                                               STREQ(defserver, server));
                         }
                     } else {
@@ -3642,7 +3679,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
         ) {
         const DrvSpooler *spPtr = &drvPtr->spooler;
 
-        Ns_Log(DriverDebug, "SockRead: require tmp file for content spooling (length %" PRIuz" > readahead "
+        Ns_Log(DriverDebug, "SockRead: require temporary file for content spooling (length %" PRIuz" > readahead "
                "%" TCL_LL_MODIFIER "d)",
                reqPtr->length, drvPtr->readahead);
 
@@ -4360,6 +4397,92 @@ SockParse(Sock *sockPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * DriverLookupHost --
+ *
+ *      Lookup the specified hostname in the virtual hosts mapping table.
+ *
+ * Results:
+ *      ServerMap entry or NULL.
+ *
+ * Side effects:
+ *
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static const ServerMap *
+DriverLookupHost(char *host, Driver *drvPtr)
+{
+    const ServerMap     *result = NULL;
+    const Tcl_HashEntry *hPtr;
+    size_t               hostLength = strlen(host);
+
+    NS_NONNULL_ASSERT(host != NULL);
+    NS_NONNULL_ASSERT(drvPtr != NULL);
+
+    /*
+     * Remove trailing dot of host header field, since RFC 2976 allows fully
+     * qualified "absolute" DNS names in host fields (see e.g. §3.2.2).
+     */
+    if (host[hostLength] == '.') {
+        host[hostLength] = '\0';
+    }
+    /*
+     * Convert provided host header field to lowercase before hash lookup.
+     */
+    Ns_StrToLower(host);
+
+    hPtr = Tcl_FindHashEntry(&drvPtr->hosts, host);
+    Ns_Log(DriverDebug, "SockSetServer driver '%s' host '%s' => %p",
+           drvPtr->moduleName, host, (void*)hPtr);
+
+    if (hPtr != NULL) {
+        /*
+         * Request with provided host header field could be resolved against a
+         * certain server.
+         */
+        result = Tcl_GetHashValue(hPtr);
+
+    } else {
+        /*
+         * Host header field content is not found in the mapping table.
+         */
+        Ns_Log(DriverDebug,
+               "cannot locate host header content '%s' in virtual hosts "
+               "table of driver '%s', fall back to default '%s'",
+               host, drvPtr->moduleName,
+               drvPtr->defMapPtr->location);
+
+        if (Ns_LogSeverityEnabled(DriverDebug)) {
+            Tcl_HashEntry  *hPtr2;
+            Tcl_HashSearch  search;
+
+            hPtr2 = Tcl_FirstHashEntry(&drvPtr->hosts, &search);
+            while (hPtr2 != NULL) {
+                Ns_Log(Notice, "... host entry: '%s'\n",
+                       (char *)Tcl_GetHashKey(&drvPtr->hosts, hPtr2));
+                hPtr2 = Tcl_NextHashEntry(&search);
+            }
+        }
+    }
+    return result;
+}
+
+NS_TLS_SSL_CTX *
+NsDriverLookupHostCtx(char *host, const Ns_Driver *drvPtr)
+{
+    const ServerMap *mapPtr;
+
+    NS_NONNULL_ASSERT(host != NULL);
+    NS_NONNULL_ASSERT(drvPtr != NULL);
+
+    mapPtr = DriverLookupHost(host, (Driver *)drvPtr);
+    return (mapPtr != NULL) ? mapPtr->ctx : NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * SockSetServer --
  *
  *      Set virtual server from driver context or Host header.
@@ -4396,7 +4519,8 @@ SockSetServer(Sock *sockPtr)
     sockPtr->location = drvPtr->location;
 
     host = Ns_SetIGet(reqPtr->headers, "Host");
-    Ns_Log(DriverDebug, "SockSetServer host '%s' request line '%s'", host, reqPtr->request.line);
+    Ns_Log(DriverDebug, "SockSetServer host '%s' request line '%s'",
+           host, reqPtr->request.line);
 
     if (unlikely((host == NULL) && (reqPtr->request.version >= 1.1))) {
         /*
@@ -4408,59 +4532,9 @@ SockSetServer(Sock *sockPtr)
     }
 
     if (sockPtr->servPtr == NULL) {
-        const ServerMap *mapPtr = NULL;
+        const ServerMap *mapPtr;
 
-        if (host != NULL) {
-            const Tcl_HashEntry *hPtr;
-            size_t               hostLength = strlen(host);
-
-            /*
-             * Remove trailing dot of host header field, since RFC 2976 allows
-             * fully qualified "absolute" DNS names in host fields (see e.g. §3.2.2).
-             */
-            if (host[hostLength] == '.') {
-                host[hostLength] = '\0';
-            }
-            /*
-             * Convert provided host header field to lowercase before hash
-             * lookup.
-             */
-            Ns_StrToLower(host);
-
-            hPtr = Tcl_FindHashEntry(&drvPtr->hosts, host);
-            Ns_Log(DriverDebug, "SockSetServer driver '%s' host '%s' => %p",
-                   drvPtr->moduleName, host, (void*)hPtr);
-
-            if (hPtr != NULL) {
-                /*
-                 * Request with provided host header field could be resolved
-                 * against a certain server.
-                 */
-                mapPtr = Tcl_GetHashValue(hPtr);
-
-            } else {
-                /*
-                 * Host header field content is not found in the mapping table.
-                 */
-                Ns_Log(DriverDebug,
-                       "cannot locate host header content '%s' in virtual hosts "
-                       "table of driver '%s', fall back to default '%s'",
-                       host, drvPtr->moduleName,
-                       drvPtr->defMapPtr->location);
-
-                if (Ns_LogSeverityEnabled(DriverDebug)) {
-                    Tcl_HashEntry  *hPtr2;
-                    Tcl_HashSearch  search;
-
-                    hPtr2 = Tcl_FirstHashEntry(&drvPtr->hosts, &search);
-                    while (hPtr2 != NULL) {
-                        Ns_Log(Notice, "... host entry: '%s'\n",
-                               (char *)Tcl_GetHashKey(&drvPtr->hosts, hPtr2));
-                        hPtr2 = Tcl_NextHashEntry(&search);
-                    }
-                }
-            }
-        }
+        mapPtr = (host != NULL) ? DriverLookupHost(host, drvPtr) : NULL;
         if (mapPtr == NULL) {
             /*
              * Could not lookup the virtual host, Get the default mapping from the driver.
@@ -4938,7 +5012,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
 
         /*
          * In case, writer streams are activated for this wrSockPtr, make sure
-         * to release the tmp file. See thread Naviserver Open Files on the
+         * to release the temporary file. See thread Naviserver Open Files on the
          * sourceforge mailing list (starting July 2019).
          */
         if (wrSockPtr->doStream == NS_WRITER_STREAM_FINISH) {
@@ -5937,7 +6011,7 @@ WriterSetupStreamingMode(Conn *connPtr, struct iovec *bufs, int nbufs, int *fdPt
         *fdPtr = Ns_GetTemp();
         connPtr->fd = *fdPtr;
 
-        Ns_Log(DriverDebug, "NsWriterQueue: new tmp file has fd %d", *fdPtr);
+        Ns_Log(DriverDebug, "NsWriterQueue: new temporary file has fd %d", *fdPtr);
 
     } else {
         /*

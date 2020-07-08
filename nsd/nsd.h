@@ -1598,6 +1598,9 @@ NS_EXTERN void NsSendSignal(int sig);
 
 NS_EXTERN Tcl_Obj * NsDriverStats(Tcl_Interp *interp) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsDriverMapVirtualServers(void);
+NS_EXTERN NS_TLS_SSL_CTX *NsDriverLookupHostCtx(char *host, const Ns_Driver *drvPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 
 /*
  * limits.c
