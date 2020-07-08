@@ -568,15 +568,26 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
                 n |= SSL_OP_NO_SSLv3;
                 Ns_Log(Notice, "nsssl: disabling SSLv3");
             }
-            if (strstr(protocols, "!TLSv1") != NULL) {
-                /*
-                 * Currently, we can't deselect v1.1 or v1.2 or 1.3 using
-                 * SSL_OP_NO_TLSv1_1 etc., but just the full "TLSv1" block.
-                 */
-
+            if (strstr(protocols, "!TLSv1.0") != NULL) {
                 n |= SSL_OP_NO_TLSv1;
-                Ns_Log(Notice, "nsssl: disabling TLSv1");
+                Ns_Log(Notice, "nsssl: disabling TLSv1.0");
             }
+            if (strstr(protocols, "!TLSv1.1") != NULL) {
+                n |= SSL_OP_NO_TLSv1_1;
+                Ns_Log(Notice, "nsssl: disabling TLSv1.1");
+            }
+#ifdef SSL_OP_NO_TLSv1_2
+            if (strstr(protocols, "!TLSv1.2") != NULL) {
+                n |= SSL_OP_NO_TLSv1_2;
+                Ns_Log(Notice, "nsssl: disabling TLSv1.2");
+            }
+#endif
+#ifdef SSL_OP_NO_TLSv1_3
+            if (strstr(protocols, "!TLSv1.3") != NULL) {
+                n |= SSL_OP_NO_TLSv1_3;
+                Ns_Log(Notice, "nsssl: disabling TLSv1.3");
+            }
+#endif
         }
         SSL_CTX_set_options(ctx, n);
     }
