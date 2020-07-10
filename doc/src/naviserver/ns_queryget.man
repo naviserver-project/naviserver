@@ -92,7 +92,7 @@ entry in the query data. See Example 3, below.
 [example_end]
 
  You can then read it and manipulate it as you want. Note, however,
- that this tmp file will be deleted once the connection closes.
+ that this temporary file will be deleted once the connection closes.
 
 
 [section NOTES]
