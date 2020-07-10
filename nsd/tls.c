@@ -43,19 +43,63 @@
 /*
  * OpenSSL < 0.9.8f does not have SSL_set_tlsext_host_name() In some
  * versions, this function is defined as a macro, on some versions as
- * a library call, which complicates detection via m4
+ * a library call, which complicates detection via m4.
  */
 # if OPENSSL_VERSION_NUMBER > 0x00908070
 #  define HAVE_SSL_set_tlsext_host_name 1
 # endif
 
+static void ReportError(Tcl_Interp *interp, const char *fmt, ...)
+    NS_GNUC_NONNULL(2) NS_GNUC_PRINTF(2,3);
+
+/*
+ * OpenSSL callback functions.
+ */
 static int SSL_serverNameCB(SSL *ssl, int *al, void *arg);
+static DH *SSL_dhCB(SSL *ssl, int isExport, int keyLength);
 static int SSLPassword(char *buf, int num, int rwflag, void *userdata);
+#ifdef HAVE_OPENSSL_PRE_1_1
+static void SSL_infoCB(const SSL *ssl, int where, int ret);
+#endif
+
+
+/*
+ * Callback implementations.
+ */
+/*
+ * Callback used for ephemeral DH keys
+ */
+static DH *
+SSL_dhCB(SSL *ssl, int isExport, int keyLength) {
+    NsSSLConfig *cfgPtr;
+    DH          *key;
+    SSL_CTX     *ctx;
+
+    ctx = SSL_get_SSL_CTX(ssl);
+
+    Ns_Log(Debug, "SSL_dhCB: isExport %d keyLength %d", isExport, keyLength);
+    cfgPtr = (NsSSLConfig *)SSL_CTX_get_app_data(ctx);
+    assert(cfgPtr != NULL);
+
+    switch (keyLength) {
+    case 512:
+        key = cfgPtr->dhKey512;
+        break;
+
+    case 1024:
+    default:
+        key = cfgPtr->dhKey1024;
+    }
+    Ns_Log(Debug, "SSL_dhCB: returns %p\n", (void *)key);
+    return key;
+}
 
 #ifdef HAVE_OPENSSL_PRE_1_1
 /*
  * The renegotiation issue was fixed in recent versions of OpenSSL,
- * and the flag was removed.
+ * and the flag was removed, therefore, this function is just for
+ * compatibility with old version of OpenSSL (flag removed in OpenSSL
+ * 1.1.*).
  */
 static void
 SSL_infoCB(const SSL *ssl, int where, int UNUSED(ret)) {
@@ -69,7 +113,8 @@ SSL_infoCB(const SSL *ssl, int where, int UNUSED(ret)) {
 /*
  * ServerNameCallback for SNI
  */
-static int SSL_serverNameCB(SSL *ssl, int *al, void *UNUSED(arg))
+static int
+SSL_serverNameCB(SSL *ssl, int *al, void *UNUSED(arg))
 {
     const char  *serverName;
     int          result = SSL_TLSEXT_ERR_NOACK;
@@ -77,9 +122,9 @@ static int SSL_serverNameCB(SSL *ssl, int *al, void *UNUSED(arg))
     serverName = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
 
     if (serverName != NULL) {
-        Ns_Sock       *sockPtr = (Ns_Sock*)SSL_get_app_data(ssl);
-        Driver        *drvPtr = (Driver *)(sockPtr->driver);
-        bool           doSNI = ((drvPtr->opts & NS_DRIVER_SNI) != 0u);
+        Ns_Sock  *sockPtr = (Ns_Sock*)SSL_get_app_data(ssl);
+        Driver   *drvPtr = (Driver *)(sockPtr->driver);
+        bool      doSNI = ((drvPtr->opts & NS_DRIVER_SNI) != 0u);
 
         //ctx = SSL_get_SSL_CTX(ssl);
         //cfgPtr = (NsSSLConfig *) SSL_CTX_get_app_data(ctx);
@@ -484,6 +529,7 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
                 SSL_CTX_set_tlsext_servername_callback(*ctxPtr, SSL_serverNameCB);
                 /* SSL_CTX_set_tlsext_servername_arg(cfgPtr->ctx, app_data); // not really needed */
             }
+            SSL_CTX_set_tmp_dh_callback(*ctxPtr, SSL_dhCB);
         }
     }
     return result;
@@ -612,6 +658,22 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
         if (SSL_CTX_use_PrivateKey_file(ctx, cert, SSL_FILETYPE_PEM) != 1) {
             ReportError(interp, "private key load error: %s", ERR_error_string(ERR_get_error(), NULL));
             goto fail;
+        }
+        /*
+         * Get DH parameters from .pem file
+         */
+        {
+            BIO *bio = BIO_new_file(cert, "r");
+            DH  *dh  = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
+            BIO_free(bio);
+
+            if (dh != NULL) {
+                if (SSL_CTX_set_tmp_dh(ctx, dh) < 0) {
+                    Ns_Log(Error, "nsssl: Couldn't set DH parameters");
+                    return NS_ERROR;
+                }
+                DH_free(dh);
+            }
         }
     }
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L

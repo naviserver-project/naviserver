@@ -89,4 +89,13 @@
 
 # include <openssl/ssl.h>
 # include <openssl/err.h>
+
+typedef struct {
+    SSL_CTX  *ctx;
+    Ns_Mutex  lock;
+    int       verify;
+    int       deferaccept;  /* Enable the TCP_DEFER_ACCEPT optimization. */
+    DH       *dhKey512;     /* Fallback Diffie Hellman keys of length 512 */
+    DH       *dhKey1024;    /* Fallback Diffie Hellman keys of length 1024 */
+} NsSSLConfig;
 #endif

@@ -63,17 +63,6 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
 
 #define NSSSL_VERSION  "2.3"
 
-NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *objPtr);
-
-typedef struct {
-    SSL_CTX         *ctx;
-    Ns_Mutex         lock;
-    int              verify;
-    int              deferaccept;  /* Enable the TCP_DEFER_ACCEPT optimization. */
-    DH              *dhKey512;     /* Fallback Diffie Hellman keys of length 512 */
-    DH              *dhKey1024;    /* Fallback Diffie Hellman keys of length 1024 */
-} NsSSLConfig;
-
 typedef struct {
     SSL         *ssl;
     int          verified;
@@ -105,8 +94,6 @@ static Ns_DriverKeepProc Keep;
 static Ns_DriverCloseProc Close;
 static Ns_DriverClientInitProc ClientInit;
 
-
-static DH *SSL_dhCB(SSL *ssl, int isExport, int keyLength);
 
 #ifndef OPENSSL_NO_OCSP
 static int SSL_cert_statusCB(SSL *ssl, void *arg);
@@ -178,33 +165,6 @@ DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g)
 #endif /* LIBRESSL_VERSION_NUMBER */
 
 #include "dhparams.h"
-
-/*
- * Callback used for ephemeral DH keys
- */
-static DH *
-SSL_dhCB(SSL *ssl, int isExport, int keyLength) {
-    NsSSLConfig *cfgPtr;
-    DH          *key;
-    SSL_CTX     *ctx;
-
-    ctx = SSL_get_SSL_CTX(ssl);
-
-    Ns_Log(Debug, "SSL_dhCB: isExport %d keyLength %d", isExport, keyLength);
-    cfgPtr = (NsSSLConfig *) SSL_CTX_get_app_data(ctx);
-
-    switch (keyLength) {
-    case 512:
-        key = cfgPtr->dhKey512;
-        break;
-
-    case 1024:
-    default:
-        key = cfgPtr->dhKey1024;
-    }
-    Ns_Log(Debug, "SSL_dhCB: returns %p\n", (void *)key);
-    return key;
-}
 
 #ifndef OPENSSL_NO_OCSP
 static int SSL_cert_statusCB(SSL *ssl, void *arg)
@@ -768,24 +728,6 @@ Ns_ModuleInit(const char *server, const char *module)
         Ns_Log(Notice, "nsssl:X509_STORE_load_locations %d", rc);
     }
 
-    /*
-     * Get DH parameters from .pem file
-     */
-    {
-        const char *cert = Ns_ConfigGetValue(path, "certificate");
-        BIO *bio = BIO_new_file(cert, "r");
-        DH  *dh  = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
-        BIO_free(bio);
-
-        if (dh != NULL) {
-            if (SSL_CTX_set_tmp_dh(cfgPtr->ctx, dh) < 0) {
-                Ns_Log(Error, "nsssl: Couldn't set DH parameters");
-                return NS_ERROR;
-            }
-            DH_free(dh);
-        }
-    }
-
 #if OPENSSL_VERSION_NUMBER > 0x00908070 && !defined(OPENSSL_NO_EC)
     /*
      * Generate key for eliptic curve cryptography (potentially used
@@ -807,8 +749,6 @@ Ns_ModuleInit(const char *server, const char *module)
         EC_KEY_free (ecdh);
     }
 #endif
-
-    SSL_CTX_set_tmp_dh_callback(cfgPtr->ctx, SSL_dhCB);
 
 #ifndef OPENSSL_NO_OCSP
     if (Ns_ConfigBool(path, "ocspstapling", NS_FALSE)) {
@@ -929,7 +869,6 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
             SSL_set_fd(sslCtx->ssl, sock->sock);
             SSL_set_accept_state(sslCtx->ssl);
             SSL_set_app_data(sslCtx->ssl, sock);
-            SSL_set_tmp_dh_callback(sslCtx->ssl, SSL_dhCB);
         }
         return NS_DRIVER_ACCEPT_DATA;
     }
