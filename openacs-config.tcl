@@ -353,7 +353,7 @@ ns_section ns/mimetypes {
     #  but in case something is missing you can add it here.
 
     #ns_param	default		*/*
-    #ns_param	noextension	*/*
+    #ns_param	noextension	text/html
     #ns_param	.pcd		image/x-photo-cd
     #ns_param	.prc		application/x-pilot
 }
