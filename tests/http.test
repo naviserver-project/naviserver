@@ -823,10 +823,10 @@ content of file
 } -result {200 {4 field1 f1 file error.log file.content-type text/plain}}
 
 #
-# Test content-disposition for file uploads with quoted file name
+# Test content-disposition for file uploads with quoted filename
 #
 test http-6.1 {
-  Content disposition with one file with quoted file name
+  Content disposition with one file with quoted filename
 } -constraints serverListen -setup {
     ns_register_proc POST /form {
       set s [ns_getform]
@@ -851,10 +851,10 @@ content of file
 } -result {200 {3 file error.log file.content-type text/plain}}
 
 #
-# Test content-disposition for file uploads with quoted file name containing escaped quote
+# Test content-disposition for file uploads with quoted filename containing escaped quote
 #
 test http-6.2a {
-  Content disposition with one file with quoted file name containing escaped quote
+  Content disposition with one file with quoted filename containing escaped quote
 } -constraints serverListen -setup {
     ns_register_proc POST /form {
       set s [ns_getform]
@@ -879,7 +879,7 @@ content of file
 } -result {200 {3 file {error "test".log} file.content-type text/plain}}
 
 test http-6.2b {
-  Content disposition with one file with quoted file name containing escaped single quote
+  Content disposition with one file with quoted filename containing escaped single quote
 } -constraints serverListen -setup {
     ns_register_proc POST /form {
       set s [ns_getform]
@@ -904,7 +904,7 @@ content of file
 } -result {200 {3 file {error 'test'.log} file.content-type text/plain}}
 
 test http-6.2c {
-  Content disposition with one file with single quoted file name containing double quote
+  Content disposition with one file with single quoted filename containing double quote
 } -constraints serverListen -setup {
     ns_register_proc POST /form {
       set s [ns_getform]
@@ -928,7 +928,7 @@ content of file
 } -result {200 {3 file {error "test.log} file.content-type text/plain}}
 
 test http-6.2d {
-  Content disposition with one file with double quoted file name containing single quote
+  Content disposition with one file with double quoted filename containing single quote
 } -constraints serverListen -setup {
     ns_register_proc POST /form {
       set s [ns_getform]
@@ -953,10 +953,10 @@ content of file
 
 
 #
-# Test content-disposition for file uploads with quoted file name containing space
+# Test content-disposition for file uploads with quoted filename containing space
 #
 test http-6.3 {
-  Content disposition with one file with quoted file name containing space
+  Content disposition with one file with quoted filename containing space
 } -constraints serverListen -setup {
     ns_register_proc POST /form {
       set s [ns_getform]
@@ -981,10 +981,10 @@ content of file
 } -result {200 {3 file {error test.log} file.content-type text/plain}}
 
 #
-# Test content-disposition for file uploads with unquoted file name containing space
+# Test content-disposition for file uploads with unquoted filename containing space
 #
 test http-6.4 {
-  Content disposition with one file and unquoted file name containing space
+  Content disposition with one file and unquoted filename containing space
 } -constraints serverListen -setup {
     ns_register_proc POST /form {
       set s [ns_getform]

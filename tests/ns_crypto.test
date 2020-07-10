@@ -235,19 +235,19 @@ if {[string match "*hkdf*" $errorMsg]} {
 #######################################################################################
 #  Working with "funny" UTF-8 characters
 #######################################################################################
-test md-utf-1.0 {plain umlaut, 16 bits UTF-8} -constraints {nsf} -body {
+test md-utf-1.0 {plain umlaut, 16-bit UTF-8} -constraints {nsf} -body {
     ns_md string ü
 } -result 607474ca475a9724d7360aba71a56d5df77e61350e3f724cfa1f46e857e2d85f
 
-test md-utf-1.1 {character outside 16bit range, 24 bits UTF-8} -constraints {nsf} -body {
+test md-utf-1.1 {character outside 16-bit range, 24 bits UTF-8} -constraints {nsf} -body {
     ns_md string ☀
 } -result d0f6163cbf68c300eb17b4e538651099d95afaaab84fa7b283f56face0ca643c
 
-test md-utf-1.2 {plain umlaut, no-nsf, 16 bits UTF-8} -body {
+test md-utf-1.2 {plain umlaut, no-nsf, 16-bit UTF-8} -body {
     ns_crypto::md string ü
 } -result 607474ca475a9724d7360aba71a56d5df77e61350e3f724cfa1f46e857e2d85f
 
-test md-utf-1.3 {character outside 16bit range, no-nsf, 24 bits UTF-8} -body {
+test md-utf-1.3 {character outside 16-bit range, no-nsf, 24 bits UTF-8} -body {
     ns_crypto::md string ☀
 } -result d0f6163cbf68c300eb17b4e538651099d95afaaab84fa7b283f56face0ca643c
 
