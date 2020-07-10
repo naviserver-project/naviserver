@@ -239,11 +239,11 @@ proc ns_link {args} {
 #     The rename() causes the link named "from" to be renamed as "to".
 #     If "to" exists, it is first removed.
 #     Both "from" and "to" must be of the same type (that is, both dirs
-#     or both non-dirs), and must reside on the same file system.
+#     or both non-dirs), and must reside on the same filesystem.
 #
 #   What we cannot guarantee is:
 #
-#       "must reside on the same file system"
+#       "must reside on the same filesystem"
 #
 #   This is because there is no portable means in Tcl to assure this
 #   and because Tcl [file rename] is clever enough to copy-then-delete

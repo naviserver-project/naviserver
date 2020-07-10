@@ -30,7 +30,7 @@
 #
 # config.tcl --
 #
-#   Configure the various sub-systems of the server.
+#   Configure the various subsystems of the server.
 #
 
 

@@ -243,7 +243,7 @@ proc ns_getform {{charset ""}}  {
 # Result:
 #   Path of the temporary file or empty if no file found.  When the
 #   INPUT element of the file contains the HTML5 attribute "multiple",
-#   a list of file names is potentially returned.
+#   a list of filenames is potentially returned.
 #
 # Side effects:
 #   None.
@@ -555,7 +555,7 @@ proc ns_parseformfile { file form contentType } {
 #   memory problems on huge files.
 #
 # Result:
-#   Returns the content the file name of the tmp file (default) or the
+#   Returns the content the filename of the temporary file (default) or the
 #   content of the file (when as_file is false).
 #
 

@@ -28,7 +28,7 @@ ns_section "ns/parameters" {
     #ns_param   pidfile             ${home}/logs/nsd.pid
     #ns_param   logdebug            true     ;# default: false
     #ns_param   logroll             false    ;# default: true
-    #ns_param	logrollfmt	    %Y-%m-%d ;# format appended to log file name
+    #ns_param	logrollfmt	    %Y-%m-%d ;# format appended to log filename
     #ns_param   logusec             true     ;# add timestamps in microsecond (usec) resolution (default: false)
     #ns_param   logusecdiff         true     ;# add timestamp diffs since in microsecond (usec) resolution (default: false)
     #ns_param   sanitizelogfiles    2        ;# default: 2; 0: none, 1: full, 2: human-friendly
@@ -128,7 +128,7 @@ ns_section "ns/module/nssock" {
 }
 
 #
-# The following section defines, which host names map to which
+# The following section defines, which hostnames map to which
 # server. In our case for example, the host "localhost" is mapped to
 # the nsd server named "default".
 #
@@ -222,7 +222,7 @@ ns_section "ns/server/default/module/nslog" {
     #ns_param   rollonsignal        false    ;# default: false; perform roll on a sighup
     #ns_param   rollhour            0        ;# default: 0; specify at which hour to roll
     ns_param    maxbackup           7        ;# default: 10; max number of backup log files
-    #ns_param   rollfmt		    %Y-%m-%d-%H:%M	;# format appended to log file name
+    #ns_param   rollfmt		    %Y-%m-%d-%H:%M	;# format appended to log filename
     #ns_param   logpartialtimes     true     ;# default: false
     #ns_param   logreqtime	    true     ;# default: false; include time to service the request
     ns_param    logthreadname       true     ;# default: false; include thread name for linking with error.log

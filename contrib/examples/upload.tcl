@@ -10,7 +10,7 @@ set cmd [ns_queryget cmd]
 set server [ns_info server]
 
 # In case of very large files and if server set maxupload limit, this
-# will return temporary file name where all content is spooled
+# will return temporary filename where all content is spooled
 set file [ns_conn contentfile]
 
 # No query and not empty file means we need to deal with situation when

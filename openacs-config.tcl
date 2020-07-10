@@ -147,7 +147,7 @@ ns_section ns/parameters {
     # Rolling of logfile:
     ns_param	logroll		on
     ns_param	logmaxbackup	100      ;# 10 is default
-    ns_param	logrollfmt	%Y-%m-%d ;# format appended to serverlog file name when rolled
+    ns_param	logrollfmt	%Y-%m-%d ;# format appended to serverlog filename when rolled
     #
     # Format of log entries:
     # ns_param  logusec         true     ;# add timestamps in microsecond (usec) resolution (default: false)
@@ -684,7 +684,7 @@ ns_section ns/server/${server}/module/nslog {
     # ns_param	rolllog		true	;# true, should server log files automatically
     # ns_param	rollhour	0	;# 0, specify at which hour to roll
     # ns_param	rollonsignal	true	;# false, perform roll on a sighup
-    ns_param	rollfmt		%Y-%m-%d ;# format appended to log file name
+    ns_param	rollfmt		%Y-%m-%d ;# format appended to log filename
 }
 
 #---------------------------------------------------------------------

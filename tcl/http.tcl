@@ -29,7 +29,7 @@
 
 # http.tcl
 #
-#   Routines for making non-blocking HTTP connections through
+#   Routines for making nonblocking HTTP connections through
 #   the ns_socket interface.
 #
 

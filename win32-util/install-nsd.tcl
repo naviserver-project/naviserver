@@ -37,7 +37,7 @@ Options:
   -h 1       : Show this help and exit.
   -f PATH    : Copy files from this source directory.
                By default it is taken from your current working directory.
-  -t PATH    : Install-to path name.  May be modified if using '-c 1'.
+  -t PATH    : Install-to pathname.  May be modified if using '-c 1'.
                You may rename or move it to anything you want after installing.
   -c {0|1}   : Append clock time to install directory name, true or false.
   -m MODULES : Tcl list of non-core modules to install.
