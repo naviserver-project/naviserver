@@ -134,7 +134,7 @@ typedef struct Slave {
     pid_t         pid;
     Ns_Time       expire;
     struct Pool  *poolPtr;
-    struct Slave  *nextPtr;
+    struct Slave *nextPtr;
 } Slave;
 
 /*
@@ -1706,37 +1706,26 @@ StatsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const*
 
     } else {
         Tcl_DString ds, *dsPtr = &ds;
-        char        buf[100];
         Pool       *poolPtr = GetPool(pool, clientData);
+        int         processes = 0;
+        Proxy      *proxyPtr;
 
         Tcl_DStringInit(dsPtr);
         Ns_MutexLock(&plock);
         Ns_MutexLock(&poolPtr->lock);
 
-        Tcl_DStringAppendElement(dsPtr, "proxies");
-        snprintf(buf, sizeof(buf), "%" PRIuPTR, poolPtr->nextid);
-        Tcl_DStringAppendElement(dsPtr, buf);
-
-        Tcl_DStringAppendElement(dsPtr, "waiting");
-        snprintf(buf, sizeof(buf), "%d", poolPtr->waiting);
-        Tcl_DStringAppendElement(dsPtr, buf);
-
-        Tcl_DStringAppendElement(dsPtr, "maxslaves");
-        snprintf(buf, sizeof(buf), "%d", poolPtr->maxslaves);
-        Tcl_DStringAppendElement(dsPtr, buf);
-
-        Tcl_DStringAppendElement(dsPtr, "free");
-        snprintf(buf, sizeof(buf), "%d", poolPtr->nfree);
-        Tcl_DStringAppendElement(dsPtr, buf);
-
-        Tcl_DStringAppendElement(dsPtr, "used");
-        snprintf(buf, sizeof(buf), "%d", poolPtr->nused);
-        Tcl_DStringAppendElement(dsPtr, buf);
-
-        Tcl_DStringAppendElement(dsPtr, "requests");
-        snprintf(buf, sizeof(buf), "%" PRIuPTR, poolPtr->nruns);
-        Tcl_DStringAppendElement(dsPtr, buf);
-
+        for (proxyPtr = poolPtr->firstPtr; proxyPtr != NULL; proxyPtr = proxyPtr->nextPtr) {
+            if (proxyPtr->slavePtr != NULL) {
+                processes ++;
+            }
+        }
+        Ns_DStringPrintf(dsPtr, "proxies %" PRIuPTR, poolPtr->nextid);
+        Ns_DStringPrintf(dsPtr, " waiting %d", poolPtr->waiting);
+        Ns_DStringPrintf(dsPtr, " maxslaves %d", poolPtr->maxslaves);
+        Ns_DStringPrintf(dsPtr, " free %d", poolPtr->nfree);
+        Ns_DStringPrintf(dsPtr, " used %d", poolPtr->nused);
+        Ns_DStringPrintf(dsPtr, " requests %" PRIuPTR, poolPtr->nruns);
+        Ns_DStringPrintf(dsPtr, " processes %d", processes);
         Tcl_DStringAppend(dsPtr, " runtime ", 9);
         Ns_DStringAppendTime(dsPtr, &poolPtr->runTime);
 

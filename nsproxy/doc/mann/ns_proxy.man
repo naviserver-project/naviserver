@@ -343,6 +343,15 @@ Sends [arg script] to the proxy specified by [arg handle].
 [call [cmd "ns_proxy stats"] [arg pool]]
 
 Provide usage statistics in form of a dict from the specified pool.
+The dict contains the following keys:
+[term proxies],
+[term waiting],
+[term maxslaves],
+[term free],
+[term used],
+[term requests],
+[term processes],
+[term runtime].
 
 
 [call [cmd "ns_proxy stop"] [arg pool] [opt [arg handle]]]
