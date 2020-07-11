@@ -102,7 +102,7 @@ Releases any handles from any pools currently owned by a thread.
 
 [para]
 This command is intended to be used as part of a garbage collection
-step.Calling this command within NaviServer is not necessary as the
+step. Calling this command within NaviServer is not necessary as the
 module registers a trace to release all handles via the
 [cmd "ns_ictl trace deallocate"] facility when interpreters are deallocated
 after some transaction, for example, at the end of a connection.
