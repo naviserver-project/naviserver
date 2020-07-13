@@ -5,15 +5,17 @@
 [titledesc {Parse HTTP header}]
 
 [description]
-This function parses the HTTP header specified by header into an ns_set specified by set.
+This function parses a single HTTP header line into a predefined
+ns_set specified by [arg set].
 
 [para]
- Optional argument [arg disposition] can be one of the following
- [list_begin itemized]
-	[item] toupper - convert header names to uppercase
-	[item] tolower - convert header names to lowercase
-	[item] preserve - preserve the existing case
- [list_end]
+Optional argument [arg disposition] can be one of the following
+[list_begin itemized]
+    [item] toupper - convert header names to uppercase
+    [item] tolower - convert header names to lowercase
+    [item] preserve - preserve the existing case
+[list_end]
+When no [arg disposition] is provided, it defaults to [term tolower]
 
 [section {COMMANDS}]
 
@@ -27,6 +29,14 @@ This function parses the HTTP header specified by header into an ns_set specifie
 [section EXAMPLES]
 
 [example_begin]
+ set reply [ns_set create reply]
+ ns_parseheader $reply "Connection: Upgrade"
+ 
+ #
+ # Return the content of the ns_set in form of a dict
+ #
+ ns_set array $reply
+ % connection Upgrade
 [example_end]
 
 
