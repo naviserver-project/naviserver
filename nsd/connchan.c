@@ -973,14 +973,16 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
     int           result;
     Sock         *sockPtr = NULL;
     Ns_Set       *hdrPtr = NULL;
-    char         *url, *method = (char *)"GET", *version = (char *)"1.0", *driverName = NULL;
+    char         *url, *method = (char *)"GET", *version = (char *)"1.0",
+                 *driverName = NULL, *sniHostname = NULL;
     Ns_Time       timeout = {1, 0}, *timeoutPtr = &timeout;
     Ns_ObjvSpec   lopts[] = {
-        {"-headers", Ns_ObjvSet,    &hdrPtr, NULL},
-        {"-method",  Ns_ObjvString, &method, NULL},
-        {"-timeout", Ns_ObjvTime,   &timeoutPtr,  NULL},
-        {"-version", Ns_ObjvString, &version, NULL},
-        {"-driver",  Ns_ObjvString, &driverName, NULL},
+        {"-driver",   Ns_ObjvString, &driverName, NULL},
+        {"-headers",  Ns_ObjvSet,    &hdrPtr, NULL},
+        {"-hostname", Ns_ObjvString, &sniHostname,    NULL},
+        {"-method",   Ns_ObjvString, &method, NULL},
+        {"-timeout",  Ns_ObjvTime,   &timeoutPtr,  NULL},
+        {"-version",  Ns_ObjvString, &version, NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec   largs[] = {
@@ -1012,9 +1014,9 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
                                                 NULL /*cert*/, NULL /*caFile*/,
                                                 NULL /* caPath*/, NS_FALSE /*verify*/,
                                                 &ctx);
-
                 if (likely(result == TCL_OK)) {
-                    result = (*sockPtr->drvPtr->clientInitProc)(interp, (Ns_Sock *)sockPtr, ctx);
+                    Ns_DriverClientInitArg params = {ctx, sniHostname};
+                    result = (*sockPtr->drvPtr->clientInitProc)(interp, (Ns_Sock *)sockPtr, &params);
 
                     /*
                      * For the time being, we create/delete the ctx in
@@ -1634,7 +1636,21 @@ ConnChanReadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
                 timeout.usec = connChanPtr->sockPtr->drvPtr->recvwait.usec;
                 timeoutPtr = &timeout;
             }
-            nRead = NsDriverRecv(connChanPtr->sockPtr, &buf, 1, timeoutPtr);
+
+            /*
+             * In case we see a NS_SOCK_AGAIN, retry. We could make
+             * this behavior optional via argument, but with OpenSSL,
+             * this seems to happen quite often.
+             */
+            for (;;) {
+                nRead = NsDriverRecv(connChanPtr->sockPtr, &buf, 1, timeoutPtr);
+                Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan NsDriverRecv %" PRIdz
+                       " bytes recvSockState %.4x", name, nRead, connChanPtr->sockPtr->recvSockState);
+                if (nRead == 0 && connChanPtr->sockPtr->recvSockState == NS_SOCK_AGAIN) {
+                    continue;
+                }
+                break;
+            }
             Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan NsDriverRecv %" PRIdz " bytes", name, nRead);
 
             if (nRead > -1) {

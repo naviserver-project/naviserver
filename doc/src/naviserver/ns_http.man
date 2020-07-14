@@ -339,9 +339,9 @@ is contained in the resulting dict under the key [term file].
  /tmp/http.83Rfc5
 [example_end]
 
-If you are connecting to a server with virtual hosting that provides
-multiple certificates via SNI (Server Name Indication) you have to
-provide the option [option -hostname].
+For connecting to a server with virtual hosting that provides
+multiple certificates via SNI (Server Name Indication) the
+option [option -hostname] is required.
 
 [para]
 

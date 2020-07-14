@@ -607,8 +607,13 @@ typedef void
      NS_GNUC_NONNULL(1);
 
 typedef int
-(Ns_DriverClientInitProc)(Tcl_Interp *interp, Ns_Sock *sock, NS_TLS_SSL_CTX *ctx);
+(Ns_DriverClientInitProc)(Tcl_Interp *interp, Ns_Sock *sock, void* arg)
+     NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(3);
 
+typedef struct Ns_DriverClientInitArg {
+    NS_TLS_SSL_CTX *ctx;
+    const char *sniHostname;
+} Ns_DriverClientInitArg;
 
 /*
  * The following structure defines the values to initialize the driver. This is

@@ -133,6 +133,7 @@ connections. On success, this command returns a dict containing
 
 [call [cmd "ns_connchan open"] \
 	[opt [option "-headers [arg h]"]] \
+	[opt [option "-hostname [arg HOSTNAME ]"]] \
 	[opt [option "-method [arg m]"]] \
 	[opt [option "-timeout [arg t]"]] \
 	[opt [option "-version [arg v]"]] \
@@ -149,6 +150,11 @@ The URL might be an HTTP or an HTTPS URL.
 The timeout value [arg t] is specified in the form
 [arg secs[opt :microsecs]], or [arg secs.fraction],
 or as a number with the time units ms, s, m, d.
+
+For connecting to a server with virtual hosting that provides
+multiple certificates via SNI (Server Name Indication) the
+option [option -hostname] is required.
+
 
 [call [cmd "ns_connchan read"] \
 	[arg channel] \

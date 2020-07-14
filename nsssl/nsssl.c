@@ -170,10 +170,10 @@ DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g)
 static int SSL_cert_statusCB(SSL *ssl, void *arg)
 {
     SSLCertStatusArg *srctx = arg;
-    int              result = SSL_TLSEXT_ERR_ALERT_FATAL;
-    OCSP_RESPONSE   *resp = NULL;
-    unsigned char   *rspder = NULL;
-    int              rspderlen;
+    int               result = SSL_TLSEXT_ERR_ALERT_FATAL;
+    OCSP_RESPONSE    *resp = NULL;
+    unsigned char    *rspder = NULL;
+    int               rspderlen;
 
     if (srctx->verbose) {
         Ns_Log(Notice, "cert_status: callback called");
@@ -942,7 +942,6 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
     if (nRead > -1) {
         nRead = Ns_SSLRecvBufs2(sslCtx->ssl, bufs, nbufs, &sockState);
     }
-
     Ns_SockSetReceiveState(sock, sockState);
 
     return nRead;
@@ -1140,7 +1139,7 @@ SSLThreadId(void)
  *
  * ClientInit --
  *
- *        Initialize client connection for the already open spockPtr.
+ *        Initialize client connection for the already open sockPtr.
  *
  * Results:
  *        Tcl result code
@@ -1151,16 +1150,19 @@ SSLThreadId(void)
  *----------------------------------------------------------------------
  */
 static int
-ClientInit(Tcl_Interp *interp, Ns_Sock *sockPtr, NS_TLS_SSL_CTX *ctx)
+ClientInit(Tcl_Interp *interp, Ns_Sock *sockPtr, void *arg)
 {
-    SSL          *ssl;
-    SSLContext   *sslCtx;
-    int           result;
+    SSL                    *ssl;
+    int                     result;
+    Ns_DriverClientInitArg *params= (Ns_DriverClientInitArg *)arg;
 
-    result = Ns_TLS_SSLConnect(interp, sockPtr->sock, ctx, NULL, &ssl);
+    result = Ns_TLS_SSLConnect(interp, sockPtr->sock,
+                               params->ctx,
+                               params->sniHostname, &ssl);
 
     if (likely(result == TCL_OK)) {
-        sslCtx = ns_calloc(1, sizeof(SSLContext));
+        SSLContext *sslCtx = ns_calloc(1, sizeof(SSLContext));
+
         sslCtx->ssl = ssl;
         sockPtr->arg = sslCtx;
     } else if (ssl != NULL) {
