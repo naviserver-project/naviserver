@@ -52,6 +52,8 @@
 static void ReportError(Tcl_Interp *interp, const char *fmt, ...)
     NS_GNUC_NONNULL(2) NS_GNUC_PRINTF(2,3);
 
+static Ns_ReturnCode WaitFor(NS_SOCKET sock, unsigned int st);
+
 /*
  * OpenSSL callback functions.
  */
@@ -74,6 +76,8 @@ SSL_dhCB(SSL *ssl, int isExport, int keyLength) {
     NsSSLConfig *cfgPtr;
     DH          *key;
     SSL_CTX     *ctx;
+
+    NS_NONNULL_ASSERT(ssl != NULL);
 
     ctx = SSL_get_SSL_CTX(ssl);
 
@@ -103,8 +107,10 @@ SSL_dhCB(SSL *ssl, int isExport, int keyLength) {
  */
 static void
 SSL_infoCB(const SSL *ssl, int where, int UNUSED(ret)) {
-    if ((where & SSL_CB_HANDSHAKE_DONE)) {
 
+    NS_NONNULL_ASSERT(ssl != NULL);
+
+    if ((where & SSL_CB_HANDSHAKE_DONE)) {
         ssl->s3->flags |= SSL3_FLAGS_NO_RENEGOTIATE_CIPHERS;
     }
 }
@@ -119,12 +125,19 @@ SSL_serverNameCB(SSL *ssl, int *al, void *UNUSED(arg))
     const char  *serverName;
     int          result = SSL_TLSEXT_ERR_NOACK;
 
+    NS_NONNULL_ASSERT(ssl != NULL);
+
     serverName = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
 
     if (serverName != NULL) {
         Ns_Sock  *sockPtr = (Ns_Sock*)SSL_get_app_data(ssl);
-        Driver   *drvPtr = (Driver *)(sockPtr->driver);
-        bool      doSNI = ((drvPtr->opts & NS_DRIVER_SNI) != 0u);
+        Driver   *drvPtr;
+        bool      doSNI;
+
+        assert(sockPtr != NULL);
+
+        drvPtr = (Driver *)(sockPtr->driver);
+        doSNI = ((drvPtr->opts & NS_DRIVER_SNI) != 0u);
 
         //ctx = SSL_get_SSL_CTX(ssl);
         //cfgPtr = (NsSSLConfig *) SSL_CTX_get_app_data(ctx);
@@ -134,12 +147,8 @@ SSL_serverNameCB(SSL *ssl, int *al, void *UNUSED(arg))
          * Find info about these codes via:
          *    fgrep -r --include=*.h 112 /usr/local/src/openssl/ | fgrep AD
          */
-        Ns_Log(Notice, "SSL_serverNameCB got server name <%s> al %d sockPtr %p drv %p doSNI %d",
-               serverName,
-               (al != NULL ? *al : 0),
-               (void*)sockPtr,
-               (void*)(sockPtr != NULL ? sockPtr->driver : NULL),
-               doSNI);
+        Ns_Log(Notice, "SSL_serverNameCB got server name <%s> al %d doSNI %d",
+               serverName, (al != NULL ? *al : 0), doSNI);
 
         /*
          * Perform lookup from host table only, when doSNI is true
@@ -321,6 +330,29 @@ Ns_TLS_CtxFree(NS_TLS_SSL_CTX *ctx)
     SSL_CTX_free(ctx);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * WaitFor --
+ *
+ *   Wait 10ms (currently hardcoded) for a state change on a socket.
+ *   This is used for handling OpenSSL's states SSL_ERROR_WANT_READ
+ *   and SSL_ERROR_WANT_WRITE.
+ *
+ * Results:
+ *   Result code.
+ *
+ * Side effects:
+ *   None
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+WaitFor(NS_SOCKET sock, unsigned int st)
+{
+    Ns_Time timeout = { 0, 10000 }; /* 10ms */
+    return Ns_SockTimedWait(sock, st, &timeout);
+}
 
 
 /*
@@ -339,7 +371,6 @@ Ns_TLS_CtxFree(NS_TLS_SSL_CTX *ctx)
  *
  *----------------------------------------------------------------------
  */
-
 int
 Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
                   const char *sni_hostname,
@@ -379,12 +410,13 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
             sslRc = SSL_connect(ssl);
             err   = SSL_get_error(ssl, sslRc);
             //fprintf(stderr, "### ssl connect sock %d returned err %d\n", sock, err);
-            if ((err == SSL_ERROR_WANT_WRITE) || (err == SSL_ERROR_WANT_READ)) {
-                Ns_Time timeout = { 0, 10000 }; /* 10ms */
-                (void) Ns_SockTimedWait(sock,
-                                        ((unsigned int)NS_SOCK_WRITE|(unsigned int)NS_SOCK_READ),
-                                        &timeout);
-                //fprintf(stderr, "### ssl connect retry on %d\n", sock);
+
+            if (err == SSL_ERROR_WANT_READ) {
+                (void)WaitFor(sock, (unsigned int)NS_SOCK_READ);
+                continue;
+
+            } else if (err == SSL_ERROR_WANT_WRITE) {
+                (void)WaitFor(sock, (unsigned int)NS_SOCK_WRITE);
                 continue;
             }
             break;
@@ -740,12 +772,12 @@ Ns_TLS_SSLAccept(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
             rc = SSL_do_handshake(ssl);
             err = SSL_get_error(ssl, rc);
 
-            if (err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_READ) {
-                unsigned int st;
-                Ns_Time      timeout = { 0, 10000 }; /* 10ms */
+            if (err == SSL_ERROR_WANT_READ) {
+                (void)WaitFor(sock, (unsigned int)NS_SOCK_READ);
+                continue;
 
-                st = (unsigned int)NS_SOCK_WRITE | (unsigned int)NS_SOCK_READ;
-                (void) Ns_SockTimedWait(sock, st, &timeout);
+            } else if (err == SSL_ERROR_WANT_WRITE) {
+                (void)WaitFor(sock, (unsigned int)NS_SOCK_WRITE);
                 continue;
             }
             break;
