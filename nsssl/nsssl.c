@@ -1073,11 +1073,11 @@ Close(Ns_Sock *sock)
          * occurred on a connection i.e. if SSL_get_error() has returned
          * SSL_ERROR_SYSCALL or SSL_ERROR_SSL.
          */
-        if (!Ns_SockInErrorState(sock)) {
-            int fd = SSL_get_fd(sslCtx->ssl);
-            int r  = SSL_shutdown(sslCtx->ssl);
+        if (!Ns_SockInErrorState(sock) && SSL_in_init(sslCtx->ssl) != 1) {
+            int r = SSL_shutdown(sslCtx->ssl);
 
-            Ns_Log(Debug, "### SSL close(%d) err %d", fd, SSL_get_error(sslCtx->ssl, r));
+            Ns_Log(Debug, "### SSL close(%d) err %d", SSL_get_fd(sslCtx->ssl),
+                   SSL_get_error(sslCtx->ssl, r));
 
             if (r == 0) {
                 /*
@@ -1098,7 +1098,7 @@ Close(Ns_Sock *sock)
                            sock->sock, ERR_error_string(err, errorBuffer));
                 }
             }
-        } else {
+        } else if (Ns_SockInErrorState(sock)) {
             Ns_Log(Notice, "### SSL close(%d) avoid shutdown in error state",
                    SSL_get_fd(sslCtx->ssl));
         }
