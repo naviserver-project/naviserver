@@ -2382,12 +2382,20 @@ DriverThread(void *arg)
                     case SOCK_SHUTERROR:    NS_FALL_THROUGH; /* fall through */
                     case SOCK_WRITEERROR:   NS_FALL_THROUGH; /* fall through */
                     case SOCK_WRITETIMEOUT:
-                        drvPtr->stats.errors++;
-                        Ns_Log(Warning,
-                               "sockread returned unexpected result %s (err %s); close socket (%d)",
-                               GetSockStateName(s),
-                               ((errno != 0) ? strerror(errno) : NS_EMPTY_STRING),
-                               sockPtr->sock);
+                        /*
+                         * Write warning just for real errors. E.g. some
+                         * modern browsers are unhappy about self-signed
+                         * certificates... these would pop up here finally (on
+                         * every request).
+                         */
+                        if (errno != 0) {
+                            drvPtr->stats.errors++;
+                            Ns_Log(Warning,
+                                   "sockread returned unexpected result %s (err %s); close socket (%d)",
+                                   GetSockStateName(s),
+                                   ((errno != 0) ? strerror(errno) : NS_EMPTY_STRING),
+                                   sockPtr->sock);
+                        }
                         SockRelease(sockPtr, s, errno);
                         break;
                     }
