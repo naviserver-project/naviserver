@@ -6,9 +6,6 @@
 include Makefile.common
 CLEAN += clean-cert
 
-dhparams.h:
-	openssl dhparam -C -2 -noout 512 >> dhparams.h
-	openssl dhparam -C -2 -noout 1024 >> dhparams.h
 
 LD_LIBRARY_PATH = LD_LIBRARY_PATH="./:$$LD_LIBRARY_PATH"
 NSD             = $(NAVISERVER)/bin/nsd

@@ -4,4 +4,4 @@ MOD      =  nsssl.so
 DLL      =  nsssl
 MODOBJS   = nsssl.o
 include  ../include/Makefile.build
-nsssl.o: dhparams.h
+

@@ -766,7 +766,10 @@ ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
  */
 void NsDriverMapVirtualServers(void)
 {
-    Driver *drvPtr;
+    Driver        *drvPtr;
+    Tcl_HashTable  serverTable;     /* names of the driver modules without duplicates */
+
+    Tcl_InitHashTable(&serverTable, TCL_STRING_KEYS);
 
     for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
         const Ns_Set *lset;
@@ -801,8 +804,8 @@ void NsDriverMapVirtualServers(void)
                     Tcl_DStringInit(dsPtr);
                     ServerMapEntryAdd(dsPtr, Ns_InfoHostname(), servPtr, drvPtr, NULL, NS_TRUE);
                     Tcl_DStringFree(dsPtr);
-                    Ns_Log(Notice, "Global driver has no mapping from host to server (section '%s' missing)",
-                           moduleName);
+                    Ns_Log(Warning, "global driver has no mapping from host to server"
+                           "(section %s missing)", path);
                 } else {
                     /*
                      * Global driver, which has no default server, and no servers section.
@@ -871,18 +874,38 @@ void NsDriverMapVirtualServers(void)
                     cert = Ns_ConfigGetValue(ds1.string, "certificate");
 
                     if (cert != NULL) {
+                        int            isNew;
+                        Tcl_HashEntry *hPtr;
+
+                        hPtr = Tcl_CreateHashEntry(&serverTable, ds1.string, &isNew);
+
                         /*
                          * A local (server-specific) certificate is configured.
                          */
-                        Ns_Log(Notice, "=== certificate configured: server '%s' on path <%s> driver %s cert %s",
+                        Ns_Log(DriverDebug, "certificate configured: server '%s' on path <%s> driver %s cert %s",
                                server, ds1.string, drvPtr->moduleName,
                                cert);
 
-                        if (Ns_TLS_CtxServerInit(ds1.string, NULL, 0u, NULL, &ctx) != TCL_OK) {
-                            Ns_Log(Error, "driver nsssl: init error: %s", strerror(errno));
+                        if (isNew == 1) {
+                            /*
+                             * We have already no sslCtx for this server. This
+                             * entry is most likely an alternate server name.
+                             */
+                            if (Ns_TLS_CtxServerInit(ds1.string, NULL, 0u, NULL, &ctx) == TCL_OK) {
+                                assert(ctx != NULL);
+                                drvPtr->opts |= NS_DRIVER_SNI;
+                                Tcl_SetHashValue(hPtr, ctx);
+                            } else {
+                                Ns_Log(Error, "driver nsssl: init error: %s", strerror(errno));
+                                ctx = NULL;
+                            }
                         } else {
-                            assert(ctx != NULL);
-                            drvPtr->opts |= NS_DRIVER_SNI;
+                            /*
+                             * No sslCtx found for this server. This entry is
+                             * most likely an alternate server name.
+                             */
+                            ctx = Tcl_GetHashValue(hPtr);
+                            Ns_Log(Notice, "=== reuse sslctx %p from '%s'", (void*)ctx, ds1.string);
                         }
                     }
                     Tcl_DStringFree(&ds1);
@@ -953,6 +976,8 @@ void NsDriverMapVirtualServers(void)
             Ns_Fatal("%s: default server '%s' not defined in '%s'", moduleName, defserver, path);
         }
     }
+    Tcl_DeleteHashTable(&serverTable);
+
 }
 
 
