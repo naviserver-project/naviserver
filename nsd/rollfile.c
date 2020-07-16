@@ -132,9 +132,9 @@ Ns_RollFile(const char *fileName, int max)
 
             while (err == 0 && num-- > 0) {
                 char *dot = strrchr(first, INTCHAR('.')) + 1;
-                snprintf(dot, 4u, "%03d", MIN(num, 999));
+                snprintf(dot, 4u, "%03u", MIN(num, 999u));
                 dot = strrchr(next, INTCHAR('.')) + 1;
-                snprintf(dot, 4u, "%03d", MIN(num + 1, 999));
+                snprintf(dot, 4u, "%03u", MIN(num + 1u, 999u));
                 err = Rename(first, next);
             }
             ns_free((char *)next);

@@ -2432,28 +2432,28 @@ Ns_ConnReturnUnavailable(Ns_Conn *conn)
  */
 
 NS_EXTERN Ns_ReturnCode
-Ns_VarGet(const char *server, const char *array, const char *key, Ns_DString *dsPtr)
+Ns_VarGet(const char *server, const char *array, const char *keyString, Ns_DString *dsPtr)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN bool
-Ns_VarExists(const char *server, const char *array, const char *key)
+Ns_VarExists(const char *server, const char *array, const char *keyString)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN Ns_ReturnCode
-Ns_VarSet(const char *server, const char *array, const char *key,
+Ns_VarSet(const char *server, const char *array, const char *keyString,
           const char *value, ssize_t len)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN Ns_ReturnCode
-Ns_VarUnset(const char *server, const char *array, const char *key)
+Ns_VarUnset(const char *server, const char *array, const char *keyString)
     NS_GNUC_NONNULL(2);
 
 NS_EXTERN Tcl_WideInt
-Ns_VarIncr(const char *server, const char *array, const char *key, int incr)
+Ns_VarIncr(const char *server, const char *array, const char *keyString, int incr)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN Ns_ReturnCode
-Ns_VarAppend(const char *server, const char *array, const char *key,
+Ns_VarAppend(const char *server, const char *array, const char *keyString,
              const char *value, ssize_t len)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 

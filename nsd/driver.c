@@ -266,7 +266,7 @@ static void  SockRelease(Sock *sockPtr, SockState reason, int err)
 
 static void  SockError(Sock *sockPtr, SockState reason, int err)
     NS_GNUC_NONNULL(1);
-static void  SockSendResponse(Sock *sockPtr, int code, const char *errMsg, const char *headers)
+static void  SockSendResponse(Sock *sockPtr, int statusCode, const char *errMsg, const char *headers)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 static void  SockTrigger(NS_SOCKET sock);
 static void  SockTimeout(Sock *sockPtr, const Ns_Time *nowPtr, const Ns_Time *timeout)
@@ -4423,11 +4423,12 @@ DriverLookupHost(char *host, Driver *drvPtr)
 {
     const ServerMap     *result = NULL;
     const Tcl_HashEntry *hPtr;
-    size_t               hostLength = strlen(host);
+    size_t               hostLength;
 
     NS_NONNULL_ASSERT(host != NULL);
     NS_NONNULL_ASSERT(drvPtr != NULL);
 
+    hostLength = strlen(host);
     /*
      * Remove trailing dot of host header field, since RFC 2976 allows fully
      * qualified "absolute" DNS names in host fields (see e.g. §3.2.2).

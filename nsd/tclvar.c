@@ -912,15 +912,16 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 static int
 GetArrayAndKey(Tcl_Interp *interp, Tcl_Obj *arrayObj, const char *keyString,
                NS_RW rw,
-               Array  **arrayPtrPtr, Tcl_Obj **objPtr)
+               Array **arrayPtrPtr, Tcl_Obj **objPtr)
 {
-    int            result = TCL_OK;
-    Tcl_Obj       *obj = NULL;
-    Array         *arrayPtr;
-    Tcl_HashEntry *hPtr;
+    int      result = TCL_OK;
+    Tcl_Obj *obj = NULL;
+    Array   *arrayPtr;
 
     arrayPtr = LockArrayObj(interp, arrayObj, NS_FALSE, rw);
     if (arrayPtr != NULL) {
+        const Tcl_HashEntry *hPtr;
+
         hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, keyString, NULL);
         if (unlikely(hPtr == NULL)) {
             Ns_TclPrintfResult(interp, "no such key: %s", keyString);
