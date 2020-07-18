@@ -1,0 +1,401 @@
+[include version_include.man]
+[manpage_begin {admin-config} n [vset version]]
+[moddesc {NaviServer Manual}]
+
+[titledesc {NaviServer Configuration Reference}]
+
+[description]
+
+When NaviServer is started, typically a configuration file is provided
+providing certain settings for the server. The configuration file
+includes network configuration options, log file information, loading
+of modules and database drivers and the like. Actually, the
+configuration file can contain the definition of multiple servers,
+running concurrently or depending on command line arguments also
+separately (see [term admin-maintenance]).
+
+
+[para] The NaviServer configuration file consists of multiple sections
+containing global configuration of the instance and sections for each
+server and module. The configuration file is actually a Tcl script,
+such that at user can set variables, defined procs to avoid repeated
+patterns and the like. Tcl variables are typically used to certain
+parameters at the begin of the file, which might be often
+changed. This eases the maintenance.
+
+[para] The following sample configuration files might be used as a
+starting point for site specific configurations:
+
+Sample documented configuration files:
+[list_begin itemized]
+[item] [uri \
+	https://bitbucket.org/naviserver/naviserver/raw/default/simple-config.tcl \
+	simple-config.tcl]
+[item] [uri \
+	https://bitbucket.org/naviserver/naviserver/raw/default/nsd-config.tcl \
+	nsd-config.tcl]
+[item] [uri \
+	https://bitbucket.org/naviserver/naviserver/raw/default/openacs-config.tcl \
+	openacs-config.tcl]
+[list_end]
+
+
+Several configuration hints and details can be found also on other
+spaces in the manual, such as e.g. in [term admin-tuning] or for
+module specific parameters (which might not be necessary in every
+installation. Furthermore, the configuration mechanism of NaviServer
+is extensible, therefore, modules and applications can as well
+use the configuration file with its abstraction to define application
+specific parameters. So, a listing of the parameters can never
+complete. In this page, we primarily define introductory examples
+for typical usage scenarios.
+
+[para]
+The main sections of a configuration file are:
+
+[list_begin itemized]
+
+[item] Global configuration values
+   [list_begin itemized]
+   [item] general parameters (starting with "ns/parameters")
+   [item] thread parameters (starting with "ns/threads")
+   [item] mimetypes (starting with "ns/mimetypes")
+   [item] database drivers (starting with "ns/db")
+   [item] global modules (starting with "ns/modules")
+   [item] servers (starting with "ns/servers")      
+   [list_end]
+[para] Examples for global parameters are in the mentioned
+sample configuration files and also e.g. in [term tcl-libraries]
+and [term admin-tuning].
+
+[item] Server specific parameters (starting with "ns/server/$servername")
+
+[item] Module specific parameters (like [term nssock], [term nsssl],
+[term nscp], [term nslog], [term nscgi] or [term nsperm].
+
+[list_end]
+
+
+[section EXAMPLES]
+
+One of the core components of the configuration file are the network
+drivers: what protocols should be used, on which addresses/ports
+should be used, or how to set up virtual servers. The most important
+network drivers of NaviServer are [term nssock] and
+[term nsssl].
+
+[para] Several additional network drivers are available via
+extra modules, such as e.g. [term nsudp], [term nssmtpd]
+(for a full list of modules, see the [uri \
+	https://bitbucket.org/naviserver/workspace/projects/PROJ \
+	"module repository"]).
+
+
+[subsection {Single Server, single address, single port}]
+
+In the simplest case, one defines in a configuration file a single
+server [emph s1] with single network driver [emph nssock]. In the
+example below the server is listening on port 8000.
+
+[example_begin]
+ ns_section ns/servers {
+   ns_param s1 "Server Instance 1"
+ }
+ 
+ ns_section ns/server/s1/modules {
+   ns_param nssock  nssock.so
+ }
+ 
+ ns_section ns/server/s1/module/nssock {
+   ns_param address 0.0.0.0
+   ns_param port    8000
+ }
+[example_end]
+
+In this example, the module is loaded for the server "s1". We show in
+later examples, how to load a network driver globally, such that one
+network driver can be used for multiple servers.
+
+[subsection {Multiple alternative servers in one configuration file}]
+
+It is as well possible to define multiple servers in the same
+configuration file (here [emph s1] and [emph s2]). These servers
+use the same driver [emph nsock] but with different ports.
+In this case it is sufficient to load the driver once.
+
+[example_begin]
+ ns_section ns/servers {
+   ns_param s1     "Server Instance 1"
+   ns_param s2     "Server Instance 1"
+ }
+ 
+ #
+ # Server s1
+ #
+ ns_section ns/server/s1/modules {
+   ns_param nssock  nssock.so
+ }
+ 
+ ns_section ns/server/s1/module/nssock {
+   ns_param address  0.0.0.0
+   ns_param port     8000
+ }
+ 
+ #
+ # Server s2
+ #
+ ns_section ns/server/s2/modules {
+   ns_param nssock   nssock.so
+ }
+ 
+ ns_section "ns/server/s2/module/nssock" {
+   ns_param address  0.0.0.0
+   ns_param port     8001
+ }
+[example_end]
+
+When the configuration file above is named e.g. two-server-config.tcl,
+the tow servers can be started with a command line like:
+
+[example_begin]
+/usr/local/ns/bin/nsd -u nsadmin -t two-server-config.tcl -f
+[example_end]
+
+When it is the goal to start only one of these servers, one can use
+e.g. the following command:
+
+[example_begin]
+/usr/local/ns/bin/nsd -u nsadmin -t two-server-config.tcl -f -server s2
+[example_end]
+
+[subsection {Single server listening on multiple IP addresses}]
+
+Often, a server has the requirement to listen on multiple addresses,
+such as on one (or many) IPv4 and one (or many) IPv6 addresses.
+This can be addressed by simply providing the list of values as
+a parameter value.
+
+[example_begin]
+ ns_section ns/servers {
+   ns_param s1 "Server Instance 1"
+ }
+ 
+ ns_section ns/server/s1/modules {
+   ns_param nssock  nssock.so
+ }
+ 
+ ns_section ns/server/s1/module/nssock {
+   ns_param address {137.208.116.31 2001:628:404:74::31}
+   ns_param port    8000
+ }
+[example_end]
+
+[subsection {Single server listening on multiple ports}]
+
+Similarly, we can define a single server, listening on multiple
+ports. In this case, one can load multiple instances of the driver
+where each of the driver listens on a different port. In the following
+example we name the different instances of the network driver
+[emph nssock1] and [emph nssock2].
+
+[example_begin]
+ #
+ # Server s1, using listening on two ports
+ #
+ ns_section ns/server/s1/modules {
+   ns_param   nssock1   nssock.so
+   ns_param   nssock2   nssock.so
+ }
+ 
+ ns_section ns/server/s1/module/nssock1 {
+   ns_param address   0.0.0.0
+   ns_param   port    8000
+ }
+ ns_section ns/server/s1/module/nssock2 {
+   ns_param address   0.0.0.0 
+   ns_param   port    8001
+ }
+[example_end]
+
+It would be as well possible to register multiple addresses for every
+network driver instance (here "nssock1" and "nssock2"). In general, by
+loading a network driver multiple times, all the of parameters of the
+driver modules (here [term nssock]) can be modified per driver
+instance.
+
+
+[subsection {Virtual servers}]
+
+By using virtual servers, multiple different server configurations can
+be used while using only a single IP address/port combination. The
+main different between a virtual server and the case of defining
+multiple alternative servers above is that the servers are available
+concurrently. The server determines by the "Host:" header field
+provided by the client to which server the request should be routed.
+Using such virtual servers is a common technique, where e.g. for the
+same IP address, multiple DNS names are registered. According to
+HTTP/1.1, clients have to send the hostname in the host header field
+to the server, such that the server can behave differently depending
+on contents of this field.
+
+[para] In the following example, we define two web servers "s1" and "s2",
+which should act as virtual servers. This means, we want to define one
+network driver, which listens on a single port, but which should
+direct requests to the server based on the content of the [term host]
+header field. 
+
+[para] Assume for the IP address of the server the DNS names
+[term foo.com], [term bar.com] and [term baz.com] are registered. We define
+server "s1" and "s2" such that "s1" should receive requests from
+[term foo.com], and "s2" should receive requests from [term bar.com] and
+[term baz.com]. Servers "s1" and "s2" have different [term pagedir]
+definitions.
+
+[para] For defining virtual servers, the network driver has to be
+loaded globally (i.e. as module [const ns/module/nssock]).  For
+requests with missing/invalid host header fields, we have to define a
+[term defaultserver] to handle such requests in the global definition.
+
+In the section [const ns/module/nssock/servers] we define the mapping
+between the hostnames and the defined servers. Note that one can
+define multiple DNS names also for a single server (here for [const s2]).
+
+[example_begin]
+ #
+ # Define two servers s1 and d2 as virtual servers
+ #
+ ns_section ns/servers {
+   ns_param s1  "Virtual Server s1"
+   ns_param s2  "Virtual Server s2 "
+ }
+ ns_section ns/server/s1/fastpath {
+   ns_param pagedir /var/www/s1
+ }
+ ns_section ns/server/s2/fastpath {
+   ns_param pagedir /var/www/s2
+ }
+ 
+ #
+ # Define a global nssock driver,
+ # directing requests to the virtual servers
+ # based on the "Host:" header field.
+ #
+ # It is necessary to define a "defaultserver"
+ # for requests without a "Host:" header field.
+ #
+ ns_section ns/modules {
+   ns_param nssock nssock.so
+ }
+ ns_section ns/module/nssock {
+   ns_param port          8000
+   ns_param defaultserver s1
+ }
+ #
+ # Define the mapping between the DNS names and the servers.
+ #
+ ns_section ns/module/nssock/servers {
+   #
+   # Domain names for s1
+   #
+   ns_param s1 foo.com
+
+   #
+   # Domain names for s2
+   #
+   ns_param s2 bar.com
+   ns_param s2 baz.com
+ }
+[example_end]
+
+[subsection {Virtual servers with HTTPS}]
+
+In general, the logic of the definition of servers and network drivers
+is the same for HTTP ([term nssock]) and HTTPS ([term nsssl]), except
+that the latter has some more configuration parameters, such as
+e.g. the certificate, or a special configuration of the ciphers,
+etc.
+
+[para] In order to define virtual servers with HTTPS, one can
+essentially use the definition of the previous section, and load as
+well the nsssl driver globally, and configure it accordingly.
+
+[example_begin]
+ #
+ # Define a global nsssl driver
+ #
+ ns_section ns/modules {
+   ns_param nssock nsssl.so
+ }
+ ns_section ns/module/nsssl {
+   ns_param port          8433
+   ns_param defaultserver s1
+   ns_param certificate   /usr/local/ns/modules/nsssl/server.pem
+ }
+ ns_section ns/module/nsssl/servers {
+   ns_param s1 foo.com
+   ns_param s2 bar.com
+   ns_param s2 baz.com
+ } 
+[example_end]
+
+However, this case requires that all accepted hostnames are listed in
+the certificate. Such certificates are called multi-domain SAN
+certificates.
+
+[para] However, there might be cases, where a server listening on a
+single address has to provide different certificates for
+e.g. "foo.com" and "bar.com". For virtual hosting this is a
+chicken-egg problem: the right certificate is needed at the time the
+connection is opened, but  the virtual server can be only detected
+while reading the request header.
+[para]
+This is a well-known problem, for which the SNI TLS extension was invented
+(a hostname that can be used for identifying the certificate is passed
+during the TLS handshake as well).
+
+[subsection {Virtual servers with HTTPS and SNI}]
+
+In order to configure SNI (Server Name Indication) for HTTPS, one can
+simply add additional certificates for the server needed.  In the
+following example the default certificate is defined on the level of
+the global driver (server.pem), whereas the certificate for the
+server "foo.com" (which will be served by "s1") is defined for the
+server "s1" separately (foo.com.pem).
+
+[example_begin]
+ #
+ # Define a global nsssl driver
+ #
+ ns_section ns/modules {
+   ns_param nssock nsssl.so
+ }
+ ns_section ns/module/nsssl {
+   ns_param port          8433
+   ns_param defaultserver s1
+   ns_param certificate   /usr/local/ns/modules/nsssl/server.pem
+ }
+ ns_section ns/module/nsssl/servers {
+   ns_param s1 foo.com
+   ns_param s2 bar.com
+   ns_param s2 baz.com
+ }
+ #
+ # Define a server-specific certificate to enable SNI.
+ # 
+ ns_section ns/server/s1/module/nsssl {
+   ns_param certificate   /usr/local/ns/modules/nsssl/foo.com.pem
+ }
+[example_end]
+
+More to come here...
+
+
+
+
+[keywords module nssock \
+	performance tuning configuration \
+	SO_REUSEPORT TCP TCP_FASTOPEN \
+	"connection thread pools" \
+	nsssl driver prebind pagedir]
+[manpage_end]
+

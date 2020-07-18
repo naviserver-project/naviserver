@@ -146,6 +146,10 @@ optional but necessary perfect forward secrecy.
  openssl dhparam 2048 >> server.pem
 [example_end]
 
+[para]
+For discussion and more examples see
+[uri ../../manual/files/admin-config.html admin-config].
+
 
 [see_also ns_log ns_write ns_http]
 [keywords module nsssl \
