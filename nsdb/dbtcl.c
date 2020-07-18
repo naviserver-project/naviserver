@@ -1310,8 +1310,6 @@ QuoteListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         } else {
             result = TCL_ERROR;
         }
-
-        result = TCL_OK;
     }
     return result;
 }
