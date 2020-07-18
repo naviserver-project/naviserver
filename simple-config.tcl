@@ -1,5 +1,5 @@
 #
-# This is minimal NaviServer config file that makes the server to
+# This is minimal NaviServer configuration file that makes the server to
 # accept HTTP requests on 0.0.0.0:8000 (IPv4)
 #
 # Logs are in the logs/nsd.log and logs/access.log

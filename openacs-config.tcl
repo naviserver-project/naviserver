@@ -6,7 +6,7 @@
 # Two servers with default settings cannot run on the same host
 #
 ######################################################################
-ns_log notice "nsd.tcl: starting to read config file..."
+ns_log notice "nsd.tcl: starting to read configuration file..."
 
 #---------------------------------------------------------------------
 # Change the HTTP and HTTPS port to e.g. 80 and 443 for production use.
@@ -898,4 +898,4 @@ ns_section "ns/module/nsstats" {
 #ns_log notice "nsd.tcl: ns_rlimit coresize [ns_rlimit coresize unlimited]"
 
 ns_log notice "nsd.tcl: using threadsafe tcl: [info exists tcl_platform(threaded)]"
-ns_log notice "nsd.tcl: finished reading config file."
+ns_log notice "nsd.tcl: finished reading configuration file."
