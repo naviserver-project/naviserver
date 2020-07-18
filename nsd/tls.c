@@ -180,9 +180,10 @@ SSL_dhCB(SSL *ssl, int isExport, int keyLength) {
         key = cfgPtr->dhKey1024;
         break;
 
-    case 2048:
+    case 2048: NS_FALL_THROUGH; /* fall through */
     default:
         key = cfgPtr->dhKey2048;
+        break;
     }
     Ns_Log(Debug, "SSL_dhCB: returns %p\n", (void *)key);
     return key;
