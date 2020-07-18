@@ -1141,7 +1141,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
 
     /*
      * Determine the port and then set the HTTP location string either
-     * as specified in the config file or constructed from the
+     * as specified in the configuration file or constructed from the
      * protocol, hostname and port.
      */
 

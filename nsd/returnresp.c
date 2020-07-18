@@ -591,7 +591,7 @@ Ns_ConnReturnRequestURITooLong(Ns_Conn *conn)
         result = Ns_ConnReturnNotice(conn, 414, "Request-URI Too Long",
                                      "The request URI is too long. You might "
                                      "consider to provide a larger value for "
-                                     "maxline in your NaviServer config file.");
+                                     "maxline in your NaviServer configuration file.");
     }
     return result;
 }
@@ -622,7 +622,7 @@ Ns_ConnReturnHeaderLineTooLong(Ns_Conn *conn)
         result = Ns_ConnReturnNotice(conn, 431, "Request Header Fields Too Large",
                                      "A provided request header line is too long. "
                                      "You might consider to provide a larger value "
-                                     "for maxline in your NaviServer config file");
+                                     "for maxline in your NaviServer configuration file");
     }
    return result;
 }

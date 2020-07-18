@@ -466,7 +466,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     nsconf.nsd = ns_strdup(Tcl_GetNameOfExecutable());
 
     /*
-     * Find and read config file, if given at the command line, just use it,
+     * Find and read configuration file, if given at the command line, just use it,
      * if not specified, try to figure out by looking in the current dir for
      * nsd.tcl and for ../conf/nsd.tcl
      */
@@ -553,7 +553,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     if (config != NULL) {
 
         /*
-         * Evaluate the config file.
+         * Evaluate the configuration file.
          */
 
         NsConfigEval(config, argc, argv, optionIndex);
@@ -561,7 +561,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     }
 
     /*
-     * This is the first place, where we can use values from the config file.
+     * This is the first place, where we can use values from the configuration file.
      *
      * Turn on logging of long mutex calls if desired. For whatever reason, we
      * can't access NS_mutexlocktrace from here (unknown external symbol),
@@ -591,7 +591,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     if (server != NULL) {
         int i = Ns_SetFind(servers, server);
         if (i < 0) {
-            Ns_Log(Error, "nsmain: no such server '%s' in config file '%s'",
+            Ns_Log(Error, "nsmain: no such server '%s' in configuration file '%s'",
                    server, nsconf.config);
             Ns_Log(Warning, "nsmain: Writing the server names we DO have to stderr now:");
             Ns_SetPrint(servers);
@@ -1194,7 +1194,7 @@ UsageMsg(int exitCode)
         "  -b  bind <address:port>  (Example: 192.168.0.1:80,[::1]:80)\n"
         "  -B  bind address:port list from <file>\n"
 #endif
-        "  -s  use server named <server> in config file\n"
+        "  -s  use server named <server> in configuration file\n"
         "  -t  read config from <file>\n"
         "\n", nsconf.argv0);
     exit(exitCode);

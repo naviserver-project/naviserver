@@ -623,7 +623,7 @@ CheckStaticCompressedDelivery(
             /*
              * The modification time of the compressed file is older
              * than the modification time of the source, and the
-             * config file indicates the we have to try to refresh the
+             * configuration file indicates the we have to try to refresh the
              * compressed file (e.g. rezip the source).
              */
             if (CompressExternalFile(Ns_GetConnInterp(conn), cmdName, fileName, compressedFileName) == TCL_OK) {

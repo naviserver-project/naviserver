@@ -369,7 +369,7 @@ ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, int
  *      None.
  *
  * Side effects:
- *      Depends on config file.
+ *      Depends on configuration file.
  *
  *----------------------------------------------------------------------
  */
@@ -1489,7 +1489,7 @@ Ns_LogRoll(void)
  *
  * Side effects:
  *      Configures this module to use the newly opened log file.  If
- *      LogRoll is turned on in the config file, then it registers a
+ *      LogRoll is turned on in the configuration file, then it registers a
  *      signal callback.
  *
  *----------------------------------------------------------------------

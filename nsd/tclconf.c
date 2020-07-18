@@ -31,7 +31,7 @@
 /*
  * tclconf.c --
  *
- *      Tcl commands for reading and setting config file info. 
+ *      Tcl commands for reading and setting configuration values.
  */
 
 #include "nsd.h"

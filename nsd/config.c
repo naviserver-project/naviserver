@@ -66,7 +66,7 @@ ConfigWideIntRange(const char *section, const char *key, Tcl_WideInt defaultValu
  *
  * Ns_ConfigString --
  *
- *      Return a config file value, or the default if not found.
+ *      Return a configuration file value, or the default if not found.
  *
  * Results:
  *      Pointer to value string.
@@ -144,7 +144,7 @@ Ns_ConfigSet(const char *section, const char *key)
  *
  * Ns_ConfigBool --
  *
- *      Return a boolean config file value, or the default if not
+ *      Return a boolean configuration file value, or the default if not
  *      found.
  *
  * Results:
@@ -183,7 +183,7 @@ Ns_ConfigBool(const char *section, const char *key, bool defaultValue)
  *
  * Ns_ConfigFlag --
  *
- *      Look for a boolean config file value, and if present OR the
+ *      Look for a boolean configuration file value, and if present OR the
  *      given flag value into the flagsPtr.
  *
  * Results:
@@ -227,7 +227,7 @@ Ns_ConfigFlag(const char *section, const char *key, unsigned int flag, int defau
  *
  * Ns_ConfigInt, Ns_ConfigIntRange --
  *
- *      Return an integer config file value, or the default if not
+ *      Return an integer configuration file value, or the default if not
  *      found. The returned value will be between the given min and max.
  *
  * Results:
@@ -294,7 +294,7 @@ Ns_ConfigIntRange(const char *section, const char *key, int defaultValue,
  *
  * Ns_Configwide, Ns_ConfigWideRange, Ns_ConfigMemUnitRange --
  *
- *      Return a wide integer config file value, or the default if not
+ *      Return a wide integer configuration file value, or the default if not
  *      found. The returned value will be between the given minValue and
  *      maxValue.
  *
@@ -483,7 +483,7 @@ Ns_ConfigTimeUnitRange(const char *section, const char *key,
  *
  * Ns_ConfigGetValue --
  *
- *      Return a config file value for a given key
+ *      Return a configuration file value for a given key
  *
  * Results:
  *      char ptr to a value
@@ -669,11 +669,11 @@ Ns_ConfigGetBool(const char *section, const char *key, bool *valuePtr)
  *
  * Ns_ConfigGetPath --
  *
- *      Get the full name of a config file section if it exists.
+ *      Get the full name of a configuration file section if it exists.
  *
  * Results:
  *      A pointer to an ASCIIZ string of the full pathname, or NULL
- *      if that path is not in the config file.
+ *      if that path is not in the configuration file.
  *
  * Side effects:
  *      None.
@@ -846,7 +846,7 @@ Ns_GetVersion(int *majorV, int *minorV, int *patchLevelV, int *type)
  *
  * NsConfigRead --
  *
- *      Read a config file at startup.
+ *      Read a configuration file at startup.
  *
  * Results:
  *      Pointer to the config buffer in an ns_malloc'ed string.
@@ -867,7 +867,7 @@ NsConfigRead(const char *file)
     NS_NONNULL_ASSERT(file != NULL);
 
     /*
-     * Open the channel for reading the config file
+     * Open the channel for reading the configuration file
      */
     chan = Tcl_OpenFileChannel(NULL, file, "r", 0);
     if (chan == NULL) {
@@ -898,7 +898,7 @@ NsConfigRead(const char *file)
         Tcl_DecrRefCount(buf);
     }
     if (conf == NULL) {
-        Ns_Fatal("config: can't %s config file '%s': '%s'",
+        Ns_Fatal("config: can't %s configuration file '%s': '%s'",
                  call, file, strerror(Tcl_GetErrno()));
     }
 

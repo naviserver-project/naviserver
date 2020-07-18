@@ -116,10 +116,10 @@ Ns_InfoServerVersion(void)
  *
  * Ns_InfoConfigFile --
  *
- *      Returns path to config file.
+ *      Returns path to configuration file.
  *
  * Results:
- *      Path to config file.
+ *      Path to configuration file.
  *
  * Side effects:
  *      None.

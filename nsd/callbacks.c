@@ -89,7 +89,7 @@ static Ns_Thread shutdownThread   = NULL;
  * Ns_RegisterAtPreStartup --
  *
  *      Register a callback to run at the pre-startup stage, at which
- *      point the config file has been parsed and modules loaded.
+ *      point the configuration file has been parsed and modules loaded.
  *      Callbacks will run in FIFO order.
  *
  * Results:

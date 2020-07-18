@@ -1085,7 +1085,7 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
     Ns_Log(Notice, "=== load certificate from <%s>", path);
 
     if (cert == NULL) {
-        Ns_Log(Error, "nsssl: certificate parameter must be specified in the config file under %s", path);
+        Ns_Log(Error, "nsssl: certificate parameter must be specified in the configuration file under %s", path);
         result = NS_ERROR;
     } else {
         const char *ciphers, *ciphersuites, *protocols;
