@@ -195,7 +195,7 @@ NsTclNsvGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                     Tcl_SetObjResult(interp, resultObj);
                 } else {
                     Ns_TclPrintfResult(interp, "no such key: %s", keyString);
-                    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NSV", "KEY", keyString, NULL);
+                    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NSV", "KEY", keyString, (char *)0L);
                     result = TCL_ERROR;
                 }
             } else /* (objc == 4) */ {
@@ -410,7 +410,7 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             UnlockArray(arrayPtr);
             if (hPtr == NULL) {
                 Ns_TclPrintfResult(interp, "no such key: %s", keyString);
-                Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NSV", "KEY", keyString, NULL);
+                Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NSV", "KEY", keyString, (char *)0L);
                 result = TCL_ERROR;
             }
         }
@@ -628,7 +628,7 @@ NsTclNsvUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
             if (Unset(arrayPtr, keyString) != NS_OK && keyString != NULL) {
                 Ns_TclPrintfResult(interp, "no such key: %s", keyString);
-                Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NSV", "KEY", keyString, NULL);
+                Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NSV", "KEY", keyString, (char *)0L);
                 result = TCL_ERROR;
             }
 
@@ -925,7 +925,7 @@ GetArrayAndKey(Tcl_Interp *interp, Tcl_Obj *arrayObj, const char *keyString,
         hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, keyString, NULL);
         if (unlikely(hPtr == NULL)) {
             Ns_TclPrintfResult(interp, "no such key: %s", keyString);
-            Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NSV", "KEY", keyString, NULL);
+            Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NSV", "KEY", keyString, (char *)0L);
             result = TCL_ERROR;
         } else {
             obj = Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1);
@@ -1203,7 +1203,7 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                                     Ns_TclPrintfResult(interp, "key \"%s\" not known in dictionary",
                                                        Tcl_GetString(dictKeyObj));
                                     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
-                                                     Tcl_GetString(dictKeyObj), NULL);
+                                                     Tcl_GetString(dictKeyObj), (char *)0L);
                                     result = TCL_ERROR;
                                 }
                                 Tcl_DecrRefCount(dictObj);
@@ -2058,7 +2058,7 @@ LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, bool create, NS_RW rw)
      */
     if (arrayPtr == NULL && !create) {
         Ns_TclPrintfResult(interp, "no such array: %s", arrayName);
-        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NSV", "ARRAY", arrayName, NULL);
+        Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NSV", "ARRAY", arrayName, (char *)0L);
     }
 
     return arrayPtr;
