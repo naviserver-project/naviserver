@@ -172,7 +172,7 @@ struct nsconf {
 
     /*
      * The following table holds config section sets from
-     * the config file.
+     * the configuration file.
      */
 
     Tcl_HashTable sections;
@@ -1585,6 +1585,8 @@ NS_EXTERN Tcl_Interp *NsTclAllocateInterp(NsServer *servPtr) NS_GNUC_RETURNS_NON
 NS_EXTERN NsInterp *NsGetInterpData(Tcl_Interp *interp)  NS_GNUC_NONNULL(1);
 NS_EXTERN void NsFreeConnInterp(Conn *connPtr)           NS_GNUC_NONNULL(1);
 
+NS_EXTERN void NsIdleCallback(NsServer *servPtr)        NS_GNUC_NONNULL(1);
+
 
 NS_EXTERN struct Bucket *NsTclCreateBuckets(const char *server, int nbuckets) NS_GNUC_NONNULL(1);
 
@@ -1638,7 +1640,7 @@ NS_EXTERN const char * NsConnIdStr(const Ns_Conn *conn)
 NS_EXTERN void NsConnTimeStatsUpdate(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN void NsConnTimeStatsFinalize(Ns_Conn *conn)
+NS_EXTERN void NsConnTimeStatsFinalize(const Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode NsConnRequire(Tcl_Interp *interp, unsigned int flags, Ns_Conn **connPtr)

@@ -279,11 +279,11 @@ Ns_SockGetPort(const Ns_Sock *sock)
  *----------------------------------------------------------------------
  */
 bool
-Ns_SockInErrorState(Ns_Sock *sock)
+Ns_SockInErrorState(const Ns_Sock *sock)
 {
     NS_NONNULL_ASSERT(sock != NULL);
 
-    return (((Sock *)sock)->recvSockState == NS_SOCK_EXCEPTION);
+    return (((const Sock *)sock)->recvSockState == NS_SOCK_EXCEPTION);
 }
 
 
@@ -711,14 +711,14 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
                    " %.4x received %.4x", sock, requestedEvents, pfd.revents);
             result = NS_ERROR;
         } else {
-            int       err = 0;
-            socklen_t len = sizeof(errno);
+            int       err = 0, sockerrno = 0;
+            socklen_t len = sizeof(sockerrno);
 
-            err = getsockopt(sock, SOL_SOCKET, SO_ERROR, (void*)&errno, &len);
-            if (err == -1 || errno != 0) {
+            err = getsockopt(sock, SOL_SOCKET, SO_ERROR, (void*)&sockerrno, &len);
+            if (err == -1 || sockerrno != 0) {
                 Ns_Log(Debug, "Ns_SockTimedWait on sock %d received events"
                        " %.4x, errno %d <%s>",
-                       sock, pfd.revents, errno, strerror(errno));
+                       sock, pfd.revents, sockerrno, strerror(sockerrno));
 
                 result = NS_ERROR;
             }

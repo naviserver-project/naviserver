@@ -1145,6 +1145,7 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                              * one key
                              */
                             dictKeyObj = objv[objc-1];
+                            dictValueObj = NULL;
                             result = Tcl_DictObjGet(interp, dictObj, dictKeyObj, &dictValueObj);
 
                         } else {

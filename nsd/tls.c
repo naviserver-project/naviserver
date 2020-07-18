@@ -97,10 +97,10 @@ static Ns_ReturnCode WaitFor(NS_SOCKET sock, unsigned int st);
 static int OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static OCSP_CERTID *OCSP_get_cert_id(SSL *ssl, X509 *cert)
+static OCSP_CERTID *OCSP_get_cert_id(const SSL *ssl, X509 *cert)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static int OCSP_computeResponse(SSL *ssl, SSLCertStatusArg *srctx, OCSP_RESPONSE **resp)
+static int OCSP_computeResponse(SSL *ssl, const SSLCertStatusArg *srctx, OCSP_RESPONSE **resp)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static OCSP_RESPONSE *OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
@@ -363,7 +363,7 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
  *----------------------------------------------------------------------
  */
 static OCSP_CERTID *
-OCSP_get_cert_id(SSL *ssl, X509 *cert)
+OCSP_get_cert_id(const SSL *ssl, X509 *cert)
 {
     X509_STORE_CTX *store_ctx;
     OCSP_CERTID    *result = NULL;
@@ -513,7 +513,7 @@ OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
  *----------------------------------------------------------------------
  */
 static int
-OCSP_computeResponse(SSL *ssl, SSLCertStatusArg *srctx, OCSP_RESPONSE **resp)
+OCSP_computeResponse(SSL *ssl, const SSLCertStatusArg *srctx, OCSP_RESPONSE **resp)
 {
     X509           *cert = NULL;
     OCSP_CERTID    *id = NULL;

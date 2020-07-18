@@ -308,7 +308,7 @@ static Tcl_InterpDeleteProc DeleteData;
 
 static Ns_ShutdownProc Shutdown;
 
-static Pool*  GetPool(const char *poolName, InterpData *idataPtr) NS_GNUC_NONNULL(1);
+static Pool*  GetPool(const char *poolName, const InterpData *idataPtr) NS_GNUC_NONNULL(1);
 static void   FreePool(Pool *poolPtr) NS_GNUC_NONNULL(1);
 
 static Proxy* CreateProxy(Pool *poolPtr) NS_GNUC_NONNULL(1);
@@ -317,28 +317,28 @@ static Err    PopProxy(Pool *poolPtr, Proxy **proxyPtrPtr, int nwant, Ns_Time *t
 static void   PushProxy(Proxy *proxyPtr) NS_GNUC_NONNULL(1);
 static Proxy* GetProxy(const char *proxyId, InterpData *idataPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static int    Eval(Tcl_Interp *interp, Proxy *proxyPtr, const char *script, Ns_Time *timeoutPtr)
+static int    Eval(Tcl_Interp *interp, Proxy *proxyPtr, const char *script, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static Err    Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static Err    Wait(Tcl_Interp *interp, Proxy *proxyPtr, Ns_Time *timeoutPtr)
+static Err    Wait(Tcl_Interp *interp, Proxy *proxyPtr, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static Err    Recv(Tcl_Interp *interp, Proxy *proxyPtr, int *resultPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static void   GetStats(Proxy *proxyPtr)  NS_GNUC_NONNULL(1);
+static void   GetStats(const Proxy *proxyPtr)  NS_GNUC_NONNULL(1);
 
 static Err    CheckProxy(Tcl_Interp *interp, Proxy *proxyPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static int    ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void   CloseProxy(Proxy *proxyPtr) NS_GNUC_NONNULL(1);
-static int    CloseSlaveOfProxy(Proxy *proxyPtr, const char *proxyId, Ns_Time *timePtr)
+static int    CloseSlaveOfProxy(Proxy *proxyPtr, const char *proxyId, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
 
 static void   FreeProxy(Proxy *proxyPtr) NS_GNUC_NONNULL(1);
 static void   ResetProxy(Proxy *proxyPtr) NS_GNUC_NONNULL(1);
 static void   ProxyError(Tcl_Interp *interp, Err err) NS_GNUC_NONNULL(1);
-static void   FmtActiveProxy(Tcl_Interp *interp, Proxy *proxyPtr)
+static void   FmtActiveProxy(Tcl_Interp *interp, const Proxy *proxyPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void   ReleaseHandles(Tcl_Interp *interp, InterpData *idataPtr)
@@ -348,15 +348,15 @@ static Slave* ExecSlave(Tcl_Interp *interp, Proxy *proxyPtr)
 static Err    CreateSlave(Tcl_Interp *interp, Proxy *proxyPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static void   SetExpire(Slave *slavePtr, Ns_Time *timePtr)
+static void   SetExpire(Slave *slavePtr, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
-static bool   SendBuf(Slave *slavePtr, Ns_Time *timePtr, Tcl_DString *dsPtr)
+static bool   SendBuf(const Slave *slavePtr, const Ns_Time *timePtr, const Tcl_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
-static bool   RecvBuf(Slave *slavePtr, Ns_Time *timePtr, Tcl_DString *dsPtr)
+static bool   RecvBuf(const Slave *slavePtr, const Ns_Time *timePtr, Tcl_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 static int    WaitFd(int fd, short events, long ms);
 
-static int    Import(Tcl_Interp *interp, Tcl_DString *dsPtr, int *resultPtr)
+static int    Import(Tcl_Interp *interp, const Tcl_DString *dsPtr, int *resultPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 static void   Export(Tcl_Interp *interp, int code, Tcl_DString *dsPtr)
     NS_GNUC_NONNULL(3);
@@ -366,10 +366,10 @@ static void   UpdateIov(struct iovec *iov, size_t n)
 static void   SetOpt(const char *str, char const **optPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void   ReaperThread(void *UNUSED(arg));
-static void   CloseSlave(Slave *slavePtr, Ns_Time *timePtr)
+static void   CloseSlave(Slave *slavePtr, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
 static void   ReapProxies(void);
-static long   GetTimeDiff(Ns_Time *timePtr)
+static long   GetTimeDiff(const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1);
 
 static void   AppendObj(Tcl_Obj *listObj, const char *flag, Tcl_Obj *obj)
@@ -994,7 +994,7 @@ ExecSlave(Tcl_Interp *interp, Proxy *proxyPtr)
  */
 
 static void
-SetExpire(Slave *slavePtr, Ns_Time *timePtr)
+SetExpire(Slave *slavePtr, const Ns_Time *timePtr)
 {
     NS_NONNULL_ASSERT(slavePtr != NULL);
 
@@ -1030,7 +1030,7 @@ SetExpire(Slave *slavePtr, Ns_Time *timePtr)
  */
 
 static int
-Eval(Tcl_Interp *interp, Proxy *proxyPtr, const char *script, Ns_Time *timeoutPtr)
+Eval(Tcl_Interp *interp, Proxy *proxyPtr, const char *script, const Ns_Time *timeoutPtr)
 {
     Err     err;
     int     status = TCL_ERROR;
@@ -1085,7 +1085,7 @@ Eval(Tcl_Interp *interp, Proxy *proxyPtr, const char *script, Ns_Time *timeoutPt
  *----------------------------------------------------------------------
  */
 static void
-GetStats(Proxy *proxyPtr)
+GetStats(const Proxy *proxyPtr)
 {
     Ns_Time now, runTimeSpan;
 
@@ -1200,7 +1200,7 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script)
  */
 
 static Err
-Wait(Tcl_Interp *interp, Proxy *proxyPtr, Ns_Time *timeoutPtr)
+Wait(Tcl_Interp *interp, Proxy *proxyPtr, const Ns_Time *timeoutPtr)
 {
     Err err = ENone;
 
@@ -1310,7 +1310,7 @@ Recv(Tcl_Interp *interp, Proxy *proxyPtr, int *resultPtr)
  */
 
 static bool
-SendBuf(Slave *slavePtr, Ns_Time *timePtr, Tcl_DString *dsPtr)
+SendBuf(const Slave *slavePtr, const Ns_Time *timePtr, const Tcl_DString *dsPtr)
 {
     ssize_t      n;
     uint32       ulen;
@@ -1383,7 +1383,7 @@ SendBuf(Slave *slavePtr, Ns_Time *timePtr, Tcl_DString *dsPtr)
  */
 
 static bool
-RecvBuf(Slave *slavePtr, Ns_Time *timePtr, Tcl_DString *dsPtr)
+RecvBuf(const Slave *slavePtr, const Ns_Time *timePtr, Tcl_DString *dsPtr)
 {
     uint32       ulen = 0u;
     ssize_t      n;
@@ -1635,7 +1635,7 @@ Export(Tcl_Interp *interp, int code, Tcl_DString *dsPtr)
  */
 
 static int
-Import(Tcl_Interp *interp, Tcl_DString *dsPtr, int *resultPtr)
+Import(Tcl_Interp *interp, const Tcl_DString *dsPtr, int *resultPtr)
 {
     int result = TCL_OK;
 
@@ -2651,7 +2651,7 @@ PopProxy(Pool *poolPtr, Proxy **proxyPtrPtr, int nwant, Ns_Time *timePtr)
  */
 
 static void
-FmtActiveProxy(Tcl_Interp *interp, Proxy *proxyPtr)
+FmtActiveProxy(Tcl_Interp *interp, const Proxy *proxyPtr)
 {
     Tcl_DString ds;
 
@@ -2692,7 +2692,7 @@ FmtActiveProxy(Tcl_Interp *interp, Proxy *proxyPtr)
  */
 
 static Pool*
-GetPool(const char *poolName, InterpData *idataPtr)
+GetPool(const char *poolName, const InterpData *idataPtr)
 {
     Tcl_HashEntry *hPtr;
     Pool          *poolPtr;
@@ -2712,7 +2712,7 @@ GetPool(const char *poolName, InterpData *idataPtr)
         poolPtr = ns_calloc(1u, sizeof(Pool));
         Tcl_SetHashValue(hPtr, poolPtr);
         poolPtr->name = Tcl_GetHashKey(&pools, hPtr);
-        if (idataPtr && idataPtr->server && idataPtr->module) {
+        if (idataPtr != NULL && idataPtr->server != NULL && idataPtr->module != NULL) {
           path = Ns_ConfigGetPath(idataPtr->server, idataPtr->module, (char *)0L);
         }
         if (*path != '\0' && (exec = Ns_ConfigGetValue(path, "exec")) != NULL) {
@@ -3017,7 +3017,7 @@ ResetProxy(Proxy *proxyPtr)
  */
 
 static void
-CloseSlave(Slave *slavePtr, Ns_Time *timePtr)
+CloseSlave(Slave *slavePtr, const Ns_Time *timePtr)
 {
     NS_NONNULL_ASSERT(slavePtr != NULL);
 
@@ -3055,7 +3055,7 @@ CloseSlave(Slave *slavePtr, Ns_Time *timePtr)
 
 
 static int
-CloseSlaveOfProxy(Proxy *proxyPtr, const char *proxyId, Ns_Time *timePtr)
+CloseSlaveOfProxy(Proxy *proxyPtr, const char *proxyId, const Ns_Time *timePtr)
 {
     int reap = 0;
 
@@ -3790,7 +3790,7 @@ ReapProxies(void)
  */
 
 static long
-GetTimeDiff(Ns_Time *timePtr)
+GetTimeDiff(const Ns_Time *timePtr)
 {
     Ns_Time now, diff;
 

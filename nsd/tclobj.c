@@ -125,7 +125,7 @@ NsTclInitAddrType(void)
  */
 
 void
-Ns_TclResetObjType(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr)
+Ns_TclResetObjType(Tcl_Obj *objPtr, const Tcl_ObjType *newTypePtr)
 {
     const Tcl_ObjType *typePtr;
 
@@ -157,7 +157,7 @@ Ns_TclResetObjType(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr)
  */
 
 void
-Ns_TclSetTwoPtrValue(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr,
+Ns_TclSetTwoPtrValue(Tcl_Obj *objPtr, const Tcl_ObjType *newTypePtr,
                      void *ptr1, void *ptr2)
 {
     NS_NONNULL_ASSERT(objPtr != NULL);
@@ -186,7 +186,7 @@ Ns_TclSetTwoPtrValue(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr,
  */
 
 void
-Ns_TclSetOtherValuePtr(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr, void *value)
+Ns_TclSetOtherValuePtr(Tcl_Obj *objPtr, const Tcl_ObjType *newTypePtr, void *value)
 {
     NS_NONNULL_ASSERT(objPtr != NULL);
     NS_NONNULL_ASSERT(newTypePtr != NULL);

@@ -120,7 +120,7 @@ GetTls(void)
  */
 
 char *
-ns_inet_ntoa(struct sockaddr *saPtr)
+ns_inet_ntoa(const struct sockaddr *saPtr)
 {
     Tls *tlsPtr = GetTls();
     union {
@@ -174,7 +174,7 @@ ns_readdir(DIR *dir)
 }
 #else
 struct dirent *
-ns_readdir(DIR * dir)
+ns_readdir(DIR *dir)
 {
     struct dirent *ent;
     Tls *tlsPtr = GetTls();

@@ -207,7 +207,8 @@ typedef enum {
     NS_TCL_TRACE_ALLOCATE     = 0x04u, /* Interp allocated, possibly from thread cache */
     NS_TCL_TRACE_DEALLOCATE   = 0x08u, /* Interp de-allocated, returned to thread-cache */
     NS_TCL_TRACE_GETCONN      = 0x10u, /* Interp allocated for connection processing (filter, proc) */
-    NS_TCL_TRACE_FREECONN     = 0x20u  /* Interp finished connection processing */
+    NS_TCL_TRACE_FREECONN     = 0x20u, /* Interp finished connection processing */
+    NS_TCL_TRACE_IDLE         = 0x40u  /* Interp (connthread) idle */
 } Ns_TclTraceType;
 
 /*
@@ -686,7 +687,7 @@ typedef Ns_ReturnCode (Ns_FilterProc)
     (const void *arg, Ns_Conn *conn, Ns_FilterType why);
 
 typedef Ns_ReturnCode (Ns_LogFilter)
-    (void *arg, Ns_LogSeverity severity, const Ns_Time *stamp, const char *msg, size_t len)
+    (const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp, const char *msg, size_t len)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 typedef Ns_ReturnCode (Ns_UrlToFileProc)
@@ -1701,16 +1702,16 @@ Ns_TaskFree(Ns_Task *task)
  */
 
 NS_EXTERN void
-Ns_TclResetObjType(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr)
+Ns_TclResetObjType(Tcl_Obj *objPtr, const Tcl_ObjType *newTypePtr)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_TclSetTwoPtrValue(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr,
+Ns_TclSetTwoPtrValue(Tcl_Obj *objPtr, const Tcl_ObjType *newTypePtr,
                      void *ptr1, void *ptr2)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_TclSetOtherValuePtr(Tcl_Obj *objPtr, Tcl_ObjType *newTypePtr, void *value)
+Ns_TclSetOtherValuePtr(Tcl_Obj *objPtr, const Tcl_ObjType *newTypePtr, void *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
@@ -1767,10 +1768,10 @@ NS_EXTERN Ns_ObjvProc Ns_ObjvWideInt;
 NS_EXTERN int Ns_TclGetMemUnitFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_WideInt *memUnitPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-NS_EXTERN int Ns_CheckWideRange(Tcl_Interp *interp, const char *name, Ns_ObjvValueRange *r, Tcl_WideInt value)
+NS_EXTERN int Ns_CheckWideRange(Tcl_Interp *interp, const char *name, const Ns_ObjvValueRange *r, Tcl_WideInt value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN int Ns_CheckTimeRange(Tcl_Interp *interp, const char *name, Ns_ObjvTimeRange *r, Ns_Time *value)
+NS_EXTERN int Ns_CheckTimeRange(Tcl_Interp *interp, const char *name, const Ns_ObjvTimeRange *r, Ns_Time *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 NS_EXTERN int
@@ -2491,7 +2492,7 @@ Ns_ScheduleWeekly(Ns_SchedProc *proc, void *clientData, unsigned int flags,
 
 NS_EXTERN int
 Ns_ScheduleProcEx(Ns_SchedProc *proc, void *clientData, unsigned int flags,
-                  Ns_Time *interval, Ns_SchedProc *cleanupProc)
+                  const Ns_Time *interval, Ns_SchedProc *cleanupProc)
     NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(4);
 
 NS_EXTERN void
@@ -2775,7 +2776,7 @@ Ns_SockSetReceiveState(Ns_Sock *sock, Ns_SockState sockState)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN bool
-Ns_SockInErrorState(Ns_Sock *sock)
+Ns_SockInErrorState(const Ns_Sock *sock) NS_GNUC_PURE
     NS_GNUC_NONNULL(1);
 
 unsigned short

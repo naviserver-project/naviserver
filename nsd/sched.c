@@ -308,7 +308,7 @@ Ns_ScheduleWeekly(Ns_SchedProc *proc, void *clientData, unsigned int flags,
 
 int
 Ns_ScheduleProcEx(Ns_SchedProc *proc, void *clientData, unsigned int flags,
-                  Ns_Time *interval, Ns_SchedProc *cleanupProc)
+                  const Ns_Time *interval, Ns_SchedProc *cleanupProc)
 {
     int id;
 

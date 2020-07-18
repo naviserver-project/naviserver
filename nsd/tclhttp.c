@@ -160,13 +160,13 @@ static Ns_ReturnCode HttpCheckSpool(
 ) NS_GNUC_NONNULL(1);
 
 static ssize_t HttpTaskSend(
-    NsHttpTask *httpPtr,
+    const NsHttpTask *httpPtr,
     const void *buffer,
     size_t length
 ) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static ssize_t HttpTaskRecv(
-    NsHttpTask *httpPtr,
+    const NsHttpTask *httpPtr,
     char *buffer,
     size_t length,
     Ns_SockState *statePtr
@@ -2855,7 +2855,7 @@ HttpAddInfo(
 
 static ssize_t
 HttpTaskSend(
-    NsHttpTask *httpPtr,
+    const NsHttpTask *httpPtr,
     const void *buffer,
     size_t length
 ) {
@@ -2904,7 +2904,7 @@ HttpTaskSend(
 
 static ssize_t
 HttpTaskRecv(
-    NsHttpTask *httpPtr,
+    const NsHttpTask *httpPtr,
     char *buffer,
     size_t length,
     Ns_SockState *statePtr

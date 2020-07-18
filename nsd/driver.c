@@ -229,7 +229,7 @@ static Tcl_ObjCmdProc AsyncLogfileOpenObjCmd;
 static Tcl_ObjCmdProc AsyncLogfileCloseObjCmd;
 
 static Ns_ReturnCode DriverWriterFromObj(Tcl_Interp *interp, Tcl_Obj *driverObj,
-                                         Ns_Conn *conn, DrvWriter **wrPtrPtr)
+                                         const Ns_Conn *conn, DrvWriter **wrPtrPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 static NS_SOCKET DriverListen(Driver *drvPtr, const char *bindaddr)
@@ -306,9 +306,9 @@ static SpoolerState WriterReadFromSpool(WriterSock *curPtr)
 static SpoolerState WriterSend(WriterSock *curPtr, int *err)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static Ns_ReturnCode WriterSetupStreamingMode(Conn *connPtr, struct iovec *bufs, int nbufs, int *fdPtr)
+static Ns_ReturnCode WriterSetupStreamingMode(Conn *connPtr, const struct iovec *bufs, int nbufs, int *fdPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
-static void WriterSockFileVecCleanup(WriterSock *wrSockPtr)
+static void WriterSockFileVecCleanup(const WriterSock *wrSockPtr)
     NS_GNUC_NONNULL(1);
 static int WriterGetMemunitFromDict(Tcl_Interp *interp, Tcl_Obj *dictObj, Tcl_Obj *keyObj, Ns_ObjvValueRange *rangePtr,
                                     Tcl_WideInt *valuePtr)
@@ -4946,7 +4946,7 @@ void NsWriterUnlock(void) {
  *----------------------------------------------------------------------
  */
 static void
-WriterSockFileVecCleanup(WriterSock *wrSockPtr) {
+WriterSockFileVecCleanup(const WriterSock *wrSockPtr) {
 
     NS_NONNULL_ASSERT(wrSockPtr != NULL);
 
@@ -6021,7 +6021,7 @@ NsWriterFinish(NsWriterSock *wrSockPtr) {
  *----------------------------------------------------------------------
  */
 Ns_ReturnCode
-WriterSetupStreamingMode(Conn *connPtr, struct iovec *bufs, int nbufs, int *fdPtr)
+WriterSetupStreamingMode(Conn *connPtr, const struct iovec *bufs, int nbufs, int *fdPtr)
 {
     bool           first;
     size_t         wrote = 0u;
@@ -6549,7 +6549,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
  *----------------------------------------------------------------------
  */
 static Ns_ReturnCode
-DriverWriterFromObj( Tcl_Interp *interp, Tcl_Obj *driverObj, Ns_Conn *conn, DrvWriter **wrPtrPtr) {
+DriverWriterFromObj(Tcl_Interp *interp, Tcl_Obj *driverObj, const Ns_Conn *conn, DrvWriter **wrPtrPtr) {
     Driver       *drvPtr;
     const char   *driverName = NULL;
     int           driverNameLen = 0;

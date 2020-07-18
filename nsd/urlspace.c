@@ -295,7 +295,7 @@ typedef struct UrlSpaceContextSpec {
 static void  NodeDestroy(Node *nodePtr)
     NS_GNUC_NONNULL(1);
 
-static void ContextFilterDestroy(Ns_Index* indexPtr)
+static void ContextFilterDestroy(const Ns_Index* indexPtr)
     NS_GNUC_NONNULL(1);
 
 static void  BranchDestroy(Branch *branchPtr)
@@ -1109,7 +1109,7 @@ NodeDestroy(Node *nodePtr)
     ns_free(nodePtr);
 }
 
-static void ContextFilterDestroy(Ns_Index* indexPtr)
+static void ContextFilterDestroy(const Ns_Index* indexPtr)
 {
     size_t i;
 

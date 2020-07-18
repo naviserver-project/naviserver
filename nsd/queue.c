@@ -2100,6 +2100,7 @@ NsConnThread(void *arg)
                          * We have a timeout, but we should not reduce the
                          * number of threads below min-threads.
                          */
+                        NsIdleCallback(servPtr);
                         continue;
 
                     } else {

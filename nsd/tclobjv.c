@@ -54,7 +54,7 @@ static int SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
 static void WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec,
                          Tcl_Interp *interp, int objc, Tcl_Obj *const* objv);
 
-static int GetOptIndexObjvSpec(Tcl_Obj *obj, Ns_ObjvSpec *tablePtr, int *idxPtr)
+static int GetOptIndexObjvSpec(Tcl_Obj *obj, const Ns_ObjvSpec *tablePtr, int *idxPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 static int GetOptIndexSubcmdSpec(Tcl_Interp *interp, Tcl_Obj *obj, const char *msg, const Ns_SubCmdSpec *tablePtr, int *idxPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
@@ -65,7 +65,7 @@ static void UpdateStringOfMemUnit(Tcl_Obj *objPtr)
 static int SetMemUnitFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static void AppendRange(Ns_DString *dsPtr, Ns_ObjvValueRange *r)
+static void AppendRange(Ns_DString *dsPtr, const Ns_ObjvValueRange *r)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
@@ -141,7 +141,7 @@ NsTclInitSpecType(void)
  *----------------------------------------------------------------------
  */
 static int
-GetOptIndexObjvSpec(Tcl_Obj *obj, Ns_ObjvSpec *tablePtr, int *idxPtr)
+GetOptIndexObjvSpec(Tcl_Obj *obj, const Ns_ObjvSpec *tablePtr, int *idxPtr)
 {
     const char *key;
     int         result = TCL_ERROR;
@@ -319,7 +319,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
  *----------------------------------------------------------------------
  */
 int
-Ns_CheckWideRange(Tcl_Interp *interp, const char *name, Ns_ObjvValueRange *r, Tcl_WideInt value)
+Ns_CheckWideRange(Tcl_Interp *interp, const char *name, const Ns_ObjvValueRange *r, Tcl_WideInt value)
 {
     int result;
 
@@ -363,7 +363,7 @@ Ns_CheckWideRange(Tcl_Interp *interp, const char *name, Ns_ObjvValueRange *r, Tc
  *----------------------------------------------------------------------
  */
 int
-Ns_CheckTimeRange(Tcl_Interp *interp, const char *name, Ns_ObjvTimeRange *r, Ns_Time *value)
+Ns_CheckTimeRange(Tcl_Interp *interp, const char *name, const Ns_ObjvTimeRange *r, Ns_Time *value)
 {
     int result;
     Tcl_DString ds0;
@@ -1795,7 +1795,7 @@ SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
  *----------------------------------------------------------------------
  */
 
-static void AppendRange(Ns_DString *dsPtr, Ns_ObjvValueRange *r)
+static void AppendRange(Ns_DString *dsPtr, const Ns_ObjvValueRange *r)
 {
     if (r->minValue == LLONG_MIN) {
         Tcl_DStringAppend(dsPtr, "[MIN,", 5);

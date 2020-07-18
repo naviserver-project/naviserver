@@ -1071,7 +1071,7 @@ NS_EXTERN struct tm *ns_gmtime(const time_t *timep)      NS_GNUC_NONNULL(1);
 NS_EXTERN char *ns_ctime(const time_t *timep)            NS_GNUC_NONNULL(1);
 NS_EXTERN char *ns_asctime(const struct tm *tmPtr)       NS_GNUC_NONNULL(1);
 NS_EXTERN char *ns_strtok(char *s1, const char *s2)      NS_GNUC_NONNULL(2);
-NS_EXTERN char *ns_inet_ntoa(struct sockaddr *saPtr)     NS_GNUC_NONNULL(1);
+NS_EXTERN char *ns_inet_ntoa(const struct sockaddr *saPtr) NS_GNUC_NONNULL(1);
 
 /*
  * sema.c:
@@ -1130,8 +1130,8 @@ NS_EXTERN time_t Ns_TimeToMilliseconds(const Ns_Time *timePtr)  NS_GNUC_NONNULL(
  */
 
 NS_EXTERN void Ns_TlsAlloc(Ns_Tls *tlsPtr, Ns_TlsCleanup *cleanup) NS_GNUC_NONNULL(1);
-NS_EXTERN void Ns_TlsSet(Ns_Tls *tlsPtr, void *value) NS_GNUC_NONNULL(1);
-NS_EXTERN void *Ns_TlsGet(Ns_Tls *tlsPtr) NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_TlsSet(const Ns_Tls *tlsPtr, void *value) NS_GNUC_NONNULL(1);
+NS_EXTERN void *Ns_TlsGet(const Ns_Tls *tlsPtr) NS_GNUC_NONNULL(1);
 
 /*
  * winthread.c:

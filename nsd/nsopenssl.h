@@ -90,7 +90,7 @@
 # include <openssl/ssl.h>
 # include <openssl/err.h>
 
-typedef struct {
+typedef struct NsSSLConfig {
     SSL_CTX  *ctx;
     Ns_Mutex  lock;
     int       verify;

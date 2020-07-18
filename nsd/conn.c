@@ -1176,7 +1176,7 @@ NsConnTimeStatsUpdate(Ns_Conn *conn) {
  *----------------------------------------------------------------------
  */
 void
-NsConnTimeStatsFinalize(Ns_Conn *conn) {
+NsConnTimeStatsFinalize(const Ns_Conn *conn) {
     const Conn *connPtr;
     ConnPool   *poolPtr;
     Ns_Time     now, diffTimeSpan;

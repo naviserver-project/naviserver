@@ -104,7 +104,7 @@ Ns_TlsAlloc(Ns_Tls *keyPtr, Ns_TlsCleanup *cleanup)
  */
 
 void
-Ns_TlsSet(Ns_Tls *keyPtr, void *value)
+Ns_TlsSet(const Ns_Tls *keyPtr, void *value)
 {
     uintptr_t   key;
 
@@ -140,7 +140,7 @@ Ns_TlsSet(Ns_Tls *keyPtr, void *value)
  */
 
 void *
-Ns_TlsGet(Ns_Tls *keyPtr)
+Ns_TlsGet(const Ns_Tls *keyPtr)
 {
     uintptr_t  key;
     void      *result;

@@ -677,7 +677,7 @@ Ns_GetUrlEncoding(const char *charset)
                  return servPtr->encoding.urlEncoding;
 
                However, "server" is not available here.  Reading
-               values from the config file would require "server" as
+               values from the configuration file would require "server" as
                well.
 
                Unfortunately, the general default for encoding opens a

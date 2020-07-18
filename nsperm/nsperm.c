@@ -130,10 +130,10 @@ static bool ValidateUserAddr(User * userPtr, const char *peer);
 static Ns_RequestAuthorizeProc AuthProc;
 static void WalkCallback(Tcl_DString * dsPtr, const void *arg);
 static int CreateNonce(const char *privatekey, char **nonce, const char *uri);
-static int CreateHeader(Server * servPtr, Ns_Conn *conn, bool stale);
+static int CreateHeader(const Server * servPtr, const Ns_Conn *conn, bool stale);
 /*static int CheckNonce(const char *privatekey, char *nonce, char *uri, int timeout);*/
 
-static void FreeUserInfo(User *userPtr, char *name)
+static void FreeUserInfo(User *userPtr, const char *name)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
@@ -719,7 +719,7 @@ ValidateUserAddr(User *userPtr, const char *peer)
  */
 
 static void
-FreeUserInfo(User *userPtr, char *name)
+FreeUserInfo(User *userPtr, const char *name)
 {
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
@@ -1732,7 +1732,7 @@ static int CheckNonce(const char *privatekey, char *nonce, char *uri, int timeou
  *----------------------------------------------------------------------
 */
 
-static int CreateHeader(Server *servPtr, Ns_Conn *conn, bool stale)
+static int CreateHeader(const Server *servPtr, const Ns_Conn *conn, bool stale)
 {
     Ns_DString  ds;
     char       *nonce = 0;

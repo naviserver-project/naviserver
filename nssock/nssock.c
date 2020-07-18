@@ -59,7 +59,7 @@ static Ns_DriverKeepProc Keep;
 
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 
-static void SetNodelay(Ns_Driver *driver, NS_SOCKET sock)
+static void SetNodelay(const Ns_Driver *driver, NS_SOCKET sock)
     NS_GNUC_NONNULL(1);
 
 
@@ -341,7 +341,7 @@ SockClose(Ns_Sock *sock)
 
 
 static void
-SetNodelay(Ns_Driver *driver, NS_SOCKET sock)
+SetNodelay(const Ns_Driver *driver, NS_SOCKET sock)
 {
 #ifdef TCP_NODELAY
     Config *cfg;

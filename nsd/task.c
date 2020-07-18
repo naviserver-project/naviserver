@@ -100,14 +100,15 @@ static bool SignalQueue(TaskQueue *queuePtr, Task *taskPtr, unsigned int signal)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void FreeTask(Task *taskPtr)
     NS_GNUC_NONNULL(1);
-static void RunTask(Task *taskPtr, short revents, Ns_Time *nowPtr)
+static void RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+static void ReleaseTask(Task *taskPtr)
+    NS_GNUC_NONNULL(1);
 
 static Ns_ThreadProc TaskThread;
 
 #define Call(tp,w) ((*((tp)->proc))((Ns_Task *)(tp),(tp)->sock,(tp)->arg,(w)))
 #define Reserve(tp) (tp)->refCount++
-#define Release(tp) if (--(tp)->refCount == 0) FreeTask(tp)
 
 /*
  * Static variables defined in this file
@@ -160,6 +161,8 @@ NsInitTask(void)
         initialized = NS_TRUE;
     }
 }
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -353,7 +356,7 @@ Ns_TaskFree(Ns_Task *task)
     taskPtr = (Task *)task;
     sock = taskPtr->sock;
 
-    Release(taskPtr);
+    ReleaseTask(taskPtr);
 
     return sock;
 }
@@ -830,7 +833,7 @@ NsWaitTaskQueueShutdown(const Ns_Time *toPtr)
  */
 
 static void
-RunTask(Task *taskPtr, short revents, Ns_Time *nowPtr)
+RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
 {
     NS_NONNULL_ASSERT(taskPtr != NULL);
 
@@ -1039,7 +1042,7 @@ JoinQueue(TaskQueue *queuePtr)
 /*
  *----------------------------------------------------------------------
  *
- * FreeTask --
+ * FreeTask, ReleaseTask --
  *
  *      Free's task memory.
  *
@@ -1060,6 +1063,15 @@ FreeTask(Task *taskPtr)
 
     return;
 }
+
+static void
+ReleaseTask(Task *taskPtr)
+{
+    if (--taskPtr->refCount == 0) {
+        FreeTask(taskPtr);
+    }
+}
+
 
 
 /*
@@ -1295,11 +1307,11 @@ TaskThread(void *arg)
              * this signal back to the task?
              */
             if (signalFlags == 0u) {
-                Release(taskPtr);
+                ReleaseTask(taskPtr);
             } else {
                 Ns_MutexLock(&queuePtr->lock);
                 taskPtr->signalFlags |= signalFlags;
-                Release(taskPtr);
+                ReleaseTask(taskPtr);
                 Ns_MutexUnlock(&queuePtr->lock);
             }
             taskPtr = nextPtr; /* Advance to the next task in the wait list */
@@ -1386,7 +1398,7 @@ TaskThread(void *arg)
     while (taskPtr != NULL) {
         taskPtr->signalFlags |= TASK_DONE;
         nextPtr = taskPtr->nextWaitPtr;
-        Release(taskPtr); /* This might free the task */
+        ReleaseTask(taskPtr); /* This might free the task */
         taskPtr = nextPtr;
     }
     queuePtr->stopped = NS_TRUE;

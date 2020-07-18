@@ -65,7 +65,8 @@ static void SetEntry(NsInterp *itPtr, TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *
 static bool noGlobChars(const char *pattern)
     NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
-static TclCache *TclCacheCreate(const char *name, size_t maxEntry, size_t maxSize, Ns_Time *timeoutPtr, Ns_Time *expPtr)
+static TclCache *TclCacheCreate(const char *name, size_t maxEntry, size_t maxSize,
+                                const Ns_Time *timeoutPtr, const Ns_Time *expPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 
 static Tcl_Obj*GetCacheNames(NsServer *servPtr, bool withUncommittedEntries)
@@ -151,7 +152,8 @@ GetCacheNames(NsServer *servPtr, bool withUncommittedEntries) {
  */
 
 static TclCache *
-TclCacheCreate(const char *name, size_t maxEntry, size_t maxSize, Ns_Time *timeoutPtr, Ns_Time *expPtr)
+TclCacheCreate(const char *name, size_t maxEntry, size_t maxSize,
+               const Ns_Time *timeoutPtr, const Ns_Time *expPtr)
 {
     TclCache *cPtr;
 

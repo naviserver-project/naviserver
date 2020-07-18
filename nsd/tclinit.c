@@ -80,6 +80,7 @@ static Ns_ObjvTable traceWhen[] = {
     {"delete",     (unsigned int)NS_TCL_TRACE_DELETE},
     {"freeconn",   (unsigned int)NS_TCL_TRACE_FREECONN},
     {"getconn",    (unsigned int)NS_TCL_TRACE_GETCONN},
+    {"idle",       (unsigned int)NS_TCL_TRACE_IDLE},
     {NULL,         (unsigned int)0}
 };
 
@@ -197,7 +198,7 @@ Nsd_Init(Tcl_Interp *interp)
  *
  * NsConfigTcl --
  *
- *      Allow configuration of Tcl-specific parameters via the config file.
+ *      Allow configuration of Tcl-specific parameters via the configuration file.
  *
  * Results:
  *      None.
@@ -563,6 +564,19 @@ Ns_GetConnInterp(Ns_Conn *conn)
         RunTraces(itPtr, NS_TCL_TRACE_GETCONN);
     }
     return connPtr->itPtr->interp;
+}
+
+void
+NsIdleCallback(NsServer *servPtr)
+{
+    NsInterp *itPtr;
+
+    NS_NONNULL_ASSERT(servPtr != NULL);
+
+    itPtr = PopInterp(servPtr, NULL);
+    itPtr->nsconn.flags = 0u;
+    RunTraces(itPtr, NS_TCL_TRACE_IDLE);
+    PushInterp(itPtr);
 }
 
 
@@ -2235,11 +2249,10 @@ UpdateInterp(NsInterp *itPtr)
  *      None.
  *
  * Side effects:
- *      Depeneds on callbacks. Event may be logged.
+ *      Depends on callbacks. Event may be logged.
  *
  *----------------------------------------------------------------------
  */
-
 static void
 RunTraces(NsInterp *itPtr, Ns_TclTraceType why)
 {
@@ -2258,6 +2271,7 @@ RunTraces(NsInterp *itPtr, Ns_TclTraceType why)
         case NS_TCL_TRACE_FREECONN:
         case NS_TCL_TRACE_DEALLOCATE:
         case NS_TCL_TRACE_DELETE:
+        case NS_TCL_TRACE_IDLE:
             /*
              * Run finalization traces in LIFO order.
              */
@@ -2301,12 +2315,12 @@ RunTraces(NsInterp *itPtr, Ns_TclTraceType why)
 static void
 LogTrace(const NsInterp *itPtr, const TclTrace *tracePtr, Ns_TclTraceType why)
 {
-    Ns_DString  ds;
-
     NS_NONNULL_ASSERT(itPtr != NULL);
     NS_NONNULL_ASSERT(tracePtr != NULL);
 
     if (Ns_LogSeverityEnabled(Debug)) {
+        Ns_DString  ds;
+
         Ns_DStringInit(&ds);
         Ns_DStringNAppend(&ds, GetTraceLabel(why), -1);
         Ns_DStringNAppend(&ds, " ", 1);
