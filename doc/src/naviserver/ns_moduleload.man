@@ -6,7 +6,7 @@
 
 [description]
 This command to be used during server initialization to load binary modules.
-The usual way to specify them in the config file.
+The usual way to specify them in the configuration file.
 
 [section {COMMANDS}]
 

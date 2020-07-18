@@ -9,7 +9,7 @@
 NaviServer is immensely scalable because it has to be. It is based on the web server
 for the most heavily-used production environment in the world --
 AOL. The sections below refer to various configuration parameters.
-For a complete reference, see the sample config files sample-config.tcl.
+For a complete reference, see the sample configuration files sample-config.tcl.
 
 
 [subsection {Only load modules you need}]
@@ -71,7 +71,7 @@ is hit.
 
 Thread settings are sometimes helpful, sometimes not. If one is
 running a small configuration (e.g. 100K requests per day), the
-default settings provided by the sample config files are typically
+default settings provided by the sample configuration files are typically
 sufficient.
 For larger or very constraint setups the paramamter for the
 connection theads can and should be tuned. The following parameters can be

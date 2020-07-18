@@ -178,7 +178,7 @@ If the [term tcl] section of the server configuration contains the
 parameter [term initcmds] then these commands are executed after the
 initialization of the Tcl-only modules. This feature is useful e.g.
 for simple server configurations, where the full code of the
-server-initialization can be put into the config file. So only one
+server-initialization can be put into the configuration file. So only one
 file has to be maintained
 
 [example_begin]

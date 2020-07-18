@@ -55,7 +55,7 @@ lead to difficult-to-trace deadlock situation (see [cmd "ns_proxy get"] command)
 
 [para]
 All the [arg timeout] values below (no matter if these are used
-in positional or arguments, or as parameters in the config file) can
+in positional or arguments, or as parameters in the configuration file) can
 be specified with time units. If the [arg timeout] value time has no time
 unit, seconds are assumed.
 

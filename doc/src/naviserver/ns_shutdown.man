@@ -13,7 +13,7 @@ this time limit is exceeded the server shuts down immediately.
 [para] When [arg timeout] is not specified the default or configured
 [arg timeout] is used (default 20). The default can be changed by the
 parameter [term shutdowntimeout] in the global server parameters
-(section [term ns/parameters] in the config file). When [arg timeout]
+(section [term ns/parameters] in the configuration file). When [arg timeout]
 it is specified, it must be a value >= 0.
 
 [section {COMMANDS}]

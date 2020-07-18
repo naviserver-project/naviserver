@@ -149,7 +149,7 @@ to set the coloring when the logfile is colorized. The color can be
 or [term default]. Intensity can be [term normal] or [term bright].
 The logfile colorization can be controlled by setting
 [term logcolorize] in section [term ns/parameters] of the
-config file.
+configuration file.
 
 [para]
 If [arg severity-level] does not already exist and more arguments arg given, then the

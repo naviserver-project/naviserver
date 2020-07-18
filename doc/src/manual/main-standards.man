@@ -18,15 +18,17 @@ Based on the Tcl/Tk Engineering Manual by John K. Ousterhout
 
 [section {Introduction}]
 
-This manual is based on the [emph {Tcl/Tk Engineering Manual}] by John
-K. Ousterhout that is available at [uri http://www.activestate.com/ ActiveState].
-Most of this document is a subset of what his manual specifies, with the goal of
-being more practical and up-to-date than the original. For example, it is assumed
-that only an ANSI compiler will be used, whereas the Ousterhout's manual
-describes conventions that will also work with non-ANSI compilers. The
-[emph {Tcl/Tk Engineering Manual}] is still recommended reading,
-particularly with respect to the section on code documentation, which
-is not reproduced here.
+This manual is based on the [emph {Tcl/Tk Engineering Manual}]
+by John K. Ousterhout that is available at
+[uri http://www.activestate.com/ActiveState].
+Most of this document is a subset of what his manual
+specifies, with the goal of being more practical and up-to-date than
+the original. For example, it is assumed that only an ANSI compiler
+will be used, whereas the Ousterhout's manual describes conventions
+that will also work with non-ANSI compilers. The
+[emph {Tcl/Tk Engineering Manual}]
+is recommended reading, particularly with respect to the section on
+code documentation, which is not reproduced here.
 
 [para]
 

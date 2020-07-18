@@ -20,7 +20,7 @@ Return the MIME type for the provided [arg filename] based on its file extension
 [list_end]
 
  The MIME type returned for a file extension can be overridden in the
- NaviServer config file, and new mappings can be added, e.g.
+ NaviServer configuration file, and new mappings can be added, e.g.
 
 [example_begin]
  ns_section "ns/mimetypes"
@@ -29,7 +29,7 @@ Return the MIME type for the provided [arg filename] based on its file extension
  ns_param  ".adp"        "text/html; charset=UTF-8"     ;# Overriding an existing mapping
 [example_end]
 
- The MIME type to be returned for files with unrecognized or missing extensions can also be specified in the "ns/mimetypes" section of the config file, e.g.
+ The MIME type to be returned for files with unrecognized or missing extensions can also be specified in the "ns/mimetypes" section of the configuration file, e.g.
 
 [example_begin]
  ns_section "ns/mimetypes"

@@ -22,14 +22,14 @@ When no [arg disposition] is provided, it defaults to [term tolower]
 [list_begin definitions]
 
 [call [cmd ns_parseheader] [arg set] [arg header] \
-        [opt  [arg disposition]] ]
+        [opt [arg disposition]] ]
 
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
- set reply [ns_set create reply]
+ set reply [lb]ns_set create reply[rb]
  ns_parseheader $reply "Connection: Upgrade"
  
  #

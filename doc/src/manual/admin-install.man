@@ -207,7 +207,7 @@ is installed.
 
 [para]
 
-If NaviServer was installed with default nsd.tcl config file, just
+If NaviServer was installed with default nsd.tcl configuration file, just
 type
 [example_begin]
   /usr/local/ns/bin/nsd

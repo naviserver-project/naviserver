@@ -46,7 +46,7 @@ Returns all registered startup/exit/shutdown callbacks
 
 [call [cmd "ns_info config"]]
 
-Returns the absolute path to the config file used to start the server
+Returns the absolute path to the configuration file used to start the server
 
 [call [cmd  "ns_info home"]]
 

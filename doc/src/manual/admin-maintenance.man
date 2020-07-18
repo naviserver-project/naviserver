@@ -541,8 +541,8 @@ the associated NaviServer features.
 [subsection {/conf}]
 
 [para] Directory containing the NaviServer configuration files. This
-is convention and convenience, the config files can be located
-anywhere as nsd process requires path to config file.
+is convention and convenience, the configuration files can be located
+anywhere as nsd process requires path to configuration file.
 
 [para] Files:
 [example_begin]
@@ -964,7 +964,7 @@ This code example disables the open command:
 
 Apart from the specific details of integration of your favored
 language you may have to take a look at the [term stacksize] parameter of
-your config file.
+your configuration file.
 
 [para]
 As a rule of thumb the default stack size (in bytes)
