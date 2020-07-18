@@ -298,11 +298,15 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
 
     if (cfgPtr->verify && sslCtx->verified == 0) {
         X509 *peer;
-
+#ifdef HAVE_OPENSSL_3
+        peer = SSL_get0_peer_certificate(sslCtx->ssl);
+#else
         peer = SSL_get_peer_certificate(sslCtx->ssl);
-
+#endif
         if (peer != NULL) {
+#ifndef HAVE_OPENSSL_3
             X509_free(peer);
+#endif
             if (SSL_get_verify_result(sslCtx->ssl) != X509_V_OK) {
                 char ipString[NS_IPADDR_SIZE];
 

@@ -1903,7 +1903,7 @@ NsCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         secretString = Ns_GetBinaryString(secretObj, isBinary == 1, &secretLength, &secretDs);
 
         kdf = EVP_KDF_fetch(NULL, "SCRYPT", NULL);
-        kctx = EVP_KDF_new_ctx(kdf);
+        kctx = EVP_KDF_CTX_new(kdf);
         EVP_KDF_free(kdf);
 
         *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_PASSWORD,
@@ -1915,7 +1915,7 @@ NsCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_SCRYPT_P, &rValueSSL);
         *p = OSSL_PARAM_construct_end();
 
-        if (EVP_KDF_set_ctx_params(kctx, params) <= 0) {
+        if (EVP_KDF_CTX_set_params(kctx, params) <= 0) {
             Ns_TclPrintfResult(interp, "could not set parameters");
             result = TCL_ERROR;
 
@@ -1938,7 +1938,7 @@ NsCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         Tcl_DStringFree(&saltDs);
         Tcl_DStringFree(&secretDs);
 
-        EVP_KDF_free_ctx(kctx);
+        EVP_KDF_CTX_free(kctx);
     }
 
     return result;
