@@ -90,12 +90,18 @@ typedef struct Task {
  * Local functions defined in this file
  */
 
-static void TriggerQueue(TaskQueue *) NS_GNUC_NONNULL(1);
-static void JoinQueue(TaskQueue *) NS_GNUC_NONNULL(1);
-static void StopQueue(TaskQueue *) NS_GNUC_NONNULL(1);
-static bool SignalQueue(TaskQueue *, Task *, unsigned) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static void FreeTask(Task *) NS_GNUC_NONNULL(1);
-static void RunTask(Task *, short, Ns_Time *) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+static void TriggerQueue(TaskQueue *queuePtr)
+    NS_GNUC_NONNULL(1);
+static void JoinQueue(TaskQueue *queuePtr)
+    NS_GNUC_NONNULL(1);
+static void StopQueue(TaskQueue *queuePtr)
+    NS_GNUC_NONNULL(1);
+static bool SignalQueue(TaskQueue *queuePtr, Task *taskPtr, unsigned int signal)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static void FreeTask(Task *taskPtr)
+    NS_GNUC_NONNULL(1);
+static void RunTask(Task *taskPtr, short revents, Ns_Time *nowPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 static Ns_ThreadProc TaskThread;
 
