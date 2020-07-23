@@ -768,15 +768,22 @@ NsThreadExit(void *arg)
             threadExitResults.data[index] = arg;
             threadExitResults.size++;
         } else {
-            /*
-             * We could search for NULL entries between
-             * 1..MAX_THREAD_EXIT_RESULTS for a slot. Not sure, in which
-             * scenario this would be necessary.
-             */
-            Tcl_Panic("nsthreads: NsThreadExit failed: too many threads (%d)"
-                      " waiting for results. Recompile with a higher "
-                      "value for MAX_THREAD_EXIT_RESULTS",
-                      MAX_THREAD_EXIT_RESULTS);
+            int ii;
+            for (ii = 1; ii < MAX_THREAD_EXIT_RESULTS; ii++) {
+                if (threadExitResults.data[ii] == NULL) {
+                    index = ii;
+                    break;
+                }
+            }
+
+            if (ii == MAX_THREAD_EXIT_RESULTS) {
+                index = 0;
+                fprintf(stderr, "NsThreadExit: thread %" PRIxPTR
+                       " %s - no free space in return table -"
+                       "returning NULL instead of %p.",
+                       Ns_ThreadId(), Ns_ThreadGetName(), (void*)arg);
+
+            }
         }
         Ns_MasterUnlock();
         /*fprintf(stderr, "%" PRIxPTR " %s === NsThreadExit receives %p sets index %u\n",
