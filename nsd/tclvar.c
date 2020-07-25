@@ -1269,7 +1269,6 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             /*
              * Operations on a dict key with a value
              */
-            const Tcl_HashEntry *hPtr;
             int         increment = 1, nargs = 0;
             Ns_ObjvSpec setArgs[] = {
                 {"array",     Ns_ObjvObj,  &arrayObj,     NULL},
@@ -1306,6 +1305,8 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
             } else {
                 const char *keyString;
+                const Tcl_HashEntry *hPtr;
+
                 /*
                  * Create array and key if it does not exist
                  */

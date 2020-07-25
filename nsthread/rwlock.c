@@ -179,7 +179,6 @@ void
 Ns_RWLockInit(Ns_RWLock *rwPtr)
 {
     RwLock          *lockPtr;
-    int              err;
     static uintptr_t nextid = 0;
 
     NS_NONNULL_ASSERT(rwPtr != NULL);
@@ -197,6 +196,7 @@ Ns_RWLockInit(Ns_RWLock *rwPtr)
 
     lockPtr->rw = NS_READ;
     {
+        int err;
 #if (defined(_XOPEN_SOURCE) && _XOPEN_SOURCE >= 500) || (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 200809L)
         pthread_rwlockattr_t attr;
         pthread_rwlockattr_setkind_np(&attr,
