@@ -1124,6 +1124,7 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
                 Ns_Log(Debug, "Ns_TLS_CtxServerInit set app data %p ctx %p for cert <%s>",
                         (void*) app_data, (void*)*ctxPtr, cert);
                 SSL_CTX_set_app_data(*ctxPtr, app_data);
+                cfgPtr = app_data;
             }
             SSL_CTX_set_session_id_context(*ctxPtr, (const unsigned char *)&nsconf.pid, sizeof(pid_t));
             SSL_CTX_set_session_cache_mode(*ctxPtr, SSL_SESS_CACHE_SERVER);
