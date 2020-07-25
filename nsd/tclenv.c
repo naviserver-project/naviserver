@@ -71,7 +71,7 @@ static Ns_Mutex lock = NULL;
  *----------------------------------------------------------------------
  */
 
-NS_EXTERN void
+void
 NsInitTclEnv(void)
 {
     static bool initialized = NS_FALSE;

@@ -150,7 +150,7 @@ static const struct {
  *----------------------------------------------------------------------
  */
 
-NS_EXTERN void
+void
 NsInitTask(void)
 {
     static bool initialized = NS_FALSE;

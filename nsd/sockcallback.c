@@ -151,7 +151,7 @@ Ns_SockCancelCallbackEx(NS_SOCKET sock, Ns_SockProc *proc, void *arg, const char
  *----------------------------------------------------------------------
  */
 
-NS_EXTERN void
+void
 NsInitSockCallback(void)
 {
     static bool initialized = NS_FALSE;
