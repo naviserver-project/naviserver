@@ -642,6 +642,7 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
             result = Tcl_EvalEx(interp, script, (int)len, 0);
             Export(interp, result, &out);
             if (active != NULL) {
+                assert(max > 0);
                 memset(active, ' ', (size_t)max);
             }
         } else {
