@@ -37,7 +37,7 @@
 #include "nsd.h"
 
 #ifdef HAVE__NSGETENVIRON
-#include <crt_externs.h>
+# include <crt_externs.h>
 #elif !defined(_WIN32)
 extern char **environ;
 #endif

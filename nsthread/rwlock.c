@@ -75,8 +75,6 @@
  */
 //#define NS_NO_MUTEX_TIMING 1
 
-NS_EXTERN void Ns_RWLockList(Tcl_DString *dsPtr)      NS_GNUC_NONNULL(1);
-
 /*
  * The following structure defines a read/write lock including a mutex
  * to protect access to the structure and condition variables for waiting
