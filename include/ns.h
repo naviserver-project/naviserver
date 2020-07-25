@@ -2463,7 +2463,7 @@ Ns_VarAppend(const char *server, const char *array, const char *keyString,
  */
 
 NS_EXTERN int
-Ns_After(Ns_Time *interval, Ns_SchedProc *proc, void *arg, ns_funcptr_t deleteProc)
+Ns_After(const Ns_Time *interval, Ns_SchedProc *proc, void *arg, ns_funcptr_t deleteProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN bool

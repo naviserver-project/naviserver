@@ -310,8 +310,8 @@ static Ns_ReturnCode WriterSetupStreamingMode(Conn *connPtr, const struct iovec 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 static void WriterSockFileVecCleanup(const WriterSock *wrSockPtr)
     NS_GNUC_NONNULL(1);
-static int WriterGetMemunitFromDict(Tcl_Interp *interp, Tcl_Obj *dictObj, Tcl_Obj *keyObj, Ns_ObjvValueRange *rangePtr,
-                                    Tcl_WideInt *valuePtr)
+static int WriterGetMemunitFromDict(Tcl_Interp *interp, Tcl_Obj *dictObj, Tcl_Obj *keyObj,
+                                    const Ns_ObjvValueRange *rangePtr, Tcl_WideInt *valuePtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
 
 static void AsyncWriterRelease(AsyncWriteData *wdPtr)
@@ -6831,8 +6831,8 @@ WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
  *----------------------------------------------------------------------
  */
 static int
-WriterGetMemunitFromDict(Tcl_Interp *interp, Tcl_Obj *dictObj, Tcl_Obj *keyObj, Ns_ObjvValueRange *rangePtr,
-                         Tcl_WideInt *valuePtr)
+WriterGetMemunitFromDict(Tcl_Interp *interp, Tcl_Obj *dictObj, Tcl_Obj *keyObj,
+                         const Ns_ObjvValueRange *rangePtr, Tcl_WideInt *valuePtr)
 {
     Tcl_Obj *intObj = NULL;
     int      result;

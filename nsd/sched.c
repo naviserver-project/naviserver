@@ -169,7 +169,7 @@ NsInitSched(void)
  */
 
 int
-Ns_After(Ns_Time *interval, Ns_SchedProc *proc, void *arg, ns_funcptr_t deleteProc)
+Ns_After(const Ns_Time *interval, Ns_SchedProc *proc, void *arg, ns_funcptr_t deleteProc)
 {
     int result;
 

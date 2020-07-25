@@ -312,7 +312,7 @@ static Pool*  GetPool(const char *poolName, const InterpData *idataPtr) NS_GNUC_
 static void   FreePool(Pool *poolPtr) NS_GNUC_NONNULL(1);
 
 static Proxy* CreateProxy(Pool *poolPtr) NS_GNUC_NONNULL(1);
-static Err    PopProxy(Pool *poolPtr, Proxy **proxyPtrPtr, int nwant, Ns_Time *timePtr)
+static Err    PopProxy(Pool *poolPtr, Proxy **proxyPtrPtr, int nwant, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void   PushProxy(Proxy *proxyPtr) NS_GNUC_NONNULL(1);
 static Proxy* GetProxy(const char *proxyId, InterpData *idataPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -343,7 +343,7 @@ static void   FmtActiveProxy(Tcl_Interp *interp, const Proxy *proxyPtr)
 
 static void   ReleaseHandles(Tcl_Interp *interp, InterpData *idataPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static Slave* ExecSlave(Tcl_Interp *interp, Proxy *proxyPtr)
+static Slave* ExecSlave(Tcl_Interp *interp, const Proxy *proxyPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static Err    CreateSlave(Tcl_Interp *interp, Proxy *proxyPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -482,7 +482,7 @@ Ns_ProxyTclInit(Tcl_Interp *interp)
  */
 
 int
-Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init)
+Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
 {
     Tcl_Interp  *interp;
     Slave        proc;
@@ -888,7 +888,7 @@ Ns_ProxyPut(PROXY handle)
  *----------------------------------------------------------------------
  */
 
-int Ns_ProxyEval(Tcl_Interp *interp, PROXY handle, const char *script, Ns_Time *timeoutPtr)
+int Ns_ProxyEval(Tcl_Interp *interp, PROXY handle, const char *script, const Ns_Time *timeoutPtr)
 {
     return Eval(interp, (Proxy *)handle, script, timeoutPtr);
 }
@@ -910,7 +910,7 @@ int Ns_ProxyEval(Tcl_Interp *interp, PROXY handle, const char *script, Ns_Time *
  */
 
 static Slave *
-ExecSlave(Tcl_Interp *interp, Proxy *proxyPtr)
+ExecSlave(Tcl_Interp *interp, const Proxy *proxyPtr)
 {
     Pool  *poolPtr;
     char  *argv[5];
@@ -2570,7 +2570,7 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
  */
 
 static Err
-PopProxy(Pool *poolPtr, Proxy **proxyPtrPtr, int nwant, Ns_Time *timePtr)
+PopProxy(Pool *poolPtr, Proxy **proxyPtrPtr, int nwant, const Ns_Time *timePtr)
 {
     Proxy        *proxyPtr;
     Err           err;

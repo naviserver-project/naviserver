@@ -62,7 +62,7 @@ typedef struct InterpData {
 NS_EXTERN void Nsproxy_LibInit (void);
 NS_EXTERN int Nsproxy_Init(Tcl_Interp *interp) NS_GNUC_NONNULL(1);
 
-NS_EXTERN int Ns_ProxyMain(int argc, char **argv, Tcl_AppInitProc *init);
+NS_EXTERN int Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init);
 NS_EXTERN int Ns_ProxyTclInit(Tcl_Interp *interp);
 
 NS_EXTERN Ns_TclTraceProc  Ns_ProxyCleanup;
@@ -77,7 +77,7 @@ typedef void* PROXY;
 NS_EXTERN int  Ns_ProxyGet(Tcl_Interp *interp, const char *poolName, PROXY *handlePtr,
 			   Ns_Time *timePtr);
 NS_EXTERN int  Ns_ProxyEval(Tcl_Interp *interp, PROXY handle, const char *script,
-                             Ns_Time *timeoutPtr);
+			    const Ns_Time *timeoutPtr);
 NS_EXTERN void Ns_ProxyPut(PROXY handle);
 
 #endif /* NSPROXY_H */

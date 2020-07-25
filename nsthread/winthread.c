@@ -1210,14 +1210,14 @@ readdir(DIR * dp)
  */
 
 int
-link(char *from, char *to)
+link(char *UNUSED(from), char *UNUSED(to))
 {
     errno = EINVAL;
     return -1;
 }
 
 int
-symlink(const char *from, const char *to)
+symlink(const char *UNUSED(from), const char *UNUSED(to))
 {
     errno = EINVAL;
     return -1;
