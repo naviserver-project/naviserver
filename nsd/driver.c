@@ -307,7 +307,7 @@ static SpoolerState WriterSend(WriterSock *curPtr, int *err)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static Ns_ReturnCode WriterSetupStreamingMode(Conn *connPtr, const struct iovec *bufs, int nbufs, int *fdPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 static void WriterSockFileVecCleanup(const WriterSock *wrSockPtr)
     NS_GNUC_NONNULL(1);
 static int WriterGetMemunitFromDict(Tcl_Interp *interp, Tcl_Obj *dictObj, Tcl_Obj *keyObj, Ns_ObjvValueRange *rangePtr,
@@ -6029,7 +6029,6 @@ WriterSetupStreamingMode(Conn *connPtr, const struct iovec *bufs, int nbufs, int
     Ns_ReturnCode  status = NS_OK;
 
     NS_NONNULL_ASSERT(connPtr != NULL);
-    NS_NONNULL_ASSERT(bufs != NULL);
     NS_NONNULL_ASSERT(fdPtr != NULL);
 
     Ns_Log(DriverDebug, "NsWriterQueue: streaming writer job");
