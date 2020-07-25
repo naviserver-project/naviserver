@@ -230,15 +230,12 @@ SSL_serverNameCB(SSL *ssl, int *al, void *UNUSED(arg))
         drvPtr = (Driver *)(sockPtr->driver);
         doSNI = ((drvPtr->opts & NS_DRIVER_SNI) != 0u);
 
-        //ctx = SSL_get_SSL_CTX(ssl);
-        //cfgPtr = (NsSSLConfig *) SSL_CTX_get_app_data(ctx);
-
         /*
          * The default for *al is initialized by SSL_AD_UNRECOGNIZED_NAME = 112.
          * Find info about these codes via:
          *    fgrep -r --include=*.h 112 /usr/local/src/openssl/ | fgrep AD
          */
-        Ns_Log(Notice, "SSL_serverNameCB got server name <%s> al %d doSNI %d",
+        Ns_Log(Debug, "SSL_serverNameCB got server name <%s> al %d doSNI %d",
                serverName, (al != NULL ? *al : 0), doSNI);
 
         /*
@@ -260,7 +257,7 @@ SSL_serverNameCB(SSL *ssl, int *al, void *UNUSED(arg))
 
             ctx = NsDriverLookupHostCtx(ds.string, sockPtr->driver);
 
-            Ns_Log(Notice, "SSL_serverNameCB lookup of <%s> location %s port %hu -> %p",
+            Ns_Log(Debug, "SSL_serverNameCB lookup of <%s> location %s port %hu -> %p",
                    serverName, ds.string, port, (void*)ctx);
 
             /*
@@ -270,7 +267,7 @@ SSL_serverNameCB(SSL *ssl, int *al, void *UNUSED(arg))
              * servername was provided (SSL_TLSEXT_ERR_NOACK).
              */
             if (ctx != NULL) {
-                Ns_Log(Notice, "SSL_serverNameCB switches server context");
+                Ns_Log(Debug, "SSL_serverNameCB switches server context");
                 SSL_set_SSL_CTX(ssl, ctx);
                 result = SSL_TLSEXT_ERR_OK;
             }
@@ -293,7 +290,6 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
     if (srctx->verbose) {
         Ns_Log(Notice, "cert_status: callback called");
     }
-    Ns_Log(Notice, "=== cert_status: callback called");
 
     /*
      * If we have not in-memory cached the OCSP response yet, fetch the value
@@ -1112,6 +1108,10 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
             if (app_data == NULL && SSL_CTX_get_app_data(*ctxPtr) == NULL) {
                 /*
                  * Create new app_data (= NsSSLConfig).
+                 *
+                 * The app_data of SSL_CTX is cfgPtr (NsSSLConfig*),
+                 * while the app_data of a SSL connection is the
+                 * sockPtr (Ns_Sock*).
                  */
                 cfgPtr = NsSSLConfigNew(path);
                 cfgPtr->ctx = *ctxPtr;
