@@ -302,9 +302,8 @@ NsParseAuth(Conn *connPtr, char *auth)
             }
             (void)Ns_SetPut(connPtr->auth, "Username", v);
             ns_free(v);
-        } else
 
-        if (STRIEQ(auth, "Digest")) {
+        } else if (STRIEQ(auth, "Digest")) {
             (void)Ns_SetPut(connPtr->auth, "AuthMethod", "Digest");
 
             /* Skip spaces */

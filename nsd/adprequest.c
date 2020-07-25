@@ -559,9 +559,10 @@ NsAdpFlush(NsInterp *itPtr, bool doStream)
 
     if (itPtr->adp.exception == ADP_ABORT) {
         Ns_TclPrintfResult(interp, "ADP flush disabled: ADP aborted");
-    } else
-    if ((conn->flags & NS_CONN_SENT_VIA_WRITER) != 0u || (len == 0 && doStream)) {
+
+    } else if ((conn->flags & NS_CONN_SENT_VIA_WRITER) != 0u || (len == 0 && doStream)) {
         result = TCL_OK;
+
     } else {
         if (itPtr->adp.chan != NULL) {
             while (len > 0) {
