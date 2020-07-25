@@ -81,7 +81,9 @@ static unsigned long SSLThreadId(void);
  * Static variables defined in this file.
  */
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 static Ns_Mutex *driver_locks;
+#endif
 
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 
@@ -123,6 +125,7 @@ Ns_ModuleInit(const char *server, const char *module)
         return NS_ERROR;
     }
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     num = CRYPTO_num_locks();
     driver_locks = ns_calloc((size_t)num, sizeof(*driver_locks));
     {   int n;
@@ -132,7 +135,7 @@ Ns_ModuleInit(const char *server, const char *module)
             Tcl_DStringSetLength(&ds, 0);
         }
     }
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+
     CRYPTO_set_locking_callback(SSLLock);
     CRYPTO_set_id_callback(SSLThreadId);
 #endif
