@@ -1376,6 +1376,7 @@ HttpQueue(
         if (decompress != 0) {
             httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
         }
+        httpPtr->servPtr = itPtr->servPtr;
 
         httpPtr->task = Ns_TaskTimedCreate(httpPtr->sock, HttpProc, httpPtr, expirePtr);
 
@@ -2961,7 +2962,6 @@ HttpDoneCallback(
     int          result;
     Tcl_Interp  *interp;
     Tcl_DString  script;
-    NsServer    *servPtr;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
@@ -2969,8 +2969,7 @@ HttpDoneCallback(
            httpPtr->finalSockState,
            (httpPtr->error != NULL) ? httpPtr->error : "none");
 
-    servPtr = NsGetServer(nsconf.defaultServer); /* FIXME */
-    interp = NsTclAllocateInterp(servPtr);
+    interp = NsTclAllocateInterp( httpPtr->servPtr);
 
     result = HttpGetResult(interp, httpPtr);
 

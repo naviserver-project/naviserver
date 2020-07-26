@@ -1100,6 +1100,7 @@ typedef struct {
     Ns_SockState       finalSockState;   /* state of the socket at completion */
     Tcl_Obj           *infoObj;          /* ancillary attr/value info */
     char              *doneCallback;     /* Tcl script run at task completion */
+    NsServer          *servPtr;          /* Server for doneCallback */
     NS_TLS_SSL_CTX    *ctx;              /* SSL context handle */
     NS_TLS_SSL        *ssl;              /* SSL connection handle */
     Tcl_DString        ds;               /* for assembling request string */
