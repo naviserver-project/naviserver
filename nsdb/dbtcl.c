@@ -1401,29 +1401,12 @@ GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Ob
                 }
             } else {
                 if ((c == '\n') || (c == '\r')) {
-#if 0
-                    /*
-                     * Not sure, what the intention of the following block was,
-                     * since the final break after this block jumps out of the
-                     * loop.
-                     */
-                    while ((c = *p++) != '\0') {
-                        if ((c != '\n') && (c != '\r')) {
-                            *--p;
-                            break;
-                        }
-                    }
-#endif
                     break;
                 }
                 if (c == '"') {
                     inquote = NS_TRUE;
                     quoted = NS_TRUE;
                     blank = NS_FALSE;
-                } else if ((c == '\r')
-                           || ((elem.length == 0) && (CHARTYPE(space, c) != 0))
-                           ) {
-                    continue;
                 } else if (strchr(delimiter, INTCHAR(c)) != NULL) {
                     if (!quoted) {
                         (void) Ns_StrTrimRight(elem.string);
