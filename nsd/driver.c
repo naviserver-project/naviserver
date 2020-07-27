@@ -323,8 +323,8 @@ static const char *GetSockStateName(SockState sockState);
 
 static size_t EndOfHeader(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
-static void RequestNew(Sock *sockPtr)
-    NS_GNUC_NONNULL(1);
+static  Request *RequestNew(void)
+    NS_GNUC_RETURNS_NONNULL;
 static void RequestFree(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static void LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buffer, size_t len)
@@ -2728,9 +2728,8 @@ PollWait(const PollData *pdata, int timeout)
  *
  * RequestNew
  *
- *      Prepares for reading from the socket, allocates a "Request"
- *      struct for the given socket. It might be reused from the pool
- *      or freshly allocated. Counterpart of RequestFree().
+ *      Allocates or reuses a "Request" struct. The struct might be reused
+ *      from the pool or freshly allocated. Counterpart of RequestFree().
  *
  * Results:
  *      None
@@ -2741,13 +2740,11 @@ PollWait(const PollData *pdata, int timeout)
  *----------------------------------------------------------------------
  */
 
-static void
-RequestNew(Sock *sockPtr)
+static Request *
+RequestNew(void)
 {
     Request *reqPtr;
     bool     reuseRequest = NS_TRUE;
-
-    NS_NONNULL_ASSERT(sockPtr != NULL);
 
     /*
      * Try to get a request from the pool of allocated Requests.
@@ -2774,7 +2771,8 @@ RequestNew(Sock *sockPtr)
         Tcl_DStringInit(&reqPtr->buffer);
         reqPtr->headers = Ns_SetCreate(NULL);
     }
-    sockPtr->reqPtr = reqPtr;
+
+    return reqPtr;
 }
 
 
@@ -3091,7 +3089,7 @@ SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *now
              *  SockRead() which is not what this driver wants.
              */
             if (sockPtr->reqPtr == NULL) {
-                RequestNew(sockPtr);
+                sockPtr->reqPtr = RequestNew();
             }
             sockStatus = SOCK_READY;
         } else {
@@ -3668,8 +3666,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
      * Initialize request structure if needed.
      */
     if (sockPtr->reqPtr == NULL) {
-        RequestNew(sockPtr);
-        assert(sockPtr->reqPtr != NULL);
+        sockPtr->reqPtr = RequestNew();
     }
 
     /*
@@ -8161,7 +8158,7 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
                     sockPtr->servPtr = itPtr->servPtr;
                 }
 
-                RequestNew(sockPtr);
+                sockPtr->reqPtr = RequestNew();
 
                 Ns_GetTime(&sockPtr->acceptTime);
                 reqPtr = sockPtr->reqPtr;
@@ -8243,7 +8240,8 @@ NSDriverSockNew(Tcl_Interp *interp, NS_SOCKET sock,
         sockPtr->servPtr = drvPtr->servPtr;
         sockPtr->sock = sock;
 
-        RequestNew(sockPtr); // not sure if needed
+        sockPtr->reqPtr = RequestNew();
+
         // peerAddr is missing
 
         Ns_GetTime(&sockPtr->acceptTime);
