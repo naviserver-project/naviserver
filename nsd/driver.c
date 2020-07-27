@@ -3669,6 +3669,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
      */
     if (sockPtr->reqPtr == NULL) {
         RequestNew(sockPtr);
+        assert(sockPtr->reqPtr != NULL);
     }
 
     /*
