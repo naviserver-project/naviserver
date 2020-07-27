@@ -999,7 +999,7 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
     } else {
         Array      *arrayPtr;
-        Tcl_Obj    *arrayObj, *keyObj, *dictKeyObj, *dictValueObj, *dictObj;
+        Tcl_Obj    *arrayObj, *keyObj, *dictKeyObj, *dictObj;
 
         if (opt == CGetdefwithdefaultIdx) {
             opt = CGetdefIdx;
@@ -1131,13 +1131,13 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                         }
                     } else {
                         int lastObjc = (opt == CGetdefIdx ? objc -1 : objc);
+                        Tcl_Obj *dictValueObj = NULL;
 
                         if (nargs == 0) {
                             /*
                              * no keys
                              */
                             dictKeyObj = NULL;
-                            dictValueObj = NULL;
                             Tcl_SetObjResult(interp, dictObj);
 
                         } else if (nargs == 1) {
@@ -1145,7 +1145,6 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                              * one key
                              */
                             dictKeyObj = objv[objc-1];
-                            dictValueObj = NULL;
                             result = Tcl_DictObjGet(interp, dictObj, dictKeyObj, &dictValueObj);
 
                         } else {
@@ -1325,7 +1324,8 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                     /*
                      * dict set dictkey:1..n dictvalue
                      */
-                    dictValueObj = objv[objc - 1];
+                    Tcl_Obj *dictValueObj = objv[objc - 1];
+
                     if (nargs == 1) {
                         result = Tcl_DictObjPut(interp, dictObj, dictKeyObj, dictValueObj);
                     } else {
