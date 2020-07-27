@@ -58,7 +58,7 @@ struct nsconf nsconf;
 void
 NsInitConf(void)
 {
-    Ns_ThreadSetName("-main-");
+    Ns_ThreadSetName("-main:%s-", "conf");
 
     /*
      * At library load time the server is considered started.

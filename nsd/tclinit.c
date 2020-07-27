@@ -1714,7 +1714,7 @@ NsTclInitServer(const char *server)
         }
         Ns_TclDeAllocateInterp(interp);
     }
-    Ns_ThreadSetName("-main-");
+    Ns_ThreadSetName("-main:%s-", server);
 }
 
 /*

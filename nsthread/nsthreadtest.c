@@ -432,7 +432,7 @@ int main(int argc, char *argv[])
     Tcl_FindExecutable(argv[0]);
     Nsthreads_LibInit();
 
-    Ns_ThreadSetName("%s", "-main-");
+    Ns_ThreadSetName("-main:%s-", "test");
 
     /*
      * Jump directly to memory test if requested.

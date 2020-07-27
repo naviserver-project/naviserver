@@ -279,16 +279,16 @@ Ns_ThreadGetName(void)
  */
 
 void
-Ns_ThreadSetName(const char *name,...)
+Ns_ThreadSetName(const char *fmt, ...)
 {
     Thread *thisPtr = GetThread();
     va_list ap;
 
-    NS_NONNULL_ASSERT(name != NULL);
+    NS_NONNULL_ASSERT(fmt != NULL);
 
     Ns_MasterLock();
-    va_start(ap, name);
-    vsnprintf(thisPtr->name, NS_THREAD_NAMESIZE, name, ap);
+    va_start(ap, fmt);
+    vsnprintf(thisPtr->name, NS_THREAD_NAMESIZE, fmt, ap);
     va_end(ap);
     Ns_MasterUnlock();
 }
