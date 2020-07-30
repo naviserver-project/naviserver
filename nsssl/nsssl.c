@@ -491,7 +491,7 @@ Close(Ns_Sock *sock)
                 }
             }
         } else if (Ns_SockInErrorState(sock)) {
-            Ns_Log(Notice, "### SSL close(%d) avoid shutdown in error state",
+            Ns_Log(Debug, "### SSL close(%d) avoid shutdown in error state",
                    SSL_get_fd(sslCtx->ssl));
         }
         SSL_free(sslCtx->ssl);
