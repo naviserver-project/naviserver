@@ -2022,7 +2022,7 @@ CmpChannelsAsStrings(const void *leftPtrPtr, const  void *rightPtrPtr)
 #ifdef DEBUG
     fprintf(stderr, "CmpChannelsAsStrings '%s' with '%s' -> %d\n",
             filterLeft, filterRight,
-            NS_strcmp(filterLeft, filterRight);
+            NS_strcmp(filterLeft, filterRight));
 #endif
     return NS_strcmp(filterLeft, filterRight);
 }
