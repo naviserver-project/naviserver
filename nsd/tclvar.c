@@ -1127,6 +1127,10 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                             result = Tcl_DictObjRemoveKeyList(interp, dictObj, nargs, &objv[objc-nargs]);
                         }
                         if (result == TCL_OK) {
+                            int dictStringLength;
+                            const char *dictString = Tcl_GetStringFromObj(dictObj, &dictStringLength);
+
+                            SetVar(arrayPtr, Tcl_GetString(keyObj), dictString, (size_t)dictStringLength);
                             Tcl_SetObjResult(interp, dictObj);
                         }
                     } else {

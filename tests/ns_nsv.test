@@ -684,6 +684,7 @@ test nsv-dict-unset.1 {nsv_dict unset} -body {
     nsv_dict set a1 k1 x 1
     nsv_dict set a1 k1 y 2
     nsv_dict unset a1 k1 x
+    nsv_get a1 k1
 } -cleanup {
     nsv_unset -nocomplain a1
 } -result {y 2}
@@ -702,20 +703,18 @@ test nsv-dict-unset.3 {nsv_dict unset with nested dicts} -body {
     nsv_dict set a1 k1 l1 l2b v2
     set _ ""
     lappend _ [nsv_dict unset a1 k1 l1 l2a]
+    lappend _ [nsv_get a1 k1]
 
     nsv_dict set a1 k1 l1 l2a v1
     nsv_dict set a1 k1 l1 l2b v2
     lappend _ [nsv_dict unset a1 k1 l1 l2c]
-
-    nsv_dict set a1 k1 l1 l2a v1
-    nsv_dict set a1 k1 l1 l2b v2
-    lappend _ [nsv_dict unset a1 k1 l1]
+    lappend _ [nsv_get a1 k1]
 
     set _
 } -cleanup {
     unset -nocomplain _
     nsv_unset -nocomplain a1
-} -result {{l1 {l2b v2}} {l1 {l2a v1 l2b v2}} {}}
+} -result {{l1 {l2b v2}} {l1 {l2b v2}} {l1 {l2b v2 l2a v1}} {l1 {l2b v2 l2a v1}}}
 
 #
 # nsv_dict incr
