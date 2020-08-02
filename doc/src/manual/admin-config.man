@@ -381,9 +381,11 @@ server "s1" separately (foo.com.pem).
  }
  #
  # Define a server-specific certificate to enable SNI.
+ # Activate for this server as OCSP stapling.
  # 
  ns_section ns/server/s1/module/nsssl {
    ns_param certificate   /usr/local/ns/modules/nsssl/foo.com.pem
+   ns_param OCSPstapling  on
  }
 [example_end]
 
