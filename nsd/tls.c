@@ -83,6 +83,10 @@ static void SSL_infoCB(const SSL *ssl, int where, int ret);
 
 # ifndef OPENSSL_NO_OCSP
 static int SSL_cert_statusCB(SSL *ssl, void *arg);
+
+static bool
+OCSP_ResponseIsValid(OCSP_RESPONSE *resp, OCSP_CERTID *id)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 # endif
 
 /*
@@ -240,7 +244,7 @@ SSL_serverNameCB(SSL *ssl, int *al, void *UNUSED(arg))
 
         /*
          * Perform lookup from host table only, when doSNI is true
-         * (i.e. when per virtual server certificates were specified.
+         * (i.e. when per virtual server certificates weres specified.
          */
         if (doSNI) {
             Tcl_DString     ds;
@@ -407,6 +411,52 @@ OCSP_get_cert_id(const SSL *ssl, X509 *cert)
 /*
  *----------------------------------------------------------------------
  *
+ * OCSP_ResponseIsValid --
+ *
+ *      Check the validity of a OCSP response. This test includes
+ *      checks of expiration dates.
+ *
+ * Results:
+ *      Boolean value.
+ *
+ * Side effects:
+ *      In case of failures of validity checks, warnings are written
+ *      to the system log.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+OCSP_ResponseIsValid(OCSP_RESPONSE *resp, OCSP_CERTID *id)
+{
+    int                   n;
+    bool                  result;
+    OCSP_BASICRESP       *basic;
+    ASN1_GENERALIZEDTIME *thisupdate, *nextupdate;
+
+    NS_NONNULL_ASSERT(resp != NULL);
+    NS_NONNULL_ASSERT(id != NULL);
+
+    basic = OCSP_response_get1_basic(resp);
+    if (basic == NULL) {
+        Ns_Log(Warning, "OCSP cache file is invalid (no basic)");
+        result = NS_FALSE;
+    } else if (OCSP_resp_find_status(basic, id, &n, NULL, NULL,
+                                     &thisupdate, &nextupdate) != 1) {
+        Ns_Log(Warning, "OCSP cache file is invalid (no dates)");
+        result = NS_FALSE;
+    } else {
+        result = (OCSP_check_validity(thisupdate, nextupdate,
+                                      300 /*MAX_VALIDITY_PERIOD*/,
+                                      -1 /* status_age, additional check
+                                            not performed.*/) == 1);
+        Ns_Log(Notice, "OCSP cache file is valid (expiry): %d", result);
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * OCSP_FromCacheFile --
  *
  *      Try to load OCSP_RESPONSE from cache file.
@@ -436,11 +486,11 @@ OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
         Tcl_DString outputBuffer;
 
         Tcl_DStringInit(&outputBuffer);
-        Tcl_DStringSetLength(&outputBuffer, pserial->length*1 + 1);
+        Tcl_DStringSetLength(&outputBuffer, pserial->length*2 + 1);
 
         Ns_HexString(pserial->data, outputBuffer.string, pserial->length, NS_TRUE);
         /*
-         *
+         * Check for the "logs" directory below NaviServer home.
          */
         if (Ns_HomePathExists("logs", (char *)0L)) {
             struct stat fileInfo;
@@ -457,20 +507,22 @@ OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
             if (Ns_Stat(dsPtr->string, &fileInfo)) {
                 BIO *derbio;
 
-                // we could/should check here a validity time based on mtime
                 /*fprintf(stderr, "... file %s exists (%ld bytes)\n",
                   fileName, (long)fileInfo.st_size);*/
+                Ns_Log(Notice, "OCSP cache file exists: %s", fileName);
 
                 derbio = BIO_new_file(fileName, "rb");
                 if (derbio == NULL) {
                     Ns_Log(Warning, "cert_status: Cannot open OCSP response file: %s", fileName);
 
                 } else {
+
                     *resp = d2i_OCSP_RESPONSE_bio(derbio, NULL);
                     BIO_free(derbio);
+
                     if (*resp == NULL) {
                         Ns_Log(Warning, "cert_status: Error reading OCSP response file: %s", fileName);
-                    } else {
+                    } else if (OCSP_ResponseIsValid(*resp, id)) {
                         result = TCL_OK;
                     }
                 }
@@ -1184,6 +1236,9 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
                 Ns_Log(Notice, "nsssl:X509_STORE_load_locations %d", rc);
             }
 #ifndef OPENSSL_NO_OCSP
+            Ns_Log(Notice, "nsssl: activate OCSP stapling for %s -> %d",
+                   path, Ns_ConfigBool(path, "ocspstapling", NS_FALSE));
+
             if (Ns_ConfigBool(path, "ocspstapling", NS_FALSE)) {
 
                 memset(&sslCertStatusArg, 0, sizeof(sslCertStatusArg));
