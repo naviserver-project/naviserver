@@ -141,8 +141,6 @@ Ns_ModuleInit(const char *server, const char *module)
 #endif
     Ns_Log(Notice, "OpenSSL %s initialized", SSLeay_version(SSLEAY_VERSION));
 
-    fprintf(stderr, "===== Ns_ModuleInit calls Ns_TLS_CtxServerInit with with app data %p\n", (void*)cfgPtr);
-
     result = Ns_TLS_CtxServerInit(path, NULL, NS_DRIVER_SNI, cfgPtr, &cfgPtr->ctx);
     if (result != TCL_OK) {
         Ns_Log(Error, "nsssl: init error: %s", strerror(errno));
