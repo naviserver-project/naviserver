@@ -905,7 +905,7 @@ void NsDriverMapVirtualServers(void)
                              * most likely an alternate server name.
                              */
                             ctx = Tcl_GetHashValue(hPtr);
-                            Ns_Log(Notice, "=== reuse sslctx %p from '%s'", (void*)ctx, ds1.string);
+                            Ns_Log(Debug, "=== reuse sslctx %p from '%s'", (void*)ctx, ds1.string);
                         }
                     }
                     Tcl_DStringFree(&ds1);
