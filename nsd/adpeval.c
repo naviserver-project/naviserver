@@ -875,8 +875,8 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
     tries = 0;
     do {
         /*
-         * fstat the open file to ensure it has not changed or been
-         * replaced since the original stat.
+         * fstat() the open file to ensure it has not changed or been replaced
+         * since the original stat().
          */
 
         if (fstat(fd, stPtr) != 0) {
