@@ -284,13 +284,15 @@ CgiRequest(const void *arg, Ns_Conn *conn)
 
     if (modPtr->maxInput > 0 && (int)conn->contentLength > modPtr->maxInput) {
         return Ns_ConnReturnBadRequest(conn, "Exceeded maximum CGI input size");
-    }
 
-    if (CgiInit(&cgi, mapPtr, conn) != NS_OK) {
+    } else if (CgiInit(&cgi, mapPtr, conn) != NS_OK) {
         return Ns_ConnReturnNotFound(conn);
+
     } else if ((cgi.interp == NULL)
                && (access(cgi.exec, X_OK) != 0)) {
-
+        /*
+         * Can't execute interpreter. Maybe return file a static file?
+         */
         if (((modPtr->flags & CGI_ALLOW_STATIC) != 0u) &&
             ( STREQ(conn->request.method, "GET") ||
               STREQ(conn->request.method, "HEAD")) ) {
@@ -305,28 +307,26 @@ CgiRequest(const void *arg, Ns_Conn *conn)
             status = Ns_ConnReturnNotFound(conn);
         }
         goto done;
-    }
 
-    /*
-     * Spool input to temp file if necessary.
-     */
-
-    if (conn->contentLength > 0u && CgiSpool(&cgi, conn) != NS_OK) {
+    } else if (conn->contentLength > 0u
+               && (CgiSpool(&cgi, conn) != NS_OK)) {
+        /*
+         * Content length failure.
+         */
         if ((cgi.flags & CGI_ECONTENT) != 0u) {
             status = Ns_ConnReturnBadRequest(conn, "Insufficient Content");
         } else {
             Ns_ConnTryReturnInternalError(conn, NS_ERROR, "nscgi: cannot spool data");
         }
         goto done;
-    }
 
-    /*
-     * Wait for CGI access if necessary.
-     */
-
-    if (modPtr->maxCgi > 0) {
-        Ns_Time timeout;
+    } else if (modPtr->maxCgi > 0) {
+        Ns_Time       timeout;
         Ns_ReturnCode wait = NS_OK;
+
+        /*
+         * Wait for CGI access if necessary.
+         */
 
         Ns_GetTime(&timeout);
         Ns_IncrTime(&timeout, modPtr->maxWait, 0);
