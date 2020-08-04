@@ -362,7 +362,7 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
     ssize_t     sent = 0;
 
     if (sslCtx == NULL) {
-        Ns_Log(Warning, "nsssl Send is called on an socket without sslCtx (sock %d)",
+        Ns_Log(Warning, "nsssl Send is called on a socket without sslCtx (sock %d)",
                sock->sock);
     } else {
         bool decork = Ns_SockCork(sock, NS_TRUE);

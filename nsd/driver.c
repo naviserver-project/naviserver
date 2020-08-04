@@ -4238,7 +4238,7 @@ SockParse(Sock *sockPtr)
                 }
 
                 /*
-                 * HTTP 0.9 did not have a HTTP-version number or request headers
+                 * HTTP 0.9 did not have an HTTP-version number or request headers
                  * and no empty line terminating the request header.
                  */
                 if (unlikely(reqPtr->request.version < 1.0)) {

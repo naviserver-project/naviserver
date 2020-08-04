@@ -1162,7 +1162,7 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
                  * Create new app_data (= NsSSLConfig).
                  *
                  * The app_data of SSL_CTX is cfgPtr (NsSSLConfig*),
-                 * while the app_data of a SSL connection is the
+                 * while the app_data of an SSL connection is the
                  * sockPtr (Ns_Sock*).
                  */
                 cfgPtr = NsSSLConfigNew(path);
@@ -1517,7 +1517,7 @@ Ns_TLS_SSLAccept(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
  *      Read data from a nonblocking socket into a vector of buffers.
  *      Ns_SockRecvBufs2() is similar to Ns_SockRecvBufs() with the following
  *      differences:
- *        a) the first argument is a SSL *
+ *        a) the first argument is an SSL *
  *        b) it performs no timeout handliong
  *        c) it returns the sockstate in its last argument
  *
@@ -1673,7 +1673,7 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
  *
  *      Send a vector of buffers on a nonblocking TLS socket.
  *      It is similar to Ns_SockSendBufs() except that it
- *        a) receives a SSL * as first argument
+ *        a) receives an SSL * as first argument
  *        b) it does not care about partial writes,
  *           it simply returns the number of bytes sent.
  *        c) it never blocks

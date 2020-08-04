@@ -177,7 +177,7 @@ ns_section	"ns/parameters" {
     # Rolling of logfile:
     ns_param	logroll		on
     # ns_param	logmaxbackup	100      ;# (default: 10)
-    # ns_param	logrollfmt	%Y-%m-%d ;# timestamp format appended to serverlog file name when rolled
+    # ns_param	logrollfmt	%Y-%m-%d ;# timestamp format appended to serverlog filename when rolled
     #
     # Format of log entries:
     # ns_param  logusec         true     ;# add timestamps in microsecond (usec) resolution (default: false)
@@ -675,7 +675,7 @@ ns_section	"ns/server/${servername}/vhost" {
     # Enable or disable virtual hosting
     ns_param	enabled                 false
 
-    # Prefix between serverdir and host name
+    # Prefix between serverdir and hostname
     ns_param	hostprefix              ""
 
     # Remove :port in the Host: header when building pageroot path so Host: www.host.com:80

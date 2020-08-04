@@ -275,7 +275,7 @@ static NsHttpParseProc* EndParsers[] = {
  *      will contain a string starting with ":", otherwise NULL.
  *
  *      If "hostStart" is non-null, a pointer will point to the hostname,
- *      which will be terminated by '\0' in case of a IPv6 address in
+ *      which will be terminated by '\0' in case of an IPv6 address in
  *      IP-literal notation.
  *
  * Side effects:
@@ -344,7 +344,7 @@ Ns_HttpParseHost(
  *
  * Ns_HttpLocationString --
  *
- *      Build a HTTP location string following the IP literation
+ *      Build an HTTP location string following the IP literation
  *      notation as in RFC 3986 section 3.2.2 in the provided
  *      Tcl_DString. In case protoString is non-null, prepend
  *      the protocol. In case port != defPort, append the port.
@@ -401,7 +401,7 @@ Ns_HttpLocationString(
  *
  * Ns_HttpMessageParse --
  *
- *      Parse a HTTP message (response line and headers).
+ *      Parse an HTTP message (response line and headers).
  *      The headers are returned into the provided Ns_Set,
  *      while the rest is returned via output args.
  *
@@ -2186,7 +2186,7 @@ HttpConnect(
         }
 
         /*
-         * Optionally setup a SSL connection
+         * Optionally setup an SSL connection
          */
         if (defPortNr == 443u) {
             NS_TLS_SSL_CTX *ctx = NULL;

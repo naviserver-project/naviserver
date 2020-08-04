@@ -121,7 +121,7 @@ variables through a form, or by using the ISINDEX tag.
      input and sends them to you as email. If
      the form method is "GET", it gets the input from an
      environment variable. If the form method is "POST", it
-     gets the input from standard input. It also assembles a
+     gets the input from standard input. It also assembles an
      HTML page and sends it to standard output.
 
 [enum] Any information the program passes to standard output is

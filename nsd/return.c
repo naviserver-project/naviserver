@@ -461,7 +461,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
      *
      *       "MIME-Version: 1.0\r\n"
      *
-     * However, MIME_Version is a MIME header, not a HTTP header (although
+     * However, MIME_Version is a MIME header, not an HTTP header (although
      * allowed in HTTP/1.1); it's only used when HTTP messages are moved over
      * MIME-based protocols (e.g., SMTP), which is uncommon. The HTTP mime
      * message parsing semantics are defined by this RFC 2616 and not any MIME
@@ -535,7 +535,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
                         Ns_DString sanitize, *sanitizePtr = &sanitize;
                         /*
                          * We have to sanititize the header field to avoid
-                         * a HTTP response splitting attack. After each
+                         * an HTTP response splitting attack. After each
                          * newline in the value, we insert a TAB character
                          * (see Section 4.2 in RFC 2616)
                          */

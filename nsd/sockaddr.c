@@ -242,7 +242,7 @@ Ns_SockaddrMaskedMatch(const struct sockaddr *addr, const struct sockaddr *mask,
  *
  * Ns_SockaddrMaskBits --
  *
- *      Build a mask with the given bits in a IPv4 or IPv6 sockaddr
+ *      Build a mask with the given bits in an IPv4 or IPv6 sockaddr
  *
  * Results:
  *      Mask computed in 1 arg.
