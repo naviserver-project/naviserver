@@ -8,7 +8,7 @@
 
 [description]
 
-These commands are used to manually construct and send a HTTP
+These commands are used to manually construct and send an HTTP
 response piecewise (in a streaming manner), to the client.
 
 

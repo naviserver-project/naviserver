@@ -194,7 +194,7 @@ anonymous cipher is used, this option is ignored.
 	]
 
 [para]
-Send a HTTP request and wait for the result.  The command [cmd "ns_http run"]
+Send an HTTP request and wait for the result.  The command [cmd "ns_http run"]
 is similar to [cmd "ns_http queue"] followed by [cmd "ns_http wait"].
 The http request is run in the same thread as the caller.
 

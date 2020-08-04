@@ -140,7 +140,7 @@ Return a response with the given [arg status] code and the error [arg message]
 wrapped in HTML.
 
 [para]
-Use this command to return a HTTP status response to the client which is not
+Use this command to return an HTTP status response to the client which is not
 covered by the above commands, or to customize the HTML message.
 
 
