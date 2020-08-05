@@ -1178,7 +1178,7 @@ Ns_SockSetBlocking(NS_SOCKET sock)
 /*
  *----------------------------------------------------------------------
  *
- * SetDeferAccept --
+ * Ns_SockSetDeferAccept --
  *
  *      Tell the OS not to give us a new socket until data is available.
  *      This saves overhead in the poll() loop and the latency of a RT.
@@ -1243,6 +1243,43 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, long secs)
 # endif
 #endif
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockSetKeepalive --
+ *
+ *      Tell the OS to activate keepalive on TCP sockets.
+ *      This makes it easy to detect stale connections.
+ *
+ *      For details, see
+ *      https://www.tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Changing socket behavior.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Ns_SockSetKeepalive(NS_SOCKET sock, int optval)
+{
+#ifdef SO_KEEPALIVE
+    socklen_t optlen = sizeof(optval);
+
+    if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, &optval, optlen) < 0) {
+        Ns_Log(Error, "sock(%d) can't set keepalive %d: %s",
+               sock, optval, ns_sockstrerror(ns_sockerrno));
+    } else {
+        Ns_Log(Notice, "sock(%d): socket option SO_KEEPALIVE set to %d",
+               sock, optval);
+    }
+#endif
+}
+
 
 
 

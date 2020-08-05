@@ -271,6 +271,7 @@ ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
     if (likely(isNew == 0)) {
         Ns_Log(Warning, "duplicate connchan name '%s'", name);
     }
+    Ns_SockSetKeepalive(sockPtr->sock, 1);
 
     connChanPtr = ns_malloc(sizeof(NsConnChan));
     Tcl_SetHashValue(hPtr, connChanPtr);

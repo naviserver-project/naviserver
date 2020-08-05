@@ -2859,6 +2859,9 @@ Ns_SockSetBlocking(NS_SOCKET sock);
 NS_EXTERN void
 Ns_SockSetDeferAccept(NS_SOCKET sock, long secs);
 
+NS_EXTERN void
+Ns_SockSetKeepalive(NS_SOCKET sock, int optval);
+
 NS_EXTERN Ns_ReturnCode
 Ns_SockCloseLater(NS_SOCKET sock);
 
