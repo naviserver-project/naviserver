@@ -31,8 +31,8 @@ test compress-1.2 {HTTP 1.0: Accept-Encoding gzip} -body {
                -setheaders {Accept-Encoding gzip} \
                -getheaders {Content-Encoding Vary} \
                GET /ns_adp_compress.adp]
-    list {*}[lrange $b 0 2] [llength [lindex $b end]] [lrange [lindex $b end] end-10 end]
-} -result "200 gzip Accept-Encoding 33 {[lrange $this_is_a_test_gzip end-10 end]}"
+    list {*}[lrange $b 0 2] [lrange [lindex $b end] end-10 end]
+} -result "200 gzip Accept-Encoding {[lrange $this_is_a_test_gzip end-10 end]}"
 
 test compress-1.2.1 {HTTP 1.0: Accept-Encoding "gzip ; q = 1"} -body {
     set b [nstest::http-0.9 \
