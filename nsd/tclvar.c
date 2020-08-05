@@ -1157,6 +1157,7 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                              */
                             int i;
 
+                            dictKeyObj = NULL; /* make sure, dictKeyObj is always initialized */
                             for (i = objc - nargs; i < lastObjc; i++) {
                                 dictKeyObj = objv[i];
                                 result = Tcl_DictObjGet(interp, dictObj, dictKeyObj, &dictValueObj);

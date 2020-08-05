@@ -1199,12 +1199,18 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
                                         ciphers, ciphersuites, protocols,
                                         ctxPtr);
         if (result == TCL_OK) {
-            NsSSLConfig *cfgPtr = (NsSSLConfig *)app_data;
+            NsSSLConfig *cfgPtr;
 
             Ns_Log(Debug, "Ns_TLS_CtxServerInit ctx %p ctx app %p",
                    (void*)*ctxPtr, SSL_CTX_get_app_data(*ctxPtr));
 
-            if (app_data == NULL && SSL_CTX_get_app_data(*ctxPtr) == NULL) {
+            if (app_data == NULL) {
+                /*
+                 * Get the app_data from the SSL_CTX.
+                 */
+                app_data = SSL_CTX_get_app_data(*ctxPtr);
+            }
+            if (app_data == NULL) {
                 /*
                  * Create new app_data (= NsSSLConfig).
                  *
@@ -1217,14 +1223,14 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
                 Ns_Log(Debug, "Ns_TLS_CtxServerInit created new app data %p for cert <%s> ctx %p",
                         (void*)cfgPtr, cert, (void*)(cfgPtr->ctx));
                 app_data = (void *)cfgPtr;
+
+                Ns_Log(Debug, "Ns_TLS_CtxServerInit set app data %p ctx %p for cert <%s>",
+                       (void*) app_data, (void*)*ctxPtr, cert);
+                SSL_CTX_set_app_data(*ctxPtr, app_data);
             }
 
-            if (app_data != NULL) {
-                Ns_Log(Debug, "Ns_TLS_CtxServerInit set app data %p ctx %p for cert <%s>",
-                        (void*) app_data, (void*)*ctxPtr, cert);
-                SSL_CTX_set_app_data(*ctxPtr, app_data);
-                cfgPtr = app_data;
-            }
+            cfgPtr = (NsSSLConfig *)app_data;
+
             SSL_CTX_set_session_id_context(*ctxPtr, (const unsigned char *)&nsconf.pid, sizeof(pid_t));
             SSL_CTX_set_session_cache_mode(*ctxPtr, SSL_SESS_CACHE_SERVER);
 
