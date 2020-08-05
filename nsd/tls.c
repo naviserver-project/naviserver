@@ -66,6 +66,7 @@ typedef struct {
     char          *respin;     /* File to load OCSP Response from (or NULL if no file) */
     int            verbose;
     OCSP_RESPONSE *resp;
+    Ns_Time        expire;
 } SSLCertStatusArg;
 
 static SSLCertStatusArg sslCertStatusArg;
@@ -296,11 +297,45 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
     }
 
     /*
+     * If there is a in-memory changed OCSP response, validate this if
+     * necessary.
+     */
+    if (srctx->resp != NULL) {
+        OCSP_CERTID *cert_id;
+        bool         flush;
+        Ns_Time      now, diff;
+
+        Ns_GetTime(&now);
+        if (Ns_DiffTime(&srctx->expire, &now, &diff) < 0) {
+            Ns_Log(Notice, "MUST VALIDATE OCSP response %" PRId64 ".%06ld sec",
+                    (int64_t) diff.sec, diff.usec);
+
+            cert_id = OCSP_get_cert_id(ssl, SSL_get_certificate(ssl));
+            if (cert_id == NULL) {
+                Ns_Log(Notice, "OCSP validation: vertificate id is unknown");
+                flush = NS_TRUE;
+            } else {
+                Ns_Log(Notice, "CAN VALIDATE OCSP response");
+                flush = !OCSP_ResponseIsValid(srctx->resp, cert_id);
+            }
+            if (flush) {
+                Ns_Log(Notice, "FLUSH OCSP response");
+                OCSP_RESPONSE_free(srctx->resp);
+                srctx->resp = NULL;
+            }
+        } else {
+            Ns_Log(Notice, "RECENT OCSP response %" PRId64 ".%06ld sec",
+                    (int64_t) diff.sec, diff.usec);
+        }
+    }
+
+    /*
      * If we have not in-memory cached the OCSP response yet, fetch the value
      * either form the disk cache or from the URL provided via the DER encoded
      * OCSP request.
      */
     if (srctx->resp == NULL) {
+        Ns_Time      now;
 
         result = OCSP_computeResponse(ssl, srctx, &resp);
         if (result != SSL_TLSEXT_ERR_OK) {
@@ -313,6 +348,13 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
          * Perform in-memory caching of the OCSP_RESPONSE.
          */
         srctx->resp = resp;
+        /*
+         * Avoid Ns_GetTime() on every invocation.
+         */
+        Ns_GetTime(&now);
+        /* TODO: provide a configurable re-check value */
+        now.sec += 300;
+        srctx->expire = now;
     } else {
         resp = srctx->resp;
     }
