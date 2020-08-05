@@ -291,22 +291,24 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
     OCSP_RESPONSE    *resp = NULL;
     unsigned char    *rspder = NULL;
     int               rspderlen;
+    Ns_Time           now;
 
     if (srctx->verbose) {
         Ns_Log(Notice, "cert_status: callback called");
     }
 
+    Ns_GetTime(&now);
     /*
      * If there is a in-memory changed OCSP response, validate this if
      * necessary.
      */
     if (srctx->resp != NULL) {
-        OCSP_CERTID *cert_id;
-        bool         flush;
-        Ns_Time      now, diff;
+        Ns_Time diff;
 
-        Ns_GetTime(&now);
         if (Ns_DiffTime(&srctx->expire, &now, &diff) < 0) {
+            OCSP_CERTID *cert_id;
+            bool         flush;
+
             Ns_Log(Notice, "MUST VALIDATE OCSP response %" PRId64 ".%06ld sec",
                     (int64_t) diff.sec, diff.usec);
 
@@ -322,6 +324,10 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
                 Ns_Log(Notice, "FLUSH OCSP response");
                 OCSP_RESPONSE_free(srctx->resp);
                 srctx->resp = NULL;
+            } else {
+                /* TODO: provide a configurable re-check value */
+                now.sec += 300;
+                srctx->expire = now;
             }
         } else {
             Ns_Log(Notice, "RECENT OCSP response %" PRId64 ".%06ld sec",
@@ -335,7 +341,6 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
      * OCSP request.
      */
     if (srctx->resp == NULL) {
-        Ns_Time      now;
 
         result = OCSP_computeResponse(ssl, srctx, &resp);
         if (result != SSL_TLSEXT_ERR_OK) {
