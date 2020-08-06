@@ -380,7 +380,7 @@ ConnChanFree(NsConnChan *connChanPtr) {
  *
  * ConnChanGet --
  *
- *    Access a NsConnChan from the per-server table via its name.
+ *    Access an NsConnChan from the per-server table via its name.
  *
  * Results:
  *    ConnChan* or NULL if not found.
@@ -1639,7 +1639,7 @@ ConnChanReadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
             }
 
             /*
-             * In case we see a NS_SOCK_AGAIN, retry. We could make
+             * In case we see an NS_SOCK_AGAIN, retry. We could make
              * this behavior optional via argument, but with OpenSSL,
              * this seems to happen quite often.
              */

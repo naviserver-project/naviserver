@@ -529,7 +529,7 @@ ns_inet_pton(struct sockaddr *saPtr, const char *addr) {
  *
  * Ns_GetSockAddr --
  *
- *      Take a host/port and fill in a NS_SOCKADDR_STORAGE structure
+ *      Take a host/port and fill in an NS_SOCKADDR_STORAGE structure
  *      appropriately. The passed in host may be an IP address or a DNS name.
  *
  * Results:

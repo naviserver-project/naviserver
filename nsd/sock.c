@@ -262,7 +262,7 @@ Ns_SockGetPort(const Ns_Sock *sock)
  *
  * Ns_SockInErrorState --
  *
- *      Check the error State of a ns_sock structure.
+ *      Check the error State of an ns_sock structure.
  *
  *      Background: SSL_shutdown() must not be called if a previous fatal error
  *      has occurred on a connection i.e. if SSL_get_error() has returned
@@ -355,7 +355,7 @@ Ns_SockRecvBufs(Ns_Sock *sock, struct iovec *bufs, int nbufs,
  *      Read data from a nonblocking socket into a vector of buffers.
  *      Ns_SockRecvBufs2() is similar to Ns_SockRecvBufs() with the following
  *      differences:
- *        a) the first argument is a NS_SOCKET
+ *        a) the first argument is an NS_SOCKET
  *        b) it performs no timeout handliong
  *        c) it returns the sockstate in its last argument
  *
@@ -523,7 +523,7 @@ Ns_SockSendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
  *
  *      Send a vector of buffers on a nonblocking socket.
  *      It is similar to Ns_SockSendBufs() except that it
- *        a) receives a NS_SOCK as first argument
+ *        a) receives an NS_SOCK as first argument
  *        b) it does not care about partial writes,
  *           it simply returns the number of bytes sent.
  *        c) it never blocks

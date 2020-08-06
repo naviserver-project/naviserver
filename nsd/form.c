@@ -64,7 +64,7 @@ static bool GetValue(const char *hdr, const char *att, const char **vsPtr, const
  *
  * Ns_ConnGetQuery --
  *
- *      Return the connection query data in form of a Ns_Set. This function
+ *      Return the connection query data in form of an Ns_Set. This function
  *      parses the either the query (of the URL) or the form content (in POST
  *      requests with content type "www-form-urlencoded" or
  *      "multipart/form-data"). In case the Ns_Set for the query is already

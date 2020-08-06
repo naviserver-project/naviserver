@@ -397,32 +397,32 @@ test cache-8.4 {cache incr: positive multiple} -body {
 
 
 test cache-9.1 {cache append} -body {
-    ns_cache_append c1 k1 a
-    ns_cache_append c1 k1 b
+    ns_cache_append c1 k1 x
+    ns_cache_append c1 k1 y
 } -cleanup {
     ns_cache_flush c1
-} -result ab
+} -result xy
 
 test cache-9.2 {cache append multiple values} -body {
-    ns_cache_append c1 k1 a
-    ns_cache_append c1 k1 b c
+    ns_cache_append c1 k1 x
+    ns_cache_append c1 k1 y z
 } -cleanup {
     ns_cache_flush c1
-} -result {abc}
+} -result {xyz}
 
 test cache-9.4 {cache lappend} -body {
-    ns_cache_lappend c1 k1 a
-    ns_cache_lappend c1 k1 b
+    ns_cache_lappend c1 k1 x
+    ns_cache_lappend c1 k1 y
 } -cleanup {
     ns_cache_flush c1
-} -result {a b}
+} -result {x y}
 
 test cache-9.5 {cache lappend multiple values} -body {
-    ns_cache_lappend c1 k1 a
-    ns_cache_lappend c1 k1 b c
+    ns_cache_lappend c1 k1 x
+    ns_cache_lappend c1 k1 y z
 } -cleanup {
     ns_cache_flush c1
-} -result {a b c}
+} -result {x y z}
 
 test cache-9.6 {cache get} -body {
     ns_cache_eval c1 k1 {return a}

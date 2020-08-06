@@ -608,7 +608,7 @@ NsShortcutFilterProc(const void *UNUSED(arg), Ns_Conn *UNUSED(conn), Ns_FilterTy
  *
  * NsTclTimeoutException --
  *
- *      Check for a NS_TIMEOUT exception in the Tcl errorCode variable.
+ *      Check for an NS_TIMEOUT exception in the Tcl errorCode variable.
  *
  * Results:
  *      NS_TRUE if there is an exception, NS_FALSE otherwise.

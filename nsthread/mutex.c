@@ -464,7 +464,7 @@ NsMutexInitNext(Ns_Mutex *mutex, const char *prefix, uintptr_t *nextPtr)
  *
  * NsGetLock --
  *
- *      Return the private lock pointer for a Ns_Mutex.
+ *      Return the private lock pointer for an Ns_Mutex.
  *
  * Results:
  *      Pointer to lock.
@@ -494,7 +494,7 @@ NsGetLock(Ns_Mutex *mutex)
  *
  * GetMutex --
  *
- *      Cast a Ns_Mutex to a Mutex, initializing if needed.
+ *      Cast an Ns_Mutex to a Mutex, initializing if needed.
  *
  * Results:
  *      Pointer to Mutex.

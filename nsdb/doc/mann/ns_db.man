@@ -30,7 +30,7 @@ is returned.
 
 [call [cmd "ns_db bindrow"] [arg handle]]
 
-ns_db bindrow returns a ns_set structure whose key names are the column names
+ns_db bindrow returns an ns_set structure whose key names are the column names
 of the rows returned by the SQL command previously-executed with ns_db exec.
 If the database is not currently returning rows (i.e., a status other than
 NS_ROWS was returned by ns_db exec), an error is thrown. The handle argument is

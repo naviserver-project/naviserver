@@ -1155,7 +1155,7 @@ message is printed to the syslog and the function returns.
 [para]
 
 
-     This function frees a ns_PdRowInfo data structure. If fFreeData
+     This function frees an ns_PdRowInfo data structure. If fFreeData
              is a nonzero value, then this function frees the data
              associated with the ns_PdRowData structure (encapsulated
              in ns_PdRowInfo) as well.

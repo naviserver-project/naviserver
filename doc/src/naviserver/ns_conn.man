@@ -30,7 +30,7 @@ Returns the local IP address of the current connection.
 
 [call [cmd  "ns_conn auth"]]
 
-Returns all authorization headers as a ns_set. For Basic authentication
+Returns all authorization headers as an ns_set. For Basic authentication
 there are reserved keys: Username and Password, these are the keys returned by ns_conn authuser and
 ns_conn authpassword. This ns_set can be updated.
 

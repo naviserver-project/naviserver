@@ -382,7 +382,7 @@ returns reply-headers.
 [example_end]
 
 The forth example is a code snippet that sets a larger timeout on the
-request, provides a ns_set for the reply headers, and spools
+request, provides an ns_set for the reply headers, and spools
 results to a file if the result is larger than 1000 bytes.
 
 [example_begin]

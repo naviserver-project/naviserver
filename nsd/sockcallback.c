@@ -513,7 +513,7 @@ SockCallbackThread(void *UNUSED(arg))
                         /*
                          * Call the Sock_Proc with the SockState flag
                          * combination from when[i]. This is actually
-                         * the only place, where a Ns_SockProc is called
+                         * the only place, where an Ns_SockProc is called
                          * with a flag combination in the last
                          * argument. If this would not be the case, we
                          * could set the type of the last parameter of

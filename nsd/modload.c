@@ -59,7 +59,7 @@ static Module *firstPtr;           /* List of static modules to be inited. */
  * Ns_RegisterModule --
  *
  *      Register a static module.  This routine can only be called from
- *      a Ns_ServerInitProc passed to Ns_Main or within the Ns_ModuleInit
+ *      an Ns_ServerInitProc passed to Ns_Main or within the Ns_ModuleInit
  *      proc of a loadable module.  It registers a module callback for
  *      for the currently initializing server.
  *

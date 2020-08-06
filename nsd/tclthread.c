@@ -794,7 +794,7 @@ NsTclRWLockObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
  *
  * ThreadArgFree --
  *
- *      Free the argument structure of a NsTclThread.
+ *      Free the argument structure of an NsTclThread.
  *
  * Results:
  *      None.

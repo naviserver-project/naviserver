@@ -140,7 +140,7 @@
 /*
  * This optimization, when turned on, prevents the server from doing a
  * whole lot of calls to Tcl_StringMatch on every lookup in urlspace.
- * Instead, a NS_strcmp is done.
+ * Instead, an NS_strcmp is done.
  *
  * GN 2015/11: This optimization was developed more than 10 years
  * ago. With the introduction of ns_urlspace it became easy to write

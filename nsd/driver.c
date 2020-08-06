@@ -5220,7 +5220,7 @@ WriterReadFromSpool(WriterSock *curPtr) {
 
         } else {
             /*
-             * Working on a Ns_FileVec.
+             * Working on an Ns_FileVec.
              */
             int    currentbuf = curPtr->c.file.currentbuf;
             size_t wantRead = curPtr->c.file.bufs[currentbuf].length;
