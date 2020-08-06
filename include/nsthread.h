@@ -148,7 +148,7 @@ typedef          long suseconds_t;
 #  define NS_INITGROUPS_GID_T int
 #  define NS_MSG_IOVLEN_T int
 
-#  define NS_SOCKET		SOCKET
+#  define NS_SOCKET             SOCKET
 #  define NS_INVALID_SOCKET     (INVALID_SOCKET)
 #  define NS_INVALID_PID        (0)
 #  define NS_INVALID_FD         (-1)
@@ -212,8 +212,8 @@ MSVC++ 14.2 _MSC_VER == 1920 (Visual Studio 2019 version 16.0)
 /*
  * MinGW
  */
-#  define NS_SOCKET 		int
-#  define NS_INVALID_PID 	(-1)
+#  define NS_SOCKET             int
+#  define NS_INVALID_PID        (-1)
 #  define NS_INVALID_SOCKET     (-1)
 #  define NS_INVALID_FD         (-1)
 # endif
@@ -231,7 +231,7 @@ MSVC++ 14.2 _MSC_VER == 1920 (Visual Studio 2019 version 16.0)
 # define NS_SIGPIPE                13
 # define NS_SIGTERM                15
 
-# define DEVNULL	           "nul:"
+# define DEVNULL                   "nul:"
 
 /*
  * For the time being, don't try to be very clever
@@ -378,7 +378,7 @@ typedef struct DIR_ *DIR;
 # include <sys/mman.h>
 # include <poll.h>
 
-# define NS_SOCKET	      int
+# define NS_SOCKET            int
 # define NS_INVALID_SOCKET     (-1)
 # define NS_INVALID_PID        (-1)
 # define NS_INVALID_FD         (-1)
@@ -471,12 +471,12 @@ typedef int ns_sockerrno_t;
 # define NS_SIGPIPE                 (SIGPIPE)
 # define NS_SIGTERM                 (SIGTERM)
 
-# define DEVNULL	            "/dev/null"
+# define DEVNULL                   "/dev/null"
 
 # define NS_MMAP_READ               (PROT_READ)
 # define NS_MMAP_WRITE              (PROT_WRITE)
 
-# define ns_mkstemp	 	    mkstemp
+# define ns_mkstemp                 mkstemp
 
 # define ns_recv                    recv
 # define ns_send                    send
@@ -487,11 +487,11 @@ typedef int ns_sockerrno_t;
 # define ns_socknbclose             close
 # define ns_sockstrerror            strerror
 
-# define ns_open		    open
-# define ns_close		    close
+# define ns_open                    open
+# define ns_close                   close
 # define ns_read                    read
 # define ns_write                   write
-# define ns_lseek		    lseek
+# define ns_lseek                   lseek
 
 # if __GNUC__
 #  if __x86_64__ || __ppc64__
@@ -907,11 +907,11 @@ typedef int bool;
 
 
 #if defined(F_DUPFD_CLOEXEC)
-# define ns_dup(fd)	    	    fcntl((fd), F_DUPFD_CLOEXEC, 0)
+# define ns_dup(fd)     fcntl((fd), F_DUPFD_CLOEXEC, 0)
 #else
-# define ns_dup(fd)	    	    dup((fd))
+# define ns_dup(fd)     dup((fd))
 #endif
-# define ns_dup2	    	    dup2
+# define ns_dup2        dup2
 
 #ifdef __cplusplus
 # define NS_EXTERN                   extern "C" NS_STORAGE_CLASS
@@ -1097,7 +1097,7 @@ NS_EXTERN int ns_signal(int sig, void (*proc)(int));
  */
 
 NS_EXTERN void Ns_ThreadCreate(Ns_ThreadProc *proc, void *arg, ssize_t stackSize,
-			       Ns_Thread *resultPtr) NS_GNUC_NONNULL(1);
+                               Ns_Thread *resultPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_ThreadExit(void *arg)              NS_GNUC_NORETURN;
 NS_EXTERN void* Ns_ThreadResult(void *arg);
 NS_EXTERN void Ns_ThreadJoin(Ns_Thread *threadPtr, void **argPtr) NS_GNUC_NONNULL(1);
