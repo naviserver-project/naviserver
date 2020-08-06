@@ -68,22 +68,22 @@ typedef Ns_Set *       (SpGetParamsProc) (Ns_DbHandle *handle);
  */
 
 typedef struct DbDriver {
-    const char	*name;
+    const char  *name;
     int          registered;
-    InitProc	*initProc;
-    NameProc	*nameProc;
-    TypeProc	*typeProc;
-    OpenProc	*openProc;
+    InitProc    *initProc;
+    NameProc    *nameProc;
+    TypeProc    *typeProc;
+    OpenProc    *openProc;
     CloseProc   *closeProc;
     DMLProc     *dmlProc;
-    SelectProc	*selectProc;
-    ExecProc	*execProc;
-    BindProc	*bindProc;
+    SelectProc  *selectProc;
+    ExecProc    *execProc;
+    BindProc    *bindProc;
     GetProc     *getProc;
     CountProc   *countProc;
-    FlushProc	*flushProc;
-    CancelProc	*cancelProc;
-    ResetProc	*resetProc;
+    FlushProc   *flushProc;
+    CancelProc  *cancelProc;
+    ResetProc   *resetProc;
     SpStartProc *spstartProc;
     SpSetParamProc   *spsetparamProc;
     SpExecProc       *spexecProc;

@@ -44,8 +44,8 @@ static void Set2Argv(Ns_DString *dsPtr, const Ns_Set *env);
 #else
 
 # define ERR_DUP        (-1)
-# define ERR_CHDIR	(-2)
-# define ERR_EXEC	(-3)
+# define ERR_CHDIR      (-2)
+# define ERR_EXEC       (-3)
 static int ExecProc(const char *exec, const char *dir, int fdin, int fdout,
                     char **argv, char **envp)
     NS_GNUC_NONNULL(1);

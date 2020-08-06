@@ -1322,18 +1322,24 @@ SHAByteSwap(uint32_t *dest, const uint8_t *src, unsigned int words)
     } while (--words > 0u);
 }
 
-/* Initialize the SHA values */
+/* 
+ * Initialize the SHA values 
+ */
 void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
 {
 
-    /* Set the h-vars to their initial values */
+    /* 
+     * Set the h-vars to their initial values.
+     */
     ctx->iv[0] = 0x67452301u;
     ctx->iv[1] = 0xEFCDAB89u;
     ctx->iv[2] = 0x98BADCFEu;
     ctx->iv[3] = 0x10325476u;
     ctx->iv[4] = 0xC3D2E1F0u;
 
-    /* Initialise bit count */
+    /* 
+     * Initialise bit count
+     */
 #if defined(HAVE_64BIT)
     ctx->bytes = 0u;
 #else
@@ -1350,18 +1356,18 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
  *  two halves rather than OR, allowing more opportunity for using
  *  associativity in optimization. (Colin Plumb)
  */
-#define f1(x,y,z) ( (z) ^ ((x) & ((y) ^ (z)) ) )	/* Rounds 0-19 */
-#define f2(x,y,z) ( (x) ^ (y) ^ (z) )			/* Rounds 20-39 */
-#define f3(x,y,z) ( ((x) & (y)) + ((z) & ((x) ^ (y)) ) )	/* Rounds 40-59 */
-#define f4(x,y,z) ( (x) ^ (y) ^ (z) )			/* Rounds 60-79 */
+#define f1(x,y,z) ( (z) ^ ((x) & ((y) ^ (z)) ) )         /* Rounds 0-19 */
+#define f2(x,y,z) ( (x) ^ (y) ^ (z) )                    /* Rounds 20-39 */
+#define f3(x,y,z) ( ((x) & (y)) + ((z) & ((x) ^ (y)) ) ) /* Rounds 40-59 */
+#define f4(x,y,z) ( (x) ^ (y) ^ (z) )                    /* Rounds 60-79 */
 
 /*
  * The SHA Mysterious Constants.
  */
-#define K2  (0x5A827999u)	/* Rounds 0 -19 - floor(sqrt(2)  * 2^30) */
-#define K3  (0x6ED9EBA1u)	/* Rounds 20-39 - floor(sqrt(3)  * 2^30) */
-#define K5  (0x8F1BBCDCu)	/* Rounds 40-59 - floor(sqrt(5)  * 2^30) */
-#define K10 (0xCA62C1D6u)	/* Rounds 60-79 - floor(sqrt(10) * 2^30) */
+#define K2  (0x5A827999u)      /* Rounds 0 -19 - floor(sqrt(2)  * 2^30) */
+#define K3  (0x6ED9EBA1u)      /* Rounds 20-39 - floor(sqrt(3)  * 2^30) */
+#define K5  (0x8F1BBCDCu)      /* Rounds 40-59 - floor(sqrt(5)  * 2^30) */
+#define K10 (0xCA62C1D6u)      /* Rounds 60-79 - floor(sqrt(10) * 2^30) */
 
 /*
  * 32-bit rotate left - kludged with shifts
@@ -1382,7 +1388,7 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
  *  The expandx() version doesn't write the result back, which can be
  *  used for the last three rounds since those outputs are never used.
  */
-#if SHA_VERSION			/* FIPS 180.1 */
+#if SHA_VERSION       /* FIPS 180.1 */
 
 #define expandx(W,i) (t = W[(i)&15u] ^ W[((i)-14)&15u] ^ W[((i)-8)&15u] ^ W[((i)-3)&15u], \
                         ROTL(1, t))
@@ -1561,20 +1567,20 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
         uint32_t t = ctx->bytesLo;
         ctx->bytesLo = (uint32_t)(t + len);
         if (ctx->bytesLo < t) {
-            ctx->bytesHi++;		/* Carry from low to high */
+            ctx->bytesHi++;                    /* Carry from low to high */
         }
-        i = (unsigned) t % SHA_BLOCKBYTES;	/* Bytes already in ctx->key */
+        i = (unsigned) t % SHA_BLOCKBYTES;     /* Bytes already in ctx->key */
     }
 #endif
 
     /*
-     * i is always less than SHA_BLOCKBYTES.
+     * "i" is always less than SHA_BLOCKBYTES.
      */
     if (SHA_BLOCKBYTES - i > len) {
         memcpy(ctx->key + i, buf, len);
 
     } else {
-        if (i != 0u) {				/* First chunk is an odd size */
+        if (i != 0u) {                         /* First chunk is an odd size */
             memcpy(ctx->key + i, buf, SHA_BLOCKBYTES - i);
             SHAByteSwap(ctx->key, (const uint8_t *) ctx->key, SHA_BLOCKWORDS);
             SHATransform(ctx);
@@ -1582,7 +1588,9 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
             len -= SHA_BLOCKBYTES - i;
         }
 
-        /* Process data in 64-byte chunks */
+        /* 
+         * Process data in 64-byte chunks 
+         */
         while (len >= SHA_BLOCKBYTES) {
             SHAByteSwap(ctx->key, buf, SHA_BLOCKWORDS);
             SHATransform(ctx);
@@ -1590,7 +1598,9 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
             len -= SHA_BLOCKBYTES;
         }
 
-        /* Handle any remaining bytes of data. */
+        /* 
+         * Handle any remaining bytes of data. 
+         */
         if (len != 0u) {
             memcpy(ctx->key, buf, len);
         }
@@ -1608,7 +1618,7 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
 #else
     unsigned i = (unsigned) ctx->bytesLo % SHA_BLOCKBYTES;
 #endif
-    uint8_t *p = (uint8_t *) ctx->key + i;	/* First unused byte */
+    uint8_t *p = (uint8_t *) ctx->key + i;     /* First unused byte */
 
     /*
      * Set the first char of padding to 0x80. There is always room.
@@ -1620,7 +1630,10 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
      */
     i = (SHA_BLOCKBYTES - 1u) - i;
 
-    if (i < 8u) {				/* Padding forces an extra block */
+    if (i < 8u) {
+        /* 
+         * Padding forces an extra block 
+         */
         memset(p, 0, i);
         SHAByteSwap(ctx->key, (const uint8_t *) ctx->key, 16u);
         SHATransform(ctx);
@@ -1852,7 +1865,7 @@ NsTclFileStatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 #endif
 
 #ifndef HIGHFIRST
-#define byteReverse(buf, len)	/* Nothing */
+#define byteReverse(buf, len)   /* Nothing */
 #else
 /*
  * Note: this code is harmless on little-endian machines.
@@ -1897,16 +1910,17 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, const unsigned char *buf, size_t len)
     NS_NONNULL_ASSERT(ctx != NULL);
     NS_NONNULL_ASSERT(buf != NULL);
 
-    /* Update bit count */
-
+    /* 
+     * Update bit count.
+     */
     t = ctx->bits[0];
     ctx->bits[0] = t + ((uint32_t) len << 3);
     if (ctx->bits[0] < t) {
-        ctx->bits[1]++;		/* Carry from low to high */
+        ctx->bits[1]++;       /* Carry from low to high */
     }
     ctx->bits[1] += (uint32_t)(len >> 29);
 
-    t = (t >> 3) & 0x3Fu;	/* Bytes already in shsInfo->data */
+    t = (t >> 3) & 0x3Fu;       /* Bytes already in shsInfo->data */
 
     /*
      * Handle any leading odd-sized chunks
@@ -2214,7 +2228,8 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
  */
 
 int
-NsTclSetUserObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclSetUserObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                   int objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -2230,7 +2245,8 @@ NsTclSetUserObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 }
 
 int
-NsTclSetGroupObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclSetGroupObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                    int objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 

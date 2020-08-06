@@ -290,9 +290,9 @@ Ns_DbPoolAllowable(const char *server, const char *pool)
 void
 Ns_DbPoolPutHandle(Ns_DbHandle *handle)
 {
-    Handle	*handlePtr;
-    Pool	*poolPtr;
-    time_t       now;
+    Handle *handlePtr;
+    Pool   *poolPtr;
+    time_t  now;
 
     NS_NONNULL_ASSERT(handle != NULL);
 

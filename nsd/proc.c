@@ -108,14 +108,14 @@ static const struct proc {
  *
  * AllocFuncptrEntry --
  *
- *	Allocate enough space for a Tcl_HashEntry including the payload. The
- *	function pointer is assigned to key.oneWordValue via memcpy().
+ *      Allocate enough space for a Tcl_HashEntry including the payload. The
+ *      function pointer is assigned to key.oneWordValue via memcpy().
  *
  * Results:
- *	Return a memory block casted to Tcl_HashEntry*.
+ *      Return a memory block casted to Tcl_HashEntry*.
  *
  * Side effects:
- *	Memory allocation.
+ *      Memory allocation.
  *----------------------------------------------------------------------
  */
 
@@ -144,14 +144,14 @@ AllocFuncptrEntry(Tcl_HashTable *UNUSED(tablePtr), void *keyPtr) {
  *
  * FreeFuncptrEntry --
  *
- *	Free an entry in the funcptr hash table. The inverse operation of
- *	AllocFuncptrEntry().
+ *      Free an entry in the funcptr hash table. The inverse operation of
+ *      AllocFuncptrEntry().
  *
  * Results:
- *	None.
+ *      None.
  *
  * Side effects:
- *	Free memory.
+ *      Free memory.
  *----------------------------------------------------------------------
  */
 static void
@@ -165,13 +165,13 @@ FreeFuncptrEntry(Tcl_HashEntry *hPtr)
  *
  * FuncptrKey --
  *
- *	Compute an unsigned int hash value from a function pointer.
+ *      Compute an unsigned int hash value from a function pointer.
  *
  * Results:
- *	Returns the computed hash.
+ *      Returns the computed hash.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -190,14 +190,14 @@ FuncptrKey(Tcl_HashTable *UNUSED(tablePtr), void *keyPtr)
  *
  * CompareFuncptrKeys --
  *
- *	Compare two function pointers.
+ *      Compare two function pointers.
  *
  * Results:
- *	The return value is 0 if they are different and 1 if they are the
- *	same.
+ *      The return value is 0 if they are different and 1 if they are the
+ *      same.
  *
  * Side effects:
- *	None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */

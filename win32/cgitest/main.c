@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -42,22 +42,31 @@ main(int argc, char **argv)
     char buf[8192];
 
     if (strstr(argv[0], "nph-") != NULL) {
-	printf("HTTP/1.0 200 OK\r\nServer: %s\r\n", argv[0]);
+        printf("HTTP/1.0 200 OK\r\nServer: %s\r\n", argv[0]);
     }
     printf("Content-type: text/plain\r\n\r\n");
     puts("\nArgs:");
     for (i = 0; i < argc; ++i) {
-	puts(argv[i]);
+        puts(argv[i]);
     }
 
     puts("\nEnvironment:");
     for (i = 0; _environ[i] != NULL; ++i) {
-	printf("%s\n", _environ[i]);
+        printf("%s\n", _environ[i]);
     }
 
     puts("\nContent:");
     while ((i = fread(buf, 1, sizeof(buf), stdin)) > 0) {
-	fwrite(buf, 1, i, stdout);
+        fwrite(buf, 1, i, stdout);
     }
     return 0;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */

@@ -152,9 +152,9 @@ ns_strdup(const char *old)
 
 int
 ns_uint32toa(
-    char *buffer,		/* Points to the storage into which the
-                                 * formatted characters are written. */
-    uint32_t n)			/* The value to be converted. */
+    char *buffer,  /* Points to the storage into which the
+                    * formatted characters are written. */
+    uint32_t n)    /* The value to be converted. */
 {
     char            temp[TCL_INTEGER_SPACE];
     register char  *p = temp;
@@ -186,9 +186,9 @@ ns_uint32toa(
 
 int
 ns_uint64toa(
-    char *buffer,		/* Points to the storage into which the
-                                 * formatted characters are written. */
-    uint64_t n)			/* The value to be converted. */
+    char *buffer,  /* Points to the storage into which the
+                    * formatted characters are written. */
+    uint64_t n)    /* The value to be converted. */
 {
     char            temp[TCL_INTEGER_SPACE];
     register char  *p = temp;
