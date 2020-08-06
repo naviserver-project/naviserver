@@ -14,7 +14,7 @@ if {$::tcl_version eq "8.5"} {
 
 namespace eval ::revproxy {
 
-    set version 0.12
+    set version 0.13
     set verbose 0
 
     #
@@ -71,7 +71,7 @@ namespace eval ::revproxy {
         #
         # When the callback decides, we have to cancel this request,
         # it can send back an empty URL. The callback can
-        # e.g. terminate the connection via a ns_returnforbidden
+        # e.g. terminate the connection via an ns_returnforbidden
         # before returning the empty string.
         #
         if {$url eq ""} {
@@ -396,7 +396,7 @@ namespace eval ::revproxy {
     nsf::proc write_once { from to url data timeouts condition } {
         #
         # Helper for cases, where the -sendtimeout is 0 and a "ns_conn
-        # write" operation ended with a NS_WOULDBLOCK.
+        # write" operation ended with an NS_WOULDBLOCK.
         #
         log notice "write_once: want to send [string length $data] bytes from $from to $to (condition $condition)"
 
@@ -409,12 +409,19 @@ namespace eval ::revproxy {
         set result [revproxy::write $from $to $data -url $url -timeouts $timeouts]
         if {$result != 0} {
             set result 2
+        } else {
+            #
+            # There was an error. We must cleanup the "$from" channel
+            # manually, the "$to" channel is automaticalled freed.
+            #
+            ns_log notice "revproxy: write_once MANUAL cleanup of $from"
+            ns_connchan close $from
+            channelCleanup $from
         }
 
-        #log notice "write_once returns $result"
+        log notice "write_once returns $result (from $from to $to)"
         return $result
     }
-
     #
     # Handle backend replies in order to be able to post-process the
     # reply header fields. This is e.g. necessary to downgrade to
