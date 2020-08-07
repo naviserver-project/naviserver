@@ -282,12 +282,13 @@ int
 NsTclRegisterLimitsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = clientData;
+    NsServer       *servPtr = itPtr->servPtr;
     NsLimits       *limitsPtr;
-    char           *method, *url, *server;
+    char           *method, *url;
     int             noinherit = 0, result = TCL_OK;
     Ns_ObjvSpec     opts[] = {
         {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_TRUE)},
-        {"-server",    Ns_ObjvString, &server,    NULL},
+        {"-server",    Ns_ObjvServer, &servPtr,   NULL},
         {"--",         Ns_ObjvBreak,  NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -298,7 +299,6 @@ NsTclRegisterLimitsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
         {NULL, NULL, NULL, NULL}
     };
 
-    server = (char *)itPtr->servPtr->server;
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
@@ -309,7 +309,7 @@ NsTclRegisterLimitsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
             flags |= NS_OP_NOINHERIT;
         }
         Ns_MutexLock(&lock);
-        Ns_UrlSpecificSet(server, method, url,
+        Ns_UrlSpecificSet(servPtr->server, method, url,
                           limid, limitsPtr, flags, NULL);
         Ns_MutexUnlock(&lock);
     }

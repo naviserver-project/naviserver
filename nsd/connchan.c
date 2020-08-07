@@ -1111,16 +1111,18 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 static int
 ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int            result, doBind = (int)NS_FALSE;
-    unsigned short port = 0u;
-    char          *driverName = NULL, *serverName = NULL, *addr = (char*)NS_EMPTY_STRING, *script;
-    Ns_ObjvSpec    lopts[] = {
+    const NsInterp *itPtr = clientData;
+    const NsServer *servPtr = itPtr->servPtr;
+    int             result, doBind = (int)NS_FALSE;
+    unsigned short  port = 0u;
+    char           *driverName = NULL, *addr = (char*)NS_EMPTY_STRING, *script;
+    Ns_ObjvSpec     lopts[] = {
         {"-driver",  Ns_ObjvString, &driverName, NULL},
-        {"-server",  Ns_ObjvString, &serverName, NULL},
+        {"-server",  Ns_ObjvServer, &servPtr, NULL},
         {"-bind",    Ns_ObjvBool,   &doBind, INT2PTR(NS_TRUE)},
         {NULL, NULL, NULL, NULL}
     };
-    Ns_ObjvSpec    largs[] = {
+    Ns_ObjvSpec     largs[] = {
         {"address", Ns_ObjvString, &addr, NULL},
         {"port",    Ns_ObjvUShort, &port, NULL},
         {"script",  Ns_ObjvString, &script, NULL},
@@ -1131,7 +1133,6 @@ ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
         result = TCL_ERROR;
 
     } else {
-        const NsInterp *itPtr = clientData;
         ListenCallback *lcbPtr;
         size_t          scriptLength;
         NS_SOCKET       sock;
@@ -1141,14 +1142,7 @@ ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
         }
         scriptLength = strlen(script);
         lcbPtr = ns_malloc(sizeof(ListenCallback) + scriptLength);
-        if (serverName == NULL) {
-            serverName = (itPtr->servPtr != NULL ? (char *)itPtr->servPtr->server : NULL);
-        }
-        if (serverName == NULL) {
-            serverName = (char *)nsconf.defaultServer;
-        }
-
-        lcbPtr->server = serverName;
+        lcbPtr->server = servPtr->server;
         memcpy(lcbPtr->script, script, scriptLength + 1u);
         lcbPtr->driverName = ns_strcopy(driverName);
 
@@ -1307,21 +1301,13 @@ ConnChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
     const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
     int             result = TCL_OK;
-    char           *server = NULL;
     Ns_ObjvSpec     lopts[] = {
-        {"-server", Ns_ObjvString, &server, NULL},
+        {"-server", Ns_ObjvServer, &servPtr, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
     if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
-
-    } else if (server != NULL) {
-        servPtr = NsGetServer(server);
-        if (servPtr == NULL) {
-            Ns_TclPrintfResult(interp, "server \"%s\" does not exist", server);
-            result = TCL_ERROR;
-        }
     }
 
     if (result == TCL_OK) {
@@ -1401,12 +1387,11 @@ static int
 ConnChanCloseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = clientData;
-    char           *name = (char*)NS_EMPTY_STRING;
-    const char     *server = NULL;
-    int             result = TCL_OK;
     NsServer       *servPtr = itPtr->servPtr;
+    char           *name = (char*)NS_EMPTY_STRING;
+    int             result = TCL_OK;
     Ns_ObjvSpec     lopts[] = {
-        {"-server", Ns_ObjvString, &server, NULL},
+        {"-server", Ns_ObjvServer, &servPtr, NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec     args[] = {
@@ -1417,16 +1402,9 @@ ConnChanCloseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
     if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
-    } else if (server != NULL) {
-        servPtr = NsGetServer(server);
-        if (servPtr == NULL) {
-            Ns_TclPrintfResult(interp, "server \"%s\" does not exist", server);
-            result = TCL_ERROR;
-        }
     } else {
-        NsConnChan *connChanPtr;
+        NsConnChan *connChanPtr = ConnChanGet(interp, servPtr, name);
 
-        connChanPtr = ConnChanGet(interp, servPtr, name);
         Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan close connChanPtr %p", name, (void*)connChanPtr);
 
         if (connChanPtr != NULL) {
