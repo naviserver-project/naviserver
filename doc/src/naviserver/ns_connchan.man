@@ -123,7 +123,7 @@ interpreted as follows:
 [call [cmd "ns_connchan listen"] \
 	[opt [option "-driver [arg d]"]] \
 	[opt [option "-server [arg s]"]] \
-	[opt [option "-bind]"]] \
+	[opt [option "-bind"]] \
 	[arg address] \
 	[arg port] \
 	[arg script] \
