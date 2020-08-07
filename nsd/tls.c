@@ -309,19 +309,19 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
             OCSP_CERTID *cert_id;
             bool         flush;
 
-            Ns_Log(Notice, "MUST VALIDATE OCSP response %" PRId64 ".%06ld sec",
+            Ns_Log(Notice, "cert_status: must validate OCSP response %" PRId64 ".%06ld sec",
                     (int64_t) diff.sec, diff.usec);
 
             cert_id = OCSP_get_cert_id(ssl, SSL_get_certificate(ssl));
             if (cert_id == NULL) {
-                Ns_Log(Notice, "OCSP validation: vertificate id is unknown");
+                Ns_Log(Warning, "cert_status: OCSP validation: certificate id is unknown");
                 flush = NS_TRUE;
             } else {
-                Ns_Log(Notice, "CAN VALIDATE OCSP response");
+                Ns_Log(Debug, "cert_status: CAN VALIDATE OCSP response");
                 flush = !OCSP_ResponseIsValid(srctx->resp, cert_id);
             }
             if (flush) {
-                Ns_Log(Notice, "FLUSH OCSP response");
+                Ns_Log(Debug, "cert_status: flush OCSP response");
                 OCSP_RESPONSE_free(srctx->resp);
                 srctx->resp = NULL;
             } else {
@@ -330,7 +330,7 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
                 srctx->expire = now;
             }
         } else {
-            Ns_Log(Notice, "RECENT OCSP response %" PRId64 ".%06ld sec",
+            Ns_Log(Debug, "cert_status: RECENT OCSP response, recheck in %" PRId64 ".%06ld sec",
                     (int64_t) diff.sec, diff.usec);
         }
     }
@@ -366,7 +366,7 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
 
     rspderlen = i2d_OCSP_RESPONSE(resp, &rspder);
 
-    Ns_Log(Notice, "cert_status: callback returns OCSP_RESPONSE with length %d", rspderlen);
+    Ns_Log(Debug, "cert_status: callback returns OCSP_RESPONSE with length %d", rspderlen);
     if (rspderlen <= 0) {
         if (resp != NULL) {
             OCSP_RESPONSE_free(resp);
@@ -717,7 +717,7 @@ OCSP_computeResponse(SSL *ssl, const SSLCertStatusArg *srctx, OCSP_RESPONSE **re
  *      OCSP_RESPONSE * or NULL in case of failure.
  *
  * Side effects:
- *      Issue http/https request to the AIA server.
+ *      Issue HTTP/HTTPS request to the AIA server.
  *
  *----------------------------------------------------------------------
  */
@@ -1284,9 +1284,10 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
                 }
 #endif
                 storePtr = SSL_CTX_get_cert_store(*ctxPtr /*SSL_get_SSL_CTX(s)*/);
-                Ns_Log(Notice, "nsssl:SSL_CTX_get_cert_store %p", (void*)storePtr);
+                Ns_Log(Debug, "nsssl:SSL_CTX_get_cert_store %p", (void*)storePtr);
+
                 rc = X509_STORE_load_locations(storePtr, cert, NULL);
-                Ns_Log(Notice, "nsssl:X509_STORE_load_locations %d", rc);
+                Ns_Log(Debug, "nsssl:X509_STORE_load_locations %d", rc);
             }
 #ifndef OPENSSL_NO_OCSP
             Ns_Log(Notice, "nsssl: activate OCSP stapling for %s -> %d",
@@ -1296,7 +1297,7 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
 
                 memset(&sslCertStatusArg, 0, sizeof(sslCertStatusArg));
                 sslCertStatusArg.timeout = -1;
-                sslCertStatusArg.verbose = 1;
+                sslCertStatusArg.verbose = Ns_ConfigBool(path, "ocspstaplingverbose", NS_FALSE);
 
                 SSL_CTX_set_tlsext_status_cb(*ctxPtr, SSL_cert_statusCB);
                 SSL_CTX_set_tlsext_status_arg(*ctxPtr, &sslCertStatusArg);
@@ -1664,7 +1665,7 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
                sock, err, sslError);
         /*
          * Starting with the commit in OpenSSL 1.1.1 branch
-         * OpenSSL_1_1_1-stable below, at least https client requests
+         * OpenSSL_1_1_1-stable below, at least HTTPS client requests
          * answered without an explicit content length start to
          * fail. This can be tested with:
          *

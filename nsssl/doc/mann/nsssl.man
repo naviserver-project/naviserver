@@ -2,7 +2,7 @@
 
 [manpage_begin nsssl n [vset version]]
 [moddesc   {NaviServer Modules}]
-[titledesc {Configuring https socket communications}]
+[titledesc {Configuring HTTPS socket communications}]
 
 [description]
 
@@ -69,9 +69,9 @@ stapling turned on, it checks for an already retrieved OCSP
 response. The disk cache file is saved in the "log" directory of the
 server and uses the serial number of the certificate to be checked as
 filename with ".der" as extension.  When the disk cache file does
-not exist, an http/https request is made to the server issuing the
+not exist, an HTTP/HTTPS request is made to the server issuing the
 servers certificate as defined by the Authority Information Access
-(AIA) Extension. The names of the file and the http/https request for
+(AIA) Extension. The names of the file and the HTTP/HTTPS request for
 the OCSP response can be obtained from the system log of the server:
 
 [example_begin]
@@ -95,6 +95,11 @@ For more details about OCSP, see:
 [uri https://tools.ietf.org/html/rfc6960]
 
 OCSP support requires OpenSSL 1.1.0 or newer.
+
+[def OCSPstaplingVerbose]
+
+Optionaly make OCSP requests more verbose in the log file.
+
 
 [def extraheaders]
 can be used to specify additional header fields be sent on every

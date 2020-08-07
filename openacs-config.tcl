@@ -323,12 +323,15 @@ if {[info exists httpsport]} {
 	#ns_param deferaccept	true    ;# false, Performance optimization
 	ns_param maxinput	${max_file_upload_mb}MB   ;# Maximum file size for uploads in bytes
 	ns_param extraheaders	$nsssl_extraheaders
-	ns_param OCSPstapling   on      ;# off; activate OCSP stapling
+	ns_param OCSPstapling   on        ;# off; activate OCSP stapling
+	#ns_param OCSPstaplingVerbose  on ;# off; make OCSP stapling more verbose
     }
     #
-    # Define, which "host" (as supplied by the "host:" header
-    # field) accepted over this driver should be associated with
-    # which server.
+    # Define, which "host" (as supplied by the "host:" header field)
+    # accepted over this driver should be associated with which
+    # server. This parameter is for virtual servers. Here we just
+    # register the $hostname and the $address (in case, the server is
+    # addressed via its ip address).
     #
     ns_section ns/module/nsssl/servers {
 	ns_param $server $hostname
