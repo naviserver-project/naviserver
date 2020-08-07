@@ -206,7 +206,7 @@ be in memory). In order to compute HMACs on large data, use
 [para] Return a message digest for the provided [arg message] and
 return it in the specified encoding. Optionally, this function can
 return a signature based on the provided private key, or it can
-verify such an signature.
+verify such a signature.
 
 [para]
 When the option [option -binary] is specified, it applies to

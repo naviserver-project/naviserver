@@ -399,7 +399,7 @@ Ns_SockaddrParseIPMask(Tcl_Interp *interp, const char *ipString,
         }
         ns_free(dupIpString);
         /*
-         * Do a bitwise AND of the ip address with the netmask
+         * Do a bitwise AND of the IP address  with the netmask
          * to make sure that all non-network bits are 0. That
          * saves us from doing this operation every time a
          * connection comes in.
@@ -423,7 +423,7 @@ Ns_SockaddrParseIPMask(Tcl_Interp *interp, const char *ipString,
  *    This function is a version of inet_ntop() which is agnostic to IPv4 and IPv6.
  *
  * Results:
- *    String pointing to printable ip address.
+ *    String pointing to printable IP address .
  *
  * Side effects:
  *    Update provided buffer with resulting character string.

@@ -177,7 +177,7 @@ test tclresp-1.14.2 {basic syntax} -body {
 # etc...
 #
 
-test tclresp-2.1 {ns_headers, status, http/1.0} -constraints serverListen -setup {
+test tclresp-2.1 {ns_headers, status, HTTP/1.0} -constraints serverListen -setup {
     ns_register_proc GET /tclresp {
         ns_headers 599
         ns_write x
@@ -190,7 +190,7 @@ test tclresp-2.1 {ns_headers, status, http/1.0} -constraints serverListen -setup
     ns_unregister_op GET /tclresp
 } -result {599 {} close {} {} x}
 
-test tclresp-2.2 {ns_headers, status, type, http/1.0} -constraints serverListen -setup {
+test tclresp-2.2 {ns_headers, status, type, HTTP/1.0} -constraints serverListen -setup {
     ns_register_proc GET /tclresp {
         ns_headers 200 text/plain
         ns_write x
@@ -203,7 +203,7 @@ test tclresp-2.2 {ns_headers, status, type, http/1.0} -constraints serverListen 
     ns_unregister_op GET /tclresp
 } -match glob -result {200 {text/plain; charset=*} close {} {} x}
 
-test tclresp-2.3 {ns_headers, status, type, length, http/1.0 keep-alive} -setup {
+test tclresp-2.3 {ns_headers, status, type, length, HTTP/1.0 keep-alive} -setup {
     ns_register_proc GET /tclresp {
         ns_headers 200 text/plain 9
         ns_write abcdefghi
@@ -216,7 +216,7 @@ test tclresp-2.3 {ns_headers, status, type, length, http/1.0 keep-alive} -setup 
     ns_unregister_op GET /tclresp
 } -match glob -result {200 {text/plain; charset=*} keep-alive {} 9 abcdefghi}
 
-test tclresp-2.3.1 {ns_headers, status, type, length, http/1.0 close} -setup {
+test tclresp-2.3.1 {ns_headers, status, type, length, HTTP/1.0 close} -setup {
     ns_register_proc GET /tclresp {
         ns_headers 200 text/plain 9
         ns_write abcdefghi
@@ -229,7 +229,7 @@ test tclresp-2.3.1 {ns_headers, status, type, length, http/1.0 close} -setup {
     ns_unregister_op GET /tclresp
 } -match glob -result {200 {text/plain; charset=*} close {} 9 abcdefghi}
 
-test tclresp-2.4 {ns_headers, status, type, length, http/1.1} -setup {
+test tclresp-2.4 {ns_headers, status, type, length, HTTP/1.1} -setup {
     ns_register_proc GET /tclresp {
         ns_headers 200 text/plain 9
         ns_write abcde
@@ -243,7 +243,7 @@ test tclresp-2.4 {ns_headers, status, type, length, http/1.1} -setup {
     ns_unregister_op GET /tclresp
 } -match glob -result {200 {text/plain; charset=*} keep-alive {} 9 abcdefghi}
 
-test tclresp-2.5 {ns_headers, status, type, http/1.1} -constraints serverListen -setup {
+test tclresp-2.5 {ns_headers, status, type, HTTP/1.1} -constraints serverListen -setup {
     ns_register_proc GET /tclresp {
         ns_headers 200 text/plain
         ns_write abcde
