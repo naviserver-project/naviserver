@@ -40,9 +40,12 @@
  access the connection socket directly (e.g. via [cmd ns_write]) will fail.
 
 
-[call [cmd "ns_connchan close"] [arg channel]]
+[call [cmd "ns_connchan close"] \
+	[opt [option "-server [arg server]"]] \
+	[arg channel]]
 
- Close the named connection channel.
+ Close the named connection channel. The [option "-server"] can be
+ used for cleaup of stale handles.
 
 [call [cmd "ns_connchan exists"] [arg channel]]
 

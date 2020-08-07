@@ -1400,19 +1400,31 @@ ConnChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 static int
 ConnChanCloseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    char        *name = (char*)NS_EMPTY_STRING;
-    int          result = TCL_OK;
-    Ns_ObjvSpec  args[] = {
+    const NsInterp *itPtr = clientData;
+    char           *name = (char*)NS_EMPTY_STRING;
+    const char     *server = NULL;
+    int             result = TCL_OK;
+    NsServer       *servPtr = itPtr->servPtr;
+    Ns_ObjvSpec     lopts[] = {
+        {"-server", Ns_ObjvString, &server, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec     args[] = {
         {"channel", Ns_ObjvString, &name, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
+
+    } else if (server != NULL) {
+        servPtr = NsGetServer(server);
+        if (servPtr == NULL) {
+            Ns_TclPrintfResult(interp, "server \"%s\" does not exist", server);
+            result = TCL_ERROR;
+        }
     } else {
-        const NsInterp *itPtr = clientData;
-        NsServer       *servPtr = itPtr->servPtr;
-        NsConnChan     *connChanPtr;
+        NsConnChan *connChanPtr;
 
         connChanPtr = ConnChanGet(interp, servPtr, name);
         Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan close connChanPtr %p", name, (void*)connChanPtr);
