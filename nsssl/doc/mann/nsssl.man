@@ -98,7 +98,7 @@ OCSP support requires OpenSSL 1.1.0 or newer.
 
 [def OCSPstaplingVerbose]
 
-Optionaly make OCSP requests more verbose in the log file.
+Optionally make OCSP requests more verbose in the log file.
 
 
 [def extraheaders]
