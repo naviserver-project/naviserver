@@ -74,9 +74,14 @@ multiple prebind addresses might be specified separated by a comma.
    Specify the server to run, if the configuration file defines multiple
    servers. The Server1 server will be run by default.
 
-[item] [emph {-t config}]
+[item] [emph {-t configuration-file}]
 [para]
    Required. Specify the path to the configuration file.
+
+[item] [emph {-T}]
+[para] Don't run NaviServer, just test the configuration file
+specified by [emph {-t}].  This option should be used on production
+sites to reduce the downtime of a server in case of typos.
 
 [list_end]
 

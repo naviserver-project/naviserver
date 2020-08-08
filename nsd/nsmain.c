@@ -101,9 +101,9 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 {
     Args           cmd;
     int            sig, optionIndex;
-    const char    *config = NULL;
     Ns_Time        timeout;
     Ns_Set        *set;
+    bool           testMode = NS_FALSE;
 #ifndef _WIN32
     bool           debug = NS_FALSE;
     bool           forked = NS_FALSE;
@@ -215,6 +215,10 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
                 UsageError("no parameter for -t option");
             }
             break;
+        case 'T':
+            testMode = NS_TRUE;
+            break;
+
         case 'p':
         case 'z':
             /* NB: Ignored. */
@@ -269,6 +273,28 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         printf("   Built:           %s\n", Ns_InfoBuildDate());
         printf("   Tcl version:     %s\n", nsconf.tcl.version);
         printf("   Platform:        %s\n", Ns_InfoPlatform());
+        return 0;
+    }
+
+    if (testMode) {
+        const char *fileContent = NULL;
+
+        if (nsconf.configFile == NULL) {
+            UsageError("option -t <file> must be provided, when -T is used");
+        }
+        fileContent = NsConfigRead(nsconf.configFile);
+        if (fileContent != NULL) {
+
+            /*
+             * Evaluate the configuration file.
+             */
+            NsConfigEval(fileContent, nsconf.configFile, argc, argv, optionIndex);
+
+            printf("%s/%s: configuation file %s looks OK\n",
+                   PACKAGE_NAME, PACKAGE_VERSION, nsconf.configFile);
+
+            ns_free((char *)fileContent);
+        }
         return 0;
     }
 
@@ -478,9 +504,6 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         }
     }
 
-    if (nsconf.configFile != NULL) {
-        config = NsConfigRead(nsconf.configFile);
-    }
 
 #ifndef _WIN32
 
@@ -550,14 +573,14 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
 #endif /* ! _WIN32 */
 
-    if (config != NULL) {
+    if (nsconf.configFile != NULL) {
+        const char *fileContent = NsConfigRead(nsconf.configFile);
 
         /*
          * Evaluate the configuration file.
          */
-
-        NsConfigEval(config, argc, argv, optionIndex);
-        ns_free((char *)config);
+        NsConfigEval(fileContent, nsconf.configFile, argc, argv, optionIndex);
+        ns_free((char *)fileContent);
     }
 
     /*
@@ -1195,7 +1218,8 @@ UsageMsg(int exitCode)
         "  -B  bind address:port list from <file>\n"
 #endif
         "  -s  use server named <server> in configuration file\n"
-        "  -t  read config from <file>\n"
+        "  -t  read configuration file from <file>\n"
+        "  -T  just check configuration file (without starting server)\n"
         "\n", nsconf.argv0);
     exit(exitCode);
 }

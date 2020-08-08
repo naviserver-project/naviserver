@@ -193,7 +193,7 @@ the PostgreSQL driver (nsdbpg, simplified):
      * Nsdb will later call the Ns_PgServerInit() function
      * for each virtual server which utilizes nsdb.
      */
-    status = Ns_DbRegisterDriver(driver, &procs[0]);
+    status = Ns_DbRegisterDriver(driver, &procs[lb]0[rb]);
     if (status) != NS_OK) {
         Ns_Log(Error, "Ns_DbDriverInit(%s):  Could not register the %s driver.",
             driver, pgDbName);

@@ -78,6 +78,18 @@ and [term admin-tuning].
 
 [section EXAMPLES]
 
+In general, when modifying configuration files, it is always a good
+idea to check whether a configuration file is syntactically correct
+before starting the server. This can reduce the downtime of a
+production server in case of typos. A configuration file named
+"nsd-config.tcl" can be checked with the command line option [term -T]
+of NaviServer.
+
+[example_begin]
+ /usr/local/ns/bin/nsd -t nsd-config.tcl -T
+[example_end]
+
+
 One of the core components of the configuration file are the network
 drivers: what protocols should be used, on which addresses/ports
 should be used, or how to set up virtual servers. The most important
@@ -155,10 +167,10 @@ In this case it is sufficient to load the driver once.
 [example_end]
 
 When the configuration file above is named e.g. two-server-config.tcl,
-the tow servers can be started with a command line like:
+the two servers can be started with a command line like:
 
 [example_begin]
-/usr/local/ns/bin/nsd -u nsadmin -t two-server-config.tcl -f
+ /usr/local/ns/bin/nsd -u nsadmin -t two-server-config.tcl -f
 [example_end]
 
 When it is the goal to start only one of these servers, one can use

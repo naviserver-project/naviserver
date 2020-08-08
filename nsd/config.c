@@ -849,7 +849,8 @@ Ns_GetVersion(int *majorV, int *minorV, int *patchLevelV, int *type)
  *      Read a configuration file at startup.
  *
  * Results:
- *      Pointer to the config buffer in an ns_malloc'ed string.
+ *      Configuration file content in an ns_malloc'ed string.
+ *      Caller is responsible to free the content.
  *
  * Side Effects:
  *      Server aborts if the file cannot be read for any reason.
@@ -862,7 +863,7 @@ NsConfigRead(const char *file)
 {
     Tcl_Channel  chan;
     Tcl_Obj     *buf;
-    const char  *call = "open", *conf = NULL;
+    const char  *call = "open", *fileContent = NULL;
 
     NS_NONNULL_ASSERT(file != NULL);
 
@@ -876,7 +877,7 @@ NsConfigRead(const char *file)
     } else {
 
         /*
-         * Slurp entire file into memory
+         * Slurp entire file into memory.
          */
         buf = Tcl_NewObj();
         Tcl_IncrRefCount(buf);
@@ -887,7 +888,7 @@ NsConfigRead(const char *file)
             int         length;
             const char *data = Tcl_GetStringFromObj(buf, &length);
 
-            conf = ns_strncopy(data, length);
+            fileContent = ns_strncopy(data, length);
         }
     }
 
@@ -897,12 +898,12 @@ NsConfigRead(const char *file)
     if (buf != NULL) {
         Tcl_DecrRefCount(buf);
     }
-    if (conf == NULL) {
+    if (fileContent == NULL) {
         Ns_Fatal("config: can't %s configuration file '%s': '%s'",
                  call, file, strerror(Tcl_GetErrno()));
     }
 
-    return conf;
+    return fileContent;
 }
 
 
@@ -924,7 +925,8 @@ NsConfigRead(const char *file)
  */
 
 void
-NsConfigEval(const char *config, int argc, char *const *argv, int optionIndex)
+NsConfigEval(const char *config, const char *configFileName,
+             int argc, char *const *argv, int optionIndex)
 {
     Tcl_Interp   *interp;
     Ns_Set *set;
@@ -946,8 +948,13 @@ NsConfigEval(const char *config, int argc, char *const *argv, int optionIndex)
     (void) Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc), TCL_GLOBAL_ONLY);
     (void) Tcl_SetVar2Ex(interp, "optind", NULL, Tcl_NewIntObj(optionIndex), TCL_GLOBAL_ONLY);
     if (Tcl_Eval(interp, config) != TCL_OK) {
-        (void) Ns_TclLogErrorInfo(interp, "\n(context: config eval)");
-        Ns_Fatal("config error");
+        (void) Ns_TclLogErrorInfo(interp, "\n(context: configuration)");
+        if (configFileName != NULL) {
+            Ns_Fatal("error in configuration file %s line %d",
+                     configFileName, Tcl_GetErrorLine(interp));
+        } else {
+            Ns_Fatal("error in configuration");
+        }
     }
     Ns_TclDestroyInterp(interp);
 }

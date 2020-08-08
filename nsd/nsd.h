@@ -1561,7 +1561,9 @@ NS_EXTERN void NsStopSpoolers(void);
 NS_EXTERN Ns_ReturnCode NsPreBind(const char *args, const char *file);
 NS_EXTERN void NsClosePreBound(void);
 NS_EXTERN const char *NsConfigRead(const char *file) NS_GNUC_NONNULL(1);
-NS_EXTERN void NsConfigEval(const char *config, int argc, char *const *argv, int optionIndex) NS_GNUC_NONNULL(1);
+NS_EXTERN void NsConfigEval(const char *config, const char *configFileName,
+                            int argc, char *const *argv, int optionIndex)
+    NS_GNUC_NONNULL(1);
 NS_EXTERN void NsConfUpdate(void);
 NS_EXTERN void NsEnableDNSCache(int maxsize, int ttl, int timeout);
 NS_EXTERN void NsStartDrivers(void);

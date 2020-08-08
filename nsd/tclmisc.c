@@ -203,7 +203,8 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
         Ns_Log(Error, "%s\n%s", Ns_DStringValue(&ds), errorInfo);
         Ns_DStringFree(&ds);
     } else {
-        Ns_Log(Error, "%s\n%s", Tcl_GetStringResult(interp), errorInfo);
+        Ns_Log(Error, "%s\n%s line %d", Tcl_GetStringResult(interp), errorInfo,
+               Tcl_GetErrorLine(interp));
     }
 
    return errorInfo;
