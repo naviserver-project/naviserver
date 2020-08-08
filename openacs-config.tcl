@@ -229,7 +229,7 @@ ns_section ns/servers {
 #---------------------------------------------------------------------
 # Global server modules
 #---------------------------------------------------------------------
-ns_section "ns/modules" {
+ns_section ns/modules {
     #
     # Load networking modules named "nssock" and/or "nsssl" depending
     # on existence of Tcl variables "httpport" and "httpsport".
@@ -364,7 +364,7 @@ ns_section ns/mimetypes {
 #---------------------------------------------------------------------
 # Global fastpath parameters
 #---------------------------------------------------------------------
-ns_section      "ns/fastpath" {
+ns_section ns/fastpath {
     #ns_param        cache               true       ;# default: false
     #ns_param        cachemaxsize        10MB       ;# default: 10MB
     #ns_param        cachemaxentry       100kB      ;# default: 8kB
@@ -392,7 +392,7 @@ ns_section      "ns/fastpath" {
 #
 # Server parameters
 #
-ns_section ns/server/${server} {
+ns_section ns/server/$server {
     #
     # Scaling and Tuning Options
     #
@@ -466,7 +466,7 @@ ns_section ns/server/${server} {
 #
 # In order to define thread pools, do the following:
 #
-#  1. Add pool names to "ns/server/${server}/pools"
+#  1. Add pool names to "ns/server/$server/pools"
 #  2. Configure pools with the noted parameters
 #  3. Map method/URL combinations for these pools
 #
@@ -475,7 +475,7 @@ ns_section ns/server/${server} {
 #
 ########################################################################
 
-ns_section "ns/server/${server}/pools" {
+ns_section ns/server/$server/pools {
     #
     # To activate connection thread pools, uncomment one of the
     # following lines and/or add other pools.
@@ -484,7 +484,7 @@ ns_section "ns/server/${server}/pools" {
     #ns_param   fast	"Fast requests, e.g. less than 10ms"
 }
 
-ns_section "ns/server/${server}/pool/monitor" {
+ns_section ns/server/$server/pool/monitor {
     ns_param   minthreads 2
     ns_param   maxthreads 2
 
@@ -495,7 +495,7 @@ ns_section "ns/server/${server}/pool/monitor" {
     ns_param   map "GET /request-monitor"
 }
 
-ns_section "ns/server/${server}/pool/fast" {
+ns_section ns/server/$server/pool/fast {
     ns_param   minthreads 2
     ns_param   maxthreads 2
     ns_param   rejectoverrun true
@@ -515,7 +515,7 @@ ns_section "ns/server/${server}/pool/fast" {
 #---------------------------------------------------------------------
 # Special HTTP pages
 #---------------------------------------------------------------------
-ns_section ns/server/${server}/redirects {
+ns_section ns/server/$server/redirects {
     ns_param   404 /shared/404
     ns_param   403 /shared/403
     ns_param   503 /shared/503
@@ -525,7 +525,7 @@ ns_section ns/server/${server}/redirects {
 #---------------------------------------------------------------------
 # ADP (AOLserver Dynamic Page) configuration
 #---------------------------------------------------------------------
-ns_section ns/server/${server}/adp {
+ns_section ns/server/$server/adp {
     ns_param	enabledebug	$debug
     ns_param	map		/*.adp		;# Extensions to parse as ADP's
     # ns_param	map		"/*.html"	;# Any extension can be mapped
@@ -553,20 +553,20 @@ ns_section ns/server/${server}/adp {
     #
 }
 
-ns_section ns/server/${server}/adp/parsers {
+ns_section ns/server/$server/adp/parsers {
     ns_param	fancy		".adp"
 }
 
 #
 # Tcl Configuration
 #
-ns_section ns/server/${server}/tcl {
+ns_section ns/server/$server/tcl {
     ns_param	library		${serverroot}/tcl
     ns_param	debug		$debug
     # ns_param	nsvbuckets	16       ;# default: 8
 }
 
-ns_section "ns/server/${server}/fastpath" {
+ns_section ns/server/$server/fastpath {
     ns_param	serverdir	${homedir}
     ns_param	pagedir		${pageroot}
     #
@@ -584,7 +584,7 @@ ns_section "ns/server/${server}/fastpath" {
 #
 # Define/override kernel parameters in section /acs
 #
-ns_section ns/server/${server}/acs {
+ns_section ns/server/$server/acs {
     ns_param NsShutdownWithNonZeroExitCode 1
     # ns_param WithDeprecatedCode 0
     # ns_param LogIncludeUserId 1
@@ -596,7 +596,7 @@ ns_section ns/server/${server}/acs {
 #
 # Provide tailored sizes for the site node cache in acs-tcl:
 #
-ns_section ns/server/${server}/acs/acs-tcl {
+ns_section ns/server/$server/acs/acs-tcl {
     # ns_param SiteNodesCacheSize        2000000
     # ns_param SiteNodesIdCacheSize       100000
     # ns_param SiteNodesChildenCacheSize  100000
@@ -609,7 +609,7 @@ ns_section ns/server/${server}/acs/acs-tcl {
 # EmailDeliveryMode. Setting this to "log" is useful for developer
 # instances.
 #
-ns_section ns/server/${server}/acs/acs-mail-lite {
+ns_section ns/server/$server/acs/acs-mail-lite {
     # ns_param EmailDeliveryMode log
 }
 
@@ -617,31 +617,31 @@ ns_section ns/server/${server}/acs/acs-mail-lite {
 # API browser configuration: setting IncludeCallingInfo to "true" is
 # useful mostly for developer instances.
 #
-ns_section ns/server/${server}/acs/acs-api-browser {
+ns_section ns/server/$server/acs/acs-api-browser {
     # ns_param IncludeCallingInfo true
 }
 
 #---------------------------------------------------------------------
 # WebDAV Support (optional, requires oacs-dav package to be installed
 #---------------------------------------------------------------------
-ns_section ns/server/${server}/tdav {
+ns_section ns/server/$server/tdav {
     ns_param	propdir		   ${serverroot}/data/dav/properties
     ns_param	lockdir		   ${serverroot}/data/dav/locks
     ns_param	defaultlocktimeout 300
 }
 
-ns_section ns/server/${server}/tdav/shares {
+ns_section ns/server/$server/tdav/shares {
     ns_param	share1		"OpenACS"
     # ns_param	share2		"Share 2 description"
 }
 
-ns_section ns/server/${server}/tdav/share/share1 {
+ns_section ns/server/$server/tdav/share/share1 {
     ns_param	uri		"/dav/*"
     # all WebDAV options
     ns_param	options		"OPTIONS COPY GET PUT MOVE DELETE HEAD MKCOL POST PROPFIND PROPPATCH LOCK UNLOCK"
 }
 
-#ns_section ns/server/${server}/tdav/share/share2 {
+#ns_section ns/server/$server/tdav/share/share2 {
 # ns_param	uri "/share2/path/*"
 # read-only WebDAV options
 # ns_param options "OPTIONS COPY GET HEAD MKCOL POST PROPFIND PROPPATCH"
@@ -651,7 +651,7 @@ ns_section ns/server/${server}/tdav/share/share1 {
 #---------------------------------------------------------------------
 # Access log -- nslog
 #---------------------------------------------------------------------
-ns_section ns/server/${server}/module/nslog {
+ns_section ns/server/$server/module/nslog {
     #
     # General parameters for access.log
     #
@@ -675,7 +675,7 @@ ns_section ns/server/${server}/module/nslog {
     # Add extra entries to the access log via specifying a Tcl
     # list of request header fields in "extendedheaders"
     #
-    if {[ns_config "ns/server/${server}/acs" LogIncludeUserId 0]} {
+    if {[ns_config "ns/server/$server/acs" LogIncludeUserId 0]} {
 	ns_param   extendedheaders    "X-User-Id"
     }
 
@@ -692,38 +692,43 @@ ns_section ns/server/${server}/module/nslog {
 
 #---------------------------------------------------------------------
 #
-# CGI interface -- nscgi, if you have legacy stuff. Tcl or ADP files inside
-# NaviServer are vastly superior to CGIs. I haven't tested these params but they
-# should be right.
+# CGI interface -- nscgi, if you have legacy stuff. Tcl or ADP files
+# inside NaviServer are vastly superior to CGIs.
 #
 #---------------------------------------------------------------------
-#ns_section "ns/server/${server}/module/nscgi"
-#       ns_param	map	"GET  /cgi-bin ${serverroot}/cgi-bin"
-#       ns_param	map	"POST /cgi-bin ${serverroot}/cgi-bin"
-#       ns_param	Interps CGIinterps
-#       ns_param        allowstaticresources true    ;# default: false
-
-#ns_section "ns/interps/CGIinterps"
-#       ns_param .pl "/usr/bin/perl"
-
+# ns_section ns/server/$server/modules {
+#     ns_param	nscgi ${bindir}/nscgi
+# }
+# ns_section ns/server/$server/module/nscgi {
+#     ns_param  map	"GET  /cgi-bin ${serverroot}/cgi-bin"
+#     ns_param  map	"POST /cgi-bin ${serverroot}/cgi-bin"
+#     ns_param  Interps CGIinterps
+#     ns_param  allowstaticresources true    ;# default: false
+# }
+# ns_section ns/interps/CGIinterps {
+#     ns_param .pl "/usr/bin/perl"
+# }
 
 #---------------------------------------------------------------------
 #
 # PAM authentication
 #
 #---------------------------------------------------------------------
-ns_section ns/server/${server}/module/nspam {
-    ns_param	PamDomain          "pam_domain"
-}
+# ns_section ns/server/$server/modules {
+#     ns_param	nspam ${bindir}/nspam
+# }
+# ns_section ns/server/$server/module/nspam {
+#     ns_param	PamDomain "pam_domain"
+# }
 
 #---------------------------------------------------------------------
 #
-# Database drivers
-# The database driver is specified here.
-# Make sure you have the driver compiled and put it in $bindir.
+# Database drivers:
+#
+# Make sure the drivers are compiled and put it in $bindir.
 #
 #---------------------------------------------------------------------
-ns_section "ns/db/drivers" {
+ns_section ns/db/drivers {
 
     if { $database eq "oracle" } {
 	ns_param	ora8           ${bindir}/ora8
@@ -734,11 +739,11 @@ ns_section "ns/db/drivers" {
     }
 
     if { $database eq "oracle" } {
-	ns_section "ns/db/driver/ora8"
+	ns_section ns/db/driver/ora8
 	ns_param	maxStringLogLength -1
 	ns_param	LobBufferSize      32768
     } else {
-	ns_section "ns/db/driver/postgres"
+	ns_section ns/db/driver/postgres
 	# Set this parameter, when "psql" is not on your path (OpenACS specific)
 	# ns_param	pgbin	"/usr/local/pg960/bin/"
     }
@@ -755,7 +760,7 @@ ns_section "ns/db/drivers" {
 #
 #     http://openacs.org/doc/tutorial-second-database
 #
-ns_section ns/server/${server}/db {
+ns_section ns/server/$server/db {
     ns_param	pools              pool1,pool2,pool3
     ns_param	defaultpool        pool1
 }
@@ -838,7 +843,7 @@ ns_section ns/db/pool/pool3 {
 # the server, so don't uncomment modules unless they have been
 # installed.
 
-ns_section ns/server/${server}/modules {
+ns_section ns/server/$server/modules {
     ns_param	nslog		${bindir}/nslog
     ns_param	nsdb		${bindir}/nsdb
     ns_param	nsproxy		${bindir}/nsproxy
@@ -857,15 +862,11 @@ ns_section ns/server/${server}/modules {
     # authorize-gateway package requires dqd_utils
     # ns_param	dqd_utils dqd_utils[expr {int($tcl_version)}]
 
-    # PAM authentication
-    # ns_param	nspam              ${bindir}/nspam
-
     # LDAP authentication
     # ns_param	nsldap             ${bindir}/nsldap
 
     # These modules aren't used in standard OpenACS installs
     # ns_param	nsperm             ${bindir}/nsperm
-    # ns_param	nscgi              ${bindir}/nscgi
 }
 
 
@@ -873,7 +874,7 @@ ns_section ns/server/${server}/modules {
 #
 # nsproxy configuration
 #
-ns_section ns/server/${server}/module/nsproxy {
+ns_section ns/server/$server/module/nsproxy {
     # ns_param	maxslaves          8
     # ns_param	sendtimeout        5s
     # ns_param	recvtimeout        5s
@@ -886,9 +887,9 @@ ns_section ns/server/${server}/module/nsproxy {
 # nsstats configuration (global module)
 #
 # When installed under acs-subsite/www/admin/nsstats.tcl it is due to
-# its /admin/ location save from public access.
+# its /admin/ location safe from public access.
 #
-ns_section "ns/module/nsstats" {
+ns_section ns/module/nsstats {
     ns_param enabled  1
     ns_param user     ""
     ns_param password ""
