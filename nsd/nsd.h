@@ -144,7 +144,7 @@ struct nsconf {
     const char *version;
     const char *home;
     const char *tmpDir;
-    const char *config;
+    const char *configFile;
     const char *build;
     pid_t       pid;
     time_t      boot_t;

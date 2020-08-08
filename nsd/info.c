@@ -130,7 +130,7 @@ Ns_InfoServerVersion(void)
 const char *
 Ns_InfoConfigFile(void)
 {
-    return nsconf.config;
+    return nsconf.configFile;
 }
 
 

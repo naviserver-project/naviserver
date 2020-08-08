@@ -206,11 +206,11 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
             }
             break;
         case 't':
-            if (nsconf.config != NULL) {
+            if (nsconf.configFile != NULL) {
                 UsageError("multiple -t <file> options");
             }
             if (optionIndex + 1 < argc) {
-                nsconf.config = argv[++optionIndex];
+                nsconf.configFile = argv[++optionIndex];
             } else {
                 UsageError("no parameter for -t option");
             }
@@ -471,15 +471,15 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      * nsd.tcl and for ../conf/nsd.tcl
      */
 
-    if (nsconf.config == NULL) {
-        nsconf.config = MakePath("nsd.tcl");
-        if (nsconf.config == NULL) {
-            nsconf.config = MakePath("conf/nsd.tcl");
+    if (nsconf.configFile == NULL) {
+        nsconf.configFile = MakePath("nsd.tcl");
+        if (nsconf.configFile == NULL) {
+            nsconf.configFile = MakePath("conf/nsd.tcl");
         }
     }
 
-    if (nsconf.config != NULL) {
-        config = NsConfigRead(nsconf.config);
+    if (nsconf.configFile != NULL) {
+        config = NsConfigRead(nsconf.configFile);
     }
 
 #ifndef _WIN32
@@ -592,7 +592,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         int i = Ns_SetFind(servers, server);
         if (i < 0) {
             Ns_Log(Error, "nsmain: no such server '%s' in configuration file '%s'",
-                   server, nsconf.config);
+                   server, nsconf.configFile);
             Ns_Log(Warning, "nsmain: Writing the server names we DO have to stderr now:");
             Ns_SetPrint(servers);
             Ns_Fatal("nsmain: no such server '%s'", server);
@@ -621,7 +621,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         if (nsconf.home == NULL) {
             Ns_Fatal("nsmain: missing: [%s]home", NS_CONFIG_PARAMETERS);
         }
-    } else if (mode == 'c' && nsconf.config == NULL) {
+    } else if (mode == 'c' && nsconf.configFile == NULL) {
         /*
          * Try to get HOME from environment variable NAVISERVER. If
          * this is not defined, take the value from the path. Using
