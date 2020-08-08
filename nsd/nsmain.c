@@ -105,7 +105,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     Ns_Time        timeout;
     Ns_Set        *set;
 #ifndef _WIN32
-    int            debug = 0;
+    bool           debug = NS_FALSE;
     bool           forked = NS_FALSE;
     char           mode = '\0';
     const char    *root = NULL, *garg = NULL, *uarg = NULL, *server = NULL;
@@ -242,7 +242,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
             }
             break;
         case 'd':
-            debug = 1;
+            debug = NS_TRUE;
             break;
         case 'g':
             if (optionIndex + 1 < argc) {

@@ -70,7 +70,7 @@ static bool GetPwUID(uid_t uid, PwElement elem, int *intResult, Ns_DString *dsPt
 #if !defined(HAVE_GETPWNAM_R) || !defined(HAVE_GETPWUID_R) || !defined(HAVE_GETGRGID_R) || !defined(HAVE_GETGRNAM_R)
 static Ns_Mutex lock = NULL;
 #endif
-static int debugMode = 0;
+static bool debugMode = NS_FALSE;
 
 
 /*
@@ -144,7 +144,7 @@ NsUnblockSignal(int signal)
  */
 
 void
-NsBlockSignals(int debug)
+NsBlockSignals(bool debug)
 {
     sigset_t set;
 
@@ -163,7 +163,7 @@ NsBlockSignals(int debug)
     (void)sigaddset(&set, SIGTERM);
     (void)sigaddset(&set, SIGHUP);
     (void)sigaddset(&set, SIGQUIT);
-    if (debugMode == 0) {
+    if (!debugMode) {
         /* NB: Don't block SIGINT in debug mode for Solaris dbx. */
         (void)sigaddset(&set, SIGINT);
     }
@@ -243,7 +243,7 @@ NsHandleSignals(void)
     (void)sigaddset(&set, SIGTERM);
     (void)sigaddset(&set, SIGHUP);
     (void)sigaddset(&set, SIGQUIT);
-    if (debugMode == 0) {
+    if (!debugMode) {
         (void)sigaddset(&set, SIGINT);
     }
     do {
