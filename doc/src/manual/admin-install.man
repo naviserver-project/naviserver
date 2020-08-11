@@ -251,9 +251,10 @@ initiate shutdown.
 [example_end]
 
 [para]
-In [emph {Background }]mode, the server  forks and disassociates from the terminal.
-Diagnostic messages  are  appended to log/server.log.  This  is a  typical
-daemon-style mode of operation.  To start the server in  background  mode use:
+In [emph {Background}] mode, the server forks and disassociates from
+the terminal.  Diagnostic messages are appended to log/server.log.
+This is a typical daemon-style mode of operation.  To start the server
+in background mode use:
 
 [para]
 
