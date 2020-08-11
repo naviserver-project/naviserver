@@ -875,7 +875,7 @@ ns_section ns/server/$server/modules {
 # nsproxy configuration
 #
 ns_section ns/server/$server/module/nsproxy {
-    # ns_param	maxslaves          8
+    # ns_param	maxworkers         8
     # ns_param	sendtimeout        5s
     # ns_param	recvtimeout        5s
     # ns_param	waittimeout        100ms

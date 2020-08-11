@@ -30,7 +30,7 @@
 /*
  * nsproxy.h --
  *
- *      Definitions for simple slave-process proxies.
+ *      Definitions for simple worker process proxies.
  */
 
 #ifndef NSPROXY_H

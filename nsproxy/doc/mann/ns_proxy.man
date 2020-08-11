@@ -36,17 +36,17 @@ in the server's module config entry, for example:
 
 [para]
 When loaded, the library adds the single [cmd ns_proxy] command with
-takes multiple options as described below. Proxies (i.e. slave
+takes multiple options as described below. Proxies (i.e. worker
 processes) are normally created on demand when requested and connected
 to the parent process via pipes used to send scripts and receive response.
 Proxies remain active until the parent process exits, effectively closing
-all pipes to the slave processes, or when their idle timer expires, depending
+all pipes to the worker processes, or when their idle timer expires, depending
 on the setup of the [arg pool] (see [cmd "ns_proxy configure"]).
 
 [para]
 Proxies are obtained from their corresponding [arg pool] by means of the
 [cmd "ns_proxy get"] command. Only the thread that obtained the proxy can use
-it to communicate with the slave process. In order to allow other threads to
+it to communicate with the worker process. In order to allow other threads to
 use the same proxy, the thread must return (via the [cmd "ns_proxy put"] or
 [cmd "ns_proxy cleanup"] commands) the proxy back to it's/theirs corresponding
 pool/s. One thread can obtain one or a bunch of proxies from a pool in one step.
@@ -79,11 +79,11 @@ result is a list of two or more elements.
 
 [para]
 Each element itself is a list which includes several keys: [emph handle],
-[emph slave], [emph start], [emph script] and their associated values.
+[emph worker], [emph start], [emph script] and their associated values.
 This format is suitable for filling in a Tcl array with the
 [cmd "array set"] Tcl command.
 The [emph handle] key contains the handle of the proxy.
-The [emph slave] key contains the process-id of the slave process.
+The [emph worker] key contains the process-id of the worker process.
 The [emph start] key contains the timestamp with the absolute time
 when this proxy has been activated. The timestamp is in format that
 [cmd ns_time] command understands.
@@ -91,7 +91,7 @@ when this proxy has been activated. The timestamp is in format that
 [para]
 The [emph script] contains the script passed to the proxy for execution.
 It is also possible to view the currently evaluating scripts with the
-Unix [emph ps] command as the proxy slave process re-writes it's command
+Unix [emph ps] command as the proxy worker process re-writes it's command
 argument space with the request script before evaluation and clears it
 after sending the result.
 
@@ -110,7 +110,7 @@ after some transaction, for example, at the end of a connection.
 
 [call [cmd "ns_proxy clear"] [arg pool] [opt [arg handle]]]
 
-Stop all slave processes attached to free proxies for the given [arg pool].
+Stop all worker processes attached to free proxies for the given [arg pool].
 If the optional [arg handle] is given, it stops the process only for
 that handle.
 
@@ -132,7 +132,7 @@ Configurable options include:
 
 
 [opt_def -env [arg setname]]
-Initializes the slave's process environment with keys/values
+Initializes the worker's process environment with keys/values
 passed in the named NaviServer set (see command [cmd ns_set]).
 
 [opt_def -evaltimeout [arg timeout]]
@@ -142,7 +142,7 @@ the optional [opt timeout] parameter to [cmd "ns_proxy eval"].
 The default is 0 milliseconds i.e. infinite.
 
 [opt_def -exec [arg program]]
-Specifies the filename of a slave proxy program.  The default is
+Specifies the filename of a worker proxy program.  The default is
 [emph nsproxy] in the [emph bin] subdirectory of the NaviServer
 run time. It is possible to create a custom program and enter the
 proxy event loop with the [emph Ns_ProxyMain] application startup
@@ -153,7 +153,7 @@ Specifies the maximum time to wait to allocate handles from the pool.
 The default is 5 seconds.
 
 [opt_def -idletimeout [arg timeout]]
-Specifies the maximum time for an idle slave process to live.
+Specifies the maximum time for an idle worker process to live.
 Minimum value is 5 seconds. After expiry of the idle
 timeout, the reaper thread will close the connection pipe and
 wait [option -waittimeout] for the process to die.
@@ -162,7 +162,7 @@ signal and finally a SIGKILL signal (waiting [option -waittimeout]
 in between) to ensure the process eventually exits.
 
 [para]
-Slave processes whose handles are already attached to some Tcl
+Worker processes whose handles are already attached to some Tcl
 interps by the means of the [cmd "ns_proxy get"] command) are not
 expired automatically. The idle timer starts to count at the moment
 their handles are put back to the pool by the [cmd "ns_proxy put"]
@@ -179,11 +179,11 @@ log (similar to "logminduration" in the db drivers). Set it to a high
 value to avoid logging (e.g. 1d). The default is 1s.
 
 [opt_def -maxruns [arg n]]
-Sets the maximum number of activation of the proxy slave process.
-When the limit it reached, the slave process is automatically restarted.
+Sets the maximum number of activation of the proxy worker process.
+When the limit it reached, the worker process is automatically restarted.
 
-[opt_def -maxslaves [arg n]]
-Sets the maximum number of proxy slave processes. Requests for
+[opt_def -maxworkers [arg n]]
+Sets the maximum number of proxy worker processes. Requests for
 proxies beyond the maximum will result in requesting threads
 waiting for existing proxies to be available instead of creating
 new proxy processes. Setting this value to 0 disables the pool,
@@ -193,7 +193,7 @@ causing all subsequent allocation requests to fail immediately
 [opt_def -reinit [arg script]]
 Specifies a script to evaluate after being allocated and before
 being returned to the caller. This can be used to re-initialize
-the slave state. The default is no script.
+the worker state. The default is no script.
 
 [opt_def -sendtimeout [arg timeout]]
 [opt_def -recvtimeout [arg timeout]]
@@ -239,7 +239,7 @@ in the example below:
 Returns a list of all free proxies for the given [arg pool]. Free
 proxies are those which are left in the pool queue waiting to
 be used by the [cmd "ns_proxy get"] command. Some proxies may have
-an active slave process attached, some not. If a slave process is
+an active worker process attached, some not. If a worker process is
 not attached to the free proxy, a new one will be created as soon
 as the proxy is requested by some thread.
 
@@ -276,7 +276,7 @@ other [cmd ns_proxy] commands, or it can be used as Tcl command itself
 (see [cmd "ns_proxy eval"] for more information).
 
 [para]
-The proxy [arg pool] naming convention allows proxy slaves to be started
+The proxy [arg pool] naming convention allows proxy worker to be started
 under different Unix UID/GID then the server itself. For that to work,
 the server must be running under root user (UID = 0). The naming
 convention is simple: pool_name:<optional_user_id>:<optional_group_id>.
@@ -346,7 +346,7 @@ Provide usage statistics in form of a dict from the specified pool.
 The dict contains the following keys:
 [term proxies],
 [term waiting],
-[term maxslaves],
+[term maxworkers],
 [term free],
 [term used],
 [term requests],
@@ -356,7 +356,7 @@ The dict contains the following keys:
 
 [call [cmd "ns_proxy stop"] [arg pool] [opt [arg handle]]]
 
-Stop all slave processes attached to running proxies for the given [arg pool].
+Stop all worker processes attached to running proxies for the given [arg pool].
 If the optional [arg handle] is given, it stops the process only for
 that handle.
 
@@ -400,17 +400,17 @@ The interpreter attempted to allocate handles from a pool from which
 it already owns one or more handles.
 
 [def EExec]
-The slave program specified by the [option {-exec program}] option could
+The worker program specified by the [option {-exec program}] option could
 not be started.
 
 [def EImport]
 The response from the proxy was invalid.
 
 [def ERecv]
-There was an error receiving the result from the slave process.
+There was an error receiving the result from the worker process.
 
 [def ESend]
-There was an error sending the script to the slave process.
+There was an error sending the script to the worker process.
 
 [def EGetTimeout]
 Timeout while waiting to get a proxy handle from the pool.
@@ -469,17 +469,17 @@ can be provided in the configuration file of NaviServer.
    # Timeout to receive results
    ns_param	recvtimeout		5s
  
-   # Timeout to wait for slaves to die
+   # Timeout to wait for workers to die
    ns_param	waittimeout		1s
  
-   # Timeout for a slave to live idle
+   # Timeout for a worker to live idle
    ns_param	idletimeout		5m
  
    # log eval operations longer than this to the system log
    ns_param	logminduration		1s
  
-   # Max number of allowed slaves alive
-   ns_param	maxslaves		8
+   # Max number of allowed workers alive
+   ns_param	maxworkers		8
  }
 [example_end]
 
@@ -508,7 +508,7 @@ the handle directly as a Tcl command:
 The following demonstrates using multiple proxies:
 
 [example_begin]
- [cmd ns_proxy] configure myproxy -maxslaves 10
+ [cmd ns_proxy] configure myproxy -maxworkers 10
  set handles [lb][cmd ns_proxy] get myproxy -handle 10[rb]
  foreach h $handles {
    $h {puts "alive: [lb]pid[rb]"}

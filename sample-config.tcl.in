@@ -761,17 +761,17 @@ ns_section  "ns/server/${servername}/module/nsproxy" {
     # Timeout to receive results
     ns_param	recvtimeout		5s
 
-    # Timeout to wait for slaves to die
+    # Timeout to wait for worker processes to die
     ns_param	waittimeout		1s
 
-    # Timeout for a slave to live idle
+    # Timeout for a worker process to live idle
     ns_param	idletimeout		5m
 
     # log eval operations longer than this to the system log
     ns_param	logminduration		1s
 
-    # Max number of allowed slaves alive
-    ns_param	maxslaves		8
+    # Max number of allowed worker processes alive
+    ns_param	maxworkers		8
 }
 
 ########################################################################
