@@ -1205,7 +1205,7 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
  *
  * NsForkBinder --
  *
- *      Fork of the slave bind/listen process.  This routine is called
+ *      Fork of the bind/listen process.  This routine is called
  *      by main() when the server starts as root.
  *
  * Results:
@@ -1305,7 +1305,7 @@ NsStopBinder(void)
  *
  * Binder --
  *
- *      Slave process bind/listen loop.
+ *      Child process bind/listen loop.
  *
  * Results:
  *      None.
@@ -1368,10 +1368,10 @@ Binder(void)
         }
 
         /*
-         * NB: Due to a bug in Solaris the slave process must
+         * NB: Due to a bug in Solaris the child process must
          * call both bind() and listen() before returning the
          * socket.  All other Unix versions would actually allow
-         * just performing the bind() in the slave and allowing
+         * just performing the bind() in the child and allowing
          * the parent to perform the listen().
          */
         switch (type) {
@@ -1432,7 +1432,7 @@ Binder(void)
         }
         if (sock != -1) {
             /*
-             * Close the socket as it won't be needed in the slave.
+             * Close the socket as it won't be needed in the child.
              */
             ns_sockclose(sock);
         }
