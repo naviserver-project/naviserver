@@ -608,7 +608,7 @@ Ns_UrlEncodingWarnUnencoded(const char *msg, const char *chars)
 
     for (i = 0u; i < strlen(chars); i++) {
         if (mustBeEncoded[UCHAR(chars[i])]) {
-            Ns_Log(Warning, "%s value '%s': byte with binary value 0x%.2x must be url encoded",
+            Ns_Log(Warning, "%s value '%s': byte with binary value 0x%.2x must be URL-encoded",
                    msg, chars, UCHAR(chars[i]));
             /*
              * Just warn about the first invalid character
@@ -656,7 +656,7 @@ Ns_GetUrlEncoding(const char *charset)
 
     /*
      * The conn urlEncoding field is initialized from the config default
-     * url encoding.  This implements the fallback described above in
+     * URL encoding.  This implements the fallback described above in
      * a single step.
      */
 
