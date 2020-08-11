@@ -536,8 +536,8 @@ static RwLock *GetRwLock(Ns_RWLock *rwPtr)
  * Ns_RWLockList --
  *
  *      Append info on each lock to Tcl_DString. Since the rwlock emulation is
- *      based on mutexes, the information on this locks is included in
- *      Ns_MutexkList().
+ *      based on mutexes, the information on these locks is included in
+ *      Ns_MutexList().
  *
  * Results:
  *      None.
