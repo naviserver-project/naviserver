@@ -2245,7 +2245,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
                     goto err;
                 }
                 switch (flag) {
-                case CMaxslaveIdx:
+                case CMaxslaveIdx: NS_FALL_THROUGH; /* fall through */
                 case CMaxworkerIdx:
                     poolPtr->maxworker = n;
                     reap = 1;
@@ -2310,7 +2310,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
             AppendObj(listObj, flags[CExecIdx],     StringObj(poolPtr->exec));
             AppendObj(listObj, flags[CInitIdx],     StringObj(poolPtr->init));
             AppendObj(listObj, flags[CReinitIdx],   StringObj(poolPtr->reinit));
-            AppendObj(listObj, flags[CMaxslaveIdx], Tcl_NewIntObj(poolPtr->maxworker));
+            AppendObj(listObj, flags[CMaxworkerIdx], Tcl_NewIntObj(poolPtr->maxworker));
             AppendObj(listObj, flags[CMaxrunsIdx],  Tcl_NewIntObj(poolPtr->conf.maxruns));
             AppendObj(listObj, flags[CGetIdx],      Ns_TclNewTimeObj(&poolPtr->conf.tget));
             AppendObj(listObj, flags[CEvalIdx],     Ns_TclNewTimeObj(&poolPtr->conf.teval));
@@ -2330,7 +2330,8 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
             break;
         case CReinitIdx:   Tcl_SetObjResult(interp, StringObj(poolPtr->reinit));
             break;
-        case CMaxslaveIdx: Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->maxworker));
+        case CMaxslaveIdx: NS_FALL_THROUGH; /* fall through */
+        case CMaxworkerIdx: Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->maxworker));
             break;
         case CMaxrunsIdx:  Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->conf.maxruns));
             break;
