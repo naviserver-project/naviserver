@@ -660,7 +660,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
 
             case SPutIdx:     NS_FALL_THROUGH; /* fall through */
             case SUpdateIdx:  NS_FALL_THROUGH; /* fall through */
-            case SIUpdateIdx:  NS_FALL_THROUGH; /* fall through */
+            case SIUpdateIdx: NS_FALL_THROUGH; /* fall through */
             case SCPutIdx:    NS_FALL_THROUGH; /* fall through */
             case SICPutIdx:
                 /*
