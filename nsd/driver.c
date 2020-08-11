@@ -3236,10 +3236,10 @@ SockError(Sock *sockPtr, SockState reason, int err)
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
     switch (reason) {
-    case SOCK_READY:
-    case SOCK_SPOOL:
-    case SOCK_MORE:
-    case SOCK_CLOSE:
+    case SOCK_READY: NS_FALL_THROUGH; /* fall through */
+    case SOCK_SPOOL: NS_FALL_THROUGH; /* fall through */
+    case SOCK_MORE:  NS_FALL_THROUGH; /* fall through */
+    case SOCK_CLOSE: NS_FALL_THROUGH; /* fall through */
     case SOCK_CLOSETIMEOUT:
         /* This is normal, never log. */
         break;

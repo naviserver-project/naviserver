@@ -173,17 +173,17 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         case 'h':
             UsageMsg(0);
 
-        case 'c':
-        case 'f':
-        case 'V':
+        case 'c': NS_FALL_THROUGH; /* fall through */
+        case 'f': NS_FALL_THROUGH; /* fall through */
 #ifdef _WIN32
-        case 'I':
-        case 'R':
-        case 'S':
+        case 'I': NS_FALL_THROUGH; /* fall through */
+        case 'R': NS_FALL_THROUGH; /* fall through */
+        case 'S': NS_FALL_THROUGH; /* fall through */
 #else
-        case 'i':
-        case 'w':
+        case 'i': NS_FALL_THROUGH; /* fall through */
+        case 'w': NS_FALL_THROUGH; /* fall through */
 #endif
+        case 'V':
             if (mode != '\0') {
 #ifdef _WIN32
                 UsageError("only one of the options -c, -f, -I, -R, -S or -V"

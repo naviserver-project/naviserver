@@ -2268,9 +2268,9 @@ RunTraces(NsInterp *itPtr, Ns_TclTraceType why)
         itPtr->currentTrace = why;
 
         switch (why) {
-        case NS_TCL_TRACE_FREECONN:
-        case NS_TCL_TRACE_DEALLOCATE:
-        case NS_TCL_TRACE_DELETE:
+        case NS_TCL_TRACE_FREECONN:   NS_FALL_THROUGH; /* fall through */
+        case NS_TCL_TRACE_DEALLOCATE: NS_FALL_THROUGH; /* fall through */
+        case NS_TCL_TRACE_DELETE:     NS_FALL_THROUGH; /* fall through */
         case NS_TCL_TRACE_IDLE:
             /*
              * Run finalization traces in LIFO order.
@@ -2287,8 +2287,8 @@ RunTraces(NsInterp *itPtr, Ns_TclTraceType why)
             }
             break;
 
-        case NS_TCL_TRACE_ALLOCATE:
-        case NS_TCL_TRACE_CREATE:
+        case NS_TCL_TRACE_ALLOCATE:  NS_FALL_THROUGH; /* fall through */
+        case NS_TCL_TRACE_CREATE:    NS_FALL_THROUGH; /* fall through */
         case NS_TCL_TRACE_GETCONN:
             /*
              * Run initialization traces in FIFO order.
