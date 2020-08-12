@@ -290,7 +290,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
              */
             NsConfigEval(fileContent, nsconf.configFile, argc, argv, optionIndex);
 
-            printf("%s/%s: configuation file %s looks OK\n",
+            printf("%s/%s: configuration file %s looks OK\n",
                    PACKAGE_NAME, PACKAGE_VERSION, nsconf.configFile);
 
             ns_free((char *)fileContent);
