@@ -510,7 +510,9 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      * read the configuration file. So, we have to read it before issuing the
      * chroot() command.
      */
-    configFileContent = NsConfigRead(nsconf.configFile);
+    if (nsconf.configFile != NULL) {
+        configFileContent = NsConfigRead(nsconf.configFile);
+    }
 
 #ifndef _WIN32
 
@@ -580,7 +582,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
 #endif /* ! _WIN32 */
 
-    if (nsconf.configFile != NULL) {
+    if (configFileContent != NULL) {
         /*
          * Evaluate the configuration file.
          */
