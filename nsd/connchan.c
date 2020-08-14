@@ -89,11 +89,13 @@ static void ConnChanFree(NsConnChan *connChanPtr)
 static NsConnChan *ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static Ns_ReturnCode SockCallbackRegister(NsConnChan *connChanPtr, const char *script, unsigned int when, const Ns_Time *timeoutPtr)
+static Ns_ReturnCode SockCallbackRegister(NsConnChan *connChanPtr, const char *script,
+                                          unsigned int when, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static ssize_t ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
-                          struct iovec *bufs, int nbufs, unsigned int flags, const Ns_Time *timeoutPtr
+                                  struct iovec *bufs, int nbufs, unsigned int flags,
+                                  const Ns_Time *timeoutPtr
 ) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6);
 
 static char *WhenToString(char *buffer, unsigned int when)
@@ -759,7 +761,7 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                    connChanPtr->channelName,
                    bufs->iov_len, (ssize_t)Ns_SumVec(bufs, nbufs));*/
 
-            result = NsDriverSend(sockPtr, bufs, nbufs,flags);
+            result = NsDriverSend(sockPtr, bufs, nbufs, flags);
             Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend NsDriverSend returned result %" PRIdz " --- %s",
                    connChanPtr->channelName, result, Tcl_ErrnoMsg(errno));
 
@@ -816,7 +818,7 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                 Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend recoverable error before timeout (%ld:%ld)",
                        connChanPtr->channelName, timeoutPtr->sec, timeoutPtr->usec);
                 if (Ns_SockTimedWait(sockPtr->sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
-                    result = NsDriverSend(sockPtr, bufs, nbufs,flags);
+                    result = NsDriverSend(sockPtr, bufs, nbufs, flags);
                 } else {
                     Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend timeout occurred",
                            connChanPtr->channelName);
@@ -1495,6 +1497,8 @@ ConnChanCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
             if (result == TCL_OK) {
                 Ns_ReturnCode status;
 
+                Ns_RWLockWrLock(&servPtr->connchans.lock);
+
                 /*
                  * Fill in the timeouts, when these are provided.
                  */
@@ -1515,6 +1519,7 @@ ConnChanCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
                     ConnChanFree(connChanPtr);
                     result = TCL_ERROR;
                 }
+                Ns_RWLockUnlock(&servPtr->connchans.lock);
             }
         }
     }
