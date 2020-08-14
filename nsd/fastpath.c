@@ -722,12 +722,16 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
      * Check compressed versions of fileName
      */
     if (useBrotli && (connPtr->flags & NS_CONN_BROTLIACCEPTED) != 0u) {
-        compressedFileName = CheckStaticCompressedDelivery(conn, dsPtr, useBrotliRefresh, ".br","::ns_brotlifile", fileName, "br");
+        compressedFileName = CheckStaticCompressedDelivery(conn, dsPtr, useBrotliRefresh,
+                                                           ".br", "::ns_brotlifile",
+                                                           fileName, "br");
     }
 
     if (compressedFileName == NULL && useGzip && (connPtr->flags & NS_CONN_ZIPACCEPTED) != 0u) {
         Tcl_DStringSetLength(dsPtr, 0);
-        compressedFileName = CheckStaticCompressedDelivery(conn, dsPtr, useGzipRefresh, ".gz","::ns_gzipfile", fileName, "gzip");
+        compressedFileName = CheckStaticCompressedDelivery(conn, dsPtr, useGzipRefresh,
+                                                           ".gz", "::ns_gzipfile",
+                                                           fileName, "gzip");
     }
 
     if (compressedFileName != NULL) {
