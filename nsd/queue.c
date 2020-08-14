@@ -1614,7 +1614,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         break;
 
     case SMappedIdx:
-        result = ServerMappedObjCmd(clientData, interp, objc, objv, servPtr,nargs);
+        result = ServerMappedObjCmd(clientData, interp, objc, objv, servPtr, nargs);
         break;
 
     case SUnmapIdx:

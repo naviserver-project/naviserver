@@ -176,8 +176,8 @@
 
 #ifdef DEBUG
 static int NS_Tcl_StringMatch(const char *a, const char *b) {
-    int r = Tcl_StringMatch(a,b);
-    fprintf(stderr, "__TclStringMatch '%s' '%s' => %d\n", a,b, r);
+    int r = Tcl_StringMatch(a, b);
+    fprintf(stderr, "__TclStringMatch '%s' '%s' => %d\n", a, b, r);
     return r;
 }
 static size_t NS_strlen(const char *a) {
@@ -186,8 +186,8 @@ static size_t NS_strlen(const char *a) {
     return r;
 }
 static int NS_strcmp(const char *a, const char *b) {
-    int r = strcmp(a,b);
-    fprintf(stderr, "NS_strcmp '%s' '%s' => %d\n", a,b, r);
+    int r = strcmp(a, b);
+    fprintf(stderr, "NS_strcmp '%s' '%s' => %d\n", a, b, r);
     return r;
 }
 #else

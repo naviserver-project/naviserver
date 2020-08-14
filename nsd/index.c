@@ -827,7 +827,7 @@ Ns_IndexIntInit(Ns_Index *indexPtr, size_t inc)
 }
 
 #ifdef _MSC_VER_VERY_OLD
-#define bsearch(a,b,c,d,e) NsBsearch((a),(b),(c),(d),(e))
+#define bsearch(a, b, c, d, e) NsBsearch((a), (b), (c), (d), (e))
 
 /*
  *----------------------------------------------------------------------

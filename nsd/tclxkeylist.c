@@ -41,8 +41,8 @@ static bool TclX_IsNullObj(Tcl_Obj *objPtr) NS_GNUC_NONNULL(1);
 #define FALSE 0
 
 
-#define ckbinstrdup(a,b) \
-  ((char *)memcpy(ckalloc((unsigned int)((b)+1)),(a),(size_t)((b)+1)))
+#define ckbinstrdup(a, b) \
+  ((char *)memcpy(ckalloc((unsigned int)((b)+1)), (a), (size_t)((b)+1)))
 
 /*
  * listType is used in TclX_IsNullObj() in read-only mode

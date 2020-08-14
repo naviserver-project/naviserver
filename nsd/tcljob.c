@@ -708,7 +708,7 @@ JobWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_O
     if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
         result =  TCL_ERROR;
     } else {
-        Ns_Time        timeout = {0,0};
+        Ns_Time        timeout = {0, 0};
         Job           *jobPtr;
         Tcl_HashEntry *hPtr;
 
@@ -954,7 +954,7 @@ JobWaitAnyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         result = TCL_ERROR;
 
     } else {
-        Ns_Time         timeout = {0,0};
+        Ns_Time         timeout = {0, 0};
         Tcl_HashSearch  search;
 
         if (deltaTimeoutPtr != NULL) {
@@ -1180,7 +1180,7 @@ JobJobListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
             jobFieldList = Tcl_NewListObj(0, NULL);
             if (AppendField(interp, jobFieldList, "id",        jobId1) != TCL_OK
                 || AppendField(interp, jobFieldList, "state",  jobState) != TCL_OK
-                || AppendField(interp, jobFieldList, "results",jobResults) != TCL_OK
+                || AppendField(interp, jobFieldList, "results", jobResults) != TCL_OK
                 || AppendField(interp, jobFieldList, "script", jobScript) != TCL_OK
                 || AppendField(interp, jobFieldList, "code",   jobCode) != TCL_OK
                 || AppendField(interp, jobFieldList, "type",   jobType) != TCL_OK

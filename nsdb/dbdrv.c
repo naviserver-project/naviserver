@@ -746,7 +746,7 @@ NsDbLoadDriver(const char *driver)
              * For unknown reasons, Ns_ModuleLoad is called with a
              * argument meanings. Typically, the argument list is
              *
-             *    interp,server,module,file,init
+             *    interp, server, module, file, init
              *
              * here it the 2nd arg is "driver" (like e.g. "postgres")
              * and the 3rd argument is "path" (like e.g. "ns/db/driver/postgres")

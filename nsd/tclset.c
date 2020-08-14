@@ -297,7 +297,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
         SArrayIdx, SCleanupIdx, SCopyIdx, SCPutIdx, SCreateidx,
         SDeleteIdx, SDelkeyIdx, SFindIdx, SFreeIdx, SGetIdx,
         SICPutIdx, SIDelkeyIdx, SIFindIdx, SIGetIdx, SIMergeIdx,
-        SIsNullIdx, SIUniqueIdx, SIUpdateIdx, SKeyIdx, SKeysIdx,SListIdx,
+        SIsNullIdx, SIUniqueIdx, SIUpdateIdx, SKeyIdx, SKeysIdx, SListIdx,
         SMergeIdx, SMoveIdx, sINameIdx, SNewIdx, SPrintIdx, SPutIdx,
         SSizeIdx, SSplitIdx, STruncateIdx, SUniqueIdx, SUpdateIdx,
         SValueIdx, SValuesIdx

@@ -87,9 +87,9 @@ Ns_SockaddrMask(const struct sockaddr *addr, const struct sockaddr *mask, struct
         }
 #endif
         /*
-          fprintf(stderr, "#### addr   %s\n",ns_inet_ntoa(addr));
-          fprintf(stderr, "#### mask   %s\n",ns_inet_ntoa(mask));
-          fprintf(stderr, "#### masked %s\n",ns_inet_ntoa(maskedAddr));
+          fprintf(stderr, "#### addr   %s\n", ns_inet_ntoa(addr));
+          fprintf(stderr, "#### mask   %s\n", ns_inet_ntoa(mask));
+          fprintf(stderr, "#### masked %s\n", ns_inet_ntoa(maskedAddr));
         */
     } else if (addr->sa_family == AF_INET && mask->sa_family == AF_INET) {
         ((struct sockaddr_in *)maskedAddr)->sin_addr.s_addr =
@@ -307,7 +307,7 @@ Ns_SockaddrMaskBits(const struct sockaddr *mask, unsigned int nrBits)
             addr->u.Word[i] = 0u;
         }
 #endif
-        /*fprintf(stderr, "#### FINAL mask %s\n",ns_inet_ntoa(mask));*/
+        /*fprintf(stderr, "#### FINAL mask %s\n", ns_inet_ntoa(mask));*/
     } else if (mask->sa_family == AF_INET) {
         if (nrBits > 32u) {
             Ns_Log(Warning, "Invalid bit mask /%d: can be most 32 bits", nrBits);

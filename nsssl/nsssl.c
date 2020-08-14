@@ -235,7 +235,7 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
        * the send low watermark to 1 fixes this problem.
        */
         int value = 1;
-        setsockopt(sock->sock, SOL_SOCKET,SO_SNDLOWAT, &value, sizeof(value));
+        setsockopt(sock->sock, SOL_SOCKET, SO_SNDLOWAT, &value, sizeof(value));
 #endif
         (void)Ns_SockSetNonBlocking(sock->sock);
 
@@ -496,7 +496,7 @@ Close(Ns_Sock *sock)
         ns_free(sslCtx);
     }
     if (sock->sock > -1) {
-        Ns_Log(Debug, "### SSL close(%d) socket",sock->sock);
+        Ns_Log(Debug, "### SSL close(%d) socket", sock->sock);
         ns_sockclose(sock->sock);
         sock->sock = -1;
     }

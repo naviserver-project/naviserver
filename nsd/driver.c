@@ -3132,7 +3132,7 @@ SockNew(Driver *drvPtr)
     if (likely(sockPtr != NULL)) {
         drvPtr->sockPtr = sockPtr->nextPtr;
         sockPtr->keep   = NS_FALSE;
-        /*fprintf(stderr, "=== SockNew drv %p got %p set %p\n", (void*)drvPtr, (void*)sockPtr,(void*)drvPtr->sockPtr);*/
+        /*fprintf(stderr, "=== SockNew drv %p got %p set %p\n", (void*)drvPtr, (void*)sockPtr, (void*)drvPtr->sockPtr);*/
 
     }
     Ns_MutexUnlock(&drvPtr->lock);
@@ -5819,7 +5819,7 @@ WriterThread(void *arg)
                         curPtr->currentRate = (int)((curPtr->nsent)/(Tcl_WideInt)currentMs);
                         Ns_Log(DriverDebug,
                                "Socket of pool '%s' is writable, currentMs %ld has updated current rate %d",
-                               curPtr->poolPtr->pool, currentMs,curPtr->currentRate);
+                               curPtr->poolPtr->pool, currentMs, curPtr->currentRate);
                     }
                 }
                 Ns_Log(DriverDebug,
@@ -7076,7 +7076,7 @@ WriterListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
                 while (wrSockPtr != NULL) {
                     char ipString[NS_IPADDR_SIZE];
                     ns_inet_ntop((struct sockaddr *)&(wrSockPtr->sockPtr->sa),
-                                 ipString,sizeof(ipString));
+                                 ipString, sizeof(ipString));
 
                     (void) Ns_DStringNAppend(dsPtr, "{", 1);
                     (void) Ns_DStringAppendTime(dsPtr, &wrSockPtr->startTime);
@@ -7301,12 +7301,12 @@ NsTclWriterObjCmd(ClientData clientData, Tcl_Interp *interp,
                   int objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
-        {"list",       WriterListObjCmd},
-        {"size",       WriterSizeObjCmd},
-        {"streaming",  WriterStreamingObjCmd},
-        {"submit",     WriterSubmitObjCmd},
-        {"submitfile", WriterSubmitFileObjCmd},
-        {"submitfiles",WriterSubmitFilesObjCmd},
+        {"list",        WriterListObjCmd},
+        {"size",        WriterSizeObjCmd},
+        {"streaming",   WriterStreamingObjCmd},
+        {"submit",      WriterSubmitObjCmd},
+        {"submitfile",  WriterSubmitFileObjCmd},
+        {"submitfiles", WriterSubmitFilesObjCmd},
         {NULL, NULL}
     };
 

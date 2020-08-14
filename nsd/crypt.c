@@ -127,7 +127,7 @@ static const int FP[] = {
 
 /*
  * Permuted-choice 1 from the key bits to yield C and D. Note that bits
- * 8,16... are left out: They are intended for a parity check.
+ * 8, 16... are left out: They are intended for a parity check.
  */
 static const int PC1_C[] = {
     57, 49, 41, 33, 25, 17, 9,

@@ -183,7 +183,7 @@ SockAccept(Ns_Sock *sock, NS_SOCKET listensock,
          * the send low watermark to 1 fixes this problem.
          */
         int value = 1;
-        setsockopt(sock->sock, SOL_SOCKET,SO_SNDLOWAT, &value, sizeof(value));
+        setsockopt(sock->sock, SOL_SOCKET, SO_SNDLOWAT, &value, sizeof(value));
 #endif
         (void)Ns_SockSetNonBlocking(sock->sock);
         SetNodelay(sock->driver, sock->sock);

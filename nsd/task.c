@@ -107,7 +107,7 @@ static void ReleaseTask(Task *taskPtr)
 
 static Ns_ThreadProc TaskThread;
 
-#define Call(tp,w) ((*((tp)->proc))((Ns_Task *)(tp),(tp)->sock,(tp)->arg,(w)))
+#define Call(tp, w) ((*((tp)->proc))((Ns_Task *)(tp), (tp)->sock, (tp)->arg, (w)))
 #define Reserve(tp) (tp)->refCount++
 
 /*

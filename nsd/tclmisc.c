@@ -1036,8 +1036,8 @@ static void hexPrint(const char *msg, const unsigned char *octects, size_t octec
 {
     size_t i;
     fprintf(stderr, "%s octectLength %zu:", msg, octectLength);
-    for (i=0; i<octectLength; i++) {
-        fprintf(stderr, "%.2x ",octects[i] & 0xff);
+    for (i = 0; i < octectLength; i++) {
+        fprintf(stderr, "%.2x ", octects[i] & 0xff);
     }
     fprintf(stderr, "\n");
 }
@@ -1074,7 +1074,7 @@ Base64EncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         //hexPrint("source ", bytes,  (size_t)nbytes);
 
         size = (size_t)nbytes;
-        buffer = ns_malloc(1u + (4u * MAX(size,2u)) / 2u);
+        buffer = ns_malloc(1u + (4u * MAX(size, 2u)) / 2u);
         (void)Ns_HtuuEncode2(bytes, size, buffer, encoding);
 
         Tcl_SetResult(interp, buffer, (Tcl_FreeProc *) ns_free);
@@ -1357,10 +1357,10 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
  *  two halves rather than OR, allowing more opportunity for using
  *  associativity in optimization. (Colin Plumb)
  */
-#define f1(x,y,z) ( (z) ^ ((x) & ((y) ^ (z)) ) )         /* Rounds 0-19 */
-#define f2(x,y,z) ( (x) ^ (y) ^ (z) )                    /* Rounds 20-39 */
-#define f3(x,y,z) ( ((x) & (y)) + ((z) & ((x) ^ (y)) ) ) /* Rounds 40-59 */
-#define f4(x,y,z) ( (x) ^ (y) ^ (z) )                    /* Rounds 60-79 */
+#define f1(x, y, z) ( (z) ^ ((x) & ((y) ^ (z)) ) )         /* Rounds 0-19 */
+#define f2(x, y, z) ( (x) ^ (y) ^ (z) )                    /* Rounds 20-39 */
+#define f3(x, y, z) ( ((x) & (y)) + ((z) & ((x) ^ (y)) ) ) /* Rounds 40-59 */
+#define f4(x, y, z) ( (x) ^ (y) ^ (z) )                    /* Rounds 60-79 */
 
 /*
  * The SHA Mysterious Constants.
@@ -1373,7 +1373,7 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
 /*
  * 32-bit rotate left - kludged with shifts
  */
-#define ROTL(n,X) ( ((X) << (n)) | ((X) >> (32-(n))) )
+#define ROTL(n, X) ( ((X) << (n)) | ((X) >> (32-(n))) )
 
 /*
  *  The initial expanding function
@@ -1391,14 +1391,14 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
  */
 #if SHA_VERSION       /* FIPS 180.1 */
 
-#define expandx(W,i) (t = W[(i)&15u] ^ W[((i)-14)&15u] ^ W[((i)-8)&15u] ^ W[((i)-3)&15u], \
+#define expandx(W, i) (t = W[(i)&15u] ^ W[((i)-14)&15u] ^ W[((i)-8)&15u] ^ W[((i)-3)&15u], \
                         ROTL(1, t))
-#define expand(W,i) (W[(i)&15u] = expandx(W,(i)))
+#define expand(W, i) (W[(i)&15u] = expandx(W, (i)))
 
 #else /* Old FIPS 180 */
 
-#define expandx(W,i) (W[(i)&15u] ^ W[((i)-14)&15u] ^ W[((i)-8)&15u] ^ W[((i)-3)&15u])
-#define expand(W,i) (W[(i)&15u] ^= W[((i)-14)&15u] ^ W[((i)-8)&15u] ^ W[((i)-3)&15u])
+#define expandx(W, i) (W[(i)&15u] ^ W[((i)-14)&15u] ^ W[((i)-8)&15u] ^ W[((i)-3)&15u])
+#define expand(W, i) (W[(i)&15u] ^= W[((i)-14)&15u] ^ W[((i)-8)&15u] ^ W[((i)-3)&15u])
 
 #endif /* SHA_VERSION */
 
@@ -1406,16 +1406,16 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
    The prototype SHA sub-round
 
    The fundamental sub-round is
-   a' = e + ROTL(5,a) + f(b, c, d) + k + data;
+   a' = e + ROTL(5, a) + f(b, c, d) + k + data;
    b' = a;
-   c' = ROTL(30,b);
+   c' = ROTL(30, b);
    d' = c;
    e' = d;
    ... but this is implemented by unrolling the loop 5 times and renaming
-   the variables (e,a,b,c,d) = (a',b',c',d',e') each iteration.
+   the variables (e, a, b, c, d) = (a', b', c', d', e') each iteration.
  */
 #define subRound(a, b, c, d, e, f, k, data) \
-    ( (e) += ROTL(5u,(a)) + f((b), (c), (d)) + (k) + (data), (b) = ROTL(30u, (b)) )
+    ( (e) += ROTL(5u, (a)) + f((b), (c), (d)) + (k) + (data), (b) = ROTL(30u, (b)) )
 /*
  *  The above code is replicated 20 times for each of the 4 functions,
  *  using the next 20 values from the W[] array for "data" each time.

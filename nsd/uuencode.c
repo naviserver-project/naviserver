@@ -74,8 +74,8 @@ static const int pr2six[256] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
 };
 
-#define Encode(table,c) (UCHAR((table)[(c)]))
-#define Decode(table,c) (UCHAR((table)[(int)(c)]))
+#define Encode(table, c) (UCHAR((table)[(c)]))
+#define Decode(table, c) (UCHAR((table)[(int)(c)]))
 
 
 /*
@@ -162,10 +162,10 @@ Ns_Base64Encode(const unsigned char *input, size_t inputSize, char *buf, size_t 
             *q++ = UCHAR('\n');
             lineLength = 0u;
         }
-        *q++ = Encode(encode_table,p[0] >> 2);
-        *q++ = Encode(encode_table,(UCHAR(p[0] << 4) & 0x30u) | ((p[1] >> 4) & 0x0Fu));
-        *q++ = Encode(encode_table,(UCHAR(p[1] << 2) & 0x3CU) | ((p[2] >> 6) & 0x03u));
-        *q++ = Encode(encode_table,p[2] & 0x3Fu);
+        *q++ = Encode(encode_table, p[0] >> 2);
+        *q++ = Encode(encode_table, (UCHAR(p[0] << 4) & 0x30u) | ((p[1] >> 4) & 0x0Fu));
+        *q++ = Encode(encode_table, (UCHAR(p[1] << 2) & 0x3CU) | ((p[2] >> 6) & 0x03u));
+        *q++ = Encode(encode_table, p[2] & 0x3Fu);
         p += 3;
         lineLength += 4u;
     }
@@ -176,15 +176,15 @@ Ns_Base64Encode(const unsigned char *input, size_t inputSize, char *buf, size_t 
 
     n = inputSize % 3u;
     if (n > 0u) {
-        *q++ = Encode(encode_table,p[0] >> 2);
+        *q++ = Encode(encode_table, p[0] >> 2);
         if (n == 1u) {
-            *q++ = Encode(encode_table,UCHAR(p[0] << 4) & 0x30u);
+            *q++ = Encode(encode_table, UCHAR(p[0] << 4) & 0x30u);
             if (encoding == 0) {
                 *q++ = UCHAR('=');
             }
         } else {
-            *q++ = Encode(encode_table,(UCHAR(p[0] << 4) & 0x30u) | ((p[1] >> 4) & 0x0Fu));
-            *q++ = Encode(encode_table,UCHAR( p[1] << 2) & 0x3CU);
+            *q++ = Encode(encode_table, (UCHAR(p[0] << 4) & 0x30u) | ((p[1] >> 4) & 0x0Fu));
+            *q++ = Encode(encode_table, UCHAR( p[1] << 2) & 0x3CU);
         }
         if (encoding == 0) {
             *q++ = UCHAR('=');
@@ -296,9 +296,9 @@ Ns_HtuuDecode2(const char *input, unsigned char *buf, size_t bufSize, int encodi
         if (decode_table[(int)(*p)] >= 0) {
             chars[n++] = *p;
             if (n == 4) {
-                *q++ = UCHAR(Decode(decode_table,chars[0]) << 2) | Decode(decode_table,chars[1]) >> 4;
-                *q++ = UCHAR(Decode(decode_table,chars[1]) << 4) | Decode(decode_table,chars[2]) >> 2;
-                *q++ = UCHAR(Decode(decode_table,chars[2]) << 6) | Decode(decode_table,chars[3]);
+                *q++ = UCHAR(Decode(decode_table, chars[0]) << 2) | Decode(decode_table, chars[1]) >> 4;
+                *q++ = UCHAR(Decode(decode_table, chars[1]) << 4) | Decode(decode_table, chars[2]) >> 2;
+                *q++ = UCHAR(Decode(decode_table, chars[2]) << 6) | Decode(decode_table, chars[3]);
                 n = 0;
             }
         }
@@ -310,10 +310,10 @@ Ns_HtuuDecode2(const char *input, unsigned char *buf, size_t bufSize, int encodi
      */
 
     if (n > 1) {
-        *q++ = UCHAR(Decode(decode_table,chars[0]) << 2) | Decode(decode_table,chars[1]) >> 4;
+        *q++ = UCHAR(Decode(decode_table, chars[0]) << 2) | Decode(decode_table, chars[1]) >> 4;
     }
     if (n > 2) {
-        *q++ = UCHAR(Decode(decode_table,chars[1]) << 4) | Decode(decode_table,chars[2]) >> 2;
+        *q++ = UCHAR(Decode(decode_table, chars[1]) << 4) | Decode(decode_table, chars[2]) >> 2;
     }
     if ((size_t)(q - buf) < bufSize) {
         *q = UCHAR('\0');

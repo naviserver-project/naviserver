@@ -2264,7 +2264,7 @@ RunTraces(NsInterp *itPtr, Ns_TclTraceType why)
     servPtr = itPtr->servPtr;
     if (servPtr != NULL) {
 
-        //Ns_Log(Notice, "RunTraces %d",(int)why);
+        //Ns_Log(Notice, "RunTraces %d", (int)why);
         itPtr->currentTrace = why;
 
         switch (why) {

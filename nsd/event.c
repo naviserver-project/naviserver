@@ -73,8 +73,8 @@ typedef struct EventQueue {
  * Local functions defined in this file
  */
 
-#define Call(ep,t,w) ((*((ep)->proc))((Ns_Event *)(ep),(ep)->sock,(ep)->arg,(t),(w)))
-#define Push(x,xs) ((x)->nextPtr = (xs), (xs) = (x))
+#define Call(ep, t, w) ((*((ep)->proc))((Ns_Event *)(ep), (ep)->sock, (ep)->arg, (t), (w)))
+#define Push(x, xs) ((x)->nextPtr = (xs), (xs) = (x))
 
 
 /*

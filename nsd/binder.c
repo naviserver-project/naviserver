@@ -1026,7 +1026,7 @@ PrebindSockets(const char *spec)
             while (count--) {
                 sock = Ns_SockBindRaw(IPPROTO_ICMP);
                 if (sock == NS_INVALID_SOCKET) {
-                    Ns_Log(Error, "prebind: bind error for icmp: %s",strerror(errno));
+                    Ns_Log(Error, "prebind: bind error for icmp: %s", strerror(errno));
                     continue;
                 }
                 hPtr = Tcl_CreateHashEntry(&preboundRaw, NSSOCK2PTR(sock), &isNew);
@@ -1054,12 +1054,12 @@ PrebindSockets(const char *spec)
                 if (l > 0) {
                     mode = (unsigned short)l;
                 } else {
-                    Ns_Log(Error, "prebind: unix: ignore invalid mode value: %s",line);
+                    Ns_Log(Error, "prebind: unix: ignore invalid mode value: %s", line);
                 }
             }
             hPtr = Tcl_CreateHashEntry(&preboundUnix, (char *) line, &isNew);
             if (isNew == 0) {
-                Ns_Log(Error, "prebind: unix: duplicate entry: %s",line);
+                Ns_Log(Error, "prebind: unix: duplicate entry: %s", line);
                 continue;
             }
             sock = Ns_SockBindUnix(line, SOCK_STREAM, mode);

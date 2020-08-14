@@ -125,7 +125,7 @@ ConfigServerVhost(const char *server)
         if (servPtr->vhost.enabled) {
             Ns_DStringInit(&ds);
             (void) NsPageRoot(&ds, servPtr, "www.example.com:80");
-            Ns_Log(Notice, "vhost[%s]: www.example.com:80 -> %s",server,ds.string);
+            Ns_Log(Notice, "vhost[%s]: www.example.com:80 -> %s", server, ds.string);
             Ns_DStringFree(&ds);
         }
         result = NS_OK;

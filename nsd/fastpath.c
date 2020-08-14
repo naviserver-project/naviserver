@@ -608,12 +608,12 @@ CheckStaticCompressedDelivery(
     Tcl_DStringAppend(dsPtr, fileName, -1);
     Tcl_DStringAppend(dsPtr, ext, -1);
     compressedFileName = Tcl_DStringValue(dsPtr);
-    //fprintf(stderr, "=== check compressed file <%s> compressed <%s>\n",fileName, compressedFileName);
+    //fprintf(stderr, "=== check compressed file <%s> compressed <%s>\n", fileName, compressedFileName);
 
 
     if (Ns_Stat(compressedFileName, &gzStat)) {
         Ns_ConnCondSetHeaders(conn, "Vary", "Accept-Encoding");
-        //fprintf(stderr, "=== we have the file <%s> compressed <%s>\n",fileName, compressedFileName);
+        //fprintf(stderr, "=== we have the file <%s> compressed <%s>\n", fileName, compressedFileName);
 
         /*
          * We have a file with the compression extension

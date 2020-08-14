@@ -161,8 +161,8 @@ static void hexPrint(const char *msg, const unsigned char *octects, size_t octec
 
         Tcl_DStringInit(&ds);
         Ns_DStringPrintf(&ds, "%s (len %zu): ", msg, octectLength);
-        for (i=0; i<octectLength; i++) {
-            Ns_DStringPrintf(&ds, "%.2x ",octects[i] & 0xff);
+        for (i = 0; i < octectLength; i++) {
+            Ns_DStringPrintf(&ds, "%.2x ", octects[i] & 0xff);
         }
         Ns_Log(Debug, "%s", ds.string);
         Tcl_DStringFree(&ds);
@@ -360,7 +360,7 @@ ListMDfunc(const EVP_MD *m, const char *from, const char *UNUSED(to), void *arg)
     if ((m != NULL) && (from != NULL)) {
         const char *mdName = EVP_MD_name(m);
 
-        /* fprintf(stderr, "from %s to %to name <%s> type (nid) %d\n",from,to,mdName, EVP_MD_type(m)); */
+        /* fprintf(stderr, "from %s to %to name <%s> type (nid) %d\n", from, to, mdName, EVP_MD_type(m)); */
         /*
          * Apprarently, the list contains upper and lowercase variants. Avoid
          * duplication.

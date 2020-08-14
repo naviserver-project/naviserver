@@ -5,7 +5,7 @@
  * http://www.mozilla.org/.
  *
  * Software distributed under the License is distributed on an "AS IS"
- * basis,WITHOUT WARRANTY OF ANY KIND,either express or implied. See
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
  * the License for the specific language governing rights and limitations
  * under the License.
  *
@@ -16,14 +16,14 @@
  * Inc. Portions created by AOL are Copyright(C) 1999 America Online,
  * Inc. All Rights Reserved.
  *
- * Alternatively,the contents of this file may be used under the terms
- * of the GNU General Public License(the "GPL"),in which case the
+ * Alternatively, the contents of this file may be used under the terms
+ * of the GNU General Public License(the "GPL"), in which case the
  * provisions of GPL are applicable instead of those above.  If you wish
  * to allow use of your version of this file only under the terms of the
  * GPL and not to allow others to use your version of this file under the
- * License,indicate your decision by deleting the provisions above and
+ * License, indicate your decision by deleting the provisions above and
  * replace them with the notice and other provisions required by the GPL.
- * If you do not delete the provisions above,a recipient may use your
+ * If you do not delete the provisions above, a recipient may use your
  * version of this file under either the License or the GPL.
  *
  */
@@ -391,10 +391,10 @@ ParseExtendedHeaders(Log *logPtr, const char *str)
                         *suffix = '\0';
                         suffix ++;
                         if (strncmp(fieldName, "request", 3) == 0) {
-                            Tcl_DStringAppendElement(&requestHeaderFields,suffix);
+                            Tcl_DStringAppendElement(&requestHeaderFields, suffix);
                             nrRequestsHeaderFields++;
                         } else if (strncmp(fieldName, "response", 3) == 0) {
-                            Tcl_DStringAppendElement(&responseHeaderFields,suffix);
+                            Tcl_DStringAppendElement(&responseHeaderFields, suffix);
                             nrResponseHeaderFields++;
                         } else {
                             Ns_Log(Error, "nslog: ignore invalid entry prefix '%s' in extendedHeaders parameter",
@@ -404,7 +404,7 @@ ParseExtendedHeaders(Log *logPtr, const char *str)
                         /*
                          * No prefix, assume request header field
                          */
-                        Tcl_DStringAppendElement(&requestHeaderFields,suffix);
+                        Tcl_DStringAppendElement(&requestHeaderFields, suffix);
                         nrRequestsHeaderFields++;
                     }
                 }
@@ -724,7 +724,7 @@ AppendEscaped(Tcl_DString *dsPtr, const char *toProcess)
                 Tcl_DStringAppend(dsPtr, "\\\"", 2);
                 break;
             case '\\':
-                Tcl_DStringAppend(dsPtr, "\\\\",2);
+                Tcl_DStringAppend(dsPtr, "\\\\", 2);
                 break;
             default:
                 /*should not happen */ assert(0);
@@ -1119,7 +1119,7 @@ LogOpen(Log *logPtr)
  *      NS_TRUE or NS_FALSE if log was closed.
  *
  * Side effects:
- *      Buffer entries,if any,are flushed.
+ *      Buffer entries, if any, are flushed.
  *
  *----------------------------------------------------------------------
  */
