@@ -104,6 +104,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     Ns_Time        timeout;
     Ns_Set        *set;
     bool           testMode = NS_FALSE;
+    const char    *configFileContent = NULL;
 #ifndef _WIN32
     bool           debug = NS_FALSE;
     bool           forked = NS_FALSE;
@@ -504,6 +505,12 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         }
     }
 
+    /*
+     * In case chroot has to be performed, we might not be able anymore to
+     * read the configuration file. So, we have to read it before issuing the
+     * chroot() command.
+     */
+    configFileContent = NsConfigRead(nsconf.configFile);
 
 #ifndef _WIN32
 
@@ -574,13 +581,11 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 #endif /* ! _WIN32 */
 
     if (nsconf.configFile != NULL) {
-        const char *fileContent = NsConfigRead(nsconf.configFile);
-
         /*
          * Evaluate the configuration file.
          */
-        NsConfigEval(fileContent, nsconf.configFile, argc, argv, optionIndex);
-        ns_free((char *)fileContent);
+        NsConfigEval(configFileContent, nsconf.configFile, argc, argv, optionIndex);
+        ns_free((char *)configFileContent);
     }
 
     /*
