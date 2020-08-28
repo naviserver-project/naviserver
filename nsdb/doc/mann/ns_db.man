@@ -330,7 +330,7 @@ These are valid uses of ns_db gethandle:
  ns_db gethandle
  # 1 handle from default pool
  
- ns_db gethandle -timeout 2:500000
+ ns_db gethandle -timeout 2.5s
  # 1 handle from default pool, 2.5 sec timeout
  
  ns_db gethandle -timeout -1 poolname
@@ -345,8 +345,8 @@ These are valid uses of ns_db gethandle:
  ns_db gethandle poolname 5
  # 5 handles from poolname
  
- ns_db gethandle -timeout 23 poolname 5
- # 5 handles from poolname, 23 sec timeout
+ ns_db gethandle -timeout 2.0s poolname 5
+ # 5 handles from poolname, 2.0 sec timeout
 [example_end]
 
 
