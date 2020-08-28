@@ -751,117 +751,127 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
     case SELECT:            NS_FALL_THROUGH; /* fall through */
     case SP_START:          NS_FALL_THROUGH; /* fall through */
     case INTERPRETSQLFILE:
+        {
+            const char *value;
 
-        /*
-         * The following commands require a 3rd argument.
-         */
+            /*
+             * The following commands require a 3rd argument.
+             */
 
-        if (objc != 4) {
-            if (cmd == INTERPRETSQLFILE) {
-                Tcl_WrongNumArgs(interp, 2, objv, "dbId sqlfile");
+            if (objc != 4) {
+                if (cmd == INTERPRETSQLFILE) {
+                    Tcl_WrongNumArgs(interp, 2, objv, "dbId sqlfile");
 
-            } else if (cmd == GETROW) {
-                Tcl_WrongNumArgs(interp, 2, objv, "dbId row");
+                } else if (cmd == GETROW) {
+                    Tcl_WrongNumArgs(interp, 2, objv, "dbId row");
 
-            } else {
-                Tcl_WrongNumArgs(interp, 2, objv, "dbId sql");
-            }
-            return TCL_ERROR;
-        }
-
-        if (DbGetHandle(idataPtr, interp, Tcl_GetString(objv[2]), &handlePtr, &hPtr) != TCL_OK) {
-            return TCL_ERROR;
-        }
-        Ns_DStringFree(&handlePtr->dsExceptionMsg);
-        handlePtr->cExceptionCode[0] = '\0';
-
-        switch (cmd) {
-        case DML:
-            if (Ns_DbDML(handlePtr, Tcl_GetString(objv[3])) != NS_OK) {
-                result = DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
-            }
-            break;
-
-        case ONE_ROW:
-            rowPtr = Ns_Db1Row(handlePtr, Tcl_GetString(objv[3]));
-            if (rowPtr == NULL) {
-                result = DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
-
-            } else if (unlikely(Ns_TclEnterSet(interp, rowPtr, NS_TCL_SET_DYNAMIC) != TCL_OK)) {
-                result = TCL_ERROR;
-            }
-            break;
-
-        case ZERO_OR_ONE_ROW:
-            rowPtr = Ns_Db0or1Row(handlePtr, Tcl_GetString(objv[3]), &nrows);
-            if (rowPtr == NULL) {
-                result = DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
-
-            } else if (nrows == 0) {
-                Ns_SetFree(rowPtr);
-
-            } else if (unlikely(Ns_TclEnterSet(interp, rowPtr, NS_TCL_SET_DYNAMIC) != TCL_OK)) {
-                result = TCL_ERROR;
-            }
-            break;
-
-        case EXEC:
-            switch (Ns_DbExec(handlePtr, Tcl_GetString(objv[3]))) {
-            case NS_DML:
-                Tcl_SetObjResult(interp, Tcl_NewStringObj("NS_DML", 6));
-                break;
-            case NS_ROWS:
-                Tcl_SetObjResult(interp, Tcl_NewStringObj("NS_ROWS", 7));
-                break;
-            default:
-                result = DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
-            }
-            break;
-
-        case SELECT:
-            rowPtr = Ns_DbSelect(handlePtr, Tcl_GetString(objv[3]));
-            if (rowPtr == NULL) {
-                result = DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
-
-            } else if (unlikely(Ns_TclEnterSet(interp, rowPtr, NS_TCL_SET_STATIC) != TCL_OK)) {
-                result = TCL_ERROR;
-            }
-            break;
-
-        case SP_START:
-            if (Ns_DbSpStart(handlePtr, Tcl_GetString(objv[3])) != NS_OK) {
-                result = DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
-            } else {
-                Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-            }
-            break;
-
-        case INTERPRETSQLFILE:
-            if (Ns_DbInterpretSqlFile(handlePtr, Tcl_GetString(objv[3])) != NS_OK) {
-                result = DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
-            }
-            break;
-
-
-        case GETROW:
-            if (Ns_TclGetSet2(interp, Tcl_GetString(objv[3]), &rowPtr) != TCL_OK) {
+                } else {
+                    Tcl_WrongNumArgs(interp, 2, objv, "dbId sql");
+                }
                 return TCL_ERROR;
             }
-            switch (Ns_DbGetRow(handlePtr, rowPtr)) {
-            case NS_OK:
-                Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
-                break;
-            case NS_END_DATA:
-                Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-                break;
-            default:
-                result = DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
-            }
-            break;
 
-        default:
-            /* should not happen */
-            assert(cmd && 0);
+            if (DbGetHandle(idataPtr, interp, Tcl_GetString(objv[2]), &handlePtr, &hPtr) != TCL_OK) {
+                return TCL_ERROR;
+            }
+            Ns_DStringFree(&handlePtr->dsExceptionMsg);
+            handlePtr->cExceptionCode[0] = '\0';
+            value = Tcl_GetString(objv[3]);
+
+            if (cmd != GETROW) {
+                fprintf(stderr, "CMD %s: <%s> (%s)\n", Tcl_GetString(objv[1]), value,
+                        objv[3]->typePtr ? objv[3]->typePtr->name : "none");
+            }
+
+            switch (cmd) {
+            case DML:
+                if (Ns_DbDML(handlePtr, value) != NS_OK) {
+                    result = DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
+                }
+                break;
+
+            case ONE_ROW:
+                rowPtr = Ns_Db1Row(handlePtr, value);
+                if (rowPtr == NULL) {
+                    result = DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
+
+                } else if (unlikely(Ns_TclEnterSet(interp, rowPtr, NS_TCL_SET_DYNAMIC) != TCL_OK)) {
+                    result = TCL_ERROR;
+                }
+                break;
+
+            case ZERO_OR_ONE_ROW:
+                rowPtr = Ns_Db0or1Row(handlePtr, value, &nrows);
+                if (rowPtr == NULL) {
+                    result = DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
+
+                } else if (nrows == 0) {
+                    Ns_SetFree(rowPtr);
+
+                } else if (unlikely(Ns_TclEnterSet(interp, rowPtr, NS_TCL_SET_DYNAMIC) != TCL_OK)) {
+                    result = TCL_ERROR;
+                }
+                break;
+
+            case EXEC:
+                switch (Ns_DbExec(handlePtr, value)) {
+                case NS_DML:
+                    Tcl_SetObjResult(interp, Tcl_NewStringObj("NS_DML", 6));
+                    break;
+                case NS_ROWS:
+                    Tcl_SetObjResult(interp, Tcl_NewStringObj("NS_ROWS", 7));
+                    break;
+                default:
+                    result = DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
+                }
+                break;
+
+            case SELECT:
+                rowPtr = Ns_DbSelect(handlePtr, value);
+                if (rowPtr == NULL) {
+                    result = DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
+
+                } else if (unlikely(Ns_TclEnterSet(interp, rowPtr, NS_TCL_SET_STATIC) != TCL_OK)) {
+                    result = TCL_ERROR;
+                }
+                break;
+
+            case SP_START:
+                if (Ns_DbSpStart(handlePtr, value) != NS_OK) {
+                    result = DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
+                } else {
+                    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+                }
+                break;
+
+            case INTERPRETSQLFILE:
+                if (Ns_DbInterpretSqlFile(handlePtr, value) != NS_OK) {
+                    result = DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
+                }
+                break;
+
+
+            case GETROW:
+                if (Ns_TclGetSet2(interp, value, &rowPtr) != TCL_OK) {
+                    result = TCL_ERROR;
+                } else {
+                    switch (Ns_DbGetRow(handlePtr, rowPtr)) {
+                    case NS_OK:
+                        Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
+                        break;
+                    case NS_END_DATA:
+                        Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+                        break;
+                    default:
+                        result = DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
+                    }
+                }
+                break;
+
+            default:
+                /* should not happen */
+                assert(cmd && 0);
+            }
         }
         break;
 
@@ -905,7 +915,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
 
         } else {
             const char *code;
-            int codeLen;
+            int         codeLen;
 
             assert(handlePtr != NULL);
 
