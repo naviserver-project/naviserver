@@ -40,6 +40,7 @@
 # Make sure, the testfile runs with an expected locale
 #
 set env(LANG) en_US.UTF-8
+encoding system utf-8
 
 package require Tcl 8.5
 package require tcltest 2.2

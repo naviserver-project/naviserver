@@ -27,10 +27,6 @@
 # version of this file under either the License or the GPL.
 #
 #
-dhparams.h:
-	openssl dhparam -C -2 -noout 512 >> dhparams.h
-	openssl dhparam -C -2 -noout 1024 >> dhparams.h
-	openssl dhparam -C -2 -noout 2048 >> dhparams.h
 
 # IMPORTANT: Do NOT use the exact same base file name for both nsd.exe
 # an nsd.dll.  If you do, NaviServer runs just fine, but the nsd.pdb
@@ -43,8 +39,6 @@ DLL	= $(LIBNM)
 PGM	= nsd
 PGMOBJS	= main.o
 HDRS	= nsd.h
-
-tls.o: dhparams.h nsopenssl.h
 
 LIBOBJS = adpcmds.o adpeval.o adpparse.o adprequest.o auth.o binder.o \
 	  cache.o callbacks.o cls.o compress.o config.o conn.o connio.o \
@@ -63,6 +57,13 @@ LIBOBJS = adpcmds.o adpeval.o adpparse.o adprequest.o auth.o binder.o \
 	  unix.o watchdog.o nswin32.o tclcrypto.o tclparsefieldvalue.o
 
 include ../include/Makefile.build
+
+tls.o: dhparams.h nsopenssl.h
+
+dhparams.h:
+	openssl dhparam -C -2 -noout 512 >> dhparams.h
+	openssl dhparam -C -2 -noout 1024 >> dhparams.h
+	openssl dhparam -C -2 -noout 2048 >> dhparams.h
 
 install-init:
 	$(INSTALL_DATA) init.tcl $(DESTDIR)$(INSTBIN)

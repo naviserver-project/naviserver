@@ -65,7 +65,7 @@
 #
 
 !ifdef NAVISERVER
-!  if ("" == "$(NAVISERVER)" || "..\naviserver" == $(NAVISERVER))
+!  if ("" == "$(NAVISERVER)" || "..\naviserver" == "$(NAVISERVER)")
 !    message Warning: Ignoring bogus value for NAVISERVER install dir:  $(NAVISERVER)
 !    undef NAVISERVER
 !  endif

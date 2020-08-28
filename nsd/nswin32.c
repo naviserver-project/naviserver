@@ -358,8 +358,8 @@ NsInstallService(char *service)
     char       nsd[PATH_MAX], config[PATH_MAX];
     Ns_DString name, cmd;
 
-    if (_fullpath(config, nsconf.config, sizeof(config)) == NULL) {
-        Ns_Log(Error, "nswin32: invalid config path '%s'", nsconf.config);
+    if (_fullpath(config, nsconf.configFile, sizeof(config)) == NULL) {
+        Ns_Log(Error, "nswin32: invalid config path '%s'", nsconf.configFile);
     } else if (GetModuleFileName(NULL, nsd, sizeof(nsd)) == 0u) {
         Ns_Log(Error, "nswin32: failed to find nsd.exe: '%s'", SysErrMsg());
     } else {

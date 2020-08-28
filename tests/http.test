@@ -664,7 +664,7 @@ test http-5.3b {
     }
 } -body {
     set string "Testing <äöüß☀>"
-    exec curl -g -s --data $string [ns_config test listenurl]/post 2> /dev/null
+    exec curl -g -s --data @- [ns_config test listenurl]/post << $string 2> /dev/null
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
@@ -1622,7 +1622,7 @@ test http-9.1 {
     }
 } -body {
     set string "Testing <äöüß☀>"
-    exec curl -H "Expect: 100-continue" --data $string [ns_config test listenurl]/post 2> /dev/null
+    exec curl -H "Expect: 100-continue" --data @- [ns_config test listenurl]/post << $string 2> /dev/null
 } -cleanup {
     ns_unregister_op POST /post
 } -result {utf-8 <application/x-www-form-urlencoded> AÄATesting <äöüß☀>ZÜZ}
