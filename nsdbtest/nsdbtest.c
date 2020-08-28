@@ -208,7 +208,7 @@ static int
 Exec(const Ns_DbHandle *handle, char *sql)
 {
     int result;
-    
+
     if (handle->verbose) {
         Ns_Log(Notice, "nsdbtest(%s): Querying '%s'", handle->driver, sql);
     }
@@ -244,9 +244,16 @@ Exec(const Ns_DbHandle *handle, char *sql)
 static int
 GetRow(Ns_DbHandle *UNUSED(handle), const Ns_Set *row)
 {
-    Ns_SetPutValue(row, 0u, "ok");
+    int result;
 
-    return (int)NS_END_DATA;
+    if (Ns_SetValue(row, 0) == NULL) {
+        Ns_SetPutValue(row, 0u, "ok");
+        result = (int)NS_OK;
+    } else {
+        result = (int)NS_END_DATA;
+    }
+
+    return result;
 }
 
 
