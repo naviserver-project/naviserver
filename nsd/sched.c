@@ -209,7 +209,7 @@ Ns_ScheduleProc(Ns_SchedProc *proc, void *arg, int thread, int secs)
     NS_NONNULL_ASSERT(proc != NULL);
 
     interval.sec = secs;
-    interval.usec = secs;
+    interval.usec = 0;
     return Ns_ScheduleProcEx(proc, arg, (thread != 0) ? NS_SCHED_THREAD : 0u, &interval, NULL);
 }
 
