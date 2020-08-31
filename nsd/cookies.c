@@ -490,6 +490,8 @@ Ns_ConnSetCookieEx(const Ns_Conn *conn, const char *name, const char *value,
         Ns_DStringAppend(&cookie, "; SameSite=Strict");
     } else if ((flags & NS_COOKIE_SAMESITE_LAX) != 0u) {
         Ns_DStringAppend(&cookie, "; SameSite=Lax");
+    } else if ((flags & NS_COOKIE_SAMESITE_NONE) != 0u) {
+        Ns_DStringAppend(&cookie, "; SameSite=None");
     }
 
 
@@ -659,10 +661,12 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         if (replace != 0) {
             flags |= NS_COOKIE_REPLACE;
         }
-        if (samesite == INTCHAR('s')) {
+        if (samesite == INTCHAR('s') || samesite == INTCHAR('S')) {
             flags |= NS_COOKIE_SAMESITE_STRICT;
-        } else if (samesite == INTCHAR('l')) {
+        } else if (samesite == INTCHAR('l') || samesite == INTCHAR('L')) {
             flags |= NS_COOKIE_SAMESITE_LAX;
+        } else if (samesite == INTCHAR('n') || samesite == INTCHAR('N')) {
+            flags |= NS_COOKIE_SAMESITE_NONE;
         }
 
         /*
