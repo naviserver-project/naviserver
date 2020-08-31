@@ -120,7 +120,7 @@ that handle.
 Configures options for the [arg pool]. The [arg pool] is created with
 default options if it does not already exist. Default options for the
 [arg pool] are taken from the NaviServer configuration file under the
-section "ns/server/$servername/module/nsproxy". In case
+section "ns/server/$server/module/nsproxy". In case
 the library is loaded in plain Tcl shell, default configuration options
 are fixed and cannot be changed w/o recompiling the code.
 
@@ -445,14 +445,14 @@ can be provided in the configuration file of NaviServer.
 [example_begin]
  # Loading the nxproxy module in the [term modules] section
  # of the server.
- ns_section	ns/server/${servername}/modules {
+ ns_section	ns/server/${server}/modules {
    # ...
    ns_param	nsproxy			${homedir}/bin/nsproxy
    # ...
  }
  
  # Configuring the nsproxy module
- [cmd ns_section] ns/server/${servername}/module/nsproxy {
+ [cmd ns_section] ns/server/${server}/module/nsproxy {
  
    # Proxy program to start
    ns_param	exec			${homedir}/bin/nsproxy
