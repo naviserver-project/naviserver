@@ -942,6 +942,7 @@ typedef struct NsServer {
     struct {
         struct Bucket *buckets;
         int nbuckets;
+        bool rwlocks;
     } nsv;
 
     /*
@@ -1591,7 +1592,7 @@ NS_EXTERN void NsFreeConnInterp(Conn *connPtr)           NS_GNUC_NONNULL(1);
 NS_EXTERN void NsIdleCallback(NsServer *servPtr)        NS_GNUC_NONNULL(1);
 
 
-NS_EXTERN struct Bucket *NsTclCreateBuckets(const char *server, int nbuckets) NS_GNUC_NONNULL(1);
+NS_EXTERN struct Bucket *NsTclCreateBuckets(const NsServer *servPtr, int nbuckets) NS_GNUC_NONNULL(1);
 
 NS_EXTERN void NsSlsCleanup(Sock *sockPtr)               NS_GNUC_NONNULL(1);
 NS_EXTERN void NsClsCleanup(Conn *connPtr)               NS_GNUC_NONNULL(1);

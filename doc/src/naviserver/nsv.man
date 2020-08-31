@@ -259,55 +259,57 @@ complain when the specified array or key does not exist.
 Migrating from ns_share is straightforward.  If your init.tcl included commands such as:
 
 [example_begin]
- 	ns_share myshare
- 	set myshare(lock) [lb]ns_mutex create[rb]
+ ns_share myshare
+ set myshare(lock) [lb]ns_mutex create[rb]
 [example_end]
 
 use instead:
 
 [example_begin]
- 	nsv_set myshare lock [lb]ns_mutex create[rb]
+ nsv_set myshare lock [lb]ns_mutex create[rb]
 [example_end]
 
 
 In your procedures, instead of:
 
 [example_begin]
- 	proc myproc {} {
- 		ns_share myshare
- 		ns_mutex lock $myshare(lock)
- 		...
+ proc myproc {} {
+     ns_share myshare
+     ns_mutex lock $myshare(lock)
+     ...
+ }
 [example_end]
 
 use:
 
 [example_begin]
- 	proc myproc {} {
- 		ns_mutex lock [lb]nsv_get myshare lock[rb]
- 		...
+ proc myproc {} {
+     ns_mutex lock [lb]nsv_get myshare lock[rb]
+     ...
+ }
 [example_end]
 
 and within an ADP page, instead of:
 
 
 [example_begin]
- 	<%
- 	ns_share myshare
- 	ns_puts $myshare(key1)
- 	%>
+ <%
+  ns_share myshare
+  ns_puts $myshare(key1)
+ %>
  
- 	<%=$myshare(key2)%>
+ <%=$myshare(key2)%>
 [example_end]
 
 use:
 
 
 [example_begin]
- 	<%
- 	ns_puts [lb]nsv_get myshare key1[rb]
- 	%>
+ <%
+ ns_puts [lb]nsv_get myshare key1[rb]
+ %>
  
- 	<%=[lb]nsv_get myshare key2[rb]%>
+ <%=[lb]nsv_get myshare key2[rb]%>
 [example_end]
 
 Notice that, unlike ns_share, no command is required to define the
@@ -319,17 +321,17 @@ perhaps just ".". For example, if you had:
 
 
 [example_begin]
- 	ns_share mylock myfile
- 	set myfile /tmp/some.file
- 	set mylock [lb]ns_mutex create[rb]
+ ns_share mylock myfile
+ set myfile /tmp/some.file
+ set mylock [lb]ns_mutex create[rb]
 [example_end]
 
 
 you can use:
 
 [example_begin]
- 	nsv_set . myfile /tmp/some.file
- 	nsv_set . mylock [lb]ns_mutex create[rb]
+ nsv_set . myfile /tmp/some.file
+ nsv_set . mylock [lb]ns_mutex create[rb]
 [example_end]
 
 
@@ -341,17 +343,17 @@ Here's the ns_share solution:
 
 
 [example_begin]
- 	ns_share ids
- 	set ids(lock) [lb]ns_mutex create[rb]
- 	set ids(next) 0
+ ns_share ids
+ set ids(lock) [lb]ns_mutex create[rb]
+ set ids(next) 0
  
- 	proc nextid {} {
- 		ns_share ids
- 		ns_mutex lock $ids(lock)
- 		set next [lb]incr ids(next)[rb]
- 		ns_mutex unlock $ids(lock)
- 		return $next
- 	}
+ proc nextid {} {
+     ns_share ids
+     ns_mutex lock $ids(lock)
+     set next [lb]incr ids(next)[rb]
+     ns_mutex unlock $ids(lock)
+     return $next
+ }
 [example_end]
 
 
@@ -359,11 +361,11 @@ and here's an nsv solution:
 
 
 [example_begin]
- 	nsv_set ids next 0
+ nsv_set ids next 0
  
- 	proc nextid {} {
- 		return [lb]nsv_incr ids next[rb]
- 	}
+ proc nextid {} {
+     return [lb]nsv_incr ids next[rb]
+ }
 [example_end]
 
 
@@ -379,14 +381,14 @@ from ordinary Tcl arrays.  For example, to copy from Tcl use:
 
 
 [example_begin]
- 	nsv_array set meta [lb]array get tmpmeta[rb]
+ nsv_array set meta [lb]array get tmpmeta[rb]
 [example_end]
 
 
 and to copy to Tcl use:
 
 [example_begin]
- 	array set metacopy [lb]nsv_array get meta[rb]
+ array set metacopy [lb]nsv_array get meta[rb]
 [example_end]
 
 
@@ -400,12 +402,12 @@ complete nsv array in one step with "reset".  For example, instead of:
 
 
 [example_begin]
- 	ns_share lock meta
- 	set lock [lb]ns_mutex create[rb]
- 	ns_mutex lock $lock
- 	unset meta
- 	array set meta [lb]array get tmpmeta[rb]
- 	ns_mutex unlock $lock
+ ns_share lock meta
+ set lock [lb]ns_mutex create[rb]
+ ns_mutex lock $lock
+ unset meta
+ array set meta [lb]array get tmpmeta[rb]
+ ns_mutex unlock $lock
 [example_end]
 
 
@@ -413,7 +415,7 @@ you can simply use:
 
 
 [example_begin]
- 	nsv_array reset meta [lb]array get tmpmeta[rb]
+ nsv_array reset meta [lb]array get tmpmeta[rb]
 [example_end]
 
 
@@ -428,6 +430,8 @@ should be taken for array operations which have to iterate over
 many shared variables to return the result, since this will lead
 to reduced scalability due too long lasting locks.
 
+[subsection {Number of buckets}]
+
 The nsv system uses a common multithreading technique to reduce the
 potential for lock contention which is to split the locks to achieve
 finer grained locking.  This technique groups arrays randomly into
@@ -436,20 +440,38 @@ The number of buckets to be used can be configured by setting the
 [const nsvbuckets] Tcl parameters, e.g.:
 
 [example_begin]
- ns_section  ns/server/${servername}/tcl {
- 
-    # Number of buckets in Tcl hash table for nsv vars
-    ns_param nsvbuckets 16
+ ns_section  ns/server/${server}/tcl {
+   # Number of buckets in Tcl hash table for nsv vars
+   ns_param nsvbuckets 16
  }
 [example_end]
 
 
-The default is 8 which should be reasonable for most applications.
-Note that you can monitor the lock contention by viewing the results
-of "ns_info locks" command after the server has been running for some
-time.  The nsv locks all have names of the form "nsv:##".  If you find
-many lock attempts which did not succeeded immediately, try increasing
-nsvbuckets.
+The default value for [term nsvbuckets] is 8 which should be
+reasonable for most applications.  Note that you can monitor the lock
+contention by viewing the results of "ns_info locks" command after the
+server has been running for some time.  The nsv locks all have names
+of the form "nsv:##".  If you find many lock attempts which did not
+succeeded immediately, try increasing [term nsvbuckets].
+
+[subsection {Mutex Locks vs. RWLocks}]
+
+An RWLock allows concurrent read access and a single writer, while a
+mutex locks allows only a single reader or a single writer at the same
+time. The RWLock has more overhead to support concurrency, but in case
+there are more read than write operations, RWLocks are better (but
+this might be different by the support for RWLocks). In general, for
+Web server applications (like e.g. OpenACS), most nsv variables have a
+write ratio of way below 1%. However, applications might be different,
+so NaviServer allows the specify in the configuration file, whether
+mutex locks or rwlocks might be used.
+
+[example_begin]
+ ns_section  ns/server/${server}/tcl {
+   ns_param nsvrwlocks false   ;# default true
+ }
+[example_end]
+
 
 [see_also nsd ns_cache ns_urlspace ns_set]
 [keywords "server built-in" nsv shared variables mutex "data structure"]

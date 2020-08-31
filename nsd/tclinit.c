@@ -313,8 +313,9 @@ ConfigServerTcl(const char *server)
         Tcl_InitHashTable(&servPtr->tcl.synch.condTable, TCL_STRING_KEYS);
         Tcl_InitHashTable(&servPtr->tcl.synch.rwTable, TCL_STRING_KEYS);
 
+        servPtr->nsv.rwlocks = Ns_ConfigBool(path, "nsvrwlocks", NS_TRUE);
         servPtr->nsv.nbuckets = Ns_ConfigIntRange(path, "nsvbuckets", 8, 1, INT_MAX);
-        servPtr->nsv.buckets = NsTclCreateBuckets(server, servPtr->nsv.nbuckets);
+        servPtr->nsv.buckets = NsTclCreateBuckets(servPtr, servPtr->nsv.nbuckets);
 
         /*
          * Initialize the list of connection headers to log for Tcl errors.

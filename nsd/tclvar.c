@@ -35,8 +35,6 @@
 
 #include "nsd.h"
 
-#define NSV_USE_RWLOCK 1
-
 /*
  * The following structure defines a collection of arrays.
  * Only the arrays within a given bucket share a lock,
@@ -44,12 +42,10 @@
  */
 
 typedef struct Bucket {
-#ifdef NSV_USE_RWLOCK
-    Ns_RWLock     lock;
-#else
-    Ns_Mutex      lock;
-#endif
-    Tcl_HashTable arrays;
+    Ns_RWLock       rwlock;
+    Ns_Mutex        mlock;
+    Tcl_HashTable   arrays;
+    const NsServer *servPtr;
 } Bucket;
 
 /*
@@ -121,12 +117,12 @@ static int GetArrayAndKey(Tcl_Interp *interp, Tcl_Obj *arrayObj, const char *key
  */
 
 Bucket *
-NsTclCreateBuckets(const char *server, int nbuckets)
+NsTclCreateBuckets(const NsServer *servPtr, int nbuckets)
 {
     char    buf[NS_THREAD_NAMESIZE];
     Bucket *buckets;
 
-    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
 
     buckets = ns_malloc(sizeof(Bucket) * (size_t)nbuckets);
     /*fprintf(stderr, "=== %d buckets require %lu bytes, array needs %ld bytes\n",
@@ -135,14 +131,16 @@ NsTclCreateBuckets(const char *server, int nbuckets)
     while (--nbuckets >= 0) {
         (void) ns_uint32toa(&buf[4], (uint32_t)nbuckets);
         Tcl_InitHashTable(&buckets[nbuckets].arrays, TCL_STRING_KEYS);
-        buckets[nbuckets].lock = NULL;
-#ifdef NSV_USE_RWLOCK
-        Ns_RWLockInit(&buckets[nbuckets].lock);
-        Ns_RWLockSetName2(&buckets[nbuckets].lock, buf, server);
-#else
-        Ns_MutexInit(&buckets[nbuckets].lock);
-        Ns_MutexSetName2(&buckets[nbuckets].lock, buf, server);
-#endif
+        buckets[nbuckets].rwlock = NULL;
+        buckets[nbuckets].mlock = NULL;
+        buckets[nbuckets].servPtr = servPtr;
+        if (servPtr->nsv.rwlocks) {
+            Ns_RWLockInit(&buckets[nbuckets].rwlock);
+            Ns_RWLockSetName2(&buckets[nbuckets].rwlock, buf, servPtr->server);
+        } else {
+            Ns_MutexInit(&buckets[nbuckets].mlock);
+            Ns_MutexSetName2(&buckets[nbuckets].mlock, buf, servPtr->server);
+        }
     }
 
     return buckets;
@@ -710,11 +708,11 @@ NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             Tcl_HashSearch       search;
             Bucket              *bucketPtr = &servPtr->nsv.buckets[i];
 
-#ifdef NSV_USE_RWLOCK
-            Ns_RWLockRdLock(&bucketPtr->lock);
-#else
-            Ns_MutexLock(&bucketPtr->lock);
-#endif
+            if (servPtr->nsv.rwlocks) {
+                Ns_RWLockRdLock(&bucketPtr->rwlock);
+            } else {
+                Ns_MutexLock(&bucketPtr->mlock);
+            }
             hPtr = Tcl_FirstHashEntry(&bucketPtr->arrays, &search);
             while (hPtr != NULL) {
                 const char *keyString = Tcl_GetHashKey(&bucketPtr->arrays, hPtr);
@@ -728,11 +726,11 @@ NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
                 }
                 hPtr = Tcl_NextHashEntry(&search);
             }
-#ifdef NSV_USE_RWLOCK
-            Ns_RWLockUnlock(&bucketPtr->lock);
-#else
-            Ns_MutexUnlock(&bucketPtr->lock);
-#endif
+            if (servPtr->nsv.rwlocks) {
+                Ns_RWLockUnlock(&bucketPtr->rwlock);
+            } else {
+                Ns_MutexUnlock(&bucketPtr->mlock);
+            }
 
             if (unlikely(result != TCL_OK)) {
                 break;
@@ -1749,14 +1747,13 @@ GetArray(Bucket *bucketPtr, const char *arrayName, bool create) {
             Tcl_SetHashValue(hPtr, arrayPtr);
         }
     } else {
-
         hPtr = Tcl_CreateHashEntry(&bucketPtr->arrays, arrayName, NULL);
         if (unlikely(hPtr == NULL)) {
-#ifdef NSV_USE_RWLOCK
-            Ns_RWLockUnlock(&bucketPtr->lock);
-#else
-            Ns_MutexUnlock(&bucketPtr->lock);
-#endif
+            if (bucketPtr->servPtr->nsv.rwlocks) {
+                Ns_RWLockUnlock(&bucketPtr->rwlock);
+            } else {
+                Ns_MutexUnlock(&bucketPtr->mlock);
+            }
             return NULL;
         }
         arrayPtr = Tcl_GetHashValue(hPtr);
@@ -1794,15 +1791,15 @@ LockArray(const NsServer *servPtr, const char *arrayName, bool create, NS_RW rw)
 
     idx = BucketIndex(arrayName);
     bucketPtr = &servPtr->nsv.buckets[idx % (unsigned int)servPtr->nsv.nbuckets];
-#ifdef NSV_USE_RWLOCK
-    if (rw == NS_READ) {
-        Ns_RWLockRdLock(&bucketPtr->lock);
+    if (servPtr->nsv.rwlocks) {
+        if (rw == NS_READ) {
+            Ns_RWLockRdLock(&bucketPtr->rwlock);
+        } else {
+            Ns_RWLockWrLock(&bucketPtr->rwlock);
+        }
     } else {
-        Ns_RWLockWrLock(&bucketPtr->lock);
+        Ns_MutexLock(&bucketPtr->mlock);
     }
-#else
-    Ns_MutexLock(&bucketPtr->lock);
-#endif
 
     return GetArray(bucketPtr, arrayName, create);
 }
@@ -1811,11 +1808,12 @@ static void
 UnlockArray(const Array *arrayPtr)
 {
     NS_NONNULL_ASSERT(arrayPtr != NULL);
-#ifdef NSV_USE_RWLOCK
-    Ns_RWLockUnlock(&((arrayPtr)->bucketPtr->lock));
-#else
-    Ns_MutexUnlock(&((arrayPtr)->bucketPtr->lock));
-#endif
+
+    if (arrayPtr->bucketPtr->servPtr->nsv.rwlocks) {
+        Ns_RWLockUnlock(&((arrayPtr)->bucketPtr->rwlock));
+    } else {
+        Ns_MutexUnlock(&((arrayPtr)->bucketPtr->mlock));
+    }
 }
 
 
@@ -2041,15 +2039,15 @@ LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, bool create, NS_RW rw)
 
     if (likely(Ns_TclGetOpaqueFromObj(arrayObj, arrayType, (void **) &bucketPtr) == TCL_OK)
         && bucketPtr != NULL) {
-#ifdef NSV_USE_RWLOCK
-        if (rw == NS_READ) {
-            Ns_RWLockRdLock(&bucketPtr->lock);
+        if (bucketPtr->servPtr->nsv.rwlocks) {
+            if (rw == NS_READ) {
+                Ns_RWLockRdLock(&bucketPtr->rwlock);
+            } else {
+                Ns_RWLockWrLock(&bucketPtr->rwlock);
+            }
         } else {
-            Ns_RWLockWrLock(&bucketPtr->lock);
+            Ns_MutexLock(&bucketPtr->mlock);
         }
-#else
-        Ns_MutexLock(&bucketPtr->lock);
-#endif
         arrayPtr = GetArray(bucketPtr, arrayName, create);
     } else {
         const NsInterp *itPtr = NsGetInterpData(interp);
@@ -2129,11 +2127,12 @@ NsTclNsvBucketObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
             }
             listObj = Tcl_NewListObj(0, NULL);
             bucketPtr = &servPtr->nsv.buckets[i];
-#ifdef NSV_USE_RWLOCK
-            Ns_RWLockRdLock(&bucketPtr->lock);
-#else
-            Ns_MutexLock(&bucketPtr->lock);
-#endif
+            if (servPtr->nsv.rwlocks) {
+                Ns_RWLockRdLock(&bucketPtr->rwlock);
+            } else {
+                Ns_MutexLock(&bucketPtr->mlock);
+            }
+
             hPtr = Tcl_FirstHashEntry(&bucketPtr->arrays, &search);
             while (hPtr != NULL) {
                 const char  *keyString = Tcl_GetHashKey(&bucketPtr->arrays, hPtr);
@@ -2152,11 +2151,12 @@ NsTclNsvBucketObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
                 }
                 hPtr = Tcl_NextHashEntry(&search);
             }
-#ifdef NSV_USE_RWLOCK
-            Ns_RWLockUnlock(&bucketPtr->lock);
-#else
-            Ns_MutexUnlock(&bucketPtr->lock);
-#endif
+            if (servPtr->nsv.rwlocks) {
+                Ns_RWLockUnlock(&bucketPtr->rwlock);
+            } else {
+                Ns_MutexUnlock(&bucketPtr->mlock);
+            }
+
             if (likely(result == TCL_OK)) {
                 result = Tcl_ListObjAppendElement(interp, resultObj, listObj);
             }
