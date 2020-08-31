@@ -58,7 +58,7 @@ set	logdir			${homedir}/logs
 #set	logdir			${homedir}/../var/log/ns
 
 # Name/description of the virtual server
-set	servername		"server1"
+set	server		        "server1"
 set	serverdesc		"Server Name"
 
 # The hostname, address and port for nssock should be set to actual values.
@@ -72,7 +72,7 @@ set	serverdir		${homedir}
 
 # Alternatively in case when multiple server share the same
 # installation, server can be put into separate directories
-#set	serverdir		${homedir}/servers/${servername}
+#set	serverdir		${homedir}/servers/${server}
 
 # Relative directory under serverdir for html/adp files
 set	pageroot		pages
@@ -86,7 +86,7 @@ set	pagedir			$serverdir/$pageroot
 # Modules to load
 ########################################################################
 
-ns_section	"ns/server/${servername}/modules" {
+ns_section ns/server/${server}/modules {
     ns_param	nssock			${homedir}/bin/nssock
     ns_param	nslog			${homedir}/bin/nslog
     ns_param	nscgi			${homedir}/bin/nscgi
@@ -103,7 +103,7 @@ ns_section	"ns/server/${servername}/modules" {
 # Global server parameters
 ########################################################################
 
-ns_section	"ns/parameters" {
+ns_section ns/parameters {
     # Home directory for the server, it will be resolved automaticlaly if not specified
     ns_param	home			$homedir
 
@@ -114,10 +114,10 @@ ns_section	"ns/parameters" {
     ns_param	tcllibrary		${homedir}/tcl
 
     # Provide name for main server log file
-    ns_param	serverlog		${logdir}/nsd-${servername}.log
+    ns_param	serverlog		${logdir}/nsd-${server}.log
 
     # Pid file of the server process
-    ns_param	pidfile			${logdir}/nsd-${servername}.pid
+    ns_param	pidfile			${logdir}/nsd-${server}.pid
 
     # Timeout for shutdown to let existing connections and background
     # jobs finish.  When this time limit is exceeded the server shuts
@@ -208,7 +208,7 @@ ns_section	"ns/parameters" {
 #  case something is missing you can add it here.
 ########################################################################
 
-ns_section	"ns/mimetypes" {
+ns_section ns/mimetypes {
 
     # MIME type for unknown extension.
     ns_param	default			"*/*"
@@ -237,7 +237,7 @@ ns_section	"ns/mimetypes" {
 #   I18N File-type to Encoding mappings
 ########################################################################
 
-ns_section	"ns/encodings" {
+ns_section ns/encodings {
     ns_param	.utf_html		"utf-8"
     ns_param	.sjis_html		"shiftjis"
     ns_param	.gb_html		"gb2312"
@@ -257,7 +257,7 @@ ns_section	"ns/encodings" {
 # Thread library (nsthread) parameters
 ########################################################################
 
-ns_section	"ns/threads" {
+ns_section ns/threads {
 
     # Global thread stacksize configuration deprecated. Server now uses OS
     # default. Only explicitly set the stacksize to some smaller than default
@@ -276,8 +276,8 @@ ns_section	"ns/threads" {
 #  Other host-specific values are set up above as Tcl variables, too.
 ########################################################################
 
-ns_section	"ns/servers" {
-    ns_param	$servername		$serverdesc
+ns_section ns/servers {
+    ns_param	$server		$serverdesc
 }
 ########################################################################
 # Server parameters
@@ -288,7 +288,7 @@ ns_section	"ns/servers" {
 #  See the global parameter I18N section for a description of these.
 ########################################################################
 
-ns_section	"ns/server/${servername}" {
+ns_section ns/server/${server} {
 
     #
     # Scaling and Tuning Options
@@ -334,7 +334,7 @@ ns_section	"ns/server/${servername}" {
 # ADP (AOLserver Dynamic Page) configuration
 ########################################################################
 
-ns_section	"ns/server/${servername}/adp" {
+ns_section ns/server/${server}/adp {
 
     # Extensions to parse as ADP's.
     ns_param	map			"/*.adp"
@@ -368,10 +368,13 @@ ns_section	"ns/server/${servername}/adp" {
 # Server specific Tcl setup
 ########################################################################
 
-ns_section      "ns/server/${servername}/tcl" {
+ns_section ns/server/${server}/tcl {
 
     # Number of buckets in Tcl hash table for nsv vars
     ns_param        nsvbuckets              16
+
+    # Use RWLocks instead of mutex locks
+    ns_param        nsvrwlocks              true
 
     # Path to private Tcl modules
     ns_param        library                 ${homedir}/modules/tcl
@@ -388,7 +391,7 @@ ns_section      "ns/server/${servername}/tcl" {
 #  directory listings.
 ########################################################################
 
-ns_section	"ns/server/${servername}/fastpath" {
+ns_section ns/server/${server}/fastpath {
 
     # Defines absolute path to server's home directory
     ns_param		serverdir             ${serverdir}
@@ -416,7 +419,7 @@ ns_section	"ns/server/${servername}/fastpath" {
 # Global FastPath settings
 ########################################################################
 
-ns_section	"ns/fastpath" {
+ns_section ns/fastpath {
 
     # Enable cache for normal URLs. Optional, default is false.
     ns_param	cache			false
@@ -451,7 +454,7 @@ ns_section	"ns/fastpath" {
 # Socket driver module (HTTP)  -- nssock
 ########################################################################
 
-ns_section	"ns/server/${servername}/module/nssock" {
+ns_section ns/server/${server}/module/nssock {
 
     # TCP port server will listen on
     ns_param	port			$port
@@ -505,9 +508,9 @@ ns_section	"ns/server/${servername}/module/nssock" {
 # Access log -- nslog
 ########################################################################
 
-ns_section	"ns/server/${servername}/module/nslog" {
+ns_section ns/server/${server}/module/nslog {
     # Name to the log file (default: access.log)
-    ns_param	file			${logdir}/access-${servername}.log
+    ns_param	file			${logdir}/access-${server}.log
 
     # If true then use common log format (default: true)
     ns_param	formattedtime		true
@@ -559,7 +562,7 @@ ns_section	"ns/server/${servername}/module/nslog" {
 #  WARNING: These directories must not live under pageroot.
 ########################################################################
 
-ns_section	"ns/server/${servername}/module/nscgi" {
+ns_section ns/server/${server}/module/nscgi {
 
     # CGI script file dir (GET).
     ns_param	map			"GET  /cgi-bin /usr/local/cgi"
@@ -579,7 +582,7 @@ ns_section	"ns/server/${servername}/module/nscgi" {
 # in the cgi-bin directory. Same for shell scripts with extension
 # ".sh".
 #
-ns_section "ns/interps/CGIinterps" {
+ns_section ns/interps/CGIinterps {
     ns_param	.pl		    "/opt/local/bin/perl"
     ns_param	.sh		    "/bin/bash"
 }
@@ -619,13 +622,13 @@ ns_section "ns/interps/CGIinterps" {
 #  4. Make sure the nscp.so module is loaded in the modules section.
 ########################################################################
 
-ns_section	"ns/server/${servername}/module/nscp" {
+ns_section ns/server/${server}/module/nscp {
     ns_param	address			127.0.0.1
     ns_param	port			9999
     ns_param	echopassword		true
     ns_param	cpcmdlogging		false
 }
-ns_section	"ns/server/${servername}/module/nscp/users" {
+ns_section ns/server/${server}/module/nscp/users {
     ns_param	user			"nsadmin:t2GqvvaiIUbF2:"
 }
 
@@ -642,14 +645,14 @@ ns_section	"ns/server/${servername}/module/nscp/users" {
 #
 ########################################################################
 
-ns_section	"ns/module/nssock" {
+ns_section ns/module/nssock {
     ns_param	port			$port
     ns_param	hostname		$hostname
     ns_param	address			$address     ;# Space separated list of IP addresses
-    ns_param	defaultserver		$servername
+    ns_param	defaultserver		$server
 }
-ns_section	"ns/module/nssock/servers" {
-    ns_param	$servername		$hostname
+ns_section ns/module/nssock/servers {
+    ns_param	$server		$hostname
 }
 
 ########################################################################
@@ -662,7 +665,7 @@ ns_section	"ns/module/nssock/servers" {
 #  3. Each virtual host directory should have ${pageroot} subdirectory
 #
 #  /usr/local/ns/
-#        servers/${servername}
+#        servers/${server}
 #                        host.com/
 #                               pages
 #                        domain.net/
@@ -670,7 +673,7 @@ ns_section	"ns/module/nssock/servers" {
 #
 ########################################################################
 
-ns_section	"ns/server/${servername}/vhost" {
+ns_section ns/server/${server}/vhost {
 
     # Enable or disable virtual hosting
     ns_param	enabled                 false
@@ -721,16 +724,16 @@ ns_section	"ns/server/${servername}/vhost" {
 #
 ########################################################################
 
-ns_section	"ns/server/server1/pools" {
+ns_section ns/server/server1/pools {
     ns_param	slow			"Slow requests here."
     ns_param	fast			"Fast requests here."
 }
-ns_section	"ns/server/server1/pool/slow" {
+ns_section ns/server/server1/pool/slow {
     ns_param	map			"POST /slowupload.adp"
     ns_param	maxthreads		20
     ns_param	minthreads		1
 }
-ns_section	"ns/server/server1/pool/fast" {
+ns_section ns/server/server1/pool/fast {
     ns_param	map			"GET /faststuff.adp"
     ns_param	maxthreads		10
 }
@@ -744,7 +747,7 @@ ns_section	"ns/server/server1/pool/fast" {
 # in case you omit the ns_param lines.
 ########################################################################
 
-ns_section  "ns/server/${servername}/module/nsproxy" {
+ns_section ns/server/${server}/module/nsproxy {
 
     # Proxy program to start
     ns_param	exec			${homedir}/bin/nsproxy
@@ -784,11 +787,11 @@ ns_section  "ns/server/${servername}/module/nsproxy" {
 # should wait to run are all configurable.
 ########################################################################
 
-ns_section "ns/limits" {
+ns_section ns/limits {
     ns_param	default			"Default Limits"
 }
 
-ns_section "ns/limit/default" {
+ns_section ns/limit/default {
 
     # Conn threads running for limit.
     ns_param	maxrun			100
@@ -800,7 +803,7 @@ ns_section "ns/limit/default" {
     ns_param	timeout			60
 }
 
-ns_section "ns/server/server1/limits" {
+ns_section ns/server/server1/limits {
 
     # Map default limit to URL.
     ns_param	default			"GET  /*"

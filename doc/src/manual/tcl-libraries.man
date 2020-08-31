@@ -113,7 +113,7 @@ defaults to [term tcl] under NaviServer [term home] directory.
 
 [item ]The [emph "per-server (private)"] Tcl library directory is
 specified by the parameter [term library] in the
-[term ns/server/\$servername/tcl] section.  It defaults to
+[term {ns/server/$server/tcl}] section.  It defaults to
 [term modules/tcl]
 under NaviServer [term home].  One can specify a
 different Tcl library directory for each server.

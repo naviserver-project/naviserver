@@ -162,13 +162,13 @@ ns_section ns/parameters {
     ns_param    lognotice       true      ;# informational messages
     #ns_param   sanitizelogfiles 2        ;# default: 2; 0: none, 1: full, 2: human-friendly
 
-    # ns_param	mailhost	    localhost
+    # ns_param	mailhost            localhost
 
-    # ns_param	jobsperthread	    0     ;# number of ns_jobs before thread exits
-    # ns_param	jobtimeout	    5m    ;# default "ns_job wait" timeout
+    # ns_param	jobsperthread       0     ;# number of ns_jobs before thread exits
+    # ns_param	jobtimeout          5m    ;# default "ns_job wait" timeout
     # ns_param	joblogminduration   1s    ;# default: 1s
 
-    # ns_param	schedsperthread	    0     ;# number of scheduled jobs before thread exits
+    # ns_param	schedsperthread     0     ;# number of scheduled jobs before thread exits
     # ns_param	schedlogminduration 2s    ;# print warnings when scheduled job takes longer than that
 
     # Write asynchronously to log files (access log and error log)
@@ -190,7 +190,7 @@ ns_section ns/parameters {
     # Enforce sequential thread initialization. This is not really
     # desirably in general, but might be useful for hunting strange
     # crashes or for debugging with valgrind.
-    # ns_param	tclinitlock	true	       ;# default: false
+    # ns_param	tclinitlock	true           ;# default: false
 
     #
     # Encoding settings (see http://dqd.com/~mayoff/encoding-doc.html)
@@ -246,46 +246,46 @@ if {[info exists httpport]} {
     # We have an "httpport" configured, so configure this module.
     #
     ns_section ns/module/nssock {
-	ns_param	defaultserver	$server
-	ns_param	address		$addresses
-	ns_param	hostname	$hostname
-	ns_param	port		$httpport                ;# default 80
-	ns_param	maxinput	${max_file_upload_mb}MB  ;# 1MB, maximum size for inputs (uploads)
-	ns_param	recvwait	${max_file_upload_min}m  ;# 30s, timeout for receive operations
-	# ns_param	maxline		8192	;# 8192, max size of a header line
-	# ns_param	maxheaders	128	;# 128, max number of header lines
-	# ns_param	uploadpath	/tmp	;# directory for uploads
-	# ns_param	backlog		256	;# 256, backlog for listen operations
-	# ns_param	maxqueuesize	256	;# 1024, maximum size of the queue
-	# ns_param	acceptsize	10	;# Maximum number of requests accepted at once.
-	# ns_param	deferaccept     true    ;# false, Performance optimization, may cause recvwait to be ignored
-	# ns_param	bufsize		16kB	;# 16kB, buffersize
-	# ns_param	readahead	16kB	;# value of bufsize, size of readahead for requests
-	# ns_param	sendwait	30s	;# 30s, timeout for send operations
-	# ns_param	closewait	2s	;# 2s, timeout for close on socket
-	# ns_param	keepwait	2s	;# 5s, timeout for keep-alive
-	# ns_param	nodelay         false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted
-	# ns_param	keepalivemaxuploadsize	  500kB  ;# 0, don't allow keep-alive for upload content larger than this
-	# ns_param	keepalivemaxdownloadsize  1MB    ;# 0, don't allow keep-alive for download content larger than this
-	# ns_param	spoolerthreads	1	;# 0, number of upload spooler threads
-	ns_param	maxupload	100kB	;# 0, when specified, spool uploads larger than this value to a temp file
-	ns_param	writerthreads	2	;# 0, number of writer threads
-	ns_param	writersize	1kB	;# 1MB, use writer threads for files larger than this value
-	# ns_param	writerbufsize	8kB	;# 8kB, buffer size for writer threads
-	# ns_param	writerstreaming	true	;# false;  activate writer for streaming HTML output (when using ns_write)
+        ns_param	defaultserver	$server
+        ns_param	address		$addresses
+        ns_param	hostname	$hostname
+        ns_param	port		$httpport                ;# default 80
+        ns_param	maxinput	${max_file_upload_mb}MB  ;# 1MB, maximum size for inputs (uploads)
+        ns_param	recvwait	${max_file_upload_min}m  ;# 30s, timeout for receive operations
+        # ns_param	maxline		8192	;# 8192, max size of a header line
+        # ns_param	maxheaders	128	;# 128, max number of header lines
+        # ns_param	uploadpath	/tmp	;# directory for uploads
+        # ns_param	backlog		256	;# 256, backlog for listen operations
+        # ns_param	maxqueuesize	256	;# 1024, maximum size of the queue
+        # ns_param	acceptsize	10	;# Maximum number of requests accepted at once.
+        # ns_param	deferaccept     true    ;# false, Performance optimization, may cause recvwait to be ignored
+        # ns_param	bufsize		16kB	;# 16kB, buffersize
+        # ns_param	readahead	16kB	;# value of bufsize, size of readahead for requests
+        # ns_param	sendwait	30s	;# 30s, timeout for send operations
+        # ns_param	closewait	2s	;# 2s, timeout for close on socket
+        # ns_param	keepwait	2s	;# 5s, timeout for keep-alive
+        # ns_param	nodelay         false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted
+        # ns_param	keepalivemaxuploadsize    500kB  ;# 0, don't allow keep-alive for upload content larger than this
+        # ns_param	keepalivemaxdownloadsize  1MB    ;# 0, don't allow keep-alive for download content larger than this
+        # ns_param	spoolerthreads	1	;# 0, number of upload spooler threads
+        ns_param	maxupload	100kB	;# 0, when specified, spool uploads larger than this value to a temp file
+        ns_param	writerthreads	2	;# 0, number of writer threads
+        ns_param	writersize	1kB	;# 1MB, use writer threads for files larger than this value
+        # ns_param	writerbufsize	8kB	;# 8kB, buffer size for writer threads
+        # ns_param	writerstreaming	true	;# false;  activate writer for streaming HTML output (when using ns_write)
 
-	#
-	# Options for port reuse (see https://lwn.net/Articles/542629/)
-	# These options require proper OS support.
-	#
-	# ns_param  reuseport       true    ;# false;  normally not needed to be set, set by driverthreads when necessary
-	# ns_param	driverthreads	2	;# 1; use multiple driver threads; activates "reuseport"
+        #
+        # Options for port reuse (see https://lwn.net/Articles/542629/)
+        # These options require proper OS support.
+        #
+        # ns_param  reuseport       true    ;# false;  normally not needed to be set, set by driverthreads when necessary
+        # ns_param	driverthreads	2	;# 1; use multiple driver threads; activates "reuseport"
 
-	#
-	# Extra driver-specific response headers fields to be added for
-	# every request.
-	#
-	ns_param    extraheaders    $nssock_extraheaders
+        #
+        # Extra driver-specific response headers fields to be added for
+        # every request.
+        #
+        ns_param    extraheaders    $nssock_extraheaders
     }
     #
     # Define, which "host" (as supplied by the "host:" header
@@ -293,8 +293,8 @@ if {[info exists httpport]} {
     # which server.
     #
     ns_section ns/module/nssock/servers {
-	ns_param $server $hostname
-	ns_param $server $address
+        ns_param $server $hostname
+        ns_param $server $address
     }
 }
 
@@ -307,24 +307,24 @@ if {[info exists httpsport]} {
     # We have an "httpsport" configured, so configure this module.
     #
     ns_section ns/module/nsssl {
-	ns_param defaultserver	$server
-	ns_param address	$addresses
-	ns_param port		$httpsport
-	ns_param hostname	$hostname
-	ns_param ciphers	"ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!RC4"
-	ns_param protocols	"!SSLv2:!SSLv3"
-	ns_param certificate	$serverroot/etc/certfile.pem
-	ns_param verify		0
-	ns_param writerthreads	2
-	ns_param writersize	1kB
-	ns_param writerbufsize	16kB	;# 8kB, buffer size for writer threads
-	#ns_param nodelay	false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted
-	#ns_param writerstreaming	true	;# false
-	#ns_param deferaccept	true    ;# false, Performance optimization
-	ns_param maxinput	${max_file_upload_mb}MB   ;# Maximum file size for uploads in bytes
-	ns_param extraheaders	$nsssl_extraheaders
-	ns_param OCSPstapling   on        ;# off; activate OCSP stapling
-	#ns_param OCSPstaplingVerbose  on ;# off; make OCSP stapling more verbose
+        ns_param defaultserver	$server
+        ns_param address	$addresses
+        ns_param port		$httpsport
+        ns_param hostname	$hostname
+        ns_param ciphers	"ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!RC4"
+        ns_param protocols	"!SSLv2:!SSLv3"
+        ns_param certificate	$serverroot/etc/certfile.pem
+        ns_param verify		0
+        ns_param writerthreads	2
+        ns_param writersize	1kB
+        ns_param writerbufsize	16kB	;# 8kB, buffer size for writer threads
+        #ns_param nodelay	false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted
+        #ns_param writerstreaming	true	;# false
+        #ns_param deferaccept	true    ;# false, Performance optimization
+        ns_param maxinput	${max_file_upload_mb}MB   ;# Maximum file size for uploads in bytes
+        ns_param extraheaders	$nsssl_extraheaders
+        ns_param OCSPstapling   on        ;# off; activate OCSP stapling
+        #ns_param OCSPstaplingVerbose  on ;# off; make OCSP stapling more verbose
     }
     #
     # Define, which "host" (as supplied by the "host:" header field)
@@ -334,8 +334,8 @@ if {[info exists httpsport]} {
     # addressed via its ip address).
     #
     ns_section ns/module/nsssl/servers {
-	ns_param $server $hostname
-	ns_param $server $address
+        ns_param $server $hostname
+        ns_param $server $address
     }
 }
 
@@ -414,7 +414,7 @@ ns_section ns/server/$server {
 
     # ns_param	lowwatermark	10       ;# 10; create additional threads above this queue-full percentage
     ns_param	highwatermark	100      ;# 80; allow concurrent creates above this queue-is percentage
-					 ;# 100 means to disable concurrent creates
+                                         ;# 100 means to disable concurrent creates
     #ns_param    connectionratelimit 200 ;# 0; limit rate per connection to this amount (KB/s); 0 means unlimited
     #ns_param    poolratelimit   200     ;# 0; limit rate for pool to this amount (KB/s); 0 means unlimited
 
@@ -564,6 +564,7 @@ ns_section ns/server/$server/tcl {
     ns_param	library		${serverroot}/tcl
     ns_param	debug		$debug
     # ns_param	nsvbuckets	16       ;# default: 8
+    # ns_param	nsvrwlocks      false    ;# default: true
 }
 
 ns_section ns/server/$server/fastpath {
@@ -625,8 +626,8 @@ ns_section ns/server/$server/acs/acs-api-browser {
 # WebDAV Support (optional, requires oacs-dav package to be installed
 #---------------------------------------------------------------------
 ns_section ns/server/$server/tdav {
-    ns_param	propdir		   ${serverroot}/data/dav/properties
-    ns_param	lockdir		   ${serverroot}/data/dav/locks
+    ns_param	propdir            ${serverroot}/data/dav/properties
+    ns_param	lockdir            ${serverroot}/data/dav/locks
     ns_param	defaultlocktimeout 300
 }
 
@@ -676,7 +677,7 @@ ns_section ns/server/$server/module/nslog {
     # list of request header fields in "extendedheaders"
     #
     if {[ns_config "ns/server/$server/acs" LogIncludeUserId 0]} {
-	ns_param   extendedheaders    "X-User-Id"
+        ns_param   extendedheaders    "X-User-Id"
     }
 
     #
@@ -731,21 +732,21 @@ ns_section ns/server/$server/module/nslog {
 ns_section ns/db/drivers {
 
     if { $database eq "oracle" } {
-	ns_param	ora8           ${bindir}/ora8
+        ns_param	ora8           ${bindir}/ora8
     } else {
-	ns_param	postgres       ${bindir}/nsdbpg
-	#
-	ns_logctl severity "Debug(sql)" -color blue $verboseSQL
+        ns_param	postgres       ${bindir}/nsdbpg
+        #
+        ns_logctl severity "Debug(sql)" -color blue $verboseSQL
     }
 
     if { $database eq "oracle" } {
-	ns_section ns/db/driver/ora8
-	ns_param	maxStringLogLength -1
-	ns_param	LobBufferSize      32768
+        ns_section ns/db/driver/ora8
+        ns_param	maxStringLogLength -1
+        ns_param	LobBufferSize      32768
     } else {
-	ns_section ns/db/driver/postgres
-	# Set this parameter, when "psql" is not on your path (OpenACS specific)
-	# ns_param	pgbin	"/usr/local/pg960/bin/"
+        ns_section ns/db/driver/postgres
+        # Set this parameter, when "psql" is not on your path (OpenACS specific)
+        # ns_param	pgbin	"/usr/local/pg960/bin/"
     }
 }
 
@@ -778,15 +779,15 @@ ns_section ns/db/pool/pool1 {
     ns_param    LogMinDuration     10ms  ;# when SQL logging is on, log only statements above this duration
     ns_param	logsqlerrors       $debug
     if { $database eq "oracle" } {
-	ns_param	driver             ora8
-	ns_param	datasource         {}
-	ns_param	user               $db_name
-	ns_param	password           $db_password
+        ns_param	driver             ora8
+        ns_param	datasource         {}
+        ns_param	user               $db_name
+        ns_param	password           $db_password
     } else {
-	ns_param	driver             postgres
-	ns_param	datasource         ${db_host}:${db_port}:dbname=${db_name}
-	ns_param	user               $db_user
-	ns_param	password           ""
+        ns_param	driver             postgres
+        ns_param	datasource         ${db_host}:${db_port}:dbname=${db_name}
+        ns_param	user               $db_user
+        ns_param	password           ""
     }
 }
 #
@@ -805,15 +806,15 @@ ns_section ns/db/pool/pool2 {
     ns_param    LogMinDuration     10ms  ;# when SQL logging is on, log only statements above this duration
     ns_param	logsqlerrors       $debug
     if { $database eq "oracle" } {
-	ns_param	driver             ora8
-	ns_param	datasource         {}
-	ns_param	user               $db_name
-	ns_param	password           $db_password
+        ns_param	driver             ora8
+        ns_param	datasource         {}
+        ns_param	user               $db_name
+        ns_param	password           $db_password
     } else {
-	ns_param	driver             postgres
-	ns_param	datasource         ${db_host}:${db_port}:dbname=${db_name}
-	ns_param	user               $db_user
-	ns_param	password           ""
+        ns_param	driver             postgres
+        ns_param	datasource         ${db_host}:${db_port}:dbname=${db_name}
+        ns_param	user               $db_user
+        ns_param	password           ""
     }
 }
 
@@ -825,15 +826,15 @@ ns_section ns/db/pool/pool3 {
     # ns_param  LogMinDuration     0ms  ;# when SQL logging is on, log only statements above this duration
     ns_param	logsqlerrors       $debug
     if { $database eq "oracle" } {
-	ns_param	driver             ora8
-	ns_param	datasource         {}
-	ns_param	user               $db_name
-	ns_param	password           $db_password
+        ns_param	driver             ora8
+        ns_param	datasource         {}
+        ns_param	user               $db_name
+        ns_param	password           $db_password
     } else {
-	ns_param	driver             postgres
-	ns_param	datasource         ${db_host}:${db_port}:dbname=${db_name}
-	ns_param	user               $db_user
-	ns_param	password           ""
+        ns_param	driver             postgres
+        ns_param	datasource         ${db_host}:${db_port}:dbname=${db_name}
+        ns_param	user               $db_user
+        ns_param	password           ""
     }
 }
 
@@ -853,10 +854,10 @@ ns_section ns/server/$server/modules {
     #
     set libthread [lindex [lsort [glob -nocomplain $homedir/lib/thread*/libthread*[info sharedlibextension]]] end]
     if {$libthread eq ""} {
-	ns_log notice "No Tcl thread library installed in $homedir/lib/"
+        ns_log notice "No Tcl thread library installed in $homedir/lib/"
     } else {
-	ns_param	libthread $libthread
-	ns_log notice "Use Tcl thread library $libthread"
+        ns_param	libthread $libthread
+        ns_log notice "Use Tcl thread library $libthread"
     }
 
     # authorize-gateway package requires dqd_utils

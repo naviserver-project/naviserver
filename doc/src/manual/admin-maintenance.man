@@ -978,8 +978,9 @@ As a rule of thumb the default stack size (in bytes)
  #
  # Thread library (nsthread) parameters
  #
- ns_section "ns/threads"
- ns_param   stacksize 64kB   ;# Per-thread stack size.
+ ns_section ns/threads {
+   ns_param   stacksize 64kB   ;# Per-thread stack size.
+ }
 [example_end]
 
 is almost always not enough. Use e.g. 512kB for the start:
@@ -988,8 +989,9 @@ is almost always not enough. Use e.g. 512kB for the start:
  #
  # Thread library (nsthread) parameters
  #
- ns_section "ns/threads"
- ns_param   stacksize 512kB  ;# Per-thread stack size.
+ ns_section ns/threads {
+   ns_param   stacksize 512kB  ;# Per-thread stack size.
+ }
 [example_end]
 
 If the size of the stack is not enough you may encounter crashes without real explanation.

@@ -194,7 +194,7 @@ ignored.
 [list_end]
 
 [example_begin]
- ns_section "ns/server/servername/module/nsperm" {
+ ns_section ns/server/$server/module/nsperm {
    ns_param htaccess   true
    ns_param passwdfile /usr/local/ns/modules/nsperm/passwd
  }

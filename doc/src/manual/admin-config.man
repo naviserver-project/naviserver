@@ -68,7 +68,7 @@ The main sections of a configuration file are:
 sample configuration files and also e.g. in [term tcl-libraries]
 and [term admin-tuning].
 
-[item] Server specific parameters (starting with "ns/server/$servername")
+[item] Server specific parameters (starting with "ns/server/$server")
 
 [item] Module specific parameters (like [term nssock], [term nsssl],
 [term nscp], [term nslog], [term nscgi] or [term nsperm].
@@ -160,7 +160,7 @@ In this case it is sufficient to load the driver once.
    ns_param nssock   nssock.so
  }
  
- ns_section "ns/server/s2/module/nssock" {
+ ns_section ns/server/s2/module/nssock {
    ns_param address  0.0.0.0
    ns_param port     8001
  }

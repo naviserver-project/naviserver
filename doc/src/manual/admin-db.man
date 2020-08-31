@@ -107,23 +107,25 @@ Postgres or Solid driver.
 [enum] Add a configuration file section called ns/db/drivers:
 
 [example_begin]
- ns_section "ns/db/drivers"
+ ns_section ns/db/drivers
 [example_end]
 
 [enum] List the database drivers you will be using. For example:
 
 [example_begin]
- ns_section "ns/db/drivers"
- ns_param postgres nsdbpg.so
- ns_param solid    nsdbtds.so
+ ns_section ns/db/drivers {
+   ns_param postgres nsdbpg.so
+   ns_param solid    nsdbtds.so
+ }
 [example_end]
 
 
 [enum] Add a configuration file section to list your database pools. For example:
 
 [example_begin]
- ns_section "ns/db/pools"
- ns_param mypool "This pool will use PostgreSQL"
+ ns_section ns/db/pools {
+   ns_param mypool "This pool will use PostgreSQL"
+ }
 [example_end]
 
 
@@ -131,7 +133,7 @@ Postgres or Solid driver.
   have named. For example:
 
 [example_begin]
- ns_section "ns/db/pool/mypool" {
+ ns_section ns/db/pool/mypool {
    ns_param driver postgres
    ns_param datasource "..."
    ns_param connections     1
@@ -165,7 +167,7 @@ Postgres or Solid driver.
   section to define which database pools it can access. For example:
 
 [example_begin]
- ns_section "ns/server/servername/db" {
+ ns_section ns/server/$server/db {
    ns_params Pools *
  }
 [example_end]
@@ -243,24 +245,26 @@ external driver to interface with the Sybase proxy daemon.
 [enum] Add a configuration file section called ns/db/drivers:
 
 [example_begin]
- ns_section "ns/db/drivers"
+ ns_section ns/db/drivers
 [example_end]
 
 
 [enum] List the Sybase database driver. For example:
 
 [example_begin]
- ns_section "ns/db/drivers"
- ns_param extsyb nssybpd.so
+ ns_section ns/db/drivers {
+   ns_param extsyb nssybpd.so
+ }
 [example_end]
 
 
 [enum] Configure the Sybase driver. For example:
 
 [example_begin]
- ns_section "ns/db/driver/extsyb"
- ns_param LocalDaemon nssybpd
- ns_param Param SYBASE-env-variable
+ ns_section ns/db/driver/extsyb {
+   ns_param LocalDaemon nssybpd
+   ns_param Param SYBASE-env-variable
+ }
 [example_end]
 
 
@@ -270,8 +274,9 @@ external driver to interface with the Sybase proxy daemon.
 [enum] Add a configuration file section to list your database pools. For example:
 
 [example_begin]
- ns_section "ns/db/pools"
- ns_param mypool "This pool will use Sybase"
+ ns_section ns/db/pools {
+   ns_param mypool "This pool will use Sybase"
+ }
 [example_end]
 
 
@@ -279,8 +284,9 @@ external driver to interface with the Sybase proxy daemon.
   have named. For example:
 
 [example_begin]
- ns_section "ns/db/pool/mypool"
- ns_param Driver extsyb
+ ns_section ns/db/pool/mypool {
+   ns_param Driver extsyb
+ }
 [example_end]
 
 
@@ -290,8 +296,9 @@ external driver to interface with the Sybase proxy daemon.
 
 
 [example_begin]
- ns_section "ns/server/servername/db"
- ns_params Pools *
+ ns_section ns/server/$server/db {
+   ns_params Pools *
+ }
 [example_end]
 
 
@@ -331,7 +338,7 @@ daemon on a remote machine.
   example:
 
 [example_begin]
- ns_section "ns/db/driver/extsyb"
+ ns_section ns/db/driver/extsyb
  ns_param RemoteHost host-name
  ns_param RemotePort port-number
  ns_param Param SYBASE-env-variable

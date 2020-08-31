@@ -45,7 +45,7 @@ and pools.
 
 An example configuration for the control port interface is shown
 below. Three sections of the configuration file are included. The nscp
-module is loaded into the /modules section for servername. The
+module is loaded into the /modules section for $server. The
 /module/nscp section defines the control port parameters, and the
 /module/nscp/users section defines the users who can log into the
 control port.
@@ -55,13 +55,13 @@ control port.
  #
  # Control port -- nscp
  #
- ns_section "ns/server/${servername}/module/nscp" {
+ ns_section ns/server/${server}/module/nscp {
    ns_param   port            9999        ;# Control port listens on port 9999
    ns_param   address         "127.0.0.1" ;# For security, use 127.0.0.1 only
  }
  
  # Control port users
- ns_section "ns/server/${servername}/module/nscp/users" {
+ ns_section ns/server/${server}/module/nscp/users {
    #
    # The default password for nsadmin is "x". You should change it.
    # type "ns_crypt newpassword salt" and put the encrypted string
@@ -70,9 +70,10 @@ control port.
    ns_param user "nsadmin:t2GqvvaiIUbF2:" ;# sample user="nsadmin", pw="x".
  }
  
- ns_section "ns/server/${servername}/modules"
- # ...
- ns_param nscp nscp.so
+ ns_section ns/server/${server}/modules {
+   # ...
+   ns_param nscp nscp.so
+ }
 [example_end]
 
 
@@ -198,10 +199,10 @@ The session responds with:
 
 
 [example_begin]
- Welcome to servername running at /usr/local/ns/bin/nsd (pid 22413)
+ Welcome to server1 running at /usr/local/ns/bin/nsd (pid 22413)
  NaviServer/4.99.18 for linux built on Feb 25 2019 at 18:38:59
 
- servername:nscp 1>
+ server1:nscp 1>
 [example_end]
 
 

@@ -35,9 +35,9 @@ has a DNS cache that can be tweaked -- see [term dnscache],
 
 [subsection {Experiment with the ADP cache}]
 
-In the ns/server/servername/adp section, the parameters are
+In the ns/server/$server/adp section, the parameters are
 [term cache], [term cachesize], and [term threadcache].
-Use the appropriate [term servername]
+Use the appropriate [term {$server}]
 for you installation (maybe the name [term default]).
 
 NaviServer defaults to a 10 MB ADP cache. This cache
@@ -49,7 +49,7 @@ your system to accommodate the cache if you decide to make it very large.
 [subsection {Experiment with the FastPath cache}]
 
 This is a separate cache used to store static HTML pages. The section is
-ns/server/servername/fastpath, and the options are
+ns/server/$server/fastpath, and the options are
 [term cache], [term cachemaxentry], and [term cachemaxsize].
 The default is 10 MB.
 On some systems enabling the [term mmap] parameter can make it work even faster.
@@ -61,7 +61,7 @@ On some systems enabling the [term mmap] parameter can make it work even faster.
 Is your site updated rarely or often? On some slower systems, setting
 [term checkmodifiedsince]
 to false in the
-[term ns/server/servername] section can speed up things considerably
+[term {ns/server/$server}] section can speed up things considerably
 as NaviServer reads all scripts and data directly from the in-memory cache
 without checking to see if the file has changed each time a cache entry
 is hit.
@@ -75,8 +75,8 @@ default settings provided by the sample configuration files are typically
 sufficient.
 For larger or very constraint setups the paramamter for the
 connection theads can and should be tuned. The following parameters can be
-altered in the section "ns/server/servername"
-(for a server named "servername"):
+altered in the section "ns/server/$server"
+(for a server named "$server"):
 [term connsperthread],
 [term highwatermark], 
 [term lowwatermark], 
@@ -133,7 +133,7 @@ pool. Additional connection thread pools can be created via
 [term pools].
 
 [example_begin]
- ns_section "ns/server/servername/pools" {
+ ns_section ns/server/$server/pools {
    #
    # To activate connection thread pools, uncomment one of the
    # following lines and/or add other pools.
@@ -142,7 +142,7 @@ pool. Additional connection thread pools can be created via
    ns_param   fast	"Fast requests, e.g. less than 10ms"
  }
  
- ns_section "ns/server/servername/pool/monitor" {
+ ns_section ns/server/$server/pool/monitor {
    ns_param   minthreads 2
    ns_param   maxthreads 2
  
@@ -153,7 +153,7 @@ pool. Additional connection thread pools can be created via
    ns_param   map "GET /request-monitor"
  }
  
- ns_section "ns/server/servername/pool/fast" {
+ ns_section ns/server/$server/pool/fast {
    ns_param   minthreads 2
    ns_param   maxthreads 2
  
@@ -167,7 +167,7 @@ pool. Additional connection thread pools can be created via
    ns_param   map "GET /*.m3u8"
  }
  
- ns_section "ns/server/servername/pool/bots" {
+ ns_section ns/server/$server/pool/bots {
    ns_param   map "GET  /* {user-agent *bot*}"
    ns_param   map "GET  /* {user-agent *rawl*}"
    ns_param   map "GET  /* {user-agent *pider*}"

@@ -272,9 +272,10 @@ allowing and denying access to a particular directory.
 To enable this
 
 [example_begin]
- ns_section "ns/server/servername/module/nsperm"
- ns_param   htaccess   true
- ns_param   passwdfile /usr/local/ns/modules/nsperm/passwd
+ ns_section ns/server/$server/module/nsperm {
+   ns_param   htaccess   true
+   ns_param   passwdfile /usr/local/ns/modules/nsperm/passwd
+ }
 [example_end]
 
 passwdfile can point to any file, by default it set to default nsperm module password file.

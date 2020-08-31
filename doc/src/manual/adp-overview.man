@@ -117,7 +117,7 @@ within the ADP section of the configuration file:
 
 [para]
 
-Section [emph {ns/server/servername/adp}]:
+Section [emph {ns/server/$server/adp}]:
 
 
 [list_begin itemized]
@@ -212,7 +212,7 @@ To debug your ADPs with TclPro, follow these steps:
 [item] Copy the prodebug.tcl file from the TclPro distribution to the
  modules/tcl directory.
 
-[item] Set the EnableDebug parameter in the ns/server/servername/adp
+[item] Set the EnableDebug parameter in the ns/server/$server/adp
  section of the configuration file to On.
 
 [item] Run TclPro and start a "remote project", which puts TclPro into a

@@ -18,11 +18,12 @@ requested (Tcl pages).  Notice the entries in your sample-config.tcl
 configuration file:
 
 [example_begin]
- ns_section "ns/server/${servername}/adp"
+ ns_section ns/server/${server}/adp
  ns_param   enabletclpages  false         ;# Parse *.tcl files in pagedir.
 [example_end]
 
-[para] When [term enabletclpages] is activated, NaviServer registers
+[para]
+When [term enabletclpages] is activated, NaviServer registers
 upon startup for all files with the extension .tcl in the directory
 [term pagedir] a handler to deliver these files as Tcl pages
 (using [cmd ns_register_tcl]). The handler is registered for the HTTP
