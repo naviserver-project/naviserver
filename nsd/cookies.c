@@ -615,7 +615,7 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     Ns_Conn       *conn;
     char          *name, *data, *domain = NULL, *path = NULL;
     int            secure = 0, scriptable = 0, discard = 0, replace = 0, result;
-    int            samesite = INTCHAR('n');
+    int            samesite = INTCHAR('I');
     Ns_Time       *expiresPtr = NULL;
     static Ns_ObjvTable samesiteValues[] = {
         {"strict", UCHAR('s')},
