@@ -30,10 +30,16 @@
 [list_end]
 
 The option [arg charset] can be used to specify the character set of
-the encode operation. Option [arg part] is used to specify the 
-[arg query] (default) or [arg path] encoding. In the query mode, the
+the encode operation. Option [arg part] is used to specify the [arg
+query] (default) or [arg path] encoding. In the query mode, the
 components will be concatenated via "&", in the path mode the
 components are concatenated with "/".
+
+[para] The part argument can be as well used for more percent
+encodings such as the cookie encoding (value "cookie", RFC 6265) or
+the oauth1 encoding (value "oauth1") as defined in RFC 5849 Section
+3.6 for the construction of the * signature base string and the
+"Authorization" header field.
 
 [section {EXAMPLES}]
 

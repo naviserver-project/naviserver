@@ -16,7 +16,7 @@ test ns_urlencode-1.1.1 {basic syntax} -body {
 
 test ns_urlencode-1.1.2 {basic syntax} -body {
     ns_urlencode -part x y
-} -returnCodes error -result {bad option "x": must be query, path, or cookie}
+} -returnCodes error -result {bad option "x": must be query, path, cookie, or oauth1}
 
 test ns_urlencode-1.2.1 {basic syntax} -body {
     ns_urldecode
@@ -24,7 +24,7 @@ test ns_urlencode-1.2.1 {basic syntax} -body {
 
 test ns_urlencode-1.2.2 {basic syntax} -body {
     ns_urldecode -part x y
-} -returnCodes error -result {bad option "x": must be query, path, or cookie}
+} -returnCodes error -result {bad option "x": must be query, path, cookie, or oauth1}
 
 
 test ns_urlencode-2.1.1a {basic operation} -body {
@@ -313,6 +313,28 @@ test ns_urlencode-5.2 {encode and unencode character sequence with percent codes
 } -cleanup {
     ns_unregister_op GET /encode-decode
 } -result "200 {/%20,'\\\".=+ /%2520%2c'%22.=+ 1}"
+
+test ns_urlencode-5.3.1 {encode and unencode character sequence with oauth1 encoding} -body {
+    set string {-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~}
+    set enc [ns_urlencode -part oauth1 $string]
+    string equal $enc $string
+} -cleanup {
+    unset string
+} -result "1"
+
+test ns_urlencode-5.3.2 {encode and unencode character sequence with oauth1 encoding} -body {
+    set unencoded {-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~}
+    set string ""
+    for {set i 1} {$i < 128} {incr i} {
+        set c [format %c $i]
+        if {[string first $c $unencoded] == -1} {append string $c}
+    }
+    # The reset must be a multiple of 2 chars, since everything must be encoded.
+    expr {[string length [ns_urlencode -part oauth1 $string]] % 3}
+} -cleanup {
+    unset string i c unencoded
+} -result 0
+
 
 
 test ns_urlencode-6.0 {security check: see, if we can sneek in a binary 0 to trick "string is integer"} -constraints {serverListen} -setup {

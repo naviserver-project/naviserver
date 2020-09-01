@@ -93,7 +93,7 @@ static const ByteKey query_enc[] = {
     {3, "14"}, {3, "15"}, {3, "16"}, {3, "17"},
     {3, "18"}, {3, "19"}, {3, "1a"}, {3, "1b"},
     {3, "1c"}, {3, "1d"}, {3, "1e"}, {3, "1f"},
-    {1, "20"}, {1, NULL}, {3, "22"}, {3, "23"},
+    {3, "20"}, {1, NULL}, {3, "22"}, {3, "23"},
     {3, "24"}, {3, "25"}, {3, "26"}, {1, NULL},
     {1, NULL}, {1, NULL}, {1, NULL}, {3, "2b"},
     {3, "2c"}, {1, NULL}, {1, NULL}, {3, "2f"},
@@ -542,6 +542,97 @@ static const ByteKey cookie_enc[] = {
     /* 0xfc */  {3, "fc"}, {3, "fd"}, {3, "fe"}, {3, "ff"}
 };
 
+/*
+ * The following table is used for encoding and decoding of oauth tokens
+ * as specified in RFC 5849 Section 3.6 for the construction of the
+ * signature base string and the "Authorization" header field.
+ *
+ * A percent-encoding is used to represent a data octet except for
+ * characters which are explicitly allowed in the RFC.
+ *
+ * Allowed oauth1 characters are defined as:
+ *
+ * Characters in the unreserved character set as defined by
+ * [RFC3986], Section 2.3 (ALPHA, DIGIT, "-", ".", "_", "~") MUST
+ * NOT be encoded.
+ *
+ * All other characters MUST be encoded.
+ *
+ * This definition implies that a total of 66 characters are allowed
+ * unencoded in a cookie:
+ *
+ *     - . 0 1 2 3 4 5 6 7 8 9
+ *     A B C D E F G H I J K L M N O P Q R S T U V W X Y Z _
+ *     a b c d e f g h i j k l m n o p q r s t u v w x y z ~
+ */
+static const ByteKey oauth1_enc[] = {
+    /* 0X00 */  {3, "00"}, {3, "01"}, {3, "02"}, {3, "03"},
+    /* 0X04 */  {3, "04"}, {3, "05"}, {3, "06"}, {3, "07"},
+    /* 0X08 */  {3, "08"}, {3, "09"}, {3, "0A"}, {3, "0B"},
+    /* 0X0C */  {3, "0C"}, {3, "0D"}, {3, "0E"}, {3, "0F"},
+    /* 0X10 */  {3, "10"}, {3, "11"}, {3, "12"}, {3, "13"},
+    /* 0X14 */  {3, "14"}, {3, "15"}, {3, "16"}, {3, "17"},
+    /* 0X18 */  {3, "18"}, {3, "19"}, {3, "1A"}, {3, "1B"},
+    /* 0X1C */  {3, "1C"}, {3, "1D"}, {3, "1E"}, {3, "1F"},
+    /* 0X20 */  {3, "20"}, {3, "21"}, {3, "22"}, {3, "23"},
+    /* 0X24 */  {3, "24"}, {3, "25"}, {3, "26"}, {3, "27"},
+    /* 0X28 */  {3, "28"}, {3, "29"}, {3, "2A"}, {3, "2B"},
+    /* 0X2C */  {3, "2C"}, {1, NULL}, {1, NULL}, {3, "2F"},
+    /* 0X30 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0X34 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0X38 */  {1, NULL}, {1, NULL}, {3, "3A"}, {3, "3B"},
+    /* 0X3C */  {3, "3C"}, {3, "3D"}, {3, "3E"}, {3, "3F"},
+    /* 0X40 */  {3, "40"}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0X44 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0X48 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0X4C */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0X50 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0X54 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0X58 */  {1, NULL}, {1, NULL}, {1, NULL}, {3, "5B"},
+    /* 0X5C */  {3, "5C"}, {3, "5D"}, {3, "5E"}, {1, NULL},
+    /* 0X60 */  {3, "60"}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0X64 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0X68 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0X6C */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0X70 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0X74 */  {1, NULL}, {1, NULL}, {1, NULL}, {1, NULL},
+    /* 0X78 */  {1, NULL}, {1, NULL}, {1, NULL}, {3, "7B"},
+    /* 0X7C */  {3, "7C"}, {3, "7D"}, {1, NULL}, {3, "7F"},
+    /* 0X80 */  {3, "80"}, {3, "81"}, {3, "82"}, {3, "83"},
+    /* 0X84 */  {3, "84"}, {3, "85"}, {3, "86"}, {3, "87"},
+    /* 0X88 */  {3, "88"}, {3, "89"}, {3, "8A"}, {3, "8B"},
+    /* 0X8C */  {3, "8C"}, {3, "8D"}, {3, "8E"}, {3, "8F"},
+    /* 0X90 */  {3, "90"}, {3, "91"}, {3, "92"}, {3, "93"},
+    /* 0X94 */  {3, "94"}, {3, "95"}, {3, "96"}, {3, "97"},
+    /* 0X98 */  {3, "98"}, {3, "99"}, {3, "9A"}, {3, "9B"},
+    /* 0X9C */  {3, "9C"}, {3, "9D"}, {3, "9E"}, {3, "9F"},
+    /* 0XA0 */  {3, "A0"}, {3, "A1"}, {3, "A2"}, {3, "A3"},
+    /* 0XA4 */  {3, "A4"}, {3, "A5"}, {3, "A6"}, {3, "A7"},
+    /* 0XA8 */  {3, "A8"}, {3, "A9"}, {3, "AA"}, {3, "AB"},
+    /* 0XAC */  {3, "AC"}, {3, "AD"}, {3, "AE"}, {3, "AF"},
+    /* 0XB0 */  {3, "B0"}, {3, "B1"}, {3, "B2"}, {3, "B3"},
+    /* 0XB4 */  {3, "B4"}, {3, "B5"}, {3, "B6"}, {3, "B7"},
+    /* 0XB8 */  {3, "B8"}, {3, "B9"}, {3, "BA"}, {3, "BB"},
+    /* 0XBC */  {3, "BC"}, {3, "BD"}, {3, "BE"}, {3, "BF"},
+    /* 0XC0 */  {3, "C0"}, {3, "C1"}, {3, "C2"}, {3, "C3"},
+    /* 0XC4 */  {3, "C4"}, {3, "C5"}, {3, "C6"}, {3, "C7"},
+    /* 0XC8 */  {3, "C8"}, {3, "C9"}, {3, "CA"}, {3, "CB"},
+    /* 0XCC */  {3, "CC"}, {3, "CD"}, {3, "CE"}, {3, "CF"},
+    /* 0XD0 */  {3, "D0"}, {3, "D1"}, {3, "D2"}, {3, "D3"},
+    /* 0XD4 */  {3, "D4"}, {3, "D5"}, {3, "D6"}, {3, "D7"},
+    /* 0XD8 */  {3, "D8"}, {3, "D9"}, {3, "DA"}, {3, "DB"},
+    /* 0XDC */  {3, "DC"}, {3, "DD"}, {3, "DE"}, {3, "DF"},
+    /* 0XE0 */  {3, "E0"}, {3, "E1"}, {3, "E2"}, {3, "E3"},
+    /* 0XE4 */  {3, "E4"}, {3, "E5"}, {3, "E6"}, {3, "E7"},
+    /* 0XE8 */  {3, "E8"}, {3, "E9"}, {3, "EA"}, {3, "EB"},
+    /* 0XEC */  {3, "EC"}, {3, "ED"}, {3, "EE"}, {3, "EF"},
+    /* 0XF0 */  {3, "F0"}, {3, "F1"}, {3, "F2"}, {3, "F3"},
+    /* 0XF4 */  {3, "F4"}, {3, "F5"}, {3, "F6"}, {3, "F7"},
+    /* 0XF8 */  {3, "F8"}, {3, "F9"}, {3, "FA"}, {3, "FB"},
+    /* 0XFC */  {3, "FC"}, {3, "FD"}, {3, "FE"}, {3, "FF"}
+};
+
+
 
 
 /*
@@ -830,7 +921,24 @@ Ns_CookieDecode(Ns_DString *dsPtr, const char *cookie, Tcl_Encoding encoding)
 #endif
 }
 
+char *
+Ns_Oauth1Encode(Ns_DString *dsPtr, const char *cookie, Tcl_Encoding encoding)
+{
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(cookie != NULL);
 
+    return UrlEncode(dsPtr, cookie, encoding, 'o', NS_FALSE);
+}
+
+char *
+Ns_Oauth1Decode(Ns_DString *dsPtr, const char *cookie, Tcl_Encoding encoding)
+{
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(cookie != NULL);
+
+    return UrlDecode(dsPtr, cookie, encoding, 'o');
+
+}
 
 /*
  *----------------------------------------------------------------------
@@ -918,21 +1026,23 @@ Ns_DecodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment,
  *----------------------------------------------------------------------
  */
 
+static Ns_ObjvTable encodingset[] = {
+    {"query",    UCHAR('q')},
+    {"path",     UCHAR('p')},
+    {"cookie",   UCHAR('c')},
+    {"oauth1", UCHAR('o')},
+    {NULL,       0u}
+};
+
 int
 NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                      int objc, Tcl_Obj *const* objv)
 {
     int          nargs, upperCase = 0, result = TCL_OK, part = INTCHAR('q');
     char        *charset = NULL;
-    static Ns_ObjvTable parts[] = {
-        {"query",  UCHAR('q')},
-        {"path",   UCHAR('p')},
-        {"cookie", UCHAR('c')},
-        {NULL,    0u}
-    };
     Ns_ObjvSpec lopts[] = {
         {"-charset",   Ns_ObjvString, &charset,   NULL},
-        {"-part",      Ns_ObjvIndex,  &part,      parts},
+        {"-part",      Ns_ObjvIndex,  &part,      encodingset},
         {"-uppercase", Ns_ObjvBool,   &upperCase, INT2PTR(NS_TRUE)},
         {"--",         Ns_ObjvBreak,  NULL,       NULL},
         {NULL, NULL, NULL, NULL}
@@ -952,10 +1062,11 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         if (charset != NULL) {
             encoding = Ns_GetCharsetEncoding(charset);
         }
+
         Ns_DStringInit(&ds);
         for (i = objc - nargs; i < objc; ++i) {
-            (void)UrlEncode(&ds, Tcl_GetString(objv[i]), encoding, (char)part,
-                            (upperCase == 1));
+            (void)UrlEncode(&ds, Tcl_GetString(objv[i]), encoding, (char)part, (upperCase == 1));
+
             if (i + 1 < objc) {
                 if (part == 'q') {
                     Ns_DStringNAppend(&ds, "&", 1);
@@ -994,15 +1105,9 @@ NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 {
     int          result = TCL_OK, part = INTCHAR('q');
     char        *charset = NULL, *chars = (char *)NS_EMPTY_STRING;
-    static Ns_ObjvTable parts[] = {
-        {"query",    UCHAR('q')},
-        {"path",     UCHAR('p')},
-        {"cookie",   UCHAR('c')},
-        {NULL,       0u}
-    };
     Ns_ObjvSpec  lopts[] = {
         {"-charset", Ns_ObjvString, &charset, NULL},
-        {"-part",    Ns_ObjvIndex,  &part,    parts},
+        {"-part",    Ns_ObjvIndex,  &part,    encodingset},
         {"--",       Ns_ObjvBreak,  NULL,     NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -1061,6 +1166,7 @@ UrlEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(urlSegment != NULL);
 
+
     if (encoding != NULL) {
         urlSegment = Tcl_UtfToExternalDString(encoding, urlSegment, -1, &ds);
     }
@@ -1072,6 +1178,7 @@ UrlEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
     case 'q': enc = query_enc; break;
     case 'p': enc = path_enc; break;
     case 'c': enc = cookie_enc; break;
+    case 'o': enc = oauth1_enc; break;
     default:  enc = query_enc; break;
     }
 
