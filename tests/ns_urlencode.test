@@ -319,10 +319,23 @@ test ns_urlencode-5.3.1 {encode and unencode character sequence with oauth1 enco
     set enc [ns_urlencode -part oauth1 $string]
     string equal $enc $string
 } -cleanup {
-    unset string
+    unset string enc
 } -result "1"
 
 test ns_urlencode-5.3.2 {encode and unencode character sequence with oauth1 encoding} -body {
+    set string {-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~}
+    set enc [ns_urlencode -part oauth1 $string]
+    set dec [ns_urldecode -part oauth1 $enc]
+    string equal $enc $dec
+} -cleanup {
+    unset string enc dec
+} -result "1"
+
+test ns_urlencode-5.3.3 {encode and unencode character sequence with oauth1 encoding} -body {
+    ns_urldecode -part oauth1 a+b
+} -result "a+b"
+
+test ns_urlencode-5.3.4 {encode and unencode character sequence with oauth1 encoding} -body {
     set unencoded {-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz~}
     set string ""
     for {set i 1} {$i < 128} {incr i} {
