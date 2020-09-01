@@ -983,7 +983,7 @@ CreateTclThread(const NsInterp *itPtr, const char *script, bool detached,
  *      existing one with the same name.
  *
  * Results:
- *      Pointer to the lock or cond etc. Tcl object representing the
+ *      Pointer to the lock or cond etc. Tcl_Obj representing the
  *      lock is left in interp.
  *
  * Side effects:

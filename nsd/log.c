@@ -2033,7 +2033,7 @@ FreeCache(void *arg)
  *
  * GetSeverityFromObj --
  *
- *      Get the severity level from the Tcl object, possibly setting
+ *      Get the severity level from the Tcl_Obj, possibly setting
  *      it's internal rep.
  *
  * Results:

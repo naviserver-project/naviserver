@@ -578,7 +578,7 @@ Ns_ObjvDouble(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  *      TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *          Next Tcl object maybe converted to boolean type.
+ *      Tcl_Obj maybe converted to boolean type.
  *
  *----------------------------------------------------------------------
  */
@@ -903,7 +903,7 @@ SetMemUnitFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
  *
  * Ns_TclGetMemUnitFromObj --
  *
- *      Convert a tcl obj with a string value of a memory unit into a Tcl_WideInt.
+ *      Convert a Tcl_Obj with a string value of a memory unit into a Tcl_WideInt.
  *      It has the same interface as e.g. Tcl_GetWideIntFromObj().
  *
  * Results:
@@ -1351,7 +1351,7 @@ NsTclParseArgsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *----------------------------------------------------------------------
  * SetSpecFromAny --
  *
- *      Attempt to convert a Tcl object to ns:spec type.
+ *      Attempt to convert a Tcl_Obj to ns:spec type.
  *
  * Results:
  *      TCL_OK or TCL_ERROR.
@@ -1510,7 +1510,7 @@ FreeSpecs(Ns_ObjvSpec *specPtr)
  * FreeSpecObj --
  *
  *     This procedure is called to delete the internal rep of a
- *     ns:spec Tcl object.
+ *     ns:spec Tcl_Obj.
  *
  * Results:
  *      None.
@@ -1538,7 +1538,7 @@ FreeSpecObj(Tcl_Obj *objPtr)
  *----------------------------------------------------------------------
  * UpdateStringOfSpec --
  *
- *     This procedure is called to convert a Tcl object from
+ *     This procedure is called to convert a Tcl_Obj from
  *     ns:spec internal form to it's string form.
  *
  * Results:
@@ -1592,7 +1592,7 @@ UpdateStringOfSpec(Tcl_Obj *objPtr)
  * DupSpec --
  *
  *     This procedure is called to copy the internal rep of a
- *     ns:spec Tcl object to another object.
+ *     ns:spec Tcl_Obj to another object.
  *
  * Results:
  *      None.

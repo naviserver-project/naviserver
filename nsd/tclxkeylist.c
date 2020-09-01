@@ -52,7 +52,7 @@ static const Tcl_ObjType *listType;
 
 /*
  * This is called once from InitInterp() call in tclinit.c
- * for first-time initialization of special Tcl objects.
+ * for first-time initialization of special Tcl_Objs.
  */
 void NsTclInitKeylistType(void)
 {
@@ -390,7 +390,7 @@ Tcl_DeleteKeyedListField(Tcl_Interp *interp, const char *fieldName, const char *
 /*
  * Keyed lists are stored as arrays recursively defined objects.  The data
  * portion of a keyed list entry is a Tcl_Obj which may be a keyed list object
- * or any other Tcl object.  Since determine the structure of a keyed list is
+ * or any other Tcl_Obj.  Since determine the structure of a keyed list is
  * lazy (you don't know if an element is data or another keyed list) until it
  * is accessed, the object can be transformed into a keyed list from a Tcl
  * string or list.

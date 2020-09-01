@@ -31,7 +31,7 @@
 /*
  * tclobj.c --
  *
- *      Helper routines for managing Tcl object types.
+ *      Helper routines for managing Tcl_Obj types.
  */
 
 #include "nsd.h"
@@ -411,7 +411,7 @@ Ns_TclSetOpaqueObj(Tcl_Obj *objPtr, const char *type, void *addr)
  *
  * NsTclObjIsByteArray --
  *
- *      Does the given Tcl object have a byte array internal rep?  The
+ *      Does the given Tcl_Obj have a byte array internal rep?  The
  *      function determines when it is safe to interpret a string as a
  *      byte array directly.
  *
@@ -522,7 +522,7 @@ UpdateStringOfAddr(Tcl_Obj *objPtr)
  *
  * SetAddrFromAny --
  *
- *      Attempt to generate an address internal form for the Tcl object.
+ *      Attempt to generate an address internal form for the Tcl_Obj.
  *
  * Results:
  *      The return value is a standard Tcl result. If an error occurs

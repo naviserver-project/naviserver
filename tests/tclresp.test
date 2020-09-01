@@ -428,7 +428,7 @@ test tclresp-5.3 {ns_returnfile fastpath cache collision} -constraints serverLis
 
 test tclresp-5.4 {ns_eval of proc with comment} -constraints serverListen -setup {
     #
-    # Define a cmd which create a tcl proc and contains a comment
+    # Define a cmd which create a Tcl proc and contains a comment
     #
     set cmd [list proc ::foo {} {
         # some comment
