@@ -658,7 +658,7 @@ HttpWaitObjCmd(
     NsHttpTask *httpPtr = NULL;
 
     char       *id = NULL, *outputFileName = NULL;
-    int         result = TCL_OK, decompress = 0;
+    int         result = TCL_OK, decompress = 0, binary = 0;
     Tcl_WideInt spoolLimit = -1;
     Tcl_Obj    *elapsedVarObj = NULL,
                *resultVarObj = NULL,
@@ -668,15 +668,16 @@ HttpWaitObjCmd(
     Ns_Time    *timeoutPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
+        {"-binary",     Ns_ObjvBool,    &binary,          INT2PTR(NS_TRUE)},
+        {"-decompress", Ns_ObjvBool,    &decompress,      INT2PTR(NS_TRUE)},
         {"-elapsed",    Ns_ObjvObj,     &elapsedVarObj,   NULL},
-        {"-result",     Ns_ObjvObj,     &resultVarObj,    NULL},
-        {"-status",     Ns_ObjvObj,     &statusVarObj,    NULL},
         {"-file",       Ns_ObjvObj,     &fileVarObj,      NULL},
-        {"-timeout",    Ns_ObjvTime,    &timeoutPtr,      NULL},
         {"-headers",    Ns_ObjvSet,     &replyHeaders,    NULL},
         {"-outputfile", Ns_ObjvString,  &outputFileName,  NULL},
+        {"-result",     Ns_ObjvObj,     &resultVarObj,    NULL},
         {"-spoolsize",  Ns_ObjvMemUnit, &spoolLimit,      NULL},
-        {"-decompress", Ns_ObjvBool,    &decompress,      INT2PTR(NS_TRUE)},
+        {"-status",     Ns_ObjvObj,     &statusVarObj,    NULL},
+        {"-timeout",    Ns_ObjvTime,    &timeoutPtr,      NULL},
         {NULL,          NULL,           NULL,             NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -706,6 +707,10 @@ HttpWaitObjCmd(
         if (decompress != 0) {
             Ns_Log(Warning, "ns_http_wait: -decompress option is deprecated");
             httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
+        }
+        if (binary != 0) {
+            Ns_Log(Warning, "ns_http_wait: -binary option is deprecated");
+            httpPtr->flags |= NS_HTTP_FLAG_BINARY;
         }
         if (spoolLimit > -1) {
             Ns_Log(Warning, "ns_http_wait: -spoolsize option is deprecated");
@@ -1215,7 +1220,7 @@ HttpQueue(
     bool run
 ) {
     Tcl_Interp *interp;
-    int         result = TCL_OK, decompress = 0;
+    int         result = TCL_OK, decompress = 0, binary = 0;
     Tcl_WideInt spoolLimit = -1;
     int         verifyCert = 0, keepHostHdr = 0;
     NsHttpTask *httpPtr = NULL;
@@ -1239,24 +1244,25 @@ HttpQueue(
     Ns_ObjvValueRange sizeRange = {0, LLONG_MAX};
 
     Ns_ObjvSpec opts[] = {
+        {"-binary",           Ns_ObjvBool,    &binary,         INT2PTR(NS_TRUE)},
         {"-body",             Ns_ObjvObj,     &bodyObj,        NULL},
-        {"-body_size",        Ns_ObjvWideInt, &bodySize,       &sizeRange},
-        {"-body_file",        Ns_ObjvString,  &bodyFileName,   NULL},
         {"-body_chan",        Ns_ObjvString,  &bodyChanName,   NULL},
+        {"-body_file",        Ns_ObjvString,  &bodyFileName,   NULL},
+        {"-body_size",        Ns_ObjvWideInt, &bodySize,       &sizeRange},
         {"-cafile",           Ns_ObjvString,  &caFile,         NULL},
         {"-capath",           Ns_ObjvString,  &caPath,         NULL},
         {"-cert",             Ns_ObjvString,  &cert,           NULL},
         {"-decompress",       Ns_ObjvBool,    &decompress,     INT2PTR(NS_TRUE)},
         {"-donecallback",     Ns_ObjvString,  &doneCallback,   NULL},
+        {"-expire",           Ns_ObjvTime,    &expirePtr,      NULL},
         {"-headers",          Ns_ObjvSet,     &requestHdrPtr,  NULL},
         {"-hostname",         Ns_ObjvString,  &sniHostname,    NULL},
         {"-keep_host_header", Ns_ObjvBool,    &keepHostHdr,    INT2PTR(NS_TRUE)},
         {"-method",           Ns_ObjvString,  &method,         NULL},
-        {"-outputfile",       Ns_ObjvString,  &outputFileName, NULL},
         {"-outputchan",       Ns_ObjvString,  &outputChanName, NULL},
+        {"-outputfile",       Ns_ObjvString,  &outputFileName, NULL},
         {"-spoolsize",        Ns_ObjvMemUnit, &spoolLimit,     NULL},
         {"-timeout",          Ns_ObjvTime,    &timeoutPtr,     NULL},
-        {"-expire",           Ns_ObjvTime,    &expirePtr,      NULL},
         {"-verify",           Ns_ObjvBool,    &verifyCert,     INT2PTR(NS_FALSE)},
         {NULL, NULL,  NULL, NULL}
     };
@@ -1358,7 +1364,6 @@ HttpQueue(
             HttpSpliceChannels(interp, httpPtr);
             HttpClose(httpPtr);
         }
-
     } else {
 
         /*
@@ -1375,6 +1380,9 @@ HttpQueue(
         }
         if (decompress != 0) {
             httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
+        }
+        if (binary != 0) {
+            httpPtr->flags |= NS_HTTP_FLAG_BINARY;
         }
         httpPtr->servPtr = itPtr->servPtr;
 
@@ -1495,6 +1503,9 @@ HttpGetResult(
     }
 
     if (httpPtr->recvSpoolMode == NS_FALSE) {
+#if defined(TCLHTTP_USE_EXTERNALTOUTF)
+        Tcl_Encoding encoding = NULL;
+#endif
         bool   binary = NS_FALSE;
         int    cSize;
         char  *cData;
@@ -1517,6 +1528,9 @@ HttpGetResult(
                 binary = NS_TRUE;
             }
         }
+        if ((httpPtr->flags & NS_HTTP_FLAG_BINARY) != 0u) {
+            binary = NS_TRUE;
+        }
         if (binary == NS_FALSE) {
             char  *cType = NULL;
 
@@ -1529,6 +1543,14 @@ HttpGetResult(
                  * completely regular text formats!
                  */
                 binary = Ns_IsBinaryMimeType(cType);
+#if defined(TCLHTTP_USE_EXTERNALTOUTF)
+                if (binary == NS_FALSE) {
+                    encoding = Ns_GetTypeEncoding(cType);
+                    if (encoding == NULL) {
+                        encoding = NS_utf8Encoding;
+                    }
+                }
+#endif
             }
         }
 
@@ -1538,7 +1560,15 @@ HttpGetResult(
         if (binary == NS_TRUE)  {
             replyBodyObj = Tcl_NewByteArrayObj((unsigned char *)cData, cSize);
         } else {
+#if defined(TCLHTTP_USE_EXTERNALTOUTF)
+            Tcl_DString ds;
+            Tcl_DStringInit(&ds);
+            Tcl_ExternalToUtfDString(encoding, cData, cSize, &ds);
+            replyBodyObj = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+            Tcl_DStringFree(&ds);
+#else
             replyBodyObj = Tcl_NewStringObj(cData, cSize);
+#endif
         }
     }
 

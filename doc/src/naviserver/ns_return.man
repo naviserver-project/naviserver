@@ -127,7 +127,7 @@ The Tcl string to send as the response body. The body may be encoded into
 an appropriate character set if required by the client and server settings.
 
 [opt_def -binary [arg body]]
-The byte-array representation of the given Tcl object will be used as the
+The byte-array representation of the given argument will be used as the
 response body. No character set conversion will be done.
 
 [opt_def -file [arg filepath]]

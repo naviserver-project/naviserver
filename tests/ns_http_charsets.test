@@ -1,0 +1,309 @@
+# -*- Tcl -*-
+#
+#
+# The contents of this file are subject to the Mozilla Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://aolserver.com/.
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+# the License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is AOLserver Code and related documentation
+# distributed by AOL.
+#
+# The Initial Developer of the Original Code is America Online,
+# Inc. Portions created by AOL are Copyright (C) 1999 America Online,
+# Inc. All Rights Reserved.
+#
+# Alternatively, the contents of this file may be used under the terms
+# of the GNU General Public License (the "GPL"), in which case the
+# provisions of GPL are applicable instead of those above.  If you wish
+# to allow use of your version of this file only under the terms of the
+# GPL and not to allow others to use your version of this file under the
+# License, indicate your decision by deleting the provisions above and
+# replace them with the notice and other provisions required by the GPL.
+# If you do not delete the provisions above, a recipient may use your
+# version of this file under either the License or the GPL.
+#
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+testConstraint curl [expr {![catch {exec curl -V}]}]
+testConstraint iconv [expr {![catch {exec iconv --version}]}]
+
+testConstraint binarySwitch [expr {([catch {ns_http run -binary x} result] == 1) && ($result eq "invalid URL \"x\"")}]; unset result
+# testConstraint pairsTest true ;# test characters pairs, long time process
+# testConstraint usingExternalToUtf true ;# true if HttpGetResult uses ExternalToUtf; will be assigned in http_charsets-0.0
+
+
+test http_charsets-0.0 "test whether HttpGetResult uses ExternalToUtf" -constraints !usingExternalToUtf -setup {
+    ns_register_proc GET /get {ns_return 200 "text/plain; charset=iso-8859-2" "Ł"}
+} -body {
+    set result [ns_http run [ns_config test listenurl]/get]
+    if {[dict get $result body] eq "Ł"} {
+        testConstraint usingExternalToUtf true
+    }
+    return {}
+} -cleanup {
+    ns_unregister_op GET /get
+} -result {}
+
+
+test http_charsets-1.0 "simple iso8859-2 text, ns_http decoded by 'encoding converfrom'" -constraints !usingExternalToUtf -setup {
+    ns_register_proc GET /get {ns_return 200 "text/plain; charset=iso-8859-2" "äöüŁ"}
+} -body {
+    set result [ns_http run -binary [ns_config test listenurl]/get]
+    encoding convertfrom iso8859-2 [dict get $result body]
+} -cleanup {
+    ns_unregister_op GET /get
+} -result {äöüŁ}
+
+
+test http_charsets-2.0 "another iso8859-2 text, ns_http decoded by 'encoding converfrom'" -constraints !usingExternalToUtf -setup {
+    ns_register_proc GET /get {ns_return 200 "text/plain; charset=iso-8859-2" "ÄÖÜŁ"}
+} -body {
+    set result [ns_http run -binary [ns_config test listenurl]/get]
+    encoding convertfrom iso8859-2 [dict get $result body]
+} -cleanup {
+    ns_unregister_op GET /get
+} -result {ÄÖÜŁ}
+
+
+test http_charsets-2.1 "another iso8859-2 text, curl decoded by iconv" -constraints {curl iconv} -setup {
+    ns_register_proc GET /get {ns_return 200 "text/plain; charset=iso-8859-2" "ÄÖÜŁ"}
+} -body {
+    exec curl -s [ns_config test listenurl]/get | iconv -f iso-8859-2 -t utf-8
+} -cleanup {
+    ns_unregister_op GET /get
+} -result {ÄÖÜŁ}
+
+
+test http_charsets-2.2 "another iso8859-2 text, ns_http -binary decoded by 'encoding converfrom'" -constraints binarySwitch -setup {
+    ns_register_proc GET /get {ns_return 200 "text/plain; charset=iso-8859-2" "ÄÖÜŁ"}
+} -body {
+    set result [ns_http run -binary [ns_config test listenurl]/get]
+    encoding convertfrom iso8859-2 [dict get $result body]
+} -cleanup {
+    ns_unregister_op GET /get
+} -result {ÄÖÜŁ}
+
+
+test http_charsets-2.3 "another iso8859-2 text, ns_http with autodecoding"  -constraints usingExternalToUtf -setup {
+    ns_register_proc GET /get {ns_return 200 "text/plain; charset=iso-8859-2" "ÄÖÜŁ"}
+} -body {
+    set result [ns_http run [ns_config test listenurl]/get]
+    dict get $result body
+} -cleanup {
+    ns_unregister_op GET /get
+} -result {ÄÖÜŁ}
+
+
+set charsets {
+    iso-8859-1 iso-8859-2 iso-8859-3 iso-8859-4 iso-8859-5 iso-8859-6 iso-8859-7 iso-8859-8 iso-8859-9
+    windows-1250 windows-1251 windows-1252 windows-1253 windows-1254 windows-1256 windows-1257 
+    koi8-r
+}
+
+foreach charset $charsets {
+    set encoding [ns_encodingforcharset $charset]
+    set content ""
+    for {set i 0x80} {$i <= 0xFF} {incr i} {
+        set char [encoding convertfrom $encoding [format %c $i]]
+        if {[string is print $char] && [encoding convertfrom $encoding [encoding convertto $encoding $char]] ne "?"} {
+            append content $char
+        } else {
+            append content "."
+        }
+    }
+#   puts $content
+
+    test http_charsets-3.$charset.ns_http-and-utf "8bit chars from $charset, ns_http gets utf-8 text" -setup {
+         ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} "utf-8" $content]
+    } -body {
+        set result [ns_http run [ns_config test listenurl]/get]
+        dict get $result body
+    } -cleanup {
+        ns_unregister_op GET /get
+    } -result $content
+
+
+    test http_charsets-3.$charset.ns_http-default "8bit chars from $charset, ns_http and 'encoding convertfrom'" -constraints !usingExternalToUtf -setup {
+         ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+    } -body {
+        set result [ns_http run [ns_config test listenurl]/get]
+        encoding convertfrom $encoding [dict get $result body]
+    } -cleanup {
+        ns_unregister_op GET /get
+    } -result $content
+
+
+    test http_charsets-3.$charset.ns_http-externl "8bit chars from $charset, ns_http autodecode" -constraints usingExternalToUtf -setup {
+         ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+    } -body {
+        set result [ns_http run [ns_config test listenurl]/get]
+        dict get $result body
+    } -cleanup {
+        ns_unregister_op GET /get
+    } -result $content
+
+
+    test http_charsets-3.$charset.ns_http-1binary "8bit chars from $charset, ns_http run -binary and 'encoding convertfrom'" -constraints binarySwitch -setup {
+         ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+    } -body {
+        set result [ns_http run -binary [ns_config test listenurl]/get]
+        encoding convertfrom $encoding [dict get $result body]
+    } -cleanup {
+        ns_unregister_op GET /get
+    } -result $content
+
+
+    test http_charsets-3.$charset.ns_http-2binary "8bit chars from $charset, ns_http queue -binary and 'encoding convertfrom'" -constraints binarySwitch -setup {
+         ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+    } -body {
+        set result [ns_http wait [ns_http queue -binary [ns_config test listenurl]/get]]
+        encoding convertfrom $encoding [dict get $result body]
+    } -cleanup {
+        ns_unregister_op GET /get
+    } -result $content
+
+
+    test http_charsets-3.$charset.ns_http--binary "8bit chars from $charset, ns_http wait -binary and 'encoding convertfrom'" -constraints binarySwitch -setup {
+         ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+    } -body {
+        set result [ns_http wait -binary [ns_http queue [ns_config test listenurl]/get]]
+        encoding convertfrom $encoding [dict get $result body]
+    } -cleanup {
+        ns_unregister_op GET /get
+    } -result $content
+
+
+    test http_charsets-3.$charset.curl-pipe-iconv "8bit chars from $charset, curl decoded by iconv" -constraints {curl iconv} -setup {
+        ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+    } -body {
+        exec curl -s [ns_config test listenurl]/get | iconv -f $charset -t utf-8
+    } -cleanup {
+        ns_unregister_op GET /get
+    } -result $content
+
+
+}
+unset -nocomplain charset encoding char content i
+
+
+if {![testConstraint pairsTest]} {
+
+puts "pairsTest not set, tests skipped"
+
+}  else {
+
+foreach charset $charsets {
+    set encoding [ns_encodingforcharset $charset]
+    for {set i 0x80} {$i <= 0xFF} {incr i} {
+        set char1 [encoding convertfrom $encoding [format %c $i]]
+        if {!([string is print $char1] && [encoding convertfrom $encoding [encoding convertto $encoding $char1]] ne "?")} {
+            continue
+        }
+        set content ""
+        for {set j 0x80} {$j <= 0xFF} {incr j} {
+            set char2 [encoding convertfrom $encoding [format %c $j]]
+            if {!([string is print $char2] && [encoding convertfrom $encoding [encoding convertto $encoding $char2]] ne "?")} {
+                continue
+                append content " " $char1 "."
+            } else {
+                append content " " $char1 $char2
+            }
+        }
+        set x [format %2X $i]
+#       puts $content
+
+        test http_charsets-4.$charset.$x.ns_http-and-utf "8bit pairs starting with '$char1' from $charset, ns_http gets utf-8 text" -constraints !usingExternalToUtf -setup {
+             ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} "utf-8" $content]
+        } -body {
+            set result [ns_http run [ns_config test listenurl]/get]
+            dict get $result body
+        } -cleanup {
+            ns_unregister_op GET /get
+        } -result $content
+        
+        
+        test http_charsets-4.$charset.$x.ns_http-default "8bit pairs starting with '$char1' from $charset, ns_http and 'encoding convertfrom'" -constraints !usingExternalToUtf -setup {
+             ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+        } -body {
+            set result [ns_http run [ns_config test listenurl]/get]
+            encoding convertfrom $encoding [dict get $result body]
+        } -cleanup {
+            ns_unregister_op GET /get
+        } -result $content
+        
+        
+        test http_charsets-4.$charset.$x.ns_http-externl "8bit pairs starting with '$char1' from $charset, ns_http autodecode" -constraints usingExternalToUtf -setup {
+             ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+        } -body {
+            set result [ns_http run [ns_config test listenurl]/get]
+            dict get $result body
+        } -cleanup {
+            ns_unregister_op GET /get
+        } -result $content
+        
+        
+        test http_charsets-4.$charset.$x.ns_http--binary "8bit pairs starting with '$char1' from $charset, 'ns_http run -binary' and 'encoding convertfrom'" -constraints binarySwitch -setup {
+             ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+        } -body {
+            set result [ns_http run -binary [ns_config test listenurl]/get]
+            encoding convertfrom $encoding [dict get $result body]
+        } -cleanup {
+            ns_unregister_op GET /get
+        } -result $content
+
+
+        test http_charsets-4.$charset.$x.ns_http-1binary "8bit pairs starting with '$char1' from $charset, ns_http queue -binary and 'encoding convertfrom'" -constraints binarySwitch -setup {
+             ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+        } -body {
+            set result [ns_http wait [ns_http queue -binary [ns_config test listenurl]/get]]
+            encoding convertfrom $encoding [dict get $result body]
+        } -cleanup {
+            ns_unregister_op GET /get
+        } -result $content
+
+
+        test http_charsets-4.$charset.$x.ns_http-2binary "8bit pairs starting with '$char1' from $charset, ns_http wait -binary and 'encoding convertfrom'" -constraints binarySwitch -setup {
+             ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+        } -body {
+            set result [ns_http wait -binary [ns_http queue [ns_config test listenurl]/get]]
+            encoding convertfrom $encoding [dict get $result body]
+        } -cleanup {
+            ns_unregister_op GET /get
+        } -result $content
+
+
+        test http_charsets-4.$charset.$x.curl-pipe-iconv "8bit pairs starting with '$char1' from $charset, curl decoded by iconv" -constraints {curl iconv} -setup {
+            ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+        } -body {
+            exec curl -s [ns_config test listenurl]/get | iconv -f $charset
+        } -cleanup {
+            ns_unregister_op GET /get
+        } -result $content
+
+        
+    }
+}
+unset -nocomplain charset encoding char1 char2 content i j
+
+}
+
+unset charsets
+
+
+cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

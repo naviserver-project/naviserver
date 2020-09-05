@@ -15,6 +15,7 @@ and process replies from web servers.
 [list_begin definitions]
 
 [call [cmd "ns_http queue"] \
+	[opt [option "-binary"]] \
 	[opt [option "-body_size [arg size]"]] \
 	[opt [option "-body [arg B]"]] \
 	[opt [option "-body_file [arg fn]"]] \
@@ -47,6 +48,10 @@ in a dedicated per-queue thread.
 
 [list_begin options]
 
+[opt_def -binary]
+transmit the content in binary form (as a Tcl byte-array) no matter
+what the content-type specifies.
+
 [opt_def -body_size [arg size]]
 specifies the expected size of the data which will be sent as the HTTP
 request body. This option must be used when sending body data via Tcl
@@ -54,7 +59,7 @@ channels which are not capable of seeking. It is optional if sending
 body data from memory or from a named file.
 
 [opt_def -body [arg body]]
-trasmit the content of the passed string as the request body.
+transmit the content of the passed string as the request body.
 This option is mutualy exclusive with [option -body_file] and [option -body_chan].
 Implementation will try to guess the "Content-Type" of the body by checking
 the type of the passed [option body].
@@ -171,6 +176,7 @@ anonymous cipher is used, this option is ignored.
 [list_end]
 
 [call [cmd "ns_http run"] \
+	[opt [option "-binary"]] \
 	[opt [option "-body_size [arg size]"]] \
 	[opt [option "-body [arg B]"]] \
 	[opt [option "-body_file [arg fn]"]] \
