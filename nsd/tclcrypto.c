@@ -1792,7 +1792,7 @@ NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 /*
  *----------------------------------------------------------------------
  *
- * NsCryptoScryptObjCmd --
+ * NsTclCryptoScryptObjCmd --
  *
  *      Compute a "password hash" using the scrypt Password-Based
  *      Key Derivation Function (RFC 7914) as defined in OpenSSL 3
@@ -1808,7 +1808,7 @@ NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
  *----------------------------------------------------------------------
  */
 int
-NsCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int                result, isBinary = 0, nValue = 1024, rValue = 8, pValue = 16;
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL;
