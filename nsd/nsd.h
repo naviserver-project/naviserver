@@ -1344,6 +1344,7 @@ NS_EXTERN Tcl_ObjCmdProc
     NsTclSymlinkObjCmd,
     NsTclThreadObjCmd,
     NsTclTimeObjCmd,
+    NsTclTrimObjCmd,
     NsTclTruncateObjCmd,
     NsTclUnRegisterOpObjCmd,
     NsTclUnRegisterUrl2FileObjCmd,

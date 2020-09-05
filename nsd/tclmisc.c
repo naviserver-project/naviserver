@@ -515,6 +515,93 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 /*
  *----------------------------------------------------------------------
  *
+ * NsTclTrimObjCmd --
+ *
+ *      Multiline trim with optional delimiter and builtin substitution
+ *      (latter is not really needed but convenient).  Trim leading spaces on
+ *      multiple lines.
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclTrimObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int               result = TCL_OK, substInt = 0;
+    Tcl_Obj          *textObj;
+    char             *delimiterString = NULL;
+    Ns_ObjvSpec       opts[] = {
+        {"-subst",     Ns_ObjvBool,   &substInt,     INT2PTR(NS_TRUE)},
+        {"-delimiter", Ns_ObjvString, &delimiterString, NULL},
+        {"--",         Ns_ObjvBreak,  NULL,         NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    Ns_ObjvSpec  args[] = {
+        {"text",      Ns_ObjvObj,  &textObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Tcl_DString ds, *dsPtr = &ds;
+        int         textLength;
+        char       *p;
+        const char *endOfString;
+
+        Tcl_DStringInit(dsPtr);
+
+        if (substInt != 0) {
+            textObj = Tcl_SubstObj(interp, textObj, TCL_SUBST_ALL);
+        }
+        p = Tcl_GetStringFromObj(textObj, &textLength);
+        endOfString = p + textLength;
+
+        while(likely(p < endOfString)) {
+            const char *to;
+            char       *j;
+            long        length;
+
+            for (j = p; likely(j < endOfString); j++) {
+                if (CHARTYPE(space, *j) != 0) {
+                    continue;
+                }
+                if (delimiterString != NULL && *j == *delimiterString) {
+                    j++;
+                    break;
+                }
+                break;
+            }
+            to = strchr(j, INTCHAR('\n'));
+            if (likely(to != NULL)) {
+                length = (to - j) + 1;
+            } else {
+                length = (endOfString - j);
+            }
+            Tcl_DStringAppend(dsPtr, j, (int)length);
+
+            p = j + length;
+        }
+
+        Tcl_DStringResult(interp, dsPtr);
+
+    }
+    return result;
+}
+
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclStripHtmlObjCmd --
  *
  *      Implements ns_striphtml.
@@ -1323,13 +1410,13 @@ SHAByteSwap(uint32_t *dest, const uint8_t *src, unsigned int words)
     } while (--words > 0u);
 }
 
-/* 
- * Initialize the SHA values 
+/*
+ * Initialize the SHA values
  */
 void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
 {
 
-    /* 
+    /*
      * Set the h-vars to their initial values.
      */
     ctx->iv[0] = 0x67452301u;
@@ -1338,8 +1425,8 @@ void Ns_CtxSHAInit(Ns_CtxSHA1 * ctx)
     ctx->iv[3] = 0x10325476u;
     ctx->iv[4] = 0xC3D2E1F0u;
 
-    /* 
-     * Initialise bit count
+    /*
+     * Initialize bit count
      */
 #if defined(HAVE_64BIT)
     ctx->bytes = 0u;
@@ -1589,8 +1676,8 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
             len -= SHA_BLOCKBYTES - i;
         }
 
-        /* 
-         * Process data in 64-byte chunks 
+        /*
+         * Process data in 64-byte chunks
          */
         while (len >= SHA_BLOCKBYTES) {
             SHAByteSwap(ctx->key, buf, SHA_BLOCKWORDS);
@@ -1599,8 +1686,8 @@ void Ns_CtxSHAUpdate(Ns_CtxSHA1 *ctx, const unsigned char *buf, size_t len)
             len -= SHA_BLOCKBYTES;
         }
 
-        /* 
-         * Handle any remaining bytes of data. 
+        /*
+         * Handle any remaining bytes of data.
          */
         if (len != 0u) {
             memcpy(ctx->key, buf, len);
@@ -1632,8 +1719,8 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
     i = (SHA_BLOCKBYTES - 1u) - i;
 
     if (i < 8u) {
-        /* 
-         * Padding forces an extra block 
+        /*
+         * Padding forces an extra block
          */
         memset(p, 0, i);
         SHAByteSwap(ctx->key, (const uint8_t *) ctx->key, 16u);
@@ -1911,7 +1998,7 @@ void Ns_CtxMD5Update(Ns_CtxMD5 *ctx, const unsigned char *buf, size_t len)
     NS_NONNULL_ASSERT(ctx != NULL);
     NS_NONNULL_ASSERT(buf != NULL);
 
-    /* 
+    /*
      * Update bit count.
      */
     t = ctx->bits[0];

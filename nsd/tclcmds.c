@@ -275,6 +275,7 @@ static const Cmd servCmds[] = {
     {"ns_setuser",               NULL, NsTclSetUserObjCmd},
     {"ns_shutdown",              NULL, NsTclShutdownObjCmd},
     {"ns_startcontent",          NULL, NsTclStartContentObjCmd},
+    {"ns_trim",                  NULL, NsTclTrimObjCmd},
     {"ns_unregister_op",         NULL, NsTclUnRegisterOpObjCmd},
     {"ns_unregister_url2file",   NULL, NsTclUnRegisterUrl2FileObjCmd},
     {"ns_upload_stats",          NULL, NsTclProgressObjCmd},
