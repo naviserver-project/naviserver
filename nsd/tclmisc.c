@@ -1157,7 +1157,7 @@ Base64EncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         const unsigned char *bytes;
 
         Tcl_DStringInit(&ds);
-        bytes = (const unsigned char*)Ns_GetBinaryString(charsObj, isBinary == 1, &nbytes, &ds);
+        bytes = Ns_GetBinaryString(charsObj, isBinary == 1, &nbytes, &ds);
         //hexPrint("source ", bytes,  (size_t)nbytes);
 
         size = (size_t)nbytes;
@@ -1844,7 +1844,7 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         Tcl_DString    ds;
 
         Tcl_DStringInit(&ds);
-        bytes = (const unsigned char *)Ns_GetBinaryString(charsObj, isBinary == 1, &nbytes, &ds);
+        bytes = Ns_GetBinaryString(charsObj, isBinary == 1, &nbytes, &ds);
         //hexPrint("source ", bytes, (size_t)nbytes);
 
         Ns_CtxSHAInit(&ctx);
@@ -2278,12 +2278,12 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
         result = TCL_ERROR;
 
     } else {
-        Ns_CtxMD5      ctx;
-        unsigned char  digest[16];
-        char           digestChars[33];
-        int            length;
-        Tcl_DString    ds;
-        const char    *str;
+        Ns_CtxMD5            ctx;
+        unsigned char        digest[16];
+        char                 digestChars[33];
+        int                  length;
+        Tcl_DString          ds;
+        const unsigned char *str;
 
         Tcl_DStringInit(&ds);
         str = Ns_GetBinaryString(charsObj, isBinary == 1, &length, &ds);

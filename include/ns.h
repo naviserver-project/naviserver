@@ -3023,7 +3023,7 @@ NS_EXTERN bool
 Ns_StrIsHost(const char *chars)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN const char *
+NS_EXTERN const unsigned char *
 Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 

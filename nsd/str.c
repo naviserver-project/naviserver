@@ -587,10 +587,10 @@ Ns_StrIsHost(const char *chars)
  *
  *----------------------------------------------------------------------
  */
-const char *
+const unsigned char *
 Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *dsPtr)
 {
-    const char *result;
+    const unsigned char *result;
 
     NS_NONNULL_ASSERT(obj != NULL);
     NS_NONNULL_ASSERT(lengthPtr != NULL);
@@ -653,7 +653,7 @@ Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *
 
     if (forceBinary || NsTclObjIsByteArray(obj)) {
         //fprintf(stderr, "NsTclObjIsByteArray\n");
-        result = (char *)Tcl_GetByteArrayFromObj(obj, lengthPtr);
+        result = (unsigned char *)Tcl_GetByteArrayFromObj(obj, lengthPtr);
     } else {
         int stringLength;
         const char *charInput;
@@ -666,7 +666,7 @@ Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *
         //}
 
         Tcl_UtfToExternalDString(NS_utf8Encoding, charInput, stringLength, dsPtr);
-        result = dsPtr->string;
+        result = (unsigned char *)dsPtr->string;
         *lengthPtr = dsPtr->length;
     }
 
