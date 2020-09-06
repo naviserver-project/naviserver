@@ -778,10 +778,10 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
             handlePtr->cExceptionCode[0] = '\0';
             value = Tcl_GetString(objv[3]);
 
-            if (cmd != GETROW) {
+            /*if (cmd != GETROW) {
                 fprintf(stderr, "CMD %s: <%s> (%s)\n", Tcl_GetString(objv[1]), value,
                         objv[3]->typePtr ? objv[3]->typePtr->name : "none");
-            }
+                        }*/
 
             switch (cmd) {
             case DML:
