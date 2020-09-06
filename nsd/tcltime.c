@@ -848,11 +848,9 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
                             p ++;
                         }
                         if (isNegative) {
-                            /*
-                            fprintf(stderr, "GetTimeFromString neg value\n");
-                            fprintf(stderr, "GetTimeFromString multiplier %.10f sec %ld dblFraction %.12f\n",
-                                  multiplier, tPtr->sec, dblFraction);
-                            */
+                            /* fprintf(stderr, "GetTimeFromString neg value\n"
+                               "GetTimeFromString multiplier %.10f sec %ld dblFraction %.12f\n",
+                               multiplier, tPtr->sec, dblFraction);*/
                             DblValueToNstime(tPtr, -1 *
                                              multiplier * ((double)llabs(tPtr->sec) + dblFraction));
                         } else {
