@@ -343,8 +343,8 @@ ParseExtendedHeaders(Log *logPtr, const char *str)
     NS_NONNULL_ASSERT(logPtr != NULL);
 
     if (str != NULL) {
-        int    argc;
-        char **argv;
+        int          argc;
+        const char **argv;
 
         if (Tcl_SplitList(NULL, str, &argc, &argv) != TCL_OK) {
             Ns_Log(Error, "nslog: invalid 'extendedHeaders' parameter: '%s'", str);
@@ -365,7 +365,7 @@ ParseExtendedHeaders(Log *logPtr, const char *str)
             logPtr->extendedHeaders = ns_strdup(str);
 
             for (i = 0; i < argc; i++) {
-                char *fieldName = argv[i];
+                const char *fieldName = argv[i];
 
                 if (strchr(fieldName, ':') != NULL) {
                     tagged ++;
@@ -384,8 +384,8 @@ ParseExtendedHeaders(Log *logPtr, const char *str)
                 Tcl_DStringInit(&responseHeaderFields);
 
                 for (i = 0; i < argc; i++) {
-                    char *fieldName = argv[i];
-                    char *suffix = strchr(fieldName, ':');
+                    const char *fieldName = argv[i];
+                    char       *suffix = strchr(fieldName, ':');
 
                     if (suffix != NULL) {
                         *suffix = '\0';
