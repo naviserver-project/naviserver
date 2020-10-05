@@ -615,9 +615,17 @@ ArgProc(Tcl_DString *dsPtr, const void *arg)
     const Callback *cbPtr = arg;
 
     Tcl_DStringStartSublist(dsPtr);
-    Ns_DStringNAppend(dsPtr, cbPtr->connChanPtr->channelName, -1);
-    Ns_DStringNAppend(dsPtr, " ", 1);
-    Ns_DStringNAppend(dsPtr, cbPtr->script, (int)cbPtr->scriptCmdNameLength);
+    if (cbPtr->connChanPtr != NULL) {
+        /*
+         * It might be the case that the connChanPtr was canceled, but
+         * the updatecmd not yet executed.
+         */
+        Ns_DStringNAppend(dsPtr, cbPtr->connChanPtr->channelName, -1);
+        Ns_DStringNAppend(dsPtr, " ", 1);
+        Ns_DStringNAppend(dsPtr, cbPtr->script, (int)cbPtr->scriptCmdNameLength);
+    } else {
+        Ns_Log(Notice, "connchan ArgProc cbPtr %p has no connChanPtr", (void*)cbPtr);
+    }
     Tcl_DStringEndSublist(dsPtr);
 }
 
