@@ -249,7 +249,7 @@ static NsConnChan *
 ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
                const Ns_Time *startTime, const char *peer, bool binary,
                const char *clientData) {
-    static uintptr_t     connchanCount = 0;
+    static uint64_t      connchanCount = 0u;
     NsConnChan          *connChanPtr;
     Tcl_HashEntry       *hPtr;
     char                 name[5 + TCL_INTEGER_SPACE];
@@ -260,25 +260,15 @@ ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
     NS_NONNULL_ASSERT(startTime != NULL);
     NS_NONNULL_ASSERT(peer != NULL);
 
-    /*
-     * Lock the channel table and create a new entry for the
-     * connection.
-     */
-
-    Ns_RWLockWrLock(&servPtr->connchans.lock);
-    snprintf(name, sizeof(name), "conn%" PRIuPTR, connchanCount ++);
-    hPtr = Tcl_CreateHashEntry(&servPtr->connchans.table, name, &isNew);
-    Ns_RWLockUnlock(&servPtr->connchans.lock);
-
-    if (likely(isNew == 0)) {
-        Ns_Log(Warning, "duplicate connchan name '%s'", name);
-    }
     Ns_SockSetKeepalive(sockPtr->sock, 1);
 
-    connChanPtr = ns_malloc(sizeof(NsConnChan));
-    Tcl_SetHashValue(hPtr, connChanPtr);
+    /*
+     * Create a new NsConnChan structure and fill in the elements,
+     * which can be set without a lock. The intention is to keep the
+     * lock-times low.
+     */
 
-    connChanPtr->channelName = ns_strdup(name);
+    connChanPtr = ns_malloc(sizeof(NsConnChan));
     connChanPtr->cbPtr = NULL;
     connChanPtr->startTime = *startTime;
     connChanPtr->rBytes = 0;
@@ -292,6 +282,25 @@ ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
     strncpy(connChanPtr->peer, peer, NS_IPADDR_SIZE - 1);
     connChanPtr->sockPtr = sockPtr;
     connChanPtr->binary = binary;
+    memcpy(name, "conn", 4);
+
+    /*
+     * Lock the channel table and create a new entry in the hash table
+     * for the connection. The counter-based name creation requires a
+     * lock to guarantee unique names.
+     */
+    Ns_RWLockWrLock(&servPtr->connchans.lock);
+    ns_uint64toa(&name[4], connchanCount ++);
+    hPtr = Tcl_CreateHashEntry(&servPtr->connchans.table, name, &isNew);
+
+    if (unlikely(isNew == 0)) {
+        Ns_Log(Warning, "duplicate connchan name '%s'", name);
+    }
+
+    Tcl_SetHashValue(hPtr, connChanPtr);
+
+    connChanPtr->channelName = ns_strdup(name);
+    Ns_RWLockUnlock(&servPtr->connchans.lock);
 
     return connChanPtr;
 }
@@ -336,7 +345,6 @@ ConnChanFree(NsConnChan *connChanPtr) {
                connChanPtr->channelName);
     }
     Ns_RWLockUnlock(&servPtr->connchans.lock);
-
 
     if (hPtr != NULL) {
         /*
