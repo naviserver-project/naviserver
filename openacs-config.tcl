@@ -294,7 +294,9 @@ if {[info exists httpport]} {
     #
     ns_section ns/module/nssock/servers {
         ns_param $server $hostname
-        ns_param $server $address
+        foreach address $addresses {
+            ns_param $server $address
+        }
     }
 }
 
