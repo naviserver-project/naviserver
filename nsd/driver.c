@@ -1303,7 +1303,7 @@ NsStopDrivers(void)
     for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
         Tcl_HashEntry  *hPtr;
         Tcl_HashSearch  search;
-        Sock           *sockPtr, *nextPtr;;
+        Sock           *sockPtr, *nextPtr;
 
         if ((drvPtr->flags & DRIVER_STARTED) == 0u) {
             continue;

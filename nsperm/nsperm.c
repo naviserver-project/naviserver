@@ -1375,7 +1375,9 @@ static int DelPermObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         return TCL_ERROR;
     }
-    if (noinherit != 0) {flags |= NS_OP_NOINHERIT;}
+    if (noinherit != 0) {
+        flags |= NS_OP_NOINHERIT;
+    }
 
     /*
      * Construct the base url.
