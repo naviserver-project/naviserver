@@ -262,7 +262,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
     EventQueue       *queuePtr;
     Event            *evPtr, *nextPtr;
     Ns_Time           now;
-    const Ns_Time    *timeoutPtr;
+    const Ns_Time    *timeoutPtr = NULL;
     int               i, n;
     NS_POLL_NFDS_TYPE nfds;
     char              c;
@@ -293,7 +293,6 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
     queuePtr->pfds[0].events = (short)POLLIN;
     queuePtr->pfds[0].revents = 0;
     nfds = 1;
-    timeoutPtr = NULL;
 
     evPtr = queuePtr->firstWaitPtr;
 
