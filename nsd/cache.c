@@ -216,7 +216,7 @@ Ns_CacheFindEntryT(Ns_Cache *cache, const char *key, const Ns_CacheTransactionSt
 {
     Cache               *cachePtr = (Cache *) cache;
     const Tcl_HashEntry *hPtr;
-    Ns_Entry            *result;
+    Ns_Entry            *result = NULL;
 
     NS_NONNULL_ASSERT(cache != NULL);
     NS_NONNULL_ASSERT(key != NULL);
@@ -227,7 +227,6 @@ Ns_CacheFindEntryT(Ns_Cache *cache, const char *key, const Ns_CacheTransactionSt
          * Entry does not exist at all.
          */
         ++cachePtr->stats.nmiss;
-        result = NULL;
 
     } else {
         Entry *ePtr = Tcl_GetHashValue(hPtr);
@@ -239,7 +238,6 @@ Ns_CacheFindEntryT(Ns_Cache *cache, const char *key, const Ns_CacheTransactionSt
              * Entry is being updated by some other thread.
              */
             ++cachePtr->stats.nmiss;
-            result = NULL;
 
         } else if (unlikely(Expired(ePtr, NULL))) {
             /*
@@ -247,7 +245,6 @@ Ns_CacheFindEntryT(Ns_Cache *cache, const char *key, const Ns_CacheTransactionSt
              */
             Ns_CacheDeleteEntry((Ns_Entry *) ePtr);
             ++cachePtr->stats.nmiss;
-            result = NULL;
 
         } else {
             void *value;
@@ -269,8 +266,6 @@ Ns_CacheFindEntryT(Ns_Cache *cache, const char *key, const Ns_CacheTransactionSt
                 ePtr->count ++;
                 Push(ePtr);
                 result = (Ns_Entry *) ePtr;
-            } else {
-                result = NULL;
             }
         }
     }

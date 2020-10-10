@@ -395,7 +395,7 @@ AcceptProc(NS_SOCKET sock, void *arg, unsigned int why)
 static void
 EvalThread(void *arg)
 {
-    Tcl_Interp *interp;
+    Tcl_Interp *interp = NULL;
     Tcl_DString ds, unameDS;
     char        ipString[NS_IPADDR_SIZE];
     int         ncmd, stop;
@@ -407,7 +407,6 @@ EvalThread(void *arg)
      * Initialize the thread and login the user.
      */
 
-    interp = NULL;
     Tcl_DStringInit(&ds);
     Tcl_DStringInit(&unameDS);
     Ns_DStringPrintf(&ds, "-nscp:%d-", sessPtr->id);

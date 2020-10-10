@@ -596,12 +596,11 @@ CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
     int           fd;
     Ns_ReturnCode status;
     size_t        len;
-    const char   *content, *err;
+    const char   *content, *err = NULL;
 
     NS_NONNULL_ASSERT(cgiPtr != NULL);
     NS_NONNULL_ASSERT(conn != NULL);
 
-    err = NULL;
     len = conn->contentLength;
     content = Ns_ConnContent(conn);
     fd = Ns_GetTemp();

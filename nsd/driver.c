@@ -2115,7 +2115,7 @@ DriverThread(void *arg)
     int            pollTimeout, accepted, nrBindaddrs = 0;
     bool           stopping;
     unsigned int   flags;
-    Sock          *sockPtr, *closePtr, *nextPtr, *waitPtr, *readPtr;
+    Sock          *sockPtr, *nextPtr, *closePtr = NULL, *waitPtr = NULL, *readPtr = NULL;
     PollData       pdata;
 
     Ns_ThreadSetName("-driver:%s-", drvPtr->threadName);
@@ -2181,7 +2181,6 @@ DriverThread(void *arg)
 
     PollCreate(&pdata);
     Ns_GetTime(&now);
-    closePtr = waitPtr = readPtr = NULL;
     stopping = ((flags & DRIVER_SHUTDOWN) != 0u);
 
     if (!stopping) {
@@ -4623,8 +4622,8 @@ SpoolerThread(void *arg)
     SpoolerQueue  *queuePtr = (SpoolerQueue*)arg;
     char           charBuffer[1];
     int            pollTimeout;
-    bool           stopping;
-    Sock          *sockPtr, *nextPtr, *waitPtr, *readPtr;
+    bool           stopping = NS_FALSE;
+    Sock          *sockPtr, *nextPtr, *waitPtr = NULL, *readPtr = NULL;
     Ns_Time        now, diff;
     const Driver  *drvPtr;
     PollData       pdata;
@@ -4641,8 +4640,6 @@ SpoolerThread(void *arg)
 
     PollCreate(&pdata);
     Ns_GetTime(&now);
-    waitPtr = readPtr = NULL;
-    stopping = NS_FALSE;
 
     while (!stopping) {
 
@@ -5617,11 +5614,11 @@ WriterThread(void *arg)
 {
     SpoolerQueue   *queuePtr = (SpoolerQueue*)arg;
     int             err, pollTimeout;
-    bool            stopping;
+    bool            stopping = NS_FALSE;
     Ns_Time         now;
     Sock           *sockPtr;
     const Driver   *drvPtr;
-    WriterSock     *curPtr, *nextPtr, *writePtr;
+    WriterSock     *curPtr, *nextPtr, *writePtr = NULL;
     PollData        pdata;
     Tcl_HashTable   pools;     /* used for accumulating bandwidth per pool */
 
@@ -5638,8 +5635,6 @@ WriterThread(void *arg)
     Ns_Log(Notice, "writer%d: accepting connections", queuePtr->id);
 
     PollCreate(&pdata);
-    writePtr = NULL;
-    stopping = NS_FALSE;
 
     while (!stopping) {
         char charBuffer[1];
@@ -7590,8 +7585,8 @@ AsyncWriterThread(void *arg)
     char            charBuffer[1];
     int             pollTimeout;
     Ns_ReturnCode   status;
-    bool            stopping;
-    AsyncWriteData *curPtr, *nextPtr, *writePtr;
+    bool            stopping = NS_FALSE;
+    AsyncWriteData *curPtr, *nextPtr, *writePtr = NULL;
     PollData        pdata;
 
     Ns_ThreadSetName("-asynclogwriter%d-", queuePtr->id);
@@ -7602,8 +7597,6 @@ AsyncWriterThread(void *arg)
      */
 
     PollCreate(&pdata);
-    writePtr = NULL;
-    stopping = NS_FALSE;
 
     /*
      * Loop forever until signaled to shutdown and all

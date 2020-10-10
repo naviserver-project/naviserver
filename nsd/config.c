@@ -1125,7 +1125,7 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defstr)
 static Ns_Set *
 GetSection(const char *section, bool create)
 {
-    Ns_Set        *set;
+    Ns_Set        *set = NULL;
     Tcl_HashEntry *hPtr;
     Tcl_DString    ds;
     int            isNew;
@@ -1163,7 +1163,6 @@ GetSection(const char *section, bool create)
      * Return config set, creating if necessary.
      */
 
-    set = NULL;
     if (likely(!create)) {
         hPtr = Tcl_FindHashEntry(&nsconf.sections, section);
     } else {
