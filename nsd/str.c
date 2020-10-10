@@ -210,9 +210,10 @@ Ns_StrToUpper(char *chars)
  *      parsed or overflows.
  *
  * Side effects:
- *      The string may begin with an arbitrary amount of white space (as determined by
- *      isspace(3)) followed by a  single  optional `+' or `-' sign.  If string starts with `0x' prefix,
- *      the number will be read in base 16, otherwise the number will be treated as decimal
+ *      The string may begin with an arbitrary amount of white space (as
+ *      determined by isspace(3)) followed by a single optional `+' or `-'
+ *      sign.  If string starts with `0x' prefix, the number will be read in
+ *      base 16, otherwise the number will be treated as decimal
  *
  *----------------------------------------------------------------------
  */
