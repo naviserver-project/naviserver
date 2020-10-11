@@ -63,7 +63,7 @@ static Tcl_FreeHashEntryProc   FreeFuncptrEntry;
  * Static variables defined in this file.
  */
 
-static Tcl_HashKeyType funPtrHashKeyType = {
+static const Tcl_HashKeyType funPtrHashKeyType = {
   1,                  /* version         */
   0,                  /* flags           */
   FuncptrKey,         /* hashKeyProc     */

@@ -73,7 +73,7 @@ static void AppendRange(Ns_DString *dsPtr, const Ns_ObjvValueRange *r)
  */
 static const Tcl_ObjType *intTypePtr;
 
-static Tcl_ObjType specType = {
+static const Tcl_ObjType specType = {
     "ns:spec",
     FreeSpecObj,
     DupSpec,
@@ -81,7 +81,7 @@ static Tcl_ObjType specType = {
     SetSpecFromAny
 };
 
-static Tcl_ObjType memUnitType = {
+static const Tcl_ObjType memUnitType = {
     "ns:mem_unit",
     NULL,
     NULL,

@@ -78,7 +78,7 @@ static double ParseTimeUnit(const char *str)
  * Local variables defined in this file.
  */
 
-static Tcl_ObjType timeType = {
+static const Tcl_ObjType timeType = {
     "ns:time",
     NULL,
     NULL,

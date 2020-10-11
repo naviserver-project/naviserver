@@ -43,8 +43,8 @@
 static Ns_ObjvValueRange dayRange    = {0, 6};
 static Ns_ObjvValueRange hourRange   = {0, 23};
 static Ns_ObjvValueRange minuteRange = {0, 59};
-static Ns_ObjvTimeRange posTimeRange = {{0, 1}, {LONG_MAX, 0}};
-static Ns_ObjvTimeRange nonnegTimeRange = {{0, 0}, {LONG_MAX, 0}};
+static const Ns_ObjvTimeRange posTimeRange = {{0, 1}, {LONG_MAX, 0}};
+static const Ns_ObjvTimeRange nonnegTimeRange = {{0, 0}, {LONG_MAX, 0}};
 
 /*
  * Local functions defined in this file.
@@ -82,7 +82,7 @@ NsTclAfterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
     Ns_Time          *interval;
     int               remain = 0, result = TCL_OK;
     Ns_ObjvSpec       args[] = {
-        {"interval", Ns_ObjvTime, &interval,  &nonnegTimeRange},
+        {"interval", Ns_ObjvTime, &interval,  (void*)&nonnegTimeRange},
         {"script",   Ns_ObjvObj,  &scriptObj, NULL},
         {"?args",    Ns_ObjvArgs, &remain,    NULL},
         {NULL, NULL, NULL, NULL}
@@ -339,7 +339,7 @@ NsTclSchedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"interval", Ns_ObjvTime,   &intervalPtr, &nonnegTimeRange},
+        {"interval", Ns_ObjvTime,   &intervalPtr, (void*)&nonnegTimeRange},
         {"script",   Ns_ObjvObj,    &scriptObj,   NULL},
         {"?args",    Ns_ObjvArgs,   &remain,      NULL},
         {NULL, NULL, NULL, NULL}

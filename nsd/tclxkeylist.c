@@ -480,7 +480,7 @@ static Tcl_SetFromAnyProc      SetKeyedListFromAny;
 /*
  * Type definition.
  */
-static Tcl_ObjType keyedListType = {
+static const Tcl_ObjType keyedListType = {
     "keyedList",              /* name */
     FreeKeyedListInternalRep, /* freeIntRepProc */
     DupKeyedListInternalRep,  /* dupIntRepProc */

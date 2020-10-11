@@ -47,7 +47,7 @@ static Tcl_SetFromAnyProc   SetAddrFromAny;
  * Local variables defined in this file.
  */
 
-static Tcl_ObjType addrType = {
+static const Tcl_ObjType addrType = {
     "ns:addr",
     NULL,
     NULL,
