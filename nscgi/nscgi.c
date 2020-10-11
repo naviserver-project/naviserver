@@ -73,8 +73,8 @@ typedef struct Cgi {
     char           *path;
     const char     *pathinfo;
     char           *dir;
-    char           *exec;
-    char           *interp;
+    const char     *exec;
+    const char     *interp;
     Ns_Set         *interpEnv;
     int             ifd;
     int             ofd;
@@ -1265,7 +1265,7 @@ CgiRegister(Mod *modPtr, const char *map)
 {
     char           *method;
     char           *url;
-    char           *path;
+    const char     *path;
     Ns_DString      ds1, ds2;
     Map            *mapPtr;
 

@@ -44,7 +44,7 @@
 static int MakeNum(const char *s)
     NS_GNUC_NONNULL(1);
 
-static int MakeMonth(char *s)
+static int MakeMonth(const char *s)
     NS_GNUC_NONNULL(1);
 
 
@@ -136,11 +136,11 @@ Ns_HttpTime(Ns_DString *dsPtr, const time_t *when)
  */
 
 time_t
-Ns_ParseHttpTime(char *chars)
+Ns_ParseHttpTime(const char *chars)
 {
-    char      *s;
-    struct tm  timeInfo;
-    time_t     t = 0;
+    const char *s;
+    struct tm   timeInfo;
+    time_t      t = 0;
 
     NS_NONNULL_ASSERT(chars != NULL);
 
@@ -413,7 +413,7 @@ MakeNum(const char *s)
  */
 
 static int
-MakeMonth(char *s)
+MakeMonth(const char *s)
 {
     int i, result = 0;
 
@@ -424,12 +424,8 @@ MakeMonth(char *s)
      * "Jan"
      */
 
-    *s = CHARCONV(upper, *s);
-    *(s + 1) = CHARCONV(lower, *(s + 1));
-    *(s + 2) = CHARCONV(lower, *(s + 2));
-
     for (i = 0; i < 12; i++) {
-        if (strncmp(month_names[i], s, 3u) == 0) {
+        if (strncasecmp(month_names[i], s, 3u) == 0) {
             result = i;
             break;
         }

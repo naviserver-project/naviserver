@@ -578,7 +578,7 @@ Ns_ConnPeer(const Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_ConnSetPeer(const Ns_Conn *conn, const struct sockaddr *saPtr)
 {
     const Conn *connPtr;
@@ -1296,7 +1296,7 @@ Ns_ConnModifiedSince(const Ns_Conn *conn, time_t since)
     assert(poolPtr->servPtr != NULL);
 
     if (poolPtr->servPtr->opts.modsince) {
-        char *hdr = Ns_SetIGet(conn->headers, "If-Modified-Since");
+        const char *hdr = Ns_SetIGet(conn->headers, "If-Modified-Since");
 
         if ((hdr != NULL) && (Ns_ParseHttpTime(hdr) >= since)) {
             result = NS_FALSE;
@@ -1325,8 +1325,8 @@ Ns_ConnModifiedSince(const Ns_Conn *conn, time_t since)
 bool
 Ns_ConnUnmodifiedSince(const Ns_Conn *conn, time_t since)
 {
-    char *hdr;
-    bool  result = NS_TRUE;
+    const char *hdr;
+    bool        result = NS_TRUE;
 
     hdr = Ns_SetIGet(conn->headers, "If-Unmodified-Since");
     if ((hdr != NULL) && (Ns_ParseHttpTime(hdr) < since)) {

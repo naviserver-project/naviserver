@@ -1532,7 +1532,7 @@ HttpGetResult(
             binary = NS_TRUE;
         }
         if (binary == NS_FALSE) {
-            char  *cType = NULL;
+            const char *cType = NULL;
 
             cType = Ns_SetIGet(httpPtr->replyHeaders, contentTypeHeader);
             if (cType != NULL) {
@@ -3913,8 +3913,8 @@ ParseBodyProc(
     Ns_Log(Ns_LogTaskDebug, "--- ParseBodyProc");
 
     if (chunkPtr->length == 0) {
-        Ns_Set *headersPtr = NULL;
-        char *trailer = NULL;
+        Ns_Set     *headersPtr;
+        const char *trailer;
 
         /*
          * We are on the last chunk. Check if we will get some

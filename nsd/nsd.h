@@ -1606,7 +1606,7 @@ NS_EXTERN void NsSendSignal(int sig);
 
 NS_EXTERN Tcl_Obj * NsDriverStats(Tcl_Interp *interp) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsDriverMapVirtualServers(void);
-NS_EXTERN NS_TLS_SSL_CTX *NsDriverLookupHostCtx(char *host, const Ns_Driver *drvPtr)
+NS_EXTERN NS_TLS_SSL_CTX *NsDriverLookupHostCtx(Tcl_DString *hostDs, const Ns_Driver *drvPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
@@ -1625,7 +1625,7 @@ NS_EXTERN Ns_ReturnCode NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, const 
 /*
  * pathname.c
  */
-NS_EXTERN char *NsPageRoot(Ns_DString *dsPtr, const NsServer *servPtr, const char *host)
+NS_EXTERN const char *NsPageRoot(Ns_DString *dsPtr, const NsServer *servPtr, const char *host)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
@@ -1772,7 +1772,7 @@ NS_EXTERN Ns_ReturnCode NsMemMap(const char *path, size_t size, int mode, FileMa
 NS_EXTERN void NsMemUmap(const FileMap *mapPtr)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN void NsParseAuth(Conn *connPtr, char *auth)
+NS_EXTERN void NsParseAuth(Conn *connPtr, const char *auth)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN bool NsTclObjIsByteArray(const Tcl_Obj *objPtr)

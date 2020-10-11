@@ -298,7 +298,7 @@ Ns_InfoBootTime(void)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_InfoHostname(void)
 {
     return nsconf.hostname;
@@ -322,7 +322,7 @@ Ns_InfoHostname(void)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_InfoAddress(void)
 {
     return nsconf.address;

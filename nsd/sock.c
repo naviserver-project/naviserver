@@ -1407,7 +1407,7 @@ Ns_SetSockErrno(ns_sockerrno_t err)
 #endif
 }
 
-char *
+const char *
 Ns_SockStrError(ns_sockerrno_t err)
 {
 #ifdef _WIN32

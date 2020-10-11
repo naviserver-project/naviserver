@@ -575,8 +575,7 @@ Ns_ConnDeleteSecureCookie(const Ns_Conn *conn, const char *name,
  *----------------------------------------------------------------------
  */
 
-
-char *
+const char *
 Ns_ConnGetCookie(Ns_DString *dest, const Ns_Conn *conn, const char *name)
 {
     int idx;

@@ -258,9 +258,10 @@ Ns_SetUserAuthorizeProc(Ns_UserAuthorizeProc *procPtr)
  */
 
 void
-NsParseAuth(Conn *connPtr, char *auth)
+NsParseAuth(Conn *connPtr, const char *auth)
 {
     register char *p;
+    Tcl_DString    authDs;
 
     NS_NONNULL_ASSERT(connPtr != NULL);
     NS_NONNULL_ASSERT(auth != NULL);
@@ -269,7 +270,10 @@ NsParseAuth(Conn *connPtr, char *auth)
         connPtr->auth = Ns_SetCreate(NULL);
     }
 
-    p = auth;
+    Tcl_DStringInit(&authDs);
+    Tcl_DStringAppend(&authDs, auth, -1);
+
+    p = authDs.string;
     while (*p != '\0' && CHARTYPE(space, *p) == 0) {
         ++p;
     }
@@ -365,6 +369,7 @@ NsParseAuth(Conn *connPtr, char *auth)
             *p = save;
         }
     }
+    Tcl_DStringFree(&authDs);
 }
 
 /*

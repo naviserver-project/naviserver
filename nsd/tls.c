@@ -260,7 +260,7 @@ SSL_serverNameCB(SSL *ssl, int *al, void *UNUSED(arg))
             Tcl_DStringInit(&ds);
             Ns_DStringPrintf(&ds, "%s:%hu", serverName, port);
 
-            ctx = NsDriverLookupHostCtx(ds.string, sockPtr->driver);
+            ctx = NsDriverLookupHostCtx(&ds, sockPtr->driver);
 
             Ns_Log(Debug, "SSL_serverNameCB lookup of <%s> location %s port %hu -> %p",
                    serverName, ds.string, port, (void*)ctx);

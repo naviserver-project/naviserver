@@ -1132,7 +1132,7 @@ NS_EXTERN const char *   Ns_ConnServer(const Ns_Conn *conn) NS_GNUC_NONNULL(1) N
 NS_EXTERN void           Ns_ConnSetCompression(Ns_Conn *conn, int level) NS_GNUC_NONNULL(1);
 NS_EXTERN void           Ns_ConnSetContentSent(Ns_Conn *conn, size_t length) NS_GNUC_NONNULL(1);
 NS_EXTERN void           Ns_ConnSetEncoding(Ns_Conn *conn, Tcl_Encoding encoding) NS_GNUC_NONNULL(1);
-NS_EXTERN char *         Ns_ConnSetPeer(const Ns_Conn *conn, const struct sockaddr *saPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN const char *   Ns_ConnSetPeer(const Ns_Conn *conn, const struct sockaddr *saPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN void           Ns_ConnSetResponseStatus(Ns_Conn *conn, int newStatus) NS_GNUC_NONNULL(1);
 NS_EXTERN void           Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding) NS_GNUC_NONNULL(1);
 NS_EXTERN NS_SOCKET      Ns_ConnSock(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
@@ -1280,7 +1280,7 @@ NS_EXTERN void
 Ns_ConnDeleteSecureCookie(const Ns_Conn *conn, const char *name, const char *domain, const char *path)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_ConnGetCookie(Ns_DString *dest, const Ns_Conn *conn, const char *name)
         NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
@@ -1958,7 +1958,7 @@ Ns_StopServer(char *server);
 /*
  * info.c:
  */
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_InfoAddress(void) NS_GNUC_CONST;
 
 NS_EXTERN time_t
@@ -1973,7 +1973,7 @@ Ns_InfoConfigFile(void) NS_GNUC_PURE;
 NS_EXTERN const char *
 Ns_InfoHomePath(void) NS_GNUC_PURE;
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_InfoHostname(void) NS_GNUC_PURE;
 
 NS_EXTERN bool
@@ -2136,31 +2136,31 @@ NS_EXTERN bool
 Ns_PathIsAbsolute(const char *path) NS_GNUC_PURE
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_NormalizePath(Ns_DString *dsPtr, const char *path)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_RETURNS_NONNULL;
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_NormalizeUrl(Ns_DString *dsPtr, const char *path)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_RETURNS_NONNULL;
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_MakePath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL
     NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_HashPath(Ns_DString *dsPtr, const char *path, int levels)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_LibPath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL
     NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_BinPath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL
     NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_HomePath(Ns_DString *dsPtr, ...) NS_GNUC_SENTINEL
     NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 
@@ -2168,15 +2168,15 @@ NS_EXTERN bool
 Ns_HomePathExists(const char *path, ...) NS_GNUC_SENTINEL
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_ModulePath(Ns_DString *dsPtr, const char *server, const char *module, ...) NS_GNUC_SENTINEL
     NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_ServerPath(Ns_DString *dsPtr, const char *server, ...) NS_GNUC_SENTINEL
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_PagePath(Ns_DString *dsPtr, const char *server, ...) NS_GNUC_SENTINEL
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -2547,7 +2547,7 @@ Ns_SetFindCmp(const Ns_Set *set, const char *key,
               int (*cmp) (const char *s1, const char *s2))
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_SetGetCmp(const Ns_Set *set, const char *key,
              int (*cmp) (const char *s1, const char *s2))
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -2568,11 +2568,11 @@ NS_EXTERN int
 Ns_SetIFind(const Ns_Set *set, const char *key)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_SetGet(const Ns_Set *set, const char *key)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_PURE;
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_SetIGet(const Ns_Set *set, const char *key)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -2867,9 +2867,6 @@ Ns_SockSetKeepalive(NS_SOCKET sock, int optval);
 NS_EXTERN Ns_ReturnCode
 Ns_SockCloseLater(NS_SOCKET sock);
 
-NS_EXTERN char *
-Ns_SockError(void);
-
 NS_EXTERN void
 Ns_ClearSockErrno(void);
 
@@ -2879,7 +2876,7 @@ Ns_GetSockErrno(void);
 NS_EXTERN void
 Ns_SetSockErrno(ns_sockerrno_t err);
 
-NS_EXTERN char *
+NS_EXTERN const char *
 Ns_SockStrError(ns_sockerrno_t err);
 
 #ifdef _WIN32
@@ -3262,7 +3259,7 @@ Ns_HttpTime(Ns_DString *dsPtr, const time_t *when)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN time_t
-Ns_ParseHttpTime(char *chars)
+Ns_ParseHttpTime(const char *chars)
     NS_GNUC_NONNULL(1);
 
 /*

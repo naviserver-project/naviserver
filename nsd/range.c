@@ -101,7 +101,8 @@ MatchRange(const Ns_Conn *conn, time_t mtime)
      */
 
     if (Ns_SetIGet(conn->headers, "Range") != NULL) {
-        char *hdr = Ns_SetIGet(conn->headers, "If-Range");
+        const char *hdr = Ns_SetIGet(conn->headers, "If-Range");
+
         if (hdr != NULL && mtime > Ns_ParseHttpTime(hdr)) {
             result = NS_FALSE;
         }
@@ -275,6 +276,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
 {
     char       *rangeString;
     const char *rangeHeaderString;
+    Tcl_DString rangeDs;
     off_t       start, end;
     int         rangeCount = 0;
     Range      *prevPtr = NULL;
@@ -286,11 +288,15 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
      * Check for valid "Range:" header
      */
 
-    rangeString = Ns_SetIGet(conn->headers, "Range");
-    if (rangeString == NULL) {
+    rangeHeaderString = Ns_SetIGet(conn->headers, "Range");
+    if (rangeHeaderString == NULL) {
         return 0;
     }
-    rangeHeaderString = rangeString;
+
+    Tcl_DStringInit(&rangeDs);
+    Tcl_DStringAppend(&rangeDs, rangeHeaderString, -1);
+
+    rangeString = rangeDs.string;
 
     /*
      * Parse the header value and fill-in ranges.
@@ -309,10 +315,10 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
          */
         Ns_Log(Warning, "range specification does not start with 'bytes=': '%s'; ignore.",
                rangeHeaderString);
-        return 0;
+        goto error;
     }
-    rangeString += 6; /* Skip "bytes=" */
 
+    rangeString += 6; /* Skip "bytes=" */
     while (*rangeString != '\0') {
         Range *thisPtr;
 
@@ -336,7 +342,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
                  * Invalid syntax.
                  */
                 InvalidSyntax(rangeString, rangeHeaderString);
-                return 0;
+                goto error;
             }
             rangeString++; /* Skip '-' */
 
@@ -361,7 +367,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
                  * Invalid syntax.
                  */
                 InvalidSyntax(rangeString, rangeHeaderString);
-                return 0;
+                goto error;
             }
 
             end = (off_t)strtoll(rangeString, &rangeString, 10);
@@ -382,7 +388,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
              * Not a digit and not a '-': invalid syntax.
              */
             InvalidSyntax(rangeString, rangeHeaderString);
-            return 0;
+            goto error;
         }
 
         /*
@@ -400,7 +406,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
              * Invalid syntax
              */
             InvalidSyntax(rangeString, rangeHeaderString);
-            return 0;
+            goto error;
         }
 
         /*
@@ -476,6 +482,10 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
     }
 
     return rangeCount;
+
+ error:
+    Tcl_DStringFree(&rangeDs);
+    return 0;
 }
 
 

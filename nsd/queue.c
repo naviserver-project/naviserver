@@ -2387,7 +2387,7 @@ ConnRun(Conn *connPtr)
     Ns_Conn        *conn;
     const NsServer *servPtr;
     Ns_ReturnCode   status;
-    char           *auth;
+    const char     *auth;
 
     NS_NONNULL_ASSERT(connPtr != NULL);
 

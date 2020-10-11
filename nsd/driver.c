@@ -249,7 +249,7 @@ static Ns_ReturnCode DriverInit(const char *server, const char *moduleName, cons
     NS_GNUC_NONNULL(7) NS_GNUC_NONNULL(9);
 static bool DriverModuleInitialized(const char *module)
     NS_GNUC_NONNULL(1);
-static const ServerMap *DriverLookupHost(char *host, Driver *drvPtr)
+static const ServerMap *DriverLookupHost(Tcl_DString *hostDs, Driver *drvPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void  SockSetServer(Sock *sockPtr)
@@ -4441,31 +4441,54 @@ SockParse(Sock *sockPtr)
  *----------------------------------------------------------------------
  */
 static const ServerMap *
-DriverLookupHost(char *host, Driver *drvPtr)
+DriverLookupHost(Tcl_DString *hostDs, Driver *drvPtr)
 {
     const ServerMap     *result = NULL;
     const Tcl_HashEntry *hPtr;
-    size_t               hostLength;
+    char                 lastChar;
 
-    NS_NONNULL_ASSERT(host != NULL);
+    NS_NONNULL_ASSERT(hostDs != NULL);
     NS_NONNULL_ASSERT(drvPtr != NULL);
 
-    hostLength = strlen(host);
     /*
      * Remove trailing dot of host header field, since RFC 2976 allows fully
      * qualified "absolute" DNS names in host fields (see e.g. §3.2.2).
+     *
      */
-    if (host[hostLength] == '.') {
-        host[hostLength] = '\0';
+    lastChar = hostDs->string[hostDs->length - 1];
+
+    if (lastChar == '.') {
+        hostDs->string[hostDs->length - 1] = '\0';
+    } else if (CHARTYPE(digit, lastChar) != 0) {
+        /*
+         * Note: in case, the host header contains a port, we are checking
+         * with the test above the last character of the port, but the
+         * trailing dot might be with the hostname before the port separator
+         * characgter (dot).
+         */
+        char *colon = strrchr(hostDs->string, INTCHAR(':'));
+
+        if (colon != NULL) {
+            /*
+             * We found colon, which might be the port separator or inside an
+             * IPv6 address. However, we look here for a dot before the colon,
+             * which would be illegal for IPv6 addresses.
+             */
+            lastChar = *(colon - 1);
+            if (lastChar == '.') {
+                memmove(colon-1, colon, 1 + hostDs->length - (colon - hostDs->string));
+            }
+        }
     }
+
     /*
      * Convert provided host header field to lowercase before hash lookup.
      */
-    Ns_StrToLower(host);
+    Ns_StrToLower(hostDs->string);
 
-    hPtr = Tcl_FindHashEntry(&drvPtr->hosts, host);
+    hPtr = Tcl_FindHashEntry(&drvPtr->hosts, hostDs->string);
     Ns_Log(DriverDebug, "SockSetServer driver '%s' host '%s' => %p",
-           drvPtr->moduleName, host, (void*)hPtr);
+           drvPtr->moduleName, hostDs->string, (void*)hPtr);
 
     if (hPtr != NULL) {
         /*
@@ -4481,7 +4504,7 @@ DriverLookupHost(char *host, Driver *drvPtr)
         Ns_Log(DriverDebug,
                "cannot locate host header content '%s' in virtual hosts "
                "table of driver '%s', fall back to default '%s'",
-               host, drvPtr->moduleName,
+               hostDs->string, drvPtr->moduleName,
                drvPtr->defMapPtr->location);
 
         if (Ns_LogSeverityEnabled(DriverDebug)) {
@@ -4500,7 +4523,7 @@ DriverLookupHost(char *host, Driver *drvPtr)
 }
 
 NS_TLS_SSL_CTX *
-NsDriverLookupHostCtx(char *host, const Ns_Driver *drvPtr)
+NsDriverLookupHostCtx(Tcl_DString *host, const Ns_Driver *drvPtr)
 {
     const ServerMap *mapPtr;
 
@@ -4533,10 +4556,10 @@ NsDriverLookupHostCtx(char *host, const Ns_Driver *drvPtr)
 static void
 SockSetServer(Sock *sockPtr)
 {
-    char    *host;
-    Request *reqPtr;
-    bool     bad_request = NS_FALSE;
-    Driver  *drvPtr;
+    const char *host;
+    Request    *reqPtr;
+    bool        bad_request = NS_FALSE;
+    Driver     *drvPtr;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
@@ -4563,9 +4586,17 @@ SockSetServer(Sock *sockPtr)
     }
 
     if (sockPtr->servPtr == NULL) {
-        const ServerMap *mapPtr;
+        const ServerMap *mapPtr = NULL;
 
-        mapPtr = (host != NULL) ? DriverLookupHost(host, drvPtr) : NULL;
+        if (host != NULL) {
+            Tcl_DString hostDs;
+
+            Tcl_DStringInit(&hostDs);
+            Tcl_DStringAppend(&hostDs, host, -1);
+            mapPtr = DriverLookupHost(&hostDs, drvPtr);
+            Tcl_DStringFree(&hostDs);
+        }
+
         if (mapPtr == NULL) {
             /*
              * Could not lookup the virtual host, Get the default mapping from the driver.

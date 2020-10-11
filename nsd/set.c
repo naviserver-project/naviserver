@@ -331,7 +331,7 @@ Ns_SetFindCmp(const Ns_Set *set, const char *key, StringCmpProc cmp)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_SetGetCmp(const Ns_Set *set, const char *key, StringCmpProc cmp)
 {
     int   i;
@@ -465,7 +465,7 @@ Ns_SetIFind(const Ns_Set *set, const char *key)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_SetGet(const Ns_Set *set, const char *key)
 {
     NS_NONNULL_ASSERT(set != NULL);
@@ -491,7 +491,7 @@ Ns_SetGet(const Ns_Set *set, const char *key)
  *----------------------------------------------------------------------
  */
 
-char *
+const char *
 Ns_SetIGet(const Ns_Set *set, const char *key)
 {
     NS_NONNULL_ASSERT(set != NULL);
