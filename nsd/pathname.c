@@ -1059,15 +1059,11 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
          * Bail out if there are suspicious characters in the unprocessed Host.
          */
 
-        if (!Ns_StrIsHost(rawHost)) {
-            path = NULL;
-
-        } else {
+        if (Ns_StrIsHost(rawHost)) {
 
             /*
              * Normalize the Host string.
              */
-
             Ns_DStringInit(&ds);
             safehost = Ns_DStringAppend(&ds, rawHost);
 

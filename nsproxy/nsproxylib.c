@@ -3837,11 +3837,10 @@ GetTimeDiff(const Ns_Time *timePtr)
 static void
 ProxyError(Tcl_Interp *interp, Err err)
 {
-    const char *sysmsg;
+    const char *sysmsg = NULL;
 
     NS_NONNULL_ASSERT(interp != NULL);
 
-    sysmsg = NULL;
     Tcl_SetErrorCode(interp, "NSPROXY", errCode[err], errMsg[err], sysmsg, (char *)0L);
 }
 

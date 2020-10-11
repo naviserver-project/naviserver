@@ -700,13 +700,12 @@ static void
 LogError(char *func, int h_errnop)
 {
     char        buf[100];
-    const char *h, *e;
+    const char *h, *e = NULL;
 
-    e = NULL;
     switch (h_errnop) {
     case HOST_NOT_FOUND:
         /* Log nothing. */
-        return;
+        h = NULL;
         break;
 
     case TRY_AGAIN:
@@ -724,7 +723,7 @@ LogError(char *func, int h_errnop)
 #ifdef NETDB_INTERNAL
     case NETDB_INTERNAL:
         h = "netdb internal error: ";
-        e = strerror(errno);
+        errorStr = strerror(errno);
         break;
 #endif
 
@@ -733,7 +732,10 @@ LogError(char *func, int h_errnop)
         h = buf;
     }
 
-    Ns_Log(Error, "dns: %s failed: %s%s", func, h, (e != 0) ? e : NS_EMPTY_STRING);
+    if (h != NULL) {
+        Ns_Log(Error, "dns: %s failed: %s%s", func, h,
+               (errorStr != NULL) ? errorStr : NS_EMPTY_STRING);
+    }
 }
 
 #endif

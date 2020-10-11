@@ -1094,7 +1094,7 @@ static void
 TaskThread(void *arg)
 {
     TaskQueue     *queuePtr = (TaskQueue *)arg;
-    Task          *taskPtr, *nextPtr, *firstWaitPtr;
+    Task          *taskPtr, *nextPtr, *firstWaitPtr = NULL;
     struct pollfd *pFds = NULL;
     size_t         maxFds = 100u; /* Initial count of pollfd's */
 
@@ -1102,7 +1102,6 @@ TaskThread(void *arg)
     Ns_Log(Notice, "starting");
 
     pFds = (struct pollfd *)ns_calloc(maxFds, sizeof(struct pollfd));
-    firstWaitPtr = NULL;
 
     for (;;) {
         NS_POLL_NFDS_TYPE nFds;

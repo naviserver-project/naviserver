@@ -398,7 +398,7 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
     Tcl_Encoding encoding;
     Tcl_DString  kds, vds;
     char        *e, saveend, unescape;
-    const char  *ks, *ke, *disp;
+    const char  *ks = NULL, *ke, *disp;
     Ns_Set      *set;
     int          isNew;
 
@@ -429,10 +429,9 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
      * Parse header lines
      */
 
-    ks = NULL;
     while ((e = strchr(start, INTCHAR('\n'))) != NULL) {
         const char *s = start;
-        char save;
+        char        save;
 
         start = e + 1;
         if (e > s && *(e-1) == '\r') {
@@ -514,10 +513,10 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
  *
  * GetBoundary --
  *
- *      Copy multipart/form-data boundy string, if any.
+ *      Copy multipart/form-data boundary string, if any.
  *
  * Results:
- *      1 if boundy copied, 0 otherwise.
+ *      NS_TRUE if boundary copied, NS_FALSE otherwise.
  *
  * Side effects:
  *      Copies boundary string to given dstring.

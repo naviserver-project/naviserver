@@ -929,7 +929,7 @@ NsConfigEval(const char *config, const char *configFileName,
              int argc, char *const *argv, int optionIndex)
 {
     Tcl_Interp   *interp;
-    Ns_Set *set;
+    Ns_Set *set = NULL;
     int i;
 
     NS_NONNULL_ASSERT(config != NULL);
@@ -938,7 +938,6 @@ NsConfigEval(const char *config, const char *configFileName,
      * Create an interp with a few config-related commands.
      */
 
-    set = NULL;
     interp = Ns_TclCreateInterp();
     (void)Tcl_CreateObjCommand(interp, "ns_section", SectionObjCmd, &set, NULL);
     (void)Tcl_CreateObjCommand(interp, "ns_param", ParamObjCmd, &set, NULL);
@@ -1075,13 +1074,12 @@ SectionObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *cons
 static const char *
 ConfigGet(const char *section, const char *key, bool exact, const char *defstr)
 {
-    const char *s;
+    const char *s = NULL;
     Ns_Set     *set;
 
     NS_NONNULL_ASSERT(section != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    s = NULL;
     set = GetSection(section, NS_FALSE);
 
     if (set != NULL) {

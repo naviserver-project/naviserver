@@ -892,7 +892,6 @@ Ns_UrlSpecificDestroy(const char *server, const char *method, const char *url,
         if ((flags & NS_OP_RECURSE) != 0u) {
             //Ns_Log(Ns_LogUrlspaceDebug, "JunctionTruncBranch %s 0x%.6x", url, flags);
             JunctionTruncBranch(JunctionGet(servPtr, id), ds.string);
-            data = NULL;
         } else {
             //Ns_Log(Ns_LogUrlspaceDebug, "JunctionDeleteNode %s 0x%.6x", url, flags);
             data = JunctionDeleteNode(JunctionGet(servPtr, id), ds.string, flags);
