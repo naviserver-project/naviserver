@@ -73,7 +73,7 @@ NsInitConf(void)
     nsconf.version = PACKAGE_VERSION;
     nsconf.tcl.version = TCL_VERSION;
 
-    time(&nsconf.boot_t);
+    (void)time(&nsconf.boot_t);
     nsconf.pid = getpid();
 
    /*
@@ -213,7 +213,7 @@ NsConfUpdate(void)
     if (Ns_PathIsAbsolute(nsconf.tcl.sharedlibrary) == NS_FALSE) {
         Ns_Set *set = Ns_ConfigCreateSection(NS_CONFIG_PARAMETERS);
 
-        Ns_HomePath(&ds, nsconf.tcl.sharedlibrary, (char *)0L);
+        (void)Ns_HomePath(&ds, nsconf.tcl.sharedlibrary, (char *)0L);
         nsconf.tcl.sharedlibrary = Ns_DStringExport(&ds);
 
         Ns_SetUpdate(set, "tcllibrary", nsconf.tcl.sharedlibrary);

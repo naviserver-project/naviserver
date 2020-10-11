@@ -346,8 +346,7 @@ Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
                 Ns_DStringNAppend(&cds, " ", 1);
             }
         }
-        Ns_NormalizePath(&xds, exec);
-        s = xds.string;
+        s = Ns_NormalizePath(&xds, exec);
         while (*s != '\0') {
             if (*s == '/') {
                 *s = '\\';
@@ -367,14 +366,14 @@ Ns_ExecArgblk(const char *exec, const char *dir, int fdin, int fdout,
         exec != NULL ? exec : cds.string, NsWin32ErrMsg(GetLastError()));
         pid = NS_INVALID_PID;
     } else {
-        CloseHandle(pi.hThread);
+        (void)CloseHandle(pi.hThread);
         pid = (pid_t)pi.hProcess;
     }
     Ns_DStringFree(&cds);
     Ns_DStringFree(&xds);
     Ns_DStringFree(&eds);
-    CloseHandle(si.hStdInput);
-    CloseHandle(si.hStdOutput);
+    (void)CloseHandle(si.hStdInput);
+    (void)CloseHandle(si.hStdOutput);
     return pid;
 #endif
 }

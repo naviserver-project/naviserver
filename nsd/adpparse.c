@@ -207,13 +207,13 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
         tagPtr->type = type;
         tagPtr->content = (char *)tagPtr + sizeof(Tag);
         memcpy(tagPtr->content, content, (size_t) slen);
-        Tcl_UtfToLower(tagPtr->content);
+        (void)Tcl_UtfToLower(tagPtr->content);
         if (end == NULL) {
             tagPtr->endtag = NULL;
         } else {
             tagPtr->endtag = tagPtr->content + slen;
             memcpy(tagPtr->endtag, end, (size_t) elen);
-            Tcl_UtfToLower(tagPtr->endtag);
+            (void)Tcl_UtfToLower(tagPtr->endtag);
         }
 
         /*
@@ -221,7 +221,7 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
          */
         Tcl_DStringInit(&tbuf);
         tag = Tcl_GetStringFromObj(objv[1], &tlen);
-        Tcl_UtfToLower(Tcl_DStringAppend(&tbuf, tag, tlen));
+        (void)Tcl_UtfToLower(Tcl_DStringAppend(&tbuf, tag, tlen));
         Ns_RWLockWrLock(&servPtr->adp.taglock);
         hPtr = Tcl_CreateHashEntry(&servPtr->adp.tags, tbuf.string, &isNew);
         if (isNew == 0) {

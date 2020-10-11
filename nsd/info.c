@@ -747,7 +747,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
             case IPageDirIdx: NS_FALL_THROUGH; /* fall through */
             case IPageRootIdx:
                 Ns_LogDeprecated(objv, 2, "ns_server ?-server s? pagedir", NULL);
-                NsPageRoot(&ds, itPtr->servPtr, NULL);
+                (void)NsPageRoot(&ds, itPtr->servPtr, NULL);
                 Tcl_DStringResult(interp, &ds);
                 break;
 
@@ -838,9 +838,9 @@ NsTclLibraryObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 
         Ns_DStringInit(&ds);
         if (moduleString != NULL) {
-            Ns_MakePath(&ds, lib, moduleString, (char *)0L);
+            (void)Ns_MakePath(&ds, lib, moduleString, (char *)0L);
         } else {
-            Ns_MakePath(&ds, lib, (char *)0L);
+            (void)Ns_MakePath(&ds, lib, (char *)0L);
         }
         Tcl_DStringResult(interp, &ds);
     }

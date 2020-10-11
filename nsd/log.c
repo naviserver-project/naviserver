@@ -419,9 +419,9 @@ NsConfigLog(void)
     if (Ns_PathIsAbsolute(file) == NS_FALSE) {
         Ns_DStringInit(&ds);
         if (Ns_HomePathExists("logs", (char *)0L)) {
-            Ns_HomePath(&ds, "logs", file, (char *)0L);
+            (void)Ns_HomePath(&ds, "logs", file, (char *)0L);
         } else {
-            Ns_HomePath(&ds, file, (char *)0L);
+            (void)Ns_HomePath(&ds, file, (char *)0L);
         }
         file = Ns_DStringExport(&ds);
         Ns_SetUpdate(set, "serverlog", file);
@@ -1448,8 +1448,8 @@ Ns_LogRoll(void)
 #ifdef _WIN32
         /* On Windows you MUST close stdout and stderr now, or
            Tcl_FSRenameFile() will fail with "Permission denied". */
-        ns_close(STDOUT_FILENO);
-        ns_close(STDERR_FILENO);
+        (void)ns_close(STDOUT_FILENO);
+        (void)ns_close(STDERR_FILENO);
 #endif
 
         pathObj = Tcl_NewStringObj(file, -1);

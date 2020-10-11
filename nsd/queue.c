@@ -2443,7 +2443,7 @@ ConnRun(Conn *connPtr)
     Tcl_InitHashTable(&connPtr->files, TCL_STRING_KEYS);
 
     memcpy(connPtr->idstr, "cns", 3u);
-    ns_uint64toa(&connPtr->idstr[3], (uint64_t)connPtr->id);
+    (void)ns_uint64toa(&connPtr->idstr[3], (uint64_t)connPtr->id);
 
     connPtr->outputheaders = Ns_SetCreate(NULL);
     if (connPtr->request.version < 1.0) {

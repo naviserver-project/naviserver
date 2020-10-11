@@ -316,7 +316,7 @@ CgiRequest(const void *arg, Ns_Conn *conn)
         if ((cgi.flags & CGI_ECONTENT) != 0u) {
             status = Ns_ConnReturnBadRequest(conn, "Insufficient Content");
         } else {
-            Ns_ConnTryReturnInternalError(conn, NS_ERROR, "nscgi: cannot spool data");
+            (void)Ns_ConnTryReturnInternalError(conn, NS_ERROR, "nscgi: cannot spool data");
         }
         goto done;
 

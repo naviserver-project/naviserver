@@ -584,7 +584,7 @@ NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
 
     if (mobj == NULL || mobj == INVALID_HANDLE_VALUE) {
         Ns_Log(Error, "CreateFileMapping(%s): %ld", path, GetLastError());
-        CloseHandle(hndl);
+        (void)CloseHandle(hndl);
         status = NS_ERROR;
 
     } else {
@@ -598,8 +598,8 @@ NsMemMap(const char *path, size_t size, int mode, FileMap *mapPtr)
 
         if (addr == NULL) {
             Ns_Log(Warning, "MapViewOfFile(%s): %ld", path, GetLastError());
-            CloseHandle(mobj);
-            CloseHandle(hndl);
+            (void)CloseHandle(mobj);
+            (void)CloseHandle(hndl);
             status = NS_ERROR;
 
         } else {
@@ -634,8 +634,8 @@ void
 NsMemUmap(const FileMap *mapPtr)
 {
     UnmapViewOfFile((LPCVOID)mapPtr->addr);
-    CloseHandle((HANDLE)mapPtr->mapobj);
-    CloseHandle((HANDLE)mapPtr->handle);
+    (void)CloseHandle((HANDLE)mapPtr->mapobj);
+    (void)CloseHandle((HANDLE)mapPtr->handle);
 }
 
 

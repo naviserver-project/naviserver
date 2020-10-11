@@ -1658,7 +1658,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
                 const char **elements;
                 int          length;
 
-                Tcl_SplitList(NULL, request->urlv, &length, &elements);
+                (void)Tcl_SplitList(NULL, request->urlv, &length, &elements);
                 Tcl_SetObjResult(interp, Tcl_NewStringObj(elements[idx], -1));
                 Tcl_Free((char *) elements);
             }

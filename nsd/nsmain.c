@@ -868,7 +868,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
                      ", error: %s (parent process was probably killed)",
                      nwrite, strerror(errno));
         }
-        ns_close(nsconf.state.pipefd[1]);
+        (void)ns_close(nsconf.state.pipefd[1]);
         nsconf.state.pipefd[1] = 0;
     }
 

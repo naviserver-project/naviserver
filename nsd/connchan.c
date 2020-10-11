@@ -290,7 +290,7 @@ ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
      * lock to guarantee unique names.
      */
     Ns_RWLockWrLock(&servPtr->connchans.lock);
-    ns_uint64toa(&name[4], connchanCount ++);
+    (void)ns_uint64toa(&name[4], connchanCount ++);
     hPtr = Tcl_CreateHashEntry(&servPtr->connchans.table, name, &isNew);
 
     if (unlikely(isNew == 0)) {
