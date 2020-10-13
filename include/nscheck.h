@@ -122,18 +122,18 @@
 
 #if __GNUC_PREREQ(2,96)
 # define NS_GNUC_MALLOC __attribute__((__malloc__))
-# define NS_GNUC_PURE __attribute__((__pure__))
 # define NS_GNUC_CONST __attribute__((__const__))
 #else
 # define NS_GNUC_MALLOC
-# define NS_GNUC_PURE
 # define NS_GNUC_CONST
 #endif
 
 #if __GNUC_PREREQ(4, 9)
 # define NS_GNUC_RETURNS_NONNULL __attribute__((returns_nonnull))
+# define NS_GNUC_PURE __attribute__((__pure__))
 #else
 # define NS_GNUC_RETURNS_NONNULL
+# define NS_GNUC_PURE
 #endif
 
 /*
