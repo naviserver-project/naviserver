@@ -284,7 +284,7 @@ NsParseAuth(Conn *connPtr, const char *auth)
         save = *p;
         *p = '\0';
 
-        if (STRIEQ(auth, "Basic")) {
+        if (STRIEQ(authDs.string, "Basic")) {
             size_t size;
 
             (void)Ns_SetPut(connPtr->auth, "AuthMethod", "Basic");
@@ -307,7 +307,7 @@ NsParseAuth(Conn *connPtr, const char *auth)
             (void)Ns_SetPut(connPtr->auth, "Username", v);
             ns_free(v);
 
-        } else if (STRIEQ(auth, "Digest")) {
+        } else if (STRIEQ(authDs.string, "Digest")) {
             (void)Ns_SetPut(connPtr->auth, "AuthMethod", "Digest");
 
             /* Skip spaces */
