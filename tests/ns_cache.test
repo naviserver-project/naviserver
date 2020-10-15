@@ -585,7 +585,7 @@ test ns_cache-12.1 {transaction rollback} -body {
     ns_cache_transaction_rollback
 
     #
-    # get the all the entries from the cache
+    # get all the entries from the cache
     #
     lappend result y: [ns_cache_keys trans_c1]
 
@@ -651,7 +651,7 @@ test ns_cache-12.2 {transaction commit} -body {
     ns_cache_transaction_commit
 
     #
-    # get the all the entries from the cache
+    # get all the entries from the cache
     #
     lappend result y: [ns_cache_keys trans_c1]
 
@@ -701,7 +701,7 @@ test ns_cache-12.3 {flush rollback cache flush} -body {
     ns_cache_transaction_rollback
 
     #
-    # get the all the entries from the cache
+    # get all the entries from the cache
     #
     lappend result keys-after-rollback: [ns_cache_keys $cache]
 
@@ -747,7 +747,7 @@ test ns_cache-12.4 {flush rollback glob flushes} -body {
     ns_cache_transaction_rollback
 
     #
-    # get the all the entries from the cache
+    # get all the entries from the cache
     #
     lappend result keys-after-rollback: [ns_cache_keys $cache]
 
@@ -794,7 +794,7 @@ test ns_cache-12.5 {flush rollback explicit flushes} -body {
     ns_cache_transaction_rollback
 
     #
-    # get the all the entries from the cache
+    # get all the entries from the cache
     #
     lappend result keys-after-rollback: [ns_cache_keys $cache]
 
