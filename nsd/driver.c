@@ -1216,7 +1216,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
             SpoolerQueue *queuePtr = ns_calloc(1u, sizeof(SpoolerQueue));
             char          buffer[100];
 
-            snprintf(buffer, sizeof(buffer), "ns:driver:writer:%d", i);
+            snprintf(buffer, sizeof(buffer), "ns:driver:writer:%s:%d", threadName, i);
             Ns_MutexSetName2(&queuePtr->lock, buffer, "queue");
             queuePtr->id = i;
             Push(queuePtr, wrPtr->firstPtr);
