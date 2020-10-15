@@ -151,8 +151,14 @@ Ns_CsDestroy(Ns_Cs *csPtr)
 void
 Ns_CsEnter(Ns_Cs *csPtr)
 {
-    CsLock        *lockPtr;
+    CsLock    *lockPtr;
     uintptr_t  tid = Ns_ThreadId();
+#ifndef NS_NO_MUTEX_TIMING
+    Ns_Time end, diff, startTime;
+
+    Ns_GetTime(&startTime);
+#endif
+    //fprintf(stderr, "[%" PRIxPTR "] Ns_CsEnter %p\n",  Ns_ThreadId(), (void*)csPtr);
 
     /*
      * Initialize the critical section if it has never been used before.
@@ -178,6 +184,28 @@ Ns_CsEnter(Ns_Cs *csPtr)
     lockPtr->tid = tid;
     lockPtr->count++;
     Ns_MutexUnlock(&lockPtr->mutex);
+
+#ifndef NS_NO_MUTEX_TIMING
+    /*
+     * Measure waiting time for busy CsLocks locks.
+     */
+    Ns_GetTime(&end);
+    Ns_DiffTime(&end, &startTime, &diff);
+    //Ns_IncrTime(&mutexPtr->total_waiting_time, diff.sec, diff.usec);
+
+    if (NS_mutexlocktrace && (diff.sec > 0 || diff.usec > 100000)) {
+        /*
+         * We can't use Ns_ThreadGetName() here, since at least at the start,
+         * it requires a master lock.
+         */
+        fprintf(stderr, "[%" PRIxPTR "] Ns_CsEnter %p: wait duration %" PRId64 ".%06ld\n",
+                 Ns_ThreadId(), (void*)csPtr, (int64_t)diff.sec, diff.usec);
+    }
+
+    /*
+     * To calculate locak duration, we have to extend the CsLock structure)
+     */
+#endif
 }
 
 
