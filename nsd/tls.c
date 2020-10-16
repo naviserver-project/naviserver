@@ -125,7 +125,7 @@ static OCSP_RESPONSE *OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int re
 static DH *get_dh512(void);
 static DH *get_dh1024(void);
 
-#if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L
+#if defined(HAVE_OPENSSL_PRE_1_1) || defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L
 /*
  * Compatibility function for libressl < 2.7; DH_set0_pqg is used just by the
  * Diffie-Hellman parameters in dhparams.h.
@@ -1359,7 +1359,7 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
 
     NS_NONNULL_ASSERT(ctxPtr != NULL);
 
-#ifdef HAVE_OPENSSL_PRE_1_0_2
+#ifdef HAVE_OPENSSL_PRE_1_1
     server_method = SSLv23_server_method();
 #else
     server_method = TLS_server_method();
@@ -1386,6 +1386,7 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
         }
     }
 
+#ifndef HAVE_OPENSSL_PRE_1_1
     if (ciphersuites != NULL) {
         rc = SSL_CTX_set_ciphersuites(ctx, ciphersuites);
         if (rc == 0) {
@@ -1393,6 +1394,7 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
                         ciphersuites, ERR_error_string(ERR_get_error(), NULL));
         }
     }
+#endif
 
     /*
      * Parse SSL protocols
