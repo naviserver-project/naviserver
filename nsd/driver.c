@@ -4523,14 +4523,14 @@ DriverLookupHost(Tcl_DString *hostDs, Driver *drvPtr)
 }
 
 NS_TLS_SSL_CTX *
-NsDriverLookupHostCtx(Tcl_DString *host, const Ns_Driver *drvPtr)
+NsDriverLookupHostCtx(Tcl_DString *hostDs, const Ns_Driver *drvPtr)
 {
     const ServerMap *mapPtr;
 
     NS_NONNULL_ASSERT(host != NULL);
     NS_NONNULL_ASSERT(drvPtr != NULL);
 
-    mapPtr = DriverLookupHost(host, (Driver *)drvPtr);
+    mapPtr = DriverLookupHost(hostDs, (Driver *)drvPtr);
     return (mapPtr != NULL) ? mapPtr->ctx : NULL;
 }
 
