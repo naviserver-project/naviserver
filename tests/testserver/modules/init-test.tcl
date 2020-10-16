@@ -62,3 +62,8 @@ set testglobalvariable 1
 #
 
 set testnamespace::testvariable2 1
+
+interp alias {} ::testalias1 {}                 testproc1
+interp alias {} ::testnamespace::testalias2 {}  testnamespace::testproc2
+interp alias {}   testalias11 {}                testproc1
+interp alias {}   testnamespace::testalias12 {} testnamespace::testproc2

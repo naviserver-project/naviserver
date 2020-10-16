@@ -69,6 +69,31 @@ test init-1.4 {namespace variables do not get cloned} -body {
 unset -nocomplain qid
 
 
+
+foreach {n command alias comment} {
+    1 ::testproc1                ::testalias1                 {global alias}
+    2 ::testnamespace::testproc2 ::testnamespace::testalias2  {namespace alias}
+    3 ::testproc1                ::testalias11                {global alias, no leading ::}
+} {
+    test init-2.$n $comment {
+       list [info commands $command] [catch $command result] $result [info commands $alias] [catch $alias result] $result
+    } [list $command 0 {} $alias 0 {}]
+}
+
+foreach {n command alias comment} {
+    4 ::testnamespace::testproc2 ::testnamespace::testalias12 {namespace alias, no leading ::}
+} {
+    test init-2.$n $comment copyAliasBug {
+       list [info commands $command] [catch $command result] $result [info commands $alias] [catch $alias result] $result
+    } [list $command 0 {} $alias 0 {}]
+}
+
+
+
+unset -nocomplain n command alias comment result
+
+
+
 cleanupTests
 
 # Local variables:

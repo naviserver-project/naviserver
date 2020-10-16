@@ -761,8 +761,10 @@ ns_runonce {
 
             # Add aliases
             foreach cmd [interp aliases {}] {
-                if {[::namespace qualifiers $cmd] eq $nsp} {
-                    append script "interp alias {} $cmd {} [interp alias {} $cmd]" \n
+                set qs [::namespace qualifiers $cmd]
+                set qs [expr {$qs eq "" ? "::" : $qs}]
+                if {$qs eq $nsp} {
+                    append script "interp alias {} [list $cmd] {} [interp alias {} [list $cmd]]" \n
                 }
             }
 
