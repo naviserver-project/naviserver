@@ -78,7 +78,7 @@ test http_charsets-2.0 "another iso8859-2 text, ns_http decoded by 'encoding con
 test http_charsets-2.1 "another iso8859-2 text, curl decoded by iconv" -constraints {curl iconv} -setup {
     ns_register_proc GET /get {ns_return 200 "text/plain; charset=iso-8859-2" "ÄÖÜŁ"}
 } -body {
-    exec curl -s [ns_config test listenurl]/get | iconv -f iso-8859-2 -t utf-8
+    exec curl -gs [ns_config test listenurl]/get | iconv -f iso-8859-2 -t utf-8
 } -cleanup {
     ns_unregister_op GET /get
 } -result {ÄÖÜŁ}
@@ -186,7 +186,7 @@ foreach charset $charsets {
     test http_charsets-3.$charset.curl-pipe-iconv "8bit chars from $charset, curl decoded by iconv" -constraints {curl iconv} -setup {
         ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
     } -body {
-        exec curl -s [ns_config test listenurl]/get | iconv -f $charset -t utf-8
+        exec curl -gs [ns_config test listenurl]/get | iconv -f $charset -t utf-8
     } -cleanup {
         ns_unregister_op GET /get
     } -result $content
@@ -285,7 +285,7 @@ foreach charset $charsets {
         test http_charsets-4.$charset.$x.curl-pipe-iconv "8bit pairs starting with '$char1' from $charset, curl decoded by iconv" -constraints {curl iconv} -setup {
             ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
         } -body {
-            exec curl -s [ns_config test listenurl]/get | iconv -f $charset
+            exec curl -gs [ns_config test listenurl]/get | iconv -f $charset
         } -cleanup {
             ns_unregister_op GET /get
         } -result $content
