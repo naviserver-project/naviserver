@@ -104,11 +104,12 @@ static void RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 static void ReleaseTask(Task *taskPtr)
     NS_GNUC_NONNULL(1);
+static void ReserveTask(Task *taskPtr)
+    NS_GNUC_NONNULL(1);
 
 static Ns_ThreadProc TaskThread;
 
 #define Call(tp, w) ((*((tp)->proc))((Ns_Task *)(tp), (tp)->sock, (tp)->arg, (w)))
-#define Reserve(tp) (tp)->refCount++
 
 /*
  * Static variables defined in this file
@@ -283,7 +284,7 @@ Ns_TaskCreate(NS_SOCKET sock, Ns_TaskProc *proc, void *arg)
     taskPtr->proc = proc;
     taskPtr->arg = arg;
 
-    Reserve(taskPtr);
+    ReserveTask(taskPtr);
 
     return (Ns_Task *) taskPtr;
 }
@@ -391,6 +392,9 @@ Ns_TaskEnqueue(Ns_Task *task, Ns_TaskQueue *queue)
     taskPtr = (Task *)task;
     queuePtr = (TaskQueue *)queue;
 
+    ReserveTask(taskPtr);
+    /*fprintf(stderr, "#### added extra refcount ->  %d\n", taskPtr->refCount);*/
+
     taskPtr->queuePtr = queuePtr;
 
     Ns_Log(Ns_LogTaskDebug, "Ns_TaskEnqueue: task %p, queue:%p",
@@ -453,7 +457,6 @@ Ns_TaskRun(Ns_Task *task)
         if ((taskPtr->flags & TASK_EXPIRE) != 0u
             && (timeoutPtr == NULL
                 || Ns_DiffTime(&taskPtr->expire, timeoutPtr, NULL) < 0)) {
-
             timeoutPtr = &taskPtr->expire;
         }
         pfd.events = taskPtr->events;
@@ -461,6 +464,7 @@ Ns_TaskRun(Ns_Task *task)
             Ns_Log(Ns_LogTaskDebug, "Ns_TaskRun: task:%p timeout",
                    (void*)taskPtr);
             (void)Call(taskPtr, NS_SOCK_TIMEOUT);
+
             status = NS_TIMEOUT;
         } else {
             Ns_Time now;
@@ -582,6 +586,8 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
     taskPtr->signalFlags = 0;
     if (result == NS_OK) {
         taskPtr->queuePtr = NULL;
+        /*fprintf(stderr, "#### removed extra refcount ->  %d\n", taskPtr->refCount);*/
+        ReleaseTask(taskPtr);
     }
     Ns_MutexUnlock(&queuePtr->lock);
 
@@ -1067,11 +1073,17 @@ FreeTask(Task *taskPtr)
 static void
 ReleaseTask(Task *taskPtr)
 {
+    Ns_Log(Ns_LogTaskDebug, "ReleaseTask taskPtr %p refCount %d", (void*)taskPtr, taskPtr->refCount);
     if (--taskPtr->refCount == 0) {
         FreeTask(taskPtr);
     }
 }
 
+static void
+ReserveTask(Task *taskPtr) {
+    taskPtr->refCount++;
+    Ns_Log(Ns_LogTaskDebug, "ReserveTask taskPtr %p refCount %d", (void*)taskPtr, taskPtr->refCount);
+}
 
 
 /*
@@ -1140,7 +1152,7 @@ TaskThread(void *arg)
                 if (taskPtr != firstWaitPtr) {
                     taskPtr->nextWaitPtr = firstWaitPtr;
                     firstWaitPtr = taskPtr;
-                    Reserve(taskPtr); /* Task acquired for the waiting list */
+                    ReserveTask(taskPtr); /* Task acquired for the waiting list */
                 }
             }
 
@@ -1291,7 +1303,7 @@ TaskThread(void *arg)
                  */
                 taskPtr->nextWaitPtr = firstWaitPtr;
                 firstWaitPtr = taskPtr;
-                Reserve(taskPtr); /* Task acquired for the waiting list */
+                ReserveTask(taskPtr); /* Task acquired for the waiting list */
 
                 Ns_Log(Ns_LogTaskDebug, "TASK_WAIT task:%p flags:%.6x",
                        (void*)taskPtr, taskPtr->flags);
