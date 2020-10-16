@@ -4527,7 +4527,7 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const Ns_Driver *drvPtr)
 {
     const ServerMap *mapPtr;
 
-    NS_NONNULL_ASSERT(host != NULL);
+    NS_NONNULL_ASSERT(hostDs != NULL);
     NS_NONNULL_ASSERT(drvPtr != NULL);
 
     mapPtr = DriverLookupHost(hostDs, (Driver *)drvPtr);
