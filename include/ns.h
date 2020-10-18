@@ -363,7 +363,7 @@ typedef Ns_ReturnCode (Ns_ModuleInitProc) (const char *server, const char *modul
 typedef Ns_ReturnCode (Ns_RequestAuthorizeProc) (const char *server, const char *method,
                                                  const char *url, const char *user,
                                                  const char *pass, const char *peer);
-typedef void  (Ns_AdpParserProc)(Ns_DString *outPtr, char *page);
+typedef void  (Ns_AdpParserProc)(Tcl_DString *outPtr, char *page);
 typedef Ns_ReturnCode (Ns_UserAuthorizeProc) (const char *user, const char *passwd)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 struct Ns_ObjvSpec;
@@ -3035,7 +3035,7 @@ Ns_TclNewCallback(Tcl_Interp *interp, ns_funcptr_t cbProc, Tcl_Obj *scriptObjPtr
 
 NS_EXTERN int
 Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
-                   Ns_DString *result, ...) NS_GNUC_SENTINEL
+                   Tcl_DString *resultDString, ...) NS_GNUC_SENTINEL
     NS_GNUC_NONNULL(2);
 
 

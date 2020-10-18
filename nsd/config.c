@@ -712,7 +712,6 @@ Ns_ConfigGetPath(const char *server, const char *module, ...)
     }
     va_end(ap);
     Ns_Log(Dev, "config section: %s", ds.string);
-
     set = Ns_ConfigCreateSection(ds.string);
     Tcl_DStringFree(&ds);
 

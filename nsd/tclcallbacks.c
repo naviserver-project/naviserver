@@ -151,7 +151,7 @@ Ns_TclFreeCallback(void *arg)
 
 int
 Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
-                   Ns_DString *result, ...)
+                   Tcl_DString *resultDString, ...)
 {
     Ns_DString   ds;
     bool         deallocInterp = NS_FALSE;
@@ -170,7 +170,7 @@ Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
 
         Ns_DStringInit(&ds);
         Ns_DStringAppend(&ds, cbPtr->script);
-        va_start(ap, result);
+        va_start(ap, resultDString);
 
         for (arg = va_arg(ap, char *); arg != NULL; arg = va_arg(ap, char *)) {
             Ns_DStringAppendElement(&ds, arg);
@@ -189,8 +189,8 @@ Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
             if (deallocInterp) {
                 (void) Ns_TclLogErrorInfo(interp, NULL);
             }
-        } else if (result != NULL) {
-            Ns_DStringAppend(result, Tcl_GetStringResult(interp));
+        } else if (resultDString != NULL) {
+            Ns_DStringAppend(resultDString, Tcl_GetStringResult(interp));
         }
         Ns_DStringFree(&ds);
         if (deallocInterp) {
