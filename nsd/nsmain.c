@@ -51,10 +51,10 @@ typedef struct Args {
  */
 
 typedef enum {
-    starting,  /* == 0 */
-    running,   /* == 1 */
-    stopping,  /* == 2 */
-    exiting    /* == 3 */
+    starting_state,  /* == 0 */
+    running_state,   /* == 1 */
+    stopping_state,  /* == 2 */
+    exiting_state    /* == 3 */
 } runState;
 
 /*
@@ -764,7 +764,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      * generated some messages.
      */
 
-    StatusMsg(starting);
+    StatusMsg(starting_state);
     LogTclVersion();
 
 #ifndef _WIN32
@@ -849,7 +849,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      * Signal startup is complete.
      */
 
-    StatusMsg(running);
+    StatusMsg(running_state);
 
     Ns_MutexLock(&nsconf.state.lock);
     nsconf.state.started = NS_TRUE;
@@ -905,7 +905,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      * without waiting for all subsystems to exit gracefully
      */
 
-    StatusMsg(stopping);
+    StatusMsg(stopping_state);
 
     Ns_MutexLock(&nsconf.state.lock);
     nsconf.state.stopping = NS_TRUE;
@@ -957,7 +957,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      */
 
     NsRemovePidFile();
-    StatusMsg(exiting);
+    StatusMsg(exiting_state);
 
     /*
      * The main thread exits gracefully on NS_SIGTERM.
@@ -1109,26 +1109,26 @@ StatusMsg(runState state)
 
     switch (state) {
 
-    case starting:
+    case starting_state:
         what = "starting";
         break;
 
-    case running:
+    case running_state:
         what = "running";
         break;
 
-    case stopping:
+    case stopping_state:
         what = "stopping";
         break;
 
-    case exiting:
+    case exiting_state:
         what = "exiting";
         break;
     }
     Ns_Log(Notice, "nsmain: %s/%s (%s) %s",
            Ns_InfoServerName(), Ns_InfoServerVersion(), Ns_InfoTag(), what);
 #ifndef _WIN32
-    if (state == starting || state == running) {
+    if (state == starting_state || state == running_state) {
         Ns_Log(Notice, "nsmain: security info: uid=%d, euid=%d, gid=%d, egid=%d",
                (int)getuid(), (int)geteuid(), (int)getgid(), (int)getegid());
     }

@@ -55,7 +55,7 @@ static const char six2pr[64] = {
  * either the corresponding 6-bit value or -1 for invalid character.
  */
 
-static const int pr2six[256] = {
+static const char pr2six[256] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63,
@@ -90,7 +90,7 @@ static const char six2pr_url[64] = {
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_'
 };
 
-static const int pr2six_url[256] = {
+static const char pr2six_url[256] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1,
@@ -264,7 +264,7 @@ Ns_HtuuDecode2(const char *input, unsigned char *buf, size_t bufSize, int encodi
     unsigned char                 chars[4] = {0u, 0u, 0u, 0u};
     register const unsigned char *p;
     register unsigned char       *q;
-    static const int             *decode_table;
+    static const char            *decode_table;
 
 
     NS_NONNULL_ASSERT(input != NULL);
