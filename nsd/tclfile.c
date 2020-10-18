@@ -176,7 +176,7 @@ Ns_TclGetOpenFd(Tcl_Interp *interp, const char *chanId, int write, int *fdPtr)
 static int
 FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, const char *cmd)
 {
-    int               maxFiles, result;
+    int               maxFiles = 0, result;
     Tcl_Obj          *fileObj = NULL;
     Ns_ObjvValueRange range = {0, 1000};
 

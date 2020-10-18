@@ -572,7 +572,7 @@ int
 NsTclStrftimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int               result = TCL_OK;
-    long              sec;
+    long              sec = 0;
     char             *fmt = (char *)"%c";
     Ns_ObjvValueRange range = {0, LONG_MAX};
     Ns_ObjvSpec  args[] = {

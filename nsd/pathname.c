@@ -733,7 +733,7 @@ NsPageRoot(Ns_DString *dsPtr, const NsServer *servPtr, const char *host)
 int
 NsTclHashPathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int               levels, result = TCL_OK;
+    int               levels = 1, result = TCL_OK;
     char             *inputString;
     Ns_ObjvValueRange range = {1, INT_MAX};
     Ns_ObjvSpec       args[] = {

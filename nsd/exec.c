@@ -521,12 +521,12 @@ ExecProc(const char *exec, const char *dir, int fdin, int fdout, char **argv,
 
         ns_close(errpipe[0]);
         if (dir != NULL && chdir(dir) != 0) {
-            result = ERR_CHDIR;
+            //result = ERR_CHDIR;
         } else if ((fdin == 1 && (fdin = ns_dup(1)) < 0) ||
                     (fdout == 0 && (fdout = ns_dup(0)) < 0) ||
                     (fdin != 0 && ns_dup2(fdin, 0) < 0) ||
                     (fdout != 1 && ns_dup2(fdout, 1) < 0)) {
-            result = ERR_DUP;
+            //result = ERR_DUP;
         } else {
             if (fdin > 2) {
                 ns_close(fdin);
@@ -540,7 +540,7 @@ ExecProc(const char *exec, const char *dir, int fdin, int fdout, char **argv,
             (void)Ns_NoCloseOnExec(2);
             execve(exec, argv, envp);
             /* NB: Not reached on successful execve(). */
-            result = ERR_EXEC;
+            //result = ERR_EXEC;
         }
         //errnum = errno;
         {

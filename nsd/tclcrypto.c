@@ -83,7 +83,7 @@ static Tcl_Obj *EncodedObj(
     size_t octectLength,
     char *outputBuffer,
     Ns_ResultEncoding encoding
-) NS_GNUC_NONNULL(1);
+) NS_GNUC_RETURNS_NONNULL NS_GNUC_NONNULL(1);
 
 static int GetDigest(Tcl_Interp *interp, const char *digestName, const EVP_MD **mdPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -160,7 +160,7 @@ static void hexPrint(const char *msg, const unsigned char *octects, size_t octec
         Tcl_DString ds;
 
         Tcl_DStringInit(&ds);
-        Ns_DStringPrintf(&ds, "%s (len %zu): ", msg, octectLength);
+        Ns_DStringPrintf(&ds, "%s (len %" PRIuz "): ", msg, octectLength);
         for (i = 0; i < octectLength; i++) {
             Ns_DStringPrintf(&ds, "%.2x ", octects[i] & 0xff);
         }

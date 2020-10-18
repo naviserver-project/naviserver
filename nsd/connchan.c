@@ -1622,7 +1622,7 @@ ConnChanReadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
             /*
              * The provided channel exists.
              */
-            ssize_t      nRead;
+            ssize_t      nRead = 0;
             struct iovec buf;
             char         buffer[16384];
             Ns_Time     *timeoutPtr, timeout;

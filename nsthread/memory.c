@@ -55,10 +55,44 @@
 /* #define SYSTEM_MALLOC 1 */
 
 #if defined(SYSTEM_MALLOC)
-void *ns_realloc(void *ptr, size_t size)  { return realloc(ptr, size); }
-void *ns_malloc(size_t size)              { return malloc(size); }
-void ns_free(void *ptr)                   { /*fprintf(stderr, "free %p\n", ptr); if (ptr != NULL) */ {free(ptr);} }
-void *ns_calloc(size_t num, size_t esize) { return calloc(num, esize); }
+void *ns_realloc(void *ptr, size_t size)  {
+    void *result;
+
+    result = realloc(ptr, size);
+    if (result == NULL) {
+        fprintf(stderr, "Fatal: failed to reallocate %" PRIuz " bytes.\n", size);
+        abort();
+    }
+    return result;
+}
+void *ns_malloc(size_t size) {
+    void *result;
+
+    assert(size > 0);
+
+    result = malloc(size);
+    if (result == NULL) {
+        fprintf(stderr, "Fatal: failed to allocate %" PRIuz " bytes.\n", size);
+        abort();
+    }
+    return result;
+}
+void ns_free(void *ptr) {
+    free(ptr);
+}
+void *ns_calloc(size_t num, size_t esize) {
+    void *result;
+
+    assert(num > 0);
+    assert(esize > 0);
+
+    result = calloc(num, esize);
+    if (result == NULL) {
+        fprintf(stderr, "Fatal: failed to allocate %" PRIuz " bytes.\n", num * esize);
+        abort();
+    }
+    return result;
+}
 #else
 void *
 ns_realloc(void *ptr, size_t size)

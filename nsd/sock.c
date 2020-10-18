@@ -660,7 +660,7 @@ Ns_SockSend(NS_SOCKET sock, const void *buffer, size_t length,
 Ns_ReturnCode
 Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
 {
-    int           n, pollTimeout;
+    int           n = 0, pollTimeout;
     struct pollfd pfd;
     Ns_ReturnCode result = NS_OK;
     short         requestedEvents, count = 0;

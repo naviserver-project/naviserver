@@ -1038,7 +1038,7 @@ int
 NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                      int objc, Tcl_Obj *const* objv)
 {
-    int          nargs, upperCase = 0, result = TCL_OK, part = INTCHAR('q');
+    int          nargs = 0, upperCase = 0, result = TCL_OK, part = INTCHAR('q');
     char        *charset = NULL;
     Ns_ObjvSpec lopts[] = {
         {"-charset",   Ns_ObjvString, &charset,   NULL},

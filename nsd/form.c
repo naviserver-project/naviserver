@@ -107,7 +107,7 @@ Ns_ConnGetQuery(Ns_Conn *conn)
                    (connPtr->flags & NS_CONN_CLOSED ) == 0u
                    && (form = connPtr->reqPtr->content) != NULL
                    ) {
-            const char *contentType = Ns_SetIGet(conn->headers, "content-type");
+            const char *contentType = Ns_SetIGet(connPtr->headers, "content-type");
 
             if (contentType != NULL) {
                 Tcl_DString bound;

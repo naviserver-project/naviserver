@@ -2004,7 +2004,7 @@ NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int fl
 ssize_t
 NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
 {
-    ssize_t       sent = -1;
+    ssize_t       sent;
     const Driver *drvPtr;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
@@ -7978,7 +7978,7 @@ AsyncLogfileOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
 static int
 AsyncLogfileCloseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int               fd, result = TCL_OK;
+    int               fd = 0, result = TCL_OK;
     Ns_ObjvValueRange range = {0, INT_MAX};
     Ns_ObjvSpec args[] = {
         {"fd", Ns_ObjvInt, &fd, &range},

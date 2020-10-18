@@ -1828,7 +1828,7 @@ HttpCheckSpool(
                 httpPtr->spoolFd = NS_INVALID_FD;
                 httpPtr->recvSpoolMode = NS_TRUE;
             } else {
-                int fd = NS_INVALID_FD;
+                int fd;
 
                 if (httpPtr->spoolFileName != NULL) {
                     int flags;
@@ -1929,7 +1929,7 @@ HttpGet(
     bool remove
 ) {
     Tcl_HashEntry *hPtr = NULL;
-    bool           status = NS_TRUE;
+    bool           success;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
     NS_NONNULL_ASSERT(taskID != NULL);
@@ -1938,16 +1938,16 @@ HttpGet(
     hPtr = Tcl_FindHashEntry(&itPtr->httpRequests, taskID);
     if (hPtr == NULL) {
         Ns_TclPrintfResult(itPtr->interp, "no such request: %s", taskID);
-        status = NS_FALSE;
+        success = NS_FALSE;
     } else {
         *httpPtrPtr = (NsHttpTask *)Tcl_GetHashValue(hPtr);
         if (remove) {
             Tcl_DeleteHashEntry(hPtr);
         }
-        status = NS_TRUE;
+        success = NS_TRUE;
     }
 
-    return status;
+    return success;
 }
 
 
@@ -2452,7 +2452,7 @@ HttpAppendRawBuffer(
     size_t size
 ) {
     int     result = TCL_OK;
-    ssize_t written = -1;
+    ssize_t written;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(buffer != NULL);

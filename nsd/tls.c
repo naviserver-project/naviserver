@@ -1748,7 +1748,7 @@ ssize_t
 
 Ns_SSLSendBufs2(SSL *ssl, const struct iovec *bufs, int nbufs)
 {
-    ssize_t sent = -1;
+    ssize_t sent;
 
     NS_NONNULL_ASSERT(ssl != NULL);
     NS_NONNULL_ASSERT(bufs != NULL);

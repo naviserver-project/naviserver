@@ -432,7 +432,7 @@ int
 NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     TclCache   *cPtr = NULL;
-    char       *key;
+    char       *key = NULL;
     Ns_Time    *timeoutPtr = NULL, *expPtr = NULL;
     int         nargs = 0, force = (int)NS_FALSE, status;
 

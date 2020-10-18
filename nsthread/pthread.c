@@ -148,6 +148,11 @@ NsGetTls(void)
     slots = pthread_getspecific(key);
     if (slots == NULL) {
         slots = calloc(NS_THREAD_MAXTLS, sizeof(void *));
+        if (slots == NULL) {
+            fprintf(stderr, "Fatal: NsGetTls failed to allocate %" PRIuz " bytes.\n",
+                    NS_THREAD_MAXTLS * sizeof(void *));
+            abort();
+        }
         pthread_setspecific(key, slots);
     }
     return slots;
@@ -769,7 +774,7 @@ Ns_ReturnCode
 Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
 {
     int              err;
-    Ns_ReturnCode    status = NS_ERROR;
+    Ns_ReturnCode    status;
     struct timespec  ts;
 
     NS_NONNULL_ASSERT(cond != NULL);

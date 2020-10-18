@@ -1022,7 +1022,7 @@ JobWaitAnyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 static int
 JobJobsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    Queue         *queue;
+    Queue         *queue = NULL;
     int            result = TCL_OK;
     Ns_ObjvSpec    args[] = {
         {"queueId",  ObjvQueue,    &queue,   NULL},
