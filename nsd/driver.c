@@ -923,7 +923,7 @@ void NsDriverMapVirtualServers(void)
                      */
                     if (drvPtr->port == drvPtr->defport) {
                         ServerMapEntryAdd(dsPtr, host, servPtr, drvPtr, ctx,
-                                          STREQ(defserver, server));
+                                          (bool)STREQ(defserver, server));
                     }
 
                     /*
@@ -935,7 +935,7 @@ void NsDriverMapVirtualServers(void)
                     (void) Ns_DStringPrintf(&hostDString, ":%hu", drvPtr->port);
 
                     ServerMapEntryAdd(dsPtr, hostDString.string, servPtr, drvPtr, ctx,
-                                      STREQ(defserver, server));
+                                      (bool)STREQ(defserver, server));
 
                     Tcl_DStringFree(&hostDString);
                 } else {
@@ -949,7 +949,7 @@ void NsDriverMapVirtualServers(void)
 
                     if (providedPort == drvPtr->port) {
                         ServerMapEntryAdd(dsPtr, host, servPtr, drvPtr, ctx,
-                                          STREQ(defserver, server));
+                                          (bool)STREQ(defserver, server));
                         /*
                          * In case, the provided port is equal to the default
                          * port of the driver, make sure that we have an entry
@@ -957,7 +957,7 @@ void NsDriverMapVirtualServers(void)
                          */
                         if (providedPort == drvPtr->defport) {
                             ServerMapEntryAdd(dsPtr, hostName, servPtr, drvPtr, ctx,
-                                              STREQ(defserver, server));
+                                              (bool)STREQ(defserver, server));
                         }
                     } else {
                         Ns_Log(Warning, "%s: driver is listening on port %hu; "
