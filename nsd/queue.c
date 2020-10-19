@@ -2726,7 +2726,8 @@ CreateConnThread(ConnPool *poolPtr)
         poolPtr->threads.creating --;
         Ns_MutexUnlock(&poolPtr->threads.lock);
 
-        Ns_Log(Notice, "Cannot create connection thread, all available slots (%d) are used\n", i);
+        Ns_Log(Debug, "Cannot create additional connection thread in pool '%s', "
+               "maxthreads (%d) are running", poolPtr->pool, i);
     }
 }
 
