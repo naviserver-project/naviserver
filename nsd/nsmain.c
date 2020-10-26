@@ -278,7 +278,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     }
 
     if (testMode) {
-        const char *fileContent = NULL;
+        const char *fileContent;
 
         if (nsconf.configFile == NULL) {
             UsageError("option -t <file> must be provided, when -T is used");

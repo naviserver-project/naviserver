@@ -399,7 +399,7 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         if (arrayPtr == NULL) {
             result = TCL_ERROR;
         } else {
-            const Tcl_HashEntry *hPtr = NULL;
+            const Tcl_HashEntry *hPtr;
 
             hPtr = Tcl_FindHashEntry(&arrayPtr->vars, keyString);
             if (likely(hPtr != NULL)) {

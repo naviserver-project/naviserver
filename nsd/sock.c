@@ -711,7 +711,7 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
                    " %.4x received %.4x", sock, requestedEvents, pfd.revents);
             result = NS_ERROR;
         } else {
-            int       err = 0, sockerrno = 0;
+            int       err, sockerrno = 0;
             socklen_t len = sizeof(sockerrno);
 
             err = getsockopt(sock, SOL_SOCKET, SO_ERROR, (void*)&sockerrno, &len);

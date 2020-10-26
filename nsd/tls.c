@@ -610,8 +610,8 @@ OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
 static int
 OCSP_computeResponse(SSL *ssl, const SSLCertStatusArg *srctx, OCSP_RESPONSE **resp)
 {
-    X509           *cert = NULL;
-    OCSP_CERTID    *id = NULL;
+    X509           *cert;
+    OCSP_CERTID    *id;
     OCSP_REQUEST   *req = NULL;
     int             rc, result = SSL_TLSEXT_ERR_NOACK;
     Tcl_DString     cachedResponseFile;
@@ -1595,7 +1595,7 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
                 Ns_SockState *sockStatePtr)
 {
     ssize_t       nRead = 0;
-    int           got = 0, sock, n = 0, err = SSL_ERROR_NONE;
+    int           got = 0, sock, n, err;
     char         *buf = NULL;
     unsigned long sslError;
     char          errorBuffer[256];

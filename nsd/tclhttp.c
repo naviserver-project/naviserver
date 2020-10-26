@@ -796,7 +796,7 @@ HttpWaitObjCmd(
             }
 
             if (replyHeaders != NULL) {
-                Ns_Set  *headers = NULL;
+                Ns_Set  *headers;
                 Tcl_Obj *kObj;
 
                 /*
@@ -910,12 +910,11 @@ HttpCleanupObjCmd(
         for (hPtr = Tcl_FirstHashEntry(&itPtr->httpRequests, &search);
              hPtr != NULL;
              hPtr = Tcl_NextHashEntry(&search)) {
-
-            NsHttpTask *httpPtr = NULL;
-            char       *taskName = NULL;
+            NsHttpTask *httpPtr;
+            char       *taskName;
 
             httpPtr = (NsHttpTask *)Tcl_GetHashValue(hPtr);
-            NS_NONNULL_ASSERT(httpPtr != NULL);
+            assert(httpPtr != NULL);
 
             taskName = Tcl_GetHashKey(&itPtr->httpRequests, hPtr);
 
@@ -987,7 +986,7 @@ HttpListObjCmd(
     NsInterp      *itPtr = clientData;
     char          *idString = NULL;
     int            result = TCL_OK;
-    Tcl_Obj       *resultObj = NULL;
+    Tcl_Obj       *resultObj;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
 
@@ -1003,17 +1002,13 @@ HttpListObjCmd(
     for (hPtr = Tcl_FirstHashEntry(&itPtr->httpRequests, &search);
          hPtr != NULL;
          hPtr = Tcl_NextHashEntry(&search) ) {
-
-        char *taskString = NULL;
-
-        taskString = Tcl_GetHashKey(&itPtr->httpRequests, hPtr);
+        char *taskString = Tcl_GetHashKey(&itPtr->httpRequests, hPtr);
 
         if (idString == NULL || STREQ(taskString, idString)) {
-            const char *taskState = NULL;
-            NsHttpTask *httpPtr = NULL;
+            const char *taskState;
+            NsHttpTask *httpPtr = (NsHttpTask *)Tcl_GetHashValue(hPtr);
 
-            httpPtr = (NsHttpTask *)Tcl_GetHashValue(hPtr);
-            NS_NONNULL_ASSERT(httpPtr != NULL);
+            assert(httpPtr != NULL);
 
             if (Ns_TaskCompleted(httpPtr->task) == NS_TRUE) {
                 taskState = "done";
@@ -1532,15 +1527,14 @@ HttpGetResult(
             binary = NS_TRUE;
         }
         if (binary == NS_FALSE) {
-            const char *cType = NULL;
+            const char *cType;
 
             cType = Ns_SetIGet(httpPtr->replyHeaders, contentTypeHeader);
             if (cType != NULL) {
 
                 /*
-                 * Caveat Emptor:
-                 * This call may return true even for
-                 * completely regular text formats!
+                 * "binary" actually means: just to take the data as it is,
+                 * i.e. to perform no charset conversion.
                  */
                 binary = Ns_IsBinaryMimeType(cType);
 #if defined(TCLHTTP_USE_EXTERNALTOUTF)
@@ -1763,7 +1757,7 @@ HttpCheckSpool(
         result = NS_ERROR;
 
     } else {
-        const char *header = NULL;
+        const char *header;
         Tcl_WideInt replyLength = 0;
 
         /*
@@ -1875,11 +1869,11 @@ HttpCheckSpool(
     }
 
     if (result == NS_OK) {
-        size_t cSize = 0;
+        size_t cSize;
 
         cSize = (size_t)(httpPtr->ds.length - httpPtr->replyHeaderSize);
         if (cSize > 0) {
-            char buf[CHUNK_SIZE], *cData = NULL;
+            char buf[CHUNK_SIZE], *cData;
 
             /*
              * There is (a part of the) content, past headers.
@@ -1928,7 +1922,7 @@ HttpGet(
     NsHttpTask **httpPtrPtr,
     bool remove
 ) {
-    Tcl_HashEntry *hPtr = NULL;
+    Tcl_HashEntry *hPtr;
     bool           success;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
@@ -2220,12 +2214,13 @@ HttpConnect(
          */
         if (defPortNr == 443u) {
             NS_TLS_SSL_CTX *ctx = NULL;
-            NS_TLS_SSL     *ssl = NULL;
-            int             result = TCL_OK;
+            int             result;
 
             result = Ns_TLS_CtxClientCreate(interp, cert, caFile, caPath,
                                             verifyCert, &ctx);
             if (likely(result == TCL_OK)) {
+                NS_TLS_SSL *ssl = NULL;
+
                 httpPtr->ctx = ctx;
                 result = Ns_TLS_SSLConnect(interp, httpPtr->sock, ctx,
                                            sniHostname, &ssl);
@@ -2666,7 +2661,7 @@ HttpAppendChunked(
     int          result = TCL_OK;
     char        *buf = (char *)buffer;
     size_t       len = size;
-    NsHttpChunk *chunkPtr = NULL;
+    NsHttpChunk *chunkPtr;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
     chunkPtr = httpPtr->chunk;
@@ -2676,7 +2671,7 @@ HttpAppendChunked(
            (void*)httpPtr, (void*)httpPtr->task);
 
     while (len > 0 && result != TCL_ERROR) {
-        NsHttpParseProc *parseProcPtr = NULL;
+        NsHttpParseProc *parseProcPtr;
 
         Ns_Log(Ns_LogTaskDebug, "... len %lu ", len);
 
@@ -2848,8 +2843,7 @@ HttpAddInfo(
     const char *key,
     const char *value
 ) {
-    Tcl_Obj *keyObj = NULL;
-    Tcl_Obj *valObj = NULL;
+    Tcl_Obj *keyObj, *valObj;
 
     if (httpPtr->infoObj == NULL) {
         httpPtr->infoObj = Tcl_NewDictObj();
@@ -3091,7 +3085,7 @@ HttpProc(
                httpPtr->bodyChan ? Tcl_GetChannelName(httpPtr->bodyChan) : "(none)");
 
         if (httpPtr->sendSpoolMode == NS_FALSE) {
-            size_t remain = 0;
+            size_t remain;
 
             /*
              * Send (next part of) the request from memory.
@@ -3419,7 +3413,7 @@ HttpProc(
                 Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_READ receive failed");
 
             } else if (n > 0) {
-                int result = TCL_OK;
+                int result;
 
                 /*
                  * Most likely case: we got some bytes.
@@ -3427,6 +3421,7 @@ HttpProc(
                 Ns_MutexLock(&httpPtr->lock);
                 httpPtr->received += (size_t)n;
                 Ns_MutexUnlock(&httpPtr->lock);
+
                 result = HttpAppendContent(httpPtr, buf, (size_t)n);
                 if (unlikely(result != TCL_OK)) {
                     httpPtr->error = "http read failed";
@@ -3934,7 +3929,7 @@ ParseBodyProc(
     } else if (len == 0) {
         result = TCL_BREAK;
     } else {
-        size_t remain = 0u, append = 0u;
+        size_t remain, append;
 
         remain = chunkPtr->length - chunkPtr->got;
         append = remain < len ? remain : len;
@@ -4019,11 +4014,9 @@ ParseTrailerProc(
             chunkPtr->callx = 0;
             result = TCL_BREAK;
         } else {
-            Ns_Set *headersPtr = NULL;
-            char   *trailer = NULL;
+            Ns_Set *headersPtr = httpPtr->replyHeaders;
+            char   *trailer = dsPtr->string;
 
-            headersPtr = httpPtr->replyHeaders;
-            trailer = dsPtr->string;
             if (Ns_ParseHeader(headersPtr, trailer, ToLower) != NS_OK) {
                 result = TCL_ERROR;
             }
