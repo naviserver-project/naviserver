@@ -462,6 +462,7 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
             FormFile      *filePtr;
             Tcl_Interp    *interp = connPtr->itPtr->interp;
 
+            assert(fs != NULL);
             value = Ext2utf(&vds, fs, (size_t)(fe - fs), encoding, unescape);
             hPtr = Tcl_CreateHashEntry(&connPtr->files, key, &isNew);
             if (isNew != 0) {
