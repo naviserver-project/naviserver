@@ -86,7 +86,7 @@ Ns_RegisterFilter(const char *server, const char *method, const char *url,
                   Ns_FilterProc *proc, Ns_FilterType when, void *arg, bool first)
 {
     NsServer *servPtr;
-    Filter *fPtr;
+    Filter   *fPtr;
 
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(method != NULL);
@@ -104,11 +104,17 @@ Ns_RegisterFilter(const char *server, const char *method, const char *url,
     fPtr->arg = arg;
     Ns_MutexLock(&servPtr->filter.lock);
     if (first) {
+        /*
+         * Prepend element at the start of the list.
+         */
         fPtr->nextPtr = servPtr->filter.firstFilterPtr;
         servPtr->filter.firstFilterPtr = fPtr;
     } else {
         Filter **fPtrPtr;
 
+        /*
+         * Append element at the end of the list.
+         */
         fPtr->nextPtr = NULL;
         fPtrPtr = &servPtr->filter.firstFilterPtr;
         while (*fPtrPtr != NULL) {

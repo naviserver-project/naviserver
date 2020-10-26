@@ -333,7 +333,7 @@ if {[info exists httpsport]} {
     # accepted over this driver should be associated with which
     # server. This parameter is for virtual servers. Here we just
     # register the $hostname and the $address (in case, the server is
-    # addressed via its ip address).
+    # addressed via its IP address).
     #
     ns_section ns/module/nsssl/servers {
         ns_param $server $hostname
