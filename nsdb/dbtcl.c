@@ -1192,7 +1192,7 @@ QuoteSqlValue(Tcl_DString *dsPtr, Tcl_Obj *valueObj, int valueType)
     } else {
         Tcl_DStringAppend(dsPtr, "'", 1);
 
-        while (1) {
+        for (;;) {
             const char *p = strchr(valueString, INTCHAR('\''));
             if (p == NULL) {
                 Tcl_DStringAppend(dsPtr, valueString, valueLength);
