@@ -4476,7 +4476,9 @@ DriverLookupHost(Tcl_DString *hostDs, Driver *drvPtr)
              */
             lastChar = *(colon - 1);
             if (lastChar == '.') {
-                memmove(colon-1, colon, 1 + hostDs->length - (colon - hostDs->string));
+                memmove(colon-1, colon,
+                        (1u + (size_t)hostDs->length) -
+                        (size_t)(colon - hostDs->string));
             }
         }
     }
