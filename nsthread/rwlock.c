@@ -335,22 +335,29 @@ Ns_RWLockRdLock(Ns_RWLock *rwPtr)
 {
     RwLock *lockPtr;
     int     err;
+    bool    busy;
 
     NS_NONNULL_ASSERT(rwPtr != NULL);
 
     lockPtr = GetRwLock(rwPtr);
-    err = pthread_rwlock_tryrdlock(&lockPtr->rwlock);
 
-    if (unlikely(err != EBUSY)) {
-        lockPtr->nbusy++;
-        err = pthread_rwlock_rdlock(&lockPtr->rwlock);
-        if (err != 0) {
-            NsThreadFatal("Ns_RWLockRdLock", "pthread_rdlock_rdlock", err);
-        }
+    err = pthread_rwlock_tryrdlock(&lockPtr->rwlock);
+    if (unlikely(err == EBUSY)) {
+        busy = NS_TRUE;
     } else if (unlikely(err != 0)) {
-        NsThreadFatal("Ns_RWLockWrLock", "pthread_rdlock_trywrlock", err);
+        busy = NS_FALSE;
+        NsThreadFatal("Ns_RWLockRdLock", "pthread_rwlock_tryrdlock", err);
+    } else {
+        busy = NS_FALSE;
     }
 
+    if (busy) {
+        err = pthread_rwlock_rdlock(&lockPtr->rwlock);
+        if (err != 0) {
+            NsThreadFatal("Ns_RWLockRdLock", "pthread_rwlock_rdlock", err);
+        }
+        lockPtr->nbusy++;
+    }
     lockPtr->nlock++;
     lockPtr->nrlock++;
 }
@@ -378,6 +385,7 @@ Ns_RWLockWrLock(Ns_RWLock *rwPtr)
 {
     RwLock *lockPtr;
     int     err;
+    bool    busy;
 #ifndef NS_NO_MUTEX_TIMING
     Ns_Time end, diff, startTime;
 #endif
@@ -392,11 +400,21 @@ Ns_RWLockWrLock(Ns_RWLock *rwPtr)
 
     err = pthread_rwlock_trywrlock(&lockPtr->rwlock);
     if (unlikely(err == EBUSY)) {
-        lockPtr->nbusy ++;
+        busy = NS_TRUE;
+    } else if (unlikely(err != 0)) {
+        busy = NS_FALSE;
+        NsThreadFatal("Ns_RWLockWrLock", "pthread_rwlock_trywrlock", err);
+    } else {
+        busy = NS_FALSE;
+    }
+
+    if (busy) {
         err = pthread_rwlock_wrlock(&lockPtr->rwlock);
         if (err != 0) {
             NsThreadFatal("Ns_RWLockWrLock", "pthread_rwlock_wrlock", err);
         }
+        lockPtr->nbusy ++;
+
 #ifndef NS_NO_MUTEX_TIMING
         /*
          * Measure total and max waiting time for busy rwlock locks.
@@ -405,10 +423,7 @@ Ns_RWLockWrLock(Ns_RWLock *rwPtr)
         Ns_DiffTime(&end, &startTime, &diff);
         Ns_IncrTime(&lockPtr->total_waiting_time, diff.sec, diff.usec);
 #endif
-    } else if (unlikely(err != 0)) {
-        NsThreadFatal("Ns_RWLockWrLock", "pthread_rwlock_trywrlock", err);
     }
-
 #ifndef NS_NO_MUTEX_TIMING
     lockPtr->rw = NS_WRITE;
     lockPtr->start_time = startTime;
