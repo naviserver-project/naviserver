@@ -2219,20 +2219,31 @@ UpdateInterp(NsInterp *itPtr)
     Ns_RWLockUnlock(&servPtr->tcl.lock);
 
     if (itPtr->epoch != epoch) {
-        Ns_Time startTime, now, diffTime;
+        fprintf(stderr, "#### itPtr->epoch %d epoch %d\n", itPtr->epoch, epoch);
+        if (0 && itPtr->epoch > 1) {
+            Ns_TclMarkForDelete(itPtr->interp);
+        } else {
+            Ns_Time startTime, now, diffTime;
 
-        Ns_GetTime(&startTime);
-        result = Tcl_EvalEx(itPtr->interp, script,
-                            scriptLength, TCL_EVAL_GLOBAL);
-        Ns_GetTime(&now);
-        Ns_DiffTime(&now, &startTime, &diffTime);
-        Ns_Log(Notice, "update interpreter to epoch %d, trace %s, time %" PRId64 ".%06ld secs",
-               epoch,
-               GetTraceLabel(itPtr->currentTrace),
-               (int64_t) diffTime.sec, diffTime.usec );
+            //xxxx
+            //Ns_TclDestroyInterp(itPtr->interp);
+            //Tcl_HashEntry *hPtr = GetCacheEntry(servPtr);
+            //Tcl_DeleteHashEntry(hPtr);
+            //itPtr = PopInterp(servPtr, NULL);
 
-        ns_free((char *)script);
-        itPtr->epoch = epoch;
+            Ns_GetTime(&startTime);
+            result = Tcl_EvalEx(itPtr->interp, script,
+                                scriptLength, TCL_EVAL_GLOBAL);
+            Ns_GetTime(&now);
+            Ns_DiffTime(&now, &startTime, &diffTime);
+            Ns_Log(Notice, "update interpreter to epoch %d, trace %s, time %" PRId64 ".%06ld secs",
+                   epoch,
+                   GetTraceLabel(itPtr->currentTrace),
+                   (int64_t) diffTime.sec, diffTime.usec );
+
+            ns_free((char *)script);
+            itPtr->epoch = epoch;
+        }
     }
 
     return result;

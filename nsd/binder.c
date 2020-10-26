@@ -273,7 +273,7 @@ PrebindCloseSockets(const char *proto, struct sockaddr *saPtr, struct Prebind *p
         if (sock != NS_INVALID_SOCKET) {
             count ++;
             Ns_Log(Debug, "prebind closing %s socket %d\n", proto, sock);
-            ns_sockclose(sock);
+            (void)ns_sockclose(sock);
         }
     }
     ns_free(pPtr);
@@ -328,7 +328,7 @@ Ns_SockListenEx(const char *address, unsigned short port, int backlog, bool reus
              */
             ns_sockerrno_t err = ns_sockerrno;
 
-            ns_sockclose(sock);
+            (void)ns_sockclose(sock);
             errno = err;
             sock = NS_INVALID_SOCKET;
             Ns_SetSockErrno(err);
@@ -518,7 +518,7 @@ Ns_SockListenUnix(const char *path, int backlog, unsigned short mode)
          */
         ns_sockerrno_t err = ns_sockerrno;
 
-        ns_sockclose(sock);
+        (void)ns_sockclose(sock);
         errno = err;
         sock = NS_INVALID_SOCKET;
         Ns_SetSockErrno(err);
@@ -563,13 +563,14 @@ Ns_SockBindUdp(const struct sockaddr *saPtr, bool reusePort)
 
     sock = (NS_SOCKET)socket((int)saPtr->sa_family, SOCK_DGRAM, 0);
 
-    if (sock == NS_INVALID_SOCKET
-        || setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&n, (socklen_t)sizeof(n)) == -1
-        || setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&n, (socklen_t)sizeof(n)) == -1
-        || bind(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) == -1) {
+    if (sock != NS_INVALID_SOCKET
+        && (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&n, (socklen_t)sizeof(n)) == -1
+            || setsockopt(sock, SOL_SOCKET, SO_BROADCAST, (char*)&n, (socklen_t)sizeof(n)) == -1
+            || bind(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) == -1)
+        ) {
         ns_sockerrno_t err = ns_sockerrno;
 
-        ns_sockclose(sock);
+        (void)ns_sockclose(sock);
         sock = NS_INVALID_SOCKET;
         Ns_SetSockErrno(err);
     } else {
@@ -627,15 +628,17 @@ Ns_SockBindUnix(const char *path, int socktype, unsigned short mode)
 
     sock = socket(AF_UNIX, socktype > 0 ? socktype : SOCK_STREAM, 0);
 
-    if (sock == NS_INVALID_SOCKET
-        || bind(sock, (struct sockaddr *) &addr, sizeof(addr)) == -1
-        || (mode && chmod(path, mode) == -1)) {
+    if (sock != NS_INVALID_SOCKET
+        && (bind(sock, (struct sockaddr *) &addr, sizeof(addr)) == -1
+            || (mode && chmod(path, mode) == -1))
+        ) {
         ns_sockerrno_t err = errno;
 
-        ns_sockclose(sock);
+        (void)ns_sockclose(sock);
         sock = NS_INVALID_SOCKET;
         Ns_SetSockErrno(err);
     }
+
     return sock;
 #endif /* _WIN32 */
 }
@@ -828,7 +831,7 @@ NsClosePreBound(void)
         port = PTR2INT(Tcl_GetHashValue(hPtr));
         Ns_Log(Warning, "prebind: closed unused raw socket: %d = %d",
                port, sock);
-        ns_sockclose(sock);
+        (void)ns_sockclose(sock);
         Tcl_DeleteHashEntry(hPtr);
         hPtr = Tcl_NextHashEntry(&search);
     }
@@ -845,7 +848,7 @@ NsClosePreBound(void)
         sock = PTR2NSSOCK(Tcl_GetHashValue(hPtr));
         Ns_Log(Warning, "prebind: closed unused Unix-domain socket: [%s] %d",
                addr, sock);
-        ns_sockclose(sock);
+        (void)ns_sockclose(sock);
         Tcl_DeleteHashEntry(hPtr);
         hPtr = Tcl_NextHashEntry(&search);
     }
@@ -886,7 +889,7 @@ static Ns_ReturnCode
 PrebindSockets(const char *spec)
 {
     Tcl_HashEntry         *hPtr;
-    int                    isNew, sock;
+    int                    isNew = 0, sock;
     char                  *next, *str, *line, *lines;
     long                   l;
     Ns_ReturnCode          status = NS_OK;
@@ -1032,7 +1035,7 @@ PrebindSockets(const char *spec)
                 hPtr = Tcl_CreateHashEntry(&preboundRaw, NSSOCK2PTR(sock), &isNew);
                 if (isNew == 0) {
                     Ns_Log(Error, "prebind: icmp: duplicate entry");
-                    ns_sockclose(sock);
+                    (void)ns_sockclose(sock);
                     continue;
                 }
                 Tcl_SetHashValue(hPtr, IPPROTO_ICMP);
@@ -1183,7 +1186,7 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
      */
 
     if (sock != NS_INVALID_SOCKET && Ns_CloseOnExec(sock) != NS_OK) {
-        ns_sockclose(sock);
+        (void)ns_sockclose(sock);
         sock = NS_INVALID_SOCKET;
     }
     if (err == 0) {
@@ -1251,8 +1254,8 @@ NsForkBinder(void)
         if (pid < 0) {
             Ns_Fatal("NsForkBinder: fork() failed: '%s'", strerror(errno));
         } else if (pid == 0) {
-            ns_sockclose(binderRequest[1]);
-            ns_sockclose(binderResponse[0]);
+            (void)ns_sockclose(binderRequest[1]);
+            (void)ns_sockclose(binderResponse[0]);
             Binder();
         }
         exit(0);
@@ -1291,10 +1294,10 @@ void
 NsStopBinder(void)
 {
     if (binderRunning) {
-        ns_sockclose(binderRequest[1]);
-        ns_sockclose(binderResponse[0]);
-        ns_sockclose(binderRequest[0]);
-        ns_sockclose(binderResponse[1]);
+        (void)ns_sockclose(binderRequest[1]);
+        (void)ns_sockclose(binderResponse[0]);
+        (void)ns_sockclose(binderRequest[0]);
+        (void)ns_sockclose(binderResponse[1]);
         binderRunning = NS_FALSE;
     }
 }
@@ -1434,7 +1437,7 @@ Binder(void)
             /*
              * Close the socket as it won't be needed in the child.
              */
-            ns_sockclose(sock);
+            (void)ns_sockclose(sock);
         }
     }
     Ns_Log(Notice, "binder: stopped");
