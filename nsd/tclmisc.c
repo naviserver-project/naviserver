@@ -328,7 +328,8 @@ Ns_SetNamedVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
     Tcl_IncrRefCount(valPtr);
     errPtr = Tcl_ObjSetVar2(interp, varPtr, NULL, valPtr, TCL_LEAVE_ERR_MSG);
     Tcl_DecrRefCount(valPtr);
-    return (errPtr != NULL ? NS_TRUE : NS_FALSE);
+
+    return (errPtr != NULL);
 }
 
 

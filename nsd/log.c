@@ -1189,7 +1189,7 @@ NsLogCtlSeverityObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
          */
         if (givenEnabled != -1 && severity != Fatal) {
             enabled = severityConfig[severity].enabled;
-            severityConfig[severity].enabled = (givenEnabled == 1 ? NS_TRUE : NS_FALSE);
+            severityConfig[severity].enabled = (givenEnabled == 1);
         } else {
             enabled = Ns_LogSeverityEnabled(severity);
         }
@@ -1317,7 +1317,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
             filterPtr->proc = LogToDString;
             filterPtr->arg  = &ds;
             Ns_DStringInit(&ds);
-            LogFlush(cachePtr, filterPtr, -1, (opt == CGetIdx) ? NS_TRUE : NS_FALSE, NS_FALSE);
+            LogFlush(cachePtr, filterPtr, -1, (opt == CGetIdx), NS_FALSE);
             Tcl_DStringResult(interp, &ds);
             break;
 

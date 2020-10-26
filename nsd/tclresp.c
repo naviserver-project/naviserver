@@ -271,7 +271,7 @@ NsTclWriteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *c
          * text objects...
          */
 
-        binary = (conn->flags & NS_CONN_WRITE_ENCODED) != 0u ? NS_FALSE : NS_TRUE;
+        binary = ((conn->flags & NS_CONN_WRITE_ENCODED) == 0u);
 
         for (i = 0, n = 0; i < objc; i++) {
             if (!binary) {

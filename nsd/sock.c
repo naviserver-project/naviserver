@@ -1355,7 +1355,7 @@ static bool
 CloseLater(NS_SOCKET sock, void *UNUSED(arg), unsigned int UNUSED(why))
 {
     int rc = ns_sockclose(sock);
-    return (rc == 0 ? NS_TRUE : NS_FALSE);
+    return (rc == 0);
 }
 
 Ns_ReturnCode

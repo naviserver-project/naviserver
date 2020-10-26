@@ -1331,8 +1331,8 @@ HttpQueue(
                              caFile,
                              caPath,
                              sniHostname,
-                             (verifyCert  == 1) ? NS_TRUE : NS_FALSE,
-                             (keepHostHdr == 1) ? NS_TRUE : NS_FALSE,
+                             (verifyCert  == 1),
+                             (keepHostHdr == 1),
                              timeoutPtr,
                              expirePtr,
                              &httpPtr);
@@ -3499,7 +3499,7 @@ HttpProc(
          * (i.e. there is no chance for cancel) hence we must mark
          * the task as completed (done) right here.
          */
-        taskDone = (httpPtr->doneCallback == NULL) ? NS_FALSE : NS_TRUE;
+        taskDone = (httpPtr->doneCallback != NULL);
         httpPtr->error = "http request timeout";
 
         break;

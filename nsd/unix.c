@@ -708,7 +708,8 @@ Ns_GetNameForGid(Ns_DString *dsPtr, gid_t gid)
     }
     Ns_MutexUnlock(&lock);
 #endif
-    return (grPtr != NULL) ? NS_TRUE : NS_FALSE;
+
+    return (grPtr != NULL);
 }
 
 

@@ -513,7 +513,7 @@ Ns_HomePathExists(const char *path, ...)
     Tcl_DecrRefCount(obj);
     Ns_DStringFree(&ds);
 
-    return status == 0 ? NS_TRUE : NS_FALSE;
+    return (status == 0);
 }
 
 

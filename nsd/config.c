@@ -799,7 +799,7 @@ Ns_ConfigGetSection(const char *section)
 Ns_Set *
 Ns_ConfigCreateSection(const char *section)
 {
-    bool create = Ns_InfoStarted() ? NS_FALSE : NS_TRUE;
+    bool create = !Ns_InfoStarted();
     return GetSection(section, create);
 }
 

@@ -6499,7 +6499,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
      */
 
     connPtr->flags |= NS_CONN_SENT_VIA_WRITER;
-    wrSockPtr->keep = connPtr->keep > 0 ? NS_TRUE : NS_FALSE;
+    wrSockPtr->keep = (connPtr->keep > 0);
     wrSockPtr->size = nsend;
     Ns_Log(DriverDebug, "NsWriterQueue NS_CONN_SENT_VIA_WRITER connPtr %p",
            (void*)connPtr);

@@ -102,7 +102,7 @@ Ns_TclThread(Tcl_Interp *interp, const char *script, Ns_Thread *thrPtr)
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(script != NULL);
 
-    CreateTclThread(NsGetInterpData(interp), script, (thrPtr == NULL ? NS_TRUE : NS_FALSE),
+    CreateTclThread(NsGetInterpData(interp), script, (thrPtr == NULL),
                     "tcl", thrPtr);
     return NS_OK;
 }

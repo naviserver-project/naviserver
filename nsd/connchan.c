@@ -951,7 +951,7 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
                                      connPtr->sockPtr,
                                      Ns_ConnStartTime((Ns_Conn *)connPtr),
                                      connPtr->reqPtr->peer,
-                                     (connPtr->flags & NS_CONN_WRITE_ENCODED) != 0u ? NS_FALSE : NS_TRUE,
+                                     ((connPtr->flags & NS_CONN_WRITE_ENCODED) == 0u),
                                      connPtr->clientData);
         Ns_Log(Ns_LogConnchanDebug, "%s ConnChanDetachObjCmd sock %d",
                connChanPtr->channelName,

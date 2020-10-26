@@ -245,7 +245,8 @@ Ns_SockPortBound(unsigned short port)
     Ns_MutexLock(&lock);
     hPtr = Tcl_FindHashEntry(&portsTable, INT2PTR(port));
     Ns_MutexUnlock(&lock);
-    return (hPtr != NULL ? NS_TRUE : NS_FALSE);
+
+    return (hPtr != NULL);
 }
 
 
@@ -320,7 +321,7 @@ ListenCallback(NS_SOCKET sock, void *arg, unsigned int why)
              * There was no hash entry for the listen callback
              */
             int result = ns_sockclose(newSock);
-            success = (result == 0) ? NS_TRUE : NS_FALSE;
+            success = (result == 0);
         } else {
             /*
              * The hash entry was found, so fire the callback (e.g. exec Tcl

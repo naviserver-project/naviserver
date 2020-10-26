@@ -176,7 +176,7 @@ Ns_EventEnqueue(Ns_EventQueue *queue, NS_SOCKET sock, Ns_EventProc *proc, void *
         evPtr->arg = arg;
         Push(evPtr, queuePtr->firstInitPtr);
     }
-    return (evPtr != NULL) ? NS_TRUE : NS_FALSE;
+    return (evPtr != NULL);
 }
 
 
@@ -369,7 +369,7 @@ Ns_RunEventQueue(Ns_EventQueue *queue)
         evPtr = nextPtr;
     }
 
-    return (queuePtr->firstWaitPtr != NULL) ? NS_TRUE : NS_FALSE;
+    return (queuePtr->firstWaitPtr != NULL);
 }
 
 
