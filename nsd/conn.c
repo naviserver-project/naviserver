@@ -181,7 +181,7 @@ Ns_ConnAuthPasswd(const Ns_Conn *conn)
  *      Get the content length from the client
  *
  * Results:
- *      An size_t content length, or 0 if none sent
+ *      A size_t content length, or 0u if no data was sent
  *
  * Side effects:
  *      None

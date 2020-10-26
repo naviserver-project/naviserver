@@ -68,7 +68,7 @@ void *ns_realloc(void *ptr, size_t size)  {
 void *ns_malloc(size_t size) {
     void *result;
 
-    assert(size > 0);
+    assert(size > 0u);
 
     result = malloc(size);
     if (result == NULL) {
@@ -83,8 +83,8 @@ void ns_free(void *ptr) {
 void *ns_calloc(size_t num, size_t esize) {
     void *result;
 
-    assert(num > 0);
-    assert(esize > 0);
+    assert(num > 0u);
+    assert(esize > 0u);
 
     result = calloc(num, esize);
     if (result == NULL) {
