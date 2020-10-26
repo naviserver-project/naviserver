@@ -1041,8 +1041,9 @@ SectionObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *cons
         result = TCL_ERROR;
 
     } else {
-        Ns_Set  **set = (Ns_Set **) clientData;
+        Ns_Set **set = (Ns_Set **) clientData;
 
+        assert(sectionName != NULL);
         *set = GetSection(sectionName, NS_TRUE);
 
         if (blockObj != NULL) {
