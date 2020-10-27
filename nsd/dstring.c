@@ -91,17 +91,33 @@ Ns_DStringVarAppend(Ns_DString *dsPtr, ...)
 char *
 Ns_DStringExport(Ns_DString *dsPtr)
 {
-    char *s;
+    char   *s;
+    size_t  size;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
+#ifdef SAME_MALLOC_IN_TCL_AND_NS
+    /*
+     * The following code saves a memory duplication in case the Tcl_DString
+     * was allocated with the same memory allocator from Tcl as used for
+     * freeing in NaviServer. This is the case, when both Tcl (+ SYSTEM_MALLOC
+     * patch) and NaviServer were compiled with SYSTEM_MALLOC, or both without
+     * it. The save assumption is that we cannot trust on this ans we do not
+     * define this flag.
+     */
     if (dsPtr->string != dsPtr->staticSpace) {
         s = dsPtr->string;
         dsPtr->string = dsPtr->staticSpace;
     } else {
-        s = ns_malloc((size_t)dsPtr->length + 1u);
-        memcpy(s, dsPtr->string, (size_t)dsPtr->length + 1u);
+        size = (size_t)dsPtr->length + 1u;
+        s = ns_malloc(size);
+        memcpy(s, dsPtr->string, size);
     }
+#else
+    size = (size_t)dsPtr->length + 1u;
+    s = ns_malloc(size);
+    memcpy(s, dsPtr->string, size);
+#endif
     Ns_DStringFree(dsPtr);
 
     return s;
