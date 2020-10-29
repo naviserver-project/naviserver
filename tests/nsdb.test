@@ -68,6 +68,46 @@ test ns_db-2.9 {nsdb releasehandle} -body {
 } -returnCodes {ok error} -result {}
 
 
+test ns_getcsv-1.0 {ns_getcsv} -body {
+    set cvsFile [ns_server pagedir]/csv
+    set f [open $cvsFile]
+
+    while {1} {
+        set r [ns_getcsv $f line]
+        switch $r {
+           -1       {break}
+            0       {}
+            default {lappend lines $line}
+        }
+    }
+    close $f
+    set lines
+} -cleanup {
+    unset -nocomplain lines r f
+} -returnCodes {ok error} -result {{aaa bbb ccc} {aaa {b
+bb} ccc} {zzz yyy xxx} {{ 1 } { 2 } { 3 }} {includes(\")quote {quoted includes (") quote}} {elm2 {} empty} single {last3 empty {} {} {}}} ;# "
+
+
+test ns_getcsv-1.1 {ns_getcsv with trim} -body {
+    set cvsFile [ns_server pagedir]/csv
+    set f [open $cvsFile]
+
+    while {1} {
+        set r [ns_getcsv -trim $f line]
+        switch $r {
+           -1       {break}
+            0       {}
+            default {lappend lines $line}
+        }
+    }
+    close $f
+    set lines
+} -cleanup {
+    unset -nocomplain lines r f
+} -returnCodes {ok error} -result {{aaa bbb ccc} {aaa {b
+bb} ccc} {zzz yyy xxx} {1 2 3} {includes(\")quote {quoted includes (") quote}} {elm2 {} empty} single {last3 empty {} {} {}}} ;# "
+
+
 cleanupTests
 
 # Local variables:
