@@ -69,8 +69,8 @@ test ns_db-2.9 {nsdb releasehandle} -body {
 
 
 test ns_getcsv-1.0 {ns_getcsv} -body {
-    set cvsFile [ns_server pagedir]/csv
-    set f [open $cvsFile]
+    set csvFile [ns_server pagedir]/csv
+    set f [open $csvFile]
 
     while {1} {
         set r [ns_getcsv $f line]
@@ -89,8 +89,8 @@ bb} ccc} {zzz yyy xxx} {{ 1 } { 2 } { 3 }} {includes(\")quote {quoted includes (
 
 
 test ns_getcsv-1.1 {ns_getcsv with trim} -body {
-    set cvsFile [ns_server pagedir]/csv
-    set f [open $cvsFile]
+    set csvFile [ns_server pagedir]/csv
+    set f [open $csvFile]
 
     while {1} {
         set r [ns_getcsv -trim $f line]
