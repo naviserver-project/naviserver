@@ -1211,13 +1211,20 @@ ns_runonce {
         foreach old [nstrace::getentries rename] {
             set new [nstrace::getentry rename $old]
             #
-            # $old and $new might be procs or commands.
-            # Handle only handle those cases, where neither
-            # $old or $new is a proc, since the procs are already
-            # parts of the serialized blueprint.
+            # $old and $new might be procs or commands.  Handle only
+            # handle those cases, where neither $old or $new is a
+            # proc, since the procs are already parts of the
+            # serialized blueprint.
             #
             if {"[info procs $old][info procs $new]" eq ""} {
-                append script "rename [list $old] [list $new]" \n
+                #
+                # Only perform rename operation when source exists and
+                # target does not exist.
+                #
+                append script \
+                    "if {\[namespace which [list $old]\] ne {} && \[namespace which [list $new]\] eq {}} " \
+                    "{rename [list $old] [list $new]}" \
+                    \n
             }
         }
         return $script
