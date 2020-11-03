@@ -412,10 +412,11 @@ JobConfigureObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         if (logminPtr != NULL) {
             tp.logminduration = *logminPtr;
         }
-        Ns_TclPrintfResult(interp, "jobsperthread %d timeout %ld:%06ld logminduration %ld:%06ld",
+        Ns_TclPrintfResult(interp, "jobsperthread %d timeout " NS_TIME_FMT
+                           " logminduration " NS_TIME_FMT,
                            tp.jobsPerThread,
-                           tp.timeout.sec, tp.timeout.usec,
-                           tp.logminduration.sec, tp.logminduration.usec );
+                           (int64_t)tp.timeout.sec, tp.timeout.usec,
+                           (int64_t)tp.logminduration.sec, tp.logminduration.usec );
         Ns_MutexUnlock(&tp.queuelock);
     }
 
@@ -1562,7 +1563,7 @@ JobThread(void *UNUSED(arg))
 
             (void)Ns_DiffTime(&jobPtr->endTime, &jobPtr->startTime, &diffTime);
             if (Ns_DiffTime(&tp.logminduration, &diffTime, NULL) < 1) {
-                Ns_Log(Notice, "ns_job %s duration %" PRId64 ".%06ld secs: '%s'",
+                Ns_Log(Notice, "ns_job %s duration " NS_TIME_FMT " secs: '%s'",
                        jobPtr->queueId, (int64_t)diffTime.sec, diffTime.usec,
                        jobPtr->script.string);
             }

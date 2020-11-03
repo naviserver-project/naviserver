@@ -65,7 +65,7 @@ static NS_SOCKET SockSetup(NS_SOCKET sock);
 static ssize_t SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs,
                         unsigned int flags);
 
-static ssize_t SockSend(NS_SOCKET sock, struct iovec *bufs, int nbufs,
+static ssize_t SockSend(NS_SOCKET sock, const struct iovec *bufs, int nbufs,
                         unsigned int flags);
 
 static NS_SOCKET BindToSameFamily(struct sockaddr *saPtr,
@@ -547,7 +547,7 @@ Ns_SockSendBufs2(NS_SOCKET sock, const struct iovec *bufs, int nbufs,
 
     NS_NONNULL_ASSERT(bufs != NULL);
 
-    sent = SockSend(sock, (struct iovec *)bufs, nbufs, flags);
+    sent = SockSend(sock, bufs, nbufs, flags);
 
     if (unlikely(sent == -1)) {
         if (Retry(ns_sockerrno)) {
@@ -1837,7 +1837,7 @@ SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
  */
 
 static ssize_t
-SockSend(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
+SockSend(NS_SOCKET sock, const struct iovec *bufs, int nbufs, unsigned int flags)
 {
     ssize_t numBytes = 0;
 
@@ -1854,7 +1854,7 @@ SockSend(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
     struct msghdr msg;
 
     memset(&msg, 0, sizeof(msg));
-    msg.msg_iov = bufs;
+    msg.msg_iov = (struct iovec *)bufs;
     msg.msg_iovlen = (NS_MSG_IOVLEN_T)nbufs;
     numBytes = sendmsg(sock, &msg, (int)flags|MSG_NOSIGNAL|MSG_DONTWAIT);
 #endif

@@ -463,7 +463,7 @@ Ns_ConnSetCookieEx(const Ns_Conn *conn, const char *name, const char *value,
     } else if (maxage == TIME_T_MAX) {
         Ns_DStringAppend(&cookie, "; Expires=Fri, 01-Jan-2035 01:00:00 GMT");
     } else if (maxage > 0) {
-        Ns_DStringPrintf(&cookie, "; Max-Age=%ld", maxage);
+        Ns_DStringPrintf(&cookie, "; Max-Age=%" PRId64, (int64_t)maxage);
     } else {
         /*
          * maxage == 0, don't specify any expiry

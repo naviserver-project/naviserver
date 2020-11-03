@@ -1053,11 +1053,11 @@ NsTclFastPathCacheStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 const Ns_Time *timePtr = Ns_CacheGetExpirey(entry);
 
                 if (timePtr->usec == 0) {
-                    Ns_DStringPrintf(&ds, "%" PRIdz " %ld ",
-                                     size, timePtr->sec);
+                    Ns_DStringPrintf(&ds, "%" PRIdz " %" PRId64 " ",
+                                     size, (int64_t)timePtr->sec);
                 } else {
-                    Ns_DStringPrintf(&ds, "%" PRIdz " %ld:%ld ",
-                                     size, timePtr->sec, timePtr->usec);
+                    Ns_DStringPrintf(&ds, "%" PRIdz " " NS_TIME_FMT " ",
+                                     size, (int64_t)timePtr->sec, timePtr->usec);
                 }
                 entry = Ns_CacheNextEntry(&search);
             }

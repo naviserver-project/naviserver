@@ -431,10 +431,10 @@ Ns_ConfigTimeUnitRange(const char *section, const char *key,
         /*
          * Found and parsed parameter.
          */
-        Ns_Log(Dev, "config: %s:%s value=%ld.%06ld secs "
-               "min=%ld.%06ld max=%ld.%06ld default=%s",
-               section, key, timePtr->sec, timePtr->usec,
-               minSec, minUsec, maxSec, maxUsec, defaultString);
+        Ns_Log(Dev, "config: %s:%s value=" NS_TIME_FMT " secs "
+               "min=" NS_TIME_FMT " max=" NS_TIME_FMT " default=%s",
+               section, key, (int64_t)timePtr->sec, timePtr->usec,
+               (int64_t)minSec, minUsec, (int64_t)maxSec, maxUsec, defaultString);
 
     } else {
 
@@ -459,19 +459,21 @@ Ns_ConfigTimeUnitRange(const char *section, const char *key,
             /*
              * No such parameter configured.
              */
-            Ns_Log(Dev, "config: %s:%s value=(null) min=%ld.%06ld max=%ld.%06ld default=%s",
+            Ns_Log(Dev, "config: %s:%s value=(null) min=" NS_TIME_FMT
+                   " max=" NS_TIME_FMT " default=%s",
                    section, key,
-                   minSec, minUsec, maxSec, maxUsec, defaultString);
+                   (int64_t)minSec, minUsec, (int64_t)maxSec, maxUsec,
+                   defaultString);
         }
     }
     if (Ns_DiffTime(timePtr, &minTime, NULL) == -1) {
-        Ns_Log(Warning, "config: %s:%s value=%ld.%06ld rounded up to %ld.%06ld",
-               section, key, timePtr->sec, timePtr->usec, minSec, minUsec);
+        Ns_Log(Warning, "config: %s:%s value=" NS_TIME_FMT " rounded up to " NS_TIME_FMT,
+               section, key, (int64_t)timePtr->sec, timePtr->usec, (int64_t)minSec, minUsec);
         *timePtr = minTime;
     }
     if (Ns_DiffTime(timePtr, &maxTime, NULL) == 1) {
-        Ns_Log(Warning, "config: %s:%s value=%ld.%06ld rounded down to %ld.%06ldf",
-               section, key, timePtr->sec, timePtr->usec, maxSec, maxUsec);
+        Ns_Log(Warning, "config: %s:%s value=" NS_TIME_FMT " rounded down to " NS_TIME_FMT,
+               section, key, (int64_t)timePtr->sec, timePtr->usec, (int64_t)maxSec, maxUsec);
         *timePtr = maxTime;
     }
 

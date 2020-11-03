@@ -838,6 +838,8 @@ typedef int bool;
 # define PRIiovlen PRIdz
 #endif
 
+#define NS_TIME_FMT "%" PRId64 ".%06ld"
+
 /*
  * Older Solaris version (2.8-) have older definitions
  * of pointer formatting macros.

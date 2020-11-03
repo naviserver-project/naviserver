@@ -868,8 +868,8 @@ SchedThread(void *UNUSED(arg))
 
             (void)Ns_DiffTime(&ePtr->laststart, &now, &diff);
             if (Ns_DiffTime(&diff, &nsconf.sched.maxelapsed, NULL) == 1) {
-                Ns_Log(Warning, "sched: excessive time taken by proc %d (%ld.%06ld seconds)",
-                       ePtr->id, diff.sec, diff.usec);
+                Ns_Log(Warning, "sched: excessive time taken by proc %d (" NS_TIME_FMT " seconds)",
+                       ePtr->id, (int64_t)diff.sec, diff.usec);
             }
             if (ePtr->hPtr == NULL) {
                 FreeEvent(ePtr);

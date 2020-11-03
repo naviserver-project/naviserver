@@ -2584,8 +2584,8 @@ DriverThread(void *arg)
 
                 assert(drvPtr == sockPtr->drvPtr);
 
-                Ns_Log(DriverDebug, "setting keepwait %ld.%6ld for socket %d",
-                       drvPtr->keepwait.sec, drvPtr->keepwait.usec,
+                Ns_Log(DriverDebug, "setting keepwait " NS_TIME_FMT " for socket %d",
+                       (int64_t)drvPtr->keepwait.sec, drvPtr->keepwait.usec,
                        sockPtr->sock);
 
                 SockTimeout(sockPtr, &now, &drvPtr->keepwait);
@@ -2602,15 +2602,16 @@ DriverThread(void *arg)
                 if (sockPtr->sock == NS_INVALID_SOCKET) {
                     SockRelease(sockPtr, SOCK_CLOSE, errno);
 
-                    Ns_Log(DriverDebug, "DRIVER SockRelease: errno %d drvPtr->closewait %ld.%6ld",
-                           errno, drvPtr->closewait.sec, drvPtr->closewait.usec);
+                    Ns_Log(DriverDebug, "DRIVER SockRelease: errno %d "
+                           "drvPtr->closewait " NS_TIME_FMT,
+                           errno, (int64_t)drvPtr->closewait.sec, drvPtr->closewait.usec);
 
                 } else if (shutdown(sockPtr->sock, SHUT_WR) != 0) {
                     SockRelease(sockPtr, SOCK_SHUTERROR, errno);
 
                 } else {
-                    Ns_Log(DriverDebug, "setting closewait %ld.%6ld for socket %d",
-                           drvPtr->closewait.sec,  drvPtr->closewait.usec, sockPtr->sock);
+                    Ns_Log(DriverDebug, "setting closewait " NS_TIME_FMT " for socket %d",
+                           (int64_t)drvPtr->closewait.sec,  drvPtr->closewait.usec, sockPtr->sock);
                     SockTimeout(sockPtr, &now, &drvPtr->closewait);
                     Push(sockPtr, closePtr);
                 }
@@ -5846,8 +5847,9 @@ WriterThread(void *arg)
                     if (currentMs > 0) {
                         curPtr->currentRate = (int)((curPtr->nsent)/(Tcl_WideInt)currentMs);
                         Ns_Log(DriverDebug,
-                               "Socket of pool '%s' is writable, currentMs %ld has updated current rate %d",
-                               curPtr->poolPtr->pool, currentMs, curPtr->currentRate);
+                               "Socket of pool '%s' is writable, currentMs %" PRId64
+                               " has updated current rate %d",
+                               curPtr->poolPtr->pool, (int64_t)currentMs, curPtr->currentRate);
                     }
                 }
                 Ns_Log(DriverDebug,
@@ -5886,9 +5888,9 @@ WriterThread(void *arg)
                  *  for too long and we need to stop this socket
                  */
                 if (sockPtr->timeout.sec == 0) {
-                    Ns_Log(DriverDebug, "Writer %p fd %d setting sendwait %ld.%6ld",
+                    Ns_Log(DriverDebug, "Writer %p fd %d setting sendwait " NS_TIME_FMT,
                            (void *)curPtr, sockPtr->sock,
-                           curPtr->sockPtr->drvPtr->sendwait.sec,
+                           (int64_t)curPtr->sockPtr->drvPtr->sendwait.sec,
                            curPtr->sockPtr->drvPtr->sendwait.usec);
                     SockTimeout(sockPtr, &now, &curPtr->sockPtr->drvPtr->sendwait);
                 } else if (Ns_DiffTime(&sockPtr->timeout, &now, NULL) <= 0) {

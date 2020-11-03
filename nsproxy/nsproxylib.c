@@ -1000,7 +1000,7 @@ SetExpire(Worker *workerPtr, const Ns_Time *timePtr)
     NS_NONNULL_ASSERT(workerPtr != NULL);
 
     Ns_Log(Ns_LogNsProxyDebug, "set expire in %ld ms for pool %s worker %ld",
-           timePtr == NULL ? -1 : Ns_TimeToMilliseconds(timePtr),
+           timePtr == NULL ? -1 : (long)Ns_TimeToMilliseconds(timePtr),
            workerPtr->poolPtr->name, (long)workerPtr->pid);
 
     if (timePtr != NULL) {
@@ -1057,7 +1057,7 @@ Eval(Tcl_Interp *interp, Proxy *proxyPtr, const char *script, const Ns_Time *tim
             Ns_GetTime(&endTime);
             (void)Ns_DiffTime(&endTime, &startTime, &diffTime);
             if (Ns_DiffTime(&proxyPtr->conf.logminduration, &diffTime, NULL) < 1) {
-                Ns_Log(Notice, "nsproxy %s duration %" PRId64 ".%06ld secs: '%s'",
+                Ns_Log(Notice, "nsproxy %s duration " NS_TIME_FMT " secs: '%s'",
                        proxyPtr->poolPtr->name, (int64_t)diffTime.sec, diffTime.usec, script);
             }
 
@@ -2669,7 +2669,7 @@ FmtActiveProxy(Tcl_Interp *interp, const Proxy *proxyPtr)
     Tcl_DStringGetResult(interp, &ds);
 
     Tcl_DStringStartSublist(&ds);
-    Ns_DStringPrintf(&ds, "handle %s slave %ld start %" PRId64 ".%06ld script",
+    Ns_DStringPrintf(&ds, "handle %s slave %ld start " NS_TIME_FMT " script",
                      proxyPtr->id,
                      (long) ((proxyPtr->workerPtr != NULL) ? proxyPtr->workerPtr->pid : 0),
                      (int64_t) proxyPtr->when.sec,
@@ -3039,7 +3039,7 @@ CloseWorker(Worker *workerPtr, const Ns_Time *timePtr)
 
     Ns_Log(Ns_LogNsProxyDebug, "nsproxy [%s]: close worker %ld (expire %ld ms)",
            workerPtr->poolPtr->name, (long) workerPtr->pid,
-           timePtr != NULL ? Ns_TimeToMilliseconds(timePtr) : -1);
+           timePtr != NULL ? (long)Ns_TimeToMilliseconds(timePtr) : -1);
 
     /*
      * Set the time to kill the worker process. Reaper thread will use passed
@@ -3191,8 +3191,9 @@ ReaperThread(void *UNUSED(arg))
                 Ns_IncrTime(&diff, poolPtr->conf.tidle.sec, poolPtr->conf.tidle.usec);
                 if (Ns_DiffTime(&diff, &timeout, NULL) < 0) {
                     timeout = diff;
-                    Ns_Log(Ns_LogNsProxyDebug, "reaper sets timeout based on idle diff %ld.%06ld of pool %s",
-                           timeout.sec, timeout.usec, poolPtr->name);
+                    Ns_Log(Ns_LogNsProxyDebug, "reaper sets timeout based on idle "
+                           "diff " NS_TIME_FMT " of pool %s",
+                           (int64_t)timeout.sec, timeout.usec, poolPtr->name);
                 }
             }
 
@@ -3216,8 +3217,10 @@ ReaperThread(void *UNUSED(arg))
 
                     if (!expired && Ns_DiffTime(&workerPtr->expire, &timeout, NULL) <= 0) {
                         timeout = workerPtr->expire;
-                        Ns_Log(Ns_LogNsProxyDebug, "reaper sets timeout based on expire %ld.%06ld pool %s worker %ld",
-                               timeout.sec, timeout.usec, poolPtr->name, (long)workerPtr->pid);
+                        Ns_Log(Ns_LogNsProxyDebug, "reaper sets timeout based on "
+                               "expire " NS_TIME_FMT " pool %s worker %ld",
+                               (int64_t)timeout.sec, timeout.usec, poolPtr->name,
+                               (long)workerPtr->pid);
                     }
                 } else {
                     expired = NS_FALSE;
@@ -3350,8 +3353,10 @@ ReaperThread(void *UNUSED(arg))
                  */
 
                 if (Ns_DiffTime(&workerPtr->expire, &timeout, NULL) < 0) {
-                    Ns_Log(Ns_LogNsProxyDebug, "reaper shortens timeout to %ld.%06ld based on expire in pool %s worker %ld kill %d",
-                           timeout.sec, timeout.usec, workerPtr->poolPtr->name, (long)workerPtr->pid, workerPtr->signal);
+                    Ns_Log(Ns_LogNsProxyDebug, "reaper shortens timeout to "
+                           NS_TIME_FMT " based on expire in pool %s worker %ld kill %d",
+                           (int64_t)timeout.sec, timeout.usec, workerPtr->poolPtr->name,
+                           (long)workerPtr->pid, workerPtr->signal);
                     timeout = workerPtr->expire;
                 }
                 if (workerPtr->signal != workerPtr->sigsent) {
@@ -3382,8 +3387,8 @@ ReaperThread(void *UNUSED(arg))
                 Ns_Log(Ns_LogNsProxyDebug, "reaper waits unlimited for cond");
                 Ns_CondWait(&pcond, &plock);
             } else {
-                Ns_Log(Ns_LogNsProxyDebug, "reaper waits for cond with timeout %ld.%06ld",
-                       timeout.sec, timeout.usec);
+                Ns_Log(Ns_LogNsProxyDebug, "reaper waits for cond with timeout " NS_TIME_FMT,
+                       (int64_t)timeout.sec, timeout.usec);
                 (void) Ns_CondTimedWait(&pcond, &plock, &timeout);
             }
             if (reaperState == Stopping) {

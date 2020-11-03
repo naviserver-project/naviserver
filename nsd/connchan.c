@@ -833,18 +833,22 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                  * will suspend all sock-callback handlings for this
                  * time period.
                  */
-                Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend recoverable error before timeout (%ld:%ld)",
-                       connChanPtr->channelName, timeoutPtr->sec, timeoutPtr->usec);
+                Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend recoverable "
+                       "error before timeout (" NS_TIME_FMT ")",
+                       connChanPtr->channelName, (int64_t)timeoutPtr->sec, timeoutPtr->usec);
                 if (Ns_SockTimedWait(sockPtr->sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
                     result = NsDriverSend(sockPtr, bufs, nbufs, flags);
                 } else {
                     Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend timeout occurred",
                            connChanPtr->channelName);
                     haveTimeout = NS_TRUE;
-                    Ns_TclPrintfResult(interp, "channel %s timeout on send operation (%ld:%ld)",
-                                       connChanPtr->channelName, timeoutPtr->sec, timeoutPtr->usec);
+                    Ns_TclPrintfResult(interp, "channel %s timeout on send "
+                                       "operation (" NS_TIME_FMT ")",
+                                       connChanPtr->channelName,
+                                       (int64_t)timeoutPtr->sec, timeoutPtr->usec);
                     Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
-                    Ns_Log(Ns_LogTimeoutDebug, "connchan send on %s runs into timeout", connChanPtr->channelName);
+                    Ns_Log(Ns_LogTimeoutDebug, "connchan send on %s runs into timeout",
+                           connChanPtr->channelName);
                     result = -1;
                 }
             }
