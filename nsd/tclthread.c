@@ -164,11 +164,13 @@ NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
     static const char *const opts[] = {
         "begin", "begindetached", "create", "wait", "join",
-        "name", "get", "getid", "handle", "id", "yield", "stackinfo", NULL
+        "name", "get", "getid", "handle", "id", "yield",
+        "stackinfo", NULL
     };
     enum {
         TBeginIdx, TBeginDetachedIdx, TCreateIdx, TWaitIdx, TJoinIdx,
-        TNameIdx, TGetIdx, TGetIdIdx, THandleIdx, TIdIdx, TYieldIdx, TStackinfoIdx
+        TNameIdx, TGetIdx, TGetIdIdx, THandleIdx, TIdIdx, TYieldIdx,
+        TStackinfoIdx
     };
 
     if (objc < 2) {
