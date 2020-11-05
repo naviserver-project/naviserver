@@ -364,12 +364,14 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
     if (sslCtx == NULL) {
         Ns_Log(Warning, "nsssl Send is called on a socket without sslCtx (sock %d)",
                sock->sock);
+        sent = -1;
     } else {
         bool decork = Ns_SockCork(sock, NS_TRUE);
 
         while (nbufs > 0) {
             if (bufs->iov_len > 0) {
                 int rc;
+
                 ERR_clear_error();
                 rc = SSL_write(sslCtx->ssl, bufs->iov_base, (int)bufs->iov_len);
                 if (rc <= 0) {
