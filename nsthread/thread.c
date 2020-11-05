@@ -64,7 +64,7 @@ static void CleanupThread(void *arg);
 static void SetBottomOfStack(void *ptr)  NS_GNUC_NONNULL(1);
 
 /*
- * The following pointer maintains a linked list of all threads.
+ * The pointer firstThreadPtr is the anchor of a linked list of all threads.
  */
 
 static Thread *firstThreadPtr;
