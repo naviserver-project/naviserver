@@ -2298,10 +2298,12 @@ UpdateInterp(NsInterp *itPtr)
                                 scriptLength, TCL_EVAL_GLOBAL);
             Ns_GetTime(&now);
             Ns_DiffTime(&now, &startTime, &diffTime);
-            Ns_Log(Notice, "update interpreter %s to epoch %d, trace %s, time %" PRId64 ".%06ld secs",
+            Ns_Log(Notice, "update interpreter %s to epoch %d, trace %s, time "
+                   NS_TIME_FMT " secs concurrent %d",
                    servPtr->server, epoch,
                    GetTraceLabel(itPtr->currentTrace),
-                   (int64_t) diffTime.sec, diffTime.usec );
+                   (int64_t) diffTime.sec, diffTime.usec,
+                   concurrentUpdates);
 
             ns_free((char *)script);
             itPtr->epoch = epoch;
