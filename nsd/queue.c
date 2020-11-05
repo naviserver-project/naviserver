@@ -562,7 +562,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 
    /*
     * We know the pool. Try to add connection into the queue of this pool
-    * (either ino a free slot or into its waiting list, or, when everything
+    * (either into a free slot or into its waiting list, or, when everything
     * fails signal an error or timeout (for retry attempts) to the caller.
     */
     Ns_MutexLock(&poolPtr->wqueue.lock);
