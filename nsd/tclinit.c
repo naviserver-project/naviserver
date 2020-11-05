@@ -148,6 +148,11 @@ static Tcl_ObjCmdProc ICtlUpdateObjCmd;
  */
 
 static Ns_Tls tls;  /* Slot for per-thread Tcl interp cache. */
+
+static Ns_Mutex updateLock = NULL;
+static int concurrentUpdates = 0;
+static int maxConcurrentUpdates = 1000;
+
 static Ns_Mutex interpLock = NULL;
 static bool concurrent_interp_create = NS_FALSE;
 
@@ -213,6 +218,7 @@ void
 NsConfigTcl(void)
 {
     concurrent_interp_create = Ns_ConfigBool(NS_CONFIG_PARAMETERS, "concurrentinterpcreate", NS_FALSE);
+    maxConcurrentUpdates = Ns_ConfigIntRange(NS_CONFIG_PARAMETERS, "maxconcurrentupdates", 1000, 1, INT_MAX);
 }
 
 
@@ -237,6 +243,9 @@ NsInitTcl(void)
 {
     Ns_MutexInit(&interpLock);
     Ns_MutexSetName(&interpLock, "interp");
+
+    Ns_MutexInit(&updateLock);
+    Ns_MutexSetName(&updateLock, "update");
     /*
      * Allocate the thread storage slot for the table of interps
      * per-thread. At thread exit, DeleteInterps will be called
@@ -1255,6 +1264,52 @@ ICtlEpochObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
 /*
  *----------------------------------------------------------------------
  *
+ * ICtlMaxconcurrentupdatesObjCmd - subcommand of NsTclICtlObjCmd --
+ *
+ *      Implements "ns_ictl maxconcurrentupdates" command.  Sets or queries the
+ *      number for allowed concurrent updates, when epoch counter is
+ *      incremented.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ICtlMaxconcurrentupdatesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int               result = TCL_OK, maxValue = -1;
+    Ns_ObjvValueRange posIntRange1 = {1, INT_MAX};
+    Ns_ObjvSpec       args[] = {
+        {"?max", Ns_ObjvInt, &maxValue, &posIntRange1},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Ns_MutexLock(&updateLock);
+        if (maxValue != -1) {
+            maxConcurrentUpdates = maxValue;
+        } else {
+            maxValue = maxConcurrentUpdates;
+        }
+        Ns_MutexUnlock(&updateLock);
+
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(maxValue));
+    }
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ICtlMarkForDeleteObjCmd - subcommand of NsTclICtlObjCmd --
  *
  *      Implements "ns_ictl markfordelete" command.
@@ -1578,21 +1633,22 @@ int
 NsTclICtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
-        {"addmodule",     ICtlAddModuleObjCmd},
-        {"cleanup",       ICtlCleanupObjCmd},
-        {"epoch",         ICtlEpochObjCmd},
-        {"get",           ICtlGetObjCmd},
-        {"getmodules",    ICtlGetModulesObjCmd},
-        {"gettraces",     ICtlGetTracesObjCmd},
-        {"markfordelete", ICtlMarkForDeleteObjCmd},
-        {"oncleanup",     ICtlOnCleanupObjCmd},
-        {"oncreate",      ICtlOnCreateObjCmd},
-        {"ondelete",      ICtlOnDeleteObjCmd},
-        {"oninit",        ICtlOnCreateObjCmd},
-        {"runtraces",     ICtlRunTracesObjCmd},
-        {"save",          ICtlSaveObjCmd},
-        {"trace",         ICtlTraceObjCmd},
-        {"update",        ICtlUpdateObjCmd},
+        {"addmodule",            ICtlAddModuleObjCmd},
+        {"cleanup",              ICtlCleanupObjCmd},
+        {"epoch",                ICtlEpochObjCmd},
+        {"get",                  ICtlGetObjCmd},
+        {"getmodules",           ICtlGetModulesObjCmd},
+        {"gettraces",            ICtlGetTracesObjCmd},
+        {"markfordelete",        ICtlMarkForDeleteObjCmd},
+        {"maxconcurrentupdates", ICtlMaxconcurrentupdatesObjCmd},
+        {"oncleanup",            ICtlOnCleanupObjCmd},
+        {"oncreate",             ICtlOnCreateObjCmd},
+        {"ondelete",             ICtlOnDeleteObjCmd},
+        {"oninit",               ICtlOnCreateObjCmd},
+        {"runtraces",            ICtlRunTracesObjCmd},
+        {"save",                 ICtlSaveObjCmd},
+        {"trace",                ICtlTraceObjCmd},
+        {"update",               ICtlUpdateObjCmd},
         {NULL, NULL}
     };
 
@@ -2201,9 +2257,10 @@ UpdateInterp(NsInterp *itPtr)
     servPtr = itPtr->servPtr;
 
     /*
-     * A reader-writer lock is used on the assumption updates are
-     * rare and likley expensive to evaluate if the virtual server
-     * contains significant state.
+     * A reader-writer lock is used on the assumption updates are rare and
+     * likley expensive to evaluate if the virtual server contains significant
+     * state. The Rd lock is here, since we are just reading the protected
+     * variables.
      *
      * In the codeblock below, we want to avoid running the blueprint update
      * under the lock. Therefore, we copy the blueprint script with ns_strdup.
@@ -2219,20 +2276,43 @@ UpdateInterp(NsInterp *itPtr)
     Ns_RWLockUnlock(&servPtr->tcl.lock);
 
     if (itPtr->epoch != epoch) {
-        Ns_Time startTime, now, diffTime;
+        bool doUpdateNow;
 
-        Ns_GetTime(&startTime);
-        result = Tcl_EvalEx(itPtr->interp, script,
+        /*
+         * The epoch has changed. Perform the interpreter update now, when
+         * either (a) the interpreter is fresh, or when the concurrently
+         * running updates are below maxConcurrentUpdates.
+         */
+        Ns_MutexLock(&updateLock);
+        doUpdateNow = (itPtr->epoch < 1) || (concurrentUpdates < maxConcurrentUpdates);
+        if (doUpdateNow) {
+            concurrentUpdates++;
+        }
+        Ns_MutexUnlock(&updateLock);
+
+        if (doUpdateNow) {
+            Ns_Time startTime, now, diffTime;
+
+            Ns_GetTime(&startTime);
+            result = Tcl_EvalEx(itPtr->interp, script,
                                 scriptLength, TCL_EVAL_GLOBAL);
-        Ns_GetTime(&now);
-        Ns_DiffTime(&now, &startTime, &diffTime);
-        Ns_Log(Notice, "update interpreter to epoch %d, trace %s, time %" PRId64 ".%06ld secs",
-               epoch,
-               GetTraceLabel(itPtr->currentTrace),
-               (int64_t) diffTime.sec, diffTime.usec );
+            Ns_GetTime(&now);
+            Ns_DiffTime(&now, &startTime, &diffTime);
+            Ns_Log(Notice, "update interpreter %s to epoch %d, trace %s, time %" PRId64 ".%06ld secs",
+                   servPtr->server, epoch,
+                   GetTraceLabel(itPtr->currentTrace),
+                   (int64_t) diffTime.sec, diffTime.usec );
 
-        ns_free((char *)script);
-        itPtr->epoch = epoch;
+            ns_free((char *)script);
+            itPtr->epoch = epoch;
+
+            Ns_MutexLock(&updateLock);
+            concurrentUpdates--;
+            Ns_MutexUnlock(&updateLock);
+        } else {
+            Ns_Log(Notice, "========= postponed update, %s epoch %d interpreter",
+                   servPtr->server, epoch);
+        }
     }
 
     return result;

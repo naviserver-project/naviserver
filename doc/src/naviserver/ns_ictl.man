@@ -78,6 +78,11 @@ server and return the whole list.  The modules are loaded later.
 [call [cmd "ns_ictl cleanup"] [arg modulename] ]
 Invoke the legacy defer callbacks.
 
+[para] When during an update the maximum number of concurrent updates is
+reached, further updates are delayed until the count is again below
+this threshould. In such cases it is possible that some request will
+be still use the previous blueprint (similar to "eventually
+consistent" in distributed database systems).
 
 [call [cmd "ns_ictl epoch"] ]
 Return the epoch (version) of the interpreter initialization script for the
@@ -105,6 +110,30 @@ Mark the interpreter for deletion after the [term deallocate] interpreter traces
 and have run. This is useful when it's necessary to delete an interp after it
 has been modified in a way that cannot be safely cleaned up, such as by the
 TclPro debugger.
+
+
+[call [cmd "ns_ictl maxconcurrentupdates"] [opt [arg max] ]]
+Query or set the maximum number of automatic concurrent updates when
+the epoch changes. By default, this value is set to 1000 (practically
+unlimited).
+
+[para] This experimental option allows a server admin to configure,
+how many concurrent interpreter updates induced via epoch changes
+(e.g. on [cmd ns_eval]) are allowed. This option is just useful for large
+sites with high number of connection threads defined. The default
+value for this parameter is sufficiently high, such that all updates
+will be performed by default potentially concurrent.
+
+[para] Background: For example, when a sites allows unlimited parallel
+updates, and the site has defined e.g. 100 connection threads, and
+every single update takes 1 second, then the request processing of the
+whole server comes to a complete standstill on epoch increments for at
+least for 1 second, since all threads will be busy with updates. When
+the number is sufficintly high it all available cores will be used,
+which will slow down the concurrent interpreter updates further. When
+the server will receive a higher number of requests (e.g. 800 per
+second), queueing will be inevitable (unless the number of concurrent
+updates is adjusted).
 
 
 [call [cmd "ns_ictl runtraces"] [arg tracewhen] ]
@@ -188,12 +217,26 @@ interpreter was last initialized.
 [example_end]
 
 
-
 [example_begin]
  % ns_ictl getmodules
  nsdb nslog nscp
 [example_end]
 
+[section {Configuration}]
+
+The following global configuration parameter influence the default
+behavior of [cmd ns_ictl]
+
+[example_begin]
+ ns_section  ns/server {
+   # Activate/Deactivate concurrent interpreter create commands
+   ns_param concurrentinterpcreate true ;# default: false
+
+   # Define maximum number of concurrent automatic update commands
+   # when epoch in incresed (e.g. on "ns_eval" commands)
+   ns_param maxconcurrentupdates 5 ;# default: 1000
+ }
+[example_end]
 
 
 [see_also ns_atclose]
