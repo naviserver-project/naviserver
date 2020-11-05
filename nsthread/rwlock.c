@@ -132,7 +132,7 @@ Ns_RWLockList(Tcl_DString *dsPtr)
         Tcl_DStringAppendElement(dsPtr, ""); /* unused? */
 #ifndef NS_NO_MUTEX_TIMING
         snprintf(buf, (int)sizeof(buf),
-                 " %" PRIuPTR " %lu %lu %" PRId64 ".%06ld %" PRId64 ".%06ld %" PRId64 ".%06ld"
+                 " %" PRIuPTR " %lu %lu " NS_TIME_FMT " " NS_TIME_FMT " " NS_TIME_FMT
                  " %lu %lu" ,
                  rwlockPtr->id, rwlockPtr->nlock, rwlockPtr->nbusy,
                  (int64_t)rwlockPtr->total_waiting_time.sec, rwlockPtr->total_waiting_time.usec,
@@ -141,7 +141,7 @@ Ns_RWLockList(Tcl_DString *dsPtr)
                  rwlockPtr->nrlock, rwlockPtr->nwlock);
 #else
         snprintf(buf, (int)sizeof(buf),
-                 " %" PRIuPTR " %lu %lu %" PRId64 ".%06ld %" PRId64 ".%06ld %" PRId64 ".%06ld"
+                 " %" PRIuPTR " %lu %lu " NS_TIME_FMT " " NS_TIME_FMT " " NS_TIME_FMT
                  " %lu %lu" ,
                  rwlockPtr->id, rwlockPtr->nlock, rwlockPtr->nbusy,
                  (int64_t)0, (long)0,

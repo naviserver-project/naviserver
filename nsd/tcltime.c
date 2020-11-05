@@ -1005,7 +1005,7 @@ Ns_GetTimeFromString(Tcl_Interp *interp, const char *str, Ns_Time *tPtr)
         Ns_TclPrintfResult(interp, "expected time value but got \"%s\"", str);
         result = TCL_ERROR;
     }
-    /* fprintf(stderr, "GetTimeFromString final %ld.%06ld -- %d\n", tPtr->sec, tPtr->usec, result);*/
+    /* fprintf(stderr, "GetTimeFromString final " NS_TIME_FMT " -- %d\n", tPtr->sec, tPtr->usec, result);*/
 
     return result;
 }

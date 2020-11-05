@@ -309,7 +309,7 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
             OCSP_CERTID *cert_id;
             bool         flush;
 
-            Ns_Log(Notice, "cert_status: must validate OCSP response %" PRId64 ".%06ld sec",
+            Ns_Log(Notice, "cert_status: must validate OCSP response " NS_TIME_FMT " sec",
                     (int64_t) diff.sec, diff.usec);
 
             cert_id = OCSP_get_cert_id(ssl, SSL_get_certificate(ssl));
@@ -330,7 +330,7 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
                 srctx->expire = now;
             }
         } else {
-            Ns_Log(Debug, "cert_status: RECENT OCSP response, recheck in %" PRId64 ".%06ld sec",
+            Ns_Log(Debug, "cert_status: RECENT OCSP response, recheck in " NS_TIME_FMT " sec",
                     (int64_t) diff.sec, diff.usec);
         }
     }

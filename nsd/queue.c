@@ -2004,7 +2004,7 @@ NsConnThread(void *arg)
         interp = NsTclAllocateInterp(servPtr);
         Ns_GetTime(&end);
         Ns_DiffTime(&end, &start, &diff);
-        Ns_Log(Notice, "thread initialized (%" PRId64 ".%06ld secs)",
+        Ns_Log(Notice, "thread initialized (" NS_TIME_FMT " secs)",
                (int64_t)diff.sec, diff.usec);
         Ns_TclDeAllocateInterp(interp);
         argPtr->state = connThread_ready;
@@ -2263,14 +2263,14 @@ NsConnThread(void *arg)
                 Ns_DiffTime(&now, &connPtr->requestQueueTime,   &fullTime);
 
                 Ns_Log(Debug, "[%d] end of job, waiting %d current %d idle %d ncons %d fromQueue %d"
-                       " start %" PRId64 ".%06ld"
-                       " %" PRId64 ".%06ld"
-                       " accept %" PRId64 ".%06ld"
-                       " queue %" PRId64 ".%06ld"
-                       " filter %" PRId64 ".%06ld"
-                       " run %" PRId64 ".%06ld"
-                       " netrun %" PRId64 ".%06ld"
-                       " total %" PRId64 ".%06ld",
+                       " start " NS_TIME_FMT
+                       " " NS_TIME_FMT
+                       " accept " NS_TIME_FMT
+                       " queue " NS_TIME_FMT
+                       " filter " NS_TIME_FMT
+                       " run " NS_TIME_FMT
+                       " netrun " NS_TIME_FMT
+                       " total " NS_TIME_FMT,
                        ThreadNr(poolPtr, argPtr),
                        waiting, poolPtr->threads.current, idle, ncons, fromQueue ? 1 : 0,
                        (int64_t) connPtr->acceptTime.sec, connPtr->acceptTime.usec,

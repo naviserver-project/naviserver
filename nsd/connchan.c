@@ -1352,7 +1352,7 @@ ConnChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
             NsConnChan *connChanPtr;
 
             connChanPtr = (NsConnChan *)Tcl_GetHashValue(hPtr);
-            Ns_DStringPrintf(dsPtr, "{%s %s %" PRId64 ".%06ld %s %s %" PRIdz " %" PRIdz,
+            Ns_DStringPrintf(dsPtr, "{%s %s " NS_TIME_FMT " %s %s %" PRIdz " %" PRIdz,
                              (char *)Tcl_GetHashKey(&servPtr->connchans.table, hPtr),
                              ((connChanPtr->cbPtr != NULL && connChanPtr->cbPtr->threadName != NULL) ?
                               connChanPtr->cbPtr->threadName : "{}"),

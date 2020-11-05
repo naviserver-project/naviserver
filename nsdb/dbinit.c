@@ -767,7 +767,7 @@ Ns_DbPoolStats(Tcl_Interp *interp)
              *  Tcl_ListObjAppendElement(interp, valuesObj, Ns_TclNewTimeObj(&poolPtr->waitTime));
             */
             if (likely(result == TCL_OK)) {
-                len = snprintf(buf, sizeof(buf), "%" PRId64 ".%06ld",
+                len = snprintf(buf, sizeof(buf), NS_TIME_FMT,
                                (int64_t)poolPtr->waitTime.sec, poolPtr->waitTime.usec);
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj(buf, len));
             }
@@ -775,7 +775,7 @@ Ns_DbPoolStats(Tcl_Interp *interp)
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("sqltime", 7));
             }
             if (likely(result == TCL_OK)) {
-                len = snprintf(buf, sizeof(buf), "%" PRId64 ".%06ld",
+                len = snprintf(buf, sizeof(buf), NS_TIME_FMT,
                                (int64_t)poolPtr->sqlTime.sec, poolPtr->sqlTime.usec);
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj(buf, len));
             }
@@ -1015,7 +1015,7 @@ NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
             long delta = Ns_DiffTime(&poolPtr->minDuration, &diffTime, NULL);
 
             if (delta < 1) {
-                Ns_Log(Ns_LogSqlDebug, "pool %s duration %" PRId64 ".%06ld secs: '%s'",
+                Ns_Log(Ns_LogSqlDebug, "pool %s duration " NS_TIME_FMT " secs: '%s'",
                        handle->poolname, (int64_t)diffTime.sec, diffTime.usec, sql);
             }
         }
@@ -1357,7 +1357,7 @@ CreatePool(const char *pool, const char *path, const char *driver)
         Ns_ConfigTimeUnitRange(path, "logminduration",
                                "0ms", 0, 0, INT_MAX, 0, &poolPtr->minDuration);
         if (poolPtr->minDuration.sec != 0 || poolPtr->minDuration.usec != 0) {
-            Ns_Log(Notice, "dbinit: set LogMinDuration for pool %s to %" PRId64 ".%06ld",
+            Ns_Log(Notice, "dbinit: set LogMinDuration for pool %s to " NS_TIME_FMT,
                    pool, (int64_t)poolPtr->minDuration.sec,
                    poolPtr->minDuration.usec);
         }
@@ -1619,7 +1619,7 @@ Ns_DbListMinDurations(Tcl_Interp *interp, const char *server)
 
             poolPtr = GetPool(pool);
             (void) Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(pool, -1));
-            len = snprintf(buffer, sizeof(buffer), "%" PRId64 ".%06ld",
+            len = snprintf(buffer, sizeof(buffer), NS_TIME_FMT,
                            (int64_t)poolPtr->minDuration.sec, poolPtr->minDuration.usec);
             (void) Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(buffer, len));
         }

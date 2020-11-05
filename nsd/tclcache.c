@@ -1448,7 +1448,7 @@ CacheTransactionFinishObjCmd(ClientData clientData, Tcl_Interp *interp, int objc
             Ns_GetTime(&endTime);
             Ns_DiffTime(&endTime, &startTime, &diffTime);
 
-            Ns_Log(Notice, "CacheTransactionFinish: %s %lu elements in (%" PRId64 ".%06ld secs)",
+            Ns_Log(Notice, "CacheTransactionFinish: %s %lu elements in " NS_TIME_FMT " secs",
                    commit ? "committed" : "rolled back",
                    count, (int64_t)diffTime.sec, diffTime.usec);
         }

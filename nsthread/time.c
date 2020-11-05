@@ -143,7 +143,7 @@ Ns_AdjTime(Ns_Time *timePtr)
 {
     NS_NONNULL_ASSERT(timePtr != NULL);
 
-    //fprintf(stderr, "Ns_AdjTime call %ld.%06ld\n", timePtr->sec, timePtr->usec);
+    //fprintf(stderr, "Ns_AdjTime call " NS_TIME_FMT "\n", timePtr->sec, timePtr->usec);
     if (unlikely(timePtr->usec < 0) && unlikely(timePtr->sec > 0)) {
         timePtr->sec += (timePtr->usec / 1000000L) - 1;
         timePtr->usec = (timePtr->usec % 1000000L) + 1000000L;
@@ -151,7 +151,7 @@ Ns_AdjTime(Ns_Time *timePtr)
         timePtr->sec += timePtr->usec / 1000000L;
         timePtr->usec = timePtr->usec % 1000000L;
     }
-    //fprintf(stderr, "Ns_AdjTime done %ld.%06ld\n", timePtr->sec, timePtr->usec);
+    //fprintf(stderr, "Ns_AdjTime done " NS_TIME_FMT "\n", timePtr->sec, timePtr->usec);
 }
 
 
@@ -297,12 +297,12 @@ Ns_DiffTime(const Ns_Time *t1, const Ns_Time *t0, Ns_Time *diffPtr)
         }
     }
 
-    //fprintf(stderr, "Ns_DiffTime res %ld.%06ld - %ld.%06ld = %ld.%06ld\n",
+    //fprintf(stderr, "Ns_DiffTime res " NS_TIME_FMT " - " NS_TIME_FMT "\n",
     //        t1->sec, t1->usec, t0->sec, t0->usec, diffPtr->sec, diffPtr->usec);
 
     Ns_AdjTime(diffPtr);
 
-    //fprintf(stderr, "Ns_DiffTime adj %ld.%06ld - %ld.%06ld = %ld.%06ld\n",
+    //fprintf(stderr, "Ns_DiffTime adj " NS_TIME_FMT " - " NS_TIME_FMT " = " NS_TIME_FMT "\n",
     //        t1->sec, t1->usec, t0->sec, t0->usec, diffPtr->sec, diffPtr->usec);
 
     if (diffPtr->sec < 0) {

@@ -198,7 +198,7 @@ Ns_CsEnter(Ns_Cs *csPtr)
          * We can't use Ns_ThreadGetName() here, since at least at the start,
          * it requires a master lock.
          */
-        fprintf(stderr, "[%" PRIxPTR "] Ns_CsEnter %p: wait duration %" PRId64 ".%06ld\n",
+        fprintf(stderr, "[%" PRIxPTR "] Ns_CsEnter %p: wait duration " NS_TIME_FMT "\n",
                  Ns_ThreadId(), (void*)csPtr, (int64_t)diff.sec, diff.usec);
     }
 
