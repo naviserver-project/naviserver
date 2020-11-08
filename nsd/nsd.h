@@ -853,7 +853,7 @@ typedef struct NsServer {
         struct Filter *firstFilterPtr;
         struct Trace *firstTracePtr;
         struct Trace *firstCleanupPtr;
-        Ns_Mutex lock;
+        Ns_RWLock lock;
     } filter;
 
     /*
