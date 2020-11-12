@@ -883,14 +883,13 @@ typedef struct NsServer {
         Tcl_HashTable     runTable;
         const char      **errorLogHeaders;
         Tcl_HashTable     caches;
-        Ns_Mutex          cachelock;
+        Ns_RWLock         cachelock;
         uintptr_t         transactionEpoch;
 
         /*
          * The following tracks synchronization
          * objects which are looked up by name.
          */
-
         struct {
             Ns_Mutex      lock;
             Tcl_HashTable mutexTable, csTable, semaTable, condTable, rwTable;

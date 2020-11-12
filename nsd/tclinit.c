@@ -311,8 +311,8 @@ ConfigServerTcl(const char *server)
         Ns_RWLockInit(&servPtr->tcl.lock);
         Ns_RWLockSetName2(&servPtr->tcl.lock, "rw:tcl", server);
 
-        Ns_MutexInit(&servPtr->tcl.cachelock);
-        Ns_MutexSetName2(&servPtr->tcl.cachelock, "ns:tcl.cache", server);
+        Ns_RWLockInit(&servPtr->tcl.cachelock);
+        Ns_RWLockSetName2(&servPtr->tcl.cachelock, "ns:tcl.cache", server);
 
         Tcl_InitHashTable(&servPtr->tcl.caches, TCL_STRING_KEYS);
         Tcl_InitHashTable(&servPtr->tcl.runTable, TCL_STRING_KEYS);

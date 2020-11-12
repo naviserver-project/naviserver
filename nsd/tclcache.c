@@ -112,7 +112,7 @@ GetCacheNames(NsServer *servPtr, bool withUncommittedEntries) {
 
     NS_NONNULL_ASSERT(servPtr != NULL);
 
-    Ns_MutexLock(&servPtr->tcl.cachelock);
+    Ns_RWLockRdLock(&servPtr->tcl.cachelock);
     for (hPtr = Tcl_FirstHashEntry(&servPtr->tcl.caches, &search);
          hPtr != NULL;
          hPtr = Tcl_NextHashEntry(&search)
@@ -129,7 +129,7 @@ GetCacheNames(NsServer *servPtr, bool withUncommittedEntries) {
             Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewStringObj(key, -1));
         }
     }
-    Ns_MutexUnlock(&servPtr->tcl.cachelock);
+    Ns_RWLockUnlock(&servPtr->tcl.cachelock);
 
     return listObj;
 }
@@ -223,13 +223,13 @@ NsTclCacheCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
         Tcl_HashEntry  *hPtr;
         int             isNew;
 
-        Ns_MutexLock(&servPtr->tcl.cachelock);
+        Ns_RWLockWrLock(&servPtr->tcl.cachelock);
         hPtr = Tcl_CreateHashEntry(&servPtr->tcl.caches, name, &isNew);
         if (isNew != 0) {
             TclCache *cPtr = TclCacheCreate(name, (size_t)maxEntry, (size_t)maxSize, timeoutPtr, expPtr);
             Tcl_SetHashValue(hPtr, cPtr);
         }
-        Ns_MutexUnlock(&servPtr->tcl.cachelock);
+        Ns_RWLockUnlock(&servPtr->tcl.cachelock);
 
         Tcl_SetObjResult(interp, Tcl_NewBooleanObj( isNew ));
     }
@@ -345,7 +345,7 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
 
         assert(cPtr != NULL);
 
-        Ns_MutexLock(&servPtr->tcl.cachelock);
+        Ns_RWLockWrLock(&servPtr->tcl.cachelock);
         if (maxEntry > 0) {
             cPtr->maxEntry = (size_t)maxEntry;
         }
@@ -358,7 +358,7 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
         if (expPtr != NULL) {
             cPtr->expires = *expPtr;
         }
-        Ns_MutexUnlock(&servPtr->tcl.cachelock);
+        Ns_RWLockUnlock(&servPtr->tcl.cachelock);
 
     } else if (objc == 2) {
         const NsInterp *itPtr = clientData;
@@ -370,10 +370,10 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
 
         Tcl_DStringInit(&ds);
 
-        Ns_MutexLock(&servPtr->tcl.cachelock);
+        Ns_RWLockRdLock(&servPtr->tcl.cachelock);
         maxSize  = (long)cPtr->maxSize;
         maxEntry = (long)cPtr->maxEntry;
-        Ns_MutexUnlock(&servPtr->tcl.cachelock);
+        Ns_RWLockUnlock(&servPtr->tcl.cachelock);
 
         Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("maxsize", 7));
         Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewWideIntObj(maxSize));
@@ -525,6 +525,11 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
                  *     status = TCL_ERROR;
                  * }
                  */
+                Ns_Log(Notice, "cache eval if %s returns %d - don't cache the data",
+                       nargs == 1
+                       ? Tcl_GetString(objv[objc-1])
+                       : Tcl_GetString(objv[1+objc-nargs]),
+                       status);
                 Ns_CacheLock(cPtr->cache);
                 Ns_CacheDeleteEntry(entry);
             } else {
@@ -1279,9 +1284,8 @@ ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *const* o
                 NsServer            *servPtr = itPtr->servPtr;
                 const Tcl_HashEntry *hPtr;
 
-                Ns_MutexLock(&servPtr->tcl.cachelock);
+                Ns_RWLockRdLock(&servPtr->tcl.cachelock);
                 hPtr = Tcl_FindHashEntry(&servPtr->tcl.caches, (const void *)cacheName);
-                Ns_MutexUnlock(&servPtr->tcl.cachelock);
                 if (hPtr == NULL) {
                     Ns_TclPrintfResult(interp, "no such cache: %s", cacheName);
                     Tcl_SetErrorCode(interp, "NSCACHE", "LOOKUP", cacheName, (char *)0L);
@@ -1290,6 +1294,7 @@ ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *const* o
                     *cPtrPtr = Tcl_GetHashValue(hPtr);
                     Ns_TclSetOpaqueObj(cacheNameObj, cacheType, *cPtrPtr);
                 }
+                Ns_RWLockUnlock(&servPtr->tcl.cachelock);
             } else {
                 /*
                  * No interpreter or no server, we can't store the entry in
@@ -1345,9 +1350,9 @@ NsTclCacheTransactionBeginObjCmd(ClientData clientData, Tcl_Interp *interp, int 
         uintptr_t  transactionEpoch;
         Ns_CacheTransactionStack *transactionStackPtr = &itPtr->cacheTransactionStack;
 
-        Ns_MutexLock(&servPtr->tcl.cachelock);
+        Ns_RWLockRdLock(&servPtr->tcl.cachelock);
         transactionEpoch = ++servPtr->tcl.transactionEpoch;
-        Ns_MutexUnlock(&servPtr->tcl.cachelock);
+        Ns_RWLockUnlock(&servPtr->tcl.cachelock);
 
         if (transactionStackPtr->depth < NS_CACHE_MAX_TRANSACTION_DEPTH) {
             transactionStackPtr->stack[transactionStackPtr->depth] = transactionEpoch;
@@ -1484,9 +1489,9 @@ CacheTransactionFinish(NsServer *servPtr, const char *cacheName, uintptr_t trans
     NS_NONNULL_ASSERT(cacheName != NULL);
     NS_NONNULL_ASSERT(countPtr != NULL);
 
-    Ns_MutexLock(&servPtr->tcl.cachelock);
+    Ns_RWLockRdLock(&servPtr->tcl.cachelock);
     hPtr = Tcl_FindHashEntry(&servPtr->tcl.caches, (const void *)cacheName);
-    Ns_MutexUnlock(&servPtr->tcl.cachelock);
+    Ns_RWLockUnlock(&servPtr->tcl.cachelock);
 
     if (unlikely(hPtr == NULL)) {
         result = TCL_ERROR;
