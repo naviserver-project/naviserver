@@ -65,7 +65,7 @@ static int AppendMultipartRangeTrailer(Ns_DString *dsPtr)
 static bool MatchRange(const Ns_Conn *conn, time_t mtime)
         NS_GNUC_NONNULL(1);
 
-static void InvalidSyntax(const char *rangeString, const char *headerString)
+static void InvalidSyntax(const char *rangeString, const char *headerString, long offset)
         NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
@@ -263,10 +263,10 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
  *----------------------------------------------------------------------
  */
 static void
-InvalidSyntax(const char *rangeString, const char *headerString) {
+InvalidSyntax(const char *rangeString, const char *headerString, long offset) {
     Ns_Log(Warning, "invalid syntax (character %d, '%c' position %ld) in "
            "range specification '%s'; ignore range",
-           *rangeString, *rangeString, rangeString - headerString, headerString);
+           *rangeString, *rangeString,  offset+1, headerString);
 }
 
 
@@ -275,7 +275,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
                   Range *ranges, int maxRanges)
 {
     char       *rangeString;
-    const char *rangeHeaderString;
+    const char *rangeHeaderString, *startRangeString;
     Tcl_DString rangeDs;
     off_t       start, end;
     int         rangeCount = 0;
@@ -318,7 +318,9 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
         goto error;
     }
 
+    startRangeString = rangeString;
     rangeString += 6; /* Skip "bytes=" */
+
     while (*rangeString != '\0') {
         Range *thisPtr;
 
@@ -341,7 +343,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
                 /*
                  * Invalid syntax.
                  */
-                InvalidSyntax(rangeString, rangeHeaderString);
+                InvalidSyntax(rangeString, rangeHeaderString, rangeString - startRangeString);
                 goto error;
             }
             rangeString++; /* Skip '-' */
@@ -366,7 +368,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
                 /*
                  * Invalid syntax.
                  */
-                InvalidSyntax(rangeString, rangeHeaderString);
+                InvalidSyntax(rangeString, rangeHeaderString, rangeString - startRangeString);
                 goto error;
             }
 
@@ -387,7 +389,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
             /*
              * Not a digit and not a '-': invalid syntax.
              */
-            InvalidSyntax(rangeString, rangeHeaderString);
+            InvalidSyntax(rangeString, rangeHeaderString, rangeString - startRangeString);
             goto error;
         }
 
@@ -405,7 +407,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
             /*
              * Invalid syntax
              */
-            InvalidSyntax(rangeString, rangeHeaderString);
+            InvalidSyntax(rangeString, rangeHeaderString, rangeString - startRangeString);
             goto error;
         }
 
