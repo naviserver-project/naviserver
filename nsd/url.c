@@ -365,6 +365,36 @@ done:
 /*
  *----------------------------------------------------------------------
  *
+ * ParseUpTo --
+ *
+ *    Helper function for NsTclParseUrlObjCmd. Return the characters up to a
+ *    specified character and terminate the parsed string by a NUL character.
+ *    The string is searched from left to right.  If the character does not
+ *    exist in the string, return NULL.
+ *
+ * Results:
+ *    Parsed string or NULL.
+ *
+ * Side effects:
+ *    none
+ *
+ *----------------------------------------------------------------------
+ */
+static char *
+ParseUpTo(char *chars, char ch)
+{
+    char *p = strchr(chars, INTCHAR(ch));
+
+    if (p != NULL) {
+        *p++ = '\0';
+    }
+    return p;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclParseUrlObjCmd --
  *
  *    Implement the "ns_parseurl" command. Offers the functionality of
@@ -378,6 +408,7 @@ done:
  *
  *----------------------------------------------------------------------
  */
+
 int
 NsTclParseUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
@@ -391,9 +422,10 @@ NsTclParseUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        char *url, *protocol, *host, *portString, *path, *tail;
+        char    *url, *protocol, *host, *portString, *path, *tail;
 
         url = ns_strdup(urlString);
+
         if (Ns_ParseUrl(url, &protocol, &host, &portString, &path, &tail) == NS_OK) {
             Tcl_Obj *resultObj = Tcl_NewListObj(0, NULL);
 
@@ -413,9 +445,28 @@ NsTclParseUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("path", 4));
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(path, -1));
             }
+
             if (tail != NULL) {
+                char *fragment, *query;
+
+                query = ParseUpTo(tail, '?');
+                if (query != NULL) {
+                    fragment = ParseUpTo(query, '#');
+                } else {
+                    fragment = ParseUpTo(tail, '#');
+                }
+
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("tail", 4));
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(tail, -1));
+
+                if (query != NULL) {
+                    Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("query", 5));
+                    Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(query, -1));
+                }
+                if (fragment != NULL) {
+                    Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("fragment", 8));
+                    Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(fragment, -1));
+                }
             }
 
             Tcl_SetObjResult(interp, resultObj);

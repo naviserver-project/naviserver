@@ -19,12 +19,14 @@ IP-literal notation as specified in RFC 3986.
 [para] The provided [arg url] might be an absolute URL (containing
 protocol and host), a protocol agnostic URL (starting with two slashes
 followed by hostname, as defined in RFC 3986) or a relative url
-(without location).
+(without location). When the [arg url] contains a [term tail]
+element, this is potentially parsed info a [term query] and/or
+[term fragment].
 
 [para]
 The resulting dict might contain the
 following elements: [term proto], [term host], [term port],
-[term path], and [term tail].
+[term path], [term tail], [term query], and [term fragment].
 
 [list_end]
 
@@ -39,6 +41,9 @@ following elements: [term proto], [term host], [term port],
  
  % ns_parseurl /foo/bar.html
  path foo tail bar.html
+
+ % ns_parseurl /top/query?x=1&y=2#pos1
+ path top tail query query x=1&y=2 fragment pos1
 [example_end]
 
 [see_also ns_absoluteurl ns_parsefieldvalue ns_parseheader]

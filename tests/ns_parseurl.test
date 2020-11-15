@@ -54,7 +54,20 @@ test ns_parseurl-3.2 {protocol relative URL without port} -body {
 } -result {host openacs.org port 80 path www tail t.html}
 
 
-test ns_parseurl-4.0 {URL with colon in the path, but no port provided} -body {
+test ns_parseurl-4.0 {URL with query part} -body {
+    ns_parseurl https://google.com/search?q=1234&f=567
+} -result {proto https host google.com path {} tail search query q=1234&f=567}
+
+test ns_parseurl-4.1 {URL with query part and fragment} -body {
+    ns_parseurl https://google.com/search?q=1234&f=567#end
+} -result {proto https host google.com path {} tail search query q=1234&f=567 fragment end}
+
+test ns_parseurl-4.2 {URL with fragment} -body {
+    ns_parseurl https://google.com/search#end
+} -result {proto https host google.com path {} tail search fragment end}
+
+
+test ns_parseurl-5.0 {URL with colon in the path, but no port provided} -body {
     ns_absoluteurl //google.com:80/test.html http://openacs.org:80
     ns_parseurl https://fcm.googleapis.com/fcm/send/c707XIVXbcY:APA91bEgMg8DNeNapWNKby
 } -result {proto https host fcm.googleapis.com path fcm/send tail c707XIVXbcY:APA91bEgMg8DNeNapWNKby}
