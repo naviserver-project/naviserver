@@ -484,17 +484,20 @@ ns_section ns/server/$server/pools {
 
     #ns_param   monitor	"Monitoring actions to check heathiness of the system"
     #ns_param   fast	"Fast requests, e.g. less than 10ms"
+    #ns_param   slow 	"Slow lane pool, for request remapping"
 }
 
 ns_section ns/server/$server/pool/monitor {
     ns_param   minthreads 2
     ns_param   maxthreads 2
 
-    ns_param   map "GET /admin/nsstats"
     ns_param   map "GET /SYSTEM"
+    ns_param   map "GET /admin/nsstats"
     ns_param   map "GET /ds"
-    ns_param   map "POST /ds"
     ns_param   map "GET /request-monitor"
+    ns_param   map "POST /SYSTEM"
+    ns_param   map "POST /admin/nsstats"
+    ns_param   map "POST /ds"
 }
 
 ns_section ns/server/$server/pool/fast {
@@ -512,6 +515,12 @@ ns_section ns/server/$server/pool/fast {
     ns_param   map "GET /*.m3u8"
 }
 
+ns_section ns/server/$server/pool/slow {
+    ns_param   minthreads 2
+    ns_param   maxthreads 5
+    ns_param   maxconnections 600
+    ns_param   rejectoverrun true
+}
 
 
 #---------------------------------------------------------------------
