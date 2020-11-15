@@ -52,7 +52,7 @@ when [option -jobsperthread] runs out. When the [option -timeout] is 0, the
 there will be no timeout.
 
 [para] The parameter [option -logminduration] defines a time limit for
-logging the system log. When a job takes longer the time limit
+logging the system log. When a job takes longer than the time limit
 it will be logged.
 
 [para] Without any arguments, the command just returns current
@@ -226,13 +226,15 @@ configuration file:
 [example_begin]
  [cmd ns_section] ns/parameters {
    # ...
+   ns_param joblogminduration 1s
    ns_param jobsperthread   1000
    ns_param jobtimeout        5m
-   ns_param joblogminduration 1s
    # ...
  } 
 [example_end]
 
+These configuration parameres define default values for
+the parameterd which can be provided to [cmd "ns_job configure"].
 
 [section EXAMPLES]
 
