@@ -506,6 +506,21 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
             Ns_GetTime(&end);
             (void)Ns_DiffTime(&end, &start, &diff);
 
+            Ns_CacheLock(cPtr->cache);
+            {
+                /*
+                 * This is just a sanity check, hopefully transitional code.
+                 */
+                Ns_Entry *entry2;
+                int isNew2 = 0;
+
+                entry2 = Ns_CacheCreateEntry(cPtr->cache, key, &isNew2);
+                if (isNew2 != 0) {
+                    Ns_Log(Warning, "==== cache %s key %s entry2 %p different from %p key '%s'",
+                           Ns_CacheName(cPtr->cache), key, (void*)entry, (void*)entry2, key);
+                }
+            }
+
             if (status != TCL_OK && status != TCL_RETURN) {
 
                 /*
@@ -530,13 +545,11 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
                        ? Tcl_GetString(objv[objc-1])
                        : Tcl_GetString(objv[1+objc-nargs]),
                        status);
-                Ns_CacheLock(cPtr->cache);
                 Ns_CacheDeleteEntry(entry);
             } else {
                 Tcl_Obj *resultObj = Tcl_GetObjResult(interp);
 
                 status = TCL_OK;
-                Ns_CacheLock(cPtr->cache);
                 SetEntry(itPtr, cPtr, entry, resultObj, expPtr,
                          (int)(diff.sec * 1000000 + diff.usec));
             }
@@ -1509,6 +1522,10 @@ CacheTransactionFinish(NsServer *servPtr, const char *cacheName, uintptr_t trans
         } else {
             *countPtr += Ns_CacheRollbackEntries(cache, transactionEpoch);
         }
+        /*
+         * Make sure to notify potentially waiting threads about the result.
+         */
+        Ns_CacheBroadcast(cPtr->cache);
         Ns_CacheUnlock(cache);
         result = TCL_OK;
     }

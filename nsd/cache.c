@@ -366,9 +366,23 @@ Ns_CacheWaitCreateEntryT(Ns_Cache *cache, const char *key, int *newPtr,
     NS_NONNULL_ASSERT(newPtr != NULL);
 
     entry = Ns_CacheCreateEntry(cache, key, &isNew);
+
     if (isNew == 0 && Ns_CacheGetValueT(entry, transactionStackPtr) == NULL) {
+        /*
+         * One could condsider setting a default timeout here, or defining max
+         * iterations to avoid definiteky a potential infinite loop.
+         */
         do {
+            if (timeoutPtr == NULL) {
+                Ns_Log(Notice, "ns_cache create entry collission cache %s key '%s', no timeout",
+                       ((Cache*)cache)->name, key);
+            } else {
+                Ns_Log(Notice, "ns_cache create entry collission cache %s key '%s', timeout " NS_TIME_FMT,
+                       ((Cache*)cache)->name, key,
+                       (int64_t)timeoutPtr->sec, timeoutPtr->usec);
+            }
             status = Ns_CacheTimedWait(cache, timeoutPtr);
+
             entry = Ns_CacheCreateEntry(cache, key, &isNew);
         } while (status == NS_OK
                  && isNew == 0
@@ -377,6 +391,30 @@ Ns_CacheWaitCreateEntryT(Ns_Cache *cache, const char *key, int *newPtr,
     *newPtr = isNew;
 
     return status == NS_OK ? entry : NULL;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_CacheName --
+ *
+ *      Gets the name of a cache.
+ *
+ * Results:
+ *      Name as const char*.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+const char *
+Ns_CacheName(const Ns_Cache *cache) {
+
+    NS_NONNULL_ASSERT(cache != NULL);
+
+    return ((Cache*)cache)->name;
 }
 
 
@@ -501,9 +539,9 @@ Ns_CacheGetValueT(const Ns_Entry *entry, const Ns_CacheTransactionStack *transac
 
         result = NULL;
         if (transactionStackPtr != NULL) {
-            unsigned int i;
+            size_t i;
 
-            for (i = 0; i < transactionStackPtr->depth; i++) {
+            for (i = 0u; i < transactionStackPtr->depth; i++) {
                 if (e->transactionEpoch == transactionStackPtr->stack[i]) {
                     result = e->uncommittedValue;
                     break;
@@ -511,6 +549,7 @@ Ns_CacheGetValueT(const Ns_Entry *entry, const Ns_CacheTransactionStack *transac
             }
         }
     }
+
     return result;
 }
 

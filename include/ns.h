@@ -807,6 +807,10 @@ Ns_CacheWaitCreateEntryT(Ns_Cache *cache, const char *key, int *newPtr,
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN const char *
+Ns_CacheName(const Ns_Cache *cache)
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+
+NS_EXTERN const char *
 Ns_CacheKey(const Ns_Entry *entry)
     NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
