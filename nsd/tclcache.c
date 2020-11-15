@@ -540,11 +540,11 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
                  *     status = TCL_ERROR;
                  * }
                  */
-                Ns_Log(Notice, "cache eval if %s returns %d - don't cache the data",
+                /*Ns_Log(Notice, "cache eval if %s returns %d - don't cache the data",
                        nargs == 1
                        ? Tcl_GetString(objv[objc-1])
                        : Tcl_GetString(objv[1+objc-nargs]),
-                       status);
+                       status);*/
                 Ns_CacheDeleteEntry(entry);
             } else {
                 Tcl_Obj *resultObj = Tcl_GetObjResult(interp);
