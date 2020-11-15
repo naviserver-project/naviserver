@@ -1361,12 +1361,13 @@ static int
 GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int           trimUnquoted = 0, result = TCL_OK;
-    char         *delimiter = (char *)",", *fileId, *varName;
+    char         *delimiter = (char *)",", *quoteString = (char *)"\"", *fileId, *varName;
     Tcl_Channel   chan;
     Ns_ObjvSpec   opts[] = {
-        {"-delimiter", Ns_ObjvString,   &delimiter, NULL},
+        {"-delimiter", Ns_ObjvString,   &delimiter,    NULL},
         {"-trim",      Ns_ObjvBool,     &trimUnquoted, INT2PTR(NS_TRUE)},
-        {"--",         Ns_ObjvBreak,    NULL,       NULL},
+        {"-quotechar", Ns_ObjvString,   &quoteString,  NULL},
+        {"--",         Ns_ObjvBreak,    NULL,          NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec   args[] = {
@@ -1386,7 +1387,7 @@ GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Ob
         bool            inquote, quoted, emptyElement;
         const char     *p, *value;
         Tcl_DString     line, cols, elem;
-        char            c;
+        char            c, quote = *quoteString;
 
         Tcl_DStringInit(&line);
         Tcl_DStringInit(&cols);
@@ -1417,7 +1418,7 @@ GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Ob
                 c = *p++;
             loopstart:
                 if (inquote) {
-                    if (c == '"') {
+                    if (c == quote) {
                         c = *p++;
                         if (c == '\0') {
                             /*
@@ -1426,7 +1427,7 @@ GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Ob
                             inquote = NS_FALSE;
                             break;
                         }
-                        if (c == '"') {
+                        if (c == quote) {
                             /*
                              * We have a quote in the quote.
                              */
@@ -1439,7 +1440,7 @@ GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Ob
                         Tcl_DStringAppend(&elem, &c, 1);
                     }
                 } else {
-                    if (c == '"' && emptyElement) {
+                    if (c == quote && emptyElement) {
                         inquote = NS_TRUE;
                         quoted = NS_TRUE;
                         emptyElement = NS_FALSE;

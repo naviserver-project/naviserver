@@ -291,14 +291,6 @@ Transform a string with single quoted elements into a proper Tcl
 list. In this step, remove space, backslash and single quote
 characters in the given string.
 
-[call [cmd "ns_getcsv"] \
-	[opt [option "-delimiter [arg char]"]] \
-	[arg fileid] \
-	[arg varname]]
-
-Read a single line from a CSV file and parse the results into a Tcl
-list variable.
-
 [call [cmd "ns_dberrorcode"] [arg handle]]
 
 Return the database error code for the specified database handle.

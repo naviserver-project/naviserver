@@ -1,0 +1,95 @@
+[include version_include.man]
+
+[manpage_begin ns_getcsv n [vset version]]
+[moddesc {NaviServer Module Commands}]
+[titledesc {Quote database names and values}]
+
+[description]
+
+These commands are for handling CSV files.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd "ns_getcsv"] \
+	[opt [option "-delimiter [arg char]"]] \
+	[opt [option "-quotechar [arg char]"]] \
+	[opt [option "-trim"]] \
+	[arg fileid] \
+	[arg varname]]
+
+Read a single tuple (line) from an open CSV file (denoted by
+[arg fileid]) and parse the results into
+the Tcl list variable named in the last argument
+([arg varname]). The command returns
+the number of parsed fields or -1 on end of file.
+
+[list_end]
+
+[section OPTIONS]
+[list_begin options]
+
+[opt_def -delimiter [arg char]]
+
+The delimiter is the value defined for speparating fields.
+Default: ,
+
+[opt_def -quotechar [arg char]]
+
+The quotechar is the symbol wrapping fields. It is especially needed,
+when the field contains a delimiter. If the field contains a
+quotechar, it has to be repeated (two quote characters in sequence).
+Default: "
+
+[opt_def -trim]
+
+Trim whitespace from unquoted fields.
+
+[list_end]
+
+[section EXAMPLES]
+
+Example script from regression test:
+
+[example_begin]
+ set csvFile test.csv
+ set f [lb]open $csvFile[rb]
+ 
+ while {1} {
+     set r [lb]ns_getcsv -trim $f line[rb]
+     switch $r {
+         -1       {break}
+          0       {}
+          default {lappend lines $line}
+     }
+ }
+ close $f
+ set lines
+[example_end]
+
+Result:
+[example_begin]
+{aaa bbb ccc} {aaa {b
+bb} ccc} {zzz yyy xxx} {1 2 3} {includes(\")quote {quoted includes (") quote}} {elm2 {} empty} single {last3 empty {} {} {}}}
+[example_end]
+
+sample.cvs
+[example_begin]
+"aaa","bbb","ccc"
+"aaa","b
+bb","ccc" 
+zzz,yyy,xxx
+ 1 , 2 , 3 
+includes(")quote,"quoted includes ("") quote" 
+elm2,,empty
+single
+last3,empty,,,
+[example_end]
+
+
+[see_also ns_db]
+[keywords quote escape csv]
+
+[manpage_end]
+
