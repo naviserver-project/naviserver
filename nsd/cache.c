@@ -374,10 +374,10 @@ Ns_CacheWaitCreateEntryT(Ns_Cache *cache, const char *key, int *newPtr,
          */
         do {
             if (timeoutPtr == NULL) {
-                Ns_Log(Notice, "ns_cache create entry collission cache %s key '%s', no timeout",
+                Ns_Log(Notice, "ns_cache create entry collision cache %s key '%s', no timeout",
                        ((Cache*)cache)->name, key);
             } else {
-                Ns_Log(Notice, "ns_cache create entry collission cache %s key '%s', timeout " NS_TIME_FMT,
+                Ns_Log(Notice, "ns_cache create entry collision cache %s key '%s', timeout " NS_TIME_FMT,
                        ((Cache*)cache)->name, key,
                        (int64_t)timeoutPtr->sec, timeoutPtr->usec);
             }
