@@ -220,7 +220,7 @@ connection pool.
 	[opt [option "-pool [arg p]"]] \
 	[cmd waiting]]
 
-Returns the number of connections waiting to be processed.
+Returns the number of connections waiting (i.e. queued) to be processed.
 
 [list_end]
 

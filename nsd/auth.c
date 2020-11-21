@@ -363,7 +363,16 @@ NsParseAuth(Conn *connPtr, const char *auth)
                     q++;
                 }
             }
+        } else if (STRIEQ(authDs.string, "Bearer")) {
 
+            (void)Ns_SetPut(connPtr->auth, "AuthMethod", "Bearer");
+
+            /* Skip spaces */
+            q = p + 1;
+            while (*q != '\0' && CHARTYPE(space, *q) != 0) {
+                q++;
+            }
+            (void)Ns_SetPut(connPtr->auth, "Token", q);
         }
         if (p != NULL) {
             *p = save;
