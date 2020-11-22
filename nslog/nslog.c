@@ -58,7 +58,7 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
 typedef struct {
     Ns_Mutex     lock;
     const char  *module;
-    const char  *file;
+    const char  *filename;
     const char  *rollfmt;
     const char  *extendedHeaders;
     const char **requestHeaders;
@@ -176,7 +176,7 @@ Ns_ModuleInit(const char *server, const char *module)
 
     file = Ns_ConfigString(path, "file", "access.log");
     if (Ns_PathIsAbsolute(file) == NS_TRUE) {
-        logPtr->file = ns_strdup(file);
+        logPtr->filename = ns_strdup(file);
     } else {
         /*
          * If log file is not given in absolute format, it's expected to
@@ -205,7 +205,7 @@ Ns_ModuleInit(const char *server, const char *module)
             Tcl_DStringSetLength(&ds, 0);
             (void) Ns_ModulePath(&ds, server, module, file, (char *)0L);
         }
-        logPtr->file = Ns_DStringExport(&ds);
+        logPtr->filename = Ns_DStringExport(&ds);
     }
 
     /*
@@ -619,14 +619,14 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
             }
             Ns_MutexLock(&logPtr->lock);
             LogClose(logPtr);
-            ns_free((char *)logPtr->file);
-            logPtr->file = ns_strdup(strarg);
+            ns_free((char *)logPtr->filename);
+            logPtr->filename = ns_strdup(strarg);
             Tcl_DStringFree(&ds);
             LogOpen(logPtr);
         } else {
             Ns_MutexLock(&logPtr->lock);
         }
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(logPtr->file, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(logPtr->filename, -1));
         Ns_MutexUnlock(&logPtr->lock);
         break;
 
@@ -642,7 +642,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
                 if (Tcl_FSAccess(objv[2], F_OK) == 0) {
                     status = Ns_RollFile(strarg, logPtr->maxbackup);
                 } else {
-                    Tcl_Obj *path = Tcl_NewStringObj(logPtr->file, -1);
+                    Tcl_Obj *path = Tcl_NewStringObj(logPtr->filename, -1);
 
                     Tcl_IncrRefCount(path);
                     rc = Tcl_FSRenameFile(path, objv[2]);
@@ -657,7 +657,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
             }
             if (status != NS_OK) {
                 Ns_TclPrintfResult(interp, "could not roll \"%s\": %s",
-                                   logPtr->file, Tcl_PosixError(interp));
+                                   logPtr->filename, Tcl_PosixError(interp));
             }
             Ns_MutexUnlock(&logPtr->lock);
             if (status != NS_OK) {
@@ -1090,10 +1090,10 @@ LogOpen(Log *logPtr)
 {
     int fd;
 
-    fd = ns_open(logPtr->file, O_APPEND | O_WRONLY | O_CREAT | O_CLOEXEC, 0644);
+    fd = ns_open(logPtr->filename, O_APPEND | O_WRONLY | O_CREAT | O_CLOEXEC, 0644);
     if (fd == NS_INVALID_FD) {
         Ns_Log(Error, "nslog: error '%s' opening '%s'",
-               strerror(errno), logPtr->file);
+               strerror(errno), logPtr->filename);
         return NS_ERROR;
     }
     if (logPtr->fd >= 0) {
@@ -1101,7 +1101,7 @@ LogOpen(Log *logPtr)
     }
 
     logPtr->fd = fd;
-    Ns_Log(Notice, "nslog: opened '%s'", logPtr->file);
+    Ns_Log(Notice, "nslog: opened '%s'", logPtr->filename);
 
     return NS_OK;
 }
@@ -1134,7 +1134,7 @@ LogClose(Log *logPtr)
         ns_close(logPtr->fd);
         logPtr->fd = NS_INVALID_FD;
         Tcl_DStringFree(&logPtr->buffer);
-        Ns_Log(Notice, "nslog: closed '%s'", logPtr->file);
+        Ns_Log(Notice, "nslog: closed '%s'", logPtr->filename);
     }
 
     return status;
@@ -1207,7 +1207,7 @@ LogRoll(Log *logPtr)
 
     (void)LogClose(logPtr);
 
-    pathObj = Tcl_NewStringObj(logPtr->file, -1);
+    pathObj = Tcl_NewStringObj(logPtr->filename, -1);
     Tcl_IncrRefCount(pathObj);
 
     if (Tcl_FSAccess(pathObj, F_OK) == 0) {
@@ -1257,7 +1257,7 @@ LogCallback(Ns_ReturnCode(proc)(Log *), void *arg, const char *desc)
     Ns_MutexUnlock(&logPtr->lock);
 
     if (status != NS_OK) {
-        Ns_Log(Error, "nslog: failed: %s '%s': '%s'", desc, logPtr->file,
+        Ns_Log(Error, "nslog: failed: %s '%s': '%s'", desc, logPtr->filename,
                strerror(Tcl_GetErrno()));
     }
 }
@@ -1282,7 +1282,7 @@ LogRollCallback(void *arg, int UNUSED(id))
  *
  * LogArg --
  *
- *      Copy log file as argument for callback introspection queries.
+ *      Copy log filename as argument for callback introspection queries.
  *
  * Results:
  *      None.
@@ -1298,7 +1298,7 @@ LogArg(Tcl_DString *dsPtr, const void *arg)
 {
     const Log *logPtr = arg;
 
-    Tcl_DStringAppendElement(dsPtr, logPtr->file);
+    Tcl_DStringAppendElement(dsPtr, logPtr->filename);
 }
 
 /*
