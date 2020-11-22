@@ -2252,6 +2252,7 @@ UpdateInterp(NsInterp *itPtr)
     NsServer   *servPtr;
     int         result = TCL_OK, epoch, scriptLength = 0;
     const char *script = NULL;
+    bool        doUpdateNow = NS_FALSE;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
     servPtr = itPtr->servPtr;
@@ -2268,28 +2269,23 @@ UpdateInterp(NsInterp *itPtr)
     Ns_RWLockRdLock(&servPtr->tcl.lock);
     if (itPtr->epoch != servPtr->tcl.epoch) {
         epoch        = servPtr->tcl.epoch;
-        script       = ns_strdup(servPtr->tcl.script);
-        scriptLength = servPtr->tcl.length;
+        /*
+         * The epoch has changed. Perform the interpreter update now, when
+         * either (a) the interpreter is fresh, or when the concurrently
+         * running updates are below maxConcurrentUpdates.
+         */
+        doUpdateNow = (itPtr->epoch < 1) || (concurrentUpdates < maxConcurrentUpdates);
+        if (doUpdateNow) {
+            concurrentUpdates++;
+            script = ns_strdup(servPtr->tcl.script);
+            scriptLength = servPtr->tcl.length;
+        }
     } else {
         epoch = itPtr->epoch;
     }
     Ns_RWLockUnlock(&servPtr->tcl.lock);
 
     if (itPtr->epoch != epoch) {
-        bool doUpdateNow;
-
-        /*
-         * The epoch has changed. Perform the interpreter update now, when
-         * either (a) the interpreter is fresh, or when the concurrently
-         * running updates are below maxConcurrentUpdates.
-         */
-        Ns_MutexLock(&updateLock);
-        doUpdateNow = (itPtr->epoch < 1) || (concurrentUpdates < maxConcurrentUpdates);
-        if (doUpdateNow) {
-            concurrentUpdates++;
-        }
-        Ns_MutexUnlock(&updateLock);
-
         if (doUpdateNow) {
             Ns_Time startTime, now, diffTime;
 
@@ -2305,8 +2301,8 @@ UpdateInterp(NsInterp *itPtr)
                    (int64_t) diffTime.sec, diffTime.usec,
                    concurrentUpdates);
 
-            ns_free((char *)script);
             itPtr->epoch = epoch;
+            ns_free((char *)script);
 
             Ns_MutexLock(&updateLock);
             concurrentUpdates--;
