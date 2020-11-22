@@ -25,14 +25,28 @@ The subcommands of ns_conn are (in alphabetical order):
 Returns the compression formats accepted by the client.
 
 [call [cmd  "ns_conn addr"]]
-
 Returns the local IP address of the current connection.
 
 [call [cmd  "ns_conn auth"]]
+Returns the authorization header content as an [cmd ns_set]. For
+[term Basic] authentication there are reserved keys:
+Username and Password, these are the keys returned by
+[cmd "ns_conn authuser"] and [cmd "ns_conn authpassword"].
 
-Returns all authorization headers as an ns_set. For Basic authentication
-there are reserved keys: Username and Password, these are the keys returned by ns_conn authuser and
-ns_conn authpassword. This ns_set can be updated.
+[para] In case of [term Digest] authentication, all the fields
+provided are returned in the ns_set. For [term Bearer] authentication
+the base65 encoded Token is returned in the ns_set.
+
+[para] This ns_set can be updated.
+
+[para] For other authorization schemes, the
+[term Authorization] header field can be handled
+like all other request header fields:
+
+[example_begin]
+ set auth_header [lb]ns_set iget [lb]ns_conn headers[rb] Authorization ""[rb]
+[example_end]
+
 
 [call [cmd  "ns_conn authpassword"]]
 
