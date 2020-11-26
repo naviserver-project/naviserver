@@ -82,7 +82,7 @@ static int HttpQueue(
 ) NS_GNUC_NONNULL(1);
 
 static int HttpConnect(
-    Tcl_Interp *interp,
+    NsInterp *itPtr,
     const char *method,
     const char *url,
     Ns_Set *hdrPtr,
@@ -196,6 +196,16 @@ static void HttpDoneCallback(
     NsHttpTask *httpPtr
 ) NS_GNUC_NONNULL(1);
 
+static void HttpClientLogWrite(
+    const NsHttpTask *httpPtr,
+    const char       *causeString
+) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static Ns_LogCallbackProc HttpClientLogOpen;
+static Ns_LogCallbackProc HttpClientLogClose;
+static Ns_LogCallbackProc HttpClientLogRoll;
+static Ns_SchedProc       SchedLogRollCallback;
+
 static Ns_TaskProc HttpProc;
 
 /*
@@ -255,6 +265,231 @@ static NsHttpParseProc* EndParsers[] = {
     &ParseEndProc,
     NULL
 };
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsInitLog --
+ *
+ *      Initialize the log API and TLS slot.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsInitHttp(NsServer *servPtr)
+{
+    const char  *path;
+
+    NS_NONNULL_ASSERT(servPtr != NULL);
+
+    Ns_MutexInit(&servPtr->httpclient.lock);
+    Ns_MutexSetName2(&servPtr->httpclient.lock, "httplog", servPtr->server);
+
+    path = Ns_ConfigGetPath(servPtr->server, NULL, "httpclient", (char *)0L);
+    servPtr->httpclient.logging = Ns_ConfigBool(path, "logging", NS_FALSE);
+
+    if (servPtr->httpclient.logging) {
+        const char  *filename;
+        Tcl_DString  defaultLogFileName;
+
+        Tcl_DStringInit(&defaultLogFileName);
+        filename = Ns_ConfigString(path, "logfile", NULL);
+        if (filename == NULL) {
+            Tcl_DStringAppend(&defaultLogFileName, "httpclient-", 11);
+            Tcl_DStringAppend(&defaultLogFileName, servPtr->server, -1);
+            Tcl_DStringAppend(&defaultLogFileName, ".log", 10);
+            filename = defaultLogFileName.string;
+        }
+
+        if (Ns_PathIsAbsolute(filename) == NS_TRUE) {
+            servPtr->httpclient.logFileName = ns_strdup(filename);
+        } else {
+            Tcl_DString ds;
+
+            Tcl_DStringInit(&ds);
+            (void) Ns_HomePath(&ds, "logs", "/", filename, (char *)0L);
+            servPtr->httpclient.logFileName = Ns_DStringExport(&ds);
+        }
+        Tcl_DStringFree(&defaultLogFileName);
+        servPtr->httpclient.logRollfmt = ns_strcopy(Ns_ConfigGetValue(path, "logrollfmt"));
+        servPtr->httpclient.logMaxbackup = Ns_ConfigIntRange(path, "logmaxbackup",
+                                                          100, 1, INT_MAX);
+
+        HttpClientLogOpen(servPtr);
+
+        /*
+         *  Schedule various log roll and shutdown options.
+         */
+
+        if (Ns_ConfigBool(path, "logroll", NS_TRUE)) {
+            int hour = Ns_ConfigIntRange(path, "logrollhour", 0, 0, 23);
+
+            Ns_ScheduleDaily(SchedLogRollCallback, servPtr,
+                             0, hour, 0, NULL);
+        }
+        if (Ns_ConfigBool(path, "logrollonsignal", NS_FALSE)) {
+            Ns_RegisterAtSignal((Ns_Callback *)(ns_funcptr_t)SchedLogRollCallback, servPtr);
+        }
+
+    } else {
+        servPtr->httpclient.fd = NS_INVALID_FD;
+        servPtr->httpclient.logFileName = NULL;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SchedLogRollCallback --
+ *
+ *      Callback for scheduled procedure to roll the client logfile.
+ *
+ * Results:
+ *      None
+ *
+ * Side effects:
+ *      Rolling the client logfile when configured.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+SchedLogRollCallback(void *arg, int UNUSED(id))
+{
+    NsServer *servPtr = (NsServer *)arg;
+
+    HttpClientLogRoll(servPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HttpClientLogRoll --
+ *
+ *      Rolling function for the the client logfile.
+ *
+ * Results:
+ *      None
+ *
+ * Side effects:
+ *      Rolling the client logfile when configured.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+HttpClientLogRoll(void *arg)
+{
+    Ns_ReturnCode status = NS_OK;
+    NsServer     *servPtr = (NsServer *)arg;
+
+    if (servPtr->httpclient.logging) {
+        status = Ns_RollFileCondFmt(HttpClientLogOpen, HttpClientLogClose, servPtr,
+                                    servPtr->httpclient.logFileName,
+                                    servPtr->httpclient.logRollfmt,
+                                    servPtr->httpclient.logMaxbackup);
+    }
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HttpClientLogOpen --
+ *
+ *      Function for opening the client logfile. This function is only called,
+ *      when logging is configured.
+ *
+ * Results:
+ *      NS_OK, NS_ERROR
+ *
+ * Side effects:
+ *      Opening the client logfile.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+HttpClientLogOpen(void *arg)
+{
+    Ns_ReturnCode status;
+    NsServer     *servPtr = (NsServer *)arg;
+
+    servPtr->httpclient.fd = ns_open(servPtr->httpclient.logFileName,
+                                     O_APPEND | O_WRONLY | O_CREAT | O_CLOEXEC,
+                                     0644);
+    if (servPtr->httpclient.fd == NS_INVALID_FD) {
+        Ns_Log(Error, "httpclient: error '%s' opening '%s'",
+               strerror(errno), servPtr->httpclient.logFileName);
+        status = NS_ERROR;
+    } else {
+        Ns_Log(Notice, "httpclient: logfile '%s' opened",
+               servPtr->httpclient.logFileName);
+        status = NS_OK;
+    }
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HttpClientLogClose --
+ *
+ *      Function for closing the client logfile when configured.
+ *
+ * Results:
+ *      NS_OK, NS_ERROR
+ *
+ * Side effects:
+ *      Closing the client logfile when configured.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+HttpClientLogClose(void *arg)
+{
+    Ns_ReturnCode status = NS_OK;
+    NsServer     *servPtr = (NsServer *)arg;
+
+    if (servPtr->httpclient.fd != NS_INVALID_FD) {
+        ns_close(servPtr->httpclient.fd);
+        servPtr->httpclient.fd = NS_INVALID_FD;
+        Ns_Log(Notice, "httpclient: logfile '%s' closed",
+               servPtr->httpclient.logFileName);
+    }
+
+    return status;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsStopHttp --
+ *
+ *      Function to be called, when the server shuts down.
+ *
+ * Results:
+ *      None
+ *
+ * Side effects:
+ *      Closing the client logfile when configured.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NsStopHttp(NsServer *servPtr)
+{
+    NS_NONNULL_ASSERT(servPtr != NULL);
+
+    (void)HttpClientLogClose(servPtr);
+}
+
+
 
 
 /*
@@ -753,7 +988,9 @@ HttpWaitObjCmd(
             Tcl_SetObjResult(interp, Tcl_NewStringObj(httpPtr->error, -1));
             if (rc == NS_TIMEOUT) {
                 Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
-                Ns_Log(Ns_LogTimeoutDebug, "ns_http request '%s' runs into timeout", httpPtr->url);
+                Ns_Log(Ns_LogTimeoutDebug, "ns_http request '%s' runs into timeout",
+                       httpPtr->url);
+                HttpClientLogWrite(httpPtr, "tasktimeout");
             }
             result = TCL_ERROR;
         }
@@ -1320,7 +1557,7 @@ HttpQueue(
     }
 
     if (result == TCL_OK) {
-        result = HttpConnect(interp,
+        result = HttpConnect(itPtr,
                              method,
                              url,
                              requestHdrPtr,
@@ -1453,6 +1690,56 @@ HttpQueue(
     return result;
 }
 
+static void
+HttpClientLogWrite(
+    const NsHttpTask *httpPtr,
+    const char       *causeString
+) {
+    Ns_Time diff;
+
+    NS_NONNULL_ASSERT(httpPtr != NULL);
+    NS_NONNULL_ASSERT(causeString != NULL);
+
+    assert(httpPtr->servPtr != NULL);
+    /*fprintf(stderr, "================ HttpClientLog %d fd %d %s etime %ld cause %s\n",
+            httpPtr->servPtr->httpclient.logging,
+            httpPtr->servPtr->httpclient.fd,
+            httpPtr->servPtr->httpclient.logFileName,
+            (long)(httpPtr->etime.sec),
+            causeString
+            );*/
+
+    Ns_DiffTime(&httpPtr->etime, &httpPtr->stime, &diff);
+
+    if (httpPtr->servPtr->httpclient.logging
+        && httpPtr->servPtr->httpclient.fd != NS_INVALID_FD
+       ) {
+        Tcl_DString logString;
+        char buf[41]; /* Big enough for Ns_LogTime(). */
+
+        Tcl_DStringInit(&logString);
+        Ns_DStringPrintf(&logString, "%s %s %d %s %s " NS_TIME_FMT
+                         " %" PRIdz " %" PRIdz " %s\n",
+                         Ns_LogTime(buf),
+                         Ns_ThreadGetName(),
+                         httpPtr->status == 0 ? 408 : httpPtr->status,
+                         httpPtr->method,
+                         httpPtr->url,
+                         (int64_t)diff.sec, diff.usec,
+                         httpPtr->sent,
+                         httpPtr->received,
+                         causeString
+                        );
+
+        Ns_MutexLock(&httpPtr->servPtr->httpclient.lock);
+        (void)NsAsyncWrite(httpPtr->servPtr->httpclient.fd,
+                           logString.string, (size_t)logString.length);
+        Ns_MutexUnlock(&httpPtr->servPtr->httpclient.lock);
+
+        Tcl_DStringFree(&logString);
+    }
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1472,7 +1759,7 @@ HttpQueue(
 
 static int
 HttpGetResult(
-    Tcl_Interp  *interp,
+    Tcl_Interp *interp,
     NsHttpTask *httpPtr
 ) {
     int      result = TCL_OK;
@@ -1487,15 +1774,25 @@ HttpGetResult(
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
+    //fprintf(stderr, "================ HttpGetResult\n");
+
+    Ns_DiffTime(&httpPtr->etime, &httpPtr->stime, &diff);
+    elapsedTimeObj = Tcl_NewObj();
+    Ns_TclSetTimeObj(elapsedTimeObj, &diff);
+
     if (httpPtr->error != NULL) {
         if (httpPtr->finalSockState == NS_SOCK_TIMEOUT) {
             Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
-            Ns_Log(Ns_LogTimeoutDebug, "ns_http request '%s' runs into timeout", httpPtr->url);
+            Ns_Log(Ns_LogTimeoutDebug, "ns_http request '%s' runs into timeout",
+                   httpPtr->url);
+            HttpClientLogWrite(httpPtr, "socktimeout");
         }
         Tcl_SetObjResult(interp, Tcl_NewStringObj(httpPtr->error, -1));
         result = TCL_ERROR;
         goto err;
     }
+
+    HttpClientLogWrite(httpPtr, "ok");
 
     if (httpPtr->recvSpoolMode == NS_FALSE) {
 #if defined(TCLHTTP_USE_EXTERNALTOUTF)
@@ -1572,10 +1869,6 @@ HttpGetResult(
         fileNameObj = Tcl_NewStringObj(httpPtr->spoolFileName, -1);
     }
 
-    Ns_DiffTime(&httpPtr->etime, &httpPtr->stime, &diff);
-    elapsedTimeObj = Tcl_NewObj();
-    Ns_TclSetTimeObj(elapsedTimeObj, &diff);
-
     /*
      * Add reply headers set into the interp
      */
@@ -1587,6 +1880,7 @@ HttpGetResult(
     httpPtr->replyHeaders = NULL; /* Prevents Ns_SetFree() in HttpClose() */
     replyHeadersObj = Tcl_GetObjResult(interp);
     Tcl_IncrRefCount(replyHeadersObj);
+
 
     /*
      * Assemble the resulting dictionary
@@ -2023,7 +2317,7 @@ HttpWaitForSocketEvent(
 
 static int
 HttpConnect(
-    Tcl_Interp *interp,
+    NsInterp *itPtr,
     const char *method,
     const char *url,
     Ns_Set *hdrPtr,
@@ -2040,6 +2334,7 @@ HttpConnect(
     Ns_Time *expirePtr,
     NsHttpTask **httpPtrPtr
 ) {
+    Tcl_Interp      *interp;
     NsHttpTask      *httpPtr;
     Ns_DString      *dsPtr;
     bool             haveUserAgent = NS_FALSE;
@@ -2051,10 +2346,12 @@ HttpConnect(
     static uint64_t  httpClientRequestCount = 0u; /* MT: static variable! */
     uint64_t         requestCount = 0u;
 
-    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(itPtr != NULL);
     NS_NONNULL_ASSERT(method != NULL);
     NS_NONNULL_ASSERT(url != NULL);
     NS_NONNULL_ASSERT(httpPtrPtr != NULL);
+
+    interp = itPtr->interp;
 
     /*
      * Setup the task structure. From this point on
@@ -2067,7 +2364,9 @@ HttpConnect(
     httpPtr->sock = NS_INVALID_SOCKET;
     httpPtr->spoolLimit = -1;
     httpPtr->url = ns_strdup(url);
+    httpPtr->method = ns_strdup(method);
     httpPtr->replyHeaders = Ns_SetCreate("replyHeaders");
+    httpPtr->servPtr = itPtr->servPtr;
 
     if (timeoutPtr != NULL) {
         httpPtr->timeout = ns_calloc(1u, sizeof(Ns_Time));
@@ -2191,6 +2490,7 @@ HttpConnect(
         httpPtr->sock = Ns_SockTimedConnect2(host, portNr, NULL, 0, toPtr, &rc);
         if (httpPtr->sock == NS_INVALID_SOCKET) {
             Ns_SockConnectError(interp, host, portNr, rc);
+            HttpClientLogWrite(httpPtr, "connecttimeout");
             goto fail;
         }
         if (Ns_SockSetNonBlocking(httpPtr->sock) != NS_OK) {
@@ -2202,6 +2502,7 @@ HttpConnect(
             if (rc == NS_TIMEOUT) {
                 Ns_TclPrintfResult(interp, "timeout waiting for writable socket");
                 Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
+                HttpClientLogWrite(httpPtr, "writetimeout");
             } else {
                 Ns_TclPrintfResult(interp, "waiting for writable socket: %s",
                                    ns_sockstrerror(ns_sockerrno));
@@ -2778,6 +3079,7 @@ HttpClose(
     }
 
     ns_free((void *)httpPtr->url);
+    ns_free((void *)httpPtr->method);
 
     Ns_MutexDestroy(&httpPtr->lock); /* Should not be held locked here! */
     Tcl_DStringFree(&httpPtr->ds);

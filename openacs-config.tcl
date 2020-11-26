@@ -590,6 +590,20 @@ ns_section ns/server/$server/fastpath {
     # ns_param	directorylisting	fancy                 ;# Can be simple or fancy
     #
 }
+
+#---------------------------------------------------------------------
+# HTTP client configuration
+#---------------------------------------------------------------------
+ns_section ns/server/$server/httpclient {
+    ns_param	logging		on ;# default: off
+    ns_param	logfile		${logroot}/httpclient.log
+    ns_param	logrollfmt	%Y-%m-%d ;# format appended to log file name
+    #ns_param	logmaxbackup	100      ;# 10, max number of backup log files
+    #ns_param	logroll		true     ;# true, should server log files automatically
+    #ns_param	logrollonsignal	true     ;# false, perform roll on a sighup
+    #ns_param	logrollhour	0        ;# 0, specify at which hour to roll
+}
+
 #---------------------------------------------------------------------
 # OpenACS specific settings (per server)
 #---------------------------------------------------------------------

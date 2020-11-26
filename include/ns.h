@@ -334,42 +334,46 @@ extern NS_IMPORT  Ns_LogSeverity Ns_LogAccessDebug;
 NS_EXTERN Ns_LogSeverity Ns_LogAccessDebug;
 #endif
 
+struct Ns_ObjvSpec;
+
 /*
  * Typedefs of functions
  */
 
-typedef int   (Ns_IndexCmpProc) (const void *left, const void *right)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-typedef int   (Ns_IndexKeyCmpProc) (const void *key, const void *elemPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
-typedef int   (Ns_SortProc) (void *left, void *right);
-typedef bool  (Ns_EqualProc) (void *left, void *right);
-typedef void  (Ns_ElemVoidProc) (void *elem);
-typedef void *(Ns_ElemValProc) (void *elem);
-typedef bool  (Ns_ElemTestProc) (void *elem);
-typedef void  (Ns_Callback) (void *arg);
-typedef void  (Ns_FreeProc) (void *arg);
-typedef void  (Ns_ShutdownProc) (const Ns_Time *toPtr, void *arg);
-typedef int   (Ns_TclInterpInitProc) (Tcl_Interp *interp, const void *arg);
-typedef int   (Ns_TclTraceProc) (Tcl_Interp *interp, const void *arg);
-typedef void  (Ns_TclDeferProc) (Tcl_Interp *interp, void *arg);
-typedef bool  (Ns_SockProc) (NS_SOCKET sock, void *arg, unsigned int why);
-typedef void  (Ns_TaskProc) (Ns_Task *task, NS_SOCKET sock, void *arg, Ns_SockState why);
-typedef void  (Ns_EventProc) (Ns_Event *event, NS_SOCKET sock, void *arg, Ns_Time *now, Ns_SockState why);
-typedef void  (Ns_SchedProc) (void *arg, int id);
-typedef Ns_ReturnCode (Ns_ServerInitProc) (const char *server);
-typedef Ns_ReturnCode (Ns_ModuleInitProc) (const char *server, const char *module) NS_GNUC_NONNULL(2);
-typedef Ns_ReturnCode (Ns_RequestAuthorizeProc) (const char *server, const char *method,
-                                                 const char *url, const char *user,
-                                                 const char *pass, const char *peer);
-typedef void  (Ns_AdpParserProc)(Tcl_DString *outPtr, char *page);
+typedef int           (Ns_SortProc)(void *left, void *right);
+typedef bool          (Ns_EqualProc)(void *left, void *right);
+typedef void          (Ns_ElemVoidProc)(void *elem);
+typedef void *        (Ns_ElemValProc)(void *elem);
+typedef bool          (Ns_ElemTestProc)(void *elem);
+typedef void          (Ns_Callback) (void *arg);
+typedef Ns_ReturnCode (Ns_LogCallbackProc)(void *arg);
+typedef void          (Ns_FreeProc)(void *arg);
+typedef void          (Ns_ShutdownProc)(const Ns_Time *toPtr, void *arg);
+typedef int           (Ns_TclInterpInitProc)(Tcl_Interp *interp, const void *arg);
+typedef int           (Ns_TclTraceProc)(Tcl_Interp *interp, const void *arg);
+typedef void          (Ns_TclDeferProc)(Tcl_Interp *interp, void *arg);
+typedef bool          (Ns_SockProc)(NS_SOCKET sock, void *arg, unsigned int why);
+typedef void          (Ns_TaskProc)(Ns_Task *task, NS_SOCKET sock, void *arg,
+                                    Ns_SockState why);
+typedef void          (Ns_EventProc)(Ns_Event *event, NS_SOCKET sock, void *arg,
+                                     Ns_Time *now, Ns_SockState why);
+typedef void          (Ns_SchedProc)(void *arg, int id);
+typedef Ns_ReturnCode (Ns_ServerInitProc)(const char *server);
+typedef Ns_ReturnCode (Ns_ModuleInitProc)(const char *server, const char *module)
+    NS_GNUC_NONNULL(2);
+typedef Ns_ReturnCode (Ns_RequestAuthorizeProc)(const char *server, const char *method,
+                                                const char *url, const char *user,
+                                                const char *pass, const char *peer);
+typedef void          (Ns_AdpParserProc)(Tcl_DString *outPtr, char *page);
 typedef Ns_ReturnCode (Ns_UserAuthorizeProc) (const char *user, const char *passwd)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-struct Ns_ObjvSpec;
-typedef int   (Ns_ObjvProc) (struct Ns_ObjvSpec *spec, Tcl_Interp *interp,
-                             int *objcPtr, Tcl_Obj *const* objv)
+typedef int           (Ns_ObjvProc)(struct Ns_ObjvSpec *spec, Tcl_Interp *interp,
+                                    int *objcPtr, Tcl_Obj *const* objv)
     NS_GNUC_NONNULL(1);
+typedef int           (Ns_IndexCmpProc) (const void *left, const void *right)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+typedef int           (Ns_IndexKeyCmpProc) (const void *key, const void *elemPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * Generic function pointer type, can be used for recasting between different
@@ -1942,6 +1946,11 @@ Ns_RollFileByDate(const char *fileName, int max)
 NS_EXTERN Ns_ReturnCode
 Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, int maxbackup)
     NS_GNUC_NONNULL(1);
+
+NS_EXTERN Ns_ReturnCode
+Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc, void *arg,
+                   const char *filename, const char *rollfmt, int maxbackup)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 /*
  * nsmain.c:

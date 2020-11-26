@@ -94,9 +94,9 @@ static Tcl_ObjCmdProc  LogObjCmd;
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 
 static Ns_ReturnCode LogFlush(Log *logPtr, Tcl_DString *dsPtr);
-static Ns_ReturnCode LogOpen (Log *logPtr);
-static Ns_ReturnCode LogRoll (Log *logPtr);
-static Ns_ReturnCode LogClose(Log *logPtr);
+static Ns_LogCallbackProc LogOpen;
+static Ns_LogCallbackProc LogClose;
+static Ns_LogCallbackProc LogRoll;
 
 static void AppendEscaped(Tcl_DString *dsPtr, const char *toProcess)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -1086,24 +1086,28 @@ LogTrace(void *arg, Ns_Conn *conn)
  */
 
 static Ns_ReturnCode
-LogOpen(Log *logPtr)
+LogOpen(void *arg)
 {
-    int fd;
+    int           fd;
+    Ns_ReturnCode status;
+    Log          *logPtr = (Log *)arg;
 
     fd = ns_open(logPtr->filename, O_APPEND | O_WRONLY | O_CREAT | O_CLOEXEC, 0644);
     if (fd == NS_INVALID_FD) {
         Ns_Log(Error, "nslog: error '%s' opening '%s'",
                strerror(errno), logPtr->filename);
-        return NS_ERROR;
-    }
-    if (logPtr->fd >= 0) {
-        ns_close(logPtr->fd);
+        status = NS_ERROR;
+    } else {
+        status = NS_OK;
+        if (logPtr->fd >= 0) {
+            ns_close(logPtr->fd);
+        }
+
+        logPtr->fd = fd;
+        Ns_Log(Notice, "nslog: opened '%s'", logPtr->filename);
     }
 
-    logPtr->fd = fd;
-    Ns_Log(Notice, "nslog: opened '%s'", logPtr->filename);
-
-    return NS_OK;
+    return status;
 }
 
 
@@ -1125,9 +1129,10 @@ LogOpen(Log *logPtr)
  */
 
 static Ns_ReturnCode
-LogClose(Log *logPtr)
+LogClose(void *arg)
 {
     Ns_ReturnCode status = NS_OK;
+    Log *logPtr = (Log *)arg;
 
     if (logPtr->fd >= 0) {
         status = LogFlush(logPtr, &logPtr->buffer);
@@ -1198,33 +1203,19 @@ LogFlush(Log *logPtr, Tcl_DString *dsPtr)
  */
 
 static Ns_ReturnCode
-LogRoll(Log *logPtr)
+LogRoll(void *arg)
 {
-    Ns_ReturnCode status = NS_OK;
-    Tcl_Obj      *pathObj;
+    Ns_ReturnCode status;
+    Log          *logPtr = (Log *)arg;
 
-    NsAsyncWriterQueueDisable(NS_FALSE);
-
-    (void)LogClose(logPtr);
-
-    pathObj = Tcl_NewStringObj(logPtr->filename, -1);
-    Tcl_IncrRefCount(pathObj);
-
-    if (Tcl_FSAccess(pathObj, F_OK) == 0) {
-        /*
-         * We are already logging to some file
-         */
-        status = Ns_RollFileFmt(pathObj,
+    status = Ns_RollFileCondFmt(LogOpen, LogClose, NULL,
+                                logPtr->filename,
                                 logPtr->rollfmt,
                                 logPtr->maxbackup);
-    }
 
-    Tcl_DecrRefCount(pathObj);
-
-    if (status == NS_OK) {
-        status = LogOpen(logPtr);
-    }
-    NsAsyncWriterQueueEnable();
+    //if (status == NS_OK) {
+    //    status = LogOpen(logPtr);
+    //}
 
     return status;
 }
@@ -1247,7 +1238,7 @@ LogRoll(Log *logPtr)
  */
 
 static void
-LogCallback(Ns_ReturnCode(proc)(Log *), void *arg, const char *desc)
+LogCallbackProc(Ns_LogCallbackProc proc, void *arg, const char *desc)
 {
     int  status;
     Log *logPtr = arg;
@@ -1266,14 +1257,14 @@ static void
 LogCloseCallback(const Ns_Time *toPtr, void *arg)
 {
     if (toPtr == NULL) {
-        LogCallback(LogClose, arg, "close");
+        LogCallbackProc(LogClose, arg, "close");
     }
 }
 
 static void
 LogRollCallback(void *arg, int UNUSED(id))
 {
-    LogCallback(LogRoll, arg, "roll");
+    LogCallbackProc(LogRoll, arg, "roll");
 }
 
 

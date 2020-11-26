@@ -964,6 +964,15 @@ typedef struct NsServer {
         Tcl_HashTable table;
     } connchans;
 
+    struct {
+        Ns_Mutex lock;
+        const char *logFileName;
+        const char *logRollfmt;
+        int  logMaxbackup;
+        int  fd;
+        bool logging;
+    } httpclient;
+
 } NsServer;
 
 /*
@@ -1069,6 +1078,7 @@ typedef struct {
     Ns_Task           *task;             /* Task handle */
     NS_SOCKET          sock;             /* socket to the remote peer */
     int                status;           /* HTTP response status */
+    const char        *method;           /* request method */
     const char        *url;              /* request URL */
     const char        *error;            /* holds error string */
     char              *next;             /* write buffer */
@@ -1440,6 +1450,14 @@ NsUrlSpaceContextSpecAppend(Tcl_DString *dsPtr, NsUrlSpaceContextSpec *spec)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN NsUrlSpaceContextFilterProc NsUrlSpaceContextFilter;
+
+/*
+ * tclhttp.c interface
+ */
+NS_EXTERN void NsInitHttp(NsServer *servPtr)
+    NS_GNUC_NONNULL(1);
+NS_EXTERN void NsStopHttp(NsServer *servPtr)
+    NS_GNUC_NONNULL(1);
 
 /*
  * Socket driver callbacks.

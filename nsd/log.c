@@ -123,7 +123,8 @@ static void  LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count,
                       bool trunc, bool locked)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static Ns_ReturnCode LogOpen(void);
+static Ns_LogCallbackProc LogOpen;
+static Ns_LogCallbackProc LogClose;
 
 static char* LogTime(LogCache *cachePtr, const Ns_Time *timePtr, bool gmt)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -147,7 +148,7 @@ static Ns_Mutex     lock;
 static Ns_Cond      cond;
 
 static bool         logOpenCalled = NS_FALSE;
-static const char  *file = NULL;
+static const char  *logfileName = NULL;
 static const char  *rollfmt = NULL;
 static unsigned int flags = 0u;
 static int          maxbackup;
@@ -415,16 +416,16 @@ NsConfigLog(void)
 
     maxbackup = Ns_ConfigIntRange(path, "logmaxbackup", 10, 0, 999);
 
-    file = Ns_ConfigString(path, "serverlog", "nsd.log");
-    if (Ns_PathIsAbsolute(file) == NS_FALSE) {
+    logfileName = Ns_ConfigString(path, "serverlog", "nsd.log");
+    if (Ns_PathIsAbsolute(logfileName) == NS_FALSE) {
         Ns_DStringInit(&ds);
         if (Ns_HomePathExists("logs", (char *)0L)) {
-            (void)Ns_HomePath(&ds, "logs", file, (char *)0L);
+            (void)Ns_HomePath(&ds, "logs", logfileName, (char *)0L);
         } else {
-            (void)Ns_HomePath(&ds, file, (char *)0L);
+            (void)Ns_HomePath(&ds, logfileName, (char *)0L);
         }
-        file = Ns_DStringExport(&ds);
-        Ns_SetUpdate(set, "serverlog", file);
+        logfileName = Ns_DStringExport(&ds);
+        Ns_SetUpdate(set, "serverlog", logfileName);
     }
 
     rollfmt = Ns_ConfigString(path, "logrollfmt", NS_EMPTY_STRING);
@@ -451,7 +452,7 @@ NsConfigLog(void)
 const char *
 Ns_InfoErrorLog(void)
 {
-    return file;
+    return logfileName;
 }
 
 
@@ -1417,11 +1418,11 @@ NsTclLogRollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *
  * Ns_LogRoll --
  *
- *      Utility function and signal handler for SIGHUP which will roll
- *      the files. When NaviServer is logging to stderr (when
- *      e.g. started with -f) no rolling will be performed. The
- *      function returns potentially errors from opening the log file
- *      as result.
+ *      Function and signal handler for SIGHUP which will roll the
+ *      system log (e.g. "error.log" or stderr). When NaviServer is
+ *      logging to stderr (when e.g. started with -f) no rolling will
+ *      be performed. The function returns potentially errors from
+ *      opening the file named by logfileName as result.
  *
  * Results:
  *      NS_OK/NS_ERROR
@@ -1435,46 +1436,18 @@ NsTclLogRollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 Ns_ReturnCode
 Ns_LogRoll(void)
 {
-    Ns_ReturnCode status = NS_OK;
+    Ns_ReturnCode status;
 
-    if (file != NULL && logOpenCalled) {
-        Tcl_Obj      *pathObj;
-
-        /*
-         * We are already logging to some file
-         */
-
-        NsAsyncWriterQueueDisable(NS_FALSE);
-#ifdef _WIN32
-        /* On Windows you MUST close stdout and stderr now, or
-           Tcl_FSRenameFile() will fail with "Permission denied". */
-        (void)ns_close(STDOUT_FILENO);
-        (void)ns_close(STDERR_FILENO);
-#endif
-
-        pathObj = Tcl_NewStringObj(file, -1);
-        Tcl_IncrRefCount(pathObj);
-
-        if (Tcl_FSAccess(pathObj, F_OK) == 0) {
-            /*
-             * The current logfile exists.
-             */
-            (void) Ns_RollFileFmt(pathObj,
-                                  rollfmt,
-                                  maxbackup);
-        }
-        Tcl_DecrRefCount(pathObj);
-
-        status = LogOpen();
-        /* On Windows, calling Ns_Log() BEFORE LogOpen() crashes the server
-           with a Microsoft assertion failure:  (_osfile(fh) & FOPEN) */
-        Ns_Log(Notice, "log: re-opening log file '%s'", file);
-
-        NsAsyncWriterQueueEnable();
+    if (logfileName != NULL && logOpenCalled) {
+        status = Ns_RollFileCondFmt(LogOpen, LogClose, NULL,
+                                    logfileName, rollfmt, maxbackup);
+    } else {
+        status = NS_OK;
     }
 
     return status;
 }
+
 
 
 /*
@@ -1502,9 +1475,9 @@ NsLogOpen(void)
      * Open the log and schedule the signal roll.
      */
 
-    if (LogOpen() != NS_OK) {
+    if (LogOpen(NULL) != NS_OK) {
         Ns_Fatal("log: failed to open server log '%s': '%s'",
-                 file, strerror(errno));
+                 logfileName, strerror(errno));
     }
     if ((flags & LOG_ROLL) != 0u) {
         Ns_Callback *proc = (Ns_Callback *)(ns_funcptr_t)Ns_LogRoll;
@@ -1519,9 +1492,9 @@ NsLogOpen(void)
  *
  * LogOpen --
  *
- *      Open the log filename specified in the 'logFile' global. If
- *      it's successfully opened, make that file the sink for stdout
- *      and stderr too.
+ *      Open the log filename specified in the global variable
+ *      'logfileName'. If it's successfully opened, make that file the
+ *      sink for stdout and stderr too.
  *
  * Results:
  *      NS_OK/NS_ERROR.
@@ -1533,7 +1506,7 @@ NsLogOpen(void)
  */
 
 static Ns_ReturnCode
-LogOpen(void)
+LogOpen(void *UNUSED(arg))
 {
     int           fd;
     Ns_ReturnCode status = NS_OK;
@@ -1545,10 +1518,10 @@ LogOpen(void)
     oflags |= O_LARGEFILE;
 #endif
 
-    fd = ns_open(file, (int)oflags, 0644);
+    fd = ns_open(logfileName, (int)oflags, 0644);
     if (fd == NS_INVALID_FD) {
         Ns_Log(Error, "log: failed to re-open log file '%s': '%s'",
-               file, strerror(errno));
+               logfileName, strerror(errno));
         status = NS_ERROR;
     } else {
 
@@ -1686,6 +1659,39 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool loc
         }
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LogClose --
+ *
+ *      Close the logfile. Since unixes, this happens via stderr
+ *      magic, we need here just the handling for windows.
+ *
+ * Results:
+ *      NS_OK
+ *
+ * Side effects:
+ *      Closing the STDERR+STDOUT on windows.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+LogClose(void *UNUSED(arg))
+{
+    /*
+     * Probably, LogFlush() should be done here as well, but it was
+     * not used so far at this place.
+     */
+#ifdef _WIN32
+    /* On Windows you MUST close stdout and stderr now, or
+       Tcl_FSRenameFile() will fail with "Permission denied". */
+    (void)ns_close(STDOUT_FILENO);
+    (void)ns_close(STDERR_FILENO);
+#endif
+    return NS_OK;
+}
+
 
 
 /*

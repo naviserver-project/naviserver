@@ -230,6 +230,93 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, int maxbackup)
     return status;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_RollFileCondFmt --
+ *
+ *      Function to conditionally roll the file based on the format
+ *      string.  This function closes the current logfile, uses
+ *      Ns_RollFileFmt() in case, a file with the same name exists, and
+ *      (re)opens log log file again.
+ *
+ * Results:
+ *      NS_OK/NS_ERROR
+ *
+ * Side effects:
+
+ *      The log file will be renamed, old log files (outside maxbackup)
+ *      are deleted.
+ *
+ *----------------------------------------------------------------------
+ */
+Ns_ReturnCode
+Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
+                   void *arg,
+                   const char *filename, const char *rollfmt, int maxbackup)
+{
+    Ns_ReturnCode status = NS_OK;
+    Tcl_DString   errorMsg;
+
+    Tcl_DStringInit(&errorMsg);
+
+    /*
+     * We assume, we are already logging to some file.
+     */
+
+    NsAsyncWriterQueueDisable(NS_FALSE);
+
+    /*
+     * Close the log file.
+     */
+    status = closeProc(arg);
+    if (status == NS_OK) {
+        Tcl_Obj      *pathObj;
+
+        pathObj = Tcl_NewStringObj(filename, -1);
+        Tcl_IncrRefCount(pathObj);
+
+        /*
+         * If the logfile exists already, roll it.
+         */
+        if (Tcl_FSAccess(pathObj, F_OK) == 0) {
+            /*
+             * The current logfile exists.
+             */
+            status = Ns_RollFileFmt(pathObj,
+                                    rollfmt,
+                                    maxbackup);
+        }
+        Tcl_DecrRefCount(pathObj);
+    } else {
+        /*
+         * Closing the file did not work. Delay writing the error msg
+         * until the log file is open (we might work on the system log
+         * here).
+         */
+        Ns_DStringPrintf(&errorMsg, "log: closing log file failed for '%s'",
+                         filename);
+    }
+
+    /*
+     * Now open the logfile (maybe again).
+     */
+    status = openProc(arg);
+    NsAsyncWriterQueueEnable();
+
+    if (status == NS_OK) {
+        if (errorMsg.length > 0) {
+            Ns_Log(Warning, "%s", errorMsg.string);
+        }
+        Ns_Log(Notice, "log: re-opening log file '%s'", filename);
+    } else {
+        Ns_Log(Warning, "log: opening log file failed: '%s'", filename);
+    }
+
+    Tcl_DStringFree(&errorMsg);
+    return status;
+}
+
 
 /*
  *----------------------------------------------------------------------

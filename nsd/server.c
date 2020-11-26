@@ -179,6 +179,7 @@ NsStopServers(const Ns_Time *toPtr)
     hPtr = Tcl_FirstHashEntry(&nsconf.servertable, &search);
     while (hPtr != NULL) {
         servPtr = Tcl_GetHashValue(hPtr);
+        NsStopHttp(servPtr);
         NsStopServer(servPtr);
         hPtr = Tcl_NextHashEntry(&search);
     }
@@ -320,6 +321,8 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
         CreatePool(servPtr, Ns_SetKey(set, i));
     }
     NsTclInitServer(server);
+    NsInitHttp(servPtr);
+
     NsInitStaticModules(server);
     initServPtr = NULL;
 }
