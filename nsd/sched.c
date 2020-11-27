@@ -210,7 +210,8 @@ Ns_ScheduleProc(Ns_SchedProc *proc, void *arg, int thread, int secs)
 
     interval.sec = secs;
     interval.usec = 0;
-    return Ns_ScheduleProcEx(proc, arg, (thread != 0) ? NS_SCHED_THREAD : 0u, &interval, NULL);
+    return Ns_ScheduleProcEx(proc, arg, (thread != 0) ? NS_SCHED_THREAD : 0u,
+                             &interval, NULL);
 }
 
 
@@ -245,7 +246,8 @@ Ns_ScheduleDaily(Ns_SchedProc *proc, void *clientData, unsigned int flags,
 
         interval.sec = (hour * 3600) + (minute * 60);
         interval.usec = 0;
-        result = Ns_ScheduleProcEx(proc, clientData, flags | NS_SCHED_DAILY, &interval, cleanupProc);
+        result = Ns_ScheduleProcEx(proc, clientData, flags | NS_SCHED_DAILY,
+                                   &interval, cleanupProc);
     }
     return result;
 }
@@ -282,7 +284,8 @@ Ns_ScheduleWeekly(Ns_SchedProc *proc, void *clientData, unsigned int flags,
 
         interval.sec = (((day * 24) + hour) * 3600) + (minute * 60);
         interval.usec = 0;
-        result = Ns_ScheduleProcEx(proc, clientData, flags | NS_SCHED_WEEKLY, &interval, cleanupProc);
+        result = Ns_ScheduleProcEx(proc, clientData, flags | NS_SCHED_WEEKLY,
+                                   &interval, cleanupProc);
     }
     return result;
 }
@@ -726,7 +729,8 @@ EventThread(void *arg)
         --nIdleThreads;
         Ns_MutexUnlock(&lock);
 
-        Ns_ThreadSetName("-sched:%" PRIuPTR ":%" PRIuPTR ":%d-", (uintptr_t)arg, ++jobId, ePtr->id);
+        Ns_ThreadSetName("-sched:%" PRIuPTR ":%" PRIuPTR ":%d-",
+                         (uintptr_t)arg, ++jobId, ePtr->id);
         (*ePtr->proc) (ePtr->arg, ePtr->id);
         Ns_ThreadSetName("-sched:idle%" PRIuPTR "-", (uintptr_t)arg);
         Ns_GetTime(&now);
