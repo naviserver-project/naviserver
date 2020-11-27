@@ -291,7 +291,7 @@ NsInitHttp(NsServer *servPtr)
     NS_NONNULL_ASSERT(servPtr != NULL);
 
     Ns_MutexInit(&servPtr->httpclient.lock);
-    Ns_MutexSetName2(&servPtr->httpclient.lock, "httplog", servPtr->server);
+    Ns_MutexSetName2(&servPtr->httpclient.lock, "httpclientlog", servPtr->server);
 
     path = Ns_ConfigGetPath(servPtr->server, NULL, "httpclient", (char *)0L);
     servPtr->httpclient.logging = Ns_ConfigBool(path, "logging", NS_FALSE);
@@ -321,7 +321,7 @@ NsInitHttp(NsServer *servPtr)
         Tcl_DStringFree(&defaultLogFileName);
         servPtr->httpclient.logRollfmt = ns_strcopy(Ns_ConfigGetValue(path, "logrollfmt"));
         servPtr->httpclient.logMaxbackup = Ns_ConfigIntRange(path, "logmaxbackup",
-                                                          100, 1, INT_MAX);
+                                                             100, 1, INT_MAX);
 
         HttpClientLogOpen(servPtr);
 
@@ -365,6 +365,9 @@ SchedLogRollCallback(void *arg, int UNUSED(id))
 {
     NsServer *servPtr = (NsServer *)arg;
 
+    Ns_Log(Notice, "httpclient: scheduled callback '%s'",
+           servPtr->httpclient.logFileName);
+
     HttpClientLogRoll(servPtr);
 }
 
@@ -388,6 +391,9 @@ HttpClientLogRoll(void *arg)
 {
     Ns_ReturnCode status = NS_OK;
     NsServer     *servPtr = (NsServer *)arg;
+
+    Ns_Log(Notice, "httpclient: client roll '%s' (logging %d)",
+           servPtr->httpclient.logFileName, servPtr->httpclient.logging);
 
     if (servPtr->httpclient.logging) {
         status = Ns_RollFileCondFmt(HttpClientLogOpen, HttpClientLogClose, servPtr,
@@ -455,6 +461,9 @@ HttpClientLogClose(void *arg)
 {
     Ns_ReturnCode status = NS_OK;
     NsServer     *servPtr = (NsServer *)arg;
+
+    Ns_Log(Notice, "httpclient: logfile '%s' try tpo close (fd %d)",
+           servPtr->httpclient.logFileName, servPtr->httpclient.fd);
 
     if (servPtr->httpclient.fd != NS_INVALID_FD) {
         ns_close(servPtr->httpclient.fd);
@@ -1775,6 +1784,14 @@ HttpGetResult(
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
     //fprintf(stderr, "================ HttpGetResult\n");
+
+    /*
+     * In some error conditions, the endtime is not set. make sure, take the
+     * current time in these cases.
+     */
+    if (httpPtr->etime.sec == 0) {
+        Ns_GetTime(&httpPtr->etime);
+    }
 
     Ns_DiffTime(&httpPtr->etime, &httpPtr->stime, &diff);
     elapsedTimeObj = Tcl_NewObj();
