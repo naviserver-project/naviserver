@@ -345,6 +345,8 @@ NsTclMutexObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *c
                  * CreateSynchObject().
                  */
                 Ns_MutexSetName(lockPtr, Tcl_GetString(objv[2]));
+            } else {
+                Ns_Log(Notice, "created unnamed syncobj %s",Ns_MutexGetName(lockPtr));
             }
             break;
 

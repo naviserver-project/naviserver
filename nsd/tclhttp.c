@@ -205,6 +205,7 @@ static Ns_LogCallbackProc HttpClientLogOpen;
 static Ns_LogCallbackProc HttpClientLogClose;
 static Ns_LogCallbackProc HttpClientLogRoll;
 static Ns_SchedProc       SchedLogRollCallback;
+static Ns_ArgProc         SchedLogArg;
 
 static Ns_TaskProc HttpProc;
 
@@ -339,6 +340,8 @@ NsInitHttp(NsServer *servPtr)
             Ns_RegisterAtSignal((Ns_Callback *)(ns_funcptr_t)SchedLogRollCallback, servPtr);
         }
 
+        Ns_RegisterProcInfo((ns_funcptr_t)SchedLogRollCallback, "httpclientlog:roll", SchedLogArg);
+
     } else {
         servPtr->httpclient.fd = NS_INVALID_FD;
         servPtr->httpclient.logFileName = NULL;
@@ -369,6 +372,30 @@ SchedLogRollCallback(void *arg, int UNUSED(id))
            servPtr->httpclient.logFileName);
 
     HttpClientLogRoll(servPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SchedLogArg --
+ *
+ *      Copy log filename as argument for callback introspection queries.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+SchedLogArg(Tcl_DString *dsPtr, const void *arg)
+{
+    const NsServer *servPtr = (NsServer *)arg;
+
+    Tcl_DStringAppendElement(dsPtr, servPtr->httpclient.logFileName);
 }
 
 /*
