@@ -156,7 +156,7 @@ SchedObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, char cmd)
             break;
         }
 
-        if ((result == TCL_OK) && (cmd != 'u')) {
+        if (result == TCL_OK) {
             Tcl_SetObjResult(interp, Tcl_NewBooleanObj(ok));
         }
     }

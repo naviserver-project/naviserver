@@ -157,13 +157,15 @@ using [cmd ns_unschedule_proc].
 
 
 [call [cmd ns_unschedule_proc] [arg id]]
-Unschedules a  previous  scheduled  script.
 
-[para] NOTE: Current behavior is to silently return without error if
-the id doesn't represent a currently scheduled ID.
+Unschedules a  previous  scheduled  script.
+The command returns a boolean result indicating
+success. When the [arg id] does not exist 0 is
+returned.
 
 [example_begin]
  % ns_unschedule_proc $id
+ 1
 [example_end]
 
 [list_end]
