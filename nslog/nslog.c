@@ -1208,7 +1208,7 @@ LogRoll(void *arg)
     Ns_ReturnCode status;
     Log          *logPtr = (Log *)arg;
 
-    status = Ns_RollFileCondFmt(LogOpen, LogClose, NULL,
+    status = Ns_RollFileCondFmt(LogOpen, LogClose, logPtr,
                                 logPtr->filename,
                                 logPtr->rollfmt,
                                 logPtr->maxbackup);
