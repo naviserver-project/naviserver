@@ -825,7 +825,7 @@ content of file
 #
 # Test content-disposition for file uploads with quoted filename
 #
-test http-6.1 {
+test http-6.1a {
   Content disposition with one file with quoted filename
 } -constraints serverListen -setup {
     ns_register_proc POST /form {
@@ -847,6 +847,34 @@ content of file
 --AA--}]
 } -cleanup {
     ns_unregister_op POST /form
+    unset -nocomplain r
+} -result {200 {3 file error.log file.content-type text/plain}}
+
+#
+# Test content-disposition for file uploads with quoted filename
+#
+test http-6.1b {
+  Content disposition with one file with quoted filename
+} -constraints serverListen -setup {
+    ns_register_proc PUT /form {
+      set s [ns_getform]
+      lappend result [ns_set size $s]
+      for {set i 0} {$i < [ns_set size $s]-1} {incr i} {
+        lappend result [ns_set key $s $i] [ns_set value $s $i]
+      }
+      ns_return 200 text/plain $result
+    }
+} -body {
+  set r [nstest::http -http 1.0 -setheaders {Content-Type multipart/form-data;boundary=AA} \
+             -getbody t \
+             PUT /form {--AA
+content-disposition: form-data; name="file"; filename="error.log"
+Content-Type: text/plain
+
+content of file
+--AA--}]
+} -cleanup {
+    ns_unregister_op PUT /form
     unset -nocomplain r
 } -result {200 {3 file error.log file.content-type text/plain}}
 
