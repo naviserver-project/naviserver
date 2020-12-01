@@ -65,7 +65,7 @@ static int Unlink(const char *file)
  *
  * Ns_RollFile --
  *
- *      Roll the log file. When the log is rolled, it gets renamed to
+ *      Roll the logfile. When the log is rolled, it gets renamed to
  *      filename.xyz, where 000 <= xyz <= 999. Older files have higher
  *      numbers.
  *
@@ -162,7 +162,7 @@ Ns_RollFile(const char *fileName, int max)
  *
  * Ns_RollFileFmt --
  *
- *      Roll the log file either based on a timestamp and a rollfmt, or
+ *      Roll the logfile either based on a timestamp and a rollfmt, or
  *      based on sequential numbers, when not rollfmt is given.
  *
  * Results:
@@ -170,7 +170,7 @@ Ns_RollFile(const char *fileName, int max)
  *
  * Side effects:
 
- *      The log file will be renamed, old log files (outside maxbackup)
+ *      The logfile will be renamed, old logfiles (outside maxbackup)
  *      are deleted.
  *
  *----------------------------------------------------------------------
@@ -238,14 +238,14 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, int maxbackup)
  *      Function to conditionally roll the file based on the format
  *      string.  This function closes the current logfile, uses
  *      Ns_RollFileFmt() in case, a file with the same name exists, and
- *      (re)opens log log file again.
+ *      (re)opens log logfile again.
  *
  * Results:
  *      NS_OK/NS_ERROR
  *
  * Side effects:
 
- *      The log file will be renamed, old log files (outside maxbackup)
+ *      The logfile will be renamed, old logfiles (outside maxbackup)
  *      are deleted.
  *
  *----------------------------------------------------------------------
@@ -267,7 +267,7 @@ Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
     NsAsyncWriterQueueDisable(NS_FALSE);
 
     /*
-     * Close the log file.
+     * Close the logfile.
      */
     status = closeProc(arg);
     if (status == NS_OK) {
@@ -286,16 +286,20 @@ Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
             status = Ns_RollFileFmt(pathObj,
                                     rollfmt,
                                     maxbackup);
+            if (status != NS_OK) {
+                Ns_DStringPrintf(&errorMsg, "log: rolling logfile failed failed for '%s': %s",
+                                 filename, strerror(Tcl_GetErrno()));
+            }
         }
         Tcl_DecrRefCount(pathObj);
     } else {
         /*
          * Closing the file did not work. Delay writing the error msg
-         * until the log file is open (we might work on the system log
+         * until the logfile is open (we might work on the system log
          * here).
          */
-        Ns_DStringPrintf(&errorMsg, "log: closing log file failed for '%s'",
-                         filename);
+        Ns_DStringPrintf(&errorMsg, "log: closing logfile failed for '%s': %s",
+                         filename, strerror(Tcl_GetErrno()));
     }
 
     /*
@@ -308,9 +312,9 @@ Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
         if (errorMsg.length > 0) {
             Ns_Log(Warning, "%s", errorMsg.string);
         }
-        Ns_Log(Notice, "log: re-opening log file '%s'", filename);
+        Ns_Log(Notice, "log: re-opening logfile '%s'", filename);
     } else {
-        Ns_Log(Warning, "log: opening log file failed: '%s'", filename);
+        Ns_Log(Warning, "log: opening logfile failed: '%s'", filename);
     }
 
     Tcl_DStringFree(&errorMsg);
