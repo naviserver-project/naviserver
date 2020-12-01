@@ -1059,7 +1059,7 @@ static int
 ICtlAddTrace(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv,  Ns_TclTraceType when)
 {
     unsigned int    flags = 0u;
-    Tcl_Obj        *scriptObj;
+    Tcl_Obj        *scriptObj = NULL;
     int             remain = 0, result = TCL_OK;
     Ns_ReturnCode   status;
     Ns_ObjvSpec     addTraceArgs[] = {
