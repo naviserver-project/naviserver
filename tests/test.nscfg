@@ -195,9 +195,9 @@ ns_section "ns/limit/confLimit2" {
 }
 
 ns_section "ns/servers" {
+    ns_param   test            "Main Test Server"
     ns_param   testvhost       "Virtual Host Test Server"
     ns_param   testvhost2      "Virtual Host Test Server with custom procs"
-    ns_param   test            "Main Test Server"
 }
 
 #
