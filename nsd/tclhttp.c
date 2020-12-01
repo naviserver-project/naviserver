@@ -333,8 +333,8 @@ NsInitHttp(NsServer *servPtr)
         if (Ns_ConfigBool(path, "logroll", NS_TRUE)) {
             int hour = Ns_ConfigIntRange(path, "logrollhour", 0, 0, 23);
 
-            Ns_ScheduleDaily(SchedLogRollCallback, servPtr,
-                             0, hour, 0, NULL);
+            Ns_ScheduleDaily(SchedLogRollCallback, servPtr, 0u,
+                             hour, 0, NULL);
         }
         if (Ns_ConfigBool(path, "logrollonsignal", NS_FALSE)) {
             Ns_RegisterAtSignal((Ns_Callback *)(ns_funcptr_t)SchedLogRollCallback, servPtr);
@@ -489,7 +489,7 @@ HttpClientLogClose(void *arg)
     Ns_ReturnCode status = NS_OK;
     NsServer     *servPtr = (NsServer *)arg;
 
-    Ns_Log(Notice, "httpclient: logfile '%s' try tpo close (fd %d)",
+    Ns_Log(Notice, "httpclient: logfile '%s' try to close (fd %d)",
            servPtr->httpclient.logFileName, servPtr->httpclient.fd);
 
     if (servPtr->httpclient.fd != NS_INVALID_FD) {
@@ -1731,12 +1731,12 @@ HttpClientLogWrite(
     const NsHttpTask *httpPtr,
     const char       *causeString
 ) {
-    Ns_Time diff;
+    Ns_Time   diff;
+    NsServer *servPtr;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(causeString != NULL);
 
-    assert(httpPtr->servPtr != NULL);
     /*fprintf(stderr, "================ HttpClientLog %d fd %d %s etime %ld cause %s\n",
             httpPtr->servPtr->httpclient.logging,
             httpPtr->servPtr->httpclient.fd,
@@ -1747,8 +1747,18 @@ HttpClientLogWrite(
 
     Ns_DiffTime(&httpPtr->etime, &httpPtr->stime, &diff);
 
-    if (httpPtr->servPtr->httpclient.logging
-        && httpPtr->servPtr->httpclient.fd != NS_INVALID_FD
+    if (likely(httpPtr->servPtr != NULL)) {
+        servPtr = httpPtr->servPtr;
+    } else {
+        /*
+         * In case, there is no server provided in httpPtr (e.g. the itPtr had
+         * no servPtr set), use the configuration of the default server.
+         */
+        servPtr = NsGetServer(nsconf.defaultServer);
+    }
+
+    if (servPtr->httpclient.logging
+        && servPtr->httpclient.fd != NS_INVALID_FD
        ) {
         Tcl_DString logString;
         char buf[41]; /* Big enough for Ns_LogTime(). */
@@ -1767,10 +1777,10 @@ HttpClientLogWrite(
                          causeString
                         );
 
-        Ns_MutexLock(&httpPtr->servPtr->httpclient.lock);
-        (void)NsAsyncWrite(httpPtr->servPtr->httpclient.fd,
+        Ns_MutexLock(&servPtr->httpclient.lock);
+        (void)NsAsyncWrite(servPtr->httpclient.fd,
                            logString.string, (size_t)logString.length);
-        Ns_MutexUnlock(&httpPtr->servPtr->httpclient.lock);
+        Ns_MutexUnlock(&servPtr->httpclient.lock);
 
         Tcl_DStringFree(&logString);
     }
