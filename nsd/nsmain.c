@@ -815,6 +815,10 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
             NsInitServer(server, initProc);
 
         }
+        /*
+         * Make the first server the default server.
+         */
+        server = Ns_SetKey(servers, 0);
     }
     nsconf.defaultServer = server;
 
