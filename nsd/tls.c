@@ -782,7 +782,7 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
             // maybe we can get an interpreter from the SSLContext, depending of being
             // able to pass Ns_Sock to callback, or to access it earlier via a push
             // into into the ocsp context
-            Tcl_Interp *interp = Ns_TclAllocateInterp(NULL);
+            Tcl_Interp *interp = Ns_TclAllocateInterp(nsconf.defaultServer);
 
             if (interp != NULL) {
                 Tcl_DString dsResult;
