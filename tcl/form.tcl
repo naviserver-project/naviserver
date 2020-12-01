@@ -423,6 +423,7 @@ proc ns_parseformfile { file form contentType } {
 
     fconfigure $fp -encoding binary -translation binary
     set boundary "--$b"
+    set fragment_headers ""
 
     while { ![eof $fp] } {
         # skip past the next boundary line
@@ -433,13 +434,29 @@ proc ns_parseformfile { file form contentType } {
         #
         # Fetch the disposition line and field name.
         #
-        set disposition [string trim [gets $fp]]
-        if { $disposition eq "" } {
+        set dispositionLine [string trim [gets $fp]]
+        if { $dispositionLine eq "" } {
             break
         }
 
-        set disposition [split [encoding convertfrom utf-8 $disposition] \;]
-        set name [string trim [lindex [split [lindex $disposition 1] =] 1] \"]
+        #
+        # Parse the header line with "ns_parseheader"
+        #
+        if {$fragment_headers ne ""} {
+            ns_set free $fragment_headers
+        }
+        set fragment_headers [ns_set create frag]
+        ns_parseheader $fragment_headers [encoding convertfrom utf-8 $dispositionLine]
+
+        #
+        # Parse the content of the disposition header into a dict and
+        # get field name and filename.
+        #
+        set disp [lindex [ns_parsefieldvalue [ns_set iget $fragment_headers Content-Disposition]] 0]
+
+        set filename [expr {[dict exist $disp filename] ? [dict get $disp filename] : ""}]
+        set name     [expr {[dict exist $disp name] ? [dict get $disp name] : ""}]
+        #ns_log notice "DISPO extracted filename <$filename> name <$name>"
 
         #
         # Fetch and save any field headers (usually just content-type
@@ -452,9 +469,12 @@ proc ns_parseformfile { file form contentType } {
             if { $line eq "" } {
                 break
             }
+            #
+            # Use still sloppy parsing
+            #
             set header [split [encoding convertfrom utf-8 $line] :]
-            set key [string tolower [string trim [lindex $header 0]]]
-            set value [string trim [lindex $header 1]]
+            set key    [string tolower [string trim [lindex $header 0]]]
+            set value  [string trim [lindex $header 1]]
 
             if {$key eq "content-type"} {
                 #
@@ -467,11 +487,10 @@ proc ns_parseformfile { file form contentType } {
             ns_set put $form $name.$key $value
         }
 
-        if { [llength $disposition] == 3 } {
+        if { $filename ne "" } {
             #
             # Uploaded file -- save the original filename as the value
             #
-            set filename [string trim [lindex [split [lindex $disposition 2] =] 1] \"]
             ns_set put $form $name $filename
 
             #
