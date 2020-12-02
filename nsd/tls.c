@@ -49,6 +49,11 @@
 #  define HAVE_SSL_set_tlsext_host_name 1
 # endif
 
+# ifndef HAVE_OPENSSL_PRE_1_1
+#  define OPENSSL_HAVE_DH_AUTO
+#  define OPENSSL_HAVE_READ_BUFFER_LEN
+# endif
+
 # ifndef HAVE_X509_STORE_CTX_GET_OBJ_BY_SUBJECT
 #  define OPENSSL_NO_OCSP 1
 # endif
@@ -76,11 +81,14 @@ static SSLCertStatusArg sslCertStatusArg;
  * OpenSSL callback functions.
  */
 static int SSL_serverNameCB(SSL *ssl, int *al, void *arg);
-static DH *SSL_dhCB(SSL *ssl, int isExport, int keyLength);
 static int SSLPassword(char *buf, int num, int rwflag, void *userdata);
 # ifdef HAVE_OPENSSL_PRE_1_1
 static void SSL_infoCB(const SSL *ssl, int where, int ret);
 # endif
+
+#ifndef OPENSSL_HAVE_DH_AUTO
+static DH *SSL_dhCB(SSL *ssl, int isExport, int keyLength);
+#endif
 
 # ifndef OPENSSL_NO_OCSP
 static int SSL_cert_statusCB(SSL *ssl, void *arg);
@@ -112,6 +120,7 @@ static OCSP_RESPONSE *OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int re
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 #endif
 
+#ifndef OPENSSL_HAVE_DH_AUTO
 /*
  *----------------------------------------------------------------------
  *
@@ -119,13 +128,13 @@ static OCSP_RESPONSE *OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int re
  *
  *----------------------------------------------------------------------
  */
-#ifndef HEADER_DH_H
-# include <openssl/dh.h>
-#endif
+# ifndef HEADER_DH_H
+#  include <openssl/dh.h>
+# endif
 static DH *get_dh512(void);
 static DH *get_dh1024(void);
 
-#if defined(HAVE_OPENSSL_PRE_1_1) || defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L
+# if  defined(HAVE_OPENSSL_PRE_1_1) || defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L
 /*
  * Compatibility function for libressl < 2.7; DH_set0_pqg is used just by the
  * Diffie-Hellman parameters in dhparams.h.
@@ -150,10 +159,9 @@ DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g)
     }
     return 1;
 }
-#endif /* LIBRESSL_VERSION_NUMBER */
+# endif /* LIBRESSL_VERSION_NUMBER */
 
 #include "dhparams.h"
-
 
 /*
  *----------------------------------------------------------------------
@@ -193,6 +201,7 @@ SSL_dhCB(SSL *ssl, int isExport, int keyLength) {
     Ns_Log(Debug, "SSL_dhCB: returns %p\n", (void *)key);
     return key;
 }
+#endif /* OPENSSL_HAVE_DH_AUTO */
 
 #ifdef HAVE_OPENSSL_PRE_1_1
 /*
@@ -1253,6 +1262,22 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
 #ifdef SSL_OP_NO_COMPRESSION
             SSL_CTX_set_options(*ctxPtr, SSL_OP_NO_COMPRESSION);
 #endif
+            /*
+             * Since EOF behavior of OpenSSL concerning EOF handling
+             * changes, we could consider using
+             *     SSL_OP_IGNORE_UNEXPECTED_EOF
+             *
+             *     SSL_MODE_ASYNC
+             */
+
+#ifdef OPENSSL_HAVE_READ_BUFFER_LEN
+            /*
+             * read_buffer_len is apparently just useful, when
+             * pipelining is set up
+             *
+            SSL_CTX_set_default_read_buffer_len(*ctxPtr, 65000);
+            */
+#endif
 
             /*
              * Obsolete since 1.1.0 but also supported in 3.0
@@ -1265,11 +1290,14 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
                 SSL_CTX_set_tlsext_servername_callback(*ctxPtr, SSL_serverNameCB);
                 /* SSL_CTX_set_tlsext_servername_arg(cfgPtr->ctx, app_data); // not really needed */
             }
-
+#ifdef OPENSSL_HAVE_DH_AUTO
+            SSL_CTX_set_dh_auto(*ctxPtr, 1);
+#else
             cfgPtr->dhKey512 = get_dh512();
             cfgPtr->dhKey1024 = get_dh1024();
             cfgPtr->dhKey2048 = get_dh2048();
             SSL_CTX_set_tmp_dh_callback(*ctxPtr, SSL_dhCB);
+#endif
 
             {
                 X509_STORE *storePtr;
@@ -1456,6 +1484,8 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
             ReportError(interp, "private key load error: %s", ERR_error_string(ERR_get_error(), NULL));
             goto fail;
         }
+
+#ifndef OPENSSL_HAVE_DH_AUTO
         /*
          * Get DH parameters from .pem file
          */
@@ -1472,7 +1502,10 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
                 DH_free(dh);
             }
         }
+#endif
+
     }
+
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
     SSL_CTX_set_quiet_shutdown(ctx, 1);
 #endif
