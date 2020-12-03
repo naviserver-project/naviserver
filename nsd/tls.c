@@ -1264,19 +1264,23 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
 #endif
             /*
              * Since EOF behavior of OpenSSL concerning EOF handling
-             * changes, we could consider using
+             * changed, we could consider using
              *     SSL_OP_IGNORE_UNEXPECTED_EOF
              *
+             * Other recent options to explore:
              *     SSL_MODE_ASYNC
              */
 
 #ifdef OPENSSL_HAVE_READ_BUFFER_LEN
             /*
-             * read_buffer_len is apparently just useful, when
-             * pipelining is set up
+             * read_buffer_len is apparently just useful, when crypto
+             * pipelining is set up. In general, the OpenSSL "dasync"
+             * engine provides AES128-SHA based ciphers that have this
+             * capability. However, these are so far for development
+             * and test purposes only.
              *
-            SSL_CTX_set_default_read_buffer_len(*ctxPtr, 65000);
-            */
+             *  SSL_CTX_set_default_read_buffer_len(*ctxPtr, 65000);
+             */
 #endif
 
             /*
