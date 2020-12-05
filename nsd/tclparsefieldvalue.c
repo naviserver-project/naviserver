@@ -295,7 +295,7 @@ NsTclParseFieldvalue(ClientData UNUSED(clientData), Tcl_Interp *interp,
             p2 = GetToken(&token, p1);
             if (p1 == p2) {
                 /*
-                 * Silently ship tokens without names.
+                 * Silently skip tokens without names.
                  */
                 p1 ++;
                 continue;
