@@ -416,7 +416,7 @@ proc ns_parseformfile { file form contentType } {
     # defined (multipart/form-data).
     #
     if {![regexp -nocase {boundary=(.*)$} $options . b] } {
-        ns_log warning "ns_parseformfile skips form processing: content-type '$contentType' options '$options'"
+        #ns_log warning "ns_parseformfile skips form processing: content-type '$contentType' options '$options'"
         close $fp
         return
     }
