@@ -403,7 +403,7 @@ SchedLogArg(Tcl_DString *dsPtr, const void *arg)
  *
  * HttpClientLogRoll --
  *
- *      Rolling function for the the client logfile.
+ *      Rolling function for the client logfile.
  *
  * Results:
  *      None
