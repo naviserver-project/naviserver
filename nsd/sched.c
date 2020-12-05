@@ -30,20 +30,32 @@
 /*
  * sched.c --
  *
- *  Support for the background task and scheduled procedure
- *  interfaces.  The implementation is based on the paper:
+ *  Support for the background task and scheduled procedure interfaces.  The
+ *  implementation of the priority queue based on a binary heap. A binary heap
+ *  has the following characteristics:
  *
- *  "A Heap-based Callout Implementation to Meet Real-Time Needs",
- *  by Barkley and Lee, in "Proceeding of the Summer 1988 USENIX
- *  Conference".
+ *   - Cost of insertion:                O(log N)
+ *   - Cost of deletion:                 O(log N)
+ *   - Cost of change of key value:      O(log N) (not used here)
+ *   - Cost of smallest (largest) value: O(1)
  *
- *  The heap code in particular is based on:
+ *  The binary heap code is based on:
  *
- *  "Chapter 9. Priority Queues and Heapsort", Sedgewick "Algorithms
- *  in C, 3rd Edition", Addison-Wesley, 1998.
+ *      "Chapter 9. Priority Queues and Heapsort", Sedgewick "Algorithms
+ *       in C, 3rd Edition", Addison-Wesley, 1998.
+ *
+ *       https://algs4.cs.princeton.edu/24pq/
  */
 
 #include "nsd.h"
+
+/*
+ * The following two defines can be used to turn on consistency checking and
+ * intense tracing of the scheduling/unscheduling of the commands.
+ *
+ * #define NS_SCHED_CONSISTENCY_CHECK
+ * #define NS_SCHED_TRACE_EVENTS
+ */
 
 /*
  * The following structure defines a scheduled event.
@@ -77,6 +89,8 @@ static void FreeEvent(Event *ePtr)      /* Free completed or cancelled event. */
     NS_GNUC_NONNULL(1);
 static void QueueEvent(Event *ePtr, const Ns_Time *nowPtr);    /* Queue event on heap. */
 static void Exchange(int i, int j);     /* Exchange elements in the global queue */
+static bool Larger(int j, int k);       /* Function defining the sorting
+                                           criterium of the binary heap */
 
 
 /*
@@ -548,6 +562,81 @@ NsWaitSchedShutdown(const Ns_Time *toPtr)
     }
 }
 
+static bool
+Larger(int j, int k)
+{
+    return (Ns_DiffTime(&queue[j]->nextqueue, &queue[k]->nextqueue, NULL) == 1);
+}
+
+
+#ifndef NS_SCHED_CONSISTENCY_CHECK
+static void QueueConsistencyCheck(const char *UNUSED(startMsg), int UNUSED(n), bool UNUSED(runAsserts)) {
+}
+#else
+
+
+static void
+QueueConsistencyCheck(const char *startMsg, int n, bool runAsserts)
+{
+    int          k;
+
+    Ns_Log(Notice, "=== %s (%d) ", startMsg, n);
+
+#ifdef NS_SCHED_TRACE_EVENTS
+    Event      *ePtr;
+    Tcl_DString ds;
+    time_t      s;
+
+    Tcl_DStringInit(&ds);
+
+    Ns_DStringPrintf(&ds, "=== %s (%d) ", startMsg, n);
+    if (n > 1) {
+        s = queue[1]->nextqueue.sec;
+    }
+    for (k = 1; k <= n; k++) {
+        ePtr = queue[k];
+        Ns_DStringPrintf(&ds, "[%d] (%p id %d qid %d " NS_TIME_FMT ")  ",
+                         k, (void*)ePtr, ePtr->id, ePtr->qid,
+                         (int64_t)ePtr->nextqueue.sec, ePtr->nextqueue.usec);
+    }
+    Ns_Log(Notice, "%s", ds.string);
+    Tcl_DStringFree(&ds);
+#endif
+
+    /*
+     * Check if all parent nodes (k/2) are earlier then the child nodes.
+     */
+    for (k = 2; k <= n; k++) {
+        int  j  = k/2;
+        bool ok = !Larger(j, k);
+
+        if (!ok) {
+            Ns_Log(Error, "=== %s: parent node [%d] (id %d " NS_TIME_FMT
+                   ") is later than child [%d] (id %d " NS_TIME_FMT ")",
+                   startMsg,
+                   j, queue[j]->id, (int64_t)queue[j]->nextqueue.sec, queue[j]->nextqueue.usec,
+                   k, queue[k]->id, (int64_t)queue[k]->nextqueue.sec, queue[k]->nextqueue.usec);
+            if (runAsserts) {
+                assert(ok);
+            }
+        }
+    }
+
+    /*
+     * Check whether all qids correspond to the array position.
+     */
+    for (k = 1; k <= n; k++) {
+        if (queue[k]->qid != k) {
+            Ns_Log(Error, "=== %s inconsistent qid on pos %d (id %d): is %d, should be %d",
+                   startMsg, k, queue[k]->id, queue[k]->qid, k);
+            if (runAsserts) {
+                assert(queue[k]->qid == k);
+            }
+        }
+    }
+}
+#endif
+
 
 /*
  *----------------------------------------------------------------------
@@ -597,30 +686,43 @@ QueueEvent(Event *ePtr, const Ns_Time *nowPtr)
             Ns_IncrTime(&ePtr->nextqueue, ePtr->interval.sec, ePtr->interval.usec);
         }
 
-        /*
-         * Place the new event at the end of the queue array and
-         * heap it up into place.  The queue array is extended
-         * if necessary.
-         */
-
         ePtr->qid = ++nqueue;
+        /*
+         * The queue array is extended if necessary.
+         */
         if (maxqueue <= nqueue) {
             maxqueue += 25;
             queue = ns_realloc(queue, sizeof(Event *) * ((size_t)maxqueue + 1u));
         }
+        /*
+         * Place the new event at the end of the queue array.
+         */
         queue[nqueue] = ePtr;
+
         if (nqueue > 1) {
             int j, k;
 
+            QueueConsistencyCheck("Queue event", nqueue - 1, NS_FALSE);
+
+            /*
+             * Bottom-up reheapify: swim up" in the heap.  When a node is
+             * larger than its parent, then the nodes have to swapped.
+             *
+             * In the implementation below, "j" is always k/2 and represents
+             * the parent node in the binary tree.
+             */
             k = nqueue;
             j = k / 2;
-            while (k > 1 &&
-                   Ns_DiffTime(&queue[j]->nextqueue, &queue[k]->nextqueue, NULL) == 1) {
+            while (k > 1 && Larger(j, k)) {
                 Exchange(j, k);
                 k = j;
                 j = k / 2;
             }
+            QueueConsistencyCheck("Queue event end", nqueue, NS_TRUE);
         }
+        Ns_Log(Debug, "QueueEvent (id %d qid %d " NS_TIME_FMT ")",
+               ePtr->id, ePtr->qid,
+               (int64_t)ePtr->nextqueue.sec, ePtr->nextqueue.usec);
 
         /*
          * Signal or create the SchedThread if necessary.
@@ -653,31 +755,46 @@ QueueEvent(Event *ePtr, const Ns_Time *nowPtr)
  */
 
 static Event *
-DeQueueEvent(int qid)
+DeQueueEvent(int k)
 {
-    Event          *ePtr;
-    int             j;
+    Event *ePtr;
+
+    Ns_Log(Debug, "DeQueueEvent (id %d qid %d " NS_TIME_FMT ")",
+           queue[k]->id, k,
+           (int64_t)queue[k]->nextqueue.sec, queue[k]->nextqueue.usec);
+
+    QueueConsistencyCheck("Dequeue event start", nqueue, NS_TRUE);
 
     /*
-     * Swap out the event to be removed and heap down to restore the
-     * order of events to be fired.
+     * Remove an element qid (named k in Sedgewick) from the priority queue.
+     *
+     * 1) Exchange element to be deleted with the node at the end. Now, the
+     *    element will violate in most cases the heap order.
+     * 2) Sink down the element.
      */
 
-    Exchange(qid, nqueue);
+    Exchange(k, nqueue);
     ePtr = queue[nqueue--];
     ePtr->qid = 0;
 
-    while ((j = 2 * qid) <= nqueue) {
-        if (j < nqueue
-            && (Ns_DiffTime(&queue[j]->nextqueue, &queue[j+1]->nextqueue, NULL) == 1) ) {
-            ++j;
-        }
-        if (Ns_DiffTime(&queue[j]->nextqueue, &queue[qid]->nextqueue, NULL) == 1) {
+    for (;;) {
+        int j =  2 * k;
+
+        if (j > nqueue) {
             break;
         }
-        Exchange(qid, j);
-        qid = j;
+
+        if (j < nqueue && Larger(j, j+1)) {
+            ++j;
+        }
+
+        if (!Larger(k, j)) {
+            break;
+        }
+        Exchange(k, j);
+        k = j;
     }
+    QueueConsistencyCheck("Dequeue event end", nqueue, NS_TRUE);
 
     return ePtr;
 }
@@ -827,6 +944,12 @@ SchedThread(void *UNUSED(arg))
         Ns_GetTime(&now);
         while (nqueue > 0 && Ns_DiffTime(&queue[1]->nextqueue, &now, NULL) <= 0) {
             ePtr = DeQueueEvent(1);
+
+#ifdef NS_SCHED_TRACE_EVENTS
+            Ns_Log(Notice, "... dequeue event (id %d) " NS_TIME_FMT,
+                   ePtr->id,
+                   (int64_t)ePtr->nextqueue.sec, ePtr->nextqueue.usec);
+#endif
             if ((ePtr->flags & NS_SCHED_ONCE) != 0u) {
                 Tcl_DeleteHashEntry(ePtr->hPtr);
                 ePtr->hPtr = NULL;
@@ -842,6 +965,14 @@ SchedThread(void *UNUSED(arg))
                 readyPtr = ePtr;
             }
         }
+
+#ifdef NS_SCHED_TRACE_EVENTS
+        if (readyPtr != NULL || firstEventPtr != NULL) {
+            Ns_Log(Notice, "... dequeuing done ready %p ready-nextPtr %p first %p",
+                   (void*)readyPtr, (void*)(readyPtr ? readyPtr->nextPtr : NULL),
+                   (void*)firstEventPtr);
+        }
+#endif
 
         /*
          * Dispatch any threaded events.
