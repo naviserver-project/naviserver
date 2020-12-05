@@ -60,7 +60,7 @@ test ns_server-2.0.3 {get values from an active connection} -setup {
     ns_unregister_op GET /run
 } -match glob -result "200 *cns*running GET /run *"
 
-test ns_server-2.0.4 {get values from an active connection with -checkforproxy} -setup {
+test ns_server-2.0.4.1 {get values from an active connection with -checkforproxy} -setup {
     ns_register_proc GET /run {
         ns_return 200 text/plain [ns_server active -checkforproxy]
     }
@@ -70,7 +70,19 @@ test ns_server-2.0.4 {get values from an active connection with -checkforproxy} 
     ns_unregister_op GET /run
 } -match glob -result "200 *cns*running GET /run *"
 
-test ns_server-2.0.5 {get queued values from an active connection with -checkforproxy} -setup {
+test ns_server-2.0.4.2 {get values from an active connection with -checkforproxy} -setup {
+    ns_register_proc GET /run {
+        ns_return 200 text/plain [ns_server active -checkforproxy]
+    }
+} -body {
+    nstest::http -http 1.1 -getbody 1 -setheaders [list X-Forwarded-For 1.2.3.4] GET /run
+} -cleanup {
+    ns_unregister_op GET /run
+} -match glob -result "200 *cns*1.2.3.4*running GET /run *"
+
+
+
+test ns_server-2.0.5 {get queued values from an active connection} -setup {
     ns_register_proc GET /run {
         ns_return 200 text/plain [ns_server queued]
     }
@@ -80,7 +92,7 @@ test ns_server-2.0.5 {get queued values from an active connection with -checkfor
     ns_unregister_op GET /run
 } -match glob -result "200"
 
-test ns_server-2.0.6 {get all values from an active connection with -checkforproxy} -setup {
+test ns_server-2.0.6 {get all values from an active connection} -setup {
     ns_register_proc GET /run {
         ns_return 200 text/plain [ns_server all]
     }

@@ -954,7 +954,7 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
         connChanPtr = ConnChanCreate(servPtr,
                                      connPtr->sockPtr,
                                      Ns_ConnStartTime((Ns_Conn *)connPtr),
-                                     connPtr->reqPtr->peer,
+                                     Ns_ConnConfiguredPeerAddr(itPtr->conn),
                                      ((connPtr->flags & NS_CONN_WRITE_ENCODED) == 0u),
                                      connPtr->clientData);
         Ns_Log(Ns_LogConnchanDebug, "%s ConnChanDetachObjCmd sock %d",

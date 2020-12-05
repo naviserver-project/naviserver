@@ -6,8 +6,21 @@
 
 [description]
 
-This command controls and configures the access log. It can change
-settings at run-time.
+This command controls and configures the access log of the server.
+The access log records all served requests of a server containing
+timestamp, IP address of the requestor, the queried resource, the
+HTTP result code, the transmitted amount of data, etc. In general it
+follows the more or less standardized access log file format (NCSA
+format, common log format) but can be influence to contain more
+information, useful for log file analysis, debugging and statistics.
+
+[para] In most cases, the access log is controlled via the parameter
+specified in the configuration file (see below). For example, when the
+server is running in reverse proxy mode, the value provided by the
+reverse proxy server via request header fields will be reported in the
+log file instead of the IP address of the physically connected host.
+Several parameters can be queried and altered as well at run-time via
+the command [cmd "ns_accesslog"].
 
 
 
@@ -112,8 +125,11 @@ The following are valid configuration parameters:
 
 [def checkforproxy]
 If true then the value of the X-Forwarded-For HTTP header is logged as the IP
-address of the client. Otherwise, the TCP peer address is logged. Only enable
-this if you run your own, trusted proxy server. Default: false.
+address of the client. Otherwise, the IP address of the directly
+connected host is logged. Default: false.
+
+[para] The parameter [def checkforproxy] is deprecated in favor of the
+more general reverse proxy mode of the server.
 
 [def driver]
 Name of the driver initiating the requests. This option can be used
@@ -216,10 +232,10 @@ Extended logging options can be configured at run-time.
 
 [example_begin]
 nscp:1> [cmd ns_accesslog] flags
-logCombined formattedTime
+logCombined
  
-nscp:2> [cmd ns_accesslog] flags {logcombined formattedtime checkforproxy}
-logcombined formattedtime checkforproxy
+nscp:2> [cmd ns_accesslog] flags {logcombined formattedtime}
+logcombined formattedtime
  
 nscp:3> [cmd ns_accesslog] extendedheaders
  
@@ -232,43 +248,43 @@ server: In this example, the loopback traffic is written to a separate
 log file.
 
 [example_begin]
-#
-# Configure extra nssock driver for loopback traffic
-#
-ns_section "ns/modules" {
-  ns_param loopback  ${bindir}/nssock
-}
+ #
+ # Configure extra nssock driver for loopback traffic
+ #
+ ns_section "ns/modules" {
+   ns_param loopback  ${bindir}/nssock
+ }
  
-ns_section ns/module/loopback {
-  ns_param	defaultserver	$server
-  ns_param	address		127.0.0.1
-  ns_param	port		8888
-}
+ ns_section ns/module/loopback {
+   ns_param	defaultserver	$server
+   ns_param	address		127.0.0.1
+   ns_param	port		8888
+ }
  
-#
-# Load nslog modules twice with different names
-#
-ns_section ns/server/${server}/modules {
-  ns_param	nslog		${bindir}/nslog
-  ns_param	nslog2		${bindir}/nslog
-}
+ #
+ # Load nslog modules twice with different names
+ #
+ ns_section ns/server/${server}/modules {
+   ns_param	nslog		${bindir}/nslog
+   ns_param	nslog2		${bindir}/nslog
+ }
  
-#
-# Configure driver patterns (default "*")
-#
-ns_section ns/server/${server}/module/nslog2 {
-  ns_param	file	  ${logroot}/access-loopback.log
-  ns_param	driver 	  "loopback"
-}
-ns_section ns/server/${server}/module/nslog {
-  ns_param	file	  ${logroot}/access.log
-  ns_param	driver 	  "ns*"
-}
+ #
+ # Configure driver patterns (default "*")
+ #
+ ns_section ns/server/${server}/module/nslog2 {
+   ns_param	file	  ${logroot}/access-loopback.log
+   ns_param	driver 	  "loopback"
+ }
+ ns_section ns/server/${server}/module/nslog {
+   ns_param	file	  ${logroot}/access.log
+   ns_param	driver 	  "ns*"
+ }
 [example_end]
 
 
 
 [see_also ns_log ns_rollfile]
-[keywords module nslog "server built-in" log path proxy ipaddress]
+[keywords module nslog "server built-in" log path ipaddress reverseproxy]
 
 [manpage_end]

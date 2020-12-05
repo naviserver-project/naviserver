@@ -45,7 +45,8 @@ ns_section ns/parameters {
     #ns_param   mutexlocktrace      true     ;# default false; print durations of long mutex calls to stderr
 
     # Reject output operations on already closed connections (e.g. subsequent ns_return statements)
-    #ns_param   rejectalreadyclosedconn false ;# default: true
+    #ns_param   rejectalreadyclosedconn false;# default: true
+    #ns_param   reverseproxymode    true     ;# running behind a reverse proxy server? (default: false)
 
     # configure SMTP module
     ns_param    smtphost            "localhost"

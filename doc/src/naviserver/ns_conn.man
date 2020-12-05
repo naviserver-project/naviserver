@@ -235,11 +235,17 @@ For example:
 [example_end]
 
 
-[call [cmd  "ns_conn  peeraddr"]]
+[call [cmd  "ns_conn  peeraddr"] [opt [option "-source configured|direct|forwarded"]]]
 
-Returns the IP address of the client, i.e. the "other side" of the HTTP connection. The
-IP address is returned in the form of a string separated with periods (e.g., 155.164.59.75).
+Returns the IP address of the client, i.e. the "other side" of the
+HTTP connection. The IP address is returned in the form of a string
+separated with periods (e.g., 155.164.59.75). In reverse proxy mode
+the IP address is determined by the value forwarded by the reverse
+proxy server (via the x-fowarded-for header field).
 
+[para] The result can be influenced by the [option "-source"] to
+return the result as configured by the reverse proxy mode (default),
+or to return always the direct or forwarded IP address.
 
 [call [cmd  "ns_conn  peerport"]]
 
@@ -365,6 +371,6 @@ encoded response.
 [example_end]
 
 [see_also ns_adp ns_getform ns_set ns_queryget ns_time]
-[keywords "server built-in" gzip connection]
+[keywords "server built-in" gzip connection reverseproxy]
 
 [manpage_end]

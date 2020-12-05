@@ -3378,7 +3378,7 @@ SockSendResponse(Sock *sockPtr, int statusCode, const char *errMsg, const char *
     }
 
     /*
-     * In case we have a request structure, complain the system log about
+     * In case we have a request structure, complain in the system log about
      * the bad request.
      */
     if (sockPtr->reqPtr != NULL) {
@@ -4040,6 +4040,36 @@ EndOfHeader(Sock *sockPtr)
                 }
             }
         }
+    }
+
+    /*
+     * Determine the peer address for clients coming via reverse proxy
+     * servers.
+     */
+    s = Ns_SetIGet(reqPtr->headers, "X-Forwarded-For");
+    if (s != NULL && !strcasecmp(s, "unknown")) {
+        s = NULL;
+    }
+    if (s != NULL) {
+        int success = ns_inet_pton((struct sockaddr *)&sockPtr->clientsa, s);
+
+        if (success <= 0) {
+            char *comma = strchr(s, INTCHAR(','));
+            /*
+             * When multiple IP addresses are provided, the first one is
+             * the one of the client.
+             */
+            if (comma != NULL) {
+                *comma = '\0';
+                success = ns_inet_pton((struct sockaddr *)&sockPtr->clientsa, s);
+                *comma = ',';
+            }
+            if (success <= 0) {
+                Ns_Log(Warning, "invalid content in X-Forwarded-For header: '%s'", s);
+            }
+        }
+    } else {
+        memset(&sockPtr->clientsa, 0, sizeof(struct NS_SOCKADDR_STORAGE));
     }
 
     /*
@@ -7104,9 +7134,15 @@ WriterListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
                 Ns_MutexLock(&queuePtr->lock);
                 wrSockPtr = queuePtr->curPtr;
                 while (wrSockPtr != NULL) {
-                    char ipString[NS_IPADDR_SIZE];
-                    ns_inet_ntop((struct sockaddr *)&(wrSockPtr->sockPtr->sa),
-                                 ipString, sizeof(ipString));
+                    char         ipString[NS_IPADDR_SIZE];
+                    struct Sock *sockPtr = wrSockPtr->sockPtr;
+
+                    if (nsconf.reverseproxymode
+                        && ((struct sockaddr *)&sockPtr->clientsa)->sa_family != 0) {
+                        ns_inet_ntop((struct sockaddr *)&sockPtr->clientsa, ipString, sizeof(ipString));
+                    } else {
+                        ns_inet_ntop((struct sockaddr *)&sockPtr->sa, ipString, sizeof(ipString));
+                    }
 
                     (void) Ns_DStringNAppend(dsPtr, "{", 1);
                     (void) Ns_DStringAppendTime(dsPtr, &wrSockPtr->startTime);

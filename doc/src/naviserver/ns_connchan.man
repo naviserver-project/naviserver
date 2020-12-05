@@ -64,7 +64,7 @@
 	[item] name of the thread
 	[item] start time of the initiating request, 
 	[item] driver, 
-	[item] the ip-address of the requestor, 
+	[item] the IP address of the client,
 	[item] sent bytes,
 	[item] received bytes,
 	[item] the client data as provided via [lb]ns_conn
@@ -72,6 +72,10 @@
 	[item] the cmd name of the callback, or "" when no callback is registered,
 	[item] the callback condition flags, or "" when no callback is registered.
  [list_end]
+
+When NaviServer is running in reverse proxy mode, the client IP
+address is taken form the value as provided by the reverse proxy
+server.
 
 [call [cmd "ns_connchan callback"] \
 	[opt [option "-timeout [arg t]"]] \
@@ -176,7 +180,7 @@ the number of bytes sent, which might be less than the input length.
 [list_end]
 
 [see_also ns_conn ns_chan ns_sockcallback ns_write]
-[keywords "server built-in" channels socket driver]
+[keywords "server built-in" channels socket driver reverseproxy]
 
 [manpage_end]
 

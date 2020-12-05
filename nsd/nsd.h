@@ -154,6 +154,7 @@ struct nsconf {
     int         backlog;
     int         sanitize_logfiles;
     bool        reject_already_closed_connection;
+    bool        reverseproxymode;
 
     /*
      * Slot IDs for socket local storage.
@@ -320,6 +321,7 @@ typedef struct Request {
     Ns_Set *headers;             /* Input headers */
     Ns_Set *auth;                /* Auth user/password and parameters */
     char peer[NS_IPADDR_SIZE];   /* Client peer address */
+    char proxypeer[NS_IPADDR_SIZE]; /* Prody peer address */
     unsigned short port;         /* Client peer port */
 
     /*
@@ -490,6 +492,7 @@ typedef struct Sock {
     /*
      * Private to Sock.
      */
+    struct NS_SOCKADDR_STORAGE clientsa; /* Client addr as determined via x-forwarded-for header field */
 
     struct Sock        *nextPtr;
     struct NsServer    *servPtr;

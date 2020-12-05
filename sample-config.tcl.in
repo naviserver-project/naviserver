@@ -149,8 +149,14 @@ ns_section ns/parameters {
     # Print duractions of long mutex calls to stderr.
     ns_param    mutexlocktrace          true  ;# default: false
 
-    # Reject output operations on already closed connections (e.g. subsequent ns_return statements)
+    # Reject output operations on already closed connections
+    # (e.g. subsequent ns_return statements)
     #ns_param    rejectalreadyclosedconn  false ;# default: true
+
+    # Is the server running behind a reverse proxy server?  When
+    # activated, determine the client IP address per default via the
+    # value provided by the reverse proxy server.
+    #ns_param   reverseproxymode    true     ;# default: false
 
     #
     # I18N Parameters

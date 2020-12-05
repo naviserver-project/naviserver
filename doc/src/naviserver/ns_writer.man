@@ -28,7 +28,7 @@ contains the following elements:
 [enum] name of the thread,
 [enum] driver,
 [enum] pool,
-[enum] IP address of the requestor,
+[enum] IP address of the client,
 [enum] file descriptor,
 [enum] remaining size,
 [enum] bytes already sent,
@@ -37,9 +37,10 @@ contains the following elements:
 [enum] the client data as provided via [lb]ns_conn clientdata[rb].
 [list_end]
 
-If [option {-server}] is
-specified, only the submitted file entries from the specified server
-are returned.
+If [option {-server}] is specified, only the submitted file entries
+from the specified server are returned. When NaviServer is running in
+reverse proxy mode, the client IP address is taken form the value as
+provided by the reverse proxy server.
 
 [call [cmd "ns_writer submit"] [arg data]]
 
@@ -166,5 +167,6 @@ reduce the damage of slow-read attacks.
 [example_end]
 
 [see_also ns_returnfile ns_conn ns_write ns_headers]
-[keywords "server built-in" writer configuration]
+[keywords "server built-in" writer configuration reverseproxy]
+
 [manpage_end]

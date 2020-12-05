@@ -1132,6 +1132,8 @@ NS_EXTERN Ns_Set *       Ns_ConnOutputHeaders(const Ns_Conn *conn) NS_GNUC_NONNU
 NS_EXTERN const char *   Ns_ConnPeer(const Ns_Conn *conn) NS_GNUC_PURE NS_GNUC_DEPRECATED_FOR(Ns_ConnPeerAddr);
 NS_EXTERN const char *   Ns_ConnPeerAddr(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 NS_EXTERN unsigned short Ns_ConnPeerPort(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN const char *   Ns_ConnForwardedPeerAddr(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+NS_EXTERN const char *   Ns_ConnConfiguredPeerAddr(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 NS_EXTERN unsigned short Ns_ConnPort(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 NS_EXTERN Ns_Time *      Ns_ConnQueueTime(Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 NS_EXTERN ssize_t        Ns_ConnResponseLength(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
@@ -1140,7 +1142,9 @@ NS_EXTERN const char *   Ns_ConnServer(const Ns_Conn *conn) NS_GNUC_NONNULL(1) N
 NS_EXTERN void           Ns_ConnSetCompression(Ns_Conn *conn, int level) NS_GNUC_NONNULL(1);
 NS_EXTERN void           Ns_ConnSetContentSent(Ns_Conn *conn, size_t length) NS_GNUC_NONNULL(1);
 NS_EXTERN void           Ns_ConnSetEncoding(Ns_Conn *conn, Tcl_Encoding encoding) NS_GNUC_NONNULL(1);
-NS_EXTERN const char *   Ns_ConnSetPeer(const Ns_Conn *conn, const struct sockaddr *saPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN const char *   Ns_ConnSetPeer(const Ns_Conn *conn, const struct sockaddr *saPtr,
+                                        const struct sockaddr *clientsaPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 NS_EXTERN void           Ns_ConnSetResponseStatus(Ns_Conn *conn, int newStatus) NS_GNUC_NONNULL(1);
 NS_EXTERN void           Ns_ConnSetUrlEncoding(Ns_Conn *conn, Tcl_Encoding encoding) NS_GNUC_NONNULL(1);
 NS_EXTERN NS_SOCKET      Ns_ConnSock(const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_PURE;

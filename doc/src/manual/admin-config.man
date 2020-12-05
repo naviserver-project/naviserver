@@ -89,7 +89,34 @@ of NaviServer.
  /usr/local/ns/bin/nsd -t nsd-config.tcl -T
 [example_end]
 
+The global parameters contain the basic setup information,
+where for example the root of the root of nsd is, where the
+server log is to be written, or whether the server runs behind
+a proxy server or not.
 
+[example_begin]
+ ns_section ns/parameters {
+   ns_param home             /var/www/myserver/
+   ns_param tcllibrary       tcl
+   ns_param serverlog        error.log
+   # ...
+   ns_param reverseproxymode true
+ }
+[example_end]
+
+When reverse proxy mode is turned on, the server assumes it is running
+behind a reverse proxy server. In this case, commands referring to the
+client IP address will return on default the value as provided by the
+reverse proxy server (i.e. provided via the x-forwarded-for header
+field). This will effect the results of [cmd  "ns_conn peeraddr"]
+and various introspection commands.
+
+[para] Below we address some general design consideration when
+tailoring your one configuration files.  Check for simple or real-live
+setups of larger installations by the provided sample configuration
+files.
+
+[para]
 One of the core components of the configuration file are the network
 drivers: what protocols should be used, on which addresses/ports
 should be used, or how to set up virtual servers. The most important
@@ -410,6 +437,6 @@ More to come here...
 	performance tuning configuration \
 	SO_REUSEPORT TCP TCP_FASTOPEN \
 	"connection thread pools" \
-	nsssl driver prebind pagedir]
+	nsssl driver prebind pagedir reverseproxy]
 [manpage_end]
 

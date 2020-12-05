@@ -234,6 +234,8 @@ Ns_ModuleInit(const char *server, const char *module)
         logPtr->flags |= LOG_SUPPRESSQUERY;
     }
     if (Ns_ConfigBool(path, "checkforproxy", NS_FALSE)) {
+        Ns_Log(Warning, "parameter checkforproxy of module nslog is deprecated; "
+               "use global parameter reversproxymode instead");
         logPtr->flags |= LOG_CHECKFORPROXY;
     }
 
@@ -827,20 +829,19 @@ LogTrace(void *arg, Ns_Conn *conn)
     Ns_MutexLock(&logPtr->lock);
 
     /*
-     * Append the peer address. Watch for users coming
-     * from proxy servers (if configured).
+     * Append the peer address.
      */
-
     if ((logPtr->flags & LOG_CHECKFORPROXY) != 0u) {
-        p = Ns_SetIGet(conn->headers, "X-Forwarded-For");
-        if (p != NULL && !strcasecmp(p, "unknown")) {
-            p = NULL;
-        }
-        if (p == NULL) {
+        /*
+         * This branch of the if is deprecated and kept only for backward
+         * compatibility (added Dec 2020).
+         */
+        p = Ns_ConnForwardedPeerAddr(conn);
+        if (*p == '\0') {
             p = Ns_ConnPeerAddr(conn);
         }
     } else {
-        p = Ns_ConnPeerAddr(conn);
+        p = Ns_ConnConfiguredPeerAddr(conn);
     }
 
     /*

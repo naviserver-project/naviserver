@@ -252,7 +252,11 @@ When the [term mapspec] is used as three element list, the last
 argument is the context filter, containing a request header-field and
 a value for matching.  The pseudo request header-field "X-NS-ip" is
 used for mapping requests from a certain IP address of from an IP
-range (in CIDR notation).  Examples:
+range (in CIDR notation). In reverse proxy mode, the client IP address
+is taken form the value as provided by the reverse proxy server.
+
+[para]
+Examples:
 
 [example_begin]
  ns_server -pool bots map "GET /* {user-agent *bot*}"
@@ -321,6 +325,6 @@ Query a certain mapping:
 [see_also ns_conn ns_register]
 [keywords \
 	"server built-in" configuration "connection thread pools" \
-	pools pagedir tuning]
+	pools pagedir tuning reverseproxy]
 
 [manpage_end]

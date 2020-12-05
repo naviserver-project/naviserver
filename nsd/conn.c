@@ -439,9 +439,11 @@ Ns_ConnResponseLength(const Ns_Conn *conn)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnPeerAddr --
+ * Ns_ConnPeerAddr, Ns_ConnForwardedPeerAddr --
  *
- *      Get the peer's internet address
+ *      Get the peer's direct or forwarded IP address.
+ *      The forwarded IP address is determined by the
+ *      X-Forwarded-For header.
  *
  * Results:
  *      A string IP address
@@ -460,6 +462,49 @@ Ns_ConnPeerAddr(const Ns_Conn *conn)
     return ((const Conn *)conn)->reqPtr->peer;
 }
 
+const char *
+Ns_ConnForwardedPeerAddr(const Ns_Conn *conn)
+{
+    NS_NONNULL_ASSERT(conn != NULL);
+
+    return ((const Conn *)conn)->reqPtr->proxypeer;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnPeerAddr, Ns_ConnForwardedPeerAddr --
+ *
+ *      This is a mode specifoc function for determining the IP address of the
+ *      communication peer. In reverse proxy mode, try to get the forwarded IP
+ *      address.  In case, this fails, return the direct IP address. When
+ *      reverse proxy mode is turned off, return the direct IP address.
+ *
+ * Results:
+ *      A string IP address
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+const char *
+Ns_ConnConfiguredPeerAddr(const Ns_Conn *conn)
+{
+    const char *p;
+
+    NS_NONNULL_ASSERT(conn != NULL);
+
+    if (nsconf.reverseproxymode) {
+        p = Ns_ConnForwardedPeerAddr(conn);
+        if (*p == '\0') {
+            p = Ns_ConnPeerAddr(conn);
+        }
+    } else {
+        p = Ns_ConnPeerAddr(conn);
+    }
+    return p;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -579,17 +624,24 @@ Ns_ConnPeer(const Ns_Conn *conn)
  */
 
 const char *
-Ns_ConnSetPeer(const Ns_Conn *conn, const struct sockaddr *saPtr)
+Ns_ConnSetPeer(const Ns_Conn *conn, const struct sockaddr *saPtr, const struct sockaddr *clientsaPtr)
 {
     const Conn *connPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(saPtr != NULL);
+    NS_NONNULL_ASSERT(clientsaPtr != NULL);
 
     connPtr = (Conn *)conn;
 
     connPtr->reqPtr->port = Ns_SockaddrGetPort(saPtr);
     (void)ns_inet_ntop(saPtr, connPtr->reqPtr->peer, NS_IPADDR_SIZE);
+
+    if (clientsaPtr->sa_family != 0) {
+        (void)ns_inet_ntop(clientsaPtr, connPtr->reqPtr->proxypeer, NS_IPADDR_SIZE);
+    } else {
+        connPtr->reqPtr->proxypeer[0] = '\0';
+    }
 
     return connPtr->reqPtr->peer;
 }
@@ -1871,9 +1923,29 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         }
         break;
 
-    case CPeerAddrIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnPeerAddr(conn), -1));
+    case CPeerAddrIdx: {
+        int source = INTCHAR('c');
+        static Ns_ObjvTable sourceTable[] = {
+            {"configured", UCHAR('c')},
+            {"direct",     UCHAR('d')},
+            {"forwarded",  UCHAR('f')},
+            {NULL,         0u}
+        };
+        Ns_ObjvSpec lopts[] = {
+            {"-source", Ns_ObjvIndex,  &source, sourceTable},
+            {NULL, NULL, NULL, NULL}
+        };
+        if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
+            result = TCL_ERROR;
+        } else if (source == INTCHAR('c')) {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnConfiguredPeerAddr(conn), -1));
+        } else if (source == INTCHAR('d')) {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnPeerAddr(conn), -1));
+        } else {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnForwardedPeerAddr(conn), -1));
+        }
         break;
+    }
 
     case CPeerPortIdx:
         Tcl_SetObjResult(interp, Tcl_NewIntObj((int)Ns_ConnPeerPort(conn)));

@@ -119,6 +119,40 @@ test ns_conn-3.3 {bearer authentication} -setup {
     ns_unregister_op GET /digest
 } -result {200 {AuthMethod Bearer Token AbCdEf123456}}
 
+
+test ns_conn-4.0 {behind proxy peer} -setup {
+    ns_register_proc GET /foo {
+        ns_return 200 text/plain <[ns_conn peeraddr -source forwarded]>
+    }
+} -body {
+    nstest::http -getbody 1 -setheaders [list X-Forwarded-For 1.2.3.4] \
+        GET /foo
+} -cleanup {
+    ns_unregister_op GET /foo
+} -result {200 <1.2.3.4>}
+
+test ns_conn-4.1 {behind proxy peer no ip-forwarded} -setup {
+    ns_register_proc GET /foo {
+        ns_return 200 text/plain <[ns_conn peeraddr -source forwarded]>
+    }
+} -body {
+    nstest::http -getbody 1 GET /foo
+} -cleanup {
+    ns_unregister_op GET /foo
+} -result {200 <>}
+
+test ns_conn-4.2 {behind proxy peer} -setup {
+    ns_register_proc GET /foo {
+        ns_return 200 text/plain <[ns_conn peeraddr -source forwarded]>
+    }
+} -body {
+    nstest::http -getbody 1 -setheaders [list X-Forwarded-For "1.2.3.4, 5.6.7.8"] \
+        GET /foo
+} -cleanup {
+    ns_unregister_op GET /foo
+} -result {200 <1.2.3.4>}
+
+
 cleanupTests
 
 # Local variables:

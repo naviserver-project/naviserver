@@ -686,6 +686,8 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         Ns_ConfigBool(NS_CONFIG_PARAMETERS, "rejectalreadyclosedconn", NS_TRUE);
     nsconf.sanitize_logfiles =
         Ns_ConfigIntRange(NS_CONFIG_PARAMETERS, "sanitizelogfiles", 2, 0, 2);
+    nsconf.reverseproxymode =
+        Ns_ConfigBool(NS_CONFIG_PARAMETERS, "reverseproxymode", NS_FALSE);
 
     /*
      * Make the result queryable.

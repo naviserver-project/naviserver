@@ -544,7 +544,17 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
         NsUrlSpaceContext ctx;
 
         ctx.headers = sockPtr->reqPtr->headers;
-        ctx.saPtr = (struct sockaddr *)&(sockPtr->sa);
+        if (nsconf.reverseproxymode
+            && ((struct sockaddr *)&sockPtr->clientsa)->sa_family != 0
+            ) {
+            ctx.saPtr = (struct sockaddr *)&(sockPtr->clientsa);
+        } else {
+            ctx.saPtr = (struct sockaddr *)&(sockPtr->sa);
+        }
+
+        /*
+         * Here we could fit-in the peer addr, when behindproxy is true.
+         */
         poolPtr = NsUrlSpecificGet(servPtr,
                                    sockPtr->reqPtr->request.method,
                                    sockPtr->reqPtr->request.url,
@@ -2400,7 +2410,10 @@ ConnRun(Conn *connPtr)
     /*
      * Make sure we update peer address with actual remote IP address
      */
-    (void) Ns_ConnSetPeer(conn, (struct sockaddr *)&(sockPtr->sa));
+    (void) Ns_ConnSetPeer(conn,
+                          (struct sockaddr *)&(sockPtr->sa),
+                          (struct sockaddr *)&(sockPtr->clientsa)
+                          );
 
     /*
      * Get the request data from the reqPtr to ease life-time management in
@@ -2768,64 +2781,25 @@ AppendConn(Tcl_DString *dsPtr, const Conn *connPtr, const char *state, bool chec
         Tcl_DStringStartSublist(dsPtr);
 
         if (connPtr->reqPtr != NULL) {
+            const char *p;
+
             Tcl_DStringAppendElement(dsPtr, connPtr->idstr);
 
-            /*
-             * The settings of (connPtr->flags & NS_CONN_CONFIGURED) is
-             * protected via the mutex connPtr->poolPtr->tqueue.lock from the
-             * caller, so the protected members can't be changed from another
-             * thread.
-             */
-            if ((connPtr->flags & NS_CONN_CONFIGURED) != 0u) {
-                const char *p;
-
-                if ( checkforproxy ) {
-                    /*
-                     * When the connection is NS_CONN_CONFIGURED, the headers
-                     * have to be always set.
-                     */
-                    assert(connPtr->headers != NULL);
-                    p = Ns_SetIGet(connPtr->headers, "X-Forwarded-For");
-
-                    if (p == NULL || (*p == '\0') || strcasecmp(p, "unknown") == 0) {
-                        /*
-                         * Lookup of header field failed, use upstream peer
-                         * address.
-                         */
-                        p = Ns_ConnPeerAddr((const Ns_Conn *) connPtr);
-                    }
-                } else {
-                    p = Ns_ConnPeerAddr((const Ns_Conn *) connPtr);
-                }
-                Tcl_DStringAppendElement(dsPtr, p);
-            } else {
+            if (checkforproxy) {
                 /*
-                 * The request is not configured, the headers might not be
-                 * fully processed. In this situation we can determine the
-                 * peer address, but not the header fields.
+                 * The user requested explicitly for "checkforproxy", so only
+                 * return the proxy value.
                  */
-                if (checkforproxy ) {
-                    /*
-                     * The user requested "checkforproxy", but we can't. Since
-                     * we assume that the user uses this option typically when
-                     * running behind a proxy, we do not want to return here
-                     * the peer address, which might be incorrect. So we
-                     * append "unknown" as in other semi-processed cases.
-                     */
-                    Ns_Log(Notice, "Connection is not configured, we can't check for the proxy yet");
-                    Tcl_DStringAppendElement(dsPtr, "unknown");
-                } else {
-                    /*
-                     * Append the peer address, which is part of the reqPtr
-                     * and unrelated with the configured state.
-                     */
-                    Tcl_DStringAppendElement(dsPtr, Ns_ConnPeerAddr((const Ns_Conn *) connPtr));
-                }
+                p = Ns_ConnForwardedPeerAddr((const Ns_Conn *)connPtr);
+            } else {
+                p = Ns_ConnConfiguredPeerAddr((const Ns_Conn *)connPtr);
             }
+            Tcl_DStringAppendElement(dsPtr, p);
         } else {
             /*
              * connPtr->reqPtr == NULL. Having no connPtr->reqPtr is normal
-             * for "queued" requests but not for "running" requests. Report this in the error log.
+             * for "queued" requests but not for "running" requests. Report
+             * this in the error log.
              */
             Tcl_DStringAppendElement(dsPtr, "unknown");
             if (*state == 'r') {
