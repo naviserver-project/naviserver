@@ -226,6 +226,48 @@ ns_localtime(const time_t *timep)
 #endif
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ns_localtime_r
+ *
+ *     Same as ns_localtime(), except that the function uses user-provided
+ *     storage buf for the result.
+ *
+ *----------------------------------------------------------------------
+ */
+struct tm *
+ns_localtime_r(const time_t *timer, struct tm *buf)
+{
+#ifdef _MSC_VER
+    /*
+     * Microsoft C (Visual Studio)
+     */
+    NS_NONNULL_ASSERT(timer != NULL);
+    NS_NONNULL_ASSERT(buf != NULL);
+
+    errNum = localtime_s(&tlsPtr->ltbuf, timer);
+    if (errNum != 0) {
+        NsThreadFatal("ns_localtime_r", "localtime_s", errNum);
+    }
+
+    return buf;
+
+#elif defined(_WIN32)
+    /*
+     * Other win compiler.
+     */
+    NS_NONNULL_ASSERT(timer != NULL);
+    *buf = *localtime(timer);
+    return buf;
+#else
+    NS_NONNULL_ASSERT(timer != NULL);
+    NS_NONNULL_ASSERT(buf != NULL);
+
+    return localtime_r(timer, buf);
+#endif
+}
+
 
 /*
  *----------------------------------------------------------------------
