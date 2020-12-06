@@ -190,14 +190,35 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, int maxbackup)
         status = Ns_RollFile(file, maxbackup);
 
     } else {
-        time_t           now = time(NULL);
+        time_t           now0, now1 = time(NULL);
         char             timeBuf[512];
         Ns_DString       ds;
         Tcl_Obj         *newPath;
-        const struct tm *ptm;
+        struct tm        tm0, tm1, *ptm0, *ptm1;
 
-        ptm = ns_localtime(&now);
-        (void) strftime(timeBuf, sizeof(timeBuf)-1u, rollfmt, ptm);
+        /*
+         * Rolling happens often at midnight, using often a day
+         * precision. When e.g. a scheduled procedure the time when this
+         * function is called might be slightly after the scheduled
+         * time, which might lead to a day jump. The problem aggrevates,
+         * when multiple log files are rotated.
+         *
+         * One approach to address the time variation would be to pass
+         * the scheduled timestamp to this function (i.e. not relying on
+         * the current time). However, this function might not only be
+         * used in the scheduled cases.
+         *
+         * The approach used below calculates therefore a comparison
+         * timestamp 60 seconds before, and in case, this refer to a
+         * different day, we assume the mentioned day jump and use the
+         * earlier date for calculating the format.
+         */
+        now0 = now1 - 60;
+        ptm0 = ns_localtime_r(&now0, &tm0);
+        ptm1 = ns_localtime_r(&now1, &tm1);
+
+        (void) strftime(timeBuf, sizeof(timeBuf)-1u, rollfmt,
+                        (ptm0->tm_mday < ptm1->tm_mday) ? ptm0 : ptm1);
 
         Ns_DStringInit(&ds);
         Ns_DStringVarAppend(&ds, file, ".", timeBuf, (char *)0L);
