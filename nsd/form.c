@@ -121,11 +121,10 @@ Ns_ConnGetQuery(Ns_Conn *conn)
                 content = connPtr->reqPtr->content;
             } else {
                 /*
-                 * Make clear that formdata is unavailable, but do not fall
-                 * back to the query-as-formdata tradition. We should keep a
-                 * consistent behavior.
+                 * Formdata is unavailable, but do not fall back to the
+                 * query-as-formdata tradition. We should keep a consistent
+                 * behavior.
                  */
-                haveFormData = NS_FALSE;
             }
         } else if (connPtr->request.query != NULL) {
             /*
