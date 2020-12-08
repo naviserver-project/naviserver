@@ -84,7 +84,7 @@ typedef struct Event {
 
 static Ns_ThreadProc SchedThread;       /* Detached event firing thread. */
 static Ns_ThreadProc EventThread;       /* Proc for NS_SCHED_THREAD events. */
-static Event *DeQueueEvent(int qid);    /* Remove event from heap. */
+static Event *DeQueueEvent(int k);      /* Remove event from heap. */
 static void FreeEvent(Event *ePtr)      /* Free completed or cancelled event. */
     NS_GNUC_NONNULL(1);
 static void QueueEvent(Event *ePtr, const Ns_Time *nowPtr);    /* Queue event on heap. */
