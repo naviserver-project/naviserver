@@ -116,7 +116,7 @@ Ns_RollFile(const char *fileName, int max)
 
             do {
                 char *dot = strrchr(next, INTCHAR('.')) + 1;
-                snprintf(dot, 4u, "%03d", MIN(num, 999) );
+                snprintf(dot, 4u, "%03u", MIN(num, 999u) );
                 num ++;
             } while ((err = Exists(next)) == 1 && num < (unsigned int)max);
 
