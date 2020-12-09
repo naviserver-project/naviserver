@@ -522,6 +522,8 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *      (latter is not really needed but convenient).  Trim leading spaces on
  *      multiple lines.
  *
+ *      Implementation of ns_trim.
+ *
  * Results:
  *      Tcl result.
  *
