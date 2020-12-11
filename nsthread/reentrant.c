@@ -243,6 +243,8 @@ ns_localtime_r(const time_t *timer, struct tm *buf)
     /*
      * Microsoft C (Visual Studio)
      */
+    int errNum;
+
     NS_NONNULL_ASSERT(timer != NULL);
     NS_NONNULL_ASSERT(buf != NULL);
 
