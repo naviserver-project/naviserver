@@ -2512,9 +2512,9 @@ DriverThread(void *arg)
                         case SOCK_ERROR: {
                             int sockerrno = ns_sockerrno;
 
-                            if (sockerrno != 0 && sockerrno != EAGAIN) {
+                            if (sockerrno != 0 && sockerrno != NS_EAGAIN) {
                                 Ns_Log(Warning, "sockAccept on fd %d returned error: %s",
-                                       drvPtr->listenfd[n], ns_sockstrerror(ns_sockerrno));
+                                       drvPtr->listenfd[n], ns_sockstrerror(sockerrno));
                             }
                             break;
                         }
@@ -2532,7 +2532,7 @@ DriverThread(void *arg)
                         case SOCK_QUEUEFULL:      NS_FALL_THROUGH; /* fall through */
                         case SOCK_WRITETIMEOUT:
                             /*
-                             * These cases should never be returned ny SockAccept()
+                             * These cases should never be returned by SockAccept()
                              */
                             Ns_Fatal("driver: SockAccept returned: %s", GetSockStateName(s));
                         }
@@ -2544,7 +2544,7 @@ DriverThread(void *arg)
 #ifdef __APPLE__
                         /*
                          * On Darwin, the first accept() succeeds typically, but it is
-                         * useless to try, since this leads always to an EAGAIN
+                         * useless to try, since this leads always to an NS_EAGAIN
                          */
                         acceptMore = NS_FALSE;
                         break;
@@ -3040,7 +3040,7 @@ SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *now
         /*
          * We reach the place frequently, especially on Linux, when we try to
          * accept multiple connection in one sweep. Usually, the errno is
-         * EAGAIN.
+         * NS_EAGAIN.
          */
 
         Ns_MutexLock(&drvPtr->lock);

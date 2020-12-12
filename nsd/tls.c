@@ -1773,7 +1773,7 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
  *        d) it does not try corking
  *
  * Results:
- *      Number of bytes sent (which might be also 0 on EAGAIN cases)
+ *      Number of bytes sent (which might be also 0 on NS_EAGAIN cases)
  *      or -1 on error.
  *
  * Side effects:

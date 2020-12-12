@@ -530,7 +530,7 @@ Ns_SockSendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
  *        d) it does not try corking
  *
  * Results:
- *      Number of bytes sent (which might be also 0 on EAGAIN cases)
+ *      Number of bytes sent (which might be also 0 on NS_EAGAIN cases)
  *      or -1 on error.
  *
  * Side effects:

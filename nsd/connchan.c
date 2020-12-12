@@ -1136,7 +1136,7 @@ static int
 ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = clientData;
-    const NsServer *servPtr = itPtr->servPtr;
+    NsServer       *servPtr = itPtr->servPtr;
     int             result, doBind = (int)NS_FALSE;
     unsigned short  port = 0u;
     char           *driverName = NULL, *addr = (char*)NS_EMPTY_STRING, *script;

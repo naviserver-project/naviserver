@@ -593,9 +593,9 @@ GetEckeyFromPem(Tcl_Interp *interp, char *pemFileName, const char *passPhrase, b
 static int
 CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int            result, isBinary = 0;
-    const char    *digestName = "sha256";
-    Tcl_Obj       *keyObj;
+    int         result, isBinary = 0;
+    char       *digestName = (char *)"sha256";
+    Tcl_Obj    *keyObj;
     Ns_ObjvSpec opts[] = {
         {"-binary", Ns_ObjvBool, &isBinary, INT2PTR(NS_TRUE)},
         {"--",      Ns_ObjvBreak, NULL,    NULL},
@@ -655,11 +655,11 @@ CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 static int
 CryptoHmacAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int            result = TCL_OK, isBinary = 0;
-    HMAC_CTX      *ctx;
-    const Tcl_Obj *ctxObj;
-    Tcl_Obj       *messageObj;
-    int            messageLength;
+    int         result = TCL_OK, isBinary = 0;
+    HMAC_CTX   *ctx;
+    Tcl_Obj    *ctxObj;
+    Tcl_Obj    *messageObj;
+    int         messageLength;
     Ns_ObjvSpec opts[] = {
         {"-binary", Ns_ObjvBool, &isBinary, INT2PTR(NS_TRUE)},
         {"--",      Ns_ObjvBreak, NULL,    NULL},
@@ -712,7 +712,7 @@ CryptoHmacGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 {
     int                result = TCL_OK;
     HMAC_CTX          *ctx;
-    const Tcl_Obj     *ctxObj;
+    Tcl_Obj           *ctxObj;
     char              *outputEncodingString = NULL;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
 
@@ -826,7 +826,7 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
 {
     int                result, isBinary = 0;
     Tcl_Obj           *keyObj, *messageObj;
-    const char        *digestName = "sha256";
+    char              *digestName = (char *)"sha256";
     char              *outputEncodingString = NULL;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
 
@@ -962,9 +962,9 @@ NsTclCryptoHmacObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
 static int
 CryptoMdNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int            result;
-    const char    *digestName = "sha256";
-    Ns_ObjvSpec    args[] = {
+    int           result;
+    char         *digestName = (char *)"sha256";
+    Ns_ObjvSpec   args[] = {
         {"digest",  Ns_ObjvString, &digestName, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -1013,7 +1013,7 @@ CryptoMdAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 {
     int            result = TCL_OK, isBinary = 0;
     EVP_MD_CTX    *mdctx;
-    const Tcl_Obj *ctxObj;
+    Tcl_Obj       *ctxObj;
     Tcl_Obj       *messageObj;
     Ns_ObjvSpec    opts[] = {
         {"-binary", Ns_ObjvBool, &isBinary, INT2PTR(NS_TRUE)},
@@ -1069,7 +1069,7 @@ CryptoMdGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 {
     int                result = TCL_OK;
     EVP_MD_CTX        *mdctx;
-    const Tcl_Obj     *ctxObj;
+    Tcl_Obj           *ctxObj;
     char              *outputEncodingString = NULL;
     Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
 

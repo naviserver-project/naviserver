@@ -248,7 +248,7 @@ ns_localtime_r(const time_t *timer, struct tm *buf)
     NS_NONNULL_ASSERT(timer != NULL);
     NS_NONNULL_ASSERT(buf != NULL);
 
-    errNum = localtime_s(&tlsPtr->ltbuf, timer);
+    errNum = localtime_s(buf, timer);
     if (errNum != 0) {
         NsThreadFatal("ns_localtime_r", "localtime_s", errNum);
     }

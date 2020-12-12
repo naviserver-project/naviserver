@@ -571,7 +571,7 @@ NsTclTrimObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         while(likely(p < endOfString)) {
             const char *to;
             char       *j;
-            long        length;
+            ptrdiff_t   length;
 
             for (j = p; likely(j < endOfString); j++) {
                 if (CHARTYPE(space, *j) != 0) {

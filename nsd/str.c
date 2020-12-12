@@ -344,7 +344,8 @@ Ns_StrToMemUnit(const char *chars, Tcl_WideInt *intPtr)
                  */
                 if (*endPtr == '.') {
                     long long decimal;
-                    long      i, digits;
+                    long      i;
+                    ptrdiff_t digits;
                     int       divisor = 1;
                     char     *ep;
 

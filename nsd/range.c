@@ -65,7 +65,7 @@ static int AppendMultipartRangeTrailer(Ns_DString *dsPtr)
 static bool MatchRange(const Ns_Conn *conn, time_t mtime)
         NS_GNUC_NONNULL(1);
 
-static void InvalidSyntax(const char *rangeString, const char *headerString, long offset)
+static void InvalidSyntax(const char *rangeString, const char *headerString, ptrdiff_t offset)
         NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
@@ -263,7 +263,7 @@ NsConnParseRange(Ns_Conn *conn, const char *type,
  *----------------------------------------------------------------------
  */
 static void
-InvalidSyntax(const char *rangeString, const char *headerString, long offset) {
+InvalidSyntax(const char *rangeString, const char *headerString, ptrdiff_t offset) {
     Ns_Log(Warning, "invalid syntax (character %d, '%c' position %ld) in "
            "range specification '%s'; ignore range",
            *rangeString, *rangeString,  offset+1, headerString);

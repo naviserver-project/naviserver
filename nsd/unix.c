@@ -466,7 +466,7 @@ ns_sock_set_blocking(NS_SOCKET sock, bool blocking)
         result = fcntl(sock, F_SETFL, flags|O_NONBLOCK);
     }
 
-    if (result == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
+    if (result == -1 && errno != NS_EAGAIN && errno != EWOULDBLOCK) {
         Ns_Log(Notice, "ns_sock_set_blocking on sock %d blocking %d err %d <%s>",
                sock, blocking, errno, ns_sockstrerror(errno));
     }
