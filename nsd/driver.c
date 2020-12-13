@@ -4546,7 +4546,7 @@ DriverLookupHost(Tcl_DString *hostDs, Driver *drvPtr)
 
             hPtr2 = Tcl_FirstHashEntry(&drvPtr->hosts, &search);
             while (hPtr2 != NULL) {
-                Ns_Log(Notice, "... host entry: '%s'\n",
+                Ns_Log(Notice, "... host entry: '%s'",
                        (char *)Tcl_GetHashKey(&drvPtr->hosts, hPtr2));
                 hPtr2 = Tcl_NextHashEntry(&search);
             }

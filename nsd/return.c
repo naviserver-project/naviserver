@@ -1014,7 +1014,7 @@ ReturnRange(Ns_Conn *conn, const char *mimeType,
 
                 dataLength = 0u;
                 for (i = 0; i < nbufs; i++) {
-                    vbuf[i].iov_base = INT2PTR(bufs[i].offset);
+                    vbuf[i].iov_base = (char *)bufs[i].buffer + bufs[i].offset;
                     vbuf[i].iov_len  = bufs[i].length;
                     dataLength += bufs[i].length;
                 }
