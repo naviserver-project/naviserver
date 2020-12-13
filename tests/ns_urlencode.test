@@ -5,7 +5,6 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
-
 # rfc2396 unreserved URI characters, except for + which receives
 # special treatment by the HTTP URL scheme.
 set unreservedChars "-.!~*'()0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -217,64 +216,68 @@ if {[ns_config test listenport] ne ""} {
 
 test ns_urlencode-3.0 {test request with unencoded path segments} -constraints {serverListen} -setup {
     ns_register_proc GET /foo/* {
-        ns_return 200 text/plain [list [ns_conn url] [ns_conn urlv]]
+        ns_return 200 text/plain [list URL [ns_conn url] URLV [ns_conn urlv]]
     }
 } -body {
-    nstest::http-0.9 -http 1.1 -getbody 1 GET /foo/bar.tcl
+    nstest::http -http 1.1 -getbody 1 GET /foo/bar.tcl
 } -cleanup {
     ns_unregister_op GET /foo/*
-} -result "200 {/foo/bar.tcl {foo bar.tcl}}"
+} -result {200 {URL /foo/bar.tcl URLV {foo bar.tcl}}}
 
 test ns_urlencode-3.1 {test request with unencoded path segments, 2 elements, ending with slash} -constraints {serverListen} -setup {
     ns_register_proc GET /foo/* {
-        ns_return 200 text/plain [list [ns_conn url] [ns_conn urlv]]
+        ns_return 200 text/plain [list URL [ns_conn url] URLV [ns_conn urlv]]
     }
 } -body {
-    nstest::http-0.9 -http 1.1 -getbody 1 GET /foo/bar/
+    nstest::http -http 1.1 -getbody 1 GET /foo/bar/
 } -cleanup {
     ns_unregister_op GET /foo/*
-} -result "200 {/foo/bar/ {foo bar}}"
+} -result {200 {URL /foo/bar/ URLV {foo bar}}}
 
-test ns_urlencode-3.2 {test request with unencoded path segments, 1 element ending with slash} -constraints {serverListen} -setup {
+test ns_urlencode-3.2 {
+    test request with unencoded path segments, 1 element ending with slash
+} -constraints {serverListen} -setup {
     ns_register_proc GET /foo* {
-        ns_return 200 text/plain [list [ns_conn url] [ns_conn urlv]]
+        ns_return 200 text/plain [list URL [ns_conn url] URLV [ns_conn urlv]]
     }
 } -body {
-    nstest::http-0.9 -http 1.1 -getbody 1 GET /foo/
+    nstest::http -http 1.1 -getbody 1 GET /foo/
 } -cleanup {
     ns_unregister_op GET /foo*
-} -result "200 {/foo/ foo}"
+} -result {200 {URL /foo/ URLV foo}}
 
-test ns_urlencode-3.3 {test request with unencoded path segments, 1 element, no slash} -constraints {serverListen} -setup {
+test ns_urlencode-3.3 {
+    test request with unencoded path segments, 1 element, no slash
+} -constraints {serverListen} -setup {
     ns_register_proc GET /foo* {
-        ns_return 200 text/plain [list [ns_conn url] [ns_conn urlv]]
+        ns_return 200 text/plain [list URL [ns_conn url] URLV [ns_conn urlv]]
     }
 } -body {
     nstest::http -http 1.1 -getbody 1 GET /foo
 } -cleanup {
     ns_unregister_op GET /foo*
-} -result "200 {/foo foo}"
+} -result {200 {URL /foo URLV foo}}
 
 
 test ns_urlencode-4.0 {test request with encoded path segments} -constraints {serverListen} -setup {
     ns_register_proc GET /foo/* {
-        ns_return 200 text/plain [list [ns_conn url] [ns_conn urlv]]
+        ns_return 200 text/plain [list URL [ns_conn url] URLV [ns_conn urlv]]
     }
 } -body {
-    nstest::http-0.9 -http 1.1 -getbody 1 GET /foo/bar%20baz.tcl
+    nstest::http -http 1.1 -getbody 1 GET /foo/bar%20baz.tcl
 } -cleanup {
     ns_unregister_op GET /foo/*
-} -result "200 {{/foo/bar baz.tcl} {foo {bar baz.tcl}}}"
+} -result {200 {URL {/foo/bar baz.tcl} URLV {foo {bar baz.tcl}}}}
 
 test ns_urlencode-4.1 {test request with encoded path segments} -constraints {serverListen} -setup {
     ns_register_proc GET /foo/* {
-        ns_return 200 text/plain [list [ns_conn url] [ns_conn urlv]]
+        ns_return 200 text/plain [list URL [ns_conn url] URLV [ns_conn urlv]]
     }
 } -body {
-    nstest::http-0.9 -http 1.1 -getbody 1 GET /foo/bar%2fbaz.tcl
+    nstest::http -http 1.1 -getbody 1 GET /foo/bar%2fbaz.tcl
 } -cleanup {
     ns_unregister_op GET /foo/*
-} -result "200 {/foo/bar/baz.tcl {foo bar/baz.tcl}}"
+} -result {200 {URL /foo/bar/baz.tcl URLV {foo bar/baz.tcl}}}
 
 
 
