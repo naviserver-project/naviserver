@@ -42,6 +42,10 @@ if {$::tcl_version eq "8.5"} {
 #ns_logctl severity Debug(task) on
 #ns_logctl severity Debug(request) on
 
+#
+# Skip the nstest::http-0.9 tests under Windows.
+#
+testConstraint http09 [expr {$::tcl_platform(platform) ne "windows"}]
 
 if {[ns_config test listenport] ne ""} {
     testConstraint serverListen true
@@ -63,19 +67,19 @@ test http-1.1 {bad request} -constraints serverListen -body {
 
 
 
-test http-1.2 {HTTP/0.9 GET} -constraints serverListen -body {
+test http-1.2 {HTTP/0.9 GET} -constraints {serverListen http09} -body {
     nstest::http-0.9 -http "" -getbody 1 GET /noexist
 } -match glob -result {*Not Found*}
 
-test http-1.2a {HTTP/0.9 no url} -constraints serverListen -body {
+test http-1.2a {HTTP/0.9 no url} -constraints {serverListen http09} -body {
     nstest::http-0.9 -http "" GET a
 } -result {400}
 
-test http-1.2b {strange request starting with GET (no http-version)} -constraints serverListen -body {
+test http-1.2b {strange request starting with GET (no http-version)} -constraints {serverListen http09} -body {
     nstest::http-0.9 -http "" GET "a b"
 } -result {400}
 
-test http-1.2c {strange request starting with GET + three tokens} -constraints serverListen -body {
+test http-1.2c {strange request starting with GET + three tokens} -constraints {serverListen http09} -body {
     nstest::http-0.9 -http "" GET "a b c"
 } -result {400}
 
@@ -92,11 +96,11 @@ test http-1.5a {bad method} -constraints serverListen -body {
     nstest::http -getbody 1 a /
 } -match glob -result {405 *Not Allowed*}
 
-test http-1.5b {bad method 0.9} -constraints serverListen -body {
+test http-1.5b {bad method 0.9} -constraints {serverListen http09} -body {
     nstest::http-0.9 -http "" -getbody 1 a b
 } -result {400}
 
-test http-1.5c {bad method 3 args} -constraints serverListen -body {
+test http-1.5c {bad method 3 args} -constraints {serverListen http09} -body {
     nstest::http-0.9 -http "" -getbody 1 a "b c"
 } -result {400}
 
@@ -200,7 +204,7 @@ test http-2.3 {HTTP/1.1 GET file larger than IOBUFSZ (connio.c)} -body {
     nstest::http -http 1.1 -getbody 0 -getheaders {Content-Length} GET /16480bytes
 } -result {200 16480}
 
-test http-2.4 {HTTP/0.9 GET small} -constraints serverListen -body {
+test http-2.4 {HTTP/0.9 GET small} -constraints {serverListen http09} -body {
     nstest::http-0.9 -http "" -getbody 1 GET /10bytes
 } -result {0123456789}
 
@@ -245,7 +249,7 @@ test http-3.2b {long header line and long body} -constraints {serverListen} -set
 } -result {413 0}
 
 
-test http-3.3old {limits: too many headers} -constraints serverListen -setup {
+test http-3.3old {limits: too many headers} -constraints {serverListen http09} -setup {
     ns_register_proc GET /limits {
         set h [ns_conn headers]
         ns_return 200 text/plain \
@@ -736,7 +740,7 @@ test http-5.5.1 {
     }
 } -body {
     set string "Testing <äöüß☀>"
-    nstest::http-0.9 -getbody 1 -setheaders {content-type text/html} POST /post $string
+    nstest::http -getbody 1 -setheaders {content-type text/html} POST /post $string
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r

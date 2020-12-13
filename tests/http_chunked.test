@@ -33,6 +33,10 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
+#
+# Skip the nstest::http-0.9 tests under Windows.
+#
+testConstraint http09 [expr {$::tcl_platform(platform) ne "windows"}]
 
 if {[ns_config test listenport]} {
     testConstraint serverListen true
@@ -41,7 +45,7 @@ if {[ns_config test listenport]} {
 
 test http_chunked-1.1 {
     ADP streaming w/chunks to HTTP/1.1 client
-} -constraints serverListen -body {
+} -constraints {serverListen http09} -body {
     nstest::http-0.9 -http 1.1 -setheaders {Connection keep-alive} \
                 -getbody 1 -getheaders {Transfer-Encoding Connection Content-Length} \
         GET /http_chunked.adp?stream=1
@@ -49,7 +53,7 @@ test http_chunked-1.1 {
 
 test http_chunked-1.2 {
     ADP with short buffered response
-} -constraints serverListen -body {
+} -constraints {serverListen http09} -body {
     nstest::http-0.9 -http 1.1 -setheaders {Connection keep-alive} \
                 -getheaders {Transfer-Encoding Connection Content-Length} -getbody t \
         GET /http_chunked.adp?stream=0
@@ -57,7 +61,7 @@ test http_chunked-1.2 {
 
 test http_chunked-1.3 {
     ADP with longer partly-buffered response and auto-streaming
-} -constraints serverListen -body {
+} -constraints {serverListen http09} -body {
     nstest::http-0.9 -http 1.1 -setheaders {Connection keep-alive} \
                 -getheaders {Transfer-Encoding Connection Content-Length} -getbody t \
         GET /http_chunked.adp?stream=0&bufsize=8
@@ -75,7 +79,7 @@ test http_chunked-1.4 {
 
 test http_chunked-2.1 {
     Tcl streaming w/chunks to HTTP/1.1 client
-} -constraints serverListen -setup {
+} -constraints {serverListen http09} -setup {
     ns_register_proc GET /tclchunked {
         ns_headers 200 text/plain
         ns_write 0123456789
@@ -91,7 +95,7 @@ test http_chunked-2.1 {
 
 test http_chunked-2.1.1 {
     Tcl streaming multiple binary buffers w/chunks to HTTP/1.1 client
-} -constraints serverListen -setup {
+} -constraints {serverListen http09} -setup {
     ns_register_proc GET /tclchunked {
         ns_headers 200 text/plain
         ns_write [binary format a5 01234] [binary format a5 56789]
@@ -136,7 +140,7 @@ test http_chunked-2.4.0 {
     PUT request with invalid chunked content.
     providing a negative length
 
-} -constraints serverListen -setup {
+} -constraints {serverListen http09} -setup {
     ns_register_proc PUT /tclchunked {
         set content [ns_conn content]
         #ns_log notice "PUT received <$content>"
@@ -158,7 +162,7 @@ test http_chunked-2.4.1 {
     PUT request with chunked data and invalid length
     (no hex encoded data)
 
-} -constraints serverListen -setup {
+} -constraints {serverListen http09} -setup {
     ns_register_proc PUT /tclchunked {
         set content [ns_conn content]
         #ns_log notice "PUT received <$content>"
@@ -181,7 +185,7 @@ test http_chunked-2.4.2 {
     less data than announced via chunk lengthw. Server will wait for
     more data, and runs after some time into a timeout.
 
-} -constraints serverListen -setup {
+} -constraints {serverListen http09} -setup {
     ns_register_proc PUT /tclchunked {
         set content [ns_conn content]
         #ns_log notice "PUT received <$content>"
@@ -210,7 +214,7 @@ test http_chunked-2.4.3 {
 
     PUT request with chunked data and a chunk extension.
 
-} -constraints serverListen -setup {
+} -constraints {serverListen http09} -setup {
     ns_register_proc PUT /tclchunked {
         set content [ns_conn content]
         #ns_log notice "PUT received <$content>"
@@ -234,7 +238,7 @@ test http_chunked-3.1 {
     provided X-Expected-Entity-Length). This is the format that WebDAV
     client of macOS uses (via Finder).
 
-} -constraints serverListen -setup {
+} -constraints {serverListen http09} -setup {
     ns_register_proc PUT /tclchunked {
         set content [ns_conn content]
         #ns_log notice "PUT received <$content>"
