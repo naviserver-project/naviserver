@@ -122,7 +122,7 @@ namespace eval ::nstest {
             set binaryFlag ""
         }
 
-        set fullUrl $proto://\[$host\]:$port/$url
+        set fullUrl $proto://\[$host\]:$port/[string trimleft $url /]
         log url $fullUrl
         set result [ns_http run \
                         {*}$extraFlags \
