@@ -124,12 +124,12 @@ test adp-4.4 {ns_adp_dir (unset)} -body {
 
 
 test adp-5.1 {Nested ADP tags} -body {
-    nstest::http -getbody 1 GET /nested.adp
+    string map {\r ""} [nstest::http -getbody 1 GET /nested.adp]
 } -result {200 {anything
 }}
 
 test adp-5.2 {Deeply nested ADP tags} -body {
-    nstest::http -getbody 1 GET /deepnest.adp
+    string map {\r ""} [nstest::http -getbody 1 GET /deepnest.adp]
 } -result {200 {deep
 }}
 
@@ -148,12 +148,12 @@ test adp-6.2 {adp-parse string} -body {
 
 
 test adp-6.3 {adp-parse file} -body {
-    ns_adp_parse -file adp1.adp
+    string map {\r ""} [ns_adp_parse -file adp1.adp]
 } -result {2 + 2 = 4 !!!
 }
 
 test adp-6.4 {adp-parse file with arguments} -body {
-    ns_adp_parse -file adp2.adp hello world
+    string map {\r ""} [ns_adp_parse -file adp2.adp hello world]
 } -result {2 + 2 = 4 !!!
 argc 3
 argv adp2.adp hello world
