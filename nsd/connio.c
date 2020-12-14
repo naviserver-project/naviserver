@@ -481,7 +481,7 @@ ConnSend(Ns_Conn *conn, ssize_t nsend, Tcl_Channel chan, FILE *fp, int fd)
         /*
          * Turn-on http-streaming for unknown content/data length
          */
-        if (nsend == -1 || Ns_ConnResponseLength(conn) < 0) {
+        if (nsend == -1) {
             stream = NS_TRUE;
             flags |= NS_CONN_STREAM;
         }
