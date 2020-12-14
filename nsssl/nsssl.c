@@ -375,17 +375,28 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
                 ERR_clear_error();
                 rc = SSL_write(sslCtx->ssl, bufs->iov_base, (int)bufs->iov_len);
                 if (rc <= 0) {
-                    /*fprintf(stderr, "### SSL_write %p len %d rc %d SSL_get_error => %d: %s\n",
+                    int sslerr = SSL_get_error(sslCtx->ssl, rc);
+
+                    /*fprintf(stderr,
+                      "### SSL_write %p len %d rc %d SSL_get_error => %d: %s\n",
                       (void*)bufs->iov_base, (int)bufs->iov_len,
-                      rc, SSL_get_error(sslCtx->ssl, rc),
-                      ERR_error_string(ERR_get_error(), NULL));*/
-                    if (SSL_get_error(sslCtx->ssl, rc) != SSL_ERROR_WANT_WRITE) {
-                        SSL_set_shutdown(sslCtx->ssl, SSL_RECEIVED_SHUTDOWN);
-                        sent = -1;
-                    } else {
-                        sent = 0;
+                      rc, sslerr, ERR_error_string(ERR_get_error(), NULL));*/
+
+                    if (sslerr == SSL_ERROR_WANT_WRITE) {
+
+                        /*
+                         * Effectively, SSL_ERROR_WANT_WRITE at this place
+                         * means we are against EWOULDBLOCK, so exit early,
+                         * reporting so much bytes sent as we did so far.
+                         */
+
+                        break;
                     }
-                    break;
+
+                    SSL_set_shutdown(sslCtx->ssl, SSL_RECEIVED_SHUTDOWN);
+                    sent = -1;
+
+                    break; /* Any other error case is terminal */
                 }
                 sent += (ssize_t)rc;
                 if (rc < (int)bufs->iov_len) {
@@ -402,6 +413,7 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
             Ns_SockCork(sock, NS_FALSE);
         }
     }
+
     return sent;
 }
 
