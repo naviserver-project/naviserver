@@ -120,6 +120,13 @@ static OCSP_RESPONSE *OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int re
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 #endif
 
+# ifndef HAVE_OPENSSL_PRE_1_1
+static void *NS_CRYPTO_malloc(size_t num, const char *UNUSED(file), int UNUSED(line));
+static void *NS_CRYPTO_realloc(void *addr, size_t num, const char *UNUSED(file), int UNUSED(line));
+static void NS_CRYPTO_free(void *addr, const char *UNUSED(file), int UNUSED(line));
+# endif
+
+
 #ifndef OPENSSL_HAVE_DH_AUTO
 /*
  *----------------------------------------------------------------------
@@ -856,6 +863,20 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
     return rsp;
 }
 
+# ifndef HAVE_OPENSSL_PRE_1_1
+static void *NS_CRYPTO_malloc(size_t num, const char *UNUSED(file), int UNUSED(line))
+{
+    return ns_malloc(num);
+}
+static void *NS_CRYPTO_realloc(void *addr, size_t num, const char *UNUSED(file), int UNUSED(line))
+{
+    return ns_realloc(addr, num);
+}
+static void NS_CRYPTO_free(void *addr, const char *UNUSED(file), int UNUSED(line))
+{
+    ns_free(addr);
+}
+# endif
 
 #endif
 
@@ -878,14 +899,26 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
  *
  *----------------------------------------------------------------------
  */
+
 void NsInitOpenSSL(void)
 {
 # ifdef HAVE_OPENSSL_EVP_H
     static int initialized = 0;
 
     if (!initialized) {
-#  if OPENSSL_VERSION_NUMBER < 0x10100000L
+        /*
+         * With the release of OpenSSL 1.1.0 the interface of
+         * CRYPTO_set_mem_functions() changed. Before that, we could
+         * register the ns_* malloc functions without change, later
+         * the types received two additional arguments for debugging
+         * (line and line number). With the advent of OpenSSL 3.0,
+         * function prototypes were introduced CRYPTO_malloc_fn,
+         * CRYPTO_realloc_fn and CRYPTO_free_fn.
+         */
+#  ifdef HAVE_OPENSSL_PRE_1_1
         CRYPTO_set_mem_functions(ns_malloc, ns_realloc, ns_free);
+#  else
+        CRYPTO_set_mem_functions(NS_CRYPTO_malloc, NS_CRYPTO_realloc, NS_CRYPTO_free);
 #  endif
         /*
          * With OpenSSL 1.1.0 or above the OpenSSL library initializes
@@ -896,9 +929,9 @@ void NsInitOpenSSL(void)
         SSL_load_error_strings();
 #   if OPENSSL_VERSION_NUMBER < 0x010100000 || defined(LIBRESSL_1_0_2)
         SSL_library_init();
-#   else
-        OPENSSL_init_ssl(0, NULL);
 #   endif
+#  else
+        OPENSSL_init_ssl(0, NULL);
 #  endif
         initialized = 1;
         Ns_Log(Notice, "%s initialized", SSLeay_version(SSLEAY_VERSION));
