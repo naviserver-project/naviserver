@@ -471,7 +471,7 @@ ConnSend(Ns_Conn *conn, ssize_t nsend, Tcl_Channel chan, FILE *fp, int fd)
         status = Ns_ConnWriteVData(conn, NULL, 0, flags);
 
     } else {
-        bool stream = false, eod = false;
+        bool stream = NS_FALSE, eod = NS_FALSE;
         char buf[IOBUFSZ];
         struct iovec vbuf;
 
@@ -482,7 +482,7 @@ ConnSend(Ns_Conn *conn, ssize_t nsend, Tcl_Channel chan, FILE *fp, int fd)
          * Turn-on http-streaming for unknown content/data length
          */
         if (nsend == -1 || Ns_ConnResponseLength(conn) < 0) {
-            stream = true;
+            stream = NS_TRUE;
             flags |= NS_CONN_STREAM;
         }
 
@@ -505,19 +505,19 @@ ConnSend(Ns_Conn *conn, ssize_t nsend, Tcl_Channel chan, FILE *fp, int fd)
             if (chan != NULL) {
                 nread = Tcl_Read(chan, buf, (int)toRead);
                 if (stream && Tcl_Eof(chan)) {
-                    eod = true;
+                    eod = NS_TRUE;
                 }
             } else if (fp != NULL) {
                 nread = (int)fread(buf, 1u, toRead, fp);
                 if (ferror(fp)) {
                     nread = -1;
                 } else if (stream && feof(fp)) {
-                    eod = true;
+                    eod = NS_TRUE;
                 }
             } else if (fd > -1) {
                 nread = ns_read(fd, buf, toRead);
                 if (stream && nread == 0) {
-                    eod = true;
+                    eod = NS_TRUE;
                 }
             } else {
                 status = NS_ERROR; /* Should never be reached */
