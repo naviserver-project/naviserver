@@ -619,7 +619,7 @@ NsTclConnSendFpObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             Ns_LogDeprecated(objv, 3, "ns_writefp fileid ?nbytes?", NULL);
 
             conn->flags |= NS_CONN_SKIPHDRS;
-            status = Ns_ConnSendChannel(conn, chan, (size_t)length);
+            status = Ns_ConnSendChannel(conn, chan, (ssize_t)length);
 
             if (status != NS_OK) {
                 Ns_TclPrintfResult(interp, "could not send %d bytes from channel %s",

@@ -1184,15 +1184,15 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode
-Ns_ConnSendFd(Ns_Conn *conn, int fd, size_t nsend)
+Ns_ConnSendFd(Ns_Conn *conn, int fd, ssize_t nsend)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode
-Ns_ConnSendFp(Ns_Conn *conn, FILE *fp, size_t nsend)
+Ns_ConnSendFp(Ns_Conn *conn, FILE *fp, ssize_t nsend)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_ReturnCode
-Ns_ConnSendChannel(Ns_Conn *conn, Tcl_Channel chan, size_t nsend)
+Ns_ConnSendChannel(Ns_Conn *conn, Tcl_Channel chan, ssize_t nsend)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_ReturnCode

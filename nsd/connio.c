@@ -56,7 +56,7 @@
  * Local functions defined in this file
  */
 
-static Ns_ReturnCode ConnSend(Ns_Conn *conn, size_t nsend, Tcl_Channel chan,
+static Ns_ReturnCode ConnSend(Ns_Conn *conn, ssize_t nsend, Tcl_Channel chan,
                               FILE *fp, int fd)
     NS_GNUC_NONNULL(1);
 
@@ -406,7 +406,8 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
  *
  * Ns_ConnSendChannel, Fp, Fd --
  *
- *      Send an open channel, FILE or fd.
+ *      Send some number of bytes to an open channel, FILE or fd.
+ *      If the number is negative, send until EOF condition on source.
  *
  * Results:
  *      NS_OK/NS_ERROR.
@@ -418,19 +419,19 @@ Ns_ConnWriteVData(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fla
  */
 
 Ns_ReturnCode
-Ns_ConnSendChannel(Ns_Conn *conn, Tcl_Channel chan, size_t nsend)
+Ns_ConnSendChannel(Ns_Conn *conn, Tcl_Channel chan, ssize_t nsend)
 {
     return ConnSend(conn, nsend, chan, NULL, -1);
 }
 
 Ns_ReturnCode
-Ns_ConnSendFp(Ns_Conn *conn, FILE *fp, size_t nsend)
+Ns_ConnSendFp(Ns_Conn *conn, FILE *fp, ssize_t nsend)
 {
     return ConnSend(conn, nsend, NULL, fp, -1);
 }
 
 Ns_ReturnCode
-Ns_ConnSendFd(Ns_Conn *conn, int fd, size_t nsend)
+Ns_ConnSendFd(Ns_Conn *conn, int fd, ssize_t nsend)
 {
     return ConnSend(conn, nsend, NULL, NULL, fd);
 }
@@ -443,8 +444,8 @@ Ns_ConnSendFd(Ns_Conn *conn, int fd, size_t nsend)
  *
  *      Send an open channel, FILE or fd. Read the content from the
  *      various sources into a buffer and send the data to the client
- *      via Ns_ConnWriteVData(). Stop transmission when errors or
- *      0-byte reads occur.
+ *      via Ns_ConnWriteVData(). Stop transmission on error, when all
+ *      requested data was sent or EOF condition on channel/FILE/fd.
  *
  * Results:
  *      NS_OK/NS_ERROR.
@@ -455,53 +456,79 @@ Ns_ConnSendFd(Ns_Conn *conn, int fd, size_t nsend)
  *----------------------------------------------------------------------
  */
 static Ns_ReturnCode
-ConnSend(Ns_Conn *conn, size_t nsend, Tcl_Channel chan, FILE *fp, int fd)
+ConnSend(Ns_Conn *conn, ssize_t nsend, Tcl_Channel chan, FILE *fp, int fd)
 {
     Ns_ReturnCode status;
+    unsigned int flags = 0;
 
     NS_NONNULL_ASSERT(conn != NULL);
+    assert(chan != NULL || fp != NULL || fd > -1);
 
-    if (nsend == 0u) {
+    if (nsend == 0) {
         /*
-         * Even if nsend is 0 ensure HTTP response headers get written.
+         * Even if no data to send, ensure HTTP response headers get written.
          */
-        status = Ns_ConnWriteVData(conn, NULL, 0, 0u);
+        status = Ns_ConnWriteVData(conn, NULL, 0, flags);
 
     } else {
+        bool stream = false, eod = false;
         char buf[IOBUFSZ];
+        struct iovec vbuf;
+
+        vbuf.iov_base = (void *)buf;
+        vbuf.iov_len = 0;
 
         /*
-         * Read from disk and send in IOBUFSZ chunks until done.
+         * Turn-on http-streaming for unknown content/data length
          */
-        status = NS_OK;
-        while (status == NS_OK && nsend > 0u) {
-            ssize_t nread;
-            size_t  toRead = nsend;
+        if (nsend == -1 || Ns_ConnResponseLength(conn) < 0) {
+            stream = true;
+            flags |= NS_CONN_STREAM;
+        }
 
-            if (toRead > sizeof(buf)) {
+        /*
+         * Read from disk and send in (max) IOBUFSZ chunks until
+         * all requested data was sent or until EOF condition on source.
+         */
+
+        status = NS_OK;
+
+        while (status == NS_OK && (nsend > 0 || (stream && !eod))) {
+            ssize_t nread = 0;
+            size_t  toRead = 0;
+
+            if (stream) {
                 toRead = sizeof(buf);
+            } else {
+                toRead = ((size_t)nsend > sizeof(buf)) ? sizeof(buf) : (size_t)nsend;
             }
             if (chan != NULL) {
                 nread = Tcl_Read(chan, buf, (int)toRead);
+                if (stream && Tcl_Eof(chan)) {
+                    eod = true;
+                }
             } else if (fp != NULL) {
                 nread = (int)fread(buf, 1u, toRead, fp);
-                if (ferror(fp) != 0) {
+                if (ferror(fp)) {
                     nread = -1;
+                } else if (stream && feof(fp)) {
+                    eod = true;
+                }
+            } else if (fd > -1) {
+                nread = ns_read(fd, buf, toRead);
+                if (stream && nread == 0) {
+                    eod = true;
                 }
             } else {
-                nread = ns_read(fd, buf, toRead);
+                status = NS_ERROR; /* Should never be reached */
             }
-
-            if (nread == -1 || nread == 0 /* NB: truncated file */) {
+            if (nread == -1 || (!stream && nread == 0) /* NB: truncated file */) {
                 status = NS_ERROR;
-            } else {
-                struct iovec vbuf;
-
-                vbuf.iov_base = (void *)buf;
-                vbuf.iov_len  = (size_t)nread;
-                status = Ns_ConnWriteVData(conn, &vbuf, 1, 0u);
-                if (status == NS_OK) {
-                    nsend -= (size_t)nread;
+            } else if (nread > 0) {
+                vbuf.iov_len = (size_t)nread;
+                status = Ns_ConnWriteVData(conn, &vbuf, 1, flags);
+                if (status == NS_OK && !stream) {
+                    nsend -= nread;
                 }
             }
         }

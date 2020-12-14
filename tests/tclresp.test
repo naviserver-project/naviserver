@@ -166,7 +166,21 @@ test tclresp-1.14.2 {basic syntax} -body {
     ns_connsendfp x 0
 } -returnCodes error -result {no connection}
 
+test tclresp-1.15.1 {basic syntax} -body {
+    ns_writefp
+} -returnCodes error -result {wrong # args: should be "ns_writefp fileid ?nbytes?"}
 
+test tclresp-1.15.2 {basic syntax} -body {
+    ns_writefp junk
+} -returnCodes error -result {can not find channel named "junk"}
+
+test tclresp-1.15.3 {basic syntax} -body {
+    ns_writefp stdout
+} -returnCodes error -result {channel "stdout" not open for reading}
+
+test tclresp-1.15.4 {basic syntax} -body {
+    ns_writefp stdin x
+} -returnCodes error -result {expected integer but got "x"}
 
 #
 # The following tests various combinations of
@@ -266,8 +280,6 @@ fghi
 0
 
 }}
-
-
 
 
 test tclresp-3.1 {ns_return} -constraints serverListen -setup {
@@ -636,6 +648,44 @@ test tclresp-13.2 {ns_write w/ manual headers} -setup {
 } -cleanup {
     ns_unregister_op GET /tclresp
 } -result {200 1 x}
+
+
+
+test tclresp-14.1 {ns_writefp Tcl channel, stream} -setup {
+    ns_register_proc GET /tclresp {
+        set file tclresp-14
+        file delete $file
+        set chan [open $file a+]
+        puts -nonewline $chan 01234
+        seek $chan 0
+        ns_headers -binary 200 application/octet-stream
+        ns_writefp $chan
+        close $chan
+        file delete $file
+    }
+} -body {
+    nstest::http -http 1.0 -getbody 1 GET /tclresp
+} -cleanup {
+    ns_unregister_op GET /tclresp
+} -result {200 01234}
+
+test tclresp-14.2 {ns_writefp Tcl channel, byte count} -setup {
+    ns_register_proc GET /tclresp {
+        set file tclresp-14
+        file delete $file
+        set chan [open $file a+]
+        puts -nonewline $chan 01234
+        seek $chan 0
+        ns_headers -binary 200 application/octet-stream 5
+        ns_writefp $chan 5
+        close $chan
+        file delete $file
+    }
+} -body {
+    nstest::http -http 1.0 -getbody 1 GET /tclresp
+} -cleanup {
+    ns_unregister_op GET /tclresp
+} -result {200 01234}
 
 #### ns_startcontent is deprecated
 # test tclresp-13.3 {ns_startcontent w/ manual headers} -setup {

@@ -926,10 +926,10 @@ ReturnOpen(Ns_Conn *conn, int status, const char *mimeType, Tcl_Channel chan,
 
         if (chan != NULL) {
             Ns_ConnSetLengthHeader(conn, len, NS_FALSE);
-            result = Ns_ConnSendChannel(conn, chan, len);
+            result = Ns_ConnSendChannel(conn, chan, (ssize_t)len);
         } else if (fp != NULL) {
             Ns_ConnSetLengthHeader(conn, len, NS_FALSE);
-            result = Ns_ConnSendFp(conn, fp, len);
+            result = Ns_ConnSendFp(conn, fp, (ssize_t)len);
         } else {
             result = ReturnRange(conn, mimeType, fd, NULL, len);
         }
