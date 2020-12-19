@@ -657,8 +657,9 @@ Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *
         //fprintf(stderr, "NsTclObjIsByteArray\n");
         result = (unsigned char *)Tcl_GetByteArrayFromObj(obj, lengthPtr);
     } else {
-        int stringLength;
+        int         stringLength;
         const char *charInput;
+
         charInput = Tcl_GetStringFromObj(obj, &stringLength);
 
         //if (NsTclObjIsEncodedByteArray(obj)) {
