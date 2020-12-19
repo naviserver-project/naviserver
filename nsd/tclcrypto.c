@@ -73,7 +73,16 @@ typedef enum {
     RESULT_ENCODING_BASE64URL = 2,
     RESULT_ENCODING_BASE64    = 3,
     RESULT_ENCODING_BINARY    = 4
-} Ns_ResultEncoding;
+} Ns_BinaryEncoding;
+
+static Ns_ObjvTable binaryencodings[] = {
+    {"hex",      RESULT_ENCODING_HEX},
+    {"base64url",RESULT_ENCODING_BASE64URL},
+    {"base64",   RESULT_ENCODING_BASE64},
+    {"binary",   RESULT_ENCODING_BINARY},
+    {NULL,       0u}
+};
+
 
 /*
  * Static functions defined in this file.
@@ -82,7 +91,7 @@ static Tcl_Obj *EncodedObj(
     unsigned char *octects,
     size_t octectLength,
     char *outputBuffer,
-    Ns_ResultEncoding encoding
+    Ns_BinaryEncoding encoding
 ) NS_GNUC_RETURNS_NONNULL NS_GNUC_NONNULL(1);
 
 static int GetDigest(Tcl_Interp *interp, const char *digestName, const EVP_MD **mdPtr)
@@ -99,7 +108,7 @@ SetResultFromEC_POINT(
     EC_KEY           *eckey,
     const EC_POINT   *ecpoint,
     BN_CTX           *bn_ctx,
-    Ns_ResultEncoding encoding)
+    Ns_BinaryEncoding encoding)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 # endif /* OPENSSL_NO_EC */
 
@@ -173,7 +182,7 @@ static void hexPrint(const char *msg, const unsigned char *octects, size_t octec
 /*
  *----------------------------------------------------------------------
  *
- * GetResultEncoding, EncodedObj --
+ * EncodedObj --
  *
  *      Helper function result encodings.
  *
@@ -186,35 +195,9 @@ static void hexPrint(const char *msg, const unsigned char *octects, size_t octec
  *----------------------------------------------------------------------
  */
 
-static int
-GetResultEncoding(Tcl_Interp *interp, const char *name, Ns_ResultEncoding *encodingPtr)
-{
-    int result = TCL_OK;
-
-    NS_NONNULL_ASSERT(interp != NULL);
-    NS_NONNULL_ASSERT(name != NULL);
-    NS_NONNULL_ASSERT(encodingPtr != NULL);
-
-    if (strcmp(name, "hex") == 0) {
-        *encodingPtr = RESULT_ENCODING_HEX;
-    } else if (strcmp(name, "base64url") == 0) {
-        *encodingPtr = RESULT_ENCODING_BASE64URL;
-    } else if (strcmp(name, "base64") == 0) {
-        *encodingPtr = RESULT_ENCODING_BASE64;
-    } else if (strcmp(name, "binary") == 0) {
-        *encodingPtr = RESULT_ENCODING_BINARY;
-    } else {
-        Ns_TclPrintfResult(interp, "Unknown value for output encoding \"%s\", "
-                           "valid: hex, base64url, base64, binary",
-                           name);
-        result = TCL_ERROR;
-    }
-    return result;
-}
-
 static Tcl_Obj*
 EncodedObj(unsigned char *octects, size_t octectLength,
-           char *outputBuffer, Ns_ResultEncoding encoding) {
+           char *outputBuffer, Ns_BinaryEncoding encoding) {
     char    *origOutputBuffer = outputBuffer;
     Tcl_Obj *resultObj = NULL; /* enumeration is complete, quiet some older compilers */
 
@@ -256,7 +239,6 @@ EncodedObj(unsigned char *octects, size_t octectLength,
 
     return resultObj;
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -713,11 +695,10 @@ CryptoHmacGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     int                result = TCL_OK;
     HMAC_CTX          *ctx;
     Tcl_Obj           *ctxObj;
-    char              *outputEncodingString = NULL;
-    Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
+    Ns_BinaryEncoding  encoding = RESULT_ENCODING_HEX;
 
     Ns_ObjvSpec    lopts[] = {
-        {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
+        {"-encoding", Ns_ObjvIndex,  &encoding,  binaryencodings},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec    args[] = {
@@ -730,13 +711,6 @@ CryptoHmacGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 
     } else if (Ns_TclGetOpaqueFromObj(ctxObj, hmacCtxType, (void **)&ctx) != TCL_OK) {
         Ns_TclPrintfResult(interp, "argument is not of type \"%s\"", hmacCtxType);
-        result = TCL_ERROR;
-
-    } else if (outputEncodingString != NULL
-               && GetResultEncoding(interp, outputEncodingString, &encoding) != TCL_OK) {
-        /*
-         * Function cares about error message
-         */
         result = TCL_ERROR;
 
     } else {
@@ -827,14 +801,13 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     int                result, isBinary = 0;
     Tcl_Obj           *keyObj, *messageObj;
     char              *digestName = (char *)"sha256";
-    char              *outputEncodingString = NULL;
-    Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
+    Ns_BinaryEncoding  encoding = RESULT_ENCODING_HEX;
 
     Ns_ObjvSpec    lopts[] = {
-        {"-binary",   Ns_ObjvBool,   &isBinary,   INT2PTR(NS_TRUE)},
-        {"-digest",   Ns_ObjvString, &digestName, NULL},
-        {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
-        {"--",        Ns_ObjvBreak,  NULL,        NULL},
+        {"-binary",   Ns_ObjvBool,     &isBinary,   INT2PTR(NS_TRUE)},
+        {"-digest",   Ns_ObjvString,   &digestName, NULL},
+        {"-encoding", Ns_ObjvIndex,    &encoding,   binaryencodings},
+        {"--",        Ns_ObjvBreak,    NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec    args[] = {
@@ -844,13 +817,6 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     };
 
     if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
-
-    } else if (outputEncodingString != NULL
-               && GetResultEncoding(interp, outputEncodingString, &encoding) != TCL_OK) {
-        /*
-         * Function cares about error message
-         */
         result = TCL_ERROR;
 
     } else {
@@ -1070,11 +1036,10 @@ CryptoMdGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     int                result = TCL_OK;
     EVP_MD_CTX        *mdctx;
     Tcl_Obj           *ctxObj;
-    char              *outputEncodingString = NULL;
-    Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
+    Ns_BinaryEncoding  encoding = RESULT_ENCODING_HEX;
 
     Ns_ObjvSpec lopts[] = {
-        {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
+        {"-encoding", Ns_ObjvIndex, &encoding, binaryencodings},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec    args[] = {
@@ -1089,14 +1054,7 @@ CryptoMdGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         Ns_TclPrintfResult(interp, "argument is not of type \"%s\"", mdCtxType);
         result = TCL_ERROR;
 
-    } else if (outputEncodingString != NULL
-               && GetResultEncoding(interp, outputEncodingString, &encoding) != TCL_OK) {
-        /*
-         * Function cares about error message
-         */
-        result = TCL_ERROR;
-
-    } else {
+     } else {
         unsigned char  digest[EVP_MAX_MD_SIZE];
         char           digestChars[EVP_MAX_MD_SIZE*2 + 1];
         unsigned int   mdLength;
@@ -1185,19 +1143,18 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     char              *digestName = (char *)"sha256",
                       *passPhrase = (char *)NS_EMPTY_STRING,
                       *signKeyFile = NULL,
-                      *verifyKeyFile = NULL,
-                      *outputEncodingString = NULL;
-    Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
+                      *verifyKeyFile = NULL;
+    Ns_BinaryEncoding  encoding = RESULT_ENCODING_HEX;
 
     Ns_ObjvSpec lopts[] = {
-        {"-binary",     Ns_ObjvBool,   &isBinary,             INT2PTR(NS_TRUE)},
-        {"-digest",     Ns_ObjvString, &digestName,           NULL},
-        {"-encoding",   Ns_ObjvString, &outputEncodingString, NULL},
-        {"-passphrase", Ns_ObjvString, &passPhrase,           NULL},
-        {"-sign",       Ns_ObjvString, &signKeyFile,          NULL},
-        {"-signature",  Ns_ObjvObj,    &signatureObj,         NULL},
-        {"-verify",     Ns_ObjvString, &verifyKeyFile,        NULL},
-        {"--",          Ns_ObjvBreak,  NULL,                  NULL},
+        {"-binary",     Ns_ObjvBool,     &isBinary,         INT2PTR(NS_TRUE)},
+        {"-digest",     Ns_ObjvString,   &digestName,       NULL},
+        {"-encoding",   Ns_ObjvIndex,    &encoding,         binaryencodings},
+        {"-passphrase", Ns_ObjvString,   &passPhrase,       NULL},
+        {"-sign",       Ns_ObjvString,   &signKeyFile,      NULL},
+        {"-signature",  Ns_ObjvObj,      &signatureObj,     NULL},
+        {"-verify",     Ns_ObjvString,   &verifyKeyFile,    NULL},
+        {"--",          Ns_ObjvBreak,    NULL,              NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -1206,13 +1163,6 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     };
 
     if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
-
-    } else if (outputEncodingString != NULL
-               && GetResultEncoding(interp, outputEncodingString, &encoding) != TCL_OK) {
-        /*
-         * Function cares about error message
-         */
         result = TCL_ERROR;
 
     } else if (signKeyFile != NULL && verifyKeyFile != NULL) {
@@ -1432,17 +1382,17 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 {
     int                result, isBinary = 0;
     Tcl_Obj           *messageObj;
-    char              *digestName = (char *)"sha256", *pemFile = NULL, *outputEncodingString = NULL,
+    char              *digestName = (char *)"sha256", *pemFile = NULL,
                       *passPhrase = (char *)NS_EMPTY_STRING;
-    Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
+    Ns_BinaryEncoding  encoding = RESULT_ENCODING_HEX;
 
     Ns_ObjvSpec lopts[] = {
-        {"-binary",     Ns_ObjvBool,   &isBinary,   INT2PTR(NS_TRUE)},
-        {"-digest",     Ns_ObjvString, &digestName, NULL},
-        {"-encoding",   Ns_ObjvString, &outputEncodingString, NULL},
-        {"-passphrase", Ns_ObjvString, &passPhrase, NULL},
-        {"-pem",        Ns_ObjvString, &pemFile,    NULL},
-        {"--",          Ns_ObjvBreak,  NULL,        NULL},
+        {"-binary",     Ns_ObjvBool,        &isBinary,   INT2PTR(NS_TRUE)},
+        {"-digest",     Ns_ObjvString,      &digestName, NULL},
+        {"-encoding",   Ns_ObjvIndex,       &encoding,   binaryencodings},
+        {"-passphrase", Ns_ObjvString,      &passPhrase, NULL},
+        {"-pem",        Ns_ObjvString,      &pemFile,    NULL},
+        {"--",          Ns_ObjvBreak,       NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -1478,13 +1428,6 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 
     } else if (pemFile == NULL) {
         Ns_TclPrintfResult(interp, "no pem file specified");
-        result = TCL_ERROR;
-
-    } else if (outputEncodingString != NULL
-               && GetResultEncoding(interp, outputEncodingString, &encoding) != TCL_OK) {
-        /*
-         * Function cares about error message
-         */
         result = TCL_ERROR;
 
     } else {
@@ -1591,16 +1534,16 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 {
     int                result, isBinary = 0, outLength = 0;
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL, *infoObj = NULL;
-    char              *digestName = (char *)"sha256", *outputEncodingString = NULL;
-    Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
+    char              *digestName = (char *)"sha256";
+    Ns_BinaryEncoding  encoding = RESULT_ENCODING_HEX;
     Ns_ObjvSpec lopts[] = {
-        {"-binary",   Ns_ObjvBool,   &isBinary,  INT2PTR(NS_TRUE)},
-        {"-digest",   Ns_ObjvString, &digestName, NULL},
-        {"-salt",     Ns_ObjvObj,    &saltObj,    NULL},
-        {"-secret",   Ns_ObjvObj,    &secretObj,  NULL},
-        {"-info",     Ns_ObjvObj,    &infoObj,    NULL},
-        {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
-        {"--",        Ns_ObjvBreak,  NULL,        NULL},
+        {"-binary",   Ns_ObjvBool,           &isBinary,  INT2PTR(NS_TRUE)},
+        {"-digest",   Ns_ObjvString,         &digestName, NULL},
+        {"-salt",     Ns_ObjvObj,            &saltObj,    NULL},
+        {"-secret",   Ns_ObjvObj,            &secretObj,  NULL},
+        {"-info",     Ns_ObjvObj,            &infoObj,    NULL},
+        {"-encoding", Ns_ObjvIndex,          &encoding,   binaryencodings},
+        {"--",        Ns_ObjvBreak,          NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -1648,13 +1591,6 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 
     } else if (infoObj == NULL) {
         Ns_TclPrintfResult(interp, "no -info specified");
-        result = TCL_ERROR;
-
-    } else if (outputEncodingString != NULL
-               && GetResultEncoding(interp, outputEncodingString, &encoding) != TCL_OK) {
-        /*
-         * Function cares about error message
-         */
         result = TCL_ERROR;
 
     } else {
@@ -1812,16 +1748,15 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 {
     int                result, isBinary = 0, nValue = 1024, rValue = 8, pValue = 16;
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL;
-    char              *outputEncodingString = NULL;
-    Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
+    Ns_BinaryEncoding  encoding = RESULT_ENCODING_HEX;
     Ns_ObjvSpec lopts[] = {
-        {"-binary",   Ns_ObjvBool,   &isBinary,  INT2PTR(NS_TRUE)},
-        {"-salt",     Ns_ObjvObj,    &saltObj,    NULL},
-        {"-secret",   Ns_ObjvObj,    &secretObj,  NULL},
-        {"-n",        Ns_ObjvInt,    &nValue,     &posIntRange1},
-        {"-p",        Ns_ObjvInt,    &pValue,     &posIntRange1},
-        {"-r",        Ns_ObjvInt,    &rValue,     &posIntRange1},
-        {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
+        {"-binary",   Ns_ObjvBool,    &isBinary,  INT2PTR(NS_TRUE)},
+        {"-salt",     Ns_ObjvObj,     &saltObj,    NULL},
+        {"-secret",   Ns_ObjvObj,     &secretObj,  NULL},
+        {"-n",        Ns_ObjvInt,     &nValue,     &posIntRange1},
+        {"-p",        Ns_ObjvInt,     &pValue,     &posIntRange1},
+        {"-r",        Ns_ObjvInt,     &rValue,     &posIntRange1},
+        {"-encoding", Ns_ObjvIndex,   &encoding,   binaryencodings},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -1863,13 +1798,6 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
     */
 
     if (Ns_ParseObjv(lopts, args, interp, 1, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
-
-    } else if (outputEncodingString != NULL
-               && GetResultEncoding(interp, outputEncodingString, &encoding) != TCL_OK) {
-        /*
-         * Function cares about error message
-         */
         result = TCL_ERROR;
 
     } else if (saltObj == NULL) {
@@ -1976,14 +1904,14 @@ static int
 CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int                result;
-    char              *pemFile = NULL, *outputEncodingString = NULL,
+    char              *pemFile = NULL,
                       *passPhrase = (char *)NS_EMPTY_STRING;
-    Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
+    Ns_BinaryEncoding  encoding = RESULT_ENCODING_HEX;
 
     Ns_ObjvSpec lopts[] = {
-        {"-encoding",   Ns_ObjvString, &outputEncodingString, NULL},
-        {"-passphrase", Ns_ObjvString, &passPhrase,           NULL},
-        {"-pem",        Ns_ObjvString, &pemFile,              NULL},
+        {"-encoding",   Ns_ObjvIndex,   &encoding,   binaryencodings},
+        {"-passphrase", Ns_ObjvString,  &passPhrase, NULL},
+        {"-pem",        Ns_ObjvString,  &pemFile,    NULL},
         {NULL, NULL, NULL, NULL}
     };
     /*
@@ -1996,13 +1924,6 @@ CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 
     } else if (pemFile == NULL) {
         Ns_TclPrintfResult(interp, "no pem file specified");
-        result = TCL_ERROR;
-
-    } else if (outputEncodingString != NULL
-               && GetResultEncoding(interp, outputEncodingString, &encoding) != TCL_OK) {
-        /*
-         * Function cares about error message
-         */
         result = TCL_ERROR;
 
     } else {
@@ -2053,7 +1974,7 @@ SetResultFromEC_POINT(
     EC_KEY           *eckey,
     const EC_POINT   *ecpoint,
     BN_CTX           *bn_ctx,
-    Ns_ResultEncoding encoding)
+    Ns_BinaryEncoding encoding)
 {
     size_t   octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint,
                                             POINT_CONVERSION_UNCOMPRESSED, NULL, 0, NULL);
@@ -2087,14 +2008,14 @@ static int
 CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int                result;
-    char              *pemFile = NULL, *outputEncodingString = NULL,
+    char              *pemFile = NULL,
                       *passPhrase = (char *)NS_EMPTY_STRING;
-    Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
+    Ns_BinaryEncoding  encoding = RESULT_ENCODING_HEX;
 
     Ns_ObjvSpec lopts[] = {
-        {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
-        {"-passphrase", Ns_ObjvString, &passPhrase,         NULL},
-        {"-pem",      Ns_ObjvString, &pemFile,              NULL},
+        {"-encoding",   Ns_ObjvIndex,   &encoding,   binaryencodings},
+        {"-passphrase", Ns_ObjvString,  &passPhrase, NULL},
+        {"-pem",        Ns_ObjvString,  &pemFile,    NULL},
         {NULL, NULL, NULL, NULL}
     };
     /*
@@ -2107,13 +2028,6 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 
     } else if (pemFile == NULL) {
         Ns_TclPrintfResult(interp, "no pem file specified");
-        result = TCL_ERROR;
-
-    } else if (outputEncodingString != NULL
-               && GetResultEncoding(interp, outputEncodingString, &encoding) != TCL_OK) {
-        /*
-         * Function cares about error message
-         */
         result = TCL_ERROR;
 
     } else {
@@ -2177,13 +2091,12 @@ static int
 CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int                result, isBinary = 0;
-    char              *outputEncodingString = NULL;
     Tcl_Obj           *importObj = NULL;
-    Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
+    Ns_BinaryEncoding  encoding = RESULT_ENCODING_HEX;
     Ns_ObjvSpec lopts[] = {
-        {"-binary",   Ns_ObjvBool,   &isBinary, INT2PTR(NS_TRUE)},
-        {"-string",   Ns_ObjvObj,    &importObj, NULL},
-        {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
+        {"-binary",   Ns_ObjvBool,    &isBinary,  INT2PTR(NS_TRUE)},
+        {"-string",   Ns_ObjvObj,     &importObj, NULL},
+        {"-encoding", Ns_ObjvIndex,   &encoding,  binaryencodings},
         {NULL, NULL, NULL, NULL}
     };
     /*
@@ -2199,13 +2112,6 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
 
     } else if (importObj == NULL) {
         Ns_TclPrintfResult(interp, "no import string specified");
-        result = TCL_ERROR;
-
-    } else if (outputEncodingString != NULL
-               && GetResultEncoding(interp, outputEncodingString, &encoding) != TCL_OK) {
-        /*
-         * Function cares about error message
-         */
         result = TCL_ERROR;
 
     } else {
@@ -2353,18 +2259,18 @@ static int
 CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int                result, isBinary = 0;
-    char              *outputEncodingString = NULL, *pemFileName = NULL,
+    char              *pemFileName = NULL,
                       *passPhrase = (char *)NS_EMPTY_STRING;
     Tcl_Obj           *pubkeyObj = NULL;
-    Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
+    Ns_BinaryEncoding  encoding = RESULT_ENCODING_HEX;
     EC_KEY            *eckey = NULL;
 
     Ns_ObjvSpec lopts[] = {
-        {"-binary",   Ns_ObjvBool,   &isBinary, INT2PTR(NS_TRUE)},
-        {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
-        {"-passphrase", Ns_ObjvString, &passPhrase,           NULL},
-        {"-pem",      Ns_ObjvString, &pemFileName, NULL},
-        {"--",        Ns_ObjvBreak,  NULL,         NULL},
+        {"-binary",     Ns_ObjvBool,    &isBinary,    INT2PTR(NS_TRUE)},
+        {"-encoding",   Ns_ObjvIndex,   &encoding,    binaryencodings},
+        {"-passphrase", Ns_ObjvString,  &passPhrase,  NULL},
+        {"-pem",        Ns_ObjvString,  &pemFileName, NULL},
+        {"--",          Ns_ObjvBreak,   NULL,         NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -2382,13 +2288,6 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
     } else if (pemFileName == NULL) {
         Ns_TclPrintfResult(interp, "no pem file specified");
-        result = TCL_ERROR;
-
-    } else if (outputEncodingString != NULL
-               && GetResultEncoding(interp, outputEncodingString, &encoding) != TCL_OK) {
-        /*
-         * Function cares about error message
-         */
         result = TCL_ERROR;
 
     } else {
@@ -2638,33 +2537,32 @@ CryptoAeadStringGetArguments(
     const unsigned char **aadStringPtr,   int *aadLengthPtr,
     char                **tagStringPtr,   int *tagLengthPtr,
     const unsigned char **inputStringPtr, int *inputLengthPtr,
-    const EVP_CIPHER    **cipherPtr, Ns_ResultEncoding *encodingPtr, EVP_CIPHER_CTX **ctxPtr
+    const EVP_CIPHER    **cipherPtr, Ns_BinaryEncoding *encodingPtr, EVP_CIPHER_CTX **ctxPtr
 ) {
     Tcl_Obj      *ivObj = NULL, *keyObj = NULL, *aadObj = NULL, *tagObj = NULL, *inputObj;
     int           result, isBinary = 0;
     char         *cipherName = (char *)"aes-128-gcm";
     Tcl_DString   ivDs, inputDs;
-    char         *outputEncodingString = NULL;
 
     Ns_ObjvSpec lopts_encrypt[] = {
-        {"-binary",   Ns_ObjvBool,    &isBinary,   INT2PTR(NS_TRUE)},
-        {"-aad",      Ns_ObjvObj,     &aadObj,     NULL},
-        {"-cipher",   Ns_ObjvString,  &cipherName, NULL},
-        {"-encoding", Ns_ObjvString,  &outputEncodingString, NULL},
-        {"-iv",       Ns_ObjvObj,     &ivObj,      NULL},
-        {"-key",      Ns_ObjvObj,     &keyObj,     NULL},
-        {"--",        Ns_ObjvBreak,   NULL,        NULL},
+        {"-binary",   Ns_ObjvBool,           &isBinary,   INT2PTR(NS_TRUE)},
+        {"-aad",      Ns_ObjvObj,            &aadObj,     NULL},
+        {"-cipher",   Ns_ObjvString,         &cipherName, NULL},
+        {"-encoding", Ns_ObjvIndex,          encodingPtr, binaryencodings},
+        {"-iv",       Ns_ObjvObj,            &ivObj,      NULL},
+        {"-key",      Ns_ObjvObj,            &keyObj,     NULL},
+        {"--",        Ns_ObjvBreak,          NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec lopts_decrypt[] = {
-        {"-binary",   Ns_ObjvBool,    &isBinary,   INT2PTR(NS_TRUE)},
-        {"-aad",      Ns_ObjvObj,     &aadObj,     NULL},
-        {"-cipher",   Ns_ObjvString,  &cipherName, NULL},
-        {"-encoding", Ns_ObjvString,  &outputEncodingString, NULL},
-        {"-iv",       Ns_ObjvObj,     &ivObj,      NULL},
-        {"-key",      Ns_ObjvObj,     &keyObj,     NULL},
-        {"-tag",      Ns_ObjvObj,     &tagObj,     NULL},
-        {"--",        Ns_ObjvBreak,   NULL,        NULL},
+        {"-binary",   Ns_ObjvBool,           &isBinary,   INT2PTR(NS_TRUE)},
+        {"-aad",      Ns_ObjvObj,            &aadObj,     NULL},
+        {"-cipher",   Ns_ObjvString,         &cipherName, NULL},
+        {"-encoding", Ns_ObjvIndex,          encodingPtr, binaryencodings},
+        {"-iv",       Ns_ObjvObj,            &ivObj,      NULL},
+        {"-key",      Ns_ObjvObj,            &keyObj,     NULL},
+        {"-tag",      Ns_ObjvObj,            &tagObj,     NULL},
+        {"--",        Ns_ObjvBreak,          NULL,        NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -2682,13 +2580,6 @@ CryptoAeadStringGetArguments(
 
     } else if (keyObj == NULL) {
         Ns_TclPrintfResult(interp, "no key in specified");
-        result = TCL_ERROR;
-
-    } else if (outputEncodingString != NULL
-               && GetResultEncoding(interp, outputEncodingString, encodingPtr) != TCL_OK) {
-        /*
-         * Function cares about error message.
-         */
         result = TCL_ERROR;
 
     } else if ((result = GetCipher(interp, cipherName, EVP_CIPH_GCM_MODE, "gcm", cipherPtr)) == TCL_OK) {
@@ -2766,7 +2657,7 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     int                  result;
     const EVP_CIPHER    *cipher = NULL;
     Tcl_DString          ivDs, keyDs, aadDs, tagDs, inputDs;
-    Ns_ResultEncoding    encoding = RESULT_ENCODING_HEX;
+    Ns_BinaryEncoding    encoding = RESULT_ENCODING_HEX;
     EVP_CIPHER_CTX      *ctx;
     const unsigned char *inputString = NULL, *ivString, *aadString, *keyString = NULL;
     char                *tagString = NULL;
@@ -3019,11 +2910,10 @@ int
 NsTclCryptoRandomBytesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int                result, nrBytes = 0;
-    char              *outputEncodingString = NULL;
-    Ns_ResultEncoding  encoding = RESULT_ENCODING_HEX;
+    Ns_BinaryEncoding  encoding = RESULT_ENCODING_HEX;
     Ns_ObjvValueRange  lengthRange = {1, INT_MAX};
     Ns_ObjvSpec lopts[] = {
-        {"-encoding", Ns_ObjvString, &outputEncodingString, NULL},
+        {"-encoding",   Ns_ObjvIndex,   &encoding,    binaryencodings},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -3032,13 +2922,6 @@ NsTclCryptoRandomBytesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
     };
 
     if (Ns_ParseObjv(lopts, args, interp, 1, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
-
-    } else if (outputEncodingString != NULL
-               && GetResultEncoding(interp, outputEncodingString, &encoding) != TCL_OK) {
-        /*
-         * Function cares about error message
-         */
         result = TCL_ERROR;
 
     } else {
