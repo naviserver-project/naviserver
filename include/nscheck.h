@@ -131,10 +131,13 @@
 #if __GNUC_PREREQ(4, 9)
 # define NS_GNUC_RETURNS_NONNULL __attribute__((returns_nonnull))
 # define NS_GNUC_PURE __attribute__((__pure__))
+# define NS_ALLOC_SIZE(ARGS) __attribute__((__alloc_size__(ARGS)))
 #else
 # define NS_GNUC_RETURNS_NONNULL
 # define NS_GNUC_PURE
+# define NS_ALLOC_SIZE(ARGS)
 #endif
+
 
 /*
  * In earlier version of GCC6, it complained when there was a nonnull
