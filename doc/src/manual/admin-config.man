@@ -242,17 +242,55 @@ example we name the different instances of the network driver
  # Server s1, using listening on two ports
  #
  ns_section ns/server/s1/modules {
-   ns_param   nssock1   nssock.so
-   ns_param   nssock2   nssock.so
+   ns_param   nssock   nssock.so
+ }
+ 
+ ns_section ns/server/s1/module/nssock {
+   ns_param address   0.0.0.0
+   ns_param port      "8000 8001"
+ }
+[example_end]
+
+When multiple IP addresses and multiple ports are specified, the
+server will be listening for every specified address on every
+specified port. In the following example, it will listen on four
+different combinations of addresses and ports.
+
+[example_begin]
+ ns_section ns/server/s1/module/nssock {
+   ns_param address {137.208.116.31 2001:628:404:74::31}
+   ns_param port    "8000 8001"
+ }
+[example_end]
+
+[subsection {Single server registering on multiple drivers}]
+
+In the last two examples a single server is listening on different
+ports and or IP addresses but the configuration of the driver was
+otherwise identical. In case, different driver parameters are needed
+it is possible to load the same driver multiple times for the same
+server with different driver names.
+
+In the following example we name the different instances of the
+network driver [emph nssock1] and [emph nssock2].
+
+[example_begin]
+ #
+ # Server s1, using two drivers for listening on two ports on two
+ # different addresses.
+ #
+ ns_section ns/server/s1/modules {
+   ns_param nssock1   nssock.so
+   ns_param nssock2   nssock.so
  }
  
  ns_section ns/server/s1/module/nssock1 {
    ns_param address   0.0.0.0
-   ns_param   port    8000
+   ns_param port      8000
  }
  ns_section ns/server/s1/module/nssock2 {
-   ns_param address   0.0.0.0 
-   ns_param   port    8001
+   ns_param address   127.0.0.1
+   ns_param port      8001
  }
 [example_end]
 

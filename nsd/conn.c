@@ -850,9 +850,10 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
      * If everything above failed, try the static driver location or - as last
      * resort - use the configured address.
      */
-    if (location == NULL && connPtr->location != NULL) {
-        location = Ns_DStringAppend(dest, connPtr->location);
-    } else {
+    if ((location == NULL) && (connPtr->location != NULL)) {
+            location = Ns_DStringAppend(dest, connPtr->location);
+        }
+    if (location == NULL) {
         unsigned short port = (connPtr->sockPtr != NULL)
             ? Ns_SockGetPort((Ns_Sock*)connPtr->sockPtr)
             : connPtr->drvPtr->port;

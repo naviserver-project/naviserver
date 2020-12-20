@@ -466,6 +466,7 @@ typedef struct Driver {
         Tcl_WideInt received;           /* Received requests */
         Tcl_WideInt errors;             /* Dropped requests due to errors */
     } stats;
+    Ns_DList ports;
     unsigned short port;                /* Port in location */
     unsigned short defport;             /* Default port */
     bool reuseport;                     /* Allow optionally multiple drivers to connect to the same port */
