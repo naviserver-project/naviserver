@@ -308,7 +308,7 @@ NsPoolAllocateThreadSlot(ConnPool *poolPtr, uintptr_t UNUSED(threadID))
     Ns_DListAppend(dlPtr, 0u);
     Ns_MutexUnlock(&poolPtr->rate.lock);
 
-    return (dlPtr->size -1u);
+    return (dlPtr->size - 1u);
 }
 
 /*
