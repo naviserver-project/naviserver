@@ -1380,33 +1380,13 @@ NsStopDrivers(void)
     NsAsyncWriterQueueDisable(NS_TRUE);
 
     for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
-        Tcl_HashEntry  *hPtr;
-        Tcl_HashSearch  search;
-        Sock           *sockPtr, *nextPtr;
-
-        if ((drvPtr->flags & DRIVER_STARTED) == 0u) {
-            continue;
-        }
-
-        Ns_MutexLock(&drvPtr->lock);
-        Ns_Log(Notice, "[driver:%s]: stopping", drvPtr->threadName);
-        drvPtr->flags |= DRIVER_SHUTDOWN;
-        Ns_CondBroadcast(&drvPtr->cond);
-        Ns_MutexUnlock(&drvPtr->lock);
-        SockTrigger(drvPtr->trigger[1]);
-
-        hPtr = Tcl_FirstHashEntry(&drvPtr->hosts, &search);
-        while (hPtr != NULL) {
-            ns_free(Tcl_GetHashValue(hPtr));
-            Tcl_DeleteHashEntry(hPtr);
-            hPtr = Tcl_NextHashEntry(&search);
-        }
-
-        /*fprintf(stderr, "==== NsStopDrivers drv %p sock %p\n", (void*)drvPtr, (void*)(drvPtr->sockPtr));*/
-        for (sockPtr = drvPtr->sockPtr; sockPtr != NULL; sockPtr = nextPtr) {
-            nextPtr = sockPtr->nextPtr;
-            /*fprintf(stderr, "==== NsStopDrivers drv %p FREE sock %p\n", (void*)drvPtr, (void*)sockPtr);*/
-            ns_free(sockPtr);
+        if ((drvPtr->flags & DRIVER_STARTED)) {
+            Ns_MutexLock(&drvPtr->lock);
+            Ns_Log(Notice, "[driver:%s]: stopping", drvPtr->threadName);
+            drvPtr->flags |= DRIVER_SHUTDOWN;
+            Ns_CondBroadcast(&drvPtr->cond);
+            Ns_MutexUnlock(&drvPtr->lock);
+            SockTrigger(drvPtr->trigger[1]);
         }
     }
 }
@@ -1419,20 +1399,15 @@ NsStopSpoolers(void)
 
     Ns_Log(Notice, "driver: stopping writer and spooler threads");
 
-    /*
-     * Shutdown all spooler and writer threads
-     */
     for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
-        Ns_Time timeout;
+        if ((drvPtr->flags & DRIVER_STARTED)) {
+            Ns_Time timeout, *shutdown = &nsconf.shutdowntimeout;
 
-        if ((drvPtr->flags & DRIVER_STARTED) == 0u) {
-            continue;
+            Ns_GetTime(&timeout);
+            Ns_IncrTime(&timeout, shutdown->sec, shutdown->usec);
+            SpoolerQueueStop(drvPtr->writer.firstPtr, &timeout, "writer");
+            SpoolerQueueStop(drvPtr->spooler.firstPtr, &timeout, "spooler");
         }
-        Ns_GetTime(&timeout);
-        Ns_IncrTime(&timeout, nsconf.shutdowntimeout.sec, nsconf.shutdowntimeout.usec);
-
-        SpoolerQueueStop(drvPtr->writer.firstPtr, &timeout, "writer");
-        SpoolerQueueStop(drvPtr->spooler.firstPtr, &timeout, "spooler");
     }
 }
 
@@ -2722,7 +2697,22 @@ DriverThread(void *arg)
     }
 
     PollFree(&pdata);
-    Tcl_DeleteHashTable(&drvPtr->hosts);
+
+    {
+        Tcl_HashSearch search;
+        Tcl_HashEntry  *hPtr;
+
+        hPtr = Tcl_FirstHashEntry(&drvPtr->hosts, &search);
+        while (hPtr != NULL) {
+            void *host;
+
+            host = (void*)Tcl_GetHashValue(hPtr);
+            ns_free(host);
+            Tcl_DeleteHashEntry(hPtr);
+            hPtr = Tcl_NextHashEntry(&search);
+        }
+        Tcl_DeleteHashTable(&drvPtr->hosts);
+    }
 
     /*fprintf(stderr, "==== driver exit %p closePtr %p waitPtr %p readPtr %p\n",
       (void*)drvPtr, (void*)closePtr, (void*)waitPtr, (void*)readPtr);*/
