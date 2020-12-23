@@ -1708,6 +1708,10 @@ NS_EXTERN Ns_ReturnCode
 Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN void
+Ns_TaskWaitCompleted(Ns_Task *task)
+    NS_GNUC_NONNULL(1);
+
 NS_EXTERN NS_SOCKET
 Ns_TaskFree(Ns_Task *task)
     NS_GNUC_NONNULL(1);

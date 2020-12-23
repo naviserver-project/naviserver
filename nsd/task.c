@@ -393,9 +393,6 @@ Ns_TaskEnqueue(Ns_Task *task, Ns_TaskQueue *queue)
     taskPtr = (Task *)task;
     queuePtr = (TaskQueue *)queue;
 
-    ReserveTask(taskPtr);
-    /*fprintf(stderr, "#### added extra refcount ->  %d\n", taskPtr->refCount);*/
-
     taskPtr->queuePtr = queuePtr;
 
     Ns_Log(Ns_LogTaskDebug, "Ns_TaskEnqueue: task %p, queue:%p",
@@ -587,8 +584,6 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
     taskPtr->signalFlags = 0;
     if (result == NS_OK) {
         taskPtr->queuePtr = NULL;
-        /*fprintf(stderr, "#### removed extra refcount ->  %d\n", taskPtr->refCount);*/
-        ReleaseTask(taskPtr);
     }
     Ns_MutexUnlock(&queuePtr->lock);
 
@@ -597,6 +592,7 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
     return result;
 }
 
+
 /*
  *----------------------------------------------------------------------
  *
@@ -619,7 +615,42 @@ Ns_TaskCompleted(const Ns_Task *task)
 {
     Task      *taskPtr;
     TaskQueue *queuePtr;
-    bool       completed;
+    bool       completed = NS_TRUE;
+
+    NS_NONNULL_ASSERT(task != NULL);
+
+    taskPtr = (Task *)task;
+    queuePtr = taskPtr->queuePtr;
+
+    if (queuePtr != NULL) {
+        Ns_MutexLock(&queuePtr->lock);
+        completed = ((taskPtr->signalFlags & TASK_DONE) != 0u);
+        Ns_MutexUnlock(&queuePtr->lock);
+    }
+
+    return completed;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TaskWaitCompleted --
+ *
+ *      Wait until the task is completed.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+void Ns_TaskWaitCompleted(Ns_Task *task)
+{
+    Task      *taskPtr;
+    TaskQueue *queuePtr;
 
     NS_NONNULL_ASSERT(task != NULL);
 
@@ -629,10 +660,12 @@ Ns_TaskCompleted(const Ns_Task *task)
     NS_NONNULL_ASSERT(queuePtr != NULL);
 
     Ns_MutexLock(&queuePtr->lock);
-    completed = ((taskPtr->signalFlags & TASK_DONE) != 0u);
+    while ((taskPtr->signalFlags & TASK_DONE) == 0u) {
+        Ns_CondWait(&queuePtr->cond, &queuePtr->lock);
+    }
     Ns_MutexUnlock(&queuePtr->lock);
 
-    return completed;
+    return;
 }
 
 
@@ -924,12 +957,14 @@ SignalQueue(TaskQueue *queuePtr, Task *taskPtr, unsigned int signal)
          * Mark the signal and add event to the signal list
          * if task not already listed there.
          */
-        pending = ((taskPtr->signalFlags & TASK_PENDING) != 0u);
         taskPtr->signalFlags |= signal;
+        pending = ((taskPtr->signalFlags & TASK_PENDING) != 0u);
+
         if (pending == NS_FALSE) {
             taskPtr->signalFlags |= TASK_PENDING;
             taskPtr->nextSignalPtr = queuePtr->firstSignalPtr;
             queuePtr->firstSignalPtr = taskPtr;
+            ReserveTask(taskPtr); /* Acquired for the signal list */
         }
     }
     Ns_MutexUnlock(&queuePtr->lock);
@@ -1074,16 +1109,25 @@ FreeTask(Task *taskPtr)
 static void
 ReleaseTask(Task *taskPtr)
 {
-    Ns_Log(Ns_LogTaskDebug, "ReleaseTask taskPtr %p refCount %d", (void*)taskPtr, taskPtr->refCount);
+    Ns_Log(Ns_LogTaskDebug, "ReleaseTask taskPtr %p refCount %d",
+           (void*)taskPtr, taskPtr->refCount);
+
     if (--taskPtr->refCount == 0) {
         FreeTask(taskPtr);
     }
+
+    return;
 }
 
 static void
-ReserveTask(Task *taskPtr) {
+ReserveTask(Task *taskPtr)
+{
     taskPtr->refCount++;
-    Ns_Log(Ns_LogTaskDebug, "ReserveTask taskPtr %p refCount %d", (void*)taskPtr, taskPtr->refCount);
+
+    Ns_Log(Ns_LogTaskDebug, "ReserveTask taskPtr %p refCount %d",
+           (void*)taskPtr, taskPtr->refCount);
+
+    return;
 }
 
 
@@ -1131,7 +1175,7 @@ TaskThread(void *arg)
         queueShutdown = queuePtr->shutdown;
 
         /*
-         * Collect all signaled tasks in the signal waiting list
+         * Handle all signalled tasks from the waiting list
          */
 
         while ((taskPtr = queuePtr->firstSignalPtr) != NULL) {
@@ -1153,7 +1197,7 @@ TaskThread(void *arg)
                 if (taskPtr != firstWaitPtr) {
                     taskPtr->nextWaitPtr = firstWaitPtr;
                     firstWaitPtr = taskPtr;
-                    ReserveTask(taskPtr); /* Task acquired for the waiting list */
+                    ReserveTask(taskPtr); /* Acquired for the waiting list */
                 }
             }
 
@@ -1169,6 +1213,7 @@ TaskThread(void *arg)
 
             queuePtr->firstSignalPtr = taskPtr->nextSignalPtr;
             taskPtr->nextSignalPtr = NULL;
+            ReleaseTask(taskPtr); /* Released from the signal list */
         }
 
         Ns_MutexUnlock(&queuePtr->lock);
@@ -1304,7 +1349,7 @@ TaskThread(void *arg)
                  */
                 taskPtr->nextWaitPtr = firstWaitPtr;
                 firstWaitPtr = taskPtr;
-                ReserveTask(taskPtr); /* Task acquired for the waiting list */
+                ReserveTask(taskPtr); /* Acquired for the waiting list */
 
                 Ns_Log(Ns_LogTaskDebug, "TASK_WAIT task:%p flags:%.6x",
                        (void*)taskPtr, taskPtr->flags);
@@ -1319,13 +1364,14 @@ TaskThread(void *arg)
              * this signal back to the task?
              */
             if (signalFlags == 0u) {
-                ReleaseTask(taskPtr);
+                ReleaseTask(taskPtr); /* Released from the waiting list */
             } else {
                 Ns_MutexLock(&queuePtr->lock);
                 taskPtr->signalFlags |= signalFlags;
-                ReleaseTask(taskPtr);
+                ReleaseTask(taskPtr); /* Released from the waiting list */
                 Ns_MutexUnlock(&queuePtr->lock);
             }
+
             taskPtr = nextPtr; /* Advance to the next task in the wait list */
         }
 

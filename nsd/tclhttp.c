@@ -3172,7 +3172,7 @@ HttpCancel(
     NS_NONNULL_ASSERT(httpPtr->task != NULL);
 
     (void) Ns_TaskCancel(httpPtr->task);
-    (void) Ns_TaskWait(httpPtr->task, NULL);
+    (void) Ns_TaskWaitCompleted(httpPtr->task);
 }
 
 
