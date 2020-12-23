@@ -121,8 +121,8 @@ static OCSP_RESPONSE *OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int re
 #endif
 
 # ifndef HAVE_OPENSSL_PRE_1_1
-static void *NS_CRYPTO_malloc(size_t num, const char *UNUSED(file), int UNUSED(line)) NS_GNUC_MALLOC NS_ALLOC_SIZE(1) NS_GNUC_RETURNS_NONNULL;
-static void *NS_CRYPTO_realloc(void *addr, size_t num, const char *UNUSED(file), int UNUSED(line)) NS_ALLOC_SIZE(2);
+static void *NS_CRYPTO_malloc(size_t num, const char *UNUSED(file), int UNUSED(line)) NS_GNUC_MALLOC NS_ALLOC_SIZE1(1) NS_GNUC_RETURNS_NONNULL;
+static void *NS_CRYPTO_realloc(void *addr, size_t num, const char *UNUSED(file), int UNUSED(line)) NS_ALLOC_SIZE1(2);
 static void NS_CRYPTO_free(void *addr, const char *UNUSED(file), int UNUSED(line));
 # endif
 

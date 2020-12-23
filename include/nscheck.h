@@ -131,11 +131,13 @@
 #if __GNUC_PREREQ(4, 9)
 # define NS_GNUC_RETURNS_NONNULL __attribute__((returns_nonnull))
 # define NS_GNUC_PURE __attribute__((__pure__))
-# define NS_ALLOC_SIZE(ARGS) __attribute__((__alloc_size__(ARGS)))
+# define NS_ALLOC_SIZE1(ARG) __attribute__((__alloc_size__(ARG)))
+# define NS_ALLOC_SIZE2(ARG1,ARG2) __attribute__((__alloc_size__(ARG1,ARG2)))
 #else
 # define NS_GNUC_RETURNS_NONNULL
 # define NS_GNUC_PURE
-# define NS_ALLOC_SIZE(ARGS)
+# define NS_ALLOC_SIZE1(ARG)
+# define NS_ALLOC_SIZE2(ARG1,ARG2)
 #endif
 
 
