@@ -84,7 +84,9 @@ namespace eval ::revproxy {
         # We might update/add more headers fields here
         #
         set queryHeaders [ns_conn headers]
-        ns_set update $queryHeaders X-Forwarded-For [ns_conn peeraddr]
+        set XForwardedFor [split [ns_set iget $queryHeaders "X-Forwarded-For" {}] ","]
+        lappend XForwardedFor [ns_conn peeraddr]
+        ns_set update $queryHeaders X-Forwarded-For [join $XForwardedFor ","]
 
         #
         # Inject a "connection close" instruction to avoid persistent
