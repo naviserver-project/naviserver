@@ -3039,7 +3039,7 @@ Ns_StrCaseFind(const char *chars, const char *subString)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN bool
-Ns_StrIsHost(const char *chars)
+Ns_StrIsValidHostHeaderContent(const char *chars)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN const unsigned char *

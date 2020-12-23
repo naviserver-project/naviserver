@@ -536,7 +536,7 @@ Ns_StrCaseFind(const char *chars, const char *subString)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_StrIsHost --
+ * Ns_StrIsValidHostHeaderContent --
  *
  *      Does the given string contain only characters permitted in a
  *      Host header? Letters, digits, single periods and the colon port
@@ -552,7 +552,7 @@ Ns_StrCaseFind(const char *chars, const char *subString)
  */
 
 bool
-Ns_StrIsHost(const char *chars)
+Ns_StrIsValidHostHeaderContent(const char *chars)
 {
     register const char *p;
     bool result = NS_TRUE;
@@ -657,8 +657,9 @@ Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *
         //fprintf(stderr, "NsTclObjIsByteArray\n");
         result = (unsigned char *)Tcl_GetByteArrayFromObj(obj, lengthPtr);
     } else {
-        int stringLength;
+        int         stringLength;
         const char *charInput;
+
         charInput = Tcl_GetStringFromObj(obj, &stringLength);
 
         //if (NsTclObjIsEncodedByteArray(obj)) {

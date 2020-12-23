@@ -489,10 +489,10 @@ HttpClientLogClose(void *arg)
     Ns_ReturnCode status = NS_OK;
     NsServer     *servPtr = (NsServer *)arg;
 
-    Ns_Log(Notice, "httpclient: logfile '%s' try to close (fd %d)",
-           servPtr->httpclient.logFileName, servPtr->httpclient.fd);
-
     if (servPtr->httpclient.fd != NS_INVALID_FD) {
+        Ns_Log(Notice, "httpclient: logfile '%s' try to close (fd %d)",
+               servPtr->httpclient.logFileName, servPtr->httpclient.fd);
+
         ns_close(servPtr->httpclient.fd);
         servPtr->httpclient.fd = NS_INVALID_FD;
         Ns_Log(Notice, "httpclient: logfile '%s' closed",

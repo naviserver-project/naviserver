@@ -123,7 +123,7 @@ foreach charset $charsets {
     }
 #   puts $content
 
-    test http_charsets-3.$charset.ns_http-and-utf "8bit chars from $charset, ns_http gets utf-8 text" -setup {
+    test http_charsets-3.$charset.ns_http-and-utf "8-bit chars from $charset, ns_http gets utf-8 text" -setup {
          ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} "utf-8" $content]
     } -body {
         set result [ns_http run [ns_config test listenurl]/get]
@@ -133,7 +133,7 @@ foreach charset $charsets {
     } -result $content
 
 
-    test http_charsets-3.$charset.ns_http-default "8bit chars from $charset, ns_http and 'encoding convertfrom'" -constraints !usingExternalToUtf -setup {
+    test http_charsets-3.$charset.ns_http-default "8-bit chars from $charset, ns_http and 'encoding convertfrom'" -constraints !usingExternalToUtf -setup {
          ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
     } -body {
         set result [ns_http run [ns_config test listenurl]/get]
@@ -143,7 +143,7 @@ foreach charset $charsets {
     } -result $content
 
 
-    test http_charsets-3.$charset.ns_http-externl "8bit chars from $charset, ns_http autodecode" -constraints usingExternalToUtf -setup {
+    test http_charsets-3.$charset.ns_http-externl "8-bit chars from $charset, ns_http autodecode" -constraints usingExternalToUtf -setup {
          ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
     } -body {
         set result [ns_http run [ns_config test listenurl]/get]
@@ -153,7 +153,7 @@ foreach charset $charsets {
     } -result $content
 
 
-    test http_charsets-3.$charset.ns_http-1binary "8bit chars from $charset, ns_http run -binary and 'encoding convertfrom'" -constraints binarySwitch -setup {
+    test http_charsets-3.$charset.ns_http-1binary "8-bit chars from $charset, ns_http run -binary and 'encoding convertfrom'" -constraints binarySwitch -setup {
          ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
     } -body {
         set result [ns_http run -binary [ns_config test listenurl]/get]
@@ -163,7 +163,7 @@ foreach charset $charsets {
     } -result $content
 
 
-    test http_charsets-3.$charset.ns_http-2binary "8bit chars from $charset, ns_http queue -binary and 'encoding convertfrom'" -constraints binarySwitch -setup {
+    test http_charsets-3.$charset.ns_http-2binary "8-bit chars from $charset, ns_http queue -binary and 'encoding convertfrom'" -constraints binarySwitch -setup {
          ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
     } -body {
         set result [ns_http wait [ns_http queue -binary [ns_config test listenurl]/get]]
@@ -173,7 +173,7 @@ foreach charset $charsets {
     } -result $content
 
 
-    test http_charsets-3.$charset.ns_http--binary "8bit chars from $charset, ns_http wait -binary and 'encoding convertfrom'" -constraints binarySwitch -setup {
+    test http_charsets-3.$charset.ns_http--binary "8-bit chars from $charset, ns_http wait -binary and 'encoding convertfrom'" -constraints binarySwitch -setup {
          ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
     } -body {
         set result [ns_http wait -binary [ns_http queue [ns_config test listenurl]/get]]
@@ -183,7 +183,7 @@ foreach charset $charsets {
     } -result $content
 
 
-    test http_charsets-3.$charset.curl-pipe-iconv "8bit chars from $charset, curl decoded by iconv" -constraints {curl iconv} -setup {
+    test http_charsets-3.$charset.curl-pipe-iconv "8-bit chars from $charset, curl decoded by iconv" -constraints {curl iconv} -setup {
         ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
     } -body {
         exec curl -gs [ns_config test listenurl]/get | iconv -f $charset -t utf-8
@@ -222,7 +222,7 @@ foreach charset $charsets {
         set x [format %2X $i]
 #       puts $content
 
-        test http_charsets-4.$charset.$x.ns_http-and-utf "8bit pairs starting with '$char1' from $charset, ns_http gets utf-8 text" -constraints !usingExternalToUtf -setup {
+        test http_charsets-4.$charset.$x.ns_http-and-utf "8-bit pairs starting with '$char1' from $charset, ns_http gets utf-8 text" -constraints !usingExternalToUtf -setup {
              ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} "utf-8" $content]
         } -body {
             set result [ns_http run [ns_config test listenurl]/get]
@@ -232,7 +232,7 @@ foreach charset $charsets {
         } -result $content
         
         
-        test http_charsets-4.$charset.$x.ns_http-default "8bit pairs starting with '$char1' from $charset, ns_http and 'encoding convertfrom'" -constraints !usingExternalToUtf -setup {
+        test http_charsets-4.$charset.$x.ns_http-default "8-bit pairs starting with '$char1' from $charset, ns_http and 'encoding convertfrom'" -constraints !usingExternalToUtf -setup {
              ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
         } -body {
             set result [ns_http run [ns_config test listenurl]/get]
@@ -242,7 +242,7 @@ foreach charset $charsets {
         } -result $content
         
         
-        test http_charsets-4.$charset.$x.ns_http-externl "8bit pairs starting with '$char1' from $charset, ns_http autodecode" -constraints usingExternalToUtf -setup {
+        test http_charsets-4.$charset.$x.ns_http-externl "8-bit pairs starting with '$char1' from $charset, ns_http autodecode" -constraints usingExternalToUtf -setup {
              ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
         } -body {
             set result [ns_http run [ns_config test listenurl]/get]
@@ -252,7 +252,7 @@ foreach charset $charsets {
         } -result $content
         
         
-        test http_charsets-4.$charset.$x.ns_http--binary "8bit pairs starting with '$char1' from $charset, 'ns_http run -binary' and 'encoding convertfrom'" -constraints binarySwitch -setup {
+        test http_charsets-4.$charset.$x.ns_http--binary "8-bit pairs starting with '$char1' from $charset, 'ns_http run -binary' and 'encoding convertfrom'" -constraints binarySwitch -setup {
              ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
         } -body {
             set result [ns_http run -binary [ns_config test listenurl]/get]
@@ -262,7 +262,7 @@ foreach charset $charsets {
         } -result $content
 
 
-        test http_charsets-4.$charset.$x.ns_http-1binary "8bit pairs starting with '$char1' from $charset, ns_http queue -binary and 'encoding convertfrom'" -constraints binarySwitch -setup {
+        test http_charsets-4.$charset.$x.ns_http-1binary "8-bit pairs starting with '$char1' from $charset, ns_http queue -binary and 'encoding convertfrom'" -constraints binarySwitch -setup {
              ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
         } -body {
             set result [ns_http wait [ns_http queue -binary [ns_config test listenurl]/get]]
@@ -272,7 +272,7 @@ foreach charset $charsets {
         } -result $content
 
 
-        test http_charsets-4.$charset.$x.ns_http-2binary "8bit pairs starting with '$char1' from $charset, ns_http wait -binary and 'encoding convertfrom'" -constraints binarySwitch -setup {
+        test http_charsets-4.$charset.$x.ns_http-2binary "8-bit pairs starting with '$char1' from $charset, ns_http wait -binary and 'encoding convertfrom'" -constraints binarySwitch -setup {
              ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
         } -body {
             set result [ns_http wait -binary [ns_http queue [ns_config test listenurl]/get]]
@@ -282,7 +282,7 @@ foreach charset $charsets {
         } -result $content
 
 
-        test http_charsets-4.$charset.$x.curl-pipe-iconv "8bit pairs starting with '$char1' from $charset, curl decoded by iconv" -constraints {curl iconv} -setup {
+        test http_charsets-4.$charset.$x.curl-pipe-iconv "8-bit pairs starting with '$char1' from $charset, curl decoded by iconv" -constraints {curl iconv} -setup {
             ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
         } -body {
             exec curl -gs [ns_config test listenurl]/get | iconv -f $charset

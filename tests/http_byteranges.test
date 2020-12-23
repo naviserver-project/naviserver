@@ -168,7 +168,7 @@ test byteranges-2.3 {Multiple non-contiguous ranges} -constraints serverListen -
                -getheaders {Content-type Content-range Content-length} \
                GET /10bytes]
     string map {\r ""} $r
-} -returnCodes {ok errror} -result [list 206 {multipart/byteranges; boundary=NaviServerNaviServerNaviServer} {} 214 \
+} -returnCodes {ok error} -result [list 206 {multipart/byteranges; boundary=NaviServerNaviServerNaviServer} {} 214 \
         {--NaviServerNaviServerNaviServer
 Content-type: */*
 Content-range: bytes 0-2/10

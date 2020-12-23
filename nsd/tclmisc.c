@@ -41,7 +41,7 @@
  */
 
 static bool WordEndsInSemi(const char *word, size_t *lengthPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+    NS_GNUC_NONNULL(1);
 static void SHAByteSwap(uint32_t *dest, const uint8_t *src, unsigned int words)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void SHATransform(Ns_CtxSHA1 *sha)

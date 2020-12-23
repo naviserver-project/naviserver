@@ -838,22 +838,29 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
                && ((host = Ns_SetIGet(headers, "Host")) != NULL)
                && (*host != '\0')) {
         /*
-         * Construct a location string from the HTTP host header.
+         * Construct a location string from the HTTP "host" header field
+         * without using port and default port.
          */
-        if (Ns_StrIsHost(host)) {
-            /*
-             * We have here no port and no default port
-             */
+        if (Ns_StrIsValidHostHeaderContent(host)) {
             location = Ns_HttpLocationString(dest, connPtr->drvPtr->protocol, host, 0u, 0u);
         }
-
     }
 
     /*
-     * If everything else fails, append the static driver location.
+     * If everything above failed, try the static driver location or - as last
+     * resort - use the configured address.
      */
+    if ((location == NULL) && (connPtr->location != NULL)) {
+            location = Ns_DStringAppend(dest, connPtr->location);
+        }
     if (location == NULL) {
-        location = Ns_DStringAppend(dest, connPtr->location);
+        unsigned short port = (connPtr->sockPtr != NULL)
+            ? Ns_SockGetPort((Ns_Sock*)connPtr->sockPtr)
+            : connPtr->drvPtr->port;
+        location = Ns_HttpLocationString(dest,
+                                         connPtr->drvPtr->protocol,
+                                         connPtr->drvPtr->address,
+                                         port, connPtr->drvPtr->defport);
     }
 
     return location;

@@ -1030,7 +1030,7 @@ static Ns_ObjvTable encodingset[] = {
     {"query",    UCHAR('q')},
     {"path",     UCHAR('p')},
     {"cookie",   UCHAR('c')},
-    {"oauth1", UCHAR('o')},
+    {"oauth1",   UCHAR('o')},
     {NULL,       0u}
 };
 

@@ -114,10 +114,11 @@ The module is typically loaded per server (specified
 below in the variable "server"):
 
 [example_begin]
- ns_section    ns/server/${server}/modules {
+ ns_section    ns/server/$server/modules {
     ns_param      nsssl            nsssl.so
  }
- ns_section    ns/server/${server}/module/nsssl {
+ 
+ ns_section    ns/server/$server/module/nsssl {
     ns_param   certificate   /usr/local/ns/modules/nsssl/server.pem
     ns_param   address       0.0.0.0
     ns_param   port          443
@@ -143,7 +144,7 @@ ciphers, etc.) or additional settings from [term nssock] such as e.g.
 [para]
 Below is an example, how a web site can create a self-signed
 certificate in PEM format.  The last line with the DH parameters is
-optional but necessary perfect forward secrecy.
+optional but necessary for achieving perfect forward secrecy.
 
 [example_begin]
  openssl req -new -x509 -sha256 -newkey rsa:2048 -days 365 -nodes  -keyout host.key.pem -out host.cert.pem
