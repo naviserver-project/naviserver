@@ -12,8 +12,8 @@ evaluated as the key to the cached result of evaluating the script. Use this
 when evaluating the script could take some time.
 
 [para]
-If the script is not pure, i.e. if it depends on something other than it's
-arguments to compute the result, then you will need to supply an expirey
+If the script is not pure, i.e. if it depends on something other than its
+arguments to compute the result, then you will need to supply an expiry
 time or explicitly flush the result when the dependency changes.
 
 

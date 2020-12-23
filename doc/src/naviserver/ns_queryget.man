@@ -97,7 +97,7 @@ entry in the query data. See Example 3, below.
 
 [section NOTES]
 
- Note that despite it's name, ns_queryget works on POST form data as
+ Note that despite its name, ns_queryget works on POST form data as
  well as query string data.
 
 [keywords  form query encoding]

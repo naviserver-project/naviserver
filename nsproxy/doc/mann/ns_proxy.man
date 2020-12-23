@@ -48,8 +48,8 @@ Proxies are obtained from their corresponding [arg pool] by means of the
 [cmd "ns_proxy get"] command. Only the thread that obtained the proxy can use
 it to communicate with the worker process. In order to allow other threads to
 use the same proxy, the thread must return (via the [cmd "ns_proxy put"] or
-[cmd "ns_proxy cleanup"] commands) the proxy back to it's/theirs corresponding
-pool/s. One thread can obtain one or a bunch of proxies from a pool in one step.
+[cmd "ns_proxy cleanup"] commands) the proxy back to its corresponding
+pool. One thread can obtain one or a bunch of proxies from a pool in one step.
 It cannot, however, repeatedly obtain proxy by proxy in a loop, as this may
 lead to difficult-to-trace deadlock situation (see [cmd "ns_proxy get"] command).
 
@@ -91,7 +91,7 @@ when this proxy has been activated. The timestamp is in format that
 [para]
 The [emph script] contains the script passed to the proxy for execution.
 It is also possible to view the currently evaluating scripts with the
-Unix [emph ps] command as the proxy worker process re-writes it's command
+Unix [emph ps] command as the proxy worker process re-writes its command
 argument space with the request script before evaluation and clears it
 after sending the result.
 

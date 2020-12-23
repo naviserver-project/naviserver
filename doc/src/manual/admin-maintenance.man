@@ -180,7 +180,7 @@ Common approaches are listed below.
 
 [para]
 
-Very easy to setup but with it's own limitations. [term init] is the parent of all processes.
+Very easy to setup but with its own limitations. [term init] is the parent of all processes.
 It creates processes from the script [term /etc/inittab]. Add a line like
 
 [example_begin]
@@ -282,11 +282,11 @@ Daemontools is a collection of software to control other processes.
 
 The situations where you might want to run NaviServer as user root are rare to none.
 But NaviServer as a tool is so flexible that it cannot only be used as webserver.
-It's possible (and has been done) to use it as some kind of application where serving
+It is possible (and has been done) to use it as some kind of application where serving
 webpages is not the primary target.
 
 [para]
-So it's possible to tell NaviServer to run as root using the -u switch at startup from the command line.
+So it is possible to tell NaviServer to run as root using the -u switch at startup from the command line.
 
 [para]
 Of course, you have to be root to do that:
@@ -304,7 +304,7 @@ You can see the result in the security info:
  ...
 [example_end]
 
-It's simply a convenience for people that need it to not have to rewrite code to achieve this.
+It is simply a convenience for people that need it to not have to rewrite code to achieve this.
 
 [subsection {Running inside Chroot Environment}]
 

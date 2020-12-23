@@ -96,7 +96,7 @@ static unsigned __stdcall ThreadMain(void *arg);
 
 /*
  * The following single Tls key is used to store the nsthread
- * structure.  It's initialized in DllMain.
+ * structure.  It is initialized in DllMain.
  */
 
 static DWORD tlskey;

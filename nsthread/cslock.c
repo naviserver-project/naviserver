@@ -117,7 +117,7 @@ Ns_CsDestroy(Ns_Cs *csPtr)
     CsLock *lockPtr = (CsLock *) *csPtr;
 
     /*
-     * Destroy the condition only if it's not null, i.e., initialized
+     * Destroy the condition only if it is not null, i.e., initialized
      * by the first use.
      */
 

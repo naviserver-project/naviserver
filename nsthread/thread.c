@@ -410,7 +410,7 @@ Ns_ThreadExit(void *arg)
      * augmenting the TLS cleanup invoked automatically by
      * the system's thread exit machinery. It is at this place
      * that we have the thread completely initialized, so an
-     * proper cleanup has better chance to finish it's work.
+     * proper cleanup has better chance to finish its work.
      */
 
     NsCleanupTls(NsGetTls());

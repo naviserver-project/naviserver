@@ -52,7 +52,7 @@ put a link to the new gcc in /usr/local/bin (keep the broken Cygnus in /usr/cygn
 
 HINT: The magic option to GCC for the compiling step is "-fPIC", so if you're
 using a third-party library, make sure "-fPIC" appears in the CFLAGS. And,
-to eliminate the possibility of strange behavior, it's helpful but not necessary
+to eliminate the possibility of strange behavior, it is helpful but not necessary
 to build everything with the same compiler and using the same options.
 If you're using a third-party library for which no source code is available,
 you may run into problems if the vendor did not build it with the equivalent

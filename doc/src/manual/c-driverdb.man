@@ -451,7 +451,7 @@ char *hModule, const char *driver);
 
      This function will be called with the database handle every time
              one is returned to the database pool. You can use this to
-             normalize it's state for the next use; for example always
+             normalize its state for the next use; for example always
              setting the handle to autocommit mode and aborting any
              uncommitted transactions.
 

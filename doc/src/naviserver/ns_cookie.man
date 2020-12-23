@@ -42,7 +42,7 @@ during subsequent requests for which the [arg domain] and [arg path] match,
 if it has not expired. If the provided domain is empty, it is ignored.
 
 [para]
-A cookie is identified by a signature which is made up of it's name, domain,
+A cookie is identified by a signature which is made up of its name, domain,
 path and secure flag. A cookie named [term foo] with path [term /x/y] is a
 different cookie than one named [term foo] with path [term /x/y/z]. During a
 request for the URL [term /x/y/z] both cookies named [term foo] are sent.

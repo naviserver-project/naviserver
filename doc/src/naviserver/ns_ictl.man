@@ -46,9 +46,14 @@ threads to avoid resource leaks and/or missed state changes.
 	 [arg script] \
 	 [opt [arg args]] ]
 
-Evaluate the given script and args and arrange for it's side effects to
-propagate to all interpreters in all threads for the current virtual server. Use
-this to define new procs once the server has started.
+Evaluate the given script and args and arrange for its side effects
+to propagate to all interpreters in all threads for the current
+virtual server. Use this to define new procs or to redefine existing
+procs once the server has started. A modified blueprint can be
+reloaded via [cmd "ns_ictl update"] which is also called by the
+default init.tcl script of NaviServer during cleanup (i.e. by the
+[term deallocate] traces).
+
 
 [para]
 If the script evaluates without error then it is appended to the interpreter
@@ -107,7 +112,7 @@ Return the script of the specified trace.
 
 [call [cmd "ns_ictl markfordelete"] ]
 Mark the interpreter for deletion after the [term deallocate] interpreter traces
-and have run. This is useful when it's necessary to delete an interp after it
+and have run. This is useful when it is necessary to delete an interp after it
 has been modified in a way that cannot be safely cleaned up, such as by the
 TclPro debugger.
 

@@ -27,7 +27,7 @@ The nslog module has these turned off by default, but it helps to see if
 it your configuration has it turned off. Also, the nsperm module uses DNS
 lookups for access control -- turn this off if you don't use host access
 control rules with nsperm. The nscgi module also can use DNS but, again,
-it's off by default (gethostbyaddr setting). If you must use DNS, NaviServer
+it is off by default (gethostbyaddr setting). If you must use DNS, NaviServer
 has a DNS cache that can be tweaked -- see [term dnscache],
 [term dnswaittimeout] and
 [term dnscachetimeout] in the config reference.
@@ -192,8 +192,8 @@ Memory considerations are paramount on heavily-used servers. Use the "ps
 -leaf" on most systems to look at the "nsd" processes. Nearly all the memory
 used by nsd should be in RSS (resident set size). If the RSS size of
 the nsd process
-is less than 2/3 its SZ, then it's a good chance that your operating system
-is thrashing, meaning it's spending more time managing memory than allowing
+is less than 2/3 its SZ, then there is a good chance that your operating system
+is thrashing, meaning it is spending more time managing memory than allowing
 the system to work to its capacity. Some operating systems actually limit
 the total RSS used by any one process. That 1-gigabyte machine might only 
 allow NaviServer to use 500 megabytes of core at any one time -- this is 
@@ -214,7 +214,7 @@ the caches, Tcl interps, threads, and other interesting data. We use these
 at AOL to gather an immense amount of data on how the systems are working
 and where they need to be improved (more cache, less cache, more memory,
 more threads, etc).  The module [term nsstats] can be dropped into any
-running server to get a snapshot of how it's doing. The module is available
+running server to get a snapshot of how it is doing. The module is available
 in the modules repository.
 
 [subsection {Further parameters for tuning}]

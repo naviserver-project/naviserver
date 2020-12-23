@@ -172,7 +172,7 @@ end script processing after ns_returnforbidden.
 [section CONFIGURATION]
 
 The body of the response which is returned for a variety of status codes can be
-customized by registering a new resource which should be returned in it's place.
+customized by registering a new resource which should be returned in its place.
 The new resource may be a static, Tcl or ADP page, or a registered procedure
 or ADP. These redirects are used for providing customized (templated)
 error pages.

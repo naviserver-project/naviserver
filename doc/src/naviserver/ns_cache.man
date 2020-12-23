@@ -13,12 +13,12 @@ entries, timeouts waiting for updates, etc.
 [para]
 The cache commands try to be efficient. For example, if two threads are
 simultaneously accessing the same entry in a cache, and the cache entry does not
-exist or has expired, then the first thread will evaluate it's script to
+exist or has expired, then the first thread will evaluate its script to
 generate the new value.  The second thread will recognize this and wait for the
 first thread to finish, and then return the value computed by the first thread.
 
 [para]
-A cache will tend to grow to it's maximum specified size.  Unused entries will
+A cache will tend to grow to its maximum specified size.  Unused entries will
 move towards the end of the Least Recently Used list and be deleted to make room
 for new entries. Similarly, expired entries will remain in the cache and only be
 deleted when they reach the end of the LRU list, or are accessed and it is
@@ -185,7 +185,7 @@ If the cache value does not already exist it is created.
 
 Append the given [arg args] to the value in the cache and return the new
 value. The cache value is as a Tcl list and the [arg args] are appended to
-maintain it's well-formed-list format.
+maintain its well-formed-list format.
 
 [para]
 If the cache value does not already exist it is created.

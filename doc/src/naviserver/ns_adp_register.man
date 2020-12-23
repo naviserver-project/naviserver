@@ -8,7 +8,7 @@
 
 These commands enable definition of HTML tags within an ADP file
 which are expanded and evaluated by the server before returning output
-to the client. Tags are defined as eitehr a single tag with
+to the client. Tags are defined as either a single tag with
 options, e.g.,  <mytag a=b c=d>  or as an
 opening/closing tag pair, e.g.,  <mytag> text
 </mytag> . This approach is an alternative to

@@ -67,7 +67,7 @@ command or evaluate ADP text/script code directly with
 [cmd ns_adp_parse]. This capability enables are large degree
 of reuse of presentation and code between applications. Each
 such included file or ADP string evaluation is performed in
-it's own  call frame  similar to a Tcl procedure
+its own call frame  similar to a Tcl procedure
 with a local variable namespace. Arguments can be passed to
 new call frames and then accessed with commands such as
  ns_adp_argv . When necessary, commands such as
@@ -188,7 +188,7 @@ case, an HTTP response will be generated on the first flush
 which specifies incremental content using HTTP/1.1
 chunked-encoding. Forcing a connection into streaming mode
 can be useful for certain long running requests where
-it's reasonable to expect the browser can render
+it is reasonable to expect the browser can render
 incremental respnoses.
 
 [para]

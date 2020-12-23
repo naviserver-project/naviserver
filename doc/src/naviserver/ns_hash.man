@@ -10,7 +10,7 @@ This command takes an arbitrary value and computes from the value a
 numeric value (integer). It uses for hashing the Tcl hash function,
 such it does not have cryptograthic strength.
 This function is very weak against malicious strings;
-it's very easy to generate multiple keys that have the same
+it is very easy to generate multiple keys that have the same
 hashcode. On the other hand, that hardly ever actually occurs.
 This function is very cheap and computes
 an integer value suitable as input for various functions.

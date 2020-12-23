@@ -40,7 +40,7 @@
 
 [section Notes]
 
-Because it's possible to catch the ns_adp_abort exception, it is
+Because it is possible to catch the ns_adp_abort exception, it is
 possible for code to execute after an ns_adp_abort in the current ADP
 block. However, all subsequent ADP blocks are guaranteed to not get
 evaluated. For example:
