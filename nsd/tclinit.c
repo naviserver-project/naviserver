@@ -2005,7 +2005,7 @@ PushInterp(NsInterp *itPtr)
     interp = itPtr->interp;
 
     /*
-     * Evaluate the dellocation traces once to perform various garbage
+     * Evaluate the deallocation traces once to perform various garbage
      * collection and then either delete the interp or push it back on the
      * per-thread list.
      */

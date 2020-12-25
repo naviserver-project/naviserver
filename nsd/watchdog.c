@@ -32,7 +32,7 @@
 /*
  * watchdog.c --
  *
- *      Fork a new process and watch it's exit status, restarting it
+ *      Fork a new process and watch its exit status, restarting it
  *      unless it exits deliberately and cleanly.
  */
 
@@ -86,7 +86,7 @@ static bool  processDied  = NS_FALSE; /* NS_TRUE if watched process died unexpec
  *
  * Results:
  *      Returns 1 if caller is now the watched process and should
- *      continue about it's business.
+ *      continue about its business.
  *
  *      Returns 0 if caller is watchdog process and should
  *      exit(0) (success).

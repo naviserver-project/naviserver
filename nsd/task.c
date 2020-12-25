@@ -1175,7 +1175,7 @@ TaskThread(void *arg)
         queueShutdown = queuePtr->shutdown;
 
         /*
-         * Handle all signalled tasks from the waiting list
+         * Handle all signaled tasks from the waiting list
          */
 
         while ((taskPtr = queuePtr->firstSignalPtr) != NULL) {

@@ -246,7 +246,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
              * create on demand string representations, the "pure"
              * property will be lost and Tcl cannot distinguish later
              * whether it can use the string representation as byte
-             * array or not. Fortuantely, this dangerous fragility is
+             * array or not. Fortunately, this dangerous fragility is
              * gone in Tcl 8.7.
              */
             if (obj->bytes == NULL) {

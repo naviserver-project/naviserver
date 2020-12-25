@@ -247,17 +247,17 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
         }
     } else if (*url == '/') {
         /*
-         * The URL begins with a single slash. Separate the tail from the
-         * path, otherwise it's all "tail".
+         * The URL begins with a single slash. Separate the "tail" from the
+         * "path", otherwise the string is just "tail".
          */
 
         url++;
         *ppath = url;
 
         /*
-         * Find the last slash on the right and everything after that
-         * becomes tail; if there are no slashes then it's all tail
-         * and path is an empty string.
+         * Find the last slash on the right and everything after that becomes
+         * "tail"; if there are no slashes then the string is "tail" and "path"
+         * is an empty string.
          */
 
         end = strrchr(url, INTCHAR('/'));

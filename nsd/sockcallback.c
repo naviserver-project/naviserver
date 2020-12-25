@@ -459,6 +459,7 @@ SockCallbackThread(void *UNUSED(arg))
                 pfds[nfds].fd = cbPtr->sock;
                 pfds[nfds].events = pfds[nfds].revents = 0;
                 for (i = 0; i < Ns_NrElements(when); ++i) {
+                    //Ns_Log(Notice, "SockCallback check when[%d]: fd %d %.4x", i, pfds[i].fd, when[i]);
                     if ((cbPtr->when & when[i]) != 0u) {
                         pfds[nfds].events |= events[i];
                     }
@@ -478,17 +479,24 @@ SockCallbackThread(void *UNUSED(arg))
             }
         }
 
+        /*for (i=0; i<(int)nfds; i++) {
+            Ns_Log(Notice, "SockCallback pollbits [%d]: fd %d %.4x", i, pfds[i].fd, pfds[i].events);
+            }*/
+
         /*
-         * Select on the sockets and drain the trigger pipe if
+         * Call poll() on the sockets and drain the trigger pipe if
          * necessary.
          */
 
         if (stop) {
             break;
         }
+
         pfds[0].revents = 0;
         do {
+            Ns_Log(Notice, "SockCallback before poll nfds %u timeout %zd", nfds, pollTimeout);
             n = ns_poll(pfds, nfds, pollTimeout);
+            Ns_Log(Notice, "SockCallback poll returned %d", n);
         } while (n < 0  && errno == NS_EINTR);
 
         if (n < 0) {
