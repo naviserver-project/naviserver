@@ -146,8 +146,9 @@ Ns_SetVec(struct iovec *bufs, int i, const void *data, size_t len)
  *
  * Ns_ResetVec --
  *
- *      Zero the bufs which have had their data sent and adjust
- *      the remainder.
+ *      Reduce the size in the iovec by the number of bytes sent (last
+ *      argument). Zero the bufs which have had their data sent and adjust the
+ *      remainder.
  *
  * Results:
  *      Index of first buf to send.
@@ -161,9 +162,9 @@ Ns_SetVec(struct iovec *bufs, int i, const void *data, size_t len)
 int
 Ns_ResetVec(struct iovec *bufs, int nbufs, size_t sent)
 {
-    int     i;
+    int i;
 
-    for (i = 0; i < nbufs && sent > 0u; i++) {
+    for (i = 0; (i < nbufs) && (sent > 0u); i++) {
         const char *data = bufs[i].iov_base;
         size_t      len  = bufs[i].iov_len;
 
