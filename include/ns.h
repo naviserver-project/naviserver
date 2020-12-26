@@ -1892,7 +1892,8 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list apSrc)
 NS_EXTERN void
 Ns_Fatal(const char *fmt, ...)
     NS_GNUC_NONNULL(1)
-    NS_GNUC_PRINTF(1, 2) NS_GNUC_NORETURN;
+    NS_GNUC_PRINTF(1, 2)
+    NS_GNUC_NORETURN;
 
 NS_EXTERN char *
 Ns_LogTime(char *timeBuf)
