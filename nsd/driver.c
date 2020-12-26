@@ -1037,14 +1037,16 @@ ParsePorts(Ns_DList *dlPtr, const char *listString, const char *path)
             Ns_Fatal("specified ports for %s invalid: %s", path, listString);
         }
         for (i= 0; i < nrPorts; i++) {
-            int portValue;
+            int portValue = 0;
 
             result = Tcl_GetIntFromObj(NULL, objv[i], &portValue);
-            if (portValue > 65535 || portValue < 0) {
-                Ns_Fatal("specified ports for %s invalid: value %d out of range (0..65535)",
-                         path, portValue);
+            if (result == TCL_OK) {
+                if (portValue > 65535 || portValue < 0) {
+                    Ns_Fatal("specified ports for %s invalid: value %d out of range (0..65535)",
+                             path, portValue);
+                }
+                Ns_DListAppend(dlPtr, INT2PTR(portValue));
             }
-            Ns_DListAppend(dlPtr, INT2PTR(portValue));
         }
         Tcl_DecrRefCount(portsObj);
     }

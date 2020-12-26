@@ -476,7 +476,6 @@ ConnSend(Ns_Conn *conn, ssize_t nsend, Tcl_Channel chan, FILE *fp, int fd)
         struct iovec vbuf;
 
         vbuf.iov_base = (void *)buf;
-        vbuf.iov_len = 0;
 
         /*
          * Turn-on http-streaming for unknown content/data length
