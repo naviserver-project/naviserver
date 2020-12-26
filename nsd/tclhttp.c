@@ -1755,6 +1755,10 @@ HttpClientLogWrite(
          * no servPtr set), use the configuration of the default server.
          */
         servPtr = NsGetServer(nsconf.defaultServer);
+        if (servPtr == NULL) {
+            Ns_Log(Error, "http client log: server could not be determined, logging attempt rejected");
+            return;
+        }
     }
 
     if (servPtr->httpclient.logging
