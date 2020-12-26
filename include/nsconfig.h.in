@@ -21,7 +21,7 @@
 /* Define to 1 if Tcl was compiled with Core Foundation support. */
 #undef HAVE_COREFOUNDATION
 
-/* Define to 1 if crypt_r is available. */
+/* Define to 1 when crypt_r library function is available. */
 #undef HAVE_CRYPT_R
 
 /* Define to 1 if you have the declaration of `tzname', and to 0 if you don't.

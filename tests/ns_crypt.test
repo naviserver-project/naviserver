@@ -13,17 +13,17 @@ test ns_crypt-1.2 {basic syntax: only key} -body {
      ns_crypt 123
 } -returnCodes error -result {wrong # args: should be "ns_crypt key salt"}
 
-test ns_crypt-1.3 {basic syntax: key but empty salt argument} -body {
+test ns_crypt-1.3 {basic syntax: key but empty salt argument (salt must be 2 chars)} -body {
      ns_crypt 123 ""
-} -result ""
+} -returnCodes error -result {salt string must be 2 characters long}
 
 test ns_crypt-1.4 {basic syntax: empty key but salt argument} -body {
      ns_crypt "" 12
 } -result "12UFlHxel6uMM"
 
-test ns_crypt-1.5 {basic syntax: empty args} -body {
+test ns_crypt-1.5 {basic syntax: empty args (salt must be 2 chars)} -body {
      ns_crypt "" ""
-} -result ""
+} -returnCodes error -result {salt string must be 2 characters long}
 
 
 test ns_crypt-2.1 {basic operation} -body {

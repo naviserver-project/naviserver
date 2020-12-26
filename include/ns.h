@@ -3243,7 +3243,7 @@ Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
-Ns_HexString(const unsigned char *digest, char *buf, int size, bool isUpper)
+Ns_HexString(const unsigned char *octets, char *outputBuffer, int size, bool isUpper)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*

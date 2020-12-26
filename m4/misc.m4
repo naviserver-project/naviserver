@@ -39,8 +39,22 @@ AC_DEFUN([AX_HAVE_ARC4RANDOM],
   ])]
 )
 
-AC_DEFUN([AX_HAVE_CRYPT_R],
-  [AC_CHECK_FUNC([crypt_r], [
-    AC_DEFINE([HAVE_CRYPT_R],[1],[Define to 1 if crypt_r is available.])
-  ])]
-)
+dnl AC_DEFUN([AX_HAVE_CRYPT_R],
+dnl    [AC_CHECK_FUNC([crypt_r], [
+dnl     AC_DEFINE([HAVE_CRYPT_R],[1],[Define to 1 if crypt_r is available.])
+dnl   ])]
+dnl )
+
+AC_DEFUN([AX_HAVE_CRYPT_R], [
+AC_MSG_CHECKING([for crypt_r library function])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+        #include <crypt.h>
+    ]], [[
+        int main(void) { struct crypt_data d; char *r = crypt_r("", "", &d);return 0; }
+    ]])], [
+        AC_DEFINE([HAVE_CRYPT_R],1,[Define to 1 when crypt_r library function is available.])
+        AC_MSG_RESULT([yes])
+    ],[
+        AC_MSG_RESULT([no])
+    ])
+]) # AX_HAVE_CRYPT_R

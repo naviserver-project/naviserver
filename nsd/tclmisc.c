@@ -1350,19 +1350,31 @@ int
 NsTclCryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int  result = TCL_OK;
+    char       *keyString, *saltString;
+    Ns_ObjvSpec args[] = {
+        {"key",  Ns_ObjvString, &keyString, NULL},
+        {"salt", Ns_ObjvString, &saltString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "key salt");
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
-    } else {
-        char buf[NS_ENCRYPT_BUFSIZE];
 
-        Tcl_SetResult(interp,
-                      Ns_Encrypt(Tcl_GetString(objv[1]),
-                                 Tcl_GetString(objv[2]), buf), TCL_VOLATILE);
+    } else {
+        if (strlen(saltString) != 2 ) {
+           Ns_TclPrintfResult(interp, "salt string must be 2 characters long");
+           result = TCL_ERROR;
+
+       } else {
+            char buf[NS_ENCRYPT_BUFSIZE];
+
+            Tcl_SetObjResult(interp,
+                             Tcl_NewStringObj(Ns_Encrypt(keyString, saltString, buf), -1));
+       }
     }
     return result;
 }
+
 /*
  *  The SHA1 routines are borrowed from libmd:
  *
@@ -1783,26 +1795,30 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
  *
  *----------------------------------------------------------------------
  */
-char *Ns_HexString(const unsigned char *digest, char *buf, int size, bool isUpper)
+char *
+Ns_HexString(const unsigned char *octets, char *outputBuffer, int size, bool isUpper)
 {
     int i;
     static const char hexCharsUpper[] = "0123456789ABCDEF";
     static const char hexCharsLower[] = "0123456789abcdef";
 
+    NS_NONNULL_ASSERT(octets != NULL);
+    NS_NONNULL_ASSERT(outputBuffer != NULL);
+
     if (isUpper) {
         for (i = 0; i < size; ++i) {
-            buf[i * 2] = hexCharsUpper[digest[i] >> 4];
-            buf[i * 2 + 1] = hexCharsUpper[digest[i] & 0xFu];
+            outputBuffer[i * 2] = hexCharsUpper[octets[i] >> 4];
+            outputBuffer[i * 2 + 1] = hexCharsUpper[octets[i] & 0xFu];
         }
     } else {
         for (i = 0; i < size; ++i) {
-            buf[i * 2] = hexCharsLower[digest[i] >> 4];
-            buf[i * 2 + 1] = hexCharsLower[digest[i] & 0xFu];
+            outputBuffer[i * 2] = hexCharsLower[octets[i] >> 4];
+            outputBuffer[i * 2 + 1] = hexCharsLower[octets[i] & 0xFu];
         }
     }
-    buf[size * 2] = '\0';
+    outputBuffer[size * 2] = '\0';
 
-    return buf;
+    return outputBuffer;
 }
 
 
