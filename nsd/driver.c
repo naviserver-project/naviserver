@@ -254,8 +254,10 @@ static bool DriverModuleInitialized(const char *module)
 static const ServerMap *DriverLookupHost(Tcl_DString *hostDs, Driver *drvPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static size_t ParsePorts(Ns_DList *dlPtr, const char *listString, const char *path)
+static size_t PortsParse(Ns_DList *dlPtr, const char *listString, const char *path)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+static char *PortsPrint(Tcl_DString *dsPtr, const Ns_DList *dlPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void  SockSetServer(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
@@ -1006,7 +1008,7 @@ void NsDriverMapVirtualServers(void)
 /*
  *----------------------------------------------------------------------
  *
- * ParsePorts --
+ * PortsParse --
  *
  *      Parse the configured ports string and check, if it is a valid list and
  *      contains values feasible to be used as ports, In case the values are
@@ -1020,9 +1022,8 @@ void NsDriverMapVirtualServers(void)
  *
  *----------------------------------------------------------------------
  */
-
 static size_t
-ParsePorts(Ns_DList *dlPtr, const char *listString, const char *path)
+PortsParse(Ns_DList *dlPtr, const char *listString, const char *path)
 {
     NS_NONNULL_ASSERT(dlPtr != NULL);
     NS_NONNULL_ASSERT(path != NULL);
@@ -1053,6 +1054,38 @@ ParsePorts(Ns_DList *dlPtr, const char *listString, const char *path)
     return dlPtr->size;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * PortsPrint --
+ *
+ *      Print the configured ports to the Tcl_DString provided in the first
+ *      argument.
+ *
+ * Results:
+ *      String content fo the Tcl_DString.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static char *
+PortsPrint(Tcl_DString *dsPtr, const Ns_DList *dlPtr)
+{
+    size_t i;
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(dlPtr != NULL);
+
+    if (dlPtr->size > 0) {
+        for ( i= 0; i < dlPtr->size; i++) {
+            Ns_DStringPrintf(dsPtr, "%hu ", (unsigned short)PTR2INT(dlPtr->data[i]));
+        }
+        Tcl_DStringSetLength(dsPtr, dsPtr->length - 1);
+    }
+    return dsPtr->string;
+}
 
 
 /*
@@ -1230,7 +1263,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
      * Get list of ports and keep the first port extra in drvPtr->port for the
      * time being.
      */
-    i = (int)ParsePorts(&drvPtr->ports, Ns_ConfigGetValue(path, "port"), path);
+    i = (int)PortsParse(&drvPtr->ports, Ns_ConfigGetValue(path, "port"), path);
     if (i == 0) {
         Ns_DListAppend(&drvPtr->ports, INT2PTR(defport));
     }
@@ -1471,6 +1504,17 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
 
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("address", 7));
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->address, -1));
+
+                {Tcl_DString ds;
+                    Tcl_DStringInit(&ds);
+                    PortsPrint(&ds, &drvPtr->ports);
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("port", 4));
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(ds.string, ds.length));
+                    Tcl_DStringFree(&ds);
+                }
+
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("defaultport",11));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewIntObj(drvPtr->defport));
 
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("protocol", 8));
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->protocol, -1));

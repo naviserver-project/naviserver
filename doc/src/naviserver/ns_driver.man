@@ -43,6 +43,8 @@ loaded for a certain server; for global drivers, the value is empty.
 configuration data, might be e.g. "http://localhost:8091"
 [item] [term address] is the space separated list of IP addresses
 (IPv4 or IPv6), on which the driver is listening, might be e.g. "0.0.0.0"
+[item] [term port] space separated list of ports, on which the driver listens
+[item] [term defaultport] the default port for this driver
 [item] [term protocol] is the name of the protocol, such as e.g. "http"
 [item] [term sendwait] timeout for send operations.
 [item] [term recvwait] timeout for receive operations.
