@@ -217,7 +217,8 @@ NsWaitSockShutdown(const Ns_Time *toPtr)
  *
  * CallbackTrigger --
  *
- *      Wakeup the callback thread if it's in poll().
+ *      Wakeup the callback thread when it is waiting for input in a
+ *      poll() call.
  *
  * Results:
  *      None.

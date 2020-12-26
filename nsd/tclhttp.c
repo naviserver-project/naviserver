@@ -2526,7 +2526,7 @@ HttpConnect(
         Ns_Log(Ns_LogTaskDebug, "HttpConnect: connecting to [%s]:%hu", host, portNr);
 
         /*
-         * Open the socket to remote, assure it's writable
+         * Open the socket to remote, assure it is writable
          */
         if (timeoutPtr != NULL && expirePtr != NULL) {
             if (Ns_DiffTime(timeoutPtr, expirePtr, NULL) < 0) {
@@ -3811,7 +3811,7 @@ HttpProc(
 
                 /*
                  * Received zero bytes on a readable socket
-                 * but it's not on EOD, it wants us to read more.
+                 * but it is not on EOD, it wants us to read more.
                  */
                 taskDone = NS_FALSE;
 

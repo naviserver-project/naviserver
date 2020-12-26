@@ -520,7 +520,7 @@ Ns_CreateLogSeverity(const char *name)
  *
  * Ns_LogSeverityName --
  *
- *      Given a log severity, return a pointer to it's name.
+ *      Given a log severity, return a pointer to its name.
  *
  * Results:
  *      The severity name.
@@ -1493,7 +1493,7 @@ NsLogOpen(void)
  * LogOpen --
  *
  *      Open the log filename specified in the global variable
- *      'logfileName'. If it's successfully opened, make that file the
+ *      'logfileName'. If it is successfully opened, make that file the
  *      sink for stdout and stderr too.
  *
  * Results:
@@ -2040,7 +2040,7 @@ FreeCache(void *arg)
  * GetSeverityFromObj --
  *
  *      Get the severity level from the Tcl_Obj, possibly setting
- *      it's internal rep.
+ *      its internal representation.
  *
  * Results:
  *      TCL_OK or TCL_ERROR.

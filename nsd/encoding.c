@@ -277,7 +277,7 @@ ConfigServerEncodings(const char *server)
  * Ns_GetFileEncoding --
  *
  *      Return the Tcl_Encoding that should be used to read a file from disk
- *      according to it's extension.
+ *      according to its extension.
  *
  *      Note this may not be the same as the encoding for the charset of the
  *      file's mimetype.

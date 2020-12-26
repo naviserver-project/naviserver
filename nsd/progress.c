@@ -235,7 +235,7 @@ NsUpdateProgress(Ns_Sock *sock)
 
             /*
              * Guard against concurrent requests to identical URLs tracking
-             * each others progress. URLs must be unique, and it's your
+             * each others progress. URLs must be unique, and it is your
              * responsibility. Yes, this is ugly.
              */
 

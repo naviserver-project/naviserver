@@ -39,10 +39,9 @@
 
 
 #
-# The Tcl system encoding determines what character set *.tcl module files
-# etc. are expected to be in.
-#
-# Don't leave this to chance: either it's utf-8 or some one set it specifically.
+# The Tcl system encoding determines what character set *.tcl module
+# files etc. are expected to be in. Report the current encoding system
+# to the system log.
 #
 
 ns_log notice "nsd/init.tcl\[[ns_info server]\]: booting virtual server: " \

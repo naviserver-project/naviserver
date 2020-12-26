@@ -1019,7 +1019,7 @@ ThreadMain(void *arg)
  *      None.
  *
  * Side effects:
- *      Thread wakeup event is reset in case it's holding
+ *      Thread wakeup event is reset in case it is holding
  *      a lingering wakeup.
  *
  *----------------------------------------------------------------------

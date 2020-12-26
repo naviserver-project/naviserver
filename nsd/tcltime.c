@@ -240,7 +240,7 @@ Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr)
  * Ns_TclGetTimePtrFromObj --
  *
  *      Convert the Tcl_Obj to an Ns_Time type and return a pointer to
- *      it's internal rep.
+ *      its internal representation.
  *
  * Results:
  *      TCL_OK or TCL_ERROR if not a valid Ns_Time.

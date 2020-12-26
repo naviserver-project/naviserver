@@ -860,7 +860,7 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
 
         /*
          * Pass a dup of the socket to the callback thread, allowing
-         * this thread's cleanup to close the current socket.  It's
+         * this thread's cleanup to close the current socket.  It is
          * not possible to simply register the channel again with
          * a NULL interp because the Tcl channel code is not entirely
          * thread safe.
@@ -1242,7 +1242,7 @@ NsTclSockProc(NS_SOCKET sock, void *arg, unsigned int why)
 
             /*
              * Create and register the channel on first use.  Because
-             * the Tcl channel code is not entirely thread safe, it's
+             * the Tcl channel code is not entirely thread safe, it is
              * not possible for the scheduling thread to create and
              * register the channel.
              */

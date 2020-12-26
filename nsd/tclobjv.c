@@ -414,7 +414,7 @@ Ns_CheckTimeRange(Tcl_Interp *interp, const char *name, const Ns_ObjvTimeRange *
  * Ns_ObjvWideInt,
  * Ns_ObjvDouble
  *
- *      Consume exactly one argument, returning it's value into dest.
+ *      Consume exactly one argument, returning its value into dest.
  *      A typical use case for Ns_ObjvUShort is for ports.
  *
  * Results:
@@ -615,8 +615,8 @@ Ns_ObjvBool(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *const*
  *
  * Ns_ObjvString --
  *
- *      Consume exactly one argument, returning a pointer to it's
- *      cstring into *spec->dest.
+ *      Consume exactly one argument, returning a pointer to its
+ *      string representation into *spec->dest.
  *
  *      If spec->arg is != NULL it is assumed to be a pointer to an
  *      int and the returned string length will be left in it.
@@ -743,7 +743,7 @@ Ns_ObjvByteArray(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  *
  * Ns_ObjvObj --
  *
- *      Consume exactly one argument, returning it's pointer into dest
+ *      Consume exactly one argument, returning its pointer into dest
  *      with no conversion.
  *
  * Results:
@@ -1539,7 +1539,7 @@ FreeSpecObj(Tcl_Obj *objPtr)
  * UpdateStringOfSpec --
  *
  *     This procedure is called to convert a Tcl_Obj from
- *     ns:spec internal form to it's string form.
+ *     ns:spec internal form to its string form.
  *
  * Results:
  *      None.

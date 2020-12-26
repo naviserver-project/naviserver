@@ -652,7 +652,7 @@ ValidateUserAddr(User *userPtr, const char *peer)
         Ns_DString addr;
 
         /*
-         * If we have gotten this far, it's necessary to do a
+         * If we have gotten this far, it is necessary to do a
          * reverse dns lookup and try to make a decision
          * based on that, if possible.
          */
@@ -1055,7 +1055,7 @@ static int AddGroupObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Ob
 
     /*
      * Loop over each of the users who is to be in the group, make sure
-     * it's ok, and add him. Also put the group into the user's list
+     * it is ok, and add this user. Also put the group into the user's list
      * of groups he's in.
      */
 

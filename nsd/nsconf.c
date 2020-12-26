@@ -62,7 +62,7 @@ NsInitConf(void)
 
     /*
      * At library load time the server is considered started.
-     * Normally it's marked stopped immediately by Ns_Main unless
+     * Normally it is marked stopped immediately by Ns_Main unless
      * libnsd is being used for some other, non-server program.
      */
 

@@ -886,7 +886,7 @@ NsTclThread(void *arg)
     }
 
     /*
-     * Need to ensure that the server has completed it's
+     * Need to ensure that the server has completed its
      * initialization prior to initiating TclEval.
      */
     (void) Ns_WaitForStartup();

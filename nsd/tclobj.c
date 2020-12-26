@@ -237,7 +237,7 @@ Ns_TclSetStringRep(Tcl_Obj *objPtr, const char *bytes, int length)
  * Ns_TclSetFromAnyError --
  *
  *      This procedure is registered as the setFromAnyProc for an
- *      object type when it doesn't make sense to generate it's internal
+ *      object type when it doesn't make sense to generate its internal
  *      form from the string representation alone.
  *
  * Results:

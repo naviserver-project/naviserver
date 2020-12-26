@@ -1761,7 +1761,10 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
         digest[i * 4u + 3u] = (uint8_t) t;
     }
 
-    memset(ctx, 0, sizeof(Ns_CtxSHA1));                         /* In case it's sensitive */
+    /*
+     * In case it is sensitive
+     */
+    memset(ctx, 0, sizeof(Ns_CtxSHA1));
 }
 
 /*
@@ -2516,7 +2519,7 @@ NsTclRlimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *             keys.
  *
  *          Note that this function is very weak against malicious strings;
- *          it's very easy to generate multiple keys that have the same
+ *          it is very easy to generate multiple keys that have the same
  *          hashcode. On the other hand, that hardly ever actually occurs and
  *          this function *is* very cheap, even by comparison with
  *          industry-standard hashes like FNV.

@@ -470,7 +470,7 @@ Ns_ProxyTclInit(Tcl_Interp *interp)
  *
  *      Main loop for nsproxy worker processes. Initialize Tcl interp and loop
  *      processing requests. On communication errors or when the peer closes
- *      it's write-pipe, worker process exits gracefully.
+ *      its write-pipe, worker process exits gracefully.
  *
  * Results:
  *      Always zero.
@@ -3059,7 +3059,7 @@ CloseWorker(Worker *workerPtr, const Ns_Time *timePtr)
     workerPtr->sigsent = 0;
 
     /*
-     * Put on the head of the close list so it's handled by
+     * Put on the head of the close list so it is handled by
      * the reaper thread.
      */
 
@@ -3764,7 +3764,7 @@ DeleteData(ClientData clientData, Tcl_Interp *interp)
  * ReapProxies --
  *
  *      Wakes up the reaper thread and waits until it does
- *      it's job and goes sleeping again.
+ *      its job and goes sleeping again.
  *
  * Results:
  *      None.

@@ -2643,7 +2643,7 @@ DriverThread(void *arg)
         /*
          * Update the timeout for each closing socket and add to the
          * close list if some data has been read from the socket
-         * (i.e., it's not a closing keep-alive connection).
+         * (i.e., it is not a closing keep-alive connection).
          */
         while (sockPtr != NULL) {
             nextPtr = sockPtr->nextPtr;

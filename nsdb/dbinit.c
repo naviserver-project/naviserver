@@ -311,7 +311,7 @@ Ns_DbPoolPutHandle(Ns_DbHandle *handle)
     handlePtr->active = NS_FALSE;
 
     /*
-     * Close the handle if it's stale, otherwise update
+     * Close the handle if it is stale, otherwise update
      * the last access time.
      */
 

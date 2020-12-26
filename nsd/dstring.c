@@ -223,7 +223,7 @@ Ns_DStringVPrintf(Ns_DString *dsPtr, const char *fmt, va_list apSrc)
     Ns_DStringSetLength(dsPtr, newLength);
 
     /*
-     * Now that any dstring buffer relocation has taken place it's
+     * Now that any dstring buffer relocation has taken place it is
      * safe to point into the middle of it at the end of the
      * existing data.
      */

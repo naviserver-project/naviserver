@@ -37,7 +37,7 @@
 
 /*
  * The following structure manages an I/O event callback
- * and it's state.
+ * and its state.
  */
 
 typedef struct Event {

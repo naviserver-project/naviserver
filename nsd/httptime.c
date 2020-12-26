@@ -420,7 +420,7 @@ MakeMonth(const char *s)
     NS_NONNULL_ASSERT(s != NULL);
 
     /*
-     * Make sure it's capitalized like this:
+     * Make sure it is capitalized like this:
      * "Jan"
      */
 

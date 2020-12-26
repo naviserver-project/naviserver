@@ -171,7 +171,7 @@ Ns_TlsGet(const Ns_Tls *keyPtr)
  *      Note the careful use of the counters to keep iterating over the
  *      list, up to 5 times, until all TLS values are NULL.  This emulates
  *      the Pthread TLS behavior which catches a destructor inadvertently
- *      calling a library which resets a TLS value after it's been destroyed.
+ *      calling a library which resets a TLS value after it has been destroyed.
  *
  * Results:
  *      None.

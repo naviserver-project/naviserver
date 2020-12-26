@@ -291,7 +291,7 @@ proc ns_formvalueput {htmlpiece dataname datavalue} {
 
                     } else {
 
-                        ## If it's an INPUT TYPE that hasn't been covered
+                        ## If it is an INPUT TYPE that hasn't been covered
                         #  (text, password, hidden, other (defaults to text))
                         ## then we add/replace the VALUE tag
 
@@ -320,9 +320,8 @@ proc ns_formvalueput {htmlpiece dataname datavalue} {
                 }
                 {^SELECT} {
 
-                    ### Set flags so OPTION and /SELECT know what to look for:
-                    #   snam is the variable name, sflg is 1 if nothing's
-                    ### been added, smul is 1 if it's MULTIPLE selection
+                    ### Set flags "inkeyselect" and "addoption" so
+                    ### OPTION and /SELECT know what to look for.
 
                     if {[ns_tagelement $tag NAME] eq $dataname} {
                         set inkeyselect 1

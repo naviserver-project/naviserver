@@ -490,7 +490,7 @@ GetHost(Ns_DString *dsPtr, const char *addr)
  * This version is not thread-safe, but we have no thread-safe
  * alternative on this platform.  Use critsec to try and serialize
  * calls, but beware: Tcl core as of 8.4.6 still calls gethostbyaddr()
- * as well, so it's still possible for two threads to call it at
+ * as well, so it is still possible for two threads to call it at
  * the same time.
  */
 
@@ -631,7 +631,7 @@ GetAddr(Ns_DString *dsPtr, const char *host)
  * This version is not thread-safe, but we have no thread-safe
  * alternative on this platform.  Use critsec to try and serialize
  * calls, but beware: Tcl core as of 8.4.6 still calls gethostbyname()
- * as well, so it's still possible for two threads to call it at
+ * as well, so it is still possible for two threads to call it at
  * the same time.
  */
 
