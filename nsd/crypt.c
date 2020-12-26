@@ -29,6 +29,10 @@
 
 #include "nsd.h"
 
+#if defined(HAVE_CRYPT_R)
+# include <crypt.h>
+#endif
+
 /*
  * If there is no HAVE_CRYPT_R defined, and we have a Linux with crypt()
  * defined, use this with a mutex lock to ensure correct behavior under
