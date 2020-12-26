@@ -196,6 +196,8 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, int maxbackup)
         Tcl_Obj         *newPath;
         struct tm        tm0, tm1, *ptm0, *ptm1;
 
+        Ns_DStringInit(&ds);
+
         /*
          * Rolling happens often at midnight, using often a day
          * precision. When e.g. a scheduled procedure the time when this
@@ -217,12 +219,21 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, int maxbackup)
         ptm0 = ns_localtime_r(&now0, &tm0);
         ptm1 = ns_localtime_r(&now1, &tm1);
 
-        (void) strftime(timeBuf, sizeof(timeBuf)-1u, rollfmt,
-                        (ptm0->tm_mday < ptm1->tm_mday) ? ptm0 : ptm1);
+        /*
+         * In theory, localtime() or localtime_r() can return NULL on
+         * invalid input, which won't happen here (famous last words).
+         */
+        if (ptm0 != NULL && ptm0 != NULL) {
+            (void) strftime(timeBuf, sizeof(timeBuf)-1u, rollfmt,
+                            (ptm0->tm_mday < ptm1->tm_mday) ? ptm0 : ptm1);
 
-        Ns_DStringInit(&ds);
-        Ns_DStringVarAppend(&ds, file, ".", timeBuf, (char *)0L);
-        newPath = Tcl_NewStringObj(ds.string, -1);
+            Ns_DStringVarAppend(&ds, file, ".", timeBuf, (char *)0L);
+        } else {
+            Ns_Log(Warning, "RollFileFmt: localtime returned NULL");
+            Ns_DStringVarAppend(&ds, file, (char *)0L);
+        }
+
+        newPath = Tcl_NewStringObj(ds.string, ds.length);
         Tcl_IncrRefCount(newPath);
 
         if (Tcl_FSAccess(newPath, F_OK) == 0) {
