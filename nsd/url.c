@@ -397,7 +397,7 @@ ParseUpTo(char *chars, char ch)
  *
  * NsTclParseUrlObjCmd --
  *
- *    Implement the "ns_parseurl" command. Offers the functionality of
+ *    Implements "ns_parseurl". Offers the functionality of
  *    Ns_ParseUrl on the Tcl layer.
  *
  * Results:
@@ -487,7 +487,7 @@ NsTclParseUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *
  * NsTclAbsoluteUrlObjCmd --
  *
- *    Implement the "ns_absoluteurl" command. Offers the functionality of
+ *    Implements "ns_absoluteurl". Offers the functionality of
  *    Ns_AbsoluteUrl on the Tcl layer.
  *
  * Results:

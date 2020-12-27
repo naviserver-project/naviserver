@@ -139,10 +139,11 @@ Ns_TclDetachedThread(Tcl_Interp *interp, const char *script)
  *
  * NsTclThreadObjCmd --
  *
- *      Implements ns_thread to get data on the current thread and
- *      create and wait on new Tcl-script based threads.  New threads
- *      will be created in the virtual-server context of the current
- *      interp, if any.
+ *      Implements "ns_thread". This command provides a script
+ *      interface to get data on the current thread and create and
+ *      wait on new Tcl-script based threads.  New threads will be
+ *      created in the virtual-server context of the current interp,
+ *      if any.
  *
  * Results:
  *      Standard Tcl result.
@@ -297,7 +298,7 @@ NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
  *
  * NsTclMutexObjCmd --
  *
- *      Implements ns_mutex.
+ *      Implements "ns_mutex".
  *
  * Results:
  *      Tcl result.
@@ -392,7 +393,7 @@ NsTclMutexObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *c
  *
  * NsTclCritSecObjCmd --
  *
- *      Implements ns_critsec.
+ *      Implements "ns_critsec".
  *
  * Results:
  *      Tcl result.
@@ -475,7 +476,7 @@ NsTclCritSecObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *
  * NsTclSemaObjCmd --
  *
- *      Implements ns_sema.
+ *      Implements "ns_sema".
  *
  * Results:
  *      Tcl result.
@@ -561,7 +562,7 @@ NsTclSemaObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
  *
  * NsTclCondObjCmd --
  *
- *      Implements ns_cond.
+ *      Implements "ns_cond".
  *
  * Results:
  *      Tcl result.
@@ -695,7 +696,7 @@ NsTclCondObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
  *
  * NsTclRWLockObjCmd --
  *
- *      Implements ns_rwlock.
+ *      Implements "ns_rwlock".
  *
  * Results:
  *      Tcl result.

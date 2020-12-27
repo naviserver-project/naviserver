@@ -162,7 +162,7 @@ Ns_TclGetOpenFd(Tcl_Interp *interp, const char *chanId, int write, int *fdPtr)
  *
  * NsTclRollFileObjCmd --
  *
- *      Implements ns_rollfile obj command.
+ *      Implements "ns_rollfile".
  *
  * Results:
  *      Tcl result.
@@ -234,7 +234,7 @@ NsTclPurgeFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *
  * NsTclMkTempObjCmd --
  *
- *      Implements ns_mktemp. The function generates a unique
+ *      Implements "ns_mktemp". The function generates a unique
  *      temporary filename using optionally a template as argument.
  *
  *      In general, the function mktemp() is not recommended, since
@@ -288,7 +288,7 @@ NsTclMkTempObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *
  * NsTclKillObjCmd --
  *
- *      Implements ns_kill as obj command.
+ *      Implements "ns_kill".
  *
  * Results:
  *      Tcl result.
@@ -332,7 +332,7 @@ NsTclKillObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  *
  * NsTclSymlinkObjCmd --
  *
- *      Implements ns_symlink as obj command.
+ *      Implements "ns_symlink".
  *
  * Results:
  *      Tcl result.
@@ -379,7 +379,7 @@ NsTclSymlinkObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  * NsTclWriteFpObjCmd --
  *
- *     Implements ns_writefp as obj command.
+ *     Implements "ns_writefp".
  *
  * Results:
  *      Tcl result.
@@ -437,7 +437,7 @@ NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *
  * NsTclTruncateObjCmd --
  *
- *     Implements ns_truncate as obj command.
+ *     Implements "ns_truncate".
  *
  * Results:
  *     Tcl result.
@@ -478,7 +478,7 @@ NsTclTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *
  * NsTclFTruncateObjCmd --
  *
- *      Implements ns_ftruncate as obj command.
+ *      Implements "ns_ftruncate".
  *
  * Results:
  *      Tcl result.
@@ -521,7 +521,7 @@ NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *
  * NsTclNormalizePathObjCmd --
  *
- *          Implements ns_normalizepath as obj command.
+ *          Implements "ns_normalizepath".
  *
  * Results:
  *          Tcl result.
@@ -556,7 +556,7 @@ NsTclNormalizePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int 
  *
  * ChanCreateObjCmd --
  *
- *    Implement the "ns_chan create" command.
+ *    Implements "ns_chan create".
  *
  * Results:
  *    Tcl result.
@@ -631,7 +631,7 @@ ChanCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *c
  *
  * ChanGetObjCmd --
  *
- *    Implement the "ns_chan get" command.
+ *    Implements "ns_chan get".
  *
  * Results:
  *    Tcl result.
@@ -693,7 +693,7 @@ ChanGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *cons
  *
  * ChanPutObjCmd --
  *
- *    Implement the "ns_chan put" command.
+ *    Implements "ns_chan put".
  *
  * Results:
  *    Tcl result.
@@ -760,7 +760,7 @@ ChanPutObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *cons
  *
  * ChanListObjCmd --
  *
- *    Implement the "ns_chan list" command.
+ *    Implements "ns_chan list".
  *
  * Results:
  *    Tcl result.
@@ -820,7 +820,7 @@ ChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
  *
  * ChanCleanupObjCmd --
  *
- *    Implement the "ns_chan cleanup" command.
+ *    Implements "ns_chan cleanup".
  *
  * Results:
  *    Tcl result.
@@ -886,7 +886,7 @@ ChanCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
  *
  * NsTclChanObjCmd --
  *
- *  Implement the ns_chan command.
+ *  Implements "ns_chan".
  *
  * Results:
  *  Tcl result.

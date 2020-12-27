@@ -1608,10 +1608,10 @@ ICtlRunTracesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
  *
  * NsTclICtlObjCmd --
  *
- *      Implements ns_ictl command to control interp state for
+ *      Implements "ns_ictl". This command is used to control interp state for
  *      virtual server interps.  This command provide internal control
- *      functions required by the init.tcl script and is not intended
- *      to be called by a user directly.  It supports four activities:
+ *      functions required by the init.tcl script and is not intended to be
+ *      called by a user directly.  It supports four activities:
  *
  *      1. Managing the list of "modules" to initialize.
  *      2. Saving the init script for evaluation with new interps.
@@ -1661,7 +1661,7 @@ NsTclICtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
  *
  * NsTclAtCloseObjCmd --
  *
- *      Implements ns_atclose.
+ *      Implements "ns_atclose".
  *
  * Results:
  *      Tcl result.

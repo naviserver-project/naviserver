@@ -239,7 +239,7 @@ PageRequest(Ns_Conn *conn, const char *fileName, const Ns_Time *expiresPtr, unsi
  *
  * NsTclRegisterAdpObjCmd, NsTclRegisterTclObjCmd --
  *
- *      Implements ns_register_adp and ns_register_tcl.
+ *      Implements "ns_register_adp" and "ns_register_tcl".
  *
  * Results:
  *      Tcl result.

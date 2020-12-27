@@ -1267,7 +1267,7 @@ Ns_ObjvServer(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *cons
  *
  * NsTclParseArgsObjCmd --
  *
- *          Implements the ns_parseargs command.
+ *          Implements "ns_parseargs".
  *
  * Results:
  *          Tcl result.

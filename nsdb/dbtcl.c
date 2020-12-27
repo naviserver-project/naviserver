@@ -273,7 +273,7 @@ CurrentHandles( Tcl_Interp *interp, Tcl_HashTable *tablePtr, Tcl_Obj *dictObj)
  *
  * DbObjCmd --
  *
- *      Implement the NaviServer ns_db Tcl command.
+ *      Implements "ns_db".
  *
  * Results:
  *      Return TCL_OK upon success and TCL_ERROR otherwise.
@@ -1333,8 +1333,8 @@ QuoteListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  *
  * GetCsvCmd --
  *
- *      Implement the ns_getcsv command to read a single line from a CSV file
- *      and parse the results into a Tcl list variable.
+ *      Implements "ns_getcsv". The command reads a single line from a
+ *      CSV file and parses the results into a Tcl list variable.
  *
  * Results:
  *      A standard Tcl result.
@@ -1347,7 +1347,6 @@ QuoteListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 static void
 FinishElement(Tcl_DString *elemPtr, Tcl_DString *colsPtr, bool quoted)
 {
-    /*Ns_Log(Notice, "FinishElement appends '%s' quoted %d", elemPtr->string, quoted);*/
     if (!quoted) {
         Tcl_DStringAppendElement(colsPtr, Ns_StrTrim(elemPtr->string));
     } else {

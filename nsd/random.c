@@ -73,11 +73,7 @@ static void GenSeeds(unsigned long seeds[], int nseeds);
  *
  * NsTclRandObjCmd --
  *
- *      This procedure implements the AOLserver Tcl
- *
- *          ns_rand ?maximum?
- *
- *      command.
+ *      Implements "ns_rand".
  *
  * Results:
  *      The Tcl result string contains a random number, either a

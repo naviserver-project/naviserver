@@ -259,7 +259,7 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
  *
  * NsTclGetUrlObjCmd --
  *
- *      Implements ns_geturl.
+ *      Implements "ns_geturl".
  *      This function is deprecated, use ns_http instead.
  *
  * Results:

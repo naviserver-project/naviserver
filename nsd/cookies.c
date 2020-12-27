@@ -596,7 +596,7 @@ Ns_ConnGetCookie(Ns_DString *dest, const Ns_Conn *conn, const char *name)
  *
  * NsTclSetCookieObjCmd --
  *
- *      Implements the ns_setcookie command.
+ *      Implements "ns_setcookie".
  *
  * Results:
  *      Tcl result.
@@ -703,7 +703,7 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *
  * NsTclGetCookieObjCmd --
  *
- *      Implements the ns_getcookie command.  The given default will be
+ *      Implements "ns_getcookie".  The given default will be
  *      returned if no matching cookie exists.
  *
  * Results:
@@ -786,7 +786,7 @@ NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *
  * NsTclDeleteCookieObjCmd --
  *
- *      Implements the ns_deletecookie command.
+ *      Implements "ns_deletecookie".
  *
  * Results:
  *      Tcl result.

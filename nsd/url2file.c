@@ -359,7 +359,7 @@ NsUrlToFileProc(Ns_DString *dsPtr, const char *server, const char *url)
  *
  * NsTclUrl2FileObjCmd --
  *
- *      Implements ns_url2file as obj command.
+ *      Implements "ns_url2file".
  *
  * Results:
  *      Tcl result.
@@ -400,7 +400,7 @@ NsTclUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
  *
  * NsTclRegisterUrl2FileObjCmd --
  *
- *      Implements ns_register_url2file as obj command.
+ *      Implements "ns_register_url2file".
  *
  * Results:
  *      Tcl result.
@@ -450,7 +450,7 @@ NsTclRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
  *
  * NsTclUnRegisterUrl2FileObjCmd --
  *
- *      Implements ns_unregister_url2file as obj command.
+ *      Implements "ns_unregister_url2file".
  *
  * Results:
  *      Tcl result.
@@ -501,7 +501,7 @@ NsTclUnRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int obj
  *
  * NsTclRegisterFastUrl2FileObjCmd --
  *
- *      Implements ns_register_fasturl2file.  Register the default fast
+ *      Implements "ns_register_fasturl2file".  Register the default fast
  *      url2file proc for the given URL.
  *
  * Results:

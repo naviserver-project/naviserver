@@ -1682,7 +1682,7 @@ Import(Tcl_Interp *interp, const Tcl_DString *dsPtr, int *resultPtr)
  *
  * StatsObjCmd --
  *
- *    Implements the "ns_proxy stats" command.
+ *    Implements "ns_proxy stats".
  *
  * Results:
  *    Tcl result.
@@ -1745,7 +1745,7 @@ StatsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const*
  *
  * StopObjCmd --
  *
- *    Implements the "ns_proxy stop" command.
+ *    Implements "ns_proxy stop".
  *
  * Results:
  *    Tcl result.
@@ -1803,7 +1803,7 @@ StopObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* 
  *
  * StopObjCmd --
  *
- *    Implements the "ns_proxy clear" command.
+ *    Implements "ns_proxy clear".
  *
  * Results:
  *    Tcl result.
@@ -1864,7 +1864,7 @@ ClearObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const*
  *
  * ProxyObjCmd --
  *
- *      Implement the ns_proxy command.
+ *      Implements "ns_proxy" wrapper.
  *
  * Results:
  *      Standard Tcl result.
@@ -2119,7 +2119,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
  *
  * ConfigureObjCmd --
  *
- *      Sub-command to configure a proxy.
+ *      Implements "ns_proxy configure".
  *
  * Results:
  *      Standard Tcl result.
@@ -2429,7 +2429,7 @@ AppendObj(Tcl_Obj *listObj, const char *flag, Tcl_Obj *obj)
  *
  * GetObjCmd --
  *
- *      Sub-command to handle ns_proxy get option.
+ *      Implements "ns_proxy get".
  *
  * Results:
  *      Standard Tcl result.

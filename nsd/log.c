@@ -1072,7 +1072,7 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, bool gmt)
  *
  * NsTclLogObjCmd --
  *
- *      Implements ns_log as obj command.
+ *      Implements "ns_log".
  *
  * Results:
  *      Tcl result.
@@ -1220,7 +1220,8 @@ NsLogCtlSeverityObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
  *
  * NsTclLogCtlObjCmd --
  *
- *      Implements ns_logctl command to manage per-thread log caching.
+ *      Implements "ns_logctl". This command provides control over the
+ *      the activated severities or buffering of log messages.
  *
  * Results:
  *      Tcl result.
@@ -1390,7 +1391,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
  *
  * NsTclLogRollObjCmd --
  *
- *      Implements ns_logroll command.
+ *      Implements "ns_logroll".
  *
  * Results:
  *      Tcl result.

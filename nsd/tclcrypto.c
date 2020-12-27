@@ -1731,9 +1731,9 @@ NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
  * NsTclCryptoScryptObjCmd --
  *
  *      Compute a "password hash" using the scrypt Password-Based
- *      Key Derivation Function (RFC 7914) as defined in OpenSSL 3
+ *      Key Derivation Function (RFC 7914) as defined in OpenSSL 3.
  *
- *      Implementation of ::ns_crypto::scrypt
+ *      Implements "ns_crypto::scrypt".
  *
  * Results:
  *      Tcl result code

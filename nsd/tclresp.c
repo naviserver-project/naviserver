@@ -58,7 +58,7 @@ static int ReturnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
  *
  * NsTclHeadersObjCmd --
  *
- *      Implements ns_headers. Set the response status code, mime-type
+ *      Implements "ns_headers". Set the response status code, mime-type
  *      header and optionally the content-length. The headers will be
  *      be written on the first write to the connection (if not suppressed).
  *
@@ -131,7 +131,7 @@ NsTclHeadersObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *
  * NsTclStartContentObjCmd --
  *
- *      Implements ns_startcontent. Set the connection ready to send
+ *      Implements "ns_startcontent". Set the connection ready to send
  *      body data in an appropriate encoding.
  *
  *      Deprecated.
@@ -205,7 +205,7 @@ NsTclStartContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
  *
  * NsTclWriteObjCmd --
  *
- *      Implements ns_write. Send data directly to client without
+ *      Implements "ns_write". Send data directly to client without
  *      buffering.
  *
  * Results:
@@ -319,7 +319,7 @@ NsTclWriteObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *c
  *
  * NsTclReturnObjCmd --
  *
- *      Implements ns_return.  Send complete response to client with
+ *      Implements "ns_return".  Send complete response to client with
  *      given data as body.
  *
  * Results:
@@ -379,7 +379,7 @@ NsTclReturnObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *
  * NsTclRespondObjCmd --
  *
- *      Implements ns_respond.  Send complete response to client using
+ *      Implements "ns_respond".  Send complete response to client using
  *      a variety of options.
  *
  * Results:
@@ -486,7 +486,7 @@ NsTclRespondObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  * NsTclReturnFileObjCmd --
  *
- *      Implements ns_returnfile.  Send complete response to client
+ *      Implements "ns_returnfile".  Send complete response to client
  *      using contents of filename if exists and is readable, otherwise
  *      send error response.
  *
@@ -531,7 +531,7 @@ NsTclReturnFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *
  * NsTclReturnFpObjCmd --
  *
- *      Implements ns_returnfp.  Send complete response to client using
+ *      Implements "ns_returnfp".  Send complete response to client using
  *      len bytes from given channel.
  *
  * Results:
@@ -580,7 +580,7 @@ NsTclReturnFpObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *
  * NsTclConnSendFpObjCmd --
  *
- *      Implements ns_connsendfp.  Send len bytes from given channel
+ *      Implements "ns_connsendfp".  Send len bytes from given channel
  *      directly to client without sending headers.
  *
  * Results:
@@ -638,7 +638,7 @@ NsTclConnSendFpObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *
  * NsTclReturnBadRequestObjCmd --
  *
- *      Implements ns_returnbadrequest.  Send an error response to
+ *      Implements "ns_returnbadrequest".  Send an error response to
  *      client with HTTP status code 400.
  *
  * Results:
@@ -677,8 +677,8 @@ NsTclReturnBadRequestObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, i
  *
  * ReturnObjCmd --
  *
- *      Implements ns_returnnotfound, ns_returnunauthorized,
- *      ns_returnforbidden, and ns_returnunavailable.
+ *      Implements "ns_returnnotfound", "ns_returnunauthorized",
+ *      "ns_returnforbidden", and "ns_returnunavailable".
  *      Send an error response to client.
  *
  * Results:
@@ -745,7 +745,7 @@ NsTclReturnTooLargeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
  *
  * NsTclReturnErrorObjCmd --
  *
- *      Implements ns_returnerror.  Send an error response to client
+ *      Implements "ns_returnerror".  Send an error response to client
  *      with given status code and message.
  *
  * Results:
@@ -785,7 +785,7 @@ NsTclReturnErrorObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
  *
  * NsTclReturnMovedObjCmd --
  *
- *      Implements ns_returnmoved.
+ *      Implements "ns_returnmoved".
  *
  * Results:
  *      Standard Tcl result.
@@ -824,7 +824,7 @@ NsTclReturnMovedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
  *
  * NsTclReturnNoticeObjCmd --
  *
- *      Implements ns_returnnotice command.  Send a response to client
+ *      Implements "ns_returnnotice".  Send a response to client
  *      with given status code, title and message.
  *
  * Results:
@@ -865,7 +865,7 @@ NsTclReturnNoticeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
  *
  * NsTclReturnRedirectObjCmd --
  *
- *      Implements ns_returnredirect.
+ *      Implements "ns_returnredirect".
  *
  * Results:
  *      Standard Tcl result.
@@ -904,7 +904,7 @@ NsTclReturnRedirectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
  *
  * NsTclInternalRedirectObjCmd --
  *
- *      Implements ns_internalredirect as obj command.
+ *      Implements "ns_internalredirect".
  *
  * Results:
  *      Tcl result.

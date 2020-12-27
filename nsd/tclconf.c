@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -42,13 +42,13 @@
  *
  * NsTclConfigObjCmd --
  *
- *      Implements ns_config. 
+ *      Implements "ns_config".
  *
  * Results:
- *      Tcl result. 
+ *      Tcl result.
  *
  * Side effects:
- *      See docs. 
+ *      See docs.
  *
  *----------------------------------------------------------------------
  */
@@ -110,7 +110,7 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         } else if (isInt != 0) {
             if (value != NULL) {
                 Tcl_WideInt v;
-                
+
                 /*
                  * There is no Tcl_GetWideInt so we put same error message as
                  * Tcl_GetInt.
@@ -185,7 +185,7 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *
  * NsTclConfigSectionObjCmd --
  *
- *      Implements ns_configsection.
+ *      Implements "ns_configsection".
  *
  * Results:
  *      Tcl result.
@@ -222,7 +222,7 @@ NsTclConfigSectionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int 
  *
  * NsTclConfigSectionsObjCmd --
  *
- *      Implements ns_configsections. 
+ *      Implements "ns_configsections".
  *
  * Results:
  *      Tcl result.
@@ -245,7 +245,7 @@ NsTclConfigSectionsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
         Ns_Set **sets;
         int      i;
         Tcl_Obj *resultList = Tcl_NewListObj(0, NULL);
-        
+
         result = TCL_OK;
         sets = Ns_ConfigGetSections();
         for (i = 0; sets[i] != NULL; i++) {
@@ -255,7 +255,7 @@ NsTclConfigSectionsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
             }
             Tcl_ListObjAppendElement(interp, resultList, Tcl_GetObjResult(interp));
         }
-        
+
         Tcl_SetObjResult(interp, resultList);
         ns_free(sets);
     }

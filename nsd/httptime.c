@@ -281,7 +281,7 @@ Ns_ParseHttpTime(const char *chars)
  *
  * NsTclParseHttpTimeObjCmd --
  *
- *      Implements ns_parsehttptime as obj command.
+ *      Implements "ns_parsehttptime".
  *
  * Results:
  *      Tcl result.
@@ -326,7 +326,7 @@ NsTclParseHttpTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int 
  *
  * NsTclHttpTimeObjCmd --
  *
- *      Implements ns_httptime as obj command.
+ *      Implements "ns_httptime".
  *
  * Results:
  *      Tcl result.

@@ -760,7 +760,7 @@ FreeUserInfo(User *userPtr, const char *name)
  *
  * AddUserCmd --
  *
- *      Implements the Tcl command ns_perm adduser
+ *      Implements "ns_perm adduser".
  *
  * Results:
  *      Tcl resut
@@ -896,7 +896,7 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
  *
  * DelUserCmd --
  *
- *      Implements the Tcl command ns_perm deluser
+ *      Implements "ns_perm deluser".
  *
  * Results:
  *      Tcl resut
@@ -940,7 +940,7 @@ static int DelUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
  *
  * ListUsersCmd --
  *
- *      Implements the Tcl command ns_perm listusers
+ *      Implements "ns_perm listusers".
  *
  * Results:
  *      Tcl resut
@@ -1128,7 +1128,7 @@ static int AddGroupObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Ob
  *
  * DelGroupCmd --
  *
- *      Implements the Tcl command ns_perm delgroup
+ *      Implements "ns_perm delgroup".
  *
  * Results:
  *      Tcl resut
@@ -1185,7 +1185,7 @@ static int DelGroupObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Ob
  *
  * ListGroupsCmd --
  *
- *      Implements the Tcl command ns_perm listgroups
+ *      Implements "ns_perm listgroups".
  *
  * Results:
  *      Tcl resut
@@ -1411,7 +1411,7 @@ static int DelPermObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
  *
  * ListPermsCmd --
  *
- *      Implements the Tcl command ns_perm listperms
+ *      Implements "ns_perm listperms".
  *
  * Results:
  *      Tcl resut

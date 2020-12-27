@@ -718,7 +718,7 @@ NsPageRoot(Ns_DString *dsPtr, const NsServer *servPtr, const char *host)
  *
  * NsTclHashPathObjCmd --
  *
- *      Implements ns_hashpath obj command; a wrapper for Ns_HashPath.
+ *      Implements "ns_hashpath". a wrapper for Ns_HashPath.
  *
  * Results:
  *      Tcl result.
@@ -761,7 +761,7 @@ NsTclHashPathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *
  * NsTclModulePathObjCmd --
  *
- *  Implements ns_modulepath command; basically a wrapper around
+ *  Implements "ns_modulepath". The command is basically a wrapper around
  *  Ns_ModulePath.
  *
  * Results:
@@ -809,7 +809,7 @@ NsTclModulePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *
  * NsTclServerPathObjCmd, NsTclPagePathObjCmd --
  *
- *      Implements ns_serverpath, ns_pagepath commands.
+ *      Implements "ns_serverpath" and "ns_pagepath".
  *
  * Results:
  *      Tcl result.
@@ -890,7 +890,7 @@ PathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* 
  *
  * NsTclServerRootProcObjCmd --
  *
- *      Implements the ns_serverrootproc command.
+ *      Implements "ns_serverrootproc".
  *
  * Results:
  *      Tcl result.

@@ -431,7 +431,7 @@ ParseExtendedHeaders(Log *logPtr, const char *str)
  *
  * LogObjCmd --
  *
- *      Implement the ns_accesslog command.
+ *      Implements "ns_accesslog".
  *
  * Results:
  *      Standard Tcl result.

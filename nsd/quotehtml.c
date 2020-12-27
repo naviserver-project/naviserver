@@ -143,7 +143,7 @@ Ns_QuoteHtml(Ns_DString *dsPtr, const char *htmlString)
  *
  * NsTclQuoteHtmlObjCmd --
  *
- *      Implements ns_quotehtml.
+ *      Implements "ns_quotehtml".
  *
  * Results:
  *      Tcl result.

@@ -815,7 +815,7 @@ SetPoolAttribute(Tcl_Interp *interp, int nargs, ConnPool *poolPtr, int *valuePtr
  *
  * ServerMaxThreadsObjCmd, subcommand of NsTclServerObjCmd --
  *
- *    Implements the "ns_server ... maxthreads ..." command.
+ *    Implements "ns_server ... maxthreads ...".
  *
  * Results:
  *    Tcl result.
@@ -855,7 +855,7 @@ ServerMaxThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
  *
  * ServerMinThreadsObjCmd, subcommand of NsTclServerObjCmd --
  *
- *    Implements the "ns_server ... minthreads ..." command.
+ *    Implements "ns_server ... minthreads ...".
  *
  * Results:
  *    Tcl result.
@@ -1001,7 +1001,7 @@ MapspecParse(Tcl_Interp *interp, Tcl_Obj *mapspecObj, char **method, char **url,
  *
  * ServerMapObjCmd, subcommand of NsTclServerObjCmd --
  *
- *    Implements the "ns_server ... map ..." command.
+ *    Implements "ns_server ... map ...".
  *
  * Results:
  *    Tcl result.
@@ -1149,7 +1149,7 @@ ServerMapObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  *
  * ServerMappedObjCmd, subcommand of NsTclServerObjCmd --
  *
- *    Implements the "ns_server ... mapped " command.
+ *    Implements "ns_server ... mapped ".
  *
  * Results:
  *    Tcl result.
@@ -1219,7 +1219,7 @@ ServerMappedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  * ServerUnmapObjCmd, subcommand of NsTclServerObjCmd --
  *
- *    Implements the "ns_server ... unmap ..." command.
+ *    Implements "ns_server ... unmap ...".
  *
  * Results:
  *    Tcl result.
@@ -1420,8 +1420,8 @@ ServerListAllCmd(Tcl_DString *dsPtr, Tcl_Interp *interp, int objc, Tcl_Obj *cons
  *
  * NsTclServerObjCmd --
  *
- *      Implement the ns_server Tcl command to return simple statistics
- *      about the running server.
+ *      Implements "ns_server". This command provides configuration and status
+ *      information about a server.
  *
  * Results:
  *      A standard Tcl result.

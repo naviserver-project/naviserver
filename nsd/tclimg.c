@@ -80,7 +80,7 @@ static Tcl_Channel GetFileChan(Tcl_Interp *interp, const char *path) NS_GNUC_NON
  *
  * NsTclImgTypeObjCmd --
  *
- *      Implements ns_imgtype as obj command.
+ *      Implements "ns_imgtype".
  *
  * Results:
  *      Tcl result.
@@ -131,7 +131,7 @@ NsTclImgTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  * NsTclImgMimeObjCmd --
  *
- *      Implements ns_imgmime as obj command.
+ *      Implements "ns_imgmime".
  *
  * Results:
  *      Tcl result.
@@ -183,7 +183,7 @@ NsTclImgMimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  * NsTclImgSizeObjCmd --
  *
- *      Implements ns_imgsize as obj command.
+ *      Implements "ns_imgsize".
  *
  * Results:
  *      Tcl result.
@@ -245,7 +245,7 @@ NsTclImgSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  * NsTclGifSizeObjCmd --
  *
- *      Implements ns_gifsize as obj command.
+ *      Implements "ns_gifsize".
  *
  * Results:
  *      Tcl result.
@@ -295,7 +295,7 @@ NsTclGifSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  * NsTclPngSizeObjCmd --
  *
- *      Implements ns_pngsize as obj command.
+ *      Implements "ns_pngsize".
  *
  * Results:
  *      Tcl result.
@@ -345,7 +345,7 @@ NsTclPngSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  * NsTclJpegSizeObjCmd --
  *
- *      Implements ns_jpegsize as obj command.
+ *      Implements "ns_jpegsize".
  *
  * Results:
  *      Tcl result.

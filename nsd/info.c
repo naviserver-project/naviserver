@@ -515,7 +515,7 @@ Ns_InfoSSL(void)
  *
  * NsTclInfoObjCmd --
  *
- *      Implements ns_info.
+ *      Implements "ns_info".
  *
  * Results:
  *      Tcl result.
@@ -796,7 +796,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
  *
  * NsTclLibraryObjCmd --
  *
- *  Implements ns_library.
+ *  Implements "ns_library".
  *
  * Results:
  *  Tcl result.

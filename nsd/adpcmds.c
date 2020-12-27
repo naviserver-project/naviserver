@@ -209,7 +209,7 @@ NsTclAdpIdentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
  * NsTclAdpCtlObjCmd --
  *
  *      ADP processing control.
- *      Implementation of ns_adp_ctl.
+ *      Implements "ns_adp_ctl".
  *
  * Results:
  *      A standard Tcl result.

@@ -1317,7 +1317,7 @@ Ns_GetMimeType(const char *file)
  *
  * NsTclGuessTypeObjCmd --
  *
- *      Implements ns_guesstype.
+ *      Implements "ns_guesstype".
  *
  * Results:
  *      Tcl result.

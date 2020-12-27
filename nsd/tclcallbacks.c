@@ -261,7 +261,8 @@ Ns_TclCallbackArgProc(Tcl_DString *dsPtr, const void *arg)
  *
  * AtObjCmd --
  *
- *      Implements ns_atprestartup, ns_atstartup, ns_atsignal, ns_atexit.
+ *      Implements "ns_atprestartup", "ns_atstartup", "ns_atsignal",
+ *      and "ns_atexit".
  *
  * Results:
  *      Tcl result.
@@ -323,7 +324,7 @@ NsTclAtExitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *
  * NsTclAtShutdownObjCmd --
  *
- *      Implements ns_atshutdown.  The callback timeout parameter is
+ *      Implements "ns_atshutdown".  The callback timeout parameter is
  *      ignored.
  *
  * Results:

@@ -179,7 +179,7 @@ TclCacheCreate(const char *name, size_t maxEntry, size_t maxSize,
  *
  * NsTclCacheCreateObjCmd --
  *
- *      Implementation of ns_cache_create
+ *      Implements "ns_cache_create".
  *
  * Results:
  *      Tcl result.
@@ -1055,7 +1055,7 @@ NsTclCacheGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
  *
  * NsTclCacheStatsObjCmd --
  *
- *      Implementation of "ns_ cache stats".  Returns statistics in form of a
+ *      Implements "ns_ cache stats".  Returns statistics in form of a
  *      dict from the specified cache. When the switch "-contents" is
  *      provided, entries for all cache entries are returned, containing the
  *      key, size, hits and expire time for each entry in the cache. The

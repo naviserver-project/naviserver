@@ -372,7 +372,7 @@ NsWaitJobsShutdown(const Ns_Time *toPtr)
  *
  * JobConfigureObjCmd, subcommand of NsTclJobCmd --
  *
- *          Implements the "ns_job configure" command.
+ *          Implements "ns_job configure".
  *          Configure jobs subsystem.
  *
  * Results:
@@ -429,7 +429,7 @@ JobConfigureObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  * JobCreateObjCmd, subcommand of NsTclJobCmd --
  *
- *          Implements the "ns_job create" command.
+ *          Implements "ns_job create".
  *          Create a new thread pool queue.
  *
  * Results:
@@ -489,7 +489,7 @@ JobCreateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  *
  * JobDeleteObjCmd, subcommand of NsTclJobCmd --
  *
- *          Implements the "ns_job delete" command.  Request that the
+ *          Implements "ns_job delete".  Request that the
  *          specified queue be deleted. The queue will only be deleted
  *          when all jobs are removed.
  *
@@ -531,7 +531,7 @@ JobDeleteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  *
  * JobQueueObjCmd, subcommand of NsTclJobCmd --
  *
- *          Implements the "ns_job queue" command.
+ *          Implements "ns_job queue".
  *          Add a new job the specified queue.
  *
  * Results:
@@ -678,7 +678,7 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
  *
  * JobWaitObjCmd, subcommand of NsTclJobCmd --
  *
- *          Implements the "ns_job wait" command.
+ *          Implements "ns_job wait".
  *          Wait for the specified job.
  *
  * Results:
@@ -814,7 +814,7 @@ JobWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_O
  *
  * JobCancelObjCmd, subcommand of NsTclJobCmd --
  *
- *          Implements the "ns_job cancel" command.
+ *          Implements "ns_job cancel".
  *          Cancel the specified job.
  *
  * Results:
@@ -883,7 +883,7 @@ JobCancelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  *
  * JobExistsObjCmd, subcommand of NsTclJobCmd --
  *
- *          Implements the "ns_job exists" command.  Sets the
+ *          Implements "ns_job exists".  Sets the
  *          Tcl result to "1" if job is running otherwise to "0".
  *
  * Results:
@@ -926,7 +926,7 @@ JobExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  *
  * JobWaitAnyObjCmd, subcommand of NsTclJobCmd --
  *
- *          Implements the "ns_job waitany" command.
+ *          Implements "ns_job waitany".
  *          Wait for any job on the queue complete.
  *
  * Results:
@@ -1009,7 +1009,7 @@ JobWaitAnyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  *
  * JobJobsObjCmd, subcommand of NsTclJobCmd --
  *
- *          Implements the "ns_job jos" command.
+ *          Implements "ns_job jos".
  *          Returns a list of job IDs in arbitrary order.
  *
  * Results:
@@ -1062,7 +1062,7 @@ JobJobsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_O
  *
  * JobQueuesObjCmd, subcommand of NsTclJobCmd --
  *
- *          Implements the "ns_job queues" command.
+ *          Implements "ns_job queues".
  *          Returns a list of the current queues.
  *
  * Results:
@@ -1110,7 +1110,7 @@ JobQueuesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  *
  * JobJobListObjCmd, subcommand of NsTclJobCmd --
  *
- *          Implements the "ns_job joblist" command.
+ *          Implements "ns_job joblist".
  *          Returns a list of all the jobs in the queue.
  *
  *          Every entry of a "job" consists of:
@@ -1220,7 +1220,7 @@ JobJobListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  *
  * JobQueueListObjCmd, subcommand of NsTclJobCmd --
  *
- *          Implements the "ns_job queuelist" command.  Returns a list
+ *          Implements "ns_job queuelist".  Returns a list
  *          of all the queues and the queue information.
  *
  * Results:
@@ -1298,7 +1298,7 @@ JobQueueListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  * JobGenIDObjCmd, subcommand of NsTclJobCmd --
  *
- *          Implements the "ns_job genID" command.
+ *          Implements "ns_job genID".
  *          Generate a unique queue name.
  *
  * Results:
@@ -1338,7 +1338,7 @@ JobGenIDObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
  *
  * JobThreadListObjCmd, subcommand of NsTclJobCmd --
  *
- *          Implements the "ns_job threadlist" command.
+ *          Implements "ns_job threadlist".
  *          Return a list of the thread pool's fields.
  *
  * Results:
@@ -1391,7 +1391,8 @@ JobThreadListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *
  * NsTclJobCmd --
  *
- *          Implement the ns_job command to manage background tasks.
+ *          Implements "ns_job".
+ *          The command is used to manage background tasks.
  *
  * Results:
  *          Standard Tcl result.

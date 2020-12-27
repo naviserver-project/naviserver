@@ -765,7 +765,8 @@ Ns_HttpMessageParse(
  *
  * NsTclHttpObjCmd --
  *
- *      Implements the [ns_http] command for handling HTTP requests.
+ *      Implements "ns_http".  This caommand is the general interface for
+ *      handling HTTP client requests.
  *
  * Results:
  *      Standard Tcl result.
@@ -803,7 +804,7 @@ NsTclHttpObjCmd(
  *
  * HttpRunObjCmd
  *
- *      Implements the [ns_http run] command
+ *      Implements "ns_http run".
  *
  * Results:
  *      Standard Tcl result.
@@ -830,7 +831,7 @@ HttpRunObjCmd(
  *
  * HttpQueueObjCmd
  *
- *      Implements the [ns_http queue] command
+ *      Implements "ns_http queue".
  *
  * Results:
  *      Standard Tcl result.
@@ -857,7 +858,7 @@ HttpQueueObjCmd(
  *
  * HttpWaitObjCmd --
  *
- *      Implements [ns_http wait] command.
+ *      Implements "ns_http wait".
  *
  * Results:
  *      Standard Tcl result.
@@ -1100,7 +1101,7 @@ HttpWaitObjCmd(
  *
  * HttpCancelObjCmd --
  *
- *      Implements [ns_http cancel] command.
+ *      Implements "ns_http cancel".
  *
  * Results:
  *      Standard Tcl result.
@@ -1151,7 +1152,7 @@ HttpCancelObjCmd(
  *
  * HttpCleanupObjCmd
  *
- *      Implements the [ns_http cleanup] command
+ *      Implements "ns_http cleanup".
  *
  * Results:
  *      Standard Tcl result.
@@ -1238,7 +1239,7 @@ HttpCleanupObjCmd(
  *
  * HttpListObjCmd
  *
- *      Implements the [ns_http list] command
+ *      Implements "ns_http list".
  *
  * Results:
  *      Standard Tcl result.
@@ -1313,7 +1314,7 @@ HttpListObjCmd(
  *
  * HttpStatsObjCmd
  *
- *      Implements the [ns_http stats] command.
+ *      Implements "ns_http stats".
  *
  * Results:
  *      Standard Tcl result.

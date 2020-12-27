@@ -245,7 +245,7 @@ SkipWhitespace(const unsigned char *source) {
  *      definitions.  When the option "-single" is specified, the first
  *      "element" is parsed and returned as a single dict.
  *
- *      Implementation of "ns_parsefieldvalue".
+ *      Implements "ns_parsefieldvalue".
  *
  * Results:
  *      Tcl result.

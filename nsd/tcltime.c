@@ -278,7 +278,7 @@ Ns_TclGetTimePtrFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time **timePtrPt
  *
  * NsTclTimeObjCmd --
  *
- *      Implements ns_time.
+ *      Implements "ns_time".
  *
  * Results:
  *      Tcl result.
@@ -450,7 +450,7 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  *
  * NsTclLocalTimeObjCmd, NsTclGmTimeObjCmd --
  *
- *      Implements ns_gmtime and ns_localtime.
+ *      Implements "ns_gmtime" and "ns_localtime".
  *
  * Results:
  *      Tcl result.
@@ -516,7 +516,7 @@ NsTclLocalTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  * NsTclSleepObjCmd --
  *
  *      Sleep with millisecond resolution.
- *      Implementation of ns_sleep command.
+ *      Implements "ns_sleep".
  *
  * Results:
  *      Tcl Result.
@@ -557,7 +557,7 @@ NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  *
  * NsTclStrftimeObjCmd --
  *
- *      Implements ns_fmttime.
+ *      Implements "ns_fmttime".
  *
  * Results:
  *      Tcl result.

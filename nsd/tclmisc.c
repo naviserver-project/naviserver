@@ -92,7 +92,7 @@ Ns_TclPrintfResult(Tcl_Interp *interp, const char *fmt, ...)
  *
  * NsTclRunOnceObjCmd --
  *
- *      Implements ns_runonce.  Run the given script only once.
+ *      Implements "ns_runonce".  Run the given script only once.
  *
  * Results:
  *      Tcl result.
@@ -339,7 +339,7 @@ Ns_SetNamedVar(Tcl_Interp *interp, Tcl_Obj *varPtr, Tcl_Obj *valPtr)
  * NsTclReflowTextObjCmd --
  *
  *      Reflow a text to the specified length.
- *      Implementation of ns_reflow_text.
+ *      Implements "ns_reflow_text".
  *
  * Results:
  *      Tcl result.
@@ -522,7 +522,7 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *      (latter is not really needed but convenient).  Trim leading spaces on
  *      multiple lines.
  *
- *      Implementation of ns_trim.
+ *      Implements "ns_trim".
  *
  * Results:
  *      Tcl result.
@@ -607,7 +607,7 @@ NsTclTrimObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  *
  * NsTclStripHtmlObjCmd --
  *
- *      Implements ns_striphtml.
+ *      Implements "ns_striphtml".
  *
  * Results:
  *      Tcl result.
@@ -1012,7 +1012,7 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *
  * NsTclHrefsObjCmd --
  *
- *      Implements ns_hrefs.
+ *      Implements "ns_hrefs".
  *
  * Results:
  *      Tcl result.
@@ -1335,7 +1335,7 @@ WordEndsInSemi(const char *word, size_t *lengthPtr)
  *
  * NsTclCryptObjCmd --
  *
- *      Implements ns_crypt as ObjCommand.
+ *      Implements "ns_crypt".
  *
  * Results:
  *      Tcl result.
@@ -2326,7 +2326,7 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
  *
  * NsTclSetUserObjCmd, NsTclSetGroupObjCmd --
  *
- *      Implements ns_setuser and ns_setgroup.
+ *      Implements "ns_setuser" and "ns_setgroup".
  *
  * Results:
  *      Standard Tcl result code.
@@ -2540,7 +2540,7 @@ NsTclRlimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *          this function *is* very cheap, even by comparison with
  *          industry-standard hashes like FNV.
  *
- *       Implements the "ns_hash" command.
+ *       Implements "ns_hash".
  *
  * Results:
  *      Numeric hash value.

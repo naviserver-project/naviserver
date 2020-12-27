@@ -84,7 +84,7 @@ Ns_TclRequest(Ns_Conn *conn, const char *name)
  *
  * NsTclRegisterProcObjCmd --
  *
- *      Implements ns_register_proc as obj command.
+ *      Implements "ns_register_proc".
  *
  * Results:
  *      Tcl result.
@@ -139,7 +139,7 @@ NsTclRegisterProcObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
  *
  * NsTclRegisterProxyObjCmd --
  *
- *      Implements ns_register_proxy as obj command.
+ *      Implements "ns_register_proxy".
  *
  * Results:
  *      Tcl result.
@@ -188,7 +188,7 @@ NsTclRegisterProxyObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tc
  *
  * NsTclRegisterFastPathObjCmd --
  *
- *      Implements ns_register_fastpath as obj command.
+ *      Implements "ns_register_fastpath".
  *
  * Results:
  *      Tcl result.
@@ -238,7 +238,7 @@ NsTclRegisterFastPathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
  *
  * NsTclUnRegisterObjCmd --
  *
- *      Implement the ns_unregister_op command.
+ *      Implements "ns_unregister_op".
  *
  * Results:
  *      Tcl result.
@@ -283,7 +283,7 @@ NsTclUnRegisterOpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
  *
  * NsTclRegisterFilterObjCmd --
  *
- *      Implements ns_register_filter.
+ *      Implements "ns_register_filter".
  *
  * Results:
  *      Tcl result.
@@ -335,7 +335,7 @@ NsTclRegisterFilterObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
  *
  * NsTclShortcutFilterObjCmd --
  *
- *      Implements ns_shortcut_filter.
+ *      Implements "ns_shortcut_filter".
  *
  * Results:
  *      Tcl result.
@@ -378,7 +378,7 @@ NsTclShortcutFilterObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
  *
  * NsTclRegisterTraceObjCmd --
  *
- *      Implements ns_register_trace as obj command.
+ *      Implements "ns_register_trace".
  *
  * Results:
  *      Tcl result.

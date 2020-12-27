@@ -64,7 +64,7 @@ static int ReturnValidId(Tcl_Interp *interp, int id, Ns_TclCallback *cbPtr)
  *
  * NsTclAfterObjCmd --
  *
- *      Implements ns_after.
+ *      Implements "ns_after".
  *
  * Results:
  *      Tcl result.
@@ -108,8 +108,8 @@ NsTclAfterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  *
  * SchedObjCmd --
  *
- *      Implements ns_unschedule_proc, ns_cancel, ns_pause, and
- *      ns_resume commands.
+ *      Implements "ns_unschedule_proc", "ns_cancel", "ns_pause", and
+ *      "ns_resume".
  *
  * Results:
  *      Tcl result.
@@ -193,7 +193,7 @@ NsTclUnscheduleObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *
  * NsTclSchedDailyObjCmd --
  *
- *      Implements ns_schedule_daily.
+ *      Implements "ns_schedule_daily".
  *
  * Results:
  *      Tcl result.
@@ -253,7 +253,7 @@ NsTclSchedDailyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *
  * NsTclSchedWeeklyObjCmd --
  *
- *      Implements ns_sched_weekly.
+ *      Implements "ns_sched_weekly".
  *
  * Results:
  *      Tcl result.
@@ -315,7 +315,7 @@ NsTclSchedWeeklyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
  *
  * NsTclSchedObjCmd --
  *
- *      Implements ns_schedule_proc.
+ *      Implements "ns_schedule_proc".
  *
  * Results:
  *      Tcl result.

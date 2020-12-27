@@ -30,7 +30,7 @@
 /*
  * tclset.c --
  *
- *      Implements the Tcl ns_set commands
+ *      Tcl API for NaviServer shared varianles via the "ns_set" command.
  */
 
 #include "nsd.h"
@@ -261,7 +261,7 @@ Ns_SetCreateFromDict(Tcl_Interp *interp, const char *name, Tcl_Obj *listObj)
  *
  * NsTclSetObjCmd --
  *
- *      Implements ns_set.
+ *      Implements "ns_set".
  *
  * Results:
  *      Tcl result.

@@ -113,7 +113,7 @@ NsTclSockArgProc(Tcl_DString *dsPtr, const void *arg)
  *
  *      Performs a reverse DNS lookup. This is the
  *
- *      Implementation of "ns_hostbyaddr"
+ *      Implements "ns_hostbyaddr".
  *
  * Results:
  *      Tcl result.
@@ -162,7 +162,7 @@ NsTclGetHostObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  *      Performs a DNS lookup.
  *
- *      Implementation of "ns_addrbyhost".
+ *      Implements "ns_addrbyhost".
  *
  * Results:
  *      Tcl result.
@@ -317,7 +317,7 @@ NsTclSockNReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *
  *      Listen on a TCP port.
  *
- *      Implementation of "ns_socklisten".
+ *      Implements "ns_socklisten".
  *
  * Results:
  *      Tcl result.
@@ -471,7 +471,7 @@ NsTclSockCheckObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *
  *      Open a tcp connection to a host/port.
  *
- *      Implementation of "ns_sockopen".
+ *      Implements "ns_sockopen".
  *
  * Results:
  *      Tcl result.
@@ -897,7 +897,7 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
  *      Listen on a socket and register a callback to run when
  *      connections arrive.
  *
- *      Implementation of "ns_socklistencallback".
+ *      Implements "ns_socklistencallback".
  *
  * Results:
  *      Tcl result.

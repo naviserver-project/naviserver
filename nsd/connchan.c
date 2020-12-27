@@ -919,7 +919,7 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
  *
  * ConnChanDeatchObjCmd --
  *
- *    Implements the "ns_connchan detach" command.
+ *    Implements "ns_connchan detach".
  *
  * Results:
  *    Tcl result.
@@ -984,7 +984,7 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
  *
  * ConnChanOpenObjCmd --
  *
- *    Implements the "ns_connchan open" command.
+ *    Implements "ns_connchan open".
  *
  * Results:
  *    Tcl result.
@@ -1123,7 +1123,7 @@ ConnChanOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  * ConnChanListenObjCmd --
  *
- *    Implements the "ns_connchan listen" command.
+ *    Implements "ns_connchan listen".
  *
  * Results:
  *    Tcl result.
@@ -1312,7 +1312,7 @@ SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why))
  *
  * ConnChanListObjCmd --
  *
- *    Implements the "ns_connchan list" command.
+ *    Implements "ns_connchan list".
  *
  * Results:
  *    Tcl result.
@@ -1400,7 +1400,7 @@ ConnChanListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  * ConnChanCloseObjCmd --
  *
- *    Implements the "ns_connchan close" command.
+ *    Implements "ns_connchan close".
  *
  * Results:
  *    Tcl result.
@@ -1450,7 +1450,7 @@ ConnChanCloseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *
  * ConnChanCallbackObjCmd --
  *
- *    Implements the "ns_connchan callback" command.
+ *    Implements "ns_connchan callback".
  *
  * Results:
  *    Tcl result.
@@ -1569,7 +1569,7 @@ ConnChanCallbackObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
  *
  * ConnChanExistsObjCmd --
  *
- *    Implements the "ns_connchan exists" command.
+ *    Implements "ns_connchan exists".
  *
  * Results:
  *    Tcl result.
@@ -1610,7 +1610,7 @@ ConnChanExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *
  * ConnChanReadObjCmd --
  *
- *    Implements the "ns_connchan read" command.
+ *    Implements "ns_connchan read".
  *
  * Results:
  *    Tcl result.
@@ -1711,7 +1711,7 @@ ConnChanReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  * ConnChanWriteObjCmd --
  *
- *    Implements the "ns_connchan write" command.
+ *    Implements "ns_connchan write".
  *
  * Results:
  *    Tcl result.
@@ -1782,7 +1782,7 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *
  * NsTclConnChanObjCmd --
  *
- *    Implements the "ns_connchan" command.
+ *    Implements "ns_connchan".
  *
  * Results:
  *    Tcl result.

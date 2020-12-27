@@ -288,7 +288,7 @@ Ns_QueryToSet(char *query, Ns_Set *set)
  *
  * NsTclParseQueryObjCmd --
  *
- *      Implements the ns_parsequery command.
+ *      Implements "ns_parsequery".
  *
  * Results:
  *      The Tcl result is a Tcl set with the parsed name-value pairs from

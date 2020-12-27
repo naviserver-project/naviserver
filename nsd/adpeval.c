@@ -778,8 +778,8 @@ NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *proc
  *
  * NsTclAdpStatsObjCmd --
  *
- *      Implement the ns_adp_stats command to return stats on cached
- *      ADP pages.
+ *      Implements "ns_adp_stats". This command returns statistics about
+ *      cached ADP pages.
  *
  * Results:
  *      Standard Tcl result.

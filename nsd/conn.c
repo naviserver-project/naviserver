@@ -1509,7 +1509,7 @@ Ns_ConnSetCompression(Ns_Conn *conn, int level)
  *
  * NsTclConnObjCmd --
  *
- *      Implements ns_conn as an obj command.
+ *      Implements "ns_conn".
  *
  * Results:
  *      Standard Tcl result.
@@ -2311,7 +2311,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
  *
  * NsTclLocationProcObjCmd --
  *
- *      Implements ns_locationproc as obj command.
+ *      Implements "ns_locationproc".
  *
  * Results:
  *      Tcl result.
@@ -2352,7 +2352,7 @@ NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
  *
  * NsTclWriteContentObjCmd --
  *
- *      Implements ns_conncptofp as obj command.
+ *      Implements "ns_conncptofp".
  *
  * Results:
  *      Standard Tcl result.

@@ -319,7 +319,7 @@ Ns_SlsUnsetKeyed(Ns_Sock *sock, const char *key)
  *
  * NsTclSlsObjCmd --
  *
- *      Implements the ns_sls command.
+ *      Implements "ns_sls".
  *
  * Results:
  *      Tcl result.

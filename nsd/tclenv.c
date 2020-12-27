@@ -31,7 +31,7 @@
 /*
  * tclenv.c --
  *
- *      Implement the "ns_env" command.
+ *      Implements "ns_env".
  */
 
 #include "nsd.h"
@@ -154,7 +154,7 @@ Ns_CopyEnviron(Ns_DString *dsPtr)
  *
  * NsTclEnvObjCmd --
  *
- *      Implements the ns_env command.  No attempt is made to avoid the
+ *      Implements "ns_env".  No attempt is made to avoid the
  *      race condition between finding a variable and using it as it is
  *      assumed the environment would only be modified, if ever, at
  *      startup.

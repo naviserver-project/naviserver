@@ -32,7 +32,7 @@
 /*
  * fork.c --
  *
- *      Implement ns_fork.
+ *      Implements "ns_fork".
  */
 
 #include "thread.h"
