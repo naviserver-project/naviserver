@@ -282,7 +282,7 @@ NsLockSet(void *lock)
  *      Try to set a mutex lock once.
  *
  * Results:
- *      1 if lock set, 0 otherwise.
+ *      NS_TRUE if lock set, NS_FALSE otherwise.
  *
  * Side effects:
  *      None.
@@ -290,7 +290,7 @@ NsLockSet(void *lock)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 NsLockTry(void *lock)
 {
     int err;
@@ -299,13 +299,13 @@ NsLockTry(void *lock)
 
     err = pthread_mutex_trylock((pthread_mutex_t *) lock);
     if (unlikely(err == EBUSY)) {
-        return 0;
+        return NS_FALSE;
     }
     if (unlikely(err != 0)) {
         NsThreadFatal("NsLockTry", "pthread_mutex_trylock", err);
     }
 
-    return 1;
+    return NS_TRUE;
 }
 
 

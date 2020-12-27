@@ -382,14 +382,14 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *clientData, unsigned int flags,
  *
  * Ns_Cancel, Ns_UnscheduleProc --
  *
- *  Cancel a previously scheduled event.
+ *      Cancel a previously scheduled event.
  *
  * Results:
- *  Ns_UnscheduleProc:  None.
- *  Ns_Cancel:          1 if cancelled, 0 otherwise.
+ *      Ns_UnscheduleProc:  None.
+ *      Ns_Cancel:          NS_TRUE if cancelled, NS_FALSE otherwise.
  *
  * Side effects:
- *  See FreeEvent().
+ *      See FreeEvent().
  *
  *----------------------------------------------------------------------
  */

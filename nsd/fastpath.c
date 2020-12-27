@@ -892,7 +892,7 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
  *      Stat a file, logging an error on unexpected results.
  *
  * Results:
- *      1 if stat OK, 0 otherwise.
+ *      NS_TRUE if stat() was successful, NS_FALSE otherwise.
  *
  * Side effects:
  *      None.

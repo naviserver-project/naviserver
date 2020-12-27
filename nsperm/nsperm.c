@@ -1479,7 +1479,7 @@ static void WalkCallback(Tcl_DString * dsPtr, const void *arg)
  *      Checks supplied user password against internak database
  *
  * Results:
- *      1 if verified, 0 if not valid
+ *      Standard Tcl result.
  *
  * Side effects:
  *      None
@@ -1487,7 +1487,8 @@ static void WalkCallback(Tcl_DString * dsPtr, const void *arg)
  *----------------------------------------------------------------------
  */
 
-static int CheckPassObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *const* objv)
+static int
+CheckPassObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *const* objv)
 {
     Server *servPtr = data;
     int rc = TCL_ERROR;
@@ -1537,7 +1538,7 @@ static int CheckPassObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
  *      Assigns new password to the user
  *
  * Results:
- *      1 if assigned, 0 if not found
+ *      Standard Tcl result
  *
  * Side effects:
  *      None
@@ -1545,7 +1546,8 @@ static int CheckPassObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_O
  *----------------------------------------------------------------------
  */
 
-static int SetPassObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *const* objv)
+static int
+SetPassObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *const* objv)
 {
     Server        *servPtr = data;
     int            rc = 0;

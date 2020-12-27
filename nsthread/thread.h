@@ -49,7 +49,7 @@ extern void  *NsGetLock(Ns_Mutex *mutex)   NS_GNUC_NONNULL(1);
 extern void  *NsLockAlloc(void)            NS_GNUC_RETURNS_NONNULL;
 extern void   NsLockFree(void *lock)       NS_GNUC_NONNULL(1);
 extern void   NsLockSet(void *lock)        NS_GNUC_NONNULL(1);
-extern int    NsLockTry(void *lock)        NS_GNUC_NONNULL(1);
+extern bool   NsLockTry(void *lock)        NS_GNUC_NONNULL(1);
 extern void   NsLockUnset(void *lock)      NS_GNUC_NONNULL(1);
 extern void   NsCleanupTls(void **slots)   NS_GNUC_NONNULL(1);
 extern void **NsGetTls(void)               NS_GNUC_RETURNS_NONNULL;

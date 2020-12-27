@@ -479,7 +479,7 @@ Ns_HomePath(Ns_DString *dsPtr, ...)
  *  Check that a path exists relative to NaviServer's home dir.
  *
  * Results:
- *  1 if exists
+ *  NS_TRUE if path exists.
  *
  * Side effects:
  *  None

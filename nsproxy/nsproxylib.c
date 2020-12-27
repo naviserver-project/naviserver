@@ -354,7 +354,7 @@ static bool   SendBuf(const Worker *workerPtr, const Ns_Time *timePtr, const Tcl
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 static bool   RecvBuf(const Worker *workerPtr, const Ns_Time *timePtr, Tcl_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
-static int    WaitFd(int fd, short events, long ms);
+static bool   WaitFd(int fd, short events, long ms);
 
 static int    Import(Tcl_Interp *interp, const Tcl_DString *dsPtr, int *resultPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -1226,7 +1226,7 @@ Wait(Tcl_Interp *interp, Proxy *proxyPtr, const Ns_Time *timeoutPtr)
         if (ms <= 0) {
             ms = -1;
         }
-        if (WaitFd(proxyPtr->workerPtr->rfd, POLLIN, (long)ms) == 0) {
+        if (!WaitFd(proxyPtr->workerPtr->rfd, POLLIN, (long)ms)) {
             err = EEvalTimeout;
         } else {
             proxyPtr->state = Done;
@@ -1354,7 +1354,7 @@ SendBuf(const Worker *workerPtr, const Ns_Time *timePtr, const Tcl_DString *dsPt
             } else {
                 waitMs = -1;
             }
-            if (WaitFd(workerPtr->wfd, POLLOUT, waitMs) == 0) {
+            if (!WaitFd(workerPtr->wfd, POLLOUT, waitMs)) {
                 success = NS_FALSE;
                 break;
             }
@@ -1432,7 +1432,7 @@ RecvBuf(const Worker *workerPtr, const Ns_Time *timePtr, Tcl_DString *dsPtr)
             } else {
                 waitMs = -1;
             }
-            if (WaitFd(workerPtr->rfd, POLLIN, waitMs) == 0) {
+            if (!WaitFd(workerPtr->rfd, POLLIN, waitMs)) {
                 success = NS_FALSE;
                 break;
             }
@@ -1476,7 +1476,7 @@ RecvBuf(const Worker *workerPtr, const Ns_Time *timePtr, Tcl_DString *dsPtr)
                 } else {
                     waitMs = -1;
                 }
-                if (WaitFd(workerPtr->rfd, POLLIN, waitMs) == 0) {
+                if (!WaitFd(workerPtr->rfd, POLLIN, waitMs)) {
                     success = NS_FALSE;
                     break;
                 }
@@ -1499,7 +1499,7 @@ RecvBuf(const Worker *workerPtr, const Ns_Time *timePtr, Tcl_DString *dsPtr)
  *      Waits for the given event on the worker pipe.
  *
  * Results:
- *      1 if event received, 0 on error.
+ *      NS_TRUE if event received, NS_FALSE on error.
  *
  * Side effects:
  *      None.
@@ -1507,7 +1507,7 @@ RecvBuf(const Worker *workerPtr, const Ns_Time *timePtr, Tcl_DString *dsPtr)
  *----------------------------------------------------------------------
  */
 
-static int
+static bool
 WaitFd(int fd, short events, long ms)
 {
     struct pollfd pfd;

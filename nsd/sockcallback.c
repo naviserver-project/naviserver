@@ -495,9 +495,9 @@ SockCallbackThread(void *UNUSED(arg))
 
         pfds[0].revents = 0;
         do {
-            Ns_Log(Notice, "SockCallback before poll nfds %u timeout %zd", nfds, pollTimeout);
+            Ns_Log(Debug, "SockCallback before poll nfds %ld timeout %zd", (long)nfds, pollTimeout);
             n = ns_poll(pfds, nfds, pollTimeout);
-            Ns_Log(Notice, "SockCallback poll returned %d", n);
+            Ns_Log(Debug, "SockCallback poll returned %d", n);
         } while (n < 0  && errno == NS_EINTR);
 
         if (n < 0) {

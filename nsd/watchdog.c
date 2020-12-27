@@ -85,8 +85,8 @@ static bool  processDied  = NS_FALSE; /* NS_TRUE if watched process died unexpec
  *      restart attempts.
  *
  * Results:
- *      Returns 1 if caller is now the watched process and should
- *      continue about its business.
+ *      Returns the pid (nonzero) if caller is now the watched process and
+ *      should continue about its business.
  *
  *      Returns 0 if caller is watchdog process and should
  *      exit(0) (success).
@@ -289,7 +289,7 @@ WatchdogSIGTERMHandler(int sig)
  *      None.
  *
  * Side effects:
- *      Sets processDied to 1 if process with watchedPid doesn't exist.
+ *      Sets processDied to NS_TRUE if process with watchedPid doesn't exist.
  *
  *----------------------------------------------------------------------
  */

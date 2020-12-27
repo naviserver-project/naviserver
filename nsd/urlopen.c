@@ -335,7 +335,7 @@ NsTclGetUrlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
  *      Fill the socket stream buffer.
  *
  * Results:
- *      1 if fill ok, 0 otherwise.
+ *      NS_TRUE if fill ok, NS_FALSE otherwise.
  *
  * Side effects:
  *      None.

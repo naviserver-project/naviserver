@@ -348,7 +348,7 @@ NsLockSet(void *lock)
  *      Try to set a mutex lock once.
  *
  * Results:
- *      1 if lock set, 0 otherwise.
+ *      NS_TRUE if lock set, NS_FALSE otherwise.
  *
  * Side effects:
  *      None.
@@ -356,7 +356,7 @@ NsLockSet(void *lock)
  *----------------------------------------------------------------------
  */
 
-int
+bool
 NsLockTry(void *lock)
 {
     return TryEnterCriticalSection((CRITICAL_SECTION *)lock);

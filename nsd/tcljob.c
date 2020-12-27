@@ -884,7 +884,7 @@ JobCancelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  * JobExistsObjCmd, subcommand of NsTclJobCmd --
  *
  *          Implements the "ns_job exists" command.  Sets the
- *          Tcl-result to "1" if job is running otherwise to "0".
+ *          Tcl result to "1" if job is running otherwise to "0".
  *
  * Results:
  *          Standard Tcl result.
