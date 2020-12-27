@@ -1452,7 +1452,7 @@ NsStopSpoolers(void)
  *
  * DriverInfoObjCmd --
  *
- *      Return public info of all drivers.
+ *      Implements "ns_driver info". Returns public info of all drivers.
  *      Subcommand of NsTclDriverObjCmd.
  *
  * Results:
@@ -1554,7 +1554,7 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  *
  * DriverStatsObjCmd --
  *
- *      Return statistics of all drivers.
+ *      Implements "ns_driver stats". Returns statistics of all drivers.
  *      Subcommand of NsTclDriverObjCmd.
  *
  * Results:
@@ -1617,7 +1617,7 @@ DriverStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *
  * DriverThreadsObjCmd --
  *
- *      Return the names of driver threads
+ *      Implements "ns_driver threads". Returns the names of driver threads
  *
  * Results:
  *      Standard Tcl Result.
@@ -1656,7 +1656,7 @@ DriverThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *
  * DriverNamesObjCmd --
  *
- *      Return the names of drivers.
+ *      Implements "ns_driver names". Returns the names of drivers.
  *
  * Results:
  *      Standard Tcl Result.
@@ -1704,7 +1704,7 @@ DriverNamesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *
  * NsTclDriverObjCmd -
  *
- *      Give information about drivers. Currently, just the statistics.
+ *      Implements "ns_driver". Give information about drivers.
  *
  * Results:
  *      Standard Tcl result.
@@ -7478,9 +7478,9 @@ WriterStreamingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *
  * NsTclWriterObjCmd --
  *
- *      Implements "ns_writer" command for submitting data to the writer
- *      threads and to configure and query the state of the writer threads at
- *      run time.
+ *      Implements "ns_writer". This command is used for submitting data to
+ *      the writer threads and to configure and query the state of the writer
+ *      threads at run time.
  *
  * Results:
  *      Standard Tcl result.

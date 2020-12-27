@@ -965,8 +965,8 @@ NsConfigEval(const char *config, const char *configFileName,
  *
  * ParamObjCmd --
  *
- *      Add a single entry to the current section of the config.  This
- *      command may only be run from within an ns_section.
+ *      Implements "ns_param". Add a single entry to the current section of
+ *      the config.  This command may only be run from within an "ns_section".
  *
  * Results:
  *      Standard Tcl Result.
@@ -1014,9 +1014,9 @@ ParamObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const*
  *
  * SectionObjCmd --
  *
- *      This creates a new config section and sets a shared variable
- *      to point at a newly-allocated set for holding config data.
- *      ns_param stores config data in the set.
+ *      Impelements "ns_section". This command creates a new config section in
+ *      form of a newly-allocated "ns_set" for holding config data.
+ *      "ns_param" stores config data in the set.
  *
  * Results:
  *      Standard Tcl result.

@@ -361,8 +361,8 @@ NsTclAdpCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
  *
  * NsTclAdpIncludeObjCmd --
  *
- *      Process the Tcl _ns_adp_include commands to evaluate an
- *      ADP.
+ *      Implements "_ns_adp_include" used internally to evaluate
+ *      ADP pages.
  *
  * Results:
  *      A standard Tcl result.
@@ -447,8 +447,8 @@ NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
  *
  * NsTclAdpParseObjCmd --
  *
- *      Process the ns_adp_parse command to evaluate strings or
- *      ADP files at the current call frame level.
+ *      Implements "ns_adp_parse". The command evaluates strings or ADP files
+ *      at the current call frame level.
  *
  * Results:
  *      A standard Tcl result.
@@ -545,7 +545,7 @@ NsTclAdpParseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
  *
  * NsTclAdpAppendObjCmd, NsTclAdpPutsObjCmd --
  *
- *      Process the ns_adp_append and ns_adp_puts commands to append
+ *      Implements "ns_adp_append" and "ns_adp_puts". Both commands append
  *      output.
  *
  * Results:
@@ -617,7 +617,7 @@ NsTclAdpPutsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *
  * NsTclAdpDirObjCmd --
  *
- *      Process the Tcl ns_adp_dir command to return the current ADP
+ *      Implements "ns_adp_dir". This command returns the current ADP
  *      directory.
  *
  * Results:
@@ -651,8 +651,8 @@ NsTclAdpDirObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
  *
  * NsTclAdpReturnObjCmd, NsTclAdpBreakObjCmd, NsTclAdpAbortObjCmd --
  *
- *      Process the Tcl ns_adp_return, ns_adp_break and ns_adp_abort
- *      commands to halt page generation.
+ *      Implements "ns_adp_return", "ns_adp_break" and "ns_adp_abort".
+ *      These commands halt page generation.
  *
  * Results:
  *      A standard Tcl result.
@@ -713,7 +713,7 @@ ExceptionObjCmd(NsInterp *itPtr, int objc, Tcl_Obj *const* objv, AdpResult excep
  *
  * NsTclAdpTellObjCmd --
  *
- *      Process the Tcl ns_adp_tell commands to return the current
+ *      Implements "ns_adp_tell". This commands returns the current
  *      offset within the output buffer.
  *
  * Results:
@@ -752,7 +752,7 @@ NsTclAdpTellObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *
  * NsTclAdpTruncObjCmd --
  *
- *      Process the Tcl ns_adp_trunc commands to truncate the output
+ *      Implements "ns_adp_trunc". This commands truncates the output
  *      buffer to the given length.
  *
  * Results:
@@ -793,7 +793,7 @@ NsTclAdpTruncObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
  *
  * NsTclAdpDumpObjCmd --
  *
- *      Process the Tcl ns_adp_dump command to return the entire text
+ *      Implements "ns_adp_dump". The command returns the entire text
  *      of the output buffer.
  *
  * Results:
@@ -832,8 +832,8 @@ NsTclAdpDumpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *
  * NsTclAdpInfoObjCmd --
  *
- *      Process the Tcl ns_adp_info commands to return the current filename,
- *      size and modification time
+ *      Implements "ns_adp_info". This command provodes introspection for the
+ *      current filename, size and modification time.
  *
  * Results:
  *      A standard Tcl result.
@@ -880,7 +880,7 @@ NsTclAdpInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *
  * NsTclAdpArgcObjCmd --
  *
- *      Process the Tcl ns_adp_args commands to return the number of
+ *      Implements "ns_adp_args". This command returns the number of
  *      arguments in the current ADP frame.
  *
  * Results:
@@ -919,7 +919,7 @@ NsTclAdpArgcObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *
  * NsTclAdpArgvObjCmd --
  *
- *      Process the Tcl ns_adp_argv command to return an argument (or
+ *      Implements "ns_adp_argv". The command returns an argument (or
  *      the entire list of arguments) within the current ADP frame.
  *
  * Results:
@@ -969,7 +969,7 @@ NsTclAdpArgvObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *
  * NsTclAdpBindArgsObjCmd --
  *
- *      Process the Tcl ns_adp_bind_args commands to copy arguments
+ *      Implements "ns_adp_bind_args". The command is used to copy arguments
  *      from the current frame into local variables.
  *
  * Results:
@@ -1018,7 +1018,7 @@ NsTclAdpBindArgsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
  *
  * NsTclAdpExcepetionObjCmd --
  *
- *      Process the Tcl ns_adp_exception commands to return the current
+ *      Implements "ns_adp_exception". The command returns the current
  *      exception state, ok, abort, or break.
  *
  * Results:
@@ -1081,7 +1081,8 @@ NsTclAdpExceptionObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
  *
  * NsTclAdpFlushObjCmd, NsTclAdpCloseObjCmd  --
  *
- *      Flush or close the current ADP output.
+ *      Implements "ns_adp_flush" and "ns_adp_close". Flush or close the
+ *      current ADP output.
  *
  * Results:
  *      A standard Tcl result.
@@ -1125,8 +1126,8 @@ NsTclAdpCloseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
  *
  * NsTclAdpDebugObjCmd --
  *
- *      Process the Tcl ns_adp_debug command to connect to the TclPro
- *      debugger if not already connected.
+ *      Implements "ns_adp_debug". The command can be used to connect to the
+ *      TclPro debugger if not already connected.
  *
  * Results:
  *      A standard Tcl result.
@@ -1176,10 +1177,10 @@ NsTclAdpDebugObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 /*
  *----------------------------------------------------------------------
  *
- * NsTclAdpMimeTypeCmd --
+ * NsTclAdpMimeTypeObjCmd --
  *
- *      Process the ns_adp_mimetype command to set or get the mime type
- *      returned upon completion of the parsed file.
+ *      Implements "ns_adp_mimetype". The command can bue used to set or get
+ *      the mime type returned upon completion of the parsed file.
  *
  * Results:
  *      A standard Tcl result.

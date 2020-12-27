@@ -680,7 +680,7 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
  *
  * ExitObjCmd --
  *
- *      Special exit command for nscp.
+ *      Implements "exit", a special exit command for nscp.
  *
  * Results:
  *      Standard Tcl result.
