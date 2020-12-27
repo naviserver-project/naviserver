@@ -337,10 +337,11 @@ if {[info exists httpsport]} {
     #
     ns_section ns/module/nsssl/servers {
         ns_param $server $hostname
-        ns_param $server $address
+        foreach address $addresses {
+            ns_param $server $address
+        }
     }
 }
-
 
 
 #---------------------------------------------------------------------
