@@ -77,6 +77,7 @@ static NS_INLINE bool Retry(int errorCode) NS_GNUC_CONST;
 
 static Ns_SockProc CloseLater;
 
+static const char *ErrorCodeString(int errorCode) NS_GNUC_PURE;
 
 
 /*
@@ -1866,6 +1867,493 @@ SockSend(NS_SOCKET sock, const struct iovec *bufs, int nbufs, unsigned int flags
 
     return numBytes;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockErrorCode --
+ *
+ *      Get the error from a socket and return it. In case, an interp is given
+ *      set as well the Tcl error code.
+ *
+ * Results:
+ *      Numeric error code or 0.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Ns_SockErrorCode(Tcl_Interp *interp, NS_SOCKET sock) {
+    int       err, sockerrno = 0;
+    socklen_t len = sizeof(sockerrno);
+
+    err = getsockopt(sock, SOL_SOCKET, SO_ERROR, (void*)&sockerrno, &len);
+    if (interp != NULL && (err == -1 || sockerrno != 0)) {
+        Tcl_SetErrorCode(interp, "POSIX",
+                         ErrorCodeString(sockerrno),
+                         Tcl_ErrnoMsg(sockerrno), NULL);
+    }
+    return sockerrno;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ErrorCodeString --
+ *
+ *      Map errorCode integer to a language independent string.  This function
+ *      is practically a copy of the Tcl implementation, except that the error
+ *      code is passed-in instead of relying to a global variable (which is
+ *      not a good idea in multithreaded programs).
+ *
+ * Results:
+ *      String.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static const char *
+ErrorCodeString(int errorCode)
+{
+    switch (errorCode) {
+#if defined(E2BIG) && (!defined(EOVERFLOW) || (E2BIG != EOVERFLOW))
+    case E2BIG: return "E2BIG";
+#endif
+#ifdef EACCES
+    case EACCES: return "EACCES";
+#endif
+#ifdef EADDRINUSE
+    case EADDRINUSE: return "EADDRINUSE";
+#endif
+#ifdef EADDRNOTAVAIL
+    case EADDRNOTAVAIL: return "EADDRNOTAVAIL";
+#endif
+#ifdef EADV
+    case EADV: return "EADV";
+#endif
+#ifdef EAFNOSUPPORT
+    case EAFNOSUPPORT: return "EAFNOSUPPORT";
+#endif
+#ifdef EAGAIN
+    case EAGAIN: return "EAGAIN";
+#endif
+#ifdef EALIGN
+    case EALIGN: return "EALIGN";
+#endif
+#if defined(EALREADY) && (!defined(EBUSY) || (EALREADY != EBUSY))
+    case EALREADY: return "EALREADY";
+#endif
+#ifdef EBADE
+    case EBADE: return "EBADE";
+#endif
+#ifdef EBADF
+    case EBADF: return "EBADF";
+#endif
+#ifdef EBADFD
+    case EBADFD: return "EBADFD";
+#endif
+#ifdef EBADMSG
+    case EBADMSG: return "EBADMSG";
+#endif
+#ifdef ECANCELED
+    case ECANCELED: return "ECANCELED";
+#endif
+#ifdef EBADR
+    case EBADR: return "EBADR";
+#endif
+#ifdef EBADRPC
+    case EBADRPC: return "EBADRPC";
+#endif
+#ifdef EBADRQC
+    case EBADRQC: return "EBADRQC";
+#endif
+#ifdef EBADSLT
+    case EBADSLT: return "EBADSLT";
+#endif
+#ifdef EBFONT
+    case EBFONT: return "EBFONT";
+#endif
+#ifdef EBUSY
+    case EBUSY: return "EBUSY";
+#endif
+#ifdef ECHILD
+    case ECHILD: return "ECHILD";
+#endif
+#ifdef ECHRNG
+    case ECHRNG: return "ECHRNG";
+#endif
+#ifdef ECOMM
+    case ECOMM: return "ECOMM";
+#endif
+#ifdef ECONNABORTED
+    case ECONNABORTED: return "ECONNABORTED";
+#endif
+#ifdef ECONNREFUSED
+    case ECONNREFUSED: return "ECONNREFUSED";
+#endif
+#ifdef ECONNRESET
+    case ECONNRESET: return "ECONNRESET";
+#endif
+#if defined(EDEADLK) && (!defined(EWOULDBLOCK) || (EDEADLK != EWOULDBLOCK))
+    case EDEADLK: return "EDEADLK";
+#endif
+#if defined(EDEADLOCK) && (!defined(EDEADLK) || (EDEADLOCK != EDEADLK))
+    case EDEADLOCK: return "EDEADLOCK";
+#endif
+#ifdef EDESTADDRREQ
+    case EDESTADDRREQ: return "EDESTADDRREQ";
+#endif
+#ifdef EDIRTY
+    case EDIRTY: return "EDIRTY";
+#endif
+#ifdef EDOM
+    case EDOM: return "EDOM";
+#endif
+#ifdef EDOTDOT
+    case EDOTDOT: return "EDOTDOT";
+#endif
+#ifdef EDQUOT
+    case EDQUOT: return "EDQUOT";
+#endif
+#ifdef EDUPPKG
+    case EDUPPKG: return "EDUPPKG";
+#endif
+#ifdef EEXIST
+    case EEXIST: return "EEXIST";
+#endif
+#ifdef EFAULT
+    case EFAULT: return "EFAULT";
+#endif
+#ifdef EFBIG
+    case EFBIG: return "EFBIG";
+#endif
+#ifdef EHOSTDOWN
+    case EHOSTDOWN: return "EHOSTDOWN";
+#endif
+#ifdef EHOSTUNREACH
+    case EHOSTUNREACH: return "EHOSTUNREACH";
+#endif
+#if defined(EIDRM) && (!defined(EINPROGRESS) || (EIDRM != EINPROGRESS))
+    case EIDRM: return "EIDRM";
+#endif
+#ifdef EINIT
+    case EINIT: return "EINIT";
+#endif
+#ifdef EINPROGRESS
+    case EINPROGRESS: return "EINPROGRESS";
+#endif
+#ifdef EINTR
+    case EINTR: return "EINTR";
+#endif
+#ifdef EINVAL
+    case EINVAL: return "EINVAL";
+#endif
+#ifdef EIO
+    case EIO: return "EIO";
+#endif
+#ifdef EISCONN
+    case EISCONN: return "EISCONN";
+#endif
+#ifdef EISDIR
+    case EISDIR: return "EISDIR";
+#endif
+#ifdef EISNAME
+    case EISNAM: return "EISNAM";
+#endif
+#ifdef ELBIN
+    case ELBIN: return "ELBIN";
+#endif
+#ifdef EL2HLT
+    case EL2HLT: return "EL2HLT";
+#endif
+#ifdef EL2NSYNC
+    case EL2NSYNC: return "EL2NSYNC";
+#endif
+#ifdef EL3HLT
+    case EL3HLT: return "EL3HLT";
+#endif
+#ifdef EL3RST
+    case EL3RST: return "EL3RST";
+#endif
+#ifdef ELIBACC
+    case ELIBACC: return "ELIBACC";
+#endif
+#ifdef ELIBBAD
+    case ELIBBAD: return "ELIBBAD";
+#endif
+#ifdef ELIBEXEC
+    case ELIBEXEC: return "ELIBEXEC";
+#endif
+#if defined(ELIBMAX) && (!defined(ECANCELED) || (ELIBMAX != ECANCELED))
+    case ELIBMAX: return "ELIBMAX";
+#endif
+#ifdef ELIBSCN
+    case ELIBSCN: return "ELIBSCN";
+#endif
+#ifdef ELNRNG
+    case ELNRNG: return "ELNRNG";
+#endif
+#if defined(ELOOP) && (!defined(ENOENT) || (ELOOP != ENOENT))
+    case ELOOP: return "ELOOP";
+#endif
+#ifdef EMFILE
+    case EMFILE: return "EMFILE";
+#endif
+#ifdef EMLINK
+    case EMLINK: return "EMLINK";
+#endif
+#ifdef EMSGSIZE
+    case EMSGSIZE: return "EMSGSIZE";
+#endif
+#ifdef EMULTIHOP
+    case EMULTIHOP: return "EMULTIHOP";
+#endif
+#ifdef ENAMETOOLONG
+    case ENAMETOOLONG: return "ENAMETOOLONG";
+#endif
+#ifdef ENAVAIL
+    case ENAVAIL: return "ENAVAIL";
+#endif
+#ifdef ENET
+    case ENET: return "ENET";
+#endif
+#ifdef ENETDOWN
+    case ENETDOWN: return "ENETDOWN";
+#endif
+#ifdef ENETRESET
+    case ENETRESET: return "ENETRESET";
+#endif
+#ifdef ENETUNREACH
+    case ENETUNREACH: return "ENETUNREACH";
+#endif
+#ifdef ENFILE
+    case ENFILE: return "ENFILE";
+#endif
+#ifdef ENOANO
+    case ENOANO: return "ENOANO";
+#endif
+#if defined(ENOBUFS) && (!defined(ENOSR) || (ENOBUFS != ENOSR))
+    case ENOBUFS: return "ENOBUFS";
+#endif
+#ifdef ENOCSI
+    case ENOCSI: return "ENOCSI";
+#endif
+#if defined(ENODATA) && (!defined(ECONNREFUSED) || (ENODATA != ECONNREFUSED))
+    case ENODATA: return "ENODATA";
+#endif
+#ifdef ENODEV
+    case ENODEV: return "ENODEV";
+#endif
+#ifdef ENOENT
+    case ENOENT: return "ENOENT";
+#endif
+#ifdef ENOEXEC
+    case ENOEXEC: return "ENOEXEC";
+#endif
+#ifdef ENOLCK
+    case ENOLCK: return "ENOLCK";
+#endif
+#ifdef ENOLINK
+    case ENOLINK: return "ENOLINK";
+#endif
+#ifdef ENOMEM
+    case ENOMEM: return "ENOMEM";
+#endif
+#ifdef ENOMSG
+    case ENOMSG: return "ENOMSG";
+#endif
+#ifdef ENONET
+    case ENONET: return "ENONET";
+#endif
+#ifdef ENOPKG
+    case ENOPKG: return "ENOPKG";
+#endif
+#ifdef ENOPROTOOPT
+    case ENOPROTOOPT: return "ENOPROTOOPT";
+#endif
+#ifdef ENOSPC
+    case ENOSPC: return "ENOSPC";
+#endif
+#if defined(ENOSR) && (!defined(ENAMETOOLONG) || (ENAMETOOLONG != ENOSR))
+    case ENOSR: return "ENOSR";
+#endif
+#if defined(ENOSTR) && (!defined(ENOTTY) || (ENOTTY != ENOSTR))
+    case ENOSTR: return "ENOSTR";
+#endif
+#ifdef ENOSYM
+    case ENOSYM: return "ENOSYM";
+#endif
+#ifdef ENOSYS
+    case ENOSYS: return "ENOSYS";
+#endif
+#ifdef ENOTBLK
+    case ENOTBLK: return "ENOTBLK";
+#endif
+#ifdef ENOTCONN
+    case ENOTCONN: return "ENOTCONN";
+#endif
+#ifdef ENOTRECOVERABLE
+    case ENOTRECOVERABLE: return "ENOTRECOVERABLE";
+#endif
+#ifdef ENOTDIR
+    case ENOTDIR: return "ENOTDIR";
+#endif
+#if defined(ENOTEMPTY) && (!defined(EEXIST) || (ENOTEMPTY != EEXIST))
+    case ENOTEMPTY: return "ENOTEMPTY";
+#endif
+#ifdef ENOTNAM
+    case ENOTNAM: return "ENOTNAM";
+#endif
+#ifdef ENOTSOCK
+    case ENOTSOCK: return "ENOTSOCK";
+#endif
+#ifdef ENOTSUP
+    case ENOTSUP: return "ENOTSUP";
+#endif
+#ifdef ENOTTY
+    case ENOTTY: return "ENOTTY";
+#endif
+#ifdef ENOTUNIQ
+    case ENOTUNIQ: return "ENOTUNIQ";
+#endif
+#ifdef ENXIO
+    case ENXIO: return "ENXIO";
+#endif
+#if defined(EOPNOTSUPP) &&  (!defined(ENOTSUP) || (ENOTSUP != EOPNOTSUPP))
+    case EOPNOTSUPP: return "EOPNOTSUPP";
+#endif
+#ifdef EOTHER
+    case EOTHER: return "EOTHER";
+#endif
+#if defined(EOVERFLOW) && (!defined(EFBIG) || (EOVERFLOW != EFBIG)) && (!defined(EINVAL) || (EOVERFLOW != EINVAL))
+    case EOVERFLOW: return "EOVERFLOW";
+#endif
+#ifdef EOWNERDEAD
+    case EOWNERDEAD: return "EOWNERDEAD";
+#endif
+#ifdef EPERM
+    case EPERM: return "EPERM";
+#endif
+#if defined(EPFNOSUPPORT) && (!defined(ENOLCK) || (ENOLCK != EPFNOSUPPORT))
+    case EPFNOSUPPORT: return "EPFNOSUPPORT";
+#endif
+#ifdef EPIPE
+    case EPIPE: return "EPIPE";
+#endif
+#ifdef EPROCLIM
+    case EPROCLIM: return "EPROCLIM";
+#endif
+#ifdef EPROCUNAVAIL
+    case EPROCUNAVAIL: return "EPROCUNAVAIL";
+#endif
+#ifdef EPROGMISMATCH
+    case EPROGMISMATCH: return "EPROGMISMATCH";
+#endif
+#ifdef EPROGUNAVAIL
+    case EPROGUNAVAIL: return "EPROGUNAVAIL";
+#endif
+#ifdef EPROTO
+    case EPROTO: return "EPROTO";
+#endif
+#ifdef EPROTONOSUPPORT
+    case EPROTONOSUPPORT: return "EPROTONOSUPPORT";
+#endif
+#ifdef EPROTOTYPE
+    case EPROTOTYPE: return "EPROTOTYPE";
+#endif
+#ifdef ERANGE
+    case ERANGE: return "ERANGE";
+#endif
+#if defined(EREFUSED) && (!defined(ECONNREFUSED) || (EREFUSED != ECONNREFUSED))
+    case EREFUSED: return "EREFUSED";
+#endif
+#ifdef EREMCHG
+    case EREMCHG: return "EREMCHG";
+#endif
+#ifdef EREMDEV
+    case EREMDEV: return "EREMDEV";
+#endif
+#ifdef EREMOTE
+    case EREMOTE: return "EREMOTE";
+#endif
+#ifdef EREMOTEIO
+    case EREMOTEIO: return "EREMOTEIO";
+#endif
+#ifdef EREMOTERELEASE
+    case EREMOTERELEASE: return "EREMOTERELEASE";
+#endif
+#ifdef EROFS
+    case EROFS: return "EROFS";
+#endif
+#ifdef ERPCMISMATCH
+    case ERPCMISMATCH: return "ERPCMISMATCH";
+#endif
+#ifdef ERREMOTE
+    case ERREMOTE: return "ERREMOTE";
+#endif
+#ifdef ESHUTDOWN
+    case ESHUTDOWN: return "ESHUTDOWN";
+#endif
+#ifdef ESOCKTNOSUPPORT
+    case ESOCKTNOSUPPORT: return "ESOCKTNOSUPPORT";
+#endif
+#ifdef ESPIPE
+    case ESPIPE: return "ESPIPE";
+#endif
+#ifdef ESRCH
+    case ESRCH: return "ESRCH";
+#endif
+#ifdef ESRMNT
+    case ESRMNT: return "ESRMNT";
+#endif
+#ifdef ESTALE
+    case ESTALE: return "ESTALE";
+#endif
+#ifdef ESUCCESS
+    case ESUCCESS: return "ESUCCESS";
+#endif
+#if defined(ETIME) && (!defined(ELOOP) || (ETIME != ELOOP))
+    case ETIME: return "ETIME";
+#endif
+#if defined(ETIMEDOUT) && (!defined(ENOSTR) || (ETIMEDOUT != ENOSTR))
+    case ETIMEDOUT: return "ETIMEDOUT";
+#endif
+#ifdef ETOOMANYREFS
+    case ETOOMANYREFS: return "ETOOMANYREFS";
+#endif
+#ifdef ETXTBSY
+    case ETXTBSY: return "ETXTBSY";
+#endif
+#ifdef EUCLEAN
+    case EUCLEAN: return "EUCLEAN";
+#endif
+#ifdef EUNATCH
+    case EUNATCH: return "EUNATCH";
+#endif
+#ifdef EUSERS
+    case EUSERS: return "EUSERS";
+#endif
+#ifdef EVERSION
+    case EVERSION: return "EVERSION";
+#endif
+#if defined(EWOULDBLOCK) && (!defined(EAGAIN) || (EWOULDBLOCK != EAGAIN))
+    case EWOULDBLOCK: return "EWOULDBLOCK";
+#endif
+#ifdef EXDEV
+    case EXDEV: return "EXDEV";
+#endif
+#ifdef EXFULL
+    case EXFULL: return "EXFULL";
+#endif
+    }
+    return "unknown error";
+}
+
+
 
 /*
  * Local Variables:

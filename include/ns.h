@@ -2913,6 +2913,8 @@ NS_EXTERN int
 ns_socknbclose(NS_SOCKET sock);
 #endif
 
+NS_EXTERN int
+Ns_SockErrorCode(Tcl_Interp *interp, NS_SOCKET sock);
 
 /*
  * sockaddr.c:
