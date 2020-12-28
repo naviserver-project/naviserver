@@ -1394,7 +1394,9 @@ NsTclCacheTransactionBeginObjCmd(ClientData clientData, Tcl_Interp *interp, int 
  *
  * NsTclCacheTransactionCommitObjCmd, NsTclCacheTransactionRollbackObjCmd  --
  *
- *      Implements "" and "". End a cache transaction and commit or rollback cache.
+ *      Implements "ns_cache_transaction_commit" and
+ *      "ns_cache_transaction_rollback". End a cache transaction and commit or
+ *      rollback cache.
  *
  * Results:
  *      Tcl result.
