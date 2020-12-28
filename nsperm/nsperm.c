@@ -235,7 +235,7 @@ static int AddCmds(Tcl_Interp *interp, const void *arg)
 /*
  *----------------------------------------------------------------------
  *
- * PermCmd --
+ * PermObjCmd --
  *
  *      Implements "ns_perm".
  *
@@ -1417,7 +1417,7 @@ static int DelPermObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
 /*
  *----------------------------------------------------------------------
  *
- * ListPermsCmd --
+ * ListPermsObjCmd --
  *
  *      Implements "ns_perm listperms".
  *

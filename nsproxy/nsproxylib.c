@@ -302,8 +302,8 @@ static Tcl_ObjCmdProc StatsObjCmd;
 static Tcl_ObjCmdProc ClearObjCmd;
 static Tcl_ObjCmdProc StopObjCmd;
 
-static Tcl_ObjCmdProc RunProxyCmd;
-static Tcl_CmdDeleteProc DelProxyCmd;
+static Tcl_ObjCmdProc RunProxyObjCmd;
+static Tcl_CmdDeleteProc DelProxyProc;
 static Tcl_InterpDeleteProc DeleteData;
 
 static Ns_ShutdownProc Shutdown;
@@ -2538,8 +2538,8 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
         proxyPtr = firstPtr;
         while (proxyPtr != NULL) {
             proxyPtr->cmdToken = Tcl_CreateObjCommand(interp, proxyPtr->id,
-                                                      RunProxyCmd, proxyPtr,
-                                                      DelProxyCmd);
+                                                      RunProxyObjCmd, proxyPtr,
+                                                      DelProxyProc);
             if (proxyPtr->cmdToken == NULL) {
                 result = TCL_ERROR;
                 break;
@@ -3627,7 +3627,7 @@ ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr)
 /*
  *----------------------------------------------------------------------
  *
- * RunProxyCmd --
+ * RunProxyObjCmd --
  *
  *      Activated when somebody calls proxy command.
  *
@@ -3641,7 +3641,7 @@ ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr)
  */
 
 static int
-RunProxyCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+RunProxyObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char       *scriptString;
     int         result;
@@ -3667,7 +3667,7 @@ RunProxyCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const*
 /*
  *----------------------------------------------------------------------
  *
- * DelProxyCmd --
+ * DelProxyProc --
  *
  *      Release a proxy from the per-interp table.
  *
@@ -3681,7 +3681,7 @@ RunProxyCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const*
  */
 
 static void
-DelProxyCmd(ClientData clientData)
+DelProxyProc(ClientData clientData)
 {
     Proxy *proxyPtr = (Proxy *)clientData;
 
