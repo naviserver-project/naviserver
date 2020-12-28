@@ -863,6 +863,8 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
     return rsp;
 }
 
+#endif /* Of OPENSSL_NO_OCSP */
+
 # ifndef HAVE_OPENSSL_PRE_1_1
 static void *NS_CRYPTO_malloc(size_t num, const char *UNUSED(file), int UNUSED(line))
 {
@@ -877,8 +879,6 @@ static void NS_CRYPTO_free(void *addr, const char *UNUSED(file), int UNUSED(line
     ns_free(addr);
 }
 # endif
-
-#endif
 
 
 
