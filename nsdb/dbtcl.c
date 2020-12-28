@@ -975,9 +975,10 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
 
 /*
  *----------------------------------------------------------------------
- * DbErrorCodeCmd --
+ * DbErrorCodeObjCmd --
  *
- *      Get database exception code for the database handle.
+ *      Implements "ns_dberrorcode".
+ *      Returns database exception code for the database handle.
  *
  * Results:
  *      Returns TCL_OK and database exception code is set as Tcl result
@@ -1028,9 +1029,10 @@ DbErrorMsgObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *c
 
 /*
  *----------------------------------------------------------------------
- * DbConfigPathCmd --
+ * DbConfigPathObjCmd --
  *
- *      Get the database section name from the configuration file.
+ *      Implements "ns_dbconfigpath". Get the database section name
+ *      from the configuration file.
  *
  * Results:
  *      TCL_OK and the database section name is set as the Tcl result
@@ -1062,9 +1064,10 @@ DbConfigPathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 
 /*
  *----------------------------------------------------------------------
- * PoolDescriptionCmd --
+ * PoolDescriptionObjCmd --
  *
- *      Get the pool's description string.
+ *      Implements "ns_pooldescription". Returns the pool's
+ *      description string.
  *
  * Results:
  *      Return TCL_OK and the pool's description string is set as the
@@ -1094,9 +1097,10 @@ PoolDescriptionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 
 /*
  *----------------------------------------------------------------------
- * QuoteListToListCmd --
+ * QuoteListToListObjCmd --
  *
- *      Remove space, \ and ' characters in a string.
+ *      Implements "ns_quotelisttolist". Removes space, \ and '
+ *      characters in a string.
  *
  * Results:
  *      TCL_OK and set the stripped string as the Tcl result or TCL_ERROR
@@ -1218,6 +1222,7 @@ QuoteSqlValue(Tcl_DString *dsPtr, Tcl_Obj *valueObj, int valueType)
  *----------------------------------------------------------------------
  * QuoteValueObjCmd --
  *
+ *      Implements "ns_dbquotevalue".
  *      Prepare a value string for inclusion in an SQL statement:
  *      -  "" is translated into NULL.
  *      -  All values of any numeric type are left alone.
@@ -1273,6 +1278,7 @@ QuoteValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  *----------------------------------------------------------------------
  * QuoteListObjCmd --
  *
+ *      Implements "ns_dbquotelist".
  *      Prepare a value string for inclusion in an SQL statement:
  *      -  "" is translated into NULL.
  *      -  All values of any numeric type are left alone.
@@ -1331,7 +1337,7 @@ QuoteListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 /*
  *----------------------------------------------------------------------
  *
- * GetCsvCmd --
+ * GetCsvObjCmd --
  *
  *      Implements "ns_getcsv". The command reads a single line from a
  *      CSV file and parses the results into a Tcl list variable.

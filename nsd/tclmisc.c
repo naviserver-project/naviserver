@@ -1109,8 +1109,7 @@ NsTclHrefsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  *
  * Base64EncodeObjCmd --
  *
- *      Worker for ns_uuencode, ns_base64encode, and ns_base64urlencode obj
- *      commands.
+ *      Implements "ns_uuencode", "ns_base64encode", and "ns_base64urlencode".
  *
  * Results:
  *      Tcl result.
@@ -1190,8 +1189,7 @@ NsTclBase64UrlEncodeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, 
  *
  * Base64DecodeObjCmd --
  *
- *      Worker for ns_uudecode, ns_base64decode, and ns_base64urldecode obj
- *      command.
+ *      Implements "ns_uudecode", "ns_base64decode", and "ns_base64urldecode".
  *
  * Results:
  *      Tcl result.
@@ -1266,7 +1264,7 @@ NsTclBase64UrlDecodeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, 
  *
  * NsTclCrashObjCmd --
  *
- *      Crash the server to test exception handling.
+ *      Implements "ns_crash". Crash the server to test exception handling.
  *
  * Results:
  *      None.
@@ -1825,10 +1823,10 @@ Ns_HexString(const unsigned char *octets, char *outputBuffer, int size, bool isU
 /*
  *----------------------------------------------------------------------
  *
- * SHA1Cmd --
+ * NsTclSHA1ObjCmd --
  *
- *      Returns a 40-character, hex-encoded string containing the SHA1
- *      hash of the first argument.
+ *      Implements "ns_sha1". Returns a 40-character, hex-encoded string
+ *      containing the SHA1 hash of the first argument.
  *
  * Results:
  *      NS_OK
@@ -1885,12 +1883,12 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 /*
  *----------------------------------------------------------------------
  *
- * FileStatCmd --
+ * NsTclFileStatObjCmd --
  *
- *      Works as file stat command but uses native call when Tcl VFS is
- *      not compiled. The reason for this when native calls are used for speed,
- *      having still slow file stat does not help, need to use native call
- *      and file stat is the most used command
+ *      Implements "ns_filestat". Works as "file stat" command but uses native
+ *      call when Tcl VFS is not compiled. The reason for this when native
+ *      calls are used for speed, having still slow file stat does not help,
+ *      need to use native call and file stat is the most used command
  *
  * Results:
  *      NS_OK
@@ -2267,10 +2265,10 @@ static void MD5Transform(uint32_t buf[4], const uint32_t block[16])
 /*
  *----------------------------------------------------------------------
  *
- * MD5Cmd --
+ * NsTclMD5ObjCmd --
  *
- *      Returns a 32-character, hex-encoded string containing the MD5
- *      hash of the first argument.
+ *      Implements "ns_md5". Returns a 32-character, hex-encoded string
+ *      containing the MD5 hash of the first argument.
  *
  * Results:
  *      NS_OK
@@ -2407,10 +2405,11 @@ GetLimitObj(rlim_t value)
  *
  * NsTclRlimitObjCmd --
  *
- *      Get or Set resource limit in the operating system.
+ *      Implements "ns_rlimit". Get or set a resource limit in the operating
+ *      system.
  *
  * Results:
- *      pair of actual value and maximum value
+ *      Pair of actual value and maximum value
  *
  * Side effects:
  *      Change resource limit with called with a value.

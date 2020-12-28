@@ -111,8 +111,7 @@ NsTclSockArgProc(Tcl_DString *dsPtr, const void *arg)
  *
  * NsTclGetHostObjCmd --
  *
- *      Performs a reverse DNS lookup. This is the
- *
+ *      Performs a reverse DNS lookup.
  *      Implements "ns_hostbyaddr".
  *
  * Results:
@@ -158,10 +157,9 @@ NsTclGetHostObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 /*
  *----------------------------------------------------------------------
  *
- * NsTclGetHostObjCmd --
+ * NsTclGetAddrObjCmd --
  *
  *      Performs a DNS lookup.
- *
  *      Implements "ns_addrbyhost".
  *
  * Results:
@@ -217,7 +215,7 @@ NsTclGetAddrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  * NsTclSockSetBlockingObjCmd --
  *
- *      Sets a socket blocking.
+ *      Implements "ns_sockblocking". Sets a socket blocking.
  *
  * Results:
  *      Tcl result.
@@ -240,7 +238,7 @@ NsTclSockSetBlockingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, in
  *
  * NsTclSockSetNonBlockingObjCmd --
  *
- *      Sets a socket nonblocking.
+ *      Implements "ns_socknonblocking". Sets a socket nonblocking.
  *
  * Results:
  *      Tcl result.
@@ -263,7 +261,8 @@ NsTclSockSetNonBlockingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *
  * NsTclSockNReadObjCmd --
  *
- *      Gets the number of bytes that a socket has waiting to be read.
+ *      Implements "ns_socknread". Gets the number of bytes that a
+ *      socket has waiting to be read.
  *
  * Results:
  *      Tcl result.
@@ -316,7 +315,6 @@ NsTclSockNReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  * NsTclSockListenObjCmd --
  *
  *      Listen on a TCP port.
- *
  *      Implements "ns_socklisten".
  *
  * Results:
@@ -375,6 +373,7 @@ NsTclSockListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  * NsTclSockAcceptObjCmd --
  *
  *      Accept a connection from a listening socket.
+ *      Implements "ns_sockaccept".
  *
  * Results:
  *      Tcl result.
@@ -425,7 +424,8 @@ NsTclSockAcceptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *
  * NsTclSockCheckObjCmd --
  *
- *      Check if a socket is still connected, useful for nonblocking.
+ *      Implements "ns_sockcheck". Checks if a socket is still
+ *      connected, useful for nonblocking.
  *
  * Results:
  *      Tcl result.
@@ -470,7 +470,6 @@ NsTclSockCheckObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  * NsTclSockOpenObjCmd --
  *
  *      Open a tcp connection to a host/port.
- *
  *      Implements "ns_sockopen".
  *
  * Results:
@@ -577,7 +576,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *
  * NsTclSelectObjCmd --
  *
- *      Implements select: basically a Tcl version of select(2).
+ *      Implements "ns_sockselect". Basically a Tcl version of select(2).
  *
  * Results:
  *      Tcl result.
@@ -737,7 +736,7 @@ done:
  *
  * NsTclSocketPairObjCmd --
  *
- *      Create a new socket pair.
+ *      Implements "ns_socketpair". Create a new socket pair.
  *
  * Results:
  *      Tcl result.
@@ -784,8 +783,8 @@ NsTclSocketPairObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNU
  *
  * NsTclSockCallbackCmd --
  *
- *      Register a Tcl callback to be run when a certain state exists
- *      on a socket. Implements "ns_sockcallback".
+ *      Implements "ns_sockcallback". Register a Tcl callback to be
+ *      run when a certain state exists on a socket.
  *
  * Results:
  *      Tcl result.
@@ -896,7 +895,6 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
  *
  *      Listen on a socket and register a callback to run when
  *      connections arrive.
- *
  *      Implements "ns_socklistencallback".
  *
  * Results:

@@ -237,7 +237,7 @@ static int AddCmds(Tcl_Interp *interp, const void *arg)
  *
  * PermCmd --
  *
- *      The ns_perm Tcl command
+ *      Implements "ns_perm".
  *
  * Results:
  *      Std Tcl ret val
@@ -758,7 +758,7 @@ FreeUserInfo(User *userPtr, const char *name)
 /*
  *----------------------------------------------------------------------
  *
- * AddUserCmd --
+ * AddUserObjCmd --
  *
  *      Implements "ns_perm adduser".
  *
@@ -894,7 +894,7 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
 /*
  *----------------------------------------------------------------------
  *
- * DelUserCmd --
+ * DelUserObjCmd --
  *
  *      Implements "ns_perm deluser".
  *
@@ -938,7 +938,7 @@ static int DelUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
 /*
  *----------------------------------------------------------------------
  *
- * ListUsersCmd --
+ * ListUsersObjCmd --
  *
  *      Implements "ns_perm listusers".
  *
@@ -1017,9 +1017,9 @@ static int ListUsersObjCmd(ClientData data, Tcl_Interp * interp, int UNUSED(objc
 /*
  *----------------------------------------------------------------------
  *
- * AddGroupCmd --
+ * AddGroupObjCmd --
  *
- *      Add a group to the global groups list
+ *      Implements "ns_perm addgroup". Adds a group to the global groups list.
  *
  * Results:
  *      Standard Tcl
@@ -1126,7 +1126,7 @@ static int AddGroupObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Ob
 /*
  *----------------------------------------------------------------------
  *
- * DelGroupCmd --
+ * DelGroupObjCmd --
  *
  *      Implements "ns_perm delgroup".
  *
@@ -1183,7 +1183,7 @@ static int DelGroupObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Ob
 /*
  *----------------------------------------------------------------------
  *
- * ListGroupsCmd --
+ * ListGroupsObjCmd --
  *
  *      Implements "ns_perm listgroups".
  *
@@ -1240,7 +1240,15 @@ static int ListGroupsObjCmd(ClientData data, Tcl_Interp * interp, int UNUSED(obj
  *
  * AllowDenyObjCmd --
  *
- *      Add a record that will allow or deny access to the specified url
+ *      Implements:
+ *
+ *         "ns_perm allowuser"
+ *         "nsperm allowgroup"
+ *         "nsperm denyuser"
+ *         "nsperm denygroup"
+ *
+ *      Adds/removes a record that will allow or deny access to
+ *      the specified URL.
  *
  * Results:
  *      Std Tcl
@@ -1341,13 +1349,13 @@ static int AllowDenyObjCmd(
  *
  * DelPermObjCmd --
  *
- *      Remove permission record
+ *      Implements "ns_perm delperm". Removes permission record.
  *
  * Results:
  *      Std Tcl
  *
  * Side effects:
- *      A perm record may be deleted
+ *      A permission record may be deleted.
  *
  *----------------------------------------------------------------------
  */
@@ -1474,9 +1482,10 @@ static void WalkCallback(Tcl_DString * dsPtr, const void *arg)
 /*
  *----------------------------------------------------------------------
  *
- * CheckPassCmd --
+ * CheckPassObjCmd --
  *
- *      Checks supplied user password against internak database
+ *      Implements "ns_perm checkpass". Checks supplied user password against
+ *      internal database.
  *
  * Results:
  *      Standard Tcl result.
@@ -1533,9 +1542,9 @@ CheckPassObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *const* 
 /*
  *----------------------------------------------------------------------
  *
- * SetPassCmd --
+ * SetPassObjCmd --
  *
- *      Assigns new password to the user
+ *      Implements "ns_perm setpass". Assigns new password to the user.
  *
  * Results:
  *      Standard Tcl result

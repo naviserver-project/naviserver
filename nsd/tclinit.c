@@ -1474,7 +1474,11 @@ ICtlCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
  *
  *      Implements various trace commands
  *
- *          ns_ictl trace|oninit|oncreate|oncleanup|ondelete
+ *          "ns_ictl oncleanup"
+ *          "ns_ictl oncreate
+ *          "ns_ictl ondelete"
+ *          "ns_ictl oninit"
+ *          "ns_ictl trace"
  *
  *      Register script-level interp traces. "ns_ictl trace" is the new
  *      version, the other ones are deprecated 3-argument variants.

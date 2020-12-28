@@ -1009,7 +1009,9 @@ Ns_DecodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment,
  *
  * NsTclUrlEncodeObjCmd --
  *
- *      Encode 1 or more segments of a either a URI path or query
+ *      Implements "ns_urlencode".
+ *
+ *      Encodes one or more segments of a either a URI path or query
  *      component part.  If the part is not specified, query is assumed.
  *      Segments are joined with a separator according to part.
  *
@@ -1086,6 +1088,8 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *----------------------------------------------------------------------
  *
  * NsTclUrlDecodeObjCmd --
+ *
+ *      Implements "ns_urldecode".
  *
  *      Decode a component of either a URL path or query.  If the part
  *      is not specified, query is assumed.
