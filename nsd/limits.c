@@ -125,7 +125,7 @@ NsGetRequestLimits(NsServer *servPtr, const char *method, const char *url)
  *
  * NsTclGetLimitsObjCmd --
  *
- *      Get the named limits.
+ *      Implements "ns_limits_get". Get the named limits.
  *
  * Results:
  *      Standard Tcl result.
@@ -161,7 +161,8 @@ NsTclGetLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *
  * NsTclListLimitsObjCmd --
  *
- *      Return the names of all limits, or only those matching a pattern.
+ *      Implements "ns_limits_list". Returns the names of all limits, or only
+ *      those matching a pattern.
  *
  * Results:
  *      Standard Tcl result.
@@ -210,8 +211,8 @@ NsTclListLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *
  * NsTclSetLimitsObjCmd --
  *
- *      Adjust the values of the named limits, or create a new named
- *      limits with default values.
+ *      Implements "ns_limits_set". Adjust the values of the named limits, or
+ *      create a new named limits with default values.
  *
  * Results:
  *      Standard Tcl result.
@@ -267,7 +268,8 @@ NsTclSetLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *
  * NsTclRegisterLimitsObjCmd --
  *
- *      Register the named limits to a method/URL.
+ *      Implements "ns_limits_register". Register the named limits to a
+ *      method/URL.
  *
  * Results:
  *      Standard Tcl result.

@@ -494,7 +494,8 @@ NsFindCharset(const char *mimetype, size_t *lenPtr)
  *
  * NsTclCharsetsObjCmd --
  *
- *      Get the list of charsets for which we have encodings.
+ *      Implements "ns_charsets". The command returns the list of charsets for
+ *      which encodings are defined.
  *
  * Results:
  *      TCL_OK
@@ -532,7 +533,8 @@ NsTclCharsetsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *
  * NsTclEncodingForCharsetObjCmd --
  *
- *      Return the name of the encoding for the specified charset.
+ *      Implements "ns_encodingforcharset". The command returns the name of
+ *      the encoding for the specified charset.
  *
  * Results:
  *      Tcl result contains an encoding name or "".

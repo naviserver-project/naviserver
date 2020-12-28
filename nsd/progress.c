@@ -102,10 +102,10 @@ NsConfigProgress(void)
 /*
  *----------------------------------------------------------------------
  *
- * NsTclUploadStatsObjCmd --
+ * NsTclProgressObjCmd --
  *
- *      Get the progress so far and total bytes to upload for the given
- *      unique URL as a two element list.
+ *      Implements "ns_upload_stats". Get the progress so far and total bytes
+ *      to upload for the given unique URL as a two element list.
  *
  * Results:
  *      Standard Tcl result.

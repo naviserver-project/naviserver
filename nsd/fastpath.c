@@ -1010,9 +1010,9 @@ FreeEntry(void *arg)
  *
  * NsTclFastPathCacheStatsObjCmd --
  *
- *      Returns stats on a cache. The size and expiry time of each
- *      entry in the cache is also appended if the -contents switch
- *      is given.
+ *      Implements "ns_fastpath_cache_stats".  The command returns
+ *      stats on a cache. The size and expiry time of each entry in
+ *      the cache is also appended if the -contents switch is given.
  *
  * Results:
  *      Tcl result.

@@ -1038,8 +1038,8 @@ Ns_StopServer(char *server)
  *
  * NsTclShutdownObjCmd --
  *
- *      Shutdown the server, waiting at most timeout seconds for threads to
- *      exit cleanly before giving up. Implements "ns_shutdown".
+ *      Implements "ns_shutdown". Shutdown the server, waiting at most timeout
+ *      seconds for threads to exit cleanly before giving up.
  *
  * Results:
  *      Tcl result.

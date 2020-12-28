@@ -106,11 +106,12 @@ static void AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flag
 /*
  *----------------------------------------------------------------------
  *
- * NsTclAdpRegisterAdpObjCmd, NsTclAdpRegisterProcObjCmd,
- * NsTclAdpRegisterScriptObjCmd --
+ * NsTclAdpRegisterAdpObjCmd, NsTclAdpRegisterTagObjCmd, NsTclAdpRegisterProcObjCmd,
+ * NsTclAdpRegisterScriptObjCmd, NsTclAdpRegisterAdptagObjCmd --
  *
- *      Register a proc, script, are ADP string tag.
- *
+ *      Implements "ns_adp_registeradp", "ns_adp_registertag",
+ *      "ns_adp_registerproc", "ns_adp_registerscript", and
+ *      "ns_register_adptag".
  *
  * Results:
  *      Standard Tcl result.

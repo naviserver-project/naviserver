@@ -1016,7 +1016,7 @@ NsTclAdpBindArgsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 /*
  *----------------------------------------------------------------------
  *
- * NsTclAdpExcepetionObjCmd --
+ * NsTclAdpExceptionObjCmd --
  *
  *      Implements "ns_adp_exception". The command returns the current
  *      exception state, ok, abort, or break.

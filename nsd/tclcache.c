@@ -244,7 +244,8 @@ NsTclCacheCreateObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
  *
  * NsTclCacheExistsObjCmd --
  *
- *      Check, whether a cache with the given name exists.
+ *      Implements "ns_cache_exists". Check, whether a cache with the given
+ *      name exists.
  *
  * Results:
  *      Tcl result.
@@ -289,6 +290,7 @@ NsTclCacheExistsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
  *
  * NsTclCacheConfigureObjCmd --
  *
+ *      Implements "ns_cache_configure".
  *      Configure a Tcl cache. Usage:
  *         ns_cache_configure /cache/ ?-timeout T1? ?-expires T2? ?-maxentry E? ?-maxsize S?
  *
@@ -412,10 +414,10 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
  *
  * NsTclCacheEvalObjCmd --
  *
- *      Get data from a cache by key.  If key is not present or data
- *      is stale, script is evaluated (with args appended, if present),
- *      and the result is stored in the cache and returned. Script
- *      errors are propagated.
+ *      Implements "ns_cache_eval". Get data from a cache by key.  If key is
+ *      not present or data is stale, script is evaluated (with args appended,
+ *      if present), and the result is stored in the cache and
+ *      returned. Script errors are propagated.
  *
  *      The -force switch causes an existing valid entry to replaced.
  *
@@ -566,8 +568,8 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
  *
  * NsTclCacheIncrObjCmd --
  *
- *      Treat the value of the cached object as in integer and
- *      increment it.  New values start at zero.
+ *      Implements "ns_cache_incr". Treat the value of the cached object as in
+ *      integer and increment it.  New values start at zero.
  *
  * Results:
  *      Tcl result.
@@ -635,7 +637,8 @@ NsTclCacheIncrObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
  *
  * NsTclCacheAppendObjCmd, NsTclCacheLappendObjCmd --
  *
- *      Append one or more elements to cached value.
+ *      Implements "ns_cache_append" and "ns_cache_lappend". Append one or
+ *      more elements to cached value.
  *
  * Results:
  *      Tcl result.
@@ -727,6 +730,7 @@ CacheAppendObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
  *
  * NsTclCacheNamesObjCmd --
  *
+ *      Implements "ns_cache_names". 
  *      Return a list of Tcl cache names for the current server.
  *
  * Results:
@@ -754,8 +758,8 @@ NsTclCacheNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int UNUSED(objc
  *
  * NsTclCacheKeysObjCmd --
  *
- *      Get a list of all valid keys in a cache, or only those matching
- *      pattern, if given.
+ *      Implements "ns_cache_keys". Get a list of all valid keys in a cache,
+ *      or only those matching pattern, if given.
  *
  * Results:
  *      Tcl result.
@@ -861,9 +865,9 @@ NsTclCacheKeysObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
  *
  * NsTclCacheFlushObjCmd --
  *
- *      Flush all entries from a cache, or the entries identified
- *      by the given keys.  Return the number of entries flushed.
- *      NB: Concurrent updates are skipped.
+ *      Implements "ns_cache_flush". Flush all entries from a cache, or the
+ *      entries identified by the given keys.  Return the number of entries
+ *      flushed.  NB: Concurrent updates are skipped.
  *
  * Results:
  *      Tcl result.
@@ -976,10 +980,11 @@ NsTclCacheFlushObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
  *
  * NsTclCacheGetObjCmd --
  *
- *      Return an entry from the cache. This function behaves similar to
- *      nsv_get; if the optional varname is passed, it returns on the Tcl
- *      level 0 or 1 depending on success and bind the variable on success. If
- *      no varName is provided, it returns the value or an error.
+ *      Implements "ns_cache_get". Return an entry from the cache. This
+ *      function behaves similar to nsv_get; if the optional varname is
+ *      passed, it returns on the Tcl level 0 or 1 depending on success and
+ *      bind the variable on success. If no varName is provided, it returns
+ *      the value or an error.
  *
  * Results:
  *      Tcl result.
@@ -1338,7 +1343,8 @@ ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *const* o
  *
  * NsTclCacheTransactionBeginObjCmd --
  *
- *      Create a cache transaction and return a new transaction ID.
+ *      Implements "ns_cache_transaction_begin". Create a cache transaction
+ *      and return a new transaction ID.
  *
  * Results:
  *      Tcl result.
@@ -1388,7 +1394,7 @@ NsTclCacheTransactionBeginObjCmd(ClientData clientData, Tcl_Interp *interp, int 
  *
  * NsTclCacheTransactionCommitObjCmd, NsTclCacheTransactionRollbackObjCmd  --
  *
- *      End a cache transaction and commit or rollback cache.
+ *      Implements "" and "". End a cache transaction and commit or rollback cache.
  *
  * Results:
  *      Tcl result.
