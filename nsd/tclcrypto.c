@@ -622,9 +622,9 @@ CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *
  * CryptoHmacAddObjCmd -- Subcommand of NsTclCryptoHmacObjCmd
  *
- *        Incremental command to add a message chunk to a predefined
- *        HMAC context, which was previously created via the "new"
- *        subcommand.
+ *        Implements "ns_crypto::hmac add", an incremental command to
+ *        add a message chunk to a predefined HMAC context, which was
+ *        previously created via the "new" subcommand.
  *
  * Results:
  *      Tcl Result Code.
@@ -678,8 +678,8 @@ CryptoHmacAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *
  * CryptoHmacGetObjCmd -- Subcommand of NsTclCryptoHmacObjCmd
  *
- *        Incremental command to get the (maybe partial) HMAC result
- *        in form of a hex string.
+ *        Implements "ns_crypto::hmac get", an incremental command to
+ *        get the (maybe partial) HMAC result in form of a hex string.
  *
  * Results:
  *      Tcl Result Code.
@@ -739,7 +739,8 @@ CryptoHmacGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *
  * CryptoHmacFreeObjCmd -- Subcommand of NsTclCryptoHmacObjCmd
  *
- *        Free a previously allocated HMAC context.
+ *        Implements "ns_crypto::hmac free". Frees a previously
+ *        allocated HMAC context.
  *
  * Results:
  *      Tcl Result Code.
@@ -781,11 +782,12 @@ CryptoHmacFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *
  * CryptoHmacStringObjCmd -- Subcommand of NsTclCryptoHmacObjCmd
  *
- *        Single command to obtain an HMAC from the provided data.
- *        Technically, this is a combination of the other subcommands,
- *        but requires that the all data for the HMAC computation is
- *        provided in the contents of a Tcl_Obj in memory. The command
- *        returns the HMAC in form of a hex string.
+ *        Implements "ns_crypto::hmac string". Single command to
+ *        obtain an HMAC from the provided data.  Technically, this is
+ *        a combination of the other subcommands, but requires that
+ *        the all data for the HMAC computation is provided in the
+ *        contents of a Tcl_Obj in memory. The command returns the
+ *        HMAC in form of a hex string.
  *
  * Results:
  *      Tcl Result Code.
@@ -873,8 +875,8 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
  *
  * NsTclCryptoHmacObjCmd --
  *
- *      Various subcmds for handling Hash-based message authentications codes
- *      (HMAC)
+ *      Implements "ns_crypto::hmac" with various subcmds for handling
+ *      Hash-based message authentications codes (HMAC)
  *
  * Results:
  *      NS_OK
@@ -912,10 +914,10 @@ NsTclCryptoHmacObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
  *
  * CryptoMdNewObjCmd -- Subcommand of NsTclCryptoMdObjCmd
  *
- *        Incremental command to initialize a MD context. This
- *        command is typically followed by a sequence of "add"
- *        subcommands until the content is read with the "get"
- *        subcommand and then freed.
+ *        Implements "ns_crypto::md new". Incremental command to
+ *        initialize a MD context. This command is typically followed
+ *        by a sequence of "add" subcommands until the content is read
+ *        with the "get" subcommand and then freed.
  *
  * Results:
  *      Tcl Result Code.
@@ -962,9 +964,9 @@ CryptoMdNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *
  * CryptoMdAddObjCmd -- Subcommand of NsTclCryptoMdObjCmd
  *
- *        Incremental command to add a message chunk to a predefined
- *        MD context, which was previously created via the "new"
- *        subcommand.
+ *        Implements "ns_crypto::md add". Incremental command to add a
+ *        message chunk to a predefined MD context, which was
+ *        previously created via the "new" subcommand.
  *
  * Results:
  *      Tcl Result Code.
@@ -1019,8 +1021,8 @@ CryptoMdAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *
  * CryptoMdGetObjCmd -- Subcommand of NsTclCryptoMdObjCmd
  *
- *        Incremental command to get the (maybe partial) MD result in
- *        form of a hex string.
+ *        Implements "ns_crypto::md get". Incremental command to get
+ *        the (maybe partial) MD result.
  *
  * Results:
  *      Tcl Result Code.
@@ -1080,7 +1082,8 @@ CryptoMdGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *
  * CryptoMdFreeObjCmd -- Subcommand of NsTclCryptoMdObjCmd
  *
- *        Free a previously allocated MD context.
+ *        Implements "ns_crypto::md free". Frees a previously
+ *        allocated MD context.
  *
  * Results:
  *      Tcl Result Code.
@@ -1121,11 +1124,12 @@ CryptoMdFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  * CryptoMdStringObjCmd -- Subcommand of NsTclCryptoMdObjCmd
  *
- *        Single command to obtain a MD (message digest) from the
- *        provided data.  Technically, this is a combination of the
- *        other subcommands, but requires that the all data for the MD
- *        computation is provided in the contents of a Tcl_Obj in
- *        memory. The command returns the MD in form of a hex string.
+ *        Implements "ns_crypto::md string", a command to obtain a MD
+ *        (message digest) from the provided data.  Technically, this
+ *        is a combination of the other subcommands, but requires that
+ *        the all data for the MD computation is provided in the
+ *        contents of a Tcl_Obj in memory. The command returns the MD
+ *        in form of a hex string.
  *
  * Results:
  *      Tcl Result Code.
@@ -1359,8 +1363,9 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *
  * CryptoMdVapidSignObjCmd -- Subcommand of NsTclCryptoMdObjCmd
  *
- *        Subcommand to sign a message according to the
- *        Voluntary Application Server Identification (VAPID) for Web Push
+ *        Implements "ns_crypto::md vapidsign". Aubcommand to sign a
+ *        message according to the Voluntary Application Server
+ *        Identification (VAPID) for Web Push
  *        https://tools.ietf.org/id/draft-ietf-webpush-vapid-03.html
  *
  *        See also: Generic Event Delivery Using HTTP Push
@@ -1515,7 +1520,8 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
  *
  * CryptoMdHkdfObjCmd -- Subcommand of NsTclCryptoMdObjCmd
  *
- *        Subcommand of ns_crypto::md to derive keys based on message digests.
+ *        Implements "ns_crypto::md hkdf", a command md to derive keys
+ *        based on message digests.
  *
  *        See: RFC 5869: HMAC-based Extract-and-Expand Key Derivation Function (HKDF)
  *        https://tools.ietf.org/html/rfc5869
@@ -1682,7 +1688,8 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  * NsTclCryptoMdObjCmd --
  *
- *      Returns a Hash-based message authentication code of the provided message
+ *      Implements "ns_crypto::md" with subcommands for Hash-based
+ *      message authentication codes.
  *
  * Results:
  *      NS_OK
@@ -1889,8 +1896,9 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int U
  *
  * CryptoEckeyPrivObjCmd -- Subcommand of NsTclCryptoEckeyObjCmd
  *
- *        Subcommand of ns_crypto::eckey to obtain the private key in
- *        various encodings from an elliptic curves PEM file.
+ *        Implements "ns_crypto::eckey priv". Subcommand to obtain the
+ *        private key in various encodings from an elliptic curves PEM
+ *        file.
  *
  * Results:
  *      Tcl Result Code.
@@ -1993,8 +2001,9 @@ SetResultFromEC_POINT(
  *
  * CryptoEckeyPubObjCmd -- Subcommand of NsTclCryptoEckeyObjCmd
  *
- *        Subcommand of ns_crypto::eckey to obtain the public key in
- *        various encodings from an elliptic curves PEM file.
+ *        Implements "ns_crypto::eckey pub". Subcommand to obtain the
+ *        public key in various encodings from an elliptic curves PEM
+ *        file.
  *
  * Results:
  *      Tcl Result Code.
@@ -2075,9 +2084,9 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *
  * CryptoEckeyImportObjCmd -- Subcommand of NsTclCryptoEckeyObjCmd
  *
- *        Subcommand of ns_crypto::eckey to import a public key
- *        into the OpenSSL EC_KEY structure in order to apply
- *        conversions of it. Can be most likely dropped.
+ *        Implements "ns_crypto::eckey import". Subcommand to import a
+ *        public key into the OpenSSL EC_KEY structure in order to
+ *        apply conversions of it. Can be most likely dropped.
  *
  * Results:
  *      Tcl Result Code.
@@ -2167,8 +2176,9 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
  *
  * CryptoEckeyGenerateObjCmd -- Subcommand of NsTclCryptoEckeyObjCmd
  *
- *        Subcommand of ns_crypto::eckey to generate an EC pemfile
- *        without the need of an external command.
+ *        Implements "ns_crypto::eckey generate". Subcommand to
+ *        generate an EC pemfile without the need of an external
+ *        command.
  *
  * Results:
  *      Tcl Result Code.
@@ -2243,9 +2253,9 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
  *
  * CryptoEckeySharedsecretObjCmd -- Subcommand of NsTclCryptoEckeyObjCmd
  *
- *        Subcommand of ns_crypto::eckey to generate a shared secret
- *        based on the private key from the .pem file and the provided
- *        public key.
+ *        Implements "ns_crypto::eckey sharedsecret". Subcommand to
+ *        generate a shared secret based on the private key from the
+ *        .pem file and the provided public key.
  *
  * Results:
  *      Tcl Result Code.
@@ -2469,7 +2479,8 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *
  * NsTclCryptoEckeyObjCmd --
  *
- *      Provide subcommands to handle EC (elliptic curve) cryptography
+ *      Implements "ns_crypto::eckey" with various subcommands to
+ *      provide subcommands to handle EC (elliptic curve) cryptography
  *      related commands.
  *
  * Results:
@@ -2638,9 +2649,10 @@ CryptoAeadStringGetArguments(
  *
  * CryptoAeadStringObjCmd -- Subcommand of NsTclCryptoAeadObjCmd
  *
- *        Sub command of NsTclCryptoAeadObjCmd to encrypt or decrypt
- *        string data. Encryption returns a dict with "bytes" and the
- *        "tag" necessary for decoding.
+ *        Implements "ns_crypto::aead::encrypt string" and
+ *        "ns_crypto::aead::decrypt string". Subcommand to encrypt or
+ *        decrypt string data. Encryption returns a dict with "bytes"
+ *        and the "tag" necessary for decoding.
  *
  * Results:
  *      Tcl Result Code.
@@ -2858,7 +2870,8 @@ CryptoAeadDecryptStringObjCmd(ClientData clientData, Tcl_Interp *interp, int obj
  *
  * NsTclCryptoAeadEncryptObjCmd, NsTclCryptoAeadDecryptObjCmd --
  *
- *      returns encrypted/decrypted data
+ *      Implements "ns_crypto::aead::encrypt" and
+ *      "ns_crypto::aead::dncrypt". Returns encrypted/decrypted data.
  *
  * Results:
  *      NS_OK
@@ -2894,7 +2907,8 @@ NsTclCryptoAeadDecryptObjCmd(ClientData clientData, Tcl_Interp *interp, int objc
  *
  * NsTclCryptoRandomBytesObjCmd --
  *
- *        Command to obtain random bytes from OpenSSL.
+ *        Implements "ns_crypto::randombytes". Returns random bytes
+ *        from OpenSSL.
  *
  *        Example: ns_crypto::randombytes 20
  *
