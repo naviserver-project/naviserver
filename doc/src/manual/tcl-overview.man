@@ -22,7 +22,7 @@ Tcl is a simple scripting language for controlling and extending
 applications; its name stands for "tool command language". Tcl
 provides generic programming facilities, such as variables and loops
 and procedures, that are useful in a variety of applications.
-Furthermore, Tcl is embedable. Its interpreter is a library of C
+Furthermore, Tcl is embeddable. Its interpreter is a library of C
 procedures that can easily be incorporated into applications, and each
 application can extend the core Tcl features with additional commands
 for that application.
@@ -243,7 +243,7 @@ Figure: NaviServer Blueprint (per server)
    The NaviServer blueprint contains Tcl functions, XOTcl/NX classes
    and objects and also namespaced variables. This are all Tcl
    variables, which are not in the topmost namespace "::". The
-   toplevel variables are treated as "scratch variables", which are
+   top-level variables are treated as "scratch variables", which are
    flushed automatically after every request. The global variables are
    often used for providing values for templating; cleaning these
    automatically can avoid unexpected interactions.

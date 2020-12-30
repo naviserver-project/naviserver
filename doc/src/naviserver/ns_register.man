@@ -432,7 +432,7 @@ which will be compared using exact string equality to the HTTP request.
 
 
 [arg_def string URL]
-The [arg URL] patterm to match against the URL in each HTTP request. The last
+The [arg URL] pattern to match against the URL in each HTTP request. The last
 component of the URL may contain the globbing characters [term *] and [term ?].
 
 [example_begin]

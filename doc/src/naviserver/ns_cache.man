@@ -253,7 +253,7 @@ Number of times an entry was found to be present but expired when requested and
 so not returned.
 
 [def pruned]
-Number of time an entry reached the end of the LRU list and was removed to make
+Number of times an entry reached the end of the LRU list and was removed to make
 way for a new entry.
 
 [list_end]

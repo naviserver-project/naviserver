@@ -126,7 +126,7 @@ This function requires OpenSSL compiled with EC support enabled.
      [opt [option "-passphrase [arg passphrase]"]] \
      ]
 
-Obtain the private key in various encodings from an elliptic curves
+Obtain the private key in various encodings from an elliptic curve
 PEM file. When the .pem-file is secured by a passphrase, this has
 to be provided via [option "-passphrase"].
 
