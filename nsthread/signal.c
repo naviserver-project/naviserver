@@ -103,7 +103,7 @@ ns_signal(int sig, void (*proc) (int))
  *
  * ns_sigwait --
  *
- *      Posix style sigwait().
+ *      POSIX style sigwait().
  *
  * Results:
  *      0 on success, otherwise an error code.
