@@ -510,9 +510,10 @@ typedef struct Sock {
     char               *taddr;           /* mmap-ed temporary file */
     size_t              tsize;           /* Size of mmap region */
     char               *tfile;           /* Name of regular temporary file */
+    unsigned long       recvErrno;       /* Last error number in read operation (can fit OpenSSL errors) */
     Ns_SockState        recvSockState;   /* Results from the last recv operation */
     int                 tfd;             /* File descriptor with request contents */
-    bool                keep;
+    bool                keep;            /* Keep alive handling */
 
     void               *sls[1];          /* Slots for sls storage */
 
@@ -1507,6 +1508,11 @@ NS_EXTERN void NsPoolAddBytesSent(ConnPool *poolPtr, Tcl_WideInt bytesSent)
 
 NS_EXTERN void NsSockClose(Sock *sockPtr, int keep)
     NS_GNUC_NONNULL(1);
+
+NS_EXTERN const char *
+NsSockSetRecvErrorCode(const Sock *sockPtr, Tcl_Interp *interp)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 
 NS_EXTERN int NsPoll(struct pollfd *pfds, NS_POLL_NFDS_TYPE nfds, const Ns_Time *timeoutPtr);
 

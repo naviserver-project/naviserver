@@ -3275,6 +3275,7 @@ SockNew(Driver *drvPtr)
         sockPtr->arg     = NULL;
         sockPtr->poolPtr = NULL;
         sockPtr->recvSockState = NS_SOCK_NONE;
+        sockPtr->recvErrno = 0u;
     }
     return sockPtr;
 }

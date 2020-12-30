@@ -1662,12 +1662,12 @@ Ns_TLS_SSLAccept(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
 
 ssize_t
 Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
-                Ns_SockState *sockStatePtr)
+                Ns_SockState *sockStatePtr, unsigned long *errnoPtr)
 {
     ssize_t       nRead = 0;
     int           got = 0, sock, n, err;
     char         *buf = NULL;
-    unsigned long sslError;
+    unsigned long sslERRcode;
     char          errorBuffer[256];
     Ns_SockState  sockState = NS_SOCK_READ;
 
@@ -1713,11 +1713,11 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
 
     case SSL_ERROR_SYSCALL:
 
-        sslError = ERR_get_error();
-        Ns_Log(Debug, "SSL_read(%d) SSL_ERROR_SYSCALL got:%d sslError %lu: %s", sock, got,
-               sslError, ERR_error_string(sslError, errorBuffer));
+        sslERRcode = ERR_get_error();
+        Ns_Log(Debug, "SSL_read(%d) SSL_ERROR_SYSCALL got:%d sslERRcode %lu: %s", sock, got,
+               sslERRcode, ERR_error_string(sslERRcode, errorBuffer));
 
-        if (sslError == 0) {
+        if (sslERRcode == 0) {
             Ns_Log(Debug, "SSL_read(%d) ERROR_SYSCALL (eod?), got:%d", sock, got);
             nRead = got;
             sockState = NS_SOCK_DONE;
@@ -1731,10 +1731,10 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
         NS_FALL_THROUGH; /* fall through */
 
     default:
-        sslError = ERR_get_error();
+        sslERRcode = ERR_get_error();
 
-        Ns_Log(Debug, "SSL_read(%d) error handler err %d sslError %lu",
-               sock, err, sslError);
+        Ns_Log(Debug, "SSL_read(%d) error handler err %d sslERRcode %lu",
+               sock, err, sslERRcode);
         /*
          * Starting with the commit in OpenSSL 1.1.1 branch
          * OpenSSL_1_1_1-stable below, at least HTTPS client requests
@@ -1750,10 +1750,10 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
          * https://github.com/openssl/openssl/commit/db943f43a60d1b5b1277e4b5317e8f288e7a0a3a
          */
         if (err == SSL_ERROR_SSL) {
-            int reasonCode = ERR_GET_REASON(sslError);
+            int reasonCode = ERR_GET_REASON(sslERRcode);
 
-            Ns_Log(Debug, "SSL_read(%d) error handler SSL_ERROR_SSL sslError %lu reason code %d",
-                   sock, sslError, reasonCode);
+            Ns_Log(Debug, "SSL_read(%d) error handler SSL_ERROR_SSL sslERRcode %lu reason code %d",
+                   sock, sslERRcode, reasonCode);
 #ifdef SSL_R_UNEXPECTED_EOF_WHILE_READING
             if (reasonCode == SSL_R_UNEXPECTED_EOF_WHILE_READING) {
                 Ns_Log(Notice, "SSL_read(%d) ERROR_SYSCALL sees UNEXPECTED_EOF_WHILE_READING", sock);
@@ -1764,14 +1764,14 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
 #endif
         }
         /*
-         * Report all sslErrors from the OpenSSL error stack as
+         * Report all sslERRcodes from the OpenSSL error stack as
          * "notices" in the system log file.
          */
-        while (sslError != 0u) {
+        while (sslERRcode != 0u) {
             Ns_Log(Notice, "SSL_read(%d) error received:%d, got:%d, err:%d,"
-                   " get_error:%lu, %s", sock, n, got, err, sslError,
-                   ERR_error_string(sslError, errorBuffer));
-            sslError = ERR_get_error();
+                   " get_error:%lu, %s", sock, n, got, err, sslERRcode,
+                   ERR_error_string(sslERRcode, errorBuffer));
+            sslERRcode = ERR_get_error();
         }
 
         SSL_set_shutdown(sslPtr, SSL_RECEIVED_SHUTDOWN);
@@ -1783,6 +1783,7 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
 
     if (nRead < 0) {
         sockState = NS_SOCK_EXCEPTION;
+        *errnoPtr = sslERRcode;
     }
 
     *sockStatePtr = sockState;
@@ -1847,6 +1848,49 @@ Ns_SSLSendBufs2(SSL *ssl, const struct iovec *bufs, int nbufs)
 
     return sent;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SSLSetErrorCode --
+ *
+ *      Set the Tcl error code in the interpreter based on the
+ *      provided numeric value (OpenSSL error value) and return the
+ *      error message.
+ *
+ * Results:
+ *      Error message in form of a string.
+ *
+ * Side effects:
+ *      Sets Tcl error code.
+ *
+ *----------------------------------------------------------------------
+ */
+const char *
+Ns_SSLSetErrorCode(Tcl_Interp *interp, unsigned long sslERRcode)
+{
+    const char *errorMsg;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+
+    if (ERR_GET_LIB(sslERRcode) == ERR_LIB_SYS) {
+        errorMsg = Ns_PosixSetErrorCode(interp, ERR_GET_REASON(sslERRcode));
+    } else {
+        char errorBuf[256];
+        /*
+         * Get long human readable error message from OpenSSL (including
+         * hex error code, library, and reason string).
+         */
+        ERR_error_string_n(sslERRcode, errorBuf, sizeof(errorBuf));
+
+        Tcl_SetErrorCode(interp, "OPENSSL", errorBuf, NULL);
+        errorMsg = ERR_reason_error_string(sslERRcode);
+    }
+
+    return errorMsg;
+}
+
+
 
 #else
 

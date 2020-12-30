@@ -292,7 +292,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
     SSLContext  *sslCtx = sock->arg;
     Ns_SockState sockState = NS_SOCK_NONE;
     ssize_t      nRead = 0;
-
+    unsigned long sslERRcode = 0u;
     /*
      * Verify client certificate, driver may require valid cert
      */
@@ -330,9 +330,9 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
     }
 
     if (nRead > -1) {
-        nRead = Ns_SSLRecvBufs2(sslCtx->ssl, bufs, nbufs, &sockState);
+        nRead = Ns_SSLRecvBufs2(sslCtx->ssl, bufs, nbufs, &sockState, &sslERRcode);
     }
-    Ns_SockSetReceiveState(sock, sockState);
+    Ns_SockSetReceiveState(sock, sockState, sslERRcode);
 
     return nRead;
 }

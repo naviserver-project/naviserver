@@ -232,11 +232,12 @@ Ns_SumVec(const struct iovec *bufs, int nbufs)
  *----------------------------------------------------------------------
  */
 void
-Ns_SockSetReceiveState(Ns_Sock *sock, Ns_SockState sockState)
+Ns_SockSetReceiveState(Ns_Sock *sock, Ns_SockState sockState, unsigned long recvErrno)
 {
     NS_NONNULL_ASSERT(sock != NULL);
 
     ((Sock *)sock)->recvSockState = sockState;
+    ((Sock *)sock)->recvErrno = recvErrno;
 }
 
 
@@ -317,35 +318,38 @@ ssize_t
 Ns_SockRecvBufs(Ns_Sock *sock, struct iovec *bufs, int nbufs,
                 const Ns_Time *timeoutPtr, unsigned int flags)
 {
-    ssize_t      n;
-    Ns_SockState sockState = NS_SOCK_READ;
-    Sock        *sockPtr = (Sock *)sock;
+    ssize_t        nrBytes;
+    Ns_SockState   sockState = NS_SOCK_READ;
+    unsigned long  recvErrno = 0u;
+    Sock          *sockPtr = (Sock *)sock;
 
     NS_NONNULL_ASSERT(sock != NULL);
 
-    n = Ns_SockRecvBufs2(sock->sock, bufs, nbufs, flags, &sockState);
-    if (sockState == NS_SOCK_AGAIN) {
+    nrBytes = Ns_SockRecvBufs2(sock->sock, bufs, nbufs, flags, &sockState, &recvErrno);
+    if (sockState == NS_SOCK_AGAIN && timeoutPtr != NULL) {
         /*
-         * If a timeoutPtr was provided, perform timeout handling.
+         * When a timeoutPtr is provided, perform timeout handling.
          */
-        if (timeoutPtr != NULL) {
-            Ns_ReturnCode status;
+        Ns_ReturnCode status;
 
-            status = Ns_SockTimedWait(sock->sock,
-                                      (unsigned int)NS_SOCK_READ,
-                                      timeoutPtr);
-            if (status == NS_OK) {
-                n = SockRecv(sock->sock, bufs, nbufs, flags);
-            } else if (status == NS_TIMEOUT) {
-                sockState = NS_SOCK_TIMEOUT;
-            } else {
-                sockState = NS_SOCK_EXCEPTION;
-            }
+        status = Ns_SockTimedWait(sock->sock,
+                                  (unsigned int)NS_SOCK_READ,
+                                  timeoutPtr);
+        if (status == NS_OK) {
+            nrBytes = SockRecv(sock->sock, bufs, nbufs, flags);
+        } else if (status == NS_TIMEOUT) {
+            sockState = NS_SOCK_TIMEOUT;
+        } else {
+            sockState = NS_SOCK_EXCEPTION;
+            recvErrno = (unsigned long)ns_sockerrno;
         }
     }
     sockPtr->recvSockState = sockState;
+    if (sockState == NS_SOCK_EXCEPTION) {
+        sockPtr->recvErrno = recvErrno;
+    }
 
-    return n;
+    return nrBytes;
 }
 
 
@@ -375,17 +379,21 @@ Ns_SockRecvBufs(Ns_Sock *sock, struct iovec *bufs, int nbufs,
  */
 ssize_t
 Ns_SockRecvBufs2(NS_SOCKET sock, struct iovec *bufs, int nbufs,
-                 unsigned int flags, Ns_SockState *sockStatePtr)
+                 unsigned int flags, Ns_SockState *sockStatePtr,
+                 unsigned long *errnoPtr)
 {
     ssize_t      n;
     Ns_SockState sockState = NS_SOCK_READ;
 
     NS_NONNULL_ASSERT(bufs != NULL);
+    NS_NONNULL_ASSERT(errnoPtr != NULL);
 
     n = SockRecv(sock, bufs, nbufs, flags);
 
     if (unlikely(n == -1)) {
-        if (Retry(ns_sockerrno)) {
+        int sockerrno = ns_sockerrno;
+
+        if (Retry(sockerrno)) {
             /*
              * Resource is temporarily unavailable.
              */
@@ -394,8 +402,11 @@ Ns_SockRecvBufs2(NS_SOCKET sock, struct iovec *bufs, int nbufs,
             /*
              * Some other error.
              */
+            Ns_Log(Debug, "Ns_SockRecvBufs2 errno %d on sock %d: %s",
+                   sockerrno, sock, strerror(sockerrno));
             sockState = NS_SOCK_EXCEPTION;
         }
+        *errnoPtr = (unsigned long)sockerrno;
     } else if (unlikely(n == 0)) {
         /*
          * Peer has performed an orderly shutdown.
@@ -1891,11 +1902,70 @@ Ns_SockErrorCode(Tcl_Interp *interp, NS_SOCKET sock) {
 
     err = getsockopt(sock, SOL_SOCKET, SO_ERROR, (void*)&sockerrno, &len);
     if (interp != NULL && (err == -1 || sockerrno != 0)) {
-        Tcl_SetErrorCode(interp, "POSIX",
-                         ErrorCodeString(sockerrno),
-                         Tcl_ErrnoMsg(sockerrno), NULL);
+        (void)Ns_PosixSetErrorCode(interp, sockerrno);
     }
     return sockerrno;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_PosixSetErrorCode --
+ *
+ *      Set the Tcl error code in the interpreter based on the provided
+ *      numeric value (POSIX errno) and return the error message.
+ *
+ * Results:
+ *      Error message in form of a string.
+ *
+ * Side effects:
+ *      Sets Tcl error code.
+ *
+ *----------------------------------------------------------------------
+ */
+const char *
+Ns_PosixSetErrorCode(Tcl_Interp *interp, int errorNum) {
+    const char *errorMsg;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+
+    errorMsg = Tcl_ErrnoMsg(errorNum);
+    Tcl_SetErrorCode(interp, "POSIX",
+                     ErrorCodeString(errorNum),
+                     Tcl_ErrnoMsg(errorNum), NULL);
+    return errorMsg;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsSockSetRecvErrorCode --
+ *
+ *      Set the Tcl error code in the interpreter based on the information
+ *      provided by Sock* (actually by recvErrno); the function works for
+ *      OpenSSL and plain POSIX style error codes.
+ *
+ * Results:
+ *      Error message in form of a string.
+ *
+ * Side effects:
+ *      Sets Tcl error code.
+ *
+ *----------------------------------------------------------------------
+ */
+const char *
+NsSockSetRecvErrorCode(const Sock *sockPtr, Tcl_Interp *interp) {
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(sockPtr != NULL);
+
+#ifdef HAVE_OPENSSL_EVP_H
+
+    if (STREQ(sockPtr->drvPtr->protocol, "https")) {
+        return Ns_SSLSetErrorCode(interp, sockPtr->recvErrno);
+    }
+#endif
+    return Ns_PosixSetErrorCode(interp, (int)sockPtr->recvErrno);
 }
 
 /*

@@ -3295,8 +3295,9 @@ HttpTaskRecv(
     size_t length,
     Ns_SockState *statePtr
 ) {
-    ssize_t recv = 0;
-    int     nbufs = 1;
+    ssize_t       recv;
+    int           nbufs = 1;
+    unsigned long recvErrorCode;
     struct  iovec iov, *bufs = &iov;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
@@ -3306,12 +3307,12 @@ HttpTaskRecv(
     iov.iov_len  = length;
 
     if (httpPtr->ssl == NULL) {
-        recv = Ns_SockRecvBufs2(httpPtr->sock, bufs, nbufs, 0u, statePtr);
+        recv = Ns_SockRecvBufs2(httpPtr->sock, bufs, nbufs, 0u, statePtr, &recvErrorCode);
     } else {
 #ifndef HAVE_OPENSSL_EVP_H
         recv = -1;
 #else
-        recv = Ns_SSLRecvBufs2(httpPtr->ssl, bufs, nbufs, statePtr);
+        recv = Ns_SSLRecvBufs2(httpPtr->ssl, bufs, nbufs, statePtr, &recvErrorCode);
 #endif
     }
 
