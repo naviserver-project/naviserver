@@ -1073,12 +1073,12 @@ PortsParse(Ns_DList *dlPtr, const char *listString, const char *path)
 static char *
 PortsPrint(Tcl_DString *dsPtr, const Ns_DList *dlPtr)
 {
-    size_t i;
-
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(dlPtr != NULL);
 
     if (dlPtr->size > 0) {
+        size_t i;
+
         for ( i= 0; i < dlPtr->size; i++) {
             Ns_DStringPrintf(dsPtr, "%hu ", (unsigned short)PTR2INT(dlPtr->data[i]));
         }

@@ -191,7 +191,6 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, int maxbackup)
 
     } else {
         time_t           now0, now1 = time(NULL);
-        char             timeBuf[512];
         Ns_DString       ds;
         Tcl_Obj         *newPath;
         struct tm        tm0, tm1, *ptm0, *ptm1;
@@ -223,7 +222,9 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, int maxbackup)
          * In theory, localtime() or localtime_r() can return NULL on
          * invalid input, which won't happen here (famous last words).
          */
-        if (ptm0 != NULL && ptm0 != NULL) {
+        if (ptm0 != NULL && ptm1 != NULL) {
+            char timeBuf[512];
+
             (void) strftime(timeBuf, sizeof(timeBuf)-1u, rollfmt,
                             (ptm0->tm_mday < ptm1->tm_mday) ? ptm0 : ptm1);
 
