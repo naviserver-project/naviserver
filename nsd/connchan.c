@@ -2109,30 +2109,12 @@ ConnChanReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             if ( webSocketFrame == 0 || connChanPtr->frameNeedsData) {
                 nRead = ConnChanReadBuffer(connChanPtr, buffer, sizeof(buffer));
                 if (nRead < 0) {
-                    const char *errorMsg = NsSockSetRecvErrorCode(connChanPtr->sockPtr, interp);
+                    const char *errorMsg;
+
+                    errorMsg = NsSockSetRecvErrorCode(connChanPtr->sockPtr, interp);
                     Tcl_SetObjResult(interp, Tcl_NewStringObj(errorMsg, -1));
                     result = TCL_ERROR;
-#if 0
-                    recvErrno = connChanPtr->sockPtr->recvErrno;
-                    Ns_Log(Error, "connchan channel %s driver %s sock %d returned -1, recvErrno %ld: %s",
-                           name, connChanPtr->sockPtr->drvPtr->moduleName,
-                           connChanPtr->sockPtr->sock,
-                           recvErrno, Ns_ErrnoMsg(recvErrno)
-                           );
-                    if  (webSocketFrame == 1) {
-                        /*
-                         * Return always a dict
-                         */
-                        Tcl_SetObjResult(interp, GetWebsocketFrame(connChanPtr, buffer, nRead));
-                    } else {
-                        /*
-                         * The connection was reset by the peer
-                         */
-                        const char *errorMsg = NsSockSetRecvErrorCode(connChanPtr->sockPtr, interp);
-                        Tcl_SetObjResult(interp, Tcl_NewStringObj(errorMsg, -1));
-                        result = TCL_ERROR;
-                    }
-#endif
+
                 } else if (webSocketFrame == 0 && nRead > 0) {
                     connChanPtr->rBytes += (size_t)nRead;
                     Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((unsigned char *)buffer, (int)nRead));
