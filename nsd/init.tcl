@@ -493,17 +493,14 @@ if {$use_trace_inits} {
     #
     # ns_eval --
     #
-    #   Evaluate a script which should contain
-    #   new procs commands and then save the
-    #   state of the procs for other interps
-    #   to sync with.
-    #   If this is called from within interp init
-    #   processing, it will devolve to an eval.
+    #   Evaluate a script which should contain new procs commands and
+    #   then save the state of the procs for other interps to sync
+    #   with.  If this is called from within interp init processing,
+    #   it will devolve to an eval.
     #
-    #   If this ever gets moved to a namespace,
-    #   the eval will need to be modified to
-    #   ensure that the procs aren't defined
-    #   in that namespace.
+    #   If this ever gets moved to a namespace, the eval will need to
+    #   be modified to ensure that the procs aren't defined in that
+    #   namespace.
     #
 
     proc ns_eval {args} {
@@ -538,23 +535,23 @@ if {$use_trace_inits} {
         }
 
         #
-        # Need to always incorporate given script into current interp
-        # Use this also to verify the script prior to doing the fold into
-        # the ictl environment
+        # Always incorporate given script into current interp.  Use
+        # this also to verify the script prior to doing the fold into
+        # the ictl environment.
         #
 
         set code [catch {uplevel 1 _ns_helper_eval $args} result]
         if {!$code && [ns_ictl epoch]} {
 
             #
-            # If the local eval result was ok (code == 0),
-            # and if we are not in interp init processing (epoch != 0),
-            # eval the args in a fresh thread to obtain a pristine
-            # environment.
-            # Note that running the _ns_eval must be serialized for this
-            # server.  We are handling this by establishing that the
-            # ns_job queue handling these requests will run only a single
-            # thread.
+            # If the local eval result was ok (code == 0), and if we
+            # are not in interp init processing (epoch != 0), eval the
+            # args in a fresh thread to obtain a pristine environment.
+            #
+            # Note that running the _ns_eval must be serialized for
+            # this server.  We are handling this by establishing that
+            # the ns_job queue handling these requests will run only a
+            # single thread.
             #
 
             set qid "ns_eval_q:[ns_info server]"
@@ -615,8 +612,8 @@ if {$use_trace_inits} {
     #
     # _ns_helper_eval --
     #
-    #   This Internal helper func is used by both ns_eval and _ns_eval.
-    #   It will insure that any references to ns_eval from code
+    #   This internal helper func is used by both ns_eval and
+    #   _ns_eval.  It ensures that any references to ns_eval from code
     #   eval'ed is properly turned into simple evals.
     #
 
