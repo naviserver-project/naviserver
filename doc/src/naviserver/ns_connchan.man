@@ -179,6 +179,7 @@ Tcl [cmd dict] containing the following elements:
 [term fin] status bit,
 [term frame] state ([term incomplete] or [term complete]),
 [term unprocessed] (received number of bytes in buffer not handled so far),
+[term fragments] (number of bytes in the WebSocket fragments buffer),
 [term haveData] (boolean value to express that unprocessed
 data might be sufficient for next frame without an extra read operation.
 
@@ -198,13 +199,13 @@ The command returns a dict containing the following elements:
 [para]
 
 [term driver] (module name the driver),
-[term peer] (communication peer, the IP address of the other side of
-the channel),
+[term fragments] (for WebSocket read operations: number of bytes in the WebSocket fragments buffer),
+[term framebuffer] (for WebSocket read operations: number of bytes in the WebSocket frame buffer),
+[term peer] (communication peer, the IP address of the other side of the channel),
 [term reveived] (number of bytes received),
 [term sendbuffer] (for buffered write operations: number of bytes in the send buffer),
-[term sent] (number of bytes sent),
-[term start] (time when the connection started), and
-[term wsbuffer] (for WebSocket read operations: number of bytes in the WebSochet frame buffert).
+[term sent] (number of bytes sent), and
+[term start] (time when the connection started).
 
 When a callback is defined for this channel, the dict contains as well the
 [term callback] and the

@@ -1489,13 +1489,30 @@ ConnChanStatusObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
             Tcl_DStringInit(&ds);
             Ns_DStringPrintf(&ds, NS_TIME_FMT, (int64_t) connChanPtr->startTime.sec, connChanPtr->startTime.usec);
 
-            Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("start", 5), Tcl_NewStringObj(ds.string, ds.length));
-            Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("driver", 6), Tcl_NewStringObj(connChanPtr->sockPtr->drvPtr->moduleName, -1));
-            Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("peer", 4), Tcl_NewStringObj(*connChanPtr->peer == '\0' ? "" : connChanPtr->peer, -1));
-            Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("sent", 4), Tcl_NewWideIntObj((Tcl_WideInt)connChanPtr->wBytes));
-            Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("reveived", 8), Tcl_NewWideIntObj((Tcl_WideInt)connChanPtr->rBytes));
-            Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("wsbuffer", 8), Tcl_NewIntObj(ConnChanBufferSize(connChanPtr,frameBuffer)));
-            Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("sendbuffer", 10), Tcl_NewIntObj(ConnChanBufferSize(connChanPtr,sendBuffer)));
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("start", 5),
+                           Tcl_NewStringObj(ds.string, ds.length));
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("driver", 6),
+                           Tcl_NewStringObj(connChanPtr->sockPtr->drvPtr->moduleName, -1));
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("peer", 4),
+                           Tcl_NewStringObj(*connChanPtr->peer == '\0' ? "" : connChanPtr->peer, -1));
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("sent", 4),
+                           Tcl_NewWideIntObj((Tcl_WideInt)connChanPtr->wBytes));
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("reveived", 8),
+                           Tcl_NewWideIntObj((Tcl_WideInt)connChanPtr->rBytes));
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("framebuffer", 8),
+                           Tcl_NewIntObj(ConnChanBufferSize(connChanPtr,frameBuffer)));
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("sendbuffer", 10),
+                           Tcl_NewIntObj(ConnChanBufferSize(connChanPtr,sendBuffer)));
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("fragments", 9),
+                           Tcl_NewIntObj(ConnChanBufferSize(connChanPtr,fragmentsBuffer)));
 
             if (connChanPtr->cbPtr != NULL) {
                 char whenBuffer[6];
@@ -2439,7 +2456,7 @@ ConnChanWsframeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         {NULL,       0u}
     };
     Ns_ObjvSpec opts[] = {
-        {"-binary", Ns_ObjvBool, &isBinary, INT2PTR(NS_TRUE)},       
+        {"-binary", Ns_ObjvBool, &isBinary, INT2PTR(NS_TRUE)},
         {"-fin",        Ns_ObjvInt,   &fin,      &finRange},
         {"-mask",       Ns_ObjvBool,  &masked,   INT2PTR(NS_TRUE)},
         {"-opcode",     Ns_ObjvIndex, &opcode,   &opcodes},
