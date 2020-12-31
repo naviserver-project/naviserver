@@ -164,23 +164,93 @@ option [option -hostname] is required.
 
 
 [call [cmd "ns_connchan read"] \
+	[opt [option "-websocket"]] \
 	[arg channel] \
 ]
 
-Read from the specified connection channel.
+Read from the specified connection channel and return the received data.
+
+[para]
+When the option [option "-websocket"] is used, then the command
+expects WebSocket frames. In this mode the result of the command is a
+Tcl [cmd dict] containing the following elements:
+
+[para]
+[term fin] status bit,
+[term frame] state ([term incomplete] or [term complete]),
+[term unprocessed] (received number of bytes in buffer not handled so far),
+[term haveData] (boolean value to express that unprocessed
+data might be sufficient for next frame without an extra read operation.
+
+[para]
+In case the frame is finished ([term fin] status bit is set),
+the dict contains as well the  WebSocket [term opcode] and
+the [term payload] of the frame.
+
+
+[call [cmd "ns_connchan status"] \
+	[arg channel] \
+]
+
+Query status information from the specified connection channel.
+The command returns a dict containing the following elements:
+
+[para]
+
+[term driver] (module name the driver),
+[term peer] (communication peer, the IP address of the other side of
+the channel),
+[term reveived] (number of bytes received),
+[term sendbuffer] (for buffered write operations: number of bytes in the send buffer),
+[term sent] (number of bytes sent),
+[term start] (time when the connection started), and
+[term wsbuffer] (for WebSocket read operations: number of bytes in the WebSochet frame buffert).
+
+When a callback is defined for this channel, the dict contains as well the
+[term callback] and the
+[term condition] on which the callback will be fired.
+
+[call [cmd "ns_connchan wsframe"] \
+	[opt [option "-binary"]] \
+	[opt [option "-fin [arg 0|1]"]] \
+	[opt [option "-mask"]] \
+	[opt [option "-opcode [arg {continue|text|binary|close|ping|pong}]"]] \
+	[arg message] \
+]
+
+returns a binary websocket frame based on the provided information
+in form of a Tcl byte array.
+When [option "-mask"] is specified, the data will be mased with
+random information. For the opcode [arg binary], the input is treated
+as binary as well. When [option "-binary"] is used, the data
+wi explicitly treated as binary. This is e.g. necessary on
+multi-segment messages, where later segments have the opcode
+[arg continue].
+
 
 [call [cmd "ns_connchan write"] \
 	[arg channel] \
+	[opt [option "-buffered"]] \
 	[arg string] \	
 ]
 
 Write to the specified connection channel. The function returns
 the number of bytes sent, which might be less than the input length.
 
+[para] When the option [option "-buffered"] is used, then for partial
+write operations the data which could not be sent is handled
+internally. The command returns like in non-buffered mode the number of
+bytes sent, but keeps the reminder and will process this data together
+with the next write operation (e.g. called with an exmpty string as
+last argument). By using the buffered mode the Tcl programmer does not
+have to care about sending the non-sent chunk again and to concatenate
+this with potentially more data form other write operations.
+
+
 [list_end]
 
 [see_also ns_conn ns_chan ns_sockcallback ns_write]
-[keywords "server built-in" channels socket driver reverseproxy]
+[keywords "server built-in" channels socket driver reverseproxy websocket]
 
 [manpage_end]
 

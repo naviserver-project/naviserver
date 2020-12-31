@@ -14,7 +14,7 @@ test ns_connchan-1.0 {basic operation} -body {
 
 test ns_connchan-1.1 {basic operation} -body {
      ns_connchan x
-} -returnCodes error -result {bad subcmd "x": must be callback, close, detach, exists, list, listen, open, read, or write}
+} -returnCodes error -result {bad subcmd "x": must be callback, close, detach, exists, list, listen, open, read, status, write, or wsframe}
 
 test ns_connchan-1.2 {detach without connection} -body {
      ns_connchan detach
@@ -183,6 +183,26 @@ test ns_connchan-1.8.5 {detach connection, return success "ns_conn driver"} -set
     ns_unregister_op GET /conn
 } -result {200 nssock}
 
+
+#
+# WebSocket
+#
+test ns_connchan-2.0 {ns_connchan wsframe, basic command flages} -body {
+    ns_connchan wsframe
+} -cleanup {
+    ns_unregister_op GET /conn
+} -returnCodes {error ok
+} -result {wrong # args: should be "ns_connchan wsframe ?-binary? ?-fin fin[0,1]? ?-mask? ?-opcode opcode? message"}
+
+test ns_connchan-2.1.1 {ns_connchan wsframe with text} -body {
+    binary encode hex [ns_connchan wsframe -opcode text "Hello Wörld"]
+} -returnCodes {error ok
+} -result {810c48656c6c6f2057c3b6726c64}
+
+test ns_connchan-2.1.2 {ns_connchan wsframe with binary data fin bit cleared} -body {
+    binary encode hex [ns_connchan wsframe -fin 0 -opcode binary "Hello World"]
+} -returnCodes {error ok
+} -result {020b48656c6c6f20576f726c64}
 cleanupTests
 
 # Local variables:

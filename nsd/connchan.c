@@ -28,12 +28,36 @@
 
 #include "nsd.h"
 
+#ifdef HAVE_OPENSSL_EVP_H
+# include "nsopenssl.h"
+# include <openssl/rand.h>
+#endif
+
+/*
+ * Handling of network byte order (big endian).
+ */
+#if defined(__linux__)
+#  include <endian.h>
+#elif defined(__FreeBSD__) || defined(__NetBSD__)
+#  include <sys/endian.h>
+#elif defined(__OpenBSD__)
+#  include <sys/types.h>
+#  define be16toh(x) betoh16(x)
+#  define be32toh(x) betoh32(x)
+#  define be64toh(x) betoh64(x)
+#elif defined(__APPLE__) || defined(_MSC_VER)
+#  define be16toh(x) ntohs(x)
+#  define be32toh(x) ntonl(x)
+#  define be64toh(x) ntohll(x)
+#  define htobe16(x) htons(x)
+#  define htobe32(x) htonl(x)
+#  define htobe64(x) htonll(x)
+#endif
 
 /*
  * Structure handling one registered channel for the [ns_connchan]
  * command.
  */
-
 typedef struct {
     const char      *channelName;
     char             peer[NS_IPADDR_SIZE];  /* Client peer address */
@@ -46,8 +70,14 @@ typedef struct {
     Ns_Time          sendTimeout;
     const char      *clientData;
     struct Callback *cbPtr;
+    Tcl_DString     *sendBuffer;       /* For unsent bytes in "ns_connchan write -buffered" */
+    Tcl_DString     *frameBuffer;      /* Buffer of for a single WebSocket frame */
+    Tcl_DString     *fragmentsBuffer;  /* Buffer for multiple WebSocket segments */
+    int              fragmentsOpcode;  /* Opcode of the first WebSocket segment */
+    bool             frameNeedsData;   /* Indicator, if additional reads are required */
 } NsConnChan;
 
+#define ConnChanBufferSize(connChanPtr, buf) ((connChanPtr)->buf != NULL ? (connChanPtr)->buf->length : 0)
 
 typedef struct Callback {
     NsConnChan  *connChanPtr;
@@ -96,12 +126,13 @@ static Ns_ReturnCode SockCallbackRegister(NsConnChan *connChanPtr, const char *s
 static ssize_t ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                                   struct iovec *bufs, int nbufs, unsigned int flags,
                                   const Ns_Time *timeoutPtr
-) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6);
+                                  ) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6);
 
 static char *WhenToString(char *buffer, unsigned int when)
     NS_GNUC_NONNULL(1);
 
 static bool SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why));
+static void RequireDsBuffer(Tcl_DString **dsPtr)  NS_GNUC_NONNULL(1);
 
 static Ns_SockProc NsTclConnChanProc;
 
@@ -114,6 +145,7 @@ static Tcl_ObjCmdProc   ConnChanListenObjCmd;
 static Tcl_ObjCmdProc   ConnChanOpenObjCmd;
 static Tcl_ObjCmdProc   ConnChanReadObjCmd;
 static Tcl_ObjCmdProc   ConnChanWriteObjCmd;
+static Tcl_ObjCmdProc   ConnChanWsframeObjCmd;
 
 static Ns_SockProc CallbackFree;
 
@@ -278,6 +310,10 @@ ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
     connChanPtr->sendTimeout.sec = 0;
     connChanPtr->sendTimeout.usec = 0;
     connChanPtr->clientData = clientData != NULL ? ns_strdup(clientData) : NULL;
+    connChanPtr->sendBuffer = NULL;
+    connChanPtr->frameBuffer = NULL;
+    connChanPtr->fragmentsBuffer = NULL;
+    connChanPtr->frameNeedsData = NS_TRUE;
 
     strncpy(connChanPtr->peer, peer, NS_IPADDR_SIZE - 1);
     connChanPtr->sockPtr = sockPtr;
@@ -377,6 +413,18 @@ ConnChanFree(NsConnChan *connChanPtr, NsServer *servPtr) {
         if (connChanPtr->sockPtr != NULL) {
             NsSockClose(connChanPtr->sockPtr, (int)NS_FALSE);
             connChanPtr->sockPtr = NULL;
+        }
+        if (connChanPtr->sendBuffer != NULL) {
+            Tcl_DStringFree(connChanPtr->sendBuffer);
+            ns_free((char *)connChanPtr->sendBuffer);
+        }
+        if (connChanPtr->frameBuffer != NULL) {
+            Tcl_DStringFree(connChanPtr->frameBuffer);
+            ns_free((char *)connChanPtr->frameBuffer);
+        }
+        if (connChanPtr->fragmentsBuffer != NULL) {
+            Tcl_DStringFree(connChanPtr->fragmentsBuffer);
+            ns_free((char *)connChanPtr->fragmentsBuffer);
         }
         ns_free((char *)connChanPtr);
     } else {
@@ -531,6 +579,7 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
             if (result != TCL_OK) {
                 (void) Ns_TclLogErrorInfo(interp, "\n(context: connchan proc)");
             } else {
+                Tcl_DString ds;
                 Tcl_Obj    *objPtr = Tcl_GetObjResult(interp);
                 int         ok = 1;
 
@@ -541,8 +590,6 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
                  */
 
                 if (logEnabled) {
-                    Tcl_DString ds;
-
                     Tcl_DStringInit(&ds);
                     Ns_DStringNAppend(&ds, script.string, (int)scriptCmdNameLength);
                     Ns_Log(Ns_LogConnchanDebug,
@@ -554,11 +601,12 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
                 /*
                  * The Tcl callback can signal with the result "0",
                  * that the connection channel should be closed
-                 * automatically. A result of "2" means to suspend the
-                 * callback, but not close the channel.
+                 * automatically. A result of "2" means to suspend
+                 * (cancel) the callback, but not close the channel.
                  */
                 result = Tcl_GetIntFromObj(interp, objPtr, &ok);
                 if (result == TCL_OK) {
+                    Ns_Log(Ns_LogConnchanDebug, "NsTclConnChanProc <%s> numeric result %d", script.string, ok);
                     if (ok == 0) {
                         result = TCL_ERROR;
                     } else if (ok == 2) {
@@ -576,6 +624,15 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
                          */
                         (void) Ns_SockCancelCallbackEx(localsock, NULL, NULL, NULL);
                     }
+                } else {
+                    Tcl_DStringInit(&ds);
+                    Ns_DStringNAppend(&ds, script.string, (int)scriptCmdNameLength);
+
+                    Ns_Log(Warning, "%s callback <%s> returned unhandled result '%s' (must be 0, 1, or 2)",
+                           channelName,
+                           ds.string,
+                           Tcl_GetString(objPtr));
+                    Tcl_DStringFree(&ds);
                 }
             }
             if (channelName != NULL) {
@@ -742,8 +799,8 @@ SockCallbackRegister(NsConnChan *connChanPtr, const char *script,
 
 static ssize_t
 ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
-           struct iovec *bufs, int nbufs, unsigned int flags,
-           const Ns_Time *timeoutPtr)
+                   struct iovec *bufs, int nbufs, unsigned int flags,
+                   const Ns_Time *timeoutPtr)
 {
     ssize_t  result;
     Sock    *sockPtr;
@@ -771,21 +828,22 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
      */
     if (likely(sockPtr->drvPtr->sendProc != NULL)) {
         bool    haveTimeout = NS_FALSE, partial;
-        ssize_t nSent = 0, toSend = (ssize_t)Ns_SumVec(bufs, nbufs), origLength = toSend;
-
-        Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend try to send %" PRIdz " bytes",
-               connChanPtr->channelName, toSend);
+        ssize_t nSent = 0, toSend = (ssize_t)Ns_SumVec(bufs, nbufs), origLength = toSend, partialResult;
 
         do {
-            /*Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend try to send [0] %" PRIdz " bytes (total %"  PRIdz ")",
+            ssize_t partialToSend = (ssize_t)Ns_SumVec(bufs, nbufs);
+
+            Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend try to send [0] %" PRIdz
+                   " bytes (total %"  PRIdz ")",
                    connChanPtr->channelName,
-                   bufs->iov_len, (ssize_t)Ns_SumVec(bufs, nbufs));*/
+                   bufs->iov_len, partialToSend);
 
-            result = NsDriverSend(sockPtr, bufs, nbufs, flags);
-            Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend NsDriverSend returned result %" PRIdz " --- %s",
-                   connChanPtr->channelName, result, Tcl_ErrnoMsg(errno));
+            partialResult = NsDriverSend(sockPtr, bufs, nbufs, flags);
+            Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend NsDriverSend returned result %"
+                   PRIdz " errorState %d --- %s",
+                   connChanPtr->channelName, partialResult, sockPtr->recvSockState, Tcl_ErrnoMsg(errno));
 
-            if (result == 0) {
+            if (partialResult == 0) {
                 /*
                  * The resource is temporarily unavailable, we can an
                  * retry, when the socket is writable.
@@ -793,86 +851,70 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                  * If there is no timeout provided, return the bytes sent so far.
                  */
                 if (timeoutPtr->sec == 0 && timeoutPtr->usec == 0) {
-                    Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend would block, no timeout configured, "
+                    Ns_Log(Ns_LogConnchanDebug,
+                           "%s ConnchanDriverSend would block, no timeout configured, "
                            "origLength %" PRIdz" still to send %" PRIdz " already sent %" PRIdz,
                            connChanPtr->channelName, origLength, toSend, nSent);
                     /*
-                     * The result might be between "0" and "toSend".
+                     * The partialResult might be between "0" and "partialToSend".
                      */
                     result = nSent;
-                    /*
-                     * For OpenSSL, we have here a special situation:
-                     * In case a write operation ends in an
-                     * SSL_ERROR_WANT_WRITE, we see a behavior similar
-                     * to a partial write, where no data was written at
-                     * all. However, the subsequent write operation
-                     * has to be performed with the identical C
-                     * buffer, otherwise we receive a
-                     * "ssl3_write_pending:bad write retry".
-                     *
-                     * - One option for a "result == 0" is to avoid
-                     *   the "break" and proceed to the TimedWait.
-                     *
-                     * - One other option is to set
-                     *   SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER which
-                     *   simply avoids the sanity check in OpenSSL
-                     *   triggering the error above.
-                     */
-                    //if (result != 0) {
-                    //    break;
-                    //}
 
-                    if (result == 0) {
-                        Ns_Log(Ns_LogConnchanDebug,
-                               "ConnchanDriverSend ZERO byte write operation. "
-                               "SSL should call SSL_write with same buffer");
-                        break;
-                    }
                     break;
-                }
-                /*
-                 * A timeout was provided. Be aware that the timeout
-                 * will suspend all sock-callback handlings for this
-                 * time period.
-                 */
-                Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend recoverable "
-                       "error before timeout (" NS_TIME_FMT ")",
-                       connChanPtr->channelName, (int64_t)timeoutPtr->sec, timeoutPtr->usec);
-                if (Ns_SockTimedWait(sockPtr->sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
-                    result = NsDriverSend(sockPtr, bufs, nbufs, flags);
                 } else {
-                    Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend timeout occurred",
-                           connChanPtr->channelName);
-                    haveTimeout = NS_TRUE;
-                    Ns_TclPrintfResult(interp, "channel %s timeout on send "
-                                       "operation (" NS_TIME_FMT ")",
-                                       connChanPtr->channelName,
-                                       (int64_t)timeoutPtr->sec, timeoutPtr->usec);
-                    Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
-                    Ns_Log(Ns_LogTimeoutDebug, "connchan send on %s runs into timeout",
-                           connChanPtr->channelName);
-                    result = -1;
+                    /*
+                     * A timeout was provided. Be aware that the timeout
+                     * will suspend all sock-callback handlings for this
+                     * time period.
+                     */
+                    Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend recoverable "
+                           "error before timeout (" NS_TIME_FMT ")",
+                           connChanPtr->channelName, (int64_t)timeoutPtr->sec, timeoutPtr->usec);
+
+                    if (Ns_SockTimedWait(sockPtr->sock, (unsigned int)NS_SOCK_WRITE, timeoutPtr) == NS_OK) {
+                        partialResult = NsDriverSend(sockPtr, bufs, nbufs, flags);
+                    } else {
+                        Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend timeout occurred",
+                               connChanPtr->channelName);
+                        haveTimeout = NS_TRUE;
+                        Ns_TclPrintfResult(interp, "channel %s timeout on send "
+                                           "operation (" NS_TIME_FMT ")",
+                                           connChanPtr->channelName,
+                                           (int64_t)timeoutPtr->sec, timeoutPtr->usec);
+                        Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+                        Ns_Log(Ns_LogTimeoutDebug, "connchan send on %s runs into timeout",
+                               connChanPtr->channelName);
+                        partialResult = -1;
+                    }
                 }
             }
 
             partial = NS_FALSE;
-            if (result != -1) {
-                nSent += result;
-                if (nSent < toSend) {
+
+            if (partialResult != -1) {
+                nSent += partialResult;
+                partialToSend -= partialResult;
+
+                Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend check partialResult %" PRIdz
+                       " nSent %" PRIdz " toSend %" PRIdz " partial ? %d",
+                       connChanPtr->channelName, partialResult, nSent, partialToSend, (partialToSend > 0));
+                assert(partialToSend >= 0);
+
+                if (partialToSend > 0) {
                     /*
                      * Partial write operation: part of the iovec has
-                     * been sent, we have to retransmit the rest. We
-                     * could advance the nbufs counter, but the only
-                     * case of nbufs > 0 is the sending of the
-                     * headers, which is a one-time operation.
+                     * been sent, we have to retransmit the rest.
                      */
-                    Ns_Log(Ns_LogConnchanDebug,
-                           "%s ConnchanDriverSend partial write operation, sent %" PRIdz " instead of %" PRIdz " bytes",
-                           connChanPtr->channelName, nSent, toSend);
-                    (void) Ns_ResetVec(bufs, nbufs, (size_t)nSent);
-                    toSend -= result;
+                    Ns_Log(Notice,
+                           "%s ConnchanDriverSend partial write operation, sent %" PRIdz
+                           " (so far %" PRIdz ") remaining %" PRIdz
+                           " bytes, full length %" PRIdz,
+                           connChanPtr->channelName, partialResult, nSent, partialToSend, origLength);
                     partial = NS_TRUE;
                 }
+                (void) Ns_ResetVec(bufs, nbufs, (size_t)partialResult);
+                assert((size_t)partialToSend == Ns_SumVec(bufs, nbufs));
+
             } else if (!haveTimeout) {
                 /*
                  * The "errno" variable might be 0 here (at least in
@@ -889,7 +931,7 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                 const char *errorMsg = Tcl_ErrnoMsg(errno);
                 /*
                  * Timeout is handled above, all other errors ar
-                 * handled here. Return these as posix errors.
+                 * handled here. Return these as POSIX errors.
                  */
                 Ns_TclPrintfResult(interp, "channel %s send operation failed: %s",
                                    connChanPtr->channelName, errorMsg);
@@ -899,10 +941,16 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
             Ns_Log(Ns_LogConnchanDebug, "%s ### check result %ld == -1 || %ld == %ld "
                    "(partial %d && ok %d) => try again %d",
                    connChanPtr->channelName,
-                   result, toSend, nSent,
-                   partial, (result != -1), (partial && (result != -1)));
+                   partialResult, toSend, nSent,
+                   partial, (partialResult != -1), (partial && (partialResult != -1)));
 
-        } while (partial && (result != -1));
+        } while (partial && (partialResult != -1));
+
+        if (partialResult != -1) {
+            result = nSent;
+        } else {
+            result = -1;
+        }
 
     } else {
         Ns_TclPrintfResult(interp, "channel %s: no sendProc registered for driver %s",
@@ -1306,6 +1354,7 @@ SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why))
 
     return (result == TCL_OK);
 }
+
 
 /*
  *----------------------------------------------------------------------
@@ -1343,7 +1392,7 @@ ConnChanListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         Tcl_DString     ds, *dsPtr = &ds;
 
         /*
-         * The provided parameter appear to be valid. Lock the channel
+         * The provided parameters appear to be valid. Lock the channel
          * table and return the infos for every existing entry in the
          * connection channel table.
          */
@@ -1394,6 +1443,78 @@ ConnChanListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     }
     return result;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConnChanStatusObjCmd --
+ *
+ *    Implements "ns_connchan status".
+ *
+ * Results:
+ *    Tcl result.
+ *
+ * Side effects:
+ *    None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ConnChanStatusObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    //const NsInterp *itPtr = clientData;
+    NsServer       *servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
+    char           *name = (char*)NS_EMPTY_STRING;
+    int             result = TCL_OK;
+    Ns_ObjvSpec     lopts[] = {
+        {"-server", Ns_ObjvServer, &servPtr, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec     args[] = {
+        {"channel", Ns_ObjvString, &name, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    }
+
+    if (result == TCL_OK) {
+        NsConnChan *connChanPtr = ConnChanGet(interp, servPtr, name);
+
+        if (connChanPtr != NULL) {
+            Tcl_DString  ds;
+            Tcl_Obj     *dictObj = Tcl_NewDictObj();
+
+            Tcl_DStringInit(&ds);
+            Ns_DStringPrintf(&ds, NS_TIME_FMT, (int64_t) connChanPtr->startTime.sec, connChanPtr->startTime.usec);
+
+            Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("start", 5), Tcl_NewStringObj(ds.string, ds.length));
+            Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("driver", 6), Tcl_NewStringObj(connChanPtr->sockPtr->drvPtr->moduleName, -1));
+            Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("peer", 4), Tcl_NewStringObj(*connChanPtr->peer == '\0' ? "" : connChanPtr->peer, -1));
+            Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("sent", 4), Tcl_NewWideIntObj((Tcl_WideInt)connChanPtr->wBytes));
+            Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("reveived", 8), Tcl_NewWideIntObj((Tcl_WideInt)connChanPtr->rBytes));
+            Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("wsbuffer", 8), Tcl_NewIntObj(ConnChanBufferSize(connChanPtr,frameBuffer)));
+            Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("sendbuffer", 10), Tcl_NewIntObj(ConnChanBufferSize(connChanPtr,sendBuffer)));
+
+            if (connChanPtr->cbPtr != NULL) {
+                char whenBuffer[6];
+
+                Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("callback", 8),
+                               Tcl_NewStringObj(connChanPtr->cbPtr->script, -1));
+                Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("condition", 9),
+                               Tcl_NewStringObj(WhenToString(whenBuffer, connChanPtr->cbPtr->when), -1));
+            }
+            Tcl_DStringFree(&ds);
+            Tcl_SetObjResult(interp, dictObj);
+
+        } else {
+            result = TCL_ERROR;
+        }
+    }
+    return result;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1604,6 +1725,320 @@ ConnChanExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConnChanReadBuffer --
+ *
+ *    Read from a connchan into a provided buffer.  In essence, this
+ *    function performs timeout setup and handles NS_SOCK_AGAIN.
+ *
+ * Results:
+ *    number of bytes read or -1 on error.
+ *
+ * Side effects:
+ *    None.
+ *
+ *----------------------------------------------------------------------
+ */
+static ssize_t
+ConnChanReadBuffer(NsConnChan *connChanPtr, char *buffer, size_t bufferSize)
+{
+    ssize_t      nRead = 0;
+    struct iovec buf;
+    Ns_Time     *timeoutPtr, timeout;
+
+    /*
+     * Read the data via the "receive" operation of the driver.
+     */
+    buf.iov_base = buffer;
+    buf.iov_len = bufferSize;
+
+    timeoutPtr = &connChanPtr->recvTimeout;
+    if (timeoutPtr->sec == 0 && timeoutPtr->usec == 0) {
+        /*
+         * No timeout was specified, use the configured receivewait of
+         * the driver as timeout.
+         */
+        timeout.sec = connChanPtr->sockPtr->drvPtr->recvwait.sec;
+        timeout.usec = connChanPtr->sockPtr->drvPtr->recvwait.usec;
+        timeoutPtr = &timeout;
+    }
+
+    /*
+     * In case we see an NS_SOCK_AGAIN, retry. We could make
+     * this behavior optional via argument, but with OpenSSL,
+     * this seems to happen quite often.
+     */
+    for (;;) {
+        nRead = NsDriverRecv(connChanPtr->sockPtr, &buf, 1, timeoutPtr);
+        Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan NsDriverRecv %" PRIdz
+               " bytes recvSockState %.4x (driver %s)", connChanPtr->channelName, nRead,
+               connChanPtr->sockPtr->recvSockState,
+               connChanPtr->sockPtr->drvPtr->moduleName);
+        if (nRead == 0 && connChanPtr->sockPtr->recvSockState == NS_SOCK_AGAIN) {
+            continue;
+        }
+        break;
+    }
+    Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan NsDriverRecv %" PRIdz " bytes",
+           connChanPtr->channelName, nRead);
+
+    return nRead;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RequireDsBuffer --
+ *
+ *    Make sure, the DS buffer is allocated.
+ *
+ * Results:
+ *    None;
+ *
+ * Side effects:
+ *    Potentially updates dsPtr which is passed as an argument
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+RequireDsBuffer(Tcl_DString **dsPtr) {
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+
+    if (*dsPtr == NULL) {
+        *dsPtr = ns_malloc(sizeof(Tcl_DString));
+        Tcl_DStringInit(*dsPtr);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetWebsocketFrame --
+ *
+ *     Frame handling for incoming WebSockets. This function checks,
+ *     if the data read so far is a complete WebSocket frame
+ *     (potentially consisting of multiple fragments) and returns the
+ *     results in form of a Tcl dict. To handle partial frames or
+ *     surplus data, the command performs socket level buffering based
+ *     on Tcl_DStrings.
+ *
+ * Results:
+ *     Tcl dict containing "fin" status bit, "frame" state (incomplete
+ *     or complete), "unprocessed" (received data in buffer not
+ *     handled so far), "haveData" (boolean value to express that
+ *     unprocessed data might be sufficient for next frame.
+ *
+ *     In case the frame is finished, the dict contains as well the
+ *     WebSocket "opcode" and "payload" of the frame.
+ *
+ * Side effects:
+ *     None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Tcl_Obj*
+GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
+{
+    unsigned char *data;
+    bool           finished, masked;
+    int            opcode, frameLength, fragmentsBufferLength;
+    size_t         payloadLength, offset;
+    unsigned char  mask[4];
+    Tcl_Obj       *resultObj;
+
+    resultObj = Tcl_NewDictObj();
+    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("bytes", 5), Tcl_NewLongObj((long)nRead));
+    if (nRead < 0) {
+        goto exception;
+    }
+
+    Ns_Log(Ns_LogConnchanDebug, "WS: received %ld bytes, have already %d",
+           nRead, ConnChanBufferSize(connChanPtr, frameBuffer));
+    /*
+     * Make sure, the frame buffer exists.
+     */
+    RequireDsBuffer(&connChanPtr->frameBuffer);
+
+    /*
+     * Append the newly read data.
+     */
+
+    //{int i; for(i=0; i<MIN(150, nRead); i++) {fprintf(stderr,"%.2x",buffer[i]&0xff);} fprintf(stderr, "\n");}
+    Tcl_DStringAppend(connChanPtr->frameBuffer, buffer, (int)nRead);
+
+    /*
+     * On very small buffers, the interpretation of the first bytes
+     * does not make sense. We need at least 2 bytes (on the
+     * connections 6, including the mask).
+     */
+    if (connChanPtr->frameBuffer->length < 3) {
+        frameLength = 0;
+        goto incomplete;
+    }
+
+    //{int i; for(i=0; i<MIN(150, connChanPtr->frameBuffer->length); i++) {fprintf(stderr,"%.2x",connChanPtr->frameBuffer->string[i]&0xff);} fprintf(stderr, "\n");}
+    /*
+     * Check, if frame is complete.
+     */
+    data = (unsigned char *)connChanPtr->frameBuffer->string;
+
+    finished      = ((data[0] & 0x80) != 0);
+    masked        = ((data[1] & 0x80) != 0);
+    opcode        = (data[0] & 0x0f);
+    payloadLength = (data[1] & 0x7f);
+
+    if (payloadLength <= 125) {
+        offset = 2;
+    } else if (payloadLength == 126) {
+        uint16_t len16 = 0;
+
+        memcpy(&len16, &data[2], 2);
+        payloadLength = be16toh(len16);
+        offset = 4;
+    } else {
+        uint64_t len64 = 0;
+
+        memcpy(&len64, &data[2], 8);
+        payloadLength = be64toh(len64);
+        offset = 10;
+    }
+
+    if (masked) {
+        /*
+         * Initialize mask;
+         */
+        memcpy(&mask, &data[offset], 4);
+        offset += 4;
+    }
+    //fprintf(stderr, "WS: payload length %zu offset %zu avail %d opcode %d fin %d, masked %d MASK ",
+    //        payloadLength, offset, connChanPtr->frameBuffer->length, opcode, finished, masked);
+    //{int i; for(i=0; i<4; i++) {fprintf(stderr,"%.2x",mask[i]&0xff);} fprintf(stderr, "\n");}
+
+    frameLength = (int)(offset + payloadLength);
+    if (connChanPtr->frameBuffer->length < (int)frameLength) {
+        //fprintf(stderr, "WS: INCOMPLETE offset %zu + payload length %zu = frameLength %d\n", offset, payloadLength, frameLength);
+        //{int i; for(i=0; i<connChanPtr->frameBuffer->length; i++) {fprintf(stderr,"%.2x",connChanPtr->frameBuffer->string[i]&0xff);} fprintf(stderr, "\n");}
+        goto incomplete;
+    }
+    //fprintf(stderr, "WS: COMPLETE ");
+    //{int i; for(i=0; i<frameLength; i++) {fprintf(stderr,"%.2x",connChanPtr->frameBuffer->string[i]&0xff);} fprintf(stderr, "\n");}
+
+    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("fin", 3), Tcl_NewIntObj(finished));
+    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("frame", 5), Tcl_NewStringObj("complete", 8));
+
+    if (!finished) {
+        Ns_Log(Warning, "WS: unfinished frame, bytes %ld payload length %zu offset %zu avail %d opcode %d fin %d, masked %d",
+               nRead, payloadLength, offset, connChanPtr->frameBuffer->length, opcode, finished, masked);
+        {int i; for(i=0; i<connChanPtr->frameBuffer->length; i++) {fprintf(stderr,"%.2x",connChanPtr->frameBuffer->string[i]&0xff);} fprintf(stderr, "\n");}
+    }
+
+    if (masked) {
+        size_t i, j;
+
+        for( i = offset, j = 0u; j < payloadLength; i++, j++ ) {
+            data[ i ] = data[ i ] ^ mask[ j % 4];
+        }
+        //fprintf(stderr, "\n");
+        //{int i; for(i=offset; i<offset+payloadLength; i++) {fprintf(stderr,"%.2x",data[i]&0xff);} fprintf(stderr, "\n");}
+    }
+
+    fragmentsBufferLength = ConnChanBufferSize(connChanPtr, fragmentsBuffer);
+
+    if (finished) {
+        Tcl_Obj *payloadObj;
+        /*
+         * The "fin" bit is set, this message is complete. If we have
+         * fragments, append the new data to the fragments already
+         * have received and clear the fragments buffer.
+         */
+
+        if (fragmentsBufferLength == 0) {
+            payloadObj = Tcl_NewByteArrayObj(&data[offset], (int)payloadLength);
+        } else {
+            Tcl_DStringAppend(connChanPtr->fragmentsBuffer, (const char *)&data[offset], (int)payloadLength);
+            payloadObj = Tcl_NewByteArrayObj((const unsigned char *)connChanPtr->fragmentsBuffer->string,
+                                             connChanPtr->fragmentsBuffer->length);
+            Ns_Log(Ns_LogConnchanDebug,
+                   "WS: append final payload opcode %d (fragments opcode %d) %d bytes, "
+                   "totaling %d bytes, clear fragmentsBuffer",
+                   opcode, connChanPtr->fragmentsOpcode,
+                   (int)payloadLength, connChanPtr->fragmentsBuffer->length);
+            Tcl_DStringSetLength(connChanPtr->fragmentsBuffer, 0);
+            opcode = connChanPtr->fragmentsOpcode;
+        }
+        Tcl_DictObjPut(NULL, resultObj,
+                       Tcl_NewStringObj("opcode", 6),
+                       Tcl_NewIntObj(opcode));
+        Tcl_DictObjPut(NULL, resultObj,
+                       Tcl_NewStringObj("payload", 7),
+                       payloadObj);
+    } else {
+        /*
+         * The "fin" bit is not set, we have a segment, but not the
+         * complete message.  Append the reveived frame to the
+         * fragments buffer.
+         */
+        RequireDsBuffer(&connChanPtr->fragmentsBuffer);
+        /*
+         * On the first fragment, keep the opcode since we will need
+         * it for delivering the full message.
+         */
+        if (fragmentsBufferLength == 0) {
+            connChanPtr->fragmentsOpcode = opcode;
+        }
+        Tcl_DStringAppend(connChanPtr->fragmentsBuffer, (const char *)&data[offset], (int)payloadLength);
+        Ns_Log(Ns_LogConnchanDebug,
+               "WS: fin 0 opcode %d (fragments opcode %d) "
+               "append %d to bytes to the fragmentsBuffer, totaling %d bytes",
+               opcode, connChanPtr->fragmentsOpcode,
+               (int)payloadLength, connChanPtr->fragmentsBuffer->length);
+    }
+    /*
+     * Finally, compact the frameBuffer.
+     */
+    if (connChanPtr->frameBuffer->length > frameLength) {
+        int copyLength = connChanPtr->frameBuffer->length - frameLength;
+
+        memcpy(connChanPtr->frameBuffer->string,
+               connChanPtr->frameBuffer->string + frameLength,
+               (size_t)copyLength);
+        Tcl_DStringSetLength(connChanPtr->frameBuffer, copyLength);
+        //fprintf(stderr, "WS: leftover %d bytes\n", connChanPtr->frameBuffer->length);
+        connChanPtr->frameNeedsData = NS_FALSE;
+    } else {
+        connChanPtr->frameNeedsData = NS_TRUE;
+        Tcl_DStringSetLength(connChanPtr->frameBuffer, 0);
+    }
+    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("unprocessed", 11),
+                   Tcl_NewIntObj(connChanPtr->frameBuffer->length));
+    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("fragments", 9),
+                   Tcl_NewIntObj(ConnChanBufferSize(connChanPtr,fragmentsBuffer)));
+    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("havedata", 8),
+                   Tcl_NewIntObj(!connChanPtr->frameNeedsData));
+    return resultObj;
+
+ incomplete:
+    connChanPtr->frameNeedsData = NS_TRUE;
+    Ns_Log(Notice, "WS: incomplete frameLength %d avail %d",
+            frameLength, connChanPtr->frameBuffer->length);
+    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("frame", 5), Tcl_NewStringObj("incomplete", 10));
+    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("unprocessed", 11), Tcl_NewIntObj(connChanPtr->frameBuffer->length));
+    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("fragments", 9), Tcl_NewIntObj(ConnChanBufferSize(connChanPtr,fragmentsBuffer)));
+    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("havedata", 8), Tcl_NewIntObj(!connChanPtr->frameNeedsData));
+
+    return resultObj;
+
+ exception:
+    connChanPtr->frameNeedsData = NS_FALSE;
+    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("frame", 5), Tcl_NewStringObj("exception", 10));
+    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("unprocessed", 11), Tcl_NewIntObj(connChanPtr->frameBuffer->length));
+    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("fragments", 9), Tcl_NewIntObj(ConnChanBufferSize(connChanPtr,frameBuffer)));
+    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("havedata", 8), Tcl_NewIntObj(!connChanPtr->frameNeedsData));
+    return resultObj;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1624,13 +2059,16 @@ static int
 ConnChanReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char        *name = (char*)NS_EMPTY_STRING;
-    int          result = TCL_OK;
+    int          result = TCL_OK, webSocketFrame = 0;
+    Ns_ObjvSpec  opts[] = {
+        {"-websocket", Ns_ObjvBool, &webSocketFrame, INT2PTR(NS_TRUE)},
+        {NULL, NULL, NULL, NULL}
+    };
     Ns_ObjvSpec  args[] = {
         {"channel", Ns_ObjvString, &name, NULL},
         {NULL, NULL, NULL, NULL}
     };
-
-    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
         //const NsInterp *itPtr = clientData;
@@ -1643,60 +2081,58 @@ ConnChanReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             /*
              * The provided channel exists.
              */
-            ssize_t      nRead = 0;
-            struct iovec buf;
-            char         buffer[16384];
-            Ns_Time     *timeoutPtr, timeout;
+            ssize_t      nRead;
+            char         buffer[16384]; //buffer[16384];
 
             if (!connChanPtr->binary) {
                 Ns_Log(Warning, "ns_connchan: only binary channels are currently supported. "
                        "Channel %s is not binary", name);
             }
 
-            /*
-             * Read the data via the "receive" operation of the driver.
-             */
-            buf.iov_base = buffer;
-            buf.iov_len = sizeof(buffer);
-
-            timeoutPtr = &connChanPtr->recvTimeout;
-            if (timeoutPtr->sec == 0 && timeoutPtr->usec == 0) {
-                /*
-                 * No timeout was specified, use the configured receivewait of
-                 * the driver as timeout.
-                 */
-                timeout.sec = connChanPtr->sockPtr->drvPtr->recvwait.sec;
-                timeout.usec = connChanPtr->sockPtr->drvPtr->recvwait.usec;
-                timeoutPtr = &timeout;
-            }
-
-            /*
-             * In case we see an NS_SOCK_AGAIN, retry. We could make
-             * this behavior optional via argument, but with OpenSSL,
-             * this seems to happen quite often.
-             */
-            for (;;) {
-                nRead = NsDriverRecv(connChanPtr->sockPtr, &buf, 1, timeoutPtr);
-                Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan NsDriverRecv %" PRIdz
-                       " bytes recvSockState %.4x", name, nRead, connChanPtr->sockPtr->recvSockState);
-                if (nRead == 0 && connChanPtr->sockPtr->recvSockState == NS_SOCK_AGAIN) {
-                    continue;
+            if ( webSocketFrame == 0 || connChanPtr->frameNeedsData) {
+                nRead = ConnChanReadBuffer(connChanPtr, buffer, sizeof(buffer));
+                if (nRead < 0) {
+                    const char *errorMsg = NsSockSetRecvErrorCode(connChanPtr->sockPtr, interp);
+                    Tcl_SetObjResult(interp, Tcl_NewStringObj(errorMsg, -1));
+                    result = TCL_ERROR;
+#if 0
+                    recvErrno = connChanPtr->sockPtr->recvErrno;
+                    Ns_Log(Error, "connchan channel %s driver %s sock %d returned -1, recvErrno %ld: %s",
+                           name, connChanPtr->sockPtr->drvPtr->moduleName,
+                           connChanPtr->sockPtr->sock,
+                           recvErrno, Ns_ErrnoMsg(recvErrno)
+                           );
+                    if  (webSocketFrame == 1) {
+                        /*
+                         * Return always a dict
+                         */
+                        Tcl_SetObjResult(interp, GetWebsocketFrame(connChanPtr, buffer, nRead));
+                    } else {
+                        /*
+                         * The connection was reset by the peer
+                         */
+                        const char *errorMsg = NsSockSetRecvErrorCode(connChanPtr->sockPtr, interp);
+                        Tcl_SetObjResult(interp, Tcl_NewStringObj(errorMsg, -1));
+                        result = TCL_ERROR;
+                    }
+#endif
+                } else if (webSocketFrame == 0 && nRead > 0) {
+                    connChanPtr->rBytes += (size_t)nRead;
+                    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((unsigned char *)buffer, (int)nRead));
+                } else if (webSocketFrame == 1) {
+                    connChanPtr->rBytes += (size_t)nRead;
+                    Tcl_SetObjResult(interp, GetWebsocketFrame(connChanPtr, buffer, nRead));
+                } else {
+                    /*
+                     * The receive operation failed, maybe a receive
+                     * timeout happened.  The read call will simply return
+                     * an empty string. We could notice this fact
+                     * internally by a timeout counter, but for the time
+                     * being no application has usage for it.
+                     */
                 }
-                break;
-            }
-            Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan NsDriverRecv %" PRIdz " bytes", name, nRead);
-
-            if (nRead > -1) {
-                connChanPtr->rBytes += (size_t)nRead;
-                Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((unsigned char *)buffer, (int)nRead));
             } else {
-                /*
-                 * The receive operation failed, maybe a receive
-                 * timeout happened.  The read call will simply return
-                 * an empty string. We could notice this fact
-                 * internally by a timeout counter, but for the time
-                 * being no application has usage for it.
-                 */
+                Tcl_SetObjResult(interp, GetWebsocketFrame(connChanPtr, buffer, 0));
             }
         }
     }
@@ -1725,15 +2161,19 @@ static int
 ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char       *name = (char*)NS_EMPTY_STRING;
-    int         result = TCL_OK;
+    int         result = TCL_OK, buffered = 0;
     Tcl_Obj    *msgObj;
+    Ns_ObjvSpec  opts[] = {
+        {"-buffered", Ns_ObjvBool, &buffered, INT2PTR(NS_TRUE)},
+        {NULL, NULL, NULL, NULL}
+    };
     Ns_ObjvSpec args[] = {
         {"channel", Ns_ObjvString, &name,   NULL},
         {"msg",     Ns_ObjvObj,    &msgObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
@@ -1747,25 +2187,232 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
             /*
              * The provided channel name exists.
              */
-            struct iovec buf;
+            struct iovec bufs[2];
             ssize_t      nSent;
-            int          msgLen;
+            int          msgLen, nBufs = 1, toSend;
             const char  *msgString = (const char *)Tcl_GetByteArrayFromObj(msgObj, &msgLen);
-
+#ifdef WS_RECORD_OUTPUT
+            static int FD;
+            static char fnbuffer[100];
+#endif
             if (!connChanPtr->binary) {
                 Ns_Log(Warning, "ns_connchan: only binary channels are currently supported. "
                        "Channel %s is not binary", name);
             }
 
+#ifdef WS_RECORD_OUTPUT
+            if (connChanPtr->wBytes == 0) {
+                snprintf(fnbuffer, sizeof(fnbuffer), "/tmp/OUT-XXXXXX");
+                mktemp(fnbuffer);
+                FD = open("/tmp/OUT", O_APPEND | O_WRONLY | O_CREAT | O_TRUNC, 0644);
+                fprintf(stderr, "CREATED file %s fd %d\n", fnbuffer, FD);
+            }
+#endif
+
+            /*
+             * When buffered was not specified, but we have a
+             * sendbuffer, fall outmatically into buffered mode.
+             */
+            if (buffered == 0 && connChanPtr->sendBuffer != NULL) {
+                Ns_Log(Notice, "ns_connchan send %s: force buffered", name);
+                buffered = 1;
+            }
+
+
             /*
              * Write the data via the "send" operation of the driver.
              */
-            buf.iov_base = (void *)msgString;
-            buf.iov_len = (size_t)msgLen;
-            nSent = ConnchanDriverSend(interp, connChanPtr, &buf, 1, 0u, &connChanPtr->sendTimeout);
+            if (msgLen > 0 && buffered && ConnChanBufferSize(connChanPtr, sendBuffer) > 0) {
+                bufs[0].iov_base = (void *)connChanPtr->sendBuffer->string;
+                bufs[0].iov_len = (size_t)connChanPtr->sendBuffer->length;
+                bufs[1].iov_base = (void *)msgString;
+                bufs[1].iov_len = (size_t)msgLen;
+                nBufs = 2;
+                toSend = msgLen + connChanPtr->sendBuffer->length;
+            } else if (msgLen == 0 && buffered && ConnChanBufferSize(connChanPtr, sendBuffer) > 0) {
+                bufs[0].iov_base = (void *)connChanPtr->sendBuffer->string;
+                bufs[0].iov_len = (size_t)connChanPtr->sendBuffer->length;
+                bufs[1].iov_len = 0u;
+                toSend = connChanPtr->sendBuffer->length;
+                Ns_Log(Ns_LogConnchanDebug, "WS: send buffered only msgLen == 0, buf length %zu toSend %d", bufs[0].iov_len, toSend);
+            } else {
+                bufs[0].iov_base = (void *)msgString;
+                bufs[0].iov_len = (size_t)msgLen;
+                bufs[1].iov_len = 0u;
+                Ns_Log(Ns_LogConnchanDebug, "WS: send msgLen toSend %ld", bufs[0].iov_len);
+                toSend = msgLen;
+            }
+
+            /*Ns_Log(Notice, "WS: send buffered before nbufs %d len[0] % " PRIdz
+                   ", len[1] %" PRIdz " len %d",
+                   nBufs, bufs[0].iov_len, bufs[1].iov_len, toSend);*/
+
+            if (toSend > 0) {
+                nSent = ConnchanDriverSend(interp, connChanPtr, bufs, nBufs, 0u, &connChanPtr->sendTimeout);
+            } else {
+                nSent = 0;
+            }
+
+            /*Ns_Log(Notice, "WS: send buffered after  nbufs %d len[0] %" PRIdz
+                   ", len[1] %" PRIdz " sent %" PRIdz,
+                   nBufs, bufs[0].iov_len, bufs[1].iov_len, nSent);*/
+
             if (nSent > -1) {
+                int remaining = toSend - (int)nSent;
+
+                /*Ns_Log(Notice, "WS: send buffered %d msgLength %d nbufs %d to send %d sent %" PRIdz
+                       " remaining %d errno %d %s (BYTES from %" PRIdz " to %" PRIdz ")",
+                        buffered, msgLen, nBufs, toSend, nSent, remaining,
+                        ns_sockerrno, ns_sockstrerror(ns_sockerrno),
+                        connChanPtr->wBytes, connChanPtr->wBytes + (size_t)MIN(0,nSent));*/
+
                 connChanPtr->wBytes += (size_t)nSent;
                 Tcl_SetObjResult(interp, Tcl_NewLongObj((long)nSent));
+
+                if (buffered && remaining > 0) {
+                    int freshDataRemaining;
+
+                    RequireDsBuffer(&connChanPtr->sendBuffer);
+                    /*
+                     * Compact old data. How much of the (old) sendBuffer was sent?
+                     */
+                    if (nBufs == 2) {
+                        Ns_Log(Ns_LogConnchanDebug, "... two-buffer old buffer length %d + new %d"
+                               " = %d sent %ld (old not fully sent %d)",
+                                connChanPtr->sendBuffer->length, msgLen,
+                                connChanPtr->sendBuffer->length + msgLen,
+                                nSent, (connChanPtr->sendBuffer->length > nSent));
+                        if (connChanPtr->sendBuffer->length > nSent) {
+                            /*
+                             * The old send buffer was not completely
+                             * sent.
+                             *
+                             * bufs[0].len is the unsent length,
+                             * bufs[0].base points to the begin of the
+                             * unset buffer.
+                             */
+                            assert(bufs[0].iov_len > 0);
+
+                            freshDataRemaining = msgLen;
+
+                            if (nSent>0) {
+                                Ns_Log(Ns_LogConnchanDebug,
+                                       "... have sent part of old buffer %ld "
+                                       "(BYTES from %" PRIdz " to %" PRIdz ")",
+                                       nSent,
+                                       connChanPtr->wBytes - (size_t)nSent,
+                                       connChanPtr->wBytes);
+#ifdef WS_RECORD_OUTPUT
+                                write(FD, connChanPtr->sendBuffer->string, (size_t)nSent);
+                                //write(2, connChanPtr->sendBuffer->string, (size_t)nSent);
+                                fprintf(stderr, "\n");
+#endif
+                                memcpy(connChanPtr->sendBuffer->string,
+                                       bufs[0].iov_base,
+                                       bufs[0].iov_len);
+                                Tcl_DStringSetLength(connChanPtr->sendBuffer, (int)bufs[0].iov_len);
+                            }
+                        } else {
+                            /*
+                             * The old send buffer was fully sent, and
+                             * maybe some of the fresh data.
+                             */
+                            assert(bufs[0].iov_len == 0);
+                            Tcl_DStringSetLength(connChanPtr->sendBuffer, 0);
+
+                            freshDataRemaining = msgLen - (int)(nSent - connChanPtr->sendBuffer->length);
+                            Ns_Log(Ns_LogConnchanDebug,
+                                   "... have sent all of old buffer %d and %ld of new buffer "
+                                   "(BYTES from %" PRIdz " to %" PRIdz ")",
+                                   connChanPtr->sendBuffer->length,
+                                   (nSent - connChanPtr->sendBuffer->length),
+                                   connChanPtr->wBytes - (size_t)nSent, connChanPtr->wBytes);
+#ifdef WS_RECORD_OUTPUT
+                            write(FD, connChanPtr->sendBuffer->string, (size_t)connChanPtr->sendBuffer->length);
+                            write(FD, msgString, (size_t)(nSent - connChanPtr->sendBuffer->length));
+#endif
+                        }
+                    } else if (msgLen == 0) {
+                        /*
+                         * There was only some data from the sendBuffer, no new Data;
+                         */
+                        assert(bufs[0].iov_len > 0);
+
+                        freshDataRemaining = 0;
+                        Ns_Log(Ns_LogConnchanDebug,
+                               "... have sent from old buffer %" PRIdz " no new data "
+                               "(BYTES from %" PRIdz " to %" PRIdz ")",
+                               nSent,
+                               connChanPtr->wBytes - (size_t)nSent, connChanPtr->wBytes);
+#ifdef WS_RECORD_OUTPUT
+                        write(FD, connChanPtr->sendBuffer->string, (size_t)nSent);
+#endif
+                        memcpy(connChanPtr->sendBuffer->string,
+                               bufs[0].iov_base,
+                               bufs[0].iov_len);
+                        Tcl_DStringSetLength(connChanPtr->sendBuffer, (int)bufs[0].iov_len);
+                    } else {
+                        /*
+                         * There is only fresh data.
+                         */
+                        freshDataRemaining = msgLen - (int)nSent;
+#ifdef WS_RECORD_OUTPUT
+                        if (nSent > 0) {
+                            write(FD, msgString, (size_t)nSent);
+                            Ns_Log(Ns_LogConnchanDebug, "... have sent only fresh data %" PRIdz
+                                   " (BYTES from %" PRIdz " to %" PRIdz ")",
+                                   nSent,
+                                   connChanPtr->wBytes - (size_t)nSent, connChanPtr->wBytes);
+                        }
+#endif
+                    }
+
+                    if (freshDataRemaining > 0) {
+                        Tcl_DStringAppend(connChanPtr->sendBuffer,
+                                          msgString + (msgLen - freshDataRemaining),
+                                          freshDataRemaining);
+                        Ns_Log(Ns_LogConnchanDebug, "... keep for later %d bytes of %d "
+                               "(buffered %d) will be BYTES from %" PRIdz " to %" PRIdz,
+                               freshDataRemaining, msgLen, connChanPtr->sendBuffer->length,
+                               connChanPtr->wBytes,
+                               connChanPtr->wBytes + (size_t)connChanPtr->sendBuffer->length);
+                    }
+                } else {
+                    /*
+                     * not (buffered && remaining > 0)
+                     */
+                    if (buffered) {
+                        /*
+                         * Everything was sent
+                         */
+                        int buffedLen = ConnChanBufferSize(connChanPtr, sendBuffer);
+                        Ns_Log(Ns_LogConnchanDebug, "... buffered %d buffedLen %d msgLength %d "
+                               "everything was sent, remaining %d, (BYTES from %" PRIdz " to %" PRIdz ")",
+                               buffered, buffedLen, msgLen, remaining,
+                               connChanPtr->wBytes - (size_t)nSent, connChanPtr->wBytes);
+                        assert(remaining == 0);
+
+                        if (buffedLen > 0) {
+#ifdef WS_RECORD_OUTPUT
+                            write(FD, connChanPtr->sendBuffer->string, (size_t)buffedLen);
+#endif
+                            Tcl_DStringSetLength(connChanPtr->sendBuffer, 0);
+                        }
+#ifdef WS_RECORD_OUTPUT
+                        if (msgLen > 0) {
+                            write(FD, msgString, (size_t)nSent);
+                        }
+#endif
+                    } else {
+                        /*
+                         * Non-buffered case, there might be a partial send operation
+                         */
+                        if (remaining != 0) {
+                            Ns_Log(Notice, "... partial write: to send %d sent %" PRIdz " remaining %d",
+                                   toSend, nSent, remaining);
+                        }
+                    }
+                }
             } else {
                 result = TCL_ERROR;
             }
@@ -1775,6 +2422,137 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 
     return result;
 }
+
+static int
+ConnChanWsframeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int                      result = TCL_OK, isBinary = 0, opcode = 1, fin = 1, masked = 0;
+    static Ns_ObjvValueRange finRange = {0, 1};
+    Tcl_Obj                 *messageObj;
+    static Ns_ObjvTable      opcodes[] = {
+        {"continue",  0},
+        {"text",      1},
+        {"binary",    2},
+        {"close",     8},
+        {"ping",      9},
+        {"pong",     10},
+        {NULL,       0u}
+    };
+    Ns_ObjvSpec opts[] = {
+        {"-binary", Ns_ObjvBool, &isBinary, INT2PTR(NS_TRUE)},       
+        {"-fin",        Ns_ObjvInt,   &fin,      &finRange},
+        {"-mask",       Ns_ObjvBool,  &masked,   INT2PTR(NS_TRUE)},
+        {"-opcode",     Ns_ObjvIndex, &opcode,   &opcodes},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"message", Ns_ObjvObj, &messageObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        const unsigned char *messageString;
+        unsigned char       *data;
+        int                  messageLength;
+        Tcl_DString          messageDs, frameDs;
+        size_t               offset;
+
+        Tcl_DStringInit(&messageDs);
+        Tcl_DStringInit(&frameDs);
+
+        /*
+         * When the binary opcode is used, get as well the data in
+         * form of binary data.
+         */
+        if (opcode == 2) {
+            isBinary = 1;
+        }
+        messageString = Ns_GetBinaryString(messageObj, isBinary == 1, &messageLength, &messageDs);
+        data = (unsigned char *)frameDs.string;
+
+        Tcl_DStringSetLength(&frameDs, 2);
+        /*
+         * Initialize first two bytes, and then XOR flags into it.
+         */
+        data[0] = '\0';
+        data[1] = '\0';
+
+        data[0] = (unsigned char)(data[0] | (unsigned char)(opcode & 0x0f));
+        if (fin) {
+            data[0] |= 0x80;
+        }
+
+        if ( messageLength <= 125 ) {
+            data[1] = (unsigned char)(data[1] | ((unsigned char)messageLength & 0x7Fu));
+            offset = 2;
+        } else if ( messageLength > 125 && messageLength <= 65535 ) {
+            uint16_t len16;
+
+            Tcl_DStringSetLength(&frameDs, 4);
+            data[1] |= (( unsigned char )126 & 0x7fu);
+            len16 = htobe16((short unsigned int)messageLength);
+            memcpy(&data[2], &len16, 2);
+            offset = 4;
+        } else {
+            uint64_t len64;
+
+            Tcl_DStringSetLength(&frameDs, 10);
+            data[1] |= (( unsigned char )127 & 0x7fu);
+            len64 = htobe64((uint64_t)messageLength);
+            memcpy(&data[2], &len64, 8);
+            offset = 10;
+        }
+        //{int i; fprintf(stderr, "masked %d length %d first two bytes: ", masked, messageLength); for(i=0; i<2; i++) {fprintf(stderr,"%.2x",data[i]&0xff);} fprintf(stderr, "\n");}
+
+        if (masked) {
+            unsigned char mask[4];
+            size_t        i, j;
+
+            data[1] |= 0x80;
+#ifdef HAVE_OPENSSL_EVP_H
+            (void) RAND_bytes(&mask[0], 4);
+#else
+            {
+                double d = Ns_DRand();
+                /*
+                 * In case double is 64-bits (which is the case on
+                 * most platforms) the first four bytes contains much
+                 * less randoness than the second 4 bytes.
+                 */
+                if (sizeof(d) == 8) {
+                    const char *p = (const char *)&d;
+                    memcpy(&mask[0], p+4, 4);
+                } else {
+                    memcpy(&mask[0], &d, 4);
+                }
+            }
+#endif
+            Tcl_DStringSetLength(&frameDs, (int)offset + 4 + messageLength);
+            data = (unsigned char *)frameDs.string;
+            memcpy(&data[offset], &mask[0], 4);
+            offset += 4;
+            for( i = offset, j = 0u; j < (size_t)messageLength; i++, j++ ) {
+                data[ i ] = messageString[ j ] ^ mask[ j % 4];
+            }
+        } else {
+            Tcl_DStringSetLength(&frameDs, (int)offset + messageLength);
+            data = (unsigned char *)frameDs.string;
+            memcpy(&data[offset], &messageString[0], (size_t)messageLength);
+        }
+
+        //{size_t i; for(i=0; i<(size_t)frameDs.length; i++) {fprintf(stderr,"%.2x",data[i]&0xff);} fprintf(stderr, "\n");}
+        Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(data, frameDs.length));
+
+        Tcl_DStringFree(&messageDs);
+        Tcl_DStringFree(&frameDs);
+    }
+    return result;
+}
+
+
 
 
 /*
@@ -1805,7 +2583,9 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         {"listen",   ConnChanListenObjCmd},
         {"open",     ConnChanOpenObjCmd},
         {"read",     ConnChanReadObjCmd},
+        {"status",   ConnChanStatusObjCmd},
         {"write",    ConnChanWriteObjCmd},
+        {"wsframe",  ConnChanWsframeObjCmd},
         {NULL, NULL}
     };
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
