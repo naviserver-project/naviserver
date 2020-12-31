@@ -42,9 +42,11 @@
 # include <sys/endian.h>
 #elif defined(__OpenBSD__)
 # include <sys/types.h>
-# define be16toh(x) betoh16(x)
-# define be32toh(x) betoh32(x)
-# define be64toh(x) betoh64(x)
+# ifndef be16toh
+#  define be16toh(x) betoh16(x)
+#  define be32toh(x) betoh32(x)
+#  define be64toh(x) betoh64(x)
+# endif
 #elif defined(__APPLE__) || defined(_MSC_VER)
 # define be16toh(x) ntohs(x)
 # define htobe16(x) htons(x)
