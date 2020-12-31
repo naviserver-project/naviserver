@@ -133,7 +133,8 @@ namespace eval ::revproxy {
                     set i 0
                     set j [expr {$chunk -1}]
                     while {$i < $length} {
-                        log notice "upstream: send max $chunk bytes from string to $backendChan (length $contentLength)"
+                        log notice "upstream: send max $chunk bytes from string to $backendChan " \
+                            "(length $contentLength)"
                         ns_connchan write $backendChan [string range $data $i $j]
                         incr i $chunk
                         incr j $chunk
@@ -145,7 +146,8 @@ namespace eval ::revproxy {
                     set F [open $contentfile r]
                     fconfigure $F -encoding binary -translation binary
                     while {1} {
-                        log notice "upstream: send max $chunk bytes from file to $backendChan (length $contentLength)"
+                        log notice "upstream: send max $chunk bytes from file to $backendChan " \
+                            "(length $contentLength)"
                         ns_connchan write $backendChan [read $F $chunk]
                         if {[eof $F]} break
                     }
@@ -156,7 +158,8 @@ namespace eval ::revproxy {
             # Full request was received and transmitted upstream, now handle replies
             #
             set frontendChan [ns_connchan detach]
-            log notice "backendChan $backendChan frontendChan $frontendChan method [ns_conn method] version 1.0 $url"
+            log notice "backendChan $backendChan frontendChan $frontendChan " \
+                "method [ns_conn method] version 1.0 $url"
 
             set timeouts [list -timeout $timeout -sendtimeout $sendtimeout -receivetimeout $receivetimeout]
             log notice "===== Set callbacks [ns_info server] "
@@ -242,12 +245,12 @@ namespace eval ::revproxy {
     # automatically closed.
     #
     nsf::proc spool { from to url timeouts arg condition } {
-        log notice "spool from $from (exists [ns_connchan exists $from]) to $to (exists [ns_connchan exists $to]): condition $condition"
+        log notice "spool from $from (exists [ns_connchan exists $from]) to $to " \
+            "(exists [ns_connchan exists $to]): condition $condition"
 
         if {$condition eq "t"} {
             ::revproxy::gateway_timeout $from "timeout occurred while spooling $from to $to"
-            set r exists=[ns_connchan exists $to]
-            ns_log notice "revproxy: spool timeout (MANUAL cleanup on $from to $to needed?) $r"
+            log notice "revproxy: spool timeout (MANUAL cleanup on $from to $to needed?)"
             channelCleanup -close $to
             # returning 0 means automatic cleanup on $from
             return 0
@@ -285,7 +288,8 @@ namespace eval ::revproxy {
                 set msg ""
             }
             if {$msg eq ""} {
-                log notice "... auto closing $from manual $to: $url (suspended [info exists ::revproxy::suspended($from)])"
+                log notice "... auto closing $from manual $to: $url " \
+                    "(suspended [info exists ::revproxy::suspended($from)])"
                 #
                 # Close our end ...
                 #
@@ -307,19 +311,18 @@ namespace eval ::revproxy {
                     # suspend the spool callback reading from '$from'.
                     #
                     set ::revproxy::suspended($from) [list $from $to $url $timeouts $arg]
-                    ns_log notice "PROXY $from: must SUSPEND reading from $from (blocking backend $to)"
-                    ns_log notice "... suspended($from): $::revproxy::suspended($from)"
-                    foreach e [ns_connchan list] {
-                        log notice "..... $e"
-                    }
+                    log notice "PROXY $from: must SUSPEND reading from $from (blocking backend $to) " \
+                        "suspended($from): $::revproxy::suspended($from)"
+                    #foreach e [ns_connchan list] {
+                    #    log notice "..... $e"
+                    #}
                 } elseif {$result == 0} {
                     #
                     # The write operation ended in an error. Maybe we
                     # have to close here the channel explicitly.
                     #
-                    ns_log notice "revproxy: spool write $from to $to returns error"
-                    set r exists=[ns_connchan exists $to]
-                    ns_log notice "revproxy: spool write MANUAL cleanup of $to (from $from) $r"
+                    ns_log notice "revproxy: spool write $from to $to returns some error; " \
+                        "MANUAL cleanup of $to (from $from)"
                     channelCleanup -close $to
                 }
             }
@@ -368,19 +371,20 @@ namespace eval ::revproxy {
             set result 0
 
         } trap {POSIX {unknown error}} {} {
-            ns_log warning "revproxy: strange 0 byte write occurred"
+            ns_log warning "revproxy: strange 0 byte write occurred on $to"
             set result 0
 
         } on error {errorMsg} {
             #
             # all other errors
             #
-            ns_log error "spool: $::errorCode, $errorMsg"
+            ns_log error "revproxy write: error on channel $to: $::errorCode, $errorMsg"
             set result 0
 
         } on ok {nrBytesSent} {
             set toSend [string length $data]
-            #log notice "spool: 'ns_connchan write' wanted to write $toSend bytes, wrote $nrBytesSent (sofar $::revproxy::spooled($to))"
+            #log notice "spool: 'ns_connchan write' wanted to write $toSend bytes, " \
+                "wrote $nrBytesSent (sofar $::revproxy::spooled($to))"
             incr ::revproxy::spooled($to) $nrBytesSent
             if {$nrBytesSent < $toSend} {
                 #
@@ -388,9 +392,10 @@ namespace eval ::revproxy {
                 #
                 #log notice "partial write (send) operation, could only send $nrBytesSent of $toSend bytes"
                 set remaining [string range $data $nrBytesSent end]
-                log notice "spool to $to: PARTIAL WRITE ($nrBytesSent of $toSend) \
-                            register write callback for $to with remaining [string length $remaining] bytes\
-                            (sofar $::revproxy::spooled($to)), setting callback on $to ::revproxy::write_once timeout [dict get $timeouts -timeout]"
+                log notice "spool to $to: PARTIAL WRITE ($nrBytesSent of $toSend) " \
+                    "register write callback for $to with remaining [string length $remaining] bytes " \
+                    "(sofar $::revproxy::spooled($to)), setting callback on $to to " \
+                    "::revproxy::write_once timeout [dict get $timeouts -timeout]"
                 #
                 # On revproxy::write_once, we do not want to set the
                 # sendtimeout for the time being (it would block), the
@@ -413,7 +418,7 @@ namespace eval ::revproxy {
                 # this channel.
                 #
                 if {[info exists ::revproxy::suspended($from)]} {
-                    ns_log notice "PROXY $from: resume after SUSPEND, reading again from $from"
+                    log notice "PROXY $from: resume after SUSPEND, reading again from $from"
 
                     lassign $::revproxy::suspended($from) from to url timeouts arg
                     ns_connchan callback \
@@ -441,13 +446,12 @@ namespace eval ::revproxy {
         # Helper for cases, where the -sendtimeout is 0 and a "ns_conn
         # write" operation ended with an NS_WOULDBLOCK.
         #
-        log notice "write_once: want to send [string length $data] bytes from $from to $to (condition $condition)"
+        log notice "write_once: want to send [string length $data] bytes " \
+            "from $from to $to (condition $condition)"
 
         if {$condition eq "t"} {
             ::revproxy::gateway_timeout $to "timeout occurred while writing once $from to $to"
-            set r exists=[ns_connchan exists $from]
-            #append r close=[catch {ns_connchan close $from}]
-            ns_log notice "revproxy: write_once timeout (MANUAL cleanup on $from to $to needed?) $r"
+            log notice "revproxy: write_once timeout (MANUAL cleanup on $from to $to needed?)"
             channelCleanup -close $from
             # returning 0 means automatic cleanup on $to
             return 0
@@ -464,7 +468,7 @@ namespace eval ::revproxy {
             # There was an error. We must cleanup the "$from" channel
             # manually, the "$to" channel is automaticalled freed.
             #
-            ns_log notice "revproxy: write_once MANUAL cleanup of $from (to $to automatic)"
+            log notice "revproxy: write_once MANUAL cleanup of $from (to $to automatic)"
             #ns_connchan close $from
             channelCleanup -close $from
         }
@@ -592,7 +596,8 @@ namespace eval ::revproxy {
                     set toWrite [string length $reply]
                     set written [ns_connchan write $to $reply]
                     incr ::revproxy::spooled($to) [expr {$written - ($headerLength + 2)}]
-                    log notice "backendReply: from $from to $to towrite $toWrite written $written spooled($to) $::revproxy::spooled($to)"
+                    log notice "backendReply: from $from to $to towrite $toWrite written $written " \
+                        "spooled($to) $::revproxy::spooled($to)"
                     #record $to-rewritten $reply
 
                 } else {
