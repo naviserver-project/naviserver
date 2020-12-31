@@ -37,21 +37,32 @@
  * Handling of network byte order (big endian).
  */
 #if defined(__linux__)
-#  include <endian.h>
+# include <endian.h>
 #elif defined(__FreeBSD__) || defined(__NetBSD__)
-#  include <sys/endian.h>
+# include <sys/endian.h>
 #elif defined(__OpenBSD__)
-#  include <sys/types.h>
-#  define be16toh(x) betoh16(x)
-#  define be32toh(x) betoh32(x)
-#  define be64toh(x) betoh64(x)
+# include <sys/types.h>
+# define be16toh(x) betoh16(x)
+# define be32toh(x) betoh32(x)
+# define be64toh(x) betoh64(x)
 #elif defined(__APPLE__) || defined(_MSC_VER)
-#  define be16toh(x) ntohs(x)
-#  define be32toh(x) ntonl(x)
+# define be16toh(x) ntohs(x)
+# define htobe16(x) htons(x)
+# define be32toh(x) ntonl(x)
+# define htobe32(x) htonl(x)
+# if defined(_MSC_VER)
+/*
+ * Not sure, why this did not work in Visual Studio 2019 (ntohll, htonll undefined)
+ *
+ *#  define be64toh(x) ntohll(x)
+ *#  define htobe64(x) htonll(x)
+ */
+#  define htobe64(x) ((1==htonl(1)) ? (x) : (((uint64_t)htonl((x) & 0xFFFFFFFFUL)) << 32) | htonl((uint32_t)((x) >> 32)))
+#  define be64toh(x) ((1==ntohl(1)) ? (x) : (((uint64_t)ntohl((x) & 0xFFFFFFFFUL)) << 32) | ntohl((uint32_t)((x) >> 32)))
+# else
 #  define be64toh(x) ntohll(x)
-#  define htobe16(x) htons(x)
-#  define htobe32(x) htonl(x)
 #  define htobe64(x) htonll(x)
+# endif
 #endif
 
 /*
