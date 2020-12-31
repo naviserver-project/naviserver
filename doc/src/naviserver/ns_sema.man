@@ -8,7 +8,7 @@
 
 This command provides a mechanism to manipulate semaphore-like objects
 but are not inter-process capable like true semaphores.  They are actually
-implemented with a mutex and a counter.  The legal options (which may be abbreviated) are:
+implemented with a mutex and a counter.  The allowed options (which may be abbreviated) are:
 
 
 [section {COMMANDS}]

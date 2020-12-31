@@ -7,7 +7,7 @@
 [description]
 
 This command provides a way to examine the current server's
-connection pools and queues.  The legal options (which may be abbreviated) are:
+connection pools and queues.  The allowed options (which may be abbreviated) are:
 
 [section {COMMANDS}]
 

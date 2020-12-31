@@ -13,7 +13,7 @@ actually a multiset - in other words, the same key can appear multiple times
 in the same set.  This data structure is particularly useful for things like
 HTTP headers which have this same property.
 
-The legal options (which may be abbreviated) are:
+The allowed options (which may be abbreviated) are:
 
 [section {COMMANDS}]
 

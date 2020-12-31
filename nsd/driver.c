@@ -4630,7 +4630,7 @@ DriverLookupHost(Tcl_DString *hostDs, Driver *drvPtr)
             /*
              * We found colon, which might be the port separator or inside an
              * IPv6 address. However, we look here for a dot before the colon,
-             * which would be illegal for IPv6 addresses.
+             * which would not be permitted for IPv6 addresses.
              */
             lastChar = *(colon - 1);
             if (lastChar == '.') {

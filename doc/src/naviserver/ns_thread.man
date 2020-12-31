@@ -6,7 +6,7 @@
 
 [description]
 
-This command provides a mechanism to manipulate threads.  The legal options (which may be abbreviated) are:
+This command provides a mechanism to manipulate threads.  The allowed options (which may be abbreviated) are:
 
 [section {COMMANDS}]
 
