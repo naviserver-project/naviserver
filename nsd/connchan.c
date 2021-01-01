@@ -146,6 +146,8 @@ static char *WhenToString(char *buffer, unsigned int when)
 
 static bool SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why));
 static void RequireDsBuffer(Tcl_DString **dsPtr)  NS_GNUC_NONNULL(1);
+static void WebsocketFrameSetCommonMembers(Tcl_Obj *resultObj, ssize_t nRead, const NsConnChan *connChanPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 static Ns_SockProc NsTclConnChanProc;
 
@@ -868,12 +870,8 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                            "%s ConnchanDriverSend would block, no timeout configured, "
                            "origLength %" PRIdz" still to send %" PRIdz " already sent %" PRIdz,
                            connChanPtr->channelName, origLength, toSend, nSent);
-                    /*
-                     * The partialResult might be between "0" and "partialToSend".
-                     */
-                    result = nSent;
-
                     break;
+
                 } else {
                     /*
                      * A timeout was provided. Be aware that the timeout
@@ -1845,6 +1843,38 @@ RequireDsBuffer(Tcl_DString **dsPtr) {
 /*
  *----------------------------------------------------------------------
  *
+ * WebsocketFrameSetCommonMembers --
+ *
+ *    Set common members of the dict, which are part of the result of
+ *    every GetWebsocketFrame() operation.
+ *
+ * Results:
+ *    None.
+ *
+ * Side effects:
+ *    None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+WebsocketFrameSetCommonMembers(Tcl_Obj *resultObj, ssize_t nRead, const NsConnChan *connChanPtr)
+{
+    NS_NONNULL_ASSERT(resultObj != NULL);
+    NS_NONNULL_ASSERT(connChanPtr != NULL);
+
+    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("bytes", 5),
+                   Tcl_NewLongObj((long)nRead));
+    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("unprocessed", 11),
+                   Tcl_NewIntObj(connChanPtr->frameBuffer->length));
+    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("fragments", 9),
+                   Tcl_NewIntObj(ConnChanBufferSize(connChanPtr,fragmentsBuffer)));
+    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("havedata", 8),
+                   Tcl_NewIntObj(!connChanPtr->frameNeedsData));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * GetWebsocketFrame --
  *
  *     Frame handling for incoming WebSockets. This function checks,
@@ -1868,6 +1898,7 @@ RequireDsBuffer(Tcl_DString **dsPtr) {
  *
  *----------------------------------------------------------------------
  */
+
 static Tcl_Obj*
 GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
 {
@@ -1879,7 +1910,7 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
     Tcl_Obj       *resultObj;
 
     resultObj = Tcl_NewDictObj();
-    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("bytes", 5), Tcl_NewLongObj((long)nRead));
+
     if (nRead < 0) {
         goto exception;
     }
@@ -2031,9 +2062,9 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
     if (connChanPtr->frameBuffer->length > frameLength) {
         int copyLength = connChanPtr->frameBuffer->length - frameLength;
 
-        memcpy(connChanPtr->frameBuffer->string,
-               connChanPtr->frameBuffer->string + frameLength,
-               (size_t)copyLength);
+        memmove(connChanPtr->frameBuffer->string,
+                connChanPtr->frameBuffer->string + frameLength,
+                (size_t)copyLength);
         Tcl_DStringSetLength(connChanPtr->frameBuffer, copyLength);
         //fprintf(stderr, "WS: leftover %d bytes\n", connChanPtr->frameBuffer->length);
         connChanPtr->frameNeedsData = NS_FALSE;
@@ -2041,12 +2072,7 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
         connChanPtr->frameNeedsData = NS_TRUE;
         Tcl_DStringSetLength(connChanPtr->frameBuffer, 0);
     }
-    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("unprocessed", 11),
-                   Tcl_NewIntObj(connChanPtr->frameBuffer->length));
-    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("fragments", 9),
-                   Tcl_NewIntObj(ConnChanBufferSize(connChanPtr,fragmentsBuffer)));
-    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("havedata", 8),
-                   Tcl_NewIntObj(!connChanPtr->frameNeedsData));
+    WebsocketFrameSetCommonMembers(resultObj, nRead, connChanPtr);
     return resultObj;
 
  incomplete:
@@ -2054,18 +2080,13 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
     Ns_Log(Notice, "WS: incomplete frameLength %d avail %d",
             frameLength, connChanPtr->frameBuffer->length);
     Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("frame", 5), Tcl_NewStringObj("incomplete", 10));
-    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("unprocessed", 11), Tcl_NewIntObj(connChanPtr->frameBuffer->length));
-    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("fragments", 9), Tcl_NewIntObj(ConnChanBufferSize(connChanPtr,fragmentsBuffer)));
-    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("havedata", 8), Tcl_NewIntObj(!connChanPtr->frameNeedsData));
-
+    WebsocketFrameSetCommonMembers(resultObj, nRead, connChanPtr);
     return resultObj;
 
  exception:
     connChanPtr->frameNeedsData = NS_FALSE;
     Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("frame", 5), Tcl_NewStringObj("exception", 10));
-    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("unprocessed", 11), Tcl_NewIntObj(connChanPtr->frameBuffer->length));
-    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("fragments", 9), Tcl_NewIntObj(ConnChanBufferSize(connChanPtr,frameBuffer)));
-    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("havedata", 8), Tcl_NewIntObj(!connChanPtr->frameNeedsData));
+    WebsocketFrameSetCommonMembers(resultObj, nRead, connChanPtr);
     return resultObj;
 }
 
@@ -2319,9 +2340,9 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                                 //write(2, connChanPtr->sendBuffer->string, (size_t)nSent);
                                 fprintf(stderr, "\n");
 #endif
-                                memcpy(connChanPtr->sendBuffer->string,
-                                       bufs[0].iov_base,
-                                       bufs[0].iov_len);
+                                memmove(connChanPtr->sendBuffer->string,
+                                        bufs[0].iov_base,
+                                        bufs[0].iov_len);
                                 Tcl_DStringSetLength(connChanPtr->sendBuffer, (int)bufs[0].iov_len);
                             }
                         } else {
@@ -2359,9 +2380,9 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 #ifdef WS_RECORD_OUTPUT
                         write(FD, connChanPtr->sendBuffer->string, (size_t)nSent);
 #endif
-                        memcpy(connChanPtr->sendBuffer->string,
-                               bufs[0].iov_base,
-                               bufs[0].iov_len);
+                        memmove(connChanPtr->sendBuffer->string,
+                                bufs[0].iov_base,
+                                bufs[0].iov_len);
                         Tcl_DStringSetLength(connChanPtr->sendBuffer, (int)bufs[0].iov_len);
                     } else {
                         /*
