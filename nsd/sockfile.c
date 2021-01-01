@@ -360,7 +360,7 @@ SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length, unsigned int flags)
             if (errno == EINTR || errno == NS_EAGAIN || errno == EWOULDBLOCK) {
                 sent = 0;
             } else if (errno == EINVAL || errno == ENOSYS) {
-                sent = _ns_sendfile(sock, fd, offset, length);
+                sent = ns_sendfile(sock, fd, offset, length);
             }
         }
 #elif defined(HAVE_BSD_SENDFILE)
