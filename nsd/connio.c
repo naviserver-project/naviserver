@@ -1023,29 +1023,29 @@ Ns_ConnReadLine(const Ns_Conn *conn, Ns_DString *dsPtr, size_t *nreadPtr)
     if ((connPtr->sockPtr == NULL) || (eol == NULL)) {
         status = NS_ERROR;
     } else {
-        size_t nread = (size_t)(eol - reqPtr->next);
+        ptrdiff_t nread = eol - reqPtr->next;
 
-        if (nread > (size_t)drvPtr->maxline) {
+        if (nread > drvPtr->maxline) {
             status = NS_ERROR;
         } else {
-            size_t ncopy = nread;
+            ptrdiff_t ncopy = nread;
 
             ++nread;
             if (nreadPtr != NULL) {
-                *nreadPtr = nread;
+                *nreadPtr = (size_t)nread;
             }
 
             /*
              * Read from the end of the buffer until we either reach
              * ncopy == 0 (this means the start of the buffer), or
-             * until we fine a '\r'.
+             * until we find a '\r'.
              */
             if (ncopy > 0u && *(eol-1) == '\r') {
                 --ncopy;
             }
             Ns_DStringNAppend(dsPtr, reqPtr->next, (int)ncopy);
             reqPtr->next  += nread;
-            reqPtr->avail -= nread;
+            reqPtr->avail -= (size_t)nread;
 
             status = NS_OK;
         }
