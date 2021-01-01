@@ -158,7 +158,7 @@ static Tcl_ObjCmdProc   ConnChanListenObjCmd;
 static Tcl_ObjCmdProc   ConnChanOpenObjCmd;
 static Tcl_ObjCmdProc   ConnChanReadObjCmd;
 static Tcl_ObjCmdProc   ConnChanWriteObjCmd;
-static Tcl_ObjCmdProc   ConnChanWsframeObjCmd;
+static Tcl_ObjCmdProc   ConnChanWsencodeObjCmd;
 
 static Ns_SockProc CallbackFree;
 
@@ -2435,8 +2435,26 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     return result;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConnChanWsencodeObjCmd --
+ *
+ *    Implements "ns_connchan wsencode". Returns a WebSocket frame in
+ *    form of binary data produced from the input parameters.
+ *
+ * Results:
+ *    Tcl result.
+ *
+ * Side effects:
+ *    None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static int
-ConnChanWsframeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int                      result = TCL_OK, isBinary = 0, opcode = 1, fin = 1, masked = 0;
     static Ns_ObjvValueRange finRange = {0, 1};
@@ -2597,7 +2615,7 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         {"read",     ConnChanReadObjCmd},
         {"status",   ConnChanStatusObjCmd},
         {"write",    ConnChanWriteObjCmd},
-        {"wsframe",  ConnChanWsframeObjCmd},
+        {"wsencode", ConnChanWsencodeObjCmd},
         {NULL, NULL}
     };
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);

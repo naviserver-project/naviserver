@@ -211,7 +211,7 @@ When a callback is defined for this channel, the dict contains as well the
 [term callback] and the
 [term condition] on which the callback will be fired.
 
-[call [cmd "ns_connchan wsframe"] \
+[call [cmd "ns_connchan wsencode"] \
 	[opt [option "-binary"]] \
 	[opt [option "-fin [arg 0|1]"]] \
 	[opt [option "-mask"]] \
