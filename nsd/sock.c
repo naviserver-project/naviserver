@@ -148,8 +148,8 @@ Ns_SetVec(struct iovec *bufs, int i, const void *data, size_t len)
  * Ns_ResetVec --
  *
  *      Reduce the size in the iovec by the number of bytes sent (last
- *      argument). Zero the bufs which have had their data sent and adjust the
- *      remainder.
+ *      argument). Zero the bufs which have had their data sent and
+ *      adjust the remainder.
  *
  * Results:
  *      Index of first buf to send.
@@ -267,9 +267,9 @@ Ns_SockGetPort(const Ns_Sock *sock)
  *
  *      Check the error State of an ns_sock structure.
  *
- *      Background: SSL_shutdown() must not be called if a previous fatal error
- *      has occurred on a connection i.e. if SSL_get_error() has returned
- *      SSL_ERROR_SYSCALL or SSL_ERROR_SSL.
+ *      Background: SSL_shutdown() must not be called if a previous
+ *      fatal error has occurred on a connection i.e. if SSL_get_error()
+ *      has returned SSL_ERROR_SYSCALL or SSL_ERROR_SSL.
  *
  *      Note: For the time being, we have just the read error state.
  *
@@ -302,9 +302,10 @@ Ns_SockInErrorState(const Ns_Sock *sock)
  *      the data is readable.
  *
  * Results:
- *      Number of bytes read or -1 on error (including timeout).  The return
- *      value will be 0 when the peer has performed an orderly shutdown. The
- *      resulting sockstate has one of the following codes:
+ *      Number of bytes read or -1 on error (including timeout).  The
+ *      return value will be 0 when the peer has performed an orderly
+ *      shutdown. The resulting sockstate has one of the following
+ *      codes:
  *
  *      NS_SOCK_READ, NS_SOCK_DONE, NS_SOCK_AGAIN, NS_SOCK_EXCEPTION,
  *      NS_SOCK_TIMEOUT
@@ -359,16 +360,17 @@ Ns_SockRecvBufs(Ns_Sock *sock, struct iovec *bufs, int nbufs,
  * Ns_SockRecvBufs2 --
  *
  *      Read data from a nonblocking socket into a vector of buffers.
- *      Ns_SockRecvBufs2() is similar to Ns_SockRecvBufs() with the following
- *      differences:
+ *      Ns_SockRecvBufs2() is similar to Ns_SockRecvBufs() with the
+ *      following differences:
+ *
  *        a) the first argument is an NS_SOCKET
  *        b) it performs no timeout handliong
  *        c) it returns the sockstate in its last argument
  *
  * Results:
- *      Number of bytes read or -1 on error.  The return
- *      value will be 0 when the peer has performed an orderly shutdown. The
- *      resulting sockstate has one of the following codes:
+ *      Number of bytes read or -1 on error.  The return value will be 0
+ *      when the peer has performed an orderly shutdown. The resulting
+ *      sockstate has one of the following codes:
  *
  *      NS_SOCK_READ, NS_SOCK_DONE, NS_SOCK_AGAIN, NS_SOCK_EXCEPTION
  *
@@ -547,7 +549,7 @@ Ns_SockSendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
  *      or -1 on error.
  *
  * Side effects:
- *      none
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -578,7 +580,7 @@ Ns_SockSendBufs2(NS_SOCKET sock, const struct iovec *bufs, int nbufs,
 /*
  *----------------------------------------------------------------------
  *
- * NsSockRecv --
+ * Ns_SockRecv --
  *
  *      Timed recv operation from a nonblocking socket.
  *
@@ -887,10 +889,10 @@ Ns_SockBind(const struct sockaddr *saPtr, bool reusePort)
             setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const void *) &n, (socklen_t)sizeof(n));
 #ifdef HAVE_IPV6
             /*
-             * IPv4 connectivity through AF_INET6 can be disabled by default, for
-             * example by /proc/sys/net/ipv6/bindv6only to 1 on Linux. We
-             * explicitly enable IPv4 so we don't need to bind separate sockets
-             * for v4 and v6.
+             * IPv4 connectivity through AF_INET6 can be disabled by
+             * default, for example by /proc/sys/net/ipv6/bindv6only to
+             * 1 on Linux. We explicitly enable IPv4 so we don't need to
+             * bind separate sockets for v4 and v6.
              */
             n = 0;
             setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, (const void *) &n, (socklen_t)sizeof(n));
@@ -1094,12 +1096,12 @@ Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost,
  *
  * Ns_SockConnectError --
  *
- *      Leave a consistent error message in the interpreter result in case
- *      a connect attempt failed. For timeout cases, set the Tcl error code to
+ *      Leave a consistent error message in the interpreter result in case a
+ *      connect attempt failed. For timeout cases, set the Tcl error code to
  *      "NS_TIMEOUT".
  *
  * Results:
- *      NONE
+ *      None.
  *
  * Side effects:
  *      None.
@@ -1501,10 +1503,10 @@ NsPoll(struct pollfd *pfds, NS_POLL_NFDS_TYPE nfds, const Ns_Time *timeoutPtr)
  *
  * BindToSameFamily --
  *
- *       We have to make sure that the local address (where the local bind
- *       happens) is of the same address family, which is especially important
- *       for (lhost == NULL), where the caller has no chance to influence the
- *       behavior, and we assume per default AF_INET6.
+ *      We have to make sure that the local address (where the local
+ *      bind happens) is of the same address family, which is especially
+ *      important for (lhost == NULL), where the caller has no chance to
+ *      influence the behavior, and we assume per default AF_INET6.
  *
  * Results:
  *      A socket or NS_INVALID_SOCKET on error.
@@ -1574,9 +1576,9 @@ BindToSameFamily(struct sockaddr *saPtr, struct sockaddr *lsaPtr,
  *
  * SockConnect --
  *
- *      Open a TCP connection to a host/port sync or async.  "host" and "port"
- *      refer to the remote, "lhost" and "lport" to the local communication
- *      endpoint.
+ *      Open a TCP connection to a host/port sync or async.  "host" and
+ *      "port" refer to the remote, "lhost" and "lport" to the local
+ *      communication endpoint.
  *
  * Results:
  *      A socket or NS_INVALID_SOCKET on error.
@@ -1790,9 +1792,9 @@ SockSetup(NS_SOCKET sock)
  *      Read data from a nonblocking socket into a vector of buffers.
  *
  * Results:
- *
- *      Number of bytes read or -1 on error.  The return value will be 0 when
- *      the peer has performed an orderly shutdown (as defined by POSIX).
+ *      Number of bytes read or -1 on error.  The return value will be 0
+ *      when the peer has performed an orderly shutdown (as defined by
+ *      POSIX).
  *
  * Side effects:
  *      None.
@@ -1884,8 +1886,8 @@ SockSend(NS_SOCKET sock, const struct iovec *bufs, int nbufs, unsigned int flags
  *
  * Ns_SockErrorCode --
  *
- *      Get the error from a socket and return it. In case, an interp is given
- *      set as well the Tcl error code.
+ *      Get the error from a socket and return it. In case, an interp is
+ *      given set as well the Tcl error code.
  *
  * Results:
  *      Numeric error code or 0.
@@ -1941,9 +1943,9 @@ Ns_PosixSetErrorCode(Tcl_Interp *interp, int errorNum) {
  *
  * NsSockSetRecvErrorCode --
  *
- *      Set the Tcl error code in the interpreter based on the information
- *      provided by Sock* (actually by recvErrno); the function works for
- *      OpenSSL and plain POSIX style error codes.
+ *      Set the Tcl error code in the interpreter based on the
+ *      information provided by Sock* (actually by recvErrno); the
+ *      function works for OpenSSL and plain POSIX style error codes.
  *
  * Results:
  *      Error message in form of a string.
@@ -1973,10 +1975,10 @@ NsSockSetRecvErrorCode(const Sock *sockPtr, Tcl_Interp *interp) {
  *
  * ErrorCodeString --
  *
- *      Map errorCode integer to a language independent string.  This function
- *      is practically a copy of the Tcl implementation, except that the error
- *      code is passed-in instead of relying to a global variable (which is
- *      not a good idea in multithreaded programs).
+ *      Map errorCode integer to a language independent string.  This
+ *      function is practically a copy of the Tcl implementation, except
+ *      that the error code is passed-in instead of relying to a global
+ *      variable (which is not a good idea in multithreaded programs).
  *
  * Results:
  *      String.
@@ -2422,8 +2424,6 @@ ErrorCodeString(int errorCode)
     }
     return "unknown error";
 }
-
-
 
 /*
  * Local Variables:

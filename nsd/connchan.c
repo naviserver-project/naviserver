@@ -54,7 +54,7 @@
 # define htobe32(x) htonl(x)
 # if defined(_MSC_VER)
 /*
- * Not sure, why this did not work in Visual Studio 2019 (ntohll, htonll undefined)
+ * Not sure, why htonll() and ntohll() are undefined in Visual Studio 2019:
  *
  *#  define be64toh(x) ntohll(x)
  *#  define htobe64(x) htonll(x)
@@ -171,14 +171,14 @@ static Ns_SockProc CallbackFree;
  *
  * WhenToString --
  *
- *    Convert socket condition to character string.  The provided
- *    input buffer has to be at least 5 bytes long.
+ *      Convert socket condition to character string.  The provided
+ *      input buffer has to be at least 5 bytes long.
  *
  * Results:
- *    Pretty string.
+ *      Pretty string.
  *
  * Side effects:
- *    None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -211,13 +211,13 @@ WhenToString(char *buffer, unsigned int when) {
  *
  * CallbackFree --
  *
- *    Free Callback structure and unregister socket callback.
+ *      Free Callback structure and unregister socket callback.
  *
  * Results:
- *    None.
+ *      None.
  *
  * Side effects:
- *    Freeing memory.
+ *      Freeing memory.
  *
  *----------------------------------------------------------------------
  */
@@ -249,18 +249,18 @@ CallbackFree(NS_SOCKET UNUSED(sock), void *arg, unsigned int why) {
  *
  * CancelCallback --
  *
- *    Register socket callback cancel operation for unregistering the
- *    socket callback.  Freeing is itself implemented as a callback
- *    (Ns_SockProc), which is called, whenever a callback is freed
- *    from the socket thread. Not that it is necessary to implement it
- *    as a callback, since all sock callbacks are implemented via a
- *    queue operation (in sockcallback.c).
+ *      Register socket callback cancel operation for unregistering
+ *      the socket callback.  Freeing is itself implemented as a
+ *      callback (Ns_SockProc), which is called, whenever a callback
+ *      is freed from the socket thread. Not that it is necessary to
+ *      implement it as a callback, since all sock callbacks are
+ *      implemented via a queue operation (in sockcallback.c).
  *
  * Results:
- *    None.
+ *      None.
  *
  * Side effects:
- *    Freeing memory.
+ *      Freeing memory.
  *
  *----------------------------------------------------------------------
  */
@@ -271,9 +271,11 @@ CancelCallback(const NsConnChan *connChanPtr)
     NS_NONNULL_ASSERT(connChanPtr != NULL);
     NS_NONNULL_ASSERT(connChanPtr->cbPtr != NULL);
 
-    Ns_Log(Ns_LogConnchanDebug, "%s connchan: CancelCallback %p", connChanPtr->channelName, (void*)connChanPtr->cbPtr);
+    Ns_Log(Ns_LogConnchanDebug, "%s connchan: CancelCallback %p",
+           connChanPtr->channelName, (void*)connChanPtr->cbPtr);
 
-    (void)Ns_SockCancelCallbackEx(connChanPtr->sockPtr->sock, CallbackFree, connChanPtr->cbPtr, NULL);
+    (void)Ns_SockCancelCallbackEx(connChanPtr->sockPtr->sock, CallbackFree,
+                                  connChanPtr->cbPtr, NULL);
 }
 
 
@@ -282,13 +284,13 @@ CancelCallback(const NsConnChan *connChanPtr)
  *
  * ConnChanCreate --
  *
- *    Allocate a connection channel structure and initialize its fields.
+ *      Allocate a connection channel structure and initialize its fields.
  *
  * Results:
- *    Initialized connection channel structure.
+ *      Initialized connection channel structure.
  *
  * Side effects:
- *    Allocating memory.
+ *      Allocating memory.
  *
  *----------------------------------------------------------------------
  */
@@ -362,14 +364,14 @@ ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
  *
  * ConnChanFree --
  *
- *    Free NsConnChan structure and remove the entry from the hash
- *    table of open connection channel structures.
+ *      Free NsConnChan structure and remove the entry from the hash
+ *      table of open connection channel structures.
  *
  * Results:
- *    None.
+ *      None.
  *
  * Side effects:
- *    Freeing memory
+ *      Freeing memory.
  *
  *----------------------------------------------------------------------
  */
@@ -455,13 +457,13 @@ ConnChanFree(NsConnChan *connChanPtr, NsServer *servPtr) {
  *
  * ConnChanGet --
  *
- *    Access an NsConnChan from the per-server table via its name.
+ *      Access an NsConnChan from the per-server table via its name.
  *
  * Results:
- *    ConnChan* or NULL if not found.
+ *      ConnChan* or NULL if not found.
  *
  * Side effects:
- *    None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -685,7 +687,7 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
  *      Append info for socket callback.
  *
  * Results:
- *      None
+ *      None.
  *
  * Side effects:
  *      None.
@@ -720,7 +722,7 @@ ArgProc(Tcl_DString *dsPtr, const void *arg)
  *
  *      Register a callback for the connection channel. Due to the
  *      underlying infrastructure, one socket has at most one callback
- *      registered.
+ *      registered at one time.
  *
  * Results:
  *      Tcl result code.
@@ -976,15 +978,15 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
 /*
  *----------------------------------------------------------------------
  *
- * ConnChanDeatchObjCmd --
+ * ConnChanDetachObjCmd --
  *
- *    Implements "ns_connchan detach".
+ *      Implements "ns_connchan detach".
  *
  * Results:
- *    Tcl result.
+ *      Tcl result.
  *
  * Side effects:
- *    Depends on subcommand.
+ *      Depends on subcommand.
  *
  *----------------------------------------------------------------------
  */
@@ -1043,13 +1045,13 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
  *
  * ConnChanOpenObjCmd --
  *
- *    Implements "ns_connchan open".
+ *      Implements "ns_connchan open".
  *
  * Results:
- *    Tcl result.
+ *      Tcl result.
  *
  * Side effects:
- *    Depends on subcommand.
+ *      Depends on subcommand.
  *
  *----------------------------------------------------------------------
  */
@@ -1182,13 +1184,13 @@ ConnChanOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  * ConnChanListenObjCmd --
  *
- *    Implements "ns_connchan listen".
+ *      Implements "ns_connchan listen".
  *
  * Results:
- *    Tcl result.
+ *      Tcl result.
  *
  * Side effects:
- *    Depends on subcommand.
+ *      Depends on subcommand.
  *
  *----------------------------------------------------------------------
  */
@@ -1372,13 +1374,13 @@ SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why))
  *
  * ConnChanListObjCmd --
  *
- *    Implements "ns_connchan list".
+ *      Implements "ns_connchan list".
  *
  * Results:
- *    Tcl result.
+ *      Tcl result.
  *
  * Side effects:
- *    Depends on subcommand.
+ *      Depends on subcommand.
  *
  *----------------------------------------------------------------------
  */
@@ -1460,13 +1462,13 @@ ConnChanListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  * ConnChanStatusObjCmd --
  *
- *    Implements "ns_connchan status".
+ *      Implements "ns_connchan status".
  *
  * Results:
- *    Tcl result.
+ *      Tcl result.
  *
  * Side effects:
- *    None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1549,13 +1551,13 @@ ConnChanStatusObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *
  * ConnChanCloseObjCmd --
  *
- *    Implements "ns_connchan close".
+ *      Implements "ns_connchan close".
  *
  * Results:
- *    Tcl result.
+ *      Tcl result.
  *
  * Side effects:
- *    Depends on subcommand.
+ *      Depends on subcommand.
  *
  *----------------------------------------------------------------------
  */
@@ -1599,13 +1601,13 @@ ConnChanCloseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *
  * ConnChanCallbackObjCmd --
  *
- *    Implements "ns_connchan callback".
+ *      Implements "ns_connchan callback".
  *
  * Results:
- *    Tcl result.
+ *      Tcl result.
  *
  * Side effects:
- *    Depends on subcommand.
+ *      Depends on subcommand.
  *
  *----------------------------------------------------------------------
  */
@@ -1718,13 +1720,13 @@ ConnChanCallbackObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
  *
  * ConnChanExistsObjCmd --
  *
- *    Implements "ns_connchan exists".
+ *      Implements "ns_connchan exists".
  *
  * Results:
- *    Tcl result.
+ *      Tcl result.
  *
  * Side effects:
- *    Depends on subcommand.
+ *      Depends on subcommand.
  *
  *----------------------------------------------------------------------
  */
@@ -1758,14 +1760,14 @@ ConnChanExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *
  * ConnChanReadBuffer --
  *
- *    Read from a connchan into a provided buffer.  In essence, this
- *    function performs timeout setup and handles NS_SOCK_AGAIN.
+ *      Read from a connchan into a provided buffer.  In essence, this
+ *      function performs timeout setup and handles NS_SOCK_AGAIN.
  *
  * Results:
- *    number of bytes read or -1 on error.
+ *      number of bytes read or -1 on error.
  *
  * Side effects:
- *    None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1820,13 +1822,13 @@ ConnChanReadBuffer(NsConnChan *connChanPtr, char *buffer, size_t bufferSize)
  *
  * RequireDsBuffer --
  *
- *    Make sure, the DS buffer is allocated.
+ *      Make sure, the DS buffer is allocated.
  *
  * Results:
- *    None;
+ *      None.
  *
  * Side effects:
- *    Potentially updates dsPtr which is passed as an argument
+ *      Potentially updates dsPtr which is passed as an argument
  *
  *----------------------------------------------------------------------
  */
@@ -1845,14 +1847,14 @@ RequireDsBuffer(Tcl_DString **dsPtr) {
  *
  * WebsocketFrameSetCommonMembers --
  *
- *    Set common members of the dict, which are part of the result of
- *    every GetWebsocketFrame() operation.
+ *      Set common members of the dict, which are part of the result of
+ *      every GetWebsocketFrame() operation.
  *
  * Results:
- *    None.
+ *      None.
  *
  * Side effects:
- *    None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1877,24 +1879,24 @@ WebsocketFrameSetCommonMembers(Tcl_Obj *resultObj, ssize_t nRead, const NsConnCh
  *
  * GetWebsocketFrame --
  *
- *     Frame handling for incoming WebSockets. This function checks,
- *     if the data read so far is a complete WebSocket frame
- *     (potentially consisting of multiple fragments) and returns the
- *     results in form of a Tcl dict. To handle partial frames or
- *     surplus data, the command performs socket level buffering based
- *     on Tcl_DStrings.
+ *      Frame handling for incoming WebSockets. This function checks,
+ *      if the data read so far is a complete WebSocket frame
+ *      (potentially consisting of multiple fragments) and returns the
+ *      results in form of a Tcl dict. To handle partial frames or
+ *      surplus data, the command performs socket level buffering based
+ *      on Tcl_DStrings.
  *
  * Results:
- *     Tcl dict containing "fin" status bit, "frame" state (incomplete
- *     or complete), "unprocessed" (received data in buffer not
- *     handled so far), "haveData" (boolean value to express that
- *     unprocessed data might be sufficient for next frame.
+ *      Tcl dict containing "fin" status bit, "frame" state (incomplete
+ *      or complete), "unprocessed" (received data in buffer not
+ *      handled so far), "haveData" (boolean value to express that
+ *      unprocessed data might be sufficient for next frame.
  *
- *     In case the frame is finished, the dict contains as well the
- *     WebSocket "opcode" and "payload" of the frame.
+ *      In case the frame is finished, the dict contains as well the
+ *      WebSocket "opcode" and "payload" of the frame.
  *
  * Side effects:
- *     None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -2096,13 +2098,13 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
  *
  * ConnChanReadObjCmd --
  *
- *    Implements "ns_connchan read".
+ *      Implements "ns_connchan read".
  *
  * Results:
- *    Tcl result.
+ *      Tcl result.
  *
  * Side effects:
- *    Depends on subcommand.
+ *      Depends on subcommand.
  *
  *----------------------------------------------------------------------
  */
@@ -2180,13 +2182,13 @@ ConnChanReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  * ConnChanWriteObjCmd --
  *
- *    Implements "ns_connchan write".
+ *      Implements "ns_connchan write".
  *
  * Results:
- *    Tcl result.
+ *      Tcl result.
  *
  * Side effects:
- *    Depends on subcommand.
+ *      Depends on subcommand.
  *
  *----------------------------------------------------------------------
  */
@@ -2462,14 +2464,14 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *
  * ConnChanWsencodeObjCmd --
  *
- *    Implements "ns_connchan wsencode". Returns a WebSocket frame in
- *    form of binary data produced from the input parameters.
+ *      Implements "ns_connchan wsencode". Returns a WebSocket frame in
+ *      form of binary data produced from the input parameters.
  *
  * Results:
- *    Tcl result.
+ *      Tcl result.
  *
  * Side effects:
- *    None.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -2611,13 +2613,13 @@ ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
  *
  * NsTclConnChanObjCmd --
  *
- *    Implements "ns_connchan".
+ *      Implements "ns_connchan".
  *
  * Results:
- *    Tcl result.
+ *      Tcl result.
  *
  * Side effects:
- *    Depends on subcommand.
+ *      Depends on subcommand.
  *
  *----------------------------------------------------------------------
  */
