@@ -866,7 +866,9 @@ Ns_GetGid(const char *group)
  *----------------------------------------------------------------------
  * Ns_SetGroup --
  *
- *      Set the effective group ID of the current process
+ *      Set the effective group ID of the current process.  The input
+ *      parameter is either a group name or a string holding a valid group id
+ *      integer.
  *
  * Results:
  *      NS_ERROR on error or NS_OK
@@ -886,10 +888,10 @@ Ns_SetGroup(const char *group)
         long gidResult = Ns_GetGid(group);
 
         if (gidResult == -1) {
-            int nc;
+            char *endPtr = NULL;
 
-            if (sscanf(group, "%24d%n", (int*)&gidResult, &nc) != 1
-                || nc != (int)strlen(group)
+            gidResult = strtol(group, &endPtr, 10);
+            if ((group == endPtr)
                 || Ns_GetNameForGid(NULL, (gid_t)gidResult) == NS_FALSE) {
                 Ns_Log(Error, "Ns_GetGroup: unknown group '%s'", group);
                 status = NS_ERROR;
@@ -915,7 +917,8 @@ Ns_SetGroup(const char *group)
  *----------------------------------------------------------------------
  * Ns_SetUser --
  *
- *      Set the effective user ID of the current process
+ *      Set the effective user ID of the current process. The input parameter
+ *      is either a user name or a string holding a valid user id integer.
  *
  * Results:
  *      NS_ERROR on error or NS_OK
@@ -938,13 +941,13 @@ Ns_SetUser(const char *user)
         Ns_DStringInit(&ds);
         uid = Ns_GetUid(user);
         if (uid == -1) {
-            int nc;
+            char *endPtr = NULL;
 
             /*
              * Hm, try see if given as numeric uid...
              */
-            if (sscanf(user, "%24ld%n", &uid, &nc) != 1
-                || nc != (int)strlen(user)
+            uid = strtol(user, &endPtr, 10);
+            if ((user == endPtr)
                 || Ns_GetNameForUid(&ds, (uid_t)uid) == NS_FALSE) {
                 Ns_Log(Error, "Ns_SetUser: unknown user '%s'", user);
                 status = NS_ERROR;

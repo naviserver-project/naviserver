@@ -615,15 +615,20 @@ Ns_ConfigGetInt64(const char *section, const char *key, int64_t *valuePtr)
     NS_NONNULL_ASSERT(valuePtr != NULL);
 
     s = Ns_ConfigGetValue(section, key);
-    if (s == NULL || sscanf(s, "%24"
-#ifdef _WIN32
-                            "I64d"
-#else
-                            SCNd64
-#endif
-                            , valuePtr) != 1) {
+    if (s == NULL) {
         success = NS_FALSE;
+    } else {
+        Tcl_WideInt  lval;
+        char        *endPtr = NULL;
+
+        lval = strtoll(s, &endPtr, 10);
+        if (endPtr != s) {
+            *valuePtr = lval;
+        } else {
+            success = NS_FALSE;
+        }
     }
+
     return success;
 }
 

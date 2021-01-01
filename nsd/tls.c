@@ -1667,7 +1667,7 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
     ssize_t       nRead = 0;
     int           got = 0, sock, n, err;
     char         *buf = NULL;
-    unsigned long sslERRcode;
+    unsigned long sslERRcode = 0u;
     char          errorBuffer[256];
     Ns_SockState  sockState = NS_SOCK_READ;
 
