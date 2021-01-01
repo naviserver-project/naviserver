@@ -55,7 +55,7 @@ ssize_t pread(int fd, char *buf, size_t count, off_t offset);
  * Local functions defined in this file
  */
 
-static ssize_t _SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length)
+static ssize_t ns_sendfile(Ns_Sock *sock, int fd, off_t offset, size_t length)
     NS_GNUC_NONNULL(1);
 
 static ssize_t SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length, unsigned int flags)
@@ -348,11 +348,11 @@ SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length, unsigned int flags)
      * Only, when the current driver supports sendfile(), try to use the
      * native implementation. When we are using e.g. HTTPS, using sendfile
      * does not work, since it would write plain data to the encrypted
-     * channel. The sendfile emulation _SendFile() uses always the right
+     * channel. The sendfile emulation ns_sendfile() uses always the right
      * driver I/O.
      */
     if ( (flags & NS_DRIVER_CAN_USE_SENDFILE) == 0u) {
-        sent = _SendFile(sock, fd, offset, length);
+        sent = ns_sendfile(sock, fd, offset, length);
     } else {
 #if defined(HAVE_LINUX_SENDFILE)
         sent = sendfile(sock->sock, fd, &offset, length);
@@ -360,7 +360,7 @@ SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length, unsigned int flags)
             if (errno == EINTR || errno == NS_EAGAIN || errno == EWOULDBLOCK) {
                 sent = 0;
             } else if (errno == EINVAL || errno == ENOSYS) {
-                sent = _SendFile(sock, fd, offset, length);
+                sent = _ns_sendfile(sock, fd, offset, length);
             }
         }
 #elif defined(HAVE_BSD_SENDFILE)
@@ -371,12 +371,12 @@ SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length, unsigned int flags)
         if (rc == 0 || errno == EINTR || errno == NS_EAGAIN || errno == EWOULDBLOCK) {
             sent = sbytes;
         } else if (errno == EOPNOTSUPP) {
-            sent = _SendFile(sock, fd, offset, length);
+            sent = ns_sendfile(sock, fd, offset, length);
         } else {
             sent = 0;
         }
 #else
-        sent = _SendFile(sock, fd, offset, length);
+        sent = ns_sendfile(sock, fd, offset, length);
 #endif
     }
 
@@ -388,7 +388,7 @@ SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length, unsigned int flags)
 /*
  *----------------------------------------------------------------------
  *
- * _SendFile
+ * ns_sendfile
  *
  *      Emulates the operation of kernel-based sendfile().
  *
@@ -403,7 +403,7 @@ SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length, unsigned int flags)
  */
 
 static ssize_t
-_SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length)
+ns_sendfile(Ns_Sock *sock, int fd, off_t offset, size_t length)
 {
     char               buf[16384];
     struct iovec       iov;
