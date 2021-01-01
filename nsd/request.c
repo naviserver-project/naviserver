@@ -56,6 +56,40 @@ static const char *GetEncodingFormat(const char *encodingString,
                                      const char *encodingFormat, double *qValue)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
+static void RequestCleanupMembers(Ns_Request *request)
+    NS_GNUC_NONNULL(1);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RequestCleanupMembers --
+ *
+ *    Frees the members of the provided Ns_Request structure.
+ *
+ * Results:
+ *    None.
+ *
+ * Side effects:
+ *    Freeing memory.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+RequestCleanupMembers(Ns_Request *request)
+{
+    NS_NONNULL_ASSERT(request != NULL);
+
+    if (request->line != NULL) {
+        Ns_Log(Ns_LogRequestDebug, "end %s", request->line);
+    }
+    ns_free((char *)request->line);
+    ns_free((char *)request->method);
+    ns_free((char *)request->protocol);
+    ns_free((char *)request->host);
+    ns_free(request->query);
+    FreeUrl(request);
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -80,21 +114,11 @@ Ns_ResetRequest(Ns_Request *request)
 {
     NS_NONNULL_ASSERT(request != NULL);
 
-    if (request->line != NULL) {
-        Ns_Log(Ns_LogRequestDebug, "end %s", request->line);
-    }
-    ns_free((char *)request->line);
-    ns_free((char *)request->method);
-    ns_free((char *)request->protocol);
-    ns_free((char *)request->host);
-    ns_free(request->query);
-    FreeUrl(request);
-
     /*
-     * There is no need to clear the full structuce, since
-     * Ns_ParseRequest() clears all fields. However, we have to protect
-     * against multiple invocations.
+     * There is no need to free the full structure, just clean the members and
+     * reset it to NULL.
      */
+    RequestCleanupMembers(request);
     memset(request, 0, sizeof(Ns_Request));
 }
 
@@ -118,17 +142,7 @@ void
 Ns_FreeRequest(Ns_Request *request)
 {
     if (request != NULL) {
-
-        if (request->line != NULL) {
-            Ns_Log(Ns_LogRequestDebug, "end %s", request->line);
-        }
-
-        ns_free((char *)request->line);
-        ns_free((char *)request->method);
-        ns_free((char *)request->protocol);
-        ns_free((char *)request->host);
-        ns_free(request->query);
-        FreeUrl(request);
+        RequestCleanupMembers(request);
         ns_free(request);
     }
 }

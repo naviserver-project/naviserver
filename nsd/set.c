@@ -46,7 +46,10 @@ typedef int (*SetFindProc)(const Ns_Set *set, const char *key);
  * Local functions defined in this file
  */
 
-static void MergeSet(Ns_Set *high, const Ns_Set *low, SetFindProc findProc)
+static void SetMerge(Ns_Set *high, const Ns_Set *low, SetFindProc findProc)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static void SetCopyElements(Ns_Set *from, Ns_Set *to)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static const char *SetGetValueCmp(const Ns_Set *set, const char *key, const char *def, StringCmpProc cmp)
@@ -891,7 +894,7 @@ Ns_SetListFree(Ns_Set **sets)
  *----------------------------------------------------------------------
  */
 static void
-MergeSet(Ns_Set *high, const Ns_Set *low, SetFindProc findProc)
+SetMerge(Ns_Set *high, const Ns_Set *low, SetFindProc findProc)
 {
     size_t i;
 
@@ -913,7 +916,7 @@ Ns_SetMerge(Ns_Set *high, const Ns_Set *low)
     NS_NONNULL_ASSERT(high != NULL);
     NS_NONNULL_ASSERT(low != NULL);
 
-    MergeSet(high, low, Ns_SetFind);
+    SetMerge(high, low, Ns_SetFind);
 }
 
 void
@@ -922,7 +925,7 @@ Ns_SetIMerge(Ns_Set *high, const Ns_Set *low)
     NS_NONNULL_ASSERT(high != NULL);
     NS_NONNULL_ASSERT(low != NULL);
 
-    MergeSet(high, low, Ns_SetIFind);
+    SetMerge(high, low, Ns_SetIFind);
 }
 
 
@@ -1015,8 +1018,7 @@ Ns_SetMove(Ns_Set *to, Ns_Set *from)
 Ns_Set *
 Ns_SetRecreate(Ns_Set *set)
 {
-    Ns_Set      *newSet;
-    size_t       i;
+    Ns_Set *newSet;
 
     NS_NONNULL_ASSERT(set != NULL);
 
@@ -1026,14 +1028,40 @@ Ns_SetRecreate(Ns_Set *set)
     newSet->name = ns_strcopy(set->name);
     newSet->fields = ns_malloc(sizeof(Ns_SetField) * newSet->maxSize);
 
-    for (i = 0u; i < set->size; i++) {
-        newSet->fields[i].name  = set->fields[i].name;
-        newSet->fields[i].value = set->fields[i].value;
-    }
+    SetCopyElements(set, newSet);
     set->size = 0u;
 
     return newSet;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetCopyElements --
+ *
+ *      Copy all elements of the source to the target. The function can only
+ *      be called in cases, where the caller takes care, that the target set
+ *      has at least the same number of elements allocated.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+SetCopyElements(Ns_Set *from, Ns_Set *to)
+{
+    size_t i;
+
+    for (i = 0u; i < from->size; i++) {
+        to->fields[i].name  = from->fields[i].name;
+        to->fields[i].value = from->fields[i].value;
+    }
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1061,7 +1089,6 @@ Ns_Set *
 Ns_SetRecreate2(Ns_Set **toPtr, Ns_Set *from)
 {
     Ns_Set      *newSet;
-    size_t       i;
 
     NS_NONNULL_ASSERT(toPtr != NULL);
     NS_NONNULL_ASSERT(from != NULL);
@@ -1110,10 +1137,7 @@ Ns_SetRecreate2(Ns_Set **toPtr, Ns_Set *from)
         newSet->size = from->size;
     }
 
-    for (i = 0u; i < from->size; i++) {
-        newSet->fields[i].name  = from->fields[i].name;
-        newSet->fields[i].value = from->fields[i].value;
-    }
+    SetCopyElements(from, newSet);
     from->size = 0u;
 
     return newSet;
