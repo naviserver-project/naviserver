@@ -143,8 +143,21 @@ static DH *get_dh1024(void);
 
 # if  defined(HAVE_OPENSSL_PRE_1_1) || defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L
 /*
- * Compatibility function for libressl < 2.7; DH_set0_pqg is used just by the
- * Diffie-Hellman parameters in dhparams.h.
+ *----------------------------------------------------------------------
+ *
+ * DH_set0_pqg --
+ *
+ *      Compatibility function for libressl < 2.7; DH_set0_pqg is used
+ *      just by the Diffie-Hellman parameters in dhparams.h. Obsoleted
+ *      by OPENSSL_HAVE_DH_AUTO.
+ *
+ * Results:
+ *      Returns walways 1.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
  */
 static int
 DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g)
@@ -174,8 +187,23 @@ DH_set0_pqg(DH *dh, BIGNUM *p, BIGNUM *q, BIGNUM *g)
  *----------------------------------------------------------------------
  * Callback implementations.
  *----------------------------------------------------------------------
+ */
+
+/*
+ *----------------------------------------------------------------------
  *
- * Callback used for ephemeral DH keys
+ * SSL_dhCB --
+ *
+ *      OpenSSL callback used for ephemeral DH keys.
+ *      Obsoleted by OPENSSL_HAVE_DH_AUTO.
+ *
+ * Results:
+ *      Returns always 1.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
  */
 static DH *
 SSL_dhCB(SSL *ssl, int isExport, int keyLength) {
@@ -210,12 +238,26 @@ SSL_dhCB(SSL *ssl, int isExport, int keyLength) {
 }
 #endif /* OPENSSL_HAVE_DH_AUTO */
 
+
 #ifdef HAVE_OPENSSL_PRE_1_1
 /*
- * The renegotiation issue was fixed in recent versions of OpenSSL,
- * and the flag was removed, therefore, this function is just for
- * compatibility with old version of OpenSSL (flag removed in OpenSSL
- * 1.1.*).
+ *----------------------------------------------------------------------
+ *
+ * SSL_infoCB --
+ *
+ *      OpenSSL callback used for renegotiation in earlier versions of
+ *      OpenSSL.  The renegotiation issue was fixed in recent versions
+ *      of OpenSSL, and the flag was removed, therefore, this function
+ *      is just for compatibility with old version of OpenSSL (flag
+ *      removed in OpenSSL 1.1.*).
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
  */
 static void
 SSL_infoCB(const SSL *ssl, int where, int UNUSED(ret)) {
@@ -228,6 +270,23 @@ SSL_infoCB(const SSL *ssl, int where, int UNUSED(ret)) {
 }
 #endif
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * SSL_serverNameCB --
+ *
+ *      OpenSSL callback used for server-ide server name indication
+ *      (SNI). The callback is controlled by the driver option
+ *      NS_DRIVER_SNI.
+ *
+ * Results:
+ *      SSL_TLSEXT_ERR_NOACK or SSL_TLSEXT_ERR_OK.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
 /*
  * ServerNameCallback for SNI
  */
@@ -1154,7 +1213,6 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
  *
  *----------------------------------------------------------------------
  */
-
 static int
 SSLPassword(char *buf, int num, int UNUSED(rwflag), void *UNUSED(userdata))
 {
@@ -1165,6 +1223,25 @@ SSLPassword(char *buf, int num, int UNUSED(rwflag), void *UNUSED(userdata))
     return (pwd != NULL ? (int)strlen(buf) : 0);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReportError --
+ *
+ *      Error reporting function for this file.  The function has the
+ *      fprintf interface (format string plus arguments) and leaves an
+ *      error message in the interpreter's result object, when an
+ *      interpreter is provided. Otherwise, it outputs a warning to
+ *      the system log.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Error reporting.
+ *
+ *----------------------------------------------------------------------
+ */
 static void
 ReportError(Tcl_Interp *interp, const char *fmt, ...)
 {
@@ -1188,15 +1265,16 @@ ReportError(Tcl_Interp *interp, const char *fmt, ...)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_TLS_CtxServerInit --
+ * NsSSLConfigNew --
  *
- *      Read config information, vreate and initialize OpenSSL context.
+ *      Creates a new NsSSLConfig structure and sets standard
+ *      configuration parameters ("deferaccept" and "verify").
  *
  * Results:
- *      A standard Tcl result.
+ *      Pointer to a new NsSSLConfig.
  *
  * Side effects:
- *      None.
+ *      Allocating memory.
  *
  *----------------------------------------------------------------------
  */
@@ -1211,6 +1289,21 @@ NsSSLConfigNew(const char *path)
     return cfgPtr;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TLS_CtxServerInit --
+ *
+ *      Read config information, vreate and initialize OpenSSL context.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
 int
 Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
                      unsigned int flags,

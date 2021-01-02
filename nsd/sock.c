@@ -241,7 +241,22 @@ Ns_SockSetReceiveState(Ns_Sock *sock, Ns_SockState sockState, unsigned long recv
     ((Sock *)sock)->recvErrno = recvErrno;
 }
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockGetPort --
+ *
+ *      Get the port of the provided Sock structure from the IPv4 or
+ *      IPv6 sock addr.
+ *
+ * Results:
+ *      Port or 0 on errors.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
 unsigned short
 Ns_SockGetPort(const Ns_Sock *sock)
 {
@@ -835,13 +850,12 @@ Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr)
     return sock;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SockBind --
+ * Ns_BindSock --
  *
- *      Create a TCP socket and bind it to the passed-in address.
+ *      Deprecated version of Ns_SockBind().
  *
  * Results:
  *      A socket or NS_INVALID_SOCKET on error.
@@ -859,6 +873,23 @@ Ns_BindSock(const struct sockaddr *saPtr)
     return Ns_SockBind(saPtr, NS_FALSE);
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockBind --
+ *
+ *      Create a TCP socket and bind it to the passed-in address.
+ *
+ * Results:
+ *      A socket or NS_INVALID_SOCKET on error.
+ *
+ * Side effects:
+ *      Will set SO_REUSEADDR always on the socket, SO_REUSEPORT
+ *      optionally.
+ *
+ *----------------------------------------------------------------------
+ */
 NS_SOCKET
 Ns_SockBind(const struct sockaddr *saPtr, bool reusePort)
 {
@@ -927,7 +958,7 @@ Ns_SockBind(const struct sockaddr *saPtr, bool reusePort)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SockConnect --
+ * Ns_SockConnect, Ns_SockConnect2 --
  *
  *      Open a TCP connection to a host/port.
  *
@@ -960,7 +991,7 @@ Ns_SockConnect2(const char *host, unsigned short port, const char *lhost, unsign
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SockAsyncConnect --
+ * Ns_SockAsyncConnect, Ns_SockAsyncConnect2 --
  *
  *      Like Ns_SockConnect, but uses a nonblocking socket.
  *
@@ -993,7 +1024,7 @@ Ns_SockAsyncConnect2(const char *host, unsigned short port, const char *lhost, u
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SockTimedConnect --
+ * Ns_SockTimedConnect, Ns_SockTimedConnect2 --
  *
  *      Like Ns_SockConnect, but with an optional timeout in seconds.
  *
@@ -1383,7 +1414,7 @@ Ns_SockCloseLater(NS_SOCKET sock)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ClearSockErrno, Ns_GetSockErrno, Ns_SetSockErrno, Ns_SockStrError  --
+ * Ns_ClearSockErrno, Ns_GetSockErrno, Ns_SetSockErrno, Ns_SockStrError --
  *
  *      Errno/GetLastError utility routines.
  *

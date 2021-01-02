@@ -918,7 +918,7 @@ Ns_SetGroup(const char *group)
  * Ns_SetUser --
  *
  *      Set the effective user ID of the current process. The input parameter
- *      is either a user name or a string holding a valid user id integer.
+ *      is either a username or a string holding a valid user id integer.
  *
  * Results:
  *      NS_ERROR on error or NS_OK

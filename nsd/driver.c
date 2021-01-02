@@ -895,7 +895,7 @@ void NsDriverMapVirtualServers(void)
 
                         if (isNew == 1) {
                             /*
-                             * We have already no sslCtx for this server. This
+                             * We have already an sslCtx for this server. This
                              * entry is most likely an alternate server name.
                              */
                             if (Ns_TLS_CtxServerInit(ds1.string, NULL, 0u, NULL, &ctx) == TCL_OK) {
