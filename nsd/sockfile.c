@@ -237,7 +237,7 @@ Ns_SockSendFileBufs(Ns_Sock *sock, const Ns_FileVec *bufs, int nbufs, unsigned i
  *      able to handle nesting calls.
  *
  * Results:
- *      NS_TRUE or NS_FALSE
+ *      NS_TRUE or NS_FALSE.
  *
  * Side effects:
  *      Switch TCP send state, potentially update sockPtr->flags
@@ -388,7 +388,7 @@ SendFile(Ns_Sock *sock, int fd, off_t offset, size_t length, unsigned int flags)
 /*
  *----------------------------------------------------------------------
  *
- * ns_sendfile
+ * ns_sendfile --
  *
  *      Emulates the operation of kernel-based sendfile().
  *
@@ -480,7 +480,8 @@ ns_sendfile(Ns_Sock *sock, int fd, off_t offset, size_t length)
  *----------------------------------------------------------------------
  */
 #ifdef _WIN32
-ssize_t pread(int fd, char *buf, size_t count, off_t offset)
+ssize_t
+pread(int fd, char *buf, size_t count, off_t offset)
 {
     HANDLE   fh = (HANDLE)_get_osfhandle(fd);
     ssize_t  result;

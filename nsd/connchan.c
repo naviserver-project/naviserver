@@ -502,7 +502,7 @@ ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name) {
  *      registered Tcl script.
  *
  * Results:
- *      NS_TRUE or NS_FALSE on error
+ *      NS_TRUE or NS_FALSE on error.
  *
  * Side effects:
  *      Will run Tcl script.
@@ -725,7 +725,7 @@ ArgProc(Tcl_DString *dsPtr, const void *arg)
  *      registered at one time.
  *
  * Results:
- *      Tcl result code.
+ *      Standard NaviServer return code.
  *
  * Side effects:
  *      Memory management for the callback structure.
@@ -983,7 +983,7 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
  *      Implements "ns_connchan detach".
  *
  * Results:
- *      Tcl result.
+ *      A standard Tcl result.
  *
  * Side effects:
  *      Depends on subcommand.
@@ -1048,7 +1048,7 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
  *      Implements "ns_connchan open".
  *
  * Results:
- *      Tcl result.
+ *      A standard Tcl result.
  *
  * Side effects:
  *      Depends on subcommand.
@@ -1187,7 +1187,7 @@ ConnChanOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *      Implements "ns_connchan listen".
  *
  * Results:
- *      Tcl result.
+ *      A standard Tcl result.
  *
  * Side effects:
  *      Depends on subcommand.
@@ -1299,7 +1299,7 @@ ConnChanListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *      ListenCallback.
  *
  * Results:
- *      NS_TRUE or NS_FALSE on error
+ *      NS_TRUE or NS_FALSE on error.
  *
  * Side effects:
  *      Will run Tcl script.
@@ -1377,7 +1377,7 @@ SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why))
  *      Implements "ns_connchan list".
  *
  * Results:
- *      Tcl result.
+ *      A standard Tcl result.
  *
  * Side effects:
  *      Depends on subcommand.
@@ -1465,7 +1465,7 @@ ConnChanListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *      Implements "ns_connchan status".
  *
  * Results:
- *      Tcl result.
+ *      A standard Tcl result.
  *
  * Side effects:
  *      None.
@@ -1554,7 +1554,7 @@ ConnChanStatusObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *      Implements "ns_connchan close".
  *
  * Results:
- *      Tcl result.
+ *      A standard Tcl result.
  *
  * Side effects:
  *      Depends on subcommand.
@@ -1604,7 +1604,7 @@ ConnChanCloseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *      Implements "ns_connchan callback".
  *
  * Results:
- *      Tcl result.
+ *      A standard Tcl result.
  *
  * Side effects:
  *      Depends on subcommand.
@@ -1723,7 +1723,7 @@ ConnChanCallbackObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
  *      Implements "ns_connchan exists".
  *
  * Results:
- *      Tcl result.
+ *      A standard Tcl result.
  *
  * Side effects:
  *      Depends on subcommand.
@@ -1764,7 +1764,7 @@ ConnChanExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *      function performs timeout setup and handles NS_SOCK_AGAIN.
  *
  * Results:
- *      number of bytes read or -1 on error.
+ *      Number of bytes read or -1 on error.
  *
  * Side effects:
  *      None.
@@ -2101,7 +2101,7 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
  *      Implements "ns_connchan read".
  *
  * Results:
- *      Tcl result.
+ *      A standard Tcl result.
  *
  * Side effects:
  *      Depends on subcommand.
@@ -2185,7 +2185,7 @@ ConnChanReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *      Implements "ns_connchan write".
  *
  * Results:
- *      Tcl result.
+ *      A standard Tcl result.
  *
  * Side effects:
  *      Depends on subcommand.
@@ -2468,7 +2468,7 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *      form of binary data produced from the input parameters.
  *
  * Results:
- *      Tcl result.
+ *      A standard Tcl result.
  *
  * Side effects:
  *      None.
@@ -2616,7 +2616,7 @@ ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
  *      Implements "ns_connchan".
  *
  * Results:
- *      Tcl result.
+ *      A standard Tcl result.
  *
  * Side effects:
  *      Depends on subcommand.

@@ -91,7 +91,7 @@ static const char *ErrorCodeString(int errorCode) NS_GNUC_PURE;
  *      "ns_sockerrno" under windows.
  *
  * Results:
- *      Boolean value
+ *      Boolean value.
  *
  * Side effects:
  *      None.
@@ -99,7 +99,8 @@ static const char *ErrorCodeString(int errorCode) NS_GNUC_PURE;
  *----------------------------------------------------------------------
  */
 
-static NS_INLINE bool Retry(int errorCode)
+static NS_INLINE bool
+Retry(int errorCode)
 {
     return (errorCode == NS_EAGAIN
             || errorCode == NS_EINTR
@@ -304,8 +305,8 @@ Ns_SockInErrorState(const Ns_Sock *sock)
  * Results:
  *      Number of bytes read or -1 on error (including timeout).  The
  *      return value will be 0 when the peer has performed an orderly
- *      shutdown. The resulting sockstate has one of the following
- *      codes:
+ *      shutdown. The resulting sockstate is set in sockPtr and has one
+ *      of the following codes:
  *
  *      NS_SOCK_READ, NS_SOCK_DONE, NS_SOCK_AGAIN, NS_SOCK_EXCEPTION,
  *      NS_SOCK_TIMEOUT
@@ -457,7 +458,6 @@ Ns_SockSendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
     sbufLen = UIO_MAXIOV;
 
     while (bufIdx < nbufs || toWrite > 0u) {
-
         ssize_t sent;
 
         /*
@@ -1138,7 +1138,7 @@ Ns_SockConnectError(Tcl_Interp *interp, const char *host, unsigned short portNr,
  *      Set a socket nonblocking.
  *
  * Results:
- *      NS_OK/NS_ERROR.
+ *      NS_OK or NS_ERROR.
  *
  * Side effects:
  *      None.
@@ -1168,7 +1168,7 @@ Ns_SockSetNonBlocking(NS_SOCKET sock)
  *      Set a socket blocking.
  *
  * Results:
- *      NS_OK/NS_ERROR.
+ *      NS_OK or NS_ERROR.
  *
  * Side effects:
  *      None.
@@ -1324,7 +1324,7 @@ Ns_SockSetKeepalive(NS_SOCKET sock, int optval)
  *      Create a pair of unix-domain sockets.
  *
  * Results:
- *      See socketpair(2)
+ *      See socketpair(2).
  *
  * Side effects:
  *      None.
@@ -1841,9 +1841,8 @@ SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
  *      Send data to a nonblocking socket from a vector of buffers.
  *
  * Results:
- *
- *      Number of bytes written
- *      -1 on error, partial write or write to non-writable socket
+ *      Number of bytes written or -1 on error, partial write or write to
+ *      non-writable socket
  *
  * Side effects:
  *      None.
@@ -1981,7 +1980,7 @@ NsSockSetRecvErrorCode(const Sock *sockPtr, Tcl_Interp *interp) {
  *      variable (which is not a good idea in multithreaded programs).
  *
  * Results:
- *      String.
+ *      Error code string.
  *
  * Side effects:
  *      None.

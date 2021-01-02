@@ -421,7 +421,7 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
  *      OCSP_CERTID pointer or NULL in cases of failure.
  *
  * Side effects:
- *      None
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -525,12 +525,12 @@ OCSP_ResponseIsValid(OCSP_RESPONSE *resp, OCSP_CERTID *id)
  *      Try to load OCSP_RESPONSE from cache file.
  *
  * Results:
- *      Tcl result code (NS_OK, NS_CONTINUE, NS_ERROR).  NS_CONTINUE means
- *      that there is no cache entry yet, but the filename of the cache file
- *      is returned in the first argument.
+ *      A standard Tcl result (TCL_OK, TCL_CONTINUE, TCL_ERROR).
+ *      TCL_CONTINUE means that there is no cache entry yet, but the
+ *      filename of the cache file is returned in the first argument.
  *
  * Side effects:
- *      None
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -619,7 +619,7 @@ OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
  *      argument.
  *
  * Side effects:
- *      None
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -885,7 +885,7 @@ static void NS_CRYPTO_free(void *addr, const char *UNUSED(file), int UNUSED(line
 /*
  *----------------------------------------------------------------------
  *
- * NsOpenSSLInit --
+ * NsInitOpenSSL --
  *
  *      Library entry point for OpenSSL. This routine calls various
  *      initialization functions for OpenSSL. OpenSSL cannot be used
@@ -900,7 +900,8 @@ static void NS_CRYPTO_free(void *addr, const char *UNUSED(file), int UNUSED(line
  *----------------------------------------------------------------------
  */
 
-void NsInitOpenSSL(void)
+void
+NsInitOpenSSL(void)
 {
 # ifdef HAVE_OPENSSL_EVP_H
     static int initialized = 0;
@@ -946,13 +947,13 @@ void NsInitOpenSSL(void)
  *
  * Ns_TLS_CtxClientCreate --
  *
- *   Create and Initialize OpenSSL context
+ *      Create and Initialize OpenSSL context
  *
  * Results:
- *   Result code.
+ *      A standard Tcl result.
  *
  * Side effects:
- *  None
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1014,13 +1015,13 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
  *
  * Ns_TLS_CtxFree --
  *
- *   Free OpenSSL context
+ *      Free OpenSSL context
  *
  * Results:
- *   none
+ *      None.
  *
  * Side effects:
- *  None
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1038,15 +1039,15 @@ Ns_TLS_CtxFree(NS_TLS_SSL_CTX *ctx)
  *
  * WaitFor --
  *
- *   Wait 10ms (currently hardcoded) for a state change on a socket.
- *   This is used for handling OpenSSL's states SSL_ERROR_WANT_READ
- *   and SSL_ERROR_WANT_WRITE.
+ *      Wait 10ms (currently hardcoded) for a state change on a socket.
+ *      This is used for handling OpenSSL's states SSL_ERROR_WANT_READ
+ *      and SSL_ERROR_WANT_WRITE.
  *
  * Results:
- *   Result code.
+ *      NaviServer return code.
  *
  * Side effects:
- *   None
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1063,14 +1064,14 @@ WaitFor(NS_SOCKET sock, unsigned int st)
  *
  * Ns_TLS_SSLConnect --
  *
- *   Initialize a socket as ssl socket and wait until the socket is
- *   usable (is connected, handshake performed)
+ *      Initialize a socket as ssl socket and wait until the socket is
+ *      usable (is connected, handshake performed)
  *
  * Results:
- *   Result code.
+ *      A standard Tcl result.
  *
  * Side effects:
- *   None
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1189,13 +1190,13 @@ ReportError(Tcl_Interp *interp, const char *fmt, ...)
  *
  * Ns_TLS_CtxServerInit --
  *
- *   Read config information, vreate and initialize OpenSSL context.
+ *      Read config information, vreate and initialize OpenSSL context.
  *
  * Results:
- *   Result code.
+ *      A standard Tcl result.
  *
  * Side effects:
- *  None
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1401,13 +1402,13 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
  *
  * Ns_TLS_CtxServerCreate --
  *
- *   Create and Initialize OpenSSL context
+ *      Create and Initialize OpenSSL context
  *
  * Results:
- *   Result code.
+ *      A standard Tcl result.
  *
  * Side effects:
- *  None
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1563,14 +1564,14 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
  *
  * Ns_TLS_SSLAccept --
  *
- *   Initialize a socket as ssl socket and wait until the socket
- *   is usable (is accepted, handshake performed)
+ *      Initialize a socket as ssl socket and wait until the socket
+ *      is usable (is accepted, handshake performed)
  *
  * Results:
- *   Tcl result code.
+ *      A standard Tcl result.
  *
  * Side effects:
- *   None
+ *      None.
  *
  *----------------------------------------------------------------------
  */
@@ -1641,8 +1642,8 @@ Ns_TLS_SSLAccept(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
  * Ns_SSLRecvBufs2 --
  *
  *      Read data from a nonblocking socket into a vector of buffers.
- *      Ns_SockRecvBufs2() is similar to Ns_SockRecvBufs() with the following
- *      differences:
+ *      Ns_SockRecvBufs2() is similar to Ns_SockRecvBufs() with the
+ *      following differences:
  *        a) the first argument is an SSL *
  *        b) it performs no timeout handliong
  *        c) it returns the sockstate in its last argument
@@ -1741,8 +1742,8 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
          * answered without an explicit content length start to
          * fail. This can be tested with:
          *
-         *       ns_logctl severity Debug(task) on
-         *       ns_http run https://www.google.com/
+         *      ns_logctl severity Debug(task) on
+         *      ns_http run https://www.google.com/
          *
          * The fix below just triggers for exactly this condition to
          * provide a graceful end for these requests.
@@ -1811,7 +1812,7 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
  *      or -1 on error.
  *
  * Side effects:
- *      none
+ *      None.
  *
  *----------------------------------------------------------------------
  */
