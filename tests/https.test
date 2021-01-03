@@ -40,7 +40,7 @@ if {[ns_info ssl] ne ""} {
 
 test https-1.1 {short request 1.0} -constraints {serverListen} -setup {
     ns_register_proc GET /get {
-	ns_return 200 text/plain "Hello World"
+        ns_return 200 text/plain "Hello World"
     }
 } -body {
     nstest::https -http 1.0 -getbody 1 GET /get
@@ -51,7 +51,7 @@ test https-1.1 {short request 1.0} -constraints {serverListen} -setup {
 
 test https-1.2 {short request 1.1} -constraints {serverListen} -setup {
     ns_register_proc GET /get {
-	ns_return 200 text/plain "Hello World"
+        ns_return 200 text/plain "Hello World"
     }
 } -body {
     nstest::https -http 1.1 -getbody 1 GET /get
@@ -62,7 +62,7 @@ test https-1.2 {short request 1.1} -constraints {serverListen} -setup {
 
 test https-1.3 {longer request} -constraints {serverListen} -setup {
     ns_register_proc GET /get {
-	ns_return 200 text/plain [string repeat "0123456789" 100]
+        ns_return 200 text/plain [string repeat "0123456789" 100]
     }
 } -body {
     nstest::https -getbody 0 -getheaders {Content-Length} GET /get
@@ -73,7 +73,7 @@ test https-1.3 {longer request} -constraints {serverListen} -setup {
 
 test https-1.4 {via writer} -constraints {serverListen} -setup {
     ns_register_proc GET /get {
-	ns_return 200 text/plain [string repeat "0123456789" 500]
+        ns_return 200 text/plain [string repeat "0123456789" 500]
     }
 } -body {
     nstest::https -http 1.1 -getbody 0 -getheaders {Content-Length} GET /get
@@ -84,7 +84,7 @@ test https-1.4 {via writer} -constraints {serverListen} -setup {
 
 test https-1.5 {via writer 500k} -constraints {serverListen} -setup {
     ns_register_proc GET /get {
-	ns_return 200 text/plain [string repeat "0123456789" 50000]
+        ns_return 200 text/plain [string repeat "0123456789" 50000]
     }
 } -body {
     nstest::https -http 1.1 -getbody 0 -getheaders {Content-Length} GET /get
@@ -95,7 +95,7 @@ test https-1.5 {via writer 500k} -constraints {serverListen} -setup {
 
 test https-1.6 {with query} -constraints {serverListen} -setup {
     ns_register_proc GET /get/foo {
-	ns_return 200 text/plain [ns_conn query]
+        ns_return 200 text/plain [ns_conn query]
     }
 } -body {
     nstest::https -http 1.1 -getbody 1 GET /get/foo?q=1
@@ -119,8 +119,8 @@ test https-2.2 {ns_http for small file} -constraints {serverListen} -body {
 
 test https-7.0 {ns_http with body and text datatype} -constraints {serverListen} -setup {
     ns_register_proc POST /post {
-	set contentType [ns_set iget [ns_conn headers] content-type]
-	ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA[ns_conn content]ZÜZ"
+        set contentType [ns_set iget [ns_conn headers] content-type]
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> AÄA[ns_conn content]ZÜZ"
     }
 } -body {
     set string "Testing 'äöüß'"
@@ -128,7 +128,7 @@ test https-7.0 {ns_http with body and text datatype} -constraints {serverListen}
     ns_set update $queryHeaders Content-Type text/plain
     #ns_log notice "queueing request for [ns_config test listenurl]/post"
     set result [ns_http run -headers $queryHeaders -body $string -method POST \
-		    [ns_config test listenurl]/post]
+                    [ns_config test listenurl]/post]
     return [list [dict get $result status] [dict get $result body]]
 } -cleanup {
     ns_unregister_op POST /post
@@ -137,9 +137,9 @@ test https-7.0 {ns_http with body and text datatype} -constraints {serverListen}
 
 test https-7.1 {ns_http with body and text datatype with encoding} -constraints {serverListen} -setup {
     ns_register_proc POST /post {
-	set contentType [ns_set iget [ns_conn headers] content-type]
-	#ns_log notice "post receives content-type '$contentType'"
-	ns_return 200 $contentType "<$contentType> AÄA[ns_conn content]ZÜZ"
+        set contentType [ns_set iget [ns_conn headers] content-type]
+        #ns_log notice "post receives content-type '$contentType'"
+        ns_return 200 $contentType "<$contentType> AÄA[ns_conn content]ZÜZ"
     }
 } -body {
     set encoding iso8859-1
@@ -147,7 +147,7 @@ test https-7.1 {ns_http with body and text datatype with encoding} -constraints 
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type "text/plain; $encoding"
     set result [ns_http run -headers $queryHeaders -body $string -method POST \
-		    [ns_config test listenurl]/post]
+                    [ns_config test listenurl]/post]
     return [list [dict get $result status] [dict get $result body]]
 } -cleanup {
     ns_unregister_op POST /post
@@ -156,15 +156,15 @@ test https-7.1 {ns_http with body and text datatype with encoding} -constraints 
 
 test https-7.2a {ns_http with body and binary datataype} -constraints {serverListen} -setup {
     ns_register_proc POST /post {
-	set contentType [ns_set iget [ns_conn headers] content-type]
-	ns_return 200 application/octet-stream [ns_conn content -binary]
+        set contentType [ns_set iget [ns_conn headers] content-type]
+        ns_return 200 application/octet-stream [ns_conn content -binary]
     }
 } -body {
     set string "\x00\x01\x02\r"
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type application/octet-stream
     set result [ns_http run -headers $queryHeaders -body $string -method POST \
-		    [ns_config test listenurl]/post]
+                    [ns_config test listenurl]/post]
     set R [dict get $result body]
     set status [dict get $result status]
     set R1 {}; foreach c [split [encoding convertto utf-8 $R] ""] {lappend R1 [format %4.4X [scan $c %c]]}
@@ -176,26 +176,26 @@ test https-7.2a {ns_http with body and binary datataype} -constraints {serverLis
 
 test https-7.2b {ns_http with body and binary datataype} -constraints {serverListen} -setup {
     ns_register_proc POST /post {
-	set contentType [ns_set iget [ns_conn headers] content-type]
-	set content [ns_conn content -binary]
-	#
-	# The following command has the sole purpose to convert
-	# "content" to a different obj type than bytearray.
-	#
-	if { $content ne "" } {set x 1}
-	ns_return -binary 200 application/octet-stream $content
+        set contentType [ns_set iget [ns_conn headers] content-type]
+        set content [ns_conn content -binary]
+        #
+        # The following command has the sole purpose to convert
+        # "content" to a different obj type than bytearray.
+        #
+        if { $content ne "" } {set x 1}
+        ns_return -binary 200 application/octet-stream $content
     }
 } -body {
     set string "\x00\x01\x02\r"
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type application/octet-stream
     set result [ns_http run -headers $queryHeaders -body $string \
-		    -method POST [ns_config test listenurl]/post]
+                    -method POST [ns_config test listenurl]/post]
     set R [dict get $result body]
     set status [dict get $result status]
     set R1 {}
     foreach c [split [encoding convertto utf-8 $R] ""] {
-	lappend R1 [format %4.4X [scan $c %c]]
+        lappend R1 [format %4.4X [scan $c %c]]
     }
     return [list $status $R1]
 } -cleanup {
@@ -206,22 +206,28 @@ test https-7.2b {ns_http with body and binary datataype} -constraints {serverLis
 
 test https-8.0 {ns_http with body_file} -constraints {serverListen} -setup {
     ns_register_proc PUT /put {
-	set contentType [ns_set iget [ns_conn headers] content-type]
-	ns_return 200 text/plain "[ns_conn encoding] <$contentType> <[ns_getcontent -as_file false]>"
+        set contentType [ns_set iget [ns_conn headers] content-type]
+        ns_return 200 text/plain "[ns_conn encoding] <$contentType> <[ns_getcontent -as_file false]>"
     }
 } -body {
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type text/plain
     #ns_log notice "queueing request for [ns_config test listenurl]/put in dir [pwd]"
     set result [ns_http run -headers $queryHeaders -body_file testserver/pages/123 -method PUT \
-		    [ns_config test listenurl]/put]
+                    [ns_config test listenurl]/put]
     return [list [dict get $result status] [dict get $result body]]
 } -cleanup {
     ns_unregister_op PUT /put
     unset -nocomplain result
 } -result {200 {utf-8 <text/plain> <123>}}
-#-returnCodes error 
+#-returnCodes error
 
 
 
 cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:
