@@ -158,9 +158,11 @@ interpreters. Existing interpreters will be reinitialized when
 Register an interpreter [term trace] [arg script].
 
 [para]
-[option create], [option allocate] and [option getconn] traces are called in FIFO (first
-in, first out) order; [option freeconn], [option deallocate] and [option delete] traces
-are called in LIFO (last in, first out) order.
+
+[option create], [option allocate], [option getconn],
+and [option idle] traces are called in FIFO (first in, first out)
+order; [option freeconn], [option deallocate] and [option delete]
+traces are called in LIFO (last in, first out) order.
 
 [para]
 All traces must be registered before server start up completes.  Valid
@@ -202,6 +204,15 @@ Note: a [option getconn] interpreter trace fires only once per connection, so if
 Tcl proc is registered as a connection filter, that will trigger the
 [option getconn] interpreter trace, otherwise it will fire later in the process
 when the registered proc, [term ADP], or Tcl page runs.
+
+[opt_def idle]
+Idle traces fire, when a connection thread is idle (received no
+requests within the thread's timeout and when [term minthreads]
+is already reached, such that the timeouted thread is kept
+around. The timeout can be configured by the parameter [term threadtimeout]
+in the [term ns/server/\$servername] section of the configuration
+file. This callback can be used e.g. for maintenance work on
+connection threads.
 
 [list_end]
 
@@ -245,6 +256,7 @@ behavior of [cmd ns_ictl]
 
 
 [see_also ns_atclose]
-[keywords "server built-in" interpreter trace module ns_eval ns_reinit ns_cleanup callback]
+[keywords "server built-in" interpreter trace module ns_eval ns_reinit \
+ns_cleanup callback configuration]
 
 [manpage_end]

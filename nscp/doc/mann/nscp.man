@@ -16,16 +16,12 @@ execute database commands while the server is running.
 
 
 [para]
-
-
 The control port interface is a Tcl interface. Within it, you can
 execute any Tcl command that Tcl libraries and ADP can; the only
 exceptions being the ns_conn commands.
 
 
 [para]
-
-
 To administer a server with the control port interface while it is
 running, the nscp module must be loaded into the server. To set
 permissions for the server, the nsperm module must also be loaded. To
@@ -34,15 +30,10 @@ configure database services for the server, including database drivers
 and pools.
 
 
-[para]
-
-
 [section {Configuring the Control Port Interface}]
 
 
 [para]
-
-
 An example configuration for the control port interface is shown
 below. Three sections of the configuration file are included. The nscp
 module is loaded into the /modules section for $server. The
@@ -79,13 +70,7 @@ control port.
 
 
 [para]
-
-
 Some things to notice about the configuration are:
-
-
-[para]
-
 
 [list_begin itemized]
 
@@ -109,36 +94,19 @@ Some things to notice about the configuration are:
 
 
 [para]
-
-
 See the Configuration Reference for complete information on
 configuration.
 
 
-[para]
-
-
 [section {Using the Control Port Interface}]
 
-
 [para]
-
-
 To use the control port interface, follow these steps:
-
-
-[para]
-
-
 
 [list_begin enum]
 
-
-[enum] Telnet to the address and port number defined in the /module/nscp
-     section for the server. For example:
-
-
-[para]
+[enum] Telnet to the address and port number defined in the
+     /module/nscp section for the server. For example:
 
 [example_begin]
  telnet localhost 9999
@@ -159,17 +127,9 @@ To use the control port interface, follow these steps:
 [example_end]
 
 
-
-[para]
-
-
 [enum] At the login prompt, type a valid username. The username must be
      one of the usernames defined in the /module/nscp/users section of
      the configuration file. For example:
-
-
-[para]
-
 
 
 [example_begin]
@@ -184,19 +144,12 @@ The session responds with:
 [example_end]
 
 
-
-[para]
-
-
 [enum] At the password prompt, type the password associated with the
      username you specified.  The default is "x".
 
 
 [para]
-
-
-     The session responds with:
-
+The session responds with:
 
 [example_begin]
  Welcome to server1 running at /usr/local/ns/bin/nsd (pid 22413)
@@ -207,24 +160,13 @@ The session responds with:
 
 
 
-[para]
-
-
 [enum] At the prompt you can type nearly any Tcl command
      available to NaviServer Tcl libraries and ADPs.
-
-
-[para]
-
 
 [enum] When you're done, just type "exit" and you will be logged off.
 
 
 [list_end]
-
-
-
-[para]
 
 
 [section {Useful Commands}]
@@ -237,12 +179,7 @@ sorted list of available NaviServer Tcl commands.
 
 
 [para]
-
-
 Useful commands:
-
-
-[para]
 
 
 [list_begin itemized]
@@ -259,6 +196,6 @@ Useful commands:
 [list_end]
 
 [see_also admin-maintenance]
-[keywords module nscp]
+[keywords module nscp configuration]
 
 [manpage_end]

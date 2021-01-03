@@ -393,5 +393,7 @@ event that you need to call it directly.
 For information on developing your own database drivers, see the
 Database Drivers Development guide.
 
+[keywords database configuration]
+
 [manpage_end]
 

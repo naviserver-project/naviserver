@@ -474,6 +474,7 @@ mutex locks or rwlocks might be used.
 
 
 [see_also nsd ns_cache ns_urlspace ns_set]
-[keywords "server built-in" nsv shared variables mutex "data structure"]
+[keywords "server built-in" nsv shared variables mutex \
+   "data structure" configuration]
 
 [manpage_end]
