@@ -1,6 +1,6 @@
 [include version_include.man]
 
-[manpage_begin ns_dbquotevalue n [vset version]]
+[manpage_begin dbquotevalues n [vset version]]
 [moddesc {NaviServer Module Commands}]
 [titledesc {Quote database names and values}]
 

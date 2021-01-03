@@ -2,11 +2,11 @@
 
 [manpage_begin ns_getcsv n [vset version]]
 [moddesc {NaviServer Module Commands}]
-[titledesc {Quote database names and values}]
+[titledesc {Parse CSV Files}]
 
 [description]
 
-These commands are for handling CSV files.
+This command parses lines of CSV files.
 
 [section {COMMANDS}]
 
