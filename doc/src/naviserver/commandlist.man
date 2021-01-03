@@ -2,12 +2,12 @@
 [manpage_begin {commandlist} n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {NaviServer commands}]
+[titledesc {NaviServer Commands}]
 
 [description]
 List of all currently available NaviServer commands.
 
-[section {ADP commands}]
+[section {ADP Commands}]
 [list_begin definitions]
 
 [call [cmd ns_adp_register]]
@@ -57,7 +57,7 @@ List of all currently available NaviServer commands.
 [call [cmd ns_adp_trunc]]
 [list_end]
 
-[section {Authorization commands}]
+[section {Authorization Commands}]
 [list_begin definitions]
 [call [cmd ns_checkurl]]
 [call [cmd ns_requestauthorize]]
@@ -65,7 +65,7 @@ List of all currently available NaviServer commands.
 [call [cmd ns_permpasswd]]
 [list_end]
 
-[section {Cache commands}]
+[section {Cache Commands}]
 [list_begin definitions]
 [call [cmd ns_cache]]
 [list_begin definitions]
@@ -88,7 +88,7 @@ List of all currently available NaviServer commands.
 [list_end]
 [list_end]
 
-[section {Cookie commands}]
+[section {Cookie Commands}]
 [list_begin definitions]
 [call [cmd ns_cookie]]
 [list_begin definitions]
@@ -98,7 +98,7 @@ List of all currently available NaviServer commands.
 [list_end]
 [list_end]
 
-[section {Concurrent programming, Job administration}]
+[section {Concurrent Programming, Job Administration}]
 [list_begin definitions]
 [call [cmd ns_cond]]
 [call [cmd ns_critsec]]
@@ -112,13 +112,13 @@ List of all currently available NaviServer commands.
 [call [cmd ns_thread]]
 [list_end]
 
-[section {DNS lookup commands}]
+[section {DNS Lookup Commands}]
 [list_begin definitions]
 [call [cmd ns_addrbyhost]]
 [call [cmd ns_hostbyaddr]]
 [list_end]
 
-[section {Files and File system commands}]
+[section {Files and Filesystem Commands}]
 [list_begin definitions]
 [call [cmd ns_filestat]]
 [call [cmd ns_ftruncate]]
@@ -130,7 +130,7 @@ List of all currently available NaviServer commands.
 [call [cmd ns_truncate]]
 [list_end]
 
-[section {Hashing and Encryption commands}]
+[section {Hashing and Encryption Commands}]
 [list_begin definitions]
 [call [cmd ns_crypt]]
 [call [cmd ns_crypto]]
@@ -153,7 +153,7 @@ List of all currently available NaviServer commands.
 [list_end]
 
 
-[section {HTML, Form, Request related commands}]
+[section {HTML, Form, Request related Commands}]
 [list_begin definitions]
 [call [cmd ns_browsermatch]]
 [call [cmd ns_conn]]
@@ -198,7 +198,7 @@ List of all currently available NaviServer commands.
 [call [cmd ns_writer]]
 [list_end]
 
-[section {HTTP and URL commands}]
+[section {HTTP and URL Commands}]
 [list_begin definitions]
 [call [cmd ns_absoluteurl]]
 [call [cmd ns_http]]
@@ -210,7 +210,7 @@ List of all currently available NaviServer commands.
 [call [cmd ns_urlencode]]
 [list_end]
 
-[section {I18N - Internationalization commands}]
+[section {I18N - Internationalization Commands}]
 [list_begin definitions]
 [call [cmd ns_charsets]]
 [call [cmd ns_choosecharset]]
@@ -222,7 +222,7 @@ List of all currently available NaviServer commands.
 [call [cmd ns_urlcharset]]
 [list_end]
 
-[section {Image processing}]
+[section {Image Processing}]
 [list_begin definitions]
 [call [cmd ns_gifsize]]
 [call [cmd ns_jpegsize]]
@@ -243,13 +243,13 @@ List of all currently available NaviServer commands.
 [list_end]
 [list_end]
 
-[section {Mail commands}]
+[section {Mail Commands}]
 [list_begin definitions]
 [call [cmd ns_sendmail]]
 [call [cmd ns_sendmail_config]]
 [list_end]
 
-[section {MIME and encoding related}]
+[section {MIME and Encoding-related Commands}]
 [list_begin definitions]
 [call [cmd ns_base64]]
 [list_begin definitions]
@@ -263,7 +263,7 @@ List of all currently available NaviServer commands.
 [call [cmd ns_guesstype]]
 [list_end]
 
-[section {Scheduling commands}]
+[section {Scheduling Commands}]
 [list_begin definitions]
 [call [cmd ns_atclose]]
 [call [cmd ns_atsignal]]
@@ -286,7 +286,7 @@ List of all currently available NaviServer commands.
 [list_end]
 [list_end]
 
-[section {Sharing variables}]
+[section {Sharing Variables}]
 [list_begin definitions]
 [call [cmd nsv]]
 [list_begin definitions]
@@ -304,7 +304,7 @@ List of all currently available NaviServer commands.
 [list_end]
 [list_end]
 
-[section {Streaming commands}]
+[section {Streaming Commands}]
 [list_begin definitions]
 [call [cmd ns_write]]
 [list_begin definitions]
@@ -315,13 +315,13 @@ List of all currently available NaviServer commands.
 
 
 
-[section {Tcl channel management}]
+[section {Tcl Channel Management}]
 [list_begin definitions]
 [call [cmd ns_chan]]
 [call [cmd ns_cleanupchans]]
 [list_end]
 
-[section {Time commands}]
+[section {Time Commands}]
 [list_begin definitions]
 [call [cmd ns_fmttime]]
 [call [cmd ns_gmtime]]
@@ -352,7 +352,7 @@ List of all currently available NaviServer commands.
 [call [cmd ns_urlspace]]
 [list_end]
 
-[section {Tcl interpreter management commands}]
+[section {Tcl Interpreter Management Commands}]
 [list_begin definitions]
 [call [cmd ns_cleanup]]
 [call [cmd ns_eval]]
@@ -361,7 +361,7 @@ List of all currently available NaviServer commands.
 [call [cmd ns_reinit]]
 [list_end]
 
-[section {Server configuration commands}]
+[section {Server Configuration Commands}]
 [list_begin definitions]
 [call [cmd ns_config]]
 [call [cmd ns_configsection]]
@@ -370,7 +370,7 @@ List of all currently available NaviServer commands.
 [call [cmd ns_modulepath]]
 [list_end]
 
-[section {Server introspection}]
+[section {Server Introspection}]
 [list_begin definitions]
 [call [cmd ns_driver]]
 [call [cmd ns_env]]
@@ -378,13 +378,13 @@ List of all currently available NaviServer commands.
 [call [cmd ns_server]]
 [list_end]
 
-[section {Suicide commands}]
+[section {Suicide Commands}]
 [list_begin definitions]
 [call [cmd ns_shutdown]]
 [call [cmd ns_crash]]
 [list_end]
 
-[section {Socket commands}]
+[section {Socket Commands}]
 [list_begin definitions]
 [call [cmd ns_sls]]
 [call [cmd ns_sockaccept]]
@@ -400,7 +400,7 @@ List of all currently available NaviServer commands.
 [call [cmd ns_sockselect]]
 [list_end]
 
-[section {Virtual Server commands}]
+[section {Virtual Server Commands}]
 [list_begin definitions]
 [call [cmd ns_serverpath]]
 [call [cmd ns_pagepath]]
@@ -408,7 +408,7 @@ List of all currently available NaviServer commands.
 [call [cmd ns_locationproc]]
 [list_end]
 
-[section {Data structures}]
+[section {Data Structures}]
 [list_begin definitions]
 [call ns_set]
 [list_begin definitions]
@@ -424,7 +424,16 @@ List of all currently available NaviServer commands.
 [list_end]
 [list_end]
 
-[section {Operating System interface and Systems Resource Limits}]
+[section {Text Processing}]
+[list_begin definitions]
+[call [cmd textutil-cmds]]
+[list_begin definitions]
+[call [cmd ns_trim]]
+[call [cmd ns_reflow_text]]
+[list_end]
+[list_end]
+
+[section {Operating System Interface and Systems Resource Limits}]
 [list_begin definitions]
 [def "Setting Privileges"]
 [list_begin definitions]
@@ -434,7 +443,7 @@ List of all currently available NaviServer commands.
 [call [cmd ns_rlimit]]
 [list_end]
 
-[section {Proxy commands}]
+[section {Proxy Commands}]
 [list_begin definitions]
 [call [cmd ns_proxy]]
 [list_end]

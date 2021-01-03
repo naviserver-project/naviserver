@@ -1,0 +1,80 @@
+[include version_include.man]
+[manpage_begin  textutil-cmds n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Utility commands for processing text}]
+
+[description]
+
+These commands support common tasks of processin text chunks in
+webserver applications.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+[call [cmd ns_trim] \
+       	[opt [option "-subst"]] \
+       	[opt [option "-delimiter [arg delimiter]"]] \
+        [arg text]]
+
+Multi-line trim with optional delimiter and builtin substitution
+(latter is not really needed but convenient).  Trim leading spaces on
+multiple lines. The delimiter has to be a single character.
+
+[para]
+The command is e.g. useful, when the indentation in the source code
+file should not be preserved on the output (such as SQL statements,
+HTML markup, etc.).
+
+[call [cmd ns_reflow_text] \
+       	[opt [option "-width [arg width]"]] \
+       	[opt [option "-offset [arg offset]"]] \
+       	[opt [option "-prefix [arg prefix]"]] \
+        [arg text]]
+
+Reflow a text to the specified length. The arguments
+[arg width] (default 80) and [arg offset] (default 0)
+are integers referring to number of characters. The
+[arg prefix] can be used to prefix every resulting line
+with a constant string.
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+% ns_trim {
+    SELECT object_id, object_name
+    FROM   acs_objects
+    WHERE  object_id > 10000
+}
+SELECT object_id, object_name
+FROM   acs_objects
+WHERE  object_id > 10000
+ 
+% ns_trim -delimiter | {
+    | <ul>
+    |   <li> one
+    |   <li> two
+    |   <li> three
+    | </ul>
+}
+ <ul>
+   <li> one
+   <li> two
+   <li> three
+ </ul>
+ 
+% ns_reflow_text -width 15 -prefix "> " "one two three four five six seven eight nine ten"
+> one two three
+> four five six
+> seven eight
+> nine ten
+[example_end]
+
+
+[see_also ns_hrefs]
+[keywords "server built-in" text]
+
+[manpage_end]
+
