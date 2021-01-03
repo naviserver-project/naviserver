@@ -106,7 +106,7 @@ test http_charsets-2.3 "another iso8859-2 text, ns_http with autodecoding"  -con
 
 set charsets {
     iso-8859-1 iso-8859-2 iso-8859-3 iso-8859-4 iso-8859-5 iso-8859-6 iso-8859-7 iso-8859-8 iso-8859-9
-    windows-1250 windows-1251 windows-1252 windows-1253 windows-1254 windows-1256 windows-1257 
+    windows-1250 windows-1251 windows-1252 windows-1253 windows-1254 windows-1256 windows-1257
     koi8-r
 }
 
@@ -230,8 +230,8 @@ foreach charset $charsets {
         } -cleanup {
             ns_unregister_op GET /get
         } -result $content
-        
-        
+
+
         test http_charsets-4.$charset.$x.ns_http-default "8-bit pairs starting with '$char1' from $charset, ns_http and 'encoding convertfrom'" -constraints !usingExternalToUtf -setup {
              ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
         } -body {
@@ -240,8 +240,8 @@ foreach charset $charsets {
         } -cleanup {
             ns_unregister_op GET /get
         } -result $content
-        
-        
+
+
         test http_charsets-4.$charset.$x.ns_http-externl "8-bit pairs starting with '$char1' from $charset, ns_http autodecode" -constraints usingExternalToUtf -setup {
              ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
         } -body {
@@ -250,8 +250,8 @@ foreach charset $charsets {
         } -cleanup {
             ns_unregister_op GET /get
         } -result $content
-        
-        
+
+
         test http_charsets-4.$charset.$x.ns_http--binary "8-bit pairs starting with '$char1' from $charset, 'ns_http run -binary' and 'encoding convertfrom'" -constraints binarySwitch -setup {
              ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
         } -body {
@@ -290,7 +290,7 @@ foreach charset $charsets {
             ns_unregister_op GET /get
         } -result $content
 
-        
+
     }
 }
 unset -nocomplain charset encoding char1 char2 content i j
