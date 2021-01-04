@@ -2492,7 +2492,7 @@ ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
         {NULL,       0u}
     };
     Ns_ObjvSpec opts[] = {
-        {"-binary", Ns_ObjvBool, &isBinary, INT2PTR(NS_TRUE)},
+        {"-binary",     Ns_ObjvBool,  &isBinary, INT2PTR(NS_TRUE)},
         {"-fin",        Ns_ObjvInt,   &fin,      &finRange},
         {"-mask",       Ns_ObjvBool,  &masked,   INT2PTR(NS_TRUE)},
         {"-opcode",     Ns_ObjvIndex, &opcode,   &opcodes},
