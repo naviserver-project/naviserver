@@ -278,10 +278,10 @@ namespace eval ::revproxy {
                 # The other side has closed the connection. Don't
                 # complain and perform standard cleanup.
                 #
-                log notice "... ECONNRESET on $from"   ;# just for double checking for now.
+                ns_log notice "... ECONNRESET on $from"   ;# just for double checking for now.
                 set msg ""
             } on error {errorMsg} {
-                log error "spool: received error while reading from $from: $errorMsg ($::errorCode)"
+                ns_log error "spool: received error while reading from $from: $errorMsg ($::errorCode)"
                 #
                 # Drop into the cleanup below
                 #
@@ -394,7 +394,7 @@ namespace eval ::revproxy {
                 set remaining [string range $data $nrBytesSent end]
                 log notice "spool to $to: PARTIAL WRITE ($nrBytesSent of $toSend) " \
                     "register write callback for $to with remaining [string length $remaining] bytes " \
-                    "(sofar $::revproxy::spooled($to)), setting callback on $to to " \
+                    "(sofar $::revproxy::spooled($to)), setting callback to " \
                     "::revproxy::write_once timeout [dict get $timeouts -timeout]"
                 #
                 # On revproxy::write_once, we do not want to set the
