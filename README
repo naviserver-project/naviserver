@@ -69,8 +69,8 @@ macOS 10.2+ and Windows. To compile and install:
     (e.g., /usr/local/ns) or in some other location.
     The following should work:
 
-    $ gunzip < tcl8.6.10-src.tar.gz | tar xvf -
-    $ cd tcl8.6.10/unix
+    $ gunzip < tcl8.6.11-src.tar.gz | tar xvf -
+    $ cd tcl8.6.11/unix
     $ ./configure --prefix=/usr/local/ns --enable-threads --enable-symbols
     $ make install
 
@@ -93,8 +93,8 @@ macOS 10.2+ and Windows. To compile and install:
 
     The following should work for official releases:
 
-        $ gunzip < naviserver-4.99.19.tar.gz | tar xvf -
-        $ cd naviserver-4.99.19
+        $ gunzip < naviserver-4.99.20.tar.gz | tar xvf -
+        $ cd naviserver-4.99.20
         $ ./configure --prefix=/usr/local/ns --with-tcl=/usr/local/ns/lib --enable-symbols
         $ make
         $ su -c 'make install'
@@ -106,7 +106,7 @@ macOS 10.2+ and Windows. To compile and install:
         Path to library installation directory of Tcl where
         configure can find the tclConfig.sh script.  Without
         this option, configure will search around for
-        tclConfig.sh, perhaps finding it in ../tcl8.6.10/unix.
+        tclConfig.sh, perhaps finding it in ../tcl8.6.11/unix.
 
     --with-zlib=/usr
 
@@ -184,7 +184,7 @@ macOS 10.2+ and Windows. To compile and install:
     named "nsfoo", get it from the modules tar file and install it
     like sketched below:
 
-        $ gunzip < naviserver-4.99.19-modules.tar.gz | tar xvf -
+        $ gunzip < naviserver-4.99.20-modules.tar.gz | tar xvf -
         $ cd modules/nsfoo
         $ make install NAVISERVER=/usr/local/ns
 
@@ -198,7 +198,7 @@ macOS 10.2+ and Windows. To compile and install:
     See: https://bitbucket.org/naviserver/ for a full list of modules.
 
 
-3g. To compile for Windows, you need Msys + Mingw
+3g. To compile for Windows with Msys + Mingw
 
     Download: https://sourceforge.net/projects/mingw/files/
 
@@ -221,11 +221,24 @@ macOS 10.2+ and Windows. To compile and install:
         c:>cd msys
         c:\msys> msys.bat
 
-        $ cd /c/naviserver-4.99.19
+        $ cd /c/naviserver-4.99.20
         $ ./configure --prefix=c:/naviserver --with-tcl=c:/naviserver/lib
         $ make install
 
     Example above assumes Tcl is also built using mingw with prefix c:/naviserver
+
+3h. To compile for Windows with MSVC
+
+    Update Update the 'tcl_64' and 'tcllib_64' variables in
+    Makefile.win32 in the top-level NaviServer directory See also
+    these settings in "include/Makefile.win32": 'HAVE_OPENSSL_EVP_H',
+    'openssl_64'.
+
+    Run appropriate Microsoft build setup script.  E.g. one of these:
+        "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
+        "%ProgramFiles%\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.Cmd" /Debug /x64 /win7
+
+    nmake -f Makefile.win32
 
 
 4. Mailing lists
