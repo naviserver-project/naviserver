@@ -299,7 +299,7 @@ You can see the result in the security info:
 
 [example_begin]
  ...
- [lb]-main-[rb] Notice: nsmain: NaviServer/4.99.18 starting
+ [lb]-main-[rb] Notice: nsmain: NaviServer/4.99.20 starting
  [lb]-main-[rb] Notice: nsmain: security info: uid=0, euid=0, gid=8, egid=8
  ...
 [example_end]
@@ -383,20 +383,19 @@ and [cmd "ns_server requestprocs"].
 
 [example_begin]
  buckel@tulpe:/usr/local/ns/bin> ./nsd -c -u nsadmin -g www -t ../sample-config.tcl
- [lb]-main-[rb] Notice: encoding: loaded: iso8859-1
- [lb]-main-[rb] Notice: nsmain: NaviServer/4.99.18 starting
- [lb]-main-[rb] Notice: nsmain: security info: uid=500, euid=500, gid=100, egid=100
- [lb]-main-[rb] Notice: nsmain: max files: FD_SETSIZE = 1024, rl_cur = 1024, rl_max = 1024
- [lb]-main-[rb] Notice: adp[lb]server1[rb]: mapped /*.adp
- [lb]-main-[rb] Notice: modload: loading '/usr/local/ns/bin/nssock.so'
- [lb]-main-[rb] Notice: modload: loading '/usr/local/ns/bin/nslog.so'
- [lb]-main-[rb] Notice: nslog: opened '/usr/local/ns/servers/server1/modules/nslog/access.log'
- [lb]-main-[rb] Notice: conf: [lb]ns/server/server1[rb]enabletclpages = 0
- [lb]-main-[rb] Notice: nsmain: NaviServer/4.95.0 running
- [lb]-main-[rb] Notice: nsmain: security info: uid=500, euid=500, gid=100, egid=100
+ [lb]-main:conf-[rb] Notice: nsmain: NaviServer/4.99.20a (8a6cc45087d1+) starting
+ [lb]-main:conf-[rb] Notice: nsmain: security info: uid=500, euid=500, gid=100, egid=100
+ [lb]-main:conf-[rb] Notice: nsmain: max files: soft limit 10240, hard limit 10240
+ [lb]-main:default-[rb] Notice: nsd/init.tcl [lb]default[rb]: booting virtual server:  Tcl system encoding: "utf-8"
+ [lb]-main:default-[rb] Notice: modload: loading '/usr/local/ns/bin/nssock.so'
+ [lb]-main:default-[rb] Notice: modload: loading '/usr/local/ns/bin/nslog.so'
+ [lb]-main:default-[rb] Notice: nslog: opened '/usr/local/ns/servers/server1/modules/nslog/access.log'
+ [lb]-main:default-[rb] Notice: conf: [lb]ns/server/server1[rb]enabletclpages = 0
+ [lb]-main:default-[rb] Notice: nsmain: NaviServer/4.99.20a (8a6cc45087d1+) running
+ [lb]-main:default-[rb] Notice: nsmain: security info: uid=500, euid=500, gid=100, egid=100
  [lb]-sched-[rb] Notice: sched: starting
- [lb]-main-[rb] Notice: nssock: listening on 10.0.0.100:8000
- [lb]-driver-[rb] Notice: starting
+ [lb]-driver:nssock:0-[rb] Notice: starting
+ [lb]-driver:nssock:0-[rb] Notice: nssock:0: listening on [lb]0.0.0.0[rb]:8080
  [lb]-driver-[rb] Notice: driver: accepting connections
  
  % ns_info threads
