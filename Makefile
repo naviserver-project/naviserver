@@ -41,6 +41,7 @@ endif
 
 distfiles = $(dirs) doc tcl contrib include tests win win32 configure m4 \
 	Makefile autogen.sh install-sh missing aclocal.m4 configure.ac \
+	config.guess config.sub \
 	README NEWS sample-config.tcl.in simple-config.tcl openacs-config.tcl \
 	nsd-config.tcl index.adp license.terms naviserver.rdf naviserver.rdf.in \
 	version_include.man.in bitbucket-install.tcl
@@ -269,11 +270,12 @@ cppcheck:
 	$(CPPCHECK) --verbose --inconclusive -j4 --enable=all nscp/*.c nscgi/*.c nsd/*.c nsdb/*.c nsproxy/*.c nssock/*.c nsperm/*.c nsssl/*.c \
 		-I./include -I/usr/include -D__x86_64__ -DNDEBUG $(DEFS)
 
-#CLANG_TIDY_CHECKS=-checks=-*,performance-*,portability-*,cert-*,modernize-*
 CLANG_TIDY_CHECKS=
+#CLANG_TIDY_CHECKS=-checks=-*,performance-*,portability-*,cert-*,modernize-*
+#CLANG_TIDY_CHECKS=-checks=-*,modernize-*,performance-*,portability-*,cert-*
 #CLANG_TIDY_CHECKS=-checks=-*,bugprone-*
 clang-tidy:
-	clang-tidy-mp-10 nscp/*.c nscgi/*.c nsd/*.c nsdb/*.c nsproxy/*.c nssock/*.c nsperm/*.c \
+	clang-tidy-mp-11 nscp/*.c nscgi/*.c nsd/*.c nsdb/*.c nsproxy/*.c nssock/*.c nsperm/*.c \
 		$(CLANG_TIDY_CHECKS) -- \
 		-I./include -I/usr/include $(DEFS)
 
@@ -295,21 +297,26 @@ distclean: clean
 	include/{Makefile.global,Makefile.module,config.h,config.h.in,stamp-h1} \
 	naviserver-$(NS_PATCH_LEVEL).tar.gz sample-config.tcl
 
-dist: clean
+config.guess:
+	wget -O config.guess 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD'
+config.sub:
+	wget -O config.sub 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD'
+
+dist: config.guess config.sub clean
 	$(RM) naviserver-$(NS_PATCH_LEVEL)
 	$(MKDIR) naviserver-$(NS_PATCH_LEVEL)
 	$(CP) $(distfiles) naviserver-$(NS_PATCH_LEVEL)
 	$(RM) naviserver-$(NS_PATCH_LEVEL)/include/{config.h,Makefile.global,Makefile.module,stamp-h1}
 	$(RM) naviserver-$(NS_PATCH_LEVEL)/*/*-{debug,gn}
 	$(RM) naviserver-$(NS_PATCH_LEVEL)/tests/testserver/access.log
-	hg log --style=changelog > naviserver-$(NS_PATCH_LEVEL)/ChangeLog
+	git log --date-order --name-status --date=short  >naviserver-$(NS_PATCH_LEVEL)/ChangeLog
 	if [ -f $(HOME)/scripts/fix-typos.tcl ]; then \
 		(cd naviserver-$(NS_PATCH_LEVEL)/; tclsh $(HOME)/scripts/fix-typos.tcl -name Change\*) \
 	fi;
 	find naviserver-$(NS_PATCH_LEVEL) -name '.[a-zA-Z_]*' -exec rm \{} \;
 	find naviserver-$(NS_PATCH_LEVEL) -name '*-original' -exec rm \{} \;
-	find naviserver-$(NS_PATCH_LEVEL) -name '*.orig' -exec rm \{} \;
-	find naviserver-$(NS_PATCH_LEVEL) -name '*-ok' -exec rm \{} \;
+	find naviserver-$(NS_PATCH_LEVEL) -name '*.c-*' -exec rm \{} \;
+	find naviserver-$(NS_PATCH_LEVEL) -name '*.h-*' -exec rm \{} \;
 	find naviserver-$(NS_PATCH_LEVEL) -name '*~' -exec rm \{} \;
 	tar czf naviserver-$(NS_PATCH_LEVEL).tar.gz --disable-copyfile --exclude="._*" naviserver-$(NS_PATCH_LEVEL)
 	$(RM) naviserver-$(NS_PATCH_LEVEL)
