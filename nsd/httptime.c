@@ -243,6 +243,7 @@ Ns_ParseHttpTime(const char *chars)
     /*
      * If there are any impossible values, then return 0.
      */
+
     if (!(timeInfo.tm_sec < 0  || timeInfo.tm_sec  > 59 ||
          timeInfo.tm_min  < 0  || timeInfo.tm_min  > 59 ||
          timeInfo.tm_hour < 0  || timeInfo.tm_hour > 23 ||
@@ -251,7 +252,25 @@ Ns_ParseHttpTime(const char *chars)
          timeInfo.tm_year < 70)) {
 
         timeInfo.tm_isdst = 0;
+#ifdef HAVE_TIMEGM
+        /*
+         * Initialize the mutex (if this did not happen so far) and
+         * provide a name for it.
+         */
+        if (lock == NULL) {
+            Ns_MasterLock();
+            if (lock == NULL) {
+                Ns_MutexInit(&lock);
+                Ns_MutexSetName2(&lock, "ns:httptime", NULL);
+            }
+            Ns_MasterUnlock();
+        }
+        Ns_MutexLock(&lock);
+        t = timegm(&timeInfo);
+        Ns_MutexUnlock(&lock);
+#else
         t = mktime(&timeInfo) - timezone;
+#endif
     }
     return t;
 }
