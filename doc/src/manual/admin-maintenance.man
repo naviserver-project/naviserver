@@ -396,7 +396,7 @@ and [cmd "ns_server requestprocs"].
  [lb]-sched-[rb] Notice: sched: starting
  [lb]-driver:nssock:0-[rb] Notice: starting
  [lb]-driver:nssock:0-[rb] Notice: nssock:0: listening on [lb]0.0.0.0[rb]:8080
- [lb]-driver-[rb] Notice: driver: accepting connections
+ [lb]-driver:nssock:0-[rb] Notice: driver: accepting connections
  
  % ns_info threads
  {-driver- -main- 1084140464 0 1119862183 p:0x40037cfb a:0x0}
