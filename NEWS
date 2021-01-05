@@ -1651,7 +1651,7 @@ New Features:
     Make mapping of host entries in the virtual server definition more
     intelligent to avoid newbie gotchas and hard to find
     mis-configurations (entries in e.g. nssock/servers)
-     a) add automatically an entry with the port, when non is given
+     a) add automatically an entry with the port, when none is given
      b) complain, when driver is not listening on the specified port
      c) add automatically an entry without the port, when the driver
        listening on the default port.
