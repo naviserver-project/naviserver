@@ -31,6 +31,9 @@ test ns_httptime-1.6 {basic syntax: incorrect format} -body {
      ns_parsehttptime a
 } -returnCodes error -result {invalid time: a}
 
+test ns_httptime-1.6 {basic syntax: incorrect format} -body {
+     ns_parsehttptime "Tue, 05 Nov 2021 08:49:37 GMT"
+} -returnCodes {ok error} -result 1636102177
 
 
 test ns_httptime-2.1 {basic operation} -body {
