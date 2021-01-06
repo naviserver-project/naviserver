@@ -14,7 +14,7 @@ if {$::tcl_version eq "8.5"} {
 
 namespace eval ::revproxy {
 
-    set version 0.13
+    set version 0.14
     set verbose 0
 
     #
@@ -233,7 +233,6 @@ namespace eval ::revproxy {
             set spooled 0
         }
         log notice "cleanup channel $chan, spooled $spooled bytes (to spool $tospool) $closeMsg"
-        unset -nocomplain ::revproxy::suspended($chan)
     }
 
     #
@@ -260,10 +259,6 @@ namespace eval ::revproxy {
             return 0
         }
 
-        if {[info exists ::revproxy::suspended($from)]} {
-            log notice "spool: want to read in suspended state from $from"
-            return 1
-        }
         if {[ns_connchan exists $from]} {
             channelSetup $from
 
@@ -288,8 +283,7 @@ namespace eval ::revproxy {
                 set msg ""
             }
             if {$msg eq ""} {
-                log notice "... auto closing $from manual $to: $url " \
-                    "(suspended [info exists ::revproxy::suspended($from)])"
+                log notice "... auto closing $from manual $to: $url "
                 #
                 # Close our end ...
                 #
@@ -310,12 +304,7 @@ namespace eval ::revproxy {
                     # The write operation to $to was blocked, we have to
                     # suspend the spool callback reading from '$from'.
                     #
-                    set ::revproxy::suspended($from) [list $from $to $url $timeouts $arg]
-                    log notice "PROXY $from: must SUSPEND reading from $from (blocking backend $to) " \
-                        "suspended($from): $::revproxy::suspended($from)"
-                    #foreach e [ns_connchan list] {
-                    #    log notice "..... $e"
-                    #}
+                    log notice "PROXY $from: must SUSPEND reading from $from (blocking backend $to) "
                 } elseif {$result == 0} {
                     #
                     # The write operation ended in an error. Maybe we
@@ -345,7 +334,7 @@ namespace eval ::revproxy {
         # *  0: write was partial, write callback was submitted
         # * -1: write resulted in an error
         try {
-            ns_connchan write $to $data
+            ns_connchan write -buffered $to $data
 
         } trap {NS_TIMEOUT} {errorMsg} {
             log notice "spool: TIMEOUT during send to $to ($url) "
@@ -357,6 +346,7 @@ namespace eval ::revproxy {
             # the transfer is aborted by the client. Don't
             # complain about it.
             #
+            log notice "write: EPIPE during send to $to ($url) "
             set result 0
 
         } trap {POSIX ECONNRESET} {} {
@@ -391,9 +381,9 @@ namespace eval ::revproxy {
                 # A partial send operation happened.
                 #
                 #log notice "partial write (send) operation, could only send $nrBytesSent of $toSend bytes"
-                set remaining [string range $data $nrBytesSent end]
+                #set remaining [string range $data $nrBytesSent end]
                 log notice "spool to $to: PARTIAL WRITE ($nrBytesSent of $toSend) " \
-                    "register write callback for $to with remaining [string length $remaining] bytes " \
+                    "register write callback for $to with remaining [expr {$toSend - $nrBytesSent}] bytes " \
                     "(sofar $::revproxy::spooled($to)), setting callback to " \
                     "::revproxy::write_once timeout [dict get $timeouts -timeout]"
                 #
@@ -406,32 +396,14 @@ namespace eval ::revproxy {
                 #
                 ns_connchan callback \
                     -timeout [dict get $timeouts -timeout] \
-                    $to [list ::revproxy::write_once $from $to $url $remaining $timeouts] wex
+                    $to [list ::revproxy::write_once $from $to $url $timeouts] wex
                 set result 2
             } else {
                 #
                 # Everything was written.
                 #
-                #log notice "... write: everything was written to $from"
-                #
-                # When the reading was suspended, resume reading from
-                # this channel.
-                #
-                if {[info exists ::revproxy::suspended($from)]} {
-                    log notice "PROXY $from: resume after SUSPEND, reading again from $from"
-
-                    lassign $::revproxy::suspended($from) from to url timeouts arg
-                    ns_connchan callback \
-                        -timeout [dict get $timeouts -timeout] \
-                        -sendtimeout [dict get $timeouts -sendtimeout] \
-                        -receivetimeout [dict get $timeouts -receivetimeout] \
-                        $from [list ::revproxy::spool $from $to $url $timeouts 0] rex
-                    unset ::revproxy::suspended($from)
-                    set result 1
-                } else {
-                    # record $to $msg
-                    set result 1
-                }
+                log notice "... write: everything was written to '$to' continue reading from '$from'"
+                set result 1
             }
         }
         #log notice "write returns $result"
@@ -441,29 +413,77 @@ namespace eval ::revproxy {
     #
     # revproxy::write_once
     #
-    nsf::proc write_once { from to url data timeouts condition } {
+    nsf::proc write_once { from to url timeouts condition } {
         #
-        # Helper for cases, where the -sendtimeout is 0 and a "ns_conn
-        # write" operation ended with an NS_WOULDBLOCK.
+        # Callback for writable: writing has blocked before, we
+        # suspended reading and wait for flushing out buffer before we
+        # continue reading.
         #
-        log notice "write_once: want to send [string length $data] bytes " \
+        set status [ns_connchan status $to]
+        log notice "revproxy::write_once: want to send [dict get $status sendbuffer] buffered bytes " \
             "from $from to $to (condition $condition)"
 
         if {$condition eq "t"} {
             ::revproxy::gateway_timeout $to "timeout occurred while writing once $from to $to"
-            log notice "revproxy: write_once timeout (MANUAL cleanup on $from to $to needed?)"
+            log notice "revproxy::write_once timeout (MANUAL cleanup on $from to $to needed?)"
             channelCleanup -close $from
             # returning 0 means automatic cleanup on $to
             return 0
         } elseif {$condition ne "w"} {
-            log warning "unexpected condition $condition while writing to $to ($url)"
+            log warning "revproxy::write_once unexpected condition $condition while writing to $to ($url)"
             return 0
         }
+        set continue 1
 
-        set result [revproxy::write $from $to $data -url $url -timeouts $timeouts]
-        if {$result != 0} {
-            set result 2
-        } else {
+        try {
+            ns_connchan write -buffered $to ""
+
+        } trap {POSIX EPIPE} {} {
+            #
+            # A "broken pipe" error might happen easily, when
+            # the transfer is aborted by the client. Don't
+            # complain about it.
+            #
+            ns_log notice "revproxy::write_once: EPIPE during send to $to ($url) "
+            set continue 0
+
+        } trap {POSIX ECONNRESET} {} {
+            #
+            # The other side has closed the connected
+            # unexpectedly. This happens when e.g. a browser page is
+            # not fully rendered yet, but the user clicked already to
+            # some other page. Do not raise an error entry in such
+            # cases.
+            #
+            ns_log notice "revproxy::write_once: ECONNRESET during send to $to ($url) "
+            set continue 0
+
+        } on error {errorMsg} {
+            ns_log error "revproxy::write_once: returned error: $errorMsg ($::errorCode)"
+            set continue 0
+
+        } on ok {result} {
+            set status [ns_connchan status $to]
+            log notice "revproxy::write_once: result <$result> status $status"
+        }
+        if {$continue == 1} {
+            if {$result == 0 || [dict get $status sendbuffer] > 0} {
+                ns_log notice "revproxy::write_once was not successful flushing the buffer " \
+                    "(still [dict get $status sendbuffer])... trigger again. \nStatus: $status"
+                ns_sleep 1ms
+            } else {
+                #
+                # All was sent, fall back to normal read-event driven handler
+                #
+                log notice "revproxy::write_once all was written to '$to' resume reading from '$from'"
+                ns_connchan callback \
+                    -timeout [dict get $timeouts -timeout] \
+                    -sendtimeout [dict get $timeouts -sendtimeout] \
+                    -receivetimeout [dict get $timeouts -receivetimeout] \
+                    $from [list ::revproxy::spool $from $to $url $timeouts 0] rex
+            }
+        }
+        if {$continue == 0} {
             #
             # There was an error. We must cleanup the "$from" channel
             # manually, the "$to" channel is automaticalled freed.
@@ -472,9 +492,9 @@ namespace eval ::revproxy {
             #ns_connchan close $from
             channelCleanup -close $from
         }
+        log notice "revproxy::write_once returns $continue (from $from to $to)"
 
-        log notice "write_once returns $result (from $from to $to)"
-        return $result
+        return $continue
     }
 
     #
