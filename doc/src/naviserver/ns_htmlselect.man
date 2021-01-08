@@ -20,24 +20,30 @@ If [option -sort] is specified, the option list of the SELECT will be sorted acc
 labels, or the elements of values if labels is not specified.  
 
 [para]
-labels is an optional list of labels to display.  If not specified, the elements of values will be
+[arg labels] is an optional list of labels to display.  If not specified, the elements of values will be
 used.  The order and number of the labels list must match the order and number of the values list.
 
 [para]
-name specifies the NAME attribute of the SELECT.
+[arg name] specifies the NAME attribute of the SELECT statement.
 
 [para]
-values is a list of the OPTIONs for the SELECT. If a labels list is not specified, the values
-themselves will be used as the OPTION labels.  
+[arg values] is a list of the OPTIONs for the SELECT. If [arg labels]
+are not specified, the [arg values] themselves will be used as the OPTION labels.
 
 [para]
-selectedData is an optional list of the OPTIONs that will be selected by default.
+[arg selectedData] is an optional list of the OPTIONs that will be selected by default.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[call [cmd ns_htmlselect] [opt [option -multi]] [opt [option {-sort}]] [opt [option {-labels labels}]] [arg name] [arg values] [opt [arg selectedData]]]
+[call [cmd ns_htmlselect] \
+        [opt [option -multi]] \
+        [opt [option {-sort}]] \
+        [opt [option {-labels [arg labels]}]] \
+        [arg name] \
+        [arg values] \
+        [opt [arg selectedData]]]
 
 
 [list_end]
@@ -46,7 +52,12 @@ selectedData is an optional list of the OPTIONs that will be selected by default
 [section EXAMPLES]
 
 [example_begin]
- % set favoriteAnimal [lb][lb]ns_htmlselect_old -sort -labels [lb]list dog cat cow[rb][rb] "favoriteAnimal"[rb]
+ % ns_htmlselect -sort -labels {dog cat cow} "favoriteAnimal" {1 2 3} 2
+ <select name='favoriteAnimal'>
+ <option value="2" selected>cat
+ <option value="3">cow
+ <option value="1">dog
+ </select>
 [example_end]
 
 [manpage_end]
