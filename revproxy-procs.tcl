@@ -419,9 +419,7 @@ namespace eval ::revproxy {
         # suspended reading and wait for flushing out buffer before we
         # continue reading.
         #
-        set status [ns_connchan status $to]
-        log notice "revproxy::write_once: want to send [dict get $status sendbuffer] buffered bytes " \
-            "from $from to $to (condition $condition)"
+        log notice "revproxy::write_once: condition $condition"
 
         if {$condition eq "t"} {
             ::revproxy::gateway_timeout $to "timeout occurred while writing once $from to $to"
@@ -433,54 +431,78 @@ namespace eval ::revproxy {
             log warning "revproxy::write_once unexpected condition $condition while writing to $to ($url)"
             return 0
         }
-        set continue 1
 
-        try {
-            ns_connchan write -buffered $to ""
+        set buffered_bytes [dict get [ns_connchan status $to] sendbuffer]
+        ns_log notice "revproxy::write_once: want to send $buffered_bytes buffered bytes" \
+            "from $from to $to (condition $condition)"
 
-        } trap {POSIX EPIPE} {} {
-            #
-            # A "broken pipe" error might happen easily, when
-            # the transfer is aborted by the client. Don't
-            # complain about it.
-            #
-            ns_log notice "revproxy::write_once: EPIPE during send to $to ($url) "
+        if {$buffered_bytes == 0} {
+            ns_log notice "revproxy::write_once: have No BUFFERED BYTES during send to $to ($url)" \
+                "condition $condition status [ns_connchan status $to]"
             set continue 0
+        } else {
+            set continue 1
 
-        } trap {POSIX ECONNRESET} {} {
-            #
-            # The other side has closed the connected
-            # unexpectedly. This happens when e.g. a browser page is
-            # not fully rendered yet, but the user clicked already to
-            # some other page. Do not raise an error entry in such
-            # cases.
-            #
-            ns_log notice "revproxy::write_once: ECONNRESET during send to $to ($url) "
-            set continue 0
+            try {
+                ns_connchan write -buffered $to ""
 
-        } on error {errorMsg} {
-            ns_log error "revproxy::write_once: returned error: $errorMsg ($::errorCode)"
-            set continue 0
+            } trap {POSIX EPIPE} {} {
+                #
+                # A "broken pipe" error might happen easily, when
+                # the transfer is aborted by the client. Don't
+                # complain about it.
+                #
+                ns_log notice "revproxy::write_once: EPIPE during send to $to ($url) "
+                set continue 0
 
-        } on ok {result} {
-            set status [ns_connchan status $to]
-            log notice "revproxy::write_once: result <$result> status $status"
+            } trap {POSIX ECONNRESET} {} {
+                #
+                # The other side has closed the connected
+                # unexpectedly. This happens when e.g. a browser page is
+                # not fully rendered yet, but the user clicked already to
+                # some other page. Do not raise an error entry in such
+                # cases.
+                #
+                ns_log notice "revproxy::write_once: ECONNRESET during send to $to ($url) "
+                set continue 0
+
+            } on error {errorMsg} {
+                ns_log error "revproxy::write_once: returned error: $errorMsg ($::errorCode)"
+                set continue 0
+
+            } on ok {nrBytesSent} {
+                set status [ns_connchan status $to]
+                ns_log notice "revproxy::write_once: write ok, nrBytesSent <$nrBytesSent> status $status"
+            }
         }
         if {$continue == 1} {
-            if {$result == 0 || [dict get $status sendbuffer] > 0} {
+            if {$nrBytesSent == 0} {
+                ns_log notice "revproxy::write_once strangely, we could not write," \
+                    "altough the socket was writable" \
+                    "(still [dict get $status sendbuffer] to send)... trigger again. \nStatus: $status"
+                ns_sleep 1ms
+
+            } elseif {[dict get $status sendbuffer] > 0} {
                 ns_log notice "revproxy::write_once was not successful flushing the buffer " \
                     "(still [dict get $status sendbuffer])... trigger again. \nStatus: $status"
-                ns_sleep 1ms
+
             } else {
                 #
                 # All was sent, fall back to normal read-event driven handler
                 #
-                log notice "revproxy::write_once all was written to '$to' resume reading from '$from'"
+                ns_log notice "revproxy::write_once all was written to '$to' resume reading from '$from'" \
+                    "\nFROM Status: [ns_connchan status $from]" \
+                    "\n... old callback [dict get [ns_connchan status $from] callback]" \
+                    "\n... new callback [list ::revproxy::spool $from $to $url $timeouts 0]"
                 ns_connchan callback \
                     -timeout [dict get $timeouts -timeout] \
                     -sendtimeout [dict get $timeouts -sendtimeout] \
                     -receivetimeout [dict get $timeouts -receivetimeout] \
                     $from [list ::revproxy::spool $from $to $url $timeouts 0] rex
+                #
+                # Return 2 to signal to deactivate the writable callback.
+                #
+                set continue 2
             }
         }
         if {$continue == 0} {
