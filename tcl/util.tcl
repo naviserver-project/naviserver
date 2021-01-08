@@ -473,16 +473,16 @@ proc ns_htmlselect args {
         set selecteddata ""
     }
 
-    set select "<SELECT NAME=$key"
+    set select "<select name='$key'"
     if {$multi == 1} {
         set size [llength $values]
         if {$size > 5} {
             set size 5
         }
-        append select " MULTIPLE SIZE=$size"
+        append select " multiple size='$size'"
     } else {
         if {[llength $values] > 25} {
-            append select " SIZE=5"
+            append select " size='5'"
         }
     }
     append select ">\n"
@@ -501,16 +501,17 @@ proc ns_htmlselect args {
         set lvpairs [lsort -command _ns_paircmp -increasing $lvpairs]
     }
     foreach lvpair $lvpairs {
-        append select "<OPTION VALUE=\"[lindex $lvpair 1]\""
-        if {[lsearch $selecteddata [lindex $lvpair 1]] >= 0} {
-            append select " SELECTED"
+        append select [subst {<option value="[lindex $lvpair 1]"}]
+        if {[lindex $lvpair 1] in $selecteddata} {
+            append select " selected"
         }
         append select ">[lindex $lvpair 0]\n"
-    }
-    append select "</SELECT>"
+                   }
+    append select "</select>"
 
     return $select
 }
+
 
 #
 # ns_browsermatch --
