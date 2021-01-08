@@ -38,6 +38,13 @@ are integers referring to number of characters. The
 [arg prefix] can be used to prefix every resulting line
 with a constant string.
 
+[call [cmd ns_striphtml] [arg html]]
+
+ Returns the contents of [arg html] with all HTML tags removed.
+ This function replaces as well all known HTML4 named entities and
+ three digit numeric entities by its UTF-8 representations and removes
+ HTML comments.
+
 [list_end]
 
 [section EXAMPLES]
@@ -72,9 +79,13 @@ WHERE  object_id > 10000
 > nine ten
 [example_end]
 
+[example_begin]
+ % ns_striphtml "<MARQUEE direction='right'><BLINK>Hello World!</BLINK></MARQUEE>"
+ Hello World!
+[example_end]
 
 [see_also ns_hrefs]
-[keywords "server built-in" text]
+[keywords "server built-in" text HTML]
 
 [manpage_end]
 

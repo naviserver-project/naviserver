@@ -191,7 +191,6 @@ List of all currently available NaviServer commands.
 [list_end]
 
 [call [cmd ns_setexpires]]
-[call [cmd ns_striphtml]]
 [call [cmd ns_tagelement]]
 [call [cmd ns_tagelementset]]
 [call [cmd ns_writecontent]]
@@ -430,6 +429,7 @@ List of all currently available NaviServer commands.
 [list_begin definitions]
 [call [cmd ns_trim]]
 [call [cmd ns_reflow_text]]
+[call [cmd ns_striphtml]]
 [list_end]
 [list_end]
 
