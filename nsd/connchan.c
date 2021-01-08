@@ -638,8 +638,18 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
                          * keeping the connchan specific structures
                          * alive (postponing cleanup to a "close"
                          * operation).
+                         *
+                         * We cannot pass "callbackFree" and "cbPtr"
+                         * to Ns_SockCancelCallbackEx(), so the
+                         * callback structure will stay around until
+                         * the callback is reset or the channel is
+                         * finally cleaned. We might consider changing
+                         * the condition flags (also from the
+                         * scripting level) to turn callbacks for
+                         * certain conditions on or off.
                          */
                         (void) Ns_SockCancelCallbackEx(localsock, NULL, NULL, NULL);
+
                     }
                 } else {
                     Tcl_DStringInit(&ds);
