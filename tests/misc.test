@@ -39,6 +39,14 @@ test ns_fmttime-1.1 {ns_rand with 0 arg - float} -body {
     return [ns_fmttime 1563812758 "%Y 00:00"]
 } -result {2019 00:00}
 
+#######################################################################################
+#  test ns_quotehtml
+#######################################################################################
+
+test ns_quotehtml {ns_quotehtml with typical value} -body {
+    return [ns_quotehtml {<span class="foo">}]
+} -result {&lt;span class=&#34;foo&#34;&gt;}
+
 #
 # Local variables:
 #    mode: tcl
