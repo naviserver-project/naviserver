@@ -238,7 +238,26 @@ macOS 10.2+ and Windows. To compile and install:
         "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
         "%ProgramFiles%\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.Cmd" /Debug /x64 /win7
 
-    nmake -f Makefile.win32
+        nmake -f Makefile.win32
+
+3i. Cross-compiling for Windows 64-bit (using gcc/mingw)
+
+    The configure magic does not detect some settings for MINGW,
+    they need to be specified explicitly:
+
+        ./configure --host=x86_64-w64-mingw32 --enable-64-bit \
+              --prefix=<path> --with-zlib=<path> --with-openssl=<path> --with-tcl=<path>/lib
+
+        CFLAGS="-DHAVE_INET_PTON -DHAVE_INET_NTON -DHAVE_GETADDRINFO -D_WIN32_WINNT=0x600" \
+              LDFLAGS="-static-libgcc" \
+              make LIBLIBS="-Wl,-Bstatic -lpthread -Wl,-Bdynamic"
+
+    The installation script does not expect the ".exe" extension; workaround:
+
+        cp nsthread/nsthreadtest.exe nsthread/nsthreadtest
+        cp nsd/nsd.exe nsd/nsd
+        cp nsproxy/nsproxy.exe nsproxy/nsproxy
+        make install
 
 
 4. Mailing lists
