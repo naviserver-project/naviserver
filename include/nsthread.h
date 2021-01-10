@@ -216,6 +216,11 @@ MSVC++ 14.2 _MSC_VER == 1920 (Visual Studio 2019 version 16.0)
 #  define NS_INVALID_PID        (-1)
 #  define NS_INVALID_SOCKET     (-1)
 #  define NS_INVALID_FD         (-1)
+
+typedef int ns_sockerrno_t;
+typedef long uid_t;
+typedef long gid_t;
+typedef long suseconds_t;
 # endif
 
 

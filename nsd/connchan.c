@@ -47,12 +47,12 @@
 #  define be32toh(x) betoh32(x)
 #  define be64toh(x) betoh64(x)
 # endif
-#elif defined(__APPLE__) || defined(_MSC_VER)
+#elif defined(__APPLE__) || defined(_WIN32)
 # define be16toh(x) ntohs(x)
 # define htobe16(x) htons(x)
 # define be32toh(x) ntonl(x)
 # define htobe32(x) htonl(x)
-# if defined(_MSC_VER)
+# if defined(_WIN32)
 /*
  * Not sure, why htonll() and ntohll() are undefined in Visual Studio 2019:
  *

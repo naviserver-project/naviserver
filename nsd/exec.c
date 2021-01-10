@@ -38,7 +38,7 @@
 #ifdef _WIN32
 
 # include <process.h>
-# include <VersionHelpers.h>
+# include <versionhelpers.h>
 static void Set2Argv(Ns_DString *dsPtr, const Ns_Set *env);
 
 #else
