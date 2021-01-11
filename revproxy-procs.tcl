@@ -273,10 +273,10 @@ namespace eval ::revproxy {
                 # The other side has closed the connection. Don't
                 # complain and perform standard cleanup.
                 #
-                ns_log notice "... ECONNRESET on $from"   ;# just for double checking for now.
+                log notice "revproxy::spool: ECONNRESET on $from"
                 set msg ""
             } on error {errorMsg} {
-                ns_log error "spool: received error while reading from $from: $errorMsg ($::errorCode)"
+                ns_log error "revproxy::spool: received error while reading from $from: $errorMsg ($::errorCode)"
                 #
                 # Drop into the cleanup below
                 #
@@ -296,6 +296,9 @@ namespace eval ::revproxy {
                     channelCleanup -close $to
                 }
             } else {
+                #
+                # Some data was received, send it to the other end.
+                #
                 log notice "spool: send [string length $msg] bytes from $from to $to ($url)"
 
                 set result [revproxy::write $from $to $msg -url $url -timeouts $timeouts]
@@ -310,7 +313,7 @@ namespace eval ::revproxy {
                     # The write operation ended in an error. Maybe we
                     # have to close here the channel explicitly.
                     #
-                    ns_log notice "revproxy: spool write $from to $to returns some error; " \
+                    ns_log notice "revproxy::spool: write $from to $to returned an error; " \
                         "MANUAL cleanup of $to (from $from)"
                     channelCleanup -close $to
                 }
@@ -433,11 +436,11 @@ namespace eval ::revproxy {
         }
 
         set buffered_bytes [dict get [ns_connchan status $to] sendbuffer]
-        ns_log notice "revproxy::write_once: want to send $buffered_bytes buffered bytes" \
+        log notice "revproxy::write_once: want to send $buffered_bytes buffered bytes" \
             "from $from to $to (condition $condition)"
 
         if {$buffered_bytes == 0} {
-            ns_log notice "revproxy::write_once: have No BUFFERED BYTES during send to $to ($url)" \
+            ns_log warning "revproxy::write_once: have no BUFFERED BYTES during send to $to ($url)" \
                 "condition $condition status [ns_connchan status $to]"
             set continue 0
         } else {
@@ -452,7 +455,7 @@ namespace eval ::revproxy {
                 # the transfer is aborted by the client. Don't
                 # complain about it.
                 #
-                ns_log notice "revproxy::write_once: EPIPE during send to $to ($url) "
+                log notice "revproxy::write_once: EPIPE during send to $to ($url) "
                 set continue 0
 
             } trap {POSIX ECONNRESET} {} {
@@ -463,7 +466,7 @@ namespace eval ::revproxy {
                 # some other page. Do not raise an error entry in such
                 # cases.
                 #
-                ns_log notice "revproxy::write_once: ECONNRESET during send to $to ($url) "
+                log notice "revproxy::write_once: ECONNRESET during send to $to ($url) "
                 set continue 0
 
             } on error {errorMsg} {
@@ -472,28 +475,28 @@ namespace eval ::revproxy {
 
             } on ok {nrBytesSent} {
                 set status [ns_connchan status $to]
-                ns_log notice "revproxy::write_once: write ok, nrBytesSent <$nrBytesSent> status $status"
+                log notice "revproxy::write_once: write ok, nrBytesSent <$nrBytesSent> status $status"
             }
         }
         if {$continue == 1} {
             if {$nrBytesSent == 0} {
-                ns_log notice "revproxy::write_once strangely, we could not write," \
+                ns_log warning "revproxy::write_once: strangely, we could not write," \
                     "altough the socket was writable" \
                     "(still [dict get $status sendbuffer] to send)... trigger again. \nStatus: $status"
                 ns_sleep 1ms
 
             } elseif {[dict get $status sendbuffer] > 0} {
-                ns_log notice "revproxy::write_once was not successful flushing the buffer " \
+                log notice "revproxy::write_once was not successful flushing the buffer " \
                     "(still [dict get $status sendbuffer])... trigger again. \nStatus: $status"
 
             } else {
                 #
                 # All was sent, fall back to normal read-event driven handler
                 #
-                ns_log notice "revproxy::write_once all was written to '$to' resume reading from '$from'" \
-                    "\nFROM Status: [ns_connchan status $from]" \
-                    "\n... old callback [dict get [ns_connchan status $from] callback]" \
-                    "\n... new callback [list ::revproxy::spool $from $to $url $timeouts 0]"
+                ns_log notice "revproxy::write_once all was written to '$to' resume reading from '$from'"
+                #    "\nFROM Status: [ns_connchan status $from]" \
+                #    "\n... old callback [dict get [ns_connchan status $from] callback]" \
+                #    "\n... new callback [list ::revproxy::spool $from $to $url $timeouts 0]"
                 ns_connchan callback \
                     -timeout [dict get $timeouts -timeout] \
                     -sendtimeout [dict get $timeouts -sendtimeout] \
