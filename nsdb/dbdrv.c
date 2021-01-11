@@ -740,7 +740,7 @@ NsDbLoadDriver(const char *driver)
         if (module == NULL) {
             Ns_Log(Error, "dbdrv: no such driver '%s'", driver);
         } else {
-            const char *path = Ns_ConfigGetPath(NULL, NULL, "db", "driver", driver, (char *)0L);
+            const char *path = Ns_ConfigSectionPath(NULL, NULL, NULL, "db", "driver", driver, (char *)0L);
 
             /*
              * For unknown reasons, Ns_ModuleLoad is called with a

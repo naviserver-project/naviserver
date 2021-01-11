@@ -99,7 +99,7 @@ Ns_ModuleInit(const char *server, const char *module)
     memset(&init, 0, sizeof(init));
     Tcl_DStringInit(&ds);
 
-    path = Ns_ConfigGetPath(server, module, (char *)0L);
+    path = Ns_ConfigSectionPath(NULL, server, module, (char *)0L);
     cfgPtr = NsSSLConfigNew(path);
 
     init.version = NS_DRIVER_VERSION_4;

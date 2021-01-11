@@ -275,13 +275,12 @@ ConfigServerTcl(const char *server)
         Ns_DString  ds;
         const char *path, *p, *initFileString;
         int         n;
-        Ns_Set     *set;
+        Ns_Set     *set = NULL;
         bool        initFileStringCopied = NS_FALSE;
 
         Ns_ThreadSetName("-main:%s-", server);
 
-        path = Ns_ConfigGetPath(server, NULL, "tcl", (char *)0L);
-        set = Ns_ConfigCreateSection(path);
+        path = Ns_ConfigSectionPath(&set, server, NULL, "tcl", (char *)0L);
 
         Ns_DStringInit(&ds);
 

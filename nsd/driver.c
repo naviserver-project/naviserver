@@ -581,13 +581,17 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         const char *path, *host, *address, *defserver;
         bool        noHostNameGiven;
         int         nrDrivers, nrBindaddrs = 0, result;
-        Ns_Set     *set;
+        Ns_Set     *set = NULL;
         Tcl_Obj    *bindaddrsObj, **objv;
         bool        hostDuplicated = NS_FALSE;
 
-        path = ((init->path != NULL) ? init->path : Ns_ConfigGetPath(server, module, (char *)0L));
-
-        set = Ns_ConfigCreateSection(path);
+        if (init->path != NULL) {
+            path =  init->path;
+            set = Ns_ConfigCreateSection(path);
+        } else {
+            path = Ns_ConfigSectionPath(&set, server, module, (char *)0L);
+        }
+        assert(path != NULL);
 
         /*
          * Determine the "defaultserver" the "hostname" / "address" for
@@ -614,9 +618,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
 
             if (Ns_GetAllAddrByHost(&ds, host) == NS_TRUE) {
                 address = ns_strdup(Tcl_DStringValue(&ds));
-                if (path != NULL) {
-                    Ns_SetUpdate(set, "address", address);
-                }
+                Ns_SetUpdate(set, "address", address);
                 Ns_Log(Notice, "no address given, obtained address '%s' from hostname %s", address, host);
 
             }
@@ -644,7 +646,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             hostDuplicated = NS_TRUE;
         }
 
-        if (noHostNameGiven && host != NULL && path != NULL) {
+        if (noHostNameGiven && host != NULL) {
             Ns_SetUpdate(set, "hostname", host);
         }
 
@@ -790,7 +792,7 @@ void NsDriverMapVirtualServers(void)
         /*
          * Check for a "/servers" section for this driver module.
          */
-        path = Ns_ConfigGetPath(NULL, moduleName, "servers", (char *)0L);
+        path = Ns_ConfigSectionPath(NULL, NULL, moduleName, "servers", (char *)0L);
         lset = Ns_ConfigGetSection(path);
 
         if (lset == NULL || Ns_SetSize(lset) == 0u) {

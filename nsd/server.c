@@ -215,7 +215,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     NsServer          *servPtr;
     const ServerInit  *initPtr;
     const char        *path, *p;
-    const Ns_Set      *set;
+    Ns_Set            *set = NULL;
     size_t             i;
     int                n;
 
@@ -249,7 +249,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
         initPtr = initPtr->nextPtr;
     }
 
-    path = Ns_ConfigGetPath(server, NULL, (char *)0L);
+    path = Ns_ConfigSectionPath(NULL, server, NULL, (char *)0L);
 
     /*
      * Set some server options.
@@ -315,8 +315,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
      */
 
     CreatePool(servPtr, NS_EMPTY_STRING);
-    path = Ns_ConfigGetPath(server, NULL, "pools", (char *)0L);
-    set = Ns_ConfigGetSection(path);
+    (void) Ns_ConfigSectionPath(&set, server, NULL, "pools", (char *)0L);
     for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
         CreatePool(servPtr, Ns_SetKey(set, i));
     }
@@ -397,17 +396,16 @@ CreatePool(NsServer *servPtr, const char *pool)
     poolPtr->servPtr = servPtr;
     if (*pool == '\0') {
         /* NB: Default options from pre-4.0 ns/server/server1 section. */
-        path = Ns_ConfigGetPath(servPtr->server, NULL, (char *)0L);
+        path = Ns_ConfigSectionPath(NULL, servPtr->server, NULL, (char *)0L);
         servPtr->pools.defaultPtr = poolPtr;
     } else {
-        const Ns_Set *set;
-        size_t        i;
+        Ns_Set *set;
+        size_t  i;
         /*
          * Map requested method/URL's to this pool.
          */
 
-        path = Ns_ConfigGetPath(servPtr->server, NULL, "pool", pool, (char *)0L);
-        set = Ns_ConfigGetSection(path);
+        path = Ns_ConfigSectionPath(&set, servPtr->server, NULL, "pool", pool, (char *)0L);
         for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
             if (strcasecmp(Ns_SetKey(set, i), "map") == 0) {
                 NsMapPool(poolPtr, Ns_SetValue(set, i), 0u);

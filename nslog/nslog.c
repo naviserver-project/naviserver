@@ -168,7 +168,7 @@ Ns_ModuleInit(const char *server, const char *module)
     Ns_MutexSetName2(&logPtr->lock, "nslog", server);
     Tcl_DStringInit(&logPtr->buffer);
 
-    path = Ns_ConfigGetPath(server, module, (char *)0L);
+    path = Ns_ConfigSectionPath(NULL, server, module, (char *)0L);
 
     /*
      * Determine the name of the log file

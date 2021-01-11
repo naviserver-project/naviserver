@@ -187,8 +187,7 @@ Ns_ModuleInit(const char *server, const char *module)
     /*
      * Config basic options.
      */
-
-    path = Ns_ConfigGetPath(server, module, (char *)0L);
+    path = Ns_ConfigSectionPath(NULL, server, module, (char *)0L);
     modPtr = ns_calloc(1u, sizeof(Mod));
     modPtr->module = module;
     modPtr->server = server;
@@ -204,7 +203,6 @@ Ns_ModuleInit(const char *server, const char *module)
     /*
      * Configure the various interp and env options.
      */
-
     Ns_DStringInit(&ds);
     section = Ns_ConfigGetValue(path, "interps");
     if (section != NULL) {

@@ -294,7 +294,7 @@ NsInitHttp(NsServer *servPtr)
     Ns_MutexInit(&servPtr->httpclient.lock);
     Ns_MutexSetName2(&servPtr->httpclient.lock, "httpclientlog", servPtr->server);
 
-    path = Ns_ConfigGetPath(servPtr->server, NULL, "httpclient", (char *)0L);
+    path = Ns_ConfigSectionPath(NULL, servPtr->server, NULL, "httpclient", (char *)0L);
     servPtr->httpclient.logging = Ns_ConfigBool(path, "logging", NS_FALSE);
 
     if (servPtr->httpclient.logging) {

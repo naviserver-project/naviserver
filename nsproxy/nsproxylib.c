@@ -2712,65 +2712,81 @@ GetPool(const char *poolName, const InterpData *idataPtr)
     hPtr = Tcl_CreateHashEntry(&pools, poolName, &isNew);
     if (isNew == 0) {
         poolPtr = (Pool *)Tcl_GetHashValue(hPtr);
+
     } else {
-        const char *path = "", *exec;
-        Tcl_DString pathDs;
-
-        Tcl_DStringInit(&pathDs);
-
         poolPtr = ns_calloc(1u, sizeof(Pool));
         Tcl_SetHashValue(hPtr, poolPtr);
         poolPtr->name = Tcl_GetHashKey(&pools, hPtr);
-        if (idataPtr != NULL && idataPtr->server != NULL && idataPtr->module != NULL) {
-            path = Ns_ConfigPath(&pathDs, idataPtr->server, idataPtr->module, (char *)0L);
-        }
-        assert(path != NULL);
 
-        exec = Ns_ConfigGetValue(path, "exec");
-        if (exec != NULL) {
-            SetOpt(exec, &poolPtr->exec);
-        } else {
+        /*
+         * If we have idataPtr with a "server" and "module" we can fill into
+         * the pool structure the values from the config file.
+         */
+        if (idataPtr == NULL || idataPtr->server == NULL || idataPtr->module == NULL) {
+            /*
+             * Just default values. When is this path taken?
+             */
             SetOpt(Tcl_DStringValue(&defexec), &poolPtr->exec);
-        }
-        Ns_ConfigTimeUnitRange(path, "gettimeout",
-                               "0ms", 0, 0, INT_MAX, 0,
-                               &poolPtr->conf.tget);
 
-        Ns_ConfigTimeUnitRange(path, "evaltimeout",
-                               "0ms", 0, 0, INT_MAX, 0,
-                               &poolPtr->conf.teval);
+            /*
+             * Just fill out non-null values.
+             */
+            poolPtr->conf.tsend.sec = 5;
+            poolPtr->conf.trecv.sec = 5;
+            poolPtr->conf.twait.sec = 1;
+            poolPtr->conf.tidle.sec = 5 * 60;
+            poolPtr->maxworker = 8;
+            poolPtr->conf.logminduration.sec = 1;
 
-        Ns_ConfigTimeUnitRange(path, "sendtimeout",
-                               "5s", 0, 0, INT_MAX, 0,
-                               &poolPtr->conf.tsend);
+        } else {
+            const char *exec, *path;
 
-        Ns_ConfigTimeUnitRange(path, "recvtimeout",
-                               "5s", 0, 0, INT_MAX, 0,
-                               &poolPtr->conf.trecv);
-
-        Ns_ConfigTimeUnitRange(path, "waittimeout",
-                               "1s", 0, 0, INT_MAX, 0,
-                               &poolPtr->conf.twait);
-
-        Ns_ConfigTimeUnitRange(path, "idletimeout",
-                               "5m", MIN_IDLE_TIMEOUT_SEC, 0, INT_MAX, 0,
-                               &poolPtr->conf.tidle);
-
-        {
-            int max = Ns_ConfigInt(path, "maxworker", -1);
-            if (max == -1) {
-                max = Ns_ConfigInt(path, "maxslaves", -1);
+            path = Ns_ConfigSectionPath(NULL, idataPtr->server, idataPtr->module, (char *)0L);
+            exec = Ns_ConfigGetValue(path, "exec");
+            if (exec != NULL) {
+                SetOpt(exec, &poolPtr->exec);
+            } else {
+                SetOpt(Tcl_DStringValue(&defexec), &poolPtr->exec);
             }
-            if (max == -1) {
-                max = 8;
-            }
-            poolPtr->maxworker  = max;
-        }
+            Ns_ConfigTimeUnitRange(path, "gettimeout",
+                                   "0ms", 0, 0, INT_MAX, 0,
+                                   &poolPtr->conf.tget);
 
-        Ns_ConfigTimeUnitRange(path, "logminduration",
-                               "1s", 0, 0, INT_MAX, 0,
-                               &poolPtr->conf.logminduration);
-        Tcl_DStringFree(&pathDs);
+            Ns_ConfigTimeUnitRange(path, "evaltimeout",
+                                   "0ms", 0, 0, INT_MAX, 0,
+                                   &poolPtr->conf.teval);
+
+            Ns_ConfigTimeUnitRange(path, "sendtimeout",
+                                   "5s", 0, 0, INT_MAX, 0,
+                                   &poolPtr->conf.tsend);
+
+            Ns_ConfigTimeUnitRange(path, "recvtimeout",
+                                   "5s", 0, 0, INT_MAX, 0,
+                                   &poolPtr->conf.trecv);
+
+            Ns_ConfigTimeUnitRange(path, "waittimeout",
+                                   "1s", 0, 0, INT_MAX, 0,
+                                   &poolPtr->conf.twait);
+
+            Ns_ConfigTimeUnitRange(path, "idletimeout",
+                                   "5m", MIN_IDLE_TIMEOUT_SEC, 0, INT_MAX, 0,
+                                   &poolPtr->conf.tidle);
+
+            {
+                int max = Ns_ConfigInt(path, "maxworker", -1);
+                if (max == -1) {
+                    max = Ns_ConfigInt(path, "maxslaves", -1);
+                }
+                if (max == -1) {
+                    max = 8;
+                }
+                poolPtr->maxworker  = max;
+            }
+
+            Ns_ConfigTimeUnitRange(path, "logminduration",
+                                   "1s", 0, 0, INT_MAX, 0,
+                                   &poolPtr->conf.logminduration);
+        }
 
         {
             int i;

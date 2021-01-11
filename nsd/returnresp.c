@@ -75,21 +75,18 @@ NsConfigRedirects(void)
 static Ns_ReturnCode
 ConfigServerRedirects(const char *server)
 {
-    NsServer     *servPtr = NsGetServer(server);
+    NsServer *servPtr = NsGetServer(server);
 
     if (servPtr != NULL) {
-        const Ns_Set *set;
-        const char   *path;
-        size_t        i;
+        Ns_Set *set = NULL;
+        size_t  i;
 
         Tcl_InitHashTable(&servPtr->request.redirect, TCL_ONE_WORD_KEYS);
-
-        path = Ns_ConfigGetPath(server, NULL, "redirects", (char *)0L);
-        set = Ns_ConfigGetSection(path);
+        (void) Ns_ConfigSectionPath(&set, server, NULL, "redirects", (char *)0L);
 
         for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
             const char *key, *map;
-            int statusCode;
+            int         statusCode;
 
             key = Ns_SetKey(set, i);
             map = Ns_SetValue(set, i);

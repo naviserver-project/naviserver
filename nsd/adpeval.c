@@ -157,7 +157,7 @@ ConfigServerAdp(const char *server)
     NsServer   *servPtr = NsGetServer(server);
     const char *path;
 
-    path = Ns_ConfigGetPath(server, NULL, "adp", (char *)0L);
+    path = Ns_ConfigSectionPath(NULL, server, NULL, "adp", (char *)0L);
 
     /*
      * Initialize the page and tag tables and locks.

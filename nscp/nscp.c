@@ -132,7 +132,7 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
 static void
 LoadUsers(Mod *modPtr, const char *server, const char *module)
 {
-    Ns_Set     *set;
+    Ns_Set     *set = NULL;
     const char *path;
     size_t      i;
 
@@ -142,13 +142,12 @@ LoadUsers(Mod *modPtr, const char *server, const char *module)
 
     Tcl_InitHashTable(&modPtr->users, TCL_STRING_KEYS);
     path = Ns_ConfigGetPath(server, module, "users", (char *)0L);
-    set = Ns_ConfigGetSection(path);
 
     /*
      * In default local mode just create empty user without password
      */
 
-    if (set == NULL && STREQ(modPtr->addr, NS_IP_LOOPBACK)) {
+    if (path == NULL && STREQ(modPtr->addr, NS_IP_LOOPBACK)) {
         Ns_DString ds;
 
         Ns_DStringInit(&ds);
@@ -254,8 +253,7 @@ Ns_ModuleInit(const char *server, const char *module)
     /*
      * Create the listening socket and callback.
      */
-
-    path = Ns_ConfigGetPath(server, module, (char *)0L);
+    path = Ns_ConfigSectionPath(NULL, server, module, (char *)0L);
     addr = Ns_ConfigString(path, "address", NS_IP_LOOPBACK);
     port = (unsigned short)Ns_ConfigInt(path, "port", 2080);
 
