@@ -1075,6 +1075,10 @@ NS_EXTERN const char *
 Ns_ConfigGetPath(const char *server, const char *module, ...)
      NS_GNUC_SENTINEL;
 
+const char *
+Ns_ConfigPath(Tcl_DString *dsPtr, const char *server, const char *module, ...)
+     NS_GNUC_NONNULL(1) NS_GNUC_SENTINEL;
+
 NS_EXTERN Ns_Set **
 Ns_ConfigGetSections(void);
 

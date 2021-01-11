@@ -2714,15 +2714,20 @@ GetPool(const char *poolName, const InterpData *idataPtr)
         poolPtr = (Pool *)Tcl_GetHashValue(hPtr);
     } else {
         const char *path = "", *exec;
-        int i;
+        Tcl_DString pathDs;
+
+        Tcl_DStringInit(&pathDs);
 
         poolPtr = ns_calloc(1u, sizeof(Pool));
         Tcl_SetHashValue(hPtr, poolPtr);
         poolPtr->name = Tcl_GetHashKey(&pools, hPtr);
         if (idataPtr != NULL && idataPtr->server != NULL && idataPtr->module != NULL) {
-          path = Ns_ConfigGetPath(idataPtr->server, idataPtr->module, (char *)0L);
+            path = Ns_ConfigPath(&pathDs, idataPtr->server, idataPtr->module, (char *)0L);
         }
-        if (*path != '\0' && (exec = Ns_ConfigGetValue(path, "exec")) != NULL) {
+        assert(path != NULL);
+
+        exec = Ns_ConfigGetValue(path, "exec");
+        if (exec != NULL) {
             SetOpt(exec, &poolPtr->exec);
         } else {
             SetOpt(Tcl_DStringValue(&defexec), &poolPtr->exec);
@@ -2765,16 +2770,21 @@ GetPool(const char *poolName, const InterpData *idataPtr)
         Ns_ConfigTimeUnitRange(path, "logminduration",
                                "1s", 0, 0, INT_MAX, 0,
                                &poolPtr->conf.logminduration);
+        Tcl_DStringFree(&pathDs);
 
-        for (i = 0; i < poolPtr->maxworker; i++) {
-            proxyPtr = CreateProxy(poolPtr);
-            proxyPtr->nextPtr = poolPtr->firstPtr;
-            poolPtr->firstPtr = proxyPtr;
-            poolPtr->nfree++;
+        {
+            int i;
+            for (i = 0; i < poolPtr->maxworker; i++) {
+                proxyPtr = CreateProxy(poolPtr);
+                proxyPtr->nextPtr = poolPtr->firstPtr;
+                poolPtr->firstPtr = proxyPtr;
+                poolPtr->nfree++;
+            }
         }
         Ns_CondInit(&poolPtr->cond);
         Ns_MutexInit(&poolPtr->lock);
         Ns_MutexSetName2(&poolPtr->lock, "nsproxy", poolName);
+
     }
     Ns_MutexUnlock(&plock);
 

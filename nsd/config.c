@@ -46,6 +46,8 @@ static Tcl_ObjCmdProc ParamObjCmd;
 
 static Ns_Set* GetSection(const char *section, bool create)
     NS_GNUC_NONNULL(1);
+static void PathAppend(Tcl_DString *dsPtr, const char *server, const char *module, va_list ap)
+    NS_GNUC_NONNULL(1);
 
 static const char* ConfigGet(const char *section, const char *key, bool exact, const char *defstr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -674,56 +676,119 @@ Ns_ConfigGetBool(const char *section, const char *key, bool *valuePtr)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConfigGetPath --
+ * PathAppend --
  *
- *      Get the full name of a configuration file section if it exists.
+ *      Construct a path based on "server" and "module" and the provided
+ *      var args list.
  *
  * Results:
- *      A pointer to an ASCIIZ string of the full pathname, or NULL
- *      if that path is not in the configuration file.
+ *      None. Appends resulting string to the Tcl_DString in the first
+ *      argument.
  *
  * Side effects:
  *      None.
  *
  *----------------------------------------------------------------------
  */
+static void
+PathAppend(Tcl_DString *dsPtr, const char *server, const char *module, va_list ap)
+{
+    const char *s;
 
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+
+    Tcl_DStringAppend(dsPtr, "ns", 2);
+    if (server != NULL) {
+        Tcl_DStringAppend(dsPtr, "/server/", 8);
+        Tcl_DStringAppend(dsPtr, server, -1);
+    }
+    if (module != NULL) {
+        Tcl_DStringAppend(dsPtr, "/module/", 8);
+        Tcl_DStringAppend(dsPtr, module, -1);
+    }
+
+    for (s = va_arg(ap, char *); s != NULL; s = va_arg(ap, char *)) {
+        Tcl_DStringAppend(dsPtr, "/", 1);
+        while (*s != '\0' && ISSLASH(*s)) {
+            ++s;
+        }
+        Tcl_DStringAppend(dsPtr, s, -1);
+        while (ISSLASH(dsPtr->string[dsPtr->length - 1])) {
+            dsPtr->string[--dsPtr->length] = '\0';
+        }
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConfigGetPath --
+ *
+ *      Get the full name of a configuration file section if it exists.
+ *
+ * Results:
+ *      A pointer to an ASCIIZ string of the full pathname, or NULL if
+ *      there are no configured parameters for this path in the
+ *      configuration file.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
 const char *
 Ns_ConfigGetPath(const char *server, const char *module, ...)
 {
     va_list         ap;
-    const char     *s;
     Tcl_DString     ds;
     const Ns_Set   *set;
 
     Tcl_DStringInit(&ds);
-    Tcl_DStringAppend(&ds, "ns", 2);
-    if (server != NULL) {
-        Tcl_DStringAppend(&ds, "/server/", 8);
-        Tcl_DStringAppend(&ds, server, -1);
-    }
-    if (module != NULL) {
-        Tcl_DStringAppend(&ds, "/module/", 8);
-        Tcl_DStringAppend(&ds, module, -1);
-    }
     va_start(ap, module);
-    for (s = va_arg(ap, char *); s != NULL; s = va_arg(ap, char *)) {
-        Tcl_DStringAppend(&ds, "/", 1);
-        while (*s != '\0' && ISSLASH(*s)) {
-            ++s;
-        }
-        Tcl_DStringAppend(&ds, s, -1);
-        while (ISSLASH(ds.string[ds.length - 1])) {
-            ds.string[--ds.length] = '\0';
-        }
-    }
+    (void)PathAppend(&ds, server, module, ap);
     va_end(ap);
+
     Ns_Log(Dev, "config section: %s", ds.string);
     set = Ns_ConfigCreateSection(ds.string);
     Tcl_DStringFree(&ds);
 
     return (set != NULL) ? Ns_SetName(set) : NULL;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConfigPath --
+ *
+ *      Returns a configuration file section path in the provided
+ *      Tcl_DString based on "server" and "module" strings. This
+ *      function is similar to Ns_ConfigGetPath() but returns the path
+ *      also in cases, where no parameters for this path are provided in
+ *      the configuration file.
+ *
+ * Results:
+ *      String value of the path.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+const char *
+Ns_ConfigPath(Tcl_DString *dsPtr, const char *server, const char *module, ...)
+{
+    va_list         ap;
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+
+    Tcl_DStringInit(dsPtr);
+    va_start(ap, module);
+    PathAppend(dsPtr, server, module, ap);
+    va_end(ap);
+
+    return dsPtr->string;
+}
+
 
 
 /*
@@ -770,10 +835,11 @@ Ns_ConfigGetSections(void)
  *
  * Ns_ConfigGetSection --
  *
- *      Return the Ns_Set of a config section called section.
+ *      Returns the Ns_Set of a config section called section.
  *
  * Results:
- *      An Ns_Set containing the section's parameters, or NULL.
+ *      An Ns_Set containing the section's parameters, or NULL, when no
+ *      parameters for this section are found.
  *
  * Side effects:
  *      None.
