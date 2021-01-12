@@ -201,7 +201,7 @@ Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, int maxbackup)
          * Rolling happens often at midnight, using often a day
          * precision. When e.g. a scheduled procedure the time when this
          * function is called might be slightly after the scheduled
-         * time, which might lead to a day jump. The problem aggrevates,
+         * time, which might lead to a day jump. The problem aggravates,
          * when multiple log files are rotated.
          *
          * One approach to address the time variation would be to pass
