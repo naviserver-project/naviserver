@@ -259,6 +259,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     servPtr->opts.modsince = Ns_ConfigBool(path, "checkmodifiedsince", NS_TRUE);
     servPtr->opts.noticedetail = Ns_ConfigBool(path, "noticedetail", NS_TRUE);
     servPtr->opts.errorminsize = (int)Ns_ConfigMemUnitRange(path, "errorminsize", 514, 0, INT_MAX);
+    servPtr->filter.rwlocks = Ns_ConfigBool(path, "filterrwlocks", NS_TRUE);
 
     servPtr->opts.hdrcase = Preserve;
     p = Ns_ConfigString(path, "headercase", "preserve");
@@ -301,8 +302,13 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     Ns_MutexInit(&servPtr->pools.lock);
     Ns_MutexSetName2(&servPtr->pools.lock, "nsd:pools", server);
 
-    Ns_RWLockInit(&servPtr->filter.lock);
-    Ns_RWLockSetName2(&servPtr->filter.lock, "nsd:filter", server);
+    if (servPtr->filter.rwlocks) {
+        Ns_RWLockInit(&servPtr->filter.lock.rwlock);
+        Ns_RWLockSetName2(&servPtr->filter.lock.rwlock, "nsd:filter", server);
+    } else {
+        Ns_MutexInit(&servPtr->filter.lock.mlock);
+        Ns_MutexSetName2(&servPtr->filter.lock.mlock, "nsd:filter", server);
+    }
 
     Ns_MutexInit(&servPtr->tcl.synch.lock);
     Ns_MutexSetName2(&servPtr->tcl.synch.lock, "nsd:tcl:synch", server);

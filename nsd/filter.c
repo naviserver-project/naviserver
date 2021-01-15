@@ -64,6 +64,64 @@ static void RunTraces(Ns_Conn *conn, const Trace *tracePtr)
 static void *RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc, void *arg)
     NS_GNUC_NONNULL(2);
 
+static void FilterLock(NsServer *servPtr, NS_RW rw)
+    NS_GNUC_NONNULL(1);
+
+static void FilterUnlock(NsServer *servPtr)
+    NS_GNUC_NONNULL(1);
+
+/*
+ *----------------------------------------------------------------------
+ * FilterLock --
+ *
+ *      Lock filters: convenience function, respecting configuration
+ *      value for locking modes.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FilterLock(NsServer *servPtr, NS_RW rw) {
+    if (servPtr->filter.rwlocks) {
+        if (rw == NS_READ) {
+            Ns_RWLockRdLock(&servPtr->filter.lock.rwlock);
+        } else {
+            Ns_RWLockWrLock(&servPtr->filter.lock.rwlock);
+        }
+    } else {
+        Ns_MutexLock(&servPtr->filter.lock.mlock);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ * FilterUnlock --
+ *
+ *      Unlock filters: convenience function, respecting configuration
+ *      value for locking modes.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+FilterUnlock(NsServer *servPtr) {
+    if (servPtr->filter.rwlocks) {
+        Ns_RWLockUnlock(&servPtr->filter.lock.rwlock);
+    } else {
+        Ns_MutexUnlock(&servPtr->filter.lock.mlock);
+    }
+}
 
 /*
  *----------------------------------------------------------------------
@@ -80,7 +138,6 @@ static void *RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc, void *arg)
  *
  *----------------------------------------------------------------------
  */
-
 void *
 Ns_RegisterFilter(const char *server, const char *method, const char *url,
                   Ns_FilterProc *proc, Ns_FilterType when, void *arg, bool first)
@@ -103,7 +160,7 @@ Ns_RegisterFilter(const char *server, const char *method, const char *url,
     fPtr->when = when;
     fPtr->arg = arg;
 
-    Ns_RWLockWrLock(&servPtr->filter.lock);
+    FilterLock(servPtr, NS_WRITE);
     if (first) {
         /*
          * Prepend element at the start of the list.
@@ -123,7 +180,7 @@ Ns_RegisterFilter(const char *server, const char *method, const char *url,
         }
         *fPtrPtr = fPtr;
     }
-    Ns_RWLockUnlock(&servPtr->filter.lock);
+    FilterUnlock(servPtr);
 
     return (void *) fPtr;
 }
@@ -158,7 +215,7 @@ NsRunFilters(Ns_Conn *conn, Ns_FilterType why)
     if ((conn->request.method != NULL) && (conn->request.url != NULL)) {
         Ns_ReturnCode filter_status = NS_OK;
 
-        Ns_RWLockRdLock(&servPtr->filter.lock);
+        FilterLock(servPtr, NS_READ);
         fPtr = servPtr->filter.firstFilterPtr;
         while (fPtr != NULL && filter_status == NS_OK) {
             if (unlikely(fPtr->when == why)
@@ -168,7 +225,7 @@ NsRunFilters(Ns_Conn *conn, Ns_FilterType why)
             }
             fPtr = fPtr->nextPtr;
         }
-        Ns_RWLockUnlock(&servPtr->filter.lock);
+        FilterUnlock(servPtr);
         if (filter_status == NS_FILTER_BREAK ||
             (why == NS_FILTER_TRACE && filter_status == NS_FILTER_RETURN)) {
             status = NS_OK;

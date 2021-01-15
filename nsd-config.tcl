@@ -144,6 +144,7 @@ ns_section ns/module/nssock/servers {
 
 ns_section ns/server/default {
     ns_param    enabletclpages      true  ;# default: false
+    #ns_param   filterrwlocks       false ;# default: true
     ns_param    checkmodifiedsince  false ;# default: true, check modified-since before returning files from cache. Disable for speedup
     ns_param    connsperthread      1000  ;# default: 0; number of connections (requests) handled per thread
     ns_param    minthreads          5     ;# default: 1; minimal number of connection threads
@@ -196,7 +197,7 @@ ns_section ns/server/default/adp {
 
 ns_section ns/server/default/tcl {
     ns_param    nsvbuckets          16       ;# default: 8
-    ns_param    nsvrwlicks          false    ;# default: true
+    ns_param    nsvrwlocks          false    ;# default: true
     ns_param    library             modules/tcl
     #
     # Example for initcmds (to be executed, when this server is fully initialized).

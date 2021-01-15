@@ -399,19 +399,20 @@ ns_section ns/server/$server {
     #
     # Scaling and Tuning Options
     #
-    # ns_param	maxconnections	100	;# 100; number of allocated connection structures
-    ns_param    rejectoverrun   true    ;# false (send 503 when queue overruns)
-    #ns_param   retryafter      5s      ;# time for Retry-After in 503 cases
+    # ns_param	maxconnections	100	 ;# 100; number of allocated connection structures
+    ns_param    rejectoverrun   true     ;# false (send 503 when queue overruns)
+    #ns_param   retryafter      5s       ;# time for Retry-After in 503 cases
+    #ns_param   filterrwlocks   false    ;# default: true
 
-    # ns_param	maxthreads	10	;# 10; maximal number of connection threads
-    ns_param	minthreads	2	;# 1; minimal number of connection threads
+    # ns_param	maxthreads	10	 ;# 10; maximal number of connection threads
+    ns_param	minthreads	2	 ;# 1; minimal number of connection threads
 
-    ns_param	connsperthread	1000	;# 10000; number of connections (requests) handled per thread
+    ns_param	connsperthread	1000	 ;# 10000; number of connections (requests) handled per thread
     ;# Setting connsperthread to > 0 will cause the thread to
     ;# graciously exit, after processing that many requests, thus
     ;# initiating kind-of Tcl-level garbage collection.
 
-    # ns_param	threadtimeout	2m	;# 2m; timeout for idle threads.
+    # ns_param	threadtimeout	2m	 ;# 2m; timeout for idle threads.
     ;# In case, minthreads < maxthreads, threads are shutdown after
     ;# this idle time until minthreads are reached.
 
@@ -423,10 +424,10 @@ ns_section ns/server/$server {
 
     # Compress response character data: ns_return, ADP etc.
     #
-    ns_param	compressenable	on	;# false, use "ns_conn compress" to override
-    # ns_param	compresslevel	4	;# 4, 1-9 where 9 is high compression, high overhead
-    # ns_param	compressminsize	512	;# Compress responses larger than this
-    # ns_param	compresspreinit true	;# false, if true then initialize and allocate buffers at startup
+    ns_param	compressenable	on	 ;# false, use "ns_conn compress" to override
+    # ns_param	compresslevel	4	 ;# 4, 1-9 where 9 is high compression, high overhead
+    # ns_param	compressminsize	512	 ;# Compress responses larger than this
+    # ns_param	compresspreinit true	 ;# false, if true then initialize and allocate buffers at startup
 
     # Enable nicer directory listing (as handled by the OpenACS request processor)
     # ns_param	directorylisting	fancy	;# Can be simple or fancy
