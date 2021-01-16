@@ -30,17 +30,15 @@
 
 package require tcltest 2.2
 namespace import -force ::tcltest::*
+package require try
 
 ::tcltest::configure {*}$argv
-
-#
-# Skip the nstest::http-0.9 tests under Windows.
-#
-testConstraint http09 [expr {$::tcl_platform(platform) ne "windows"}]
 
 if {[ns_config test listenport]} {
     testConstraint serverListen true
 }
+testConstraint http09 true
+
 #ns_logctl severity Debug(ns:driver) on
 
 test http_chunked-1.1 {

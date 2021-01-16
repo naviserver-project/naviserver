@@ -2,6 +2,7 @@
 
 package require tcltest 2.2
 namespace import -force ::tcltest::*
+package require try
 
 test ns_nsv-1.1 {basic syntax nsv_set} -body {
     nsv_set

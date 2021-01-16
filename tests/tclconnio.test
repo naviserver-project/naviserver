@@ -6,18 +6,12 @@ namespace import -force ::tcltest::*
 ::tcltest::configure {*}$argv
 
 #
-# Skip the nstest::http-0.9 tests under Windows.
-#
-testConstraint http09 [expr {$::tcl_platform(platform) ne "windows"}]
-
-#
 # Enable the channel detach/attach test if the Tcl Thread package is available.
 #
-
 if {![catch {package require Thread}]} {
     testConstraint Thread true
 }
-
+testConstraint http09 true
 
 
 test tclconnio-1.1 {ns_connsendfp} -constraints http09 -setup {

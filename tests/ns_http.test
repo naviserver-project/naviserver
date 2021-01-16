@@ -31,28 +31,20 @@
 
 package require tcltest 2.2
 namespace import -force ::tcltest::*
-if {$::tcl_version eq "8.5"} {
-    #
-    # In Tcl 8.5, "::try" was not yet a built-in of Tcl
-    #
-    package require try
-}
 
 ::tcltest::configure {*}$argv
 #ns_logctl severity Debug(task) on
 #ns_logctl severity Debug(request) on
-
-#
-# Skip the nstest::http-0.9 tests under Windows.
-#
-testConstraint http09 [expr {$::tcl_platform(platform) ne "windows"}]
 
 if {[ns_config test listenport] ne ""} {
     testConstraint serverListen true
 }
 if {$tcl_version >= 8.6} {
     testConstraint tcl86 true
+} else {
+    package require try
 }
+testConstraint http09 true
 
 # testConstraint binaryMismatch true
 # testConstraint broken true

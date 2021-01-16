@@ -5,11 +5,7 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
-#
-# Skip the nstest::http-0.9 tests under Windows.
-#
-testConstraint http09 [expr {$::tcl_platform(platform) ne "windows"}]
-
+testConstraint http09 true
 
 # "this is a test\n"
 

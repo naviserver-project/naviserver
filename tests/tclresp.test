@@ -9,10 +9,7 @@ namespace import -force ::tcltest::*
 if {[ns_config test listenport]} {
     testConstraint serverListen true
 }
-#
-# Skip the nstest::http-0.9 tests under Windows.
-#
-testConstraint http09 [expr {$::tcl_platform(platform) ne "windows"}]
+testConstraint http09 true
 
 
 
