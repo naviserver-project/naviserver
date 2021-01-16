@@ -681,7 +681,7 @@ typedef int bool;
 #  define ETIMEDOUT                  1
 # endif
 # ifndef P_tmpdir
-#  define P_tmpdir "c:/tmp"
+#  define P_tmpdir "c:/temp"
 # endif
 #else
 # define NS_EWOULDBLOCK              EWOULDBLOCK
