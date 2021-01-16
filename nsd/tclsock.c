@@ -79,6 +79,9 @@ static int EnterDupedSocks(Tcl_Interp *interp, NS_SOCKET sock, Tcl_Obj *listObj)
 static int SockSetBlocking(const char *value, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static Ns_ReturnCode GetSocketFromChannel(Tcl_Interp *interp, const char *chanId, int write, NS_SOCKET *socketPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+
 static Ns_SockProc SockListenCallback;
 
 
@@ -289,7 +292,7 @@ NsTclSockNReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         Tcl_Channel   chan = Tcl_GetChannel(interp, Tcl_GetString(objv[1]), NULL);
 
         if (chan == NULL
-            || Ns_TclGetOpenFd(interp, Tcl_GetString(objv[1]), 0, (int *) &sock) != TCL_OK) {
+            || GetSocketFromChannel(interp, Tcl_GetString(objv[1]), 0, &sock) != TCL_OK) {
             result = TCL_ERROR;
 
         } else if (ns_sockioctl(sock, FIONREAD, &nread) != 0) {
@@ -638,6 +641,7 @@ NsTclSelectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     if (Tcl_ListObjGetElements(interp, objv[arg++], &fobjc, &fobjv) != TCL_OK) {
         return TCL_ERROR;
     }
+
     Tcl_DStringInit(&dsRfd);
     Tcl_DStringInit(&dsNbuf);
     for (i = 0; i < fobjc; ++i) {
@@ -687,18 +691,20 @@ NsTclSelectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         /*
          * Actually perform the select.
          */
-        NS_SOCKET sock;
+        int nserrno, rc;
 
         do {
-            sock = (NS_SOCKET)select(maxfd + 1, rPtr, wPtr, ePtr, tvPtr);
-        } while (sock == NS_INVALID_SOCKET && errno == NS_EINTR);
-        if (sock == NS_INVALID_SOCKET) {
+            rc = select(maxfd + 1, rPtr, wPtr, ePtr, tvPtr);
+            nserrno = ns_sockerrno;
+        } while (rc == -1 && nserrno == NS_EINTR);
+
+        if (rc == -1) {
             Tcl_AppendStringsToObj(Tcl_GetObjResult(interp), "select failed: ",
                                    Tcl_PosixError(interp), (char *)0L);
         } else {
             Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
-            if (sock == (NS_SOCKET)0) {
+            if (rc == 0) {
                 /*
                  * The sets can have any random value now
                  */
@@ -842,9 +848,9 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
                            "should be one/more of r, w, e, or x", whenString);
         result = TCL_ERROR;
 
-    } else if (Ns_TclGetOpenFd(interp, sockId,
-                        (when & (unsigned int)NS_SOCK_WRITE) != 0u,
-                        (int *) &sock) != TCL_OK) {
+    } else if (GetSocketFromChannel(interp, sockId,
+                                (when & (unsigned int)NS_SOCK_WRITE) != 0u,
+                                &sock) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
@@ -1028,7 +1034,7 @@ AppendReadyFiles(Tcl_Interp *interp, Tcl_Obj *listObj,
     }
     if (Tcl_SplitList(interp, flist, &fargc, &fargv) == TCL_OK) {
         while (fargc-- > 0) {
-            (void) Ns_TclGetOpenFd(interp, fargv[fargc], write, (int *) &sock);
+            (void) GetSocketFromChannel(interp, fargv[fargc], write, &sock);
             if ((setPtr != NULL) && FD_ISSET(sock, setPtr)) {
                 Tcl_DStringAppendElement(dsPtr, fargv[fargc]);
             }
@@ -1046,6 +1052,47 @@ AppendReadyFiles(Tcl_Interp *interp, Tcl_Obj *listObj,
     Tcl_DStringFree(&ds);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetSocketFromChannel --
+ *
+ *      Return the socket for the the given channel.
+ *
+ * Results:
+ *      NS_OK or NS_ERROR.
+ *
+ * Side effects:
+ *      The value at socketPtr is updated with a valid NS_SOCKET.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Ns_ReturnCode
+GetSocketFromChannel(Tcl_Interp *interp, const char *chanId, int write, NS_SOCKET *socketPtr)
+{
+    Tcl_Channel   chan;
+    ClientData    data;
+    Ns_ReturnCode result = NS_OK;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(chanId != NULL);
+    NS_NONNULL_ASSERT(socketPtr != NULL);
+
+    if (Ns_TclGetOpenChannel(interp, chanId, write, NS_TRUE, &chan) != TCL_OK) {
+        result = NS_ERROR;
+
+    } else if (Tcl_GetChannelHandle(chan, write != 0 ? TCL_WRITABLE : TCL_READABLE,
+                                    &data) != TCL_OK) {
+        Ns_TclPrintfResult(interp, "could not get handle for channel: %s", chanId);
+        result = NS_ERROR;
+
+    } else {
+        *socketPtr = PTR2INT(data);
+    }
+
+    return result;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1092,15 +1139,15 @@ GetSet(Tcl_Interp *interp, const char *flist, int write, fd_set **setPtrPtr,
         result = TCL_OK;
 
         /*
-         * Loop over each file, try to get its FD, and set the bit in
-         * the fd_set.
+         * Loop over each file, get its FD and set the bit in the
+         * fd_set.
          */
 
         while (fargc-- > 0) {
             NS_SOCKET sock = NS_INVALID_SOCKET;
 
-            if (Ns_TclGetOpenFd(interp, fargv[fargc],
-                                write, (int *) &sock) != TCL_OK) {
+            if (GetSocketFromChannel(interp, fargv[fargc],
+                                 write, &sock) != NS_OK) {
                 result = TCL_ERROR;
                 break;
             }
