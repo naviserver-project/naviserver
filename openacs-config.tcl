@@ -484,7 +484,7 @@ ns_section ns/server/$server/pools {
     # To activate connection thread pools, uncomment one of the
     # following lines and/or add other pools.
 
-    #ns_param   monitor	"Monitoring actions to check heathiness of the system"
+    #ns_param   monitor	"Monitoring actions to check healthiness of the system"
     #ns_param   fast	"Fast requests, e.g. less than 10ms"
     #ns_param   slow 	"Slow lane pool, for request remapping"
 }
