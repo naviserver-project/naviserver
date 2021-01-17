@@ -849,8 +849,8 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
         result = TCL_ERROR;
 
     } else if (GetSocketFromChannel(interp, sockId,
-                                (when & (unsigned int)NS_SOCK_WRITE) != 0u,
-                                &sock) != NS_OK) {
+                                    (when & (unsigned int)NS_SOCK_WRITE) != 0u,
+                                    &sock) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
@@ -1034,8 +1034,9 @@ AppendReadyFiles(Tcl_Interp *interp, Tcl_Obj *listObj,
     }
     if (Tcl_SplitList(interp, flist, &fargc, &fargv) == TCL_OK) {
         while (fargc-- > 0) {
-            (void) GetSocketFromChannel(interp, fargv[fargc], write, &sock);
-            if ((setPtr != NULL) && FD_ISSET(sock, setPtr)) {
+            Ns_ReturnCode rc = GetSocketFromChannel(interp, fargv[fargc], write, &sock);
+
+            if ((rc == NS_OK) && (setPtr != NULL) && FD_ISSET(sock, setPtr)) {
                 Tcl_DStringAppendElement(dsPtr, fargv[fargc]);
             }
         }
@@ -1074,6 +1075,7 @@ GetSocketFromChannel(Tcl_Interp *interp, const char *chanId, int write, NS_SOCKE
     Tcl_Channel   chan;
     ClientData    data;
     Ns_ReturnCode result = NS_OK;
+    NS_SOCKET     sock = NS_INVALID_SOCKET;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(chanId != NULL);
@@ -1088,8 +1090,9 @@ GetSocketFromChannel(Tcl_Interp *interp, const char *chanId, int write, NS_SOCKE
         result = NS_ERROR;
 
     } else {
-        *socketPtr = PTR2INT(data);
+        sock = PTR2INT(data);
     }
+    *socketPtr = sock;
 
     return result;
 }
@@ -1147,7 +1150,7 @@ GetSet(Tcl_Interp *interp, const char *flist, int write, fd_set **setPtrPtr,
             NS_SOCKET sock = NS_INVALID_SOCKET;
 
             if (GetSocketFromChannel(interp, fargv[fargc],
-                                 write, &sock) != NS_OK) {
+                                     write, &sock) != NS_OK) {
                 result = TCL_ERROR;
                 break;
             }
