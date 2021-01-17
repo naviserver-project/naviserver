@@ -1058,7 +1058,7 @@ AppendReadyFiles(Tcl_Interp *interp, Tcl_Obj *listObj,
  *
  * GetSocketFromChannel --
  *
- *      Return the socket for the the given channel.
+ *      Return the socket for the given channel.
  *
  * Results:
  *      NS_OK or NS_ERROR.
