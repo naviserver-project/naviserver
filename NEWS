@@ -313,7 +313,7 @@ Bug Fixes:
   - Fixed potential crashes in (desperate) error situations, where the
     connection was already closed.
 
-  - Fixed leaking tmp file, when writerstraming is activated and
+  - Fixed leaking temporary file, when writerstraming is activated and
     streaming HTML output is used. This bug could appear, when
     "writerstreaming" is turned on in the config file (default off).
     See also: https://sourceforge.net/p/naviserver/mailman/naviserver-
@@ -475,7 +475,7 @@ Code Changes:
 
 
  - Refactored low-level socket I/O:
-   * All driver operations are now strictly non-blocking
+   * All driver operations are now strictly nonblocking
    * Use same infrastructure for all network I/O operations
      (driver, connchan, ns_http, ...)
    * Rewritten socketfile/sendfile handling (including *BSD support)
@@ -496,7 +496,7 @@ Code Changes:
    than with linked lists, resulting in better CPU cache hit rates.
 
  - Distinguish between Ns_NormalizePath() and Ns_NormalizeUrl(),
-   where the first is for the file system and the latter for URLs.
+   where the first is for the filesystem and the latter for URLs.
    Previously, both cases were handled identically.
 
   - Function pointer handling:
@@ -1110,7 +1110,7 @@ New Features:
       address and returned an error, when this failed. This happened
       when using client functions (e.g. ns_http).
 
-    * host names with multiple IP addresses are nowadays quite common,
+    * hostnames with multiple IP addresses are nowadays quite common,
       e.g. "localhost" having an IPv4 and an IPv6 address registered. In
       previous versions, when e.g. localhost has as first address the IPv6
       address, but IPv6 was not active, it returned an error.
@@ -1658,7 +1658,7 @@ New Features:
     Old configurations (doing a-c manually) should continue to work
 
   - Improved integration of NaviServer with e.g. service files (systemd):
-    When the server is starting in a forking mode, return a non-zero
+    When the server is starting in a forking mode, return a nonzero
     return code, when initialization of the server went wrong (e.g.
     error in the config file)
 
@@ -1739,7 +1739,7 @@ Performance Improvements:
     cases by about a factor of 2
 
   * Improved performance by replacing the slow "snprintf(... %d ...)"
-    function by a the new functions ns_uint32toa() and ns_uint64toa().
+    function by the new functions ns_uint32toa() and ns_uint64toa().
     This change improved the performance of EnterSet() by nearly a
     factor of 2.5. Before, snprintf() took in this function 3x (!) as
     long as Tcl_CreateHashEntry(); the new ns_u32toa() is about 6x
@@ -2616,7 +2616,7 @@ Code Changes:
 
  - C-Code cleanup:
    * Removed all implicit type-conversions, signed/unsigned comparisons
-     as flagged by the following gcc/clang flags (ensure cleanness on 64bit)
+     as flagged by the following gcc/clang flags (ensure cleanness on 64-bit)
      -Wconversion -Wsign-conversion -Wfloat-conversion -Wsign-compare
 
    * Reduced number of return statement before end of function
@@ -2858,7 +2858,7 @@ New Features:
 
   * Reduced memory consumption: avoid memory bloat on uploads and in
     HTTP client operations with large contents (esp. useful for
-    contents >1GB).  ns_getform an the new ns_getcontent work now on
+    contents >1GB).  ns_getform the new ns_getcontent work now on
     spooled and in-memory content in a uniform manner.
 
   * Improved debugging support: new severity "Debug(request)" can be
@@ -2975,7 +2975,7 @@ C API Changes:
       Ns_BindSock(), Ns_ConnSetPeer(), Ns_GetSockAddr(),
       Ns_SockBind(), Ns_SockBindUdp()
     * Ns_CtxString() renamed to Ns_HexString() to make its intention
-      more clear and added a parameter to control lower and upper case
+      more clear and added a parameter to control lower and uppercase
 
 
 
@@ -3554,9 +3554,9 @@ New Features/Performance Improvements:
       NaviServer allows now deliver gzipped content for static files
       in cases the client requests for this. The gzipped files
       are stored
-      statically in the file system like the unzipped content. Therefore,
+      statically in the filesystem like the unzipped content. Therefore,
       the file delivery of gzipped content can be performed without
-      runtime penalty. NaviServer compares the time stamps of the
+      runtime penalty. NaviServer compares the timestamps of the
       compressed and uncompressed content. If the time-stamp of the
       uncompressed content is changed, NaviServer refreshes the
       compressed content automatically.
@@ -3576,13 +3576,12 @@ New Features/Performance Improvements:
 
 	  Command for zipping files in case the (static) gzipped
 	  version of the file is older than the source. The command is
-	  just used for re- gzipping outdated files, it does not
+	  just used for re-gzipping outdated files, it does not
 	  actively compress files, which were previously not
-	  compressed (this would be wasteful for e.g.  large tmp
-	  files, there is not cleanup, etc.). If this parameter is not
-	  defined, outdated gzipped files are ignored, and a warning
-	  is written to the error.log. Example setting:
-	  "/usr/bin/gzip -9".
+	  compressed (this would be wasteful for e.g. large temporary
+	  files, etc.). If this parameter is not defined, outdated
+	  gzipped files are ignored, and a warning is written to the
+	  error.log. Example setting: "/usr/bin/gzip -9".
 
 	- parameter "gzip_refresh" (default false)
 
@@ -3663,7 +3662,7 @@ Bug Fixes:
       the strict old order.
 
     * Ns_CacheUnsetValue() is now more robust against code, where
-      freeProc calls a ns_cache operation (such as
+      freeProc calls an ns_cache operation (such as
       e.g. nsdbipg). Before that modification, double free operations
       were possible when the cache was pruned.
 
@@ -3678,7 +3677,7 @@ Bug Fixes:
     * Fix flag settings in ns_adp_parse
 
     * Fix clock ensemble oddity in blueprint (error message: Error:
-      time zone ":Tcl/Localtime" not found; many thanks to
+      timezone ":Tcl/Localtime" not found; many thanks to
       David Osborne)
 
     * Save Tcl interpreter aliases and ensembles in blueprint (Many
@@ -3736,7 +3735,7 @@ Tcl API Changes:
     * ns_time: add option "ns_time format" to print a time
       in the sec:usec format in secs in a decimal dot notation
 
-    * Mark ns_tmpnam as deprecated since it uses an
+    * Mark ns_tmpnam as deprecated since it uses a
       deprecated C-library function (use ns_mktemp instead)
 
     * Allow "ns_mktemp" to be called without template
@@ -3850,7 +3849,7 @@ Performance Improvements:
       (tqueue) per pool. In classical naviserver there is was a single poll lock
       (covering all pools) used. The change leads to a much finer lock
       granularity in improves scalability.
-    * Added async disk writer to reduce request latencies due to file system latencies.
+    * Added async disk writer to reduce request latencies due to filesystem latencies.
       Now used optionally for access log and error-log.
     * Use GetSection() instead of Ns_ConfigCreateSection() in ConfigGet().
       This is faster and removes the need for the most-frequently used mutex lock
@@ -3862,7 +3861,7 @@ Performance Improvements:
 
 Bug Fixes:
 
-    * Do not save variables of the toplevel namespace into the blueprint.
+    * Do not save variables of the top-level namespace into the blueprint.
       OpenACS had with this a problem, since the database handles are managed via
       global variables, which is solved by this modification.
     * ns_eval -sync syntax.
@@ -3872,7 +3871,7 @@ Bug Fixes:
     * Fix length computation in "ns_writer submitfile" when offset is specified
     * Fix thread safety of "nswriter list".
     * Simplified driver logic and fixed bad interaction with nsssl,
-      which used non-blocking sockets, but declared itself as a non-async
+      which used nonblocking sockets, but declared itself as a non-async
       driver). Fixed potential bug for partial reads in header parsing
       (string comparison could read past available bytes, pick up values
       from previous requests).
@@ -4121,7 +4120,7 @@ Code Changes:
       writes at the driver level.
 
       - The old SockSend() is now implemented using of nssock.sendProc
-	and performs partial writes on non-blocking sockets.
+	and performs partial writes on nonblocking sockets.
 
       - Ns_SockSendBufs() delivers all iovec bufs like before but now
 	calls NsDriverSend() instead of the direct SockSend().
@@ -4207,7 +4206,7 @@ New Features:
 
     * Less eager thread creation short request peaks. Naviserver tended
       to create too many threads in situation of short bottlenecks (e.g.
-      file system latencies). This can reduce resource consumption on
+      filesystem latencies). This can reduce resource consumption on
       larges sites significantly.
 
     * New threads are added to the waiting queue in an already warm
@@ -4306,7 +4305,7 @@ New Features:
     * ns_parseargs: default values can now be specified with in the form
       {[..]} to cause evaluation, like ns_parseargs {-flag {[script]}} $args ...
 
-    * Commands which timeout now set a NS_TIMEOUT Tcl error code, which if not
+    * Commands which timeout now set an NS_TIMEOUT Tcl error code, which if not
       caught is reported as an HTTP 503 Unavailable response.
 
     * Handle png images, as well as existing gif and jpg with new ns_img*
@@ -4384,7 +4383,7 @@ Bug Fixes:
 
     * Naviserver could loop under linux in some situations where a
       client connection was closed unexpectedly (observed under vmware
-      under intel 64bit).
+      under intel 64-bit).
 
     * Improved Code quality (reduced scope of variables, unused variables,
       changed types of file descriptors for socket from "int" to "SOCKET"
@@ -4395,12 +4394,12 @@ Bug Fixes:
 
     * Fix to prevent multiple DriverAccepts on the same socket. The
       original coded relied on the fact that later accepts lead to an
-      ERROR_STATE. Under RHEL 4 (Power, 64bit) the second accept
+      ERROR_STATE. Under RHEL 4 (Power, 64-bit) the second accept
       blocks.
 
     * Fix Ns_Time for platforms, where time_t is long.
     * Updated documentation
-    * Various 64bit fixes.
+    * Various 64-bit fixes.
     * Fix path attribute of HTTP Cookie string.
     * Make sure upload stats lock is unlocked after use.
     * Fix crash in writer thread logging already freed data.
