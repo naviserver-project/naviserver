@@ -1174,11 +1174,13 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defstr)
         }
         if (i >= 0) {
             s = Ns_SetValue(set, i);
-        } else {
+        } else if (!nsconf.state.started) {
             i = (int)Ns_SetPut(set, key, defstr);
             if (defstr != NULL) {
                 s = Ns_SetValue(set, i);
             }
+        } else {
+            s = defstr;
         }
     }
     return s;
