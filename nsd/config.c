@@ -1173,8 +1173,19 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defstr)
             i = Ns_SetIFind(set, key);
         }
         if (i >= 0) {
+            /*
+             * The configuration value was found in the ns_set for this
+             * section.
+             */
             s = Ns_SetValue(set, i);
         } else if (!nsconf.state.started) {
+            /*
+             * The configuration value was NOT found. Since we want to be able
+             * to retrieve all current configuration values via introspection
+             * (e.g. as used by nsstats), add new entries to the set. This is
+             * only possible during startup when we there is a single
+             * thread. Changing ns_sets is not thread safe.
+             */
             i = (int)Ns_SetPut(set, key, defstr);
             if (defstr != NULL) {
                 s = Ns_SetValue(set, i);
