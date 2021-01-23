@@ -539,7 +539,7 @@ Ns_CacheGetValueT(const Ns_Entry *entry, const Ns_CacheTransactionStack *transac
 
         result = NULL;
         if (transactionStackPtr != NULL) {
-            size_t i;
+            unsigned int i;
 
             for (i = 0u; i < transactionStackPtr->depth; i++) {
                 if (e->transactionEpoch == transactionStackPtr->stack[i]) {
