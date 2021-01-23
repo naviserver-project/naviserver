@@ -442,7 +442,7 @@ Ns_TaskRun(Ns_Task *task)
     pfd.fd = taskPtr->sock;
 
     Ns_Log(Ns_LogTaskDebug, "Ns_TaskRun: task:%p init", (void*)taskPtr);
-    (void)Call(taskPtr, NS_SOCK_INIT);
+    Call(taskPtr, NS_SOCK_INIT);
 
     flags |= (TASK_TIMEDOUT|TASK_EXPIRED);
 
@@ -461,7 +461,7 @@ Ns_TaskRun(Ns_Task *task)
         if (NsPoll(&pfd, (NS_POLL_NFDS_TYPE)1, timeoutPtr) != 1) {
             Ns_Log(Ns_LogTaskDebug, "Ns_TaskRun: task:%p timeout",
                    (void*)taskPtr);
-            (void)Call(taskPtr, NS_SOCK_TIMEOUT);
+            Call(taskPtr, NS_SOCK_TIMEOUT);
 
             status = NS_TIMEOUT;
         } else {
@@ -474,7 +474,7 @@ Ns_TaskRun(Ns_Task *task)
     if (status == NS_OK && (taskPtr->flags & flags) == 0u) {
         Ns_Log(Ns_LogTaskDebug, "Ns_TaskRun: task:%p done",
                (void*)taskPtr);
-        (void)Call(taskPtr, NS_SOCK_DONE);
+        Call(taskPtr, NS_SOCK_DONE);
     }
 
     return;
@@ -886,7 +886,7 @@ RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
         taskPtr->flags |= TASK_EXPIRED;
         Ns_Log(Ns_LogTaskDebug, "RunTask: task:%p expired, flags:%.6x",
                (void*)taskPtr, taskPtr->flags);
-        (void)Call(taskPtr, NS_SOCK_TIMEOUT);
+        Call(taskPtr, NS_SOCK_TIMEOUT);
 
     } else if (revents != 0) {
         unsigned int index;
@@ -901,7 +901,7 @@ RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
             if ((revents & map[index].event) != 0) {
                 Ns_Log(Ns_LogTaskDebug, "RunTask: task:%p events, event:%.2x",
                        (void*)taskPtr, map[index].when);
-                (void)Call(taskPtr, map[index].when);
+                Call(taskPtr, map[index].when);
             }
         }
     } else if ((taskPtr->flags & TASK_TIMEOUT) != 0u
@@ -910,7 +910,7 @@ RunTask(Task *taskPtr, short revents, const Ns_Time *nowPtr)
         taskPtr->flags |= TASK_TIMEDOUT;
         Ns_Log(Ns_LogTaskDebug, "RunTask: task:%p timedout, flags:%.6x",
                (void*)taskPtr, taskPtr->flags);
-        (void)Call(taskPtr, NS_SOCK_TIMEOUT);
+        Call(taskPtr, NS_SOCK_TIMEOUT);
     }
 
     return;
@@ -1259,7 +1259,7 @@ TaskThread(void *arg)
                        (void*)taskPtr, taskPtr->flags);
 
                 taskPtr->flags &= ~(TASK_INIT);
-                (void)Call(taskPtr, NS_SOCK_INIT);
+                Call(taskPtr, NS_SOCK_INIT);
 
                 Ns_Log(Ns_LogTaskDebug, "TASK_INIT task:%p flags:%.6x DONE",
                        (void*)taskPtr, taskPtr->flags);
@@ -1271,7 +1271,7 @@ TaskThread(void *arg)
 
                 taskPtr->flags &= ~(TASK_CANCEL|TASK_WAIT);
                 taskPtr->flags |= TASK_DONE;
-                (void)Call(taskPtr, NS_SOCK_CANCEL);
+                Call(taskPtr, NS_SOCK_CANCEL);
 
                 Ns_Log(Ns_LogTaskDebug, "TASK_CANCEL task:%p flags:%.6x DONE",
                        (void*)taskPtr, taskPtr->flags);
@@ -1303,7 +1303,7 @@ TaskThread(void *arg)
                 taskPtr->flags &= ~(TASK_DONE|TASK_WAIT);
                 signalFlags |= TASK_DONE;
                 broadcast = NS_TRUE;
-                (void)Call(taskPtr, NS_SOCK_DONE);
+                Call(taskPtr, NS_SOCK_DONE);
 
                 Ns_Log(Ns_LogTaskDebug, "TASK_DONE task:%p flags:%.6x DONE",
                        (void*)taskPtr, taskPtr->flags);
@@ -1444,7 +1444,7 @@ TaskThread(void *arg)
     taskPtr = firstWaitPtr;
     while (taskPtr != NULL) {
         nextPtr = taskPtr->nextWaitPtr;
-        (void)Call(taskPtr, NS_SOCK_EXIT);
+        Call(taskPtr, NS_SOCK_EXIT);
         taskPtr = nextPtr;
     }
 

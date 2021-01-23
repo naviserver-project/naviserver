@@ -745,7 +745,7 @@ Ns_ConfigGetPath(const char *server, const char *module, ...)
 
     Tcl_DStringInit(&ds);
     va_start(ap, module);
-    (void)PathAppend(&ds, server, module, ap);
+    PathAppend(&ds, server, module, ap);
     va_end(ap);
 
     Ns_Log(Dev, "config section: %s", ds.string);
@@ -784,7 +784,7 @@ Ns_ConfigSectionPath(Ns_Set **setPtr, const char *server, const char *module, ..
 
     Tcl_DStringInit(&ds);
     va_start(ap, module);
-    (void)PathAppend(&ds, server, module, ap);
+    PathAppend(&ds, server, module, ap);
     va_end(ap);
 
     Ns_Log(Dev, "config section: %s", ds.string);
