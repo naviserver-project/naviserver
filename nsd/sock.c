@@ -1964,7 +1964,8 @@ Ns_PosixSetErrorCode(Tcl_Interp *interp, int errorNum) {
     errorMsg = Tcl_ErrnoMsg(errorNum);
     Tcl_SetErrorCode(interp, "POSIX",
                      ErrorCodeString(errorNum),
-                     Tcl_ErrnoMsg(errorNum), NULL);
+                     Tcl_ErrnoMsg(errorNum),
+                     (char *)0L);
     return errorMsg;
 }
 

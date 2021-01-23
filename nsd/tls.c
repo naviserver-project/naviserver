@@ -1977,7 +1977,7 @@ Ns_SSLSetErrorCode(Tcl_Interp *interp, unsigned long sslERRcode)
          */
         ERR_error_string_n(sslERRcode, errorBuf, sizeof(errorBuf));
 
-        Tcl_SetErrorCode(interp, "OPENSSL", errorBuf, NULL);
+        Tcl_SetErrorCode(interp, "OPENSSL", errorBuf, (char *)0L);
         errorMsg = ERR_reason_error_string(sslERRcode);
     }
 
