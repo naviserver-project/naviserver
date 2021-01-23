@@ -49,7 +49,7 @@ typedef int (*SetFindProc)(const Ns_Set *set, const char *key);
 static void SetMerge(Ns_Set *high, const Ns_Set *low, SetFindProc findProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static void SetCopyElements(Ns_Set *from, Ns_Set *to)
+static void SetCopyElements(const Ns_Set *from, Ns_Set *to)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static const char *SetGetValueCmp(const Ns_Set *set, const char *key, const char *def, StringCmpProc cmp)
@@ -1052,7 +1052,7 @@ Ns_SetRecreate(Ns_Set *set)
  *----------------------------------------------------------------------
  */
 static void
-SetCopyElements(Ns_Set *from, Ns_Set *to)
+SetCopyElements(const Ns_Set *from, Ns_Set *to)
 {
     size_t i;
 

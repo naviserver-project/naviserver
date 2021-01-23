@@ -288,7 +288,7 @@ Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
                    void *arg,
                    const char *filename, const char *rollfmt, int maxbackup)
 {
-    Ns_ReturnCode status = NS_OK;
+    Ns_ReturnCode status;
     Tcl_DString   errorMsg;
 
     Tcl_DStringInit(&errorMsg);
