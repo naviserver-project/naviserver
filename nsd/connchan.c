@@ -2551,8 +2551,12 @@ ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
         if ( messageLength <= 125 ) {
             data[1] = (unsigned char)(data[1] | ((unsigned char)messageLength & 0x7Fu));
             offset = 2;
-        } else if ( messageLength > 125 && messageLength <= 65535 ) {
+        } else if ( messageLength <= 65535 ) {
             uint16_t len16;
+            /*
+             * Together with the first clause, this means:
+             * messageLength > 125 && messageLength <= 65535
+             */
 
             Tcl_DStringSetLength(&frameDs, 4);
             data[1] |= (( unsigned char )126 & 0x7fu);
@@ -2561,6 +2565,10 @@ ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
             offset = 4;
         } else {
             uint64_t len64;
+            /*
+             * Together with the first two clauses, this means:
+             * messageLength > 65535
+             */
 
             Tcl_DStringSetLength(&frameDs, 10);
             data[1] |= (( unsigned char )127 & 0x7fu);
