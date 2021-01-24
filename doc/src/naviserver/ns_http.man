@@ -382,9 +382,9 @@ returns reply-headers.
  #######################
  # output results
  #######################
- ns_log notice "status [lb]dict get $r status[lb]"
- ns_log notice "reply "[lb]dict get $r [lb]
- ns_log notice "headers "[lb]dict get $r headers[lb]
+ ns_log notice "status [lb]dict get $r status[rb]"
+ ns_log notice "reply "[lb]dict get $r [rb]
+ ns_log notice "headers "[lb]dict get $r headers[rb]
 [example_end]
 
 The forth example is a code snippet that sets a larger timeout on the
@@ -427,4 +427,3 @@ otherwise stored in memory.
 [keywords "global built-in" http-client HTTP HTTPS POST GET nssock spooling SNI]
 
 [manpage_end]
-
