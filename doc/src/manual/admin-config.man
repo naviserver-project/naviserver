@@ -288,6 +288,7 @@ network driver [emph nssock1] and [emph nssock2].
    ns_param address   0.0.0.0
    ns_param port      8000
  }
+ 
  ns_section ns/server/s1/module/nssock2 {
    ns_param address   127.0.0.1
    ns_param port      8001
@@ -367,6 +368,7 @@ define multiple DNS names also for a single server (here for [const s2]).
    ns_param port          8000
    ns_param defaultserver s1
  }
+ 
  #
  # Define the mapping between the DNS names and the servers.
  #
@@ -403,11 +405,13 @@ well the nsssl driver globally, and configure it accordingly.
  ns_section ns/modules {
    ns_param nssock nsssl.so
  }
+ 
  ns_section ns/module/nsssl {
    ns_param port          8433
    ns_param defaultserver s1
    ns_param certificate   /usr/local/ns/modules/nsssl/server.pem
  }
+ 
  ns_section ns/module/nsssl/servers {
    ns_param s1 foo.com
    ns_param s2 bar.com
@@ -456,6 +460,7 @@ server "s1" separately (foo.com.pem).
    ns_param s2 bar.com
    ns_param s2 baz.com
  }
+ 
  #
  # Define a server-specific certificate to enable SNI.
  # Activate for this server as OCSP stapling.

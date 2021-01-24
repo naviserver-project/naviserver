@@ -21,41 +21,38 @@ Microsoft Frontpage and Netscape Navigator Gold.
 
 
 [para]
-
-
 In the years since then, NaviSoft created the NaviHosting service and
 created a group of software tools around it that was used by GNN,
 PrimeHost, and the AOL service itself.  In 1998 the NaviSoft
 subsidiary was integrated back into AOL and a new group of people
 became stewards to the code. This team supported the legacy code and
-added exciting new features to AOLServer, like ADP server-side HTML
+added exciting new features to AOLserver, like ADP server-side HTML
 scripts, caching--even an FTP server.  The team also maintained the
 many software applications that supported GNN, PrimeHost, and AOL.
 
 
 [para]
-
-
-Finally, in 1999, the entire AOLServer code base was overhauled and
+Finally, in 1999, the entire AOLserver code base was overhauled and
 [uri http://news.com.com/2100-1023-228252.html] released to the Open
 Source community as AOLserver 3.0 under the AOLserver Public License,
 an application of the Mozilla Public License.
 
 [para]
+America Online continued to use AOLserver throughout its business --
+for sites like Digital City (http://home.digitalcity.com/),
+Netscape (http://home.netscape.com),
+CompuServe (http://compuserve.com/), to the
+America Online service (http://aol.com/) itself.
 
-
-America Online continues to use AOLServer throughout its business--from
-[uri http://home.digitalcity.com/] Digital City to
-[uri http://home.netscape.com] Netscape to
-[uri http://compuserve.com/] CompuServe to the
-[uri http://aol.com/] America Online service itself.
-
+[para]
+In 2005 new project called NaviServer was created which was a fork of
+AOLserver 4.0.11.
 
 [para]
 
-
-In 2005 new project called NaviServer was created which was a fork of
-AOLServer 4.0.11.
-
+Later AOL has refocused its business, separated from Time Warner
+and was acquired by Verizon Communications in 2015
+[url https://en.wikipedia.org/wiki/AOL]. While the latest release
+of AOLserver is from 2012, NaviServer continues being actively developed.
 
 [manpage_end]
