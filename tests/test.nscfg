@@ -8,47 +8,55 @@
 #
 set env(LANG) en_US.UTF-8
 
+
+#
+# Determine available IP addresses and unused ports for the web server
+# and nscp.
+#
+proc __ns_get_free_port {addr startPort maxPort} {
+    for {set port $startPort} {$port < $maxPort} {incr port} {
+        if {![catch {
+            ns_log notice "try $addr $port"
+            close [ns_socklisten $addr $port]
+        } errorMsg]} {
+            return $port
+        }
+    }
+    return ""
+}
+
+foreach loopback [expr {[ns_info ipv6] ? [list ::1 "127.0.0.1"] : "127.0.0.1"}] {
+    set port [__ns_get_free_port $loopback 8000 8100]
+    if {$port ne ""} {
+        break
+    }
+}
+set nscp_port [expr {$::tcl_platform(platform) eq "windows" ? "" : [__ns_get_free_port $loopback 4080 4099]}]
+
 #
 # Parameters for test scripts.
 #
+ns_section "test" {
+    ns_param   home   [pwd]/tests
+    ns_param listenport [expr {$port < 8100 ? $port : 0}]
+    ns_param loopback   $loopback
 
-ns_section "test"
-ns_param   home   [pwd]/tests
-
-foreach loopback [expr {[ns_info ipv6] ? [list ::1 "127.0.0.1"] : "127.0.0.1"}] {
-    for {set port 8000} {$port < 8100} {incr port} {
-	if {![catch {
-	    ns_log notice "try $loopback $port"
-	    close [ns_socklisten $loopback $port]
-	} msg]} {
-	    set ok 1
-	    break
-	}
-    }
-    if {[info exists ok]} {
-	break
+    if {[string match *:* $loopback]} {
+        ns_param   listenurl    http://\[$loopback\]:[ns_config test listenport]
+    } else {
+        ns_param   listenurl    http://$loopback:[ns_config test listenport]
     }
 }
 
-ns_param   listenport	    [expr {$port < 8100 ? $port : 0}]
-ns_param   loopback	    $loopback
-
-if {[string match *:* $loopback]} {
-    ns_param   listenurl    http://\[$loopback\]:[ns_config test listenport]
-} else {
-    ns_param   listenurl    http://$loopback:[ns_config test listenport]
-}
-
-ns_log notice "configure LOOPBACK  $loopback"
-ns_log notice "configure LISTENURL [ns_config test listenurl]"
+ns_log notice "configure LOOPBACK $loopback LISTENURL [ns_config test listenurl]"
 
 #
 # Small helper to allow to share config file with windows
 #
 proc sharedlibextension {} {
     switch -- $::tcl_platform(os) {
-	Darwin {return .so}
-	default {return [info sharedlibextension]}
+        Darwin {return .so}
+        default {return [info sharedlibextension]}
     }
 }
 
@@ -73,10 +81,10 @@ ns_section "ns/testconfig" {
 
 ns_section "ns/modules" {
     if {[ns_config "test" listenport]} {
-	ns_param   nssock [ns_config "test" home]/../nssock/nssock
+        ns_param nssock [ns_config "test" home]/../nssock/nssock
     }
     if {[ns_info ssl]} {
-	ns_param   nsssl  [ns_config "test" home]/../nsssl/nsssl
+        ns_param nsssl  [ns_config "test" home]/../nsssl/nsssl
     }
 }
 
@@ -162,20 +170,20 @@ ns_section "ns/fastpath" {
     #set v mmap
     #set v none
     switch $v {
-	cache {
-	    ns_param   cache           true
-	    ns_param   cachemaxsize    2055
-	    ns_param   cachemaxentry   3200
-	    ns_param   mmap            false
-	}
-	mmap {
-	    ns_param   cache           false
-	    ns_param   mmap            true
-	}
-	none {
-	    ns_param   cache           false
-	    ns_param   mmap            false
-	}
+        cache {
+            ns_param   cache           true
+            ns_param   cachemaxsize    2055
+            ns_param   cachemaxentry   3200
+            ns_param   mmap            false
+        }
+        mmap {
+            ns_param   cache           false
+            ns_param   mmap            true
+        }
+        none {
+            ns_param   cache           false
+            ns_param   mmap            false
+        }
     }
     unset v
 }
@@ -280,10 +288,23 @@ ns_section "ns/server/test/module/nsproxy" {
     ns_param   exec            [ns_config "test" home]/../nsproxy/test-nsproxy.sh
 }
 
+ns_section "ns/server/test/module/nscp" {
+    ns_param   port            $nscp_port
+}
+
+ns_section "ns/server/test/module/nscp/users" {
+    ns_param   user            "::"
+    ns_param   user            "nsadmin:t2GqvvaiIUbF2:" ;# sample user="nsadmin", pw="x".
+}
+
+
 ns_section "ns/server/test/modules" {
     ns_param   nslog           [ns_config "test" home]/../nslog/nslog[sharedlibextension]
     ns_param   nsdb            [ns_config "test" home]/../nsdb/nsdb[sharedlibextension]
     ns_param   nsproxy         [ns_config "test" home]/../nsproxy/nsproxy[sharedlibextension]
+    if {$nscp_port ne ""} {
+        ns_param nscp          [ns_config "test" home]/../nscp/nscp
+    }
 }
 
 #
