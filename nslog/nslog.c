@@ -951,7 +951,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     Ns_DStringPrintf(dsPtr, "%d %" PRIdz, (n != 0) ? n : 200, Ns_ConnContentSent(conn));
 
     /*
-     * Append the referrer (using the missepelled header field "Referer") and
+     * Append the referrer (using the misspelled header field "Referer") and
      * user-agent headers (if any)
      */
 
