@@ -1285,7 +1285,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     drvPtr->extraHeaders = Ns_ConfigSet(path, "extraheaders");
 
     /*
-     * Check if upload spooler are enabled
+     * Check if upload spooler threads are enabled.
      */
     spPtr = &drvPtr->spooler;
     spPtr->threads = Ns_ConfigIntRange(path, "spoolerthreads", 0, 0, 32);
@@ -4908,6 +4908,7 @@ SpoolerThread(void *arg)
 
                 case SOCK_READY:
                     assert(sockPtr->reqPtr != NULL);
+                    Ns_Log(DriverDebug, "spooler thread done with request");
                     SockSetServer(sockPtr);
                     Push(sockPtr, waitPtr);
                     break;
