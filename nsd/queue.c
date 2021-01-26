@@ -2084,17 +2084,17 @@ NsConnThread(void *arg)
             poolPtr->tqueue.nextPtr = argPtr;
             Ns_MutexUnlock(tqueueLockPtr);
 
-            /*
-             * Wait until someone wakes us up, or a timeout happens.
-             */
             while (!servPtr->pools.shutdown) {
 
                 Ns_GetTime(timePtr);
                 Ns_IncrTime(timePtr, timeout.sec, timeout.usec);
 
+                /*
+                 * Wait until someone wakes us up, or a timeout happens.
+                 */
                 status = Ns_CondTimedWait(&argPtr->cond, &argPtr->lock, timePtr);
 
-                if (status == NS_TIMEOUT) {
+                if (unlikely(status == NS_TIMEOUT)) {
                     if (unlikely(argPtr->connPtr != NULL)) {
                         /*
                          * This should not happen: we had a timeout, but there
@@ -2115,15 +2115,15 @@ NsConnThread(void *arg)
 
                     } else {
                         /*
-                         * We have a timeout, and the thread can exit
+                         * We have a timeout, and the thread can exit.
                          */
                         break;
                     }
                 }
 
-                if (argPtr->connPtr != NULL) {
+                if (likely(argPtr->connPtr != NULL)) {
                     /*
-                     * We got something to do
+                     * We got something to do; therefore leave this loop.
                      */
                     break;
                 }
@@ -2147,6 +2147,9 @@ NsConnThread(void *arg)
                      aPtr != NULL;
                      prevPtr = &aPtr->nextPtr, aPtr = aPtr->nextPtr) {
                     if (aPtr == argPtr) {
+                        /*
+                         * This request is for us.
+                         */
                         *prevPtr = aPtr->nextPtr;
                         argPtr->nextPtr = NULL;
                         break;
