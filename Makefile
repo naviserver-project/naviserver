@@ -131,7 +131,7 @@ install-include: all
 	done
 
 install-tests:
-	$(CP) -r tests $(INSTSRVPAG)
+	$(CP) tests $(INSTSRVPAG)
 
 install-doc:
 	@if [ -d doc/html ]; then \
@@ -315,6 +315,7 @@ dist: config.guess config.sub clean
 	fi;
 	find naviserver-$(NS_PATCH_LEVEL) -type f -name '.[a-zA-Z_]*' -exec rm \{} \;
 	find naviserver-$(NS_PATCH_LEVEL) -name '*-original' -exec rm \{} \;
+	find naviserver-$(NS_PATCH_LEVEL) -name '*.pem' -exec rm \{} \;
 	find naviserver-$(NS_PATCH_LEVEL) -name '*.c-*' -exec rm \{} \;
 	find naviserver-$(NS_PATCH_LEVEL) -name '*.h-*' -exec rm \{} \;
 	find naviserver-$(NS_PATCH_LEVEL) -name '*~' -exec rm \{} \;
