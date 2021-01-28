@@ -531,15 +531,7 @@ Ns_ConnCurrentAddr(const Ns_Conn *conn)
 
     connPtr = (Conn *)conn;
     if (connPtr->sockPtr != NULL) {
-        struct NS_SOCKADDR_STORAGE sa;
-        socklen_t len = (socklen_t)sizeof(sa);
-        int retVal = getsockname(connPtr->sockPtr->sock, (struct sockaddr *) &sa, &len);
-
-        if (retVal == -1) {
-            result = NULL;
-        } else {
-            result = ns_inet_ntoa((struct sockaddr *)&sa);
-        }
+        result = Ns_SockGetAddr((Ns_Sock *)connPtr->sockPtr);
     } else {
         result = NULL;
     }
@@ -854,13 +846,18 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
             location = Ns_DStringAppend(dest, connPtr->location);
         }
     if (location == NULL) {
-        unsigned short port = (connPtr->sockPtr != NULL)
-            ? Ns_SockGetPort((Ns_Sock*)connPtr->sockPtr)
-            : connPtr->drvPtr->port;
-        location = Ns_HttpLocationString(dest,
-                                         connPtr->drvPtr->protocol,
-                                         connPtr->drvPtr->address,
-                                         port, connPtr->drvPtr->defport);
+        unsigned short port;
+        const char    *addr;
+
+        if (connPtr->sockPtr != NULL) {
+            port = Ns_SockGetPort((Ns_Sock*)connPtr->sockPtr);
+            addr = Ns_SockGetAddr((Ns_Sock*)connPtr->sockPtr);
+        } else {
+            port = connPtr->drvPtr->port;
+            addr = connPtr->drvPtr->address;
+        }
+        location = Ns_HttpLocationString(dest, connPtr->drvPtr->protocol,
+                                         addr, port, connPtr->drvPtr->defport);
     }
 
     return location;
