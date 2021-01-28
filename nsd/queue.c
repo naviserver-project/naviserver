@@ -677,9 +677,9 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
 
         if ((sockPtr->flags & NS_CONN_SOCK_WAITING) == 0u) {
             /*
-             * The flag NS_CONN_SOCK_WAITING is just used to avalid reporting
-             * the same request multiple times as unsuccessful queueing attempts
-             * (when rejectoverrun is false).
+             * The flag NS_CONN_SOCK_WAITING is just used to avoid reporting
+             * the same request multiple times as unsuccessful queueing
+             * attempts (when rejectoverrun is false).
              */
             sockPtr->flags |= NS_CONN_SOCK_WAITING;
             Ns_Log(Notice, "[%s pool %s] All available connections are used, waiting %d idle %d current %d",
@@ -2123,7 +2123,7 @@ NsConnThread(void *arg)
 
                 if (likely(argPtr->connPtr != NULL)) {
                     /*
-                     * We got something to do; therefore leave this loop.
+                     * We got something to do; therefore, leave this loop.
                      */
                     break;
                 }

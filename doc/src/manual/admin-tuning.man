@@ -231,7 +231,7 @@ concurrent interpreter create operations in Tcl 8.6.
 
 [example_begin]
  ns_section ns/parameters {
-    ns_param concurrentinterpcreate false   ; default false
+    ns_param concurrentinterpcreate true  ;# default false
  }
 [example_end]
 
