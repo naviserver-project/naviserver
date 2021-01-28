@@ -4718,10 +4718,11 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const Ns_Driver *drvPtr)
 static void
 SockSetServer(Sock *sockPtr)
 {
-    const char *host;
-    Request    *reqPtr;
-    bool        bad_request = NS_FALSE;
-    Driver     *drvPtr;
+    const char      *host;
+    Request         *reqPtr;
+    bool             bad_request = NS_FALSE;
+    Driver          *drvPtr;
+    const ServerMap *mapPtr = NULL;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
@@ -4735,8 +4736,8 @@ SockSetServer(Sock *sockPtr)
     sockPtr->location = NULL;
 
     host = Ns_SetIGet(reqPtr->headers, "Host");
-    Ns_Log(DriverDebug, "SockSetServer host '%s' request line '%s'",
-           host, reqPtr->request.line);
+    Ns_Log(DriverDebug, "SockSetServer host '%s' request line '%s' servPtr %p",
+           host, reqPtr->request.line, (void*)sockPtr->servPtr);
 
     if (unlikely((host == NULL) && (reqPtr->request.version >= 1.1))) {
         /*
@@ -4747,35 +4748,68 @@ SockSetServer(Sock *sockPtr)
         bad_request = NS_TRUE;
     }
 
-    if (sockPtr->servPtr == NULL) {
-        const ServerMap *mapPtr = NULL;
+    if (host != NULL) {
+        Tcl_DString hostDs;
 
-        if (host != NULL) {
-            Tcl_DString hostDs;
+        Tcl_DStringInit(&hostDs);
+        Tcl_DStringAppend(&hostDs, host, -1);
+        mapPtr = DriverLookupHost(&hostDs, drvPtr);
+        Tcl_DStringFree(&hostDs);
+    }
 
-            Tcl_DStringInit(&hostDs);
-            Tcl_DStringAppend(&hostDs, host, -1);
-            mapPtr = DriverLookupHost(&hostDs, drvPtr);
-            Tcl_DStringFree(&hostDs);
-        }
+    if (mapPtr == NULL && sockPtr->servPtr == NULL) {
+        /*
+         * The driver is installed globally, fall back to the default server,
+         * which has to be defined in this case.
+         */
+        mapPtr = drvPtr->defMapPtr;
+    }
 
-        if (mapPtr == NULL) {
-            /*
-             * Could not lookup the virtual host, Get the default mapping from the driver.
-             */
-            mapPtr = drvPtr->defMapPtr;
-        }
-        if (mapPtr != NULL) {
+    if (mapPtr != NULL) {
+        /*
+         * Get server and location from the configured mapping.
+         */
+        if (sockPtr->servPtr == NULL) {
             sockPtr->servPtr  = mapPtr->servPtr;
-            sockPtr->location = mapPtr->location;
-        } else {
-            sockPtr->location = drvPtr->location;
         }
+        sockPtr->location = mapPtr->location;
+        Ns_Log(DriverDebug, "SockSetServer request line '%s' get location from mapping '%s'",
+               reqPtr->request.line, sockPtr->location);
+    } else {
+        /*
+         * There is no configured mapping.
+         */
         if (sockPtr->servPtr == NULL) {
             Ns_Log(Warning, "cannot determine server for request: \"%s\" (host \"%s\")\n",
                    reqPtr->request.line, host);
             bad_request = NS_TRUE;
         }
+        /*
+         * Could not lookup the virtual host, get the default location from
+         * the driver or from local side of the socket connection.
+         */
+        if (drvPtr->location != NULL) {
+            sockPtr->location = drvPtr->location;
+        } else {
+            static NS_THREAD_LOCAL Tcl_DString locationDs;
+            static NS_THREAD_LOCAL bool initialized;
+
+            if (!initialized) {
+                Tcl_DStringInit(&locationDs);
+                initialized = NS_TRUE;
+            }
+            Tcl_DStringSetLength(&locationDs, 0);
+
+            Ns_HttpLocationString(&locationDs,
+                                  drvPtr->protocol,
+                                  Ns_SockGetAddr((Ns_Sock *)sockPtr),
+                                  Ns_SockGetPort((Ns_Sock *)sockPtr),
+                                  drvPtr->defport);
+            sockPtr->location = locationDs.string;
+        }
+
+        Ns_Log(DriverDebug, "SockSetServer request line '%s' get location from driver '%s'",
+               reqPtr->request.line, sockPtr->location);
     }
 
     if (unlikely(bad_request)) {
@@ -4784,6 +4818,8 @@ SockSetServer(Sock *sockPtr)
         reqPtr->request.method = ns_strdup("BAD");
     }
 
+    Ns_Log(DriverDebug, "SockSetServer host '%s' request line '%s' final location '%s'",
+           host, reqPtr->request.line, sockPtr->location);
 }
 
 /*

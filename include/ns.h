@@ -2812,6 +2812,10 @@ unsigned short
 Ns_SockGetPort(const Ns_Sock *sock)
     NS_GNUC_NONNULL(1);
 
+const char *
+Ns_SockGetAddr(const Ns_Sock *sock)
+    NS_GNUC_NONNULL(1);
+
 NS_EXTERN ssize_t
 Ns_SockRecvBufs(Ns_Sock *sock, struct iovec *bufs, int nbufs,
                 const Ns_Time *timeoutPtr, unsigned int flags);

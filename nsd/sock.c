@@ -276,6 +276,43 @@ Ns_SockGetPort(const Ns_Sock *sock)
 
     return result;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockGetLocalAddr --
+ *
+ *      Get the IP Address in form of a string from the provided NS_SOCKET.
+ *
+ * Results:
+ *      String or NULL
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+const char *
+Ns_SockGetAddr(const Ns_Sock *sock)
+{
+    const char *result;
+    struct NS_SOCKADDR_STORAGE sa;
+    socklen_t len = (socklen_t)sizeof(sa);
+    int       retVal;
+
+    NS_NONNULL_ASSERT(sock != NULL);
+
+    retVal = getsockname(sock->sock, (struct sockaddr *) &sa, &len);
+    if (retVal == -1) {
+        result = 0u;
+    } else {
+        result = ns_inet_ntoa((struct sockaddr *)&sa);
+    }
+
+    return result;
+}
+
+
 /*
  *----------------------------------------------------------------------
  *
