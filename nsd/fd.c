@@ -46,7 +46,7 @@ static int dupHigh = 0;
 
 
 /*
- * The following structure maitains an open temp fd.
+ * The following structure maintains an open temp fd.
  */
 
 typedef struct Tmp {

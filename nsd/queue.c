@@ -2031,7 +2031,7 @@ NsConnThread(void *arg)
         /*
          * We are ready to process requests. Pick it either a request
          * from the waiting queue, or go to a waiting state and add
-         * jourself to the conn thread queue.
+         * yourself to the conn thread queue.
          */
         assert(argPtr->connPtr == NULL);
         assert(argPtr->state == connThread_ready);

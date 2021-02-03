@@ -321,7 +321,7 @@ typedef struct Request {
     Ns_Set *headers;             /* Input headers */
     Ns_Set *auth;                /* Auth user/password and parameters */
     char peer[NS_IPADDR_SIZE];   /* Client peer address */
-    char proxypeer[NS_IPADDR_SIZE]; /* Prody peer address */
+    char proxypeer[NS_IPADDR_SIZE]; /* Proyy peer address */
     unsigned short port;         /* Client peer port */
 
     /*
@@ -357,7 +357,7 @@ typedef struct Request {
 } Request;
 
 /*
- * The following structure maitains data for each instance of
+ * The following structure maintains data for each instance of
  * a driver initialized with Ns_DriverInit.
  */
 

@@ -187,7 +187,7 @@ test ns_connchan-1.8.5 {detach connection, return success "ns_conn driver"} -set
 #
 # WebSocket
 #
-test ns_connchan-2.0 {ns_connchan wsencode, basic command flages} -body {
+test ns_connchan-2.0 {ns_connchan wsencode, basic command flags} -body {
     ns_connchan wsencode
 } -cleanup {
     ns_unregister_op GET /conn

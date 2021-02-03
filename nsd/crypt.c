@@ -173,7 +173,7 @@ static const int PC2_D[] = {
 };
 
 /*
- * The following structure maitains the key schedule.
+ * The following structure maintains the key schedule.
  */
 
 struct sched {
