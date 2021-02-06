@@ -52,7 +52,7 @@ AOLserver 4.0.11.
 
 Later AOL has refocused its business, separated from Time Warner
 and was acquired by Verizon Communications in 2015
-[url https://en.wikipedia.org/wiki/AOL]. While the latest release
+[uri https://en.wikipedia.org/wiki/AOL]. While the latest release
 of AOLserver is from 2012, NaviServer continues being actively developed.
 
 [manpage_end]
