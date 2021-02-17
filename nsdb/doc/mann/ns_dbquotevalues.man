@@ -1,6 +1,6 @@
 [include version_include.man]
 
-[manpage_begin dbquotevalues n [vset version]]
+[manpage_begin ns_dbquotevalues n [vset version]]
 [moddesc {NaviServer Module Commands}]
 [titledesc {Quote database names and values}]
 
@@ -36,12 +36,19 @@ Prepare the provided [arg list] for inclusion in an SQL statement. The
 command calls essentially [cmd ns_dbquotevalue] for every element
 of the list and combined the result with a comma.
 
+[call [cmd ns_quotelisttolist] [arg string]]
+
+Transform a string with single quoted elements into a proper Tcl
+list. In this step, remove space, backslash and single quote
+characters in the given string.
 
 [call [cmd ns_dbquotename] [arg name]]
 
 Surround [arg name] with double quotes if it contains a space. The resulting
 name can then be used in SQL statements for names of database objects such as
 tables or columns.
+
+
 
 [list_end]
 
