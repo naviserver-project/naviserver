@@ -285,12 +285,6 @@ Change the verbose setting (the Verbose parameter in the configuration file) for
 the given pool.
 
 
-[call [cmd "ns_quotelisttolist"] [arg string]]
-
-Transform a string with single quoted elements into a proper Tcl
-list. In this step, remove space, backslash and single quote
-characters in the given string.
-
 [call [cmd "ns_dberrorcode"] [arg handle]]
 
 Return the database error code for the specified database handle.
@@ -478,7 +472,7 @@ ns_section ns/db/pool/pool2 {
 [example_end]
 
 
-[see_also ns_buildsqldate ns_dbquotevalue]
+[see_also ns_buildsqldate ns_dbquotevalues]
 [keywords "server built-in" module nsdb database SQL pools]
 
 
