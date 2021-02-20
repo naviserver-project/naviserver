@@ -635,23 +635,22 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      */
 
     nsconf.home = Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "home");
-    if (mode != 'c' && nsconf.home == NULL) {
+    if (nsconf.home == NULL && mode != 'c') {
 
         /*
          *  We will try to figure out our installation directory from
-         *  executable binary.
-         *  Check if nsd is in bin/ subdirectory according to our make install,
-         *  if true make our home one level up, otherwise make home directory
-         *  where executable binary resides.
-         *  All custom installation will require "home" config parameter to be
-         *  specified in the nsd.tcl
+         *  executable binary.  Check if nsd is in bin/ subdirectory according
+         *  to our make install, if true make our home one level up, otherwise
+         *  make home directory where executable binary resides.  All custom
+         *  installation will require "home" config parameter to be specified
+         *  in the nsd.tcl
          */
 
         nsconf.home = MakePath("");
         if (nsconf.home == NULL) {
             Ns_Fatal("nsmain: missing: [%s]home", NS_CONFIG_PARAMETERS);
         }
-    } else if (mode == 'c' && nsconf.configFile == NULL) {
+    } else if (nsconf.home == NULL /* && mode == 'c' */) {
         /*
          * Try to get HOME from environment variable NAVISERVER. If
          * this is not defined, take the value from the path. Using
