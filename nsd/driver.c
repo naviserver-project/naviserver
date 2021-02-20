@@ -4665,9 +4665,9 @@ DriverLookupHost(Tcl_DString *hostDs, Driver *drvPtr)
          */
         Ns_Log(DriverDebug,
                "cannot locate host header content '%s' in virtual hosts "
-               "table of driver '%s', fall back to default '%s'",
-               hostDs->string, drvPtr->moduleName,
-               drvPtr->defMapPtr->location);
+               "table of driver '%s', fall back to default "
+               "(default mapping or driver data)",
+               hostDs->string, drvPtr->moduleName);
 
         if (Ns_LogSeverityEnabled(DriverDebug)) {
             Tcl_HashEntry  *hPtr2;
