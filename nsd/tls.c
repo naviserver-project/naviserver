@@ -366,7 +366,7 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
     OCSP_RESPONSE    *resp = NULL;
     unsigned char    *rspder = NULL;
     int               rspderlen;
-    Ns_Time           now;
+    Ns_Time           now, diff;
 
     if (srctx->verbose) {
         Ns_Log(Notice, "cert_status: callback called");
@@ -378,7 +378,6 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
      * necessary.
      */
     if (srctx->resp != NULL) {
-        Ns_Time diff;
 
         if (Ns_DiffTime(&srctx->expire, &now, &diff) < 0) {
             OCSP_CERTID *cert_id;
@@ -411,26 +410,48 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
     }
 
     /*
-     * If we have not in-memory cached the OCSP response yet, fetch the value
-     * either form the disk cache or from the URL provided via the DER encoded
-     * OCSP request.
+     * If we have no in-memory cached OCSP response, fetch the value
+     * either form the disk cache or from the URL provided via the DER
+     * encoded OCSP request.
+     *
+     * In failure cases, avoid a too eager generation of error
+     * messages in the logfile by performin also retries to obtain the
+     * OCSP response based on the timeout.
      */
-    if (srctx->resp == NULL) {
+
+    if (srctx->resp == NULL
+        && ((srctx->expire.sec == 0) || Ns_DiffTime(&srctx->expire, &now, &diff) < 0)
+        ) {
 
         result = OCSP_computeResponse(ssl, srctx, &resp);
-        if (result != SSL_TLSEXT_ERR_OK) {
-            if (resp != NULL) {
-                OCSP_RESPONSE_free(resp);
+        /*
+         * Sometimes a firewall blocks the access to an AIA server. In
+         * this case, we cannot provide a stapling. In such cases,
+         * behave just like without OCSP stapling.
+         */
+        if (unlikely(resp == NULL)) {
+            /*
+             * We got no response.
+             */
+            Ns_Log(Debug, "We got no response, result %d", result);
+        } else {
+            /*
+             * We got a response.
+             */
+            if (result != SSL_TLSEXT_ERR_OK) {
+                if (resp != NULL) {
+                    OCSP_RESPONSE_free(resp);
+                }
+                goto err;
             }
-            goto err;
+            /*
+             * Perform in-memory caching of the OCSP_RESPONSE.
+             */
+            srctx->resp = resp;
+            /*
+             * Avoid Ns_GetTime() on every invocation.
+             */
         }
-        /*
-         * Perform in-memory caching of the OCSP_RESPONSE.
-         */
-        srctx->resp = resp;
-        /*
-         * Avoid Ns_GetTime() on every invocation.
-         */
         Ns_GetTime(&now);
         /* TODO: provide a configurable re-check value */
         now.sec += 300;
@@ -439,23 +460,37 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
         resp = srctx->resp;
     }
 
-    rspderlen = i2d_OCSP_RESPONSE(resp, &rspder);
+    if (resp != NULL) {
+        rspderlen = i2d_OCSP_RESPONSE(resp, &rspder);
 
-    Ns_Log(Debug, "cert_status: callback returns OCSP_RESPONSE with length %d", rspderlen);
-    if (rspderlen <= 0) {
-        if (resp != NULL) {
-            OCSP_RESPONSE_free(resp);
-            srctx->resp = NULL;
+        Ns_Log(Debug, "cert_status: callback returns OCSP_RESPONSE with length %d", rspderlen);
+        if (rspderlen <= 0) {
+            if (resp != NULL) {
+                OCSP_RESPONSE_free(resp);
+                srctx->resp = NULL;
+            }
+            goto err;
         }
-        goto err;
-    }
+        SSL_set_tlsext_status_ocsp_resp(ssl, rspder, rspderlen);
+        if (srctx->verbose) {
+            Ns_Log(Notice, "cert_status: OCSP response sent to client");
+            //OCSP_RESPONSE_print(bio_err, resp, 2);
+        }
+        result = SSL_TLSEXT_ERR_OK;
+    } else {
+        /*
+         * We could not find a cached result or a response from the
+         * AIA. We cannot perform staping, but we still do not want to
+         * cancel the request fully. We have to cancel the previous
+         * error from the OCSP validity check, otherwise OpenSSL will
+         * cancel the request with:
+         * "routines:OCSP_check_validity:status expired"
+         */
+        result = SSL_TLSEXT_ERR_NOACK;
 
-    SSL_set_tlsext_status_ocsp_resp(ssl, rspder, rspderlen);
-    if (srctx->verbose) {
-        Ns_Log(Notice, "cert_status: OCSP response sent to client");
-        //OCSP_RESPONSE_print(bio_err, resp, 2);
+        ERR_clear_error();
+        Ns_Log(Notice, "cert_status: OCSP cannot validate the certificate");
     }
-    result = SSL_TLSEXT_ERR_OK;
 
  err:
     if (result != SSL_TLSEXT_ERR_OK) {
@@ -463,7 +498,7 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
     }
 
     //OCSP_RESPONSE_free(resp);
-
+    Ns_Log(Debug, "SSL_cert_statusCB returns result %d", result);
     return result;
 }
 
@@ -742,7 +777,8 @@ OCSP_computeResponse(SSL *ssl, const SSLCertStatusArg *srctx, OCSP_RESPONSE **re
         *resp = OCSP_FromAIA(req, sk_OPENSSL_STRING_value(aia, 0),
                              srctx->timeout);
         if (*resp == NULL) {
-            Ns_Log(Warning, "cert_status: error querying responder");
+            Ns_Log(Warning, "cert_status: no OCSP response obtained");
+            //result = SSL_TLSEXT_ERR_OK;
         } else {
             BIO        *derbio;
             const char *fileName = cachedResponseFile.string;
@@ -887,7 +923,8 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
                         if (*stringValue == '2') {
                             status = NS_OK;
                         } else {
-                            /*fprintf(stderr, "### OCSP_REQUEST status <%s>\n", stringValue);*/
+                            Ns_Log(Warning, "OCSP request returns status code %s from AIA %s",
+                                   stringValue, dsCMD.string);
                             status = NS_ERROR;
                         }
                     } else {
@@ -1463,11 +1500,13 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
             }
 #endif
 
-#if OPENSSL_VERSION_NUMBER > 0x00908070 && !defined(OPENSSL_NO_EC)
+#if OPENSSL_VERSION_NUMBER > 0x00908070 && !defined(HAVE_OPENSSL_3) && !defined(OPENSSL_NO_EC)
             /*
              * Generate key for eliptic curve cryptography (potentially used
              * for Elliptic Curve Digital Signature Algorithm (ECDSA) and
              * Elliptic Curve Diffie-Hellman (ECDH).
+             *
+             * At least in OpenSSL3 secure re-negotiation is default.
              */
             {
                 EC_KEY *ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
@@ -1478,6 +1517,25 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
                 }
                 SSL_CTX_set_options(cfgPtr->ctx, SSL_OP_SINGLE_ECDH_USE);
                 if (SSL_CTX_set_tmp_ecdh(cfgPtr->ctx, ecdh) != 1) {
+                    Ns_Log(Error, "nsssl: Couldn't set ecdh parameters");
+                    return NS_ERROR;
+                }
+                EC_KEY_free (ecdh);
+            }
+            {
+                EC_KEY *ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+
+                if (ecdh == NULL) {
+                    Ns_Log(Error, "nsssl: Couldn't obtain ecdh parameters");
+                    return NS_ERROR;
+                }
+                SSL_CTX_set_options(cfgPtr->ctx, SSL_OP_SINGLE_ECDH_USE);
+                /*
+                 * The last argument of SSL_CTX_set1_groups_list() can
+                 * contain multipl group names separate by a semicolon
+                 * (e.g. "P-521:P-384:P-256:X25519:ffdhe2048")
+                 */
+                if (SSL_CTX_set1_groups(cfgPtr->ctx, "P-256") != 1) {
                     Ns_Log(Error, "nsssl: Couldn't set ecdh parameters");
                     return NS_ERROR;
                 }
