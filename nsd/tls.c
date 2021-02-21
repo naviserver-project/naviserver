@@ -896,15 +896,16 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
             Tcl_Interp *interp = Ns_TclAllocateInterp(nsconf.defaultServer);
 
             if (interp != NULL) {
+                Tcl_Obj    *resultObj;
                 Tcl_DString dsResult;
 
                 Tcl_DStringInit(&dsResult);
-
                 Ns_Log(Notice, "OCSP command: %s\n", dsCMD.string);
+
                 if (Tcl_EvalEx(interp, dsCMD.string, dsCMD.length, 0) != TCL_OK) {
-                    Ns_Log(Error, "OCSP_REQUEST '%s' returned error", dsCMD.string);
+                    resultObj = Tcl_GetObjResult(interp);
+                    Ns_Log(Error, "OCSP_REQUEST '%s' returned error '%s'", dsCMD.string, Tcl_GetString(resultObj));
                 } else {
-                    Tcl_Obj *resultObj;
                     Tcl_Obj *statusObj = Tcl_NewStringObj("status", -1);
                     Tcl_Obj *bodyObj = Tcl_NewStringObj("body", -1);
                     Tcl_Obj *valueObj = NULL;
@@ -1517,25 +1518,6 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
                 }
                 SSL_CTX_set_options(cfgPtr->ctx, SSL_OP_SINGLE_ECDH_USE);
                 if (SSL_CTX_set_tmp_ecdh(cfgPtr->ctx, ecdh) != 1) {
-                    Ns_Log(Error, "nsssl: Couldn't set ecdh parameters");
-                    return NS_ERROR;
-                }
-                EC_KEY_free (ecdh);
-            }
-            {
-                EC_KEY *ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-
-                if (ecdh == NULL) {
-                    Ns_Log(Error, "nsssl: Couldn't obtain ecdh parameters");
-                    return NS_ERROR;
-                }
-                SSL_CTX_set_options(cfgPtr->ctx, SSL_OP_SINGLE_ECDH_USE);
-                /*
-                 * The last argument of SSL_CTX_set1_groups_list() can
-                 * contain multipl group names separate by a semicolon
-                 * (e.g. "P-521:P-384:P-256:X25519:ffdhe2048")
-                 */
-                if (SSL_CTX_set1_groups(cfgPtr->ctx, "P-256") != 1) {
                     Ns_Log(Error, "nsssl: Couldn't set ecdh parameters");
                     return NS_ERROR;
                 }
