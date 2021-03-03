@@ -55,6 +55,7 @@
  * String equivalents of some header keys
  */
 static const char *transferEncodingHeader = "Transfer-Encoding";
+static const char *acceptEncodingHeader   = "Accept-Encoding";
 static const char *contentEncodingHeader  = "Content-Encoding";
 static const char *contentTypeHeader      = "Content-Type";
 static const char *contentLengthHeader    = "Content-Length";
@@ -1489,7 +1490,7 @@ HttpQueue(
     bool run
 ) {
     Tcl_Interp *interp;
-    int         result = TCL_OK, decompress = 0, binary = 0;
+    int         result = TCL_OK, decompress = 0, raw = 0, binary = 0;
     Tcl_WideInt spoolLimit = -1;
     int         verifyCert = 0, keepHostHdr = 0;
     NsHttpTask *httpPtr = NULL;
@@ -1521,6 +1522,7 @@ HttpQueue(
         {"-cafile",           Ns_ObjvString,  &caFile,         NULL},
         {"-capath",           Ns_ObjvString,  &caPath,         NULL},
         {"-cert",             Ns_ObjvString,  &cert,           NULL},
+        {"-raw",              Ns_ObjvBool,    &raw,            INT2PTR(NS_TRUE)},
         {"-decompress",       Ns_ObjvBool,    &decompress,     INT2PTR(NS_TRUE)},
         {"-donecallback",     Ns_ObjvString,  &doneCallback,   NULL},
         {"-expire",           Ns_ObjvTime,    &expirePtr,      NULL},
@@ -1557,6 +1559,10 @@ HttpQueue(
         Ns_TclPrintfResult(interp, "only one of -body, -body_chan or -body_file"
                            " options are allowed");
         result = TCL_ERROR;
+    } else if (unlikely(decompress == 0)) {
+        Ns_Log(Warning, "the -decompress option is deprecated, use -raw instead");
+    } else if (raw == 1) {
+        decompress = 0;
     }
 
     if (result == TCL_OK && bodyFileName != NULL) {
@@ -1647,7 +1653,7 @@ HttpQueue(
         if (doneCallback != NULL) {
             httpPtr->doneCallback = ns_strdup(doneCallback);
         }
-        if (decompress != 0) {
+        if (likely(decompress != 0) && likely(raw == 0)) {
             httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
         }
         if (binary != 0) {
@@ -1868,8 +1874,8 @@ HttpGetResult(
          * We have a choice between binary and string objects.
          * Unfortunately, this is mostly whole lotta guess-work...
          */
-        if ((httpPtr->flags & NS_HTTP_FLAG_GZIP_ENCODING) != 0u) {
-            if ((httpPtr->flags & NS_HTTP_FLAG_DECOMPRESS) == 0) {
+        if (unlikely((httpPtr->flags & NS_HTTP_FLAG_GZIP_ENCODING) != 0u)) {
+            if (unlikely((httpPtr->flags & NS_HTTP_FLAG_DECOMPRESS) == 0u)) {
 
                 /*
                  * Gzipped but not inflated content
@@ -2152,7 +2158,7 @@ HttpCheckSpool(
         header = Ns_SetIGet(httpPtr->replyHeaders, contentEncodingHeader);
         if (header != NULL && Ns_Match(header, "gzip") != NULL) {
             httpPtr->flags |= NS_HTTP_FLAG_GZIP_ENCODING;
-            if ((httpPtr->flags & NS_HTTP_FLAG_GUNZIP) != 0u) {
+            if ((httpPtr->flags & NS_HTTP_FLAG_DECOMPRESS) != 0u) {
                 httpPtr->compress = ns_calloc(1u, sizeof(Ns_CompressStream));
                 (void) Ns_InflateInit(httpPtr->compress);
                 Ns_Log(Ns_LogTaskDebug, "HttpCheckSpool: %s: %s",
@@ -2396,7 +2402,7 @@ HttpConnect(
     Tcl_Interp      *interp;
     NsHttpTask      *httpPtr;
     Ns_DString      *dsPtr;
-    bool             haveUserAgent = NS_FALSE;
+    bool             haveUserAgent = NS_FALSE, ownHeaders = NS_FALSE;
     unsigned short   portNr, defPortNr;
     char            *port = (char*)NS_EMPTY_STRING;
     char            *url2, *proto, *host, *path, *tail;
@@ -2520,6 +2526,25 @@ HttpConnect(
     }
 
     /*
+     * If content decompression allowed and no encodings explicitly set
+     * we tell remote what we would accept per-default.
+     */
+#ifdef HAVE_ZLIB_H
+    if (likely((httpPtr->flags & NS_HTTP_FLAG_DECOMPRESS) != 0u)) {
+        if (hdrPtr == NULL || Ns_SetIFind(hdrPtr, acceptEncodingHeader) == -1) {
+            const char *acceptEncodings = "gzip, deflate";
+
+            if (hdrPtr == NULL) {
+                hdrPtr = Ns_SetCreate(NULL);
+                ownHeaders = NS_TRUE;
+            }
+
+            Ns_SetPut(hdrPtr, acceptEncodingHeader, acceptEncodings);
+        }
+    }
+#endif
+
+    /*
      * Now we are ready to attempt the connection.
      * If no timeout given, assume 10 seconds.
      */
@@ -2619,7 +2644,7 @@ HttpConnect(
      * Add provided headers, remove headers we are providing explicitly,
      * check User-Agent header existence.
      */
-    if (hdrPtr != NULL) {
+    if (ownHeaders == NS_FALSE && hdrPtr != NULL) {
         size_t ii;
 
         if (keepHostHdr == NS_FALSE) {
@@ -2677,7 +2702,7 @@ HttpConnect(
 
     } else {
 
-        if (hdrPtr != NULL) {
+        if (ownHeaders == NS_FALSE && hdrPtr != NULL) {
             contentType = Ns_SetIGet(hdrPtr, contentTypeHeader);
         }
 
@@ -2774,9 +2799,17 @@ HttpConnect(
         Tcl_DStringFree(&d);
     }
 
+
+    if (ownHeaders == NS_TRUE) {
+        Ns_SetFree(hdrPtr);
+    }
+
     return TCL_OK;
 
  fail:
+    if (ownHeaders == NS_TRUE) {
+        Ns_SetFree(hdrPtr);
+    }
     ns_free((void *)url2);
     HttpClose(httpPtr);
 
@@ -2868,7 +2901,8 @@ HttpAppendBuffer(
     Ns_Log(Ns_LogTaskDebug, "HttpAppendBuffer: got %" PRIuz " bytes flags:%.6x",
            size, httpPtr->flags);
 
-    if (likely((httpPtr->flags & NS_HTTP_FLAG_GUNZIP) == 0u)) {
+    if (unlikely((httpPtr->flags & NS_HTTP_FLAG_DECOMPRESS) == 0u)
+        || likely((httpPtr->flags & NS_HTTP_FLAG_GZIP_ENCODING) == 0u)) {
 
         /*
          * Output raw content
