@@ -23,7 +23,7 @@ and process replies from web servers.
 	[opt [option "-cafile [arg CA]"]] \
 	[opt [option "-capath [arg CP]"]] \
 	[opt [option "-cert [arg C]"]] \
-	[opt [option "-decompress"]] \
+	[opt [option "-raw"]] \
 	[opt [option "-donecallback [arg call]"]] \
 	[opt [option "-headers [arg ns_set]"]] \
 	[opt [option "-hostname [arg HOSTNAME ]"]] \
@@ -106,9 +106,8 @@ the subject's certificate (actual client or server certificate),
 followed by intermediate CA certificates if applicable, and ending at
 the highest level (root) CA.
 
-[opt_def -decompress]
-In opt_def the response has a content encoding of gzip, automatically
-decompress the result.
+[opt_def -raw]
+delivers the content as-is (unmodified), regardless of the content encoding.
 
 [opt_def -donecallback [arg call]]
 this callback argument will be executed as Tcl script when the requests
@@ -184,7 +183,7 @@ anonymous cipher is used, this option is ignored.
 	[opt [option "-cafile [arg CA]"]] \
 	[opt [option "-capath [arg CP]"]] \
 	[opt [option "-cert [arg C]"]] \
-	[opt [option "-decompress"]] \
+	[opt [option "-raw"]] \
 	[opt [option "-donecallback [arg call]"]] \
 	[opt [option "-headers [arg ns_set]"]] \
 	[opt [option "-hostname [arg HOSTNAME ]"]] \
@@ -318,7 +317,7 @@ First, a minimal GET example:
 [example_begin]
  % ns_http queue http://www.google.com
  http0
- 
+
  % ns_http wait http0
  status 302 time 0:97095 headers d0 body { ... }
 [example_end]
@@ -365,20 +364,20 @@ returns reply-headers.
    lappend post_data "[lb]ns_urlencode $key[rb]=[lb]ns_urlencode $value[rb]"
  }
  set post_data [lb]join $post_data &[rb]
- 
+
  #######################
  # submit POST request
  #######################
  set requestHeaders [lb]ns_set create[rb]
  set replyHeaders [lb]ns_set create[rb]
  ns_set update $requestHeaders "Content-type" "application/x-www-form-urlencoded"
- 
+
  set h [lb]ns_http queue -method POST \
    -headers $requestHeaders \
    -timeout 10.0 \
    -body $post_data https://duckduckgo.com/[rb]
  set r [lb]ns_http wait $h[rb]
- 
+
  #######################
  # output results
  #######################
@@ -394,10 +393,10 @@ results to a file if the result is larger than 1000 bytes.
 [example_begin]
  set replyHeaders [lb]ns_set create[rb]
  ns_set update $requestHeaders Host localhost
- 
+
  set h [lb]ns_http queue -timeout 10.0 http://www.google.com[rb]
  ns_http wait -result R -headers $replyHeaders -status S -spoolsize 1Kb -file F $h
- 
+
  if {[lb]info exists F[rb]} {
    ns_log notice "Spooled [lb]file size $F[rb] bytes to $F"
    file delete -- $F
