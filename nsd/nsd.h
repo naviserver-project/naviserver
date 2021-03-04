@@ -1139,11 +1139,11 @@ typedef struct _NsHttpChunk {
     NsHttpParseProc  **parsers;          /* Array of chunked encoding parsers */
 } NsHttpChunk;
 
-#define NS_HTTP_FLAG_DECOMPRESS    (1<<0)
-#define NS_HTTP_FLAG_GZIP_ENCODING (1<<1)
-#define NS_HTTP_FLAG_CHUNKED       (1<<2)
-#define NS_HTTP_FLAG_CHUNKED_END   (1<<3)
-#define NS_HTTP_FLAG_BINARY        (1<<4)
+#define NS_HTTP_FLAG_DECOMPRESS    (1u<<0)
+#define NS_HTTP_FLAG_GZIP_ENCODING (1u<<1)
+#define NS_HTTP_FLAG_CHUNKED       (1u<<2)
+#define NS_HTTP_FLAG_CHUNKED_END   (1u<<3)
+#define NS_HTTP_FLAG_BINARY        (1u<<4)
 
 #define NS_HTTP_FLAG_GUNZIP (NS_HTTP_FLAG_DECOMPRESS|NS_HTTP_FLAG_GZIP_ENCODING)
 

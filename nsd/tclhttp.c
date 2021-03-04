@@ -1660,6 +1660,8 @@ HttpQueue(
         }
         if (likely(decompress != 0) && likely(raw == 0)) {
             httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
+        } else {
+            httpPtr->flags = (httpPtr->flags & ~NS_HTTP_FLAG_DECOMPRESS);
         }
         if (binary != 0) {
             httpPtr->flags |= NS_HTTP_FLAG_BINARY;
