@@ -308,43 +308,6 @@ ns_gmtime(const time_t *timep)
 #endif
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * ns_ctime
- *
- *----------------------------------------------------------------------
- */
-char *
-ns_ctime(const time_t *timep)
-{
-#ifdef _MSC_VER
-
-    Tls *tlsPtr = GetTls();
-    int errNum;
-
-    NS_NONNULL_ASSERT(timep != NULL);
-    errNum = ctime_s(tlsPtr->ctbuf, sizeof(tlsPtr->ctbuf), timep);
-    if (errNum != 0) {
-        NsThreadFatal("ns_ctime", "ctime_s", errNum);
-    }
-
-    return tlsPtr->ctbuf;
-
-#elif defined(_WIN32)
-
-    NS_NONNULL_ASSERT(timep != NULL);
-    return ctime(timep);
-
-#else
-    Tls *tlsPtr = GetTls();
-    NS_NONNULL_ASSERT(timep != NULL);
-    return ctime_r(timep, tlsPtr->ctbuf);
-#endif
-}
-
-
 /*
  *----------------------------------------------------------------------
  *
