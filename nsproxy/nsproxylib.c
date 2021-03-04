@@ -3182,7 +3182,7 @@ ReaperThread(void *UNUSED(arg))
     reaperState = Running;
     Ns_CondSignal(&pcond); /* Wakeup starter thread */
 
-    while (1) {
+    for (;;) {
         Tcl_HashEntry *hPtr;
         Worker          *prevWorkerPtr;
 
