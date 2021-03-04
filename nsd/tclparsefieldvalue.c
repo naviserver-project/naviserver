@@ -288,7 +288,7 @@ NsTclParseFieldvalue(ClientData UNUSED(clientData), Tcl_Interp *interp,
         Ns_DStringInit(&value);
         p1 = SkipWhitespace((unsigned char *)sourceString);
 
-        while (1) {
+        for (;;) {
             const unsigned char *p2;
 
             p1 = SkipWhitespace(p1);
