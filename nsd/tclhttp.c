@@ -978,9 +978,9 @@ HttpWaitObjCmd(
             Ns_Log(Warning, "ns_http_wait: -headers option is deprecated");
         }
         if (decompress != 0) {
-            Ns_Log(Warning, "ns_http_wait: -decompress option is deprecated");
-            httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
+            Ns_Log(Warning, "ns_http_wait: ignore obsolete flag -decompress");
         }
+
         if (binary != 0) {
             Ns_Log(Warning, "ns_http_wait: -binary option is deprecated");
             httpPtr->flags |= NS_HTTP_FLAG_BINARY;
@@ -1000,6 +1000,11 @@ HttpWaitObjCmd(
             }
             Ns_MutexUnlock(&httpPtr->lock);
         }
+        /*
+         * Always decompress unless told differently. Here we do not have the
+         * "-raw" option, since we do not need backward compatibility.
+         */
+        httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
 
         if (elapsedVarObj != NULL) {
             Ns_Log(Warning, "ns_http_wait: -elapsed option is deprecated");
@@ -1559,10 +1564,10 @@ HttpQueue(
         Ns_TclPrintfResult(interp, "only one of -body, -body_chan or -body_file"
                            " options are allowed");
         result = TCL_ERROR;
-    } else if (unlikely(decompress == 0)) {
-        Ns_Log(Warning, "the -decompress option is deprecated, use -raw instead");
-    } else if (raw == 1) {
-        decompress = 0;
+    } else if (unlikely(decompress != 0)) {
+        Ns_Log(Warning, "ignore obsolete flag -decompress");
+    } else if (raw != 1) {
+        decompress = 1;
     }
 
     if (result == TCL_OK && bodyFileName != NULL) {
