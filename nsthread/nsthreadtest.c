@@ -86,18 +86,14 @@ static void
 Msg(const char *fmt,...)
 {
     va_list         ap;
-    char           *s, *r;
     time_t          now;
+    char            buffer[80];
 
     time(&now);
-    s = ns_ctime(&now);
-    r = strchr(s, INTCHAR('\n'));
-    if (r != NULL) {
-        *r = '\0';
-    }
+    strftime(buffer, sizeof(buffer), "%d/%b/%Y:%H:%M:%S", localtime(&now));
     va_start(ap, fmt);
     Ns_MutexLock(&slock);
-    printf("[%s][%s]: ", Ns_ThreadGetName(), s);
+    printf("[%s][%s]: ", Ns_ThreadGetName(), buffer);
     vfprintf(stdout, fmt, ap);
     printf("\n");
     Ns_MutexUnlock(&slock);
@@ -192,18 +188,20 @@ WorkThread(void *arg)
     if (i == 5) {
         Ns_Time         to;
         Ns_ReturnCode   st;
+        char            buffer[80];
 
         Ns_GetTime(&to);
         Msg("time: " NS_TIME_FMT, (int64_t) to.sec, to.usec);
         Ns_IncrTime(&to, 5, 0);
         Msg("time: " NS_TIME_FMT, (int64_t) to.sec, to.usec);
+        strftime(buffer, sizeof(buffer), "%d/%b/%Y:%H:%M:%S", localtime(&now));
+        Msg("timed wait starts: %s", buffer);
         Ns_MutexLock(&lock);
-        time(&now);
-        Msg("timed wait starts: %s", ns_ctime(&now));
         st = Ns_CondTimedWait(&cond, &lock, &to);
         Ns_MutexUnlock(&lock);
         time(&now);
-        Msg("timed wait ends: %s - status: %d", ns_ctime(&now), st);
+        strftime(buffer, sizeof(buffer), "%d/%b/%Y:%H:%M:%S", localtime(&now));
+        Msg("timed wait ends: %s - status: %d", buffer, st);
     }
     if (i == 9) {
         Msg("sleep 4 seconds start");
