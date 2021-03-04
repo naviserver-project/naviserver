@@ -1937,8 +1937,6 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
     /*
      * Append the newly read data.
      */
-
-    //{int i; for(i=0; i<MIN(150, nRead); i++) {fprintf(stderr,"%.2x",buffer[i]&0xff);} fprintf(stderr, "\n");}
     Tcl_DStringAppend(connChanPtr->frameBuffer, buffer, (int)nRead);
 
     /*
@@ -1951,7 +1949,6 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
         goto incomplete;
     }
 
-    //{int i; for(i=0; i<MIN(150, connChanPtr->frameBuffer->length); i++) {fprintf(stderr,"%.2x",connChanPtr->frameBuffer->string[i]&0xff);} fprintf(stderr, "\n");}
     /*
      * Check, if frame is complete.
      */
@@ -1985,26 +1982,26 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
         memcpy(&mask, &data[offset], 4);
         offset += 4;
     }
-    //fprintf(stderr, "WS: payload length %zu offset %zu avail %d opcode %d fin %d, masked %d MASK ",
-    //        payloadLength, offset, connChanPtr->frameBuffer->length, opcode, finished, masked);
-    //{int i; for(i=0; i<4; i++) {fprintf(stderr,"%.2x",mask[i]&0xff);} fprintf(stderr, "\n");}
 
     frameLength = (int)(offset + payloadLength);
     if (connChanPtr->frameBuffer->length < (int)frameLength) {
-        //fprintf(stderr, "WS: INCOMPLETE offset %zu + payload length %zu = frameLength %d\n", offset, payloadLength, frameLength);
-        //{int i; for(i=0; i<connChanPtr->frameBuffer->length; i++) {fprintf(stderr,"%.2x",connChanPtr->frameBuffer->string[i]&0xff);} fprintf(stderr, "\n");}
         goto incomplete;
     }
-    //fprintf(stderr, "WS: COMPLETE ");
-    //{int i; for(i=0; i<frameLength; i++) {fprintf(stderr,"%.2x",connChanPtr->frameBuffer->string[i]&0xff);} fprintf(stderr, "\n");}
 
     Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("fin", 3), Tcl_NewIntObj(finished));
     Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("frame", 5), Tcl_NewStringObj("complete", 8));
 
     if (!finished) {
-        Ns_Log(Warning, "WS: unfinished frame, bytes %ld payload length %zu offset %zu avail %d opcode %d fin %d, masked %d",
-               nRead, payloadLength, offset, connChanPtr->frameBuffer->length, opcode, finished, masked);
-        {int i; for(i=0; i<connChanPtr->frameBuffer->length; i++) {fprintf(stderr,"%.2x",connChanPtr->frameBuffer->string[i]&0xff);} fprintf(stderr, "\n");}
+        Ns_Log(Warning, "WS: unfinished frame, bytes %ld payload length %zu offset %zu "
+               "avail %d opcode %d fin %d, masked %d",
+               nRead, payloadLength, offset, connChanPtr->frameBuffer->length,
+               opcode, finished, masked);
+
+        /*{   int i; for(i=0; i<connChanPtr->frameBuffer->length; i++) {
+                fprintf(stderr,"%.2x",connChanPtr->frameBuffer->string[i]&0xff);
+            }
+            fprintf(stderr, "\n");
+            }*/
     }
 
     if (masked) {
@@ -2013,8 +2010,6 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
         for( i = offset, j = 0u; j < payloadLength; i++, j++ ) {
             data[ i ] = data[ i ] ^ mask[ j % 4];
         }
-        //fprintf(stderr, "\n");
-        //{int i; for(i=offset; i<offset+payloadLength; i++) {fprintf(stderr,"%.2x",data[i]&0xff);} fprintf(stderr, "\n");}
     }
 
     fragmentsBufferLength = ConnChanBufferSize(connChanPtr, fragmentsBuffer);
@@ -2030,7 +2025,8 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
         if (fragmentsBufferLength == 0) {
             payloadObj = Tcl_NewByteArrayObj(&data[offset], (int)payloadLength);
         } else {
-            Tcl_DStringAppend(connChanPtr->fragmentsBuffer, (const char *)&data[offset], (int)payloadLength);
+            Tcl_DStringAppend(connChanPtr->fragmentsBuffer,
+                              (const char *)&data[offset], (int)payloadLength);
             payloadObj = Tcl_NewByteArrayObj((const unsigned char *)connChanPtr->fragmentsBuffer->string,
                                              connChanPtr->fragmentsBuffer->length);
             Ns_Log(Ns_LogConnchanDebug,
@@ -2061,7 +2057,8 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
         if (fragmentsBufferLength == 0) {
             connChanPtr->fragmentsOpcode = opcode;
         }
-        Tcl_DStringAppend(connChanPtr->fragmentsBuffer, (const char *)&data[offset], (int)payloadLength);
+        Tcl_DStringAppend(connChanPtr->fragmentsBuffer,
+                          (const char *)&data[offset], (int)payloadLength);
         Ns_Log(Ns_LogConnchanDebug,
                "WS: fin 0 opcode %d (fragments opcode %d) "
                "append %d to bytes to the fragmentsBuffer, totaling %d bytes",
@@ -2097,7 +2094,9 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
 
  exception:
     connChanPtr->frameNeedsData = NS_FALSE;
-    Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("frame", 5), Tcl_NewStringObj("exception", 10));
+    Tcl_DictObjPut(NULL, resultObj,
+                   Tcl_NewStringObj("frame", 5),
+                   Tcl_NewStringObj("exception", 10));
     WebsocketFrameSetCommonMembers(resultObj, nRead, connChanPtr);
     return resultObj;
 }
@@ -2279,7 +2278,9 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                 bufs[0].iov_len = (size_t)connChanPtr->sendBuffer->length;
                 bufs[1].iov_len = 0u;
                 toSend = connChanPtr->sendBuffer->length;
-                Ns_Log(Ns_LogConnchanDebug, "WS: send buffered only msgLen == 0, buf length %zu toSend %d", bufs[0].iov_len, toSend);
+                Ns_Log(Ns_LogConnchanDebug,
+                       "WS: send buffered only msgLen == 0, buf length %zu toSend %d",
+                       bufs[0].iov_len, toSend);
             } else {
                 bufs[0].iov_base = (void *)msgString;
                 bufs[0].iov_len = (size_t)msgLen;
@@ -2293,7 +2294,8 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                    nBufs, bufs[0].iov_len, bufs[1].iov_len, toSend);*/
 
             if (toSend > 0) {
-                nSent = ConnchanDriverSend(interp, connChanPtr, bufs, nBufs, 0u, &connChanPtr->sendTimeout);
+                nSent = ConnchanDriverSend(interp, connChanPtr, bufs, nBufs, 0u,
+                                           &connChanPtr->sendTimeout);
             } else {
                 nSent = 0;
             }
@@ -2576,7 +2578,6 @@ ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
             memcpy(&data[2], &len64, 8);
             offset = 10;
         }
-        //{int i; fprintf(stderr, "masked %d length %d first two bytes: ", masked, messageLength); for(i=0; i<2; i++) {fprintf(stderr,"%.2x",data[i]&0xff);} fprintf(stderr, "\n");}
 
         if (masked) {
             unsigned char mask[4];
@@ -2614,7 +2615,6 @@ ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
             memcpy(&data[offset], &messageString[0], (size_t)messageLength);
         }
 
-        //{size_t i; for(i=0; i<(size_t)frameDs.length; i++) {fprintf(stderr,"%.2x",data[i]&0xff);} fprintf(stderr, "\n");}
         Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(data, frameDs.length));
 
         Tcl_DStringFree(&messageDs);
