@@ -1464,7 +1464,7 @@ GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Ob
             }
             if (inquote) {
                 Tcl_DStringAppend(&elem, "\n", 1);
-                Tcl_DStringTrunc(&line, 0);
+                Tcl_DStringSetLength(&line, 0);
                 continue;
             }
             break;
