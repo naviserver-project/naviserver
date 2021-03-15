@@ -40,7 +40,7 @@
  * Static functions defined in this file.
  */
 
-static Ns_Callback *cleanupProcs[NS_CONN_MAXCLS];
+static Ns_Callback *cleanupProcs[NS_CONN_MAXCLS+1];
 static void **GetSlot(const Ns_Cls *clsPtr, Ns_Conn *conn) NS_GNUC_PURE;
 
 
