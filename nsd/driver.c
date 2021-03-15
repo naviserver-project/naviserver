@@ -1065,7 +1065,7 @@ PortsParse(Ns_DList *dlPtr, const char *listString, const char *path)
  *      argument.
  *
  * Results:
- *      String content fo the Tcl_DString.
+ *      String content of the Tcl_DString.
  *
  * Side effects:
  *      None.

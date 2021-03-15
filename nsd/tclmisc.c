@@ -1363,7 +1363,7 @@ NsTclCryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
            Ns_TclPrintfResult(interp, "salt string must be 2 characters long");
            result = TCL_ERROR;
 
-       } else {
+        } else {
             char buf[NS_ENCRYPT_BUFSIZE];
 
             Tcl_SetObjResult(interp,
