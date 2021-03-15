@@ -809,7 +809,8 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
                 && (filePtr->mtime != connPtr->fileInfo.st_mtime
                     || filePtr->size != (size_t)connPtr->fileInfo.st_size
                     || filePtr->dev  != (dev_t)connPtr->fileInfo.st_dev
-                    || filePtr->ino  != connPtr->fileInfo.st_ino)) {
+                    || filePtr->ino  != connPtr->fileInfo.st_ino)
+                ) {
                 Ns_CacheUnsetValue(entry);
                 isNew = 1;
             }
