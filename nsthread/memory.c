@@ -68,10 +68,16 @@ void *ns_realloc(void *ptr, size_t size)  {
 void *ns_malloc(size_t size) {
     void *result;
 
-    assert(size > 0u);
-
+    /*
+     * In case of size == 0, the allowed result of a malloc call is either
+     * NULL or a pointer to zero allocated bytes. Therefore, we cannot deduce
+     * in general, that a malloc() result of NULL means out of memory.
+     */
     result = malloc(size);
-    if (result == NULL) {
+    /*if (size == 0u) {
+        fprintf(stderr, "ZERO ns_malloc size=%lu ptr %p\n", size, result);
+        }*/
+    if (unlikely(result == NULL && size > 0u)) {
         fprintf(stderr, "Fatal: failed to allocate %" PRIuz " bytes.\n", size);
         abort();
     }
