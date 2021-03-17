@@ -95,6 +95,7 @@ typedef struct NsSSLConfig {
     Ns_Mutex  lock;
     int       verify;
     int       deferaccept;  /* Enable the TCP_DEFER_ACCEPT optimization. */
+    int       nodelay;      /* Enable the TCP_NODELAY optimization. */
     DH       *dhKey512;     /* Fallback Diffie Hellman keys of length 512 */
     DH       *dhKey1024;    /* Fallback Diffie Hellman keys of length 1024 */
     DH       *dhKey2048;    /* Fallback Diffie Hellman keys of length 2048 */

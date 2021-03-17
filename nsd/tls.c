@@ -1306,7 +1306,7 @@ ReportError(Tcl_Interp *interp, const char *fmt, ...)
  * NsSSLConfigNew --
  *
  *      Creates a new NsSSLConfig structure and sets standard
- *      configuration parameters ("deferaccept" and "verify").
+ *      configuration parameters ("deferaccept", "nodelay", and "verify").
  *
  * Results:
  *      Pointer to a new NsSSLConfig.
@@ -1323,6 +1323,7 @@ NsSSLConfigNew(const char *path)
 
     cfgPtr = ns_calloc(1, sizeof(NsSSLConfig));
     cfgPtr->deferaccept = Ns_ConfigBool(path, "deferaccept", NS_FALSE);
+    cfgPtr->nodelay = Ns_ConfigBool(path, "nodelay", NS_TRUE);
     cfgPtr->verify = Ns_ConfigBool(path, "verify", 0);
     return cfgPtr;
 }
