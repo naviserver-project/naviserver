@@ -42,7 +42,7 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
 
 typedef struct Config {
     int        deferaccept;  /* Enable the TCP_DEFER_ACCEPT optimization. */
-    int        nodelay;      /* Enable the TCP_NODEALY optimization. */
+    int        nodelay;      /* Enable the TCP_NODELAY optimization. */
 } Config;
 
 /*
