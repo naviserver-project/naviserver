@@ -1257,6 +1257,37 @@ Ns_SockSetBlocking(NS_SOCKET sock)
     return status;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockSetNodelay --
+ *
+ *      Set socket option TCP_NODELAY when defined.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Ns_SockSetNodelay(NS_SOCKET sock)
+{
+#ifdef TCP_NODELAY
+    int value = 1;
+
+    if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
+                   (const void *)&value, sizeof(value)) == -1) {
+        Ns_Log(Error, "nssock: setsockopt(TCP_NODELAY): %s",
+               ns_sockstrerror(ns_sockerrno));
+    } else {
+        Ns_Log(Debug, "nodelay: socket option TCP_NODELAY activated");
+    }
+#endif
+}
+
 
 /*
  *----------------------------------------------------------------------

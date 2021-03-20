@@ -59,9 +59,6 @@ static Ns_DriverKeepProc Keep;
 
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 
-static void SetNodelay(const Ns_Driver *driver, NS_SOCKET sock)
-    NS_GNUC_NONNULL(1);
-
 
 /*
  *----------------------------------------------------------------------
@@ -83,16 +80,16 @@ NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
 {
     Ns_DriverInitData  init;
-    Config            *cfg;
+    Config            *drvCfgPtr;
     const char        *path;
 
     NS_NONNULL_ASSERT(module != NULL);
 
     memset(&init, 0, sizeof(init));
     path = Ns_ConfigSectionPath(NULL, server, module, (char *)0L);
-    cfg = ns_malloc(sizeof(Config));
-    cfg->deferaccept = Ns_ConfigBool(path, "deferaccept", NS_FALSE);
-    cfg->nodelay = Ns_ConfigBool(path, "nodelay", NS_TRUE);
+    drvCfgPtr = ns_malloc(sizeof(Config));
+    drvCfgPtr->deferaccept = Ns_ConfigBool(path, "deferaccept", NS_FALSE);
+    drvCfgPtr->nodelay = Ns_ConfigBool(path, "nodelay", NS_TRUE);
 
     init.version = NS_DRIVER_VERSION_4;
     init.name         = "nssock";
@@ -105,7 +102,7 @@ Ns_ModuleInit(const char *server, const char *module)
     init.requestProc  = NULL;
     init.closeProc    = SockClose;
     init.opts         = NS_DRIVER_ASYNC;
-    init.arg          = cfg;
+    init.arg          = drvCfgPtr;
     init.path         = (char*)path;
     init.protocol     = "http";
     init.defaultPort  = 80;
@@ -137,10 +134,10 @@ SockListen(Ns_Driver *driver, const char *address, unsigned short port, int back
 
     sock = Ns_SockListenEx(address, port, backlog, reuseport);
     if (sock != NS_INVALID_SOCKET) {
-        Config *cfg = driver->arg;
+        Config *drvCfgPtr = driver->arg;
 
         (void) Ns_SockSetNonBlocking(sock);
-        if (cfg->deferaccept != 0) {
+        if (drvCfgPtr->deferaccept != 0) {
             Ns_SockSetDeferAccept(sock, (long)driver->recvwait.sec);
         }
     }
@@ -170,7 +167,7 @@ static NS_DRIVER_ACCEPT_STATUS
 SockAccept(Ns_Sock *sock, NS_SOCKET listensock,
            struct sockaddr *sockaddrPtr, socklen_t *socklenPtr)
 {
-    Config *cfg    = sock->driver->arg;
+    Config *drvCfgPtr = sock->driver->arg;
     NS_DRIVER_ACCEPT_STATUS status = NS_DRIVER_ACCEPT_ERROR;
 
     sock->sock = Ns_SockAccept(listensock, sockaddrPtr, socklenPtr);
@@ -186,8 +183,11 @@ SockAccept(Ns_Sock *sock, NS_SOCKET listensock,
         setsockopt(sock->sock, SOL_SOCKET, SO_SNDLOWAT, &value, sizeof(value));
 #endif
         (void)Ns_SockSetNonBlocking(sock->sock);
-        SetNodelay(sock->driver, sock->sock);
-        status = (cfg->deferaccept != 0) ? NS_DRIVER_ACCEPT_DATA : NS_DRIVER_ACCEPT;
+        if (drvCfgPtr->nodelay != 0) {
+            Ns_SockSetNodelay(sock->sock);
+        }
+
+        status = (drvCfgPtr->deferaccept != 0) ? NS_DRIVER_ACCEPT_DATA : NS_DRIVER_ACCEPT;
     }
     return status;
 }
@@ -337,30 +337,6 @@ SockClose(Ns_Sock *sock)
         ns_sockclose(sock->sock);
         sock->sock = NS_INVALID_SOCKET;
     }
-}
-
-
-static void
-SetNodelay(const Ns_Driver *driver, NS_SOCKET sock)
-{
-#ifdef TCP_NODELAY
-    Config *cfg;
-
-    NS_NONNULL_ASSERT(driver != NULL);
-
-    cfg = driver->arg;
-    if (cfg->nodelay != 0) {
-        int value = 1;
-
-        if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
-                       (const void *)&value, sizeof(value)) == -1) {
-            Ns_Log(Error, "nssock: setsockopt(TCP_NODELAY): %s",
-                   ns_sockstrerror(ns_sockerrno));
-        } else {
-            Ns_Log(Debug, "nodelay: socket option TCP_NODELAY activated");
-        }
-    }
-#endif
 }
 
 /*
