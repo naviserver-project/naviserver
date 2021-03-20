@@ -2890,6 +2890,9 @@ NS_EXTERN Ns_ReturnCode
 Ns_SockSetBlocking(NS_SOCKET sock);
 
 NS_EXTERN void
+Ns_SockSetNodelay(NS_SOCKET sock);
+
+NS_EXTERN void
 Ns_SockSetDeferAccept(NS_SOCKET sock, long secs);
 
 NS_EXTERN void

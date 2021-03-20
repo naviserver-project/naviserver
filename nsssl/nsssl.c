@@ -93,14 +93,14 @@ Ns_ModuleInit(const char *server, const char *module)
     Tcl_DString        ds;
     int                num, result;
     const char        *path;
-    NsSSLConfig       *cfgPtr;
+    NsSSLConfig       *drvCfgPtr;
     Ns_DriverInitData  init;
 
     memset(&init, 0, sizeof(init));
     Tcl_DStringInit(&ds);
 
     path = Ns_ConfigSectionPath(NULL, server, module, (char *)0L);
-    cfgPtr = NsSSLConfigNew(path);
+    drvCfgPtr = NsSSLConfigNew(path);
 
     init.version = NS_DRIVER_VERSION_4;
     init.name = "nsssl";
@@ -114,14 +114,14 @@ Ns_ModuleInit(const char *server, const char *module)
     init.closeProc = Close;
     init.clientInitProc = ClientInit;
     init.opts = NS_DRIVER_SSL|NS_DRIVER_ASYNC;
-    init.arg = cfgPtr;
+    init.arg = drvCfgPtr;
     init.path = path;
     init.protocol = "https";
     init.defaultPort = 443;
 
     if (Ns_DriverInit(server, module, &init) != NS_OK) {
         Ns_Log(Error, "nsssl: driver init failed.");
-        ns_free(cfgPtr);
+        ns_free(drvCfgPtr);
         return NS_ERROR;
     }
 
@@ -141,7 +141,7 @@ Ns_ModuleInit(const char *server, const char *module)
 #endif
     Ns_Log(Notice, "OpenSSL %s initialized", SSLeay_version(SSLEAY_VERSION));
 
-    result = Ns_TLS_CtxServerInit(path, NULL, NS_DRIVER_SNI, cfgPtr, &cfgPtr->ctx);
+    result = Ns_TLS_CtxServerInit(path, NULL, NS_DRIVER_SNI, drvCfgPtr, &drvCfgPtr->ctx);
     if (result != TCL_OK) {
         Ns_Log(Error, "nsssl: init error: %s", strerror(errno));
         return NS_ERROR;
@@ -193,10 +193,10 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int backlog,
 
     sock = Ns_SockListenEx(address, port, backlog, reuseport);
     if (sock != NS_INVALID_SOCKET) {
-        NsSSLConfig *cfgPtr = driver->arg;
+        NsSSLConfig *drvCfgPtr = driver->arg;
 
         (void) Ns_SockSetNonBlocking(sock);
-        if (cfgPtr->deferaccept) {
+        if (drvCfgPtr->deferaccept) {
             Ns_SockSetDeferAccept(sock, (long)driver->recvwait.sec);
         }
     }
@@ -223,7 +223,7 @@ Listen(Ns_Driver *driver, const char *address, unsigned short port, int backlog,
 static NS_DRIVER_ACCEPT_STATUS
 Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, socklen_t *socklenPtr)
 {
-    NsSSLConfig *cfgPtr = sock->driver->arg;
+    NsSSLConfig *drvCfgPtr = sock->driver->arg;
     SSLContext  *sslCtx = sock->arg;
 
     sock->sock = Ns_SockAccept(listensock, sockaddrPtr, socklenPtr);
@@ -238,10 +238,13 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
         setsockopt(sock->sock, SOL_SOCKET, SO_SNDLOWAT, &value, sizeof(value));
 #endif
         (void)Ns_SockSetNonBlocking(sock->sock);
+        if (drvCfgPtr->nodelay != 0) {
+            Ns_SockSetNodelay(sock->sock);
+        }
 
         if (sslCtx == NULL) {
             sslCtx = ns_calloc(1, sizeof(SSLContext));
-            sslCtx->ssl = SSL_new(cfgPtr->ctx);
+            sslCtx->ssl = SSL_new(drvCfgPtr->ctx);
             if (sslCtx->ssl == NULL) {
                 char ipString[NS_IPADDR_SIZE];
                 Ns_Log(Error, "%d: SSL session init error for %s: [%s]",
@@ -288,7 +291,7 @@ static ssize_t
 Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
      Ns_Time *UNUSED(timeoutPtr), unsigned int UNUSED(flags))
 {
-    NsSSLConfig *cfgPtr = sock->driver->arg;
+    NsSSLConfig *drvCfgPtr = sock->driver->arg;
     SSLContext  *sslCtx = sock->arg;
     Ns_SockState sockState = NS_SOCK_NONE;
     ssize_t      nRead = 0;
@@ -297,7 +300,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
      * Verify client certificate, driver may require valid cert
      */
 
-    if (cfgPtr->verify && sslCtx->verified == 0) {
+    if (drvCfgPtr->verify && sslCtx->verified == 0) {
         X509 *peer;
 #ifdef HAVE_OPENSSL_3
         peer = SSL_get0_peer_certificate(sslCtx->ssl);
