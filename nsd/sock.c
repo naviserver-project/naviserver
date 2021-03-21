@@ -1280,10 +1280,10 @@ Ns_SockSetNodelay(NS_SOCKET sock)
 
     if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
                    (const void *)&value, sizeof(value)) == -1) {
-        Ns_Log(Error, "nssock: setsockopt(TCP_NODELAY): %s",
-               ns_sockstrerror(ns_sockerrno));
+        Ns_Log(Error, "nssock(%d): setsockopt(TCP_NODELAY): %s",
+               sock, ns_sockstrerror(ns_sockerrno));
     } else {
-        Ns_Log(Debug, "nodelay: socket option TCP_NODELAY activated");
+        Ns_Log(Debug, "nssock(%d): option TCP_NODELAY activated", sock);
     }
 #endif
 }
