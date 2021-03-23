@@ -3517,9 +3517,9 @@ HttpProc(
                 ssize_t nb = 0;
 
                 httpPtr->next += n;
-                nb = (ssize_t)(httpPtr->sent - httpPtr->requestHeaderSize);
                 Ns_MutexLock(&httpPtr->lock);
                 httpPtr->sent += (size_t)n;
+                nb = (ssize_t)(httpPtr->sent - httpPtr->requestHeaderSize);
                 if (nb > 0) {
                     httpPtr->sendBodySize = (size_t)nb;
                 }
@@ -3670,9 +3670,9 @@ HttpProc(
                         ssize_t nb = 0;
 
                         httpPtr->next += sent;
-                        nb = (ssize_t)(httpPtr->sent - httpPtr->requestHeaderSize);
                         Ns_MutexLock(&httpPtr->lock);
                         httpPtr->sent += (size_t)sent;
+                        nb = (ssize_t)(httpPtr->sent - httpPtr->requestHeaderSize);
                         if (nb > 0) {
                             httpPtr->sendBodySize = (size_t)nb;
                         }
@@ -3691,9 +3691,9 @@ HttpProc(
                     if (sent > 0) {
                         ssize_t nb = 0;
 
-                        nb = (ssize_t)(httpPtr->sent - httpPtr->requestHeaderSize);
                         Ns_MutexLock(&httpPtr->lock);
                         httpPtr->sent += (size_t)sent;
+                        nb = (ssize_t)(httpPtr->sent - httpPtr->requestHeaderSize);
                         if (nb > 0) {
                             httpPtr->sendBodySize = (size_t)nb;
                         }
