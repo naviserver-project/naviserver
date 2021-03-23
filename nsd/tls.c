@@ -1897,6 +1897,12 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
                 break;
             }
 #endif
+            if (reasonCode == SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN) {
+                Ns_Log(Notice, "SSL_read(%d) client complains: CERTIFICATE_UNKNOWN", sock);
+                nRead = 0;
+                sockState = NS_SOCK_AGAIN;
+                break;
+            }
         }
         /*
          * Report all sslERRcodes from the OpenSSL error stack as
