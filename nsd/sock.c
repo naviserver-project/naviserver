@@ -1325,7 +1325,7 @@ Ns_SockSetDeferAccept(NS_SOCKET sock, long secs)
         Ns_Log(Error, "deferaccept setsockopt(TCP_FASTOPEN): %s",
                ns_sockstrerror(ns_sockerrno));
     } else {
-        Ns_Log(Notice, "deferaccept: socket option TCP_FASTOPEN activated");
+        Ns_Log(Notice, "nssock(%d): option TCP_FASTOPEN activated", sock);
     }
     (void)secs;
 #else
