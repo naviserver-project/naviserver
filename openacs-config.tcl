@@ -149,9 +149,11 @@ ns_section ns/parameters {
     ns_param	logmaxbackup	100      ;# 10 is default
     ns_param	logrollfmt	%Y-%m-%d ;# format appended to serverlog filename when rolled
     #
-    # Format of log entries:
+    # Format of log entries in serverlog:
+    # ns_param  logsec          false    ;# add timestamps in second resolution (default: true)
     # ns_param  logusec         true     ;# add timestamps in microsecond (usec) resolution (default: false)
     # ns_param  logusecdiff     true     ;# add timestamp diffs since in microsecond (usec) resolution (default: false)
+    # ns_param  logthread       false    ;# add thread-info the log file lines (default: true)
     ns_param	logcolorize	true     ;# colorize log file with ANSI colors (default: false)
     ns_param	logprefixcolor	green    ;# black, red, green, yellow, blue, magenta, cyan, gray, default
     # ns_param  logprefixintensity normal;# bright or normal

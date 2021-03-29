@@ -45,9 +45,11 @@
 
 #define LOG_ROLL      0x01u
 #define LOG_EXPAND    0x02u
-#define LOG_USEC      0x04u
-#define LOG_COLORIZE  0x08u
+#define LOG_SEC       0x04u
+#define LOG_USEC      0x08u
 #define LOG_USEC_DIFF 0x10u
+#define LOG_THREAD    0x20u
+#define LOG_COLORIZE  0x40u
 
 /*
  * The following struct represents a log entry header as stored in the
@@ -389,6 +391,9 @@ NsConfigLog(void)
     if (Ns_ConfigBool(path, "logroll", NS_TRUE) == NS_TRUE) {
         flags |= LOG_ROLL;
     }
+    if (Ns_ConfigBool(path, "logsec", NS_TRUE) == NS_TRUE) {
+        flags |= LOG_SEC;
+    }
     if (Ns_ConfigBool(path, "logusec", NS_FALSE) == NS_TRUE) {
         flags |= LOG_USEC;
     }
@@ -397,6 +402,9 @@ NsConfigLog(void)
     }
     if (Ns_ConfigBool(path, "logexpanded", NS_FALSE) == NS_TRUE) {
         flags |= LOG_EXPAND;
+    }
+    if (Ns_ConfigBool(path, "logthread", NS_TRUE) == NS_TRUE) {
+        flags |= LOG_THREAD;
     }
     if (Ns_ConfigBool(path, "logcolorize", NS_FALSE) == NS_TRUE) {
         flags |= LOG_COLORIZE;
@@ -1717,19 +1725,11 @@ LogToDString(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
 {
     Ns_DString *dsPtr  = (Ns_DString *)arg;
     LogCache   *cachePtr = GetCache();
-    const char *timeString;
-    size_t      timeStringLength;
     char        buffer[COLOR_BUFFER_SIZE];
 
     NS_NONNULL_ASSERT(arg != NULL);
     NS_NONNULL_ASSERT(stamp != NULL);
     NS_NONNULL_ASSERT(msg != NULL);
-
-    /*
-     * Add the log stamp
-     */
-    timeString = LogTime(cachePtr, stamp, NS_FALSE);
-    timeStringLength = cachePtr->lbufSize;
 
     /*
      * In case colorization was configured, add the escape necessary
@@ -1739,11 +1739,23 @@ LogToDString(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
         Ns_DStringPrintf(dsPtr, "%s%d;%dm", LOG_COLORSTART, prefixIntensity, prefixColor);
     }
 
-    Ns_DStringNAppend(dsPtr, timeString, (int)timeStringLength);
+    if ((flags & LOG_SEC) != 0u) {
+        const char *timeString;
+        size_t      timeStringLength;
+
+        /*
+         * Add the log stamp
+         */
+        timeString = LogTime(cachePtr, stamp, NS_FALSE);
+        timeStringLength = cachePtr->lbufSize;
+        Ns_DStringNAppend(dsPtr, timeString, (int)timeStringLength);
+    }
+
     if ((flags & LOG_USEC) != 0u) {
         Ns_DStringSetLength(dsPtr, Ns_DStringLength(dsPtr) - 1);
         Ns_DStringPrintf(dsPtr, ".%06ld]", stamp->usec);
     }
+
     if ((flags & LOG_USEC_DIFF) != 0u) {
         Ns_Time        now;
         static Ns_Time last = {0, 0};
@@ -1771,15 +1783,18 @@ LogToDString(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
         }
         last.usec = now.usec;
     }
+    if ((flags & LOG_THREAD) != 0u) {
+        Ns_DStringPrintf(dsPtr, "[%d.%" PRIxPTR "]", (int)Ns_InfoPid(), Ns_ThreadId());
+    }
     if ((flags & LOG_COLORIZE) != 0u) {
-        Ns_DStringPrintf(dsPtr, "[%d.%" PRIxPTR "][%s] %s%s%s: ",
-                         (int)Ns_InfoPid(), Ns_ThreadId(), Ns_ThreadGetName(),
+        Ns_DStringPrintf(dsPtr, "[%s] %s%s%s: ",
+                         Ns_ThreadGetName(),
                          (const char *)LOG_COLOREND,
                          LogSeverityColor(buffer, severity),
                          Ns_LogSeverityName(severity));
     } else {
-        Ns_DStringPrintf(dsPtr, "[%d.%" PRIxPTR "][%s] %s: ",
-                         (int)Ns_InfoPid(), Ns_ThreadId(), Ns_ThreadGetName(),
+        Ns_DStringPrintf(dsPtr, "[%s] %s: ",
+                         Ns_ThreadGetName(),
                          Ns_LogSeverityName(severity));
     }
 
