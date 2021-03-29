@@ -185,13 +185,16 @@ ns_section ns/parameters {
     # ns_param	logmaxbackup	100      ;# (default: 10)
     # ns_param	logrollfmt	%Y-%m-%d ;# timestamp format appended to serverlog filename when rolled
     #
-    # Format of log entries:
-    # ns_param  logusec         true     ;# add timestamps in microsecond (usec) resolution (default: false)
-    # ns_param  logusecdiff     true     ;# add timestamp diffs since in microsecond (usec) resolution (default: false)
-    # ns_param	logcolorize	true     ;# colorize log file with ANSI colors (default: false)
-    # ns_param	logprefixcolor	green    ;# black, red, green, yellow, blue, magenta, cyan, gray, default
+    # Format of log entries in serverlog:
+    # ns_param   logsec            false    ;# add timestamps in second resolution (default: true)
+    # ns_param   logusec           true     ;# add timestamps in microsecond (usec) resolution (default: false)
+    # ns_param   logusecdiff       true     ;# add timestamp diffs since in microsecond (usec) resolution (default: false)
+    # ns_param   logthread         false    ;# add thread-info the log file lines (default: true)
+    #
+    # ns_param	logcolorize        true     ;# colorize log file with ANSI colors (default: false)
+    # ns_param	logprefixcolor     green    ;# black, red, green, yellow, blue, magenta, cyan, gray, default
     # ns_param  logprefixintensity normal;# bright or normal
-    # ns_param  sanitizelogfiles   2     ;# default: 2; 0: none, 1: full, 2: human-friendly
+    # ns_param  sanitizelogfiles   1     ;# default: 2; 0: none, 1: full, 2: human-friendly
     #
     # Severities to be logged (can also be controlled at runtime via ns_logctl)_
     # ns_param	logdebug	false    ;# debug messages

@@ -261,6 +261,14 @@ the path must exist. The server will fail to start if the log file cannot be
 opened.
 Default: logs/nsd.log
 
+[def logsec]
+If true, log entries will have seconds timestamps.
+Default: true.
+
+[def logthread]
+If true, log entries will have thread ids included.
+Default: true.
+
 [def logusec]
 If true, log entries will have timestamps with microsecond (usec) resolution.
 Default: false.
