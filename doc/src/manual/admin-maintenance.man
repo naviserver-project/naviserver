@@ -327,7 +327,7 @@ to simplify and speed up the task of creating a chroot environment.
 
 [list_begin itemized]
 
-[item] Usually strong barrier for attackers
+[item] Usually, strong barrier for attackers
 [item] Access to the filesystem is limited
 [item] Hopefully limits the damage of previously unknown, new security holes
 
@@ -353,7 +353,7 @@ Use Novell AppArmor (http://www.novell.com/products/apparmor/) and create a Prof
 
 [subsection {Command (interactive) mode}]
 
-Usually you start the server and it waits for signals. With testing in mind, a new mode was
+Usually, you start the server and it waits for signals. With testing in mind, a new mode was
 added for developers: The interactive 'Command mode'.
 
 [para]

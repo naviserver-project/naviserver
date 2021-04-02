@@ -239,7 +239,7 @@ In more detail, here's what each of these functions needs to do:
 
 
      This function returns the string which identifies the database
-             type. Usually it is the same as the name of the driver.
+             type. Usually, it is the same as the name of the driver.
 
 
 [para]
@@ -604,7 +604,7 @@ The set of functions that need to be implemented are:
 [para]
 
 
-     Flushes any pending data. Usually this function will call
+     Flushes any pending data. Usually, this function will call
              Ns_PdDbCancel or something similar along with any other
              database specific clean-up routines. If the flush
              operation is successful, this function should call

@@ -7,7 +7,7 @@
 [description]
 This command installs custom script which will return
 location string for the current connection, as returned by
-[cmd "ns_conn location"]. Usually the locations looks like http://localhost/.
+[cmd "ns_conn location"]. Usually, the locations looks like http://localhost/.
 
 [section {COMMANDS}]
 

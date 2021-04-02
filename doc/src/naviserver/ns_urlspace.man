@@ -96,7 +96,7 @@ URL spaces runs out, a Tcl exception is raised.
 [list_begin options]
 
 [opt_def -id [arg id]]
-ID of the URL space. In general multiple different URL spaces
+ID of the URL space. In general, multiple different URL spaces
 could be used, which can be allocated with the command
 [cmd  "ns_urlspace new"]. The maximum number of available URL spaces
 is a compile time constant of NaviServer. When no ID is specified,

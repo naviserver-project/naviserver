@@ -16,7 +16,7 @@ The helper command [emph ns_sendmail_config] returns or logs the current configu
 for ns_sendmail.
 
 [para]
-In the default configuration mail is sent to "localhost" on port 25. Usually "localhost"
+In the default configuration mail is sent to "localhost" on port 25. Usually, "localhost"
 resolves to the host where NaviServer is deployed and the running SMTP server accepts mail
 from the local machine. 
 [para]
