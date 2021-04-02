@@ -9,7 +9,7 @@
 This command controls and configures the access log of the server.
 The access log records all served requests of a server containing
 timestamp, IP address of the requestor, the queried resource, the
-HTTP result code, the transmitted amount of data, etc. In general it
+HTTP result code, the transmitted amount of data, etc. In general, it
 follows the more or less standardized access log file format (NCSA
 format, common log format) but can be influence to contain more
 information, useful for log file analysis, debugging and statistics.
