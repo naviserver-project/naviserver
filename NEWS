@@ -1,4 +1,109 @@
 =======================================
+NaviServer 4.99.21, released 2021-01-XX
+=======================================
+
+ 59 files changed, 808 insertions(+), 499 deletions(-)
+
+New Features:
+-------------
+
+ - Logging improvements: Added parameter "logsec" and "logthread" for
+   section "ns/parameter" to make logging of full timestamps and
+   thread info optional. This give more control to a developer to
+   shorten the log entries e.g. on development instances by excluding
+   certain values.
+
+ - Made "ns_http ... -decompress ... "obsolete in favour of new option
+   "-raw".  This fixes as well a crash.
+
+
+Bug Fixes:
+----------
+
+ - Fixed computation of "location" of a request for cases, where the
+   network driver is not installed globally. The value of [ns_conn
+   location] (and the redirect target) is often, but not always
+   determined by the host header field as used for virtual servers.
+
+ - Fixed handling of sendBodyLength in ns_http
+
+ - Fixed handling of user-ids in nscp.
+
+ - Fixed potential segmentation violation in debug output, when (a) the
+   network driver is installed locally, and (b) the content of host
+   header field cannot be located in virtual server map (fallback to
+   validation via driver data).
+
+ - Fixed potential segmentation violation when nsd is called with '-c'
+   and '-t' and the config file contains no "home" parameter in the
+   config file. The fix simplifies the logic, and performs same
+   configuration of nsconf.home whenever "-c" is used in the command
+   line.
+
+ - Increase sysadmin-friendliness of OCSP handling in error cases: In
+   case OCSP (Online Certificate Status Protocol) is activated and the
+   connection to the AIA-server is blocked, do not reject all traffic
+   but behave like in a configuration without having OCSP activated,
+   and complain the system log.  Background: Sometimes requests to the
+   let's encrypt AIA server seems to be blocked by
+   firewalls. Previously, in such stituations, all traffic was
+   blocked.
+
+ - Relax bailing out on malloc(0), since at least the OpenSSL 3a*
+   versions use this frequently on certain configurations. Calls of
+   malloc(0) are essentially useless and dangerous, but we cannot
+   avoid these.
+
+Performance improvements:
+-------------------------
+
+ - Added support for TCP_NODELAY for https sockets via configuration
+   option "nodelay" in the nsssl driver section. For whatever reasons,
+   NaviServer handled so far this option. The option can reduce the
+   time of connection calls via https (clearly measurable in benchmark
+   setups).
+
+
+Documentation improvements:
+---------------------------
+
+ - improved the following man pages
+
+        doc/src/manual/admin-config.man
+        doc/src/manual/admin-tuning.man
+        doc/src/manual/main-history.man
+        doc/src/naviserver/ns_http.man
+        doc/src/naviserver/ns_http.man
+        doc/src/naviserver/ns_write.man
+        nsdb/doc/mann/ns_db.man
+
+Configuration Changes:
+----------------------
+
+ - New options "logsec" and "logthread" for section "ns/parameter"
+   (see above)
+
+
+Code Changes:
+-------------
+ - Extended regression test to cover e.g. the error cases from above.
+
+ - Code Cleanup
+    . Removed obsolete and deprecated functions ctime_r()
+      and asctime_r() in favor of strftime().
+
+    . Removed calls to deprecated Tcl functions
+
+    - Don't pass (implementation-defined) NULL as last argument of a
+      variadic function.
+
+    - Usual cleanup, such as reduced implicit type conversions,
+      removed uselass casts, removed dead assignments
+
+ - Improve comments, fixed typos
+
+
+=======================================
 NaviServer 4.99.20, released 2021-01-17
 =======================================
 
