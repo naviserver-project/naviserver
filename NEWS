@@ -1133,7 +1133,7 @@ New Features:
  - Added support for sending of multiple file chunks in a
    single connection:
 
-      ns_writer sendfiles /list of filespecs/
+      ns_writer submitfiles /list of filespecs/
 
    Every "filespec" is a dict which must contain a "filename" element
    and can contain additionally an "-offset" and/or a "-size" element.

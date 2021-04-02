@@ -439,9 +439,8 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
              * We got a response.
              */
             if (result != SSL_TLSEXT_ERR_OK) {
-                if (resp != NULL) {
-                    OCSP_RESPONSE_free(resp);
-                }
+                assert(resp != NULL);
+                OCSP_RESPONSE_free(resp);
                 goto err;
             }
             /*
@@ -1353,7 +1352,7 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
     const char *cert;
 
     cert = Ns_ConfigGetValue(path, "certificate");
-    Ns_Log(Notice, "=== load certificate from <%s>", path);
+    Ns_Log(Notice, "load certificate from <%s/%s>", path, cert);
 
     if (cert == NULL) {
         Ns_Log(Error, "nsssl: certificate parameter must be specified in the configuration file under %s", path);
@@ -1403,9 +1402,9 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
                        (void*) app_data, (void*)*ctxPtr, cert);
                 SSL_CTX_set_app_data(*ctxPtr, app_data);
             }
-
+#if !defined(OPENSSL_HAVE_DH_AUTO) || !defined(HAVE_OPENSSL_3)
             cfgPtr = (NsSSLConfig *)app_data;
-
+#endif
             SSL_CTX_set_session_id_context(*ctxPtr, (const unsigned char *)&nsconf.pid, sizeof(pid_t));
             SSL_CTX_set_session_cache_mode(*ctxPtr, SSL_SESS_CACHE_SERVER);
 

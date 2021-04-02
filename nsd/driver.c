@@ -2186,6 +2186,7 @@ static void
 DriverClose(Sock *sockPtr)
 {
     NS_NONNULL_ASSERT(sockPtr != NULL);
+    /*fprintf(stderr, "##### DriverClose (%d)\n", sockPtr->sock);*/
     (*sockPtr->drvPtr->closeProc)((Ns_Sock *) sockPtr);
 }
 
@@ -2450,6 +2451,7 @@ DriverThread(void *arg)
                 /*
                  * Peer has closed the connection
                  */
+                Ns_Log(DriverDebug, "Peer has closed %p", (void*)sockPtr);
                 SockRelease(sockPtr, SOCK_CLOSE, 0);
 
             } else if (unlikely(!PollIn(&pdata, sockPtr->pidx))
@@ -2457,6 +2459,7 @@ DriverThread(void *arg)
                 /*
                  * Got no data for this sockPtr.
                  */
+                Ns_Log(DriverDebug, "Got no data for this sockPtr %p", (void*)sockPtr);
                 if (Ns_DiffTime(&sockPtr->timeout, &now, &diff) <= 0) {
                     SockRelease(sockPtr, SOCK_READTIMEOUT, 0);
                 } else {
@@ -2469,9 +2472,11 @@ DriverThread(void *arg)
                  * If enabled, perform read-ahead now.
                  */
                 assert(drvPtr == sockPtr->drvPtr);
+                Ns_Log(DriverDebug, "Got some data for this sockPtr %p", (void*)sockPtr);
 
                 if (likely((drvPtr->opts & NS_DRIVER_ASYNC) != 0u)) {
                     SockState s = SockRead(sockPtr, 0, &now);
+                    Ns_Log(DriverDebug, "SockRead on %p returned %s", (void*)sockPtr, GetSockStateName(s));
 
                     /*
                      * Queue for connection processing if ready.
@@ -2553,6 +2558,7 @@ DriverThread(void *arg)
                     }
                 }
             }
+
             sockPtr = nextPtr;
         }
 
@@ -3919,12 +3925,12 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
 
     {
         Ns_SockState nsSockState = sockPtr->recvSockState;
-    /*
-     * The nsSockState has one of the following values, when provided:
-     *
-     *      NS_SOCK_READ, NS_SOCK_DONE, NS_SOCK_AGAIN, NS_SOCK_EXCEPTION,
-     *      NS_SOCK_TIMEOUT
-     */
+        /*
+         * The nsSockState has one of the following values, when provided:
+         *
+         *      NS_SOCK_READ, NS_SOCK_DONE, NS_SOCK_AGAIN, NS_SOCK_EXCEPTION,
+         *      NS_SOCK_TIMEOUT
+         */
         switch (nsSockState) {
         case NS_SOCK_TIMEOUT:  NS_FALL_THROUGH; /* fall through */
         case NS_SOCK_EXCEPTION:

@@ -316,7 +316,7 @@ NsParseAuth(Conn *connPtr, const char *auth)
                 q++;
             }
 
-            while (q != NULL && *q != '\0') {
+            while (*q != '\0') {
                 size_t idx;
                 char   save2;
 

@@ -227,6 +227,7 @@ Accept(Ns_Sock *sock, NS_SOCKET listensock, struct sockaddr *sockaddrPtr, sockle
     SSLContext  *sslCtx = sock->arg;
 
     sock->sock = Ns_SockAccept(listensock, sockaddrPtr, socklenPtr);
+
     if (sock->sock != NS_INVALID_SOCKET) {
 #ifdef __APPLE__
       /*
@@ -444,10 +445,14 @@ Keep(Ns_Sock *sock)
 
     if (SSL_get_shutdown(sslCtx->ssl) == 0) {
         BIO *bio = SSL_get_wbio(sslCtx->ssl);
-        if (bio != NULL && BIO_flush(bio) == 1) {
-            return NS_TRUE;
+        if (likely(bio != NULL)) {
+            int flush = BIO_flush(bio);
+            if (likely(flush == 1)) {
+                return NS_TRUE;
+            }
         }
     }
+    /*fprintf(stderr, "##### Keep (%d) => 0\n", sock->sock);*/
     return NS_FALSE;
 }
 
@@ -483,8 +488,8 @@ Close(Ns_Sock *sock)
         if (!Ns_SockInErrorState(sock) && SSL_in_init(sslCtx->ssl) != 1) {
             int r = SSL_shutdown(sslCtx->ssl);
 
-            Ns_Log(Debug, "### SSL close(%d) err %d", SSL_get_fd(sslCtx->ssl),
-                   SSL_get_error(sslCtx->ssl, r));
+            Ns_Log(Debug, "### SSL close(%d) shutdown returned %d err %d",
+                   SSL_get_fd(sslCtx->ssl), r, SSL_get_error(sslCtx->ssl, r));
 
             if (r == 0) {
                 /*
