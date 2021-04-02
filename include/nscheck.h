@@ -194,6 +194,8 @@
 
 #if defined(__GNUC__) && !defined(__OpenBSD__)
 # define NS_THREAD_LOCAL __thread
+#elif defined(__clang__)
+# define NS_THREAD_LOCAL __thread
 #elif defined NS_HAVE_C11
 # include <threads.h>
 # define NS_THREAD_LOCAL thread_local
