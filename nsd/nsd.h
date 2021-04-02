@@ -321,7 +321,7 @@ typedef struct Request {
     Ns_Set *headers;             /* Input headers */
     Ns_Set *auth;                /* Auth user/password and parameters */
     char peer[NS_IPADDR_SIZE];   /* Client peer address */
-    char proxypeer[NS_IPADDR_SIZE]; /* Proyy peer address */
+    char proxypeer[NS_IPADDR_SIZE]; /* Proxy peer address */
     unsigned short port;         /* Client peer port */
 
     /*

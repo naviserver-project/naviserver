@@ -135,7 +135,6 @@ static void
 LoadUsers(Mod *localModPtr, const char *server, const char *module)
 {
     Ns_Set     *set = NULL;
-    const char *path;
     size_t      i;
 
     NS_NONNULL_ASSERT(localModPtr != NULL);
@@ -143,14 +142,15 @@ LoadUsers(Mod *localModPtr, const char *server, const char *module)
     NS_NONNULL_ASSERT(module != NULL);
 
     Tcl_InitHashTable(&localModPtr->users, TCL_STRING_KEYS);
-    path = Ns_ConfigSectionPath(&set, server, module, "users", (char *)0L);
+    (void) Ns_ConfigSectionPath(&set, server, module, "users", (char *)0L);
 
     /*
      * In case, no users are configured and nscp is listening on the loopback
      * address, create empty user without password.
      */
     if (Ns_SetSize(set) == 0u && STREQ(localModPtr->addr, NS_IP_LOOPBACK)) {
-        Ns_DString ds;
+        Ns_DString  ds;
+        const char *path;
 
         Ns_DStringInit(&ds);
         path = Ns_ModulePath(&ds, server, module, "users", (char *)0L);
