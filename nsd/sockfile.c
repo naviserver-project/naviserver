@@ -48,7 +48,7 @@
 
 #ifdef _WIN32
 #include <io.h>
-ssize_t pread(int fd, char *buf, size_t count, off_t offset);
+static ssize_t pread(int fd, char *buf, size_t count, off_t offset);
 #endif
 
 /*
@@ -480,7 +480,7 @@ ns_sendfile(Ns_Sock *sock, int fd, off_t offset, size_t length)
  *----------------------------------------------------------------------
  */
 #ifdef _WIN32
-ssize_t
+static ssize_t
 pread(int fd, char *buf, size_t count, off_t offset)
 {
     HANDLE   fh = (HANDLE)_get_osfhandle(fd);
