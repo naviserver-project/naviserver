@@ -196,7 +196,7 @@ ns_section ns/parameters {
     # ns_param  logprefixintensity normal;# bright or normal
     # ns_param  sanitizelogfiles   1     ;# default: 2; 0: none, 1: full, 2: human-friendly
     #
-    # Severities to be logged (can also be controlled at runtime via ns_logctl)_
+    # Severities to be logged (can also be controlled at runtime via ns_logctl)
     # ns_param	logdebug	false    ;# debug messages
     # ns_param	logdev		false    ;# development message
     # ns_param  lognotice       true     ;# informational messages
