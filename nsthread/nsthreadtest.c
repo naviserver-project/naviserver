@@ -194,6 +194,7 @@ WorkThread(void *arg)
         Msg("time: " NS_TIME_FMT, (int64_t) to.sec, to.usec);
         Ns_IncrTime(&to, 5, 0);
         Msg("time: " NS_TIME_FMT, (int64_t) to.sec, to.usec);
+        time(&now);
         strftime(buffer, sizeof(buffer), "%d/%b/%Y:%H:%M:%S", localtime(&now));
         Msg("timed wait starts: %s", buffer);
         Ns_MutexLock(&lock);
@@ -208,7 +209,6 @@ WorkThread(void *arg)
         sleep(4);
         Msg("sleep 4 seconds done");
     }
-    time(&now);
     Ns_RWLockUnlock(&rwlock);
     Msg("rwlock unlocked");
     Msg("exiting");
