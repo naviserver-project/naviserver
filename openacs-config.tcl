@@ -159,7 +159,7 @@ ns_section ns/parameters {
     # ns_param  logprefixintensity normal;# bright or normal
     #
     # Severities to be logged (can be controlled at runtime via ns_logctl)
-    ns_param	logdebug	$debug    ;# debug messages
+    #ns_param	logdebug	$debug    ;# debug messages
     ns_param	logdev		$dev      ;# development message
     ns_param    lognotice       true      ;# informational messages
     #ns_param   sanitizelogfiles 2        ;# default: 2; 0: none, 1: full, 2: human-friendly
@@ -927,6 +927,13 @@ ns_section ns/module/nsstats {
     ns_param password ""
     ns_param bglocks  {oacs:sched_procs}
 }
+
+#ns_logctl severity Debug(ns:driver) on
+#ns_logctl severity Debug(request) on
+#ns_logctl severity Debug(task) on
+#ns_logctl severity Debug(connchan) on
+ns_logctl severity debug $debug
+ns_logctl severity "Debug(sql)" $verboseSQL
 
 #
 # If you want to activate core dumps, one can use the following command
