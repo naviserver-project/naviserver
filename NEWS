@@ -1,8 +1,8 @@
 =======================================
-NaviServer 4.99.21, released 2021-01-XX
+NaviServer 4.99.21, released 2021-04-09
 =======================================
 
- 59 files changed, 808 insertions(+), 499 deletions(-)
+ 64 files changed, 939 insertions(+), 536 deletions(-)
 
 New Features:
 -------------
@@ -13,14 +13,14 @@ New Features:
    shorten the log entries e.g. on development instances by excluding
    certain values.
 
- - Made "ns_http ... -decompress ... "obsolete in favour of new option
+ - Made "ns_http ... -decompress ... "obsolete in favor of new option
    "-raw".  This fixes as well a crash.
 
 
 Bug Fixes:
 ----------
 
- - Fixed computation of "location" of a request for cases, where the
+ - Fixed computation of "location" of a request for cases where the
    network driver is not installed globally. The value of [ns_conn
    location] (and the redirect target) is often, but not always
    determined by the host header field as used for virtual servers.
@@ -46,7 +46,7 @@ Bug Fixes:
    but behave like in a configuration without having OCSP activated,
    and complain the system log.  Background: Sometimes requests to the
    let's encrypt AIA server seems to be blocked by
-   firewalls. Previously, in such stituations, all traffic was
+   firewalls. Previously, in such situations, all traffic was
    blocked.
 
  - Relax bailing out on malloc(0), since at least the OpenSSL 3a*
@@ -98,7 +98,7 @@ Code Changes:
       variadic function.
 
     - Usual cleanup, such as reduced implicit type conversions,
-      removed uselass casts, removed dead assignments
+      removed useless casts, removed dead assignments
 
  - Improve comments, fixed typos
 
