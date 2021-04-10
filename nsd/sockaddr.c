@@ -420,7 +420,8 @@ Ns_SockaddrParseIPMask(Tcl_Interp *interp, const char *ipString,
  *
  * ns_inet_ntop --
  *
- *    This function is a version of inet_ntop() which is agnostic to IPv4 and IPv6.
+ *    This function is a version of inet_ntop() which is agnostic to
+ *    IPv4 and IPv6.
  *
  * Results:
  *    String pointing to printable IP address.
@@ -438,7 +439,8 @@ ns_inet_ntop(const struct sockaddr *saPtr, char *buffer, size_t size) {
     NS_NONNULL_ASSERT(buffer != NULL);
 
     if (saPtr->sa_family == AF_INET6) {
-        result = inet_ntop(AF_INET6, &((const struct sockaddr_in6 *)saPtr)->sin6_addr, buffer, (socklen_t)size);
+        result = inet_ntop(AF_INET6, &((const struct sockaddr_in6 *)saPtr)->sin6_addr,
+                           buffer, (socklen_t)size);
 
         if (result != NULL) {
             const struct in6_addr *addr = &(((struct sockaddr_in6 *)saPtr)->sin6_addr);
@@ -448,6 +450,10 @@ ns_inet_ntop(const struct sockaddr *saPtr, char *buffer, size_t size) {
              * address. This is important, since getsockname() might return
              * for a socket AF_INET6, although the socket was created with
              * AF_INET (see e.g. ListenCallback() in listen.c).
+             *
+             * Example of V4MAPPED address: ::ffff:127.0.0.1
+             * Potential dangers:
+             * https://tools.ietf.org/html/draft-itojun-v6ops-v4mapped-harmful-02
              */
             if (IN6_IS_ADDR_V4MAPPED(addr)) {
                 const char *tail = strrchr(result, INTCHAR(':'));
@@ -460,15 +466,17 @@ ns_inet_ntop(const struct sockaddr *saPtr, char *buffer, size_t size) {
                 if (tail != NULL) {
                     size_t len = strlen(tail);
 
-                    if (len > 6) {
+                    if (len > 6 && len < size) {
                         tail ++;
                         memcpy(buffer, tail, len);
+                        buffer[len] = '\0';
                     }
                 }
             }
         }
     } else {
-        result = inet_ntop(AF_INET, &((const struct sockaddr_in *)saPtr)->sin_addr, buffer, (socklen_t)size);
+        result = inet_ntop(AF_INET, &((const struct sockaddr_in *)saPtr)->sin_addr,
+                           buffer, (socklen_t)size);
     }
 
     return result;
