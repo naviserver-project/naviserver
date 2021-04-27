@@ -259,7 +259,7 @@ if {[info exists httpport]} {
         # ns_param	uploadpath	/tmp	;# directory for uploads
         # ns_param	backlog		256	;# 256, backlog for listen operations
         # ns_param	maxqueuesize	256	;# 1024, maximum size of the queue
-        # ns_param	acceptsize	10	;# Maximum number of requests accepted at once.
+        # ns_param	acceptsize	10	;# backlog; Maximum number of requests accepted at once.
         # ns_param	deferaccept     true    ;# false, Performance optimization, may cause recvwait to be ignored
         # ns_param	bufsize		16kB	;# 16kB, buffersize
         # ns_param	readahead	16kB	;# value of bufsize, size of readahead for requests
