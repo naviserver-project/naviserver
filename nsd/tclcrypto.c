@@ -1200,7 +1200,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
             keyFile = verifyKeyFile;
         }
         if (result != TCL_ERROR && keyFile != NULL) {
-            pkey = GetPkeyFromPem(interp, keyFile, passPhrase, NS_TRUE);
+            pkey = GetPkeyFromPem(interp, keyFile, passPhrase, (signKeyFile != NULL));
             if (pkey == NULL) {
                 result = TCL_ERROR;
             }

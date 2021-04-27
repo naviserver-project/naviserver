@@ -221,6 +221,8 @@ EXTRA_TEST_DIRS =
 ifneq ($(OPENSSL_LIBS),)
   #EXTRA_TEST_DIRS += nsssl
   PEM_FILE        = tests/testserver/etc/server.pem
+  PEM_PRIVATE     = tests/testserver/etc/myprivate.pem
+  PEM_PUBLIC      = tests/testserver/etc/mypublic.pem
   SSLCONFIG       = tests/testserver/etc/openssl.cnf
   EXTRA_TEST_REQ  = $(PEM_FILE)
 endif
@@ -232,6 +234,8 @@ $(PEM_FILE):
 	rm -rf host.cert host.key
 	openssl dhparam 1024 >> server.pem
 	mv server.pem $(PEM_FILE)
+	openssl genrsa -out $(PEM_PRIVATE) 512
+	openssl rsa -in $(PEM_PRIVATE) -pubout > $(PEM_PUBLIC)
 
 check: test
 
@@ -315,7 +319,7 @@ dist: config.guess config.sub clean
 	fi;
 	find naviserver-$(NS_PATCH_LEVEL) -type f -name '.[a-zA-Z_]*' -exec rm \{} \;
 	find naviserver-$(NS_PATCH_LEVEL) -name '*-original' -exec rm \{} \;
-	find naviserver-$(NS_PATCH_LEVEL) -name '*.pem' -exec rm \{} \;
+	find naviserver-$(NS_PATCH_LEVEL) -name '[a-z]*.pem' -exec rm \{} \;
 	find naviserver-$(NS_PATCH_LEVEL) -name '*.c-*' -exec rm \{} \;
 	find naviserver-$(NS_PATCH_LEVEL) -name '*.h-*' -exec rm \{} \;
 	find naviserver-$(NS_PATCH_LEVEL) -name '*~' -exec rm \{} \;
