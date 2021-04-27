@@ -54,8 +54,8 @@ test ns_crypto_sha2-2.4 {basic operation} -constraints crypto -body {
 #######################################################################################
 test ns_crypto_sign-1.0 {basic operation} -constraints crypto -body {
     set path [ns_config "test" home]/testserver/etc/
-    ::ns_crypto::md string -digest sha1 -sign $path/myprivate.pem "abcdefghijklmnopqrstuvwxyz\n"
-} -result "9139be98f16cf53d22da63cb559bb06a93338da6a344e28a4285c2da33facb7080d26e7a09483779a016eebc207602fc3f90492c2f2fb8143f0fe30fd855593d"
+    ::ns_crypto::md string -digest sha1 -sign $path/TESTKEY.pem "abcdefghijklmnopqrstuvwxyz\n"
+} -returnCodes {error ok} -result "9139be98f16cf53d22da63cb559bb06a93338da6a344e28a4285c2da33facb7080d26e7a09483779a016eebc207602fc3f90492c2f2fb8143f0fe30fd855593d"
 
 #######################################################################################
 #  verify signature using a fixed private key, using SHA1.
@@ -74,16 +74,16 @@ test ns_crypto_signature_verify-1.0 {basic operation} -constraints crypto -body 
                  "abcdefghijklmnopqrstuxvwxyz\n"]
     set vfy_ok [::ns_crypto::md string \
                     -digest sha1 \
-                    -verify $path//myprivate.pem \
+                    -verify $path/mypublic.pem \
                     -signature $sig \
                     "abcdefghijklmnopqrstuxvwxyz\n"]
     set vfy_nok [::ns_crypto::md string \
                      -digest sha1 \
-                     -verify $path//myprivate.pem \
+                     -verify $path/mypublic.pem \
                      -signature $sig \
                      "abcdefghijklmnopqrstuxvwxyz"]
     return [list $vfy_ok $vfy_nok]
-} -result {1 0}
+} -returnCodes {error return} -result {1 0}
 
 
 #######################################################################################
