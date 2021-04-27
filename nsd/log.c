@@ -1732,7 +1732,7 @@ LogToDString(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     NS_NONNULL_ASSERT(msg != NULL);
 
     /*
-     * In case colorization was configured, add the escape necessary
+     * In case colorization was configured, add the necessary escape
      * sequences.
      */
     if ((flags & LOG_COLORIZE) != 0u) {
