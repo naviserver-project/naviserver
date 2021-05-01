@@ -32,6 +32,42 @@ Typically this command is used on POST, PUT, PROPFIND or similar requests.
 
 [list_end]
 
+[section EXAMPLES]
+
+The following script checks, whether the received request was a POST
+or POST requests, it checks the provided content type, and in case it
+was a JSON type, it retrieves the payload of the request and converts
+it to a Tcl dict. Note that the json package form tcllib has some
+restrictions. There are several alternative JSON parsers available for
+Tcl.
+
+[example_begin]
+ if {[lb]ns_conn method[rb] in {PUT POST}
+    && [lb]ns_set iget [lb]ns_conn headers[rb] Content-Type] eq "application/json"
+ } {
+    package req json
+ 
+    set dict [lb]json::json2dict [lb]ns_getcontent -as_file false[rb][rb]
+    ns_return 200 text/plain $dict\n
+ 
+ } else {
+    ad_return_complaint 1 "unsupported HTTP method: [lb]ns_conn method[rb]"
+ }
+[example_end]
+
+When the script above is saved in the page directory under the name
+json_receiver.tcl, and the server is running under port 8100 on
+localhost, the example above can be tested e.g. with the following
+command from the shell.
+
+[example_begin]
+ curl --header "Content-Type: application/json" --request POST --data '{
+   "username":"xyz","password":"xyz"
+ }' http://localhost:8100/json-receiver.tcl
+[example_end]
+
+
+
 [keywords form]
 [see_also ns_getform ns_conn]
 
