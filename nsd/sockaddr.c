@@ -432,7 +432,7 @@ Ns_SockaddrParseIPMask(Tcl_Interp *interp, const char *ipString,
  *----------------------------------------------------------------------
  */
 const char *
-ns_inet_ntop(const struct sockaddr *saPtr, char *buffer, size_t size) {
+ns_inet_ntop(const struct sockaddr *restrict saPtr, char *restrict buffer, size_t size) {
     const char *result;
 
     NS_NONNULL_ASSERT(saPtr != NULL);
