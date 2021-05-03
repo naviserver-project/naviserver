@@ -459,7 +459,7 @@ Ns_ConnPeerAddr(const Ns_Conn *conn)
 {
     NS_NONNULL_ASSERT(conn != NULL);
 
-    return ((const Conn *)conn)->reqPtr->peer;
+    return ((const Conn *)conn)->peer;
 }
 
 const char *
@@ -467,7 +467,7 @@ Ns_ConnForwardedPeerAddr(const Ns_Conn *conn)
 {
     NS_NONNULL_ASSERT(conn != NULL);
 
-    return ((const Conn *)conn)->reqPtr->proxypeer;
+    return ((const Conn *)conn)->proxypeer;
 }
 
 /*
@@ -618,7 +618,7 @@ Ns_ConnPeer(const Ns_Conn *conn)
 const char *
 Ns_ConnSetPeer(const Ns_Conn *conn, const struct sockaddr *saPtr, const struct sockaddr *clientsaPtr)
 {
-    const Conn *connPtr;
+    Conn *connPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(saPtr != NULL);
@@ -627,15 +627,15 @@ Ns_ConnSetPeer(const Ns_Conn *conn, const struct sockaddr *saPtr, const struct s
     connPtr = (Conn *)conn;
 
     connPtr->reqPtr->port = Ns_SockaddrGetPort(saPtr);
-    (void)ns_inet_ntop(saPtr, connPtr->reqPtr->peer, NS_IPADDR_SIZE);
+    (void)ns_inet_ntop(saPtr, connPtr->peer, NS_IPADDR_SIZE);
 
     if (clientsaPtr->sa_family != 0) {
-        (void)ns_inet_ntop(clientsaPtr, connPtr->reqPtr->proxypeer, NS_IPADDR_SIZE);
+        (void)ns_inet_ntop(clientsaPtr, connPtr->proxypeer, NS_IPADDR_SIZE);
     } else {
-        connPtr->reqPtr->proxypeer[0] = '\0';
+        connPtr->proxypeer[0] = '\0';
     }
 
-    return connPtr->reqPtr->peer;
+    return connPtr->peer;
 }
 
 

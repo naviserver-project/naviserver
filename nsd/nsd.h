@@ -317,11 +317,9 @@ typedef struct Ns_DList {
 
 typedef struct Request {
     struct Request *nextPtr;     /* Next on free list */
-    Ns_Request request;          /* Parsed request line */
+    Ns_Request request;          /* Parsed request structure */
     Ns_Set *headers;             /* Input headers */
     Ns_Set *auth;                /* Auth user/password and parameters */
-    char peer[NS_IPADDR_SIZE];   /* Client peer address */
-    char proxypeer[NS_IPADDR_SIZE]; /* Proxy peer address */
     unsigned short port;         /* Client peer port */
 
     /*
@@ -583,6 +581,9 @@ typedef struct Conn {
     struct Conn *prevPtr;
     struct Conn *nextPtr;
     struct Sock *sockPtr;
+
+    char peer[NS_IPADDR_SIZE];   /* Client peer address */
+    char proxypeer[NS_IPADDR_SIZE]; /* Proxy peer address */
 
     NsLimits *limitsPtr; /* Per-connection limits */
     Ns_Time   timeout;   /* Absolute timeout (startTime + limit) */
