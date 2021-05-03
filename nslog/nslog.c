@@ -833,7 +833,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
     if ((logPtr->flags & LOG_CHECKFORPROXY) != 0u) {
         /*
-         * This branch of the if is deprecated and kept only for backward
+         * This branch is deprecated and kept only for backward
          * compatibility (added Dec 2020).
          */
         p = Ns_ConnForwardedPeerAddr(conn);
