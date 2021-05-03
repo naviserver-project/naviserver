@@ -37,8 +37,8 @@
 #include "nsd.h"
 
 /*
- * The following structure defines a request procedure including user
- * routine and client data.
+ * The following structure defines a structure for registered procs including
+ * client data and a deletion callback.
  */
 
 typedef struct {
@@ -47,7 +47,7 @@ typedef struct {
     Ns_Callback    *deleteCallback;
     void           *arg;
     unsigned int    flags;
-} Req;
+} RegisteredProc;
 
 /*
  * Static functions defined in this file.
@@ -55,7 +55,7 @@ typedef struct {
 
 static Ns_ServerInitProc ConfigServerProxy;
 static void WalkCallback(Tcl_DString *dsPtr, const void *arg) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static void FreeReq(void *arg) NS_GNUC_NONNULL(1);
+static void FreeRegisteredProc(void *arg) NS_GNUC_NONNULL(1);
 
 /*
  * Static variables defined in this file.
@@ -127,21 +127,21 @@ Ns_RegisterRequest(const char *server, const char *method, const char *url,
                    Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg,
                    unsigned int flags)
 {
-    Req *reqPtr;
+    RegisteredProc *regPtr;
 
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(method != NULL);
     NS_NONNULL_ASSERT(url != NULL);
     NS_NONNULL_ASSERT(proc != NULL);
 
-    reqPtr = ns_malloc(sizeof(Req));
-    reqPtr->proc = proc;
-    reqPtr->deleteCallback = deleteCallback;
-    reqPtr->arg = arg;
-    reqPtr->flags = flags;
-    reqPtr->refcnt = 1;
+    regPtr = ns_malloc(sizeof(RegisteredProc));
+    regPtr->proc = proc;
+    regPtr->deleteCallback = deleteCallback;
+    regPtr->arg = arg;
+    regPtr->flags = flags;
+    regPtr->refcnt = 1;
     Ns_MutexLock(&ulock);
-    Ns_UrlSpecificSet(server, method, url, uid, reqPtr, flags, FreeReq);
+    Ns_UrlSpecificSet(server, method, url, uid, regPtr, flags, FreeRegisteredProc);
     Ns_MutexUnlock(&ulock);
 }
 
@@ -168,7 +168,7 @@ Ns_GetRequest(const char *server, const char *method, const char *url,
               Ns_OpProc **procPtr, Ns_Callback **deletePtr, void **argPtr,
               unsigned int *flagsPtr)
 {
-    const Req *reqPtr;
+    const RegisteredProc *regPtr;
 
     NS_NONNULL_ASSERT(server != NULL);
     NS_NONNULL_ASSERT(method != NULL);
@@ -178,13 +178,13 @@ Ns_GetRequest(const char *server, const char *method, const char *url,
     NS_NONNULL_ASSERT(flagsPtr != NULL);
 
     Ns_MutexLock(&ulock);
-    reqPtr = NsUrlSpecificGet(NsGetServer(server), method, url, uid,
+    regPtr = NsUrlSpecificGet(NsGetServer(server), method, url, uid,
                               0u, NS_URLSPACE_DEFAULT, NULL, NULL);
-    if (reqPtr != NULL) {
-        *procPtr = reqPtr->proc;
-        *deletePtr = reqPtr->deleteCallback;
-        *argPtr = reqPtr->arg;
-        *flagsPtr = reqPtr->flags;
+    if (regPtr != NULL) {
+        *procPtr = regPtr->proc;
+        *deletePtr = regPtr->deleteCallback;
+        *argPtr = regPtr->arg;
+        *flagsPtr = regPtr->flags;
     } else {
         *procPtr = NULL;
         *deletePtr = NULL;
@@ -304,13 +304,13 @@ Ns_ConnRunRequest(Ns_Conn *conn)
          */
 
         if ((conn->request.method != NULL) && (conn->request.url != NULL)) {
-            Req        *reqPtr;
+            RegisteredProc *regPtr;
 
             Ns_MutexLock(&ulock);
-            reqPtr = NsUrlSpecificGet(connPtr->poolPtr->servPtr,
+            regPtr = NsUrlSpecificGet(connPtr->poolPtr->servPtr,
                                       conn->request.method, conn->request.url, uid,
                                       0u, NS_URLSPACE_DEFAULT, NULL, NULL);
-            if (reqPtr == NULL) {
+            if (regPtr == NULL) {
                 Ns_MutexUnlock(&ulock);
                 if (STREQ(conn->request.method, "BAD")) {
                     status = Ns_ConnReturnBadRequest(conn, NULL);
@@ -318,12 +318,12 @@ Ns_ConnRunRequest(Ns_Conn *conn)
                     status = Ns_ConnReturnInvalidMethod(conn);
                 }
             } else {
-                ++reqPtr->refcnt;
+                ++regPtr->refcnt;
                 Ns_MutexUnlock(&ulock);
-                status = (*reqPtr->proc) (reqPtr->arg, conn);
+                status = (*regPtr->proc) (regPtr->arg, conn);
 
                 Ns_MutexLock(&ulock);
-                FreeReq(reqPtr);
+                FreeRegisteredProc(regPtr);
                 Ns_MutexUnlock(&ulock);
             }
         }
@@ -430,25 +430,25 @@ Ns_RegisterProxyRequest(const char *server, const char *method, const char *prot
     if (servPtr == NULL) {
         Ns_Log(Error, "Ns_RegisterProxyRequest: no such server: %s", server);
     } else {
-        Req           *reqPtr;
-        Ns_DString     ds;
-        int            isNew;
-        Tcl_HashEntry *hPtr;
+        RegisteredProc *regPtr;
+        Ns_DString      ds;
+        int             isNew;
+        Tcl_HashEntry  *hPtr;
 
         Ns_DStringInit(&ds);
         Ns_DStringVarAppend(&ds, method, protocol, (char *)0L);
-        reqPtr = ns_malloc(sizeof(Req));
-        reqPtr->refcnt = 1;
-        reqPtr->proc = proc;
-        reqPtr->deleteCallback = deleteCallback;
-        reqPtr->arg = arg;
-        reqPtr->flags = 0u;
+        regPtr = ns_malloc(sizeof(RegisteredProc));
+        regPtr->refcnt = 1;
+        regPtr->proc = proc;
+        regPtr->deleteCallback = deleteCallback;
+        regPtr->arg = arg;
+        regPtr->flags = 0u;
         Ns_MutexLock(&servPtr->request.plock);
         hPtr = Tcl_CreateHashEntry(&servPtr->request.proxy, ds.string, &isNew);
         if (isNew == 0) {
-            FreeReq(Tcl_GetHashValue(hPtr));
+            FreeRegisteredProc(Tcl_GetHashValue(hPtr));
         }
-        Tcl_SetHashValue(hPtr, reqPtr);
+        Tcl_SetHashValue(hPtr, regPtr);
         Ns_MutexUnlock(&servPtr->request.plock);
         Ns_DStringFree(&ds);
     }
@@ -492,7 +492,7 @@ Ns_UnRegisterProxyRequest(const char *server, const char *method,
         Ns_MutexLock(&servPtr->request.plock);
         hPtr = Tcl_FindHashEntry(&servPtr->request.proxy, ds.string);
         if (hPtr != NULL) {
-            FreeReq(Tcl_GetHashValue(hPtr));
+            FreeRegisteredProc(Tcl_GetHashValue(hPtr));
             Tcl_DeleteHashEntry(hPtr);
         }
         Ns_MutexUnlock(&servPtr->request.plock);
@@ -522,7 +522,7 @@ Ns_ReturnCode
 NsConnRunProxyRequest(Ns_Conn *conn)
 {
     NsServer            *servPtr;
-    Req                 *reqPtr = NULL;
+    RegisteredProc      *regPtr = NULL;
     Ns_ReturnCode        status;
     Ns_DString           ds;
     const Tcl_HashEntry *hPtr;
@@ -536,16 +536,16 @@ NsConnRunProxyRequest(Ns_Conn *conn)
     Ns_MutexLock(&servPtr->request.plock);
     hPtr = Tcl_FindHashEntry(&servPtr->request.proxy, ds.string);
     if (hPtr != NULL) {
-        reqPtr = Tcl_GetHashValue(hPtr);
-        ++reqPtr->refcnt;
+        regPtr = Tcl_GetHashValue(hPtr);
+        ++regPtr->refcnt;
     }
     Ns_MutexUnlock(&servPtr->request.plock);
-    if (reqPtr == NULL) {
+    if (regPtr == NULL) {
         status = Ns_ConnReturnNotFound(conn);
     } else {
-        status = (*reqPtr->proc) (reqPtr->arg, conn);
+        status = (*regPtr->proc) (regPtr->arg, conn);
         Ns_MutexLock(&servPtr->request.plock);
-        FreeReq(reqPtr);
+        FreeRegisteredProc(regPtr);
         Ns_MutexUnlock(&servPtr->request.plock);
     }
     Ns_DStringFree(&ds);
@@ -589,20 +589,20 @@ NsGetRequestProcs(Tcl_DString *dsPtr, const char *server)
 static void
 WalkCallback(Tcl_DString *dsPtr, const void *arg)
 {
-     const Req *reqPtr;
+     const RegisteredProc *regPtr;
 
      NS_NONNULL_ASSERT(dsPtr != NULL);
      NS_NONNULL_ASSERT(arg != NULL);
-     reqPtr = arg;
+     regPtr = arg;
 
-     Ns_GetProcInfo(dsPtr, (ns_funcptr_t)reqPtr->proc, reqPtr->arg);
+     Ns_GetProcInfo(dsPtr, (ns_funcptr_t)regPtr->proc, regPtr->arg);
 }
 
 
 /*
  *----------------------------------------------------------------------
  *
- * FreeReq --
+ * FreeRegisteredProc --
  *
  *      URL space callback to delete a request structure.
  *
@@ -616,17 +616,17 @@ WalkCallback(Tcl_DString *dsPtr, const void *arg)
  */
 
 static void
-FreeReq(void *arg)
+FreeRegisteredProc(void *arg)
 {
-    Req *reqPtr = (Req *) arg;
+    RegisteredProc *regPtr = (RegisteredProc *) arg;
 
     NS_NONNULL_ASSERT(arg != NULL);
 
-    if (--reqPtr->refcnt == 0) {
-        if (reqPtr->deleteCallback != NULL) {
-            (*reqPtr->deleteCallback) (reqPtr->arg);
+    if (--regPtr->refcnt == 0) {
+        if (regPtr->deleteCallback != NULL) {
+            (*regPtr->deleteCallback) (regPtr->arg);
         }
-        ns_free(reqPtr);
+        ns_free(regPtr);
     }
 }
 
