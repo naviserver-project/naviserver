@@ -123,7 +123,7 @@ static void CancelCallback(const NsConnChan *connChanPtr)
 static NsConnChan *ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
                                   const Ns_Time *startTime, const char *peer, bool binary,
                                   const char *clientData)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3)
     NS_GNUC_RETURNS_NONNULL;
 
 static void ConnChanFree(NsConnChan *connChanPtr, NsServer *servPtr)
@@ -284,7 +284,9 @@ CancelCallback(const NsConnChan *connChanPtr)
  *
  * ConnChanCreate --
  *
- *      Allocate a connection channel structure and initialize its fields.
+ *      Allocate a connection channel structure and initialize its
+ *      fields.  When the passed-in peer is NULL, determine peerAddr
+ *      from the sockPtr.
  *
  * Results:
  *      Initialized connection channel structure.
@@ -307,7 +309,6 @@ ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
     NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(sockPtr != NULL);
     NS_NONNULL_ASSERT(startTime != NULL);
-    NS_NONNULL_ASSERT(peer != NULL);
 
     Ns_SockSetKeepalive(sockPtr->sock, 1);
 
@@ -332,7 +333,11 @@ ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
     connChanPtr->fragmentsBuffer = NULL;
     connChanPtr->frameNeedsData = NS_TRUE;
 
-    strncpy(connChanPtr->peer, peer, NS_IPADDR_SIZE - 1);
+    if (peer == NULL) {
+        (void)ns_inet_ntop((struct sockaddr *)&(sockPtr->sa), connChanPtr->peer, NS_IPADDR_SIZE);
+    } else {
+        strncpy(connChanPtr->peer, peer, NS_IPADDR_SIZE - 1);
+    }
     connChanPtr->sockPtr = sockPtr;
     connChanPtr->binary = binary;
     memcpy(name, "conn", 4);
@@ -1136,7 +1141,7 @@ ConnChanOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
                 connChanPtr = ConnChanCreate(servPtr,
                                              sockPtr,
                                              &now,
-                                             sockPtr->reqPtr->peer,
+                                             NULL,
                                              NS_TRUE /* binary, fixed for the time being */,
                                              NULL);
                 if (hdrPtr != NULL) {
@@ -1264,7 +1269,7 @@ ConnChanListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                 connChanPtr = ConnChanCreate(sockPtr->servPtr,
                                              sockPtr,
                                              &now,
-                                             sockPtr->reqPtr->peer,
+                                             NULL,
                                              NS_TRUE /* binary, fixed for the time being */,
                                              NULL);
                 retVal = getsockname(sock, (struct sockaddr *) &sa, &len);
@@ -1340,7 +1345,7 @@ SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why))
         connChanPtr = ConnChanCreate(sockPtr->servPtr,
                                      sockPtr,
                                      &now,
-                                     sockPtr->reqPtr->peer,
+                                     NULL,
                                      NS_TRUE /* binary, fixed for the time being */,
                                      NULL);
         Ns_Log(Notice, "SockListenCallback new connChan %s sock %d", connChanPtr->channelName, sock);
