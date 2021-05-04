@@ -192,6 +192,12 @@
 # define NS_INLINE inline
 #endif
 
+#if defined(__cplusplus)
+# define NS_RESTRICT
+#else
+# define NS_RESTRICT restrict
+#endif
+
 #if defined(__GNUC__) && !defined(__OpenBSD__)
 # define NS_THREAD_LOCAL __thread
 #elif defined(__clang__)
