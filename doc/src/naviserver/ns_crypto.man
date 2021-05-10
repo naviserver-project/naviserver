@@ -347,7 +347,7 @@ The scrypt function is as well used in many cryptocurrencies as a
 proof-of-work algorithm.
 
 [para] Colin Percival. 2009. Stronger key derivation via
-sequential memory-hard functions. In BSDCan ’09: The Technical BSD
+sequential memory-hard functions. In BSDCan 09: The Technical BSD
 Conference.
 
 [para]
