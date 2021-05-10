@@ -90,7 +90,7 @@ Msg(const char *fmt,...)
     char            buffer[80];
 
     time(&now);
-    strftime(buffer, sizeof(buffer), "%d/%b/%Y:%H:%M:%S", localtime(&now));
+    strftime(buffer, sizeof(buffer), "%d/%b/%Y:%H:%M:%S", ns_localtime(&now));
     va_start(ap, fmt);
     Ns_MutexLock(&slock);
     printf("[%s][%s]: ", Ns_ThreadGetName(), buffer);
@@ -195,13 +195,13 @@ WorkThread(void *arg)
         Ns_IncrTime(&to, 5, 0);
         Msg("time: " NS_TIME_FMT, (int64_t) to.sec, to.usec);
         time(&now);
-        strftime(buffer, sizeof(buffer), "%d/%b/%Y:%H:%M:%S", localtime(&now));
+        strftime(buffer, sizeof(buffer), "%d/%b/%Y:%H:%M:%S", ns_localtime(&now));
         Msg("timed wait starts: %s", buffer);
         Ns_MutexLock(&lock);
         st = Ns_CondTimedWait(&cond, &lock, &to);
         Ns_MutexUnlock(&lock);
         time(&now);
-        strftime(buffer, sizeof(buffer), "%d/%b/%Y:%H:%M:%S", localtime(&now));
+        strftime(buffer, sizeof(buffer), "%d/%b/%Y:%H:%M:%S", ns_localtime(&now));
         Msg("timed wait ends: %s - status: %d", buffer, st);
     }
     if (i == 9) {
