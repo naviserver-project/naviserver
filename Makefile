@@ -227,13 +227,15 @@ ifneq ($(OPENSSL_LIBS),)
   EXTRA_TEST_REQ  = $(PEM_FILE)
 endif
 
-$(PEM_FILE):
+$(PEM_FILE): $(PEM_PRIVATE)
 	openssl genrsa 2048 > host.key
 	openssl req -new -config $(SSLCONFIG) -x509 -nodes -sha1 -days 365 -key host.key > host.cert
 	cat host.cert host.key > server.pem
 	rm -rf host.cert host.key
 	openssl dhparam 1024 >> server.pem
 	mv server.pem $(PEM_FILE)
+
+$(PEM_PRIVATE):
 	openssl genrsa -out $(PEM_PRIVATE) 512
 	openssl rsa -in $(PEM_PRIVATE) -pubout > $(PEM_PUBLIC)
 
