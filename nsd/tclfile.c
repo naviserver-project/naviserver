@@ -400,9 +400,9 @@ NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         Tcl_WrongNumArgs(interp, 1, objv, "fileid ?nbytes?");
         result = TCL_ERROR;
 
-    } else if (objc >= 2
-               && Ns_TclGetOpenChannel(interp, Tcl_GetString(objv[1]),
-                                       0, NS_TRUE, &chan) != TCL_OK) {
+    } else if (/*objc >= 2*/
+               Ns_TclGetOpenChannel(interp, Tcl_GetString(objv[1]),
+                                    0, NS_TRUE, &chan) != TCL_OK) {
         result = TCL_ERROR;
     } else if (objc == 3
                && Tcl_GetWideIntFromObj(interp, objv[2], &nbytes) != TCL_OK) {
