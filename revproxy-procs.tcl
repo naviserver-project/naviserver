@@ -14,8 +14,9 @@ if {$::tcl_version eq "8.5"} {
 
 namespace eval ::revproxy {
 
-    set version 0.14
+    set version 0.15
     set verbose 0
+    #ns_logctl severity Debug(connchan) on
 
     #
     # Upstream handler (deliver request from an upstream server)
@@ -135,7 +136,7 @@ namespace eval ::revproxy {
                     while {$i < $length} {
                         log notice "upstream: send max $chunk bytes from string to $backendChan " \
                             "(length $contentLength)"
-                        ns_connchan write $backendChan [string range $data $i $j]
+                        ns_connchan write -buffered $backendChan [string range $data $i $j]
                         incr i $chunk
                         incr j $chunk
                     }
@@ -148,12 +149,31 @@ namespace eval ::revproxy {
                     while {1} {
                         log notice "upstream: send max $chunk bytes from file to $backendChan " \
                             "(length $contentLength)"
-                        ns_connchan write $backendChan [read $F $chunk]
+                        ns_connchan write -buffered $backendChan [read $F $chunk]
                         if {[eof $F]} break
                     }
                     close $F
                 }
             }
+
+            #
+            # Check status of backend channel. In particular, we check
+            # whether some content is still buffered in the channel.
+            #
+            # The loop with the 1ms way is transitional code. We
+            # should solve this via a writable callback, but for this,
+            # we have to be able to reproduce reliably a situation,
+            # where this is needed.
+            #
+            set status [ns_connchan status $backendChan]
+            ns_log notice "STATUS backend: $status"
+            while {[dict get $status sendbuffer] > 0} {
+                ns_sleep 1ms
+                ns_connchan write -buffered $backendChan ""
+                set status [ns_connchan status $backendChan]
+                ns_log notice "STATUS backend on retry: $status"
+            }
+
             #
             # Full request was received and transmitted upstream, now handle replies
             #
