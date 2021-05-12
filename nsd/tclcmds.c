@@ -161,7 +161,7 @@ static const Cmd basicCmds[] = {
     {"ns_uudecode",              NULL, NsTclBase64DecodeObjCmd},
     {"ns_uuencode",              NULL, NsTclBase64EncodeObjCmd},
     {"ns_writefp",               NULL, NsTclWriteFpObjCmd},
-
+    {"ns_valid_utf8",            NULL, NsTclValidUtf8ObjCmd},
     /*
      * Add more basic Tcl commands here.
      */

@@ -47,6 +47,23 @@ test ns_quotehtml {ns_quotehtml with typical value} -body {
     return [ns_quotehtml {<span class="foo">}]
 } -result {&lt;span class=&#34;foo&#34;&gt;}
 
+#######################################################################################
+#  test ns_valid_utf8
+#######################################################################################
+
+test ns_valid_utf8-1.0 {ns_valid_utf8 with typical value} -body {
+    return [ns_valid_utf8 "hello world"]
+} -result 1
+
+test ns_valid_utf8-1.0 {invalid utf8, containing x85 at the end} -body {
+    return [ns_valid_utf8 "forschungsprojek\x85"]
+} -result 0
+
+test ns_valid_utf8-1.0 {valid utf8, containing x85 at the end} -body {
+    return [ns_valid_utf8 "forschungsprojek\xc3\x85"]
+} -result 1
+
+
 #
 # Local variables:
 #    mode: tcl
