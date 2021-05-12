@@ -52,6 +52,8 @@ static void MD5Transform(uint32_t buf[4], const uint32_t block[16])
 static int Base64EncodeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, int encoding);
 static int Base64DecodeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, int encoding);
 
+static bool Valid_UTF8(const unsigned char *bytes, size_t nrBytes)
+    NS_GNUC_NONNULL(1);
 
 
 /*
@@ -2576,6 +2578,166 @@ NsTclHashObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     return result;
 
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Valid_UTF8 --
+ *
+ *      Check the validity of the UTF-8 input string.
+ *
+ *      This implementation is fully platform independent and
+ *      based on the code from Daniel Lemire, but not using
+ *      the SIMD operations from
+ *
+ *         John Keiser, Daniel Lemire, Validating UTF-8 In Less Than
+ *         One Instruction Per Byte, Software: Practice &
+ *         Experience 51 (5), 2021
+ *         https://github.com/lemire/fastvalidate-utf-8
+ *
+ *      If necessary, more performance can be squeezed
+ *      out. This might be the case, when this function would
+ *      be used internally for validating.
+ *
+ * Results:
+ *      Boolean value.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool Valid_UTF8(const unsigned char *bytes, size_t nrBytes)
+{
+    size_t index = 0;
+
+    for (;;) {
+        unsigned char byte1, byte2;
+
+        /*
+         * Quick loop, when we have just 7-bit ASCII characters.
+         */
+        do {
+            if (index >= nrBytes) {
+                /*
+                 * Successful end of string.
+                 */
+                return NS_TRUE;
+            }
+            byte1 = bytes[index++];
+        } while (byte1 < 0x80);
+
+        if (byte1 < 0xE0) {
+            /*
+             * Two-byte UTF-8.
+             */
+            if (index == nrBytes) {
+                /*
+                 * Premature end of string.
+                 */
+                return NS_FALSE;
+            }
+            if (byte1 < 0xC2 || bytes[index++] > 0xBF) {
+                return NS_FALSE;
+            }
+        } else if (byte1 < 0xF0) {
+            /*
+             * Three-byte UTF-8.
+             */
+            if (index + 1 >= nrBytes) {
+                /*
+                 * Premature end of string.
+                 */
+                return NS_FALSE;
+            }
+            byte2 = bytes[index++];
+            if (byte2 > 0xBF
+                /* Overlong? 5 most significant bits must not all be zero. */
+                || (byte1 == 0xE0 && byte2 < 0xA0)
+                /* Check for illegal surrogate codepoints. */
+                || (byte1 == 0xED && 0xA0 <= byte2)
+                /* Third byte trailing-byte test. */
+                || bytes[index++] > 0xBF) {
+                return NS_FALSE;
+            }
+        } else {
+            /*
+             * Four-byte UTF-8.
+             */
+            if (index + 2 >= nrBytes) {
+                /*
+                 * Premature end of string.
+                 */
+                return NS_FALSE;
+            }
+            byte2 = bytes[index++];
+            if (byte2 > 0xBF
+                /* Check that 1 <= plane <= 16. Tricky optimized form of:
+                 * if (byte1 > (byte) 0xF4
+                 *     || byte1 == (unsigned char) 0xF0 && byte2 < (unsigned char) 0x90
+                 *     || byte1 == (unsigned char) 0xF4 && byte2 > (unsigned char) 0x8F)
+                 */
+                || (((byte1 << 28) + (byte2 - 0x90)) >> 30) != 0
+                /* Third byte trailing byte test */
+                || bytes[index++] > 0xBF
+                /*  Fourth byte trailing byte test */
+                || bytes[index++] > 0xBF) {
+                return NS_FALSE;
+            }
+        }
+    }
+}
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclValidUtf8ObjCmd --
+ *
+ *      Check, if the input string is valid UTF-8.
+ *
+ *      Implements "ns_valid_utf8".
+ *
+ * Results:
+ *      Tcl result code
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclValidUtf8ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int                result;
+    Tcl_Obj           *stringObj = NULL;
+    Ns_ObjvSpec args[] = {
+        {"string",    Ns_ObjvObj, &stringObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Tcl_DString          stringDS;
+        int                  stringLength;
+        const unsigned char *bytes;
+
+        Tcl_DStringInit(&stringDS);
+        bytes = Ns_GetBinaryString(stringObj, 1, &stringLength, &stringDS);
+
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(Valid_UTF8(bytes, (size_t)stringLength)));
+        Tcl_DStringFree(&stringDS);
+        result = TCL_OK;
+    }
+    return result;
+}
+
+#if 0
+set s "hello world"
+time {time {ns_valid_utf8 $s} 1000} 1000  ;# 251mms ;# 229
+set s [string repeat x 1000]
+time {time {ns_valid_utf8 $s} 1000} 1000  ;# 4328.282139999999 ; 1535.6498230000002
+
+#endif
 
 
 /*

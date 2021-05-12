@@ -1380,6 +1380,7 @@ NS_EXTERN Tcl_ObjCmdProc
     TclX_KeyldelObjCmd,
     TclX_KeylgetObjCmd,
     TclX_KeylkeysObjCmd,
+    NsTclValidUtf8ObjCmd,
     TclX_KeylsetObjCmd;
 
 NS_EXTERN Ns_LogSeverity Ns_LogRequestDebug;
