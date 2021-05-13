@@ -100,7 +100,10 @@ Ns_StrTrimLeft(char *chars)
  *
  * Ns_StrTrimRight --
  *
- *      Trim trailing white space from a string.
+ *      Trim trailing white space from a string. Do NOT trim potential
+ *      parts of UTF-8 characters such we do not damage a string like
+ *      "test\xc3\x85", where \x85 is a UTF-8 whitespace; fortunately,
+ *      byte 2-4 in UTF-8 follows the pattern 10xxxxxx.
  *
  * Results:
  *      A pointer to the trimmed string, which will be in the
@@ -120,8 +123,8 @@ Ns_StrTrimRight(char *chars)
     NS_NONNULL_ASSERT(chars != NULL);
 
     len = (int)strlen(chars);
-
     while ((--len >= 0)
+           && (chars[len] > 0)
            && (CHARTYPE(space, chars[len]) != 0
                || chars[len] == '\n')) {
         chars[len] = '\0';
