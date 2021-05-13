@@ -368,6 +368,7 @@ Ns_ScheduleProcEx(Ns_SchedProc *proc, void *clientData, unsigned int flags,
             } while (isNew == 0);
             Tcl_SetHashValue(ePtr->hPtr, ePtr);
             ePtr->id = id;
+            Ns_Log(Debug, "QueueEvent (%d) based on current time", id);
             QueueEvent(ePtr, &now);
         }
         Ns_MutexUnlock(&lock);
@@ -655,7 +656,7 @@ QueueConsistencyCheck(const char *startMsg, int n, bool runAsserts)
  */
 
 static void
-QueueEvent(Event *ePtr, const Ns_Time *nowPtr)
+QueueEvent(Event *ePtr, const Ns_Time *baseTimePtr)
 {
     if ((ePtr->flags & NS_SCHED_PAUSED) == 0u) {
 
@@ -665,7 +666,7 @@ QueueEvent(Event *ePtr, const Ns_Time *nowPtr)
 
         if ((ePtr->flags & (NS_SCHED_DAILY | NS_SCHED_WEEKLY)) != 0u) {
             struct tm  *tp;
-            time_t      secs = nowPtr->sec;
+            time_t      secs = baseTimePtr->sec;
 
             tp = ns_localtime(&secs);
             tp->tm_sec = (int)ePtr->interval.sec;
@@ -676,14 +677,35 @@ QueueEvent(Event *ePtr, const Ns_Time *nowPtr)
             }
             ePtr->nextqueue.sec = mktime(tp);
             ePtr->nextqueue.usec = 0;
-            if (Ns_DiffTime(&ePtr->nextqueue, nowPtr, NULL) <= 0) {
+            if (Ns_DiffTime(&ePtr->nextqueue, baseTimePtr, NULL) <= 0) {
                 tp->tm_mday += ((ePtr->flags & NS_SCHED_WEEKLY) != 0u) ? 7 : 1;
                 ePtr->nextqueue.sec = mktime(tp);
                 ePtr->nextqueue.usec = 0;
             }
         } else {
-            ePtr->nextqueue = *nowPtr;
+            Ns_Time diff, now;
+            long d;
+
+            ePtr->nextqueue = *baseTimePtr;
             Ns_IncrTime(&ePtr->nextqueue, ePtr->interval.sec, ePtr->interval.usec);
+            Ns_GetTime(&now);
+            d = Ns_DiffTime(&ePtr->nextqueue, &now, &diff);
+
+            Ns_Log(Debug, "sched: compute next run time based on: basetime " NS_TIME_FMT
+                   " last queue " NS_TIME_FMT " last end " NS_TIME_FMT
+                   " next time " NS_TIME_FMT " now " NS_TIME_FMT " d %ld",
+                   (int64_t)baseTimePtr->sec, baseTimePtr->usec,
+                   (int64_t)ePtr->lastqueue.sec, ePtr->lastqueue.usec,
+                   (int64_t)ePtr->lastend.sec, ePtr->lastend.usec,
+                   (int64_t)ePtr->nextqueue.sec, ePtr->nextqueue.usec,
+                   (int64_t)now.sec, now.usec, d);
+                ;
+            if (d == -1) {
+                ePtr->nextqueue = now;
+                Ns_IncrTime(&ePtr->nextqueue, 0, 10000);
+                Ns_Log(Warning, "sched id %d: last execution overlaps with scheduled exection; "
+                       "running late", ePtr->id);
+            }
         }
 
         ePtr->qid = ++nqueue;
@@ -861,7 +883,11 @@ EventThread(void *arg)
         } else {
             ePtr->flags &= ~NS_SCHED_RUNNING;
             ePtr->lastend = now;
-            QueueEvent(ePtr, &now);
+            /*
+             * EventThread triggers QueueEvent() based on lastqueue.
+             */
+            Ns_Log(Debug, "QueueEvent (%d) based on lastqueue", ePtr->id);
+            QueueEvent(ePtr, &ePtr->lastqueue);
         }
         /* Served given # of jobs in this thread */
         if (jpt != 0 && --njobs <= 0) {
@@ -1014,14 +1040,21 @@ SchedThread(void *UNUSED(arg))
             if (ePtr != NULL) {
                 ePtr->flags &= ~NS_SCHED_RUNNING;
                 ePtr->lastend = now;
-                QueueEvent(ePtr, &ePtr->lastend);
+                /*
+                 * Base repeating thread on the last queue time, and not on
+                 * the last endtime to avoid a growing timeshift for events
+                 * that should run at fixed intervals.
+                 *
+                 * SchedThread triggers QueueEvent() based on lastqueue.
+                 */
+                Ns_Log(Debug, "QueueEvent (%d) based on lastqueue", ePtr->id);
+                QueueEvent(ePtr, &ePtr->lastqueue);
             }
         }
 
         /*
          * Wait for the next ready event.
          */
-
         if (nqueue == 0) {
             Ns_CondWait(&schedcond, &lock);
         } else if (!shutdownPending) {
