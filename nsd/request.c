@@ -172,7 +172,7 @@ Ns_FreeRequest(Ns_Request *request)
  */
 
 Ns_ReturnCode
-Ns_ParseRequest(Ns_Request *request, const char *line)
+Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
 {
     char       *url, *l, *p;
     Ns_DString  ds;
@@ -182,6 +182,13 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
     if (request == NULL) {
         return NS_ERROR;
     }
+
+    /*
+     * We could check here the validity UTF-8 of the request line, in case we
+     * would know it is supposed to be UTF8. Unfortunately, this is known
+     * ownly after the server is determined. We could use the ns/param
+     * encoding, but then, the per-server urlEncoding does not make sense.
+     */
 
 #if !defined(NDEBUG)
     /*
@@ -197,7 +204,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line)
      * Make a copy of the line to chop up. Make sure it isn't blank.
      */
 
-    Ns_DStringAppend(&ds, line);
+    Ns_DStringNAppend(&ds, line, (int)len);
     l = Ns_StrTrim(ds.string);
     if (*l == '\0') {
         goto done;
@@ -501,7 +508,10 @@ SetUrl(Ns_Request *request, char *url)
      */
     encodedPath = url;
     encoding = Ns_GetUrlEncoding(NULL);
+    Ns_Log(Debug, "### Request SetUrl calls Ns_UrlPathDecode '%s'", encodedPath);
     p = Ns_UrlPathDecode(&ds1, encodedPath, encoding);
+    Ns_Log(Debug, " ### decoded path '%s'", p);
+
     if (p == NULL) {
         p = url;
     }

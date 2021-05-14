@@ -1817,7 +1817,6 @@ NS_EXTERN bool NsTclObjIsEncodedByteArray(const Tcl_Obj *objPtr)
 NS_EXTERN bool NsTclTimeoutException(Tcl_Interp *interp)
     NS_GNUC_NONNULL(1);
 
-
 /*
  * (HTTP) Proxy support
  */

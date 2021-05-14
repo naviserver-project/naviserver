@@ -4402,7 +4402,7 @@ SockParse(Sock *sockPtr)
                  */
                 Ns_Log(DriverDebug, "SockParse (%d): parse request line <%s>", sockPtr->sock, s);
 
-                if (Ns_ParseRequest(&reqPtr->request, s) == NS_ERROR) {
+                if (Ns_ParseRequest(&reqPtr->request, s, (size_t)(e-s)) == NS_ERROR) {
                     /*
                      * Invalid request.
                      */
@@ -4823,6 +4823,19 @@ SockSetServer(Sock *sockPtr)
 
         Ns_Log(DriverDebug, "SockSetServer request line '%s' get location from driver '%s'",
                reqPtr->request.line, sockPtr->location);
+    }
+
+    /*
+     * Since the URLencoding can be set per server, we need the server
+     * assignment to check the validity of the request line.
+     */
+    if (NsEncodingIsUtf8(sockPtr->servPtr->encoding.urlEncoding)) {
+        if (!Ns_ValidUTF8((const unsigned char *)reqPtr->request.url,
+                          strlen(reqPtr->request.url))) {
+            Ns_Log(Warning, "Invalid UTF-8 encoding in url '%s'",
+                   reqPtr->request.url);
+            bad_request = NS_TRUE;
+        }
     }
 
     if (unlikely(bad_request)) {
