@@ -2256,7 +2256,7 @@ Ns_ResetRequest(Ns_Request *request)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode
-Ns_ParseRequest(Ns_Request *request, const char *line)
+Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
     NS_GNUC_NONNULL(2);
 
 NS_EXTERN const char *
@@ -3063,6 +3063,10 @@ Ns_StrIsValidHostHeaderContent(const char *chars)
 NS_EXTERN const unsigned char *
 Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+
+NS_EXTERN bool
+Ns_ValidUTF8(const unsigned char *bytes, size_t nrBytes)
+    NS_GNUC_NONNULL(1);
 
 /*
  * tclcallbacks.c:

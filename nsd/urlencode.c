@@ -978,7 +978,6 @@ Ns_EncodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment,
     NS_NONNULL_ASSERT(urlSegment != NULL);
 
     return Ns_UrlQueryEncode(dsPtr, urlSegment, encoding);
-
 }
 
 char *
@@ -1367,6 +1366,7 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
          * 2x.
          */
         Ns_DStringNAppend(dsPtr, urlSegment, (int)inputLength);
+        //Ns_Log(Notice, "### UrlDecode plain append <%s> len %ld", dsPtr->string, inputLength);
     } else {
         int          oldLength, decodedLength;
         char        *decoded;
@@ -1386,7 +1386,7 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
             memcpy(decoded, urlSegment, inputLength);
             decodedLength = (int)inputLength;
         }
-
+        //Ns_Log(Notice, "### UrlDecode <%s> encoding %p", decoded, (void*)encoding);
         if (likely(encoding != NULL)) {
             Tcl_DString  ds;
 
@@ -1395,6 +1395,7 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
 
             Ns_DStringSetLength(dsPtr, oldLength);
             Ns_DStringAppend(dsPtr, Tcl_DStringValue(&ds));
+            //Ns_Log(Notice, "### UrlDecode after ext to utf8 <%s>", dsPtr->string);
             Tcl_DStringFree(&ds);
 
         } else {

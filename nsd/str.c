@@ -679,6 +679,120 @@ Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ValidUTF8 --
+ *
+ *      Check the validity of the UTF-8 input string.
+ *
+ *      This implementation is fully platform independent and
+ *      based on the code from Daniel Lemire, but not using
+ *      the SIMD operations from
+ *
+ *         John Keiser, Daniel Lemire, Validating UTF-8 In Less Than
+ *         One Instruction Per Byte, Software: Practice &
+ *         Experience 51 (5), 2021
+ *         https://github.com/lemire/fastvalidate-utf-8
+ *
+ *      If necessary, more performance can be squeezed
+ *      out. This might be the case, when this function would
+ *      be used internally for validating.
+ *
+ * Results:
+ *      Boolean value.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+bool Ns_ValidUTF8(const unsigned char *bytes, size_t nrBytes)
+{
+    size_t index = 0;
+
+    for (;;) {
+        unsigned char byte1, byte2;
+
+        /*
+         * Quick loop, when we have just 7-bit ASCII characters.
+         */
+        do {
+            if (index >= nrBytes) {
+                /*
+                 * Successful end of string.
+                 */
+                return NS_TRUE;
+            }
+            /*Ns_Log(Notice, "[%ld] work on %.2x %c", index, bytes[index], bytes[index]);*/
+            byte1 = bytes[index++];
+        } while (byte1 < 0x80);
+
+        if (byte1 < 0xE0) {
+            /*
+             * Two-byte UTF-8.
+             */
+            if (index == nrBytes) {
+                /*
+                 * Premature end of string.
+                 */
+                Ns_Log(Debug, "UTF8 decode '%s': 2byte premature", bytes);
+                return NS_FALSE;
+            }
+            byte2 = bytes[index++];
+            if (byte1 < 0xC2 || /*bytes[index++]*/ byte2 > 0xBF) {
+                Ns_Log(Debug, "UTF8 decode '%s': 2-byte invalid 2nd byte %.2x", bytes, byte2);
+                return NS_FALSE;
+            }
+        } else if (byte1 < 0xF0) {
+            /*
+             * Three-byte UTF-8.
+             */
+            if (index + 1 >= nrBytes) {
+                /*
+                 * Premature end of string.
+                 */
+                Ns_Log(Debug, "UTF8 decode '%s': 3-byte premature", bytes);
+                return NS_FALSE;
+            }
+            byte2 = bytes[index++];
+            if (byte2 > 0xBF
+                /* Overlong? 5 most significant bits must not all be zero. */
+                || (byte1 == 0xE0 && byte2 < 0xA0)
+                /* Check for illegal surrogate codepoints. */
+                || (byte1 == 0xED && 0xA0 <= byte2)
+                /* Third byte trailing-byte test. */
+                || bytes[index++] > 0xBF) {
+                return NS_FALSE;
+            }
+        } else {
+            /*
+             * Four-byte UTF-8.
+             */
+            if (index + 2 >= nrBytes) {
+                /*
+                 * Premature end of string.
+                 */
+                Ns_Log(Debug, "UTF8 decode '%s': 3-byte premature", bytes);
+                return NS_FALSE;
+            }
+            byte2 = bytes[index++];
+            if (byte2 > 0xBF
+                /* Check that 1 <= plane <= 16. Tricky optimized form of:
+                 * if (byte1 > (byte) 0xF4
+                 *     || byte1 == (unsigned char) 0xF0 && byte2 < (unsigned char) 0x90
+                 *     || byte1 == (unsigned char) 0xF4 && byte2 > (unsigned char) 0x8F)
+                 */
+                || (((byte1 << 28) + (byte2 - 0x90)) >> 30) != 0
+                /* Third byte trailing byte test */
+                || bytes[index++] > 0xBF
+                /*  Fourth byte trailing byte test */
+                || bytes[index++] > 0xBF) {
+                return NS_FALSE;
+            }
+        }
+    }
+}
 
 /*
  * Local Variables:
