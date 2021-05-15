@@ -160,29 +160,93 @@ namespace eval ::revproxy {
             # Check status of backend channel. In particular, we check
             # whether some content is still buffered in the channel.
             #
-            # The loop with the 1ms way is transitional code. We
-            # should solve this via a writable callback, but for this,
-            # we have to be able to reproduce reliably a situation,
-            # where this is needed.
-            #
-            set status [ns_connchan status $backendChan]
-            ns_log notice "STATUS backend: $status"
-            while {[dict get $status sendbuffer] > 0} {
-                ns_sleep 1ms
-                ns_connchan write -buffered $backendChan ""
-                set status [ns_connchan status $backendChan]
-                ns_log notice "STATUS backend on retry: $status"
-            }
-
-            #
-            # Full request was received and transmitted upstream, now handle replies
+            # We could send the data here as well with a loop, since
+            # we are here still in the connection thread. Nowever, it
+            # is more efficient to trigger I/O operation via the
+            # writable condition in the socks thread, since this will
+            # not block the connection thread.
             #
             set frontendChan [ns_connchan detach]
             log notice "backendChan $backendChan frontendChan $frontendChan " \
                 "method [ns_conn method] version 1.0 $url"
+            set done_cmd [list ::revproxy::upstream_send_done \
+                              -backendChan $backendChan \
+                              -frontendChan $frontendChan \
+                              -url $url \
+                              -timeout $timeout \
+                              -sendtimeout $sendtimeout \
+                              -receivetimeout $receivetimeout \
+                              -backend_reply_callback $backend_reply_callback \
+                              -exception_callback $exception_callback]
 
+            set status [ns_connchan status $backendChan]
+            if {[dict get $status sendbuffer] == 0} {
+                {*}$done_cmd
+            } else {
+                ns_log notice "revproxy::upstream: sending request to the client is not finished yet: $status"
+                ns_connchan callback $backendChan \
+                    [list revproxy::upstream_send_writable $backendChan $done_cmd] wex
+            }
+        } errorMsg]} {
+            ::revproxy::upstream_send_failed \
+                -errorMsg $errorMsg \
+                -url $url \
+                -exception_callback $exception_callback \
+                {*}[expr {[info exists frontendChan] ? "-frontendChan $frontendChan" : ""}] \
+                {*}[expr {[info exists backendChan]  ? "-backendChan $backendChan" : ""}]
+        }
+        return filter_return
+    }
+
+    nsf::proc upstream_send_writable {
+        channel
+        done_cmd
+        condition
+    } {
+        # When continue is 1, the event will fire again; when continue
+        # is 0 channel will be closed.  A continue of 2 means cancel
+        # the callback, but don't close the channel.
+        #
+        log notice "upstream_send_writable on $channel (condition $condition)"
+
+        set result [ns_connchan write -buffered $channel ""]
+        set status [ns_connchan status $channel]
+        #ns_log notice "upstream_send writable <$result> status $status"
+        if {$result == 0 || [dict get $status sendbuffer] > 0} {
+            #ns_log warning "upstream_send_writable still flushing the buffer " \
+                "(still [dict get $status sendbuffer])... trigger again. status: $status"
+            set continue 1
+        } else {
+            #
+            # All was sent,
+            #
+            set continue 1
+            {*}$done_cmd
+            ns_log notice "revproxy::upstream_send_writable all was sent, register callback for reading DONE"
+        }
+
+        log "upstream_send_writable returns $continue (channel $channel)"
+        return $continue
+    }
+
+    nsf::proc upstream_send_done {
+        -backendChan
+        -frontendChan
+        -url
+        -timeout
+        -sendtimeout
+        -receivetimeout
+        -backend_reply_callback
+        -exception_callback
+    } {
+        #
+        # Full request was received and transmitted upstream, now
+        # setup for replies.
+        #
+        #ns_log notice "=== upstream_send_done ==="
+        try {
             set timeouts [list -timeout $timeout -sendtimeout $sendtimeout -receivetimeout $receivetimeout]
-            log notice "===== Set callbacks [ns_info server] "
+            log notice "===== Set callbacks [ns_info server] frontendChan $frontendChan backendChan $backendChan"
             ns_connchan callback \
                 -timeout $timeout -sendtimeout $sendtimeout -receivetimeout $receivetimeout \
                 $frontendChan [list ::revproxy::spool $frontendChan $backendChan client $timeouts 0] rex
@@ -190,19 +254,33 @@ namespace eval ::revproxy {
                 -timeout $timeout -sendtimeout $sendtimeout -receivetimeout $receivetimeout \
                 $backendChan [list ::revproxy::backendReply -callback $backend_reply_callback \
                                   $backendChan $frontendChan $url $timeouts 0] rex
+        } on error {errorMsg} {
+            ns_log error "upstream_send_done: $errorMsg"
+            ::revproxy::upstream_send_failed \
+                -errorMsg $errorMsg \
+                -url $url \
+                -exception_callback $exception_callback \
+                {*}[expr {[info exists frontendChan] ? "-frontendChan $frontendChan" : ""}] \
+                {*}[expr {[info exists backendChan]  ? "-backendChan $backendChan" : ""}]
+        }
+    }
 
-        } errorMsg]} {
-            ns_log error "revproxy::upstream: error during establishing connections to $url: $errorMsg"
-            if {$exception_callback ne ""} {
-                {*}$exception_callback -error $errorMsg -url $url
-            }
-            foreach chan {frontendChan backendChan} {
-                if {[info exists $chan]} {
-                    ns_connchan close [set $chan]
-                }
+    nsf::proc upstream_send_failed {
+        -errorMsg
+        -frontendChan
+        -backendChan
+        -url
+        {-exception_callback ""}
+    } {
+        ns_log error "revproxy::upstream: error during establishing connections to $url: $errorMsg"
+        if {$exception_callback ne ""} {
+            {*}$exception_callback -error $errorMsg -url $url
+        }
+        foreach chan {frontendChan backendChan} {
+            if {[info exists $chan]} {
+                ns_connchan close [set $chan]
             }
         }
-        return filter_return
     }
 
     nsf::proc gateway_timeout { from msg } {
