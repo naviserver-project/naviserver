@@ -200,7 +200,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
      * https://www.w3.org/Addressing/URL/4_URI_Recommentations.html
      */
 
-    if (!Ns_Is7-bit(line, len)) {
+    if (!Ns_Is7bit(line, len)) {
         Ns_Log(Warning, "Ns_ParseRequest: line <%s> contains 8-bit "
                "character data. Future version might reject it.", line);
     }
