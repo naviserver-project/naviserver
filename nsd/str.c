@@ -811,7 +811,7 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes)
  *
  *----------------------------------------------------------------------
  */
-bool Ns_Is7-bit(const char *bytes, size_t nrBytes)
+bool Ns_Is7bit(const char *bytes, size_t nrBytes)
 {
     const char *current = bytes, *end = bytes + nrBytes;
     uint64_t mask1 = 0u, mask2 = 0u, mask3 = 0u, mask4 = 0u, last_mask = 0u;
