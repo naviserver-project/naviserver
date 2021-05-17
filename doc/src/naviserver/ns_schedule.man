@@ -16,16 +16,20 @@ procedures. This functionality is similar to Unix cron.
 
 
 [call [cmd ns_schedule_proc] \
-	[opt [option {-once}]] \
-	[opt [option -thread]] \
-	[arg interval] \
-	[arg script]]
+        [opt [option {-once}]] \
+        [opt [option -thread]] \
+        [arg interval] \
+        [arg script]]
 
 This command schedules a script to be run after a certain interval.
-Returns the ID of the newly scheduled script.  If
-[option -once] is specified, then the script is run once and then
-unscheduled, otherwise it will continue to run every interval
-time periods.
+Returns the ID of the newly scheduled script.  If [option -once] is
+specified, then the script is run once and then unscheduled, otherwise
+it will continue to run every interval time periods. The time interval
+is based on the time instant, when the command was issued. When the
+time duration of a command takes long than the specified time interval
+for rescheduling, a warning message is generated and the command is
+issued 10ms after the long running one. So, the scheduled commmands
+run always sequentially.
 
 [para] The
 [arg interval] can be specified with time units (per default seconds).
@@ -44,12 +48,12 @@ threads.
 
 
 [call [cmd ns_schedule_weekly] \
-	[opt [option -once]] \
-	[opt [option -thread]] \
-	[arg day] \
-	[arg hour] \
-	[arg minute] \
-	[arg script]]
+        [opt [option -once]] \
+        [opt [option -thread]] \
+        [arg day] \
+        [arg hour] \
+        [arg minute] \
+        [arg script]]
 
 This command schedules a script to be run on a certain day of the week at a
 certain hour and minute of that day.  Returns the ID of the newly scheduled script.
@@ -74,11 +78,11 @@ shifts affecting the time of day when the script will execute.
 
 
 [call [cmd ns_schedule_daily] \
-	[opt [option -once]] \
-	[opt [option -thread]] \
-	[arg hour] \
-	[arg minute] \
-	[arg script]]
+        [opt [option -once]] \
+        [opt [option -thread]] \
+        [arg hour] \
+        [arg minute] \
+        [arg script]]
 
 This command schedules a script to be run at a certain hour and minute of the day.
 Returns the ID of the newly scheduled script.  If [option -once] is specified, then the script
@@ -134,8 +138,8 @@ on success, 0 on failure.
 
 
 [call [cmd ns_after] \
-	[arg interval] \
-	[arg script]]
+        [arg interval] \
+        [arg script]]
 
 Execute a command after a time delay.  This command executes a script
 in the background after [arg interval] time units.  It does this
