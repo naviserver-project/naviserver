@@ -682,7 +682,7 @@ Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ValidUTF8 --
+ * Ns_Valid_UTF8 --
  *
  *      Check the validity of the UTF-8 input string.
  *
@@ -707,7 +707,7 @@ Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *
  *
  *----------------------------------------------------------------------
  */
-bool Ns_ValidUTF8(const unsigned char *bytes, size_t nrBytes)
+bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes)
 {
     size_t index = 0;
 
@@ -792,6 +792,53 @@ bool Ns_ValidUTF8(const unsigned char *bytes, size_t nrBytes)
             }
         }
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_Is7-bit --
+ *
+ *      Checks whether the input string is 7-bit. This functions tries to
+ *      perform this test with a low number of iterations for
+ *      performance reasons.
+ *
+ * Results:
+ *      Boolean value.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+bool Ns_Is7-bit(const char *bytes, size_t nrBytes)
+{
+    const char *current = bytes, *end = bytes + nrBytes;
+    uint64_t mask1 = 0u, mask2 = 0u, mask3 = 0u, mask4 = 0u, last_mask = 0u;
+
+    /*
+     * An unsigned 64-bit integral type is not guaranteed by the C
+     * standard but is typically available on 32-bit machines, and on
+     * virtually all machines running Linux. ... and since we use this
+     * as well on other places, this should be ok.
+     */
+    for (; current < end - 32; current += 32) {
+        const uint64_t* p = (const uint64_t*)current;
+        mask1 |= p[0];
+        mask2 |= p[1];
+        mask3 |= p[2];
+        mask4 |= p[3];
+    }
+
+    for (; current < end - 8; current += 8) {
+        const uint64_t* p = (const uint64_t*)current;
+        mask1 |= p[0];
+    }
+
+    for (; current < end; current++) {
+        last_mask |= *(const uint8_t*)current;
+    }
+    return ((mask1 | mask2 | mask3 | mask4 | last_mask) & 0x8080808080808080u) == 0u;
 }
 
 /*

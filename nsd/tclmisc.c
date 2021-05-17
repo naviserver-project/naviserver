@@ -2613,7 +2613,7 @@ NsTclValidUtf8ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         Tcl_DStringInit(&stringDS);
         bytes = Ns_GetBinaryString(stringObj, 1, &stringLength, &stringDS);
 
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_ValidUTF8(bytes, (size_t)stringLength)));
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_Valid_UTF8(bytes, (size_t)stringLength)));
         Tcl_DStringFree(&stringDS);
         result = TCL_OK;
     }

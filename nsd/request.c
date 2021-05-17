@@ -188,7 +188,22 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
      * would know it is supposed to be UTF8. Unfortunately, this is known
      * ownly after the server is determined. We could use the ns/param
      * encoding, but then, the per-server urlEncoding does not make sense.
+     *
+     * RFC 7230 (Hypertext Transfer Protocol (HTTP/1.1): Message Syntax and
+     * Routing) states: Parsing an HTTP message as a stream of Unicode
+     * characters, without regard for the specific encoding, creates security
+     * vulnerabilities due to the varying ways that string processing
+     * libraries handle invalid multibyte character sequences that contain the
+     * octet LF (%x0A).
+     *
+     * W3C recommends only URLs with proper encodings (subset of US ASCII):
+     * https://www.w3.org/Addressing/URL/4_URI_Recommentations.html
      */
+
+    if (!Ns_Is7-bit(line, len)) {
+        Ns_Log(Warning, "Ns_ParseRequest: line <%s> contains 8-bit "
+               "character data. Future version might reject it.", line);
+    }
 
 #if !defined(NDEBUG)
     /*
