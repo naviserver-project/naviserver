@@ -3065,7 +3065,11 @@ Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN bool
-Ns_ValidUTF8(const unsigned char *bytes, size_t nrBytes)
+Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN bool
+Ns_Is7bit(const char *bytes, size_t nrBytes)
     NS_GNUC_NONNULL(1);
 
 /*
