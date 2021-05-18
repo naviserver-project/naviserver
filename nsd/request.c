@@ -202,7 +202,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
 
     if (!Ns_Is7bit(line, len)) {
         Ns_Log(Warning, "Ns_ParseRequest: line <%s> contains 8-bit "
-               "character data. Future version might reject it.", line);
+               "character data. Future versions might reject it.", line);
     }
 
 #if !defined(NDEBUG)
