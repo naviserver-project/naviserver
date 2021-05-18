@@ -661,12 +661,12 @@ QueueConsistencyCheck(const char *startMsg, int n, bool runAsserts)
 static void
 QueueEvent(Event *ePtr)
 {
-    if ((ePtr->flags & NS_SCHED_PAUSED) == 0u) {
+    long d;
 
+    if ((ePtr->flags & NS_SCHED_PAUSED) == 0u) {
         /*
          * Calculate the time from now in seconds this event should run.
          */
-
         if ((ePtr->flags & (NS_SCHED_DAILY | NS_SCHED_WEEKLY)) != 0u) {
             struct tm  *tp;
             time_t      secs = ePtr->scheduled.sec;
@@ -680,17 +680,25 @@ QueueEvent(Event *ePtr)
             }
             ePtr->nextqueue.sec = mktime(tp);
             ePtr->nextqueue.usec = 0;
-            if (Ns_DiffTime(&ePtr->nextqueue, &ePtr->scheduled, NULL) <= 0) {
+            d = Ns_DiffTime(&ePtr->nextqueue, &ePtr->scheduled, NULL);
+            Ns_Log(Debug, "SCHED_DAILY: scheduled " NS_TIME_FMT " next " NS_TIME_FMT
+                   " diff %ld secdiff %ld",
+                   (int64_t)ePtr->scheduled.sec, ePtr->scheduled.usec,
+                   (int64_t)ePtr->nextqueue.sec, ePtr->nextqueue.usec,
+                   d, (long)ePtr->nextqueue.sec-(long)ePtr->scheduled.sec);
+
+            if (d <= 0) {
                 tp->tm_mday += ((ePtr->flags & NS_SCHED_WEEKLY) != 0u) ? 7 : 1;
                 ePtr->nextqueue.sec = mktime(tp);
                 ePtr->nextqueue.usec = 0;
+                Ns_Log(Debug, "SCHED_DAILY: final next " NS_TIME_FMT ,
+                       (int64_t)ePtr->nextqueue.sec, ePtr->nextqueue.usec);
             }
+            ePtr->scheduled = ePtr->nextqueue;
         } else {
             Ns_Time diff, now;
-            long d;
 
             ePtr->nextqueue = ePtr->scheduled;
-
             Ns_IncrTime(&ePtr->nextqueue, ePtr->interval.sec, ePtr->interval.usec);
             /*
              * The update time is the next scheduled time.
