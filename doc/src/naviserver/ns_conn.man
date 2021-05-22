@@ -215,6 +215,31 @@ Query or set the keepalive for the current connection.
 Returns the location string for this virtual server in the form:
 protocol://hostname[lb]:port[rb].
 
+The location is determined via the following means:
+[list_begin enumerated]
+
+[enum]
+if [cmd ns_locationproc] is configured, its result is returned.
+
+[enum]
+if virtual hosting is enabled, and the "Host:" header field
+is provided and valid, it returns its content.
+
+[enum]
+If everything above fails, it is determined by virtual hosts mapping table
+(as defined in the "ns/module/nssock/servers" or
+"ns/module/nsssl/servers" section in the configuration file).
+
+[enum]
+If everything above fails, and a connection is open, it is determined
+by the current socket address.
+
+[enum]
+If everything above fails, it is determined
+by configuration values of the driver.
+
+[list_end]
+
 
 [call [cmd  "ns_conn method"]]
 
@@ -370,7 +395,7 @@ encoded response.
  }
 [example_end]
 
-[see_also ns_adp ns_getform ns_set ns_queryget ns_time]
+[see_also ns_adp ns_locationproc ns_getform ns_set ns_queryget ns_time]
 [keywords "server built-in" gzip connection reverseproxy]
 
 [manpage_end]
