@@ -715,15 +715,26 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes)
         unsigned char byte1, byte2;
 
         /*
-         * Quick loop, when we have just 7-bit ASCII characters.
+         * First a loop over 7-bit ASCII characters.
          */
         do {
-            if (index >= nrBytes) {
+            /*
+             * In most cases, the strings are longer. Reduce the number of
+             * loops by processing eight characters at a time.
+             */
+            if (likely(index + 8 < nrBytes)) {
+                const uint64_t *p = (const uint64_t*)&bytes[index];
+                if ((*p & 0x8080808080808080u) == 0u) {
+                    index += 8;
+                    continue;
+                }
+            } else if (unlikely(index >= nrBytes)) {
                 /*
                  * Successful end of string.
                  */
                 return NS_TRUE;
             }
+
             /*Ns_Log(Notice, "[%ld] work on %.2x %c", index, bytes[index], bytes[index]);*/
             byte1 = bytes[index++];
         } while (byte1 < 0x80);
@@ -740,7 +751,7 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes)
                 return NS_FALSE;
             }
             byte2 = bytes[index++];
-            if (byte1 < 0xC2 || /*bytes[index++]*/ byte2 > 0xBF) {
+            if (byte1 < 0xC2 || ((/*bytes[index++]*/ byte2 & 0xC0) != 0x80)) {
                 Ns_Log(Debug, "UTF8 decode '%s': 2-byte invalid 2nd byte %.2x", bytes, byte2);
                 return NS_FALSE;
             }

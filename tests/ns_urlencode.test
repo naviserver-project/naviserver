@@ -170,14 +170,29 @@ test ns_urlencode-2.5.14 {spaces and plus signs} -body {
     ns_urldecode -part query "%2b"
 } -result {+}
 
-test ns_urlencode-2.5.15 {spaces and plus signs} -body {
+test ns_urlencode-2.5.15 {spaces and plus signs, lower-case} -body {
     ns_urldecode "%2b"
 } -result {+}
 
-test ns_urlencode-2.5.16 {spaces and plus signs} -body {
+test ns_urlencode-2.5.16 {spaces and plus signs, upper-case} -body {
     ns_urldecode "%2B"
 } -result {+}
 
+test ns_urlencode-2.5.17 {plain chars and encoded chars} -body {
+    ns_urldecode -part path "/mot%C3%B6rhead"
+} -result {/motörhead}
+
+test ns_urlencode-2.5.18.1 {invalid 2byte utf-8 - 2nd by too small} -body {
+    ns_valid_utf8 [ns_urldecode -part path "/mot%C3or"]
+} -result 0
+
+test ns_urlencode-2.5.18.2 {invalid 2byte utf-8 - premature end} -body {
+    ns_valid_utf8 [ns_urldecode -part path "/mot%C3"]
+} -result 0
+
+test ns_urlencode-2.5.18.2 {invalid 2byte utf-8 - text with cp850 chars} -body {
+    ns_valid_utf8 [ns_urldecode -part path "test%E4%FC"]
+} -result 0
 
 test ns_urlencode-2.6.1 {rfc2396 section 2.4.3 URI 'delim' characters} -body {
     ns_urlencode -part path "<>\#%\""
