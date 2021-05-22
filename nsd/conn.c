@@ -839,12 +839,19 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
     }
 
     /*
+     * If everything above failed, try the location form the connPtr. This is
+     * actually determine from sockPtr->location which comes from
+     * mapPtr->location, which comes from the virtual hosts mapping table.
+     */
+    if ((location == NULL) && (connPtr->location != NULL)) {
+        location = Ns_DStringAppend(dest, connPtr->location);
+    }
+
+    /*
      * If everything above failed, try the static driver location or - as last
      * resort - use the configured address.
      */
-    if ((location == NULL) && (connPtr->location != NULL)) {
-            location = Ns_DStringAppend(dest, connPtr->location);
-        }
+
     if (location == NULL) {
         unsigned short port;
         const char    *addr;
