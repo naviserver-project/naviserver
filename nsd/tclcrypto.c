@@ -1854,7 +1854,7 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
             Ns_TclPrintfResult(interp, "could not set parameters");
             result = TCL_ERROR;
 
-        } else if (EVP_KDF_derive(kctx, out, sizeof(out)) <= 0) {
+        } else if (EVP_KDF_derive(kctx, out, sizeof(out), NULL) <= 0) {
             Ns_TclPrintfResult(interp, "could not derive key");
             result = TCL_ERROR;
 
