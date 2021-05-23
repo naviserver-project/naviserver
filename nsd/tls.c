@@ -1902,6 +1902,19 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
                 sockState = NS_SOCK_AGAIN;
                 break;
             }
+            if (reasonCode == SSL_R_UNSUPPORTED_PROTOCOL) {
+                struct NS_SOCKADDR_STORAGE sa;
+                socklen_t socklen = (socklen_t)sizeof(sa);
+                char      ipString[NS_IPADDR_SIZE];
+
+                if ( getpeername(sock, (struct sockaddr *)&sa, &socklen) == 0) {
+                    ns_inet_ntop((struct sockaddr *)&sa, ipString, sizeof(ipString));
+                } else {
+                    ipString[0] = '\0';
+                }
+                Ns_Log(Notice, "SSL_read(%d) client requested unsupported protocol: %s from peer %s",
+                       sock, SSL_get_version(sslPtr), ipString);
+            }
         }
         /*
          * Report all sslERRcodes from the OpenSSL error stack as
@@ -1911,6 +1924,7 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
             Ns_Log(Notice, "SSL_read(%d) error received:%d, got:%d, err:%d,"
                    " get_error:%lu, %s", sock, n, got, err, sslERRcode,
                    ERR_error_string(sslERRcode, errorBuffer));
+
             sslERRcode = ERR_get_error();
         }
 
