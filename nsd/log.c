@@ -739,7 +739,8 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list apSrc)
         size_t    length, offset;
         LogEntry *entryPtr;
         /*
-         * Track usage to provide statistics.
+         * Track usage to provide statistics.  The next line can lead
+         * potentially to data races (dirty reads).
          */
         severityConfig[severity].count ++;
 
@@ -1604,8 +1605,8 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool loc
     NS_NONNULL_ASSERT(cachePtr != NULL);
     NS_NONNULL_ASSERT(listPtr != NULL);
 
-    fprintf(stderr, "#### %s cachePtr %p locked %d count %d cachePtr->count %d\n",
-            Ns_ThreadGetName(), (void*)cachePtr, locked, count, cachePtr->count);
+    /*fprintf(stderr, "#### %s cachePtr %p locked %d count %d cachePtr->count %d\n",
+      Ns_ThreadGetName(), (void*)cachePtr, locked, count, cachePtr->count);*/
 
     if (locked) {
         Ns_MutexLock(&lock);
