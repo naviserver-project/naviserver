@@ -1383,7 +1383,7 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
         if (firstCode != NULL) {
             ptrdiff_t offset = firstCode - urlSegment;
 
-            memcpy(decoded, urlSegment, offset);
+            memcpy(decoded, urlSegment, (size_t)offset);
             decodedLength = (int)offset;
             dsPtr->length += decodedLength;
             decodedLength += PercentDecode(decoded+offset, urlSegment+offset, part);

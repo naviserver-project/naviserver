@@ -214,7 +214,9 @@ NsThreadMain(void *arg)
 {
     Thread  *thrPtr = (Thread *) arg;
 
+    Ns_MasterLock();
     thrPtr->tid = Ns_ThreadId();
+    Ns_MasterUnlock();
     Ns_TlsSet(&key, thrPtr);
     Ns_ThreadSetName("-thread:%" PRIxPTR "-", thrPtr->tid);
     SetBottomOfStack(&thrPtr);
@@ -551,7 +553,9 @@ NsThreadShutdownStarted(void)
 {
     Thread *thisPtr = GetThread();
 
+    Ns_MasterLock();
     thisPtr->flags |= NS_THREAD_EXITED;
+    Ns_MasterUnlock();
 }
 
 

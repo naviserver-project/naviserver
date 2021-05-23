@@ -6181,9 +6181,8 @@ WriterThread(void *arg)
         }
 
         /*
-         * Check for shutdown
+         * Check for shutdown (potentially a dirty read)
          */
-
         stopping = queuePtr->shutdown;
     }
     PollFree(&pdata);
