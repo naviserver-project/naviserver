@@ -716,30 +716,30 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes)
 
         /*
          * First a loop over 7-bit ASCII characters.
+         *
+         * In most cases, the strings are longer. Reduce the number of
+         * loops by processing eight characters at a time.
          */
-        do {
-            /*
-             * In most cases, the strings are longer. Reduce the number of
-             * loops by processing eight characters at a time.
-             */
-            if (likely(index + 8 < nrBytes)) {
-                const uint64_t *p = (const uint64_t*)&bytes[index];
-                if ((*p & 0x8080808080808080u) == 0u) {
-                    index += 8;
-                    continue;
-                }
-            } else if (unlikely(index >= nrBytes)) {
-                /*
-                 * Successful end of string.
-                 */
-                return NS_TRUE;
+        if (likely(index + 8 < nrBytes)) {
+            const uint64_t *p = (const uint64_t*)&bytes[index];
+
+            if ((*p & 0x8080808080808080u) == 0u) {
+                index += 8;
+                continue;
             }
+        } else if (unlikely(index >= nrBytes)) {
+            /*
+             * Successful end of string.
+             */
+            return NS_TRUE;
+        }
 
-            /*Ns_Log(Notice, "[%ld] work on %.2x %c", index, bytes[index], bytes[index]);*/
-            byte1 = bytes[index++];
-        } while (byte1 < 0x80);
+        /*Ns_Log(Notice, "[%ld] work on %.2x %c", index, bytes[index], bytes[index]);*/
+        byte1 = bytes[index++];
+        if (byte1 < 0x80) {
+            continue;
 
-        if (byte1 < 0xE0) {
+        } else if (byte1 < 0xE0) {
             /*
              * Two-byte UTF-8.
              */
