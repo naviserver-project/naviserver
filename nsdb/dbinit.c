@@ -538,22 +538,24 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
             status = Connect(handlePtr);
         }
     }
+
+    Ns_GetTime(&endTime);
+    (void)Ns_DiffTime(&endTime, &startTime, &diffTime);
+
+    Ns_MutexLock(&poolPtr->lock);
     if (status != NS_OK) {
-        Ns_MutexLock(&poolPtr->lock);
         while (ngot > 0) {
             ReturnHandle(handlesPtrPtr[--ngot]);
         }
         if (poolPtr->waiting != 0) {
             Ns_CondSignal(&poolPtr->getCond);
         }
-        Ns_MutexUnlock(&poolPtr->lock);
         (void) IncrCount("Ns_DbPoolTimedGetMultipleHandles fail2", poolPtr, -nwant);
     }
 
-    Ns_GetTime(&endTime);
-    (void)Ns_DiffTime(&endTime, &startTime, &diffTime);
     Ns_IncrTime(&poolPtr->waitTime, diffTime.sec, diffTime.usec);
     poolPtr->getHandleCount++;
+    Ns_MutexUnlock(&poolPtr->lock);
 
     return status;
 }
@@ -990,7 +992,10 @@ NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
     NS_NONNULL_ASSERT(sql != NULL);
 
     poolPtr = ((const Handle *)handle)->poolPtr;
+
+    Ns_MutexLock(&poolPtr->lock);
     poolPtr->statementCount++;
+    Ns_MutexUnlock(&poolPtr->lock);
 
     if (handle->dsExceptionMsg.length > 0) {
         /*
@@ -1009,7 +1014,10 @@ NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
 
         Ns_GetTime(&endTime);
         (void)Ns_DiffTime(&endTime, startTime, &diffTime);
+
+        Ns_MutexLock(&poolPtr->lock);
         Ns_IncrTime(&poolPtr->sqlTime, diffTime.sec, diffTime.usec);
+        Ns_MutexUnlock(&poolPtr->lock);
 
         if (Ns_LogSeverityEnabled(Ns_LogSqlDebug) == NS_TRUE) {
             long delta = Ns_DiffTime(&poolPtr->minDuration, &diffTime, NULL);

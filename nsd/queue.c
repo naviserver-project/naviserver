@@ -458,6 +458,7 @@ neededAdditionalConnectionThreads(const ConnPool *poolPtr) {
 void
 NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
     bool create;
+    int  waitnum;
 
     NS_NONNULL_ASSERT(servPtr != NULL);
 
@@ -476,6 +477,7 @@ NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
     if (create) {
         poolPtr->threads.current ++;
         poolPtr->threads.creating ++;
+        waitnum = poolPtr->wqueue.wait.num;
     }
 
     Ns_MutexUnlock(&poolPtr->threads.lock);
@@ -484,7 +486,7 @@ NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
     if (create) {
         Ns_Log(Notice, "NsEnsureRunningConnectionThreads wantCreate %d waiting %d idle %d current %d",
                (int)create,
-               poolPtr->wqueue.wait.num,
+               waitnum,
                poolPtr->threads.idle,
                poolPtr->threads.current);
         CreateConnThread(poolPtr);
