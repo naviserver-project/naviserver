@@ -1,7 +1,7 @@
 Reverse Proxy Module for NaviServer
 ===================================
 
-Release 0.11
+Release 0.15
 ------------
 
     neumann@wu-wien.ac.at
@@ -30,7 +30,7 @@ Both the incoming and upstream connections might be based on http or
 https. The implementation works as well with WebSockets (including
 secure WebSockets).
 
-The module requires at least NaviServer 4.99.14. The implementation is
+The module requires at least NaviServer 4.99.21. The implementation is
 based on nsf, which is available from e.g.  http://next-scripting.org/
 
 ***
