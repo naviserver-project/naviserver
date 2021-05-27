@@ -380,6 +380,75 @@ test ns_urlencode-6.0 {security check: see, if we can sneek in a binary 0 to tri
     ns_unregister_op GET /encode-decode
 } -result "200 {1%00%27 0}"
 
+#
+# Test URLs ending with "funny characaters", e.g. the URL ends with
+# %3f, which decodes to a question mark.
+#
+test ns_urlencode-7.0 {
+    Funny chars: URL ends with question mark
+} -constraints {serverListen} -setup {
+    ns_register_proc GET /a? {
+        ns_return 200 text/plain [list [ns_conn url] [ns_info server]]
+    }
+} -body {
+    nstest::http -http 1.1 -getbody 1 GET /[ns_urlencode -part path a?]
+} -cleanup {
+    ns_unregister_op GET /a?
+} -returnCodes {ok return error} -result "200 {/a? test}"
+
+test ns_urlencode-7.0.1 {
+    Funny chars: URL ends with question mark, not found
+} -constraints {serverListen} -body {
+    set r [nstest::http -http 1.1 -getbody 1 \
+               GET /[ns_urlencode -part path a?]]
+    #ns_log notice r=$r
+    string match "404*was not found on this server*" $r
+} -returnCodes {ok return error} -result 1
+
+test ns_urlencode-7.0.2 {
+    Funny chars: URL ends with question mark, not found,
+    test on vhost with custom error page
+} -constraints {serverListen} -body {
+    set r [nstest::http -http 1.1 -getbody 1 \
+               -setheaders [list Host testvhost:[ns_config test listenport]] \
+               GET /[ns_urlencode -part path a?]]
+    #ns_log notice r=$r
+    string match "404*CUSTOM 404 page*" $r
+} -returnCodes {ok return error} -result 1
+
+test ns_urlencode-7.1 {
+    Funny chars: URL is just a question mark
+} -constraints {serverListen} -setup {
+    ns_register_proc GET /? {
+        ns_return 200 text/plain [list ok [ns_conn url] [ns_info server]]
+    }
+} -body {
+    nstest::http -http 1.1 -getbody 1 GET /[ns_urlencode -part path ?]
+} -cleanup {
+    ns_unregister_op GET /?
+} -returnCodes {ok return error} -result "200 {ok /? test}"
+
+test ns_urlencode-7.1.1 {
+    Funny chars: URL is just a question mark, not found
+} -constraints {serverListen} -body {
+    set r [nstest::http -http 1.1 -getbody 1 \
+               GET /[ns_urlencode -part path a?]]
+    #ns_log notice r=$r
+    string match "404*was not found on this server*" $r
+} -returnCodes {ok return error} -result 1
+
+test ns_urlencode-7.1.2 {
+    Funny chars: URL is just a question mark, not found,
+    test on vhost with custom error page
+} -constraints {serverListen} -body {
+    set r [nstest::http -http 1.1 -getbody 1 \
+               -setheaders [list Host testvhost:[ns_config test listenport]] \
+               GET /[ns_urlencode -part path a?]]
+    #ns_log notice r=$r
+    string match "404*CUSTOM 404 page*" $r
+} -returnCodes {ok return error} -result 1
+
+
 
 unset unreservedChars
 
