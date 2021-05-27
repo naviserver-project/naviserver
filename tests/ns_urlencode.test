@@ -423,7 +423,7 @@ test ns_urlencode-7.1 {
         ns_return 200 text/plain [list ok [ns_conn url] [ns_info server]]
     }
 } -body {
-    nstest::http -http 1.1 -getbody 1 GET /[ns_urlencode -part path ?]
+    nstest::http -http 1.1 -getbody 1 GET /%3F
 } -cleanup {
     ns_unregister_op GET /?
 } -returnCodes {ok return error} -result "200 {ok /? test}"
@@ -432,7 +432,7 @@ test ns_urlencode-7.1.1 {
     Funny chars: URL is just a question mark, not found
 } -constraints {serverListen} -body {
     set r [nstest::http -http 1.1 -getbody 1 \
-               GET /[ns_urlencode -part path a?]]
+               GET /%3F]
     #ns_log notice r=$r
     string match "404*was not found on this server*" $r
 } -returnCodes {ok return error} -result 1
@@ -443,7 +443,7 @@ test ns_urlencode-7.1.2 {
 } -constraints {serverListen} -body {
     set r [nstest::http -http 1.1 -getbody 1 \
                -setheaders [list Host testvhost:[ns_config test listenport]] \
-               GET /[ns_urlencode -part path a?]]
+               GET /%3F]
     #ns_log notice r=$r
     string match "404*CUSTOM 404 page*" $r
 } -returnCodes {ok return error} -result 1
