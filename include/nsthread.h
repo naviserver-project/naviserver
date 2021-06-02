@@ -1024,7 +1024,7 @@ NS_EXTERN int   ns_uint64toa(char *buffer, uint64_t n) NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_MutexInit(Ns_Mutex *mutexPtr)       NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_MutexDestroy(Ns_Mutex *mutexPtr);
 NS_EXTERN void Ns_MutexLock(Ns_Mutex *mutexPtr)       NS_GNUC_NONNULL(1);
-NS_EXTERN int  Ns_MutexTryLock(Ns_Mutex *mutexPtr)    NS_GNUC_NONNULL(1);
+NS_EXTERN Ns_ReturnCode Ns_MutexTryLock(Ns_Mutex *mutexPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_MutexUnlock(Ns_Mutex *mutexPtr)     NS_GNUC_NONNULL(1);
 NS_EXTERN void Ns_MutexList(Tcl_DString *dsPtr)       NS_GNUC_NONNULL(1);
 NS_EXTERN const char *Ns_MutexGetName(Ns_Mutex *mutexPtr) NS_GNUC_NONNULL(1);

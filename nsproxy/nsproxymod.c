@@ -11,7 +11,7 @@
  *
  * The Original Code is AOLserver Code and related documentation
  * distributed by AOL.
- * 
+ *
  * The Initial Developer of the Original Code is America Online,
  * Inc. Portions created by AOL are Copyright (C) 1999 America Online,
  * Inc. All Rights Reserved.
@@ -129,7 +129,7 @@ Ns_ModuleInit(const char *server, const char *module)
  *      Initialize interpreter
  *
  * Results:
- *      Tcl result code
+ *      Ns_ReturnCode
  *
  * Side effects:
  *      None.
@@ -137,16 +137,15 @@ Ns_ModuleInit(const char *server, const char *module)
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 InitInterp(Tcl_Interp *interp, const void *arg)
 {
     const SrvMod *smPtr = arg;
-    int           status;
+    Ns_ReturnCode status = NS_OK;
 
-    status = Ns_ProxyTclInit(interp);
-
-    if (status == TCL_OK) {
+    if (Ns_ProxyTclInit(interp) == TCL_OK) {
         InterpData *idataPtr = Tcl_GetAssocData(interp, ASSOC_DATA, NULL);
+
         idataPtr->server = smPtr->server;
         idataPtr->module = smPtr->module;
     }

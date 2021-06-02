@@ -803,7 +803,7 @@ Ns_TclRegisterTrace(const char *server, Ns_TclTraceProc *proc,
         if ((when == NS_TCL_TRACE_CREATE) || (when == NS_TCL_TRACE_ALLOCATE)) {
             Tcl_Interp *interp = NsTclAllocateInterp(servPtr);
 
-            if ((*proc)(interp, arg) != TCL_OK) {
+            if ((*proc)(interp, arg) != NS_OK) {
                 (void) Ns_TclLogErrorInfo(interp, "\n(context: register trace)");
             }
             Ns_TclDeAllocateInterp(interp);

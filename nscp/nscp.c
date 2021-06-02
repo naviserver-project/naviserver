@@ -75,7 +75,7 @@ static Tcl_ObjCmdProc ExitObjCmd;
 static bool Login(const Sess *sessPtr, Tcl_DString *unameDSPtr);
 static bool GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, bool echo)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
-static void LoadUsers(Mod *modPtr, const char *server, const char *module)
+static void LoadUsers(Mod *localModPtr, const char *server, const char *module)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 static Ns_ArgProc ArgProc;
 static Ns_TclTraceProc NscpAddCmds;
@@ -736,14 +736,14 @@ ExitObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* 
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 NscpAddCmds(Tcl_Interp *interp, const void *UNUSED(arg))
 {
     /*const char *server = arg;*/
 
     (void)Tcl_CreateObjCommand(interp, "nscp", NsTclNscpObjCmd, NULL, NULL);
 
-    return TCL_OK;
+    return NS_OK;
 }
 /*
  *----------------------------------------------------------------------
