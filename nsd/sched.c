@@ -661,9 +661,9 @@ QueueConsistencyCheck(const char *startMsg, int n, bool runAsserts)
 static void
 QueueEvent(Event *ePtr)
 {
-    long d;
-
     if ((ePtr->flags & NS_SCHED_PAUSED) == 0u) {
+        long d;
+
         /*
          * Calculate the time from now in seconds this event should run.
          */
