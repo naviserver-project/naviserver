@@ -1514,12 +1514,12 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
 
                 if (ecdh == NULL) {
                     Ns_Log(Error, "nsssl: Couldn't obtain ecdh parameters");
-                    return NS_ERROR;
+                    return TCL_ERROR;
                 }
                 SSL_CTX_set_options(cfgPtr->ctx, SSL_OP_SINGLE_ECDH_USE);
                 if (SSL_CTX_set_tmp_ecdh(cfgPtr->ctx, ecdh) != 1) {
                     Ns_Log(Error, "nsssl: Couldn't set ecdh parameters");
-                    return NS_ERROR;
+                    return TCL_ERROR;
                 }
                 EC_KEY_free (ecdh);
             }
@@ -1668,7 +1668,7 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
             if (dh != NULL) {
                 if (SSL_CTX_set_tmp_dh(ctx, dh) < 0) {
                     Ns_Log(Error, "nsssl: Couldn't set DH parameters");
-                    return NS_ERROR;
+                    return TCL_ERROR;
                 }
                 DH_free(dh);
             }
@@ -1979,6 +1979,7 @@ Ns_SSLSendBufs2(SSL *ssl, const struct iovec *bufs, int nbufs)
     NS_NONNULL_ASSERT(bufs != NULL);
 
     if (nbufs > 1) {
+        sent = -1; /* just to silence static checkers (cppcheck) */
         Ns_Fatal("Ns_SSLSendBufs2: can handle at most one buffer at the time");
     } else if (bufs[0].iov_len == 0) {
         sent = 0;

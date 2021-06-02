@@ -1098,7 +1098,7 @@ Ns_CacheLock(Ns_Cache *cache)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_CacheTryLock(Ns_Cache *cache)
 {
     Cache *cachePtr = (Cache *) cache;

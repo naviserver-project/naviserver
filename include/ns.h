@@ -350,7 +350,7 @@ typedef Ns_ReturnCode (Ns_LogCallbackProc)(void *arg);
 typedef void          (Ns_FreeProc)(void *arg);
 typedef void          (Ns_ShutdownProc)(const Ns_Time *toPtr, void *arg);
 typedef int           (Ns_TclInterpInitProc)(Tcl_Interp *interp, const void *arg);
-typedef int           (Ns_TclTraceProc)(Tcl_Interp *interp, const void *arg);
+typedef Ns_ReturnCode (Ns_TclTraceProc)(Tcl_Interp *interp, const void *arg);
 typedef void          (Ns_TclDeferProc)(Tcl_Interp *interp, void *arg);
 typedef bool          (Ns_SockProc)(NS_SOCKET sock, void *arg, unsigned int why);
 typedef void          (Ns_TaskProc)(Ns_Task *task, NS_SOCKET sock, void *arg,
@@ -901,7 +901,7 @@ NS_EXTERN void
 Ns_CacheLock(Ns_Cache *cache)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int
+NS_EXTERN Ns_ReturnCode
 Ns_CacheTryLock(Ns_Cache *cache)
     NS_GNUC_NONNULL(1);
 

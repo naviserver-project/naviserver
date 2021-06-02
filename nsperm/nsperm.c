@@ -129,9 +129,9 @@ static int AllowDenyObjCmd(
 static bool ValidateUserAddr(User * userPtr, const char *peer);
 static Ns_RequestAuthorizeProc AuthProc;
 static void WalkCallback(Tcl_DString * dsPtr, const void *arg);
-static int CreateNonce(const char *privatekey, char **nonce, const char *uri);
-static int CreateHeader(const Server * servPtr, const Ns_Conn *conn, bool stale);
-/*static int CheckNonce(const char *privatekey, char *nonce, char *uri, int timeout);*/
+static Ns_ReturnCode CreateNonce(const char *privatekey, char **nonce, const char *uri);
+static Ns_ReturnCode CreateHeader(const Server * servPtr, const Ns_Conn *conn, bool stale);
+/*static Ns_ReturnCode CheckNonce(const char *privatekey, char *nonce, char *uri, int timeout);*/
 
 static void FreeUserInfo(User *userPtr, const char *name)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -225,7 +225,7 @@ Ns_ModuleInit(const char *server, const char *module)
  *----------------------------------------------------------------------
  */
 
-static int AddCmds(Tcl_Interp *interp, const void *arg)
+static Ns_ReturnCode AddCmds(Tcl_Interp *interp, const void *arg)
 {
   Tcl_CreateObjCommand(interp, "ns_perm", PermObjCmd, (ClientData)arg, NULL);
     return NS_OK;
@@ -1251,7 +1251,7 @@ static int ListGroupsObjCmd(ClientData data, Tcl_Interp * interp, int UNUSED(obj
  *      the specified URL.
  *
  * Results:
- *      Std Tcl
+ *      Standard Tcl result.
  *
  * Side effects:
  *      A perm record may be created
@@ -1267,12 +1267,8 @@ static int AllowDenyObjCmd(
     bool allow,
     bool user
 ) {
-    Server      *servPtr = data;
-    Perm        *permPtr;
-    Ns_DString   base;
-    char        *method, *url;
-    int          i, isNew, noinherit = 0, nargs = 0;
-    unsigned int flags = 0u;
+    char *method, *url;
+    int   noinherit = 0, nargs = 0, result;
 
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,   &noinherit,  INT2PTR(NS_TRUE)},
@@ -1285,63 +1281,72 @@ static int AllowDenyObjCmd(
         {"users", Ns_ObjvArgs, &nargs, NULL},
         {NULL, NULL, NULL, NULL}
     };
-    if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
-        return TCL_ERROR;
-    }
-    if (noinherit != 0) {
-        flags |= NS_OP_NOINHERIT;
-    }
 
-    /*
-     * Construct the base url.
-     */
 
-    Ns_DStringInit(&base);
-    Ns_NormalizeUrl(&base, url);
+    result = Ns_ParseObjv(opts, args, interp, 2, objc, objv);
+    if (likely(result == NS_OK)) {
+        Server      *servPtr = data;
+        Perm        *permPtr;
+        Ns_DString   base;
+        int          i, isNew;
+        unsigned int flags = 0u;
 
-    /*
-     * Locate and verify the exact record.
-     */
+        if (noinherit != 0) {
+            flags |= NS_OP_NOINHERIT;
+        }
 
-    Ns_RWLockWrLock(&servPtr->lock);
-    permPtr = Ns_UrlSpecificGet(servPtr->server, method, url, uskey);
+        /*
+         * Construct the base url.
+         */
 
-    if (permPtr != NULL && !STREQ(base.string, permPtr->baseurl)) {
-        permPtr = NULL;
-    }
-    if (permPtr == NULL) {
-        permPtr = ns_calloc(1u, sizeof(Perm));
-        permPtr->baseurl = Ns_DStringExport(&base);
-        Tcl_InitHashTable(&permPtr->allowuser, TCL_STRING_KEYS);
-        Tcl_InitHashTable(&permPtr->denyuser, TCL_STRING_KEYS);
-        Tcl_InitHashTable(&permPtr->allowgroup, TCL_STRING_KEYS);
-        Tcl_InitHashTable(&permPtr->denygroup, TCL_STRING_KEYS);
-        Ns_UrlSpecificSet(servPtr->server, method, url, uskey, permPtr, flags, NULL);
-    }
-    if (!allow) {
-        permPtr->flags |= PERM_IMPLICIT_ALLOW;
-    }
+        Ns_DStringInit(&base);
+        Ns_NormalizeUrl(&base, url);
 
-    for (i = objc - nargs; i < objc; i++) {
-        char *key = Tcl_GetString(objv[i]);
+        /*
+         * Locate and verify the exact record.
+         */
 
-        if (user) {
-            if (allow) {
-                (void) Tcl_CreateHashEntry(&permPtr->allowuser, key, &isNew);
+        Ns_RWLockWrLock(&servPtr->lock);
+        permPtr = Ns_UrlSpecificGet(servPtr->server, method, url, uskey);
+
+        if (permPtr != NULL && !STREQ(base.string, permPtr->baseurl)) {
+            permPtr = NULL;
+        }
+        if (permPtr == NULL) {
+            permPtr = ns_calloc(1u, sizeof(Perm));
+            permPtr->baseurl = Ns_DStringExport(&base);
+            Tcl_InitHashTable(&permPtr->allowuser, TCL_STRING_KEYS);
+            Tcl_InitHashTable(&permPtr->denyuser, TCL_STRING_KEYS);
+            Tcl_InitHashTable(&permPtr->allowgroup, TCL_STRING_KEYS);
+            Tcl_InitHashTable(&permPtr->denygroup, TCL_STRING_KEYS);
+            Ns_UrlSpecificSet(servPtr->server, method, url, uskey, permPtr, flags, NULL);
+        }
+        if (!allow) {
+            permPtr->flags |= PERM_IMPLICIT_ALLOW;
+        }
+
+        for (i = objc - nargs; i < objc; i++) {
+            char *key = Tcl_GetString(objv[i]);
+
+            if (user) {
+                if (allow) {
+                    (void) Tcl_CreateHashEntry(&permPtr->allowuser, key, &isNew);
+                } else {
+                    (void) Tcl_CreateHashEntry(&permPtr->denyuser, key, &isNew);
+                }
             } else {
-                (void) Tcl_CreateHashEntry(&permPtr->denyuser, key, &isNew);
-            }
-        } else {
-            if (allow) {
-                (void) Tcl_CreateHashEntry(&permPtr->allowgroup, key, &isNew);
-            } else {
-                (void) Tcl_CreateHashEntry(&permPtr->denygroup, key, &isNew);
+                if (allow) {
+                    (void) Tcl_CreateHashEntry(&permPtr->allowgroup, key, &isNew);
+                } else {
+                    (void) Tcl_CreateHashEntry(&permPtr->denygroup, key, &isNew);
+                }
             }
         }
+        Ns_RWLockUnlock(&servPtr->lock);
+        Ns_DStringFree(&base);
     }
-    Ns_RWLockUnlock(&servPtr->lock);
-    Ns_DStringFree(&base);
-    return TCL_OK;
+
+    return result;
 }
 
 /*
@@ -1352,7 +1357,7 @@ static int AllowDenyObjCmd(
  *      Implements "ns_perm delperm". Removes permission record.
  *
  * Results:
- *      Std Tcl
+ *      Standard Tcl result.
  *
  * Side effects:
  *      A permission record may be deleted.
@@ -1422,7 +1427,7 @@ static int DelPermObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
  *      Implements "ns_perm listperms".
  *
  * Results:
- *      Tcl resut
+ *      Standard Tcl result.
  *
  * Side effects:
  *      None
@@ -1613,37 +1618,40 @@ SetPassObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj *const* ob
  *----------------------------------------------------------------------
 */
 
-static int CreateNonce(const char *privatekey, char **nonce, const char *uri)
+static Ns_ReturnCode
+CreateNonce(const char *privatekey, char **nonce, const char *uri)
 {
-    time_t now;
-    Ns_DString ds;
-    Ns_CtxMD5 md5;
-    unsigned char sig[16];
-    char buf[33];
-    char bufcoded[1 + (4 * 48) / 2];
+    Ns_ReturnCode status = NS_OK;
 
     if (privatekey == NULL) {
-        return NS_ERROR;
+        status = NS_ERROR;
+    } else {
+        time_t        now;
+        Ns_DString    ds;
+        Ns_CtxMD5     md5;
+        unsigned char sig[16];
+        char          buf[33];
+        char          bufcoded[1 + (4 * 48) / 2];
+
+        now = time(NULL);
+
+        Ns_DStringInit(&ds);
+        Ns_DStringPrintf(&ds, "%" PRId64 ":%s:%s", (int64_t) now, uri, privatekey);
+
+        Ns_CtxMD5Init(&md5);
+        Ns_CtxMD5Update(&md5, (unsigned char *) ds.string, (unsigned int) ds.length);
+        Ns_CtxMD5Final(&md5, sig);
+        Ns_HexString(sig, buf, 16, NS_TRUE);
+
+        /* encode the current time and MD5 string into the nonce */
+        Ns_DStringSetLength(&ds, 0);
+        Ns_DStringPrintf(&ds, "%" PRId64 " %s", (int64_t) now, buf);
+        Ns_HtuuEncode((unsigned char *) ds.string, (unsigned int) ds.length, bufcoded);
+
+        *nonce = ns_strdup(bufcoded);
     }
 
-    now = time(NULL);
-
-    Ns_DStringInit(&ds);
-    Ns_DStringPrintf(&ds, "%" PRId64 ":%s:%s", (int64_t) now, uri, privatekey);
-
-    Ns_CtxMD5Init(&md5);
-    Ns_CtxMD5Update(&md5, (unsigned char *) ds.string, (unsigned int) ds.length);
-    Ns_CtxMD5Final(&md5, sig);
-    Ns_HexString(sig, buf, 16, NS_TRUE);
-
-    /* encode the current time and MD5 string into the nonce */
-    Ns_DStringSetLength(&ds, 0);
-    Ns_DStringPrintf(&ds, "%" PRId64 " %s", (int64_t) now, buf);
-    Ns_HtuuEncode((unsigned char *) ds.string, (unsigned int) ds.length, bufcoded);
-
-    *nonce = ns_strdup(bufcoded);
-
-    return NS_OK;
+    return status;
 }
 
 
@@ -1668,8 +1676,8 @@ static int CreateNonce(const char *privatekey, char **nonce, const char *uri)
  * Side effects:
  *      None.
  */
-
-static int CheckNonce(const char *privatekey, char *nonce, char *uri, int timeout)
+static Ns_ReturnCode
+CheckNonce(const char *privatekey, char *nonce, char *uri, int timeout)
 {
     Ns_CtxMD5 md5;
     Ns_DString ds;
@@ -1677,52 +1685,53 @@ static int CheckNonce(const char *privatekey, char *nonce, char *uri, int timeou
     char *decoded;
     char *ntime;
     char *tnonce;
-    int n, rv = NS_OK;
+    int n;
     unsigned char sig[16];
     time_t now, nonce_time;
+    Ns_ReturnCode status = NS_OK;
 
     if (privatekey == NULL) {
-        return NS_ERROR;
+        result = NS_ERROR;
+    } else {
+
+        time(&now);
+
+        /* decode the nonce */
+        n = 3 + ((strlen(nonce) * 3) / 4);
+        decoded = ns_malloc((unsigned int) n);
+        n = Ns_HtuuDecode(nonce, (unsigned char *) decoded, n);
+        decoded[n] = '\0';
+
+        ntime = ns_strtok(decoded, " ");
+        tnonce = ns_strtok(NULL, " ");
+
+        /* recreate the nonce to ensure that it isn't corrupted */
+        Ns_CtxMD5Init(&md5);
+
+        Ns_DStringInit(&ds);
+        Ns_DStringVarAppend(&ds, ntime, ":", uri, ":", privatekey, (char *)0L);
+
+        Ns_CtxMD5Update(&md5, (unsigned char *) ds.string, (unsigned int) ds.length);
+        Ns_CtxMD5Final(&md5, sig);
+        Ns_HexString(sig, buf, 16, NS_TRUE);
+
+        /* Check for a stale timestamp. If the timestamp is stale we still check
+         * to see if the user sent the proper digest password. The stale flag
+         * is only set if the nonce is expired AND the credentials are OK, otherwise
+         * the get a 401, but that happens elsewhere.
+         */
+
+        nonce_time = (time_t) strtol(ntime, (char **) NULL, 10);
+
+        if ((now - nonce_time) > timeout) {
+            status = NS_ERROR;
+        }
+
+        if (!(STREQ(tnonce, buf))) {
+            status = NS_ERROR;
+        }
     }
-
-    time(&now);
-
-    /* decode the nonce */
-    n = 3 + ((strlen(nonce) * 3) / 4);
-    decoded = ns_malloc((unsigned int) n);
-    n = Ns_HtuuDecode(nonce, (unsigned char *) decoded, n);
-    decoded[n] = '\0';
-
-    ntime = ns_strtok(decoded, " ");
-    tnonce = ns_strtok(NULL, " ");
-
-    /* recreate the nonce to ensure that it isn't corrupted */
-    Ns_CtxMD5Init(&md5);
-
-    Ns_DStringInit(&ds);
-    Ns_DStringVarAppend(&ds, ntime, ":", uri, ":", privatekey, (char *)0L);
-
-    Ns_CtxMD5Update(&md5, (unsigned char *) ds.string, (unsigned int) ds.length);
-    Ns_CtxMD5Final(&md5, sig);
-    Ns_HexString(sig, buf, 16, NS_TRUE);
-
-    /* Check for a stale timestamp. If the timestamp is stale we still check
-     * to see if the user sent the proper digest password. The stale flag
-     * is only set if the nonce is expired AND the credentials are OK, otherwise
-     * the get a 401, but that happens elsewhere.
-     */
-
-    nonce_time = (time_t) strtol(ntime, (char **) NULL, 10);
-
-    if ((now - nonce_time) > timeout) {
-        rv = NS_ERROR;
-    }
-
-    if (!(STREQ(tnonce, buf))) {
-        rv = NS_ERROR;
-    }
-
-    return rv;
+    return status;
 }
 #endif
 
@@ -1743,23 +1752,26 @@ static int CheckNonce(const char *privatekey, char *nonce, char *uri, int timeou
  *----------------------------------------------------------------------
 */
 
-static int CreateHeader(const Server *servPtr, const Ns_Conn *conn, bool stale)
+static Ns_ReturnCode
+CreateHeader(const Server *servPtr, const Ns_Conn *conn, bool stale)
 {
-    Ns_DString  ds;
-    char       *nonce = 0;
+    Ns_ReturnCode  status = NS_OK;
+    char          *nonce = 0;
 
     if (CreateNonce(usdigest, &nonce, NS_EMPTY_STRING) == NS_ERROR) {
-        return NS_ERROR;
-    }
+        status = NS_ERROR;
+    } else {
+        Ns_DString     ds;
 
-    Ns_DStringInit(&ds);
-    Ns_DStringPrintf(&ds, "Digest realm=\"%s\", nonce=\"%s\", algorithm=\"MD5\", qop=\"auth\"", servPtr->server, nonce);
+        Ns_DStringInit(&ds);
+        Ns_DStringPrintf(&ds, "Digest realm=\"%s\", nonce=\"%s\", algorithm=\"MD5\", qop=\"auth\"", servPtr->server, nonce);
 
-    if (stale) {
-        Ns_DStringVarAppend(&ds, ", stale=\"true\"", (char *)0L);
+        if (stale) {
+            Ns_DStringVarAppend(&ds, ", stale=\"true\"", (char *)0L);
+        }
+        Ns_ConnSetHeaders(conn, "WWW-Authenticate", ds.string);
     }
-    Ns_ConnSetHeaders(conn, "WWW-Authenticate", ds.string);
-    return NS_OK;
+    return status;
 }
 
 /*

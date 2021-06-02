@@ -309,7 +309,7 @@ Ns_MutexLock(Ns_Mutex *mutex)
  *----------------------------------------------------------------------
  */
 
-int
+Ns_ReturnCode
 Ns_MutexTryLock(Ns_Mutex *mutex)
 {
     Mutex *mutexPtr;
