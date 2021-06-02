@@ -1498,7 +1498,7 @@ Bug Fixes:
 
       The scrypt function is a modern replacement for crypt and bcrypt
       and derives secret keys from a secret string. It is based on
-      memory- hard functions, which offer added protection against
+      memory-hard functions, which offer added protection against
       attacks using custom hardware and GPU arrays.
 
       The function requires the compilation of NaviServer against

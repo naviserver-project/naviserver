@@ -28,7 +28,7 @@ it will continue to run every interval time periods. The time interval
 is based on the time instant, when the command was issued. When the
 time duration of a command takes long than the specified time interval
 for rescheduling, a warning message is generated and the command is
-issued 10ms after the long running one. So, the scheduled commmands
+issued 10ms after the long running one. So, the scheduled commands
 run always sequentially.
 
 [para] The
