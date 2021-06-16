@@ -477,8 +477,8 @@ NsEnsureRunningConnectionThreads(const NsServer *servPtr, ConnPool *poolPtr) {
     if (create) {
         poolPtr->threads.current ++;
         poolPtr->threads.creating ++;
-        waitnum = poolPtr->wqueue.wait.num;
     }
+    waitnum = poolPtr->wqueue.wait.num;
 
     Ns_MutexUnlock(&poolPtr->threads.lock);
     Ns_MutexUnlock(&poolPtr->wqueue.lock);

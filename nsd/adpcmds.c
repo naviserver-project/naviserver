@@ -376,7 +376,7 @@ NsTclAdpCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 int
 NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    char          *file;
+    char          *fileName = NULL;
     int            result, tclScript = 0, nocache = 0, nargs = 0;
     Ns_Time       *ttlPtr = NULL;
 
@@ -388,8 +388,8 @@ NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"file",  Ns_ObjvString, &file,  NULL},
-        {"?args", Ns_ObjvArgs,   &nargs, NULL},
+        {"fileName", Ns_ObjvString, &fileName,  NULL},
+        {"?args",    Ns_ObjvArgs,   &nargs,     NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
@@ -433,7 +433,7 @@ NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
                 result = TCL_OK;
             }
         } else {
-            result = NsAdpInclude(clientData, objc, objv, file, ttlPtr);
+            result = NsAdpInclude(clientData, objc, objv, fileName, ttlPtr);
             itPtr->adp.flags = flags;
         }
     }
@@ -587,7 +587,7 @@ int
 NsTclAdpPutsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     NsInterp   *itPtr = clientData;
-    char       *s;
+    char       *chars = NULL;
     int         length = 0, nonewline = 0, result = TCL_OK;
     Ns_ObjvSpec opts[] = {
         {"-nonewline", Ns_ObjvBool,  &nonewline, INT2PTR(NS_TRUE)},
@@ -595,14 +595,14 @@ NsTclAdpPutsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"string",  Ns_ObjvString, &s, &length},
+        {"string",  Ns_ObjvString, &chars, &length},
         {NULL, NULL, NULL, NULL}
     };
 
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
-    } else if (NsAdpAppend(itPtr, s, length) != TCL_OK) {
+    } else if (NsAdpAppend(itPtr, chars, length) != TCL_OK) {
         result = TCL_ERROR;
 
     } else if (nonewline == 0 && NsAdpAppend(itPtr, "\n", 1) != TCL_OK) {
