@@ -1267,7 +1267,7 @@ static int AllowDenyObjCmd(
     bool allow,
     bool user
 ) {
-    char *method, *url;
+    char *method = NULL, *url = NULL;
     int   noinherit = 0, nargs = 0, result;
 
     Ns_ObjvSpec opts[] = {

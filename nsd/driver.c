@@ -4829,7 +4829,9 @@ SockSetServer(Sock *sockPtr)
      * Since the URLencoding can be set per server, we need the server
      * assignment to check the validity of the request line.
      */
-    if (NsEncodingIsUtf8(sockPtr->servPtr->encoding.urlEncoding)) {
+    if (likely(sockPtr->servPtr != NULL)
+        && NsEncodingIsUtf8(sockPtr->servPtr->encoding.urlEncoding)
+        ) {
         if (!Ns_Valid_UTF8((const unsigned char *)reqPtr->request.url,
                            strlen(reqPtr->request.url))) {
             Ns_Log(Warning, "Invalid UTF-8 encoding in url '%s'",
