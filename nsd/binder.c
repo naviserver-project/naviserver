@@ -627,10 +627,15 @@ Ns_SockBindUnix(const char *path, int socktype, unsigned short mode)
     unlink(path);
 
     sock = socket(AF_UNIX, socktype > 0 ? socktype : SOCK_STREAM, 0);
-
+    /*
+     * There is a small race condition below, since the permissions on
+     * the socket are checked not in an atomic fashion and might be
+     * changed immediately after the bind operation. Unforunately,
+     * fchmod is not portable.
+     */
     if (sock != NS_INVALID_SOCKET
         && (bind(sock, (struct sockaddr *) &addr, sizeof(addr)) == -1
-            || (mode && chmod(path, mode) == -1))
+            || (mode != 0u && chmod(path, mode) == -1))
         ) {
         ns_sockerrno_t err = errno;
 
