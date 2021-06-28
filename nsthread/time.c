@@ -127,7 +127,9 @@ Ns_GetTime(Ns_Time *timePtr)
  *
  * Ns_AdjTime --
  *
- *      Adjust an Ns_Time so the values are in range.
+ *      Adjust an Ns_Time so the values are in range. "usec" is only allowed
+ *      to be negative, when "sec" == 0 (to express e.g. -0.1sec).
+ *      "usec" is kept in the range <1mio.
  *
  * Results:
  *      None.
@@ -325,12 +327,14 @@ void
 Ns_IncrTime(Ns_Time *timePtr, time_t sec, long usec)
 {
     NS_NONNULL_ASSERT(timePtr != NULL);
-    assert(sec >= 0);
-    assert(usec >= 0);
 
-    timePtr->sec += sec;
-    timePtr->usec += usec;
-    Ns_AdjTime(timePtr);
+    if (unlikely(usec < 0) || unlikely(sec < 0)) {
+        fprintf(stderr, "Ns_IncrTime ignores negative increment sec %ld or usec %ld\n", sec, usec);
+    } else {
+        timePtr->sec += sec;
+        timePtr->usec += usec;
+        Ns_AdjTime(timePtr);
+    }
 }
 
 

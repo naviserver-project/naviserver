@@ -112,7 +112,7 @@ Ns_MutexInit(Ns_Mutex *mutex)
     (void) ns_uint64toa(&mutexPtr->name[2], (uint64_t)mutexPtr->id);
 
     Ns_MasterUnlock();
-    //fprintf(stderr, "=== created mutex %ld name %s\n", mutexPtr->id, mutexPtr->name);
+    /*fprintf(stderr, "=== created mutex %ld name %s\n", mutexPtr->id, mutexPtr->name);*/
     *mutex = (Ns_Mutex) mutexPtr;
 }
 
@@ -246,7 +246,7 @@ Ns_MutexLock(Ns_Mutex *mutex)
 {
     Mutex *mutexPtr;
 #ifndef NS_NO_MUTEX_TIMING
-    Ns_Time end, diff, startTime;
+    Ns_Time startTime;
 
     Ns_GetTime(&startTime);
 #endif
@@ -260,28 +260,38 @@ Ns_MutexLock(Ns_Mutex *mutex)
         ++mutexPtr->nbusy;
 
 #ifndef NS_NO_MUTEX_TIMING
-        /*
-         * Measure total and max waiting time for busy mutex locks.
-         */
-        Ns_GetTime(&end);
-        Ns_DiffTime(&end, &startTime, &diff);
-        Ns_IncrTime(&mutexPtr->total_waiting_time, diff.sec, diff.usec);
+        {
+            Ns_Time endTime, diffTime;
+            long    delta;
 
-        if (NS_mutexlocktrace && (diff.sec > 0 || diff.usec > 100000)) {
-            fprintf(stderr, "[%s] Mutex lock %s: wait duration " NS_TIME_FMT "\n",
-                    Ns_ThreadGetName(), mutexPtr->name, (int64_t)diff.sec, diff.usec);
-        }
+            /*
+             * Measure total and max waiting time for busy mutex locks.
+             */
+            Ns_GetTime(&endTime);
+            delta = Ns_DiffTime(&endTime, &startTime, &diffTime);
+            if (likely(delta >= 0)) {
+                Ns_IncrTime(&mutexPtr->total_waiting_time, diffTime.sec, diffTime.usec);
 
-        /*
-         * Keep max waiting time since server start. It might be a
-         * good idea to either provide a call to reset the max-time,
-         * or to report wait times above a certain threshold (as an
-         * extra value in the statistics, or in the log file).
-         */
-        if (Ns_DiffTime(&mutexPtr->max_waiting_time, &diff, NULL) < 0) {
-            mutexPtr->max_waiting_time = diff;
-            /*fprintf(stderr, "Mutex %s max time " NS_TIME_FMT "\n",
-              mutexPtr->name, (int64_t)diff.sec, diff.usec);*/
+                if (NS_mutexlocktrace && (diffTime.sec > 0 || diffTime.usec > 100000)) {
+                    fprintf(stderr, "[%s] Mutex lock %s: wait duration " NS_TIME_FMT "\n",
+                            Ns_ThreadGetName(), mutexPtr->name, (int64_t)diffTime.sec, diffTime.usec);
+                }
+            } else {
+                fprintf(stderr, "[%s] Mutex lock %s warning: wait duration " NS_TIME_FMT " is negative\n",
+                        Ns_ThreadGetName(), mutexPtr->name, (int64_t)diffTime.sec, diffTime.usec);
+            }
+
+            /*
+             * Keep max waiting time since server start. It might be a
+             * good idea to either provide a call to reset the max-time,
+             * or to report wait times above a certain threshold (as an
+             * extra value in the statistics, or in the log file).
+             */
+            if (Ns_DiffTime(&mutexPtr->max_waiting_time, &diffTime, NULL) < 0) {
+                mutexPtr->max_waiting_time = diffTime;
+                /*fprintf(stderr, "Mutex %s max time " NS_TIME_FMT "\n",
+                  mutexPtr->name, (int64_t)diff.sec, diff.usec);*/
+            }
         }
 #endif
     }
