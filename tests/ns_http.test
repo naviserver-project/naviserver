@@ -350,6 +350,7 @@ test http-4.7 {HTTP/1.1 PUT one more large file} -setup {
     unset -nocomplain l
 } -result [list 200 100000]
 
+
 #
 # size is larger than maxinput
 #
@@ -665,6 +666,22 @@ test http-5.3b {
     ns_unregister_op POST /post
     unset -nocomplain r
 } -result {utf-8 <application/x-www-form-urlencoded> AÄATesting <äöüß☀>ZÜZ}
+
+
+test http-5.3c {
+    HTTP/1.1 POST application/json via curl, charset UTF-8
+} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /json {
+        set contentType [ns_set iget [ns_conn headers] content-type]
+        ns_return 200 text/plain "$contentType '[ns_getcontent -as_file 0 -binary 0]'"
+    }
+} -body {
+    set string {{"name":"Colchões"}}
+    exec curl -g -s -H "Content-Type: application/json; charset=utf-8" --data @- [ns_config test listenurl]/json << $string 2> /dev/null
+} -cleanup {
+    ns_unregister_op POST /json
+    unset -nocomplain l
+} -result {application/json; charset=utf-8 '{"name":"Colchões"}'}
 
 
 test http-5.4.1 {
