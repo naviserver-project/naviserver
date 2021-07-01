@@ -25,7 +25,7 @@ AC_ARG_WITH([openssl],
   AS_HELP_STRING(--with-openssl=DIR,Build and link with OpenSSL),
   [
     ac_openssl=$withval
-    if test "${ac_openssl}" != "no" ; then
+    if test "${ac_openssl}" != "no" -a "${ac_openssl}" != "yes" ; then
       ac_openssl=yes
       if test -d "$withval" ; then
         echo "Trying to use directory $withval/include and -L$withval/lib"
