@@ -31,6 +31,8 @@ AC_ARG_WITH([openssl],
         echo "Trying to use directory $withval/include and -L$withval/lib"
         OPENSSL_INCLUDES="-I$withval/include"
         OPENSSL_LIBS="-L$withval/lib -lssl -lcrypto"
+      else
+        echo "WARNING: no such directory: $withval"
       fi
     fi
   ],
@@ -50,19 +52,24 @@ if test "${ac_openssl}" = "yes" ; then
   if test -z "$OPENSSL_INCLUDES"; then
      dnl No path provided, check PKG_CONFIG
      if test -z "$PKG_CONFIG"; then
-     	AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
+        AC_PATH_PROG(PKG_CONFIG, pkg-config, no)
      fi
      if test -x "$PKG_CONFIG" && $PKG_CONFIG --exists openssl; then
-     	echo "OpenSSL is configured via $PKG_CONFIG"
-     	OPENSSL_LIBS=`$PKG_CONFIG --libs openssl`
-     	OPENSSL_INCLUDES=`$PKG_CONFIG --cflags-only-I openssl`
+        echo "OpenSSL is configured via $PKG_CONFIG"
+        OPENSSL_LIBS=`$PKG_CONFIG --libs openssl`
+        OPENSSL_INCLUDES=`$PKG_CONFIG --cflags-only-I openssl`
      fi
   fi
 
-  save_CPPFLAGS="$CPPFLAGS"
-  save_LIBS="$LIBS"
-  CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
-  LIBS="$LIBS $OPENSSL_LIBS"
+  CPPFLAGS_saved="${CPPFLAGS}"
+  LIBS_saved="${LIBS}"
+  CFLAGS_saved="${CFLAGS}"
+  LDFLAGS_saved="${LDFLAGS}"
+
+  CPPFLAGS="${OPENSSL_INCLUDES} ${CPPFLAGS}"
+  LIBS="${LIBS} ${OPENSSL_LIBS}"
+  CFLAGS="${OPENSSL_INCLUDES} ${CFLAGS}"
+  LDFLAGS="${LIBS} ${LDFLAGS}"
 
   AC_CHECK_HEADERS([openssl/evp.h])
   FOUND_SSL_LIB="no"
@@ -76,7 +83,7 @@ if test "${ac_openssl}" = "yes" ; then
   else
     AC_DEFINE([HAVE_X509_STORE_CTX_GET_OBJ_BY_SUBJECT], [1], [Define to X509_STORE_CTX_get_obj_by_subject])
   fi
-  
+
   dnl echo "OpenSSL headers found:    $ac_cv_header_openssl_evp_h"
   dnl echo "OpenSSL lib ssl found:    $ac_cv_lib_ssl_SSL_library_init"
   dnl echo "OpenSSL lib crypto found: $ac_cv_lib_crypto_PEM_read_bio_DHparams"
@@ -85,8 +92,10 @@ if test "${ac_openssl}" = "yes" ; then
     AC_MSG_ERROR([OpenSSL support requested but not available])
   fi
 
-  CPPFLAGS="$save_CPPFLAGS"
-  LIBS="$save_LIBS"
+  CPPFLAGS="${CPPFLAGS_saved}"
+  LIBS="${LIBS_saved}"
+  CFLAGS="${CFLAGS_saved}"
+  LDFLAGS="${LDFLAGS_saved}"
 fi
 
 AC_SUBST([OPENSSL_INCLUDES])
