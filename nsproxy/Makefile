@@ -29,12 +29,15 @@
 
 MODNAME  = nsproxy
 LIBNM    = $(MODNAME)
-PGM	 = $(MODNAME) 
+PGM	 = $(MODNAME)-helper
 MOD      = $(MODNAME).so
 LIBHDRS  = nsproxy.h
 LIBOBJS  = nsproxylib.o
 PGMOBJS  = nsproxy.o
 MODOBJS  = nsproxymod.o
 MANSRCS  = ns_proxy.man
+
+CFLAGS += -DNSPROXY_HELPER='"$(MODNAME)-helper"'
+
 
 include  ../include/Makefile.build
