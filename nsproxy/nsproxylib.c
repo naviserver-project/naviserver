@@ -422,6 +422,7 @@ Nsproxy_LibInit(void)
 
         Tcl_DStringInit(&defexec);
         Ns_BinPath(&defexec, NSPROXY_HELPER, (char *)0L);
+
         Tcl_InitHashTable(&pools, TCL_STRING_KEYS);
         Ns_RegisterAtShutdown(Shutdown, NULL);
         Ns_RegisterProcInfo((ns_funcptr_t)Shutdown, "nsproxy:shutdown", NULL);

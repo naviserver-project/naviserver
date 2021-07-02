@@ -869,9 +869,14 @@ void NsDriverMapVirtualServers(void)
                 Ns_Log(Error, "%s: no such server: %s", moduleName, server);
             } else {
                 char *writableHost, *hostName, *portStart;
+                bool  hostParsedOk;
 
                 writableHost = ns_strdup(host);
-                Ns_HttpParseHost(writableHost, &hostName, &portStart);
+                hostParsedOk = Ns_HttpParseHost(writableHost, &hostName, &portStart);
+                if (!hostParsedOk) {
+                    Ns_Log(Warning, "server map: invalid host name: '%s'", writableHost);
+                    continue;
+                }
 
                 if ((drvPtr->opts & NS_DRIVER_SSL) != 0u) {
                     Tcl_DString  ds1;

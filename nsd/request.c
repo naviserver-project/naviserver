@@ -151,7 +151,7 @@ Ns_FreeRequest(Ns_Request *request)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ParseRequests --
+ * Ns_ParseRequest --
  *
  *    Parse a request from the client into an Ns_Request structure.
  *    On success, it fills the following Ns_Request members:
@@ -331,8 +331,12 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
             *p++ = '\0';
             request->protocol = ns_strdup(url);
             url = p;
-            if ((strlen(url) > 3u) && (*p++ == '/')
-                && (*p++ == '/') && (*p != '\0') && (*p != '/')) {
+            if ((strlen(url) > 3u)
+                && (*p++ == '/')
+                && (*p++ == '/')
+                && (*p != '\0')
+                && (*p != '/') ) {
+                bool  hostParsedOk;
                 char *h = p;
 
                 while ((*p != '\0') && (*p != '/')) {
@@ -346,12 +350,18 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
                 /*
                  * Check for port
                  */
-                Ns_HttpParseHost(h, NULL, &p);
-                if (p != NULL) {
-                    *p++ = '\0';
-                    request->port = (unsigned short)strtol(p, NULL, 10);
+                hostParsedOk = Ns_HttpParseHost(h, NULL, &p);
+                if (hostParsedOk) {
+                    if (p != NULL) {
+                        *p++ = '\0';
+                        request->port = (unsigned short)strtol(p, NULL, 10);
+                    }
+                    request->host = ns_strdup(h);
+                } else {
+                    ns_free((char*)request->protocol);
+                    request->protocol = NULL;
+                    goto done;
                 }
-                request->host = ns_strdup(h);
             }
         }
     }

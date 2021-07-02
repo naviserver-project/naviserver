@@ -543,12 +543,17 @@ NsStopHttp(NsServer *servPtr)
  *          openacs.org:80                         (reg-name notation)
  *
  * Results:
- *      If a port is indicated after the hostname, the "portStart"
- *      will contain a string starting with ":", otherwise NULL.
+ *      Boolean value indicating success.
  *
- *      If "hostStart" is non-null, a pointer will point to the hostname,
- *      which will be terminated by '\0' in case of an IPv6 address in
- *      IP-literal notation.
+ *      In addition, parts of the parsed content is returned via the
+ *      provided pointers:
+
+ *      - If a port is indicated after the hostname, the "portStart"
+ *        will contain a string starting with ":", otherwise NULL.
+ *
+ *      - If "hostStart" is non-null, a pointer will point to the hostname,
+ *        which will be terminated by '\0' in case of an IPv6 address in
+ *        IP-literal notation.
  *
  * Side effects:
  *      May write a '\0' into the passed hostSting.
@@ -556,13 +561,13 @@ NsStopHttp(NsServer *servPtr)
  *----------------------------------------------------------------------
  */
 
-void
+bool
 Ns_HttpParseHost(
     char *hostString,
     char **hostStart,
     char **portStart
 ) {
-    bool ipLiteral = NS_FALSE;
+    bool ipLiteral = NS_FALSE, success = NS_TRUE;
 
     NS_NONNULL_ASSERT(hostString != NULL);
     NS_NONNULL_ASSERT(portStart != NULL);
@@ -590,9 +595,15 @@ Ns_HttpParseHost(
             } else {
                 *portStart = NULL;
             }
+        } else {
+            success = NS_FALSE;
+            *portStart = NULL;
+            if (hostStart != NULL) {
+                *hostStart = NULL;
+            }
         }
     }
-    if (ipLiteral == NS_FALSE) {
+    if (success && !ipLiteral) {
         char *slash = strchr(hostString, INTCHAR('/')),
              *colon = strchr(hostString, INTCHAR(':'));
         if (slash != NULL && colon != NULL && slash < colon) {
@@ -608,6 +619,8 @@ Ns_HttpParseHost(
             *hostStart = hostString;
         }
     }
+
+    return success;
 }
 
 

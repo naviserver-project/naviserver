@@ -944,7 +944,12 @@ PrebindSockets(const char *spec)
         /*
          * Parse port
          */
-        Ns_HttpParseHost(line, &addr, &str);
+        {
+            bool hostParsedOk = Ns_HttpParseHost(line, &addr, &str);
+            if (!hostParsedOk) {
+                Ns_Log(Warning, "prebind: invalid host name: '%s'", line);
+            }
+        }
         if (str != NULL) {
             *str++ = '\0';
             l = strtol(str, NULL, 10);

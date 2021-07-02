@@ -3202,7 +3202,7 @@ Ns_TclRegisterDeferred(Tcl_Interp *interp, Ns_TclDeferProc *proc, void *arg)
 /*
  * tclhttp.c
  */
-NS_EXTERN void
+NS_EXTERN bool
 Ns_HttpParseHost(char *hostString, char **hostStart, char **portStart)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
