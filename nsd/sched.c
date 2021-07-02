@@ -718,7 +718,7 @@ QueueEvent(Event *ePtr)
                  */
                 ePtr->nextqueue = now;
                 Ns_IncrTime(&ePtr->nextqueue, 0, 10000);
-                Ns_Log(Warning, "sched id %d: last execution overlaps with scheduled exection; "
+                Ns_Log(Warning, "sched id %d: last execution overlaps with scheduled execution; "
                        "running late", ePtr->id);
             }
         }
