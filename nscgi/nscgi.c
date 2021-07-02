@@ -845,7 +845,12 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     s = Ns_ConnLocationAppend(conn, dsPtr);
     s = strchr(s, INTCHAR(':'));
     s += 3;                        /* Get past the protocol "://"  */
-    Ns_HttpParseHost(s, NULL, &p); /* Get to the port number    */
+    {
+        bool hostParsedOk = Ns_HttpParseHost(s, NULL, &p); /* Get to the port number    */
+        if (!hostParsedOk) {
+            Ns_Log(Warning, "nscgi: invalid host name: '%s'", s);
+        }
+    }
 
     if (p != NULL) {
         int j;
