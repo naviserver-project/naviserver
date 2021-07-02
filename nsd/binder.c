@@ -630,7 +630,7 @@ Ns_SockBindUnix(const char *path, int socktype, unsigned short mode)
     /*
      * There is a small race condition below, since the permissions on
      * the socket are checked not in an atomic fashion and might be
-     * changed immediately after the bind operation. Unforunately,
+     * changed immediately after the bind operation. Unfortunately,
      * fchmod is not portable.
      */
     if (sock != NS_INVALID_SOCKET

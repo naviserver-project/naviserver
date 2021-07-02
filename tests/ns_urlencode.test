@@ -170,11 +170,11 @@ test ns_urlencode-2.5.14 {spaces and plus signs} -body {
     ns_urldecode -part query "%2b"
 } -result {+}
 
-test ns_urlencode-2.5.15 {spaces and plus signs, lower-case} -body {
+test ns_urlencode-2.5.15 {spaces and plus signs, lowercase} -body {
     ns_urldecode "%2b"
 } -result {+}
 
-test ns_urlencode-2.5.16 {spaces and plus signs, upper-case} -body {
+test ns_urlencode-2.5.16 {spaces and plus signs, uppercase} -body {
     ns_urldecode "%2B"
 } -result {+}
 
