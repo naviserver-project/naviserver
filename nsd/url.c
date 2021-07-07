@@ -36,6 +36,17 @@
 
 #include "nsd.h"
 
+/*
+ * Local typedefs of functions
+ */
+
+/*
+ * Local functions defined in this file
+ */
+
+static char* ParseUpTo(char *chars, char ch)
+    NS_GNUC_NONNULL(1);
+
 
 /*
  *----------------------------------------------------------------------
@@ -91,6 +102,162 @@ Ns_RelativeUrl(const char *url, const char *location)
 /*
  *----------------------------------------------------------------------
  *
+ * ParseUserInfo --
+ *
+ *      Parse the user-info part from the "authority" part of a URL
+ *
+ *           authority   = [ userinfo "@" ] host [ ":" port ]
+ *
+ *      and return the reminded of the string.
+ *
+ * Results:
+ *      String starting with the "host" part.
+ *
+ * Side effects:
+ *
+ *      In case the "authority" contains "userinfo", it is returned via the
+ *      pointer in the second argument.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static char *
+ParseUserInfo(char *chars, char **userinfo)
+{
+    char *p;
+
+    /*
+     * RFC 3986 defines
+     *
+     *   userinfo      = *( unreserved / pct-encoded / sub-delims / ":" )
+     *   unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
+     *   sub-delims  = "!" / "$" / "&" / "'" / "(" / ")"
+     *               / "*" / "+" / "," / ";" / "="
+     *
+     *   ALPHA   = (%41-%5A and %61-%7A)
+     *   DIGIT   = (%30-%39),
+     *   hyphen (%2D), period (%2E), underscore (%5F), tilde (%7E)
+     *   exclam (%21) dollar (%24) amp (%26) singlequote (%27)
+     *   lparen (%28) lparen (%29) asterisk (%2A) plus (%2B)
+     *   comma (%2C) semicolon (%3B) equals (%3D)
+     *
+     *   colon (%3a)
+     *
+     * Percent-encoded is just checked by the character range, but does not
+     * check the two following (number) chars.
+     *
+     *   percent (%25) ... for percent-encoded
+     */
+    static const bool userinfo_table[256] = {
+        /*          0  1  2  3   4  5  6  7   8  9  a  b   c  d  e  f */
+        /* 0x00 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0x10 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0x20 */  0, 1, 0, 0,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 0,
+        /* 0x30 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  0, 1, 0, 0,
+        /* 0x40 */  0, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0x50 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 0,  0, 0, 0, 1,
+        /* 0x60 */  0, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0x70 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 0,  0, 0, 1, 0,
+        /* 0x80 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0x90 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xa0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xb0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xc0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xd0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xe0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xf0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0
+    };
+
+    NS_NONNULL_ASSERT(chars != NULL);
+    NS_NONNULL_ASSERT(userinfo != NULL);
+
+    for (p = chars; userinfo_table[(int)*p] != 0; p++) {
+        ;
+    }
+
+    if (*p == '\x40') {
+        *userinfo = chars;
+        *p = '\0';
+        chars = p+1;
+    } else {
+        *userinfo = NULL;
+    }
+    /*fprintf(stderr, "==== userinfo p %.2x, '%s'\n", *p, chars);*/
+
+    return chars;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseUpTo --
+ *
+ *    Helper function of Ns_ParseUrl(). Return the characters up to a
+ *    specified character and terminate the parsed string by a NUL
+ *    character.  The string is searched from left to right.  If the
+ *    character does not exist in the string, return NULL.
+ *
+ * Results:
+ *    Parsed string or NULL.
+ *
+ * Side effects:
+ *    None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static char *
+ParseUpTo(char *chars, char ch)
+{
+    char *p = strchr(chars, INTCHAR(ch));
+
+    if (p != NULL) {
+        *p++ = '\0';
+    }
+    return p;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ValidateChars --
+ *
+ *    Helper function of Ns_ParseUrl(). Scan a string up to the end based on
+ *    the provided table of valid characters.
+ *
+ * Results:
+ *
+ *    When the string is valid, it is retuned unmodified. in case it contains
+ *    errors, NULL is returned and the error message is set.
+ *
+ * Side effects:
+ *    None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static char *
+ValidateChars(char *chars, const bool *table, const char *msg, const char** errorMsg)
+{
+    char *p, *result;
+
+    for (p = chars; table[(int)*p] != 0; p++) {
+        ;
+    }
+    if (*p == '\0') {
+        result = chars;
+    } else {
+        *errorMsg = msg;
+        result = NULL;
+    }
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_ParseUrl --
  *
  *      Parse a URL into its component parts
@@ -105,18 +272,148 @@ Ns_RelativeUrl(const char *url, const char *location)
  *
  *----------------------------------------------------------------------
  */
-
 Ns_ReturnCode
-Ns_ParseUrl(char *url, char **pprotocol, char **phost,
-            char **pport, char **ppath, char **ptail)
+Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
 {
     char *end;
 
-    *pprotocol = NULL;
-    *phost = NULL;
-    *pport = NULL;
-    *ppath = NULL;
-    *ptail = NULL;
+    /*
+     * RFC 3986 defines
+     *
+     *    foo://example.com:8042/over/there?name=ferret#nose
+     *    \_/   \______________/\_________/ \_________/ \__/
+     *     |           |            |            |        |
+     *   scheme     authority       path        query   fragment
+     *
+     *      scheme  = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
+     *      ALPHA   = (%41-%5A and %61-%7A)
+     *      DIGIT   = (%30-%39),
+     *      plus (%2B) hyphen (%2D), period (%2E),
+     *
+     *      underscore (%5F), tilde (%7E)
+     */
+
+    static const bool scheme_table[256] = {
+        /*          0  1  2  3   4  5  6  7   8  9  a  b   c  d  e  f */
+        /* 0x00 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0x10 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0x20 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 1,  0, 1, 1, 0,
+        /* 0x30 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 0, 0,  0, 0, 0, 0,
+        /* 0x40 */  0, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0x50 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 0,  0, 0, 0, 0,
+        /* 0x60 */  0, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0x70 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 0,  0, 0, 0, 0,
+        /* 0x80 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0x90 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xa0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xb0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xc0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xd0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xe0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xf0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0
+    };
+
+    /*
+     * RFC 3986 defines (simplified)
+     *
+     *   path          = path-abempty    ; begins with "/" or is empty
+     *                   / path-absolute   ; begins with "/" but not "//"
+     *   path-absolute = "/" [ segment-nz *( "/" segment ) ]
+     *   segment       = *pchar
+     *   segment-nz    = 1*pchar
+     *   pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
+     *
+     *   unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
+     *   sub-delims  = "!" / "$" / "&" / "'" / "(" / ")"
+     *               / "*" / "+" / "," / ";" / "="
+     *
+     *   ALPHA   = (%41-%5A and %61-%7A)
+     *   DIGIT   = (%30-%39),
+     *   hyphen (%2D), period (%2E), underscore (%5F), tilde (%7E)
+     *   exclam (%21) dollar (%24) amp (%26) singlequote (%27)
+     *   lparen (%28) lparen (%29) asterisk (%2A) plus (%2B)
+     *   comma (%2C) semicolon (%3B) equals (%3D)
+     *
+     *   slash (%2F) colon (%3A) at (%40)
+     *
+     * Percent-encoded is just checked by the character range, but does not
+     * check the two following (number) chars.
+     *
+     *   percent (%25) ... for percent-encoded
+     */
+
+    static const bool path_table[256] = {
+        /*          0  1  2  3   4  5  6  7   8  9  a  b   c  d  e  f */
+        /* 0x00 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0x10 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0x20 */  0, 1, 0, 0,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0x30 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  0, 1, 0, 0,
+        /* 0x40 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0x50 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 0,  0, 0, 0, 1,
+        /* 0x60 */  0, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0x70 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 0,  0, 0, 1, 0,
+        /* 0x80 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0x90 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xa0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xb0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xc0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xd0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xe0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xf0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0
+    };
+
+    /*
+     * RFC 3986 defines
+     *
+     *   query       = *( pchar / "/" / "?" )
+     *   fragment    = *( pchar / "/" / "?" )
+     *
+     *   pchar       = unreserved / pct-encoded / sub-delims / ":" / "@"
+     *
+     *   unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
+     *   sub-delims  = "!" / "$" / "&" / "'" / "(" / ")"
+     *               / "*" / "+" / "," / ";" / "="
+     *
+     *   ALPHA   = (%41-%5A and %61-%7A)
+     *   DIGIT   = (%30-%39),
+     *   hyphen (%2D), period (%2E), underscore (%5F), tilde (%7E)
+     *   exclam (%21) dollar (%24) amp (%26) singlequote (%27)
+     *   lparen (%28) lparen (%29) asterisk (%2A) plus (%2B)
+     *   comma (%2C) semicolon (%3B) equals (%3D)
+     *
+     *   slash (%2F) colon (%3A) question mark (%3F) at (%40)
+     *
+     * Percent-encoded is just checked by the character range, but does not
+     * check the two following (number) chars.
+     *
+     *   percent (%25) ... for percent-encoded
+     */
+
+    static const bool fragment_table[256] = {
+        /*          0  1  2  3   4  5  6  7   8  9  a  b   c  d  e  f */
+        /* 0x00 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0x10 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0x20 */  0, 1, 0, 0,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0x30 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  0, 1, 0, 1,
+        /* 0x40 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0x50 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 0,  0, 0, 0, 1,
+        /* 0x60 */  0, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0x70 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 0,  0, 0, 1, 0,
+        /* 0x80 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0x90 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xa0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xb0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xc0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xd0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xe0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xf0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0
+    };
+
+    NS_NONNULL_ASSERT(urlPtr);
+
+    memset(urlPtr, 0, sizeof(Ns_URL));
+    urlPtr->path = (char *)"";
+    urlPtr->tail = (char *)"";
 
     /*
      * Set variable "end" to the end of the protocol
@@ -125,7 +422,7 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
      *     +--end
      */
 
-    for (end = url; CHARTYPE(alpha, *end) != 0; end++) {
+    for (end = url; scheme_table[(int)*end] != 0; end++) {
         ;
     }
     if (*end == ':') {
@@ -138,37 +435,59 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
          * ^   ^ ^
          * |   | +-- url
          * |   +-- end
-         * +-------- *pprotocol
+         * +-------- protocol
          */
 
         *end = '\0';
-        *pprotocol = url;
+        urlPtr->protocol = url;
         url = end + 1;
+        /*fprintf(stderr, "SCHEME looks ok: %s\n", *pprotocol);*/
+
+    } else if (*end != '/' && *end != '\0') {
+        /*
+         * The check for '/' accepts relative URLs.
+         */
+        Ns_Log(Debug, "URI scheme does not look ok: last char 0x%.2x '%s'",
+               *end, url);
+        *errorMsg = "invalid scheme";
+        return NS_ERROR;
     }
 
     if (url[0] == '/' && url[1] == '/') {
+        bool  hostParsedOk;
 
         /*
-         * The URL starts with two slashes, which means a host is specified.
-         * Advance url past that and set *phost.
+         * The URL starts with two slashes, which means an authority part
+         * (host) is specified.  Advance url past that and set *phost.
          *
          * http\0//www.foo.com:8000/baz/blah/spoo.html
          * ^   ^   ^
-         * |   |   +-- url, *phost
+         * |   |   +-- url, *host
          * |   +-- end
-         * +-------- *pprotocol
+         * +-------- protocol
          */
-
         url = url + 2;
 
-        *phost = url;
+        /*
+         * RFC 3986 defines
+         *
+         *     authority   = [ userinfo "@" ] host [ ":" port ]
+         *
+         */
+        url = ParseUserInfo(url, &urlPtr->userinfo);
+        urlPtr->host = url;
 
         /*
-         * Look for a port number, which is optional.
+         * Parse authority part and return the optional string pointing to the
+         * port.
          */
-        Ns_HttpParseHost(url, phost, &end);
+        hostParsedOk = Ns_HttpParseHost2(url, strict, &urlPtr->host, &urlPtr->port, &end);
+        if (!hostParsedOk) {
+            *errorMsg = "invalid authority";
+            return NS_ERROR;
+        }
 
-        if (end != NULL) {
+        if (urlPtr->port != NULL) {
 
             /*
              * A port was specified. Clear the colon and
@@ -176,13 +495,13 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
              *
              * http\0//www.foo.com\08000/baz/blah/spoo.html
              * ^       ^          ^ ^
-             * |       +-- *phost | +------ url, *pport
-             * +----- *pprotocol  +--- end
+             * |       +-- host   | +------ url, port
+             * +----- protocol    +--- end
              */
 
-            *end = '\0';
-            url = end + 1;
-            *pport = url;
+            *urlPtr->port = '\0';
+            url = urlPtr->port + 1;
+            urlPtr->port = url;
         } else {
             /*
              * No port was specified.
@@ -191,33 +510,54 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
              * host entry is terminated with a null character. The next string
              * operation has to start after the enclosing bracket.
              */
-            if (*phost != NULL && *phost != url) {
-                url += strlen(*phost) + 2u;
+            if (urlPtr->host != url) {
+                url += strlen(urlPtr->host) + 2u;
             }
         }
+    } else {
+        end = url;
+    }
+    /*
+     * "end" points now either to
+     * - the string terminator (NUL)
+     * - the slash which starts the path/tail, or to
+     * - one of the remaining components (query, or fragment)
+     *
+     * http\0//www.foo.com\08000\0baz/blah/spoo.html
+     * ^       ^            ^   ^ ^
+     * |       |            |   | +-- url
+     * |       +-- host     |   +-- end
+     * +----- protocol      +-- port
+     */
+    /*fprintf(stderr, "CHECK FOR PATH <%s>\n", end);*/
 
+
+    if (*end == '\0') {
         /*
-         * Move up to the slash which starts the path/tail.
-         * Clear out the dividing slash.
-         *
-         * http\0//www.foo.com\08000\0baz/blah/spoo.html
-         * ^       ^            ^   ^ ^
-         * |       |            |   | +-- url
-         * |       +-- *phost   |   +-- end
-         * +----- *pprotocol    +-- *pport
+         * No path, tail, query, fragment specified: we are done.
          */
 
-        end = strchr(url, INTCHAR('/'));
-        if (end == NULL) {
+    } else if (*end == '#') {
+        /*
+         * No path, tail, query, just a fragment specified.
+         * We could validate.
+         */
+        *end = '\0';
+        urlPtr->fragment = end + 1;
 
+    } else if (*end == '?') {
+        /*
+         * No path, tail, just a query and maybe a fragment specified.
+         */
+        *end = '\0';
+        urlPtr->query = end + 1;
+        urlPtr->fragment = ParseUpTo(urlPtr->query, '#');
+
+    } else {
+        if (*end == '/') {
             /*
-             * No path or tail specified. Return.
+             * We have a path, tail, and maybe a query or fragment specified.
              */
-
-            *ppath = (char *)"";
-            *ptail = (char *)"";
-
-        } else {
             *end = '\0';
             url = end + 1;
 
@@ -228,53 +568,67 @@ Ns_ParseUrl(char *url, char **pprotocol, char **phost,
              *
              * http\0//www.foo.com\08000\0baz/blah/spoo.html
              * ^       ^            ^   ^ ^       ^^
-             * |       |            |   | |       |+-- *ptail
+             * |       |            |   | |       |+-- tail
              * |       |            |   | |       +-- end
-             * |       |            |   | +-- *ppath
-             * |       +-- *phost   |   +-- end
-             * +----- *pprotocol    +-- *pport
+             * |       |            |   | +-- path
+             * |       +-- host     |   +-- end
+             * +----- protocol      +-- port
              */
 
-            *ppath = url;
+
+            /*
+             * Separate the "tail" from the "path", otherwise the string is
+             * just "tail".
+             */
+
             end = strrchr(url, INTCHAR('/'));
             if (end == NULL) {
-                *ptail = *ppath;
-                *ppath = (char *)"";
+                urlPtr->tail = url;
             } else {
                 *end = '\0';
-                *ptail = end + 1;
+                urlPtr->path = url;
+                urlPtr->tail = end + 1;
+            }
+
+        } else {
+            /*
+             * The URL starts with no slash, just set the "tail" and let
+             * "path" undefined (legacy NaviServer).
+             */
+            urlPtr->tail = end;
+        }
+
+        if (urlPtr->tail != NULL) {
+            urlPtr->query = ParseUpTo(urlPtr->tail, '?');
+            if (urlPtr->query != NULL) {
+                urlPtr->fragment = ParseUpTo(urlPtr->query, '#');
+            } else {
+                urlPtr->fragment = ParseUpTo(urlPtr->tail, '#');
             }
         }
-    } else if (*url == '/') {
-        /*
-         * The URL begins with a single slash. Separate the "tail" from the
-         * "path", otherwise the string is just "tail".
-         */
-
-        url++;
-        *ppath = url;
-
-        /*
-         * Find the last slash on the right and everything after that becomes
-         * "tail"; if there are no slashes then the string is "tail" and "path"
-         * is an empty string.
-         */
-
-        end = strrchr(url, INTCHAR('/'));
-        if (end == NULL) {
-            *ptail = *ppath;
-            *ppath = (char *)"";
-        } else {
-            *end = '\0';
-            *ptail = end + 1;
+        if (strict) {
+            /*
+             * Validate content.
+             */
+            if (urlPtr->query != NULL) {
+                urlPtr->query = ValidateChars(urlPtr->query, fragment_table,
+                                              "query contains invalid character", errorMsg);
+            }
+            if (urlPtr->fragment != NULL) {
+                urlPtr->fragment = ValidateChars(urlPtr->fragment, fragment_table,
+                                                 "fragment contains invalid character", errorMsg);
+            }
+            if (urlPtr->tail != NULL) {
+                urlPtr->tail = ValidateChars(urlPtr->tail, path_table,
+                                             "query contains invalid character", errorMsg);
+            }
+            if (urlPtr->path != NULL) {
+                urlPtr->path = ValidateChars(urlPtr->path, path_table,
+                                             "path contains invalid character", errorMsg);
+            }
         }
-    } else {
-        /*
-         * The URL starts with no slash, just set the "tail".
-         */
-
-        *ptail = url;
     }
+
     return NS_OK;
 }
 
@@ -300,8 +654,8 @@ Ns_ReturnCode
 Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)
 {
     Ns_DString    urlDs, baseDs;
-    char         *proto, *host, *port, *path, *tail;
-    char         *bproto, *bhost, *bport, *bpath, *btail;
+    Ns_URL        u, bu;
+    const char   *errorMsg = NULL;
     Ns_ReturnCode status;
 
     /*
@@ -311,48 +665,51 @@ Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)
     Ns_DStringInit(&urlDs);
     Ns_DStringInit(&baseDs);
 
+    /*
+     * The first part does not have to be a valid URL.
+     */
     Ns_DStringAppend(&urlDs, url);
-    (void) Ns_ParseUrl(urlDs.string, &proto, &host, &port, &path, &tail);
+    (void) Ns_ParseUrl(urlDs.string, NS_FALSE, &u, &errorMsg);
 
     Ns_DStringAppend(&baseDs, base);
-    status = Ns_ParseUrl(baseDs.string, &bproto, &bhost, &bport, &bpath, &btail);
+    status = Ns_ParseUrl(baseDs.string, NS_FALSE, &bu, &errorMsg);
 
-    if (bproto == NULL || bhost == NULL || bpath == NULL) {
+    if (bu.protocol == NULL || bu.host == NULL || bu.path == NULL) {
         status = NS_ERROR;
         goto done;
     }
-    if (proto == NULL) {
-        proto = bproto;
+    if (u.protocol == NULL) {
+        u.protocol = bu.protocol;
     }
-    assert(proto != NULL);
+    assert(u.protocol != NULL);
 
-    if (host == NULL) {
-        host = bhost;
-        port = bport;
+    if (u.host == NULL) {
+        u.host = bu.host;
+        u.port = bu.port;
     }
-    assert(host != NULL);
+    assert(u.host != NULL);
 
-    if (path == NULL) {
-        path = bpath;
+    if (u.path == NULL) {
+        u.path = bu.path;
     }
-    assert(path != NULL);
+    assert(u.path != NULL);
 
-    if (strchr(host, INTCHAR(':')) == NULL) {
+    if (strchr(u.host, INTCHAR(':')) == NULL) {
         /*
          * We have to use IP literal notation to avoid ambiguity of colon
          * (part of address or separator for port).
          */
-        Ns_DStringVarAppend(dsPtr, proto, "://", host, (char *)0L);
+        Ns_DStringVarAppend(dsPtr, u.protocol, "://", u.host, (char *)0L);
     } else {
-        Ns_DStringVarAppend(dsPtr, proto, "://[", host, "]", (char *)0L);
+        Ns_DStringVarAppend(dsPtr, u.protocol, "://[", u.host, "]", (char *)0L);
     }
-    if (port != NULL) {
-        Ns_DStringVarAppend(dsPtr, ":", port, (char *)0L);
+    if (u.port != NULL) {
+        Ns_DStringVarAppend(dsPtr, ":", u.port, (char *)0L);
     }
-    if (*path == '\0') {
-        Ns_DStringVarAppend(dsPtr, "/", tail, (char *)0L);
+    if (*u.path == '\0') {
+        Ns_DStringVarAppend(dsPtr, "/", u.tail, (char *)0L);
     } else {
-        Ns_DStringVarAppend(dsPtr, "/", path, "/", tail, (char *)0L);
+        Ns_DStringVarAppend(dsPtr, "/", u.path, "/", u.tail, (char *)0L);
     }
 done:
     Ns_DStringFree(&urlDs);
@@ -361,35 +718,6 @@ done:
     return status;
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * ParseUpTo --
- *
- *    Helper function for NsTclParseUrlObjCmd. Return the characters up to a
- *    specified character and terminate the parsed string by a NUL character.
- *    The string is searched from left to right.  If the character does not
- *    exist in the string, return NULL.
- *
- * Results:
- *    Parsed string or NULL.
- *
- * Side effects:
- *    none
- *
- *----------------------------------------------------------------------
- */
-static char *
-ParseUpTo(char *chars, char ch)
-{
-    char *p = strchr(chars, INTCHAR(ch));
-
-    if (p != NULL) {
-        *p++ = '\0';
-    }
-    return p;
-}
 
 
 /*
@@ -412,72 +740,75 @@ ParseUpTo(char *chars, char ch)
 int
 NsTclParseUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int         result = TCL_OK;
+    int         result = TCL_OK, strict = 0;
     char       *urlString;
+    Ns_ObjvSpec opts[] = {
+        {"-strict",     Ns_ObjvBool,    &strict,          INT2PTR(NS_TRUE)},
+        {NULL, NULL, NULL, NULL}
+    };
     Ns_ObjvSpec args[] = {
         {"url",  Ns_ObjvString, &urlString, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        char    *url, *protocol, *host, *portString, *path, *tail;
+        char       *url;
+        Ns_URL      u;
+        const char *errorMsg = NULL;
 
         url = ns_strdup(urlString);
 
-        if (Ns_ParseUrl(url, &protocol, &host, &portString, &path, &tail) == NS_OK) {
+        if (Ns_ParseUrl(url, (bool)strict, &u, &errorMsg) == NS_OK) {
             Tcl_Obj *resultObj = Tcl_NewListObj(0, NULL);
 
-            if (protocol != NULL) {
+            if (u.protocol != NULL) {
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("proto", 5));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(protocol, -1));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.protocol, -1));
             }
-            if (host != NULL) {
+            if (u.userinfo != NULL) {
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("userinfo", 8));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.userinfo, -1));
+            }
+            if (u.host != NULL) {
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("host", 4));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(host, -1));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.host, -1));
             }
-            if (portString != NULL) {
+            if (u.port != NULL) {
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("port", 4));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(portString, -1));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.port, -1));
             }
-            if (path != NULL) {
+            if (u.path != NULL) {
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("path", 4));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(path, -1));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.path, -1));
             }
-
-            if (tail != NULL) {
-                char *fragment, *query;
-
-                query = ParseUpTo(tail, '?');
-                if (query != NULL) {
-                    fragment = ParseUpTo(query, '#');
-                } else {
-                    fragment = ParseUpTo(tail, '#');
-                }
-
+            if (u.tail != NULL) {
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("tail", 4));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(tail, -1));
-
-                if (query != NULL) {
-                    Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("query", 5));
-                    Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(query, -1));
-                }
-                if (fragment != NULL) {
-                    Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("fragment", 8));
-                    Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(fragment, -1));
-                }
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.tail, -1));
             }
-
-            Tcl_SetObjResult(interp, resultObj);
+            if (u.query != NULL) {
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("query", 5));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.query, -1));
+            }
+            if (u.fragment != NULL) {
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("fragment", 8));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.fragment, -1));
+            }
+            if (errorMsg != NULL) {
+                Ns_TclPrintfResult(interp, "Could not parse URL \"%s\": %s", urlString, errorMsg);
+                result = TCL_ERROR;
+            } else {
+                Tcl_SetObjResult(interp, resultObj);
+            }
 
         } else {
-            Ns_TclPrintfResult(interp, "Could not parse URL \"%s\"", url);
+            Ns_TclPrintfResult(interp, "Could not parse URL \"%s\": %s", urlString, errorMsg);
             result = TCL_ERROR;
         }
         ns_free(url);
     }
-
+    /*Ns_Log(Notice, "===== ns_parseurl '%s' returns result %d", urlString, result);*/
     return result;
 }
 

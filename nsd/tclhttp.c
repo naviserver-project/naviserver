@@ -230,6 +230,8 @@ static NsHttpParseProc TrailerInitProc;
 static NsHttpParseProc ParseTrailerProc;
 static NsHttpParseProc ParseEndProc;
 
+static char* SkipDigits(char *chars) NS_GNUC_NONNULL(1);
+
 /*
  * Callbacks for the chunked-encoding state machine
  * to parse variable number of chunks.
@@ -526,6 +528,30 @@ NsStopHttp(NsServer *servPtr)
     (void)HttpClientLogClose(servPtr);
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SkipDigits --
+ *
+ *    Helper function of Ns_HttpParseHost() to skip digits in a string.
+ *
+ * Results:
+ *    First non-digit charactger.
+ *
+ * Side effects:
+ *    none
+ *
+ *----------------------------------------------------------------------
+ */
+static char*
+SkipDigits(char *chars)
+{
+    for (; *chars  >= '0' && *chars <= '9'; chars++) {
+        ;
+    }
+    return chars;
+}
 
 
 
@@ -560,30 +586,126 @@ NsStopHttp(NsServer *servPtr)
  *
  *----------------------------------------------------------------------
  */
-
-bool
+void
 Ns_HttpParseHost(
     char *hostString,
     char **hostStart,
     char **portStart
 ) {
-    bool ipLiteral = NS_FALSE, success = NS_TRUE;
+    char *end;
 
     NS_NONNULL_ASSERT(hostString != NULL);
     NS_NONNULL_ASSERT(portStart != NULL);
 
+    (void) Ns_HttpParseHost2(hostString, NS_FALSE, hostStart, portStart, &end);
+}
+
+bool
+Ns_HttpParseHost2(
+    char *hostString,
+    bool strict,
+    char **hostStart,
+    char **portStart,
+    char **end
+) {
+    bool ipLiteral = NS_FALSE, success = NS_TRUE;
+
+    /*
+     * RFC 3986 defines
+     *
+     *   reg-name    = *( unreserved / pct-encoded / sub-delims )
+     *   unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
+     *   sub-delims  = "!" / "$" / "&" / "'" / "(" / ")"
+     *               / "*" / "+" / "," / ";" / "="
+     *
+     *   ALPHA   = (%41-%5A and %61-%7A)
+     *   DIGIT   = (%30-%39),
+     *   hyphen (%2D), period (%2E), underscore (%5F), tilde (%7E)
+     *   exclam (%21) dollar (%24) amp (%26) singlequote (%27)
+     *   lparen (%28) lparen (%29) asterisk (%2A) plus (%2B)
+     *   comma (%2C) semicolon (%3B) equals (%3D)
+     *
+     * However, errata #4942 of RFC 3986 says:
+     *
+     *   reg-name    = *( unreserved / pct-encoded / "-" / ".")
+     *
+     * A reg-namee consists of a sequence of domain labels separated by ".",
+     * each domain label starting and ending with an alphanumeric character
+     * and possibly also containing "-" characters.  The rightmost domain
+     * label of a fully qualified domain name in DNS may be followed by a
+     * single "." and should be if it is necessary to distinguish between the
+     * complete domain name and some local domain.
+     *
+     * Percent-encoded is just checked by the character range, but does not
+     * check the two following (number) chars.
+     *
+     *   percent (%25) ... for percent-encoded
+     */
+    static const bool regname_table[256] = {
+        /*          0  1  2  3   4  5  6  7   8  9  a  b   c  d  e  f */
+        /* 0x00 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0x10 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0x20 */  0, 0, 0, 0,  0, 1, 0, 0,  0, 0, 0, 0,  0, 1, 1, 0,
+        /* 0x30 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 0, 0,  0, 0, 0, 0,
+        /* 0x40 */  0, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0x50 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 0,  0, 0, 0, 1,
+        /* 0x60 */  0, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0x70 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 0,  0, 0, 1, 0,
+        /* 0x80 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0x90 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xa0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xb0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xc0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xd0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xe0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xf0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0
+    };
+
+    /*
+     * Host name delimiters ":/?#" and NUL
+     */
+    static const bool delimiter_table[256] = {
+        /*          0  1  2  3   4  5  6  7   8  9  a  b   c  d  e  f */
+        /* 0x00 */  0, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0x10 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0x20 */  0, 1, 1, 0,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 0,
+        /* 0x30 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 0, 1,  1, 1, 1, 0,
+        /* 0x40 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0x50 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0x60 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0x70 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0x80 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0x90 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0xa0 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0xb0 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0xc0 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0xd0 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0xe0 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0xf0 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1
+    };
+
+    NS_NONNULL_ASSERT(hostString != NULL);
+    NS_NONNULL_ASSERT(portStart != NULL);
+    NS_NONNULL_ASSERT(end != NULL);
+
+    /*
+     * RFC 3986 defines
+     *
+     *   host       = IP-literal / IPv4address / reg-name
+     *   IP-literal = "[" ( IPv6address / IPvFuture  ) "]"
+     */
     if (*hostString == '[') {
         char *p;
 
         /*
-         * Maybe this is an address in IP-literal notation in square braces
+         * This looks like an address in IP-literal notation in square brackets.
          */
         p = strchr(hostString + 1, INTCHAR(']'));
         if (p != NULL) {
             ipLiteral = NS_TRUE;
 
             /*
-             * Terminate the IP-literal if hostStart is given.
+             * Zero-byte terminate the IP-literal if hostStart is given.
              */
             if (hostStart != NULL) {
                 *p = '\0';
@@ -592,29 +714,90 @@ Ns_HttpParseHost(
             p++;
             if (*p == ':') {
                 *portStart = p;
+                *end = SkipDigits(p+1);
             } else {
                 *portStart = NULL;
+                *end = p;
             }
+            /*fprintf(stderr, "==== IP literal portStart '%s' end '%s'\n", *portStart, *end);*/
         } else {
+            /*
+             * There is no closing square bracket
+             */
             success = NS_FALSE;
             *portStart = NULL;
             if (hostStart != NULL) {
                 *hostStart = NULL;
             }
+            *end = p;
         }
     }
     if (success && !ipLiteral) {
-        char *slash = strchr(hostString, INTCHAR('/')),
-             *colon = strchr(hostString, INTCHAR(':'));
-        if (slash != NULL && colon != NULL && slash < colon) {
+        char *p;
 
+        /*
+         * Still to handle from the RFC 3986 "host" rule:
+         *
+         *   host        = .... / IPv4address / reg-name
+         *
+         * Character-wise, IPv4address is a special case of reg-name.
+         *
+         *   reg-name    = *( unreserved / pct-encoded / sub-delims )
+         *   unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
+         *   sub-delims  = "!" / "$" / "&" / "'" / "(" / ")"
+         *               / "*" / "+" / "," / ";" / "="
+         *
+         * However: errata #4942 of RFC 3986 says:
+         *
+         *   reg-name    = *( unreserved / pct-encoded / "-" / ".")
+         *
+         * which is more in sync with reality. In the errata, the two
+         * explicitly mentioned characters are not needed, since these are
+         * already part of "unreserved". Probabaly, there are characters in
+         * "unreserved", which are not desired either.
+         *
+         * RFC 3986 sec 3.2: The authority component is preceded by a double
+         * slash ("//") and is terminated by the next slash ("/"), question
+         * mark ("?"), or number sign ("#") character, or by the end of the
+         * URI.
+         *
+         */
+
+        if (strict) {
             /*
-             * Found a colon after the first slash, ignore this colon.
+             * Use the table based on regname + errata in RFC 3986.
              */
-            *portStart = NULL;
+            for (p = hostString; regname_table[(int)*p]; p++) {
+                ;
+            }
         } else {
-            *portStart = colon;
+            /*
+             * Just scan for the bare necessity based on delimiters.
+             */
+            for (p = hostString; delimiter_table[(int)*p]; p++) {
+                ;
+            }
         }
+        /*
+         * The host is not allowed to start with a dot ("dots are separators
+         * for labels").
+         *
+         * Colon is not part of the allowed characters in reg-name, so we can
+         * use it to determine the (optional) port.
+         *
+         */
+        success = (*hostString != '.'
+                   && (*p == '\0' || *p == ':' || *p == '/' || *p == '?' || *p == '#'));
+        if (*p == ':') {
+            *portStart = p;
+            *end = SkipDigits(p+1);
+        } else {
+            *portStart = NULL;
+            *end = p;
+        }
+
+        /* fprintf(stderr, "==== p %.2x, success %d '%s'\n", *p, success, hostString); */
+
         if (hostStart != NULL) {
             *hostStart = hostString;
         }
@@ -2424,8 +2607,9 @@ HttpConnect(
     Ns_DString      *dsPtr;
     bool             haveUserAgent = NS_FALSE, ownHeaders = NS_FALSE;
     unsigned short   portNr, defPortNr;
-    char            *port = (char*)NS_EMPTY_STRING;
-    char            *url2, *proto, *host, *path, *tail;
+    char            *url2;
+    Ns_URL           u;
+    const char      *errorMsg = NULL;
     const char      *contentType = NULL;
 
     static uint64_t  httpClientRequestCount = 0u; /* MT: static variable! */
@@ -2478,13 +2662,13 @@ HttpConnect(
      * the item separating characters with '\0' characters.
      */
     url2 = ns_strdup(url);
-    if (Ns_ParseUrl(url2, &proto, &host, &port, &path, &tail) != NS_OK
-        || proto == NULL
-        || host  == NULL
-        || path  == NULL
-        || tail  == NULL) {
+    if (Ns_ParseUrl(url2, NS_FALSE, &u, &errorMsg) != NS_OK
+        || u.protocol == NULL
+        || u.host  == NULL
+        || u.path  == NULL
+        || u.tail  == NULL) {
 
-        Ns_TclPrintfResult(interp, "invalid URL \"%s\"", url);
+        Ns_TclPrintfResult(interp, "invalid URL \"%s\": %s", url, errorMsg);
         goto fail;
     }
 
@@ -2504,7 +2688,7 @@ HttpConnect(
      * Check used protocol and protocol-specific parameters
      * and determine the default port (80 for HTTP, 443 for HTTPS)
      */
-    if (STREQ("http", proto)) {
+    if (STREQ("http", u.protocol)) {
         if (cert != NULL
             || caFile != NULL
             || caPath != NULL
@@ -2516,7 +2700,7 @@ HttpConnect(
         defPortNr = 80u;
     }
 #ifdef HAVE_OPENSSL_EVP_H
-    else if (STREQ("https", proto)) {
+    else if (STREQ("https", u.protocol)) {
         defPortNr = 443u;
     }
 #endif
@@ -2528,8 +2712,8 @@ HttpConnect(
     /*
      * Connect to specified port or to the default port.
      */
-    if (port != NULL) {
-        portNr = (unsigned short) strtol(port, NULL, 10);
+    if (u.port != NULL) {
+        portNr = (unsigned short) strtol(u.port, NULL, 10);
     } else {
         portNr = defPortNr;
     }
@@ -2573,7 +2757,7 @@ HttpConnect(
         Ns_ReturnCode rc;
         Ns_Time       def = {10, 0}, *toPtr = NULL;
 
-        Ns_Log(Ns_LogTaskDebug, "HttpConnect: connecting to [%s]:%hu", host, portNr);
+        Ns_Log(Ns_LogTaskDebug, "HttpConnect: connecting to [%s]:%hu", u.host, portNr);
 
         /*
          * Open the socket to remote, assure it is writable
@@ -2591,9 +2775,9 @@ HttpConnect(
         } else {
             toPtr = &def;
         }
-        httpPtr->sock = Ns_SockTimedConnect2(host, portNr, NULL, 0, toPtr, &rc);
+        httpPtr->sock = Ns_SockTimedConnect2(u.host, portNr, NULL, 0, toPtr, &rc);
         if (httpPtr->sock == NS_INVALID_SOCKET) {
-            Ns_SockConnectError(interp, host, portNr, rc);
+            Ns_SockConnectError(interp, u.host, portNr, rc);
             HttpClientLogWrite(httpPtr, "connecttimeout");
             goto fail;
         }
@@ -2652,12 +2836,20 @@ HttpConnect(
     Ns_DStringAppend(dsPtr, method);
     Ns_StrToUpper(Ns_DStringValue(dsPtr));
     Ns_DStringNAppend(dsPtr, " /", 2);
-    if (*path != '\0') {
-        Ns_DStringNAppend(dsPtr, path, -1);
+    if (*u.path != '\0') {
+        Ns_DStringNAppend(dsPtr, u.path, -1);
         Ns_DStringNAppend(dsPtr, "/", 1);
     }
-    Ns_DStringNAppend(dsPtr, tail, -1);
-    Ns_Log(Ns_LogTaskDebug, "HttpConnect: %s request: %s", proto, Ns_DStringValue(dsPtr));
+    Ns_DStringNAppend(dsPtr, u.tail, -1);
+    if (u.query != NULL) {
+        Ns_DStringNAppend(dsPtr, "?", 1);
+        Ns_DStringNAppend(dsPtr, u.query, -1);
+    }
+    if (u.fragment != NULL) {
+        Ns_DStringNAppend(dsPtr, "#", 1);
+        Ns_DStringNAppend(dsPtr, u.fragment, -1);
+    }
+    Ns_Log(Ns_LogTaskDebug, "HttpConnect: %s request: %s", u.protocol, Ns_DStringValue(dsPtr));
     Ns_DStringNAppend(dsPtr, " HTTP/1.1\r\n", 11);
 
     /*
@@ -2704,7 +2896,7 @@ HttpConnect(
      */
     if (keepHostHdr == NS_FALSE) {
         (void)Ns_DStringVarAppend(dsPtr, hostHeader, ": ", (char *)0L);
-        (void)Ns_HttpLocationString(dsPtr, NULL, host, portNr, defPortNr);
+        (void)Ns_HttpLocationString(dsPtr, NULL, u.host, portNr, defPortNr);
         Ns_DStringNAppend(dsPtr, "\r\n", 2);
     }
 

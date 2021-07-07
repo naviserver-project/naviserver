@@ -422,6 +422,20 @@ typedef struct Ns_Request {
 } Ns_Request;
 
 /*
+ * Typedef for URL components
+ */
+typedef struct _Ns_URL {
+    char *protocol;
+    char *userinfo;
+    char *host;
+    char *port;
+    char *path;
+    char *tail;
+    char *query;
+    char *fragment;
+} Ns_URL;
+
+/*
  * The connection structure.
  */
 
@@ -3203,8 +3217,13 @@ Ns_TclRegisterDeferred(Tcl_Interp *interp, Ns_TclDeferProc *proc, void *arg)
  * tclhttp.c
  */
 NS_EXTERN bool
+Ns_HttpParseHost2(char *hostString, bool strict, char **hostStart, char **portStart, char **end)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+
+NS_EXTERN void
 Ns_HttpParseHost(char *hostString, char **hostStart, char **portStart)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3)
+    NS_GNUC_DEPRECATED_FOR(Ns_HttpParseHost2);
 
 NS_EXTERN char *
 Ns_HttpLocationString(Tcl_DString *dsPtr, const char *protoString,
@@ -3318,10 +3337,8 @@ NS_EXTERN const char *
 Ns_RelativeUrl(const char *url, const char *location);
 
 NS_EXTERN Ns_ReturnCode
-Ns_ParseUrl(char *url, char **pprotocol, char **phost, char **pport,
-            char **ppath, char **ptail)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4)
-    NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
+Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN Ns_ReturnCode
 Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)

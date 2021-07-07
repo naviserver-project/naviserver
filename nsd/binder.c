@@ -895,7 +895,7 @@ PrebindSockets(const char *spec)
 {
     Tcl_HashEntry         *hPtr;
     int                    isNew = 0, sock;
-    char                  *next, *str, *line, *lines;
+    char                  *next, *line, *lines;
     long                   l;
     Ns_ReturnCode          status = NS_OK;
     struct NS_SOCKADDR_STORAGE sa;
@@ -908,7 +908,7 @@ PrebindSockets(const char *spec)
 
     for (; line != NULL; line = next) {
         const char     *proto;
-        char           *addr, *p;
+        char           *addr, *p, *str;
         unsigned short  port;
         long            reuses;
         struct Prebind *pPtr;
@@ -945,21 +945,23 @@ PrebindSockets(const char *spec)
          * Parse port
          */
         {
-            bool hostParsedOk = Ns_HttpParseHost(line, &addr, &str);
+            char *portStr, *end;
+            bool hostParsedOk = Ns_HttpParseHost2(line, NS_TRUE, &addr, &portStr, &end);
+
             if (!hostParsedOk) {
-                Ns_Log(Warning, "prebind: invalid host name: '%s'", line);
+                Ns_Log(Warning, "prebind: invalid hostname: '%s'", line);
             }
+            if (portStr != NULL) {
+                *portStr++ = '\0';
+                l = strtol(portStr, NULL, 10);
+                line = portStr;
+            } else {
+                assert(addr != NULL);
+                l = strtol(addr, NULL, 10);
+                addr = (char *)NS_IP_UNSPECIFIED;
+            }
+            port = (l >= 0) ? (unsigned short)l : 0u;
         }
-        if (str != NULL) {
-            *str++ = '\0';
-            l = strtol(str, NULL, 10);
-            line = str;
-        } else {
-            assert(addr != NULL);
-            l = strtol(addr, NULL, 10);
-            addr = (char *)NS_IP_UNSPECIFIED;
-        }
-        port = (l >= 0) ? (unsigned short)l : 0u;
 
         /*
          * Parse protocol; a line starting with a '/' means: path, which

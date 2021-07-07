@@ -337,7 +337,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
                 && (*p != '\0')
                 && (*p != '/') ) {
                 bool  hostParsedOk;
-                char *h = p;
+                char *h = p, *end;
 
                 while ((*p != '\0') && (*p != '/')) {
                     p++;
@@ -350,7 +350,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
                 /*
                  * Check for port
                  */
-                hostParsedOk = Ns_HttpParseHost(h, NULL, &p);
+                hostParsedOk = Ns_HttpParseHost2(h, NS_FALSE, NULL, &p, &end);
                 if (hostParsedOk) {
                     if (p != NULL) {
                         *p++ = '\0';

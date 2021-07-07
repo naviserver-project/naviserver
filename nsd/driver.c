@@ -868,13 +868,13 @@ void NsDriverMapVirtualServers(void)
             if (servPtr == NULL) {
                 Ns_Log(Error, "%s: no such server: %s", moduleName, server);
             } else {
-                char *writableHost, *hostName, *portStart;
+                char *writableHost, *hostName, *portStart, *end;
                 bool  hostParsedOk;
 
                 writableHost = ns_strdup(host);
-                hostParsedOk = Ns_HttpParseHost(writableHost, &hostName, &portStart);
+                hostParsedOk = Ns_HttpParseHost2(writableHost, NS_TRUE, &hostName, &portStart, &end);
                 if (!hostParsedOk) {
-                    Ns_Log(Warning, "server map: invalid host name: '%s'", writableHost);
+                    Ns_Log(Warning, "server map: invalid hostname: '%s'", writableHost);
                     continue;
                 }
 
@@ -6348,7 +6348,6 @@ WriterSetupStreamingMode(Conn *connPtr, const struct iovec *bufs, int nbufs, int
     }
 
     if (first) {
-        //bufs = NULL;
         connPtr->nContentSent = wrote;
 #ifndef _WIN32
         /*
@@ -8345,8 +8344,10 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
                    const char *url, const char *httpMethod, const char *version,
                    const Ns_Time *timeoutPtr, Sock **sockPtrPtr)
 {
-    char   *protocol, *host, *portString, *path, *tail, *url2;
-    int     result = TCL_OK;
+    char       *url2;
+    const char *errorMsg = NULL;
+    int         result = TCL_OK;
+    Ns_URL      u;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(url != NULL);
@@ -8359,30 +8360,30 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
     /*
      * We need here a fully qualified URL, otherwise raise an error
      */
-    if (unlikely(Ns_ParseUrl(url2, &protocol, &host, &portString, &path, &tail) != NS_OK)
-        || protocol == NULL || host == NULL || path == NULL || tail == NULL) {
-        Ns_Log(Notice, "driver: invalid URL '%s' passed to NSDriverClientOpen", url2);
+    if (unlikely(Ns_ParseUrl(url2, NS_FALSE, &u, &errorMsg) != NS_OK)
+        || u.protocol == NULL || u.host == NULL || u.path == NULL || u.tail == NULL) {
+        Ns_Log(Notice, "driver: invalid URL '%s' passed to NSDriverClientOpen: %s", url2, errorMsg);
         result = TCL_ERROR;
 
     } else {
         Driver        *drvPtr;
         unsigned short portNr = 0u; /* make static checker happy */
 
-        assert(protocol != NULL);
-        assert(host != NULL);
-        assert(path != NULL);
-        assert(tail != NULL);
+        assert(u.protocol != NULL);
+        assert(u.host != NULL);
+        assert(u.path != NULL);
+        assert(u.tail != NULL);
 
         /*
          * Find a matching driver for the specified protocol and optionally
          * the specified driver name.
          */
-        drvPtr = LookupDriver(interp, protocol, driverName);
+        drvPtr = LookupDriver(interp, u.protocol, driverName);
         if (drvPtr == NULL) {
             result = TCL_ERROR;
 
-        } else if (portString != NULL) {
-            portNr = (unsigned short) strtol(portString, NULL, 10);
+        } else if (u.port != NULL) {
+            portNr = (unsigned short) strtol(u.port, NULL, 10);
 
         } else if (drvPtr->defport != 0u) {
             /*
@@ -8391,7 +8392,7 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
             portNr = drvPtr->defport;
 
         } else {
-            Ns_TclPrintfResult(interp, "no default port for protocol '%s' defined", protocol);
+            Ns_TclPrintfResult(interp, "no default port for protocol '%s' defined", u.protocol);
             result = TCL_ERROR;
         }
 
@@ -8399,14 +8400,13 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
             NS_SOCKET     sock;
             Ns_ReturnCode status;
 
-            sock = Ns_SockTimedConnect2(host, portNr, NULL, 0u, timeoutPtr, &status);
+            sock = Ns_SockTimedConnect2(u.host, portNr, NULL, 0u, timeoutPtr, &status);
 
             if (sock == NS_INVALID_SOCKET) {
-                Ns_SockConnectError(interp, host, portNr, status);
+                Ns_SockConnectError(interp, u.host, portNr, status);
                 result = TCL_ERROR;
 
             } else {
-                const char    *query;
                 Tcl_DString    ds, *dsPtr = &ds;
                 Request       *reqPtr;
                 Sock          *sockPtr;
@@ -8431,24 +8431,32 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
                 Ns_DStringAppend(dsPtr, httpMethod);
                 Ns_StrToUpper(Ns_DStringValue(dsPtr));
                 Tcl_DStringAppend(dsPtr, " /", 2);
-                if (*path != '\0') {
-                    if (*path == '/') {
-                        path ++;
+                if (*u.path != '\0') {
+                    if (*u.path == '/') {
+                        u.path ++;
                     }
-                    Tcl_DStringAppend(dsPtr, path, -1);
+                    Tcl_DStringAppend(dsPtr, u.path, -1);
                     Tcl_DStringAppend(dsPtr, "/", 1);
                 }
-                Tcl_DStringAppend(dsPtr, tail, -1);
+                Tcl_DStringAppend(dsPtr, u.tail, -1);
+                if (u.query != NULL) {
+                    Ns_DStringNAppend(dsPtr, "?", 1);
+                    Ns_DStringNAppend(dsPtr, u.query, -1);
+                }
+                if (u.fragment != NULL) {
+                    Ns_DStringNAppend(dsPtr, "#", 1);
+                    Ns_DStringNAppend(dsPtr, u.fragment, -1);
+                }
+
                 Tcl_DStringAppend(dsPtr, " HTTP/", 6);
                 Tcl_DStringAppend(dsPtr, version, -1);
 
                 reqPtr->request.line = Ns_DStringExport(dsPtr);
                 reqPtr->request.method = ns_strdup(httpMethod);
-                reqPtr->request.protocol = ns_strdup(protocol);
-                reqPtr->request.host = ns_strdup(host);
-                query = strchr(tail, INTCHAR('?'));
-                if (query != NULL) {
-                    reqPtr->request.query = ns_strdup(query+1);
+                reqPtr->request.protocol = ns_strdup(u.protocol);
+                reqPtr->request.host = ns_strdup(u.host);
+                if (u.query != NULL) {
+                    reqPtr->request.query = ns_strdup(u.query+1);
                 } else {
                     reqPtr->request.query = NULL;
                 }
