@@ -745,7 +745,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 {
     int           i, opipe[2];
     Ns_ReturnCode status;
-    char         *s, *e, *p;
+    char         *s, *e;
     Ns_DString   *dsPtr;
     const Mod    *modPtr;
     const char   *value;
@@ -846,28 +846,30 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     s = strchr(s, INTCHAR(':'));
     s += 3;                        /* Get past the protocol "://"  */
     {
-        bool hostParsedOk = Ns_HttpParseHost(s, NULL, &p); /* Get to the port number    */
+        char *end, *portString;
+        bool  hostParsedOk = Ns_HttpParseHost2(s, NS_FALSE, NULL, &portString, &end);
+
         if (!hostParsedOk) {
-            Ns_Log(Warning, "nscgi: invalid host name: '%s'", s);
+            Ns_Log(Warning, "nscgi: invalid hostname: '%s'", s);
         }
-    }
 
-    if (p != NULL) {
-        int j;
+        if (portString != NULL) {
+            int j;
 
-        p++;
-        Ns_SetUpdate(cgiPtr->env, "SERVER_PORT", p);
-        for (j = 0; *p != '\0'; ++p, ++j) {
-            ;
+            portString++;
+            Ns_SetUpdate(cgiPtr->env, "SERVER_PORT", portString);
+            for (j = 0; *portString != '\0'; ++portString, ++j) {
+                ;
+            }
+            Ns_DStringSetLength(dsPtr, j);
         }
-        Ns_DStringSetLength(dsPtr, j);
-    }
-    Ns_SetUpdate(cgiPtr->env, "SERVER_NAME", dsPtr->string);
-    Ns_DStringSetLength(dsPtr, 0);
-    if (p == NULL) {
-        Ns_DStringPrintf(dsPtr, "%hu", Ns_ConnPort(conn));
-        Ns_SetUpdate(cgiPtr->env, "SERVER_PORT", dsPtr->string);
+        Ns_SetUpdate(cgiPtr->env, "SERVER_NAME", dsPtr->string);
         Ns_DStringSetLength(dsPtr, 0);
+        if (portString == NULL) {
+            Ns_DStringPrintf(dsPtr, "%hu", Ns_ConnPort(conn));
+            Ns_SetUpdate(cgiPtr->env, "SERVER_PORT", dsPtr->string);
+            Ns_DStringSetLength(dsPtr, 0);
+        }
     }
 
     /*
