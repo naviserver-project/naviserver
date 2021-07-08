@@ -908,7 +908,7 @@ PrebindSockets(const char *spec)
 
     for (; line != NULL; line = next) {
         const char     *proto;
-        char           *addr, *p, *str;
+        char           *addr, *p, *str = NULL;
         unsigned short  port = 0u;
         long            reuses;
         struct Prebind *pPtr;

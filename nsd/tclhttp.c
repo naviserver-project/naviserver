@@ -212,9 +212,9 @@ static void HttpClientLogWrite(
 static NS_SOCKET HttpTunnel(
     NsInterp *itPtr,
     const char *proxyhost,
-    short int proxyport,
+    unsigned short proxyport,
     const char *host,
-    short int port,
+    unsigned short port,
     const Ns_Time *timeout
 ) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
@@ -2828,7 +2828,7 @@ HttpConnect(
             if (portval <= 0) {
                 Ns_TclPrintfResult(interp, "invalid proxy port");
             }
-            pPortNr = (short)portval;
+            pPortNr = (unsigned short)portval;
             if (defPortNr == 443u) {
                 httpTunnel = NS_TRUE;
             } else {
@@ -2884,8 +2884,8 @@ HttpConnect(
                 goto fail;
             }
         } else {
-            char *rhost = u.host;
-            short rport = portNr;
+            char          *rhost = u.host;
+            unsigned short rport = portNr;
 
             if (httpProxy == NS_TRUE) {
                 rhost = pHost;
@@ -4472,18 +4472,18 @@ NS_SOCKET
 HttpTunnel(
     NsInterp *itPtr,
     const char *proxyhost,
-    short int proxyport,
+    unsigned short proxyport,
     const char *host,
-    short int port,
+    unsigned short port,
     const Ns_Time *timeout
 ) {
     NsHttpTask *httpPtr;
     Ns_DString *dsPtr;
     Tcl_Interp *interp;
 
-    NS_SOCKET result = NS_INVALID_SOCKET;
-    char *url = "proxy-tunnel"; /* Not relevant; for logging purposes only */
-    uint64_t requestCount = 0u;
+    NS_SOCKET   result = NS_INVALID_SOCKET;
+    const char *url = "proxy-tunnel"; /* Not relevant; for logging purposes only */
+    uint64_t    requestCount = 0u;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
     NS_NONNULL_ASSERT(proxyhost != NULL && proxyport > 0);
