@@ -502,18 +502,6 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
 
             url = urlPtr->port;
             urlPtr->port = url;
-        } else {
-            /*
-             * No port was specified.
-             *
-             * If the url has the host specified in IP literal notation,
-             * the host entry is terminated with a null character. The
-             * next string operation has to start after the enclosing
-             * bracket.
-             */
-            if (urlPtr->host != url) {
-                url += strlen(urlPtr->host) + 2u;
-            }
         }
     } else {
         end = url;

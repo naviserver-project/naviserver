@@ -125,6 +125,10 @@ NsTclCreateBuckets(const NsServer *servPtr, int nbuckets)
     NS_NONNULL_ASSERT(servPtr != NULL);
 
     buckets = ns_malloc(sizeof(Bucket) * (size_t)nbuckets);
+    if (unlikely(buckets == NULL)) {
+        Ns_Fatal("nsv: out of memory while creating buckets");
+    }
+
     /*fprintf(stderr, "=== %d buckets require %lu bytes, array needs %ld bytes\n",
       nbuckets, sizeof(Bucket) * (size_t)nbuckets, sizeof(Array));*/
     memcpy(buf, "nsv:", 4);

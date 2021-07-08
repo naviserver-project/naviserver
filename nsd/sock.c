@@ -971,7 +971,8 @@ Ns_SockBind(const struct sockaddr *saPtr, bool reusePort)
         if (bind(sock, (const struct sockaddr *)saPtr,
                  Ns_SockaddrGetSockLen((const struct sockaddr *)saPtr)) != 0) {
 
-            Ns_Log(Notice, "bind operation on sock %d lead to error: %s", sock, ns_sockstrerror(ns_sockerrno));
+            Ns_Log(Notice, "bind operation on sock %d lead to error: %s",
+                   sock, ns_sockstrerror(ns_sockerrno));
             Ns_LogSockaddr(Warning, "bind on", (const struct sockaddr *) saPtr);
             ns_sockclose(sock);
             sock = NS_INVALID_SOCKET;

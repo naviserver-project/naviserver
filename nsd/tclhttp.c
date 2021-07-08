@@ -2651,7 +2651,7 @@ HttpConnect(
     Ns_DString     *dsPtr;
     bool            haveUserAgent = NS_FALSE, ownHeaders = NS_FALSE;
     bool            httpTunnel = NS_FALSE, httpProxy = NS_FALSE;
-    unsigned short  portNr = 80, defPortNr = 80, pPortNr = 0;
+    unsigned short  portNr, defPortNr, pPortNr = 0;
     char           *url2, *pHost = NULL;
     Ns_URL          u;
     const char     *errorMsg = NULL;
@@ -4486,9 +4486,11 @@ HttpTunnel(
     uint64_t    requestCount = 0u;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
-    NS_NONNULL_ASSERT(proxyhost != NULL && proxyport > 0);
-    NS_NONNULL_ASSERT(host != NULL && port > 0);
+    NS_NONNULL_ASSERT(proxyhost != NULL);
+    NS_NONNULL_ASSERT(host != NULL);
 
+    assert(proxyport > 0);
+    assert(port > 0);
     /*
      * Setup the task structure. From this point on
      * if something goes wrong, we must HttpClose().
