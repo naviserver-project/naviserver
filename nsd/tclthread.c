@@ -965,16 +965,18 @@ CreateTclThread(const NsInterp *itPtr, const char *script, bool detached,
 
     scriptLength = strlen(script);
     argPtr = ns_malloc(sizeof(TclThreadArg) + scriptLength);
-    argPtr->detached = detached;
-    argPtr->threadName = ns_strdup(threadName);
-    memcpy(argPtr->script, script, scriptLength + 1u);
+    if (likely(argPtr != NULL)) {
+        argPtr->detached = detached;
+        argPtr->threadName = ns_strdup(threadName);
+        memcpy(argPtr->script, script, scriptLength + 1u);
 
-    if (itPtr->servPtr != NULL) {
-        argPtr->server = itPtr->servPtr->server;
-    } else {
-        argPtr->server = NULL;
+        if (itPtr->servPtr != NULL) {
+            argPtr->server = itPtr->servPtr->server;
+        } else {
+            argPtr->server = NULL;
+        }
+        Ns_ThreadCreate(NsTclThread, argPtr, 0, thrPtr);
     }
-    Ns_ThreadCreate(NsTclThread, argPtr, 0, thrPtr);
 }
 
 

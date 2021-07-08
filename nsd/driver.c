@@ -734,16 +734,18 @@ ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
 
         (void) Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, (char *)0L);
         mapPtr = ns_malloc(sizeof(ServerMap) + (size_t)dsPtr->length);
-        mapPtr->servPtr = servPtr;
-        mapPtr->ctx = ctx;
-        memcpy(mapPtr->location, dsPtr->string, (size_t)dsPtr->length + 1u);
+        if (likely(mapPtr != NULL)) {
+            mapPtr->servPtr = servPtr;
+            mapPtr->ctx = ctx;
+            memcpy(mapPtr->location, dsPtr->string, (size_t)dsPtr->length + 1u);
 
-        Tcl_SetHashValue(hPtr, mapPtr);
-        Ns_Log(Notice, "%s: adding virtual host entry for host <%s> location: %s mapped to server: %s ctx %p",
-               drvPtr->threadName, host, mapPtr->location, servPtr->server, (void*)ctx);
+            Tcl_SetHashValue(hPtr, mapPtr);
+            Ns_Log(Notice, "%s: adding virtual host entry for host <%s> location: %s mapped to server: %s ctx %p",
+                   drvPtr->threadName, host, mapPtr->location, servPtr->server, (void*)ctx);
 
-        if (addDefaultMapEntry) {
-            drvPtr->defMapPtr = mapPtr;
+            if (addDefaultMapEntry) {
+                drvPtr->defMapPtr = mapPtr;
+            }
         }
         /*
          * Always reset the Tcl_DString

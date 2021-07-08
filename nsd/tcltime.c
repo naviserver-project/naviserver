@@ -540,9 +540,10 @@ NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         rc = TCL_ERROR;
     } else {
-        time_t ms = Ns_TimeToMilliseconds(tPtr);
+        time_t ms;
 
         assert(tPtr != NULL);
+        ms = Ns_TimeToMilliseconds(tPtr);
         if (ms > 0) {
             Tcl_Sleep((int)ms);
         }

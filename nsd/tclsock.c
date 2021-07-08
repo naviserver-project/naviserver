@@ -940,13 +940,19 @@ NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, int obj
         }
         scriptLength = strlen(script);
         lcbPtr = ns_malloc(sizeof(ListenCallback) + scriptLength);
-        lcbPtr->server = (itPtr->servPtr != NULL ? itPtr->servPtr->server : NULL);
-        memcpy(lcbPtr->script, script, scriptLength + 1u);
-
-        if (Ns_SockListenCallback(addr, port, SockListenCallback, NS_FALSE, lcbPtr) == NS_INVALID_SOCKET) {
-            Ns_TclPrintfResult(interp, "could not register callback");
-            ns_free(lcbPtr);
+        if (unlikely(lcbPtr == NULL)) {
             result = TCL_ERROR;
+        } else {
+            Ns_ReturnCode  status;
+
+            lcbPtr->server = (itPtr->servPtr != NULL ? itPtr->servPtr->server : NULL);
+            memcpy(lcbPtr->script, script, scriptLength + 1u);
+            status = Ns_SockListenCallback(addr, port, SockListenCallback, NS_FALSE, lcbPtr);
+            if (status == NS_INVALID_SOCKET) {
+                Ns_TclPrintfResult(interp, "could not register callback");
+                ns_free(lcbPtr);
+                result = TCL_ERROR;
+            }
         }
     }
 

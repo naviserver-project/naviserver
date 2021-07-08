@@ -107,44 +107,46 @@ static struct Prebind*
 PrebindAlloc(const char *proto, size_t reuses, struct sockaddr *saPtr)
 {
     struct Prebind *pPtr;
-    bool            reuseport;
-    size_t          i;
 
     NS_NONNULL_ASSERT(proto != NULL);
     NS_NONNULL_ASSERT(saPtr != NULL);
 
     pPtr = ns_malloc(sizeof(Prebind) + sizeof(NS_SOCKET)*reuses-1);
-    pPtr->count = reuses;
+    if (pPtr != NULL) {
+        bool   reuseport;
+        size_t i;
 
-    reuseport = (reuses > 1);
+        pPtr->count = reuses;
 
-    for (i = 0u; i < reuses; i++) {
-        if (*proto == 't') {
-            pPtr->sockets[i] = Ns_SockBind(saPtr, reuseport);
-        } else if (*proto == 'u') {
-            pPtr->sockets[i] = Ns_SockBindUdp(saPtr, reuseport);
-        } else {
-            Ns_Log(Error, "prebind: invalid protocol %s", proto);
-            ns_free(pPtr);
-            pPtr = NULL;
-            break;
-        }
+        reuseport = (reuses > 1);
 
-        if (pPtr->sockets[i] == NS_INVALID_SOCKET) {
-            Ns_LogSockaddr(Error, "prebind error on ", (const struct sockaddr *)saPtr);
-            Ns_Log(Error, "prebind error: %s", strerror(errno));
-            if (i == 0) {
-                /*
-                 * Could not bind to a single port. Return NULL to
-                 * signal an invalid attempt.
-                 */
+        for (i = 0u; i < reuses; i++) {
+            if (*proto == 't') {
+                pPtr->sockets[i] = Ns_SockBind(saPtr, reuseport);
+            } else if (*proto == 'u') {
+                pPtr->sockets[i] = Ns_SockBindUdp(saPtr, reuseport);
+            } else {
+                Ns_Log(Error, "prebind: invalid protocol %s", proto);
                 ns_free(pPtr);
                 pPtr = NULL;
                 break;
             }
+
+            if (pPtr->sockets[i] == NS_INVALID_SOCKET) {
+                Ns_LogSockaddr(Error, "prebind error on ", (const struct sockaddr *)saPtr);
+                Ns_Log(Error, "prebind error: %s", strerror(errno));
+                if (i == 0) {
+                    /*
+                     * Could not bind to a single port. Return NULL to
+                     * signal an invalid attempt.
+                     */
+                    ns_free(pPtr);
+                    pPtr = NULL;
+                    break;
+                }
+            }
         }
     }
-
     return pPtr;
 }
 

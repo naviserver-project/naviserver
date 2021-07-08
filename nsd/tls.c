@@ -1979,7 +1979,7 @@ Ns_SSLSendBufs2(SSL *ssl, const struct iovec *bufs, int nbufs)
     NS_NONNULL_ASSERT(bufs != NULL);
 
     if (nbufs > 1) {
-        sent = -1; /* just to silence static checkers (cppcheck) */
+        /* sent = -1; to silence bad static checkers (cppcheck), fb infer complains when set */
         Ns_Fatal("Ns_SSLSendBufs2: can handle at most one buffer at the time");
     } else if (bufs[0].iov_len == 0) {
         sent = 0;

@@ -827,6 +827,9 @@ Ns_ConfigGetSections(void)
 
     n = nsconf.sections.numEntries + 1;
     sets = ns_malloc(sizeof(Ns_Set *) * (size_t)n);
+    if (unlikely(sets == NULL)) {
+        Ns_Fatal("config: out of memory while allocating section");
+    }
     n = 0;
     hPtr = Tcl_FirstHashEntry(&nsconf.sections, &search);
     while (hPtr != NULL) {

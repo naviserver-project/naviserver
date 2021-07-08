@@ -81,6 +81,9 @@ Ns_TclNewCallback(Tcl_Interp *interp, ns_funcptr_t cbProc, Tcl_Obj *scriptObjPtr
 
     cbPtr = ns_malloc(sizeof(Ns_TclCallback) +
                       + (objc > 1 ? (size_t)(objc-1) * sizeof(char *) : 0u) );
+    if (unlikely(cbPtr == NULL)) {
+        Ns_Fatal("tclcallback: out of memory while creating callback");
+    }
 
     cbPtr->cbProc = cbProc;
     cbPtr->server = Ns_TclInterpServer(interp);

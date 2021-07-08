@@ -205,6 +205,10 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
          *   - tag end string
          */
         tagPtr = ns_malloc(sizeof(Tag) + (size_t)slen + (size_t)elen);
+        if (unlikely(tagPtr == NULL)) {
+            return TCL_ERROR;
+        }
+
         tagPtr->type = type;
         tagPtr->content = (char *)tagPtr + sizeof(Tag);
         memcpy(tagPtr->content, content, (size_t) slen);

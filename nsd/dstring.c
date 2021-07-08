@@ -116,7 +116,9 @@ Ns_DStringExport(Ns_DString *dsPtr)
 #else
     size = (size_t)dsPtr->length + 1u;
     s = ns_malloc(size);
-    memcpy(s, dsPtr->string, size);
+    if (likely(s != NULL)) {
+        memcpy(s, dsPtr->string, size);
+    }
 #endif
     Ns_DStringFree(dsPtr);
 

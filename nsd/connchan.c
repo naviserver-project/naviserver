@@ -1244,11 +1244,15 @@ ConnChanListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         }
         scriptLength = strlen(script);
         lcbPtr = ns_malloc(sizeof(ListenCallback) + scriptLength);
+        if (unlikely(lcbPtr == NULL)) {
+            return TCL_ERROR;
+        }
+
         lcbPtr->server = servPtr->server;
         memcpy(lcbPtr->script, script, scriptLength + 1u);
         lcbPtr->driverName = ns_strcopy(driverName);
-
         sock = Ns_SockListenCallback(addr, port, SockListenCallback, doBind, lcbPtr);
+
         /* Ns_Log(Notice, "ns_connchan listen calls  Ns_SockListenCallback, returning %d", sock);*/
         if (sock == NS_INVALID_SOCKET) {
             Ns_TclPrintfResult(interp, "could not register callback");
@@ -1923,7 +1927,7 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
     bool           finished, masked;
     int            opcode, frameLength, fragmentsBufferLength;
     size_t         payloadLength, offset;
-    unsigned char  mask[4];
+    unsigned char  mask[4] = {0u,0u,0u,0u};
     Tcl_Obj       *resultObj;
 
     resultObj = Tcl_NewDictObj();
