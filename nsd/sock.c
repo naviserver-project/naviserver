@@ -1184,16 +1184,26 @@ Ns_SockConnectError(Tcl_Interp *interp, const char *host, unsigned short portNr,
     NS_NONNULL_ASSERT(host != NULL);
 
     if (status == NS_TIMEOUT) {
-        Ns_TclPrintfResult(interp, "timeout while connecting to %s port %hu", host, portNr);
-        Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
-        Ns_Log(Ns_LogTimeoutDebug, "socket connect to %s port %hu runs into timeout", host, portNr);
-    } else {
+
         /*
-         * Tcl_PosixError() sets as well the Tcl error code.
+         * Watch: Ns_TclPrintfResult() destroys errorCode variable
          */
-        Ns_TclPrintfResult(interp, "can't connect to %s port %hu: %s",
-                           host, portNr,
-                           (Tcl_GetErrno() != 0) ?  Tcl_PosixError(interp) : "reason unknown");
+        Ns_TclPrintfResult(interp, "timeout while connecting to %s port %hu",
+                           host, portNr);
+        Ns_Log(Ns_LogTimeoutDebug, "connect to %s port %hu runs into timeout",
+               host, portNr);
+        Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+    } else {
+        const char *err;
+        char buf[16];
+
+        /*
+         * Tcl_PosixError() maintains errorCode variable
+         */
+        err = (Tcl_GetErrno() != 0) ? Tcl_PosixError(interp) : "reason unknown";
+        sprintf(buf, "%hu", portNr);
+        Tcl_AppendResult(interp, "can't connect to ", host, " port ", buf,
+                         ": ", err, NULL);
     }
 }
 

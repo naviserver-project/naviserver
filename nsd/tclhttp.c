@@ -52,7 +52,7 @@
 #define CHUNK_SIZE 16384
 
 /*
- * String equivalents of some header keys
+ * String equivalents of some methods, header keys
  */
 static const char *transferEncodingHeader = "Transfer-Encoding";
 static const char *acceptEncodingHeader   = "Accept-Encoding";
@@ -63,12 +63,18 @@ static const char *connectionHeader       = "Connection";
 static const char *trailersHeader         = "Trailers";
 static const char *hostHeader             = "Host";
 static const char *userAgentHeader        = "User-Agent";
+static const char *connectMethod          = "CONNECT";
 
 /*
  * Attempt to maintain Tcl errorCode variable.
  * This is still not done thoroughly through the code.
  */
 static const char *errorCodeTimeoutString = "NS_TIMEOUT";
+
+/*
+ * For http task mutex naming
+ */
+static uint64_t httpClientRequestCount = 0u; /* MT: static variable! */
 
 /*
  * Local functions defined in this file
@@ -86,6 +92,7 @@ static int HttpConnect(
     NsInterp *itPtr,
     const char *method,
     const char *url,
+    Tcl_Obj *proxyObj,
     Ns_Set *hdrPtr,
     ssize_t bodySize,
     Tcl_Obj *bodyObj,
@@ -99,7 +106,7 @@ static int HttpConnect(
     Ns_Time *timeoutPtr,
     Ns_Time *expirePtr,
     NsHttpTask **httpPtrPtr
-) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(16);
+) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(17);
 
 static bool HttpGet(
     NsInterp *itPtr,
@@ -201,6 +208,15 @@ static void HttpClientLogWrite(
     const NsHttpTask *httpPtr,
     const char       *causeString
 ) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static NS_SOCKET HttpTunnel(
+    NsInterp *itPtr,
+    const char *proxyhost,
+    short int proxyport,
+    const char *host,
+    short int port,
+    const Ns_Time *timeout
+) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 static Ns_LogCallbackProc HttpClientLogOpen;
 static Ns_LogCallbackProc HttpClientLogClose;
@@ -1707,9 +1723,8 @@ HttpQueue(
                *bodyChanName = NULL,
                *bodyFileName = NULL;
     Ns_Set     *requestHdrPtr = NULL;
-    Tcl_Obj    *bodyObj = NULL;
-    Ns_Time    *timeoutPtr = NULL;
-    Ns_Time    *expirePtr = NULL;
+    Tcl_Obj    *bodyObj = NULL, *proxyObj = NULL;
+    Ns_Time    *timeoutPtr = NULL, *expirePtr = NULL;
     Tcl_WideInt bodySize = 0;
     Tcl_Channel bodyChan = NULL, spoolChan = NULL;
     Ns_ObjvValueRange sizeRange = {0, LLONG_MAX};
@@ -1726,7 +1741,6 @@ HttpQueue(
         {"-raw",              Ns_ObjvBool,    &raw,            INT2PTR(NS_TRUE)},
         {"-decompress",       Ns_ObjvBool,    &decompress,     INT2PTR(NS_TRUE)},
         {"-donecallback",     Ns_ObjvString,  &doneCallback,   NULL},
-        {"-expire",           Ns_ObjvTime,    &expirePtr,      NULL},
         {"-headers",          Ns_ObjvSet,     &requestHdrPtr,  NULL},
         {"-hostname",         Ns_ObjvString,  &sniHostname,    NULL},
         {"-keep_host_header", Ns_ObjvBool,    &keepHostHdr,    INT2PTR(NS_TRUE)},
@@ -1734,8 +1748,10 @@ HttpQueue(
         {"-outputchan",       Ns_ObjvString,  &outputChanName, NULL},
         {"-outputfile",       Ns_ObjvString,  &outputFileName, NULL},
         {"-spoolsize",        Ns_ObjvMemUnit, &spoolLimit,     NULL},
+        {"-expire",           Ns_ObjvTime,    &expirePtr,      NULL},
         {"-timeout",          Ns_ObjvTime,    &timeoutPtr,     NULL},
         {"-verify",           Ns_ObjvBool,    &verifyCert,     INT2PTR(NS_FALSE)},
+        {"-proxy",            Ns_ObjvObj,     &proxyObj,       NULL},
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -1804,6 +1820,7 @@ HttpQueue(
         result = HttpConnect(itPtr,
                              method,
                              url,
+                             proxyObj,
                              requestHdrPtr,
                              bodySize,
                              bodyObj,
@@ -2588,6 +2605,7 @@ HttpConnect(
     NsInterp *itPtr,
     const char *method,
     const char *url,
+    Tcl_Obj *proxyObj,
     Ns_Set *hdrPtr,
     ssize_t bodySize,
     Tcl_Obj *bodyObj,
@@ -2602,18 +2620,17 @@ HttpConnect(
     Ns_Time *expirePtr,
     NsHttpTask **httpPtrPtr
 ) {
-    Tcl_Interp      *interp;
-    NsHttpTask      *httpPtr;
-    Ns_DString      *dsPtr;
-    bool             haveUserAgent = NS_FALSE, ownHeaders = NS_FALSE;
-    unsigned short   portNr, defPortNr;
-    char            *url2;
-    Ns_URL           u;
-    const char      *errorMsg = NULL;
-    const char      *contentType = NULL;
-
-    static uint64_t  httpClientRequestCount = 0u; /* MT: static variable! */
-    uint64_t         requestCount = 0u;
+    Tcl_Interp     *interp;
+    NsHttpTask     *httpPtr;
+    Ns_DString     *dsPtr;
+    bool            haveUserAgent = NS_FALSE, ownHeaders = NS_FALSE;
+    bool            httpTunnel = NS_FALSE, httpProxy = NS_FALSE;
+    unsigned short  portNr = 80, defPortNr = 80, pPortNr = 0;
+    char           *url2, *pHost = NULL;
+    Ns_URL          u;
+    const char     *errorMsg = NULL;
+    const char     *contentType = NULL;
+    uint64_t        requestCount = 0u;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
     NS_NONNULL_ASSERT(method != NULL);
@@ -2749,13 +2766,73 @@ HttpConnect(
 #endif
 
     /*
+     * Check if we need to connect to the proxy server first.
+     * If the passed dictionary contains "host" key, we expect
+     * to find the "port" and (optionally) "tunnel" keys.
+     * If host is found, we will proxy.
+     * For https connections we will tunnel, otherwise we will
+     * cache-proxy. We will tunnel always if optional "tunnel"
+     * key is true.
+     */
+    if (proxyObj != NULL) {
+        Tcl_Obj *keyObj, *valObj;
+
+        keyObj = Tcl_NewStringObj("host", 4);
+        valObj = NULL;
+        if (Tcl_DictObjGet(interp, proxyObj, keyObj, &valObj) != TCL_OK) {
+            Tcl_DecrRefCount(keyObj);
+            goto fail; /* proxyObj is not a dictionary? */
+        }
+        Tcl_DecrRefCount(keyObj);
+        pHost = (valObj != NULL) ? Tcl_GetString(valObj) : NULL;
+        if (pHost != NULL) {
+            int portval = 0;
+
+            keyObj = Tcl_NewStringObj("port", 4);
+            valObj = NULL;
+            Tcl_DictObjGet(interp, proxyObj, keyObj, &valObj);
+            Tcl_DecrRefCount(keyObj);
+            if (valObj == NULL) {
+                Ns_TclPrintfResult(interp, "missing proxy port");
+                goto fail;
+            }
+            if (Tcl_GetIntFromObj(interp, valObj, &portval) != TCL_OK) {
+                goto fail;
+            }
+            if (portval <= 0) {
+                Ns_TclPrintfResult(interp, "invalid proxy port");
+            }
+            pPortNr = (short)portval;
+            if (defPortNr == 443u) {
+                httpTunnel = NS_TRUE;
+            } else {
+                keyObj = Tcl_NewStringObj("tunnel", 6);
+                valObj = NULL;
+                Tcl_DictObjGet(interp, proxyObj, keyObj, &valObj);
+                Tcl_DecrRefCount(keyObj);
+                if (valObj == NULL) {
+                    httpTunnel = NS_FALSE;
+                } else {
+                    int tunnel;
+
+                    if (Tcl_GetBooleanFromObj(interp, valObj, &tunnel) != TCL_OK) {
+                        goto fail;
+                    }
+                    httpTunnel = (tunnel == 1) ? NS_TRUE : NS_FALSE;
+                }
+            }
+            httpProxy = (defPortNr == 80u) && (httpTunnel == NS_FALSE);
+        }
+    }
+
+    /*
      * Now we are ready to attempt the connection.
      * If no timeout given, assume 10 seconds.
      */
 
     {
         Ns_ReturnCode rc;
-        Ns_Time       def = {10, 0}, *toPtr = NULL;
+        Ns_Time       def = {30, 0}, *toPtr = NULL;
 
         Ns_Log(Ns_LogTaskDebug, "HttpConnect: connecting to [%s]:%hu", u.host, portNr);
 
@@ -2775,27 +2852,43 @@ HttpConnect(
         } else {
             toPtr = &def;
         }
-        httpPtr->sock = Ns_SockTimedConnect2(u.host, portNr, NULL, 0, toPtr, &rc);
-        if (httpPtr->sock == NS_INVALID_SOCKET) {
-            Ns_SockConnectError(interp, u.host, portNr, rc);
-            HttpClientLogWrite(httpPtr, "connecttimeout");
-            goto fail;
-        }
-        if (Ns_SockSetNonBlocking(httpPtr->sock) != NS_OK) {
-            Ns_TclPrintfResult(interp, "can't set socket nonblocking mode");
-            goto fail;
-        }
-        rc = HttpWaitForSocketEvent(httpPtr->sock, POLLOUT, httpPtr->timeout);
-        if (rc != NS_OK) {
-            if (rc == NS_TIMEOUT) {
-                Ns_TclPrintfResult(interp, "timeout waiting for writable socket");
-                Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
-                HttpClientLogWrite(httpPtr, "writetimeout");
-            } else {
-                Ns_TclPrintfResult(interp, "waiting for writable socket: %s",
-                                   ns_sockstrerror(ns_sockerrno));
+        if (httpTunnel == NS_TRUE) {
+            httpPtr->sock = HttpTunnel(itPtr, pHost, pPortNr, u.host, portNr, toPtr);
+            if (httpPtr->sock == NS_INVALID_SOCKET) {
+                goto fail;
             }
-            goto fail;
+        } else {
+            char *rhost = u.host;
+            short rport = portNr;
+
+            if (httpProxy == NS_TRUE) {
+                rhost = pHost;
+                rport = pPortNr;
+            }
+            httpPtr->sock = Ns_SockTimedConnect2(rhost, rport, NULL, 0, toPtr, &rc);
+            if (httpPtr->sock == NS_INVALID_SOCKET) {
+                Ns_SockConnectError(interp, rhost, rport, rc);
+                if (rc == NS_TIMEOUT) {
+                    HttpClientLogWrite(httpPtr, "connecttimeout");
+                }
+                goto fail;
+            }
+            if (Ns_SockSetNonBlocking(httpPtr->sock) != NS_OK) {
+                Ns_TclPrintfResult(interp, "can't set socket nonblocking mode");
+                goto fail;
+            }
+            rc = HttpWaitForSocketEvent(httpPtr->sock, POLLOUT, toPtr);
+            if (rc != NS_OK) {
+                if (rc == NS_TIMEOUT) {
+                    Ns_TclPrintfResult(interp, "timeout waiting for writable socket");
+                    HttpClientLogWrite(httpPtr, "writetimeout");
+                    Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
+                } else {
+                    Ns_TclPrintfResult(interp, "waiting for writable socket: %s",
+                                       ns_sockstrerror(ns_sockerrno));
+                }
+                goto fail;
+            }
         }
 
         /*
@@ -2835,22 +2928,28 @@ HttpConnect(
     Ns_DStringSetLength(dsPtr, 0);
     Ns_DStringAppend(dsPtr, method);
     Ns_StrToUpper(Ns_DStringValue(dsPtr));
-    Ns_DStringNAppend(dsPtr, " /", 2);
-    if (*u.path != '\0') {
-        Ns_DStringNAppend(dsPtr, u.path, -1);
-        Ns_DStringNAppend(dsPtr, "/", 1);
+    if (httpProxy == NS_TRUE) {
+        Ns_DStringNAppend(dsPtr, " ", 1);
+        Ns_DStringNAppend(dsPtr, url, -1);
+    } else {
+        Ns_DStringNAppend(dsPtr, " /", 2);
+        if (*u.path != '\0') {
+            Ns_DStringNAppend(dsPtr, u.path, -1);
+            Ns_DStringNAppend(dsPtr, "/", 1);
+        }
+        Ns_DStringNAppend(dsPtr, u.tail, -1);
+        if (u.query != NULL) {
+            Ns_DStringNAppend(dsPtr, "?", 1);
+            Ns_DStringNAppend(dsPtr, u.query, -1);
+        }
+        if (u.fragment != NULL) {
+            Ns_DStringNAppend(dsPtr, "#", 1);
+            Ns_DStringNAppend(dsPtr, u.fragment, -1);
+        }
     }
-    Ns_DStringNAppend(dsPtr, u.tail, -1);
-    if (u.query != NULL) {
-        Ns_DStringNAppend(dsPtr, "?", 1);
-        Ns_DStringNAppend(dsPtr, u.query, -1);
-    }
-    if (u.fragment != NULL) {
-        Ns_DStringNAppend(dsPtr, "#", 1);
-        Ns_DStringNAppend(dsPtr, u.fragment, -1);
-    }
-    Ns_Log(Ns_LogTaskDebug, "HttpConnect: %s request: %s", u.protocol, Ns_DStringValue(dsPtr));
     Ns_DStringNAppend(dsPtr, " HTTP/1.1\r\n", 11);
+
+    Ns_Log(Ns_LogTaskDebug, "HttpConnect: %s request: %s", u.protocol, dsPtr->string);
 
     /*
      * Add provided headers, remove headers we are providing explicitly,
@@ -4055,7 +4154,22 @@ HttpProc(
                         httpPtr->error = "http read failed";
                         Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_READ spool failed");
                     } else {
-                        taskDone = NS_FALSE;
+
+                        /*
+                         * At the point of reading response content (if any).
+                         * Continue reading if any of the following is true:
+                         *
+                         *   o. remote tells content length
+                         *   o. chunked content not fully parsed
+                         *   o. caller tells it expects content
+                         */
+                        if (httpPtr->replyLength > 0
+                            || ((httpPtr->flags & NS_HTTP_FLAG_CHUNKED) != 0u
+                                && (httpPtr->flags & NS_HTTP_FLAG_CHUNKED_END) == 0u)
+                            || (httpPtr->flags & NS_HTTP_FLAG_EMPTY) == 0u) {
+
+                            taskDone = NS_FALSE;
+                        }
                     }
                 }
 
@@ -4307,6 +4421,149 @@ HttpCutChannel(
         Tcl_CutChannel(chan);
     }
 
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HttpTunnel --
+ *
+ *        Dig a tunnel to the remote host over the given proxy.
+ *
+ * Results:
+ *        Socket tunneled to the remote host/port.
+ *        Should behave as a regular directly connected socket.
+ *
+ * Side effects:
+ *        Runs an HTTP task for HTTP/1.1 connection to proxy.
+ *
+ *----------------------------------------------------------------------
+ */
+
+NS_SOCKET
+HttpTunnel(
+    NsInterp *itPtr,
+    const char *proxyhost,
+    short int proxyport,
+    const char *host,
+    short int port,
+    const Ns_Time *timeout
+) {
+    NsHttpTask *httpPtr;
+    Ns_DString *dsPtr;
+    Tcl_Interp *interp;
+
+    NS_SOCKET result = NS_INVALID_SOCKET;
+    char *url = "proxy-tunnel"; /* Not relevant; for logging purposes only */
+    uint64_t requestCount = 0u;
+
+    NS_NONNULL_ASSERT(itPtr != NULL);
+    NS_NONNULL_ASSERT(proxyhost != NULL && proxyport > 0);
+    NS_NONNULL_ASSERT(host != NULL && port > 0);
+
+    /*
+     * Setup the task structure. From this point on
+     * if something goes wrong, we must HttpClose().
+     */
+    httpPtr = ns_calloc(1u, sizeof(NsHttpTask));
+    httpPtr->chunk = ns_calloc(1u, sizeof(NsHttpChunk));
+    httpPtr->bodyFileFd = NS_INVALID_FD;
+    httpPtr->spoolFd = NS_INVALID_FD;
+    httpPtr->sock = NS_INVALID_SOCKET;
+    httpPtr->spoolLimit = -1;
+    httpPtr->url = ns_strdup(url);
+    httpPtr->flags |= NS_HTTP_FLAG_EMPTY; /* Do not expect response content */
+    httpPtr->method = ns_strdup(connectMethod);
+    httpPtr->replyHeaders = Ns_SetCreate("replyHeaders"); /* Ignored */
+    httpPtr->servPtr = itPtr->servPtr;
+
+    if (timeout != NULL) {
+        httpPtr->timeout = ns_calloc(1u, sizeof(Ns_Time));
+        *httpPtr->timeout = *timeout;
+    }
+
+    Ns_GetTime(&httpPtr->stime);
+
+    interp = itPtr->interp;
+    dsPtr = &httpPtr->ds;
+    Ns_DStringInit(&httpPtr->ds);
+    Ns_DStringInit(&httpPtr->chunk->ds);
+
+    Ns_MasterLock();
+    requestCount = ++httpClientRequestCount;
+    Ns_MasterUnlock();
+
+    Ns_MutexInit(&httpPtr->lock);
+    (void)ns_uint64toa(dsPtr->string, requestCount);
+    Ns_MutexSetName2(&httpPtr->lock, "ns:httptask", dsPtr->string);
+
+    /*
+     * Now we are ready to attempt the connection.
+     * If no timeout given, assume 10 seconds.
+     */
+
+    {
+        Ns_ReturnCode rc;
+        Ns_Time       def = {10, 0}, *toPtr = NULL;
+
+        Ns_Log(Ns_LogTaskDebug, "HttpTunnel: connecting to proxy [%s]:%hu",
+               proxyhost, proxyport);
+
+        toPtr = (httpPtr->timeout != NULL) ? httpPtr->timeout : &def;
+        httpPtr->sock = Ns_SockTimedConnect2(proxyhost, proxyport, NULL, 0, toPtr, &rc);
+        if (httpPtr->sock == NS_INVALID_SOCKET) {
+            Ns_SockConnectError(interp, proxyhost, proxyport, rc);
+            if (rc == NS_TIMEOUT) {
+                HttpClientLogWrite(httpPtr, "connecttimeout");
+            }
+            goto fail;
+        }
+        if (Ns_SockSetNonBlocking(httpPtr->sock) != NS_OK) {
+            Ns_TclPrintfResult(interp, "can't set socket nonblocking mode");
+            goto fail;
+        }
+        rc = HttpWaitForSocketEvent(httpPtr->sock, POLLOUT, httpPtr->timeout);
+        if (rc != NS_OK) {
+            if (rc == NS_TIMEOUT) {
+                Ns_TclPrintfResult(interp, "timeout waiting for writable socket");
+                HttpClientLogWrite(httpPtr, "writetimeout");
+                Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
+            } else {
+                Ns_TclPrintfResult(interp, "waiting for writable socket: %s",
+                                   ns_sockstrerror(ns_sockerrno));
+            }
+            goto fail;
+        }
+    }
+
+    /*
+     * At this point we are connected.
+     * Construct CONNECT request line.
+     */
+    Ns_DStringSetLength(dsPtr, 0);
+    Ns_DStringPrintf(dsPtr, "%s %s:%d HTTP/1.1\r\n", httpPtr->method, host, port);
+    Ns_DStringPrintf(dsPtr, "%s: %s:%d\r\n", hostHeader, host, port);
+    Ns_DStringNAppend(dsPtr, "\r\n", 2);
+
+    httpPtr->requestLength = (size_t)dsPtr->length;
+    httpPtr->next = dsPtr->string;
+
+    /*
+     * Run the task, on success hijack the socket.
+     */
+    httpPtr->task = Ns_TaskCreate(httpPtr->sock, HttpProc, httpPtr);
+    Ns_TaskRun(httpPtr->task);
+    if (httpPtr->status == 200) {
+        result = httpPtr->sock;
+        httpPtr->sock = NS_INVALID_SOCKET;
+    } else {
+        Ns_TclPrintfResult(interp, "can't open http tunnel");
+    }
+
+fail:
+    HttpClose(httpPtr);
     return result;
 }
 
