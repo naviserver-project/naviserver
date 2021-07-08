@@ -34,6 +34,7 @@ and process replies from web servers.
 	[opt [option "-outputchan [arg chan]"]] \
 	[opt [option "-timeout [arg T]"]] \
 	[opt [option "-expire [arg T]"]] \
+    [opt [option "-proxy [arg dict]] \
 	[opt [option "-verify"]] \
 	[arg url] \
 	]
@@ -171,6 +172,24 @@ verified. If the verification process fails, the TLS/SSL handshake is
 immediately terminated with an alert message containing the reason for
 the verification failure. If no server certificate is sent, because an
 anonymous cipher is used, this option is ignored.
+
+[opt_def -proxy [arg dict]]
+Controls wether to handle HTTP/HTTPS requests over an intermediate proxy.
+The argument must be a valid Tcl dictionary with (at least) following
+keys: [term host], [term port]. Optionally, an [term tunnel] boolean key
+may be specified.
+The [term host] must hold the hostname or IP address of the proxy
+server. The [term port] the TCP port of the proxy server. If [term host]
+is ommited, no other keys from the dictionary are evaluated and the proxy
+connection is suppressed; the request is handled as if the option was
+not specified.  If, however, [term host] is specified, it will require
+the presence of the [term port], otherwise an error is thrown.
+The optional [term tunnel] controls when to use HTTP-tunnel facility.
+Without it, or if set to false, the HTTP connections are handled over
+the caching-proxy and HTTPS connections over the HTTP-tunnel.
+With the [term tunnel] set to true, the HTTP-tunneling is used for both
+HTTP and HTTPS connections.
+Currently, no proxy authentication is supported. This will be added later.
 
 [list_end]
 
