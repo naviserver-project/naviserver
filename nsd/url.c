@@ -412,8 +412,6 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
     NS_NONNULL_ASSERT(urlPtr);
 
     memset(urlPtr, 0, sizeof(Ns_URL));
-    urlPtr->path = (char *)"";
-    urlPtr->tail = (char *)"";
 
     /*
      * Set variable "end" to the end of the protocol
@@ -456,6 +454,9 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
     if (url[0] == '/' && url[1] == '/') {
         bool  hostParsedOk;
 
+        urlPtr->path = (char *)"";
+        urlPtr->tail = (char *)"";
+
         /*
          * The URL starts with two slashes, which means an authority part
          * (host) is specified.  Advance url past that and set *phost.
@@ -490,8 +491,8 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
         if (urlPtr->port != NULL) {
 
             /*
-             * A port was specified. Clear the colon and
-             * set *pport to the first digit.
+             * A port was specified. Set urlPtr->port to the first
+             * digit.
              *
              * http\0//www.foo.com\08000/baz/blah/spoo.html
              * ^       ^          ^ ^
@@ -499,16 +500,16 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
              * +----- protocol    +--- end
              */
 
-            *urlPtr->port = '\0';
-            url = urlPtr->port + 1;
+            url = urlPtr->port;
             urlPtr->port = url;
         } else {
             /*
              * No port was specified.
              *
-             * If the url has the host specified in IP literal notation, the
-             * host entry is terminated with a null character. The next string
-             * operation has to start after the enclosing bracket.
+             * If the url has the host specified in IP literal notation,
+             * the host entry is terminated with a null character. The
+             * next string operation has to start after the enclosing
+             * bracket.
              */
             if (urlPtr->host != url) {
                 url += strlen(urlPtr->host) + 2u;
@@ -555,6 +556,9 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
 
     } else {
         if (*end == '/') {
+            urlPtr->path = (char *)"";
+            urlPtr->tail = (char *)"";
+
             /*
              * We have a path, tail, and maybe a query or fragment specified.
              */

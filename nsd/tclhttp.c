@@ -558,7 +558,7 @@ SkipDigits(char *chars)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_HttpParseHost --
+ * Ns_HttpParseHost2, Ns_HttpParseHost --
  *
  *      Obtain the hostname from a writable string
  *      using syntax as specified in RFC 3986 section 3.2.2.
@@ -568,21 +568,28 @@ SkipDigits(char *chars)
  *          [2001:db8:1f70::999:de8:7648:6e8]:8000 (IP-literal notation)
  *          openacs.org:80                         (reg-name notation)
  *
+ *      Ns_HttpParseHost() is the legacy version of Ns_HttpParseHost2().
+ *
  * Results:
  *      Boolean value indicating success.
  *
  *      In addition, parts of the parsed content is returned via the
  *      provided pointers:
-
+ *
  *      - If a port is indicated after the hostname, the "portStart"
  *        will contain a string starting with ":", otherwise NULL.
  *
- *      - If "hostStart" is non-null, a pointer will point to the hostname,
- *        which will be terminated by '\0' in case of an IPv6 address in
- *        IP-literal notation.
+ *      - If "hostStart" is non-null, a pointer will point to the
+ *        hostname, which will be terminated by '\0' in case of an IPv6
+ *        address in IP-literal notation.
+ *
+ *      Note: Ns_HttpParseHost2 can be used to parse empty host/port
+ *      values. To detect these cases, use a test like
+ *
+ *        if (hostParsedOk && hostString != end && hostStart != portStart) ...
  *
  * Side effects:
- *      May write a '\0' into the passed hostSting.
+ *      May write NUL charactger '\0' into the passed hostString.
  *
  *----------------------------------------------------------------------
  */
@@ -598,6 +605,13 @@ Ns_HttpParseHost(
     NS_NONNULL_ASSERT(portStart != NULL);
 
     (void) Ns_HttpParseHost2(hostString, NS_FALSE, hostStart, portStart, &end);
+    if (*portStart != NULL) {
+        /*
+         * The old version was returning in portStart the position of the
+         * character BEFORE the port (usually ':'). So, keep compatibility.
+         */
+        *portStart = *portStart-1;
+    }
 }
 
 bool
@@ -629,7 +643,7 @@ Ns_HttpParseHost2(
      *
      *   reg-name    = *( unreserved / pct-encoded / "-" / ".")
      *
-     * A reg-namee consists of a sequence of domain labels separated by ".",
+     * A reg-name consists of a sequence of domain labels separated by ".",
      * each domain label starting and ending with an alphanumeric character
      * and possibly also containing "-" characters.  The rightmost domain
      * label of a fully qualified domain name in DNS may be followed by a
@@ -713,8 +727,9 @@ Ns_HttpParseHost2(
             }
             p++;
             if (*p == ':') {
+                *(p++) = '\0';
                 *portStart = p;
-                *end = SkipDigits(p+1);
+                *end = SkipDigits(p);
             } else {
                 *portStart = NULL;
                 *end = p;
@@ -780,7 +795,7 @@ Ns_HttpParseHost2(
         }
         /*
          * The host is not allowed to start with a dot ("dots are separators
-         * for labels").
+         * for labels"), and it has to be at least one character long.
          *
          * Colon is not part of the allowed characters in reg-name, so we can
          * use it to determine the (optional) port.
@@ -789,8 +804,9 @@ Ns_HttpParseHost2(
         success = (*hostString != '.'
                    && (*p == '\0' || *p == ':' || *p == '/' || *p == '?' || *p == '#'));
         if (*p == ':') {
+            *(p++) = '\0';
             *portStart = p;
-            *end = SkipDigits(p+1);
+            *end = SkipDigits(p);
         } else {
             *portStart = NULL;
             *end = p;
@@ -801,6 +817,16 @@ Ns_HttpParseHost2(
         if (hostStart != NULL) {
             *hostStart = hostString;
         }
+    }
+
+    /*
+     * When a port is found, make sure, the port is at least one digit.
+     * We could consider making the test only in the non-strict case,
+     * but it is hard to believe that zero-byte ports make sense in any
+     * szenario.
+     */
+    if (success && *portStart != NULL) {
+        success = (*portStart != *end);
     }
 
     return success;
