@@ -131,6 +131,7 @@ test ns_parseurl-1.10.3 {strict misc valid} -body {
 
 test ns_parseurl-1.10.4 {strict misc invalid} -body {
     lmap url {
+        http://foo.com:/index.html
         https://[::]:8000/some/path/helloworld.tcl?x=1&y=2#some-anchor#with-2nd-invalid-hash
         https://.a.b.c
         https://a.b/motörhead
@@ -140,10 +141,11 @@ test ns_parseurl-1.10.4 {strict misc invalid} -body {
         "http://foo.bar/breeble booz"
         some@scheme://userid@example.com/
     } {catch {ns_parseurl -strict $url}}
-} -result {1 1 1 1 1 1 1 1}
+} -result {1 1 1 1 1 1 1 1 1}
 
 test ns_parseurl-1.10.5 {non-strict misc invalid} -body {
     lmap url {
+        http://foo.com:/index.html
         https://[::]:8000/some/path/helloworld.tcl?x=1&y=2#some-anchor#with-2nd-invalid-hash
         https://.a.b.c
         https://a.b/motörhead
@@ -153,7 +155,7 @@ test ns_parseurl-1.10.5 {non-strict misc invalid} -body {
         "http://foo.bar/breeble booz"
         some@scheme://userid@example.com/
     } {catch {ns_parseurl $url}}
-} -result {0 1 0 0 0 1 0 1}
+} -result {1 0 1 0 0 0 1 0 1}
 
 #
 # relative URLs
@@ -223,10 +225,14 @@ test ns_absoluteurl-2.1c {replace just the last part, use ip literal notation} -
     ns_absoluteurl foo.html {http://[::1]:80/www/t.html}
 } -result {http://[::1]:80/www/foo.html}
 
+test ns_absoluteurl-2.1d {reaplace just the last part} -body {
+    ns_absoluteurl icon.png https://img.icons8.com/color/24/000000/
+} -result {https://img.icons8.com/color/24/000000/icon.png}
 
 test ns_absoluteurl-2.2 {replace the whole path} -body {
     ns_absoluteurl /foo.html http://openacs.org/www/t.html
 } -result {http://openacs.org/foo.html}
+
 
 test ns_absoluteurl-2.3a {replace the protocol} -body {
     ns_absoluteurl //google.com http://openacs.org/www/t.html
@@ -241,9 +247,11 @@ test ns_absoluteurl-2.3c {replace the protocol} -body {
 } -result {https://google.com/test.html}
 
 
-test ns_absoluteurl-3.0 {incomplete base URL} -body {
+test ns_absoluteurl-3.0a {incomplete base URL} -body {
     ns_absoluteurl //google.com/test.html //openacs.org/www/t.html
 } -returnCodes error -result {Could not parse base URL into protocol, host and path}
+
+
 
 test ns_absoluteurl-3.1a {base URL containing just protocol and host} -body {
     ns_absoluteurl //google.com/test.html http://openacs.org/
@@ -264,7 +272,6 @@ test ns_absoluteurl-3.2b {base URL containing just protocol and host, no slash} 
 test ns_absoluteurl-3.2c {base URL containing just protocol and host, no slash} -body {
     ns_absoluteurl //google.com:80/test.html http://openacs.org:80
 } -result {http://google.com:80/test.html}
-
 
 
 

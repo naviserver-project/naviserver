@@ -877,8 +877,10 @@ NsClosePreBound(void)
  *          0/icmp[/count]
  *          /path[|mode]
  *
+ *       protocol: tcp|udp
  *       mode: mode bits as used by "chmod" specified as octal value
  *
+ *      Example: nsd -c -b /tmp/foo,localhost:9999/tcp#2,localhost:9998,udp:9997
  * Results:
  *      None.
  *
@@ -894,9 +896,8 @@ static Ns_ReturnCode
 PrebindSockets(const char *spec)
 {
     Tcl_HashEntry         *hPtr;
-    int                    isNew = 0, sock;
+    int                    isNew = 0, specCount = 0;
     char                  *next, *line, *lines;
-    long                   l;
     Ns_ReturnCode          status = NS_OK;
     struct NS_SOCKADDR_STORAGE sa;
     struct sockaddr       *saPtr = (struct sockaddr *)&sa;
@@ -904,15 +905,15 @@ PrebindSockets(const char *spec)
     NS_NONNULL_ASSERT(spec != NULL);
 
     line = lines = ns_strdup(spec);
-    Ns_Log(Notice, "trying to prebind <%s>", line);
 
     for (; line != NULL; line = next) {
         const char     *proto;
         char           *addr, *p, *str;
-        unsigned short  port;
+        unsigned short  port = 0u;
         long            reuses;
         struct Prebind *pPtr;
 
+        specCount ++;
         /*
          * Find the next comma separated token.
          */
@@ -942,40 +943,50 @@ PrebindSockets(const char *spec)
         }
 
         /*
-         * Parse port
+         * Parse "addr:port" or "port"
+         *
+         *    addr:port[/protocol][#number]
+         *    port[/protocol][#number]
+         *    0/icmp[/count]
          */
         {
-            char *portStr, *end;
-            bool hostParsedOk = Ns_HttpParseHost2(line, NS_TRUE, &addr, &portStr, &end);
+            char *portStr, *end = line;
+            bool  hostParsedOk = Ns_HttpParseHost2(line, NS_TRUE, &addr, &portStr, &end);
 
-            if (!hostParsedOk) {
-                Ns_Log(Warning, "prebind: invalid hostname: '%s'", line);
-            }
-            if (portStr != NULL) {
-                *portStr++ = '\0';
-                l = strtol(portStr, NULL, 10);
-                line = portStr;
+            if (hostParsedOk && line != end && addr != portStr ) {
+                long l;
+
+                if (portStr != NULL) {
+                    l = strtol(portStr, NULL, 10);
+                } else {
+                    assert(addr != NULL);
+                    l = strtol(addr, NULL, 10);
+                    addr = (char *)NS_IP_UNSPECIFIED;
+                }
+                port = (l >= 0) ? (unsigned short)l : 0u;
+
+                /*
+                 * Parse protocol
+                 */
+                if (*line != '/' && (str = strchr(line, INTCHAR('/'))) != NULL) {
+                    *str++ = '\0';
+                    proto = str;
+                }
             } else {
-                assert(addr != NULL);
-                l = strtol(addr, NULL, 10);
-                addr = (char *)NS_IP_UNSPECIFIED;
+                Ns_Log(Debug, "prebind: line <%s> was not parsed ok, must be UNIX", line);
+                proto = "unix";
             }
-            port = (l >= 0) ? (unsigned short)l : 0u;
-        }
-
-        /*
-         * Parse protocol; a line starting with a '/' means: path, which
-         * implies a unix-domain socket.
-         */
-        if (*line != '/' && (str = strchr(line, INTCHAR('/'))) != NULL) {
-            *str++ = '\0';
-            proto = str;
+            /*
+             * Continue parsing after "addr:port|port"
+             */
+            line = end;
         }
 
         /*
          * TCP
          */
-        Ns_Log(Notice, "prebind: proto %s addr %s port %d reuses %ld", proto, addr, port, reuses);
+        Ns_Log(Notice, "prebind: try proto %s addr %s port %d reuses %ld",
+               proto, addr, port, reuses);
 
         if (STREQ(proto, "tcp") && port > 0) {
             if (Ns_GetSockAddr(saPtr, addr, port) != NS_OK) {
@@ -1028,18 +1039,25 @@ PrebindSockets(const char *spec)
 
         /*
          * ICMP
+         *
+         * Example:
+         *   0/icmp[/count]
          */
         if (strncmp(proto, "icmp", 4u) == 0) {
             long count = 1;
-            /* Parse count */
 
-            str = strchr(str, INTCHAR('/'));
+            /*
+             * Parse count
+             */
             if (str != NULL) {
-                *(str++) = '\0';
-                count = strtol(str, NULL, 10);
+                str = strchr(str, INTCHAR('/'));
+                if (str != NULL) {
+                    *(str++) = '\0';
+                    count = strtol(str, NULL, 10);
+                }
             }
             while (count--) {
-                sock = Ns_SockBindRaw(IPPROTO_ICMP);
+                NS_SOCKET sock = Ns_SockBindRaw(IPPROTO_ICMP);
                 if (sock == NS_INVALID_SOCKET) {
                     Ns_Log(Error, "prebind: bind error for icmp: %s", strerror(errno));
                     continue;
@@ -1057,34 +1075,47 @@ PrebindSockets(const char *spec)
 
         /*
          * Unix-domain socket
+         * a line starting with a '/' means: path, which
+         * implies a unix-domain socket.
          */
-        if (Ns_PathIsAbsolute(line) == NS_TRUE) {
-            unsigned short mode = 0u;
-            /* Parse mode */
+        if (STREQ(proto, "unix")) {
+            if (Ns_PathIsAbsolute(line) == NS_TRUE) {
+                unsigned short mode = 0u;
+                NS_SOCKET      sock;
 
-            str = strchr(line, INTCHAR('|'));
-            if (str != NULL) {
-                *(str++) = '\0';
-                l = strtol(str, NULL, 8);
-                if (l > 0) {
-                    mode = (unsigned short)l;
-                } else {
-                    Ns_Log(Error, "prebind: unix: ignore invalid mode value: %s", line);
+                Ns_Log(Debug, "prebind: Unix-domain socket <%s>\n", line);
+
+                /*
+                 * Parse mode
+                 */
+                str = strchr(line, INTCHAR('|'));
+                if (str != NULL) {
+                    long l;
+
+                    *(str++) = '\0';
+                    l = strtol(str, NULL, 8);
+                    if (l > 0) {
+                        mode = (unsigned short)l;
+                    } else {
+                        Ns_Log(Error, "prebind: unix: ignore invalid mode value: %s", line);
+                    }
                 }
+                hPtr = Tcl_CreateHashEntry(&preboundUnix, (char *) line, &isNew);
+                if (isNew == 0) {
+                    Ns_Log(Error, "prebind: unix: duplicate entry: %s", line);
+                    continue;
+                }
+                sock = Ns_SockBindUnix(line, SOCK_STREAM, mode);
+                if (sock == NS_INVALID_SOCKET) {
+                    Ns_Log(Error, "prebind: unix: %s: %s", proto, strerror(errno));
+                    Tcl_DeleteHashEntry(hPtr);
+                    continue;
+                }
+                Tcl_SetHashValue(hPtr, NSSOCK2PTR(sock));
+                Ns_Log(Notice, "prebind: unix: %s = %d", line, sock);
+            } else {
+                Ns_Log(Warning, "prebind: invalid entry #%d: '%s'", specCount, spec);
             }
-            hPtr = Tcl_CreateHashEntry(&preboundUnix, (char *) line, &isNew);
-            if (isNew == 0) {
-                Ns_Log(Error, "prebind: unix: duplicate entry: %s", line);
-                continue;
-            }
-            sock = Ns_SockBindUnix(line, SOCK_STREAM, mode);
-            if (sock == NS_INVALID_SOCKET) {
-                Ns_Log(Error, "prebind: unix: %s: %s", proto, strerror(errno));
-                Tcl_DeleteHashEntry(hPtr);
-                continue;
-            }
-            Tcl_SetHashValue(hPtr, NSSOCK2PTR(sock));
-            Ns_Log(Notice, "prebind: unix: %s = %d", line, sock);
         }
     }
     ns_free(lines);
