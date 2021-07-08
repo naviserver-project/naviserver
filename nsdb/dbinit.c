@@ -1007,20 +1007,31 @@ NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
         }
     } else {
         /*
-         * No exception log entries, if SQL debug is enabled and run time
-         * is above threshold.
+         * No exception occurred.
          */
         Ns_Time endTime, diffTime;
+        long    delta;
 
+        /*
+         * Update SQL statistics.
+         */
         Ns_GetTime(&endTime);
-        (void)Ns_DiffTime(&endTime, startTime, &diffTime);
+        delta = Ns_DiffTime(&endTime, startTime, &diffTime);
+        if (likely(delta >= 0)) {
+            Ns_MutexLock(&poolPtr->lock);
+            Ns_IncrTime(&poolPtr->sqlTime, diffTime.sec, diffTime.usec);
+            Ns_MutexUnlock(&poolPtr->lock);
+        } else {
+            Ns_Log(Warning, "negative runtime pool %s duration " NS_TIME_FMT " secs: '%s'",
+                   handle->poolname, (int64_t)diffTime.sec, diffTime.usec, sql);
+        }
 
-        Ns_MutexLock(&poolPtr->lock);
-        Ns_IncrTime(&poolPtr->sqlTime, diffTime.sec, diffTime.usec);
-        Ns_MutexUnlock(&poolPtr->lock);
-
+        /*
+         * Log entry, when SQL debug is enabled and SQL time is above
+         * logging threshold.
+         */
         if (Ns_LogSeverityEnabled(Ns_LogSqlDebug) == NS_TRUE) {
-            long delta = Ns_DiffTime(&poolPtr->minDuration, &diffTime, NULL);
+            delta = Ns_DiffTime(&poolPtr->minDuration, &diffTime, NULL);
 
             if (delta < 1) {
                 Ns_Log(Ns_LogSqlDebug, "pool %s duration " NS_TIME_FMT " secs: '%s'",
@@ -1659,7 +1670,6 @@ Ns_DbGetMinDuration(Tcl_Interp *interp, const char *pool, Ns_Time **minDuration)
     Pool *poolPtr;
     int   result;
 
-    NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(pool != NULL);
     NS_NONNULL_ASSERT(minDuration != NULL);
 
@@ -1667,7 +1677,7 @@ Ns_DbGetMinDuration(Tcl_Interp *interp, const char *pool, Ns_Time **minDuration)
      * Get the poolPtr
      */
     poolPtr = GetPool(pool);
-    if (poolPtr == NULL) {
+    if (poolPtr == NULL && interp != NULL) {
         Ns_TclPrintfResult(interp, "Invalid pool '%s'", pool);
         result = TCL_ERROR;
     } else {
