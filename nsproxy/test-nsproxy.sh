@@ -9,4 +9,4 @@
 LD_LIBRARY_PATH="../nsd:../nsthread:../nsproxy:$LD_LIBRARY_PATH"
 export LD_LIBRARY_PATH
 
-exec ../nsproxy/nsproxy $@
+exec ../nsproxy/nsproxy-helper $@
