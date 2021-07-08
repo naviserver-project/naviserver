@@ -47,7 +47,7 @@ Tcl.
  } {
     package req json
  
-    set dict [lb]json::json2dict [lb]ns_getcontent -as_file false[rb][rb]
+    set dict [lb]json::json2dict [lb]ns_getcontent -as_file false -binary false[rb][rb]
     ns_return 200 text/plain $dict\n
  
  } else {
@@ -69,7 +69,7 @@ command from the shell.
 
 
 [keywords form]
-[see_also ns_getform ns_conn]
+[see_also ns_getform ns_conn ns_return]
 
 [manpage_end]
 
