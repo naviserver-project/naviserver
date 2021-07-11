@@ -228,7 +228,7 @@ ParseUpTo(char *chars, char ch)
  *
  * Results:
  *
- *    When the string is valid, it is retuned unmodified. in case it contains
+ *    When the string is valid, it is returned unmodified. in case it contains
  *    errors, NULL is returned and the error message is set.
  *
  * Side effects:

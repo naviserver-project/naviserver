@@ -174,13 +174,13 @@ the verification failure. If no server certificate is sent, because an
 anonymous cipher is used, this option is ignored.
 
 [opt_def -proxy [arg dict]]
-Controls wether to handle HTTP/HTTPS requests over an intermediate proxy.
+Controls whether to handle HTTP/HTTPS requests over an intermediate proxy.
 The argument must be a valid Tcl dictionary with (at least) following
 keys: [term host], [term port]. Optionally, an [term tunnel] boolean key
 may be specified.
 The [term host] must hold the hostname or IP address of the proxy
 server. The [term port] the TCP port of the proxy server. If [term host]
-is ommited, no other keys from the dictionary are evaluated and the proxy
+is omitted, no other keys from the dictionary are evaluated and the proxy
 connection is suppressed; the request is handled as if the option was
 not specified.  If, however, [term host] is specified, it will require
 the presence of the [term port], otherwise an error is thrown.
