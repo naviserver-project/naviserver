@@ -2715,6 +2715,10 @@ HttpConnect(
         goto fail;
     }
 
+    if (u.userinfo != NULL) {
+        Ns_Log(Warning, "ns_http: userinfo '%s' ignored: %s", u.userinfo, url);
+    }
+
     /*
      * If "-keep_host_header" option set
      * then "Host:" header must be given.
