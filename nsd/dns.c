@@ -284,12 +284,12 @@ GetHost(Ns_DString *dsPtr, const char *addr)
     struct sockaddr        *saPtr = (struct sockaddr *)&sa;
     bool   success = NS_FALSE;
 
+    sa.ss_family = AF_UNSPEC;
     r = ns_inet_pton(saPtr, addr);
     if (r > 0) {
         char buf[NI_MAXHOST];
         int  err;
 
-        sa.ss_family = AF_UNSPEC;
         err = getnameinfo(saPtr,
                           ((sa.ss_family == AF_INET6)
                            ? (socklen_t)sizeof(struct sockaddr_in6)
