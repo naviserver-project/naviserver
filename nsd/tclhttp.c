@@ -4591,7 +4591,8 @@ HttpTunnel(
         result = httpPtr->sock;
         httpPtr->sock = NS_INVALID_SOCKET;
     } else {
-        Ns_TclPrintfResult(interp, "can't open http tunnel");
+        Ns_TclPrintfResult(interp, "can't open http tunnel, response status: %d",
+                           httpPtr->status);
     }
 
 fail:
