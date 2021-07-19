@@ -784,7 +784,7 @@ Ns_HttpParseHost2(
          *
          * which is more in sync with reality. In the errata, the two
          * explicitly mentioned characters are not needed, since these are
-         * already part of "unreserved". Probabaly, there are characters in
+         * already part of "unreserved". Probably, there are characters in
          * "unreserved", which are not desired either.
          *
          * RFC 3986 sec 3.2: The authority component is preceded by a double
@@ -839,7 +839,7 @@ Ns_HttpParseHost2(
      * When a port is found, make sure, the port is at least one digit.
      * We could consider making the test only in the non-strict case,
      * but it is hard to believe that zero-byte ports make sense in any
-     * szenario.
+     * scenario.
      */
     if (success && *portStart != NULL) {
         success = (*portStart != *end);
@@ -2857,12 +2857,12 @@ HttpConnect(
 
     /*
      * Now we are ready to attempt the connection.
-     * If no timeout given, assume 10 seconds.
+     * If no timeout given, assume 30 seconds.
      */
 
     {
         Ns_ReturnCode rc;
-        Ns_Time       def = {30, 0}, *toPtr = NULL;
+        Ns_Time       defaultTimout = {30, 0}, *toPtr = NULL;
 
         Ns_Log(Ns_LogTaskDebug, "HttpConnect: connecting to [%s]:%hu", u.host, portNr);
 
@@ -2880,7 +2880,7 @@ HttpConnect(
         } else if (expirePtr != NULL) {
             toPtr = expirePtr;
         } else {
-            toPtr = &def;
+            toPtr = &defaultTimout;
         }
         if (httpTunnel == NS_TRUE) {
             httpPtr->sock = HttpTunnel(itPtr, pHost, pPortNr, u.host, portNr, toPtr);
