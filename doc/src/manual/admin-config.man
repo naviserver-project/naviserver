@@ -429,6 +429,7 @@ e.g. "foo.com" and "bar.com". For virtual hosting this is a
 chicken-egg problem: the right certificate is needed at the time the
 connection is opened, but  the virtual server can be only detected
 while reading the request header.
+
 [para]
 This is a well-known problem, for which the SNI TLS extension was invented
 (a hostname that can be used for identifying the certificate is passed
