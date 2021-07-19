@@ -28,6 +28,16 @@ certificates if applicable, and ending at the highest level (root) CA.
 The PEM file cem can contain DH parameters (see the example below how
 to add these).
 
+[para] When the server receives a hangup signal (HUP), the
+certificates and private keys are reloaded without server restart.
+The signal can be send also from a script executed in the server:
+
+[example_begin]
+  ns_kill [pid] 1    ;# SIGHUP has signal number 1
+[example_end]
+
+
+
 [def ciphers]
 defines which ciphers will be used. The
 ciphers are defined in the OpenSSL "CIPHER LIST FORMAT"
@@ -160,6 +170,6 @@ For discussion and more examples see
 
 [see_also ns_log ns_write ns_http]
 [keywords module nsssl \
-	performance tuning configuration TCP_FASTOPEN HTTPS driver]
+	performance tuning configuration TCP_FASTOPEN HTTPS driver signal]
 
 [manpage_end]

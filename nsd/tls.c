@@ -106,6 +106,11 @@ static void ReportError(Tcl_Interp *interp, const char *fmt, ...)
 
 static Ns_ReturnCode WaitFor(NS_SOCKET sock, unsigned int st);
 
+static void CertTableInit(void);
+static void CertTableReload(void *UNUSED(arg));
+static void CertTableAdd(const NS_TLS_SSL_CTX *ctx, const char *cert)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+
 # ifndef OPENSSL_NO_OCSP
 static int OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -1032,6 +1037,8 @@ NsInitOpenSSL(void)
 #  endif
         initialized = 1;
         Ns_Log(Notice, "%s initialized", SSLeay_version(SSLEAY_VERSION));
+
+        CertTableInit();
     }
 # endif
 }
@@ -1529,6 +1536,69 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * CertTableInit, CertTableAdd, CertTableReload --
+ *
+ *      Static API for reloading certificates upon SIGHUP.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Tcl_HashTable certTable;
+static void CertTableAdd(const NS_TLS_SSL_CTX *ctx, const char *cert)
+{
+    int            isNew    = 0;
+    Tcl_HashEntry *hPtr;
+
+    Ns_MasterLock();
+    hPtr = Tcl_CreateHashEntry(&certTable, (char *)ctx, &isNew);
+    if (isNew != 0) {
+        Tcl_SetHashValue(hPtr, cert);
+        Ns_Log(Debug, "CertTableAdd: sslCtx %p cert '%s'", (void *)ctx, cert);
+    }
+    Ns_MasterUnlock();
+}
+
+static void CertTableInit(void)
+{
+    Tcl_InitHashTable(&certTable, TCL_ONE_WORD_KEYS);
+    Ns_RegisterAtSignal((Ns_Callback *)(ns_funcptr_t)CertTableReload, NULL);
+}
+
+static void CertTableReload(void *UNUSED(arg))
+{
+    Tcl_HashEntry  *hPtr;
+    Tcl_HashSearch  search;
+
+    Ns_MasterLock();
+    hPtr = Tcl_FirstHashEntry(&certTable, &search);
+    while (hPtr != NULL) {
+        NS_TLS_SSL_CTX *ctx = Tcl_GetHashKey(&certTable, hPtr);
+        const char     *cert = Tcl_GetHashValue(hPtr);
+
+        Ns_Log(Notice, "CertTableReload: sslCtx %p cert '%s'", (void *)ctx, cert);
+
+        /*
+         * Reload certificate and private key
+         */
+        if (SSL_CTX_use_certificate_chain_file(ctx, cert) != 1) {
+            Ns_Log(Warning, "certificate reload error: %s", ERR_error_string(ERR_get_error(), NULL));
+
+        } else if (SSL_CTX_use_PrivateKey_file(ctx, cert, SSL_FILETYPE_PEM) != 1) {
+            Ns_Log(Warning, "private key reload error: %s", ERR_error_string(ERR_get_error(), NULL));
+        }
+
+        hPtr = Tcl_NextHashEntry(&search);
+    }
+    Ns_MasterUnlock();
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1655,6 +1725,10 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
             ReportError(interp, "private key load error: %s", ERR_error_string(ERR_get_error(), NULL));
             goto fail;
         }
+        /*
+         * Remember ctx and certificate name for reloading.
+         */
+        CertTableAdd(ctx, cert);
 
 #ifndef OPENSSL_HAVE_DH_AUTO
         /*
