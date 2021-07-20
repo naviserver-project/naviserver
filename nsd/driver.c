@@ -4834,10 +4834,14 @@ SockSetServer(Sock *sockPtr)
 
     /*
      * Since the URLencoding can be set per server, we need the server
-     * assignment to check the validity of the request line.
+     * assignment to check the validity of the request URL.
+     *
+     * In some error conditions (e.g. from nssmtpd) the reqPtr->request.*
+     * members might be NULL.
      */
     if (likely(sockPtr->servPtr != NULL)
         && NsEncodingIsUtf8(sockPtr->servPtr->encoding.urlEncoding)
+        && reqPtr->request.url != NULL
         ) {
         if (!Ns_Valid_UTF8((const unsigned char *)reqPtr->request.url,
                            strlen(reqPtr->request.url))) {
