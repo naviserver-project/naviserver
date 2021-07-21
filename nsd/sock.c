@@ -60,6 +60,8 @@ static NS_SOCKET SockConnect(const char *host, unsigned short port,
                              const char *lhost, unsigned short lport,
                              bool async) NS_GNUC_NONNULL(1);
 
+static Ns_ReturnCode WaitForConnect(NS_SOCKET sock);
+
 static NS_SOCKET SockSetup(NS_SOCKET sock);
 
 static ssize_t SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs,
@@ -768,31 +770,49 @@ Ns_SockTimedWait(NS_SOCKET sock, unsigned int what, const Ns_Time *timeoutPtr)
     }
 
     if (count > 1) {
-        Ns_Log(Debug, "Ns_SockTimedWait on sock %d tried %d times, returns n %d",
+        Ns_Log(Debug, "Ns_SockTimedWait on sock %d: tried %d times, returns n %d",
                sock, count, n);
     }
 
     if (likely(n > 0)) {
         if ((pfd.revents & requestedEvents) == 0) {
-            Ns_Log(Debug, "Ns_SockTimedWait on sock %d event mismatch, expected"
+            Ns_Log(Debug, "Ns_SockTimedWait on sock %d: event mismatch, expected"
                    " %.4x received %.4x", sock, requestedEvents, pfd.revents);
             result = NS_ERROR;
         } else {
-            int       err, sockerrno = 0;
-            socklen_t len = sizeof(sockerrno);
 
-            err = getsockopt(sock, SOL_SOCKET, SO_ERROR, (void*)&sockerrno, &len);
-            if (err == -1) {
-                Ns_Log(Debug, "Ns_SockTimedWait getsockopt on sock %d failed "
-                       "errno %d <%s>",
-                       sock, errno, strerror(errno));
-                result = NS_ERROR;
-            } else if (sockerrno != 0) {
-                Ns_Log(Debug, "Ns_SockTimedWait getsockopt on sock %d retrieved error "
-                       "errno %d <%s>",
-                       sock, sockerrno, strerror(sockerrno));
+            Ns_Log(Debug, "Ns_SockTimedWait on sock %d: poll returned %d,"
+                   " requested 0x%.2x"
+                   " expected 0x%.4x received 0x%.4x", sock, n, what, requestedEvents, pfd.revents);
 
-                result = NS_ERROR;
+            if (((what & (unsigned int)NS_SOCK_READ) != 0u && ((pfd.events & POLLIN) != 0u))
+                || ((what & (unsigned int)NS_SOCK_WRITE) != 0u && ((pfd.events & POLLOUT) != 0u))
+                ) {
+                /*
+                 * We got a "readable" for a "read" request or a "writable"
+                 * for a "write" request, so everything is fine.
+                 */
+                Ns_Log(Debug, "Ns_SockTimedWait on sock %d got what we wanted", sock);
+            } else {
+                int       err, sockerrno = 0;
+                socklen_t len = sizeof(sockerrno);
+
+                /*
+                 * We did not get, what we wanted, so it must be some error.
+                 */
+                err = getsockopt(sock, SOL_SOCKET, SO_ERROR, (void*)&sockerrno, &len);
+                if (err == -1) {
+                    Ns_Log(Debug, "Ns_SockTimedWait getsockopt on sock %d failed "
+                           "errno %d <%s>",
+                           sock, errno, strerror(errno));
+                    result = NS_ERROR;
+                } else if (sockerrno != 0) {
+                    Ns_Log(Debug, "Ns_SockTimedWait getsockopt on sock %d retrieved error "
+                           "errno %d <%s>",
+                           sock, sockerrno, strerror(sockerrno));
+
+                    result = NS_ERROR;
+                }
             }
         }
     } else if (n == 0) {
@@ -1629,7 +1649,7 @@ NsPoll(struct pollfd *pfds, NS_POLL_NFDS_TYPE nfds, const Ns_Time *timeoutPtr)
  *
  * Side effects:
  *
- *      Pententially updating sockat address info pointed by lsaPtr.
+ *      Potentially updating socket address info pointed by lsaPtr.
  *
  *----------------------------------------------------------------------
  */
@@ -1686,6 +1706,104 @@ BindToSameFamily(struct sockaddr *saPtr, struct sockaddr *lsaPtr,
     return sock;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * WaitForConnect --
+ *
+ *      Handle EINPROGRESS and friends in async connect attempts.  We check
+ *      after the connect, whether the socket is writable.  This works
+ *      sometimes, but in some cases, poll() returns that the socket is
+ *      writable, but it is still not connected. So, we double check, if we
+ *      can get the peer address for this socket via getpeername(), which is
+ *      only possible when connection succeeded.  Otherwise we retry a couple
+ *      of times.
+ *
+ * Results:
+ *      NS_OK on success or NS_ERROR on failure.
+ *
+ * Side effects:
+ *
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Ns_ReturnCode
+WaitForConnect(NS_SOCKET sock)
+{
+    struct pollfd sockfd;
+    Ns_ReturnCode result;
+    int count = 20;
+
+    for (;;) {
+        sockfd.events = POLLOUT;
+        sockfd.revents = 0;
+        sockfd.fd = sock;
+
+        /*
+         * Wait for max 100ms for the socket to become
+         * writable, otherwise use the next offered IP
+         * address. TODO: The waiting timespan should be
+         * probably configurable.
+         */
+        (void) ns_poll(&sockfd, 1, 100);
+
+        if ((sockfd.revents & POLLOUT) != 0) {
+            struct NS_SOCKADDR_STORAGE sa;
+            socklen_t socklen = (socklen_t)sizeof(sa);
+
+            /*
+             * The socket is writable, but does it really mean, we are connected?
+             */
+            Ns_Log(Debug, "WaitForConnect: sock %d is writable", sock);
+
+            /*
+             * We know this for sure, when getpeername() on the socket succeeds.
+             */
+            if (getpeername(sock, (struct sockaddr *)&sa, &socklen) != 0) {
+                if (ns_sockerrno == ENOTCONN) {
+                    /*
+                     * The socket is not yet connected.
+                     */
+                    if (count-- > 0) {
+                        struct pollfd timeoutfd;
+                        /*
+                         * Wait 1ms and retry
+                         */
+                        (void) ns_poll(&timeoutfd, 0, 1);
+                        Ns_Log(Debug, "WaitForConnect: sock %d ENOTCONN, left retries %d",
+                               sock, count);
+                        continue;
+                    } else {
+                        Ns_Log(Debug, "WaitForConnect: sock %d ENOTCONN, giving up", sock);
+                    }
+                } else {
+                    Ns_Log(Debug, "WaitForConnect on sock %d: getpeername() returned error %s",
+                           sock, ns_sockstrerror(ns_sockerrno));
+                }
+                result = NS_ERROR;
+            } else {
+                /*
+                 * Everything is fine: socket is writable, and getpeername()
+                 * returned success.
+                 */
+                result = NS_OK;
+            }
+        } else {
+            /*
+             * The socket is NOT writable
+             */
+            Ns_Log(Debug, "WaitForConnect: sock %d is not writable", sock);
+            result = NS_ERROR;
+        }
+        break;
+    }
+    Ns_Log(Debug, "WaitForConnect: sock %d connect success %d", sock, result);
+
+    return result;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1705,7 +1823,6 @@ BindToSameFamily(struct sockaddr *saPtr, struct sockaddr *lsaPtr,
  *
  *----------------------------------------------------------------------
  */
-
 
 static NS_SOCKET
 SockConnect(const char *host, unsigned short port, const char *lhost,
@@ -1743,17 +1860,17 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
 
         for (;;) {
             Ns_ReturnCode  result;
-            const char    *address = ns_strtok(addresses, " ");
+            const char    *address;
 
+            address = ns_strtok(addresses, " ");
             /*
              * In the next iteration, process the next address.
              */
             addresses = NULL;
             if (address == NULL) {
+                Ns_Log(Debug, "SockConnect to %s: addresses exhausted", host);
                 break;
             }
-
-            Ns_Log(Debug, "SockConnect to %s: try address <%s> async %d", host, address, async);
 
             result = Ns_GetSockAddr(saPtr, address, port);
             if (result == NS_OK) {
@@ -1792,7 +1909,6 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
                          * but the handling is this way much easier.
                          */
                         if (multipleIPs) {
-                            struct pollfd sockfd;
 
                             if (err == NS_EWOULDBLOCK) {
                                 Ns_Log(Debug, "async connect to %s on sock %d returned NS_EWOULDBLOCK",
@@ -1801,20 +1917,9 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
                                 Ns_Log(Debug, "async connect to %s on sock %d returned EINPROGRESS",
                                        address, sock);
                             }
-                            sockfd.events = POLLOUT;
-                            sockfd.revents = 0;
-                            sockfd.fd = sock;
-                            /*
-                             * Wait for max 100ms for the socket to become
-                             * writable, otherwise use the next offered IP
-                             * address. TODO: The waiting timespan should be
-                             * probably configurable.
-                             */
-                            (void) ns_poll(&sockfd, 1, 100);
-
-                            if ((sockfd.revents & POLLOUT) != 0) {
+                            if (WaitForConnect(sock) == NS_OK) {
                                 /*
-                                 * The socket is writable, we can use this IP address.
+                                 * The socket is connected, we can use this IP address.
                                  */
                                 /*Ns_Log(Notice, "async connect multipleIPs INPROGRESS "
                                        "sock %d socket writable (address %s)",
@@ -1823,11 +1928,11 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
 
                             } else {
                                 /*
-                                 * The socket is NOT writable, try a next IP address.
+                                 * The socket could not be connected, try a next IP address.
                                  */
-                                /*Ns_Log(Notice, "async connect multipleIPs INPROGRESS "
-                                       "sock %d connect failed (address %s)",
-                                       sock, address);*/
+                                /* Ns_Log(Notice, "async connect multipleIPs INPROGRESS "
+                                       "sock %d connect failed (address %s), try next",
+                                       sock, address); */
                                 ns_sockclose(sock);
                                 sock = NS_INVALID_SOCKET;
                                 continue;
@@ -1854,6 +1959,9 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
         }
     }
     Tcl_DStringFree(&ds);
+
+    Ns_Log(Debug, "SockConnect to %s: returns sock %d", host, sock);
+
     return sock;
 }
 
