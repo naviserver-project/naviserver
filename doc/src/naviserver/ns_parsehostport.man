@@ -1,0 +1,47 @@
+[include version_include.man]
+[manpage_begin ns_parsehostport n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Parse a string containing host and an optional port}]
+
+[description]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_parsehostport] \
+        [opt [option "-strict"]] \
+        [arg hostport]]
+
+[para] This function interprets the provided string as host
+and optional port as defined by the authority elements in RFC 3986.
+The function supports IP-literal notation. The functionlity is
+an subset of [cmd ns_parseurl].
+
+[para] When [option "-strict"] is specified, the function performs a
+more thorough checking of the valid characters for the host(as defined
+in RFC 3986, but relaxed by errata #4942). Otherwise, the checking is
+kept to the bare minimum.
+
+[para]
+The resulting dict might contain the
+following elements: [term host], [term port].
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+ % ns_parsehostport openacs.org:443
+ host openacs.org port 443
+ 
+ % ns_parsehostport {[lb]::1[rb]}
+ host ::1 port 80
+[example_end]
+
+[see_also ns_absoluteurl ns_parsefieldvalue ns_parseheader ns_parseurl]
+[keywords "global built-in" parse]
+[manpage_end]
+
+

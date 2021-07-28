@@ -553,7 +553,7 @@ NsStopHttp(NsServer *servPtr)
  *    Helper function of Ns_HttpParseHost() to skip digits in a string.
  *
  * Results:
- *    First non-digit charactger.
+ *    First non-digit character.
  *
  * Side effects:
  *    none
@@ -605,7 +605,7 @@ SkipDigits(char *chars)
  *        if (hostParsedOk && hostString != end && hostStart != portStart) ...
  *
  * Side effects:
- *      May write NUL charactger '\0' into the passed hostString.
+ *      May write NUL character '\0' into the passed hostString.
  *
  *----------------------------------------------------------------------
  */
@@ -798,14 +798,14 @@ Ns_HttpParseHost2(
             /*
              * Use the table based on regname + errata in RFC 3986.
              */
-            for (p = hostString; regname_table[(int)*p]; p++) {
+            for (p = hostString; regname_table[*p & 0xffu]; p++) {
                 ;
             }
         } else {
             /*
              * Just scan for the bare necessity based on delimiters.
              */
-            for (p = hostString; delimiter_table[(int)*p]; p++) {
+            for (p = hostString; delimiter_table[*p & 0xffu]; p++) {
                 ;
             }
         }
