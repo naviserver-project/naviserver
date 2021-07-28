@@ -125,7 +125,7 @@ test ns_parseurl-1.10.3 {strict misc valid} -body {
         http://foo.com/?x=1&y=2
         http://foo.com?x=1&y=2
         http://userid@example.com/
-        some-scheme://userid@example.com/
+        some-scheme://userid@example.com/        
     } {catch {ns_parseurl -strict $url}}
 } -result {0 0 0 0 0 0 0 0 0}
 
@@ -140,8 +140,10 @@ test ns_parseurl-1.10.4 {strict misc invalid} -body {
         ":// should fail"
         "http://foo.bar/breeble booz"
         some@scheme://userid@example.com/
+        1.2.3.4:80
+        :80
     } {catch {ns_parseurl -strict $url}}
-} -result {1 1 1 1 1 1 1 1 1}
+} -result {1 1 1 1 1 1 1 1 1 1 1}
 
 test ns_parseurl-1.10.5 {non-strict misc invalid} -body {
     lmap url {
@@ -154,8 +156,10 @@ test ns_parseurl-1.10.5 {non-strict misc invalid} -body {
         ":// should fail"
         "http://foo.bar/breeble booz"
         some@scheme://userid@example.com/
+        1.2.3.4:80
+        :80
     } {catch {ns_parseurl $url}}
-} -result {1 0 1 0 0 0 1 0 1}
+} -result {1 0 1 0 0 0 1 0 1 1 1}
 
 #
 # relative URLs
@@ -273,6 +277,48 @@ test ns_absoluteurl-3.2c {base URL containing just protocol and host, no slash} 
     ns_absoluteurl //google.com:80/test.html http://openacs.org:80
 } -result {http://google.com:80/test.html}
 
+
+#
+# Parse host and port
+#
+
+test ns_parsehostport-1.0 {basic syntax: plain call} -body {
+     ns_parsehostport
+} -returnCodes error -result {wrong # args: should be "ns_parsehostport ?-strict? hostport"}
+
+test ns_parsehostport-1.1 {full URL, no port} -body {
+    ns_parsehostport openacs.org
+} -result {host openacs.org}
+
+test ns_parsehostport-1.2 {full URL, no port} -body {
+    ns_parsehostport openacs.org:80
+} -returnCodes {error ok} -result {host openacs.org port 80}
+
+test ns_parsehostport-1.3 {full URL, no port} -body {
+    ns_parsehostport {[::1]:80}
+} -returnCodes {error ok} -result {host ::1 port 80}
+
+test ns_parsehostport-1.4 {strict misc invalid} -body {
+    lmap hostport {
+        foo.com:
+        :80
+        motörhead
+        motörhead.com:8000
+        "a b:80"
+        ""
+    } {catch {ns_parsehostport -strict $hostport}}
+} -result {1 1 1 1 1 1}
+
+test ns_parsehostport-1.5 {non-strict misc invalid} -body {
+    lmap hostport {
+        foo.com:
+        :80
+        motörhead
+        motörhead.com:8000
+        "a b:80"
+        ""
+    } {catch {ns_parsehostport $hostport}}
+} -result {1 1 0 0 1 1}
 
 
 cleanupTests

@@ -171,7 +171,7 @@ ParseUserInfo(char *chars, char **userinfo)
     NS_NONNULL_ASSERT(chars != NULL);
     NS_NONNULL_ASSERT(userinfo != NULL);
 
-    for (p = chars; userinfo_table[(int)*p] != 0; p++) {
+    for (p = chars; userinfo_table[*p & 0xffu] != 0; p++) {
         ;
     }
 
@@ -242,7 +242,7 @@ ValidateChars(char *chars, const bool *table, const char *msg, const char** erro
 {
     char *p, *result;
 
-    for (p = chars; table[(int)*p] != 0; p++) {
+    for (p = chars; table[*p & 0xffu] != 0; p++) {
         ;
     }
     if (*p == '\0') {
@@ -408,6 +408,25 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
         /* 0xe0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
         /* 0xf0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0
     };
+    static const bool alpha_table[256] = {
+        /*          0  1  2  3   4  5  6  7   8  9  a  b   c  d  e  f */
+        /* 0x00 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0x10 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0x20 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0x30 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0x40 */  0, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0x50 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 0,  0, 0, 0, 0,
+        /* 0x60 */  0, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 1,
+        /* 0x70 */  1, 1, 1, 1,  1, 1, 1, 1,  1, 1, 1, 0,  0, 0, 0, 0,
+        /* 0x80 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0x90 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xa0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xb0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xc0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xd0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xe0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,
+        /* 0xf0 */  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0
+    };
 
     NS_NONNULL_ASSERT(urlPtr);
 
@@ -420,10 +439,14 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
      *     +--end
      */
 
-    for (end = url; scheme_table[(int)*end] != 0; end++) {
-        ;
+    if (alpha_table[*url & 0xffu]) {
+        for (end = url+1; scheme_table[*end & 0xffu] != 0; end++) {
+            ;
+        }
+    } else {
+        end = url;
     }
-    if (*end == ':') {
+    if (end != url && *end == ':') {
         /*
          * There is a protocol specified. Clear out the colon.
          * Set pprotocol to the start of the protocol, and url to
@@ -801,6 +824,69 @@ NsTclParseUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         ns_free(url);
     }
     /*Ns_Log(Notice, "===== ns_parseurl '%s' returns result %d", urlString, result);*/
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclParseHostportObjCmd --
+ *
+ *    Implements "ns_parsehostport". Offers the functionality of
+ *    Ns_HttpParseHost2 on the Tcl layer.
+ *
+ * Results:
+ *    Tcl result.
+ *
+ * Side effects:
+ *    none
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclParseHostportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK, strict = 0;
+    char       *hostportString;
+    Ns_ObjvSpec opts[] = {
+        {"-strict",     Ns_ObjvBool,    &strict,          INT2PTR(NS_TRUE)},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"hostport",  Ns_ObjvString, &hostportString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        char *hostport, *hostStart, *portStart, *end;
+        bool  success;
+
+        hostport = ns_strdup(hostportString);
+        success = Ns_HttpParseHost2(hostport, strict, &hostStart, &portStart, &end);
+        if (success && *hostStart != '\0' && portStart != hostport) {
+            Tcl_Obj *resultObj = Tcl_NewListObj(0, NULL);
+
+            if (hostStart != NULL) {
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("host", 4));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(hostStart, -1));
+            }
+            if (portStart != NULL) {
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("port", 4));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(portStart, -1));
+            }
+
+            Tcl_SetObjResult(interp, resultObj);
+
+        } else {
+            Ns_TclPrintfResult(interp, "Could not parse host and port \"%s\"", hostportString);
+            result = TCL_ERROR;
+        }
+        ns_free(hostport);
+    }
     return result;
 }
 
