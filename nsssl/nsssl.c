@@ -143,7 +143,7 @@ Ns_ModuleInit(const char *server, const char *module)
 
     result = Ns_TLS_CtxServerInit(path, NULL, NS_DRIVER_SNI, drvCfgPtr, &drvCfgPtr->ctx);
     if (result != TCL_OK) {
-        Ns_Log(Error, "nsssl: init error: %s", strerror(errno));
+        Ns_Log(Error, "nsssl: could not initialize OpenSSL context (section %s): %s", path, strerror(errno));
         return NS_ERROR;
     }
 
