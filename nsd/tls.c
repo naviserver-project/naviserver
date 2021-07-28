@@ -1339,7 +1339,7 @@ NsSSLConfigNew(const char *path)
  *
  * Ns_TLS_CtxServerInit --
  *
- *      Read config information, vreate and initialize OpenSSL context.
+ *      Read config information, create and initialize OpenSSL context.
  *
  * Results:
  *      A standard Tcl result.
@@ -1359,7 +1359,7 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
     const char *cert;
 
     cert = Ns_ConfigGetValue(path, "certificate");
-    Ns_Log(Notice, "load certificate from <%s/%s>", path, cert);
+    Ns_Log(Notice, "load certificate '%s' specified in section %s", cert, path);
 
     if (cert == NULL) {
         Ns_Log(Error, "nsssl: certificate parameter must be specified in the configuration file under %s", path);

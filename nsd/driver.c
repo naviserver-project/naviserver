@@ -912,7 +912,9 @@ void NsDriverMapVirtualServers(void)
                                 drvPtr->opts |= NS_DRIVER_SNI;
                                 Tcl_SetHashValue(hPtr, ctx);
                             } else {
-                                Ns_Log(Error, "driver nsssl: init error: %s", strerror(errno));
+                                Ns_Log(Error, "driver nsssl: "
+                                       "could not initialize OpenSSL context (section %s): %s",
+                                       ds1.string, strerror(errno));
                                 ctx = NULL;
                             }
                         } else {
