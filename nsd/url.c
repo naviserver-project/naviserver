@@ -171,7 +171,7 @@ ParseUserInfo(char *chars, char **userinfo)
     NS_NONNULL_ASSERT(chars != NULL);
     NS_NONNULL_ASSERT(userinfo != NULL);
 
-    for (p = chars; userinfo_table[*p & 0xffu] != 0; p++) {
+    for (p = chars; userinfo_table[UCHAR(*p)] != 0; p++) {
         ;
     }
 
@@ -242,7 +242,7 @@ ValidateChars(char *chars, const bool *table, const char *msg, const char** erro
 {
     char *p, *result;
 
-    for (p = chars; table[*p & 0xffu] != 0; p++) {
+    for (p = chars; table[UCHAR(*p)] != 0; p++) {
         ;
     }
     if (*p == '\0') {
@@ -439,8 +439,8 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
      *     +--end
      */
 
-    if (alpha_table[*url & 0xffu]) {
-        for (end = url+1; scheme_table[*end & 0xffu] != 0; end++) {
+    if (alpha_table[UCHAR(*url)]) {
+        for (end = url+1; scheme_table[UCHAR(*end)] != 0; end++) {
             ;
         }
     } else {
