@@ -315,8 +315,8 @@ if {[info exists httpsport]} {
         ns_param address	$addresses
         ns_param port		$httpsport
         ns_param hostname	$hostname
-        ns_param ciphers	"ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!RC4"
-        ns_param protocols	"!SSLv2:!SSLv3"
+        ns_param ciphers	"ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384"
+        ns_param protocols	"!SSLv2:!SSLv3:!TLSv1.0:!TLSv1.1"
         ns_param certificate	$serverroot/etc/certfile.pem
         ns_param verify		0
         ns_param writerthreads	2
