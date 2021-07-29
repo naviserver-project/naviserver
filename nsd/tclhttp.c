@@ -798,16 +798,17 @@ Ns_HttpParseHost2(
             /*
              * Use the table based on regname + errata in RFC 3986.
              */
-            for (p = hostString; regname_table[*p & 0xffu]; p++) {
+            for (p = hostString; regname_table[UCHAR(*p)]; p++) {
                 ;
             }
         } else {
             /*
              * Just scan for the bare necessity based on delimiters.
              */
-            for (p = hostString; delimiter_table[*p & 0xffu]; p++) {
+            for (p = hostString; delimiter_table[UCHAR(*p)]; p++) {
                 ;
             }
+
         }
         /*
          * The host is not allowed to start with a dot ("dots are separators
