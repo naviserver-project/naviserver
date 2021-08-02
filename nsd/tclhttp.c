@@ -40,6 +40,8 @@
 #include <openssl/err.h>
 #endif
 
+#define TCLHTTP_USE_EXTERNALTOUTF 1
+
 /*
  * The maximum number of bytes we can send to TLS
  * in one operation is 2^14 => 16384 (see RFC 5246).
@@ -2146,6 +2148,11 @@ HttpGetResult(
                  * i.e. to perform no charset conversion.
                  */
                 binary = Ns_IsBinaryMimeType(cType);
+                /*
+                 * When the MIME type does not indicate binary treatment, a
+                 * charset encoding is required. (e.g. "text/plain;
+                 * charset=iso-8859-2")
+                 */
 #if defined(TCLHTTP_USE_EXTERNALTOUTF)
                 if (binary == NS_FALSE) {
                     encoding = Ns_GetTypeEncoding(cType);
