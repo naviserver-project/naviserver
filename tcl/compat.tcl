@@ -291,35 +291,28 @@ proc ns_chmod {file mode} {
 #
 # ns_truncate --
 #
-#   This is still implement in the server code. The reason is that
+#   This is still implemented in the server code. The reason is that
 #   the Tcl has no portable equivalent; nsd/tclfile.c:NsTclFTruncateObjCmd()
 #
 
 #
 # ns_ftruncate --
 #
-#   This is still implement in the server code. The reason is that
+#   This is still implemented in the server code. The reason is that
 #   the Tcl has no portable equivalent; nsd/tclfile.c:NsTclTruncateObjCmd()
 #
 
 #
 # ns_mktemp --
 #
-#   This is still implement in the server code. The reason is that
+#   This is still implemented in the server code. The reason is that
 #   the Tcl has no portable equivalent; nsd/tclfile.c:NsTclMkTempObjCmd()
-#
-
-#
-# ns_tempnam --
-#
-#   This is still implement in the server code. The reason is that
-#   the Tcl has no portable equivalent; nsd/tclfile.c:NsTclTempNamObjCmd()
 #
 
 #
 # ns_symlink --
 #
-#   This is still implement in the server code. The reason is that
+#   This is still implemented in the server code. The reason is that
 #   the Tcl [file link] command always creates link target with
 #   absolute path to the linked file; nsd/tclfile.c:NsTclSymlinkObjCmd()
 #
