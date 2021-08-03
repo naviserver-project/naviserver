@@ -169,14 +169,35 @@ test ns_parseurl-1.10.5 {non-strict misc invalid} -body {
 # relative URLs
 #
 
-test ns_parseurl-2.1 {relative URL} -body {
+test ns_parseurl-2.1.0 {relative URL} -body {
     ns_parseurl /www/t.html
 } -returnCodes {error ok} -result {path www tail t.html}
 
-# legacy NaviServer, desired?
-test ns_parseurl-2.2 {relative URL, no leading /} -body {
+test ns_parseurl-2.1.1 {relative URL} -body {
+    ns_parseurl /
+} -returnCodes {error ok} -result {path {} tail {}}
+
+test ns_parseurl-2.1.2 {relative URL} -body {
+    ns_parseurl /?x=1
+} -returnCodes {error ok} -result {path {} tail {} query x=1}
+
+# legacy NaviServer, kept for compatibility
+test ns_parseurl-2.2.0 {relative URL, no leading /} -body {
     ns_parseurl www/t.html
 } -result {tail www/t.html}
+
+test ns_parseurl-2.2.1 {relative URL, no leading /} -body {
+    ns_parseurl .
+} -result {tail .}
+
+test ns_parseurl-2.2.2 {relative URL, no leading /} -body {
+    ns_parseurl ./a
+} -result {tail ./a}
+
+test ns_parseurl-2.2.3 {relative URL, no leading /} -body {
+    ns_parseurl ./a?x=1
+} -result {tail ./a query x=1}
+
 
 #
 # protocol relative (protocol agnostic) URLs (contained in RFC 3986)
