@@ -464,7 +464,7 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
         url = end + 1;
         /*fprintf(stderr, "SCHEME looks ok: %s\n", *pprotocol);*/
 
-    } else if (*end != '/' && *end != '\0') {
+    } else if (*end != '/' && *end != '.'  && *end != '\0') {
         /*
          * The check for '/' accepts relative URLs.
          */

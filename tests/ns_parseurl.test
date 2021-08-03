@@ -142,8 +142,10 @@ test ns_parseurl-1.10.4 {strict misc invalid} -body {
         some@scheme://userid@example.com/
         1.2.3.4:80
         :80
+        /
+        .
     } {catch {ns_parseurl -strict $url}}
-} -result {1 1 1 1 1 1 1 1 1 1 1}
+} -result {1 1 1 1 1 1 1 1 1 1 1 0 0}
 
 test ns_parseurl-1.10.5 {non-strict misc invalid} -body {
     lmap url {
@@ -158,8 +160,10 @@ test ns_parseurl-1.10.5 {non-strict misc invalid} -body {
         some@scheme://userid@example.com/
         1.2.3.4:80
         :80
+        /
+        .
     } {catch {ns_parseurl $url}}
-} -result {1 0 1 0 0 0 1 0 1 1 1}
+} -result {1 0 1 0 0 0 1 0 1 1 1 0 0}
 
 #
 # relative URLs
