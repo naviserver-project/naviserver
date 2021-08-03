@@ -21,11 +21,11 @@ IP-literal notation as specified in RFC 3986.
 [para] The provided [arg url] might be an absolute URL (containing
 protocol and host), a protocol agnostic URL (starting with two slashes
 followed by hostname, as defined in RFC 3986) or a relative URL
-(without location). When the relative URL starts with a slash, it is
-separated into [term path] and [term tail], otherwise everything is
-parsed into [term tail] (legacy NaviServer behavior).
-When the [arg url] contains a [term query] or [term fragment],
-these are potentially returned in the dict.
+starting with a slash or dot. When the relative URL starts with a
+slash, it is separated into [term path] and [term tail], otherwise it
+is parsed into [term tail] (legacy NaviServer behavior).  When the
+[arg url] contains a [term query] or [term fragment], these are
+potentially returned in the dict.
 
 [para] When [option "-strict"] is specified, the function performs a
 more thorough checking of the input characters (as defined in RFC
