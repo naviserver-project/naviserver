@@ -1737,6 +1737,8 @@ WaitForConnect(NS_SOCKET sock)
     int count = 20;
 
     for (;;) {
+        int nfds;
+
         sockfd.events = POLLOUT;
         sockfd.revents = 0;
         sockfd.fd = sock;
@@ -1747,7 +1749,8 @@ WaitForConnect(NS_SOCKET sock)
          * address. TODO: The waiting timespan should be
          * probably configurable.
          */
-        (void) ns_poll(&sockfd, 1, 100);
+        nfds = ns_poll(&sockfd, 1, 100);
+        Ns_Log(Debug, "WaitForConnect: poll returned 0x%.4x, nsfds %d", sockfd.revents, nfds);
 
         if ((sockfd.revents & POLLOUT) != 0) {
             struct NS_SOCKADDR_STORAGE sa;
@@ -1792,9 +1795,15 @@ WaitForConnect(NS_SOCKET sock)
             }
         } else {
             /*
-             * The socket is NOT writable
+             * The socket is NOT writable. The behaviour on macOS differs from
+             * Linux: while we see a writable socket during in-progress
+             * states, we do not get this under macOS. In case, we have no
+             * error state, we retry.
              */
-            Ns_Log(Debug, "WaitForConnect: sock %d is not writable", sock);
+            if (sockfd.revents == 0 && Ns_SockErrorCode(NULL, sock) == 0) {
+                Ns_Log(Debug, "WaitForConnect: sock %d retry", sock);
+                continue;
+            }
             result = NS_ERROR;
         }
         break;
