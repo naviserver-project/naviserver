@@ -30,7 +30,7 @@
 
 package require tcltest 2.2
 namespace import -force ::tcltest::*
-package require try
+if {$::tcl_version < 8.6} {package require try}
 
 ::tcltest::configure {*}$argv
 
