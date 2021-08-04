@@ -125,7 +125,7 @@ test ns_parseurl-1.10.3 {strict misc valid} -body {
         http://foo.com/?x=1&y=2
         http://foo.com?x=1&y=2
         http://userid@example.com/
-        some-scheme://userid@example.com/        
+        some-scheme://userid@example.com/
     } {catch {ns_parseurl -strict $url}}
 } -result {0 0 0 0 0 0 0 0 0}
 
@@ -144,8 +144,9 @@ test ns_parseurl-1.10.4 {strict misc invalid} -body {
         :80
         /
         .
+        "a b:"
     } {catch {ns_parseurl -strict $url}}
-} -result {1 1 1 1 1 1 1 1 1 1 1 0 0}
+} -result {1 1 1 1 1 1 1 1 1 1 1 0 0 1}
 
 test ns_parseurl-1.10.5 {non-strict misc invalid} -body {
     lmap url {
@@ -162,8 +163,9 @@ test ns_parseurl-1.10.5 {non-strict misc invalid} -body {
         :80
         /
         .
+        "a b:"
     } {catch {ns_parseurl $url}}
-} -result {1 0 1 0 0 0 1 0 1 1 1 0 0}
+} -result {1 0 1 0 0 0 1 0 1 1 1 0 0 1}
 
 #
 # relative URLs
@@ -181,7 +183,11 @@ test ns_parseurl-2.1.2 {relative URL} -body {
     ns_parseurl /?x=1
 } -returnCodes {error ok} -result {path {} tail {} query x=1}
 
-# legacy NaviServer, kept for compatibility
+#
+# Legacy NaviServer behavior (putting remainder into "tail"), kept for
+# compatibility.
+#
+
 test ns_parseurl-2.2.0 {relative URL, no leading /} -body {
     ns_parseurl www/t.html
 } -result {tail www/t.html}
@@ -198,9 +204,53 @@ test ns_parseurl-2.2.3 {relative URL, no leading /} -body {
     ns_parseurl ./a?x=1
 } -result {tail ./a query x=1}
 
+#
+# Testing (relative) URLs containing colons
+#
+
+test ns_parseurl-2.3.1 {relative URL containing colon - legacy behavior} -body {
+    ns_parseurl ./foo:bar
+} -result {tail ./foo:bar}
+
+test ns_parseurl-2.3.2 {relative URL containing colon} -body {
+    ns_parseurl /foo:bar
+} -result {path {} tail foo:bar}
+
+test ns_parseurl-2.3.3 {URL starting with other char containing colon} -body {
+    ns_parseurl foo:bar
+} -result {proto foo tail bar}
+
+test ns_parseurl-2.3.4 {URL starting with other char containing colon} -body {
+    ns_parseurl ./foo:bar
+} -result {tail ./foo:bar}
+
+test ns_parseurl-2.3.4.1 {relative URL starting with dot containing colon - legacy behavior} -body {
+    ns_parseurl ./foo:bar/baz
+} -result {tail ./foo:bar/baz}
+
+test ns_parseurl-2.3.4.2 {relative URL starting with dot containing colon - legacy behavior} -body {
+    ns_parseurl ./foo/bar:baz
+} -result {tail ./foo/bar:baz}
+
+test ns_parseurl-2.3.5.1 {relative URL starting with slash containing colon} -body {
+    ns_parseurl /foo:bar/baz
+} -result {path foo:bar tail baz}
+
+test ns_parseurl-2.3.5.2 {relative URL starting with slash containing colon} -body {
+    ns_parseurl /foo/bar:baz
+} -result {path foo tail bar:baz}
+
+test ns_parseurl-2.3.6.1 {URL starting with other char containing colon before slash} -body {
+    ns_parseurl foo:bar/baz
+} -result {proto foo tail bar/baz}
+
+test ns_parseurl-2.3.6.2 {URL starting with other char containing colon after slash - legacy behavior} -body {
+    ns_parseurl foo/bar:baz
+} -result {tail foo/bar:baz}
+
 
 #
-# protocol relative (protocol agnostic) URLs (contained in RFC 3986)
+# Protocol relative (protocol agnostic) URLs (contained in RFC 3986)
 #
 test ns_parseurl-3.1 {protocol relative URL with port} -body {
     ns_parseurl //openacs.org/www/t.html
