@@ -39,7 +39,7 @@ namespace import -force ::tcltest::*
 if {[ns_config test listenport] ne ""} {
     testConstraint serverListen true
 }
-if {$tcl_version >= 8.6} {
+if {$::tcl_version >= 8.6} {
     testConstraint tcl86 true
 } else {
     package require try
