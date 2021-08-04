@@ -464,15 +464,30 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
         url = end + 1;
         /*fprintf(stderr, "SCHEME looks ok: %s\n", *pprotocol);*/
 
-    } else if (*end != '/' && *end != '.'  && *end != '\0') {
+    } else if (*end != '/' && *end != '\0') {
         /*
-         * The check for '/' accepts relative URLs.
+         * We do not have an explicit relative URL starting with a
+         * slash. Accept relative URL based on the heuristic to avoid getting
+         * every non-accepted scheme here (the remainding URL must not have a
+         * colon before a slash.
          */
-        Ns_Log(Debug, "URI scheme does not look ok: last char 0x%.2x '%s'",
-               *end, url);
-        *errorMsg = "invalid scheme";
-        return NS_ERROR;
+        char *p;
+
+        for (p = end; *p != '\0' && *p != '/'; p++) {
+            if (*p == ':') {
+                /*
+                 * We have a colon before the slash or end, do not accept
+                 * this.
+                 */
+                Ns_Log(Debug, "URI scheme does not look ok: last char 0x%.2x '%s'",
+                       *end, url);
+                *errorMsg = "invalid scheme";
+                return NS_ERROR;
+            }
+        }
+
     }
+
 
     if (url[0] == '/' && url[1] == '/') {
         bool  hostParsedOk;
@@ -575,7 +590,6 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
              */
             *end = '\0';
             url = end + 1;
-
             /*
              * Set the path to URL and advance to the last slash.
              * Set ptail to the character after that, or if there is none,
