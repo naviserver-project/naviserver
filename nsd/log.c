@@ -1653,9 +1653,6 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool loc
             cPtr = cPtr->prevPtr;
         } while (cPtr != NULL);
 
-        if (locked) {
-            Ns_MutexUnlock(&lock);
-        }
         nentry++;
         if ((count > 0 && nentry >= count) || ePtr == cachePtr->currEntry) {
             break;
