@@ -112,7 +112,6 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     const char    *root = NULL, *garg = NULL, *uarg = NULL, *server = NULL;
     const char    *bindargs = NULL, *bindfile = NULL;
     Ns_Set        *servers;
-    struct rlimit  rl;
     Ns_ReturnCode  status;
 #else
     /*
@@ -516,15 +515,16 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
 #ifndef _WIN32
 
-    /*
-     * Pre-bind any sockets now, before a possible setuid from root
-     * or chroot which may hide /etc/resolv.conf required to resolve
-     * name-based addresses.
-     */
-
-    status = NsPreBind(bindargs, bindfile);
-    if (status != NS_OK) {
-        Ns_Fatal("nsmain: prebind failed");
+    if (bindargs != NULL || bindfile != NULL) {
+        /*
+         * Pre-bind any sockets now, before a possible setuid from root
+         * or chroot which may hide /etc/resolv.conf required to resolve
+         * name-based addresses.
+         */
+        status = NsPreBind(bindargs, bindfile);
+        if (status != NS_OK) {
+            Ns_Fatal("nsmain: prebind failed");
+        }
     }
 
     /*
@@ -556,8 +556,9 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
          * Before setuid, fork the background binder process to
          * listen on ports which were not pre-bound above.
          */
-
-        NsForkBinder();
+        if (bindargs != NULL || bindfile != NULL) {
+            NsForkBinder();
+        }
 
         if (Ns_SetUser(uarg) == NS_ERROR) {
             Ns_Fatal("nsmain: failed to switch to user %s", uarg);
@@ -769,31 +770,36 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     LogTclVersion();
 
 #ifndef _WIN32
+    {
+        struct rlimit rl;
 
-    /*
-     * Log the current open file limit.
-     */
+        /*
+         * Log the current open file limit.
+         */
+        memset(&rl, 0, sizeof(rl));
 
-    if (getrlimit(RLIMIT_NOFILE, &rl)) {
-        Ns_Log(Warning, "nsmain: "
-               "getrlimit(RLIMIT_NOFILE) failed: '%s'", strerror(errno));
-    } else {
-        if (rl.rlim_max == RLIM_INFINITY) {
-            Ns_Log(Notice, "nsmain: "
-                   "max files: soft limit %u, hard limit %s",
-                   (unsigned int)rl.rlim_cur, "infinity");
+        if (getrlimit(RLIMIT_NOFILE, &rl) != 0) {
+            Ns_Log(Warning, "nsmain: "
+                   "getrlimit(RLIMIT_NOFILE) failed: '%s'", strerror(errno));
         } else {
-            Ns_Log(Notice, "nsmain: "
-                   "max files: soft limit %u, hard limit %u",
-                   (unsigned int)rl.rlim_cur, (unsigned int)rl.rlim_max);
-        }
-        if (rl.rlim_cur > FD_SETSIZE) {
-            Ns_Log(Warning, "nsmain: rl_cur (%ld) > FD_SETSIZE (%d), select() calls should not be used",
-                   (long)rl.rlim_cur, FD_SETSIZE);
-        }
-        /* fprintf(stderr, "FD_SETSIZE %d\n", FD_SETSIZE); */
-    }
+            char curBuffer[TCL_INTEGER_SPACE], maxBuffer[TCL_INTEGER_SPACE];
 
+            snprintf(curBuffer, sizeof(curBuffer), "%llu", rl.rlim_cur);
+            snprintf(maxBuffer, sizeof(maxBuffer), "%llu", rl.rlim_max);
+            Ns_Log(Notice, "nsmain: "
+                   "max files: soft limit %s, hard limit %s",
+                   (rl.rlim_cur == RLIM_INFINITY ? "infinity" : curBuffer),
+                   (rl.rlim_max == RLIM_INFINITY ? "infinity" : maxBuffer)
+                   );
+            if (rl.rlim_cur == RLIM_INFINITY
+                || rl.rlim_cur > FD_SETSIZE) {
+                Ns_Log(Warning, "nsmain: current limit "
+                       "of maximum number of files > FD_SETSIZE (%d), "
+                       "select() calls should not be used",
+                       FD_SETSIZE);
+            }
+        }
+    }
 #endif
 
     /*
