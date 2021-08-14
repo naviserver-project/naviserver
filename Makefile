@@ -136,8 +136,10 @@ install-tests:
 install-doc:
 	@if [ -d doc/html ]; then \
 		$(MKDIR) $(DESTDIR)$(NAVISERVER)/pages/doc ; \
+		$(MKDIR) $(DESTDIR)$(NAVISERVER)/pages/doc/naviserver ; \
 		$(CP) doc/html/* $(DESTDIR)$(NAVISERVER)/pages/doc ; \
 		$(CP) contrib/banners/*.png $(DESTDIR)$(NAVISERVER)/pages/doc ; \
+		$(CP) doc/src/man.css $(DESTDIR)$(NAVISERVER)/pages/doc/naviserver/ ; \
 		echo "\nThe documentation is installed under: $(DESTDIR)$(NAVISERVER)/pages/doc" ; \
 	else \
 		echo "\nNo documentation is installed locally; either generate the documentation with" ; \
