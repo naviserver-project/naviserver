@@ -1271,7 +1271,7 @@ void
 NsForkBinder(void)
 {
 #ifndef _WIN32
-    pid_t pid;
+    pid_t pid1;
     int status;
 
     /*
@@ -1291,26 +1291,30 @@ NsForkBinder(void)
      * process-based Linux and SGI threads.
      */
 
-    pid = ns_fork();
-    if (pid < 0) {
+    pid1 = ns_fork();
+    if (pid1 < 0) {
         Ns_Fatal("NsForkBinder: fork() failed: '%s'", strerror(errno));
-    } else if (pid == 0) {
-        pid = ns_fork();
-        if (pid < 0) {
+
+    } else if (pid1 == 0) {
+        pid_t pid2;
+
+        pid2 = ns_fork();
+        if (pid2 < 0) {
             Ns_Fatal("NsForkBinder: fork() failed: '%s'", strerror(errno));
-        } else if (pid == 0) {
+        } else if (pid2 == 0) {
             (void)ns_sockclose(binderRequest[1]);
             (void)ns_sockclose(binderResponse[0]);
             Binder();
         }
         exit(0);
     }
-    if (Ns_WaitForProcess(pid, &status) != NS_OK) {
+
+    if (Ns_WaitForProcess(pid1, &status) != NS_OK) {
         Ns_Fatal("NsForkBinder: Ns_WaitForProcess(%d) failed: '%s'",
-                 pid, strerror(errno));
+                 pid1, strerror(errno));
     } else if (status != 0) {
         Ns_Fatal("NsForkBinder: process %d exited with nonzero status: %d",
-                 pid, status);
+                 pid1, status);
     }
     binderRunning = NS_TRUE;
 #endif /* _WIN32 */
