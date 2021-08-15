@@ -502,7 +502,7 @@ typedef int ns_sockerrno_t;
 # define ns_lseek                   lseek
 
 # if __GNUC__
-#  if __x86_64__ || __ppc64__
+#  if defined(__x86_64__) || defined(__ppc64__)
 #   define HAVE_64BIT 1
 #  endif
 # endif
