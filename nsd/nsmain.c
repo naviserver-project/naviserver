@@ -784,8 +784,8 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         } else {
             char curBuffer[TCL_INTEGER_SPACE], maxBuffer[TCL_INTEGER_SPACE];
 
-            snprintf(curBuffer, sizeof(curBuffer), "%llu", rl.rlim_cur);
-            snprintf(maxBuffer, sizeof(maxBuffer), "%llu", rl.rlim_max);
+            snprintf(curBuffer, sizeof(curBuffer), "%" PRIuMAX, (uintmax_t)rl.rlim_cur);
+            snprintf(maxBuffer, sizeof(maxBuffer), "%" PRIuMAX, (uintmax_t)rl.rlim_max);
             Ns_Log(Notice, "nsmain: "
                    "max files: soft limit %s, hard limit %s",
                    (rl.rlim_cur == RLIM_INFINITY ? "infinity" : curBuffer),
