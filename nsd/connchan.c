@@ -129,6 +129,9 @@ static NsConnChan *ConnChanCreate(NsServer *servPtr, Sock *sockPtr,
 static void ConnChanFree(NsConnChan *connChanPtr, NsServer *servPtr)
     NS_GNUC_NONNULL(1);
 
+static ssize_t ConnChanReadBuffer(NsConnChan *connChanPtr, char *buffer, size_t bufferSize)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 static NsConnChan *ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
@@ -1963,10 +1966,10 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
      */
     data = (unsigned char *)connChanPtr->frameBuffer->string;
 
-    finished      = ((data[0] & 0x80) != 0);
-    masked        = ((data[1] & 0x80) != 0);
-    opcode        = (data[0] & 0x0f);
-    payloadLength = (data[1] & 0x7f);
+    finished      = ((data[0] & 0x80u) != 0);
+    masked        = ((data[1] & 0x80u) != 0);
+    opcode        = (data[0] & 0x0Fu);
+    payloadLength = (data[1] & 0x7Fu);
 
     if (payloadLength <= 125) {
         offset = 2;
@@ -2554,13 +2557,13 @@ ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
         data[0] = '\0';
         data[1] = '\0';
 
-        data[0] = (unsigned char)(data[0] | (unsigned char)(opcode & 0x0f));
+        data[0] = (unsigned char)(data[0] | ((unsigned char)opcode & 0x0Fu));
         if (fin) {
-            data[0] |= 0x80;
+            data[0] |= 0x80u;
         }
 
         if ( messageLength <= 125 ) {
-            data[1] = (unsigned char)(data[1] | ((unsigned char)messageLength & 0x7Fu));
+            data[1] = (unsigned char)(data[1] | ((unsigned char)messageLength & 0x7fu));
             offset = 2;
         } else if ( messageLength <= 65535 ) {
             uint16_t len16;
@@ -2592,7 +2595,7 @@ ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
             unsigned char mask[4];
             size_t        i, j;
 
-            data[1] |= 0x80;
+            data[1] |= 0x80u;
 #ifdef HAVE_OPENSSL_EVP_H
             (void) RAND_bytes(&mask[0], 4);
 #else

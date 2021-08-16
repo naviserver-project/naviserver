@@ -4480,7 +4480,7 @@ HttpCutChannel(
  *----------------------------------------------------------------------
  */
 
-NS_SOCKET
+static NS_SOCKET
 HttpTunnel(
     NsInterp *itPtr,
     const char *proxyhost,
