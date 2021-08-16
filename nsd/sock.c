@@ -1230,7 +1230,7 @@ Ns_SockConnectError(Tcl_Interp *interp, const char *host, unsigned short portNr,
         err = (Tcl_GetErrno() != 0) ? Tcl_PosixError(interp) : "reason unknown";
         sprintf(buf, "%hu", portNr);
         Tcl_AppendResult(interp, "can't connect to ", host, " port ", buf,
-                         ": ", err, NULL);
+                         ": ", err, (char *)0L);
     }
 }
 
