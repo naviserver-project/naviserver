@@ -751,7 +751,7 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes)
                 return NS_FALSE;
             }
             byte2 = bytes[index++];
-            if (byte1 < 0xC2 || ((/*bytes[index++]*/ byte2 & 0xC0) != 0x80)) {
+            if (byte1 < 0xC2 || ((/*bytes[index++]*/ byte2 & 0xC0u) != 0x80u)) {
                 Ns_Log(Debug, "UTF8 decode '%s': 2-byte invalid 2nd byte %.2x", bytes, byte2);
                 return NS_FALSE;
             }
@@ -794,7 +794,7 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes)
                  *     || byte1 == (unsigned char) 0xF0 && byte2 < (unsigned char) 0x90
                  *     || byte1 == (unsigned char) 0xF4 && byte2 > (unsigned char) 0x8F)
                  */
-                || (((byte1 << 28) + (byte2 - 0x90)) >> 30) != 0
+                || (((byte1 << 28) + (byte2 - 0x90u)) >> 30) != 0
                 /* Third byte trailing byte test */
                 || bytes[index++] > 0xBF
                 /*  Fourth byte trailing byte test */
