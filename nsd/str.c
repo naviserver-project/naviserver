@@ -794,7 +794,7 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes)
                  *     || byte1 == (unsigned char) 0xF0 && byte2 < (unsigned char) 0x90
                  *     || byte1 == (unsigned char) 0xF4 && byte2 > (unsigned char) 0x8F)
                  */
-                || (((byte1 << 28) + (byte2 - 0x90u)) >> 30) != 0
+                || (((unsigned)(byte1 << 28) + (byte2 - 0x90u)) >> 30) != 0
                 /* Third byte trailing byte test */
                 || bytes[index++] > 0xBF
                 /*  Fourth byte trailing byte test */

@@ -219,6 +219,7 @@ List of all currently available NaviServer commands.
 [call [cmd ns_formfieldcharset]]
 [call [cmd ns_setformencoding]]
 [call [cmd ns_urlcharset]]
+[call [cmd ns_valid_utf8]]
 [list_end]
 
 [section {Image Processing}]

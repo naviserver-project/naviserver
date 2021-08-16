@@ -1,0 +1,37 @@
+[include version_include.man]
+[manpage_begin ns_valid_utf8 n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Check whether the provided byte-array contains a valid UTF-8 byte sequence}]
+
+[description]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_valid_utf8] \
+        [arg string]]
+
+[para] This function checks whether the provided argument (a Tcl
+byte-array) contains a valid UTF-8 code). The function returns a
+boolean result.
+
+[para] Note that this function
+only makes sense when applied on binary data, typically read from a
+socket or a file.
+
+[example_begin]
+ % ns_valid_utf8 [encoding convertto utf-8 motörhead]
+ 1
+ 
+ % ns_valid_utf8 "foo\x85"
+ 0
+[example_end]
+
+[list_end]
+
+[keywords "global built-in" parse utf-8 encoding]
+[manpage_end]
+
+
