@@ -9,7 +9,7 @@ New Features:
 
  - Logging improvements: Added parameter "logsec" and "logthread" for
    section "ns/parameter" to make logging of full timestamps and
-   thread info optional. This give more control to a developer to
+   thread info optional. This gives more control to a developer to
    shorten the log entries e.g. on development instances by excluding
    certain values.
 
