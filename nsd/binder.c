@@ -1275,8 +1275,8 @@ NsForkBinder(void)
     int status;
 
     /*
-     * Create two socket pipes, one for sending the request and one
-     * for receiving the response.
+     * Create two socket pipes, one for sending the request and one for
+     * receiving the response.
      */
 
     if (ns_sockpair(binderRequest) != 0 || ns_sockpair(binderResponse) != 0) {
@@ -1285,10 +1285,9 @@ NsForkBinder(void)
 
     /*
      * Double-fork and run as a binder until the socket pairs are
-     * closed.  The server double forks to avoid problems
-     * waiting for a child root process after the parent does a
-     * setuid(), something which appears to confuse the
-     * process-based Linux and SGI threads.
+     * closed.  The server double forks to avoid problems waiting for a
+     * child root process after the parent does a setuid(), something
+     * which appears to confuse the process-based Linux and SGI threads.
      */
 
     pid1 = ns_fork();
@@ -1302,21 +1301,31 @@ NsForkBinder(void)
         if (pid2 < 0) {
             Ns_Fatal("NsForkBinder: fork() failed: '%s'", strerror(errno));
         } else if (pid2 == 0) {
+            /*
+             * Grandchild process.
+             */
             (void)ns_sockclose(binderRequest[1]);
             (void)ns_sockclose(binderResponse[0]);
             Binder();
+        } else {
+            /*
+             * Child process.
+             */
+            exit(0);
         }
-        exit(0);
+    } else {
+        /*
+         * Parent process.
+         */
+        if (Ns_WaitForProcess(pid1, &status) != NS_OK) {
+            Ns_Fatal("NsForkBinder: Ns_WaitForProcess(%d) failed: '%s'",
+                     pid1, strerror(errno));
+        } else if (status != 0) {
+            Ns_Fatal("NsForkBinder: process %d exited with nonzero status: %d",
+                     pid1, status);
+        }
+        binderRunning = NS_TRUE;
     }
-
-    if (Ns_WaitForProcess(pid1, &status) != NS_OK) {
-        Ns_Fatal("NsForkBinder: Ns_WaitForProcess(%d) failed: '%s'",
-                 pid1, strerror(errno));
-    } else if (status != 0) {
-        Ns_Fatal("NsForkBinder: process %d exited with nonzero status: %d",
-                 pid1, status);
-    }
-    binderRunning = NS_TRUE;
 #endif /* _WIN32 */
 }
 
