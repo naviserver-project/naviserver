@@ -2010,7 +2010,7 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
                opcode, finished, masked);
 
         /*{   int i; for(i=0; i<connChanPtr->frameBuffer->length; i++) {
-                fprintf(stderr,"%.2x",connChanPtr->frameBuffer->string[i]&0xff);
+                fprintf(stderr,"%.2x",connChanPtr->frameBuffer->string[i]&0xFF);
             }
             fprintf(stderr, "\n");
             }*/
@@ -2563,7 +2563,7 @@ ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
         }
 
         if ( messageLength <= 125 ) {
-            data[1] = (unsigned char)(data[1] | ((unsigned char)messageLength & 0x7fu));
+            data[1] = (unsigned char)(data[1] | ((unsigned char)messageLength & 0x7Fu));
             offset = 2;
         } else if ( messageLength <= 65535 ) {
             uint16_t len16;
@@ -2573,7 +2573,7 @@ ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
              */
 
             Tcl_DStringSetLength(&frameDs, 4);
-            data[1] |= (( unsigned char )126 & 0x7fu);
+            data[1] |= (( unsigned char )126 & 0x7Fu);
             len16 = htobe16((short unsigned int)messageLength);
             memcpy(&data[2], &len16, 2);
             offset = 4;
@@ -2585,7 +2585,7 @@ ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
              */
 
             Tcl_DStringSetLength(&frameDs, 10);
-            data[1] |= (( unsigned char )127 & 0x7fu);
+            data[1] |= (( unsigned char )127 & 0x7Fu);
             len64 = htobe64((uint64_t)messageLength);
             memcpy(&data[2], &len64, 8);
             offset = 10;
