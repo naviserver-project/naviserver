@@ -34,7 +34,7 @@ and process replies from web servers.
 	[opt [option "-outputchan [arg chan]"]] \
 	[opt [option "-timeout [arg T]"]] \
 	[opt [option "-expire [arg T]"]] \
-    [opt [option "-proxy [arg dict]] \
+        [opt [option "-proxy [arg dict]"]] \
 	[opt [option "-verify"]] \
 	[arg url] \
 	]
