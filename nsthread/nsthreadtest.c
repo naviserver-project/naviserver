@@ -480,6 +480,8 @@ int main(int argc, char *argv[])
         Msg("thread %" PRIdPTR " exited - code: %" PRIuPTR, i, (uintptr_t) codeArg);
     }
 #if PTHREAD_TEST
+    memset(tids, 0, sizeof(tids));
+
     for (i = 0; i < 10; ++i) {
         pthread_create(&tids[i], NULL, Pthread, (void *) i);
         printf("pthread: create %" PRIdPTR " = %" PRIxPTR "\n", i, (uintptr_t) tids[i]);
