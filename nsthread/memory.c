@@ -149,7 +149,13 @@ ns_strncopy(const char *old, ssize_t size)
         size_t new_size = likely(size > 0) ? (size_t)size : strlen(old);
         new_size ++;
         new = ns_malloc(new_size);
-        memcpy(new, old, new_size);
+        if (new != NULL) {
+            memcpy(new, old, new_size);
+        } else {
+#if defined(ENOMEM)
+            errno = ENOMEM;
+#endif
+        }
     }
     return new;
 }
@@ -164,7 +170,13 @@ ns_strdup(const char *old)
 
     length = strlen(old) + 1u;
     p = ns_malloc(length);
-    memcpy(p, old, length);
+    if (p != NULL) {
+        memcpy(p, old, length);
+    } else {
+#if defined(ENOMEM)
+        errno = ENOMEM;
+#endif
+    }
 
     return p;
 }
