@@ -111,8 +111,8 @@ test "x$prefix" = "xNONE" && prefix="/usr/local/ns"
 system=`uname`
 case "$system" in
   Darwin)
-    LDLIB="cc -dynamiclib -install_name \$(INSTLIB)/\$(LIBFILE)"
-    LDSO="cc -bundle"
+    LDLIB="\$(CC) -dynamiclib -install_name \$(INSTLIB)/\$(LIBFILE)"
+    LDSO="\$(CC) -bundle"
     CCRFLAG=
     LDRFLAG=
     CCRPATHS=
