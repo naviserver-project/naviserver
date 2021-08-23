@@ -77,7 +77,7 @@ typedef struct LogFilter {
     Ns_FreeProc       *freeArgProc; /* User-given function to free passed arg */
     void              *arg;         /* Argument passed to proc and free */
     int                refcnt;      /* Number of current consumers */
-    struct LogFilter  *nextPtr;      /* Maintains double linked list */
+    struct LogFilter  *nextPtr;     /* Maintains double linked list */
     struct LogFilter  *prevPtr;
 } LogFilter;
 
@@ -98,7 +98,7 @@ typedef struct LogCache {
     size_t      gbufSize;
     size_t      lbufSize;
     LogEntry   *firstEntry;   /* First in the list of log entries */
-    LogEntry   *currEntry;    /* Current in the list of log entries */
+    LogEntry   *currentEntry; /* Current in the list of log entries */
     Ns_DString  buffer;       /* The log entries cache text-cache */
 } LogCache;
 
@@ -752,22 +752,22 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list apSrc)
             fprintf(stderr, "Log cache is already finalized, ignore logging attempt\n");
             return;
         }
-        if (cachePtr->currEntry != NULL) {
-            entryPtr = cachePtr->currEntry->nextPtr;
+        if (cachePtr->currentEntry != NULL) {
+            entryPtr = cachePtr->currentEntry->nextPtr;
         } else {
             entryPtr = cachePtr->firstEntry;
         }
         if (entryPtr == NULL) {
             entryPtr = ns_malloc(sizeof(LogEntry));
             entryPtr->nextPtr = NULL;
-            if (cachePtr->currEntry != NULL) {
-                cachePtr->currEntry->nextPtr = entryPtr;
+            if (cachePtr->currentEntry != NULL) {
+                cachePtr->currentEntry->nextPtr = entryPtr;
             } else {
                 cachePtr->firstEntry = entryPtr;
             }
         }
 
-        cachePtr->currEntry = entryPtr;
+        cachePtr->currentEntry = entryPtr;
         cachePtr->count++;
 
         offset = (size_t)Ns_DStringLength(&cachePtr->buffer);
@@ -1613,7 +1613,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool loc
     }
 
     ePtr = cachePtr->firstEntry;
-    while (ePtr != NULL && cachePtr->currEntry != NULL) {
+    while (ePtr != NULL && cachePtr->currentEntry != NULL) {
         const char *logString = Ns_DStringValue(&cachePtr->buffer) + ePtr->offset;
 
         /*
@@ -1654,7 +1654,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool loc
         } while (cPtr != NULL);
 
         nentry++;
-        if ((count > 0 && nentry >= count) || ePtr == cachePtr->currEntry) {
+        if ((count > 0 && nentry >= count) || ePtr == cachePtr->currentEntry) {
             break;
         }
         ePtr = ePtr->nextPtr;
@@ -1664,7 +1664,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool loc
         if (count > 0) {
             size_t length = (ePtr != NULL) ? (ePtr->offset + ePtr->length) : 0u;
             cachePtr->count = (length != 0u) ? nentry : 0;
-            cachePtr->currEntry = ePtr;
+            cachePtr->currentEntry = ePtr;
             Ns_DStringSetLength(&cachePtr->buffer, (int)length);
         } else {
             LogEntry *entryPtr, *tmpPtr;
@@ -1678,7 +1678,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool loc
             entryPtr = cachePtr->firstEntry;
 
             cachePtr->count = 0;
-            cachePtr->currEntry = NULL;
+            cachePtr->currentEntry = NULL;
             cachePtr->firstEntry = NULL;
             Ns_DStringSetLength(&cachePtr->buffer, 0);
 
