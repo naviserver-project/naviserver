@@ -37,7 +37,7 @@ The value [arg t] can be specified in the form
 or as a number with the time units ms, s, m, d.
 
 [opt_def -expires [arg t]]
-A time in the future when the cache value expires. The expired value will be
+A time in the future when the cache entry expires. The expired entry will be
 deleted only when retrieved, e.g. via [cmd ns_cache_eval].
 
 [para]
@@ -78,7 +78,7 @@ Create a new Tcl cache identified by [arg name] with maximum size
 the cache. The size of a single entry is the size of the key plus the
 size of the value and the internal overhead per cache entry (about 126
 bytes on a 64-bit machine).  Optionally, a [option -timeout], an
-[option -expires] time and the maximum size of the cache value of a
+[option -expires] time and the maximum size of the cache entry value of a
 single entry (parameter [option -maxentry]) can be specified.
 The values for [arg size] and [option -maxentry] can be specified in
 memory units (kB, MB, GB, KiB, MiB, GiB).
@@ -129,7 +129,7 @@ into the cache.
 The [arg script] is also executed if a cached value exists but has expired.
 
 [para]
-If the [option -force] option is set then any existing cached value is removed
+If the [option -force] option is set then any existing cached entry is removed
 whether it has expired or not, and the [arg script] is run to regenerate it.
 
 
