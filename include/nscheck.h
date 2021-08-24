@@ -195,7 +195,11 @@
 #if defined(__cplusplus)
 # define NS_RESTRICT
 #else
-# define NS_RESTRICT restrict
+# ifdef _MSC_VER
+#  define NS_RESTRICT __restrict
+# else
+#  define NS_RESTRICT restrict
+# endif
 #endif
 
 #if defined(__GNUC__) && !defined(__OpenBSD__)
