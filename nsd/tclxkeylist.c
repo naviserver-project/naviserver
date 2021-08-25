@@ -1521,7 +1521,7 @@ TclX_KeylkeysObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
             if (result == TCL_OK) {
                 result = TclX_KeyedListGetKeys(interp, keylPtr, key, &listObjPtr);
                 if (result == TCL_BREAK) {
-                    Ns_TclPrintfResult(interp, "key not found: \"%s\"", key);
+                    Ns_TclPrintfResult(interp, "key not found: \"%s\"", key != NULL ? key : "");
                     result = TCL_ERROR;
                 }
             }
