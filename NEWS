@@ -1,4 +1,216 @@
 =======================================
+NaviServer 4.99.22, released 2021-08-XX
+=======================================
+
+ 93 files changed, 4004 insertions(+), 1465 deletions(-)
+
+New Features:
+-------------
+
+ - Added support for macOS machines with the M1 processor.
+
+ - ns_http improvements:
+   . Added proxy handling for [ns_http]
+   . Added handling of charsets in ns_http get requests (for non-binary MIME types)
+
+ - Extended default mime-types:
+   . Added "jpeg/xl" to the default MIME types (specified in IANA provisional list)
+
+ - Better handling with invalid UTF-8 (also relevant for security reasons)
+   . new function "ns_valid_utf8" to check whether a byte-array contains
+     a valid UTF-8 byte sequence
+
+   . Check internally the validity of UTF-8 and complain in the system
+     log when invalid characters are encountered. Note that Tcl
+     transforms sometimes invalid UTF-8 into valid UTF-8 (e.g., URL
+     /x%c3.) such that the exact analysis of potential attacks can
+     become complex.
+
+   . Proper encoded URLs contain just a subset of 7-bit US ASCII. The
+     general problem of handling UTF-8 in request headers is actually
+     quite complex and spread over several RFCs. The current HTTP
+     specification (RFC 7230) states that "Parsing an HTTP message as
+     a stream of Unicode characters, without regard for the specific
+     encoding, creates security vulnerabilities due to the varying
+     ways that string processing libraries handle invalid multibyte
+     character sequences that contain the octet LF (%x0A)." ... older
+     RFCs allowed explicitly ISO8859-1.  However, all recent browsers
+     code properly encode UTF-8 in the URLs.  So, in theory, a server
+     could reject uncoded "binary" data, and assume this data is
+     coming from hacking attacks. However, this change just adds a
+     warning for these cases.
+
+   . UTF-8 validity checking is performed for URLs in percent-encoded
+     and in non-encoded form
+
+ - "ns_parseurl" reform: make URL conformant with RFC 3986
+
+    Previously, the parsing of URLs as performed by "ns_parseurl" was
+    more driven by heuristics than by standards. The new version
+    parses now URLs according to RFC 3986 (checking as well for valid
+    characters in user-defined URL components when the new option
+    "-strict" is used). Most internal usages of Ns_HttpParseHost() are
+    non-strict to provide good backwards compatibility.  The function
+    now parses as well the userinfo in the authority. (authority =
+    [userinfo "@"] host [":" port]).
+
+ - Added command: "ns_parsehostport ?-strict? string"
+
+   This command implements a subset of "ns_parseurl" by just trying to
+   parse the provided string into "host" and "port" (when
+   available). The command handles also the IP literal convention as
+   specified in RFC 3986 for parsing IPv6 addresses with ports.
+
+ - Added automated reloading of server certificates when SIGHUP is
+   received. While in previous version it was necessary to restart the
+   server, when certificates were renewed (e.g., via letsencrypt), the
+   new version reloads certificates when it receives a SIGHUP signal.
+
+
+Bug Fixes:
+----------
+
+ - Make sure to nul-terminate IPv4 portion in V4MAPPED addresses.
+
+ - Fixed a potential race condition on peer and proxy IP address,
+   where on e.g., pipelined requests the request structure is already
+   reused in a new request, while the old connection is used for
+   logging. This could result in incorrect peer addresses in the
+   access.log
+
+ - More precise execution of scheduled procs
+
+   Background: previously, the scheduling of repeated scheduled procs
+   was based on the last finish time. This has the consequence that
+   the execution time will drift away more and more from a starting
+   time, depending on the runtime of certain jobs. If one has e.g., a
+   service that should run every minute, some of these minutes might
+   be skipped by the cumulative drift on a long running server. New
+   repeated scheduled procs on the original scheduled time rather than
+   on last finish time.
+
+ - Fixed Ns_StrTrimRight() to avoid damaging of UTF-8 characters
+
+   Background: Up to now, NaviServer was using "CHARTYPE(space, c)" to
+   determine, which characters can be trimmed at the end of a string.
+   Unfortunately, there exists characters, which are classified as
+   "space", but which can be trailing bytes with different semantics
+   in multibyte UTF-8 characters (e.g., 0x85). When these bytes are
+   stripped the result are invalid UTF-8 characters.
+
+ - Added support for handling potentially negative time values when
+   Ns_GetTime() is non-monotonous
+
+   Background: The time of Ns_GetTime() is determined by
+   gettimeofday() is therefore potentially affected by discontinuous
+   jumps in the system time (e.g., if the system administrator
+   manually changes the system time).
+
+ - nsproxy: Disambiguate the name of the helper command with the name of the module
+
+   NaviServer could get confused between the helper command "nsproxy"
+   and the shared object of the module (called nsproxy.so). Since for
+   module-loading, the suffix is optional (to support multi-platform
+   config files), there as a potential confusion. The helper command
+   is now called "nsproxy-helper".
+
+ - Fixed list of charsets as returned by "ns_charsets".
+
+   Previously, "ns_charsets" returned just the mapped charsets (where
+   the name of the charset as defined in Tcl and by IANA differs). So
+   e.g., "utf8" was not reported back. Now, the full is reported
+   back. Additionally, more recent mappings were added.
+
+ - Bugfix for "ns_http connect": Linux sometimes returned error (false positive)
+
+   Sometimes "ns_http run SOMEHOST:PORT" returned under Linux an error
+   of the form "can't connect to SOMEHOST port PORT: operation now in
+   progress".  This problem could have occurred on connections to hosts
+   where the DNS entries have multiple IP addresses associated. This
+   error only showed up on the first connection attempt (e.g., after a
+   server restart, or on no connections to this host for e.g., a few
+   hours), all later attempts with identical parameters worked without
+   problems. It turned out that sometimes - while working through the
+   associated IP addresses - the call "getsockopt(sock, SOL_SOCKET,
+   SO_ERROR, ...)"  retrieved errno 113 <No route to host> from the
+   socket, maybe related with routing table lookup.
+
+ - Improved log messages concerning limit of number of open files
+
+ - Improved handling of running out of memory when creating threads
+   from Tcl
+
+ - Fixed potential race condition in logging during shutdown
+
+ - Fix potential bug in openssl.m4 (could check for files on a wrong path)
+
+
+Documentation improvements:
+---------------------------
+
+ - Improved the following man pages
+
+        doc/src/manual/admin-config.man
+        doc/src/manual/admin-maintenance.man
+        doc/src/manual/admin-tuning.man
+        doc/src/manual/c-driverdb.man
+        doc/src/manual/main-history.man
+        doc/src/naviserver/commandlist.man
+        doc/src/naviserver/ns_cache.man
+        doc/src/naviserver/ns_conn.man
+        doc/src/naviserver/ns_crypto.man
+        doc/src/naviserver/ns_getcontent.man
+        doc/src/naviserver/ns_http.man
+        doc/src/naviserver/ns_locationproc.man
+        doc/src/naviserver/ns_log.man
+        doc/src/naviserver/ns_parseurl.man
+        doc/src/naviserver/ns_schedule.man
+        doc/src/naviserver/ns_sendmail.man
+        doc/src/naviserver/ns_urlspace.man
+        doc/src/naviserver/ns_write.man
+        nsssl/doc/mann/nsssl.man
+
+ - Added examples for "ns_getcontent" to the manual pages
+
+ - Improved sample configuration files:
+
+   . Added a section for the sample config files how to use the
+     letsencrypt NaviServer module
+   . Updated cipher configurations as recommended by Mozilla in
+     sample configuration files.
+
+
+
+Code Changes:
+-------------
+ - Improved naming of functions
+ - OpenSSL: aligned code with current snapshot of OpenSSL 3.0* (3.0.0-beta3-dev)
+ - Aligned stubbed functions with Linux prototypes (use "restrict" keyword)
+
+ - Extended regression test
+    . improved setup in tests for testing with private keys
+    . added testing for application/json with UTF-8 charset vis ns_http
+    . fixed handling of ns_hostbyaddr under macOS
+    . added 90 additional tests
+
+ - Code Cleanup
+    . Imoproved security by reducing usage of "ns_mktemp":
+      use on the Tcl level "file tempfile ..." (introduced in Tcl 8.6)
+      instead of "ns_mktemp" whenever possible.
+    . Do not require to have tcllib package "try" installed when using
+      Tcl 8.6 or newer
+    . Use also in test cases reentrant version of localtime()
+    . Reduced (harmless) data races
+    . Fixed issued found by facebook infer 1.1.0
+    - Avoided passing NULL after the last typed argument to a variadic function
+
+ - Added ability to pass "CFLAGS_OPTIMIZE=..." to "make"
+   (eases build specific optimization)
+
+ - Improved comments, fixed typos
+
+
+=======================================
 NaviServer 4.99.21, released 2021-04-09
 =======================================
 
