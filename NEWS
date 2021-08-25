@@ -2,7 +2,7 @@
 NaviServer 4.99.22, released 2021-08-XX
 =======================================
 
- 93 files changed, 4004 insertions(+), 1465 deletions(-)
+ 93 files changed, 4216 insertions(+), 1465 deletions(-)
 
 New Features:
 -------------
@@ -188,13 +188,13 @@ Code Changes:
  - Aligned stubbed functions with Linux prototypes (use "restrict" keyword)
 
  - Extended regression test
-    . improved setup in tests for testing with private keys
-    . added testing for application/json with UTF-8 charset vis ns_http
-    . fixed handling of ns_hostbyaddr under macOS
-    . added 90 additional tests
+    . Improved setup in tests for testing with private keys
+    . Added testing for application/json with UTF-8 charset vis ns_http
+    . Fixed handling of ns_hostbyaddr under macOS
+    . Added 90 additional tests
 
  - Code Cleanup
-    . Imoproved security by reducing usage of "ns_mktemp":
+    . Improved security by reducing usage of "ns_mktemp":
       use on the Tcl level "file tempfile ..." (introduced in Tcl 8.6)
       instead of "ns_mktemp" whenever possible.
     . Do not require to have tcllib package "try" installed when using
