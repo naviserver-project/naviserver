@@ -41,7 +41,7 @@ NS_EXTERN void             NsDbDisconnect(Ns_DbHandle *handle)
 NS_EXTERN struct DbDriver *NsDbGetDriver(const Ns_DbHandle *handle) NS_GNUC_PURE;
 NS_EXTERN struct DbDriver *NsDbLoadDriver(const char *driver)
   NS_GNUC_NONNULL(1);
-NS_EXTERN void             NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
+NS_EXTERN void             NsDbLogSql(const Ns_Time *startTime, Ns_DbHandle *handle, const char *sql)
   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 NS_EXTERN Ns_ReturnCode    NsDbOpen(Ns_DbHandle *handle)
   NS_GNUC_NONNULL(1);
