@@ -122,20 +122,20 @@ const char *NS_EMPTY_STRING = "";
 
 static Pool *GetPool(const char *pool)
     NS_GNUC_NONNULL(1);
-static void  ReturnHandle(Handle *handlePtr)
+static void ReturnHandle(Handle *handlePtr)
     NS_GNUC_NONNULL(1);
-static bool  IsStale(const Handle *handlePtr, time_t now)
+static bool IsStale(const Handle *handlePtr, time_t now)
     NS_GNUC_NONNULL(1);
 static Ns_ReturnCode Connect(Handle *handlePtr)
     NS_GNUC_NONNULL(1);
 static Pool *CreatePool(const char *pool, const char *path, const char *driver)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static int   IncrCount(const char *context, const Pool *poolPtr, int incr)
+static int IncrCount(const char *context, const Pool *poolPtr, int incr)
     NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(2);
 static ServData *GetServer(const char *server)
     NS_GNUC_NONNULL(1);
-static void  TransferHandleStats(Pool *poolPtr, Handle *handlePtr)
-        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static void TransferHandleStats(Handle *handlePtr)
+        NS_GNUC_NONNULL(1);
 
 /*
  * Static variables defined in this file
@@ -333,7 +333,7 @@ Ns_DbPoolPutHandle(Ns_DbHandle *handle)
     (void) IncrCount("Ns_DbPoolPutHandle", poolPtr, -1);
 
     Ns_MutexLock(&poolPtr->lock);
-    TransferHandleStats(poolPtr, handlePtr);
+    TransferHandleStats(handlePtr);
     ReturnHandle(handlePtr);
     if (poolPtr->waiting != 0) {
         Ns_CondSignal(&poolPtr->getCond);
@@ -743,7 +743,7 @@ Ns_DbPoolStats(Tcl_Interp *interp)
                 if (handlePtr->connected) {
                     connected ++;
                 }
-                TransferHandleStats(poolPtr, handlePtr);
+                TransferHandleStats(handlePtr);
             }
             statementCount = poolPtr->statementCount;
             getHandleCount = poolPtr->getHandleCount;
@@ -1260,18 +1260,19 @@ CheckArgProc(Tcl_DString *dsPtr, const void *arg)
  *----------------------------------------------------------------------
  */
 static void
-TransferHandleStats(Pool *poolPtr, Handle *handlePtr)
+TransferHandleStats(Handle *handlePtr)
 {
-    NS_NONNULL_ASSERT(poolPtr != NULL);
     NS_NONNULL_ASSERT(handlePtr != NULL);
 
-    if (handlePtr->sqlTime.sec != 0 || handlePtr->sqlTime.usec != 0) {
-        Ns_IncrTime(&poolPtr->sqlTime, handlePtr->sqlTime.sec, handlePtr->sqlTime.usec);
-        handlePtr->sqlTime.sec = 0;
-        handlePtr->sqlTime.usec = 0;
+    if (handlePtr->statementCount > 0) {
+        if (handlePtr->sqlTime.sec != 0 || handlePtr->sqlTime.usec != 0) {
+            Ns_IncrTime(&handlePtr->poolPtr->sqlTime, handlePtr->sqlTime.sec, handlePtr->sqlTime.usec);
+            handlePtr->sqlTime.sec = 0;
+            handlePtr->sqlTime.usec = 0;
+        }
+        handlePtr->poolPtr->statementCount += handlePtr->statementCount;
+        handlePtr->statementCount = 0;
     }
-    poolPtr->statementCount += handlePtr->statementCount;
-    handlePtr->statementCount = 0;
 }
 
 /*
@@ -1331,7 +1332,7 @@ CheckPool(void *arg, int UNUSED(id))
         while (handlePtr != NULL) {
             Handle *nextPtr = handlePtr->nextPtr;
 
-            TransferHandleStats(poolPtr, handlePtr);
+            TransferHandleStats(handlePtr);
             ReturnHandle(handlePtr);
             handlePtr = nextPtr;
         }
