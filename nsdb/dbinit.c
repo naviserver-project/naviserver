@@ -97,6 +97,8 @@ typedef struct Handle {
     time_t          otime;           /* open time */
     time_t          atime;           /* last access time */
     uintptr_t       sessionId;
+    Ns_Time         sqlTime;
+    Tcl_WideInt     statementCount;
     int             stale_on_close;
     bool            stale;
     bool            used;
@@ -118,15 +120,22 @@ const char *NS_EMPTY_STRING = "";
  * Local functions defined in this file
  */
 
-static Pool     *GetPool(const char *pool)                    NS_GNUC_NONNULL(1);
-static void      ReturnHandle(Handle *handlePtr)              NS_GNUC_NONNULL(1);
-static bool      IsStale(const Handle *handlePtr, time_t now) NS_GNUC_NONNULL(1);
-static Ns_ReturnCode Connect(Handle *handlePtr)               NS_GNUC_NONNULL(1);
-static Pool     *CreatePool(const char *pool, const char *path, const char *driver)
+static Pool *GetPool(const char *pool)
+    NS_GNUC_NONNULL(1);
+static void  ReturnHandle(Handle *handlePtr)
+    NS_GNUC_NONNULL(1);
+static bool  IsStale(const Handle *handlePtr, time_t now)
+    NS_GNUC_NONNULL(1);
+static Ns_ReturnCode Connect(Handle *handlePtr)
+    NS_GNUC_NONNULL(1);
+static Pool *CreatePool(const char *pool, const char *path, const char *driver)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static int       IncrCount(const char *context, const Pool *poolPtr, int incr)
+static int   IncrCount(const char *context, const Pool *poolPtr, int incr)
     NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(2);
-static ServData *GetServer(const char *server)                NS_GNUC_NONNULL(1);
+static ServData *GetServer(const char *server)
+    NS_GNUC_NONNULL(1);
+static void  TransferHandleStats(Pool *poolPtr, Handle *handlePtr)
+        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
  * Static variables defined in this file
@@ -322,7 +331,9 @@ Ns_DbPoolPutHandle(Ns_DbHandle *handle)
         handlePtr->atime = now;
     }
     (void) IncrCount("Ns_DbPoolPutHandle", poolPtr, -1);
+
     Ns_MutexLock(&poolPtr->lock);
+    TransferHandleStats(poolPtr, handlePtr);
     ReturnHandle(handlePtr);
     if (poolPtr->waiting != 0) {
         Ns_CondSignal(&poolPtr->getCond);
@@ -490,6 +501,7 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
         timePtr = &timeout;
     }
     status = NS_OK;
+
     Ns_MutexLock(&poolPtr->lock);
     while (status == NS_OK && poolPtr->waiting != 0) {
         status = Ns_CondTimedWait(&poolPtr->waitCond, &poolPtr->lock, timePtr);
@@ -567,12 +579,13 @@ Ns_DbPoolTimedGetMultipleHandles(Ns_DbHandle **handles, const char *pool,
  * Ns_DbBouncePool --
  *
  *      Close all handles in the pool.
+ *      Marks handles as stale and close these via CheckPool().
  *
  * Results:
- *      NS_OK if pool was bounce, NS_ERROR otherwise.
+ *      NS_OK if pool was in use, NS_ERROR otherwise.
  *
  * Side effects:
- *      Handles are all marked stale and then closed by CheckPool.
+ *      Closing handles.
  *
  *----------------------------------------------------------------------
  */
@@ -709,16 +722,18 @@ Ns_DbPoolStats(Tcl_Interp *interp)
         if (poolPtr == NULL) {
             Ns_Log(Warning, "Ignore invalid pool: %s", pool);
         } else {
-            const Handle  *handlePtr;
-            Tcl_Obj       *valuesObj;
-            int            unused = 0, connected = 0, len;
-            char           buf[100];
+            Handle      *handlePtr;
+            Tcl_Obj     *valuesObj;
+            int          unused = 0, connected = 0, len;
+            char         buf[100];
+            Tcl_WideInt  statementCount, getHandleCount;
+            Ns_Time      sqlTime, waitTime;
 
             /*
-             * Iterate over the handles of this pool, which are currently
-             * unused. Some of the currently unused handles might have been never
-             * used. By subtracting the never used handles from the total handles,
-             * we determine the used handles.
+             * Iterate over the handles of this pool. Some of the
+             * currently unused handles might have been never used. By
+             * subtracting the never used handles from the total
+             * handles, we determine the used handles.
              */
             Ns_MutexLock(&poolPtr->lock);
             for (handlePtr = poolPtr->firstPtr; handlePtr != NULL; handlePtr = handlePtr->nextPtr) {
@@ -728,19 +743,24 @@ Ns_DbPoolStats(Tcl_Interp *interp)
                 if (handlePtr->connected) {
                     connected ++;
                 }
+                TransferHandleStats(poolPtr, handlePtr);
             }
+            statementCount = poolPtr->statementCount;
+            getHandleCount = poolPtr->getHandleCount;
+            sqlTime = poolPtr->sqlTime;
+            waitTime = poolPtr->waitTime;
             Ns_MutexUnlock(&poolPtr->lock);
 
             valuesObj = Tcl_NewListObj(0, NULL);
             result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("statements", 10));
             if (likely(result == TCL_OK)) {
-                result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewWideIntObj(poolPtr->statementCount));
+                result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewWideIntObj(statementCount));
             }
             if (likely(result == TCL_OK)) {
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("gethandles", 10));
             }
             if (likely(result == TCL_OK)) {
-                result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewWideIntObj(poolPtr->getHandleCount));
+                result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewWideIntObj(getHandleCount));
             }
             if (likely(result == TCL_OK)) {
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("handles", 7));
@@ -765,20 +785,19 @@ Ns_DbPoolStats(Tcl_Interp *interp)
             }
             /*
              * We could use Ns_TclNewTimeObj here (2x), when the default representation
-             * of the obj would be floating point format
+             * of the obj would be floating point format, but we have still sec:usec.
+             *
              *  Tcl_ListObjAppendElement(interp, valuesObj, Ns_TclNewTimeObj(&poolPtr->waitTime));
-            */
+             */
             if (likely(result == TCL_OK)) {
-                len = snprintf(buf, sizeof(buf), NS_TIME_FMT,
-                               (int64_t)poolPtr->waitTime.sec, poolPtr->waitTime.usec);
+                len = snprintf(buf, sizeof(buf), NS_TIME_FMT, (int64_t)waitTime.sec, waitTime.usec);
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj(buf, len));
             }
             if (likely(result == TCL_OK)) {
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("sqltime", 7));
             }
             if (likely(result == TCL_OK)) {
-                len = snprintf(buf, sizeof(buf), NS_TIME_FMT,
-                               (int64_t)poolPtr->sqlTime.sec, poolPtr->sqlTime.usec);
+                len = snprintf(buf, sizeof(buf), NS_TIME_FMT, (int64_t)sqlTime.sec, sqlTime.usec);
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj(buf, len));
             }
             if (likely(result == TCL_OK)) {
@@ -953,11 +972,11 @@ NsDbGetActive(Ns_DbHandle *handle)
 }
 
 void
-NsDbSetActive(const char *context, Ns_DbHandle *handle, bool active)
+NsDbSetActive(const char *UNUSED(context), Ns_DbHandle *handle, bool active)
 {
     Handle *handlePtr = (Handle *) handle;
 
-    NS_NONNULL_ASSERT(context != NULL);
+    /*NS_NONNULL_ASSERT(context != NULL);*/
     NS_NONNULL_ASSERT(handle != NULL);
 
     handlePtr->active = active;
@@ -983,19 +1002,18 @@ NsDbSetActive(const char *context, Ns_DbHandle *handle, bool active)
  */
 
 void
-NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
+NsDbLogSql(const Ns_Time *startTime, Ns_DbHandle *handle, const char *sql)
 {
     Pool   *poolPtr;
+    Handle *handlePtr;
 
     NS_NONNULL_ASSERT(startTime != NULL);
     NS_NONNULL_ASSERT(handle != NULL);
     NS_NONNULL_ASSERT(sql != NULL);
 
-    poolPtr = ((const Handle *)handle)->poolPtr;
-
-    Ns_MutexLock(&poolPtr->lock);
-    poolPtr->statementCount++;
-    Ns_MutexUnlock(&poolPtr->lock);
+    handlePtr = (Handle *)handle;
+    poolPtr   = handlePtr->poolPtr;
+    handlePtr->statementCount++;
 
     if (handle->dsExceptionMsg.length > 0) {
         /*
@@ -1018,9 +1036,7 @@ NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
         Ns_GetTime(&endTime);
         delta = Ns_DiffTime(&endTime, startTime, &diffTime);
         if (likely(delta >= 0)) {
-            Ns_MutexLock(&poolPtr->lock);
-            Ns_IncrTime(&poolPtr->sqlTime, diffTime.sec, diffTime.usec);
-            Ns_MutexUnlock(&poolPtr->lock);
+            Ns_IncrTime(&handlePtr->sqlTime, diffTime.sec, diffTime.usec);
         } else {
             Ns_Log(Warning, "negative runtime pool %s duration " NS_TIME_FMT " secs: '%s'",
                    handle->poolname, (int64_t)diffTime.sec, diffTime.usec, sql);
@@ -1039,6 +1055,7 @@ NsDbLogSql(const Ns_Time *startTime, const Ns_DbHandle *handle, const char *sql)
             }
         }
     }
+
 }
 
 
@@ -1226,6 +1243,40 @@ CheckArgProc(Tcl_DString *dsPtr, const void *arg)
 /*
  *----------------------------------------------------------------------
  *
+ * TransferHandleStats --
+ *
+ *      Transfer the cached statistics values kept per handle into the
+ *      pool statistics (sqlTime and statementCount). The purpose of per
+ *      handle caching is to avoid frequent locking on the pool mutex.
+ *
+ *      It is assumed that the pool data is mutex protected by the caller.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Updates poolPtr->statementCount and poolPtr->sqlTime.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+TransferHandleStats(Pool *poolPtr, Handle *handlePtr)
+{
+    NS_NONNULL_ASSERT(poolPtr != NULL);
+    NS_NONNULL_ASSERT(handlePtr != NULL);
+
+    if (handlePtr->sqlTime.sec != 0 || handlePtr->sqlTime.usec != 0) {
+        Ns_IncrTime(&poolPtr->sqlTime, handlePtr->sqlTime.sec, handlePtr->sqlTime.usec);
+        handlePtr->sqlTime.sec = 0;
+        handlePtr->sqlTime.usec = 0;
+    }
+    poolPtr->statementCount += handlePtr->statementCount;
+    handlePtr->statementCount = 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * CheckPool --
  *
  *      Verify all handles in a pool are not stale.
@@ -1238,7 +1289,6 @@ CheckArgProc(Tcl_DString *dsPtr, const void *arg)
  *
  *----------------------------------------------------------------------
  */
-
 static void
 CheckPool(void *arg, int UNUSED(id))
 {
@@ -1248,7 +1298,6 @@ CheckPool(void *arg, int UNUSED(id))
     /*
      * Grab the entire list of handles from the pool.
      */
-
     Ns_MutexLock(&poolPtr->lock);
     handlePtr = poolPtr->firstPtr;
     poolPtr->firstPtr = poolPtr->lastPtr = NULL;
@@ -1282,6 +1331,7 @@ CheckPool(void *arg, int UNUSED(id))
         while (handlePtr != NULL) {
             Handle *nextPtr = handlePtr->nextPtr;
 
+            TransferHandleStats(poolPtr, handlePtr);
             ReturnHandle(handlePtr);
             handlePtr = nextPtr;
         }
@@ -1398,6 +1448,9 @@ CreatePool(const char *pool, const char *path, const char *driver)
             handlePtr->otime = handlePtr->atime = 0;
             handlePtr->stale = NS_FALSE;
             handlePtr->stale_on_close = 0;
+            handlePtr->statementCount = 0;
+            handlePtr->sqlTime.sec = 0;
+            handlePtr->sqlTime.usec = 0;
 
             /*
              * The following elements of the Handle structure could be
@@ -1487,13 +1540,13 @@ Connect(Handle *handlePtr)
  */
 
 static int
-IncrCount(const char *context, const Pool *poolPtr, int incr)
+IncrCount(const char *UNUSED(context), const Pool *poolPtr, int incr)
 {
     Tcl_HashTable *tablePtr;
     Tcl_HashEntry *hPtr;
     int prev, count, isNew;
 
-    NS_NONNULL_ASSERT(context != NULL);
+    /*NS_NONNULL_ASSERT(context != NULL);*/
     NS_NONNULL_ASSERT(poolPtr != NULL);
 
     tablePtr = Ns_TlsGet(&tls);
