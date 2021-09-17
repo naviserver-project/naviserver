@@ -163,14 +163,12 @@ static Tcl_HashTable serversTable;
  */
 
 NS_EXPORT Ns_ReturnCode
-Ns_ModuleInit(const char *server, const char *module)
+Ns_ModuleInit(const char *server, const char *UNUSED(module))
 {
     Server        *servPtr;
     Tcl_HashEntry *hPtr;
     int            isNew;
     Ns_ReturnCode  result;
-
-    NS_NONNULL_ASSERT(module != NULL);
 
     if (uskey < 0) {
         double        d;
