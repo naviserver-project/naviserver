@@ -246,9 +246,9 @@ static Ns_ReturnCode DriverInit(const char *server, const char *moduleName, cons
                                 const Ns_DriverInitData *init,
                                 NsServer *servPtr, const char *path,
                                 const char *bindaddrs,
-                                const char *defserver, const char *host)
+                                const char *defserver)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(6)
-    NS_GNUC_NONNULL(7) NS_GNUC_NONNULL(9);
+    NS_GNUC_NONNULL(7);
 static bool DriverModuleInitialized(const char *module)
     NS_GNUC_NONNULL(1);
 static const ServerMap *DriverLookupHost(Tcl_DString *hostDs, Driver *drvPtr)
@@ -672,15 +672,11 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             char  *moduleName = ns_malloc(maxModuleNameLength);
             int    i;
 
-            if (host == NULL) {
-                host = Ns_InfoHostname();
-            }
-
             for (i = 0; i < nrDrivers; i++) {
                 snprintf(moduleName, maxModuleNameLength, "%s:%d", module, i);
                 status = DriverInit(server, module, moduleName, init,
                                     servPtr, path,
-                                    address, defserver, host);
+                                    address, defserver);
                 if (status != NS_OK) {
                     break;
                 }
@@ -1120,7 +1116,7 @@ static Ns_ReturnCode
 DriverInit(const char *server, const char *moduleName, const char *threadName,
            const Ns_DriverInitData *init,
            NsServer *servPtr, const char *path,
-           const char *bindaddrs, const char *defserver, const char *host)
+           const char *bindaddrs, const char *defserver)
 {
     const char     *defproto;
     Driver         *drvPtr;
@@ -1133,7 +1129,6 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     NS_NONNULL_ASSERT(init != NULL);
     NS_NONNULL_ASSERT(path != NULL);
     NS_NONNULL_ASSERT(bindaddrs != NULL);
-    NS_NONNULL_ASSERT(host != NULL);
 
     /*
      * Set the protocol and port defaults.
