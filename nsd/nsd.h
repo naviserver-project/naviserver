@@ -155,6 +155,7 @@ struct nsconf {
     int         sanitize_logfiles;
     bool        reject_already_closed_connection;
     bool        reverseproxymode;
+    bool        nocache;
 
     /*
      * Slot IDs for socket local storage.
