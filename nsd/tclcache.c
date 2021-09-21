@@ -523,7 +523,7 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
                 }
             }
 
-            if (status != TCL_OK && status != TCL_RETURN) {
+            if (unlikely((status != TCL_OK && status != TCL_RETURN) || (nsconf.nocache == NS_TRUE))) {
 
                 /*
                  * Don't cache anything, if the status code is not TCL_OK
