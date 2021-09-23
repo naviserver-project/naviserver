@@ -548,6 +548,9 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
                        : Tcl_GetString(objv[1+objc-nargs]),
                        status);*/
                 Ns_CacheDeleteEntry(entry);
+                if (nsconf.nocache == NS_TRUE && status == TCL_RETURN) {
+                    status = TCL_OK;
+                }
             } else {
                 Tcl_Obj *resultObj = Tcl_GetObjResult(interp);
 
