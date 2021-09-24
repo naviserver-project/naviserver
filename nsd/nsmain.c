@@ -688,8 +688,16 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         Ns_ConfigIntRange(NS_CONFIG_PARAMETERS, "sanitizelogfiles", 2, 0, 2);
     nsconf.reverseproxymode =
         Ns_ConfigBool(NS_CONFIG_PARAMETERS, "reverseproxymode", NS_FALSE);
-    nsconf.nocache =
-        Ns_ConfigBool(NS_CONFIG_PARAMETERS, "nocache", NS_FALSE);
+
+    {
+        /*
+         * Allow values like "none", or abbreaviated to "no"), but be open for
+         * future enhancements like e.g. "cluster".
+         */
+        const char *cacheConfig = Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "cachingmode");
+
+        nsconf.nocache = (strncmp(cacheConfig, "no", 2) == 0);
+    }
 
     /*
      * Make the result queryable.
