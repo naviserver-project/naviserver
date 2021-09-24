@@ -523,7 +523,7 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
                 }
             }
 
-            if (unlikely((status != TCL_OK && status != TCL_RETURN) || (nsconf.nocache == NS_TRUE))) {
+            if (unlikely((status != TCL_OK && status != TCL_RETURN))) {
 
                 /*
                  * Don't cache anything, if the status code is not TCL_OK
@@ -548,9 +548,13 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
                        : Tcl_GetString(objv[1+objc-nargs]),
                        status);*/
                 Ns_CacheDeleteEntry(entry);
-                if (nsconf.nocache == NS_TRUE && status == TCL_RETURN) {
+
+            } else if (unlikely(nsconf.nocache == NS_TRUE)) {
+                Ns_CacheDeleteEntry(entry);
+                if (status == TCL_RETURN) {
                     status = TCL_OK;
                 }
+
             } else {
                 Tcl_Obj *resultObj = Tcl_GetObjResult(interp);
 
@@ -733,7 +737,7 @@ CacheAppendObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
  *
  * NsTclCacheNamesObjCmd --
  *
- *      Implements "ns_cache_names". 
+ *      Implements "ns_cache_names".
  *      Return a list of Tcl cache names for the current server.
  *
  * Results:
