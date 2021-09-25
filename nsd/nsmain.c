@@ -695,8 +695,11 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
          * future enhancements like e.g. "cluster".
          */
         const char *cacheConfig = Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "cachingmode");
-
-        nsconf.nocache = (strncmp(cacheConfig, "no", 2) == 0);
+        if (cacheConfig == NULL) {
+            nsconf.nocache = NS_FALSE;
+        } else {
+            nsconf.nocache = (strncmp(cacheConfig, "no", 2) == 0);
+        }
     }
 
     /*
