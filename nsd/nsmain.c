@@ -691,7 +691,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
     {
         /*
-         * Allow values like "none", or abbreaviated to "no"), but be open for
+         * Allow values like "none", or abbreviated to "no"), but be open for
          * future enhancements like e.g. "cluster".
          */
         const char *cacheConfig = Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "cachingmode");

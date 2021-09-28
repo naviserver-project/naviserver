@@ -150,6 +150,66 @@ test ns_md-file-1.0 {ns_hmac file function} -constraints {crypto nsf} -body {
     set result
 } -result "53deaf2e6c268ed0aae583e1c6f8679eedf08fb1218914530fa09b954c4bd621"
 
+
+#######################################################################################
+#  Password hashes
+#
+# Test Cases for pbkdf2-hmac-sha1 based on RFC 6070
+# (PKCS #5_ Password-Based Key Derivation Function 2 (PBKDF2) Test Vectors)
+############################################################################
+
+test pbkdf2_hmac-sha1.0 {Testcase 1 for pbkdf2-hmac-sha1 based on RFC 6070} -body {
+    ::ns_crypto::pbkdf2_hmac -secret "password" -iterations 1 -salt "salt" -digest sha1
+} -result "0c60c80f961f0e71f3a9b524af6012062fe037a6"
+
+test pbkdf2_hmac-sha1.1 {Testcase 2 for pbkdf2-hmac-sha1 based on RFC 6070} -body {
+    ::ns_crypto::pbkdf2_hmac -secret "password" -iterations 2 -salt "salt" -digest sha1
+} -result "ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957"
+
+test pbkdf2_hmac-sha1.2 {Testcase 3 for pbkdf2-hmac-sha1 based on RFC 6070} -body {
+      ::ns_crypto::pbkdf2_hmac -secret "password" -iterations 4096 -salt "salt" -digest sha1
+} -result "4b007901b765489abead49d926f721d065a429c1"
+
+#test pbkdf2_hmac-sha1.3 {Testcase 4 for pbkdf2-hmac-sha1 based on RFC 6070; this test takes a while (11secs)
+#} -body {
+#    ::ns_crypto::pbkdf2_hmac -secret "password" -iterations 16777216 -salt "salt" -digest sha1
+#} -result "eefe3d61cd4da4e4e9945b3d6ba2158c2634e984"
+
+test pbkdf2_hmac-sha1.4 {Testcase 5 for pbkdf2-hmac-sha1 based on RFC 6070, forcing a different length} -body {
+    ::ns_crypto::pbkdf2_hmac \
+        -secret "passwordPASSWORDpassword" \
+        -iterations 4096 \
+        -salt "saltSALTsaltSALTsaltSALTsaltSALTsalt" \
+        -digest sha1 \
+        -dklen 25
+} -result "3d2eec4fe41c849b80c8d83662c0e44a8b291a964cf2f07038"
+
+test pbkdf2_hmac-sha1.5 {Testcase 6 for pbkdf2-hmac-sha1 based on RFC 6070, forcing a different length} -body {
+    ::ns_crypto::pbkdf2_hmac -secret "pass\0word" -iterations 4096 -salt "sa\0lt" -digest sha1 -dklen 16
+} -result "56fa6aa75548099dcc37d7f03425e0c3"
+
+############################################################################
+# Test Cases for pbkdf2-hmac-sha2 from
+# https://stackoverflow.com/questions/5130513/pbkdf2-hmac-sha2-test-vectors
+############################################################################
+
+test pbkdf2_hmac-sha256.0 {Testcase 1 for pbkdf2-hmac-sha256} -body {
+    ::ns_crypto::pbkdf2_hmac -secret "password" -iterations 1 -salt "salt"
+} -result "120fb6cffcf8b32c43e7225256c4f837a86548c92ccc35480805987cb70be17b"
+
+test pbkdf2_hmac-sha256.1 {Testcase 2 for pbkdf2-hmac-sha256} -body {
+    ::ns_crypto::pbkdf2_hmac -secret "password" -iterations 2 -salt "salt"
+} -result "ae4d0c95af6b46d32d0adff928f06dd02a303f8ef3c251dfd6e2d85a95474c43"
+
+test pbkdf2_hmac-sha256.2 {Testcase 3 for pbkdf2-hmac-sha256} -body {
+    ::ns_crypto::pbkdf2_hmac -secret "password" -iterations 4096 -salt "salt"
+} -result "c5e478d59288c841aa530db6845c4c8d962893a001ce4e11a4963873aa98134a"
+
+test pbkdf2_hmac-sha256.5 {Testcase 4 for pbkdf2-hmac-sha256, forcing a different length} -body {
+    ::ns_crypto::pbkdf2_hmac -secret "pass\0word" -iterations 4096 -salt "sa\0lt" -dklen 16
+} -result "89b69d0516f829893c696226650a8687"
+
+
 #######################################################################################
 #  HOTP: An HMAC-Based One-Time Password Algorithm
 #  RFC 4426 https://tools.ietf.org/html/rfc4226

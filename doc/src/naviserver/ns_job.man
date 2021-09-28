@@ -233,8 +233,8 @@ configuration file:
  } 
 [example_end]
 
-These configuration parameres define default values for
-the parameterd which can be provided to [cmd "ns_job configure"].
+These configuration parameters define default values for
+the parameters which can be provided to [cmd "ns_job configure"].
 
 [section EXAMPLES]
 
