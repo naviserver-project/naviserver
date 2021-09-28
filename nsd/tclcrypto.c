@@ -151,9 +151,9 @@ static const char * const hmacCtxType  = "ns:hmacctx";
 static Ns_ObjvValueRange posIntRange0 = {0, INT_MAX};
 # endif
 # ifdef HAVE_OPENSSL_3
-static Ns_ObjvValueRange posIntRange1 = {1, INT_MAX};
 #include <openssl/core_names.h>
 # endif
+static Ns_ObjvValueRange posIntRange1 = {1, INT_MAX};
 
 /*
  *----------------------------------------------------------------------
@@ -1886,6 +1886,159 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int U
     return TCL_ERROR;
 }
 # endif
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclCryptoPbkdf2hmacObjCmd --
+ *
+ *      Compute a password hash using PBKDF2 (Password-Based Key
+ *      Derivation Function 2). This function is used to reduce
+ *      vulnerabilities of brute-force attacks against password hashes
+ *      and is used e.g. in SCRAM (Salted Challenge Response
+ *      Authentication Mechanism).
+ *
+ *      The hash function of SCRAM is PBKDF2 [RFC2898] with HMAC() as the
+ *      pseudorandom function (PRF) and with dkLen == output length of
+ *      HMAC() == output length of H().
+ *
+ *      Implements "ns_crypto::pbkdf2_hmac".
+ *
+ * Results:
+ *      Tcl result code
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int                result, isBinary = 0, iter = 4096, dkLength = -1;
+    Tcl_Obj           *saltObj = NULL, *secretObj = NULL;
+    char              *digestName = (char *)"sha256";
+    Ns_BinaryEncoding  encoding = RESULT_ENCODING_HEX;
+    Ns_ObjvSpec opts[] = {
+        {"-binary",     Ns_ObjvBool,    &isBinary,   INT2PTR(NS_TRUE)},
+        {"-digest",     Ns_ObjvString,  &digestName, NULL},
+        {"-dklen",      Ns_ObjvInt,     &dkLength,   &posIntRange1},
+        {"-iterations", Ns_ObjvInt,     &iter,       &posIntRange1},
+        {"-salt",       Ns_ObjvObj,     &saltObj,    NULL},
+        {"-secret",     Ns_ObjvObj,     &secretObj,  NULL},
+        {"-encoding",   Ns_ObjvIndex,   &encoding,   binaryencodings},
+        {NULL, NULL, NULL, NULL}
+    };
+    /*
+      ############################################################################
+      # Test Cases for pbkdf2-hmac-sha1 based on RFC 6070
+      # (PKCS #5_ Password-Based Key Derivation Function 2 (PBKDF2) Test Vectors)
+      ############################################################################
+      ::ns_crypto::pbkdf2_hmac -secret "password" -iterations 1 -salt "salt" -digest sha1
+      0c60c80f961f0e71f3a9b524af6012062fe037a6
+
+      ::ns_crypto::pbkdf2_hmac -secret "password" -iterations 2 -salt "salt" -digest sha1
+      ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957
+
+      ::ns_crypto::pbkdf2_hmac -secret "password" -iterations 4096 -salt "salt" -digest sha1
+      4b007901b765489abead49d926f721d065a429c1
+
+      ::ns_crypto::pbkdf2_hmac -secret "password" -iterations 16777216 -salt "salt" -digest sha1
+      eefe3d61cd4da4e4e9945b3d6ba2158c2634e984
+
+      ::ns_crypto::pbkdf2_hmac -secret "pass\0word" -iterations 4096 -salt "sa\0lt" -digest sha1 -dklen 16
+      56fa6aa75548099dcc37d7f03425e0c3
+
+
+      ############################################################################
+      # Test Cases for pbkdf2-hmac-sha2 from
+      * https://stackoverflow.com/questions/5130513/pbkdf2-hmac-sha2-test-vectors
+      ############################################################################
+
+      ::ns_crypto::pbkdf2_hmac -secret "password" -iterations 1 -salt "salt"
+      120fb6cffcf8b32c43e7225256c4f837a86548c92ccc35480805987cb70be17b
+
+      ::ns_crypto::pbkdf2_hmac -secret "password" -iterations 2 -salt "salt"
+      ae4d0c95af6b46d32d0adff928f06dd02a303f8ef3c251dfd6e2d85a95474c43
+
+      ::ns_crypto::pbkdf2_hmac -secret "password" -iterations 4096 -salt "salt"
+      c5e478d59288c841aa530db6845c4c8d962893a001ce4e11a4963873aa98134a
+
+      ::ns_crypto::pbkdf2_hmac -secret "pass\0word" -iterations 4096 -salt "sa\0lt" -dklen 16
+      89b69d0516f829893c696226650a8687
+
+      ############################################################################
+      # Performance considerations
+      ############################################################################
+
+      # PostgreSQL 10 uses 4096 (very low value)
+      time {::ns_crypto::pbkdf2_hmac -secret "pass\0word" -iterations 4096 -salt "sa\0lt" -dklen 16}
+      4172 microseconds per iteration
+
+      # Recommendation from RFC 7677
+      time {::ns_crypto::pbkdf2_hmac -secret "pass\0word" -iterations 15000 -salt "sa\0lt" -dklen 16}
+      16027 microseconds per iteration
+
+      # Comparison with higher value
+      time {::ns_crypto::pbkdf2_hmac -secret "pass\0word" -iterations 65536 -salt "sa\0lt" -dklen 16}
+      65891 microseconds per iteration
+   */
+
+    if (Ns_ParseObjv(opts, NULL, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (saltObj == NULL) {
+        Ns_TclPrintfResult(interp, "no -salt specified");
+        result = TCL_ERROR;
+
+    } else if (secretObj == NULL) {
+        Ns_TclPrintfResult(interp, "no -secret specified");
+        result = TCL_ERROR;
+
+    } else {
+        const EVP_MD  *md;
+
+        /*
+         * Look up the Message Digest from OpenSSL
+         */
+        result = GetDigest(interp, digestName, &md);
+        if (result == TCL_OK) {
+            Tcl_DString          saltDs, secretDs;
+            int                  saltLength, secretLength;
+            const unsigned char *saltString, *secretString;
+            unsigned char       *out = NULL;
+
+            /*
+             * All input parameters are valid, get salt and secret
+             */
+            Tcl_DStringInit(&saltDs);
+            Tcl_DStringInit(&secretDs);
+            if (dkLength == -1) {
+                dkLength = EVP_MD_size(md);
+            }
+            out = ns_malloc((size_t)dkLength);
+
+            saltString   = Ns_GetBinaryString(saltObj,   isBinary == 1, &saltLength,   &saltDs);
+            secretString = Ns_GetBinaryString(secretObj, isBinary == 1, &secretLength, &secretDs);
+
+            if (PKCS5_PBKDF2_HMAC((const char *)secretString, secretLength,
+                                  saltString, saltLength,
+                                  iter, md,
+                                  dkLength, out) == 1) {
+                Tcl_SetObjResult(interp, EncodedObj(out, (size_t)dkLength, NULL, encoding));
+                result = TCL_OK;
+            } else {
+                Ns_TclPrintfResult(interp, "could not derive key");
+                result = TCL_ERROR;
+            }
+            if (out != NULL) {
+                ns_free(out);
+            }
+        }
+    }
+    return result;
+}
 
 
 
