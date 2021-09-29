@@ -2266,16 +2266,16 @@ UpdateInterp(NsInterp *itPtr)
      * state. The Rd lock is here, since we are just reading the protected
      * variables.
      *
-     * In the codeblock below, we want to avoid running the blueprint update
+     * In the code block below, we want to avoid running the blueprint update
      * under the lock. Therefore, we copy the blueprint script with ns_strdup.
      */
     Ns_RWLockRdLock(&servPtr->tcl.lock);
     if (itPtr->epoch != servPtr->tcl.epoch) {
-        epoch        = servPtr->tcl.epoch;
+        epoch = servPtr->tcl.epoch;
         /*
          * The epoch has changed. Perform the interpreter update now, when
-         * either (a) the interpreter is fresh, or when the concurrently
-         * running updates are below maxConcurrentUpdates.
+         * either (a) the interpreter is fresh, or (b) when the concurrently
+         * running updates are below "maxConcurrentUpdates".
          */
         doUpdateNow = (itPtr->epoch < 1) || (concurrentUpdates < maxConcurrentUpdates);
         if (doUpdateNow) {
@@ -2292,12 +2292,14 @@ UpdateInterp(NsInterp *itPtr)
         if (doUpdateNow) {
             Ns_Time startTime, now, diffTime;
 
+            Ns_Log(Notice, "start update interpreter %s to epoch %d, concurrent %d",
+                   servPtr->server, epoch, concurrentUpdates);
             Ns_GetTime(&startTime);
             result = Tcl_EvalEx(itPtr->interp, script,
                                 scriptLength, TCL_EVAL_GLOBAL);
             Ns_GetTime(&now);
             Ns_DiffTime(&now, &startTime, &diffTime);
-            Ns_Log(Notice, "update interpreter %s to epoch %d, trace %s, time "
+            Ns_Log(Notice, "update interpreter %s to epoch %d done, trace %s, time "
                    NS_TIME_FMT " secs concurrent %d",
                    servPtr->server, epoch,
                    GetTraceLabel(itPtr->currentTrace),
@@ -2311,8 +2313,8 @@ UpdateInterp(NsInterp *itPtr)
             concurrentUpdates--;
             Ns_MutexUnlock(&updateLock);
         } else {
-            Ns_Log(Notice, "========= postponed update, %s epoch %d interpreter",
-                   servPtr->server, epoch);
+            Ns_Log(Notice, "postponed update, %s epoch %d interpreter (concurrent %d max %d)",
+                   servPtr->server, epoch, concurrentUpdates, maxConcurrentUpdates);
         }
     }
 
