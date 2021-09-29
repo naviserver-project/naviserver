@@ -498,20 +498,27 @@ for a .php file in the given path an info message.
 This example shows how to expire all HTML files after an hour:
 
 [example_begin]
-  if {![lb]nsv_exists filters installed[rb]} {
-    nsv_set filters installed 1
-    ns_register_filter postauth GET /*.html ExpireSoon 3600
-  }
- 
-  proc ExpireSoon {seconds why} {
-    ns_set update [lb]ns_conn outputheaders[rb] Expires [lb]ns_httptime [lb]expr {$seconds + [lb]ns_time[rb]}[rb][rb]
-  }
+ if {![lb]nsv_exists filters installed[rb]} {
+   nsv_set filters installed 1
+   ns_register_filter postauth GET /*.html ExpireSoon 3600
+ }
+
+ proc ExpireSoon {seconds why} {
+   ns_set update [lb]ns_conn outputheaders[rb] Expires [lb]ns_httptime [lb]expr {$seconds + [lb]ns_time[rb]}[rb][rb]
+ }
 [example_end]
 
-[para] The command [cmd ns_info] [arg requestprocs] can be used to list the
-currently registered procs.
+
+[para] The command [cmd ns_server] can be used to list the
+currently registered [term filters], [term traces] or [term procs].
+
+[example_begin]
+  ns_server filters
+  ns_server traces
+  ns_server requestprocs
+[example_end]
 
 
-[see_also ns_adp ns_conn ns_info ns_shortcut_filter]
+[see_also ns_adp ns_conn ns_server ns_shortcut_filter]
 [keywords "server built-in" ADP filter request callback fastpath]
 [manpage_end]
