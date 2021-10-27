@@ -1185,6 +1185,7 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                                 } else {
                                     Tcl_SetObjResult(interp, dictValueObj);
                                 }
+                                Tcl_DecrRefCount(dictObj);
 
                             } else if (opt == CExistsIdx) {
                                 /*
