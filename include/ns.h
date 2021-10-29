@@ -273,15 +273,15 @@ typedef struct Ns_CacheSearch {
     Tcl_HashSearch hsearch;
 } Ns_CacheSearch;
 
-typedef struct _Ns_Cache         Ns_Cache;
-typedef struct _Ns_Entry         Ns_Entry;
-typedef struct _Ns_Cls          *Ns_Cls;
-typedef struct _Ns_Sls          *Ns_Sls;
+typedef struct Ns_Cache         Ns_Cache;
+typedef struct Ns_Entry         Ns_Entry;
+typedef struct Ns_Cls          *Ns_Cls;
+typedef struct Ns_Sls          *Ns_Sls;
 typedef void                     Ns_OpContext;
-typedef struct _Ns_TaskQueue     Ns_TaskQueue;
-typedef struct _Ns_Task          Ns_Task;
-typedef struct _Ns_EventQueue    Ns_EventQueue;
-typedef struct _Ns_Event         Ns_Event;
+typedef struct Ns_TaskQueue     Ns_TaskQueue;
+typedef struct Ns_Task          Ns_Task;
+typedef struct Ns_EventQueue    Ns_EventQueue;
+typedef struct Ns_Event         Ns_Event;
 
 #define NS_CACHE_MAX_TRANSACTION_DEPTH 16
 
@@ -424,7 +424,7 @@ typedef struct Ns_Request {
 /*
  * Typedef for URL components
  */
-typedef struct _Ns_URL {
+typedef struct Ns_URL {
     char *protocol;
     char *userinfo;
     char *host;
