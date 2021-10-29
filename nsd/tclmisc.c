@@ -537,10 +537,11 @@ NsTclTrimObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 {
     int               result = TCL_OK, substInt = 0;
     Tcl_Obj          *textObj;
-    char             *delimiterString = NULL;
+    char             *delimiterString = NULL, *prefixString = NULL;
     Ns_ObjvSpec       opts[] = {
         {"-subst",     Ns_ObjvBool,   &substInt,     INT2PTR(NS_TRUE)},
         {"-delimiter", Ns_ObjvString, &delimiterString, NULL},
+        {"-prefix",    Ns_ObjvString, &prefixString, NULL},
         {"--",         Ns_ObjvBreak,  NULL,         NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -551,6 +552,14 @@ NsTclTrimObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
     };
 
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (delimiterString != NULL && prefixString != NULL) {
+        Ns_TclPrintfResult(interp, "invalid arguments: either -prefix or -delimiter can be specified");
+        result = TCL_ERROR;
+
+    } else if (delimiterString != NULL && strlen(delimiterString) != 1) {
+        Ns_TclPrintfResult(interp, "invalid arguments: -delimiter must be a single character");
         result = TCL_ERROR;
 
     } else {
@@ -567,32 +576,56 @@ NsTclTrimObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         p = Tcl_GetStringFromObj(textObj, &textLength);
         endOfString = p + textLength;
 
-        while(likely(p < endOfString)) {
-            const char *to;
-            char       *j;
-            ptrdiff_t   length;
+        if (prefixString != NULL) {
+            size_t prefixLength = strlen(prefixString);
 
-            for (j = p; likely(j < endOfString); j++) {
-                if (CHARTYPE(space, *j) != 0) {
-                    continue;
+            while(likely(p < endOfString)) {
+                const char *eolString;
+                char       *j;
+                ptrdiff_t   length;
+
+                if (strncmp(p, prefixString, prefixLength) == 0) {
+                    j = p + prefixLength;
+                } else {
+                    j = p;
                 }
-                if (delimiterString != NULL && *j == *delimiterString) {
-                    j++;
+                eolString = strchr(j, INTCHAR('\n'));
+                if (likely(eolString != NULL)) {
+                    length = (eolString - j) + 1;
+                } else {
+                    length = (endOfString - j);
+                }
+                Tcl_DStringAppend(dsPtr, j, (int)length);
+
+                p = j + length;
+            }
+        } else {
+            while(likely(p < endOfString)) {
+                const char *eolString;
+                char       *j;
+                ptrdiff_t   length;
+
+                for (j = p; likely(j < endOfString); j++) {
+                    if (CHARTYPE(space, *j) != 0) {
+                        continue;
+                    }
+                    if (delimiterString != NULL && *j == *delimiterString) {
+                        j++;
+                        break;
+                    }
                     break;
                 }
-                break;
-            }
-            to = strchr(j, INTCHAR('\n'));
-            if (likely(to != NULL)) {
-                length = (to - j) + 1;
-            } else {
-                length = (endOfString - j);
-            }
-            Tcl_DStringAppend(dsPtr, j, (int)length);
+                eolString = strchr(j, INTCHAR('\n'));
+                if (likely(eolString != NULL)) {
+                    length = (eolString - j) + 1;
+                } else {
+                    length = (endOfString - j);
+                }
+                Tcl_DStringAppend(dsPtr, j, (int)length);
 
-            p = j + length;
+                p = j + length;
+            }
         }
-
         Tcl_DStringResult(interp, dsPtr);
 
     }

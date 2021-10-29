@@ -40,6 +40,43 @@ test ns_fmttime-1.1 {ns_rand with 0 arg - float} -body {
 } -result {2019 00:00}
 
 #######################################################################################
+#  test ns_trim
+#######################################################################################
+
+test ns_trim-0.0 {ns_trim without arguments} -body {
+    ns_trim
+} -returnCodes error -result {wrong # args: should be "ns_trim ?-subst? ?-delimiter delimiter? ?-prefix prefix? ?--? text"}
+test ns_trim-0.1 {ns_trim with invalid delimiter} -body {
+    ns_trim -delimiter aa "hello world"
+} -returnCodes error -result {invalid arguments: -delimiter must be a single character}
+test ns_trim-0.2 {ns_trim with delimiter and prefix} -body {
+    ns_trim -delimiter a -prefix b "hello world"
+} -returnCodes error -result {invalid arguments: either -prefix or -delimiter can be specified}
+
+test ns_trim-1.1 {nothing to trim} -body {
+    string map {\n \\n} [ns_trim "line1\nline2"]
+} -result {line1\nline2}
+test ns_trim-1.2 {trim spaces} -body {
+    string map {\n \\n} [ns_trim " line1\n  line2\nline3\n "]
+} -result {line1\nline2\nline3\n}
+test ns_trim-1.3 {trim with delimiter} -body {
+    string map {\n \\n} [ns_trim -delimiter : " : line1\n  : line2\n    : line3\n :"]
+} -result { line1\n line2\n line3\n}
+test ns_trim-1.4 {trim with delimiter and leading newline} -body {
+    string map {\n \\n} [ns_trim -delimiter : "\n : line1\n  : line2\n    : line3\n :"]
+} -result { line1\n line2\n line3\n}
+test ns_trim-1.5 {trim with delimiter and no occurence of delimiter} -body {
+    string map {\n \\n} [ns_trim -delimiter ! "\n : line1\n  : line2\n    : line3\n :"]
+} -result {: line1\n: line2\n: line3\n:}
+
+test ns_trim-2.1 {trim with prefix} -body {
+    string map {\n \\n} [ns_trim -prefix "> " "\n>  line1\nline2\n>   line3\n> "]
+} -result {\n line1\nline2\n  line3\n}
+test ns_trim-2.2 {trim with delimiter and no occurence of prefix} -body {
+    string map {\n \\n} [ns_trim -prefix > "\n : line1\n  : line2\n    : line3\n :"]
+} -result {\n : line1\n  : line2\n    : line3\n :}
+
+#######################################################################################
 #  test ns_quotehtml
 #######################################################################################
 
