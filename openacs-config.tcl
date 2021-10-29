@@ -9,37 +9,53 @@
 ns_log notice "nsd.tcl: starting to read configuration file..."
 
 #---------------------------------------------------------------------
-# Change the HTTP and HTTPS port to e.g. 80 and 443 for production use.
-set httpport		8000
-
+# Port settings:
+#    Change the HTTP and HTTPS port to e.g. 80 and 443 for production
+#    use.  Setting the HTTPS port to 0 means to active the https
+#    driver for ns_http, but do not listen on this port.
 #
-# Setting the HTTPS port to 0 means to active the https driver for
-# ns_http, but do not listen on this port.
-#
-#set httpsport		0
-#set httpsport		8443
-
-# The hostname and address should be set to actual values.
-# setting the address to 0.0.0.0 means NaviServer listens on all interfaces
-set hostname		localhost
-set address_v4		127.0.0.1  ;# listen on loopback via IPv4
-#set address_v4		0.0.0.0    ;# listen on all IPv4 addresses
-#set address_v6		::1        ;# listen on loopback via IPv6
-#set address_v6		::0        ;# listen on all IPv6 addresses
-
 # Note: If port is privileged (usually < 1024), OpenACS must be
-# started by root, and the run script must contain the flag
-# '-b address:port' which matches the address and port
-# as specified above.
+# started by root, and the run script must contain the flag '-b
+# address:port' which matches the address and port as specified below.
+#
+#     httpsport		0
+#     httpsport		8443
+#
+# The "hostname" and "ipaddress" should be set to actual values such
+# that the server is reachable over the Internet. The default values
+# are fine for testing purposes. One can specify for the "ipaddress"
+# also multiple values (e.g. IPv4 and IPv6).
+#
+#    hostname		localhost
+#    ipaddress		127.0.0.1  ;# listen on loopback via IPv4
+#    ipaddress		0.0.0.0    ;# listen on all IPv4 addresses
+#    ipaddress  	::1        ;# listen on loopback via IPv6
+#    ipaddress		::0        ;# listen on all IPv6 addresses
 
-set server		"openacs"
+# All default variables in defaultConfig can be overloaded by
+# 1) setting these variables in this file (highest precedence)
+# 2) setting these variables as environment variables with
+#    the "oacs_" prefix (suitable for e.g. docker setups)
+# 3) set the variables from the default values.
+#
+set defaultConfig {
+    hostname	localhost
+    ipaddress	127.0.0.1
+    httpport	8000
+    httpsport	""
+
+    server     "openacs"
+    serverroot	/var/www/$server
+    logroot	$serverroot/log/
+    homedir	/usr/local/ns
+    bindir	$homedir/bin
+    db_name	$server
+    db_user	$server
+    db_host	localhost
+    db_port	""
+}
+
 set servername		"New OpenACS Installation - Development"
-
-set serverroot		/var/www/$server
-set logroot		$serverroot/log/
-
-set homedir		/usr/local/ns
-set bindir		$homedir/bin
 
 # Are we running behind a proxy?
 set proxy_mode		false
@@ -47,14 +63,9 @@ set proxy_mode		false
 #---------------------------------------------------------------------
 # Which database do you want? PostgreSQL or Oracle?
 set database              postgres
-set db_name               $server
 
 if { $database eq "oracle" } {
     set db_password           "mysitepassword"
-} else {
-    set db_host               localhost
-    set db_port               ""
-    set db_user               $server
 }
 
 #---------------------------------------------------------------------
@@ -65,14 +76,6 @@ set verboseSQL false
 
 set max_file_upload_mb        20
 set max_file_upload_min        5
-
-#---------------------------------------------------------------------
-# Set environment variables HOME and LANG. HOME is needed since
-# otherwise some programs called via exec might try to write into the
-# root home directory.
-#
-set env(HOME) $homedir
-set env(LANG) en_US.UTF-8
 
 #---------------------------------------------------------------------
 # Set headers that should be included in every response from the
@@ -97,18 +100,23 @@ append nsssl_extraheaders $nssock_extraheaders
 # Nothing below this point need be changed in a default install.
 #
 ######################################################################
+#
+# For all potential variables, allow environment variables such as
+# "oacs_httpport" or "oacs_ipaddress" to override local values.
+#
+source [file dirname [ns_info nsd]]/../tcl/init.tcl
+ns_configure_variables "oacs_" $defaultConfig
+
+#---------------------------------------------------------------------
+# Set environment variables HOME and LANG. HOME is needed since
+# otherwise some programs called via exec might try to write into the
+# root home directory.
+#
+set env(HOME) $homedir
+set env(LANG) en_US.UTF-8
 
 
 ns_logctl severity "Debug(ns:driver)" $debug
-
-set addresses {}
-if {[info exists address_v4]} {lappend addresses $address_v4}
-if {[info exists address_v6]} {lappend addresses $address_v6}
-
-if {[llength $addresses] == 0} {
-    ns_log error "Either an IPv4 or IPv6 address must be specified"
-    exit
-}
 
 #---------------------------------------------------------------------
 #
@@ -236,8 +244,8 @@ ns_section ns/modules {
     # Load networking modules named "nssock" and/or "nsssl" depending
     # on existence of Tcl variables "httpport" and "httpsport".
     #
-    if {[info exists httpport]}  { ns_param nssock ${bindir}/nssock }
-    if {[info exists httpsport]} { ns_param nsssl  ${bindir}/nsssl }
+    if {[info exists httpport] && $httpport ne ""}  { ns_param nssock ${bindir}/nssock }
+    if {[info exists httpsport] && $httpsport ne ""} { ns_param nsssl  ${bindir}/nsssl }
 }
 
 #---------------------------------------------------------------------
@@ -249,7 +257,7 @@ if {[info exists httpport]} {
     #
     ns_section ns/module/nssock {
         ns_param	defaultserver	$server
-        ns_param	address		$addresses
+        ns_param	address		$ipaddress
         ns_param	hostname	$hostname
         ns_param	port		$httpport                ;# default 80
         ns_param	maxinput	${max_file_upload_mb}MB  ;# 1MB, maximum size for inputs (uploads)
@@ -296,7 +304,7 @@ if {[info exists httpport]} {
     #
     ns_section ns/module/nssock/servers {
         ns_param $server $hostname
-        foreach address $addresses {
+        foreach address $ipaddress {
             ns_param $server $address
         }
     }
@@ -312,7 +320,7 @@ if {[info exists httpsport]} {
     #
     ns_section ns/module/nsssl {
         ns_param defaultserver	$server
-        ns_param address	$addresses
+        ns_param address	$ipaddress
         ns_param port		$httpsport
         ns_param hostname	$hostname
         ns_param ciphers	"ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384"
@@ -341,7 +349,7 @@ if {[info exists httpsport]} {
     #
     ns_section ns/module/nsssl/servers {
         ns_param $server $hostname
-        foreach address $addresses {
+        foreach address $ipaddress {
             ns_param $server $address
         }
     }

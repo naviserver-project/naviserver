@@ -54,6 +54,43 @@ if {[info exists ::auto_path] == 0} {
 } else {
     set ::auto_path [concat [file join [ns_info home] lib] $::auto_path]
 }
+#
+# Allow environment variables (such as "oacs_httpport" or
+# "oacs_ipaddress") to overload predefined variables specified via
+# Tcl dict.
+#
+proc ns_configure_variables {prefix defaultConfig} {
+
+    foreach var [dict keys $defaultConfig] {
+        #
+        # If the variable is already set in the script, take this
+        # value.
+        #
+        if {[uplevel [list info exists var]]} {
+            continue
+        }
+        #
+        # If we have an environment variable for this variable set,
+        # take it.
+        #
+        if {[info exists ::env(${prefix}$var)]} {
+            set value $::env(${prefix}$var)
+            ns_log notice "setting $var to '$value' from environment variable"
+        } elseif {[dict exists $defaultConfig $var]} {
+            #
+            # Otherwise set the variable to the default from the dict.
+            #
+            set value [dict get $defaultConfig $var]
+            ns_log notice "setting $var to '$value' from default configuration"
+        } else {
+            continue
+        }
+        #
+        # Use "subst" to support $substitutions in the values.
+        #
+        uplevel [list set $var [uplevel [list subst $value]]]
+    }
+}
 
 # Local variables:
 #    mode: tcl
