@@ -54,11 +54,15 @@ with a constant string.
 [call [cmd ns_trim] \
         [opt [option "-subst"]] \
         [opt [option "-delimiter [arg delimiter]"]] \
+        [opt [option "-prefix [arg prefix]"]] \
         [arg text]]
 
-Multi-line trim with optional delimiter and builtin substitution
-(latter is not really needed but convenient).  Trim leading spaces on
-multiple lines. The delimiter has to be a single character.
+Multi-line trim with optional [arg delimiter] or [arg prefix].
+Either one of these can be used. If none are specified,
+all the trailing spaces are trimmed (as it is the case when the
+delimiter is used. The delimiter has to be a single character.
+Optionally, substitution can be used, which is applied before
+trimming (not really needed but sometimes convenient).
 
 [para]
 The command is e.g. useful, when the indentation in the source code
@@ -116,6 +120,14 @@ HTML markup, etc.).
     <li> two
     <li> three
   </ul>
+
+ ns_trim -prefix "> " {
+ > line 1
+ > line 2 
+ }
+  
+ line 1
+ line 2 
 [example_end]
 
 [see_also ns_hrefs]
