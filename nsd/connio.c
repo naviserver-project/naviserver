@@ -115,11 +115,14 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fl
     Ns_DStringInit(&gzDs);
 
     /*
-     * Transcode from utf8 if necessary.
+     * Transcode to charset if necessary. In earlier versions, the
+     * transcoding was guarded by "!NsEncodingIsUtf8()", which was an
+     * optimization. However, we cannot assume that the internal Tcl
+     * UTF-8 is the same as an external, especially for emoji and
+     * other multibyte characters.
      */
 
     if (connPtr->outputEncoding != NULL
-        && ! NsEncodingIsUtf8(connPtr->outputEncoding)
         && nbufs > 0
         && bufs[0].iov_len > 0u) {
         int i;
