@@ -240,13 +240,13 @@ interpreter was last initialized.
 
 [section {Configuration}]
 
-The following global configuration parameter influence the default
+The following global configuration parameters can influence the default
 behavior of [cmd ns_ictl]
 
 [example_begin]
  ns_section  ns/server {
    # Activate/Deactivate concurrent interpreter create commands
-   ns_param concurrentinterpcreate true ;# default: false
+   #ns_param concurrentinterpcreate false ;# default: true
 
    # Define maximum number of concurrent automatic update commands
    # when epoch in incresed (e.g. on "ns_eval" commands)

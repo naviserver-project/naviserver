@@ -996,7 +996,9 @@ NsAdpLogError(NsInterp *itPtr)
                 dot = "...";
             }
             while (((unsigned char)adp[len] & 0xC0u) == 0x80u) {
-                /* NB: Avoid truncating multi-byte UTF-8 character. */
+                /*
+                 * Avoid truncating multi-byte UTF-8 character.
+                 */
                 len--;
                 dot = "...";
             }

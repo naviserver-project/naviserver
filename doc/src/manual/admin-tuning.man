@@ -226,8 +226,8 @@ NaviServer in a certain application specific context.
 interpreter create operations.  Versions of Tcl up to at least 8.5 are
 known to crash in case two threads create interpreters at the same
 time. These crashes were hard to reproduce, but serializing
-interpreter creation helped. Probably it is possible to allow
-concurrent interpreter create operations in Tcl 8.6.
+interpreter creation helped. For Tcl versions starting with
+Tcl 8.6, the default is set to true.
 
 [example_begin]
  ns_section ns/parameters {
