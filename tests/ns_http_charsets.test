@@ -308,7 +308,7 @@ test encoding_ns_http-1.1 {
     Send body with ns_return and charset utf-8
 } -constraints usingExternalToUtf -setup {
     ns_register_proc GET /encoding {
-        ns_return 200 "text/plain; charset=utf-8" "äöü"
+        ns_return 200 "text/plain; charset=utf-8" "äöü😃"
     }
 } -body {
     set result [ns_http run [ns_config test listenurl]/encoding]
@@ -319,7 +319,7 @@ test encoding_ns_http-1.1 {
         [dict get $result body]
 } -cleanup {
     ns_unregister_op GET /encoding
-} -result [list 200 "text/plain; charset=utf-8" 6 "äöü"]
+} -result [list 200 "text/plain; charset=utf-8" 10 "äöü😃"]
 
 
 test encoding_ns_http-1.2 {
