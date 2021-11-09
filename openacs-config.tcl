@@ -193,9 +193,9 @@ ns_section ns/parameters {
     # Versions up to at least Tcl 8.5 are known that these might
     # crash in case two threads create interpreters at the same
     # time. These crashes were hard to reproduce, but serializing
-    # interpreter creation helped. Probably it is possible to
-    # allow concurrent interpreter create operations in Tcl 8.6.
-    #ns_param        concurrentinterpcreate true   ;# default: false
+    # interpreter creation helped. Starting with Tcl 8.6,
+    # the default is set to "true".
+    #ns_param        concurrentinterpcreate false   ;# default: true
 
     # Enforce sequential thread initialization. This is not really
     # desirably in general, but might be useful for hunting strange

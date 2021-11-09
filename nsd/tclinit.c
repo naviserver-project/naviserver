@@ -217,7 +217,13 @@ Nsd_Init(Tcl_Interp *interp)
 void
 NsConfigTcl(void)
 {
-    concurrent_interp_create = Ns_ConfigBool(NS_CONFIG_PARAMETERS, "concurrentinterpcreate", NS_FALSE);
+    concurrent_interp_create = Ns_ConfigBool(NS_CONFIG_PARAMETERS, "concurrentinterpcreate",
+#ifdef NS_TCL_PRE86
+                                             NS_FALSE
+#else
+                                             NS_TRUE
+#endif
+                                             );
     maxConcurrentUpdates = Ns_ConfigIntRange(NS_CONFIG_PARAMETERS, "maxconcurrentupdates", 1000, 1, INT_MAX);
 }
 
