@@ -757,6 +757,8 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
     case INTERPRETSQLFILE:
         {
             const char *value;
+            int         valueLength = 0;
+            Tcl_DString ds;
 
             /*
              * The following commands require a 3rd argument.
@@ -780,7 +782,15 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
             }
             Ns_DStringFree(&handlePtr->dsExceptionMsg);
             handlePtr->cExceptionCode[0] = '\0';
-            value = Tcl_GetString(objv[3]);
+            value = Tcl_GetStringFromObj(objv[3], &valueLength);
+
+            /*
+             * Convert data to external UTF-8... and lets hope, the
+             * driver can handle this. We might have to tailor this by
+             * driver (needs additional configuration options).
+             */
+            Tcl_UtfToExternalDString(NULL, value, valueLength, &ds);
+            value = ds.string;
 
             /*if (cmd != GETROW) {
                 fprintf(stderr, "CMD %s: <%s> (%s)\n", Tcl_GetString(objv[1]), value,
@@ -876,6 +886,8 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
                 /* should not happen */
                 assert(cmd && 0);
             }
+
+            Tcl_DStringFree(&ds);
         }
         break;
 
