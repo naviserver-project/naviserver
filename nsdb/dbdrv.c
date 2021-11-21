@@ -334,9 +334,13 @@ Ns_DbDriverDbType(Ns_DbHandle *handle)
 int
 Ns_DbDML(Ns_DbHandle *handle, const char *sql)
 {
-    const DbDriver *driverPtr = NsDbGetDriver(handle);
+    const DbDriver *driverPtr;
     int             status = NS_ERROR;
 
+    NS_NONNULL_ASSERT(handle != NULL);
+    NS_NONNULL_ASSERT(sql != NULL);
+
+    driverPtr = NsDbGetDriver(handle);
     if (driverPtr != NULL && handle->connected) {
 
         if (driverPtr->execProc != NULL) {

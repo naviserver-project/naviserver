@@ -1011,7 +1011,7 @@ Ns_ObjvMemUnit(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  * Ns_ObjvSet --
  *
  *      Consume exactly one argument, returning a pointer to the
- *      Ns_Time into *spec->dest.
+ *      Ns_Set into *spec->dest.
  *
  * Results:
  *      TCL_OK or TCL_ERROR.
