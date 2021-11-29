@@ -21,7 +21,7 @@ The [option "-timeout [arg t]"] option specifies how long to wait for the
 connect to be made.
 The value [arg t] can be specified in the form
 [arg secs[opt :microsecs]], or [arg secs.fraction],
-or as a number with the time units ms, s, m, d.
+or as a number with a time unit.
 
 [section {COMMANDS}]
 
@@ -48,6 +48,6 @@ or as a number with the time units ms, s, m, d.
 [example_end]
 
 
-[see_also ns_sockcallback ns_sockcheck]
+[see_also ns_sockcallback ns_sockcheck ns_time]
 [keywords "global built-in" NaviServer socket]
 [manpage_end]

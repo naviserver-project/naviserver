@@ -17,7 +17,6 @@ Sleeps for a specified time period.
 [call [cmd ns_sleep] [arg duration]]
 
 The [arg duration] can be specified with time units (per default seconds).
-Valid time units are ms, s, m, d.
 
 [list_end]
 
@@ -28,7 +27,7 @@ Valid time units are ms, s, m, d.
 [example_end]
 
 
-[see_also nsd]
+[see_also nsd ns_time]
 [keywords "global built-in" time]
 
 [manpage_end]

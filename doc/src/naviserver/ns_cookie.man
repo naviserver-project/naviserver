@@ -112,7 +112,7 @@ The cookie will expire the given [arg time], after which the client will no
 longer send the cookie back to the server.
 The [arg time] value can be specified in the form
 [arg secs[opt :microsecs]], or [arg secs.fraction],
-or as a number with the time units ms, s, m, d.
+or as a number with a time unit.
 If [arg time] is large it is treated
 as the absolute time in the future when the cookie should expire. The special
 value [emph -1] may be used to indicate that the cookie should never
@@ -170,7 +170,7 @@ Track all user agents which ever vist out site:
  ns_register_filter preauth GET /* browser_tracking_filter
 [example_end]
 
-[see_also ns_cookiecharset ]
+[see_also ns_cookiecharset ns_time]
 [keywords "server built-in" cookie session]
 
 [manpage_end]

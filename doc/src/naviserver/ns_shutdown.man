@@ -29,7 +29,7 @@ it is specified, it must be a value >= 0.
 Time to wait before shutting down the server.
 The [arg timeout] can be specified in the form
 [arg secs[opt :microsecs]], or [arg secs.fraction],
-or as a number with the time units ms, s, m, d.
+or as a number with a time unit.
 
 [para]
 [option -restart]
@@ -44,10 +44,8 @@ send an interrupt signal to the server, leading to a nonzero exit code.
  ns_shutdown 30s
 [example_end]
 
-
-[see_also ns_kill]
+[see_also ns_kill ns_time]
 [keywords "server built-in" restart]
-
 
 [manpage_end]
 

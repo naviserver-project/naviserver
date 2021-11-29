@@ -373,7 +373,7 @@ Specifies for how long to keep result in the cache, in seconds or absolute time.
 
 [opt_def -expires [arg t]]
 Specifies that the result of evaluating the [term ADP] page should be cached
-for [arg t] seconds (or some other specified time unit such as ms, s, m, d).
+for [arg t] seconds (or a value with a time unit).
 If  [arg t] is large, it expresses a time in the
 future (expressed as seconds after the [term epoch]).
 
@@ -519,6 +519,6 @@ currently registered [term filters], [term traces] or [term procs].
 [example_end]
 
 
-[see_also ns_adp ns_conn ns_server ns_shortcut_filter]
+[see_also ns_adp ns_conn ns_server ns_shortcut_filter ns_time]
 [keywords "server built-in" ADP filter request callback fastpath]
 [manpage_end]

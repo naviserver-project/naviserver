@@ -34,7 +34,7 @@ The following options are used for several commands below.
 The time to wait for some other thread to compute the cache value.
 The value [arg t] can be specified in the form
 [arg secs[opt :microsecs]], or [arg secs.fraction],
-or as a number with the time units ms, s, m, d.
+or as a number with a time unit.
 
 [opt_def -expires [arg t]]
 A time in the future when the cache entry expires. The expired entry will be
@@ -43,7 +43,7 @@ deleted only when retrieved, e.g. via [cmd ns_cache_eval].
 [para]
 The value [arg t] can be specified in the form
 [arg secs[opt :microsecs]], or [arg secs.fraction],
-or as a number with the time units ms, s, m, d.
+or as a number with a time unit.
 Small values of [arg t] are treated as offsets, large values as absolute times.
 
 [list_end]
@@ -391,7 +391,7 @@ first completes.
 [example_end]
 
 
-[see_also ns_memoize nsv ns_time ns_urlspace]
+[see_also ns_memoize nsv ns_time ns_urlspace ns_time]
 [keywords "server built-in" "global built-in" cache fastpath]
 
 [manpage_end]
