@@ -93,7 +93,7 @@ outgoing packets.  When [option -sendtimeout] has the value of 0, a
 read operation might return the empty string. A value larger than 0
 might block the event processing for the specified time.
 All timeouts values are specified in the form [arg secs[opt :microsecs]], or
-[arg secs.fraction] or as a number with the time units ms, s, m, d.
+[arg secs.fraction] or as a number with a time unit.
 
 [para]
 The argument [arg when] consist of one or more characters
@@ -156,7 +156,7 @@ The URL might be an HTTP or an HTTPS URL.
 [option -version] specifies the HTTP version (default 1.0)
 The timeout value [arg t] is specified in the form
 [arg secs[opt :microsecs]], or [arg secs.fraction],
-or as a number with the time units ms, s, m, d.
+or as a number with a time unit.
 
 For connecting to a server with virtual hosting that provides
 multiple certificates via SNI (Server Name Indication) the
@@ -250,7 +250,7 @@ this with potentially more data form other write operations.
 
 [list_end]
 
-[see_also ns_conn ns_chan ns_sockcallback ns_write]
+[see_also ns_conn ns_chan ns_sockcallback ns_write ns_time]
 [keywords "server built-in" channels socket driver reverseproxy websocket]
 
 [manpage_end]

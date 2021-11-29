@@ -19,8 +19,7 @@ of r, w, e, or x, specifying, when the callback should fire.
 The optional argument [arg "timeout"]
 can be specified in the form
 [arg secs[opt :microsecs]], or [arg secs.fraction],
-or as a number with the time units ms, s, m, d.
-[arg secs[opt :microsecs]].
+or as a number a the time unit.
 
 [para]
 When the callback is fired, the specified [arg script] will be called
@@ -59,6 +58,6 @@ The value of the reported [arg condition] will be as follows:
 [example_end]
 
 
-[see_also ns_sockopen ns_chan ns_connchan ns_socklisten ns_sockaccept]
+[see_also ns_sockopen ns_chan ns_connchan ns_socklisten ns_sockaccept ns_time]
 [keywords "global built-in" NaviServer socket callback]
 [manpage_end]

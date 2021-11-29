@@ -33,7 +33,6 @@ run always sequentially.
 
 [para] The
 [arg interval] can be specified with time units (per default seconds).
-Valid time units are ms, s, m, d.
 
 If [option -thread] is specified, then the script will be run in its
 own thread, otherwise it will run in the scheduler's thread.  If the
@@ -210,7 +209,7 @@ script as returned by the ns_schedule* commands.
 
 
 
-[see_also nsd ns_job ns_log]
+[see_also nsd ns_job ns_log ns_time]
 [keywords "global built-in" background schedule]
 
 [manpage_end]
