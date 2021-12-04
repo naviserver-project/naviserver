@@ -31,7 +31,7 @@ socket or a file.
 
 [list_end]
 
-[keywords "global built-in" parse utf-8 encoding]
+[keywords "global built-in" parse utf-8 encoding i18n]
 [manpage_end]
 
 

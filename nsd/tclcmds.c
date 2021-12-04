@@ -69,6 +69,7 @@ static const Cmd basicCmds[] = {
     {"ns_base64encode",          NULL, NsTclBase64EncodeObjCmd},
     {"ns_base64urldecode",       NULL, NsTclBase64UrlDecodeObjCmd},
     {"ns_base64urlencode",       NULL, NsTclBase64UrlEncodeObjCmd},
+    {"ns_baseunit" ,             NULL, NsTclBaseUnitObjCmd},
     {"ns_cancel",                NULL, NsTclCancelObjCmd},
     {"ns_charsets",              NULL, NsTclCharsetsObjCmd},
     {"ns_config",                NULL, NsTclConfigObjCmd},
@@ -81,9 +82,9 @@ static const Cmd basicCmds[] = {
     {"ns_crypto::eckey",         NULL, NsTclCryptoEckeyObjCmd},
     {"ns_crypto::hmac",          NULL, NsTclCryptoHmacObjCmd},
     {"ns_crypto::md",            NULL, NsTclCryptoMdObjCmd},
+    {"ns_crypto::pbkdf2_hmac",   NULL, NsTclCryptoPbkdf2hmacObjCmd},
     {"ns_crypto::randombytes",   NULL, NsTclCryptoRandomBytesObjCmd},
     {"ns_crypto::scrypt",        NULL, NsTclCryptoScryptObjCmd},
-    {"ns_crypto::pbkdf2_hmac",   NULL, NsTclCryptoPbkdf2hmacObjCmd},
     {"ns_encodingforcharset",    NULL, NsTclEncodingForCharsetObjCmd},
     {"ns_env",                   NULL, NsTclEnvObjCmd},
     {"ns_fastpath_cache_stats",  NULL, NsTclFastPathCacheStatsObjCmd},
@@ -93,8 +94,8 @@ static const Cmd basicCmds[] = {
     {"ns_gifsize",               NULL, NsTclGifSizeObjCmd},
     {"ns_gmtime",                NULL, NsTclGmTimeObjCmd},
     {"ns_guesstype",             NULL, NsTclGuessTypeObjCmd},
-    {"ns_hashpath",              NULL, NsTclHashPathObjCmd},
     {"ns_hash",                  NULL, NsTclHashObjCmd},
+    {"ns_hashpath",              NULL, NsTclHashPathObjCmd},
     {"ns_hostbyaddr",            NULL, NsTclGetHostObjCmd},
     {"ns_hrefs",                 NULL, NsTclHrefsObjCmd},
     {"ns_http",                  NULL, NsTclHttpObjCmd},
@@ -119,10 +120,10 @@ static const Cmd basicCmds[] = {
     {"ns_parseargs",             NULL, NsTclParseArgsObjCmd},
     {"ns_parsefieldvalue",       NULL, NsTclParseFieldvalue},
     {"ns_parseheader",           NULL, NsTclParseHeaderObjCmd},
+    {"ns_parsehostport",         NULL, NsTclParseHostportObjCmd},
     {"ns_parsehttptime",         NULL, NsTclParseHttpTimeObjCmd},
     {"ns_parsequery",            NULL, NsTclParseQueryObjCmd},
     {"ns_parseurl",              NULL, NsTclParseUrlObjCmd},
-    {"ns_parsehostport",         NULL, NsTclParseHostportObjCmd},
     {"ns_pause",                 NULL, NsTclPauseObjCmd},
     {"ns_pngsize",               NULL, NsTclPngSizeObjCmd},
     {"ns_purgefiles",            NULL, NsTclPurgeFilesObjCmd},
@@ -152,6 +153,7 @@ static const Cmd basicCmds[] = {
     {"ns_socknread",             NULL, NsTclSockNReadObjCmd},
     {"ns_sockopen",              NULL, NsTclSockOpenObjCmd},
     {"ns_sockselect",            NULL, NsTclSelectObjCmd},
+    {"ns_strcoll",               NULL, NsTclStrcollObjCmd},
     {"ns_striphtml",             NULL, NsTclStripHtmlObjCmd},
     {"ns_symlink",               NULL, NsTclSymlinkObjCmd},
     {"ns_thread",                NULL, NsTclThreadObjCmd},
@@ -162,12 +164,8 @@ static const Cmd basicCmds[] = {
     {"ns_urlencode",             NULL, NsTclUrlEncodeObjCmd},
     {"ns_uudecode",              NULL, NsTclBase64DecodeObjCmd},
     {"ns_uuencode",              NULL, NsTclBase64EncodeObjCmd},
-    {"ns_writefp",               NULL, NsTclWriteFpObjCmd},
     {"ns_valid_utf8",            NULL, NsTclValidUtf8ObjCmd},
-    /*
-     * Add more basic Tcl commands here.
-     */
-
+    {"ns_writefp",               NULL, NsTclWriteFpObjCmd},
     {NULL, NULL, NULL}
 };
 

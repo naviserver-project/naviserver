@@ -29,7 +29,7 @@
 [example_end]
 
 [see_also ns_urldecode]
-[keywords charset]
+[keywords charset i18n]
 
 [manpage_end]
 

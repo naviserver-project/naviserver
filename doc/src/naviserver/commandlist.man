@@ -218,6 +218,7 @@ List of all currently available NaviServer commands.
 [call [cmd ns_encodingfortype]]
 [call [cmd ns_formfieldcharset]]
 [call [cmd ns_setformencoding]]
+[call [cmd ns_strcoll]]
 [call [cmd ns_urlcharset]]
 [call [cmd ns_valid_utf8]]
 [list_end]
@@ -470,6 +471,7 @@ List of all currently available NaviServer commands.
 [call [cmd ns_sourceproc]]
 [call [cmd ns_upload_stats]]
 [call [cmd ns_moduleload]]
+[call [cmd ns_baseunit]]
 [list_end]
 
 [section {Deprecated}]

@@ -28,7 +28,7 @@
 
 
 [see_also nsd]
-[keywords "global built-in" encoding charset]
+[keywords "global built-in" encoding charset i18n]
 
 [manpage_end]
 

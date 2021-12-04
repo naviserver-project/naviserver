@@ -19,7 +19,7 @@ of r, w, e, or x, specifying, when the callback should fire.
 The optional argument [arg "timeout"]
 can be specified in the form
 [arg secs[opt :microsecs]], or [arg secs.fraction],
-or as a number a the time unit.
+or as a number with a time unit.
 
 [para]
 When the callback is fired, the specified [arg script] will be called

@@ -24,10 +24,7 @@
 
 
 [see_also nsd]
-[keywords "global built-in"  ns_charsets]
-
-
-
+[keywords "global built-in"  ns_charsets i18n]
 
 [manpage_end]
 
