@@ -36,6 +36,11 @@
 
 #include "nsd.h"
 
+#if defined(HAVE_XLOCALE_H)
+# include <xlocale.h>
+#endif
+#include <locale.h>
+
 /*
  * Local functions defined in this file
  */
@@ -392,15 +397,16 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         Tcl_DString ds, *dsPtr = &ds;
         size_t      k, inputPos, outputPos, textLength, prefixLength, currentWidth, nrPrefixes, nrNewLines = 1u;
         bool        done = NS_FALSE;
+        const char *p;
 
         textLength   = strlen(textString);
         prefixLength = (prefixString == NULL ? 0u : strlen(prefixString));
         Tcl_DStringInit(dsPtr);
 
-        for (k = 0u; k < textLength; k++) {
-            if (textString[k] == '\n') {
-                nrNewLines++;
-            }
+        p = textString;
+        while( (p = strchr(p, INTCHAR('\n'))) != NULL) {
+            nrNewLines++;
+            p++;
         }
 
         inputPos = 0u;
@@ -2665,6 +2671,138 @@ ns_valid_utf8 [encoding convertto utf-8 "foo\x85"]
 ns_valid_utf8 "foo\xc3\x85"
 
 #endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclBaseUnitObjCmd --
+ *
+ *      Convert the provided argument to its base unit
+ *
+ *      Implements "ns_baseunit".
+ *
+ * Results:
+ *      Tcl result code
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclBaseUnitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int          result;
+    Tcl_WideInt  memUnitValue = -1;
+    Ns_Time     *tPtr = NULL;
+    Ns_ObjvSpec opts[] = {
+        {"-size",  Ns_ObjvMemUnit, &memUnitValue, NULL},
+        {"-time",  Ns_ObjvTime, &tPtr,  NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(opts, NULL, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (objc != 3) {
+        Ns_TclPrintfResult(interp, "either -size or -time must be specified");
+        result = TCL_ERROR;
+
+    } else {
+        const char *argString = Tcl_GetString(objv[1]);
+
+        if (argString[1] == 's') {
+            Tcl_SetObjResult(interp, Tcl_NewWideIntObj(memUnitValue));
+            result = TCL_OK;
+
+        } else if (argString[1] == 't') {
+            Tcl_DString ds, *dsPtr = &ds;
+
+            Tcl_DStringInit(dsPtr);
+            Ns_DStringAppendTime(dsPtr, tPtr);
+            Tcl_DStringResult(interp, dsPtr);
+            result = TCL_OK;
+
+        } else {
+            Ns_TclPrintfResult(interp, "either -size or -time must be specified");
+            result = TCL_ERROR;
+        }
+    }
+    return result;
+}
+#if 0
+ns_baseunit -size 1KB
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclStrcollObjCmd --
+ *
+ *      Compare two strings based on the POSIX strcoll_l() command.
+ *
+ *      Implements "ns_strcoll".
+ *
+ * Results:
+ *      Tcl result code
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclStrcollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int          result;
+    Tcl_Obj     *arg1Obj, *arg2Obj;
+    char*        localeString = (char *)"en_US";
+    Ns_ObjvSpec opts[] = {
+        {"-locale", Ns_ObjvString, &localeString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    Ns_ObjvSpec args[] = {
+        {"string1",  Ns_ObjvObj, &arg1Obj, NULL},
+        {"/* string2",  Ns_ObjvObj, &arg2Obj, NULL}, */
+    /*     {NULL, NULL, NULL, NULL} */
+    /* }; */
+
+    /* if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) { */
+    /*     result = TCL_ERROR; */
+
+    /* } else { */
+    /*     Tcl_DString ds1, ds2, *ds1Ptr = &ds1, *ds2Ptr = &ds2; */
+    /*     const char *string1, *string2; */
+    /*     int         length1, length2; */
+    /*     locale_t    locale; */
+
+    /*     Tcl_DStringInit(ds1Ptr); */
+        Tcl_DStringInit(ds2Ptr);
+
+#ifdef _win32
+        locale = _create_locale(LC_COLLATE, localeString);
+#else
+        locale = newlocale(LC_COLLATE_MASK, localeString, (locale_t)0);
+#endif
+        string1 = Tcl_GetStringFromObj(arg1Obj, &length1);
+        string2 = Tcl_GetStringFromObj(arg2Obj, &length2);
+        Tcl_UtfToExternalDString(NULL, string1, length1, ds1Ptr);
+        Tcl_UtfToExternalDString(NULL, string2, length2, ds2Ptr);
+
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(strcoll_l(ds1Ptr->string, ds2Ptr->string, locale)));
+        Tcl_DStringFree(ds1Ptr);
+        Tcl_DStringFree(ds2Ptr);
+
+#ifdef _win32
+        _free_locale(locale);
+#else
+        freelocale(locale);
+#endif
+        result = TCL_OK;
+    }
+    return result;
+}
 
 
 /*

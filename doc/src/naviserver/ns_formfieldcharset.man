@@ -25,7 +25,7 @@ to set the urlencoding for the current connection.
 
 
 [see_also nsd]
-[keywords ns_charsets ns_urlcharset]
+[keywords ns_charsets ns_urlcharset i18n]
 
 [manpage_end]
 

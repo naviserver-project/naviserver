@@ -1,0 +1,44 @@
+[include version_include.man]
+[manpage_begin ns_strcoll n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Compare strings according to the current locale collation}]
+
+[description]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_strcoll] \
+        [opt [option "-locale [arg locale]"]] \
+        [arg string1] \
+        [arg string2]]
+
+[para] This command compares lexicographically string1 with string2
+  according to the current locale collation and returns an integer
+  greater than, equal to, or less than 0, depending on whether string1
+  is greater than, equal to, or less than string2. The command is
+  necessary in cases, where e.g. the sorting order from the database
+  (normally based on local collation) is different from default Tcl
+  sorting order to provide a unifor interface with same sorting
+  orders. The name is derived from the baseline POSIX function call.
+
+[para]
+  The command is suitable for usage in the Tcl lsort command:
+
+[example_begin]
+ % set l {Bor Bar Bär}
+ % lsort -command ns_strcoll $l
+ Bar Bär Bor
+ 
+ % lsort $l
+ Bar Bor Bär 
+[example_end]
+
+[list_end]
+
+[keywords "global built-in" compare LC_COLLATE locale i18n]
+[manpage_end]
+
+

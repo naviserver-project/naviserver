@@ -28,8 +28,8 @@
 [example_end]
 
 
-[see_also nsd]
-[keywords ns_charsets ns_urlcharset]
+[see_also ns_charsets ns_urlcharset nsd]
+[keywords i18n encoding]
 
 [manpage_end]
 

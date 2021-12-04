@@ -189,6 +189,10 @@ MSVC++ 14.2 _MSC_VER == 1920 (Visual Studio 2019 version 16.0)
 
 #  define strtoll                     _strtoi64
 
+#  define strcoll_l                   _strcoll_l
+#  define locale_t                    _locale_t
+#  define freelocale                  _free_locale
+
 #  define access                      _access
 #  define chsize                      _chsize
 #  define close                       _close

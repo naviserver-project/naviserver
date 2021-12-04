@@ -29,7 +29,7 @@ Will use the configured OutputCharset if no charset is explicitly specified in t
 
 
 [see_also nsd]
-[keywords ns_charsets ns_urlcharset]
+[keywords ns_charsets ns_urlcharset i18n]
 
 [manpage_end]
 
