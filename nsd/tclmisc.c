@@ -2764,20 +2764,20 @@ NsTclStrcollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 
     Ns_ObjvSpec args[] = {
         {"string1",  Ns_ObjvObj, &arg1Obj, NULL},
-        {"/* string2",  Ns_ObjvObj, &arg2Obj, NULL}, */
-    /*     {NULL, NULL, NULL, NULL} */
-    /* }; */
+        {"string2",  Ns_ObjvObj, &arg2Obj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    /* if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) { */
-    /*     result = TCL_ERROR; */
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
 
-    /* } else { */
-    /*     Tcl_DString ds1, ds2, *ds1Ptr = &ds1, *ds2Ptr = &ds2; */
-    /*     const char *string1, *string2; */
-    /*     int         length1, length2; */
-    /*     locale_t    locale; */
+    } else {
+        Tcl_DString ds1, ds2, *ds1Ptr = &ds1, *ds2Ptr = &ds2;
+        const char *string1, *string2;
+        int         length1, length2;
+        locale_t    locale;
 
-    /*     Tcl_DStringInit(ds1Ptr); */
+        Tcl_DStringInit(ds1Ptr);
         Tcl_DStringInit(ds2Ptr);
 
 #ifdef _win32
