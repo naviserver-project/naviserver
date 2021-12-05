@@ -34,7 +34,7 @@ in a webpage with an HTML renderer. Specifically:
 
  Returns the contents of [arg html] with all HTML tags removed.
  This function replaces as well all known HTML4 named entities and
- three digit numeric entities by its UTF-8 representations and removes
+ three-digit numeric entities by its UTF-8 representations and removes
  HTML comments.
 
 
@@ -58,16 +58,27 @@ with a constant string.
         [arg text]]
 
 Multi-line trim with optional [arg delimiter] or [arg prefix].
-Either one of these can be used. If none are specified,
-all the trailing spaces are trimmed (as it is the case when the
-delimiter is used. The delimiter has to be a single character.
+The command is useful, when not the full indentation from the source code
+file (with a indentation depending on the nesting level) should
+be preserved on the output (such as SQL statements, HTML markup, etc.).
+
+[para] When neither [option -delimiter] or [option -prefix] is specified
+all leading whitespace is stripped from the result.
+When [option -delimiter] is specified, the delimiter is stripped as
+well.  The specified [arg delimiter] has to be a single character.
+
+[para]
+When [option -prefix] is used the specified string will be stripped from
+lines starting exactly with this prefix (example: use
+[option "-prefix [term >>]"] to strip the prefix [term >>] from
+every line starting with it. This option is mutual exclusive with
+the option [option -delimiter].
+
+[para]
 Optionally, substitution can be used, which is applied before
 trimming (not really needed but sometimes convenient).
 
 [para]
-The command is e.g. useful, when the indentation in the source code
-file should not be preserved on the output (such as SQL statements,
-HTML markup, etc.).
 
 [list_end]
 
