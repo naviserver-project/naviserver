@@ -606,6 +606,9 @@ NsTclTrimObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
                 p = j + length;
             }
         } else {
+            /*
+             * No "-prefix"
+             */
             while(likely(p < endOfString)) {
                 const char *eolString;
                 char       *j;

@@ -83,22 +83,22 @@ Ns_TclNewCallback(Tcl_Interp *interp, ns_funcptr_t cbProc, Tcl_Obj *scriptObjPtr
                       + (objc > 1 ? (size_t)(objc-1) * sizeof(char *) : 0u) );
     if (unlikely(cbPtr == NULL)) {
         Ns_Fatal("tclcallback: out of memory while creating callback");
-    }
+    } else {
 
-    cbPtr->cbProc = cbProc;
-    cbPtr->server = Ns_TclInterpServer(interp);
-    cbPtr->script = ns_strdup(Tcl_GetString(scriptObjPtr));
-    cbPtr->argc   = objc;
-    cbPtr->argv   = (char **)&cbPtr->args;
+        cbPtr->cbProc = cbProc;
+        cbPtr->server = Ns_TclInterpServer(interp);
+        cbPtr->script = ns_strdup(Tcl_GetString(scriptObjPtr));
+        cbPtr->argc   = objc;
+        cbPtr->argv   = (char **)&cbPtr->args;
 
-    if (objc > 0) {
-        int i;
+        if (objc > 0) {
+            int i;
 
-        for (i = 0; i < objc; i++) {
-            cbPtr->argv[i] = ns_strdup(Tcl_GetString(objv[i]));
+            for (i = 0; i < objc; i++) {
+                cbPtr->argv[i] = ns_strdup(Tcl_GetString(objv[i]));
+            }
         }
     }
-
     return cbPtr;
 }
 
