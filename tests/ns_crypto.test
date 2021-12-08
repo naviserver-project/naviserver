@@ -209,7 +209,6 @@ test pbkdf2_hmac-sha256.5 {Testcase 4 for pbkdf2-hmac-sha256, forcing a differen
     ::ns_crypto::pbkdf2_hmac -secret "pass\0word" -iterations 4096 -salt "sa\0lt" -dklen 16
 } -result "89b69d0516f829893c696226650a8687"
 
-
 #######################################################################################
 #  HOTP: An HMAC-Based One-Time Password Algorithm
 #  RFC 4426 https://tools.ietf.org/html/rfc4226
@@ -379,6 +378,22 @@ test base64-md5.2 {
     list $m0 $m1 [string equal $ns_hex $tcl_hex]
 } -result {E50C2BFEF5ABE4D1004C192DFFA769ED E50C2BFEF5ABE4D1004C192DFFA769ED 1}
 
+############################################################################
+# Test Cases for ns_crypto::aead::encrypt and decrypt
+############################################################################
+test aead-1.0 {aead::encrypt} -body {
+    set d [ns_crypto::aead::encrypt string -cipher aes-128-gcm -iv 123456789 -key secret "hello world"]
+    list bytes [string length [dict get $d bytes]] tag [string length [dict get $d tag]]
+} -result {bytes 22 tag 32}
+
+test aead-1.1 {aead::encrypt and decrypt} -body {
+    set d [ns_crypto::aead::encrypt string -cipher aes-128-gcm -iv 123456789 \
+               -key secret -encoding binary \
+               "hello world"]
+    ns_crypto::aead::decrypt string -cipher aes-128-gcm -iv 123456789 \
+        -key secret -tag [dict get $d tag] \
+        -encoding binary [dict get $d bytes]
+} -result {hello world}
 
 
 #
