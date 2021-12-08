@@ -3527,40 +3527,47 @@ SockSendResponse(Sock *sockPtr, int statusCode, const char *errMsg, const char *
      */
     if (sockPtr->reqPtr != NULL) {
         Request     *reqPtr = sockPtr->reqPtr;
-        const char  *requestLine = (reqPtr->request.line != NULL) ? reqPtr->request.line : NS_EMPTY_STRING;
-        char peer[NS_IPADDR_SIZE];
-
-        (void)ns_inet_ntop((struct sockaddr *)&(sockPtr->sa), peer, NS_IPADDR_SIZE);
+        const char  *requestLine = (reqPtr->request.line != NULL)
+            ? reqPtr->request.line
+            : NS_EMPTY_STRING;
 
         /*
          * Check, if bad request looks like a TLS handshake. If yes, there is
          * no need to print out the received buffer.
          */
-        if (requestLine[0] == (char)0x16 && requestLine[1] >= 3 && requestLine[2] == 1) {
-            Ns_Log(Warning, "invalid request %d (%s) from peer %s: received TLS handshake "
-                   "on a non-TLS connection",
-                   statusCode, errMsg, peer);
+        if (unlikely(statusCode == 400)) {
+            char peer[NS_IPADDR_SIZE];
+            const char *bufferString = reqPtr->buffer.string;
 
-        } else if (statusCode == 400) {
-            Tcl_DString dsReqLine;
+            (void)ns_inet_ntop((struct sockaddr *)&(sockPtr->sa), peer, NS_IPADDR_SIZE);
 
-            /*
-             * These are errors, which might have to be invested based on
-             * deails of the received buffer.
-             */
-            Tcl_DStringInit(&dsReqLine);
-            Ns_Log(Warning, "invalid request: %d (%s) from peer %s request '%s' offsets: read %" PRIuz
-                   " write %" PRIuz " content %" PRIuz " avail %" PRIuz,
-                   statusCode, errMsg,
-                   peer,
-                   Ns_DStringAppendPrintable(&dsReqLine, NS_FALSE, requestLine, strlen(requestLine)),
-                   reqPtr->roff,
-                   reqPtr->woff,
-                   reqPtr->coff,
-                   reqPtr->avail);
-            Tcl_DStringFree(&dsReqLine);
+            if (bufferString[0] == (char)0x16 && bufferString[1] >= 3 && bufferString[2] == 1) {
+                Ns_Log(Warning, "invalid request %d (%s) from peer %s: received TLS handshake "
+                       "on a non-TLS connection",
+                       statusCode, errMsg, peer);
 
-            LogBuffer(Warning, "REQ BUFFER", reqPtr->buffer.string, (size_t)reqPtr->buffer.length);
+            } else {
+                Tcl_DString dsReqLine;
+
+                /*
+                 * These are errors, which might need some investigation based
+                 * on based on details of the received buffer.
+                 */
+                Tcl_DStringInit(&dsReqLine);
+                Ns_Log(Warning, "invalid request: %d (%s) from peer %s request '%s'"
+                       " offsets: read %" PRIuz
+                       " write %" PRIuz " content %" PRIuz " avail %" PRIuz,
+                       statusCode, errMsg,
+                       peer,
+                       Ns_DStringAppendPrintable(&dsReqLine, NS_FALSE, requestLine, strlen(requestLine)),
+                       reqPtr->roff,
+                       reqPtr->woff,
+                       reqPtr->coff,
+                       reqPtr->avail);
+                Tcl_DStringFree(&dsReqLine);
+
+                LogBuffer(Warning, "REQ BUFFER", reqPtr->buffer.string, (size_t)reqPtr->buffer.length);
+            }
         } else if (statusCode >= 500) {
             Ns_Log(Warning, "request returns %d (%s): %s", statusCode, errMsg, requestLine);
         }

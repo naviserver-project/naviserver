@@ -184,6 +184,15 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
     }
 
     /*
+     * Check, if the request looks like a TLS handshake. If yes, there is no
+     * need to try to parse the received buffer. There is no need to complain
+     * about binary content in this case.
+     */
+    if (line[0] == (char)0x16 && line[1] >= 3 && line[2] == 1) {
+        return NS_ERROR;
+    }
+
+    /*
      * We could check here the validity UTF-8 of the request line, in case we
      * would know it is supposed to be UTF8. Unfortunately, this is known
      * ownly after the server is determined. We could use the ns/param
@@ -199,7 +208,6 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
      * W3C recommends only URLs with proper encodings (subset of US ASCII):
      * https://www.w3.org/Addressing/URL/4_URI_Recommentations.html
      */
-
     if (!Ns_Is7bit(line, len)) {
         Ns_Log(Warning, "Ns_ParseRequest: line <%s> contains 8-bit "
                "character data. Future versions might reject it.", line);
