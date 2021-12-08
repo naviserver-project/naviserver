@@ -40,6 +40,22 @@ integrity, and authenticity. Currently, only GCM mode (Galois/Counter
 Mode) is supported. For details about AEAD in GCM mode, see
 e.g. https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf
 
+[para]
+AEAD has the following properties:
+
+[list_begin definitions]
+[def Secrecy] Nobody will be able to get any information about the
+     encrypted plaintext, except the length.
+[def Authenticity] Without the key it is impossible to change the
+     plaintext underlying the ciphertext undetected.
+[def Symmetric] Encrypting the message and decrypting the ciphertext
+     is done with the same key.
+[def Randomization] The encryption is randomized. Two messages with
+     the same plaintext will not yield the same ciphertext. This prevents
+     attackers from knowing which ciphertext corresponds to a given
+     plaintext.
+[list_end]
+
 [para] The function returns a dict consisting of [term bytes] and the
 authentication [term tag] used for decryption.
 
