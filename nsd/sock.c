@@ -306,7 +306,7 @@ Ns_SockGetAddr(const Ns_Sock *sock)
 
     retVal = getsockname(sock->sock, (struct sockaddr *) &sa, &len);
     if (retVal == -1) {
-        result = 0u;
+        result = NULL;
     } else {
         result = ns_inet_ntoa((struct sockaddr *)&sa);
     }
