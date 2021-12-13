@@ -28,9 +28,13 @@ AC_ARG_WITH([openssl],
     if test "${ac_openssl}" != "no" -a "${ac_openssl}" != "yes" ; then
       ac_openssl=yes
       if test -d "$withval" ; then
-        echo "Trying to use directory $withval/include and -L$withval/lib"
         OPENSSL_INCLUDES="-I$withval/include"
-        OPENSSL_LIBS="-L$withval/lib -lssl -lcrypto"
+        if test -r "$withval/lib64/libssl.so" ; then
+           OPENSSL_LIBS="-L$withval/lib64 -lssl -lcrypto"
+        else
+           OPENSSL_LIBS="-L$withval/lib -lssl -lcrypto"
+        fi
+        echo "Trying to use directory $withval/include and $OPENSSL_LIBS"
       else
         echo "WARNING: no such directory: $withval"
       fi
