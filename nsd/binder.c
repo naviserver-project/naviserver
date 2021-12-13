@@ -1311,8 +1311,9 @@ NsForkBinder(void)
             /*
              * Child process.
              */
-            exit(0);
         }
+        exit(0);
+
     } else {
         /*
          * Parent process.
