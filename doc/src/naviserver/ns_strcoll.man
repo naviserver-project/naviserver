@@ -24,6 +24,11 @@
   sorting order to provide a unifor interface with same sorting
   orders. The name is derived from the baseline POSIX function call.
 
+[para] When the option [option "-locale"] is not set, the LC_COLLATE
+value is determines by the operating system. When locale is specified,
+it is recommended to use the specification consisting of language,
+territory and codeset (e.g. [term en_US.UTF-8].
+
 [para]
   The command is suitable for usage in the Tcl lsort command:
 
@@ -34,6 +39,10 @@
  
  % lsort $l
  Bar Bor Bär 
+
+ % lsort -command {ns_strcoll -locale en_US.UTF-8} $l
+ Bar Bär Bor
+
 [example_end]
 
 [list_end]

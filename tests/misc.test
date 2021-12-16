@@ -30,7 +30,7 @@ test ns_fmttime-1.0 {ns_fmttime without format} -body {
     #
     return [llength [ns_fmttime 1563812758]]
 } -result {5}
-    
+
 test ns_fmttime-1.1 {ns_rand with 0 arg - float} -body {
     #
     # The year information is in all timezones for this timestamp
@@ -85,6 +85,25 @@ test ns_quotehtml {ns_quotehtml with typical value} -body {
 } -result {&lt;span class=&#34;foo&#34;&gt;}
 
 #######################################################################################
+#  test ns_strcoll
+#######################################################################################
+
+test ns_strcoll-1.1 {ns_strcoll without locale specified} -body {
+    set l {Önce Ince Once Ance Adam Çengel Art Ceb Dora Prvda Правда Omikron ό Zeppelin}
+    return [lsort -command ns_strcoll $l]
+} -result {Adam Ance Art Ceb Çengel Dora Ince Omikron Once Önce Prvda Zeppelin ό Правда}
+
+test ns_strcoll-1.2 {ns_strcoll without locale specified} -body {
+    set l {Önce Ince Once Ance Adam Çengel Art Ceb Dora Prvda Правда Omikron ό Zeppelin}
+    return [lsort -command {ns_strcoll -locale en_US.UTF-8} $l]
+} -result {Adam Ance Art Ceb Çengel Dora Ince Omikron Once Önce Prvda Zeppelin ό Правда}
+
+test ns_strcoll-1.3 {ns_strcoll check potential confusion between arguments and flags} -body {
+    set l {-a -locale en_US.UTF-8 -some -other 123}
+    return [lsort -command ns_strcoll $l]
+} -result {-a -locale -other -some 123 en_US.UTF-8}
+
+#######################################################################################
 #  test ns_valid_utf8
 #######################################################################################
 
@@ -92,11 +111,11 @@ test ns_valid_utf8-1.0 {ns_valid_utf8 with typical value} -body {
     return [ns_valid_utf8 "hello world"]
 } -result 1
 
-test ns_valid_utf8-1.0 {invalid utf8, containing x85 at the end} -body {
+test ns_valid_utf8-1.1 {invalid utf8, containing x85 at the end} -body {
     return [ns_valid_utf8 "forschungsprojek\x85"]
 } -result 0
 
-test ns_valid_utf8-1.0 {valid utf8, containing x85 at the end} -body {
+test ns_valid_utf8-1.2 {valid utf8, containing x85 at the end} -body {
     return [ns_valid_utf8 "forschungsprojek\xc3\x85"]
 } -result 1
 

@@ -2759,9 +2759,10 @@ NsTclStrcollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 {
     int          result;
     Tcl_Obj     *arg1Obj, *arg2Obj;
-    char*        localeString = (char *)"en_US";
+    char        *localeString = NULL;
     Ns_ObjvSpec opts[] = {
         {"-locale", Ns_ObjvString, &localeString, NULL},
+        {"--",      Ns_ObjvBreak,  NULL,          NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -2783,26 +2784,44 @@ NsTclStrcollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         Tcl_DStringInit(ds1Ptr);
         Tcl_DStringInit(ds2Ptr);
 
+        if (localeString == NULL) {
+            /*
+             * make sure we get all locales
+             * https://man7.org/linux/man-pages/man3/setlocale.3.html
+             */
+            localeString = setlocale(LC_COLLATE, "");
+            Ns_Log(Debug, "ns_collate: current localeString '%s'", localeString);
+        }
 #ifdef _win32
         locale = _create_locale(LC_COLLATE, localeString);
 #else
         locale = newlocale(LC_COLLATE_MASK, localeString, (locale_t)0);
 #endif
-        string1 = Tcl_GetStringFromObj(arg1Obj, &length1);
-        string2 = Tcl_GetStringFromObj(arg2Obj, &length2);
-        Tcl_UtfToExternalDString(NULL, string1, length1, ds1Ptr);
-        Tcl_UtfToExternalDString(NULL, string2, length2, ds2Ptr);
+        if (locale == (locale_t)0) {
+            Ns_TclPrintfResult(interp, "specified locale '%s' is not available", localeString);
+            result = TCL_ERROR;
 
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(strcoll_l(ds1Ptr->string, ds2Ptr->string, locale)));
+        } else {
+            string1 = Tcl_GetStringFromObj(arg1Obj, &length1);
+            string2 = Tcl_GetStringFromObj(arg2Obj, &length2);
+            Tcl_UtfToExternalDString(NULL, string1, length1, ds1Ptr);
+            Tcl_UtfToExternalDString(NULL, string2, length2, ds2Ptr);
+
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(strcoll_l(ds1Ptr->string, ds2Ptr->string, locale)));
+
+            if (locale != LC_GLOBAL_LOCALE) {
+#ifdef _win32
+                _free_locale(locale);
+#else
+                freelocale(locale);
+#endif
+            }
+            result = TCL_OK;
+        }
+
         Tcl_DStringFree(ds1Ptr);
         Tcl_DStringFree(ds2Ptr);
 
-#ifdef _win32
-        _free_locale(locale);
-#else
-        freelocale(locale);
-#endif
-        result = TCL_OK;
     }
     return result;
 }
