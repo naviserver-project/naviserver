@@ -1020,7 +1020,7 @@ NsDbLogSql(const Ns_Time *startTime, Ns_DbHandle *handle, const char *sql)
          * An exception occurred.
          */
         if (poolPtr->fVerboseError) {
-            Ns_Log(Error, "dbinit: error(%s,%s): '%s'",
+            Ns_Log(Error, "dbinit: source %s msg '%s' SQL:\n%s",
                    handle->datasource, handle->dsExceptionMsg.string, sql);
         }
     } else {
