@@ -2792,7 +2792,7 @@ NsTclStrcollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             localeString = setlocale(LC_COLLATE, "");
             Ns_Log(Debug, "ns_collate: current localeString '%s'", localeString);
         }
-#ifdef _win32
+#ifdef _WIN32
         locale = _create_locale(LC_COLLATE, localeString);
 #else
         locale = newlocale(LC_COLLATE_MASK, localeString, (locale_t)0);
@@ -2809,13 +2809,13 @@ NsTclStrcollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 
             Tcl_SetObjResult(interp, Tcl_NewIntObj(strcoll_l(ds1Ptr->string, ds2Ptr->string, locale)));
 
-            if (locale != LC_GLOBAL_LOCALE) {
-#ifdef _win32
-                _free_locale(locale);
+#ifdef _WIN32
+            _free_locale(locale);
 #else
+            if (locale != LC_GLOBAL_LOCALE) {
                 freelocale(locale);
-#endif
             }
+#endif
             result = TCL_OK;
         }
 
