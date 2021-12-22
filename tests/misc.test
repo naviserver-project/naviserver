@@ -5,9 +5,6 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
-testConstraint collateIgnoresDash [expr {$::tcl_platform(os) in {OpenBSD Linux}}]
-testConstraint localeCollate [expr {$::tcl_platform(os) in {Darwin Linux}}]
-
 #######################################################################################
 #  test ns_parsefieldvalue
 #######################################################################################
@@ -90,7 +87,16 @@ test ns_quotehtml {ns_quotehtml with typical value} -body {
 #######################################################################################
 #  test ns_strcoll
 #######################################################################################
+testConstraint collateFold [expr {$::tcl_platform(os) in {Linux}}]
+testConstraint localeCollate [expr {$::tcl_platform(os) in {Darwin Linux}}]
 
+#
+# The constraint 'collateFold' means to sort upper and lower character
+# right next to each other and to ignore certain characters
+# (e.g. dash) in the sorting order when comparing UTF-8. Probably,
+# strcoll_l on these systems is based on the ICU library
+# (International Components for Unicode).
+#
 test ns_strcoll-1.0.0 {ns_strcoll without locale (assuming en_US.UTF-8)} \
     -constraints localeCollate -body {
         return [expr {[ns_strcoll Bär Bor] < 0}]
@@ -118,26 +124,47 @@ test ns_strcoll-1.2 {ns_strcoll with locale en_US.UTF-8} \
         return [lsort -command {ns_strcoll -locale en_US.UTF-8 --} $l]
     } -result {Adam Ance Art Bar Bär Bor Ceb Çengel Dora Ince Omikron Once Önce Pravda Zeppelin ό Правда}
 
-# For unknown reasons, macOS has a different sorting order:
-# Linux and OpenBSD sorts "-a" between "1" and "b" (i.e. ignores dash), while
-# macOS sorts "-a" before "1"
-test ns_strcoll-1.3 {sort with leading dashes, without locale specified} \
-    -constraints {collateIgnoresDash} -body {
+#
+# Check ignored dashes
+#
+test ns_strcoll-2.1 {sort with leading dashes, without locale specified} \
+    -constraints {collateFold} -body {
         set l {b 1 -a}
         return [lsort -command ns_strcoll $l]
     } -result {1 -a b}
 
-test ns_strcoll-1.4 {sort with leading dashes, with locale en_US.UTF-8} \
-    -constraints {collateIgnoresDash} -body {
+test ns_strcoll-2.2 {sort with leading dashes, with locale en_US.UTF-8} \
+    -constraints {collateFold} -body {
         set l {b 1 -a}
         return [lsort -command {ns_strcoll -locale en_US.UTF-8 --} $l]
     } -result {1 -a b}
 
-test ns_strcoll-1.5 {sort with leading dashes, with locale C} \
+test ns_strcoll-2.3 {sort with leading dashes, with locale C} \
     -body {
         set l {b 1 -a}
         return [lsort -command {ns_strcoll -locale C --} $l]
     } -result {-a 1 b}
+
+#
+# Check case sorting
+#
+test ns_strcoll-3.1 {sort with upper and lower case characters, no locale} \
+    -constraints {collateFold} -body {
+        set l {za zb Za ma mb Ma aa ab Aa 1 .}
+        return [lsort -command ns_strcoll $l]
+    } -result {. 1 aa Aa ab ma Ma mb za Za zb}
+
+test ns_strcoll-3.2 {sort with upper and lower case characters, locale en_US.UTF-8} \
+    -constraints {collateFold} -body {
+        set l {za zb Za ma mb Ma aa ab Aa 1 .}
+        return [lsort -command {ns_strcoll -locale en_US.UTF-8 --} $l]
+    } -result {. 1 aa Aa ab ma Ma mb za Za zb}
+
+test ns_strcoll-3.3 {sort with upper and lower case characters, locale C} \
+    -body {
+        set l {za zb Za ma mb Ma aa ab Aa 1 .}
+        return [lsort -command {ns_strcoll -locale C --} $l]
+    } -result {. 1 Aa Ma Za aa ab ma mb za zb}
 
 #######################################################################################
 #  test ns_valid_utf8
