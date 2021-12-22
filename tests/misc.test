@@ -5,7 +5,8 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
-testConstraint nomacos [expr {$::tcl_platform(os) ne "Darwin"}]
+testConstraint collateIgnoresDash [expr {$::tcl_platform(os) in {OpenBSD Linux}}]
+testConstraint localeCollate [expr {$::tcl_platform(os) in {Darwin Linux}}]
 
 #######################################################################################
 #  test ns_parsefieldvalue
@@ -90,42 +91,53 @@ test ns_quotehtml {ns_quotehtml with typical value} -body {
 #  test ns_strcoll
 #######################################################################################
 
-test ns_strcoll-1.0.0 {ns_strcoll without locale (assuming en_US.UTF-8)} -body {
-    return [expr {[ns_strcoll Bär Bor] < 0}]
-} -result 1
+test ns_strcoll-1.0.0 {ns_strcoll without locale (assuming en_US.UTF-8)} \
+    -constraints localeCollate -body {
+        return [expr {[ns_strcoll Bär Bor] < 0}]
+    } -result 1
 
-test ns_strcoll-1.0.1 {ns_strcoll with locale C} -body {
-    return [expr {[ns_strcoll -locale C Bär Bor] > 0}]
-} -result 1
+test ns_strcoll-1.0.1 {ns_strcoll with locale C} \
+    -body {
+        return [expr {[ns_strcoll -locale C Bär Bor] > 0}]
+    } -result 1
 
-test ns_strcoll-1.0.2 {ns_strcoll with locale en_US.UTF-8 } -body {
-    return [expr {[ns_strcoll -locale en_US.UTF-8 Bär Bor] < 0}]
-} -result 1
+test ns_strcoll-1.0.2 {ns_strcoll with locale en_US.UTF-8 } \
+    -constraints localeCollate -body {
+        return [expr {[ns_strcoll -locale en_US.UTF-8 Bär Bor] < 0}]
+    } -result 1
 
-test ns_strcoll-1.1 {ns_strcoll without locale specified} -body {
-    set l {Önce Ince Once Ance Adam Çengel Art Ceb Dora Pravda Правда Omikron ό Zeppelin Bar Bor Bär}
-    return [lsort -command ns_strcoll $l]
-} -result {Adam Ance Art Bar Bär Bor Ceb Çengel Dora Ince Omikron Once Önce Pravda Zeppelin ό Правда}
+test ns_strcoll-1.1 {ns_strcoll without locale specified} \
+    -constraints localeCollate -body {
+        set l {Önce Ince Once Ance Adam Çengel Art Ceb Dora Pravda Правда Omikron ό Zeppelin Bar Bor Bär}
+        return [lsort -command ns_strcoll $l]
+    } -result {Adam Ance Art Bar Bär Bor Ceb Çengel Dora Ince Omikron Once Önce Pravda Zeppelin ό Правда}
 
-test ns_strcoll-1.2 {ns_strcoll with locale en_US.UTF-8} -body {
-    set l {Önce Ince Once Ance Adam Çengel Art Ceb Dora Pravda Правда Omikron ό Zeppelin Bar Bor Bär}
-    return [lsort -command {ns_strcoll -locale en_US.UTF-8 --} $l]
-} -result {Adam Ance Art Bar Bär Bor Ceb Çengel Dora Ince Omikron Once Önce Pravda Zeppelin ό Правда}
+test ns_strcoll-1.2 {ns_strcoll with locale en_US.UTF-8} \
+    -constraints localeCollate -body {
+        set l {Önce Ince Once Ance Adam Çengel Art Ceb Dora Pravda Правда Omikron ό Zeppelin Bar Bor Bär}
+        return [lsort -command {ns_strcoll -locale en_US.UTF-8 --} $l]
+    } -result {Adam Ance Art Bar Bär Bor Ceb Çengel Dora Ince Omikron Once Önce Pravda Zeppelin ό Правда}
 
 # For unknown reasons, macOS has a different sorting order:
-# Linux sorts "-a" between "1" and "b" (i.e. ignores dash), while
+# Linux and OpenBSD sorts "-a" between "1" and "b" (i.e. ignores dash), while
 # macOS sorts "-a" before "1"
 test ns_strcoll-1.3 {sort with leading dashes, without locale specified} \
-     -constraints nomacos -body {
+    -constraints {collateIgnoresDash} -body {
         set l {b 1 -a}
         return [lsort -command ns_strcoll $l]
     } -result {1 -a b}
 
 test ns_strcoll-1.4 {sort with leading dashes, with locale en_US.UTF-8} \
-    -constraints nomacos -body {
+    -constraints {collateIgnoresDash} -body {
         set l {b 1 -a}
         return [lsort -command {ns_strcoll -locale en_US.UTF-8 --} $l]
     } -result {1 -a b}
+
+test ns_strcoll-1.5 {sort with leading dashes, with locale C} \
+    -body {
+        set l {b 1 -a}
+        return [lsort -command {ns_strcoll -locale C --} $l]
+    } -result {-a 1 b}
 
 #######################################################################################
 #  test ns_valid_utf8
