@@ -37,6 +37,11 @@
 
 #include "ns.h"
 
+#if defined(HAVE_XLOCALE_H)
+# include <xlocale.h>
+#endif
+#include "locale.h"
+
 /*
  * Constants
  */
@@ -146,6 +151,7 @@ struct nsconf {
     const char *tmpDir;
     const char *configFile;
     const char *build;
+    locale_t    locale;
     pid_t       pid;
     time_t      boot_t;
     char        hostname[255];
