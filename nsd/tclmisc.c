@@ -36,11 +36,6 @@
 
 #include "nsd.h"
 
-#if defined(HAVE_XLOCALE_H)
-# include <xlocale.h>
-#endif
-#include <locale.h>
-
 /*
  * Local functions defined in this file
  */
@@ -2757,7 +2752,7 @@ ns_baseunit -size 1KB
 int
 NsTclStrcollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int          result;
+    int          result = TCL_OK;
     Tcl_Obj     *arg1Obj, *arg2Obj;
     char        *localeString = NULL;
     Ns_ObjvSpec opts[] = {
@@ -2776,52 +2771,55 @@ NsTclStrcollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         result = TCL_ERROR;
 
     } else {
-        Tcl_DString ds1, ds2, *ds1Ptr = &ds1, *ds2Ptr = &ds2;
-        const char *string1, *string2;
-        int         length1, length2;
-        locale_t    locale;
+        locale_t    locale = 0;
 
-        Tcl_DStringInit(ds1Ptr);
-        Tcl_DStringInit(ds2Ptr);
-
-        if (localeString == NULL) {
-            /*
-             * make sure we get all locales
-             * https://man7.org/linux/man-pages/man3/setlocale.3.html
-             */
-            localeString = setlocale(LC_COLLATE, "");
-            Ns_Log(Debug, "ns_collate: current localeString '%s'", localeString);
-        }
+        if (localeString != NULL) {
 #ifdef _WIN32
-        locale = _create_locale(LC_COLLATE, localeString);
+            locale = _create_locale(LC_COLLATE, localeString);
 #else
-        locale = newlocale(LC_COLLATE_MASK, localeString, (locale_t)0);
+            locale = newlocale(LC_COLLATE_MASK, localeString, (locale_t)0);
 #endif
-        if (locale == (locale_t)0) {
-            Ns_TclPrintfResult(interp, "specified locale '%s' is not available", localeString);
-            result = TCL_ERROR;
+            if (locale == 0) {
+                Ns_TclPrintfResult(interp, "specified locale '%s' is not available", localeString);
+                result = TCL_ERROR;
+            }
+        }
 
-        } else {
+        if (result == TCL_OK) {
+            Tcl_DString ds1, ds2, *ds1Ptr = &ds1, *ds2Ptr = &ds2;
+            int         length1, length2, comparisonValue;
+            const char *string1, *string2;
+
+            Tcl_DStringInit(ds1Ptr);
+            Tcl_DStringInit(ds2Ptr);
+
             string1 = Tcl_GetStringFromObj(arg1Obj, &length1);
             string2 = Tcl_GetStringFromObj(arg2Obj, &length2);
             Tcl_UtfToExternalDString(NULL, string1, length1, ds1Ptr);
             Tcl_UtfToExternalDString(NULL, string2, length2, ds2Ptr);
 
-            Tcl_SetObjResult(interp, Tcl_NewIntObj(strcoll_l(ds1Ptr->string, ds2Ptr->string, locale)));
+            errno = 0;
+            comparisonValue = strcoll_l(ds1Ptr->string, ds2Ptr->string,
+                                        locale != 0 ? locale : nsconf.locale);
 
+            Ns_Log(Debug, "ns_collate: compare '%s' and '%s' using %s (%p) -> %d (%d)",
+                   ds1Ptr->string, ds2Ptr->string,
+                   localeString == NULL ? "default locale" : localeString,
+                   (void*)locale, comparisonValue, errno);
+
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(comparisonValue));
+
+            Tcl_DStringFree(ds1Ptr);
+            Tcl_DStringFree(ds2Ptr);
+        }
+
+        if (locale != 0) {
 #ifdef _WIN32
             _free_locale(locale);
 #else
-            if (locale != LC_GLOBAL_LOCALE) {
-                freelocale(locale);
-            }
+            freelocale(locale);
 #endif
-            result = TCL_OK;
         }
-
-        Tcl_DStringFree(ds1Ptr);
-        Tcl_DStringFree(ds2Ptr);
-
     }
     return result;
 }

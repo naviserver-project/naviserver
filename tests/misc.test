@@ -5,6 +5,8 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
+testConstraint nomacos [expr {$::tcl_platform(os) ne "Darwin"}]
+
 #######################################################################################
 #  test ns_parsefieldvalue
 #######################################################################################
@@ -88,20 +90,42 @@ test ns_quotehtml {ns_quotehtml with typical value} -body {
 #  test ns_strcoll
 #######################################################################################
 
+test ns_strcoll-1.0.0 {ns_strcoll without locale (assuming en_US.UTF-8)} -body {
+    return [expr {[ns_strcoll Bär Bor] < 0}]
+} -result 1
+
+test ns_strcoll-1.0.1 {ns_strcoll with locale C} -body {
+    return [expr {[ns_strcoll -locale C Bär Bor] > 0}]
+} -result 1
+
+test ns_strcoll-1.0.2 {ns_strcoll with locale en_US.UTF-8 } -body {
+    return [expr {[ns_strcoll -locale en_US.UTF-8 Bär Bor] < 0}]
+} -result 1
+
 test ns_strcoll-1.1 {ns_strcoll without locale specified} -body {
-    set l {Önce Ince Once Ance Adam Çengel Art Ceb Dora Prvda Правда Omikron ό Zeppelin}
+    set l {Önce Ince Once Ance Adam Çengel Art Ceb Dora Pravda Правда Omikron ό Zeppelin Bar Bor Bär}
     return [lsort -command ns_strcoll $l]
-} -result {Adam Ance Art Ceb Çengel Dora Ince Omikron Once Önce Prvda Zeppelin ό Правда}
+} -result {Adam Ance Art Bar Bär Bor Ceb Çengel Dora Ince Omikron Once Önce Pravda Zeppelin ό Правда}
 
-test ns_strcoll-1.2 {ns_strcoll without locale specified} -body {
-    set l {Önce Ince Once Ance Adam Çengel Art Ceb Dora Prvda Правда Omikron ό Zeppelin}
-    return [lsort -command {ns_strcoll -locale en_US.UTF-8} $l]
-} -result {Adam Ance Art Ceb Çengel Dora Ince Omikron Once Önce Prvda Zeppelin ό Правда}
+test ns_strcoll-1.2 {ns_strcoll with locale en_US.UTF-8} -body {
+    set l {Önce Ince Once Ance Adam Çengel Art Ceb Dora Pravda Правда Omikron ό Zeppelin Bar Bor Bär}
+    return [lsort -command {ns_strcoll -locale en_US.UTF-8 --} $l]
+} -result {Adam Ance Art Bar Bär Bor Ceb Çengel Dora Ince Omikron Once Önce Pravda Zeppelin ό Правда}
 
-test ns_strcoll-1.3 {ns_strcoll check potential confusion between arguments and flags} -body {
-    set l {-a -locale en_US.UTF-8 -some -other 123}
-    return [lsort -command ns_strcoll $l]
-} -result {-a -locale -other -some 123 en_US.UTF-8}
+# For unknown reasons, macOS has a different sorting order:
+# Linux sorts "-a" between "1" and "b" (i.e. ignores dash), while
+# macOS sorts "-a" before "1"
+test ns_strcoll-1.3 {sort with leading dashes, without locale specified} \
+     -constraints nomacos -body {
+        set l {b 1 -a}
+        return [lsort -command ns_strcoll $l]
+    } -result {1 -a b}
+
+test ns_strcoll-1.4 {sort with leading dashes, with locale en_US.UTF-8} \
+    -constraints nomacos -body {
+        set l {b 1 -a}
+        return [lsort -command {ns_strcoll -locale en_US.UTF-8 --} $l]
+    } -result {1 -a b}
 
 #######################################################################################
 #  test ns_valid_utf8

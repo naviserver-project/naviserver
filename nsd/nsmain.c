@@ -598,6 +598,32 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      * can't access NS_mutexlocktrace from here (unknown external symbol),
      * although it is defined exactly like NS_finalshutdown;
      */
+
+    /*
+     * Internationalized programs must call setlocale() to initiate specific
+     * language operations.
+     */
+    { char *localeString =  getenv("LC_ALL");
+        if (localeString == NULL) {
+            localeString =  getenv("LC_COLLATE");
+        }
+        if (localeString == NULL) {
+            localeString =  getenv("LANG");
+        }
+        if (localeString == NULL) {
+            localeString =  setlocale(LC_COLLATE, NULL);
+        }
+
+        Ns_Log(Notice, "initialized locale %s", localeString);
+        (void) setlocale(LC_COLLATE, localeString);
+#ifdef _WIN32
+            nsconf.locale = _create_locale(LC_COLLATE, localeString);
+#else
+            nsconf.locale = newlocale(LC_COLLATE_MASK, localeString, (locale_t)0);
+#endif
+    }
+
+
 #ifndef _WIN32
     NS_mutexlocktrace = Ns_ConfigBool(NS_CONFIG_PARAMETERS, "mutexlocktrace", NS_FALSE);
 #endif
