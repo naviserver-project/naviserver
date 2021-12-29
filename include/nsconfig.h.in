@@ -28,6 +28,9 @@
    */
 #undef HAVE_DECL_TZNAME
 
+/* Is 'DIR64' in <sys/types.h>? */
+#undef HAVE_DIR64
+
 /* Define to 1 if you have the `drand48' function. */
 #undef HAVE_DRAND48
 
@@ -109,9 +112,6 @@
 /* Define to 1 if you have the `z' library (-lz). */
 #undef HAVE_LIBZ
 
-/* Do we have <limits.h>? */
-#undef HAVE_LIMITS_H
-
 /* Define to 1 for Linux-type sendfile */
 #undef HAVE_LINUX_SENDFILE
 
@@ -180,9 +180,6 @@
 
 /* Define to 1 if `tm_zone' is a member of `struct tm'. */
 #undef HAVE_STRUCT_TM_TM_ZONE
-
-/* Define to 1 if you have the <sys/param.h> header file. */
-#undef HAVE_SYS_PARAM_H
 
 /* Define to 1 if you have the <sys/sendfile.h> header file. */
 #undef HAVE_SYS_SENDFILE_H
@@ -264,33 +261,6 @@
 /* No Compiler support for module scope symbols */
 #undef MODULE_SCOPE
 
-/* Do we have <dirent.h>? */
-#undef NO_DIRENT_H
-
-/* Do we have <dlfcn.h>? */
-#undef NO_DLFCN_H
-
-/* Do we have <errno.h>? */
-#undef NO_ERRNO_H
-
-/* Do we have <float.h>? */
-#undef NO_FLOAT_H
-
-/* Do we have <limits.h>? */
-#undef NO_LIMITS_H
-
-/* Do we have <stdlib.h>? */
-#undef NO_STDLIB_H
-
-/* Do we have <string.h>? */
-#undef NO_STRING_H
-
-/* Do we have <sys/wait.h>? */
-#undef NO_SYS_WAIT_H
-
-/* Do we have <values.h>? */
-#undef NO_VALUES_H
-
 /* Define to 1 if the native crypt library should be used */
 #undef NS_HAVE_CRYPT
 
@@ -340,7 +310,7 @@
 /* Are we building with threads enabled? */
 #undef TCL_THREADS
 
-/* Are wide integers to be implemented with C 'long's? */
+/* Do 'long' and 'long long' have the same size (64-bit)? */
 #undef TCL_WIDE_INT_IS_LONG
 
 /* What type should be used to define wide integers? */
@@ -348,10 +318,6 @@
 
 /* Maximum value for time_t */
 #undef TIME_T_MAX
-
-/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. This
-   macro is obsolete. */
-#undef TIME_WITH_SYS_TIME
 
 /* Define to 1 if your <sys/time.h> declares `struct tm'. */
 #undef TM_IN_SYS_TIME
