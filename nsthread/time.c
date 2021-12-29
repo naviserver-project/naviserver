@@ -329,7 +329,8 @@ Ns_IncrTime(Ns_Time *timePtr, time_t sec, long usec)
     NS_NONNULL_ASSERT(timePtr != NULL);
 
     if (unlikely(usec < 0) || unlikely(sec < 0)) {
-        fprintf(stderr, "Ns_IncrTime ignores negative increment sec %ld or usec %ld\n", sec, usec);
+        fprintf(stderr, "Ns_IncrTime ignores negative increment sec %" PRId64
+                " or usec %ld\n", (int64_t)sec, usec);
     } else {
         timePtr->sec += sec;
         timePtr->usec += usec;
