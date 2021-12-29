@@ -28,6 +28,8 @@
   Valid time units are μs, ms, s, m, h, d, w, y.
   Valid size units are kB, MB, GB, KiB, MiB, GiB.
 
+[section EXAMPLES]
+
 [example_begin]
  % ns_baseunit -size 10KB
  10240
