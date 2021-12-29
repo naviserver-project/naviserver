@@ -534,6 +534,7 @@ proc ns_browsermatch {args} {
 #
 
 proc ns_set_precision {precision} {
+    ns_deprecated {set ::tcl_precision $precision}
     set ::tcl_precision $precision
 }
 
