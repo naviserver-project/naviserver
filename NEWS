@@ -98,6 +98,10 @@ New Features:
       % lsort $l
       Bar Bor Bär
 
+   Note that the output of the command depends on correct
+   installation of locales on the host. Furthermore, the output of the
+   command varies depending on the C library's implementation, which
+   might differ for some locales/charsets between platforms.
 
 Performance Improvements:
 
