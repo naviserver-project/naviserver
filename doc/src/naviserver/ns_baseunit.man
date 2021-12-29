@@ -28,6 +28,8 @@
   Valid time units are μs, ms, s, m, h, d, w, y.
   Valid size units are kB, MB, GB, KiB, MiB, GiB.
 
+[list_end]
+
 [section EXAMPLES]
 
 [example_begin]
@@ -38,7 +40,6 @@
  9000
 [example_end]
 
-[list_end]
 
 [keywords "global built-in" conversion time size unit]
 [manpage_end]

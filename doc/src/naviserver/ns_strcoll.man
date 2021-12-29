@@ -40,6 +40,8 @@ UTF-8 locales, other implementations don't. Future versions of the
 function might consider using the ICU library (International
 Components for Unicode) for further cross-platform compatibility.
 
+[list_end]
+
 [section EXAMPLES]
 
 [para]
@@ -58,7 +60,6 @@ The command is suitable for usage in the Tcl lsort command:
 
 [example_end]
 
-[list_end]
 
 [keywords "global built-in" compare LC_COLLATE locale i18n]
 [manpage_end]
