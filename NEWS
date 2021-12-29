@@ -1,4 +1,265 @@
 =======================================
+NaviServer 4.99.23, released 2021-12-29
+=======================================
+
+ 70 files changed, 1431 insertions(+), 566 deletions(-)
+
+New Features:
+
+ - Improved hash algorithms for improved security
+
+   The new version supports SCRAM (Salted Challenge Response
+   Authentication Mechanism), which is one of the newer recommended
+   password hash algorithm to replace the classic salted SHA1
+   approaches. The classical hash algorithms become easier to attack
+   via high performance hashing hardware (GPUs).  NaviServer supports
+   now SCRYPT and SCRAM (when compiled with more recent versions of
+   OpenSSL; SCRYPT requires at least OpenSSL 3.0. SCRAM requires OpenSSL 1.1)
+
+   The actual hash function of SCRAM is PBKDF2 [RFC2898] with HMAC as
+   the pseudorandom function (PRF) and with dkLen == output length of
+   HMAC == output length of the digest function.
+
+   Here is an example of using pbkdf2_hmac for the hash function of
+   SCRAM-sha-256. RFC 7677 recommends to use 15K iterations for PBKDF2:
+
+      ::ns_crypto::pbkdf2_hmac \
+               -digest sha256 \
+               -iterations 15000 \
+               -secret $password \
+               -salt $salt]
+
+   OpenACS supports already switching to from salted SHA1 to SCAM (or
+   SCRYPT) via configuration variable.
+
+
+ - Better Unicode support, including emojis requiring 4-byte UTF-8 characters.
+
+   Earlier versions of NaviServer and the nsdb* database drivers
+   assumed on a few places that Tcl-internal UTF-8 is also valid UTF-8
+   for external sources, which is often, but not always true. Now, the
+   proper export functions are everywhere called.
+
+   The new code was tested with Emojis up to Unicode 13 (many thanks
+   to Wolfgang Winkler)
+
+   This change effects as well the database driver module "nsdbpg".
+
+ - ns_trim enhancements:
+   The new option "-prefix ..." can be used to strip a string
+   (such as ">> ") from every line starting with it.
+
+ - extended time unit support (added "w" for weeks and "y" for years)
+
+ - Added an experimental global parameter "nocache" to ease to
+   experiment with horizontal scaling. As a consequence, "ns_cache
+   eval" becomes a dummy operation.
+
+ - Added an experimental command "ns_baseunit"
+
+      ns_baseunit ?-size size? ?-time time?
+
+   Convert from memory units or from time units to its base value
+   using the NaviServer internal converters, which are used the same
+   way for various commands.  The base unit for a memory size is a
+   byte, for a time value a second). This command is necessary to
+   provide Tcl-level commands calculating with these units to support
+   uniform interfaces (e.g., calculating cache partition sizes base on
+   values such as 2MB).
+
+   Either "-size" or "-time" has to be specified.
+
+      % ns_baseunit -size 10KB
+      10240
+
+      ns_baseunit -time 2.5h
+      9000
+
+ - Added an experimental command "ns_strcoll"
+
+       ns_strcoll ?-locale locale? string1 string2"
+
+   This command compares lexicographically string1 with string2
+   according to the current locale collation and returns an integer
+   greater than, equal to, or less than 0, depending on whether
+   string1 is greater than, equal to, or less than string2. The
+   command is necessary in cases, where e.g., the sorting order from
+   the database (normally based on local collation) is different from
+   default Tcl sorting order to provide a uniform interface with same
+   sorting orders. The name is derived from the baseline POSIX
+   function call.
+
+   The command is suitable for usage in the lsort command:
+
+      % set l {Bor Bar Bär}
+      % lsort -command ns_strcoll $l
+      Bar Bär Bor
+
+      % lsort $l
+      Bar Bor Bär
+
+
+Performance Improvements:
+
+ - Increase scalability on DB operations by reducing DB pool locks
+
+   On high load servers, the total number of locks and busy locks on
+   the DB pools might become quite high. The new code caches these
+   statistics in the handles (which are per thread, requiring no
+   locks) and transfers the aggregated values on handle closes or
+   statistics calls.
+
+ - Set default for "concurrentinterpcreate" to "true" for Tcl 8.6 or
+   newer. Versions up to at least Tcl 8.5 are known to crash in case
+   two threads create interpreters at the same time. These crashes
+   were hard to reproduce, but serializing interpreter creation
+   helped. Since all our major servers are running since several years
+   without problems with this parameter turned on the default is now
+   set to "true", when NaviServer is compiled with Tcl 8.6 or newer.
+
+
+Bug Fixes:
+ - Fixed memory leak in "nsv_dict get" operations.
+
+
+Documentation improvements:
+---------------------------
+
+ - Improved the following man pages:
+
+        doc/src/manual/admin-tuning.man
+        doc/src/naviserver/commandlist.man
+        doc/src/naviserver/ns_adp_include.man
+        doc/src/naviserver/ns_baseunit.man
+        doc/src/naviserver/ns_cache.man
+        doc/src/naviserver/ns_charsets.man
+        doc/src/naviserver/ns_choosecharset.man
+        doc/src/naviserver/ns_connchan.man
+        doc/src/naviserver/ns_cookie.man
+        doc/src/naviserver/ns_cookiecharset.man
+        doc/src/naviserver/ns_crypto.man
+        doc/src/naviserver/ns_encodingforcharset.man
+        doc/src/naviserver/ns_encodingfortype.man
+        doc/src/naviserver/ns_formfieldcharset.man
+        doc/src/naviserver/ns_ictl.man
+        doc/src/naviserver/ns_job.man
+        doc/src/naviserver/ns_register.man
+        doc/src/naviserver/ns_schedule.man
+        doc/src/naviserver/ns_setformencoding.man
+        doc/src/naviserver/ns_shutdown.man
+        doc/src/naviserver/ns_sleep.man
+        doc/src/naviserver/ns_sockcallback.man
+        doc/src/naviserver/ns_sockopen.man
+        doc/src/naviserver/ns_strcoll.man
+        doc/src/naviserver/ns_time.man
+        doc/src/naviserver/ns_urlcharset.man
+        doc/src/naviserver/ns_valid_utf8.man
+        doc/src/naviserver/textutil-cmds.man
+
+
+Configuration Changes:
+----------------------
+
+ -  Ease configuration via environment variables
+
+    This feature is useful to manage many NaviServer instances with
+    mostly identical configurations without having to provide multiple
+    configuration files (e.g. for Docker setups, or clusters).
+
+    The sample configuration for of OpenACS (openacs-config.tcl)
+    contains now a Tcl dictionary with default values:
+
+      set defaultConfig {
+         hostname   localhost
+         ipaddress  127.0.0.1
+         httpport   8000
+         httpsport  ""
+         server     "openacs"
+         serverroot /var/www/$server
+         logroot    $serverroot/log/
+         homedir    /usr/local/ns
+         bindir     $homedir/bin
+         db_name    $server
+         db_user    $server
+         db_host    localhost
+         db_port    ""
+     }
+
+    These configuration values (keys of the dict) can be overridden by
+    environment variables prefixed with "oacs_" followed by the
+    parameter name. One can change the default port specified in the
+    configuration file for plain HTTP connections by e.g., providing it
+    via environment variables:
+
+        oacs_httpport=8101 /usr/local/ns/bin/nsd -i -t ....
+
+
+
+Code Changes:
+-------------
+ - Extended regression test
+
+ - Code Cleanup
+     . Do not declare reserved C identifiers
+
+ - Improved comments, fixed typos
+
+ - Marked "ns_set_precision" as deprecated, since there is no
+   reason why not setting the Tcl variable ::tcl_precision directly.
+
+
+Changes in NaviServer Modules:
+==============================
+
+ 8 files changed, 697 insertions(+), 283 deletions(-)
+
+
+nsdbpg:
+-------
+
+ - Extended added support for UTF-8 including emojis (see above)
+
+ - Added "ns_pg pid /handle/" to return the current backend PID
+   without SQL parsing.  This command is about 100x faster than using
+   "select pg_backend_pid()" and can be used e.g. for deploying
+   prepared statements.
+
+ - Some code cleanup and modernization
+
+ - Added minimal documentation of ns_pg* API in README file
+
+ - Bumped version number to 2.6
+
+nsstats:
+--------
+
+ - improved handling of fractional seconds
+ - added summary line with total savings to cache statistics
+   (to estimate consequences of eliminating this cache)
+ - improve bread crums for "mapped" server URLs
+ - added user interface for unmapping URLs from connection pools
+
+nsodbc:
+-------
+
+ - adjust code with current prototypes
+ - fix warnings from static checkers
+
+nsshell:
+--------
+
+ - Improved source code documentation
+ - Updated PRISM.JS libraries links , to prevent X-Content-Type-Options errors
+
+letsencrypt:
+------------
+
+ - Removed obtaining the intermediate cross signed certificate, since this does not seem
+   to be required anymore
+ - Improved source code documentation
+
+
+=======================================
 NaviServer 4.99.22, released 2021-08-25
 =======================================
 
