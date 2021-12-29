@@ -38,19 +38,20 @@ dnl      HAVE_BSD_SENDFILE
 dnl      HAVE_LINUX_SENDFILE
 dnl
 
+
 AC_DEFUN([AX_HAVE_BSD_SENDFILE], [AC_CHECK_FUNC(sendfile, [
     AC_CACHE_CHECK([for BSD-compatible sendfile], bsd_cv_sendfile, [
-    AC_TRY_COMPILE([
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
     #include <sys/types.h>
     #include <sys/socket.h>
     #include <sys/uio.h>
-    ], [
+    ]],[[
     int fd, s, flags;
     off_t offset, sbytes;
     size_t nbytes;
     struct sf_hdtr hdtr;
     (void) sendfile(fd, s, offset, nbytes, &hdtr, &sbytes, flags);
-    ], bsd_cv_sendfile=yes, bsd_cv_sendfile=no)])
+    ]])], [bsd_cv_sendfile=yes], [bsd_cv_sendfile=no])])
     bsd_ok=$bsd_cv_sendfile
     if test "$bsd_ok" = yes; then
         AC_DEFINE(HAVE_BSD_SENDFILE, 1, [Define to 1 for BSD-type sendfile])
@@ -59,14 +60,14 @@ AC_DEFUN([AX_HAVE_BSD_SENDFILE], [AC_CHECK_FUNC(sendfile, [
 
 AC_DEFUN([AX_HAVE_LINUX_SENDFILE], [AC_CHECK_FUNC(sendfile, [
     AC_CACHE_CHECK([for Linux-compatible sendfile], linux_cv_sendfile, [
-    AC_TRY_COMPILE([
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
     #include <sys/sendfile.h>
-    ], [
+    ]],[[
     int out, in;
     off_t offset;
     size_t count;
     (void) sendfile(out, in, &offset, count);
-    ], linux_cv_sendfile=yes, linux_cv_sendfile=no)])
+    ]])], [linux_cv_sendfile=yes], [linux_cv_sendfile=no])])
     linux_ok=$linux_cv_sendfile
     if test "$linux_ok" = yes; then
         AC_DEFINE(HAVE_LINUX_SENDFILE, 1, [Define to 1 for Linux-type sendfile])
