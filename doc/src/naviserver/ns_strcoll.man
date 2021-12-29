@@ -21,16 +21,29 @@
   is greater than, equal to, or less than string2. The command is
   necessary in cases, where e.g. the sorting order from the database
   (normally based on local collation) is different from default Tcl
-  sorting order to provide a unifor interface with same sorting
-  orders. The name is derived from the baseline POSIX function call.
+  sorting order to provide a uniform interface with same sorting
+  orders. The name of the function is derived from the baseline POSIX
+  function call.
 
 [para] When the option [option "-locale"] is not set, the LC_COLLATE
-value is determines by the operating system. When locale is specified,
-it is recommended to use the specification consisting of language,
-territory and codeset (e.g. [term en_US.UTF-8].
+value is determined by the operating system (looking into the settings
+of LC_ALL, LC_COLLATE and LANG). When locale is specified, it is
+recommended to use the specification consisting of language, territory
+and charset (e.g. [term en_US.UTF-8].
+
+[para] Note that the output of the command depends on correct
+installation of locales on the host. Furthermore, the output of the
+command varies depending on the C library's implementation. Some
+implementations support further advanced sorting features such as
+case-folding collation, ignoring preceding dashes etc. especially for
+UTF-8 locales, other implementations don't. Future versions of the
+function might consider using the ICU library (International
+Components for Unicode) for further cross-platform compatibility.
+
+[section EXAMPLES]
 
 [para]
-  The command is suitable for usage in the Tcl lsort command:
+The command is suitable for usage in the Tcl lsort command:
 
 [example_begin]
  % set l {Bor Bar Bär}
