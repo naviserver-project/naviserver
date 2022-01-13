@@ -10,9 +10,9 @@ New Features:
 
    The new version supports SCRAM (Salted Challenge Response
    Authentication Mechanism), which is one of the newer recommended
-   password hash algorithm to replace the classic salted SHA1
+   password hash algorithms to replace the classic salted SHA1
    approaches. The classical hash algorithms become easier to attack
-   via high performance hashing hardware (GPUs).  NaviServer supports
+   via high-performance hashing hardware (GPUs).  NaviServer supports
    now SCRYPT and SCRAM (when compiled with more recent versions of
    OpenSSL; SCRYPT requires at least OpenSSL 3.0. SCRAM requires OpenSSL 1.1)
 
@@ -36,14 +36,14 @@ New Features:
  - Better Unicode support, including emojis requiring 4-byte UTF-8 characters.
 
    Earlier versions of NaviServer and the nsdb* database drivers
-   assumed on a few places that Tcl-internal UTF-8 is also valid UTF-8
+   assumed in a few places that Tcl-internal UTF-8 is also valid UTF-8
    for external sources, which is often, but not always true. Now, the
    proper export functions are everywhere called.
 
    The new code was tested with Emojis up to Unicode 13 (many thanks
    to Wolfgang Winkler)
 
-   This change effects as well the database driver module "nsdbpg".
+   This change affects as well the database driver module "nsdbpg".
 
  - ns_trim enhancements:
    The new option "-prefix ..." can be used to strip a string
@@ -85,7 +85,7 @@ New Features:
    string1 is greater than, equal to, or less than string2. The
    command is necessary in cases, where e.g., the sorting order from
    the database (normally based on local collation) is different from
-   default Tcl sorting order to provide a uniform interface with same
+   default Tcl sorting order to provide a uniform interface with the same
    sorting orders. The name is derived from the baseline POSIX
    function call.
 
@@ -98,7 +98,7 @@ New Features:
       % lsort $l
       Bar Bor Bär
 
-   Note that the output of the command depends on correct
+   Note that the output of the command depends on the correct
    installation of locales on the host. Furthermore, the output of the
    command varies depending on the C library's implementation, which
    might differ for some locales/charsets between platforms.
@@ -117,7 +117,7 @@ Performance Improvements:
    newer. Versions up to at least Tcl 8.5 are known to crash in case
    two threads create interpreters at the same time. These crashes
    were hard to reproduce, but serializing interpreter creation
-   helped. Since all our major servers are running since several years
+   helped. Since all our major servers are running for several years
    without problems with this parameter turned on the default is now
    set to "true", when NaviServer is compiled with Tcl 8.6 or newer.
 
@@ -240,7 +240,7 @@ nsstats:
  - improved handling of fractional seconds
  - added summary line with total savings to cache statistics
    (to estimate consequences of eliminating this cache)
- - improve bread crums for "mapped" server URLs
+ - improve bread-crums for "mapped" server URLs
  - added user interface for unmapping URLs from connection pools
 
 nsodbc:
@@ -253,12 +253,12 @@ nsshell:
 --------
 
  - Improved source code documentation
- - Updated PRISM.JS libraries links , to prevent X-Content-Type-Options errors
+ - Updated PRISM.JS libraries links, to prevent X-Content-Type-Options errors
 
 letsencrypt:
 ------------
 
- - Removed obtaining the intermediate cross signed certificate, since this does not seem
+ - Removed obtaining the intermediate cross-signed certificate, since this does not seem
    to be required anymore
  - Improved source code documentation
 
