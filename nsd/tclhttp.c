@@ -4067,7 +4067,7 @@ HttpProc(
                         } else {
 
                             /*
-                             * We read less then chunksize bytes, the source
+                             * We read less than chunksize bytes, the source
                              * is on EOF, so what to do?  Since we can't
                              * rectify Content-Length, receiver expects us
                              * to send more...

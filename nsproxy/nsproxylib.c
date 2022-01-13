@@ -3225,7 +3225,7 @@ ReaperThread(void *UNUSED(arg))
 
             /*
              * Get max time to wait for one of the worker process.
-             * This is less then time for the whole pool.
+             * This is less than the time for the whole pool.
              */
 
             proxyPtr = poolPtr->firstPtr;
