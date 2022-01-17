@@ -51,7 +51,7 @@ following elements: [term proto], [term userinfo],
  
  % ns_parseurl /foo/bar.html
  path foo tail bar.html
-
+ 
  % ns_parseurl /top/query?x=1&y=2#pos1
  path top tail query query x=1&y=2 fragment pos1
 [example_end]

@@ -183,15 +183,15 @@ test ns_urlencode-2.5.17 {plain chars and encoded chars} -body {
 } -result {/motörhead}
 
 test ns_urlencode-2.5.18.1 {invalid 2byte utf-8 - 2nd by too small} -body {
-    ns_valid_utf8 [ns_urldecode -part path "/mot%C3or"]
-} -result 0
+    ns_valid_utf8 [ns_urldecode -charset iso8859-1 -part path "/mot%C3or"]
+} -returnCodes {ok error} -result 0
 
 test ns_urlencode-2.5.18.2 {invalid 2byte utf-8 - premature end} -body {
-    ns_valid_utf8 [ns_urldecode -part path "/mot%C3"]
+    catch {ns_urldecode -charset iso8859-1 -part path "/mot%C3"}
 } -result 0
 
 test ns_urlencode-2.5.18.2 {invalid 2byte utf-8 - text with cp850 chars} -body {
-    ns_valid_utf8 [ns_urldecode -part path "test%E4%FC"]
+    ns_valid_utf8 [ns_urldecode -charset iso8859-1 -part path "test%E4%FC"]
 } -result 0
 
 test ns_urlencode-2.6.1 {rfc2396 section 2.4.3 URI 'delim' characters} -body {

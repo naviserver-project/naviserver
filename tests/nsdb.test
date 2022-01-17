@@ -20,7 +20,7 @@ test ns_dbquotevalue-2 {basic syntax} -body {
 } -returnCodes {ok error} -result {NULL}
 test ns_dbquotevalue-3 {basic syntax} -body {
     ns_dbquotevalue 10
-} -returnCodes {ok error} -result {'10'}
+} -returnCodes {ok error} -result {10}
 test ns_dbquotevalue-3 {basic syntax} -body {
     ns_dbquotevalue "hello world"
 } -returnCodes {ok error} -result {'hello world'}
