@@ -3390,7 +3390,7 @@ Ns_UrlQueryEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encodi
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_UrlQueryDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding)
+Ns_UrlQueryDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, int *resultPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
@@ -3574,7 +3574,7 @@ Ns_ConnClearQuery(Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode
-Ns_QueryToSet(char *query, Ns_Set *set)
+Ns_QueryToSet(char *query, Ns_Set *set, Tcl_Encoding encoding)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 

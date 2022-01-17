@@ -6,28 +6,34 @@
 
 [description]
 
-This command parses the specified querystring into an [cmd ns_set],
-which is returned.  The keys and values will be decoded
-based by the rules used for [cmd ns_urlencode].
+Parse HTTP query parameters.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
- [call [cmd ns_parsequery] [arg querystring]]
-
+ [call [cmd ns_parsequery] \
+     [opt [option "-charset [arg charset]"]] \
+     [opt [arg "--"]] \
+     [arg querystring]]
 
 [list_end]
 
+This command parses the specified HTTP [arg querystring]
+into an [cmd ns_set], which is returned.  The keys and values will be decoded
+based by the rules used for [cmd ns_urlencode]. In case the
+query cannot be parsed to the charset, an exception is raised.
+
+[param]
+The option [option -charset] can be used to specify the character set of
+the encode operation.
 
 [section EXAMPLES]
 
 [example_begin]
  % set s [lb]ns_parsequery "msg=Hello+World%21&a=b&a=b&c=d"[rb]
  d0
-[example_end]
-
-[example_begin]
+ 
  % ns_set array $s
  msg {Hello World!} a b a b c d
 [example_end]
@@ -35,7 +41,7 @@ based by the rules used for [cmd ns_urlencode].
 
 [para]
 
-[see_also ns_set ns_getform ns_urlencode]
-[keywords "global built-in" URL query]
+[see_also ns_set ns_getform ns_urlencode ns_parseurl]
+[keywords "global built-in" URL query encoding charset]
 
 [manpage_end]

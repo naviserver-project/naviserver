@@ -968,7 +968,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
                 if (e != NULL) {
                     *e = '\0';
                 }
-                (void) Ns_UrlQueryDecode(dsPtr, s, NULL);
+                (void) Ns_UrlQueryDecode(dsPtr, s, NULL, NULL);
                 Ns_DStringNAppend(dsPtr, NS_EMPTY_STRING, 1);
                 if (e != NULL) {
                     *e++ = '+';

@@ -215,7 +215,7 @@ NsUpdateProgress(Ns_Sock *sock)
 
             if (request->query != NULL) {
               set = Ns_SetCreate(NULL);
-              if (Ns_QueryToSet(request->query, set) == NS_OK) {
+              if (Ns_QueryToSet(request->query, set,  Ns_GetUrlEncoding(NULL)) == NS_OK) {
                 key = Ns_SetGet(set, "X-Progress-ID");
                 Ns_Log(Notice, "progress start URL %s key '%s'", request->url, key);
               }
