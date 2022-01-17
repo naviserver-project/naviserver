@@ -39,7 +39,7 @@
  * Local functions defined in this file.
  */
 
-static void ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
+static int ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void ParseMultiInput(Conn *connPtr, const char *start, char *end)
@@ -131,10 +131,10 @@ Ns_ConnGetQuery(Ns_Conn *conn)
              * The content has none of the "FORM" content types, so get it
              * in good old AOLserver tradition from the query variables.
              */
-            ParseQuery(connPtr->request.query,
-                       connPtr->query,
-                       connPtr->urlEncoding,
-                       NS_FALSE);
+            (void)ParseQuery(connPtr->request.query,
+                             connPtr->query,
+                             connPtr->urlEncoding,
+                             NS_FALSE);
         }
 
         if (content != NULL) {
@@ -165,7 +165,7 @@ Ns_ConnGetQuery(Ns_Conn *conn)
                 } else {
                     encoding = connPtr->urlEncoding;
                 }
-                ParseQuery(content, connPtr->query, encoding, translate);
+                (void)ParseQuery(content, connPtr->query, encoding, translate);
 
             } else if (GetBoundary(&bound, contentType)) {
                 /*
@@ -273,13 +273,12 @@ Ns_ConnClearQuery(Ns_Conn *conn)
  */
 
 Ns_ReturnCode
-Ns_QueryToSet(char *query, Ns_Set *set)
+Ns_QueryToSet(char *query, Ns_Set *set, Tcl_Encoding  encoding)
 {
     NS_NONNULL_ASSERT(query != NULL);
     NS_NONNULL_ASSERT(set != NULL);
 
-    ParseQuery(query, set, NULL, NS_FALSE);
-    return NS_OK;
+    return ParseQuery(query, set, encoding, NS_FALSE);
 }
 
 
@@ -304,16 +303,32 @@ int
 NsTclParseQueryObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int     result;
+    char   *charset = NULL, *chars = (char *)NS_EMPTY_STRING;
+    Ns_ObjvSpec  lopts[] = {
+        {"-charset", Ns_ObjvString, &charset, NULL},
+        {"--",       Ns_ObjvBreak,  NULL,     NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec  args[] = {
+        {"querystring", Ns_ObjvString, &chars, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "querystring");
+    if (Ns_ParseObjv(lopts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
-        Ns_Set *set = Ns_SetCreate(NULL);
+        Tcl_Encoding encoding;
+        Ns_Set      *set = Ns_SetCreate(NULL);
 
-        if (Ns_QueryToSet(Tcl_GetString(objv[1]), set) != NS_OK) {
-            Ns_TclPrintfResult(interp, "could not parse query: \"%s\"", Tcl_GetString(objv[1]));
+        if (charset != NULL) {
+            encoding = Ns_GetCharsetEncoding(charset);
+        } else {
+            encoding = Ns_GetUrlEncoding(NULL);
+        }
+
+        if (Ns_QueryToSet(chars, set, encoding) != NS_OK) {
+            Ns_TclPrintfResult(interp, "could not parse query: \"%s\"", chars);
             Ns_SetFree(set);
             result = TCL_ERROR;
         } else {
@@ -330,10 +345,10 @@ NsTclParseQueryObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  * ParseQuery --
  *
  *      Parse the given form string for URL encoded key=value pairs,
- *      converting to UTF if given encoding is not NULL.
+ *      converting to UTF8 if given encoding is not NULL.
  *
  * Results:
- *      None.
+ *      TCL_OK or TCL_ERROR in case parsing was not possible.
  *
  * Side effects:
  *      None.
@@ -341,11 +356,12 @@ NsTclParseQueryObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
  *----------------------------------------------------------------------
  */
 
-static void
+static Ns_ReturnCode
 ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
 {
     Tcl_DString  kds, vds, vds2;
     char        *p;
+    int          result = TCL_OK;
 
     NS_NONNULL_ASSERT(form != NULL);
     NS_NONNULL_ASSERT(set != NULL);
@@ -369,10 +385,11 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
             *v = '\0';
         }
         Ns_DStringSetLength(&kds, 0);
-        k = Ns_UrlQueryDecode(&kds, k, encoding);
+        k = Ns_UrlQueryDecode(&kds, k, encoding, &result);
         if (v != NULL) {
             Ns_DStringSetLength(&vds, 0);
-            (void) Ns_UrlQueryDecode(&vds, v+1, encoding);
+
+            (void) Ns_UrlQueryDecode(&vds, v+1, encoding, &result);
             *v = '=';
             v = vds.string;
             if (translate) {
@@ -397,6 +414,9 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
                 }
             }
         }
+        if (result != TCL_OK) {
+            break;
+        }
         (void) Ns_SetPut(set, k, v);
         if (p != NULL) {
             *p++ = '&';
@@ -405,6 +425,8 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
     Tcl_DStringFree(&kds);
     Tcl_DStringFree(&vds);
     Tcl_DStringFree(&vds2);
+
+    return (result == TCL_OK ? NS_OK : NS_ERROR);
 }
 
 

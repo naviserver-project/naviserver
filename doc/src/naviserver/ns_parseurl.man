@@ -56,8 +56,8 @@ following elements: [term proto], [term userinfo],
  path top tail query query x=1&y=2 fragment pos1
 [example_end]
 
-[see_also ns_absoluteurl ns_parsefieldvalue ns_parseheader ns_parsehostport]
-[keywords "global built-in" url parse]
+[see_also ns_absoluteurl ns_parsequery ns_parsefieldvalue ns_parseheader ns_parsehostport]
+[keywords "global built-in" url parse encoding]
 [manpage_end]
 
 

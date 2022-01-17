@@ -449,6 +449,26 @@ test ns_urlencode-7.1.2 {
 } -returnCodes {ok return error} -result 1
 
 
+#
+# ns_parsequery
+#
+test ns_parsequery-1.0 {basic syntax} -body {
+    ns_parsequery
+} -returnCodes error -result {wrong # args: should be "ns_parsequery ?-charset charset? ?--? querystring"}
+
+test ns_parsequery-1.1 {simple operation} -body {
+    ns_set array [ns_parsequery a=1&b=2]
+} -returnCodes {error ok} -result {a 1 b 2}
+
+test ns_parsequery-1.2 {simple operation} -body {
+    ns_set array [ns_parsequery msg=Hello+World%21&a=b&a=b&c=d]
+} -returnCodes {error ok} -result {msg {Hello World!} a b a b c d}
+
+test ns_parsequery-1.3 {invalid UTF-8} -body {
+    ns_parsequery return=%0a%0d%bf%f0%9f
+} -returnCodes {error ok} -result {could not parse query: "return=%0a%0d%bf%f0%9f"}
+
+
 
 unset unreservedChars
 

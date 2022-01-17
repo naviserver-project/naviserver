@@ -846,7 +846,7 @@ Ns_UrlPathDecode(Ns_DString *dsPtr, const char *urlSegment,
  *      If encoding is NULL, UTF8 is assumed.
  *
  * Results:
- *      A pointer to the dstring's value, containing the transformed
+ *      A pointer to the Tcl_DString's value, containing the transformed
  *      query string component.
  *
  * Side effects:
@@ -868,12 +868,12 @@ Ns_UrlQueryEncode(Ns_DString *dsPtr, const char *urlSegment,
 
 char *
 Ns_UrlQueryDecode(Ns_DString *dsPtr, const char *urlSegment,
-                  Tcl_Encoding encoding)
+                  Tcl_Encoding encoding, int *resultPtr)
 {
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(urlSegment != NULL);
 
-    return UrlDecode(dsPtr, urlSegment, encoding, 'q', NULL);
+    return UrlDecode(dsPtr, urlSegment, encoding, 'q', resultPtr);
 }
 
 /*
@@ -987,7 +987,7 @@ Ns_DecodeUrlWithEncoding(Ns_DString *dsPtr, const char *urlSegment,
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(urlSegment != NULL);
 
-    return Ns_UrlQueryDecode(dsPtr, urlSegment, encoding);
+    return Ns_UrlQueryDecode(dsPtr, urlSegment, encoding, NULL);
 }
 
 char *
@@ -999,7 +999,7 @@ Ns_DecodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment,
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(urlSegment != NULL);
 
-    return Ns_UrlQueryDecode(dsPtr, urlSegment, encoding);
+    return Ns_UrlQueryDecode(dsPtr, urlSegment, encoding, NULL);
 }
 
 

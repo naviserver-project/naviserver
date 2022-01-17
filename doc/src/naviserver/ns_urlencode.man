@@ -29,7 +29,7 @@
 
 [list_end]
 
-The option [arg charset] can be used to specify the character set of
+The option [option -charset] can be used to specify the character set of
 the encode operation. Option [arg part] is used to specify the
 [arg query] (default) or [arg path] encoding. In the query mode, the
 components will be concatenated via "&", in the path mode the
