@@ -464,7 +464,7 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
         url = end + 1;
         /*fprintf(stderr, "SCHEME looks ok: %s\n", *pprotocol);*/
 
-    } else if (*end != '/' && *end != '\0') {
+    } else if (*end != '/' && *end != '?' && *end != '#' && *end != '\0' ) {
         /*
          * We do not have an explicit relative URL starting with a
          * slash. Accept relative URL based on the heuristic to avoid getting
@@ -485,7 +485,6 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
                 return NS_ERROR;
             }
         }
-
     }
 
 
@@ -609,6 +608,10 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
              * Separate the "tail" from the "path", otherwise the string is
              * just "tail".
              */
+            urlPtr->query = ParseUpTo(url, '?');
+            if (urlPtr->query == NULL) {
+                urlPtr->fragment = ParseUpTo(url, '#');
+            }
 
             end = strrchr(url, INTCHAR('/'));
             if (end == NULL) {
@@ -628,10 +631,12 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
         }
 
         if (urlPtr->tail != NULL) {
-            urlPtr->query = ParseUpTo(urlPtr->tail, '?');
+            if (urlPtr->query == NULL) {
+                urlPtr->query = ParseUpTo(urlPtr->tail, '?');
+            }
             if (urlPtr->query != NULL) {
                 urlPtr->fragment = ParseUpTo(urlPtr->query, '#');
-            } else {
+            } else if (urlPtr->fragment == NULL) {
                 urlPtr->fragment = ParseUpTo(urlPtr->tail, '#');
             }
         }

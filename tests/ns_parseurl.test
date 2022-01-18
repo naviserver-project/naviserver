@@ -25,9 +25,21 @@ test ns_parseurl-1.4 {full URL, no port, no component, no trailing slash} -body 
     ns_parseurl http://openacs.org
 } -result {proto http host openacs.org path {} tail {}}
 
-test ns_parseurl-1.5 {full URL, no port, one component} -body {
+test ns_parseurl-1.5.1 {full URL, no port, one component} -body {
     ns_parseurl http://openacs.org/t.html
 } -result {proto http host openacs.org path {} tail t.html}
+
+test ns_parseurl-1.5.2.1 {full URL, no port, one component, query} -body {
+    ns_parseurl http://openacs.org/t.html?x=1
+} -result {proto http host openacs.org path {} tail t.html query x=1}
+
+test ns_parseurl-1.5.2.2 {full URL, no port, one component, query} -body {
+    ns_parseurl http://openacs.org/t.html?x=1/2
+} -result {proto http host openacs.org path {} tail t.html query x=1/2}
+
+test ns_parseurl-1.5.3 {full URL, no port, one component, query, fragment} -body {
+    ns_parseurl http://openacs.org/t.html?x=1/2&y=http://www.org#foo
+} -result {proto http host openacs.org path {} tail t.html query x=1/2&y=http://www.org fragment foo}
 
 test ns_parseurl-1.6 {full URL with userinfo, no port, one component} -body {
     ns_parseurl http://foo@openacs.org/t.html
@@ -37,13 +49,25 @@ test ns_parseurl-1.6.1 {full URL with slash (RFC 3986), no port, query} -body {
     ns_parseurl http://openacs.org/?x=1
 } -result {proto http host openacs.org path {} tail {} query x=1}
 
-test ns_parseurl-1.6.2 {full URL with slash (RFC 3986), with port, query} -body {
+test ns_parseurl-1.6.2.1 {full URL with slash (RFC 3986), with port, query} -body {
     ns_parseurl http://openacs.org:80/?x=1
 } -result {proto http host openacs.org port 80 path {} tail {} query x=1}
 
-test ns_parseurl-1.6.3 {full URL with slash (RFC 3986), with port, query, fragment} -body {
+test ns_parseurl-1.6.2.2 {full URL with slash (RFC 3986), with port, query} -body {
+    ns_parseurl http://openacs.org:80/?x=1/2
+} -result {proto http host openacs.org port 80 path {} tail {} query x=1/2}
+
+test ns_parseurl-1.6.3.1 {full URL with slash (RFC 3986), with port, query, fragment} -body {
     ns_parseurl http://openacs.org:80/?x=1#foo
 } -result {proto http host openacs.org port 80 path {} tail {} query x=1 fragment foo}
+
+test ns_parseurl-1.6.3.2 {full URL with slash (RFC 3986), with port, query, fragment} -body {
+    ns_parseurl http://openacs.org:80/?x=1/2#foo
+} -result {proto http host openacs.org port 80 path {} tail {} query x=1/2 fragment foo}
+
+test ns_parseurl-1.6.3.3 {full URL with slash (RFC 3986), with port, query, fragment} -body {
+    ns_parseurl http://openacs.org:80/?x=1/2&url=http://www.org#foo
+} -result {proto http host openacs.org port 80 path {} tail {} query x=1/2&url=http://www.org fragment foo}
 
 test ns_parseurl-1.6.4 {full URL with slash (RFC 3986), with port, fragment} -body {
     ns_parseurl http://openacs.org:80/#foo
@@ -182,6 +206,11 @@ test ns_parseurl-2.1.1 {relative URL} -body {
 test ns_parseurl-2.1.2 {relative URL} -body {
     ns_parseurl /?x=1
 } -returnCodes {error ok} -result {path {} tail {} query x=1}
+
+test ns_parseurl-2.1.2 {relative URL} -body {
+    ns_parseurl index?url=http://www.test.com
+} -returnCodes {error ok} -result {tail index query url=http://www.test.com}
+
 
 #
 # Legacy NaviServer behavior (putting remainder into "tail"), kept for
