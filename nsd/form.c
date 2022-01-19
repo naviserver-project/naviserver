@@ -414,10 +414,9 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
                 }
             }
         }
-        if (result != TCL_OK) {
-            break;
+        if (result == TCL_OK) {
+            (void) Ns_SetPut(set, k, v);
         }
-        (void) Ns_SetPut(set, k, v);
         if (p != NULL) {
             *p++ = '&';
         }
