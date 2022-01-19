@@ -1215,8 +1215,17 @@ QuoteSqlValue(Tcl_DString *dsPtr, Tcl_Obj *valueObj, int valueType)
     valueString = Tcl_GetStringFromObj(valueObj, &valueLength);
 
     if (valueObj->typePtr == intTypePtr) {
-        Tcl_DStringAppend(dsPtr, valueString, valueLength);
-
+        /*
+         * Since we can trust the byterep, we can bypass the expensive
+         * Tcl_UtfToExternalDString check.
+         */
+        if (valueType == INTCHAR('n')) {
+            Tcl_DStringAppend(dsPtr, valueString, valueLength);
+        } else {
+            Tcl_DStringAppend(dsPtr, "'", 1);
+            Tcl_DStringAppend(dsPtr, valueString, valueLength);
+            Tcl_DStringAppend(dsPtr, "'", 1);
+        }
     } else {
         Tcl_DString   ds;
           /*

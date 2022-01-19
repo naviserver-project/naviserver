@@ -20,7 +20,7 @@ test ns_dbquotevalue-2 {basic syntax} -body {
 } -returnCodes {ok error} -result {NULL}
 test ns_dbquotevalue-3 {basic syntax} -body {
     ns_dbquotevalue 10
-} -returnCodes {ok error} -result {10}
+} -returnCodes {ok error} -result {'10'}
 test ns_dbquotevalue-3 {basic syntax} -body {
     ns_dbquotevalue "hello world"
 } -returnCodes {ok error} -result {'hello world'}
@@ -29,7 +29,7 @@ test ns_dbquotevalue-4 {basic syntax} -body {
 } -returnCodes {ok error} -result {'hello o''toole'}
 test ns_dbquotevalue-5 {passing in value with objType "int"} -body {
     ns_dbquotevalue [expr {123}]
-} -returnCodes {ok error} -result 123
+} -returnCodes {ok error} -result '123'
 test ns_dbquotevalue-6 {string containing invalid value} -body {
     ns_dbquotevalue "1\x002"
 } -returnCodes {ok error} -result "input string '1\x002' contains invalid characters"
@@ -56,7 +56,7 @@ test ns_dbquotelist-4 {basic syntax} -body {
 } -returnCodes {ok error} -result {'hello','o''toole'}
 test ns_dbquotelist-5 {passing in value with objType "int"} -body {
     ns_dbquotelist [list [expr {123}] 456]
-} -returnCodes {ok error} -result {123,'456'}
+} -returnCodes {ok error} -result {'123','456'}
 test ns_dbquotelist-6 {string containing invalid value} -body {
     ns_dbquotelist "1\x002"
 } -returnCodes {ok error} -result "input string '1\x002' contains invalid characters"
