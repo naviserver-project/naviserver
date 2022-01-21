@@ -1235,7 +1235,7 @@ QuoteSqlValue(Tcl_DString *dsPtr, Tcl_Obj *valueObj, int valueType)
         Tcl_DStringInit(&ds);
         Tcl_UtfToExternalDString(NULL, valueString, valueLength, &ds);
 
-        if (strlen(ds.string) < ds.length) {
+        if (strlen(ds.string) < (size_t)ds.length) {
             result = NS_ERROR;
 
         } else if (valueType == INTCHAR('n')) {
