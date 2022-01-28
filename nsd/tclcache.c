@@ -1240,7 +1240,8 @@ SetEntry(NsInterp *itPtr, TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_T
 
     if (cPtr->maxEntry > 0u && valueSize > cPtr->maxEntry) {
         Ns_Log(Notice, "ns_cache %s key '%s': "
-               "entry size %" PRIuz " larger than maxentry %" PRIuz,
+               "entry size %" PRIuz " is larger than the configured maxentry %" PRIuz
+               "value (entry is not cached)",
                Ns_CacheName(cPtr->cache),
                Ns_CacheKey(entry),
                valueSize,
