@@ -188,7 +188,7 @@ Unregister the previously registered log filter script identified by
 
 [call [cmd ns_logroll] ]
 
-Roll the server error log. The behavior is independent from the
+Roll the server error log. The behavior is independent of the
 configuration parameter [emph logroll]. See [cmd ns_rollfile] for
 details of log rolling.
 

@@ -117,12 +117,21 @@ The result is a byte string of the decrypted input (no dict).
 
 [call [cmd "ns_crypto::eckey generate"] \
      [opt [option "-name [arg name]"]] \
-     [opt [option "-pem [arg pem]"]] \
+     [option "-pem [arg pem]"] \
      ]
 
 Generate an EC pemfile without the need of an external command.
+If no [option -name] is provided (name of the eliptic curve),
+[term prime256v1] is assumed. An other popular candidate is
+[term secp384r1]. The [option "-pem"] denotes the name
+of the output file, which is in PEM format.
+
 [para]
 This function requires OpenSSL compiled with EC support enabled.
+
+[example_begin]
+ % ns_crypto::eckey generate -name prime256v1 -pem /tmp/priv.key.pem
+[example_end]
 
 
 [call [cmd "ns_crypto::eckey import"] \
@@ -459,6 +468,6 @@ is performed. When the type of the Tcl value is clearly a binary type
 [list_end]
 
 [see_also nsd ns_md ns_hmac]
-[keywords crypto HMAC HKDF AEAD random]
+[keywords crypto HMAC HKDF AEAD ecdsa random]
 
 [manpage_end]
