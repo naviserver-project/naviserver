@@ -50,43 +50,61 @@ ANSI standard C.
 
 [para]
 
-[emph {GNU make}] is also required.  It is also available from the GNU web site.
+[emph {GNU make}] is also required.  It is available for
+all major operating systems and also available from the GNU web site.
+On some platforms (e.g., SunOS, FreeBSD, OpenBSD) the GNU make
+is called [emph {gmake}].
 
 [para]
 
 [section {Downloading}]
 
-Released versions are available from 
-[uri http://sourceforge.net/project/showfiles.php?group_id=130646 {SourceForge Download area}]
+Released versions of NaviServer are available from
+[uri https://sourceforge.net/projects/naviserver/ {SourceForge Download area}].
+
+You find there for every version the main NaviServer source code and
+as well the [emph {naviserver-*modules.tar.gz}] files matching the
+main source code files with the same version.
 
 [para]
 
-Latest development version is available from the Bitbucket repository
+Latest development version of NaviServer and the
+modules is available from the
+[uri https://sourceforge.net/projects/naviserver/ {Bitbucket NaviServer repository}]
+and can be downloaded via:
 
 [example_begin]
  git clone https:/bitbucket.org/naviserver/naviserver.git
- cd naviserver
- ./autogen.sh
- make install
+[example_end]
+
+or for the modules with
+
+[example_begin]
+ git clone https://bitbucket.org/naviserver/[emph modulname]
 [example_end]
 
 [section {Building}]
 
-We've tried to make building NaviServer as simple as possible.  On the supported
-platforms, simply type:
+We've tried to make building NaviServer as simple as possible.  When
+downloading a release from sourceforge, simply type:
 
 [example_begin]
+ cd naviserver
  ./configure
  make
+ sudo make install
 [example_end]
 
-[para]
+When working with the (unreleased) version from the source code
+repository, a call of [emph autogen.sh] is necessary as well:
 
-Some modules use third-party libraries.  If the library is missing, the NaviServer
-build will continue without error -- it just will not build the offending
-module.
-
-
+[example_begin]
+ cd naviserver
+ ./autogen.sh
+ ./configure
+ make
+ sudo make install
+ make install
 [para]
 
 
@@ -112,26 +130,19 @@ Two options to configure.sh script worth noting:
 Type "[emph {make install}]" to make a production server.  This
 will create an installation directory at [emph {/usr/local/ns/}], populate
 the directories with various  startup files and  configuration files, copy
-the binaries to the [emph {/usr/local/ns/bin}] directory, and finish.  To install
-confidence tests, type "make install-tests" and they will appear in the
-tests/ directory of your server's pageroot.  The default location for installations
-can be overridden by typing "[emph {gmake install PREFIX=/your/directory/}]".
-
+the binaries to the [emph {/usr/local/ns/bin}] directory, and finish.
 
 [para]
 
-[section {Downloading and Installing Modules}]
+[section {Compiling and Installing Modules}]
 
-To download and install additional modules:
+Download modules from sourceforge releases or Bitbucket as described
+above. Note that you should first install the main NaviServer package
+before installing the optional modules. Some part of the configuration
+of the modules is taken from previously installed NaviServer
+installations.
 
-[example_begin]
-  hg clone http://bitbucket.org/naviserver/modulename
-  cd modulename
-  make install
-[example_end]
-
-[para]
-The steps above assume, that NaviServer is installed at the standard
+Typically installed at the standard
 place at [term /usr/local/ns/]. If this is not the case in your
 installation, please provide the location to make via parameter
 [term NAVISERVER].
@@ -160,35 +171,17 @@ file for any additional information.
 The installation directory contains several configuration files under
 /usr/local/ns/conf installation directory.
 A simple configuration to start with is nsd-config.tcl, which is used
-below. A more complete reference of the available parameter is
-sample-config, a very short configuration file is simple-config.tcl.
-
-The most basic configuration parameters are the port and listening
-addresses, which are set in nsd-config.tcl as follows:
-
-[list_begin enum]
-
-  [enum] Listen for HTTP connections on your computer's primary
-        interface at port 8080.  To use another port and/or select
-        interfaces, you can set the [term port] and [term address]
-        parameters. For details how to configure the networking setup
-	of NaviServer, see [term nssock] (for HTTP) and [term nsssl]
-        (for HTTPS).
-
-  [enum] Check security settings for [term nscp] (Control Port module)
-  and listen on localhost:4080 if they are set.
-
-[list_end]
+int he examples below. For more details, see
+[uri ../admin-config.html {NaviServer Configuration Reference}].
 
 [para]
 
 
-Note: Some modules can be disabled in the sample nsd.tcl for security
-reasons. They are [emph {nscp}] and [emph {nsperm}]. These modules can
-be disables by e.g. commenting out the respective lines in the
-"ns/server/default/modules" section.  These modules are not required
-to run a server unless you want to use the Control Port and/or the
-Permissions module, respectively.  Before using them in a production
+Note: Modules can be disabled in the sample nsd.tcl for various
+reasons. Some modules like [emph nscp] or [emph nsperm] are optional
+and can be disabled by e.g., commenting out the
+respective lines in the "ns/server/default/modules" section of the
+configuration file.  Before using them in a production
 environment, change the passwords and default permissions by following
 the instructions in the NaviServer documentation.
 
@@ -271,7 +264,7 @@ file, send the signal and wait for shutdown, e.g.:
 
 [para]
 In [emph {Watchdog}] mode, the server is restarted automatically when
-it crashes independent from the respawn support from the operating system.
+it crashes independent of the respawn support from the operating system.
 
 
 [item] Inittab mode (non-forking mode):
