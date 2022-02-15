@@ -26,12 +26,12 @@ ns_log notice "nsd.tcl: starting to read configuration file..."
 # are fine for testing purposes. One can specify for the "ipaddress"
 # also multiple values (e.g. IPv4 and IPv6).
 #
-#    hostname		localhost
-#    ipaddress		127.0.0.1  ;# listen on loopback via IPv4
-#    ipaddress		0.0.0.0    ;# listen on all IPv4 addresses
-#    ipaddress  	::1        ;# listen on loopback via IPv6
-#    ipaddress		::0        ;# listen on all IPv6 addresses
-
+#    hostname	localhost
+#    ipaddress	127.0.0.1  ;# listen on loopback via IPv4
+#    ipaddress	0.0.0.0    ;# listen on all IPv4 addresses
+#    ipaddress  ::1        ;# listen on loopback via IPv6
+#    ipaddress	::0        ;# listen on all IPv6 addresses
+#
 # All default variables in defaultConfig can be overloaded by
 # 1) setting these variables in this file (highest precedence)
 # 2) setting these variables as environment variables with
@@ -55,17 +55,27 @@ set defaultConfig {
     db_port	""
 }
 
-set servername		"New OpenACS Installation - Development"
+set servername	"New OpenACS Installation - Development"
 
 # Are we running behind a proxy?
-set proxy_mode		false
+set proxy_mode	false
 
 #---------------------------------------------------------------------
 # Which database do you want? PostgreSQL or Oracle?
-set database              postgres
+#
+set database  postgres
 
 if { $database eq "oracle" } {
-    set db_password           "mysitepassword"
+    set db_password           "openacs"
+
+    set ::env(ORACLE_HOME) /opt/oracle/product/19c/dbhome_1
+    set ::env(NLS_DATE_FORMAT) YYYY-MM-DD
+    set ::env(NLS_LANG) American_America.UTF8
+    if {$db_port eq ""} {
+        set db_port 1521
+    }
+    #set datasource ""
+    set datasource ${db_host}:${db_port}/$db_name ;# name of the pluggable database / service
 }
 
 #---------------------------------------------------------------------
@@ -771,7 +781,7 @@ ns_section ns/server/$server/module/nslog {
 ns_section ns/db/drivers {
 
     if { $database eq "oracle" } {
-        ns_param	ora8           ${bindir}/ora8
+        ns_param	nsoracle           ${bindir}/nsoracle
     } else {
         ns_param	postgres       ${bindir}/nsdbpg
         #
@@ -779,7 +789,7 @@ ns_section ns/db/drivers {
     }
 
     if { $database eq "oracle" } {
-        ns_section ns/db/driver/ora8
+        ns_section ns/db/driver/nsoracle
         ns_param	maxStringLogLength -1
         ns_param	LobBufferSize      32768
     } else {
@@ -818,8 +828,8 @@ ns_section ns/db/pool/pool1 {
     ns_param    LogMinDuration     10ms  ;# when SQL logging is on, log only statements above this duration
     ns_param	logsqlerrors       $debug
     if { $database eq "oracle" } {
-        ns_param	driver             ora8
-        ns_param	datasource         {}
+        ns_param	driver             nsoracle
+        ns_param	datasource         $datasource
         ns_param	user               $db_name
         ns_param	password           $db_password
     } else {
@@ -845,8 +855,8 @@ ns_section ns/db/pool/pool2 {
     ns_param    LogMinDuration     10ms  ;# when SQL logging is on, log only statements above this duration
     ns_param	logsqlerrors       $debug
     if { $database eq "oracle" } {
-        ns_param	driver             ora8
-        ns_param	datasource         {}
+        ns_param	driver             nsoracle
+        ns_param	datasource         $datasource
         ns_param	user               $db_name
         ns_param	password           $db_password
     } else {
@@ -865,8 +875,8 @@ ns_section ns/db/pool/pool3 {
     # ns_param  LogMinDuration     0ms  ;# when SQL logging is on, log only statements above this duration
     ns_param	logsqlerrors       $debug
     if { $database eq "oracle" } {
-        ns_param	driver             ora8
-        ns_param	datasource         {}
+        ns_param	driver             nsoracle
+        ns_param	datasource         $datasource
         ns_param	user               $db_name
         ns_param	password           $db_password
     } else {
