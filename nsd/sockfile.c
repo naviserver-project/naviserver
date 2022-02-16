@@ -115,17 +115,16 @@ Ns_ResetFileVec(Ns_FileVec *bufs, int nbufs, size_t sent)
     int          i;
 
     for (i = 0; i < nbufs && sent > 0u; i++) {
-        int    fd     = bufs[i].fd;
         size_t length = bufs[i].length;
-        off_t  offset = bufs[i].offset;
-
         if (length > 0u) {
             if (sent >= length) {
                 sent -= length;
-                (void) Ns_SetFileVec(bufs, i, fd, NULL, 0, 0u);
+                bufs[i].buffer = NULL;
+                bufs[i].offset = 0;
+                bufs[i].length = 0;
             } else {
-                (void) Ns_SetFileVec(bufs, i, fd, NULL,
-                                     offset + (off_t)sent, length - sent);
+                bufs[i].offset += sent;
+                bufs[i].length -= sent;
                 break;
             }
         }
