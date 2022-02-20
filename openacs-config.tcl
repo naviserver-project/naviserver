@@ -61,7 +61,7 @@ set servername	"New OpenACS Installation - Development"
 set proxy_mode	false
 
 #---------------------------------------------------------------------
-# Which database do you want? PostgreSQL or Oracle?
+# Which database do you want to use? PostgreSQL or Oracle?
 #
 set database  postgres
 
@@ -70,7 +70,10 @@ if { $database eq "oracle" } {
 
     set ::env(ORACLE_HOME) /opt/oracle/product/19c/dbhome_1
     set ::env(NLS_DATE_FORMAT) YYYY-MM-DD
+    set ::env(NLS_TIMESTAMP_FORMAT) "YYYY-MM-DD HH24:MI:SS.FF6"
+    set ::env(NLS_TIMESTAMP_TZ_FORMAT) "YYYY-MM-DD HH24:MI:SS.FF6 TZH:TZM"
     set ::env(NLS_LANG) American_America.UTF8
+
     if {$db_port eq ""} {
         set db_port 1521
     }
