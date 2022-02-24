@@ -18,6 +18,20 @@ test ns_striphtml-2.0.2 {bare less sign} -body {
 test ns_striphtml-2.0.3 {bare greater sign} -body {
     ns_striphtml {hello&gt;world}
 } -result "hello>world"
+test ns_striphtml-2.0.3 {bare greater sign} -body {
+    ns_striphtml {hello&lt;&gt;world}
+} -result "hello<>world"
+
+test ns_striphtml-2.0.4 {two entity next to each other} -body {
+    ns_striphtml {a&lt;b&lt;&gt;c}
+} -result "a<b<>c"
+test ns_striphtml-2.0.5 {entity immediately followed by opening tag} -body {
+    ns_striphtml {a<a href='h'>b</a>c&amp;<a href='h'>d</a>e}
+} -result "abc&de"
+test ns_striphtml-2.0.6 {unknown entity} -body {
+    ns_striphtml {a&ltxxx;b}
+} -result "ab"
+
 
 test ns_striphtml-2.1 {euro entity} -body {
     ns_striphtml {hello&euro;world}
