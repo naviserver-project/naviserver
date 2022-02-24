@@ -1227,7 +1227,7 @@ QuoteSqlValue(Tcl_DString *dsPtr, Tcl_Obj *valueObj, int valueType)
             Tcl_DStringAppend(dsPtr, "'", 1);
         }
     } else {
-        Tcl_DString   ds;
+        Tcl_DString ds;
           /*
          * Protect against potential attacks, e.g. embedded nulls
          * appearing after conversion to the external value.
