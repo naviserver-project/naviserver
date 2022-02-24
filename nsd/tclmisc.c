@@ -689,6 +689,9 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 
         while (*inPtr != '\0') {
 
+            Ns_Log(Debug, "inptr %c intag %d inentity %d incomment %d string <%s>",
+                   *inPtr, intag, inentity, incomment, inPtr);
+
             if (*inPtr == '<') {
                 intag = NS_TRUE;
                 if ((*(inPtr + 1) == '!')
@@ -998,25 +1001,31 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                                     } else {
                                         *outPtr++ = *entities[i].value;
                                     }
-                                    inPtr += length + 1;
+                                    inPtr += length;
                                     inentity = NS_FALSE;
                                     break;
                                 }
 
-                                if (firstChar >  *inPtr) {
+                                if (firstChar > *inPtr) {
                                     break;
                                 }
                             }
                         }
                     }
-                }
-
-                if (!inentity) {
+                    Ns_Log(Debug, "...... after entity inptr '%c' intag %d inentity %d "
+                           "incomment %d string <%s>",
+                           *inPtr, intag, inentity, incomment, inPtr);
+                } else {
                     /*
-                     * incr pointer only if we're not in something HTMLish.
+                     * Plain Text output
                      */
                     *outPtr++ = *inPtr;
                 }
+
+            } else {
+                /*
+                 * Must be intag || inentity
+                 */
             }
             ++inPtr;
         }
