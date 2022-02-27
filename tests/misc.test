@@ -77,14 +77,6 @@ test ns_trim-2.2 {trim with delimiter and no occurrence of prefix} -body {
 } -result {\n : line1\n  : line2\n    : line3\n :}
 
 #######################################################################################
-#  test ns_quotehtml
-#######################################################################################
-
-test ns_quotehtml {ns_quotehtml with typical value} -body {
-    return [ns_quotehtml {<span class="foo">}]
-} -result {&lt;span class=&#34;foo&#34;&gt;}
-
-#######################################################################################
 #  test ns_strcoll
 #######################################################################################
 testConstraint collateFold [expr {$::tcl_platform(os) in {Linux}}]

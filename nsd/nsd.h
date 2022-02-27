@@ -1383,6 +1383,7 @@ NS_EXTERN Tcl_ObjCmdProc
     NsTclTruncateObjCmd,
     NsTclUnRegisterOpObjCmd,
     NsTclUnRegisterUrl2FileObjCmd,
+    NsTclUnquoteHtmlObjCmd,
     NsTclUnscheduleObjCmd,
     NsTclUrl2FileObjCmd,
     NsTclUrlDecodeObjCmd,

@@ -159,6 +159,7 @@ static const Cmd basicCmds[] = {
     {"ns_thread",                NULL, NsTclThreadObjCmd},
     {"ns_time",                  NULL, NsTclTimeObjCmd},
     {"ns_truncate",              NULL, NsTclTruncateObjCmd},
+    {"ns_unquotehtml",           NULL, NsTclUnquoteHtmlObjCmd},
     {"ns_unschedule_proc",       NULL, NsTclUnscheduleObjCmd},
     {"ns_urldecode",             NULL, NsTclUrlDecodeObjCmd},
     {"ns_urlencode",             NULL, NsTclUrlEncodeObjCmd},
