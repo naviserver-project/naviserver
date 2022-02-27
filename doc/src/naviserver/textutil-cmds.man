@@ -30,6 +30,13 @@ in a webpage with an HTML renderer. Specifically:
  All other characters are unmodified in the output.
 
 
+[call [cmd ns_unquotehtml] [arg html]]
+
+This is essentially the inverse operation of [cmd ns_quotehtml] and
+replaces the named and numeric entities in the provided string by
+their native characters.
+
+
 [call [cmd ns_striphtml] [arg html]]
 
  Returns the contents of [arg html] with all HTML tags removed.
@@ -142,7 +149,7 @@ trimming (not really needed but sometimes convenient).
 [example_end]
 
 [see_also ns_hrefs]
-[keywords "server built-in" text quote HTML encoding]
+[keywords "server built-in" text quote HTML encoding entity]
 
 [manpage_end]
 
