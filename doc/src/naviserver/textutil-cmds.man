@@ -33,16 +33,17 @@ in a webpage with an HTML renderer. Specifically:
 [call [cmd ns_unquotehtml] [arg html]]
 
 This is essentially the inverse operation of [cmd ns_quotehtml] and
-replaces the named and numeric entities in the provided string by
-their native characters.
-
+replaces the named and numeric entities in decimal or hexadecimal
+notation contained in the provided string by their native characters.
+ASCII control characters are omitted.
 
 [call [cmd ns_striphtml] [arg html]]
 
  Returns the contents of [arg html] with all HTML tags removed.
  This function replaces as well all known HTML4 named entities and
- three-digit numeric entities by its UTF-8 representations and removes
- HTML comments.
+ numeric entities in decimal or hexadecimal notation
+ by its UTF-8 representations and removes HTML comments.
+ ASCII control characters are omitted.
 
 
 [call [cmd ns_reflow_text] \

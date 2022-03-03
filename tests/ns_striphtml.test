@@ -18,26 +18,29 @@ test ns_striphtml-2.0.2 {bare less sign} -body {
 test ns_striphtml-2.0.3 {bare greater sign} -body {
     ns_striphtml {hello&gt;world}
 } -result "hello>world"
-test ns_striphtml-2.0.3 {bare greater sign} -body {
+test ns_striphtml-2.0.4 {two entities next to each other} -body {
+    ns_striphtml {&lt;&gt;}
+} -result "<>"
+test ns_striphtml-2.0.5 {two entities next to each other, embedded} -body {
     ns_striphtml {hello&lt;&gt;world}
 } -result "hello<>world"
-test ns_striphtml-2.0.4 {with decimal numeric entity} -body {
+test ns_striphtml-2.0.6 {with decimal numeric entity} -body {
     ns_striphtml [ns_quotehtml {hello "world"}]
 } -result {hello "world"}
-test ns_striphtml-2.0.5 {with decomal numeric entity} -body {
+test ns_striphtml-2.0.7 {with decomal numeric entity} -body {
     ns_striphtml [ns_quotehtml {hello 'world'}]
 } -result "hello 'world'"
-test ns_striphtml-2.0.6 {with hex entity} -body {
+test ns_striphtml-2.0.8 {with hex entity} -body {
     ns_striphtml {hello &#x22;world&#x22;}
 } -result {hello "world"}
 
-test ns_striphtml-2.0.7 {two entity next to each other} -body {
+test ns_striphtml-2.0.9 {two entity next to each other} -body {
     ns_striphtml {a&lt;b&lt;&gt;c}
 } -result "a<b<>c"
-test ns_striphtml-2.0.8 {entity immediately followed by opening tag} -body {
+test ns_striphtml-2.0.10 {entity immediately followed by opening tag} -body {
     ns_striphtml {a<a href='h'>b</a>c&amp;<a href='h'>d</a>e}
 } -result "abc&de"
-test ns_striphtml-2.0.9 {unknown entity} -body {
+test ns_striphtml-2.0.11 {unknown entity} -body {
     ns_striphtml {a&ltxxx;b}
 } -result "ab"
 
@@ -347,6 +350,25 @@ test ns_unquotehtml-1.1 {ns_unquotehtml with typical value} -body {
 test ns_unquotehtml-1.2 {ns_unquotehtml with named UTF-8 entity} -body {
     return [ns_unquotehtml {a&otimes;b}]
 } -result {a⊗b}
+test ns_unquotehtml-1.3 {two entities next to each other} -body {
+    ns_unquotehtml {&lt;&gt;}
+} -result "<>"
+test ns_unquotehtml-1.4 {two entities next to each other. embedded} -body {
+    ns_unquotehtml {hello&lt;&gt;world}
+} -result "hello<>world"
+
+
+test ns_unquotehtml-2.0 {ns_unquotehtml with numeric entities (US ASCII)} -body {
+    ns_unquotehtml {&#104;&#x65;&#108;&#x6C;&#x6F;}
+} -result {hello}
+
+test ns_unquotehtml-2.1 {ns_unquotehtml with numeric euro sign as (code point U+20AC)} -body {
+    ns_unquotehtml {give me &#x20AC;&#8364;!}
+} -result {give me €€!}
+
+test ns_unquotehtml-2.2 {ns_unquotehtml with mermaids with different skin tones} -body {
+    ns_unquotehtml {&#129500;&#127995; Light skin tone; &#129500;&#127998; Medium Dark skin tone.}
+} -result {🧜🏻 Light skin tone; 🧜🏾 Medium Dark skin tone.}
 
 
 

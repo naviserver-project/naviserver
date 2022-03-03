@@ -39,15 +39,18 @@
 /*
  * Static functions defined in this file.
  */
-static void
-QuoteHtml(Ns_DString *dsPtr, const char *breakChar, const char *htmlString)
+static void QuoteHtml(Ns_DString *dsPtr, const char *breakChar, const char *htmlString)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static bool WordEndsInSemi(const char *word, size_t *lengthPtr)
     NS_GNUC_NONNULL(1);
 
+static int ToUTF8(long value, char *outPtr)
+    NS_GNUC_NONNULL(2);
+
 static size_t EntityDecode(const char *entity, size_t length, bool *needEncodePtr, char *outPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+
 
 
 /*
@@ -267,18 +270,17 @@ NsTclUnquoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
                         int    oldLength = dsPtr->length;
 
                         /*
-                         * The appended characters are max 3 bytes; make sure, we
+                         * The appended characters are max 4 bytes; make sure, we
                          * have this space in the Tcl_DString.
                          */
-                        Tcl_DStringSetLength(dsPtr, oldLength + 3);
-
-                        decoded = EntityDecode(possibleEntity + 1u, length, &needEncode, dsPtr->string + oldLength);
-                        //fprintf(stderr, "..... %lu length, entity '%s'\n", length, possibleEntity);
+                        Tcl_DStringSetLength(dsPtr, oldLength + 4);
+                        decoded = EntityDecode(possibleEntity + 1u, length, &needEncode,
+                                               dsPtr->string + oldLength);
                         Tcl_DStringSetLength(dsPtr, oldLength + (int)decoded);
-                        //fprintf(stderr, "..... %d bytes, have now '%s'\n", (int)decoded, dsPtr->string);
 
                         /*
-                         * handle needEncode
+                         * Include the boundary characters "&" and ";" in the
+                         * length calculation.
                          */
                         htmlString += (length + 2);
                     } else {
@@ -311,6 +313,57 @@ NsTclUnquoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ToUTF8 --
+ *
+ *      Convert a unicode code poing to UTF8. The function writes from 0 up to
+ *      4 bytes to the output.
+ *
+ * Results:
+ *      Returns number of bytes written to the output. The value of 0 means
+ *      invalud input.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ToUTF8(long value, char *outPtr)
+{
+    int length = 0;
+
+    NS_NONNULL_ASSERT(outPtr != NULL);
+
+    if(value <= 0x7F) {
+        *outPtr = (char)value;
+        length = 1;
+
+    } else if (value <= 0x7FF) {
+        *outPtr++ = (char)(((value >> 6) & 0x1F) | 0xC0);
+        *outPtr++ = (char)(((value >> 0) & 0x3F) | 0x80);
+        length = 2;
+
+    } else if (value <= 0xFFFF) {
+        *outPtr++ = (char) (((value >> 12) & 0x0F) | 0xE0);
+        *outPtr++ = (char) (((value >>  6) & 0x3F) | 0x80);
+        *outPtr++ = (char) (((value >>  0) & 0x3F) | 0x80);
+        length = 3;
+
+    } else if (value <= 0x10FFFF) {
+        *outPtr++ = (char) (((value >> 18) & 0x07) | 0xF0);
+        *outPtr++ = (char) (((value >> 12) & 0x3F) | 0x80);
+        *outPtr++ = (char) (((value >>  6) & 0x3F) | 0x80);
+        *outPtr++ = (char) (((value >>  0) & 0x3F) | 0x80);
+        length = 4;
+    } else {
+        length = 0;
+    }
+    return length;
+}
 
 
 /*
@@ -322,7 +375,7 @@ NsTclUnquoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
  *      sign) or non-numeric.
  *
  * Results:
- *      length of decoded characters.
+ *      Number of decoded characters.
  *
  * Side effects:
  *      None.
@@ -575,9 +628,8 @@ EntityDecode(const char *entity, size_t length, bool *needEncodePtr, char *outPt
     NS_NONNULL_ASSERT(output != NULL);
     NS_NONNULL_ASSERT(needEncodePtr != NULL);
 
-
     /*
-     * Handle numeric entities between 33 and 255.
+     * Handle numeric entities.
      */
     if (*entity == '#') {
         long value;
@@ -588,7 +640,7 @@ EntityDecode(const char *entity, size_t length, bool *needEncodePtr, char *outPt
              */
             value = strtol(entity + 1, NULL, 10);
 
-        } else if (*(entity + 1) == 'x') {
+        } else if (*(entity + 1) == 'x' && length >= 3 && length <= 8) {
             /*
              * Hexadecimal numeric entity.
              */
@@ -599,15 +651,24 @@ EntityDecode(const char *entity, size_t length, bool *needEncodePtr, char *outPt
             value = 0;
         }
 
-        //fprintf(stderr, "..... numeric decode '%s' -> %ld\n", entity, value);
-        if (value > 32 && value < 256) {
-            *outPtr++ = (char) value;
-            decoded ++;
+        if (value >= 32) {
+            int outLength;
+
+            outLength = ToUTF8(value, outPtr);
+            decoded += (size_t)outLength;
+
+            Ns_Log(Debug, "entity decode: code point %.2lx %.2lx "
+                   "corresponds to %d UTF-8 characers",
+                   ((value >> 8) & 0xff), (value & 0xff), outLength);
+
             if (value > 127) {
                 *needEncodePtr = NS_TRUE;
             }
         } else {
-            Ns_Log(Notice, "ns_striphtml: ignore numeric entity with value %ld", value);
+            /*
+             * ASCII device control characters should not be present in HTML.
+             */
+            Ns_Log(Notice, "entity decode: ignore numeric entity with value %ld", value);
         }
     } else {
         size_t i;
@@ -627,8 +688,6 @@ EntityDecode(const char *entity, size_t length, bool *needEncodePtr, char *outPt
 
                     memcpy(outPtr, namedEntities[i].value, namedEntities[i].outputLength);
                     decoded += namedEntities[i].outputLength;
-                    //*needEncodePtr = NS_TRUE;
-                    //fprintf(stderr, "SET need Encode -> TRUE\n");
                 } else {
                     *outPtr = *namedEntities[i].value;
                     decoded++;
