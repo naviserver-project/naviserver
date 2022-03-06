@@ -3384,7 +3384,7 @@ HttpAppendContent(
  *        machine by simply invoking the registered procs.
  *
  *        Due to its universal nature, this code can be made
- *        independent from NsHttp and re-used elsewhere.
+ *        independent of NsHttp and re-used elsewhere.
  *
  * Results:
  *        Tcl result code

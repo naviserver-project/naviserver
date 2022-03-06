@@ -318,12 +318,12 @@ NsTclUnquoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
  *
  * ToUTF8 --
  *
- *      Convert a unicode code poing to UTF8. The function writes from 0 up to
+ *      Convert a unicode code point to UTF8. The function writes from 0 up to
  *      4 bytes to the output.
  *
  * Results:
  *      Returns number of bytes written to the output. The value of 0 means
- *      invalud input.
+ *      invalid input.
  *
  * Side effects:
  *      None.
@@ -658,7 +658,7 @@ EntityDecode(const char *entity, size_t length, bool *needEncodePtr, char *outPt
             decoded += (size_t)outLength;
 
             Ns_Log(Debug, "entity decode: code point %.2lx %.2lx "
-                   "corresponds to %d UTF-8 characers",
+                   "corresponds to %d UTF-8 characters",
                    ((value >> 8) & 0xff), (value & 0xff), outLength);
 
             if (value > 127) {
