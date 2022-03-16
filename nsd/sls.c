@@ -107,7 +107,7 @@ Ns_SlsAlloc(Ns_Sls *slsPtr, Ns_Callback *cleanup)
     cleanupProcs = ns_realloc(cleanupProcs, sizeof(Ns_Callback *) * nsconf.nextSlsId);
     cleanupProcs[id] = cleanup;
 
-    *slsPtr = UINT2PTR(id);
+    *slsPtr = (Ns_Sls)UINT2PTR(id);
 }
 
 
