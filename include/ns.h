@@ -275,9 +275,9 @@ typedef struct Ns_CacheSearch {
 
 typedef struct Ns_Cache         Ns_Cache;
 typedef struct Ns_Entry         Ns_Entry;
-typedef struct Ns_Cls          *Ns_Cls;
-typedef struct Ns_Sls          *Ns_Sls;
-typedef void                     Ns_OpContext;
+typedef uintptr_t               Ns_Cls;
+typedef uintptr_t               Ns_Sls;
+typedef void                    Ns_OpContext;
 typedef struct Ns_TaskQueue     Ns_TaskQueue;
 typedef struct Ns_Task          Ns_Task;
 typedef struct Ns_EventQueue    Ns_EventQueue;
