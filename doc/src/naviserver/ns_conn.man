@@ -25,7 +25,7 @@ The subcommands of ns_conn are (in alphabetical order):
 Returns the compression formats accepted by the client.
 
 [call [cmd  "ns_conn addr"]]
-Returns the local IP address of the current connection.
+Returns the local IP address (IPv4 or IPv6) of the current connection.
 
 [call [cmd  "ns_conn auth"]]
 Returns the authorization header content as an [cmd ns_set]. For
@@ -260,13 +260,15 @@ For example:
 [example_end]
 
 
-[call [cmd  "ns_conn  peeraddr"] [opt [option "-source configured|direct|forwarded"]]]
+[call [cmd  "ns_conn peeraddr"] [opt [option "-source configured|direct|forwarded"]]]
 
 Returns the IP address of the client, i.e. the "other side" of the
-HTTP connection. The IP address is returned in the form of a string
-separated with periods (e.g., 155.164.59.75). In reverse proxy mode
-the IP address is determined by the value forwarded by the reverse
-proxy server (via the x-fowarded-for header field).
+HTTP connection. An IPv4 address is returned in the form of a string
+separated with periods (e.g., 155.164.59.75), an IPv4 address is
+returned in the form of a string separated with colons (e.g.,
+2001:628:404:74::31).  In reverse proxy mode the IP address is
+determined by the value forwarded by the reverse proxy server (via the
+x-fowarded-for header field).
 
 [para] The result can be influenced by the [option "-source"] to
 return the result as configured by the reverse proxy mode (default),
@@ -395,7 +397,8 @@ encoded response.
  }
 [example_end]
 
-[see_also ns_adp ns_locationproc ns_getform ns_set ns_queryget ns_time]
-[keywords "server built-in" gzip connection reverseproxy]
+[see_also ns_adp ns_locationproc ns_getform ns_set ns_queryget \
+  ns_time ns_subnetmatch]
+[keywords "server built-in" IPv4 IPv6 gzip connection reverseproxy]
 
 [manpage_end]

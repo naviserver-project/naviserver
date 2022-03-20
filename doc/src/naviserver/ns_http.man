@@ -378,31 +378,29 @@ returns reply-headers.
  #######################
  # construct POST data
  #######################
- set post_data {}
- foreach {key value} {q NaviServer} {
-   lappend post_data "[lb]ns_urlencode $key[rb]=[lb]ns_urlencode $value[rb]"
- }
- set post_data [lb]join $post_data &[rb]
-
+ set post_data [lb]join [lb]lmap {key value} {
+     q NaviServer
+ } {
+   set _ "[lb]ns_urlencode $key[rb]=[lb]ns_urlencode $value[rb]"
+ }[rb] &[rb]
+ 
  #######################
  # submit POST request
  #######################
- set requestHeaders [lb]ns_set create[rb]
- set replyHeaders [lb]ns_set create[rb]
- ns_set update $requestHeaders "Content-type" "application/x-www-form-urlencoded"
-
- set h [lb]ns_http queue -method POST \
+ set requestHeaders [lb]ns_set create headers "Content-type" "application/x-www-form-urlencoded"[rb]
+ 
+ set r [lb]ns_http queue -method POST \
    -headers $requestHeaders \
    -timeout 10.0 \
-   -body $post_data https://duckduckgo.com/[rb]
- set r [lb]ns_http wait $h[rb]
-
+   -body $post_data \
+   https://httpbin.org/anything[rb]
+ 
  #######################
  # output results
  #######################
  ns_log notice "status [lb]dict get $r status[rb]"
- ns_log notice "reply "[lb]dict get $r [rb]
- ns_log notice "headers "[lb]dict get $r headers[rb]
+ ns_log notice "reply [lb]dict get $r [rb]"
+ ns_log notice "headers [lb]dict get $r headers[rb]"
 [example_end]
 
 The forth example is a code snippet that sets a larger timeout on the
@@ -410,12 +408,11 @@ request, provides an ns_set for the reply headers, and spools
 results to a file if the result is larger than 1000 bytes.
 
 [example_begin]
- set replyHeaders [lb]ns_set create[rb]
- ns_set update $requestHeaders Host localhost
-
+ set requestHeaders [lb]ns_set create headers Host localhost[rb]
+ 
  set h [lb]ns_http queue -timeout 10.0 http://www.google.com[rb]
- ns_http wait -result R -headers $replyHeaders -status S -spoolsize 1Kb -file F $h
-
+ ns_http wait -result R -headers $requestHeaders -status S -spoolsize 1kB -file F $h
+ 
  if {[lb]info exists F[rb]} {
    ns_log notice "Spooled [lb]file size $F[rb] bytes to $F"
    file delete -- $F
@@ -439,6 +436,7 @@ otherwise stored in memory.
  % set chan [lb]open /tmp/file.dat w[rb]
  % ns_http run -outputchan $chan -spoolsize 0 http://www.google.com
  status 302 time 0:132577 headers d2 outputchan file22
+ 
  % close $chan
 [example_end]
 [see_also ns_httptime ns_set ns_urlencode]
