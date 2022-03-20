@@ -105,8 +105,7 @@ repository, a call of [emph autogen.sh] is necessary as well:
  make
  sudo make install
  make install
-[para]
-
+[example_end]
 
 Note: If you have any problems building, the two files [emph {include/Makefile.global}] and
 [emph {include/Makefile.module}] have all the information you need to change
