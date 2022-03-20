@@ -155,6 +155,7 @@ static const Cmd basicCmds[] = {
     {"ns_sockselect",            NULL, NsTclSelectObjCmd},
     {"ns_strcoll",               NULL, NsTclStrcollObjCmd},
     {"ns_striphtml",             NULL, NsTclStripHtmlObjCmd},
+    {"ns_subnetmatch",           NULL, NsTclSubnetmatchObjCmd},
     {"ns_symlink",               NULL, NsTclSymlinkObjCmd},
     {"ns_thread",                NULL, NsTclThreadObjCmd},
     {"ns_time",                  NULL, NsTclTimeObjCmd},

@@ -1,0 +1,56 @@
+[include version_include.man]
+[manpage_begin ns_subnetmatch n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+
+[titledesc {Determine if IP address is included in a subnet specification}]
+
+[description]
+
+ Determine, if a provided IP address (IPv4 or IPv6) is included in a
+ subnet specification, which is provided in CIDR notation. 
+
+ [uri https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing]
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_subnetmatch] [arg subnet] [arg ipaddr]]
+
+ The command validates the provided [arg subnet] specification (IPv4
+ or IPv6 address followed by slash and number of significant bits) and
+ the provided [arg ipaddr] and tests whether the IP address is in the
+ implied range. The command returns a boolean value as the result. When
+ comparing an IPv4 and IPv6 address/CIDR specification or vice versa,
+ the result is always false.
+ 
+ [para]
+ The function can be used as well to check, whether an IP address is
+ an IPv4 or IPv6 address.
+[list_end]
+
+[example_begin]
+ % ns_subnetmatch 137.208.0.0/16 137.208.116.31
+ 1
+ 
+ % ns_subnetmatch 137.208.0.0/16 112.207.16.33
+ 0
+
+ % ns_subnetmatch 2001:628:404:74::31/64 [lb]ns_conn peeraddr[rb]
+ ...
+
+ # Is IP address a valid IPv6 address?
+ % set ip [lb]ns_conn peeraddr[rb]
+ % ns_subnetmatch ::/0 $ip
+ 
+ # Is IP address a valid IPv4 address?
+ % ns_subnetmatch 0.0.0.0/0 $ip
+
+[example_end]
+
+[keywords "global built-in" IPv4 IPv6 CIDR subnet]
+[see_also ns_conn]
+
+[manpage_end]
+

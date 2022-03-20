@@ -174,6 +174,66 @@ test ns_valid_utf8-1.2 {valid utf8, containing x85 at the end} -body {
     return [ns_valid_utf8 "forschungsprojek\xc3\x85"]
 } -result 1
 
+#######################################################################################
+#  test ns_subnetmatch
+#######################################################################################
+
+test ns_subnetmatch-1.0 {ns_subnetmatch IPv4} -body {
+    return [ns_subnetmatch 137.208.0.0/16 137.208.116.31]
+} -result 1
+
+test ns_subnetmatch-1.1 {ns_subnetmatch IPv4 invalid cidr} -body {
+    ns_subnetmatch 137.208/16 137.208.116.31
+} -returnCodes error  -result {'137.208/16' is not a valid CIDR string for IPv4 or IPv6}
+test ns_subnetmatch-1.2 {ns_subnetmatch IPv4 invalid ip} -body {
+    ns_subnetmatch 137.208.0.0/16 137.208.116
+} -returnCodes error  -result {'137.208.116' is not a valid IPv4 or IPv6 address}
+
+test ns_subnetmatch-1.3 {ns_subnetmatch IPv4} -body {
+    lmap ip {
+        137.208.215.0
+        137.208.216.0
+        137.208.219.0
+        137.208.220.0
+        137.208.223.0
+        137.208.224.0
+    } {ns_subnetmatch 137.208.216.0/21 $ip}
+} -result {0 1 1 1 1 0}
+
+test ns_subnetmatch-1.4 {ns_subnetmatch IPv4} -body {
+    lmap ip {
+        137.208.215.0
+        137.208.216.0
+        137.208.219.0
+        137.208.220.0
+        137.208.223.0
+        137.208.224.0
+    } {ns_subnetmatch 0.0.0.0/0 $ip}
+} -result {1 1 1 1 1 1}
+
+test ns_subnetmatch-2.0 {ns_subnetmatch IPv6} -body {
+    return [ns_subnetmatch 2001:4860:4860::8888/32 2001:4860:6666:6666:6666:6666:6666:66FF]
+} -result 1
+
+test ns_subnetmatch-2.1 {ns_subnetmatch IPv6 invalid cidr} -body {
+    ns_subnetmatch 2001:4860:4860:8888/32 2001:4860:6666:6666:6666:6666:6666:66FF
+} -returnCodes error  -result {'2001:4860:4860:8888/32' is not a valid CIDR string for IPv4 or IPv6}
+
+test ns_subnetmatch-2.2 {ns_subnetmatch IPv6 invalid ip} -body {
+    ns_subnetmatch 2001:4860:4860::8888/32 2001:4860:6666:6666:6666:6666:6666
+} -returnCodes error  -result {'2001:4860:6666:6666:6666:6666:6666' is not a valid IPv4 or IPv6 address}
+
+test ns_subnetmatch-2.3 {ns_subnetmatch comparing IPv4 with IPv6} -body {
+    ns_subnetmatch 2001:628:404:74::31/64 137.206.1.1
+} -result 0
+
+test ns_subnetmatch-2.4 {ns_subnetmatch IPv4} -body {
+    lmap ip {
+        2001:628:404:74::31
+        ::1
+        ::0
+    } {ns_subnetmatch ::/0 $ip}
+} -result {1 1 1}
 
 #
 # Local variables:
