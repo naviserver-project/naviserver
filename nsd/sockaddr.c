@@ -192,6 +192,7 @@ Ns_SockaddrMaskedMatch(const struct sockaddr *addr, const struct sockaddr *mask,
 
     NS_NONNULL_ASSERT(addr != NULL);
     NS_NONNULL_ASSERT(mask != NULL);
+    NS_NONNULL_ASSERT(masked != NULL);
 
     if (addr == mask) {
         success = NS_TRUE;
@@ -224,6 +225,12 @@ Ns_SockaddrMaskedMatch(const struct sockaddr *addr, const struct sockaddr *mask,
         }
 #endif
     } else if (addr->sa_family == AF_INET && mask->sa_family == AF_INET) {
+        /* fprintf(stderr, "addr %.8x & mask %.8x masked %.8x <-> %.8x\n",
+                ((struct sockaddr_in *)addr)->sin_addr.s_addr,
+                ((struct sockaddr_in *)mask)->sin_addr.s_addr,
+                ((struct sockaddr_in *)masked)->sin_addr.s_addr,
+                (((struct sockaddr_in *)addr)->sin_addr.s_addr
+                & ((struct sockaddr_in *)mask)->sin_addr.s_addr));*/
         success = ((((struct sockaddr_in *)addr)->sin_addr.s_addr
                     & ((struct sockaddr_in *)mask)->sin_addr.s_addr) ==
                    (((struct sockaddr_in *)masked)->sin_addr.s_addr));
@@ -390,7 +397,7 @@ Ns_SockaddrParseIPMask(Tcl_Interp *interp, const char *ipString,
             validMask = ns_inet_pton(maskPtr, slash);
         }
 
-        if (validIP <= 0 || validMask <= 0) {
+        if (validIP <= 0 || validMask < 0) {
             if (interp != NULL) {
                 Ns_TclPrintfResult(interp, "invalid address or hostname \"%s\". "
                                    "Should be ipaddr/netmask or hostname", dupIpString);

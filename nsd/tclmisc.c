@@ -2378,6 +2378,68 @@ NsTclStrcollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 }
 
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclSubnetmatchObjCmd --
+ *
+ *      Checks whether an IP address (IPv4 or IPV6) is in a given CIDR
+ *      (Classless Inter-Domain Routing) range. CIDR supports variable-length
+ *      subnet masking and specifies an IPv6 or IPv6 address, a slash ('/')
+ *      character, and a decimal number representing the significant bits of
+ *      the IP address.
+ *
+ *      Implements "ns_subnetmatch".
+ *
+ * Results:
+ *      Tcl result code
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclSubnetmatchObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int          result = TCL_OK;
+    char        *cidrString, *ipString;
+    unsigned int nrBits = 0;
+    struct NS_SOCKADDR_STORAGE ip, ip2, mask;
+    struct sockaddr
+        *ipPtr = (struct sockaddr *)&ip,
+        *ipPtr2 = (struct sockaddr *)&ip2,
+        *maskPtr = (struct sockaddr *)&mask;
+
+    Ns_ObjvSpec args[] = {
+        {"cidr",   Ns_ObjvString, &cidrString, NULL},
+        {"ipaddr", Ns_ObjvString, &ipString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (ns_inet_pton(ipPtr, ipString) != 1) {
+        Ns_TclPrintfResult(interp, "'%s' is not a valid IPv4 or IPv6 address", ipString);
+        result = TCL_ERROR;
+
+    } else if (Ns_SockaddrParseIPMask(interp, cidrString, ipPtr2, maskPtr, &nrBits) != NS_OK) {
+        Ns_TclPrintfResult(interp, "'%s' is not a valid CIDR string for IPv4 or IPv6", cidrString);
+        result = TCL_ERROR;
+
+    } else {
+        bool success = (nrBits == 0 || Ns_SockaddrMaskedMatch(ipPtr, maskPtr, ipPtr2));
+
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(success));
+    }
+    return result;
+}
+#if 0
+ns_subnetmatch 137.208.0.0/16 137.208.116.31
+#endif
+
 /*
  * Local Variables:
  * mode: c

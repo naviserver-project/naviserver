@@ -634,10 +634,10 @@ ns_section ns/server/$server/httpclient {
 #---------------------------------------------------------------------
 # OpenACS specific settings (per server)
 #---------------------------------------------------------------------
-#
-# Define/override kernel parameters in section /acs
-#
 ns_section ns/server/$server/acs {
+    #
+    # Define/override kernel parameters in section /acs
+    #
     ns_param NsShutdownWithNonZeroExitCode 1
     # ns_param WithDeprecatedCode 0
     # ns_param LogIncludeUserId 1
