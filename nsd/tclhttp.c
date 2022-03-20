@@ -3870,7 +3870,7 @@ HttpProc(
                 if (remain > 0) {
 
                     /*
-                     * We still have something to be send
+                     * We still have something to be sent
                      * left in memory.
                      */
                     Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE"
