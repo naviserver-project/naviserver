@@ -456,6 +456,7 @@ static const namedEntity_t namedEntities[] = {
     {"amp",      3, "\x26",         1},    /* "&" */
     {"and",      3, "\xe2\x88\xa7", 3},    /* "∧" */
     {"ang",      3, "\xe2\x88\xa0", 3},    /* "∠" */
+    {"apos",     4, "\x27",         1},    /* "'" */
     {"aring",    5, "\xc3\xa5",     2},    /* "å" */
     {"asymp",    5, "\xe2\x89\x88", 3},    /* "≈" */
     {"atilde",   6, "\xc3\xa3",     2},    /* "ã" */
@@ -567,6 +568,7 @@ static const namedEntity_t namedEntities[] = {
     {"prod",     4, "\xe2\x88\x8f", 3},    /* "∏" */
     {"prop",     4, "\xe2\x88\x9d", 3},    /* "∝" */
     {"psi",      3, "\xcf\x88",     2},    /* "ψ" */
+    {"quot",     4, "\x22",         1},    /* "\"" */
     {"rArr",     4, "\xe2\x87\x92", 3},    /* "⇒" */
     {"radic",    5, "\xe2\x88\x9a", 3},    /* "√" */
     {"rang",     4, "\xe3\x80\x89", 3},    /* "〉" */
