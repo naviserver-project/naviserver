@@ -1196,6 +1196,114 @@ ConnChanOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     }
     return result;
 }
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConnChanConnectObjCmd --
+ *
+ *      Implements "ns_connchan connect".
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      Depends on subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ConnChanConnectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int            result, doTLS = (int)NS_FALSE;
+    unsigned short portNr = 0u;
+    char         *host;
+    Ns_Time       timeout = {1, 0}, *timeoutPtr = &timeout;
+    Ns_ObjvSpec   lopts[] = {
+        {"-tls",      Ns_ObjvBool, &doTLS, INT2PTR(NS_TRUE)},
+        {"-timeout",  Ns_ObjvTime, &timeoutPtr,  NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec   largs[] = {
+        {"host",    Ns_ObjvString, &host,   NULL},
+        {"port",    Ns_ObjvUShort, &portNr, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(lopts, largs, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        //const NsInterp *itPtr = clientData;
+        NsServer       *servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
+        NsConnChan     *connChanPtr;
+        Sock           *sockPtr = NULL;
+        NS_SOCKET       sock;
+        Ns_ReturnCode   status;
+
+        fprintf(stderr, "CONNECT %s %hu TLS %d\n", host, portNr, doTLS);
+        sock = Ns_SockTimedConnect2(host, portNr, NULL, 0u, timeoutPtr, &status);
+
+        if (sock == NS_INVALID_SOCKET) {
+            Ns_SockConnectError(interp, host, portNr, status);
+            result = TCL_ERROR;
+
+        } else {
+            result = NSDriverSockNew(interp, sock, doTLS ? "https" : "http", NULL, "CONNECT", &sockPtr);
+        }
+
+        if (likely(result == TCL_OK)) {
+
+            if (STREQ(sockPtr->drvPtr->protocol, "https")) {
+                NS_TLS_SSL_CTX *ctx;
+
+                assert(sockPtr->drvPtr->clientInitProc != NULL);
+
+                /*
+                 * For the time being, just pass NULL
+                 * structures. Probably, we could create the
+                 * SSLcontext.
+                 */
+                result = Ns_TLS_CtxClientCreate(interp,
+                                                NULL /*cert*/, NULL /*caFile*/,
+                                                NULL /* caPath*/, NS_FALSE /*verify*/,
+                                                &ctx);
+                if (likely(result == TCL_OK)) {
+                    Ns_DriverClientInitArg params = {ctx, host};
+                    result = (*sockPtr->drvPtr->clientInitProc)(interp, (Ns_Sock *)sockPtr, &params);
+
+                    /*
+                     * For the time being, we create/delete the ctx in
+                     * an eager fashion. We could probably make it
+                     * reusable and keep it around.
+                     */
+                    if (ctx != NULL)  {
+                        Ns_TLS_CtxFree(ctx);
+                    }
+                }
+            }
+
+            if (likely(result == TCL_OK)) {
+                Ns_Time      now;
+
+                Ns_GetTime(&now);
+                connChanPtr = ConnChanCreate(servPtr,
+                                             sockPtr,
+                                             &now,
+                                             NULL,
+                                             NS_TRUE /* binary, fixed for the time being */,
+                                             NULL);
+
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(connChanPtr->channelName, -1));
+            }
+
+        }
+        if (unlikely(result != TCL_OK && sockPtr != NULL && sockPtr->sock > 0)) {
+            ns_sockclose(sockPtr->sock);
+        }
+        Ns_Log(Ns_LogConnchanDebug, "ns_connchan connect %s %hu returns %d", host, portNr, result);
+    }
+    return result;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -2659,6 +2767,7 @@ NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"callback", ConnChanCallbackObjCmd},
+        {"connect",  ConnChanConnectObjCmd},
         {"close",    ConnChanCloseObjCmd},
         {"detach",   ConnChanDetachObjCmd},
         {"exists",   ConnChanExistsObjCmd},
