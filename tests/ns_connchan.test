@@ -3,6 +3,13 @@
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
+if {[ns_config test listenport] ne ""} {
+    testConstraint serverListenHTTP true
+}
+if {[ns_info ssl] ne ""} {
+    testConstraint serverListenHTTPS true
+}
+
 ::tcltest::configure {*}$argv
 
 #
@@ -14,7 +21,7 @@ test ns_connchan-1.0 {basic operation} -body {
 
 test ns_connchan-1.1 {basic operation} -body {
      ns_connchan x
-} -returnCodes error -result {bad subcmd "x": must be callback, close, detach, exists, list, listen, open, read, status, write, or wsencode}
+} -returnCodes error -result {bad subcmd "x": must be callback, connect, close, detach, exists, list, listen, open, read, status, write, or wsencode}
 
 test ns_connchan-1.2 {detach without connection} -body {
      ns_connchan detach
@@ -182,6 +189,33 @@ test ns_connchan-1.8.5 {detach connection, return success "ns_conn driver"} -set
 } -cleanup {
     ns_unregister_op GET /conn
 } -result {200 nssock}
+
+#
+# ns_connchan connect
+#
+test ns_connchan-1.9.0 {connect to listenport with plain http} -constraints serverListenHTTP -body {
+    set conf [ns_parseurl [ns_config test listenurl]]
+    set chan [ns_connchan connect [dict get $conf host] [dict get $conf port]]
+    ns_connchan write $chan "GET / HTTP/1.0\r\n\r\n"
+    set result [ns_connchan read $chan]
+    ns_connchan close $chan
+    #
+    # Return just the first line of the reply
+    #
+    string trimright [lindex [split $result \n] 0] \r
+} -returnCodes {error ok} -result {HTTP/1.0 200 OK}
+
+test ns_connchan-1.9.1 {connect to listenport via TLS} -constraints serverListenHTTPS -body {
+    set conf [ns_parseurl [ns_config test tls_listenurl]]
+    set chan [ns_connchan connect -tls [dict get $conf host] [dict get $conf port]]
+    ns_connchan write $chan "GET / HTTP/1.0\r\n\r\n"
+    set result [ns_connchan read $chan]
+    ns_connchan close $chan
+    #
+    # return just the first line of the reply
+    #
+    string trimright [lindex [split $result \n] 0] \r
+} -returnCodes {error ok} -result {HTTP/1.0 200 OK}
 
 
 #

@@ -92,7 +92,7 @@ timeout for incoming packets, [option -sendtimeout] is the timeout for
 outgoing packets.  When [option -sendtimeout] has the value of 0, a
 read operation might return the empty string. A value larger than 0
 might block the event processing for the specified time.
-All timeouts values are specified in the form [arg secs[opt :microsecs]], or
+All timeouts values are specified in the form [arg secs[opt :microseconds]], or
 [arg secs.fraction] or as a number with a time unit.
 
 [para]
@@ -124,6 +124,27 @@ interpreted as follows:
 [list_end]
 
 
+[call [cmd "ns_connchan connect"] \
+	[opt [option "-tls"]] \
+	[opt [option "-timeout [arg t]"]] \
+	[arg host] \
+	[arg port] \
+]
+
+Open a client connection channel to the specified [arg host]
+and [arg port].  The command is similar to [cmd "ns_connchan open"],
+but does less: While
+[cmd "ns_connchan open"] send an HTTP request to the server denoted by
+a URL, [cmd "ns_connchan connect"] just connects to the server
+without sending any request data.
+
+[para] The option [option "-tls"] will connection via TLS, otherwise
+the connection is via plain socket. [option -timeout] specifies the
+timeout for establishing the connection (default 1 second).
+The timeout value [arg t] can be specified in the form
+[arg secs[opt :microseconds]], or [arg secs.fraction],
+or as a number with a time unit.
+
 [call [cmd "ns_connchan listen"] \
 	[opt [option "-driver [arg d]"]] \
 	[opt [option "-server [arg s]"]] \
@@ -150,12 +171,12 @@ connections. On success, this command returns a dict containing
 Open a connection channel to the specified [arg url].
 The URL might be an HTTP or an HTTPS URL.
 [option -headers] refers to a [term ns_set] of request header fields,
-[option -method] is the HTTP method (default GET),
-[option -timeout] is the timeout for establishing the connection
+[option -method] specifies the HTTP method (default GET),
+[option -timeout] specifies the timeout for establishing the connection
 (default 1 second), and
 [option -version] specifies the HTTP version (default 1.0)
 The timeout value [arg t] is specified in the form
-[arg secs[opt :microsecs]], or [arg secs.fraction],
+[arg secs[opt :microseconds]], or [arg secs.fraction],
 or as a number with a time unit.
 
 For connecting to a server with virtual hosting that provides
