@@ -37,15 +37,16 @@ set nscp_port [expr {$::tcl_platform(platform) eq "windows" ? "" : [__ns_get_fre
 # Parameters for test scripts.
 #
 ns_section "test" {
-    ns_param   home   [pwd]/tests
+    ns_param home       [pwd]/tests
     ns_param listenport [expr {$port < 8100 ? $port : 0}]
+    if {[ns_info ssl] ne ""} {
+        ns_param tls_listenport [__ns_get_free_port $loopback 8443 8543]
+    }
     ns_param loopback   $loopback
 
-    if {[string match *:* $loopback]} {
-        ns_param   listenurl    http://\[$loopback\]:[ns_config test listenport]
-    } else {
-        ns_param   listenurl    http://$loopback:[ns_config test listenport]
-    }
+    set loopback_host [expr {[string match *:* $loopback] ? "\[$loopback\]" : $loopback}]
+    ns_param listenurl http://$loopback_host:[ns_config test listenport]
+    ns_param tls_listenurl http://$loopback_host:[ns_config test tls_listenport]
 }
 
 ns_log notice "configure LOOPBACK $loopback LISTENURL [ns_config test listenurl]"
@@ -110,7 +111,7 @@ ns_section "ns/module/nssock" {
 }
 
 ns_section "ns/module/nsssl" {
-    ns_param   port            8443
+    ns_param   port            [ns_config "test" tls_listenport]
     ns_param   hostname        localhost
     ns_param   address         [ns_config "test" loopback]
     ns_param   defaultserver   test
