@@ -603,24 +603,38 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      * Internationalized programs must call setlocale() to initiate specific
      * language operations.
      */
-    { char *localeString =  getenv("LC_ALL");
+    {
+        char *localeString =  getenv("LC_ALL");
+        const char *source, *response;
+
         if (localeString == NULL) {
+            source = "environment variable LC_COLLATE";
             localeString =  getenv("LC_COLLATE");
         }
         if (localeString == NULL) {
+            source = "environment variable LANG";
             localeString =  getenv("LANG");
         }
         if (localeString == NULL) {
+            source = "system-wide default locale";
             localeString =  setlocale(LC_COLLATE, NULL);
         }
 
-        Ns_Log(Notice, "initialized locale %s", localeString);
-        (void) setlocale(LC_COLLATE, localeString);
+        response = setlocale(LC_COLLATE, localeString);
+        if (response != NULL) {
 #ifdef _WIN32
             nsconf.locale = _create_locale(LC_COLLATE, localeString);
 #else
             nsconf.locale = newlocale(LC_COLLATE_MASK, localeString, (locale_t)0);
 #endif
+        }
+        if (nsconf.locale == 0) {
+            Ns_Fatal("nsmain: system configuration mismatch.\n"
+                     "The provided locale '%s' based on the %s is not installed on this system.\n"
+                     "On unix-like systems you can check the available locales with the command 'locale -a' .\n",
+                               localeString, source);
+        }
+        Ns_Log(Notice, "initialized locale %s from %s", localeString, source);
     }
 
 
