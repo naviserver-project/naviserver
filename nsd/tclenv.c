@@ -307,7 +307,8 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
 
     /*
      * In case we have no unsetenv(), we have to deal with the value==NULL
-     * case here.
+     * case here. If the value is not NULL, valueLength contains the
+     * terminating NUL character.
      */
     len = nameLength = strlen(name);
     if (value != NULL) {
@@ -317,6 +318,7 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
         len += 1u;
         valueLength = 0u;
     }
+
     /*
      * Use malloc() directly (and not ns_malloc())
      * as putenv() expects.
@@ -340,13 +342,15 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
          * recent BSDs) that do not obey SUS but copy the presented
          * string. This method fails on such platforms.
          */
-
         memcpy(s, name, nameLength);
         *(s + nameLength) = '=';
         *(s + nameLength + 1u) = '\0';
 
         if (value != NULL) {
-            strncat(s + nameLength + 1, value, valueLength);
+            /*
+             * Copy the value including the terminatig NUL character.
+             */
+            memcpy(s + nameLength + 1, value, valueLength);
         }
 
         if (putenv(s) != 0) {

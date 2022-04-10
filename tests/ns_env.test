@@ -41,11 +41,11 @@ test ns_env-2.1 {names} -body {
 } -result 1
 
 test ns_env-2.2 {set, get} -body {
-    ns_env set NSTEST X
+    ns_env set NSTEST X1
     ns_env get NSTEST
 } -cleanup {
     ns_env unset NSTEST
-} -result X
+} -result X1
 
 test ns_env-2.5 {unset} -body {
     ns_env set NSTEST X
