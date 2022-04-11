@@ -634,12 +634,41 @@ ns_section ns/server/$server/httpclient {
 #---------------------------------------------------------------------
 # OpenACS specific settings (per server)
 #---------------------------------------------------------------------
+#
+# Define/override OpenACS kernel parameter for $server
+#
 ns_section ns/server/$server/acs {
     #
-    # Define/override kernel parameters in section /acs
+    # Provide optionally a different cookie namespace (used for
+    # prefixing OpenACS cookies)
+    # ns_param CookieNamespace "ad_"
     #
-    ns_param NsShutdownWithNonZeroExitCode 1
+    # Define a mapping between MIME types and CSP rules for static
+    # files. The mapping is of the form of a Tcl dict. The mapping is
+    # used e.g. in "security::csp::add_static_resource_header".
+    #
+    ns_param StaticCSP {
+        image/svg+xml "script-src 'none'"
+    }
+
+    #
+    # The following option should causes on acs-admin/server-restart
+    # the usage of "ns_shutdown -restart" instead of plain
+    # "ns_shutdown".  This seems to be required in current Windows
+    # installations. Default is 0.
+    #
+    # ns_param NsShutdownWithNonZeroExitCode 1
+
+    #
+    # Should deprecated log be used? Use value of 1 on legacy
+    # sites. Default is 1.
+    #
     # ns_param WithDeprecatedCode 0
+
+    #
+    # Should user_ids be included in log files? Some sensitive sites
+    # do not allow this. Default is 0.
+    #
     # ns_param LogIncludeUserId 1
     #
 }
