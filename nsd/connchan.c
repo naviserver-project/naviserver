@@ -1234,7 +1234,6 @@ ConnChanConnectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
     } else {
         //const NsInterp *itPtr = clientData;
         NsServer       *servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
-        NsConnChan     *connChanPtr;
         Sock           *sockPtr = NULL;
         NS_SOCKET       sock;
         Ns_ReturnCode   status;
@@ -1282,7 +1281,8 @@ ConnChanConnectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             }
 
             if (likely(result == TCL_OK)) {
-                Ns_Time      now;
+                Ns_Time     now;
+                NsConnChan *connChanPtr;
 
                 Ns_GetTime(&now);
                 connChanPtr = ConnChanCreate(servPtr,

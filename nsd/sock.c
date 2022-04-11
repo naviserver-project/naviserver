@@ -70,7 +70,7 @@ static ssize_t SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs,
 static ssize_t SockSend(NS_SOCKET sock, const struct iovec *bufs, int nbufs,
                         unsigned int flags);
 
-static NS_SOCKET BindToSameFamily(struct sockaddr *saPtr,
+static NS_SOCKET BindToSameFamily(const struct sockaddr *saPtr,
                                   struct sockaddr *lsaPtr,
                                   const char *lhost, unsigned short lport)
                                   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -1655,7 +1655,7 @@ NsPoll(struct pollfd *pfds, NS_POLL_NFDS_TYPE nfds, const Ns_Time *timeoutPtr)
  */
 
 static NS_SOCKET
-BindToSameFamily(struct sockaddr *saPtr, struct sockaddr *lsaPtr,
+BindToSameFamily(const struct sockaddr *saPtr, struct sockaddr *lsaPtr,
                  const char *lhost, unsigned short lport)
 {
     NS_SOCKET     sock;
