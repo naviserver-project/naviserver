@@ -344,13 +344,14 @@ PutEnv(Tcl_Interp *interp, const char *name, const char *value)
          */
         memcpy(s, name, nameLength);
         *(s + nameLength) = '=';
-        *(s + nameLength + 1u) = '\0';
 
-        if (value != NULL) {
+        if (valueLength != 0u) {
             /*
              * Copy the value including the terminatig NUL character.
              */
             memcpy(s + nameLength + 1, value, valueLength);
+        } else {
+            *(s + nameLength + 1u) = '\0';
         }
 
         if (putenv(s) != 0) {
