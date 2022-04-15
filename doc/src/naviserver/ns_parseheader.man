@@ -6,7 +6,25 @@
 
 [description]
 This function parses a single HTTP header line into a predefined
-ns_set specified by [arg set].
+[cmd ns_set] specified by [arg set].
+
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_parseheader] \
+        [opt [option -prefix]] \
+        [arg set] [arg headerline] \
+        [opt [arg disposition]] ]
+
+[para] The [arg headerline] specifies a line containing HTTP
+header fields, where the field name is parased into a key of the
+[cmd ns_set] and the field value to the value of the entry.
+
+[para]
+The option [option -prefix] can be used to specify a prefix for the
+key.
 
 [para]
 Optional argument [arg disposition] can be one of the following
@@ -16,13 +34,6 @@ Optional argument [arg disposition] can be one of the following
     [item] preserve - preserve the existing case
 [list_end]
 When no [arg disposition] is provided, it defaults to [term tolower]
-
-[section {COMMANDS}]
-
-[list_begin definitions]
-
-[call [cmd ns_parseheader] [arg set] [arg header] \
-        [opt [arg disposition]] ]
 
 [list_end]
 

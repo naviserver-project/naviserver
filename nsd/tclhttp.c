@@ -982,7 +982,7 @@ Ns_HttpMessageParse(
                 }
                 hdrPtr->name = ns_strdup(p);
                 firsthdr = 0;
-            } else if (len < 2 || Ns_ParseHeader(hdrPtr, p, ToLower) != NS_OK) {
+            } else if (len < 2 || Ns_ParseHeader(hdrPtr, p, NULL, ToLower, NULL) != NS_OK) {
                 break;
             }
             p = eol;
@@ -4923,7 +4923,7 @@ ParseTrailerProc(
             Ns_Set *headersPtr = httpPtr->replyHeaders;
             char   *trailer = dsPtr->string;
 
-            if (Ns_ParseHeader(headersPtr, trailer, ToLower) != NS_OK) {
+            if (Ns_ParseHeader(headersPtr, trailer, NULL, ToLower, NULL) != NS_OK) {
                 result = TCL_ERROR;
             }
         }

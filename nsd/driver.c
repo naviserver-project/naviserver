@@ -4138,8 +4138,8 @@ EndOfHeader(Sock *sockPtr)
     }
 
     /*
-     * In case a valid and meaningful was provided, the string with the
-     * content length ("s") is not NULL.
+     * In case a valid and meaningful headers determining the content length
+     * was provided, the string with the content length ("s") is not NULL.
      */
     if (s != NULL) {
         Tcl_WideInt length;
@@ -4432,7 +4432,7 @@ SockParse(Sock *sockPtr)
                     Ns_Log(Notice, "pre-HTTP/1.0 request <%s>", reqPtr->request.line);
                 }
 
-            } else if (Ns_ParseHeader(reqPtr->headers, s, Preserve) != NS_OK) {
+            } else if (Ns_ParseHeader(reqPtr->headers, s, NULL, Preserve, NULL) != NS_OK) {
                 /*
                  * Invalid header.
                  */
