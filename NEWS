@@ -4292,7 +4292,7 @@ New Features:
   * New Command "ns_rlimit" to get/set various resource limits from
     the operating system. A typical use case for this command is to
     query or set e.g. the core size via the NaviServer startup file or
-    to change it at runtime in a syntax independent from the naming
+    to change it at runtime in a syntax independent of the naming
     and conventions in the various startup scripts (e.g. upstart,
     systemd, ...). This is e.g. useful when a core dump should be
     created from the running state (e.g. in combination with the
