@@ -783,17 +783,23 @@ NsTclParseHeaderObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
     Ns_HeaderCaseDisposition disp = Preserve;
     char        *setString = (char *)NS_EMPTY_STRING,
                 *headerString = (char *)NS_EMPTY_STRING,
-                *dispositionString = NULL;
+                *dispositionString = NULL,
+                *prefix = NULL;
+    Ns_ObjvSpec opts[] = {
+        {"-prefix",  Ns_ObjvString,  &prefix,  NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
     Ns_ObjvSpec  args[] = {
-        {"set", Ns_ObjvString, &setString, NULL},
-        {"header", Ns_ObjvString, &headerString, NULL},
+        {"set",          Ns_ObjvString, &setString, NULL},
+        {"headerline",   Ns_ObjvString, &headerString, NULL},
         {"?disposition", Ns_ObjvString, &dispositionString, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
     assert(clientData != NULL);
 
-    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else if (LookupSet(itPtr, setString, NS_FALSE, &set) != TCL_OK) {
@@ -819,10 +825,13 @@ NsTclParseHeaderObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 
     if (result == TCL_OK) {
         assert(set != NULL);
+        size_t fieldNumber;
 
-        if (Ns_ParseHeader(set, headerString, disp) != NS_OK) {
+        if (Ns_ParseHeader(set, headerString, prefix, disp, &fieldNumber) != NS_OK) {
             Ns_TclPrintfResult(interp, "invalid header: %s", headerString);
             result = TCL_ERROR;
+        } else {
+            Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)fieldNumber));
         }
     }
     return result;

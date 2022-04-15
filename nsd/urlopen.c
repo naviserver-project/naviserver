@@ -224,7 +224,7 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
         }
         if (ds.length > 0
             && headers != NULL
-            && Ns_ParseHeader(headers, ds.string, Preserve) != NS_OK) {
+            && Ns_ParseHeader(headers, ds.string, NULL, Preserve, NULL) != NS_OK) {
             goto done;
         }
     } while (ds.length > 0);

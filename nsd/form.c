@@ -491,11 +491,14 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
             --e;
         }
         if (s == e) {
+            /*
+             * Reached empty line, end of header.
+             */
             break;
         }
         save = *e;
         *e = '\0';
-        (void) Ns_ParseHeader(set, s, ToLower);
+        (void) Ns_ParseHeader(set, s, NULL, ToLower, NULL);
         *e = save;
     }
 

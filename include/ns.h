@@ -2282,7 +2282,8 @@ Ns_SetRequestUrl(Ns_Request *request, const char *url)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_ReturnCode
-Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
+Ns_ParseHeader(Ns_Set *set, const char *line, const char *prefix, Ns_HeaderCaseDisposition disp,
+               size_t *fieldNumberPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_ReturnCode

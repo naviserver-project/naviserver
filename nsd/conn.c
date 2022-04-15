@@ -2085,12 +2085,32 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
                 } else if (GetChan(interp, Tcl_GetString(objv[4]), &chan) != TCL_OK) {
                     result = TCL_ERROR;
 
-                } else if (Tcl_Write(chan, connPtr->reqPtr->content + offset, length) != length) {
-                    Ns_TclPrintfResult(interp, "could not write %s bytes to %s: %s",
-                                       Tcl_GetString(objv[3]),
-                                       Tcl_GetString(objv[4]),
-                                       Tcl_PosixError(interp));
-                    result = TCL_ERROR;
+                } else {
+                    char *content = connPtr->reqPtr->content + offset;
+#ifdef NS_SKIPBOM
+                    Ns_Log(Notice, "NS_CONN COPY offset %d length %d chan '%s'\n",
+                           offset, length, Tcl_GetString(objv[4]));
+                    /*
+                     * The passed-in channel is binary. If this is the first
+                     * write operation, and file file starts with a BOM, then
+                     * strip it.
+                     */
+                    if (Tcl_Tell(chan) == 0 &&
+                        UCHAR(content[0]) == 0xEF &&
+                        UCHAR(content[1]) == 0xBB &&
+                        UCHAR(content[2]) == 0xBF) {
+                        Ns_Log(Notice, "NS_CONN COPY ---- BOM");
+                        content += 3;
+                        length -= 3;
+                    }
+#endif
+                    if (Tcl_Write(chan, content, length) != length) {
+                        Ns_TclPrintfResult(interp, "could not write %s bytes to %s: %s",
+                                           Tcl_GetString(objv[3]),
+                                           Tcl_GetString(objv[4]),
+                                           Tcl_PosixError(interp));
+                        result = TCL_ERROR;
+                    }
                 }
             }
         }

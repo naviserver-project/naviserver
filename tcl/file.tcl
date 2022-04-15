@@ -129,6 +129,35 @@ proc ns_sourceproc {args} {
     }
 }
 
+# proc ns_fileskipbom args {
+#     ns_parseargs {
+#         {-keepencoding false}
+#         channel
+#     } $args
+
+#     #ns_log notice "ns_fileskipbom channel $channel keepencoding $keepencoding"
+#     set start [tell $channel]
+#     set startBytes [read $channel 3]
+#     binary scan $startBytes H* hex
+#     if {$hex eq "efbbbf"} {
+#         #
+#         # UTF-8 BOM was found, set end-of-BOM to start of
+#         # content.
+#         #
+#         #ns_log notice "*************** BOM"
+#         if {!$keepencoding} {
+#             #ns_log notice "*************** BOM reconfigure"
+#             fconfigure $channel -encoding utf-8
+#         }
+#     } else {
+#         #
+#         # no BOM, reset file pointer to start
+#         #
+#         seek $channel $start
+#     }
+# }
+
+
 # Local variables:
 #    mode: tcl
 #    tcl-indent-level: 4

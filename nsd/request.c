@@ -632,9 +632,11 @@ SetUrl(Ns_Request *request, char *url)
  */
 
 Ns_ReturnCode
-Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
+Ns_ParseHeader(Ns_Set *set, const char *line, const char *prefix, Ns_HeaderCaseDisposition disp,
+               size_t *fieldNumberPtr)
 {
-    Ns_ReturnCode   status = NS_OK;
+    Ns_ReturnCode status = NS_OK;
+    size_t        idx = 0u;
 
     /*
      * Header lines are first checked if they continue a previous
@@ -653,7 +655,10 @@ Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
             status = NS_ERROR;
 
         } else {
-            size_t idx = Ns_SetLast(set);
+            idx = Ns_SetLast(set);
+            /*
+             * Append to the last entry.
+             */
             while (CHARTYPE(space, *line) != 0) {
                 ++line;
             }
@@ -669,6 +674,14 @@ Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
         }
     } else {
         char *sep;
+        Tcl_DString ds, *dsPtr = &ds;
+
+        if (prefix != NULL) {
+            Tcl_DStringInit(dsPtr);
+            Tcl_DStringAppend(dsPtr, prefix, -1);
+            Tcl_DStringAppend(dsPtr, line, -1);
+            line = dsPtr->string;
+        }
 
         sep = strchr(line, INTCHAR(':'));
         if (sep == NULL) {
@@ -680,7 +693,6 @@ Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
         } else {
             const char *value;
             char       *key;
-            size_t      idx;
 
             *sep = '\0';
             for (value = sep + 1; (*value != '\0') && CHARTYPE(space, *value) != 0; value++) {
@@ -705,8 +717,15 @@ Ns_ParseHeader(Ns_Set *set, const char *line, Ns_HeaderCaseDisposition disp)
             }
             *sep = ':';
         }
+
+        if (prefix != NULL) {
+            Tcl_DStringFree(dsPtr);
+        }
     }
 
+    if (fieldNumberPtr != NULL && status == NS_OK) {
+        *fieldNumberPtr = idx;
+    }
     return status;
 }
 
