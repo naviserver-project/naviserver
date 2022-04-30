@@ -1067,20 +1067,20 @@ ICtlAddTrace(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const
     Tcl_Obj        *scriptObj = NULL;
     int             remain = 0, result = TCL_OK;
     Ns_ReturnCode   status;
-    Ns_ObjvSpec     addTraceArgs[] = {
-        {"when",       Ns_ObjvFlags,  &flags,     traceWhen},
-        {"script",     Ns_ObjvObj,    &scriptObj, NULL},
-        {"?args",      Ns_ObjvArgs,   &remain,    NULL},
-        {NULL, NULL, NULL, NULL}
-    };
-    Ns_ObjvSpec     legacyAddTraceArgs[] = {
-        {"script",     Ns_ObjvObj,    &scriptObj, NULL},
-        {"?args",      Ns_ObjvArgs,   &remain,    NULL},
-    };
 
     if (when == NS_TCL_TRACE_NONE) {
+        Ns_ObjvSpec     addTraceArgs[] = {
+            {"when",       Ns_ObjvFlags,  &flags,     traceWhen},
+            {"script",     Ns_ObjvObj,    &scriptObj, NULL},
+            {"?args",      Ns_ObjvArgs,   &remain,    NULL},
+            {NULL, NULL, NULL, NULL}
+        };
         status = Ns_ParseObjv(NULL, addTraceArgs, interp, 2, objc, objv);
     } else {
+        Ns_ObjvSpec     legacyAddTraceArgs[] = {
+            {"script",     Ns_ObjvObj,    &scriptObj, NULL},
+            {"?args",      Ns_ObjvArgs,   &remain,    NULL},
+        };
         status = Ns_ParseObjv(NULL, legacyAddTraceArgs, interp, 2, objc, objv);
     }
     if (status != NS_OK) {
