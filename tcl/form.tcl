@@ -454,6 +454,7 @@ proc ns_parseformfile { file form contentType } {
         set content_type ""
         set fragment_headers [ns_set create frag]
 
+        set name ""
         while { ![eof $fp] } {
             set line [string trimright [encoding convertfrom utf-8 [gets $fp]] "\r\n"]
             #ns_log notice "PARSE multipart <$line> after trim"
@@ -489,6 +490,13 @@ proc ns_parseformfile { file form contentType } {
                     ns_set put $form $name.$key $value
                 }
             }
+        }
+
+        #
+        # Header terminated before we found a name.
+        #
+        if {$name eq ""} {
+            continue
         }
 
         ns_set free $fragment_headers
