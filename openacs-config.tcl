@@ -33,10 +33,15 @@ ns_log notice "nsd.tcl: starting to read configuration file..."
 #    ipaddress	::0        ;# listen on all IPv6 addresses
 #
 # All default variables in defaultConfig can be overloaded by
-# 1) setting these variables in this file (highest precedence)
-# 2) setting these variables as environment variables with
-#    the "oacs_" prefix (suitable for e.g. docker setups)
-# 3) set the variables from the default values.
+#
+# 1) setting these variables explicitly in this file after
+#    "ns_configure_variables" (highest precedence)
+#
+# 2) setting these variables as environment variables with the "oacs_"
+#    prefix (suitable for e.g. docker setups).  The lookup for
+#    environment variables happens in "ns_configure_variables".
+#
+# 3) Alter/override the variables in the "defaultConfig"
 #
 set defaultConfig {
     hostname	localhost
@@ -53,7 +58,16 @@ set defaultConfig {
     db_user	$server
     db_host	localhost
     db_port	""
+    CookieNamespace ad_
 }
+#
+# Override default variables (this allows commenting lines)
+#
+# If the same domain name serves multiple OpenACS instances,
+# same-named cookies will mix up.  you migth consider a different
+# namespace of the cookies.
+#
+#dict set defaultConfig CookieNamespace ad_8000_
 
 set servername	"New OpenACS Installation - Development"
 
@@ -641,7 +655,7 @@ ns_section ns/server/$server/acs {
     #
     # Provide optionally a different cookie namespace (used for
     # prefixing OpenACS cookies)
-    # ns_param CookieNamespace "ad_"
+    ns_param CookieNamespace $CookieNamespace
     #
     # Define a mapping between MIME types and CSP rules for static
     # files. The mapping is of the form of a Tcl dict. The mapping is
@@ -931,9 +945,14 @@ ns_section ns/server/$server/modules {
     ns_param	nsproxy		${bindir}/nsproxy
 
     #
-    # Determine, if libthread is installed
+    # Determine, if libthread is installed. First check for a version
+    # having the "-ns" suffix. If this does not exist, check for a
+    # legacy version without it.
     #
-    set libthread [lindex [lsort [glob -nocomplain $homedir/lib/thread*/libthread*[info sharedlibextension]]] end]
+    set libthread [lindex [lsort [glob -nocomplain $homedir/lib/thread*/libthread-ns*[info sharedlibextension]]] end]
+    if {$libthread eq ""} {
+        set libthread [lindex [lsort [glob -nocomplain $homedir/lib/thread*/libthread*[info sharedlibextension]]] end]
+    }
     if {$libthread eq ""} {
         ns_log notice "No Tcl thread library installed in $homedir/lib/"
     } else {
