@@ -241,7 +241,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
     Ns_Log(Ns_LogRequestDebug, "begin %s", request->line);
 
     /*
-     * Look for the minimum of method and url.
+     * Look for the minimum of method and URL.
      *
      * Collect non-space characters as first token.
      */
@@ -305,7 +305,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
         }
     } else {
         /*
-         * Let us assume, the request is HTTP 0.9, when the url starts with a
+         * Let us assume, the request is HTTP 0.9, when the URL starts with a
          * slash. HTTP 0.9 did not have proxy functionality.
          */
         if (*url != '/') {
@@ -391,10 +391,10 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
  *
  * Ns_SkipUrl --
  *
- *    Return a pointer n elements into the request's url.
+ *    Return a pointer n elements into the request's URL.
  *
  * Results:
- *    The url beginning n elements in.
+ *    The URL beginning n elements in.
  *
  * Side effects:
  *    None.
@@ -431,13 +431,13 @@ Ns_SkipUrl(const Ns_Request *request, int n)
  *
  * Ns_SetRequestUrl --
  *
- *    Set the url in a request structure.
+ *    Set the URL in a request structure.
  *
  * Results:
  *    None.
  *
  * Side effects:
- *    Makes a copy of url.
+ *    Makes a copy of URL.
  *
  *----------------------------------------------------------------------
  */
@@ -463,7 +463,7 @@ Ns_SetRequestUrl(Ns_Request *request, const char *url)
  *
  * FreeUrl --
  *
- *    Free the url in a request.
+ *    Free the URL in a request.
  *
  * Results:
  *    None.
