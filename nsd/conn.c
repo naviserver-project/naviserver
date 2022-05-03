@@ -2000,9 +2000,16 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         if ((itPtr->nsconn.flags & CONN_TCLFORM) != 0u) {
             Tcl_SetResult(interp, itPtr->nsconn.form, TCL_STATIC);
         } else {
-            Ns_Set *form = Ns_ConnGetQuery(conn);
+            Ns_ReturnCode rc = NS_OK;
+            Ns_Set *form = Ns_ConnGetQuery(interp, conn, &rc);
 
-            if (form == NULL) {
+            if (rc == NS_ERROR) {
+                /*
+                 * Ns_ConnGetQuery() provides error message when rc != NS_OK;
+                 */
+                result = TCL_ERROR;
+
+            } else if (form == NULL) {
                 itPtr->nsconn.form[0] = '\0';
                 itPtr->nsconn.flags |= CONN_TCLFORM;
             } else {

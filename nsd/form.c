@@ -42,7 +42,7 @@
 static int ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static void ParseMultiInput(Conn *connPtr, const char *start, char *end)
+static Ns_ReturnCode ParseMultiInput(Conn *connPtr, const char *start, char *end)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static char *Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding, char unescape)
@@ -71,7 +71,7 @@ static bool GetValue(const char *hdr, const char *att, const char **vsPtr, const
  *      set, it is treated as cached result and is returned untouched.
  *
  * Results:
- *      Query data or NULL if error
+ *      Query data or NULL if no form data is available.
  *
  * Side effects:
  *      None.
@@ -80,9 +80,9 @@ static bool GetValue(const char *hdr, const char *att, const char **vsPtr, const
  */
 
 Ns_Set *
-Ns_ConnGetQuery(Ns_Conn *conn)
+Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Ns_ReturnCode *rcPtr)
 {
-    Conn           *connPtr;
+    Conn *connPtr;
 
     NS_NONNULL_ASSERT(conn != NULL);
     connPtr = (Conn *) conn;
@@ -92,12 +92,15 @@ Ns_ConnGetQuery(Ns_Conn *conn)
      * called multiple times during a single request.
      */
     if (connPtr->query == NULL) {
-        const char *contentType, *charset = NULL;
-        char       *content = NULL;
-        size_t      charsetOffset;
-        bool        haveFormData = NS_FALSE;
+        const char   *contentType, *charset = NULL;
+        char         *content = NULL, *toParse = NULL;
+        size_t        charsetOffset;
+        bool          haveFormData = NS_FALSE;
+        Ns_ReturnCode status = NS_OK;
+
         /*
-         * We are called the first time, so create an ns_set.
+         * We are called the first time, so create an ns_set named (slightly
+         * misleading "connPtr->query")
          */
         connPtr->query = Ns_SetCreate(NULL);
         contentType = Ns_SetIGet(connPtr->headers, "content-type");
@@ -131,7 +134,8 @@ Ns_ConnGetQuery(Ns_Conn *conn)
              * The content has none of the "FORM" content types, so get it
              * in good old AOLserver tradition from the query variables.
              */
-            (void)ParseQuery(connPtr->request.query,
+            toParse = connPtr->request.query;
+            status = ParseQuery(toParse,
                              connPtr->query,
                              connPtr->urlEncoding,
                              NS_FALSE);
@@ -146,6 +150,9 @@ Ns_ConnGetQuery(Ns_Conn *conn)
             Tcl_DStringInit(&bound);
 
             if (*contentType == 'a') {
+                /*
+                 * The content-type is "application/x-www-form-urlencoded"
+                 */
                 bool         translate;
                 Tcl_Encoding encoding;
 #ifdef _WIN32
@@ -165,7 +172,8 @@ Ns_ConnGetQuery(Ns_Conn *conn)
                 } else {
                     encoding = connPtr->urlEncoding;
                 }
-                (void)ParseQuery(content, connPtr->query, encoding, translate);
+                toParse = content;
+                status = ParseQuery(content, connPtr->query, encoding, translate);
 
             } else if (GetBoundary(&bound, contentType)) {
                 /*
@@ -187,14 +195,32 @@ Ns_ConnGetQuery(Ns_Conn *conn)
                     }
                     e = NextBoundary(&bound, s, formEndPtr);
                     if (e != NULL) {
-                        ParseMultiInput(connPtr, s, e);
+                        status = ParseMultiInput(connPtr, s, e);
+                        if (status == NS_ERROR) {
+                            toParse = s;
+                        }
                     }
                     s = e;
                 }
             }
             Tcl_DStringFree(&bound);
         }
+
+        if (status == NS_ERROR) {
+            Ns_Log(Warning, "formdata: could not parse '%s'", toParse);
+            Ns_ConnClearQuery(conn);
+            if (rcPtr != NULL) {
+                *rcPtr = status;
+                if (interp != NULL) {
+                    Ns_TclPrintfResult(interp,
+                                       "cannot decode '%s'; contains invalid UTF-8",
+                                       toParse);
+                }
+            }
+            return NULL;
+        }
     }
+
     return connPtr->query;
 }
 
@@ -261,19 +287,19 @@ Ns_ConnClearQuery(Ns_Conn *conn)
  *
  * Ns_QueryToSet --
  *
- *      Parse query data into an Ns_Set
+ *      Parse query data into a given Ns_Set.
  *
  * Results:
  *      NS_OK.
  *
  * Side effects:
- *      Will add data to set without any UTF conversion.
+ *      Will add data to set.
  *
  *----------------------------------------------------------------------
  */
 
 Ns_ReturnCode
-Ns_QueryToSet(char *query, Ns_Set *set, Tcl_Encoding  encoding)
+Ns_QueryToSet(char *query, Ns_Set *set, Tcl_Encoding encoding)
 {
     NS_NONNULL_ASSERT(query != NULL);
     NS_NONNULL_ASSERT(set != NULL);
@@ -445,15 +471,16 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
  *----------------------------------------------------------------------
  */
 
-static void
+static Ns_ReturnCode
 ParseMultiInput(Conn *connPtr, const char *start, char *end)
 {
-    Tcl_Encoding encoding;
-    Tcl_DString  kds, vds;
-    char        *e, saveend, unescape;
-    const char  *ks = NULL, *ke, *disp;
-    Ns_Set      *set;
-    int          isNew;
+    Tcl_Encoding  encoding;
+    Tcl_DString   kds, vds;
+    char         *e, saveend, unescape;
+    const char   *ks = NULL, *ke, *disp;
+    Ns_Set       *set;
+    int           isNew;
+    Ns_ReturnCode status = NS_OK;
 
     NS_NONNULL_ASSERT(connPtr != NULL);
     NS_NONNULL_ASSERT(start != NULL);
@@ -511,8 +538,19 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
         const char *key = Ext2utf(&kds, ks, (size_t)(ke - ks), encoding, unescape);
         const char *value, *fs = NULL, *fe = NULL;
 
+        if (key == NULL) {
+            status = NS_ERROR;
+            goto bailout;
+        }
+        Ns_Log(Debug, "ParseMultiInput disp '%s'", disp);
+
         if (GetValue(disp, "filename=", &fs, &fe, &unescape) == NS_FALSE) {
+            Ns_Log(Debug, "ParseMultiInput LINE '%s'", start);
             value = Ext2utf(&vds, start, (size_t)(end - start), encoding, unescape);
+            if (value == NULL) {
+                status = NS_ERROR;
+                goto bailout;
+            }
         } else {
             Tcl_HashEntry *hPtr;
             FormFile      *filePtr;
@@ -520,6 +558,11 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
 
             assert(fs != NULL);
             value = Ext2utf(&vds, fs, (size_t)(fe - fs), encoding, unescape);
+            if (value == NULL) {
+                status = NS_ERROR;
+                goto bailout;
+            }
+
             hPtr = Tcl_CreateHashEntry(&connPtr->files, key, &isNew);
             if (isNew != 0) {
 
@@ -549,19 +592,22 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
                                             Tcl_NewWideIntObj((Tcl_WideInt)(end - start)));
             set = NULL;
         }
+        Ns_Log(Debug, "ParseMultiInput sets '%s': '%s'", key, value);
         (void) Ns_SetPut(connPtr->query, key, value);
     }
 
     /*
      * Restore the end marker.
      */
-
+ bailout:
     *end = saveend;
     Tcl_DStringFree(&kds);
     Tcl_DStringFree(&vds);
     if (set != NULL) {
         Ns_SetFree(set);
     }
+
+    return status;
 }
 
 
@@ -747,18 +793,30 @@ GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePt
 static char *
 Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding, char unescape)
 {
+    char *buffer;
+
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(start != NULL);
 
     if (encoding == NULL) {
         Tcl_DStringSetLength(dsPtr, 0);
         Tcl_DStringAppend(dsPtr, start, (int)len);
+        buffer = dsPtr->string;
     } else {
         /*
-         * ExternalToUtfDString will re-init dstring.
+         * Actual to UTF conversion.
          */
-        Tcl_DStringFree(dsPtr);
-        (void) Tcl_ExternalToUtfDString(encoding, start, (int)len, dsPtr);
+        if (!Ns_Valid_UTF8((const unsigned char *)start, len)) {
+            Ns_Log(Warning, "form: multipart contains invalid UTF8: %s", start);
+            buffer = NULL;
+        } else {
+            /*
+             * ExternalToUtfDString will re-init dstring.
+             */
+            Tcl_DStringFree(dsPtr);
+            (void) Tcl_ExternalToUtfDString(encoding, start, (int)len, dsPtr);
+            buffer = dsPtr->string;
+        }
     }
 
     /*
@@ -766,9 +824,8 @@ Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding
      * backslashes have to be removed. This will shorten the resulting
      * string.
      */
-    if (unescape != '\0') {
+    if (buffer != NULL && unescape != '\0') {
       int i, j, l = (int)len;
-      char *buffer = dsPtr->string;
 
       for (i = 0; i<l; i++) {
         if (buffer[i] == '\\' && buffer[i+1] == unescape) {
@@ -779,8 +836,10 @@ Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding
         }
       }
       Tcl_DStringSetLength(dsPtr, l);
+      buffer = dsPtr->string;
     }
-    return dsPtr->string;
+
+    return buffer;
 }
 
 /*

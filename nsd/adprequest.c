@@ -193,7 +193,7 @@ PageRequest(Ns_Conn *conn, const char *fileName, const Ns_Time *expiresPtr, unsi
         if ((servPtr->adp.flags & ADP_DEBUG) != 0u &&
             conn->request.method != NULL &&
             STREQ(conn->request.method, "GET")) {
-            const Ns_Set *query = Ns_ConnGetQuery(conn);
+            const Ns_Set *query = Ns_ConnGetQuery(interp, conn, NULL); /* currently ignoring encoding errors */
 
             if (query != NULL) {
                 itPtr->adp.debugFile = Ns_SetIGet(query, "debug");
