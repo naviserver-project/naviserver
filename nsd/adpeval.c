@@ -480,7 +480,7 @@ AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *const* objv, const char *file,
         const Ns_Set *hdrs;
         const char   *host, *port, *procs;
 
-        hdrs = Ns_ConnGetQuery(itPtr->conn);
+        hdrs = Ns_ConnGetQuery(interp, itPtr->conn, NULL); /* currently ignoring encoding errors */
         host = Ns_SetIGet(hdrs, "dhost");
         port = Ns_SetIGet(hdrs, "dport");
         procs = Ns_SetIGet(hdrs, "dprocs");

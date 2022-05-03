@@ -3566,9 +3566,9 @@ Ns_SetGroup(const char *group);
 /*
  * form.c:
  */
-NS_EXTERN Ns_Set  *
-Ns_ConnGetQuery(Ns_Conn *conn)
-    NS_GNUC_NONNULL(1);
+NS_EXTERN Ns_Set *
+Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Ns_ReturnCode *rcPtr)
+    NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
 Ns_ConnClearQuery(Ns_Conn *conn)

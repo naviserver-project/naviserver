@@ -382,7 +382,6 @@ proc ns_parseformfile { file form contentType } {
 
     if { [catch { set fp [open $file r] } errmsg] } {
         ns_log warning "ns_parseformfile could not open $file for reading"
-        return
     }
     #
     # Separate content-type and options
@@ -453,7 +452,13 @@ proc ns_parseformfile { file form contentType } {
         set header_set [ns_set create part_header]
 
         while { ![eof $fp] } {
-            set line [string trimright [encoding convertfrom utf-8 [gets $fp]] "\r\n"]
+            set raw [gets $fp]
+            if {![ns_valid_utf8 $raw]} {
+                ns_log warning "multipart header contains invalid UTF-8: $raw"
+                close $fp
+                error "multipart header contains invalid UTF-8"
+            }
+            set line [string trimright [encoding convertfrom utf-8 $raw] "\r\n"]
             #ns_log notice "PARSE multipart <$line> after trim"
 
             if { $line eq "" } {
@@ -578,6 +583,16 @@ proc ns_parseformfile { file form contentType } {
             seek $fp $start
 
             if {$content_type eq "" || [string match "text/*" $content_type]} {
+                #
+                # For ordinary values, newer HTTP specs mandate that
+                # the content_type must be omitted, but this was not
+                # always so.
+                #
+                if {![ns_valid_utf8 $value]} {
+                    ns_log warning "multipart value for $name contains invalid UTF-8: $value"
+                    close $fp
+                    error "multipart value for $name contains invalid UTF-8"
+                }
                 set value [encoding convertfrom utf-8 $value]
             }
             ns_set put $form $name $value

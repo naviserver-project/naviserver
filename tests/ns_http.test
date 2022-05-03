@@ -803,6 +803,147 @@ test http-5.6 {
 } -result {200 {utf-8 <text/html> AÄATest/üß☀ZÜZ}}
 
 
+test http-5.7.0 {
+
+    Invalid encoding in query parameter with GET via ns_http
+
+} -constraints {serverListen} -setup {
+    ns_register_proc GET /GET {
+        set contentType [ns_set iget [ns_conn headers] content-type]
+        try {
+            ns_getform
+        } on ok {nsform} {
+            ns_return 200 text/plain "$contentType '[ns_set array $nsform]' [ns_conn method] [ns_conn query]"
+        } on error {errorMsg} {
+            ns_return 400 text/plain "$contentType $errorMsg"
+        }
+    }
+} -body {
+    nstest::http -getbody 1 GET /GET?p1=a%C5%93Cb&p2=a%E6b
+} -cleanup {
+    ns_unregister_op GET /GET
+    unset -nocomplain r
+} -result {400 { cannot decode 'p1=a%C5%93Cb&p2=a%E6b'; contains invalid UTF-8}}
+
+
+test http-5.7.0c {
+
+    Invalid encoding in query parameter with GET via curl
+
+} -constraints {serverListen curl} -setup {
+    ns_register_proc GET /GET {
+        set contentType [ns_set iget [ns_conn headers] content-type]
+        try {
+            ns_getform
+        } on ok {nsform} {
+            ns_return 200 text/plain "$contentType '[ns_set array $nsform]' [ns_conn method] [ns_conn query]"
+        } on error {errorMsg} {
+            ns_return 400 text/plain "$contentType [ns_conn method] [ns_conn query] $errorMsg"
+        }
+    }
+} -body {
+    exec curl -g -s -X GET [ns_config test listenurl]/GET?p1=a%C5%93Cb&p2=a%E6b 2> /dev/null
+} -cleanup {
+    ns_unregister_op GET /GET
+    unset -nocomplain r
+} -returnCodes {error ok} -result { GET p1=a%C5%93Cb&p2=a%E6b cannot decode 'p1=a%C5%93Cb&p2=a%E6b'; contains invalid UTF-8}
+
+
+test http-5.7.1 {
+
+    Invalid encoding in query parameter with POST via ns_http
+
+} -constraints {serverListen} -setup {
+    #ns_logctl severity Debug(request) on
+    ns_register_proc POST /POST {
+        set contentType [ns_set iget [ns_conn headers] content-type]
+        try {
+            ns_getform
+        } on ok {nsform} {
+            ns_return 200 text/plain "$contentType '[ns_set array $nsform]' [ns_conn method] [ns_conn query]"
+        } on error {errorMsg} {
+            ns_return 400 text/plain "$contentType $errorMsg"
+        }
+    }
+} -body {
+    nstest::http -setheaders {content-type application/x-www-form-urlencoded} -getbody 1 POST /POST p1=a%C5%93Cb&p2=a%E6b
+} -cleanup {
+    ns_unregister_op POST /POST
+    unset -nocomplain r
+} -result {400 {application/x-www-form-urlencoded cannot decode 'p1=a%C5%93Cb&p2=a%E6b'; contains invalid UTF-8}}
+
+
+test http-5.7.2 {
+
+    Invalid encoding in query parameter with POST and multipart via ns_http
+
+} -constraints {serverListen curl} -setup {
+    ns_register_proc POST /POST {
+        set contentType [ns_set iget [ns_conn headers] content-type]
+        try {
+            ns_getform
+        } on ok {nsform} {
+            ns_return 200 text/plain "$contentType '[ns_set array $nsform]' [ns_conn method] [ns_conn query]"
+        } on error {errorMsg} {
+            ns_return 400 text/plain "$contentType [ns_conn method]"
+        }
+    }
+} -body {
+    set contentType "multipart/form-data; boundary=---------------------------9051914041544843365972754266"
+    set body [subst [ns_trim -delimiter | {
+        |-----------------------------9051914041544843365972754266
+        |Content-Disposition: form-data; name="p0"
+        |
+        |123 - jööö
+        |-----------------------------9051914041544843365972754266
+        |Content-Disposition: form-data; name="p1"
+        |
+        |aœb-schön //😈//😃//
+        |-----------------------------9051914041544843365972754266
+        |Content-Disposition: form-data; name="p2"
+        |
+        |a\xE6b
+        |-----------------------------9051914041544843365972754266
+    }]]
+    #ns_log notice "ONE = //a[binary format H* E6]b//"
+    #ns_log notice [binary format H* E6]
+    #ns_log notice BODY=$body
+    #ns_logctl severity Debug(task) on
+
+    nstest::http -setheaders [list content-type $contentType] -getbody 1 POST /POST $body
+} -cleanup {
+    ns_unregister_op POST /POST
+    unset -nocomplain r
+} -result {400 {multipart/form-data; boundary=---------------------------9051914041544843365972754266 POST}}
+
+test http-5.7.2c {
+
+    Invalid encoding in query parameter with POST and multipart via curl
+
+} -constraints {serverListen curl} -setup {
+    ns_register_proc POST /POST {
+        set contentType [ns_set iget [ns_conn headers] content-type]
+        try {
+            ns_getform
+        } on ok {nsform} {
+            ns_return 200 text/plain "$contentType '[ns_set array $nsform]' [ns_conn method]"
+        } on error {errorMsg} {
+            ns_return 400 text/plain "$contentType [ns_conn method] [ns_conn query] $errorMsg"
+        }
+    }
+} -body {
+    set x [exec curl -g -s -X POST -F "p1=aœb" -F "p2=a\xE6b" -F "p3=😃" -F "p4=😈" [ns_config test listenurl]/POST 2> /dev/null]
+    # strip dynamic boundary from curl
+    regsub {=[-]+[a-z0-9]+} $x "=..." x
+    return $x
+} -cleanup {
+    ns_unregister_op POST /POST
+    unset -nocomplain r
+} -returnCodes {error return ok} -result {multipart/form-data; boundary=... 'p1 aœb p2 aæb p3 😃 p4 😈' POST}
+
+
+
+
 #
 # Test content-disposition for file uploads
 #
