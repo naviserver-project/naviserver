@@ -2000,26 +2000,35 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         if ((itPtr->nsconn.flags & CONN_TCLFORM) != 0u) {
             Tcl_SetResult(interp, itPtr->nsconn.form, TCL_STATIC);
         } else {
-            Ns_ReturnCode rc = NS_OK;
-            Ns_Set *form = Ns_ConnGetQuery(interp, conn, &rc);
-
-            if (rc == NS_ERROR) {
-                /*
-                 * Ns_ConnGetQuery() provides error message when rc != NS_OK;
-                 */
+            Tcl_Obj *fallbackEncodingsObj = NULL;
+            Ns_ObjvSpec lopts[] = {
+                {"-fallbackencodings", Ns_ObjvObj, &fallbackEncodingsObj, NULL},
+                {NULL, NULL, NULL, NULL}
+            };
+            if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
                 result = TCL_ERROR;
-
-            } else if (form == NULL) {
-                itPtr->nsconn.form[0] = '\0';
-                itPtr->nsconn.flags |= CONN_TCLFORM;
             } else {
-                if (unlikely(Ns_TclEnterSet(interp, form, NS_TCL_SET_STATIC) != TCL_OK)) {
+                Ns_ReturnCode rc = NS_OK;
+                Ns_Set *form = Ns_ConnGetQuery(interp, conn, fallbackEncodingsObj, &rc);
+
+                if (rc == NS_ERROR) {
+                    /*
+                     * Ns_ConnGetQuery() provides error message when rc != NS_OK;
+                     */
                     result = TCL_ERROR;
-                } else {
-                    setName = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &setNameLength);
-                    setNameLength++;
-                    memcpy(itPtr->nsconn.form, setName, MIN((size_t)setNameLength, NS_SET_SIZE));
+
+                } else if (form == NULL) {
+                    itPtr->nsconn.form[0] = '\0';
                     itPtr->nsconn.flags |= CONN_TCLFORM;
+                } else {
+                    if (unlikely(Ns_TclEnterSet(interp, form, NS_TCL_SET_STATIC) != TCL_OK)) {
+                        result = TCL_ERROR;
+                    } else {
+                        setName = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &setNameLength);
+                        setNameLength++;
+                        memcpy(itPtr->nsconn.form, setName, MIN((size_t)setNameLength, NS_SET_SIZE));
+                        itPtr->nsconn.flags |= CONN_TCLFORM;
+                    }
                 }
             }
         }

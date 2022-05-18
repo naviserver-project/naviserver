@@ -166,7 +166,11 @@ proc ns_queryexists {key} {
 #   an [ns_atclose] callback to delete those file on conn close.
 #
 
-proc ns_getform {{charset ""}}  {
+proc ns_getform {args}  {
+    ns_parseargs {
+        {-fallbackencodings ""}
+        {charset ""}
+    } $args
 
     if {![ns_conn isconnected]} {
         return
@@ -193,7 +197,7 @@ proc ns_getform {{charset ""}}  {
 
     if {![info exists ::_ns_form]} {
 
-        set ::_ns_form [ns_conn form]
+        set ::_ns_form [ns_conn form -fallbackencodings $fallbackencodings]
         set tmpfile [ns_conn contentfile]
         if { $tmpfile eq "" } {
             #
@@ -222,9 +226,14 @@ proc ns_getform {{charset ""}}  {
             }
         } else {
             #
-            # Get the content via external content file
+            # Get the content via external spool file
             #
-            ns_parseformfile $tmpfile $::_ns_form [ns_set iget [ns_conn headers] content-type]
+            ns_parseformfile \
+                $tmpfile \
+                $::_ns_form \
+                [ns_set iget [ns_conn headers] content-type] \
+                $fallbackencodings
+
             ns_atclose [list file delete -- $tmpfile]
         }
     }
@@ -378,7 +387,7 @@ proc ns_isformcached {} {
 #   files and stored as name.tmpfile in the ns_set
 #
 
-proc ns_parseformfile { file form contentType } {
+proc ns_parseformfile { file form contentType {fallbackencodings ""}} {
 
     if { [catch { set fp [open $file r] } errmsg] } {
         ns_log warning "ns_parseformfile could not open $file for reading"
@@ -409,7 +418,7 @@ proc ns_parseformfile { file form contentType } {
         try {
             set content [read $fp]
             #ns_log warning "===== ns_parseformfile reads $file $form $contentType -> [string length $content] bytes"
-            set s [ns_parsequery $content]
+            set s [ns_parsequery -fallbackencodings $fallbackencodings $content]
             for {set i 0} {$i < [ns_set size $s]} {incr i} {
                 ns_set put $form [ns_set key $s $i] [ns_set value $s $i]
             }
