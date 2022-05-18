@@ -454,7 +454,7 @@ test ns_urlencode-7.1.2 {
 #
 test ns_parsequery-1.0 {basic syntax} -body {
     ns_parsequery
-} -returnCodes error -result {wrong # args: should be "ns_parsequery ?-charset charset? ?--? querystring"}
+} -returnCodes error -result {wrong # args: should be "ns_parsequery ?-charset charset? ?-fallbackencodings fallbackencodings? ?--? querystring"}
 
 test ns_parsequery-1.1 {simple operation} -body {
     ns_set array [ns_parsequery a=1&b=2]
