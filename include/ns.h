@@ -3567,7 +3567,7 @@ Ns_SetGroup(const char *group);
  * form.c:
  */
 NS_EXTERN Ns_Set *
-Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackEncodingsObj, Ns_ReturnCode *rcPtr)
+Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, Ns_ReturnCode *rcPtr)
     NS_GNUC_NONNULL(2);
 
 NS_EXTERN void

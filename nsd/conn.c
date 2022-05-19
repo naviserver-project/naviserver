@@ -2000,16 +2000,16 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         if ((itPtr->nsconn.flags & CONN_TCLFORM) != 0u) {
             Tcl_SetResult(interp, itPtr->nsconn.form, TCL_STATIC);
         } else {
-            Tcl_Obj *fallbackEncodingsObj = NULL;
+            Tcl_Obj *fallbackCharsetObj = NULL;
             Ns_ObjvSpec lopts[] = {
-                {"-fallbackencodings", Ns_ObjvObj, &fallbackEncodingsObj, NULL},
+                {"-fallbackcharset", Ns_ObjvObj, &fallbackCharsetObj, NULL},
                 {NULL, NULL, NULL, NULL}
             };
             if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
                 result = TCL_ERROR;
             } else {
                 Ns_ReturnCode rc = NS_OK;
-                Ns_Set *form = Ns_ConnGetQuery(interp, conn, fallbackEncodingsObj, &rc);
+                Ns_Set *form = Ns_ConnGetQuery(interp, conn, fallbackCharsetObj, &rc);
 
                 if (rc == NS_ERROR) {
                     /*

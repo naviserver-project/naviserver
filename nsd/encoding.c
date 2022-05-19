@@ -281,9 +281,16 @@ ConfigServerEncodings(const char *server)
 
         servPtr->encoding.urlEncoding =
             Ns_GetCharsetEncoding(servPtr->encoding.urlCharset);
+
         if (servPtr->encoding.urlEncoding == NULL) {
             Ns_Log(Warning, "no encoding found for charset \"%s\" from config",
                    servPtr->encoding.urlCharset);
+        }
+        servPtr->encoding.formFallbackCharset =
+            Ns_ConfigString(path, "FormFallbackCharset", NULL);
+        if (servPtr->encoding.formFallbackCharset != NULL
+            && *servPtr->encoding.formFallbackCharset == '\0') {
+            servPtr->encoding.formFallbackCharset  = NULL;
         }
 
         /*
@@ -299,13 +306,6 @@ ConfigServerEncodings(const char *server)
             Ns_Fatal("could not find encoding for default output charset \"%s\"",
                      servPtr->encoding.outputCharset);
         }
-
-        /*
-         * Force charset into content-type header for dynamic responses.
-         */
-
-        servPtr->encoding.hackContentTypeP =
-            Ns_ConfigBool(path, "HackContentType", NS_TRUE);
 
         result = NS_OK;
 

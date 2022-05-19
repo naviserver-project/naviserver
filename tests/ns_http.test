@@ -834,7 +834,7 @@ test http-5.7.0c {
     ns_register_proc GET /GET {
         set contentType [ns_set iget [ns_conn headers] content-type]
         try {
-            ns_getform ;# -fallbackencodings iso8859-1
+            ns_getform
         } on ok {nsform} {
             ns_return 200 text/plain "$contentType '[ns_set array $nsform]' [ns_conn method] [ns_conn query]"
         } on error {errorMsg} {
@@ -850,13 +850,13 @@ test http-5.7.0c {
 
 test http-5.7.0d {
 
-    Invalid encoding in query parameter with GET via curl with fallbackencodings
+    Invalid encoding in query parameter with GET via curl with fallbackcharset
 
 } -constraints {serverListen curl} -setup {
     ns_register_proc GET /GET {
         set contentType [ns_set iget [ns_conn headers] content-type]
         try {
-            ns_getform -fallbackencodings iso8859-1
+            ns_getform -fallbackcharset iso8859-1
         } on ok {nsform} {
             ns_return 200 text/plain "$contentType '[ns_set array $nsform]' [ns_conn method] [ns_conn query]"
         } on error {errorMsg} {
@@ -868,7 +868,7 @@ test http-5.7.0d {
 } -cleanup {
     ns_unregister_op GET /GET
     unset -nocomplain r
-} -returnCodes {error ok} -result { 'p1 aœCb p1 aœCb p1 aÅCb p2 aæb' GET p1=a%C5%93Cb&p2=a%E6b}
+} -returnCodes {error ok} -result { 'p1 aÅCb p2 aæb' GET p1=a%C5%93Cb&p2=a%E6b}
 
 
 test http-5.7.1a {
@@ -897,14 +897,14 @@ test http-5.7.1a {
 
 test http-5.7.1b {
 
-    Invalid encoding in query parameter with POST via ns_http with fallbackencodings
+    Invalid encoding in query parameter with POST via ns_http with fallbackcharset
 
 } -constraints {serverListen} -setup {
     #ns_logctl severity Debug(request) on
     ns_register_proc POST /POST {
         set contentType [ns_set iget [ns_conn headers] content-type]
         try {
-            ns_getform -fallbackencodings iso8859-1
+            ns_getform -fallbackcharset iso8859-1
         } on ok {nsform} {
             ns_return 200 text/plain "$contentType '[ns_set array $nsform]' [ns_conn method] [ns_conn query]"
         } on error {errorMsg} {
@@ -916,7 +916,7 @@ test http-5.7.1b {
 } -cleanup {
     ns_unregister_op POST /POST
     unset -nocomplain r
-} -result {200 {application/x-www-form-urlencoded 'p1 aœCb p1 aÅCb p2 aæb' POST }}
+} -result {200 {application/x-www-form-urlencoded 'p1 aÅCb p2 aæb' POST }}
 
 
 test http-5.7.2 {

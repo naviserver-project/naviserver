@@ -642,8 +642,14 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     NS_mutexlocktrace = Ns_ConfigBool(NS_CONFIG_PARAMETERS, "mutexlocktrace", NS_FALSE);
 #endif
 
+    nsconf.formFallbackCharset = Ns_ConfigString(NS_CONFIG_PARAMETERS, "FormFallbackCharset", NULL);
+    if (nsconf.formFallbackCharset != NULL
+        && *nsconf.formFallbackCharset == '\0') {
+        nsconf.formFallbackCharset  = NULL;
+    }
+
     /*
-     * If no servers were defained, autocreate server "default"
+     * If no servers were defined, autocreate server "default"
      * so all default config values will be used for that server
      */
 

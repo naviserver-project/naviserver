@@ -230,9 +230,8 @@ ns_section ns/parameters {
     # ns_param	tclinitlock	true           ;# default: false
 
     #
-    # Encoding settings (see http://dqd.com/~mayoff/encoding-doc.html)
+    # Encoding settings
     #
-    # ns_param	HackContentType	1
 
     # NaviServer's defaults charsets are all utf-8.  Although the
     # default charset is utf-8, set the parameter "OutputCharset"
@@ -241,6 +240,9 @@ ns_section ns/parameters {
     # per-default ISO-8859-1.
     ns_param	OutputCharset	utf-8
     # ns_param	URLCharset	utf-8
+
+    # In cases were UTF-8 parsing fails in forms, retry with the specified charset.
+    # ns_param formfallbackcharset iso8859-1
 
     #
     # DNS configuration parameters

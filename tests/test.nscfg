@@ -163,6 +163,7 @@ ns_section "ns/parameters" {
     ns_param   logdev          false
     ns_param   progressminsize 1
     ns_param   concurrentinterpcreate true   ;# default: false
+    #ns_param  formfallbackcharset iso8859-1
 }
 
 ns_section "ns/fastpath" {
