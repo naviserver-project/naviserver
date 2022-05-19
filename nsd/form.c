@@ -42,10 +42,11 @@
 static int ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static Ns_ReturnCode ParseQueryWithFallback(Tcl_Interp *interp, char *toParse, Ns_Set *set,
+static Ns_ReturnCode ParseQueryWithFallback(Tcl_Interp *interp, NsServer *servPtr,
+                                            char *toParse, Ns_Set *set,
                                             Tcl_Encoding encoding, bool translate,
-                                            Tcl_Obj *fallbackEncodingsObj)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+                                            Tcl_Obj *fallbackCharsetObj)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 static Ns_ReturnCode ParseMultiInput(Conn *connPtr, const char *start, char *end)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -85,7 +86,7 @@ static bool GetValue(const char *hdr, const char *att, const char **vsPtr, const
  */
 
 Ns_Set *
-Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackEncodingsObj, Ns_ReturnCode *rcPtr)
+Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, Ns_ReturnCode *rcPtr)
 {
     Conn *connPtr;
 
@@ -140,12 +141,9 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackEncodingsObj
              * in good old AOLserver tradition from the query variables.
              */
             toParse = connPtr->request.query;
-            status = ParseQuery(toParse,
-                                connPtr->query,
-                                connPtr->urlEncoding,
-                                NS_FALSE);
-            status = ParseQueryWithFallback(interp, toParse, connPtr->query, connPtr->urlEncoding,
-                                            NS_FALSE, fallbackEncodingsObj);
+            status = ParseQueryWithFallback(interp, connPtr->poolPtr->servPtr,
+                                            toParse, connPtr->query, connPtr->urlEncoding,
+                                            NS_FALSE, fallbackCharsetObj);
         }
 
         if (content != NULL) {
@@ -180,8 +178,9 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackEncodingsObj
                     encoding = connPtr->urlEncoding;
                 }
                 toParse = content;
-                status = ParseQueryWithFallback(interp, content, connPtr->query, encoding,
-                                                translate, fallbackEncodingsObj);
+                status = ParseQueryWithFallback(interp, connPtr->poolPtr->servPtr,
+                                                content, connPtr->query, encoding,
+                                                translate, fallbackCharsetObj);
 
             } else if (GetBoundary(&bound, contentType)) {
                 /*
@@ -334,15 +333,16 @@ Ns_QueryToSet(char *query, Ns_Set *set, Tcl_Encoding encoding)
  */
 
 int
-NsTclParseQueryObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclParseQueryObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int      result;
-    char    *charset = NULL, *chars = (char *)NS_EMPTY_STRING;
-    Tcl_Obj *fallbackEncodingsObj = NULL;
-    Ns_ObjvSpec  lopts[] = {
-        {"-charset",           Ns_ObjvString, &charset, NULL},
-        {"-fallbackencodings", Ns_ObjvObj,    &fallbackEncodingsObj, NULL},
-        {"--",                 Ns_ObjvBreak,  NULL,     NULL},
+    int       result;
+    NsInterp *itPtr = clientData;
+    char     *charset = NULL, *chars = (char *)NS_EMPTY_STRING;
+    Tcl_Obj  *fallbackCharsetObj = NULL;
+    Ns_ObjvSpec lopts[] = {
+        {"-charset",         Ns_ObjvString, &charset, NULL},
+        {"-fallbackcharset", Ns_ObjvObj,    &fallbackCharsetObj, NULL},
+        {"--",               Ns_ObjvBreak,  NULL,     NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec  args[] = {
@@ -355,7 +355,10 @@ NsTclParseQueryObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 
     } else {
         Tcl_Encoding encoding;
-        Ns_Set      *set = Ns_SetCreate(NULL);
+        Conn                *connPtr;
+        Ns_Set              *set = Ns_SetCreate(NULL);
+
+        connPtr = (Conn *)itPtr->conn;
 
         if (charset != NULL) {
             encoding = Ns_GetCharsetEncoding(charset);
@@ -363,7 +366,8 @@ NsTclParseQueryObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             encoding = Ns_GetUrlEncoding(NULL);
         }
 
-        if (ParseQueryWithFallback(interp, chars, set, encoding, NS_FALSE, fallbackEncodingsObj)) {
+        if (ParseQueryWithFallback(interp, connPtr != NULL ? connPtr->poolPtr->servPtr : NULL,
+                                   chars, set, encoding, NS_FALSE, fallbackCharsetObj)) {
             Ns_TclPrintfResult(interp, "could not parse query: \"%s\"", chars);
             Ns_SetFree(set);
             result = TCL_ERROR;
@@ -464,45 +468,70 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
     return (result == TCL_OK ? NS_OK : NS_ERROR);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseQueryWithFallback --
+ *
+ *      Helper function for ParseQuery(), which handles fallback charset for
+ *      cases, where converting to UTF8 fails (due to invalid UTF-8).
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR in case parsing was not possible.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static Ns_ReturnCode
-ParseQueryWithFallback(Tcl_Interp *interp, char *toParse, Ns_Set *set, Tcl_Encoding encoding,
-                       bool translate, Tcl_Obj *fallbackEncodingsObj)
+ParseQueryWithFallback(Tcl_Interp *interp, NsServer *servPtr, char *toParse,
+                       Ns_Set *set, Tcl_Encoding encoding,
+                       bool translate, Tcl_Obj *fallbackCharsetObj)
 {
     Ns_ReturnCode status;
+    const char *fallbackCharsetString = NULL;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(toParse != NULL);
     NS_NONNULL_ASSERT(set != NULL);
 
     status = ParseQuery(toParse, set, encoding,  translate);
-    if (status == NS_ERROR && fallbackEncodingsObj != NULL) {
-        int          objc;
-        Tcl_Obj    **objv;
+    if (status == NS_ERROR) {
+        /*
+         * ParseQuery failed. This might be due to invalid UTF-8. Retry with
+         * fallbackCharset if specified. The precedence order is:
+         * - use command line parameter, if specified.
+         * - use per server parameter "formFallbackCharset" if specified;
+         * - use global server parameter "formFallbackCharset" if specified;
+         */
+        if (fallbackCharsetObj != NULL) {
+            fallbackCharsetString = Tcl_GetString(fallbackCharsetObj);
+            if (*fallbackCharsetString == '\0') {
+                fallbackCharsetString = NULL;
+            }
+        }
+        if (fallbackCharsetString == NULL && servPtr != NULL) {
+            fallbackCharsetString = servPtr->encoding.formFallbackCharset;
+        }
+        if (fallbackCharsetString == NULL && servPtr != NULL) {
+            fallbackCharsetString = nsconf.formFallbackCharset;
+        }
 
-        if (Tcl_ListObjGetElements(NULL, fallbackEncodingsObj, &objc, &objv) != TCL_OK) {
-            Ns_TclPrintfResult(interp,
-                               "fallback encodings: not a wellformed list: %s",
-                               Tcl_GetString(fallbackEncodingsObj));
-            status = NS_ERROR;
-        } else {
-            int i;
-            for (i = 0; i < objc; i++) {
-                const char *fallbackEncodingString = Tcl_GetString(objv[i]);
-                Tcl_Encoding fallbackEncoding = Ns_GetCharsetEncoding(fallbackEncodingString);
+        if (fallbackCharsetString != NULL) {
+            Tcl_Encoding fallbackEncoding = Ns_GetCharsetEncoding(fallbackCharsetString);
 
-                if (fallbackEncoding == NULL) {
-                    Ns_TclPrintfResult(interp,
-                                       "invalid fallback encoding: '%s'",
-                                       fallbackEncodingString);
-                    status = NS_ERROR;
-                } else if (fallbackEncoding != encoding) {
-                    Ns_Log(Notice, "Retry ParseQuery with encoding %s", fallbackEncodingString);
-                    status = ParseQuery(toParse, set, fallbackEncoding,  translate);
-                    if (status == NS_OK) {
-                        break;
-                    }
-                }
+            fallbackEncoding = Ns_GetCharsetEncoding(fallbackCharsetString);
+            if (fallbackEncoding == NULL) {
+                Ns_TclPrintfResult(interp,
+                                   "invalid fallback encoding: '%s'",
+                                   fallbackCharsetString);
+                status = NS_ERROR;
+            } else if (fallbackEncoding != encoding) {
+                Ns_Log(Notice, "Retry ParseQuery with encoding %s", fallbackCharsetString);
+                Ns_SetTrunc(set, 0u);
+                status = ParseQuery(toParse, set, fallbackEncoding,  translate);
             }
 
         }

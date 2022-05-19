@@ -151,6 +151,7 @@ struct nsconf {
     const char *tmpDir;
     const char *configFile;
     const char *build;
+    const char *formFallbackCharset;
     locale_t    locale;
     pid_t       pid;
     time_t      boot_t;
@@ -813,10 +814,10 @@ typedef struct NsServer {
         const char    *urlCharset;
         Tcl_Encoding   urlEncoding;
 
+        const char    *formFallbackCharset;
+
         const char    *outputCharset;
         Tcl_Encoding   outputEncoding;
-
-        bool           hackContentTypeP;
 
     } encoding;
 

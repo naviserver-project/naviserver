@@ -168,7 +168,7 @@ proc ns_queryexists {key} {
 
 proc ns_getform {args}  {
     ns_parseargs {
-        {-fallbackencodings ""}
+        {-fallbackcharset ""}
         {charset ""}
     } $args
 
@@ -197,7 +197,7 @@ proc ns_getform {args}  {
 
     if {![info exists ::_ns_form]} {
 
-        set ::_ns_form [ns_conn form -fallbackencodings $fallbackencodings]
+        set ::_ns_form [ns_conn form -fallbackcharset $fallbackcharset]
         set tmpfile [ns_conn contentfile]
         if { $tmpfile eq "" } {
             #
@@ -232,7 +232,7 @@ proc ns_getform {args}  {
                 $tmpfile \
                 $::_ns_form \
                 [ns_set iget [ns_conn headers] content-type] \
-                $fallbackencodings
+                $fallbackcharset
 
             ns_atclose [list file delete -- $tmpfile]
         }
@@ -387,7 +387,7 @@ proc ns_isformcached {} {
 #   files and stored as name.tmpfile in the ns_set
 #
 
-proc ns_parseformfile { file form contentType {fallbackencodings ""}} {
+proc ns_parseformfile { file form contentType {fallbackcharset ""}} {
 
     if { [catch { set fp [open $file r] } errmsg] } {
         ns_log warning "ns_parseformfile could not open $file for reading"
@@ -418,7 +418,7 @@ proc ns_parseformfile { file form contentType {fallbackencodings ""}} {
         try {
             set content [read $fp]
             #ns_log warning "===== ns_parseformfile reads $file $form $contentType -> [string length $content] bytes"
-            set s [ns_parsequery -fallbackencodings $fallbackencodings $content]
+            set s [ns_parsequery -fallbackcharset $fallbackcharset $content]
             for {set i 0} {$i < [ns_set size $s]} {incr i} {
                 ns_set put $form [ns_set key $s $i] [ns_set value $s $i]
             }

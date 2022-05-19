@@ -162,10 +162,6 @@ ns_section ns/parameters {
     # I18N Parameters
     #
 
-    # Automatic adjustment of response content-type header to include charset
-    # This defaults to True.
-    #ns_param	hackcontenttype		true
-
     # Default output charset.  When none specified, no character encoding of
     # output is performed. (default: utf-8)
     #ns_param	outputcharset		utf-8
@@ -173,6 +169,9 @@ ns_section ns/parameters {
     # Default Charset for Url Encode/Decode. When none specified, no character
     # set encoding is performed. (default: utf-8)
     #ns_param	urlcharset		utf-8
+
+    # In cases were UTF-8 parsing fails in forms, retry with the specified charset.
+    # ns_param formfallbackcharset iso8859-1
 
     # This parameter supports output encoding arbitration.
     ns_param	preferredcharsets	{ utf-8 iso8859-1 }
@@ -293,7 +292,7 @@ ns_section ns/servers {
 #
 #  Server-level I18N Parameters can be specified here, to override
 #  the global ones for this server.
-#  These are: hackcontenttype outputcharset urlcharset
+#  These are: outputcharset urlcharset formfallbackcharset
 #  See the global parameter I18N section for a description of these.
 ########################################################################
 
