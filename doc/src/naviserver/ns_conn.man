@@ -163,13 +163,25 @@ Return the internal flags of the current connection. Use with care,
 the flags might change over versions.
 
 
-[call [cmd  "ns_conn form"]]
+[call [cmd  "ns_conn form"] \
+     [opt [option "-fallbackcharset [arg fallbackcharset]"]] \
+]
 
-Returns any submitted form data as an [term ns_set]. This form data may have been submitted
-with a POST or appended to the URL in a GET request.
+Returns any submitted form data as an [term ns_set]. This form data
+may have been submitted with a POST or appended to the URL in a GET
+request.
+
+[para]
+The option [option -fallbackcharset] can be used to specify an
+alternative character set in cases, the decoding the form-data leads
+to invalid UTF-8. Instead of raising an exception, a second attempt of
+decoding the data is made with the fallback charset. Note that the
+fallback charset can be provided as well via the configuration parameter
+[term formfallbackcharset]. For more details, see [cmd ns_getform].
 
 [para] Note: ns_conn form is not suitable for multipart formdata file
-upload widgets. Use [cmd ns_getform] instead.
+upload. Use [cmd ns_getform] instead.
+
 
 
 [call [cmd  "ns_conn headerlength"]]
