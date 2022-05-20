@@ -14,6 +14,7 @@ Parse HTTP query parameters.
 
  [call [cmd ns_parsequery] \
      [opt [option "-charset [arg charset]"]] \
+     [opt [option "-fallbackcharset [arg fallbackcharset]"]] \
      [opt [arg "--"]] \
      [arg querystring]]
 
@@ -27,6 +28,16 @@ query cannot be parsed to the charset, an exception is raised.
 [para]
 The option [option -charset] can be used to specify the character set of
 the encode operation.
+
+[para]
+
+The option [option -fallbackcharset] can be used to specify an
+alternative character set in cases, the conversion of the
+[arg querystring] leads to invalid UTF-8. Instead of raising an exception,
+a second attempt of decoding the query string is made with the fallback
+charset. Note that the fallback charset can be provided as well via the
+configuration parameter [term formfallbackcharset]. For more details,
+see [cmd ns_getform].
 
 [section EXAMPLES]
 
@@ -42,6 +53,6 @@ the encode operation.
 [para]
 
 [see_also ns_set ns_getform ns_urlencode ns_parseurl]
-[keywords "global built-in" URL query encoding charset]
+[keywords "global built-in" URL query encoding charset urlcharset formfallbackcharset]
 
 [manpage_end]
