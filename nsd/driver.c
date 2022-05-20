@@ -7614,7 +7614,7 @@ NsTclWriterObjCmd(ClientData clientData, Tcl_Interp *interp,
 void
 NsAsyncWriterQueueEnable(void)
 {
-    if (Ns_ConfigBool(NS_CONFIG_PARAMETERS, "asynclogwriter", NS_FALSE) == NS_TRUE) {
+    if (Ns_ConfigBool(NS_GLOBAL_CONFIG_PARAMETERS, "asynclogwriter", NS_FALSE) == NS_TRUE) {
         SpoolerQueue  *queuePtr;
 
         /*

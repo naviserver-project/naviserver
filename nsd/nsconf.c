@@ -149,7 +149,7 @@ NsConfUpdate(void)
 {
     size_t      size;
     Ns_DString  ds;
-    const char *path = NS_CONFIG_PARAMETERS;
+    const char *path = NS_GLOBAL_CONFIG_PARAMETERS;
 
     NsConfigTcl();
     NsConfigLog();
@@ -211,7 +211,7 @@ NsConfUpdate(void)
     Ns_DStringInit(&ds);
     nsconf.tcl.sharedlibrary = Ns_ConfigString(path, "tcllibrary", "tcl");
     if (Ns_PathIsAbsolute(nsconf.tcl.sharedlibrary) == NS_FALSE) {
-        Ns_Set *set = Ns_ConfigCreateSection(NS_CONFIG_PARAMETERS);
+        Ns_Set *set = Ns_ConfigCreateSection(NS_GLOBAL_CONFIG_PARAMETERS);
 
         (void)Ns_HomePath(&ds, nsconf.tcl.sharedlibrary, (char *)0L);
         nsconf.tcl.sharedlibrary = Ns_DStringExport(&ds);

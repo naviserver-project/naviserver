@@ -125,7 +125,7 @@ GetFile(void)
     const char *file;
     Tcl_Obj *path;
 
-    file = Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "pidfile");
+    file = Ns_ConfigGetValue(NS_GLOBAL_CONFIG_PARAMETERS, "pidfile");
     if (file == NULL) {
         Ns_DString ds;
         Ns_Set *set;
@@ -138,7 +138,7 @@ GetFile(void)
         }
         path = Tcl_NewStringObj(ds.string, ds.length);
 
-        set = Ns_ConfigCreateSection(NS_CONFIG_PARAMETERS);
+        set = Ns_ConfigCreateSection(NS_GLOBAL_CONFIG_PARAMETERS);
         Ns_SetUpdate(set, "pidfile", ds.string);
 
         Ns_DStringFree(&ds);
