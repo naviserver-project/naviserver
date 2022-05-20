@@ -105,7 +105,7 @@ static Ns_Time   timeout;   /* Time in seconds to wait for concurrent update.  *
 void
 NsConfigDNS(void)
 {
-    const char *path = NS_CONFIG_PARAMETERS;
+    const char *path = NS_GLOBAL_CONFIG_PARAMETERS;
 
     if (Ns_ConfigBool(path, "dnscache", NS_TRUE) == NS_TRUE) {
         size_t maxSize = (size_t)Ns_ConfigMemUnitRange(path, "dnscachemaxsize", 1024 * 500,

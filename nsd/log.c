@@ -382,7 +382,7 @@ void
 NsConfigLog(void)
 {
     Ns_DString  ds;
-    const char *path = NS_CONFIG_PARAMETERS;
+    const char *path = NS_GLOBAL_CONFIG_PARAMETERS;
     Ns_Set     *set  = Ns_ConfigCreateSection(path);
 
     severityConfig[Debug ].enabled = Ns_ConfigBool(path, "logdebug",  NS_FALSE);

@@ -46,7 +46,7 @@
  * Constants
  */
 
-#define NS_CONFIG_PARAMETERS           "ns/parameters"
+#define NS_GLOBAL_CONFIG_PARAMETERS           "ns/parameters"
 #define NS_CONFIG_THREADS              "ns/threads"
 
 NS_EXTERN const char *NS_EMPTY_STRING;
