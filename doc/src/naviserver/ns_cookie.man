@@ -83,6 +83,7 @@ recommended to use a unique name for each restricted cookie.
      [opt [option "-domain [arg d]"]] \
      [opt [option "-path [arg p]"]] \
      [opt [option "-replace [arg bool]"]] \
+     [opt [option "-samesite [arg t]"]] \
      [opt [option "-secure [arg bool]"]] \
      [opt [option --]] \
      [arg name]  ]
@@ -132,8 +133,9 @@ The default value is false.
 [opt_def -samesite [arg strict|lax|none]]
 When the flag is set it prevents the browser from
 sending this cookie along with cross-site requests to mitigate cross site
-scripting attacks. Permissible values are [term strict], [term lax],
-or [term none] (default). While the value [term strict] prevents
+scripting attacks. Permissible values are [term strict], [term lax] (default),
+or [term none] (only allowed together with [option -secure]).
+While the value [term strict] prevents
 sending the cookie to the target site in all cross-site browsing
 context, the value of [term lax] allows sending the cookie when the
 user clicks on regular links. For details, see
