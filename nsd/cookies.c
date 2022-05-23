@@ -63,6 +63,14 @@ static CookieParser GetFromSetCookieHeader;
 static char *CopyCookieValue(Tcl_DString *dest, char *valueStart)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static Ns_ObjvTable samesiteValues[] = {
+    {"strict", UCHAR('s')},
+    {"lax",    UCHAR('l')},
+    {"none",   UCHAR('n')},
+    {NULL,    0u}
+};
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -614,14 +622,8 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     Ns_Conn       *conn;
     char          *name, *data, *domain = NULL, *path = NULL;
     int            secure = 0, scriptable = 0, discard = 0, replace = 0, result;
-    int            samesite = INTCHAR('I');
+    int            samesite = INTCHAR('l');
     Ns_Time       *expiresPtr = NULL;
-    static Ns_ObjvTable samesiteValues[] = {
-        {"strict", UCHAR('s')},
-        {"lax",    UCHAR('l')},
-        {"none",   UCHAR('n')},
-        {NULL,    0u}
-    };
     Ns_ObjvSpec    opts[] = {
         {"-discard",    Ns_ObjvBool,   &discard,    NULL},
         {"-domain",     Ns_ObjvString, &domain,     NULL},
@@ -660,11 +662,20 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         if (replace != 0) {
             flags |= NS_COOKIE_REPLACE;
         }
-        if (samesite == INTCHAR('s') || samesite == INTCHAR('S')) {
+        /*
+         * If "-samesite none" flag was provided, and secure was not set, fall
+         * back to "-samesite lax" and complain.
+         */
+        if (samesite == INTCHAR('n') && secure == 0) {
+            Ns_Log(Warning, "cookie '%s': trying to set '-samesite none' "
+                   "without the '-secure' flag. Fall back to -samesite lax", name);
+            samesite = INTCHAR('l');
+        }
+        if (samesite == INTCHAR('s')) {
             flags |= NS_COOKIE_SAMESITE_STRICT;
-        } else if (samesite == INTCHAR('l') || samesite == INTCHAR('L')) {
+        } else if (samesite == INTCHAR('l')) {
             flags |= NS_COOKIE_SAMESITE_LAX;
-        } else if (samesite == INTCHAR('n') || samesite == INTCHAR('N')) {
+        } else if (samesite == INTCHAR('n')) {
             flags |= NS_COOKIE_SAMESITE_NONE;
         }
 
@@ -804,12 +815,14 @@ NsTclDeleteCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     Ns_Conn        *conn;
     char           *name, *domain = NULL, *path = NULL;
     int             secure = 0, replace = 0, result;
+    int             samesite = INTCHAR('l');
     Ns_ObjvSpec     opts[] = {
-        {"-secure",  Ns_ObjvBool,   &secure,  NULL},
-        {"-domain",  Ns_ObjvString, &domain,  NULL},
-        {"-path",    Ns_ObjvString, &path,    NULL},
-        {"-replace", Ns_ObjvBool,   &replace, NULL},
-        {"--",       Ns_ObjvBreak,  NULL,     NULL},
+        {"-domain",  Ns_ObjvString, &domain,   NULL},
+        {"-path",    Ns_ObjvString, &path,     NULL},
+        {"-replace", Ns_ObjvBool,   &replace,  NULL},
+        {"-samesite",Ns_ObjvIndex,  &samesite, samesiteValues},
+        {"-secure",  Ns_ObjvBool,   &secure,   NULL},
+        {"--",       Ns_ObjvBreak,  NULL,      NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -829,6 +842,24 @@ NsTclDeleteCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         }
         if (secure != 0) {
             flags |= NS_COOKIE_SECURE;
+        }
+
+        /*
+         * If "-samesite none" flag was provided, and secure was not set, fall
+         * back to "-samesite lax" and complain.
+         */
+        if (samesite == INTCHAR('n') && secure == 0) {
+            Ns_Log(Warning, "cookie '%s': trying to set '-samesite none' "
+                   "without the '-secure' flag. Fall back to -samesite lax", name);
+            samesite = INTCHAR('l');
+        }
+
+        if (samesite == INTCHAR('s')) {
+            flags |= NS_COOKIE_SAMESITE_STRICT;
+        } else if (samesite == INTCHAR('l')) {
+            flags |= NS_COOKIE_SAMESITE_LAX;
+        } else if (samesite == INTCHAR('n')) {
+            flags |= NS_COOKIE_SAMESITE_NONE;
         }
 
         Ns_ConnSetCookieEx(conn, name, NULL, (time_t)0, domain, path,
