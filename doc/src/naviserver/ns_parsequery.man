@@ -20,10 +20,11 @@ Parse HTTP query parameters.
 
 [list_end]
 
-This command parses the specified HTTP [arg querystring]
-into an [cmd ns_set], which is returned.  The keys and values will be decoded
-based by the rules used for [cmd ns_urlencode]. In case the
-query cannot be parsed to the charset, an exception is raised.
+This command parses the specified HTTP [arg querystring] into an
+[cmd ns_set], which is returned.  The keys and values will be decoded based
+by the rules used for [cmd ns_urlencode]. In case the query cannot be
+parsed to the charset, an exception is raised (with exception code
+NS_INVALID_UTF8).
 
 [para]
 The option [option -charset] can be used to specify the character set of

@@ -40,12 +40,13 @@ when the connection is closed.
 [para]
 
 In case in the provided form data contains invalid UTF-8 text, an
-exception is raised. When the global or per-server configuration
-variable [term formfallbackcharset] is provided, a second decoding
-attempt is made with this charset and a warning is generated when
-invalid UTF-8 data is encountered.  Note that the second attempt using
-the fallback charset is made as well, when an invalid charset was
-provided with in the content-type header field.
+exception is raised (with exception code NS_INVALID_UTF8). When the
+global or per-server configuration variable [term formfallbackcharset]
+is provided, a second decoding attempt is made with this charset and a
+warning is generated when invalid UTF-8 data is encountered.  Note
+that the second attempt using the fallback charset is made as well,
+when an invalid charset was provided with in the content-type header
+field.
 
 By using the option [option "-fallbackcharset [arg charset]"]
 the fallback charset can be specified explicitly, which overrides

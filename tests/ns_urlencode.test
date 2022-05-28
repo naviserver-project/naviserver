@@ -465,8 +465,16 @@ test ns_parsequery-1.2 {simple operation} -body {
 } -returnCodes {error ok} -result {msg {Hello World!} a b a b c d}
 
 test ns_parsequery-1.3 {invalid UTF-8} -body {
-    ns_parsequery return=%0a%0d%bf%f0%9f
-} -returnCodes {error ok} -result {could not parse query: "return=%0a%0d%bf%f0%9f"}
+    try {
+        ns_parsequery return=%0a%0d%bf%f0%9f
+    } on error {errorMsg errorDict} {
+        set _ "$errorMsg [dict get $errorDict -errorcode]"
+    } on ok {result} {
+        set _ "OK"
+    }
+} -returnCodes {error ok} -cleanup {
+   unset -nocomplain _
+} -result {could not parse query: "return=%0a%0d%bf%f0%9f" NS_INVALID_UTF8}
 
 test parsequery-1.4 {parsequery using urlencoding} -setup {
     ns_register_proc GET /parsequery {
