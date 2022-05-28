@@ -558,7 +558,7 @@ ParseQueryWithFallback(Tcl_Interp *interp, NsServer *servPtr, char *toParse,
         }
 
         if (fallbackCharsetString != NULL) {
-            Tcl_Encoding fallbackEncoding = Ns_GetCharsetEncoding(fallbackCharsetString);
+            Tcl_Encoding fallbackEncoding;
 
             fallbackEncoding = Ns_GetCharsetEncoding(fallbackCharsetString);
             if (fallbackEncoding == NULL) {

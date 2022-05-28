@@ -627,7 +627,7 @@ EntityDecode(const char *entity, size_t length, bool *needEncodePtr, char *outPt
     size_t decoded = 0u;
 
     NS_NONNULL_ASSERT(entity != NULL);
-    NS_NONNULL_ASSERT(output != NULL);
+    NS_NONNULL_ASSERT(outPtr != NULL);
     NS_NONNULL_ASSERT(needEncodePtr != NULL);
 
     /*
