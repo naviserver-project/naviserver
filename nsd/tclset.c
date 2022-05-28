@@ -824,9 +824,9 @@ NsTclParseHeaderObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
     }
 
     if (result == TCL_OK) {
-        assert(set != NULL);
         size_t fieldNumber;
 
+        assert(set != NULL);
         if (Ns_ParseHeader(set, headerString, prefix, disp, &fieldNumber) != NS_OK) {
             Ns_TclPrintfResult(interp, "invalid header: %s", headerString);
             result = TCL_ERROR;
