@@ -131,7 +131,7 @@ test cookie-2.9 {set scriptable cookie} -setup {
     nstest::http -getheaders {Set-Cookie} GET /cookie-2.9
 } -cleanup {
     ns_unregister_op GET /cookie-2.9
-} -result 200 x="y"; SameSite=Lax
+} -result {200 {x="y"; SameSite=Lax}}
 
 test cookie-2.10 {set discard flag for cookie} -setup {
     ns_register_proc GET /cookie-2.10 {
@@ -310,7 +310,7 @@ test cookie-4.6 {get cookie with cookie-set values} -setup {
     nstest::http -getbody 1 -getheaders {Set-Cookie} GET /cookie-4.6
 } -cleanup {
     ns_unregister_op GET /cookie-4.6
-} -result {200 {foo="foovalue"; HttpOnly} foovalue}
+} -result {200 {foo="foovalue"; HttpOnly; SameSite=Lax} foovalue}
 
 test cookie-4.7 {get missing cookie} -setup {
     ns_register_proc GET /cookie-4.7 {
@@ -322,7 +322,7 @@ test cookie-4.7 {get missing cookie} -setup {
     nstest::http -getbody 1 -getheaders {Set-Cookie} GET /cookie-4.7
 } -cleanup {
     ns_unregister_op GET /cookie-4.7
-} -result {200 {foo="foovalue"; HttpOnly} {no such cookie}}
+} -result {200 {foo="foovalue"; HttpOnly; SameSite=Lax} {no such cookie}}
 
 
 test cookie-4.8 {get all named cookies, single cookie} -setup {
