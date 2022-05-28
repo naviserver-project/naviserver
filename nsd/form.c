@@ -391,8 +391,8 @@ NsTclParseQueryObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
 
     } else {
         Tcl_Encoding encoding;
-        Conn                *connPtr;
-        Ns_Set              *set = Ns_SetCreate(NULL);
+        Conn        *connPtr;
+        Ns_Set      *set = Ns_SetCreate(NULL);
 
         connPtr = (Conn *)itPtr->conn;
 
@@ -402,9 +402,11 @@ NsTclParseQueryObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
             encoding = Ns_GetUrlEncoding(NULL);
         }
 
+        fprintf(stderr, "ParseQueryWithFallback <%s>\n", chars);
         if (ParseQueryWithFallback(interp, connPtr != NULL ? connPtr->poolPtr->servPtr : NULL,
                                    chars, set, encoding, NS_FALSE, fallbackCharsetObj)) {
             Ns_TclPrintfResult(interp, "could not parse query: \"%s\"", chars);
+            Tcl_SetErrorCode(interp, "NS_INVALID_UTF8", NULL);
             Ns_SetFree(set);
             result = TCL_ERROR;
         } else {
