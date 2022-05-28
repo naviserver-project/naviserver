@@ -257,6 +257,7 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                     Ns_TclPrintfResult(interp,
                                        "cannot decode '%s'; contains invalid UTF-8",
                                        toParse);
+                    Tcl_SetErrorCode(interp, "NS_INVALID_UTF8", NULL);
                 }
             }
             return NULL;

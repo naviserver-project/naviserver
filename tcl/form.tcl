@@ -505,7 +505,7 @@ proc ns_parseformfile {args} {
             if {![ns_valid_utf8 $raw]} {
                 ns_log warning "multipart header contains invalid UTF-8: $raw"
                 close $fp
-                error "multipart header contains invalid UTF-8"
+                throw NS_INVALID_UTF8 "multipart header contains invalid UTF-8"
             }
             set line [string trimright [encoding convertfrom utf-8 $raw] "\r\n"]
             #ns_log notice "PARSE multipart <$line> after trim"
@@ -641,7 +641,7 @@ proc ns_parseformfile {args} {
                 if {$encoding eq "utf-8" && ![ns_valid_utf8 $value]} {
                     ns_log warning "multipart value for $name contains invalid UTF-8: $value // $encoding"
                     close $fp
-                    error "multipart value for $name contains invalid UTF-8"
+                    throw NS_INVALID_UTF8 "multipart value for $name contains invalid UTF-8"
                 }
                 set value [encoding convertfrom $encoding $value]
             }
