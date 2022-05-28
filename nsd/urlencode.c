@@ -1138,6 +1138,7 @@ NsTclUrlDecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         } else {
             Ns_TclPrintfResult(interp, "input string '%s' cannot be converted to UTF-8",
                                chars);
+            Tcl_SetErrorCode(interp, "NS_INVALID_UTF8", NULL);
             Ns_DStringFree(&ds);
         }
     }

@@ -814,8 +814,9 @@ test http-5.7.0 {
             ns_getform
         } on ok {nsform} {
             ns_return 200 text/plain "$contentType '[ns_set array $nsform]' [ns_conn method] [ns_conn query]"
-        } on error {errorMsg} {
-            ns_return 400 text/plain "$contentType $errorMsg"
+        } on error {errorMsg errorDict} {
+            set errorCode [dict get $errorDict -errorcode]
+            ns_return 400 text/plain "$contentType $errorMsg $errorCode"
         }
     }
 } -body {
@@ -823,7 +824,7 @@ test http-5.7.0 {
 } -cleanup {
     ns_unregister_op GET /GET
     unset -nocomplain r
-} -result {400 { cannot decode 'p1=a%C5%93Cb&p2=a%E6b'; contains invalid UTF-8}}
+} -result {400 { cannot decode 'p1=a%C5%93Cb&p2=a%E6b'; contains invalid UTF-8 NS_INVALID_UTF8}}
 
 
 test http-5.7.0c {
@@ -837,8 +838,9 @@ test http-5.7.0c {
             ns_getform
         } on ok {nsform} {
             ns_return 200 text/plain "$contentType '[ns_set array $nsform]' [ns_conn method] [ns_conn query]"
-        } on error {errorMsg} {
-            ns_return 400 text/plain "$contentType [ns_conn method] [ns_conn query] $errorMsg"
+        } on error {errorMsg errorDict} {
+            set errorCode [dict get $errorDict -errorcode]
+            ns_return 400 text/plain "$contentType [ns_conn method] [ns_conn query] $errorMsg $errorCode"
         }
     }
 } -body {
@@ -846,7 +848,7 @@ test http-5.7.0c {
 } -cleanup {
     ns_unregister_op GET /GET
     unset -nocomplain r
-} -returnCodes {error ok} -result { GET p1=a%C5%93Cb&p2=a%E6b cannot decode 'p1=a%C5%93Cb&p2=a%E6b'; contains invalid UTF-8}
+} -returnCodes {error ok} -result { GET p1=a%C5%93Cb&p2=a%E6b cannot decode 'p1=a%C5%93Cb&p2=a%E6b'; contains invalid UTF-8 NS_INVALID_UTF8}
 
 test http-5.7.0d {
 
@@ -859,8 +861,9 @@ test http-5.7.0d {
             ns_getform -fallbackcharset iso8859-1
         } on ok {nsform} {
             ns_return 200 text/plain "$contentType '[ns_set array $nsform]' [ns_conn method] [ns_conn query]"
-        } on error {errorMsg} {
-            ns_return 400 text/plain "$contentType [ns_conn method] [ns_conn query] $errorMsg"
+        } on error {errorMsg errorDict} {
+            set errorCode [dict get $errorDict -errorcode]
+            ns_return 400 text/plain "$contentType [ns_conn method] [ns_conn query] $errorMsg $errorCode"
         }
     }
 } -body {
@@ -883,8 +886,9 @@ test http-5.7.1a {
             ns_getform
         } on ok {nsform} {
             ns_return 200 text/plain "$contentType '[ns_set array $nsform]' [ns_conn method] [ns_conn query]"
-        } on error {errorMsg} {
-            ns_return 400 text/plain "$contentType $errorMsg"
+        } on error {errorMsg errorDict} {
+            set errorCode [dict get $errorDict -errorcode]
+            ns_return 400 text/plain "$contentType $errorMsg $errorCode"
         }
     }
 } -body {
@@ -892,7 +896,7 @@ test http-5.7.1a {
 } -cleanup {
     ns_unregister_op POST /POST
     unset -nocomplain r
-} -result {400 {application/x-www-form-urlencoded cannot decode 'p1=a%C5%93Cb&p2=a%E6b'; contains invalid UTF-8}}
+} -result {400 {application/x-www-form-urlencoded cannot decode 'p1=a%C5%93Cb&p2=a%E6b'; contains invalid UTF-8 NS_INVALID_UTF8}}
 
 
 test http-5.7.1b {
@@ -907,8 +911,9 @@ test http-5.7.1b {
             ns_getform -fallbackcharset iso8859-1
         } on ok {nsform} {
             ns_return 200 text/plain "$contentType '[ns_set array $nsform]' [ns_conn method] [ns_conn query]"
-        } on error {errorMsg} {
-            ns_return 400 text/plain "$contentType $errorMsg"
+        } on error {errorMsg errorDict} {
+            set errorCode [dict get $errorDict -errorcode]
+            ns_return 400 text/plain "$contentType $errorMsg $errorCode"
         }
     }
 } -body {
@@ -930,8 +935,9 @@ test http-5.7.2a {
             ns_getform
         } on ok {nsform} {
             ns_return 200 text/plain "$contentType '[ns_set array $nsform]' [ns_conn method] [ns_conn query]"
-        } on error {errorMsg} {
-            ns_return 400 text/plain "$contentType [ns_conn method]"
+        } on error {errorMsg errorDict} {
+            set errorCode [dict get $errorDict -errorcode]
+            ns_return 400 text/plain "$contentType [ns_conn method] $errorCode"
         }
     }
 } -body {
@@ -962,7 +968,7 @@ test http-5.7.2a {
 } -cleanup {
     ns_unregister_op POST /POST
     unset -nocomplain r
-} -returnCodes {ok error} -result {400 {multipart/form-data; boundary=----5.7.2a POST}}
+} -returnCodes {ok error} -result {400 {multipart/form-data; boundary=----5.7.2a POST NS_INVALID_UTF8}}
 
 test http-5.7.2b {
 
@@ -975,8 +981,9 @@ test http-5.7.2b {
             ns_getform
         } on ok {nsform} {
             ns_return 200 text/plain "$contentType '[ns_set get $nsform p2]' [ns_conn method]"
-        } on error {errorMsg} {
-            ns_return 400 text/plain "$contentType [ns_conn method]"
+        } on error {errorMsg errorDict} {
+            set errorCode [dict get $errorDict -errorcode]
+            ns_return 400 text/plain "$contentType [ns_conn method] $errorCode"
         }
     }
 } -body {
@@ -1292,7 +1299,10 @@ test http-6.5.1b {ns_getform and ns_getformfile + 2KB file} -constraints {curl s
         ns_return 200 text/plain "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile f2 '$f2'"
     }
 } -body {
-    # binary values (i.e. invalud utf-8) passed to curl via command line seems problematic
+    #
+    # Binary values (i.e. invalid utf-8) passed to curl via command
+    # line seems problematic.
+    #
     #set file [ns_server pagedir]/2048bytes
     #exec curl -g -s -F file=@$file -F _charset_=iso8859-1 -F f2=\xfc [ns_config test listenurl]/post 2> /dev/null
 
