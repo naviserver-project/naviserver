@@ -228,12 +228,39 @@ proc ns_getform {args}  {
             #
             # Get the content via external spool file
             #
-            ns_parseformfile \
-                $tmpfile \
-                $::_ns_form \
-                [ns_set iget [ns_conn headers] content-type] \
-                $fallbackcharset
+            try {
+                if {$fallbackcharset eq ""} {
+                    set fallbackcharset iso8859-1
+                }
+                ns_parseformfile \
+                    -fallbackcharset $fallbackcharset \
+                    $tmpfile \
+                    $::_ns_form \
+                    [ns_set iget [ns_conn headers] content-type]
+            } on error {errorMsg errorDict} {
+                #ns_log notice "ns_parseformfile: error in first round, set = [ns_set array $::_ns_form]"
+            } on ok {result} {
+                set errorDict ""
+            }
+            set defaultCharset [ns_set get $::_ns_form "_charset_" ""]
+            #ns_log notice "ns_parseformfile: call OK -> _charset_ '$defaultCharset'"
 
+            if {$defaultCharset ne ""}  {
+                ns_set truncate $::_ns_form 0
+                #ns_log notice "ns_parseformfile: second round with charset <$defaultCharset>"
+                ns_parseformfile \
+                    -encoding [ns_encodingforcharset $defaultCharset] \
+                    -fallbackcharset $fallbackcharset \
+                    $tmpfile \
+                    $::_ns_form \
+                    [ns_set iget [ns_conn headers] content-type]
+            } elseif {$errorDict ne ""} {
+                #
+                # There was no "_charset_" specified, throw the error
+                # caught above.
+                #
+                throw [dict get $errorDict -errorcode] $errorMsg
+            }
             ns_atclose [list file delete -- $tmpfile]
         }
     }
@@ -387,7 +414,13 @@ proc ns_isformcached {} {
 #   files and stored as name.tmpfile in the ns_set
 #
 
-proc ns_parseformfile { file form contentType {fallbackcharset ""}} {
+proc ns_parseformfile {args} {
+    ns_parseargs {
+        {-fallbackcharset ""}
+        {-encoding ""}
+        file form contentType
+    } $args
+
 
     if { [catch { set fp [open $file r] } errmsg] } {
         ns_log warning "ns_parseformfile could not open $file for reading"
@@ -398,11 +431,17 @@ proc ns_parseformfile { file form contentType {fallbackcharset ""}} {
     set options ""
     regexp {^(.*)\s*;(.*)$} $contentType . contentType options
     #
-    # Handle charset in options
+    # Handle charset unless we have and explicit encoding from the caller
     #
-    if {[regexp {charset\s*=\s*(\S+)} $options . charset]} {
-        if {$charset ni {utf-8 UTF-8}} {
-            fconfigure $fp -encoding $charset
+    if {$encoding eq ""} {
+        set mimetypeEncoding ""
+        if {[regexp {charset\s*=\s*(\S+)} $options . mimetypeCharset]} {
+            set mimetypeEncoding [ns_encodingforcharset $mimetypeCharset]
+        }
+        if {$mimetypeEncoding ne ""} {
+            set encoding $mimetypeEncoding
+        } else {
+            set encoding [ns_conn urlencoding]
         }
     }
 
@@ -418,12 +457,10 @@ proc ns_parseformfile { file form contentType {fallbackcharset ""}} {
         try {
             set content [read $fp]
             #ns_log warning "===== ns_parseformfile reads $file $form $contentType -> [string length $content] bytes"
-            set s [ns_parsequery -fallbackcharset $fallbackcharset $content]
+            set s [ns_parsequery -charset $encoding -fallbackcharset $fallbackcharset $content]
             for {set i 0} {$i < [ns_set size $s]} {incr i} {
                 ns_set put $form [ns_set key $s $i] [ns_set value $s $i]
             }
-        } on error {errorMsg} {
-            ns_log error "ns_parseformfile: could not parse form content for $contentType: $errorMsg"
         } finally {
             close $fp
         }
@@ -442,7 +479,7 @@ proc ns_parseformfile { file form contentType {fallbackcharset ""}} {
     }
 
     #
-    # Everything below is just for "multipart/form-data"
+    # Everything below is just for content-type "multipart/form-data"
     #
     fconfigure $fp -encoding binary -translation binary
     set boundary "--$b"
@@ -454,7 +491,9 @@ proc ns_parseformfile { file form contentType {fallbackcharset ""}} {
         # Parse part of a multipart entry, containing a boundary line,
         # a header and the body.
         #
-        if { ![string match $boundary* [string trim [gets $fp]]] } {
+        set raw [gets $fp]
+        #ns_log notice "PARSE multipart raw boundary <$raw> match [string match $boundary* [string trim $raw]]"
+        if { ![string match $boundary* [string trim $raw]] } {
             continue
         }
 
@@ -462,6 +501,7 @@ proc ns_parseformfile { file form contentType {fallbackcharset ""}} {
 
         while { ![eof $fp] } {
             set raw [gets $fp]
+            #ns_log notice "PARSE multipart raw header <$raw>"
             if {![ns_valid_utf8 $raw]} {
                 ns_log warning "multipart header contains invalid UTF-8: $raw"
                 close $fp
@@ -474,12 +514,16 @@ proc ns_parseformfile { file form contentType {fallbackcharset ""}} {
                 #
                 # Part header finished
                 #
+                #ns_log notice "PARSE multipart break [eof $fp]"
                 break
             }
             #
             # Parse header line (or header continuation line)
             #
             ns_parseheader $header_set $line
+        }
+        if {[eof $fp]} {
+            break
         }
 
         #
@@ -494,15 +538,11 @@ proc ns_parseformfile { file form contentType {fallbackcharset ""}} {
             set disp [lindex [ns_parsefieldvalue $content_disposition] 0]
             set filename [expr {[dict exist $disp filename] ? [dict get $disp filename] : ""}]
             set name     [expr {[dict exist $disp name] ? [dict get $disp name] : ""}]
-            ns_log notice "PARSE multipart extracted filename <$filename> name <$name>"
+            #ns_log notice "PARSE multipart extracted filename <$filename> name <$name>"
         } else {
             set name ""
             set filename ""
-            ns_log notice "PARSE multipart no content_disposition"
-        }
-
-        if {$name eq ""} {
-            ns_log warning "ns_parseformfile: fragment header does not contain a field name"
+            ns_log warning "PARSE multipart no content_disposition"
             continue
         }
 
@@ -589,20 +629,21 @@ proc ns_parseformfile { file form contentType {fallbackcharset ""}} {
                 append value $line
                 set start [tell $fp]
             }
+            #ns_log notice "PARSE multipart GOT value <$value>"
             seek $fp $start
 
+            #
+            # For ordinary values, newer HTTP specs mandate that
+            # the content_type must be omitted, but this was not
+            # always so.
+            #
             if {$content_type eq "" || [string match "text/*" $content_type]} {
-                #
-                # For ordinary values, newer HTTP specs mandate that
-                # the content_type must be omitted, but this was not
-                # always so.
-                #
-                if {![ns_valid_utf8 $value]} {
-                    ns_log warning "multipart value for $name contains invalid UTF-8: $value"
+                if {$encoding eq "utf-8" && ![ns_valid_utf8 $value]} {
+                    ns_log warning "multipart value for $name contains invalid UTF-8: $value // $encoding"
                     close $fp
                     error "multipart value for $name contains invalid UTF-8"
                 }
-                set value [encoding convertfrom utf-8 $value]
+                set value [encoding convertfrom $encoding $value]
             }
             ns_set put $form $name $value
         }

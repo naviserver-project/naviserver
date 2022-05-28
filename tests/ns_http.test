@@ -919,11 +919,11 @@ test http-5.7.1b {
 } -result {200 {application/x-www-form-urlencoded 'p1 aÅCb p2 aæb' POST }}
 
 
-test http-5.7.2 {
+test http-5.7.2a {
 
-    Invalid encoding in query parameter with POST and multipart via ns_http
+    Invalid encoding (mixed utf-8 and iso8859-1) in multipart multipart via ns_http
 
-} -constraints {serverListen curl} -setup {
+} -constraints {serverListen} -setup {
     ns_register_proc POST /POST {
         set contentType [ns_set iget [ns_conn headers] content-type]
         try {
@@ -935,59 +935,77 @@ test http-5.7.2 {
         }
     }
 } -body {
-    set contentType "multipart/form-data; boundary=---------------------------9051914041544843365972754266"
+    set boundary "----5.7.2a"
+    set ct "multipart/form-data; boundary=$boundary"
     set body [subst [ns_trim -delimiter | {
-        |-----------------------------9051914041544843365972754266
+        |--$boundary
         |Content-Disposition: form-data; name="p0"
         |
         |123 - jööö
-        |-----------------------------9051914041544843365972754266
+        |--$boundary
         |Content-Disposition: form-data; name="p1"
         |
         |aœb-schön //😈//😃//
-        |-----------------------------9051914041544843365972754266
+        |--$boundary
         |Content-Disposition: form-data; name="p2"
         |
         |a\xE6b
-        |-----------------------------9051914041544843365972754266
+        |--$boundary--
     }]]
-    #ns_log notice "ONE = //a[binary format H* E6]b//"
-    #ns_log notice [binary format H* E6]
-    #ns_log notice BODY=$body
-    #ns_logctl severity Debug(task) on
+    #set x [subst [ns_trim -delimiter | {
+    #    |a\xE6b
+    #}]]
+    #set F [open /tmp/e6 wb]; puts -nonewline $F $x; close $F
 
-    nstest::http -setheaders [list content-type $contentType] -getbody 1 POST /POST $body
+    #ns_logctl severity Debug(task) on
+    nstest::http -setheaders [list content-type $ct] -getbody 1 POST /POST $body
 } -cleanup {
     ns_unregister_op POST /POST
     unset -nocomplain r
-} -result {400 {multipart/form-data; boundary=---------------------------9051914041544843365972754266 POST}}
+} -returnCodes {ok error} -result {400 {multipart/form-data; boundary=----5.7.2a POST}}
 
-test http-5.7.2c {
+test http-5.7.2b {
 
-    Invalid encoding in query parameter with POST and multipart via curl
+    Mixed encoding (utf-8 and iso8859-1) with default charset in multipart multipart via ns_http
 
-} -constraints {serverListen curl} -setup {
+} -constraints {serverListen} -setup {
     ns_register_proc POST /POST {
         set contentType [ns_set iget [ns_conn headers] content-type]
         try {
             ns_getform
         } on ok {nsform} {
-            ns_return 200 text/plain "$contentType '[ns_set array $nsform]' [ns_conn method]"
+            ns_return 200 text/plain "$contentType '[ns_set get $nsform p2]' [ns_conn method]"
         } on error {errorMsg} {
-            ns_return 400 text/plain "$contentType [ns_conn method] [ns_conn query] $errorMsg"
+            ns_return 400 text/plain "$contentType [ns_conn method]"
         }
     }
 } -body {
-    set x [exec curl -g -s -X POST -F "p1=aœb" -F "p2=a\xE6b" -F "p3=😃" -F "p4=😈" [ns_config test listenurl]/POST 2> /dev/null]
-    # strip dynamic boundary from curl
-    regsub {=[-]+[a-z0-9]+} $x "=..." x
-    return $x
+    set boundary "----5.7.2b"
+    set ct "multipart/form-data; boundary=$boundary"
+    set body [subst [ns_trim -delimiter | {
+        |--$boundary
+        |Content-Disposition: form-data; name="p0"
+        |
+        |123 - jööö
+        |--$boundary
+        |Content-Disposition: form-data; name="p1"
+        |
+        |aœb-schön //😈//😃//
+        |--$boundary
+        |Content-Disposition: form-data; name="_charset_"
+        |
+        |iso8859-1
+        |--$boundary
+        |Content-Disposition: form-data; name="p2"
+        |
+        |a\xE6b
+        |--$boundary--
+    }]]
+    nstest::http -setheaders [list content-type $ct] -getbody 1 POST /POST $body
 } -cleanup {
     ns_unregister_op POST /POST
     unset -nocomplain r
-} -returnCodes {error return ok} -result {multipart/form-data; boundary=... 'p1 aœb p2 aæb p3 😃 p4 😈' POST}
-
-
+} -returnCodes {ok error} -result {200 {multipart/form-data; boundary=----5.7.2b 'aæb' POST}}
 
 
 #
@@ -1237,7 +1255,7 @@ content of file
 } -result {200 {3 file error file.content-type text/plain}}
 
 
-test http-6.5.1 {ns_getform and ns_getformfile + 2KB file} -constraints {curl serverListen} -setup {
+test http-6.5.1a {ns_getform and ns_getformfile + 2KB file} -constraints {curl serverListen} -setup {
     ns_register_proc POST /post {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType     [ns_set iget [ns_conn headers] content-type]
@@ -1247,17 +1265,19 @@ test http-6.5.1 {ns_getform and ns_getformfile + 2KB file} -constraints {curl se
         set maxUpload       [ns_config [ns_driversection -driver nssock] maxupload]
         set needSpool       [expr {$contentLength > $maxUpload}]
         set ct              [lindex $contentType 0]
-        ns_return 200 text/plain "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile"
+        set formValues      [ns_set array [ns_conn form]]
+        set f2              [ns_set get [ns_conn form] f2 ""]
+        ns_return 200 text/plain "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile f2 '$f2'"
     }
 } -body {
     set file [ns_server pagedir]/2048bytes
-    exec curl -g -s -F file=@$file [ns_config test listenurl]/post 2> /dev/null
+    exec curl -g -s -F file=@$file -F _charset_=utf-8 -F f2=ü [ns_config test listenurl]/post 2> /dev/null
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
-} -result {multipart/form-data; contentFile 0 needSpool 0 file 1}
+} -result {multipart/form-data; contentFile 0 needSpool 0 file 1 f2 'ü'}
 
-test http-6.5.2 {ns_getform and ns_getformfile + 16KB file} -constraints {curl serverListen} -setup {
+test http-6.5.1b {ns_getform and ns_getformfile + 2KB file} -constraints {curl serverListen} -setup {
     ns_register_proc POST /post {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType     [ns_set iget [ns_conn headers] content-type]
@@ -1267,17 +1287,65 @@ test http-6.5.2 {ns_getform and ns_getformfile + 16KB file} -constraints {curl s
         set maxUpload       [ns_config [ns_driversection -driver nssock] maxupload]
         set needSpool       [expr {$contentLength > $maxUpload}]
         set ct              [lindex $contentType 0]
-        ns_return 200 text/plain "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile"
+        set formValues      [ns_set array [ns_conn form]]
+        set f2              [ns_set get [ns_conn form] f2 ""]
+        ns_return 200 text/plain "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile f2 '$f2'"
+    }
+} -body {
+    # binary values (i.e. invalud utf-8) passed to curl via command line seems problematic
+    #set file [ns_server pagedir]/2048bytes
+    #exec curl -g -s -F file=@$file -F _charset_=iso8859-1 -F f2=\xfc [ns_config test listenurl]/post 2> /dev/null
+
+    set boundary "----6.5.1b"
+    set ct "multipart/form-data; boundary=$boundary"
+    set body [subst [ns_trim -delimiter | {
+        |--$boundary
+        |Content-Disposition: form-data; name="file"; filename="file.txt"
+        |Content-Type: text/plain
+        |
+        |[string repeat x 2048]
+        |--$boundary
+        |Content-Disposition: form-data; name="_charset_"
+        |
+        |iso8859-1
+        |--$boundary
+        |Content-Disposition: form-data; name="f2"
+        |
+        |\xFC
+        |--$boundary--
+    }]]
+    nstest::http -setheaders [list content-type $ct] -getbody 1 POST /post $body
+
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain r boundary body
+} -result {200 {multipart/form-data; contentFile 0 needSpool 0 file 1 f2 'ü'}}
+
+
+
+test http-6.5.2a {ns_getform and ns_getformfile + 16KB file multipart} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /post {
+        #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
+        set contentType     [ns_set iget [ns_conn headers] content-type]
+        set contentLength   [ns_set iget [ns_conn headers] content-length]
+        set haveFile        [expr {[ns_getformfile file] ne ""}]
+        set haveContentFile [expr {[ns_conn contentfile] ne ""}]
+        set maxUpload       [ns_config [ns_driversection -driver nssock] maxupload]
+        set needSpool       [expr {$contentLength > $maxUpload}]
+        set ct              [lindex $contentType 0]
+        set formValues      [ns_set array [ns_conn form]]
+        set f2              [ns_set get [ns_conn form] f2 ""]
+        ns_return 200 text/plain "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile f2 '$f2'"
     }
 } -body {
     set file [ns_server pagedir]/16480bytes
-    exec curl -g -s -F file=@$file [ns_config test listenurl]/post 2> /dev/null
+    exec curl -g -s -F file=@$file -F f2=ü [ns_config test listenurl]/post 2> /dev/null
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
-} -result {multipart/form-data; contentFile 1 needSpool 1 file 1}
+} -result {multipart/form-data; contentFile 1 needSpool 1 file 1 f2 'ü'}
 
-test http-6.5.3 {ns_getform and ns_getformfile + 16KB file} -constraints {curl serverListen} -setup {
+test http-6.5.2b {ns_getform and ns_getformfile + 16KB file multipart, explicit charset} -constraints {curl serverListen} -setup {
     ns_register_proc POST /post {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType     [ns_set iget [ns_conn headers] content-type]
@@ -1287,19 +1355,156 @@ test http-6.5.3 {ns_getform and ns_getformfile + 16KB file} -constraints {curl s
         set maxUpload       [ns_config [ns_driversection -driver nssock] maxupload]
         set needSpool       [expr {$contentLength > $maxUpload}]
         set ct              [lindex $contentType 0]
-        set fields          [dict keys [ns_set array [ns_conn form]]]
-        ns_return 200 text/plain "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile fields $fields"
+        set formValues      [ns_set array [ns_conn form]]
+        set f2              [ns_set get [ns_conn form] f2 ""]
+        ns_return 200 text/plain "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile f2 '$f2'"
+    }
+} -body {
+    set file [ns_server pagedir]/16480bytes
+    exec curl -g -s -F file=@$file -F _charset_=utf-8 -F f2=ü [ns_config test listenurl]/post 2> /dev/null
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain r
+} -returnCodes {ok  error} -result {multipart/form-data; contentFile 1 needSpool 1 file 1 f2 'ü'}
+
+test http-6.5.2c {ns_getform and ns_getformfile + 16KB file multipart, explicit charset iso8859-1} -constraints {serverListen} -setup {
+    ns_register_proc POST /post {
+        ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
+        set contentType     [ns_set iget [ns_conn headers] content-type]
+        set contentLength   [ns_set iget [ns_conn headers] content-length]
+        set haveFile        [expr {[ns_getformfile file] ne ""}]
+        set haveContentFile [expr {[ns_conn contentfile] ne ""}]
+        set maxUpload       [ns_config [ns_driversection -driver nssock] maxupload]
+        set needSpool       [expr {$contentLength > $maxUpload}]
+        set ct              [lindex $contentType 0]
+        set formValues      [ns_set array [ns_conn form]]
+        set f2              [ns_set get [ns_conn form] f2 ""]
+        ns_return 200 text/plain "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile f2 '$f2'"
+    }
+} -body {
+    set boundary "----6.5.2c"
+    set ct "multipart/form-data; boundary=$boundary"
+    set body [subst [ns_trim -delimiter | {
+        |--$boundary
+        |Content-Disposition: form-data; name="file"; filename="file.txt"
+        |Content-Type: text/plain
+        |
+        |[string repeat x 16480]
+        |--$boundary
+        |Content-Disposition: form-data; name="_charset_"
+        |
+        |iso8859-1
+        |--$boundary
+        |Content-Disposition: form-data; name="f2"
+        |
+        |\xFC
+        |--$boundary--
+    }]]
+    nstest::http -setheaders [list content-type $ct] -getbody 1 POST /post $body
+
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain boundary ct
+} -returnCodes {ok error} -result {200 {multipart/form-data; contentFile 1 needSpool 1 file 1 f2 'ü'}}
+
+test http-6.5.3a {ns_getform and ns_getformfile + 16KB file urlencoded utf-8} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /post {
+        #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
+        set contentType     [ns_set iget [ns_conn headers] content-type]
+        set contentLength   [ns_set iget [ns_conn headers] content-length]
+        set haveFile        [expr {[ns_getformfile file] ne ""}]
+        set haveContentFile [expr {[ns_conn contentfile] ne ""}]
+        set maxUpload       [ns_config [ns_driversection -driver nssock] maxupload]
+        set needSpool       [expr {$contentLength > $maxUpload}]
+        set ct              [lindex $contentType 0]
+        set formValues      [ns_set array [ns_conn form]]
+        set fields          [dict keys $formValues]
+        set f2              [ns_set get [ns_conn form] f2 ""]
+        ns_return 200 text/plain \
+            "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile fields $fields f2 '$f2'"
     }
 } -body {
     exec curl -g -s -H "Content-Type: application/x-www-form-urlencoded; charset=utf-8" \
-        --data-urlencode "f1=[string repeat hello 4000]"  --data-urlencode f2=ü \
+        --data-urlencode "f1=[string repeat hello 4000]" --data _charset_=utf-8 --data-urlencode f2=ü \
+        [ns_config test listenurl]/post 2> /dev/null
+} -cleanup {
+    ns_unregister_op POST /post
+} -result {application/x-www-form-urlencoded; contentFile 1 needSpool 1 file 0 fields f1 _charset_ f2 f2 'ü'}
+
+test http-6.5.3b {ns_getform and ns_getformfile + 16KB file urlencoded iso8859-1} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /post {
+        #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
+        set contentType     [ns_set iget [ns_conn headers] content-type]
+        set contentLength   [ns_set iget [ns_conn headers] content-length]
+        set haveFile        [expr {[ns_getformfile file] ne ""}]
+        set haveContentFile [expr {[ns_conn contentfile] ne ""}]
+        set maxUpload       [ns_config [ns_driversection -driver nssock] maxupload]
+        set needSpool       [expr {$contentLength > $maxUpload}]
+        set ct              [lindex $contentType 0]
+        set formValues      [ns_set array [ns_conn form]]
+        set fields          [dict keys $formValues]
+        set f2              [ns_set get [ns_conn form] f2 ""]
+        ns_return 200 text/plain \
+            "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile fields $fields f2 '$f2'"
+    }
+} -body {
+    exec curl -g -s -H "Content-Type: application/x-www-form-urlencoded; charset=utf-8" \
+        --data-urlencode "f1=[string repeat hello 4000]"  --data _charset_=iso8859-1 --data f2=%fc \
+        [ns_config test listenurl]/post 2> /dev/null
+} -cleanup {
+    ns_unregister_op POST /post
+} -returnCodes {ok error} -result {application/x-www-form-urlencoded; contentFile 1 needSpool 1 file 0 fields f1 _charset_ f2 f2 'ü'}
+
+
+test http-6.5.4a {ns_getform and ns_getformfile + 16KB file urlencoded iso8859-1} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /post {
+        #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
+        set contentType     [ns_set iget [ns_conn headers] content-type]
+        set contentLength   [ns_set iget [ns_conn headers] content-length]
+        set haveFile        [expr {[ns_getformfile file] ne ""}]
+        set haveContentFile [expr {[ns_conn contentfile] ne ""}]
+        set maxUpload       [ns_config [ns_driversection -driver nssock] maxupload]
+        set needSpool       [expr {$contentLength > $maxUpload}]
+        set ct              [lindex $contentType 0]
+        set formValues      [ns_set array [ns_conn form]]
+        set fields          [dict keys $formValues]
+        set f2              [ns_set get [ns_conn form] f2 ""]
+        ns_return 200 text/plain \
+            "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile fields $fields f2 '$f2'"
+    }
+} -body {
+    exec curl -g -s -H "Content-Type: application/x-www-form-urlencoded; charset=iso8859-1" \
+        --data-urlencode "f1=[string repeat hello 4000]" --data f2=%fc \
         [ns_config test listenurl]/post 2> /dev/null
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
-} -result {application/x-www-form-urlencoded; contentFile 1 needSpool 1 file 0 fields f1 f2}
+} -result {application/x-www-form-urlencoded; contentFile 1 needSpool 1 file 0 fields f1 f2 f2 'ü'}
 
-
+test http-6.5.4b {ns_getform and ns_getformfile + 16KB file urlencoded iso8859-1} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /post {
+        #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
+        set contentType     [ns_set iget [ns_conn headers] content-type]
+        set contentLength   [ns_set iget [ns_conn headers] content-length]
+        set haveFile        [expr {[ns_getformfile file] ne ""}]
+        set haveContentFile [expr {[ns_conn contentfile] ne ""}]
+        set maxUpload       [ns_config [ns_driversection -driver nssock] maxupload]
+        set needSpool       [expr {$contentLength > $maxUpload}]
+        set ct              [lindex $contentType 0]
+        set formValues      [ns_set array [ns_conn form]]
+        set fields          [dict keys $formValues]
+        set f2              [ns_set get [ns_conn form] f2 ""]
+        ns_return 200 text/plain \
+            "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile fields $fields f2 '$f2'"
+    }
+} -body {
+    exec curl -g -s -H "Content-Type: application/x-www-form-urlencoded" \
+        --data-urlencode "f1=[string repeat hello 4000]" --data _charset_=iso8859-1 --data f2=%fc \
+        [ns_config test listenurl]/post 2> /dev/null
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain r
+} -result {application/x-www-form-urlencoded contentFile 1 needSpool 1 file 0 fields f1 _charset_ f2 f2 'ü'}
 
 
 
