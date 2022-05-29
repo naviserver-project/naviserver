@@ -20,11 +20,15 @@ test ns_writer-1.2 {basic syntax: wrong argument} -body {
 test ns_writer-1.3 {basic operation} -body {
     catch {ns_writer list -foo} errorMsg
     set _ $errorMsg
+}-cleanup {
+    unset -nocomplain _
 } -match exact -result {wrong # args: should be "ns_writer list ?-server server?"}
 
 test ns_writer-1.4 {basic operation} -body {
     catch {ns_writer list -server test foo} errorMsg
     set _ $errorMsg
+}-cleanup {
+    unset -nocomplain _
 } -match exact -result {wrong # args: should be "ns_writer list ?-server server?"}
 
 test ns_writer-2.1 {basic operation} -body {
@@ -38,6 +42,8 @@ test ns_writer-2.2 {basic operation} -body {
 test ns_writer-2.3 {basic operation} -body {
     catch {expr {[ns_writer list -server foo] eq ""}} errorMsg
     set _ $errorMsg
+} -cleanup {
+    unset -nocomplain _
 } -match exact -result {invalid server: 'foo'}
 
 
