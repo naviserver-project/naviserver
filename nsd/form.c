@@ -402,7 +402,6 @@ NsTclParseQueryObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
             encoding = Ns_GetUrlEncoding(NULL);
         }
 
-        fprintf(stderr, "ParseQueryWithFallback <%s>\n", chars);
         if (ParseQueryWithFallback(interp, connPtr != NULL ? connPtr->poolPtr->servPtr : NULL,
                                    chars, set, encoding, NS_FALSE, fallbackCharsetObj)) {
             Ns_TclPrintfResult(interp, "could not parse query: \"%s\"", chars);
