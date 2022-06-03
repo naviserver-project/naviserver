@@ -64,8 +64,8 @@ set defaultConfig {
 # Override default variables (this allows commenting lines)
 #
 # If the same domain name serves multiple OpenACS instances,
-# same-named cookies will mix up.  you migth consider a different
-# namespace of the cookies.
+# same-named cookies will mix up.  You might consider a different
+# namespace for the cookies.
 #
 #dict set defaultConfig CookieNamespace ad_8000_
 
@@ -236,14 +236,13 @@ ns_section ns/parameters {
     # NaviServer's defaults charsets are all utf-8.  Although the
     # default charset is utf-8, set the parameter "OutputCharset"
     # here, since otherwise OpenACS uses in the meta-tags the charset
-    # from [ad_conn charset], which is taken from the db and
+    # from [ad_conn charset], which is taken from the db and is
     # per-default ISO-8859-1.
     ns_param	OutputCharset	utf-8
     # ns_param	URLCharset	utf-8
 
     # In cases were UTF-8 parsing fails in forms, retry with the specified charset.
     # ns_param formfallbackcharset iso8859-1
-
     #
     # DNS configuration parameters
     #
