@@ -11,11 +11,15 @@
 [list_begin definitions]
 
 [call [cmd ns_valid_utf8] \
-        [arg string]]
+        [arg string] \
+        [opt [arg varname]] \
+        ]
 
 [para] This function checks whether the provided argument (a Tcl
 byte-array) contains a valid UTF-8 code). The function returns a
-boolean result.
+boolean result. When the optional [arg varname] is specified,
+a variable with this name is set in failure cases to the
+invalid part of the input [arg string].
 
 [para] Note that this function
 only makes sense when applied on binary data, typically read from a
@@ -27,6 +31,11 @@ socket or a file.
  
  % ns_valid_utf8 "foo\x85"
  0
+ 
+ % ns_valid_utf8 mot\x85rhead errorString
+ 0
+ % set errorString
+ mot|\x85r|...
 [example_end]
 
 [list_end]

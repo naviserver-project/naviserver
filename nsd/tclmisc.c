@@ -2186,24 +2186,43 @@ NsTclHashObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
 int
 NsTclValidUtf8ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int                result;
-    Tcl_Obj           *stringObj = NULL;
+    int         result;
+    Tcl_Obj    *stringObj = NULL, *errorVarnameObj = NULL;
     Ns_ObjvSpec args[] = {
         {"string",    Ns_ObjvObj, &stringObj, NULL},
+        {"?error",    Ns_ObjvObj, &errorVarnameObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        Tcl_DString          stringDS;
+        Tcl_DString          stringDS, errorDS;
         int                  stringLength;
         const unsigned char *bytes;
+        bool                 isValid;
 
         Tcl_DStringInit(&stringDS);
         bytes = Ns_GetBinaryString(stringObj, 1, &stringLength, &stringDS);
+        isValid = Ns_Valid_UTF8(bytes, (size_t)stringLength, &errorDS);
 
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_Valid_UTF8(bytes, (size_t)stringLength)));
+        if (!isValid) {
+            if (errorVarnameObj != NULL) {
+                Tcl_DString outputDS;
+
+                Tcl_DStringInit(&outputDS);
+                Ns_DStringAppendPrintable(&outputDS, NS_FALSE,
+                                          errorDS.string, (size_t)errorDS.length);
+
+                Tcl_ObjSetVar2(interp, errorVarnameObj, NULL,
+                               Tcl_NewStringObj(outputDS.string, outputDS.length),
+                               0);
+                Tcl_DStringFree(&outputDS);
+            }
+            Tcl_DStringFree(&errorDS);
+        }
+
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(isValid));
         Tcl_DStringFree(&stringDS);
         result = TCL_OK;
     }

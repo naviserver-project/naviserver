@@ -190,9 +190,60 @@ test ns_urlencode-2.5.18.2 {invalid 2byte utf-8 - premature end} -body {
     catch {ns_urldecode -charset iso8859-1 -part path "/mot%C3"}
 } -result 0
 
-test ns_urlencode-2.5.18.2 {invalid 2byte utf-8 - text with cp850 chars} -body {
+test ns_urlencode-2.5.18.3 {invalid 2byte utf-8 - text with cp850 chars} -body {
     ns_valid_utf8 [ns_urldecode -charset iso8859-1 -part path "test%E4%FC"]
 } -result 0
+
+test ns_urlencode-2.5.19.1 {invalid 2byte utf-8 - premature end} -body {
+    catch {ns_urldecode -part path "/mot%C3"}
+} -result 1
+test ns_urlencode-2.5.19.2 {invalid 2byte utf-8 - premature end} -body {
+    catch {ns_urldecode -part path "/123456789/mot%C3"}
+} -result 1
+test ns_urlencode-2.5.19.3 {invalid 2byte utf-8 - 2nd byte invalid} -body {
+    catch {ns_urldecode -part path "/mot%C3%02xxx"}
+} -result 1
+test ns_urlencode-2.5.19.3 {invalid 2byte utf-8 - 2nd byte invalid} -body {
+    catch {ns_urldecode -part path "/123456789/mot%C3%02xxx"}
+} -result 1
+test ns_urlencode-2.5.19.4 {invalid 3byte utf-8 - premature end} -body {
+    catch {ns_urldecode -part path "/mot%E9"}
+} -result 1
+test ns_urlencode-2.5.19.5 {invalid 3byte utf-8 - premature end} -body {
+    catch {ns_urldecode -part path "/123456789/mot%E9"}
+} -result 1
+test ns_urlencode-2.5.19.6 {invalid 3byte utf-8 - premature end} -body {
+    catch {ns_urldecode -part path "/mot%E9%E8"}
+} -result 1
+test ns_urlencode-2.5.19.7 {invalid 3byte utf-8 - premature end} -body {
+    catch {ns_urldecode -part path "/123456789/mot%E9%E8"}
+} -result 1
+test ns_urlencode-2.5.19.8 {invalid 3byte utf-8 - invalid 3 bytes} -body {
+    catch {ns_urldecode -part path "/mot%E9%E8%E7"}
+} -result 1
+test ns_urlencode-2.5.19.9 {invalid 3byte utf-8 - invalid 3 bytes} -body {
+    catch {ns_urldecode -part path "/123456789/mot%E9%E8%E7"}
+} -result 1
+# valid %F0%9f%92%95
+test ns_urlencode-2.5.19.10 {invalid 4byte utf-8 - truncate} -body {
+    catch {ns_urldecode -part path "/mot%F0"}
+} -result 1
+test ns_urlencode-2.5.19.11 {invalid 4byte utf-8 - truncate} -body {
+    catch {ns_urldecode -part path "/mot%F0%9f"}
+} -result 1
+test ns_urlencode-2.5.19.12 {invalid 4byte utf-8 - truncate} -body {
+    catch {ns_urldecode -part path "/mot%F0%9f%92"}
+} -result 1
+test ns_urlencode-2.5.19.13 {invalid 4byte utf-8 - NO truncate} -body {
+    catch {ns_urldecode -part path "/mot%F0%9f%92%95"}
+} -result 0
+test ns_urlencode-2.5.19.14 {invalid 4byte utf-8 - invalid 4th byte} -body {
+    catch {ns_urldecode -part path "/mot%F0%9f%92%C0xxx"}
+} -result 1
+test ns_urlencode-2.5.19.15 {invalid 4byte utf-8 - invalid 3rd byte} -body {
+    catch {ns_urldecode -part path "/mot%F0%9f%C0%C0xxx"}
+} -result 1
+
 
 test ns_urlencode-2.6.1 {rfc2396 section 2.4.3 URI 'delim' characters} -body {
     ns_urlencode -part path "<>\#%\""

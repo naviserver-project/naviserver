@@ -4848,7 +4848,7 @@ SockSetServer(Sock *sockPtr)
         && reqPtr->request.url != NULL
         ) {
         if (!Ns_Valid_UTF8((const unsigned char *)reqPtr->request.url,
-                           strlen(reqPtr->request.url))) {
+                           strlen(reqPtr->request.url), NULL)) {
             Ns_Log(Warning, "Invalid UTF-8 encoding in url '%s'",
                    reqPtr->request.url);
             bad_request = NS_TRUE;

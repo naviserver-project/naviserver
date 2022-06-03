@@ -36,6 +36,11 @@
 
 #include "nsd.h"
 
+
+static void
+InvalidUtf8ErrorMessage(Tcl_DString *dsPtr, const unsigned char *bytes, size_t nrBytes,
+                 size_t index, int atMost, bool isTruncated);
+
 
 /*
  *----------------------------------------------------------------------
@@ -682,6 +687,45 @@ Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *
 /*
  *----------------------------------------------------------------------
  *
+ * InvalidUtf8ErrorMessage --
+ *
+ *      Helper function for Ns_Valid_UTF8 to return a shoreted error string,
+ *      when dsPtr is not NULL. The function initializes the string and
+ *      expects the caller to free it.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+`*/
+static void
+InvalidUtf8ErrorMessage(Tcl_DString *dsPtr, const unsigned char *bytes, size_t nrBytes,
+                 size_t index, int atMost, bool isTruncated)
+{
+    if (dsPtr != NULL) {
+        long prefixLen = MIN(10, (long)index);
+        Tcl_DStringInit(dsPtr);
+        if ((long)index > prefixLen) {
+            Tcl_DStringAppend(dsPtr, (char *)bytes, (int)prefixLen);
+            Tcl_DStringAppend(dsPtr, "...", 3);
+        } else {
+            Tcl_DStringAppend(dsPtr, (char *)bytes, (int)index-1);
+        }
+        Tcl_DStringAppend(dsPtr, "|", 1);
+        Tcl_DStringAppend(dsPtr, (char *)(bytes+index-1), MIN(atMost, (int)(nrBytes-(index-1))));
+        Tcl_DStringAppend(dsPtr, "|", 1);
+        if (!isTruncated) {
+            Tcl_DStringAppend(dsPtr, "...", 3);
+        }
+        /*Ns_Log(Notice, ".... '%s'", dsPtr->string);*/
+    }
+}
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_Valid_UTF8 --
  *
  *      Check the validity of the UTF-8 input string.
@@ -699,6 +743,9 @@ Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *
  *      out. This might be the case, when this function would
  *      be used internally for validating.
  *
+ *      When a dsPtr is provided, and a validation error occurs, it will ne
+ *      initialized and filled with a truncated error string.
+ *
  * Results:
  *      Boolean value.
  *
@@ -707,7 +754,7 @@ Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *
  *
  *----------------------------------------------------------------------
  */
-bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes)
+bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes, Tcl_DString *dsPtr)
 {
     size_t index = 0;
 
@@ -748,11 +795,13 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes)
                  * Premature end of string.
                  */
                 Ns_Log(Debug, "UTF8 decode '%s': 2byte premature", bytes);
+                InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, index, 2, NS_TRUE);
                 return NS_FALSE;
             }
             byte2 = bytes[index++];
             if (byte1 < 0xC2 || ((/*bytes[index++]*/ byte2 & 0xC0u) != 0x80u)) {
                 Ns_Log(Debug, "UTF8 decode '%s': 2-byte invalid 2nd byte %.2x", bytes, byte2);
+                InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, index-1, 2, NS_FALSE);
                 return NS_FALSE;
             }
         } else if (byte1 < 0xF0) {
@@ -763,6 +812,7 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes)
                 /*
                  * Premature end of string.
                  */
+                InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, index, 3, NS_TRUE);
                 Ns_Log(Debug, "UTF8 decode '%s': 3-byte premature", bytes);
                 return NS_FALSE;
             }
@@ -774,9 +824,15 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes)
                 || (byte1 == 0xED && 0xA0 <= byte2)
                 /* Third byte trailing-byte test. */
                 || bytes[index++] > 0xBF) {
+
+                Ns_Log(Debug, "UTF8 decode '%s': 3-byte invalid sequence byte %.2x %.2x %.2x",
+                       bytes, byte1, byte2, bytes[index]);
+
+                InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, bytes[index-1] > 0xBF ? index -1 : index, 3, NS_FALSE);
                 return NS_FALSE;
             }
         } else {
+            size_t startIndex;
             /*
              * Four-byte UTF-8.
              */
@@ -784,9 +840,11 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes)
                 /*
                  * Premature end of string.
                  */
-                Ns_Log(Debug, "UTF8 decode '%s': 3-byte premature", bytes);
+                Ns_Log(Debug, "UTF8 decode '%s': 4-byte premature", bytes);
+                InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, index, 4, NS_TRUE);
                 return NS_FALSE;
             }
+            startIndex = index;
             byte2 = bytes[index++];
             if (byte2 > 0xBF
                 /* Check that 1 <= plane <= 16. Tricky optimized form of:
@@ -799,6 +857,11 @@ bool Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes)
                 || bytes[index++] > 0xBF
                 /*  Fourth byte trailing byte test */
                 || bytes[index++] > 0xBF) {
+
+                Ns_Log(Debug, "UTF8 decode '%s': 3-byte invalid sequence byte %.2x %.2x %.2x %.2x",
+                       bytes, byte1, byte2, bytes[index-2], bytes[index-1]);
+
+                InvalidUtf8ErrorMessage(dsPtr, bytes, nrBytes, startIndex, 4, NS_FALSE);
                 return NS_FALSE;
             }
         }

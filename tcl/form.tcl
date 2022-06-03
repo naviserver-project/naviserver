@@ -638,8 +638,8 @@ proc ns_parseformfile {args} {
             # always so.
             #
             if {$content_type eq "" || [string match "text/*" $content_type]} {
-                if {$encoding eq "utf-8" && ![ns_valid_utf8 $value]} {
-                    ns_log warning "multipart value for $name contains invalid UTF-8: $value // $encoding"
+                if {$encoding eq "utf-8" && ![ns_valid_utf8 $value errorString]} {
+                    ns_log warning "multipart value for $name contains invalid UTF-8: '$errorString' // $encoding"
                     close $fp
                     throw NS_INVALID_UTF8 "multipart value for $name contains invalid UTF-8"
                 }
