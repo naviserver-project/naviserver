@@ -933,11 +933,13 @@ Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding
         Tcl_DStringAppend(dsPtr, start, (int)len);
         buffer = dsPtr->string;
     } else {
+        Tcl_DString ds;
         /*
          * Actual to UTF conversion.
          */
-        if (NsEncodingIsUtf8(encoding) && !Ns_Valid_UTF8((const unsigned char *)start, len)) {
-            Ns_Log(Warning, "form: multipart contains invalid UTF8: %s", start);
+        if (NsEncodingIsUtf8(encoding) && !Ns_Valid_UTF8((const unsigned char *)start, len, &ds)) {
+            Ns_Log(Warning, "form: multipart contains invalid UTF8: %s", ds.string);
+            Tcl_DStringFree(&ds);
             buffer = NULL;
         } else {
             /*

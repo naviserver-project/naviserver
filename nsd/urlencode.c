@@ -1401,35 +1401,35 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
         }
 
         if (likely(encoding != NULL)) {
-            bool validByteSequence = NS_TRUE;
+            bool        validByteSequence = NS_TRUE;
+            Tcl_DString messageDs;
 
             if (encoding == NS_utf8Encoding) {
-                validByteSequence = Ns_Valid_UTF8((const unsigned char *)decoded, (size_t)decodedLength);
+                validByteSequence = Ns_Valid_UTF8((const unsigned char *)decoded, (size_t)decodedLength, &messageDs);
             }
             Ns_Log(Debug, "### UrlDecode external '%s' encoding %s valid %d", decoded,
                    Tcl_GetEncodingName(encoding), validByteSequence);
 
             if (validByteSequence) {
-                Tcl_DString ds;
+                Tcl_DString encodedDs;
 
-                (void)Tcl_ExternalToUtfDString(encoding, decoded, decodedLength, &ds);
+                (void)Tcl_ExternalToUtfDString(encoding, decoded, decodedLength, &encodedDs);
                 Ns_DStringSetLength(dsPtr, oldLength);
-                Ns_DStringAppend(dsPtr, Tcl_DStringValue(&ds));
-                Tcl_DStringFree(&ds);
+                Ns_DStringAppend(dsPtr, Tcl_DStringValue(&encodedDs));
+                Tcl_DStringFree(&encodedDs);
             } else {
                 /*
-                 * The input byte sequence is not valid. We could simply
-                 * reject to convert the percentcodes
-                 *
-                 *    Ns_DStringSetLength(dsPtr, oldLength);
-                 *    Ns_DStringNAppend(dsPtr, urlSegment, inputLength);
-                 *
-                 * but that could break some existing code. For the time
-                 * being, we just provided a warning message.
+                 * The input byte sequence is not valid. Here, we have
+                 * the invalid UTF-8 sequence at hand. We do not want to
+                 * loose this information about the bad byte
+                 * sequence. Since we have no interp in the API, we
+                 * cannot return it in the error message. Therefore, we
+                 * provide a warning message.
                  */
 
-                Ns_Log(Warning, "decoded string is invalid UTF-8: '%s' len %d", decoded, decodedLength);
-                Ns_DStringSetLength(dsPtr, (oldLength));
+                Ns_Log(Warning, "decoded string contains invalid UTF-8: '%s'", messageDs.string);
+                Tcl_DStringFree(&messageDs);
+                Ns_DStringSetLength(dsPtr, oldLength);
 
                 result = TCL_ERROR;
             }
