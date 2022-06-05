@@ -229,6 +229,11 @@ proc ns_getform {args}  {
             # Get the content via external spool file
             #
             try {
+                #
+                # We have to provide a fallback charset here,
+                # otherwise, ns_parseformfile would fail, and we
+                # would not be able to query the "_charset_" field.
+                #
                 if {$fallbackcharset eq ""} {
                     set fallbackcharset iso8859-1
                 }
@@ -420,7 +425,6 @@ proc ns_parseformfile {args} {
         {-encoding ""}
         file form contentType
     } $args
-
 
     if { [catch { set fp [open $file r] } errmsg] } {
         ns_log warning "ns_parseformfile could not open $file for reading"

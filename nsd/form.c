@@ -39,7 +39,7 @@
  * Local functions defined in this file.
  */
 
-static int ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
+static Ns_ReturnCode ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static Ns_ReturnCode ParseQueryWithFallback(Tcl_Interp *interp, NsServer *servPtr,
@@ -391,10 +391,7 @@ NsTclParseQueryObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
 
     } else {
         Tcl_Encoding encoding;
-        Conn        *connPtr;
         Ns_Set      *set = Ns_SetCreate(NULL);
-
-        connPtr = (Conn *)itPtr->conn;
 
         if (charset != NULL) {
             encoding = Ns_GetCharsetEncoding(charset);
@@ -402,8 +399,9 @@ NsTclParseQueryObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
             encoding = Ns_GetUrlEncoding(NULL);
         }
 
-        if (ParseQueryWithFallback(interp, connPtr != NULL ? connPtr->poolPtr->servPtr : NULL,
-                                   chars, set, encoding, NS_FALSE, fallbackCharsetObj)) {
+        if (ParseQueryWithFallback(interp, itPtr->servPtr,
+                                   chars, set, encoding,
+                                   NS_FALSE, fallbackCharsetObj)) {
             Ns_TclPrintfResult(interp, "could not parse query: \"%s\"", chars);
             Tcl_SetErrorCode(interp, "NS_INVALID_UTF8", NULL);
             Ns_SetFree(set);
@@ -436,9 +434,9 @@ NsTclParseQueryObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
 static Ns_ReturnCode
 ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
 {
-    Tcl_DString  kds, vds, vds2;
-    char        *p;
-    int          result = TCL_OK;
+    Tcl_DString   kds, vds, vds2;
+    char         *p;
+    Ns_ReturnCode result = NS_OK;
 
     NS_NONNULL_ASSERT(form != NULL);
     NS_NONNULL_ASSERT(set != NULL);
@@ -502,7 +500,7 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
     Tcl_DStringFree(&vds);
     Tcl_DStringFree(&vds2);
 
-    return (result == TCL_OK ? NS_OK : NS_ERROR);
+    return result;
 }
 
 /*
@@ -521,14 +519,12 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
  *
  *----------------------------------------------------------------------
  */
-
 static Ns_ReturnCode
 ParseQueryWithFallback(Tcl_Interp *interp, NsServer *servPtr, char *toParse,
                        Ns_Set *set, Tcl_Encoding encoding,
                        bool translate, Tcl_Obj *fallbackCharsetObj)
 {
     Ns_ReturnCode status;
-    const char *fallbackCharsetString = NULL;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(toParse != NULL);
@@ -536,43 +532,20 @@ ParseQueryWithFallback(Tcl_Interp *interp, NsServer *servPtr, char *toParse,
 
     status = ParseQuery(toParse, set, encoding,  translate);
     if (status == NS_ERROR) {
+        Tcl_Encoding fallbackEncoding = NULL;
+        Ns_ReturnCode rc;
+
         /*
          * ParseQuery failed. This might be due to invalid UTF-8. Retry with
-         * fallbackCharset if specified. The precedence order is:
-         * - use command line parameter, if specified.
-         * - use per server parameter "formFallbackCharset" if specified;
-         * - use global server parameter "formFallbackCharset" if specified;
+         * fallbackCharset if specified.
          */
-        if (fallbackCharsetObj != NULL) {
-            fallbackCharsetString = Tcl_GetString(fallbackCharsetObj);
-            if (*fallbackCharsetString == '\0') {
-                fallbackCharsetString = NULL;
-            }
+        rc = NsGetFallbackEncoding(interp, servPtr, fallbackCharsetObj, NS_TRUE, &fallbackEncoding);
+        if (rc == NS_OK && fallbackEncoding != NULL && fallbackEncoding != encoding) {
+            Ns_Log(Notice, "Retry ParseQuery with encoding %s",
+                   Ns_GetEncodingCharset(fallbackEncoding));
+            Ns_SetTrunc(set, 0u);
+            status = ParseQuery(toParse, set, fallbackEncoding,  translate);
         }
-        if (fallbackCharsetString == NULL && servPtr != NULL) {
-            fallbackCharsetString = servPtr->encoding.formFallbackCharset;
-        }
-        if (fallbackCharsetString == NULL && servPtr != NULL) {
-            fallbackCharsetString = nsconf.formFallbackCharset;
-        }
-
-        if (fallbackCharsetString != NULL) {
-            Tcl_Encoding fallbackEncoding;
-
-            fallbackEncoding = Ns_GetCharsetEncoding(fallbackCharsetString);
-            if (fallbackEncoding == NULL) {
-                Ns_TclPrintfResult(interp,
-                                   "invalid fallback encoding: '%s'",
-                                   fallbackCharsetString);
-                status = NS_ERROR;
-            } else if (fallbackEncoding != encoding) {
-                Ns_Log(Debug, "Retry ParseQuery with encoding %s", fallbackCharsetString);
-                Ns_SetTrunc(set, 0u);
-                status = ParseQuery(toParse, set, fallbackEncoding,  translate);
-            }
-
-        }
-
     }
     return status;
 }

@@ -747,6 +747,72 @@ AddCharset(const char *charset, const char *name)
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * NsGetFallbackEncoding --
+ *
+ *      Obtain a fallback encoding either from a specified argument
+ *      (fallbackCharsetObj) or from the configuration.
+ *
+ *      The resolving order is
+ *        - use command line parameter, if specified.
+ *        - use per server parameter "formFallbackCharset" if specified;
+ *        - use global server parameter "formFallbackCharset" if specified.
+ *      The last two options are only tried, when "fromConfig" is true.
+ *
+ * Results:
+ *      NS_OK or NS_ERROR. In the error case, an error message is left in the
+ *      interp result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Ns_ReturnCode
+NsGetFallbackEncoding(Tcl_Interp *interp, NsServer *servPtr,
+                      Tcl_Obj *fallbackCharsetObj, bool fromConfig,
+                      Tcl_Encoding *encodingPtr)
+{
+    const char   *fallbackCharsetString = NULL;
+    Ns_ReturnCode result = NS_OK;
+
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(encodingPtr != NULL);
+
+    if (fallbackCharsetObj != NULL) {
+        fallbackCharsetString = Tcl_GetString(fallbackCharsetObj);
+        if (*fallbackCharsetString == '\0') {
+            fallbackCharsetString = NULL;
+        }
+    }
+    if (fromConfig) {
+        if (fallbackCharsetString == NULL && servPtr != NULL) {
+            fallbackCharsetString = servPtr->encoding.formFallbackCharset;
+        }
+        if (fallbackCharsetString == NULL && servPtr != NULL) {
+            fallbackCharsetString = nsconf.formFallbackCharset;
+        }
+    }
+    Ns_Log(Debug, "NsGetFallbackEncoding fromConfig %p %d, '%s'",
+           (void*)fallbackCharsetObj, fromConfig, fallbackCharsetString);
+    if (fallbackCharsetString != NULL) {
+        *encodingPtr = Ns_GetCharsetEncoding(fallbackCharsetString);
+        if (*encodingPtr == NULL) {
+            Ns_TclPrintfResult(interp,
+                               "invalid fallback encoding: '%s'",
+                               fallbackCharsetString);
+            result = NS_ERROR;
+        }
+    } else {
+        *encodingPtr = NULL;
+    }
+
+    return result;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

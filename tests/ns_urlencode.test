@@ -19,7 +19,7 @@ test ns_urlencode-1.1.2 {basic syntax} -body {
 
 test ns_urlencode-1.2.1 {basic syntax} -body {
     ns_urldecode
-} -returnCodes error -result {wrong # args: should be "ns_urldecode ?-charset charset? ?-part part? ?--? string"}
+} -returnCodes error -result {wrong # args: should be "ns_urldecode ?-charset charset? ?-fallbackcharset fallbackcharset? ?-part part? ?--? string"}
 
 test ns_urlencode-1.2.2 {basic syntax} -body {
     ns_urldecode -part x y
@@ -249,11 +249,18 @@ test ns_urlencode-2.6.1 {rfc2396 section 2.4.3 URI 'delim' characters} -body {
     ns_urlencode -part path "<>\#%\""
 } -result {%3c%3e%23%25%22}
 
+test ns_urlencode-2.6.2 {plain chars and encoded chars} -body {
+    ns_urldecode -charset iso8859-1 -part path "/mot%F6rhead"
+} -result {/motörhead}
+
+test ns_urlencode-2.6.3 {plain chars and encoded chars} -body {
+    ns_urldecode -fallbackcharset iso8859-1 -part path "/mot%F6rhead"
+} -returnCodes {ok return error}  -result {/motörhead}
+
 
 test ns_urlencode-2.7.1 {rfc2396 section 2.4.3 URI 'unwise' characters} -body {
     ns_urlencode -part path {{}|\^[]`}
 } -result {%7b%7d%7c%5c%5e%5b%5d%60}
-
 
 test ns_urlencode-2.8.1 {rfc2396 section 3.3 URI path component reserved characters} -body {
     ns_urlencode -part path {/?;=}
@@ -498,6 +505,7 @@ test ns_urlencode-7.1.2 {
     #ns_log notice r=$r
     string match "404*CUSTOM 404 page*" $r
 } -returnCodes {ok return error} -result 1
+
 
 
 #

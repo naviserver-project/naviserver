@@ -33,7 +33,7 @@ the encode operation.
 [para]
 
 The option [option -fallbackcharset] can be used to specify an
-alternative character set in cases, the conversion of the
+alternative character set when the conversion of the
 [arg querystring] leads to invalid UTF-8. Instead of raising an exception,
 a second attempt of decoding the query string is made with the fallback
 charset. Note that the fallback charset can be provided as well via the
