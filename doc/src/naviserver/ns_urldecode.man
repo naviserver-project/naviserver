@@ -16,19 +16,37 @@
 
  [call [cmd ns_urldecode] \
      [opt [option "-charset [arg charset]"]] \
+     [opt [option "-fallbackcharset [arg fallbackcharset]"]] \
      [opt [option "-part [arg part]"]] \
+     [opt [arg "--"]] \
      [arg string]]
 
 [list_end]
 
 The option [option -charset] can be used to specify the character set of
-the decode operation. Option [option -part] is used to specify the
-[arg query] (default) or [arg path] encoding. In case the string
+the decode operation. In case the string
 cannot be decoded into the specified charset (on most platforms UTF-8)
 an exception is raised.
 
-[see_also nsd ns_urlencode ns_parsequery ns_charsets ns_urlcharset]
-[keywords "global built-in" encoding charset url]
+[para]
+
+In cases, where no explicit [option "-charset"] is specified, the
+option [option -fallbackcharset] can be used to specify an alternative
+character set when the conversion of the [arg querystring]
+leads to invalid UTF-8. Instead of raising an exception, a second
+attempt of decoding the query string is made with the fallback
+charset. In contrary to [cmd ns_getform]
+and [cmd ns_parsequery] the configuration parameter
+is not used [term formfallbackcharset], since this happens outside
+automatic form processing.
+
+[para]
+
+The option [option -part] is used to specify the
+[arg query] (default) or [arg path] encoding.
+
+[see_also nsd ns_urlencode ns_parsequery ns_charsets ns_urlcharset ns_getform]
+[keywords "global built-in" encoding charset URL formfallbackcharset]
 
 [manpage_end]
 
