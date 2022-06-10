@@ -17,7 +17,7 @@ test cookie-1.2 {basic syntax} -body {
 
 test cookie-1.3 {basic syntax} -body {
     ns_deletecookie
-} -returnCodes error -result {wrong # args: should be "ns_deletecookie ?-secure secure? ?-domain domain? ?-path path? ?-replace replace? ?--? name"}
+} -returnCodes error -result {wrong # args: should be "ns_deletecookie ?-domain domain? ?-path path? ?-replace replace? ?-samesite samesite? ?-secure secure? ?--? name"}
 
 
 
@@ -30,7 +30,7 @@ test cookie-2.1 {set plain cookie} -setup {
     nstest::http -getheaders {Set-Cookie} GET /cookie-2.1
 } -cleanup {
     ns_unregister_op GET /cookie-2.1
-} -result {200 {x="y"; HttpOnly}}
+} -result {200 {x="y"; HttpOnly; SameSite=Lax}}
 
 test cookie-2.2 {set cookie w/weird chars} -setup {
     ns_register_proc GET /cookie-2.2 {
@@ -41,7 +41,7 @@ test cookie-2.2 {set cookie w/weird chars} -setup {
     nstest::http -getheaders {Set-Cookie} GET /cookie-2.2
 } -cleanup {
     ns_unregister_op GET /cookie-2.2
-} -result {200 {x="%20%25/&"; HttpOnly}}
+} -result {200 {x="%20%25/&"; HttpOnly; SameSite=Lax}}
 
 test cookie-2.3 {secure cookie} -setup {
     ns_register_proc GET /cookie-2.3 {
@@ -52,9 +52,9 @@ test cookie-2.3 {secure cookie} -setup {
     nstest::http -getheaders {Set-Cookie} GET /cookie-2.3
 } -cleanup {
     ns_unregister_op GET /cookie-2.3
-} -result {200 {x="y"; Secure; HttpOnly}}
+} -result {200 {x="y"; Secure; HttpOnly; SameSite=Lax}}
 
-test cookie-2.4 {set cookie w/ domain} -setup {
+test cookie-2.4.1 {set cookie w/ domain} -setup {
     ns_register_proc GET /cookie-2.4 {
         ns_setcookie -domain example.com -- x y
         ns_return 200 text/plain ok
@@ -63,9 +63,9 @@ test cookie-2.4 {set cookie w/ domain} -setup {
     nstest::http -getheaders {Set-Cookie} GET /cookie-2.4
 } -cleanup {
     ns_unregister_op GET /cookie-2.4
-} -result {200 {x="y"; Domain=example.com; HttpOnly}}
+} -result {200 {x="y"; Domain=example.com; HttpOnly; SameSite=Lax}}
 
-test cookie-2.4 {set cookie with empty domain} -setup {
+test cookie-2.4.2 {set cookie with empty domain} -setup {
     ns_register_proc GET /cookie-2.4 {
         ns_setcookie -domain "" -- x y
         ns_return 200 text/plain ok
@@ -74,7 +74,7 @@ test cookie-2.4 {set cookie with empty domain} -setup {
     nstest::http -getheaders {Set-Cookie} GET /cookie-2.4
 } -cleanup {
     ns_unregister_op GET /cookie-2.4
-} -result {200 {x="y"; HttpOnly}}
+} -result {200 {x="y"; HttpOnly; SameSite=Lax}}
 
 
 test cookie-2.5 {set cookie w/ path} -setup {
@@ -86,7 +86,7 @@ test cookie-2.5 {set cookie w/ path} -setup {
     nstest::http -getheaders {Set-Cookie} GET /cookie-2.5
 } -cleanup {
     ns_unregister_op GET /cookie-2.5
-} -result {200 {x="y"; Path=/foo/bar; HttpOnly}}
+} -result {200 {x="y"; Path=/foo/bar; HttpOnly; SameSite=Lax}}
 
 test cookie-2.6 {set cookie w/ max age} -setup {
     ns_register_proc GET /cookie-2.6 {
@@ -97,7 +97,7 @@ test cookie-2.6 {set cookie w/ max age} -setup {
     nstest::http -getheaders {Set-Cookie} GET /cookie-2.6
 } -cleanup {
     ns_unregister_op GET /cookie-2.6
-} -result {200 {x="y"; Max-Age=99; HttpOnly}}
+} -result {200 {x="y"; Max-Age=99; HttpOnly; SameSite=Lax}}
 
 test cookie-2.7 {set cookie w/ infinite lifetime} -setup {
     ns_register_proc GET /cookie-2.7 {
@@ -108,7 +108,7 @@ test cookie-2.7 {set cookie w/ infinite lifetime} -setup {
     nstest::http -getheaders {Set-Cookie} GET /cookie-2.7
 } -cleanup {
     ns_unregister_op GET /cookie-2.7
-} -result {200 {x="y"; Expires=Fri, 01-Jan-2035 01:00:00 GMT; HttpOnly}}
+} -result {200 {x="y"; Expires=Fri, 01-Jan-2035 01:00:00 GMT; HttpOnly; SameSite=Lax}}
 
 test cookie-2.8 {set cookie w/ absolute expiry} -setup {
     ns_register_proc GET /cookie-2.8 {
@@ -120,7 +120,7 @@ test cookie-2.8 {set cookie w/ absolute expiry} -setup {
     nstest::http -getheaders {Set-Cookie} GET /cookie-2.8
 } -cleanup {
     ns_unregister_op GET /cookie-2.8
-} -result {200 {x="y"; Max-Age=10; HttpOnly}}
+} -result {200 {x="y"; Max-Age=10; HttpOnly; SameSite=Lax}}
 
 test cookie-2.9 {set scriptable cookie} -setup {
     ns_register_proc GET /cookie-2.9 {
@@ -131,7 +131,7 @@ test cookie-2.9 {set scriptable cookie} -setup {
     nstest::http -getheaders {Set-Cookie} GET /cookie-2.9
 } -cleanup {
     ns_unregister_op GET /cookie-2.9
-} -result {200 x=\"y\"}
+} -result {200 {x="y"; SameSite=Lax}}
 
 test cookie-2.10 {set discard flag for cookie} -setup {
     ns_register_proc GET /cookie-2.10 {
@@ -142,7 +142,7 @@ test cookie-2.10 {set discard flag for cookie} -setup {
     nstest::http -getheaders {Set-Cookie} GET /cookie-2.10
 } -cleanup {
     ns_unregister_op GET /cookie-2.10
-} -result {200 {x="1"; Discard; HttpOnly}}
+} -result {200 {x="1"; Discard; HttpOnly; SameSite=Lax}}
 
 test cookie-2.11 {set discard flag for cookie} -setup {
     ns_register_proc GET /cookie-2.11 {
@@ -154,7 +154,7 @@ test cookie-2.11 {set discard flag for cookie} -setup {
     nstest::http -getmultiheaders {Set-Cookie} GET /cookie-2.11
 } -cleanup {
     ns_unregister_op GET /cookie-2.11
-} -result {200 {x="1"; HttpOnly} {x="2"; HttpOnly}}
+} -result {200 {x="1"; HttpOnly; SameSite=Lax} {x="2"; HttpOnly; SameSite=Lax}}
 
 test cookie-2.12 {set discard flag for cookie} -setup {
     ns_register_proc GET /cookie-2.12 {
@@ -166,7 +166,7 @@ test cookie-2.12 {set discard flag for cookie} -setup {
     nstest::http -getmultiheaders {Set-Cookie} GET /cookie-2.12
 } -cleanup {
     ns_unregister_op GET /cookie-2.12
-} -result {200 {x="2"; HttpOnly}}
+} -result {200 {x="2"; HttpOnly; SameSite=Lax}}
 
 
 #
@@ -194,7 +194,7 @@ test cookie-2.14 {samesite strict cookie} -setup {
     ns_unregister_op GET /cookie-2.3
 } -result {200 {x="value"; HttpOnly; SameSite=Lax}}
 
-test cookie-2.15 {samesite none cookie} -setup {
+test cookie-2.15.1 {samesite none cookie, no secure, fall back to Lax} -setup {
     ns_register_proc GET /cookie-2.3 {
         ns_setcookie -samesite none -- x value
         ns_return 200 text/plain ok
@@ -203,7 +203,18 @@ test cookie-2.15 {samesite none cookie} -setup {
     nstest::http -getheaders {Set-Cookie} GET /cookie-2.3
 } -cleanup {
     ns_unregister_op GET /cookie-2.3
-} -result {200 {x="value"; HttpOnly; SameSite=None}}
+} -result {200 {x="value"; HttpOnly; SameSite=Lax}}
+
+test cookie-2.15.2 {samesite none cookie, with secure} -setup {
+    ns_register_proc GET /cookie-2.3 {
+        ns_setcookie -samesite none -secure true -- x value
+        ns_return 200 text/plain ok
+    }
+} -body {
+    nstest::http -getheaders {Set-Cookie} GET /cookie-2.3
+} -cleanup {
+    ns_unregister_op GET /cookie-2.3
+} -result {200 {x="value"; Secure; HttpOnly; SameSite=None}}
 
 test cookie-2.16 {samesite invalid cookie} -body {
     ns_setcookie -samesite x -- x value
@@ -222,7 +233,7 @@ test cookie-3.1 {delete cookie} -setup {
     nstest::http -getheaders {Set-Cookie} GET /cookie-3.1
 } -cleanup {
     ns_unregister_op GET /cookie-3.1
-} -result {200 {x=""; Expires=Fri, 01-Jan-1980 01:00:00 GMT; HttpOnly}}
+} -result {200 {x=""; Expires=Fri, 01-Jan-1980 01:00:00 GMT; HttpOnly; SameSite=Lax}}
 
 test cookie-3.2 {delete cookie w/ all options} -setup {
     ns_register_proc GET /cookie-3.2 {
@@ -233,7 +244,7 @@ test cookie-3.2 {delete cookie w/ all options} -setup {
     nstest::http -getheaders {Set-Cookie} GET /cookie-3.2
 } -cleanup {
     ns_unregister_op GET /cookie-3.2
-} -result {200 {x=""; Expires=Fri, 01-Jan-1980 01:00:00 GMT; Domain=example.com; Path=/foo/bar; Secure; HttpOnly}}
+} -result {200 {x=""; Expires=Fri, 01-Jan-1980 01:00:00 GMT; Domain=example.com; Path=/foo/bar; Secure; HttpOnly; SameSite=Lax}}
 
 
 
@@ -299,7 +310,7 @@ test cookie-4.6 {get cookie with cookie-set values} -setup {
     nstest::http -getbody 1 -getheaders {Set-Cookie} GET /cookie-4.6
 } -cleanup {
     ns_unregister_op GET /cookie-4.6
-} -result {200 {foo="foovalue"; HttpOnly} foovalue}
+} -result {200 {foo="foovalue"; HttpOnly; SameSite=Lax} foovalue}
 
 test cookie-4.7 {get missing cookie} -setup {
     ns_register_proc GET /cookie-4.7 {
@@ -311,7 +322,7 @@ test cookie-4.7 {get missing cookie} -setup {
     nstest::http -getbody 1 -getheaders {Set-Cookie} GET /cookie-4.7
 } -cleanup {
     ns_unregister_op GET /cookie-4.7
-} -result {200 {foo="foovalue"; HttpOnly} {no such cookie}}
+} -result {200 {foo="foovalue"; HttpOnly; SameSite=Lax} {no such cookie}}
 
 
 test cookie-4.8 {get all named cookies, single cookie} -setup {

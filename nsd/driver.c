@@ -4848,7 +4848,7 @@ SockSetServer(Sock *sockPtr)
         && reqPtr->request.url != NULL
         ) {
         if (!Ns_Valid_UTF8((const unsigned char *)reqPtr->request.url,
-                           strlen(reqPtr->request.url))) {
+                           strlen(reqPtr->request.url), NULL)) {
             Ns_Log(Warning, "Invalid UTF-8 encoding in url '%s'",
                    reqPtr->request.url);
             bad_request = NS_TRUE;
@@ -7614,7 +7614,7 @@ NsTclWriterObjCmd(ClientData clientData, Tcl_Interp *interp,
 void
 NsAsyncWriterQueueEnable(void)
 {
-    if (Ns_ConfigBool(NS_CONFIG_PARAMETERS, "asynclogwriter", NS_FALSE) == NS_TRUE) {
+    if (Ns_ConfigBool(NS_GLOBAL_CONFIG_PARAMETERS, "asynclogwriter", NS_FALSE) == NS_TRUE) {
         SpoolerQueue  *queuePtr;
 
         /*

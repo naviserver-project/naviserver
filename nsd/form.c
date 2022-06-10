@@ -39,7 +39,7 @@
  * Local functions defined in this file.
  */
 
-static int ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
+static Ns_ReturnCode ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static Ns_ReturnCode ParseQueryWithFallback(Tcl_Interp *interp, NsServer *servPtr,
@@ -48,8 +48,8 @@ static Ns_ReturnCode ParseQueryWithFallback(Tcl_Interp *interp, NsServer *servPt
                                             Tcl_Obj *fallbackCharsetObj)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
-static Ns_ReturnCode ParseMultiInput(Conn *connPtr, const char *start, char *end)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+static Ns_ReturnCode ParseMultipartEntry(Conn *connPtr, Tcl_Encoding valueEncoding, const char *start, char *end)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 static char *Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding, char unescape)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -147,12 +147,12 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
         }
 
         if (content != NULL) {
-            Tcl_DString bound;
+            Tcl_DString boundaryDs;
             /*
              * We have one of the accepted content types AND the data is
              * provided via content string.
              */
-            Tcl_DStringInit(&bound);
+            Tcl_DStringInit(&boundaryDs);
 
             if (*contentType == 'a') {
                 /*
@@ -182,35 +182,70 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                                                 content, connPtr->query, encoding,
                                                 translate, fallbackCharsetObj);
 
-            } else if (GetBoundary(&bound, contentType)) {
+            } else if (GetBoundary(&boundaryDs, contentType)) {
                 /*
-                 * GetBoundary cares for "multipart/form-data; boundary=..."
+                 * GetBoundary cares for "multipart/form-data; boundary=...".
                  */
-                const char *formEndPtr = content + connPtr->reqPtr->length;
-                char       *s;
+                const char  *formEndPtr = content + connPtr->reqPtr->length;
+                char        *firstBoundary = NextBoundary(&boundaryDs, content, formEndPtr), *s;
+                Tcl_Encoding valueEncoding = connPtr->urlEncoding;
 
-                s = NextBoundary(&bound, content, formEndPtr);
-                while (s != NULL) {
-                    char  *e;
+                s = firstBoundary;
+                for (;;) {
+                    const char *defaultCharset;
 
-                    s += bound.length;
-                    if (*s == '\r') {
-                        ++s;
+                    while (s != NULL) {
+                        char  *e;
+
+                        s += boundaryDs.length;
+                        if (*s == '\r') {
+                            ++s;
+                        }
+                        if (*s == '\n') {
+                            ++s;
+                        }
+                        e = NextBoundary(&boundaryDs, s, formEndPtr);
+                        if (e != NULL) {
+                            status = ParseMultipartEntry(connPtr, valueEncoding, s, e);
+                            if (status == NS_ERROR) {
+                                toParse = s;
+                            }
+                        }
+                        s = e;
                     }
-                    if (*s == '\n') {
-                        ++s;
-                    }
-                    e = NextBoundary(&bound, s, formEndPtr);
-                    if (e != NULL) {
-                        status = ParseMultiInput(connPtr, s, e);
-                        if (status == NS_ERROR) {
-                            toParse = s;
+                    /*
+                     * We have now parsed all form fields into
+                     * connPtr->query. According to the HTML5 standard, we
+                     * have to check for a form entry named "_charset_"
+                     * specifying the "default charset".
+                     * https://datatracker.ietf.org/doc/html/rfc7578#section-4.6
+                     */
+                    defaultCharset = Ns_SetGet(connPtr->query, "_charset_");
+                    if (defaultCharset != NULL && strcmp(defaultCharset, "utf-8") != 0) {
+                        /*
+                         * We got an explicit charset different from UTF-8. We
+                         * have to reparse the input data.
+                         */
+                        Tcl_Encoding defaultEncoding = Ns_GetCharsetEncoding(defaultCharset);
+
+                        if (valueEncoding != NULL) {
+                            if (valueEncoding != defaultEncoding) {
+                                valueEncoding = defaultEncoding;
+                                s = firstBoundary;
+                                Ns_SetTrunc(connPtr->query, 0u);
+                                Ns_Log(Debug, "form: retry with default charset %s", defaultCharset);
+                                continue;
+                            }
+                        } else {
+                            Ns_Log(Error, "multipart form: invalid charset specified"
+                                   " inside of form '%s'", defaultCharset);
+                            status = NS_ERROR;
                         }
                     }
-                    s = e;
+                    break;
                 }
             }
-            Tcl_DStringFree(&bound);
+            Tcl_DStringFree(&boundaryDs);
         }
 
         if (status == NS_ERROR) {
@@ -222,6 +257,7 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                     Ns_TclPrintfResult(interp,
                                        "cannot decode '%s'; contains invalid UTF-8",
                                        toParse);
+                    Tcl_SetErrorCode(interp, "NS_INVALID_UTF8", NULL);
                 }
             }
             return NULL;
@@ -355,10 +391,7 @@ NsTclParseQueryObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
 
     } else {
         Tcl_Encoding encoding;
-        Conn                *connPtr;
-        Ns_Set              *set = Ns_SetCreate(NULL);
-
-        connPtr = (Conn *)itPtr->conn;
+        Ns_Set      *set = Ns_SetCreate(NULL);
 
         if (charset != NULL) {
             encoding = Ns_GetCharsetEncoding(charset);
@@ -366,9 +399,11 @@ NsTclParseQueryObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
             encoding = Ns_GetUrlEncoding(NULL);
         }
 
-        if (ParseQueryWithFallback(interp, connPtr != NULL ? connPtr->poolPtr->servPtr : NULL,
-                                   chars, set, encoding, NS_FALSE, fallbackCharsetObj)) {
+        if (ParseQueryWithFallback(interp, itPtr->servPtr,
+                                   chars, set, encoding,
+                                   NS_FALSE, fallbackCharsetObj)) {
             Ns_TclPrintfResult(interp, "could not parse query: \"%s\"", chars);
+            Tcl_SetErrorCode(interp, "NS_INVALID_UTF8", NULL);
             Ns_SetFree(set);
             result = TCL_ERROR;
         } else {
@@ -399,9 +434,9 @@ NsTclParseQueryObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
 static Ns_ReturnCode
 ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
 {
-    Tcl_DString  kds, vds, vds2;
-    char        *p;
-    int          result = TCL_OK;
+    Tcl_DString   kds, vds, vds2;
+    char         *p;
+    Ns_ReturnCode result = NS_OK;
 
     NS_NONNULL_ASSERT(form != NULL);
     NS_NONNULL_ASSERT(set != NULL);
@@ -465,7 +500,7 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
     Tcl_DStringFree(&vds);
     Tcl_DStringFree(&vds2);
 
-    return (result == TCL_OK ? NS_OK : NS_ERROR);
+    return result;
 }
 
 /*
@@ -484,14 +519,12 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
  *
  *----------------------------------------------------------------------
  */
-
 static Ns_ReturnCode
 ParseQueryWithFallback(Tcl_Interp *interp, NsServer *servPtr, char *toParse,
                        Ns_Set *set, Tcl_Encoding encoding,
                        bool translate, Tcl_Obj *fallbackCharsetObj)
 {
     Ns_ReturnCode status;
-    const char *fallbackCharsetString = NULL;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(toParse != NULL);
@@ -499,43 +532,20 @@ ParseQueryWithFallback(Tcl_Interp *interp, NsServer *servPtr, char *toParse,
 
     status = ParseQuery(toParse, set, encoding,  translate);
     if (status == NS_ERROR) {
+        Tcl_Encoding fallbackEncoding = NULL;
+        Ns_ReturnCode rc;
+
         /*
          * ParseQuery failed. This might be due to invalid UTF-8. Retry with
-         * fallbackCharset if specified. The precedence order is:
-         * - use command line parameter, if specified.
-         * - use per server parameter "formFallbackCharset" if specified;
-         * - use global server parameter "formFallbackCharset" if specified;
+         * fallbackCharset if specified.
          */
-        if (fallbackCharsetObj != NULL) {
-            fallbackCharsetString = Tcl_GetString(fallbackCharsetObj);
-            if (*fallbackCharsetString == '\0') {
-                fallbackCharsetString = NULL;
-            }
+        rc = NsGetFallbackEncoding(interp, servPtr, fallbackCharsetObj, NS_TRUE, &fallbackEncoding);
+        if (rc == NS_OK && fallbackEncoding != NULL && fallbackEncoding != encoding) {
+            Ns_Log(Notice, "Retry ParseQuery with encoding %s",
+                   Ns_GetEncodingCharset(fallbackEncoding));
+            Ns_SetTrunc(set, 0u);
+            status = ParseQuery(toParse, set, fallbackEncoding,  translate);
         }
-        if (fallbackCharsetString == NULL && servPtr != NULL) {
-            fallbackCharsetString = servPtr->encoding.formFallbackCharset;
-        }
-        if (fallbackCharsetString == NULL && servPtr != NULL) {
-            fallbackCharsetString = nsconf.formFallbackCharset;
-        }
-
-        if (fallbackCharsetString != NULL) {
-            Tcl_Encoding fallbackEncoding = Ns_GetCharsetEncoding(fallbackCharsetString);
-
-            fallbackEncoding = Ns_GetCharsetEncoding(fallbackCharsetString);
-            if (fallbackEncoding == NULL) {
-                Ns_TclPrintfResult(interp,
-                                   "invalid fallback encoding: '%s'",
-                                   fallbackCharsetString);
-                status = NS_ERROR;
-            } else if (fallbackEncoding != encoding) {
-                Ns_Log(Notice, "Retry ParseQuery with encoding %s", fallbackCharsetString);
-                Ns_SetTrunc(set, 0u);
-                status = ParseQuery(toParse, set, fallbackEncoding,  translate);
-            }
-
-        }
-
     }
     return status;
 }
@@ -544,21 +554,22 @@ ParseQueryWithFallback(Tcl_Interp *interp, NsServer *servPtr, char *toParse,
 /*
  *----------------------------------------------------------------------
  *
- * ParseMulitInput --
+ * ParseMultipartEntry --
  *
- *      Parse the a multipart form input.
+ *      Parse a single part of a multipart form.
  *
  * Results:
- *      None.
+ *      Ns_ReturnCode (NS_OK or NS_ERROR).
  *
  * Side effects:
- *      Records offset, lengths for files.
+ *      Records offset, lengths for files.  After execution, connPtr->query
+ *      contains the parsed form in form of an Ns_Set.
  *
  *----------------------------------------------------------------------
  */
 
 static Ns_ReturnCode
-ParseMultiInput(Conn *connPtr, const char *start, char *end)
+ParseMultipartEntry(Conn *connPtr, Tcl_Encoding valueEncoding, const char *start, char *end)
 {
     Tcl_Encoding  encoding;
     Tcl_DString   kds, vds;
@@ -628,11 +639,17 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
             status = NS_ERROR;
             goto bailout;
         }
-        Ns_Log(Debug, "ParseMultiInput disp '%s'", disp);
+        Ns_Log(Debug, "ParseMultipartEntry disp '%s'", disp);
 
         if (GetValue(disp, "filename=", &fs, &fe, &unescape) == NS_FALSE) {
-            Ns_Log(Debug, "ParseMultiInput LINE '%s'", start);
-            value = Ext2utf(&vds, start, (size_t)(end - start), encoding, unescape);
+            /*
+             * Plain (non-file) entry.
+             */
+            if (valueEncoding == NULL) {
+                valueEncoding = encoding;
+            }
+            Ns_Log(Debug, "ParseMultipartEntry LINE '%s'", start);
+            value = Ext2utf(&vds, start, (size_t)(end - start), valueEncoding, unescape);
             if (value == NULL) {
                 status = NS_ERROR;
                 goto bailout;
@@ -678,7 +695,7 @@ ParseMultiInput(Conn *connPtr, const char *start, char *end)
                                             Tcl_NewWideIntObj((Tcl_WideInt)(end - start)));
             set = NULL;
         }
-        Ns_Log(Debug, "ParseMultiInput sets '%s': '%s'", key, value);
+        Ns_Log(Debug, "ParseMultipartEntry sets '%s': '%s'", key, value);
         (void) Ns_SetPut(connPtr->query, key, value);
     }
 
@@ -867,10 +884,10 @@ GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePt
  *      Convert input string to UTF.
  *
  * Results:
- *      Pointer to converted string.
+ *      Pointer to converted string or NULL, when conversion to UTF-8 fails.
  *
  * Side effects:
- *      Converted string is copied to given dstring, overwriting
+ *      Converted string is copied to given dString, overwriting
  *      any previous content.
  *
  *----------------------------------------------------------------------
@@ -889,11 +906,13 @@ Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding
         Tcl_DStringAppend(dsPtr, start, (int)len);
         buffer = dsPtr->string;
     } else {
+        Tcl_DString ds;
         /*
          * Actual to UTF conversion.
          */
-        if (!Ns_Valid_UTF8((const unsigned char *)start, len)) {
-            Ns_Log(Warning, "form: multipart contains invalid UTF8: %s", start);
+        if (NsEncodingIsUtf8(encoding) && !Ns_Valid_UTF8((const unsigned char *)start, len, &ds)) {
+            Ns_Log(Warning, "form: multipart contains invalid UTF8: %s", ds.string);
+            Tcl_DStringFree(&ds);
             buffer = NULL;
         } else {
             /*

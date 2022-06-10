@@ -3080,7 +3080,7 @@ Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN bool
-Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes)
+Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes, Tcl_DString *dsPtr)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN bool
@@ -3391,7 +3391,7 @@ Ns_UrlQueryEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encodi
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *
-Ns_UrlQueryDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, int *resultPtr)
+Ns_UrlQueryDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding, Ns_ReturnCode *resultPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN char *

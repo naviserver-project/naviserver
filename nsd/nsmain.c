@@ -605,7 +605,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      */
     {
         char *localeString =  getenv("LC_ALL");
-        const char *source, *response;
+        const char *source = "unknown source", *response;
 
         if (localeString == NULL) {
             source = "environment variable LC_COLLATE";
@@ -639,10 +639,10 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
 
 #ifndef _WIN32
-    NS_mutexlocktrace = Ns_ConfigBool(NS_CONFIG_PARAMETERS, "mutexlocktrace", NS_FALSE);
+    NS_mutexlocktrace = Ns_ConfigBool(NS_GLOBAL_CONFIG_PARAMETERS, "mutexlocktrace", NS_FALSE);
 #endif
 
-    nsconf.formFallbackCharset = Ns_ConfigString(NS_CONFIG_PARAMETERS, "FormFallbackCharset", NULL);
+    nsconf.formFallbackCharset = Ns_ConfigString(NS_GLOBAL_CONFIG_PARAMETERS, "FormFallbackCharset", NULL);
     if (nsconf.formFallbackCharset != NULL
         && *nsconf.formFallbackCharset == '\0') {
         nsconf.formFallbackCharset  = NULL;
@@ -681,7 +681,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      * Verify and change to the home directory.
      */
 
-    nsconf.home = Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "home");
+    nsconf.home = Ns_ConfigGetValue(NS_GLOBAL_CONFIG_PARAMETERS, "home");
     if (nsconf.home == NULL && mode != 'c') {
 
         /*
@@ -695,7 +695,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
         nsconf.home = MakePath("");
         if (nsconf.home == NULL) {
-            Ns_Fatal("nsmain: missing: [%s]home", NS_CONFIG_PARAMETERS);
+            Ns_Fatal("nsmain: missing: [%s]home", NS_GLOBAL_CONFIG_PARAMETERS);
         }
     } else if (nsconf.home == NULL /* && mode == 'c' */) {
         /*
@@ -729,18 +729,18 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     }
     nsconf.home = SetCwd(nsconf.home);
     nsconf.reject_already_closed_connection =
-        Ns_ConfigBool(NS_CONFIG_PARAMETERS, "rejectalreadyclosedconn", NS_TRUE);
+        Ns_ConfigBool(NS_GLOBAL_CONFIG_PARAMETERS, "rejectalreadyclosedconn", NS_TRUE);
     nsconf.sanitize_logfiles =
-        Ns_ConfigIntRange(NS_CONFIG_PARAMETERS, "sanitizelogfiles", 2, 0, 2);
+        Ns_ConfigIntRange(NS_GLOBAL_CONFIG_PARAMETERS, "sanitizelogfiles", 2, 0, 2);
     nsconf.reverseproxymode =
-        Ns_ConfigBool(NS_CONFIG_PARAMETERS, "reverseproxymode", NS_FALSE);
+        Ns_ConfigBool(NS_GLOBAL_CONFIG_PARAMETERS, "reverseproxymode", NS_FALSE);
 
     {
         /*
          * Allow values like "none", or abbreviated to "no"), but be open for
          * future enhancements like e.g. "cluster".
          */
-        const char *cacheConfig = Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "cachingmode");
+        const char *cacheConfig = Ns_ConfigGetValue(NS_GLOBAL_CONFIG_PARAMETERS, "cachingmode");
         if (cacheConfig == NULL) {
             nsconf.nocache = NS_FALSE;
         } else {
@@ -752,7 +752,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      * Make the result queryable.
      */
 
-    set = Ns_ConfigCreateSection(NS_CONFIG_PARAMETERS);
+    set = Ns_ConfigCreateSection(NS_GLOBAL_CONFIG_PARAMETERS);
     Ns_SetUpdate(set, "home", nsconf.home);
 
     /*
@@ -761,7 +761,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
     NsConfUpdate();
 
-    nsconf.tmpDir = Ns_ConfigGetValue(NS_CONFIG_PARAMETERS, "tmpdir");
+    nsconf.tmpDir = Ns_ConfigGetValue(NS_GLOBAL_CONFIG_PARAMETERS, "tmpdir");
     if (nsconf.tmpDir == NULL) {
         nsconf.tmpDir = getenv("TMPDIR");
         if (nsconf.tmpDir == NULL) {

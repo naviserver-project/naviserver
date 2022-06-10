@@ -46,7 +46,7 @@
  * Constants
  */
 
-#define NS_CONFIG_PARAMETERS           "ns/parameters"
+#define NS_GLOBAL_CONFIG_PARAMETERS           "ns/parameters"
 #define NS_CONFIG_THREADS              "ns/threads"
 
 NS_EXTERN const char *NS_EMPTY_STRING;
@@ -1719,6 +1719,10 @@ NS_EXTERN const char *NsFindCharset(const char *mimetype, size_t *lenPtr)
 NS_EXTERN bool NsEncodingIsUtf8(const Tcl_Encoding encoding)
     NS_GNUC_PURE;
 
+NS_EXTERN Ns_ReturnCode NsGetFallbackEncoding(Tcl_Interp *interp, NsServer *servPtr,
+                                              Tcl_Obj *fallbackCharsetObj, bool fromConfig,
+                                              Tcl_Encoding *encodingPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(5);
 
 /*
  * ADP routines.

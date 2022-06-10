@@ -83,6 +83,7 @@ static int
 CacheTransactionFinishPop(NsInterp *itPtr, Tcl_Obj *listObj, bool commit, unsigned long *countPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
+static int CacheEval(Tcl_Interp *interp, int nargs, int objc, Tcl_Obj *const* objv);
 
 static Ns_ObjvProc ObjvCache;
 
@@ -407,6 +408,38 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, T
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * CacheEval --
+ *
+ *      Helper function for NsTclCacheEvalObjCmd to handle calling the command
+ *      and its return code. The main purpose of this function is to avoid
+ *      code duplication.
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      Maybe some side effects from the called script.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+CacheEval(Tcl_Interp *interp, int nargs, int objc, Tcl_Obj *const* objv)
+{
+    int status;
+
+    if (nargs == 1) {
+        status = Tcl_EvalObjEx(interp, objv[objc-1], 0);
+    } else {
+        status = Tcl_EvalObjv(interp, nargs, objv + (objc-nargs), 0);
+    }
+    if (status == TCL_RETURN) {
+        status = TCL_OK;
+    }
+    return status;
+}
 
 
 /*
@@ -455,6 +488,10 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         status = TCL_ERROR;
 
+    } else if (unlikely(nsconf.nocache == NS_TRUE)) {
+        /*Ns_Log(Notice, "nocache: %s %d", Tcl_GetString(objv[objc-nargs]), nargs);*/
+        status = CacheEval(interp, nargs, objc, objv);
+
     } else {
         Ns_Entry                 *entry;
         NsInterp                 *itPtr;
@@ -498,14 +535,11 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
              */
 
             Ns_CacheUnlock(cPtr->cache);
-            Ns_GetTime(&start);
 
-            if (nargs == 1) {
-                status = Tcl_EvalObjEx(interp, objv[objc-1], 0);
-            } else {
-                status = Tcl_EvalObjv(interp, nargs, objv + (objc-nargs), 0);
-            }
+            Ns_GetTime(&start);
+            status = CacheEval(interp, nargs, objc, objv);
             Ns_GetTime(&end);
+
             (void)Ns_DiffTime(&end, &start, &diff);
 
             Ns_CacheLock(cPtr->cache);
@@ -548,12 +582,6 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
                        : Tcl_GetString(objv[1+objc-nargs]),
                        status);*/
                 Ns_CacheDeleteEntry(entry);
-
-            } else if (unlikely(nsconf.nocache == NS_TRUE)) {
-                Ns_CacheDeleteEntry(entry);
-                if (status == TCL_RETURN) {
-                    status = TCL_OK;
-                }
 
             } else {
                 Tcl_Obj *resultObj = Tcl_GetObjResult(interp);
@@ -1320,7 +1348,7 @@ ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *const* o
                 hPtr = Tcl_FindHashEntry(&servPtr->tcl.caches, (const void *)cacheName);
                 if (hPtr == NULL) {
                     Ns_TclPrintfResult(interp, "no such cache: %s", cacheName);
-                    Tcl_SetErrorCode(interp, "NSCACHE", "LOOKUP", cacheName, (char *)0L);
+                    Tcl_SetErrorCode(interp, "NS_CACHE", "LOOKUP", cacheName, (char *)0L);
                     result = TCL_ERROR;
                 } else {
                     *cPtrPtr = Tcl_GetHashValue(hPtr);
@@ -1333,7 +1361,7 @@ ObjvCache(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *const* o
                  * the cache.
                  */
                 Ns_TclPrintfResult(interp, "no server for cache %s", cacheName);
-                Tcl_SetErrorCode(interp, "NSCACHE", "LOOKUP", cacheName, (char *)0L);
+                Tcl_SetErrorCode(interp, "NS_CACHE", "LOOKUP", cacheName, (char *)0L);
                 result = TCL_ERROR;
             }
         } else {
@@ -1608,7 +1636,7 @@ CacheTransactionFinishPop(NsInterp *itPtr, Tcl_Obj *listObj, bool commit, unsign
             if (result != TCL_OK) {
 
                 Ns_TclPrintfResult(itPtr->interp, "no such cache: %s", cacheName);
-                Tcl_SetErrorCode(itPtr->interp, "NSCACHE", "LOOKUP", cacheName, (char *)0L);
+                Tcl_SetErrorCode(itPtr->interp, "NS_CACHE", "LOOKUP", cacheName, (char *)0L);
                 break;
             }
         }
