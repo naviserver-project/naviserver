@@ -55,7 +55,7 @@ set defaultConfig {
     homedir	/usr/local/ns
     bindir	$homedir/bin
     db_name	$server
-    db_user	$server
+    db_user	nsadmin
     db_host	localhost
     db_port	""
     CookieNamespace ad_
