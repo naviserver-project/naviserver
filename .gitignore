@@ -12,6 +12,9 @@
 *.ilk
 *.DS_Store
 *.ast.sh
+*.pem
+*.pid
+*.patch
 
 autom4te.cache
 aclocal.m4
@@ -38,3 +41,4 @@ include/nsconfig.h*
 include/nsversion.h
 include/nsversion-win32.h
 include/stamp-h1
+
