@@ -1,0 +1,370 @@
+commit ad0f36b16b2beca6bf5d44ba7445147dd2d06151
+Author: Gustaf Neumann <neumann@wu.ac.at>
+Date:   2021-05-26
+
+    updated version numbers
+
+M	README
+
+commit 64478f09b80f3659ca618a3ae9ce5f612aba6292
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2021-05-15
+
+    For large request bodies, send the data to the backend event driven.
+    
+    In the last version, the data was sent on partial write operations with
+    in a loop with 1ms sleep time. The new version is better, since it triggers
+    for the writable condition on the channel
+
+M	revproxy-procs.tcl
+
+commit 39af19b179d3a1ee76a26c12638cbbc24a874969
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2021-05-11
+
+    use buffered writes to address potential partialy writes.
+    
+    This is a transitional solution, we have to get a setup, where the problem
+    happens reliably
+
+M	revproxy-procs.tcl
+
+commit b8727a2477fd8c307cf1b4d3aeac890df0481240
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2021-01-11
+
+    reduce verbosity
+
+M	revproxy-procs.tcl
+
+commit e690137f7e13596dee64aa5e329e4ffc9b71c177
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2021-01-08
+
+    simplify logic
+
+M	revproxy-procs.tcl
+
+commit a2f7de870c91083a9251997dcdb7fa382fbaa647
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2021-01-06
+
+    use buffed ns_connchan write operations
+
+M	revproxy-procs.tcl
+
+commit b1a455db5a2d7dce569fc31dfa108af94efbc84f
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2021-01-04
+
+    fine-tuning logging messages
+
+M	revproxy-procs.tcl
+
+commit 9cd8196fbe0d0aedd41ef6ae98872a0c9e92d468
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2020-12-31
+
+    break overlong lines, reduce verbosity
+
+M	revproxy-procs.tcl
+
+commit 4cf574979070904d2e039aefe58e2dd0411cc04a
+Merge: d368d85 2c12fb1
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2020-12-31
+
+    Merge branch 'master' of http://bitbucket.org/naviserver/revproxy
+
+commit 2c12fb155c728f0aa8b92379b8f4914d2a2e3d3e
+Merge: e0c8865 fa0d518
+Author: David Osborne <david@qcode.co.uk>
+Date:   2020-12-31
+
+    Merged in x-forwarded-for-headers (pull request #2)
+    
+    Whitespace changes
+    
+    Approved-by: Gustaf Neumann
+
+commit d368d85c9313e1c5ccdba0ffddc7acfdcdeff981
+Merge: f4f667c e0c8865
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2020-12-31
+
+    Merge branch 'master' of http://bitbucket.org/naviserver/revproxy
+
+commit f4f667c08233c26a475ae07e144304fc9cc166cf
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2020-12-31
+
+    use exception handling from reading side as well; minor refactoring
+
+M	revproxy-procs.tcl
+
+commit fa0d5188ec77e327fcddf729fb756cb479e15909
+Author: David Osborne <david@qcode.co.uk>
+Date:   2020-12-23
+
+    Whitespace changes
+
+M	revproxy-procs.tcl
+
+commit e0c8865a73438ccab109bb5f6068d01d5b52e314
+Merge: 4c2e6e5 837b15f
+Author: David Osborne <david@qcode.co.uk>
+Date:   2020-12-23
+
+    Merged in x-forwarded-for-headers (pull request #1)
+    
+    preserve existing X-Forwarded-For IPs
+    
+    Approved-by: Gustaf Neumann
+
+commit 837b15feaa953e05c3c4dc7dc4af342656fb87e6
+Author: David Osborne <david@qcode.co.uk>
+Date:   2020-12-23
+
+    preserve existing X-Forwarded-For IPs in cases where the proxy is itself behind a proxy or load balancer
+
+M	revproxy-procs.tcl
+
+commit 4c2e6e5b7b5d7dfe80a134d5b818dbf46305517f
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2020-08-06
+
+    bug fix for potential stale handles
+    
+    handle a rare situation, where after a partial write operation on an
+    upstream connection, the next write operation (when the channel
+    is writable again) fails as well. In this case, the channel to
+    the backend has to be manually closed.
+
+M	revproxy-procs.tcl
+
+commit 839489c0614f698737bb3ab4051761b85dd02794
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2019-10-22
+
+    support request cancellation via url_rewrite_callback (when it returns an empty URL)
+
+M	revproxy-procs.tcl
+
+commit 89159765d30075ceb8abc74d8c0c86c2e87b0f8d
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2019-10-10
+
+    Don't raise error on ECONNRESET during spooling
+
+M	revproxy-procs.tcl
+
+commit 4015c8b3b9ae7e2e7e651632f8e75b3097591c7d
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2019-10-05
+
+    improve logging
+
+M	revproxy-procs.tcl
+
+commit 98857f946154c986f64006c369ce04adc6b3a058
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2019-05-17
+
+    improve documentation
+
+M	README
+M	revproxy-procs.tcl
+
+commit 4c79c9ab38dabe2f399618a46f00fa75a6471c08
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2019-04-09
+
+    make channelCleanup more robust
+
+M	revproxy-procs.tcl
+
+commit 5544906d7946beec9bac1b0fa3b6a78ad94c7614
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2018-08-16
+
+    more improvements for "-sendtimeout 0" (where "ns_connchan write" might write less bytes than desired due to blocking sockets)
+    - implement socket read suspension (required actual NaviServer)
+    - add basic bookkeeping when possible (data to be spooled, already spooled)
+    - improve messages and debug mode
+
+M	revproxy-procs.tcl
+
+commit b5b17994a0f804f7bfe2d7f081f8931697491cd6
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2018-08-13
+
+    explicitly compare after send operations the desired and actual number of sent bytes and resubmit the rest when necessary
+
+M	revproxy-procs.tcl
+
+commit d140d57e01b95d58049dcc1b4db956325c9b17f1
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2018-08-11
+
+    bump version number to 0.11
+
+M	README
+M	revproxy-procs.tcl
+
+commit 2784f00cff5d9c35f5040844c6575f1a622f609b
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2018-08-11
+
+    - add sendtimeout and receivetimeout switches to revproxy::upstream
+    - use per default "-sendtimeout 0" and "write_once" handler, since it gives best behavior on burst behavior (running ffprobe over revproxy)
+    - base handling of blocking write requests on try/POSIX
+
+M	README
+M	revproxy-procs.tcl
+
+commit e61dfa15011812cf3ae52a1f810e0e71c9bf6ccd
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2018-08-09
+
+    added a revproxy::write_once to handle cases, where "-sendtimeout" is 0.
+    Reason: when the wouldblock happens, the timeout causes for the timeout period a halt on the sockcallback handling
+
+M	revproxy-procs.tcl
+
+commit d72975a8efcaa4ab805f5eef41ce310c65ec8372
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2018-05-15
+
+    add backend_reply_callback to ::revproxy::upstream to allow for modifying backend header fields
+    bump version number to 0.10
+
+M	README
+M	revproxy-procs.tcl
+
+commit 3171096e34ce0dae700de9e9d48ec07af2496d48
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2018-05-05
+
+    fix typo, break overlong lines
+
+M	README
+M	revproxy-procs.tcl
+
+commit 813aa912cf3c4aa6f85d06f3f4f7887131478518
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-11-17
+
+     add missing brackets
+
+M	revproxy-procs.tcl
+
+commit 146a7ca4d2efb1efd6a101f9ac98589bd4531666
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-11-15
+
+    update README fiöe
+
+M	README
+
+commit 7be346b35474bb41d8302a594db4c1a68243fb3b
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-11-15
+
+    Add url_rewrite_callback
+
+M	revproxy-procs.tcl
+
+commit ec1530cb0e2172eac3d1f50aa3057cf22b6c75ab
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-04-22
+
+    Fix spelling errors
+
+M	revproxy-procs.tcl
+
+commit 39cd8b36bc422d1789e16e7ce17d469aef2add96
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-04-11
+
+    whitespace changes: use spaces instead of tabs, remove trailing spaces
+
+M	revproxy-procs.tcl
+
+commit 2b497e297d91827ea8cb382bf6a9206f7aef0653
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-04-11
+
+    Generalize error handling, reverse callback registration as suggested by David.
+
+M	revproxy-procs.tcl
+
+commit 6259da869159aa6ef6c115f3b2ef63f36584e2eb
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-04-05
+
+    set the default timeout back to 10 seconds
+
+M	revproxy-procs.tcl
+
+commit 7ee3b570545ad12a7b32d787c378514ed89b9106
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-04-05
+
+    Add timeout handling
+
+M	revproxy-procs.tcl
+
+commit 3f4612e0c5d0494c6a94e18be071e6038cc85978
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-03-12
+
+    - close the connection after every request
+
+M	revproxy-procs.tcl
+
+commit 626fedc48ee42c5702e1d7c6c7854cfabd409b75
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-02-24
+
+    Add support for handling requests with provided content (POST, PUT, ...)
+
+M	revproxy-procs.tcl
+
+commit 7093358090d162c52b8fb5cd7e80c8bb41cca29f
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-11-01
+
+    - make code more defensive (checking channels for existence to avoid race conditions)
+    - bump version number to 0.4
+
+M	revproxy-procs.tcl
+
+commit d626cbfcd2e0886f81b34b26903986cfcbe75486
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-10-28
+
+    - process request replies to be able to rewrite reply header files in proxy (necessary for downgrading from http/1.1 to http/1.0, which is in turn needed for applying regsubs, and to let the filters be fired on subsequent requests)
+
+M	revproxy-procs.tcl
+
+commit a365c832b9be94ea8bd3ea5827f4e57f1176940d
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-10-26
+
+    - add an option to rewrite urls
+    - added a "verbose" variable to ease debugging
+    - bump version number to 0.2
+
+M	README
+M	revproxy-procs.tcl
+
+commit 044909b40d3d374e2bc92cbcd378989bb37e177e
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-10-23
+
+    - initial commit
+
+A	LICENSE
+A	Makefile
+A	README
+A	revproxy-procs.tcl
