@@ -579,7 +579,7 @@ namespace eval ::revproxy {
         if {$continue == 1} {
             if {$nrBytesSent == 0} {
                 ns_log warning "revproxy::write_once: strangely, we could not write," \
-                    "altough the socket was writable" \
+                    "although the socket was writable" \
                     "(still [dict get $status sendbuffer] to send)... trigger again. \nStatus: $status"
                 ns_sleep 1ms
 
