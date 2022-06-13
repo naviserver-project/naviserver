@@ -76,17 +76,6 @@ Date:   2020-12-31
 
     Merge branch 'master' of http://bitbucket.org/naviserver/revproxy
 
-commit 2c12fb155c728f0aa8b92379b8f4914d2a2e3d3e
-Merge: e0c8865 fa0d518
-Author: David Osborne <david@qcode.co.uk>
-Date:   2020-12-31
-
-    Merged in x-forwarded-for-headers (pull request #2)
-    
-    Whitespace changes
-    
-    Approved-by: Gustaf Neumann
-
 commit d368d85c9313e1c5ccdba0ffddc7acfdcdeff981
 Merge: f4f667c e0c8865
 Author: Gustaf Neumann <neumann@wu-wien.ac.at>
@@ -109,17 +98,6 @@ Date:   2020-12-23
     Whitespace changes
 
 M	revproxy-procs.tcl
-
-commit e0c8865a73438ccab109bb5f6068d01d5b52e314
-Merge: 4c2e6e5 837b15f
-Author: David Osborne <david@qcode.co.uk>
-Date:   2020-12-23
-
-    Merged in x-forwarded-for-headers (pull request #1)
-    
-    preserve existing X-Forwarded-For IPs
-    
-    Approved-by: Gustaf Neumann
 
 commit 837b15feaa953e05c3c4dc7dc4af342656fb87e6
 Author: David Osborne <david@qcode.co.uk>
