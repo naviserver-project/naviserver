@@ -1,4 +1,442 @@
 =======================================
+NaviServer 4.99.24, released 2022-06-14
+=======================================
+
+ 77 files changed, 3242 insertions(+), 1100 deletions(-)
+
+New Features:
+
+ - Improved security
+
+   * Added protection against certain attacks in ns_dbquotevalue
+
+     Due to the corrected conversion to external UTF-8 in db-output,
+     new potential attack vectors appeared that were protected earlier
+     via the Tcl-internal 'modified UTF-8'. E.g., the binary null
+     character is stored as an overlong (two-byte) encoding of null
+     (0xc0 0x80), so that an actual (embedded) null byte (0x00) never
+     appears in the string. Due to the conversion, the internal
+     representation is translated back to the binary null
+     character. Embedded null byte characters can lead to
+     non-terminated string literals via ns_dbquotevalue.
+
+     In the updated version of NaviServer, ns_dbquotevalue raises an
+     exception when this occurs. Therefore, the function can be used
+     as well as an input checker (together with "try").
+
+   * Raise an exception when trying to use "ns_urldecode" to
+     produce invalid UTF-8
+
+     Background: several (external) functions expect valid UTF-8 to be
+     passed in and crash if this is not the case. One such example is
+     tDOM. These nasty byte sequences are used more intensively by
+     vulnerability scanners.
+
+     Therefore, ns_urldecode raises now an exception, when it tries to
+     convert to invalid UTF-8. It is still possible to use
+     ns_urldecode to convert to other charsets.
+
+        ns_urldecode -charset iso8859-1 -part path "/mot%C3or"
+
+     When urldecode() is called internally and would produce invalid
+     UTF-8, it truncates the string (and writes a warning to the
+     system log).
+
+     Note that the enw fallback charset
+
+ - Fallback charsets
+
+   In case, a conversion to UTF-8 fails due to invalid byte sequences,
+   one can now provide a fallback charset for a second attempt of
+   decoding this data. This feature is useful for websites that
+   have to deal with requests containing invalid (form) data, typically
+   from legacy applications.
+
+   The fallback charset can be provided as optional parameter
+   "-fallbackcharset" for the command "ns_getform", "ns_parsequery"
+   and "ns_urldecode":
+
+        ns_getform ?-fallbackcharset fallbackcharset? ?charset?
+        ns_parsequery ?-charset charset? ?-fallbackcharset fallbackcharset? ?--? querystring
+        ns_urldecode ?-charset charset? ?-fallbackcharset fallbackcharset? ?-part part? ?--? string
+
+   In case, the parameter is not specified, it can be also be provided
+   to the form-processing commands "ns_getform" and "ns_parsequery" via
+   configuration variables:
+
+     * per-server configuration parameter "formFallbackCharset"
+       (in the section "ns/server/$server"), or as
+
+     * global server configuration parameter "formFallbackCharset"
+       (in the section "ns/parameters").
+
+   The highest precedence has the optional parameter, followed by the
+   per-server configuration parameter and the global configuration
+   parameter.
+
+
+ - Provide a hint when cache-entry is too large for caching
+
+   Background: the size of the entry is typically determined after the
+   execution of a potentially expensive query. During the eval of the
+   command, the cache entry is locked and forces a
+   serialization. However, this means that in these cases the
+   situation is worse than without a cache, where some queries can be
+   executed in parallel. We faced the situation of an expected
+   slowdown of the server with many "create entry collision", where
+   due to application matters, an entry was becoming too large. This
+   situation is not easy to debug, especially in stress
+   situations. The log message would have helped a log to identify the
+   cause.
+
+ - Added support for multibyte numeric entities
+
+   This change supports conversion of numeric entities representing
+   multibyte characters into HTML in "ns_striphtml" and
+   "ns_unquotehtml". Technically, the numeric entities represent
+   Unicode code points, which are transformed into UTF-8
+   serialization.  Every entity represents a single code point; The
+   values can be provided in decimal or hexadecimal notation. Before
+   this change, only single byte numeric entities were
+   supported. ASCII control characters (decimal 0-31) are ignored as
+   before.
+
+ - New and extended commands:
+
+   * ns_unquotehtml /text/
+
+     This command is the inverse operation of "ns_quotehtml". It
+     replaces the named and numeric entities in the provided string
+     with the native values. The command is similar to "ns_striphtml",
+     but "ns_striphtml" removes as well other HTML markup which might
+     not be desired in all cases.
+
+     This change fixes as well a bug with numeric entities (the old
+     code assumed, these are starting directly with a number after the
+     ampersand) and it adds support for numeric entities with
+     hexadecimal values (so far with the same value range as for
+     decimal numeric entities).
+
+   * ns_subnetmatch /subnet/ /ipaddr/
+
+     Determine, if a provided IP address (IPv4 or IPv6) is included in
+     a subnet specification, which is provided in CIDR notation. The
+     command makes internal NaviServer functionality available at the
+     Tcl level.  The regression test was extended to cover the
+     functionality.
+
+     The command ns_subnetmatch validates the provided subnet
+     specification (IPv4 or IPv6 address followed by slash and number
+     of significant bits) and the provided IP address and tests whether
+     the IP address is in the implied range. The command returns a
+     boolean value as the result. When comparing an IPv4 and IPv6
+     address/CIDR specification or vice versa, the result is always
+     false.
+
+     The function can be use when e.g. restricting access to certain
+     functionality to some subnets. The function can be used as well
+     to check, whether an IP address is an IPv4 or IPv6 address.
+
+      Examples:
+        % ns_subnetmatch 137.208.0.0/16 137.208.116.31
+        1
+
+        % ns_subnetmatch 137.208.0.0/16 112.207.16.33
+        0
+
+        % ns_subnetmatch 2001:628:404:74::31/64 [ns_conn peeraddr]
+        ...
+
+        # Is IP address a valid IPv6 address?
+        % ns_subnetmatch ::/0 $ip
+
+        # Is IP address a valid IPv4 address?
+        % ns_subnetmatch 0.0.0.0/0 $ip
+
+   * ns_connchan: Added new subcommand "ns_connchan connect"
+
+     "ns_connchan connect" is similar to "ns_connchan open", except
+     that it does not send an HTTP request (HTTP method, URL, and
+     header fields) but just opens the connection. It can be used for
+     some non-HTTP communication over TCP and TLS over the ns_connchan
+     infrastructure.
+
+   * ns_parseheader, Ns_ParseHeader(): return the field
+     number (index) of the parsed entry
+
+     Previously, there was no explicit feedback, what field of an
+     "ns_set" has been parsed by "ns_parseheader". Now, in success
+     cases, the function returns the index of the new/modified
+     entry. This function made it possible to generalize and simplify
+     the Tcl-level parsing of "multipart/form-data"
+     significantly. Additionally, a new optional argument "-prefix"
+     was added. When specified, it adds the specified prefix to the
+     key.
+
+   * ns_setcookie, ns_deletecookie
+
+     Mozilla and Chrome changed the default value for SameSite of
+     cookies from "none" to "lax" in February and Aug 2020. Cookies
+     that explicitly set SameSite=None must also set the "Secure"
+     attribute.
+
+     In order to mirror this change of policy in NaviServer and to
+     reduce necessary code changes, the default behavior for setting
+     or deleting cookie is now samesite "lax" (when "-samesite" is not
+     explicitly specified).  When trying to set a cookie with
+     "-samesite none" without the "-secure" flag, a warning is
+     generated, and the "-samesite lax" is assumed, since major
+     browsers announced that these will reject these cookies soon.
+
+
+API changes:
+
+ - ns_getform, ns_parsequery, and ns_urldecode
+
+   New optional parameter "-fallbackcharset". See above for details.
+
+- ns_parsequery: added option "-charset" and raise exception on failure
+
+   The new option "-charset" can be used to add a charset for the
+   result encoding of the passed-in HTTP query.
+
+   In case the charset is UTF8 (default on most platforms), and the
+   content is invalid UTF-8, an exception is raised (similar to
+   ns_urldecode). This can be addressed by parameter
+   "-fallbackcharset" (See above for details).
+
+ - ns_deletecookie: added support "-samesite" flag for ns_deletecookie.
+
+   Since "ns_deletecookie" sets internally a cookie, some browsers
+   might ignore in the future certain cookie requests (e.g. when
+   "-samesite" is not used or set to "none" on non-secure connections).
+
+ - ns_trim enhancements:
+   The new option "-prefix ..." can be used to strip a string
+   (such as ">> ") from every line starting with it.
+
+ - Potential incompatibilities
+    * "ns_urldecode" and "ns_getform" will raise an exception
+      when invalid UTF-8 data is tried to be interpreted as UTF-8
+      and no fallback charset is provided. Invalid UTF-8 data
+      causes trouble with external components such as
+      Tdom or databases and opens vulnerability vectors.
+
+
+Performance Improvements:
+
+ - Improve "cachingmode none"
+
+    "ns_cache_eval" works as follows:
+     1) create a temporary cache entry for the key
+     2) lock the cache-key (to avoid multiple parallel executions)
+     3) execute the query
+     4) store the result for the entry on success
+     5) unlock the cache-key
+
+    Previously, "cachingmode none" was simply avoiding to store the cached
+    values (step 4), but was serializing calls for a cache key as in
+    default caching modes. This was leading easily to cache entry collisions.
+
+    Now, "cachingmode none" is avoiding all steps 1..5 (therefore
+    no serialization and no cache collisions).
+
+    See also: https://openacs.org/forums/message-view?message_id=5665480
+
+Bug Fixes:
+
+  - Improved robustness of "ns_parseurl" for handling query parameters
+    and fragments for partial URLs
+
+    * fix over-eager collecting of URL components in tail
+    * extended regression test
+
+  - Fixed Ns_ResetFileVec NOT to invalidate residual Ns_FileVec
+    buffer.q (caused problems under Windows).
+
+  - ns_striphtml: Fixed probably very old bug for markup immediately
+    after an entity
+
+    This bug fix handles cases, where e.g. two entities are in a text
+    right next to each other, like e.g. in the string
+    "hello&lt;&gt;world". The old code was correctly decoding the
+    first entity, but output the second one literally.
+
+  - Fixed compilation for C++, which was introduced in 4.99.23
+    to avoid usage of reserved C identifiers
+
+    Many thanks to Brendan Graves for reporting the problem.
+
+  - Added missing named entities "apos" and "quote". These have been
+    missing since ages.
+
+  - Provide an error message when the configured locale is not
+    installed on the host.
+
+    This change causes NaviServer to abort, when the configured locale
+    is not installed on the host. Typically, this locale is e.g. used
+    by "ns_strcoll" for determining the default collating order. The
+    configuration file for the regression testing sets the environment
+    variable LANG to "en_US.UTF-8". This means that for running the
+    stock regression test, this locale must be installed on the
+    system. Before this change, NaviServer could crash at runtime when
+    trying to access the default locale (as e.g. in "ns_strcoll")
+
+  - Added support for "_charset_" field for default charset in
+    multipart/form-data (RFC 7578, section 4.6)
+
+    RFC 7578 (July 2015) defines an optional "_charset_" entry in the
+    form (typically provided as hidden form field) to specify the
+    charset of text entries. This is now supported as well by
+    NaviServer. This is apparently a seldom used feature.
+
+Documentation improvements:
+---------------------------
+
+ - Improved the following man pages:
+
+       doc/src/manual/admin-install.man
+       doc/src/naviserver/ns_conn.man
+       doc/src/naviserver/ns_connchan.man
+       doc/src/naviserver/ns_cookie.man
+       doc/src/naviserver/ns_crypto.man
+       doc/src/naviserver/ns_getform.man
+       doc/src/naviserver/ns_http.man
+       doc/src/naviserver/ns_httptime.man
+       doc/src/naviserver/ns_log.man
+       doc/src/naviserver/ns_parseheader.man
+       doc/src/naviserver/ns_parsequery.man
+       doc/src/naviserver/ns_parseurl.man
+       doc/src/naviserver/ns_rlimit.man
+       doc/src/naviserver/ns_urldecode.man
+       doc/src/naviserver/ns_urlencode.man
+       doc/src/naviserver/ns_valid_utf8.man
+       doc/src/naviserver/textutil-cmds.man
+       nsdb/doc/mann/ns_db.man
+
+
+Configuration Changes:
+----------------------
+
+ - Updated OpenACS sample configuration file
+    * reflect recent Oracle (tested with Oracle 19c)
+
+    * added documentation for "StaticCSP", "CookieNamespace",
+      "NsShutdownWithNonZeroExitCode", "LogIncludeUserId"
+
+
+Code Changes:
+-------------
+
+ - Set Tcl error code "NS_INVALID_UTF8" for errors due to invalid UTF-8
+
+ - Changed Tcl error code "NSCACHE" to "NS_CACHE". Now all
+   NaviServer-specific error codes start with the prefix "NS_".
+
+ - Extended regression test
+
+ - Improve Tcl version compatibility
+
+   * Removed -DTCL_NO_DEPRECATED from default CFLAGS to cope with
+     recent deprecation in Tcl 8.7a5
+
+ - Code Cleanup
+     . Do not declare reserved C identifiers
+     . Improved type cleanness
+     . Refactored file-based multipart form parser to make logic
+       explicit (Tcl code)
+
+ - Improved comments, fixed typos
+
+ - Marked "ns_set_precision" as deprecated, since there is no
+   reason why not setting the Tcl variable ::tcl_precision directly.
+
+ - Don't hard-wire port for HTTPS testing to 8443
+
+   The setup code looks now for a free port for HTTPS connections
+   starting with 8443, and remembers the free port in the
+   configuration value "tls_listenport" and "tls_listenurl". This is
+   now fully analogous to the setup of the plain HTTP testing (setting
+   "listenport" and "listenurl")
+
+ - Silence warning with recent versions of gcc when certain values of
+   _FORTIFY_SOURCE/-Wstringop-overflow are set.
+
+
+Changes in NaviServer Modules:
+==============================
+
+ 22 files changed, 8447 insertions(+), 1429 deletions(-)
+
+ - general: Updated obsolete ChangeLog files and
+   replaced these by automatically generated ones.
+
+nsdbpg:
+-------
+
+ - Raise exception when a value for a bind variable contains a NUL
+   character. This value is explicitly forbidden in text strings
+   passed to PostgreSQL.
+
+ - Let "ns_pg" report available subcommands even when handle is not
+   specified.  This makes the command compatible with the "icanuse"
+   feature in OpenACS.
+
+
+nsoracle:
+---------
+ - Added support for output columns of type SQLT_TIMESTAMP or SQLT_TIMESTAMP_TZ
+
+   This change fixes a bug, where SQL queries of the form
+
+         SELECT TO_TIMESTAMP(sysdate) FROM dual
+
+   lead to errors for the form:
+
+         Database operation "getrow" failed (exception 1406, "nsoracle.c:3659:Ns_OracleGetRow:
+         error in `OCIStmtFetch ()': ORA-01406: fetched column value was truncated
+
+   The driver needs for several output types special rules, where the
+   timestamp cases were not supported so far. It is also recommended
+   to set the according environment variables specifying the output
+   format in the configuration server of NaviServer, such as e.g.
+
+        set ::env(NLS_TIMESTAMP_FORMAT) "YYYY-MM-DD HH24:MI:SS.FF6"
+        set ::env(NLS_TIMESTAMP_TZ_FORMAT) "YYYY-MM-DD HH24:MI:SS.FF6 TZH:TZM"
+
+   For testing in you local Oracle installation, you might test the
+   output formats (and the required sizes with the following snippet
+   for sqlplus:
+
+       COLUMN localtimestamp format a40
+       COLUMN systimestamp format a40
+       COLUMN ts_bytes format a80
+
+       alter session set nls_timestamp_format='YYYY-MM-DD HH24:MI:SS.FF6';
+       select localtimestamp, length(localtimestamp), dump(localtimestamp) ts_bytes from dual;
+
+       alter session set nls_timestamp_tz_format='YYYY-MM-DD HH24:MI:SS.FF6 TZH:TZM';
+       select systimestamp, length(systimestamp), dump(systimestamp) ts_bytes from dual;
+
+       alter session set nls_timestamp_tz_format='YYYY-MM-DD HH24:MI:SS.FF6 TZR';
+       select systimestamp, length(systimestamp), dump(systimestamp) ts_bytes from dual;
+
+ - Code cleanup, ensure silent compilation with standard compiler settings
+ - Improved spelling
+
+ECDSA
+letsencrypt:
+------------
+ - Added option to produce certificates with ECDSA
+
+   Prior to this change, all certificates were using RSA keys. Since a
+   while, keys based on elliptic curves became the preference of
+   letsencrypt.
+
+ - Improved spelling
+
+
+=======================================
 NaviServer 4.99.23, released 2021-12-29
 =======================================
 
