@@ -910,7 +910,7 @@ PrebindSockets(const char *spec)
 
     for (; line != NULL; line = next) {
         const char     *proto;
-        char           *addr, *p, *str = NULL;
+        char           *addr, *p, *str = NULL, *end;
         unsigned short  port = 0u;
         long            reuses;
         struct Prebind *pPtr;
@@ -952,7 +952,7 @@ PrebindSockets(const char *spec)
          *    0/icmp[/count]
          */
         {
-            char *portStr, *end = line;
+            char *portStr;
             bool  hostParsedOk = Ns_HttpParseHost2(line, NS_TRUE, &addr, &portStr, &end);
 
             if (hostParsedOk && line != end && addr != portStr ) {
