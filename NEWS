@@ -42,7 +42,8 @@ New Features:
      UTF-8, it truncates the string (and writes a warning to the
      system log).
 
-     Note that the enw fallback charset
+     Note that the new fallback charset feature might avoid such
+     exceptions (see below).
 
  - Fallback charsets
 
@@ -1708,7 +1709,7 @@ Performance improvements:
        nsv:2:openacs.org    6       2.23M   16
        nsv:5:openacs.org    3       2.16M   0
 
-     On more busy sites, the improved scalability si much higher.
+     On more busy sites, the improved scalability is much higher.
 
    * rwlocks are better in cases, where the number of readers is
      significantly higher than the number of writers.  So, it has to

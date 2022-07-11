@@ -121,7 +121,7 @@ The result is a byte string of the decrypted input (no dict).
      ]
 
 Generate an EC pemfile without the need of an external command.
-If no [option -name] is provided (name of the eliptic curve),
+If no [option -name] is provided (name of the elliptic curve),
 [term prime256v1] is assumed. An other popular candidate is
 [term secp384r1]. The [option "-pem"] denotes the name
 of the output file, which is in PEM format.

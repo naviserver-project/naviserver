@@ -61,7 +61,7 @@ static const char *SetGetValueCmp(const Ns_Set *set, const char *key, const char
  *
  * Ns_SetIUpdate --
  *
- *      Remove a tuple and re-add it (case insensitive).
+ *      Update tuple or add it (case insensitive)
  *
  * Results:
  *      None.
@@ -75,11 +75,17 @@ static const char *SetGetValueCmp(const Ns_Set *set, const char *key, const char
 void
 Ns_SetIUpdate(Ns_Set *set, const char *key, const char *value)
 {
+    int index;
+
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    Ns_SetIDeleteKey(set, key);
-    (void)Ns_SetPut(set, key, value);
+    index = Ns_SetIFind(set, key);
+    if (index != -1) {
+        Ns_SetPutValue(set, (size_t)index, value);
+    } else {
+        (void)Ns_SetPut(set, key, value);
+    }
 }
 
 
@@ -88,7 +94,7 @@ Ns_SetIUpdate(Ns_Set *set, const char *key, const char *value)
  *
  * Ns_SetUpdate --
  *
- *      Remove a tuple and re-add it.
+ *      Update tuple or add it (case sensitive)
  *
  * Results:
  *      None.
@@ -98,15 +104,22 @@ Ns_SetIUpdate(Ns_Set *set, const char *key, const char *value)
  *
  *----------------------------------------------------------------------
  */
-
 void
 Ns_SetUpdate(Ns_Set *set, const char *key, const char *value)
 {
+    int index;
+
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    Ns_SetDeleteKey(set, key);
-    (void)Ns_SetPut(set, key, value);
+    index = Ns_SetFind(set, key);
+
+    if (index != -1) {
+        Ns_SetPutValue(set, (size_t)index, value);
+    } else {
+        (void)Ns_SetPut(set, key, value);
+    }
+
 }
 
 
@@ -180,7 +193,7 @@ Ns_SetFree(Ns_Set *set)
  *
  * Ns_SetPut --
  *
- *      Insert a tuple into an existing set.
+ *      Insert (add) a tuple into an existing set.
  *
  * Results:
  *      The index number of the new tuple.

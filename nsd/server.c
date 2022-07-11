@@ -258,7 +258,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     servPtr->opts.realm = Ns_ConfigString(path, "realm", server);
     servPtr->opts.modsince = Ns_ConfigBool(path, "checkmodifiedsince", NS_TRUE);
     servPtr->opts.noticedetail = Ns_ConfigBool(path, "noticedetail", NS_TRUE);
-    servPtr->opts.errorminsize = (int)Ns_ConfigMemUnitRange(path, "errorminsize", 514, 0, INT_MAX);
+    servPtr->opts.errorminsize = (int)Ns_ConfigMemUnitRange(path, "errorminsize", NULL, 514, 0, INT_MAX);
     servPtr->filter.rwlocks = Ns_ConfigBool(path, "filterrwlocks", NS_TRUE);
 
     servPtr->opts.hdrcase = Preserve;
@@ -283,7 +283,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
            server);
 #endif
     servPtr->compress.level = Ns_ConfigIntRange(path, "compresslevel", 4, 1, 9);
-    servPtr->compress.minsize = (int)Ns_ConfigMemUnitRange(path, "compressminsize", 512, 0, INT_MAX);
+    servPtr->compress.minsize = (int)Ns_ConfigMemUnitRange(path, "compressminsize", NULL, 512, 0, INT_MAX);
     servPtr->compress.preinit = Ns_ConfigBool(path, "compresspreinit", NS_FALSE);
 
     /*
@@ -321,7 +321,8 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
      */
 
     CreatePool(servPtr, NS_EMPTY_STRING);
-    (void) Ns_ConfigSectionPath(&set, server, NULL, "pools", (char *)0L);
+    set = Ns_ConfigGetSection(Ns_ConfigGetPath(server, NULL, "pools",  (char *)0L));
+
     for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
         CreatePool(servPtr, Ns_SetKey(set, i));
     }
@@ -392,7 +393,7 @@ CreatePool(NsServer *servPtr, const char *pool)
     ConnPool   *poolPtr;
     Conn       *connBufPtr, *connPtr;
     int         n, maxconns, lowwatermark, highwatermark, queueLength;
-    const char *path;
+    const char *section;
 
     NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(pool != NULL);
@@ -400,9 +401,10 @@ CreatePool(NsServer *servPtr, const char *pool)
     poolPtr = ns_calloc(1u, sizeof(ConnPool));
     poolPtr->pool = pool;
     poolPtr->servPtr = servPtr;
+
     if (*pool == '\0') {
         /* NB: Default options from pre-4.0 ns/server/server1 section. */
-        path = Ns_ConfigSectionPath(NULL, servPtr->server, NULL, (char *)0L);
+        section = Ns_ConfigSectionPath(NULL, servPtr->server, NULL, (char *)0L);
         servPtr->pools.defaultPtr = poolPtr;
     } else {
         Ns_Set *set;
@@ -410,10 +412,11 @@ CreatePool(NsServer *servPtr, const char *pool)
         /*
          * Map requested method/URL's to this pool.
          */
-
-        path = Ns_ConfigSectionPath(&set, servPtr->server, NULL, "pool", pool, (char *)0L);
+        section = Ns_ConfigGetPath(servPtr->server, NULL, "pool", pool,  (char *)0L);
+        set = Ns_ConfigGetSection2(section, NS_FALSE);
         for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
             if (strcasecmp(Ns_SetKey(set, i), "map") == 0) {
+                NsConfigMarkAsRead(section, i);
                 NsMapPool(poolPtr, Ns_SetValue(set, i), 0u);
             }
         }
@@ -435,7 +438,7 @@ CreatePool(NsServer *servPtr, const char *pool)
      * if necessary.
      */
 
-    maxconns = Ns_ConfigIntRange(path, "maxconnections", 100, 1, INT_MAX);
+    maxconns = Ns_ConfigIntRange(section, "maxconnections", 100, 1, INT_MAX);
     poolPtr->wqueue.maxconns = maxconns;
     connBufPtr = ns_calloc((size_t) maxconns, sizeof(Conn));
 
@@ -445,24 +448,24 @@ CreatePool(NsServer *servPtr, const char *pool)
      * garbage collection.
      */
     poolPtr->threads.connsperthread =
-        Ns_ConfigIntRange(path, "connsperthread", 10000, 0, INT_MAX);
+        Ns_ConfigIntRange(section, "connsperthread", 10000, 0, INT_MAX);
 
     poolPtr->threads.max =
-        Ns_ConfigIntRange(path, "maxthreads", 10, 0, maxconns);
+        Ns_ConfigIntRange(section, "maxthreads", 10, 0, maxconns);
     poolPtr->threads.min =
-        Ns_ConfigIntRange(path, "minthreads", 1, 1, poolPtr->threads.max);
+        Ns_ConfigIntRange(section, "minthreads", 1, 1, poolPtr->threads.max);
 
-    Ns_ConfigTimeUnitRange(path, "threadtimeout", "2m", 0, 0, INT_MAX, 0,
+    Ns_ConfigTimeUnitRange(section, "threadtimeout", "2m", 0, 0, INT_MAX, 0,
                            &poolPtr->threads.timeout);
 
-    poolPtr->wqueue.rejectoverrun = Ns_ConfigBool(path, "rejectoverrun", NS_FALSE);
-    Ns_ConfigTimeUnitRange(path, "retryafter", "5s", 0, 0, INT_MAX, 0,
+    poolPtr->wqueue.rejectoverrun = Ns_ConfigBool(section, "rejectoverrun", NS_FALSE);
+    Ns_ConfigTimeUnitRange(section, "retryafter", "5s", 0, 0, INT_MAX, 0,
                            &poolPtr->wqueue.retryafter);
 
     poolPtr->rate.defaultConnectionLimit =
-        Ns_ConfigIntRange(path, "connectionratelimit", -1, -1, INT_MAX);
+        Ns_ConfigIntRange(section, "connectionratelimit", -1, -1, INT_MAX);
     poolPtr->rate.poolLimit =
-        Ns_ConfigIntRange(path, "poolratelimit", -1, -1, INT_MAX);
+        Ns_ConfigIntRange(section, "poolratelimit", -1, -1, INT_MAX);
 
     if (poolPtr->rate.poolLimit != -1) {
         NsWriterBandwidthManagement = NS_TRUE;
@@ -482,8 +485,8 @@ CreatePool(NsServer *servPtr, const char *pool)
 
     queueLength = maxconns - poolPtr->threads.max;
 
-    highwatermark = Ns_ConfigIntRange(path, "highwatermark", 80, 0, 100);
-    lowwatermark =  Ns_ConfigIntRange(path, "lowwatermark", 10, 0, 100);
+    highwatermark = Ns_ConfigIntRange(section, "highwatermark", 80, 0, 100);
+    lowwatermark =  Ns_ConfigIntRange(section, "lowwatermark", 10, 0, 100);
     poolPtr->wqueue.highwatermark = (queueLength * highwatermark) / 100;
     poolPtr->wqueue.lowwatermark  = (queueLength * lowwatermark) / 100;
 

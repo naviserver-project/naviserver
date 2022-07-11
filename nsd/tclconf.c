@@ -158,7 +158,7 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
                 }
             }
 
-            if (status == TCL_OK && doSet != 0) {
+            if (status == TCL_OK && doSet != 0 && !nsconf.state.started) {
                 /* make setting queryable */
 
                 Ns_Set *set = Ns_ConfigCreateSection(section);
@@ -199,18 +199,37 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 int
 NsTclConfigSectionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int     result;
-
-    if (unlikely((objc != 2))) {
+    int         result = TCL_OK;
+    char       *section, filter = '\0';
+    static Ns_ObjvTable filterset[] = {
+        {"unread",    UCHAR('u')},
+        {"defaulted", UCHAR('d')},
+        {"defaults",  UCHAR('s')},
+        {NULL,        0u}
+    };
+    Ns_ObjvSpec opts[] = {
+        {"-filter",    Ns_ObjvIndex,  &filter,      filterset},
+        {"--",     Ns_ObjvBreak, NULL,      NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"section",  Ns_ObjvString, &section, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    if (unlikely(Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK)) {
         result = TCL_ERROR;
-        Tcl_WrongNumArgs(interp, 1, objv, "section");
     } else {
         Ns_Set *set;
 
-        result = TCL_OK;
-        set = Ns_ConfigGetSection(Tcl_GetString(objv[1]));
+        if (filter != '\0') {
+            set = NsConfigSectionGetFiltered(section, filter);
+        } else {
+            set = Ns_ConfigGetSection(section);
+        }
         if (set != NULL) {
-            result = Ns_TclEnterSet(interp, set, NS_TCL_SET_STATIC);
+            result = Ns_TclEnterSet(interp, set,
+                                    filter == 'd' || filter == 'u' ?
+                                    NS_TCL_SET_DYNAMIC : NS_TCL_SET_STATIC);
         }
     }
     return result;
