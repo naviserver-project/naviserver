@@ -86,7 +86,7 @@ void
 NsConfigProgress(void)
 {
     progressMinSize = (size_t)
-        Ns_ConfigMemUnitRange(NS_GLOBAL_CONFIG_PARAMETERS, "progressminsize", 0, 0, INT_MAX);
+        Ns_ConfigMemUnitRange(NS_GLOBAL_CONFIG_PARAMETERS, "progressminsize", NULL, 0, 0, INT_MAX);
 
     if (progressMinSize > 0u) {
         Ns_SlsAlloc(&slot, ResetProgress);

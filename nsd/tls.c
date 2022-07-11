@@ -68,7 +68,7 @@
  */
 typedef struct {
     int            timeout;
-    char          *respin;     /* File to load OCSP Response from (or NULL if no file) */
+    //char          *respin;     /* File to load OCSP Response from (or NULL if no file) */
     int            verbose;
     OCSP_RESPONSE *resp;
     Ns_Time        expire;
@@ -1510,7 +1510,7 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
 
 #if OPENSSL_VERSION_NUMBER > 0x00908070 && !defined(HAVE_OPENSSL_3) && !defined(OPENSSL_NO_EC)
             /*
-             * Generate key for eliptic curve cryptography (potentially used
+             * Generate key for elliptic curve cryptography (potentially used
              * for Elliptic Curve Digital Signature Algorithm (ECDSA) and
              * Elliptic Curve Diffie-Hellman (ECDH).
              *

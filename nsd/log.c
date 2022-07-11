@@ -421,6 +421,9 @@ NsConfigLog(void)
         if (likely(result == TCL_OK)) {
             prefixIntensity = (LogColorIntensity)idx;
         }
+    } else {
+        (void) Ns_ConfigString(path, "logprefixcolor", NS_EMPTY_STRING);
+        (void) Ns_ConfigString(path, "logprefixintensity", NS_EMPTY_STRING);
     }
 
     maxbackup = Ns_ConfigIntRange(path, "logmaxbackup", 10, 0, 999);

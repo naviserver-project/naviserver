@@ -182,9 +182,9 @@ ConfigServerAdp(const char *server)
     servPtr->adp.startpage = Ns_ConfigString(path, "startpage", NULL);
     servPtr->adp.debuginit = Ns_ConfigString(path, "debuginit", "ns_adp_debuginit");
     servPtr->adp.tracesize = Ns_ConfigInt(path, "tracesize", 40);
-    servPtr->adp.cachesize = (size_t)Ns_ConfigMemUnitRange(path, "cachesize", 5000 * 1024,
+    servPtr->adp.cachesize = (size_t)Ns_ConfigMemUnitRange(path, "cachesize", "5MB", 5000 * 1024,
                                                            1000 * 1024, INT_MAX);
-    servPtr->adp.bufsize   = (size_t)Ns_ConfigMemUnitRange(path, "bufsize",   1024 * 1000,
+    servPtr->adp.bufsize   = (size_t)Ns_ConfigMemUnitRange(path, "bufsize",  "1MB",  1024 * 1000,
                                                            100 * 1024, INT_MAX);
     servPtr->adp.defaultExtension = Ns_ConfigString(path, "defaultextension", NULL);
 

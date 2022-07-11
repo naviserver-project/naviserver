@@ -1615,6 +1615,9 @@ NS_EXTERN void NsStopSpoolers(void);
 NS_EXTERN Ns_ReturnCode NsPreBind(const char *args, const char *file);
 NS_EXTERN void NsClosePreBound(void);
 NS_EXTERN const char *NsConfigRead(const char *file) NS_GNUC_NONNULL(1);
+NS_EXTERN Ns_Set *NsConfigSectionGetFiltered(const char *section, char filter) NS_GNUC_NONNULL(1);
+NS_EXTERN void NsConfigMarkAsRead(const char *section, size_t i) NS_GNUC_NONNULL(1);
+
 NS_EXTERN void NsConfigEval(const char *config, const char *configFileName,
                             int argc, char *const *argv, int optionIndex)
     NS_GNUC_NONNULL(1);

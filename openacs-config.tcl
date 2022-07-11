@@ -98,7 +98,6 @@ if { $database eq "oracle" } {
 #---------------------------------------------------------------------
 # If debug is false, all debugging will be turned off.
 set debug false
-set dev   false
 set verboseSQL false
 
 set max_file_upload_mb        20
@@ -193,11 +192,11 @@ ns_section ns/parameters {
     ns_param	logprefixcolor	green    ;# black, red, green, yellow, blue, magenta, cyan, gray, default
     # ns_param  logprefixintensity normal;# bright or normal
     #
-    # Severities to be logged (can be controlled at runtime via ns_logctl)
-    #ns_param	logdebug	$debug    ;# debug messages
-    ns_param	logdev		$dev      ;# development message
-    ns_param    lognotice       true      ;# informational messages
-    #ns_param   sanitizelogfiles 2        ;# default: 2; 0: none, 1: full, 2: human-friendly
+    # Severities to be logged (can be better controlled (also at runtime) via ns_logctl)
+    #ns_param	logdebug	trueug   ;# debug messages
+    #ns_param	logdev		true     ;# development message
+    #ns_param   lognotice       true     ;# informational messages
+    #ns_param   sanitizelogfiles 2       ;# default: 2; 0: none, 1: full, 2: human-friendly
 
     # ns_param	mailhost            localhost
 
@@ -246,10 +245,10 @@ ns_section ns/parameters {
     #
     # DNS configuration parameters
     #
-    ns_param dnscache true          ;# default: true
-    ns_param dnswaittimeout 5s      ;# time for waiting for a DNS reply; default: 5s
-    ns_param dnscachetimeout 1h     ;# time to keep entries in cache; default: 1h
-    ns_param dnscachemaxsize 500kB  ;# max size of DNS cache in memory units; default: 500kB
+    #ns_param dnscache true          ;# default: true
+    #ns_param dnswaittimeout 5s      ;# time for waiting for a DNS reply; default: 5s
+    #ns_param dnscachetimeout 60m     ;# time to keep entries in cache; default: 1h
+    ns_param dnscachemaxsize 500KB  ;# max size of DNS cache in memory units; default: 500KB
 
     # Running behind proxy? Used also by OpenACS...
     ns_param reverseproxymode	$proxy_mode

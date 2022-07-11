@@ -1056,13 +1056,15 @@ Ns_ConfigWideInt(const char *section, const char *key, Tcl_WideInt defaultValue)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Tcl_WideInt
-Ns_ConfigWideIntRange(const char *section, const char *key, Tcl_WideInt defaultValue,
-                  Tcl_WideInt minValue, Tcl_WideInt maxValue)
+Ns_ConfigWideIntRange(const char *section, const char *key,
+                      Tcl_WideInt defaultValue,
+                      Tcl_WideInt minValue, Tcl_WideInt maxValue)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Tcl_WideInt
-Ns_ConfigMemUnitRange(const char *section, const char *key, Tcl_WideInt defaultValue,
-                  Tcl_WideInt minValue, Tcl_WideInt maxValue)
+Ns_ConfigMemUnitRange(const char *section, const char *key,
+                      const char *defaultString, Tcl_WideInt defaultValue,
+                      Tcl_WideInt minValue, Tcl_WideInt maxValue)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN const char *
@@ -1098,6 +1100,10 @@ Ns_ConfigGetSections(void);
 
 NS_EXTERN Ns_Set *
 Ns_ConfigGetSection(const char *section)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN Ns_Set *
+Ns_ConfigGetSection2(const char *section, bool markAsRead)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_Set *

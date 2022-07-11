@@ -135,15 +135,31 @@ test ns_config-6.1 {sections} -body {
 
 test ns_config-7.1 {section} -body {
     ns_configsection
-} -returnCodes error -result {wrong # args: should be "ns_configsection section"}
+} -returnCodes error -result {wrong # args: should be "ns_configsection ?-filter filter? ?--? section"}
 
 test ns_config-7.2 {section} -body {
     ns_set array [ns_configsection ns/testconfig]
 } -match glob -result {trueval yes intval 42 *}
 
 test ns_config-7.3 {section missing} -body {
-    ns_configsection does/not/exist
+    ns_configsection section/does/not/exist
 } -result {}
+
+test ns_config-7.4.0 {section} -body {
+    ns_set array [ns_configsection -filter "" ns/testconfig]
+} -returnCodes {error ok} -result {bad option "": must be unread, defaulted, or defaults}
+
+test ns_config-7.4.1 {section} -body {
+    ns_set array [ns_configsection -filter "unread" ns/testconfig]
+} -returnCodes {error ok} -result {trueval yes intval 42 notbool this-is-not-a-bool notint this-is-not-an-int CamelCase ok wideint 12345678900 isTestServer true}
+
+test ns_config-7.4.2 {section} -body {
+    ns_set size [ns_configsection -filter "defaulted" ns/server/testvhost]
+} -returnCodes {error ok} -result {21}
+
+test ns_config-7.4.3 {section} -body {
+    ns_set size [ns_configsection -filter "defaults" ns/server/testvhost]
+} -returnCodes {error ok} -result {23}
 
 
 test ns_config-8.1 {missing -set} -body {
