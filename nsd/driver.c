@@ -2383,7 +2383,7 @@ DriverThread(void *arg)
                 NsEnsureRunningConnectionThreads(servPtr, NULL);
 
             } else {
-                Ns_Set *servers = Ns_ConfigCreateSection("ns/servers");
+                Ns_Set *servers = Ns_ConfigGetSection("ns/servers");
                 size_t  j;
 
                 /*

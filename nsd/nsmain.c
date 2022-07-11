@@ -653,7 +653,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      * so all default config values will be used for that server
      */
 
-    servers = Ns_ConfigCreateSection("ns/servers");
+    servers = Ns_ConfigGetSection("ns/servers");
     if (Ns_SetSize(servers) == 0u) {
         (void)Ns_SetPut(servers, "default", "Default NaviServer");
     }
