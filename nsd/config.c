@@ -64,7 +64,7 @@ static Tcl_ObjCmdProc SectionObjCmd;
 static Tcl_ObjCmdProc ParamObjCmd;
 
 static void ConfigMark(Section *sectionPtr, size_t i, ValueOperation op)
-    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+    NS_GNUC_NONNULL(1);
 
 static Section* GetSection(const char *section, bool create)
     NS_GNUC_NONNULL(1);
