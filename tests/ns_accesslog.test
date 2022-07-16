@@ -16,6 +16,9 @@ test ns_log-1.2 {basic syntax} -body {
     ns_accesslog ?
 } -returnCodes error -result {bad option "?": must be rollfmt, maxbackup, maxbuffer, extendedheaders, flags, file, or roll}
 
+test ns_log-1.3 {extendedheaders} -body {
+    ns_accesslog extendedheaders Host
+} -returnCodes ok -result {Host}
 
 
 cleanupTests

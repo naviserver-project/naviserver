@@ -359,10 +359,10 @@ ParseExtendedHeaders(Log *logPtr, const char *str)
                 ns_free((char *)logPtr->extendedHeaders);
             }
             if (logPtr->requestHeaders != NULL) {
-                ns_free((char *)logPtr->requestHeaders);
+                Tcl_Free((char *) logPtr->requestHeaders);
             }
             if (logPtr->responseHeaders != NULL) {
-                ns_free((char *)logPtr->responseHeaders);
+                Tcl_Free((char *)logPtr->responseHeaders);
             }
             logPtr->extendedHeaders = ns_strdup(str);
 
