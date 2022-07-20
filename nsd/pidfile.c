@@ -139,7 +139,7 @@ GetFile(void)
         path = Tcl_NewStringObj(ds.string, ds.length);
 
         set = Ns_ConfigCreateSection(NS_GLOBAL_CONFIG_PARAMETERS);
-        Ns_SetUpdate(set, "pidfile", ds.string);
+        Ns_SetUpdateSz(set, "pidfile", 7, ds.string, ds.length);
 
         Ns_DStringFree(&ds);
     } else {

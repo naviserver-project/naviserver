@@ -1750,7 +1750,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
             Tcl_SetResult(interp, itPtr->nsconn.auth, TCL_STATIC);
         } else {
             if (connPtr->auth == NULL) {
-                connPtr->auth = Ns_SetCreate(NULL);
+                connPtr->auth = Ns_SetCreate(NS_SET_NAME_AUTH);
             }
             if (unlikely(Ns_TclEnterSet(interp, connPtr->auth, NS_TCL_SET_STATIC) != TCL_OK)) {
                 result = TCL_ERROR;

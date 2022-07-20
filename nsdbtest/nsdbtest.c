@@ -45,7 +45,7 @@ static Ns_ReturnCode  OpenDb(Ns_DbHandle *handle) NS_GNUC_NONNULL(1);
 static Ns_ReturnCode  CloseDb(Ns_DbHandle *handle) NS_GNUC_NONNULL(1);
 static Ns_Set        *BindRow(Ns_DbHandle *handle) NS_GNUC_NONNULL(1);
 static int            Exec(const Ns_DbHandle *handle, char *sql) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static int            GetRow(Ns_DbHandle *handle, const Ns_Set *row) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static int            GetRow(Ns_DbHandle *handle, Ns_Set *row) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static Ns_ReturnCode  Flush(Ns_DbHandle *handle) NS_GNUC_NONNULL(1);
 static Ns_ReturnCode  ResetHandle(Ns_DbHandle *handle) NS_GNUC_NONNULL(1);
 
@@ -181,7 +181,7 @@ CloseDb(Ns_DbHandle *UNUSED(handle))
 static Ns_Set *
 BindRow(Ns_DbHandle *handle)
 {
-    (void)Ns_SetPut(handle->row, "column1", NULL);
+    (void)Ns_SetPutSz(handle->row, "column1", 7, NULL, 0);
     handle->fetchingRows = NS_FALSE;
 
     return handle->row;
@@ -242,12 +242,12 @@ Exec(const Ns_DbHandle *handle, char *sql)
  */
 
 static int
-GetRow(Ns_DbHandle *UNUSED(handle), const Ns_Set *row)
+GetRow(Ns_DbHandle *UNUSED(handle), Ns_Set *row)
 {
     int result;
 
     if (Ns_SetValue(row, 0) == NULL) {
-        Ns_SetPutValue(row, 0u, "ok");
+        Ns_SetPutValueSz(row, 0u, "ok", 2);
         result = (int)NS_OK;
     } else {
         result = (int)NS_END_DATA;

@@ -177,10 +177,11 @@ Returns the number of fields in the set.
 
 [call [cmd "ns_set split"] [arg setId] [opt [arg splitChar]]]
 
-Splits one set into multiple sets based on the splitChar as described below and
-returns a Tcl list of IDs for the newly-allocated sets.  It assumes that the
-keys in the source setId contain a specific character (splitChar) that can be used
-to separate the name of a new set and the key in the new set.  The default splitChar is a period ".".
+Splits one set into multiple sets based on the splitChar as described
+below, and returns a Tcl list of IDs for the newly-allocated sets.  It
+assumes that the keys in the source setId contain a specific character
+(splitChar) that can be used to separate the name of a new set and the
+key in the new set.  The default splitChar is a period ".".
 
 [call [cmd "ns_set truncate"] [arg setId] [arg fieldNumber]]
 
@@ -198,10 +199,10 @@ is performed case-sensitively.
 
 [call [cmd "ns_set update"] [arg setId] [arg key] [arg value]]
 
-Updates the first field in the specified set whose key is key and replaces its value
-with value.  This is equivalent to [cmd "ns_set delkey"] followed by
-[cmd "ns_set put"] if there is
-only one field with the key of key.
+Updates the first field in the specified set whose key is key and
+replaces its value with value.  This is roughly equivalent to
+[cmd "ns_set delkey"] followed by [cmd "ns_set put"]. Only the first
+occurrence of the named field is updated.
 
 [call [cmd "ns_set value"] [arg setId] [arg fieldNumber]]
 

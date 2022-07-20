@@ -72,7 +72,7 @@ test http_chunked-1.4 {
     nstest::http -http 1.0 -setheaders {Connection keep-alive} \
         -getheaders {Transfer-Encoding Connection Content-Length} -getbody t \
         GET /http_chunked.adp?stream=1&bufsize=8
-} -result {200 {} close {} 012345678901234}
+} -returnCodes {error ok} -result {200 {} close {} 012345678901234}
 
 
 test http_chunked-2.1 {

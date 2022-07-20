@@ -67,6 +67,8 @@ static const char *hostHeader             = "Host";
 static const char *userAgentHeader        = "User-Agent";
 static const char *connectMethod          = "CONNECT";
 
+static const int acceptEncodingHeaderLength = 15;
+
 /*
  * Attempt to maintain Tcl errorCode variable.
  * This is still not done thoroughly through the code.
@@ -2685,7 +2687,7 @@ HttpConnect(
     httpPtr->spoolLimit = -1;
     httpPtr->url = ns_strdup(url);
     httpPtr->method = ns_strdup(method);
-    httpPtr->replyHeaders = Ns_SetCreate("replyHeaders");
+    httpPtr->replyHeaders = Ns_SetCreate(NS_SET_NAME_CLIENT_RESPONSE);
     httpPtr->servPtr = itPtr->servPtr;
 
     if (timeoutPtr != NULL) {
@@ -2798,7 +2800,8 @@ HttpConnect(
                 ownHeaders = NS_TRUE;
             }
 
-            Ns_SetPut(hdrPtr, acceptEncodingHeader, acceptEncodings);
+            Ns_SetPutSz(hdrPtr, acceptEncodingHeader, acceptEncodingHeaderLength,
+                        acceptEncodings, 13);
         }
     }
 #endif
@@ -4516,7 +4519,7 @@ HttpTunnel(
     httpPtr->url = ns_strdup(url);
     httpPtr->flags |= NS_HTTP_FLAG_EMPTY; /* Do not expect response content */
     httpPtr->method = ns_strdup(connectMethod);
-    httpPtr->replyHeaders = Ns_SetCreate("replyHeaders"); /* Ignored */
+    httpPtr->replyHeaders = Ns_SetCreate(NS_SET_NAME_CLIENT_RESPONSE); /* Ignored */
     httpPtr->servPtr = itPtr->servPtr;
 
     if (timeout != NULL) {

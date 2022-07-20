@@ -148,7 +148,7 @@ static const size_t nreasons = (sizeof(reasons) / sizeof(reasons[0]));
 void
 Ns_ConnSetHeaders(const Ns_Conn *conn, const char *field, const char *value)
 {
-  (void) Ns_SetPut(conn->outputheaders, field, value);
+    (void) Ns_SetPutSz(conn->outputheaders, field, -1, value, -1);
 }
 
 /*
@@ -199,7 +199,7 @@ Ns_ConnPrintfHeaders(const Ns_Conn *conn, const char *field, const char *fmt,...
     va_start(ap, fmt);
     Ns_DStringVPrintf(&ds, fmt, ap);
     va_end(ap);
-    (void) Ns_SetPut(conn->outputheaders, field, ds.string);
+    (void) Ns_SetPutSz(conn->outputheaders, field, -1, ds.string, ds.length);
     Ns_DStringFree(&ds);
 }
 
@@ -224,7 +224,7 @@ void
 Ns_ConnCondSetHeaders(const Ns_Conn *conn, const char *field, const char *value)
 {
     if (Ns_SetIGet(conn->outputheaders, field) == NULL) {
-        (void) Ns_SetPut(conn->outputheaders, field, value);
+        (void) Ns_SetPutSz(conn->outputheaders, field, -1, value, -1);
     }
 }
 

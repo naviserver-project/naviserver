@@ -443,14 +443,17 @@ NsConfigLog(void)
 
     logfileName = Ns_ConfigString(path, "serverlog", "nsd.log");
     if (Ns_PathIsAbsolute(logfileName) == NS_FALSE) {
+        int length;
+
         Ns_DStringInit(&ds);
         if (Ns_HomePathExists("logs", (char *)0L)) {
             (void)Ns_HomePath(&ds, "logs", logfileName, (char *)0L);
         } else {
             (void)Ns_HomePath(&ds, logfileName, (char *)0L);
         }
+        length = ds.length;
         logfileName = Ns_DStringExport(&ds);
-        Ns_SetUpdate(set, "serverlog", logfileName);
+        Ns_SetUpdateSz(set, "serverlog", 9, logfileName, length);
     }
 
     rollfmt = Ns_ConfigString(path, "logrollfmt", NS_EMPTY_STRING);

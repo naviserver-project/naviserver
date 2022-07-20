@@ -137,7 +137,7 @@ Ns_ConfigString(const char *section, const char *key, const char *defaultValue)
  *----------------------------------------------------------------------
  */
 const Ns_Set *
-Ns_ConfigSet(const char *section, const char *key)
+Ns_ConfigSet(const char *section, const char *key, const char *name)
 {
     const char *value;
     Ns_Set     *setPtr;
@@ -154,7 +154,7 @@ Ns_ConfigSet(const char *section, const char *key)
     if (value != NULL) {
         Tcl_Obj *valueObj = Tcl_NewStringObj(value, -1);
 
-        setPtr = Ns_SetCreateFromDict(NULL, "key", valueObj);
+        setPtr = Ns_SetCreateFromDict(NULL, name, valueObj);
         Tcl_DecrRefCount(valueObj);
     } else {
         setPtr = NULL;
@@ -306,9 +306,10 @@ Ns_ConfigIntRange(const char *section, const char *key, int defaultValue,
     }
     if (update) {
         Section *sectionPtr = GetSection(section, NS_FALSE);
+        int      length;
 
-        snprintf(strBuffer, sizeof(strBuffer), "%d", value);
-        Ns_SetUpdate(sectionPtr->set, key, strBuffer);
+        length = snprintf(strBuffer, sizeof(strBuffer), "%d", value);
+        Ns_SetUpdateSz(sectionPtr->set, key, -1, strBuffer, length);
     }
 
     return value;
@@ -915,10 +916,6 @@ static void ConfigMark(Section *sectionPtr, size_t i, ValueOperation op)
             sectionPtr->readArray[index] |= ((uintmax_t)1u << shift);
             break;
         }
-        //sectionPtr->defaultArray[index] &= ~((uintmax_t)1u << shift);
-        //fprintf(stderr, "SSS %s/%s: idx %lu (started %d): set %p defaults %p index %lu shift %lu\n",
-        //        sectionPtr->set->name, sectionPtr->set->field[i].name, i, nsconf.state.started,
-        //        (void*)sectionPtr->set, (void*)sectionPtr->defaultArray[0], index, shift) ;
     }
 }
 
@@ -1190,10 +1187,10 @@ static int
 ParamObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
-    char       *paramName = (char *)NS_EMPTY_STRING, *paramValue = (char *)NS_EMPTY_STRING;
+    Tcl_Obj    *nameObj, *valueObj;
     Ns_ObjvSpec args[] = {
-        {"name",  Ns_ObjvString,  &paramName, NULL},
-        {"value", Ns_ObjvString,  &paramValue, NULL},
+        {"name",  Ns_ObjvObj,  &nameObj,  NULL},
+        {"value", Ns_ObjvObj,  &valueObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -1203,18 +1200,20 @@ ParamObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const*
     } else {
         Section *sectionPtr = *((Section **) clientData);
 
-        assert(paramName != NULL);
-        assert(paramValue != NULL);
-        //fprintf(stderr, "+++ setting param %s %s in set %p\n",
-        //        paramName, paramValue, (void*)sectionPtr->set);
         if (likely(sectionPtr != NULL)) {
-           size_t i = Ns_SetPut(sectionPtr->set, paramName, paramValue);
-           if (!nsconf.state.started) {
-               ConfigMark(sectionPtr, i, value_set);
-           }
+            const char *nameString, *valueString;
+            int         nameLength, valueLength;
+            size_t      i;
+
+            nameString = Tcl_GetStringFromObj(nameObj, &nameLength);
+            valueString = Tcl_GetStringFromObj(valueObj, &valueLength);
+            i = Ns_SetPutSz(sectionPtr->set, nameString, nameLength, valueString, valueLength);
+            if (!nsconf.state.started) {
+                ConfigMark(sectionPtr, i, value_set);
+            }
         } else {
             Ns_TclPrintfResult(interp, "parameter %s not preceded by an ns_section command",
-                               paramName);
+                               Tcl_GetString(nameObj));
             result = TCL_ERROR;
         }
     }
@@ -1315,6 +1314,7 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defaultS
              * section.
              */
             s = Ns_SetValue(sectionPtr->set, i);
+
         } else if (!nsconf.state.started && defaultString != NULL && *defaultString != '\0') {
             /*
              * The configuration value was NOT found. Since we want to be able
@@ -1324,19 +1324,17 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defaultS
              * startup when we there is a single thread. Changing ns_sets is
              * not thread safe.
              */
-            i = (int)Ns_SetPut(sectionPtr->set, key, defaultString);
+            i = (int)Ns_SetPutSz(sectionPtr->set, key, -1, defaultString, -1);
             ConfigMark(sectionPtr, (size_t)i, value_defaulted);
+            s = Ns_SetValue(sectionPtr->set, i);
 
-            if (defaultString != NULL) {
-                s = Ns_SetValue(sectionPtr->set, i);
-            }
         } else {
             s = defaultString;
         }
         if (!nsconf.state.started) {
             ConfigMark(sectionPtr, (size_t)i, value_read);
             if (defaultString != NULL) {
-                (void)Ns_SetPut(sectionPtr->defaults, key, defaultString);
+                (void)Ns_SetPutSz(sectionPtr->defaults, key, -1, defaultString, -1);
             }
         }
     }
@@ -1371,12 +1369,12 @@ NsConfigSectionGetFiltered(const char *section, char filter)
                     if (filter == 'u' && (sectionPtr->readArray[index] & mask) == 0u) {
                         /*fprintf(stderr, "unused parameter: %s/%s (%lu)\n",
                           section, set->fields[i].name, i);*/
-                        Ns_SetPut(result, set->fields[i].name, set->fields[i].value);
+                        Ns_SetPutSz(result, set->fields[i].name, -1, set->fields[i].value, -1);
                     } else if  (filter == 'd' && (sectionPtr->defaultArray[index] & mask) != 0u) {
                         /*fprintf(stderr, "defaulted parameter: %s/%s (%lu) defaults %p mask %p\n",
                           section, set->fields[i].name, i,
                           (void*)sectionPtr->defaultArray[0], (void*)mask);*/
-                        Ns_SetPut(result, set->fields[i].name, set->fields[i].value);
+                        Ns_SetPutSz(result, set->fields[i].name, -1, set->fields[i].value, -1);
                     }
                 }
             }

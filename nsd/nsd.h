@@ -645,6 +645,8 @@ typedef struct Conn {
     int compress;
 
     Ns_Set *query;
+    Ns_Set *formData;
+
     Tcl_HashTable files;
     void *cls[NS_CONN_MAXCLS];
 
@@ -1405,6 +1407,7 @@ NS_EXTERN Ns_LogSeverity Ns_LogRequestDebug;
 NS_EXTERN Ns_LogSeverity Ns_LogConnchanDebug;
 NS_EXTERN Ns_LogSeverity Ns_LogUrlspaceDebug;
 NS_EXTERN Ns_LogSeverity Ns_LogTimeoutDebug;
+NS_EXTERN Ns_LogSeverity Ns_LogNsSetDebug;
 NS_EXTERN bool NsWriterBandwidthManagement;
 
 NS_EXTERN const char *nsBuildDate;
@@ -1663,6 +1666,15 @@ NS_EXTERN void NsDriverMapVirtualServers(void);
 NS_EXTERN NS_TLS_SSL_CTX *NsDriverLookupHostCtx(Tcl_DString *hostDs, const Ns_Driver *drvPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+
+#ifdef NS_SET_DSTRING
+NS_EXTERN void Ns_SetDataPrealloc(Ns_Set *set, int size)
+    NS_GNUC_NONNULL(1);
+#endif
+NS_EXTERN void NsSetResize(Ns_Set *set, size_t newSize, int bufferSize)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN Ns_Set *NsHeaderSetGet(size_t size);
 
 /*
  * limits.c

@@ -267,7 +267,7 @@ NsParseAuth(Conn *connPtr, const char *auth)
     NS_NONNULL_ASSERT(auth != NULL);
 
     if (connPtr->auth == NULL) {
-        connPtr->auth = Ns_SetCreate(NULL);
+        connPtr->auth = Ns_SetCreate(NS_SET_NAME_AUTH);
     }
 
     Tcl_DStringInit(&authDs);
@@ -285,9 +285,10 @@ NsParseAuth(Conn *connPtr, const char *auth)
         *p = '\0';
 
         if (STRIEQ(authDs.string, "Basic")) {
-            size_t size;
+            size_t  size;
+            ssize_t userLength;
 
-            (void)Ns_SetPut(connPtr->auth, "AuthMethod", "Basic");
+            (void)Ns_SetPutSz(connPtr->auth, "AuthMethod", 10, "Basic", 5);
 
             /* Skip spaces */
             q = p + 1;
@@ -299,16 +300,23 @@ NsParseAuth(Conn *connPtr, const char *auth)
             v = ns_malloc(size);
             size = Ns_HtuuDecode(q, (unsigned char *) v, size);
             v[size] = '\0';
+
             q = strchr(v, INTCHAR(':'));
             if (q != NULL) {
+                ssize_t pwLength;
+
                 *q++ = '\0';
-                (void)Ns_SetPut(connPtr->auth, "Password", q);
+                pwLength = ((v+size) - q);
+                (void)Ns_SetPutSz(connPtr->auth, "Password", 8, q, pwLength);
+                userLength = (ssize_t)size - (pwLength + 1);
+            } else {
+                userLength = (ssize_t)size;
             }
-            (void)Ns_SetPut(connPtr->auth, "Username", v);
+            (void)Ns_SetPutSz(connPtr->auth, "Username", 8, v, userLength);
             ns_free(v);
 
         } else if (STRIEQ(authDs.string, "Digest")) {
-            (void)Ns_SetPut(connPtr->auth, "AuthMethod", "Digest");
+            (void)Ns_SetPutSz(connPtr->auth, "AuthMethod", 10, "Digest", 6);
 
             /* Skip spaces */
             q = p + 1;
@@ -332,7 +340,7 @@ NsParseAuth(Conn *connPtr, const char *auth)
                 /* Remember position */
                 save2 = *(++v);
                 *v = '\0';
-                idx = Ns_SetPut(connPtr->auth, q, NULL);
+                idx = Ns_SetPutSz(connPtr->auth, q, (ssize_t)(v-q), NULL, 0);
                 /* Restore character */
                 *v = save2;
                 /* Skip = and optional spaces */
@@ -356,7 +364,7 @@ NsParseAuth(Conn *connPtr, const char *auth)
                 save2 = *q;
                 *q = '\0';
                 /* Update with current value */
-                Ns_SetPutValue(connPtr->auth, idx, p);
+                Ns_SetPutValueSz(connPtr->auth, idx, p, -1);
                 *q = save2;
                 /* Advance to the end of the param value, can be end or next name*/
                 while (*q != '\0' && (*q == ',' || *q == '"' || CHARTYPE(space, *q) != 0)) {
@@ -365,14 +373,14 @@ NsParseAuth(Conn *connPtr, const char *auth)
             }
         } else if (STRIEQ(authDs.string, "Bearer")) {
 
-            (void)Ns_SetPut(connPtr->auth, "AuthMethod", "Bearer");
+            (void)Ns_SetPutSz(connPtr->auth, "AuthMethod", 10, "Bearer", 6);
 
             /* Skip spaces */
             q = p + 1;
             while (*q != '\0' && CHARTYPE(space, *q) != 0) {
                 q++;
             }
-            (void)Ns_SetPut(connPtr->auth, "Token", q);
+            (void)Ns_SetPutSz(connPtr->auth, "Token", 5, q, authDs.length - (q - authDs.string));
         }
         if (p != NULL) {
             *p = save;
