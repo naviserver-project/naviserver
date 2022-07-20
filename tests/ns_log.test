@@ -89,7 +89,7 @@ test ns_log-5.1 {buffering} -body {
 } -match glob -result "* Notice: one\n* Notice: two\n"
 
 test ns_log-5.2 {count buffered log entries} -body {
-        ns_logctl flush
+    ns_logctl flush
     ns_log notice one
     ns_log notice two
     set n [ns_logctl count]

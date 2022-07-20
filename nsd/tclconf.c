@@ -56,8 +56,8 @@
 int
 NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    char       *section, *key = (char *)NS_EMPTY_STRING;
-    Tcl_Obj    *defObj = NULL;
+    char       *section;
+    Tcl_Obj    *defObj = NULL, *keyObj;
     int         status, isBool = 0, isInt = 0, exact = 0, doSet = 0;
     Tcl_WideInt minValue = LLONG_MIN, maxValue = LLONG_MAX;
 
@@ -73,7 +73,7 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     };
     Ns_ObjvSpec args[] = {
         {"section",  Ns_ObjvString, &section, NULL},
-        {"key",      Ns_ObjvString, &key,     NULL},
+        {"key",      Ns_ObjvObj,    &keyObj,     NULL},
         {"?default", Ns_ObjvObj,    &defObj,  NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -83,14 +83,17 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
     } else {
         const char *value;
         bool        done = NS_FALSE;
+        char       *keyString;
+        int         keyLength;
 
         if (minValue > LLONG_MIN || maxValue < LLONG_MAX) {
             isInt = 1;
         }
 
+        keyString = Tcl_GetStringFromObj(keyObj, &keyLength);
         value = (exact != 0) ?
-            Ns_ConfigGetValueExact(section, key) :
-            Ns_ConfigGetValue(section, key);
+            Ns_ConfigGetValueExact(section, keyString) :
+            Ns_ConfigGetValue(section, keyString);
 
         /*
          * Handle type checking of config value.
@@ -159,11 +162,14 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
             }
 
             if (status == TCL_OK && doSet != 0 && !nsconf.state.started) {
-                /* make setting queryable */
-
                 Ns_Set *set = Ns_ConfigCreateSection(section);
+
+                /* make setting queryable */
                 if (set != NULL) {
-                    Ns_SetUpdate(set, key, Tcl_GetString(defObj));
+                    int         defLength;
+                    const char *defString = Tcl_GetStringFromObj(defObj, &defLength);
+
+                    Ns_SetUpdateSz(set, keyString, keyLength, defString, defLength);
                 }
             }
             if (status == TCL_OK) {

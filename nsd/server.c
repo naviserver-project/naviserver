@@ -272,7 +272,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     /*
      * Add server specific extra headers.
      */
-    servPtr->opts.extraHeaders = Ns_ConfigSet(path, "extraheaders");
+    servPtr->opts.extraHeaders = Ns_ConfigSet(path, "extraheaders", NULL);
 
     /*
      * Initialize on-the-fly compression support.

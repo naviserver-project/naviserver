@@ -381,10 +381,10 @@ typedef int           (Ns_IndexKeyCmpProc) (const void *key, const void *elemPtr
  */
 typedef void (*ns_funcptr_t)(void);
 
+
 /*
  * The field of a key-value data structure.
  */
-
 
 typedef struct Ns_SetField {
     char *name;
@@ -392,13 +392,44 @@ typedef struct Ns_SetField {
 } Ns_SetField;
 
 /*
- * The key-value data structure.
+ * Ns_Set: the key-value data structure.
  */
+/* #define NS_SET_DSTRING 1 */
+/* #define NS_SET_DEBUG 1 */
+/*
+ * Activate named ns_sets for the time being, to ease potential debugging. The code
+ * is slightly faster, when this is deactivated (names are as all malloced).
+ */
+#define NS_SET_WITH_NAMES 1
+
+
+#ifdef NS_SET_WITH_NAMES
+# define NS_SET_NAME_AUTH "auth"
+# define NS_SET_NAME_CLIENT_RESPONSE "clresp"
+# define NS_SET_NAME_DB "db"
+# define NS_SET_NAME_MP "mp"
+# define NS_SET_NAME_PARSEQ "parseq"
+# define NS_SET_NAME_QUERY "query"
+# define NS_SET_NAME_REQ "req"
+# define NS_SET_NAME_RESPONSE "resp"
+#else
+# define NS_SET_NAME_AUTH NULL
+# define NS_SET_NAME_CLIENT_RESPONSE NULL
+# define NS_SET_NAME_DB NULL
+# define NS_SET_NAME_MP NULL
+# define NS_SET_NAME_PARSEQ NULL
+# define NS_SET_NAME_QUERY NULL
+# define NS_SET_NAME_REQ NULL
+# define NS_SET_NAME_RESPONSE NULL
+#endif
 
 typedef struct Ns_Set {
     const char  *name;
     size_t       size;
     size_t       maxSize;
+#ifdef NS_SET_DSTRING
+    Tcl_DString  data;
+#endif
     Ns_SetField *fields;
 } Ns_Set;
 
@@ -1114,7 +1145,7 @@ NS_EXTERN void
 Ns_GetVersion(int *majorV, int *minorV, int *patchLevelV, int *type);
 
 NS_EXTERN const Ns_Set *
-Ns_ConfigSet(const char *section, const char *key)
+Ns_ConfigSet(const char *section, const char *key, const char *name)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
@@ -2552,16 +2583,28 @@ Ns_UnscheduleProc(int id);
  * set.c:
  */
 
-NS_EXTERN void
-Ns_SetUpdate(Ns_Set *set, const char *key, const char *value)
+NS_EXTERN size_t
+Ns_SetUpdate(Ns_Set *set, const char *keyString, const char *valueString)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN void
-Ns_SetIUpdate(Ns_Set *set, const char *key, const char *value)
+NS_EXTERN size_t
+Ns_SetUpdateSz(Ns_Set *set, const char *keyString, ssize_t keyLength, const char *valueString, ssize_t valueLength)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN size_t
+Ns_SetIUpdate(Ns_Set *set, const char *keyString, const char *valueString)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN size_t
+Ns_SetIUpdateSz(Ns_Set *set, const char *keyString, ssize_t keyLength, const char *valueString, ssize_t valueLength)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_Set *
 Ns_SetCreate(const char *name)
+    NS_GNUC_RETURNS_NONNULL;
+
+NS_EXTERN Ns_Set *
+Ns_SetCreateSz(const char *name, size_t size)
     NS_GNUC_RETURNS_NONNULL;
 
 NS_EXTERN Ns_Set *
@@ -2582,7 +2625,7 @@ Ns_SetPut(Ns_Set *set, const char *key, const char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN size_t
-Ns_SetPutSz(Ns_Set *set, const char *key, const char *value, ssize_t size)
+Ns_SetPutSz(Ns_Set *set, const char *keyString, ssize_t keyLength, const char *valueString, ssize_t valueLength)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN bool
@@ -2593,7 +2636,7 @@ Ns_SetUniqueCmp(const Ns_Set *set, const char *key,
 NS_EXTERN int
 Ns_SetFindCmp(const Ns_Set *set, const char *key,
               int (*cmp) (const char *s1, const char *s2))
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN const char *
 Ns_SetGetCmp(const Ns_Set *set, const char *key,
@@ -2633,7 +2676,11 @@ Ns_SetDelete(Ns_Set *set, int index)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_SetPutValue(const Ns_Set *set, size_t index, const char *value)
+Ns_SetPutValue(Ns_Set *set, size_t index, const char *value)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+
+NS_EXTERN void
+Ns_SetPutValueSz(Ns_Set *set, size_t index, const char *value, ssize_t size)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
@@ -2686,6 +2733,9 @@ Ns_SetIGetValue(const Ns_Set *set, const char *key, const char *def)
 NS_EXTERN void
 Ns_DStringAppendSet(Ns_DString *dsPtr, const Ns_Set *set)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+NS_EXTERN void Ns_SetClearValues(Ns_Set *set)
+    NS_GNUC_NONNULL(1);
 
 /*
  * see macros above for:

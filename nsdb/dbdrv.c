@@ -409,6 +409,9 @@ Ns_DbSelect(Ns_DbHandle *handle, const char *sql)
         } else if (driverPtr->selectProc != NULL) {
             Ns_Time startTime;
 
+#ifdef NS_SET_DEBUG
+            Ns_Log(Notice, "Ns_DbSelect Ns_SetTrunc %p", (void*)handle->row);
+#endif
             Ns_GetTime(&startTime);
             Ns_SetTrunc(handle->row, 0u);
             setPtr = (*driverPtr->selectProc)(handle, sql);
@@ -498,6 +501,9 @@ Ns_DbBindRow(Ns_DbHandle *handle)
     if (handle->connected
         && driverPtr != NULL
         && driverPtr->bindProc != NULL) {
+#ifdef NS_SET_DEBUG
+        Ns_Log(Notice, "Ns_DbBindRow Ns_SetTrunc %p", (void*)handle->row);
+#endif
 
         Ns_SetTrunc(handle->row, 0u);
         setPtr = (*driverPtr->bindProc)(handle);
@@ -1062,6 +1068,9 @@ Ns_DbSpGetParams(Ns_DbHandle *handle)
     NS_NONNULL_ASSERT(handle != NULL);
 
     driverPtr = NsDbGetDriver(handle);
+#ifdef NS_SET_DEBUG
+    Ns_Log(Notice, "Ns_DbSpGetParams Ns_SetTrunc %p", (void*)handle->row);
+#endif
     Ns_SetTrunc(handle->row, 0u);
     if (handle->connected
         && driverPtr != NULL

@@ -131,6 +131,9 @@ Ns_Db0or1Row(Ns_DbHandle *handle, const char *sql, int *nrows)
             }
         }
         if (success) {
+#ifdef NS_SET_DEBUG
+            Ns_Log(Notice, "Ns_Db0or1Row Ns_SetCopy %p", (void*)row);
+#endif
             row = Ns_SetCopy(row);
         }
     }

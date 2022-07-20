@@ -1444,7 +1444,10 @@ CreatePool(const char *pool, const char *path, const char *driver)
             handlePtr->connection = NULL;
             handlePtr->connected = NS_FALSE;
             handlePtr->fetchingRows = NS_FALSE;
-            handlePtr->row = Ns_SetCreate(NULL);
+            handlePtr->row = Ns_SetCreate(NS_SET_NAME_DB);
+#ifdef NS_SET_DEBUG
+            Ns_Log(Notice, "Ns_DbInit CreatePool %s %i: %p", pool, i, (void*)handlePtr->row);
+#endif
             handlePtr->cExceptionCode[0] = '\0';
             handlePtr->otime = handlePtr->atime = 0;
             handlePtr->stale = NS_FALSE;

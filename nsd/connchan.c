@@ -1238,7 +1238,6 @@ ConnChanConnectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         NS_SOCKET       sock;
         Ns_ReturnCode   status;
 
-        fprintf(stderr, "CONNECT %s %hu TLS %d\n", host, portNr, doTLS);
         sock = Ns_SockTimedConnect2(host, portNr, NULL, 0u, timeoutPtr, &status);
 
         if (sock == NS_INVALID_SOCKET) {

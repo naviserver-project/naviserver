@@ -71,7 +71,7 @@ test ns_conn-2.1 {basic operation} -body {
 # Test C-level interface of basic authentication (just parsing of the
 # authorization string and decoding into user and password)
 #
-test ns_conn-3.1 {basic authentication} -setup {
+test ns_conn-3.1.0 {basic authentication} -setup {
     ns_register_proc GET /basic {
         set auth [ns_set array [ns_conn auth]]
         set user [ns_conn authuser]
@@ -85,6 +85,22 @@ test ns_conn-3.1 {basic authentication} -setup {
 } -cleanup {
     ns_unregister_op GET /basic
 } -result {200 {{AuthMethod Basic Password y Username x} x y}}
+
+test ns_conn-3.1.1 {basic authentication, different lengths} -setup {
+    ns_register_proc GET /basic {
+        set auth [ns_set array [ns_conn auth]]
+        set user [ns_conn authuser]
+        set pw [ns_conn authpassword]
+        ns_return 200 text/plain [list $auth $user $pw]
+    }
+} -body {
+    set authString "Basic [ns_uuencode user:password]"
+    nstest::http -getbody 1 -setheaders [list authorization $authString] \
+        GET /basic
+} -cleanup {
+    ns_unregister_op GET /basic
+} -result {200 {{AuthMethod Basic Password password Username user} user password}}
+
 
 #
 # Test C-level interface of digest authentication (just parsing of the

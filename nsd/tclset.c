@@ -248,7 +248,12 @@ Ns_SetCreateFromDict(Tcl_Interp *interp, const char *name, Tcl_Obj *listObj)
 
         setPtr = Ns_SetCreate(name);
         for (i = 0; i < objc; i += 2) {
-            Ns_SetPut(setPtr, Tcl_GetString(objv[i]), Tcl_GetString(objv[i+1]));
+            const char *keyString, *valueString;
+            int         keyLength, valueLength;
+
+            keyString = Tcl_GetStringFromObj(objv[i], &keyLength);
+            valueString = Tcl_GetStringFromObj(objv[i], &valueLength);
+            Ns_SetPutSz(setPtr, keyString, keyLength, valueString, valueLength);
         }
     }
 
@@ -277,7 +282,6 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
 {
     NsInterp            *itPtr = clientData;
     Ns_Set              *set = NULL;
-    const char          *key, *val;
     Tcl_DString          ds;
     Tcl_HashTable       *tablePtr;
     const Tcl_HashEntry *hPtr;
@@ -320,7 +324,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
         tablePtr = &itPtr->sets;
         hPtr = Tcl_FirstHashEntry(tablePtr, &search);
         while (hPtr != NULL) {
-            key = Tcl_GetHashKey(tablePtr, hPtr);
+            const char *key = Tcl_GetHashKey(tablePtr, hPtr);
             if (IS_DYNAMIC(key)) {
                 set = Tcl_GetHashValue(hPtr);
                 Ns_SetFree(set);
@@ -359,12 +363,22 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
 
         switch (opt) {
         case SNewIdx:
-            name = (offset < objc) ? Tcl_GetString(objv[offset++]) : NULL;
+            if (objc % 2 == 0) {
+                /*
+                 * No name provided.
+                 */
+                name = NULL;
+            } else {
+                name = Tcl_GetString(objv[offset++]);
+            }
             set = Ns_SetCreate(name);
             while (offset < objc) {
-                key = Tcl_GetString(objv[offset++]);
-                val = (offset < objc) ? Tcl_GetString(objv[offset++]) : NULL;
-                (void)Ns_SetPut(set, key, val);
+                const char *keyString, *valueString;
+                int         keyLength, valueLength;
+
+                keyString = Tcl_GetStringFromObj(objv[offset++], &keyLength);
+                valueString = Tcl_GetStringFromObj(objv[offset++], &valueLength);
+                (void)Ns_SetPutSz(set, keyString, keyLength, valueString, valueLength);
             }
             Tcl_SetObjResult(interp, EnterSet(itPtr, set, NS_TCL_SET_DYNAMIC));
             break;
@@ -431,7 +445,6 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
 
             switch (opt) {
             case SArrayIdx:  NS_FALL_THROUGH; /* fall through */
-            case SSizeIdx:   NS_FALL_THROUGH; /* fall through */
             case sINameIdx:  NS_FALL_THROUGH; /* fall through */
             case SPrintIdx:  NS_FALL_THROUGH; /* fall through */
             case SFreeIdx:
@@ -453,11 +466,6 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                             Tcl_DStringResult(interp, &ds);
                             break;
                         }
-
-                    case SSizeIdx:
-                        objPtr = Tcl_NewLongObj((long)Ns_SetSize(set));
-                        Tcl_SetObjResult(interp, objPtr);
-                        break;
 
                     case sINameIdx:
                         Tcl_SetObjResult(interp, Tcl_NewStringObj(set->name, -1));
@@ -523,15 +531,48 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                 break;
             }
 
+            case SSizeIdx: {
+                long elements = 0, bufferSize = 0;
+
+                if (unlikely(objc < 3 || objc > 5)) {
+                    Tcl_WrongNumArgs(interp, 2, objv, "setId ?elements? ?bufferSize?");
+                    result = TCL_ERROR;
+
+                } else if (objc == 3) {
+                    objPtr = Tcl_NewLongObj((long)Ns_SetSize(set));
+                    Tcl_SetObjResult(interp, objPtr);
+
+                } else {
+                    if (Tcl_GetLongFromObj(interp, objv[3], &elements) != TCL_OK
+                        || elements < 1) {
+                        Ns_TclPrintfResult(interp, "invalid integer value for number of elements '%s'",
+                                           Tcl_GetString(objv[3]));
+                        result = TCL_ERROR;
+
+                    } else if (objc == 5
+                               && (Tcl_GetLongFromObj(interp, objv[4], &bufferSize) != TCL_OK
+                                   || bufferSize < 1)) {
+                        Ns_TclPrintfResult(interp, "invalid integer value for buffer size '%s'",
+                                           Tcl_GetString(objv[4]));
+                        result = TCL_ERROR;
+
+                    } else {
+                        NsSetResize(set, (size_t)elements, (int)bufferSize);
+                        objPtr = Tcl_NewLongObj((long)Ns_SetSize(set));
+                        Tcl_SetObjResult(interp, objPtr);
+                    }
+                }
+                break;
+            }
+
             case SGetIdx:  NS_FALL_THROUGH; /* fall through */
             case SIGetIdx:
                 if (unlikely(objc < 4)) {
-                    Tcl_WrongNumArgs(interp, 2, objv, "setId key ?default?");
+                    Tcl_WrongNumArgs(interp, 2, objv, "setId get ?default?");
                     result = TCL_ERROR;
                 } else {
                     const char *def = (objc > 4 ? Tcl_GetString(objv[4]) : NULL);
-
-                    key = Tcl_GetString(objv[3]);
+                    const char *key = Tcl_GetString(objv[3]);
 
                     switch (opt) {
                     case SGetIdx:
@@ -565,7 +606,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                     result = TCL_ERROR;
 
                 } else {
-                    key = Tcl_GetString(objv[3]);
+                    const char *key = Tcl_GetString(objv[3]);
 
                     switch (opt) {
                     case SIFindIdx:
@@ -624,6 +665,8 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                     result = TCL_ERROR;
 
                 } else {
+                    const char *val;
+
                     switch (opt) {
                     case SValueIdx:
                         val = Ns_SetValue(set, i);
@@ -637,8 +680,8 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                         break;
 
                     case SKeyIdx:
-                        key = Ns_SetKey(set, i);
-                        Tcl_SetObjResult(interp, Tcl_NewStringObj(key, -1));
+                        val = Ns_SetKey(set, i);
+                        Tcl_SetObjResult(interp, Tcl_NewStringObj(val, -1));
                         break;
 
                     case SDeleteIdx:
@@ -672,36 +715,37 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                     result = TCL_ERROR;
                 } else {
                     int i;
+                    const char *keyString, *valueString;
+                    int         keyLength, valueLength;
 
-                    key = Tcl_GetString(objv[3]);
-                    val = Tcl_GetString(objv[4]);
+                    keyString = Tcl_GetStringFromObj(objv[3], &keyLength);
+                    valueString = Tcl_GetStringFromObj(objv[4], &valueLength);
 
                     switch (opt) {
                     case SUpdateIdx:
-                        Ns_SetDeleteKey(set, key);
-                        i = (int)Ns_SetPut(set, key, val);
+                        i = (int)Ns_SetUpdateSz(set, keyString, keyLength, valueString, valueLength);
                         break;
+
                     case SIUpdateIdx:
-                        Ns_SetIDeleteKey(set, key);
-                        i = (int)Ns_SetPut(set, key, val);
+                        i = (int)Ns_SetIUpdateSz(set, keyString, keyLength, valueString, valueLength);
                         break;
 
                     case SICPutIdx:
-                        i = Ns_SetIFind(set, key);
+                        i = Ns_SetIFind(set, keyString);
                         if (i < 0) {
-                            i = (int)Ns_SetPut(set, key, val);
+                            i = (int)Ns_SetPutSz(set, keyString, keyLength, valueString, valueLength);
                         }
                         break;
 
                     case SCPutIdx:
-                        i = Ns_SetFind(set, key);
+                        i = Ns_SetFind(set, keyString);
                         if (i < 0) {
-                            i = (int)Ns_SetPut(set, key, val);
+                            i = (int)Ns_SetPutSz(set, keyString, keyLength, valueString, valueLength);
                         }
                         break;
 
                     case SPutIdx:
-                        i = (int)Ns_SetPut(set, key, val);
+                        i = (int)Ns_SetPutSz(set, keyString, keyLength, valueString, valueLength);
                         break;
 
                     default:

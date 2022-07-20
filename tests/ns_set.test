@@ -141,24 +141,42 @@ test ns_set-1.38 {basic syntax ns_set imerge} -body {
 
 
 
-test ns_set-2.0 {basic operation ns_set} -body {
+test ns_set-2.0 {basic operation ns_set create without args} -body {
     ns_set cleanup
     ns_set create; ns_set create; ns_set create
     ns_set cleanup
     ns_set list
 } -result ""
 
-test ns_set-2.1 {basic operation ns_set} -body {
+test ns_set-2.1.0 {basic operation ns_set create with name} -body {
     ns_set array [ns_set create testset foo bar moo baz]
 } -result [list foo bar moo baz] -cleanup {
     ns_set cleanup
 }
 
-test ns_set-2.2 {basic operation ns_set} -body {
+test ns_set-2.1.1 {basic operation ns_set create without name} -body {
+    ns_set array [ns_set create foo bar moo baz]
+} -result [list foo bar moo baz] -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.2.1 {ns_set size} -body {
     ns_set size [ns_set create testset foo bar moo baz]
 } -result 2 -cleanup {
     ns_set cleanup
 }
+
+test ns_set-2.2.2 {ns_set resize} -body {
+    set s [ns_set create foo a 1 b 2 c 3]
+    set size0 [ns_set size $s]
+    set size1 [ns_set size $s 2 1000]
+    set size2 [ns_set size $s]
+    list $size0  $size1 $size2 [ns_set array $s]
+} -returnCodes {error ok} -result {3 2 2 {a 1 b 2}} -cleanup {
+    unset -nocomplain s size0 size1 size2
+    ns_set cleanup
+}
+
 
 test ns_set-2.3 {basic operation ns_set} -body {
     ns_set name [ns_set create tEsTsEt foo bar moo baz]
@@ -194,7 +212,7 @@ test ns_set-2.7 {basic operation ns_set} -body {
     ns_set cleanup
 }
 
-test ns_set-2.8 {basic operation ns_set} -body {
+test ns_set-2.8 {basic operation ns_set trunc} -body {
     set x [ns_set create testset foo bar moo baz]
     ns_set truncate $x 1
     ns_set get $x foo
@@ -202,12 +220,26 @@ test ns_set-2.8 {basic operation ns_set} -body {
     ns_set cleanup
 }
 
-test ns_set-2.9 {basic operation ns_set} -body {
+test ns_set-2.9 {basic operation ns_set trunc} -body {
     set x [ns_set create testset foo bar moo baz]
     ns_set truncate $x 1
     ns_set get $x moo
 } -result "" -cleanup {
     ns_set cleanup
+}
+
+test ns_set-2.9.1 {basic operation ns_set trunc} -body {
+    set x [ns_set create a 1 b 2 c 3]
+    set _ [list [ns_set array $x]]
+    ns_set update $x a LONG.a
+    ns_set update $x b LONG.b
+    ns_set update $x c LONG.c
+    lappend _ [ns_set array $x]
+    ns_set trunc $x 2
+    lappend _ [ns_set array $x]
+} -result {{a 1 b 2 c 3} {a LONG.a b LONG.b c LONG.c} {a LONG.a b LONG.b}} -cleanup {
+    ns_set cleanup
+    unset -nocomplain x _
 }
 
 test ns_set-2.10 {basic operation ns_set} -body {

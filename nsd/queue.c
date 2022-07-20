@@ -2225,6 +2225,9 @@ NsConnThread(void *arg)
         Ns_MutexLock(tqueueLockPtr);
         connPtr->flags &= ~NS_CONN_CONFIGURED;
 
+        /*
+         * We are done with the headers, reset these for further reuse.
+         */
         Ns_SetTrunc(connPtr->headers, 0);
 
         argPtr->state = connThread_ready;
@@ -2378,6 +2381,33 @@ NsConnThread(void *arg)
     Ns_ThreadExit(argPtr);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsHeaderSetGet --
+ *
+ *      Return an Ns_Set for request headers with some defaults.
+ *
+ * Results:
+ *      Ns_Set *
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+Ns_Set *NsHeaderSetGet(size_t size)
+{
+    Ns_Set *result;
+
+    result = Ns_SetCreateSz(NS_SET_NAME_REQ, MAX(10, size));
+#ifdef NS_SET_DSTRING
+    Ns_SetDataPrealloc(result, 4095);
+#endif
+
+    return result;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -2394,7 +2424,6 @@ NsConnThread(void *arg)
  *
  *----------------------------------------------------------------------
  */
-
 static void
 ConnRun(Conn *connPtr)
 {
@@ -2431,7 +2460,27 @@ ConnRun(Conn *connPtr)
     /*
       Ns_Log(Notice, "ConnRun connPtr %p req %p %s", connPtr, connPtr->request, connPtr->request.line);
     */
-    (void) Ns_SetRecreate2(&connPtr->headers, connPtr->reqPtr->headers);
+
+    /*
+     * Move connPtr->reqPtr->headers to connPtr->headers (named "req") for the
+     * delivery thread and get a fresh or preallocated structure for the next
+     * request in this connection thread.
+     */
+    {
+        Ns_Set *preallocedHeaders = connPtr->headers;
+        if (preallocedHeaders == NULL) {
+            preallocedHeaders = NsHeaderSetGet(connPtr->reqPtr->headers->maxSize);
+        } else {
+#ifdef NS_SET_DSTRING
+            Ns_Log(Ns_LogNsSetDebug, "SSS ConnRun REUSE %p '%s': size %lu/%lu buffer %d/%d",
+                   (void*)preallocedHeaders, preallocedHeaders->name,
+                   preallocedHeaders->size, preallocedHeaders->maxSize,
+                   preallocedHeaders->data.length, preallocedHeaders->data.spaceAvl);
+#endif
+        }
+        connPtr->headers = connPtr->reqPtr->headers;
+        connPtr->reqPtr->headers = preallocedHeaders;
+    }
 
     /*
      * Flag, that the connection is fully configured and we can use its
@@ -2463,7 +2512,10 @@ ConnRun(Conn *connPtr)
     memcpy(connPtr->idstr, "cns", 3u);
     (void)ns_uint64toa(&connPtr->idstr[3], (uint64_t)connPtr->id);
 
-    connPtr->outputheaders = Ns_SetCreate(NULL);
+    if (connPtr->outputheaders == NULL) {
+        connPtr->outputheaders = Ns_SetCreate(NS_SET_NAME_RESPONSE);
+    }
+
     if (connPtr->request.version < 1.0) {
         conn->flags |= NS_CONN_SKIPHDRS;
     }
@@ -2651,8 +2703,8 @@ ConnRun(Conn *connPtr)
     Ns_ConnClearQuery(conn);
     Ns_SetFree(connPtr->auth);
     connPtr->auth = NULL;
-    Ns_SetFree(connPtr->outputheaders);
-    connPtr->outputheaders = NULL;
+
+    Ns_SetTrunc(connPtr->outputheaders, 0);
 
     if (connPtr->request.line != NULL) {
         /*

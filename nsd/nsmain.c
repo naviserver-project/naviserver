@@ -654,8 +654,11 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      */
 
     servers = Ns_ConfigGetSection("ns/servers");
+    if (servers == NULL) {
+        servers = Ns_ConfigCreateSection("ns/servers");
+    }
     if (Ns_SetSize(servers) == 0u) {
-        (void)Ns_SetPut(servers, "default", "Default NaviServer");
+        (void)Ns_SetPutSz(servers, "default", 7, "Default NaviServer", 18);
     }
 
     /*
@@ -753,7 +756,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      */
 
     set = Ns_ConfigCreateSection(NS_GLOBAL_CONFIG_PARAMETERS);
-    Ns_SetUpdate(set, "home", nsconf.home);
+    Ns_SetUpdateSz(set, "home", 4, nsconf.home, -1);
 
     /*
      * Update core config values.
@@ -767,7 +770,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         if (nsconf.tmpDir == NULL) {
             nsconf.tmpDir = P_tmpdir;
         }
-        Ns_SetUpdate(set, "tmpdir", nsconf.tmpDir);
+        Ns_SetUpdateSz(set, "tmpdir", 6, nsconf.tmpDir, -1);
     }
 
 #ifdef _WIN32

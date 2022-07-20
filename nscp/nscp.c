@@ -155,7 +155,7 @@ LoadUsers(Mod *localModPtr, const char *server, const char *module)
         Ns_DStringInit(&ds);
         path = Ns_ModulePath(&ds, server, module, "users", (char *)0L);
         set = Ns_ConfigGetSection(path);
-        Ns_SetUpdate(set, "user", "::");
+        Ns_SetUpdateSz(set, "user", 4, "::", 2);
         Ns_DStringFree(&ds);
     }
 

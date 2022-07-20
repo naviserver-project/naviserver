@@ -108,7 +108,10 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
          * We are called the first time, so create an ns_set named (slightly
          * misleading "connPtr->query")
          */
-        connPtr->query = Ns_SetCreate(NULL);
+        if (connPtr->formData == NULL) {
+            connPtr->formData = Ns_SetCreate(NS_SET_NAME_QUERY);
+        }
+        connPtr->query = connPtr->formData;
         contentType = Ns_SetIGet(connPtr->headers, "content-type");
 
         if (contentType != NULL) {
@@ -299,7 +302,7 @@ Ns_ConnClearQuery(Ns_Conn *conn)
         const Tcl_HashEntry *hPtr;
         Tcl_HashSearch       search;
 
-        Ns_SetFree(connPtr->query);
+        Ns_SetTrunc(connPtr->query, 0);
         connPtr->query = NULL;
 
         hPtr = Tcl_FirstHashEntry(&connPtr->files, &search);
@@ -391,7 +394,7 @@ NsTclParseQueryObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
 
     } else {
         Tcl_Encoding encoding;
-        Ns_Set      *set = Ns_SetCreate(NULL);
+        Ns_Set      *set = Ns_SetCreate(NS_SET_NAME_PARSEQ);
 
         if (charset != NULL) {
             encoding = Ns_GetCharsetEncoding(charset);
@@ -587,7 +590,7 @@ ParseMultipartEntry(Conn *connPtr, Tcl_Encoding valueEncoding, const char *start
 
     Tcl_DStringInit(&kds);
     Tcl_DStringInit(&vds);
-    set = Ns_SetCreate(NULL);
+    set = Ns_SetCreate(NS_SET_NAME_MP);
 
     /*
      * Trim off the trailing \r\n and null terminate the input.
