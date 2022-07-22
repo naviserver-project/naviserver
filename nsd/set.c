@@ -1033,7 +1033,7 @@ void Ns_SetClearValues(Ns_Set *set, int maxAlloc)
 
         /*
          * In cases, where the allocated memory was larger than maxAlloc, and
-         * the actual needed amount is less than a quarter, shrink the
+         * the actually needed amount is less than a quarter, shrink the
          * buffer. We do not have to use realloc(), since the content is
          * anyhow copied later. Note that we have to use the same
          * alloc()/free() functions that also Tcl uses.
