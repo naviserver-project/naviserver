@@ -2734,7 +2734,7 @@ NS_EXTERN void
 Ns_DStringAppendSet(Ns_DString *dsPtr, const Ns_Set *set)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN void Ns_SetClearValues(Ns_Set *set)
+NS_EXTERN void Ns_SetClearValues(Ns_Set *set, int maxAlloc)
     NS_GNUC_NONNULL(1);
 
 /*

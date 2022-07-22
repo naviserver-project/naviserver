@@ -996,7 +996,7 @@ Ns_SetPutValueSz(Ns_Set *set, size_t index, const char *value, ssize_t size)
  *
  *----------------------------------------------------------------------
  */
-void Ns_SetClearValues(Ns_Set *set)
+void Ns_SetClearValues(Ns_Set *set, int maxAlloc)
 {
     size_t i;
 
@@ -1009,6 +1009,10 @@ void Ns_SetClearValues(Ns_Set *set)
             break;
         }
     }
+    Ns_Log(Ns_LogNsSetDebug,
+           "Ns_SetClearValues %p '%s': size %ld/%ld data %d/%d (created %ld)",
+           (void*)set, set->name, set->size, set->maxSize,
+           set->data.length, set->data.spaceAvl, createdSets);
 
     if (mustShift) {
         Tcl_DString ds, *dsPtr = &ds;
@@ -1026,6 +1030,20 @@ void Ns_SetClearValues(Ns_Set *set)
             set->fields[i].value = NULL;
         }
         Tcl_DStringSetLength(&set->data, dsPtr->length);
+
+        /*
+         * In cases, where the allocated memory was larger than maxAlloc, and
+         * the actual needed amount is less than a quarter, shrink the
+         * buffer. We do not have to use realloc(), since the content is
+         * anyhow copied later. Note that we have to use the same
+         * alloc()/free() functions that also Tcl uses.
+         */
+        if (set->data.spaceAvl > maxAlloc && (dsPtr->length < maxAlloc/4)) {
+            const char *oldBuffer = set->data.string;
+            set->data.string = ckalloc(maxAlloc);
+            ckfree(oldBuffer);
+            set->data.spaceAvl = maxAlloc;
+        }
         memcpy(set->data.string, dsPtr->string, (size_t)dsPtr->length);
 
         p = set->data.string;
@@ -1036,7 +1054,13 @@ void Ns_SetClearValues(Ns_Set *set)
         }
         Tcl_DStringFree(dsPtr);
         Ns_DListFree(dlPtr);
+
+        Ns_Log(Ns_LogNsSetDebug,
+           "... final size %ld/%ld data %d/%d",
+           set->size, set->maxSize,
+           set->data.length, set->data.spaceAvl);
     }
+
 #else
     for (i = 0u; i < set->size; ++i) {
         ns_free(set->fields[i].value);
