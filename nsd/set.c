@@ -1017,7 +1017,8 @@ void Ns_SetClearValues(Ns_Set *set, int maxAlloc)
     if (mustShift) {
         Tcl_DString ds, *dsPtr = &ds;
         Ns_DList    dl, *dlPtr = &dl;
-        char        *p;
+        char       *p;
+        int         oldLength = set->data.length;
 
         Tcl_DStringInit(dsPtr);
         Ns_DListInit(dlPtr);
@@ -1038,7 +1039,7 @@ void Ns_SetClearValues(Ns_Set *set, int maxAlloc)
          * anyhow copied later. Note that we have to use the same
          * alloc()/free() functions that also Tcl uses.
          */
-        if (set->data.spaceAvl > maxAlloc && (dsPtr->length < maxAlloc/4)) {
+        if (set->data.spaceAvl > maxAlloc && (oldLength < maxAlloc/4)) {
             const char *oldBuffer = set->data.string;
             set->data.string = ckalloc(maxAlloc);
             ckfree(oldBuffer);
