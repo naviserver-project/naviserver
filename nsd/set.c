@@ -250,6 +250,7 @@ AppendData(Ns_Set *set, size_t index, const char *value, ssize_t valueSize)
     Tcl_DStringAppend(&set->data, value, (int)valueSize);
     if (value != NULL) {
         Tcl_DStringSetLength(&set->data, set->data.length + 1);
+        set->data.string[set->data.length-1] = '\0';
     }
     if (oldDataStart != set->data.string) {
         Ns_Log(Ns_LogNsSetDebug, "MUST SHIFT %p '%s': length %d->%d buffer %d->%d (while appending %ld '%s')",
