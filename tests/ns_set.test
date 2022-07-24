@@ -160,6 +160,31 @@ test ns_set-2.1.1 {basic operation ns_set create without name} -body {
     ns_set cleanup
 }
 
+test ns_set-2.1.2 {basic operation ns_set + updates - boundary case for reallocs} -body {
+    set s [ns_set create foo]
+    foreach {k v} {
+        src /packages/acs-core-docs/lib/navfooter
+        leftLink docbook-primer
+        leftLabel Prev
+        leftTitle {OpenACS Documentation Guide}
+        rightLink nxml-mode
+        rightLabel Next
+        rightTitle {Using nXML mode in Emacs}
+        homeLink index
+        homeLabel Home
+        upLink doc-standards
+        upLabel Up
+    } {
+        ns_set update $s $k $v
+    }
+    lsort [ns_set keys $s]
+} -result {homeLabel homeLink leftLabel leftLink leftTitle rightLabel rightLink rightTitle src upLabel upLink} -cleanup {
+    ns_set cleanup
+    unset -nocomplain s k v
+}
+
+
+
 test ns_set-2.2.1 {ns_set size} -body {
     ns_set size [ns_set create testset foo bar moo baz]
 } -result 2 -cleanup {
