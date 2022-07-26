@@ -23,7 +23,7 @@ pipelines:
               - cd install-ns
               - version_ns=GIT git_branch_ns=master with_postgres=0 bash install-ns.sh build
         - step:
-            name: Test Run
+            name: Regression test
             script:
               # apt update && apt -y install cppcheck && cppcheck .
               - make test
