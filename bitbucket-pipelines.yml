@@ -13,6 +13,7 @@ pipelines:
         - step:
             name: Setup
             script:
+              - apt install -y git
               - git clone https://github.com/gustafn/install-ns.git
               - cd install-ns
               - bash install-ns.sh build
