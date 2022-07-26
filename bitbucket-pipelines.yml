@@ -21,7 +21,7 @@ pipelines:
               - update-locale LC_ALL="en_US.UTF-8"              
               - git clone https://github.com/gustafn/install-ns.git
               - cd install-ns
-              - bash install-ns.sh build
+              - version_ns=GIT git_branch_ns=master with_postgres=0 bash install-ns.sh build
         - step:
             name: Test
             script:
