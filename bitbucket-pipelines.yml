@@ -14,7 +14,10 @@ pipelines:
             name: Setup
             script:
               - apt-get update
-              - apt-get install -y git wget curl build-essential
+              - locale-gen en_US.UTF-8
+              - update-locale LANG="en_US.UTF-8"
+              - update-locale LC_ALL="en_US.UTF-8"
+              - apt-get install -y git wget curl build-essential zlib1g-dev
               - git clone https://github.com/gustafn/install-ns.git
               - cd install-ns
               - bash install-ns.sh build
