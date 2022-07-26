@@ -1,0 +1,23 @@
+# Template C++ Application
+
+# This template allows you to validate your C++ application.
+# The workflow allows running tests and code linting on the default branch.
+
+
+image: ubuntu:latest
+
+
+pipelines:
+  default:
+    - parallel:
+        - step:
+            name: Setup
+            script:
+              - git clone https://github.com/gustafn/install-ns.git
+              - cd install-ns
+              - bash install-ns.sh build
+        - step:
+            name: Test
+            script:
+              # apt update && apt -y install cppcheck && cppcheck .
+              - make test
