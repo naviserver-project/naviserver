@@ -233,7 +233,9 @@ ConfigServerFastpath(const char *server)
             Ns_Log(Error, "fastpath[%s]: directoryfile is not a list: %s", server, p);
         }
 
-        servPtr->fastpath.serverdir = Ns_ConfigString(path, "serverdir", NS_EMPTY_STRING);
+        servPtr->fastpath.serverdir =
+            ns_strcopy(Ns_ConfigString(path, "serverdir", NS_EMPTY_STRING));
+
         if (!Ns_PathIsAbsolute(servPtr->fastpath.serverdir)) {
             (void)Ns_HomePath(&ds, servPtr->fastpath.serverdir, (char *)0L);
             servPtr->fastpath.serverdir = Ns_DStringExport(&ds);
@@ -246,7 +248,7 @@ ConfigServerFastpath(const char *server)
          * "pageroot" always points to the absolute path, while "pagedir"
          * might contain the relative path (or is the same as "pageroot").
          */
-        servPtr->fastpath.pagedir = Ns_ConfigString(path, "pagedir", "pages");
+        servPtr->fastpath.pagedir = ns_strcopy(Ns_ConfigString(path, "pagedir", "pages"));
         if (Ns_PathIsAbsolute(servPtr->fastpath.pagedir) == NS_TRUE) {
             servPtr->fastpath.pageroot = servPtr->fastpath.pagedir;
             NormalizePath(&servPtr->fastpath.pageroot);
@@ -256,8 +258,8 @@ ConfigServerFastpath(const char *server)
             servPtr->fastpath.pageroot = Ns_DStringExport(&ds);
         }
 
-        servPtr->fastpath.dirproc = Ns_ConfigString(path, "directoryproc", "_ns_dirlist");
-        servPtr->fastpath.diradp  = Ns_ConfigGetValue(path, "directoryadp");
+        servPtr->fastpath.dirproc = ns_strcopy(Ns_ConfigString(path, "directoryproc", "_ns_dirlist"));
+        servPtr->fastpath.diradp  = ns_strcopy(Ns_ConfigString(path, "directoryadp", NULL));
 
         Ns_RegisterRequest(server, "GET", "/",  Ns_FastPathProc, NULL, NULL, 0u);
         Ns_RegisterRequest(server, "HEAD", "/", Ns_FastPathProc, NULL, NULL, 0u);

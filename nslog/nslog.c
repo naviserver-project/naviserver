@@ -239,7 +239,7 @@ Ns_ModuleInit(const char *server, const char *module)
         logPtr->flags |= LOG_CHECKFORPROXY;
     }
 
-    logPtr->driverPattern = Ns_ConfigString(path, "driver", NULL);
+    logPtr->driverPattern = ns_strcopy(Ns_ConfigString(path, "driver", NULL));
 
     logPtr->ipv4maskPtr = NULL;
 #ifdef HAVE_IPV6

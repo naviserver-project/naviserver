@@ -1250,7 +1250,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
 #endif
     }
 
-    drvPtr->uploadpath = ns_strdup(Ns_ConfigString(path, "uploadpath", nsconf.tmpDir));
+    drvPtr->uploadpath = ns_strcopy(Ns_ConfigString(path, "uploadpath", nsconf.tmpDir));
 
     /*
      * If activated, "maxupload" has to be at least "readahead" bytes. Tell

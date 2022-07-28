@@ -273,7 +273,7 @@ Ns_ModuleInit(const char *server, const char *module)
          */
         modPtr = ns_malloc(sizeof(Mod));
         modPtr->server = server;
-        modPtr->addr = addr;
+        modPtr->addr = ns_strcopy(addr);
         modPtr->port = port;
         modPtr->echo = Ns_ConfigBool(path, "echopasswd", NS_TRUE);
         modPtr->commandLogging = Ns_ConfigBool(path, "cpcmdlogging", NS_FALSE);
