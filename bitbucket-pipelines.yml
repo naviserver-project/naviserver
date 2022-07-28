@@ -1,0 +1,29 @@
+# Template C++ Application
+
+# This template allows you to validate your C++ application.
+# The workflow allows running tests and code linting on the default branch.
+
+
+image: ubuntu:latest
+
+
+pipelines:
+  default:
+    - parallel:
+        - step:
+            name: Setup
+            script:
+              - apt-get update
+              - apt-get install -y git wget curl build-essential zlib1g-dev
+              - apt-get install locales
+              - locale-gen en_US.UTF-8
+              - update-locale LANG="en_US.UTF-8"
+              - update-locale LC_ALL="en_US.UTF-8"              
+              - git clone https://github.com/gustafn/install-ns.git
+              - cd install-ns
+              - version_ns=GIT git_branch_ns=master with_postgres=0 bash install-ns.sh build
+        - step:
+            name: Regression test
+            script:
+              # apt update && apt -y install cppcheck && cppcheck .
+              - make test
