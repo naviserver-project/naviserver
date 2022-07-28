@@ -918,6 +918,8 @@ static void ConfigMark(Section *sectionPtr, size_t i, ValueOperation op)
             sectionPtr->readArray[index] |= ((uintmax_t)1u << shift);
             break;
         }
+    } else {
+        Ns_Log(Notice, "Cannot mark in set %s pos %lu", sectionPtr->set->name, i);
     }
 }
 
@@ -1317,7 +1319,7 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defaultS
              */
             s = Ns_SetValue(sectionPtr->set, i);
 
-        } else if (!nsconf.state.started && defaultString != NULL && *defaultString != '\0') {
+        } else if (!nsconf.state.started /*&& defaultString != NULL && *defaultString != '\0'*/) {
             /*
              * The configuration value was NOT found. Since we want to be able
              * to retrieve all current configuration values including defaults
@@ -1326,7 +1328,8 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defaultS
              * startup when we there is a single thread. Changing ns_sets is
              * not thread safe.
              */
-            i = (int)Ns_SetPutSz(sectionPtr->set, key, -1, defaultString, -1);
+            i = (int)Ns_SetPutSz(sectionPtr->set, key, -1,
+                                 defaultString, defaultString == NULL ? 0 : -1);
             ConfigMark(sectionPtr, (size_t)i, value_defaulted);
             s = Ns_SetValue(sectionPtr->set, i);
 
