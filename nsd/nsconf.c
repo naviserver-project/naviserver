@@ -209,13 +209,14 @@ NsConfUpdate(void)
      */
 
     Ns_DStringInit(&ds);
-    nsconf.tcl.sharedlibrary = Ns_ConfigString(path, "tcllibrary", "tcl");
+    nsconf.tcl.sharedlibrary = ns_strcopy(Ns_ConfigString(path, "tcllibrary", "tcl"));
     if (Ns_PathIsAbsolute(nsconf.tcl.sharedlibrary) == NS_FALSE) {
         Ns_Set *set = Ns_ConfigCreateSection(NS_GLOBAL_CONFIG_PARAMETERS);
         int     length;
 
         (void)Ns_HomePath(&ds, nsconf.tcl.sharedlibrary, (char *)0L);
         length = ds.length;
+        ns_free((void*)nsconf.tcl.sharedlibrary);
         nsconf.tcl.sharedlibrary = Ns_DStringExport(&ds);
 
         Ns_SetUpdateSz(set, "tcllibrary", 10, nsconf.tcl.sharedlibrary, length);

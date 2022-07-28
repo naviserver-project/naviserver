@@ -435,13 +435,16 @@ NsConfigLog(void)
             prefixIntensity = (LogColorIntensity)idx;
         }
     } else {
+        /*
+         * Just refer to these values to mark these as used.
+         */
         (void) Ns_ConfigString(path, "logprefixcolor", NS_EMPTY_STRING);
         (void) Ns_ConfigString(path, "logprefixintensity", NS_EMPTY_STRING);
     }
 
     maxbackup = Ns_ConfigIntRange(path, "logmaxbackup", 10, 0, 999);
 
-    logfileName = Ns_ConfigString(path, "serverlog", "nsd.log");
+    logfileName = ns_strcopy(Ns_ConfigString(path, "serverlog", "nsd.log"));
     if (Ns_PathIsAbsolute(logfileName) == NS_FALSE) {
         int length;
 
@@ -452,11 +455,12 @@ NsConfigLog(void)
             (void)Ns_HomePath(&ds, logfileName, (char *)0L);
         }
         length = ds.length;
+        ns_free((void*)logfileName);
         logfileName = Ns_DStringExport(&ds);
         Ns_SetUpdateSz(set, "serverlog", 9, logfileName, length);
     }
 
-    rollfmt = Ns_ConfigString(path, "logrollfmt", NS_EMPTY_STRING);
+    rollfmt = ns_strcopy(Ns_ConfigString(path, "logrollfmt", NS_EMPTY_STRING));
 
 }
 

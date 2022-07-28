@@ -178,15 +178,15 @@ ConfigServerAdp(const char *server)
      * Initialise various ADP options.
      */
 
-    servPtr->adp.errorpage = Ns_ConfigString(path, "errorpage", NULL);
-    servPtr->adp.startpage = Ns_ConfigString(path, "startpage", NULL);
-    servPtr->adp.debuginit = Ns_ConfigString(path, "debuginit", "ns_adp_debuginit");
+    servPtr->adp.errorpage = ns_strcopy(Ns_ConfigString(path, "errorpage", NULL));
+    servPtr->adp.startpage = ns_strcopy(Ns_ConfigString(path, "startpage", NULL));
+    servPtr->adp.debuginit = ns_strcopy(Ns_ConfigString(path, "debuginit", "ns_adp_debuginit"));
     servPtr->adp.tracesize = Ns_ConfigInt(path, "tracesize", 40);
     servPtr->adp.cachesize = (size_t)Ns_ConfigMemUnitRange(path, "cachesize", "5MB", 5000 * 1024,
                                                            1000 * 1024, INT_MAX);
     servPtr->adp.bufsize   = (size_t)Ns_ConfigMemUnitRange(path, "bufsize",  "1MB",  1024 * 1000,
                                                            100 * 1024, INT_MAX);
-    servPtr->adp.defaultExtension = Ns_ConfigString(path, "defaultextension", NULL);
+    servPtr->adp.defaultExtension = ns_strcopy(Ns_ConfigString(path, "defaultextension", NULL));
 
     servPtr->adp.flags = 0u;
     (void) Ns_ConfigFlag(path, "cache",        ADP_CACHE,     0, &servPtr->adp.flags);

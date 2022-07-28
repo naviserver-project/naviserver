@@ -255,7 +255,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
      * Set some server options.
      */
 
-    servPtr->opts.realm = Ns_ConfigString(path, "realm", server);
+    servPtr->opts.realm = ns_strcopy(Ns_ConfigString(path, "realm", server));
     servPtr->opts.modsince = Ns_ConfigBool(path, "checkmodifiedsince", NS_TRUE);
     servPtr->opts.noticedetail = Ns_ConfigBool(path, "noticedetail", NS_TRUE);
     servPtr->opts.errorminsize = (int)Ns_ConfigMemUnitRange(path, "errorminsize", NULL, 514, 0, INT_MAX);

@@ -642,7 +642,8 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     NS_mutexlocktrace = Ns_ConfigBool(NS_GLOBAL_CONFIG_PARAMETERS, "mutexlocktrace", NS_FALSE);
 #endif
 
-    nsconf.formFallbackCharset = Ns_ConfigString(NS_GLOBAL_CONFIG_PARAMETERS, "FormFallbackCharset", NULL);
+    nsconf.formFallbackCharset =
+        ns_strcopy(Ns_ConfigString(NS_GLOBAL_CONFIG_PARAMETERS, "FormFallbackCharset", NULL));
     if (nsconf.formFallbackCharset != NULL
         && *nsconf.formFallbackCharset == '\0') {
         nsconf.formFallbackCharset  = NULL;
@@ -764,7 +765,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
     NsConfUpdate();
 
-    nsconf.tmpDir = Ns_ConfigGetValue(NS_GLOBAL_CONFIG_PARAMETERS, "tmpdir");
+    nsconf.tmpDir = ns_strcopy(Ns_ConfigGetValue(NS_GLOBAL_CONFIG_PARAMETERS, "tmpdir"));
     if (nsconf.tmpDir == NULL) {
         nsconf.tmpDir = getenv("TMPDIR");
         if (nsconf.tmpDir == NULL) {

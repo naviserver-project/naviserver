@@ -92,9 +92,10 @@ ConfigWideIntRange(const char *section, const char *key,
  * Ns_ConfigString --
  *
  *      Return a configuration file value, or the default if not found.
+ *      Similar to Ns_ConfigGetValue(), but receives a default.
  *
  * Results:
- *      Pointer to value string.
+ *      Pointer to value string or NULL.
  *
  * Side effects:
  *      None.
@@ -525,9 +526,10 @@ Ns_ConfigTimeUnitRange(const char *section, const char *key,
  * Ns_ConfigGetValue --
  *
  *      Return a configuration file value for a given key
+ *      Similar to Ns_ConfigString(), but gets no default value.
  *
  * Results:
- *      char ptr to a value
+ *      Char pointer to a value or NULL
  *
  * Side effects:
  *      None.

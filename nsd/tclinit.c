@@ -290,17 +290,19 @@ ConfigServerTcl(const char *server)
 
         Ns_DStringInit(&ds);
 
-        servPtr->tcl.library = Ns_ConfigString(path, "library", "modules/tcl");
+        servPtr->tcl.library = ns_strcopy(Ns_ConfigString(path, "library", "modules/tcl"));
         if (Ns_PathIsAbsolute(servPtr->tcl.library) == NS_FALSE) {
             Ns_HomePath(&ds, servPtr->tcl.library, (char *)0L);
             n = ds.length;
+            ns_free((void*)servPtr->tcl.library);
             servPtr->tcl.library = Ns_DStringExport(&ds);
             Ns_SetUpdateSz(set, "library", 7, servPtr->tcl.library, n);
         }
 
-        initFileString = Ns_ConfigString(path, "initfile", "bin/init.tcl");
+        initFileString = ns_strcopy(Ns_ConfigString(path, "initfile", "bin/init.tcl"));
         if (Ns_PathIsAbsolute(initFileString) == NS_FALSE) {
             Ns_HomePath(&ds, initFileString, (char *)0L);
+            ns_free((void*)initFileString);
             initFileString = Ns_DStringExport(&ds);
             n = ds.length;
             Ns_SetUpdateSz(set, "initfile", 8, initFileString, n);

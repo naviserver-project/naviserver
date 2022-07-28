@@ -1396,17 +1396,17 @@ CreatePool(const char *pool, const char *path, const char *driver)
          * Allocate Pool structure and initialize its members
          */
         poolPtr = ns_calloc(1u, sizeof(Pool));
-        poolPtr->driver = driver;
+        poolPtr->driver = ns_strcopy(driver);
         poolPtr->driverPtr = driverPtr;
         Ns_MutexInit(&poolPtr->lock);
         Ns_MutexSetName2(&poolPtr->lock, "nsdb", pool);
         Ns_CondInit(&poolPtr->waitCond);
         Ns_CondInit(&poolPtr->getCond);
-        poolPtr->source = source;
-        poolPtr->name = pool;
-        poolPtr->user = Ns_ConfigGetValue(path, "user");
-        poolPtr->pass = Ns_ConfigGetValue(path, "password");
-        poolPtr->desc = Ns_ConfigGetValue("ns/db/pools", pool);
+        poolPtr->source = ns_strcopy(source);
+        poolPtr->name = ns_strcopy(pool);
+        poolPtr->user = ns_strcopy(Ns_ConfigGetValue(path, "user"));
+        poolPtr->pass = ns_strcopy(Ns_ConfigGetValue(path, "password"));
+        poolPtr->desc = ns_strcopy(Ns_ConfigGetValue("ns/db/pools", pool));
         poolPtr->stale_on_close = 0;
         poolPtr->fVerboseError = Ns_ConfigBool(path, "logsqlerrors", NS_FALSE);
         poolPtr->nhandles = Ns_ConfigIntRange(path, "connections", 2, 0, INT_MAX);
