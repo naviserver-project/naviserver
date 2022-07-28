@@ -601,8 +601,8 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
          */
         defserver = Ns_ConfigGetValue(path, "defaultserver");
 
-        address = Ns_ConfigGetValue(path, "address");
-        host = Ns_ConfigGetValue(path, "hostname");
+        address = Ns_ConfigString(path, "address", NULL);
+        host = Ns_ConfigString(path, "hostname", NULL);
         noHostNameGiven = (host == NULL);
 
         /*
@@ -650,8 +650,8 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             hostDuplicated = NS_TRUE;
         }
 
-        if (noHostNameGiven && host != NULL) {
-            Ns_SetUpdateSz(set, "hostname", 8, host, -1);
+        if (host != NULL) {
+            (void) Ns_SetUpdateSz(set, "hostname", 8, host, -1);
         }
 
         /*
@@ -1193,7 +1193,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
 
     drvPtr->bufsize        = (size_t)Ns_ConfigMemUnitRange(path, "bufsize", "16KB", 16384, 1024, INT_MAX);
     drvPtr->maxinput       = Ns_ConfigMemUnitRange(path, "maxinput", "1MB", 1024*1024, 1024, LLONG_MAX);
-    drvPtr->maxupload      = Ns_ConfigMemUnitRange(path, "maxupload", NULL, 0, 0, (Tcl_WideInt)drvPtr->maxinput);
+    drvPtr->maxupload      = Ns_ConfigMemUnitRange(path, "maxupload", "0MB", 0, 0, (Tcl_WideInt)drvPtr->maxinput);
     drvPtr->readahead      = Ns_ConfigMemUnitRange(path, "readahead", NULL, (Tcl_WideInt)drvPtr->bufsize,
                                                    (Tcl_WideInt)drvPtr->bufsize, drvPtr->maxinput);
 
@@ -1215,10 +1215,10 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     drvPtr->reuseport      = Ns_ConfigBool(path,     "reuseport",       NS_FALSE);
     drvPtr->acceptsize     = Ns_ConfigIntRange(path, "acceptsize", drvPtr->backlog, 1, INT_MAX);
 
-    drvPtr->keepmaxuploadsize   = (size_t)Ns_ConfigMemUnitRange(path, "keepalivemaxuploadsize", NULL,
-                                                            0, 0, INT_MAX);
-    drvPtr->keepmaxdownloadsize = (size_t)Ns_ConfigMemUnitRange(path, "keepalivemaxdownloadsize", NULL,
-                                                            0, 0, INT_MAX);
+    drvPtr->keepmaxuploadsize   = (size_t)Ns_ConfigMemUnitRange(path, "keepalivemaxuploadsize",
+                                                                "0MB", 0, 0, INT_MAX);
+    drvPtr->keepmaxdownloadsize = (size_t)Ns_ConfigMemUnitRange(path, "keepalivemaxdownloadsize",
+                                                                "0MB", 0, 0, INT_MAX);
     drvPtr->recvTimeout = drvPtr->recvwait;
 
     drvPtr->nextPtr = firstDrvPtr;
