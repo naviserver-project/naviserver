@@ -237,8 +237,8 @@ AtExit(void)
 #define BS (1024*16)
 
 static int nthreads = 10;
-static int memstart;
-static int nrunning;
+static int memStart = 0;
+static int nrunning = 0;
 
 static void
 MemThread(void *arg)
@@ -249,7 +249,7 @@ MemThread(void *arg)
     Ns_MutexLock(&lock);
     ++nrunning;
     Ns_CondBroadcast(&cond);
-    while (memstart == 0) {
+    while (memStart == 0) {
         Ns_CondWait(&cond, &lock);
     }
     Ns_MutexUnlock(&lock);
@@ -281,7 +281,7 @@ MemTime(int ns)
     tids = ns_malloc(sizeof(Ns_Thread *) * (size_t)nthreads);
     Ns_MutexLock(&lock);
     nrunning = 0;
-    memstart = 0;
+    memStart = 0;
     Ns_MutexUnlock(&lock);
     printf("starting %d %smalloc threads...", nthreads, (ns != 0) ? "ns_" : "");
     fflush(stdout);
@@ -294,7 +294,7 @@ MemTime(int ns)
     }
     printf("waiting....");
     fflush(stdout);
-    memstart = 1;
+    memStart = 1;
     Ns_CondBroadcast(&cond);
     Ns_GetTime(&start);
     Ns_MutexUnlock(&lock);
@@ -439,11 +439,14 @@ int main(int argc, char *argv[])
     for (i = 1; i < argc; ++i) {
         p = argv[i];
         switch (*p) {
-            case 'n':
-                break;
-            case 'm':
-                nthreads = (int)strtol(p + 1, NULL, 10);
-                goto mem;
+        case 'n':
+            break;
+        case 'm':
+            nthreads = (int)strtol(p + 1, NULL, 10);
+            goto mem;
+        default:
+            Msg("valid arguments: ?m? ?n/NR_THREADS/?");
+            return 0;
         }
     }
 

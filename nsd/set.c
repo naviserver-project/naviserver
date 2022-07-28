@@ -149,7 +149,7 @@ Ns_SetIUpdate(Ns_Set *set, const char *keyString, const char *valueString)
  *      Update tuple or add it (case sensitive)
  *
  * Results:
- *      None.
+ *      Index value.
  *
  * Side effects:
  *      None.

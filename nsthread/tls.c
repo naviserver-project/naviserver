@@ -194,13 +194,14 @@ NsCleanupTls(void **slots)
         NS_finalshutdown != 1
 #endif
         ) {
-        int tries, retry;
+        int  tries;
+        bool retry;
 
         tries = 0;
         do {
             int i;
 
-            retry = 0;
+            retry = NS_FALSE;
             i = NS_THREAD_MAXTLS;
             while (i-- > 0) {
                 if (cleanupProcs[i] != NULL && slots[i] != NULL) {
@@ -209,7 +210,7 @@ NsCleanupTls(void **slots)
                     arg = slots[i];
                     slots[i] = NULL;
                     (*cleanupProcs[i])(arg);
-                    retry = 1;
+                    retry = NS_TRUE;
                 }
             }
         } while (retry && tries++ < 5);

@@ -49,6 +49,10 @@
 
 static const char * NS_EMPTY_STRING = "";
 
+#ifndef NSPROXY_HELPER
+# define NSPROXY_HELPER "nsproxy-helper"
+#endif
+
 #ifdef _WIN32
 # define SIGKILL 9
 # define SIGTERM 15
@@ -3308,9 +3312,15 @@ ReaperThread(void *UNUSED(arg))
                             workerPtr->poolPtr->conf.twait.sec,
                             workerPtr->poolPtr->conf.twait.usec);
                 switch (workerPtr->signal) {
-                case 0:       workerPtr->signal = SIGTERM; break;
-                case SIGTERM: workerPtr->signal = SIGKILL; break;
-                case SIGKILL: workerPtr->signal = -1;      break;
+                case 0:
+                    workerPtr->signal = SIGTERM;
+                    break;
+                case SIGTERM:
+                    workerPtr->signal = SIGKILL;
+                    break;
+                case SIGKILL:
+                    workerPtr->signal = -1;
+                    break;
                 }
             }
 
