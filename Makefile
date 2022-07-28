@@ -283,7 +283,7 @@ CLANG_TIDY_CHECKS=
 #CLANG_TIDY_CHECKS=-checks=-*,modernize-*,performance-*,portability-*,cert-*
 #CLANG_TIDY_CHECKS=-checks=-*,bugprone-*
 clang-tidy:
-	clang-tidy-mp-11 nscp/*.c nscgi/*.c nsd/*.c nsdb/*.c nsproxy/*.c nssock/*.c nsperm/*.c \
+	clang-tidy-mp-14 nscp/*.c nscgi/*.c nsd/*.c nsdb/*.c nsproxy/*.c nssock/*.c nsperm/*.c \
 		$(CLANG_TIDY_CHECKS) -- \
 		-I./include -I/usr/include $(DEFS)
 
