@@ -2,7 +2,7 @@ set pageName [ns_queryget file ""]
 switch -exact $pageName {
     nsconf.tcl -
     nsstats.tcl {
-        set source https://bitbucket.org/naviserver/[file rootname $pageName]/get/master.tar.gz
+        set source https://bitbucket.org/naviserver/[file rootname $pageName]/get/main.tar.gz
         set page [ns_server pagedir]/$pageName
         if {![file readable $page]} {
             set outputfile /tmp/bitbucket-download-[pid].tar.gz
