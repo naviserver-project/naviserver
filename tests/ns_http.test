@@ -105,8 +105,8 @@ test http-1.6.0 {HTTP/1.0 HEAD existing} -constraints serverListen -body {
 } -match glob -result {200 10}
 
 test http-1.6.1 {HTTP/1.0 HEAD not-existing} -constraints serverListen -body {
-    nstest::http -getbody 1 -getheaders {Content-Length} HEAD /noexist
-} -match glob -result {404 53*}
+    nstest::http -getbody 1 HEAD /noexist
+} -match glob -result {404}
 
 #
 # GET and HEAD request for non-existig page + custom error page

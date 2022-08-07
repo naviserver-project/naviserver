@@ -394,6 +394,10 @@ typedef struct Ns_SetField {
 /*
  * Ns_Set: the key-value data structure.
  */
+#if NS_MAJOR_VERSION > 4
+# define NS_SET_DSTRING 1
+#endif
+
 /* #define NS_SET_DSTRING 1 */
 /* #define NS_SET_DEBUG 1 */
 /*
