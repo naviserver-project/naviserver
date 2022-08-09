@@ -47,7 +47,7 @@ jobs:
         run: |
           git clone https://github.com/gustafn/install-ns.git
           echo GITHUB_REF=${GITHUB_REF} PWD=`pwd`
-          echo ls=`ls`
+          echo ls=`ls -ltrd`
       - name: Compile all
         run: |
           sudo version_ns=.. version_modules=GIT \
