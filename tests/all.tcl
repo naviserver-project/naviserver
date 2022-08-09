@@ -71,6 +71,23 @@ if {$::tcl_platform(platform) eq "windows"} {
    #configure -file [list ns_thread.test]
 }
 
+#
+# The trick with cleanupTestsHook works for Tcl 8.5 and newer.
+# The more modern variant of this is to use
+#
+#   set code [runAllTests]
+#
+# but requires Tcl 8.6.
+#
+proc tcltest::cleanupTestsHook {} {
+    variable numTests
+    upvar 2 testFileFailures crashed
+    set ::code [expr {$numTests(Failed) > 0}]
+    if {[info exists crashed]} {
+        set ::code [expr {$::code || [llength $crashed]}]
+    }
+}
+
 #ns_logctl severity Debug(ns:driver) true
 #ns_logctl severity debug on
 
@@ -92,3 +109,4 @@ ns_shutdown
 # Wait until these are finished, ns_shutdown will terminate this script
 #
 vwait forever
+exit $code
