@@ -17,28 +17,27 @@ jobs:
             tcltag: core-8-6-12
             nsf_version: 2.3.0
             tdom_version: 0.9.1
-            
+
           - os: ubuntu-latest
             compiler: gcc-11
             tcltag: core-8-7-a5
             nsf_version: HEAD
             tdom_version: 0.9.3
-            
+
     defaults:
       run:
         shell: bash
-        
+
     steps:
       - name: Intro
         run: |
           echo GITHUB_REF=${GITHUB_REF} PWD=`pwd`
       - name: Install Linux dependencies (debugging)
-        if: ${{ env.ACT && startsWith(matrix.os, 'ubuntu') }}
+        #if: ${{ env.ACT && startsWith(matrix.os, 'ubuntu') }}
         run: |
-          add-apt-repository -y ppa:ubuntu-toolchain-r/test
-          apt-get update
-          apt-get install -y ${CC}
-          git clone https://github.com/gustafn/install-ns.git
+          sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+          sudo apt-get update
+          sudo apt-get install -y ${CC}
       - name: Checkout
         uses: actions/checkout@v2
         with:
@@ -46,11 +45,12 @@ jobs:
           #token: ${{ secrets.PAT }}
       - name: Show what we have now
         run: |
+          git clone https://github.com/gustafn/install-ns.git
           echo GITHUB_REF=${GITHUB_REF} PWD=`pwd`
           echo ls=`ls`
       - name: Compile all
         run: |
-          version_ns=.. version_modules=GIT \
+          sudo version_ns=.. version_modules=GIT \
             version_tcl=${TCLTAG} \
             version_xotcl=${NSF_VERSION} \
             version_tdom=${TDOM_VERSION} \
