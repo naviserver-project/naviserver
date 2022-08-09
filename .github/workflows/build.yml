@@ -47,7 +47,7 @@ jobs:
         run: |
           git clone https://github.com/gustafn/install-ns.git
           echo GITHUB_REF=${GITHUB_REF} PWD=`pwd`
-          echo ls=`ls -ltrd`
+          echo ls=`ls -ltr`
       - name: Compile all
         run: |
           sudo version_ns=.. version_modules=GIT \
@@ -57,3 +57,6 @@ jobs:
             with_postgres=0 with_postgres_driver=1 with_ns_doc=0 \
             bash install-ns.sh build
         working-directory: install-ns
+      - name: Regression test
+        run: |
+          make test
