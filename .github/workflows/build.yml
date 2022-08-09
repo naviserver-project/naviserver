@@ -43,7 +43,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: nm-wu/naviserver-mirror
-          token: ${{ secrets.PAT }}
+          #token: ${{ secrets.PAT }}
       - name: Show what we have now
         run: |
           echo GITHUB_REF=${GITHUB_REF} PWD=`pwd`
