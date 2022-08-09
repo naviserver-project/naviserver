@@ -11,29 +11,28 @@ if {[ns_config test listenport]} {
 
 test ns_listencallback-1.0 {register} -constraints {serverListen} -setup {
     #
-    # search for a free port
+    # Register listen callback with Tcl handler
     #
-    set localhost [expr {[ns_info ipv6] ? "::1" : "127.0.0.1"}]
-    for {set port 7225} {$port < 9225} {incr port} {
-        ns_log notice "try $localhost $port"
-        if {![catch {
-            ns_log notice "could open $addr $port"
-            close [ns_socklisten $localhost $port]
-        } errorMsg]} {
-            ns_log notice "try $addr $port failed -> $errorMsg"
-            continue
-        } else {
+    #ns_socklistencallback * $port ns_listencallback::conn_handler
+} -body {
+
+    for {set port 7225} {$port < 7999} {incr port} {
+        ns_log notice "try open socket on localhost $port"
+        try {
+            #
+            # Register listen callback with Tcl handler
+            #
+            ns_socklistencallback * $port ns_listencallback::conn_handler
+            #
+            # Try to open this
+            #
+            set fds [ns_sockopen localhost $port]
+        } on error {errorMsg} {
+            ns_log notice "try localhost $port failed -> $errorMsg"
+        } on ok {result} {
             break
         }
     }
-    #
-    # Register listen callback with Tcl handler
-    #
-    ns_socklistencallback * $port ns_listencallback::conn_handler
-} -body {
-
-    ns_log notice "open socket on $localhost $port"
-    set fds [ns_sockopen $localhost $port]
     lassign $fds rfd wfd
     set size 0
 
