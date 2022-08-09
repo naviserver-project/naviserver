@@ -33,7 +33,7 @@ jobs:
         run: |
           echo GITHUB_REF=${GITHUB_REF} PWD=`pwd`
       - name: Install Linux dependencies (debugging)
-        if: ${{ env.ACT && startsWith(matrix.os, 'ubuntu') }}
+        #if: ${{ env.ACT && startsWith(matrix.os, 'ubuntu') }}
         run: |
           add-apt-repository -y ppa:ubuntu-toolchain-r/test
           apt-get update
