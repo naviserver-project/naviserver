@@ -9,4 +9,4 @@ pipelines:
   default:
     - step:
         script:
-          - git push --mirror git@github.com:nm-wu/naviserver-mirror.git
+          - git push git@github.com:nm-wu/naviserver-mirror.git
