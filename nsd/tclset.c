@@ -252,7 +252,7 @@ Ns_SetCreateFromDict(Tcl_Interp *interp, const char *name, Tcl_Obj *listObj)
             int         keyLength, valueLength;
 
             keyString = Tcl_GetStringFromObj(objv[i], &keyLength);
-            valueString = Tcl_GetStringFromObj(objv[i], &valueLength);
+            valueString = Tcl_GetStringFromObj(objv[i+1], &valueLength);
             Ns_SetPutSz(setPtr, keyString, keyLength, valueString, valueLength);
         }
     }
