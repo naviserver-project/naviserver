@@ -118,7 +118,7 @@ Ns_TclGetOpenChannel(Tcl_Interp *interp, const char *chanId, int write,
  * Ns_TclGetOpenFd --
  *
  *      Return an open Unix file descriptor for the given channel.
- *      This routine is used by the AOLserver * routines to provide
+ *      This routine is used by the NaviServer routines to provide
  *      access to the underlying socket.
  *
  * Results:

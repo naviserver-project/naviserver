@@ -40,7 +40,7 @@
  * The following constants are defined for this file.
  */
 
-#define NS_SQLERRORCODE "NSINT" /* SQL error code for AOLserver exceptions. */
+#define NS_SQLERRORCODE "NSINT" /* SQL error code for NaviServer exceptions. */
 
 
 /*
