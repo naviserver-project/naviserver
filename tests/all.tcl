@@ -88,10 +88,18 @@ ns_logctl severity notice off
 # Shutdown the server to let the cleanup handlers run
 #
 #foreach s [ns_info servers] {puts stderr "$s: [ns_server -server $s stats]"}
-ns_shutdown
+
+if {$code ne "0"} {
+    #
+    # We had some errors during the regression test, force a non-zero
+    # exit code
+    #
+    ns_shutdown -restart
+} else {
+    ns_shutdown
+}
 
 #
 # Wait until these are finished, ns_shutdown will terminate this script
 #
 vwait forever
-exit $code
