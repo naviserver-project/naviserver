@@ -12,7 +12,7 @@
 /*
  * nscp.c --
  *
- *      Simple control port module for AOLserver which allows
+ *      Simple control port module for NaviServer which allows
  *      one to telnet to a specified port, login, and issue
  *      Tcl commands.
  */

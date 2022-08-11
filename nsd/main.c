@@ -13,7 +13,7 @@
 /*
  * main.c --
  *
- *      Example AOLserver main() startup routine.
+ *      Example NaviServer main() startup routine.
  */
 
 #include "nsd.h"
@@ -26,7 +26,7 @@ static Ns_ServerInitProc ServerInit;
  *
  * main --
  *
- *      AOLserver startup routine which simply calls Ns_Main().
+ *      NaviServer startup routine which simply calls Ns_Main().
  *      Ns_Main() will later call ServerInit() if not NULL.
  *
  * Results:

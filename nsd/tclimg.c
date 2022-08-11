@@ -9,7 +9,7 @@
  *
  *
  * Based on the work from Ayan George <ayan@ayan.net>
- * for the AOLserver nsimage module.
+ * written originally for the AOLserver nsimage module.
  */
 
 /*
