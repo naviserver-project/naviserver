@@ -3,12 +3,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * The Original Code is AOLserver Code and related documentation
- * distributed by AOL.
- *
- * The Initial Developer of the Original Code is America Online,
- * Inc. Portions created by AOL are Copyright(C) 1999 America Online,
- * Inc. All Rights Reserved.
+ * The Initial Developer of the Original Code and related documentation
+ * is America Online, Inc. Portions created by AOL are Copyright (C) 1999
+ * America Online, Inc. All Rights Reserved.
  */
 
 /*
