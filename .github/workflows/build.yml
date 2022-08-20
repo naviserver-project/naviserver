@@ -21,7 +21,7 @@ jobs:
           - os: ubuntu-latest
             compiler: gcc-11
             tcltag: core-8-7-a5
-            nsf_version: HEAD
+            nsf_version: 2.4.0
             tdom_version: 0.9.3
 
     defaults:
@@ -54,6 +54,7 @@ jobs:
             version_tcl=${TCLTAG} \
             version_xotcl=${NSF_VERSION} \
             version_tdom=${TDOM_VERSION} \
+            CC=${CC} \
             with_postgres=0 with_postgres_driver=1 with_ns_doc=0 \
             bash install-ns.sh build
         working-directory: install-ns
