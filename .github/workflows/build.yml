@@ -4,10 +4,12 @@ jobs:
   naviserver:
     runs-on: ubuntu-latest
     env:
-      CC: ${{ matrix.compiler }}
-      TCLTAG: ${{ matrix.tcltag }}
-      NSF_VERSION: ${{ matrix.nsf_version }}
+      CC:           ${{ matrix.compiler }}
+      TCLTAG:       ${{ matrix.tcltag }}
+      NSF_VERSION:  ${{ matrix.nsf_version }}
+      NS_MODULES:   ${{ matrix.ns_modules }}
       TDOM_VERSION: ${{ matrix.tdom_version }}
+
     strategy:
       fail-fast: false
       matrix:
@@ -21,6 +23,7 @@ jobs:
           - os: ubuntu-latest
             compiler: gcc-11
             tcltag: core-8-7-a5
+            ns_modules: nsdbpg nsdbi nsdbipg
             nsf_version: 2.4.0
             tdom_version: 0.9.3
 
@@ -50,10 +53,13 @@ jobs:
           ls -ltr
       - name: Compile all
         run: |
-          sudo version_ns=.. version_modules=GIT \
+          sudo \
+            version_ns=.. \
+            version_modules=GIT \
             version_tcl=${TCLTAG} \
             version_xotcl=${NSF_VERSION} \
             version_tdom=${TDOM_VERSION} \
+            ns_modules="${NS_MODULES}" \
             CC=${CC} \
             with_postgres=0 with_postgres_driver=1 with_ns_doc=0 \
             bash install-ns.sh build
