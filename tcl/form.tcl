@@ -198,6 +198,14 @@ proc ns_getform {args}  {
     if {![info exists ::_ns_form]} {
 
         set ::_ns_form [ns_conn form -fallbackcharset $fallbackcharset]
+        foreach name [ns_set keys $::_ns_form] {
+            if {[string match "*.tmpfile" $name]} {
+                ns_log warning "Somone tries to sneak in a fake upload file " \
+                    "'$name' value '$value': [ns_conn url]"
+                ns_set delkey $::_ns_form $name
+            }
+        }
+
         set tmpfile [ns_conn contentfile]
         if { $tmpfile eq "" } {
             #
@@ -462,8 +470,13 @@ proc ns_parseformfile {args} {
             set content [read $fp]
             #ns_log warning "===== ns_parseformfile reads $file $form $contentType -> [string length $content] bytes"
             set s [ns_parsequery -charset $encoding -fallbackcharset $fallbackcharset $content]
-            for {set i 0} {$i < [ns_set size $s]} {incr i} {
-                ns_set put $form [ns_set key $s $i] [ns_set value $s $i]
+            foreach {name value} [ns_set array $s] {
+                if {[string match "*.tmpfile" $name]} {
+                    ns_log warning "Somone tries to sneak-in a fake upload file " \
+                        "'$name' value '$value': [ns_conn url]"
+                } else {
+                    ns_set put $form $name $value
+                }
             }
         } finally {
             close $fp
@@ -649,7 +662,12 @@ proc ns_parseformfile {args} {
                 }
                 set value [encoding convertfrom $encoding $value]
             }
-            ns_set put $form $name $value
+            if {[string match "*.tmpfile" $name]} {
+                ns_log warning "Somone tries to sneak-in a fake upload file "\
+                    "'$name' value '$value': [ns_conn url]"
+            } else {
+                ns_set put $form $name $value
+            }
         }
     }
     close $fp
