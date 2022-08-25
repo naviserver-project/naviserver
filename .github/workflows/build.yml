@@ -23,7 +23,7 @@ jobs:
           - os: ubuntu-latest
             compiler: gcc-11
             tcltag: core-8-7-a5
-            ns_modules: nsdbpg nsdbi nsdbipg
+            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd
             nsf_version: 2.4.0
             tdom_version: 0.9.3
 
