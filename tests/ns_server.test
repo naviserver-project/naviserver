@@ -316,7 +316,7 @@ test ns_server-3.3 {
     serving no content
 } -setup {
     ns_register_filter preauth GET /ns_server-3.3 ::_ns_filter_test filter_break {
-        ns_log notice "inside the filter 3.3"
+        #ns_log notice "inside the filter 3.3"
     }
 } -body {
     nstest::http GET /ns_server-3.3
@@ -328,7 +328,7 @@ test ns_server-3.4 {
     serving some content
 } -setup {
     ns_register_filter preauth GET /ns_server-3.4 ::_ns_filter_test filter_break {
-        ns_log notice "inside the filter 3.4"
+        #ns_log notice "inside the filter 3.4"
         ns_return 200 text/plain ok
     }
 } -body {

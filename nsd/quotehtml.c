@@ -888,7 +888,7 @@ HtmlParseTagAtts(const char *string, ptrdiff_t length)
 
     resultObj = Tcl_NewListObj(0, NULL);
 
-    while (i<length && CHARTYPE(space, string[i]) == 1) {
+    while (i<length && CHARTYPE(space, string[i]) != 0) {
         i++;
     }
     tagNameStart = i;
@@ -896,8 +896,9 @@ HtmlParseTagAtts(const char *string, ptrdiff_t length)
         i++;
     }
     Tcl_ListObjAppendElement(NULL, resultObj,
-                             Tcl_NewStringObj(&string[tagNameStart], i-tagNameStart));
-    while (i<length && CHARTYPE(space, string[i]) == 1) {
+                             Tcl_NewStringObj(&string[tagNameStart],
+                                              (int)(i - tagNameStart)));
+    while (i<length && CHARTYPE(space, string[i]) != 0) {
         i++;
     }
     if (string[tagNameStart] != '/') {
@@ -918,7 +919,7 @@ HtmlParseTagAtts(const char *string, ptrdiff_t length)
                 i++;
             }
             attributeNameEnd = i;
-            while (i<length && CHARTYPE(space, string[i]) == 1) {
+            while (i<length && CHARTYPE(space, string[i]) != 0) {
                 i++;
             }
             /*
@@ -929,7 +930,7 @@ HtmlParseTagAtts(const char *string, ptrdiff_t length)
                 char delimiter = '\0';
 
                 i++;
-                while (i<length && CHARTYPE(space, string[i]) == 1) {
+                while (i<length && CHARTYPE(space, string[i]) != 0) {
                     i++;
                 }
                 if (string[i] == '\'' || string[i] == '"') {
@@ -958,15 +959,17 @@ HtmlParseTagAtts(const char *string, ptrdiff_t length)
                      */
                 }
                 Tcl_DictObjPut(NULL, attributesObj,
-                               Tcl_NewStringObj(&string[attributeStart], attributeNameEnd-attributeStart),
-                               Tcl_NewStringObj(&string[valueStart], valueEnd-valueStart));
+                               Tcl_NewStringObj(&string[attributeStart],
+                                                (int)(attributeNameEnd - attributeStart)),
+                               Tcl_NewStringObj(&string[valueStart],
+                                                (int)(valueEnd - valueStart)));
             } else {
                 /*
                  * No equals after attribute name: The value is implicitly the empty string.
                  * https://www.w3.org/TR/2011/WD-html5-20110525/syntax.html#syntax-tag-name
                  */
                 Tcl_DictObjPut(NULL, attributesObj,
-                               Tcl_NewStringObj(&string[attributeStart], attributeNameEnd-attributeStart),
+                               Tcl_NewStringObj(&string[attributeStart], (int)(attributeNameEnd - attributeStart)),
                                Tcl_NewStringObj("", 0));
                 i--;
             }
@@ -1011,7 +1014,7 @@ HtmlFinishElement(Tcl_Obj *listObj, const char* what, const char *start, const c
         Tcl_ListObjAppendElement(NULL, elementObj, HtmlParseTagAtts(lastStart, length));
     } else {
         Tcl_ListObjAppendElement(NULL, elementObj, withText
-                                 ? Tcl_NewStringObj(lastStart, length)
+                                 ? Tcl_NewStringObj(lastStart, (int)length)
                                  : Tcl_NewStringObj("", 0));
     }
     Tcl_ListObjAppendElement(NULL, listObj, elementObj);
@@ -1055,7 +1058,6 @@ NsTclParseHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         bool        incomment; /* flag to see if we are inside a comment */
         char       *inString;  /* copy of input string */
         const char *inPtr;     /* moving pointer to input string */
-        bool        needEncode;
         const char *lastStart;
         Tcl_Obj    *listObj;
 
@@ -1067,7 +1069,6 @@ NsTclParseHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         inPtr      = inString;
         intag      = NS_FALSE;
         incomment  = NS_FALSE;
-        needEncode = NS_FALSE;
 
         listObj = Tcl_NewListObj(0, NULL);
 

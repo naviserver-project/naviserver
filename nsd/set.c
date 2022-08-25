@@ -808,18 +808,18 @@ Ns_SetTrunc(Ns_Set *set, size_t size)
             hexPrint("before trunc", (unsigned char *)set->data.string, (size_t)set->data.length);
             Ns_SetPrint(set);
 # endif
-            Ns_Log(Notice, "... initial endPtr %p len %ld", (void*)endPtr, endPtr-set->data.string);
+            //Ns_Log(Notice, "... initial endPtr %p len %ld", (void*)endPtr, endPtr-set->data.string);
             for (i = 0; i <= size; i++) {
                 if (set->fields[i].name > endPtr) {
                     endPtr = set->fields[i].name + strlen(set->fields[i].name) + 1;
-                    Ns_Log(Notice, "... ext1 endPtr %p len %ld", (void*)endPtr, endPtr-set->data.string);
+                    //Ns_Log(Notice, "... ext1 endPtr %p len %ld", (void*)endPtr, endPtr-set->data.string);
                 }
                 if (set->fields[i].value > endPtr) {
                     endPtr = set->fields[i].value + strlen(set->fields[i].value) + 1;
-                    Ns_Log(Notice, "... [%lu] ext2 endPtr %p len %ld", i, (void*)endPtr, endPtr-set->data.string);
+                    //Ns_Log(Notice, "... [%lu] ext2 endPtr %p len %ld", i, (void*)endPtr, endPtr-set->data.string);
                 }
             }
-            Ns_Log(Notice, "... final can trunc data from %i to %ld",  set->data.length, endPtr-set->data.string);
+            //Ns_Log(Notice, "... final can trunc data from %i to %ld",  set->data.length, endPtr-set->data.string);
             Tcl_DStringSetLength(&set->data, (int)(endPtr - set->data.string));
 
 # ifdef NS_SET_DEBUG
