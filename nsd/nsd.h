@@ -1361,6 +1361,7 @@ NS_EXTERN Tcl_ObjCmdProc
     NsTclStrcollObjCmd,
     NsTclStrftimeObjCmd,
     NsTclStripHtmlObjCmd,
+    NsTclParseHtmlObjCmd,
     NsTclSubnetmatchObjCmd,
     NsTclSymlinkObjCmd,
     NsTclThreadObjCmd,

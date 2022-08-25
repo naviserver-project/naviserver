@@ -33,6 +33,13 @@ static int ToUTF8(long value, char *outPtr)
 static size_t EntityDecode(const char *entity, size_t length, bool *needEncodePtr, char *outPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
+static void
+HtmlFinishElement(Tcl_Obj *listObj, const char* what, const char *start, const char *lastStart,
+                  const char *currentPtr, int withText)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+static Tcl_Obj *
+HtmlParseTagAtts(const char *string, ptrdiff_t length)
+    NS_GNUC_NONNULL(1);
 
 
 /*
@@ -855,6 +862,266 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     return result;
 }
 
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HtmlParseTagAtts --
+ *
+ *      Helper function of NsTclParseHtmlObjCmd() to parse contents of a tag
+ *      (name and attributes).
+ *
+ * Results:
+ *      List containing name and parsed attributes in form of a dict Tcl_Obj.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static Tcl_Obj *
+HtmlParseTagAtts(const char *string, ptrdiff_t length)
+{
+    ptrdiff_t   i = 0, tagNameStart;
+    Tcl_Obj    *resultObj;
+
+    resultObj = Tcl_NewListObj(0, NULL);
+
+    while (i<length && CHARTYPE(space, string[i]) == 1) {
+        i++;
+    }
+    tagNameStart = i;
+    while (i<length && CHARTYPE(space, string[i]) == 0) {
+        i++;
+    }
+    Tcl_ListObjAppendElement(NULL, resultObj,
+                             Tcl_NewStringObj(&string[tagNameStart], i-tagNameStart));
+    while (i<length && CHARTYPE(space, string[i]) == 1) {
+        i++;
+    }
+    if (string[tagNameStart] != '/') {
+        Tcl_Obj *attributesObj = Tcl_NewDictObj();
+
+        while (i<length && string[tagNameStart] != '/') {
+            /*
+             * We have attributes
+             */
+            ptrdiff_t attributeStart = i, attributeNameEnd, valueStart, valueEnd;
+
+            while (i<length && CHARTYPE(space, string[i]) == 0
+                   && string[i] != '"'
+                   && string[i] != '\''
+                   && string[i] != '='
+                   && string[i] != '/'
+               ) {
+                i++;
+            }
+            attributeNameEnd = i;
+            while (i<length && CHARTYPE(space, string[i]) == 1) {
+                i++;
+            }
+            /*
+             * After the attribute name, we expect an "=" or whitespace/end
+             * for empty values.
+             */
+            if (string[i] == '=') {
+                char delimiter = '\0';
+
+                i++;
+                while (i<length && CHARTYPE(space, string[i]) == 1) {
+                    i++;
+                }
+                if (string[i] == '\'' || string[i] == '"') {
+                    delimiter = string[i];
+                    i++;
+                }
+                valueStart = i;
+                valueEnd = valueStart;
+                if (i<length) {
+                    if (delimiter == '\0') {
+                        while (i<length && CHARTYPE(space, string[i]) == 0) {
+                            i++;
+                        }
+                        valueEnd = i;
+                    } else {
+                        while (i<length && string[i] != delimiter) {
+                            i++;
+                        }
+                        valueEnd = i;
+                        i++;
+                    }
+                } else {
+                    /*
+                     * Equal sign is at the end, value start is value end,
+                     * assume an empty value.
+                     */
+                }
+                Tcl_DictObjPut(NULL, attributesObj,
+                               Tcl_NewStringObj(&string[attributeStart], attributeNameEnd-attributeStart),
+                               Tcl_NewStringObj(&string[valueStart], valueEnd-valueStart));
+            } else {
+                /*
+                 * No equals after attribute name: The value is implicitly the empty string.
+                 * https://www.w3.org/TR/2011/WD-html5-20110525/syntax.html#syntax-tag-name
+                 */
+                Tcl_DictObjPut(NULL, attributesObj,
+                               Tcl_NewStringObj(&string[attributeStart], attributeNameEnd-attributeStart),
+                               Tcl_NewStringObj("", 0));
+                i--;
+            }
+            i++;
+        }
+        Tcl_ListObjAppendElement(NULL, resultObj, attributesObj);
+    }
+
+    return resultObj;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HtmlFinishElement --
+ *
+ *       Helper function of NsTclParseHtmlObjCmd() to return a list element of
+ *       the result list.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+HtmlFinishElement(Tcl_Obj *listObj, const char* what, const char *start, const char *lastStart,
+                  const char *currentPtr, int withText)
+{
+    ptrdiff_t length = currentPtr - lastStart;
+    Tcl_Obj  *elementObj = Tcl_NewListObj(0, NULL);
+
+    Tcl_ListObjAppendElement(NULL, elementObj, Tcl_NewStringObj(what, -1));
+    Tcl_ListObjAppendElement(NULL, elementObj, Tcl_NewLongObj(currentPtr - start - length));
+    Tcl_ListObjAppendElement(NULL, elementObj, Tcl_NewLongObj(currentPtr - start - 1));
+    if (*what == 't' && *(what+1) == 'a') {
+        /*
+         * Call the tag parser
+         */
+        Tcl_ListObjAppendElement(NULL, elementObj, HtmlParseTagAtts(lastStart, length));
+    } else {
+        Tcl_ListObjAppendElement(NULL, elementObj, withText
+                                 ? Tcl_NewStringObj(lastStart, length)
+                                 : Tcl_NewStringObj("", 0));
+    }
+    Tcl_ListObjAppendElement(NULL, listObj, elementObj);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclParseHtmlObjCmd --
+ *
+ *      Implements "ns_parsehtml".
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      See docs.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclParseHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int          result = TCL_OK, withText = (int)NS_FALSE;
+    char        *htmlString = (char *)NS_EMPTY_STRING;
+    Ns_ObjvSpec opts[] = {
+        {"-withtext", Ns_ObjvBool,  &withText, INT2PTR(NS_TRUE)},
+        {"--",        Ns_ObjvBreak, NULL,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec  args[] = {
+        {"html", Ns_ObjvString,  &htmlString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        bool        intag;     /* flag to see if are we inside a tag */
+        bool        incomment; /* flag to see if we are inside a comment */
+        char       *inString;  /* copy of input string */
+        const char *inPtr;     /* moving pointer to input string */
+        bool        needEncode;
+        const char *lastStart;
+        Tcl_Obj    *listObj;
+
+        /*
+         * Make a copy of the input and point the moving and output ptrs to it.
+         */
+        inString   = ns_strdup(htmlString);
+        lastStart  = inString;
+        inPtr      = inString;
+        intag      = NS_FALSE;
+        incomment  = NS_FALSE;
+        needEncode = NS_FALSE;
+
+        listObj = Tcl_NewListObj(0, NULL);
+
+        while (*inPtr != '\0') {
+
+            Ns_Log(Debug, "inptr %c intag %d incomment %d string <%s>",
+                   *inPtr, intag, incomment, inPtr);
+
+            if (incomment) {
+                if ((*(inPtr) == '-')
+                    && (*(inPtr + 1) == '-')
+                    && (*(inPtr + 2) == '>')) {
+                    incomment  = NS_FALSE;
+                    inPtr += 2;
+                    HtmlFinishElement(listObj, "comment", inString, lastStart, inPtr, withText);
+                    lastStart = inPtr + 1;
+                }
+            } else if (intag) {
+                if (*inPtr == '>') {
+                    /*
+                     * Closing a tag.
+                     */
+                    intag = NS_FALSE;
+                    HtmlFinishElement(listObj, "tag", inString, lastStart, inPtr, withText);
+                    lastStart = inPtr + 1;
+                }
+            } else if (*inPtr == '<') {
+                if (inPtr != lastStart) {
+                    HtmlFinishElement(listObj, "text", inString, lastStart, inPtr, withText);
+                }
+                lastStart = inPtr + 1;
+                /*
+                 * We have either a tag (with potential arguments) or a comment.
+                 */
+                if ((*(inPtr + 1) == '!')
+                    && (*(inPtr + 2) == '-')
+                    && (*(inPtr + 3) == '-')) {
+                    intag = NS_FALSE;
+                    incomment = NS_TRUE;
+                } else {
+                    intag = NS_TRUE;
+                }
+            }
+            ++inPtr;
+        }
+        if (inPtr != lastStart) {
+            HtmlFinishElement(listObj, "text", inString, lastStart, inPtr, withText);
+        }
+
+        Tcl_SetObjResult(interp, listObj);
+        ns_free(inString);
+    }
+    return result;
+}
 
 /*
  * Local Variables:
