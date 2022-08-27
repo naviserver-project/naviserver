@@ -34,9 +34,9 @@ static size_t EntityDecode(const char *entity, size_t length, bool *needEncodePt
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 static void
-HtmlFinishElement(Tcl_Obj *listObj, const char* what, const char *start, const char *lastStart,
-                  const char *currentPtr, int withText)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+HtmlFinishElement(Tcl_Obj *listObj, const char* what, const char *lastStart,
+                  const char *currentPtr, bool noAngle, Tcl_Obj *contentObj)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 static Tcl_Obj *
 HtmlParseTagAtts(const char *string, ptrdiff_t length)
     NS_GNUC_NONNULL(1);
@@ -883,34 +883,66 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 static Tcl_Obj *
 HtmlParseTagAtts(const char *string, ptrdiff_t length)
 {
-    ptrdiff_t   i = 0, tagNameStart;
-    Tcl_Obj    *resultObj;
+    ptrdiff_t   i = 0;
+    Tcl_Obj    *resultObj, *nameObj;
 
+    Ns_Log(Debug, "HtmlParseTagAtts string '%s' length %ld", string, length);
+
+
+    /*
+     * Accept every non-space character as tagname - the first character is
+     * checked already.
+     */
+    if (i<length && CHARTYPE(space, string[i]) == 0) {
+        i++;
+    }
+    /*
+     * Accept every non-space character after first char, a few are disallowed)
+     */
+    while (i<length
+           && CHARTYPE(space, string[i]) == 0
+           && string[i] != '/'
+           ) {
+        if (string[i] == '\''
+            || string[i] == '"'
+            || string[i] == '&') {
+            return NULL;
+        }
+        i++;
+    }
     resultObj = Tcl_NewListObj(0, NULL);
+    nameObj = Tcl_NewStringObj(string,(int)i);
+    Tcl_ListObjAppendElement(NULL, resultObj, nameObj);
+    Ns_Log(Debug, "... tagname '%s'", Tcl_GetString(nameObj));
 
     while (i<length && CHARTYPE(space, string[i]) != 0) {
+        Ns_Log(Debug, "... after tagname skip space '%c'", string[i]);
         i++;
     }
-    tagNameStart = i;
-    while (i<length && CHARTYPE(space, string[i]) == 0) {
-        i++;
-    }
-    Tcl_ListObjAppendElement(NULL, resultObj,
-                             Tcl_NewStringObj(&string[tagNameStart],
-                                              (int)(i - tagNameStart)));
-    while (i<length && CHARTYPE(space, string[i]) != 0) {
-        i++;
-    }
-    if (string[tagNameStart] != '/') {
-        Tcl_Obj *attributesObj = Tcl_NewDictObj();
 
-        while (i<length && string[tagNameStart] != '/') {
+    /*
+     * When the tag name starts with a slash, it is the endtag without
+     * attributes.x
+     */
+    if (string[0] != '/') {
+        Tcl_Obj *attributesObj = Tcl_NewDictObj(), *valueObj;
+        bool     incorrectSyntax = NS_FALSE;
+
+        while (i<length) {
             /*
              * We have attributes
              */
-            ptrdiff_t attributeStart = i, attributeNameEnd, valueStart, valueEnd;
+            ptrdiff_t attributeStart = i, attributeNameEnd;
 
-            while (i<length && CHARTYPE(space, string[i]) == 0
+            Ns_Log(Debug, "to parse attribute name '%s' i %ld length %ld", &string[i], i, length);
+
+            if (CHARTYPE(space, string[i]) != 0) {
+                Ns_Log(Warning, "HtmlParseTagAtts: attribute name MUST NOT START WITH SPACE '%s'",
+                       &string[i]);
+            }
+
+            while (i<length
+                   && CHARTYPE(space, string[i]) == 0
                    && string[i] != '"'
                    && string[i] != '\''
                    && string[i] != '='
@@ -919,7 +951,9 @@ HtmlParseTagAtts(const char *string, ptrdiff_t length)
                 i++;
             }
             attributeNameEnd = i;
+
             while (i<length && CHARTYPE(space, string[i]) != 0) {
+                //Ns_Log(Debug, "... after att skip space %ld %c", i, string[i]);
                 i++;
             }
             /*
@@ -927,20 +961,29 @@ HtmlParseTagAtts(const char *string, ptrdiff_t length)
              * for empty values.
              */
             if (string[i] == '=') {
+                ptrdiff_t valueStart, valueEnd;
                 char delimiter = '\0';
 
                 i++;
                 while (i<length && CHARTYPE(space, string[i]) != 0) {
+                    //Ns_Log(Debug, "... after equals skip space %ld %c", i, string[i]);
                     i++;
                 }
                 if (string[i] == '\'' || string[i] == '"') {
                     delimiter = string[i];
                     i++;
                 }
+                Ns_Log(Debug, "... got equals at pos %ld delimiter %c", i, delimiter);
+
                 valueStart = i;
                 valueEnd = valueStart;
                 if (i<length) {
+                    Ns_Log(Debug, "to parse attribute value '%s' i %ld length %ld delimiter %c",
+                           &string[i], i, length, delimiter);
                     if (delimiter == '\0') {
+                        /*
+                         * No delimiter, collect non-space chars as value.
+                         */
                         while (i<length && CHARTYPE(space, string[i]) == 0) {
                             i++;
                         }
@@ -949,33 +992,81 @@ HtmlParseTagAtts(const char *string, ptrdiff_t length)
                         while (i<length && string[i] != delimiter) {
                             i++;
                         }
+                        if (string[i] != delimiter) {
+                            Ns_Log(Warning, "HtmlParseTagAtts: missing closing delimiter (%c) in (%s)",
+                                   delimiter, string);
+                            incorrectSyntax = NS_TRUE;
+                        }
                         valueEnd = i;
-                        i++;
                     }
+                    i++;
                 } else {
                     /*
                      * Equal sign is at the end, value start is value end,
                      * assume an empty value.
                      */
                 }
-                Tcl_DictObjPut(NULL, attributesObj,
-                               Tcl_NewStringObj(&string[attributeStart],
-                                                (int)(attributeNameEnd - attributeStart)),
-                               Tcl_NewStringObj(&string[valueStart],
-                                                (int)(valueEnd - valueStart)));
+                if (!incorrectSyntax) {
+                    nameObj = Tcl_NewStringObj(&string[attributeStart],
+                                               (int)(attributeNameEnd - attributeStart));
+                    valueObj = Tcl_NewStringObj(&string[valueStart],
+                                                (int)(valueEnd - valueStart));
+                    Tcl_DictObjPut(NULL, attributesObj, nameObj, valueObj);
+                    Ns_Log(Debug, "... att '%s' got value '%s'",
+                           Tcl_GetString(nameObj), Tcl_GetString(valueObj));
+                }
+            } else if (string[i] != '/') {
+                if (!incorrectSyntax) {
+                    /*
+                     * No equals after attribute name: The value is implicitly the empty string.
+                     * https://www.w3.org/TR/2011/WD-html5-20110525/syntax.html#syntax-tag-name
+                     */
+                    nameObj = Tcl_NewStringObj(&string[attributeStart],
+                                               (int)(attributeNameEnd - attributeStart));
+
+                    valueObj = Tcl_NewStringObj("", 0);
+                    Tcl_DictObjPut(NULL, attributesObj, nameObj, valueObj);
+                    Ns_Log(Debug, "... no equals %c i %ld length %ld att '%s' value '%s'", string[i], i, length,
+                           Tcl_GetString(nameObj), Tcl_GetString(valueObj));
+                }
+                /*
+                 * Since we have skipped space already, we might be at the
+                 * first character of the next attribute already. In case this
+                 * attribute was the last, we point to the closing ">",
+                 * decrementing in fine as well.
+                 */
             } else {
                 /*
-                 * No equals after attribute name: The value is implicitly the empty string.
-                 * https://www.w3.org/TR/2011/WD-html5-20110525/syntax.html#syntax-tag-name
+                 * The next character is '/' (terminating slash, as used for
+                 * empty tag notation such as "<br/>". Skip it.
                  */
-                Tcl_DictObjPut(NULL, attributesObj,
-                               Tcl_NewStringObj(&string[attributeStart], (int)(attributeNameEnd - attributeStart)),
-                               Tcl_NewStringObj("", 0));
-                i--;
+                i++;
             }
-            i++;
+
+            /*
+             * We are after the attribute value, skip potential white space.
+             */
+            while (i<length && CHARTYPE(space, string[i]) != 0) {
+                // Ns_Log(Debug, "... end of loop skip space pos %ld '%c'", i, string[i]);
+                i++;
+            }
+            if (i == attributeStart) {
+                /*
+                 * Safety belt: we are still at the begin of the attribute,
+                 * nothing was consumed. To avoid infinite loops, advance here and complain.
+                 */
+                Ns_Log(Warning, "HtmlParseTagAtts: safety belt, nothing consumed, we are pos %ld '%c' in string '%s'",
+                       i, string[i], string);
+                i++;
+            }
         }
-        Tcl_ListObjAppendElement(NULL, resultObj, attributesObj);
+
+        if (incorrectSyntax) {
+            Tcl_DecrRefCount(resultObj);
+            resultObj = NULL;
+        } else {
+            Tcl_ListObjAppendElement(NULL, resultObj, attributesObj);
+        }
     }
 
     return resultObj;
@@ -998,24 +1089,21 @@ HtmlParseTagAtts(const char *string, ptrdiff_t length)
  *----------------------------------------------------------------------
  */
 static void
-HtmlFinishElement(Tcl_Obj *listObj, const char* what, const char *start, const char *lastStart,
-                  const char *currentPtr, int withText)
+HtmlFinishElement(Tcl_Obj *listObj, const char *what, const char *lastStart,
+                  const char *currentPtr, bool noAngle, Tcl_Obj *contentObj)
 {
     ptrdiff_t length = currentPtr - lastStart;
     Tcl_Obj  *elementObj = Tcl_NewListObj(0, NULL);
 
     Tcl_ListObjAppendElement(NULL, elementObj, Tcl_NewStringObj(what, -1));
-    Tcl_ListObjAppendElement(NULL, elementObj, Tcl_NewLongObj(currentPtr - start - length));
-    Tcl_ListObjAppendElement(NULL, elementObj, Tcl_NewLongObj(currentPtr - start - 1));
-    if (*what == 't' && *(what+1) == 'a') {
-        /*
-         * Call the tag parser
-         */
-        Tcl_ListObjAppendElement(NULL, elementObj, HtmlParseTagAtts(lastStart, length));
-    } else {
-        Tcl_ListObjAppendElement(NULL, elementObj, withText
-                                 ? Tcl_NewStringObj(lastStart, (int)length)
-                                 : Tcl_NewStringObj("", 0));
+    if (noAngle) {
+        lastStart --;
+        length += 2;
+    }
+    Tcl_ListObjAppendElement(NULL, elementObj,
+                             Tcl_NewStringObj(lastStart, (int)length));
+    if (contentObj != NULL) {
+        Tcl_ListObjAppendElement(NULL, elementObj, contentObj);
     }
     Tcl_ListObjAppendElement(NULL, listObj, elementObj);
 }
@@ -1038,11 +1126,11 @@ HtmlFinishElement(Tcl_Obj *listObj, const char* what, const char *start, const c
 int
 NsTclParseHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int          result = TCL_OK, withText = (int)NS_FALSE;
+    int          result = TCL_OK, withNoAngleOption = (int)NS_FALSE;
     char        *htmlString = (char *)NS_EMPTY_STRING;
     Ns_ObjvSpec opts[] = {
-        {"-withtext", Ns_ObjvBool,  &withText, INT2PTR(NS_TRUE)},
-        {"--",        Ns_ObjvBreak, NULL,    NULL},
+        {"-noangle", Ns_ObjvBool, &withNoAngleOption, INT2PTR(NS_TRUE)},
+        {"--",       Ns_ObjvBreak, NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec  args[] = {
@@ -1054,73 +1142,108 @@ NsTclParseHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         result = TCL_ERROR;
 
     } else {
-        bool        intag;     /* flag to see if are we inside a tag */
-        bool        incomment; /* flag to see if we are inside a comment */
-        char       *inString;  /* copy of input string */
-        const char *inPtr;     /* moving pointer to input string */
+        bool        inTag;     /* flag to see if are we inside a tag */
+        bool        inComment; /* flag to see if we are inside a comment */
+        bool        inPi;      /* flag to see if we are inside a processing instruction */
+        const char *ptr;       /* moving pointer to input string */
         const char *lastStart;
         Tcl_Obj    *listObj;
+        bool         noAngle = withNoAngleOption ? NS_FALSE : NS_TRUE;
 
-        /*
-         * Make a copy of the input and point the moving and output ptrs to it.
-         */
-        inString   = ns_strdup(htmlString);
-        lastStart  = inString;
-        inPtr      = inString;
-        intag      = NS_FALSE;
-        incomment  = NS_FALSE;
+        lastStart  = htmlString;
+        ptr        = htmlString;
+        inTag      = NS_FALSE;
+        inComment  = NS_FALSE;
+        inPi       = NS_FALSE;
 
         listObj = Tcl_NewListObj(0, NULL);
 
-        while (*inPtr != '\0') {
+        while (*ptr != '\0') {
 
-            Ns_Log(Debug, "inptr %c intag %d incomment %d string <%s>",
-                   *inPtr, intag, incomment, inPtr);
+            Ns_Log(Debug, "inptr %c inTag %d inComment %d string <%s>",
+                   *ptr, inTag, inComment, ptr);
 
-            if (incomment) {
-                if ((*(inPtr) == '-')
-                    && (*(inPtr + 1) == '-')
-                    && (*(inPtr + 2) == '>')) {
-                    incomment  = NS_FALSE;
-                    inPtr += 2;
-                    HtmlFinishElement(listObj, "comment", inString, lastStart, inPtr, withText);
-                    lastStart = inPtr + 1;
+            if (inComment) {
+                if ((*(ptr) == '-')
+                    && (*(ptr + 1) == '-')
+                    && (*(ptr + 2) == '>')) {
+                    inComment  = NS_FALSE;
+                    ptr += 2;
+                    HtmlFinishElement(listObj, "comment", lastStart, ptr, noAngle, NULL);
+                    lastStart = ptr + 1;
                 }
-            } else if (intag) {
-                if (*inPtr == '>') {
+            } else if (inPi) {
+                if ((*(ptr) == '?')
+                    && *(ptr + 1) == '>') {
+                    inPi  = NS_FALSE;
+                    ptr += 1;
+                    HtmlFinishElement(listObj, "pi", lastStart, ptr, noAngle, NULL);
+                    lastStart = ptr + 1;
+                }
+            } else if (inTag) {
+                if (*ptr == '>') {
+                    Tcl_Obj *contentObj;
+
+                    contentObj = HtmlParseTagAtts(lastStart, ptr - lastStart);
                     /*
                      * Closing a tag.
                      */
-                    intag = NS_FALSE;
-                    HtmlFinishElement(listObj, "tag", inString, lastStart, inPtr, withText);
-                    lastStart = inPtr + 1;
+                    inTag = NS_FALSE;
+                    if (contentObj == NULL) {
+                        /*
+                         * Parsing of the tag content was syntactically not
+                         * possible, therefore fallback to treat the content
+                         * as text, including the surrounding <> characters.
+                         */
+                        HtmlFinishElement(listObj, "text",
+                                          lastStart-1, ptr+1, NS_FALSE, NULL);
+                    } else {
+                        HtmlFinishElement(listObj, "tag",
+                                          lastStart, ptr, noAngle, contentObj);
+                    }
+                    lastStart = ptr + 1;
                 }
-            } else if (*inPtr == '<') {
-                if (inPtr != lastStart) {
-                    HtmlFinishElement(listObj, "text", inString, lastStart, inPtr, withText);
+            } else if (*ptr == '<'
+                       && CHARTYPE(space,*(ptr + 1)) == 0
+                       && strchr(ptr, '>') != NULL) {
+                char nextChar = *(ptr + 1);
+
+                if (ptr != lastStart) {
+                    HtmlFinishElement(listObj, "text", lastStart, ptr, NS_FALSE, NULL);
                 }
-                lastStart = inPtr + 1;
+                lastStart = ptr + 1;
                 /*
                  * We have either a tag (with potential arguments) or a comment.
                  */
-                if ((*(inPtr + 1) == '!')
-                    && (*(inPtr + 2) == '-')
-                    && (*(inPtr + 3) == '-')) {
-                    intag = NS_FALSE;
-                    incomment = NS_TRUE;
+                if ((nextChar == '!')
+                    && (*(ptr + 2) == '-')
+                    && (*(ptr + 3) == '-')) {
+                    inTag = NS_FALSE;
+                    inComment = NS_TRUE;
+                } else if (nextChar == '?') {
+                    inTag = NS_FALSE;
+                    inPi = NS_TRUE;
+                } else if (nextChar == '/'
+                           || (nextChar >= 'a' && nextChar <= 'z')
+                           || (nextChar >= 'A' && nextChar <= 'Z') ){
+                    inTag = NS_TRUE;
                 } else {
-                    intag = NS_TRUE;
+                    Ns_Log(Debug, "first character of tag '%c' is unknown, must be text: %s",
+                           nextChar, htmlString);
+                    lastStart = ptr;
+                    ptr--;
                 }
+                ptr++;
             }
-            ++inPtr;
+            ptr++;
         }
-        if (inPtr != lastStart) {
-            HtmlFinishElement(listObj, "text", inString, lastStart, inPtr, withText);
+        if (ptr != lastStart) {
+            HtmlFinishElement(listObj, "text", lastStart, ptr, NS_FALSE, NULL);
         }
 
         Tcl_SetObjResult(interp, listObj);
-        ns_free(inString);
     }
+
     return result;
 }
 
