@@ -35,7 +35,7 @@ static size_t EntityDecode(const char *entity, size_t length, bool *needEncodePt
 
 static void
 HtmlFinishElement(Tcl_Obj *listObj, const char* what, const char *lastStart,
-                  const char *currentPtr, bool noAngle, Tcl_Obj *contentObj)
+                  const char *currentPtr, bool noAngle,  bool onlyTags, Tcl_Obj *contentObj)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 static Tcl_Obj *
 HtmlParseTagAtts(const char *string, ptrdiff_t length)
@@ -1090,22 +1090,28 @@ HtmlParseTagAtts(const char *string, ptrdiff_t length)
  */
 static void
 HtmlFinishElement(Tcl_Obj *listObj, const char *what, const char *lastStart,
-                  const char *currentPtr, bool noAngle, Tcl_Obj *contentObj)
+                  const char *currentPtr, bool noAngle, bool onlyTags, Tcl_Obj *contentObj)
 {
-    ptrdiff_t length = currentPtr - lastStart;
-    Tcl_Obj  *elementObj = Tcl_NewListObj(0, NULL);
+    if (onlyTags) {
+        if (contentObj != NULL) {
+            Tcl_ListObjAppendElement(NULL, listObj, contentObj);
+        }
+    } else {
+        ptrdiff_t length = currentPtr - lastStart;
+        Tcl_Obj  *elementObj = Tcl_NewListObj(0, NULL);
 
-    Tcl_ListObjAppendElement(NULL, elementObj, Tcl_NewStringObj(what, -1));
-    if (noAngle) {
-        lastStart --;
-        length += 2;
+        Tcl_ListObjAppendElement(NULL, elementObj, Tcl_NewStringObj(what, -1));
+        if (noAngle) {
+            lastStart --;
+            length += 2;
+        }
+        Tcl_ListObjAppendElement(NULL, elementObj,
+                                 Tcl_NewStringObj(lastStart, (int)length));
+        if (contentObj != NULL) {
+            Tcl_ListObjAppendElement(NULL, elementObj, contentObj);
+        }
+        Tcl_ListObjAppendElement(NULL, listObj, elementObj);
     }
-    Tcl_ListObjAppendElement(NULL, elementObj,
-                             Tcl_NewStringObj(lastStart, (int)length));
-    if (contentObj != NULL) {
-        Tcl_ListObjAppendElement(NULL, elementObj, contentObj);
-    }
-    Tcl_ListObjAppendElement(NULL, listObj, elementObj);
 }
 
 /*
@@ -1126,11 +1132,12 @@ HtmlFinishElement(Tcl_Obj *listObj, const char *what, const char *lastStart,
 int
 NsTclParseHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int          result = TCL_OK, withNoAngleOption = (int)NS_FALSE;
+    int          result = TCL_OK, withNoAngleOption = (int)NS_FALSE, onlyTagsOption = (int)NS_FALSE;
     char        *htmlString = (char *)NS_EMPTY_STRING;
     Ns_ObjvSpec opts[] = {
-        {"-noangle", Ns_ObjvBool, &withNoAngleOption, INT2PTR(NS_TRUE)},
-        {"--",       Ns_ObjvBreak, NULL,    NULL},
+        {"-noangle",  Ns_ObjvBool, &withNoAngleOption, INT2PTR(NS_TRUE)},
+        {"-onlytags", Ns_ObjvBool, &onlyTagsOption, INT2PTR(NS_TRUE)},
+        {"--",        Ns_ObjvBreak, NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec  args[] = {
@@ -1141,6 +1148,10 @@ NsTclParseHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
+    } else if (withNoAngleOption == NS_TRUE && onlyTagsOption == NS_TRUE) {
+        Ns_TclPrintfResult(interp, "the options '-noangle' and '-onlytags' are mutually exclusive");
+        result = TCL_ERROR;
+
     } else {
         bool        inTag;     /* flag to see if are we inside a tag */
         bool        inComment; /* flag to see if we are inside a comment */
@@ -1148,7 +1159,8 @@ NsTclParseHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         const char *ptr;       /* moving pointer to input string */
         const char *lastStart;
         Tcl_Obj    *listObj;
-        bool         noAngle = withNoAngleOption ? NS_FALSE : NS_TRUE;
+        bool        noAngle = withNoAngleOption ? NS_FALSE : NS_TRUE;
+        bool        onlyTags = (bool)onlyTagsOption;
 
         lastStart  = htmlString;
         ptr        = htmlString;
@@ -1169,7 +1181,7 @@ NsTclParseHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                     && (*(ptr + 2) == '>')) {
                     inComment  = NS_FALSE;
                     ptr += 2;
-                    HtmlFinishElement(listObj, "comment", lastStart, ptr, noAngle, NULL);
+                    HtmlFinishElement(listObj, "comment", lastStart, ptr, noAngle, onlyTags, NULL);
                     lastStart = ptr + 1;
                 }
             } else if (inPi) {
@@ -1177,7 +1189,7 @@ NsTclParseHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                     && *(ptr + 1) == '>') {
                     inPi  = NS_FALSE;
                     ptr += 1;
-                    HtmlFinishElement(listObj, "pi", lastStart, ptr, noAngle, NULL);
+                    HtmlFinishElement(listObj, "pi", lastStart, ptr, noAngle, onlyTags, NULL);
                     lastStart = ptr + 1;
                 }
             } else if (inTag) {
@@ -1192,14 +1204,14 @@ NsTclParseHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                     if (contentObj == NULL) {
                         /*
                          * Parsing of the tag content was syntactically not
-                         * possible, therefore fallback to treat the content
+                         * possible, therefore, fallback to treat the content
                          * as text, including the surrounding <> characters.
                          */
                         HtmlFinishElement(listObj, "text",
-                                          lastStart-1, ptr+1, NS_FALSE, NULL);
+                                          lastStart-1, ptr+1, NS_FALSE, onlyTags, NULL);
                     } else {
                         HtmlFinishElement(listObj, "tag",
-                                          lastStart, ptr, noAngle, contentObj);
+                                          lastStart, ptr, noAngle, onlyTags, contentObj);
                     }
                     lastStart = ptr + 1;
                 }
@@ -1209,7 +1221,7 @@ NsTclParseHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                 char nextChar = *(ptr + 1);
 
                 if (ptr != lastStart) {
-                    HtmlFinishElement(listObj, "text", lastStart, ptr, NS_FALSE, NULL);
+                    HtmlFinishElement(listObj, "text", lastStart, ptr, NS_FALSE, onlyTags, NULL);
                 }
                 lastStart = ptr + 1;
                 /*
@@ -1238,7 +1250,7 @@ NsTclParseHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
             ptr++;
         }
         if (ptr != lastStart) {
-            HtmlFinishElement(listObj, "text", lastStart, ptr, NS_FALSE, NULL);
+            HtmlFinishElement(listObj, "text", lastStart, ptr, NS_FALSE, onlyTags, NULL);
         }
 
         Tcl_SetObjResult(interp, listObj);
