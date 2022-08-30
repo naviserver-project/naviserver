@@ -200,8 +200,8 @@ proc ns_getform {args}  {
         set ::_ns_form [ns_conn form -fallbackcharset $fallbackcharset]
         foreach name [ns_set keys $::_ns_form] {
             if {[string match "*.tmpfile" $name]} {
-                ns_log warning "Somone tries to sneak in a fake upload file " \
-                    "'$name' value '$value': [ns_conn url]"
+                ns_log warning "Somone tries to sneak-in a fake upload file " \
+                    "'$name' value '[ns_set get $::_ns_form $name]': [ns_conn url]"
                 ns_set delkey $::_ns_form $name
             }
         }
