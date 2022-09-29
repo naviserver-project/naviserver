@@ -56,30 +56,37 @@ help:
 install: install-dirs install-include install-tcl install-modules \
 	install-config install-doc install-examples install-notice
 
+HAVE_NSADMIN := $(shell id -u nsadmin 2> /dev/null)
+
 install-notice:
 	@echo ""
 	@echo ""
 	@echo "Congratulations, you have installed NaviServer."
 	@echo ""
 	@if [ "`whoami`" = "root" ]; then \
-	  echo "  Because you are running as root, the server needs an unprivileged user to be"; \
-	  echo "  specified (e.g. nsadmin). This user can be created on a Linux-like system with"; \
-	  echo "  the command"; \
-	  echo ""; \
-	  echo "  useradd nsadmin"; \
-	  echo ""; \
-	  echo "The permissions for log directory have to be set up:"; \
-	  echo ""; \
-	  echo "  chown -R nsadmin:nsadmin $(NAVISERVER)/logs"; \
-	  echo ""; \
-	  user="-u nsadmin"; \
+	    if [ "x${HAVE_NSADMIN}" = "x" ] ; then \
+		echo "  When running as root, the server needs an unprivileged user to be"; \
+		echo "  specified (e.g. nsadmin). This user can be created on a Linux-like system with"; \
+		echo "  the command"; \
+		echo ""; \
+		echo "  useradd nsadmin"; \
+		echo ""; \
+	    else \
+	        if [ ! `sudo -u nsadmin test -w $(NAVISERVER)/logs && echo 1` ] ; then \
+		    echo "The permissions for log directory have to be set up:"; \
+		    echo ""; \
+		    echo "  chown -R nsadmin:nsadmin $(NAVISERVER)/logs"; \
+		    echo ""; \
+		fi; \
+	    fi; \
+	    user="-u nsadmin"; \
 	fi; \
 	echo "You can now run NaviServer by typing the following command: "; \
 	echo ""; \
 	echo "  $(NAVISERVER)/bin/nsd $$user -t $(NAVISERVER)/conf/nsd-config.tcl -f"; \
 	echo ""; \
 	echo "As a next step, you need to configure the server according to your needs."; \
-	echo "Consult as a reference the alternate configuration files in $(NAVISERVER)/conf/"; \
+	echo "Consult the sample configuration files in $(NAVISERVER)/conf/ as a reference."; \
 	echo ""
 
 install-dirs: all
