@@ -263,7 +263,7 @@ Ns_NoCloseOnExec(int fd)
  *      Dup a file descriptor to be 256 or higher
  *
  * Results:
- *      Returns new file discriptor.
+ *      Returns new file descriptor.
  *
  * Side effects:
  *      Original file descriptor is closed.

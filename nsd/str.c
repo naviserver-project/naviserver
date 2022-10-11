@@ -409,7 +409,7 @@ Ns_StrToMemUnit(const char *chars, Tcl_WideInt *intPtr)
                 if (fraction > 0.0) {
                     /*
                      * We have a fraction (e.g. 1.5MB). Compute the value as
-                     * floating point value and covert the result to integer.
+                     * floating point value and convert the result to integer.
                      */
                     double r = (double)(lval * multiplier) + fraction * multiplier;
 

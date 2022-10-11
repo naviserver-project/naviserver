@@ -923,7 +923,7 @@ GetTimeFromString(Tcl_Interp *interp, const char *str, char separator, Ns_Time *
  *
  * SetTimeFromAny --
  *
- *      Attempt to generate an Ns_Time internal respresentation for the Tcl
+ *      Attempt to generate an Ns_Time internal representation for the Tcl
  *      object. It interprets integer as seconds, but allows as well the form
  *      sec:usec, sec.fraction, or number plus time unit.
  *

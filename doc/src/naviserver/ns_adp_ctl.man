@@ -26,7 +26,7 @@ generates an ADP exception, unwinding the ADP call stack.
 
 Return the currently
 ADP output buffer size, setting it to a new value if the
-optionial [arg size] argument is specified.
+optional [arg size] argument is specified.
 
 [call [cmd "ns_adp_ctl cache"] [opt [arg bool]]]
 

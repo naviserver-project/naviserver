@@ -65,7 +65,7 @@ static char *AppendData(Ns_Set *set, size_t index, const char *value, ssize_t va
 #endif
 
 #if defined(NS_SET_DEBUG)
-static void hexPrint(const char *msg, const unsigned char *octects, size_t octectLength)
+static void hexPrint(const char *msg, const unsigned char *octets, size_t octectLength)
 {
     if (Ns_LogSeverityEnabled(Notice)) {
         size_t i;
@@ -74,17 +74,17 @@ static void hexPrint(const char *msg, const unsigned char *octects, size_t octec
         Tcl_DStringInit(&ds);
         Ns_DStringPrintf(&ds, "%s (len %" PRIuz "): ", msg, octectLength);
         for (i = 0; i < octectLength; i++) {
-            Ns_DStringPrintf(&ds, "%.2x ", octects[i] & 0xff);
+            Ns_DStringPrintf(&ds, "%.2x ", octets[i] & 0xff);
         }
         Ns_Log(Notice, "%s", ds.string);
         Tcl_DStringInit(&ds);
 
         Ns_DStringPrintf(&ds, "%s (len %" PRIuz "): ", msg, octectLength);
         for (i = 0; i < octectLength; i++) {
-            if (octects[i] < 20) {
+            if (octets[i] < 20) {
                 Ns_DStringPrintf(&ds, "%-2c ", 32);
             } else {
-                Ns_DStringPrintf(&ds, "%-2c ", octects[i]);
+                Ns_DStringPrintf(&ds, "%-2c ", octets[i]);
             }
         }
         Ns_Log(Notice, "%s", ds.string);

@@ -106,7 +106,7 @@ ns_logctl severity notice off
 
 if {$code ne "0"} {
     #
-    # We had some errors during the regression test, force a non-zero
+    # We had some errors during the regression test, force a nonzero
     # exit code
     #
     ns_shutdown -restart

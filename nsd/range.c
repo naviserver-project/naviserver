@@ -459,7 +459,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
 
         /*
          * Check this range overlapping with the former.
-         * The standard does not cleary specify how to
+         * The standard does not clearly specify how to
          * check those. Therefore, here is what we do:
          *
          *  a. For non-overlapping ranges: keep both

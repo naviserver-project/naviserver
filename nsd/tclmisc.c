@@ -750,12 +750,12 @@ NsTclHrefsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  */
 
 #if 0
-static void hexPrint(const char *msg, const unsigned char *octects, size_t octectLength)
+static void hexPrint(const char *msg, const unsigned char *octets, size_t octectLength)
 {
     size_t i;
     fprintf(stderr, "%s octectLength %" PRIuz ":", msg, octectLength);
     for (i = 0; i < octectLength; i++) {
-        fprintf(stderr, "%.2x ", octects[i] & 0xff);
+        fprintf(stderr, "%.2x ", octets[i] & 0xff);
     }
     fprintf(stderr, "\n");
 }

@@ -648,7 +648,7 @@ Ns_LogSeverityEnabled(Ns_LogSeverity severity)
  *      Previous enabled state.
  *
  * Side effects:
- *      Upadating severityConfig
+ *      Updating severityConfig
  *
  *----------------------------------------------------------------------
  */

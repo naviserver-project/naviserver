@@ -862,7 +862,7 @@ GetEncodingFormat(const char *encodingString, const char *encodingFormat, double
  *
  * CompressAllow --
  *
- *      Handle quality values expressed expicitly (for gzip or brotli) in the
+ *      Handle quality values expressed explicitly (for gzip or brotli) in the
  *      header fields. Respect cases, where compression is forbidden via
  *      identy or default rules.
  *

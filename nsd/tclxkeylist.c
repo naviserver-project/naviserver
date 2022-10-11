@@ -159,7 +159,7 @@ TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key,
  *  - interp (I/O) - Error message will be return in result if there
  *    is an error.
  *  - subFieldName (I) - If "" or NULL, then the keys are
- *    retreved for the top level of the list.  If specified, it is name of the
+ *    retrieved for the top level of the list.  If specified, it is name of the
  *    field who's subfield keys are to be retrieve.
  *  - keyedList (I) - The list to search for the field.
  *  - keysArgcPtr (O) - The number of keys in the keyed list is returned here.

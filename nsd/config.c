@@ -1231,7 +1231,7 @@ ParamObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const*
  *
  * SectionObjCmd --
  *
- *      Impelements "ns_section". This command creates a new config section in
+ *      Implements "ns_section". This command creates a new config section in
  *      form of a newly-allocated "ns_set" for holding config data.
  *      "ns_param" stores config data in the set.
  *
