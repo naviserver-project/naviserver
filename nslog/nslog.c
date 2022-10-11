@@ -313,7 +313,7 @@ AddCmds(Tcl_Interp *interp, const void *arg)
  *      None
  *
  * Side effects:
- *      Upadating fields in logPtr
+ *      Updating fields in logPtr
  *
  *----------------------------------------------------------------------
  */

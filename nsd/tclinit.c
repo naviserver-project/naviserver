@@ -2254,7 +2254,7 @@ UpdateInterp(NsInterp *itPtr)
 
     /*
      * A reader-writer lock is used on the assumption updates are rare and
-     * likley expensive to evaluate if the virtual server contains significant
+     * likely expensive to evaluate if the virtual server contains significant
      * state. The Rd lock is here, since we are just reading the protected
      * variables.
      *

@@ -2231,7 +2231,7 @@ New Features:
       working with header fields.
 
     * Added subcommand "ns_set iupdate": this command is the case
-      insenstive counterpart of "ns_set update".
+      insensitive counterpart of "ns_set update".
 
     * Fixed "nsv_set a b" when neither a key nor the array exists.
 

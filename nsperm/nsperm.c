@@ -425,7 +425,7 @@ static Ns_ReturnCode AuthProc(const char *server, const char *method, const char
     if (STREQ(auth, "Basic")) {
 
         /*
-         * Basic Authentiction: Verify user password (if any).
+         * Basic Authentication: Verify user password (if any).
          */
 
         if (userPtr->pwd[0] != 0) {

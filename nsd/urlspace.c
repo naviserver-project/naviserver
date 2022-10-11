@@ -1182,7 +1182,7 @@ CmpUrlSpaceContextSpecs(const void *leftPtrPtr, const void *rightPtrPtr)
             result = ((int)ctxRight->specifity - (int)ctxLeft->specifity);
             if (result == 0) {
                 /*
-                 * Both patters are equally long -> take lexical order.
+                 * Both patterns are equally long -> take lexical order.
                  */
                 result = NS_strcmp(ctxLeft->patternString, ctxLeft->patternString);
             }

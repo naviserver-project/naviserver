@@ -814,7 +814,7 @@ NsTclAdpDumpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *
  * NsTclAdpInfoObjCmd --
  *
- *      Implements "ns_adp_info". This command provodes introspection for the
+ *      Implements "ns_adp_info". This command provides introspection for the
  *      current filename, size and modification time.
  *
  * Results:

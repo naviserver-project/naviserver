@@ -181,7 +181,7 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
         }
 
         /*
-         * Allocate piggypacked memory chunk containing
+         * Allocate piggybacked memory chunk containing
          *   - tag structure,
          *   - tag begin string,
          *   - tag end string

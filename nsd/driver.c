@@ -5669,7 +5669,7 @@ WriterSend(WriterSock *curPtr, int *err) {
 
         if (curPtr->fd != NS_INVALID_FD) {
             /*
-             * File-descriptor based send operation. Reduce the (remainig)
+             * File-descriptor based send operation. Reduce the (remaining)
              * buffer size the amount of data sent and adjust the buffer
              * offset. For partial send operations, this will lead to a
              * remaining buffer size > 0.

@@ -29,7 +29,7 @@
 #include "thread.h"
 
 /*
- * The following structure defines a critcal section including a mutex,
+ * The following structure defines a critical section including a mutex,
  * thread id of the owner, and a condition variable for waiting threads.
  */
 
