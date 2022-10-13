@@ -61,13 +61,13 @@ body data from memory or from a named file.
 
 [opt_def -body [arg body]]
 transmit the content of the passed string as the request body.
-This option is mutualy exclusive with [option -body_file] and [option -body_chan].
+This option is mutually exclusive with [option -body_file] and [option -body_chan].
 Implementation will try to guess the "Content-Type" of the body by checking
 the type of the passed [option body].
 
 [opt_def -body_file [arg fn]]
 transmit the file specified via filename as the request body.
-This option is mutualy exclusive with [option -body] and [option -body_chan].
+This option is mutually exclusive with [option -body] and [option -body_chan].
 Implementation will try to guess the "Content-Type" of the body by checking
 the extension of the passed [option fn].
 
@@ -75,7 +75,7 @@ the extension of the passed [option fn].
 transmit the content specified via Tcl channel, which must be opened for
 reading, as the request body. The channel must be in blocking mode and
 should be seekable (unless the [option -body_size] is specified).
-This option is mutualy exclusive with [option -body] and [option -body_file].
+This option is mutually exclusive with [option -body] and [option -body_file].
 Caller should put "Content-Type" header in passed [option -headers] set
 since the implementation cannot guess the correct value. If none found,
 the "application/octet-stream" will be assumed.
@@ -143,12 +143,12 @@ The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB).
 
 [opt_def -outputfile [arg fn]]
 receive the response content into the specified filename.
-This option is mutualy exclusive with [option -outputchan].
+This option is mutually exclusive with [option -outputchan].
 
 [opt_def -outputchan [arg chan]]
 receive the response content into the specified Tcl channel, which must be
 opened for writing. The channel must be in blocking mode.
-This option is mutualy exclusive with [option -outputfile].
+This option is mutually exclusive with [option -outputfile].
 For [cmd "ns_http queue"] command, the [option -outputchan] channel will be
 dissociated from the current interpreter/thread and the ownership will be
 transferred to the thread that runs the request. Upon [cmd "ns_http wait"]
@@ -164,7 +164,9 @@ specified in any supported ns_time format.
 
 [opt_def -timeout [arg T]]
 time to wait for connection setup and socket readable/writable state.
-The time can be specified in any supported ns_time format.
+The time can be specified in any supported ns_time format. When a
+domain name is resolved against several IP addresses, the provided
+timeout span is used for every IP address. The default timeout is 5s.
 
 [opt_def -verify]
 used for HTTPS URIs to specify that the server certificate should be
@@ -176,7 +178,7 @@ anonymous cipher is used, this option is ignored.
 [opt_def -proxy [arg dict]]
 Controls whether to handle HTTP/HTTPS requests over an intermediate proxy.
 The argument must be a valid Tcl dictionary with (at least) following
-keys: [term host], [term port]. Optionally, an [term tunnel] boolean key
+keys: [term host], [term port]. Optionally, a [term tunnel] boolean key
 may be specified.
 The [term host] must hold the hostname or IP address of the proxy
 server. The [term port] the TCP port of the proxy server. If [term host]
