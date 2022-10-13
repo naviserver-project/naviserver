@@ -58,9 +58,11 @@
 
 static NS_SOCKET SockConnect(const char *host, unsigned short port,
                              const char *lhost, unsigned short lport,
-                             bool async) NS_GNUC_NONNULL(1);
+                             bool async, int count, int ms,
+                             Ns_ReturnCode *resultPtr)
+    NS_GNUC_NONNULL(1);
 
-static Ns_ReturnCode WaitForConnect(NS_SOCKET sock);
+static Ns_ReturnCode WaitForConnect(NS_SOCKET sock, int count, int ms);
 
 static NS_SOCKET SockSetup(NS_SOCKET sock);
 
@@ -1039,7 +1041,7 @@ Ns_SockConnect(const char *host, unsigned short port)
 {
     NS_NONNULL_ASSERT(host != NULL);
 
-    return SockConnect(host, port, NULL, 0u, NS_FALSE);
+    return SockConnect(host, port, NULL, 0u, NS_FALSE, 20, 100, NULL);
 }
 
 NS_SOCKET
@@ -1047,7 +1049,7 @@ Ns_SockConnect2(const char *host, unsigned short port, const char *lhost, unsign
 {
     NS_NONNULL_ASSERT(host != NULL);
 
-    return SockConnect(host, port, lhost, lport, NS_FALSE);
+    return SockConnect(host, port, lhost, lport, NS_FALSE, 20, 100, NULL);
 }
 
 
@@ -1072,7 +1074,7 @@ Ns_SockAsyncConnect(const char *host, unsigned short port)
 {
     NS_NONNULL_ASSERT(host != NULL);
 
-    return SockConnect(host, port, NULL, 0u, NS_TRUE);
+    return SockConnect(host, port, NULL, 0u, NS_TRUE, 20, 100, NULL);
 }
 
 NS_SOCKET
@@ -1080,7 +1082,7 @@ Ns_SockAsyncConnect2(const char *host, unsigned short port, const char *lhost, u
 {
     NS_NONNULL_ASSERT(host != NULL);
 
-    return SockConnect(host, port, lhost, lport, NS_TRUE);
+    return SockConnect(host, port, lhost, lport, NS_TRUE, 20, 100, NULL);
 }
 
 
@@ -1117,19 +1119,24 @@ Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost,
     NS_SOCKET     sock;
     socklen_t     len;
     Ns_ReturnCode status;
+    int           count;
+    const int     ms = 100;
 
     NS_NONNULL_ASSERT(host != NULL);
     NS_NONNULL_ASSERT(timeoutPtr != NULL);
 
     /*
-     * Connect to the host asynchronously and wait for
-     * it to connect.
+     * Connect to the host asynchronously and wait for it to connect. The
+     * connection code makes a few attempts in the interval of "ms"
+     * milliseconds. The number of attempts is determined by the timeoutPtr.
      */
+    count = (int)Ns_TimeToMilliseconds(timeoutPtr)/ms;
+    Ns_Log(Debug, "Ns_SockTimedConnect2 for %s:%hu MS %ld count %d",
+           host, port, Ns_TimeToMilliseconds(timeoutPtr), count);
 
-    sock = SockConnect(host, port, lhost, lport, NS_TRUE);
+    sock = SockConnect(host, port, lhost, lport, NS_TRUE, count, ms, &status);
     if (unlikely(sock == NS_INVALID_SOCKET)) {
         /*Ns_Log(Warning, "SockConnect returned invalid socket");*/
-        status = NS_ERROR;
 
     } else {
         /*Ns_Log(Notice, "SockConnect for %s:%hu returned socket %d, wait for write (errno %d <%s>)",
@@ -1711,13 +1718,15 @@ BindToSameFamily(const struct sockaddr *saPtr, struct sockaddr *lsaPtr,
  *
  * WaitForConnect --
  *
- *      Handle EINPROGRESS and friends in async connect attempts.  We check
- *      after the connect, whether the socket is writable.  This works
- *      sometimes, but in some cases, poll() returns that the socket is
- *      writable, but it is still not connected. So, we double check, if we
- *      can get the peer address for this socket via getpeername(), which is
- *      only possible when connection succeeded.  Otherwise we retry a couple
- *      of times.
+ *      Handle EINPROGRESS and friends in async connect attempts.  We
+ *      check after the connect, whether the socket is writable.  This
+ *      works sometimes, but in some cases, poll() returns that the
+ *      socket is writable, but it is still not connected. So, we double
+ *      check, if we can get the peer address for this socket via
+ *      getpeername(), which is only possible when connection succeeded.
+ *      "count" specifies the number of connections attempts (important
+ *      for async operations), and "ms" determines the interval between
+ *      attempts.
  *
  * Results:
  *      NS_OK on success or NS_ERROR on failure.
@@ -1730,11 +1739,10 @@ BindToSameFamily(const struct sockaddr *saPtr, struct sockaddr *lsaPtr,
  */
 
 static Ns_ReturnCode
-WaitForConnect(NS_SOCKET sock)
+WaitForConnect(NS_SOCKET sock, int count, int ms)
 {
     struct pollfd sockfd;
     Ns_ReturnCode result;
-    int count = 20;
 
     for (;;) {
         int nfds;
@@ -1744,13 +1752,12 @@ WaitForConnect(NS_SOCKET sock)
         sockfd.fd = sock;
 
         /*
-         * Wait for max 100ms for the socket to become
-         * writable, otherwise use the next offered IP
-         * address. TODO: The waiting timespan should be
-         * probably configurable.
+         * Wait for max "ms" milliseconds for the socket to become
+         * writable, otherwise use the next offered IP address.
          */
-        nfds = ns_poll(&sockfd, 1, 100);
-        Ns_Log(Debug, "WaitForConnect: poll returned 0x%.4x, nsfds %d", sockfd.revents, nfds);
+        nfds = ns_poll(&sockfd, 1, ms);
+        Ns_Log(Debug, "WaitForConnect: poll returned 0x%.4x, nsfds %d count %d",
+               sockfd.revents, nfds, count);
 
         if ((sockfd.revents & POLLOUT) != 0) {
             struct NS_SOCKADDR_STORAGE sa;
@@ -1800,11 +1807,11 @@ WaitForConnect(NS_SOCKET sock)
              * states, we do not get this under macOS. In case, we have no
              * error state, we retry.
              */
-            if (sockfd.revents == 0 && Ns_SockErrorCode(NULL, sock) == 0) {
-                Ns_Log(Debug, "WaitForConnect: sock %d retry", sock);
+            if (count-- > 0 && sockfd.revents == 0 && Ns_SockErrorCode(NULL, sock) == 0) {
+                /*Ns_Log(Debug, "WaitForConnect: sock %d retry", sock);*/
                 continue;
             }
-            result = NS_ERROR;
+            result = count > 0 ? NS_ERROR : NS_TIMEOUT;
         }
         break;
     }
@@ -1821,7 +1828,9 @@ WaitForConnect(NS_SOCKET sock)
  *
  *      Open a TCP connection to a host/port sync or async.  "host" and
  *      "port" refer to the remote, "lhost" and "lport" to the local
- *      communication endpoint.
+ *      communication endpoint. "count" specifies the number of
+ *      connections attempts (important for async operations), and "ms"
+ *      determines the interval between attempts.
  *
  * Results:
  *      A socket or NS_INVALID_SOCKET on error.
@@ -1835,13 +1844,15 @@ WaitForConnect(NS_SOCKET sock)
 
 static NS_SOCKET
 SockConnect(const char *host, unsigned short port, const char *lhost,
-            unsigned short lport, bool async)
+            unsigned short lport, bool async, int count, int ms, Ns_ReturnCode *resultPtr)
 {
-    NS_SOCKET             sock;
-    bool                  success;
-    Tcl_DString           ds;
+    NS_SOCKET      sock;
+    bool           success;
+    Tcl_DString    ds;
+    Ns_ReturnCode  result;
 
-    /*Ns_Log(Notice, "SockConnect calls Ns_GetSockAddr %s %hu", host, port);*/
+    /*Ns_Log(Notice, "SockConnect calls Ns_GetSockAddr %s %hu count %d ms %d",
+      host, port, count, ms);*/
 
     Tcl_DStringInit(&ds);
     success = Ns_GetAllAddrByHost(&ds, host);
@@ -1849,6 +1860,7 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
     if (!success) {
         Ns_Log(Warning, "SockConnect could not resolve host %s", host);
         sock = NS_INVALID_SOCKET;
+        result = NS_ERROR;
     } else {
 
         /*
@@ -1866,9 +1878,13 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
                    host, addresses);
         }
         sock = NS_INVALID_SOCKET;
+        /*
+         * Setting result to NS_ERROR is needed for the case, where
+         * "addresses" are empty.
+         */
+        result = NS_ERROR;
 
         for (;;) {
-            Ns_ReturnCode  result;
             const char    *address;
 
             address = ns_strtok(addresses, " ");
@@ -1918,7 +1934,6 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
                          * but the handling is this way much easier.
                          */
                         if (multipleIPs) {
-
                             if (err == NS_EWOULDBLOCK) {
                                 Ns_Log(Debug, "async connect to %s on sock %d returned NS_EWOULDBLOCK",
                                        address, sock);
@@ -1926,7 +1941,8 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
                                 Ns_Log(Debug, "async connect to %s on sock %d returned EINPROGRESS",
                                        address, sock);
                             }
-                            if (WaitForConnect(sock) == NS_OK) {
+                            result = WaitForConnect(sock, count, ms);
+                            if (result == NS_OK) {
                                 /*
                                  * The socket is connected, we can use this IP address.
                                  */
@@ -1939,9 +1955,9 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
                                 /*
                                  * The socket could not be connected, try a next IP address.
                                  */
-                                /* Ns_Log(Notice, "async connect multipleIPs INPROGRESS "
-                                       "sock %d connect failed (address %s), try next",
-                                       sock, address); */
+                                /*Ns_Log(Debug, "async connect multipleIPs INPROGRESS "
+                                       "sock %d connect failed (address %s), try next (result %d)",
+                                       sock, address, result);*/
                                 ns_sockclose(sock);
                                 sock = NS_INVALID_SOCKET;
                                 continue;
@@ -1951,8 +1967,9 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
                         Ns_Log(Notice, "close sock %d due to error err %d <%s>",
                                sock, err, ns_sockstrerror(err));
                         ns_sockclose(sock);
-                        Ns_LogSockaddr(Warning, "SockConnect fails", saPtr);
+                        /* Ns_LogSockaddr(Warning, "SockConnect fails", saPtr);*/
                         sock = NS_INVALID_SOCKET;
+                        result = NS_ERROR;
                         continue;
                     }
                 } else {
@@ -1968,6 +1985,9 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
         }
     }
     Tcl_DStringFree(&ds);
+    if (resultPtr != NULL) {
+        *resultPtr = result;
+    }
 
     Ns_Log(Debug, "SockConnect to %s: returns sock %d", host, sock);
 

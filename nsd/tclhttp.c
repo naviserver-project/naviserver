@@ -2868,12 +2868,12 @@ HttpConnect(
 
     /*
      * Now we are ready to attempt the connection.
-     * If no timeout given, assume 30 seconds.
+     * If no timeout given, assume 5 seconds.
      */
 
     {
         Ns_ReturnCode rc;
-        Ns_Time       defaultTimout = {30, 0}, *toPtr = NULL;
+        Ns_Time       defaultTimout = {5, 0}, *toPtr = NULL;
 
         Ns_Log(Ns_LogTaskDebug, "HttpConnect: connecting to [%s]:%hu", u.host, portNr);
 
