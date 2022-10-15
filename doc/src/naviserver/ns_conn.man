@@ -282,7 +282,7 @@ For example:
 
 Returns the IP address of the client, i.e. the "other side" of the
 HTTP connection. An IPv4 address is returned in the form of a string
-separated with periods (e.g., 155.164.59.75), an IPv4 address is
+separated with periods (e.g., 155.164.59.75), an IPv6 address is
 returned in the form of a string separated with colons (e.g.,
 2001:628:404:74::31).  In reverse proxy mode the IP address is
 determined by the value forwarded by the reverse proxy server (via the
