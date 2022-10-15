@@ -1525,7 +1525,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         "channel", "clientdata", "close", "compress", "content",
         "contentfile", "contentlength", "contentsentlength", "copy",
         "currentaddr", "currentport",
-        "driver",
+        "details", "driver",
         "encoding",
         "fileheaders", "filelength", "fileoffset", "files", "flags", "form",
         "headerlength", "headers", "host",
@@ -1545,36 +1545,36 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         NULL
     };
     static const unsigned int required_flags[] = {
-        NS_CONN_REQUIRE_CONFIGURED, NS_CONN_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
+        /* A */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
         /* line continued */ NS_CONN_REQUIRE_CONFIGURED,
-        NS_CONN_REQUIRE_OPEN, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_OPEN,
+        /* C */ NS_CONN_REQUIRE_OPEN, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_OPEN,
         /* line continued */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
-        NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_OPEN,
+        /* C */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_OPEN,
         /* line continued */ NS_CONN_REQUIRE_OPEN,
-        NS_CONN_REQUIRE_CONNECTED, NS_CONN_REQUIRE_CONNECTED,
-        NS_CONN_REQUIRE_CONFIGURED,
-        NS_CONN_REQUIRE_CONFIGURED,
-        NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
+        /* C */ NS_CONN_REQUIRE_CONNECTED, NS_CONN_REQUIRE_CONNECTED,
+        /* D */ NS_CONN_REQUIRE_CONNECTED, NS_CONN_REQUIRE_CONFIGURED,
+        /* E */ NS_CONN_REQUIRE_CONFIGURED,
+        /* F */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
         /* line continued */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
         /* line continued */ NS_CONN_REQUIRE_CONFIGURED,
-        NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
-        NS_CONN_REQUIRE_CONFIGURED, 0u,
-        NS_CONN_REQUIRE_CONNECTED,
-        NS_CONN_REQUIRE_CONFIGURED,
-        NS_CONN_REQUIRE_CONFIGURED,
-        NS_CONN_REQUIRE_CONFIGURED,
-        NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
+        /* H */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
+        /* I */ NS_CONN_REQUIRE_CONFIGURED, 0u,
+        /* K */ NS_CONN_REQUIRE_CONNECTED,
+        /* L */ NS_CONN_REQUIRE_CONFIGURED,
+        /* M */ NS_CONN_REQUIRE_CONFIGURED,
+        /* O */ NS_CONN_REQUIRE_CONFIGURED,
+        /* P */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
         /* line continued */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONNECTED,
         /* line continued */ NS_CONN_REQUIRE_CONFIGURED,
-        NS_CONN_REQUIRE_CONFIGURED,
-        NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
-        NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONNECTED, NS_CONN_REQUIRE_CONFIGURED,
+        /* Q */ NS_CONN_REQUIRE_CONFIGURED,
+        /* R */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
+        /* S */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONNECTED, NS_CONN_REQUIRE_CONFIGURED,
         /* line continued */ NS_CONN_REQUIRE_CONFIGURED,
-        NS_CONN_REQUIRE_CONFIGURED,
-        NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
+        /* T */ NS_CONN_REQUIRE_CONFIGURED,
+        /* U */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
         /* line continued */ NS_CONN_REQUIRE_CONFIGURED,
-        NS_CONN_REQUIRE_CONFIGURED,
-        NS_CONN_REQUIRE_CONFIGURED,
+        /* V */ NS_CONN_REQUIRE_CONFIGURED,
+        /* Z */ NS_CONN_REQUIRE_CONFIGURED,
         0u
     };
     enum ISubCmdIdx {
@@ -1582,7 +1582,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         CChannelIdx, CClientdataIdx, CCloseIdx, CCompressIdx, CContentIdx,
         CContentFileIdx, CContentLengthIdx, CContentSentLenIdx, CCopyIdx,
         CCurrentAddrIdx, CCurrentPortIdx,
-        CDriverIdx,
+        CDetailsIdx, CDriverIdx,
         CEncodingIdx,
         CFileHdrIdx, CFileLenIdx, CFileOffIdx, CFilesIdx, CFlagsIdx, CFormIdx,
         CHeaderLengthIdx, CHeadersIdx, CHostIdx,
@@ -2217,6 +2217,13 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
 
     case CDriverIdx:
         Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnDriverName(conn), -1));
+        break;
+
+    case CDetailsIdx:
+        if (connPtr->drvPtr->connInfoProc != NULL) {
+            Tcl_SetObjResult(interp,
+                             connPtr->drvPtr->connInfoProc(Ns_ConnSockPtr(conn)));
+        }
         break;
 
     case CServerIdx:

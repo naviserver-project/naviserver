@@ -54,6 +54,7 @@ static Ns_DriverAcceptProc Accept;
 static Ns_DriverRecvProc Recv;
 static Ns_DriverSendProc Send;
 static Ns_DriverKeepProc Keep;
+static Ns_DriverConnInfoProc ConnInfo;
 static Ns_DriverCloseProc Close;
 static Ns_DriverClientInitProc ClientInit;
 
@@ -87,7 +88,7 @@ Ns_ModuleInit(const char *server, const char *module)
     path = Ns_ConfigSectionPath(NULL, server, module, (char *)0L);
     drvCfgPtr = NsSSLConfigNew(path);
 
-    init.version = NS_DRIVER_VERSION_4;
+    init.version = NS_DRIVER_VERSION_5;
     init.name = "nsssl";
     init.listenProc = Listen;
     init.acceptProc = Accept;
@@ -95,6 +96,7 @@ Ns_ModuleInit(const char *server, const char *module)
     init.sendProc = Send;
     init.sendFileProc = NULL;
     init.keepProc = Keep;
+    init.connInfoProc = ConnInfo;
     init.requestProc = NULL;
     init.closeProc = Close;
     init.clientInitProc = ClientInit;
@@ -103,6 +105,11 @@ Ns_ModuleInit(const char *server, const char *module)
     init.path = path;
     init.protocol = "https";
     init.defaultPort = 443;
+#ifdef  OPENSSL_VERSION_TEXT
+    init.libraryVersion = OPENSSL_VERSION_TEXT;
+#else
+    init.libraryVersion = ns_strdup(SSLeay_version(SSLEAY_VERSION));
+#endif
 
     if (Ns_DriverInit(server, module, &init) != NS_OK) {
         Ns_Log(Error, "nsssl: driver init failed.");
@@ -151,7 +158,7 @@ Ns_ModuleInit(const char *server, const char *module)
 
     Tcl_DStringFree(&ds);
     Ns_Log(Notice, "nsssl: version %s loaded, based on %s",
-           NSSSL_VERSION, SSLeay_version(SSLEAY_VERSION));
+           NSSSL_VERSION, init.libraryVersion);
     return NS_OK;
 }
 
@@ -440,6 +447,45 @@ Keep(Ns_Sock *sock)
     /*fprintf(stderr, "##### Keep (%d) => 0\n", sock->sock);*/
     return NS_FALSE;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConnInfo --
+ *
+ *      Return Tcl_Obj hinting connection details
+ *
+ * Results:
+ *      Tcl_Obj *
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_Obj*
+ConnInfo(Ns_Sock *sock)
+{
+    SSLContext *sslCtx = sock->arg;
+    Tcl_Obj    *resultObj;
+
+    resultObj = Tcl_NewDictObj();
+
+    /*Tcl_DictObjPut(NULL, resultObj,
+                   Tcl_NewStringObj("protocol", 8),
+                   Tcl_NewStringObj(sock->driver->protocol, -1));*/
+    Tcl_DictObjPut(NULL, resultObj,
+                   Tcl_NewStringObj("sslversion", 10),
+                   Tcl_NewStringObj(SSL_get_version(sslCtx->ssl), -1));
+    Tcl_DictObjPut(NULL, resultObj,
+                   Tcl_NewStringObj("cipher", 6),
+                   Tcl_NewStringObj(SSL_get_cipher(sslCtx->ssl), -1));
+
+    return resultObj;
+}
+
 
 
 /*

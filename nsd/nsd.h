@@ -407,6 +407,7 @@ typedef struct Driver {
     Ns_DriverSendProc       *sendProc;
     Ns_DriverSendFileProc   *sendFileProc; /* Optional - optimize direct file send. */
     Ns_DriverKeepProc       *keepProc;
+    Ns_DriverConnInfoProc   *connInfoProc; /* Driver specific info about connection. */
     Ns_DriverRequestProc    *requestProc;
     Ns_DriverCloseProc      *closeProc;
     Ns_DriverClientInitProc *clientInitProc; /* Optional - initialization of client connections */
@@ -455,6 +456,7 @@ typedef struct Driver {
         Tcl_WideInt errors;             /* Dropped requests due to errors */
     } stats;
     Ns_DList ports;
+    const char *libraryVersion;
     unsigned short port;                /* Port in location */
     unsigned short defport;             /* Default port */
     bool reuseport;                     /* Allow optionally multiple drivers to connect to the same port */

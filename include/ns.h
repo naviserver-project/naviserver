@@ -179,6 +179,7 @@ typedef enum {
 #define NS_DRIVER_VERSION_2        2    /* IPv4 only */
 #define NS_DRIVER_VERSION_3        3    /* IPv4 and IPv6 */
 #define NS_DRIVER_VERSION_4        4    /* Client support, current version */
+#define NS_DRIVER_VERSION_5        5    /* Library info, current connection info */
 
 /*
  * The following are valid Tcl interp traces types.
@@ -647,7 +648,11 @@ typedef void
 
 typedef int
 (Ns_DriverClientInitProc)(Tcl_Interp *interp, Ns_Sock *sock, void* arg)
-     NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(2)  NS_GNUC_NONNULL(3);
+     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+typedef Tcl_Obj *
+(Ns_DriverConnInfoProc)(Ns_Sock *sock)
+     NS_GNUC_NONNULL(1);
 
 typedef struct Ns_DriverClientInitArg {
     NS_TLS_SSL_CTX *ctx;
@@ -669,13 +674,15 @@ typedef struct Ns_DriverInitData {
     Ns_DriverKeepProc       *keepProc;         /* Keep a socket open after conn done? */
     Ns_DriverRequestProc    *requestProc;      /* First proc to be called by a connection thread. */
     Ns_DriverCloseProc      *closeProc;        /* Close a connection socket. */
-    Ns_DriverClientInitProc *clientInitProc;   /* Initialize a client connection*/
+    Ns_DriverClientInitProc *clientInitProc;   /* Initialize a client connection */
     int                      version;          /* Version 4. */
     unsigned int             opts;             /* NS_DRIVER_ASYNC | NS_DRIVER_SSL  */
     void                    *arg;              /* Module's driver callback data */
     const char              *path;             /* Path to find config parameter such as port, address, etc. */
     const char              *protocol;         /* Protocol */
     unsigned short           defaultPort;      /* Default port */
+    Ns_DriverConnInfoProc   *connInfoProc;     /* NS_DRIVER_VERSION_5: Obtain information about a connection */
+    const char              *libraryVersion;   /* NS_DRIVER_VERSION_5: Version of the used library */
 } Ns_DriverInitData;
 
 

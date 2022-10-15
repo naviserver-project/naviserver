@@ -119,6 +119,12 @@ Returns or sets the number of bytes in the content to be sent.
 Copies number of bytes from the current connection starting
 at the given offset to a Tcl channel.
 
+[call [cmd  "ns_conn details"]]
+
+Returns a dict with driver specific details concerning the current
+connection. For an HTTPS connection, it returns the result of protocol
+and cipher negotiation.
+
 
 [call [cmd  "ns_conn driver"]]
 

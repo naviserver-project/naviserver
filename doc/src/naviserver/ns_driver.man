@@ -50,6 +50,8 @@ configuration data, might be e.g. "http://localhost:8091"
 [item] [term recvwait] timeout for receive operations.
 [item] [term extraheaders] are the extra response header fields to be returned
 on every request via this driver.
+[item] [term libraryversion] version number of the library implemented
+major parts of the communication.
 [list_end]
 
 

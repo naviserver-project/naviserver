@@ -1170,6 +1170,10 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     drvPtr->clientInitProc = init->clientInitProc;
     drvPtr->arg            = init->arg;
     drvPtr->opts           = init->opts;
+    if (init->version == NS_DRIVER_VERSION_5) {
+        drvPtr->connInfoProc   = init->connInfoProc;
+        drvPtr->libraryVersion = init->libraryVersion;
+    }
     drvPtr->servPtr        = servPtr;
     drvPtr->defport        = defport;
 
@@ -1253,7 +1257,6 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
      * as specified in the configuration file or constructed from the
      * protocol, hostname and port.
      */
-
     drvPtr->protocol     = ns_strdup(defproto);
     drvPtr->address      = ns_strdup(bindaddrs);
 
@@ -1534,6 +1537,13 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
                 } else {
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(NS_EMPTY_STRING, 0));
                 }
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("libraryversion", 14));
+                if (drvPtr->libraryVersion != NULL) {
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->libraryVersion, -1));
+                } else {
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(NS_EMPTY_STRING, 0));
+                }
+
 
                 Tcl_ListObjAppendElement(interp, resultObj, listObj);
             }
