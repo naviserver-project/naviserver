@@ -380,7 +380,6 @@ ParseExtendedHeaders(Log *logPtr, const char *str)
                 logPtr->nrResponseHeaders = 0;
             } else {
                 Tcl_DString requestHeaderFields, responseHeaderFields;
-                int nrRequestsHeaderFields = 0, nrResponseHeaderFields = 0;
 
                 Tcl_DStringInit(&requestHeaderFields);
                 Tcl_DStringInit(&responseHeaderFields);
@@ -394,10 +393,8 @@ ParseExtendedHeaders(Log *logPtr, const char *str)
                         suffix ++;
                         if (strncmp(fieldName, "request", 3) == 0) {
                             Tcl_DStringAppendElement(&requestHeaderFields, suffix);
-                            nrRequestsHeaderFields++;
                         } else if (strncmp(fieldName, "response", 3) == 0) {
                             Tcl_DStringAppendElement(&responseHeaderFields, suffix);
-                            nrResponseHeaderFields++;
                         } else {
                             Ns_Log(Error, "nslog: ignore invalid entry prefix '%s' in extendedHeaders parameter",
                                    fieldName);
@@ -407,7 +404,6 @@ ParseExtendedHeaders(Log *logPtr, const char *str)
                          * No prefix, assume request header field
                          */
                         Tcl_DStringAppendElement(&requestHeaderFields, suffix);
-                        nrRequestsHeaderFields++;
                     }
                 }
                 (void) Tcl_SplitList(NULL, requestHeaderFields.string,
