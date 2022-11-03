@@ -371,7 +371,9 @@ static const struct exttype {
     { ".hdf",     "application/x-hdf" },
     { ".hdt",     "application/vnd.hdt"},
     { ".heic",    "image/heic"},
+    { ".heics",   "image/heic-sequence"},                    /* https://www.iana.org/assignments/media-types/image/heif-sequence*/
     { ".heif",    "image/heif"},
+    { ".heifs",   "image/heif-sequence"},                    /* https://www.iana.org/assignments/media-types/image/heic-sequence*/
     { ".heldxml", "application/held+xml"},                   /* http://www.iana.org/go/rfc5985 */
     { ".help",    "application/x-helpfile" },
     { ".hgl",     "application/vnd.hp-hpgl" },
@@ -450,7 +452,7 @@ static const struct exttype {
     { ".jpm",     "image/jpm"},                              /* http://www.iana.org/go/rfc3745 */
     { ".jps",     "image/x-jps" },
     { ".jrd",     "application/jrd+json"},                   /* http://www.iana.org/go/rfc7033 */
-    { ".js",      "application/javascript"},                 /* http://www.iana.org/go/rfc4329 */
+    { ".js",      "text/javascript"},                        /* RFC 9239 */
     { ".json",    "application/json"},                       /* http://www.iana.org/go/rfc7158 */
     { ".jsonld",  "application/vnd.ims.lis.v2.result+json"},
     { ".jtd",     "text/vnd.esmertec.theme-descriptor"},
@@ -541,6 +543,7 @@ static const struct exttype {
     { ".miz",     "text/mizar"},
     { ".mj2",     "video/mj2"},                              /* http://www.iana.org/go/rfc3745 */
     { ".mjf",     "audio/x-vnd.audioexplosion.mjuicemediafile" },
+    { ".mjs",     "text/javascript"},                        /* RFC 9239 */
     { ".mjpg",    "video/x-motion-jpeg" },
     { ".mlp",     "audio/vnd.dolby.mlp"},
     { ".mm",      "application/base64" },
