@@ -1074,6 +1074,7 @@ static const struct exttype {
     { ".vsw",     "application/x-visio" },
     { ".vtf",     "image/vnd.valve.source.texture"},
     { ".vtu",     "model/vnd.vtu"},
+    { ".vtt",     "text/vtt"},                             /* https://www.iana.org/assignments/media-types/text/vtt */
     { ".vxml",    "application/voicexml+xml"},             /* rfc 4267 */
     { ".w60",     "application/wordperfect6.0" },
     { ".w61",     "application/wordperfect6.1" },
