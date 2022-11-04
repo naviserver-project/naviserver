@@ -903,7 +903,8 @@ static const struct exttype {
     { ".spx",     "audio/ogg" },
     { ".sql",     "application/sql"},                        /* http://www.iana.org/go/rfc6922 */
     { ".src",     "application/x-wais-source" },
-    { ".sru",     "application/sru+xml"},                    /* http://www.iana.org/go/rfc6207 */
+    { ".srt",     "text/plain"},                           /* https://www.matroska.org/technical/subtitles.html */
+    { ".sru",     "application/sru+xml"},                  /* http://www.iana.org/go/rfc6207 */
     { ".srx",     "application/sparql-results+xml"},       /* w3c sparql */
     { ".sse",     "application/vnd.kodak-descriptor"},
     { ".ssf",     "application/vnd.epson.ssf"},
