@@ -960,7 +960,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
             const char *arg5 = Tcl_GetString(objv[5]);
 
             if (!STREQ(arg5, "in") && !STREQ(arg5, "out")) {
-                Ns_TclPrintfResult(interp, "inout parameter of setparam must "
+                Ns_TclPrintfResult(interp, "direction of setparam must "
                                    "be \"in\" or \"out\"");
                 result = TCL_ERROR;
 
