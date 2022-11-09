@@ -247,17 +247,18 @@ this function.
      [arg handle] \
      [arg varname] \
      [arg vartype] \
-     [arg inout] \
+     [arg direction] \
      [arg value] ]
 
-ns_db sp_setparam sets a parameter for a call to a stored procedure. The varname
-is the name of the variable, for example "@name". The vartype is the data type
-of this parameter, for example "varchar". The inout argument indicates whether
-it is an input or output parameter. It must be set to either "in" or "out".
-The value is the parameter value to send. This function returns 1 on success and
-throws an error on failure. This function is implemented only for the Sybase
-database driver. See the Examples section, below, for an example of
-this function.
+ns_db sp_setparam sets a parameter for a call to a stored
+procedure. [arg varname] is the name of the variable, for example
+"@name".  [arg vartype] is the data type of this parameter, for
+example "varchar". The [arg direction] argument indicates whether it
+is an input or output parameter. It must be set to either "in" or
+"out".  [arg value] denotes the parameter value to send. This function
+returns 1 on success and throws an error on failure. This function is
+implemented only for the Sybase database driver. See the Examples
+section, below, for an example of this function.
 
 
 [call [cmd "ns_db sp_start"] [arg handle] [arg procname]]

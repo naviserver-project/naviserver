@@ -914,7 +914,7 @@ Ns_DbSpStart(Ns_DbHandle *handle, const char *procname)
  *
  *      Set a parameter in a store procedure; must have executed Ns_DbSpStart
  *      first. "paramname" looks like "@x", paramtype is like "int" or
- *      "varchar", inout is "in" or "out", value is like "123".
+ *      "varchar", direction is "in" or "out", value is like "123".
  *
  * Results:
  *      NS_OK/NS_ERROR
@@ -927,7 +927,7 @@ Ns_DbSpStart(Ns_DbHandle *handle, const char *procname)
 
 Ns_ReturnCode
 Ns_DbSpSetParam(Ns_DbHandle *handle, const char *paramname, const char *paramtype,
-                const char *inout, const char *value)
+                const char *direction, const char *value)
 {
     const DbDriver *driverPtr;
     Ns_ReturnCode    status = NS_ERROR;
@@ -941,7 +941,7 @@ Ns_DbSpSetParam(Ns_DbHandle *handle, const char *paramname, const char *paramtyp
         && driverPtr->spsetparamProc != NULL) {
 
         Ns_DStringInit(&args);
-        Ns_DStringVarAppend(&args, paramname, " ", paramtype, " ", inout, " ",
+        Ns_DStringVarAppend(&args, paramname, " ", paramtype, " ", direction, " ",
                             value, (char *)0L);
         status = (*driverPtr->spsetparamProc)(handle, args.string);
         Ns_DStringFree(&args);
