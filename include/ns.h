@@ -2105,7 +2105,7 @@ Ns_GetCharsetEncoding(const char *charset)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Tcl_Encoding
-Ns_GetCharsetEncodingEx(const char *charset, int len)
+Ns_GetCharsetEncodingEx(const char *charset, TCL_SIZE_T len)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN const char *

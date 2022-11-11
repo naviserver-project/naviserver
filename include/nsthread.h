@@ -561,6 +561,13 @@ typedef int ns_sockerrno_t;
 # define TCL_INDEX_NONE -1
 #endif
 
+#ifdef NS_TCL_PRE9
+# define TCL_SIZE_T int
+#else
+# define TCL_SIZE_T Tcl_Size
+#endif
+
+
 #if !defined(NS_POLL_NFDS_TYPE)
 # define NS_POLL_NFDS_TYPE unsigned int
 #endif
@@ -808,6 +815,12 @@ typedef int bool;
 #endif
 #if !defined(PRIuz)
 # define PRIuz "zu"
+#endif
+
+#ifdef NS_TCL_PRE9
+# define PRITcl_Size "d"
+#else
+# define PRITcl_Size PRIuz
 #endif
 
 /*

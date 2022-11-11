@@ -3022,7 +3022,8 @@ RequestFree(Sock *sockPtr)
     /*assert(reqPtr->headers->size == 0);*/
     if (reqPtr->headers->size > 0) {
 #ifdef NS_SET_DSTRING
-        Ns_Log(Warning, "RequestFree must trunc reqPtr->headers %p->%p: size %lu/%lu buffer %d/%d",
+        Ns_Log(Warning, "RequestFree must trunc reqPtr->headers %p->%p: size %lu/%lu "
+               "buffer %" PRITcl_Size "/%" PRITcl_Size,
                (void*)reqPtr, (void*)reqPtr->headers,
                reqPtr->headers->size, reqPtr->headers->maxSize,
                reqPtr->headers->data.length, reqPtr->headers->data.spaceAvl);

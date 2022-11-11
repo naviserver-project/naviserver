@@ -371,7 +371,7 @@ Ns_GetTypeEncoding(const char *mimeType)
     NS_NONNULL_ASSERT(mimeType != NULL);
 
     charset = NsFindCharset(mimeType, &len);
-    return (charset != NULL) ? Ns_GetCharsetEncodingEx(charset, (int)len) : NULL;
+    return (charset != NULL) ? Ns_GetCharsetEncodingEx(charset, (TCL_SIZE_T)len) : NULL;
 }
 
 
@@ -401,7 +401,7 @@ Ns_GetCharsetEncoding(const char *charset)
 }
 
 Tcl_Encoding
-Ns_GetCharsetEncodingEx(const char *charset, int len)
+Ns_GetCharsetEncodingEx(const char *charset, TCL_SIZE_T len)
 {
     const Tcl_HashEntry *hPtr;
     Tcl_Encoding         encoding;
@@ -579,7 +579,7 @@ NsTclEncodingForCharsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         Tcl_WrongNumArgs(interp, 1, objv, "charset");
         result =  TCL_ERROR;
     } else {
-        int          encodingNameLen;
+        TCL_SIZE_T   encodingNameLen;
         const char  *encodingName = Tcl_GetStringFromObj(objv[1], &encodingNameLen);
         Tcl_Encoding encoding = Ns_GetCharsetEncodingEx(encodingName, encodingNameLen);
 

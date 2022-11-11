@@ -2135,7 +2135,7 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
                                              connChanPtr->fragmentsBuffer->length);
             Ns_Log(Ns_LogConnchanDebug,
                    "WS: append final payload opcode %d (fragments opcode %d) %d bytes, "
-                   "totaling %d bytes, clear fragmentsBuffer",
+                   "totaling %" PRITcl_Size " bytes, clear fragmentsBuffer",
                    opcode, connChanPtr->fragmentsOpcode,
                    (int)payloadLength, connChanPtr->fragmentsBuffer->length);
             Tcl_DStringSetLength(connChanPtr->fragmentsBuffer, 0);
@@ -2165,7 +2165,7 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
                           (const char *)&data[offset], (int)payloadLength);
         Ns_Log(Ns_LogConnchanDebug,
                "WS: fin 0 opcode %d (fragments opcode %d) "
-               "append %d to bytes to the fragmentsBuffer, totaling %d bytes",
+               "append %d to bytes to the fragmentsBuffer, totaling %" PRITcl_Size " bytes",
                opcode, connChanPtr->fragmentsOpcode,
                (int)payloadLength, connChanPtr->fragmentsBuffer->length);
     }
@@ -2190,7 +2190,7 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
 
  incomplete:
     connChanPtr->frameNeedsData = NS_TRUE;
-    Ns_Log(Notice, "WS: incomplete frameLength %d avail %d",
+    Ns_Log(Notice, "WS: incomplete frameLength %d avail %" PRITcl_Size,
             frameLength, connChanPtr->frameBuffer->length);
     Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("frame", 5), Tcl_NewStringObj("incomplete", 10));
     WebsocketFrameSetCommonMembers(resultObj, nRead, connChanPtr);
@@ -2398,7 +2398,8 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                 toSend = (size_t)msgLen;
             }
 
-            Ns_Log(Ns_LogConnchanDebug, "%s new message length %d buffered length %d total %" PRIdz,
+            Ns_Log(Ns_LogConnchanDebug, "%s new message length %d buffered length %" PRITcl_Size
+                   " total %" PRIdz,
                    name, msgLen, connChanPtr->sendBuffer != NULL ? connChanPtr->sendBuffer->length : 0,
                    toSend);
 
@@ -2433,7 +2434,8 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                      * Compact old data. How much of the (old) sendBuffer was sent?
                      */
                     if (nBufs == 2) {
-                        Ns_Log(Ns_LogConnchanDebug, "... two-buffer old buffer length %d + new %d"
+                        Ns_Log(Ns_LogConnchanDebug, "... two-buffer old buffer length %"
+                               PRITcl_Size " + new %d"
                                " = %" PRIdz " sent %ld (old not fully sent %d)",
                                connChanPtr->sendBuffer->length, msgLen,
                                (size_t)connChanPtr->sendBuffer->length + (size_t)msgLen,
@@ -2478,7 +2480,7 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 
                             freshDataRemaining = msgLen - (int)(nSent - connChanPtr->sendBuffer->length);
                             Ns_Log(Ns_LogConnchanDebug,
-                                   "... have sent all of old buffer %d and %ld of new buffer "
+                                   "... have sent all of old buffer %" PRITcl_Size " and %ld of new buffer "
                                    "(BYTES from %" PRIdz " to %" PRIdz ")",
                                    connChanPtr->sendBuffer->length,
                                    (nSent - connChanPtr->sendBuffer->length),
@@ -2525,14 +2527,14 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 
                     if (freshDataRemaining > 0) {
                         Ns_Log(Ns_LogConnchanDebug, "... appending to sendbuffer old %d + remaining %d "
-                               "will be %d",
+                               "will be %" PRITcl_Size,
                                connChanPtr->sendBuffer->length, freshDataRemaining,
                                connChanPtr->sendBuffer->length + freshDataRemaining);
                         Tcl_DStringAppend(connChanPtr->sendBuffer,
                                           msgString + (msgLen - freshDataRemaining),
                                           freshDataRemaining);
                         Ns_Log(Ns_LogConnchanDebug, "... keep for later %d bytes of %d "
-                               "(buffered %d) will be BYTES from %" PRIdz " to %" PRIdz,
+                               "(buffered %" PRITcl_Size ") will be BYTES from %" PRIdz " to %" PRIdz,
                                freshDataRemaining, msgLen, connChanPtr->sendBuffer->length,
                                connChanPtr->wBytes,
                                connChanPtr->wBytes + (size_t)connChanPtr->sendBuffer->length);
