@@ -202,7 +202,7 @@ NsMapPool(ConnPool *poolPtr, const char *mapString, unsigned int flags)
     NS_NONNULL_ASSERT(poolPtr != NULL);
     NS_NONNULL_ASSERT(mapString != NULL);
 
-    mapspecObj = Tcl_NewStringObj(mapString, -1);
+    mapspecObj = Tcl_NewStringObj(mapString, TCL_INDEX_NONE);
     server = poolPtr->servPtr->server;
 
     Tcl_IncrRefCount(mapspecObj);
@@ -1190,7 +1190,7 @@ ServerMappedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         Ns_MutexUnlock(&servPtr->urlspace.lock);
 
         if (mappedPoolPtr != NULL) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(mappedPoolPtr->pool, -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(mappedPoolPtr->pool, TCL_INDEX_NONE));
         }
     }
 
@@ -1544,7 +1544,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
             Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
             for (poolPtr = servPtr->pools.firstPtr; poolPtr != NULL; poolPtr = poolPtr->nextPtr) {
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(poolPtr->pool, -1));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(poolPtr->pool, TCL_INDEX_NONE));
             }
             Tcl_SetObjResult(interp, listObj);
         }
@@ -1564,7 +1564,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
     case SServerdirIdx:
         Tcl_DStringInit(dsPtr);
-        Tcl_DStringAppend(dsPtr, servPtr->fastpath.serverdir, -1);
+        Tcl_DStringAppend(dsPtr, servPtr->fastpath.serverdir, TCL_INDEX_NONE);
         Tcl_DStringResult(interp, dsPtr);
         break;
 
@@ -1581,7 +1581,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         break;
 
     case STcllibIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(servPtr->tcl.library, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(servPtr->tcl.library, TCL_INDEX_NONE));
         break;
 
     case SUrl2fileIdx:

@@ -276,7 +276,7 @@ ParseRangeOffsets(Ns_Conn *conn, size_t objLength,
     }
 
     Tcl_DStringInit(&rangeDs);
-    Tcl_DStringAppend(&rangeDs, rangeHeaderString, -1);
+    Tcl_DStringAppend(&rangeDs, rangeHeaderString, TCL_INDEX_NONE);
 
     rangeString = rangeDs.string;
 

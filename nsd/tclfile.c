@@ -251,7 +251,7 @@ NsTclMkTempObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         char buffer[PATH_MAX] = "";
 
         snprintf(buffer, sizeof(buffer), "%s/ns-XXXXXX", nsconf.tmpDir);
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(mktemp(buffer), -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(mktemp(buffer), TCL_INDEX_NONE));
 
     } else /*if (objc == 2)*/ {
         char *buffer;
@@ -661,7 +661,7 @@ ChanGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *cons
              */
             assert(regChan != NULL);
             SpliceChannel(interp, regChan->chan);
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(regChan->name, -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(regChan->name, TCL_INDEX_NONE));
             hPtr = Tcl_CreateHashEntry(&itPtr->chans, name, &isNew);
             Tcl_SetHashValue(hPtr, regChan);
         }
@@ -785,7 +785,7 @@ ChanListObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
         for (hPtr = Tcl_FirstHashEntry(tabPtr, &search); hPtr != NULL;
              hPtr = Tcl_NextHashEntry(&search)) {
             const char *key = Tcl_GetHashKey(tabPtr, hPtr);
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(key, -1));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(key, TCL_INDEX_NONE));
         }
         if (isShared != (int)NS_FALSE) {
             Ns_MutexUnlock(&servPtr->chans.lock);

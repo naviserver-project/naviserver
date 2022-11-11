@@ -131,7 +131,7 @@ Ns_RWLockList(Tcl_DString *dsPtr)
                  (int64_t)0, (long)0,
                  rwlockPtr->nrlock, rwlockPtr->nwlock);
 #endif
-        Tcl_DStringAppend(dsPtr, buf, -1);
+        Tcl_DStringAppend(dsPtr, buf, TCL_INDEX_NONE);
         Tcl_DStringEndSublist(dsPtr);
     }
     Ns_MasterUnlock();

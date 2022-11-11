@@ -327,7 +327,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                  hPtr = Tcl_NextHashEntry(&search)
                  ) {
                 const char *listKey = Tcl_GetHashKey(tablePtr, hPtr);
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(listKey, -1));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(listKey, TCL_INDEX_NONE));
             }
             Tcl_SetObjResult(interp, listObj);
         }
@@ -450,7 +450,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                         }
 
                     case sINameIdx:
-                        Tcl_SetObjResult(interp, Tcl_NewStringObj(set->name, -1));
+                        Tcl_SetObjResult(interp, Tcl_NewStringObj(set->name, TCL_INDEX_NONE));
                         break;
 
                     case SKeysIdx: {
@@ -558,11 +558,11 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
 
                     switch (opt) {
                     case SGetIdx:
-                        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_SetGetValue(set, key, def), -1));
+                        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_SetGetValue(set, key, def), TCL_INDEX_NONE));
                         break;
 
                     case SIGetIdx:
-                        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_SetIGetValue(set, key, def), -1));
+                        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_SetIGetValue(set, key, def), TCL_INDEX_NONE));
                         break;
 
                     default:
@@ -652,7 +652,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                     switch (opt) {
                     case SValueIdx:
                         val = Ns_SetValue(set, i);
-                        Tcl_SetObjResult(interp, Tcl_NewStringObj(val, -1));
+                        Tcl_SetObjResult(interp, Tcl_NewStringObj(val, TCL_INDEX_NONE));
                         break;
 
                     case SIsNullIdx:
@@ -663,7 +663,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
 
                     case SKeyIdx:
                         val = Ns_SetKey(set, i);
-                        Tcl_SetObjResult(interp, Tcl_NewStringObj(val, -1));
+                        Tcl_SetObjResult(interp, Tcl_NewStringObj(val, TCL_INDEX_NONE));
                         break;
 
                     case SDeleteIdx:

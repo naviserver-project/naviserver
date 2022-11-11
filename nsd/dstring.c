@@ -516,7 +516,7 @@ NS_EXTERN char *Ns_DStringAppend(Ns_DString *dsPtr, const char *bytes) NS_GNUC_D
 char *
 Ns_DStringAppend(Ns_DString *dsPtr, const char *bytes)
 {
-    return Tcl_DStringAppend(dsPtr, bytes, -1);
+    return Tcl_DStringAppend(dsPtr, bytes, TCL_INDEX_NONE);
 }
 
 #undef Ns_DStringAppendElement

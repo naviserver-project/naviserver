@@ -1644,7 +1644,7 @@ Import(Tcl_Interp *interp, const Tcl_DString *dsPtr, int *resultPtr)
         ilen = ntohl(resPtr->ilen);
         rlen = ntohl(resPtr->rlen);
         if (clen > 0) {
-            Tcl_Obj *err = Tcl_NewStringObj(str, -1);
+            Tcl_Obj *err = Tcl_NewStringObj(str, TCL_INDEX_NONE);
 
             Tcl_SetObjErrorCode(interp, err);
             str += clen;
@@ -1654,7 +1654,7 @@ Import(Tcl_Interp *interp, const Tcl_DString *dsPtr, int *resultPtr)
             str += ilen;
         }
         if (rlen > 0) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(str, -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(str, TCL_INDEX_NONE));
         }
         *resultPtr = (int)ntohl(resPtr->code);
     }
@@ -2280,7 +2280,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
     if (objc == 3) {
         Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
-        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(flags[CEnvIdx], -1));
+        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(flags[CEnvIdx], TCL_INDEX_NONE));
         if (poolPtr->env != NULL) {
             if (unlikely(Ns_TclEnterSet(interp, poolPtr->env, NS_TCL_SET_DYNAMIC) != TCL_OK)) {
                 result = TCL_ERROR;
@@ -2392,7 +2392,7 @@ StringObj(const char* chars) {
     Tcl_Obj *resultObj;
 
     if (chars != NULL) {
-        resultObj = Tcl_NewStringObj(chars, -1);
+        resultObj = Tcl_NewStringObj(chars, TCL_INDEX_NONE);
     } else {
         resultObj = Tcl_NewStringObj("", 0);
     }
@@ -2940,7 +2940,7 @@ CreateWorker(Tcl_Interp *interp, Proxy *proxyPtr)
     Ns_MutexLock(&poolPtr->lock);
     init = proxyPtr->poolPtr->init != NULL;
     if (init != 0) {
-        Tcl_DStringAppend(&ds, poolPtr->init, -1);
+        Tcl_DStringAppend(&ds, poolPtr->init, TCL_INDEX_NONE);
     }
     Ns_MutexUnlock(&poolPtr->lock);
     proxyPtr->workerPtr = ExecWorker(interp, proxyPtr);
@@ -3603,7 +3603,7 @@ ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr)
         Ns_MutexLock(&proxyPtr->poolPtr->lock);
         reinit = proxyPtr->poolPtr->reinit != NULL;
         if (reinit != 0) {
-            Tcl_DStringAppend(&ds, proxyPtr->poolPtr->reinit, -1);
+            Tcl_DStringAppend(&ds, proxyPtr->poolPtr->reinit, TCL_INDEX_NONE);
         }
         Ns_MutexUnlock(&proxyPtr->poolPtr->lock);
         if (reinit != 0) {

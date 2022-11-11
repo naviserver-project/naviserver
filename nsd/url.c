@@ -781,35 +781,35 @@ NsTclParseUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 
             if (u.protocol != NULL) {
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("proto", 5));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.protocol, -1));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.protocol, TCL_INDEX_NONE));
             }
             if (u.userinfo != NULL) {
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("userinfo", 8));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.userinfo, -1));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.userinfo, TCL_INDEX_NONE));
             }
             if (u.host != NULL) {
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("host", 4));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.host, -1));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.host, TCL_INDEX_NONE));
             }
             if (u.port != NULL) {
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("port", 4));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.port, -1));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.port, TCL_INDEX_NONE));
             }
             if (u.path != NULL) {
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("path", 4));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.path, -1));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.path, TCL_INDEX_NONE));
             }
             if (u.tail != NULL) {
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("tail", 4));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.tail, -1));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.tail, TCL_INDEX_NONE));
             }
             if (u.query != NULL) {
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("query", 5));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.query, -1));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.query, TCL_INDEX_NONE));
             }
             if (u.fragment != NULL) {
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("fragment", 8));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.fragment, -1));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(u.fragment, TCL_INDEX_NONE));
             }
             if (errorMsg != NULL) {
                 Ns_TclPrintfResult(interp, "Could not parse URL \"%s\": %s", urlString, errorMsg);
@@ -873,11 +873,11 @@ NsTclParseHostportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int 
 
             if (hostStart != NULL) {
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("host", 4));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(hostStart, -1));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(hostStart, TCL_INDEX_NONE));
             }
             if (portStart != NULL) {
                 Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj("port", 4));
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(portStart, -1));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(portStart, TCL_INDEX_NONE));
             }
 
             Tcl_SetObjResult(interp, resultObj);

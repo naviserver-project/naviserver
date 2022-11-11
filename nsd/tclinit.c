@@ -290,7 +290,7 @@ ConfigServerTcl(const char *server)
             Ns_SetUpdateSz(set, "initfile", 8, initFileString, n);
             initFileStringCopied = NS_TRUE;
         }
-        servPtr->tcl.initfile = Tcl_NewStringObj(initFileString, -1);
+        servPtr->tcl.initfile = Tcl_NewStringObj(initFileString, TCL_INDEX_NONE);
         if (initFileStringCopied) {
             ns_free((char *)initFileString);
         }
@@ -1022,7 +1022,7 @@ Ns_TclInitModule(const char *server, const char *module)
         status = NS_ERROR;
     } else {
         (void) Tcl_ListObjAppendElement(NULL, servPtr->tcl.modules,
-                                        Tcl_NewStringObj(module, -1));
+                                        Tcl_NewStringObj(module, TCL_INDEX_NONE));
         status = NS_OK;
     }
     return status;
@@ -1175,7 +1175,7 @@ ICtlGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *cons
 
     } else {
         Ns_RWLockRdLock(&servPtr->tcl.lock);
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(servPtr->tcl.script, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(servPtr->tcl.script, TCL_INDEX_NONE));
         Ns_RWLockUnlock(&servPtr->tcl.lock);
     }
     return result;
@@ -2398,7 +2398,7 @@ LogTrace(const NsInterp *itPtr, const TclTrace *tracePtr, Ns_TclTraceType why)
         Ns_DString  ds;
 
         Ns_DStringInit(&ds);
-        Ns_DStringNAppend(&ds, GetTraceLabel(why), -1);
+        Ns_DStringNAppend(&ds, GetTraceLabel(why), TCL_INDEX_NONE);
         Ns_DStringNAppend(&ds, " ", 1);
         Ns_GetProcInfo(&ds, (ns_funcptr_t)tracePtr->proc, tracePtr->arg);
         Ns_Log(Debug, "ns:interptrace[%s]: %s",

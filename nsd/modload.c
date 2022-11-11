@@ -128,7 +128,7 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
          * Tcl_DString.
          */
         if (ds.length == 0) {
-            Tcl_DStringAppend(&ds, file, -1);
+            Tcl_DStringAppend(&ds, file, TCL_INDEX_NONE);
         }
 
         /*
@@ -141,7 +141,7 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
             file = ds.string;
         }
     }
-    pathObj = Tcl_NewStringObj(file, -1);
+    pathObj = Tcl_NewStringObj(file, TCL_INDEX_NONE);
 
     Tcl_IncrRefCount(pathObj);
     if (Tcl_FSGetNormalizedPath(NULL, pathObj) == NULL) {

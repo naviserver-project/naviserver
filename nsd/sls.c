@@ -367,7 +367,7 @@ NsTclSlsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
                         result =  TCL_ERROR;
                     }
                 } else {
-                    Tcl_SetObjResult(interp, Tcl_NewStringObj(data, -1));
+                    Tcl_SetObjResult(interp, Tcl_NewStringObj(data, TCL_INDEX_NONE));
                 }
             }
             break;

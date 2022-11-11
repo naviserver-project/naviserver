@@ -125,7 +125,7 @@ GetFile(void)
 
         Ns_DStringFree(&ds);
     } else {
-        path = Tcl_NewStringObj(file, -1);
+        path = Tcl_NewStringObj(file, TCL_INDEX_NONE);
     }
     return path;
 }

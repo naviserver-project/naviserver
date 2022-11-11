@@ -469,7 +469,7 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
                     /*
                      * Append the remaining string.
                      */
-                    Tcl_DStringAppend(&vds2, v, -1);
+                    Tcl_DStringAppend(&vds2, v, TCL_INDEX_NONE);
                     v = vds2.string;
                 }
             }

@@ -645,7 +645,7 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
     Ns_DStringInit(&msgDs);
     if (ok) {
         Ns_Log(Notice, "nscp: %s logged in", user);
-        Tcl_DStringAppend(unameDSPtr, user, -1);
+        Tcl_DStringAppend(unameDSPtr, user, TCL_INDEX_NONE);
         Ns_DStringPrintf(&msgDs,
             "\nWelcome to %s running at %s (pid %d)\n"
             "%s/%s for %s built on %s\nTag: %s\n",
@@ -757,7 +757,7 @@ NscpUsersObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         while (hPtr != NULL) {
             char *userName = Tcl_GetHashKey(&modPtr->users, hPtr);
 
-            Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(userName, -1));
+            Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(userName, TCL_INDEX_NONE));
             hPtr = Tcl_NextHashEntry(&search);
         }
 

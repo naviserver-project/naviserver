@@ -210,7 +210,7 @@ NsConfigEncodings(void)
     Tcl_InitHashTable(&charsets, TCL_STRING_KEYS);
     Tcl_InitHashTable(&encnames, TCL_STRING_KEYS);
     Tcl_InitHashTable(&encodings, TCL_STRING_KEYS);
-    NS_utf8Encoding = Ns_GetCharsetEncoding("utf-8");
+    NS_utf8Encoding = Ns_GetCharsetEncodingEx("utf-8", 5);
 
     /*
      * Add default charsets and file mappings.
@@ -397,7 +397,7 @@ Ns_GetCharsetEncoding(const char *charset)
 {
     NS_NONNULL_ASSERT(charset != NULL);
 
-    return Ns_GetCharsetEncodingEx(charset, -1);
+    return Ns_GetCharsetEncodingEx(charset, TCL_INDEX_NONE);
 }
 
 Tcl_Encoding
@@ -544,7 +544,7 @@ NsTclCharsetsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
          hPtr = Tcl_NextHashEntry(&search)
          ) {
         const char *key = Tcl_GetHashKey(&charsets, hPtr);
-        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(key, -1));
+        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(key, TCL_INDEX_NONE));
     }
     Tcl_SetObjResult(interp, listObj);
 
@@ -584,7 +584,7 @@ NsTclEncodingForCharsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         Tcl_Encoding encoding = Ns_GetCharsetEncodingEx(encodingName, encodingNameLen);
 
         if (encoding != NULL) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetEncodingName(encoding), -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetEncodingName(encoding), TCL_INDEX_NONE));
         }
     }
 

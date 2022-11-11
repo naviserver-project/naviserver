@@ -787,7 +787,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     if (Ns_SetFind(cgiPtr->env, "PATH") < 0) {
         s = getenv("PATH");
         if (s != NULL) {
-            Ns_SetUpdateSz(cgiPtr->env, "PATH", 4, s, -1);
+            Ns_SetUpdateSz(cgiPtr->env, "PATH", 4, s, TCL_INDEX_NONE);
         }
     }
 
@@ -795,14 +795,14 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
      * Set all the CGI specified variables.
      */
 
-    Ns_SetUpdateSz(cgiPtr->env, "SCRIPT_NAME", 11, cgiPtr->name, -1);
+    Ns_SetUpdateSz(cgiPtr->env, "SCRIPT_NAME", 11, cgiPtr->name, TCL_INDEX_NONE);
     if (cgiPtr->pathinfo != NULL && *cgiPtr->pathinfo != '\0') {
         Ns_DString tmp;
 
         if (Ns_UrlPathDecode(dsPtr, cgiPtr->pathinfo, NULL) != NULL) {
             Ns_SetUpdateSz(cgiPtr->env, "PATH_INFO", 9, dsPtr->string, dsPtr->length);
         } else {
-            Ns_SetUpdateSz(cgiPtr->env, "PATH_INFO", 9, cgiPtr->pathinfo, -1);
+            Ns_SetUpdateSz(cgiPtr->env, "PATH_INFO", 9, cgiPtr->pathinfo, TCL_INDEX_NONE);
         }
         Ns_DStringSetLength(dsPtr, 0);
         Ns_DStringInit(&tmp);
@@ -844,7 +844,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
             int j;
 
             portString++;
-            Ns_SetUpdateSz(cgiPtr->env, "SERVER_PORT", 11, portString, -1);
+            Ns_SetUpdateSz(cgiPtr->env, "SERVER_PORT", 11, portString, TCL_INDEX_NONE);
             for (j = 0; *portString != '\0'; ++portString, ++j) {
                 ;
             }
@@ -864,20 +864,20 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
      */
 
     Ns_SetUpdateSz(cgiPtr->env, "AUTH_TYPE", 9, "Basic", 5);
-    Ns_SetUpdateSz(cgiPtr->env, "REMOTE_USER", 11, Ns_ConnAuthUser(conn), -1);
+    Ns_SetUpdateSz(cgiPtr->env, "REMOTE_USER", 11, Ns_ConnAuthUser(conn), TCL_INDEX_NONE);
 
     {
         const char *peer = Ns_ConnPeerAddr(conn);
 
         if (peer != NULL) {
-            Ns_SetUpdateSz(cgiPtr->env, "REMOTE_ADDR", 11, peer, -1);
+            Ns_SetUpdateSz(cgiPtr->env, "REMOTE_ADDR", 11, peer, TCL_INDEX_NONE);
             if ((modPtr->flags & CGI_GETHOST) != 0u) {
                 if (Ns_GetHostByAddr(dsPtr, peer) == NS_TRUE) {
                     Ns_SetUpdateSz(cgiPtr->env, "REMOTE_HOST", 11, dsPtr->string, dsPtr->length);
                 }
                 Ns_DStringSetLength(dsPtr, 0);
             } else {
-                Ns_SetUpdateSz(cgiPtr->env, "REMOTE_HOST", 11, peer, -1);
+                Ns_SetUpdateSz(cgiPtr->env, "REMOTE_HOST", 11, peer, TCL_INDEX_NONE);
             }
         }
     }
@@ -886,8 +886,8 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
      * Provide request information.
      */
 
-    Ns_SetUpdateSz(cgiPtr->env, "REQUEST_METHOD", 14, conn->request.method, -1);
-    Ns_SetUpdateSz(cgiPtr->env, "QUERY_STRING", 12, conn->request.query, -1);
+    Ns_SetUpdateSz(cgiPtr->env, "REQUEST_METHOD", 14, conn->request.method, TCL_INDEX_NONE);
+    Ns_SetUpdateSz(cgiPtr->env, "QUERY_STRING", 12, conn->request.query, TCL_INDEX_NONE);
 
     value = Ns_SetIGet(conn->headers, "Content-Type");
     if (value == NULL) {
@@ -897,7 +897,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
             value = NS_EMPTY_STRING;
         }
     }
-    Ns_SetUpdateSz(cgiPtr->env, "CONTENT_TYPE", 12, value, -1);
+    Ns_SetUpdateSz(cgiPtr->env, "CONTENT_TYPE", 12, value, TCL_INDEX_NONE);
 
     if (conn->contentLength == 0u) {
         Ns_SetUpdateSz(cgiPtr->env, "CONTENT_LENGTH", 14, NS_EMPTY_STRING, 0);

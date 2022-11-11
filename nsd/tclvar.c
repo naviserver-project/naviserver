@@ -171,7 +171,7 @@ NsTclNsvGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             const char          *keyString = Tcl_GetString(objv[2]);
 
             hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, keyString, NULL);
-            resultObj = likely(hPtr != NULL) ? Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1) : NULL;
+            resultObj = likely(hPtr != NULL) ? Tcl_NewStringObj(Tcl_GetHashValue(hPtr), TCL_INDEX_NONE) : NULL;
             UnlockArray(arrayPtr);
 
             if (objc == 3) {
@@ -251,7 +251,7 @@ SetResultToOldValue(Tcl_Interp *interp, Array *arrayPtr, const char *key)
     hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, key, NULL);
     if (likely(hPtr != NULL)) {
         result = NS_TRUE;
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), TCL_INDEX_NONE));
     } else {
         result = NS_FALSE;
         Tcl_SetObjResult(interp, Tcl_NewStringObj("", 0));
@@ -389,7 +389,7 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
             hPtr = Tcl_FindHashEntry(&arrayPtr->vars, keyString);
             if (likely(hPtr != NULL)) {
-                Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1));
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetHashValue(hPtr), TCL_INDEX_NONE));
             }
             UnlockArray(arrayPtr);
             if (hPtr == NULL) {
@@ -489,7 +489,7 @@ NsTclNsvLappendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
         hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, Tcl_GetString(objv[2]), &isNew);
         if (unlikely(isNew == 0)) {
-            Tcl_DStringAppend(&ds, Tcl_GetHashValue(hPtr), -1);
+            Tcl_DStringAppend(&ds, Tcl_GetHashValue(hPtr), TCL_INDEX_NONE);
         }
 
         for (i = 3; i < objc; ++i) {
@@ -543,7 +543,7 @@ NsTclNsvAppendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
         hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, Tcl_GetString(objv[2]), &isNew);
         if (unlikely(isNew == 0)) {
-            Tcl_DStringAppend(&ds, Tcl_GetHashValue(hPtr), -1);
+            Tcl_DStringAppend(&ds, Tcl_GetHashValue(hPtr), TCL_INDEX_NONE);
         }
 
         for (i = 3; i < objc; ++i) {
@@ -705,7 +705,7 @@ NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
 
                 if ((pattern == NULL) || (Tcl_StringMatch(keyString, pattern) != 0)) {
                     result = Tcl_ListObjAppendElement(interp, resultObj,
-                                                      Tcl_NewStringObj(keyString, -1));
+                                                      Tcl_NewStringObj(keyString, TCL_INDEX_NONE));
                     if (unlikely(result != TCL_OK)) {
                         break;
                     }
@@ -854,10 +854,10 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                         const char *keyString = Tcl_GetHashKey(&arrayPtr->vars, hPtr);
 
                         if ((pattern == NULL) || (Tcl_StringMatch(keyString, pattern) != 0)) {
-                            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(keyString, -1));
+                            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(keyString, TCL_INDEX_NONE));
                             if (opt == (int)CGetIdx) {
                                 Tcl_ListObjAppendElement(interp, listObj,
-                                                         Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1));
+                                                         Tcl_NewStringObj(Tcl_GetHashValue(hPtr), TCL_INDEX_NONE));
                             }
                         }
                         hPtr = Tcl_NextHashEntry(&search);
@@ -912,7 +912,7 @@ GetArrayAndKey(Tcl_Interp *interp, Tcl_Obj *arrayObj, const char *keyString,
             Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "NSV", "KEY", keyString, (char *)0L);
             result = TCL_ERROR;
         } else {
-            obj = Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1);
+            obj = Tcl_NewStringObj(Tcl_GetHashValue(hPtr), TCL_INDEX_NONE);
         }
     } else {
         result = TCL_ERROR;
@@ -1305,7 +1305,7 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 keyString = Tcl_GetString(keyObj);
                 hPtr = Tcl_CreateHashEntry(&arrayPtr->vars, keyString, NULL);
                 if (likely(hPtr != NULL)) {
-                    dictObj = Tcl_NewStringObj(Tcl_GetHashValue(hPtr), -1);
+                    dictObj = Tcl_NewStringObj(Tcl_GetHashValue(hPtr), TCL_INDEX_NONE);
                 } else {
                     dictObj = Tcl_NewDictObj();
                 }
@@ -2125,7 +2125,7 @@ NsTclNsvBucketObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
                 const Array *arrayPtr  = Tcl_GetHashValue(hPtr);
                 Tcl_Obj     *elemObj   = Tcl_NewListObj(0, NULL);
 
-                result = Tcl_ListObjAppendElement(interp, elemObj, Tcl_NewStringObj(keyString, -1));
+                result = Tcl_ListObjAppendElement(interp, elemObj, Tcl_NewStringObj(keyString, TCL_INDEX_NONE));
                 if (likely(result == TCL_OK)) {
                     result = Tcl_ListObjAppendElement(interp, elemObj, Tcl_NewLongObj(arrayPtr->locks));
                 }

@@ -245,8 +245,8 @@ CurrentHandles( Tcl_Interp *interp, Tcl_HashTable *tablePtr, Tcl_Obj *dictObj)
         Ns_DbHandle *handlePtr = Tcl_GetHashValue(hPtr);
         Tcl_Obj     *keyv[2];
 
-        keyv[0] = Tcl_NewStringObj(handlePtr->poolname, -1);
-        keyv[1] = Tcl_NewStringObj(Tcl_GetHashKey(tablePtr, hPtr), -1);
+        keyv[0] = Tcl_NewStringObj(handlePtr->poolname, TCL_INDEX_NONE);
+        keyv[1] = Tcl_NewStringObj(Tcl_GetHashKey(tablePtr, hPtr), TCL_INDEX_NONE);
         Tcl_DictObjPutKeyList(interp, dictObj, 2, keyv, Tcl_NewIntObj(NsDbGetActive(handlePtr)));
         hPtr = Tcl_NextHashEntry(&search);
     }
@@ -386,7 +386,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
                 Tcl_Obj  *listObj = Tcl_NewListObj(0, NULL);
 
                 while (*pool != '\0') {
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(pool, -1));
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(pool, TCL_INDEX_NONE));
                     pool = pool + strlen(pool) + 1;
                 }
                 Tcl_SetObjResult(interp, listObj);
@@ -568,8 +568,8 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
         } else {
             Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(handlePtr->cExceptionCode, -1));
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(handlePtr->dsExceptionMsg.string, -1));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(handlePtr->cExceptionCode, TCL_INDEX_NONE));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(handlePtr->dsExceptionMsg.string, TCL_INDEX_NONE));
             Tcl_SetObjResult(interp, listObj);
         }
         break;
@@ -617,19 +617,19 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
 
         switch (cmd) {
         case POOLNAME:
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(handlePtr->poolname, -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(handlePtr->poolname, TCL_INDEX_NONE));
             break;
 
         case PASSWORD:
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(handlePtr->password, -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(handlePtr->password, TCL_INDEX_NONE));
             break;
 
         case USER:
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(handlePtr->user, -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(handlePtr->user, TCL_INDEX_NONE));
             break;
 
         case DATASOURCE:
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(handlePtr->datasource, -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(handlePtr->datasource, TCL_INDEX_NONE));
             break;
 
         case DISCONNECT:
@@ -637,11 +637,11 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
             break;
 
         case DBTYPE:
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_DbDriverDbType(handlePtr), -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_DbDriverDbType(handlePtr), TCL_INDEX_NONE));
             break;
 
         case DRIVER:
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_DbDriverName(handlePtr), -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_DbDriverName(handlePtr), TCL_INDEX_NONE));
             break;
 
         case CANCEL:
@@ -725,7 +725,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
             if (Ns_DbSpReturnCode(handlePtr, tmpbuf, 32) != NS_OK) {
                 result = DbFail(interp, handlePtr, Tcl_GetString(objv[1]));
             } else {
-                Tcl_SetObjResult(interp, Tcl_NewStringObj(tmpbuf, -1));
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(tmpbuf, TCL_INDEX_NONE));
             }
             break;
 
@@ -1007,7 +1007,7 @@ ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const*
 
     } else {
         if (cmd == 'c') {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(handle->cExceptionCode, -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(handle->cExceptionCode, TCL_INDEX_NONE));
         } else {
             Tcl_DStringResult(interp, &handle->dsExceptionMsg);
         }
@@ -1057,7 +1057,7 @@ DbConfigPathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         const InterpData *idataPtr = clientData;
         const char *section = Ns_ConfigSectionPath(NULL, idataPtr->server, NULL, "db", (char *)0L);
 
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(section, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(section, TCL_INDEX_NONE));
     }
     return result;
 }
@@ -1089,7 +1089,7 @@ PoolDescriptionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
         Tcl_WrongNumArgs(interp, 1, objv, "poolname");
         result = TCL_ERROR;
     } else {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_DbPoolDescription(Tcl_GetString(objv[1])), -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_DbPoolDescription(Tcl_GetString(objv[1])), TCL_INDEX_NONE));
     }
 
     return result;

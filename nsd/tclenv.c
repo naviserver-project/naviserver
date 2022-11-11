@@ -196,7 +196,7 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
 
                 name = envp[i];
                 value = strchr(name, INTCHAR('='));
-                obj = Tcl_NewStringObj(name, (value != NULL) ? (int)(value - name) : -1);
+                obj = Tcl_NewStringObj(name, (value != NULL) ? (int)(value - name) : TCL_INDEX_NONE);
                 if (Tcl_ListObjAppendElement(interp, resultObj, obj) != TCL_OK) {
                     result = TCL_ERROR;
                     break;
@@ -240,7 +240,7 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
                     result = TCL_ERROR;
 
                 } else {
-                    Tcl_SetObjResult(interp, Tcl_NewStringObj(value, -1));
+                    Tcl_SetObjResult(interp, Tcl_NewStringObj(value, TCL_INDEX_NONE));
                 }
             }
             break;

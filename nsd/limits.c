@@ -176,7 +176,7 @@ NsTclListLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 
             if (pattern == NULL || Tcl_StringMatch(limits, pattern) != 0) {
                 Tcl_ListObjAppendElement(interp, listObj,
-                                         Tcl_NewStringObj(limits, -1));
+                                         Tcl_NewStringObj(limits, TCL_INDEX_NONE));
             }
             hPtr = Tcl_NextHashEntry(&search);
         }

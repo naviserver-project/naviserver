@@ -106,10 +106,10 @@ GetCacheNames(NsServer *servPtr, bool withUncommittedEntries) {
             const TclCache *cPtr = Tcl_GetHashValue(hPtr);
 
             if (Ns_CacheGetNrUncommittedEntries(cPtr->cache) > 0) {
-                Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewStringObj(key, -1));
+                Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewStringObj(key, TCL_INDEX_NONE));
             }
         } else {
-            Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewStringObj(key, -1));
+            Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewStringObj(key, TCL_INDEX_NONE));
         }
     }
     Ns_RWLockUnlock(&servPtr->tcl.cachelock);
@@ -843,7 +843,7 @@ NsTclCacheKeysObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
         Ns_CacheLock(cPtr->cache);
         entry = Ns_CacheFindEntryT(cPtr->cache, pattern, transactionStackPtr);
         if (entry != NULL && Ns_CacheGetValueT(entry, transactionStackPtr) != NULL) {
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(pattern, -1));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(pattern, TCL_INDEX_NONE));
         }
         Ns_CacheUnlock(cPtr->cache);
         Tcl_SetObjResult(interp, listObj);
@@ -864,7 +864,7 @@ NsTclCacheKeysObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
             const char *key = Ns_CacheKey(entry);
 
             if (pattern == NULL || Tcl_StringMatch(key, pattern) == 1) {
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(key, -1));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(key, TCL_INDEX_NONE));
             }
             entry = Ns_CacheNextEntryT(&search, transactionStackPtr);
         }
@@ -1043,7 +1043,7 @@ NsTclCacheGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
             void  *value = Ns_CacheGetValueT(entry, transactionStackPtr);
 
             if (value != NULL) {
-                resultObj = Tcl_NewStringObj(value, -1);
+                resultObj = Tcl_NewStringObj(value, TCL_INDEX_NONE);
             } else {
                 resultObj = NULL;
             }

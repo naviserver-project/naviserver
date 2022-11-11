@@ -159,7 +159,7 @@ NormalizePath(const char **pathPtr) {
         /*
          * The path contains a slash, it might be not normalized;
          */
-        pathObj = Tcl_NewStringObj(*pathPtr, -1);
+        pathObj = Tcl_NewStringObj(*pathPtr, TCL_INDEX_NONE);
         Tcl_IncrRefCount(pathObj);
 
         normalizedPathObj = Tcl_FSGetNormalizedPath(NULL, pathObj);
@@ -539,7 +539,7 @@ CompressExternalFile(Tcl_Interp *interp, const char *cmdName, const char *fileNa
     NS_NONNULL_ASSERT(gzFileName != NULL);
 
     Tcl_DStringInit(dsPtr);
-    Tcl_DStringAppend(dsPtr, cmdName, -1);
+    Tcl_DStringAppend(dsPtr, cmdName, TCL_INDEX_NONE);
     Tcl_DStringAppend(dsPtr, " ", 1);
     Tcl_DStringAppendElement(dsPtr, fileName);
     Tcl_DStringAppendElement(dsPtr, gzFileName);
@@ -595,8 +595,8 @@ CheckStaticCompressedDelivery(
 
     connPtr = (Conn *)conn;
 
-    Tcl_DStringAppend(dsPtr, fileName, -1);
-    Tcl_DStringAppend(dsPtr, ext, -1);
+    Tcl_DStringAppend(dsPtr, fileName, TCL_INDEX_NONE);
+    Tcl_DStringAppend(dsPtr, ext, TCL_INDEX_NONE);
     compressedFileName = Tcl_DStringValue(dsPtr);
     //fprintf(stderr, "=== check compressed file <%s> compressed <%s>\n", fileName, compressedFileName);
 

@@ -177,7 +177,7 @@ int
 Tcl_GetKeyedListKeys(Tcl_Interp *interp, const char *subFieldName, const char *keyedList,
                      int *keysArgcPtr, char ***keysArgvPtr)
 {
-    Tcl_Obj    *keylistPtr = Tcl_NewStringObj(keyedList, -1);
+    Tcl_Obj    *keylistPtr = Tcl_NewStringObj(keyedList, TCL_INDEX_NONE);
     const char *keylistKey = subFieldName;
     Tcl_Obj    *objValPtr;
     int         status;
@@ -263,7 +263,7 @@ int
 Tcl_GetKeyedListField(Tcl_Interp *interp, const char *fieldName,
                       const char *keyedList, char **fieldValuePtr)
 {
-    Tcl_Obj *keylistPtr = Tcl_NewStringObj(keyedList, -1);
+    Tcl_Obj *keylistPtr = Tcl_NewStringObj(keyedList, TCL_INDEX_NONE);
     const char *keylistKey = fieldName;
 
     Tcl_Obj *objValPtr;
@@ -316,8 +316,8 @@ char *
 Tcl_SetKeyedListField(Tcl_Interp *interp, const char *fieldName,
                       const char *fieldValue, const char *keyedList)
 {
-    Tcl_Obj     *keylistPtr = Tcl_NewStringObj(keyedList,  -1);
-    Tcl_Obj     *valuePtr   = Tcl_NewStringObj(fieldValue, -1);
+    Tcl_Obj     *keylistPtr = Tcl_NewStringObj(keyedList,  TCL_INDEX_NONE);
+    Tcl_Obj     *valuePtr   = Tcl_NewStringObj(fieldValue, TCL_INDEX_NONE);
     const char  *keylistKey = fieldName;
     char        *result = NULL;
     int          status, listLen;
@@ -362,7 +362,7 @@ Tcl_SetKeyedListField(Tcl_Interp *interp, const char *fieldName,
 char *
 Tcl_DeleteKeyedListField(Tcl_Interp *interp, const char *fieldName, const char *keyedList)
 {
-    Tcl_Obj    *keylistPtr = Tcl_NewStringObj(keyedList, -1);
+    Tcl_Obj    *keylistPtr = Tcl_NewStringObj(keyedList, TCL_INDEX_NONE);
     char       *newList = NULL;
     int         status, listLen;
 
@@ -1257,7 +1257,7 @@ TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl
             Tcl_Obj *listObjPtr = Tcl_NewListObj(0, NULL);
 
             for (idx = 0u; idx < keylIntPtr->numEntries; idx++) {
-                Tcl_Obj  *nameObjPtr = Tcl_NewStringObj(keylIntPtr->entries[idx].key, -1);
+                Tcl_Obj  *nameObjPtr = Tcl_NewStringObj(keylIntPtr->entries[idx].key, TCL_INDEX_NONE);
 
                 if (Tcl_ListObjAppendElement(interp, listObjPtr,
                                              nameObjPtr) != TCL_OK) {

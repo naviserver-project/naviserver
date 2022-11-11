@@ -660,8 +660,8 @@ Ns_ParseHeader(Ns_Set *set, const char *line, const char *prefix, Ns_HeaderCaseD
 
         if (prefix != NULL) {
             Tcl_DStringInit(dsPtr);
-            Tcl_DStringAppend(dsPtr, prefix, -1);
-            Tcl_DStringAppend(dsPtr, line, -1);
+            Tcl_DStringAppend(dsPtr, prefix, TCL_INDEX_NONE);
+            Tcl_DStringAppend(dsPtr, line, TCL_INDEX_NONE);
             line = dsPtr->string;
         }
 
@@ -680,7 +680,7 @@ Ns_ParseHeader(Ns_Set *set, const char *line, const char *prefix, Ns_HeaderCaseD
             for (value = sep + 1; (*value != '\0') && CHARTYPE(space, *value) != 0; value++) {
                 ;
             }
-            idx = Ns_SetPutSz(set, line, sep-line, value, -1);
+            idx = Ns_SetPutSz(set, line, sep-line, value, TCL_INDEX_NONE);
             key = Ns_SetKey(set, idx);
             if (disp == ToLower) {
                 while (*key != '\0') {

@@ -146,11 +146,11 @@ NsTclRequestAuthorizeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
             break;
 
         case NS_FORBIDDEN:
-            Tcl_SetObjResult(interp, Tcl_NewStringObj("FORBIDDEN", -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj("FORBIDDEN", TCL_INDEX_NONE));
             break;
 
         case NS_UNAUTHORIZED:
-            Tcl_SetObjResult(interp, Tcl_NewStringObj("UNAUTHORIZED", -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj("UNAUTHORIZED", TCL_INDEX_NONE));
             break;
 
         case NS_FILTER_BREAK:  NS_FALL_THROUGH; /* fall through */
@@ -253,7 +253,7 @@ NsParseAuth(Conn *connPtr, const char *auth)
     }
 
     Tcl_DStringInit(&authDs);
-    Tcl_DStringAppend(&authDs, auth, -1);
+    Tcl_DStringAppend(&authDs, auth, TCL_INDEX_NONE);
 
     p = authDs.string;
     while (*p != '\0' && CHARTYPE(space, *p) == 0) {
@@ -346,7 +346,7 @@ NsParseAuth(Conn *connPtr, const char *auth)
                 save2 = *q;
                 *q = '\0';
                 /* Update with current value */
-                Ns_SetPutValueSz(connPtr->auth, idx, p, -1);
+                Ns_SetPutValueSz(connPtr->auth, idx, p, TCL_INDEX_NONE);
                 *q = save2;
                 /* Advance to the end of the param value, can be end or next name*/
                 while (*q != '\0' && (*q == ',' || *q == '"' || CHARTYPE(space, *q) != 0)) {

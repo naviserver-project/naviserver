@@ -1016,7 +1016,7 @@ NsAdpLogError(NsInterp *itPtr)
         Tcl_Obj *objv[2];
 
         ++itPtr->adp.errorLevel;
-        objv[0] = Tcl_NewStringObj(adp, -1);
+        objv[0] = Tcl_NewStringObj(adp, TCL_INDEX_NONE);
         Tcl_IncrRefCount(objv[0]);
         objv[1] = Tcl_GetVar2Ex(interp, "errorInfo", NULL, TCL_GLOBAL_ONLY);
         if (objv[1] == NULL) {

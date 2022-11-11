@@ -135,7 +135,7 @@ Ns_ConfigSet(const char *section, const char *key, const char *name)
            NS_EMPTY_STRING);
 
     if (value != NULL) {
-        Tcl_Obj *valueObj = Tcl_NewStringObj(value, -1);
+        Tcl_Obj *valueObj = Tcl_NewStringObj(value, TCL_INDEX_NONE);
 
         setPtr = Ns_SetCreateFromDict(NULL, name, valueObj);
         Tcl_DecrRefCount(valueObj);
@@ -292,7 +292,7 @@ Ns_ConfigIntRange(const char *section, const char *key, int defaultValue,
         int      length;
 
         length = snprintf(strBuffer, sizeof(strBuffer), "%d", value);
-        Ns_SetUpdateSz(sectionPtr->set, key, -1, strBuffer, length);
+        Ns_SetUpdateSz(sectionPtr->set, key, TCL_INDEX_NONE, strBuffer, length);
     }
 
     return value;
@@ -721,11 +721,11 @@ PathAppend(Tcl_DString *dsPtr, const char *server, const char *module, va_list a
     Tcl_DStringAppend(dsPtr, "ns", 2);
     if (server != NULL) {
         Tcl_DStringAppend(dsPtr, "/server/", 8);
-        Tcl_DStringAppend(dsPtr, server, -1);
+        Tcl_DStringAppend(dsPtr, server, TCL_INDEX_NONE);
     }
     if (module != NULL) {
         Tcl_DStringAppend(dsPtr, "/module/", 8);
-        Tcl_DStringAppend(dsPtr, module, -1);
+        Tcl_DStringAppend(dsPtr, module, TCL_INDEX_NONE);
     }
 
     for (s = va_arg(ap, char *); s != NULL; s = va_arg(ap, char *)) {
@@ -733,7 +733,7 @@ PathAppend(Tcl_DString *dsPtr, const char *server, const char *module, va_list a
         while (*s != '\0' && ISSLASH(*s)) {
             ++s;
         }
-        Tcl_DStringAppend(dsPtr, s, -1);
+        Tcl_DStringAppend(dsPtr, s, TCL_INDEX_NONE);
         while (ISSLASH(dsPtr->string[dsPtr->length - 1])) {
             dsPtr->string[--dsPtr->length] = '\0';
         }
@@ -1310,7 +1310,7 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defaultS
              * startup when we there is a single thread. Changing ns_sets is
              * not thread safe.
              */
-            i = (int)Ns_SetPutSz(sectionPtr->set, key, -1,
+            i = (int)Ns_SetPutSz(sectionPtr->set, key, TCL_INDEX_NONE,
                                  defaultString, defaultString == NULL ? 0 : -1);
             ConfigMark(sectionPtr, (size_t)i, value_defaulted);
             s = Ns_SetValue(sectionPtr->set, i);
@@ -1321,7 +1321,9 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defaultS
         if (!nsconf.state.started) {
             ConfigMark(sectionPtr, (size_t)i, value_read);
             if (defaultString != NULL) {
-                (void)Ns_SetPutSz(sectionPtr->defaults, key, -1, defaultString, -1);
+                (void)Ns_SetPutSz(sectionPtr->defaults,
+                                  key, TCL_INDEX_NONE,
+                                  defaultString, TCL_INDEX_NONE);
             }
         }
     }
@@ -1356,12 +1358,16 @@ NsConfigSectionGetFiltered(const char *section, char filter)
                     if (filter == 'u' && (sectionPtr->readArray[index] & mask) == 0u) {
                         /*fprintf(stderr, "unused parameter: %s/%s (%lu)\n",
                           section, set->fields[i].name, i);*/
-                        Ns_SetPutSz(result, set->fields[i].name, -1, set->fields[i].value, -1);
+                        Ns_SetPutSz(result,
+                                    set->fields[i].name, TCL_INDEX_NONE,
+                                    set->fields[i].value, TCL_INDEX_NONE);
                     } else if  (filter == 'd' && (sectionPtr->defaultArray[index] & mask) != 0u) {
                         /*fprintf(stderr, "defaulted parameter: %s/%s (%lu) defaults %p mask %p\n",
                           section, set->fields[i].name, i,
                           (void*)sectionPtr->defaultArray[0], (void*)mask);*/
-                        Ns_SetPutSz(result, set->fields[i].name, -1, set->fields[i].value, -1);
+                        Ns_SetPutSz(result,
+                                    set->fields[i].name, TCL_INDEX_NONE,
+                                    set->fields[i].value, TCL_INDEX_NONE);
                     }
                 }
             }
@@ -1410,7 +1416,7 @@ GetSection(const char *section, bool create)
     while (CHARTYPE(space, *p) != 0) {
         ++p;
     }
-    Tcl_DStringAppend(&ds, p, -1);
+    Tcl_DStringAppend(&ds, p, TCL_INDEX_NONE);
     s = ds.string;
     while (likely(*s != '\0')) {
         if (unlikely(*s == '\\')) {

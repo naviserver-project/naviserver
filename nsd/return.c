@@ -130,7 +130,7 @@ static const size_t nreasons = (sizeof(reasons) / sizeof(reasons[0]));
 void
 Ns_ConnSetHeaders(const Ns_Conn *conn, const char *field, const char *value)
 {
-    (void) Ns_SetPutSz(conn->outputheaders, field, -1, value, -1);
+    (void) Ns_SetPutSz(conn->outputheaders, field, TCL_INDEX_NONE, value, TCL_INDEX_NONE);
 }
 
 /*
@@ -181,7 +181,7 @@ Ns_ConnPrintfHeaders(const Ns_Conn *conn, const char *field, const char *fmt,...
     va_start(ap, fmt);
     Ns_DStringVPrintf(&ds, fmt, ap);
     va_end(ap);
-    (void) Ns_SetPutSz(conn->outputheaders, field, -1, ds.string, ds.length);
+    (void) Ns_SetPutSz(conn->outputheaders, field, TCL_INDEX_NONE, ds.string, ds.length);
     Ns_DStringFree(&ds);
 }
 
@@ -206,7 +206,9 @@ void
 Ns_ConnCondSetHeaders(const Ns_Conn *conn, const char *field, const char *value)
 {
     if (Ns_SetIGet(conn->outputheaders, field) == NULL) {
-        (void) Ns_SetPutSz(conn->outputheaders, field, -1, value, -1);
+        (void) Ns_SetPutSz(conn->outputheaders,
+                           field, TCL_INDEX_NONE,
+                           value, TCL_INDEX_NONE);
     }
 }
 
@@ -538,7 +540,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
 
                         } while (lineBreak != NULL);
 
-                        Tcl_DStringAppend(sanitizePtr, value, -1);
+                        Tcl_DStringAppend(sanitizePtr, value, TCL_INDEX_NONE);
 
                         Ns_DStringVarAppend(dsPtr, key, ": ", Tcl_DStringValue(sanitizePtr), "\r\n", (char *)0L);
                         Ns_DStringFree(sanitizePtr);

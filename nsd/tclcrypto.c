@@ -330,7 +330,7 @@ ListMDfunc(const EVP_MD *m, const char *from, const char *UNUSED(to), void *arg)
          * duplication.
          */
         if ((*from >= 'a') && (*from <= 'z')) {
-            (void)Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewStringObj(mdName, -1));
+            (void)Tcl_ListObjAppendElement(NULL, listPtr, Tcl_NewStringObj(mdName, TCL_INDEX_NONE));
         }
     }
 }

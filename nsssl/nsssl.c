@@ -475,13 +475,13 @@ ConnInfo(Ns_Sock *sock)
 
     /*Tcl_DictObjPut(NULL, resultObj,
                    Tcl_NewStringObj("protocol", 8),
-                   Tcl_NewStringObj(sock->driver->protocol, -1));*/
+                   Tcl_NewStringObj(sock->driver->protocol, TCL_INDEX_NONE));*/
     Tcl_DictObjPut(NULL, resultObj,
                    Tcl_NewStringObj("sslversion", 10),
-                   Tcl_NewStringObj(SSL_get_version(sslCtx->ssl), -1));
+                   Tcl_NewStringObj(SSL_get_version(sslCtx->ssl), TCL_INDEX_NONE));
     Tcl_DictObjPut(NULL, resultObj,
                    Tcl_NewStringObj("cipher", 6),
-                   Tcl_NewStringObj(SSL_get_cipher(sslCtx->ssl), -1));
+                   Tcl_NewStringObj(SSL_get_cipher(sslCtx->ssl), TCL_INDEX_NONE));
 
     return resultObj;
 }

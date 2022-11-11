@@ -102,7 +102,7 @@ Ns_SetIUpdateSz(Ns_Set *set, const char *keyString, ssize_t keyLength, const cha
     NS_NONNULL_ASSERT(keyString != NULL);
 
     index = Ns_SetIFind(set, keyString);
-    if (index != -1) {
+    if (index != TCL_INDEX_NONE) {
         Ns_SetPutValueSz(set, (size_t)index, valueString, valueLength);
         /*
          * If the capitalization of the key is different, keep the new one.
@@ -148,7 +148,7 @@ Ns_SetUpdateSz(Ns_Set *set, const char *keyString, ssize_t keyLength, const char
     NS_NONNULL_ASSERT(keyString != NULL);
 
     index = Ns_SetFind(set, keyString);
-    if (index != -1) {
+    if (index != TCL_INDEX_NONE) {
         Ns_SetPutValueSz(set, (size_t)index, valueString, valueLength);
         result = (size_t)index;
     } else {
@@ -160,7 +160,7 @@ Ns_SetUpdateSz(Ns_Set *set, const char *keyString, ssize_t keyLength, const char
 size_t
 Ns_SetUpdate(Ns_Set *set, const char *keyString, const char *valueString)
 {
-    return Ns_SetUpdateSz(set, keyString, -1, valueString, -1);
+    return Ns_SetUpdateSz(set, keyString, TCL_INDEX_NONE, valueString, TCL_INDEX_NONE);
 }
 
 #ifdef NS_SET_DSTRING
@@ -226,7 +226,7 @@ AppendData(Ns_Set *set, size_t index, const char *value, ssize_t valueSize)
     oldDataStart = set->data.string;
     oldLength = set->data.length;
     oldAvail = set->data.spaceAvl;
-    if (valueSize == -1 && value == NULL) {
+    if (valueSize == TCL_INDEX_NONE && value == NULL) {
         valueSize = 0;
     }
     Tcl_DStringAppend(&set->data, value, (int)valueSize);
@@ -403,7 +403,9 @@ Ns_SetFree(Ns_Set *set)
  */
 
 size_t
-Ns_SetPutSz(Ns_Set *set, const char *keyString, ssize_t keyLength, const char *valueString, ssize_t valueLength)
+Ns_SetPutSz(Ns_Set *set,
+            const char *keyString, ssize_t keyLength,
+            const char *valueString, ssize_t valueLength)
 {
     size_t idx;
 
@@ -440,7 +442,7 @@ Ns_SetPut(Ns_Set *set, const char *key, const char *value)
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    return Ns_SetPutSz(set, key, -1, value, -1);
+    return Ns_SetPutSz(set, key, TCL_INDEX_NONE, value, TCL_INDEX_NONE);
 }
 
 /*
@@ -910,7 +912,7 @@ Ns_SetDelete(Ns_Set *set, int index)
 void
 Ns_SetPutValue(Ns_Set *set, size_t index, const char *value)
 {
-    Ns_SetPutValueSz(set, index, value, -1);
+    Ns_SetPutValueSz(set, index, value, TCL_INDEX_NONE);
 }
 
 void
@@ -921,7 +923,7 @@ Ns_SetPutValueSz(Ns_Set *set, size_t index, const char *value, ssize_t size)
 
     if (index < set->size) {
 #ifdef NS_SET_DSTRING
-        if (size == -1) {
+        if (size == TCL_INDEX_NONE) {
             size = (ssize_t)strlen(value);
         }
 #ifdef NS_SET_DEBUG
@@ -1507,7 +1509,9 @@ SetCopyElements(const char* msg, const Ns_Set *from, Ns_Set *const to)
 
     to->size = 0u;
     for (i = 0u; i < from->size; i++) {
-        Ns_SetPutSz(to, from->fields[i].name, -1, from->fields[i].value, -1);
+        Ns_SetPutSz(to,
+                    from->fields[i].name, TCL_INDEX_NONE,
+                    from->fields[i].value, TCL_INDEX_NONE);
     }
 #else
     (void)msg;

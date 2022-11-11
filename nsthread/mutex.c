@@ -408,7 +408,7 @@ Ns_MutexList(Tcl_DString *dsPtr)
                  (int64_t)mutexPtr->max_waiting_time.sec, mutexPtr->max_waiting_time.usec,
                  (int64_t)mutexPtr->total_lock_time.sec, mutexPtr->total_lock_time.usec
                  );
-        Tcl_DStringAppend(dsPtr, buf, -1);
+        Tcl_DStringAppend(dsPtr, buf, TCL_INDEX_NONE);
         Tcl_DStringEndSublist(dsPtr);
     }
     Ns_MasterUnlock();

@@ -764,7 +764,7 @@ NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         } else if (defaultObj != NULL) {
             Tcl_SetObjResult(interp, defaultObj);
         } else {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj("no such cookie", -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj("no such cookie", TCL_INDEX_NONE));
             status = TCL_ERROR;
         }
         Ns_DStringFree(&ds);

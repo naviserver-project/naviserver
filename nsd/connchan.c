@@ -709,7 +709,7 @@ ArgProc(Tcl_DString *dsPtr, const void *arg)
          * It might be the case that the connChanPtr was canceled, but
          * the updatecmd not yet executed.
          */
-        Ns_DStringNAppend(dsPtr, cbPtr->connChanPtr->channelName, -1);
+        Ns_DStringNAppend(dsPtr, cbPtr->connChanPtr->channelName, TCL_INDEX_NONE);
         Ns_DStringNAppend(dsPtr, " ", 1);
         Ns_DStringNAppend(dsPtr, cbPtr->script, (int)cbPtr->scriptCmdNameLength);
     } else {
@@ -1037,7 +1037,7 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
          */
         connPtr->flags |= NS_CONN_CLOSED;
 
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(connChanPtr->channelName, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(connChanPtr->channelName, TCL_INDEX_NONE));
         Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan detach returns %d", connChanPtr->channelName, result);
     }
     return result;
@@ -1167,7 +1167,7 @@ ConnChanOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 
                 if (nSent > -1) {
                     connChanPtr->wBytes += (size_t)nSent;
-                    Tcl_SetObjResult(interp, Tcl_NewStringObj(connChanPtr->channelName, -1));
+                    Tcl_SetObjResult(interp, Tcl_NewStringObj(connChanPtr->channelName, TCL_INDEX_NONE));
                 } else {
                     result = TCL_ERROR;
                 }
@@ -1276,7 +1276,7 @@ ConnChanConnectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
                                              NS_TRUE /* binary, fixed for the time being */,
                                              NULL);
 
-                Tcl_SetObjResult(interp, Tcl_NewStringObj(connChanPtr->channelName, -1));
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(connChanPtr->channelName, TCL_INDEX_NONE));
             }
 
         }
@@ -1382,7 +1382,7 @@ ConnChanListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                     char      ipString[NS_IPADDR_SIZE];
 
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("channel", 7));
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(connChanPtr->channelName, -1));
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(connChanPtr->channelName, TCL_INDEX_NONE));
 
                     port = Ns_SockaddrGetPort((struct sockaddr *) &sa);
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("port", 4));
@@ -1393,7 +1393,7 @@ ConnChanListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 
                     ns_inet_ntop((struct sockaddr *) &sa, ipString, sizeof(ipString));
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("address", 7));
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(ipString, -1));
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(ipString, TCL_INDEX_NONE));
 
                     Tcl_SetObjResult(interp, listObj);
                 }
@@ -1454,7 +1454,7 @@ SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why))
         Tcl_DString script;
 
         Tcl_DStringInit(&script);
-        Tcl_DStringAppend(&script, lcbPtr->script, -1);
+        Tcl_DStringAppend(&script, lcbPtr->script, TCL_INDEX_NONE);
         Tcl_DStringAppendElement(&script, connChanPtr->channelName);
         result = Tcl_EvalEx(interp, script.string, script.length, 0);
         Tcl_DStringFree(&script);
@@ -1621,10 +1621,10 @@ ConnChanStatusObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                            Tcl_NewStringObj(ds.string, ds.length));
             Tcl_DictObjPut(NULL, dictObj,
                            Tcl_NewStringObj("driver", 6),
-                           Tcl_NewStringObj(connChanPtr->sockPtr->drvPtr->moduleName, -1));
+                           Tcl_NewStringObj(connChanPtr->sockPtr->drvPtr->moduleName, TCL_INDEX_NONE));
             Tcl_DictObjPut(NULL, dictObj,
                            Tcl_NewStringObj("peer", 4),
-                           Tcl_NewStringObj(*connChanPtr->peer == '\0' ? "" : connChanPtr->peer, -1));
+                           Tcl_NewStringObj(*connChanPtr->peer == '\0' ? "" : connChanPtr->peer, TCL_INDEX_NONE));
             Tcl_DictObjPut(NULL, dictObj,
                            Tcl_NewStringObj("sent", 4),
                            Tcl_NewWideIntObj((Tcl_WideInt)connChanPtr->wBytes));
@@ -1645,9 +1645,9 @@ ConnChanStatusObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                 char whenBuffer[6];
 
                 Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("callback", 8),
-                               Tcl_NewStringObj(connChanPtr->cbPtr->script, -1));
+                               Tcl_NewStringObj(connChanPtr->cbPtr->script, TCL_INDEX_NONE));
                 Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("condition", 9),
-                               Tcl_NewStringObj(WhenToString(whenBuffer, connChanPtr->cbPtr->when), -1));
+                               Tcl_NewStringObj(WhenToString(whenBuffer, connChanPtr->cbPtr->when), TCL_INDEX_NONE));
             }
             Tcl_DStringFree(&ds);
             Tcl_SetObjResult(interp, dictObj);
@@ -2261,7 +2261,7 @@ ConnChanReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
                     const char *errorMsg;
 
                     errorMsg = NsSockSetRecvErrorCode(connChanPtr->sockPtr, interp);
-                    Tcl_SetObjResult(interp, Tcl_NewStringObj(errorMsg, -1));
+                    Tcl_SetObjResult(interp, Tcl_NewStringObj(errorMsg, TCL_INDEX_NONE));
                     result = TCL_ERROR;
 
                 } else if (webSocketFrame == 0 && nRead > 0) {

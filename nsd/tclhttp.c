@@ -310,7 +310,7 @@ NsInitHttp(NsServer *servPtr)
         filename = Ns_ConfigString(path, "logfile", NULL);
         if (filename == NULL) {
             Tcl_DStringAppend(&defaultLogFileName, "httpclient-", 11);
-            Tcl_DStringAppend(&defaultLogFileName, servPtr->server, -1);
+            Tcl_DStringAppend(&defaultLogFileName, servPtr->server, TCL_INDEX_NONE);
             Tcl_DStringAppend(&defaultLogFileName, ".log", 10);
             filename = defaultLogFileName.string;
         }
@@ -1253,7 +1253,7 @@ HttpWaitObjCmd(
             result = HttpGetResult(interp, httpPtr);
         } else {
             HttpCancel(httpPtr);
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(httpPtr->error, -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(httpPtr->error, TCL_INDEX_NONE));
             if (rc == NS_TIMEOUT) {
                 Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
                 Ns_Log(Ns_LogTimeoutDebug, "ns_http request '%s' runs into timeout",
@@ -1524,13 +1524,13 @@ HttpListObjCmd(
             }
 
             Tcl_ListObjAppendElement
-                (interp, resultObj, Tcl_NewStringObj(taskString, -1));
+                (interp, resultObj, Tcl_NewStringObj(taskString, TCL_INDEX_NONE));
 
             Tcl_ListObjAppendElement
-                (interp, resultObj, Tcl_NewStringObj(httpPtr->url, -1));
+                (interp, resultObj, Tcl_NewStringObj(httpPtr->url, TCL_INDEX_NONE));
 
             Tcl_ListObjAppendElement
-                (interp, resultObj, Tcl_NewStringObj(taskState, -1));
+                (interp, resultObj, Tcl_NewStringObj(taskState, TCL_INDEX_NONE));
         }
     }
 
@@ -1605,11 +1605,11 @@ HttpStatsObjCmd(
 
             (void) Tcl_DictObjPut
                 (interp, entryObj, Tcl_NewStringObj("task", 4),
-                 Tcl_NewStringObj(taskString, -1));
+                 Tcl_NewStringObj(taskString, TCL_INDEX_NONE));
 
             (void) Tcl_DictObjPut
                 (interp, entryObj, Tcl_NewStringObj("url", 3),
-                 Tcl_NewStringObj(httpPtr->url, -1));
+                 Tcl_NewStringObj(httpPtr->url, TCL_INDEX_NONE));
 
             (void) Tcl_DictObjPut
                 (interp, entryObj, Tcl_NewStringObj("requestlength", 13),
@@ -2085,7 +2085,7 @@ HttpGetResult(
                    httpPtr->url);
             HttpClientLogWrite(httpPtr, "socktimeout");
         }
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(httpPtr->error, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(httpPtr->error, TCL_INDEX_NONE));
         result = TCL_ERROR;
         goto err;
     }
@@ -2158,7 +2158,7 @@ HttpGetResult(
             Tcl_DString ds;
             Tcl_DStringInit(&ds);
             Tcl_ExternalToUtfDString(encoding, cData, cSize, &ds);
-            replyBodyObj = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+            replyBodyObj = Tcl_NewStringObj(Tcl_DStringValue(&ds), TCL_INDEX_NONE);
             Tcl_DStringFree(&ds);
 #else
             replyBodyObj = Tcl_NewStringObj(cData, cSize);
@@ -2169,7 +2169,7 @@ HttpGetResult(
     statusObj = Tcl_NewIntObj(httpPtr->status);
 
     if (httpPtr->spoolFd != NS_INVALID_FD) {
-        fileNameObj = Tcl_NewStringObj(httpPtr->spoolFileName, -1);
+        fileNameObj = Tcl_NewStringObj(httpPtr->spoolFileName, TCL_INDEX_NONE);
     }
 
     /*
@@ -2215,13 +2215,13 @@ HttpGetResult(
         const char *chanName = Tcl_GetChannelName(httpPtr->bodyChan);
 
         Tcl_DictObjPut(interp, resultObj, Tcl_NewStringObj("body_chan", 9),
-                       Tcl_NewStringObj(chanName, -1));
+                       Tcl_NewStringObj(chanName, TCL_INDEX_NONE));
     }
     if (httpPtr->spoolChan != NULL) {
         const char *chanName = Tcl_GetChannelName(httpPtr->spoolChan);
 
         Tcl_DictObjPut(interp, resultObj, Tcl_NewStringObj("outputchan", 10),
-                       Tcl_NewStringObj(chanName, -1));
+                       Tcl_NewStringObj(chanName, TCL_INDEX_NONE));
     }
     Tcl_SetObjResult(interp, resultObj);
 
@@ -2953,21 +2953,21 @@ HttpConnect(
     Ns_StrToUpper(Ns_DStringValue(dsPtr));
     if (httpProxy == NS_TRUE) {
         Ns_DStringNAppend(dsPtr, " ", 1);
-        Ns_DStringNAppend(dsPtr, url, -1);
+        Ns_DStringNAppend(dsPtr, url, TCL_INDEX_NONE);
     } else {
         Ns_DStringNAppend(dsPtr, " /", 2);
         if (*u.path != '\0') {
-            Ns_DStringNAppend(dsPtr, u.path, -1);
+            Ns_DStringNAppend(dsPtr, u.path, TCL_INDEX_NONE);
             Ns_DStringNAppend(dsPtr, "/", 1);
         }
-        Ns_DStringNAppend(dsPtr, u.tail, -1);
+        Ns_DStringNAppend(dsPtr, u.tail, TCL_INDEX_NONE);
         if (u.query != NULL) {
             Ns_DStringNAppend(dsPtr, "?", 1);
-            Ns_DStringNAppend(dsPtr, u.query, -1);
+            Ns_DStringNAppend(dsPtr, u.query, TCL_INDEX_NONE);
         }
         if (u.fragment != NULL) {
             Ns_DStringNAppend(dsPtr, "#", 1);
-            Ns_DStringNAppend(dsPtr, u.fragment, -1);
+            Ns_DStringNAppend(dsPtr, u.fragment, TCL_INDEX_NONE);
         }
     }
     Ns_DStringNAppend(dsPtr, " HTTP/1.1\r\n", 11);
@@ -3579,8 +3579,8 @@ HttpAddInfo(
         Tcl_IncrRefCount(httpPtr->infoObj);
     }
 
-    keyObj = Tcl_NewStringObj(key, -1);
-    valObj = Tcl_NewStringObj(value, -1);
+    keyObj = Tcl_NewStringObj(key, TCL_INDEX_NONE);
+    valObj = Tcl_NewStringObj(value, TCL_INDEX_NONE);
 
     Tcl_DictObjPut(NULL, httpPtr->infoObj, keyObj, valObj);
 }
@@ -3728,7 +3728,7 @@ HttpDoneCallback(
     result = HttpGetResult(interp, httpPtr);
 
     Tcl_DStringInit(&script);
-    Tcl_DStringAppend(&script, httpPtr->doneCallback, -1);
+    Tcl_DStringAppend(&script, httpPtr->doneCallback, TCL_INDEX_NONE);
     Ns_DStringPrintf(&script, " %d ", result);
     Tcl_DStringAppendElement(&script, Tcl_GetStringResult(interp));
 

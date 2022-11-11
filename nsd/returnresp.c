@@ -215,12 +215,12 @@ Ns_ConnReturnMoved(Ns_Conn *conn, const char *url)
         if (*url == '/') {
             (void) Ns_ConnLocationAppend(conn, &urlDs);
         }
-        Tcl_DStringAppend(&urlDs, url, -1);
+        Tcl_DStringAppend(&urlDs, url, TCL_INDEX_NONE);
         Ns_ConnSetHeaders(conn, "Location", urlDs.string);
 
         Tcl_DStringAppend(&msgDs, "<a href=\"", 9);
         Ns_QuoteHtml(&msgDs, urlDs.string);
-        Tcl_DStringAppend(&msgDs, "\">The requested URL has moved permanently here.</a>", -1);
+        Tcl_DStringAppend(&msgDs, "\">The requested URL has moved permanently here.</a>", TCL_INDEX_NONE);
 
         result = Ns_ConnReturnNotice(conn, 301, "Redirection", msgDs.string);
 
@@ -291,14 +291,14 @@ Ns_ConnReturnRedirect(Ns_Conn *conn, const char *url)
         if (*url == '/') {
             (void) Ns_ConnLocationAppend(conn, &urlDs);
         }
-        Tcl_DStringAppend(&urlDs, url, -1);
+        Tcl_DStringAppend(&urlDs, url, TCL_INDEX_NONE);
 
         Ns_UrlEncodingWarnUnencoded("header field location", urlDs.string);
         Ns_ConnSetHeaders(conn, "Location", urlDs.string);
 
         Tcl_DStringAppend(&msgDs, "<a href=\"", 9);
         Ns_QuoteHtml(&msgDs, urlDs.string);
-        Tcl_DStringAppend(&msgDs, "\">The requested URL has moved here.</a>", -1);
+        Tcl_DStringAppend(&msgDs, "\">The requested URL has moved here.</a>", TCL_INDEX_NONE);
 
         result = Ns_ConnReturnNotice(conn, 302, "Redirection", msgDs.string);
 

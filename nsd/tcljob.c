@@ -635,7 +635,7 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
             create = NS_FALSE;
         }
 
-        Tcl_DStringAppend(&jobPtr->id, jobIdString, -1);
+        Tcl_DStringAppend(&jobPtr->id, jobIdString, TCL_INDEX_NONE);
         Tcl_SetHashValue(hPtr, jobPtr);
         Ns_CondBroadcast(&tp.cond);
 
@@ -648,7 +648,7 @@ JobQueueObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
             Ns_ThreadCreate(JobThread, NULL, 0, NULL);
         }
         if (result == TCL_OK) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(jobIdString, -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(jobIdString, TCL_INDEX_NONE));
         }
     }
     return result;
@@ -778,7 +778,7 @@ JobWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_O
                 }
                 if (jobPtr->errorInfo != NULL) {
                     Tcl_AddObjErrorInfo(interp, "\n", 1);
-                    Tcl_AddObjErrorInfo(interp, jobPtr->errorInfo, -1);
+                    Tcl_AddObjErrorInfo(interp, jobPtr->errorInfo, TCL_INDEX_NONE);
                 }
             }
         }
@@ -1030,7 +1030,7 @@ JobJobsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_O
              ) {
             const char *jobIdString = Tcl_GetHashKey(&queue->jobs, hPtr);
 
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(jobIdString, -1));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(jobIdString, TCL_INDEX_NONE));
         }
         (void)ReleaseQueue(queue, NS_FALSE);
         Tcl_SetObjResult(interp, listObj);
@@ -1077,7 +1077,7 @@ JobQueuesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
              hPtr = Tcl_NextHashEntry(&search)
              ) {
             const Queue *queue = Tcl_GetHashValue(hPtr);
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(queue->name, -1));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(queue->name, TCL_INDEX_NONE));
         }
         Ns_MutexUnlock(&tp.queuelock);
         Tcl_SetObjResult(interp, listObj);
@@ -1309,7 +1309,7 @@ JobGenIDObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
                  tp.nextQueueId++, (Tcl_WideInt) currentTime.sec);
         Ns_MutexUnlock(&tp.queuelock);
 
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, TCL_INDEX_NONE));
     }
     return result;
 }
@@ -1565,7 +1565,7 @@ JobThread(void *UNUSED(arg))
          * Save the results.
          */
 
-        Tcl_DStringAppend(&jobPtr->results, Tcl_GetStringResult(interp), -1);
+        Tcl_DStringAppend(&jobPtr->results, Tcl_GetStringResult(interp), TCL_INDEX_NONE);
         if (jobPtr->code == TCL_ERROR) {
             err = Tcl_GetVar(interp, "errorCode", TCL_GLOBAL_ONLY);
             if (err != NULL) {
@@ -1809,7 +1809,7 @@ NewJob(const char* server, const char* queueName, JobTypes type, const char *scr
 
     Tcl_DStringInit(&jobPtr->id);
     Tcl_DStringInit(&jobPtr->script);
-    Tcl_DStringAppend(&jobPtr->script, script, -1);
+    Tcl_DStringAppend(&jobPtr->script, script, TCL_INDEX_NONE);
     Tcl_DStringInit(&jobPtr->results);
 
     return jobPtr;
@@ -2286,11 +2286,11 @@ AppendField(Tcl_Interp *interp, Tcl_Obj *list, const char *name,
      * it will set the result anyway.
      */
 
-    elObj = Tcl_NewStringObj(name, -1);
+    elObj = Tcl_NewStringObj(name, TCL_INDEX_NONE);
 
     result = Tcl_ListObjAppendElement(interp, list, elObj);
     if (likely( result == TCL_OK) ) {
-        elObj = Tcl_NewStringObj(value, -1);
+        elObj = Tcl_NewStringObj(value, TCL_INDEX_NONE);
         result = Tcl_ListObjAppendElement(interp, list, elObj);
     }
 
@@ -2325,7 +2325,7 @@ AppendFieldInt(Tcl_Interp *interp, Tcl_Obj *list, const char *name, int value)
      * it will set the result anyway.
      */
 
-    elObj = Tcl_NewStringObj(name, -1);
+    elObj = Tcl_NewStringObj(name, TCL_INDEX_NONE);
     result = Tcl_ListObjAppendElement(interp, list, elObj);
     if (likely (result == TCL_OK) ) {
         elObj = Tcl_NewIntObj(value);
@@ -2361,7 +2361,7 @@ AppendFieldLong(Tcl_Interp *interp, Tcl_Obj *list, const char *name,
     NS_NONNULL_ASSERT(list != NULL);
     NS_NONNULL_ASSERT(name != NULL);
 
-    elObj = Tcl_NewStringObj(name, -1);
+    elObj = Tcl_NewStringObj(name, TCL_INDEX_NONE);
     result = Tcl_ListObjAppendElement(interp, list, elObj);
     if (likely( result == TCL_OK )) {
         elObj = Tcl_NewLongObj(value);

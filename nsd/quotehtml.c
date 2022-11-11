@@ -282,7 +282,7 @@ NsTclUnquoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
             /*
              * Append the last chunk
              */
-            Ns_DStringNAppend(dsPtr, htmlString, -1);
+            Ns_DStringNAppend(dsPtr, htmlString, TCL_INDEX_NONE);
 
         }
 
@@ -855,7 +855,7 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                                            inString, (int)strlen(inString), &ds);
             Tcl_DStringResult(interp, &ds);
         } else {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(inString, -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(inString, TCL_INDEX_NONE));
         }
         ns_free(inString);
     }
@@ -1100,7 +1100,7 @@ HtmlFinishElement(Tcl_Obj *listObj, const char *what, const char *lastStart,
         ptrdiff_t length = currentPtr - lastStart;
         Tcl_Obj  *elementObj = Tcl_NewListObj(0, NULL);
 
-        Tcl_ListObjAppendElement(NULL, elementObj, Tcl_NewStringObj(what, -1));
+        Tcl_ListObjAppendElement(NULL, elementObj, Tcl_NewStringObj(what, TCL_INDEX_NONE));
         if (noAngle) {
             lastStart --;
             length += 2;

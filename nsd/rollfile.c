@@ -288,7 +288,7 @@ Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
     if (status == NS_OK) {
         Tcl_Obj      *pathObj;
 
-        pathObj = Tcl_NewStringObj(filename, -1);
+        pathObj = Tcl_NewStringObj(filename, TCL_INDEX_NONE);
         Tcl_IncrRefCount(pathObj);
 
         /*
@@ -371,7 +371,7 @@ Ns_PurgeFiles(const char *fileName, int max)
 
     NS_NONNULL_ASSERT(fileName != NULL);
 
-    pathObj = Tcl_NewStringObj(fileName, -1);
+    pathObj = Tcl_NewStringObj(fileName, TCL_INDEX_NONE);
     Tcl_IncrRefCount(pathObj);
 
     /*
@@ -587,7 +587,7 @@ Unlink(const char *file)
 
     NS_NONNULL_ASSERT(file != NULL);
 
-    fileObj = Tcl_NewStringObj(file, -1);
+    fileObj = Tcl_NewStringObj(file, TCL_INDEX_NONE);
     Tcl_IncrRefCount(fileObj);
     err = Tcl_FSDeleteFile(fileObj);
     if (err != 0) {
@@ -608,10 +608,10 @@ Rename(const char *from, const char *to)
     NS_NONNULL_ASSERT(from != NULL);
     NS_NONNULL_ASSERT(to != NULL);
 
-    fromObj = Tcl_NewStringObj(from, -1);
+    fromObj = Tcl_NewStringObj(from, TCL_INDEX_NONE);
     Tcl_IncrRefCount(fromObj);
 
-    toObj = Tcl_NewStringObj(to, -1);
+    toObj = Tcl_NewStringObj(to, TCL_INDEX_NONE);
     Tcl_IncrRefCount(toObj);
 
     err = Tcl_FSRenameFile(fromObj, toObj);

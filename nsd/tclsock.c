@@ -1032,7 +1032,7 @@ AppendReadyFiles(Tcl_Interp *interp, Tcl_Obj *listObj,
         /*
          * Append the ready files to the passed in listObj
          */
-        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(dsPtr->string, -1));
+        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(dsPtr->string, TCL_INDEX_NONE));
 
         Tcl_Free((char *) fargv);
     } else {
@@ -1193,7 +1193,7 @@ EnterSock(Tcl_Interp *interp, NS_SOCKET sock, Tcl_Obj *listObj)
         if (result == TCL_OK) {
             Tcl_RegisterChannel(interp, chan);
             Tcl_ListObjAppendElement(interp, listObj,
-                                     Tcl_NewStringObj(Tcl_GetChannelName(chan), -1));
+                                     Tcl_NewStringObj(Tcl_GetChannelName(chan), TCL_INDEX_NONE));
         }
     }
 
@@ -1292,7 +1292,7 @@ NsTclSockProc(NS_SOCKET sock, void *arg, unsigned int why)
             (void)Tcl_SetChannelOption(NULL, cbPtr->chan, "-translation", "binary");
         }
         Tcl_RegisterChannel(interp, cbPtr->chan);
-        Tcl_DStringAppend(&script, cbPtr->script, -1);
+        Tcl_DStringAppend(&script, cbPtr->script, TCL_INDEX_NONE);
         Tcl_DStringAppendElement(&script, Tcl_GetChannelName(cbPtr->chan));
         if ((why & (unsigned int)NS_SOCK_TIMEOUT) != 0u) {
             w = "t";
@@ -1367,7 +1367,7 @@ SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why))
         if (Tcl_ListObjGetElements(interp, listObj, &objc, &objv) == TCL_OK
             && objc == 2) {
             Tcl_DStringInit(&script);
-            Tcl_DStringAppend(&script, lcbPtr->script, -1);
+            Tcl_DStringAppend(&script, lcbPtr->script, TCL_INDEX_NONE);
             Tcl_DStringAppendElement(&script, Tcl_GetString(objv[0]));
             Tcl_DStringAppendElement(&script, Tcl_GetString(objv[1]));
             result = Tcl_EvalEx(interp, script.string, script.length, 0);

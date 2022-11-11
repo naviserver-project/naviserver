@@ -1676,7 +1676,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
             }
             connPtr->clientData = ns_strdup(value);
         }
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(connPtr->clientData, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(connPtr->clientData, TCL_INDEX_NONE));
         break;
 
     case CCompressIdx:
@@ -1713,7 +1713,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
                 int          length;
 
                 (void)Tcl_SplitList(NULL, request->urlv, &length, &elements);
-                Tcl_SetObjResult(interp, Tcl_NewStringObj(elements[idx], -1));
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(elements[idx], TCL_INDEX_NONE));
                 Tcl_Free((char *) elements);
             }
         }
@@ -1723,7 +1723,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         {
             const char *addr = Ns_ConnCurrentAddr(conn);
 
-            Tcl_SetObjResult(interp, Tcl_NewStringObj((addr != NULL) ? addr : NS_EMPTY_STRING, -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj((addr != NULL) ? addr : NS_EMPTY_STRING, TCL_INDEX_NONE));
         }
         break;
 
@@ -1756,13 +1756,13 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
 
     case CAuthUserIdx:
         if (connPtr->auth != NULL) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnAuthUser(conn), -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnAuthUser(conn), TCL_INDEX_NONE));
         }
         break;
 
     case CAuthPasswordIdx:
         if (connPtr->auth != NULL) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnAuthPasswd(conn), -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnAuthPasswd(conn), TCL_INDEX_NONE));
         }
         break;
 
@@ -1878,7 +1878,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         {
             const char *file = Ns_ConnContentFile(conn);
             if (file != NULL) {
-                Tcl_SetObjResult(interp, Tcl_NewStringObj(file, -1));
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(file, TCL_INDEX_NONE));
             }
         }
         break;
@@ -1895,7 +1895,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         }
         if ((result == TCL_OK) && (connPtr->outputEncoding != NULL)) {
             const char *charset = Ns_GetEncodingCharset(connPtr->outputEncoding);
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(charset, -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(charset, TCL_INDEX_NONE));
         }
         break;
 
@@ -1921,7 +1921,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         }
         if ((result == TCL_OK) && (connPtr->urlEncoding != NULL)) {
             const char *charset = Ns_GetEncodingCharset(connPtr->urlEncoding);
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(charset, -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(charset, TCL_INDEX_NONE));
         }
         break;
 
@@ -1940,11 +1940,11 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         if (Ns_ParseObjv(lopts, NULL, interp, 2, objc, objv) != NS_OK) {
             result = TCL_ERROR;
         } else if (source == INTCHAR('c')) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnConfiguredPeerAddr(conn), -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnConfiguredPeerAddr(conn), TCL_INDEX_NONE));
         } else if (source == INTCHAR('d')) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnPeerAddr(conn), -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnPeerAddr(conn), TCL_INDEX_NONE));
         } else {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnForwardedPeerAddr(conn), -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnForwardedPeerAddr(conn), TCL_INDEX_NONE));
         }
         break;
     }
@@ -2037,7 +2037,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
                  hPtr = Tcl_NextHashEntry(&search)
                  ) {
                 const char *key = Tcl_GetHashKey(&connPtr->files, hPtr);
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(key, -1));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(key, TCL_INDEX_NONE));
             }
             Tcl_SetObjResult(interp, listObj);
         }
@@ -2140,11 +2140,11 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         break;
 
     case CRequestIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(request->line, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(request->line, TCL_INDEX_NONE));
         break;
 
     case CMethodIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(request->method, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(request->method, TCL_INDEX_NONE));
         break;
 
     case CPartialTimesIdx:
@@ -2178,11 +2178,11 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         }
 
     case CProtocolIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(connPtr->drvPtr->protocol, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(connPtr->drvPtr->protocol, TCL_INDEX_NONE));
         break;
 
     case CHostIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(request->host, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(request->host, TCL_INDEX_NONE));
         break;
 
     case CPortIdx:
@@ -2194,7 +2194,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         break;
 
     case CQueryIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(request->query, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(request->query, TCL_INDEX_NONE));
         break;
 
     case CUrlcIdx:
@@ -2216,7 +2216,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         }
 
     case CDriverIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnDriverName(conn), -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnDriverName(conn), TCL_INDEX_NONE));
         break;
 
     case CDetailsIdx:
@@ -2227,11 +2227,11 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         break;
 
     case CServerIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnServer(conn), -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnServer(conn), TCL_INDEX_NONE));
         break;
 
     case CPoolIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(connPtr->poolPtr->pool, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(connPtr->poolPtr->pool, TCL_INDEX_NONE));
         break;
 
     case CStatusIdx:
@@ -2289,7 +2289,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
             result = TCL_ERROR;
         } else {
             Tcl_RegisterChannel(interp, chan);
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan),-1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan),TCL_INDEX_NONE));
         }
         break;
 
@@ -2446,7 +2446,7 @@ NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
             toCopy = (int)reqPtr->avail;
         }
         if (Ns_ConnCopyToChannel(itPtr->conn, (size_t)toCopy, chan) != NS_OK) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj("could not copy content", -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj("could not copy content", TCL_INDEX_NONE));
             result = TCL_ERROR;
         }
     }
@@ -2646,23 +2646,23 @@ NsConnRequire(Tcl_Interp *interp, unsigned int flags, Ns_Conn **connPtr)
 
     conn = Ns_TclGetConn(interp);
     if (conn == NULL) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("no connection", -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("no connection", TCL_INDEX_NONE));
         status = NS_ERROR;
 
     } else if (((flags & NS_CONN_REQUIRE_CONNECTED) != 0u)
                && (Ns_ConnSockPtr(conn) == NULL)) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("connection socket is detached", -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("connection socket is detached", TCL_INDEX_NONE));
         status = NS_ERROR;
 
     } else if (((flags & NS_CONN_REQUIRE_OPEN) != 0u)
                && ((conn->flags & NS_CONN_CLOSED) != 0u)
                && nsconf.reject_already_closed_connection) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("connection already closed", -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("connection already closed", TCL_INDEX_NONE));
         status = NS_ERROR;
 
     } else if (((flags & NS_CONN_REQUIRE_CONFIGURED) != 0u)
                && ((conn->flags & NS_CONN_CONFIGURED) == 0u)) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj("connection is not configured", -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj("connection is not configured", TCL_INDEX_NONE));
         status = NS_ERROR;
 
     } else {

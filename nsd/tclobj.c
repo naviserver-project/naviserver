@@ -237,7 +237,7 @@ Ns_TclSetFromAnyError(Tcl_Interp *interp, Tcl_Obj *UNUSED(objPtr))
 {
     Tcl_AppendToObj(Tcl_GetObjResult(interp),
                     "can't convert value to requested type except via prescribed API",
-                    -1);
+                    TCL_INDEX_NONE);
     return TCL_ERROR;
 }
 

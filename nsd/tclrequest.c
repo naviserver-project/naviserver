@@ -482,7 +482,7 @@ NsTclFilterProc(const void *arg, Ns_Conn *conn, Ns_FilterType why)
      * Append the command
      */
 
-    Tcl_DStringAppend(&ds, cbPtr->script, -1);
+    Tcl_DStringAppend(&ds, cbPtr->script, TCL_INDEX_NONE);
 
     /*
      * Append the 'why' argument

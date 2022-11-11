@@ -149,7 +149,7 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
     Tcl_DString     ds;
 
     if (extraInfo != NULL) {
-        Tcl_AddObjErrorInfo(interp, extraInfo, -1);
+        Tcl_AddObjErrorInfo(interp, extraInfo, TCL_INDEX_NONE);
     }
     errorInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
     if (errorInfo == NULL) {
@@ -268,14 +268,14 @@ Ns_LogDeprecated(Tcl_Obj *const* objv, int objc, const char *alternative, const 
         Tcl_DStringAppend(&ds, s, len);
         Tcl_DStringAppend(&ds, " ", 1);
     }
-    Tcl_DStringAppend(&ds, "' is deprecated. ", -1);
+    Tcl_DStringAppend(&ds, "' is deprecated. ", TCL_INDEX_NONE);
     if (alternative != NULL) {
-        Tcl_DStringAppend(&ds, "Use '", -1);
-        Tcl_DStringAppend(&ds, alternative, -1);
-        Tcl_DStringAppend(&ds, "' instead. ", -1);
+        Tcl_DStringAppend(&ds, "Use '", TCL_INDEX_NONE);
+        Tcl_DStringAppend(&ds, alternative, TCL_INDEX_NONE);
+        Tcl_DStringAppend(&ds, "' instead. ", TCL_INDEX_NONE);
     }
     if (explanation != NULL) {
-        Tcl_DStringAppend(&ds, explanation, -1);
+        Tcl_DStringAppend(&ds, explanation, TCL_INDEX_NONE);
     }
     Ns_Log(Notice, "%s", Tcl_DStringValue(&ds));
     Tcl_DStringFree(&ds);
@@ -688,7 +688,7 @@ NsTclHrefsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
                             }
                             save = *he;
                             *he = '\0';
-                            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(s, -1));
+                            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(s, TCL_INDEX_NONE));
                             *he = save;
                             break;
                         }
@@ -938,7 +938,7 @@ NsTclCryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
             char buf[NS_ENCRYPT_BUFSIZE];
 
             Tcl_SetObjResult(interp,
-                             Tcl_NewStringObj(Ns_Encrypt(keyString, saltString, buf), -1));
+                             Tcl_NewStringObj(Ns_Encrypt(keyString, saltString, buf), TCL_INDEX_NONE));
        }
     }
     return result;
@@ -1514,7 +1514,7 @@ NsTclFileStatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 #ifdef S_ISSOCK
                                   S_ISSOCK(st.st_mode) ? "socket" :
 #endif
-                   NS_EMPTY_STRING), -1), 0);
+                   NS_EMPTY_STRING), TCL_INDEX_NONE), 0);
         }
         Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
     }
@@ -1962,7 +1962,7 @@ GetLimitObj(rlim_t value)
     Tcl_Obj *obj;
 
     if (value == RLIM_INFINITY) {
-        obj = Tcl_NewStringObj("unlimited", -1);
+        obj = Tcl_NewStringObj("unlimited", TCL_INDEX_NONE);
     } else {
         obj = Tcl_NewWideIntObj((Tcl_WideInt)value);
     }

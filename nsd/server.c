@@ -497,9 +497,9 @@ CreatePool(NsServer *servPtr, const char *pool)
 
         Tcl_DStringInit(&ds);
         Tcl_DStringAppend(&ds, "nsd:", 4);
-        Tcl_DStringAppend(&ds, servPtr->server, -1);
+        Tcl_DStringAppend(&ds, servPtr->server, TCL_INDEX_NONE);
         Tcl_DStringAppend(&ds, ":", 1);
-        Tcl_DStringAppend(&ds, NsPoolName(pool), -1);
+        Tcl_DStringAppend(&ds, NsPoolName(pool), TCL_INDEX_NONE);
 
         for (j = 0; j < maxconns; j++) {
             char suffix[64];

@@ -2902,7 +2902,7 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
             data = NsUrlSpecificGet(servPtr, key, url, id, flags, op, NsUrlSpaceContextFilter, ctxPtr);
             Ns_RWLockUnlock(&servPtr->urlspace.idlocks[id]);
 
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(data, -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(data, TCL_INDEX_NONE));
         }
     }
     return result;

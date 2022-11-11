@@ -487,7 +487,7 @@ Ns_HomePathExists(const char *path, ...)
     MakePath(&ds, &ap);
     va_end(ap);
 
-    obj = Tcl_NewStringObj(ds.string, -1);
+    obj = Tcl_NewStringObj(ds.string, TCL_INDEX_NONE);
     Tcl_IncrRefCount(obj);
     stPtr = Tcl_AllocStatBuf();
     status = Tcl_FSStat(obj, stPtr);

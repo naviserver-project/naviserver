@@ -127,8 +127,8 @@ PageRequest(Ns_Conn *conn, const char *fileName, const Ns_Time *expiresPtr, unsi
         Tcl_DStringInit(&ds);
         dsPtr = &ds;
 
-        Tcl_DStringAppend(dsPtr, fileName, -1);
-        Tcl_DStringAppend(dsPtr, servPtr->adp.defaultExtension, -1);
+        Tcl_DStringAppend(dsPtr, fileName, TCL_INDEX_NONE);
+        Tcl_DStringAppend(dsPtr, servPtr->adp.defaultExtension, TCL_INDEX_NONE);
 
         if (access(dsPtr->string, R_OK) == 0) {
             fileName = dsPtr->string;
@@ -188,8 +188,8 @@ PageRequest(Ns_Conn *conn, const char *fileName, const Ns_Time *expiresPtr, unsi
         itPtr->adp.flags |= aflags;
         itPtr->adp.conn = conn;
         start = ((servPtr->adp.startpage != NULL) ? servPtr->adp.startpage : fileName);
-        objv[0] = Tcl_NewStringObj(start, -1);
-        objv[1] = Tcl_NewStringObj(fileName, -1);
+        objv[0] = Tcl_NewStringObj(start, TCL_INDEX_NONE);
+        objv[1] = Tcl_NewStringObj(fileName, TCL_INDEX_NONE);
         Tcl_IncrRefCount(objv[0]);
         Tcl_IncrRefCount(objv[1]);
         result = NsAdpInclude(itPtr, 2, objv, start, expiresPtr);

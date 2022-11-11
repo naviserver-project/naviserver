@@ -102,7 +102,7 @@ NsTclImgTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             case unknown: type = "unknown"; break;
             }
             result = Tcl_Close(interp, chan);
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(type, -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(type, TCL_INDEX_NONE));
         }
     }
     return result;
@@ -153,7 +153,7 @@ NsTclImgMimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             }
 
             result = Tcl_Close(interp, chan);
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(mime, -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(mime, TCL_INDEX_NONE));
         }
     }
     return result;

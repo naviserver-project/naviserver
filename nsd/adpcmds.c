@@ -404,7 +404,7 @@ NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
             } else {
                 int i;
 
-                Tcl_DStringAppend(dsPtr, "<% ns_adp_include", -1);
+                Tcl_DStringAppend(dsPtr, "<% ns_adp_include", TCL_INDEX_NONE);
                 if ((itPtr->adp.flags & ADP_TCLFILE) != 0u) {
                     Tcl_DStringAppendElement(dsPtr, "-tcl");
                 }
@@ -621,7 +621,7 @@ NsTclAdpDirObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         Tcl_WrongNumArgs(interp, 1, objv, NULL);
         status = TCL_ERROR;
     } else {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(itPtr->adp.cwd, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(itPtr->adp.cwd, TCL_INDEX_NONE));
     }
 
     return status;
@@ -842,7 +842,7 @@ NsTclAdpInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
     } else {
         Tcl_Obj  * resultObj = Tcl_NewListObj(0, NULL);
 
-        result = Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(framePtr->file, -1));
+        result = Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(framePtr->file, TCL_INDEX_NONE));
         if (likely(result == TCL_OK)) {
             result = Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewWideIntObj((Tcl_WideInt)framePtr->size));
         }
@@ -1048,7 +1048,7 @@ NsTclAdpExceptionObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
                 exception = "timeout";
                 break;
             }
-            if (Tcl_ObjSetVar2(interp, varnameObj, NULL, Tcl_NewStringObj(exception, -1),
+            if (Tcl_ObjSetVar2(interp, varnameObj, NULL, Tcl_NewStringObj(exception, TCL_INDEX_NONE),
                                TCL_LEAVE_ERR_MSG) == NULL) {
                 result = TCL_ERROR;
             }
@@ -1195,7 +1195,7 @@ NsTclAdpMimeTypeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
             Ns_ConnSetEncodedTypeHeader(conn, mimetypeString);
         }
         type = Ns_SetIGet(conn->outputheaders, "Content-Type");
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(type, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(type, TCL_INDEX_NONE));
     }
     return result;
 }

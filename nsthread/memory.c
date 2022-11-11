@@ -139,7 +139,7 @@ ns_strncopy(const char *old, ssize_t size)
     char *new = NULL;
 
     if (likely(old != NULL)) {
-        size_t new_size = likely(size > 0) ? (size_t)size : strlen(old);
+        size_t new_size = likely(size != TCL_INDEX_NONE) ? (size_t)size : strlen(old);
         new_size ++;
         new = ns_malloc(new_size);
         if (new != NULL) {

@@ -616,7 +616,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             Ns_Log(Notice, "no address given, set address to unspecified address %s", address);
         }
 
-        bindaddrsObj = Tcl_NewStringObj(address, -1);
+        bindaddrsObj = Tcl_NewStringObj(address, TCL_INDEX_NONE);
         result = Tcl_ListObjGetElements(NULL, bindaddrsObj, &nrBindaddrs, &objv);
         if (result != TCL_OK || nrBindaddrs < 1 || nrBindaddrs >= MAX_LISTEN_ADDR_PER_DRIVER) {
             Ns_Fatal("%s: bindaddrs '%s' is not a valid Tcl list containing addresses (max %d)",
@@ -633,7 +633,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         }
 
         if (host != NULL) {
-            (void) Ns_SetUpdateSz(set, "hostname", 8, host, -1);
+            (void) Ns_SetUpdateSz(set, "hostname", 8, host, TCL_INDEX_NONE);
         }
 
         /*
@@ -935,7 +935,7 @@ void NsDriverMapVirtualServers(void)
                      * all the explicitly configured ports of the driver.
                      */
                     Tcl_DStringInit(&hostDString);
-                    Tcl_DStringAppend(&hostDString, host, -1);
+                    Tcl_DStringAppend(&hostDString, host, TCL_INDEX_NONE);
                     prefixLength = hostDString.length;
 
                     for (pNum = 0u; pNum < drvPtr->ports.size; pNum ++) {
@@ -1026,7 +1026,7 @@ PortsParse(Ns_DList *dlPtr, const char *listString, const char *path)
 
     if (listString != NULL) {
         int       nrPorts, result, i;
-        Tcl_Obj **objv, *portsObj = Tcl_NewStringObj(listString, -1);
+        Tcl_Obj **objv, *portsObj = Tcl_NewStringObj(listString, TCL_INDEX_NONE);
 
         Tcl_IncrRefCount(portsObj);
         result = Tcl_ListObjGetElements(NULL, portsObj, &nrPorts, &objv);
@@ -1490,21 +1490,21 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
                 Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("module", 6));
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->moduleName, -1));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->moduleName, TCL_INDEX_NONE));
 
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("type", 4));
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->type, -1));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->type, TCL_INDEX_NONE));
 
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("server", 6));
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->server != NULL ?
-                                                                           drvPtr->server : NS_EMPTY_STRING, -1));
+                                                                           drvPtr->server : NS_EMPTY_STRING, TCL_INDEX_NONE));
 
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("location", 8));
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->location != NULL ?
-                                                                           drvPtr->location : NS_EMPTY_STRING, -1));
+                                                                           drvPtr->location : NS_EMPTY_STRING, TCL_INDEX_NONE));
 
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("address", 7));
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->address, -1));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->address, TCL_INDEX_NONE));
 
                 {Tcl_DString ds;
                     Tcl_DStringInit(&ds);
@@ -1518,7 +1518,7 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewIntObj(drvPtr->defport));
 
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("protocol", 8));
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->protocol, -1));
+                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->protocol, TCL_INDEX_NONE));
 
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("sendwait", 8));
                 Tcl_ListObjAppendElement(interp, listObj, Ns_TclNewTimeObj(&drvPtr->sendwait));
@@ -1539,7 +1539,7 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
                 }
                 Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("libraryversion", 14));
                 if (drvPtr->libraryVersion != NULL) {
-                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->libraryVersion, -1));
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->libraryVersion, TCL_INDEX_NONE));
                 } else {
                     Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(NS_EMPTY_STRING, 0));
                 }
@@ -1594,10 +1594,10 @@ DriverStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
 
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("thread", 6));
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->threadName, -1));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->threadName, TCL_INDEX_NONE));
 
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("module", 6));
-            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->moduleName, -1));
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(drvPtr->moduleName, TCL_INDEX_NONE));
 
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("received", 8));
             Tcl_ListObjAppendElement(interp, listObj, Tcl_NewWideIntObj(drvPtr->stats.received));
@@ -1651,7 +1651,7 @@ DriverThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
          * Iterate over all drivers and collect results.
          */
         for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
-            Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(drvPtr->threadName, -1));
+            Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(drvPtr->threadName, TCL_INDEX_NONE));
         }
         Tcl_SetObjResult(interp, resultObj);
     }
@@ -1697,7 +1697,7 @@ DriverNamesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
             (void)Tcl_CreateHashEntry(&driverNames, drvPtr->moduleName, &isNew);
             if (isNew == 1) {
-                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(drvPtr->moduleName, -1));
+                Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(drvPtr->moduleName, TCL_INDEX_NONE));
             }
         }
         Tcl_SetObjResult(interp, resultObj);
@@ -2237,7 +2237,7 @@ DriverThread(void *arg)
         Tcl_Obj *bindaddrsObj, **objv;
         int      j = 0, result;
 
-        bindaddrsObj = Tcl_NewStringObj(drvPtr->address, -1);
+        bindaddrsObj = Tcl_NewStringObj(drvPtr->address, TCL_INDEX_NONE);
         Tcl_IncrRefCount(bindaddrsObj);
 
         result = Tcl_ListObjGetElements(NULL, bindaddrsObj, &nrBindaddrs, &objv);
@@ -4062,7 +4062,7 @@ LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buffer, size_t l
     if (Ns_LogSeverityEnabled(severity)) {
 
         Tcl_DStringInit(&ds);
-        Tcl_DStringAppend(&ds, msg, -1);
+        Tcl_DStringAppend(&ds, msg, TCL_INDEX_NONE);
         Tcl_DStringAppend(&ds, ": ", 2);
         (void)Ns_DStringAppendPrintable(&ds, NS_FALSE, buffer, len);
 
@@ -4792,7 +4792,7 @@ SockSetServer(Sock *sockPtr)
         Tcl_DString hostDs;
 
         Tcl_DStringInit(&hostDs);
-        Tcl_DStringAppend(&hostDs, host, -1);
+        Tcl_DStringAppend(&hostDs, host, TCL_INDEX_NONE);
         mapPtr = DriverLookupHost(&hostDs, drvPtr);
         Tcl_DStringFree(&hostDs);
     }
@@ -8461,21 +8461,21 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
                     if (*u.path == '/') {
                         u.path ++;
                     }
-                    Tcl_DStringAppend(dsPtr, u.path, -1);
+                    Tcl_DStringAppend(dsPtr, u.path, TCL_INDEX_NONE);
                     Tcl_DStringAppend(dsPtr, "/", 1);
                 }
-                Tcl_DStringAppend(dsPtr, u.tail, -1);
+                Tcl_DStringAppend(dsPtr, u.tail, TCL_INDEX_NONE);
                 if (u.query != NULL) {
                     Ns_DStringNAppend(dsPtr, "?", 1);
-                    Ns_DStringNAppend(dsPtr, u.query, -1);
+                    Ns_DStringNAppend(dsPtr, u.query, TCL_INDEX_NONE);
                 }
                 if (u.fragment != NULL) {
                     Ns_DStringNAppend(dsPtr, "#", 1);
-                    Ns_DStringNAppend(dsPtr, u.fragment, -1);
+                    Ns_DStringNAppend(dsPtr, u.fragment, TCL_INDEX_NONE);
                 }
 
                 Tcl_DStringAppend(dsPtr, " HTTP/", 6);
-                Tcl_DStringAppend(dsPtr, version, -1);
+                Tcl_DStringAppend(dsPtr, version, TCL_INDEX_NONE);
 
                 reqPtr->request.line = Ns_DStringExport(dsPtr);
                 reqPtr->request.method = ns_strdup(httpMethod);

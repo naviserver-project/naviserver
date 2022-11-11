@@ -370,7 +370,7 @@ Ns_CheckTimeRange(Tcl_Interp *interp, const char *name, const Ns_ObjvTimeRange *
         Tcl_DString ds, *dsPtr = &ds;
 
         Tcl_DStringInit(dsPtr);
-        Tcl_DStringAppend(dsPtr, "expected time value in range [", -1);
+        Tcl_DStringAppend(dsPtr, "expected time value in range [", TCL_INDEX_NONE);
         if (r->maxValue.sec == LONG_MAX) {
             Ns_DStringAppendTime(dsPtr, &r->minValue);
             Tcl_DStringAppend(dsPtr, "s, MAX],", 8);
@@ -1828,7 +1828,7 @@ WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *inter
     }
     if (argSpec != NULL) {
         for (specPtr = argSpec; specPtr->key != NULL; ++specPtr) {
-            Tcl_DStringAppend(&ds, specPtr->key, -1);
+            Tcl_DStringAppend(&ds, specPtr->key, TCL_INDEX_NONE);
 
             if ((specPtr->proc == Ns_ObjvInt
                  || specPtr->proc == Ns_ObjvLong

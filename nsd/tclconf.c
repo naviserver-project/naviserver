@@ -114,7 +114,7 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
                 }
             }
         } else if (value != NULL) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(value, -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(value, TCL_INDEX_NONE));
             done = NS_TRUE;
         }
 

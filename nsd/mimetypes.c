@@ -1428,7 +1428,7 @@ NsTclGuessTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
     } else {
         const char *type = Ns_GetMimeType(Tcl_GetString(objv[1]));
 
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(type, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(type, TCL_INDEX_NONE));
     }
 
     return result;

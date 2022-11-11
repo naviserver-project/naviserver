@@ -250,13 +250,13 @@ AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const cha
     NS_NONNULL_ASSERT(adp != NULL);
 
     if ((flags & ADP_CACHE) == 0u) {
-        Tcl_DStringAppend(&codePtr->text, adp, -1);
+        Tcl_DStringAppend(&codePtr->text, adp, TCL_INDEX_NONE);
     } else {
         Ns_DStringPrintf(&codePtr->text,
                          "ns_adp_append {<%%"
                          "if {[info proc adp:%s] == {}} {"
                          "  proc adp:%s {} { uplevel [for {", file, file);
-        Tcl_DStringAppend(&codePtr->text, adp, -1);
+        Tcl_DStringAppend(&codePtr->text, adp, TCL_INDEX_NONE);
         Ns_DStringPrintf(&codePtr->text, "} {0} {} {}]}}\nadp:%s %%>}", file);
     }
     codePtr->nblocks = codePtr->nscripts = 1;
@@ -917,12 +917,12 @@ AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *ae, char *se
     NS_NONNULL_ASSERT(ae != NULL);
 
     Tcl_DStringInit(&script);
-    Tcl_DStringAppend(&script, "ns_adp_append [", -1);
+    Tcl_DStringAppend(&script, "ns_adp_append [", TCL_INDEX_NONE);
     if (tagPtr->type == TAG_ADP) {
         /*
          * String will be an ADP fragment to evaluate.
          */
-        Tcl_DStringAppend(&script, "ns_adp_parse -- ", -1);
+        Tcl_DStringAppend(&script, "ns_adp_parse -- ", TCL_INDEX_NONE);
     }
     Tcl_DStringAppendElement(&script, tagPtr->content);
     if (tagPtr->type == TAG_PROC) {
@@ -945,7 +945,7 @@ AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *ae, char *se
         /*
          * Append code to create set with tag attributes.
          */
-        Tcl_DStringAppend(&script, " [ns_set create", -1);
+        Tcl_DStringAppend(&script, " [ns_set create", TCL_INDEX_NONE);
         Tcl_DStringAppendElement(&script, tagPtr->tag);
         ParseAtts(as, ae, NULL, &script, 1);
         Tcl_DStringAppend(&script, "]", 1);

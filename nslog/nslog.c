@@ -172,7 +172,7 @@ Ns_ModuleInit(const char *server, const char *module)
 
             Tcl_DStringSetLength(&ds, 0);
             (void) Ns_ModulePath(&ds, server, module, (char *)0L);
-            dirpath = Tcl_NewStringObj(ds.string, -1);
+            dirpath = Tcl_NewStringObj(ds.string, TCL_INDEX_NONE);
             Tcl_IncrRefCount(dirpath);
             rc = Tcl_FSCreateDirectory(dirpath);
             Tcl_DecrRefCount(dirpath);
@@ -457,7 +457,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
         strarg = logPtr->rollfmt;
         Ns_MutexUnlock(&logPtr->lock);
         if (strarg != NULL) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(strarg, -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(strarg, TCL_INDEX_NONE));
         }
         break;
 
@@ -520,7 +520,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
                 result = ParseExtendedHeaders(logPtr, Tcl_GetString(objv[2]));
             }
             if (result == TCL_OK) {
-                Tcl_SetObjResult(interp, Tcl_NewStringObj(logPtr->extendedHeaders, -1));
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(logPtr->extendedHeaders, TCL_INDEX_NONE));
             } else {
                 Ns_TclPrintfResult(interp, "invalid value: %s",
                                    Tcl_GetString(objv[2]));
@@ -536,7 +536,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
             Tcl_DStringInit(&ds);
             if (objc > 2) {
                 flags = 0u;
-                Tcl_DStringAppend(&ds, Tcl_GetString(objv[2]), -1);
+                Tcl_DStringAppend(&ds, Tcl_GetString(objv[2]), TCL_INDEX_NONE);
                 Ns_StrToLower(ds.string);
                 if (strstr(ds.string, "logcombined")) {
                     flags |= LOG_COMBINED;
@@ -566,22 +566,22 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
                 Ns_MutexUnlock(&logPtr->lock);
             }
             if ((flags & LOG_COMBINED)) {
-                Tcl_DStringAppend(&ds, "logcombined ", -1);
+                Tcl_DStringAppend(&ds, "logcombined ", TCL_INDEX_NONE);
             }
             if ((flags & LOG_FMTTIME)) {
-                Tcl_DStringAppend(&ds, "formattedtime ", -1);
+                Tcl_DStringAppend(&ds, "formattedtime ", TCL_INDEX_NONE);
             }
             if ((flags & LOG_REQTIME)) {
-                Tcl_DStringAppend(&ds, "logreqtime ", -1);
+                Tcl_DStringAppend(&ds, "logreqtime ", TCL_INDEX_NONE);
             }
             if ((flags & LOG_PARTIALTIMES)) {
-                Tcl_DStringAppend(&ds, "logpartialtimes ", -1);
+                Tcl_DStringAppend(&ds, "logpartialtimes ", TCL_INDEX_NONE);
             }
             if ((flags & LOG_CHECKFORPROXY)) {
-                Tcl_DStringAppend(&ds, "checkforproxy ", -1);
+                Tcl_DStringAppend(&ds, "checkforproxy ", TCL_INDEX_NONE);
             }
             if ((flags & LOG_SUPPRESSQUERY)) {
-                Tcl_DStringAppend(&ds, "suppressquery ", -1);
+                Tcl_DStringAppend(&ds, "suppressquery ", TCL_INDEX_NONE);
             }
             Tcl_DStringResult(interp, &ds);
         }
@@ -604,7 +604,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
         } else {
             Ns_MutexLock(&logPtr->lock);
         }
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(logPtr->filename, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(logPtr->filename, TCL_INDEX_NONE));
         Ns_MutexUnlock(&logPtr->lock);
         break;
 
@@ -620,7 +620,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
                 if (Tcl_FSAccess(objv[2], F_OK) == 0) {
                     status = Ns_RollFile(strarg, logPtr->maxbackup);
                 } else {
-                    Tcl_Obj *path = Tcl_NewStringObj(logPtr->filename, -1);
+                    Tcl_Obj *path = Tcl_NewStringObj(logPtr->filename, TCL_INDEX_NONE);
 
                     Tcl_IncrRefCount(path);
                     rc = Tcl_FSRenameFile(path, objv[2]);
@@ -678,7 +678,7 @@ AppendEscaped(Tcl_DString *dsPtr, const char *toProcess)
             /*
              * No break-char found, append all and stop
              */
-            Tcl_DStringAppend(dsPtr, toProcess, -1);
+            Tcl_DStringAppend(dsPtr, toProcess, TCL_INDEX_NONE);
         } else {
             /*
              * Append the break-char free prefix
@@ -849,7 +849,7 @@ LogTrace(void *arg, Ns_Conn *conn)
         }
     }
 
-    Tcl_DStringAppend(dsPtr, p, -1);
+    Tcl_DStringAppend(dsPtr, p, TCL_INDEX_NONE);
 
     /*
      * Append the thread name, if requested.
@@ -857,7 +857,7 @@ LogTrace(void *arg, Ns_Conn *conn)
      */
     Tcl_DStringAppend(dsPtr, " ", 1);
     if ((logPtr->flags & LOG_THREADNAME) != 0) {
-        Tcl_DStringAppend(dsPtr, Ns_ThreadGetName(), -1);
+        Tcl_DStringAppend(dsPtr, Ns_ThreadGetName(), TCL_INDEX_NONE);
         Tcl_DStringAppend(dsPtr, " ", 1);
     } else {
         Tcl_DStringAppend(dsPtr, "- ", 2);
@@ -879,10 +879,10 @@ LogTrace(void *arg, Ns_Conn *conn)
         }
         if (quote != 0) {
             Tcl_DStringAppend(dsPtr, "\"", 1);
-            Tcl_DStringAppend(dsPtr, user, -1);
+            Tcl_DStringAppend(dsPtr, user, TCL_INDEX_NONE);
             Tcl_DStringAppend(dsPtr, "\" ", 2);
         } else {
-            Tcl_DStringAppend(dsPtr, user, -1);
+            Tcl_DStringAppend(dsPtr, user, TCL_INDEX_NONE);
             Tcl_DStringAppend(dsPtr, " ", 1);
         }
     }
@@ -897,7 +897,7 @@ LogTrace(void *arg, Ns_Conn *conn)
         char buf[41]; /* Big enough for Ns_LogTime(). */
 
         Ns_LogTime(buf);
-        Tcl_DStringAppend(dsPtr, buf, -1);
+        Tcl_DStringAppend(dsPtr, buf, TCL_INDEX_NONE);
     }
 
     /*

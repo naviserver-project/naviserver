@@ -553,6 +553,14 @@ typedef int ns_sockerrno_t;
 # define NS_TCL_PRE87
 #endif
 
+#if TCL_MAJOR_VERSION<=9
+# define NS_TCL_PRE9
+#endif
+
+#ifndef TCL_INDEX_NONE
+# define TCL_INDEX_NONE -1
+#endif
+
 #if !defined(NS_POLL_NFDS_TYPE)
 # define NS_POLL_NFDS_TYPE unsigned int
 #endif

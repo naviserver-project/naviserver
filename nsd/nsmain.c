@@ -739,7 +739,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      */
 
     set = Ns_ConfigCreateSection(NS_GLOBAL_CONFIG_PARAMETERS);
-    Ns_SetUpdateSz(set, "home", 4, nsconf.home, -1);
+    Ns_SetUpdateSz(set, "home", 4, nsconf.home, TCL_INDEX_NONE);
 
     /*
      * Update core config values.
@@ -753,7 +753,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         if (nsconf.tmpDir == NULL) {
             nsconf.tmpDir = P_tmpdir;
         }
-        Ns_SetUpdateSz(set, "tmpdir", 6, nsconf.tmpDir, -1);
+        Ns_SetUpdateSz(set, "tmpdir", 6, nsconf.tmpDir, TCL_INDEX_NONE);
     }
 
 #ifdef _WIN32
@@ -1373,7 +1373,7 @@ SetCwd(const char *path)
 
     NS_NONNULL_ASSERT(path != NULL);
 
-    pathObj = Tcl_NewStringObj(path, -1);
+    pathObj = Tcl_NewStringObj(path, TCL_INDEX_NONE);
     Tcl_IncrRefCount(pathObj);
     if (Tcl_FSChdir(pathObj) == -1) {
         Ns_Fatal("nsmain: chdir(%s) failed: '%s'", path, strerror(Tcl_GetErrno()));

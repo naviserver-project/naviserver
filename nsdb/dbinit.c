@@ -783,7 +783,7 @@ Ns_DbPoolStats(Tcl_Interp *interp)
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj(buf, len));
             }
             if (likely(result == TCL_OK)) {
-                result = Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(pool, -1));
+                result = Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(pool, TCL_INDEX_NONE));
             }
             if (likely(result == TCL_OK)) {
                 result = Tcl_ListObjAppendElement(interp, resultObj, valuesObj);
@@ -1676,7 +1676,7 @@ Ns_DbListMinDurations(Tcl_Interp *interp, const char *server)
             int           len;
 
             poolPtr = GetPool(pool);
-            (void) Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(pool, -1));
+            (void) Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(pool, TCL_INDEX_NONE));
             len = snprintf(buffer, sizeof(buffer), NS_TIME_FMT,
                            (int64_t)poolPtr->minDuration.sec, poolPtr->minDuration.usec);
             (void) Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(buffer, len));

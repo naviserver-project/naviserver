@@ -552,7 +552,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
 
     switch (opt) {
     case IArgv0Idx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(nsconf.argv0, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(nsconf.argv0, TCL_INDEX_NONE));
         break;
 
     case IStartedIdx:
@@ -564,15 +564,15 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         break;
 
     case INsdIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(nsconf.nsd, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(nsconf.nsd, TCL_INDEX_NONE));
         break;
 
     case INameIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoServerName(), -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoServerName(), TCL_INDEX_NONE));
         break;
 
     case IConfigIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoConfigFile(), -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoConfigFile(), TCL_INDEX_NONE));
         break;
 
     case ICallbacksIdx:
@@ -611,17 +611,17 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
     case ILogIdx:
         {
             const char *elog = Ns_InfoErrorLog();
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(elog == NULL ? "STDOUT" : elog, -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(elog == NULL ? "STDOUT" : elog, TCL_INDEX_NONE));
         }
         break;
 
     case IPlatformIdx:
         Ns_LogDeprecated(objv, 2, "$::tcl_platform(platform)", NULL);
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoPlatform(), -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoPlatform(), TCL_INDEX_NONE));
         break;
 
     case IHostNameIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoHostname(), -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoHostname(), TCL_INDEX_NONE));
         break;
 
     case IIpv6Idx:
@@ -629,7 +629,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         break;
 
     case IAddressIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoAddress(), -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoAddress(), TCL_INDEX_NONE));
         break;
 
     case IUptimeIdx:
@@ -658,15 +658,15 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         break;
 
     case IVersionIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(NS_VERSION, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(NS_VERSION, TCL_INDEX_NONE));
         break;
 
     case IPatchLevelIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(NS_PATCH_LEVEL, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(NS_PATCH_LEVEL, TCL_INDEX_NONE));
         break;
 
     case IHomeIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoHomePath(), -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoHomePath(), TCL_INDEX_NONE));
         break;
 
     case IWinntIdx:
@@ -679,11 +679,11 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         break;
 
     case IBuilddateIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoBuildDate(), -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoBuildDate(), TCL_INDEX_NONE));
         break;
 
     case ITagIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoTag(), -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoTag(), TCL_INDEX_NONE));
         break;
 
     case IServersIdx:
@@ -709,7 +709,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
          */
 
         if (unlikely(itPtr->servPtr == NULL)) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj("no server", -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj("no server", TCL_INDEX_NONE));
             result = TCL_ERROR;
 
         } else {
@@ -719,7 +719,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
 
             switch (opt) {
             case IServerIdx:
-                Tcl_SetObjResult(interp,  Tcl_NewStringObj(server, -1));
+                Tcl_SetObjResult(interp,  Tcl_NewStringObj(server, TCL_INDEX_NONE));
                 break;
 
                 /*
@@ -735,7 +735,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
 
             case ITclLibIdx:
                 Ns_LogDeprecated(objv, 2, "ns_server ?-server s? tcllib", NULL);
-                Tcl_SetObjResult(interp, Tcl_NewStringObj(itPtr->servPtr->tcl.library, -1));
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(itPtr->servPtr->tcl.library, TCL_INDEX_NONE));
                 break;
 
             case IFiltersIdx:
@@ -763,7 +763,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
                 break;
 
             default:
-                Tcl_SetObjResult(interp, Tcl_NewStringObj("unrecognized option", -1));
+                Tcl_SetObjResult(interp, Tcl_NewStringObj("unrecognized option", TCL_INDEX_NONE));
                 result = TCL_ERROR;
                 break;
             }

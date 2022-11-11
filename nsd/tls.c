@@ -861,8 +861,8 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
         (void) Ns_Base64Encode((unsigned char *)dsBinary.string,
                                (size_t)derLength, dsBase64.string,
                                0, 0);
-        Tcl_DStringAppend(&dsCMD, "ns_http run ", -1);
-        Tcl_DStringAppend(&dsCMD, aiaURL, -1);
+        Tcl_DStringAppend(&dsCMD, "ns_http run ", TCL_INDEX_NONE);
+        Tcl_DStringAppend(&dsCMD, aiaURL, TCL_INDEX_NONE);
 
         /*
          * Append slash to URI if necessary.
@@ -892,8 +892,8 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
                     resultObj = Tcl_GetObjResult(interp);
                     Ns_Log(Error, "OCSP_REQUEST '%s' returned error '%s'", dsCMD.string, Tcl_GetString(resultObj));
                 } else {
-                    Tcl_Obj *statusObj = Tcl_NewStringObj("status", -1);
-                    Tcl_Obj *bodyObj = Tcl_NewStringObj("body", -1);
+                    Tcl_Obj *statusObj = Tcl_NewStringObj("status", TCL_INDEX_NONE);
+                    Tcl_Obj *bodyObj = Tcl_NewStringObj("body", TCL_INDEX_NONE);
                     Tcl_Obj *valueObj = NULL;
                     Ns_ReturnCode status;
 

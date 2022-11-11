@@ -337,7 +337,7 @@ ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, int
 
             Ns_DStringInit(dsPtr);
             while (tablePtr->key != NULL) {
-                Ns_DStringNAppend(dsPtr, tablePtr->key, -1);
+                Ns_DStringNAppend(dsPtr, tablePtr->key, TCL_INDEX_NONE);
                 Ns_DStringNAppend(dsPtr, " ", 1);
                 tablePtr++;
             }
@@ -676,7 +676,7 @@ LogStats(void)
 
     listObj = Tcl_NewListObj(0, NULL);
     for (s = 0; s < severityIdx; s++) {
-        (void)Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewStringObj(severityConfig[s].label, -1));
+        (void)Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewStringObj(severityConfig[s].label, TCL_INDEX_NONE));
         (void)Tcl_ListObjAppendElement(NULL, listObj, Tcl_NewLongObj(severityConfig[s].count));
     }
     return listObj;
@@ -1392,7 +1392,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
             objPtr = Tcl_GetObjResult(interp);
             for (i = 0; i < severityIdx; i++) {
                 if (Tcl_ListObjAppendElement(interp, objPtr,
-                                             Tcl_NewStringObj(severityConfig[i].label, -1))
+                                             Tcl_NewStringObj(severityConfig[i].label, TCL_INDEX_NONE))
                     != TCL_OK) {
                     result = TCL_ERROR;
                     break;
