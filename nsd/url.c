@@ -667,10 +667,10 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
  */
 
 Ns_ReturnCode
-Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)
+Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *urlString, const char *baseString)
 {
     Ns_DString    urlDs, baseDs;
-    Ns_URL        u, bu;
+    Ns_URL        url, base;
     const char   *errorMsg = NULL;
     Ns_ReturnCode status;
 
@@ -684,48 +684,48 @@ Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)
     /*
      * The first part does not have to be a valid URL.
      */
-    Ns_DStringAppend(&urlDs, url);
-    (void) Ns_ParseUrl(urlDs.string, NS_FALSE, &u, &errorMsg);
+    Ns_DStringAppend(&urlDs, urlString);
+    (void) Ns_ParseUrl(urlDs.string, NS_FALSE, &url, &errorMsg);
 
-    Ns_DStringAppend(&baseDs, base);
-    status = Ns_ParseUrl(baseDs.string, NS_FALSE, &bu, &errorMsg);
+    Ns_DStringAppend(&baseDs, baseString);
+    status = Ns_ParseUrl(baseDs.string, NS_FALSE, &base, &errorMsg);
 
-    if (bu.protocol == NULL || bu.host == NULL || bu.path == NULL) {
+    if (base.protocol == NULL || base.host == NULL || base.path == NULL) {
         status = NS_ERROR;
         goto done;
     }
-    if (u.protocol == NULL) {
-        u.protocol = bu.protocol;
+    if (url.protocol == NULL) {
+        url.protocol = base.protocol;
     }
-    assert(u.protocol != NULL);
+    assert(url.protocol != NULL);
 
-    if (u.host == NULL) {
-        u.host = bu.host;
-        u.port = bu.port;
+    if (url.host == NULL) {
+        url.host = base.host;
+        url.port = base.port;
     }
-    assert(u.host != NULL);
+    assert(url.host != NULL);
 
-    if (u.path == NULL) {
-        u.path = bu.path;
+    if (url.path == NULL) {
+        url.path = base.path;
     }
-    assert(u.path != NULL);
+    assert(url.path != NULL);
 
-    if (strchr(u.host, INTCHAR(':')) == NULL) {
+    if (strchr(url.host, INTCHAR(':')) == NULL) {
         /*
          * We have to use IP literal notation to avoid ambiguity of colon
          * (part of address or separator for port).
          */
-        Ns_DStringVarAppend(dsPtr, u.protocol, "://", u.host, (char *)0L);
+        Ns_DStringVarAppend(dsPtr, url.protocol, "://", url.host, (char *)0L);
     } else {
-        Ns_DStringVarAppend(dsPtr, u.protocol, "://[", u.host, "]", (char *)0L);
+        Ns_DStringVarAppend(dsPtr, url.protocol, "://[", url.host, "]", (char *)0L);
     }
-    if (u.port != NULL) {
-        Ns_DStringVarAppend(dsPtr, ":", u.port, (char *)0L);
+    if (url.port != NULL) {
+        Ns_DStringVarAppend(dsPtr, ":", url.port, (char *)0L);
     }
-    if (*u.path == '\0') {
-        Ns_DStringVarAppend(dsPtr, "/", u.tail, (char *)0L);
+    if (*url.path == '\0') {
+        Ns_DStringVarAppend(dsPtr, "/", url.tail, (char *)0L);
     } else {
-        Ns_DStringVarAppend(dsPtr, "/", u.path, "/", u.tail, (char *)0L);
+        Ns_DStringVarAppend(dsPtr, "/", url.path, "/", url.tail, (char *)0L);
     }
 done:
     Ns_DStringFree(&urlDs);

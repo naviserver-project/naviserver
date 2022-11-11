@@ -3391,7 +3391,7 @@ Ns_ParseUrl(char *url, bool strict, Ns_URL *urlPtr, const char **errorMsg)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN Ns_ReturnCode
-Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *url, const char *base)
+Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *urlString, const char *baseString)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 /*
