@@ -138,6 +138,8 @@ static int maxConcurrentUpdates = 1000;
 static Ns_Mutex interpLock = NULL;
 static bool concurrent_interp_create = NS_FALSE;
 
+const Tcl_ObjType *NS_intTypePtr = NULL;
+
 static const char *
 GetTraceLabel(unsigned int traceWhy) {
     unsigned int i = 0u;
@@ -2182,6 +2184,11 @@ NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
     if (!initialized) {
         Ns_MasterLock();
         if (!initialized) {
+            Tcl_Obj *tmpObj = Tcl_NewIntObj(0);
+
+            NS_intTypePtr = tmpObj->typePtr;
+            Tcl_DecrRefCount(tmpObj);
+
             NsTclInitQueueType();
             NsTclInitAddrType();
             NsTclInitTimeType();

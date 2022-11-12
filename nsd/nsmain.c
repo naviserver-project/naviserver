@@ -847,6 +847,8 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     }
 #endif
 
+    //Ns_LogSeveritySetEnabled(Debug, NS_TRUE);
+
     /*
      * Create the pid file.
      */

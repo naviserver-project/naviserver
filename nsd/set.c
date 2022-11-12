@@ -235,7 +235,9 @@ AppendData(Ns_Set *set, size_t index, const char *value, ssize_t valueSize)
         set->data.string[set->data.length-1] = '\0';
     }
     if (oldDataStart != set->data.string) {
-        Ns_Log(Ns_LogNsSetDebug, "MUST SHIFT %p '%s': length %d->%d buffer %d->%d (while appending %ld '%s')",
+        Ns_Log(Ns_LogNsSetDebug, "MUST SHIFT %p '%s': length %d->%" PRITcl_Size
+               "buffer %d->%" PRITcl_Size
+               " (while appending %ld '%s')",
                (void*)set, set->name,
                oldLength, set->data.length,
                oldAvail, set->data.spaceAvl,
@@ -369,7 +371,9 @@ Ns_SetFree(Ns_Set *set)
 
 #ifdef NS_SET_DSTRING
         Ns_Log(Ns_LogNsSetDebug,
-               "Ns_SetFree %p '%s': size %ld/%ld data %d/%d (created %ld)",
+               "Ns_SetFree %p '%s': size %ld/%ld"
+               " data %" PRITcl_Size "/%" PRITcl_Size
+               " (created %ld)",
                 (void*)set, set->name, set->size, set->maxSize,
                 set->data.length, set->data.spaceAvl, createdSets);
         Tcl_DStringFree(&set->data);
@@ -995,7 +999,9 @@ void Ns_SetClearValues(Ns_Set *set, int maxAlloc)
         }
     }
     Ns_Log(Ns_LogNsSetDebug,
-           "Ns_SetClearValues %p '%s': size %ld/%ld data %d/%d (created %ld)",
+           "Ns_SetClearValues %p '%s': size %ld/%ld"
+           " data %" PRITcl_Size "/%" PRITcl_Size
+           " (created %ld)",
            (void*)set, set->name, set->size, set->maxSize,
            set->data.length, set->data.spaceAvl, createdSets);
 
@@ -1027,7 +1033,7 @@ void Ns_SetClearValues(Ns_Set *set, int maxAlloc)
         if (set->data.spaceAvl > maxAlloc && (oldLength < maxAlloc/4)) {
             const char *oldBuffer = set->data.string;
             set->data.string = ckalloc(maxAlloc);
-            ckfree(oldBuffer);
+            ckfree((void*)oldBuffer);
             set->data.spaceAvl = maxAlloc;
         }
         memcpy(set->data.string, dsPtr->string, (size_t)dsPtr->length);
@@ -1042,7 +1048,7 @@ void Ns_SetClearValues(Ns_Set *set, int maxAlloc)
         Ns_DListFree(dlPtr);
 
         Ns_Log(Ns_LogNsSetDebug,
-           "... final size %ld/%ld data %d/%d",
+           "... final size %ld/%ld data %" PRITcl_Size "/%" PRITcl_Size,
            set->size, set->maxSize,
            set->data.length, set->data.spaceAvl);
     }

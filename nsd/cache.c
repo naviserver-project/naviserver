@@ -1245,9 +1245,9 @@ Ns_CacheStats(Ns_Cache *cache, Ns_DString *dest)
         ePtr = (Entry *)Ns_CacheNextEntry(&search);
     }
 
-    return Ns_DStringPrintf(dest, "maxsize %lu size %lu entries %d "
-               "flushed %lu hits %lu missed %lu hitrate %.2f "
-               "expired %lu pruned %lu commit %lu rollback %lu saved %.6f",
+    return Ns_DStringPrintf(dest, "maxsize %lu size %lu entries %" PRITcl_Size
+               " flushed %lu hits %lu missed %lu hitrate %.2f"
+               " expired %lu pruned %lu commit %lu rollback %lu saved %.6f",
                (unsigned long) cachePtr->maxSize,
                (unsigned long) cachePtr->currentSize,
                cachePtr->entriesTable.numEntries, cachePtr->stats.nflushed,

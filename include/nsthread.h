@@ -553,12 +553,20 @@ typedef int ns_sockerrno_t;
 # define NS_TCL_PRE87
 #endif
 
-#if TCL_MAJOR_VERSION<=9
+#if TCL_MAJOR_VERSION<9
 # define NS_TCL_PRE9
 #endif
 
 #ifndef TCL_INDEX_NONE
 # define TCL_INDEX_NONE -1
+#endif
+
+#ifndef TCL_IO_FAILURE
+# define TCL_IO_FAILURE -1
+#endif
+
+#ifndef TCL_HASH_TYPE
+# define TCL_HASH_TYPE unsigned
 #endif
 
 #ifdef NS_TCL_PRE9
@@ -922,6 +930,12 @@ typedef int bool;
 # define NSSOCK2PTR(p) INT2PTR(p)
 #endif
 
+#ifdef NS_TCL_PRE9
+# define PTR2TCL_SIZE(p) PTR2UINT(p)
+#else
+# define PTR2TCL_SIZE(p) ((uintptr_t)(p))
+#endif
+
 
 #if defined(F_DUPFD_CLOEXEC)
 # define ns_dup(fd)     fcntl((fd), F_DUPFD_CLOEXEC, 0)
@@ -1192,7 +1206,6 @@ NS_EXTERN int     ns_snprintf(char *buf, size_t len, const char *fmt, ...);
 
 NS_EXTERN int NS_finalshutdown;
 NS_EXTERN bool NS_mutexlocktrace;
-
 #endif /* NSTHREAD_H */
 
 /*

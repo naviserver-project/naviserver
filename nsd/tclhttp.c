@@ -2157,7 +2157,7 @@ HttpGetResult(
 #if defined(TCLHTTP_USE_EXTERNALTOUTF)
             Tcl_DString ds;
             Tcl_DStringInit(&ds);
-            Tcl_ExternalToUtfDString(encoding, cData, cSize, &ds);
+            (void)Tcl_ExternalToUtfDString(encoding, cData, cSize, &ds);
             replyBodyObj = Tcl_NewStringObj(Tcl_DStringValue(&ds), TCL_INDEX_NONE);
             Tcl_DStringFree(&ds);
 #else
@@ -3126,7 +3126,7 @@ HttpConnect(
         Tcl_DString d;
 
         Tcl_DStringInit(&d);
-        Ns_Log(Ns_LogRequestDebug, "full request (len %d) <%s>",
+        Ns_Log(Ns_LogRequestDebug, "full request (len %" PRITcl_Size ") <%s>",
                dsPtr->length,
                Ns_DStringAppendPrintable(&d, NS_TRUE, dsPtr->string,
                                          (size_t)dsPtr->length));
@@ -3905,7 +3905,7 @@ HttpProc(
              */
 
             Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE sendSpoolMode"
-                   " buffersize:%d buffer:%p next:%p sent:%" PRIuz,
+                   " buffersize:%" PRITcl_Size" buffer:%p next:%p sent:%" PRIuz,
                    httpPtr->ds.length, (void *)httpPtr->ds.string,
                    (void *)httpPtr->next, httpPtr->sent);
 

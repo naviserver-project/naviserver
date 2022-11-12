@@ -4,6 +4,7 @@ package require tcltest 2.2
 namespace import -force ::tcltest::*
 
 tcltest::testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
+tcltest::testConstraint pre_tcl90 [expr {$::tcl_version < 9.0}]
 
 ::tcltest::configure {*}$argv
 
@@ -168,16 +169,17 @@ test ns_base64encode-2.3.2 {ns_base64encode and decode with 2 byte UTF-8 charact
     #set decoded [encoding convertfrom utf-8 $decoded]
     list [string length $string] [string equal $string $decoded] [string length $decoded] \
         $encoded $decoded
-} -result {1 1 1 w7w= ü}
+} -returnCodes {error ok} -result {1 1 1 w7w= ü}
 
-test ns_base64encode-2.3.3 {ns_base64encode and decode with 3 byte UTF-8 character "☀"} -body {
-    set string "☀"
-    set encoded [ns_base64encode $string]
-    set decoded [ns_base64decode $encoded]
-    #set decoded [encoding convertfrom utf-8 $decoded]
-    list [string length $string] [string equal $string $decoded] [string length $decoded] \
-        $encoded $decoded
-} -result {1 1 1 4piA ☀}
+test ns_base64encode-2.3.3 {ns_base64encode and decode with 3 byte UTF-8 character "☀"} \
+    -body {
+        set string "☀"
+        set encoded [ns_base64encode $string]
+        set decoded [ns_base64decode $encoded]
+        #set decoded [encoding convertfrom utf-8 $decoded]
+        list [string length $string] [string equal $string $decoded] [string length $decoded] \
+            $encoded $decoded
+    } -result {1 1 1 4piA ☀}
 
 
 # test tcl_base64encode-2.3.4.0 {tcl base64 encode and decode with 3 byte UTF-8 character "☀"} -body {
@@ -191,10 +193,15 @@ test ns_base64encode-2.3.3 {ns_base64encode and decode with 3 byte UTF-8 charact
 test tcl_base64encode-2.3.4.1 {tcl base64 encode and decode with 2 byte UTF-8 character "ü"} -body {
     set string "ü"
     set encoded [ns_base64encode [encoding convertto utf-8 $string]]
-    set decoded [encoding convertfrom utf-8 [ns_base64decode $encoded]]
+    # handle Tcl 9.0 (tcl90) inside the test
+    if {[package vcompare $::tcl_patchLevel 8.99.0] == -1} {
+        set decoded [encoding convertfrom utf-8 [ns_base64decode $encoded]]
+    } else {
+        set decoded [ns_base64decode $encoded]
+    }
     list [string length $string] [string equal $string $decoded] [string length $decoded] \
         $encoded $decoded
-} -result {1 1 1 w7w= ü}
+} -returnCodes {error ok} -result {1 1 1 w7w= ü}
 
 test tcl_base64encode-2.3.4.2 {tcl base64 encode and decode with 3 byte UTF-8 character "☀"} -body {
     set string "a"
@@ -240,7 +247,8 @@ if {$tcl_version > 8.5} {
             $encoded $decoded
     } -result {1 1 1 /A== ü}
 
-    test tcl_base64encode-2.3.3 {tcl base64 encode and decode with 3 byte UTF-8 character "☀"} -body {
+    test tcl_base64encode-2.3.3 {tcl base64 encode and decode with 3 byte UTF-8 character "☀"} \
+        -constraints {pre_tcl90} -body {
         set string "☀"
         set encoded [binary encode base64 $string]
         set decoded [binary decode base64 $encoded]
@@ -256,7 +264,7 @@ if {$tcl_version > 8.5} {
             $encoded $decoded
     } -result {1 1 1 4piA ☀}
 
-    test tcl_base64encode-2.3.4.1 {tcl base64 encode and decode with 3 byte UTF-8 character "☀"} -body {
+    test tcl_base64encode-2.3.4.1 {tcl base64 encode and decode with 2 byte UTF-8 character "ü"} -body {
         set string "ü"
         set encoded [binary encode base64 [encoding convertto utf-8 $string]]
         set decoded [encoding convertfrom utf-8 [binary decode base64 $encoded]]
@@ -264,7 +272,7 @@ if {$tcl_version > 8.5} {
             $encoded $decoded
     } -result {1 1 1 w7w= ü}
 
-    test tcl_base64encode-2.3.4.2 {tcl base64 encode and decode with 3 byte UTF-8 character "☀"} -body {
+    test tcl_base64encode-2.3.4.2 {tcl base64 encode and decode with 1 byte UTF-8 character "a"} -body {
         set string "a"
         set encoded [binary encode base64 [encoding convertto utf-8 $string]]
         set decoded [encoding convertfrom utf-8 [binary decode base64 $encoded]]

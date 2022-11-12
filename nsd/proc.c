@@ -158,13 +158,13 @@ FreeFuncptrEntry(Tcl_HashEntry *hPtr)
  *----------------------------------------------------------------------
  */
 
-static unsigned int
+static TCL_HASH_TYPE
 FuncptrKey(Tcl_HashTable *UNUSED(tablePtr), void *keyPtr)
 {
   /*
    * Simply return the value part of the funcptrEntry as hash value.
    */
-  return PTR2UINT(((funcptrEntry_t *)keyPtr)->funcptr);
+  return PTR2TCL_SIZE(((funcptrEntry_t *)keyPtr)->funcptr);
 }
 
 /*

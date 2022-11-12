@@ -2454,7 +2454,8 @@ ConnRun(Conn *connPtr)
             preallocedHeaders = NsHeaderSetGet(connPtr->reqPtr->headers->maxSize);
         } else {
 #ifdef NS_SET_DSTRING
-            Ns_Log(Ns_LogNsSetDebug, "SSS ConnRun REUSE %p '%s': size %lu/%lu buffer %d/%d",
+            Ns_Log(Ns_LogNsSetDebug, "SSS ConnRun REUSE %p '%s': size %lu/%lu "
+                   "buffer %" PRITcl_Size "/%" PRITcl_Size,
                    (void*)preallocedHeaders, preallocedHeaders->name,
                    preallocedHeaders->size, preallocedHeaders->maxSize,
                    preallocedHeaders->data.length, preallocedHeaders->data.spaceAvl);

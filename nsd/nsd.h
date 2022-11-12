@@ -1146,6 +1146,7 @@ typedef struct _NsHttpChunk {
 
 #define NS_HTTP_FLAG_GUNZIP (NS_HTTP_FLAG_DECOMPRESS|NS_HTTP_FLAG_GZIP_ENCODING)
 
+NS_EXTERN const Tcl_ObjType *NS_intTypePtr;
 
 /*
  * Tcl object and string commands.

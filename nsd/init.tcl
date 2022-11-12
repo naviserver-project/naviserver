@@ -30,8 +30,12 @@ ns_log notice "nsd/init.tcl\[[ns_info server]\]: booting virtual server: " \
     "Tcl system encoding: \"[encoding system]\""
 
 
-package require Tcl 8.5
-
+if {[package vcompare $::tcl_patchLevel 8.5] >= 0} {
+    ns_log notice "nsd/init.tcl\[[ns_info server]\]:" \
+        "loaded Tcl $::tcl_version ($::tcl_patchLevel)"
+} else {
+    error "This version of NaviServer requires at least Tcl 8.5; provided version: $::tcl_patchLevel"
+}
 
 #
 # __ns_sourcefile --

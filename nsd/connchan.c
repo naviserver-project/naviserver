@@ -2031,7 +2031,7 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
         goto exception;
     }
 
-    Ns_Log(Ns_LogConnchanDebug, "WS: received %ld bytes, have already %d",
+    Ns_Log(Ns_LogConnchanDebug, "WS: received %ld bytes, have already %" PRITcl_Size,
            nRead, ConnChanBufferSize(connChanPtr, frameBuffer));
     /*
      * Make sure, the frame buffer exists.
@@ -2087,7 +2087,7 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
         offset += 4;
     }
 
-    frameLength = (int)(offset + payloadLength);
+    frameLength = (TCL_SIZE_T)(offset + payloadLength);
     if (connChanPtr->frameBuffer->length < (int)frameLength) {
         goto incomplete;
     }
@@ -2097,7 +2097,7 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
 
     if (!finished) {
         Ns_Log(Warning, "WS: unfinished frame, bytes %ld payload length %zu offset %zu "
-               "avail %d opcode %d fin %d, masked %d",
+               "avail %" PRITcl_Size " opcode %d fin %d, masked %d",
                nRead, payloadLength, offset, connChanPtr->frameBuffer->length,
                opcode, finished, masked);
 
@@ -2127,17 +2127,17 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
          */
 
         if (fragmentsBufferLength == 0) {
-            payloadObj = Tcl_NewByteArrayObj(&data[offset], (int)payloadLength);
+            payloadObj = Tcl_NewByteArrayObj(&data[offset], (TCL_SIZE_T)payloadLength);
         } else {
             Tcl_DStringAppend(connChanPtr->fragmentsBuffer,
-                              (const char *)&data[offset], (int)payloadLength);
+                              (const char *)&data[offset], (TCL_SIZE_T)payloadLength);
             payloadObj = Tcl_NewByteArrayObj((const unsigned char *)connChanPtr->fragmentsBuffer->string,
                                              connChanPtr->fragmentsBuffer->length);
             Ns_Log(Ns_LogConnchanDebug,
-                   "WS: append final payload opcode %d (fragments opcode %d) %d bytes, "
+                   "WS: append final payload opcode %d (fragments opcode %d) %" PRITcl_Size" bytes, "
                    "totaling %" PRITcl_Size " bytes, clear fragmentsBuffer",
                    opcode, connChanPtr->fragmentsOpcode,
-                   (int)payloadLength, connChanPtr->fragmentsBuffer->length);
+                   (TCL_SIZE_T)payloadLength, connChanPtr->fragmentsBuffer->length);
             Tcl_DStringSetLength(connChanPtr->fragmentsBuffer, 0);
             opcode = connChanPtr->fragmentsOpcode;
         }
@@ -2165,9 +2165,10 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
                           (const char *)&data[offset], (int)payloadLength);
         Ns_Log(Ns_LogConnchanDebug,
                "WS: fin 0 opcode %d (fragments opcode %d) "
-               "append %d to bytes to the fragmentsBuffer, totaling %" PRITcl_Size " bytes",
+               "append %" PRITcl_Size " to bytes to the fragmentsBuffer, "
+               "totaling %" PRITcl_Size " bytes",
                opcode, connChanPtr->fragmentsOpcode,
-               (int)payloadLength, connChanPtr->fragmentsBuffer->length);
+               (TCL_SIZE_T)payloadLength, connChanPtr->fragmentsBuffer->length);
     }
     /*
      * Finally, compact the frameBuffer.
@@ -2526,7 +2527,8 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                     }
 
                     if (freshDataRemaining > 0) {
-                        Ns_Log(Ns_LogConnchanDebug, "... appending to sendbuffer old %d + remaining %d "
+                        Ns_Log(Ns_LogConnchanDebug, "... appending to sendbuffer old %" PRITcl_Size
+                               " + remaining %d "
                                "will be %" PRITcl_Size,
                                connChanPtr->sendBuffer->length, freshDataRemaining,
                                connChanPtr->sendBuffer->length + freshDataRemaining);

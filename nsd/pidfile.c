@@ -62,7 +62,7 @@ NsCreatePidFile(void)
 
         snprintf(buf, sizeof(buf), "%d\n", nsconf.pid);
         toWrite = strlen(buf);
-        if ((size_t)Tcl_WriteChars(chan, buf, (int)toWrite) != toWrite) {
+        if ((size_t)Tcl_WriteChars(chan, buf, (TCL_SIZE_T)toWrite) != toWrite) {
             Ns_Log(Error, "pidfile: failed to write pid file '%s': '%s'",
                    Tcl_GetString(path), strerror(Tcl_GetErrno()));
         }

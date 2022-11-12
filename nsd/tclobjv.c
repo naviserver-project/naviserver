@@ -56,8 +56,6 @@ static void AppendRange(Ns_DString *dsPtr, const Ns_ObjvValueRange *r)
 /*
  * Static variables defined in this file.
  */
-static const Tcl_ObjType *intTypePtr;
-
 static const Tcl_ObjType specType = {
     "ns:spec",
     FreeSpecObj,
@@ -827,10 +825,6 @@ Ns_ObjvTime(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 void
 NsTclInitMemUnitType(void)
 {
-    intTypePtr = Tcl_GetObjType("int");
-    if (intTypePtr == NULL) {
-        Tcl_Panic("NsTclInitObjs: no int type");
-    }
     Tcl_RegisterObjType(&memUnitType);
 }
 
@@ -857,7 +851,7 @@ SetMemUnitFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(objPtr != NULL);
 
-    if (objPtr->typePtr == intTypePtr) {
+    if (objPtr->typePtr == NS_intTypePtr) {
         long longValue;
         /*
          * When the type is "int", the memory unit is in bytes.
@@ -913,7 +907,7 @@ Ns_TclGetMemUnitFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_WideInt *memUni
      * Many values come in already as int values. No need to convert
      * these to memUnitType.
      */
-    if (objPtr->typePtr == intTypePtr) {
+    if (objPtr->typePtr == NS_intTypePtr) {
         int intValue;
 
         if (likely(Tcl_GetIntFromObj(interp, objPtr, &intValue) != TCL_OK)) {

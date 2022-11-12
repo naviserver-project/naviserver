@@ -68,7 +68,6 @@ static const Tcl_ObjType timeType = {
     SetTimeFromAny
 };
 
-static const Tcl_ObjType *intTypePtr;
 static Ns_ObjvValueRange poslongRange0 = {0, LONG_MAX};
 static Ns_ObjvTimeRange nonnegTimeRange = {{0, 0}, {LONG_MAX, 0}};
 
@@ -98,9 +97,8 @@ NsTclInitTimeType(void)
         Tcl_Panic("NsTclInitObjs: sizeof(obj.internalRep) < sizeof(Ns_Time)");
     }
 #endif
-    intTypePtr = Tcl_GetObjType("int");
-    if (intTypePtr == NULL) {
-        Tcl_Panic("NsTclInitObjs: no int type");
+    if (NS_intTypePtr == NULL) {
+        Tcl_Panic("tcltime: no tclIntType");
     }
     Tcl_RegisterObjType(&timeType);
 }
@@ -193,7 +191,7 @@ Ns_TclGetTimeFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Ns_Time *timePtr)
     NS_NONNULL_ASSERT(objPtr != NULL);
     NS_NONNULL_ASSERT(timePtr != NULL);
 
-    if (objPtr->typePtr == intTypePtr) {
+    if (objPtr->typePtr == NS_intTypePtr) {
         if (likely(Tcl_GetLongFromObj(interp, objPtr, &sec) == TCL_OK)) {
             timePtr->sec = sec;
             timePtr->usec = 0;
@@ -930,7 +928,7 @@ SetTimeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(objPtr != NULL);
 
-    if (objPtr->typePtr == intTypePtr) {
+    if (objPtr->typePtr == NS_intTypePtr) {
         /*
          * When the type is "int", usec is 0.
          */

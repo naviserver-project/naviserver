@@ -66,12 +66,12 @@ static Tcl_ObjCmdProc
 
 static int ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, char cmd);
 
+NS_EXTERN const Tcl_ObjType *NS_intTypePtr;
 
 /*
  * Local variables defined in this file.
  */
 
-static const Tcl_ObjType *intTypePtr = NULL;
 static const char *const datakey = "nsdb:data";
 
 static const Ns_ObjvTable valueTypes[] = {
@@ -153,8 +153,7 @@ NsDbAddCmds(Tcl_Interp *interp, const void *arg)
     Tcl_InitHashTable(&idataPtr->dbs, TCL_STRING_KEYS);
     Tcl_SetAssocData(interp, datakey, FreeData, idataPtr);
 
-    intTypePtr = Tcl_GetObjType("int");
-    if (intTypePtr == NULL) {
+    if (NS_intTypePtr == NULL) {
         Tcl_Panic("NsTclInitObjs: no int type");
     }
 
@@ -1196,7 +1195,7 @@ QuoteSqlValue(Tcl_DString *dsPtr, Tcl_Obj *valueObj, int valueType)
 
     valueString = Tcl_GetStringFromObj(valueObj, &valueLength);
 
-    if (valueObj->typePtr == intTypePtr) {
+    if (valueObj->typePtr == NS_intTypePtr) {
         /*
          * Since we can trust the byterep, we can bypass the expensive
          * Tcl_UtfToExternalDString check.
@@ -1447,7 +1446,7 @@ GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Ob
         emptyElement = NS_TRUE;
 
         for (;;) {
-            if (Tcl_Gets(chan, &line) < 0) {
+            if (Tcl_Gets(chan, &line) == TCL_IO_FAILURE) {
                 Tcl_DStringFree(&line);
                 Tcl_DStringFree(&cols);
                 Tcl_DStringFree(&elem);
