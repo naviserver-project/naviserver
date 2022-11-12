@@ -848,7 +848,7 @@ Base64DecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             Tcl_DString ds, *dsPtr = &ds;
 
             Tcl_DStringInit(dsPtr);
-            Tcl_ExternalToUtfDString(NULL, (char *)decoded, (int)size, dsPtr);
+            (void)Tcl_ExternalToUtfDString(NULL, (char *)decoded, (int)size, dsPtr);
             Tcl_DStringResult(interp, dsPtr);
         }
 
@@ -2349,8 +2349,8 @@ NsTclStrcollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 
             string1 = Tcl_GetStringFromObj(arg1Obj, &length1);
             string2 = Tcl_GetStringFromObj(arg2Obj, &length2);
-            Tcl_UtfToExternalDString(NULL, string1, length1, ds1Ptr);
-            Tcl_UtfToExternalDString(NULL, string2, length2, ds2Ptr);
+            (void)Tcl_UtfToExternalDString(NULL, string1, length1, ds1Ptr);
+            (void)Tcl_UtfToExternalDString(NULL, string2, length2, ds2Ptr);
 
             errno = 0;
             comparisonValue = strcoll_l(ds1Ptr->string, ds2Ptr->string,
