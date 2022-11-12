@@ -796,7 +796,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
              * have to tailor this functionality for certain drivers
              * (would need additional configuration options).
              */
-            Tcl_UtfToExternalDString(NULL, value, valueLength, &ds);
+            (void)Tcl_UtfToExternalDString(NULL, value, valueLength, &ds);
             value = ds.string;
 
             /*if (cmd != GETROW) {
@@ -1228,12 +1228,12 @@ QuoteSqlValue(Tcl_DString *dsPtr, Tcl_Obj *valueObj, int valueType)
         }
     } else {
         Tcl_DString ds;
-          /*
+        /*
          * Protect against potential attacks, e.g. embedded nulls
          * appearing after conversion to the external value.
          */
         Tcl_DStringInit(&ds);
-        Tcl_UtfToExternalDString(NULL, valueString, valueLength, &ds);
+        (void)Tcl_UtfToExternalDString(NULL, valueString, valueLength, &ds);
 
         if (strlen(ds.string) < (size_t)ds.length) {
             result = NS_ERROR;

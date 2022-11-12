@@ -676,7 +676,7 @@ Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *
         //    //fprintf(stderr, "some other obj\n");
         //}
 
-        Tcl_UtfToExternalDString(NS_utf8Encoding, charInput, stringLength, dsPtr);
+        (void)Tcl_UtfToExternalDString(NS_utf8Encoding, charInput, stringLength, dsPtr);
         result = (unsigned char *)dsPtr->string;
         *lengthPtr = dsPtr->length;
     }
