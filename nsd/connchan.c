@@ -557,7 +557,7 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
             assert(servPtr != NULL);
 
             Tcl_DStringInit(&script);
-            Tcl_DStringAppend(&script, cbPtr->script, (int)cbPtr->scriptLength);
+            Tcl_DStringAppend(&script, cbPtr->script, (TCL_SIZE_T)cbPtr->scriptLength);
 
             if ((why & (unsigned int)NS_SOCK_TIMEOUT) != 0u) {
                 w = "t";
@@ -601,7 +601,7 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
 
                 if (logEnabled) {
                     Tcl_DStringInit(&ds);
-                    Ns_DStringNAppend(&ds, script.string, (int)scriptCmdNameLength);
+                    Ns_DStringNAppend(&ds, script.string, (TCL_SIZE_T)scriptCmdNameLength);
                     Ns_Log(Ns_LogConnchanDebug,
                            "%s NsTclConnChanProc Tcl eval <%s> returned <%s>",
                            channelName, ds.string, Tcl_GetString(objPtr));
@@ -646,7 +646,7 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
                     }
                 } else {
                     Tcl_DStringInit(&ds);
-                    Ns_DStringNAppend(&ds, script.string, (int)scriptCmdNameLength);
+                    Ns_DStringNAppend(&ds, script.string, (TCL_SIZE_T)scriptCmdNameLength);
 
                     Ns_Log(Warning, "%s callback <%s> returned unhandled result '%s' (must be 0, 1, or 2)",
                            channelName,
@@ -711,7 +711,7 @@ ArgProc(Tcl_DString *dsPtr, const void *arg)
          */
         Ns_DStringNAppend(dsPtr, cbPtr->connChanPtr->channelName, TCL_INDEX_NONE);
         Ns_DStringNAppend(dsPtr, " ", 1);
-        Ns_DStringNAppend(dsPtr, cbPtr->script, (int)cbPtr->scriptCmdNameLength);
+        Ns_DStringNAppend(dsPtr, cbPtr->script, (TCL_SIZE_T)cbPtr->scriptCmdNameLength);
     } else {
         Ns_Log(Notice, "connchan ArgProc cbPtr %p has no connChanPtr", (void*)cbPtr);
     }
@@ -1552,7 +1552,7 @@ ConnChanListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
                 char whenBuffer[6];
 
                 Ns_DStringNAppend(dsPtr, " ", 1);
-                Ns_DStringNAppend(dsPtr, connChanPtr->cbPtr->script, (int)connChanPtr->cbPtr->scriptCmdNameLength);
+                Ns_DStringNAppend(dsPtr, connChanPtr->cbPtr->script, (TCL_SIZE_T)connChanPtr->cbPtr->scriptCmdNameLength);
                 Ns_DStringAppendElement(dsPtr, WhenToString(whenBuffer, connChanPtr->cbPtr->when));
             } else {
                 Ns_DStringNAppend(dsPtr, " {} {}", 6);
@@ -2020,7 +2020,8 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
 {
     unsigned char *data;
     bool           finished, masked;
-    int            opcode, frameLength, fragmentsBufferLength;
+    int            opcode;
+    TCL_SIZE_T     frameLength, fragmentsBufferLength;
     size_t         payloadLength, offset;
     unsigned char  mask[4] = {0u,0u,0u,0u};
     Tcl_Obj       *resultObj;
@@ -2041,7 +2042,7 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
     /*
      * Append the newly read data.
      */
-    Tcl_DStringAppend(connChanPtr->frameBuffer, buffer, (int)nRead);
+    Tcl_DStringAppend(connChanPtr->frameBuffer, buffer, (TCL_SIZE_T)nRead);
 
     /*
      * On very small buffers, the interpretation of the first bytes
@@ -2088,7 +2089,7 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
     }
 
     frameLength = (TCL_SIZE_T)(offset + payloadLength);
-    if (connChanPtr->frameBuffer->length < (int)frameLength) {
+    if (connChanPtr->frameBuffer->length < (TCL_SIZE_T)frameLength) {
         goto incomplete;
     }
 
@@ -2162,7 +2163,7 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
             connChanPtr->fragmentsOpcode = opcode;
         }
         Tcl_DStringAppend(connChanPtr->fragmentsBuffer,
-                          (const char *)&data[offset], (int)payloadLength);
+                          (const char *)&data[offset], (TCL_SIZE_T)payloadLength);
         Ns_Log(Ns_LogConnchanDebug,
                "WS: fin 0 opcode %d (fragments opcode %d) "
                "append %" PRITcl_Size " to bytes to the fragmentsBuffer, "
@@ -2174,7 +2175,7 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
      * Finally, compact the frameBuffer.
      */
     if (connChanPtr->frameBuffer->length > frameLength) {
-        int copyLength = connChanPtr->frameBuffer->length - frameLength;
+        TCL_SIZE_T copyLength = connChanPtr->frameBuffer->length - frameLength;
 
         memmove(connChanPtr->frameBuffer->string,
                 connChanPtr->frameBuffer->string + frameLength,
@@ -2191,8 +2192,8 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
 
  incomplete:
     connChanPtr->frameNeedsData = NS_TRUE;
-    Ns_Log(Notice, "WS: incomplete frameLength %d avail %" PRITcl_Size,
-            frameLength, connChanPtr->frameBuffer->length);
+    Ns_Log(Notice, "WS: incomplete frameLength %" PRITcl_Size " avail %" PRITcl_Size,
+           frameLength, connChanPtr->frameBuffer->length);
     Tcl_DictObjPut(NULL, resultObj, Tcl_NewStringObj("frame", 5), Tcl_NewStringObj("incomplete", 10));
     WebsocketFrameSetCommonMembers(resultObj, nRead, connChanPtr);
     return resultObj;
@@ -2267,7 +2268,7 @@ ConnChanReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 
                 } else if (webSocketFrame == 0 && nRead > 0) {
                     connChanPtr->rBytes += (size_t)nRead;
-                    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((unsigned char *)buffer, (int)nRead));
+                    Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((unsigned char *)buffer, (TCL_SIZE_T)nRead));
                 } else if (webSocketFrame == 1) {
                     connChanPtr->rBytes += (size_t)nRead;
                     Tcl_SetObjResult(interp, GetWebsocketFrame(connChanPtr, buffer, nRead));
@@ -2339,7 +2340,8 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
             struct iovec bufs[2];
             ssize_t      nSent;
             size_t       toSend;
-            int          msgLen, nBufs = 1;
+            int          nBufs = 1;
+            TCL_SIZE_T   msgLen;
             const char  *msgString = (const char *)Tcl_GetByteArrayFromObj(msgObj, &msgLen);
 #ifdef WS_RECORD_OUTPUT
             static int FD;
@@ -2368,7 +2370,7 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                 buffered = 1;
             }
 
-            Ns_Log(Ns_LogConnchanDebug, "%s new message length %d buffered %d",
+            Ns_Log(Ns_LogConnchanDebug, "%s new message length %" PRITcl_Size " buffered %d",
                    name, msgLen, buffered);
 
             /*
@@ -2399,7 +2401,8 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                 toSend = (size_t)msgLen;
             }
 
-            Ns_Log(Ns_LogConnchanDebug, "%s new message length %d buffered length %" PRITcl_Size
+            Ns_Log(Ns_LogConnchanDebug, "%s new message length %" PRITcl_Size
+                   " buffered length %" PRITcl_Size
                    " total %" PRIdz,
                    name, msgLen, connChanPtr->sendBuffer != NULL ? connChanPtr->sendBuffer->length : 0,
                    toSend);
@@ -2428,7 +2431,7 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                 Tcl_SetObjResult(interp, Tcl_NewLongObj((long)nSent));
 
                 if (buffered && remaining > 0) {
-                    int freshDataRemaining;
+                    TCL_SIZE_T freshDataRemaining;
 
                     RequireDsBuffer(&connChanPtr->sendBuffer);
                     /*
@@ -2436,12 +2439,13 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                      */
                     if (nBufs == 2) {
                         Ns_Log(Ns_LogConnchanDebug, "... two-buffer old buffer length %"
-                               PRITcl_Size " + new %d"
+                               PRITcl_Size " + new %" PRITcl_Size
                                " = %" PRIdz " sent %ld (old not fully sent %d)",
                                connChanPtr->sendBuffer->length, msgLen,
                                (size_t)connChanPtr->sendBuffer->length + (size_t)msgLen,
-                               nSent, (connChanPtr->sendBuffer->length > nSent));
-                        if (connChanPtr->sendBuffer->length > nSent) {
+                               nSent,
+                               (connChanPtr->sendBuffer->length > (TCL_SIZE_T)nSent));
+                        if (connChanPtr->sendBuffer->length > (TCL_SIZE_T)nSent) {
                             /*
                              * The old send buffer was not completely
                              * sent.
@@ -2454,7 +2458,7 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 
                             freshDataRemaining = msgLen;
 
-                            if (nSent>0) {
+                            if (nSent > 0) {
                                 Ns_Log(Ns_LogConnchanDebug,
                                        "... have sent part of old buffer %ld "
                                        "(BYTES from %" PRIdz " to %" PRIdz ")",
@@ -2469,7 +2473,7 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                                 memmove(connChanPtr->sendBuffer->string,
                                         bufs[0].iov_base,
                                         bufs[0].iov_len);
-                                Tcl_DStringSetLength(connChanPtr->sendBuffer, (int)bufs[0].iov_len);
+                                Tcl_DStringSetLength(connChanPtr->sendBuffer, (TCL_SIZE_T)bufs[0].iov_len);
                             }
                         } else {
                             /*
@@ -2479,13 +2483,15 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                             assert(bufs[0].iov_len == 0);
                             Tcl_DStringSetLength(connChanPtr->sendBuffer, 0);
 
-                            freshDataRemaining = msgLen - (int)(nSent - connChanPtr->sendBuffer->length);
+                            freshDataRemaining = msgLen - ((TCL_SIZE_T)nSent - connChanPtr->sendBuffer->length);
                             Ns_Log(Ns_LogConnchanDebug,
-                                   "... have sent all of old buffer %" PRITcl_Size " and %ld of new buffer "
+                                   "... have sent all of old buffer %" PRITcl_Size
+                                   " and %" PRITcl_Size " of new buffer "
                                    "(BYTES from %" PRIdz " to %" PRIdz ")",
                                    connChanPtr->sendBuffer->length,
-                                   (nSent - connChanPtr->sendBuffer->length),
-                                   connChanPtr->wBytes - (size_t)nSent, connChanPtr->wBytes);
+                                   ((TCL_SIZE_T)nSent - connChanPtr->sendBuffer->length),
+                                   connChanPtr->wBytes - (size_t)nSent,
+                                   connChanPtr->wBytes);
 #ifdef WS_RECORD_OUTPUT
                             write(FD, connChanPtr->sendBuffer->string, (size_t)connChanPtr->sendBuffer->length);
                             write(FD, msgString, (size_t)(nSent - connChanPtr->sendBuffer->length));
@@ -2509,12 +2515,12 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                         memmove(connChanPtr->sendBuffer->string,
                                 bufs[0].iov_base,
                                 bufs[0].iov_len);
-                        Tcl_DStringSetLength(connChanPtr->sendBuffer, (int)bufs[0].iov_len);
+                        Tcl_DStringSetLength(connChanPtr->sendBuffer, (TCL_SIZE_T)bufs[0].iov_len);
                     } else {
                         /*
                          * There is only fresh data.
                          */
-                        freshDataRemaining = msgLen - (int)nSent;
+                        freshDataRemaining = msgLen - (TCL_SIZE_T)nSent;
 #ifdef WS_RECORD_OUTPUT
                         if (nSent > 0) {
                             write(FD, msgString, (size_t)nSent);
@@ -2528,16 +2534,20 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 
                     if (freshDataRemaining > 0) {
                         Ns_Log(Ns_LogConnchanDebug, "... appending to sendbuffer old %" PRITcl_Size
-                               " + remaining %d "
-                               "will be %" PRITcl_Size,
+                               " + remaining %" PRITcl_Size
+                               " will be %" PRITcl_Size,
                                connChanPtr->sendBuffer->length, freshDataRemaining,
                                connChanPtr->sendBuffer->length + freshDataRemaining);
                         Tcl_DStringAppend(connChanPtr->sendBuffer,
                                           msgString + (msgLen - freshDataRemaining),
                                           freshDataRemaining);
-                        Ns_Log(Ns_LogConnchanDebug, "... keep for later %d bytes of %d "
-                               "(buffered %" PRITcl_Size ") will be BYTES from %" PRIdz " to %" PRIdz,
-                               freshDataRemaining, msgLen, connChanPtr->sendBuffer->length,
+                        Ns_Log(Ns_LogConnchanDebug, "... keep for later %" PRITcl_Size
+                               " bytes of %" PRITcl_Size
+                               " (buffered %" PRITcl_Size ") will be BYTES from %" PRIdz
+                               " to %" PRIdz,
+                               freshDataRemaining,
+                               msgLen,
+                               connChanPtr->sendBuffer->length,
                                connChanPtr->wBytes,
                                connChanPtr->wBytes + (size_t)connChanPtr->sendBuffer->length);
                     }
@@ -2549,9 +2559,12 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                         /*
                          * Everything was sent
                          */
-                        int buffedLen = ConnChanBufferSize(connChanPtr, sendBuffer);
-                        Ns_Log(Ns_LogConnchanDebug, "... buffered %d buffedLen %d msgLength %d "
-                               "everything was sent, remaining %" PRIdz ", (BYTES from %" PRIdz " to %" PRIdz ")",
+                        TCL_SIZE_T buffedLen = ConnChanBufferSize(connChanPtr, sendBuffer);
+
+                        Ns_Log(Ns_LogConnchanDebug, "... buffered %d buffedLen %" PRITcl_Size
+                               " msgLength %" PRITcl_Size
+                               " everything was sent, remaining %" PRIdz
+                               ", (BYTES from %" PRIdz " to %" PRIdz ")",
                                buffered, buffedLen, msgLen, remaining,
                                connChanPtr->wBytes - (size_t)nSent, connChanPtr->wBytes);
                         assert(remaining == 0);
@@ -2639,7 +2652,7 @@ ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     } else {
         const unsigned char *messageString;
         unsigned char       *data;
-        int                  messageLength;
+        TCL_SIZE_T           messageLength;
         Tcl_DString          messageDs, frameDs;
         size_t               offset;
 
@@ -2720,7 +2733,7 @@ ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
                 }
             }
 #endif
-            Tcl_DStringSetLength(&frameDs, (int)offset + 4 + messageLength);
+            Tcl_DStringSetLength(&frameDs, (TCL_SIZE_T)offset + 4 + messageLength);
             data = (unsigned char *)frameDs.string;
             memcpy(&data[offset], &mask[0], 4);
             offset += 4;
@@ -2728,7 +2741,7 @@ ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
                 data[ i ] = messageString[ j ] ^ mask[ j % 4];
             }
         } else {
-            Tcl_DStringSetLength(&frameDs, (int)offset + messageLength);
+            Tcl_DStringSetLength(&frameDs, (TCL_SIZE_T)offset + messageLength);
             data = (unsigned char *)frameDs.string;
             memcpy(&data[offset], &messageString[0], (size_t)messageLength);
         }

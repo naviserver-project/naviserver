@@ -29,11 +29,11 @@ test ns_gifsize-2.3 {file is broken} -body {
 
 test ns_gifsize-2.4 {normal indexed gif} -body {
      ns_gifsize "${testdir}/images/color5x200.gif"
-} -result [list 5 200]
+} -returnCodes {error ok} -result [list 5 200]
 
 test ns_gifsize-2.5 {small gif} -body {
      ns_gifsize "${testdir}/images/small.gif"
-} -result [list 1 1]
+} -returnCodes {error ok} -result [list 1 1]
 
 cleanupTests
 

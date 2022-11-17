@@ -246,9 +246,9 @@ Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
     if (flush) {
         compressLen += 4u; /* Gzip footer. */
     }
-    Ns_DStringSetLength(dsPtr, (int)compressLen);
+    Ns_DStringSetLength(dsPtr, (TCL_SIZE_T)compressLen);
 
-    z->next_out  = (Bytef *) (dsPtr->string + offset);
+    z->next_out  = (Bytef *)(dsPtr->string + offset);
     z->avail_out = (uInt)compressLen;
 
     /*
@@ -280,7 +280,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
             DeflateOrAbort(z, flushFlags);
         }
     }
-    Ns_DStringSetLength(dsPtr, (dsPtr->length - (int)z->avail_out));
+    Ns_DStringSetLength(dsPtr, (dsPtr->length - (TCL_SIZE_T)z->avail_out));
 
     if (flush) {
         (void) deflateReset(z);

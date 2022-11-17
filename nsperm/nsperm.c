@@ -760,7 +760,8 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
     struct sockaddr    *ipPtr = (struct sockaddr *)&ip, *maskPtr = (struct sockaddr *)&mask;
     char buf[NS_ENCRYPT_BUFSIZE];
     char               *name, *pwd, *field = NULL, *salt = NULL;
-    int                 isNew, i, nargs = 0, allow = 0, deny = 0, clear = 0;
+    int                 isNew, allow = 0, deny = 0, clear = 0;
+    TCL_SIZE_T          nargs = 0, i;
 
     Ns_ObjvSpec opts[] = {
         {"-allow", Ns_ObjvBool, &allow, INT2PTR(NS_TRUE)},
@@ -814,7 +815,7 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
      * 192.168.2.3/255.255.255.0, foo.bar.com, or .bar.com
      */
 
-    for (i = objc - nargs; i < objc; ++i) {
+    for (i = (TCL_SIZE_T)objc - nargs; i < (TCL_SIZE_T)objc; ++i) {
         Ns_ReturnCode status;
         char         *net = Tcl_GetString(objv[i]);
 
@@ -1247,8 +1248,9 @@ static int AllowDenyObjCmd(
     bool allow,
     bool user
 ) {
-    char *method = NULL, *url = NULL;
-    int   noinherit = 0, nargs = 0, result;
+    char      *method = NULL, *url = NULL;
+    int        noinherit = 0, result;
+    TCL_SIZE_T nargs = 0;
 
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,   &noinherit,  INT2PTR(NS_TRUE)},
@@ -1268,7 +1270,8 @@ static int AllowDenyObjCmd(
         Server      *servPtr = data;
         Perm        *permPtr;
         Ns_DString   base;
-        int          i, isNew;
+        int          isNew;
+        TCL_SIZE_T   i;
         unsigned int flags = 0u;
 
         if (noinherit != 0) {
@@ -1305,7 +1308,7 @@ static int AllowDenyObjCmd(
             permPtr->flags |= PERM_IMPLICIT_ALLOW;
         }
 
-        for (i = objc - nargs; i < objc; i++) {
+        for (i = (TCL_SIZE_T)objc - nargs; i < (TCL_SIZE_T)objc; i++) {
             char *key = Tcl_GetString(objv[i]);
 
             if (user) {

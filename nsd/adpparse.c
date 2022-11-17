@@ -28,7 +28,7 @@
 #define APPEND      "ns_adp_append "
 #define APPEND_LEN  (sizeof(APPEND) - 1u)
 
-#define LENSZ       ((int)(sizeof(int)))
+#define LENSZ       ((TCL_SIZE_T)(sizeof(int)))
 
 /*
  * The following structure maintains proc and ADP registered tags.
@@ -157,7 +157,8 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
         NsServer       *servPtr = itPtr->servPtr;
         const char     *end, *tag, *content;
         Tcl_HashEntry  *hPtr;
-        int             isNew, slen, elen, tlen;
+        int             isNew;
+        TCL_SIZE_T      slen, elen, tlen;
         Tcl_DString     tbuf;
         Tag            *tagPtr;
 
@@ -260,7 +261,14 @@ AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const cha
         Ns_DStringPrintf(&codePtr->text, "} {0} {} {}]}}\nadp:%s %%>}", file);
     }
     codePtr->nblocks = codePtr->nscripts = 1;
-    size = -codePtr->text.length;
+    /*
+     * The cast of "text.lengh" to "int" is dangerous (for really big
+     * strings). "size" should be TCL_SIZE_T, but we keep it so far due to the
+     * logic with the negative lengths.
+     *
+     * See also: keep "len" as int in AdpExec() in adpeval.c
+     */
+    size = -(int)codePtr->text.length;
     AppendLengths(codePtr, &size, &line);
 }
 
@@ -504,7 +512,14 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
      */
 
     if ((flags & ADP_SINGLE) != 0u) {
-        int line = 0, len = -codePtr->text.length;
+        /*
+         * The cast of "text.lengh" to "int" is dangerous (for really big
+         * strings).
+         *
+         * See also: AdpParseTclFile(), and AdpExec() in adpeval.c
+         */
+
+        int line = 0, len = -(int)codePtr->text.length;
         codePtr->nscripts = codePtr->nblocks = 1;
         AppendLengths(codePtr, &len, &line);
     } else {
@@ -626,20 +641,20 @@ AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsigned int fla
 
             switch (type) {
             case 'S':
-                Tcl_DStringAppend(&codePtr->text, APPEND, (int)APPEND_LEN);
-                Tcl_DStringAppend(&codePtr->text, s, (int)len);
+                Tcl_DStringAppend(&codePtr->text, APPEND, (TCL_SIZE_T)APPEND_LEN);
+                Tcl_DStringAppend(&codePtr->text, s, (TCL_SIZE_T)len);
                 break;
 
             case 't':
                 save = *e;
                 *e = '\0';
-                Tcl_DStringAppend(&codePtr->text, APPEND, (int)APPEND_LEN);
+                Tcl_DStringAppend(&codePtr->text, APPEND, (TCL_SIZE_T)APPEND_LEN);
                 Tcl_DStringAppendElement(&codePtr->text, s);
                 *e = save;
                 break;
 
             default:
-                Tcl_DStringAppend(&codePtr->text, s, (int)len);
+                Tcl_DStringAppend(&codePtr->text, s, (TCL_SIZE_T)len);
 
             }
             Tcl_DStringAppend(&codePtr->text, "\n", 1);
@@ -650,9 +665,9 @@ AppendBlock(Parse *parsePtr, const char *s, char *e, char type, unsigned int fla
             ++codePtr->nblocks;
             if (type == 'S') {
                 l += (ptrdiff_t)APPEND_LEN;
-                Tcl_DStringAppend(&codePtr->text, APPEND, (int)APPEND_LEN);
+                Tcl_DStringAppend(&codePtr->text, APPEND, (TCL_SIZE_T)APPEND_LEN);
             }
-            Tcl_DStringAppend(&codePtr->text, s, (int)len);
+            Tcl_DStringAppend(&codePtr->text, s, (TCL_SIZE_T)len);
             if (type != 't') {
                 ++codePtr->nscripts;
                 l = -l;
@@ -705,7 +720,7 @@ GetTag(Tcl_DString *dsPtr, char *s, const char *e, char **aPtr)
         ++s;
     }
     Tcl_DStringSetLength(dsPtr, 0);
-    Tcl_DStringAppend(dsPtr, t, (int)(s - t));
+    Tcl_DStringAppend(dsPtr, t, (TCL_SIZE_T)(s - t));
     if (aPtr != NULL) {
         while (s < e && CHARTYPE(space, *s) != 0) {
             ++s;
@@ -980,7 +995,7 @@ static void
 AppendLengths(AdpCode *codePtr, const int *length, const int *line)
 {
     Tcl_DString *textPtr;
-    int          start, ncopy;
+    TCL_SIZE_T   start, ncopy;
 
     NS_NONNULL_ASSERT(codePtr != NULL);
     NS_NONNULL_ASSERT(length != NULL);
@@ -991,7 +1006,7 @@ AppendLengths(AdpCode *codePtr, const int *length, const int *line)
      * Need to round up start of lengths array to next word.
      */
     start = ((textPtr->length / LENSZ) + 1) * LENSZ;
-    ncopy = codePtr->nblocks * LENSZ;
+    ncopy = (TCL_SIZE_T)codePtr->nblocks * LENSZ;
     Tcl_DStringSetLength(textPtr, start + (ncopy * 2));
     codePtr->len = (int *) (textPtr->string + start);
     codePtr->line = (int *) (textPtr->string + start + ncopy);

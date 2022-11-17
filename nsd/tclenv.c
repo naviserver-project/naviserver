@@ -196,7 +196,8 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
 
                 name = envp[i];
                 value = strchr(name, INTCHAR('='));
-                obj = Tcl_NewStringObj(name, (value != NULL) ? (int)(value - name) : TCL_INDEX_NONE);
+                obj = Tcl_NewStringObj(name,
+                                       (value != NULL) ? (TCL_SIZE_T)(value - name) : TCL_INDEX_NONE);
                 if (Tcl_ListObjAppendElement(interp, resultObj, obj) != TCL_OK) {
                     result = TCL_ERROR;
                     break;

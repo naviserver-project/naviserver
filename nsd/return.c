@@ -291,7 +291,7 @@ Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, const char *mimeType)
     charset = NsFindCharset(mimeType, &len);
 
     if (charset != NULL) {
-        encoding = Ns_GetCharsetEncodingEx(charset, (int)len);
+        encoding = Ns_GetCharsetEncodingEx(charset, (TCL_SIZE_T)len);
         Ns_ConnSetEncoding(conn, encoding);
     } else {
         encoding = Ns_ConnGetEncoding(conn);
@@ -530,7 +530,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
                             size_t offset = (size_t)(lineBreak - value);
 
                             if (offset > 0u) {
-                                Tcl_DStringAppend(sanitizePtr, value, (int)offset);
+                                Tcl_DStringAppend(sanitizePtr, value, (TCL_SIZE_T)offset);
                             }
                             Tcl_DStringAppend(sanitizePtr, "\n\t", 2);
 
@@ -720,14 +720,14 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
      */
 
     if (status >= 400) {
-        while (ds.length < servPtr->opts.errorminsize) {
+        while (ds.length < (TCL_SIZE_T)servPtr->opts.errorminsize) {
             Ns_DStringAppend(&ds, "                    ");
         }
     }
 
     Ns_DStringVarAppend(&ds, "\n</body></html>\n", (char *)0L);
 
-    result = Ns_ConnReturnCharData(conn, status, ds.string, ds.length, "text/html");
+    result = Ns_ConnReturnCharData(conn, status, ds.string, (ssize_t)ds.length, "text/html");
     Ns_DStringFree(&ds);
 
     return result;

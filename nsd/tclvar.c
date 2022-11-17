@@ -547,7 +547,7 @@ NsTclNsvAppendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         }
 
         for (i = 3; i < objc; ++i) {
-            int          length;
+            TCL_SIZE_T  length;
             const char *value = Tcl_GetStringFromObj(objv[i], &length);
 
             Tcl_DStringAppend(&ds, value, length);
@@ -764,7 +764,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         result = TCL_ERROR;
 
     } else {
-        int        lobjc, size;
+        TCL_SIZE_T lobjc, size;
         Array     *arrayPtr;
         Tcl_Obj  **lobjv;
 
@@ -783,7 +783,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 result = TCL_ERROR;
 
             } else {
-                int  i;
+                TCL_SIZE_T i;
 
                 arrayPtr = LockArrayObj(interp, objv[2], NS_TRUE, NS_WRITE);
                 assert(arrayPtr != NULL);
@@ -1057,8 +1057,8 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             /*
              * Operations on a dict key
              */
-            int          nargs = 0;
-            Tcl_Obj     *varnameObj = NULL;
+            TCL_SIZE_T  nargs = 0;
+            Tcl_Obj    *varnameObj = NULL;
             Ns_ObjvSpec getArgs[] = {
                 {"array",     Ns_ObjvObj,  &arrayObj,     NULL},
                 {"key",       Ns_ObjvObj,  &keyObj,       NULL},
@@ -1108,7 +1108,8 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                             /*
                              * Nested dict
                              */
-                            result = Tcl_DictObjRemoveKeyList(interp, dictObj, nargs, &objv[objc-nargs]);
+                            result = Tcl_DictObjRemoveKeyList(interp, dictObj,
+                                                              nargs, &objv[(TCL_SIZE_T)objc-nargs]);
                         }
                         if (result == TCL_OK) {
                             int dictStringLength;
@@ -1139,10 +1140,10 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                             /*
                              * nested keys
                              */
-                            int i;
+                            TCL_SIZE_T i;
 
                             dictKeyObj = NULL; /* make sure, dictKeyObj is always initialized */
-                            for (i = objc - nargs; i < lastObjc; i++) {
+                            for (i = (TCL_SIZE_T)objc - nargs; i < (TCL_SIZE_T)lastObjc; i++) {
                                 dictKeyObj = objv[i];
                                 result = Tcl_DictObjGet(interp, dictObj, dictKeyObj, &dictValueObj);
                                 if (dictValueObj != NULL) {
@@ -1258,7 +1259,8 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             /*
              * Operations on a dict key with a value
              */
-            int         increment = 1, nargs = 0;
+            int         increment = 1;
+            TCL_SIZE_T  nargs = 0;
             Ns_ObjvSpec setArgs[] = {
                 {"array",     Ns_ObjvObj,  &arrayObj,     NULL},
                 {"key",       Ns_ObjvObj,  &keyObj,       NULL},
@@ -1322,8 +1324,10 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                         /*
                          * Nested dict
                          */
-                        result = Tcl_DictObjPutKeyList(interp, dictObj, nargs,
-                                                       &objv[objc-(nargs+1)], dictValueObj);
+                        result = Tcl_DictObjPutKeyList(interp, dictObj,
+                                                       nargs,
+                                                       &objv[(TCL_SIZE_T)objc - (nargs+1)],
+                                                       dictValueObj);
                     }
                 } else {
                     Tcl_Obj *oldDictValueObj;
@@ -1343,7 +1347,7 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                         }
                     } else {
                         Tcl_DString ds;
-                        int         i, objLength;
+                        TCL_SIZE_T  i, objLength;
                         const char *objString;
 
                         /*
@@ -1357,7 +1361,7 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                             Tcl_DStringAppend(&ds, objString, objLength);
                         }
 
-                        for (i = objc - nargs; i < objc; i++) {
+                        for (i = (TCL_SIZE_T)objc - nargs; i < (TCL_SIZE_T)objc; i++) {
                             objString = Tcl_GetStringFromObj(objv[i], &objLength);
 
                             if (opt == CAppendIdx) {

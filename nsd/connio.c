@@ -118,7 +118,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fl
 
             if (utfLen > 0u) {
                 (void) Tcl_UtfToExternalDString(connPtr->outputEncoding,
-                                                utfBytes, (int)utfLen, &encDs);
+                                                utfBytes, (TCL_SIZE_T)utfLen, &encDs);
             }
         }
         (void)Ns_SetVec(&iov, 0, encDs.string, (size_t)encDs.length);
@@ -487,12 +487,12 @@ ConnSend(Ns_Conn *conn, ssize_t nsend, Tcl_Channel chan, FILE *fp, int fd)
                 toRead = ((size_t)nsend > sizeof(buf)) ? sizeof(buf) : (size_t)nsend;
             }
             if (chan != NULL) {
-                nread = Tcl_Read(chan, buf, (int)toRead);
+                nread = (ssize_t)Tcl_Read(chan, buf, (TCL_SIZE_T)toRead);
                 if (stream && Tcl_Eof(chan)) {
                     eod = NS_TRUE;
                 }
             } else if (fp != NULL) {
-                nread = (int)fread(buf, 1u, toRead, fp);
+                nread = (ssize_t)fread(buf, 1u, toRead, fp);
                 if (ferror(fp)) {
                     nread = -1;
                 } else if (stream && feof(fp)) {
@@ -1028,7 +1028,7 @@ Ns_ConnReadLine(const Ns_Conn *conn, Ns_DString *dsPtr, size_t *nreadPtr)
             if (ncopy > 0u && *(eol-1) == '\r') {
                 --ncopy;
             }
-            Ns_DStringNAppend(dsPtr, reqPtr->next, (int)ncopy);
+            Ns_DStringNAppend(dsPtr, reqPtr->next, (TCL_SIZE_T)ncopy);
             reqPtr->next  += nread;
             reqPtr->avail -= (size_t)nread;
 
@@ -1126,7 +1126,7 @@ Ns_ConnCopyToDString(const Ns_Conn *conn, size_t toCopy, Ns_DString *dsPtr)
     if (connPtr->sockPtr == NULL || reqPtr->avail < toCopy) {
         status = NS_ERROR;
     } else {
-        Ns_DStringNAppend(dsPtr, reqPtr->next, (int)toCopy);
+        Ns_DStringNAppend(dsPtr, reqPtr->next, (TCL_SIZE_T)toCopy);
         reqPtr->next  += toCopy;
         reqPtr->avail -= toCopy;
     }
@@ -1197,7 +1197,7 @@ ConnCopy(const Ns_Conn *conn, size_t toCopy, Tcl_Channel chan, FILE *fp, int fd)
              * was provided.
              */
             if (chan != NULL) {
-                nwrote = Tcl_Write(chan, reqPtr->next, (int)ncopy);
+                nwrote = (ssize_t)Tcl_Write(chan, reqPtr->next, (TCL_SIZE_T)ncopy);
             } else if (fp != NULL) {
                 nwrote = (ssize_t)fwrite(reqPtr->next, 1u, ncopy, fp);
                 if (ferror(fp) != 0) {

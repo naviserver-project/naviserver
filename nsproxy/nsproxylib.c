@@ -600,7 +600,7 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
         Req      req, *reqPtr = &req;
         uint32_t len;
 
-        if (Tcl_DStringLength(&in) < (int)sizeof(Req)) {
+        if (Tcl_DStringLength(&in) < (TCL_SIZE_T)sizeof(Req)) {
             break;
         }
 
@@ -625,7 +625,7 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
                 }
                 snprintf(active, activeSize, "{%.*s%s}", n, script, dots);
             }
-            result = Tcl_EvalEx(interp, script, (int)len, 0);
+            result = Tcl_EvalEx(interp, script, (TCL_SIZE_T)len, 0);
             Export(interp, result, &out);
             if (active != NULL) {
                 assert(max > 0);
@@ -1131,7 +1131,7 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script)
             Tcl_DStringSetLength(&proxyPtr->in, 0);
             Tcl_DStringAppend(&proxyPtr->in, (char *) &req, sizeof(req));
             if (len > 0u) {
-                Tcl_DStringAppend(&proxyPtr->in, script, (int)len);
+                Tcl_DStringAppend(&proxyPtr->in, script, (TCL_SIZE_T)len);
             }
             proxyPtr->state = Busy;
 
@@ -1431,9 +1431,9 @@ RecvBuf(const Worker *workerPtr, const Ns_Time *timePtr, Tcl_DString *dsPtr)
         ssize_t  len;
 
         n = (ssize_t)(avail - iov[1].iov_len);
-        Tcl_DStringSetLength(dsPtr, (int)n);
+        Tcl_DStringSetLength(dsPtr, (TCL_SIZE_T)n);
         len = (ssize_t)ntohl(ulen);
-        Tcl_DStringSetLength(dsPtr, (int)len);
+        Tcl_DStringSetLength(dsPtr, (TCL_SIZE_T)len);
         len -= n;
         ptr  = dsPtr->string + n;
 
@@ -1594,13 +1594,13 @@ Export(Tcl_Interp *interp, int code, Tcl_DString *dsPtr)
     hdr.rlen = htonl(rlen);
     Tcl_DStringAppend(dsPtr, (char *) &hdr, sizeof(hdr));
     if (clen > 0) {
-        Tcl_DStringAppend(dsPtr, ecode, (int)clen);
+        Tcl_DStringAppend(dsPtr, ecode, (TCL_SIZE_T)clen);
     }
     if (ilen > 0) {
-        Tcl_DStringAppend(dsPtr, einfo, (int)ilen);
+        Tcl_DStringAppend(dsPtr, einfo, (TCL_SIZE_T)ilen);
     }
     if (rlen > 0) {
-        Tcl_DStringAppend(dsPtr, result, (int)rlen);
+        Tcl_DStringAppend(dsPtr, result, (TCL_SIZE_T)rlen);
     }
 }
 
@@ -1630,7 +1630,7 @@ Import(Tcl_Interp *interp, const Tcl_DString *dsPtr, int *resultPtr)
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(resultPtr != NULL);
 
-    if (dsPtr->length < (int)sizeof(Res)) {
+    if (dsPtr->length < (TCL_SIZE_T)sizeof(Res)) {
         result = TCL_ERROR;
 
     } else {

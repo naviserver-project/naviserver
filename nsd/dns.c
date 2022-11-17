@@ -208,7 +208,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, bo
                 Ns_CacheBroadcast(cache);
             } else {
                 Ns_DStringNAppend(&ds, Ns_CacheGetValue(entry),
-                                  (int)Ns_CacheGetSize(entry));
+                                  (TCL_SIZE_T)Ns_CacheGetSize(entry));
                 success = NS_TRUE;
             }
             Ns_CacheUnlock(cache);
@@ -227,7 +227,7 @@ DnsGet(GetProc *getProc, Ns_DString *dsPtr, Ns_Cache *cache, const char *key, bo
             while (*p != '\0' && CHARTYPE(space, *p) == 0) {
                 ++p;
             }
-            Ns_DStringSetLength(&ds, (int)(p - ds.string));
+            Ns_DStringSetLength(&ds, (TCL_SIZE_T)(p - ds.string));
         }
         Ns_DStringNAppend(dsPtr, ds.string, ds.length);
     }

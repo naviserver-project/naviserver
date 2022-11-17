@@ -552,7 +552,7 @@ Ns_CacheGetValueT(const Ns_Entry *entry, const Ns_CacheTransactionStack *transac
  *
  *----------------------------------------------------------------------
  */
-int
+TCL_SIZE_T
 Ns_CacheGetNrUncommittedEntries(const Ns_Cache *cache)
 {
     const Cache *cachePtr;

@@ -1523,7 +1523,7 @@ JobThread(void *UNUSED(arg))
         /*
          * ... and execute the job.
          */
-        code = Tcl_EvalEx(interp, jobPtr->script.string, -1, 0);
+        code = Tcl_EvalEx(interp, jobPtr->script.string, TCL_INDEX_NONE, 0);
 
         Ns_MutexLock(&tp.queuelock);
         Ns_MutexLock(&queue->lock);
@@ -1929,8 +1929,7 @@ LookupQueue(Tcl_Interp *interp, const char *queueName, Queue **queuePtr,
  *----------------------------------------------------------------------
  */
 static int
-ObjvQueue(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
-          Tcl_Obj *const* objv)
+ObjvQueue(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj *const* objv)
 {
     int result;
 

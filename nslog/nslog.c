@@ -44,11 +44,11 @@ typedef struct {
     const char **requestHeaders;
     const char **responseHeaders;
     const char  *driverPattern;
+    TCL_SIZE_T   maxbackup;
     int          nrRequestHeaders;
     int          nrResponseHeaders;
     int          fd;
     unsigned int flags;
-    int          maxbackup;
     int          maxlines;
     int          curlines;
     struct NS_SOCKADDR_STORAGE  ipv4maskStruct;
@@ -193,7 +193,7 @@ Ns_ModuleInit(const char *server, const char *module)
      */
 
     logPtr->rollfmt = ns_strcopy(Ns_ConfigGetValue(path, "rollfmt"));
-    logPtr->maxbackup = Ns_ConfigIntRange(path, "maxbackup", 100, 1, INT_MAX);
+    logPtr->maxbackup = (TCL_SIZE_T)Ns_ConfigIntRange(path, "maxbackup", 100, 1, INT_MAX);
     logPtr->maxlines = Ns_ConfigIntRange(path, "maxbuffer", 0, 0, INT_MAX);
     if (Ns_ConfigBool(path, "formattedtime", NS_TRUE)) {
         logPtr->flags |= LOG_FMTTIME;
@@ -477,9 +477,9 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
             if (result == TCL_OK) {
                 Ns_MutexLock(&logPtr->lock);
                 if (objc > 2) {
-                    logPtr->maxbackup = intarg;
+                    logPtr->maxbackup = (TCL_SIZE_T)intarg;
                 } else {
-                    intarg = logPtr->maxbackup;
+                    intarg = (int)logPtr->maxbackup;
                 }
                 Ns_MutexUnlock(&logPtr->lock);
                 Tcl_SetObjResult(interp, Tcl_NewIntObj(intarg));
@@ -683,7 +683,7 @@ AppendEscaped(Tcl_DString *dsPtr, const char *toProcess)
             /*
              * Append the break-char free prefix
              */
-            Tcl_DStringAppend(dsPtr, toProcess, (int)(breakChar - toProcess));
+            Tcl_DStringAppend(dsPtr, toProcess, (TCL_SIZE_T)(breakChar - toProcess));
 
             /*
              * Escape the break-char
@@ -778,7 +778,7 @@ LogTrace(void *arg, Ns_Conn *conn)
     Log          *logPtr = arg;
     const char   *user, *p, *driverName;
     char          buffer[PIPE_BUF], *bufferPtr = NULL;
-    int           n, i;
+    int           n;
     Ns_ReturnCode status;
     size_t        bufferSize = 0u;
     Tcl_DString   ds, *dsPtr = &ds;
@@ -984,13 +984,16 @@ LogTrace(void *arg, Ns_Conn *conn)
     AppendExtHeaders(dsPtr, logPtr->requestHeaders, conn->headers);
     AppendExtHeaders(dsPtr, logPtr->responseHeaders, conn->outputheaders);
 
-    for (i = 0; i < dsPtr->length; i++) {
-        /*
-         * Quick fix to disallow terminal escape characters in the log
-         * file. See e.g. http://www.securityfocus.com/bid/37712/info
-         */
-        if (unlikely(dsPtr->string[i] == 0x1b)) {
-            dsPtr->string[i] = 7; /* bell */
+    {
+        TCL_SIZE_T l;
+        for (l = 0; l < dsPtr->length; l++) {
+            /*
+             * Quick fix to disallow terminal escape characters in the log
+             * file. See e.g. http://www.securityfocus.com/bid/37712/info
+             */
+            if (unlikely(dsPtr->string[l] == 0x1b)) {
+                dsPtr->string[l] = 7; /* bell */
+            }
         }
     }
 
@@ -1144,11 +1147,11 @@ LogClose(void *arg)
 static Ns_ReturnCode
 LogFlush(Log *logPtr, Tcl_DString *dsPtr)
 {
-    int   len = dsPtr->length;
-    char *buf = dsPtr->string;
+    TCL_SIZE_T len = dsPtr->length;
+    char      *buf = dsPtr->string;
 
     if (len > 0) {
-        if (logPtr->fd >= 0 && ns_write(logPtr->fd, buf, (size_t)len) != len) {
+        if (logPtr->fd >= 0 && ns_write(logPtr->fd, buf, (size_t)len) != (ssize_t)len) {
             Ns_Log(Error, "nslog: logging disabled: ns_write() failed: '%s'",
                    strerror(errno));
             ns_close(logPtr->fd);

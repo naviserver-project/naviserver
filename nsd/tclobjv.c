@@ -37,7 +37,7 @@ static int SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static void WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec,
-                         Tcl_Interp *interp, int objc, Tcl_Obj *const* objv);
+                         Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv);
 
 static int GetOptIndexObjvSpec(Tcl_Obj *obj, const Ns_ObjvSpec *tablePtr, int *idxPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -185,7 +185,8 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
              int offset, int objc, Tcl_Obj *const* objv)
 {
     Ns_ObjvSpec  *specPtr;
-    int           optIndex, requiredArgs = 0, remain = (objc - offset);
+    int           optIndex, requiredArgs = 0;
+    TCL_SIZE_T    remain = (TCL_SIZE_T)(objc - offset);
 
     NS_NONNULL_ASSERT(interp != NULL);
 
@@ -217,7 +218,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
     if (likely(optSpec != NULL) && likely(optSpec->key != NULL)) {
 
         while (remain > 0) {
-            Tcl_Obj *obj = objv[objc - remain];
+            Tcl_Obj *obj = objv[(TCL_SIZE_T)objc - remain];
             int      result;
 
 #ifdef NS_TCL_PRE87
@@ -247,7 +248,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
 
             --remain;
             specPtr = optSpec + optIndex;
-            result = specPtr->proc(specPtr, interp, &remain, objv + (objc - remain));
+            result = specPtr->proc(specPtr, interp, &remain, objv + ((TCL_SIZE_T)objc - remain));
 
             if (result == TCL_BREAK) {
                 break;
@@ -259,7 +260,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
     if (unlikely(argSpec == NULL)) {
         if (remain > 0) {
         badargs:
-            WrongNumArgs(optSpec, argSpec, interp, offset, objv);
+            WrongNumArgs(optSpec, argSpec, interp, (TCL_SIZE_T)offset, objv);
             return NS_ERROR;
         }
         return NS_OK;
@@ -272,7 +273,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
             }
             return NS_OK;
         }
-        if (unlikely(specPtr->proc(specPtr, interp, &remain, objv + (objc - remain)))
+        if (unlikely(specPtr->proc(specPtr, interp, &remain, objv + ((TCL_SIZE_T)objc - remain)))
             != TCL_OK) {
             return NS_ERROR;
         }
@@ -409,7 +410,7 @@ Ns_CheckTimeRange(Tcl_Interp *interp, const char *name, const Ns_ObjvTimeRange *
  *----------------------------------------------------------------------
  */
 int
-Ns_ObjvInt(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+Ns_ObjvInt(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
            Tcl_Obj *const* objv)
 {
     int result;
@@ -436,7 +437,7 @@ Ns_ObjvInt(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 }
 
 int
-Ns_ObjvUShort(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+Ns_ObjvUShort(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
               Tcl_Obj *const* objv)
 {
     int result;
@@ -470,7 +471,7 @@ Ns_ObjvUShort(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 }
 
 int
-Ns_ObjvLong(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+Ns_ObjvLong(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
             Tcl_Obj *const* objv)
 {
     int result;
@@ -497,7 +498,7 @@ Ns_ObjvLong(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 }
 
 int
-Ns_ObjvWideInt(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+Ns_ObjvWideInt(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
                Tcl_Obj *const* objv)
 {
     int result;
@@ -524,7 +525,7 @@ Ns_ObjvWideInt(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 }
 
 int
-Ns_ObjvDouble(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+Ns_ObjvDouble(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
               Tcl_Obj *const* objv)
 {
     int     result;
@@ -567,7 +568,7 @@ Ns_ObjvDouble(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  */
 
 int
-Ns_ObjvBool(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *const* objv)
+Ns_ObjvBool(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj *const* objv)
 {
     int *dest, result;
 
@@ -614,7 +615,7 @@ Ns_ObjvBool(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *const*
  */
 
 int
-Ns_ObjvString(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+Ns_ObjvString(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
               Tcl_Obj *const* objv)
 {
     int result;
@@ -656,7 +657,7 @@ Ns_ObjvString(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  */
 
 int
-Ns_ObjvEval(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+Ns_ObjvEval(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
               Tcl_Obj *const* objv)
 {
     int result;
@@ -700,7 +701,7 @@ Ns_ObjvEval(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  */
 
 int
-Ns_ObjvByteArray(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+Ns_ObjvByteArray(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
               Tcl_Obj *const* objv)
 {
     int result;
@@ -739,7 +740,7 @@ Ns_ObjvByteArray(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  */
 
 int
-Ns_ObjvObj(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+Ns_ObjvObj(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
            Tcl_Obj *const* objv)
 {
     int result;
@@ -779,7 +780,7 @@ Ns_ObjvObj(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  */
 
 int
-Ns_ObjvTime(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+Ns_ObjvTime(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
             Tcl_Obj *const* objv)
 {
     int result;
@@ -831,14 +832,14 @@ NsTclInitMemUnitType(void)
 static void
 UpdateStringOfMemUnit(Tcl_Obj *objPtr)
 {
-    long     memUnit;
-    int      len;
-    char     buf[(TCL_INTEGER_SPACE) + 1];
+    long       memUnit;
+    TCL_SIZE_T len;
+    char       buf[(TCL_INTEGER_SPACE) + 1];
 
     NS_NONNULL_ASSERT(objPtr != NULL);
 
     memUnit = PTR2INT((void *) &objPtr->internalRep);
-    len = ns_uint64toa(buf, (uint64_t)memUnit);
+    len = (TCL_SIZE_T)ns_uint64toa(buf, (uint64_t)memUnit);
     Ns_TclSetStringRep(objPtr, buf, len);
 }
 
@@ -956,7 +957,7 @@ Ns_TclGetMemUnitFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_WideInt *memUni
  */
 
 int
-Ns_ObjvMemUnit(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+Ns_ObjvMemUnit(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
             Tcl_Obj *const* objv)
 {
     int result;
@@ -1002,7 +1003,7 @@ Ns_ObjvMemUnit(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  */
 
 int
-Ns_ObjvSet(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+Ns_ObjvSet(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
             Tcl_Obj *const* objv)
 {
     int result;
@@ -1045,7 +1046,7 @@ Ns_ObjvSet(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  */
 
 int
-Ns_ObjvIndex(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+Ns_ObjvIndex(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
              Tcl_Obj *const* objv)
 {
     const Ns_ObjvTable *tablePtr;
@@ -1093,7 +1094,7 @@ Ns_ObjvIndex(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
  */
 
 int
-Ns_ObjvFlags(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
+Ns_ObjvFlags(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
              Tcl_Obj *const* objv)
 {
     unsigned int       *dest;
@@ -1160,7 +1161,7 @@ Ns_ObjvFlags(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr,
 
 int
 Ns_ObjvBreak(Ns_ObjvSpec *UNUSED(spec), Tcl_Interp *UNUSED(interp),
-             int *UNUSED(objcPtr), Tcl_Obj *const* UNUSED(objv))
+             TCL_SIZE_T *UNUSED(objcPtr), Tcl_Obj *const* UNUSED(objv))
 {
     return TCL_BREAK;
 }
@@ -1185,11 +1186,11 @@ Ns_ObjvBreak(Ns_ObjvSpec *UNUSED(spec), Tcl_Interp *UNUSED(interp),
 
 int
 Ns_ObjvArgs(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp),
-            int *objcPtr, Tcl_Obj *const* UNUSED(objv))
+            TCL_SIZE_T *objcPtr, Tcl_Obj *const* UNUSED(objv))
 {
     NS_NONNULL_ASSERT(spec != NULL);
 
-    *((int *) spec->dest) = *objcPtr;
+    *((TCL_SIZE_T *) spec->dest) = *(TCL_SIZE_T *)objcPtr;
     *objcPtr = 0;
 
     return TCL_OK;
@@ -1213,7 +1214,7 @@ Ns_ObjvArgs(Ns_ObjvSpec *spec, Tcl_Interp *UNUSED(interp),
  */
 
 int
-Ns_ObjvServer(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *const* objv)
+Ns_ObjvServer(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj *const* objv)
 {
     NsServer **dest;
     int        result = TCL_OK;
@@ -1639,7 +1640,7 @@ DupSpec(Tcl_Obj *srcObj, Tcl_Obj *dupObj)
  */
 
 static int
-ObjvTcl(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *const* objv)
+ObjvTcl(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj *const* objv)
 {
     int result;
 
@@ -1676,7 +1677,7 @@ ObjvTcl(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *const* obj
  */
 
 static int
-ObjvTclArgs(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *const* objv)
+ObjvTclArgs(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj *const* objv)
 {
     Tcl_Obj  *listObj;
     int       result;
@@ -1740,7 +1741,7 @@ SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
         value++;
         len -= 2u;
 
-        result = Tcl_EvalEx(interp, value, (int)len, 0);
+        result = Tcl_EvalEx(interp, value, (TCL_SIZE_T)len, 0);
         if (result == TCL_OK) {
             valueObj = Tcl_GetObjResult(interp);
         }
@@ -1791,7 +1792,7 @@ static void AppendRange(Ns_DString *dsPtr, const Ns_ObjvValueRange *r)
 
 static void
 WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
-             int objc, Tcl_Obj *const* objv)
+             TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const Ns_ObjvSpec *specPtr;
     Ns_DString         ds;

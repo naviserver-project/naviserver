@@ -240,7 +240,7 @@ NormalizePath(Ns_DString *dsPtr, const char *path, bool url)
 
             slash = strrchr(dsPtr->string, INTCHAR('/'));
             if (slash != NULL) {
-              Ns_DStringSetLength(dsPtr, (int)(slash - dsPtr->string));
+                Ns_DStringSetLength(dsPtr, (TCL_SIZE_T)(slash - dsPtr->string));
             }
         } else if (part[0] != '\0' &&
                (part[0] != '.' || part[1] != '\0')) {
@@ -819,7 +819,8 @@ static int
 PathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, char cmd)
 {
     char       *host = NULL;
-    int         npaths = 0, result = TCL_OK;
+    TCL_SIZE_T  npaths = 0;
+    int         result = TCL_OK;
     Ns_ObjvSpec opts[] = {
         {"-host", Ns_ObjvString, &host, NULL},
         {"--",    Ns_ObjvBreak,  NULL,  NULL},
@@ -856,7 +857,7 @@ PathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* 
             } else {
                 (void) ServerRoot(&ds, servPtr, host);
             }
-            for (i = objc - npaths; i < objc; ++i) {
+            for (i = objc - (int)npaths; i < objc; ++i) {
                 Ns_MakePath(&ds, Tcl_GetString(objv[i]), (char *)0L);
             }
             Tcl_DStringResult(interp, &ds);
@@ -901,7 +902,7 @@ NsTclServerRootProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int
         Ns_TclCallback *cbPtr;
 
         cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclServerRoot, objv[1],
-                                  objc - 2, objv + 2);
+                                  (TCL_SIZE_T)(objc - 2), objv + 2);
         if (unlikely(Ns_SetServerRootProc(NsTclServerRoot, cbPtr) != NS_OK)) {
             result = TCL_ERROR;
         }
@@ -959,8 +960,8 @@ NsTclServerRoot(Ns_DString *dest, const char *host, const void *arg)
 static char *
 MakePath(Ns_DString *dest, va_list *pap)
 {
-    char *s;
-    int len;
+    char      *s;
+    TCL_SIZE_T len;
 
     NS_NONNULL_ASSERT(dest != NULL);
 

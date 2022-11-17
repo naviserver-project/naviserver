@@ -66,7 +66,7 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
         const char *value;
         bool        done = NS_FALSE;
         char       *keyString;
-        int         keyLength;
+        TCL_SIZE_T  keyLength;
 
         if (minValue > LLONG_MIN || maxValue < LLONG_MAX) {
             isInt = 1;
@@ -148,7 +148,7 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
                 /* make setting queryable */
                 if (set != NULL) {
-                    int         defLength;
+                    TCL_SIZE_T  defLength;
                     const char *defString = Tcl_GetStringFromObj(defObj, &defLength);
 
                     Ns_SetUpdateSz(set, keyString, keyLength, defString, defLength);

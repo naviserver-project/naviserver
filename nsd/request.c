@@ -209,7 +209,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
      * Make a copy of the line to chop up. Make sure it isn't blank.
      */
 
-    Ns_DStringNAppend(&ds, line, (int)len);
+    Ns_DStringNAppend(&ds, line, (TCL_SIZE_T)len);
     l = Ns_StrTrim(ds.string);
     if (*l == '\0') {
         goto done;
@@ -588,7 +588,7 @@ SetUrl(Ns_Request *request, char *url)
          */
         Tcl_ListObjLength(NULL, listPtr, &request->urlc);
         request->urlv = ns_strdup(Tcl_GetString(listPtr));
-        request->urlv_len = (int)strlen(request->urlv);
+        request->urlv_len = (TCL_SIZE_T)strlen(request->urlv);
 
         Tcl_DecrRefCount(listPtr);
     }
@@ -680,7 +680,7 @@ Ns_ParseHeader(Ns_Set *set, const char *line, const char *prefix, Ns_HeaderCaseD
             for (value = sep + 1; (*value != '\0') && CHARTYPE(space, *value) != 0; value++) {
                 ;
             }
-            idx = Ns_SetPutSz(set, line, sep-line, value, TCL_INDEX_NONE);
+            idx = Ns_SetPutSz(set, line, (TCL_SIZE_T)(sep - line), value, TCL_INDEX_NONE);
             key = Ns_SetKey(set, idx);
             if (disp == ToLower) {
                 while (*key != '\0') {

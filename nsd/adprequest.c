@@ -479,7 +479,8 @@ NsAdpFlush(NsInterp *itPtr, bool doStream)
 {
     const Ns_Conn *conn;
     Tcl_Interp    *interp;
-    int            len, result = TCL_ERROR;
+    int            result = TCL_ERROR;
+    TCL_SIZE_T     len;
     unsigned int   flags;
     char          *buf;
 
@@ -547,8 +548,8 @@ NsAdpFlush(NsInterp *itPtr, bool doStream)
     } else {
         if (itPtr->adp.chan != NULL) {
             while (len > 0) {
-                int wrote = Tcl_Write(itPtr->adp.chan, buf, len);
-                if (wrote < 0) {
+                TCL_SIZE_T wrote = Tcl_Write(itPtr->adp.chan, buf, len);
+                if (wrote == TCL_IO_FAILURE) {
                     Ns_TclPrintfResult(interp, "write failed: %s", Tcl_PosixError(interp));
                     break;
                 }

@@ -76,7 +76,7 @@ Ns_FetchPage(Ns_DString *dsPtr, const char *url, const char *server)
     Ns_DStringFree(&ds);
     if (chan != NULL) {
         char buf[1024];
-        int  nread;
+        TCL_SIZE_T nread;
 
         while ((nread = Tcl_Read(chan, buf, (int)sizeof(buf))) > 0) {
             Ns_DStringNAppend(dsPtr, buf, nread);
@@ -217,7 +217,7 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
      */
 
     do {
-      Ns_DStringNAppend(dsPtr, s.ptr, (int)s.cnt);
+        Ns_DStringNAppend(dsPtr, s.ptr, (TCL_SIZE_T)s.cnt);
     } while (FillBuf(&s));
 
     if (s.error == 0) {
@@ -395,13 +395,13 @@ GetLine(Stream *sPtr, Ns_DString *dsPtr)
                 *eol++ = '\0';
                 n = (size_t)(eol - sPtr->ptr);
             }
-            Ns_DStringNAppend(dsPtr, sPtr->ptr, (int)n - 1);
+            Ns_DStringNAppend(dsPtr, sPtr->ptr, (TCL_SIZE_T)n - 1);
             sPtr->ptr += n;
             sPtr->cnt -= n;
             if (eol != NULL) {
                 n = (size_t)dsPtr->length;
                 if (n > 0u && dsPtr->string[n - 1u] == '\r') {
-                    Ns_DStringSetLength(dsPtr, (int)n - 1);
+                    Ns_DStringSetLength(dsPtr, (TCL_SIZE_T)n - 1);
                 }
                 success = NS_TRUE;
                 break;

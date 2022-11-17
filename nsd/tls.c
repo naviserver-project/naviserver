@@ -629,9 +629,9 @@ OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
         Tcl_DString outputBuffer;
 
         Tcl_DStringInit(&outputBuffer);
-        Tcl_DStringSetLength(&outputBuffer, pserial->length*2 + 1);
+        Tcl_DStringSetLength(&outputBuffer, (TCL_SIZE_T)(pserial->length*2 + 1));
 
-        Ns_HexString(pserial->data, outputBuffer.string, pserial->length, NS_TRUE);
+        Ns_HexString(pserial->data, outputBuffer.string, (TCL_SIZE_T)pserial->length, NS_TRUE);
         /*
          * Check for the "logs" directory below NaviServer home.
          */
@@ -840,15 +840,15 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
         Ns_Log(Error, "cert_status: invalid OCSP request size");
 
     } else {
-        Tcl_DString dsBinary, dsBase64, dsCMD;
+        Tcl_DString    dsBinary, dsBase64, dsCMD;
         unsigned char *ppout;
-        size_t base64len;
+        TCL_SIZE_T     base64len;
 
         Tcl_DStringInit(&dsBinary);
         Tcl_DStringInit(&dsBase64);
         Tcl_DStringInit(&dsCMD);
 
-        Tcl_DStringSetLength(&dsBinary, derLength + 1);
+        Tcl_DStringSetLength(&dsBinary, (TCL_SIZE_T)derLength + 1);
         ppout = (unsigned char *)dsBinary.string;
         derLength = i2d_OCSP_REQUEST(req, &ppout);
 
@@ -856,8 +856,8 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
          * Append DER encoding of the OCSP request via URL-encoding of base64
          * encoding, as defined in https://tools.ietf.org/html/rfc6960#appendix-A
          */
-        base64len = MAX(4, ((size_t)derLength * 4/3) + 4);
-        Tcl_DStringSetLength(&dsBase64, (int)base64len);
+        base64len = MAX(4, ((TCL_SIZE_T)derLength * 4/3) + 4);
+        Tcl_DStringSetLength(&dsBase64, base64len);
         (void) Ns_Base64Encode((unsigned char *)dsBinary.string,
                                (size_t)derLength, dsBase64.string,
                                0, 0);

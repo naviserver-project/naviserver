@@ -256,13 +256,13 @@ void
 Ns_LogDeprecated(Tcl_Obj *const* objv, int objc, const char *alternative, const char *explanation)
 {
     Tcl_DString ds;
-    int i;
+    int         i;
 
     Tcl_DStringInit(&ds);
     Tcl_DStringAppend(&ds, "'", 1);
     for (i = 0; i < objc; i++) {
         const char *s;
-        int len;
+        TCL_SIZE_T  len;
 
         s = Tcl_GetStringFromObj(objv[i], &len);
         Tcl_DStringAppend(&ds, s, len);
@@ -336,7 +336,7 @@ InsertFreshNewline(Tcl_DString *dsPtr, const char *prefixString, size_t prefixLe
         dsPtr->string[*outputPosPtr] = '\n';
         (*outputPosPtr)++;
     } else {
-        Tcl_DStringSetLength(dsPtr, dsPtr->length + (int)prefixLength);
+        Tcl_DStringSetLength(dsPtr, dsPtr->length + (TCL_SIZE_T)prefixLength);
         dsPtr->string[*outputPosPtr] = '\n';
         (*outputPosPtr)++;
         memcpy(&dsPtr->string[*outputPosPtr], prefixString, prefixLength);
@@ -403,7 +403,7 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
          * Set the length of the Tcl_DString to the same size as the input
          * string plus for every linebreak+1 the prefixString.
          */
-        Tcl_DStringSetLength(dsPtr, (int)(textLength + nrPrefixes * prefixLength));
+        Tcl_DStringSetLength(dsPtr, (TCL_SIZE_T)(textLength + nrPrefixes * prefixLength));
 
         while (inputPos < textLength && !done) {
             size_t processedPos;
@@ -576,7 +576,7 @@ NsTclTrimObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
                 } else {
                     length = (endOfString - j);
                 }
-                Tcl_DStringAppend(dsPtr, j, (int)length);
+                Tcl_DStringAppend(dsPtr, j, (TCL_SIZE_T)length);
 
                 p = j + length;
             }
@@ -605,7 +605,7 @@ NsTclTrimObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
                 } else {
                     length = (endOfString - j);
                 }
-                Tcl_DStringAppend(dsPtr, j, (int)length);
+                Tcl_DStringAppend(dsPtr, j, (TCL_SIZE_T)length);
 
                 p = j + length;
             }
@@ -765,7 +765,7 @@ Base64EncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
     } else {
         char                *buffer;
         size_t               size;
-        int                  nbytes = 0;
+        TCL_SIZE_T           nbytes = 0;
         Tcl_DString          ds;
         const unsigned char *bytes;
 
@@ -842,13 +842,13 @@ Base64DecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         // hexPrint("decoded", decoded, size);
 
         if (isBinary) {
-            Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, (int)size));
+            Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, (TCL_SIZE_T)size));
 
         } else {
             Tcl_DString ds, *dsPtr = &ds;
 
             Tcl_DStringInit(dsPtr);
-            (void)Tcl_ExternalToUtfDString(NULL, (char *)decoded, (int)size, dsPtr);
+            (void)Tcl_ExternalToUtfDString(NULL, (char *)decoded, (TCL_SIZE_T)size, dsPtr);
             Tcl_DStringResult(interp, dsPtr);
         }
 
@@ -1365,9 +1365,9 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
  *----------------------------------------------------------------------
  */
 char *
-Ns_HexString(const unsigned char *octets, char *outputBuffer, int size, bool isUpper)
+Ns_HexString(const unsigned char *octets, char *outputBuffer, TCL_SIZE_T size, bool isUpper)
 {
-    int i;
+    TCL_SIZE_T i;
     static const char hexCharsUpper[] = "0123456789ABCDEF";
     static const char hexCharsLower[] = "0123456789abcdef";
 
@@ -1430,7 +1430,7 @@ NsTclSHA1ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
         unsigned char  digest[20];
         char           digestChars[41];
         Ns_CtxSHA1     ctx;
-        int            nbytes;
+        TCL_SIZE_T     nbytes;
         const unsigned char *bytes;
         Tcl_DString    ds;
 
@@ -1872,7 +1872,7 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
         Ns_CtxMD5            ctx;
         unsigned char        digest[16];
         char                 digestChars[33];
-        int                  length;
+        TCL_SIZE_T           length;
         Tcl_DString          ds;
         const unsigned char *str;
 
@@ -2180,7 +2180,7 @@ NsTclValidUtf8ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
         result = TCL_ERROR;
     } else {
         Tcl_DString          stringDS, errorDS;
-        int                  stringLength;
+        TCL_SIZE_T           stringLength;
         const unsigned char *bytes;
         bool                 isValid;
 
@@ -2341,7 +2341,8 @@ NsTclStrcollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
 
         if (result == TCL_OK) {
             Tcl_DString ds1, ds2, *ds1Ptr = &ds1, *ds2Ptr = &ds2;
-            int         length1, length2, comparisonValue;
+            TCL_SIZE_T  length1, length2;
+            int         comparisonValue;
             const char *string1, *string2;
 
             Tcl_DStringInit(ds1Ptr);

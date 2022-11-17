@@ -917,7 +917,7 @@ void NsDriverMapVirtualServers(void)
                 if (portStart == NULL) {
                     Tcl_DString hostDString;
                     size_t      pNum;
-                    int         prefixLength;
+                    TCL_SIZE_T  prefixLength;
                     /*
                      * The provided host entry does NOT contain a port.
                      *
@@ -2977,7 +2977,7 @@ RequestFree(Sock *sockPtr)
         if (reqPtr->savedChar != '\0') {
             reqPtr->buffer.string[0] = reqPtr->savedChar;
         }
-        Tcl_DStringSetLength(&reqPtr->buffer, (int)leftover);
+        Tcl_DStringSetLength(&reqPtr->buffer, (TCL_SIZE_T)leftover);
         LogBuffer(DriverDebug, "KEEP BUFFER", reqPtr->buffer.string, leftover);
         reqPtr->leftover = leftover;
     } else {
@@ -3935,7 +3935,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
         buf.iov_base = tbuf;
         buf.iov_len = MIN(nread, sizeof(tbuf));
     } else {
-        Tcl_DStringSetLength(bufPtr, (int)(buflen + nread));
+        Tcl_DStringSetLength(bufPtr, (TCL_SIZE_T)(buflen + nread));
         buf.iov_base = bufPtr->string + reqPtr->woff;
         buf.iov_len = nread;
     }
@@ -3971,7 +3971,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
         case NS_SOCK_EXCEPTION:
             return SOCK_READERROR;
         case NS_SOCK_AGAIN:
-            Tcl_DStringSetLength(bufPtr, (int)buflen);
+            Tcl_DStringSetLength(bufPtr, (TCL_SIZE_T)buflen);
             return SOCK_MORE;
         case NS_SOCK_DONE:
             return SOCK_CLOSE;
@@ -3991,7 +3991,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
              * more fragile. We keep there for old-style drivers.
              */
             if (n < 0) {
-                Tcl_DStringSetLength(bufPtr, (int)buflen);
+                Tcl_DStringSetLength(bufPtr, (TCL_SIZE_T)buflen);
                 /*
                  * The driver returns -1 when the peer closed the connection, but
                  * clears the errno such we can distinguish from error conditions.
@@ -4003,7 +4003,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
             }
 
             if (n == 0) {
-                Tcl_DStringSetLength(bufPtr, (int)buflen);
+                Tcl_DStringSetLength(bufPtr, (TCL_SIZE_T)buflen);
                 return SOCK_MORE;
             }
             break;
@@ -4016,7 +4016,7 @@ SockRead(Sock *sockPtr, int spooler, const Ns_Time *timePtr)
             return SOCK_WRITEERROR;
         }
     } else {
-        Tcl_DStringSetLength(bufPtr, (int)(buflen + (size_t)n));
+        Tcl_DStringSetLength(bufPtr, (TCL_SIZE_T)(buflen + (size_t)n));
     }
 
     reqPtr->woff  += (size_t)n;

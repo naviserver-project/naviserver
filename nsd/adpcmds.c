@@ -57,7 +57,7 @@ static Tcl_ObjCmdProc AdpCtlBufSizeObjCmd;
  */
 
 int
-Ns_AdpAppend(Tcl_Interp *interp, const char *buf, int len)
+Ns_AdpAppend(Tcl_Interp *interp, const char *buf, TCL_SIZE_T len)
 {
     NsInterp *itPtr;
     int       status;
@@ -74,7 +74,7 @@ Ns_AdpAppend(Tcl_Interp *interp, const char *buf, int len)
 }
 
 int
-NsAdpAppend(NsInterp *itPtr, const char *buf, int len)
+NsAdpAppend(NsInterp *itPtr, const char *buf, TCL_SIZE_T len)
 {
     Tcl_DString *bufPtr;
     int          status = TCL_OK;
@@ -359,7 +359,8 @@ int
 NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     char          *fileName = NULL;
-    int            result, tclScript = 0, nocache = 0, nargs = 0;
+    int            result, tclScript = 0, nocache = 0;
+    TCL_SIZE_T     nargs = 0;
     Ns_Time       *ttlPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
@@ -381,8 +382,8 @@ NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
         unsigned int   flags;
         Tcl_DString   *dsPtr;
 
-        objv = objv + (objc - nargs);
-        objc = nargs;
+        objv = objv + (objc - (int)nargs);
+        objc = (int)nargs;
 
         flags = itPtr->adp.flags;
         if (nocache != 0) {
@@ -444,7 +445,8 @@ NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_O
 int
 NsTclAdpParseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int         result, nargs = 0;
+    int         result;
+    TCL_SIZE_T  nargs = 0;
     int         asFile = (int)NS_FALSE, safe = (int)NS_FALSE, asString = (int)NS_FALSE, tclScript = (int)NS_FALSE;
     char       *cwd = NULL;
     Ns_ObjvSpec opts[] = {
@@ -464,8 +466,8 @@ NsTclAdpParseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj
         result = TCL_ERROR;
 
     } else {
-        objv = objv + (objc - nargs);
-        objc = nargs;
+        objv = objv + (objc - (int)nargs);
+        objc = (int)nargs;
 
         if (asString && asFile) {
             Ns_TclPrintfResult(interp, "specify either '-string' or '-file', but not both.");
@@ -553,7 +555,7 @@ NsTclAdpAppendObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
         int i;
 
         for (i = 1; i < objc; ++i) {
-            int         len;
+            TCL_SIZE_T  len;
             const char *s = Tcl_GetStringFromObj(objv[i], &len);
 
             if (NsAdpAppend(itPtr, s, len) != TCL_OK) {
@@ -570,7 +572,8 @@ NsTclAdpPutsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 {
     NsInterp   *itPtr = clientData;
     char       *chars = NULL;
-    int         length = 0, nonewline = 0, result = TCL_OK;
+    int         nonewline = 0, result = TCL_OK;
+    TCL_SIZE_T  length = 0;
     Ns_ObjvSpec opts[] = {
         {"-nonewline", Ns_ObjvBool,  &nonewline, INT2PTR(NS_TRUE)},
         {"--",         Ns_ObjvBreak, NULL,       NULL},
@@ -750,7 +753,8 @@ int
 NsTclAdpTruncObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Tcl_DString      *dsPtr;
-    int               length = 0, result = TCL_OK;
+    int               result = TCL_OK;
+    TCL_SIZE_T        length = 0;
     Ns_ObjvSpec  args[] = {
         {"?length",  Ns_ObjvInt, &length, &posintRange0},
         {NULL, NULL, NULL, NULL}
@@ -933,7 +937,7 @@ NsTclAdpArgvObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 
     } else {
         if (objc == 1) {
-            Tcl_SetListObj(Tcl_GetObjResult(interp), (int)framePtr->objc, framePtr->objv);
+            Tcl_SetListObj(Tcl_GetObjResult(interp), (TCL_SIZE_T)framePtr->objc, framePtr->objv);
         } else {
             if ((idx + 1) <= (int)framePtr->objc) {
                 Tcl_SetObjResult(interp, framePtr->objv[idx]);

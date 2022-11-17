@@ -2604,7 +2604,7 @@ MkSeq(Ns_DString *dsPtr, const char *method, const char *url)
     NS_NONNULL_ASSERT(method != NULL);
     NS_NONNULL_ASSERT(url != NULL);
 
-    Ns_DStringNAppend(dsPtr, method, (int)NS_strlen(method) + 1);
+    Ns_DStringNAppend(dsPtr, method, (TCL_SIZE_T)NS_strlen(method) + 1);
 
     /*
      * Loop over each directory in the URL and turn the slashes
@@ -2622,7 +2622,7 @@ MkSeq(Ns_DString *dsPtr, const char *method, const char *url)
                 done = NS_TRUE;
             }
 
-            Ns_DStringNAppend(dsPtr, url, (int)l++);
+            Ns_DStringNAppend(dsPtr, url, (TCL_SIZE_T)l++);
             Ns_DStringNAppend(dsPtr, "\0", 1);
             url += l;
         } else {

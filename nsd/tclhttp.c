@@ -326,8 +326,8 @@ NsInitHttp(NsServer *servPtr)
         }
         Tcl_DStringFree(&defaultLogFileName);
         servPtr->httpclient.logRollfmt = ns_strcopy(Ns_ConfigGetValue(path, "logrollfmt"));
-        servPtr->httpclient.logMaxbackup = Ns_ConfigIntRange(path, "logmaxbackup",
-                                                             100, 1, INT_MAX);
+        servPtr->httpclient.logMaxbackup = (TCL_SIZE_T)Ns_ConfigIntRange(path, "logmaxbackup",
+                                                                         100, 1, INT_MAX);
 
         HttpClientLogOpen(servPtr);
 
@@ -1940,7 +1940,7 @@ HttpQueue(
             } else {
                 Tcl_HashEntry *hPtr = NULL;
                 uint32_t       ii;
-                int            len;
+                TCL_SIZE_T     len;
                 char           buf[TCL_INTEGER_SPACE + 4];
 
                 /*
@@ -1950,7 +1950,7 @@ HttpQueue(
                 for (ii = (uint32_t)itPtr->httpRequests.numEntries; ; ii++) {
                     int new = 0;
 
-                    len = ns_uint32toa(&buf[4], ii);
+                    len = (TCL_SIZE_T)ns_uint32toa(&buf[4], ii);
                     hPtr = Tcl_CreateHashEntry(&itPtr->httpRequests, buf, &new);
                     if (new != 0) {
                         break;
@@ -2096,9 +2096,9 @@ HttpGetResult(
 #if defined(TCLHTTP_USE_EXTERNALTOUTF)
         Tcl_Encoding encoding = NULL;
 #endif
-        bool   binary = NS_FALSE;
-        int    cSize;
-        char  *cData;
+        bool       binary = NS_FALSE;
+        TCL_SIZE_T cSize;
+        char      *cData;
 
         /*
          * Determine type (binary/text) of the received data
@@ -2149,7 +2149,7 @@ HttpGetResult(
         }
 
         cData = httpPtr->ds.string + httpPtr->replyHeaderSize;
-        cSize = (int)httpPtr->replyBodySize;
+        cSize = (TCL_SIZE_T)httpPtr->replyBodySize;
 
         if (binary == NS_TRUE)  {
             replyBodyObj = Tcl_NewByteArrayObj((unsigned char *)cData, cSize);
@@ -2281,14 +2281,14 @@ HttpCheckHeader(
 
     eoh = strstr(httpPtr->ds.string, "\r\n\r\n");
     if (eoh != NULL) {
-        httpPtr->replyHeaderSize = (int)(eoh - httpPtr->ds.string) + 4;
+        httpPtr->replyHeaderSize = (TCL_SIZE_T)(eoh - httpPtr->ds.string) + 4;
         *(eoh + 2) = '\0';
     } else {
         eoh = strstr(httpPtr->ds.string, "\n\n");
         if (eoh != NULL) {
             Ns_Log(Warning, "HttpCheckHeader: client reply contains"
                    " LF instead of CR/LF trailer which should not happen");
-            httpPtr->replyHeaderSize = (int)(eoh - httpPtr->ds.string) + 2;
+            httpPtr->replyHeaderSize = (TCL_SIZE_T)(eoh - httpPtr->ds.string) + 2;
             *(eoh + 1) = '\0';
         }
     }
@@ -3067,9 +3067,9 @@ HttpConnect(
         }
 
         if (bodyObj != NULL) {
-            int   bodyLen = 0;
-            char *bodyStr = NULL;
-            bool  binary;
+            TCL_SIZE_T bodyLen = 0;
+            char      *bodyStr = NULL;
+            bool       binary;
 
             /*
              * Append in-memory body to the requests string
@@ -3096,7 +3096,7 @@ HttpConnect(
             }
 
             httpPtr->bodySize = (size_t)bodyLen;
-            Ns_DStringPrintf(dsPtr, "%s: %d\r\n\r\n", contentLengthHeader,
+            Ns_DStringPrintf(dsPtr, "%s: %" PRITcl_Size "\r\n\r\n", contentLengthHeader,
                              bodyLen);
 
             httpPtr->requestHeaderSize = (size_t)dsPtr->length;
@@ -3183,12 +3183,12 @@ HttpAppendRawBuffer(
         if (httpPtr->spoolFd != NS_INVALID_FD) {
             written = ns_write(httpPtr->spoolFd, buffer, size);
         } else if (httpPtr->spoolChan != NULL) {
-            written = (ssize_t)Tcl_Write(httpPtr->spoolChan, buffer, (int)size);
+            written = (ssize_t)Tcl_Write(httpPtr->spoolChan, buffer, (TCL_SIZE_T)size);
         } else {
             written = -1;
         }
     } else {
-        Tcl_DStringAppend(&httpPtr->ds, buffer, (int)size);
+        Tcl_DStringAppend(&httpPtr->ds, buffer, (TCL_SIZE_T)size);
         written = (ssize_t)size;
     }
 
@@ -3914,7 +3914,7 @@ HttpProc(
                 /*
                  * Read remaining body data in chunks
                  */
-                Tcl_DStringSetLength(&httpPtr->ds, (int)toRead);
+                Tcl_DStringSetLength(&httpPtr->ds, (TCL_SIZE_T)toRead);
                 httpPtr->next = httpPtr->ds.string;
                 if (toRead > httpPtr->bodySize) {
                     toRead = httpPtr->bodySize; /* At end of the body! */
@@ -3924,7 +3924,7 @@ HttpProc(
                 } else if (httpPtr->bodyFileFd != NS_INVALID_FD) {
                     n = ns_read(httpPtr->bodyFileFd, httpPtr->next, toRead);
                 } else if (httpPtr->bodyChan != NULL) {
-                    n = Tcl_Read(httpPtr->bodyChan, httpPtr->next, (int)toRead);
+                    n = (ssize_t)Tcl_Read(httpPtr->bodyChan, httpPtr->next, (TCL_SIZE_T)toRead);
                 } else {
                     n = -1; /* Here we could read only from file or chan! */
                 }
@@ -3936,7 +3936,7 @@ HttpProc(
                      * we are at the EOF (we are reading in blocking mode!).
                      */
                     onEof = NS_TRUE;
-                    Tcl_DStringSetLength(&httpPtr->ds, (int)n);
+                    Tcl_DStringSetLength(&httpPtr->ds, (TCL_SIZE_T)n);
                 }
 
                 if (n > 0) {
@@ -3953,7 +3953,7 @@ HttpProc(
                 /*
                  * The buffer has still some content left
                  */
-                n = httpPtr->ds.length - (httpPtr->next - httpPtr->ds.string);
+                n = (ssize_t)(httpPtr->ds.length - (TCL_SIZE_T)(httpPtr->next - httpPtr->ds.string));
 
                 Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE"
                        " remaining buffersize:%" PRIdz, n);

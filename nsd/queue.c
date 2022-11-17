@@ -1077,8 +1077,8 @@ ServerMapObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
             resultObj = Tcl_NewListObj(0, NULL);
 
             for (i = 0; i < oc; i++) {
-                Tcl_Obj *elemObj = ov[i];
-                int      length;
+                Tcl_Obj   *elemObj = ov[i];
+                TCL_SIZE_T length;
 
                 /*
                  * Get the last element, which is the pool, and compare it
@@ -1420,7 +1420,8 @@ int
 NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = clientData;
-    int             subcmd = 0, result = TCL_OK, nargs = 0;
+    int             subcmd = 0, result = TCL_OK;
+    TCL_SIZE_T      nargs = 0;
     NsServer       *servPtr = NULL;
     ConnPool       *poolPtr;
     char           *pool = NULL, *optArg = NULL;
@@ -1604,31 +1605,31 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         break;
 
     case SMapIdx:
-        result = ServerMapObjCmd(clientData, interp, objc, objv, servPtr, poolPtr, nargs);
+        result = ServerMapObjCmd(clientData, interp, objc, objv, servPtr, poolPtr, (int)nargs);
         break;
 
     case SMappedIdx:
-        result = ServerMappedObjCmd(clientData, interp, objc, objv, servPtr, nargs);
+        result = ServerMappedObjCmd(clientData, interp, objc, objv, servPtr, (int)nargs);
         break;
 
     case SUnmapIdx:
-        result = ServerUnmapObjCmd(clientData, interp, objc, objv, servPtr, nargs);
+        result = ServerUnmapObjCmd(clientData, interp, objc, objv, servPtr, (int)nargs);
         break;
 
     case SMaxthreadsIdx:
-        result = ServerMaxThreadsObjCmd(clientData, interp, objc, objv, poolPtr, nargs);
+        result = ServerMaxThreadsObjCmd(clientData, interp, objc, objv, poolPtr, (int)nargs);
         break;
 
     case SPoolRateLimitIdx:
-        result = ServerPoolRateLimitObjCmd(clientData, interp, objc, objv, poolPtr, nargs);
+        result = ServerPoolRateLimitObjCmd(clientData, interp, objc, objv, poolPtr, (int)nargs);
         break;
 
     case SConnectionRateLimitIdx:
-        result = ServerConnectionRateLimitObjCmd(clientData, interp, objc, objv, poolPtr, nargs);
+        result = ServerConnectionRateLimitObjCmd(clientData, interp, objc, objv, poolPtr, (int)nargs);
         break;
 
     case SMinthreadsIdx:
-        result = ServerMinThreadsObjCmd(clientData, interp, objc, objv, poolPtr, nargs);
+        result = ServerMinThreadsObjCmd(clientData, interp, objc, objv, poolPtr, (int)nargs);
         break;
 
     case SConnectionsIdx:
@@ -1674,7 +1675,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
     case SActiveIdx:
         Tcl_DStringInit(dsPtr);
-        result = ServerListActiveCmd(dsPtr, interp, objc, objv, poolPtr, nargs);
+        result = ServerListActiveCmd(dsPtr, interp, objc, objv, poolPtr, (int)nargs);
         if (likely(result == NS_OK)) {
             Tcl_DStringResult(interp, dsPtr);
         } else {
@@ -1684,7 +1685,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
     case SQueuedIdx:
         Tcl_DStringInit(dsPtr);
-        result = ServerListQueuedCmd(dsPtr, interp, objc, objv, poolPtr, nargs);
+        result = ServerListQueuedCmd(dsPtr, interp, objc, objv, poolPtr, (int)nargs);
         if (likely(result == NS_OK)) {
             Tcl_DStringResult(interp, dsPtr);
         } else {
@@ -1694,7 +1695,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
     case SAllIdx:
         Tcl_DStringInit(dsPtr);
-        result = ServerListAllCmd(dsPtr, interp, objc, objv, poolPtr, nargs);
+        result = ServerListAllCmd(dsPtr, interp, objc, objv, poolPtr, (int)nargs);
         if (likely(result == NS_OK)) {
             Tcl_DStringResult(interp, dsPtr);
         } else {

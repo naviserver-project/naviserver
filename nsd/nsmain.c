@@ -23,8 +23,8 @@
  */
 
 typedef struct Args {
-    char **argv;
-    int    argc;
+    char     **argv;
+    TCL_SIZE_T argc;
 } Args;
 
 /*
@@ -1326,7 +1326,7 @@ MakePath(const char *file)
             /*
              * Make sure we have valid path on all platforms
              */
-            obj = Tcl_NewStringObj(nsconf.nsd, (int)(str - nsconf.nsd));
+            obj = Tcl_NewStringObj(nsconf.nsd, (TCL_SIZE_T)(str - nsconf.nsd));
             Tcl_AppendStringsToObj(obj, "/", file, (char *)0L);
 
             Tcl_IncrRefCount(obj);

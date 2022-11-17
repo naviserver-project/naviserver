@@ -195,23 +195,23 @@ EncodedObj(unsigned char *octets, size_t octectLength,
 
     switch (encoding) {
     case RESULT_ENCODING_BINARY:
-        resultObj = Tcl_NewByteArrayObj(octets, (int)octectLength);
+        resultObj = Tcl_NewByteArrayObj(octets, (TCL_SIZE_T)octectLength);
         break;
 
     case RESULT_ENCODING_BASE64URL:
         hexPrint("result", octets, octectLength);
         (void)Ns_HtuuEncode2(octets, octectLength, outputBuffer, 1);
-        resultObj = Tcl_NewStringObj(outputBuffer, (int)strlen(outputBuffer));
+        resultObj = Tcl_NewStringObj(outputBuffer, (TCL_SIZE_T)strlen(outputBuffer));
         break;
 
     case RESULT_ENCODING_BASE64:
         (void)Ns_HtuuEncode2(octets, octectLength, outputBuffer, 0);
-        resultObj = Tcl_NewStringObj(outputBuffer, (int)strlen(outputBuffer));
+        resultObj = Tcl_NewStringObj(outputBuffer, (TCL_SIZE_T)strlen(outputBuffer));
         break;
 
     case RESULT_ENCODING_HEX:
-        Ns_HexString(octets, outputBuffer, (int)octectLength, NS_FALSE);
-        resultObj = Tcl_NewStringObj(outputBuffer, (int)octectLength*2);
+        Ns_HexString(octets, outputBuffer, (TCL_SIZE_T)octectLength, NS_FALSE);
+        resultObj = Tcl_NewStringObj(outputBuffer, (TCL_SIZE_T)octectLength*2);
         break;
     }
 
@@ -584,13 +584,13 @@ CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
         if (result != TCL_ERROR) {
             HMAC_CTX            *ctx;
             const unsigned char *keyString;
-            int                  keyLength;
+            TCL_SIZE_T           keyLength;
             Tcl_DString          keyDs;
 
             Tcl_DStringInit(&keyDs);
             keyString = Ns_GetBinaryString(keyObj, isBinary == 1, &keyLength, &keyDs);
             ctx = HMAC_CTX_new();
-            HMAC_Init_ex(ctx, keyString, keyLength, md, NULL);
+            HMAC_Init_ex(ctx, keyString, (int)keyLength, md, NULL);
             Ns_TclSetAddrObj(Tcl_GetObjResult(interp), hmacCtxType, ctx);
             Tcl_DStringFree(&keyDs);
         }
@@ -623,7 +623,7 @@ CryptoHmacAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     HMAC_CTX   *ctx;
     Tcl_Obj    *ctxObj;
     Tcl_Obj    *messageObj;
-    int         messageLength;
+    TCL_SIZE_T  messageLength;
     Ns_ObjvSpec opts[] = {
         {"-binary", Ns_ObjvBool, &isBinary, INT2PTR(NS_TRUE)},
         {"--",      Ns_ObjvBreak, NULL,    NULL},
@@ -816,7 +816,7 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
             HMAC_CTX            *ctx;
             const unsigned char *keyString, *messageString;
             unsigned int         mdLength;
-            int                  keyLength, messageLength;
+            TCL_SIZE_T           keyLength, messageLength;
             Tcl_DString          keyDs, messageDs;
 
             /*
@@ -834,7 +834,7 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
              */
             ctx = HMAC_CTX_new();
             HMAC(md,
-                 (const void *)keyString, keyLength,
+                 (const void *)keyString, (int)keyLength,
                  (const void *)messageString, (size_t)messageLength,
                  digest, &mdLength);
             HMAC_CTX_free(ctx);
@@ -985,7 +985,7 @@ CryptoMdAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 
     } else {
         const unsigned char *message;
-        int                  messageLength;
+        TCL_SIZE_T           messageLength;
         Tcl_DString          messageDs;
 
         Tcl_DStringInit(&messageDs);
@@ -1192,7 +1192,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
             char                 digestChars[EVP_MAX_MD_SIZE*2 + 1], *outputBuffer = digestChars;
             EVP_MD_CTX          *mdctx;
             const unsigned char *messageString;
-            int                  messageLength;
+            TCL_SIZE_T           messageLength;
             unsigned int         mdLength = 0u;
             Tcl_DString          messageDs, signatureDs;
 
@@ -1240,7 +1240,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                                  * with the requested size and use
                                  * this as "digest".
                                  */
-                                Tcl_DStringSetLength(&signatureDs, (int)mdSize);
+                                Tcl_DStringSetLength(&signatureDs, (TCL_SIZE_T)mdSize);
                                 digest = (unsigned char*)signatureDs.string;
 
                                 r = EVP_DigestSignFinal(mdctx, digest, &mdSize);
@@ -1270,7 +1270,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                                                    (size_t)messageLength);
 
                         if (r == 1) {
-                            int                  signatureLength;
+                            TCL_SIZE_T           signatureLength;
                             const unsigned char *signatureString;
 
                             signatureString = Ns_GetBinaryString(signatureObj, 1,
@@ -1439,7 +1439,7 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
             unsigned char        digest[EVP_MAX_MD_SIZE];
             EVP_MD_CTX          *mdctx;
             const unsigned char *messageString;
-            int                  messageLength;
+            TCL_SIZE_T           messageLength;
             unsigned int         sigLen, mdLength, rLen, sLen;
             Tcl_DString          messageDs;
             ECDSA_SIG           *sig;
@@ -1609,7 +1609,7 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             const unsigned char *infoString, *saltString, *secretString;
             unsigned char       *keyString;
             Tcl_DString          infoDs, saltDs, secretDs;
-            int                  infoLength, saltLength, secretLength;
+            TCL_SIZE_T           infoLength, saltLength, secretLength;
             size_t               outSize = (size_t)outLength;
 
             /*
@@ -1628,13 +1628,13 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             // hexPrint("secret", secretString, (size_t)secretLength);
             // hexPrint("info  ", infoString,   (size_t)infoLength);
 
-            if (EVP_PKEY_CTX_set1_hkdf_salt(pctx, saltString, saltLength) <= 0) {
+            if (EVP_PKEY_CTX_set1_hkdf_salt(pctx, saltString, (int)saltLength) <= 0) {
                 Ns_TclPrintfResult(interp, "could not set salt");
                 result = TCL_ERROR;
-            } else if (EVP_PKEY_CTX_set1_hkdf_key(pctx, secretString, secretLength) <= 0) {
+            } else if (EVP_PKEY_CTX_set1_hkdf_key(pctx, secretString, (int)secretLength) <= 0) {
                 Ns_TclPrintfResult(interp, "could not set secret");
                 result = TCL_ERROR;
-            } else if (EVP_PKEY_CTX_add1_hkdf_info(pctx, infoString, infoLength) <= 0) {
+            } else if (EVP_PKEY_CTX_add1_hkdf_info(pctx, infoString, (int)infoLength) <= 0) {
                 Ns_TclPrintfResult(interp, "could not set info");
                 result = TCL_ERROR;
             } else if (EVP_PKEY_derive(pctx, keyString, &outSize) <= 0) {
@@ -1802,7 +1802,7 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
         EVP_KDF_CTX         *kctx;
         unsigned char        out[64];
         Tcl_DString          saltDs, secretDs;
-        int                  saltLength, secretLength;
+        TCL_SIZE_T           saltLength, secretLength;
         const unsigned char *saltString, *secretString;
         OSSL_PARAM           params[6], *p = params;
         uint64_t             nValueSSL = (uint64_t)nValue;
@@ -1987,7 +1987,7 @@ NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, i
         result = GetDigest(interp, digestName, &md);
         if (result == TCL_OK) {
             Tcl_DString          saltDs, secretDs;
-            int                  saltLength, secretLength;
+            TCL_SIZE_T           saltLength, secretLength;
             const unsigned char *saltString, *secretString;
             unsigned char       *out = NULL;
 
@@ -2004,8 +2004,8 @@ NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, i
             saltString   = Ns_GetBinaryString(saltObj,   isBinary == 1, &saltLength,   &saltDs);
             secretString = Ns_GetBinaryString(secretObj, isBinary == 1, &secretLength, &secretDs);
 
-            if (PKCS5_PBKDF2_HMAC((const char *)secretString, secretLength,
-                                  saltString, saltLength,
+            if (PKCS5_PBKDF2_HMAC((const char *)secretString, (int)secretLength,
+                                  saltString, (int)saltLength,
                                   iter, md,
                                   dkLength, out) == 1) {
                 Tcl_SetObjResult(interp, EncodedObj(out, (size_t)dkLength, NULL, encoding));
@@ -2094,7 +2094,7 @@ CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             size_t      octLength = EC_KEY_priv2oct(eckey, NULL, 0);
 
             Tcl_DStringInit(&ds);
-            Tcl_DStringSetLength(&ds, (int)octLength);
+            Tcl_DStringSetLength(&ds, (TCL_SIZE_T)octLength);
             octLength = EC_KEY_priv2oct(eckey, (unsigned char *)ds.string, octLength);
             Tcl_SetObjResult(interp, EncodedObj((unsigned char *)ds.string, octLength, NULL, encoding));
 
@@ -2124,7 +2124,7 @@ SetResultFromEC_POINT(
 
     Ns_Log(Debug, "import: octet length %" PRIuz, octLength);
 
-    Tcl_DStringSetLength(dsPtr, (int)octLength);
+    Tcl_DStringSetLength(dsPtr, (TCL_SIZE_T)octLength);
     octLength = EC_POINT_point2oct(EC_KEY_get0_group(eckey), ecpoint, POINT_CONVERSION_UNCOMPRESSED,
                                    (unsigned char *)dsPtr->string, octLength, bn_ctx);
     Tcl_SetObjResult(interp, EncodedObj((unsigned char *)dsPtr->string, octLength, NULL, encoding));
@@ -2259,7 +2259,7 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
         result = TCL_ERROR;
 
     } else {
-        int                  rawKeyLength;
+        TCL_SIZE_T           rawKeyLength;
         const unsigned char *rawKeyString;
         EC_KEY              *eckey = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
         Tcl_DString          keyDs;
@@ -2267,7 +2267,7 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
         Tcl_DStringInit(&keyDs);
         rawKeyString = Ns_GetBinaryString(importObj, isBinary == 1, &rawKeyLength, &keyDs);
 
-        Ns_Log(Debug, "import: raw key length %d", rawKeyLength);
+        Ns_Log(Debug, "import: raw key length %" PRITcl_Size, rawKeyLength);
         hexPrint("key", rawKeyString, (size_t)rawKeyLength);
 
         if (EC_KEY_oct2key(eckey, rawKeyString, (size_t)rawKeyLength, NULL) != 1) {
@@ -2449,7 +2449,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     }
 
     if (result == TCL_OK) {
-        int                  pubkeyLength;
+        TCL_SIZE_T           pubkeyLength;
         const unsigned char *pubkeyString;
         Tcl_DString          importDs;
         const EC_GROUP      *group;
@@ -2540,7 +2540,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 Tcl_DStringInit(&ds);
                 (void)EVP_PKEY_derive(ctx, NULL, &sharedKeySize);
                 if (sharedKeySize > 0) {
-                    Tcl_DStringSetLength(&ds, (int)sharedKeySize);
+                    Tcl_DStringSetLength(&ds, (TCL_SIZE_T)sharedKeySize);
                     (void)EVP_PKEY_derive(ctx, (unsigned char *)ds.string, &sharedKeySize);
                     hexPrint("recommended", (unsigned char *)ds.string, sharedKeySize);
                     result = TCL_OK;
@@ -2574,7 +2574,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
             Tcl_DStringInit(&ds);
             sharedSecretLength = (size_t)((EC_GROUP_get_degree(group) + 7) / 8);
-            Tcl_DStringSetLength(&ds, (int)sharedSecretLength);
+            Tcl_DStringSetLength(&ds, (TCL_SIZE_T)sharedSecretLength);
 
             if (ECDH_compute_key(ds.string, sharedSecretLength, pubKeyPt, eckey, NULL) <= 0) {
                 Ns_TclPrintfResult(interp, "could not derive shared secret");
@@ -2678,11 +2678,11 @@ CryptoAeadStringGetArguments(
     Tcl_Interp           *interp, int objc, Tcl_Obj *const* objv, bool encrypt,
     Tcl_DString          *ivDsPtr, Tcl_DString *keyDsPtr, Tcl_DString *aadDsPtr,
     Tcl_DString          *tagDsPtr,
-    const unsigned char **keyStringPtr,   int *keyLengthPtr,
-    const unsigned char **ivStringPtr,    int *ivLengthPtr,
-    const unsigned char **aadStringPtr,   int *aadLengthPtr,
-    char                **tagStringPtr,   int *tagLengthPtr,
-    const unsigned char **inputStringPtr, int *inputLengthPtr,
+    const unsigned char **keyStringPtr,   TCL_SIZE_T *keyLengthPtr,
+    const unsigned char **ivStringPtr,    TCL_SIZE_T *ivLengthPtr,
+    const unsigned char **aadStringPtr,   TCL_SIZE_T *aadLengthPtr,
+    char                **tagStringPtr,   TCL_SIZE_T *tagLengthPtr,
+    const unsigned char **inputStringPtr, TCL_SIZE_T *inputLengthPtr,
     const EVP_CIPHER    **cipherPtr, Ns_BinaryEncoding *encodingPtr, EVP_CIPHER_CTX **ctxPtr
 ) {
     Tcl_Obj      *ivObj = NULL, *keyObj = NULL, *aadObj = NULL, *tagObj = NULL, *inputObj;
@@ -2808,7 +2808,7 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     EVP_CIPHER_CTX      *ctx;
     const unsigned char *inputString = NULL, *ivString, *aadString, *keyString = NULL;
     char                *tagString = NULL;
-    int                  inputLength, keyLength, ivLength, aadLength, tagLength;
+    TCL_SIZE_T           inputLength, keyLength, ivLength, aadLength, tagLength;
 
     /*
       ::ns_crypto::aead::encrypt string -cipher aes-128-gcm -iv 123456789 -key secret "hello world"
@@ -2840,13 +2840,13 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
              * Encrypt ...
              */
             if ((EVP_EncryptInit_ex(ctx, cipher, NULL, NULL, NULL) != 1)
-                || (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, ivLength, NULL) != 1)
+                || (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, (int)ivLength, NULL) != 1)
                 || (EVP_EncryptInit_ex(ctx, NULL, NULL, keyString, ivString) != 1)
                 ) {
                 Ns_TclPrintfResult(interp, "could not initialize encryption context");
                 result = TCL_ERROR;
 
-            } else if (EVP_EncryptUpdate(ctx, NULL, &length, aadString, aadLength) != 1) {
+            } else if (EVP_EncryptUpdate(ctx, NULL, &length, aadString, (int)aadLength) != 1) {
                 /*
                  * To specify additional authenticated data (AAD), a call
                  * to EVP_CipherUpdate(), EVP_EncryptUpdate() or
@@ -2857,7 +2857,8 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
                 result = TCL_ERROR;
 
             } else {
-                int          cipherBlockSize = EVP_CIPHER_block_size(cipher), outputLength;
+                int          cipherBlockSize = EVP_CIPHER_block_size(cipher);
+                TCL_SIZE_T   outputLength;
                 Tcl_Obj     *listObj;
                 Tcl_DString  outputDs;
 
@@ -2870,17 +2871,17 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
                  * encrypted output.  EVP_EncryptUpdate can be called
                  * multiple times if necessary.
                  */
-                Tcl_DStringSetLength(&outputDs, inputLength + cipherBlockSize);
+                Tcl_DStringSetLength(&outputDs, inputLength + (TCL_SIZE_T)cipherBlockSize);
                 (void)EVP_EncryptUpdate(ctx, (unsigned char *)outputDs.string, &length,
-                                        inputString, inputLength);
-                outputLength = length;
+                                        inputString, (int)inputLength);
+                outputLength = (TCL_SIZE_T)length;
 
                 //fprintf(stderr, "allocated size %d, inputLength %d cipherBlockSize %d actual size %d\n",
                 // (inputLength + cipherBlockSize), inputLength, cipherBlockSize, outputLength);
                 assert((inputLength + cipherBlockSize) >= outputLength);
 
                 (void)EVP_EncryptFinal_ex(ctx, (unsigned char  *)(outputDs.string + length), &length);
-                outputLength += length;
+                outputLength += (TCL_SIZE_T)length;
                 //fprintf(stderr, "allocated size %d, final size %d\n", (inputLength + cipherBlockSize), outputLength);
                 Tcl_DStringSetLength(&outputDs, outputLength);
 
@@ -2888,7 +2889,7 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
                  * Get the tag
                  */
                 Tcl_DStringSetLength(&tagDs, 16);
-                EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, tagDs.length, tagDs.string);
+                EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, (int)tagDs.length, tagDs.string);
 
                 listObj = Tcl_NewListObj(0, NULL);
                 /*
@@ -2919,13 +2920,13 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
                 result = TCL_ERROR;
 
             } else if ((EVP_DecryptInit_ex(ctx, cipher, NULL, NULL, NULL) != 1)
-                       || (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, ivLength, NULL) != 1)
+                       || (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, (int)ivLength, NULL) != 1)
                        || (EVP_DecryptInit_ex(ctx, NULL, NULL, keyString, ivString) != 1)
                        ) {
                 Ns_TclPrintfResult(interp, "could not initialize decryption context");
                 result = TCL_ERROR;
 
-            } else if (EVP_DecryptUpdate(ctx, NULL, &length, aadString, aadLength) != 1) {
+            } else if (EVP_DecryptUpdate(ctx, NULL, &length, aadString, (int)aadLength) != 1) {
                 /*
                  * To specify additional authenticated data (AAD), a call
                  * to EVP_CipherUpdate(), EVP_EncryptUpdate() or
@@ -2936,7 +2937,7 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
                 result = TCL_ERROR;
 
             } else {
-                int          outputLength;
+                TCL_SIZE_T   outputLength;
                 Tcl_DString  outputDs;
 
                 Tcl_DStringInit(&outputDs);
@@ -2950,19 +2951,19 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
                 Tcl_DStringSetLength(&outputDs, inputLength);
                 (void)EVP_DecryptUpdate(ctx,
                                         (unsigned char *)outputDs.string, &length,
-                                        inputString, inputLength);
-                outputLength = length;
+                                        inputString, (int)inputLength);
+                outputLength = (TCL_SIZE_T)length;
 
                 /*
                  * Set expected tag value. Works in OpenSSL 1.0.1d and later
                  */
-                if(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, tagLength, tagString) != 1) {
+                if(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, (int)tagLength, tagString) != 1) {
                     Ns_TclPrintfResult(interp, "could not set tag value");
                     result = TCL_ERROR;
                 } else {
 
                     (void)EVP_DecryptFinal_ex(ctx, (unsigned char  *)(outputDs.string + length), &length);
-                    outputLength += length;
+                    outputLength += (TCL_SIZE_T)length;
                     //fprintf(stderr, "allocated size %d, final size %d\n", inputLength, outputLength);
                     Tcl_DStringSetLength(&outputDs, outputLength);
                     Tcl_SetObjResult(interp, EncodedObj((unsigned char *)outputDs.string,
@@ -3078,7 +3079,7 @@ NsTclCryptoRandomBytesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
         int         rc;
 
         Tcl_DStringInit(&ds);
-        Tcl_DStringSetLength(&ds, nrBytes);
+        Tcl_DStringSetLength(&ds, (TCL_SIZE_T)nrBytes);
         rc = RAND_bytes((unsigned char *)ds.string, nrBytes);
         if (likely(rc == 1)) {
             Tcl_SetObjResult(interp, EncodedObj((unsigned char *)ds.string, (size_t)nrBytes, NULL, encoding));

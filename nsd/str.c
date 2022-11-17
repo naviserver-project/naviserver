@@ -21,7 +21,7 @@
 
 static void
 InvalidUtf8ErrorMessage(Tcl_DString *dsPtr, const unsigned char *bytes, size_t nrBytes,
-                 size_t index, int atMost, bool isTruncated);
+                 size_t index, TCL_SIZE_T atMost, bool isTruncated);
 
 
 /*
@@ -580,7 +580,7 @@ Ns_StrIsValidHostHeaderContent(const char *chars)
  *----------------------------------------------------------------------
  */
 const unsigned char *
-Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *dsPtr)
+Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, TCL_SIZE_T *lengthPtr, Tcl_DString *dsPtr)
 {
     const unsigned char *result;
 
@@ -647,7 +647,7 @@ Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *
         //fprintf(stderr, "NsTclObjIsByteArray\n");
         result = (unsigned char *)Tcl_GetByteArrayFromObj(obj, lengthPtr);
     } else {
-        int         stringLength;
+        TCL_SIZE_T  stringLength;
         const char *charInput;
 
         charInput = Tcl_GetStringFromObj(obj, &stringLength);
@@ -685,19 +685,20 @@ Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *
 `*/
 static void
 InvalidUtf8ErrorMessage(Tcl_DString *dsPtr, const unsigned char *bytes, size_t nrBytes,
-                 size_t index, int atMost, bool isTruncated)
+                 size_t index, TCL_SIZE_T atMost, bool isTruncated)
 {
     if (dsPtr != NULL) {
         long prefixLen = MIN(10, (long)index);
+
         Tcl_DStringInit(dsPtr);
         if ((long)index > prefixLen) {
-            Tcl_DStringAppend(dsPtr, (char *)bytes, (int)prefixLen);
+            Tcl_DStringAppend(dsPtr, (char *)bytes, (TCL_SIZE_T)prefixLen);
             Tcl_DStringAppend(dsPtr, "...", 3);
         } else {
-            Tcl_DStringAppend(dsPtr, (char *)bytes, (int)index-1);
+            Tcl_DStringAppend(dsPtr, (char *)bytes, (TCL_SIZE_T)index-1);
         }
         Tcl_DStringAppend(dsPtr, "|", 1);
-        Tcl_DStringAppend(dsPtr, (char *)(bytes+index-1), MIN(atMost, (int)(nrBytes-(index-1))));
+        Tcl_DStringAppend(dsPtr, (char *)(bytes+index-1), MIN(atMost, (TCL_SIZE_T)(nrBytes-(index-1))));
         Tcl_DStringAppend(dsPtr, "|", 1);
         if (!isTruncated) {
             Tcl_DStringAppend(dsPtr, "...", 3);

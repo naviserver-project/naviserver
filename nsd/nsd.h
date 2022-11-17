@@ -262,7 +262,6 @@ typedef struct AdpFrame {
     unsigned short     objc;
 } AdpFrame;
 
-
 /*
  * The following structure defines blocks of ADP.  The
  * len pointer is an array of ints with positive values
@@ -280,12 +279,6 @@ typedef struct AdpCode {
     int        *line;
     Tcl_DString text;
 } AdpCode;
-
-#define AdpCodeLen(cp,i)    ((cp)->len[(i)])
-#define AdpCodeLine(cp,i)   ((cp)->line[(i)])
-#define AdpCodeText(cp)     ((cp)->text.string)
-#define AdpCodeBlocks(cp)   ((cp)->nblocks)
-#define AdpCodeScripts(cp)  ((cp)->nscripts)
 
 /*
  * Dynamic list structures. These are an alternative to e.g. double linked
@@ -881,7 +874,7 @@ typedef struct NsServer {
         Tcl_Obj          *initfile;
         Ns_RWLock         lock;
         const char       *script;
-        int               length;
+        TCL_SIZE_T        length;
         int               epoch;
         Tcl_Obj          *modules;
         Tcl_HashTable     runTable;
@@ -972,7 +965,7 @@ typedef struct NsServer {
         Ns_Mutex lock;
         const char *logFileName;
         const char *logRollfmt;
-        int  logMaxbackup;
+        TCL_SIZE_T logMaxbackup;
         int  fd;
         bool logging;
     } httpclient;
@@ -1089,7 +1082,7 @@ typedef struct {
     size_t             requestLength;    /* size of the complete request */
     size_t             replyLength;      /* content-length of the reply */
     size_t             requestHeaderSize;/* size of the request header */
-    int                replyHeaderSize;  /* size of reply header */
+    TCL_SIZE_T         replyHeaderSize;  /* size of reply header */
     size_t             sent;             /* total amount of data sent */
     size_t             received;         /* total amount data received */
     size_t             sendBodySize;     /* amount of request body sent */
@@ -1654,7 +1647,7 @@ NS_EXTERN NS_TLS_SSL_CTX *NsDriverLookupHostCtx(Tcl_DString *hostDs, const Ns_Dr
 
 
 #ifdef NS_SET_DSTRING
-NS_EXTERN void Ns_SetDataPrealloc(Ns_Set *set, int size)
+NS_EXTERN void Ns_SetDataPrealloc(Ns_Set *set, TCL_SIZE_T size)
     NS_GNUC_NONNULL(1);
 #endif
 NS_EXTERN void NsSetResize(Ns_Set *set, size_t newSize, int bufferSize)
@@ -1729,7 +1722,7 @@ NS_EXTERN Ns_ReturnCode NsGetFallbackEncoding(Tcl_Interp *interp, NsServer *serv
  * ADP routines.
  */
 
-NS_EXTERN int NsAdpAppend(NsInterp *itPtr, const char *buf, int len)
+NS_EXTERN int NsAdpAppend(NsInterp *itPtr, const char *buf, TCL_SIZE_T len)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int NsAdpFlush(NsInterp *itPtr, bool doStream)

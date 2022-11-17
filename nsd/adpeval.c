@@ -17,6 +17,12 @@
 
 #include "nsd.h"
 
+#define AdpCodeLen(cp,i)    ((cp)->len[(i)])
+#define AdpCodeLine(cp,i)   ((cp)->line[(i)])
+#define AdpCodeText(cp)     ((cp)->text.string)
+#define AdpCodeBlocks(cp)   ((cp)->nblocks)
+#define AdpCodeScripts(cp)  ((cp)->nscripts)
+
 /*
  * The following structure defines a cached ADP page result.  A cached
  * object is created by executing the non-cached code and saving the
@@ -93,7 +99,7 @@ static int AdpSource(NsInterp *itPtr, int objc, Tcl_Obj *const* objv, const char
                      const Ns_Time *expiresPtr, Tcl_DString *outputPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(6);
 
-static int AdpDebug(const NsInterp *itPtr, const char *ptr, int len, int nscript)
+static int AdpDebug(const NsInterp *itPtr, const char *ptr, TCL_SIZE_T len, int nscript)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void DecrCache(AdpCache *cachePtr)
@@ -898,7 +904,7 @@ ParseFile(const NsInterp *itPtr, const char *file, struct stat *stPtr, unsigned 
         if (encoding == NULL) {
             page = buf;
         } else {
-            page = Tcl_ExternalToUtfDString(encoding, buf, (int)n, &utf);
+            page = Tcl_ExternalToUtfDString(encoding, buf, (TCL_SIZE_T)n, &utf);
         }
         pagePtr = ns_malloc(sizeof(Page));
         pagePtr->servPtr = itPtr->servPtr;
@@ -1085,7 +1091,7 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *const* objv, const char *file,
     if (file != NULL) {
         const char *slash = strrchr(file, INTCHAR('/'));
         if (slash != NULL) {
-            Ns_DStringNAppend(&cwd, file, (int)(slash - file));
+            Ns_DStringNAppend(&cwd, file, (TCL_SIZE_T)(slash - file));
             itPtr->adp.cwd = cwd.string;
         }
     }
@@ -1103,6 +1109,13 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *const* objv, const char *file,
     nscript = 0;
     result = TCL_OK;
     for (i = 0; itPtr->adp.exception == ADP_OK && i < nblocks; ++i) {
+        /*
+         * So far, we keep "len" as int and not as TCL_SIZE_T due to the
+         * logic with the negative lengths below.
+         *
+         * See also: comment "size" should be TCL_SIZE_T.
+         * in AdpParseTclFile() in adpparse.c.
+         */
         int len;
 
         frame.line = (unsigned short)AdpCodeLine(codePtr, i);
@@ -1111,18 +1124,18 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *const* objv, const char *file,
             AdpTrace(itPtr, ptr, len);
         }
         if (len > 0) {
-            result = NsAdpAppend(itPtr, ptr, len);
+            result = NsAdpAppend(itPtr, ptr, (TCL_SIZE_T)len);
         } else {
             len = -len;
             if (itPtr->adp.debugLevel > 0) {
-                result = AdpDebug(itPtr, ptr, len, nscript);
+                result = AdpDebug(itPtr, ptr, (TCL_SIZE_T)len, nscript);
             } else if (objsPtr == NULL) {
-                result = Tcl_EvalEx(interp, ptr, len, 0);
+                result = Tcl_EvalEx(interp, ptr, (TCL_SIZE_T)len, 0);
             } else {
                 assert(nscript < objsPtr->nobjs);
                 objPtr = objsPtr->objs[nscript];
                 if (objPtr == NULL) {
-                    objPtr = Tcl_NewStringObj(ptr, len);
+                    objPtr = Tcl_NewStringObj(ptr, (TCL_SIZE_T)len);
                     Tcl_IncrRefCount(objPtr);
                     objsPtr->objs[nscript] = objPtr;
                 }
@@ -1212,7 +1225,7 @@ AdpExec(NsInterp *itPtr, int objc, Tcl_Obj *const* objv, const char *file,
  */
 
 static int
-AdpDebug(const NsInterp *itPtr, const char *ptr, int len, int nscript)
+AdpDebug(const NsInterp *itPtr, const char *ptr, TCL_SIZE_T len, int nscript)
 {
     Tcl_Interp *interp;
     int         level;

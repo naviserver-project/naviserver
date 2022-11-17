@@ -398,7 +398,8 @@ NsTclRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
 {
     char       *url;
     Tcl_Obj    *scriptObj;
-    int         remain = 0, noinherit = 0, result = TCL_OK;
+    TCL_SIZE_T  remain = 0;
+    int         noinherit = 0, result = TCL_OK;
     Ns_ObjvSpec opts[] = {
         {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_TRUE)},
         {"--",         Ns_ObjvBreak,  NULL,       NULL},
@@ -418,7 +419,7 @@ NsTclRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
         Ns_TclCallback *cbPtr;
 
         cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclUrl2FileProc,
-                                  scriptObj, remain, objv + (objc - remain));
+                                  scriptObj, remain, objv + (objc - (int)remain));
         flags = (noinherit != 0) ? NS_OP_NOINHERIT : 0u;
         Ns_RegisterUrl2FileProc(itPtr->servPtr->server, url,
                                 NsTclUrl2FileProc, Ns_TclFreeCallback, cbPtr, flags);

@@ -370,7 +370,7 @@ FindLimits(const char *limits, int create)
  */
 
 static int
-ObjvLimits(Ns_ObjvSpec *spec, Tcl_Interp *interp, int *objcPtr, Tcl_Obj *const* objv)
+ObjvLimits(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj *const* objv)
 {
     NsLimits         **limitsPtrPtr = spec->dest;
     int                create = (spec->arg != NULL) ? 1 : 0, result = TCL_OK;

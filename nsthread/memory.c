@@ -133,13 +133,32 @@ ns_strcopy(const char *old)
     return (old == NULL ? NULL : ns_strdup(old));
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ns_strncopy --
+ *
+ *      Copy a string when "old" is not NULL, and compute its size when "size"
+ *      is provided as -1.  We stick there to the NaviServer 4.* type of
+ *      "ssize_t" instead of "NS_SIZE_T", since the latter falls back to "int"
+ *      on NaviServer 4 (which is maybe too small).
+ *
+ * Results:
+ *      The copied string
+ *
+ * Side effects:
+ *      Memory allocation
+ *
+ *----------------------------------------------------------------------
+ */
+
 char *
 ns_strncopy(const char *old, ssize_t size)
 {
     char *new = NULL;
 
     if (likely(old != NULL)) {
-        size_t new_size = likely(size != TCL_INDEX_NONE) ? (size_t)size : strlen(old);
+        size_t new_size = likely((size_t)size != (size_t)TCL_INDEX_NONE) ? (size_t)size : strlen(old);
         new_size ++;
         new = ns_malloc(new_size);
         if (new != NULL) {

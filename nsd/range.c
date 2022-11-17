@@ -37,11 +37,11 @@ static void SetRangeHeader(const Ns_Conn *conn, off_t start, off_t end, size_t o
 static void SetMultipartRangeHeader(const Ns_Conn *conn)
     NS_GNUC_NONNULL(1);
 
-static int AppendMultipartRangeHeader(Ns_DString *dsPtr, const char *type,
+static TCL_SIZE_T AppendMultipartRangeHeader(Ns_DString *dsPtr, const char *type,
                                       off_t start, off_t end, size_t objLength)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(1);
 
-static int AppendMultipartRangeTrailer(Ns_DString *dsPtr)
+static TCL_SIZE_T AppendMultipartRangeTrailer(Ns_DString *dsPtr)
         NS_GNUC_NONNULL(1);
 
 static bool MatchRange(const Ns_Conn *conn, time_t mtime)
@@ -525,11 +525,11 @@ SetMultipartRangeHeader(const Ns_Conn *conn)
  *----------------------------------------------------------------------
  */
 
-static int
+static TCL_SIZE_T
 AppendMultipartRangeHeader(Ns_DString *dsPtr, const char *type,
                            off_t start, off_t end, size_t objLength)
 {
-    int origlen;
+    TCL_SIZE_T origlen;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(type != NULL);
@@ -545,10 +545,10 @@ AppendMultipartRangeHeader(Ns_DString *dsPtr, const char *type,
     return dsPtr->length - origlen;
 }
 
-static int
+static TCL_SIZE_T
 AppendMultipartRangeTrailer(Ns_DString *dsPtr)
 {
-    int origlen;
+    TCL_SIZE_T origlen;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
 

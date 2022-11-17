@@ -689,10 +689,10 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
         case SESSIONID:
             {
                 char idstr[TCL_INTEGER_SPACE + 4];
-                int  length;
+                TCL_SIZE_T length;
 
                 memcpy(idstr, "sid", 3u);
-                length = ns_uint64toa(&idstr[3], (uint64_t)NsDbGetSessionId(handlePtr));
+                length = (TCL_SIZE_T)ns_uint64toa(&idstr[3], (uint64_t)NsDbGetSessionId(handlePtr));
                 Tcl_SetObjResult(interp, Tcl_NewStringObj(idstr, length + 3));
             }
             break;
@@ -744,7 +744,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* ob
     case INTERPRETSQLFILE:
         {
             const char *value;
-            int         valueLength = 0;
+            TCL_SIZE_T  valueLength = 0;
             Tcl_DString ds;
 
             /*
@@ -1186,8 +1186,8 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 static Ns_ReturnCode
 QuoteSqlValue(Tcl_DString *dsPtr, Tcl_Obj *valueObj, int valueType)
 {
-    int         valueLength;
-    const char *valueString;
+    TCL_SIZE_T    valueLength;
+    const char   *valueString;
     Ns_ReturnCode result = NS_OK;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
@@ -1231,7 +1231,7 @@ QuoteSqlValue(Tcl_DString *dsPtr, Tcl_Obj *valueObj, int valueType)
                     Tcl_DStringAppend(dsPtr, valueString, valueLength);
                     break;
                 } else {
-                    int length = (int)((p - valueString) + 1);
+                    TCL_SIZE_T length = (TCL_SIZE_T)((p - valueString) + 1);
 
                     Tcl_DStringAppend(dsPtr, valueString, length);
                     Tcl_DStringAppend(dsPtr, "'", 1);
@@ -1587,7 +1587,8 @@ static void
 EnterDbHandle(InterpData *idataPtr, Tcl_Interp *interp, Ns_DbHandle *handle, Tcl_Obj *listObj)
 {
     Tcl_HashEntry *hPtr;
-    int            isNew, next, len;
+    int            isNew;
+    TCL_SIZE_T     len, next;
     char           buf[100];
 
     NS_NONNULL_ASSERT(idataPtr != NULL);
@@ -1595,9 +1596,9 @@ EnterDbHandle(InterpData *idataPtr, Tcl_Interp *interp, Ns_DbHandle *handle, Tcl
     NS_NONNULL_ASSERT(handle != NULL);
     NS_NONNULL_ASSERT(listObj != NULL);
 
-    next = idataPtr->dbs.numEntries;
+    next = (TCL_SIZE_T)idataPtr->dbs.numEntries;
     do {
-        len = snprintf(buf, sizeof(buf), "nsdb%x", next++);
+        len = (TCL_SIZE_T)snprintf(buf, sizeof(buf), "nsdb%zx", (unsigned long)next++);
         hPtr = Tcl_CreateHashEntry(&idataPtr->dbs, buf, &isNew);
     } while (isNew == 0);
 

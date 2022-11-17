@@ -264,7 +264,7 @@ ConfigServerTcl(const char *server)
     } else {
         Ns_DString  ds;
         const char *path, *p, *initFileString;
-        int         n;
+        TCL_SIZE_T  n;
         Ns_Set     *set = NULL;
         bool        initFileStringCopied = NS_FALSE;
 
@@ -431,7 +431,7 @@ Ns_TclEval(Ns_DString *dsPtr, const char *server, const char *script)
     if (interp != NULL) {
         const char *result;
 
-        if (Tcl_EvalEx(interp, script, -1, 0) != TCL_OK) {
+        if (Tcl_EvalEx(interp, script, TCL_INDEX_NONE, 0) != TCL_OK) {
             result = Ns_TclLogErrorInfo(interp, NULL);
         } else {
             result = Tcl_GetStringResult(interp);
@@ -1053,7 +1053,8 @@ ICtlAddTrace(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const
 {
     unsigned int    flags = 0u;
     Tcl_Obj        *scriptObj = NULL;
-    int             remain = 0, result = TCL_OK;
+    TCL_SIZE_T      remain = 0;
+    int             result = TCL_OK;
     Ns_ReturnCode   status;
 
     if (when == NS_TCL_TRACE_NONE) {
@@ -1092,7 +1093,7 @@ ICtlAddTrace(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const
                 when  = (Ns_TclTraceType)flags;
             }
             cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclTraceProc,
-                                      scriptObj, remain, objv + (objc - remain));
+                                      scriptObj, remain, objv + (objc - (int)remain));
             if (Ns_TclRegisterTrace(servPtr->server, NsTclTraceProc, cbPtr, when) != NS_OK) {
                 result = TCL_ERROR;
             }
@@ -1364,7 +1365,7 @@ ICtlSaveObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
     } else {
         const NsInterp *itPtr = (const NsInterp *)clientData;
         NsServer       *servPtr = itPtr->servPtr;
-        int             length;
+        TCL_SIZE_T      length;
         const char     *script = ns_strdup(Tcl_GetStringFromObj(scriptObj, &length));
 
         Ns_RWLockWrLock(&servPtr->tcl.lock);
@@ -1689,7 +1690,7 @@ NsTclAtCloseObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
         atPtr = ns_malloc(sizeof(AtClose));
         atPtr->nextPtr = itPtr->firstAtClosePtr;
         itPtr->firstAtClosePtr = atPtr;
-        atPtr->objPtr = Tcl_ConcatObj(objc-1, objv+1);
+        atPtr->objPtr = Tcl_ConcatObj((TCL_SIZE_T)(objc-1), objv+1);
         Tcl_IncrRefCount(atPtr->objPtr);
     }
 
@@ -2252,7 +2253,8 @@ static int
 UpdateInterp(NsInterp *itPtr)
 {
     NsServer   *servPtr;
-    int         result = TCL_OK, epoch, scriptLength = 0;
+    int         result = TCL_OK, epoch;
+    TCL_SIZE_T  scriptLength = 0;
     const char *script = NULL;
     bool        doUpdateNow = NS_FALSE;
 

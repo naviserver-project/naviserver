@@ -419,7 +419,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
              * 3. PATH_INFO is everything past SCRIPT_NAME in the URL.
              */
 
-            cgiPtr->name = Ns_DStringNAppend(CgiDs(cgiPtr), url, (int)plen);
+            cgiPtr->name = Ns_DStringNAppend(CgiDs(cgiPtr), url, (TCL_SIZE_T)plen);
             dsPtr = CgiDs(cgiPtr);
             (void) Ns_UrlToFile(dsPtr, server, cgiPtr->name);
             cgiPtr->path =  dsPtr->string;
@@ -841,7 +841,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         }
 
         if (portString != NULL) {
-            int j;
+            TCL_SIZE_T j;
 
             portString++;
             Ns_SetUpdateSz(cgiPtr->env, "SERVER_PORT", 11, portString, TCL_INDEX_NONE);

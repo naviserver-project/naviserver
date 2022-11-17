@@ -288,10 +288,10 @@ Ns_ConfigIntRange(const char *section, const char *key, int defaultValue,
         update = NS_TRUE;
     }
     if (update) {
-        Section *sectionPtr = GetSection(section, NS_FALSE);
-        int      length;
+        Section   *sectionPtr = GetSection(section, NS_FALSE);
+        TCL_SIZE_T length;
 
-        length = snprintf(strBuffer, sizeof(strBuffer), "%d", value);
+        length = (TCL_SIZE_T)snprintf(strBuffer, sizeof(strBuffer), "%d", value);
         Ns_SetUpdateSz(sectionPtr->set, key, TCL_INDEX_NONE, strBuffer, length);
     }
 
@@ -845,7 +845,7 @@ Ns_ConfigGetSections(void)
     Ns_Set             **sets;
     const Tcl_HashEntry *hPtr;
     Tcl_HashSearch       search;
-    int                  n;
+    TCL_SIZE_T           n;
 
     n = nsconf.sections.numEntries + 1;
     sets = ns_malloc(sizeof(Ns_Set *) * (size_t)n);
@@ -1074,14 +1074,14 @@ NsConfigRead(const char *file)
          */
         buf = Tcl_NewObj();
         Tcl_IncrRefCount(buf);
-        if (Tcl_ReadChars(chan, buf, -1, 0) == -1) {
+        if (Tcl_ReadChars(chan, buf, TCL_INDEX_NONE, 0) == TCL_IO_FAILURE) {
             call = "read";
 
         } else {
-            int         length;
+            TCL_SIZE_T  length;
             const char *data = Tcl_GetStringFromObj(buf, &length);
 
-            fileContent = ns_strncopy(data, length);
+            fileContent = ns_strncopy(data, (ssize_t)length);
         }
     }
 
@@ -1188,7 +1188,7 @@ ParamObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const*
 
         if (likely(sectionPtr != NULL)) {
             const char *nameString, *valueString;
-            int         nameLength, valueLength;
+            TCL_SIZE_T  nameLength, valueLength;
             size_t      i;
 
             nameString = Tcl_GetStringFromObj(nameObj, &nameLength);
@@ -1311,7 +1311,7 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defaultS
              * not thread safe.
              */
             i = (int)Ns_SetPutSz(sectionPtr->set, key, TCL_INDEX_NONE,
-                                 defaultString, defaultString == NULL ? 0 : -1);
+                                 defaultString, defaultString == NULL ? 0 : TCL_INDEX_NONE);
             ConfigMark(sectionPtr, (size_t)i, value_defaulted);
             s = Ns_SetValue(sectionPtr->set, i);
 

@@ -418,7 +418,7 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
         colormap = (((buf[4] & 0x80u) != 0u) ? 1u : 0u);
 
         if (colormap != 0u) {
-            int bytesToRead = 3 * (int)depth;
+            TCL_SIZE_T bytesToRead = 3 * (TCL_SIZE_T)depth;
             if (Tcl_Read(chan, (char *)buf, bytesToRead) != bytesToRead) {
                 result = TCL_ERROR;
                 break;
@@ -426,13 +426,13 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
         }
 
     outerloop:
-        if (Tcl_Read(chan, (char *)buf, 1) != 1) {
+        if (Tcl_Read(chan, (char *)buf, 1) == TCL_IO_FAILURE) {
             result = TCL_ERROR;
             break;
         }
 
         if (buf[0] == UCHAR('!')) {
-            if (Tcl_Read(chan, (char *)buf, 1) != 1) {
+            if (Tcl_Read(chan, (char *)buf, 1) == TCL_IO_FAILURE) {
                 result = TCL_ERROR;
                 break;
             }
@@ -444,7 +444,7 @@ GifSize(Tcl_Channel chan, uint32_t *wPtr, uint32_t *hPtr)
                 goto outerloop;
             }
 
-            if (Tcl_Read(chan, (char *)buf, (int)count) != (int)count) {
+            if (Tcl_Read(chan, (char *)buf, (TCL_SIZE_T)count) != (TCL_SIZE_T)count) {
                 result = TCL_ERROR;
                 break;
             }
@@ -677,7 +677,7 @@ static enum imgtype
 GetImageType(Tcl_Channel chan)
 {
     unsigned char buf[8];
-    int           toRead;
+    TCL_SIZE_T    toRead;
     enum imgtype  type = unknown;
     static const unsigned char jpeg_magic  [] = {0xffu, 0xd8u};
     static const          char gif87_magic [] = {'G','I','F','8','7','a'};

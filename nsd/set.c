@@ -42,7 +42,7 @@ static Ns_Set *SetCreate(const char *name, size_t size);
 #ifdef NS_SET_DSTRING
 static void ShiftData(Ns_Set *set, const char *oldDataStart)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static char *AppendData(Ns_Set *set, size_t index, const char *value, ssize_t valueSize)
+static char *AppendData(Ns_Set *set, size_t index, const char *value, TCL_SIZE_T valueSize)
     NS_GNUC_NONNULL(1);
 #endif
 
@@ -93,7 +93,9 @@ static void hexPrint(const char *msg, const unsigned char *octets, size_t octect
  */
 
 size_t
-Ns_SetIUpdateSz(Ns_Set *set, const char *keyString, ssize_t keyLength, const char *valueString, ssize_t valueLength)
+Ns_SetIUpdateSz(Ns_Set *set,
+                const char *keyString, TCL_SIZE_T keyLength,
+                const char *valueString, TCL_SIZE_T valueLength)
 {
     ssize_t index;
     size_t result;
@@ -102,7 +104,7 @@ Ns_SetIUpdateSz(Ns_Set *set, const char *keyString, ssize_t keyLength, const cha
     NS_NONNULL_ASSERT(keyString != NULL);
 
     index = Ns_SetIFind(set, keyString);
-    if (index != TCL_INDEX_NONE) {
+    if (index != -1) {
         Ns_SetPutValueSz(set, (size_t)index, valueString, valueLength);
         /*
          * If the capitalization of the key is different, keep the new one.
@@ -120,7 +122,7 @@ Ns_SetIUpdateSz(Ns_Set *set, const char *keyString, ssize_t keyLength, const cha
 size_t
 Ns_SetIUpdate(Ns_Set *set, const char *keyString, const char *valueString)
 {
-    return Ns_SetIUpdateSz(set, keyString, -1, valueString, -1);
+    return Ns_SetIUpdateSz(set, keyString, TCL_INDEX_NONE, valueString, TCL_INDEX_NONE);
 }
 
 /*
@@ -139,7 +141,9 @@ Ns_SetIUpdate(Ns_Set *set, const char *keyString, const char *valueString)
  *----------------------------------------------------------------------
  */
 size_t
-Ns_SetUpdateSz(Ns_Set *set, const char *keyString, ssize_t keyLength, const char *valueString, ssize_t valueLength)
+Ns_SetUpdateSz(Ns_Set *set,
+               const char *keyString, TCL_SIZE_T keyLength,
+               const char *valueString, TCL_SIZE_T valueLength)
 {
     ssize_t index;
     size_t result;
@@ -148,7 +152,7 @@ Ns_SetUpdateSz(Ns_Set *set, const char *keyString, ssize_t keyLength, const char
     NS_NONNULL_ASSERT(keyString != NULL);
 
     index = Ns_SetFind(set, keyString);
-    if (index != TCL_INDEX_NONE) {
+    if (index != -1) {
         Ns_SetPutValueSz(set, (size_t)index, valueString, valueLength);
         result = (size_t)index;
     } else {
@@ -218,10 +222,10 @@ ShiftData(Ns_Set *set, const char *oldDataStart) {
  *----------------------------------------------------------------------
  */
 static char *
-AppendData(Ns_Set *set, size_t index, const char *value, ssize_t valueSize)
+AppendData(Ns_Set *set, size_t index, const char *value, TCL_SIZE_T valueSize)
 {
-    char *oldDataStart;
-    int   oldLength, oldAvail;
+    char      *oldDataStart;
+    TCL_SIZE_T oldLength, oldAvail;
 
     oldDataStart = set->data.string;
     oldLength = set->data.length;
@@ -229,14 +233,15 @@ AppendData(Ns_Set *set, size_t index, const char *value, ssize_t valueSize)
     if (valueSize == TCL_INDEX_NONE && value == NULL) {
         valueSize = 0;
     }
-    Tcl_DStringAppend(&set->data, value, (int)valueSize);
+    Tcl_DStringAppend(&set->data, value, (TCL_SIZE_T)valueSize);
     if (value != NULL) {
         Tcl_DStringSetLength(&set->data, set->data.length + 1);
         set->data.string[set->data.length-1] = '\0';
     }
     if (oldDataStart != set->data.string) {
-        Ns_Log(Ns_LogNsSetDebug, "MUST SHIFT %p '%s': length %d->%" PRITcl_Size
-               "buffer %d->%" PRITcl_Size
+        Ns_Log(Ns_LogNsSetDebug, "MUST SHIFT %p '%s':"
+               " length %" PRITcl_Size "->%" PRITcl_Size
+               " buffer %" PRITcl_Size "->%" PRITcl_Size
                " (while appending %ld '%s')",
                (void*)set, set->name,
                oldLength, set->data.length,
@@ -285,7 +290,7 @@ NsSetResize(Ns_Set *set, size_t newSize, int bufferSize)
     }
 #ifdef NS_SET_DSTRING
     oldDataStart = set->data.string;
-    Ns_SetDataPrealloc(set, (int)bufferSize);
+    Ns_SetDataPrealloc(set, (TCL_SIZE_T)bufferSize);
     ShiftData(set, oldDataStart);
 #endif
 }
@@ -408,8 +413,8 @@ Ns_SetFree(Ns_Set *set)
 
 size_t
 Ns_SetPutSz(Ns_Set *set,
-            const char *keyString, ssize_t keyLength,
-            const char *valueString, ssize_t valueLength)
+            const char *keyString, TCL_SIZE_T keyLength,
+            const char *valueString, TCL_SIZE_T valueLength)
 {
     size_t idx;
 
@@ -826,7 +831,7 @@ Ns_SetTrunc(Ns_Set *set, size_t size)
                 }
             }
             //Ns_Log(Notice, "... final can trunc data from %i to %ld",  set->data.length, endPtr-set->data.string);
-            Tcl_DStringSetLength(&set->data, (int)(endPtr - set->data.string));
+            Tcl_DStringSetLength(&set->data, (TCL_SIZE_T)(endPtr - set->data.string));
 
 # ifdef NS_SET_DEBUG
             hexPrint("after trunc", (unsigned char *)set->data.string, (size_t)set->data.length);
@@ -920,7 +925,7 @@ Ns_SetPutValue(Ns_Set *set, size_t index, const char *value)
 }
 
 void
-Ns_SetPutValueSz(Ns_Set *set, size_t index, const char *value, ssize_t size)
+Ns_SetPutValueSz(Ns_Set *set, size_t index, const char *value, TCL_SIZE_T size)
 {
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(value != NULL);
@@ -928,7 +933,7 @@ Ns_SetPutValueSz(Ns_Set *set, size_t index, const char *value, ssize_t size)
     if (index < set->size) {
 #ifdef NS_SET_DSTRING
         if (size == TCL_INDEX_NONE) {
-            size = (ssize_t)strlen(value);
+            size = (TCL_SIZE_T)strlen(value);
         }
 #ifdef NS_SET_DEBUG
         Ns_Log(Notice, "Ns_SetPutValue %p [%lu] key '%s' value '%s size %ld",
@@ -985,7 +990,7 @@ Ns_SetPutValueSz(Ns_Set *set, size_t index, const char *value, ssize_t size)
  *
  *----------------------------------------------------------------------
  */
-void Ns_SetClearValues(Ns_Set *set, int maxAlloc)
+void Ns_SetClearValues(Ns_Set *set, TCL_SIZE_T maxAlloc)
 {
     size_t i;
 
@@ -1009,14 +1014,14 @@ void Ns_SetClearValues(Ns_Set *set, int maxAlloc)
         Tcl_DString ds, *dsPtr = &ds;
         Ns_DList    dl, *dlPtr = &dl;
         char       *p;
-        int         oldLength = set->data.length;
+        TCL_SIZE_T  oldLength = set->data.length;
 
         Tcl_DStringInit(dsPtr);
         Ns_DListInit(dlPtr);
         for (i = 0u; i < set->size; ++i) {
             size_t nameSize = strlen(set->fields[i].name);
 
-            Tcl_DStringAppend(dsPtr, set->fields[i].name, (int)nameSize);
+            Tcl_DStringAppend(dsPtr, set->fields[i].name, (TCL_SIZE_T)nameSize);
             Tcl_DStringSetLength(dsPtr, dsPtr->length+1);
             Ns_DListAppend(dlPtr, (void*)(ptrdiff_t)(nameSize+1));
             set->fields[i].value = NULL;
@@ -1032,6 +1037,7 @@ void Ns_SetClearValues(Ns_Set *set, int maxAlloc)
          */
         if (set->data.spaceAvl > maxAlloc && (oldLength < maxAlloc/4)) {
             const char *oldBuffer = set->data.string;
+
             set->data.string = ckalloc(maxAlloc);
             ckfree((void*)oldBuffer);
             set->data.spaceAvl = maxAlloc;
@@ -1189,7 +1195,7 @@ Ns_SetSplit(const Ns_Set *set, char sep)
     NS_NONNULL_ASSERT(set != NULL);
 
     Ns_DStringInit(&ds);
-    Ns_DStringNAppend(&ds, (char *) &end, (int)sizeof(Ns_Set *));
+    Ns_DStringNAppend(&ds, (char *) &end, (TCL_SIZE_T)sizeof(Ns_Set *));
 
     for (i = 0u; i < set->size; ++i) {
         Ns_Set     *next;
@@ -1211,7 +1217,7 @@ Ns_SetSplit(const Ns_Set *set, char sep)
             next = Ns_SetCreate(name);
             sp = (Ns_Set **) (ds.string + ds.length - sizeof(Ns_Set *));
             *sp = next;
-            Ns_DStringNAppend(&ds, (char *) &end, (int)sizeof(Ns_Set *));
+            Ns_DStringNAppend(&ds, (char *) &end, (TCL_SIZE_T)sizeof(Ns_Set *));
         }
         (void)Ns_SetPut(next, key, set->fields[i].value);
         if (name != NULL) {
@@ -1353,9 +1359,9 @@ Ns_SetIMerge(Ns_Set *high, const Ns_Set *low)
  *
  *----------------------------------------------------------------------
  */
-void Ns_SetDataPrealloc(Ns_Set *set, int size)
+void Ns_SetDataPrealloc(Ns_Set *set, TCL_SIZE_T size)
 {
-    int oldStringSize = set->data.length;
+    TCL_SIZE_T oldStringSize = set->data.length;
 
     /*
      * Note that Tcl_DStringSetLength() allocates actually one byte more than

@@ -462,7 +462,7 @@ ParseQuery(char *form, Ns_Set *set, Tcl_Encoding encoding, bool translate)
                      */
                     Ns_DStringSetLength(&vds2, 0);
                     do {
-                        Tcl_DStringAppend(&vds2, v, (int)(q - v));
+                        Tcl_DStringAppend(&vds2, v, (TCL_SIZE_T)(q - v));
                         v = q +1;
                         q = strchr(v, INTCHAR('\r'));
                     } while (q != NULL);
@@ -734,7 +734,7 @@ GetBoundary(Tcl_DString *dsPtr, const char *contentType)
             ++be;
         }
         Tcl_DStringAppend(dsPtr, "--", 2);
-        Tcl_DStringAppend(dsPtr, bs, (int)(be - bs));
+        Tcl_DStringAppend(dsPtr, bs, (TCL_SIZE_T)(be - bs));
         success = NS_TRUE;
     }
     return success;
@@ -888,7 +888,7 @@ Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding
 
     if (encoding == NULL) {
         Tcl_DStringSetLength(dsPtr, 0);
-        Tcl_DStringAppend(dsPtr, start, (int)len);
+        Tcl_DStringAppend(dsPtr, start, (TCL_SIZE_T)len);
         buffer = dsPtr->string;
     } else {
         Tcl_DString ds;
@@ -904,7 +904,7 @@ Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding
              * ExternalToUtfDString will re-init dstring.
              */
             Tcl_DStringFree(dsPtr);
-            (void) Tcl_ExternalToUtfDString(encoding, start, (int)len, dsPtr);
+            (void) Tcl_ExternalToUtfDString(encoding, start, (TCL_SIZE_T)len, dsPtr);
             buffer = dsPtr->string;
         }
     }
@@ -915,7 +915,7 @@ Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding
      * string.
      */
     if (buffer != NULL && unescape != '\0') {
-      int i, j, l = (int)len;
+        TCL_SIZE_T i, j, l = (TCL_SIZE_T)len;
 
       for (i = 0; i<l; i++) {
         if (buffer[i] == '\\' && buffer[i+1] == unescape) {

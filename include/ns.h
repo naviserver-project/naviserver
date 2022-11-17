@@ -238,7 +238,7 @@ typedef enum {
 #define Ns_DStringLength           Tcl_DStringLength
 #define Ns_DStringValue            Tcl_DStringValue
 #define Ns_DStringNAppend          Tcl_DStringAppend
-#define Ns_DStringAppend(d,s)      Tcl_DStringAppend((d), (s), -1)
+#define Ns_DStringAppend(d,s)      Tcl_DStringAppend((d), (s), TCL_INDEX_NONE)
 #define Ns_DStringAppendElement    Tcl_DStringAppendElement
 #define Ns_DStringInit             Tcl_DStringInit
 #define Ns_DStringFree             Tcl_DStringFree
@@ -351,7 +351,7 @@ typedef void          (Ns_AdpParserProc)(Tcl_DString *outPtr, char *page);
 typedef Ns_ReturnCode (Ns_UserAuthorizeProc) (const char *user, const char *passwd)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 typedef int           (Ns_ObjvProc)(struct Ns_ObjvSpec *spec, Tcl_Interp *interp,
-                                    int *objcPtr, Tcl_Obj *const* objv)
+                                    TCL_SIZE_T *objcPtr, Tcl_Obj *const* objv)
     NS_GNUC_NONNULL(1);
 typedef int           (Ns_IndexCmpProc) (const void *left, const void *right)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -432,8 +432,8 @@ typedef struct Ns_Request {
     const char     *url;
     const char     *urlv;
     char           *query;
-    int             url_len;
-    int             urlv_len;
+    TCL_SIZE_T      url_len;
+    TCL_SIZE_T      urlv_len;
     int             urlc;
     unsigned short  port;
     double          version;
@@ -761,7 +761,7 @@ typedef char *(Ns_LocationProc)        /* Deprecated */
  */
 
 NS_EXTERN int
-Ns_AdpAppend(Tcl_Interp *interp, const char *buf, int len)
+Ns_AdpAppend(Tcl_Interp *interp, const char *buf, TCL_SIZE_T len)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
@@ -979,7 +979,7 @@ NS_EXTERN void
 Ns_CacheSetMaxSize(Ns_Cache *cache, size_t maxSize)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int
+NS_EXTERN TCL_SIZE_T
 Ns_CacheGetNrUncommittedEntries(const Ns_Cache *cache)
     NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
@@ -1782,7 +1782,7 @@ Ns_TclSetOtherValuePtr(Tcl_Obj *objPtr, const Tcl_ObjType *newTypePtr, void *val
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
-Ns_TclSetStringRep(Tcl_Obj *objPtr, const char *bytes, int length)
+Ns_TclSetStringRep(Tcl_Obj *objPtr, const char *bytes, TCL_SIZE_T length)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN int
@@ -1989,25 +1989,25 @@ Ns_LogSeveritySetEnabled(Ns_LogSeverity severity, bool enabled)
  */
 
 NS_EXTERN Ns_ReturnCode
-Ns_RollFile(const char *fileName, int max)
+Ns_RollFile(const char *fileName, TCL_SIZE_T max)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode
-Ns_PurgeFiles(const char *fileName, int max)
+Ns_PurgeFiles(const char *fileName, TCL_SIZE_T max)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode
-Ns_RollFileByDate(const char *fileName, int max)
+Ns_RollFileByDate(const char *fileName, TCL_SIZE_T max)
     NS_GNUC_NONNULL(1)
     NS_GNUC_DEPRECATED_FOR(Ns_PurgeFiles);
 
 NS_EXTERN Ns_ReturnCode
-Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, int maxbackup)
+Ns_RollFileFmt(Tcl_Obj *fileObj, const char *rollfmt, TCL_SIZE_T maxbackup)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN Ns_ReturnCode
 Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc, void *arg,
-                   const char *filename, const char *rollfmt, int maxbackup)
+                   const char *filename, const char *rollfmt, TCL_SIZE_T maxbackup)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 /*
@@ -2581,7 +2581,9 @@ Ns_SetUpdate(Ns_Set *set, const char *keyString, const char *valueString)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN size_t
-Ns_SetUpdateSz(Ns_Set *set, const char *keyString, ssize_t keyLength, const char *valueString, ssize_t valueLength)
+Ns_SetUpdateSz(Ns_Set *set,
+               const char *keyString, TCL_SIZE_T keyLength,
+               const char *valueString, TCL_SIZE_T valueLength)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN size_t
@@ -2589,7 +2591,9 @@ Ns_SetIUpdate(Ns_Set *set, const char *keyString, const char *valueString)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN size_t
-Ns_SetIUpdateSz(Ns_Set *set, const char *keyString, ssize_t keyLength, const char *valueString, ssize_t valueLength)
+Ns_SetIUpdateSz(Ns_Set *set,
+                const char *keyString, TCL_SIZE_T keyLength,
+                const char *valueString, TCL_SIZE_T valueLength)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_Set *
@@ -2618,7 +2622,9 @@ Ns_SetPut(Ns_Set *set, const char *key, const char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN size_t
-Ns_SetPutSz(Ns_Set *set, const char *keyString, ssize_t keyLength, const char *valueString, ssize_t valueLength)
+Ns_SetPutSz(Ns_Set *set,
+            const char *keyString, TCL_SIZE_T keyLength,
+            const char *valueString, TCL_SIZE_T valueLength)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN bool
@@ -2673,7 +2679,7 @@ Ns_SetPutValue(Ns_Set *set, size_t index, const char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
-Ns_SetPutValueSz(Ns_Set *set, size_t index, const char *value, ssize_t size)
+Ns_SetPutValueSz(Ns_Set *set, size_t index, const char *value, TCL_SIZE_T size)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
@@ -2727,7 +2733,7 @@ NS_EXTERN void
 Ns_DStringAppendSet(Ns_DString *dsPtr, const Ns_Set *set)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN void Ns_SetClearValues(Ns_Set *set, int maxAlloc)
+NS_EXTERN void Ns_SetClearValues(Ns_Set *set, TCL_SIZE_T maxAlloc)
     NS_GNUC_NONNULL(1);
 
 /*
@@ -3125,7 +3131,7 @@ Ns_StrIsValidHostHeaderContent(const char *chars)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN const unsigned char *
-Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *dsPtr)
+Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, TCL_SIZE_T *lengthPtr, Tcl_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 NS_EXTERN bool
@@ -3141,8 +3147,8 @@ Ns_Is7bit(const char *bytes, size_t nrBytes)
  */
 
 NS_EXTERN Ns_TclCallback *
-Ns_TclNewCallback(Tcl_Interp *interp, ns_funcptr_t cbProc, Tcl_Obj *scriptObjPtr, int objc,
-                  Tcl_Obj *const* objv)
+Ns_TclNewCallback(Tcl_Interp *interp, ns_funcptr_t cbProc, Tcl_Obj *scriptObjPtr,
+                  TCL_SIZE_T objc, Tcl_Obj *const* objv)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN int
@@ -3337,7 +3343,7 @@ Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
-Ns_HexString(const unsigned char *octets, char *outputBuffer, int size, bool isUpper)
+Ns_HexString(const unsigned char *octets, char *outputBuffer, TCL_SIZE_T size, bool isUpper)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*

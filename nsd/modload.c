@@ -120,7 +120,7 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
             ".so"
 #endif
             ;
-        int extLength = (int)strlen(defaultExtension);
+        TCL_SIZE_T extLength = (TCL_SIZE_T)strlen(defaultExtension);
 
         /*
          * The specified module name does not exist.  Try appending the

@@ -577,7 +577,7 @@ NsTclStrftimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
                                    Tcl_GetString(objv[1]), (char *)0L);
             result = TCL_ERROR;
         } else {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, (int)bufLength));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(buf, (TCL_SIZE_T)bufLength));
         }
     }
 
@@ -608,9 +608,9 @@ NsTclStrftimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
 static void
 UpdateStringOfTime(Tcl_Obj *objPtr)
 {
-    Ns_Time *timePtr;
-    int      len;
-    char     buf[(TCL_INTEGER_SPACE * 2) + 1];
+    Ns_Time   *timePtr;
+    TCL_SIZE_T len;
+    char       buf[(TCL_INTEGER_SPACE * 2) + 1];
 
     NS_NONNULL_ASSERT(objPtr != NULL);
 
@@ -618,10 +618,10 @@ UpdateStringOfTime(Tcl_Obj *objPtr)
     Ns_AdjTime(timePtr);
 
     if (timePtr->usec == 0 && timePtr->sec >= 0) {
-        len = ns_uint64toa(buf, (uint64_t)timePtr->sec);
+        len = (TCL_SIZE_T)ns_uint64toa(buf, (uint64_t)timePtr->sec);
     } else {
-        len = snprintf(buf, sizeof(buf), "%" PRId64 ":%ld",
-                       (int64_t)timePtr->sec, timePtr->usec);
+        len = (TCL_SIZE_T)snprintf(buf, sizeof(buf), "%" PRId64 ":%ld",
+                                   (int64_t)timePtr->sec, timePtr->usec);
     }
     Ns_TclSetStringRep(objPtr, buf, len);
 }

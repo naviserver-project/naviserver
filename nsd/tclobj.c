@@ -198,13 +198,13 @@ Ns_TclSetOtherValuePtr(Tcl_Obj *objPtr, const Tcl_ObjType *newTypePtr, void *val
  */
 
 void
-Ns_TclSetStringRep(Tcl_Obj *objPtr, const char *bytes, int length)
+Ns_TclSetStringRep(Tcl_Obj *objPtr, const char *bytes, TCL_SIZE_T length)
 {
     NS_NONNULL_ASSERT(objPtr != NULL);
     NS_NONNULL_ASSERT(bytes != NULL);
 
-    if (length < 1) {
-        length = (int)strlen(bytes);
+    if (length == TCL_INDEX_NONE) {
+        length = (TCL_SIZE_T)strlen(bytes);
     }
     objPtr->length = length;
     objPtr->bytes = ckalloc((unsigned) length + 1u);
@@ -492,9 +492,13 @@ UpdateStringOfAddr(Tcl_Obj *objPtr)
     const char *type = objPtr->internalRep.twoPtrValue.ptr1;
     const void *addr = objPtr->internalRep.twoPtrValue.ptr2;
     char        buf[128];
-    int         len;
+    TCL_SIZE_T  len;
 
-    len = snprintf(buf, sizeof(buf), "t%" PRIxPTR "-a%" PRIxPTR "-%s", (uintptr_t)type, (uintptr_t)addr, type);
+    len = (TCL_SIZE_T)snprintf(buf, sizeof(buf),
+                               "t%" PRIxPTR "-a%" PRIxPTR "-%s",
+                               (uintptr_t)type,
+                               (uintptr_t)addr,
+                               type);
     Ns_TclSetStringRep(objPtr, buf, len);
 }
 

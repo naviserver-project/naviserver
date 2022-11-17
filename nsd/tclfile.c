@@ -182,9 +182,9 @@ FileObjCmd(Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, const char *cmd)
         const char   *path = Tcl_GetString(fileObj);
 
         if (*cmd == 'p' /* "purge" */ ) {
-            status = Ns_PurgeFiles(path, maxFiles);
+            status = Ns_PurgeFiles(path, (TCL_SIZE_T)maxFiles);
         } else /* must be "roll" */ {
-            status = Ns_RollFile(path, maxFiles);
+            status = Ns_RollFile(path, (TCL_SIZE_T)maxFiles);
         }
         if (status != NS_OK) {
             Ns_TclPrintfResult(interp, "could not %s \"%s\": %s",

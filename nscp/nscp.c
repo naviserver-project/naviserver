@@ -579,7 +579,7 @@ GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, bool echo)
             }
         }
 
-        Tcl_DStringAppend(dsPtr, buf, (int)n);
+        Tcl_DStringAppend(dsPtr, buf, (TCL_SIZE_T)n);
         result = NS_TRUE;
 
     } while (buf[n-1] != '\n');

@@ -71,7 +71,7 @@ QuoteHtml(Ns_DString *dsPtr, const char *breakChar, const char *htmlString)
          * Append the first part, escape the protected char, and
          * continue.
          */
-        Ns_DStringNAppend(dsPtr, toProcess, (int)(breakChar - toProcess));
+        Ns_DStringNAppend(dsPtr, toProcess, (TCL_SIZE_T)(breakChar - toProcess));
         switch (*breakChar) {
         case '<':
             Ns_DStringNAppend(dsPtr, "&lt;", 4);
@@ -242,8 +242,8 @@ NsTclUnquoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
                     break;
 
                 } else {
-                    size_t length = 0u;
-                    int prefixLength = (int)(possibleEntity - htmlString);
+                    size_t     length = 0u;
+                    TCL_SIZE_T prefixLength = (TCL_SIZE_T)(possibleEntity - htmlString);
 
                     /*
                      * Add the string leading to the ampersand to the output
@@ -255,8 +255,8 @@ NsTclUnquoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
                     }
 
                     if (WordEndsInSemi(possibleEntity, &length)) {
-                        size_t decoded;
-                        int    oldLength = dsPtr->length;
+                        size_t     decoded;
+                        TCL_SIZE_T oldLength = dsPtr->length;
 
                         /*
                          * The appended characters are max 4 bytes; make sure, we
@@ -265,7 +265,7 @@ NsTclUnquoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
                         Tcl_DStringSetLength(dsPtr, oldLength + 4);
                         decoded = EntityDecode(possibleEntity + 1u, length, &needEncode,
                                                dsPtr->string + oldLength);
-                        Tcl_DStringSetLength(dsPtr, oldLength + (int)decoded);
+                        Tcl_DStringSetLength(dsPtr, oldLength + (TCL_SIZE_T)decoded);
 
                         /*
                          * Include the boundary characters "&" and ";" in the
@@ -852,7 +852,7 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
             Tcl_DString ds;
 
             (void)Tcl_ExternalToUtfDString(Ns_GetCharsetEncoding("utf-8"),
-                                           inString, (int)strlen(inString), &ds);
+                                           inString, (TCL_SIZE_T)strlen(inString), &ds);
             Tcl_DStringResult(interp, &ds);
         } else {
             Tcl_SetObjResult(interp, Tcl_NewStringObj(inString, TCL_INDEX_NONE));
@@ -911,7 +911,7 @@ HtmlParseTagAtts(const char *string, ptrdiff_t length)
         i++;
     }
     resultObj = Tcl_NewListObj(0, NULL);
-    nameObj = Tcl_NewStringObj(string,(int)i);
+    nameObj = Tcl_NewStringObj(string, (TCL_SIZE_T)i);
     Tcl_ListObjAppendElement(NULL, resultObj, nameObj);
     Ns_Log(Debug, "... tagname '%s'", Tcl_GetString(nameObj));
 
@@ -1008,9 +1008,9 @@ HtmlParseTagAtts(const char *string, ptrdiff_t length)
                 }
                 if (!incorrectSyntax) {
                     nameObj = Tcl_NewStringObj(&string[attributeStart],
-                                               (int)(attributeNameEnd - attributeStart));
+                                               (TCL_SIZE_T)(attributeNameEnd - attributeStart));
                     valueObj = Tcl_NewStringObj(&string[valueStart],
-                                                (int)(valueEnd - valueStart));
+                                                (TCL_SIZE_T)(valueEnd - valueStart));
                     Tcl_DictObjPut(NULL, attributesObj, nameObj, valueObj);
                     Ns_Log(Debug, "... att '%s' got value '%s'",
                            Tcl_GetString(nameObj), Tcl_GetString(valueObj));
@@ -1022,7 +1022,7 @@ HtmlParseTagAtts(const char *string, ptrdiff_t length)
                      * https://www.w3.org/TR/2011/WD-html5-20110525/syntax.html#syntax-tag-name
                      */
                     nameObj = Tcl_NewStringObj(&string[attributeStart],
-                                               (int)(attributeNameEnd - attributeStart));
+                                               (TCL_SIZE_T)(attributeNameEnd - attributeStart));
 
                     valueObj = Tcl_NewStringObj("", 0);
                     Tcl_DictObjPut(NULL, attributesObj, nameObj, valueObj);
@@ -1106,7 +1106,7 @@ HtmlFinishElement(Tcl_Obj *listObj, const char *what, const char *lastStart,
             length += 2;
         }
         Tcl_ListObjAppendElement(NULL, elementObj,
-                                 Tcl_NewStringObj(lastStart, (int)length));
+                                 Tcl_NewStringObj(lastStart, (TCL_SIZE_T)length));
         if (contentObj != NULL) {
             Tcl_ListObjAppendElement(NULL, elementObj, contentObj);
         }

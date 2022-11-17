@@ -231,7 +231,7 @@ Ns_SetCreateFromDict(Tcl_Interp *interp, const char *name, Tcl_Obj *listObj)
         setPtr = Ns_SetCreate(name);
         for (i = 0; i < objc; i += 2) {
             const char *keyString, *valueString;
-            int         keyLength, valueLength;
+            TCL_SIZE_T  keyLength, valueLength;
 
             keyString = Tcl_GetStringFromObj(objv[i], &keyLength);
             valueString = Tcl_GetStringFromObj(objv[i+1], &valueLength);
@@ -356,7 +356,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
             set = Ns_SetCreate(name);
             while (offset < objc) {
                 const char *keyString, *valueString;
-                int         keyLength, valueLength;
+                TCL_SIZE_T  keyLength, valueLength;
 
                 keyString = Tcl_GetStringFromObj(objv[offset++], &keyLength);
                 valueString = Tcl_GetStringFromObj(objv[offset++], &valueLength);
@@ -636,7 +636,8 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                  * These commands require a set and key/value index.
                  */
                 Ns_ObjvValueRange idxRange = {0, (Tcl_WideInt)Ns_SetSize(set)};
-                int               i, oc = 1;
+                int               i;
+                TCL_SIZE_T        oc = 1;
                 Ns_ObjvSpec       spec = {"?idx", Ns_ObjvInt, &i, &idxRange};
 
                 if (unlikely(objc != 4)) {
@@ -698,7 +699,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                 } else {
                     int i;
                     const char *keyString, *valueString;
-                    int         keyLength, valueLength;
+                    TCL_SIZE_T  keyLength, valueLength;
 
                     keyString = Tcl_GetStringFromObj(objv[3], &keyLength);
                     valueString = Tcl_GetStringFromObj(objv[4], &valueLength);
@@ -885,7 +886,8 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, Ns_TclSetType type)
 {
     Tcl_HashTable  *tablePtr;
     Tcl_HashEntry  *hPtr;
-    int             isNew, len;
+    int             isNew;
+    TCL_SIZE_T      len;
     uint32_t        next;
     char            buf[TCL_INTEGER_SPACE + 1];
 
@@ -899,7 +901,7 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, Ns_TclSetType type)
      * Allocate a new set IDs until we find an unused one.
      */
     for (next = (uint32_t)tablePtr->numEntries; ; ++ next) {
-        len = ns_uint32toa(buf+1, next);
+        len = (TCL_SIZE_T)ns_uint32toa(buf+1, next);
         hPtr = Tcl_CreateHashEntry(tablePtr, buf, &isNew);
         if (isNew != 0) {
             break;

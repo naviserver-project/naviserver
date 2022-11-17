@@ -28,7 +28,7 @@
  */
 
 typedef struct ByteKey {
-    int   len;         /* Length required to encode string. */
+    TCL_SIZE_T  len;         /* Length required to encode string. */
     const char *str;   /* String for multibyte encoded character. */
 } ByteKey;
 
@@ -41,6 +41,9 @@ static char *UrlEncode(Ns_DString *dsPtr, const char *urlSegment,
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static char *UrlDecode(Ns_DString *dsPtr, const char *urlSegment,
                        Tcl_Encoding encoding, char part, Ns_ReturnCode *resultPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static TCL_SIZE_T PercentDecode(char *dest, const char *source, char part)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
@@ -1021,7 +1024,8 @@ int
 NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                      int objc, Tcl_Obj *const* objv)
 {
-    int          nargs = 0, upperCase = 0, result = TCL_OK, part = INTCHAR('q');
+    int          upperCase = 0, result = TCL_OK, part = INTCHAR('q');
+    TCL_SIZE_T   nargs = 0;
     char        *charset = NULL;
     Ns_ObjvSpec lopts[] = {
         {"-charset",   Ns_ObjvString, &charset,   NULL},
@@ -1040,17 +1044,17 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     } else {
         Ns_DString   ds;
         Tcl_Encoding encoding = NULL;
-        int          i;
+        TCL_SIZE_T   i;
 
         if (charset != NULL) {
             encoding = Ns_GetCharsetEncoding(charset);
         }
 
         Ns_DStringInit(&ds);
-        for (i = objc - nargs; i < objc; ++i) {
+        for (i = (TCL_SIZE_T)objc - nargs; i < (TCL_SIZE_T)objc; ++i) {
             (void)UrlEncode(&ds, Tcl_GetString(objv[i]), encoding, (char)part, (upperCase == 1));
 
-            if (i + 1 < objc) {
+            if (i + 1 < (TCL_SIZE_T)objc) {
                 if (part == 'q') {
                     Ns_DStringNAppend(&ds, "&", 1);
                 } else {
@@ -1187,7 +1191,7 @@ static char *
 UrlEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
           char part, bool upperCase)
 {
-    register int   i, n;
+    TCL_SIZE_T     i, n;
     register char *q;
     const char    *p;
     Tcl_DString    ds;
@@ -1198,7 +1202,7 @@ UrlEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
 
 
     if (encoding != NULL) {
-        urlSegment = Tcl_UtfToExternalDString(encoding, urlSegment, -1, &ds);
+        urlSegment = Tcl_UtfToExternalDString(encoding, urlSegment, TCL_INDEX_NONE, &ds);
     }
 
     /*
@@ -1276,12 +1280,12 @@ UrlEncode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
  *
  *----------------------------------------------------------------------
  */
-static int
+static TCL_SIZE_T
 PercentDecode(char *dest, const char *source, char part)
 {
     register char       *q = dest;
     register const char *p = source;
-    register int         n = 0;
+    register TCL_SIZE_T  n = 0;
     static const int hex_code[] = {
         /* 0x00 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
         /* 0x10 */  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -1394,10 +1398,10 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
          * encoding). This optimization improves this function roughly
          * 2x.
          */
-        Ns_DStringNAppend(dsPtr, urlSegment, (int)inputLength);
+        Ns_DStringNAppend(dsPtr, urlSegment, (TCL_SIZE_T)inputLength);
         //Ns_Log(Notice, "### UrlDecode plain append <%s> len %ld", dsPtr->string, inputLength);
     } else {
-        int   oldLength, decodedLength;
+        TCL_SIZE_T oldLength, decodedLength;
         char *decoded;
 
         oldLength = dsPtr->length;
@@ -1406,19 +1410,19 @@ UrlDecode(Ns_DString *dsPtr, const char *urlSegment, Tcl_Encoding encoding,
          * Expand the Tcl_DString by the length of the input
          * string which will be the largest size required.
          */
-        Ns_DStringSetLength(dsPtr, oldLength + (int)inputLength);
+        Ns_DStringSetLength(dsPtr, oldLength + (TCL_SIZE_T)inputLength);
         decoded = dsPtr->string + oldLength;
 
         if (firstCode != NULL) {
             ptrdiff_t offset = firstCode - urlSegment;
 
             memcpy(decoded, urlSegment, (size_t)offset);
-            decodedLength = (int)offset;
+            decodedLength = (TCL_SIZE_T)offset;
             dsPtr->length += decodedLength;
             decodedLength += PercentDecode(decoded+offset, urlSegment+offset, part);
         } else {
             memcpy(decoded, urlSegment, inputLength);
-            decodedLength = (int)inputLength;
+            decodedLength = (TCL_SIZE_T)inputLength;
         }
 
         if (likely(encoding != NULL)) {

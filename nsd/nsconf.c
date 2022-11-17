@@ -193,8 +193,8 @@ NsConfUpdate(void)
     Ns_DStringInit(&ds);
     nsconf.tcl.sharedlibrary = ns_strcopy(Ns_ConfigString(path, "tcllibrary", "tcl"));
     if (Ns_PathIsAbsolute(nsconf.tcl.sharedlibrary) == NS_FALSE) {
-        Ns_Set *set = Ns_ConfigCreateSection(NS_GLOBAL_CONFIG_PARAMETERS);
-        int     length;
+        Ns_Set    *set = Ns_ConfigCreateSection(NS_GLOBAL_CONFIG_PARAMETERS);
+        TCL_SIZE_T length;
 
         (void)Ns_HomePath(&ds, nsconf.tcl.sharedlibrary, (char *)0L);
         length = ds.length;

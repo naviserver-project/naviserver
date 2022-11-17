@@ -1656,7 +1656,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
     case CKeepAliveIdx:
         {
             Ns_ObjvValueRange keepRange = {0, 1};
-            int          oc = 1;
+            TCL_SIZE_T  oc = 1;
             Ns_ObjvSpec spec = {"?size", Ns_ObjvInt, &connPtr->keep, &keepRange};
 
             if (objc > 2 && Ns_ObjvInt(&spec, interp, &oc, &objv[2]) != TCL_OK) {
@@ -1682,7 +1682,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
     case CCompressIdx:
         if (objc > 2) {
             Ns_ObjvValueRange compressRange = {0, 9};
-            int               oc = 1, level = 0;
+            TCL_SIZE_T        oc = 1;
+            int               level = 0;
             Ns_ObjvSpec       spec = {"?level", Ns_ObjvInt, &level, &compressRange};
 
             if (Ns_ObjvInt(&spec, interp, &oc, &objv[2]) != TCL_OK) {
@@ -1703,14 +1704,15 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
             Tcl_SetObjResult(interp, Tcl_NewStringObj(request->urlv, request->urlv_len));
         } else {
             Ns_ObjvValueRange idxRange = {0, request->urlc - 1};
-            int               oc = 1, idx = 0;
+            TCL_SIZE_T        oc = 1;
+            int               idx = 0;
             Ns_ObjvSpec       spec = {"?idx", Ns_ObjvInt, &idx, &idxRange};
 
             if (Ns_ObjvInt(&spec, interp, &oc, &objv[2]) != TCL_OK) {
                 result = TCL_ERROR;
             } else {
                 const char **elements;
-                int          length;
+                TCL_SIZE_T   length;
 
                 (void)Tcl_SplitList(NULL, request->urlv, &length, &elements);
                 Tcl_SetObjResult(interp, Tcl_NewStringObj(elements[idx], TCL_INDEX_NONE));
@@ -1768,7 +1770,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
 
     case CContentIdx:
         {
-            int         binary = (int)NS_FALSE, offset = 0, length = -1, requiredLength;
+            int         binary = (int)NS_FALSE;
+            TCL_SIZE_T  length = TCL_INDEX_NONE, requiredLength, offset = 0;
             Tcl_DString encDs;
             Ns_ObjvSpec lopts[] = {
                 {"-binary",    Ns_ObjvBool,  &binary, INT2PTR(NS_TRUE)},
@@ -1806,11 +1809,11 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
                 result = TCL_ERROR;
             }
 
-            if ((result == TCL_OK) && (length == -1)) {
-                length = (int)connPtr->reqPtr->length - offset;
+            if ((result == TCL_OK) && (length == TCL_INDEX_NONE)) {
+                length = (TCL_SIZE_T)connPtr->reqPtr->length - offset;
 
             } else if ((result == TCL_OK)
-                       && (length > -1)
+                       && (length >= 0)
                        && ((size_t)length + (size_t)offset > connPtr->reqPtr->length)
                        ) {
                 Ns_TclPrintfResult(interp, "offset + length exceeds available content length");
@@ -1828,10 +1831,10 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
                 } else if (!binary) {
                     content = Tcl_ExternalToUtfDString(connPtr->outputEncoding,
                                                        connPtr->reqPtr->content,
-                                                       (int)connPtr->reqPtr->length,
+                                                       (TCL_SIZE_T)connPtr->reqPtr->length,
                                                        &encDs);
                     contentLength = (size_t)Tcl_DStringLength(&encDs);
-                    if (requiredLength == -1) {
+                    if (requiredLength == TCL_INDEX_NONE) {
                         length = Tcl_DStringLength(&encDs) - offset;
                     }
                 } else {
@@ -1840,7 +1843,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
                 }
 
                 if (contentLength > 0u) {
-                    if (requiredLength == -1 && offset == 0) {
+                    if (requiredLength == TCL_INDEX_NONE && offset == 0) {
                         /*
                          * return full content
                          */
@@ -1848,21 +1851,21 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
                             Tcl_DStringResult(interp, &encDs);
                         } else {
                             Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((uint8_t*)connPtr->reqPtr->content,
-                                                                         (int)connPtr->reqPtr->length));
+                                                                         (TCL_SIZE_T)connPtr->reqPtr->length));
                         }
                     } else {
                         /*
                          * return partial content
                          */
                         if (!binary) {
-                            Tcl_Obj *contentObj = Tcl_NewStringObj(content, (int)contentLength);
+                            Tcl_Obj *contentObj = Tcl_NewStringObj(content, (TCL_SIZE_T)contentLength);
 
                             Tcl_SetObjResult(interp, Tcl_GetRange(contentObj, offset, offset+length-1));
                             Tcl_DStringFree(&encDs);
                             Tcl_DecrRefCount(contentObj);
                         } else {
                             Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((const uint8_t*)content + offset,
-                                                                         (int)length));
+                                                                         (TCL_SIZE_T)length));
                         }
                     }
                 }
@@ -2074,7 +2077,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
             result = TCL_ERROR;
 
         } else {
-            int               oc = 3, offset;
+            TCL_SIZE_T        oc = 3;
+            int               offset;
             Ns_ObjvValueRange offsetRange = {0, (Tcl_WideInt)connPtr->reqPtr->length};
             Ns_ObjvSpec       specOffset = {"offset", Ns_ObjvInt, &offset, &offsetRange};
 
@@ -2082,7 +2086,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
                 result = TCL_ERROR;
 
             } else {
-                int               length;
+                TCL_SIZE_T        length;
                 Ns_ObjvValueRange lengthRange = {0, ((Tcl_WideInt)connPtr->reqPtr->length - offset)};
                 Ns_ObjvSpec       specLength = {"length", Ns_ObjvInt, &length, &lengthRange};
 
@@ -2125,8 +2129,9 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
 
     case CRatelimitIdx:
         if (objc > 2) {
-            int               rateLimit, oc = 2;
-            Ns_ObjvSpec       specLength = {"ratelimit", Ns_ObjvInt, &rateLimit, &posintRange0};
+            TCL_SIZE_T  oc = 2;
+            int         rateLimit;
+            Ns_ObjvSpec specLength = {"ratelimit", Ns_ObjvInt, &rateLimit, &posintRange0};
 
             if (Ns_ObjvInt(&specLength, interp, &oc, &objv[2]) != TCL_OK) {
                 result = TCL_ERROR;
@@ -2241,7 +2246,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
 
         } else if (objc == 3) {
             Ns_ObjvValueRange statusRange = {100, 599};
-            int               oc = 2, status;
+            TCL_SIZE_T        oc = 2;
+            int               status;
             Ns_ObjvSpec       spec = {"?status", Ns_ObjvInt, &status, &statusRange};
 
             if (NsConnRequire(interp, NS_CONN_REQUIRE_CONNECTED, &conn) != NS_OK) {
@@ -2301,7 +2307,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
             Tcl_WideInt       sent;
             Ns_ObjvValueRange sentRange = {0, LLONG_MAX};
             Ns_ObjvSpec       spec = {"?idx", Ns_ObjvWideInt, &sent, &sentRange};
-            int               oc = 1;
+            TCL_SIZE_T        oc = 1;
 
             if (Ns_ObjvWideInt(&spec, interp, &oc, &objv[2]) != TCL_OK) {
                 result = TCL_ERROR;
@@ -2375,7 +2381,7 @@ NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
         result = TCL_ERROR;
     } else {
         Ns_TclCallback *cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclConnLocation,
-                                                  objv[1], objc - 2, objv + 2);
+                                                  objv[1], (TCL_SIZE_T)(objc - 2), objv + 2);
         if (Ns_SetConnLocationProc(NsTclConnLocation, cbPtr) != NS_OK) {
             result = TCL_ERROR;
         }
@@ -2405,7 +2411,8 @@ int
 NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     const NsInterp   *itPtr = clientData;
-    int               toCopy = 0, result = TCL_OK;
+    int               result = TCL_OK;
+    TCL_SIZE_T        toCopy = 0;
     char             *chanName;
     Tcl_Channel       chan;
 
@@ -2442,8 +2449,8 @@ NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
 
         Ns_LogDeprecated(objv, 1, "ns_conn copy ...", NULL);
 
-        if ((toCopy > (int)reqPtr->avail) || (toCopy == 0)) {
-            toCopy = (int)reqPtr->avail;
+        if ((toCopy > (TCL_SIZE_T)reqPtr->avail) || (toCopy == 0)) {
+            toCopy = (TCL_SIZE_T)reqPtr->avail;
         }
         if (Ns_ConnCopyToChannel(itPtr->conn, (size_t)toCopy, chan) != NS_OK) {
             Tcl_SetObjResult(interp, Tcl_NewStringObj("could not copy content", TCL_INDEX_NONE));

@@ -146,7 +146,7 @@ static bool         logOpenCalled = NS_FALSE;
 static const char  *logfileName = NULL;
 static const char  *rollfmt = NULL;
 static unsigned int flags = 0u;
-static int          maxbackup;
+static TCL_SIZE_T   maxbackup;
 
 static LogFilter   *filters;
 static const char  *const filterType = "ns:logfilter";
@@ -312,7 +312,8 @@ static int
 ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, int *idxPtr)
 {
     size_t       len;
-    int          result, pos = 1;
+    int          result;
+    TCL_SIZE_T   pos = 1;
     const char  *valueString;
 
     NS_NONNULL_ASSERT(path != NULL);
@@ -326,7 +327,7 @@ ObjvTableLookup(const char *path, const char *param, Ns_ObjvTable *tablePtr, int
     len = strlen(valueString);
     if (len > 0u) {
         Ns_ObjvSpec  spec;
-        Tcl_Obj     *objPtr = Tcl_NewStringObj(valueString, (int)len);
+        Tcl_Obj     *objPtr = Tcl_NewStringObj(valueString, (TCL_SIZE_T)len);
 
         spec.arg  = tablePtr;
         spec.dest = idxPtr;
@@ -424,11 +425,11 @@ NsConfigLog(void)
         (void) Ns_ConfigString(path, "logprefixintensity", NS_EMPTY_STRING);
     }
 
-    maxbackup = Ns_ConfigIntRange(path, "logmaxbackup", 10, 0, 999);
+    maxbackup = (TCL_SIZE_T)Ns_ConfigIntRange(path, "logmaxbackup", 10, 0, 999);
 
     logfileName = ns_strcopy(Ns_ConfigString(path, "serverlog", "nsd.log"));
     if (Ns_PathIsAbsolute(logfileName) == NS_FALSE) {
-        int length;
+        TCL_SIZE_T length;
 
         Ns_DStringInit(&ds);
         if (Ns_HomePathExists("logs", (char *)0L)) {
@@ -1321,7 +1322,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
                 result = TCL_ERROR;
             } else {
                 cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)Ns_TclCallbackProc,
-                                          objv[2], objc - 3, objv + 3);
+                                          objv[2], (TCL_SIZE_T)(objc - 3), objv + 3);
                 Ns_AddLogFilter(LogToTcl, cbPtr, Ns_TclFreeCallback);
                 Ns_TclSetAddrObj(Tcl_GetObjResult(interp), filterType, cbPtr);
             }
@@ -1368,7 +1369,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
             count = 0;
             if (objc > 2) {
                 Ns_ObjvValueRange countRange = {0, INT_MAX};
-                int               oc = 1;
+                TCL_SIZE_T        oc = 1;
                 Ns_ObjvSpec       spec = {"?count", Ns_ObjvInt, &count, &countRange};
 
                 if (Ns_ObjvInt(&spec, interp, &oc, &objv[2]) != TCL_OK) {
@@ -1670,7 +1671,7 @@ LogFlush(LogCache *cachePtr, LogFilter *listPtr, int count, bool trunc, bool loc
             size_t length = (ePtr != NULL) ? (ePtr->offset + ePtr->length) : 0u;
             cachePtr->count = (length != 0u) ? nentry : 0;
             cachePtr->currentEntry = ePtr;
-            Ns_DStringSetLength(&cachePtr->buffer, (int)length);
+            Ns_DStringSetLength(&cachePtr->buffer, (TCL_SIZE_T)length);
         } else {
             LogEntry *entryPtr, *tmpPtr;
 
@@ -1785,7 +1786,7 @@ LogToDString(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
          */
         timeString = LogTime(cachePtr, stamp, NS_FALSE);
         timeStringLength = cachePtr->lbufSize;
-        Ns_DStringNAppend(dsPtr, timeString, (int)timeStringLength);
+        Ns_DStringNAppend(dsPtr, timeString, (TCL_SIZE_T)timeStringLength);
     }
 
     if ((flags & LOG_USEC) != 0u) {
@@ -1849,7 +1850,7 @@ LogToDString(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     if (nsconf.sanitize_logfiles > 0) {
         Ns_DStringAppendPrintable(dsPtr, nsconf.sanitize_logfiles == 2, msg, len);
     } else {
-        Ns_DStringNAppend(dsPtr, msg, (int)len);
+        Ns_DStringNAppend(dsPtr, msg, (TCL_SIZE_T)len);
     }
     if ((flags & LOG_COLORIZE) != 0u) {
         Ns_DStringNAppend(dsPtr, (const char *)LOG_COLOREND, 4);
@@ -1983,7 +1984,7 @@ LogToTcl(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
              * to use a temporary DString here.
              */
             Ns_DStringInit(&ds2);
-            Ns_DStringNAppend(&ds2, msg, (int)len);
+            Ns_DStringNAppend(&ds2, msg, (TCL_SIZE_T)len);
             Ns_DStringAppendElement(&ds, ds2.string);
             Ns_DStringFree(&ds2);
 

@@ -267,8 +267,8 @@ NsParseAuth(Conn *connPtr, const char *auth)
         *p = '\0';
 
         if (STRIEQ(authDs.string, "Basic")) {
-            size_t  size;
-            ssize_t userLength;
+            size_t     size;
+            TCL_SIZE_T userLength;
 
             (void)Ns_SetPutSz(connPtr->auth, "AuthMethod", 10, "Basic", 5);
 
@@ -285,14 +285,14 @@ NsParseAuth(Conn *connPtr, const char *auth)
 
             q = strchr(v, INTCHAR(':'));
             if (q != NULL) {
-                ssize_t pwLength;
+                TCL_SIZE_T pwLength;
 
                 *q++ = '\0';
-                pwLength = ((v+size) - q);
+                pwLength = (TCL_SIZE_T)((v+size) - q);
                 (void)Ns_SetPutSz(connPtr->auth, "Password", 8, q, pwLength);
-                userLength = (ssize_t)size - (pwLength + 1);
+                userLength = (TCL_SIZE_T)size - (pwLength + 1);
             } else {
-                userLength = (ssize_t)size;
+                userLength = (TCL_SIZE_T)size;
             }
             (void)Ns_SetPutSz(connPtr->auth, "Username", 8, v, userLength);
             ns_free(v);
@@ -322,7 +322,7 @@ NsParseAuth(Conn *connPtr, const char *auth)
                 /* Remember position */
                 save2 = *(++v);
                 *v = '\0';
-                idx = Ns_SetPutSz(connPtr->auth, q, (ssize_t)(v-q), NULL, 0);
+                idx = Ns_SetPutSz(connPtr->auth, q, (TCL_SIZE_T)(v-q), NULL, 0);
                 /* Restore character */
                 *v = save2;
                 /* Skip = and optional spaces */
@@ -362,7 +362,8 @@ NsParseAuth(Conn *connPtr, const char *auth)
             while (*q != '\0' && CHARTYPE(space, *q) != 0) {
                 q++;
             }
-            (void)Ns_SetPutSz(connPtr->auth, "Token", 5, q, authDs.length - (q - authDs.string));
+            (void)Ns_SetPutSz(connPtr->auth, "Token", 5, q,
+                              (authDs.length - (TCL_SIZE_T)(q - authDs.string)));
         }
         if (p != NULL) {
             *p = save;

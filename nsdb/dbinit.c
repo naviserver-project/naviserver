@@ -706,7 +706,8 @@ Ns_DbPoolStats(Tcl_Interp *interp)
         } else {
             Handle      *handlePtr;
             Tcl_Obj     *valuesObj;
-            int          unused = 0, connected = 0, len;
+            int          unused = 0, connected = 0;
+            TCL_SIZE_T   len;
             char         buf[100];
             Tcl_WideInt  statementCount, getHandleCount;
             Ns_Time      sqlTime, waitTime;
@@ -772,14 +773,14 @@ Ns_DbPoolStats(Tcl_Interp *interp)
              *  Tcl_ListObjAppendElement(interp, valuesObj, Ns_TclNewTimeObj(&poolPtr->waitTime));
              */
             if (likely(result == TCL_OK)) {
-                len = snprintf(buf, sizeof(buf), NS_TIME_FMT, (int64_t)waitTime.sec, waitTime.usec);
+                len = (TCL_SIZE_T)snprintf(buf, sizeof(buf), NS_TIME_FMT, (int64_t)waitTime.sec, waitTime.usec);
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj(buf, len));
             }
             if (likely(result == TCL_OK)) {
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj("sqltime", 7));
             }
             if (likely(result == TCL_OK)) {
-                len = snprintf(buf, sizeof(buf), NS_TIME_FMT, (int64_t)sqlTime.sec, sqlTime.usec);
+                len = (TCL_SIZE_T)snprintf(buf, sizeof(buf), NS_TIME_FMT, (int64_t)sqlTime.sec, sqlTime.usec);
                 result = Tcl_ListObjAppendElement(interp, valuesObj, Tcl_NewStringObj(buf, len));
             }
             if (likely(result == TCL_OK)) {
@@ -1673,12 +1674,13 @@ Ns_DbListMinDurations(Tcl_Interp *interp, const char *server)
         for ( ; *pool != '\0'; pool += strlen(pool) + 1u) {
             char          buffer[100];
             const Pool   *poolPtr;
-            int           len;
+            TCL_SIZE_T    len;
 
             poolPtr = GetPool(pool);
             (void) Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(pool, TCL_INDEX_NONE));
-            len = snprintf(buffer, sizeof(buffer), NS_TIME_FMT,
-                           (int64_t)poolPtr->minDuration.sec, poolPtr->minDuration.usec);
+            len = (TCL_SIZE_T)snprintf(buffer, sizeof(buffer), NS_TIME_FMT,
+                                       (int64_t)poolPtr->minDuration.sec,
+                                       poolPtr->minDuration.usec);
             (void) Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(buffer, len));
         }
     }

@@ -331,13 +331,13 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
     for (thrPtr = firstThreadPtr; (thrPtr != NULL); thrPtr = thrPtr->nextPtr) {
 
         if ((thrPtr->flags & NS_THREAD_EXITED) == 0u) {
-            int written;
+            TCL_SIZE_T written;
 
             Tcl_DStringStartSublist(dsPtr);
             Tcl_DStringAppendElement(dsPtr, thrPtr->name);
             Tcl_DStringAppendElement(dsPtr, thrPtr->parent);
-            written = snprintf(buf, sizeof(buf), " %" PRIxPTR " %d %" PRId64,
-                               thrPtr->tid, thrPtr->flags, (int64_t) thrPtr->ctime);
+            written = (TCL_SIZE_T)snprintf(buf, sizeof(buf), " %" PRIxPTR " %d %" PRId64,
+                                           thrPtr->tid, thrPtr->flags, (int64_t) thrPtr->ctime);
             Tcl_DStringAppend(dsPtr, buf, written);
             if (proc != NULL) {
                 (*proc)(dsPtr, thrPtr->proc, thrPtr->arg);
@@ -352,14 +352,14 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
                 memcpy(addrBuffer, &thrPtr->proc, sizeof(thrPtr->proc));
                 Tcl_DStringAppend(dsPtr, " 0x", 3);
                 for (i = sizeof(thrPtr->proc) - 1; i >= 0 ; i--) {
-                    written = snprintf(buf, sizeof(buf), "%02x", addrBuffer[i]);
+                    written = (TCL_SIZE_T)snprintf(buf, sizeof(buf), "%02x", addrBuffer[i]);
                     Tcl_DStringAppend(dsPtr, buf, written);
                 }
-                written = snprintf(buf, sizeof(buf), " %p ", thrPtr->arg);
+                written = (TCL_SIZE_T)snprintf(buf, sizeof(buf), " %p ", thrPtr->arg);
                 Tcl_DStringAppend(dsPtr, buf, written);
             }
 
-            written = ns_uint32toa(buf, (uint32_t)thrPtr->ostid);
+            written = (TCL_SIZE_T)ns_uint32toa(buf, (uint32_t)thrPtr->ostid);
             Tcl_DStringAppend(dsPtr, buf, written);
 
             Tcl_DStringEndSublist(dsPtr);
