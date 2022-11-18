@@ -262,7 +262,7 @@ AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const cha
     }
     codePtr->nblocks = codePtr->nscripts = 1;
     /*
-     * The cast of "text.lengh" to "int" is dangerous (for really big
+     * The cast of "text.length" to "int" is dangerous (for really big
      * strings). "size" should be TCL_SIZE_T, but we keep it so far due to the
      * logic with the negative lengths.
      *
@@ -513,7 +513,7 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
 
     if ((flags & ADP_SINGLE) != 0u) {
         /*
-         * The cast of "text.lengh" to "int" is dangerous (for really big
+         * The cast of "text.length" to "int" is dangerous (for really big
          * strings).
          *
          * See also: AdpParseTclFile(), and AdpExec() in adpeval.c
