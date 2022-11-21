@@ -200,7 +200,7 @@ proc ns_getform {args}  {
         set ::_ns_form [ns_conn form -fallbackcharset $fallbackcharset]
         foreach name [ns_set keys $::_ns_form] {
             if {[string match "*.tmpfile" $name]} {
-                ns_log warning "Somone tries to sneak-in a fake upload file " \
+                ns_log warning "Someone tries to sneak-in a fake upload file " \
                     "'$name' value '[ns_set get $::_ns_form $name]': [ns_conn url]"
                 ns_set delkey $::_ns_form $name
             }
@@ -472,7 +472,7 @@ proc ns_parseformfile {args} {
             set s [ns_parsequery -charset $encoding -fallbackcharset $fallbackcharset $content]
             foreach {name value} [ns_set array $s] {
                 if {[string match "*.tmpfile" $name]} {
-                    ns_log warning "Somone tries to sneak-in a fake upload file " \
+                    ns_log warning "Someone tries to sneak-in a fake upload file " \
                         "'$name' value '$value': [ns_conn url]"
                 } else {
                     ns_set put $form $name $value
@@ -663,7 +663,7 @@ proc ns_parseformfile {args} {
                 set value [encoding convertfrom $encoding $value]
             }
             if {[string match "*.tmpfile" $name]} {
-                ns_log warning "Somone tries to sneak-in a fake upload file "\
+                ns_log warning "Someone tries to sneak-in a fake upload file "\
                     "'$name' value '$value': [ns_conn url]"
             } else {
                 ns_set put $form $name $value
