@@ -857,24 +857,29 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
     /*
      * Initialize the virtual servers.
+     *
+     * Set the default server before the init scripts to make it accessbile
+     * from there.
      */
 
     if (server != NULL) {
+        nsconf.defaultServer = server;
         NsInitServer(server, initProc);
+
     } else {
         size_t i;
+
+        /*
+         * Make the first server the default server.
+         */
+        nsconf.defaultServer = Ns_SetKey(servers, 0);
 
         for (i = 0u; i < Ns_SetSize(servers); ++i) {
             server = Ns_SetKey(servers, i);
             NsInitServer(server, initProc);
 
         }
-        /*
-         * Make the first server the default server.
-         */
-        server = Ns_SetKey(servers, 0);
     }
-    nsconf.defaultServer = server;
 
     /*
      * Initialize non-server static modules.
