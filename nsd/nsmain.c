@@ -858,7 +858,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     /*
      * Initialize the virtual servers.
      *
-     * Set the default server before the init scripts to make it accessbile
+     * Set the default server before the init scripts to make it accessible
      * from there.
      */
 
