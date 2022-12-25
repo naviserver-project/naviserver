@@ -475,7 +475,8 @@ NsTclFilterProc(const void *arg, Ns_Conn *conn, Ns_FilterType why)
     const Ns_TclCallback *cbPtr = arg;
     Tcl_DString           ds;
     Tcl_Interp           *interp;
-    int                   ii, rc;
+    int                   rc;
+    TCL_SIZE_T            ii;
     const char           *result;
     Ns_ReturnCode         status;
 

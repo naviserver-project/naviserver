@@ -43,7 +43,7 @@ static Ns_ReturnCode CreateTclThread(const NsInterp *itPtr, const char *script, 
 static void *CreateSynchObject(const NsInterp *itPtr,
                                Tcl_HashTable *typeTable, unsigned int *idPtr,
                                Ns_Callback *initProc, const char *type,
-                               Tcl_Obj *objPtr, int cnt)
+                               Tcl_Obj *objPtr, TCL_SIZE_T cnt)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(5);
 
 static void ThreadArgFree(void *arg)
@@ -326,7 +326,8 @@ NsTclMutexObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *c
                                     &servPtr->tcl.synch.mutexId,
                                     (Ns_Callback *) Ns_MutexInit,
                                     mutexType,
-                                    (objc >= 3) ? objv[2] : NULL, -1);
+                                    (objc >= 3) ? objv[2] : NULL,
+                                    TCL_INDEX_NONE);
         switch (opt) {
         case MCreateIdx:
             if (objc > 2) {
@@ -421,7 +422,8 @@ NsTclCritSecObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
                                   &servPtr->tcl.synch.csId,
                                   (Ns_Callback *) Ns_CsInit,
                                   csType,
-                                  (objc >= 3) ? objv[2] : NULL, -1);
+                                  (objc >= 3) ? objv[2] : NULL,
+                                  TCL_INDEX_NONE);
         switch (opt) {
         case CCreateIdx:
             /* Handled above. */
@@ -479,7 +481,8 @@ NsTclCritSecObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
 int
 NsTclSemaObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int                      opt = 0, cnt = 0, result = TCL_OK;
+    int                      opt = 0, result = TCL_OK;
+    long                     cnt = 0;
     static const char *const opts[] = {
         "create", "destroy", "release", "wait", NULL
     };
@@ -495,7 +498,7 @@ NsTclSemaObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         result = TCL_ERROR;
 
     } else if (opt == SCreateIdx && objc == 3) {
-        if (Tcl_GetIntFromObj(interp, objv[2], &cnt) != TCL_OK) {
+        if (Tcl_GetLongFromObj(interp, objv[2], &cnt) != TCL_OK) {
             result = TCL_ERROR;
         }
     }
@@ -510,7 +513,8 @@ NsTclSemaObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
                                     &servPtr->tcl.synch.semaId,
                                     NULL,
                                     semaType,
-                                    (objc == 3) ? objv[2] : NULL, cnt);
+                                    (objc == 3) ? objv[2] : NULL,
+                                    (TCL_SIZE_T)cnt);
         switch (opt) {
         case SCreateIdx:
             /* Handled above. */
@@ -519,11 +523,11 @@ NsTclSemaObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         case SReleaseIdx:
             if (objc < 4) {
                 cnt = 1;
-            } else if (Tcl_GetIntFromObj(interp, objv[3], &cnt) != TCL_OK) {
+            } else if (Tcl_GetLongFromObj(interp, objv[3], &cnt) != TCL_OK) {
                 result = TCL_ERROR;
             }
             if (result == TCL_OK) {
-                Ns_SemaPost(semaPtr, cnt);
+                Ns_SemaPost(semaPtr, (TCL_SIZE_T)cnt);
             }
             break;
 
@@ -592,7 +596,8 @@ NsTclCondObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
                                 &servPtr->tcl.synch.condId,
                                 (Ns_Callback *) Ns_CondInit,
                                 condType,
-                                (objc >= 3) ? objv[2] : NULL, -1);
+                                (objc >= 3) ? objv[2] : NULL,
+                                TCL_INDEX_NONE);
     switch (opt) {
     case ECreateIdx:
         /* Handled above. */
@@ -613,7 +618,8 @@ NsTclCondObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
                                         &servPtr->tcl.synch.mutexId,
                                         (Ns_Callback *) Ns_MutexInit,
                                         mutexType,
-                                        objv[3], -1);
+                                        objv[3],
+                                        TCL_INDEX_NONE);
             if (objc == 4) {
                 timeout.sec = timeout.usec = 0;
             } else if (Ns_TclGetTimeFromObj(interp, objv[4], &timeout) != TCL_OK) {
@@ -724,7 +730,8 @@ NsTclRWLockObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
                                                       &servPtr->tcl.synch.rwId,
                                                       (Ns_Callback *) Ns_RWLockInit,
                                                       rwType,
-                                                      (objc == 3) ? objv[2] : NULL, -1);
+                                                      (objc == 3) ? objv[2] : NULL,
+                                                      TCL_INDEX_NONE);
         switch (opt) {
         case RCreateIdx:
             /* Handled above. */
@@ -997,7 +1004,7 @@ static void *
 CreateSynchObject(const NsInterp *itPtr,
                   Tcl_HashTable *typeTable, unsigned int *idPtr,
                   Ns_Callback *initProc, const char *type,
-                  Tcl_Obj *objPtr, int cnt)
+                  Tcl_Obj *objPtr, TCL_SIZE_T cnt)
 {
     NsServer      *servPtr;
     Tcl_Interp    *interp;
@@ -1042,7 +1049,7 @@ CreateSynchObject(const NsInterp *itPtr,
 
         if (isNew != 0) {
             addr = ns_calloc(1u, sizeof(void *));
-            if (cnt > -1) {
+            if (cnt != TCL_INDEX_NONE) {
                 Ns_SemaInit((Ns_Sema *) addr, cnt);
             } else if (initProc != NULL) {
                 (*initProc)(addr);

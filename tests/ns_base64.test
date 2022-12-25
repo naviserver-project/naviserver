@@ -347,11 +347,16 @@ test ns_base64encode-3.0 {
     #ns_log notice [list [ns_sha1 $a] [ns_sha1 $b] [ns_sha1 $c]]
     #ns_log notice [list [ns_md5 $a] [ns_md5 $b] [ns_md5 $c]]
 
-    set F [::open [ns_mktemp] w]; ::fconfigure $F -translation binary
-    ::puts -nonewline $F $a
-    ::puts -nonewline $F $b
-    ::puts -nonewline $F $c
-    ::close $F
+    #
+    # Tcl9 raises an error with invalid byte sequence for the "puts"
+    # operation, even when everything is set to binary. The "puts"
+    # operations were converting the tcl objs to bytearrays.
+    #
+    #set F [::open [ns_mktemp] wb]; ::fconfigure $F -encoding binary -translation binary
+    #::puts -nonewline $F $a
+    #::puts -nonewline $F $b
+    #::puts -nonewline $F $c
+    #::close $F
 
     ns_log notice "obj(a) [nsf::__db_get_obj $a]"
     ns_log notice "obj(b) [nsf::__db_get_obj $b]"
@@ -359,15 +364,18 @@ test ns_base64encode-3.0 {
     #ns_logctl severity Debug on
     #set md [ns_md string -digest sha1 $a]
     #ns_log notice "====== WQ [string equal 7e32f884eaf0cbdf8c2df9e481ea9bef3ddbc4cf $md]==========================="
-    lappend r [list \
+    set types [list \
                    [lindex [nsf::__db_get_obj $a] 1] \
                    [lindex [nsf::__db_get_obj $b] 1] \
                    [lindex [nsf::__db_get_obj $c] 1]]
+    #ns_log notice types=$types
+    lappend r [string equal $types "{} bytearray string"]
+
     set l [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
     ns_log notice $l
     lappend r $l
 
-}  -result {äüö☀ Ã¤Ã¼Ã¶â äüö☀ {{} bytearray string} {w6TDvMO24piA w6TDvMO24piA w6TDvMO24piA} {bytearray bytearray bytearray} {w6TDvMO24piA w6TDvMO24piA w6TDvMO24piA}}
+} -returnCodes {error ok} -result {äüö☀ Ã¤Ã¼Ã¶â äüö☀ {{} bytearray string} {w6TDvMO24piA w6TDvMO24piA w6TDvMO24piA} 1 {w6TDvMO24piA w6TDvMO24piA w6TDvMO24piA}}
 
 
 test ns_base64encode-3.1 {
@@ -391,22 +399,26 @@ test ns_base64encode-3.1 {
     # % echo -n "€"| base64
     # 4oKs
 
-    set F [::open [ns_mktemp] w]; ::fconfigure $F -translation binary
-    ::puts -nonewline $F $a
-    ::puts -nonewline $F $b
-    ::puts -nonewline $F $c
-    ::close $F
+    #
+    # Tcl9 raises an error with invalid byte sequence for the "puts"
+    # operation, even when everything is set to binary.  The "puts"
+    # operations were converting the tcl objs to bytearrays.
+    #
+    #set F [::open [ns_mktemp] wb]; ::fconfigure $F -encoding binary -translation binary
+    #::puts -nonewline $F $a
+    #::puts -nonewline $F $b
+    #::puts -nonewline $F $c
+    #::close $F
 
-    lappend r [list \
+    set types [list \
                    [lindex [nsf::__db_get_obj $a] 1] \
                    [lindex [nsf::__db_get_obj $b] 1] \
                    [lindex [nsf::__db_get_obj $c] 1]]
-
-
-    ns_log notice [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
+    #ns_log notice types=$types
+    lappend r [string equal $types "{} {} bytearray"]
     lappend r [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
 
-} -returnCodes {error ok} -result {{} {} bytearray {4oKs 4oKs 4oKs} {bytearray bytearray bytearray} {4oKs 4oKs 4oKs}}
+} -returnCodes {error ok} -result {{} {} bytearray {4oKs 4oKs 4oKs} 1 {4oKs 4oKs 4oKs}}
 
 
 test ns_base64encode-3.2 {
@@ -429,10 +441,14 @@ test ns_base64encode-3.2 {
     # % echo -n "äöüʃɪbəlɛθ"| base64
     # w6TDtsO8yoPJqmLJmWzJm864
 
-    set F [::open [ns_mktemp] w]; ::fconfigure $F -translation binary
-    ::puts -nonewline $F $a
-    ::puts -nonewline $F $b
-    ::close $F
+    #
+    # Tcl9 raises an error with invalid byte sequence for the puts operation,
+    # even when everything is set to binary
+    #
+    #set F [::open [ns_mktemp] wb]; ::fconfigure $F -encoding binary -translation binary
+    #::puts -nonewline $F $a
+    #::puts -nonewline $F $b
+    #::close $F
 
     lappend r [list \
                    [lindex [nsf::__db_get_obj $a] 1] \
@@ -440,10 +456,9 @@ test ns_base64encode-3.2 {
                   ]
 
 
-    ns_log notice [list [ns_base64encode $a] [ns_base64encode $b] ]
     lappend r [list [ns_base64encode $a] [ns_base64encode $b] ]
 
-} -returnCodes {error ok} -result {{} bytearray {w6TDtsO8yoPJqmLJmWzJm864 w6TDtsO8yoPJqmLJmWzJm864} {bytearray bytearray} {w6TDtsO8yoPJqmLJmWzJm864 w6TDtsO8yoPJqmLJmWzJm864}}
+} -returnCodes {error ok} -result {{} bytearray {w6TDtsO8yoPJqmLJmWzJm864 w6TDtsO8yoPJqmLJmWzJm864} {{} bytearray} {w6TDtsO8yoPJqmLJmWzJm864 w6TDtsO8yoPJqmLJmWzJm864}}
 
 
 test ns_base64encode-3.3 {binary data, from file or memory} -constraints {nsf} -body {
@@ -475,12 +490,16 @@ test ns_base64encode-3.3 {binary data, from file or memory} -constraints {nsf} -
     #ns_log notice [list [ns_sha1 $a] [ns_sha1 $b] [ns_sha1 $c]]
     #ns_log notice [list [ns_md5 $a] [ns_md5 $b] [ns_md5 $c]]
 
-    set F [::open [ns_mktemp] w]; ::fconfigure $F -translation binary
-    ::puts -nonewline $F $_
-    ::puts -nonewline $F $a
-    ::puts -nonewline $F $b
-    ::puts -nonewline $F $c
-    ::close $F
+    #
+    # Tcl9 raises an error with invalid byte sequence for the puts operation,
+    # even when everything is set to binary
+    #
+    #set F [::open [ns_mktemp] wb]; ::fconfigure $F -encoding binary -translation binary
+    #::puts -nonewline $F $_
+    #::puts -nonewline $F $a
+    #::puts -nonewline $F $b
+    #::puts -nonewline $F $c
+    #::close $F
 
     ns_log notice "obj(_) [nsf::__db_get_obj $_]"
     ns_log notice "obj(a) [nsf::__db_get_obj $a]"
@@ -495,7 +514,7 @@ test ns_base64encode-3.3 {binary data, from file or memory} -constraints {nsf} -
     lappend r [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
 } -cleanup {
     unset -nocomplain _ r fn a b c F
-} -returnCodes {error ok} -result {{} bytearray bytearray string {AAECA+KYgA== AAECA+KYgA== AAECA+KYgA==} {bytearray bytearray bytearray} {AAECA+KYgA== AAECA+KYgA== AAECA+KYgA==}}
+} -returnCodes {error ok} -result {{} bytearray bytearray string {AAECA+KYgA== AAECA+KYgA== AAECA+KYgA==} {bytearray bytearray string} {AAECA+KYgA== AAECA+KYgA== AAECA+KYgA==}}
 
 
 test ns_base64decode-4.0 {

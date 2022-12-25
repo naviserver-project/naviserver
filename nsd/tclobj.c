@@ -35,6 +35,9 @@ static const Tcl_ObjType addrType = {
     NULL,
     UpdateStringOfAddr,
     SetAddrFromAny
+#ifdef TCL_OBJTYPE_V0
+   ,TCL_OBJTYPE_V0
+#endif
 };
 
 static const Tcl_ObjType *byteArrayTypePtr; /* For NsTclObjIsByteArray(). */

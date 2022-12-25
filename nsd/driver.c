@@ -4603,6 +4603,7 @@ SockParse(Sock *sockPtr)
              * needed for chunked input processing.
              */
             reqPtr->content = bufPtr->string + reqPtr->coff;
+            Ns_Log(Debug, "driver sets  reqPtr->content (len %zu) to '%s'", reqPtr->contentLength, reqPtr->content);
         }
         reqPtr->next = reqPtr->content;
 

@@ -1107,10 +1107,10 @@ NS_EXTERN char *ns_inet_ntoa(const struct sockaddr *saPtr) NS_GNUC_NONNULL(1);
  * sema.c:
  */
 
-NS_EXTERN void Ns_SemaInit(Ns_Sema *semaPtr, int initCount) NS_GNUC_NONNULL(1);
-NS_EXTERN void Ns_SemaDestroy(Ns_Sema *semaPtr)             NS_GNUC_NONNULL(1);
-NS_EXTERN void Ns_SemaWait(Ns_Sema *semaPtr)                NS_GNUC_NONNULL(1);
-NS_EXTERN void Ns_SemaPost(Ns_Sema *semaPtr, int count)     NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_SemaInit(Ns_Sema *semaPtr, TCL_SIZE_T initCount) NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_SemaDestroy(Ns_Sema *semaPtr)                    NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_SemaWait(Ns_Sema *semaPtr)                       NS_GNUC_NONNULL(1);
+NS_EXTERN void Ns_SemaPost(Ns_Sema *semaPtr, TCL_SIZE_T count)     NS_GNUC_NONNULL(1);
 
 /*
  * signal.c:

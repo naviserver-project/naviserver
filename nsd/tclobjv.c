@@ -62,6 +62,9 @@ static const Tcl_ObjType specType = {
     DupSpec,
     UpdateStringOfSpec,
     SetSpecFromAny
+#ifdef TCL_OBJTYPE_V0
+   ,TCL_OBJTYPE_V0
+#endif
 };
 
 static const Tcl_ObjType memUnitType = {
@@ -70,6 +73,9 @@ static const Tcl_ObjType memUnitType = {
     NULL,
     UpdateStringOfMemUnit,
     SetMemUnitFromAny
+#ifdef TCL_OBJTYPE_V0
+   ,TCL_OBJTYPE_V0
+#endif
 };
 
 

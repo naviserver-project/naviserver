@@ -66,6 +66,9 @@ static const Tcl_ObjType timeType = {
     NULL,
     UpdateStringOfTime,
     SetTimeFromAny
+#ifdef TCL_OBJTYPE_V0
+   ,TCL_OBJTYPE_V0
+#endif
 };
 
 static Ns_ObjvValueRange poslongRange0 = {0, LONG_MAX};

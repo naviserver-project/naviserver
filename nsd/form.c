@@ -113,6 +113,7 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
              */
             if ((connPtr->flags & NS_CONN_CLOSED) == 0u) {
                 content = connPtr->reqPtr->content;
+                // Ns_Log(Debug, "content <%s>", content);
             } else {
                 /*
                  * Formdata is unavailable, but do not fall back to the
@@ -646,6 +647,7 @@ ParseMultipartEntry(Conn *connPtr, Tcl_Encoding valueEncoding, const char *start
 
             assert(fs != NULL);
             value = Ext2utf(&vds, fs, (size_t)(fe - fs), encoding, unescape);
+
             if (value == NULL) {
                 status = NS_ERROR;
                 goto bailout;
@@ -758,19 +760,19 @@ GetBoundary(Tcl_DString *dsPtr, const char *contentType)
  */
 
 static char *
-NextBoundary(const Tcl_DString *dsPtr, char *s, const char *e)
+NextBoundary(const Tcl_DString *boundaryDsPtr, char *s, const char *e)
 {
-    char c, sc;
+    char        c, sc;
     const char *find;
-    size_t len;
+    size_t      len;
 
-    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(boundaryDsPtr != NULL);
     NS_NONNULL_ASSERT(s != NULL);
     NS_NONNULL_ASSERT(e != NULL);
 
-    find = dsPtr->string;
+    find = boundaryDsPtr->string;
     c = *find++;
-    len = (size_t)(dsPtr->length - 1);
+    len = (size_t)(boundaryDsPtr->length - 1);
     e -= len;
     do {
         do {

@@ -1944,7 +1944,8 @@ LogToTcl(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
         status = NS_OK;
 
     } else {
-        int                   ii, ret;
+        int                   ret;
+        TCL_SIZE_T            ii;
         void                 *logfile = INT2PTR(STDERR_FILENO);
         Tcl_Obj              *stampObj;
         Ns_DString            ds, ds2;

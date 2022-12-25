@@ -2655,6 +2655,8 @@ HttpConnect(
     NS_NONNULL_ASSERT(url != NULL);
     NS_NONNULL_ASSERT(httpPtrPtr != NULL);
 
+    /*Ns_Log(Notice, "HttpConnect bodySize %ld body type %s", bodySize, bodyObj->typePtr?bodyObj->typePtr->name:"none");*/
+
     interp = itPtr->interp;
 
     /*
@@ -3078,6 +3080,7 @@ HttpConnect(
              * 2GB+ hence the signed int type suffices.
              */
             binary = NsTclObjIsByteArray(bodyObj);
+
             if (binary == NS_FALSE) {
                 if (contentType != NULL) {
 
@@ -3090,7 +3093,9 @@ HttpConnect(
                 }
             }
             if (binary == NS_TRUE) {
+                //Ns_Log(Notice, "... bodyObj has type %s ", bodyObj->typePtr?bodyObj->typePtr->name:"NONE");
                 bodyStr = (char *)Tcl_GetByteArrayFromObj(bodyObj, &bodyLen);
+                //Ns_Log(Notice, "... body as bytearray len %zu body '%s'", bodyLen, bodyStr);
             } else {
                 bodyStr = Tcl_GetStringFromObj(bodyObj, &bodyLen);
             }

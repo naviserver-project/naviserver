@@ -18,6 +18,7 @@ namespace import -force ::tcltest::*
 
 testConstraint curl [expr {![catch {exec curl -V}]}]
 testConstraint iconv [expr {![catch {exec iconv --version}]}]
+testConstraint pre_tcl90 [expr {$::tcl_version < 9.0}]
 
 # testConstraint pairsTest true ;# test characters pairs, long time process
 # testConstraint usingExternalToUtf true ;# true if HttpGetResult uses ExternalToUtf; will be assigned in http_charsets-0.0
@@ -29,6 +30,7 @@ test http_charsets-0.0 "test whether HttpGetResult uses ExternalToUtf" -constrai
     set result [ns_http run [ns_config test listenurl]/get]
     if {[dict get $result body] eq "Ł"} {
         testConstraint usingExternalToUtf true
+        ns_log notice "Test has set usingExternalToUtf to true"
     }
     return {}
 } -cleanup {
@@ -91,11 +93,15 @@ set charsets {
     koi8-r
 }
 
+set nocomplain [expr {[tcltest::testConstraint pre_tcl90] ? "" : "-nocomplain"}]
+
 foreach charset $charsets {
+    ns_log notice "testing now with charset $charset"
+
     set encoding [ns_encodingforcharset $charset]
     set content ""
     for {set i 0x80} {$i <= 0xFF} {incr i} {
-        set char [encoding convertfrom $encoding [format %c $i]]
+        set char [encoding convertfrom {*}$nocomplain $encoding [format %c $i]]
         if {[string is print $char] && [encoding convertfrom $encoding [encoding convertto $encoding $char]] ne "?"} {
             append content $char
         } else {
@@ -172,9 +178,10 @@ foreach charset $charsets {
         ns_unregister_op GET /get
     } -result $content
 
-
 }
+
 unset -nocomplain charset encoding char content i
+
 
 
 if {![testConstraint pairsTest]} {

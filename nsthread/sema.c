@@ -27,9 +27,9 @@
  */
 
 typedef struct {
-    Ns_Mutex lock;
-    Ns_Cond  cond;
-    int      count;
+    Ns_Mutex   lock;
+    Ns_Cond    cond;
+    TCL_SIZE_T count;
 } Sema;
 
 
@@ -52,7 +52,7 @@ typedef struct {
  */
 
 void
-Ns_SemaInit(Ns_Sema *semaPtr, int count)
+Ns_SemaInit(Ns_Sema *semaPtr, TCL_SIZE_T count)
 {
     static uintptr_t nextid = 0u;
     Sema *sPtr;
@@ -151,7 +151,7 @@ Ns_SemaWait(Ns_Sema *semaPtr)
  */
 
 void
-Ns_SemaPost(Ns_Sema *semaPtr, int count)
+Ns_SemaPost(Ns_Sema *semaPtr, TCL_SIZE_T count)
 {
     Sema *sPtr;
 

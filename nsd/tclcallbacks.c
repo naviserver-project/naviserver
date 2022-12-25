@@ -74,7 +74,7 @@ Ns_TclNewCallback(Tcl_Interp *interp, ns_funcptr_t cbProc, Tcl_Obj *scriptObjPtr
         cbPtr->argv   = (char **)&cbPtr->args;
 
         if (objc > 0) {
-            int i;
+            TCL_SIZE_T i;
 
             for (i = 0; i < objc; i++) {
                 cbPtr->argv[i] = ns_strdup(Tcl_GetString(objv[i]));
@@ -104,7 +104,7 @@ Ns_TclNewCallback(Tcl_Interp *interp, ns_funcptr_t cbProc, Tcl_Obj *scriptObjPtr
 void
 Ns_TclFreeCallback(void *arg)
 {
-    int             ii;
+    TCL_SIZE_T      ii;
     Ns_TclCallback *cbPtr = arg;
 
     for (ii = 0; ii < cbPtr->argc; ii++) {
@@ -150,7 +150,7 @@ Ns_TclEvalCallback(Tcl_Interp *interp, const Ns_TclCallback *cbPtr,
     }
     if (interp != NULL) {
         const char *arg;
-        int         ii;
+        TCL_SIZE_T  ii;
         va_list     ap;
 
         Ns_DStringInit(&ds);
@@ -231,7 +231,7 @@ Ns_TclCallbackProc(void *arg)
 void
 Ns_TclCallbackArgProc(Tcl_DString *dsPtr, const void *arg)
 {
-    int             ii;
+    TCL_SIZE_T            ii;
     const Ns_TclCallback *cbPtr = arg;
 
     Tcl_DStringAppendElement(dsPtr, cbPtr->script);

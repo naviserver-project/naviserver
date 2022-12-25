@@ -547,7 +547,7 @@ typedef struct Ns_TclCallback {
     const char     *server;
     const char     *script;
     char          **argv;
-    int             argc;
+    TCL_SIZE_T      argc;
     char           *args[1];
 } Ns_TclCallback;
 

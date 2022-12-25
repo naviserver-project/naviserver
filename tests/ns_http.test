@@ -782,7 +782,7 @@ test http-5.6 {
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
-} -result {200 {utf-8 <text/html> AÄATest/üß☀ZÜZ}}
+} -returnCodes {error ok} -result {200 {utf-8 <text/html> AÄATest/üß☀ZÜZ}}
 
 
 test http-5.7.0 {
@@ -878,7 +878,8 @@ test http-5.7.1a {
 } -cleanup {
     ns_unregister_op POST /POST
     unset -nocomplain r
-} -result {400 {application/x-www-form-urlencoded cannot decode 'p1=a%C5%93Cb&p2=a%E6b'; contains invalid UTF-8 NS_INVALID_UTF8}}
+} -returnCodes {error ok} \
+    -result {400 {application/x-www-form-urlencoded cannot decode 'p1=a%C5%93Cb&p2=a%E6b'; contains invalid UTF-8 NS_INVALID_UTF8}}
 
 
 test http-5.7.1b {
@@ -903,7 +904,8 @@ test http-5.7.1b {
 } -cleanup {
     ns_unregister_op POST /POST
     unset -nocomplain r
-} -result {200 {application/x-www-form-urlencoded 'p1 aÅCb p2 aæb' POST }}
+} -returnCodes {error ok} \
+    -result {200 {application/x-www-form-urlencoded 'p1 aÅCb p2 aæb' POST }}
 
 
 test http-5.7.2a {
@@ -940,11 +942,7 @@ test http-5.7.2a {
         |a\xE6b
         |--$boundary--
     }]]
-    #set x [subst [ns_trim -delimiter | {
-    #    |a\xE6b
-    #}]]
-    #set F [open /tmp/e6 wb]; puts -nonewline $F $x; close $F
-
+    ns_log notice [nsf::__db_get_obj $body]
     #ns_logctl severity Debug(task) on
     nstest::http -setheaders [list content-type $ct] -getbody 1 POST /POST $body
 } -cleanup {
@@ -1540,7 +1538,7 @@ test http-7.1a {
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
-} -result {200 {<text/plain; iso8859-1> AÄATesting 'äöüß?'ZÜZ}}
+} -returnCodes {error ok return} -result {200 {<text/plain; iso8859-1> AÄATesting 'äöüß?'ZÜZ}}
 
 
 test http-7.1b {
@@ -1571,7 +1569,7 @@ test http-7.1b {
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
-} -result {200 {<text/plain; iso8859-1> AÄATesting 'äöüß?'ZÜZ}}
+} -returnCodes {error ok return} -result {200 {<text/plain; iso8859-1> AÄATesting 'äöüß?'ZÜZ}}
 
 
 test http-7.2a {ns_http with body and binary datataype} -constraints {serverListen} -setup {

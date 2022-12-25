@@ -194,6 +194,7 @@ proc ns_getform {args}  {
             # Get the content via memory (indirectly via [ns_conn
             # content], the command [ns_conn form] does this)
             #
+            ns_log debug "ns_getfrom: get content from memory (files [ns_conn files])"
             foreach {file} [ns_conn files] {
                 set offs [ns_conn fileoffset $file]
                 set lens [ns_conn filelength $file]
@@ -201,7 +202,13 @@ proc ns_getform {args}  {
                 foreach off $offs len $lens hdr $hdrs {
 
                     set fp [ns_opentmpfile tmpfile]
-                    catch {fconfigure $fp -encoding binary -translation binary}
+                    set nocomplain [expr {$::tcl_version < 9.0 ? "" : "-nocomplain"}]
+                    try {
+                        ns_log notice "fconfigure $fp {*}$nocomplain -encoding binary -translation binary"
+                        fconfigure $fp {*}$nocomplain -encoding binary -translation binary
+                    } on error {errorMsg} {
+                        ns_log warning "ns_getform: fconfigure of time file returned: $errorMsg"
+                    }
 
                     ns_atclose [list file delete -- $tmpfile]
                     ns_conn copy $off $len $fp
@@ -218,6 +225,7 @@ proc ns_getform {args}  {
             #
             # Get the content via external spool file
             #
+            ns_log debug "ns_getfrom: get content from file"
             try {
                 #
                 # We have to provide a fallback charset here,
