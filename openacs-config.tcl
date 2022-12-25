@@ -1,4 +1,4 @@
-######################################################################
+s######################################################################
 #
 # Config parameter for an OpenACS site using NaviServer.
 #
@@ -32,16 +32,17 @@ ns_log notice "nsd.tcl: starting to read configuration file..."
 #    ipaddress  ::1        ;# listen on loopback via IPv6
 #    ipaddress	::0        ;# listen on all IPv6 addresses
 #
-# All default variables in defaultConfig can be overloaded by
+# All default variables in "defaultConfig" can be overloaded by:
 #
-# 1) setting these variables explicitly in this file after
+# 1) Setting these variables explicitly in this file after
 #    "ns_configure_variables" (highest precedence)
 #
-# 2) setting these variables as environment variables with the "oacs_"
+# 2) Setting these variables as environment variables with the "oacs_"
 #    prefix (suitable for e.g. docker setups).  The lookup for
 #    environment variables happens in "ns_configure_variables".
 #
 # 3) Alter/override the variables in the "defaultConfig"
+#    (lowest precedence)
 #
 set defaultConfig {
     hostname	localhost
