@@ -36,7 +36,7 @@
  created handle as result.
 
 [para]
- After this command was issued in a connection thread all attempts to
+ After this command was issued in a connection thread, all attempts to
  access the connection socket directly (e.g. via [cmd ns_write]) will fail.
 
 
@@ -74,7 +74,7 @@
  [list_end]
 
 When NaviServer is running in reverse proxy mode, the client IP
-address is taken form the value as provided by the reverse proxy
+address is taken from the value as provided by the reverse proxy
 server.
 
 [call [cmd "ns_connchan callback"] \
@@ -86,7 +86,7 @@ server.
 	[arg when] \
 ]
 
-Register a Tcl callback for the names connection [arg channel].
+Register a Tcl callback for the named connection [arg channel].
 [option -timeout] is the poll timeout, [option -receivetimeout] is a
 timeout for incoming packets, [option -sendtimeout] is the timeout for
 outgoing packets.  When [option -sendtimeout] has the value of 0, a
@@ -134,7 +134,7 @@ interpreted as follows:
 Open a client connection channel to the specified [arg host]
 and [arg port].  The command is similar to [cmd "ns_connchan open"],
 but does less: While
-[cmd "ns_connchan open"] send an HTTP request to the server denoted by
+[cmd "ns_connchan open"] sends an HTTP request to the server denoted by
 a URL, [cmd "ns_connchan connect"] just connects to the server
 without sending any request data.
 
@@ -193,7 +193,7 @@ Read from the specified connection channel and return the received data.
 
 [para]
 When the option [option "-websocket"] is used, then the command
-expects WebSocket frames. In this mode the result of the command is a
+expects WebSocket frames. In this mode, the result of the command is a
 Tcl [cmd dict] containing the following elements:
 
 [para]
@@ -202,7 +202,11 @@ Tcl [cmd dict] containing the following elements:
 [term unprocessed] (received number of bytes in buffer not handled so far),
 [term fragments] (number of bytes in the WebSocket fragments buffer),
 [term haveData] (boolean value to express that unprocessed
-data might be sufficient for next frame without an extra read operation.
+data might be sufficient for the next frame without an extra read
+operation.
+
+
+
 
 [para]
 In case the frame is finished ([term fin] status bit is set),
@@ -223,7 +227,7 @@ The command returns a dict containing the following elements:
 [term fragments] (for WebSocket read operations: number of bytes in the WebSocket fragments buffer),
 [term framebuffer] (for WebSocket read operations: number of bytes in the WebSocket frame buffer),
 [term peer] (communication peer, the IP address of the other side of the channel),
-[term reveived] (number of bytes received),
+[term received] (number of bytes received),
 [term sendbuffer] (for buffered write operations: number of bytes in the send buffer),
 [term sent] (number of bytes sent), and
 [term start] (time when the connection started).
@@ -241,11 +245,11 @@ When a callback is defined for this channel, the dict contains as well the
 ]
 
 returns a binary websocket frame based on the provided information
-in form of a Tcl byte array.
-When [option "-mask"] is specified, the data will be mased with
+in the form of a Tcl byte array.
+When [option "-mask"] is specified, the data will be masked with
 random information. For the opcode [arg binary], the input is treated
 as binary as well. When [option "-binary"] is used, the data
-wi explicitly treated as binary. This is e.g. necessary on
+will be treated as binary. This is e.g. necessary on
 multi-segment messages, where later segments have the opcode
 [arg continue].
 
@@ -263,10 +267,10 @@ the number of bytes sent, which might be less than the input length.
 write operations the data which could not be sent is handled
 internally. The command returns like in non-buffered mode the number of
 bytes sent, but keeps the reminder and will process this data together
-with the next write operation (e.g. called with an exmpty string as
-last argument). By using the buffered mode the Tcl programmer does not
+with the next write operation (e.g. called with an empty string as
+last argument). By using the buffered mode, the Tcl programmer does not
 have to care about sending the non-sent chunk again and to concatenate
-this with potentially more data form other write operations.
+this with potentially more data from other write operations.
 
 
 [list_end]
@@ -275,4 +279,3 @@ this with potentially more data form other write operations.
 [keywords "server built-in" channels socket driver reverseproxy websocket]
 
 [manpage_end]
-
