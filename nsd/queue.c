@@ -2548,8 +2548,7 @@ ConnRun(Conn *connPtr)
              * treat the result as NS_FILTER_RETURN. Other feedback to this
              * connection can not work anymore.
              */
-            Ns_Log(Debug, "Filter closed connection; cancel further request processing");
-
+            Ns_Log(Debug, "Preauth filter closed connection; cancel further request processing");
             status = NS_FILTER_RETURN;
         }
 

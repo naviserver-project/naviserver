@@ -1820,7 +1820,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
                        ) {
                 Ns_TclPrintfResult(interp, "offset (%" PRITcl_Size ") + length"
                                    " (%" PRITcl_Size ") exceeds available content length"
-                                   " (%" PRITcl_Size ")",
+                                   " (%" PRIuz ")",
                                    offset, length,
                                    connPtr->reqPtr->length);
                 result = TCL_ERROR;
