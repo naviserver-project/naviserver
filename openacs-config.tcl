@@ -49,6 +49,7 @@ set defaultConfig {
     ipaddress	127.0.0.1
     httpport	8000
     httpsport	""
+    nscpport    ""
 
     server     "openacs"
     serverroot	/var/www/$server
@@ -61,8 +62,10 @@ set defaultConfig {
     db_port	""
     CookieNamespace ad_
 }
+
 #
-# Override default variables (this allows commenting lines)
+# Override default variables as defined by "defaultConfig" (this
+# allows commenting lines)
 #
 # If the same domain name serves multiple OpenACS instances,
 # same-named cookies will mix up.  You might consider a different
@@ -81,7 +84,7 @@ set proxy_mode	false
 set database  postgres
 
 if { $database eq "oracle" } {
-    set db_password           "openacs"
+    set db_password "openacs"
 
     set ::env(ORACLE_HOME) /opt/oracle/product/19c/dbhome_1
     set ::env(NLS_DATE_FORMAT) YYYY-MM-DD
@@ -128,8 +131,9 @@ append nsssl_extraheaders $nssock_extraheaders
 #
 ######################################################################
 #
-# For all potential variables, allow environment variables such as
-# "oacs_httpport" or "oacs_ipaddress" to override local values.
+# For all potential variables defined by the dict "defaultConfig",
+# allow environment variables such as "oacs_httpport" or
+# "oacs_ipaddress" to override local values.
 #
 source [file dirname [ns_info nsd]]/../tcl/init.tcl
 ns_configure_variables "oacs_" $defaultConfig
@@ -263,26 +267,18 @@ ns_section ns/servers {
     ns_param $server $servername
 }
 
-
-#---------------------------------------------------------------------
-# Global server modules
-#---------------------------------------------------------------------
-ns_section ns/modules {
-    #
-    # Load networking modules named "nssock" and/or "nsssl" depending
-    # on existence of Tcl variables "httpport" and "httpsport".
-    #
-    if {[info exists httpport] && $httpport ne ""}  { ns_param nssock ${bindir}/nssock }
-    if {[info exists httpsport] && $httpsport ne ""} { ns_param nsssl  ${bindir}/nsssl }
-}
-
 #---------------------------------------------------------------------
 # Configuration for plain HTTP interface  -- module nssock
 #---------------------------------------------------------------------
-if {[info exists httpport]} {
+if {[info exists httpport] && $httpport ne ""} {
     #
-    # We have an "httpport" configured, so configure this module.
+    # We have an "httpport" configured, so load and configure the
+    # module "nssock" as a global server module.
     #
+    ns_section ns/modules {
+         ns_param nssock ${bindir}/nssock
+    }
+
     ns_section ns/module/nssock {
         ns_param	defaultserver	$server
         ns_param	address		$ipaddress
@@ -342,10 +338,18 @@ if {[info exists httpport]} {
 # Configuration for HTTPS interface (SSL/TLS) -- module nsssl
 #---------------------------------------------------------------------
 
-if {[info exists httpsport]} {
+if {[info exists httpsport] && $httpsport ne ""} {
     #
     # We have an "httpsport" configured, so configure this module.
     #
+    #
+    # We have an "httpsport" configured, so load and configure the
+    # module "nsssl" as a global server module.
+    #
+    ns_section ns/modules {
+        ns_param nsssl  ${bindir}/nsssl
+    }
+
     ns_section ns/module/nsssl {
         ns_param defaultserver	$server
         ns_param address	$ipaddress
@@ -941,9 +945,9 @@ ns_section ns/db/pool/pool3 {
 # installed.
 
 ns_section ns/server/$server/modules {
-    ns_param	nslog		${bindir}/nslog
-    ns_param	nsdb		${bindir}/nsdb
-    ns_param	nsproxy		${bindir}/nsproxy
+    ns_param nslog ${bindir}/nslog
+    ns_param nsdb ${bindir}/nsdb
+    ns_param nsproxy ${bindir}/nsproxy
 
     #
     # Determine, if libthread is installed. First check for a version
@@ -971,7 +975,56 @@ ns_section ns/server/$server/modules {
     # ns_param	nsperm             ${bindir}/nsperm
 }
 
+#---------------------------------------------------------------------
+# Example configuration for the NaviServer Control Port (nscp)
+#
+# To enable:
+#
+# 1. Define an address and port to listen on. For security reasons
+#    listening on any ipaddress other than the loopback address
+#    (127.0.0.1 or ::1) is not recommended. For this script, it can be
+#    activated by setting the variable "nscpport" to a valid port used
+#    for listening (e.g. 9999).
+#
+# 2. Decide whether you wish to enable features such as password
+#    echoing at login time, and command logging.
+#
+# 3. Add a list of authorized users and passwords. The entries
+#    take the following format:
+#
+#    <user>:<encryptedPassword>:
+#
+#    You can use the ns_crypt Tcl command to generate an encrypted
+#    password. The ns_crypt command uses the same algorithm as the
+#    Unix crypt(3) command. You could also use passwords from the
+#    /etc/passwd file.
+#
+#    The first two characters of the password are the salt - they can be
+#    anything since the salt is used to simply introduce disorder into
+#    the encoding algorithm.
+#
+#    ns_crypt <key> <salt>
+#    ns_crypt x t2
+#
+#    The configuration example below adds the user "nsadmin" with a
+#    password of "x".
+#
+# 4. Make sure the "nscp" module is loaded in the modules section.
+#
+ns_section "ns/server/${server}/module/nscp" {
+    ns_param address 127.0.0.1
+    ns_param port $nscpport
+    ns_param echopassword 1
+    ns_param cpcmdlogging 1
+}
 
+ns_section "ns/server/${server}/module/nscp/users" {
+    ns_param user "nsadmin:t2GqvvaiIUbF2:"
+}
+
+ns_section "ns/server/${server}/modules" {
+    if {$nscpport ne ""} {ns_param nscp nscp}
+}
 
 #
 # nsproxy configuration
