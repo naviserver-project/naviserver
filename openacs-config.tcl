@@ -638,7 +638,9 @@ ns_section ns/server/$server/fastpath {
 }
 
 #---------------------------------------------------------------------
-# HTTP client configuration
+# HTTP client log configuration
+#
+# Log file for outgoing ns_http requests
 #---------------------------------------------------------------------
 ns_section ns/server/$server/httpclient {
     ns_param	logging		on ;# default: off
