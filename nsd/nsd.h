@@ -1781,6 +1781,9 @@ NS_EXTERN void NsAdpReset(NsInterp *itPtr)
 NS_EXTERN void NsAdpFree(NsInterp *itPtr)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN char *NsParseTagEnd(char *str)
+    NS_GNUC_NONNULL(1);
+
 /*
  * Tcl support routines.
  */

@@ -282,6 +282,51 @@ AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const cha
     AppendLengths(codePtr, &size, &line);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsParseTagEnd --
+ *
+ *      Search for the endsign of a tag (greater than). For ages, NaviServer
+ *      just searched for the first upcoming greater than sign:
+ *
+ *         strchr(str, INTCHAR('>'));
+ *
+ *      However, the Living Standard of HTML allows the greater sign in
+ *      attributes values as long these are between single or double quotes:
+ *      https://html.spec.whatwg.org/multipage/syntax.html#syntax-attribute-value
+ *
+ * Results:
+ *      Either pointing the the ending greater sign or NULL
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+char*
+NsParseTagEnd(char *str)
+{
+    while (1) {
+        if (unlikely(*str == '>')) {
+            break;
+        }
+        if (*str == '\'' || *str == '\"') {
+            char quote = *str;
+            do {
+                str++;
+            } while (*str != '\0' && *str != quote);
+        }
+        if (likely(*str != '\0')) {
+            str++;
+            continue;
+        }
+        str = NULL;
+        break;
+    }
+    return str;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -310,6 +355,7 @@ AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const cha
  *
  *----------------------------------------------------------------------
  */
+
 static void
 AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
 {
@@ -353,7 +399,15 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
     state = TagNext;
     Ns_RWLockRdLock(&servPtr->adp.taglock);
 
-    while ((s = strchr(adp, INTCHAR('<'))) && (e = strchr(s, INTCHAR('>')))) {
+    for (;;) {
+        s = strchr(adp, INTCHAR('<'));
+        if (s == NULL) {
+            break;
+        }
+        e = NsParseTagEnd(s);
+        if (e == NULL) {
+            break;
+        }
 
         /*
          * Process the tag depending on the current state.

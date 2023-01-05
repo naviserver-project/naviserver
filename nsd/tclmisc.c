@@ -671,7 +671,15 @@ NsTclHrefsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         Tcl_Obj    *listObj = Tcl_NewListObj(0, NULL);
 
         p = htmlString;
-        while (((s = strchr(p, INTCHAR('<'))) != NULL) && ((e = strchr(s, INTCHAR('>'))) != NULL)) {
+        for (;;) {
+            s = strchr(p, INTCHAR('<'));
+            if (s == NULL) {
+                break;
+            }
+            e = NsParseTagEnd(s);
+            if (e == NULL) {
+                break;
+            }
             ++s;
             *e = '\0';
             while (*s != '\0' && CHARTYPE(space, *s) != 0) {
