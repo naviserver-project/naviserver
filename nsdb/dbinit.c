@@ -989,8 +989,8 @@ NsDbSetActive(const char *UNUSED(context), Ns_DbHandle *handle, bool active)
  *
  * NsDbLogSql --
  *
- *      Log a SQL statement depending on the verbose state of the
- *      handle.
+ *      Log a SQL statement depending on the setting of Ns_LogSqlDebug
+ *      and the LogMinDuration. Errors are always reported.
  *
  * Results:
  *      None.
