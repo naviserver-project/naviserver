@@ -141,6 +141,58 @@ argc 3
 argv adp2.adp hello world
 }
 
+test adp-7.1 {adp-parse string with tag, quoted and unquoted} -body {
+    proc ::test_tag_proc {params} {return [ns_set array $params]}
+    ns_adp_registerscript test71 ::test_tag_proc
+    ns_adp_parse -string {<test71 a="1" b=2>}
+} -cleanup {
+    rename  ::test_tag_proc ""
+} -result {a 1 b 2}
+
+test adp-7.2a {adp-parse string with tag, with less sign} -body {
+    proc ::test_tag_proc {params} {return [ns_set array $params]}
+    ns_adp_registerscript test72 ::test_tag_proc
+    ns_adp_parse -string {<test72 a="1" title="<" b=2>}
+} -cleanup {
+    rename  ::test_tag_proc ""
+} -result {a 1 title < b 2}
+
+test adp-7.2b {adp-parse string with tag with greater sign} -body {
+    proc ::test_tag_proc {params} {return [ns_set array $params]}
+    ns_adp_registerscript test72 ::test_tag_proc
+    ns_adp_parse -string {<test72 a="1" title=">" b=2>}
+} -cleanup {
+    rename  ::test_tag_proc ""
+} -result {a 1 title > b 2}
+
+test adp-7.3 {adp-parse string with tag, with markup in attribute} -body {
+    proc ::test_tag_proc {params} {return [ns_set array $params]}
+    ns_adp_registerscript test73 ::test_tag_proc
+    ns_adp_parse -string {<test73 a="1" title="<i class='fal fa-link'></i>" b=2>}
+} -cleanup {
+    rename  ::test_tag_proc ""
+} -result {a 1 title {<i class='fal fa-link'></i>} b 2}
+
+#
+# When parsing fails, the result is literally the input
+#
+test adp-7.4a {adp-parse string with tag, attribute quote not terminated} -body {
+    proc ::test_tag_proc {params} {return [ns_set array $params]}
+    ns_adp_registerscript test74 ::test_tag_proc
+    ns_adp_parse -string {<test74 a="1" b=2}
+} -cleanup {
+    rename  ::test_tag_proc ""
+} -result {<test74 a="1" b=2}
+
+test adp-7.4b {adp-parse string with tag, attribute quote not terminated} -body {
+    proc ::test_tag_proc {params} {return [ns_set array $params]}
+    ns_adp_registerscript test74 ::test_tag_proc
+    ns_adp_parse -string {<test74 a="1" title=" b=2>}  ;#"
+} -cleanup {
+    rename  ::test_tag_proc ""
+} -result {<test74 a="1" title=" b=2>} ;#"
+
+
 cleanupTests
 
 # Local variables:
