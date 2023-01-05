@@ -297,23 +297,31 @@ AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const cha
 char*
 NsParseTagEnd(char *str)
 {
-    while (1) {
-        if (unlikely(*str == '>')) {
+    for (;;) {
+        str = strpbrk(str, ">'\"");
+        if (str == NULL || *str == '>') {
+            /*
+             * We found the closing character of the tag or the end of the
+             * string.
+             */
             break;
-        }
-        if (*str == '\'' || *str == '\"') {
-            char quote = *str;
-            do {
-                str++;
-            } while (*str != '\0' && *str != quote);
-        }
-        if (likely(*str != '\0')) {
+        } else {
+            /*
+             * Some quote (single quote or double quote) was found. Search for
+             * the end of the quoted string. Note, that there is no backslash
+             * escaping for quotes between quotes defined for HTML.
+             */
+            str = strchr(str+1, INTCHAR(*str));
+            if (str == NULL) {
+                /*
+                 * The closing quote is missing.
+                 */
+                break;
+            }
             str++;
-            continue;
         }
-        str = NULL;
-        break;
     }
+
     return str;
 }
 
