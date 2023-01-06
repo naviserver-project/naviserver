@@ -106,9 +106,14 @@ test adp-3.2 {ns_adp_ctl bufsize} -body {
 
 
 
-test adp-4.1 {ns_adp_append} -body {
+test adp-4.1a {ns_adp_append} -body {
     ns_adp_parse {<% ns_adp_append adp-4.1 %>}
 } -result {adp-4.1}
+
+test adp-4.1b {ns_adp_append} -body {
+    ns_adp_parse {<% ns_adp_append adp-4.1' %>}
+} -result {adp-4.1'}
+
 
 test adp-4.2 {ns_adp_puts} -body {
     ns_adp_parse {<% ns_adp_puts adp-4.2 %>}

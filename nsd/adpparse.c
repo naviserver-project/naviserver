@@ -412,7 +412,13 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
         if (s == NULL) {
             break;
         }
-        e = NsParseTagEnd(s);
+        /*
+         * Handling of <% ...%> requires a different end-of-tag handling. This
+         * code should be probably refactored for more clarity and
+         * consistency.  For now, we just switch to the traditional behavior
+         * in cases where the "tag" starts with a percent sign.
+         */
+        e = s[1] == '%' ? strchr(s, INTCHAR('>')) : NsParseTagEnd(s);
         if (e == NULL) {
             break;
         }
