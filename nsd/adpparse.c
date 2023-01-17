@@ -398,17 +398,26 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
     Ns_RWLockRdLock(&servPtr->adp.taglock);
 
     for (;;) {
+        bool beginOfEvalBlock;
+
         s = strchr(adp, INTCHAR('<'));
         if (s == NULL) {
             break;
         }
+
         /*
-         * Handling of <% ...%> requires a different end-of-tag handling. This
-         * code should be probably refactored for more clarity and
+         * Handling of <% ...%> requires a different end-of-tag handling. For
+         * regular tags, we have to differentiate between the closing ">"
+         * inside and outside quotes, which does not apply the the adp-eval
+         * blocks.
+         *
+         * This code should be probably refactored for more clarity and
          * consistency.  For now, we just switch to the traditional behavior
-         * in cases where the "tag" starts with a percent sign.
+         * in cases where we identified the begin of an eval block <% ...%>.
          */
-        e = s[1] == '%' ? strchr(s, INTCHAR('>')) : NsParseTagEnd(s);
+        beginOfEvalBlock = (s[1] == '%' && s[2] != '>');  /* NB: Avoid <%>. */
+
+        e = beginOfEvalBlock ? strchr(s, INTCHAR('>')) : NsParseTagEnd(s);
         if (e == NULL) {
             break;
         }
@@ -419,12 +428,13 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
         switch (state) {
         case TagNext:
             /*
-             * Look for a <% ... %> sequence.
+             * Do we have a <% ... %> sequence or a regular tag?
              */
-            if (s[1] == '%' && s[2] != '>') {   /* NB: Avoid <%>. */
+            if (beginOfEvalBlock) {
                 /*
-                 * Find the corresponding %> beyond any additional
-                 * nested <% ... %> sequences.
+                 * We identified the start of a <% ... %> block. Find the
+                 * corresponding %> beyond any additional nested <% ... %>
+                 * sequences.
                  */
                 e = strstr(e - 1, "%>");
                 n = s + 2;
