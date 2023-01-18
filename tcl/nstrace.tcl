@@ -42,7 +42,7 @@
 #
 #  B. Register traces on selected Tcl commands and get state
 #     they create in a set of shared variables (the epoch).
-#     Then start bootstraping the interp. This will trigger
+#     Then start bootstrapping the interp. This will trigger
 #     trace callbacks and they will start filling the epoch.
 #     After the bootstrapping is done, synthesize a script
 #     containing minimal fixed state (variables, modules) and
