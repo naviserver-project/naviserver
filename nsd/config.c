@@ -109,7 +109,7 @@ Ns_ConfigString(const char *section, const char *key, const char *defaultValue)
  * Ns_ConfigSet --
  *
  *      Return an Ns_Set *from a config value specified as Tcl list. The list
- *      has to be a flat list with attributes and valus (also a Tcl dict).
+ *      has to be a flat list with attributes and values (also a Tcl dict).
  *
  * Results:
  *      Ns_set or NULL, of the config value does not exist.

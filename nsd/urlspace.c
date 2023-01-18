@@ -265,7 +265,7 @@ typedef struct UrlSpaceContextSpec {
     const char   *patternString;
     struct NS_SOCKADDR_STORAGE ip;
     struct NS_SOCKADDR_STORAGE mask;
-    unsigned int  specifity;
+    unsigned int  specificity;
     unsigned char type;
     bool          hasPattern;
 } UrlSpaceContextSpec;
@@ -411,7 +411,7 @@ static Ns_ObjvValueRange idRange = {-1, MAX_URLSPACES};
  * CountNonWildcharChars --
  *
  *      Helper function to count non-wildcard characters to determine
- *      the specifity of a key.
+ *      the specificity of a key.
  *
  * Results:
  *      Number of chars different to '*'
@@ -489,7 +489,7 @@ NsUrlSpaceContextSpecNew(const char *field, const char *patternString)
                         *maskPtr = (struct sockaddr *)&spec->mask;
         Ns_ReturnCode    status;
 
-        status = Ns_SockaddrParseIPMask(NULL, patternString, ipPtr, maskPtr, &spec->specifity);
+        status = Ns_SockaddrParseIPMask(NULL, patternString, ipPtr, maskPtr, &spec->specificity);
         if (status == NS_OK) {
             //char ipString[NS_IPADDR_SIZE];
             //fprintf(stderr, "NsUrlSpaceContextSpecNew: masked IP %s\n",
@@ -508,20 +508,20 @@ NsUrlSpaceContextSpecNew(const char *field, const char *patternString)
              * Treat spec like header fields
              */
             spec->hasPattern = (strchr(patternString, INTCHAR('*')) != NULL);
-            spec->specifity = (unsigned int)CountNonWildcharChars(patternString);
+            spec->specificity = (unsigned int)CountNonWildcharChars(patternString);
             spec->type = 'h';
         }
     } else {
         spec->hasPattern = (strchr(patternString, INTCHAR('*')) != NULL);
-        spec->specifity = (unsigned int)CountNonWildcharChars(patternString);
+        spec->specificity = (unsigned int)CountNonWildcharChars(patternString);
         spec->type = 'h';
     }
 
     spec->field = ns_strdup(field);
     spec->patternString = ns_strdup(patternString);
 
-    //fprintf(stderr, "NsUrlSpaceContextSpecNew: <%s %s> type %c specifity %u\n",
-    //        spec->field, spec->patternString, spec->type, spec->specifity);
+    //fprintf(stderr, "NsUrlSpaceContextSpecNew: <%s %s> type %c specificity %u\n",
+    //        spec->field, spec->patternString, spec->type, spec->specificity);
 
     return (NsUrlSpaceContextSpec *)spec;
 }
@@ -1179,7 +1179,7 @@ CmpUrlSpaceContextSpecs(const void *leftPtrPtr, const void *rightPtrPtr)
             /*
              * Both have a wildcard, take the longer pattern as more concrete.
              */
-            result = ((int)ctxRight->specifity - (int)ctxLeft->specifity);
+            result = ((int)ctxRight->specificity - (int)ctxLeft->specificity);
             if (result == 0) {
                 /*
                  * Both patterns are equally long -> take lexical order.
@@ -1200,8 +1200,8 @@ CmpUrlSpaceContextSpecs(const void *leftPtrPtr, const void *rightPtrPtr)
     }
 #if 0 || defined(DEBUG)
     fprintf(stderr, "CmpContextFilters '%s: %s' (%c %u) with '%s: %s' (%c %u) -> %d\n",
-            ctxLeft->field, ctxLeft->patternString, ctxLeft->type, ctxLeft->specifity,
-            ctxRight->field, ctxRight->patternString, ctxRight->type, ctxRight->specifity,
+            ctxLeft->field, ctxLeft->patternString, ctxLeft->type, ctxLeft->specificity,
+            ctxRight->field, ctxRight->patternString, ctxRight->type, ctxRight->specificity,
             result);
 #endif
     return result;

@@ -7,7 +7,7 @@
 [description]
 
 This file implements set of commands and utilities to manage Tcl interpreter
-initialization for NaviServer. What all this stuff does is simple: synthetize
+initialization for NaviServer. What all this stuff does is simple: synthesize
 a Tcl script used to initialize new Tcl interpreters.
 
 [para]
@@ -25,7 +25,7 @@ There are basically two strategies:
 [item] B Register traces on selected Tcl commands and get state they create in a set of
          shared variables (the epoch). Then start bootstraping the interp. This will
          trigger trace callbacks and they will start filling the epoch. After the
-         bootstrapping is done, synthetize a script containing minimal fixed state
+         bootstrapping is done, synthesize a script containing minimal fixed state
          (variables, modules) and a definition of [lb]unknown[rb] command which will
          on-demand load procedure definitions out of the epoch state. This script
          is obtained by the [lb]nstrace::tracescript[rb] command (see below).

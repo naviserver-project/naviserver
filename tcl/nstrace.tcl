@@ -9,7 +9,7 @@
 # This file implements set of commands and utilities to manage
 # Tcl interpreter initialization for NaviServer.
 #
-# What all this stuff does is simple: synthetize a Tcl script
+# What all this stuff does is simple: synthesize a Tcl script
 # used to initialize new Tcl interpreters.
 #
 #
@@ -29,7 +29,7 @@
 #     they create in a set of shared variables (the epoch).
 #     Then start bootstraping the interp. This will trigger
 #     trace callbacks and they will start filling the epoch.
-#     After the bootstrapping is done, synthetize a script
+#     After the bootstrapping is done, synthesize a script
 #     containing minimal fixed state (variables, modules) and
 #     a definition of [unknown] command which will on-demand
 #     load procedure definitions out of the epoch state.
@@ -249,7 +249,7 @@ ns_runonce {
         }
 
         #
-        # This one synthetizes script used to pull state out of the
+        # This one synthesizes script used to pull state out of the
         # shared variables filled in by the Tcl command tracing.
         #
 

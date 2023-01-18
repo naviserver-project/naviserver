@@ -287,7 +287,7 @@ AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const cha
  *      https://html.spec.whatwg.org/multipage/syntax.html#syntax-attribute-value
  *
  * Results:
- *      Either pointing the the ending greater sign or NULL
+ *      Either pointing the ending greater sign or NULL
  *
  * Side effects:
  *      None.
@@ -308,7 +308,7 @@ NsParseTagEnd(char *str)
         } else {
             /*
              * Some quote (single quote or double quote) was found. Search for
-             * the end of the quoted string. Note, that there is no backslash
+             * the end of the quoted string. Note that there is no backslash
              * escaping for quotes between quotes defined for HTML.
              */
             str = strchr(str+1, INTCHAR(*str));
@@ -408,7 +408,7 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
         /*
          * Handling of <% ...%> requires a different end-of-tag handling. For
          * regular tags, we have to differentiate between the closing ">"
-         * inside and outside quotes, which does not apply the the adp-eval
+         * inside and outside quotes, which does not apply the adp-eval
          * blocks.
          *
          * This code should be probably refactored for more clarity and

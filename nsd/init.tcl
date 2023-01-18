@@ -140,7 +140,7 @@ proc __ns_sourcemodule {modname} {
 #
 #  a. Run an introspective script against initialized
 #     interp and collect "things" (variables, procs,
-#     packages etc) present. Then synthetize new Tcl
+#     packages etc) present. Then synthesize new Tcl
 #     script with commands to re-create those "things"
 #     in any new interpreter.
 #
@@ -155,7 +155,7 @@ proc __ns_sourcemodule {modname} {
 #
 #  b. Register introspection traces on selected set of
 #     Tcl commands and capture the state in thread-shared
-#     variables. Then synthetize new Tcl script with
+#     variables. Then synthesize new Tcl script with
 #     overloaded Tcl [unknown] command to load referenced
 #     items (procs, packages etc) on as-needed basis out
 #     of the captured state.

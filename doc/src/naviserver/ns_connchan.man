@@ -45,7 +45,7 @@
 	[arg channel]]
 
  Close the named connection channel. The [option "-server"] can be
- used for cleaup of stale handles.
+ used for cleanup of stale handles.
 
 [call [cmd "ns_connchan exists"] [arg channel]]
 
