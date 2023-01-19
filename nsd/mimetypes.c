@@ -137,7 +137,7 @@ static const struct exttype {
     { ".any",     "application/vnd.mitsubishi.misty-guard.trustweb"},
     { ".aos",     "application/x-nokia-9000-communicator-add-on-software" },
     { ".apkg",    "application/vnd.anki"},
-    { ".apng",    "image/vnd.mozilla.apng"},
+    { ".apng",    "image/apng"},                            /* https://www.w3.org/TR/png */
     { ".appcache", "text/cache-manifest"},
     { ".apr",     "application/vnd.lotus-approach"},
     { ".aps",     "application/mime" },
@@ -169,8 +169,9 @@ static const struct exttype {
     { ".atxml",   "application/atxml"},
     { ".au",      "audio/basic" },
     { ".auc",     "application/tamp-apex-update-confirm"},   /* http://www.iana.org/go/rfc5934 */
-    { ".auth-policy+xml", "application/auth-policy+xml"},  /* [RFC4745] */
+    { ".auth-policy+xml", "application/auth-policy+xml"},    /* [RFC4745] */
     { ".avi",     "video/x-msvideo" },
+    { ".avif",    "image/avif" },                            /* https://aomediacodec.github.io/av1-avif/ */
     { ".avs",     "video/avs-video" },
     { ".axa",     "audio/annodex" },
     { ".axs",     "application/olescript" },
