@@ -30,13 +30,9 @@ Here are some examples of applications you can use ADPs for:
 
 
 [list_begin itemized]
-
 [item] Returning HTML conditionally
-
 [item] Retrieving information from a database to use in a page
-
 [item] Inserting information from a form into a database
-
 [list_end]
 
 
@@ -91,11 +87,10 @@ will need to specify which pages the server will need to parse for Tcl
 commands and process.
 
 
- [subsection {Required Configuration Parameters}]
+[subsection {Required Configuration Parameters}]
 
 
 [list_begin itemized]
-
 
 [item] Use the Map configuration parameter to determine
  which files are to be processed. For example, you can specify that
@@ -103,12 +98,11 @@ commands and process.
  server. Or, you can specify that all files that reside in a
  certain directory (for example, /usr/pages/adp) will be processed.
 
-
 [list_end]
 
 
 
- [subsection {List of Configuration Parameters}]
+[subsection {List of Configuration Parameters}]
 
 
 The following table describes all the parameters that can be set
@@ -179,7 +173,7 @@ with the extensions .adp or .asp will be parsed, and all files in the
 
 [para]
 
-  If you plan to use the Tcl script to return part or all of the
+ If you plan to use the Tcl script to return part or all of the
  page's content, just omit that part of the page, but you
  can create all of the surrounding HTML.
 
@@ -224,9 +218,7 @@ To debug your ADPs with TclPro, follow these steps:
  use debug=*.adp to trap all files, or you can use
  debug=someinclude.inc file to trap in an included file.
 
-
 [list_end]
-
 
  To set a breakpoint in a procedure you'll have to "instrument"
  the procedure either after the debugger traps the first
@@ -242,16 +234,13 @@ specific syntax.
 
 [para]
 
-
-Insert Tcl commands between any of the following sets of HTML tags:
-
+Insert Tcl commands between any of the following markup variants:
 
 [para]
 
-
 [list_begin itemized]
 
-[item] <script language="tcl" runat="server" stream="on">
+[item] 
 
 [example_begin]
  <script language="tcl" runat="server" stream="on">
@@ -263,59 +252,42 @@ The contents of the script are interpreted using the Tcl
 interpreter. The result is not inserted into the page, however. You
 can use the [cmd ns_adp_puts] Tcl function to put content into the page.
 
-
 [para]
-
-
-The language=tcl attribute is optional. Future enhancements to ADPs
+The [term language="tcl"] attribute is optional. Future enhancements to ADPs
 will include the capability to embed scripts in other scripting
 languages, and you will be able to configure the default language. If
-the language attribute is set to anything except tcl, the script will
+the language attribute is set to anything except [term tcl], the script will
 not be processed, and a warning will be written to the log file.
 
-
 [para]
-
-
-The runat="server" attribute is required. If this attribute is missing,
-the script will not be processed. The runat="server" attribute is
+The [term runat="server"] attribute is required. If this attribute is missing,
+the script will not be processed. The [term runat="server"] attribute is
 necessary so that client-side scripts are not executed accidentally.
 
-
 [para]
+The [term stream="on"] attribute is optional. If it is included, all
+output for the rest of the page is streamed out to the browser as soon
+as it is ready. Streaming is useful when your script may take a long
+time to complete (such as a complex database query). Content is output
+to the page gradually (incrementally) as the script is running (this is also called
+"streaming HTML"). One disadvantage of streaming HTML is that the
+server cannot return a [term Content-length] header with the
+response, such that persistent connections are not possible.
 
-The stream=on attribute is optional. If it is included, all output for
-the rest of the page is streamed out to the browser as soon as it is
-ready. Streaming is useful when your script may take a long time to
-complete (such as a complex database query). Content is output to the
-page gradually as the script is running. One disadvantage of streaming
-is that the server cannot return a Content-length header with the
-response. Content-length can speed up the connection, especially if
-the connection is going through a proxy server.
+[item] [example {<% ... %>}]
 
-[item] <% ... %>
+[para] This syntax is evaluated exactly the same as the first syntax
+above, except that you cannot specify any of the attributes. The
+[term language="tcl"] and [term runat="server"] attributes are
+implied. There is no way to specify HTML streaming for this syntax,
+but when HTML streaming was activated in a previous script, it will be
+honored.  This syntax can also be used inside HTML tags.
 
+[item] [example {<%= ... %>}]
 
-[para]
-
-
-This syntax is evaluated exactly the same as the first syntax, above,
-except that you cannot specify any of the attributes. The language=Tcl
-and runat="server" attributes are implied. Streaming is not allowed with
-this syntax, but output within this syntax will be streamed if
-streaming was turned on in a previous script. This syntax can be used
-inside HTML tags.
-
-
-[item] <%= ... %>
-
-
-[para]
-
-
-The Tcl commands within these tags are evaluated as the argument to an
+[para] The Tcl commands within these tags are evaluated as the argument to an
 [cmd ns_adp_puts] command, which inserts the results into the page. This syntax
-can be used inside HTML tags.
+can also be used inside HTML tags.
 
 
 [list_end]
@@ -671,9 +643,9 @@ includes a file, executes another ADP, and uses streaming.
  <p>Here's an example of streaming:
  <script language="tcl" stream="on" runat="server">
    ns_adp_puts "<br>1...<br>"
-   ns_sleep 2
+   ns_sleep 2s
    ns_adp_puts "2...<br>"
-   ns_sleep 2
+   ns_sleep 2s
    ns_adp_puts "3!<br>"
  </script>
  <p>
@@ -686,22 +658,22 @@ includes a file, executes another ADP, and uses streaming.
 [para]
 The standard-header file referenced in the above example looks like this:
 
-
-[para]
-This is a standard header.
+[example_begin]
+ This is a standard header.
+[example_end]
 
 
 [para]
 The time.adp file referenced in the example looks like this:
 
+[example_begin]
+ The time is: <%=[lb]ns_httptime [lb]ns_time[rb][rb]%>
+[example_end]
+
 
 [para]
-The time is: <%=[lb]ns_httptime [lb]ns_time[rb][rb]%>
-
-
-[para]
-Because of the streaming used in the last script, the "1...", "2...",
-"3!" and "End" part of the page will be displayed gradually.
+Because of the streaming used in the last script, the output "1...", "2...",
+"3!" and "End" will be displayed incrementally in the page.
 
 [see_also ns_adp ns_adp_puts ns_adp_eval ns_adp_argv ns_adp_include ns_sleep ns_adp_register]
 [keywords ADP configuration]

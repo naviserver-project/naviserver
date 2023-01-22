@@ -161,7 +161,7 @@ which is usually when the user closes their browser.
 
 [section EXAMPLES]
 
-Track all user agents which ever visted out site:
+Track all user agents which ever visited our site:
 
 [example_begin]
  proc browser_tracking_filter {} {
