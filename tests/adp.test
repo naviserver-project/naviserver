@@ -126,11 +126,11 @@ test adp-5.2 {Deeply nested ADP tags} -body {
 #
 
 test adp-6.1 {adp-parse string} -body {
-    ns_adp_parse {2 + 2 = <%= [expr 2 + 2] %> !!!}
+    ns_adp_parse {2 + 2 = <%= [expr {2 + 2}] %> !!!}
 } -result {2 + 2 = 4 !!!}
 
 test adp-6.2 {adp-parse string} -body {
-    ns_adp_parse -string {2 + 2 = <%= [expr 2 + 2] %> !!!}
+    ns_adp_parse -string {2 + 2 = <%= [expr {2 + 2}] %> !!!}
 } -result {2 + 2 = 4 !!!}
 
 
@@ -196,6 +196,145 @@ test adp-7.4b {adp-parse string with tag, attribute quote not terminated} -body 
 } -cleanup {
     rename  ::test_tag_proc ""
 } -result {<test74 a="1" title=" b=2>} ;#"
+
+test adp-7.5.1 {adp-parse string with non-registered tag, attribute quote not terminated} -body {
+    ns_adp_parse -string {<test75 a="1" title=" b=2>}  ;#"
+} -result {<test75 a="1" title=" b=2>} ;#"
+
+test adp-7.5.2 {adp-parse string with non-registered tag, plain less sign in text} -body {
+    ns_adp_parse -string {a < b & x=1, <test75 a="1" b=2> ...}
+} -result {a < b & x=1, <test75 a="1" b=2> ...}
+
+test adp-7.5.3 {adp-parse string with non-registered tag, plain less and gt sign in text} -body {
+    ns_adp_parse -string {a < b & x=1, <test75 a="1" b=2> .>.}
+} -result {a < b & x=1, <test75 a="1" b=2> .>.}
+
+#
+# <script> tags (lang=tcl)
+#
+test adp-8.1.0 {adp-parse script base case} -body {
+    ns_adp_parse {begin <script>hello word</script> end}
+} -returnCodes {ok error} -result {begin <script>hello word</script> end}
+
+test adp-8.1.1 {adp-parse script runat="server" and default language} -body {
+    set r [ns_adp_parse {begin <script runat="server">set ::result ok</script> end}]
+    list $r $::result
+} -cleanup {
+    unset -nocomplain ::result
+} -returnCodes {ok error} -result {{begin  end} ok}
+
+test adp-8.1.2 {adp-parse script runat="server" and language tcl} -body {
+    set r [ns_adp_parse {begin <script language=tcl runat=server>set ::result ok</script> end}]
+    list $r $::result
+} -cleanup {
+    unset -nocomplain ::result
+} -returnCodes {ok error} -result {{begin  end} ok}
+
+test adp-8.1.3a {adp-parse script runat="server" and language tcl, tag inside script} -body {
+    set r [ns_adp_parse {begin <script language=tcl runat=server>set ::result <br></script> end}]
+    list $r $::result
+} -cleanup {
+    unset -nocomplain ::result
+} -returnCodes {ok error} -result {{begin  end} <br>}
+
+test adp-8.1.3b {adp-parse script runat="server" and language tcl, broken tag inside script} -body {
+    set r [ns_adp_parse {begin <script language=tcl runat=server>set ::result "<a '>"</script> end}]
+    list $r $::result
+} -cleanup {
+    unset -nocomplain ::result
+} -returnCodes {ok error} -result {{begin  end} {<a '>}}
+
+# <%= .. %> is NOT executed in "<script language=tcl runat=server>...</script>"
+test adp-8.1.4 {adp-parse script runat="server" and language tcl, <%...%> inside script} -body {
+    set r [ns_adp_parse {begin <script language=tcl runat=server>set ::result {<%= [expr {2 + 2}] %>}</script> end}]
+    list $r $::result
+} -cleanup {
+    unset -nocomplain ::result
+} -returnCodes {ok error} -result {{begin  end} {<%= [expr {2 + 2}] %>}}
+
+#
+# <script> tags (type="text/javascript")
+#
+test adp-8.2.0 {adp-parse script classical javascript case} -body {
+    ns_adp_parse {begin <script type="text/javascript">alert('hi');</script> end}
+} -result {begin <script type="text/javascript">alert('hi');</script> end}
+
+test adp-8.2.1 {adp-parse script javascript case, tag inside script} -body {
+    ns_adp_parse {begin <script type="text/javascript">x = '<br>';</script> end}
+} -result {begin <script type="text/javascript">x = '<br>';</script> end}
+
+test adp-8.2.2a {adp-parse script javascript case, broken tag inside script} -body {
+    ns_adp_parse {begin <script type="text/javascript"> begin < ' end</script> end}
+} -result {begin <script type="text/javascript"> begin < ' end</script> end}
+
+test adp-8.2.2b {adp-parse script javascript case, broken tag inside script} -body {
+    ns_adp_parse {begin <script type="text/javascript"> x= '<a "';</script> end} ;#"
+} -result {begin <script type="text/javascript"> x= '<a "';</script> end}    ;#"
+
+# Not sure, the following is a good idea, since adp inline code <% .. %>
+# substitution can interfere with JavaScript Templates (JST).
+# Execute  <%= .. %> in "<script type="text/javascript>...</script>"?
+test adp-8.2.3 {adp-parse script javascript case, <% .. %> inside script} -body {
+    ns_adp_parse {begin <script type="text/javascript"> x= '<%= [expr {2 + 2}] %>';</script> end}
+} -result {begin <script type="text/javascript"> x= '4';</script> end}
+
+test adp-8.2.4a {adp-parse script javascript case, nested <script>} -body {
+    ns_adp_parse {begin <script type="text/javascript">document.write("<script>alert('Hi')</script>");</script> end}
+} -result {begin <script type="text/javascript">document.write("<script>alert('Hi')</script>");</script> end}
+
+test adp-8.2.4b {adp-parse script javascript case, nested <script> unbalanced} -body {
+    ns_adp_parse {begin <script type="text/javascript">document.write("<script>alert('Hi')");</script> end}
+} -result {begin <script type="text/javascript">document.write("<script>alert('Hi')");</script> end}
+
+test adp-8.2.5a {adp-parse script javascript case, </script> inside script} -body {
+    ns_adp_parse {begin <script type="text/javascript"> x= '</script>';</script> end}
+} -result {begin <script type="text/javascript"> x= '</script>';</script> end}
+
+test adp-8.2.5b {adp-parse script javascript case, </script> inside script} -body {
+    ns_adp_parse {begin <script type="text/javascript"> x= '</script>'; end}
+} -result {begin <script type="text/javascript"> x= '</script>'; end}
+
+
+
+test adp-8.3.0a {adp-parse string with tag and script} -body {
+    proc ::test_tag_proc {params} {return RESULT}
+    ns_adp_registerscript test831 ::test_tag_proc
+    ns_adp_parse -string {start <foo arg="<test831>"> end}
+} -cleanup {
+    rename  ::test_tag_proc ""
+} -result {start <foo arg="RESULT"> end}
+
+test adp-8.3.0b {adp-parse string with tag and script} -body {
+    proc ::test_tag_proc {params} {return RESULT}
+    ns_adp_registerscript test831 ::test_tag_proc
+    ns_adp_parse -string {start <script arg="<test831>"></script> end}
+} -cleanup {
+    rename  ::test_tag_proc ""
+} -result {start <script arg="RESULT"></script> end}
+
+
+test adp-8.3.1 {adp-parse string with tag and script} -body {
+    proc ::test_tag_proc {params} {return RESULT}
+    ns_adp_registerscript test831 ::test_tag_proc
+    ns_adp_parse -string {start <foo arg="<test831>"> <script arg="<test831>"> end}
+} -cleanup {
+    rename  ::test_tag_proc ""
+} -result {start <foo arg="RESULT"> <script arg="RESULT"> end}
+
+test adp-8.3.2 {adp-parse string with tag and script} -body {
+    proc ::test_tag_proc {params} {return bar}
+    ns_adp_registerscript test832 ::test_tag_proc
+    ns_adp_parse -string {start <foo<test831>> end}
+} -cleanup {
+    rename  ::test_tag_proc ""
+} -result {start <foobar> end}
+
+
+
+if {0} {
+    <script type="<%=@headscript.type;literal@"<if @headscript.src@ not nil> src="@headscript.src;literal@"</if>><if @headscript.content@ not nil>@headscript.content;noquote@</if></script>
+    <html<if @doc.lang@ not nil> lang="@doc.lang;literal@"</if>>
+}
 
 
 cleanupTests
