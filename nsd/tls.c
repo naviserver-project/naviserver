@@ -2046,7 +2046,7 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
 ssize_t
 Ns_SSLSendBufs2(SSL *ssl, const struct iovec *bufs, int nbufs)
 {
-    ssize_t sent;
+    ssize_t sent = 0;
 
     NS_NONNULL_ASSERT(ssl != NULL);
     NS_NONNULL_ASSERT(bufs != NULL);
@@ -2055,10 +2055,7 @@ Ns_SSLSendBufs2(SSL *ssl, const struct iovec *bufs, int nbufs)
         /* sent = -1; to silence bad static checkers (cppcheck), fb infer complains when set */
         Ns_Fatal("Ns_SSLSendBufs2: can handle at most one buffer at the time");
 
-    } else if (bufs[0].iov_len == 0) {
-        sent = 0;
-
-    } else {
+    } else if (bufs[0].iov_len > 0) {
         int  err;
 
         sent = SSL_write(ssl, bufs[0].iov_base, (int)bufs[0].iov_len);
