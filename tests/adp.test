@@ -173,10 +173,10 @@ test adp-7.2b {adp-parse string with tag with greater sign} -body {
 test adp-7.3 {adp-parse string with tag, with markup in attribute} -body {
     proc ::test_tag_proc {params} {return [ns_set array $params]}
     ns_adp_registerscript test73 ::test_tag_proc
-    ns_adp_parse -string {<test73 a="1" title="<i class='fal fa-link'></i>" b=2>}
+    ns_adp_parse -string {<test73 a="1" title="<i class='fa fa-link'></i>" b=2>}
 } -cleanup {
     rename  ::test_tag_proc ""
-} -result {a 1 title {<i class='fal fa-link'></i>} b 2}
+} -result {a 1 title {<i class='fa fa-link'></i>} b 2}
 
 #
 # When parsing fails, the result is literally the input
@@ -195,7 +195,7 @@ test adp-7.4b {adp-parse string with tag, attribute quote not terminated} -body 
     ns_adp_parse -string {<test74 a="1" title=" b=2>}  ;#"
 } -cleanup {
     rename  ::test_tag_proc ""
-} -result {<test74 a="1" title=" b=2>} ;#"
+} -result {a 1 title {" b=2>}} ;#"
 
 test adp-7.5.1 {adp-parse string with non-registered tag, attribute quote not terminated} -body {
     ns_adp_parse -string {<test75 a="1" title=" b=2>}  ;#"
@@ -270,6 +270,27 @@ test adp-8.2.2a {adp-parse script javascript case, broken tag inside script} -bo
 test adp-8.2.2b {adp-parse script javascript case, broken tag inside script} -body {
     ns_adp_parse {begin <script type="text/javascript"> x= '<a "';</script> end} ;#"
 } -result {begin <script type="text/javascript"> x= '<a "';</script> end}    ;#"
+
+test adp-8.2.2c {adp-parse script javascript case, broken tag inside script, trailing tag} -body {
+    ns_adp_parse {begin <script type="text/javascript"> begin <a ' end</script> <tag t=foo'> end}
+} -result {begin <script type="text/javascript"> begin <a ' end</script> <tag t=foo'> end}
+
+test adp-8.2.2d {adp-parse script javascript case, broken tag inside script, trailing registered tag, invalid tag name before} -body {
+    proc ::test_tag_proc {params} {return RESULT}
+    ns_adp_registerscript test822 ::test_tag_proc
+    ns_adp_parse {begin <script type="text/javascript"> begin <a. ' end</script> <test822> t=foo' end}
+} -cleanup {
+    rename  ::test_tag_proc ""
+} -result {begin <script type="text/javascript"> begin <a. ' end</script> RESULT t=foo' end}
+
+test adp-8.2.2e {adp-parse script javascript case, broken tag inside script, trailing registered tag, no attribute} -body {
+    proc ::test_tag_proc {params} {return RESULT}
+    ns_adp_registerscript test822 ::test_tag_proc
+    ns_adp_parse {begin <script type="text/javascript"> begin <a ' end</script> <test822> t=foo' end}
+} -cleanup {
+    rename  ::test_tag_proc ""
+} -result {begin <script type="text/javascript"> begin <a ' end</script> RESULT t=foo' end}
+
 
 # Not sure, the following is a good idea, since adp inline code <% .. %>
 # substitution can interfere with JavaScript Templates (JST).
