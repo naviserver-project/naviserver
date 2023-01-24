@@ -103,6 +103,65 @@ static void AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned
 static void AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const char* file)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+
+/*
+ * report --
+ *
+ *      Local debugging function
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Printing to log file.
+ */
+#if 0
+static void report(const char *msg, const char *string, ssize_t len)
+{
+    const int max = 3000;
+
+    if (len == -1) {
+        len = (ssize_t)strlen(string)+1;
+    }
+    {
+        char buffer[len + 2];
+        memcpy(buffer, string, len+1);
+        buffer[len>max ? max : len+1] = '\0';
+        Ns_Log(Notice, "%s //%s//", msg, buffer);
+    }
+}
+#endif
+
+/*
+ * TagValidFirstChar, TagValidChar --
+ *
+ *      Valid characters for tag names. These rules are slightly more tolerant
+ *      than in HTML, but these this is necessary, since ADP is more tolerant
+ *      than HTML and supports as well embedding of tags in start tags,
+ *      etc. This is as well needed for backward compatibility. These rules
+ *      are in essence just needed in NsParseTagEnd to determine, if markup is
+ *      used in attribute values.
+ *
+ * Results:
+ *      Boolean value.
+ *
+ * Side effects:
+ *      Printing to log file.
+ */
+static bool TagValidFirstChar (char c) {
+    return (c >= 'a' && c <= 'z')
+        || (c >= 'A' && c <= 'Z')
+        || (c >= '0' && c <= '9');
+}
+static bool TagValidChar (char c) {
+    return (c >= 'a' && c <= 'z')
+        || (c >= 'A' && c <= 'Z')
+        || (c >= '0' && c <= '9')
+        || (c == ':')
+        || (c == '_') ;
+}
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -296,6 +355,11 @@ AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const cha
  *      attributes values as long these are between single or double quotes:
  *      https://html.spec.whatwg.org/multipage/syntax.html#syntax-attribute-value
  *
+ *      As long the tag looks like a valid definition, it parses it and ignores
+ *      markup between quotes. When the passed-in string does not look like a
+ *      well-formed start tag, fall back to the legacy approach to provide
+ *      maximal backward compatibility.
+ *
  * Results:
  *      Either pointing the ending greater sign or NULL
  *
@@ -307,29 +371,108 @@ AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const cha
 char*
 NsParseTagEnd(char *str)
 {
+    const char *startTagStr = str;
+    /*
+     * Parse tag name
+     */
+    str++;
+    if (!TagValidFirstChar(*str)) {
+        //Ns_Log(Notice, "legacy case: no valid first character of tag name");
+        goto legacy;
+    }
+    str++;
+    while (TagValidChar(*str)) {
+        str++;
+    }
+    //report("NsParseTagEnd tag name ", startTagStr, str-startTagStr);
+
+    /*
+     * Now we expect whitespace* followed by optional attributes and maybe the
+     * closing ">" character.
+     */
+    if (*str != '>' && CHARTYPE(space, *str) == 0) {
+        //Ns_Log(Notice, "legacy case: no space or > after tag name");
+        goto legacy;
+    }
     for (;;) {
-        str = strpbrk(str, ">'\"");
-        if (str == NULL || *str == '>') {
-            /*
-             * We found the closing character of the tag or the end of the
-             * string.
-             */
-            break;
-        } else {
-            /*
-             * Some quote (single quote or double quote) was found. Search for
-             * the end of the quoted string. Note that there is no backslash
-             * escaping for quotes between quotes defined for HTML.
-             */
-            str = strchr(str+1, INTCHAR(*str));
-            if (str == NULL) {
-                /*
-                 * The closing quote is missing.
-                 */
-                break;
-            }
+        while (CHARTYPE(space, *str) != 0) {
             str++;
         }
+        if (*str == '>') {
+            goto done;
+        }
+        /*
+         * Expect attribute name
+         */
+        if (!TagValidFirstChar(*str)) {
+            //Ns_Log(Notice, "legacy case: no valid first character of attribute name");
+            goto legacy;
+        }
+        str++;
+        while (TagValidChar(*str)) {
+            str++;
+        }
+        while (CHARTYPE(space, *str) != 0) {
+            str++;
+        }
+        //report("NsParseTagEnd tag name + att", startTagStr, str-startTagStr);
+        if (*str == '>') {
+            /*
+             * Attribute without equal sign at the end
+             */
+            goto done;
+        }
+        if (*str != '=') {
+            //Ns_Log(Notice, "legacy case: no valid character after attribute name");
+            goto legacy;
+        }
+        str++;
+        while (CHARTYPE(space, *str) != 0) {
+            str++;
+        }
+        /*
+         * We expect quoted or unquoted attribute value
+         */
+        //Ns_Log(Notice, "We are now at char '%c'. Is this a quoted value?", *str);
+        if (*str == '\'' || *str == '"') {
+            const char quote = *str;
+            str++;
+            while (*str != quote) {
+                if (*str == '\0') {
+                    //Ns_Log(Notice, "legacy case: quote not terminated");
+                    goto legacy;
+                }
+                str++;
+            }
+            str++;
+        } else {
+            /*
+             * Unquoted value
+             */
+            if (!TagValidFirstChar(*str)) {
+                //Ns_Log(Notice, "legacy case: no valid first character of unquoted value");
+                goto legacy;
+            }
+            str++;
+            while (TagValidChar(*str)) {
+                str++;
+            }
+        }
+        //report("NsParseTagEnd tag name + att + value", startTagStr, str-startTagStr);
+    }
+    assert(str != NULL);
+    //report("NsParseTagEnd ===", startTagStr, str-startTagStr);
+
+ done:
+    return str;
+
+ legacy:
+
+    str = strchr(startTagStr, INTCHAR('>'));
+    if (str != NULL) {
+        //report("NsParseTagEnd ===", startTagStr, str-startTagStr);
+    } else {
+        //Ns_Log(Notice, "NsParseTagEnd === NULL");
     }
 
     return str;
