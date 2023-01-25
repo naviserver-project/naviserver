@@ -2097,13 +2097,13 @@ HttpGetResult(
     Ns_TclSetTimeObj(elapsedTimeObj, &diff);
 
     if (httpPtr->error != NULL) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(httpPtr->error, -1));
         if (httpPtr->finalSockState == NS_SOCK_TIMEOUT) {
             Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
             Ns_Log(Ns_LogTimeoutDebug, "ns_http request '%s' runs into timeout",
                    httpPtr->url);
             HttpClientLogWrite(httpPtr, "socktimeout");
         }
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(httpPtr->error, -1));
         result = TCL_ERROR;
         goto err;
     }
@@ -4560,6 +4560,7 @@ HttpTunnel(
             Ns_SockConnectError(interp, proxyhost, proxyport, rc);
             if (rc == NS_TIMEOUT) {
                 HttpClientLogWrite(httpPtr, "connecttimeout");
+                Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
             }
             goto fail;
         }
