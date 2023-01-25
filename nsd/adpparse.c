@@ -510,21 +510,19 @@ NsParseTagEnd(char *str)
 static void
 AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
 {
-    int                  level;
-    unsigned int         scriptFlags;
+    int                  level = 0;
+    unsigned int         scriptFlags = 0u;
     const Tcl_HashEntry *hPtr;
     const Tag           *tagPtr = NULL;
-    const char          *script = NS_EMPTY_STRING, *ae = NS_EMPTY_STRING;
-    char                *s, *e, *n, *a, *text, null = '\0', *as = &null;
     Tcl_DString          tag;
-    bool                 scriptStreamDone;
+    bool                 scriptStreamDone = NS_FALSE;
     Parse                parse;
+
     enum {
         TagNext,
         TagScript,
         TagReg
     } state;
-
 
     NS_NONNULL_ASSERT(codePtr != NULL);
     NS_NONNULL_ASSERT(servPtr != NULL);
@@ -544,10 +542,6 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
      * Parse ADP one tag at a time.
      */
     text = adp;
-    scriptStreamDone = NS_FALSE;
-    scriptFlags = 0u;
-    level = 0;
-    state = TagNext;
     Ns_RWLockRdLock(&servPtr->adp.taglock);
 
     for (;;) {
