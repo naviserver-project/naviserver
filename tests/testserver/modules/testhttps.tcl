@@ -51,6 +51,7 @@ namespace eval ::nstest {
             {-getmultiheaders}
             {-getbody 0}
             {-getbinary 0}
+            {-timeout 3s}
             {-verbose 0}
             {-hostname}
             --
@@ -72,7 +73,6 @@ namespace eval ::nstest {
             default {error "protocol $proto not supported"}
         }
 
-        set timeout 3
         set ::nstest::verbose $verbose
         set extraFlags {}
 
@@ -124,13 +124,26 @@ namespace eval ::nstest {
 
         set fullUrl $proto://\[$host\]:$port/[string trimleft $url /]
         log url $fullUrl
-        set result [ns_http run \
-                        {*}$extraFlags \
-                        -timeout $timeout \
-                        -method $method \
-                        -headers $hdrs \
-                        -body $body \
-                        $fullUrl]
+        try {
+            ns_http run \
+                {*}$extraFlags \
+                -timeout $timeout \
+                -method $method \
+                -headers $hdrs \
+                -body $body \
+                $fullUrl
+        } trap {NS_TIMEOUT} {errorMsg} {
+            #ns_log notice "REQUEST timeout: $errorMsg errorCode $::errorCode"
+            dict set result status 000
+            dict set result body "testcase NS_TIMEOUT: $errorMsg"
+            dict set result headers [ns_set create]
+
+        } on error {errorMsg} {
+            #ns_log notice "REQUEST error: $errorMsg errorCode $::errorCode"
+            ::throw $::errorCode $errorMsg
+        } on ok {result} {
+            #ns_log notice "REQUEST returned $result"
+        }
 
         #ns_set cleanup $hdrs
         #set hdrs [ns_set create]
