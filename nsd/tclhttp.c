@@ -2079,13 +2079,13 @@ HttpGetResult(
     Ns_TclSetTimeObj(elapsedTimeObj, &diff);
 
     if (httpPtr->error != NULL) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(httpPtr->error, TCL_INDEX_NONE));
         if (httpPtr->finalSockState == NS_SOCK_TIMEOUT) {
             Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
             Ns_Log(Ns_LogTimeoutDebug, "ns_http request '%s' runs into timeout",
                    httpPtr->url);
             HttpClientLogWrite(httpPtr, "socktimeout");
         }
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(httpPtr->error, TCL_INDEX_NONE));
         result = TCL_ERROR;
         goto err;
     }
@@ -3095,6 +3095,19 @@ HttpConnect(
             if (binary == NS_TRUE) {
                 //Ns_Log(Notice, "... bodyObj has type %s ", bodyObj->typePtr?bodyObj->typePtr->name:"NONE");
                 bodyStr = (char *)Tcl_GetByteArrayFromObj(bodyObj, &bodyLen);
+//#define JAN 1
+#ifdef JAN
+                if (bodyStr == NULL) {
+                    Ns_TclPrintfResult(interp, "Body is not really binary");
+                    goto fail;
+                }
+#endif
+#if !defined(NS_TCL_PRE9)
+                if (bodyStr == NULL) {
+                    bodyStr = (char *)Tcl_GetBytesFromObj(interp, bodyObj, &bodyLen);
+                    Ns_Log(Notice, "... Tcl_GetBytesFromObj returned len %zu body '%p'", bodyLen, (void*)bodyStr);
+                }
+#endif
                 //Ns_Log(Notice, "... body as bytearray len %zu body '%s'", bodyLen, bodyStr);
             } else {
                 bodyStr = Tcl_GetStringFromObj(bodyObj, &bodyLen);
@@ -4547,6 +4560,7 @@ HttpTunnel(
             Ns_SockConnectError(interp, proxyhost, proxyport, rc);
             if (rc == NS_TIMEOUT) {
                 HttpClientLogWrite(httpPtr, "connecttimeout");
+                Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
             }
             goto fail;
         }
