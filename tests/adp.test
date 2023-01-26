@@ -368,12 +368,36 @@ test adp-8.3.2 {adp-parse string with tag and script} -body {
     rename  ::test_tag_proc ""
 } -result {start <foobar> end}
 
-
-
 if {0} {
+    #
+    # some cases from OpenACS (require <if> tag)
+    #
     <script type="<%=@headscript.type;literal@"<if @headscript.src@ not nil> src="@headscript.src;literal@"</if>><if @headscript.content@ not nil>@headscript.content;noquote@</if></script>
     <html<if @doc.lang@ not nil> lang="@doc.lang;literal@"</if>>
 }
+
+test http_adp-2.0 {simple ADP page} -body {
+    nstest::http -getbody 1 GET /helloworld.adp
+} -result {200 {Hello World!}}
+
+test http_adp-2.1.1 {ADP page with timed out ns_http request} -body {
+    #
+    # Here the invocation of the testcase times out
+    #
+    nstest::http -timeout 1s -getbody 1 GET /http_nonexistent.adp
+} -returnCodes {ok return error} -match glob -result {000 {testcase NS_TIMEOUT: http request timeout}}
+
+test http_adp-2.1.2 {ADP page with timed out ns_http request followed by simple ADP page} -body {
+    try {ns_http run -timeout .5s http://192.0.2.1/} on error {errorMsg} {ns_log notice "run ends in $::errorCode '$errorMsg'"}
+    try {ns_http run http://192.0.2.1/} on error {errorMsg} {ns_log notice "run ends in $::errorCode '$errorMsg'"}
+    nstest::http -getbody 1 GET /helloworld.adp
+} -returnCodes {ok return error} -result {200 {Hello World!}}
+
+
+test http_adp-2.2 {ADP page with timed out ns_http request followed by simple ADP page} -body {
+    nstest::http -getbody 1 GET /http_returntimeout.adp
+} -returnCodes {ok return error} -match glob -result {503 *Service Unavailable*}
+
 
 cleanupTests
 

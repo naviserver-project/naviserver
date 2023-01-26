@@ -125,6 +125,7 @@ PageRequest(Ns_Conn *conn, const char *fileName, const Ns_Time *expiresPtr, unsi
     bool            fileNotFound;
     Tcl_DString     ds, *dsPtr = NULL;
     Ns_ReturnCode   status;
+    unsigned int    savedAdpFlags;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -203,9 +204,11 @@ PageRequest(Ns_Conn *conn, const char *fileName, const Ns_Time *expiresPtr, unsi
         /*
          * Include the ADP with the special start page and null args.
          */
-
+        savedAdpFlags = itPtr->adp.flags;
         itPtr->adp.flags |= aflags;
+        itPtr->adp.depth = 0;
         itPtr->adp.conn = conn;
+
         start = ((servPtr->adp.startpage != NULL) ? servPtr->adp.startpage : fileName);
         objv[0] = Tcl_NewStringObj(start, -1);
         objv[1] = Tcl_NewStringObj(fileName, -1);
@@ -215,16 +218,19 @@ PageRequest(Ns_Conn *conn, const char *fileName, const Ns_Time *expiresPtr, unsi
         Tcl_DecrRefCount(objv[0]);
         Tcl_DecrRefCount(objv[1]);
 
+        //Ns_Log(Notice, "ADP request '%s' lead to exception %.8x depth %d", conn->request.line, itPtr->adp.exception, itPtr->adp.depth);
         if (itPtr->adp.exception == ADP_TIMEOUT) {
             Ns_Log(Ns_LogTimeoutDebug, "ADP request %s lead to a timeout", conn->request.line);
             status = Ns_ConnReturnUnavailable(conn);
             Tcl_ResetResult(interp);
+            itPtr->adp.exception = ADP_OK;
 
         } else if (NsAdpFlush(itPtr, NS_FALSE) != TCL_OK || result != TCL_OK) {
             status = NS_ERROR;
         } else {
             status = NS_OK;
         }
+        itPtr->adp.flags = savedAdpFlags;
     }
 
     if (dsPtr != NULL) {
