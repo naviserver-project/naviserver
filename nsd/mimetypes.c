@@ -298,7 +298,7 @@ static const struct exttype {
     { ".dms",     "text/vnd.dmclientscript"},
     { ".dna",     "application/vnd.dna"},
     { ".dns",     "application/dns"},                      /* [RFC4027] */
-    { ".dns",     "text/dns"},                             /* [RFC4027] */
+    /*{ ".dns",     "text/dns"},*/                         /* [RFC4027] */
     { ".dns+json", "application/dns+json"},                /* [RFC8427] */
     { ".dns-message", "application/dns-message"},          /* [RFC8484] */
     { ".doc",     "application/msword" },
@@ -416,7 +416,6 @@ static const struct exttype {
     { ".grxml",   "application/srgs+xml"},                 /* w3c speech grammar */
     { ".gsd",     "audio/x-gsm" },
     { ".gsheet",  "application/urc-grpsheet+xml"},
-    { ".gsm",     "audio/x-gsm" },
     { ".gsp",     "application/x-gsp" },
     { ".gss",     "application/x-gss" },
     { ".gtar",    "application/x-gtar" },
