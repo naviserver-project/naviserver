@@ -1828,7 +1828,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
                 length = (int)connPtr->reqPtr->length - offset;
 
             } else if ((result == TCL_OK)
-                       && (length > -1)
+                       && (length >= 0)
+                       && (offset >= 0)
                        && ((size_t)length + (size_t)offset > connPtr->reqPtr->length)
                        ) {
                 Ns_TclPrintfResult(interp, "offset + length exceeds available content length");
