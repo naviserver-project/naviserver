@@ -1805,7 +1805,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
             requiredLength = length;
             if ((result == TCL_OK)
                 && (offset > 0)
-                && (offset > connPtr->reqPtr->length)
+                && ((size_t)offset > connPtr->reqPtr->length)
                 ) {
                 Ns_TclPrintfResult(interp, "offset exceeds available content length");
                 result = TCL_ERROR;
@@ -1816,7 +1816,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
 
             } else if ((result == TCL_OK)
                        && (length >= 0)
-                       && (length + offset > connPtr->reqPtr->length)
+                       && (offset >= 0)
+                       && ((size_t)length + (size_t)offset > connPtr->reqPtr->length)
                        ) {
                 Ns_TclPrintfResult(interp, "offset (%" PRITcl_Size ") + length"
                                    " (%" PRITcl_Size ") exceeds available content length"
