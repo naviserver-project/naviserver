@@ -444,7 +444,6 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
              * We got a response.
              */
             if (result != SSL_TLSEXT_ERR_OK) {
-                assert(resp != NULL);
                 OCSP_RESPONSE_free(resp);
                 goto err;
             }
@@ -743,6 +742,12 @@ OCSP_computeResponse(SSL *ssl, const SSLCertStatusArg *srctx, OCSP_RESPONSE **re
         goto err;
     }
 
+    aia = X509_get1_ocsp(cert);
+    if (aia == NULL) {
+        Ns_Log(Warning, "cert_status: cannot obtain URL for Authority Information Access (AIA), maybe self-signed?");
+        goto err;
+    }
+
     /*
      * Try to get the OCSP_RESPONSE from a cache file.
      */
@@ -760,8 +765,7 @@ OCSP_computeResponse(SSL *ssl, const SSLCertStatusArg *srctx, OCSP_RESPONSE **re
         STACK_OF(X509_EXTENSION) *exts;
         int i;
 
-        aia = X509_get1_ocsp(cert);
-        if (aia != NULL && srctx->verbose) {
+        if (srctx->verbose) {
             Ns_Log(Notice, "cert_status: Authority Information Access (AIA) URL: %s",
                    sk_OPENSSL_STRING_value(aia, 0));
         }
