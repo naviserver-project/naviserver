@@ -1950,7 +1950,15 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
                    sock, sslERRcode, reasonCode);
 #ifdef SSL_R_UNEXPECTED_EOF_WHILE_READING
             if (reasonCode == SSL_R_UNEXPECTED_EOF_WHILE_READING) {
-                Ns_Log(Notice, "SSL_read(%d) ERROR_SYSCALL sees UNEXPECTED_EOF_WHILE_READING", sock);
+                /*
+                 * Only complain loudly, when socket not in init
+                 * mode. SSL_in_init() returns 1 if the SSL/TLS state
+                 * machine is currently processing or awaiting
+                 * handshake messages, or 0 otherwise.
+                 */
+                Ns_LogSeverity level = (SSL_in_init(sslPtr) == 1 ? Debug : Notice);
+
+                Ns_Log(level, "SSL_read(%d) ERROR_SYSCALL sees UNEXPECTED_EOF_WHILE_READING", sock);
                 nRead = got;
                 sockState = NS_SOCK_DONE;
                 break;
