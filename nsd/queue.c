@@ -2458,7 +2458,7 @@ ConnRun(Conn *connPtr)
     memset(&(connPtr->reqPtr->request), 0, sizeof(struct Ns_Request));
 
     /*
-      Ns_Log(Notice, "ConnRun connPtr %p req %p %s", connPtr, connPtr->request, connPtr->request.line);
+      Ns_Log(Notice, "ConnRun connPtr %p req %s", (void*)connPtr, connPtr->request.line);
     */
 
     /*
