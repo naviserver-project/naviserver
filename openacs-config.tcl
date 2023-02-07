@@ -1,4 +1,4 @@
-s######################################################################
+######################################################################
 #
 # Config parameter for an OpenACS site using NaviServer.
 #
@@ -50,6 +50,7 @@ set defaultConfig {
     httpport	8000
     httpsport	""
     nscpport    ""
+    smtpdport   ""
 
     server     "openacs"
     serverroot	/var/www/$server
@@ -356,6 +357,7 @@ if {[info exists httpsport] && $httpsport ne ""} {
         ns_param port		$httpsport
         ns_param hostname	$hostname
         ns_param ciphers	"ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384"
+        #ns_param ciphersuites  "TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256"
         ns_param protocols	"!SSLv2:!SSLv3:!TLSv1.0:!TLSv1.1"
         ns_param certificate	$serverroot/etc/certfile.pem
         ns_param verify		0
@@ -661,7 +663,10 @@ ns_section ns/server/$server/httpclient {
 ns_section ns/server/$server/acs {
     #
     # Provide optionally a different cookie namespace (used for
-    # prefixing OpenACS cookies)
+    # prefixing OpenACS cookies). This is important when e.g.
+    # multiple servers are running on different ports of the same
+    # host, but should not share cookies.
+    #
     ns_param CookieNamespace $CookieNamespace
     #
     # Define a mapping between MIME types and CSP rules for static
@@ -692,7 +697,14 @@ ns_section ns/server/$server/acs {
     #
     # ns_param LogIncludeUserId 1
     #
+
+    #
+    # Cluster secret for intra-cluster communications. Clustering will
+    # not be enabled if no value is provided.
+    #
+    #ns_param ClusterSecret "please change me"
 }
+
 
 # Define/override OpenACS package parameters in section
 # ending with /acs/PACKAGENAME
@@ -1075,6 +1087,37 @@ ns_section ns/server/${server}/module/letsencrypt {
     # certificate for many subsites.
 
     #ns_param domains { openacs.org openacs.net fisheye.openacs.org cvs.openacs.org }
+}
+
+#
+# Sample configuration for the nssmtpd module.
+#
+# To use this, it is necessary to install the NaviServer nssmtpd
+# module first, and to privide a non-empty "smtpdport" below, and set
+# the package parameter "EmailDeliveryMode" in the acs-mail-lite
+# package to "nssmtpd". See: https://openacs.org/xowiki/outgoing_email
+#
+ns_section "ns/server/${server}/module/nssmtpd" {
+    ns_param port $smtpdport
+    ns_param address 127.0.0.1
+    ns_param relay localhost:25
+    ns_param spamd localhost
+    ns_param initproc smtpd::init
+    ns_param rcptproc smtpd::rcpt
+    ns_param dataproc smtpd::data
+    ns_param errorproc smtpd::error
+    ns_param relaydomains "localhost"
+    ns_param localdomains "localhost"
+    #
+    # Next section is for STARTTLS functionality:
+    #
+    #ns_param certificate "pathToYourCertificateChainFile.pem"
+    #ns_param cafile ""
+    #ns_param capath ""
+    #ns_param ciphers "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384"
+}
+ns_section ns/server/${server}/modules {
+    if {$smtpdport ne ""} {ns_param nssmtpd nssmtpd}
 }
 
 
