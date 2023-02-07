@@ -57,20 +57,21 @@ proc ns_configure_variables {prefix defaultConfig} {
         #
         if {[info exists ::env(${prefix}$var)]} {
             set value $::env(${prefix}$var)
-            ns_log notice "setting $var to '$value' from environment variable"
+            set source "environment variable"
         } elseif {[dict exists $defaultConfig $var]} {
             #
             # Otherwise set the variable to the default from the dict.
             #
             set value [dict get $defaultConfig $var]
-            ns_log notice "setting $var to '$value' from default configuration"
+            set source "default configuration"
         } else {
             continue
         }
         #
         # Use "subst" to support $substitutions in the values.
         #
-        uplevel [list set $var [uplevel [list subst $value]]]
+        set v [uplevel [list set $var [uplevel [list subst $value]]]]
+        ns_log notice "setting $var to '$v' from $source"
     }
 }
 
