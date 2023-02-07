@@ -1428,6 +1428,23 @@ NsStopDrivers(void)
 }
 
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsStopSpoolers --
+ *
+ *      Trigger the SpoolerThreads associated with driver threads to
+ *      shutdown. This effects the "writer" and "spooler" threads.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Associated queues are stopped.
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
 NsStopSpoolers(void)
 {
@@ -1453,8 +1470,8 @@ NsStopSpoolers(void)
  *
  * DriverInfoObjCmd --
  *
- *      Implements "ns_driver info". Returns public info of all drivers.
- *      Subcommand of NsTclDriverObjCmd.
+ *      Implements "ns_driver info". Returns public info of all initialized
+ *      drivers.  Subcommand of NsTclDriverObjCmd.
  *
  * Results:
  *      Standard Tcl Result.
@@ -1480,7 +1497,8 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
         Tcl_InitHashTable(&driverNames, TCL_STRING_KEYS);
 
         /*
-         * Iterate over all modules, not necessarily all driver threads
+         * Iterate over all network driver modules, not necessarily all driver
+         * threads.
          */
         for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
             int isNew = 0;
