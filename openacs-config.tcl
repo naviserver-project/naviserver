@@ -540,10 +540,12 @@ ns_section ns/server/$server/pool/monitor {
     ns_param   maxthreads 2
 
     ns_param   map "GET /SYSTEM"
+    ns_param   map "GET /acs-admin"
     ns_param   map "GET /admin/nsstats"
     ns_param   map "GET /ds"
     ns_param   map "GET /request-monitor"
     ns_param   map "POST /SYSTEM"
+    ns_param   map "POST /acs-admin"
     ns_param   map "POST /admin/nsstats"
     ns_param   map "POST /ds"
 }
