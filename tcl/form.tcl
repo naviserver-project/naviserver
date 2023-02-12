@@ -204,10 +204,9 @@ proc ns_getform {args}  {
                     set fp [ns_opentmpfile tmpfile]
                     set nocomplain [expr {$::tcl_version < 9.0 ? "" : "-nocomplain"}]
                     try {
-                        ns_log notice "fconfigure $fp {*}$nocomplain -encoding binary -translation binary"
                         fconfigure $fp {*}$nocomplain -encoding binary -translation binary
                     } on error {errorMsg} {
-                        ns_log warning "ns_getform: fconfigure of time file returned: $errorMsg"
+                        ns_log warning "ns_getform: fconfigure of temporary file returned: $errorMsg"
                     }
 
                     ns_atclose [list file delete -- $tmpfile]
@@ -352,7 +351,7 @@ proc ns_openexcl {file} {
 
 proc ns_opentmpfile {varFilename {template ""}} {
     upvar $varFilename tmpFileName
-    return [file tempfile tmpFileName {*}$template]
+    return [::file tempfile tmpFileName {*}$template]
 }
 
 #
