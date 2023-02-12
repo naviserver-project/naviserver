@@ -39,8 +39,14 @@ static char *Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Enco
 static bool GetBoundary(Tcl_DString *dsPtr, const char *contentType)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+#define NS_USE_STRSTR 1
+#if defined(NS_USE_STRSTR)
+static char *NextBoundary(const Tcl_DString *boundaryDsPtr, char *start)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_PURE;
+#else
 static char *NextBoundary(const Tcl_DString *boundaryDsPtr, char *s, const char *e)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_PURE;
+#endif
 
 static bool GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePtr, char *uPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
@@ -66,7 +72,6 @@ static bool GetValue(const char *hdr, const char *att, const char **vsPtr, const
  *
  *----------------------------------------------------------------------
  */
-
 Ns_Set *
 Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, Ns_ReturnCode *rcPtr)
 {
@@ -172,9 +177,20 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                 /*
                  * GetBoundary cares for "multipart/form-data; boundary=...".
                  */
+#if !defined(NS_USE_STRSTR)
                 const char  *formEndPtr = content + connPtr->reqPtr->length;
-                char        *firstBoundary = NextBoundary(&boundaryDs, content, formEndPtr), *s;
+#endif
+                char        *firstBoundary, *s;
                 Tcl_Encoding valueEncoding = connPtr->urlEncoding;
+
+#if defined(NS_USE_STRSTR)
+                firstBoundary = NextBoundary(&boundaryDs, content);
+#else
+                firstBoundary = NextBoundary(&boundaryDs, content, formEndPtr);
+#endif
+                NsHexPrint("multipart content",
+                           (const unsigned char *)content, connPtr->reqPtr->length,
+                           20, NS_TRUE);
 
                 s = firstBoundary;
                 for (;;) {
@@ -190,7 +206,11 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                         if (*s == '\n') {
                             ++s;
                         }
+#if defined(NS_USE_STRSTR)
+                        e = NextBoundary(&boundaryDs, s);
+#else
                         e = NextBoundary(&boundaryDs, s, formEndPtr);
+#endif
                         if (e != NULL) {
                             status = ParseMultipartEntry(connPtr, valueEncoding, s, e);
                             if (status == NS_ERROR) {
@@ -748,7 +768,8 @@ GetBoundary(Tcl_DString *dsPtr, const char *contentType)
  *
  * NextBoundary --
  *
- *      Locate the next form boundary.
+ *      Locate the next form boundary. On success, the result points to the
+ *      character before the boundary.
  *
  * Results:
  *      Pointer to start of next input field or NULL on end of fields.
@@ -758,7 +779,25 @@ GetBoundary(Tcl_DString *dsPtr, const char *contentType)
  *
  *----------------------------------------------------------------------
  */
+#if defined(NS_USE_STRSTR)
+static char *
+NextBoundary(const Tcl_DString *boundaryDsPtr, char *start)
+{
+    char *result = strstr(start, boundaryDsPtr->string);
 
+    if (result != NULL) {
+        /*Ns_Log(Notice, "NextBoundary found boundary offset %ld", result-start);*/
+        result--;
+        /*
+         * We could check, whether the preceding character is an expected
+         * delimiter such as \0x0, 0xa, 0xd. However, previous version did not
+         * test this as well.
+         */
+        //NsHexPrint("boundary previous", (const unsigned char *)result, 10, 30, NS_TRUE);
+    }
+    return result;
+}
+#else
 static char *
 NextBoundary(const Tcl_DString *boundaryDsPtr, char *s, const char *e)
 {
@@ -773,6 +812,8 @@ NextBoundary(const Tcl_DString *boundaryDsPtr, char *s, const char *e)
     find = boundaryDsPtr->string;
     c = *find++;
     len = (size_t)(boundaryDsPtr->length - 1);
+    /* Ns_Log(Notice, "search for boundary <%s> (boundary len %lu) firstchar '%c' in <%s>",
+       boundaryDsPtr->string, len, c, s);*/
     e -= len;
     do {
         do {
@@ -786,6 +827,7 @@ NextBoundary(const Tcl_DString *boundaryDsPtr, char *s, const char *e)
 
     return s;
 }
+#endif
 
 
 /*
@@ -887,6 +929,9 @@ Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(start != NULL);
+
+    /*Ns_Log(Notice, "Ext2utf start '%s' (len %lu), encoding %p %s", start, len,
+      (void*)encoding, encoding == NULL ? "default" : Tcl_GetEncodingName(encoding));*/
 
     if (encoding == NULL) {
         Tcl_DStringSetLength(dsPtr, 0);
