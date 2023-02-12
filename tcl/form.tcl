@@ -362,7 +362,7 @@ proc ns_openexcl {file} {
 
 proc ns_opentmpfile {varFilename {template ""}} {
     upvar $varFilename tmpFileName
-    return [file tempfile tmpFileName {*}$template]
+    return [::file tempfile tmpFileName {*}$template]
 }
 
 #
