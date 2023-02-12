@@ -942,9 +942,8 @@ test http-5.7.2a {
         |a\xE6b
         |--$boundary--
     }]]
-    ns_log notice [nsf::__db_get_obj $body]
-    #ns_logctl severity Debug(task) on
-    nstest::http -setheaders [list content-type $ct] -getbody 1 POST /POST $body
+    #ns_log notice [nsf::__db_get_obj $body]
+    nstest::http -setheaders [list content-type $ct] -getbody 1 POST /POST [binary format a* $body]
 } -cleanup {
     ns_unregister_op POST /POST
     unset -nocomplain r
@@ -988,7 +987,7 @@ test http-5.7.2b {
         |a\xE6b
         |--$boundary--
     }]]
-    nstest::http -setheaders [list content-type $ct] -getbody 1 POST /POST $body
+    nstest::http -setheaders [list content-type $ct] -getbody 1 POST /POST [binary format a* $body]
 } -cleanup {
     ns_unregister_op POST /POST
     unset -nocomplain r
@@ -1374,7 +1373,7 @@ test http-6.5.2c {ns_getform and ns_getformfile + 16KB file multipart, explicit 
 } -body {
     set boundary "----6.5.2c"
     set ct "multipart/form-data; boundary=$boundary"
-    set body [subst [ns_trim -delimiter | {
+    set body [binary format a* [subst [ns_trim -delimiter | {
         |--$boundary
         |Content-Disposition: form-data; name="file"; filename="file.txt"
         |Content-Type: text/plain
@@ -1389,13 +1388,56 @@ test http-6.5.2c {ns_getform and ns_getformfile + 16KB file multipart, explicit 
         |
         |\xFC
         |--$boundary--
-    }]]
+    }]]]
     nstest::http -setheaders [list content-type $ct] -getbody 1 POST /post $body
 
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain boundary ct
 } -returnCodes {ok error} -result {200 {multipart/form-data; contentFile 1 needSpool 1 file 1 f2 'ü'}}
+
+test http-6.5.2d {ns_getform and ns_getformfile + 16KB file multipart, explicit charset iso8859-1} -constraints {serverListen} -setup {
+    ns_register_proc POST /post.tcl {
+        ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
+        set contentType     [ns_set iget [ns_conn headers] content-type]
+        set contentLength   [ns_set iget [ns_conn headers] content-length]
+        set haveFile        [expr {[ns_getformfile file] ne ""}]
+        set haveContentFile [expr {[ns_conn contentfile] ne ""}]
+        set maxUpload       [ns_config [ns_driversection -driver nssock] maxupload]
+        set needSpool       [expr {$contentLength > $maxUpload}]
+        set ct              [lindex $contentType 0]
+        set formValues      [ns_set array [ns_conn form]]
+        set f2              [ns_set get [ns_conn form] f2 ""]
+        set charset         [ns_set get [ns_conn form] _charset_ ""]
+        ns_log notice "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile f2 '$f2'"
+        nsv_set regression-test http-6.5.2d [list f2 $f2 charset $charset]
+        ns_return 200 text/plain "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile f2 '$f2'"
+    }
+} -body {
+    #
+    # The file "*.request" is a complete request, including header.
+    # So we can be sure what data is sent in the encoding we want to
+    # test.
+    #
+    set F [open [ns_server pagedir]/ns_http-6.5.2-multipart-mixed.request rb]; set C [read $F]; close $F
+    #
+    #
+    #
+    set d [ns_parseurl  [ns_config test listenurl]]
+    set S [socket [dict get $d host] [dict get $d port]]
+    fconfigure $S -translation binary
+    puts -nonewline $S $C
+    flush $S
+    set response [read $S]
+    close $S
+    return [nsv_get regression-test http-6.5.2d]
+
+} -cleanup {
+    ns_unregister_op POST /post.tcl
+    nsv_unset regression-test http-6.5.2d
+    unset -nocomplain d S C response
+} -returnCodes {ok return error} -result {f2 ü charset iso8859-1}
+
 
 test http-6.5.3a {ns_getform and ns_getformfile + 16KB file urlencoded utf-8} -constraints {curl serverListen} -setup {
     ns_register_proc POST /post {
@@ -1530,6 +1572,7 @@ test http-7.1a {
 } -body {
     set encoding iso8859-1
     set string [encoding convertto $encoding "Testing 'äöüß☀'"]
+    #set string [encoding convertto $encoding [binary format a* "Testing 'äöüß☀'"]]
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type "text/plain; $encoding"
     set result [ns_http run -headers $queryHeaders -body $string -method POST \
@@ -1545,7 +1588,7 @@ test http-7.1b {
 
     ns_http with body
     text datatype
-    with encoding iso8859-
+    with encoding iso8859-1
     no bytearray
 
 } -constraints {serverListen} -setup {
@@ -1553,7 +1596,7 @@ test http-7.1b {
         set contentType [ns_set iget [ns_conn headers] content-type]
         set content [ns_conn content]
         # The following command has the sole purpose to conververt
-        # content to a different obj type than bytearray
+        # "content" to a different obj type than bytearray
         if { $content ne "" } {set x 1}
         #ns_log notice "post receives content-type '$contentType'"
         ns_return 200 $contentType "<$contentType> AÄA${content}ZÜZ"
@@ -1561,6 +1604,7 @@ test http-7.1b {
 } -body {
     set encoding iso8859-1
     set string [encoding convertto $encoding "Testing 'äöüß☀'"]
+    #set string [encoding convertto $encoding [binary format a* "Testing 'äöüß☀'"]]
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type "text/plain; $encoding"
     set result [ns_http run -headers $queryHeaders -body $string -method POST \
@@ -1799,7 +1843,7 @@ test http-8.3 {ns_return with UTF-8 3 byte char with impure bytearray} -constrai
         set fn [ns_mktemp]
         set F [open /tmp/sun w]
         fconfigure $F -translation binary
-        puts -nonewline $F $v
+        puts -nonewline $F [binary format a* $v]
         close $F
         file delete $fn
         ns_return 200 "text/plain" $v

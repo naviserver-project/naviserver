@@ -1,0 +1,18 @@
+POST /post.tcl HTTP/1.0
+Content-Length: 246
+Content-Type: multipart/form-data; boundary=XXX
+
+--XXX
+Content-Disposition: form-data; name="file"; filename="file.txt"
+Content-Type: text/plain
+
+xxxxxxxxxxx
+--XXX
+Content-Disposition: form-data; name="_charset_"
+
+iso8859-1
+--XXX
+Content-Disposition: form-data; name="f2"
+
+ü
+--XXX--
