@@ -898,6 +898,45 @@ bool Ns_Is7bit(const char *bytes, size_t nrBytes)
     return ((mask1 | mask2 | mask3 | mask4 | last_mask) & 0x8080808080808080u) == 0u;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsHexPrint --
+ *
+ *      Debugging function for internal use. Print the potentially binary
+ *      content of a buffer in human-readable form.
+ *
+ * Results:
+ *      None
+ *
+ * Side effects:
+ *      Output to stderr.
+ *
+ *----------------------------------------------------------------------
+ */
+void NsHexPrint(const char *msg, const unsigned char *octets, size_t octectLength,
+                unsigned int perLine, bool withChar)
+{
+    size_t i;
+
+    fprintf(stderr, "%s octectLength %" PRIuz ":\n", msg, octectLength);
+    for (i = 0; i < octectLength; i++) {
+        if (withChar) {
+            fprintf(stderr, "%c %.2x ",
+                    iscntrl(octets[i] & 0xff) ? 46 : octets[i] & 0xff,
+                    octets[i] & 0xff);
+        } else {
+            fprintf(stderr, "%.2x ", octets[i] & 0xff);
+        }
+        if (((i + 1) % perLine) == 0) {
+            fprintf(stderr, "\n");
+        }
+    }
+    fprintf(stderr, "\n");
+}
+
+
 /*
  * Local Variables:
  * mode: c
