@@ -80,7 +80,7 @@ typedef struct Task {
     NS_POLL_NFDS_TYPE  idx;           /* Poll index */
     short              events;        /* Poll events */
     Ns_Time            timeout;       /* Read/write timeout (wall-clock time) */
-    Ns_Time            expire;        /* Task wall-clock time) */
+    Ns_Time            expire;        /* Task (wall-clock time) */
     int                refCount;      /* For reserve/release purposes */
     unsigned int       signalFlags;   /* Signal flags sent to queue thread */
     unsigned int       flags;         /* Flags private to the task */

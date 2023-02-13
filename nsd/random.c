@@ -207,7 +207,7 @@ GenSeeds(unsigned long seeds[], int nseeds)
  * CounterThread --
  *
  *      Generate a random seed.  This routine runs as a separate thread where
- *      it imcrements a counter some indeterminate number of times.  The
+ *      it increments a counter some indeterminate number of times.  The
  *      assumption is that this thread runs for a sufficiently long time to be
  *      preempted an arbitrary number of times by the kernel threads
  *      scheduler.
