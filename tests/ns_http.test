@@ -1398,7 +1398,7 @@ test http-6.5.2c {ns_getform and ns_getformfile + 16KB file multipart, explicit 
 
 test http-6.5.2d {ns_getform and ns_getformfile + 16KB file multipart, explicit charset iso8859-1} -constraints {serverListen} -setup {
     ns_register_proc POST /post.tcl {
-        ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
+        #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType     [ns_set iget [ns_conn headers] content-type]
         set contentLength   [ns_set iget [ns_conn headers] content-length]
         set haveFile        [expr {[ns_getformfile file] ne ""}]
@@ -1409,7 +1409,7 @@ test http-6.5.2d {ns_getform and ns_getformfile + 16KB file multipart, explicit 
         set formValues      [ns_set array [ns_conn form]]
         set f2              [ns_set get [ns_conn form] f2 ""]
         set charset         [ns_set get [ns_conn form] _charset_ ""]
-        ns_log notice "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile f2 '$f2'"
+        #ns_log notice "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile f2 '$f2'"
         nsv_set regression-test http-6.5.2d [list f2 $f2 charset $charset]
         ns_return 200 text/plain "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile f2 '$f2'"
     }

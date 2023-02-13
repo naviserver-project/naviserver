@@ -188,9 +188,9 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
 #else
                 firstBoundary = NextBoundary(&boundaryDs, content, formEndPtr);
 #endif
-                NsHexPrint("multipart content",
+                /*NsHexPrint("multipart content",
                            (const unsigned char *)content, connPtr->reqPtr->length,
-                           20, NS_TRUE);
+                           20, NS_TRUE);*/
 
                 s = firstBoundary;
                 for (;;) {
