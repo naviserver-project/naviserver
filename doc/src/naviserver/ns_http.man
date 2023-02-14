@@ -27,6 +27,7 @@ and process replies from web servers.
 	[opt [option "-donecallback [arg call]"]] \
 	[opt [option "-headers [arg ns_set]"]] \
 	[opt [option "-hostname [arg HOSTNAME ]"]] \
+	[opt [option "-keepalive [arg T]"]] \
 	[opt [option "-keep_host_header"]] \
 	[opt [option "-method [arg M]"]] \
 	[opt [option "-spoolsize [arg int]"]] \
@@ -128,6 +129,10 @@ certificate. This option has to be used, when the host supports
 virtual hosting, is configured with multiple certificates and supports
 the SNI (Server Name Indication) extension of TLS.
 
+[opt_def -keepalive [arg T]] when specified, set the keepalive value
+of the connection to the specified time duration. The time can be
+specified in any supported ns_time format.
+
 [opt_def -keep_host_header]
 allows the Host: header field for the request to be passed in via
 the [option -headers] arg, otherwise it is overwritten.
@@ -208,6 +213,7 @@ Currently, no proxy authentication is supported. This will be added later.
 	[opt [option "-donecallback [arg call]"]] \
 	[opt [option "-headers [arg ns_set]"]] \
 	[opt [option "-hostname [arg HOSTNAME ]"]] \
+	[opt [option "-keepalive [arg T]"]] \
 	[opt [option "-keep_host_header"]] \
 	[opt [option "-method [arg M]"]] \
 	[opt [option "-spoolsize [arg int]"]] \

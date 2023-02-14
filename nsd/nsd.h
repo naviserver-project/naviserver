@@ -965,6 +965,7 @@ typedef struct NsServer {
         Ns_Mutex lock;
         const char *logFileName;
         const char *logRollfmt;
+        Tcl_HashTable pconns;      /* Hash table for persistent connections */
         TCL_SIZE_T logMaxbackup;
         int  fd;
         bool logging;
@@ -1078,6 +1079,7 @@ typedef struct {
     const char        *method;           /* request method */
     const char        *url;              /* request URL */
     const char        *error;            /* holds error string */
+    const char        *persistentKey;    /* key for persistent connections */
     char              *next;             /* write buffer */
     size_t             requestLength;    /* size of the complete request */
     size_t             replyLength;      /* content-length of the reply */
@@ -1099,6 +1101,7 @@ typedef struct {
     Ns_Time           *timeout;          /* interval to wait for connect/data */
     Ns_Time            stime;            /* wall-clock task starting time */
     Ns_Time            etime;            /* wall-clock task ending time */
+    Ns_Time            keepAliveTimeout; /* timeout for keep-alive */
     bool               sendSpoolMode;    /* flag, spool from file/channel */
     bool               recvSpoolMode;    /* flag, spool to file/channel */
     int                bodyFileFd;       /* fd of the file to read the body */
@@ -1136,6 +1139,7 @@ typedef struct _NsHttpChunk {
 #define NS_HTTP_FLAG_CHUNKED_END   (1u<<3)
 #define NS_HTTP_FLAG_BINARY        (1u<<4)
 #define NS_HTTP_FLAG_EMPTY         (1u<<5)
+#define NS_HTTP_KEEPALIVE          (1u<<6)
 
 #define NS_HTTP_FLAG_GUNZIP (NS_HTTP_FLAG_DECOMPRESS|NS_HTTP_FLAG_GZIP_ENCODING)
 
