@@ -1095,7 +1095,7 @@ ns_section ns/server/${server}/module/letsencrypt {
 # Sample configuration for the nssmtpd module.
 #
 # To use this, it is necessary to install the NaviServer nssmtpd
-# module first, and to privide a non-empty "smtpdport" below, and set
+# module first, and to provide a nonempty "smtpdport" below, and set
 # the package parameter "EmailDeliveryMode" in the acs-mail-lite
 # package to "nssmtpd". See: https://openacs.org/xowiki/outgoing_email
 #
