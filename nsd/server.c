@@ -308,8 +308,13 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
         CreatePool(servPtr, Ns_SetKey(set, i));
     }
-    NsTclInitServer(server);
+
+    /*
+     * Initialize infrastructure of ns_http before Tcl init to make it usable
+     * from starup scripts.
+     */
     NsInitHttp(servPtr);
+    NsTclInitServer(server);
 
     NsInitStaticModules(server);
     initServPtr = NULL;
