@@ -3664,7 +3664,7 @@ HttpClose(
                     Ns_Log(Ns_LogTaskDebug, "Added persistent connection entry <%s> for %p",
                            httpPtr->persistentKey, (void*)httpPtr);
                 } else {
-                    Ns_Log(Error, "Could not add persistent connection");
+                    Ns_Log(Warning, "Could not add persistent connection");
                 }
             }
             return;
@@ -5296,23 +5296,27 @@ PersistentConnectionLookup(NsHttpTask *httpPtr, NsHttpTask **waitingHttpPtrPtr)
     Tcl_HashEntry *hPtr;
     NsServer      *servPtr = httpPtr->servPtr;
 
-    Ns_MutexLock(&servPtr->httpclient.lock);
-    hPtr = Tcl_FindHashEntry(&servPtr->httpclient.pconns, httpPtr->persistentKey);
-    if (hPtr != NULL) {
-        NsHttpTask *waitingHttpPtr = (NsHttpTask *)Tcl_GetHashValue(hPtr);
+    if (unlikely(httpPtr->servPtr == NULL)) {
+        hPtr = NULL;
+    } else {
+        Ns_MutexLock(&servPtr->httpclient.lock);
+        hPtr = Tcl_FindHashEntry(&servPtr->httpclient.pconns, httpPtr->persistentKey);
+        if (hPtr != NULL) {
+            NsHttpTask *waitingHttpPtr = (NsHttpTask *)Tcl_GetHashValue(hPtr);
 
-        Ns_Log(Ns_LogTaskDebug, "Forcing cancel on %p (wait task)", (void*)waitingHttpPtr->task);
-        Ns_TaskCancel(waitingHttpPtr->task);
-        waitingHttpPtr->task = NULL;
+            Ns_Log(Ns_LogTaskDebug, "Forcing cancel on %p (wait task)", (void*)waitingHttpPtr->task);
+            Ns_TaskCancel(waitingHttpPtr->task);
+            waitingHttpPtr->task = NULL;
 
-        /*
-         * Delete the entry which is to be reused. This prevents concurrent
-         * double reuse.
-         */
-        Tcl_DeleteHashEntry(hPtr);
-        *waitingHttpPtrPtr = waitingHttpPtr;
+            /*
+             * Delete the entry which is to be reused. This prevents concurrent
+             * double reuse.
+             */
+            Tcl_DeleteHashEntry(hPtr);
+            *waitingHttpPtrPtr = waitingHttpPtr;
+        }
+        Ns_MutexUnlock(&servPtr->httpclient.lock);
     }
-    Ns_MutexUnlock(&servPtr->httpclient.lock);
 
     return (hPtr != NULL);
 }
@@ -5338,17 +5342,20 @@ PersistentConnectionDelete(NsHttpTask *httpPtr)
     Tcl_HashEntry *hPtr;
     NsServer      *servPtr = httpPtr->servPtr;
 
-    /*
-     * Make sure to delete the persistent connection entry, don't care about
-     * the rest.
-     */
-    Ns_MutexLock(&servPtr->httpclient.lock);
-    hPtr = Tcl_FindHashEntry(&servPtr->httpclient.pconns, httpPtr->persistentKey);
-    if (hPtr != NULL) {
-        Tcl_DeleteHashEntry(hPtr);
+    if (unlikely(servPtr == NULL)) {
+        hPtr = NULL;
+    } else {
+        /*
+         * Make sure to delete the persistent connection entry, don't care about
+         * the rest.
+         */
+        Ns_MutexLock(&servPtr->httpclient.lock);
+        hPtr = Tcl_FindHashEntry(&servPtr->httpclient.pconns, httpPtr->persistentKey);
+        if (hPtr != NULL) {
+            Tcl_DeleteHashEntry(hPtr);
+        }
+        Ns_MutexUnlock(&servPtr->httpclient.lock);
     }
-    Ns_MutexUnlock(&servPtr->httpclient.lock);
-
     return (hPtr != NULL);
 }
 
@@ -5370,18 +5377,20 @@ PersistentConnectionDelete(NsHttpTask *httpPtr)
 static bool
 PersistentConnectionAdd(NsHttpTask *httpPtr)
 {
-    Tcl_HashEntry *hPtr;
-    NsServer      *servPtr = httpPtr->servPtr;
-    int            isNew = 0;
+    NsServer *servPtr = httpPtr->servPtr;
+    int       isNew = 0;
 
-    Ns_MutexLock(&servPtr->httpclient.lock);
-    hPtr = Tcl_CreateHashEntry(&servPtr->httpclient.pconns, httpPtr->persistentKey, &isNew);
+    if (httpPtr->servPtr != NULL) {
+        Tcl_HashEntry *hPtr;
 
-    if (isNew != 0) {
-        Tcl_SetHashValue(hPtr, httpPtr);
+        Ns_MutexLock(&servPtr->httpclient.lock);
+        hPtr = Tcl_CreateHashEntry(&servPtr->httpclient.pconns, httpPtr->persistentKey, &isNew);
+
+        if (isNew != 0) {
+            Tcl_SetHashValue(hPtr, httpPtr);
+        }
+        Ns_MutexUnlock(&servPtr->httpclient.lock);
     }
-    Ns_MutexUnlock(&servPtr->httpclient.lock);
-
     return (isNew != 0);
 }
 
