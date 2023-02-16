@@ -322,7 +322,7 @@ SetCreate(const char *name, size_t size)
     setPtr->size = 0u;
     setPtr->maxSize = size;
     setPtr->name = ns_strcopy(name);
-    setPtr->fields = ns_malloc(sizeof(Ns_SetField) * setPtr->maxSize);
+    setPtr->fields = ns_calloc(1u, sizeof(Ns_SetField) * setPtr->maxSize);
 #ifdef NS_SET_DSTRING
     Tcl_DStringInit(&setPtr->data);
 #endif
@@ -434,6 +434,7 @@ Ns_SetPutSz(Ns_Set *set,
         Ns_Log(Ns_LogNsSetDebug, "Ns_SetPutSz %p '%s': [%lu] realloc from %lu to maxsize %lu"
                " (while adding '%s')",
                (void*)set, set->name, idx, oldSize, set->maxSize, valueString);
+        memset(&set->fields[idx], 0, sizeof(Ns_SetField) * (set->maxSize - set->size));
     }
 #ifdef NS_SET_DSTRING
     set->fields[idx].name = AppendData(set, idx, keyString, keyLength);
