@@ -772,7 +772,13 @@ Ns_VALog(Ns_LogSeverity severity, const char *fmt, va_list apSrc)
          */
         cachePtr = GetCache();
         if (cachePtr->finalizing) {
-            fprintf(stderr, "Log cache is already finalized, ignore logging attempt\n");
+            Tcl_DString ds;
+
+            fprintf(stderr, "Log cache is already finalized, ignore logging attempt, message:\n");
+            Tcl_DStringInit(&ds);
+            Ns_DStringVPrintf(&ds, fmt, apSrc);
+            fprintf(stderr, "%s", ds.string);
+            Tcl_DStringFree(&ds);
             return;
         }
         if (cachePtr->currentEntry != NULL) {
