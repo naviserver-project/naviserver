@@ -1867,13 +1867,19 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
         result = NS_ERROR;
 
         for (;;) {
-            const char    *address;
+            const char *address;
 
-            address = ns_strtok(addresses, " ");
-            /*
-             * In the next iteration, process the next address.
-             */
-            addresses = NULL;
+            if (multipleIPs) {
+                address = ns_strtok(addresses, " ");
+                Ns_Log(Debug, "...loop over addresses, address <%s>", address);
+                /*
+                 * In the next iteration, process the next address.
+                 */
+                addresses = NULL;
+            } else {
+                address = addresses;
+            }
+
             if (address == NULL) {
                 Ns_Log(Debug, "SockConnect to %s: addresses exhausted", host);
                 break;
@@ -1896,9 +1902,12 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
                         Ns_Log(Warning, "attempt to set socket nonblocking failed");
                     }
                 }
+                Ns_Log(Debug, "...call connect");
 
                 if (connect(sock, saPtr, Ns_SockaddrGetSockLen(saPtr)) != 0) {
                     ns_sockerrno_t err = ns_sockerrno;
+
+                    Ns_Log(Debug, "...connect failure async %d err %d", async, err);
 
                     if ((err != NS_EINPROGRESS) && (err != NS_EWOULDBLOCK)) {
                         Ns_Log(Notice, "connect on sock %d async %d err %d <%s>",
@@ -1915,36 +1924,42 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
                          * getsockopt() here. We might loose some concurrency,
                          * but the handling is this way much easier.
                          */
-                        if (multipleIPs) {
-                            if (err == NS_EWOULDBLOCK) {
-                                Ns_Log(Debug, "async connect to %s on sock %d returned NS_EWOULDBLOCK",
-                                       address, sock);
-                            } else {
-                                Ns_Log(Debug, "async connect to %s on sock %d returned EINPROGRESS",
-                                       address, sock);
-                            }
-                            result = WaitForConnect(sock, count, ms);
-                            if (result == NS_OK) {
-                                /*
-                                 * The socket is connected, we can use this IP address.
-                                 */
-                                /*Ns_Log(Notice, "async connect multipleIPs INPROGRESS "
-                                       "sock %d socket writable (address %s)",
-                                       sock, address);*/
-                                break;
-
-                            } else {
-                                /*
-                                 * The socket could not be connected, try a next IP address.
-                                 */
-                                /*Ns_Log(Debug, "async connect multipleIPs INPROGRESS "
-                                       "sock %d connect failed (address %s), try next (result %d)",
-                                       sock, address, result);*/
-                                ns_sockclose(sock);
-                                sock = NS_INVALID_SOCKET;
-                                continue;
-                            }
+                        if (err == NS_EWOULDBLOCK) {
+                            Ns_Log(Debug, "async connect to %s on sock %d returned NS_EWOULDBLOCK",
+                                   address, sock);
+                        } else {
+                            Ns_Log(Debug, "async connect to %s on sock %d returned EINPROGRESS",
+                                   address, sock);
                         }
+                        Ns_Log(Debug, "...wait for connect %d ms", ms);
+                        result = WaitForConnect(sock, count, ms);
+                        Ns_Log(Debug, "...wait for connect returns %d", result);
+                        if (result == NS_OK) {
+                            /*
+                             * The socket is connected, we can use this IP address.
+                             */
+                            /*Ns_Log(Notice, "async connect multipleIPs INPROGRESS "
+                              "sock %d socket writable (address %s)",
+                              sock, address);*/
+                            break;
+
+                        } else if (multipleIPs) {
+                            /*
+                             * The socket could not be connected, try a next IP address.
+                             */
+                            Ns_Log(Debug, "async connect multipleIPs INPROGRESS "
+                                   "sock %d connect failed (address %s), try next (result %d)",
+                                   sock, address, result);
+                            ns_sockclose(sock);
+                            sock = NS_INVALID_SOCKET;
+                            continue;
+                        } else {
+                            Ns_Log(Debug, "...connect async lead to result %d err %d", result, err);
+                            ns_sockclose(sock);
+                            sock = NS_INVALID_SOCKET;
+                            break;
+                        }
+
                     } else if (err != 0) {
                         Ns_Log(Notice, "close sock %d due to error err %d <%s>",
                                sock, err, ns_sockstrerror(err));
@@ -1959,11 +1974,6 @@ SockConnect(const char *host, unsigned short port, const char *lhost,
                     break;
                 }
             }
-            //if (async && (sock != NS_INVALID_SOCKET)) {
-            //if (Ns_SockSetBlocking(sock) != NS_OK) {
-            //    Ns_Log(Warning, "attempt to set socket blocking failed");
-            //}
-            //}
         }
     }
     Tcl_DStringFree(&ds);
