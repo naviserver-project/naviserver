@@ -809,7 +809,6 @@ Ns_ConnClose(Ns_Conn *conn)
             NsSockClose(connPtr->sockPtr, connPtr->keep);
         }
 
-
         connPtr->sockPtr = NULL;
         connPtr->flags |= NS_CONN_CLOSED;
         Ns_Log(Ns_LogRequestDebug, "connection closed");

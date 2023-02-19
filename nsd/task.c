@@ -138,7 +138,8 @@ static const struct {
 static char *
 DStringAppendTaskFlags(Tcl_DString *dsPtr, unsigned int flags)
 {
-    int i, count = 0;
+    int    count = 0;
+    size_t i;
     static const struct {
         unsigned int state;
         const char  *label;
