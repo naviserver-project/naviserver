@@ -216,6 +216,9 @@ static bool PersistentConnectionAdd(NsHttpTask *httpPtr)
 static bool PersistentConnectionDelete(NsHttpTask *httpPtr)
     NS_GNUC_NONNULL(1);
 
+static void LogDebug(const char *before, NsHttpTask *httpPtr, const char *after)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
 static Ns_LogCallbackProc HttpClientLogOpen;
 static Ns_LogCallbackProc HttpClientLogClose;
 static Ns_LogCallbackProc HttpClientLogRoll;
@@ -286,6 +289,39 @@ static NsHttpParseProc* EndParsers[] = {
 };
 
 
+/*----------------------------------------------------------------------
+ *
+ * LogDebug --
+ *
+ *      When task debugging is on, write a standardized debug message to the
+ *      log file, including the final sock state and error in human readable
+ *      form.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Writes to the log file.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+LogDebug(const char *before, NsHttpTask *httpPtr, const char *after)
+{
+    if (Ns_LogSeverityEnabled(Ns_LogTaskDebug)) {
+        Tcl_DString dsSockState;
+
+        Tcl_DStringInit(&dsSockState);
+        Ns_Log(Ns_LogTaskDebug, "%s httpPtr:%p finalSockState:%s err:(%s) %s",
+               before,
+               (void*)httpPtr,
+               Ns_DStringAppendSockState(&dsSockState, httpPtr->finalSockState),
+               (httpPtr->error != NULL) ? httpPtr->error : "none",
+               after);
+        Tcl_DStringFree(&dsSockState);
+    }
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -308,7 +344,6 @@ NsInitHttp(NsServer *servPtr)
     const char  *path;
 
     NS_NONNULL_ASSERT(servPtr != NULL);
-    Ns_Log(Notice, "NsInitHttp");
 
     Ns_MutexInit(&servPtr->httpclient.lock);
     Ns_MutexSetName2(&servPtr->httpclient.lock, "httpclient", servPtr->server);
@@ -1264,6 +1299,7 @@ HttpWaitObjCmd(
         }
 
         rc = Ns_TaskWait(httpPtr->task, timeoutPtr);
+        Ns_Log(Ns_LogTaskDebug, "Ns_TaskWait returns %d", rc);
 
         if (likely(rc == NS_OK)) {
             result = HttpGetResult(interp, httpPtr);
@@ -1873,6 +1909,8 @@ HttpQueue(
     }
 
     if (result == TCL_OK) {
+        Ns_Log(Ns_LogTaskDebug, "HttpQueue calls HttpConnect with timeout:%p", (void*)timeoutPtr);
+
         result = HttpConnect(itPtr,
                              method,
                              url,
@@ -3670,6 +3708,7 @@ HttpClose(
             return;
         } else {
             Ns_Log(Ns_LogTaskDebug, "TaskFree %p in HttpClose", (void*)(httpPtr->task));
+            LogDebug("HttpClose",  httpPtr, "");
             (void) Ns_TaskFree(httpPtr->task);
             httpPtr->task = NULL;
         }
@@ -3945,7 +3984,6 @@ HttpTaskRecv(
  *
  *----------------------------------------------------------------------
  */
-
 static void
 HttpDoneCallback(
     NsHttpTask *httpPtr
@@ -3956,9 +3994,7 @@ HttpDoneCallback(
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
-    Ns_Log(Ns_LogTaskDebug, "HttpDoneCallback: finalSockState:%.2x, err:(%s)",
-           httpPtr->finalSockState,
-           (httpPtr->error != NULL) ? httpPtr->error : "none");
+    LogDebug("HttpDoneCallback", httpPtr, "");
 
     interp = NsTclAllocateInterp( httpPtr->servPtr);
 
@@ -4030,7 +4066,7 @@ HttpProc(
     switch (why) {
     case NS_SOCK_INIT:
 
-        Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_INIT");
+        Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_INIT timeout:%p", (void*)httpPtr->timeout);
 
         if (httpPtr->bodyChan != NULL) {
             HttpSpliceChannel(NULL, httpPtr->bodyChan);
@@ -4492,6 +4528,10 @@ HttpProc(
          * the task as completed (done) right here.
          */
         taskDone = (httpPtr->doneCallback != NULL);
+        LogDebug("HttpProc: NS_SOCK_TIMEOUT", httpPtr, "");
+        //Ns_TaskCancel(httpPtr->task);
+        //taskDone = NS_FALSE;
+
         httpPtr->error = "http request timeout";
 
         break;
@@ -4552,9 +4592,7 @@ HttpProc(
 
     if (httpPtr != NULL) {
         httpPtr->finalSockState = why;
-        Ns_Log(Ns_LogTaskDebug, "HttpProc: exit taskDone:%d, finalSockState:%.2x,"
-               " error:(%s)", taskDone, httpPtr->finalSockState,
-               httpPtr->error != NULL ? httpPtr->error : "none");
+        LogDebug("HttpProc: exit", httpPtr, taskDone ? "done" : "not done");
         if (taskDone == NS_TRUE) {
             Ns_GetTime(&httpPtr->etime);
             Ns_TaskDone(httpPtr->task);
