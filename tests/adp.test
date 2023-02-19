@@ -367,7 +367,8 @@ test http_adp-2.1.1 {ADP page with timed out ns_http request} -body {
     #
     # Here the invocation of the testcase times out
     #
-    nstest::http -timeout 1s -getbody 1 GET /http_nonexistent.adp
+    #ns_logctl severity Debug(task) on
+    nstest::http -timeout 2s -getbody 1 GET /http_nonexistent.adp
 } -returnCodes {ok return error} -match glob -result {000 {testcase NS_TIMEOUT: http request timeout}}
 
 test http_adp-2.1.2 {ADP page with timed out ns_http request followed by simple ADP page} -body {
