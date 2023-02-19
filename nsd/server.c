@@ -311,7 +311,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
 
     /*
      * Initialize infrastructure of ns_http before Tcl init to make it usable
-     * from starup scripts.
+     * from startup scripts.
      */
     NsInitHttp(servPtr);
     NsTclInitServer(server);
