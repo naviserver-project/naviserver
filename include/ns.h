@@ -1425,6 +1425,10 @@ NS_EXTERN char *
 Ns_DStringAppendTime(Tcl_DString *dsPtr, const Ns_Time *timePtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+NS_EXTERN const char *
+Ns_DStringAppendSockState(Tcl_DString *dsPtr, Ns_SockState state)
+    NS_GNUC_NONNULL(1);
+
 NS_EXTERN Ns_DString *
 Ns_DStringPop(void)
      NS_GNUC_DEPRECATED;

@@ -443,6 +443,53 @@ Ns_DStringAppendTime(Tcl_DString *dsPtr, const Ns_Time *timePtr)
     return dsPtr->string;
 }
 
+/*----------------------------------------------------------------------
+ *
+ * Ns_DStringAppendSockState --
+ *
+ *      Append the provided Ns_SockState in human readble form
+ *
+ * Results:
+ *      DString value
+ *
+ * Side effects:
+ *      Appends to the DString
+ *
+ *----------------------------------------------------------------------
+ */
+const char *
+Ns_DStringAppendSockState(Tcl_DString *dsPtr, Ns_SockState state)
+{
+    int i, count = 0;
+    static const struct {
+        Ns_SockState state;
+        const char  *label;
+    } options[] = {
+        { NS_SOCK_NONE,      "NONE"},
+        { NS_SOCK_READ,      "READ"},
+        { NS_SOCK_WRITE,     "WRITE"},
+        { NS_SOCK_EXCEPTION, "EXCEPTION"},
+        { NS_SOCK_EXIT,      "EXIT"},
+        { NS_SOCK_DONE,      "DONE"},
+        { NS_SOCK_CANCEL,    "CANCEL"},
+        { NS_SOCK_TIMEOUT,   "TIMEOUT"},
+        { NS_SOCK_AGAIN,     "AGAIN"},
+        { NS_SOCK_INIT,      "INIT"}
+    };
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+
+    for (i = 0; i<sizeof(options)/sizeof(options[0]); i++) {
+        if ((options[i].state & state) != 0u) {
+            if (count > 0) {
+                Tcl_DStringAppend(dsPtr, "|", 1);
+            }
+            Tcl_DStringAppend(dsPtr, options[i].label, TCL_INDEX_NONE);
+            count ++;
+        }
+    }
+    return dsPtr->string;
+}
 
 
 /*
