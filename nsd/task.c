@@ -124,7 +124,7 @@ static const struct {
  *
  * DStringAppendTaskFlags --
  *
- *      Append the provided task flags in human readble form.
+ *      Append the provided task flags in human readable form.
  *
  * Results:
  *      Tcl_DString value

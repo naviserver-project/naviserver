@@ -447,7 +447,7 @@ Ns_DStringAppendTime(Tcl_DString *dsPtr, const Ns_Time *timePtr)
  *
  * Ns_DStringAppendSockState --
  *
- *      Append the provided Ns_SockState in human readble form
+ *      Append the provided Ns_SockState in human readable form
  *
  * Results:
  *      DString value
