@@ -2,19 +2,44 @@
 # Sample configuration file for NaviServer
 ########################################################################
 
+# All default variables in "defaultConfig" can be overloaded by:
 #
-# Set the IP-address and port, on which the server listens:
+# 1) Setting these variables explicitly in this file after
+#    "ns_configure_variables" (highest precedence)
 #
-set port 8080
-set address "0.0.0.0"  ;# one might use as well for IPv6: set address ::
+# 2) Setting these variables as environment variables with the "nsd_"
+#    prefix (suitable for e.g. docker setups).  The lookup for
+#    environment variables happens in "ns_configure_variables".
+#
+# 3) Alter/override the variables in the "defaultConfig"
+#    (lowest precedence)
+#
+# Some comments:
+#   "ipaddress":
+#       specify an IPv4 or IPv6 address, or a blank separated
+#       list of such addresses
+#   "httpport":
+#       might be as well a list of ports, when listening on
+#       multiple ports
+#   "nscpport":
+#       when non-empty, load the nscp module and listen
+#       on the specified port
+#   "home":
+#       the root directory, containng the subdirecturies
+#       "pages", "logs", "lib", "bin", "tcl", ....
+#
+dict set defaultConfig ipaddress 0.0.0.0
+dict set defaultConfig httpport 8080
+dict set defaultConfig nscpport ""
+dict set defaultConfig home [file dirname [file dirname [info nameofexecutable]]]
 
 #
-# Get the "home" directory from the currently executing binary.
-# We could do alternatively:
-#    set home /usr/local/ns
+# For all potential variables defined by the dict "defaultConfig",
+# allow environment variables such as "oacs_httpport" or
+# "oacs_ipaddress" to override local values.
 #
-set home [file dirname [file dirname [info nameofexecutable]]]
-
+source [file dirname [ns_info nsd]]/../tcl/init.tcl
+ns_configure_variables "nsd_" $defaultConfig
 
 ########################################################################
 # Global settings (for all servers)
@@ -124,8 +149,8 @@ ns_section ns/modules {
 
 ns_section ns/module/nssock {
     ns_param    defaultserver            default
-    ns_param    port                     $port
-    ns_param    address                  $address     ;# Space separated list of IP addresses
+    ns_param    port                     $httpport
+    ns_param    address                  $ipaddress   ;# Space separated list of IP addresses
     #ns_param    hostname                [ns_info hostname]
     ns_param    maxinput                 10MB         ;# default: 1MB, maximum size for inputs (uploads)
     #ns_param   readahead                1MB          ;# default: 16384; size of readahead for requests
@@ -188,13 +213,13 @@ ns_section ns/server/default {
 }
 
 ns_section ns/server/default/modules {
-    ns_param    nscp                nscp
+    if {$nscpport ne ""} {ns_param nscp nscp}
     ns_param    nslog               nslog
     ns_param    nscgi               nscgi
 }
 
 ns_section ns/server/default/fastpath {
-    #ns_param    pagedir             pages
+    #ns_param   pagedir             pages
     #ns_param   serverdir           ""
     #ns_param   directoryfile       "index.adp index.tcl index.html index.htm"
     #ns_param   directoryproc       _ns_dirlist
@@ -262,7 +287,7 @@ ns_section ns/server/default/module/nslog {
 }
 
 ns_section ns/server/default/module/nscp {
-    ns_param   port     4080
+    ns_param   port     $nscpport
     #ns_param   address  0.0.0.0
 }
 
