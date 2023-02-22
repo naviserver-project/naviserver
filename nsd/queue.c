@@ -603,7 +603,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
         connPtr->drvPtr               = sockPtr->drvPtr;
         connPtr->poolPtr              = poolPtr;
         connPtr->server               = servPtr->server;
-        connPtr->location             = ns_strncopy(sockPtr->location, TCL_INDEX_NONE);
+        connPtr->location             = ns_strncopy(sockPtr->location, -1);
         connPtr->flags                = sockPtr->flags;
         if ((sockPtr->drvPtr->opts & NS_DRIVER_ASYNC) == 0u) {
             connPtr->acceptTime       = *nowPtr;
