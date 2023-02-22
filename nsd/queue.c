@@ -585,7 +585,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
         connPtr->drvPtr               = sockPtr->drvPtr;
         connPtr->poolPtr              = poolPtr;
         connPtr->server               = servPtr->server;
-        connPtr->location             = sockPtr->location;
+        connPtr->location             = ns_strncopy(sockPtr->location, TCL_INDEX_NONE);
         connPtr->flags                = sockPtr->flags;
         if ((sockPtr->drvPtr->opts & NS_DRIVER_ASYNC) == 0u) {
             connPtr->acceptTime       = *nowPtr;
@@ -599,6 +599,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
          */
         sockPtr->acceptTime.sec       = 0;
         sockPtr->flags                = 0u;
+        sockPtr->location             = NULL;
 
         /*
          * Try to get an entry from the connection thread queue,
@@ -2695,6 +2696,10 @@ ConnRun(Conn *connPtr)
          */
         Ns_ResetRequest(&connPtr->request);
         assert(connPtr->request.line == NULL);
+    }
+    if (connPtr->location != NULL) {
+        ns_free((char *)connPtr->location);
+        connPtr->location = NULL;
     }
 
     if (connPtr->clientData != NULL) {
