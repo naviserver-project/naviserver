@@ -249,6 +249,7 @@ static NsHttpParseProc ParseTrailerProc;
 static NsHttpParseProc ParseEndProc;
 
 static char* SkipDigits(char *chars) NS_GNUC_NONNULL(1);
+static char *DStringAppendHttpFlags(Tcl_DString *dsPtr, unsigned int flags) NS_GNUC_NONNULL(1);
 
 /*
  * Callbacks for the chunked-encoding state machine
@@ -288,6 +289,53 @@ static NsHttpParseProc* EndParsers[] = {
     NULL
 };
 
+/*----------------------------------------------------------------------
+ *
+ * DStringAppendHttpFlags --
+ *
+ *      Append the provided taskHTTP flags in human readable form.
+ *
+ * Results:
+ *      Tcl_DString value
+ *
+ * Side effects:
+ *      Appends to the Tcl_DString
+ *
+ *----------------------------------------------------------------------
+ */
+
+static char *
+DStringAppendHttpFlags(Tcl_DString *dsPtr, unsigned int flags)
+{
+    int    count = 0;
+    size_t i;
+    static const struct {
+        unsigned int state;
+        const char  *label;
+    } options[] = {
+        { NS_HTTP_FLAG_DECOMPRESS,    "DECOMPRESS" },
+        { NS_HTTP_FLAG_GZIP_ENCODING, "GZIP" },
+        { NS_HTTP_FLAG_CHUNKED,       "CHUNKED" },
+        { NS_HTTP_FLAG_CHUNKED_END,   "CHUNKED_END" },
+        { NS_HTTP_FLAG_BINARY,        "BINARY" },
+        { NS_HTTP_FLAG_EMPTY,         "EMPTY" },
+        { NS_HTTP_KEEPALIVE,          "KEEPALIVE" },
+        { NS_HTTP_VERSION_1_1,        "1.1" }
+    };
+
+    for (i=0; i<sizeof(options)/sizeof(options[0]); i++) {
+        if ((options[i].state & flags) != 0u) {
+            if (count > 0) {
+                Tcl_DStringAppend(dsPtr, "|", 1);
+            }
+            Tcl_DStringAppend(dsPtr, options[i].label, TCL_INDEX_NONE);
+            count ++;
+        }
+    }
+    return dsPtr->string;
+}
+
+
 
 /*----------------------------------------------------------------------
  *
@@ -310,15 +358,19 @@ LogDebug(const char *before, NsHttpTask *httpPtr, const char *after)
 {
     if (Ns_LogSeverityEnabled(Ns_LogTaskDebug)) {
         Tcl_DString dsSockState;
+        Tcl_DString dsHttpState;
 
         Tcl_DStringInit(&dsSockState);
-        Ns_Log(Ns_LogTaskDebug, "%s httpPtr:%p finalSockState:%s err:(%s) %s",
+        Tcl_DStringInit(&dsHttpState);
+        Ns_Log(Ns_LogTaskDebug, "%s httpPtr:%p flags:%s finalSockState:%s err:(%s) %s",
                before,
                (void*)httpPtr,
+               DStringAppendHttpFlags(&dsHttpState, httpPtr->flags),
                Ns_DStringAppendSockState(&dsSockState, httpPtr->finalSockState),
                (httpPtr->error != NULL) ? httpPtr->error : "none",
                after);
         Tcl_DStringFree(&dsSockState);
+        Tcl_DStringFree(&dsHttpState);
     }
 }
 
@@ -2251,17 +2303,25 @@ HttpGetResult(
      */
     {
         const char *field;
-        httpPtr->flags &= ~NS_HTTP_KEEPALIVE;
+
+        if ((httpPtr->flags & NS_HTTP_VERSION_1_1) != 0u) {
+            /*
+             * For HTTP/1.1 the default is KEEPALIVE, unless there is an
+             * explicit "connection: close" required from the peer.
+             */
+            httpPtr->flags |= NS_HTTP_KEEPALIVE;
+        } else {
+            httpPtr->flags &= ~NS_HTTP_KEEPALIVE;
+        }
 
         field = Ns_SetIGet(httpPtr->replyHeaders, connectionHeader);
         if (field != NULL) {
-            if (strncmp(field, "keep-alive", 10) == 0) {
-                httpPtr->flags |= NS_HTTP_KEEPALIVE;
-                Ns_Log(Ns_LogTaskDebug, "connection: keep-alive provided %.6x", httpPtr->flags);
-            } else {
-                Ns_Log(Ns_LogTaskDebug, "connection: <%s> is NOT keep-alive", field);
+            if (strncmp(field, "close", 5) == 0) {
+                httpPtr->flags &= ~NS_HTTP_KEEPALIVE;
             }
         }
+        Ns_Log(Ns_LogTaskDebug, "connection: %s",
+               (httpPtr->flags & NS_HTTP_KEEPALIVE) != 0u ? "keep-alive" : "close");
     }
     /* Ns_Log(Notice, "replyHeaders");
        Ns_SetPrint(httpPtr->replyHeaders); */
@@ -2413,6 +2473,7 @@ HttpCheckSpool(
     NsHttpTask *httpPtr
 ) {
     Ns_ReturnCode result = NS_OK;
+    int           major = 0, minor = 0;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
@@ -2439,8 +2500,8 @@ HttpCheckSpool(
 
     if (Ns_HttpMessageParse(httpPtr->ds.string, strlen(httpPtr->ds.string),
                             httpPtr->replyHeaders,
-                            NULL,
-                            NULL,
+                            &major,
+                            &minor,
                             &httpPtr->status,
                             NULL) != NS_OK || httpPtr->status == 0) {
 
@@ -2451,6 +2512,9 @@ HttpCheckSpool(
         const char *header;
         Tcl_WideInt replyLength = 0;
 
+        if (minor == 1 && major == 1) {
+            httpPtr->flags |= NS_HTTP_VERSION_1_1;
+        }
         /*
          * Check the returned Content-Length
          */
@@ -2479,6 +2543,9 @@ HttpCheckSpool(
                 httpPtr->chunk->parsers = ChunkParsers;
                 Ns_Log(Ns_LogTaskDebug, "HttpCheckSpool: %s: %s",
                        transferEncodingHeader, header);
+                /*
+                 * Why is this header field deleted here?
+                 */
                 Ns_SetIDeleteKey(httpPtr->replyHeaders, transferEncodingHeader);
             }
         }
@@ -3546,23 +3613,25 @@ HttpAppendChunked(
     char        *buf = (char *)buffer;
     size_t       len = size;
     NsHttpChunk *chunkPtr;
+    NsHttpParseProc *parseProcPtr;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
     chunkPtr = httpPtr->chunk;
     NS_NONNULL_ASSERT(chunkPtr != NULL);
 
-    Ns_Log(Ns_LogTaskDebug, "HttpAppendChunked: http:%p, task:%p",
-           (void*)httpPtr, (void*)httpPtr->task);
+    Ns_Log(Ns_LogTaskDebug, "HttpAppendChunked: http:%p, task:%p bytes:%lu",
+           (void*)httpPtr, (void*)httpPtr->task, size);
+    /* NsHexPrint("", buffer, size, 20, NS_TRUE);*/
 
     while (len > 0 && result != TCL_ERROR) {
-        NsHttpParseProc *parseProcPtr;
 
         Ns_Log(Ns_LogTaskDebug, "... len %lu ", len);
 
         parseProcPtr = *(chunkPtr->parsers + chunkPtr->callx);
         while (len > 0 && parseProcPtr != NULL) {
             result = (*parseProcPtr)(httpPtr, &buf, &len);
-            Ns_Log(Ns_LogTaskDebug, "... parseproc returns %d ", result);
+            Ns_Log(Ns_LogTaskDebug, "... parse proc %d from %p returns %s ",
+                   chunkPtr->callx, (void*)chunkPtr->parsers, result == TCL_OK ? "OK" : "not ok");
             if (result != TCL_OK) {
                 break;
             }
@@ -3572,6 +3641,13 @@ HttpAppendChunked(
         if (parseProcPtr == NULL) {
             chunkPtr->callx = 0; /* Repeat from the first proc */
         }
+    }
+    /*
+     * When we reach the end, len == 0 and we jump out of the loop. When we
+     * have reached the end parser, call it here.
+     */
+    if (parseProcPtr == ParseEndProc) {
+        result = (*parseProcPtr)(httpPtr, &buf, &len);
     }
 
     if (result != TCL_ERROR) {
@@ -3692,7 +3768,7 @@ HttpClose(
            ) {
             httpPtr->task = Ns_TaskTimedCreate(httpPtr->sock, CloseWaitProc, httpPtr,
                                                &httpPtr->keepAliveTimeout);
-            Ns_Log(Ns_LogTaskDebug, "TaskCreate %p from HttpClose", (void*)httpPtr->task);
+            LogDebug("HttpClose",  httpPtr, "keepalive");
 
             TaskQueueRequire();
             if (Ns_TaskEnqueue(httpPtr->task, taskQueue) != NS_OK) {
@@ -3708,7 +3784,7 @@ HttpClose(
             return;
         } else {
             Ns_Log(Ns_LogTaskDebug, "TaskFree %p in HttpClose", (void*)(httpPtr->task));
-            LogDebug("HttpClose",  httpPtr, "");
+            LogDebug("HttpClose",  httpPtr, "no keepalive");
             (void) Ns_TaskFree(httpPtr->task);
             httpPtr->task = NULL;
         }
@@ -4450,7 +4526,6 @@ HttpProc(
                         httpPtr->error = "http read failed";
                         Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_READ spool failed");
                     } else {
-
                         /*
                          * At the point of reading response content (if any).
                          * Continue reading if any of the following is true:
@@ -4463,18 +4538,22 @@ HttpProc(
                             (httpPtr->replyLength > 0 && httpPtr->replySize < httpPtr->replyLength)
                             || ((httpPtr->flags & NS_HTTP_FLAG_CHUNKED) != 0u
                                 && (httpPtr->flags & NS_HTTP_FLAG_CHUNKED_END) == 0u)
-                            || (httpPtr->replyLength == 0 && (httpPtr->flags & NS_HTTP_FLAG_EMPTY) == 0u)
+                            || ((httpPtr->flags & NS_HTTP_FLAG_CHUNKED) == 0u
+                                && httpPtr->replyLength == 0
+                                && (httpPtr->flags & NS_HTTP_FLAG_EMPTY) == 0u)
                         ) {
                             taskDone = NS_FALSE;
-
                         }
+                        LogDebug("read ok", httpPtr, "");
                         Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_READ httpPtr->replyLength %ld"
-                               " httpPtr->replySize %ld flags %.6x %d %d %d -> %d",
+                               " httpPtr->replySize %ld flags %.6x %d %d %d -> done %d",
                                httpPtr->replyLength, httpPtr->replySize, httpPtr->flags,
                                (httpPtr->replyLength > 0 && httpPtr->replySize < httpPtr->replyLength),
                                ((httpPtr->flags & NS_HTTP_FLAG_CHUNKED) != 0u
                                 && (httpPtr->flags & NS_HTTP_FLAG_CHUNKED_END) == 0u),
-                               (httpPtr->replyLength == 0 && (httpPtr->flags & NS_HTTP_FLAG_EMPTY) != 0u),
+                               ((httpPtr->flags & NS_HTTP_FLAG_CHUNKED) == 0u
+                                && httpPtr->replyLength == 0
+                                && (httpPtr->flags & NS_HTTP_FLAG_EMPTY) == 0u),
                                taskDone);
                     }
                 }
@@ -5009,8 +5088,6 @@ ParseLengthProc(
     NsHttpChunk *chunkPtr = httpPtr->chunk;
     Tcl_DString *dsPtr = &chunkPtr->ds;
 
-    Ns_Log(Ns_LogTaskDebug, "--- ParseLengthProc");
-
     /*
      * Collect all that looks as a hex digit
      */
@@ -5019,11 +5096,13 @@ ParseLengthProc(
         len--;
         buf++;
     }
+    Ns_Log(Ns_LogTaskDebug, "--- ParseLengthProc hex digits <%s>", dsPtr->string);
 
     if (len == 0) {
         result = TCL_BREAK;
     } else {
         Tcl_WideInt cl = 0;
+
         if (Ns_StrToWideInt(dsPtr->string, &cl) != NS_OK || cl < 0) {
             result = TCL_ERROR;
         } else {
@@ -5082,7 +5161,7 @@ ParseBodyProc(
     size_t       len = *size;
     NsHttpChunk *chunkPtr = httpPtr->chunk;
 
-    Ns_Log(Ns_LogTaskDebug, "--- ParseBodyProc");
+    Ns_Log(Ns_LogTaskDebug, "--- ParseBodyProc chunk length %ld", chunkPtr->length);
 
     if (chunkPtr->length == 0) {
         Ns_Set     *headersPtr;
@@ -5095,8 +5174,10 @@ ParseBodyProc(
         headersPtr = httpPtr->replyHeaders;
         trailer = Ns_SetIGet(headersPtr, trailersHeader);
         if (trailer != NULL) {
+            Ns_Log(Ns_LogTaskDebug, "... switch to trailer parsers");
             chunkPtr->parsers = TrailerParsers;
         } else {
+            Ns_Log(Ns_LogTaskDebug, "... switch to end parsers");
             chunkPtr->parsers = EndParsers;
         }
 
@@ -5234,6 +5315,8 @@ ParseEndProc(
     char **UNUSED(buffer),
     size_t *size
 ) {
+    Ns_Log(Ns_LogTaskDebug, "--- ParseEndProc");
+
     *size = 0;
     httpPtr->flags |= NS_HTTP_FLAG_CHUNKED_END;
 

@@ -38,6 +38,7 @@ test tclconnio-2.1 {ns_conn channel, no length, 1.0} -setup {
         flush $chan
     }
 } -body {
+    #ns_logctl severity Debug(task) on
     nstest::http -http 1.0 -getbody 1 -getheaders {Content-Length Connection} \
         GET /tclconnio
 } -cleanup {

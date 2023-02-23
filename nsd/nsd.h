@@ -1140,6 +1140,7 @@ typedef struct _NsHttpChunk {
 #define NS_HTTP_FLAG_BINARY        (1u<<4)
 #define NS_HTTP_FLAG_EMPTY         (1u<<5)
 #define NS_HTTP_KEEPALIVE          (1u<<6)
+#define NS_HTTP_VERSION_1_1        (1u<<7)
 
 #define NS_HTTP_FLAG_GUNZIP (NS_HTTP_FLAG_DECOMPRESS|NS_HTTP_FLAG_GZIP_ENCODING)
 
