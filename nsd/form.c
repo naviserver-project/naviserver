@@ -39,10 +39,10 @@ static char *Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Enco
 static bool GetBoundary(Tcl_DString *dsPtr, const char *contentType)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-#define NS_USE_STRSTR 1
-#if defined(NS_USE_STRSTR)
-static char *NextBoundary(const Tcl_DString *boundaryDsPtr, char *start)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_PURE;
+#define NS_USE_MEMMEM 1
+#if defined(NS_USE_MEMMEM)
+static char *NextBoundary(char *content, size_t contentLength, const Tcl_DString *boundaryDsPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_PURE;
 #else
 static char *NextBoundary(const Tcl_DString *boundaryDsPtr, char *s, const char *e)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_PURE;
@@ -177,14 +177,12 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                 /*
                  * GetBoundary cares for "multipart/form-data; boundary=...".
                  */
-#if !defined(NS_USE_STRSTR)
                 const char  *formEndPtr = content + connPtr->reqPtr->length;
-#endif
                 char        *firstBoundary, *s;
                 Tcl_Encoding valueEncoding = connPtr->urlEncoding;
 
-#if defined(NS_USE_STRSTR)
-                firstBoundary = NextBoundary(&boundaryDs, content);
+#if defined(NS_USE_MEMMEM)
+                firstBoundary = NextBoundary(content, connPtr->reqPtr->length, &boundaryDs);
 #else
                 firstBoundary = NextBoundary(&boundaryDs, content, formEndPtr);
 #endif
@@ -206,8 +204,8 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                         if (*s == '\n') {
                             ++s;
                         }
-#if defined(NS_USE_STRSTR)
-                        e = NextBoundary(&boundaryDs, s);
+#if defined(NS_USE_MEMMEM)
+                        e = NextBoundary(s, formEndPtr - s, &boundaryDs);
 #else
                         e = NextBoundary(&boundaryDs, s, formEndPtr);
 #endif
@@ -779,11 +777,11 @@ GetBoundary(Tcl_DString *dsPtr, const char *contentType)
  *
  *----------------------------------------------------------------------
  */
-#if defined(NS_USE_STRSTR)
+#if defined(NS_USE_MEMMEM)
 static char *
-NextBoundary(const Tcl_DString *boundaryDsPtr, char *start)
+NextBoundary(char *content, size_t contentLength, const Tcl_DString *boundaryDsPtr)
 {
-    char *result = strstr(start, boundaryDsPtr->string);
+    char *result = ns_memmem(content, contentLength, boundaryDsPtr->string, boundaryDsPtr->length);
 
     if (result != NULL) {
         /*Ns_Log(Notice, "NextBoundary found boundary offset %ld", result-start);*/

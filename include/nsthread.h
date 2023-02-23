@@ -1037,6 +1037,8 @@ NS_EXTERN char *ns_strcopy(const char *string) NS_GNUC_MALLOC;
 NS_EXTERN char *ns_strncopy(const char *string, ssize_t size) NS_GNUC_MALLOC;
 NS_EXTERN int   ns_uint32toa(char *buffer, uint32_t n) NS_GNUC_NONNULL(1);
 NS_EXTERN int   ns_uint64toa(char *buffer, uint64_t n) NS_GNUC_NONNULL(1);
+NS_EXTERN void *ns_memmem(const void *haystack, size_t haystackLength, const void *const needle, const size_t needleLength)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 /*
  * mutex.c:
