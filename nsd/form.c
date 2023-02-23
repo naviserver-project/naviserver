@@ -209,7 +209,7 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                             ++s;
                         }
 #if defined(NS_USE_MEMMEM)
-                        e = NextBoundary(s, formEndPtr - s, &boundaryDs);
+                        e = NextBoundary(s, (size_t)(formEndPtr - s), &boundaryDs);
 #else
                         e = NextBoundary(&boundaryDs, s, formEndPtr);
 #endif
@@ -785,8 +785,10 @@ GetBoundary(Tcl_DString *dsPtr, const char *contentType)
 static char *
 NextBoundary(char *content, size_t contentLength, const Tcl_DString *boundaryDsPtr)
 {
-    char *result = ns_memmem(content, contentLength, boundaryDsPtr->string, boundaryDsPtr->length);
+    char *result;
 
+    result = ns_memmem(content, contentLength,
+                       boundaryDsPtr->string, (size_t)boundaryDsPtr->length);
     if (result != NULL) {
         /*Ns_Log(Notice, "NextBoundary found boundary offset %ld", result-start);*/
         result--;
