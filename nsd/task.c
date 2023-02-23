@@ -768,11 +768,12 @@ Ns_TaskCallback(Ns_Task *task, Ns_SockState when, const Ns_Time *timeoutPtr)
         Tcl_DStringInit(&dsSockState);
         if (timeoutPtr != NULL) {
             Ns_DStringAppendTime(&dsTime, timeoutPtr);
+            Tcl_DStringAppend(&dsTime, "s", 1);
         } else {
             Tcl_DStringAppend(&dsTime, "none", 4);
         }
         Ns_DStringAppendSockState(&dsSockState, when);
-        Ns_Log(Ns_LogTaskDebug, "Ns_TaskCallback: task:%p  when:%s, timeout:%ss",
+        Ns_Log(Ns_LogTaskDebug, "Ns_TaskCallback: task:%p  when:%s, timeout:%s",
                (void*)taskPtr, dsSockState.string, dsTime.string);
         Tcl_DStringFree(&dsTime);
         Tcl_DStringFree(&dsSockState);
