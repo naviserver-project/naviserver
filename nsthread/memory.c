@@ -282,6 +282,7 @@ ns_uint64toa(
     return len;
 }
 
+#ifndef HAVE_MEMMEM
 /*
  *----------------------------------------------------------------------
  *
@@ -318,6 +319,8 @@ ns_memmem(const void *haystack, size_t haystackLength,
     }
     return NULL;
 }
+#endif
+
 /*
  * Local Variables:
  * mode: c

@@ -17,6 +17,10 @@
 
 #include "nsd.h"
 
+#if defined(HAVE_MEMMEM)
+# include <string.h>
+#endif
+
 /*
  * Local functions defined in this file.
  */

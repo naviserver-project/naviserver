@@ -124,6 +124,9 @@
 /* Define to 1 if you have the `lseek64' function. */
 #undef HAVE_LSEEK64
 
+/* Define to 1 if memmem is available. */
+#undef HAVE_MEMMEM
+
 /* Define to 1 if DNS calls are MT-safe */
 #undef HAVE_MTSAFE_DNS
 

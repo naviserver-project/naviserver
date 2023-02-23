@@ -40,3 +40,13 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
         AC_MSG_RESULT([no])
     ])
 ]) # AX_HAVE_CRYPT_R
+
+dnl
+dnl Check to see whether we have the memmem available.
+dnl
+
+AC_DEFUN([AX_HAVE_MEMMEM],
+  [AC_CHECK_FUNC([memmem], [
+    AC_DEFINE([HAVE_MEMMEM],[1],[Define to 1 if memmem is available.])
+  ])]
+)
