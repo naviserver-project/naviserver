@@ -460,7 +460,8 @@ Ns_DStringAppendTime(Tcl_DString *dsPtr, const Ns_Time *timePtr)
 const char *
 Ns_DStringAppendSockState(Tcl_DString *dsPtr, Ns_SockState state)
 {
-    int i, count = 0;
+    int    count = 0;
+    size_t i;
     static const struct {
         Ns_SockState state;
         const char  *label;
