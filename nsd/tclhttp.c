@@ -146,7 +146,7 @@ static void HttpAddInfo(
     NsHttpTask *httpPtr,
     const char *key,
     const char *value
-)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(2);
+)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static void HttpCheckHeader(
     NsHttpTask *httpPtr
@@ -182,7 +182,7 @@ static void HttpSpliceChannel(
 static void HttpSpliceChannels(
     Tcl_Interp *interp,
     NsHttpTask *httpPtr
-) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+) NS_GNUC_NONNULL(2);
 
 static int HttpGetResult(
     Tcl_Interp *interp,
@@ -323,6 +323,8 @@ DStringAppendHttpFlags(Tcl_DString *dsPtr, unsigned int flags)
         { NS_HTTP_VERSION_1_1,        "1.1" }
     };
 
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+
     for (i=0; i<sizeof(options)/sizeof(options[0]); i++) {
         if ((options[i].state & flags) != 0u) {
             if (count > 0) {
@@ -356,9 +358,12 @@ DStringAppendHttpFlags(Tcl_DString *dsPtr, unsigned int flags)
 static void
 LogDebug(const char *before, NsHttpTask *httpPtr, const char *after)
 {
+    NS_NONNULL_ASSERT(before != NULL);
+    NS_NONNULL_ASSERT(httpPtr != NULL);
+    NS_NONNULL_ASSERT(after != NULL);
+
     if (Ns_LogSeverityEnabled(Ns_LogTaskDebug)) {
-        Tcl_DString dsSockState;
-        Tcl_DString dsHttpState;
+        Tcl_DString dsSockState, dsHttpState;
 
         Tcl_DStringInit(&dsSockState);
         Tcl_DStringInit(&dsHttpState);
@@ -652,6 +657,8 @@ NsStopHttp(NsServer *servPtr)
 static char*
 SkipDigits(char *chars)
 {
+    NS_NONNULL_ASSERT(SkipDigits != NULL);
+
     for (; *chars  >= '0' && *chars <= '9'; chars++) {
         ;
     }
@@ -2190,8 +2197,6 @@ HttpGetResult(
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
-    //fprintf(stderr, "================ HttpGetResult\n");
-
     /*
      * In some error conditions, the endtime is not set. make sure, take the
      * current time in these cases.
@@ -3535,6 +3540,7 @@ HttpAppendContent(
     int result;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
+    NS_NONNULL_ASSERT(buffer != NULL);
 
     if ((httpPtr->flags & NS_HTTP_FLAG_CHUNKED) == 0u) {
         result = HttpAppendBuffer(httpPtr, buffer, size);
@@ -3613,11 +3619,13 @@ HttpAppendChunked(
     char        *buf = (char *)buffer;
     size_t       len = size;
     NsHttpChunk *chunkPtr;
-    NsHttpParseProc *parseProcPtr;
+    NsHttpParseProc *parseProcPtr = NULL;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
+    NS_NONNULL_ASSERT(buffer != NULL);
+
     chunkPtr = httpPtr->chunk;
-    NS_NONNULL_ASSERT(chunkPtr != NULL);
+    assert(chunkPtr != NULL);
 
     Ns_Log(Ns_LogTaskDebug, "HttpAppendChunked: http:%p, task:%p bytes:%lu",
            (void*)httpPtr, (void*)httpPtr->task, size);
@@ -3894,7 +3902,7 @@ HttpCancel(
     NsHttpTask *httpPtr
 ) {
     NS_NONNULL_ASSERT(httpPtr != NULL);
-    NS_NONNULL_ASSERT(httpPtr->task != NULL);
+    assert(httpPtr->task != NULL);
 
     (void) Ns_TaskCancel(httpPtr->task);
     Ns_TaskWaitCompleted(httpPtr->task);
@@ -3925,6 +3933,10 @@ HttpAddInfo(
     const char *value
 ) {
     Tcl_Obj *keyObj, *valObj;
+
+    NS_NONNULL_ASSERT(httpPtr != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(value != NULL);
 
     if (httpPtr->infoObj == NULL) {
         httpPtr->infoObj = Tcl_NewDictObj();
@@ -4702,6 +4714,8 @@ HttpSpliceChannels(
     Tcl_Interp *interp,
     NsHttpTask *httpPtr
 ) {
+    NS_NONNULL_ASSERT(httpPtr != NULL);
+
     if (httpPtr->bodyChan != NULL) {
         HttpSpliceChannel(interp, httpPtr->bodyChan);
         httpPtr->bodyChan = NULL;
@@ -4734,6 +4748,8 @@ HttpSpliceChannel(
     Tcl_Interp *interp,
     Tcl_Channel chan
 ) {
+    NS_NONNULL_ASSERT(chan != NULL);
+
     Tcl_SpliceChannel(chan);
 
     if (interp != NULL) {
@@ -4768,6 +4784,8 @@ HttpCutChannel(
     Tcl_Channel chan
 ) {
     int result = TCL_OK;
+
+    NS_NONNULL_ASSERT(chan != NULL);
 
     if (interp != NULL) {
         if (Tcl_IsChannelShared(chan)) {
@@ -4841,7 +4859,6 @@ HttpTunnel(
     NsHttpTask *httpPtr;
     Ns_DString *dsPtr;
     Tcl_Interp *interp;
-
     NS_SOCKET   result = NS_INVALID_SOCKET;
     const char *url = "proxy-tunnel"; /* Not relevant; for logging purposes only */
     uint64_t    requestCount = 0u;
@@ -5417,6 +5434,9 @@ PersistentConnectionLookup(NsHttpTask *httpPtr, NsHttpTask **waitingHttpPtrPtr)
     Tcl_HashEntry *hPtr;
     NsServer      *servPtr = httpPtr->servPtr;
 
+    NS_NONNULL_ASSERT(httpPtr != NULL);
+    NS_NONNULL_ASSERT(waitingHttpPtrPtr != NULL);
+
     if (unlikely(httpPtr->servPtr == NULL)) {
         hPtr = NULL;
     } else {
@@ -5461,8 +5481,11 @@ static bool
 PersistentConnectionDelete(NsHttpTask *httpPtr)
 {
     Tcl_HashEntry *hPtr;
-    NsServer      *servPtr = httpPtr->servPtr;
+    NsServer      *servPtr;
 
+    NS_NONNULL_ASSERT(httpPtr != NULL);
+
+    servPtr = httpPtr->servPtr;
     if (unlikely(servPtr == NULL)) {
         hPtr = NULL;
     } else {
@@ -5500,6 +5523,8 @@ PersistentConnectionAdd(NsHttpTask *httpPtr)
 {
     NsServer *servPtr = httpPtr->servPtr;
     int       isNew = 0;
+
+    NS_NONNULL_ASSERT(httpPtr != NULL);
 
     if (httpPtr->servPtr != NULL) {
         Tcl_HashEntry *hPtr;
