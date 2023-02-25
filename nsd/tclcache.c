@@ -1287,6 +1287,25 @@ SetEntry(NsInterp *itPtr, TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_T
             expPtr = Ns_AbsoluteTime(&t, &cPtr->expires);
         } else {
             expPtr = Ns_AbsoluteTime(&t, expPtr);
+#ifdef DEBUG_REL_TIME
+            {
+                Ns_Time tr, *trPtr;
+                //fprintf(stderr, "call Ns_RelativeTime with %p (2)\n", (void*)expPtr);
+                if (expPtr != NULL) {
+                    fprintf(stderr, "call Ns_RelativeTime INPUT  " NS_TIME_FMT "\n",  (int64_t)expPtr->sec, expPtr->usec);
+                }
+                trPtr =  Ns_RelativeTime(&tr, expPtr);
+                //fprintf(stderr, "call Ns_RelativeTime with %p (2) -> %p\n", (void*)expPtr, (void*)trPtr);
+                if (trPtr != NULL) {
+                    fprintf(stderr, "call Ns_RelativeTime INPUT2 " NS_TIME_FMT "\n",  (int64_t)expPtr->sec, expPtr->usec);
+                    fprintf(stderr, "call Ns_RelativeTime OUTPUT " NS_TIME_FMT "\n",  (int64_t)trPtr->sec, trPtr->usec);
+
+                    Ns_Log(Notice, "expires specified abolute " NS_TIME_FMT " relative " NS_TIME_FMT,
+                           (int64_t)expPtr->sec, expPtr->usec,
+                           (int64_t)trPtr->sec, trPtr->usec );
+                }
+            }
+#endif
         }
         if (transactionStackPtr->depth > 0) {
             int uncommitted = Ns_CacheSetValueExpires(entry, value, valueSize,
