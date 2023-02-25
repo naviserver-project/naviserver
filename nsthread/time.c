@@ -160,7 +160,6 @@ Ns_DiffTime(const Ns_Time *t1, const Ns_Time *t0, Ns_Time *diffPtr)
     Ns_Time diff, t0p, t1p, *t0Ptr, *t1Ptr;
     bool    t0pos, t1pos, subtract, isNegative;
 
-
     NS_NONNULL_ASSERT(t0 != NULL);
     NS_NONNULL_ASSERT(t1 != NULL);
 
@@ -355,6 +354,43 @@ Ns_AbsoluteTime(Ns_Time *absPtr, Ns_Time *adjPtr)
     return adjPtr;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_RelativeTime --
+ *
+ *      Given an absolute time, return the relative time, relative to the time
+ *      when this is called. When the input time is "now + 300s", the result
+ *      will be "300s".  Small values are assumed to be relative already.
+ *
+ * Results:
+ *      Pointer to relative time.
+ *
+ * Side effects:
+ *      Ns_Time structure pointed to by relTimePtr may be adjusted upwards.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Ns_Time *
+Ns_RelativeTime(Ns_Time *relTimePtr, Ns_Time *absoluteTimePtr)
+{
+    Ns_Time *resultTimePtr = absoluteTimePtr;
+
+    NS_NONNULL_ASSERT(relTimePtr != NULL);
+
+    if (absoluteTimePtr != NULL) {
+        if (absoluteTimePtr->sec > 1000000000) {
+            Ns_Time now;
+
+            Ns_GetTime(&now);
+            Ns_DiffTime(absoluteTimePtr, &now, relTimePtr);
+            resultTimePtr = relTimePtr;
+        }
+    }
+    return resultTimePtr;
+}
 
 /*
  *----------------------------------------------------------------------
