@@ -516,7 +516,7 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
         if (unlikely(entry == NULL)) {
             status = TCL_ERROR;
 
-        } else if (likely(isNew == 0 && force == 0)) {
+        } else if (likely(isNew == 0 && force == (int)NS_FALSE)) {
             char    *value = Ns_CacheGetValueT(entry, transactionStackPtr);
             Tcl_Obj *resultObj = Tcl_NewStringObj(value, (int)Ns_CacheGetSize(entry));
 
@@ -530,10 +530,19 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
         } else {
             Ns_Time start, end, diff;
 
+            if (isNew == 0 && force == (int)NS_TRUE) {
+                /*
+                 * When called with the "-force" flag, make the overall logic
+                 * more similar to the situation, where an entry is
+                 * unset. There are several places already, which treat
+                 * (entryPtr->value == NULL) specially during deletion etc.
+                 */
+                Ns_CacheUnsetValue(entry);
+                Ns_Log(Debug, "Force unset");
+            }
             /*
              * Evaluate the cmd to obtain the cache value.
              */
-
             Ns_CacheUnlock(cPtr->cache);
 
             Ns_GetTime(&start);
@@ -552,8 +561,10 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Ob
 
                 entry2 = Ns_CacheCreateEntry(cPtr->cache, key, &isNew2);
                 if (isNew2 != 0) {
-                    Ns_Log(Warning, "==== cache %s key %s entry2 %p different from %p key '%s'",
-                           Ns_CacheName(cPtr->cache), key, (void*)entry, (void*)entry2, key);
+                    Ns_Log(Warning, "==== cache %s key %s old entry %p"
+                           " different from re-fetched entry %p",
+                           Ns_CacheName(cPtr->cache),
+                           key, (void*)entry, (void*)entry2);
                 }
             }
 
