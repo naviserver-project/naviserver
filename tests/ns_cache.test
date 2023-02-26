@@ -9,6 +9,7 @@ namespace import -force ::tcltest::*
 ns_cache_create -maxentry 10 -- c0 20480
 ns_cache_create -maxentry 10 -- c1 1024
 ns_cache_create -expires 100 -- c2 [expr 1024 * 1024]
+ns_cache_create -expires 100.1s -timeout 1s -- c4 [expr 1024 * 1024]
 
 
 test cache-1.1 {basic syntax} -body {
@@ -275,13 +276,117 @@ test cache-6.4.1 {eval force replacement} -body {
     ns_cache_flush c1
 } -result b
 
-test cache-6.4.1 {eval maxentry size} -body {
+test cache-6.4.2 {eval maxentry size} -body {
     ns_cache_eval c1 k1 {return a}
+    # The value of k2 is larger than "maxentry" size, so don't cache.
     ns_cache_eval c1 k2 {return 01234567891}
     ns_cache_keys c1
 } -cleanup {
     ns_cache_flush c1
 } -result k1
+
+# t1  sccccccccccccccD
+# t2 F  F  F  F  F  F  F
+test cache-6.4.3 {flush during ns_cache_eval} -body {
+    nsv_set sync . .
+    ns_thread begindetached {
+        set x 0
+        nsv_set sync t1 started
+        while {[nsv_get sync t2 result] == 0} {ns_log notice "t1 waits";ns_sleep 1ms}
+        ns_log notice "t1 GO"
+        ns_sleep 2ms
+        time {ns_cache_eval -force -- c4 k1 {incr i; ns_sleep 20ms; ns_log notice "t1 return"; return "b $i"}} 10
+        nsv_unset sync t1
+        ns_log notice "t1 DONE"
+    }
+    ns_thread begindetached {
+        set x 0
+        nsv_set sync t2 started
+        while {[nsv_get sync t1 result] == 0} {ns_log notice "t2 waits";ns_sleep 1ms}
+        ns_log notice "t2 GO"
+        time {ns_sleep 3ms; ns_log notice "t2 flush"; ns_cache_flush c4} 50
+        nsv_unset sync t2
+        ns_log notice "t2 DONE"
+    }
+    ns_sleep 0.5s
+    ns_log notice "c"
+    set r [ns_cache_eval -force -- c4 k1 {return c}]
+    ns_log notice "c DONE $r"
+    set r
+} -cleanup {
+    unset -nocomplain r
+    ns_cache_flush c4
+    ns_log notice "call flush DONE"
+} -returnCodes {ok return error} -result "c"
+
+test cache-6.4.4 {flush during ns_cache_eval -force} -body {
+    nsv_set sync . .
+    ns_thread begindetached {
+        set x 0
+        nsv_set sync t1 started
+        while {[nsv_get sync t2 result] == 0} {ns_log notice "t1 waits";ns_sleep 1ms}
+        ns_log notice "t1 GO"
+        ns_sleep 2ms
+        time {ns_cache_eval -force -- c4 k1 {incr i; ns_sleep 20ms; ns_log notice "t1 return"; return "b $i"}} 10
+        nsv_unset sync t1
+        ns_log notice "t1 DONE"
+    }
+    ns_thread begindetached {
+        set x 0
+        nsv_set sync t2 started
+        while {[nsv_get sync t1 result] == 0} {ns_log notice "t2 waits";ns_sleep 1ms}
+        ns_log notice "t2 GO"
+        time {ns_sleep 3ms; ns_log notice "t2 flush"; ns_cache_flush c4} 50
+        nsv_unset sync t2
+        ns_log notice "t2 DONE"
+    }
+    ns_sleep 0.5s
+    ns_log notice "c"
+    set r [ns_cache_eval -force -- c4 k1 {return c}]
+    ns_log notice "c DONE $r"
+    set r
+} -cleanup {
+    unset -nocomplain r
+    ns_cache_flush c4
+    ns_log notice "call flush DONE"
+} -returnCodes {ok return error} -result "c"
+
+
+#    01234567890123456789012345678901234567890123456789
+# t1  sccccccccccD
+# t2 sccD sccD sccD sccD
+test cache-6.4.5 {interleaving ns_cache_eval -force} -body {
+    nsv_set sync . .
+    ns_thread begindetached {
+        set x 0
+        nsv_set sync t1 started
+        while {[nsv_get sync t2 result] == 0} {ns_log notice "t1 waits";ns_sleep 1ms}
+        ns_log notice "t1 GO"
+        ns_sleep 10ms
+        time {ns_cache_eval -force -- c4 k1 {incr i; ns_log notice "t1 $i";ns_sleep 20ms; return "t1 $i"};ns_sleep 1ms} 5
+        nsv_unset sync t1
+        ns_log notice "t1 DONE"
+    }
+    ns_thread begindetached {
+        set x 0
+        nsv_set sync t2 started
+        while {[nsv_get sync t1 result] == 0} {ns_log notice "t2 waits";ns_sleep 1ms}
+        ns_log notice "t2 GO"
+        time {ns_cache_eval -force -- c4 k1 {incr i; ns_log notice "t2 $i";ns_sleep 2ms; return "t2 $i"};ns_sleep 1ms} 15
+        nsv_unset sync t2
+        ns_log notice "t2 DONE"
+    }
+    ns_sleep 1.5s
+    ns_log notice "c"
+    set r [ns_cache_eval -force -- c4 k1 {return c}]
+    ns_log notice "c DONE $r"
+    set r
+} -cleanup {
+    unset -nocomplain r
+    ns_cache_flush c4
+    ns_log notice "call flush DONE"
+} -returnCodes {ok return error} -result "c"
+
 
 test cache-6.5 {eval: wait timeout absolute} -body {
     ns_thread begindetached {
