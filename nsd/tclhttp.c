@@ -657,7 +657,7 @@ NsStopHttp(NsServer *servPtr)
 static char*
 SkipDigits(char *chars)
 {
-    NS_NONNULL_ASSERT(SkipDigits != NULL);
+    NS_NONNULL_ASSERT(chars != NULL);
 
     for (; *chars  >= '0' && *chars <= '9'; chars++) {
         ;
@@ -3776,7 +3776,7 @@ HttpClose(
            ) {
             httpPtr->task = Ns_TaskTimedCreate(httpPtr->sock, CloseWaitProc, httpPtr,
                                                &httpPtr->keepAliveTimeout);
-            LogDebug("HttpClose",  httpPtr, "keepalive");
+            LogDebug("HttpClose", httpPtr, "keepalive");
 
             TaskQueueRequire();
             if (Ns_TaskEnqueue(httpPtr->task, taskQueue) != NS_OK) {
@@ -3792,7 +3792,7 @@ HttpClose(
             return;
         } else {
             Ns_Log(Ns_LogTaskDebug, "TaskFree %p in HttpClose", (void*)(httpPtr->task));
-            LogDebug("HttpClose",  httpPtr, "no keepalive");
+            LogDebug("HttpClose", httpPtr, "no keepalive");
             (void) Ns_TaskFree(httpPtr->task);
             httpPtr->task = NULL;
         }
@@ -5440,6 +5440,8 @@ PersistentConnectionLookup(NsHttpTask *httpPtr, NsHttpTask **waitingHttpPtrPtr)
     if (unlikely(httpPtr->servPtr == NULL)) {
         hPtr = NULL;
     } else {
+        assert(httpPtr->persistentKey != NULL);
+
         Ns_MutexLock(&servPtr->httpclient.lock);
         hPtr = Tcl_FindHashEntry(&servPtr->httpclient.pconns, httpPtr->persistentKey);
         if (hPtr != NULL) {
@@ -5493,6 +5495,8 @@ PersistentConnectionDelete(NsHttpTask *httpPtr)
          * Make sure to delete the persistent connection entry, don't care about
          * the rest.
          */
+        assert(httpPtr->persistentKey != NULL);
+
         Ns_MutexLock(&servPtr->httpclient.lock);
         hPtr = Tcl_FindHashEntry(&servPtr->httpclient.pconns, httpPtr->persistentKey);
         if (hPtr != NULL) {
@@ -5527,15 +5531,21 @@ PersistentConnectionAdd(NsHttpTask *httpPtr)
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
     if (httpPtr->servPtr != NULL) {
-        Tcl_HashEntry *hPtr;
+        if (httpPtr->persistentKey != NULL) {
+            Tcl_HashEntry *hPtr;
 
-        Ns_MutexLock(&servPtr->httpclient.lock);
-        hPtr = Tcl_CreateHashEntry(&servPtr->httpclient.pconns, httpPtr->persistentKey, &isNew);
+            Ns_MutexLock(&servPtr->httpclient.lock);
+            hPtr = Tcl_CreateHashEntry(&servPtr->httpclient.pconns, httpPtr->persistentKey, &isNew);
 
-        if (isNew != 0) {
-            Tcl_SetHashValue(hPtr, httpPtr);
+            if (isNew != 0) {
+                Tcl_SetHashValue(hPtr, httpPtr);
+            }
+            Ns_MutexUnlock(&servPtr->httpclient.lock);
+        } else {
+            Ns_Log(Error, "PersistentConnectionAdd: persistent key of %p already deleted."
+                   " Code must be debugged with Debug(task) turned on and sent to the"
+                   " NaviServer developers", (void*)httpPtr);
         }
-        Ns_MutexUnlock(&servPtr->httpclient.lock);
     }
     return (isNew != 0);
 }
