@@ -351,7 +351,7 @@ Ns_CacheWaitCreateEntryT(Ns_Cache *cache, const char *key, int *newPtr,
 
     if (isNew == 0 && Ns_CacheGetValueT(entry, transactionStackPtr) == NULL) {
         /*
-         * One could condsider setting a default timeout here, or defining max
+         * One could consider setting a default timeout here, or defining max
          * iterations to avoid definiteky a potential infinite loop.
          */
         do {
