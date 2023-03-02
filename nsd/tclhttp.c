@@ -408,6 +408,9 @@ NsInitHttp(NsServer *servPtr)
     Tcl_InitHashTable(&servPtr->httpclient.pconns, TCL_STRING_KEYS);
 
     path = Ns_ConfigSectionPath(NULL, servPtr->server, NULL, "httpclient", (char *)0L);
+    Ns_ConfigTimeUnitRange(path, "keepalive",
+                           "0s", 0, 0, INT_MAX, 0, &servPtr->httpclient.keepaliveTimeout);
+
     servPtr->httpclient.logging = Ns_ConfigBool(path, "logging", NS_FALSE);
 
     if (servPtr->httpclient.logging) {
@@ -2309,11 +2312,12 @@ HttpGetResult(
     {
         const char *field;
 
+        /*
+         * Set the default value of KEEPALIVE handling depending on HTTP
+         * version.  For HTTP/1.1 the default is KEEPALIVE, unless there is an
+         * explicit "connection: close" provided from the server.
+         */
         if ((httpPtr->flags & NS_HTTP_VERSION_1_1) != 0u) {
-            /*
-             * For HTTP/1.1 the default is KEEPALIVE, unless there is an
-             * explicit "connection: close" required from the peer.
-             */
             httpPtr->flags |= NS_HTTP_KEEPALIVE;
         } else {
             httpPtr->flags &= ~NS_HTTP_KEEPALIVE;
@@ -2321,11 +2325,25 @@ HttpGetResult(
 
         field = Ns_SetIGet(httpPtr->replyHeaders, connectionHeader);
         if (field != NULL) {
-            if (strncmp(field, "close", 5) == 0) {
+            if (strncasecmp(field, "close", 5) == 0) {
                 httpPtr->flags &= ~NS_HTTP_KEEPALIVE;
             }
         }
-        Ns_Log(Ns_LogTaskDebug, "connection: %s",
+        /*
+         * Sanity check: When the keep-alive flag is still set, we should have
+         * also a keep-alive timeout value present. This timeout value
+         * controls the initialization logic during connection setup. By using
+         * this sanity check, we do not rely only on the response of the
+         * server with its exact field contents.
+         */
+        if ((httpPtr->flags & NS_HTTP_KEEPALIVE) != 0u
+            && httpPtr->keepAliveTimeout.sec == 0
+            && httpPtr->keepAliveTimeout.usec == 0
+           ) {
+            httpPtr->flags &= ~NS_HTTP_KEEPALIVE;
+            Ns_Log(Ns_LogTaskDebug, "HttpGetResult: sanity check deactivates keep-alive");
+        }
+        Ns_Log(Ns_LogTaskDebug, "HttpGetResult: connection: %s",
                (httpPtr->flags & NS_HTTP_KEEPALIVE) != 0u ? "keep-alive" : "close");
     }
     /* Ns_Log(Notice, "replyHeaders");
@@ -2825,6 +2843,7 @@ HttpConnect(
     /*Ns_Log(Notice, "HttpConnect bodySize %ld body type %s", bodySize, bodyObj->typePtr?bodyObj->typePtr->name:"none");*/
 
     interp = itPtr->interp;
+    assert(itPtr->servPtr != NULL);
 
     /*
      * Setup the task structure. From this point on
@@ -2846,6 +2865,19 @@ HttpConnect(
         *httpPtr->timeout = *timeoutPtr;
     }
 
+    /*
+     * Take keep-alive timeout either from provided flag, or from
+     * configuration file.
+     */
+    if (keepAliveTimeoutPtr == NULL &&
+        (itPtr->servPtr->httpclient.keepaliveTimeout.sec != 0
+         || itPtr->servPtr->httpclient.keepaliveTimeout.usec != 0
+        )) {
+        keepAliveTimeoutPtr = &itPtr->servPtr->httpclient.keepaliveTimeout;
+        Ns_Log(Ns_LogTaskDebug, "HttpConnect: use keep-alive " NS_TIME_FMT
+               " from configuration file",
+               (int64_t)keepAliveTimeoutPtr->sec, keepAliveTimeoutPtr->usec );
+    }
     if (keepAliveTimeoutPtr != NULL) {
         httpPtr->keepAliveTimeout = *keepAliveTimeoutPtr;
     }
@@ -3216,8 +3248,9 @@ HttpConnect(
      * Disable keep-alive connections, when no keep-alive timeout is
      * specified.
      */
+    Ns_Log(Ns_LogTaskDebug, "HttpConnect: keepAliveTimeoutPtr %p", (void*)keepAliveTimeoutPtr);
     if (keepAliveTimeoutPtr == NULL
-        || (keepAliveTimeoutPtr->sec==0 && keepAliveTimeoutPtr->usec == 0)
+        || (keepAliveTimeoutPtr->sec == 0 && keepAliveTimeoutPtr->usec == 0)
        ) {
         Ns_DStringPrintf(dsPtr, "%s: close\r\n", connectionHeader);
     }

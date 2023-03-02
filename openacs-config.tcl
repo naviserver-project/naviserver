@@ -642,19 +642,25 @@ ns_section ns/server/$server/fastpath {
 }
 
 #---------------------------------------------------------------------
-# HTTP client log configuration
-#
-# Log file for outgoing ns_http requests
+# HTTP client (ns_http) configuration
 #---------------------------------------------------------------------
 ns_section ns/server/$server/httpclient {
-    ns_param	logging		on ;# default: off
+    #
+    # Set default keep-alive timeout for outgoing ns_http requests
+    #
+    #ns_param	keepalive       5s       ;# default: 0s
+
+    #
+    # Configure log file for outgoing ns_http requests
+    #
+    ns_param	logging		on       ;# default: off
     ns_param	logfile		${logroot}/httpclient.log
     ns_param	logrollfmt	%Y-%m-%d ;# format appended to log filename
     #ns_param	logmaxbackup	100      ;# 10, max number of backup log files
     #ns_param	logroll		true     ;# true, should server log files automatically
     #ns_param	logrollonsignal	true     ;# false, perform roll on a sighup
     #ns_param	logrollhour	0        ;# 0, specify at which hour to roll
-}
+ }
 
 #---------------------------------------------------------------------
 # OpenACS specific settings (per server)

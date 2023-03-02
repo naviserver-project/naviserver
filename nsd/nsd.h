@@ -967,6 +967,7 @@ typedef struct NsServer {
         const char *logRollfmt;
         Tcl_HashTable pconns;      /* Hash table for persistent connections */
         TCL_SIZE_T logMaxbackup;
+        Ns_Time    keepaliveTimeout;
         int  fd;
         bool logging;
     } httpclient;

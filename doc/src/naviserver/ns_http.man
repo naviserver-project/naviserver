@@ -2,13 +2,15 @@
 [manpage_begin ns_http n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {Simple HTTP client functionality}]
+[titledesc {HTTP client functionality}]
 
 [description]
 
-This command provides a simple HTTP and HTTPS client functionality.
-It can be used to create, dispatch, wait on and/or cancel requests
-and process replies from web servers.
+The command [cmd ns_http] provides HTTP and HTTPS client
+functionality. It can be used to create, dispatch, wait on and/or
+cancel requests and process replies from web servers, where NaviServer
+acts as a web client. This is important, for example, to use web
+services and REST interfaces.
 
 [section {COMMANDS}]
 
@@ -57,20 +59,20 @@ what the content-type specifies.
 [opt_def -body_size [arg size]]
 specifies the expected size of the data which will be sent as the HTTP
 request body. This option must be used when sending body data via Tcl
-channels which are not capable of seeking. It is optional if sending
+channels, which are not capable of seeking. It is optional if sending
 body data from memory or from a named file.
 
 [opt_def -body [arg body]]
 transmit the content of the passed string as the request body.
 This option is mutually exclusive with [option -body_file] and [option -body_chan].
-Implementation will try to guess the "Content-Type" of the body by checking
+The implementation will try to guess the "Content-Type" of the body by checking
 the type of the passed [option body].
 
 [opt_def -body_file [arg fn]]
 transmit the file specified via filename as the request body.
 This option is mutually exclusive with [option -body] and [option -body_chan].
-Implementation will try to guess the "Content-Type" of the body by checking
-the extension of the passed [option fn].
+The implementation will try to guess the "Content-Type" of the body by checking
+the extension of the passed-in [option fn].
 
 [opt_def -body_chan [arg chan]]
 transmit the content specified via Tcl channel, which must be opened for
@@ -84,7 +86,7 @@ For [cmd "ns_http queue"] command, the [option -body_chan] channel will be
 dissociated from the current interpreter/thread and the ownership will be
 transferred to the thread that runs the request. Upon [cmd "ns_http wait"]
 the channel is tossed back to the running interpreter and can be manipulated.
-It is the caller responsibility to close the channel when not needed any more.
+It is the caller's responsibility to close the channel when not needed any more.
 The implementation will not do that (see [cmd "ns_http cleanup"] for exception).
 
 [opt_def "-cafile" [arg CA]]
@@ -112,11 +114,11 @@ the highest level (root) CA.
 delivers the content as-is (unmodified), regardless of the content encoding.
 
 [opt_def -donecallback [arg call]]
-this callback argument will be executed as Tcl script when the requests
+this callback argument will be executed as Tcl script when the request
 is completed.  The provided [arg call] is appended with two arguments,
 a flag indicating a Tcl error or not (integer value 1 or 0), and the
 dictionary as returned by [cmd "ns_http run"]. When this option is used,
-[cmd "ns_http queue"] returns empty so user has no further control
+[cmd "ns_http queue"] returns empty and the user has no further control
 (wait, cancel) on the task.
 
 [opt_def -headers [arg ns_set]]
@@ -129,19 +131,19 @@ certificate. This option has to be used, when the host supports
 virtual hosting, is configured with multiple certificates and supports
 the SNI (Server Name Indication) extension of TLS.
 
-[opt_def -keepalive [arg T]] when specified, set the keepalive value
-of the connection to the specified time duration. The time can be
+[opt_def -keepalive [arg T]] when specified, set the keep-alive timeout
+of the connection to the specified duration. The time can be
 specified in any supported ns_time format.
 
 [opt_def -keep_host_header]
 allows the Host: header field for the request to be passed in via
-the [option -headers] arg, otherwise it is overwritten.
+the [option -headers] argument, otherwise it is overwritten.
 
 [opt_def -method [arg method]]
 Standard HTTP/HTTPS request method such as GET, POST, HEAD, PUT etc.
 
 [opt_def -spoolsize [arg int]]
-In case the result is larger than given value, it will be spooled to a
+In case the result is larger than the given value, it will be spooled to a
 temporary file, a named file (see [option -outputfile]) or the Tcl
 channel (see [option -outputchan]).
 The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB).
@@ -182,16 +184,16 @@ anonymous cipher is used, this option is ignored.
 
 [opt_def -proxy [arg dict]]
 Controls whether to handle HTTP/HTTPS requests over an intermediate proxy.
-The argument must be a valid Tcl dictionary with (at least) following
+The argument must be a valid Tcl dictionary with (at least) the following
 keys: [term host], [term port]. Optionally, a [term tunnel] boolean key
 may be specified.
 The [term host] must hold the hostname or IP address of the proxy
-server. The [term port] the TCP port of the proxy server. If [term host]
+server. The [term port] is the TCP port of the proxy server. If [term host]
 is omitted, no other keys from the dictionary are evaluated and the proxy
 connection is suppressed; the request is handled as if the option was
 not specified.  If, however, [term host] is specified, it will require
 the presence of the [term port], otherwise an error is thrown.
-The optional [term tunnel] controls when to use HTTP-tunnel facility.
+The optional [term tunnel] controls when to use the HTTP-tunnel facility.
 Without it, or if set to false, the HTTP connections are handled over
 the caching-proxy and HTTPS connections over the HTTP-tunnel.
 With the [term tunnel] set to true, the HTTP-tunneling is used for both
@@ -228,7 +230,7 @@ Currently, no proxy authentication is supported. This will be added later.
 [para]
 Send an HTTP request and wait for the result.  The command [cmd "ns_http run"]
 is similar to [cmd "ns_http queue"] followed by [cmd "ns_http wait"].
-The http request is run in the same thread as the caller.
+The HTTP request is run in the same thread as the caller.
 
 [call [cmd "ns_http wait"] \
 	[opt [option "-timeout [arg T]"]] \
@@ -241,14 +243,14 @@ Waits for the queued command specified by the [term id] returned from
 following keys: [term status], [term time], [term headers].
 The [term status] contains HTTP/HTTPS status code (200, 201, 400, etc).
 The [term time] contains elapsed request ns_time.
-The [term headers] contains name of the set with response headers.
-If the request body was given over a Tcl channel, it will add key
-[term body_chan] in the passed result dictionary.
+The [term headers] contains the name of the set with response headers.
+If the request body was given over a Tcl channel, it will add the key
+[term body_chan] to the result dictionary.
 If the response was not spooled in the file nor channel, it will return
 [term body] key with the response data. Otherwise it will return either
 [term file] if the response was spooled into the named (or temporary) file
 or [term outputchan] if the request was spooled into a Tcl channel.
-For HTTPS requests it will add [term https] with some low-level TLS
+For HTTPS requests, it will add [term https] with some low-level TLS
 parameters in a Tcl dictionary format.
 
 The specified [option -timeout] specified the maximum duration of
@@ -256,8 +258,8 @@ the request to complete. The time can be specified
 in any supported ns_time format.
 
 [para]
-On success [cmd "ns_http wait"] returns the same dictionary as the
-[cmd "ns_http run"]. On error, leaves descriptive error message
+On success, [cmd "ns_http wait"] returns the same dictionary as the
+[cmd "ns_http run"]. On error, leaves a descriptive error message
 in the interpreter result. On timeout, sets the Tcl [variable ::errorCode]
 variable to NS_TIMEOUT in addition to leaving the error message.
 
@@ -270,7 +272,7 @@ ID of the HTTP request to wait for.
 
 Cancel queued HTTP/HTTPS request by the ID (of the request)
 as returned by [cmd "ns_http queue"] command. The command returns
-empty result. The sense behind this command is to be able to
+an empty result. The sense behind this command is to be able to
 terminate runaway requests or requests that have been timed out.
 Even completed requests can be cancelled if nobody is interested
 in the request result.
@@ -290,8 +292,8 @@ optionally assigned to a task, will be automatically closed.
 
 If [arg id] was specified, returns a single list in form
 of: "id url status".
-If [arg id] was not specified, returns a list of N elements
-where each element is in itself a list in form of: "id url status".
+If [arg id] was not specified, returns a list of N elements,
+where each element is in itself a list in the form of: "id url status".
 The status can be one of: "done", "running", "error".
 
 [list_begin arguments]
@@ -302,33 +304,33 @@ Optional ID of the HTTP request to list.
 [call [cmd "ns_http stats"] ?[arg id]?]
 
 Returns statistics from the currently running request in the form of
-a list of Tcl dictionares.  If optional [arg id] was specified, just
+a list of Tcl dictionaries.  If the optional [arg id] was specified, just
 one dictionary containing details about the requested task will be
-returned, or empty if the task cannot be found. Otherwise a list of
+returned, or empty if the task cannot be found. Otherwise, a list of
 dictionaries will be returned.
-One returned dictionary contains following keys:
+The returned dictionary contains the following keys:
 [term task], [term url], [term requestlength], [term replylength],
 [term sent], [term received], [term sendbodysize], [term replybodysize],
 [term replysize].
-The [term task] returns the ID of the Http task.
+The [term task] returns the ID of the HTTP task.
 The [term url] returns the URL for the given task.
-The [term requestlength] returns the length of the complete http request,
-including header line, all of the headers plus optional request body.
+The [term requestlength] returns the length of the complete HTTP request,
+including header line, all the headers plus the optional request body.
 The [term replylength] returns the value of the Content-Length as
 returned by the remote. This can be zero if the length of returned data
 is not known in advance.
-The [term sent] returns number of bytes sent to the remote. This includes
-the header line, all of the headers plus optional request body.
-The [term received] returns number of bytes received from the remote. This
-includes status line, all of the headers plus the optional reply body.
-The [term sendbodysize] returns number of bytes of the request body sent
+The member [term sent] returns the number of bytes sent to the remote. This includes
+the header line, all the headers plus optional request body.
+The member [term received] contains the number of bytes received from the remote. This
+includes the status line, all the headers plus the optional reply body.
+The member [term sendbodysize] returns the number of bytes of the request body sent
 to the remote so far.
-The [term replybodysize] returns number of bvtes of the reply body received
+The member [term replybodysize] returns the number of bytes of the reply body received
 from the remote so far.
-The [term replysize] returns number of bytes of the body received from the
-remote so far. Difference to the [term replybodysize] is that this element
-tracks number of body bytes prior optional deflate step for compressed contents,
-whereas the [term replybodysize] tracks the number of body bytes of the
+The member [term replysize] returns the number of bytes of the body received from the
+remote so far. The difference to the [term replybodysize] is that this element
+tracks the number of body bytes prior to the optional deflate step for compressed contents,
+whereas the member [term replybodysize] tracks the number of body bytes of the
 deflated contents.  For uncompressed reply content, both [term replysize]
 and [term replybodysize] will have the same value.
 
@@ -350,9 +352,9 @@ First, a minimal GET example:
 [example_end]
 
 [para]
-The second example is a code snippet making a requests via HTTPS
-(note that HTTPS is supported only if the NaviServer was compiled
-with OpenSSL support.
+The second example is a code snippet making a request via HTTPS
+(note that HTTPS is supported only when NaviServer was compiled
+with OpenSSL support).
 
 [example_begin]
  % set result [lb]ns_http run https://www.google.com[rb]
@@ -360,7 +362,7 @@ with OpenSSL support.
  302
 [example_end]
 
-If the returned data is too large to be retained in memory
+If the returned data is too large to be retained in memory,
 you can use the [option -spoolsize] to control when the
 content should be spooled to file. The spooled filename
 is contained in the resulting dict under the key [term file].
@@ -378,7 +380,7 @@ option [option -hostname] is required.
 [para]
 
 The third example is a code snippet making a POST requests via
-HTTPS and provides url-encoded POST data. The examples sets a
+HTTPS and provides url-encoded POST data. The example sets a
 larger timeout on the request, provides requests headers and
 returns reply-headers.
 
@@ -411,7 +413,7 @@ returns reply-headers.
  ns_log notice "headers [lb]dict get $r headers[rb]"
 [example_end]
 
-The forth example is a code snippet that sets a larger timeout on the
+The fourth example is a code snippet that sets a larger timeout on the
 request, provides an ns_set for the reply headers, and spools
 results to a file if the result is larger than 1000 bytes.
 
@@ -429,7 +431,7 @@ results to a file if the result is larger than 1000 bytes.
  }
 [example_end]
 
-Example for downloading a file from the web into a named file
+The next example is for downloading a file from the web into a named file
 or passed Tcl channel. Note the [option -spoolsize] of zero
 which will redirect all received data into the file/channel.
 Without the [option -spoolsize] set, all the data would be
@@ -447,7 +449,42 @@ otherwise stored in memory.
  
  % close $chan
 [example_end]
-[see_also ns_httptime ns_set ns_urlencode]
-[keywords "global built-in" http-client HTTP HTTPS POST GET nssock spooling SNI]
+
+
+[section CONFIGURATION]
+
+The behavior of [cmd ns_http] can be influenced by optional settings in the
+NaviServer configuration file. One can specify the default keep-alive
+timeout for outgoing HTTP requests, and the logging behavior. When
+logging is activated, the log file will contain information similar to
+the access.log of NaviServer (see [cmd nslog] module), but for HTTP
+client requests.
+
+[example_begin]
+ #---------------------------------------------------------------------
+ # HTTP client (ns_http) configuration
+ #---------------------------------------------------------------------
+ ns_section ns/server/server1/httpclient {
+    #
+    # Set default keep-alive timeout for outgoing ns_http requests
+    #
+    ns_param	keepalive       5s       ;# default: 0s
+
+    #
+    # Configure log file for outgoing ns_http requests
+    #
+    ns_param	logging		on       ;# default: off
+    ns_param	logfile		${logroot}/httpclient.log
+    ns_param	logrollfmt	%Y-%m-%d ;# format appended to log filename
+    #ns_param	logmaxbackup	100      ;# 10, max number of backup log files
+    #ns_param	logroll		true     ;# true, should server log files automatically
+    #ns_param	logrollonsignal	true     ;# false, perform roll on a sighup
+    #ns_param	logrollhour	0        ;# 0, specify at which hour to roll
+ }
+[example_end]
+
+
+[see_also ns_httptime ns_set ns_urlencode nslog]
+[keywords "global built-in" HTTP-client HTTP HTTPS nssock spooling SNI configuration nslog]
 
 [manpage_end]
