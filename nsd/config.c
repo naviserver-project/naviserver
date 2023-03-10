@@ -33,8 +33,14 @@ typedef enum {
 
 } ValueOperation;
 
-static const unsigned int bitElements = (sizeof(uintmax_t) * 8);
-static const unsigned int maxBitElements = bitElements *
+/*
+ * Older versions of gcc (and probably some other compilers as well)
+ * do not accept const variables as const expressions. Therefore, we 
+ * introduced here the const expression NS_BITELEMENTS.
+ */
+#define NS_BITELEMENTS (sizeof(uintmax_t) * 8)
+static const unsigned int bitElements = NS_BITELEMENTS;
+static const unsigned int maxBitElements = NS_BITELEMENTS *
     (int)(sizeof(((Section*)0)->defaultArray) /
           sizeof(((Section*)0)->defaultArray[0]));
 
