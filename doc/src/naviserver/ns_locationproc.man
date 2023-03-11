@@ -4,10 +4,14 @@
 
 [titledesc {Register custom location handler}]
 
-[description]
-This command installs custom script which will return
+[description] This command installs a custom script which will return
 location string for the current connection, as returned by
-[cmd "ns_conn location"]. Usually, the locations looks like http://localhost/.
+[cmd "ns_conn location"]. Usually, a location looks like http://localhost/.
+
+[cmd ns_locationproc] registers the handler for the current
+server. Therefore, the command cannot be used in the configuration
+script (no current server, defining the setup of all servers), but in
+the module files.
 
 [section {COMMANDS}]
 
@@ -23,10 +27,15 @@ location string.
 [section EXAMPLES]
 
 [example_begin]
- ns_locationproc   nstest::location arg
- 
- proc nstest::location {args} {
-    return "testlocation.$args"
+ namespace eval nstest {
+    ns_locationproc ::nstest::location
+
+    ad_proc ::nstest::location {args} {
+        set location [ns_conn protocol]://[ns_set iget [ns_conn headers] host]
+        ns_log notice "LOCATION-PROC args <$args> - location <$location>"
+        return $location
+    }
+    ns_log notice "SOURCING location-procs.tcl <[ns_info server]>"
  }
 [example_end]
 
