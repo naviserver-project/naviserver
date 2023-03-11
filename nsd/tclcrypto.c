@@ -2695,7 +2695,7 @@ static int
 CryptoAeadStringGetArguments(
     Tcl_Interp           *interp, int objc, Tcl_Obj *const* objv, bool encrypt,
     Tcl_DString          *ivDsPtr, Tcl_DString *keyDsPtr, Tcl_DString *aadDsPtr,
-    Tcl_DString          *tagDsPtr,
+    Tcl_DString          *tagDsPtr, Tcl_DString *inputDsPtr,
     const unsigned char **keyStringPtr,   int *keyLengthPtr,
     const unsigned char **ivStringPtr,    int *ivLengthPtr,
     const unsigned char **aadStringPtr,   int *aadLengthPtr,
@@ -2706,7 +2706,6 @@ CryptoAeadStringGetArguments(
     Tcl_Obj      *ivObj = NULL, *keyObj = NULL, *aadObj = NULL, *tagObj = NULL, *inputObj;
     int           result, isBinary = 0;
     char         *cipherName = (char *)"aes-128-gcm";
-    Tcl_DString   ivDs, inputDs;
 
     Ns_ObjvSpec lopts_encrypt[] = {
         {"-binary",   Ns_ObjvBool,           &isBinary,   INT2PTR(NS_TRUE)},
@@ -2737,8 +2736,6 @@ CryptoAeadStringGetArguments(
     *encodingPtr = RESULT_ENCODING_HEX;
     *ctxPtr = NULL;
 
-    Tcl_DStringInit(&ivDs);
-
     if (Ns_ParseObjv(encrypt ? lopts_encrypt : lopts_decrypt, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
@@ -2758,7 +2755,7 @@ CryptoAeadStringGetArguments(
             *aadStringPtr = Ns_GetBinaryString(aadObj, isBinary == 1, aadLengthPtr, aadDsPtr);
         } else {
             *aadLengthPtr = 0;
-            *aadStringPtr = 0;
+            *aadStringPtr = NULL;
         }
 
         /*
@@ -2790,7 +2787,7 @@ CryptoAeadStringGetArguments(
             result = TCL_ERROR;
 
         } else {
-            *inputStringPtr = Ns_GetBinaryString(inputObj, isBinary == 1, inputLengthPtr, &inputDs);
+            *inputStringPtr = Ns_GetBinaryString(inputObj, isBinary == 1, inputLengthPtr, inputDsPtr);
             result = TCL_OK;
         }
     }
@@ -2824,7 +2821,7 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     Tcl_DString          ivDs, keyDs, aadDs, tagDs, inputDs;
     Ns_BinaryEncoding    encoding = RESULT_ENCODING_HEX;
     EVP_CIPHER_CTX      *ctx;
-    const unsigned char *inputString = NULL, *ivString, *aadString, *keyString = NULL;
+    const unsigned char *inputString = NULL, *ivString = NULL, *aadString = NULL, *keyString = NULL;
     char                *tagString = NULL;
     int                  inputLength, keyLength, ivLength, aadLength, tagLength;
 
@@ -2843,7 +2840,7 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     Tcl_DStringInit(&tagDs);
 
     result = CryptoAeadStringGetArguments(interp, objc, objv, encrypt,
-                                          &ivDs, &keyDs, &aadDs, &tagDs,
+                                          &ivDs, &keyDs, &aadDs, &tagDs, &inputDs,
                                           &keyString,   &keyLength,
                                           &ivString,    &ivLength,
                                           &aadString,   &aadLength,
@@ -2864,7 +2861,8 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
                 Ns_TclPrintfResult(interp, "could not initialize encryption context");
                 result = TCL_ERROR;
 
-            } else if (EVP_EncryptUpdate(ctx, NULL, &length, aadString, aadLength) != 1) {
+            } else if (aadString != NULL
+                       && EVP_EncryptUpdate(ctx, NULL, &length, aadString, aadLength) != 1) {
                 /*
                  * To specify additional authenticated data (AAD), a call
                  * to EVP_CipherUpdate(), EVP_EncryptUpdate() or
@@ -2888,42 +2886,53 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
                  * encrypted output.  EVP_EncryptUpdate can be called
                  * multiple times if necessary.
                  */
-                Tcl_DStringSetLength(&outputDs, inputLength + cipherBlockSize);
-                (void)EVP_EncryptUpdate(ctx, (unsigned char *)outputDs.string, &length,
-                                        inputString, inputLength);
-                outputLength = length;
+                Tcl_DStringSetLength(&outputDs, inputLength + (int)cipherBlockSize);
+                if (EVP_EncryptUpdate(ctx, (unsigned char *)outputDs.string, &length,
+                                      inputString, (int)inputLength) == 0) {
+                    Ns_TclPrintfResult(interp, "encryption of data failed");
+                    result = TCL_ERROR;
+                } else {
+                    outputLength = length;
 
-                //fprintf(stderr, "allocated size %d, inputLength %d cipherBlockSize %d actual size %d\n",
-                // (inputLength + cipherBlockSize), inputLength, cipherBlockSize, outputLength);
-                assert((inputLength + cipherBlockSize) >= outputLength);
+                    /*fprintf(stderr, "allocated size %d, inputLength %d cipherBlockSize %d actual size %d\n",
+                      (inputLength + cipherBlockSize), inputLength, cipherBlockSize, outputLength);*/
+                    assert((inputLength + cipherBlockSize) >= outputLength);
 
-                (void)EVP_EncryptFinal_ex(ctx, (unsigned char  *)(outputDs.string + length), &length);
-                outputLength += length;
-                //fprintf(stderr, "allocated size %d, final size %d\n", (inputLength + cipherBlockSize), outputLength);
-                Tcl_DStringSetLength(&outputDs, outputLength);
+                    if (EVP_EncryptFinal_ex(ctx,
+                                            (unsigned char  *)(outputDs.string + length),
+                                            &length) == 0) {
+                        Ns_TclPrintfResult(interp, "finalization of encryption failed");
+                        result = TCL_ERROR;
 
-                /*
-                 * Get the tag
-                 */
-                Tcl_DStringSetLength(&tagDs, 16);
-                EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, tagDs.length, tagDs.string);
+                    } else {
+                        outputLength += length;
+                        /*fprintf(stderr, "allocated size %d, final size %d\n", (inputLength + cipherBlockSize), outputLength);*/
+                        Tcl_DStringSetLength(&outputDs, outputLength);
+                    }
+                }
+                if (result == TCL_OK) {
+                    /*
+                     * Get the tag
+                     */
+                    Tcl_DStringSetLength(&tagDs, 16);
+                    EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, (int)tagDs.length, tagDs.string);
 
-                listObj = Tcl_NewListObj(0, NULL);
-                /*
-                 * Convert the result to the output format and return a
-                 * dict containing "bytes" and "tag" as the interp result.
-                 */
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("bytes", 5));
-                Tcl_ListObjAppendElement(interp, listObj, EncodedObj((unsigned char *)outputDs.string,
-                                                                     (size_t)outputDs.length,
-                                                                     NULL, encoding));
-                Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("tag", 3));
-                Tcl_ListObjAppendElement(interp, listObj, EncodedObj((unsigned char *)tagDs.string,
-                                                                     (size_t)tagDs.length,
-                                                                     NULL, encoding));
-                Tcl_SetObjResult(interp, listObj);
-                assert(result == TCL_OK);
-                Tcl_DStringFree(&outputDs);
+                    listObj = Tcl_NewListObj(0, NULL);
+                    /*
+                     * Convert the result to the output format and return a
+                     * dict containing "bytes" and "tag" as the interp result.
+                     */
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("bytes", 5));
+                    Tcl_ListObjAppendElement(interp, listObj, EncodedObj((unsigned char *)outputDs.string,
+                                                                         (size_t)outputDs.length,
+                                                                         NULL, encoding));
+                    Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj("tag", 3));
+                    Tcl_ListObjAppendElement(interp, listObj, EncodedObj((unsigned char *)tagDs.string,
+                                                                         (size_t)tagDs.length,
+                                                                         NULL, encoding));
+                    Tcl_SetObjResult(interp, listObj);
+                    Tcl_DStringFree(&outputDs);
+                }
             }
 
         } else {
@@ -2943,7 +2952,8 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
                 Ns_TclPrintfResult(interp, "could not initialize decryption context");
                 result = TCL_ERROR;
 
-            } else if (EVP_DecryptUpdate(ctx, NULL, &length, aadString, aadLength) != 1) {
+            } else if (aadString != NULL
+                       && EVP_DecryptUpdate(ctx, NULL, &length, aadString, aadLength) != 1) {
                 /*
                  * To specify additional authenticated data (AAD), a call
                  * to EVP_CipherUpdate(), EVP_EncryptUpdate() or
@@ -2966,27 +2976,31 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
                  * EVP_DecryptUpdate can be called multiple times if necessary.
                  */
                 Tcl_DStringSetLength(&outputDs, inputLength);
-                (void)EVP_DecryptUpdate(ctx,
-                                        (unsigned char *)outputDs.string, &length,
-                                        inputString, inputLength);
-                outputLength = length;
-
-                /*
-                 * Set expected tag value. Works in OpenSSL 1.0.1d and later
-                 */
-                if(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, tagLength, tagString) != 1) {
-                    Ns_TclPrintfResult(interp, "could not set tag value");
+                if (EVP_DecryptUpdate(ctx, (unsigned char *)outputDs.string, &length,
+                                      inputString, (int)inputLength) == 0) {
+                    Ns_TclPrintfResult(interp, "decryption of data failed");
                     result = TCL_ERROR;
                 } else {
+                    outputLength = length;
 
-                    (void)EVP_DecryptFinal_ex(ctx, (unsigned char  *)(outputDs.string + length), &length);
-                    outputLength += length;
-                    //fprintf(stderr, "allocated size %d, final size %d\n", inputLength, outputLength);
-                    Tcl_DStringSetLength(&outputDs, outputLength);
-                    Tcl_SetObjResult(interp, EncodedObj((unsigned char *)outputDs.string,
-                                                        (size_t)outputDs.length,
-                                                        NULL, encoding));
-                    assert(result == TCL_OK);
+                    /*
+                     * Set expected tag value. Works in OpenSSL 1.0.1d and later
+                     */
+                    if(EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, (int)tagLength, tagString) != 1) {
+                        Ns_TclPrintfResult(interp, "could not set tag value");
+                        result = TCL_ERROR;
+                    } else {
+
+                        (void)EVP_DecryptFinal_ex(ctx,
+                                                  (unsigned char  *)(outputDs.string + length),
+                                                  &length);
+                        outputLength += length;
+                        //fprintf(stderr, "allocated size %d, final size %d\n", inputLength, outputLength);
+                        Tcl_DStringSetLength(&outputDs, outputLength);
+                        Tcl_SetObjResult(interp, EncodedObj((unsigned char *)outputDs.string,
+                                                            (size_t)outputDs.length,
+                                                            NULL, encoding));
+                    }
                 }
                 Tcl_DStringFree(&outputDs);
             }
