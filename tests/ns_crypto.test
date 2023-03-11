@@ -384,16 +384,16 @@ test base64-md5.2 {
 test aead-1.0 {aead::encrypt} -body {
     set d [ns_crypto::aead::encrypt string -cipher aes-128-gcm -iv 123456789 -key secret "hello world"]
     list bytes [string length [dict get $d bytes]] tag [string length [dict get $d tag]]
-} -result {bytes 22 tag 32}
+} -returnCodes {ok error} -result {bytes 22 tag 32}
 
 test aead-1.1 {aead::encrypt and decrypt} -body {
     set d [ns_crypto::aead::encrypt string -cipher aes-128-gcm -iv 123456789 \
-               -key secret -encoding binary \
+               -key secret -aad 127.0.0.1 -encoding binary \
                "hello world"]
     ns_crypto::aead::decrypt string -cipher aes-128-gcm -iv 123456789 \
         -key secret -tag [dict get $d tag] \
         -encoding binary [dict get $d bytes]
-} -result {hello world}
+} -returnCodes {ok error} -result {hello world}
 
 
 #
