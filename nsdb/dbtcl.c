@@ -66,7 +66,12 @@ static Tcl_ObjCmdProc
 
 static int ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, char cmd);
 
-NS_IMPORT const Tcl_ObjType *NS_intTypePtr;
+#if defined(_MSC_VER) 
+extern NS_IMPORT const Tcl_ObjType *NS_intTypePtr;
+#else
+NS_EXTERN const Tcl_ObjType *NS_intTypePtr;
+#endif
+
 
 /*
  * Local variables defined in this file.
