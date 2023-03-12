@@ -66,12 +66,11 @@ static Tcl_ObjCmdProc
 
 static int ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, char cmd);
 
-#if defined(_MSC_VER) 
-extern NS_IMPORT const Tcl_ObjType *NS_intTypePtr;
-#else
-NS_EXTERN const Tcl_ObjType *NS_intTypePtr;
-#endif
-
+/*
+ * Importing from the DLL requires NS_IMPORT under windows. NS_IMPORT
+ * is a noop under Unix.
+ */
+NS_EXTERN NS_IMPORT const Tcl_ObjType *NS_intTypePtr;
 
 /*
  * Local variables defined in this file.
