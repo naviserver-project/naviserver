@@ -3101,6 +3101,13 @@ HttpConnect(
             Ns_DStringPrintf(&persistentKeyDs, "%s:%hu", rhost, rport);
             httpPtr->persistentKey = Ns_DStringExport(&persistentKeyDs);
 
+            if (strcasecmp(httpPtr->method, "HEAD") == 0) {
+                /*
+                 * Do not expect a response content.
+                 */
+                httpPtr->flags |= NS_HTTP_FLAG_EMPTY;
+            }
+
             lookupSuccessful = PersistentConnectionLookup(httpPtr, &waitingHttpPtr);
             Ns_Log(Ns_LogTaskDebug, "PersistentConnectionLookup persistent key <%s> -> %d",
                    httpPtr->persistentKey, lookupSuccessful);
@@ -4580,7 +4587,9 @@ HttpProc(
                          *   o. caller tells it expects content
                          */
                         if (
-                            (httpPtr->replyLength > 0 && httpPtr->replySize < httpPtr->replyLength)
+                            (httpPtr->replyLength > 0
+                             && httpPtr->replySize < httpPtr->replyLength
+                             && (httpPtr->flags & NS_HTTP_FLAG_EMPTY) == 0u)
                             || ((httpPtr->flags & NS_HTTP_FLAG_CHUNKED) != 0u
                                 && (httpPtr->flags & NS_HTTP_FLAG_CHUNKED_END) == 0u)
                             || ((httpPtr->flags & NS_HTTP_FLAG_CHUNKED) == 0u
