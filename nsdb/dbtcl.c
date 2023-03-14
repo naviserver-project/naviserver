@@ -70,7 +70,7 @@ static int ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
  * Importing from the DLL requires NS_IMPORT under windows. NS_IMPORT
  * is a noop under Unix.
  */
-NS_EXTERN NS_IMPORT const Tcl_ObjType *NS_intTypePtr;
+extern NS_IMPORT const Tcl_ObjType *NS_intTypePtr;
 
 /*
  * Local variables defined in this file.
