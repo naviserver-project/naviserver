@@ -108,7 +108,8 @@ test http-1.6.3 { HTTP/1.0 HEAD not-existing vhost + custom error page} -constra
 } -match glob -result {404 15}
 
 #
-# GET + HEAD + POST with query parameter
+# GET + HEAD + POST with query parameter and non existing page
+# (returning custom error page)
 #
 test http-1.6.4 { HTTP/1.0 GET not-existing vhost + custom error page + query} -constraints serverListen -body {
     nstest::http -getbody 1 \
@@ -2093,6 +2094,46 @@ test http-9.1 {
 } -cleanup {
     ns_unregister_op POST /post
 } -result {utf-8 <application/x-www-form-urlencoded> AÄATesting <äöüß☀>ZÜZ}
+
+#
+# GET * POST + HEAD requests for existing page with keepalive
+#
+test http-10.1.0 {HTTP/1.0 GET + keepalive} -constraints serverListen -body {
+    #ns_logctl severity Debug(task) on
+
+    set r0 [ns_http run -keepalive 10s -method GET [ns_config test listenurl]/10bytes]
+    set r1 [ns_http run -keepalive 10s -method GET [ns_config test listenurl]/10bytes]
+    set r2 [ns_http run -keepalive 10s -method GET [ns_config test listenurl]/10bytes]
+    list [dict get $r0 status] [dict get $r1 status] [ns_set iget [dict get $r1 headers] content-length] [dict get $r2 status]
+
+} -cleanup {
+    unset -nocomplain r0 r1 r2
+} -returnCodes {error ok} -result {200 200 10 200}
+
+test http-10.1.1 {HTTP/1.0 POST + keepalive} -constraints serverListen -setup {
+    ns_register_proc POST /post {
+        ns_return 200 text/plain "hi there"
+    }
+} -body {
+    #ns_logctl severity Debug(task) on
+    set r0 [ns_http run -keepalive 10s -method GET [ns_config test listenurl]/10bytes]
+    set r1 [ns_http run -keepalive 10s -method POST [ns_config test listenurl]/post]
+    set r2 [ns_http run -keepalive 10s -method GET [ns_config test listenurl]/10bytes]
+    list [dict get $r0 status] [dict get $r1 status] [ns_set iget [dict get $r1 headers] content-length] [dict get $r2 status]
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain r0 r1 r2
+}  -returnCodes {error ok} -result {200 200 8 200}
+
+test http-10.1.2 {HTTP/1.0 HEAD + keepalive} -constraints serverListen -body {
+    #ns_logctl severity Debug(task) on
+    set r0 [ns_http run -keepalive 10s -method GET [ns_config test listenurl]/10bytes]
+    set r1 [ns_http run -keepalive 10s -method HEAD [ns_config test listenurl]/10bytes]
+    set r2 [ns_http run -keepalive 10s -method GET [ns_config test listenurl]/10bytes]
+    list [dict get $r0 status] [dict get $r1 status] [ns_set iget [dict get $r1 headers] content-length] [dict get $r2 status]
+} -cleanup {
+    unset -nocomplain r0 r1 r2
+} -returnCodes {error ok} -result {200 200 10 200}
 
 
 
