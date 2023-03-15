@@ -17,8 +17,7 @@
 # 4. nmake -f Makefile.win32
 #
 
-tcl_64 = C:\P\Tcl-64-8.6
-#tcl_64 = C:\P\ActiveTcl
+tcl_64 = C:\P\Tcl-64-8.6.12
 tcl_32 = C:\P\Tcl-32
 
 tcllib_64 = tcl86t.lib
