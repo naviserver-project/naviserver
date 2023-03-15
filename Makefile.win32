@@ -17,8 +17,7 @@
 # 4. nmake -f Makefile.win32
 #
 
-tcl_64 = C:\P\Tcl-64-8.6
-#tcl_64 = C:\P\ActiveTcl
+tcl_64 = C:\P\Tcl-64-8.6.12
 tcl_32 = C:\P\Tcl-32
 
 tcllib_64 = tcl86t.lib
@@ -174,11 +173,19 @@ $(PEM_FILE):
 	openssl req -new -config $(SSLCONFIG) -x509 -nodes -sha1 -days 365 -keyout $(PEM_FILE) -out $(PEM_FILE)
 	openssl dhparam 1024 >> $(PEM_FILE)
 
+
+# Appending to PATH can get lots of duplicate paths, causing the tests
+# to fail with this error:
+#   NMAKE : fatal error U1095: expanded command line [...] too long
+# So instead we smash the PATH explicitly here:
+_path:
+	PATH=$(PWD)\nsd;$(PWD)\nsthread;$(PWD)\nsdb;$(PWD)\nsproxy;$(TCLPATH)\bin;$(openssl_dir)\bin;C:\P\ps;C:\Windows\system32
+
 # Nmake has NO GOOD WAY to save the output of a shell command into a variable!
 # Thus we use a static output filename here, rather than e.g. embedding the current date/time.
 # Fortunately command output redirection works essentially the same way as in Unix.
-_test:
-	PATH=$(PWD)\nsd;$(PWD)\nsthread;$(PWD)\nsdb;$(PWD)\nsproxy;$(PATH) & $(PWD)\nsd\nsd.exe -c -t $(PWD)/tests/test.nscfg $(PWD)/tests/all.tcl 1>> test-win-out-0.txt 2>&1
+_test: _path
+	$(PWD)\nsd\nsd.exe -c -t $(PWD)/tests/test.nscfg $(PWD)/tests/all.tcl 1>> test-win-out-0.txt 2>&1
 
-_test_one:
-	PATH=$(PWD)\nsd;$(PWD)\nsthread;$(PWD)\nsdb;$(PWD)\nsproxy;$(PATH) & $(PWD)\nsd\nsd.exe -c -t $(PWD)/tests/test.nscfg $(PWD)/tests/all.tcl -verbose sp -file ns_thread.test
+_test_one: _path
+	$(PWD)\nsd\nsd.exe -c -t $(PWD)/tests/test.nscfg $(PWD)/tests/all.tcl -verbose sp -file ns_thread.test
