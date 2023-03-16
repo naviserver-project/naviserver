@@ -9,7 +9,7 @@
  *
  */
 
-
+#define NS_DBTCL_C 1
 /*
  * dbtcl.c --
  *
@@ -26,6 +26,12 @@ typedef struct InterpData {
     const char *server;
     Tcl_HashTable dbs;
 } InterpData;
+
+/*
+ * The data for this severity resides in this file (and is protected
+ * in nsdb.h via NS_DBTCL_C).
+ */
+Ns_LogSeverity Ns_LogSqlDebug;
 
 /*
  * Local functions defined in this file
@@ -1602,7 +1608,7 @@ EnterDbHandle(InterpData *idataPtr, Tcl_Interp *interp, Ns_DbHandle *handle, Tcl
 
     next = (TCL_SIZE_T)idataPtr->dbs.numEntries;
     do {
-        len = (TCL_SIZE_T)snprintf(buf, sizeof(buf), "nsdb%zx", (unsigned long)next++);
+        len = (TCL_SIZE_T)snprintf(buf, sizeof(buf), "nsdb%lx", (unsigned long)next++);
         hPtr = Tcl_CreateHashEntry(&idataPtr->dbs, buf, &isNew);
     } while (isNew == 0);
 

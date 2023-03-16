@@ -107,8 +107,9 @@ typedef struct {
     Ns_Set **columns;
 } Ns_DbTableInfo;
 
-NS_EXTERN Ns_LogSeverity Ns_LogSqlDebug;
-
+#ifndef NS_DBTCL_H
+extern NS_IMPORT Ns_LogSeverity Ns_LogSqlDebug;
+#endif
 
 typedef Ns_ReturnCode (NsDb_DriverInitProc)(const char *driver, const char *configPath);
 NS_EXTERN const char *NS_EMPTY_STRING;
