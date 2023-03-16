@@ -27,7 +27,7 @@
  * version of this file under either the License or the GPL.
  */
 
-
+#define NS_DBTCL_C 1
 /*
  * dbtcl.c --
  *
@@ -44,6 +44,12 @@ typedef struct InterpData {
     const char *server;
     Tcl_HashTable dbs;
 } InterpData;
+
+/*
+ * The data for this severity resides in this file (and is protected
+ * in nsdb.h via NS_DBTCL_C).
+ */
+Ns_LogSeverity Ns_LogSqlDebug;
 
 /*
  * Local functions defined in this file
