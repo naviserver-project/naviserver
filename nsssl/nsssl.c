@@ -596,21 +596,25 @@ static int
 ClientInit(Tcl_Interp *interp, Ns_Sock *sockPtr, void *arg)
 {
     SSL                    *ssl;
-    int                     result;
     Ns_DriverClientInitArg *params= (Ns_DriverClientInitArg *)arg;
+    int                     result;
 
-    result = Ns_TLS_SSLConnect(interp, sockPtr->sock,
-                               params->ctx,
-                               params->sniHostname, &ssl);
-
-    if (likely(result == TCL_OK)) {
+    if (Ns_TLS_SSLConnect(interp, sockPtr->sock,
+                          params->ctx,
+                          params->sniHostname,
+                          NULL,
+                          &ssl) == NS_OK) {
         SSLContext *sslCtx = ns_calloc(1, sizeof(SSLContext));
 
         sslCtx->ssl = ssl;
         sockPtr->arg = sslCtx;
-    } else if (ssl != NULL) {
-        SSL_shutdown(ssl);
-        SSL_free(ssl);
+        result = TCL_OK;
+    } else {
+        if (ssl != NULL) {
+            SSL_shutdown(ssl);
+            SSL_free(ssl);
+        }
+        result = TCL_ERROR;
     }
 
     return result;

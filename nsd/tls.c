@@ -86,7 +86,7 @@ OCSP_ResponseIsValid(OCSP_RESPONSE *resp, OCSP_CERTID *id)
 static void ReportError(Tcl_Interp *interp, const char *fmt, ...)
     NS_GNUC_NONNULL(2) NS_GNUC_PRINTF(2,3);
 
-static Ns_ReturnCode WaitFor(NS_SOCKET sock, unsigned int st);
+static Ns_ReturnCode WaitFor(NS_SOCKET sock, unsigned int st, Ns_Time *timeoutPtr);
 
 static void CertTableInit(void);
 static void CertTableReload(void *UNUSED(arg));
@@ -1128,12 +1128,12 @@ Ns_TLS_CtxFree(NS_TLS_SSL_CTX *ctx)
  *
  * WaitFor --
  *
- *      Wait 10ms (currently hardcoded) for a state change on a socket.
- *      This is used for handling OpenSSL's states SSL_ERROR_WANT_READ
- *      and SSL_ERROR_WANT_WRITE.
+ *      Wait for the provided or default 10ms (currently hardcoded)
+ *      for a state change on a socket.  This is used for handling
+ *      OpenSSL's states SSL_ERROR_WANT_READ and SSL_ERROR_WANT_WRITE.
  *
  * Results:
- *      NaviServer return code.
+ *      NS_OK, NS_ERROR, or NS_TIMEOUT.
  *
  * Side effects:
  *      None.
@@ -1141,11 +1141,41 @@ Ns_TLS_CtxFree(NS_TLS_SSL_CTX *ctx)
  *----------------------------------------------------------------------
  */
 static Ns_ReturnCode
-WaitFor(NS_SOCKET sock, unsigned int st)
+WaitFor(NS_SOCKET sock, unsigned int st, Ns_Time *timeoutPtr)
 {
-    Ns_Time timeout = { 0, 10000 }; /* 10ms */
-    return Ns_SockTimedWait(sock, st, &timeout);
+    Ns_Time timeout;
+    if (timeoutPtr == NULL) {
+        /* 10ms */
+        timeout.sec = 0;
+        timeout.usec = 10000;
+        timeoutPtr = &timeout;
+    }
+    return Ns_SockTimedWait(sock, st, timeoutPtr);
 }
+
+static Ns_ReturnCode
+PartialTimeout(Ns_Time *endTimePtr, Ns_Time *diffPtr, Ns_Time *defaultPartialTimeoutPtr,
+               Ns_Time **partialTimeoutPtrPtr)
+{
+    Ns_Time       now;
+    Ns_ReturnCode result = NS_OK;
+
+    Ns_GetTime(&now);
+    if (Ns_DiffTime(endTimePtr, &now, diffPtr) > 0) {
+        if (diffPtr->sec > defaultPartialTimeoutPtr->sec || diffPtr->usec > defaultPartialTimeoutPtr->usec) {
+            *partialTimeoutPtrPtr = defaultPartialTimeoutPtr;
+        } else {
+            *partialTimeoutPtrPtr = diffPtr;
+        }
+        Ns_Log(Debug, "Ns_TLS_SSLConnect partial timeout " NS_TIME_FMT,
+               (int64_t)(*partialTimeoutPtrPtr)->sec, (*partialTimeoutPtrPtr)->usec);
+    } else {
+        /* time is up */
+        result = NS_TIMEOUT;
+    }
+    return result;
+}
+
 
 
 /*
@@ -1157,30 +1187,36 @@ WaitFor(NS_SOCKET sock, unsigned int st)
  *      usable (is connected, handshake performed)
  *
  * Results:
- *      A standard Tcl result.
+ *      NS_OK, NS_ERROR, or NS_TIMEOUT.
  *
  * Side effects:
  *      None.
  *
  *----------------------------------------------------------------------
  */
-int
+Ns_ReturnCode
 Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
-                  const char *sni_hostname,
+                  const char *sni_hostname, Ns_Time *timeoutPtr,
                   NS_TLS_SSL **sslPtr)
 {
     NS_TLS_SSL     *ssl;
-    int             result = TCL_OK;
+    Ns_ReturnCode   result = NS_OK;
+    Ns_Time         endTime, defaultPartialTimeout = { 0, 10000 }; /* 10ms */
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(ctx != NULL);
     NS_NONNULL_ASSERT(sslPtr != NULL);
 
+    if (timeoutPtr != NULL) {
+        Ns_GetTime(&endTime);
+        Ns_IncrTime(&endTime, timeoutPtr->sec, timeoutPtr->usec);
+    }
+
     ssl = SSL_new(ctx);
     *sslPtr = ssl;
     if (ssl == NULL) {
         Ns_TclPrintfResult(interp, "SSLCreate failed: %s", ERR_error_string(ERR_get_error(), NULL));
-        result = TCL_ERROR;
+        result = NS_ERROR;
 
     } else {
         if (sni_hostname != NULL) {
@@ -1197,27 +1233,38 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
         SSL_set_connect_state(ssl);
 
         for (;;) {
-            int sslRc, err;
+            int           sslRc, err;
+            Ns_Time       timeout, *partialTimeoutPtr = NULL;
 
             Ns_Log(Debug, "ssl connect on sock %d", sock);
             sslRc = SSL_connect(ssl);
             err   = SSL_get_error(ssl, sslRc);
             //fprintf(stderr, "### ssl connect sock %d returned err %d\n", sock, err);
 
-            if (err == SSL_ERROR_WANT_READ) {
-                (void)WaitFor(sock, (unsigned int)NS_SOCK_READ);
-                continue;
-
-            } else if (err == SSL_ERROR_WANT_WRITE) {
-                (void)WaitFor(sock, (unsigned int)NS_SOCK_WRITE);
+            if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
+                if (timeoutPtr != NULL) {
+                    /*
+                     * Since there might be many WANT_READ or
+                     * WANT_WRITE, we have to constantly check the
+                     * remaining time and may adjust the partial
+                     * timeout as well.
+                     */
+                    if (PartialTimeout(&endTime, &timeout, &defaultPartialTimeout, &partialTimeoutPtr) == NS_TIMEOUT) {
+                        result = NS_TIMEOUT;
+                        break;
+                    }
+                }
+                (void) WaitFor(sock,
+                               (unsigned int)(err == SSL_ERROR_WANT_READ ? NS_SOCK_READ : NS_SOCK_WRITE),
+                               partialTimeoutPtr);
                 continue;
             }
             break;
         }
 
-        if (!SSL_is_init_finished(ssl)) {
+        if (result == NS_OK && !SSL_is_init_finished(ssl)) {
             Ns_TclPrintfResult(interp, "ssl connect failed: %s", ERR_error_string(ERR_get_error(), NULL));
-            result = TCL_ERROR;
+            result = NS_ERROR;
         } else {
             //const char *verifyString = X509_verify_cert_error_string(SSL_get_verify_result(ssl));
             //fprintf(stderr, "### SSL certificate verify: %s\n", verifyString);
@@ -1802,11 +1849,11 @@ Ns_TLS_SSLAccept(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
             err = SSL_get_error(ssl, rc);
 
             if (err == SSL_ERROR_WANT_READ) {
-                (void)WaitFor(sock, (unsigned int)NS_SOCK_READ);
+                (void)WaitFor(sock, (unsigned int)NS_SOCK_READ, NULL);
                 continue;
 
             } else if (err == SSL_ERROR_WANT_WRITE) {
-                (void)WaitFor(sock, (unsigned int)NS_SOCK_WRITE);
+                (void)WaitFor(sock, (unsigned int)NS_SOCK_WRITE, NULL);
                 continue;
             }
             break;

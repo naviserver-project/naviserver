@@ -3060,8 +3060,9 @@ HttpConnect(
 
     {
         Ns_ReturnCode rc;
-        Ns_Time       defaultTimout = {5, 0}, *toPtr = NULL;
+        Ns_Time       defaultTimout = {5, 0}, *toPtr = NULL, startTime;
 
+        Ns_GetTime(&startTime);
         Ns_Log(Ns_LogTaskDebug, "HttpConnect: connecting to [%s]:%hu", u.host, portNr);
 
         /*
@@ -3167,10 +3168,46 @@ HttpConnect(
                                                     verifyCert, &ctx);
                     if (likely(result == TCL_OK)) {
                         NS_TLS_SSL *ssl = NULL;
+                        Ns_Time now, remainingTime;
 
                         httpPtr->ctx = ctx;
-                        result = Ns_TLS_SSLConnect(interp, httpPtr->sock, ctx,
-                                                   sniHostname, &ssl);
+                        Ns_GetTime(&now);
+                        Ns_DiffTime(&now, &startTime, &remainingTime);
+                        if (Ns_DiffTime(toPtr, &remainingTime, &remainingTime) < 0) {
+                            /*
+                             * The remaining timeout is already negative,
+                             * already too late to call Ns_TLS_SSLConnect()
+                             */
+                            Ns_Log(Ns_LogTaskDebug, "Ns_TLS_SSLConnect negative remaining timeout " NS_TIME_FMT,
+                                   (int64_t)remainingTime.sec, remainingTime.usec);
+                            Ns_TclPrintfResult(interp, "timeout waiting for TLS setup");
+                            HttpClientLogWrite(httpPtr, "tlssetuptimeout");
+                            Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
+                            goto fail;
+                        } else {
+                            Ns_ReturnCode rc;
+
+                            Ns_Log(Ns_LogTaskDebug, "Ns_TLS_SSLConnect remaining timeout " NS_TIME_FMT,
+                                   (int64_t)remainingTime.sec, remainingTime.usec);
+
+                            rc = Ns_TLS_SSLConnect(interp, httpPtr->sock, ctx,
+                                                   sniHostname, &remainingTime, &ssl);
+                            if (rc == NS_TIMEOUT) {
+                                /*
+                                 * Ns_TLS_SSLConnect ran into a timeout.
+                                 */
+                                Ns_TclPrintfResult(interp, "timeout waiting for TLS handshake");
+                                HttpClientLogWrite(httpPtr, "tlsconnecttimeout");
+                                Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
+                                goto fail;
+
+                            } else if (rc == NS_ERROR) {
+                                result = TCL_ERROR;
+                            } else {
+                                result = TCL_OK;
+                            }
+                        }
+
                         if (likely(result == TCL_OK)) {
                             httpPtr->ssl = ssl;
 #ifdef HAVE_OPENSSL_EVP_H
