@@ -2961,8 +2961,6 @@ HttpConnect(
                     Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
                     goto fail;
                 } else {
-                    Ns_ReturnCode rc;
-                    
                     Ns_Log(Ns_LogTaskDebug, "Ns_TLS_SSLConnect remaining timeout " NS_TIME_FMT,
                            (int64_t)remainingTime.sec, remainingTime.usec);
                     
