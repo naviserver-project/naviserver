@@ -1295,9 +1295,6 @@ SetEntry(NsInterp *itPtr, TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_T
                 trPtr =  Ns_RelativeTime(&tr, expPtr);
                 //fprintf(stderr, "call Ns_RelativeTime with %p (2) -> %p\n", (void*)expPtr, (void*)trPtr);
                 if (trPtr != NULL) {
-                    fprintf(stderr, "call Ns_RelativeTime INPUT2 " NS_TIME_FMT "\n",  (int64_t)expPtr->sec, expPtr->usec);
-                    fprintf(stderr, "call Ns_RelativeTime OUTPUT " NS_TIME_FMT "\n",  (int64_t)trPtr->sec, trPtr->usec);
-
                     Ns_Log(Notice, "expires specified absolute " NS_TIME_FMT " relative " NS_TIME_FMT,
                            (int64_t)expPtr->sec, expPtr->usec,
                            (int64_t)trPtr->sec, trPtr->usec );
