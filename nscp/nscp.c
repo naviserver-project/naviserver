@@ -127,18 +127,12 @@ LoadUsers(Mod *localModPtr, const char *server, const char *module)
     (void) Ns_ConfigSectionPath(&set, server, module, "users", (char *)0L);
 
     /*
-     * In case, no users are configured and nscp is listening on the loopback
-     * address, create empty user without password.
+     * In case, no users are configured, and nscp is listening on the loopback
+     * address, create automatically a user with an empty name and no
+     * password.
      */
     if (Ns_SetSize(set) == 0u && STREQ(localModPtr->addr, NS_IP_LOOPBACK)) {
-        Ns_DString  ds;
-        const char *path;
-
-        Ns_DStringInit(&ds);
-        path = Ns_ModulePath(&ds, server, module, "users", (char *)0L);
-        set = Ns_ConfigGetSection(path);
         Ns_SetUpdateSz(set, "user", 4, "::", 2);
-        Ns_DStringFree(&ds);
     }
 
     /*
