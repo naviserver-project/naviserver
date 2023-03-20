@@ -11,6 +11,8 @@ namespace import -force ::tcltest::*
 tcltest::testConstraint crypto [ns_info ssl]
 tcltest::testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
 tcltest::testConstraint tcl86 [expr {$tcl_version >= 8.6}]
+tcltest::testConstraint scrypt [expr {![catch {::ns_crypto::scrypt -salt NaCl -secret 42}]}]
+tcltest::testConstraint argon2 [expr {![catch {::ns_crypto::argon2 -variant ARGON2D -salt saltsalt -secret 42}]}]
 
 #######################################################################################
 #  Message digests: sha1, sha224, sha256, sha512
@@ -414,6 +416,129 @@ test aead-1.1 {aead::encrypt and decrypt} -body {
         -key secret -tag [dict get $d tag] \
         -encoding binary [dict get $d bytes]
 } -returnCodes {ok error} -result {hello world}
+
+
+############################################################################
+# Test Cases for ns_crypto::scrypt
+############################################################################
+test scrypt-1.1 {
+    Test case from RFC 7914 (example 2 in sect 12)
+} -constraints {crypto scrypt} -body {
+    ::ns_crypto::scrypt -secret "password" -salt "NaCl" -n 1024 -r 8 -p 16
+} -returnCodes {ok error} -result {fdbabe1c9d3472007856e7190d01e9fe7c6ad7cbc8237830e77376634b3731622eaf30d92e22a3886ff109279d9830dac727afb94a83ee6d8360cbdfa2cc0640}
+
+test scrypt-1.2 {
+    Test case from RFC 7914 (example 3 in sect 12)
+} -constraints {crypto scrypt} -body {
+    ::ns_crypto::argon2 -variant ARGON2D -salt saltsalt -password 42
+    ::ns_crypto::scrypt -secret "pleaseletmein" -salt "SodiumChloride" -n 16384 -r 8 -p 1
+} -returnCodes {ok error} -result {7023bdcb3afd7348461c06cd81fd38ebfda8fbba904f8e3ea9b543f6545da1f2d5432955613f0fcf62d49705242a9af9e61e85dc0d651e40dfcf017b45575887}
+
+# test scrypt-1.3 {
+#     Test case from RFC 7914 (example 4 in sect 12)
+# } -constraints {crypto scrypt} -body {
+#     ::ns_crypto::scrypt -secret "pleaseletmein" -salt "SodiumChloride" -n 1048576 -r 8 -p 1
+# } -returnCodes {ok error} -result {2101cb9b6a511aaeaddbbe09cf70f881ec568d574a2ffd4dabe5ee9820adaa478e56fd8f4ba5d09ffa1c6d927c40f4c337304049e8a952fbcbf45c6fa77a41a4}
+
+############################################################################
+# Test Cases for ns_crypto::argon2
+############################################################################
+test argon2-1.1 {
+    Test case from the OpenSSL EVP_KDF-ARGON2 manual page, using ARGON2D
+} -constraints {crypto argon2} -body {
+    # This example uses Argon2d with password "1234567890", salt
+    # "saltsalt", using 2 lanes, 2 threads, and memory cost of 65536:
+    ::ns_crypto::argon2 -variant argon2d \
+        -password "1234567890" \
+        -salt "saltsalt" \
+        -memcost 65536 \
+        -lanes 2 \
+        -threads 2 \
+        -outlen 128
+} -returnCodes {ok error} -result {a86c83a19f0b234ecba8c275d16d059153f961e4c39ec9b1be98b3e73d791789363682443ad594334048634e91c493affed0bc29fd329a0e553c00149d6db19af4e4a354aec14dbd575d78ba87d4a4bc4746666e7a4e6ee1572bbffc2eba308a2d825cb7b41fde3a95d5cff0dfa2d0fdd636b32aea8b4a3c532742d330bd1b90}
+
+test argon2-1.2 {
+    Test case from RFC 9106, test vector 1 using ARGON2d
+} -constraints {crypto argon2} -body {
+    ::ns_crypto::argon2 -variant argon2d \
+        -password [binary format H* [string repeat 01 32]] \
+        -salt     [binary format H* [string repeat 02 16]] \
+        -secret   [binary format H* [string repeat 03 8]] \
+        -ad       [binary format H* [string repeat 04 12]] \
+        -iter 3 -memcost 32 -lanes 4 -outlen 32 -binary
+} -returnCodes {ok error} -result {512b391b6f1162975371d30919734294f868e3be3984f3c1a13a4db9fabe4acb}
+
+test argon2-1.3 {
+    Test case from RFC 9106, test vector 2 using ARGON2i
+} -constraints {crypto argon2} -body {
+    ::ns_crypto::argon2 -variant argon2i \
+        -password [binary format H* [string repeat 01 32]] \
+        -salt     [binary format H* [string repeat 02 16]] \
+        -secret   [binary format H* [string repeat 03 8]] \
+        -ad       [binary format H* [string repeat 04 12]] \
+        -iter 3 -memcost 32 -lanes 4 -outlen 32 -binary
+} -returnCodes {ok error} -result {c814d9d1dc7f37aa13f0d77f2494bda1c8de6b016dd388d29952a4c4672b6ce8}
+
+test argon2-1.4 {
+    Test case from RFC 9106, test vector 2 using ARGON2id
+} -constraints {crypto argon2} -body {
+    ::ns_crypto::argon2 -variant argon2id \
+        -password [binary format H* [string repeat 01 32]] \
+        -salt     [binary format H* [string repeat 02 16]] \
+        -secret   [binary format H* [string repeat 03 8]] \
+        -ad       [binary format H* [string repeat 04 12]] \
+        -iter 3 -memcost 32 -lanes 4 -outlen 32 -binary
+} -returnCodes {ok error} -result {0d640df58d78766c08c037a34a8b53c9d01ef0452d75b65eb52520e96b01e659}
+
+test argon2-1.5 {
+    Test case using size recommendations based on ARGON2ID
+} -constraints {crypto argon2} -body {
+    #
+    # This example uses argon2id with password "1234567890", 16 bytes
+    # salt, using 4 lanes and theads, and memory cost of 1 GB (1,0485,76 KB)
+    # and two iterations. The recommended time should be between 50ms and 500ms.
+    #
+    # https://argon2-cffi.readthedocs.io/en/stable/parameters.html
+    # https://www.ory.sh/choose-recommended-argon2-parameters-password-hashing/
+    set t [time {
+        set r [::ns_crypto::argon2 -variant argon2id \
+                   -password "1234567890" \
+                   -salt "saltsaltsaltsalt" \
+                   -memcost 1048576 \
+                   -lanes 4 \
+                   -iter 1 \
+                   -threads 4 \
+                   -outlen 16]
+    }]
+    ns_log notice "argon2id with sample configuration takes $t"
+    set r
+} -cleanup {
+    unset -nocomplain t r
+} -returnCodes {ok error} -result {fce738768c843779aac2cf2f8f0e0629}
+
+test argon2-1.6 {
+    Test case from the OpenSSL EVP_KDF-ARGON2 manual page, using ARGON2ID
+} -constraints {crypto argon2} -body {
+    #
+    # This example uses argon2id with password "1234567890", 16 bytes
+    # salt, using one of the recommendations of the OWASP project.
+    #
+    # https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#argon2id
+    set t [time {
+        set r [::ns_crypto::argon2 -variant argon2id \
+                   -password "1234567890" \
+                   -salt "saltsaltsaltsalt" \
+                   -memcost 12288 \
+                   -lanes 1 \
+                   -iter 3 \
+                   -threads 1 \
+                   -outlen 16]
+    }]
+    ns_log notice "argon2id with OWASP configuration takes $t"
+    set r
+} -cleanup {
+    unset -nocomplain t r
+} -returnCodes {ok error} -result {fd600c7fbbe5be5155d043c79dbc31d4}
 
 
 #

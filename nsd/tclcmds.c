@@ -61,6 +61,7 @@ static const Cmd basicCmds[] = {
     {"ns_crypt",                 NULL, NsTclCryptObjCmd},
     {"ns_crypto::aead::decrypt", NULL, NsTclCryptoAeadDecryptObjCmd},
     {"ns_crypto::aead::encrypt", NULL, NsTclCryptoAeadEncryptObjCmd},
+    {"ns_crypto::argon2",        NULL, NsTclCryptoArgon2ObjCmd},
     {"ns_crypto::eckey",         NULL, NsTclCryptoEckeyObjCmd},
     {"ns_crypto::hmac",          NULL, NsTclCryptoHmacObjCmd},
     {"ns_crypto::md",            NULL, NsTclCryptoMdObjCmd},

@@ -60,7 +60,7 @@ AEAD has the following properties:
 authentication [term tag] used for decryption.
 
 [para] The option [option "-aad"] can be used to specify
-Additional Authenticated Data (AAD),which is data handled by
+Additional Authenticated Data (AAD), which is data handled by
 encryption, which is sent in clear text. The encryption still provides
 authenticity for AAD. AAD can be used e.g. for addresses, ports,
 sequence numbers, protocol version numbers.
@@ -113,6 +113,87 @@ The result is a byte string of the decrypted input (no dict).
     -key secret -tag [lb]dict get $d tag[rb] \
     -encoding binary [lb]dict get $d bytes[rb]
 [example_end]
+
+
+
+[call [cmd "ns_crypto::argon2"] \
+     [opt [option -binary]] \
+     [opt [option "-password [arg password]"]] \
+     [opt [option "-salt [arg salt]"]] \
+     [opt [option "-ad [arg ad]"]] \
+     [opt [option "-iter [arg iter]"]] \
+     [opt [option "-lanes [arg lanes]"]] \
+     [opt [option "-memcost [arg memcost]"]] \
+     [opt [option "-outlen [arg outlen]"]] \
+     [opt [option "-secret [arg secret]"]] \
+     [opt [option "-threads [arg threads]"]] \
+     [opt [option "-variant [arg Argon2id|Argon2i|Argon2d]"]] \
+]
+
+Compute a password hash or a derived key based on the Argon2 family
+of functions (RFC 9106, published in 2021) and return the hash (named
+"tag" in the RFC) in the specified encoding (default hex).
+
+[para] Argon2 is a modern replacement for crypt and bcrypt and derives
+more secret keys from a secret string. Argon2 was selected as the
+winner of the 2015 Password Hashing Competition and is the recommended
+password hashing algorithm of the OWASP project.
+
+The algorithm is defined in 3 different variants, named Argon2d
+(providing resistance GPU cracking attacks), Argon2i (resist
+side-channel attacks) and Argon2id (hybrid version, based on Argon2d
+and Argon2i).
+
+[para] Argon2 has several parameters to provide control over execution time,
+required memory, and degree of parallelism to tailor security
+requirements of a site, to provide high security against modern
+password cracking hardware.
+
+The function requires the compilation of NaviServer against
+OpenSSL 3.2 or newer. The names of the parameters correspond to the
+names of the parameters provided for the C-level API, so additional
+information can be obtained from the OpenSSL documentation.
+
+[para] When the option [option -binary] is specified, it applies to
+the input parameters [option -ad], [option -password], [option -salt],
+and [option -secret].
+
+[para] The provided [option "-salt"] must be at least 8 bytes.
+
+[para] The option [option "-iter"] can be used to specify the number
+of iterations of the algorithm (sometimes named "passes"). The default
+value is 3.
+
+[para] The option [option "-lanes"] can be used to specify the number
+of memory segments that can be processed in parallel. The number of
+used threads depends on the [option "-threads"] parameter. The
+provided value influences the result. The default value of "lanes" is
+1.
+
+[para] The option [option "-memcost"] can be used to specify the
+memory cost specified in 1 KB blocks. The default value is
+1024 (i.e. 1 MB).
+
+[para] The option [option "-outlen"] can be used to specify the
+length of the resulting tag in bytes. The default value is 64.
+
+[para] The option [option "-secret"] can be used to specify an
+additional secret (sometimes called pepper) to be used an optional
+secret data used along the password.
+
+[para] The option [option "-threads"] can be used to specify the
+number of threads for the computation of the lanes. The provided value
+does not influence the result, but just the duration of the command.
+The default value is 1.
+
+[para] The option [option "-variant"] can be used to specify the
+variant of the command.  The default value is "Argon2id".
+
+[example_begin]
+ % ::ns_crypto::argon2 -variant argon2id -salt saltsalt -password 42 -outlen 16
+ d508696098fa42e70058a3141d1c7464
+[example_end]
+
 
 
 [call [cmd "ns_crypto::eckey generate"] \
@@ -351,10 +432,10 @@ Return the specified number of random bytes in the specified encoding
      [opt [option "-secret [arg secret]"]] \
      [opt [option "-salt [arg salt]"]] \
      [opt [option "-n [arg n]"]] \
-     [opt [option "-n [arg r]"]] \
-     [opt [option "-n [arg p]"]] \
+     [opt [option "-r [arg r]"]] \
+     [opt [option "-p [arg p]"]] \
      [opt [option "-encoding [arg encoding]"]] \
-     [arg nrbytes]]
+     ]
 
 Compute a password hash based on the scrypt Password-Based Key
 Derivation Function (RFC 7914) and return the specified number of

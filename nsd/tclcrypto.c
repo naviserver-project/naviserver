@@ -1766,23 +1766,24 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
       ############################################################################
       # Test Case 2: RFC 7914 (example 3 in sect 12)
       ############################################################################
-      ::ns_crypto::scrypt -secret "pleaselectmein" -salt SodiumChloride -n 16384 -r 8 -p 1
+      ::ns_crypto::scrypt -secret "pleaseletmein" -salt "SodiumChloride" -n 16384 -r 8 -p 1
 
       7023bdcb3afd7348461c06cd81fd38ebfda8fbba904f8e3ea9b543f6545da1f2
       d5432955613f0fcf62d49705242a9af9e61e85dc0d651e40dfcf017b45575887
 
-      % time {::ns_crypto::scrypt -secret "pleaselectmein" -salt SodiumChloride -n 16384 -r 8 -p 1}
+      % time {::ns_crypto::scrypt -secret "pleaseletmein" -salt "SodiumChloride" -n 16384 -r 8 -p 1}
       47901 microseconds per iteration
 
       ############################################################################
       # Test Case 3: RFC 7914 (example 4 in sect 12)
       ############################################################################
       ::ns_crypto::scrypt -secret "pleaselectmein" -salt SodiumChloride -n 1048576 -r 8 -p 1
+      ::ns_crypto::scrypt -secret "pleaseletmein" -salt "SodiumChloride" -n 1048576 -r 8 -p 1
 
       2101cb9b6a511aaeaddbbe09cf70f881ec568d574a2ffd4dabe5ee9820adaa47
       8e56fd8f4ba5d09ffa1c6d927c40f4c337304049e8a952fbcbf45c6fa77a41a4
 
-      % time {::ns_crypto::scrypt -secret "pleaselectmein" -salt SodiumChloride -n 1048576 -r 8 -p 1}
+      % time {::ns_crypto::scrypt -secret "pleaseletmein" -salt "SodiumChloride" -n 1048576 -r 8 -p 1}
       3095741 microseconds per iteration
     */
 
@@ -1814,7 +1815,6 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
          */
         Tcl_DStringInit(&saltDs);
         Tcl_DStringInit(&secretDs);
-        //keyString = ns_malloc((size_t)outLength);
 
         saltString   = Ns_GetBinaryString(saltObj,   isBinary == 1, &saltLength,   &saltDs);
         secretString = Ns_GetBinaryString(secretObj, isBinary == 1, &secretLength, &secretDs);
@@ -1828,15 +1828,11 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
         *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_SALT,
                                                  (void*)saltString, (size_t)saltLength);
         *p++ = OSSL_PARAM_construct_uint64(OSSL_KDF_PARAM_SCRYPT_N, &nValueSSL);
-        *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_SCRYPT_R, &pValueSSL);
-        *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_SCRYPT_P, &rValueSSL);
+        *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_SCRYPT_R, &rValueSSL);
+        *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_SCRYPT_P, &pValueSSL);
         *p = OSSL_PARAM_construct_end();
 
-        if (EVP_KDF_CTX_set_params(kctx, params) <= 0) {
-            Ns_TclPrintfResult(interp, "could not set parameters");
-            result = TCL_ERROR;
-
-        } else if (EVP_KDF_derive(kctx, out, sizeof(out), NULL) <= 0) {
+        if (EVP_KDF_derive(kctx, out, sizeof(out), params) <= 0) {
             Ns_TclPrintfResult(interp, "could not derive key");
             result = TCL_ERROR;
 
@@ -1845,6 +1841,8 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
              * Convert the result to the output format and set the interp
              * result.
              */
+            /*printf("Output = %s\n", OPENSSL_buf2hexstr(out, sizeof(out)));*/
+
             Tcl_SetObjResult(interp, EncodedObj(out, sizeof(out), NULL, encoding));
             result = TCL_OK;
         }
@@ -1869,6 +1867,205 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int U
 }
 # endif
 
+# if defined(HAVE_OPENSSL_3) && OPENSSL_VERSION_PREREQ(3,2)
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclCryptoArgon2ObjCmd --
+ *
+ *      Compute a "password hash" using the Argon2d Password-Based
+ *      Key Derivation Function (RFC 9106) as defined in OpenSSL 3.2.
+ *
+ *      Parameters (as defined in RFC 9106)
+ *        P message string
+ *        S nonce, salt
+ *        T tag length
+ *        p degree of parallelism (lanes)
+ *        m memory size
+ *        t number of passes
+ *        K secret value (optional)
+ *        X associated data (optional)
+ *
+ *      Test vectors:
+ *        m 32 KiB, t 3, p 4, T 32
+ *
+ *      Implements "ns_crypto::argon2".
+ *
+ * Results:
+ *      Tcl result code
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+#include <openssl/thread.h>         /* OSSL_set_max_threads */
+
+int
+NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+{
+    int                result, isBinary = 0, memcost = 1024, iter = 3, lanes = 1, threads = 1, outlen = 64;
+    Tcl_Obj           *saltObj = NULL, *secretObj = NULL, *adObj = NULL, *passObj = NULL;
+    Ns_BinaryEncoding  encoding = RESULT_ENCODING_HEX;
+    char              *variant = "Argon2id";
+    Ns_ObjvSpec lopts[] = {
+        {"-binary",   Ns_ObjvBool,    &isBinary,  INT2PTR(NS_TRUE)},
+        {"-ad",       Ns_ObjvObj,     &adObj,      NULL},
+        {"-iter",     Ns_ObjvInt,     &iter,       &posIntRange1},
+        {"-lanes",    Ns_ObjvInt,     &lanes,      &posIntRange1},
+        {"-memcost",  Ns_ObjvInt,     &memcost,    &posIntRange1},
+        {"-outlen",   Ns_ObjvInt,     &outlen,     &posIntRange1},
+        {"-password", Ns_ObjvObj,     &passObj,    NULL},
+        {"-salt",     Ns_ObjvObj,     &saltObj,    NULL},
+        {"-secret",   Ns_ObjvObj,     &secretObj,  NULL},
+        {"-threads",  Ns_ObjvInt,     &threads,    NULL},
+        {"-variant",  Ns_ObjvString,  &variant,    NULL},
+        {"-encoding", Ns_ObjvIndex,   &encoding,   binaryencodings},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(lopts, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (saltObj == NULL) {
+        Ns_TclPrintfResult(interp, "no -salt specified");
+        result = TCL_ERROR;
+
+    } else if (threads > lanes)  {
+        Ns_TclPrintfResult(interp, "requested more threads than lanes");
+        result = TCL_ERROR;
+
+    } else if (memcost < 8 * lanes) {
+        Ns_TclPrintfResult(interp, "memcost must be greater or equal than 8 times the number of lanes");
+        result = TCL_ERROR;
+
+    } else {
+        EVP_KDF             *kdf;
+        EVP_KDF_CTX         *kctx = NULL;
+        Tcl_DString          saltDs, secretDs, adDs, passDs, outDs;
+        TCL_SIZE_T           saltLength, secretLength = 0, adLength = 0, passLength = 0;
+        const unsigned char *saltString, *secretString = NULL, *adString = NULL, *passString = NULL;
+        OSSL_PARAM           params[9], *p = params;
+        uint32_t             memcostSSL = (uint32_t)memcost; // memory, OSSL_KDF_PARAM_ARGON2_MEMCOST
+        uint32_t             iterSSL = (uint32_t)iter; // passes, OSSL_KDF_PARAM_ITER
+        uint32_t             lanesSSL = (uint32_t)lanes; // lanes, OSSL_KDF_PARAM_ARGON2_LANES
+        uint32_t             threadsSSL = (uint32_t)threads; // OSSL_KDF_PARAM_ARGON2_THREADS
+
+        /*
+         * All input parameters are valid, get key and data.
+         */
+        Tcl_DStringInit(&saltDs);
+        Tcl_DStringInit(&secretDs);
+        Tcl_DStringInit(&adDs);
+        Tcl_DStringInit(&passDs);
+        Tcl_DStringInit(&outDs);
+
+        if (threads > 1) {
+            if (OSSL_set_max_threads(NULL, threads) != 1) {
+                Ns_TclPrintfResult(interp, "could not set max threads");
+                result = TCL_ERROR;
+                goto cleanup;
+            }
+            *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_THREADS, &threadsSSL);
+        }
+
+        saltString   = Ns_GetBinaryString(saltObj,   isBinary == 1, &saltLength,   &saltDs);
+        if (saltLength < 8) {
+            Ns_TclPrintfResult(interp, "salt must be at least 64 bits (8 characters)");
+            result = TCL_ERROR;
+            goto cleanup;
+        }
+        //NsHexPrint("saltString", saltString, (size_t)saltLength, 32, NS_FALSE);
+        *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_SALT, (void*)saltString, saltLength);
+
+        if (secretObj != NULL) {
+            secretString = Ns_GetBinaryString(secretObj, isBinary == 1, &secretLength, &secretDs);
+            //NsHexPrint("secretString", secretString, (size_t)secretLength, 32, NS_FALSE);
+            *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_SECRET,
+                                                     (void*)secretString, secretLength);
+        }
+        if (adObj != NULL) {
+            adString = Ns_GetBinaryString(adObj,     isBinary == 1, &adLength,     &adDs);
+            //NsHexPrint("adString", adString, (size_t)adLength, 32, NS_FALSE);
+            *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_ARGON2_AD,
+                                                     (void*)adString, adLength);
+        }
+        if (passObj != NULL) {
+            passString = Ns_GetBinaryString(passObj, isBinary == 1, &passLength,   &passDs);
+            //NsHexPrint("passString", passString, (size_t)passLength, 32, NS_FALSE);
+            *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_PASSWORD,
+                                                     (void*)passString, passLength);
+        }
+
+        /*fprintf(stderr, "variant %s pass (%d) secret (%d) salt (%d) threads %d iter %d lanes %d memcost %d\n",
+                variant,
+                passLength, secretLength, saltLength,
+                threads, iterSSL, lanesSSL, memcostSSL);*/
+
+        *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_ARGON2_LANES, &lanesSSL);
+        *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_ARGON2_MEMCOST, &memcostSSL);
+        *p++ = OSSL_PARAM_construct_uint32(OSSL_KDF_PARAM_ITER, &iterSSL);
+        *p = OSSL_PARAM_construct_end();
+
+        kdf = EVP_KDF_fetch(NULL, variant, NULL);
+        if (kdf != NULL) {
+            kctx = EVP_KDF_CTX_new(kdf);
+            EVP_KDF_free(kdf);
+        }
+        if (kctx == NULL) {
+            Ns_TclPrintfResult(interp, "argon2: could not initialize KDF context for algorithm '%s'", variant);
+            result = TCL_ERROR;
+            goto cleanup;
+        }
+
+        Tcl_DStringSetLength(&outDs, outlen);
+
+        if (EVP_KDF_CTX_set_params(kctx, params) <= 0) {
+            Ns_TclPrintfResult(interp, "argon2: could not set parameters");
+            result = TCL_ERROR;
+
+        } else if (EVP_KDF_derive(kctx, (unsigned char *)outDs.string, outlen, params) <= 0) {
+            Ns_TclPrintfResult(interp, "argon2: could not derive key");
+            result = TCL_ERROR;
+        }  else {
+            /*
+             * Convert the result to the output format and set the interp
+             * result.
+             */
+            //fprintf(stderr, "Output = %s\n", OPENSSL_buf2hexstr((unsigned char *)outDs.string, outlen));
+
+            Tcl_SetObjResult(interp, EncodedObj((unsigned char *)outDs.string, outlen, NULL, encoding));
+            result = TCL_OK;
+        }
+
+    cleanup:
+        /*
+         * Clean up.
+         */
+        Tcl_DStringFree(&saltDs);
+        Tcl_DStringFree(&secretDs);
+        Tcl_DStringFree(&adDs);
+        Tcl_DStringFree(&passDs);
+        Tcl_DStringFree(&outDs);
+
+        if (kctx != NULL) {
+            EVP_KDF_CTX_free(kctx);
+        }
+    }
+
+    return result;
+}
+# else
+int
+NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
+{
+    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 3.2 built into NaviServer");
+    return TCL_ERROR;
+}
+# endif
 
 /*
  *----------------------------------------------------------------------
@@ -3169,6 +3366,14 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int U
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 3.0 built into NaviServer");
     return TCL_ERROR;
 }
+
+int
+NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
+{
+    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 3.2 built into NaviServer");
+    return TCL_ERROR;
+}
+
 #endif
 
 /*
