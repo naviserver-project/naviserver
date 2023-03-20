@@ -1907,7 +1907,7 @@ NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
     int                result, isBinary = 0, memcost = 1024, iter = 3, lanes = 1, threads = 1, outlen = 64;
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL, *adObj = NULL, *passObj = NULL;
     Ns_BinaryEncoding  encoding = RESULT_ENCODING_HEX;
-    char              *variant = "Argon2id";
+    const char        *variant = "Argon2id";
     Ns_ObjvSpec lopts[] = {
         {"-binary",   Ns_ObjvBool,    &isBinary,  INT2PTR(NS_TRUE)},
         {"-ad",       Ns_ObjvObj,     &adObj,      NULL},
@@ -1964,7 +1964,7 @@ NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
         Tcl_DStringInit(&outDs);
 
         if (threads > 1) {
-            if (OSSL_set_max_threads(NULL, threads) != 1) {
+            if (OSSL_set_max_threads(NULL, threadsSSL) != 1) {
                 Ns_TclPrintfResult(interp, "could not set max threads");
                 result = TCL_ERROR;
                 goto cleanup;
@@ -1979,25 +1979,26 @@ NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
             goto cleanup;
         }
         //NsHexPrint("saltString", saltString, (size_t)saltLength, 32, NS_FALSE);
-        *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_SALT, (void*)saltString, saltLength);
+        *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_SALT,
+                                                 (void*)saltString, (size_t)saltLength);
 
         if (secretObj != NULL) {
             secretString = Ns_GetBinaryString(secretObj, isBinary == 1, &secretLength, &secretDs);
             //NsHexPrint("secretString", secretString, (size_t)secretLength, 32, NS_FALSE);
             *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_SECRET,
-                                                     (void*)secretString, secretLength);
+                                                     (void*)secretString, (size_t)secretLength);
         }
         if (adObj != NULL) {
             adString = Ns_GetBinaryString(adObj,     isBinary == 1, &adLength,     &adDs);
             //NsHexPrint("adString", adString, (size_t)adLength, 32, NS_FALSE);
             *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_ARGON2_AD,
-                                                     (void*)adString, adLength);
+                                                     (void*)adString, (size_t)adLength);
         }
         if (passObj != NULL) {
             passString = Ns_GetBinaryString(passObj, isBinary == 1, &passLength,   &passDs);
             //NsHexPrint("passString", passString, (size_t)passLength, 32, NS_FALSE);
             *p++ = OSSL_PARAM_construct_octet_string(OSSL_KDF_PARAM_PASSWORD,
-                                                     (void*)passString, passLength);
+                                                     (void*)passString, (size_t)passLength);
         }
 
         /*fprintf(stderr, "variant %s pass (%d) secret (%d) salt (%d) threads %d iter %d lanes %d memcost %d\n",
@@ -2027,7 +2028,7 @@ NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
             Ns_TclPrintfResult(interp, "argon2: could not set parameters");
             result = TCL_ERROR;
 
-        } else if (EVP_KDF_derive(kctx, (unsigned char *)outDs.string, outlen, params) <= 0) {
+        } else if (EVP_KDF_derive(kctx, (unsigned char *)outDs.string, (size_t)outlen, params) <= 0) {
             Ns_TclPrintfResult(interp, "argon2: could not derive key");
             result = TCL_ERROR;
         }  else {
@@ -2037,7 +2038,7 @@ NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
              */
             //fprintf(stderr, "Output = %s\n", OPENSSL_buf2hexstr((unsigned char *)outDs.string, outlen));
 
-            Tcl_SetObjResult(interp, EncodedObj((unsigned char *)outDs.string, outlen, NULL, encoding));
+            Tcl_SetObjResult(interp, EncodedObj((unsigned char *)outDs.string, (size_t)outlen, NULL, encoding));
             result = TCL_OK;
         }
 
