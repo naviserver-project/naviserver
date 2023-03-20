@@ -430,7 +430,6 @@ test scrypt-1.1 {
 test scrypt-1.2 {
     Test case from RFC 7914 (example 3 in sect 12)
 } -constraints {crypto scrypt} -body {
-    ::ns_crypto::argon2 -variant ARGON2D -salt saltsalt -password 42
     ::ns_crypto::scrypt -secret "pleaseletmein" -salt "SodiumChloride" -n 16384 -r 8 -p 1
 } -returnCodes {ok error} -result {7023bdcb3afd7348461c06cd81fd38ebfda8fbba904f8e3ea9b543f6545da1f2d5432955613f0fcf62d49705242a9af9e61e85dc0d651e40dfcf017b45575887}
 
