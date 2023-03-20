@@ -31,11 +31,11 @@ location string.
     ns_locationproc ::nstest::location
 
     ad_proc ::nstest::location {args} {
-        set location [ns_conn protocol]://[ns_set iget [ns_conn headers] host]
+        set location [lb]ns_conn protocol[rb]://[lb]ns_set iget [lb]ns_conn headers[rb] host[rb]
         ns_log notice "LOCATION-PROC args <$args> - location <$location>"
         return $location
     }
-    ns_log notice "SOURCING location-procs.tcl <[ns_info server]>"
+    ns_log notice "SOURCING location-procs.tcl <[lb]ns_info server[rb]>"
  }
 [example_end]
 
