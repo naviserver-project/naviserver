@@ -432,7 +432,7 @@ results to a file if the result is larger than 1000 bytes.
 [example_end]
 
 The next example is for downloading a file from the web into a named file
-or passed Tcl channel. Note the [option -spoolsize] of zero
+or passed Tcl channel. Note the [option -spoolsize] of zero,
 which will redirect all received data into the file/channel.
 Without the [option -spoolsize] set, all the data would be
 otherwise stored in memory.

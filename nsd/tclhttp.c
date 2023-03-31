@@ -4629,6 +4629,7 @@ HttpProc(
                                 && (httpPtr->flags & NS_HTTP_FLAG_CHUNKED_END) == 0u)
                             || ((httpPtr->flags & NS_HTTP_FLAG_CHUNKED) == 0u
                                 && httpPtr->replyLength == 0
+                                && httpPtr->replySize != 0
                                 && (httpPtr->flags & NS_HTTP_FLAG_EMPTY) == 0u)
                         ) {
                             taskDone = NS_FALSE;
@@ -4637,11 +4638,14 @@ HttpProc(
                         Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_READ httpPtr->replyLength %ld"
                                " httpPtr->replySize %ld flags %.6x %d %d %d -> done %d",
                                httpPtr->replyLength, httpPtr->replySize, httpPtr->flags,
-                               (httpPtr->replyLength > 0 && httpPtr->replySize < httpPtr->replyLength),
+                               (httpPtr->replyLength > 0
+                                && httpPtr->replySize < httpPtr->replyLength
+                                && (httpPtr->flags & NS_HTTP_FLAG_EMPTY) == 0u),
                                ((httpPtr->flags & NS_HTTP_FLAG_CHUNKED) != 0u
                                 && (httpPtr->flags & NS_HTTP_FLAG_CHUNKED_END) == 0u),
                                ((httpPtr->flags & NS_HTTP_FLAG_CHUNKED) == 0u
                                 && httpPtr->replyLength == 0
+                                && httpPtr->replySize != 0
                                 && (httpPtr->flags & NS_HTTP_FLAG_EMPTY) == 0u),
                                taskDone);
                     }
