@@ -320,7 +320,8 @@ DStringAppendHttpFlags(Tcl_DString *dsPtr, unsigned int flags)
         { NS_HTTP_FLAG_BINARY,        "BINARY" },
         { NS_HTTP_FLAG_EMPTY,         "EMPTY" },
         { NS_HTTP_KEEPALIVE,          "KEEPALIVE" },
-        { NS_HTTP_VERSION_1_1,        "1.1" }
+        { NS_HTTP_VERSION_1_1,        "1.1" },
+        { NS_HTTP_STREAMING,          "STREAMING" }
     };
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
@@ -2570,6 +2571,12 @@ HttpCheckSpool(
                  * Why is this header field deleted here?
                  */
                 Ns_SetIDeleteKey(httpPtr->replyHeaders, transferEncodingHeader);
+            } else {
+                /*
+                 * No content-length provided and not chunked, assume
+                 * streaming HTML.
+                 */
+                httpPtr->flags |= NS_HTTP_STREAMING;
             }
         }
 
@@ -4625,6 +4632,7 @@ HttpProc(
                             (httpPtr->replyLength > 0
                              && httpPtr->replySize < httpPtr->replyLength
                              && (httpPtr->flags & NS_HTTP_FLAG_EMPTY) == 0u)
+                            || (httpPtr->flags & NS_HTTP_STREAMING) != 0u /* we rely on connection-close */
                             || ((httpPtr->flags & NS_HTTP_FLAG_CHUNKED) != 0u
                                 && (httpPtr->flags & NS_HTTP_FLAG_CHUNKED_END) == 0u)
                             || ((httpPtr->flags & NS_HTTP_FLAG_CHUNKED) == 0u
@@ -4636,8 +4644,9 @@ HttpProc(
                         }
                         LogDebug("read ok", httpPtr, "");
                         Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_READ httpPtr->replyLength %ld"
-                               " httpPtr->replySize %ld flags %.6x %d %d %d -> done %d",
+                               " httpPtr->replySize %ld flags %.6x %d %d %d %d -> done %d",
                                httpPtr->replyLength, httpPtr->replySize, httpPtr->flags,
+                               (httpPtr->flags & NS_HTTP_STREAMING) != 0u,
                                (httpPtr->replyLength > 0
                                 && httpPtr->replySize < httpPtr->replyLength
                                 && (httpPtr->flags & NS_HTTP_FLAG_EMPTY) == 0u),
