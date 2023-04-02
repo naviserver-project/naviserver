@@ -1887,7 +1887,6 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int U
 }
 # endif
 
-
 /*
  *----------------------------------------------------------------------
  *
