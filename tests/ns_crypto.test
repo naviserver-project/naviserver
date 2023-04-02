@@ -347,11 +347,21 @@ test base64-md5.0 {
     ns_base64encode and decode with 2 byte UTF-8 character "ü"
 } -body {
     set string "ü"
-    ns_log notice "obj(inp) [nsf::__db_get_obj $string]"
+    ns_log notice 00-literal-ü
+    set m00 [ns_md5 "ü"]
+    ns_log notice 01-var-string-before-convertfrom
+    ns_log notice "obj(inp0) [nsf::__db_get_obj $string]"
+    set m01 [ns_md5 $string]
+    ns_log notice "obj(inp1) [nsf::__db_get_obj $string]"
     set s1 [encoding convertfrom utf-8 $string]
+    ns_log notice 02-var-string-after-convertfrom
+    ns_log notice "obj(inp2) [nsf::__db_get_obj $string]"
+    set m02 [ns_md5 $string]
+    ns_log notice 03-var-s1
+    set m02 [ns_md5 $s1]
     ns_log notice "obj(res) [nsf::__db_get_obj $s1]"
-
     set m0 [ns_md5 $string]
+
     ns_log notice "obj(str0) [nsf::__db_get_obj $string] $m0 $string"
     set encoded [ns_base64encode $string]
     set decoded [ns_base64decode $encoded]
@@ -360,7 +370,7 @@ test base64-md5.0 {
     set decoded2 [encoding convertfrom utf-8 $decoded]; # FAILS with TIP 657 branch
     set m2 [ns_md5 $decoded2]
     ns_log notice "obj(dec2) [nsf::__db_get_obj $decoded] $m2 $decoded2"
-    list $m0 $m1 [string equal $m0 $m1] [string equal $m0 $m2]
+    list $m01 $m1 [string equal $m01 $m1] [string equal $m01 $m2]
 } -returnCodes {ok error} -result {C03410A5204B21CD8229FF754688D743 C03410A5204B21CD8229FF754688D743 1 1}
 
 test base64-md5.1 {
@@ -382,11 +392,15 @@ test base64-md5.1 {
 } -result {C03410A5204B21CD8229FF754688D743 C03410A5204B21CD8229FF754688D743 C03410A5204B21CD8229FF754688D743}
 
 test base64-md5.2 {
-    ns_base64encode and decode with 2 byte UTF-8 character "ü"
+    ns_base64decode and tcl base64decode of binary data
 } -constraints tcl86 -body {
     set encoded {I+w+Yr+CXWGVsk2ZbqqzZlKcTuEM8TCMLOYjBv1h8xo2txA0Q5UX7v5gd5j6e8x1eIWGcfd3ORH2Vgt2HcDURw==}
     set ns_dec  [ns_base64decode -binary $encoded]
+    ns_log notice "obj(ns_dec) [nsf::__db_get_obj $ns_dec]"
     set tcl_dec [binary decode base64 $encoded]
+    ns_log notice "obj(tcl_de) [nsf::__db_get_obj $tcl_dec]"
+    # The following two ns_md5 commands have to autodetect the byte
+    # array
     set m0 [ns_md5 $ns_dec]
     set m1 [ns_md5 $tcl_dec]
     #ns_log notice "obj(ns_dec) [nsf::__db_get_obj $ns_dec] $m0"

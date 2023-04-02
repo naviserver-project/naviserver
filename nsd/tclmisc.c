@@ -847,7 +847,7 @@ Base64DecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
         size = (size_t)len + 3u;
         decoded = (unsigned char *)ns_malloc(size);
         size = Ns_HtuuDecode2(chars, decoded, size, encoding);
-        // hexPrint("decoded", decoded, size);
+        //NsHexPrint("base64 decoded", decoded, size, 30, NS_FALSE);
 
         if (isBinary) {
             Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, (TCL_SIZE_T)size));
@@ -1886,6 +1886,8 @@ NsTclMD5ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
 
         Tcl_DStringInit(&ds);
         str = Ns_GetBinaryString(charsObj, isBinary == 1, &length, &ds);
+        //NsHexPrint("md5 input data", str, length, 30, NS_FALSE);
+
         Ns_CtxMD5Init(&ctx);
         Ns_CtxMD5Update(&ctx, (const unsigned char *) str, (size_t)length);
         Ns_CtxMD5Final(&ctx, digest);
