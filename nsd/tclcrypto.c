@@ -1867,7 +1867,7 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int U
 }
 # endif
 
-# if defined(HAVE_OPENSSL_3) && OPENSSL_VERSION_PREREQ(3,2)
+# ifdef HAVE_OPENSSL_3_2
 /*
  *----------------------------------------------------------------------
  *
