@@ -2786,7 +2786,7 @@ CryptoAeadStringGetArguments(
             result = TCL_ERROR;
 
         } else {
-            *inputStringPtr = Ns_GetBinaryString(inputObj, isBinary == 1, inputLengthPtr, inputDsPtr);
+            *inputStringPtr = Ns_GetBinaryString(inputObj, NS_TRUE, inputLengthPtr, inputDsPtr);
             result = TCL_OK;
         }
     }

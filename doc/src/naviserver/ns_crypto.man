@@ -80,7 +80,7 @@ encryption.
 [para] The argument [arg input] is the data to be encrypted.
 
 [para] When the option [option -binary] is specified, it applies to
-[option -key], [option -aad], [option -iv], [arg input],
+[option -key], [option -aad], [option -iv], [arg input].
 
 [example_begin]
  % ns_crypto::aead::encrypt string -cipher aes-128-gcm -iv 123456789 -key secret "hello world"
@@ -103,7 +103,8 @@ This function implements the inverse function of
 The result is a byte string of the decrypted input (no dict).
 
 [para] When the option [option -binary] is specified, it applies to
-[option -key], [option -aad], [option -iv], [option -tag], [arg input],
+[option -key], [option -aad], [option -iv], and [option -tag].
+The argument [arg input] (the cipher text) is always treated as byte array.
 
 [example_begin]
  % set d [lb]ns_crypto::aead::encrypt string -cipher aes-128-gcm -iv 123456789 \
