@@ -660,9 +660,8 @@ Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *
      * d5b6c20ee0b3f6dafa632a63eafe3fd0db26752d
      *
      */
-
+    Ns_Log(Debug, "Ns_GetBinaryString is byte-array: %d", NsTclObjIsByteArray(obj));
     if (forceBinary || NsTclObjIsByteArray(obj)) {
-        //fprintf(stderr, "NsTclObjIsByteArray\n");
         result = (unsigned char *)Tcl_GetByteArrayFromObj(obj, lengthPtr);
     } else {
         int         stringLength;

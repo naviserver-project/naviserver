@@ -438,10 +438,16 @@ NsTclObjIsByteArray(const Tcl_Obj *objPtr)
      * 8.7a1, Tcl has introduced the properByteArrayTypePtr, which allows as
      * well a string rep.
      */
+    Ns_Log(Debug, "NsTclObjIsByteArray %p byteArrayTypePtr %d properByteArrayTypePtr %d"
+           "objPtr->bytes %p",
+           (void*)objPtr,
+           (objPtr->typePtr == byteArrayTypePtr),
+           (objPtr->typePtr == properByteArrayTypePtr),
+           (void*)objPtr->bytes);
 #ifdef NS_TCL_PRE87
     result = ((objPtr->typePtr == byteArrayTypePtr) && (objPtr->bytes == NULL));
 #else
-    result = (objPtr->typePtr == properByteArrayTypePtr);
+    result = (objPtr->typePtr == properByteArrayTypePtr) && (objPtr->bytes == NULL);
 #endif
 
 #if 0
