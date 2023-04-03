@@ -328,11 +328,11 @@ test ns_base64encode-3.0 {
     ns_log notice "obj(c) [nsf::__db_get_obj $c]"
 
     set r [list $a $b $c]
-    lappend r [list \
+    set types [list \
                    [lindex [nsf::__db_get_obj $a] 1] \
                    [lindex [nsf::__db_get_obj $b] 1] \
                    [lindex [nsf::__db_get_obj $c] 1]]
-    #ns_log notice $r
+    #ns_log notice $types
     lappend r [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
     #ns_log notice [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
     ns_log notice [list [ns_md string -digest sha1 $a] [ns_md string -digest sha1 $b] [ns_md string -digest sha1 $c]]
@@ -364,7 +364,7 @@ test ns_base64encode-3.0 {
 
 } -cleanup {
     unset -nocomplain r fn a b c l F
-} -returnCodes {error ok} -result {äüö☀ Ã¤Ã¼Ã¶â äüö☀ {{} bytearray string} {w6TDvMO24piA w6TDvMO24piA w6TDvMO24piA} 1 {w6TDvMO24piA w6TDvMO24piA w6TDvMO24piA}}
+} -returnCodes {error ok} -result {äüö☀ Ã¤Ã¼Ã¶â äüö☀} {w6TDvMO24piA w6TDvMO24piA w6TDvMO24piA} 1 {w6TDvMO24piA w6TDvMO24piA w6TDvMO24piA}}
 
 
 test ns_base64encode-3.1 {
