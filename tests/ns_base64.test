@@ -351,7 +351,7 @@ test ns_base64encode-3.0 {
     #ns_logctl severity Debug on
     #set md [ns_md string -digest sha1 $a]
     #ns_log notice "====== WQ [string equal 7e32f884eaf0cbdf8c2df9e481ea9bef3ddbc4cf $md]==========================="
-    lappend r [list \
+    set types  [list \
                    [lindex [nsf::__db_get_obj $a] 1] \
                    [lindex [nsf::__db_get_obj $b] 1] \
                    [lindex [nsf::__db_get_obj $c] 1]]
