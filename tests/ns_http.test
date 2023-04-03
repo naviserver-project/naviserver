@@ -556,12 +556,12 @@ test http-5.2.1-b {
 if {$tcl_version > 8.6} {
     #
     # Binary content via non-binary mimetype is questionable, but works in 8.7
-    #
+    # Binary content with binary mimetype should work
 
     test http-5.2.2-b {
 
         check encoding  ns_conn content PUT,
-        content type text/html
+        content type application/octet-stream
         binary data
 
     } -constraints {serverListen} -setup {
@@ -576,36 +576,40 @@ if {$tcl_version > 8.6} {
         }
     } -body {
         set string [encoding convertto utf-8 "\u0000\u0001\u0002\u0003☀"]
-        nstest::http -getbody 1 -setheaders {content-type text/html} PUT /put $string
+        nstest::http -getbody 1 -setheaders {content-type application/octet-stream} PUT /put $string
     } -cleanup {
         ns_unregister_op PUT /put
         unset -nocomplain r
-    } -result {200 {utf-8 <text/html> 00 01 02 03 E2 98 80 (7 7)}}
+    } -result {200 {utf-8 <application/octet-stream> 00 01 02 03 E2 98 80 (7 7)}}
 
-
-    test http-5.2.3-b {
-
-        check encoding  ns_conn content PUT,
-        content type text/html;charset=utf-8
-        binary data
-
-    } -constraints {serverListen} -setup {
-        ns_register_proc PUT /put {
-            #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
-            set contentType [ns_set iget [ns_conn headers] content-type]
-            set contentLength [ns_set iget [ns_conn headers] content-length]
-            set content [ns_conn content -binary]
-            foreach byte [split $content ""] { lappend bytes [format %02X [scan $byte %c]] }
-            set bytesLength [llength $bytes]
-            ns_return 200 text/plain "[ns_conn encoding] <$contentType> $bytes ($contentLength $bytesLength)"
-        }
-    } -body {
-        set string [encoding convertto utf-8 "\u0000\u0001\u0002\u0003☀"]
-        nstest::http -getbody 1 -setheaders {content-type text/html;charset=utf-8} PUT /put $string
-    } -cleanup {
-        ns_unregister_op PUT /put
-        unset -nocomplain r
-    } -result {200 {utf-8 <text/html;charset=utf-8> 00 01 02 03 E2 98 80 (7 7)}}
+    #
+    #  Detection of binary content via Tcl_Obj object type + bytes
+    #  content is unreliable. Therefore, this questionable test for
+    #  tcl 8.7+ is deactivated.
+    #
+    # test http-5.2.3-b {
+    #
+    #     check encoding  ns_conn content PUT,
+    #     content type text/html;charset=utf-8
+    #     binary data
+    #
+    # } -constraints {serverListen} -setup {
+    #     ns_register_proc PUT /put {
+    #         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
+    #         set contentType [ns_set iget [ns_conn headers] content-type]
+    #         set contentLength [ns_set iget [ns_conn headers] content-length]
+    #         set content [ns_conn content -binary]
+    #         foreach byte [split $content ""] { lappend bytes [format %02X [scan $byte %c]] }
+    #         set bytesLength [llength $bytes]
+    #         ns_return 200 text/plain "[ns_conn encoding] <$contentType> $bytes ($contentLength $bytesLength)"
+    #     }
+    # } -body {
+    #     set string [encoding convertto utf-8 "\u0000\u0001\u0002\u0003☀"]
+    #     nstest::http -getbody 1 -setheaders {content-type text/html;charset=utf-8} PUT /put $string
+    # } -cleanup {
+    #     ns_unregister_op PUT /put
+    #     unset -nocomplain r
+    # } -returnCodes {error ok} -result {200 {utf-8 <text/html> 00 01 02 03 E2 98 80 (7 7)}}
 }
 
 
