@@ -355,11 +355,16 @@ test ns_base64encode-3.0 {
                    [lindex [nsf::__db_get_obj $a] 1] \
                    [lindex [nsf::__db_get_obj $b] 1] \
                    [lindex [nsf::__db_get_obj $c] 1]]
-    set l [list [ns_base64encode $a] [ns_base64encode $b] [ns_base64encode $c]]
+    #ns_log notice types=$types
+    lappend r [string equal $types "{} bytearray string"]
+
+    set l [list [ns_base64encode $a] [ns_base64encode -binary $b] [ns_base64encode $c]]
     ns_log notice $l
     lappend r $l
 
-}  -result {äüö☀ Ã¤Ã¼Ã¶â äüö☀ {{} bytearray string} {w6TDvMO24piA w6TDvMO24piA w6TDvMO24piA} {bytearray bytearray bytearray} {w6TDvMO24piA w6TDvMO24piA w6TDvMO24piA}}
+} -cleanup {
+    unset -nocomplain r fn a b c l F
+} -returnCodes {error ok} -result {äüö☀ Ã¤Ã¼Ã¶â äüö☀ {{} bytearray string} {w6TDvMO24piA w6TDvMO24piA w6TDvMO24piA} 1 {w6TDvMO24piA w6TDvMO24piA w6TDvMO24piA}}
 
 
 test ns_base64encode-3.1 {
