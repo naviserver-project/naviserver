@@ -2619,7 +2619,7 @@ HttpCheckSpool(
                     fd = ns_open(httpPtr->spoolFileName, flags, 0644);
                 } else {
                     const char *tmpDir, *tmpFile = "http.XXXXXX";
-                    size_t tmpLen;
+                    size_t      tmpLen;
 
                     tmpDir = nsconf.tmpDir;
                     tmpLen = strlen(tmpDir) + 13;
@@ -2632,7 +2632,7 @@ HttpCheckSpool(
                      */
                     Ns_MutexLock(&httpPtr->lock);
                     httpPtr->spoolFileName = ns_malloc(tmpLen);
-                    sprintf(httpPtr->spoolFileName, "%s/%s", tmpDir, tmpFile);
+                    snprintf(httpPtr->spoolFileName, tmpLen, "%s/%s", tmpDir, tmpFile);
                     Ns_MutexUnlock(&httpPtr->lock);
 
                     fd = ns_mkstemp(httpPtr->spoolFileName);

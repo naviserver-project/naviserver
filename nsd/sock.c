@@ -1211,13 +1211,14 @@ Ns_SockConnectError(Tcl_Interp *interp, const char *host, unsigned short portNr,
         Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
     } else {
         const char *err;
-        char buf[16];
+        char buf[TCL_INTEGER_SPACE];
 
         /*
          * Tcl_PosixError() maintains errorCode variable
          */
         err = (Tcl_GetErrno() != 0) ? Tcl_PosixError(interp) : "reason unknown";
-        sprintf(buf, "%hu", portNr);
+        ns_uint32toa(buf, (uint32_t)portNr);
+
         Tcl_AppendResult(interp, "can't connect to ", host, " port ", buf,
                          ": ", err, (char *)0L);
     }
