@@ -187,8 +187,8 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
 int
 NsTclConfigSectionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int         result = TCL_OK;
-    char       *section, filter = '\0';
+    int         result = TCL_OK, filter = 0;
+    char       *section;
     static Ns_ObjvTable filterset[] = {
         {"unread",    UCHAR('u')},
         {"defaulted", UCHAR('d')},
@@ -196,8 +196,8 @@ NsTclConfigSectionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int 
         {NULL,        0u}
     };
     Ns_ObjvSpec opts[] = {
-        {"-filter",    Ns_ObjvIndex,  &filter,      filterset},
-        {"--",     Ns_ObjvBreak, NULL,      NULL},
+        {"-filter", Ns_ObjvIndex, &filter, filterset},
+        {"--",      Ns_ObjvBreak, NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -210,7 +210,7 @@ NsTclConfigSectionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int 
         Ns_Set *set;
 
         if (filter != '\0') {
-            set = NsConfigSectionGetFiltered(section, filter);
+            set = NsConfigSectionGetFiltered(section, (char)filter);
         } else {
             set = Ns_ConfigGetSection(section);
         }
