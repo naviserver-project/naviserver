@@ -620,6 +620,16 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
             localeString =  setlocale(LC_COLLATE, NULL);
         }
 
+#ifdef _WIN32
+        if (localeString != NULL) {
+            /*
+             * Under windows, later calls to setlocale() overwrite the
+             * returned string and the pointer will be invalid.
+             */
+            localeString = ns_strdup(localeString);
+        }
+#endif
+
         response = setlocale(LC_COLLATE, localeString);
         if (response != NULL) {
 #ifdef _WIN32
