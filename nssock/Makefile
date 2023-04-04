@@ -11,5 +11,4 @@
 MOD      =  nssock.so
 MODOBJS  =  nssock.o
 
-LIBOBJS = nssock.o
 include  ../include/Makefile.build
