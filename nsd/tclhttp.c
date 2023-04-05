@@ -321,7 +321,8 @@ DStringAppendHttpFlags(Tcl_DString *dsPtr, unsigned int flags)
         { NS_HTTP_FLAG_EMPTY,         "EMPTY" },
         { NS_HTTP_KEEPALIVE,          "KEEPALIVE" },
         { NS_HTTP_VERSION_1_1,        "1.1" },
-        { NS_HTTP_STREAMING,          "STREAMING" }
+        { NS_HTTP_STREAMING,          "STREAMING" },
+        { NS_HTTP_HEADERS_PENDING,    "HDR_PENDING" }
     };
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
@@ -2461,6 +2462,8 @@ HttpCheckHeader(
     if (eoh != NULL) {
         httpPtr->replyHeaderSize = (TCL_SIZE_T)(eoh - httpPtr->ds.string) + 4;
         *(eoh + 2) = '\0';
+        httpPtr->flags &= ~NS_HTTP_HEADERS_PENDING;
+        Ns_Log(Ns_LogTaskDebug, "HttpCheckHeader: headers complete");
     } else {
         eoh = strstr(httpPtr->ds.string, "\n\n");
         if (eoh != NULL) {
@@ -2468,6 +2471,9 @@ HttpCheckHeader(
                    " LF instead of CR/LF trailer which should not happen");
             httpPtr->replyHeaderSize = (TCL_SIZE_T)(eoh - httpPtr->ds.string) + 2;
             *(eoh + 1) = '\0';
+            httpPtr->flags &= ~NS_HTTP_HEADERS_PENDING;
+        } else {
+            Ns_Log(Ns_LogTaskDebug, "HttpCheckHeader: headers not complete");
         }
     }
 }
@@ -2506,7 +2512,7 @@ HttpCheckSpool(
      * response/headers but haven not yet parsed it because
      * we still do not know the value of the response status.
      *
-     * The Ns_DString in httpPtr->ds contains, at this point:
+     * The Tcl_DString in httpPtr->ds contains, at this point:
      *
      *     1. HTTP response line (delimited by CR/LF)
      *     2. Response header(s) (each delimited by CR/LF)
@@ -2521,7 +2527,6 @@ HttpCheckSpool(
      * length of the DString value (size of 1.-3.) and not
      * using the DString length element.
      */
-
     if (Ns_HttpMessageParse(httpPtr->ds.string, strlen(httpPtr->ds.string),
                             httpPtr->replyHeaders,
                             &major,
@@ -2853,7 +2858,7 @@ HttpConnect(
     assert(itPtr->servPtr != NULL);
 
     /*
-     * Setup the task structure. From this point on
+     * Setup the NsHttpTask structure. From this point on
      * if something goes wrong, we must HttpClose().
      */
     httpPtr = ns_calloc(1u, sizeof(NsHttpTask));
@@ -2866,6 +2871,7 @@ HttpConnect(
     httpPtr->method = ns_strdup(method);
     httpPtr->replyHeaders = Ns_SetCreate(NS_SET_NAME_CLIENT_RESPONSE);
     httpPtr->servPtr = itPtr->servPtr;
+    httpPtr->flags = NS_HTTP_HEADERS_PENDING;
 
     if (timeoutPtr != NULL) {
         httpPtr->timeout = ns_calloc(1u, sizeof(Ns_Time));
@@ -4624,12 +4630,15 @@ HttpProc(
                          * At the point of reading response content (if any).
                          * Continue reading if any of the following is true:
                          *
-                         *   o. remote tells content length
-                         *   o. chunked content not fully parsed
-                         *   o. caller tells it expects content
+                         *   - headers are not complete
+                         *   - remote tells content length and it is not complete
+                         *   - we received streaming HTML content (no content-length provided)
+                         *   - chunked content not fully parsed
+                         *   - caller tells it expects content
                          */
                         if (
-                            (httpPtr->replyLength > 0
+                            ((httpPtr->flags & NS_HTTP_HEADERS_PENDING) != 0u)
+                            || (httpPtr->replyLength > 0
                              && httpPtr->replySize < httpPtr->replyLength
                              && (httpPtr->flags & NS_HTTP_FLAG_EMPTY) == 0u)
                             || (httpPtr->flags & NS_HTTP_STREAMING) != 0u /* we rely on connection-close */
