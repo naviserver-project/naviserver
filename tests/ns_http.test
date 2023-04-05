@@ -2127,7 +2127,7 @@ test http-10.1.1 {HTTP/1.0 POST + keepalive} -constraints serverListen -setup {
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r0 r1 r2
-}  -returnCodes {error ok} -result {200 200 8 200}
+} -returnCodes {error ok} -result {200 200 8 200}
 
 test http-10.1.2 {HTTP/1.0 HEAD + keepalive} -constraints serverListen -body {
     #ns_logctl severity Debug(task) on
@@ -2139,7 +2139,71 @@ test http-10.1.2 {HTTP/1.0 HEAD + keepalive} -constraints serverListen -body {
     unset -nocomplain r0 r1 r2
 } -returnCodes {error ok} -result {200 200 10 200}
 
+#
+# Test client request with potentation problem cases
+#   - handling empty requests
+#   - request header comes via multiple read operations
+#
+test http-11.1.1 {HTTP/1.0 GET + 0bytes} -constraints serverListen -setup {
+    ns_register_proc GET /0bytes {
+        ns_return 200 text/plain ""
+    }
+} -body {
+    set r0 [ns_http run -keepalive 0s -method GET [ns_config test listenurl]/10bytes]
+    set r1 [ns_http run -keepalive 0s -method GET [ns_config test listenurl]/0bytes]
+    list [dict get $r1 status] [ns_set iget [dict get $r1 headers] content-length]
+} -cleanup {
+    ns_unregister_op GET /0bytes
+    unset -nocomplain r0 r1
+} -returnCodes {error ok} -result {200 0}
 
+test http-11.1.2 {HTTP/1.0 GET + 0bytes + keepalive} -constraints serverListen -setup {
+    ns_register_proc GET /0bytes {
+        ns_return 200 text/plain ""
+    }
+} -body {
+    set r0 [ns_http run -keepalive 10s -method GET [ns_config test listenurl]/10bytes]
+    set r1 [ns_http run -keepalive 10s -method GET [ns_config test listenurl]/0bytes]
+    set r2 [ns_http run -keepalive 10s -method GET [ns_config test listenurl]/10bytes]
+    list [dict get $r0 status] \
+        [dict get $r1 status] [ns_set iget [dict get $r1 headers] content-length] \
+        [ns_set iget [dict get $r2 headers] content-length]
+} -cleanup {
+    ns_unregister_op GET /0bytes
+    unset -nocomplain r0 r1 r2
+} -returnCodes {error ok} -result {200 200 0 10}
+
+
+test http-11.2.1 {HTTP/1.0 GET + many reply header fields} -constraints serverListen -setup {
+    ns_register_proc GET /many-reply-header-fields {
+        for {set i 0} {$i < 2000} {incr i} {ns_set put [ns_conn outputheaders] X-extra-$i $i}
+        ns_return 200 text/plain "OK"
+    }
+} -body {
+    set r0 [ns_http run -keepalive 0s -method GET [ns_config test listenurl]/10bytes]
+    set r1 [ns_http run -keepalive 0s -method GET [ns_config test listenurl]/many-reply-header-fields]
+    list [dict get $r0 status] [dict get $r1 status] [llength [ns_set keys [dict get $r1 headers] x-*]]
+} -cleanup {
+    ns_unregister_op GET /many-reply-header-fields
+    unset -nocomplain i r0 r1
+} -returnCodes {error ok} -result {200 200 2000}
+
+test http-11.2.2 {HTTP/1.0 GET + many reply header fields + keepalive} -constraints serverListen -setup {
+    ns_register_proc GET /many-reply-header-fields {
+        for {set i 0} {$i < 2000} {incr i} {ns_set put [ns_conn outputheaders] X-extra-$i $i}
+        ns_return 200 text/plain "OK"
+    }
+} -body {
+    set r0 [ns_http run -keepalive 10s -method GET [ns_config test listenurl]/10bytes]
+    set r1 [ns_http run -keepalive 10s -method GET [ns_config test listenurl]/many-reply-header-fields]
+    set r2 [ns_http run -keepalive 10s -method GET [ns_config test listenurl]/10bytes]
+    list [dict get $r0 status] \
+        [dict get $r1 status] [llength [ns_set keys [dict get $r1 headers] x-*]] \
+        [ns_set iget [dict get $r2 headers] content-length]
+} -cleanup {
+    ns_unregister_op GET /many-reply-header-fields
+    unset -nocomplain i r0 r1 r2
+} -returnCodes {error ok} -result {200 200 2000 10}
 
 cleanupTests
 
