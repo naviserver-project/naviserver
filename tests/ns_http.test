@@ -2140,7 +2140,7 @@ test http-10.1.2 {HTTP/1.0 HEAD + keepalive} -constraints serverListen -body {
 } -returnCodes {error ok} -result {200 200 10 200}
 
 #
-# Test client request with potentation problem cases
+# Test client request with potential problem cases
 #   - handling empty requests
 #   - request header comes via multiple read operations
 #
