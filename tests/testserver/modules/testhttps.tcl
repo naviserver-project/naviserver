@@ -34,6 +34,7 @@ namespace eval ::nstest {
             {-getbody 0}
             {-getbinary 0}
             {-timeout 3s}
+            {-partialresults 0}
             {-verbose 0}
             {-hostname}
             --
@@ -60,6 +61,9 @@ namespace eval ::nstest {
 
         if {[info exists hostname]} {
             lappend extraFlags -hostname $hostname
+        }
+        if {$partialresults} {
+            lappend extraFlags -partialresults
         }
 
         set hdrs [ns_set create]

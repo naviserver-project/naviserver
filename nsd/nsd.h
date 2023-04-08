@@ -1144,6 +1144,7 @@ typedef struct _NsHttpChunk {
 #define NS_HTTP_VERSION_1_1        (1u<<7)
 #define NS_HTTP_STREAMING          (1u<<8)
 #define NS_HTTP_HEADERS_PENDING    (1u<<9)
+#define NS_HTTP_PARTIAL_RESULTS    (1u<<10)
 
 #define NS_HTTP_FLAG_GUNZIP (NS_HTTP_FLAG_DECOMPRESS|NS_HTTP_FLAG_GZIP_ENCODING)
 

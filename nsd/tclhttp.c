@@ -1862,7 +1862,7 @@ HttpQueue(
     bool run
 ) {
     Tcl_Interp *interp;
-    int         result = TCL_OK, decompress = 0, raw = 0, binary = 0;
+    int         result = TCL_OK, decompress = 0, raw = 0, binary = 0, partialResults = 0;
     Tcl_WideInt spoolLimit = -1;
     int         verifyCert = 0, keepHostHdr = 0;
     NsHttpTask *httpPtr = NULL;
@@ -1903,10 +1903,11 @@ HttpQueue(
         {"-method",           Ns_ObjvString,  &method,         NULL},
         {"-outputchan",       Ns_ObjvString,  &outputChanName, NULL},
         {"-outputfile",       Ns_ObjvString,  &outputFileName, NULL},
+        {"-partialresults",   Ns_ObjvBool,    &partialResults, INT2PTR(NS_TRUE)},
         {"-spoolsize",        Ns_ObjvMemUnit, &spoolLimit,     NULL},
         {"-expire",           Ns_ObjvTime,    &expirePtr,      NULL},
         {"-timeout",          Ns_ObjvTime,    &timeoutPtr,     NULL},
-        {"-verify",           Ns_ObjvBool,    &verifyCert,     INT2PTR(NS_FALSE)},
+        {"-verify",           Ns_ObjvBool,    &verifyCert,     INT2PTR(NS_TRUE)},
         {"-proxy",            Ns_ObjvObj,     &proxyObj,       NULL},
         {NULL, NULL,  NULL, NULL}
     };
@@ -2038,6 +2039,10 @@ HttpQueue(
         if (binary != 0) {
             httpPtr->flags |= NS_HTTP_FLAG_BINARY;
         }
+        if (partialResults != 0) {
+            httpPtr->flags |= NS_HTTP_PARTIAL_RESULTS;
+        }
+
         httpPtr->servPtr = itPtr->servPtr;
 
         httpPtr->task = Ns_TaskTimedCreate(httpPtr->sock, HttpProc, httpPtr, expirePtr);
@@ -2197,6 +2202,7 @@ HttpGetResult(
             *fileNameObj     = NULL,
             *resultObj       = NULL,
             *replyHeadersObj = NULL,
+            *errorObj        = NULL,
             *elapsedTimeObj;
 
     NS_NONNULL_ASSERT(interp != NULL);
@@ -2215,18 +2221,29 @@ HttpGetResult(
     Ns_TclSetTimeObj(elapsedTimeObj, &diff);
 
     if (httpPtr->error != NULL) {
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(httpPtr->error, TCL_INDEX_NONE));
+        errorObj = Tcl_NewStringObj(httpPtr->error, TCL_INDEX_NONE);
+        /*
+         * Write always httpCLientLog file with "socktimeout" and system log entry.
+         */
         if (httpPtr->finalSockState == NS_SOCK_TIMEOUT) {
-            Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
             Ns_Log(Ns_LogTimeoutDebug, "ns_http request '%s' runs into timeout",
                    httpPtr->url);
             HttpClientLogWrite(httpPtr, "socktimeout");
+        } else {
+            HttpClientLogWrite(httpPtr, "error");
         }
-        result = TCL_ERROR;
-        goto err;
-    }
 
-    HttpClientLogWrite(httpPtr, "ok");
+        if ((httpPtr->flags & NS_HTTP_PARTIAL_RESULTS) == 0u) {
+            Tcl_SetObjResult(interp, errorObj);
+            if (httpPtr->finalSockState == NS_SOCK_TIMEOUT) {
+                Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
+            }
+            result = TCL_ERROR;
+            goto err;
+        }
+    } else {
+        HttpClientLogWrite(httpPtr, "ok");
+    }
 
     if (httpPtr->recvSpoolMode == NS_FALSE) {
 #if defined(TCLHTTP_USE_EXTERNALTOUTF)
@@ -2386,6 +2403,10 @@ HttpGetResult(
         Tcl_DictObjPut(interp, resultObj, Tcl_NewStringObj("body", 4),
                        replyBodyObj);
     }
+    if (errorObj != NULL) {
+        Tcl_DictObjPut(interp, resultObj, Tcl_NewStringObj("error", 5),
+                       errorObj);
+    }
     if (httpPtr->infoObj != NULL) {
         Tcl_DictObjPut(interp, resultObj, Tcl_NewStringObj("https", 5),
                        httpPtr->infoObj);
@@ -2402,6 +2423,7 @@ HttpGetResult(
         Tcl_DictObjPut(interp, resultObj, Tcl_NewStringObj("outputchan", 10),
                        Tcl_NewStringObj(chanName, TCL_INDEX_NONE));
     }
+
     Tcl_SetObjResult(interp, resultObj);
 
     Tcl_DecrRefCount(replyHeadersObj);

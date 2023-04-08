@@ -35,6 +35,7 @@ services and REST interfaces.
 	[opt [option "-spoolsize [arg int]"]] \
 	[opt [option "-outputfile [arg fn]"]] \
 	[opt [option "-outputchan [arg chan]"]] \
+	[opt [option "-partialresults"]] \
 	[opt [option "-timeout [arg T]"]] \
 	[opt [option "-expire [arg T]"]] \
         [opt [option "-proxy [arg dict]"]] \
@@ -162,6 +163,12 @@ transferred to the thread that runs the request. Upon [cmd "ns_http wait"]
 the channel is tossed back to the running interpreter and can be manipulated.
 It is the caller responsibility to close the channel when not needed any more.
 The implementation will not do that (see [cmd "ns_http cleanup"] for exception).
+
+[opt_def -partialresults] When specified, return also partial
+results. Additionally, no exception is raised and the error is
+returned in the dict member [term error].  This option is useful to
+inspect partial results also when e.g. the server terminates the
+connection unexpectedly.
 
 [opt_def -expire [arg T]]
 time to wait for the whole request to complete. Upon expiry of this timer,
