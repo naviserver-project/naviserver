@@ -3413,8 +3413,10 @@ HttpConnect(
                 }
             }
             if (binary == NS_TRUE) {
-                //Ns_Log(Notice, "... bodyObj has type %s ", bodyObj->typePtr?bodyObj->typePtr->name:"NONE");
+                /*Ns_Log(Notice, "... bodyObj has type %s ", bodyObj->typePtr?bodyObj->typePtr->name:"NONE");*/
+                /*Ns_Log(Notice, "... before GetByteArrayFromObj body <%s>", Tcl_GetString(bodyObj));*/
                 bodyStr = (char *)Tcl_GetByteArrayFromObj(bodyObj, &bodyLen);
+                /*NsHexPrint("after GetByteArrayFromObj", (unsigned char *)bodyStr, (size_t)bodyLen, 20, NS_TRUE);*/
 //#define JAN 1
 #ifdef JAN
                 if (bodyStr == NULL) {
@@ -4308,7 +4310,7 @@ HttpProc(
             }
 
             if (n == -1) {
-                httpPtr->error = "http send failed";
+                httpPtr->error = "http send failed (initial send request)";
                 Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE send failed");
 
             } else {
@@ -4436,7 +4438,7 @@ HttpProc(
              */
 
             if (unlikely(n == -1)) {
-                httpPtr->error = "http read failed";
+                httpPtr->error = "http read failed (initial data to send)";
                 Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE read failed");
 
             } else {
@@ -4450,7 +4452,7 @@ HttpProc(
                        " %" PRIdz " of %" PRIuz " bytes", sent, toSend);
 
                 if (unlikely(sent == -1)) {
-                    httpPtr->error = "http send failed";
+                    httpPtr->error = "http send failed (send request)";
                     Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE send failed");
 
                 } else if (sent < toSend) {
@@ -4538,7 +4540,7 @@ HttpProc(
                              * Or, we can trigger the error immediately.
                              * We opt for the latter.
                              */
-                            httpPtr->error = "http read failed";
+                            httpPtr->error = "http read failed (chunk data to send)";
                             taskDone = NS_TRUE;
                             Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE"
                                    " short read, left:%" PRIuz, httpPtr->bodySize);
@@ -4610,7 +4612,7 @@ HttpProc(
                  * At this point we do not really know
                  * what kind of error it was.
                  */
-                httpPtr->error = "http read failed";
+                httpPtr->error = "http read failed (initial receive from server)";
                 Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_READ receive failed");
 
             } else if (n > 0) {
@@ -4625,10 +4627,11 @@ HttpProc(
 
                 result = HttpAppendContent(httpPtr, buf, (size_t)n);
                 if (unlikely(result != TCL_OK)) {
-                    httpPtr->error = "http read failed";
+                    httpPtr->error = "http read failed (chunk receive from server)";
                     Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_READ append failed");
                 } else {
                     Ns_ReturnCode rc = NS_OK;
+
                     if (httpPtr->replyHeaderSize == 0) {
 
                         /*
@@ -4645,7 +4648,7 @@ HttpProc(
                         rc = HttpCheckSpool(httpPtr);
                     }
                     if (unlikely(rc != NS_OK)) {
-                        httpPtr->error = "http read failed";
+                        httpPtr->error = "http read failed (check spool)";
                         Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_READ spool failed");
                     } else {
                         /*
