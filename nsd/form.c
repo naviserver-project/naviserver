@@ -155,6 +155,7 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                  */
                 bool         translate;
                 Tcl_Encoding encoding;
+                Tcl_Obj      *fallbackCharsetCompatibilityObj = NULL;
 #ifdef _WIN32
                 /*
                  * Keep CRLF
@@ -173,9 +174,16 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                     encoding = connPtr->urlEncoding;
                 }
                 toParse = content;
+                if (*Tcl_GetString(fallbackCharsetObj) == '\0') {
+                    fallbackCharsetCompatibilityObj = Tcl_NewStringObj("iso8859-1", 9);
+                    fallbackCharsetObj = fallbackCharsetCompatibilityObj;
+                }
                 status = ParseQueryWithFallback(interp, connPtr->poolPtr->servPtr,
                                                 content, connPtr->query, encoding,
                                                 translate, fallbackCharsetObj);
+                if (fallbackCharsetCompatibilityObj != NULL) {
+                    Tcl_DecrRefCount(fallbackCharsetCompatibilityObj);
+                }
 
             } else if (GetBoundary(&boundaryDs, contentType)) {
                 /*
