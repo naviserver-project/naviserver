@@ -12,11 +12,6 @@
 #ifndef NSD_H
 #define NSD_H
 
-/* Needed for SSL support on Windows: */
-#if defined(_MSC_VER) && !defined(HAVE_CONFIG_H)
-#  include "nsconfig-win32.h"
-#endif
-
 #include "ns.h"
 
 #if defined(HAVE_XLOCALE_H)

@@ -2305,6 +2305,7 @@ HttpGetResult(
         cSize = (TCL_SIZE_T)httpPtr->replyBodySize;
 
         if (binary == NS_TRUE)  {
+            //NsHexPrint("replybodyobj", (unsigned char *)cData, (size_t)cSize, 20, NS_TRUE);
             replyBodyObj = Tcl_NewByteArrayObj((unsigned char *)cData, cSize);
         } else {
 #if defined(TCLHTTP_USE_EXTERNALTOUTF)

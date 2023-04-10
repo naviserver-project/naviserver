@@ -38,7 +38,7 @@ proc write_file_nsversion {DD} {
    set f_in  {include/nsversion.h.in}
    set f_out {include/nsversion-win32.h}
    set hh [open $f_in r] ; set content [read -nonewline $hh] ; close $hh
-   set output [replace_ac_text $DD $content] ; unset content
+   set output [replace_ac_text $DD $content]
    set hh [open $f_out w] ; fconfigure $hh -translation lf ; puts -nonewline $hh $output ; close $hh
    puts "Wrote file:  $f_out"
 }
@@ -55,7 +55,8 @@ proc parse_ac_grep {ac_vars b1 {debug_p 0}} {
       set patt {} ; append patt {AC_SUBST\(\[} $v2 {\],[ ]*([^\n\r\#\)]*)}
       if {$debug_p} { puts "     v2:  $v2   Pattern:  $patt" }
       if {[regexp $patt $b2 match m1]} {
-         set rr [string trim $m1 {][}] ; if {$debug_p} { puts " Result:  $rr" }
+         set rr [string trim $m1 {][}]
+         if {$debug_p} { puts " Result:  $rr" }
          dict set DD $v2 $rr
       } else {
          dict set DD $v2 {unknown}
@@ -72,8 +73,14 @@ proc parse_ac_subst {DD {debug_p 0}} {
       dict with DD {
          if {[catch { set r1 [subst $val] } errmsg]} {
             # Probably we do not have the variable it is referring to.
-            if {$debug_p} { puts "  --->  $errmsg" }
-            set r1 {unknown}
+            # Make a final attempt (hack) in this single purpose
+            # script for NS_PATCH_LEVEL.
+            if {$key eq "NS_PATCH_LEVEL"} {
+                set r1 [subst {"$NS_MAJOR_VERSION.$NS_MINOR_VERSION.$NS_RELEASE_SERIAL"}]
+            } else {
+                if {$debug_p} { puts "  --->  $errmsg" }
+                set r1 {unknown}
+            }
          }
          if {$debug_p} { puts "  --->  $r1" }
          lappend update_l $key $r1

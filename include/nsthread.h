@@ -25,7 +25,14 @@
 
 #ifdef HAVE_CONFIG_H
 # include "nsconfig.h"
+#else
+# if defined(_MSC_VER)
+/* Hard-coded configuration for windows */
+#  include "nsconfig-win32.h"
+# endif
 #endif
+
+
 
 #include <nscheck.h>
 #include <fcntl.h>
@@ -188,6 +195,7 @@ MSVC++ 14.2 _MSC_VER == 1920 (Visual Studio 2019 version 16.0)
 
 #  define timezone                    _timezone
 #  define daylight                    _daylight
+#  define timegm                      _mkgmtime
 
 #  define getpid()                    (pid_t)GetCurrentProcessId()
 #  define ftruncate(f,s)              _chsize((f),(s))

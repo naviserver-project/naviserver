@@ -1,12 +1,17 @@
+/*
+ * Activate HAVE_OPENSSL_EVP_H for OpenSSL on Windows. This assumes
+ * that openssl include files (e.g. openssl/evp.h) are on the include
+ * path, and the lib files (e.g. libssl, libcrypto) are available for
+ * linking. The locations are provided in include/Makefile.win32
+ */
+#define HAVE_OPENSSL_EVP_H 1
 
 /*
- * To enable OpenSSL (for both core nsd.exe and nsssl.dll), you must
- * define HAVE_OPENSSL_EVP_H in TWO files in "naviserver/include/":
- *   Makefile.win32 and nsconfig-win32.h
- * I tried many other approaches but could not get the build to work
- * any other way.  --atp@piskorski.com, 2020/05/01 12:17 EDT
+ * Activate HAVE_ZLIB_H for using zlib on Windows. This assumes that
+ * zlib.h and zconf.h can be found on the include path, and zlib*.lib
+ * is available for linking.
  */
+#define HAVE_ZLIB_H 1
 
-/* Needed for SSL support on Windows: */
 #define HAVE_STDINT_H 1
-#define HAVE_OPENSSL_EVP_H 1
+#define HAVE_TIMEGM 1

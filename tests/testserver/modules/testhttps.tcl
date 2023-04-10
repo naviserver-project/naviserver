@@ -102,11 +102,9 @@ namespace eval ::nstest {
         }
         #ns_log notice "HEADERS [ns_set array $hdrs]"
 
-        if {[string is true $getbinary]} {
-            set binaryFlag "-binary"
-        } else {
-            set binaryFlag ""
-        }
+        #if {$getbinary} {
+        #    lappend extraFlags "-binary"
+        #}
 
         set fullUrl $proto://\[$host\]:$port/[string trimleft $url /]
         log url $fullUrl
@@ -131,11 +129,6 @@ namespace eval ::nstest {
             #ns_log notice "REQUEST returned $result"
         }
 
-        #ns_set cleanup $hdrs
-        #set hdrs [ns_set create]
-
-        #ns_http wait {*}$binaryFlag -result body -status status  -headers $hdrs $r
-        #ns_log notice result=$result
         set body [dict get $result body]
         set status [dict get $result status]
         set hdrs [dict get $result headers]

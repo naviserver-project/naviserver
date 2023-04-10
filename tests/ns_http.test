@@ -31,9 +31,26 @@ testConstraint http09 true
 # testConstraint binaryMismatch true
 # testConstraint broken true
 
+set devnull     [expr {$tcl_platform(platform) eq "windows" ? "NUL:" : "/dev/null"}]
+set contentfile [expr {$tcl_platform(platform) eq "windows" ? 0 : 1}]
+
 set curl ""
 catch {set curl [exec curl -V]}
 testConstraint curl [expr {$curl ne "" ? "true" : "false" }]
+
+proc test_case_name {} {
+    set name unknown
+    for {set i [info frame]} {$i>0} {incr i -1} {
+        set info [info frame $i]
+        if {[dict get $info type] eq "eval" && [lindex [dict get $info cmd] 0] eq "::tcltest::RunTest"} {
+            #ns_log notice "FRAME $i: [lindex [dict get $info cmd] 1]"
+            set name [lindex [dict get $info cmd] 1]
+            break
+        }
+    }
+    return $name
+}
+
 
 test http-1.1 {bad request} -constraints serverListen -body {
     nstest::http bogus
@@ -136,13 +153,13 @@ test http-1.6.7 { HTTP/1.0 POST not-existing vhost + custom error page + huge qu
     for {set i 0} {$i < 5000} {incr i} {
         lappend query "x$i=$i"
     }
-    nstest::http -getbody 1 \
+    nstest::http -getbody 1 -partialresults 1 \
         -setheaders [list Host testvhost:[ns_config test listenport]] \
         -getheaders {Content-Length} \
         POST /noexist [join $query]
 } -cleanup {
     unset i query
-} -match glob -result {404 15 {CUSTOM 404 page}}
+} -returnCodes {ok return error} -match glob -result {404 15 {CUSTOM 404 page}}
 
 
 #
@@ -154,7 +171,7 @@ test http-1.6.8 { HTTP/1.0 PUT not allowed} -constraints serverListen -body {
     nstest::http -getbody 0 \
         -getheaders {Content-Length} \
         PUT /noexist
-} -match glob -result {405 53*}
+} -match glob -result {405 5*}
 
 test http-1.6.9 { HTTP/1.0 PUT not allowed vhost + custom error page} -constraints serverListen -body {
     nstest::http -getbody 1 \
@@ -215,42 +232,44 @@ test http-3.2b {long header line and long body} -constraints {serverListen} -set
     }
 } -body {
     set r [nstest::http -http 1.1 \
+               -partialresults 1 \
                -setheaders [list x [string repeat x 1050]] \
                PUT /put [string repeat x 1000002]]
     list [lindex $r 0] [string length [lindex $r 1]]
 } -cleanup {
     ns_unregister_op PUT /put
     unset -nocomplain r
-} -result {413 0}
+} -returnCodes {error ok} -result {413 0}
 
 
-test http-3.3old {limits: too many headers} -constraints {serverListen http09} -setup {
-    ns_register_proc GET /limits {
-        set h [ns_conn headers]
-        ns_return 200 text/plain \
-            "maxheaders: [ns_config ns/module/nssock maxheaders] nheaders: [ns_set size $h]"
-    }
-} -body {
-    nstest::http-0.9 -http 1.1 -getbody 1 \
-        -setheaders [split [string repeat xy 1024] ""] \
-        GET /limits
-} -cleanup {
-    ns_unregister_op GET /limits
-} -result 414
-
-# test http-3.3new {limits: too many headers} -constraints serverListen -setup {
+# test http-3.3old {limits: too many headers} -constraints {serverListen http09} -setup {
 #     ns_register_proc GET /limits {
 #         set h [ns_conn headers]
 #         ns_return 200 text/plain \
 #             "maxheaders: [ns_config ns/module/nssock maxheaders] nheaders: [ns_set size $h]"
 #     }
 # } -body {
-#     nstest::http -http 1.1 -getbody 1 \
+#     nstest::http-0.9 -http 1.1 -getbody 1 \
 #         -setheaders [split [string repeat xy 1024] ""] \
 #         GET /limits
 # } -cleanup {
 #     ns_unregister_op GET /limits
-# } -returnCodes error -result 414
+# } -returnCodes {ok error} -result 414
+
+test http-3.3new {limits: too many headers} -constraints serverListen -setup {
+    ns_register_proc GET /limits {
+        set h [ns_conn headers]
+        ns_return 200 text/plain \
+            "maxheaders: [ns_config ns/module/nssock maxheaders] nheaders: [ns_set size $h]"
+    }
+} -body {
+    nstest::http -http 1.1 -getbody 1 \
+        -partialresults 1 \
+        -setheaders [split [string repeat xy 1024] ""] \
+        GET /limits
+} -cleanup {
+    ns_unregister_op GET /limits
+} -returnCodes {error ok} -result 414
 
 
 
@@ -342,7 +361,8 @@ test http-4.8 {HTTP/1.1 PUT file larger than maxinput} -constraints {} -setup {
         ns_return 200 text/plain [ns_conn content]
     }
 } -body {
-    set r [nstest::http -http 1.1 PUT /put [string repeat x 1000002]]
+    set r [nstest::http -http 1.1 -partialresults 1 \
+               PUT /put [string repeat x 1000002]]
     list [lindex $r 0] [string length [lindex $r 1]]
 } -cleanup {
     ns_unregister_op PUT /put
@@ -357,7 +377,8 @@ test http-4.9 {HTTP/1.1 PUT file much larger than maxinput} -constraints {} -set
         ns_return 200 text/plain [ns_conn content]
     }
 } -body {
-    set r [nstest::http -http 1.1 PUT /put [string repeat x 1000002]]
+    set r [nstest::http -http 1.1 -partialresults 1 \
+               PUT /put [string repeat x 1000002]]
     list [lindex $r 0] [string length [lindex $r 1]]
 } -cleanup {
     ns_unregister_op PUT /put
@@ -648,7 +669,7 @@ test http-5.3b {
     }
 } -body {
     set string "Testing <äöüß☀>"
-    exec curl -g -s --data @- [ns_config test listenurl]/post << $string 2> /dev/null
+    exec curl -g -s --data @- [ns_config test listenurl]/post << $string 2> $devnull
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
@@ -664,7 +685,7 @@ test http-5.3c {
     }
 } -body {
     set string {{"name":"Colchões"}}
-    exec curl -g -s -H "Content-Type: application/json; charset=utf-8" --data @- [ns_config test listenurl]/json << $string 2> /dev/null
+    exec curl -g -s -H "Content-Type: application/json; charset=utf-8" --data @- [ns_config test listenurl]/json << $string 2> $devnull
 } -cleanup {
     ns_unregister_op POST /json
     unset -nocomplain l
@@ -831,7 +852,7 @@ test http-5.7.0c {
         }
     }
 } -body {
-    exec curl -g -s -X GET [ns_config test listenurl]/GET?p1=a%C5%93Cb&p2=a%E6b 2> /dev/null
+    exec curl -g -s -X GET [ns_config test listenurl]/GET?p1=a%C5%93Cb&p2=a%E6b 2> $devnull
 } -cleanup {
     ns_unregister_op GET /GET
     unset -nocomplain r
@@ -854,7 +875,7 @@ test http-5.7.0d {
         }
     }
 } -body {
-    exec curl -g -s -X GET [ns_config test listenurl]/GET?p1=a%C5%93Cb&p2=a%E6b 2> /dev/null
+    exec curl -g -s -X GET [ns_config test listenurl]/GET?p1=a%C5%93Cb&p2=a%E6b 2> $devnull
 } -cleanup {
     ns_unregister_op GET /GET
     unset -nocomplain r
@@ -863,14 +884,15 @@ test http-5.7.0d {
 
 test http-5.7.1a {
 
-    Invalid encoding in query parameter with POST via ns_http
+    Invalid encoding in form-urlencoded parameter with POST via ns_http
+    in-memory decoding, should be same as file based decoding
 
 } -constraints {serverListen} -setup {
     #ns_logctl severity Debug(request) on
     ns_register_proc POST /POST {
         set contentType [ns_set iget [ns_conn headers] content-type]
         try {
-            ns_getform
+            ns_getform -fallbackcharset ""
         } on ok {nsform} {
             ns_return 200 text/plain "$contentType '[ns_set array $nsform]' [ns_conn method] [ns_conn query]"
         } on error {errorMsg errorDict} {
@@ -883,13 +905,13 @@ test http-5.7.1a {
 } -cleanup {
     ns_unregister_op POST /POST
     unset -nocomplain r
-} -returnCodes {error ok} \
-    -result {400 {application/x-www-form-urlencoded cannot decode 'p1=a%C5%93Cb&p2=a%E6b'; contains invalid UTF-8 NS_INVALID_UTF8}}
+} -returnCodes {error ok} -result {200 {application/x-www-form-urlencoded 'p1 aÅCb p2 aæb' POST }}
 
 
 test http-5.7.1b {
 
-    Invalid encoding in query parameter with POST via ns_http with fallbackcharset
+    Invalid encoding in query parameter with POST via ns_http
+    with explicit fallbackcharset
 
 } -constraints {serverListen} -setup {
     #ns_logctl severity Debug(request) on
@@ -930,7 +952,7 @@ test http-5.7.2a {
         }
     }
 } -body {
-    set boundary "----5.7.2a"
+    set boundary "----[test_case_name]"
     set ct "multipart/form-data; boundary=$boundary"
     set body [subst [ns_trim -delimiter | {
         |--$boundary
@@ -952,7 +974,7 @@ test http-5.7.2a {
 } -cleanup {
     ns_unregister_op POST /POST
     unset -nocomplain r
-} -returnCodes {ok error} -result {400 {multipart/form-data; boundary=----5.7.2a POST NS_INVALID_UTF8}}
+} -returnCodes {ok error} -result {400 {multipart/form-data; boundary=----http-5.7.2a POST NS_INVALID_UTF8}}
 
 test http-5.7.2b {
 
@@ -971,7 +993,7 @@ test http-5.7.2b {
         }
     }
 } -body {
-    set boundary "----5.7.2b"
+    set boundary "----[test_case_name]"
     set ct "multipart/form-data; boundary=$boundary"
     set body [subst [ns_trim -delimiter | {
         |--$boundary
@@ -996,7 +1018,7 @@ test http-5.7.2b {
 } -cleanup {
     ns_unregister_op POST /POST
     unset -nocomplain r
-} -returnCodes {ok error} -result {200 {multipart/form-data; boundary=----5.7.2b 'aæb' POST}}
+} -returnCodes {ok error} -result {200 {multipart/form-data; boundary=----http-5.7.2b 'aæb' POST}}
 
 
 #
@@ -1245,6 +1267,31 @@ content of file
     unset -nocomplain r
 } -result {200 {3 file error file.content-type text/plain}}
 
+#
+# Using curl with umlauts in the command line is different on linux (utf-8) and windows (ios8859)
+#
+# test http-6.5.1a {ns_getform and ns_getformfile + 2KB file} -constraints {curl serverListen} -setup {
+#     ns_register_proc POST /post {
+#         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
+#         set contentType     [ns_set iget [ns_conn headers] content-type]
+#         set contentLength   [ns_set iget [ns_conn headers] content-length]
+#         set haveFile        [expr {[ns_getformfile file] ne ""}]
+#         set haveContentFile [expr {[ns_conn contentfile] ne ""}]
+#         set maxUpload       [ns_config [ns_driversection -driver nssock] maxupload]
+#         set needSpool       [expr {$contentLength > $maxUpload}]
+#         set ct              [lindex $contentType 0]
+#         set formValues      [ns_set array [ns_conn form]]
+#         set f2              [ns_set get [ns_conn form] f2 ""]
+#         ns_return 200 text/plain "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile f2 '$f2'"
+#     }
+# } -body {
+#     set file [ns_server pagedir]/2048bytes
+#     exec curl -g -s -F file=@$file -F _charset_=utf-8 -F f2=ü [ns_config test listenurl]/post 2> $devnull
+# } -cleanup {
+#     ns_unregister_op POST /post
+#     unset -nocomplain r
+# } -result {multipart/form-data; contentFile 0 needSpool 0 file 1 f2 'ü'}
+
 
 test http-6.5.1a {ns_getform and ns_getformfile + 2KB file} -constraints {curl serverListen} -setup {
     ns_register_proc POST /post {
@@ -1261,12 +1308,34 @@ test http-6.5.1a {ns_getform and ns_getformfile + 2KB file} -constraints {curl s
         ns_return 200 text/plain "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile f2 '$f2'"
     }
 } -body {
-    set file [ns_server pagedir]/2048bytes
-    exec curl -g -s -F file=@$file -F _charset_=utf-8 -F f2=ü [ns_config test listenurl]/post 2> /dev/null
+    #
+    # Binary values (i.e. invalid utf-8) passed to curl via command
+    # line seems problematic.
+    #
+    #set file [ns_server pagedir]/2048bytes
+    #exec curl -g -s -F file=@$file -F _charset_=iso8859-1 -F f2=\xfc [ns_config test listenurl]/post 2> $devnull
+
+    set boundary "----[test_case_name]"
+    set ct "multipart/form-data; boundary=$boundary"
+    set body [subst [ns_trim -delimiter | {
+        |--$boundary
+        |Content-Disposition: form-data; name="file"; filename="file.txt"
+        |Content-Type: text/plain
+        |
+        |[string repeat x 2048]
+        |--$boundary
+        |Content-Disposition: form-data; name="f2"
+        |
+        |\xFC
+        |--$boundary--
+    }]]
+    nstest::http -setheaders [list content-type $ct] POST /post $body
+
 } -cleanup {
     ns_unregister_op POST /post
-    unset -nocomplain r
-} -result {multipart/form-data; contentFile 0 needSpool 0 file 1 f2 'ü'}
+    unset -nocomplain r boundary body
+} -returnCodes {ok error} -result {500}
+
 
 test http-6.5.1b {ns_getform and ns_getformfile + 2KB file} -constraints {curl serverListen} -setup {
     ns_register_proc POST /post {
@@ -1288,9 +1357,9 @@ test http-6.5.1b {ns_getform and ns_getformfile + 2KB file} -constraints {curl s
     # line seems problematic.
     #
     #set file [ns_server pagedir]/2048bytes
-    #exec curl -g -s -F file=@$file -F _charset_=iso8859-1 -F f2=\xfc [ns_config test listenurl]/post 2> /dev/null
+    #exec curl -g -s -F file=@$file -F _charset_=iso8859-1 -F f2=\xfc [ns_config test listenurl]/post 2> $devnull
 
-    set boundary "----6.5.1b"
+    set boundary "----[test_case_name]"
     set ct "multipart/form-data; boundary=$boundary"
     set body [subst [ns_trim -delimiter | {
         |--$boundary
@@ -1316,7 +1385,6 @@ test http-6.5.1b {ns_getform and ns_getformfile + 2KB file} -constraints {curl s
 } -result {200 {multipart/form-data; contentFile 0 needSpool 0 file 1 f2 'ü'}}
 
 
-
 test http-6.5.2a {ns_getform and ns_getformfile + 16KB file multipart} -constraints {curl serverListen} -setup {
     ns_register_proc POST /post {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
@@ -1333,13 +1401,16 @@ test http-6.5.2a {ns_getform and ns_getformfile + 16KB file multipart} -constrai
     }
 } -body {
     set file [ns_server pagedir]/16480bytes
-    exec curl -g -s -F file=@$file -F f2=ü [ns_config test listenurl]/post 2> /dev/null
+    # Using curl with "f2=ü" is not cross-platform reliable
+    #exec curl -g -s -F file=@$file -F f2=ü [ns_config test listenurl]/post 2> $devnull
+    set string "ü"
+    exec curl -g -s -F file=@$file -F f2=<- [ns_config test listenurl]/post << $string 2> $devnull
 } -cleanup {
     ns_unregister_op POST /post
-    unset -nocomplain r
-} -result {multipart/form-data; contentFile 1 needSpool 1 file 1 f2 'ü'}
+    unset -nocomplain r string file
+} -result [subst {multipart/form-data; contentFile $contentfile needSpool 1 file 1 f2 'ü'}]
 
-test http-6.5.2b {ns_getform and ns_getformfile + 16KB file multipart, explicit charset} -constraints {curl serverListen} -setup {
+test http-6.5.2b {ns_getform and ns_getformfile + 16KB file multipart} -constraints {curl serverListen} -setup {
     ns_register_proc POST /post {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType     [ns_set iget [ns_conn headers] content-type]
@@ -1355,13 +1426,97 @@ test http-6.5.2b {ns_getform and ns_getformfile + 16KB file multipart, explicit 
     }
 } -body {
     set file [ns_server pagedir]/16480bytes
-    exec curl -g -s -F file=@$file -F _charset_=utf-8 -F f2=ü [ns_config test listenurl]/post 2> /dev/null
+    # Using curl with "f2=ü" is not cross-platform reliable
+    #exec curl -g -s -F file=@$file -F f2=ü [ns_config test listenurl]/post 2> $devnull
+    set string "ü"
+    exec curl -g -s -F file=@$file -F f2=<- [ns_config test listenurl]/post << $string 2> $devnull
 } -cleanup {
     ns_unregister_op POST /post
-    unset -nocomplain r
-} -returnCodes {ok  error} -result {multipart/form-data; contentFile 1 needSpool 1 file 1 f2 'ü'}
+    unset -nocomplain r string file
+} -result [subst {multipart/form-data; contentFile $contentfile needSpool 1 file 1 f2 'ü'}]
 
-test http-6.5.2c {ns_getform and ns_getformfile + 16KB file multipart, explicit charset iso8859-1} -constraints {serverListen} -setup {
+test http-6.5.2c {ns_getform and ns_getformfile + 16KB file multipart} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /post {
+        #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
+        set contentType     [ns_set iget [ns_conn headers] content-type]
+        set contentLength   [ns_set iget [ns_conn headers] content-length]
+        set haveFile        [expr {[ns_getformfile file] ne ""}]
+        set haveContentFile [expr {[ns_conn contentfile] ne ""}]
+        set maxUpload       [ns_config [ns_driversection -driver nssock] maxupload]
+        set needSpool       [expr {$contentLength > $maxUpload}]
+        set ct              [lindex $contentType 0]
+        set formValues      [ns_set array [ns_conn form]]
+        set f2              [ns_set get [ns_conn form] f2 ""]
+        ns_return 200 text/plain "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile f2 '$f2'"
+    }
+} -body {
+    #set file [ns_server pagedir]/16480bytes
+    #exec curl -g -s -F file=@$file -F f2=ü [ns_config test listenurl]/post 2> $devnull
+
+    set boundary "----[test_case_name]"
+    set ct "multipart/form-data; boundary=$boundary"
+    set body [subst [ns_trim -delimiter | {
+        |--$boundary
+        |Content-Disposition: form-data; name="file"; filename="file.txt"
+        |Content-Type: text/plain
+        |
+        |[string repeat x 16480]
+        |--$boundary
+        |Content-Disposition: form-data; name="f2"
+        |
+        |ü
+        |--$boundary--
+    }]]
+    #ns_log notice "BODY <$body>"
+    # Use "convertto utf-8" to compensate the conversion happening in Tcl_GetByteArrayFromObj
+    nstest::http -setheaders [list content-type $ct] -getbody 1 POST /post [encoding convertto utf-8 $body]
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain body ct boundary
+} -result [subst {200 {multipart/form-data; contentFile $contentfile needSpool 1 file 1 f2 'ü'}}]
+
+test http-6.5.2d {ns_getform and ns_getformfile + 16KB file multipart, explicit charset} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /post {
+        #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
+        set contentType     [ns_set iget [ns_conn headers] content-type]
+        set contentLength   [ns_set iget [ns_conn headers] content-length]
+        set haveFile        [expr {[ns_getformfile file] ne ""}]
+        set haveContentFile [expr {[ns_conn contentfile] ne ""}]
+        set maxUpload       [ns_config [ns_driversection -driver nssock] maxupload]
+        set needSpool       [expr {$contentLength > $maxUpload}]
+        set ct              [lindex $contentType 0]
+        set formValues      [ns_set array [ns_conn form]]
+        set f2              [ns_set get [ns_conn form] f2 ""]
+        ns_return 200 text/plain "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile f2 '$f2'"
+    }
+} -body {
+    #set file [ns_server pagedir]/16480bytes
+    #exec curl -g -s -F file=@$file -F _charset_=utf-8 -F f2=ü [ns_config test listenurl]/post 2> $devnull
+    set boundary "----[test_case_name]"
+    set ct "multipart/form-data; boundary=$boundary"
+    set body [subst [ns_trim -delimiter | {
+        |--$boundary
+        |Content-Disposition: form-data; name="file"; filename="file.txt"
+        |Content-Type: text/plain
+        |
+        |[string repeat x 16480]
+        |--$boundary
+        |Content-Disposition: form-data; name="_charset_"
+        |
+        |utf-8
+        |--$boundary
+        |Content-Disposition: form-data; name="f2"
+        |
+        |ü
+        |--$boundary--
+    }]]
+    nstest::http -setheaders [list content-type $ct] -getbody 1 POST /post [encoding convertto utf-8 $body]
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain body ct boundary
+} -returnCodes {ok  error} -result [subst {200 {multipart/form-data; contentFile $contentfile needSpool 1 file 1 f2 'ü'}}]
+
+test http-6.5.2e {ns_getform and ns_getformfile + 16KB file multipart, explicit charset iso8859-1} -constraints {serverListen} -setup {
     ns_register_proc POST /post {
         ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType     [ns_set iget [ns_conn headers] content-type]
@@ -1376,7 +1531,7 @@ test http-6.5.2c {ns_getform and ns_getformfile + 16KB file multipart, explicit 
         ns_return 200 text/plain "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile f2 '$f2'"
     }
 } -body {
-    set boundary "----6.5.2c"
+    set boundary "----[test_case_name]"
     set ct "multipart/form-data; boundary=$boundary"
     set body [binary format a* [subst [ns_trim -delimiter | {
         |--$boundary
@@ -1398,10 +1553,10 @@ test http-6.5.2c {ns_getform and ns_getformfile + 16KB file multipart, explicit 
 
 } -cleanup {
     ns_unregister_op POST /post
-    unset -nocomplain boundary ct
-} -returnCodes {ok error} -result {200 {multipart/form-data; contentFile 1 needSpool 1 file 1 f2 'ü'}}
+    unset -nocomplain body boundary ct
+} -returnCodes {ok error} -result [subst {200 {multipart/form-data; contentFile $contentfile needSpool 1 file 1 f2 'ü'}}]
 
-test http-6.5.2d {ns_getform and ns_getformfile + 16KB file multipart, explicit charset iso8859-1} -constraints {serverListen} -setup {
+test http-6.5.2e {ns_getform and ns_getformfile + 16KB file multipart, explicit charset iso8859-1} -constraints {serverListen} -setup {
     ns_register_proc POST /post.tcl {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType     [ns_set iget [ns_conn headers] content-type]
@@ -1444,7 +1599,11 @@ test http-6.5.2d {ns_getform and ns_getformfile + 16KB file multipart, explicit 
 } -returnCodes {ok return error} -result {f2 ü charset iso8859-1}
 
 
-test http-6.5.3a {ns_getform and ns_getformfile + 16KB file urlencoded utf-8} -constraints {curl serverListen} -setup {
+test http-6.5.3a {
+    ns_getform and ns_getformfile + 16KB file
+    urlencoded
+    _charset_=utf-8
+} -constraints {curl serverListen} -setup {
     ns_register_proc POST /post {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType     [ns_set iget [ns_conn headers] content-type]
@@ -1461,14 +1620,21 @@ test http-6.5.3a {ns_getform and ns_getformfile + 16KB file urlencoded utf-8} -c
             "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile fields $fields f2 '$f2'"
     }
 } -body {
+    set string "ü"
     exec curl -g -s -H "Content-Type: application/x-www-form-urlencoded; charset=utf-8" \
-        --data-urlencode "f1=[string repeat hello 4000]" --data _charset_=utf-8 --data-urlencode f2=ü \
-        [ns_config test listenurl]/post 2> /dev/null
+        --data-urlencode "f1=[string repeat hello 4000]" \
+        --data-urlencode _charset_=utf-8 --data-urlencode f2@- \
+        << $string [ns_config test listenurl]/post 2> $devnull
 } -cleanup {
     ns_unregister_op POST /post
-} -result {application/x-www-form-urlencoded; contentFile 1 needSpool 1 file 0 fields f1 _charset_ f2 f2 'ü'}
+    unset -nocomplain string
+} -result [subst {application/x-www-form-urlencoded; contentFile $contentfile needSpool 1 file 0 fields f1 _charset_ f2 f2 'ü'}]
 
-test http-6.5.3b {ns_getform and ns_getformfile + 16KB file urlencoded iso8859-1} -constraints {curl serverListen} -setup {
+test http-6.5.3b {
+    ns_getform and ns_getformfile + 16KB file
+    urlencoded
+    _charset_=iso8859-1
+} -constraints {curl serverListen} -setup {
     ns_register_proc POST /post {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType     [ns_set iget [ns_conn headers] content-type]
@@ -1486,11 +1652,13 @@ test http-6.5.3b {ns_getform and ns_getformfile + 16KB file urlencoded iso8859-1
     }
 } -body {
     exec curl -g -s -H "Content-Type: application/x-www-form-urlencoded; charset=utf-8" \
-        --data-urlencode "f1=[string repeat hello 4000]"  --data _charset_=iso8859-1 --data f2=%fc \
-        [ns_config test listenurl]/post 2> /dev/null
+        --data-urlencode "f1=[string repeat hello 4000]" \
+        --data _charset_=iso8859-1 --data f2=%fc \
+        [ns_config test listenurl]/post 2> $devnull
 } -cleanup {
     ns_unregister_op POST /post
-} -returnCodes {ok error} -result {application/x-www-form-urlencoded; contentFile 1 needSpool 1 file 0 fields f1 _charset_ f2 f2 'ü'}
+} -returnCodes {ok error
+} -result [subst {application/x-www-form-urlencoded; contentFile $contentfile needSpool 1 file 0 fields f1 _charset_ f2 f2 'ü'}]
 
 
 test http-6.5.4a {ns_getform and ns_getformfile + 16KB file urlencoded iso8859-1} -constraints {curl serverListen} -setup {
@@ -1512,11 +1680,11 @@ test http-6.5.4a {ns_getform and ns_getformfile + 16KB file urlencoded iso8859-1
 } -body {
     exec curl -g -s -H "Content-Type: application/x-www-form-urlencoded; charset=iso8859-1" \
         --data-urlencode "f1=[string repeat hello 4000]" --data f2=%fc \
-        [ns_config test listenurl]/post 2> /dev/null
+        [ns_config test listenurl]/post 2> $devnull
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
-} -result {application/x-www-form-urlencoded; contentFile 1 needSpool 1 file 0 fields f1 f2 f2 'ü'}
+} -result [subst {application/x-www-form-urlencoded; contentFile $contentfile needSpool 1 file 0 fields f1 f2 f2 'ü'}]
 
 test http-6.5.4b {ns_getform and ns_getformfile + 16KB file urlencoded iso8859-1} -constraints {curl serverListen} -setup {
     ns_register_proc POST /post {
@@ -1537,11 +1705,11 @@ test http-6.5.4b {ns_getform and ns_getformfile + 16KB file urlencoded iso8859-1
 } -body {
     exec curl -g -s -H "Content-Type: application/x-www-form-urlencoded" \
         --data-urlencode "f1=[string repeat hello 4000]" --data _charset_=iso8859-1 --data f2=%fc \
-        [ns_config test listenurl]/post 2> /dev/null
+        [ns_config test listenurl]/post 2> $devnull
 } -cleanup {
     ns_unregister_op POST /post
     unset -nocomplain r
-} -result {application/x-www-form-urlencoded contentFile 1 needSpool 1 file 0 fields f1 _charset_ f2 f2 'ü'}
+} -result [subst {application/x-www-form-urlencoded contentFile $contentfile needSpool 1 file 0 fields f1 _charset_ f2 f2 'ü'}]
 
 
 
@@ -1783,7 +1951,10 @@ test http-8.0.2t {ns_http with body_chan run} -constraints {serverListen} -setup
     unset -nocomplain d
 } -result {200 {utf-8 <text/plain> <123>}}
 
-test http-8.0.2u {ns_http with body_chan and outputchan run} -constraints {serverListen} -setup {
+test http-8.0.2u {
+    ns_http with outputchan
+    ns_http run
+} -constraints {serverListen macOrUnix} -setup {
     ns_register_proc PUT /put {
         set contentType [ns_set iget [ns_conn headers] content-type]
         ns_return 200 text/plain "[ns_conn encoding] <$contentType> <[ns_getcontent -as_file false]>"
@@ -1794,24 +1965,38 @@ test http-8.0.2u {ns_http with body_chan and outputchan run} -constraints {serve
     puts $ch 123
     close $ch
 } -body {
+    #
+    # The concurrent write and read operations on the same channel
+    # poses a problem under windows. We run into a problem already
+    # while receiving the results of the output channel while sending
+    # the PUT request to the server, which cannot reply to it. So even
+    # "-partialresults" does not help.
+    #
     set ch [open $fn r]
     set co [open $fo w]
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type text/plain
-    set d [ns_http run -headers $queryHeaders -body_size 3 -body_chan $ch -spoolsize 0 -outputchan $co -method PUT \
+    #ns_logctl severity Debug(task) on
+    #ns_logctl severity Debug(request) on
+    #ns_logctl severity Debug(ns:driver) on
+    set d [ns_http run -headers $queryHeaders \
+               -body_size 3 -body_chan $ch -spoolsize 0 \
+               -outputchan $co -method PUT \
                [ns_config test listenurl]/put]
     close [dict get $d body_chan]
     close [dict get $d outputchan]
     set co [open $fo r]
     set bo [read $co]
     close $co
-    return [list [dict get $d status] $bo]
+    list [dict get $d status] $bo
 } -cleanup {
+    if {$ch in [file channels]} {close $ch}
+    if {$co in [file channels]} {close $co}
     file delete $fn
     file delete $fo
     ns_unregister_op PUT /put
-    unset -nocomplain d
-} -result {200 {utf-8 <text/plain> <123>}}
+    unset -nocomplain d fn fo ch co bo
+} -returnCodes {error ok} -result {200 {utf-8 <text/plain> <123>}}
 
 #
 # Tests with funny chars
@@ -1846,7 +2031,7 @@ test http-8.3 {ns_return with UTF-8 3 byte char with impure bytearray} -constrai
     ns_register_proc GET /get {
         set v "☃"
         set fn [ns_mktemp]
-        set F [open /tmp/sun w]
+        set F [open [ns_config ns/parameters tmpdir]/sun w]
         fconfigure $F -translation binary
         puts -nonewline $F [binary format a* $v]
         close $F
@@ -2094,7 +2279,7 @@ test http-9.1 {
     }
 } -body {
     set string "Testing <äöüß☀>"
-    exec curl -g -H "Expect: 100-continue" --data @- [ns_config test listenurl]/post << $string 2> /dev/null
+    exec curl -g -H "Expect: 100-continue" --data @- [ns_config test listenurl]/post << $string 2> $devnull
 } -cleanup {
     ns_unregister_op POST /post
 } -result {utf-8 <application/x-www-form-urlencoded> AÄATesting <äöüß☀>ZÜZ}

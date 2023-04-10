@@ -116,14 +116,11 @@ NS_DB_P=0
 !endif
 !endif
 
-
-# To enable OpenSSL (for both core nsd.exe and nsssl.dll), you must
-# define HAVE_OPENSSL_EVP_H in TWO files in "naviserver/include/":
-#   Makefile.win32 and nsconfig-win32.h
-# I tried many other approaches but could not get the build to work
-# any other way.  --atp@piskorski.com, 2020/05/01 12:17 EDT
-
-HAVE_OPENSSL_EVP_H=1
+# To activate zlib, provide location of include and library files here
+# and activate HAVE_ZLIB in nsconfig-win32.h, and make sure, zlib is
+# installed on your system
+zlib_lib=c:\P\lib
+zlib_include=c:\P\include
 
 # For past OpenSSL-related link problems, see:
 #   https://sourceforge.net/p/naviserver/mailman/message/36519758/
@@ -140,7 +137,7 @@ HAVE_OPENSSL_EVP_H=1
 # - openssl-1.0.2q-x64_86-win64.zip, openssl-1.0.2q-x64_86-win64_LinkLibs.zip
 #   Use:  openssl_libs = ssleay32.lib libeay32.lib
 
-openssl_64 = C:\P\OpenSSL-Win64-3.0.8
+openssl_64 = C:\P\OpenSSL-Win64-3.1.0
 openssl_32 = C:\P\OpenSSL-Win32
 #openssl_64 = C:\P\openssl-indy_1.0.2q\64
 #openssl_32 = C:\P\openssl-indy_1.0.2q\32
@@ -188,7 +185,7 @@ DEFS = $(DEFS) /I "$(NS_DIR)\nsdb"
 !endif
 
 !else
-!  message Debug: Building NaviServer core.  DLL: $(DLL)  PGM: $(PGM)
+!  message Debug: Building NaviServer core.  DLL: $(DLL)  PGM: $(PGM)  zlib: $(zlib_lib)
 
    # Ok to link everything against nsthread EXCEPT for nsthread itself:
 !  if "$(DLL)" != "nsthread"
@@ -205,6 +202,10 @@ LIBS = $(LIBS) /LIBPATH:"$(NS_DIR)\nsd" libnsd.lib
    # Since c. 2016, nsd.exe needs to link against OpenSSL, otherwise you get
    # "unresolved external symbol" for _SSL_get_version and _SSL_get_cipher:
 LIBS = $(LIBS) "/LIBPATH:$(openssl_dir)\lib\VC" $(openssl_libs)
+!  endif
+
+!  if ("nsd" == "$(PGM)" && "$(zlib_lib)" != "")
+LIBS = $(LIBS) /LIBPATH:"$(zlib_lib)" zlib.lib
 !  endif
 
 !endif
@@ -332,7 +333,7 @@ DEFS	= $(DEFS) /D "NDEBUG"
 # Final flags for compiler and linker
 #
 
-CFLAGS  = $(COPTS) /I "$(INCDIR)" /I "$(openssl_dir)\include" $(DEFS)
+CFLAGS  = $(COPTS) /I "$(INCDIR)" /I "$(openssl_dir)\include" /I "$(zlib_include)" $(DEFS)
 LIBS	= $(LIBS) $(TCLLIB) kernel32.lib advapi32.lib ws2_32.lib user32.lib
 
 
