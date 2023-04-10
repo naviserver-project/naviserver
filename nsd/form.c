@@ -209,7 +209,7 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                     while (s != NULL) {
                         char  *e;
 
-                        s += boundaryDs.length;
+                        s += boundaryDs.length + 1;
                         if (*s == '\r') {
                             ++s;
                         }
@@ -224,11 +224,13 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                         if (e != NULL) {
                             status = ParseMultipartEntry(connPtr, valueEncoding, s, e);
                             if (status == NS_ERROR) {
+                                Ns_Log(Debug, "ParseMultipartEntry -> error");
                                 toParse = s;
                             }
                         }
                         s = e;
                     }
+
                     /*
                      * We have now parsed all form fields into
                      * connPtr->query. According to the HTML5 standard, we
@@ -256,7 +258,26 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                             Ns_Log(Error, "multipart form: invalid charset specified"
                                    " inside of form '%s'", defaultCharset);
                             status = NS_ERROR;
+                            break;
                         }
+                    }
+                    /*
+                     * In case, we have still an unhandled error, we might
+                     * provide more mechanism in the future, when client could
+                     * not pass a proper fallbackEncoding. For now, just
+                     * provide a warning.
+                     */
+                    if (status == NS_ERROR) {
+                        Ns_ReturnCode rc;
+                        Tcl_Encoding fallbackEncoding = NULL;
+
+                        rc = NsGetFallbackEncoding(interp, connPtr->poolPtr->servPtr,
+                                                   fallbackCharsetObj, NS_TRUE, &fallbackEncoding);
+                        Ns_Log(Warning, "multipart form: error rc %d fallbackCharsetObj '%s'"
+                               " valueEncoding %p"
+                               " fallbackencoding %p",
+                               rc, fallbackCharsetObj == NULL ? "NONE" : Tcl_GetString(fallbackCharsetObj),
+                               (void*)valueEncoding, (void*)fallbackEncoding);
                     }
                     break;
                 }
