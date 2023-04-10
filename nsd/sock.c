@@ -67,10 +67,12 @@ static Ns_ReturnCode WaitForConnect(NS_SOCKET sock, int count, int ms);
 static NS_SOCKET SockSetup(NS_SOCKET sock);
 
 static ssize_t SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs,
-                        unsigned int flags);
+                        unsigned int flags, unsigned long *errorCode)
+    NS_GNUC_NONNULL(5);
 
 static ssize_t SockSend(NS_SOCKET sock, const struct iovec *bufs, int nbufs,
-                        unsigned int flags);
+                        unsigned int flags, unsigned long *errorCode)
+    NS_GNUC_NONNULL(5);
 
 static NS_SOCKET BindToSameFamily(const struct sockaddr *saPtr,
                                   struct sockaddr *lsaPtr,
@@ -394,7 +396,10 @@ Ns_SockRecvBufs(Ns_Sock *sock, struct iovec *bufs, int nbufs,
                                   (unsigned int)NS_SOCK_READ,
                                   timeoutPtr);
         if (status == NS_OK) {
-            nrBytes = SockRecv(sock->sock, bufs, nbufs, flags);
+            nrBytes = SockRecv(sock->sock, bufs, nbufs, flags, &recvErrno);
+            if (nrBytes == -1) {
+                sockState = NS_SOCK_EXCEPTION;
+            }
         } else if (status == NS_TIMEOUT) {
             sockState = NS_SOCK_TIMEOUT;
         } else {
@@ -443,16 +448,15 @@ Ns_SockRecvBufs2(NS_SOCKET sock, struct iovec *bufs, int nbufs,
 {
     ssize_t      n;
     Ns_SockState sockState = NS_SOCK_READ;
+    unsigned long errorCode = 0;
 
     NS_NONNULL_ASSERT(bufs != NULL);
     NS_NONNULL_ASSERT(errnoPtr != NULL);
 
-    n = SockRecv(sock, bufs, nbufs, flags);
+    n = SockRecv(sock, bufs, nbufs, flags, &errorCode);
 
     if (unlikely(n == -1)) {
-        int sockerrno = ns_sockerrno;
-
-        if (Retry(sockerrno)) {
+        if (Retry((int)errorCode)) {
             /*
              * Resource is temporarily unavailable.
              */
@@ -461,11 +465,11 @@ Ns_SockRecvBufs2(NS_SOCKET sock, struct iovec *bufs, int nbufs,
             /*
              * Some other error.
              */
-            Ns_Log(Debug, "Ns_SockRecvBufs2 errno %d on sock %d: %s",
-                   sockerrno, sock, strerror(sockerrno));
-            sockState = NS_SOCK_EXCEPTION;
+            Ns_Log(Debug, "Ns_SockRecvBufs2 errno %lu on sock %d: %s",
+                   errorCode, sock, strerror((int)errorCode));
+            errorCode = NS_SOCK_EXCEPTION;
         }
-        *errnoPtr = (unsigned long)sockerrno;
+        *errnoPtr = errorCode;
     } else if (unlikely(n == 0)) {
         /*
          * Peer has performed an orderly shutdown.
@@ -615,13 +619,14 @@ Ns_SockSendBufs2(NS_SOCKET sock, const struct iovec *bufs, int nbufs,
                  unsigned int flags)
 {
     ssize_t sent;
+    unsigned long errorCode = 0;
 
     NS_NONNULL_ASSERT(bufs != NULL);
 
-    sent = SockSend(sock, bufs, nbufs, flags);
+    sent = SockSend(sock, bufs, nbufs, flags, &errorCode);
 
     if (unlikely(sent == -1)) {
-        if (Retry(ns_sockerrno)) {
+        if (Retry((int)errorCode)) {
             /*
              * Resource is temporarily unavailable.
              */
@@ -2051,7 +2056,7 @@ SockSetup(NS_SOCKET sock)
  */
 
 static ssize_t
-SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
+SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags, unsigned long *errorCodePtr)
 {
     ssize_t numBytes = 0;
 
@@ -2060,6 +2065,7 @@ SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
 
     if (WSARecv(sock, (LPWSABUF)bufs, (unsigned long)nbufs, &RecvBytes,
                 &Flags, NULL, NULL) != 0) {
+        *errorCodePtr = WSAGetLastError();
         numBytes = -1;
     } else {
         numBytes = (ssize_t)RecvBytes;
@@ -2071,10 +2077,11 @@ SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
     msg.msg_iov = bufs;
     msg.msg_iovlen = (NS_MSG_IOVLEN_T)nbufs;
     numBytes = recvmsg(sock, &msg, (int)flags);
+    *errorCodePtr = (unsigned long)ns_sockerrno;
 #endif
 
     if (numBytes == -1) {
-        Ns_Log(Debug, "SockRecv: %s", ns_sockstrerror(ns_sockerrno));
+        Ns_Log(Debug, "SockRecv: %s", ns_sockstrerror((int)*errorCodePtr));
     }
 
     return numBytes;
@@ -2099,7 +2106,7 @@ SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs, unsigned int flags)
  */
 
 static ssize_t
-SockSend(NS_SOCKET sock, const struct iovec *bufs, int nbufs, unsigned int flags)
+SockSend(NS_SOCKET sock, const struct iovec *bufs, int nbufs, unsigned int flags, unsigned long *errorCodePtr)
 {
     ssize_t numBytes = 0;
 
@@ -2109,6 +2116,7 @@ SockSend(NS_SOCKET sock, const struct iovec *bufs, int nbufs, unsigned int flags
     if (WSASend(sock, (LPWSABUF)bufs, (unsigned long)nbufs, &nrBytesSent,
                 (DWORD)flags, NULL, NULL) == -1) {
         numBytes = -1;
+        *errorCodePtr = WSAGetLastError();
     } else {
         numBytes = (ssize_t)nrBytesSent;
     }
@@ -2119,10 +2127,11 @@ SockSend(NS_SOCKET sock, const struct iovec *bufs, int nbufs, unsigned int flags
     msg.msg_iov = (struct iovec *)bufs;
     msg.msg_iovlen = (NS_MSG_IOVLEN_T)nbufs;
     numBytes = sendmsg(sock, &msg, (int)flags|MSG_NOSIGNAL|MSG_DONTWAIT);
+    *errorCodePtr = (unsigned long)ns_sockerrno;
 #endif
 
     if (numBytes == -1) {
-        Ns_Log(Debug, "SockSend: %d, %s", sock, ns_sockstrerror(ns_sockerrno));
+        Ns_Log(Debug, "SockSend: %d, %s", sock, ns_sockstrerror((int)*errorCodePtr));
     }
 
     return numBytes;
