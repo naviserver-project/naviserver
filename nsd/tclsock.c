@@ -301,7 +301,8 @@ NsTclSockNReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                                    Tcl_PosixError(interp), (char *)0L);
             result = TCL_ERROR;
 
-        } else {
+        }
+        if (result != TCL_ERROR) {
             int nrBytes = (int)nread;
 
             nrBytes += Tcl_InputBuffered(chan);
