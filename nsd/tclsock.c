@@ -283,7 +283,8 @@ NsTclSockNReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
                                    Tcl_PosixError(interp), (char *)0L);
             result = TCL_ERROR;
 
-        } else {
+        }
+        if (result != TCL_ERROR) {
             int nrBytes = (int)nread;
 
             nrBytes += Tcl_InputBuffered(chan);
@@ -1032,7 +1033,8 @@ AppendReadyFiles(Tcl_Interp *interp, Tcl_Obj *listObj,
         /*
          * Append the ready files to the passed in listObj
          */
-        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(dsPtr->string, TCL_INDEX_NONE));
+        Tcl_ListObjAppendElement(interp, listObj,
+                                 Tcl_NewStringObj(dsPtr->string, TCL_INDEX_NONE));
 
         Tcl_Free((char *) fargv);
     } else {
