@@ -3367,6 +3367,17 @@ SockRelease(Sock *sockPtr, SockState reason, int err)
     Ns_Log(DriverDebug, "SockRelease reason %s err %d (sock %d)",
            GetSockStateName(reason), err, sockPtr->sock);
 
+    if (reason == SOCK_ERROR) {
+        /*
+         * In case of early errors (e.g. SockSendResponse), try to provide a
+         * more specific error code rather than just 400.
+         */
+        Ns_Log(DriverDebug, "... flags %.6x", sockPtr->flags);
+        if ((sockPtr->flags & NS_CONN_ENTITYTOOLARGE) != 0) {
+            reason = SOCK_ENTITYTOOLARGE;
+        }
+    }
+
     /*fprintf(stderr, "=== SockRelease %p\n", (void*)sockPtr);*/
 
     drvPtr = sockPtr->drvPtr;
