@@ -89,7 +89,7 @@ static Ns_ObjvTable binaryencodings[] = {
  */
 static Tcl_Obj *EncodedObj(
     unsigned char *octets,
-    size_t octectLength,
+    size_t octetLength,
     char *outputBuffer,
     Ns_BinaryEncoding encoding
 ) NS_GNUC_RETURNS_NONNULL NS_GNUC_NONNULL(1);
@@ -162,15 +162,15 @@ static Ns_ObjvValueRange posIntRange1 = {1, INT_MAX};
  *
  *----------------------------------------------------------------------
  */
-static void hexPrint(const char *msg, const unsigned char *octets, size_t octectLength)
+static void hexPrint(const char *msg, const unsigned char *octets, size_t octetLength)
 {
     if (Ns_LogSeverityEnabled(Debug)) {
         size_t i;
         Tcl_DString ds;
 
         Tcl_DStringInit(&ds);
-        Ns_DStringPrintf(&ds, "%s (len %" PRIuz "): ", msg, octectLength);
-        for (i = 0; i < octectLength; i++) {
+        Ns_DStringPrintf(&ds, "%s (len %" PRIuz "): ", msg, octetLength);
+        for (i = 0; i < octetLength; i++) {
             Ns_DStringPrintf(&ds, "%.2x ", octets[i] & 0xff);
         }
         Ns_Log(Debug, "%s", ds.string);
@@ -196,7 +196,7 @@ static void hexPrint(const char *msg, const unsigned char *octets, size_t octect
  */
 
 static Tcl_Obj*
-EncodedObj(unsigned char *octets, size_t octectLength,
+EncodedObj(unsigned char *octets, size_t octetLength,
            char *outputBuffer, Ns_BinaryEncoding encoding) {
     char    *origOutputBuffer = outputBuffer;
     Tcl_Obj *resultObj = NULL; /* enumeration is complete, quiet some older compilers */
@@ -208,28 +208,28 @@ EncodedObj(unsigned char *octets, size_t octectLength,
          * It is a safe assumption to double the size, since the hex
          * encoding needs the most space.
          */
-        outputBuffer = ns_malloc(octectLength * 2u + 1u);
+        outputBuffer = ns_malloc(octetLength * 2u + 1u);
     }
 
     switch (encoding) {
     case RESULT_ENCODING_BINARY:
-        resultObj = Tcl_NewByteArrayObj(octets, (int)octectLength);
+        resultObj = Tcl_NewByteArrayObj(octets, (int)octetLength);
         break;
 
     case RESULT_ENCODING_BASE64URL:
-        hexPrint("result", octets, octectLength);
-        (void)Ns_HtuuEncode2(octets, octectLength, outputBuffer, 1);
+        hexPrint("result", octets, octetLength);
+        (void)Ns_HtuuEncode2(octets, octetLength, outputBuffer, 1);
         resultObj = Tcl_NewStringObj(outputBuffer, (int)strlen(outputBuffer));
         break;
 
     case RESULT_ENCODING_BASE64:
-        (void)Ns_HtuuEncode2(octets, octectLength, outputBuffer, 0);
+        (void)Ns_HtuuEncode2(octets, octetLength, outputBuffer, 0);
         resultObj = Tcl_NewStringObj(outputBuffer, (int)strlen(outputBuffer));
         break;
 
     case RESULT_ENCODING_HEX:
-        Ns_HexString(octets, outputBuffer, (int)octectLength, NS_FALSE);
-        resultObj = Tcl_NewStringObj(outputBuffer, (int)octectLength*2);
+        Ns_HexString(octets, outputBuffer, (int)octetLength, NS_FALSE);
+        resultObj = Tcl_NewStringObj(outputBuffer, (int)octetLength*2);
         break;
     }
 

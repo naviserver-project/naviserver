@@ -65,22 +65,22 @@ static char *AppendData(Ns_Set *set, size_t index, const char *value, ssize_t va
 #endif
 
 #if defined(NS_SET_DEBUG)
-static void hexPrint(const char *msg, const unsigned char *octets, size_t octectLength)
+static void hexPrint(const char *msg, const unsigned char *octets, size_t octetLength)
 {
     if (Ns_LogSeverityEnabled(Notice)) {
         size_t i;
         Tcl_DString ds;
 
         Tcl_DStringInit(&ds);
-        Ns_DStringPrintf(&ds, "%s (len %" PRIuz "): ", msg, octectLength);
-        for (i = 0; i < octectLength; i++) {
+        Ns_DStringPrintf(&ds, "%s (len %" PRIuz "): ", msg, octetLength);
+        for (i = 0; i < octetLength; i++) {
             Ns_DStringPrintf(&ds, "%.2x ", octets[i] & 0xff);
         }
         Ns_Log(Notice, "%s", ds.string);
         Tcl_DStringInit(&ds);
 
-        Ns_DStringPrintf(&ds, "%s (len %" PRIuz "): ", msg, octectLength);
-        for (i = 0; i < octectLength; i++) {
+        Ns_DStringPrintf(&ds, "%s (len %" PRIuz "): ", msg, octetLength);
+        for (i = 0; i < octetLength; i++) {
             if (octets[i] < 20) {
                 Ns_DStringPrintf(&ds, "%-2c ", 32);
             } else {

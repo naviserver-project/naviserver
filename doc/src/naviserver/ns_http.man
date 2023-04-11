@@ -296,7 +296,7 @@ Optional ID of the HTTP request to list.
 [call [cmd "ns_http stats"] ?[arg id]?]
 
 Returns statistics from the currently running request in the form of
-a list of Tcl dictionares.  If optional [arg id] was specified, just
+a list of Tcl dictionaries.  If optional [arg id] was specified, just
 one dictionary containing details about the requested task will be
 returned, or empty if the task cannot be found. Otherwise a list of
 dictionaries will be returned.
@@ -317,7 +317,7 @@ The [term received] returns number of bytes received from the remote. This
 includes status line, all of the headers plus the optional reply body.
 The [term sendbodysize] returns number of bytes of the request body sent
 to the remote so far.
-The [term replybodysize] returns number of bvtes of the reply body received
+The [term replybodysize] returns number of bytes of the reply body received
 from the remote so far.
 The [term replysize] returns number of bytes of the body received from the
 remote so far. Difference to the [term replybodysize] is that this element

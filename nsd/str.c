@@ -931,13 +931,13 @@ bool Ns_Is7bit(const char *bytes, size_t nrBytes)
  *
  *----------------------------------------------------------------------
  */
-void NsHexPrint(const char *msg, const unsigned char *octets, size_t octectLength,
+void NsHexPrint(const char *msg, const unsigned char *octets, size_t octetLength,
                 unsigned int perLine, bool withChar)
 {
     size_t i;
 
-    fprintf(stderr, "%s octectLength %" PRIuz ":\n", msg, octectLength);
-    for (i = 0; i < octectLength; i++) {
+    fprintf(stderr, "%s octetLength %" PRIuz ":\n", msg, octetLength);
+    for (i = 0; i < octetLength; i++) {
         if (withChar) {
             fprintf(stderr, "%c %.2x ",
                     iscntrl(octets[i] & 0xff) ? 46 : octets[i] & 0xff,
