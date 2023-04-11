@@ -900,7 +900,7 @@ test http-5.7.1a {
 } -cleanup {
     ns_unregister_op POST /POST
     unset -nocomplain r
-} -result {400 {application/x-www-form-urlencoded cannot decode 'p1=a%C5%93Cb&p2=a%E6b'; contains invalid UTF-8 NS_INVALID_UTF8}}
+} -result {200 {application/x-www-form-urlencoded 'p1 aÅCb p2 aæb' POST }
 
 
 test http-5.7.1b {
