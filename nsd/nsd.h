@@ -1844,7 +1844,7 @@ NS_EXTERN bool NsTclTimeoutException(Tcl_Interp *interp)
 /*
  * str.c
  */
-NS_EXTERN void NsHexPrint(const char *msg, const unsigned char *octets, size_t octectLength,
+NS_EXTERN void NsHexPrint(const char *msg, const unsigned char *octets, size_t octetLength,
                           unsigned int perLine, bool withChar)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
