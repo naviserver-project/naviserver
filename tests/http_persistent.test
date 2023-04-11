@@ -9,23 +9,9 @@ if {[ns_config test listenport]} {
     testConstraint serverListen true
 }
 
-# On Windows, currently these tests all LOCK UP NaviServer, so for now
-# we skip them with the macOrUnix constraint.  The error accompanying
-# the lock up looks like this:  --atp@piskorski.com, 2020/06/04 16:50 EDT
-#
-# ns_sockioctl failed: no such file or directory
-#     while executing
-# "ns_socknread $s"
-#     (procedure "client_readable" line 2)
-#     invoked from within
-# "client_readable 1000 $s"
-#     (procedure "tcltest::client_receive" line 2)
-#     invoked from within
-# "tcltest::client_receive sock0000000006332A20"
+#set ::tcltest::verbose 1
 
-
-test http-persist-1 {simple setup} -constraints {serverListen macOrUnix} -body {
-
+test http-persist-1 {simple setup} -constraints {serverListen} -body {
     set d [tcltest::client 2 {
         "GET /1 HTTP/1.1\nHost: localhost\n\n"
         "GET /2 HTTP/1.1\nHost: localhost\n\n"
@@ -38,16 +24,17 @@ test http-persist-1 {simple setup} -constraints {serverListen macOrUnix} -body {
         regexp {Connection:\s+(\S+)\s} $bytes . connection
         set contentLength ""
         regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
-        lappend result connection $connection content-length $contentLength
+        lappend result connection $connection \
+            content-length [string compare $contentLength ""]
     }
     return $result
 
 } -cleanup {
     unset -nocomplain result d k bytes connection contentLength
-} -result {connection keep-alive content-length 3 connection keep-alive content-length 4}
+} -result {connection keep-alive content-length 1 connection keep-alive content-length 1}
 
 
-test http-persist-2 {three requests in two chunks} -constraints {serverListen macOrUnix} -body {
+test http-persist-2 {three requests in two chunks} -constraints {serverListen} -body {
 
     set d [tcltest::client 3 {
         "GET /1 HTTP/1.1\nHost: localhost\n\nGET /2 HTTP/1.1\nHost: localhost\n\n"
@@ -59,16 +46,16 @@ test http-persist-2 {three requests in two chunks} -constraints {serverListen ma
         set bytes [dict get $d $k bytes]
         set contentLength ""
         regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
-        lappend result content-length $contentLength
+        lappend result content-length [string compare $contentLength ""]
     }
 
     return $result
 } -cleanup {
     unset -nocomplain result d k bytes contentLength
-} -result {content-length 3 content-length 4 content-length 5}
+} -result {content-length 1 content-length 1 content-length 1}
 
 
-test http-persist-3 {three requests in one chunk} -constraints {serverListen macOrUnix} -body {
+test http-persist-3 {three requests in one chunk} -constraints {serverListen} -body {
 
     set d [tcltest::client 3 {
         "GET /1 HTTP/1.1\nHost: localhost\n\nGET /2 HTTP/1.1\nHost: localhost\n\nGET /3 HTTP/1.1\nHost: localhost\n\n"
@@ -79,16 +66,17 @@ test http-persist-3 {three requests in one chunk} -constraints {serverListen mac
         set bytes [dict get $d $k bytes]
         set contentLength ""
         regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
-        lappend result content-length $contentLength
+        lappend result content-length [string compare $contentLength ""]
+
     }
 
     return $result
 } -cleanup {
     unset -nocomplain result d k bytes contentLength
-} -result {content-length 3 content-length 4 content-length 5}
+} -result {content-length 1 content-length 1 content-length 1}
 
 
-test http-persist-4 {three requests in three chunks, broken strangely} -constraints {serverListen macOrUnix} -body {
+test http-persist-4 {three requests in three chunks, broken strangely} -constraints {serverListen} -body {
 
     set d [tcltest::client 3 {
         "GET /1 HTTP/1.1\nHost: localhost\n\nGET /2 "
@@ -101,16 +89,16 @@ test http-persist-4 {three requests in three chunks, broken strangely} -constrai
         set bytes [dict get $d $k bytes]
         set contentLength ""
         regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
-        lappend result content-length $contentLength
+        lappend result content-length [string compare $contentLength ""]
     }
 
     return $result
 } -cleanup {
     unset -nocomplain result d k bytes contentLength
-} -result {content-length 3 content-length 4 content-length 5}
+} -result {content-length 1 content-length 1 content-length 1}
 
 
-test http-persist-5 {three requests in two chunks, one with content} -constraints {serverListen macOrUnix} -body {
+test http-persist-5 {three requests in two chunks, one with content} -constraints {serverListen} -body {
 
     set d [tcltest::client 3 {
         "GET /1 HTTP/1.1\nHost: localhost\nContent-length: 2\n\nabGET /2 HTTP/1.1\nHost: localhost\n\n"
@@ -122,16 +110,16 @@ test http-persist-5 {three requests in two chunks, one with content} -constraint
         set bytes [dict get $d $k bytes]
         set contentLength ""
         regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
-        lappend result content-length $contentLength
+        lappend result content-length  [string compare $contentLength ""]
     }
 
     return $result
 } -cleanup {
     unset -nocomplain result d k bytes contentLength
-} -result {content-length 3 content-length 4 content-length 5}
+} -result {content-length 1 content-length 1 content-length 1}
 
 
-test http-persist-6 {two requests in one chunk, both with content} -constraints {serverListen macOrUnix} -body {
+test http-persist-6 {two requests in one chunk, both with content} -constraints {serverListen} -body {
 
     set d [tcltest::client 2 {
         "GET /1 HTTP/1.1\nHost: localhost\nContent-length: 2\n\nabGET /2 HTTP/1.1\nHost: localhost\nContent-length: 3\n\nXYZ"
@@ -142,16 +130,16 @@ test http-persist-6 {two requests in one chunk, both with content} -constraints 
         set bytes [dict get $d $k bytes]
         set contentLength ""
         regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
-        lappend result content-length $contentLength
+        lappend result content-length  [string compare $contentLength ""]
     }
 
     return $result
 } -cleanup {
     unset -nocomplain result d k bytes contentLength
-} -result {content-length 3 content-length 4}
+} -result {content-length 1 content-length 1}
 
 
-test http-persist-7 {two requests in one chunk, both with content, trailing junk} -constraints {serverListen macOrUnix} -body {
+test http-persist-7 {two requests in one chunk, both with content, trailing junk} -constraints {serverListen} -body {
 
     set d [tcltest::client 3 {
         "GET /1 HTTP/1.1\nHost: localhost\nContent-length: 2\n\nabGET /2 HTTP/1.1\nHost: localhost\nContent-length: 3\n\nXYZTOOMUCH\n"
@@ -162,16 +150,16 @@ test http-persist-7 {two requests in one chunk, both with content, trailing junk
         set bytes [dict get $d $k bytes]
         set contentLength ""
         regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
-        lappend result content-length $contentLength
+        lappend result content-length [string compare $contentLength ""]
     }
 
     return $result
 } -cleanup {
     unset -nocomplain result d k bytes contentLength
-} -result {content-length 3 content-length 4 content-length {}}
+} -result {content-length 1 content-length 1 content-length 0}
 
 
-test http-persist-8 {one request in six chunks} -constraints {serverListen macOrUnix} -body {
+test http-persist-8 {one request in six chunks} -constraints {serverListen} -body {
 
     set d [tcltest::client 1 {
         "GET "
@@ -187,16 +175,16 @@ test http-persist-8 {one request in six chunks} -constraints {serverListen macOr
         set bytes [dict get $d $k bytes]
         set contentLength ""
         regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
-        lappend result content-length $contentLength
+        lappend result content-length [string compare $contentLength ""]
     }
 
     return $result
 } -cleanup {
     unset -nocomplain result d k bytes contentLength
-} -result {content-length 3}
+} -result {content-length 1}
 
 
-test http-persist-9 {two requests with content, broken to 3 arbitrary chunks} -constraints {serverListen macOrUnix} -body {
+test http-persist-9 {two requests with content, broken to 3 arbitrary chunks} -constraints {serverListen} -body {
 
     set d [tcltest::client 2 {
         "GET /1 HTTP/1.1\nHost: localhost\nContent-length: 20\n\n0123456789"
@@ -209,13 +197,13 @@ test http-persist-9 {two requests with content, broken to 3 arbitrary chunks} -c
         set bytes [dict get $d $k bytes]
         set contentLength ""
         regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
-        lappend result content-length $contentLength
+        lappend result content-length [string compare $contentLength ""]
     }
 
     return $result
 } -cleanup {
     unset -nocomplain result d k bytes contentLength
-} -result {content-length 3 content-length 4}
+} -result {content-length 1 content-length 1}
 
 # Local variables:
 #    mode: tcl

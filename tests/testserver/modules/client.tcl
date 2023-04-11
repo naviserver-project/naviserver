@@ -1,5 +1,7 @@
 # -*- Tcl -*-
+
 namespace eval ::tcltest {
+
     #
     # A simple Tcl client used solely for testing and debugging of
     # buffering in persistent HTTP connections. Since the code uses
@@ -15,7 +17,8 @@ namespace eval ::tcltest {
     #
     proc client_log {msg} {
         if {$::tcltest::verbose} {
-            puts stderr "### $msg"
+            #puts stderr "### $msg"
+            ns_log notice "### $msg"
         }
     }
 
@@ -39,7 +42,7 @@ namespace eval ::tcltest {
         set contentLength 0
         set bytes ""
         set received 0
-        set index [string first \n\n $::tcltest::received]
+        set index [string first \r\n\r\n $::tcltest::received]
         if {$index > -1} {
             set head [string range $::tcltest::received 0 $index-1]
             set rest [string range $::tcltest::received $index+2 end]
@@ -51,8 +54,9 @@ namespace eval ::tcltest {
                 if {[string length $rest] >= $contentLength} {
                     set bytes $head\n\n[string range $rest 0 $contentLength-1]
                     set toparse [string range $rest $contentLength end]
+                    #client_log "still to parse <$toparse>"
                 } else {
-                    #client_log "need more content-length $contentLength <$rest>"
+                    client_log "need more content-length $contentLength <$rest>"
                     set toparse $::tcltest::received
                 }
             } else {
@@ -63,7 +67,7 @@ namespace eval ::tcltest {
             set ::tcltest::received $toparse
         }
         set more [expr {$toparse ne ""}]
-        client_log "eceived $received bytes [string length $bytes] more $more"
+        client_log "received $received bytes [string length $bytes] more $more"
 
         return [list bytes $bytes more $more received $received]
     }
@@ -120,7 +124,7 @@ namespace eval ::tcltest {
 
         set sockerr [fconfigure $rfd -error]
         if {$sockerr ne {}} {return -code error $sockerr}
-        fconfigure $rfd -translation crlf -blocking 0
+        fconfigure $rfd -translation binary -blocking 0
         fconfigure $wfd -translation crlf -blocking 1
         fileevent $rfd readable [list tcltest::client_receive $rfd]
         ::tcltest::client_send $wfd
