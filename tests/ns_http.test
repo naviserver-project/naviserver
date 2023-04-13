@@ -1384,6 +1384,53 @@ test http-6.5.1b {ns_getform and ns_getformfile + 2KB file} -constraints {curl s
     unset -nocomplain r boundary body
 } -result {200 {multipart/form-data; contentFile 0 needSpool 0 file 1 f2 'ü'}}
 
+test http-6.5.1c {ns_getform and ns_getformfile + 2KB file with binary NUL} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /post {
+        #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
+        set contentType     [ns_set iget [ns_conn headers] content-type]
+        set contentLength   [ns_set iget [ns_conn headers] content-length]
+        set haveFile        [expr {[ns_getformfile file] ne ""}]
+        set haveContentFile [expr {[ns_conn contentfile] ne ""}]
+        set maxUpload       [ns_config [ns_driversection -driver nssock] maxupload]
+        set needSpool       [expr {$contentLength > $maxUpload}]
+        set ct              [lindex $contentType 0]
+        set formValues      [ns_set array [ns_conn form]]
+        set f2              [binary encode hex [ns_set get [ns_conn form] f2 ""]]
+        ns_return 200 text/plain "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile f2 '$f2'"
+    }
+} -body {
+    #
+    # Binary values (i.e. invalid utf-8) passed to curl via command
+    # line seems problematic.
+    #
+    #set file [ns_server pagedir]/2048bytes
+    #exec curl -g -s -F file=@$file -F _charset_=iso8859-1 -F f2=\xfc [ns_config test listenurl]/post 2> $devnull
+
+    set boundary "----[test_case_name]"
+    set ct "multipart/form-data; boundary=$boundary"
+    set body [subst [ns_trim -delimiter | {
+        |--$boundary
+        |Content-Disposition: form-data; name="file"; filename="file.txt"
+        |Content-Type: text/plain
+        |
+        |[string repeat x 2048]
+        |--$boundary
+        |Content-Disposition: form-data; name="_charset_"
+        |
+        |iso8859-1
+        |--$boundary
+        |Content-Disposition: form-data; name="f2"
+        |
+        |\x00
+        |--$boundary--
+    }]]
+    nstest::http -setheaders [list content-type $ct] -getbody 1 POST /post $body
+
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain r boundary body
+} -result {200 {multipart/form-data; contentFile 0 needSpool 0 file 1 f2 '00'}}
+
 
 test http-6.5.2a {ns_getform and ns_getformfile + 16KB file multipart} -constraints {curl serverListen} -setup {
     ns_register_proc POST /post {
@@ -1597,6 +1644,53 @@ test http-6.5.2e {ns_getform and ns_getformfile + 16KB file multipart, explicit 
     nsv_unset regression-test http-6.5.2d
     unset -nocomplain d S C response
 } -returnCodes {ok return error} -result {f2 ü charset iso8859-1}
+
+test http-6.5.2f {ns_getform and ns_getformfile + 16KB file with binary NUL} -constraints {curl serverListen} -setup {
+    ns_register_proc POST /post {
+        #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
+        set contentType     [ns_set iget [ns_conn headers] content-type]
+        set contentLength   [ns_set iget [ns_conn headers] content-length]
+        set haveFile        [expr {[ns_getformfile file] ne ""}]
+        set haveContentFile [expr {[ns_conn contentfile] ne ""}]
+        set maxUpload       [ns_config [ns_driversection -driver nssock] maxupload]
+        set needSpool       [expr {$contentLength > $maxUpload}]
+        set ct              [lindex $contentType 0]
+        set formValues      [ns_set array [ns_conn form]]
+        set f2              [binary encode hex [ns_set get [ns_conn form] f2 ""]]
+        ns_return 200 text/plain "$ct contentFile $haveContentFile file $haveFile f2 '$f2'"
+    }
+} -body {
+    #
+    # Binary values (i.e. invalid utf-8) passed to curl via command
+    # line seems problematic.
+    #
+    #set file [ns_server pagedir]/2048bytes
+    #exec curl -g -s -F file=@$file -F _charset_=iso8859-1 -F f2=\xfc [ns_config test listenurl]/post 2> $devnull
+
+    set boundary "----[test_case_name]"
+    set ct "multipart/form-data; boundary=$boundary"
+    set body [subst [ns_trim -delimiter | {
+        |--$boundary
+        |Content-Disposition: form-data; name="file"; filename="file.txt"
+        |Content-Type: text/plain
+        |
+        |[string repeat x 16480]
+        |--$boundary
+        |Content-Disposition: form-data; name="_charset_"
+        |
+        |iso8859-1
+        |--$boundary
+        |Content-Disposition: form-data; name="f2"
+        |
+        |\x00
+        |--$boundary--
+    }]]
+    nstest::http -setheaders [list content-type $ct] -getbody 1 POST /post [encoding convertto utf-8 $body]
+
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain r boundary body
+} -result [subst {200 {multipart/form-data; contentFile $contentfile file 1 f2 '00'}}]
 
 
 test http-6.5.3a {
