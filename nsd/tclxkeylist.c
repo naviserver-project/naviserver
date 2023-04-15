@@ -765,8 +765,9 @@ FindKeyedListEntry(const keylIntObj_t *keylIntPtr, const char *key, size_t *keyL
 static int
 ObjToKeyedListEntry(Tcl_Interp *interp, Tcl_Obj *objPtr, keylEntry_t *entryPtr)
 {
-    int       objc, result = TCL_OK;
-    Tcl_Obj **objv;
+    int        result = TCL_OK;
+    TCL_OBJC_T objc;
+    Tcl_Obj  **objv;
 
     if (Tcl_ListObjGetElements(interp, objPtr, &objc, &objv) != TCL_OK) {
         Ns_TclPrintfResult(interp, "keyed list entry not a valid list, "
@@ -865,20 +866,21 @@ DupKeyedListInternalRep(Tcl_Obj *srcPtr, Tcl_Obj *copyPtr)
 static int
 SetKeyedListFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 {
-    int       objc, result = TCL_OK;
-    Tcl_Obj **objv;
+    int         result = TCL_OK;
+    TCL_OBJC_T  objc;
+    Tcl_Obj   **objv;
 
     if (Tcl_ListObjGetElements(interp, objPtr, &objc, &objv) != TCL_OK) {
         result = TCL_ERROR;
 
     } else {
-        int           idx;
+        TCL_OBJC_T    i;
         keylIntObj_t *keylIntPtr = AllocKeyedListIntRep();
 
         EnsureKeyedListSpace(keylIntPtr, (TCL_SIZE_T)objc);
 
-        for (idx = 0; idx < objc; idx++) {
-            if (ObjToKeyedListEntry(interp, objv[idx],
+        for (i = 0; i < objc; i++) {
+            if (ObjToKeyedListEntry(interp, objv[i],
                                     &(keylIntPtr->entries[keylIntPtr->numEntries])) != TCL_OK) {
                 result = TCL_ERROR;
                 break;
@@ -1286,7 +1288,7 @@ TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl
  *-----------------------------------------------------------------------------
  */
 int
-TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     Tcl_Obj    *keylPtr, *valuePtr;
     int         keyLen, status;
@@ -1365,7 +1367,7 @@ TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *-----------------------------------------------------------------------------
  */
 int
-TclX_KeylsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+TclX_KeylsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
 
@@ -1374,7 +1376,8 @@ TclX_KeylsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
                                 "listvar key value ?key value...?");
     } else {
         Tcl_Obj    *keylVarPtr, *newVarObj;
-        int         idx, keyLen;
+        int         keyLen;
+        TCL_OBJC_T  i;
 
         /*
          * Get the variable that we are going to update.  If the var
@@ -1392,14 +1395,14 @@ TclX_KeylsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
             newVarObj = NULL;
         }
 
-        for (idx = 2; idx < objc; idx += 2) {
-            const char *key = Tcl_GetStringFromObj(objv[idx], &keyLen);
+        for (i = 2; i < objc; i += 2) {
+            const char *key = Tcl_GetStringFromObj(objv[i], &keyLen);
 
             result = ValidateKey(interp, key, keyLen, TRUE);
             if (result == TCL_ERROR) {
                 break;
             }
-            result = TclX_KeyedListSet(interp, keylVarPtr, key, objv[idx+1]);
+            result = TclX_KeyedListSet(interp, keylVarPtr, key, objv[i+1]);
             if (result == TCL_ERROR) {
                 break;
             }
@@ -1425,7 +1428,7 @@ TclX_KeylsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *----------------------------------------------------------------------------
  */
 int
-TclX_KeyldelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+TclX_KeyldelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -1458,13 +1461,13 @@ TclX_KeyldelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
                 }
             }
             if (result == TCL_OK) {
-                int idx;
+                TCL_OBJC_T i;
 
                 keylPtr = keylVarPtr;
 
-                for (idx = 2; idx < objc; idx++) {
+                for (i = 2; i < objc; i++) {
                     int        keyLen;
-                    const char *key = Tcl_GetStringFromObj(objv[idx], &keyLen);
+                    const char *key = Tcl_GetStringFromObj(objv[i], &keyLen);
 
                     if (ValidateKey(interp, key, keyLen, TRUE) == TCL_ERROR) {
                         result = TCL_ERROR;
@@ -1490,7 +1493,7 @@ TclX_KeyldelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *-----------------------------------------------------------------------------
  */
 int
-TclX_KeylkeysObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+TclX_KeylkeysObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int         result;
 

@@ -183,7 +183,6 @@ Ns_SockaddrMaskedMatch(const struct sockaddr *addr, const struct sockaddr *mask,
         const struct in6_addr *addrBits   = &(((struct sockaddr_in6 *)addr)->sin6_addr);
         const struct in6_addr *maskBits   = &(((struct sockaddr_in6 *)mask)->sin6_addr);
         const struct in6_addr *maskedBits = &(((struct sockaddr_in6 *)masked)->sin6_addr);
-
         int i;
 
         success = NS_TRUE;

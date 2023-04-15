@@ -376,7 +376,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
 {
     Mod            *modPtr;
     Ns_DString     *dsPtr;
-    int             i;
+    TCL_OBJC_T      i;
     size_t          ulen, plen;
     struct stat     st;
     char           *e, *s;
@@ -725,7 +725,7 @@ CgiFree(Cgi *cgiPtr)
 static Ns_ReturnCode
 CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 {
-    int           i, opipe[2];
+    int           opipe[2], i;
     Ns_ReturnCode status;
     char         *s, *e;
     Ns_DString   *dsPtr;
@@ -762,9 +762,11 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
             s = *envp;
             e = strchr(s, INTCHAR('='));
             if (e != NULL) {
+                int idx;
+
                 *e = '\0';
-                i = Ns_SetFind(cgiPtr->env, s);
-                if (i < 0) {
+                idx = Ns_SetFind(cgiPtr->env, s);
+                if (idx < 0) {
                     /*
                      * TODO: we should use Ns_SetPutSz instead, but this
                      * change should be done once we have test cases for

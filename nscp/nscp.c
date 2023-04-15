@@ -53,7 +53,7 @@ typedef struct Sess {
  */
 
 static Ns_SockProc AcceptProc;
-static Tcl_ObjCmdProc ExitObjCmd;
+static TCL_OBJCMDPROC_T ExitObjCmd;
 static bool Login(const Sess *sessPtr, Tcl_DString *unameDSPtr);
 static bool GetLine(NS_SOCKET sock, const char *prompt, Tcl_DString *dsPtr, bool echo)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -61,7 +61,7 @@ static void LoadUsers(Mod *localModPtr, const char *server, const char *module)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 static Ns_ArgProc ArgProc;
 static Ns_TclTraceProc NscpAddCmds;
-static Tcl_ObjCmdProc NsTclNscpObjCmd;
+static TCL_OBJCMDPROC_T NsTclNscpObjCmd;
 
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 /*
@@ -419,7 +419,7 @@ EvalThread(void *arg)
      */
 
     stop = 0;
-    (void)Tcl_CreateObjCommand(interp, "exit", ExitObjCmd, (ClientData) &stop, NULL);
+    (void)TCL_CREATEOBJCOMMAND(interp, "exit", ExitObjCmd, (ClientData) &stop, NULL);
 
     ncmd = 0;
     while (stop == 0) {
@@ -678,7 +678,7 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
  */
 
 static int
-ExitObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+ExitObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -717,7 +717,7 @@ NscpAddCmds(Tcl_Interp *interp, const void *UNUSED(arg))
 {
     /*const char *server = arg;*/
 
-    (void)Tcl_CreateObjCommand(interp, "nscp", NsTclNscpObjCmd, NULL, NULL);
+    (void)TCL_CREATEOBJCOMMAND(interp, "nscp", NsTclNscpObjCmd, NULL, NULL);
 
     return NS_OK;
 }
@@ -737,7 +737,7 @@ NscpAddCmds(Tcl_Interp *interp, const void *UNUSED(arg))
  *----------------------------------------------------------------------
  */
 static int
-NscpUsersObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NscpUsersObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -778,7 +778,7 @@ NscpUsersObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl
  */
 
 static int
-NsTclNscpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclNscpObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"users", NscpUsersObjCmd},

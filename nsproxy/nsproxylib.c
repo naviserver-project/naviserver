@@ -48,7 +48,7 @@ ssize_t writev(int fildes, const struct iovec *iov, int iovcnt);
 ssize_t writev(int fildes, const struct iovec *iov, int iovcnt)
 {
     ssize_t result = 0;
-    int i;
+    int     i;
 
     for (i = 0; i < iovcnt; i++) {
         ssize_t written = ns_write(fildes, iov[i].iov_base, iov[i].iov_len);
@@ -72,7 +72,7 @@ ssize_t writev(int fildes, const struct iovec *iov, int iovcnt)
 ssize_t readv(int fildes, const struct iovec *iov, int iovcnt)
 {
     ssize_t result = 0;
-    int i;
+    int     i;
 
     for (i = 0; i < iovcnt; i++) {
         ssize_t read = ns_read(fildes, iov[i].iov_base, iov[i].iov_len);
@@ -281,14 +281,14 @@ static Ns_LogSeverity Ns_LogNsProxyDebug = 0;
  * Static functions defined in this file.
  */
 
-static Tcl_ObjCmdProc ProxyObjCmd;
-static Tcl_ObjCmdProc ConfigureObjCmd;
-static Tcl_ObjCmdProc GetObjCmd;
-static Tcl_ObjCmdProc StatsObjCmd;
-static Tcl_ObjCmdProc ClearObjCmd;
-static Tcl_ObjCmdProc StopObjCmd;
+static TCL_OBJCMDPROC_T ProxyObjCmd;
+static TCL_OBJCMDPROC_T ConfigureObjCmd;
+static TCL_OBJCMDPROC_T GetObjCmd;
+static TCL_OBJCMDPROC_T StatsObjCmd;
+static TCL_OBJCMDPROC_T ClearObjCmd;
+static TCL_OBJCMDPROC_T StopObjCmd;
 
-static Tcl_ObjCmdProc RunProxyObjCmd;
+static TCL_OBJCMDPROC_T RunProxyObjCmd;
 static Tcl_CmdDeleteProc DelProxyProc;
 static Tcl_InterpDeleteProc DeleteData;
 
@@ -443,7 +443,7 @@ Ns_ProxyTclInit(Tcl_Interp *interp)
     Tcl_InitHashTable(&idataPtr->ids, TCL_STRING_KEYS);
     Tcl_InitHashTable(&idataPtr->cnts, TCL_ONE_WORD_KEYS);
     Tcl_SetAssocData(interp, ASSOC_DATA, DeleteData, idataPtr);
-    (void)Tcl_CreateObjCommand(interp, "ns_proxy", ProxyObjCmd, idataPtr, NULL);
+    (void)TCL_CREATEOBJCOMMAND(interp, "ns_proxy", ProxyObjCmd, idataPtr, NULL);
 
     return TCL_OK;
 }
@@ -1679,7 +1679,7 @@ Import(Tcl_Interp *interp, const Tcl_DString *dsPtr, int *resultPtr)
  *----------------------------------------------------------------------
  */
 static int
-StatsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+StatsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
     char       *pool;
@@ -1742,7 +1742,7 @@ StatsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const*
  *----------------------------------------------------------------------
  */
 static int
-StopObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+StopObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
     char       *pool, *handle = NULL;
@@ -1801,7 +1801,7 @@ StopObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* 
  */
 
 static int
-ClearObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+ClearObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
     char       *pool, *handle = NULL;
@@ -1862,7 +1862,7 @@ ClearObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const*
  */
 
 static int
-ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     InterpData    *idataPtr = data;
     Pool          *poolPtr;
@@ -2117,7 +2117,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
  */
 
 static int
-ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+ConfigureObjCmd(ClientData data, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     InterpData *idataPtr = data;
     Pool       *poolPtr;
@@ -2151,7 +2151,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* o
             goto err;
         }
     } else if (objc > 4) {
-        int   i;
+        TCL_OBJC_T  i;
         const char *str;
 
         for (i = 3; i < (objc - 1); ++i) {
@@ -2427,7 +2427,7 @@ AppendObj(Tcl_Obj *listObj, const char *flag, Tcl_Obj *obj)
  */
 
 static int
-GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+GetObjCmd(ClientData data, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     InterpData    *idataPtr = data;
     Proxy         *proxyPtr, *firstPtr;
@@ -2523,7 +2523,7 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 
         proxyPtr = firstPtr;
         while (proxyPtr != NULL) {
-            proxyPtr->cmdToken = Tcl_CreateObjCommand(interp, proxyPtr->id,
+            proxyPtr->cmdToken = TCL_CREATEOBJCOMMAND(interp, proxyPtr->id,
                                                       RunProxyObjCmd, proxyPtr,
                                                       DelProxyProc);
             if (proxyPtr->cmdToken == NULL) {
@@ -3659,7 +3659,7 @@ ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr)
  */
 
 static int
-RunProxyObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+RunProxyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     char       *scriptString;
     int         result;

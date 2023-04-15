@@ -102,7 +102,7 @@ static Ns_LogFilter LogToFile;
 static Ns_LogFilter LogToTcl;
 static Ns_LogFilter LogToDString;
 
-static Tcl_ObjCmdProc NsLogCtlSeverityObjCmd;
+static TCL_OBJCMDPROC_T NsLogCtlSeverityObjCmd;
 
 static LogCache* GetCache(void)
     NS_GNUC_RETURNS_NONNULL;
@@ -1115,7 +1115,7 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, bool gmt)
  */
 
 int
-NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     void *addrPtr;
     int   result = TCL_OK;
@@ -1132,7 +1132,7 @@ NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
         if (likely(objc == 3)) {
             Ns_Log(severity, "%s", Tcl_GetString(objv[2]));
         } else {
-            int i;
+            TCL_OBJC_T i;
 
             Ns_DStringInit(&ds);
             for (i = 2; i < objc; ++i) {
@@ -1164,7 +1164,7 @@ NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_
  */
 
 static int
-NsLogCtlSeverityObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsLogCtlSeverityObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     Ns_LogSeverity    severity = 0; /* default value for the error cases */
     void             *addrPtr = NULL;
@@ -1264,7 +1264,7 @@ NsLogCtlSeverityObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
  */
 
 int
-NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int             result = TCL_OK, count, opt, i;
     Ns_DString      ds;
@@ -1375,7 +1375,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
             count = 0;
             if (objc > 2) {
                 Ns_ObjvValueRange countRange = {0, INT_MAX};
-                TCL_SIZE_T        oc = 1;
+                TCL_OBJC_T        oc = 1;
                 Ns_ObjvSpec       spec = {"?count", Ns_ObjvInt, &count, &countRange};
 
                 if (Ns_ObjvInt(&spec, interp, &oc, &objv[2]) != TCL_OK) {
@@ -1441,7 +1441,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
 
 int
 NsTclLogRollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                   int UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
+                   TCL_OBJC_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
 {
     if (Ns_LogRoll() != NS_OK) {
         Ns_TclPrintfResult(interp, "could not roll server log");
@@ -2187,7 +2187,7 @@ GetSeverityFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr, void **addrPtrPtr)
         if (hPtr != NULL) {
             *addrPtrPtr = Tcl_GetHashValue(hPtr);
         } else {
-            int  i;
+            int i;
             /*
              * Check for a legacy integer severity.
              */

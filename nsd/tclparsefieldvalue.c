@@ -239,7 +239,7 @@ SkipWhitespace(const unsigned char *source) {
  */
 int
 NsTclParseFieldvalue(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                      int objc, Tcl_Obj *const* objv)
+                      TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK, singleInt = (int)NS_FALSE,
                  lowerInt = (int)NS_FALSE, strictInt = (int)NS_FALSE;

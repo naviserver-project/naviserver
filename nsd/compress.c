@@ -262,6 +262,7 @@ Ns_CompressBufsGzip(Ns_CompressStream *cStream, struct iovec *bufs, int nbufs,
         DeflateOrAbort(z, flushFlags);
     } else {
         int i;
+
         for (i = 0; i < nbufs; i++) {
 
             z->next_in  = (void *)bufs[i].iov_base;

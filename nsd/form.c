@@ -406,7 +406,7 @@ Ns_QueryToSet(char *query, Ns_Set *set, Tcl_Encoding encoding)
  */
 
 int
-NsTclParseQueryObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclParseQueryObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int       result;
     NsInterp *itPtr = clientData;
@@ -995,7 +995,8 @@ Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding
      * string.
      */
     if (buffer != NULL && unescape != '\0') {
-        TCL_SIZE_T i, j, l = (TCL_SIZE_T)len;
+        TCL_OBJC_T i, j;
+        TCL_SIZE_T l = (TCL_SIZE_T)len;
 
       for (i = 0; i<l; i++) {
         if (buffer[i] == '\\' && buffer[i+1] == unescape) {

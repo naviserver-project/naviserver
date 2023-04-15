@@ -48,8 +48,8 @@ static const unsigned int maxBitElements = NS_BITELEMENTS *
  * Local functions defined in this file.
  */
 
-static Tcl_ObjCmdProc SectionObjCmd;
-static Tcl_ObjCmdProc ParamObjCmd;
+static TCL_OBJCMDPROC_T SectionObjCmd;
+static TCL_OBJCMDPROC_T ParamObjCmd;
 
 static void ConfigMark(Section *sectionPtr, size_t i, ValueOperation op)
     NS_GNUC_NONNULL(1);
@@ -924,13 +924,13 @@ void NsConfigMarkAsRead(const char *section, size_t i) {
 /* currently not needed */
 const char *NsConfigGetDefault(const char *section, const char *key) {
     const char *result = NULL;
-    int         i;
+    int         idx;
     Section    *sectionPtr = GetSection(section, NS_FALSE);
 
     if (sectionPtr != NULL) {
-        i = Ns_SetIFind(sectionPtr->defaults, key);
-        if (i > -1) {
-            result = sectionPtr->defaults->fields[i].value;
+        idx = Ns_SetIFind(sectionPtr->defaults, key);
+        if (idx > -1) {
+            result = sectionPtr->defaults->fields[idx].value;
         }
     }
     return result;
@@ -1138,8 +1138,8 @@ NsConfigEval(const char *config, const char *configFileName,
      */
 
     interp = Ns_TclCreateInterp();
-    (void)Tcl_CreateObjCommand(interp, "ns_section", SectionObjCmd, &sectionPtr, NULL);
-    (void)Tcl_CreateObjCommand(interp, "ns_param", ParamObjCmd, &sectionPtr, NULL);
+    (void)TCL_CREATEOBJCOMMAND(interp, "ns_section", SectionObjCmd, &sectionPtr, NULL);
+    (void)TCL_CREATEOBJCOMMAND(interp, "ns_param", ParamObjCmd, &sectionPtr, NULL);
     for (i = 0; argv[i] != NULL; ++i) {
         (void) Tcl_SetVar(interp, "argv", argv[i], TCL_APPEND_VALUE|TCL_LIST_ELEMENT|TCL_GLOBAL_ONLY);
     }
@@ -1176,7 +1176,7 @@ NsConfigEval(const char *config, const char *configFileName,
  */
 
 static int
-ParamObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+ParamObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
     Tcl_Obj    *nameObj, *valueObj;
@@ -1233,7 +1233,7 @@ ParamObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const*
  */
 
 static int
-SectionObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+SectionObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
     char       *sectionName = NULL;
@@ -1292,20 +1292,20 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defaultS
     sectionPtr = GetSection(section, NS_FALSE);
 
     if (sectionPtr != NULL && sectionPtr->set != NULL) {
-        int  i;
+        int idx;
 
         if (exact) {
-            i = Ns_SetFind(sectionPtr->set, key);
+            idx = Ns_SetFind(sectionPtr->set, key);
         } else {
-            i = Ns_SetIFind(sectionPtr->set, key);
+            idx = Ns_SetIFind(sectionPtr->set, key);
         }
 
-        if (i >= 0) {
+        if (idx >= 0) {
             /*
              * The configuration value was found in the ns_set for this
              * section.
              */
-            s = Ns_SetValue(sectionPtr->set, i);
+            s = Ns_SetValue(sectionPtr->set, idx);
 
         } else if (!nsconf.state.started /*&& defaultString != NULL && *defaultString != '\0'*/) {
             /*
@@ -1316,16 +1316,16 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defaultS
              * startup when we there is a single thread. Changing ns_sets is
              * not thread safe.
              */
-            i = (int)Ns_SetPutSz(sectionPtr->set, key, TCL_INDEX_NONE,
+            idx = (int)Ns_SetPutSz(sectionPtr->set, key, TCL_INDEX_NONE,
                                  defaultString, defaultString == NULL ? 0 : TCL_INDEX_NONE);
-            ConfigMark(sectionPtr, (size_t)i, value_defaulted);
-            s = Ns_SetValue(sectionPtr->set, i);
+            ConfigMark(sectionPtr, (size_t)idx, value_defaulted);
+            s = Ns_SetValue(sectionPtr->set, idx);
 
         } else {
             s = defaultString;
         }
-        if (!nsconf.state.started) {
-            ConfigMark(sectionPtr, (size_t)i, value_read);
+        if (!nsconf.state.started && idx >= 0) {
+            ConfigMark(sectionPtr, (size_t)idx, value_read);
             if (defaultString != NULL) {
                 (void)Ns_SetPutSz(sectionPtr->defaults,
                                   key, TCL_INDEX_NONE,

@@ -201,9 +201,10 @@ Ns_TclFreeSet(Tcl_Interp *interp, const char *setId)
 Ns_Set *
 Ns_SetCreateFromDict(Tcl_Interp *interp, const char *name, Tcl_Obj *listObj)
 {
-    int       result, objc;
-    Tcl_Obj **objv;
-    Ns_Set   *setPtr;
+    int        result;
+    TCL_OBJC_T objc;
+    Tcl_Obj  **objv;
+    Ns_Set    *setPtr;
 
     NS_NONNULL_ASSERT(listObj != NULL);
 
@@ -226,7 +227,7 @@ Ns_SetCreateFromDict(Tcl_Interp *interp, const char *name, Tcl_Obj *listObj)
         setPtr = NULL;
 
     } else {
-        int i;
+        TCL_OBJC_T i;
 
         setPtr = Ns_SetCreate(name);
         for (i = 0; i < objc; i += 2) {
@@ -260,7 +261,7 @@ Ns_SetCreateFromDict(Tcl_Interp *interp, const char *name, Tcl_Obj *listObj)
  */
 
 int
-NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     NsInterp            *itPtr = clientData;
     Ns_Set              *set = NULL;
@@ -336,7 +337,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
     case SNewIdx:   NS_FALL_THROUGH; /* fall through */
     case SCopyIdx:  NS_FALL_THROUGH; /* fall through */
     case SSplitIdx: {
-        int           offset = 2;
+        TCL_OBJC_T    offset = 2;
         const char   *name;
 
         /*
@@ -388,7 +389,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                 Tcl_Obj     *listObj = Tcl_NewListObj(0, NULL);
                 Ns_Set     **sets;
                 const char  *split;
-                int          i;
+                TCL_OBJC_T   i;
 
                 split = (offset < objc) ? Tcl_GetString(objv[offset]) : ".";
                 sets = Ns_SetSplit(set, *split);
@@ -637,7 +638,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                  */
                 Ns_ObjvValueRange idxRange = {0, (Tcl_WideInt)Ns_SetSize(set)};
                 int               i;
-                TCL_SIZE_T        oc = 1;
+                TCL_OBJC_T        oc = 1;
                 Ns_ObjvSpec       spec = {"?idx", Ns_ObjvInt, &i, &idxRange};
 
                 if (unlikely(objc != 4)) {
@@ -697,7 +698,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
                     Tcl_WrongNumArgs(interp, 2, objv, "setId key value");
                     result = TCL_ERROR;
                 } else {
-                    int i;
+                    int         i;
                     const char *keyString, *valueString;
                     TCL_SIZE_T  keyLength, valueLength;
 
@@ -802,7 +803,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
  */
 
 int
-NsTclParseHeaderObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclParseHeaderObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     NsInterp    *itPtr = clientData;
     int          result = TCL_OK;

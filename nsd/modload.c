@@ -251,7 +251,7 @@ Ns_ModuleLoad(Tcl_Interp *interp, const char *server, const char *module, const 
  */
 
 int
-NsTclModuleLoadObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclModuleLoadObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     char         *module, *file, *init = (char *)"Ns_ModuleInit";
     int           global = (int)NS_FALSE, result = TCL_OK;

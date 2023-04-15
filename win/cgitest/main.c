@@ -19,9 +19,9 @@
  */
 
 int
-main(int argc, char **argv)
+main(TCL_OBJC_T argc, char **argv)
 {
-    int i;
+    TCL_OBJC_T i;
     char buf[8192];
 
     if (strstr(argv[0], "nph-") != NULL) {

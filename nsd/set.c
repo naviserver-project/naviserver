@@ -562,14 +562,14 @@ Ns_SetFindCmp(const Ns_Set *set, const char *key, StringCmpProc cmp)
 const char *
 Ns_SetGetCmp(const Ns_Set *set, const char *key, StringCmpProc cmp)
 {
-    int   i;
+    int idx;
 
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
     NS_NONNULL_ASSERT(cmp != NULL);
 
-    i = Ns_SetFindCmp(set, key, cmp);
-    return ((i == -1) ? NULL : set->fields[i].value);
+    idx = Ns_SetFindCmp(set, key, cmp);
+    return ((idx == -1) ? NULL : set->fields[idx].value);
 }
 
 

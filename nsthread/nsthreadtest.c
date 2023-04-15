@@ -292,10 +292,10 @@ static void
 DumpString(Tcl_DString *dsPtr)
 {
     char **largv;
-    int largc;
+    TCL_SIZE_T largc;
 
     if (Tcl_SplitList(NULL, dsPtr->string, &largc, (const char***)&largv) == TCL_OK) {
-        int i;
+        TCL_SIZE_T i;
 
         for (i = 0; i < largc; ++i) {
             printf("\t%s\n", largv[i]);

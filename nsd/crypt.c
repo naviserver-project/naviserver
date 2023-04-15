@@ -204,7 +204,7 @@ static void encrypt_private(const struct sched *sp, unsigned char *block, bool b
 static void
 setkey_private(struct sched *sp, const unsigned char *key)
 {
-    register int    i;
+    register int i;
 
     NS_NONNULL_ASSERT(sp != NULL);
     NS_NONNULL_ASSERT(key != NULL);

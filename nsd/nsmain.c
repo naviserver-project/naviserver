@@ -24,7 +24,7 @@
 
 typedef struct Args {
     char     **argv;
-    TCL_SIZE_T argc;
+    TCL_OBJC_T argc;
 } Args;
 
 /*
@@ -662,15 +662,15 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      */
 
     if (server != NULL) {
-        int i = Ns_SetFind(servers, server);
-        if (i < 0) {
+        int idx = Ns_SetFind(servers, server);
+        if (idx < 0) {
             Ns_Log(Error, "nsmain: no such server '%s' in configuration file '%s'",
                    server, nsconf.configFile);
             Ns_Log(Warning, "nsmain: Writing the server names we DO have to stderr now:");
             Ns_SetPrint(servers);
             Ns_Fatal("nsmain: no such server '%s'", server);
         }
-        server = Ns_SetKey(servers, i);
+        server = Ns_SetKey(servers, idx);
     }
 
     /*
@@ -1119,7 +1119,7 @@ Ns_StopServer(char *server)
  */
 
 int
-NsTclShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int         sig = NS_SIGTERM, result = TCL_OK;
     Ns_Time    *timeoutPtr = NULL;

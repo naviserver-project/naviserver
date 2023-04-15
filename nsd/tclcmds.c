@@ -25,7 +25,7 @@
 typedef struct Cmd {
     const char *name;
     Tcl_CmdProc *proc;
-    Tcl_ObjCmdProc *objProc;
+    TCL_OBJCMDPROC_T *objProc;
 } Cmd;
 
 /*
@@ -324,7 +324,7 @@ AddCmds(const Cmd *cmdPtr, NsInterp *itPtr)
          * One has to provide either an objProc or a proc.
          */
         if (cmdPtr->objProc != NULL) {
-            (void)Tcl_CreateObjCommand(itPtr->interp, cmdPtr->name, cmdPtr->objProc, itPtr, NULL);
+            (void)TCL_CREATEOBJCOMMAND(itPtr->interp, cmdPtr->name, cmdPtr->objProc, itPtr, NULL);
         } else {
             assert(cmdPtr->proc != NULL);
             (void)Tcl_CreateCommand(itPtr->interp, cmdPtr->name, cmdPtr->proc, itPtr, NULL);

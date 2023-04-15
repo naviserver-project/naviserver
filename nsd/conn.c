@@ -1507,7 +1507,7 @@ Ns_ConnSetCompression(Ns_Conn *conn, int level)
  */
 
 int
-NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     NsInterp            *itPtr = clientData;
     Conn                *connPtr;
@@ -1656,7 +1656,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
     case CKeepAliveIdx:
         {
             Ns_ObjvValueRange keepRange = {0, 1};
-            TCL_SIZE_T  oc = 1;
+            TCL_OBJC_T  oc = 1;
             Ns_ObjvSpec spec = {"?size", Ns_ObjvInt, &connPtr->keep, &keepRange};
 
             if (objc > 2 && Ns_ObjvInt(&spec, interp, &oc, &objv[2]) != TCL_OK) {
@@ -1682,7 +1682,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
     case CCompressIdx:
         if (objc > 2) {
             Ns_ObjvValueRange compressRange = {0, 9};
-            TCL_SIZE_T        oc = 1;
+            TCL_OBJC_T        oc = 1;
             int               level = 0;
             Ns_ObjvSpec       spec = {"?level", Ns_ObjvInt, &level, &compressRange};
 
@@ -1704,7 +1704,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
             Tcl_SetObjResult(interp, Tcl_NewStringObj(request->urlv, request->urlv_len));
         } else {
             Ns_ObjvValueRange idxRange = {0, request->urlc - 1};
-            TCL_SIZE_T        oc = 1;
+            TCL_OBJC_T        oc = 1;
             int               idx = 0;
             Ns_ObjvSpec       spec = {"?idx", Ns_ObjvInt, &idx, &idxRange};
 
@@ -2084,7 +2084,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
             result = TCL_ERROR;
 
         } else {
-            TCL_SIZE_T        oc = 3;
+            TCL_OBJC_T        oc = 3;
             int               offset;
             Ns_ObjvValueRange offsetRange = {0, (Tcl_WideInt)connPtr->reqPtr->length};
             Ns_ObjvSpec       specOffset = {"offset", Ns_ObjvInt, &offset, &offsetRange};
@@ -2136,7 +2136,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
 
     case CRatelimitIdx:
         if (objc > 2) {
-            TCL_SIZE_T  oc = 2;
+            TCL_OBJC_T  oc = 2;
             int         rateLimit;
             Ns_ObjvSpec specLength = {"ratelimit", Ns_ObjvInt, &rateLimit, &posintRange0};
 
@@ -2253,7 +2253,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
 
         } else if (objc == 3) {
             Ns_ObjvValueRange statusRange = {100, 599};
-            TCL_SIZE_T        oc = 2;
+            TCL_OBJC_T        oc = 2;
             int               status;
             Ns_ObjvSpec       spec = {"?status", Ns_ObjvInt, &status, &statusRange};
 
@@ -2314,7 +2314,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
             Tcl_WideInt       sent;
             Ns_ObjvValueRange sentRange = {0, LLONG_MAX};
             Ns_ObjvSpec       spec = {"?idx", Ns_ObjvWideInt, &sent, &sentRange};
-            TCL_SIZE_T        oc = 1;
+            TCL_OBJC_T        oc = 1;
 
             if (Ns_ObjvWideInt(&spec, interp, &oc, &objv[2]) != TCL_OK) {
                 result = TCL_ERROR;
@@ -2374,7 +2374,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
  */
 
 int
-NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     const NsServer *servPtr = NsGetInitServer();
     int             result = TCL_OK;
@@ -2415,7 +2415,7 @@ NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
  */
 
 int
-NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     const NsInterp   *itPtr = clientData;
     int               result = TCL_OK;

@@ -202,15 +202,15 @@ static Ns_ThreadProc SpoolerThread;
 static Ns_ThreadProc WriterThread;
 static Ns_ThreadProc AsyncWriterThread;
 
-static Tcl_ObjCmdProc WriterListObjCmd;
-static Tcl_ObjCmdProc WriterSizeObjCmd;
-static Tcl_ObjCmdProc WriterStreamingObjCmd;
-static Tcl_ObjCmdProc WriterSubmitObjCmd;
-static Tcl_ObjCmdProc WriterSubmitFileObjCmd;
+static TCL_OBJCMDPROC_T WriterListObjCmd;
+static TCL_OBJCMDPROC_T WriterSizeObjCmd;
+static TCL_OBJCMDPROC_T WriterStreamingObjCmd;
+static TCL_OBJCMDPROC_T WriterSubmitObjCmd;
+static TCL_OBJCMDPROC_T WriterSubmitFileObjCmd;
 
-static Tcl_ObjCmdProc AsyncLogfileWriteObjCmd;
-static Tcl_ObjCmdProc AsyncLogfileOpenObjCmd;
-static Tcl_ObjCmdProc AsyncLogfileCloseObjCmd;
+static TCL_OBJCMDPROC_T AsyncLogfileWriteObjCmd;
+static TCL_OBJCMDPROC_T AsyncLogfileOpenObjCmd;
+static TCL_OBJCMDPROC_T AsyncLogfileCloseObjCmd;
 
 static Ns_ReturnCode DriverWriterFromObj(Tcl_Interp *interp, Tcl_Obj *driverObj,
                                          const Ns_Conn *conn, DrvWriter **wrPtrPtr)
@@ -657,7 +657,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
             size_t      maxModuleNameLength = strlen(module) + (size_t)TCL_INTEGER_SPACE + 1u;
             char       *moduleName = ns_malloc(maxModuleNameLength);
             const char *passedDefserver = defserver != NULL ? ns_strdup(defserver) : NULL;
-            int    i;
+            int         i;
 
             for (i = 0; i < nrDrivers; i++) {
                 snprintf(moduleName, maxModuleNameLength, "%s:%d", module, i);
@@ -1482,7 +1482,7 @@ NsStopSpoolers(void)
  *----------------------------------------------------------------------
  */
 static int
-DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -1592,7 +1592,7 @@ DriverInfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  *----------------------------------------------------------------------
  */
 static int
-DriverStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+DriverStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -1654,7 +1654,7 @@ DriverStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *----------------------------------------------------------------------
  */
 static int
-DriverThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+DriverThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -1693,7 +1693,7 @@ DriverThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
  *----------------------------------------------------------------------
  */
 static int
-DriverNamesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+DriverNamesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -1741,7 +1741,7 @@ DriverNamesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  *----------------------------------------------------------------------
  */
 int
-NsTclDriverObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclDriverObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"info",       DriverInfoObjCmd},
@@ -5394,7 +5394,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
     }
 
     if ((wrSockPtr->err != 0) || (wrSockPtr->status != SPOOLER_OK)) {
-        int i;
+        TCL_SIZE_T i;
         /*
          * Lookup the matching sockState from the spooler state. The array has
          * just 5 elements, on average, just 2 comparisons are needed (since
@@ -6699,7 +6699,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
         wrSockPtr->c.file.toRead = nsend;
 
     } else if (bufs != NULL) {
-        int   i, j, headerbufs = (headerSize > 0u ? 1 : 0);
+        int i, j, headerbufs = (headerSize > 0u ? 1 : 0);
 
         wrSockPtr->fd = NS_INVALID_FD;
 
@@ -6924,7 +6924,7 @@ DriverWriterFromObj(Tcl_Interp *interp, Tcl_Obj *driverObj, const Ns_Conn *conn,
  *----------------------------------------------------------------------
  */
 static int
-WriterSubmitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+WriterSubmitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int               result = TCL_OK;
     Ns_Conn          *conn;
@@ -7063,7 +7063,7 @@ WriterCheckInputParams(Tcl_Interp *interp, const char *filenameString,
  *----------------------------------------------------------------------
  */
 static int
-WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
     Ns_Conn    *conn;
@@ -7187,7 +7187,7 @@ WriterGetMemunitFromDict(Tcl_Interp *interp, Tcl_Obj *dictObj, Tcl_Obj *keyObj,
  *----------------------------------------------------------------------
  */
 static int
-WriterSubmitFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+WriterSubmitFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
     Ns_Conn    *conn;
@@ -7353,7 +7353,7 @@ WriterSubmitFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
  *----------------------------------------------------------------------
  */
 static int
-WriterListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+WriterListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
     NsServer    *servPtr = NULL;
@@ -7449,7 +7449,7 @@ WriterListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  *----------------------------------------------------------------------
  */
 static int
-WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int               result = TCL_OK;
     Tcl_Obj          *driverObj = NULL;
@@ -7534,7 +7534,7 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tc
  */
 static int
 WriterStreamingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                      int objc, Tcl_Obj *const* objv)
+                      TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int          boolValue = -1, result = TCL_OK;
     Tcl_Obj     *driverObj = NULL;
@@ -7620,7 +7620,7 @@ WriterStreamingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  */
 int
 NsTclWriterObjCmd(ClientData clientData, Tcl_Interp *interp,
-                  int objc, Tcl_Obj *const* objv)
+                  TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"list",        WriterListObjCmd},
@@ -8101,7 +8101,7 @@ AsyncWriterThread(void *arg)
  *----------------------------------------------------------------------
  */
 static int
-AsyncLogfileWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+AsyncLogfileWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int               result = TCL_OK, binary = (int)NS_FALSE, sanitize;
     Tcl_Obj          *stringObj;
@@ -8189,7 +8189,7 @@ AsyncLogfileWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
  *----------------------------------------------------------------------
  */
 static int
-AsyncLogfileOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+AsyncLogfileOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
     unsigned int flags = O_APPEND;
@@ -8218,12 +8218,13 @@ AsyncLogfileOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
         result = TCL_ERROR;
 
     } else if (flagsObj != NULL) {
-        Tcl_Obj **ov;
-        int       oc;
+        Tcl_Obj  **ov;
+        TCL_OBJC_T oc;
 
         result = Tcl_ListObjGetElements(interp, flagsObj, &oc, &ov);
         if (result == TCL_OK && oc > 0) {
-            int i, opt;
+            TCL_OBJC_T i;
+            int        opt;
 
             flags = 0u;
             for (i = 0; i < oc; i++) {
@@ -8272,7 +8273,7 @@ AsyncLogfileOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
  *----------------------------------------------------------------------
  */
 static int
-AsyncLogfileCloseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+AsyncLogfileCloseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int               fd = 0, result = TCL_OK;
     Ns_ObjvValueRange range = {0, INT_MAX};
@@ -8312,7 +8313,7 @@ AsyncLogfileCloseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int o
  *----------------------------------------------------------------------
  */
 int
-NsTclAsyncLogfileObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclAsyncLogfileObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"open",  AsyncLogfileOpenObjCmd},

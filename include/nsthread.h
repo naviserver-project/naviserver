@@ -565,6 +565,14 @@ typedef int ns_sockerrno_t;
 # define NS_TCL_PRE87
 #endif
 
+#ifndef NS_TCL_PRE87
+# if TCL_MAJOR_VERSION<=8 && TCL_MINOR_VERSION>=7 && TCL_RELEASE_SERIAL>=6
+#  define NS_TCL_HAVE_TIP629
+# elseif TCL_MAJOR_VERSION>=9
+#  define NS_TCL_HAVE_TIP629
+# endif    
+#endif
+
 #if TCL_MAJOR_VERSION<9
 # define NS_TCL_PRE9
 #endif
@@ -581,12 +589,26 @@ typedef int ns_sockerrno_t;
 # define TCL_HASH_TYPE unsigned
 #endif
 
-#ifdef NS_TCL_PRE9
-# define TCL_SIZE_T int
+
+#ifdef NS_TCL_HAVE_TIP629
+# define TCL_OBJC_T           int
+# define TCL_OBJCMDPROC_T     Tcl_ObjCmdProc
+# define TCL_CREATEOBJCOMMAND Tcl_CreateObjCommand
 #else
-# define TCL_SIZE_T Tcl_Size
+/* 
+ * Support for TIP 627 
+ * https://core.tcl-lang.org/tips/doc/trunk/tip/627.md
+*/
+# define TCL_OBJC_T           size_t
+# define TCL_OBJCMDPROC_T     Tcl_ObjCmdProc2
+# define TCL_CREATEOBJCOMMAND Tcl_CreateObjCommand2
 #endif
 
+#ifdef NS_TCL_PRE9
+# define TCL_SIZE_T           int
+#else
+# define TCL_SIZE_T           Tcl_Size
+#endif
 
 #if !defined(NS_POLL_NFDS_TYPE)
 # define NS_POLL_NFDS_TYPE unsigned int

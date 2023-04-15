@@ -70,7 +70,7 @@ static Ns_TaskQueue *taskQueue = NULL; /* MT: static variable! */
 
 static int HttpQueue(
     NsInterp *itPtr,
-    int objc,
+    TCL_OBJC_T objc,
     Tcl_Obj *const*
     objv,
     bool run
@@ -231,13 +231,13 @@ static Ns_TaskProc CloseWaitProc;
 /*
  * Function implementing the Tcl interface.
  */
-static Tcl_ObjCmdProc HttpCancelObjCmd;
-static Tcl_ObjCmdProc HttpCleanupObjCmd;
-static Tcl_ObjCmdProc HttpListObjCmd;
-static Tcl_ObjCmdProc HttpStatsObjCmd;
-static Tcl_ObjCmdProc HttpQueueObjCmd;
-static Tcl_ObjCmdProc HttpRunObjCmd;
-static Tcl_ObjCmdProc HttpWaitObjCmd;
+static TCL_OBJCMDPROC_T HttpCancelObjCmd;
+static TCL_OBJCMDPROC_T HttpCleanupObjCmd;
+static TCL_OBJCMDPROC_T HttpListObjCmd;
+static TCL_OBJCMDPROC_T HttpStatsObjCmd;
+static TCL_OBJCMDPROC_T HttpQueueObjCmd;
+static TCL_OBJCMDPROC_T HttpRunObjCmd;
+static TCL_OBJCMDPROC_T HttpWaitObjCmd;
 
 static NsHttpParseProc ParseCRProc;
 static NsHttpParseProc ParseLFProc;
@@ -1122,7 +1122,7 @@ int
 NsTclHttpObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    TCL_OBJC_T objc,
     Tcl_Obj *const* objv
 ) {
     const Ns_SubCmdSpec subcmds[] = {
@@ -1160,7 +1160,7 @@ static int
 HttpRunObjCmd(
     ClientData clientData,
     Tcl_Interp *UNUSED(interp),
-    int objc,
+    TCL_OBJC_T objc,
     Tcl_Obj *const* objv
 ) {
     return HttpQueue(clientData, objc, objv, NS_TRUE);
@@ -1187,7 +1187,7 @@ static int
 HttpQueueObjCmd(
     ClientData clientData,
     Tcl_Interp *UNUSED(interp),
-    int objc,
+    TCL_OBJC_T objc,
     Tcl_Obj *const* objv
 ) {
     return HttpQueue(clientData, objc, objv, NS_FALSE);
@@ -1264,7 +1264,7 @@ static int
 HttpWaitObjCmd(
     ClientData  clientData,
     Tcl_Interp *interp,
-    int         objc,
+    TCL_OBJC_T         objc,
     Tcl_Obj    *const* objv
 ) {
     NsInterp   *itPtr = clientData;
@@ -1463,7 +1463,7 @@ static int
 HttpCancelObjCmd(
     ClientData  clientData,
     Tcl_Interp *interp,
-    int         objc,
+    TCL_OBJC_T         objc,
     Tcl_Obj    *const* objv
 ) {
     NsInterp    *itPtr = clientData;
@@ -1515,7 +1515,7 @@ static int
 HttpCleanupObjCmd(
     ClientData  clientData,
     Tcl_Interp *interp,
-    int         objc,
+    TCL_OBJC_T         objc,
     Tcl_Obj    *const* objv
 ) {
     NsInterp    *itPtr = clientData;
@@ -1601,7 +1601,7 @@ static int
 HttpListObjCmd(
     ClientData  clientData,
     Tcl_Interp *interp,
-    int         objc,
+    TCL_OBJC_T         objc,
     Tcl_Obj    *const* objv
 ) {
     NsInterp      *itPtr = clientData;
@@ -1676,7 +1676,7 @@ static int
 HttpStatsObjCmd(
     ClientData  clientData,
     Tcl_Interp *interp,
-    int         objc,
+    TCL_OBJC_T         objc,
     Tcl_Obj    *const* objv
 ) {
     NsInterp      *itPtr = clientData;
@@ -1857,7 +1857,7 @@ static void TaskQueueRequire(void) {
 static int
 HttpQueue(
     NsInterp *itPtr,
-    int objc,
+    TCL_OBJC_T objc,
     Tcl_Obj *const* objv,
     bool run
 ) {

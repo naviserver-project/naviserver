@@ -69,7 +69,7 @@ static Ns_ShutdownProc LogCloseCallback;
 static Ns_TraceProc    LogTrace;
 static Ns_ArgProc      LogArg;
 static Ns_TclTraceProc AddCmds;
-static Tcl_ObjCmdProc  LogObjCmd;
+static TCL_OBJCMDPROC_T  LogObjCmd;
 
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 
@@ -291,7 +291,7 @@ AddCmds(Tcl_Interp *interp, const void *arg)
 {
     const Log *logPtr = arg;
 
-    Tcl_CreateObjCommand(interp, "ns_accesslog", LogObjCmd, (ClientData)logPtr, NULL);
+    TCL_CREATEOBJCOMMAND(interp, "ns_accesslog", LogObjCmd, (ClientData)logPtr, NULL);
     return NS_OK;
 }
 
@@ -419,7 +419,7 @@ ParseExtendedHeaders(Log *logPtr, const char *str)
  */
 
 static int
-LogObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     const char    *strarg;
     int            rc, cmd, result = TCL_OK;

@@ -115,8 +115,8 @@ Ns_GetEnviron(void)
 char **
 Ns_CopyEnviron(Ns_DString *dsPtr)
 {
-    char *const*envp;
-    int i;
+    char *const *envp;
+    int          i;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
@@ -151,7 +151,7 @@ Ns_CopyEnviron(Ns_DString *dsPtr)
  */
 
 int
-NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int                      result, opt;
     static const char *const opts[] = {

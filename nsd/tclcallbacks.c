@@ -27,7 +27,7 @@ typedef void *(AtProc)(Ns_Callback *proc, void *data);
  */
 
 static Ns_ShutdownProc ShutdownProc;
-static int AtObjCmd(AtProc *atProc, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+static int AtObjCmd(AtProc *atProc, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 
@@ -53,7 +53,7 @@ static int AtObjCmd(AtProc *atProc, Tcl_Interp *interp, int objc, Tcl_Obj *const
  */
 Ns_TclCallback *
 Ns_TclNewCallback(Tcl_Interp *interp, ns_funcptr_t cbProc, Tcl_Obj *scriptObjPtr,
-                  TCL_SIZE_T objc, Tcl_Obj *const* objv)
+                  TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     Ns_TclCallback *cbPtr;
 
@@ -74,7 +74,7 @@ Ns_TclNewCallback(Tcl_Interp *interp, ns_funcptr_t cbProc, Tcl_Obj *scriptObjPtr
         cbPtr->argv   = (char **)&cbPtr->args;
 
         if (objc > 0) {
-            TCL_SIZE_T i;
+            TCL_OBJC_T i;
 
             for (i = 0; i < objc; i++) {
                 cbPtr->argv[i] = ns_strdup(Tcl_GetString(objv[i]));
@@ -259,7 +259,7 @@ Ns_TclCallbackArgProc(Tcl_DString *dsPtr, const void *arg)
  */
 
 static int
-AtObjCmd(AtProc *atProc, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+AtObjCmd(AtProc *atProc, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -280,25 +280,25 @@ AtObjCmd(AtProc *atProc, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 }
 
 int
-NsTclAtPreStartupObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclAtPreStartupObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     return AtObjCmd(Ns_RegisterAtPreStartup, interp, objc, objv);
 }
 
 int
-NsTclAtStartupObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclAtStartupObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     return AtObjCmd(Ns_RegisterAtStartup, interp, objc, objv);
 }
 
 int
-NsTclAtSignalObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclAtSignalObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     return AtObjCmd(Ns_RegisterAtSignal, interp, objc, objv);
 }
 
 int
-NsTclAtExitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclAtExitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     return AtObjCmd(Ns_RegisterAtExit, interp, objc, objv);
 }
@@ -322,7 +322,7 @@ NsTclAtExitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, T
  */
 
 int
-NsTclAtShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+NsTclAtShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
     static bool initialized = NS_FALSE;
