@@ -568,9 +568,9 @@ typedef int ns_sockerrno_t;
 #ifndef NS_TCL_PRE87
 # if TCL_MAJOR_VERSION<=8 && TCL_MINOR_VERSION>=7 && TCL_RELEASE_SERIAL>=6
 #  define NS_TCL_HAVE_TIP629
-# elseif TCL_MAJOR_VERSION>=9
+# elif (TCL_MAJOR_VERSION>=9)
 #  define NS_TCL_HAVE_TIP629
-# endif    
+# endif
 #endif
 
 #if TCL_MAJOR_VERSION<9
