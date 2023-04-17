@@ -152,8 +152,8 @@ typedef struct WriterSock {
             size_t             toRead;
             unsigned char     *buf;
             Ns_FileVec        *bufs;
-            int                nbufs;
-            int                currentbuf;
+            TCL_SIZE_T         nbufs;
+            TCL_SIZE_T         currentbuf;
             Ns_Mutex           fdlock;
         } file;
     } c;
@@ -564,7 +564,8 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
     if (!alreadyInitialized && status == NS_OK) {
         const char *path, *host, *address, *defserver;
         bool        noHostNameGiven;
-        int         nrDrivers, nrBindaddrs = 0, result;
+        int         nrDrivers, result;
+        TCL_SIZE_T  nrBindaddrs = 0;
         Ns_Set     *set = NULL;
         Tcl_Obj    *bindaddrsObj, **objv;
         bool        hostDuplicated = NS_FALSE;
@@ -1025,8 +1026,9 @@ PortsParse(Ns_DList *dlPtr, const char *listString, const char *path)
     NS_NONNULL_ASSERT(path != NULL);
 
     if (listString != NULL) {
-        int       nrPorts, result, i;
-        Tcl_Obj **objv, *portsObj = Tcl_NewStringObj(listString, TCL_INDEX_NONE);
+        int        result;
+        TCL_SIZE_T nrPorts, i;
+        Tcl_Obj  **objv, *portsObj = Tcl_NewStringObj(listString, TCL_INDEX_NONE);
 
         Tcl_IncrRefCount(portsObj);
         result = Tcl_ListObjGetElements(NULL, portsObj, &nrPorts, &objv);
@@ -2240,7 +2242,8 @@ DriverThread(void *arg)
     Driver        *drvPtr = (Driver*)arg;
     Ns_Time        now, diff;
     char           charBuffer[1], drain[1024];
-    int            pollTimeout, accepted, nrBindaddrs = 0;
+    int            pollTimeout, accepted;
+    TCL_SIZE_T     nrBindaddrs = 0;
     bool           stopping;
     unsigned int   flags;
     Sock          *sockPtr, *nextPtr, *closePtr = NULL, *waitPtr = NULL, *readPtr = NULL;
@@ -2252,8 +2255,9 @@ DriverThread(void *arg)
     flags = DRIVER_STARTED;
 
     {
-        Tcl_Obj *bindaddrsObj, **objv;
-        int      j = 0, result;
+        Tcl_Obj   *bindaddrsObj, **objv;
+        TCL_SIZE_T j = 0;
+        int        result;
 
         bindaddrsObj = Tcl_NewStringObj(drvPtr->address, TCL_INDEX_NONE);
         Tcl_IncrRefCount(bindaddrsObj);
@@ -2265,7 +2269,7 @@ DriverThread(void *arg)
         assert(result == TCL_OK);
 
         if (result == TCL_OK) {
-            int i;
+            TCL_SIZE_T i;
 
             /*
              * Bind all provided addresses.
@@ -2288,7 +2292,9 @@ DriverThread(void *arg)
                 }
             }
             if (j > 0 && j < nrBindaddrs) {
-                Ns_Log(Warning, "could only bind to %d out of %d addresses", j, nrBindaddrs);
+                Ns_Log(Warning, "could only bind to %" PRITcl_Size
+                       " out of %" PRITcl_Size
+                       " addresses", j, nrBindaddrs);
             }
         }
 
@@ -2326,7 +2332,7 @@ DriverThread(void *arg)
     }
 
     while (!stopping) {
-        int n;
+        int  nrWaiting;
         bool reanimation = NS_FALSE;
 
         /*
@@ -2339,8 +2345,9 @@ DriverThread(void *arg)
 
         /* was peviously restricted to (waitPtr == NULL) */
         {
-            for (n = 0; n < nrBindaddrs; n++) {
-                drvPtr->pidx[n] = PollSet(&pdata, drvPtr->listenfd[n],
+            TCL_SIZE_T addr;
+            for (addr = 0; addr < nrBindaddrs; addr++) {
+                drvPtr->pidx[addr] = PollSet(&pdata, drvPtr->listenfd[addr],
                                           (short)POLLIN, NULL);
             }
         }
@@ -2377,10 +2384,10 @@ DriverThread(void *arg)
             }
         }
 
-        n = PollWait(&pdata, pollTimeout);
+        nrWaiting = PollWait(&pdata, pollTimeout);
         reanimation = PollIn(&pdata, 0);
 
-        Ns_Log(DriverDebug, "=== PollWait returned %d, trigger[0] %d", n, reanimation);
+        Ns_Log(DriverDebug, "=== PollWait returned %d, trigger[0] %d", nrWaiting, reanimation);
 
         if (reanimation && unlikely(ns_recv(drvPtr->trigger[0], charBuffer, 1u, 0) != 1)) {
             const char *errstr = ns_sockstrerror(ns_sockerrno);
@@ -2393,7 +2400,7 @@ DriverThread(void *arg)
          * minimal value.  Perform this test on timeouts (n == 0;
          * just for safety reasons) or on explicit wakeup calls.
          */
-        if ((n == 0) || reanimation) {
+        if ((nrWaiting == 0) || reanimation) {
             NsServer *servPtr = drvPtr->servPtr;
 
             if (servPtr != NULL) {
@@ -2622,15 +2629,16 @@ DriverThread(void *arg)
                    accepted < drvPtr->acceptsize
                    && drvPtr->queuesize < drvPtr->maxqueuesize ) {
                 bool gotRequests = NS_FALSE;
+                TCL_SIZE_T i;
 
                 /*
                  * Check for input data on all bind addresses. Stop checking,
                  * when one round of checking on all addresses fails.
                  */
 
-                for (n = 0; n < nrBindaddrs; n++) {
-                    if (PollIn(&pdata, drvPtr->pidx[n])) {
-                        SockState s = SockAccept(drvPtr, pdata.pfds[drvPtr->pidx[n]].fd, &sockPtr, &now);
+                for (i = 0; i < nrBindaddrs; i++) {
+                    if (PollIn(&pdata, drvPtr->pidx[i])) {
+                        SockState s = SockAccept(drvPtr, pdata.pfds[drvPtr->pidx[i]].fd, &sockPtr, &now);
 
                         switch (s) {
                         case SOCK_SPOOL:
@@ -2657,7 +2665,7 @@ DriverThread(void *arg)
 
                             if (sockerrno != 0 && sockerrno != NS_EAGAIN) {
                                 Ns_Log(Warning, "sockAccept on fd %d returned error: %s",
-                                       drvPtr->listenfd[n], ns_sockstrerror(sockerrno));
+                                       drvPtr->listenfd[i], ns_sockstrerror(sockerrno));
                             }
                             break;
                         }
@@ -2767,9 +2775,11 @@ DriverThread(void *arg)
          */
 
         if (stopping) {
-            for (n = 0; n < nrBindaddrs; n++) {
-                ns_sockclose(drvPtr->listenfd[n]);
-                drvPtr->listenfd[n] = NS_INVALID_SOCKET;
+            TCL_SIZE_T i;
+
+            for (i = 0; i < nrBindaddrs; i++) {
+                ns_sockclose(drvPtr->listenfd[i]);
+                drvPtr->listenfd[i] = NS_INVALID_SOCKET;
             }
         }
     }
@@ -5268,9 +5278,10 @@ WriterSockFileVecCleanup(const WriterSock *wrSockPtr) {
     NS_NONNULL_ASSERT(wrSockPtr != NULL);
 
     if ( wrSockPtr->c.file.nbufs > 0) {
-        int i;
+        TCL_SIZE_T i;
 
-        Ns_Log(DriverDebug, "WriterSockRelease nbufs %d", wrSockPtr->c.file.nbufs);
+        Ns_Log(DriverDebug, "WriterSockRelease nbufs %" PRITcl_Size,
+               wrSockPtr->c.file.nbufs);
 
         for (i = 0; i < wrSockPtr->c.file.nbufs; i++) {
             /*
@@ -5478,8 +5489,9 @@ WriterReadFromSpool(WriterSock *curPtr) {
     } else {
         toRead = curPtr->c.file.toRead;
 
-        Ns_Log(DriverDebug, "### WriterReadFromSpool [%d]: fd %d tosend %lu files %d",
-                curPtr->c.file.currentbuf, curPtr->fd, toRead, curPtr->c.file.nbufs);
+        Ns_Log(DriverDebug, "### WriterReadFromSpool [%" PRITcl_Size
+               "]: fd %d tosend %lu files %" PRITcl_Size,
+               curPtr->c.file.currentbuf, curPtr->fd, toRead, curPtr->c.file.nbufs);
     }
 
     maxsize = curPtr->c.file.maxsize;
@@ -5541,13 +5553,15 @@ WriterReadFromSpool(WriterSock *curPtr) {
             /*
              * Working on an Ns_FileVec.
              */
-            int    currentbuf = curPtr->c.file.currentbuf;
+            TCL_SIZE_T currentbuf = curPtr->c.file.currentbuf;
             size_t wantRead = curPtr->c.file.bufs[currentbuf].length;
             size_t segSize = (wantRead > toRead ? toRead : wantRead);
 
             n = ns_read(curPtr->fd, bufPtr, segSize);
 
-            Ns_Log(DriverDebug, "### WriterReadFromSpool [%d] (nbufs %d): read from fd %d want %lu got %ld (remain %lu)",
+            Ns_Log(DriverDebug, "### WriterReadFromSpool [%" PRITcl_Size
+                   "] (nbufs %" PRITcl_Size
+                   "): read from fd %d want %lu got %ld (remain %lu)",
                    currentbuf, curPtr->c.file.nbufs, curPtr->fd,  segSize, n, wantRead);
 
             if (n > 0) {
@@ -5561,7 +5575,9 @@ WriterReadFromSpool(WriterSock *curPtr) {
                     /*
                      * Partial read on a segment.
                      */
-                    Ns_Log(DriverDebug, "### WriterReadFromSpool [%d] (nbufs %d): partial read on fd %d (got %ld)",
+                    Ns_Log(DriverDebug, "### WriterReadFromSpool [%" PRITcl_Size
+                           "] (nbufs %" PRITcl_Size
+                           "): partial read on fd %d (got %ld)",
                            currentbuf, curPtr->c.file.nbufs,
                            curPtr->fd, n);
 
@@ -5575,7 +5591,8 @@ WriterReadFromSpool(WriterSock *curPtr) {
                     curPtr->c.file.currentbuf ++;
                     curPtr->fd = curPtr->c.file.bufs[curPtr->c.file.currentbuf].fd;
 
-                    Ns_Log(DriverDebug, "### WriterReadFromSpool switch to [%d] fd %d",
+                    Ns_Log(DriverDebug, "### WriterReadFromSpool switch to [%" PRITcl_Size
+                           "] fd %d",
                            curPtr->c.file.currentbuf, curPtr->fd);
                 }
             }
@@ -6471,7 +6488,7 @@ Ns_ReturnCode
 NsWriterQueue(Ns_Conn *conn, size_t nsend,
               Tcl_Channel chan, FILE *fp, int fd,
               struct iovec *bufs, int nbufs,
-              const Ns_FileVec *filebufs, int nfilebufs,
+              const Ns_FileVec *filebufs, TCL_SIZE_T nfilebufs,
               bool everysize)
 {
     Conn          *connPtr;
@@ -6482,7 +6499,7 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
     size_t         headerSize;
     Ns_ReturnCode  status = NS_OK;
     Ns_FileVec    *fbufs = NULL;
-    int            nfbufs = 0;
+    TCL_SIZE_T     nfbufs = 0;
 
     NS_NONNULL_ASSERT(conn != NULL);
     connPtr = (Conn *)conn;
@@ -6666,7 +6683,9 @@ NsWriterQueue(Ns_Conn *conn, size_t nsend,
         wrSockPtr->c.file.bufs = fbufs;
         wrSockPtr->c.file.nbufs = nfbufs;
 
-        Ns_Log(DriverDebug, "### Writer(%d) tosend %" PRIdz " files %d bufsize %" PRIdz,
+        Ns_Log(DriverDebug, "### Writer(%d) tosend %" PRIdz
+               " files %" PRITcl_Size
+               " bufsize %" PRIdz,
                fd, nsend, nfbufs, wrPtr->bufsize);
 
         if (unlikely(headerSize >= wrPtr->bufsize)) {
@@ -6865,7 +6884,7 @@ static Ns_ReturnCode
 DriverWriterFromObj(Tcl_Interp *interp, Tcl_Obj *driverObj, const Ns_Conn *conn, DrvWriter **wrPtrPtr) {
     Driver       *drvPtr;
     const char   *driverName = NULL;
-    int           driverNameLen = 0;
+    TCL_SIZE_T    driverNameLen = 0;
     DrvWriter    *wrPtr = NULL;
     Ns_ReturnCode result;
 
@@ -6877,7 +6896,7 @@ DriverWriterFromObj(Tcl_Interp *interp, Tcl_Obj *driverObj, const Ns_Conn *conn,
     if (driverObj == NULL) {
         if (conn != NULL) {
             driverName = Ns_ConnDriverName(conn);
-            driverNameLen = (int)strlen(driverName);
+            driverNameLen = (TCL_SIZE_T)strlen(driverName);
         }
     } else {
         driverName = Tcl_GetStringFromObj(driverObj, &driverNameLen);
@@ -7191,7 +7210,8 @@ WriterSubmitFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_O
 {
     int         result = TCL_OK;
     Ns_Conn    *conn;
-    int         headers = 0, nrFiles;
+    int         headers = 0;
+    TCL_SIZE_T  nrFiles;
     Tcl_Obj    *filesObj = NULL, **fileObjv;
     Ns_ObjvSpec lopts[] = {
         {"-headers",  Ns_ObjvBool,    &headers, INT2PTR(NS_TRUE)},
@@ -8130,7 +8150,7 @@ AsyncLogfileWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_O
 
     } else {
         const char   *buffer;
-        int           length;
+        TCL_SIZE_T    length;
         Ns_ReturnCode rc;
 
         if (binary == (int)NS_TRUE || NsTclObjIsByteArray(stringObj)) {
@@ -8219,11 +8239,11 @@ AsyncLogfileOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OB
 
     } else if (flagsObj != NULL) {
         Tcl_Obj  **ov;
-        TCL_OBJC_T oc;
+        TCL_SIZE_T oc;
 
         result = Tcl_ListObjGetElements(interp, flagsObj, &oc, &ov);
         if (result == TCL_OK && oc > 0) {
-            TCL_OBJC_T i;
+            TCL_SIZE_T i;
             int        opt;
 
             flags = 0u;

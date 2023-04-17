@@ -857,7 +857,7 @@ PathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *
             } else {
                 (void) ServerRoot(&ds, servPtr, host);
             }
-            for (i = objc - npaths; i < objc; ++i) {
+            for (i = objc - (TCL_OBJC_T)npaths; i < objc; ++i) {
                 Ns_MakePath(&ds, Tcl_GetString(objv[i]), (char *)0L);
             }
             Tcl_DStringResult(interp, &ds);

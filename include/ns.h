@@ -434,7 +434,7 @@ typedef struct Ns_Request {
     char           *query;
     TCL_SIZE_T      url_len;
     TCL_SIZE_T      urlv_len;
-    int             urlc;
+    TCL_SIZE_T      urlc;
     unsigned short  port;
     double          version;
 } Ns_Request;
@@ -1903,7 +1903,7 @@ Tcl_GetKeyedListField(Tcl_Interp  *interp, const char *fieldName,
 
 NS_EXTERN int
 Tcl_GetKeyedListKeys(Tcl_Interp  *interp, char const *subFieldName,
-                     const char *keyedList, int *keysArgcPtr, char ***keysArgvPtr);
+                     const char *keyedList, TCL_SIZE_T *keysArgcPtr, char ***keysArgvPtr);
 
 NS_EXTERN char *
 Tcl_SetKeyedListField(Tcl_Interp  *interp, const char *fieldName,

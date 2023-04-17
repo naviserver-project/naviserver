@@ -419,7 +419,7 @@ NsTclRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_
         Ns_TclCallback *cbPtr;
 
         cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclUrl2FileProc,
-                                  scriptObj, remain, objv + (objc - remain));
+                                  scriptObj, remain, objv + ((TCL_SIZE_T)objc - remain));
         flags = (noinherit != 0) ? NS_OP_NOINHERIT : 0u;
         Ns_RegisterUrl2FileProc(itPtr->servPtr->server, url,
                                 NsTclUrl2FileProc, Ns_TclFreeCallback, cbPtr, flags);

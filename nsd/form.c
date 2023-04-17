@@ -995,19 +995,18 @@ Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Encoding encoding
      * string.
      */
     if (buffer != NULL && unescape != '\0') {
-        TCL_OBJC_T i, j;
-        TCL_SIZE_T l = (TCL_SIZE_T)len;
+        TCL_SIZE_T j, i, l = (TCL_SIZE_T)len;
 
-      for (i = 0; i<l; i++) {
-        if (buffer[i] == '\\' && buffer[i+1] == unescape) {
-          for (j = i; j < l; j++) {
-            buffer[j] = buffer[j+1];
-          }
-          l --;
+        for (i = 0; i<l; i++) {
+            if (buffer[i] == '\\' && buffer[i+1] == unescape) {
+                for (j = i; j < l; j++) {
+                    buffer[j] = buffer[j+1];
+                }
+                l --;
+            }
         }
-      }
-      Tcl_DStringSetLength(dsPtr, l);
-      buffer = dsPtr->string;
+        Tcl_DStringSetLength(dsPtr, l);
+        buffer = dsPtr->string;
     }
 
     return buffer;

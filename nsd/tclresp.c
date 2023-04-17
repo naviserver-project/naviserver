@@ -205,7 +205,8 @@ NsTclWriteObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl
 {
     const NsInterp *itPtr = clientData;
     Ns_Conn        *conn  = NULL;
-    int             length = 0, n, result;
+    int             n, result;
+    TCL_SIZE_T      length = 0;
     TCL_OBJC_T      i;
     Ns_ReturnCode   status;
     bool            binary;
@@ -341,14 +342,14 @@ NsTclReturnObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T 
 
     } else {
         const char *data;
-        int         len;
+        TCL_SIZE_T  len;
 
         if (binary == (int)NS_TRUE || NsTclObjIsByteArray(dataObj)) {
             data = (const char *) Tcl_GetByteArrayFromObj(dataObj, &len);
-            result = Result(interp, Ns_ConnReturnData(conn, httpStatus, data, len, mimeType));
+            result = Result(interp, Ns_ConnReturnData(conn, httpStatus, data, (ssize_t)len, mimeType));
         } else {
             data = Tcl_GetStringFromObj(dataObj, &len);
-            result = Result(interp, Ns_ConnReturnCharData(conn, httpStatus, data, len, mimeType));
+            result = Result(interp, Ns_ConnReturnCharData(conn, httpStatus, data, (ssize_t)len, mimeType));
         }
     }
 

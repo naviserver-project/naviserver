@@ -1437,7 +1437,7 @@ CmdThread(void *arg)
     signal(SIGPIPE, SIG_IGN);
 #endif
 
-    Tcl_Main(cmd->argc, cmd->argv, NsTclAppInit);
+    Tcl_Main((TCL_SIZE_T)cmd->argc, cmd->argv, NsTclAppInit);
 }
 
 /*

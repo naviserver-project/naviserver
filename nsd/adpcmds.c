@@ -382,8 +382,8 @@ NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc
         unsigned int   flags;
         Tcl_DString   *dsPtr;
 
-        objv = objv + (objc - nargs);
-        objc = nargs;
+        objv = objv + (objc - (TCL_OBJC_T)nargs);
+        objc = (TCL_OBJC_T)nargs;
 
         flags = itPtr->adp.flags;
         if (nocache != 0) {
@@ -466,8 +466,8 @@ NsTclAdpParseObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, 
         result = TCL_ERROR;
 
     } else {
-        objv = objv + (objc - nargs);
-        objc = nargs;
+        objv = objv + (objc - (TCL_OBJC_T)nargs);
+        objc = (TCL_OBJC_T)nargs;
 
         if (asString && asFile) {
             Ns_TclPrintfResult(interp, "specify either '-string' or '-file', but not both.");

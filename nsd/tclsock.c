@@ -578,7 +578,7 @@ NsTclSelectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T 
 {
     fd_set                rset, wset, eset, *rPtr, *wPtr, *ePtr;
     int                   status, arg, maxfd;
-    TCL_OBJC_T            fobjc, i;
+    TCL_SIZE_T            fobjc, i;
     Tcl_Obj             **fobjv;
     Tcl_Channel           chan;
     struct timeval        tv, *tvPtr;
@@ -1009,7 +1009,7 @@ AppendReadyFiles(Tcl_Interp *interp, Tcl_Obj *listObj,
                  const fd_set *setPtr, int write, const char *flist,
                  Tcl_DString *dsPtr)
 {
-    int           fargc = 0;
+    TCL_SIZE_T    fargc = 0;
     const char  **fargv = NULL;
     NS_SOCKET     sock;
     Tcl_DString   ds;
@@ -1109,7 +1109,8 @@ static int
 GetSet(Tcl_Interp *interp, const char *flist, int write, fd_set **setPtrPtr,
        fd_set *setPtr, int *const maxPtr)
 {
-    int          fargc, result;
+    int          result;
+    TCL_SIZE_T   fargc;
     const char **fargv = NULL;
 
     NS_NONNULL_ASSERT(interp != NULL);
@@ -1360,8 +1361,9 @@ SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why))
     Tcl_Interp           *interp;
     Tcl_DString           script;
     Tcl_Obj             **objv;
-    int                   result, objc;
-    Tcl_Obj             *listObj = Tcl_NewListObj(0, NULL);
+    int                   result;
+    TCL_SIZE_T            objc;
+    Tcl_Obj              *listObj = Tcl_NewListObj(0, NULL);
 
     interp = Ns_TclAllocateInterp(lcbPtr->server);
     result = EnterDupedSocks(interp, sock, listObj);

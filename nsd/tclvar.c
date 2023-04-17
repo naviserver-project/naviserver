@@ -307,7 +307,7 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         result = TCL_ERROR;
 
     } else if (valueObj != NULL) {
-        int         len;
+        TCL_SIZE_T  len;
         bool        setArrayValue = NS_TRUE, returnNewValue = NS_TRUE;
         const char *value = Tcl_GetStringFromObj(valueObj, &len);
 
@@ -785,7 +785,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 result = TCL_ERROR;
 
             } else {
-                TCL_OBJC_T i;
+                TCL_SIZE_T i;
 
                 arrayPtr = LockArrayObj(interp, objv[2], NS_TRUE, NS_WRITE);
                 assert(arrayPtr != NULL);
@@ -1020,7 +1020,7 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                                         &arrayPtr, &dictObj);
                 if (result == TCL_OK) {
                     if (opt == CSizeIdx) {
-                        int size;
+                        TCL_SIZE_T size;
 
                         result = Tcl_DictObjSize(interp, dictObj, &size);
                         if (result == TCL_OK) {
@@ -1114,7 +1114,7 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                                                               nargs, &objv[(TCL_SIZE_T)objc-nargs]);
                         }
                         if (result == TCL_OK) {
-                            int dictStringLength;
+                            TCL_SIZE_T dictStringLength;
                             const char *dictString = Tcl_GetStringFromObj(dictObj, &dictStringLength);
 
                             SetVar(arrayPtr, Tcl_GetString(keyObj), dictString, (size_t)dictStringLength);
@@ -1142,7 +1142,7 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                             /*
                              * nested keys
                              */
-                            TCL_OBJC_T i;
+                            TCL_SIZE_T i;
 
                             dictKeyObj = NULL; /* make sure, dictKeyObj is always initialized */
                             for (i = (TCL_SIZE_T)objc - nargs; i < (TCL_SIZE_T)lastObjc; i++) {
@@ -1349,8 +1349,7 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                         }
                     } else {
                         Tcl_DString ds;
-                        TCL_SIZE_T  objLength;
-                        TCL_OBJC_T  i;
+                        TCL_SIZE_T  objLength, i;
                         const char *objString;
 
                         /*
@@ -1364,7 +1363,7 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                             Tcl_DStringAppend(&ds, objString, objLength);
                         }
 
-                        for (i = objc - nargs; i < objc; i++) {
+                        for (i = (TCL_SIZE_T)objc - nargs; i < (TCL_SIZE_T)objc; i++) {
                             objString = Tcl_GetStringFromObj(objv[i], &objLength);
 
                             if (opt == CAppendIdx) {
@@ -1381,7 +1380,7 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 }
                 if (result == TCL_OK) {
                     const char *dictString;
-                    int         dictStringLength;
+                    TCL_SIZE_T  dictStringLength;
 
                     dictString = Tcl_GetStringFromObj(dictObj, &dictStringLength);
                     SetVar(arrayPtr, keyString, dictString, (size_t)dictStringLength);

@@ -929,7 +929,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *co
 
         } else {
             const char *code;
-            int         codeLen;
+            TCL_SIZE_T  codeLen;
 
             assert(handlePtr != NULL);
 
@@ -1352,12 +1352,12 @@ QuoteListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T ob
 
     } else {
         Tcl_DString ds;
-        TCL_OBJC_T         oc;
+        TCL_SIZE_T  oc;
         Tcl_Obj   **ov;
 
         Tcl_DStringInit(&ds);
         if (Tcl_ListObjGetElements(interp, listObj, &oc, &ov) == TCL_OK) {
-            TCL_OBJC_T i;
+            TCL_SIZE_T i;
 
             for (i = 0; i < oc; i++) {
 

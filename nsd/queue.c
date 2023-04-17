@@ -941,7 +941,7 @@ static Ns_ReturnCode
 MapspecParse(Tcl_Interp *interp, Tcl_Obj *mapspecObj, char **method, char **url,
              NsUrlSpaceContextSpec **specPtr) {
     Ns_ReturnCode status = NS_ERROR;
-    TCL_OBJC_T           oc;
+    TCL_SIZE_T    oc;
     Tcl_Obj     **ov;
 
     NS_NONNULL_ASSERT(mapspecObj != NULL);
@@ -955,7 +955,7 @@ MapspecParse(Tcl_Interp *interp, Tcl_Obj *mapspecObj, char **method, char **url,
             *method = Tcl_GetString(ov[0]);
             *url = Tcl_GetString(ov[1]);
             if (oc == 3) {
-                int        oc2;
+                TCL_SIZE_T oc2;
                 Tcl_Obj  **ov2;
 
                 if (Tcl_ListObjGetElements(NULL, ov[2], &oc2, &ov2) == TCL_OK && oc2 == 2) {
@@ -1046,8 +1046,8 @@ ServerMapObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T ob
 
     } else {
         Tcl_DString  ds, *dsPtr = &ds;
-        Tcl_Obj     **ov, *fullListObj;
-        TCL_OBJC_T          oc;
+        Tcl_Obj    **ov, *fullListObj;
+        TCL_SIZE_T   oc;
 
         /*
          * Return the current mappings just in the case, when the map
@@ -1069,7 +1069,7 @@ ServerMapObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T ob
         result = Tcl_ListObjGetElements(interp, fullListObj, &oc, &ov);
         if (result == TCL_OK) {
             Tcl_Obj *resultObj;
-            TCL_OBJC_T i;
+            TCL_SIZE_T i;
 
             /*
              * The result should be always a proper list, so the potential
@@ -1606,31 +1606,31 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
         break;
 
     case SMapIdx:
-        result = ServerMapObjCmd(clientData, interp, objc, objv, servPtr, poolPtr, nargs);
+        result = ServerMapObjCmd(clientData, interp, objc, objv, servPtr, poolPtr, (TCL_OBJC_T)nargs);
         break;
 
     case SMappedIdx:
-        result = ServerMappedObjCmd(clientData, interp, objc, objv, servPtr, nargs);
+        result = ServerMappedObjCmd(clientData, interp, objc, objv, servPtr, (TCL_OBJC_T)nargs);
         break;
 
     case SUnmapIdx:
-        result = ServerUnmapObjCmd(clientData, interp, objc, objv, servPtr, nargs);
+        result = ServerUnmapObjCmd(clientData, interp, objc, objv, servPtr, (TCL_OBJC_T)nargs);
         break;
 
     case SMaxthreadsIdx:
-        result = ServerMaxThreadsObjCmd(clientData, interp, objc, objv, poolPtr, nargs);
+        result = ServerMaxThreadsObjCmd(clientData, interp, objc, objv, poolPtr, (TCL_OBJC_T)nargs);
         break;
 
     case SPoolRateLimitIdx:
-        result = ServerPoolRateLimitObjCmd(clientData, interp, objc, objv, poolPtr, nargs);
+        result = ServerPoolRateLimitObjCmd(clientData, interp, objc, objv, poolPtr, (TCL_OBJC_T)nargs);
         break;
 
     case SConnectionRateLimitIdx:
-        result = ServerConnectionRateLimitObjCmd(clientData, interp, objc, objv, poolPtr, nargs);
+        result = ServerConnectionRateLimitObjCmd(clientData, interp, objc, objv, poolPtr, (TCL_OBJC_T)nargs);
         break;
 
     case SMinthreadsIdx:
-        result = ServerMinThreadsObjCmd(clientData, interp, objc, objv, poolPtr, nargs);
+        result = ServerMinThreadsObjCmd(clientData, interp, objc, objv, poolPtr, (TCL_OBJC_T)nargs);
         break;
 
     case SConnectionsIdx:
@@ -1676,7 +1676,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
 
     case SActiveIdx:
         Tcl_DStringInit(dsPtr);
-        result = ServerListActiveCmd(dsPtr, interp, objc, objv, poolPtr, nargs);
+        result = ServerListActiveCmd(dsPtr, interp, objc, objv, poolPtr, (TCL_OBJC_T)nargs);
         if (likely(result == NS_OK)) {
             Tcl_DStringResult(interp, dsPtr);
         } else {
@@ -1686,7 +1686,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
 
     case SQueuedIdx:
         Tcl_DStringInit(dsPtr);
-        result = ServerListQueuedCmd(dsPtr, interp, objc, objv, poolPtr, nargs);
+        result = ServerListQueuedCmd(dsPtr, interp, objc, objv, poolPtr, (TCL_OBJC_T)nargs);
         if (likely(result == NS_OK)) {
             Tcl_DStringResult(interp, dsPtr);
         } else {
@@ -1696,7 +1696,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
 
     case SAllIdx:
         Tcl_DStringInit(dsPtr);
-        result = ServerListAllCmd(dsPtr, interp, objc, objv, poolPtr, nargs);
+        result = ServerListAllCmd(dsPtr, interp, objc, objv, poolPtr, (TCL_OBJC_T)nargs);
         if (likely(result == NS_OK)) {
             Tcl_DStringResult(interp, dsPtr);
         } else {

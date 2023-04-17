@@ -1272,7 +1272,7 @@ static int AllowDenyObjCmd(
         Perm        *permPtr;
         Ns_DString   base;
         int          isNew;
-        TCL_OBJC_T   i;
+        TCL_SIZE_T   i;
         unsigned int flags = 0u;
 
         if (noinherit != 0) {

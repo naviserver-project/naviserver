@@ -193,7 +193,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
     Ns_ObjvSpec  *specPtr;
     int           optIndex;
     TCL_OBJC_T    requiredArgs = 0;
-    TCL_OBJC_T    remain = (objc - offset);
+    TCL_SIZE_T    remain = (TCL_SIZE_T)(objc - offset);
 
     NS_NONNULL_ASSERT(interp != NULL);
 
@@ -225,7 +225,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
     if (likely(optSpec != NULL) && likely(optSpec->key != NULL)) {
 
         while (remain > 0) {
-            Tcl_Obj *obj = objv[objc - remain];
+            Tcl_Obj *obj = objv[objc - (TCL_OBJC_T)remain];
             int      result;
 
 #ifdef NS_TCL_PRE87
@@ -267,7 +267,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
     if (unlikely(argSpec == NULL)) {
         if (remain > 0) {
         badargs:
-            WrongNumArgs(optSpec, argSpec, interp, (TCL_SIZE_T)offset, objv);
+            WrongNumArgs(optSpec, argSpec, interp, offset, objv);
             return NS_ERROR;
         }
         return NS_OK;
@@ -610,7 +610,7 @@ Ns_ObjvBool(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj 
  *      string representation into *spec->dest.
  *
  *      If spec->arg is != NULL it is assumed to be a pointer to an
- *      int and the returned string length will be left in it.
+ *      TCL_SIZE_T and the returned string length will be left in it.
  *
  * Results:
  *      TCL_OK or TCL_ERROR.
@@ -632,7 +632,7 @@ Ns_ObjvString(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
     if (likely(*objcPtr > 0)) {
         const char **dest = spec->dest;
 
-        *dest = Tcl_GetStringFromObj(objv[0], (int *) spec->arg);
+        *dest = Tcl_GetStringFromObj(objv[0], (TCL_SIZE_T *) spec->arg);
         *objcPtr -= 1;
         result = TCL_OK;
     } else {
@@ -652,7 +652,7 @@ Ns_ObjvString(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
  *      result of eval into *spec->dest.
  *
  *      If spec->arg is != NULL it is assumed to be a pointer to an
- *      int and the returned string length will be left in it.
+ *      TCL_SIZE_T and the returned string length will be left in it.
  *
  * Results:
  *      TCL_OK or TCL_ERROR.
@@ -676,7 +676,7 @@ Ns_ObjvEval(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
 
         result = Tcl_EvalObjEx(interp, objv[0], 0);
         if (likely(result == TCL_OK)) {
-            *dest = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), (int *) spec->arg);
+            *dest = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), (TCL_SIZE_T *) spec->arg);
             *objcPtr -= 1;
         }
     } else {
@@ -1118,12 +1118,12 @@ Ns_ObjvFlags(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
     if (*objcPtr < 1) {
         result = TCL_ERROR;
     } else {
-        TCL_OBJC_T flagc;
+        TCL_SIZE_T flagc;
 
         result = Tcl_ListObjGetElements(interp, objv[0], &flagc, &flagv);
         if (likely(result == TCL_OK)) {
             if (likely(flagc > 0)) {
-                TCL_OBJC_T i;
+                TCL_SIZE_T i;
 
                 for (i = 0; i < flagc; ++i) {
                     result = Tcl_GetIndexFromObjStruct(interp, flagv[i], tablePtr,
@@ -1269,7 +1269,7 @@ int
 NsTclParseArgsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     Tcl_Obj  **argv, *argsObj;
-    TCL_OBJC_T argc;
+    TCL_SIZE_T argc;
     int        status = TCL_OK;
 
     if (objc != 3) {
@@ -1297,7 +1297,7 @@ NsTclParseArgsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC
 
         opts = objv[1]->internalRep.twoPtrValue.ptr1;
         args = objv[1]->internalRep.twoPtrValue.ptr2;
-        if (Ns_ParseObjv(opts, args, interp, 0, argc, argv) != NS_OK) {
+        if (Ns_ParseObjv(opts, args, interp, 0, (TCL_OBJC_T)argc, argv) != NS_OK) {
             status = TCL_ERROR;
 
         } else {
@@ -1355,7 +1355,7 @@ SetSpecFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 {
     Ns_ObjvSpec   *specPtr, *optSpec, *argSpec = NULL;
     Tcl_Obj      **specv, **specPair, *defObjPtr;
-    int            numSpecs, specLen, keyLen, i;
+    TCL_SIZE_T     numSpecs, specLen, keyLen, i;
 
     if (Tcl_ListObjGetElements(interp, objPtr, &numSpecs, &specv) != TCL_OK) {
         return TCL_ERROR;
@@ -1396,7 +1396,8 @@ SetSpecFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 
         if (key[0] == '\0' || (key[0] == '-' && key[1] == '\0')) {
             Ns_TclPrintfResult(interp,
-                "argument or option in position %d has no name", i);
+                               "argument or option in position %" PRITcl_Size
+                               " has no name", i);
             FreeSpecs(optSpec);
             return TCL_ERROR;
         }
@@ -1690,7 +1691,7 @@ ObjvTclArgs(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj 
     Tcl_Obj  *listObj;
     int       result;
 
-    listObj = Tcl_NewListObj(*objcPtr, objv);
+    listObj = Tcl_NewListObj((TCL_SIZE_T)*objcPtr, objv);
     if (listObj == NULL) {
         result = TCL_ERROR;
     } else {
@@ -1850,9 +1851,9 @@ WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *inter
     if (ds.length > 0) {
         Ns_DStringSetLength(&ds, ds.length - 1);
         /*Ns_Log(Notice, ".... call tclwrongnumargs %ld size %ld <%s>", objc, sizeof(objc), ds.string);*/
-        Tcl_WrongNumArgs(interp, objc, objv, ds.string);
+        Tcl_WrongNumArgs(interp, (TCL_SIZE_T)objc, objv, ds.string);
     } else {
-        Tcl_WrongNumArgs(interp, objc, objv, NULL);
+        Tcl_WrongNumArgs(interp, (TCL_SIZE_T)objc, objv, NULL);
     }
 
     Ns_DStringFree(&ds);

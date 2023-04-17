@@ -737,7 +737,7 @@ CacheAppendObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
                 Tcl_SetStringObj(valObj, Ns_CacheGetValueT(entry, transactionStackPtr),
                                  (TCL_SIZE_T)Ns_CacheGetSize(entry));
             }
-            for (i = objc - nelements; i < objc; i++) {
+            for (i = objc - (TCL_OBJC_T)nelements; i < objc; i++) {
                 if (append) {
                     Tcl_AppendObjToObj(valObj, objv[i]);
                 } else if (Tcl_ListObjAppendElement(interp, valObj, objv[i]) != TCL_OK) {
@@ -936,7 +936,7 @@ NsTclCacheFlushObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc
     } else {
         Ns_Entry  *entry;
         int        nflushed = 0;
-        TCL_OBJC_T i;
+        TCL_SIZE_T i;
         Ns_Cache  *cache;
 
         assert(cPtr != NULL);
@@ -972,7 +972,7 @@ NsTclCacheFlushObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc
              */
 
             for (i = npatterns; i > 0; i--) {
-                entry = Ns_CacheFindEntryT(cache, Tcl_GetString(objv[objc-i]), transactionStackPtr);
+                entry = Ns_CacheFindEntryT(cache, Tcl_GetString(objv[(TCL_SIZE_T)objc-i]), transactionStackPtr);
                 if (entry != NULL && Ns_CacheGetValueT(entry, transactionStackPtr) != NULL) {
                     Ns_CacheFlushEntry(entry);
                     nflushed++;
@@ -990,7 +990,7 @@ NsTclCacheFlushObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc
                 const char *key = Ns_CacheKey(entry);
 
                 for (i = npatterns; i > 0; i--) {
-                    const char *pattern = Tcl_GetString(objv[objc-i]);
+                    const char *pattern = Tcl_GetString(objv[(TCL_SIZE_T)objc-i]);
 
                     if (Tcl_StringMatch(key, pattern) == 1) {
                         Ns_CacheFlushEntry(entry);
@@ -1253,7 +1253,7 @@ static void
 SetEntry(NsInterp *itPtr, TclCache *cPtr, Ns_Entry *entry, Tcl_Obj *valObj, Ns_Time *expPtr, int cost)
 {
     const char *bytes;
-    int         len;
+    TCL_SIZE_T  len;
     size_t      valueSize;
 
     NS_NONNULL_ASSERT(cPtr != NULL);
@@ -1639,7 +1639,7 @@ CacheTransactionFinishPop(NsInterp *itPtr, Tcl_Obj *listObj, bool commit, unsign
 
     if (transactionStackPtr->uncommitted[transactionStackPtr->depth] > 0) {
         Tcl_Obj      **lobjv;
-        int            lobjc;
+        TCL_SIZE_T     lobjc;
         unsigned int   i;
 
         Tcl_ListObjGetElements(itPtr->interp, listObj, &lobjc, &lobjv);

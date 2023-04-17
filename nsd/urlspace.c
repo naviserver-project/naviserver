@@ -3015,7 +3015,8 @@ UrlSpaceSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
 {
     const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
-    int             result = TCL_OK, id = -1, noinherit = 0, oc = 0;
+    int             result = TCL_OK, id = -1, noinherit = 0;
+    TCL_SIZE_T      oc = 0;
     char           *key = (char *)".", *url = (char*)NS_EMPTY_STRING, *data = (char*)NS_EMPTY_STRING;
     Tcl_Obj        *headerFilterObj = NULL, **ov = NULL;
     Ns_ObjvSpec     lopts[] = {

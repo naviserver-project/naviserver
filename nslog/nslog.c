@@ -45,8 +45,8 @@ typedef struct {
     const char **responseHeaders;
     const char  *driverPattern;
     TCL_SIZE_T   maxbackup;
-    int          nrRequestHeaders;
-    int          nrResponseHeaders;
+    TCL_SIZE_T   nrRequestHeaders;
+    TCL_SIZE_T   nrResponseHeaders;
     int          fd;
     unsigned int flags;
     int          maxlines;
@@ -325,7 +325,7 @@ ParseExtendedHeaders(Log *logPtr, const char *str)
     NS_NONNULL_ASSERT(logPtr != NULL);
 
     if (str != NULL) {
-        int          argc;
+        TCL_SIZE_T   argc;
         const char **argv;
 
         if (Tcl_SplitList(NULL, str, &argc, &argv) != TCL_OK) {
@@ -333,7 +333,8 @@ ParseExtendedHeaders(Log *logPtr, const char *str)
             result = NS_ERROR;
 
         } else {
-            int i, tagged = 0;
+            int        tagged = 0;
+            TCL_SIZE_T i;
 
             if (logPtr->extendedHeaders != NULL) {
                 ns_free((char *)logPtr->extendedHeaders);

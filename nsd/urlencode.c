@@ -1044,17 +1044,17 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     } else {
         Ns_DString   ds;
         Tcl_Encoding encoding = NULL;
-        TCL_OBJC_T   i;
+        TCL_SIZE_T   i;
 
         if (charset != NULL) {
             encoding = Ns_GetCharsetEncoding(charset);
         }
 
         Ns_DStringInit(&ds);
-        for (i = objc - nargs; i < (TCL_SIZE_T)objc; ++i) {
+        for (i = (TCL_SIZE_T)objc - nargs; i < (TCL_SIZE_T)objc; ++i) {
             (void)UrlEncode(&ds, Tcl_GetString(objv[i]), encoding, (char)part, (upperCase == 1));
 
-            if (i + 1 < objc) {
+            if (i + 1 < (TCL_SIZE_T)objc) {
                 if (part == 'q') {
                     Ns_DStringNAppend(&ds, "&", 1);
                 } else {

@@ -53,7 +53,7 @@ static int AtObjCmd(AtProc *atProc, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj
  */
 Ns_TclCallback *
 Ns_TclNewCallback(Tcl_Interp *interp, ns_funcptr_t cbProc, Tcl_Obj *scriptObjPtr,
-                  TCL_OBJC_T objc, Tcl_Obj *const* objv)
+                  TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Ns_TclCallback *cbPtr;
 
@@ -74,7 +74,7 @@ Ns_TclNewCallback(Tcl_Interp *interp, ns_funcptr_t cbProc, Tcl_Obj *scriptObjPtr
         cbPtr->argv   = (char **)&cbPtr->args;
 
         if (objc > 0) {
-            TCL_OBJC_T i;
+            TCL_SIZE_T i;
 
             for (i = 0; i < objc; i++) {
                 cbPtr->argv[i] = ns_strdup(Tcl_GetString(objv[i]));

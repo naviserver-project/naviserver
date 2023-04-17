@@ -276,8 +276,7 @@ char **
 Ns_DStringAppendArgv(Ns_DString *dsPtr)
 {
     char      *s, **argv;
-    TCL_SIZE_T len, size;
-    TCL_OBJC_T i, argc;
+    TCL_SIZE_T len, size, i, argc;
 
     /*
      * Determine the number of strings.

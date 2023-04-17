@@ -388,13 +388,13 @@ const char *
 Ns_SkipUrl(const Ns_Request *request, int n)
 {
     const char **elements, *result = NULL;
-    int          length;
+    TCL_SIZE_T   length;
 
     NS_NONNULL_ASSERT(request != NULL);
 
     Tcl_SplitList(NULL, request->urlv, &length, &elements);
 
-    if (n <= request->urlc) {
+    if (n <= (int)request->urlc) {
         size_t skip = 0u;
 
         while (--n >= 0) {

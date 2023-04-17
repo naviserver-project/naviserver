@@ -590,7 +590,7 @@ typedef int ns_sockerrno_t;
 #endif
 
 
-#ifdef NS_TCL_HAVE_TIP629
+#ifndef NS_TCL_HAVE_TIP629
 # define TCL_OBJC_T           int
 # define TCL_OBJCMDPROC_T     Tcl_ObjCmdProc
 # define TCL_CREATEOBJCOMMAND Tcl_CreateObjCommand

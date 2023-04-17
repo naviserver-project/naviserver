@@ -1375,7 +1375,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
             count = 0;
             if (objc > 2) {
                 Ns_ObjvValueRange countRange = {0, INT_MAX};
-                TCL_OBJC_T        oc = 1;
+                TCL_SIZE_T        oc = 1;
                 Ns_ObjvSpec       spec = {"?count", Ns_ObjvInt, &count, &countRange};
 
                 if (Ns_ObjvInt(&spec, interp, &oc, &objv[2]) != TCL_OK) {

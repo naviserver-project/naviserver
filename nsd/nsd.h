@@ -803,7 +803,7 @@ typedef struct NsServer {
         const char *dirproc;
         const char *diradp;
         Ns_UrlToFileProc *url2file;
-        int dirc;
+        TCL_SIZE_T dirc;
     } fastpath;
 
     /*
@@ -1545,7 +1545,7 @@ NS_EXTERN Ns_ReturnCode NsWriterQueue(
     struct iovec *bufs,
     int nbufs,
     const Ns_FileVec *filebufs,
-    int nfilebufs,
+    TCL_SIZE_T nfilebufs,
     bool everysize
 ) NS_GNUC_NONNULL(1);
 

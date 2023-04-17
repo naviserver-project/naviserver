@@ -954,7 +954,7 @@ NsAdpLogError(NsInterp *itPtr)
     const Ns_Conn  *conn;
     Ns_DString      ds;
     const AdpFrame *framePtr;
-    int             len;
+    TCL_SIZE_T      len;
     const char     *err, *adp, *inc, *dot;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
@@ -991,7 +991,7 @@ NsAdpLogError(NsInterp *itPtr)
                 dot = "...";
             }
             Ns_DStringPrintf(&ds, "%sadp script:\n\"%.*s%s\"",
-                             inc, len, adp, dot);
+                             inc, (int)len, adp, dot);
         }
         framePtr = framePtr->prevPtr;
         inc = "\n    included from ";

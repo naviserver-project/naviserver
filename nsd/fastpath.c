@@ -341,7 +341,7 @@ Ns_FastPathProc(const void *UNUSED(arg), Ns_Conn *conn)
         result = FastReturn(conn, 200, NULL, ds.string);
 
     } else if (S_ISDIR(connPtr->fileInfo.st_mode)) {
-        int i;
+        TCL_SIZE_T i;
 
         /*
          * For directories, search for a matching directory file and

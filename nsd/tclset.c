@@ -202,7 +202,7 @@ Ns_Set *
 Ns_SetCreateFromDict(Tcl_Interp *interp, const char *name, Tcl_Obj *listObj)
 {
     int        result;
-    TCL_OBJC_T objc;
+    TCL_SIZE_T objc;
     Tcl_Obj  **objv;
     Ns_Set    *setPtr;
 
@@ -227,7 +227,7 @@ Ns_SetCreateFromDict(Tcl_Interp *interp, const char *name, Tcl_Obj *listObj)
         setPtr = NULL;
 
     } else {
-        TCL_OBJC_T i;
+        TCL_SIZE_T i;
 
         setPtr = Ns_SetCreate(name);
         for (i = 0; i < objc; i += 2) {
@@ -638,7 +638,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_O
                  */
                 Ns_ObjvValueRange idxRange = {0, (Tcl_WideInt)Ns_SetSize(set)};
                 int               i;
-                TCL_OBJC_T        oc = 1;
+                TCL_SIZE_T        oc = 1;
                 Ns_ObjvSpec       spec = {"?idx", Ns_ObjvInt, &i, &idxRange};
 
                 if (unlikely(objc != 4)) {

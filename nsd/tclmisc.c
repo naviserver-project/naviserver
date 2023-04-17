@@ -545,7 +545,7 @@ NsTclTrimObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T ob
 
     } else {
         Tcl_DString ds, *dsPtr = &ds;
-        int         textLength;
+        TCL_SIZE_T  textLength;
         char       *p;
         const char *endOfString;
 
@@ -839,7 +839,7 @@ Base64DecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
         result = TCL_ERROR;
 
     } else {
-        int            len;
+        TCL_SIZE_T     len;
         size_t         size;
         unsigned char *decoded;
         const char    *chars = Tcl_GetStringFromObj(charsObj, &len);
@@ -1375,7 +1375,7 @@ void Ns_CtxSHAFinal(Ns_CtxSHA1 *ctx, unsigned char digest[20])
 char *
 Ns_HexString(const unsigned char *octets, char *outputBuffer, TCL_SIZE_T size, bool isUpper)
 {
-    TCL_OBJC_T i;
+    TCL_SIZE_T i;
     static const char hexCharsUpper[] = "0123456789ABCDEF";
     static const char hexCharsLower[] = "0123456789abcdef";
 

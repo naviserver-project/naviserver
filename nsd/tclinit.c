@@ -1093,7 +1093,7 @@ ICtlAddTrace(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj
                 when  = (Ns_TclTraceType)flags;
             }
             cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclTraceProc,
-                                      scriptObj, remain, objv + (objc - remain));
+                                      scriptObj, remain, objv + (objc - (TCL_OBJC_T)remain));
             if (Ns_TclRegisterTrace(servPtr->server, NsTclTraceProc, cbPtr, when) != NS_OK) {
                 result = TCL_ERROR;
             }
