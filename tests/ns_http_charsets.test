@@ -93,7 +93,7 @@ set charsets {
     koi8-r
 }
 
-set nocomplain [expr {[tcltest::testConstraint pre_tcl90] ? "" : "-nocomplain"}]
+set nocomplain [expr {[tcltest::testConstraint pre_tcl90] ? "" : "-profile tcl8"}]
 
 foreach charset $charsets {
     ns_log notice "testing now with charset $charset"
