@@ -571,6 +571,15 @@ typedef int ns_sockerrno_t;
 # define NS_TCL_PRE87
 #endif
 
+/*
+ * Minimal forward compatibility for compiling
+ * modules with Tcl9 support (TIP 627, 64bit object counts)
+ * with Tcl8 versions
+ */
+#define TCL_SIZE_T           int
+#define TCL_OBJCMDPROC_T     Tcl_ObjCmdProc
+#define TCL_CREATEOBJCOMMAND Tcl_CreateObjCommand
+
 #if !defined(NS_POLL_NFDS_TYPE)
 # define NS_POLL_NFDS_TYPE unsigned int
 #endif
