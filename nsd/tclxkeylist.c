@@ -208,14 +208,14 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, const char *subFieldName, const char *k
             for (ii = 0; ii < keyCount; ii++) {
                 sumKeySize += Tcl_GetCharLength(objValues[ii]) + 1;
             }
-            keySize = (keyCount + 1) * sizeof(char *);
+            keySize = (keyCount + 1) * (TCL_SIZE_T)sizeof(char *);
             keyArgv = (char **)ckalloc((unsigned int)keySize + (unsigned int)sumKeySize);
             keyArgv[keyCount] = NULL;
             nextByte = ((char *)keyArgv) + keySize;
 
             for (ii = 0; ii < keyCount; ii++) {
                 const char *keyPtr;
-                TCL_SIZE_T keyLen = 0;
+                TCL_SIZE_T  keyLen = 0;
 
                 keyArgv[ii] = nextByte;
                 keyPtr = Tcl_GetStringFromObj(objValues[ii], &keyLen);

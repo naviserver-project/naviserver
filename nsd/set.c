@@ -1039,7 +1039,7 @@ void Ns_SetClearValues(Ns_Set *set, TCL_SIZE_T maxAlloc)
         if (set->data.spaceAvl > maxAlloc && (oldLength < maxAlloc/4)) {
             const char *oldBuffer = set->data.string;
 
-            set->data.string = ckalloc(maxAlloc);
+            set->data.string = ckalloc((size_t)maxAlloc);
             ckfree((void*)oldBuffer);
             set->data.spaceAvl = maxAlloc;
         }

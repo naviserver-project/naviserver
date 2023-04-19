@@ -599,7 +599,7 @@ typedef int ns_sockerrno_t;
  * Support for TIP 627 
  * https://core.tcl-lang.org/tips/doc/trunk/tip/627.md
 */
-# define TCL_OBJC_T           size_t
+# define TCL_OBJC_T           ptrdiff_t
 # define TCL_OBJCMDPROC_T     Tcl_ObjCmdProc2
 # define TCL_CREATEOBJCOMMAND Tcl_CreateObjCommand2
 #endif
