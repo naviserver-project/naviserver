@@ -27,6 +27,13 @@ jobs:
             nsf_version: 2.4.0
             tdom_version: 0.9.3
 
+          - os: ubuntu-latest
+            compiler: gcc-11
+            tcltag: main
+            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd
+            nsf_version: HEAD
+            tdom_version: 0.9.3
+
     defaults:
       run:
         shell: bash
