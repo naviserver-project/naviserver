@@ -107,7 +107,7 @@ typedef struct {
     Ns_Set **columns;
 } Ns_DbTableInfo;
 
-#ifndef NS_DBTCL_H
+#ifndef NS_DBTCL_C
 extern NS_IMPORT Ns_LogSeverity Ns_LogSqlDebug;
 #endif
 
