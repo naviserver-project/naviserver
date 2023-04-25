@@ -2418,6 +2418,38 @@ test http-10.1.2 {HTTP/1.0 HEAD + keepalive} -constraints serverListen -body {
     unset -nocomplain r0 r1 r2
 } -returnCodes {error ok} -result {200 200 10 200}
 
+test http-10.1.3a {GET with 204 answer via ns_http + keepalive} -constraints serverListen -setup {
+    ns_register_proc GET /get {
+        ns_return 204 text/plain ""
+    }
+} -body {
+    #ns_logctl severity Debug(task) on
+    set r0 [ns_http run -keepalive 10s -method GET [ns_config test listenurl]/10bytes]
+    set r1 [ns_http run -keepalive 10s -method GET [ns_config test listenurl]/get]
+    set r2 [ns_http run -keepalive 10s -method GET [ns_config test listenurl]/10bytes]
+    list [dict get $r0 status] [dict get $r1 status] [ns_set iget [dict get $r1 headers] content-length] [dict get $r2 status]
+} -cleanup {
+    ns_unregister_op GET /get
+    unset -nocomplain r0 r1 r2
+} -returnCodes {error ok} -result {200 204 0 200}
+
+
+test http-10.1.3b {GET with 204 answer raw + keepalive} -constraints serverListen -setup {
+    ns_register_proc GET /get {
+        ns_write "HTTP/1.1 204 No Content\r\n\r\n"
+    }
+} -body {
+    #ns_logctl severity Debug(task) on
+    set r0 [ns_http run -keepalive 10s -method GET [ns_config test listenurl]/10bytes]
+    set r1 [ns_http run -keepalive 10s -method GET [ns_config test listenurl]/get]
+    set r2 [ns_http run -keepalive 10s -method GET [ns_config test listenurl]/10bytes]
+    list [dict get $r0 status] [dict get $r1 status] [ns_set iget [dict get $r1 headers] content-length] [dict get $r2 status]
+} -cleanup {
+    ns_unregister_op GET /get
+    unset -nocomplain r0 r1 r2
+} -returnCodes {error ok} -result {200 204 {} 200}
+
+
 #
 # Test client request with potential problem cases
 #   - handling empty requests

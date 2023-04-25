@@ -2454,14 +2454,13 @@ HttpGetResult(
  *
  * HttpCheckHeader --
  *
- *      Check whether we have full HTTP response incl. headers.
- *      If yes, record the total size of the response
- *      (including the lone CR/LF delimiter) in the NsHttpTask
- *      structure, as to avoid subsequent checking.
- *      Terminate the response string by eliminating the lone
- *      CR/LF delimiter (put a NULL byte at the CR place).
- *      This way it is easy to calculate size of the optional
- *      body content following the response line/headers.
+ *      Check whether we have full HTTP response including headers.  If yes,
+ *      record the total size of the response (including the lone CR/LF
+ *      delimiter) in the NsHttpTask structure, as to avoid subsequent
+ *      checking.  Terminate the response string by eliminating the lone CR/LF
+ *      delimiter (put a NULL byte at the CR place).  This way it is easy to
+ *      calculate size of the optional body content following the response
+ *      line/headers.
  *
  * Results:
  *      None.
@@ -2567,6 +2566,14 @@ HttpCheckSpool(
         if (minor == 1 && major == 1) {
             httpPtr->flags |= NS_HTTP_VERSION_1_1;
         }
+
+        /*
+         * In case the requests returns 204 (no content), no body is expected.
+         */
+        if (httpPtr->status == 204) {
+            httpPtr->flags |= NS_HTTP_FLAG_EMPTY;
+        }
+
         /*
          * Check the returned Content-Length
          */
@@ -2599,7 +2606,7 @@ HttpCheckSpool(
                  * Why is this header field deleted here?
                  */
                 Ns_SetIDeleteKey(httpPtr->replyHeaders, transferEncodingHeader);
-            } else {
+            } else if (httpPtr->status != 204) {
                 /*
                  * No content-length provided and not chunked, assume
                  * streaming HTML.
