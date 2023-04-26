@@ -932,7 +932,9 @@ void NsHexPrint(const char *msg, const unsigned char *octets, size_t octetLength
             fprintf(stderr, "\n");
         }
     }
-    fprintf(stderr, "\n");
+    if (octetLength % perLine != 0) {
+        fprintf(stderr, "\n");
+    }
 }
 
 
