@@ -2449,6 +2449,48 @@ test http-10.1.3b {GET with 204 answer raw + keepalive} -constraints serverListe
     unset -nocomplain r0 r1 r2
 } -returnCodes {error ok} -result {200 204 {} 200}
 
+test http-10.2.0 {POST with 100-continue raw + keepalive} -constraints serverListen -setup {
+    ns_register_proc POST /post {
+        ns_write "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK"
+    }
+} -body {
+    set r0 [ns_http run -keepalive 0s -method GET [ns_config test listenurl]/10bytes]
+    #ns_logctl severity Debug(task) on
+    #
+    # By setting "Expect 100-continue", the server sends "100
+    # continue" by itself (or with a ENTITYTOOLARGE). So, we do not
+    # have to send it manually via ns_write in the POST handler.
+    #
+    set r1 [ns_http run -keepalive 0s \
+                -headers [ns_set create q Expect 100-continue] \
+                -body "Hello" -method POST [ns_config test listenurl]/post]
+    #set r2 [ns_http run -keepalive 0s -method GET [ns_config test listenurl]/10bytes]
+    set r2 $r0
+    list [dict get $r0 status] [dict get $r1 status] [ns_set iget [dict get $r1 headers] content-length] [dict get $r2 status]
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain r0 r1 r2
+} -returnCodes {error ok} -result {200 200 2 200}
+
+
+test http-10.2.1 {POST with 100-continue raw + keepalive} -constraints serverListen -setup {
+    ns_register_proc POST /post {
+        ns_write "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK"
+    }
+} -body {
+    set r0 [ns_http run -keepalive 10s -method GET [ns_config test listenurl]/10bytes]
+    #ns_logctl severity Debug(task) on
+    set r1 [ns_http run -keepalive 10s \
+                -headers [ns_set create q Expect 100-continue] \
+                -body "Hello" \
+                -method POST [ns_config test listenurl]/post]
+    set r2 [ns_http run -keepalive 10s -method GET [ns_config test listenurl]/10bytes]
+    list [dict get $r0 status] [dict get $r1 status] [ns_set iget [dict get $r1 headers] content-length] [dict get $r2 status]
+} -cleanup {
+    ns_unregister_op POST /post
+    unset -nocomplain r0 r1 r2
+} -returnCodes {error ok} -result {200 200 2 200}
+
 
 #
 # Test client request with potential problem cases
@@ -2483,6 +2525,40 @@ test http-11.1.2 {HTTP/1.0 GET + 0bytes + keepalive} -constraints serverListen -
     ns_unregister_op GET /0bytes
     unset -nocomplain r0 r1 r2
 } -returnCodes {error ok} -result {200 200 0 10}
+
+test http-11.1.3a {GET with 204 answer via ns_http + no keepalive} -constraints serverListen -setup {
+    ns_register_proc GET /get {
+        ns_return 204 text/plain ""
+    }
+} -body {
+    #ns_logctl severity Debug(task) on
+    set r0 [ns_http run -keepalive 0s -method GET [ns_config test listenurl]/10bytes]
+    set r1 [ns_http run -keepalive 0s -method GET [ns_config test listenurl]/get]
+    set r2 [ns_http run -keepalive 0s -method GET [ns_config test listenurl]/10bytes]
+    list [dict get $r0 status] [dict get $r1 status] [ns_set iget [dict get $r1 headers] content-length] [dict get $r2 status]
+} -cleanup {
+    ns_unregister_op GET /get
+    unset -nocomplain r0 r1 r2
+} -returnCodes {error ok} -result {200 204 0 200}
+
+
+test http-11.1.3b {GET with 204 answer raw + no keepalive} -constraints serverListen -setup {
+    ns_register_proc GET /get {
+        ns_write "HTTP/1.1 204 No Content\r\n\r\n"
+    }
+} -body {
+    #ns_logctl severity Debug(task) on
+    set r0 [ns_http run -keepalive 0s -method GET [ns_config test listenurl]/10bytes]
+    set r1 [ns_http run -keepalive 0s -method GET [ns_config test listenurl]/get]
+    set r2 [ns_http run -keepalive 0s -method GET [ns_config test listenurl]/10bytes]
+    list [dict get $r0 status] [dict get $r1 status] [ns_set iget [dict get $r1 headers] content-length] [dict get $r2 status]
+} -cleanup {
+    ns_unregister_op GET /get
+    unset -nocomplain r0 r1 r2
+} -returnCodes {error ok} -result {200 204 {} 200}
+
+
+
 
 
 test http-11.2.1 {HTTP/1.0 GET + many reply header fields} -constraints serverListen -setup {

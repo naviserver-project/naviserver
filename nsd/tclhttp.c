@@ -136,6 +136,11 @@ static int HttpAppendRawBuffer(
     size_t size
 ) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static int
+SkipMessage(
+    NsHttpTask *httpPtr
+) NS_GNUC_NONNULL(1);
+
 static Ns_ReturnCode HttpWaitForSocketEvent(
     NS_SOCKET sock,
     short events,
@@ -152,7 +157,7 @@ static void HttpCheckHeader(
     NsHttpTask *httpPtr
 ) NS_GNUC_NONNULL(1);
 
-static Ns_ReturnCode HttpCheckSpool(
+static int HttpCheckSpool(
     NsHttpTask *httpPtr
 ) NS_GNUC_NONNULL(1);
 
@@ -1056,6 +1061,7 @@ Ns_HttpMessageParse(
     if (payloadPtr != NULL) {
         *payloadPtr = NULL;
     }
+    Ns_Log(Ns_LogTaskDebug, "Message Parse <%s>", message);
 
     items = sscanf(message, "HTTP/%2d.%2d %3d", majorPtr, minorPtr, statusPtr);
     if (items != 3) {
@@ -2506,13 +2512,14 @@ HttpCheckHeader(
  *
  * HttpCheckSpool --
  *
- *      Determine, whether the received data should be left in
- *      the memory or whether it should be spooled to a file
- *      or channel, depending on the size of the returned content
- *      and the configuration settings.
+ *      Determine, whether the received data should be left in the
+ *      memory or whether it should be spooled to a file or channel,
+ *      depending on the size of the returned content and the
+ *      configuration settings. The function might return TCL_CONTINUE
+ *      to signal, that the buffer has to be processed again.
  *
  * Results:
- *      Ns_ReturnCode.
+ *      Tcl Return Code
  *
  * Side effects:
  *      Handles the partial response content located in memory.
@@ -2520,15 +2527,16 @@ HttpCheckHeader(
  *----------------------------------------------------------------------
  */
 
-static Ns_ReturnCode
+static int
 HttpCheckSpool(
     NsHttpTask *httpPtr
 ) {
-    Ns_ReturnCode result = NS_OK;
-    int           major = 0, minor = 0;
+    int result = TCL_OK;
+    int major = 0, minor = 0;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
+    Ns_Log(Ns_LogTaskDebug, "HttpCheckSpool");
     /*
      * At this point, we already identified the end of the
      * response/headers but haven not yet parsed it because
@@ -2557,20 +2565,35 @@ HttpCheckSpool(
                             NULL) != NS_OK || httpPtr->status == 0) {
 
         Ns_Log(Warning, "ns_http: parsing reply failed");
-        result = NS_ERROR;
+        result = TCL_ERROR;
 
     } else {
         const char *header;
         Tcl_WideInt replyLength = 0;
 
+        /*
+         * We have received the message header and parsed the first
+         * line. Therefore, we know the HTTP status code and the version
+         * numbers.
+         */
         if (minor == 1 && major == 1) {
             httpPtr->flags |= NS_HTTP_VERSION_1_1;
         }
 
-        /*
-         * In case the requests returns 204 (no content), no body is expected.
-         */
-        if (httpPtr->status == 204) {
+        if (httpPtr->status / 100 == 1) {
+            /*
+             * Handling of all informational messages, such as "100
+             * continue". We skip here the message without further
+             * processing.
+             */
+            SkipMessage(httpPtr);
+            return TCL_CONTINUE;
+
+        } else if (httpPtr->status == 204) {
+            /*
+             * In case the requests returns 204 (no content), no body is
+             * expected.
+             */
             httpPtr->flags |= NS_HTTP_FLAG_EMPTY;
         }
 
@@ -2611,6 +2634,7 @@ HttpCheckSpool(
                  * No content-length provided and not chunked, assume
                  * streaming HTML.
                  */
+                Ns_Log(Notice, "SET STREADMING status %d", httpPtr->status);
                 httpPtr->flags |= NS_HTTP_STREAMING;
             }
         }
@@ -2685,13 +2709,13 @@ HttpCheckSpool(
                      */
                     Ns_Log(Error, "ns_http: can't open spool file: %s:",
                            httpPtr->spoolFileName);
-                    result = NS_ERROR;
+                    result = TCL_ERROR;
                 }
             }
         }
     }
 
-    if (result == NS_OK) {
+    if (result == TCL_OK) {
         size_t cSize;
 
         cSize = (size_t)(httpPtr->ds.length - httpPtr->replyHeaderSize);
@@ -2713,7 +2737,7 @@ HttpCheckSpool(
             memcpy(buf, cData, cSize);
             Ns_DStringSetLength(&httpPtr->ds, httpPtr->replyHeaderSize);
             if (HttpAppendContent(httpPtr, buf, cSize) != TCL_OK) {
-                result = NS_ERROR;
+                result = TCL_ERROR;
             }
         }
     }
@@ -3549,6 +3573,82 @@ HttpAppendRawBuffer(
 
     return result;
 }
+/*
+ *----------------------------------------------------------------------
+ *
+ * SkipMessage --
+ *
+ *        Skip the incoming message. This is needed e.g. for "100
+ *        continue" handling.
+ *
+ * Results:
+ *        Tcl result code.
+ *
+ * Side effects:
+ *        None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+SkipMessage(
+    NsHttpTask *httpPtr
+) {
+    int result = TCL_OK;
+
+    NS_NONNULL_ASSERT(httpPtr != NULL);
+
+    Ns_Log(Ns_LogTaskDebug, "RESET 1xx");
+
+    if (httpPtr->recvSpoolMode == NS_TRUE) {
+        /*
+         * Spool mode is activated after the header
+         * processing. Therefore, it should be here set to NS_FALSE.
+         */
+        Ns_Log(Error, "ns_http: SkipMessage is called in spool mode (should never happen).");
+
+    } else {
+        /*
+        NsHexPrint("old buffer", (unsigned char*)httpPtr->ds.string, httpPtr->ds.length,
+                   20, NS_TRUE);
+        Ns_Log(Notice, "... old <%s>", httpPtr->ds.string);
+        Ns_Log(Notice, "... replyHeaderSize %d current Size %d",
+               httpPtr->replyHeaderSize, httpPtr->ds.length);
+        */
+        if (httpPtr->ds.length == httpPtr->replyHeaderSize) {
+            /*
+             * We have received just the header. Skip it.
+             */
+            Tcl_DStringSetLength(&httpPtr->ds, (TCL_SIZE_T)0);
+
+        } else if (httpPtr->ds.length > httpPtr->replyHeaderSize) {
+            TCL_SIZE_T newSize;
+            /*
+             * We have received more than the header. Move remaining
+             * content upfront in the buffer.
+             */
+            newSize =  httpPtr->ds.length - httpPtr->replyHeaderSize;
+            memmove(httpPtr->ds.string, httpPtr->ds.string + httpPtr->replyHeaderSize, newSize);
+            Tcl_DStringSetLength(&httpPtr->ds, newSize);
+
+        } else {
+            Ns_Log(Error, "ns_http: SkipMessage called with header size way too large"
+                   "(should never happen)");
+        }
+        /*
+        NsHexPrint("new buffer", (unsigned char*)httpPtr->ds.string, httpPtr->ds.length,
+                   20, NS_TRUE);
+        Ns_Log(Notice, "... new <%s>", httpPtr->ds.string);
+        Ns_Log(Notice, "... replyLength %zu replySize %zu",
+               httpPtr->replyLength, httpPtr->replySize);
+        */
+        httpPtr->replyHeaderSize = 0;
+    }
+    httpPtr->flags |= NS_HTTP_HEADERS_PENDING;
+    httpPtr->status = 0;
+
+    return result;
+}
+
 
 
 /*
@@ -4640,6 +4740,8 @@ HttpProc(
                 } else {
                     Ns_ReturnCode rc = NS_OK;
 
+                  process_header:
+
                     if (httpPtr->replyHeaderSize == 0) {
 
                         /*
@@ -4647,13 +4749,18 @@ HttpProc(
                          */
                         HttpCheckHeader(httpPtr);
                     }
-                    if (httpPtr->replyHeaderSize > 0 && httpPtr->status == 0) {
 
+                    if (httpPtr->replyHeaderSize > 0 && httpPtr->status == 0) {
+                        int result;
                         /*
                          * Parses received status/headers,
                          * decides where to spool content.
                          */
-                        rc = HttpCheckSpool(httpPtr);
+                        result = HttpCheckSpool(httpPtr);
+                        if (result == TCL_CONTINUE) {
+                            goto process_header;
+                        }
+                        rc = (result == TCL_OK ? NS_OK : NS_ERROR);
                     }
                     if (unlikely(rc != NS_OK)) {
                         httpPtr->error = "http read failed (check spool)";
