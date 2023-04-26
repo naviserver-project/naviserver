@@ -62,6 +62,7 @@ set defaultConfig {
     db_host	localhost
     db_port	""
     CookieNamespace ad_
+    cachingmode full
 }
 
 #
@@ -174,6 +175,13 @@ ns_section ns/parameters {
     # (compile time macro P_tmpdir)
     #
     # ns_param        tmpdir    c:/tmp
+
+    # Parameter for controlling caching via ns_cache. Potential values
+    # are "full" or "none", future versions might allow as well
+    # "cluster".  The value of "none" makes ns_cache operations to
+    # no-ops, this is a very conservative value for clusters.
+    #
+    ns_param   cachingmode     $cachingmode  ;# default: "full"
 
     # Timeout for shutdown to let existing connections and background
     # jobs finish.  When this time limit is exceeded the server shuts

@@ -754,11 +754,11 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
          * Allow values like "none", or abbreviated to "no"), but be open for
          * future enhancements like e.g. "cluster".
          */
-        const char *cacheConfig = Ns_ConfigGetValue(NS_GLOBAL_CONFIG_PARAMETERS, "cachingmode");
-        if (cacheConfig == NULL) {
+        const char *valueString = Ns_ConfigString(NS_GLOBAL_CONFIG_PARAMETERS, "cachingmode", "full");
+        if (strcmp(valueString, "full") == 0) {
             nsconf.nocache = NS_FALSE;
         } else {
-            nsconf.nocache = (strncmp(cacheConfig, "no", 2) == 0);
+            nsconf.nocache = (strncmp(valueString, "no", 2) == 0);
         }
     }
 
