@@ -54,6 +54,13 @@ ns_section ns/parameters {
     ns_param    tcllibrary          tcl
     #ns_param   pidfile             ${home}/logs/nsd.pid
 
+    # Parameter for controlling caching via ns_cache. Potential values
+    # are "full" or "none", future versions might allow as well
+    # "cluster".  The value of "none" makes ns_cache operations to
+    # no-ops, this is a very conservative value for clusters.
+    #
+    # ns_param  cachingmode      "none"      ;# default: "full"
+
     #ns_param   progressminsize     1MB      ;# default: 0
     #ns_param   listenbacklog       256      ;# default: 32; backlog for ns_socket commands
 
