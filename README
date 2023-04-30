@@ -1,11 +1,10 @@
-
 WHAT IS THIS?
 -------------
 
 This is the source distribution of the NaviServer, a versatile
-multiprotocol (httpd et al) server written in C/Tcl.  It can 
-be easily extended in either language to create interesting 
-web sites and services. 
+multiprotocol (HTTP(S) et al) server written in C/Tcl.  It can
+be easily extended in either language to create interesting
+websites and services.
 
 Contents
 --------
@@ -53,7 +52,7 @@ The latest development version is available online:
 3. Compiling and installing
 ---------------------------
 
-The server is known to compile and run on FreeBSD, Linux, Solaris, 
+NaviServer is known to compile and run on FreeBSD, Linux, Solaris,
 macOS 10.2+ and Windows. To compile and install:
 
 
@@ -67,10 +66,14 @@ macOS 10.2+ and Windows. To compile and install:
     and follow the instructions in the included README. You may install
     Tcl within the directory you intend to install the server
     (e.g., /usr/local/ns) or in some other location.
-    The following should work:
 
-    $ gunzip < tcl8.6.12-src.tar.gz | tar xvf -
-    $ cd tcl8.6.12/unix
+    NaviServer 4.99.* requires Tcl 8.5 or Tcl 8.6. NaviServer 5 will
+    be compatible with Tcl 9 (when it is released).
+
+    The following commands should work on a Unix-like operating system:
+
+    $ gunzip < tcl8.6.13-src.tar.gz | tar xvf -
+    $ cd tcl8.6.13/unix
     $ ./configure --prefix=/usr/local/ns --enable-threads --enable-symbols
     $ make install
 
@@ -87,14 +90,18 @@ macOS 10.2+ and Windows. To compile and install:
 
         https://sourceforge.net/projects/naviserver/files/
 
-    Latest development source code:
+    Latest development source code (Git repository):
 
-	https://bitbucket.org/naviserver/naviserver/
+        https://bitbucket.org/naviserver/naviserver/
+
+    Note, that the main branches on the Git repository are:
+        - main (the latest development code)
+        - release/4.99 (bug fixes for NaviServer 4.99.*)
 
     The following should work for official releases:
 
-        $ gunzip < naviserver-4.99.24.tar.gz | tar xvf -
-        $ cd naviserver-4.99.24
+        $ gunzip < naviserver-4.99.25.tar.gz | tar xvf -
+        $ cd naviserver-4.99.25
         $ ./configure --prefix=/usr/local/ns --with-tcl=/usr/local/ns/lib --enable-symbols
         $ make
         $ su -c 'make install'
@@ -106,12 +113,12 @@ macOS 10.2+ and Windows. To compile and install:
         Path to library installation directory of Tcl where
         configure can find the tclConfig.sh script.  Without
         this option, configure will search around for
-        tclConfig.sh, perhaps finding it in ../tcl8.6.12/unix.
+        tclConfig.sh, perhaps finding it in ../tcl8.6.13/unix.
 
     --with-zlib=/usr
 
         You will need the zlib compression library headers available.
-        e.g. $ yum install zlib-devel, for Fedora Linux. If the headers
+        e.g. "yum install zlib-devel" for Fedora Linux. If the headers
         are not located in the usual places where the compiler looks,
         you can tell configure where to find them with the --with-zlib
         option.
@@ -124,13 +131,13 @@ macOS 10.2+ and Windows. To compile and install:
 
         Set the installation directory for the server.  All
         program, man page, and runtime files (e.g., log
-        files) will be install or updated within this
+        files) will be installed or updated within this
         directory.
 
 
-    To compile with Purify tool, set the variable $PURIFY to 
+    To compile with Purify tool, set the variable $PURIFY to
     your Purify executable along with any options you desire, e.g.,
- 
+
         make PURIFY="purify -cache-dir=/home/joe/my-cache-dir" install
 
     Alternatively, NaviServer can be installed directly from Bitbucket
@@ -148,12 +155,12 @@ macOS 10.2+ and Windows. To compile and install:
 
     Checkouts from the source code repository have to generate
     the documentation from the sources as well via "make build-doc",
-    otherwise a "make install" will complain.
+    otherwise, the call "make install" will complain.
 
     See: 'make help' for more help in the build process.
 
 
-3d. Create and edit a config file (nsd.tcl, by convention)
+3d. Create and edit a configuration file (nsd.tcl, by convention)
 
     A couple of samples are provided to get you started:
 
@@ -162,10 +169,10 @@ macOS 10.2+ and Windows. To compile and install:
     $ vi nsd.tcl
 
     sample-config.tcl contains every possible configuration option and
-    it's default value. Remove the ones you don't need.
+    its default value. Remove the ones you don't need.
 
     simple-config.tcl contains a basic set of the important configuration
-    options you are likely to need. Add to it as necessary. 
+    options you are likely to need. Add to it as necessary.
 
 
 3e. Try running the server in a shell window:
@@ -179,19 +186,19 @@ macOS 10.2+ and Windows. To compile and install:
 
 3f. To download and install additional modules:
 
-    For tar releases of naviserver, a compatible version of the modules
-    is as well provided via sourceforge. In order to obtain a module
+    For tar releases of NaviServer, a compatible version of the modules
+    is as well provided via SourceForge. In order to obtain a module
     named "nsfoo", get it from the modules tar file and install it
     like sketched below:
 
-        $ gunzip < naviserver-4.99.24-modules.tar.gz | tar xvf -
+        $ gunzip < naviserver-4.99.25-modules.tar.gz | tar xvf -
         $ cd modules/nsfoo
         $ make install NAVISERVER=/usr/local/ns
 
     Alternatively, modules can be obtained from the code repository at
     Bitbucket via git. To get a module "nsfoo" via git
 
-	$ git clone https://bitbucket.org/naviserver/nsfoo.git
+        $ git clone https://bitbucket.org/naviserver/nsfoo.git
         $ cd nsfoo
         $ make install NAVISERVER=/usr/local/ns
 
@@ -203,15 +210,15 @@ macOS 10.2+ and Windows. To compile and install:
     Download: https://sourceforge.net/projects/mingw/files/
 
     The Msys + Mingw download above is the minimal environment needed
-    to build Naviserver under Windows. It includes a shell environment and
+    to build NaviServer under Windows. It includes a shell environment and
     gcc.
 
     To install, you just download the zip file and extract the
     files into a directory. The README.TXT file describes how to launch
     the msys shell.
 
-    You then run the configure script in the naviserver directory. The
-    Msys based configure/build process works just like the UNIX one. 
+    You then run the configure script in the NaviServer directory. The
+    Msys based configure/build process works just like the UNIX one.
 
     Example of building naviserver.exe:
 
@@ -221,18 +228,17 @@ macOS 10.2+ and Windows. To compile and install:
         c:>cd msys
         c:\msys> msys.bat
 
-        $ cd /c/naviserver-4.99.24
+        $ cd /c/naviserver-4.99.25
         $ ./configure --prefix=c:/naviserver --with-tcl=c:/naviserver/lib
         $ make install
 
-    Example above assumes Tcl is also built using mingw with prefix c:/naviserver
+    The example above assumes Tcl is also built using mingw with prefix c:/naviserver
 
 3h. To compile for Windows with MSVC
 
-    Update Update the 'tcl_64' and 'tcllib_64' variables in
-    Makefile.win32 in the top-level NaviServer directory See also
-    these settings in "include/Makefile.win32": 'HAVE_OPENSSL_EVP_H',
-    'openssl_64'.
+    Update the 'tcl_64' and 'tcllib_64' variables in Makefile.win32 in
+    the top-level NaviServer directory. See also these settings in
+    "include/Makefile.win32": 'HAVE_OPENSSL_EVP_H', 'openssl_64'.
 
     Run appropriate Microsoft build setup script.  E.g. one of these:
         "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvars64.bat"
