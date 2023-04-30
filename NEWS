@@ -6013,7 +6013,7 @@ Tcl API Changes:
           ns_server ?-server /server/? ?-pool /p/? stats
 
       - Query for the current connection, whether
-        the requestor accepts zipped results
+        the requester accepts zipped results
 
           ns_conn zipaccepted
 
@@ -6050,7 +6050,7 @@ Tcl API Changes:
 
       - The output of "ns_writer list" now contains the start time of
         the initiating request, the name of the thread, driver, the
-        ip-address of the requestor, the file descriptor, the
+        ip-address of the requester, the file descriptor, the
         remaining size and the bytes already sent, and the client data
         as provided via [ns_conn clientdata].
 
