@@ -281,14 +281,15 @@ static Ns_LogSeverity Ns_LogNsProxyDebug = 0;
  * Static functions defined in this file.
  */
 
-static TCL_OBJCMDPROC_T ProxyObjCmd;
+static TCL_OBJCMDPROC_T ClearObjCmd;
 static TCL_OBJCMDPROC_T ConfigureObjCmd;
 static TCL_OBJCMDPROC_T GetObjCmd;
+static TCL_OBJCMDPROC_T PidsObjCmd;
+static TCL_OBJCMDPROC_T ProxyObjCmd;
+static TCL_OBJCMDPROC_T RunProxyObjCmd;
 static TCL_OBJCMDPROC_T StatsObjCmd;
-static TCL_OBJCMDPROC_T ClearObjCmd;
 static TCL_OBJCMDPROC_T StopObjCmd;
 
-static TCL_OBJCMDPROC_T RunProxyObjCmd;
 static Tcl_CmdDeleteProc DelProxyProc;
 static Tcl_InterpDeleteProc DeleteData;
 
@@ -1725,6 +1726,62 @@ StatsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj 
     return result;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PidsObjCmd --
+ *
+ *    Implements "ns_proxy pids".
+ *
+ * Results:
+ *    Tcl result.
+ *
+ * Side effects:
+ *    None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+PidsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    char       *pool;
+    Ns_ObjvSpec args[] = {
+        {"pool",    Ns_ObjvString, &pool, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Tcl_DString ds, *dsPtr = &ds;
+        Pool       *poolPtr = GetPool(pool, clientData);
+        Proxy      *proxyPtr;
+
+        Tcl_DStringInit(dsPtr);
+        Ns_MutexLock(&plock);
+        Ns_MutexLock(&poolPtr->lock);
+
+        for (proxyPtr = poolPtr->firstPtr; proxyPtr != NULL; proxyPtr = proxyPtr->nextPtr) {
+            if (proxyPtr->workerPtr != NULL) {
+                char buffer[TCL_INTEGER_SPACE];
+                TCL_SIZE_T bytes = ns_uint32toa(buffer, proxyPtr->workerPtr->pid);
+
+                Ns_DStringNAppend(dsPtr, buffer, bytes);
+                Ns_DStringNAppend(dsPtr, " ", 1);
+            }
+        }
+
+        Ns_MutexUnlock(&poolPtr->lock);
+        Ns_MutexUnlock(&plock);
+
+        Tcl_DStringResult(interp, dsPtr);
+    }
+
+    return result;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1876,13 +1933,13 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const
 
     static const char *opts[] = {
         "active", "cleanup", "clear", "configure", "eval",
-        "free", "get", "handles", "ping", "pools", "put",
+        "free", "get", "handles", "pids", "ping", "pools", "put",
         "recv", "release", "send", "stats", "stop", "wait",
         NULL
     };
     enum {
         PActiveIdx, PCleanupIdx, PClearIdx, PConfigureIdx, PEvalIdx,
-        PFreeIdx, PGetIdx, PHandlesIdx, PPingIdx, PPoolsIdx, PPutIdx,
+        PFreeIdx, PGetIdx, PHandlesIdx, PPidsIdx, PPingIdx, PPoolsIdx, PPutIdx,
         PRecvIdx, PReleaseIdx, PSendIdx, PStatsIdx, PStopIdx, PWaitIdx
     };
 
@@ -2076,6 +2133,10 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const
 
     case PClearIdx:
         result = ClearObjCmd(data, interp, objc, objv);
+        break;
+
+    case PPidsIdx:
+        result = PidsObjCmd(data, interp, objc, objv);
         break;
 
     case PPoolsIdx:

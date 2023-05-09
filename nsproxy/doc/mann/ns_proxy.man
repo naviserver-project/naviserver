@@ -299,6 +299,13 @@ the startup of the proxy under some alternative UID/GID may/will fail.
 Returns list of all proxies allocated for the current interpreter.
 
 
+[call [cmd "ns_proxy pids"]  [arg pool]]
+
+Returns a list of the process ids of proxy helpers for the specified
+pool. These pids can be used for further analysis (e.g., checking
+memory footprints, etc.)
+
+
 [call [cmd "ns_proxy ping"] [arg handle]]
 
 This command sends a null request to the proxy specified by the
