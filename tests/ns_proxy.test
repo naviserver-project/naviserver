@@ -22,7 +22,7 @@ test ns_proxy-1.1 {basic syntax} -body {
 
 test ns_proxy-1.2 {basic syntax} -body {
     ns_proxy ?
-} -returnCodes error -result {bad option "?": must be active, cleanup, clear, configure, eval, free, get, handles, ping, pools, put, recv, release, send, stats, stop, or wait}
+} -returnCodes error -result {bad option "?": must be active, cleanup, clear, configure, eval, free, get, handles, pids, ping, pools, put, recv, release, send, stats, stop, or wait}
 
 test ns_proxy-2.1 {configuration syntax} -body {
     ns_proxy config

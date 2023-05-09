@@ -301,7 +301,7 @@ Returns list of all proxies allocated for the current interpreter.
 
 [call [cmd "ns_proxy pids"]  [arg pool]]
 
-Returns a list of the process ids of proxy helpers for the specified
+Returns a list of the process IDs of proxy helpers for the specified
 pool. These pids can be used for further analysis (e.g., checking
 memory footprints, etc.)
 
