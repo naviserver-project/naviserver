@@ -106,6 +106,10 @@ static bool HttpGet(
 
 static void HttpClose(
     NsHttpTask *httpPtr
+) NS_GNUC_NONNULL(1);
+
+static void HttpCleanupPerRequestData(
+    NsHttpTask *httpPtr
 )  NS_GNUC_NONNULL(1);
 
 static void HttpCancel(
@@ -3964,9 +3968,10 @@ CloseWaitProc(
 /*
  *----------------------------------------------------------------------
  *
- * HttpClose --
+ * HttpCleanupPerRequestData --
  *
- *        Finish task and cleanup memory
+ *        Cleanup per-request data. This is in essence everything inside
+ *        NsHttpTask except the keep-alive specific connection data.
  *
  * Results:
  *        None
@@ -3977,61 +3982,12 @@ CloseWaitProc(
  *----------------------------------------------------------------------
  */
 static void
-HttpClose(
+HttpCleanupPerRequestData(
     NsHttpTask *httpPtr
 ) {
+
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
-    Ns_Log(Ns_LogTaskDebug, "HttpClose: http:%p, task:%p sock %d",
-           (void*)httpPtr, (void*)httpPtr->task, httpPtr->sock);
-
-    /*
-     * When HttpConnect runs into a failure, it might not have httpPtr->task
-     * set. We cannot be sure, the task is always set.
-     */
-    if (httpPtr->task != NULL) {
-
-        if (httpPtr->sock != NS_INVALID_SOCKET
-            && (httpPtr->flags & NS_HTTP_KEEPALIVE) != 0u
-           ) {
-            httpPtr->task = Ns_TaskTimedCreate(httpPtr->sock, CloseWaitProc, httpPtr,
-                                               &httpPtr->keepAliveTimeout);
-            LogDebug("HttpClose", httpPtr, "keepalive");
-
-            TaskQueueRequire();
-            if (Ns_TaskEnqueue(httpPtr->task, taskQueue) != NS_OK) {
-                Ns_Log(Error, "Could not enqueue CloseWait task");
-            } else {
-                if (PersistentConnectionAdd(httpPtr)) {
-                    Ns_Log(Ns_LogTaskDebug, "Added persistent connection entry <%s> for %p",
-                           httpPtr->persistentKey, (void*)httpPtr);
-                } else {
-                    Ns_Log(Warning, "Could not add persistent connection");
-                }
-            }
-            return;
-        } else {
-            Ns_Log(Ns_LogTaskDebug, "TaskFree %p in HttpClose", (void*)(httpPtr->task));
-            LogDebug("HttpClose", httpPtr, "no keepalive");
-            (void) Ns_TaskFree(httpPtr->task);
-            httpPtr->task = NULL;
-        }
-    }
-#ifdef HAVE_OPENSSL_EVP_H
-    if (httpPtr->ssl != NULL) {
-        SSL_shutdown(httpPtr->ssl);
-        SSL_free(httpPtr->ssl);
-        httpPtr->ssl = NULL;
-    }
-    if (httpPtr->ctx != NULL) {
-        SSL_CTX_free(httpPtr->ctx);
-        httpPtr->ctx = NULL;
-    }
-#endif
-    if (httpPtr->sock != NS_INVALID_SOCKET) {
-        ns_sockclose(httpPtr->sock);
-        httpPtr->sock = NS_INVALID_SOCKET;
-    }
     if (httpPtr->spoolFileName != NULL) {
         ns_free((void *)httpPtr->spoolFileName);
         httpPtr->spoolFileName = NULL;
@@ -4073,14 +4029,6 @@ HttpClose(
         ns_free((void *)httpPtr->timeout);
         httpPtr->timeout = NULL;
     }
-    if (httpPtr->persistentKey != NULL) {
-        if (PersistentConnectionDelete(httpPtr)) {
-            /*Ns_Log(Warning, "persistent connections: deleting persistent key");*/
-        }
-        ns_free((void *)httpPtr->persistentKey);
-        httpPtr->persistentKey = NULL;
-    }
-
     ns_free((void *)httpPtr->url);
     httpPtr->url = NULL;
 
@@ -4095,6 +4043,92 @@ HttpClose(
         ns_free((void *)httpPtr->chunk);
         httpPtr->chunk = NULL;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HttpClose --
+ *
+ *        Finish task and cleanup memory
+ *
+ * Results:
+ *        None
+ *
+ * Side effects:
+ *        Free up memory
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+HttpClose(
+    NsHttpTask *httpPtr
+) {
+    NS_NONNULL_ASSERT(httpPtr != NULL);
+
+    Ns_Log(Ns_LogTaskDebug, "HttpClose: http:%p, task:%p sock %d",
+           (void*)httpPtr, (void*)httpPtr->task, httpPtr->sock);
+
+    /*
+     * When HttpConnect runs into a failure, it might not have httpPtr->task
+     * set. We cannot be sure, the task is always set.
+     */
+
+    /*Ns_Log(Notice, "HttpClose bodyfileFd %d spoolFd %d",
+      httpPtr->bodyFileFd,  httpPtr->spoolFd);*/
+
+    if (httpPtr->task != NULL) {
+
+        if (httpPtr->sock != NS_INVALID_SOCKET
+            && (httpPtr->flags & NS_HTTP_KEEPALIVE) != 0u
+           ) {
+            httpPtr->task = Ns_TaskTimedCreate(httpPtr->sock, CloseWaitProc, httpPtr,
+                                               &httpPtr->keepAliveTimeout);
+            LogDebug("HttpClose", httpPtr, "keepalive");
+
+            TaskQueueRequire();
+            if (Ns_TaskEnqueue(httpPtr->task, taskQueue) != NS_OK) {
+                Ns_Log(Error, "Could not enqueue CloseWait task");
+            } else {
+                if (PersistentConnectionAdd(httpPtr)) {
+                    Ns_Log(Ns_LogTaskDebug, "Added persistent connection entry <%s> for %p",
+                           httpPtr->persistentKey, (void*)httpPtr);
+                } else {
+                    Ns_Log(Warning, "Could not add persistent connection");
+                }
+            }
+            HttpCleanupPerRequestData(httpPtr);
+            return;
+        } else {
+            Ns_Log(Ns_LogTaskDebug, "TaskFree %p in HttpClose", (void*)(httpPtr->task));
+            LogDebug("HttpClose", httpPtr, "no keepalive");
+            (void) Ns_TaskFree(httpPtr->task);
+            httpPtr->task = NULL;
+        }
+    }
+#ifdef HAVE_OPENSSL_EVP_H
+    if (httpPtr->ssl != NULL) {
+        SSL_shutdown(httpPtr->ssl);
+        SSL_free(httpPtr->ssl);
+        httpPtr->ssl = NULL;
+    }
+    if (httpPtr->ctx != NULL) {
+        SSL_CTX_free(httpPtr->ctx);
+        httpPtr->ctx = NULL;
+    }
+#endif
+    if (httpPtr->sock != NS_INVALID_SOCKET) {
+        ns_sockclose(httpPtr->sock);
+        httpPtr->sock = NS_INVALID_SOCKET;
+    }
+    if (httpPtr->persistentKey != NULL) {
+        if (PersistentConnectionDelete(httpPtr)) {
+            /*Ns_Log(Warning, "persistent connections: deleting persistent key");*/
+        }
+        ns_free((void *)httpPtr->persistentKey);
+        httpPtr->persistentKey = NULL;
+    }
+    HttpCleanupPerRequestData(httpPtr);
 
     ns_free((void *)httpPtr);
 }
