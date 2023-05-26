@@ -10,16 +10,16 @@ ns_log notice "nsd.tcl: starting to read configuration file..."
 
 #---------------------------------------------------------------------
 # Port settings:
+#
 #    Change the HTTP and HTTPS port to e.g. 80 and 443 for production
-#    use.  Setting the HTTPS port to 0 means to active the https
-#    driver for ns_http, but do not listen on this port.
+#    use.  Setting the configuration parameter "httpport" or
+#    "httpsport" to the special value 0 means to active the HTTP/HTTPS
+#    driver for ns_http, but do not listen on this port. Without
+#    loading the driver, ns_http won't be able to the protocol.
 #
-# Note: If port is privileged (usually < 1024), OpenACS must be
-# started by root, and the run script must contain the flag '-b
-# address:port' which matches the address and port as specified below.
-#
-#     httpsport		0
-#     httpsport		8443
+# Note: If the specufued port is privileged (usually < 1024), OpenACS
+# must be started by root, and the run script must contain the flag
+# '-b address:port' which matches the configured address and port.
 #
 # The "hostname" and "ipaddress" should be set to actual values such
 # that the server is reachable over the Internet. The default values
