@@ -4785,7 +4785,6 @@ HttpProc(
                     }
 
                     if (httpPtr->replyHeaderSize > 0 && httpPtr->status == 0) {
-                        int result;
                         /*
                          * Parses received status/headers,
                          * decides where to spool content.

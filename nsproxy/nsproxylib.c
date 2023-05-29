@@ -1767,7 +1767,7 @@ PidsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *
         for (proxyPtr = poolPtr->firstPtr; proxyPtr != NULL; proxyPtr = proxyPtr->nextPtr) {
             if (proxyPtr->workerPtr != NULL) {
                 char buffer[TCL_INTEGER_SPACE];
-                TCL_SIZE_T bytes = ns_uint32toa(buffer, proxyPtr->workerPtr->pid);
+                TCL_SIZE_T bytes = ns_uint32toa(buffer, (unsigned int)proxyPtr->workerPtr->pid);
 
                 Ns_DStringNAppend(dsPtr, buffer, bytes);
                 Ns_DStringNAppend(dsPtr, " ", 1);
