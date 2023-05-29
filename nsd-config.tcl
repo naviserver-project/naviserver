@@ -22,7 +22,7 @@
 #       might be as well a list of ports, when listening on
 #       multiple ports
 #   "nscpport":
-#       when non-empty, load the nscp module and listen
+#       when nonempty, load the nscp module and listen
 #       on the specified port
 #   "home":
 #       the root directory, containng the subdirecturies

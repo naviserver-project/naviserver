@@ -1629,7 +1629,7 @@ ConnChanStatusObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC
                            Tcl_NewStringObj("sent", 4),
                            Tcl_NewWideIntObj((Tcl_WideInt)connChanPtr->wBytes));
             Tcl_DictObjPut(NULL, dictObj,
-                           Tcl_NewStringObj("reveived", 8),
+                           Tcl_NewStringObj("received", 8),
                            Tcl_NewWideIntObj((Tcl_WideInt)connChanPtr->rBytes));
             Tcl_DictObjPut(NULL, dictObj,
                            Tcl_NewStringObj("framebuffer", 8),
@@ -2151,7 +2151,7 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
     } else {
         /*
          * The "fin" bit is not set, we have a segment, but not the
-         * complete message.  Append the reveived frame to the
+         * complete message.  Append the received frame to the
          * fragments buffer.
          */
         RequireDsBuffer(&connChanPtr->fragmentsBuffer);
