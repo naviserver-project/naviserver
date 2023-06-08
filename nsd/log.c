@@ -102,7 +102,8 @@ static Ns_LogFilter LogToFile;
 static Ns_LogFilter LogToTcl;
 static Ns_LogFilter LogToDString;
 
-static TCL_OBJCMDPROC_T NsLogCtlSeverityObjCmd;
+static TCL_OBJCMDPROC_T LogCtlSeverityObjCmd;
+static TCL_OBJCMDPROC_T LogCtlGrepObjCmd;
 
 static LogCache* GetCache(void)
     NS_GNUC_RETURNS_NONNULL;
@@ -1150,7 +1151,7 @@ NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T obj
 /*
  *----------------------------------------------------------------------
  *
- * NsLogCtlSeverityObjCmd --
+ * LogCtlSeverityObjCmd --
  *
  *      Implements "ns_logctl severtiy" command.
  *
@@ -1164,7 +1165,7 @@ NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T obj
  */
 
 static int
-NsLogCtlSeverityObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+LogCtlSeverityObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     Ns_LogSeverity    severity = 0; /* default value for the error cases */
     void             *addrPtr = NULL;
@@ -1245,6 +1246,176 @@ NsLogCtlSeverityObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OB
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * StripColorCodes --
+ *
+ *      Strip ANSI color codes from the specified string.
+ *
+ * Results:
+ *      Stripped string
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static char *
+StripColorCodes(char *line, ssize_t len, TCL_SIZE_T *resultLen)
+{
+    /*
+     * Sample color codes:
+     *
+     *  1b5b303b33326d ; ESC [ 0 ; 3 2 m
+     *  1b5b303b33396d ; ESC [ 0 ; 3 9 m
+     *  1b5b306d       ; ESC [ 0 m
+     *  1b5b313b33316d ; ESC [ 1 ; 3 1 m
+     *  1b5b313b33396d ; ESC [ 1 ; 3 9 m
+     */
+    char *startEsc;
+    *resultLen = (TCL_SIZE_T)len;
+
+    startEsc = strchr(line, 27);
+    while (startEsc != NULL && *(startEsc + 1) == INTCHAR('[')) {
+        char *p;
+        /*
+         * In escape mode, strip everything up to the next 'm';
+         */
+        p = strchr(startEsc + 2, INTCHAR('m'));
+        if (p == NULL) {
+            /*
+             * False alarm (it looked like an escape code, but it is
+             * apparently none). Continue after this.
+             */
+            startEsc += 2;
+        } else {
+            ptrdiff_t skip = p - startEsc;
+
+            memcpy(startEsc, p+1, (size_t)(*resultLen - (p-line)));
+            *resultLen = *resultLen - (TCL_SIZE_T)(skip+1);
+        }
+        startEsc = strchr(startEsc, 27);
+    }
+
+    return line;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LogCtlGrepObjCmd --
+ *
+ *      Read the logfile line by line, clean it from color codes,
+ *      concatenate continuation lines and grep for content.
+ *      Implements "ns_logctl grep" command.
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+LogCtlGrepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+{
+    int          result = TCL_OK;
+    char        *string, *filename = (char *)logfileName;
+    Ns_ObjvSpec  lopts[] = {
+        {"-filename", Ns_ObjvString, &filename, NULL},
+        {"--",        Ns_ObjvBreak,  NULL,      NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec  largs[] = {
+        {"string", Ns_ObjvString, &string, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(lopts, largs, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        FILE *file;
+
+        /*
+         * Open the file in read mode
+         */
+        file = fopen(filename, "r");
+
+        if (file == NULL) {
+            Ns_TclPrintfResult(interp, "Unable to open the file '%s'", filename);
+            result = TCL_ERROR;
+        } else {
+            TCL_SIZE_T  strippedLen;
+            char       *line = NULL, *strippedLine;
+            Tcl_DString resultDs, fullLineDs;
+
+            Tcl_DStringInit(&resultDs);
+            Tcl_DStringInit(&fullLineDs);
+
+            /*
+             * Read the file line by line.
+             */
+            while (1) {
+                size_t  len;
+                ssize_t read;
+
+                read = getline(&line, &len, file);
+                if (read == -1) {
+                    break;
+                }
+
+                if (fullLineDs.length != 0) {
+                    /*
+                     * fullLineDs had already content, append to it.
+                     */
+                    if (*line != ':') {
+                        /*
+                         * If the read line starts with a character
+                         * different to a colon, it is not a
+                         * continuation line, concatenation is done
+                         * and we can grep full line.
+                         */
+                        if (*string != '\0' && strstr(fullLineDs.string, string) != NULL) {
+                            strippedLine = StripColorCodes(fullLineDs.string, fullLineDs.length,
+                                                           &strippedLen);
+                            Ns_DStringNAppend(&resultDs, strippedLine, strippedLen);
+                        }
+                        Tcl_DStringSetLength(&fullLineDs, 0);
+                    }
+                }
+                /*
+                 * Always append the read line to full line.
+                 */
+                Ns_DStringNAppend(&fullLineDs, line, (TCL_SIZE_T)read);
+            }
+            if (fullLineDs.length != 0) {
+                if (*string != '\0' && strstr(fullLineDs.string, string) != NULL) {
+                    strippedLine = StripColorCodes(fullLineDs.string, fullLineDs.length,
+                                                   &strippedLen);
+                    Ns_DStringNAppend(&resultDs, strippedLine, strippedLen);
+                }
+            }
+
+            /*
+             * Final cleanup.
+             */
+            fclose(file);x
+            if (line != NULL) {
+                free(line);
+            }
+            Tcl_DStringFree(&fullLineDs);
+            Tcl_DStringResult(interp, &resultDs);
+        }
+    }
+    return result;
+}
+
+
 
 /*
  *----------------------------------------------------------------------
@@ -1266,7 +1437,7 @@ NsLogCtlSeverityObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OB
 int
 NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
-    int             result = TCL_OK, count, opt, i;
+    int             result = TCL_OK, opt, i;
     Ns_DString      ds;
     Tcl_Obj        *objPtr;
     LogCache       *cachePtr = GetCache();
@@ -1278,6 +1449,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
         "count",
         "flush",
         "get",
+        "grep",
         "hold",
         "peek",
         "register",
@@ -1293,6 +1465,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
         CCountIdx,
         CFlushIdx,
         CGetIdx,
+        CGrepIdx,
         CHoldIdx,
         CPeekIdx,
         CRegisterIdx,
@@ -1350,7 +1523,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
             cachePtr->hold = NS_TRUE;
             break;
 
-        case CPeekIdx:
+        case CPeekIdx: NS_FALL_THROUGH; /* fall through */
         case CGetIdx:
             memset(filterPtr, 0, sizeof(*filterPtr));
             filterPtr->proc = LogToDString;
@@ -1371,25 +1544,28 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
             Tcl_SetObjResult(interp, Tcl_NewIntObj(cachePtr->count));
             break;
 
-        case CTruncIdx:
-            count = 0;
-            if (objc > 2) {
-                Ns_ObjvValueRange countRange = {0, INT_MAX};
-                TCL_SIZE_T        oc = 1;
-                Ns_ObjvSpec       spec = {"?count", Ns_ObjvInt, &count, &countRange};
-
-                if (Ns_ObjvInt(&spec, interp, &oc, &objv[2]) != TCL_OK) {
-                    result = TCL_ERROR;
-                }
-            }
-            if (result == TCL_OK) {
+        case CTruncIdx: {
+            int count = 0;
+            Ns_ObjvValueRange countRange = {0, INT_MAX};
+            Ns_ObjvSpec       args[] = {
+                {"?count", Ns_ObjvInt, &count, &countRange},
+                {NULL, NULL, NULL, NULL}
+            };
+            if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+                result = TCL_ERROR;
+            } else {
                 memset(filterPtr, 0, sizeof(*filterPtr));
                 LogFlush(cachePtr, filterPtr, count, NS_TRUE, NS_TRUE);
             }
             break;
+        }
+
+        case CGrepIdx:
+            result = LogCtlGrepObjCmd(clientData, interp, objc, objv);
+            break;
 
         case CSeverityIdx:
-            result = NsLogCtlSeverityObjCmd(clientData, interp, objc, objv);
+            result = LogCtlSeverityObjCmd(clientData, interp, objc, objv);
             break;
 
         case CSeveritiesIdx:

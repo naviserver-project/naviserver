@@ -97,15 +97,23 @@ message buffering can be turned on subcommand  [method hold].
 [call [cmd ns_logctl] \
 	  [method flush] ]
 
-[call [cmd ns_logctl] \
-	  [method get] ]
-
-Return all buffered log messages, removing them from the buffer without writing them
-to the log file.
-
-
 Write buffered log messages from the current thread to the log file. Do not
 disable buffering enabled by [arg hold].
+
+[call [cmd ns_logctl] [method get] ]
+
+Return all buffered log messages, removing them from the buffer
+without writing them to the log file.
+
+[call [cmd ns_logctl] [method grep] \
+   [opt "[option -filename] [arg filename]"] \
+   [arg string]]
+
+Read through the system log file, join continuation lines, strip color
+codes and grep in the result for the provided string. The function
+returns all lines containing the specified string.
+When [option -filename] is specified, the search is performed on
+the specified file.  The specified filename should be fully qualified.
 
 [call [cmd ns_logctl] \
 	  [method hold] ]
