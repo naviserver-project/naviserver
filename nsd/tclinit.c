@@ -891,7 +891,7 @@ RegisterAt(Ns_TclTraceProc *proc, const void *arg, Ns_TclTraceType when)
 Ns_ReturnCode
 Ns_TclInitInterps(const char *server, Ns_TclInterpInitProc *proc, const void *arg)
 {
-    return Ns_TclRegisterTrace(server, proc, arg, NS_TCL_TRACE_CREATE);
+    return Ns_TclRegisterTrace(server, (Ns_TclTraceProc*)proc, arg, NS_TCL_TRACE_CREATE);
 }
 
 
@@ -2149,6 +2149,39 @@ CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
     return interp;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * InitializeInterpData --
+ *
+ *      Initialize once the datastructures needed for Tcl interpreters.
+ *
+ * Results:
+ *      Boolean value, has to return NS_TRUE for Windows compatibility.
+ *
+ * Side effects:
+ *      One-time intializations.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool InitializeInterpData(void) {
+    Tcl_Obj *tmpObj = Tcl_NewIntObj(0);
+
+    //fprintf(stderr, "==== InitializeInterpData\n");
+    NS_intTypePtr = tmpObj->typePtr;
+    Tcl_DecrRefCount(tmpObj);
+
+    Ns_MasterLock();
+    NsTclInitQueueType();
+    NsTclInitAddrType();
+    NsTclInitTimeType();
+    NsTclInitMemUnitType();
+    NsTclInitKeylistType();
+    Ns_MasterUnlock();
+
+    return NS_TRUE;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -2171,7 +2204,6 @@ CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
 static NsInterp *
 NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
 {
-    static volatile bool initialized = NS_FALSE;
     NsInterp *itPtr;
 
     NS_NONNULL_ASSERT(interp != NULL);
@@ -2181,25 +2213,7 @@ NewInterpData(Tcl_Interp *interp, NsServer *servPtr)
      * types.  These calls cannot be in NsTclInit above because
      * Tcl is not fully initialized at libnsd load time.
      */
-
-    if (!initialized) {
-        Ns_MasterLock();
-        if (!initialized) {
-            Tcl_Obj *tmpObj = Tcl_NewIntObj(0);
-
-            NS_intTypePtr = tmpObj->typePtr;
-            Tcl_DecrRefCount(tmpObj);
-
-            NsTclInitQueueType();
-            NsTclInitAddrType();
-            NsTclInitTimeType();
-            NsTclInitMemUnitType();
-            NsTclInitKeylistType();
-            initialized = NS_TRUE;
-        }
-        Ns_MasterUnlock();
-    }
-
+    NS_INIT_ONCE(InitializeInterpData);
     /*
      * Allocate and initialize a new NsInterp struct.
      */

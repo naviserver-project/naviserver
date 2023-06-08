@@ -32,7 +32,38 @@
 # endif
 #endif
 
-
+/*
+ * NS_INIT_ONCE: handle one-time initialization in a thread-safe manner.  The
+ * macro addresses the concerns expressed in the "Double-checked Locking"
+ * pattern (https://en.wikipedia.org/wiki/Double-checked_locking)
+ *
+ * The provided function should return NS_TRUE for compatibility with
+ * windows. For Unix compilations, the return value is ignored.
+ *
+ * NS_INIT_ONCE is defined as a macro to provide different variables for the
+ * controlling variables.
+ */
+#ifdef _WIN32
+# define NS_INIT_ONCE(fn) \
+    { static INIT_ONCE init_once = INIT_ONCE_STATIC_INIT; \
+        InitOnceExecuteOnce(&init_once, (PINIT_ONCE_FN)(fn), NULL, NULL); \
+    }
+#elif defined(HAVE_PTHREAD)
+# define NS_INIT_ONCE(fn) \
+    { static pthread_once_t init_once = PTHREAD_ONCE_INIT; \
+        pthread_once(&init_once, (ns_funcptr_t)(fn));      \
+    }
+#else
+# define NS_INIT_ONCE(fn) \
+    { static volatile bool initialized = NS_FALSE; \
+      if (!initialized) { \
+          if (!initialized) { \
+              (fn)(); \
+              initialized = NS_TRUE; \
+            } \
+        } \
+    }
+#endif
 
 #include <nscheck.h>
 #include <fcntl.h>
@@ -595,8 +626,8 @@ typedef int ns_sockerrno_t;
 # define TCL_OBJCMDPROC_T     Tcl_ObjCmdProc
 # define TCL_CREATEOBJCOMMAND Tcl_CreateObjCommand
 #else
-/* 
- * Support for TIP 627 
+/*
+ * Support for TIP 627
  * https://core.tcl-lang.org/tips/doc/trunk/tip/627.md
 */
 # define TCL_OBJC_T           ptrdiff_t
