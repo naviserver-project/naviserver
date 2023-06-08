@@ -2125,7 +2125,7 @@ CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
  *
  * InitializeInterpData --
  *
- *      Initialize once the datastructures needed for Tcl interpreters.
+ *      Initialize once the data structures needed for Tcl interpreters.
  *
  * Results:
  *      Boolean value, has to return NS_TRUE for Windows compatibility.
@@ -2142,15 +2142,21 @@ static bool InitializeInterpData(void) {
     NS_intTypePtr = tmpObj->typePtr;
     Tcl_DecrRefCount(tmpObj);
 
-    Ns_MasterLock();
+#if defined(_WIN32) || defined(HAVE_PTHREAD)
+     Ns_MasterLock();
+#endif
+
     NsTclInitQueueType();
     NsTclInitAddrType();
     NsTclInitTimeType();
     NsTclInitMemUnitType();
     NsTclInitKeylistType();
-    Ns_MasterUnlock();
 
-    return NS_TRUE;
+#if defined(_WIN32) || defined(HAVE_PTHREAD)
+     Ns_MasterUnlock();
+#endif
+
+     return NS_TRUE;
 }
 
 

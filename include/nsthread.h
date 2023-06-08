@@ -57,10 +57,12 @@
 # define NS_INIT_ONCE(fn) \
     { static volatile bool initialized = NS_FALSE; \
       if (!initialized) { \
+          Ns_MasterLock(); \
           if (!initialized) { \
               (fn)(); \
               initialized = NS_TRUE; \
-            } \
+          } \
+          Ns_MasterUnlock(); \
         } \
     }
 #endif

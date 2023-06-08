@@ -818,6 +818,37 @@ static void ThreadArgFree(void *arg)
     ns_free(argPtr);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * InitializeTls --
+ *
+ *      Initialize once the data structures needed for thread local storage.
+ *
+ * Results:
+ *      Boolean value, has to return NS_TRUE for Windows compatibility.
+ *
+ * Side effects:
+ *      One-time intialization.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool InitializeTls(void) {
+
+    //fprintf(stderr, "==== InitializeTls\n");
+#if defined(_WIN32) || defined(HAVE_PTHREAD)
+     Ns_MasterLock();
+#endif
+
+    Ns_TlsAlloc(&argtls, ThreadArgFree);
+
+#if defined(_WIN32) || defined(HAVE_PTHREAD)
+     Ns_MasterUnlock();
+#endif
+
+    return NS_TRUE;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -841,7 +872,6 @@ NsTclThread(void *arg)
     TclThreadArg    *argPtr = arg;
     Ns_DString       ds, *dsPtr;
     bool             detached;
-    static bool      initialized = NS_FALSE;
 
     NS_NONNULL_ASSERT(arg != NULL);
 
@@ -857,14 +887,8 @@ NsTclThread(void *arg)
      * initialization might be moved into some tclThreadInit() code,
      * which does not exist.
      */
-    if (!initialized) {
-        Ns_MasterLock();
-        if (!initialized) {
-            Ns_TlsAlloc(&argtls, ThreadArgFree);
-            initialized = NS_TRUE;
-        }
-        Ns_MasterUnlock();
-    }
+    NS_INIT_ONCE(InitializeTls);
+
     Ns_TlsSet(&argtls, argPtr);
 
     if (argPtr->threadName != NULL) {
