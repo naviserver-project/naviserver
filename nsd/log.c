@@ -1404,7 +1404,7 @@ LogCtlGrepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T o
             /*
              * Final cleanup.
              */
-            fclose(file);x
+            fclose(file);
             if (line != NULL) {
                 free(line);
             }
