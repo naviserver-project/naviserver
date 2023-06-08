@@ -869,35 +869,6 @@ RegisterAt(Ns_TclTraceProc *proc, const void *arg, Ns_TclTraceType when)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_TclInitInterps --
- *
- *      Arrange for the given proc to be called on newly created
- *      interps.  This routine now simply uses the more general Tcl
- *      interp tracing facility.  Earlier versions would invoke the
- *      given proc immediately on each interp in a shared pool which
- *      explains this otherwise misnamed API.
- *
- *      Deprecated.
- *
- * Results:
- *      See Ns_TclRegisterTrace.
- *
- * Side effects:
- *      See Ns_TclRegisterTrace.
- *
- *----------------------------------------------------------------------
- */
-
-Ns_ReturnCode
-Ns_TclInitInterps(const char *server, Ns_TclInterpInitProc *proc, const void *arg)
-{
-    return Ns_TclRegisterTrace(server, (Ns_TclTraceProc*)proc, arg, NS_TCL_TRACE_CREATE);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * Ns_TclRegisterDeferred --
  *
  *      Register a procedure to be called when the interp is deallocated.

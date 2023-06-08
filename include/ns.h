@@ -3264,10 +3264,6 @@ NS_EXTERN Ns_ReturnCode
 Ns_TclRegisterAtDelete(Ns_TclTraceProc *proc, const void *arg)
      NS_GNUC_NONNULL(1) NS_GNUC_DEPRECATED_FOR(RegisterAt);
 
-NS_EXTERN Ns_ReturnCode
-Ns_TclInitInterps(const char *server, Ns_TclInterpInitProc *proc, const void *arg)
-     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_DEPRECATED_FOR(Ns_TclRegisterTrace);
-
 NS_EXTERN void
 Ns_TclRegisterDeferred(Tcl_Interp *interp, Ns_TclDeferProc *proc, void *arg)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_DEPRECATED;
