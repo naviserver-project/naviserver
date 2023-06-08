@@ -49,11 +49,11 @@ static Ns_ReturnCode WaitForConnect(NS_SOCKET sock, int count, int ms);
 static NS_SOCKET SockSetup(NS_SOCKET sock);
 
 static ssize_t SockRecv(NS_SOCKET sock, struct iovec *bufs, int nbufs,
-                        unsigned int flags, unsigned long *errorCode)
+                        unsigned int flags, unsigned long *errorCodePtr)
     NS_GNUC_NONNULL(5);
 
 static ssize_t SockSend(NS_SOCKET sock, const struct iovec *bufs, int nbufs,
-                        unsigned int flags, unsigned long *errorCode)
+                        unsigned int flags, unsigned long *errorCodePtr)
     NS_GNUC_NONNULL(5);
 
 static NS_SOCKET BindToSameFamily(const struct sockaddr *saPtr,
