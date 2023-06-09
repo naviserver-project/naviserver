@@ -44,7 +44,7 @@ static const char *const week_names[] = {
 };
 
 #ifdef HAVE_TIMEGM
-static Ns_Mutex lock;
+static Ns_Mutex lock = NULL;
 #endif
 
 
@@ -96,6 +96,30 @@ Ns_HttpTime(Ns_DString *dsPtr, const time_t *when)
     }
 
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsInitHttptime --
+ *
+ *      Initialize once the time mutex and provide a name for it.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      One-time initialization.
+ *
+ *----------------------------------------------------------------------
+ */
+void NsInitHttptime(void) {
+#ifdef HAVE_TIMEGM
+    fprintf(stderr, "==== NsInitHttptime =====================================\n");
+
+    Ns_MutexInit(&lock);
+    Ns_MutexSetName2(&lock, "ns:httptime", NULL);
+#endif
 }
 
 
@@ -235,18 +259,7 @@ Ns_ParseHttpTime(const char *chars)
 
         timeInfo.tm_isdst = 0;
 #ifdef HAVE_TIMEGM
-        /*
-         * Initialize the mutex (if this did not happen so far) and
-         * provide a name for it.
-         */
-        if (lock == NULL) {
-            Ns_MasterLock();
-            if (lock == NULL) {
-                Ns_MutexInit(&lock);
-                Ns_MutexSetName2(&lock, "ns:httptime", NULL);
-            }
-            Ns_MasterUnlock();
-        }
+
         Ns_MutexLock(&lock);
         t = timegm(&timeInfo);
         Ns_MutexUnlock(&lock);

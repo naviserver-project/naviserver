@@ -829,7 +829,7 @@ static void ThreadArgFree(void *arg)
  *      Boolean value, has to return NS_TRUE for Windows compatibility.
  *
  * Side effects:
- *      One-time intialization.
+ *      One-time initialization.
  *
  *----------------------------------------------------------------------
  */

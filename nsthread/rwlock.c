@@ -234,7 +234,11 @@ Ns_RWLockSetName2(Ns_RWLock *rwPtr, const char *prefix, const char *name)
     } else {
         nameLength = 0u;
     }
-
+    if (*rwPtr == NULL) {
+        fprintf(stderr, "Ns_RWLockSetName2: called with unitialized lock pointer. "
+                "(should not happen)\n");
+        Ns_RWLockInit(rwPtr);
+    }
     lockPtr = GetRwLock(rwPtr);
 
     Ns_MasterLock();
@@ -480,6 +484,9 @@ GetRwLock(Ns_RWLock *rwPtr)
 {
     NS_NONNULL_ASSERT(rwPtr != NULL);
 
+    assert(*rwPtr != NULL);
+
+#ifndef KEEP_DOUBLE_LOCK
     if (*rwPtr == NULL) {
         Ns_MasterLock();
         if (*rwPtr == NULL) {
@@ -487,6 +494,7 @@ GetRwLock(Ns_RWLock *rwPtr)
         }
         Ns_MasterUnlock();
     }
+#endif
     return (RwLock *) *rwPtr;
 }
 

@@ -2131,7 +2131,7 @@ CreateInterp(NsInterp **itPtrPtr, NsServer *servPtr)
  *      Boolean value, has to return NS_TRUE for Windows compatibility.
  *
  * Side effects:
- *      One-time intializations.
+ *      One-time initializations.
  *
  *----------------------------------------------------------------------
  */

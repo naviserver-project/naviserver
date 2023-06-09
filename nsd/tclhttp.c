@@ -61,12 +61,12 @@ static const char *errorCodeTimeoutString = "NS_TIMEOUT";
  * For http task mutex naming
  */
 static uint64_t httpClientRequestCount = 0u; /* MT: static variable! */
-
 static Ns_TaskQueue *taskQueue = NULL; /* MT: static variable! */
 
 /*
  * Local functions defined in this file
  */
+static bool InitializeTaskQueue(void);
 
 static int HttpQueue(
     NsInterp *itPtr,
@@ -217,7 +217,6 @@ static NS_SOCKET HttpTunnel(
 ) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 
-static void TaskQueueRequire(void);
 static bool PersistentConnectionLookup(NsHttpTask *httpPtr, NsHttpTask **waitingHttpPtrPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static bool PersistentConnectionAdd(NsHttpTask *httpPtr)
@@ -413,10 +412,13 @@ NsInitHttp(NsServer *servPtr)
 
     NS_NONNULL_ASSERT(servPtr != NULL);
 
+    fprintf(stderr, "============== NsInitHttp %p ==============\n", (void*)servPtr);
     Ns_MutexInit(&servPtr->httpclient.lock);
     Ns_MutexSetName2(&servPtr->httpclient.lock, "httpclient", servPtr->server);
 
     Tcl_InitHashTable(&servPtr->httpclient.pconns, TCL_STRING_KEYS);
+
+    NS_INIT_ONCE(InitializeTaskQueue);
 
     path = Ns_ConfigSectionPath(NULL, servPtr->server, NULL, "httpclient", (char *)0L);
     Ns_ConfigTimeUnitRange(path, "keepalive",
@@ -1818,7 +1820,7 @@ HttpStatsObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TaskQueueRequire --
+ * InitializeTaskQueue --
  *
  *      Make sure that we have a task queue defined.
  *
@@ -1831,14 +1833,12 @@ HttpStatsObjCmd(
  *----------------------------------------------------------------------
  */
 
-static void TaskQueueRequire(void) {
-    if (taskQueue == NULL) {
-        Ns_MasterLock();
-        if (taskQueue == NULL) {
-            taskQueue = Ns_CreateTaskQueue("tclhttp");
-        }
-        Ns_MasterUnlock();
-    }
+static bool InitializeTaskQueue(void) {
+
+    fprintf(stderr, "============== TaskQueueRequire %p ==============\n", (void*)taskQueue);
+    taskQueue = Ns_CreateTaskQueue("tclhttp");
+
+    return NS_TRUE;
 }
 
 
@@ -2073,7 +2073,7 @@ HttpQueue(
             /*
              * Enqueue the task, optionally returning the taskID
              */
-            TaskQueueRequire();
+            assert(taskQueue != NULL);
 
             if (Ns_TaskEnqueue(httpPtr->task, taskQueue) != NS_OK) {
                 HttpSpliceChannels(interp, httpPtr);
@@ -4086,7 +4086,8 @@ HttpClose(
                                                &httpPtr->keepAliveTimeout);
             LogDebug("HttpClose", httpPtr, "keepalive");
 
-            TaskQueueRequire();
+            assert(taskQueue != NULL);
+
             if (Ns_TaskEnqueue(httpPtr->task, taskQueue) != NS_OK) {
                 Ns_Log(Error, "Could not enqueue CloseWait task");
             } else {

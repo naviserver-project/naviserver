@@ -73,6 +73,7 @@ Nsd_LibInit(void)
         NsInitTcl();
         NsInitRequests();
         NsInitUrl2File();
+        NsInitHttptime();
     }
 }
 
