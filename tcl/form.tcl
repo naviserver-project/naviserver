@@ -202,7 +202,8 @@ proc ns_getform {args}  {
                 foreach off $offs len $lens hdr $hdrs {
 
                     set fp [ns_opentmpfile tmpfile]
-                    set nocomplain [expr {$::tcl_version < 9.0 ? "" : "-nocomplain"}]
+                    #set nocomplain [expr {$::tcl_version < 9.0 ? "" : "-nocomplain"}]
+                    set nocomplain "" ;# Tcl9 is a moving target, not sure yet, how this will end up when released
                     try {
                         fconfigure $fp {*}$nocomplain -encoding binary -translation binary
                     } on error {errorMsg} {
