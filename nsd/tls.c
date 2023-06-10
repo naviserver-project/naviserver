@@ -2173,7 +2173,7 @@ void NsInitOpenSSL(void)
 
 int
 Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET UNUSED(sock), NS_TLS_SSL_CTX *UNUSED(ctx),
-                  const char *UNUSED(sni_hostname),
+                  const char *UNUSED(sni_hostname),  Ns_Time *UNUSED(timeoutPtr),
                   NS_TLS_SSL **UNUSED(sslPtr))
 {
     Ns_TclPrintfResult(interp, "SSLCreate failed: no support for OpenSSL built in");
