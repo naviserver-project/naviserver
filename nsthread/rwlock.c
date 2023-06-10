@@ -79,8 +79,8 @@ typedef struct RwLock {
     char             name[NS_THREAD_NAMESIZE+1];
 } RwLock;
 
-static RwLock *GetRwLock(Ns_RWLock *rwPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
+static RwLock *GetRwLock(Ns_RWLock *rwPtr, const char *caller)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_RETURNS_NONNULL;
 
 
 static RwLock *firstRwlockPtr = NULL;
@@ -234,12 +234,11 @@ Ns_RWLockSetName2(Ns_RWLock *rwPtr, const char *prefix, const char *name)
     } else {
         nameLength = 0u;
     }
+
     if (*rwPtr == NULL) {
-        fprintf(stderr, "Ns_RWLockSetName2: called with unitialized lock pointer. "
-                "(should not happen)\n");
         Ns_RWLockInit(rwPtr);
     }
-    lockPtr = GetRwLock(rwPtr);
+    lockPtr = GetRwLock(rwPtr, "Ns_RWLockSetName2");
 
     Ns_MasterLock();
     p = lockPtr->name;
@@ -325,7 +324,7 @@ Ns_RWLockRdLock(Ns_RWLock *rwPtr)
 
     NS_NONNULL_ASSERT(rwPtr != NULL);
 
-    lockPtr = GetRwLock(rwPtr);
+    lockPtr = GetRwLock(rwPtr, "Ns_RWLockRdLock");
 
     err = pthread_rwlock_tryrdlock(&lockPtr->rwlock);
     if (unlikely(err == EBUSY)) {
@@ -378,7 +377,7 @@ Ns_RWLockWrLock(Ns_RWLock *rwPtr)
 
     NS_NONNULL_ASSERT(rwPtr != NULL);
 
-    lockPtr = GetRwLock(rwPtr);
+    lockPtr = GetRwLock(rwPtr, "Ns_RWLockWrLock");
 
 #ifndef NS_NO_MUTEX_TIMING
     Ns_GetTime(&startTime);
@@ -480,13 +479,18 @@ Ns_RWLockUnlock(Ns_RWLock *rwPtr)
  */
 
 static RwLock *
-GetRwLock(Ns_RWLock *rwPtr)
+GetRwLock(Ns_RWLock *rwPtr, const char *caller)
 {
     NS_NONNULL_ASSERT(rwPtr != NULL);
 
-    assert(*rwPtr != NULL);
+    if (*rwPtr == NULL) {
+        fprintf(stderr, "%s: called with unitialized lock pointer. "
+                "This should not happen, call Ns_RWLockInit() before this call\n",
+                caller);
+        Ns_RWLockInit(rwPtr);
+    }
 
-#ifndef KEEP_DOUBLE_LOCK
+#ifdef KEEP_DOUBLE_LOCK
     if (*rwPtr == NULL) {
         Ns_MasterLock();
         if (*rwPtr == NULL) {
@@ -494,6 +498,8 @@ GetRwLock(Ns_RWLock *rwPtr)
         }
         Ns_MasterUnlock();
     }
+#else
+    assert(*rwPtr != NULL);
 #endif
     return (RwLock *) *rwPtr;
 }
@@ -516,7 +522,7 @@ typedef struct RwLock {
                          * readers, -1 indicates exclusive writer. */
 } RwLock;
 
-static RwLock *GetRwLock(Ns_RWLock *rwPtr)
+static RwLock *GetRwLock(Ns_RWLock *rwPtr, const char *caller)
     NS_GNUC_NONNULL(1) NS_GNUC_RETURNS_NONNULL;
 
 
@@ -662,7 +668,7 @@ Ns_RWLockRdLock(Ns_RWLock *rwPtr)
 
     NS_NONNULL_ASSERT(rwPtr != NULL);
 
-    lockPtr = GetRwLock(rwPtr);
+    lockPtr = GetRwLock(rwPtr, "Ns_RWLockRdLock");
     Ns_MutexLock(&lockPtr->mutex);
 
     /*
@@ -705,7 +711,7 @@ Ns_RWLockWrLock(Ns_RWLock *rwPtr)
 
     NS_NONNULL_ASSERT(rwPtr != NULL);
 
-    lockPtr = GetRwLock(rwPtr);
+    lockPtr = GetRwLock(rwPtr, "Ns_RWLockWrLock");
 
     Ns_MutexLock(&lockPtr->mutex);
     while (lockPtr->lockcnt != 0) {
@@ -772,10 +778,18 @@ Ns_RWLockUnlock(Ns_RWLock *rwPtr)
  */
 
 static RwLock *
-GetRwLock(Ns_RWLock *rwPtr)
+GetRwLock(Ns_RWLock *rwPtr, const char *caller)
 {
     NS_NONNULL_ASSERT(rwPtr != NULL);
 
+    if (*rwPtr == NULL) {
+        fprintf(stderr, "%s: called with unitialized lock pointer. "
+                "This should not happen, call Ns_RWLockInit() before this call\n",
+                caller);
+        Ns_RWLockInit(rwPtr);
+    }
+
+#ifdef KEEP_DOUBLE_LOCK
     if (*rwPtr == NULL) {
         Ns_MasterLock();
         if (*rwPtr == NULL) {
@@ -783,6 +797,10 @@ GetRwLock(Ns_RWLock *rwPtr)
         }
         Ns_MasterUnlock();
     }
+#else
+    assert(*rwPtr != NULL);
+#endif
+
     return (RwLock *) *rwPtr;
 }
 

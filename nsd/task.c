@@ -103,7 +103,7 @@ static Ns_ThreadProc TaskThread;
  */
 
 static TaskQueue *firstQueuePtr; /* List of all known task queues */
-static Ns_Mutex   lock;          /* Lock for the queue list */
+static Ns_Mutex   lock = NULL;   /* Lock for the queue list */
 
 /*
  * The following maps Ns_SockState bits to poll event bits.

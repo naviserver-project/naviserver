@@ -41,8 +41,8 @@ static Tcl_HashTable  charsets;     /* Maps Internet charset names to Tcl encodi
 static Tcl_HashTable  encnames;     /* Maps Tcl encoding names to Internet charset names. */
 static Tcl_HashTable  encodings;    /* Cache of loaded Tcl encodings */
 
-static Ns_Mutex       lock;         /* Lock around encodings. */
-static Ns_Cond        cond;
+static Ns_Mutex       lock = NULL;  /* Lock around encodings. */
+static Ns_Cond        cond = NULL;
 
 Tcl_Encoding          NS_utf8Encoding = NULL; /* Cached pointer to utf-8 encoding. */
 

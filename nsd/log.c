@@ -140,8 +140,8 @@ static Ns_Tls       tls;
 #if !defined(NS_THREAD_LOCAL)
 static Ns_Tls       tlsEntry;
 #endif
-static Ns_Mutex     lock;
-static Ns_Cond      cond;
+static Ns_Mutex     lock = NULL;
+static Ns_Cond      cond = NULL;
 
 static bool         logOpenCalled = NS_FALSE;
 static const char  *logfileName = NULL;

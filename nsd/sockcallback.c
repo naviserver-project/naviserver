@@ -50,8 +50,8 @@ static Callback     *firstQueuePtr = NULL, *lastQueuePtr = NULL;
 static bool          shutdownPending = NS_FALSE;
 static bool          running = NS_FALSE;
 static Ns_Thread     sockThread;
-static Ns_Mutex      lock;
-static Ns_Cond       cond;
+static Ns_Mutex      lock = NULL;
+static Ns_Cond       cond = NULL;
 static NS_SOCKET     trigPipe[2];
 static Tcl_HashTable activeCallbacks;
 

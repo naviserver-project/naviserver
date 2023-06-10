@@ -44,7 +44,7 @@ static size_t        progressMinSize; /* Config: progress enabled? */
 static Ns_Sls        slot;            /* Per-socket progress slot. */
 
 static Tcl_HashTable urlTable;        /* Large uploads in progress. */
-static Ns_Mutex      lock;            /* Lock around table and Progress struct. */
+static Ns_Mutex      lock = NULL;     /* Lock around table and Progress struct. */
 
 
 

@@ -82,9 +82,9 @@ static bool Larger(int j, int k);       /* Function defining the sorting
  */
 
 static Tcl_HashTable eventsTable;   /* Hash table of events. */
-static Ns_Mutex lock;               /* Lock around heap and hash table. */
-static Ns_Cond schedcond;           /* Condition to wakeup SchedThread. */
-static Ns_Cond eventcond;           /* Condition to wakeup EventThread(s). */
+static Ns_Mutex lock = NULL;        /* Lock around heap and hash table. */
+static Ns_Cond schedcond = NULL;    /* Condition to wakeup SchedThread. */
+static Ns_Cond eventcond = NULL;    /* Condition to wakeup EventThread(s). */
 static Event **queue = NULL;        /* Heap priority queue (dynamically re-sized). */
 static Event *firstEventPtr = NULL; /* Pointer to the first event */
 static int nqueue = 0;              /* Number of events in queue. */

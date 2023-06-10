@@ -43,6 +43,7 @@ void
 Nsd_LibInit(void)
 {
     static bool initialized = NS_FALSE;
+    fprintf(stderr, "==== Nsd_LibInit %d  =====================================\n", initialized);
 
     if (!initialized) {
         initialized = NS_TRUE;
@@ -55,6 +56,7 @@ Nsd_LibInit(void)
         Ns_MutexSetName(&nsconf.state.lock, "nsd:conf");
 
         NsInitSls();
+        NsInitCallbacks();
         NsInitConf(); /* <- Server marked 'started' during library load. */
         NsInitLog();
         NsInitOpenSSL();
@@ -75,6 +77,7 @@ Nsd_LibInit(void)
         NsInitUrl2File();
         NsInitHttptime();
     }
+    fprintf(stderr, "==== Nsd_LibInit %d  ================================ DONE\n", initialized);
 }
 
 /*

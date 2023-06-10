@@ -35,8 +35,8 @@ static bool SockAddrEqual(const struct sockaddr *saPtr1, const struct sockaddr *
  * Static variables used in this file
  */
 
-static Ns_Mutex lock;
-static Ns_Cond cond;
+static Ns_Mutex lock = NULL;
+static Ns_Cond cond = NULL;
 static Ns_Thread tickThread;
 static SERVICE_STATUS_HANDLE hStatus = NULL;
 static SERVICE_STATUS curStatus;

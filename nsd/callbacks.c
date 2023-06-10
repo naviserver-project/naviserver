@@ -56,8 +56,8 @@ static Callback *firstShutdown = NULL;
 static Callback *firstExit = NULL;
 static Callback *firstReady = NULL;
 
-static Ns_Mutex  lock;
-static Ns_Cond   cond;
+static Ns_Mutex  lock = NULL;
+static Ns_Cond   cond = NULL;
 
 static bool      shutdownPending  = NS_FALSE;
 static bool      shutdownComplete = NS_FALSE;
@@ -448,7 +448,6 @@ static void *
 RegisterAt(Callback **firstPtrPtr, ns_funcptr_t proc, void *arg, bool fifo)
 {
     Callback   *cbPtr, *nextPtr;
-    static bool first = NS_TRUE;
 
     NS_NONNULL_ASSERT(firstPtrPtr != NULL);
     NS_NONNULL_ASSERT(proc != NULL);
@@ -457,11 +456,6 @@ RegisterAt(Callback **firstPtrPtr, ns_funcptr_t proc, void *arg, bool fifo)
     cbPtr->proc = (ns_funcptr_t)proc;
     cbPtr->arg = arg;
 
-    Ns_MutexLock(&lock);
-    if (first) {
-        first = NS_FALSE;
-        Ns_MutexSetName(&lock, "ns:callbacks");
-    }
     if (shutdownPending) {
         ns_free(cbPtr);
         cbPtr = NULL;
@@ -522,6 +516,27 @@ RunCallbacks(const char *list, const Callback *cbPtr)
         cbPtr = cbPtr->nextPtr;
     }
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsInitCallbacks --
+ *
+ *      Initialize once the callback mutex and provide a name for it.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      One-time initialization.
+ *
+ *----------------------------------------------------------------------
+ */
+void NsInitCallbacks(void) {
+    fprintf(stderr, "==== NsInitCallbacks =====================================\n");
+    Ns_MutexSetName(&lock, "ns:callbacks");
+}
+
 
 /*
  * Local Variables:

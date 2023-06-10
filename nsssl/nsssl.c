@@ -68,7 +68,7 @@ static unsigned long SSLThreadId(void);
  */
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
-static Ns_Mutex *driver_locks;
+static Ns_Mutex *driver_locks = NULL;
 #endif
 
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;

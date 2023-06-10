@@ -55,7 +55,7 @@ static Ns_ServerInitProc ConfigServerUrl2File;
  * Static variables defined in this file.
  */
 
-static Ns_Mutex   ulock;
+static Ns_Mutex   ulock = NULL;
 static int        uid;
 
 

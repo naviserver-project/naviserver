@@ -39,7 +39,7 @@ static Ns_SockProc  ListenCallback;
  */
 
 static Tcl_HashTable portsTable;      /* Table of per-port data. */
-static Ns_Mutex      lock;            /* Lock around portsTable. */
+static Ns_Mutex      lock = NULL;     /* Lock around portsTable. */
 
 
 /*

@@ -37,7 +37,7 @@ typedef struct Tmp {
 } Tmp;
 
 static Tmp      *firstTmpPtr = NULL;
-static Ns_Mutex  lock;
+static Ns_Mutex  lock = NULL;
 
 /*
  * The following constants are defined for this file

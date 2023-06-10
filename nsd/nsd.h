@@ -1400,9 +1400,11 @@ NS_EXTERN const char *nsBuildDate;
  * Libnsd initialization routines.
  */
 NS_EXTERN void NsInitBinder(void);
+NS_EXTERN void NsInitCallbacks(void);
 NS_EXTERN void NsInitConf(void);
 NS_EXTERN void NsInitDrivers(void);
 NS_EXTERN void NsInitFd(void);
+NS_EXTERN void NsInitHttptime(void);
 NS_EXTERN void NsInitInfo(void);
 NS_EXTERN void NsInitLimits(void);
 NS_EXTERN void NsInitListen(void);
@@ -1420,7 +1422,6 @@ NS_EXTERN void NsInitTask(void);
 NS_EXTERN void NsInitTcl(void);
 NS_EXTERN void NsInitTclEnv(void);
 NS_EXTERN void NsInitUrl2File(void);
-NS_EXTERN void NsInitHttptime(void);
 
 NS_EXTERN void NsConfigAdp(void);
 NS_EXTERN void NsConfigLog(void);
