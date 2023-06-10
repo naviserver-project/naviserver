@@ -76,6 +76,8 @@ Nsd_LibInit(void)
         NsInitRequests();
         NsInitUrl2File();
         NsInitHttptime();
+        NsInitDNS();
+        NsInitRandom();
     }
     fprintf(stderr, "==== Nsd_LibInit %d  ================================ DONE\n", initialized);
 }

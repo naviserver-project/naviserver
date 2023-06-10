@@ -437,6 +437,7 @@ int main(int argc, char *argv[])
     Ns_MutexSetName(&slock, "msglock");
     Ns_MutexSetName(&block, "busylock");
     Ns_RWLockSetName2(&rwlock, "rwlock", NULL);
+    Ns_CsInit(&cs);
 
     Ns_ThreadStackSize(81920);
     Ns_SemaInit(&sema, 3);

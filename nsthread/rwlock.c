@@ -484,7 +484,7 @@ GetRwLock(Ns_RWLock *rwPtr, const char *caller)
     NS_NONNULL_ASSERT(rwPtr != NULL);
 
     if (*rwPtr == NULL) {
-        fprintf(stderr, "%s: called with unitialized lock pointer. "
+        fprintf(stderr, "%s: called with uninitialized lock pointer. "
                 "This should not happen, call Ns_RWLockInit() before this call\n",
                 caller);
         Ns_RWLockInit(rwPtr);
@@ -783,7 +783,7 @@ GetRwLock(Ns_RWLock *rwPtr, const char *caller)
     NS_NONNULL_ASSERT(rwPtr != NULL);
 
     if (*rwPtr == NULL) {
-        fprintf(stderr, "%s: called with unitialized lock pointer. "
+        fprintf(stderr, "%s: called with uninitialized lock pointer. "
                 "This should not happen, call Ns_RWLockInit() before this call\n",
                 caller);
         Ns_RWLockInit(rwPtr);

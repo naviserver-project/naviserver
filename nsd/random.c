@@ -117,22 +117,11 @@ NsTclRandObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T ob
 double
 Ns_DRand(void)
 {
-    if (!initialized) {
-        Ns_CsEnter(&lock);
-        if (!initialized) {
-            unsigned long seed[1];
 
-            GenSeeds(seed, 1);
-#if defined(HAVE_DRAND48)
-            srand48((long) seed[0]);
-#elif defined(HAVE_RANDOM)
-            srandom((unsigned int) seed[0]);
-#else
-            srand((unsigned int) seed[0]);
-#endif
-            initialized = NS_TRUE;
-        }
-        Ns_CsLeave(&lock);
+    if (!initialized) {
+        fprintf(stderr, "Ns_DRand: called before initialization. "
+                "This should not happen, call NsInitRandom() before this call\n");
+        NsInitRandom();
     }
 #if defined(HAVE_ARC4RANDOM)
     return ((double)(arc4random() % (unsigned)RAND_MAX) / ((double)RAND_MAX + 1.0));
@@ -269,6 +258,36 @@ Roulette(void)
     ocount = counter;
     randbuf = (randbuf<<3) ^ counter;
     return randbuf;
+}
+
+/*----------------------------------------------------------------------
+ *
+ * NsInitRandom --
+ *
+ *      Initialize once the critical section and the seeds.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      One-time initialization.
+ *
+ *----------------------------------------------------------------------
+ */
+void NsInitRandom(void) {
+    unsigned long seed[1];
+
+    //fprintf(stderr, "==== NsInitRandom =====================================\n");
+    Ns_CsInit(&lock);
+    GenSeeds(seed, 1);
+#if defined(HAVE_DRAND48)
+    srand48((long) seed[0]);
+#elif defined(HAVE_RANDOM)
+    srandom((unsigned int) seed[0]);
+#else
+    srand((unsigned int) seed[0]);
+#endif
+    initialized = NS_TRUE;
 }
 
 /*

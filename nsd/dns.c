@@ -65,6 +65,7 @@ static Ns_Cache *hostCache;
 static Ns_Cache *addrCache;
 static Ns_Time   ttl;       /* Time in seconds each entry can live in the cache. */
 static Ns_Time   timeout;   /* Time in seconds to wait for concurrent update.  */
+static Ns_Cs     getDNScs = NULL;
 
 
 
@@ -408,8 +409,7 @@ GetHost(Ns_DString *dsPtr, const char *addr)
     int result;
     bool status = NS_FALSE;
 #ifndef HAVE_MTSAFE_DNS
-    static Ns_Cs cs;
-    Ns_CsEnter(&cs);
+    Ns_CsEnter(&getDNScs);
 #endif
 
     memset(&sa, 0, sizeof(struct sockaddr_in));
@@ -438,7 +438,7 @@ GetHost(Ns_DString *dsPtr, const char *addr)
          */
     }
 #ifndef HAVE_MTSAFE_DNS
-    Ns_CsLeave(&cs);
+    Ns_CsLeave(&getDNScs);
 #endif
 
     return status;
@@ -485,14 +485,13 @@ static bool
 GetHost(Ns_DString *dsPtr, const char *addr)
 {
     struct sockaddr_in sa;
-    static Ns_Cs cs;
     bool status = NS_FALSE;
 
     sa.sin_addr.s_addr = inet_addr(addr);
     if (sa.sin_addr.s_addr != INADDR_NONE) {
         struct hostent *he;
 
-        Ns_CsEnter(&cs);
+        Ns_CsEnter(&getDNScs);
         he = gethostbyaddr((char *) &sa.sin_addr,
                            sizeof(struct in_addr), AF_INET);
         if (he == NULL) {
@@ -501,7 +500,7 @@ GetHost(Ns_DString *dsPtr, const char *addr)
             Ns_DStringAppend(dsPtr, he->h_name);
             status = NS_TRUE;
         }
-        Ns_CsLeave(&cs);
+        Ns_CsLeave(&getDNScs);
     }
     return status;
 }
@@ -517,9 +516,8 @@ GetAddr(Ns_DString *dsPtr, const char *host)
     int              result;
     bool             status = NS_FALSE;
 #ifndef HAVE_MTSAFE_DNS
-    static Ns_Cs     cs;
 
-    Ns_CsEnter(&cs);
+    Ns_CsEnter(&getDNScs);
 #endif
 
     memset(&hints, 0, sizeof(hints));
@@ -550,7 +548,7 @@ GetAddr(Ns_DString *dsPtr, const char *host)
          */
     }
 #ifndef HAVE_MTSAFE_DNS
-    Ns_CsLeave(&cs);
+    Ns_CsLeave(&getDNScs);
 #endif
     return status;
 }
@@ -623,10 +621,9 @@ GetAddr(Ns_DString *dsPtr, const char *host)
 {
     struct hostent *he;
     struct in_addr ia, *ptr;
-    static Ns_Cs cs;
     bool status = NS_FALSE;
 
-    Ns_CsEnter(&cs);
+    Ns_CsEnter(&getDNScs);
     he = gethostbyname(host);
     if (he == NULL) {
         LogError("gethostbyname", h_errno);
@@ -642,7 +639,7 @@ GetAddr(Ns_DString *dsPtr, const char *host)
             status = NS_TRUE;
         }
     }
-    Ns_CsLeave(&cs);
+    Ns_CsLeave(&getDNScs);
 
     return status;
 }
@@ -722,6 +719,26 @@ LogError(char *func, int h_errnop)
 }
 
 #endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsInitDNS --
+ *
+ *      Initialize once the critical section.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      One-time initialization.
+ *
+ *----------------------------------------------------------------------
+ */
+void NsInitDNS(void) {
+    fprintf(stderr, "==== NsInitDNS =====================================\n");
+    Ns_CsInit(&getDNScs);
+}
 
 /*
  * Local Variables:

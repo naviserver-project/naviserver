@@ -139,6 +139,7 @@ static Ns_Mutex interpLock = NULL;
 static bool concurrent_interp_create = NS_FALSE;
 
 const Tcl_ObjType *NS_intTypePtr = NULL;
+static Ns_Cs popInterpCsLock;
 
 static const char *
 GetTraceLabel(unsigned int traceWhy) {
@@ -236,6 +237,8 @@ NsInitTcl(void)
 
     Ns_MutexInit(&updateLock);
     Ns_MutexSetName(&updateLock, "update");
+
+    Ns_CsInit(&popInterpCsLock);
     /*
      * Allocate the thread storage slot for the table of interps
      * per-thread. At thread exit, DeleteInterps will be called
@@ -1899,7 +1902,6 @@ PopInterp(NsServer *servPtr, Tcl_Interp *interp)
 {
     NsInterp      *itPtr;
     Tcl_HashEntry *hPtr;
-    static Ns_Cs   lock;
 
     /*
      * Get an already initialized interp for the given virtual server
@@ -1910,7 +1912,7 @@ PopInterp(NsServer *servPtr, Tcl_Interp *interp)
     itPtr = Tcl_GetHashValue(hPtr);
     if (itPtr == NULL) {
         if (nsconf.tcl.lockoninit) {
-            Ns_CsEnter(&lock);
+            Ns_CsEnter(&popInterpCsLock);
         }
         if (interp != NULL) {
             itPtr = NewInterpData(interp, servPtr);
@@ -1928,7 +1930,7 @@ PopInterp(NsServer *servPtr, Tcl_Interp *interp)
             RunTraces(itPtr, NS_TCL_TRACE_CREATE);
         }
         if (nsconf.tcl.lockoninit) {
-            Ns_CsLeave(&lock);
+            Ns_CsLeave(&popInterpCsLock);
         }
         Tcl_SetHashValue(hPtr, itPtr);
     }

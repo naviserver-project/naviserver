@@ -19,7 +19,6 @@
 #
 #
 
-
 #
 # The Tcl system encoding determines what character set *.tcl module
 # files etc. are expected to be in. Report the current encoding system

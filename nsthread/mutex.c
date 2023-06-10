@@ -507,7 +507,7 @@ GetMutex(Ns_Mutex *mutex, const char *caller)
     NS_NONNULL_ASSERT(mutex != NULL);
 
     if (*mutex == NULL) {
-        fprintf(stderr, "%s: called with unitialized lock pointer. "
+        fprintf(stderr, "%s: called with uninitialized lock pointer. "
                 "This should not happen, call Ns_MutexInit() before this call\n",
                 caller);
         //Ns_MutexInit(mutex);

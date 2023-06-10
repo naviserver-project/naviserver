@@ -147,6 +147,8 @@ Ns_CsEnter(Ns_Cs *csPtr)
      */
 
     if (*csPtr == NULL) {
+        fprintf(stderr, "Ns_CsEnter: called with uninitialized lock pointer. "
+                "This should not happen, call Ns_CsInit() before this call\n");
         Ns_MasterLock();
         if (*csPtr == NULL) {
             Ns_CsInit(csPtr);
