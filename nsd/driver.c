@@ -1142,6 +1142,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
 
     Ns_MutexInit(&drvPtr->lock);
     Ns_MutexSetName2(&drvPtr->lock, "ns:drv", threadName);
+    Ns_CondInit(&drvPtr->cond);
 
     Ns_MutexInit(&drvPtr->spooler.lock);
     Ns_MutexSetName2(&drvPtr->spooler.lock, "ns:drv:spool", threadName);

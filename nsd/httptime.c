@@ -115,7 +115,7 @@ Ns_HttpTime(Ns_DString *dsPtr, const time_t *when)
  */
 void NsInitHttptime(void) {
 #ifdef HAVE_TIMEGM
-    fprintf(stderr, "==== NsInitHttptime =====================================\n");
+    //fprintf(stderr, "==== NsInitHttptime =====================================\n");
 
     Ns_MutexInit(&lock);
     Ns_MutexSetName2(&lock, "ns:httptime", NULL);

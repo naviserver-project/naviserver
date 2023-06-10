@@ -514,6 +514,10 @@ CreatePool(NsServer *servPtr, const char *pool)
             snprintf(suffix, 64u, "connthread:%d", j);
             Ns_MutexInit(&poolPtr->tqueue.args[j].lock);
             Ns_MutexSetName2(&poolPtr->tqueue.args[j].lock, ds.string, suffix);
+            Ns_CondInit(&poolPtr->tqueue.args[j].cond);
+            fprintf(stderr, "pool %s tqueue arg %d mutex %p cond %p\n", pool, j,
+                    (void*)poolPtr->tqueue.args[j].lock,
+                    (void*)poolPtr->tqueue.args[j].cond);
         }
         Ns_MutexInit(&poolPtr->tqueue.lock);
         Ns_MutexSetName2(&poolPtr->tqueue.lock, ds.string, "tqueue");

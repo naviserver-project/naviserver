@@ -264,6 +264,7 @@ NsTclInitQueueType(void)
 {
     Tcl_InitHashTable(&tp.queues, TCL_STRING_KEYS);
     Ns_MutexSetName(&tp.queuelock, "jobThreadPool");
+    Ns_CondInit(&tp.cond);
     tp.nextThreadId = 0u;
     tp.nextQueueId = 0u;
     tp.maxThreads = 0;
@@ -1737,8 +1738,9 @@ NewQueue(const char *queueName, const char *queueDesc, int maxThreads)
     queue->refCount = 0;
 
     Ns_MutexSetName2(&queue->lock, "tcljob", queueName);
-    Tcl_InitHashTable(&queue->jobs, TCL_STRING_KEYS);
+    Ns_CondInit(&queue->cond);
 
+    Tcl_InitHashTable(&queue->jobs, TCL_STRING_KEYS);
     tp.maxThreads += maxThreads;
 
     return queue;

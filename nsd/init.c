@@ -54,6 +54,7 @@ Nsd_LibInit(void)
 
         Ns_MutexInit(&nsconf.state.lock);
         Ns_MutexSetName(&nsconf.state.lock, "nsd:conf");
+        Ns_CondInit(&nsconf.state.cond);
 
         NsInitSls();
         NsInitCallbacks();

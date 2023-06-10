@@ -261,6 +261,7 @@ Ns_CreateTaskQueue(const char *name)
     memcpy(queuePtr->name, name, nameLength + 1u);
     Ns_MutexInit(&queuePtr->lock);
     Ns_MutexSetName2(&queuePtr->lock, "ns:taskqueue", name);
+    Ns_CondInit(&queuePtr->cond);
 
     if (ns_sockpair(queuePtr->trigger) != 0) {
         Ns_Fatal("taskqueue: ns_sockpair() failed: %s",

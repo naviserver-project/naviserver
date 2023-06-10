@@ -206,6 +206,7 @@ NsConfigEncodings(void)
     size_t        i;
 
     Ns_MutexSetName(&lock, "ns:encodings");
+    Ns_CondInit(&cond);
     Tcl_InitHashTable(&extensions, TCL_STRING_KEYS);
     Tcl_InitHashTable(&charsets, TCL_STRING_KEYS);
     Tcl_InitHashTable(&encnames, TCL_STRING_KEYS);

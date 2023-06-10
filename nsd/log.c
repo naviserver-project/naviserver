@@ -251,6 +251,8 @@ NsInitLog(void)
     Ns_LogSeverity i;
 
     Ns_MutexSetName(&lock, "ns:log");
+    Ns_CondInit(&cond);
+
     Ns_TlsAlloc(&tls, FreeCache);
 #if !defined(NS_THREAD_LOCAL)
     Ns_TlsAlloc(&tlsEntry, LogEntriesFree);

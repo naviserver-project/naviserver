@@ -404,6 +404,7 @@ Nsproxy_LibInit(void)
 
         Ns_MutexInit(&plock);
         Ns_MutexSetName(&plock, "ns:proxy");
+        Ns_CondInit(&pcond);
 
         Nsd_LibInit();
 

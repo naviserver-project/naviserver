@@ -146,6 +146,8 @@ NsInitSched(void)
 {
     Ns_MutexInit(&lock);
     Ns_MutexSetName(&lock, "ns:sched");
+    Ns_CondInit(&schedcond);
+    Ns_CondInit(&eventcond);
     Tcl_InitHashTable(&eventsTable, TCL_ONE_WORD_KEYS);
 }
 

@@ -736,7 +736,7 @@ LogError(char *func, int h_errnop)
  *----------------------------------------------------------------------
  */
 void NsInitDNS(void) {
-    fprintf(stderr, "==== NsInitDNS =====================================\n");
+    //fprintf(stderr, "==== NsInitDNS =====================================\n");
     Ns_CsInit(&getDNScs);
 }
 
