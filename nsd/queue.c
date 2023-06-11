@@ -1960,7 +1960,6 @@ NsConnThread(void *arg)
      * of the thread.
      */
     argPtr = arg;
-    fprintf(stderr, "NsConnThread receives lock %p cond %p\n", (void*)argPtr->lock, (void*)argPtr->cond);
     poolPtr = argPtr->poolPtr;
     assert(poolPtr != NULL);
 

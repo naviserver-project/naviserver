@@ -142,6 +142,7 @@ NsInitSockCallback(void)
         Tcl_InitHashTable(&activeCallbacks, TCL_ONE_WORD_KEYS);
         Ns_MutexInit(&lock);
         Ns_MutexSetName(&lock, "ns:sockcallbacks");
+        Ns_CondInit(&cond);
         initialized = NS_TRUE;
     }
 }

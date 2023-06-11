@@ -535,6 +535,7 @@ RunCallbacks(const char *list, const Callback *cbPtr)
 void NsInitCallbacks(void) {
     fprintf(stderr, "==== NsInitCallbacks =====================================\n");
     Ns_MutexSetName(&lock, "ns:callbacks");
+    Ns_CondInit(&cond);
 }
 
 

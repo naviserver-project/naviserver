@@ -1303,6 +1303,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
 
             snprintf(buffer, sizeof(buffer), "ns:driver:spooler:%s:%d", threadName, i);
             Ns_MutexSetName2(&queuePtr->lock, buffer, "queue");
+            Ns_CondInit(&queuePtr->cond);
             queuePtr->id = i;
             Push(queuePtr, spPtr->firstPtr);
         }
@@ -1336,6 +1337,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
 
             snprintf(buffer, sizeof(buffer), "ns:driver:writer:%s:%d", threadName, i);
             Ns_MutexSetName2(&queuePtr->lock, buffer, "queue");
+            Ns_CondInit(&queuePtr->cond);
             queuePtr->id = i;
             Push(queuePtr, wrPtr->firstPtr);
         }
@@ -7703,6 +7705,8 @@ NsAsyncWriterQueueEnable(void)
                  */
                 queuePtr = ns_calloc(1u, sizeof(SpoolerQueue));
                 Ns_MutexSetName2(&queuePtr->lock, "ns:driver:async-writer", "queue");
+                Ns_CondInit(&queuePtr->cond);
+
                 asyncWriter->firstPtr = queuePtr;
                 /*
                  * Start the spooler queue
