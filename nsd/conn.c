@@ -2086,19 +2086,20 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
 
         } else {
             TCL_SIZE_T        oc = 3;
-            int               offset;
-            Ns_ObjvValueRange offsetRange = {0, (Tcl_WideInt)connPtr->reqPtr->length};
-            Ns_ObjvSpec       specOffset = {"offset", Ns_ObjvInt, &offset, &offsetRange};
+            Tcl_WideInt       offset;
+            Ns_ObjvValueRange offsetRange = {0, (Tcl_WideInt)(connPtr->reqPtr->length)};
+            Ns_ObjvSpec       specOffset = {"offset", Ns_ObjvWideInt, &offset, &offsetRange};
 
-            if (Ns_ObjvInt(&specOffset, interp, &oc, &objv[2]) != TCL_OK) {
+            if (Ns_ObjvWideInt(&specOffset, interp, &oc, &objv[2]) != TCL_OK) {
                 result = TCL_ERROR;
 
             } else {
                 TCL_SIZE_T        length;
+                Tcl_WideInt       lengthValue;
                 Ns_ObjvValueRange lengthRange = {0, ((Tcl_WideInt)connPtr->reqPtr->length - offset)};
-                Ns_ObjvSpec       specLength = {"length", Ns_ObjvInt, &length, &lengthRange};
+                Ns_ObjvSpec       specLength = {"length", Ns_ObjvWideInt, &lengthValue, &lengthRange};
 
-                if (Ns_ObjvInt(&specLength, interp, &oc, &objv[3]) != TCL_OK) {
+                if (Ns_ObjvWideInt(&specLength, interp, &oc, &objv[3]) != TCL_OK) {
                     result = TCL_ERROR;
 
                 } else if (GetChan(interp, Tcl_GetString(objv[4]), &chan) != TCL_OK) {
@@ -2106,6 +2107,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
 
                 } else {
                     char *content = connPtr->reqPtr->content + offset;
+                    length = (TCL_SIZE_T)lengthValue;
 #ifdef NS_SKIPBOM
                     Ns_Log(Notice, "NS_CONN COPY offset %d length %d chan '%s'\n",
                            offset, length, Tcl_GetString(objv[4]));
