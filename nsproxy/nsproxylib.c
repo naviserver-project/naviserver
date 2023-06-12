@@ -137,9 +137,9 @@ typedef struct Req {
 
 typedef struct Res {
     uint32 code;
-    uint32 clen;
-    uint32 ilen;
-    uint32 rlen;
+    uint32 ecodeLength;
+    uint32 einfoLength;
+    uint32 resultLength;
 } Res;
 
 /*
@@ -1573,7 +1573,7 @@ Export(Tcl_Interp *interp, int code, Tcl_DString *dsPtr)
 {
     Res          hdr;
     const char  *einfo = NULL, *ecode = NULL, *result = NULL;
-    unsigned int clen = 0u, ilen = 0u, rlen = 0u;
+    unsigned int ecodeLength = 0u, einfoLength = 0u, resultLength = 0u;
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
@@ -1585,24 +1585,24 @@ Export(Tcl_Interp *interp, int code, Tcl_DString *dsPtr)
             ecode = Tcl_GetVar(interp, "errorCode", TCL_GLOBAL_ONLY);
             einfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
         }
-        clen = (ecode != NULL) ? ((unsigned int)strlen(ecode) + 1) : 0u;
-        ilen = (einfo != NULL) ? ((unsigned int)strlen(einfo) + 1) : 0u;
+        ecodeLength = (ecode != NULL) ? ((unsigned int)strlen(ecode) + 1) : 0u;
+        einfoLength = (einfo != NULL) ? ((unsigned int)strlen(einfo) + 1) : 0u;
         result = Tcl_GetStringResult(interp);
-        rlen = (unsigned int)strlen(result);
+        resultLength = (unsigned int)strlen(result);
     }
     hdr.code = htonl((unsigned int)code);
-    hdr.clen = htonl(clen);
-    hdr.ilen = htonl(ilen);
-    hdr.rlen = htonl(rlen);
+    hdr.ecodeLength = htonl(ecodeLength);
+    hdr.einfoLength = htonl(einfoLength);
+    hdr.resultLength = htonl(resultLength);
     Tcl_DStringAppend(dsPtr, (char *) &hdr, sizeof(hdr));
-    if (clen > 0) {
-        Tcl_DStringAppend(dsPtr, ecode, (TCL_SIZE_T)clen);
+    if (ecodeLength > 0) {
+        Tcl_DStringAppend(dsPtr, ecode, (TCL_SIZE_T)ecodeLength);
     }
-    if (ilen > 0) {
-        Tcl_DStringAppend(dsPtr, einfo, (TCL_SIZE_T)ilen);
+    if (einfoLength > 0) {
+        Tcl_DStringAppend(dsPtr, einfo, (TCL_SIZE_T)einfoLength);
     }
-    if (rlen > 0) {
-        Tcl_DStringAppend(dsPtr, result, (TCL_SIZE_T)rlen);
+    if (resultLength > 0) {
+        Tcl_DStringAppend(dsPtr, result, (TCL_SIZE_T)resultLength);
     }
 }
 
@@ -1638,24 +1638,24 @@ Import(Tcl_Interp *interp, const Tcl_DString *dsPtr, int *resultPtr)
     } else {
         Res         res, *resPtr = &res;
         const char *str    = dsPtr->string + sizeof(Res);
-        size_t      rlen, clen, ilen;
+        size_t      resultLength, ecodeLength, einfoLength;
 
         memcpy(&res, dsPtr->string, sizeof(Res));
 
-        clen = ntohl(resPtr->clen);
-        ilen = ntohl(resPtr->ilen);
-        rlen = ntohl(resPtr->rlen);
-        if (clen > 0) {
+        ecodeLength = ntohl(resPtr->ecodeLength);
+        einfoLength = ntohl(resPtr->einfoLength);
+        resultLength = ntohl(resPtr->resultLength);
+        if (ecodeLength > 0) {
             Tcl_Obj *err = Tcl_NewStringObj(str, TCL_INDEX_NONE);
 
             Tcl_SetObjErrorCode(interp, err);
-            str += clen;
+            str += ecodeLength;
         }
-        if (ilen > 0) {
+        if (einfoLength > 0) {
             Tcl_AddErrorInfo(interp, str);
-            str += ilen;
+            str += einfoLength;
         }
-        if (rlen > 0) {
+        if (resultLength > 0) {
             Tcl_SetObjResult(interp, Tcl_NewStringObj(str, TCL_INDEX_NONE));
         }
         *resultPtr = (int)ntohl(resPtr->code);
