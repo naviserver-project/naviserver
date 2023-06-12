@@ -434,6 +434,7 @@ NsHandleSignals(void)
         ReportStatus((DWORD)SERVICE_RUNNING, NO_ERROR, 0u);
     }
     Ns_MutexSetName2(&lock, "ns", "signal");
+    Ns_CondInit(&cond);
     do {
         Ns_MutexLock(&lock);
         while (sigpending == 0u) {
