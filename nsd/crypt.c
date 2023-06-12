@@ -351,7 +351,7 @@ encrypt_private(const struct sched *sp, unsigned char *block, bool backwards)
     /*
      * The combination of the key and the input, before selection.
      */
-    unsigned char preS[48];
+    unsigned char preSelection[48];
 
     int             i, ii;
     register int    j;
@@ -392,7 +392,7 @@ encrypt_private(const struct sched *sp, unsigned char *block, bool backwards)
          * current key bits.
          */
         for (j = 0; j < 48; j++) {
-            preS[j] = R[sp->E[j] - 1u] ^ sp->KS[i][j];
+            preSelection[j] = R[sp->E[j] - 1u] ^ sp->KS[i][j];
         }
 
         /*
@@ -408,12 +408,12 @@ encrypt_private(const struct sched *sp, unsigned char *block, bool backwards)
 
             t = 6 * j;
             k = S[j][
-                UCHAR(preS[t] << 5) +
-                UCHAR(preS[t + 1] << 3) +
-                UCHAR(preS[t + 2] << 2) +
-                UCHAR(preS[t + 3] << 1) +
-                (preS[t + 4]     ) +
-                UCHAR(preS[t + 5] << 4)];
+                UCHAR(preSelection[t] << 5) +
+                UCHAR(preSelection[t + 1] << 3) +
+                UCHAR(preSelection[t + 2] << 2) +
+                UCHAR(preSelection[t + 3] << 1) +
+                (preSelection[t + 4]     ) +
+                UCHAR(preSelection[t + 5] << 4)];
             t = 4 * j;
             assert(t < (32-3));
 
