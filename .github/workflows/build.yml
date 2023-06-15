@@ -30,7 +30,7 @@ jobs:
           - os: ubuntu-latest
             compiler: gcc-11
             tcltag: main
-            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd
+            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl
             nsf_version: HEAD
             tdom_version: 0.9.3
 
