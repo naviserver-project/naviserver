@@ -51,8 +51,9 @@ typedef enum {
 
 } ValueOperation;
 
-static const unsigned int bitElements = (sizeof(uintmax_t) * 8);
-static const unsigned int maxBitElements = bitElements *
+#define NS_BITELEMENTS (sizeof(uintmax_t) * 8)
+static const unsigned int bitElements = NS_BITELEMENTS;
+static const unsigned int maxBitElements = NS_BITELEMENTS *
     (int)(sizeof(((Section*)0)->defaultArray) /
           sizeof(((Section*)0)->defaultArray[0]));
 
