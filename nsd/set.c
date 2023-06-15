@@ -956,6 +956,11 @@ Ns_SetPutValueSz(Ns_Set *set, size_t index, const char *value, ssize_t size)
                 /*
                  * Nothing to do.
                  */
+            } else if (set->fields[index].value == value && oldSize == (size_t)size) {
+                /*
+                 * Old value is the same as the new value (same address, same size)
+                 */
+                Ns_Log(Notice, "Ns_SetPutValueSz %p: old value is the same as the new value: '%s'", (void*)set, value);
             } else if (oldSize >= (size_t)size && oldSize != 0) {
                 /*
                  * New value fits old slot
@@ -975,8 +980,12 @@ Ns_SetPutValueSz(Ns_Set *set, size_t index, const char *value, ssize_t size)
             Tcl_Panic("Ns_SetPutValueSz called on a set with size 0");
         }
 #else
-        ns_free(set->fields[index].value);
-        set->fields[index].value = ns_strncopy(value, size);
+        if (set->fields[index].value != value) {
+            ns_free(set->fields[index].value);
+            set->fields[index].value = ns_strncopy(value, size);
+        } else {
+            Ns_Log(Notice, "Ns_SetPutValueSz %p: old value is the same as the new value: '%s'", (void*)set, value);
+        }
 #endif
     }
 }
