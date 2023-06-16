@@ -449,7 +449,7 @@ Ns_SockRecvBufs2(NS_SOCKET sock, struct iovec *bufs, int nbufs,
              */
             Ns_Log(Debug, "Ns_SockRecvBufs2 errno %lu on sock %d: %s",
                    errorCode, sock, strerror((int)errorCode));
-            errorCode = NS_SOCK_EXCEPTION;
+            sockState = NS_SOCK_EXCEPTION;
         }
         *errnoPtr = errorCode;
     } else if (unlikely(n == 0)) {
