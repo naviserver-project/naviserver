@@ -57,7 +57,7 @@ static char *Ext2utf(Tcl_DString *dsPtr, const char *start, size_t len, Tcl_Enco
 static bool GetBoundary(Tcl_DString *dsPtr, const char *contentType)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static char *NextBoundary(const Tcl_DString *boundaryDsPtr, char *s, const char *e)
+static char *NextBoundary(const Tcl_DString *dsPtr, char *s, const char *e)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_PURE;
 
 static bool GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePtr, char *uPtr)

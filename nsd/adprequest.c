@@ -125,7 +125,6 @@ PageRequest(Ns_Conn *conn, const char *fileName, const Ns_Time *expiresPtr, unsi
     bool            fileNotFound;
     Tcl_DString     ds, *dsPtr = NULL;
     Ns_ReturnCode   status;
-    unsigned int    savedAdpFlags;
 
     NS_NONNULL_ASSERT(conn != NULL);
 
@@ -173,6 +172,7 @@ PageRequest(Ns_Conn *conn, const char *fileName, const Ns_Time *expiresPtr, unsi
         const char     *type, *start;
         Tcl_Obj        *objv[2];
         int             result;
+        unsigned int    savedAdpFlags;
 
         Ns_Log(Debug, "AdpPageRequest for '%s' access ok", fileName);
 
