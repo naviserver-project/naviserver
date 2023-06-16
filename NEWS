@@ -1,4 +1,39 @@
 =======================================
+NaviServer 4.99.26, released 2023-06-16
+=======================================
+
+ 18 files changed, 109 insertions(+), 64 deletions(-)
+
+New Features:
+-------------
+ - None
+
+Bug Fixes:
+----------
+
+ - Bug fix: don't update the value of an ns_set entry using the
+   identical string.
+
+   Since the update of an ns_set entry requires a free operation of
+   the old memory and a copy operation of the new value, in case the
+   pointers are identical, the new value might be freed in the first
+   step, leading to an invalid value. This condition can happen only
+   from the C level API.  Unfortunately, this happend with the sample
+   configuration file for OpenACS.
+
+ - Increase portability for older compilers und windows.
+   NaviServer 4.99.* uses now same idiom for NS_BITELEMENTS
+   as in NaviServer 5
+
+ - improved error message on socket errors (reported unknown error
+   before)
+
+Configuration Files:
+--------------------
+ - Modernize recommended cipher lists in OpenSSL configuration
+   files
+
+=======================================
 NaviServer 4.99.25, released 2023-05-01
 =======================================
 
