@@ -941,7 +941,7 @@ program.
 
 
 [para]
-Example: [const NaviServer/4.99.25]
+Example: [const NaviServer/4.99.26]
 
 
 [para]
