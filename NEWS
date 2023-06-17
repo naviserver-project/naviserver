@@ -18,10 +18,10 @@ Bug Fixes:
    the old memory and a copy operation of the new value, in case the
    pointers are identical, the new value might be freed in the first
    step, leading to an invalid value. This condition can happen only
-   from the C level API.  Unfortunately, this happend with the sample
+   from the C level API.  Unfortunately, this happened with the sample
    configuration file for OpenACS.
 
- - Increase portability for older compilers und windows.
+ - Increase portability for older compilers and windows.
    NaviServer 4.99.* uses now same idiom for NS_BITELEMENTS
    as in NaviServer 5
 
