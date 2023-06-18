@@ -349,6 +349,8 @@ Ns_GetFileEncoding(const char *file)
         if (hPtr != NULL) {
             const char *name = Tcl_GetHashValue(hPtr);
             encoding = Ns_GetCharsetEncoding(name);
+            Ns_Log(Debug, "Ns_GetFileEncoding for file '%s' with ext '%s' = %s %p",
+                   file, ext, name, (void*)encoding);
         }
     }
     return encoding;
@@ -689,7 +691,7 @@ LoadEncoding(const char *name)
  *
  * AddCharset, AddExtension --
  *
- *      Add extensiont to encoding mapping and charset aliases.
+ *      Add extension to encoding mapping and charset aliases.
  *
  * Results:
  *      None.
