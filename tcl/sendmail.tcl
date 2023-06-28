@@ -369,7 +369,7 @@ proc ns_sendmail args {
 
         #
         # Tell remote server about recipients. Count all
-        # aknowledged ones
+        # acknowledged ones
         #
 
         set countok 0
