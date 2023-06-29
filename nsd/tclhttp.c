@@ -435,7 +435,7 @@ NsInitHttp(NsServer *servPtr)
         if (filename == NULL) {
             Tcl_DStringAppend(&defaultLogFileName, "httpclient-", 11);
             Tcl_DStringAppend(&defaultLogFileName, servPtr->server, TCL_INDEX_NONE);
-            Tcl_DStringAppend(&defaultLogFileName, ".log", 10);
+            Tcl_DStringAppend(&defaultLogFileName, ".log", 4);
             filename = defaultLogFileName.string;
         }
 
