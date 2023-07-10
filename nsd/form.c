@@ -174,7 +174,9 @@ Ns_ConnGetQuery(Tcl_Interp *interp, Ns_Conn *conn, Tcl_Obj *fallbackCharsetObj, 
                     encoding = connPtr->urlEncoding;
                 }
                 toParse = content;
-                if (*Tcl_GetString(fallbackCharsetObj) == '\0') {
+                if (fallbackCharsetObj == NULL
+                    || *Tcl_GetString(fallbackCharsetObj) == '\0'
+                    ) {
                     fallbackCharsetCompatibilityObj = Tcl_NewStringObj("iso8859-1", 9);
                     fallbackCharsetObj = fallbackCharsetCompatibilityObj;
                 }
