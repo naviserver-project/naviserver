@@ -1131,6 +1131,14 @@ ns_section "ns/server/${server}/module/nssmtpd" {
     #ns_param cafile ""
     #ns_param capath ""
     #ns_param ciphers "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305"
+
+    ns_param logging on ;# default: off
+    #ns_param logfile ${logroot}/smtpsend.log
+    ns_param logrollfmt %Y-%m-%d ;# format appended to log filename
+    #ns_param logmaxbackup 100 ;# 10, max number of backup log files
+    #ns_param logroll true ;# true, should server log files automatically
+    #ns_param logrollonsignal true ;# false, perform roll on a sighup
+    #ns_param logrollhour 0 ;# 0, specify at which hour to roll
 }
 ns_section ns/server/${server}/modules {
     if {$smtpdport ne ""} {ns_param nssmtpd nssmtpd}
