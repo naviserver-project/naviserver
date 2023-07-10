@@ -303,7 +303,7 @@ Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
                                     rollfmt,
                                     maxbackup);
             if (status != NS_OK) {
-                Ns_DStringPrintf(&errorMsg, "log: rolling logfile failed failed for '%s': %s",
+                Ns_DStringPrintf(&errorMsg, "rollfile: rolling logfile failed failed for '%s': %s",
                                  filename, strerror(Tcl_GetErrno()));
             }
         }
@@ -314,7 +314,7 @@ Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
          * until the logfile is open (we might work on the system log
          * here).
          */
-        Ns_DStringPrintf(&errorMsg, "log: closing logfile failed for '%s': %s",
+        Ns_DStringPrintf(&errorMsg, "rollfile: closing logfile failed for '%s': %s",
                          filename, strerror(Tcl_GetErrno()));
     }
 
@@ -328,9 +328,9 @@ Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
         if (errorMsg.length > 0) {
             Ns_Log(Warning, "%s", errorMsg.string);
         }
-        Ns_Log(Notice, "log: re-opening logfile '%s'", filename);
+        Ns_Log(Notice, "rollfile: re-opening logfile '%s'", filename);
     } else {
-        Ns_Log(Warning, "log: opening logfile failed: '%s'", filename);
+        Ns_Log(Warning, "rollfile: opening logfile failed: '%s'", filename);
     }
 
     Tcl_DStringFree(&errorMsg);
