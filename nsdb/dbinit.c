@@ -848,7 +848,7 @@ NsDbInitServer(const char *server)
      */
 
     sdataPtr->allowed = NS_EMPTY_STRING;
-    pool = Ns_ConfigGetValue(path, "pools");
+    pool = ns_strdup(Ns_ConfigGetValue(path, "pools"));
     if (pool != NULL && poolsTable.numEntries > 0) {
         const Pool *poolPtr;
         char       *allowed;
