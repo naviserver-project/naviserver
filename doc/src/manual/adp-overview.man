@@ -20,7 +20,7 @@ code.
 [section {When to Use ADPs}]
 
 ADPs are ideal in situations where you want to generate all or part of
-a specific page dynamically. You can re-use code by storing Tcl
+a specific page dynamically. You can reuse code by storing Tcl
 scripts in Tcl libraries and invoking them from within multiple ADPs.
 You can also include files and parse other ADPs from within your ADPs.
 
