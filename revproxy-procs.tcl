@@ -296,7 +296,7 @@ namespace eval ::revproxy {
         foreach entry [ns_connchan list] {
             if {[lindex $entry 0] eq $from} {
                 lassign $entry . . . . . sent received
-                #log notice "FROM channel <$entry> sent $sent reveived $received"
+                #log notice "FROM channel <$entry> sent $sent received $received"
                 if {$sent == 0} {
                     ns_connchan write $from "HTTP/1.0 504 Gateway Timeout\r\n\r\n"
                 }
@@ -717,8 +717,7 @@ namespace eval ::revproxy {
                     #
                     # Make sure to close the connection
                     #
-                    ns_set idelkey $replyHeaders connection
-                    ns_set put $replyHeaders Connection close
+                    ns_set iupdate $replyHeaders connection close
 
                     #
                     # Build the reply

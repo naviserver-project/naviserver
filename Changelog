@@ -30,7 +30,7 @@ commit 39af19b179d3a1ee76a26c12638cbbc24a874969
 Author: Gustaf Neumann <neumann@wu-wien.ac.at>
 Date:   2021-05-11
 
-    use buffered writes to address potential partialy writes.
+    use buffered writes to address potential partially writes.
     
     This is a transitional solution, we have to get a setup, where the problem
     happens reliably
