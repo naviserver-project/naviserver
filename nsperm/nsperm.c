@@ -761,7 +761,7 @@ FreeUserInfo(User *userPtr, const char *name)
  *      Implements "ns_perm adduser".
  *
  * Results:
- *      Tcl resut
+ *      Tcl result
  *
  * Side effects:
  *      A user may be added to the global user hash table
@@ -897,7 +897,7 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
  *      Implements "ns_perm deluser".
  *
  * Results:
- *      Tcl resut
+ *      Tcl result
  *
  * Side effects:
  *      A user may be deleted from the global user hash table
@@ -941,7 +941,7 @@ static int DelUserObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Obj
  *      Implements "ns_perm listusers".
  *
  * Results:
- *      Tcl resut
+ *      Tcl result
  *
  * Side effects:
  *      None
@@ -1129,7 +1129,7 @@ static int AddGroupObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Ob
  *      Implements "ns_perm delgroup".
  *
  * Results:
- *      Tcl resut
+ *      Tcl result
  *
  * Side effects:
  *      A group may be deleted from the global user hash table
@@ -1186,7 +1186,7 @@ static int DelGroupObjCmd(ClientData data, Tcl_Interp * interp, int objc, Tcl_Ob
  *      Implements "ns_perm listgroups".
  *
  * Results:
- *      Tcl resut
+ *      Tcl result
  *
  * Side effects:
  *      None

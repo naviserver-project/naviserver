@@ -3346,7 +3346,7 @@ SockNew(Driver *drvPtr)
  * SockRelease --
  *
  *      Close a socket and release the connection structure for
- *      re-use.
+ *      reuse.
  *
  * Results:
  *      None.
@@ -3414,7 +3414,7 @@ SockRelease(Sock *sockPtr, SockState reason, int err)
  * SockError --
  *
  *      Log error message for given socket
- *      re-use.
+ *      reuse.
  *
  * Results:
  *      None.

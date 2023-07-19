@@ -199,7 +199,7 @@ take some time to complete) from using up all available connection slots,
 preventing other pages from being served.
 
 [para]
-The large files are loacted in the [term /download] directory. We also want to
+The large files are located in the [term /download] directory. We also want to
 control large PDF files which are located throughout the URL hierarchy using
 the same limit.
 
