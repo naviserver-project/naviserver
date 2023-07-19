@@ -94,7 +94,7 @@ macOS 10.2+ and Windows. To compile and install:
 
         https://bitbucket.org/naviserver/naviserver/
 
-    Note that the main branches on the Git repository are:
+    Note, that the main branches on the Git repository are:
         - main (the latest development code)
         - release/4.99 (bug fixes for NaviServer 4.99.*)
 
