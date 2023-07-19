@@ -2474,7 +2474,7 @@ Code Changes:
 - Improved error code handling on driver receive operations
 
    Previously, higher level of API calls were not able to access
-   realiably the error information detected on the lower-level (async
+   reliably the error information detected on the lower-level (async
    I/O-based or OpenSSL based) driver operations. This made it
    impossible to provide good error messages e.g. in "ns_connchan" and
    we could not provide error processing based on Tcl error
