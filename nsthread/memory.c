@@ -59,9 +59,9 @@
 void *ns_realloc(void *ptr, size_t size)  {
     void *result;
 
-#ifdef NS_VERBOSE_MALLOC
+# ifdef NS_VERBOSE_MALLOC
     fprintf(stderr, "#MEM# realloc %lu\n", size);
-#endif
+# endif
     result = realloc(ptr, size);
     if (result == NULL) {
         fprintf(stderr, "Fatal: failed to reallocate %" PRIuz " bytes.\n", size);
@@ -71,9 +71,9 @@ void *ns_realloc(void *ptr, size_t size)  {
 }
 void *ns_malloc(size_t size) {
     void *result;
-#ifdef NS_VERBOSE_MALLOC
+# ifdef NS_VERBOSE_MALLOC
     fprintf(stderr, "#MEM# malloc %lu\n", size);
-#endif
+# endif
 
     /*
      * In case of size == 0, the allowed result of a malloc call is either
@@ -99,9 +99,9 @@ void *ns_calloc(size_t num, size_t esize) {
     assert(num > 0u);
     assert(esize > 0u);
 
-#ifdef NS_VERBOSE_MALLOC
+# ifdef NS_VERBOSE_MALLOC
     fprintf(stderr, "#MEM# calloc %lu\n", esize);
-#endif
+# endif
 
     result = calloc(num, esize);
     if (result == NULL) {
@@ -110,7 +110,7 @@ void *ns_calloc(size_t num, size_t esize) {
     }
     return result;
 }
-#else
+#else /* defined(SYSTEM_MALLOC) */
 void *
 ns_realloc(void *ptr, size_t size)
 {
@@ -143,7 +143,7 @@ ns_calloc(size_t num, size_t esize)
 
     return new;
 }
-#endif
+#endif /* defined(SYSTEM_MALLOC) */
 
 char *
 ns_strcopy(const char *old)
