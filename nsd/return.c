@@ -85,7 +85,7 @@ static const struct {
     {423, "Locked"},
     {424, "Failed Dependency"},
     {425, "Insufficient Space On Resource"},
-    {426, "Ugrade Required"},
+    {426, "Upgrade Required"},
     {426, "Precondition Required"},
     {429, "Too Many Requests"},
     {431, "Request Header Fields Too Large"},
