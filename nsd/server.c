@@ -197,12 +197,40 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     NsServer          *servPtr;
     const ServerInit  *initPtr;
     const char        *path, *p;
-    Ns_Set            *set = NULL;
+    Ns_Set            *set = NULL, **sections;
     size_t             i;
     int                n;
+    bool               found = NS_FALSE;
+    Tcl_DString        ds, *dsPtr = &ds;
 
     NS_NONNULL_ASSERT(server != NULL);
 
+    /*
+     * Before adding a hash entry, double-check, if the specified server was
+     * properly defined.
+     */
+    Tcl_DStringInit(dsPtr);
+    Tcl_DStringAppend(dsPtr, "ns/server/", 10);
+    Tcl_DStringAppend(dsPtr, server, TCL_INDEX_NONE);
+
+    sections = Ns_ConfigGetSections();
+
+    for (i = 0; sections[i] != NULL; i++) {
+        if (strncmp(dsPtr->string, sections[i]->name, (size_t)dsPtr->length) == 0) {
+            found = NS_TRUE;
+            break;
+        }
+    }
+    Tcl_DStringFree(dsPtr);
+
+    if (!found) {
+        Ns_Log(Error, "no section 'ns/server/%s' in configuration file", server);
+        return;
+    }
+
+    /*
+     * Servers must not be defined twice.
+     */
     hPtr = Tcl_CreateHashEntry(&nsconf.servertable, server, &n);
     if (n == 0) {
         Ns_Log(Error, "duplicate server: %s", server);
