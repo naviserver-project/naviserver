@@ -111,7 +111,7 @@ added to this queue. Since this queue has a limited
 size, it might as well overrun. In this situation,
 one can fine tune the behavior. When [term rejectoverrun]
 is set, NaviServer will send a 503 (service unavailable)
-reply to the client. When additionall the parameter
+reply to the client. When additionally the parameter
 [term retryafter] is set, NaviServer provides it value
 as a "Retry-After" hint to the client. When
 [term rejectoverrun] is false the NaviServer keeps

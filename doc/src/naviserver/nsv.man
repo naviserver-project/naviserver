@@ -101,7 +101,7 @@ variable. When the varname option is provided, the behavior is
 similar to the optional last argument in [cmd nsv_get] or
 [cmd ns_cache_get]
 
-The option [opt "-varname [arg varname]"] has the adavantage
+The option [opt "-varname [arg varname]"] has the advantage
 to test and get the value with a single locked command. This avoids
 race conditions and reduces the number of locks for the application.
 
