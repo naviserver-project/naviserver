@@ -43,7 +43,7 @@ void
 Nsd_LibInit(void)
 {
     static bool initialized = NS_FALSE;
-    fprintf(stderr, "==== Nsd_LibInit %d  =====================================\n", initialized);
+    //fprintf(stderr, "==== Nsd_LibInit %d  =====================================\n", initialized);
 
     if (!initialized) {
         initialized = NS_TRUE;
@@ -80,7 +80,7 @@ Nsd_LibInit(void)
         NsInitDNS();
         NsInitRandom();
     }
-    fprintf(stderr, "==== Nsd_LibInit %d  ================================ DONE\n", initialized);
+    //fprintf(stderr, "==== Nsd_LibInit %d  ================================ DONE\n", initialized);
 }
 
 /*

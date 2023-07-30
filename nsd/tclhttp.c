@@ -412,7 +412,7 @@ NsInitHttp(NsServer *servPtr)
 
     NS_NONNULL_ASSERT(servPtr != NULL);
 
-    fprintf(stderr, "============== NsInitHttp %p ==============\n", (void*)servPtr);
+    //fprintf(stderr, "============== NsInitHttp %p ==============\n", (void*)servPtr);
     Ns_MutexInit(&servPtr->httpclient.lock);
     Ns_MutexSetName2(&servPtr->httpclient.lock, "httpclient", servPtr->server);
 
@@ -1835,7 +1835,7 @@ HttpStatsObjCmd(
 
 static bool InitializeTaskQueue(void) {
 
-    fprintf(stderr, "============== TaskQueueRequire %p ==============\n", (void*)taskQueue);
+    //fprintf(stderr, "============== TaskQueueRequire %p ==============\n", (void*)taskQueue);
     taskQueue = Ns_CreateTaskQueue("tclhttp");
 
     return NS_TRUE;
