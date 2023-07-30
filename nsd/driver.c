@@ -319,10 +319,10 @@ static void RequestFree(Sock *sockPtr)
 static void LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buffer, size_t len)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static void ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
-                              NsServer *servPtr, Driver *drvPtr,
-                              NS_TLS_SSL_CTX *ctx,
-                              bool addDefaultMapEntry)
+static ServerMap *ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
+                                    NsServer *servPtr, Driver *drvPtr,
+                                    NS_TLS_SSL_CTX *ctx,
+                                    bool addDefaultMapEntry)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 static Driver *LookupDriver(Tcl_Interp *interp, const char* protocol, const char *driverName)
@@ -700,11 +700,13 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
  *----------------------------------------------------------------------
  */
 
-static void
+static ServerMap *
 ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
                   NsServer *servPtr, Driver *drvPtr,
                   NS_TLS_SSL_CTX *ctx,
-                  bool addDefaultMapEntry) {
+                  bool addDefaultMapEntry)
+{
+    ServerMap     *mapPtr = NULL;
     Tcl_HashEntry *hPtr;
     int            isNew;
 
@@ -715,8 +717,6 @@ ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
 
     hPtr = Tcl_CreateHashEntry(&drvPtr->hosts, host, &isNew);
     if (isNew != 0) {
-        ServerMap *mapPtr;
-
         (void) Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, (char *)0L);
         mapPtr = ns_malloc(sizeof(ServerMap) + (size_t)dsPtr->length);
         if (likely(mapPtr != NULL)) {
@@ -725,6 +725,10 @@ ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
             memcpy(mapPtr->location, dsPtr->string, (size_t)dsPtr->length + 1u);
 
             Tcl_SetHashValue(hPtr, mapPtr);
+            /*
+             * Use threadName here, since this function is used as well during
+             * startup, when the thread name is not part if the Ns_Log entry.
+             */
             Ns_Log(Notice, "%s: adding virtual host entry for host <%s> location: %s mapped to server: %s ctx %p",
                    drvPtr->threadName, host, mapPtr->location, servPtr->server, (void*)ctx);
 
@@ -740,6 +744,7 @@ ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
         Ns_Log(Notice, "%s: ignore duplicate virtual host entry: %s",
                drvPtr->threadName, host);
     }
+    return mapPtr;
 }
 
 
@@ -749,8 +754,8 @@ ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
  * NsDriverMapVirtualServers --
  *
  *      Map "Host:" headers for drivers not bound to physical servers.  This
- *      function has to be called a time, when all servers are already defined
- *      such that NsGetServer(server) can succeed.
+ *      function has to be called at a time, when all servers are already
+ *      defined such that NsGetServer(server) can succeed.
  *
  * Results:
  *      None.
@@ -1179,6 +1184,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     }
     drvPtr->servPtr        = servPtr;
     drvPtr->defport        = defport;
+    drvPtr->path           = ns_strdup(path);
 
     drvPtr->bufsize        = (size_t)Ns_ConfigMemUnitRange(path, "bufsize", "16KB", 16384, 1024, INT_MAX);
     drvPtr->maxinput       = Ns_ConfigMemUnitRange(path, "maxinput", "1MB", 1024*1024, 1024, LLONG_MAX);
@@ -4768,15 +4774,103 @@ DriverLookupHost(Tcl_DString *hostDs, Driver *drvPtr)
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsDriverLookupHostCtx --
+ *
+ *      Lookup the NS_TLS_SSL_CTX matching to hostName. This function is only
+ *      called in https drivers, where SNI can be used.
+ *
+ * Results:
+ *      NS_TLS_SSL_CTX entry or NULL.
+ *
+ * Side effects:
+ *
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 NS_TLS_SSL_CTX *
-NsDriverLookupHostCtx(Tcl_DString *hostDs, const Ns_Driver *drvPtr)
+NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, const Ns_Driver *drvPtr)
 {
     const ServerMap *mapPtr;
+    Driver *driver = (Driver *)drvPtr;
 
     NS_NONNULL_ASSERT(hostDs != NULL);
     NS_NONNULL_ASSERT(drvPtr != NULL);
 
-    mapPtr = DriverLookupHost(hostDs, (Driver *)drvPtr);
+    mapPtr = DriverLookupHost(hostDs, driver);
+
+    if (mapPtr == NULL && hostName != NULL) {
+        const char *vhostcertificates, *path = driver->path;
+
+        /*
+         * Try to get from the driver the value of the configuration variable
+         * "vhostcertificates".
+         */
+        vhostcertificates = Ns_ConfigGetValue(path, "vhostcertificates");
+        Ns_Log(Debug, "SSL_serverNameCB %s/vhostcertificates -> '%s'", path, vhostcertificates);
+
+        if (vhostcertificates != NULL) {
+            Tcl_DString dsFileName, *dsPtr = &dsFileName;
+            struct stat st;
+
+            Tcl_DStringInit(dsPtr);
+            Tcl_DStringAppend(dsPtr, vhostcertificates, TCL_INDEX_NONE);
+            Tcl_DStringAppend(dsPtr, "/", 1);
+            Tcl_DStringAppend(dsPtr, hostName, TCL_INDEX_NONE);
+            Tcl_DStringAppend(dsPtr, ".pem", 4);
+
+            if (stat(dsPtr->string, &st) != 0) {
+                Ns_Log(Notice, "SSL_serverNameCB pem file does not exist: '%s'", dsPtr->string);
+            } else {
+                NS_TLS_SSL_CTX *ctx = NULL;
+                int             result;
+
+                Ns_Log(Notice, "SSL_serverNameCB pem file exists: '%s'", dsPtr->string);
+
+                result = Ns_TLS_CtxServerCreate(NULL, dsPtr->string,
+                                                NULL /*caFile*/, NULL /*caPath*/,
+                                                Ns_ConfigBool(path, "verify", 0),
+                                                Ns_ConfigGetValue(path, "ciphers"),
+                                                Ns_ConfigGetValue(path, "ciphersuites"),
+                                                Ns_ConfigGetValue(path, "protocols"),
+                                                &ctx);
+                Ns_Log(Debug, "SSL_serverNameCB load cert -> ctx %p'", (void*)ctx);
+
+                if (result == TCL_OK) {
+                    Tcl_DString dsHostPort, *dsHostPortPtr = &dsHostPort;
+
+                    /*
+                     * We need here just the TLS_Ctx, and not the full server
+                     * init as in nsssl as provided by Ns_TLS_CtxServerInit(),
+                     * with "app_data" as (NsSSLConfig *drvCfgPtr;) ?
+                     */
+                    assert(ctx != NULL);
+
+                    Tcl_DStringInit(dsHostPortPtr);
+                    (void) Ns_DStringPrintf(dsHostPortPtr, "%s:%hu", hostName, driver->port);
+
+                    Tcl_DStringSetLength(dsPtr, 0);
+                    /*
+                     * Register this name to be used with the default
+                     * server. Since this happens in a driver thread, no lock
+                     * is required. Even when with have multiple driver
+                     * threads, these have different driver structures.
+                     */
+                    mapPtr = ServerMapEntryAdd(dsPtr, dsHostPortPtr->string,
+                                               driver->defMapPtr->servPtr,
+                                               driver, ctx, NS_FALSE);
+
+                    Tcl_DStringFree(dsHostPortPtr);
+                }
+            }
+            Tcl_DStringFree(dsPtr);
+        }
+    }
+
     return (mapPtr != NULL) ? mapPtr->ctx : NULL;
 }
 

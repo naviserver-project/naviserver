@@ -78,7 +78,7 @@ Ns_ModuleInit(const char *server, const char *module)
 {
     Tcl_DString        ds;
     int                num, result;
-    const char        *path;
+    const char        *path, *vhostcertificates;
     NsSSLConfig       *drvCfgPtr;
     Ns_DriverInitData  init;
 
@@ -105,11 +105,34 @@ Ns_ModuleInit(const char *server, const char *module)
     init.path = path;
     init.protocol = "https";
     init.defaultPort = 443;
-#ifdef  OPENSSL_VERSION_TEXT
+#ifdef OPENSSL_VERSION_TEXT
     init.libraryVersion = OPENSSL_VERSION_TEXT;
 #else
     init.libraryVersion = ns_strdup(SSLeay_version(SSLEAY_VERSION));
 #endif
+
+    /*
+     * In case "vhostcertificates" was specified in the configuration file,
+     * and it is valid, activate NS_DRIVER_SNI.
+     */
+    vhostcertificates = Ns_ConfigGetValue(path, "vhostcertificates");
+    if (vhostcertificates != NULL) {
+        struct stat st;
+
+        if (stat(vhostcertificates, &st) != 0) {
+            Ns_Log(Warning, "vhostcertificates directory '%s' does not exist",
+                   vhostcertificates);
+
+        } else if (S_ISDIR(st.st_mode) == 0) {
+            Ns_Log(Warning, "value specified for vhostcertificates is not a directory: '%s'",
+                   vhostcertificates);
+
+        } else {
+            Ns_Log(Notice, "vhostcertificates directory '%s' is valid, activating SNI",
+                   vhostcertificates);
+            init.opts |= NS_DRIVER_SNI;
+        }
+    }
 
     if (Ns_DriverInit(server, module, &init) != NS_OK) {
         Ns_Log(Error, "nsssl: driver init failed.");
@@ -131,7 +154,7 @@ Ns_ModuleInit(const char *server, const char *module)
     CRYPTO_set_locking_callback(SSLLock);
     CRYPTO_set_id_callback(SSLThreadId);
 #endif
-    Ns_Log(Notice, "OpenSSL %s initialized", SSLeay_version(SSLEAY_VERSION));
+    Ns_Log(Notice, "nsssl: OpenSSL %s initialized", SSLeay_version(SSLEAY_VERSION));
 
     result = Ns_TLS_CtxServerInit(path, NULL, NS_DRIVER_SNI, drvCfgPtr, &drvCfgPtr->ctx);
     if (result != TCL_OK) {

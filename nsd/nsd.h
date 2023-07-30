@@ -400,6 +400,7 @@ typedef struct Driver {
     Ns_DriverCloseProc      *closeProc;
     Ns_DriverClientInitProc *clientInitProc; /* Optional - initialization of client connections */
 
+    const char *path;                   /* Path in the configuration namespace */
     const char *defserver;              /* default server, might be NULL */
     Tcl_HashTable hosts;                /* Virtual hosts mapping to server */
     const struct ServerMap *defMapPtr;  /* Default for virtual host entry */
@@ -1443,6 +1444,7 @@ NS_EXTERN void NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     NS_GNUC_NONNULL(1);
 NS_EXTERN void NsRegisterServerInit(Ns_ServerInitProc *proc)
     NS_GNUC_NONNULL(1);
+
 NS_EXTERN NsServer *NsGetInitServer(void) NS_GNUC_PURE;
 NS_EXTERN NsServer *NsGetServer(const char *server);
 NS_EXTERN void NsStartServers(void);
@@ -1651,9 +1653,10 @@ NS_EXTERN void NsSendSignal(int sig);
 
 NS_EXTERN Tcl_Obj * NsDriverStats(Tcl_Interp *interp) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsDriverMapVirtualServers(void);
-NS_EXTERN NS_TLS_SSL_CTX *NsDriverLookupHostCtx(Tcl_DString *hostDs, const Ns_Driver *drvPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
+NS_EXTERN NS_TLS_SSL_CTX *NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, const Ns_Driver *drvPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+NS_EXTERN void NsServerMapEntryAddToDefaultServer(const char *hostName, Driver *drvPtr, NS_TLS_SSL_CTX *ctx)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 #ifdef NS_SET_DSTRING
 NS_EXTERN void Ns_SetDataPrealloc(Ns_Set *set, TCL_SIZE_T size)

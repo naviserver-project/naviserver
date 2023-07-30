@@ -307,7 +307,7 @@ SSL_serverNameCB(SSL *ssl, int *al, void *UNUSED(arg))
 
         /*
          * Perform lookup from host table only, when doSNI is true
-         * (i.e. when per virtual server certificates weres specified.
+         * (i.e., when per virtual server certificates were specified.
          */
         if (doSNI) {
             Tcl_DString     ds;
@@ -322,9 +322,9 @@ SSL_serverNameCB(SSL *ssl, int *al, void *UNUSED(arg))
             Tcl_DStringInit(&ds);
             Ns_DStringPrintf(&ds, "%s:%hu", serverName, port);
 
-            ctx = NsDriverLookupHostCtx(&ds, sockPtr->driver);
+            ctx = NsDriverLookupHostCtx(&ds, serverName, sockPtr->driver);
 
-            Ns_Log(Debug, "SSL_serverNameCB lookup of <%s> location %s port %hu -> %p",
+            Ns_Log(Debug, "SSL_serverNameCB lookup result of <%s> location %s port %hu -> ctx %p",
                    serverName, ds.string, port, (void*)ctx);
 
             /*
@@ -1372,7 +1372,9 @@ NsSSLConfigNew(const char *path)
  *
  * Ns_TLS_CtxServerInit --
  *
- *      Read config information, create and initialize OpenSSL context.
+ *      Read config information, create and initialize OpenSSL
+ *      context.  This function is called at startup to define OpenSSL
+ *      contexts for the defined servers.
  *
  * Results:
  *      A standard Tcl result.
