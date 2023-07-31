@@ -793,26 +793,30 @@ void NsDriverMapVirtualServers(void)
              * There is no mapping from hostname to virtual server defined.
              */
             if (drvPtr->server == NULL) {
+                NsServer *servPtr = defserver != NULL ? NsGetServer(defserver) : NULL;
 
                 /*
                  * We have a global driver module. If there is at least a
                  * default server configured, we can use this for the mapping
                  * to the default server.
                  */
-                if (defserver != NULL) {
-                    NsServer *servPtr = NsGetServer(defserver);
-
+                if (servPtr != NULL) {
                     Tcl_DStringInit(dsPtr);
                     ServerMapEntryAdd(dsPtr, Ns_InfoHostname(), servPtr, drvPtr, NULL, NS_TRUE);
                     Tcl_DStringFree(dsPtr);
-                    Ns_Log(Warning, "global driver has no mapping from host to server"
-                           "(section %s missing)", path);
                 } else {
                     /*
-                     * Global driver, which has no default server, and no servers section.
+                     * Global driver with no valid defaultserver defined.
                      */
-                    Ns_Fatal("%s: virtual servers configured,"
-                             " but '%s' has no defaultserver defined", moduleName, path);
+                    if (defserver == NULL) {
+                        Ns_Fatal("%s: virtual servers configured,"
+                                 " but '%s' has no defaultserver defined",
+                                 moduleName, path);
+                    } else {
+                        Ns_Fatal("%s: virtual servers configured,"
+                                 " but '%s' has invalid defaultserver defined: '%s'",
+                                 moduleName, path, defserver);
+                    }
                 }
             }
 
@@ -4815,8 +4819,12 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, const Ns_Driver
 
         if (vhostcertificates != NULL) {
             Tcl_DString dsFileName, *dsPtr = &dsFileName;
+            NsServer   *servPtr = driver->servPtr;
             struct stat st;
 
+            if (servPtr == NULL && driver->defMapPtr != NULL) {
+                servPtr = driver->defMapPtr->servPtr;
+            }
             Tcl_DStringInit(dsPtr);
             Tcl_DStringAppend(dsPtr, vhostcertificates, TCL_INDEX_NONE);
             Tcl_DStringAppend(dsPtr, "/", 1);
@@ -4825,11 +4833,14 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, const Ns_Driver
 
             if (stat(dsPtr->string, &st) != 0) {
                 Ns_Log(Notice, "SSL_serverNameCB pem file does not exist: '%s'", dsPtr->string);
+            } else if (servPtr == NULL) {
+                Ns_Log(Notice, "SSL_serverNameCB driver %s has no configured defaultserver,"
+                       " ignoring vhostcertificates", path);
             } else {
                 NS_TLS_SSL_CTX *ctx = NULL;
                 int             result;
 
-                Ns_Log(Notice, "SSL_serverNameCB pem file exists: '%s'", dsPtr->string);
+                Ns_Log(Debug, "SSL_serverNameCB pem file exists: '%s'", dsPtr->string);
 
                 result = Ns_TLS_CtxServerCreate(NULL, dsPtr->string,
                                                 NULL /*caFile*/, NULL /*caPath*/,
@@ -4843,6 +4854,7 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, const Ns_Driver
                 if (result == TCL_OK) {
                     Tcl_DString dsHostPort, *dsHostPortPtr = &dsHostPort;
 
+                    Ns_Log(Notice, "SSL_serverNameCB pem file loaded: '%s'", dsPtr->string);
                     /*
                      * We need here just the TLS_Ctx, and not the full server
                      * init as in nsssl as provided by Ns_TLS_CtxServerInit(),
@@ -4855,13 +4867,13 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, const Ns_Driver
 
                     Tcl_DStringSetLength(dsPtr, 0);
                     /*
-                     * Register this name to be used with the default
-                     * server. Since this happens in a driver thread, no lock
-                     * is required. Even when with have multiple driver
-                     * threads, these have different driver structures.
+                     * Register this name to be used with the configure or
+                     * default server. Since this happens in a driver thread,
+                     * no lock is required, even when with multiple driver
+                     * threads, since these have different driver structures.
                      */
                     mapPtr = ServerMapEntryAdd(dsPtr, dsHostPortPtr->string,
-                                               driver->defMapPtr->servPtr,
+                                               servPtr,
                                                driver, ctx, NS_FALSE);
 
                     Tcl_DStringFree(dsHostPortPtr);
