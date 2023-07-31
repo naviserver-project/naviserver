@@ -197,36 +197,42 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     NsServer          *servPtr;
     const ServerInit  *initPtr;
     const char        *path, *p;
-    Ns_Set            *set = NULL, **sections;
+    Ns_Set            *set = NULL;
     size_t             i;
     int                n;
-    bool               found = NS_FALSE;
-    Tcl_DString        ds, *dsPtr = &ds;
 
     NS_NONNULL_ASSERT(server != NULL);
 
-    /*
-     * Before adding a hash entry, double-check, if the specified server was
-     * properly defined.
-     */
-    Tcl_DStringInit(dsPtr);
-    Tcl_DStringAppend(dsPtr, "ns/server/", 10);
-    Tcl_DStringAppend(dsPtr, server, TCL_INDEX_NONE);
+#if 0
+    {
+        bool         found = NS_FALSE;
+        Ns_Set      *set = NULL, **sections;
+        Tcl_DString  ds, *dsPtr = &ds;
 
-    sections = Ns_ConfigGetSections();
+        /*
+         * Before adding a hash entry, double-check, if the specified server was
+         * properly defined.
+         */
+        Tcl_DStringInit(dsPtr);
+        Tcl_DStringAppend(dsPtr, "ns/server/", 10);
+        Tcl_DStringAppend(dsPtr, server, TCL_INDEX_NONE);
 
-    for (i = 0; sections[i] != NULL; i++) {
-        if (strncmp(dsPtr->string, sections[i]->name, (size_t)dsPtr->length) == 0) {
-            found = NS_TRUE;
-            break;
+        sections = Ns_ConfigGetSections();
+
+        for (i = 0; sections[i] != NULL; i++) {
+            if (strncmp(dsPtr->string, sections[i]->name, (size_t)dsPtr->length) == 0) {
+                found = NS_TRUE;
+                break;
+            }
+        }
+        Tcl_DStringFree(dsPtr);
+
+        if (!found) {
+            Ns_Log(Error, "no section 'ns/server/%s' in configuration file", server);
+            return;
         }
     }
-    Tcl_DStringFree(dsPtr);
-
-    if (!found) {
-        Ns_Log(Error, "no section 'ns/server/%s' in configuration file", server);
-        return;
-    }
+#endif
 
     /*
      * Servers must not be defined twice.
