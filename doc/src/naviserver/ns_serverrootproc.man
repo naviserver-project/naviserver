@@ -6,39 +6,74 @@
 
 [description]
 
-If virtual hosting is enabled, this function can be used to set a
-callback for determining the server root directory based on the host
-header field of the current connection.
+This command can be used to set a callback for determining the root
+directory of the server based on, e.g., the host header field of the
+current connection.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[call [cmd ns_serverrootproc] [arg cmd] [opt [arg args]]]
+[call [cmd ns_serverrootproc] [arg script] [opt [arg args]]]
 
 [para]
-The command registered with ns_serverrootproc may have the host
-appended as the last arg before it is executed
+The script registered with [cmd ns_serverrootproc] is registered for
+a server. At the time of the registry, some client data might be
+passed as arguments.
 
 [list_end]
 
 [section EXAMPLES]
 
+Since the command [cmd ns_serverrootproc] requires a defined server,
+it cannot be written plainly to the configuration file (defining
+potentially multiple servers). However, it is possible to use the
+parameter [term initcmd] in the section [term tcl] of the server (here
+[term default]) as shown below.
+
 [example_begin]
- ns_serverrootproc nstest::serverroot arg
- 
- proc nstest::serverroot {{host ""} args} {
-   if {$host ne "" } {
-     set path [lb]eval file join testserverroot $host $args[rb]
-   } else {
-     set path [lb]eval file join testserverroot $args[rb]
+ ns_section ns/server/default/tcl {
+   ns_param initcmds {
+     #
+     # Use the Tcl namespace "::default" for the "default" server.
+     #
+     namespace eval ::default {
+       proc serverroot {args} {
+         #
+         # Don't call [lb]ns_server pagedir[rb] here, since this
+         # would lead to an infinite loop causing an exception.
+         #
+         set rootDir [lb]ns_server serverdir[rb]
+         #
+         # Accessing the host header field requires an
+         # active connection.
+         #
+         if {[lb]ns_conn isconnected[rb]} {
+           set rawHost [lb]ns_set iget [lb]ns_conn headers[rb] host[rb]
+           ns_log notice "serverroot <$args>" \
+              server  '[lb]ns_info server[rb]' \
+              host    '$rawHost' \
+              rootdir '$rootDir'
+           #
+           # Check, if there is a directory containing the
+           # host in the name. One might want to normalize
+           # the raw host header field.
+           #
+           if {$rawHost ne "" && [lb]::file isdirectory $rootDir/$rawHost[rb]} {
+             set rootDir $rootDir/$rawHost
+           }
+           ns_log notice "... final rootdir '$rootDir'"
+         }
+         return $rootDir
+       }
+       ns_serverrootproc [lb]namespace current[rb]::serverroot
+     }
    }
-   return $path
  }
 [example_end]
 
 
-[see_also ns_locationproc]
+[see_also ns_locationproc ns_server ns_conn ns_set]
 [keywords "global built-in" callback virtual hosting]
 [manpage_end]
 
