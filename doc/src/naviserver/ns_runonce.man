@@ -5,8 +5,13 @@
 [titledesc {Run Tcl script only once}]
 
 [description]
-This command ensirres that the script will be run only one time even if the
-file will be loaded several times
+
+This command ensures that the passed-in script will be executed only
+once. In other words, when ns_runonce is executed multiple times with
+the same script, later invocations have no effect. The command is
+typically used in situations, where resources are allocated. The
+command requires an executing server, i.e., it can't be used in the
+configuration file.
 
 [section {COMMANDS}]
 
@@ -16,12 +21,12 @@ file will be loaded several times
 
 [para]
 [option -global]
-If specified run the command in global context
-otherwise in current virtual server.
+If specified, the unique execution refers to all defined servers,
+otherwise, the execution will be only once per server.
 
 [para]
 [arg script]
-Tcl script to run
+Tcl script to be executed
 [list_end]
 
 [section EXAMPLES]
@@ -33,7 +38,7 @@ Tcl script to run
 [example_end]
 
 
-[see_also nsd ns_atstartup]
+[see_also nsd ns_atstartup ns_atsignal]
 [keywords "server built-in" NaviServer callback]
 [manpage_end]
 
