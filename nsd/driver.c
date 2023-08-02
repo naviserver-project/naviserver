@@ -4524,7 +4524,7 @@ SockParse(Sock *sockPtr)
     /*
      * Check if all content has arrived.
      */
-    Ns_Log(Debug, "=== length < avail (length %" PRIuz
+    Ns_Log(DriverDebug, "=== length < avail (length %" PRIuz
            ", avail %" PRIuz ") tfd %d tfile %p chunkStartOff %" PRIuz,
            reqPtr->length, reqPtr->avail, sockPtr->tfd,
            (void *)sockPtr->tfile, reqPtr->chunkStartOff);
