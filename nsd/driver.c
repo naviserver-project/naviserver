@@ -4540,7 +4540,7 @@ SockParse(Sock *sockPtr)
     /*
      * Check if all content has arrived.
      */
-    Ns_Log(Debug, "=== length < avail (length %" PRIuz
+    Ns_Log(DriverDebug, "=== length < avail (length %" PRIuz
            ", avail %" PRIuz ") tfd %d tfile %p chunkStartOff %" PRIuz,
            reqPtr->length, reqPtr->avail, sockPtr->tfd,
            (void *)sockPtr->tfile, reqPtr->chunkStartOff);
@@ -4655,7 +4655,7 @@ SockParse(Sock *sockPtr)
              * needed for chunked input processing.
              */
             reqPtr->content = bufPtr->string + reqPtr->coff;
-            Ns_Log(Debug, "driver sets  reqPtr->content (len %zu) to '%s'", reqPtr->contentLength, reqPtr->content);
+            Ns_Log(DriverDebug, "driver sets  reqPtr->content (len %zu) to '%s'", reqPtr->contentLength, reqPtr->content);
         }
         reqPtr->next = reqPtr->content;
 
