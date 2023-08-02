@@ -338,6 +338,16 @@ Ns_FastPathProc(const void *UNUSED(arg), Ns_Conn *conn)
     servPtr = connPtr->poolPtr->servPtr;
     url = conn->request.url;
 
+    /*
+     * When one of the callbacks is defined, we need the interpreter
+     * for this connection quite early during the request.
+     */
+    if (servPtr->vhost.serverRootProc != NULL
+        || servPtr->vhost.connLocationProc != NULL
+        ) {
+        (void)Ns_GetConnInterp(conn);
+    }
+
     Ns_DStringInit(&ds);
 
     if ((NsUrlToFile(&ds, servPtr, url) != NS_OK)
@@ -355,6 +365,7 @@ Ns_FastPathProc(const void *UNUSED(arg), Ns_Conn *conn)
     } else if (S_ISDIR(connPtr->fileInfo.st_mode)) {
         int i;
 
+        Ns_Log(Debug, "FastPathProc resolves dir <%s> names %d", url, servPtr->fastpath.dirc);
         /*
          * For directories, search for a matching directory file and
          * restart the connection if found.
@@ -366,9 +377,11 @@ Ns_FastPathProc(const void *UNUSED(arg), Ns_Conn *conn)
                 goto notfound;
             }
             Ns_DStringVarAppend(&ds, "/", servPtr->fastpath.dirv[i], (char *)0L);
+
             if ((stat(ds.string, &connPtr->fileInfo) == 0)
                 && S_ISREG(connPtr->fileInfo.st_mode)
                 ) {
+                Ns_Log(Debug, "FastPathProc checks [%d] '%s' -> found", i, ds.string);
                 if (url[strlen(url) - 1u] != '/') {
                     const char* query = conn->request.query;
 
@@ -383,6 +396,7 @@ Ns_FastPathProc(const void *UNUSED(arg), Ns_Conn *conn)
                 }
                 goto done;
             }
+            Ns_Log(Debug, "FastPathProc checks [%d] '%s' -> not found", i, ds.string);
         }
 
         /*
@@ -391,9 +405,13 @@ Ns_FastPathProc(const void *UNUSED(arg), Ns_Conn *conn)
          */
 
         if (servPtr->fastpath.diradp != NULL) {
+            Ns_Log(Debug, "FastPathProc lists directory listing using ADP");
             result = Ns_AdpRequest(conn, servPtr->fastpath.diradp);
+
         } else if (servPtr->fastpath.dirproc != NULL) {
+            Ns_Log(Debug, "FastPathProc lists directory listing using Tcl");
             result = Ns_TclRequest(conn, servPtr->fastpath.dirproc);
+
         } else {
             goto notfound;
         }
