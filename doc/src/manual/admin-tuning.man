@@ -253,6 +253,7 @@ Sample documented configuration files:
 	performance tuning configuration \
 	SO_REUSEPORT TCP TCP_FASTOPEN \
 	"connection thread pools" \
-	nsssl driver prebind pagedir]
+	nsssl driver prebind pagedir \
+        blueprint]
 [manpage_end]
 

@@ -222,8 +222,8 @@ better-suited to different situations:
    threads, or background threads) upon initialization.
 
 
-[para][image blueprint3 "NaviServer Blueprint"][para]
-Figure: NaviServer Blueprint (per server)
+[para][image blueprint3 "NaviServer Blueprint"]
+[para]Figure 1: NaviServer Blueprint (per server)
 
 [para]
 
@@ -1049,6 +1049,6 @@ this is necessary).
  }
 [example_end]
 
-[keywords ns_set nsdb]
+[keywords ns_set nsdb blueprint configuration loading tcl-modules]
 
 [manpage_end]

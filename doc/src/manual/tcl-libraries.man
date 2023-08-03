@@ -275,7 +275,7 @@ can by queried via [term ns_library] as shown in the following example.
  set priv [lb]ns_library private foo[rb]
 [example_end]
 
-[see_also ns_config ns_library]
-[keywords configuration paths resolution]
+[see_also ns_config ns_library ]
+[keywords configuration paths resolution initcmds]
 [manpage_end]
 
