@@ -3258,7 +3258,25 @@ HttpConnect(
                         } else {
                             Ns_Log(Ns_LogTaskDebug, "Ns_TLS_SSLConnect remaining timeout " NS_TIME_FMT,
                                    (int64_t)remainingTime.sec, remainingTime.usec);
+                            /*
+                             * If the user has specified an sniHostname, use
+                             * it. Otherwise use the hostname from the URL,
+                             * when it is non-numeric.
+                             */
+                            if (sniHostname == NULL) {
+                                char *p = rhost;
 
+                                while (*p != 0) {
+                                    char c = *p;
+                                    if ((c >= '0' && c <= '9') || c == ':' || c == '.') {
+                                        p++;
+                                        continue;
+                                    }
+                                    sniHostname = rhost;
+                                    Ns_Log(Debug, "automatically use SNI <%s>", rhost);
+                                    break;
+                                }
+                            }
                             rc = Ns_TLS_SSLConnect(interp, httpPtr->sock, ctx,
                                                    sniHostname, &remainingTime, &ssl);
                             if (rc == NS_TIMEOUT) {
