@@ -85,14 +85,17 @@ combination matches) just before authorization. If the procedure returns with a 
 
 [list_begin itemized]
 
-[item] TCL_OK (using: return "filter_ok"): The server will continue to the next pre-authorization
+[item] TCL_OK (script ends with: [const {return "filter_ok"}]):
+       The server will continue to the next pre-authorization
        filter for this connection, or, if there are no more pre-authorization filters, it will
-        continue on with authorization.
+       continue on with authorization.
 
-[item] TCL_BREAK (using: return "filter_break"): The server will not process any more pre-authorization
+[item] TCL_BREAK (script ends with: [const {return "filter_break"}]):
+       The server will not process any more pre-authorization
        filters for this connection, and it will continue on with authorization.
 
-[item] TCL_RETURN (using: return "filter_return"): The server will close the connection and will
+[item] TCL_RETURN (script ends with: [const {return "filter_return"}]):
+       The server will close the connection and will
        not run any more pre-authorization filters. It will not authorize the request, and it will
        not run the function registered for this METHOD/URL. It WILL run any trace functions
        registered for this METHOD/URL, usually including logging. It is assumed that the filter
@@ -104,14 +107,17 @@ just after successful authorization. If the procedure returns:
 
 [list_begin itemized]
 
-[item] TCL_OK (using: return "filter_ok"): The server will continue to the next post-authorization
+[item] TCL_OK (script ends with: [const {return "filter_ok"}]):
+       The server will continue to the next post-authorization
        filter for this connection, or, if there are no more post-authorization filters, it will run
        the function registered to handle this request.
 
-[item] TCL_BREAK (using: return "filter_break"): The server will not process any more post-authorization
+[item] TCL_BREAK (script ends with: [const {return "filter_break"}]):
+       The server will not process any more post-authorization
        filters for this connection, and it will run the function registered to handle this request.
 
-[item] TCL_RETURN (using: return "filter_return"): The server will close the connection and will
+[item] TCL_RETURN (script ends with: [const {return "filter_return"}]):
+       The server will close the connection and will
        not run any more post-authorization filters and it will not run the function registered for
        this METHOD/URL. It WILL run any trace functions registered for this METHOD/URL, usually
        including logging. It is assumed that the filter has returned a proper response (e.g.,
@@ -124,9 +130,12 @@ the connection has been totally processed and closed. If the procedure returns:
 
 [list_begin itemized]
 
-[item] TCL_OK (using: return "filter_ok"): The server will continue to the next trace filter.
+[item] TCL_OK (script ends with: [const {return "filter_ok"}]):
+       The server will continue to the next trace filter.
 
-[item] TCL_BREAK, TCL_RETURN (using: return "filter_break" or return "filter_return"): The rest
+[item] TCL_BREAK, TCL_RETURN (script ends with:
+       [const {return "filter_break"}] or
+       [const {return "filter_return"}]): The rest
        of the trace filters are ignored.
 
 [list_end]
