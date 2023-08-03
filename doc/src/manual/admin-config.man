@@ -224,7 +224,7 @@ a parameter value.
  }
  
  ns_section ns/server/s1/module/nssock {
-   ns_param address {137.208.116.31 2001:628:404:74::31}
+   ns_param address "137.208.116.31 2001:628:404:74::31"
    ns_param port    8000
  }
 [example_end]
@@ -258,7 +258,7 @@ different combinations of addresses and ports.
 
 [example_begin]
  ns_section ns/server/s1/module/nssock {
-   ns_param address {137.208.116.31 2001:628:404:74::31}
+   ns_param address "137.208.116.31 2001:628:404:74::31"
    ns_param port    "8000 8001"
  }
 [example_end]
@@ -309,18 +309,42 @@ be used while using only a single IP address/port combination. The
 main different between a virtual server and the case of defining
 multiple alternative servers above is that the servers are available
 concurrently. The server determines by the "Host:" header field
-provided by the client to which server the request should be routed.
-Using such virtual servers is a common technique, where e.g. for the
-same IP address, multiple DNS names are registered. According to
-HTTP/1.1, clients have to send the hostname in the host header field
-to the server, such that the server can behave differently depending
-on contents of this field.
+provided by the client to which server the request should be
+routed. Using such virtual servers is a common technique, where
+e.g. for the same IP address, multiple DNS names are
+registered. According to HTTP/1.1, clients have to send the hostname
+in the host header field to the server, such that the server can
+behave differently depending on the contents of this field.
 
-[para] In the following example, we define two web servers "s1" and "s2",
-which should act as virtual servers. This means, we want to define one
-network driver, which listens on a single port, but which should
-direct requests to the server based on the content of the [term host]
-header field. 
+[para] NaviServer can define multiple virtual servers, where each of
+the servers has a separate setup (e.g., different number of threads defined,
+different page directories), separate blueprints (e.g., loading
+of different modules), uses different network drivers, etc. (see
+Figure 1).
+
+[para][image blueprint3 "NaviServer Blueprint"]
+[para]Figure 1: NaviServer Blueprint (per server)
+
+[para] When NaviServer is started, it reads first the configuration
+file, which contains the definition of all servers, and then, it
+creates and configures the virtual servers based on this
+information. This is also the reason, why certain (server-specific)
+commands cannot be contained (and executed) in the configuration file
+(e.g., registering URL handlers, callbacks, etc.), but can be loaded
+from the module files (see also [uri tcl-libraries.html]).
+Additionally, it is possible to specify server specific commands
+in the section [const ns/server/SERVERNAME/tcl] with the parameter
+[const initcmds] (see also [uri tcl-libraries.html]).
+
+[para] Note that it is also possible to define virtual servers with a
+single NaviServer server definition, but this will be covered later.
+
+[para] In the following example, we define two separate servers "s1"
+and "s2", which should act as virtual web servers. This means, we want
+to define one network driver, which listens on a single port, but
+which should direct requests to one of the two potentially differently
+configured servers based on the content of the [term host] header
+field.
 
 [para] Assume for the IP address of the server the DNS names
 [term foo.com], [term bar.com] and [term baz.com] are registered. We define
@@ -330,13 +354,12 @@ server "s1" and "s2" such that "s1" should receive requests from
 definitions.
 
 [para] For defining virtual servers, the network driver has to be
-loaded globally (i.e. as module [const ns/module/nssock]).  For
+loaded globally (i.e., as module [const ns/module/nssock]).  For
 requests with missing/invalid host header fields, we have to define a
 [term defaultserver] to handle such requests in the global definition.
 
 In the section [const ns/module/nssock/servers] we define the mapping
-between the hostnames and the defined servers. Note that one can
-define multiple DNS names also for a single server (here for [const s2]).
+between the hostnames and the defined servers.
 
 [example_begin]
  #
@@ -385,6 +408,13 @@ define multiple DNS names also for a single server (here for [const s2]).
    ns_param s2 baz.com
  }
 [example_end]
+
+Note that one can define multiple DNS names also for a single
+server. With the definition above, "s1" serves [term foo.com] and
+"s2" serves [term bar.com] and [term baz.com]. Since "s1" is the
+default server, requests with unregistered hostnames will also be
+directed to it.
+
 
 [subsection {Virtual servers with HTTPS}]
 
@@ -440,9 +470,9 @@ during the TLS handshake as well).
 In order to configure SNI (Server Name Indication) for HTTPS, one can
 simply add additional certificates for the server needed.  In the
 following example the default certificate is defined on the level of
-the global driver (server.pem), whereas the certificate for the
+the global driver ([const server.pem]), whereas the certificate for the
 server "foo.com" (which will be served by "s1") is defined for the
-server "s1" separately (foo.com.pem).
+server "s1" separately ([const foo.com.pem]).
 
 [example_begin]
  #
@@ -464,7 +494,7 @@ server "s1" separately (foo.com.pem).
  
  #
  # Define a server-specific certificate to enable SNI.
- # Activate for this server as OCSP stapling.
+ # Furthermore, activate for server "s1" also OCSP stapling.
  # 
  ns_section ns/server/s1/module/nsssl {
    ns_param certificate   /usr/local/ns/modules/nsssl/foo.com.pem
@@ -472,7 +502,107 @@ server "s1" separately (foo.com.pem).
  }
 [example_end]
 
-More to come here...
+OCSP (abbreviation of Online Certificate Status Protocol, RFC 2560 and
+RFC 6066) is a protocol that checks the validity status of a
+certificate. The term "OCSP stapling" refers to the use of
+digitally-signed time-stamped OCSP responses in the web server for
+performance reasons. In the example above, OCSP stapling is defined
+for server "s1".
+
+
+[subsection {Single virtual server with mass virtual hosting (HTTP)}]
+
+The virtual servers defined in the last sections have the disadvantage
+that these require to know the server upfront, to include the server
+definition in the configuration file. Therefore, adding another
+virtual server requires a restart (which is quick, but still, will
+interrupt services). In case, the virtual hosts are very similar, it
+is possible to define a single virtual server hosting multiple
+domains, serving e.g. from different page directories.
+
+[para] The following example defines server "s1" serving only for
+HTTP connections over port 8000. The new part is the registration of a
+callback via [cmd ns_serverrootproc], which determines the root
+directory for serving pages based on the "host" header field. The
+definition assumes a directory structure like the following, where
+"foo.com" has, e.g., a different [const index.html] file.
+
+[example_begin]
+ /var/www/
+ ├── default
+ │   └── index.html
+ ├── foo.com
+ │   └── index.html
+...
+[example_end]
+
+When the content of the host header field (not including the port) is
+found in the filesystem under [const /var/www], it is used as the
+pageroot for this request.  It is certainly possible, the extend the
+example and include the port as well in the directory name.
+
+[example_begin]
+ #
+ # Define server "s1"
+ #  - listening on all IP addresses,
+ #  - port 8000,
+ #  - serve pages from /var/www/
+ #
+ ns_section ns/servers {
+   ns_param s1        "Sample Server"
+ }
+ ns_section ns/server/s1/modules {
+   ns_param nssock    nssock
+ }
+ ns_section ns/server/s1/module/nssock {
+   ns_param address   0.0.0.0
+   ns_param port      8000
+ }
+ ns_section ns/server/s1/fastpath {
+   ns_param pagedir   ""
+   ns_param serverdir /var/www
+ }
+ 
+ #
+ # Register for this server a callback for determining the server root
+ # depending on the contents of the "host" header field.
+ #
+ ns_section ns/server/s1/tcl {
+   ns_param initcmds {
+     [cmd ns_serverrootproc] {
+       set rootDir [lb]ns_server serverdir[rb]
+       set dir default
+       if {[lb]ns_conn isconnected[rb]} {
+         set rawHost [lb]ns_set iget [lb]ns_conn headers[rb] host[rb]
+         if {$rawHost ne ""} {
+           set hostDict [lb]ns_parsehostport $rawHost[rb]
+           if {[lb]::file isdirectory $rootDir/[lb]dict get $hostDict host[rb][rb]} {
+             set dir [lb]dict get $hostDict host[rb]
+           } else {
+             ns_log debug "... $rootDir/[lb]dict get $hostDict host[rb] does not exist, use default"
+           }
+         }
+       }
+       set rootDir $rootDir/$dir
+       ns_log debug "... final rootdir '$rootDir'"
+       return $rootDir
+     }
+   }
+ }
+[example_end]
+
+[para] This approach has the advantage that at runtime of NaviServer,
+new directories might be added or removed to server additional
+domains.
+
+[subsection {Single virtual server with mass virtual hosting using
+HTTPS and SNI}]
+
+While the previous section works for plain HTTP, the usage of HTTPS
+requires SNI and multiple certificates. This feature will be available
+in NaviServer 5.
+
+[para] More to come here...
 
 
 
@@ -481,6 +611,8 @@ More to come here...
 	performance tuning configuration \
 	SO_REUSEPORT TCP TCP_FASTOPEN \
 	"connection thread pools" \
-	nsssl driver prebind pagedir reverseproxy]
+	nsssl driver prebind pagedir reverseproxy \
+        OCSP initcmds]
+[see_also tcl-libraries tcl-overview]
 [manpage_end]
 
