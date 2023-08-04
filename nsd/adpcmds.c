@@ -259,10 +259,8 @@ NsTclAdpCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         const char        *option;
         const unsigned int flag;
     } adpCtlOpts[] = {
-
         { "bufsize",      (unsigned)CBufSizeIdx },
         { "channel",      (unsigned)CChanIdx },
-
         { "autoabort",    ADP_AUTOABORT },
         { "cache",        ADP_CACHE },
         { "detailerror",  ADP_DETAIL },
@@ -276,7 +274,6 @@ NsTclAdpCtlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         { "trimspace",    ADP_TRIM },
         { NULL, 0u}
     };
-
 
     if (unlikely(objc < 2)) {
         Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
@@ -1096,13 +1093,14 @@ NsTclAdpExceptionObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
 static int
 AdpFlushObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv, bool doStream)
 {
-    NsInterp *itPtr = clientData;
-    int       result;
+    int result;
 
     if (objc != 1) {
         Tcl_WrongNumArgs(interp, 1, objv, NULL);
         result = TCL_ERROR;
     } else {
+        NsInterp *itPtr = clientData;
+
         result = NsAdpFlush(itPtr, doStream);
     }
     return result;
