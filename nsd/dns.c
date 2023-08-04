@@ -653,8 +653,54 @@ GetAddr(Ns_DString *dsPtr, const char *host)
 #endif /* HAVE_IPV6 */
 
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsHostnameIsNumericIP --
+ *
+ *      Check, of the specified hostname is a numeric IP address
+ *      (IPv4 or IPv6).
+ *
+ * Results:
+ *      Boolean.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+bool
+NsHostnameIsNumericIP(const char *hostname)
+{
+    bool        result = NS_TRUE;
 
+    NS_NONNULL_ASSERT(hostname != NULL);
 
+    /*
+     * When the hostname contains a colon, it must be an IPv6
+     * address. It will be regarded as numeric.
+     */
+    if (strchr(hostname, INTCHAR(':')) == NULL) {
+        /*
+         * Otherwise, make sure, the name contains only digits or
+         * dots.
+         */
+        const char *p = hostname;
+
+        while (*p != 0) {
+            char c = *p;
+
+            if ((c >= '0' && c <= '9') || c == '.') {
+                p++;
+                continue;
+            }
+            result = NS_FALSE;
+            break;
+        }
+    }
+
+    return result;
+}
 
 
 

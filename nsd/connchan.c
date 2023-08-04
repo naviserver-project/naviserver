@@ -1085,10 +1085,14 @@ ConnChanOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
         result = TCL_ERROR;
     } else {
         //const NsInterp *itPtr = clientData;
-        NsServer       *servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
-        NsConnChan     *connChanPtr;
+        NsServer    *servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
+        NsConnChan  *connChanPtr;
+        Tcl_DString  ds;
+        Ns_URL       parsedUrl;
 
-        result = NSDriverClientOpen(interp, driverName, url, method, version, timeoutPtr, &sockPtr);
+        Tcl_DStringInit(&ds);
+        result = NSDriverClientOpen(interp, driverName, url, method, version, timeoutPtr, &ds,
+                                    &parsedUrl, &sockPtr);
         if (likely(result == TCL_OK)) {
 
             if (STREQ(sockPtr->drvPtr->protocol, "https")) {
@@ -1107,6 +1111,13 @@ ConnChanOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
                                                 &ctx);
                 if (likely(result == TCL_OK)) {
                     Ns_DriverClientInitArg params = {ctx, sniHostname};
+
+                    if (sniHostname == NULL) {
+                        if (!NsHostnameIsNumericIP(parsedUrl.host)) {
+                            params.sniHostname = parsedUrl.host;
+                            Ns_Log(Notice, "automatically use SNI <%s>", parsedUrl.host);
+                        }
+                    }
                     result = (*sockPtr->drvPtr->clientInitProc)(interp, (Ns_Sock *)sockPtr, &params);
 
                     /*
@@ -1173,6 +1184,7 @@ ConnChanOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
                 }
             }
         }
+        Tcl_DStringFree(&ds);
 
         if (unlikely(result != TCL_OK && sockPtr != NULL && sockPtr->sock > 0)) {
             ns_sockclose(sockPtr->sock);
@@ -1251,6 +1263,7 @@ ConnChanConnectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJ
                                                 &ctx);
                 if (likely(result == TCL_OK)) {
                     Ns_DriverClientInitArg params = {ctx, host};
+
                     result = (*sockPtr->drvPtr->clientInitProc)(interp, (Ns_Sock *)sockPtr, &params);
 
                     /*

@@ -3263,20 +3263,9 @@ HttpConnect(
                              * it. Otherwise use the hostname from the URL,
                              * when it is non-numeric.
                              */
-                            if (sniHostname == NULL) {
-                                char *p = rhost;
-
-                                while (*p != 0) {
-                                    char c = *p;
-
-                                    if ((c >= '0' && c <= '9') || c == ':' || c == '.') {
-                                        p++;
-                                        continue;
-                                    }
-                                    sniHostname = rhost;
-                                    Ns_Log(Debug, "automatically use SNI <%s>", rhost);
-                                    break;
-                                }
+                            if (sniHostname == NULL && !NsHostnameIsNumericIP(rhost)) {
+                                sniHostname = rhost;
+                                Ns_Log(Debug, "automatically use SNI <%s>", rhost);
                             }
                             rc = Ns_TLS_SSLConnect(interp, httpPtr->sock, ctx,
                                                    sniHostname, &remainingTime, &ssl);
