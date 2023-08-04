@@ -116,7 +116,7 @@ SockListen(Ns_Driver *driver, const char *address, unsigned short port, int back
 
     sock = Ns_SockListenEx(address, port, backlog, reuseport);
     if (sock != NS_INVALID_SOCKET) {
-        Config *drvCfgPtr = driver->arg;
+        const Config *drvCfgPtr = driver->arg;
 
         (void) Ns_SockSetNonBlocking(sock);
         if (drvCfgPtr->deferaccept != 0) {
@@ -149,7 +149,7 @@ static NS_DRIVER_ACCEPT_STATUS
 SockAccept(Ns_Sock *sock, NS_SOCKET listensock,
            struct sockaddr *sockaddrPtr, socklen_t *socklenPtr)
 {
-    Config *drvCfgPtr = sock->driver->arg;
+    const Config *drvCfgPtr = sock->driver->arg;
     NS_DRIVER_ACCEPT_STATUS status = NS_DRIVER_ACCEPT_ERROR;
 
     sock->sock = Ns_SockAccept(listensock, sockaddrPtr, socklenPtr);

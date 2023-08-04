@@ -798,7 +798,7 @@ Shutdown(const Ns_Time *timeoutPtr, void *UNUSED(arg))
  *----------------------------------------------------------------------
  */
 int
-Ns_ProxyGet(Tcl_Interp *interp, const char *poolName, PROXY* handlePtr, Ns_Time *timePtr)
+Ns_ProxyGet(Tcl_Interp *interp, const char *poolName, PROXY* handlePtr, const Ns_Time *timePtr)
 {
     Pool  *poolPtr;
     Proxy *proxyPtr;

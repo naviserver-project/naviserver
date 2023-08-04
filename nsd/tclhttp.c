@@ -148,7 +148,7 @@ SkipMessage(
 static Ns_ReturnCode HttpWaitForSocketEvent(
     NS_SOCKET sock,
     short events,
-    Ns_Time *timeoutPtr
+    const Ns_Time *timeoutPtr
 );
 
 static void HttpAddInfo(
@@ -2816,7 +2816,7 @@ static Ns_ReturnCode
 HttpWaitForSocketEvent(
     NS_SOCKET sock,
     short events,
-    Ns_Time *timeoutPtr
+    const Ns_Time *timeoutPtr
 ) {
     Ns_ReturnCode result;
     struct pollfd pollfd;
@@ -3268,6 +3268,7 @@ HttpConnect(
 
                                 while (*p != 0) {
                                     char c = *p;
+
                                     if ((c >= '0' && c <= '9') || c == ':' || c == '.') {
                                         p++;
                                         continue;
@@ -3649,7 +3650,8 @@ SkipMessage(
              * content upfront in the buffer.
              */
             newSize =  httpPtr->ds.length - httpPtr->replyHeaderSize;
-            memmove(httpPtr->ds.string, httpPtr->ds.string + httpPtr->replyHeaderSize, newSize);
+            assert(newSize>=0);
+            memmove(httpPtr->ds.string, httpPtr->ds.string + httpPtr->replyHeaderSize, (size_t)newSize);
             Tcl_DStringSetLength(&httpPtr->ds, newSize);
 
         } else {
@@ -4251,7 +4253,8 @@ HttpTaskSend(
     size_t length
 ) {
     ssize_t sent;
-    struct  iovec iov, *bufs = &iov;
+    struct  iovec iov;
+    const struct iovec *bufs = &iov;
     int     nbufs = 1;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
@@ -5580,8 +5583,8 @@ ParseTrailerProc(
             chunkPtr->callx = 0;
             result = TCL_BREAK;
         } else {
-            Ns_Set *headersPtr = httpPtr->replyHeaders;
-            char   *trailer = dsPtr->string;
+            Ns_Set     *headersPtr = httpPtr->replyHeaders;
+            const char *trailer = dsPtr->string;
 
             if (Ns_ParseHeader(headersPtr, trailer, NULL, ToLower, NULL) != NS_OK) {
                 result = TCL_ERROR;
