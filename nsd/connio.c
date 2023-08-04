@@ -1173,7 +1173,6 @@ ConnCopy(const Ns_Conn *conn, size_t toCopy, Tcl_Channel chan, FILE *fp, int fd)
 {
     const Conn   *connPtr;
     Request      *reqPtr;
-    size_t        ncopy = toCopy;
     Ns_ReturnCode status = NS_OK;
 
     NS_NONNULL_ASSERT(conn != NULL);
@@ -1185,6 +1184,8 @@ ConnCopy(const Ns_Conn *conn, size_t toCopy, Tcl_Channel chan, FILE *fp, int fd)
     if (connPtr->sockPtr == NULL || reqPtr->avail < toCopy) {
         status = NS_ERROR;
     } else {
+        size_t ncopy = toCopy;
+
         /*
          * There is data to copy.
          */
