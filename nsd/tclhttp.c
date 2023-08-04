@@ -2969,7 +2969,11 @@ HttpConnect(
                 } else {
                     Ns_Log(Ns_LogTaskDebug, "Ns_TLS_SSLConnect remaining timeout " NS_TIME_FMT,
                            (int64_t)remainingTime.sec, remainingTime.usec);
-
+                    
+                    if (sniHostname == NULL && !NsHostnameIsNumericIP(rhost)) {
+                        sniHostname = rhost;
+                        Ns_Log(Debug, "automatically use SNI <%s>", rhost);
+                    }
                     rc = Ns_TLS_SSLConnect(interp, httpPtr->sock, ctx,
                                            sniHostname, &remainingTime, &ssl);
                     if (rc == NS_TIMEOUT) {
