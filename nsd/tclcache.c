@@ -734,9 +734,9 @@ CacheAppendObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *
         result = TCL_ERROR;
 
     } else {
-        int                       isNew;
-        Ns_Entry                 *entry;
-        Ns_CacheTransactionStack *transactionStackPtr = &itPtr->cacheTransactionStack;
+        int                             isNew;
+        Ns_Entry                       *entry;
+        const Ns_CacheTransactionStack *transactionStackPtr = &itPtr->cacheTransactionStack;
 
         assert(cPtr != NULL);
         assert(key != NULL);

@@ -3665,7 +3665,7 @@ Ns_TLS_CtxFree(NS_TLS_SSL_CTX *ctx)
 
 NS_EXTERN Ns_ReturnCode
 Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
-                  const char *sni_hostname, Ns_Time *timeoutPtr,
+                  const char *sni_hostname, const Ns_Time *timeoutPtr,
                   NS_TLS_SSL **sslPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(6);
 

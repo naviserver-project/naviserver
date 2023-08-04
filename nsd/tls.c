@@ -93,14 +93,19 @@ static DH *SSL_dhCB(SSL *ssl, int isExport, int keyLength);
 # ifndef OPENSSL_NO_OCSP
 static int SSL_cert_statusCB(SSL *ssl, void *arg);
 
+/*
+ * Local functions defined in this file
+ */
+static Ns_ReturnCode
+PartialTimeout(const Ns_Time *endTimePtr, Ns_Time *diffPtr, Ns_Time *defaultPartialTimeoutPtr,
+               Ns_Time **partialTimeoutPtrPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+
 static bool
 OCSP_ResponseIsValid(OCSP_RESPONSE *resp, OCSP_CERTID *id)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 # endif
 
-/*
- * Local functions defined in this file
- */
 static void ReportError(Tcl_Interp *interp, const char *fmt, ...)
     NS_GNUC_NONNULL(2) NS_GNUC_PRINTF(2,3);
 
@@ -1172,7 +1177,7 @@ WaitFor(NS_SOCKET sock, unsigned int st, Ns_Time *timeoutPtr)
 }
 
 static Ns_ReturnCode
-PartialTimeout(Ns_Time *endTimePtr, Ns_Time *diffPtr, Ns_Time *defaultPartialTimeoutPtr,
+PartialTimeout(const Ns_Time *endTimePtr, Ns_Time *diffPtr, Ns_Time *defaultPartialTimeoutPtr,
                Ns_Time **partialTimeoutPtrPtr)
 {
     Ns_Time       now;
@@ -1214,7 +1219,7 @@ PartialTimeout(Ns_Time *endTimePtr, Ns_Time *diffPtr, Ns_Time *defaultPartialTim
  */
 Ns_ReturnCode
 Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
-                  const char *sni_hostname, Ns_Time *timeoutPtr,
+                  const char *sni_hostname, const Ns_Time *timeoutPtr,
                   NS_TLS_SSL **sslPtr)
 {
     NS_TLS_SSL     *ssl;

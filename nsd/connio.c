@@ -591,7 +591,7 @@ Ns_ConnSendFileVec(Ns_Conn *conn, Ns_FileVec *bufs, int nbufs)
         }
         nwrote += (size_t)sent;
         if (nwrote < towrite) {
-            Ns_Sock *sock = (Ns_Sock *)sockPtr;
+            const Ns_Sock *sock = (Ns_Sock *)sockPtr;
 
             if (sent > 0) {
                 (void)Ns_ResetFileVec(bufs, nbufs, (size_t)sent);

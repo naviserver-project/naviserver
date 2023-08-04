@@ -1469,7 +1469,8 @@ NsStopSpoolers(void)
 
     for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
         if ((drvPtr->flags & DRIVER_STARTED)) {
-            Ns_Time timeout, *shutdown = &nsconf.shutdowntimeout;
+            Ns_Time        timeout;
+            const Ns_Time *shutdown = &nsconf.shutdowntimeout;
 
             Ns_GetTime(&timeout);
             Ns_IncrTime(&timeout, shutdown->sec, shutdown->usec);

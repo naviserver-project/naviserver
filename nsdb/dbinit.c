@@ -962,7 +962,7 @@ NsDbDisconnect(Ns_DbHandle *handle)
 bool
 NsDbGetActive(Ns_DbHandle *handle)
 {
-    Handle *handlePtr = (Handle *) handle;
+    const Handle *handlePtr = (Handle *) handle;
 
     NS_NONNULL_ASSERT(handle != NULL);
 

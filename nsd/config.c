@@ -981,7 +981,7 @@ Ns_ConfigGetSection2(const char *section, bool markAsRead)
         && !nsconf.state.started
         ) {
         size_t i;
-        Ns_Set *set = sectionPtr->set;
+        const Ns_Set *set = sectionPtr->set;
 
         for (i = 0u; i < set->size; i++) {
             ConfigMark(sectionPtr, i, value_read);

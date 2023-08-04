@@ -380,7 +380,7 @@ static Ns_ReturnCode AuthProc(const char *server, const char *method, const char
     Tcl_HashSearch search;
     char           buf[NS_ENCRYPT_BUFSIZE], *group;
     const char    *auth = NULL;
-    Ns_Conn       *conn = Ns_GetConn();
+    const Ns_Conn *conn = Ns_GetConn();
 
     if (conn == NULL) {
         Ns_Log(Error, "nsperm: authProc called without connection");
