@@ -4700,40 +4700,66 @@ DriverLookupHost(Tcl_DString *hostDs, Driver *drvPtr)
 {
     const ServerMap     *result = NULL;
     const Tcl_HashEntry *hPtr;
-    char                 lastChar;
+    char                *hostStart, *portStart, *end;
+    bool                ipLiteral;
 
     NS_NONNULL_ASSERT(hostDs != NULL);
     NS_NONNULL_ASSERT(drvPtr != NULL);
+
+    Ns_Log(Debug, "driver lookup parse <%s>", hostDs->string);
+
+    if (!Ns_HttpParseHost2(hostDs->string, NS_FALSE, &hostStart, &portStart, &end)) {
+        Ns_Log(Warning, "Cannot parse provided host header field <%s>", hostDs->string);
+        return NULL;
+    }
+    /*
+     * In IP-literal notation, we have to care about surrounding square
+     * braces.
+     */
+    ipLiteral = (hostStart != hostDs->string);
 
     /*
      * Remove trailing dot of host header field, since RFC 2976 allows fully
      * qualified "absolute" DNS names in host fields (see e.g. §3.2.2).
      *
      */
-    lastChar = hostDs->string[hostDs->length - 1];
-
-    if (lastChar == '.') {
-        hostDs->string[hostDs->length - 1] = '\0';
-    } else if (CHARTYPE(digit, lastChar) != 0) {
+    if (portStart == NULL) {
         /*
-         * Note: in case, the host header contains a port, we are checking
-         * with the test above the last character of the port, but the
-         * trailing dot might be with the hostname before the port separator
-         * characgter (dot).
+         * No port provided
          */
-        char *colon = strrchr(hostDs->string, INTCHAR(':'));
-
-        if (colon != NULL) {
+        if (ipLiteral) {
             /*
-             * We found colon, which might be the port separator or inside an
-             * IPv6 address. However, we look here for a dot before the colon,
-             * which would not be permitted for IPv6 addresses.
+             * Undo NUL chars from Ns_HttpParseHost2, do not check for last
+             * character.
              */
-            lastChar = *(colon - 1);
-            if (lastChar == '.') {
-                memmove(colon-1, colon,
-                        (1u + (size_t)hostDs->length) -
-                        (size_t)(colon - hostDs->string));
+             hostDs->string[hostDs->length - 1] = ']';
+        } else {
+            /*
+             * Drop last character if it is a dot.
+             */
+            if (hostDs->string[hostDs->length - 1] == '.') {
+                Tcl_DStringSetLength(hostDs, hostDs->length - 1);
+            }
+        }
+        Ns_DStringPrintf(hostDs, ":%hu", drvPtr->port);
+    } else {
+        /*
+         * Port provided.
+         */
+        *(portStart-1) = ':';
+        if (ipLiteral) {
+            /*
+             * Undo NUL chars from Ns_HttpParseHost2, do not check for last
+             * character.
+             */
+            *(portStart -2) = ']';
+        } else {
+            if (*(portStart -2) == '.') {
+                /*
+                 * Drop last character if it is a dot.
+                 */
+                memmove(portStart-2, portStart-1, hostDs->length + 1 - (portStart - hostDs->string));
+                Tcl_DStringSetLength(hostDs, hostDs->length - 1);
             }
         }
     }
@@ -4742,9 +4768,10 @@ DriverLookupHost(Tcl_DString *hostDs, Driver *drvPtr)
      * Convert provided host header field to lowercase before hash lookup.
      */
     Ns_StrToLower(hostDs->string);
+    Ns_Log(Debug, "lookup string <%s>", hostDs->string);
 
     hPtr = Tcl_FindHashEntry(&drvPtr->hosts, hostDs->string);
-    Ns_Log(DriverDebug, "SockSetServer driver '%s' host '%s' => %p",
+    Ns_Log(Debug, "SockSetServer driver '%s' host '%s' => %p",
            drvPtr->moduleName, hostDs->string, (void*)hPtr);
 
     if (hPtr != NULL) {
@@ -4758,13 +4785,13 @@ DriverLookupHost(Tcl_DString *hostDs, Driver *drvPtr)
         /*
          * Host header field content is not found in the mapping table.
          */
-        Ns_Log(DriverDebug,
+        Ns_Log(Debug,
                "cannot locate host header content '%s' in virtual hosts "
                "table of driver '%s', fall back to default "
                "(default mapping or driver data)",
                hostDs->string, drvPtr->moduleName);
 
-        if (Ns_LogSeverityEnabled(DriverDebug)) {
+        if (Ns_LogSeverityEnabled(Debug)) {
             Tcl_HashEntry  *hPtr2;
             Tcl_HashSearch  search;
 
