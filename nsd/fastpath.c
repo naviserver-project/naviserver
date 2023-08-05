@@ -511,7 +511,7 @@ UrlIs(const char *server, const char *url, bool isDir)
  * Ns_PageRoot --
  *
  *      Return pathname of the server pages directory.
- *      Depreciated: Use Ns_PagePath() which is virtual host aware.
+ *      Deprecated: Use Ns_PagePath() which is virtual host aware.
  *
  * Results:
  *      Server pageroot or NULL on invalid server.
