@@ -2212,9 +2212,7 @@ NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
                 Ns_TclPrintfResult(interp, "could not derive key");
                 result = TCL_ERROR;
             }
-            if (out != NULL) {
-                ns_free(out);
-            }
+            ns_free(out);
         }
     }
     return result;

@@ -5531,9 +5531,8 @@ WriterSockRelease(WriterSock *wrSockPtr) {
     } else {
         NsSockClose(wrSockPtr->sockPtr, (int)wrSockPtr->keep);
     }
-    if (wrSockPtr->clientData != NULL) {
-        ns_free(wrSockPtr->clientData);
-    }
+    ns_free(wrSockPtr->clientData);
+
     if (wrSockPtr->fd != NS_INVALID_FD) {
         if (wrSockPtr->doStream != NS_WRITER_STREAM_FINISH) {
             (void) ns_close(wrSockPtr->fd);
@@ -5554,10 +5553,7 @@ WriterSockRelease(WriterSock *wrSockPtr) {
             ns_free(wrSockPtr->c.mem.bufs);
         }
     }
-    if (wrSockPtr->headerString != NULL) {
-        ns_free(wrSockPtr->headerString);
-    }
-
+    ns_free(wrSockPtr->headerString);
     ns_free(wrSockPtr);
 }
 

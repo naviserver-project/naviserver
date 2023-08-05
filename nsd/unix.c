@@ -637,9 +637,8 @@ Ns_GetNameForUid(Ns_DString *dsPtr, uid_t uid)
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
     success = GetPwUID(uid, PwNAME, NULL, dsPtr, &ptr);
-    if (ptr != NULL) {
-        ns_free(ptr);
-    }
+    ns_free(ptr);
+
     return success;
 }
 
@@ -720,9 +719,8 @@ Ns_GetUserHome(Ns_DString *dsPtr, const char *user)
     NS_NONNULL_ASSERT(dsPtr != NULL);
 
     success = GetPwNam(user, PwDIR, NULL, dsPtr, &ptr);
-    if (ptr != NULL) {
-        ns_free(ptr);
-    }
+    ns_free(ptr);
+
     return success;
 }
 
@@ -751,9 +749,8 @@ Ns_GetUserGid(const char *user)
     NS_NONNULL_ASSERT(user != NULL);
 
     (void) GetPwNam(user, PwGID, &retcode, NULL, &ptr);
-    if (ptr != NULL) {
-        ns_free(ptr);
-    }
+    ns_free(ptr);
+
     return retcode;
 }
 
@@ -782,9 +779,8 @@ Ns_GetUid(const char *user)
     NS_NONNULL_ASSERT(user != NULL);
 
     (void) GetPwNam(user, PwUID, &retcode, NULL, &ptr);
-    if (ptr != NULL) {
-        ns_free(ptr);
-    }
+    ns_free(ptr);
+
     return retcode;
 }
 

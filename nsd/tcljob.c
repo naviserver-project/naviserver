@@ -1844,14 +1844,8 @@ FreeJob(Job *jobPtr)
     Tcl_DStringFree(&jobPtr->id);
 
     ns_free((char *)jobPtr->queueId);
-
-    if (jobPtr->errorCode != NULL) {
-        ns_free(jobPtr->errorCode);
-    }
-    if (jobPtr->errorInfo != NULL) {
-        ns_free(jobPtr->errorInfo);
-    }
-
+    ns_free(jobPtr->errorCode);
+    ns_free(jobPtr->errorInfo);
     ns_free(jobPtr);
 }
 

@@ -1677,9 +1677,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
     case CClientdataIdx:
         if (objc > 2) {
             const char *value = Tcl_GetString(objv[2]);
-            if (connPtr->clientData != NULL) {
-                ns_free(connPtr->clientData);
-            }
+
+            ns_free(connPtr->clientData);
             connPtr->clientData = ns_strdup(value);
         }
         Tcl_SetObjResult(interp, Tcl_NewStringObj(connPtr->clientData, TCL_INDEX_NONE));

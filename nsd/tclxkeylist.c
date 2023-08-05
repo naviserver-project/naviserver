@@ -632,9 +632,7 @@ FreeKeyedListData(keylIntObj_t * keylIntPtr)
         ns_free(keylIntPtr->entries[idx].key);
         Tcl_DecrRefCount(keylIntPtr->entries[idx].valuePtr);
     }
-    if (keylIntPtr->entries != NULL) {
-        ns_free((char *) keylIntPtr->entries);
-    }
+    ns_free((char *) keylIntPtr->entries);
     ckfree((char *) keylIntPtr);
 }
 

@@ -721,9 +721,7 @@ FreeUserInfo(User *userPtr, const char *name)
     while (hPtr != NULL) {
         char *maskString = Tcl_GetHashValue(hPtr);
 
-        if (maskString != NULL) {
-            ns_free(maskString);
-        }
+        ns_free(maskString);
         Tcl_DeleteHashEntry(hPtr);
         hPtr = Tcl_NextHashEntry(&search);
     }

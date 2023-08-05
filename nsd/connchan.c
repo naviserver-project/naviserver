@@ -416,9 +416,7 @@ ConnChanFree(NsConnChan *connChanPtr, NsServer *servPtr) {
             connChanPtr->cbPtr = NULL;
         }
         ns_free((char *)connChanPtr->channelName);
-        if (connChanPtr->clientData != NULL) {
-            ns_free((char *)connChanPtr->clientData);
-        }
+        ns_free((char *)connChanPtr->clientData);
 
         if (connChanPtr->sockPtr != NULL) {
             NsSockClose(connChanPtr->sockPtr, (int)NS_FALSE);
@@ -655,9 +653,8 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
                     Tcl_DStringFree(&ds);
                 }
             }
-            if (channelName != NULL) {
-                ns_free((char *)channelName);
-            }
+            ns_free((char *)channelName);
+
             Ns_TclDeAllocateInterp(interp);
             Tcl_DStringFree(&script);
 

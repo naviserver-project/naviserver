@@ -812,9 +812,7 @@ static void ThreadArgFree(void *arg)
     NS_NONNULL_ASSERT(arg != NULL);
     argPtr = (TclThreadArg *)arg;
 
-    if (argPtr->threadName != NULL) {
-        ns_free((char *)argPtr->threadName);
-    }
+    ns_free((char *)argPtr->threadName);
     ns_free(argPtr);
 }
 

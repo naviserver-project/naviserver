@@ -456,12 +456,8 @@ UrlSpaceContextSpecFree(void *arg)
 {
     UrlSpaceContextSpec *spec = arg;
 
-    if (spec->field != NULL) {
-        ns_free((void*)spec->field);
-    }
-    if (spec->patternString != NULL) {
-        ns_free((void*)spec->patternString);
-    }
+    ns_free((void*)spec->field);
+    ns_free((void*)spec->patternString);
     ns_free(arg);
 }
 

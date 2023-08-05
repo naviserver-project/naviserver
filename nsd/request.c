@@ -511,9 +511,7 @@ SetUrl(Ns_Request *request, char *url)
     p = strchr(url, INTCHAR('?'));
     if (p != NULL) {
         *p++ = '\0';
-        if (request->query != NULL) {
-            ns_free(request->query);
-        }
+        ns_free(request->query);
         if (*p != '\0') {
             request->query = ns_strdup(p);
         }

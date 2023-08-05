@@ -1088,9 +1088,7 @@ Ns_HttpMessageParse(
                 p[len - 1u] = '\0';
             }
             if (firsthdr != 0) {
-                if (hdrPtr->name != NULL) {
-                    ns_free((void *)hdrPtr->name);
-                }
+                ns_free((void *)hdrPtr->name);
                 hdrPtr->name = ns_strdup(p);
                 firsthdr = 0;
             } else if (len < 2 || Ns_ParseHeader(hdrPtr, p, NULL, ToLower, NULL) != NS_OK) {

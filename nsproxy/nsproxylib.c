@@ -2439,9 +2439,7 @@ SetOpt(const char *str, char const **optPtr)
     NS_NONNULL_ASSERT(str != NULL);
     NS_NONNULL_ASSERT(optPtr != NULL);
 
-    if (*optPtr != NULL) {
-        ns_free((char*)*optPtr);
-    }
+    ns_free((char*)*optPtr);
     if (*str != '\0') {
         *optPtr = ns_strdup(str);
     } else {
@@ -3535,15 +3533,9 @@ FreePool(Pool *poolPtr)
 {
     NS_NONNULL_ASSERT(poolPtr != NULL);
 
-    if (poolPtr->exec != NULL) {
-        ns_free((char *)poolPtr->exec);
-    }
-    if (poolPtr->init != NULL) {
-        ns_free((char *)poolPtr->init);
-    }
-    if (poolPtr->reinit != NULL) {
-        ns_free((char *)poolPtr->reinit);
-    }
+    ns_free((char *)poolPtr->exec);
+    ns_free((char *)poolPtr->init);
+    ns_free((char *)poolPtr->reinit);
     if (poolPtr->env) {
         Ns_SetFree(poolPtr->env);
     }

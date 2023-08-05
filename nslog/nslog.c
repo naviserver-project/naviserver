@@ -336,9 +336,7 @@ ParseExtendedHeaders(Log *logPtr, const char *str)
             int        tagged = 0;
             TCL_SIZE_T i;
 
-            if (logPtr->extendedHeaders != NULL) {
-                ns_free((char *)logPtr->extendedHeaders);
-            }
+            ns_free((char *)logPtr->extendedHeaders);
             if (logPtr->requestHeaders != NULL) {
                 Tcl_Free((char *) logPtr->requestHeaders);
             }
@@ -450,9 +448,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *c
         Ns_MutexLock(&logPtr->lock);
         if (objc > 2) {
             strarg = ns_strdup(Tcl_GetString(objv[2]));
-            if (logPtr->rollfmt != NULL) {
-                ns_free((char *)logPtr->rollfmt);
-            }
+            ns_free((char *)logPtr->rollfmt);
             logPtr->rollfmt = strarg;
         }
         strarg = logPtr->rollfmt;
