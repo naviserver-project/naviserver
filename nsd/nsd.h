@@ -1581,7 +1581,7 @@ NS_EXTERN Ns_OpProc NsTclRequestProc;
 NS_EXTERN Ns_OpProc NsAdpPageProc;
 NS_EXTERN Ns_ArgProc NsAdpPageArgProc;
 NS_EXTERN Ns_TclTraceProc NsTclTraceProc;
-NS_EXTERN Ns_UrlToFileProc NsUrlToFileProc;
+NS_EXTERN Ns_UrlToFileProc NsUrlToFileProc NS_GNUC_DEPRECATED_FOR(Ns_FastUrl2FileProc);
 NS_EXTERN Ns_Url2FileProc NsTclUrl2FileProc;
 NS_EXTERN Ns_Url2FileProc NsMountUrl2FileProc;
 NS_EXTERN Ns_ArgProc NsMountUrl2FileArgProc;
