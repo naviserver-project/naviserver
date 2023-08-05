@@ -447,7 +447,17 @@ which returns 'Hello World'.
  }
 [example_end]
 
+The same script could also be implemented by specifying the script
+body directly in the [cmd ns_register_proc] command invocation.
 
+[example_begin]
+ ns_register_proc GET /example/hello {
+   ns_return 200 text/plain "Hello World"
+ }
+[example_end]
+
+The second variant is shorter, by defining procs, it might be easier
+for complex examples to e.g. update the procs at runtime, etc.
 
 [subsection {Example 2: showhdrs}]
 
@@ -716,37 +726,42 @@ code when sending raw data to the client.
  ns_register_proc GET /example/finaldest finaldest
  
  proc not_here {} {
-  set headers [lb]ns_set new myheaders[rb]
-  ns_set put $headers Location \
-      [lb]ns_conn location[rb]/example/finaldest
-  ns_respond -status 302 -type text/plain \
-      -string "Redirection" -headers $headers
+   ns_respond -status 302 -type text/plain \
+      -string "Redirection" \
+      -headers [lb]ns_set new myheaders \
+         Location [lb]ns_conn location[rb]/example/finaldest[rb] \
+         [rb]
  }
  
  proc not_here2 {} {
-  set content \
- "<html><head><title>Redirection</title></head><body>
- <h1>Redirection</h1>The actual location of what you were looking for is
- <a href='[lb]ns_conn location[rb]/example/finaldest'> here.</a>
- </body></html>"
+   set content [lb]subst [lb]ns_trim -delimiter | {
+        |<html>
+        |<head><title>Redirection</title></head>
+        |<body>
+        |<h1>Redirection</h1>
+        |The actual location of what you were looking for is
+        |<a href='[lb]ns_conn location[rb]/example/finaldest'> here.</a>
+        |</body>
+        |</html>}[rb][rb]
  
-  ns_write  \
- "HTTP/1.0 302 Document follows
- MIME-Version: 1.0
- Content-Type: text/html
- Content-Length: [lb]string length $content[rb]
- Location: [lb]ns_conn location[rb]/example/finaldest
- 
- $content"
+   ns_write [lb]subst [lb]ns_trim -delimiter | {
+        |HTTP/1.0 302 Document follows
+        |MIME-Version: 1.0
+        |Content-Type: text/html
+        |Content-Length: [lb]string length $content[rb]
+        |Location: [lb]ns_conn location[rb]/example/finaldest
+        |
+        |$content
+        |}[rb][rb]
  }
  
  proc not_here3 {} {
-  ns_returnredirect [lb]ns_conn location[rb]/example/finaldest
+   ns_returnredirect [lb]ns_conn location[rb]/example/finaldest
  }
  
  proc finaldest {} {
-  ns_return 200 text/plain \
-      "You have arrived at the final destination."
+   ns_return 200 text/plain \
+     "You have arrived at the final destination."
  }
 [example_end]
 
