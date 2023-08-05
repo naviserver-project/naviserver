@@ -848,7 +848,8 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
             port = connPtr->drvPtr->port;
             addr = connPtr->drvPtr->address;
         }
-        Ns_Log(Debug, "Ns_ConnLocation: final resort, use numerical address <%s>", location);
+        Ns_Log(Debug, "Ns_ConnLocation: final resort, use numerical address '%s' '%hu'",
+               addr, port);
         location = Ns_HttpLocationString(dest, connPtr->drvPtr->protocol,
                                          addr, port, connPtr->drvPtr->defport);
     }
