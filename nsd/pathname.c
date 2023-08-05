@@ -1043,7 +1043,7 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
              * Call the registered proc (typically, a Tcl call).
              */
             path = (servPtr->vhost.serverRootProc)(dest, rawHost, servPtr->vhost.serverRootArg);
-            if (conn != NULL) {
+            if (conn != NULL && path != NULL) {
                 Ns_Log(Debug, "cache value <%s>", path);
                 conn->request.serverRoot = ns_strdup(path);
             }
