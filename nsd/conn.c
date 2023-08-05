@@ -811,8 +811,8 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
         /*
          * Prefer the new style Ns_ConnLocationProc.
          */
-
         location = (*servPtr->vhost.connLocationProc)(conn, dest, servPtr->vhost.connLocationArg);
+        Ns_Log(Debug, "Ns_ConnLocation: locationproc returned <%s>", location);
 
     } else if (servPtr->vhost.locationProc != NULL) {
 
@@ -823,6 +823,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
         location = (*servPtr->vhost.locationProc)(conn);
         if (location != NULL) {
             location = Ns_DStringAppend(dest, location);
+            Ns_Log(Debug, "Ns_ConnLocation: old style locationproc returned <%s>", location);
         }
 
     } else if (servPtr->vhost.enabled
@@ -835,6 +836,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
          */
         if (Ns_StrIsValidHostHeaderContent(host)) {
             location = Ns_HttpLocationString(dest, connPtr->drvPtr->protocol, host, 0u, 0u);
+            Ns_Log(Debug, "Ns_ConnLocation: vhost - location based on host header field <%s>", location);
         }
     }
 
@@ -845,6 +847,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
      */
     if ((location == NULL) && (connPtr->location != NULL)) {
         location = Ns_DStringAppend(dest, connPtr->location);
+        Ns_Log(Debug, "Ns_ConnLocation: location from mapping table <%s>", location);
     }
 
     /*
@@ -863,6 +866,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
             port = connPtr->drvPtr->port;
             addr = connPtr->drvPtr->address;
         }
+        Ns_Log(Debug, "Ns_ConnLocation: final resort, use numerical address <%s>", location);
         location = Ns_HttpLocationString(dest, connPtr->drvPtr->protocol,
                                          addr, port, connPtr->drvPtr->defport);
     }
