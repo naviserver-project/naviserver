@@ -675,7 +675,7 @@ CheckStaticCompressedDelivery(
  *      Return file contents, possibly from cache.
  *
  * Results:
- *      Standard Ns_Request result.
+ *      NaviServer return code.
  *
  * Side effects:
  *      May map, cache, open, and/or send file out connection.
