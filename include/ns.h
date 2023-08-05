@@ -432,6 +432,7 @@ typedef struct Ns_Request {
     const char     *url;
     const char     *urlv;
     char           *query;
+    const char     *serverRoot;
     TCL_SIZE_T      url_len;
     TCL_SIZE_T      urlv_len;
     TCL_SIZE_T      urlc;

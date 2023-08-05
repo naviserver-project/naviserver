@@ -685,9 +685,12 @@ NsPageRoot(Ns_DString *dsPtr, const NsServer *servPtr, const char *host)
     assert(servPtr->fastpath.pagedir != NULL);
 
     if (Ns_PathIsAbsolute(servPtr->fastpath.pagedir) == NS_TRUE) {
+        Ns_Log(Debug, "NsPageRoot is absolute <%s>", servPtr->fastpath.pagedir);
         path = Ns_DStringAppend(dsPtr, servPtr->fastpath.pagedir);
     } else {
         (void) ServerRoot(dsPtr, servPtr, host);
+        Ns_Log(Debug, "NsPageRoot is not absolute <%s>, ServerRoot <%s>",
+               servPtr->fastpath.pagedir, dsPtr->string);
         path = Ns_MakePath(dsPtr, servPtr->fastpath.pagedir, (char *)0L);
     }
 
@@ -1016,7 +1019,7 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
 {
     char           *safehost;
     const char     *path = NULL;
-    const Ns_Conn  *conn;
+    Ns_Conn        *conn;
     const Ns_Set   *headers;
     Ns_DString      ds;
 
@@ -1024,13 +1027,27 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
     NS_NONNULL_ASSERT(servPtr != NULL);
 
     if (servPtr->vhost.serverRootProc != NULL) {
-
         /*
-         * Prefer to run a user-registered Ns_ServerRootProc.
+         * Configured to run a user-registered Ns_ServerRootProc.
          */
 
-        path = (servPtr->vhost.serverRootProc)(dest, rawHost, servPtr->vhost.serverRootArg);
-
+        conn = Ns_GetConn();
+        if (conn != NULL && conn->request.serverRoot != NULL) {
+            /*
+             * Use the cached value.
+             */
+            Tcl_DStringAppend(dest, conn->request.serverRoot, TCL_INDEX_NONE);
+            path = dest->string;
+        } else {
+            /*
+             * Call the registered proc (typically, a Tcl call).
+             */
+            path = (servPtr->vhost.serverRootProc)(dest, rawHost, servPtr->vhost.serverRootArg);
+            if (conn != NULL) {
+                Ns_Log(Debug, "cache value <%s>", path);
+                conn->request.serverRoot = ns_strdup(path);
+            }
+        }
     } else if (servPtr->vhost.enabled
                && (rawHost != NULL
                    || ((conn = Ns_GetConn()) != NULL
@@ -1065,7 +1082,6 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
             /*
              * Build the final path.
              */
-
             path = Ns_MakePath(dest, servPtr->fastpath.serverdir,
                                servPtr->vhost.hostprefix, (char *)0L);
             if (servPtr->vhost.hosthashlevel > 0) {
@@ -1083,6 +1099,7 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
         path = Ns_MakePath(dest, servPtr->fastpath.serverdir, (char *)0L);
     }
 
+    Ns_Log(Debug, "ServerRoot returns path <%s> // <%s>", path, dest->string);
     return path;
 }
 
