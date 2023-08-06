@@ -436,6 +436,7 @@ typedef struct Ns_Request {
     TCL_SIZE_T      url_len;
     TCL_SIZE_T      urlv_len;
     TCL_SIZE_T      urlc;
+    bool            isProxyRequest;
     unsigned short  port;
     double          version;
 } Ns_Request;
