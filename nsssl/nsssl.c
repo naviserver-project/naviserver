@@ -505,6 +505,9 @@ ConnInfo(Ns_Sock *sock)
     Tcl_DictObjPut(NULL, resultObj,
                    Tcl_NewStringObj("cipher", 6),
                    Tcl_NewStringObj(SSL_get_cipher(sslCtx->ssl), TCL_INDEX_NONE));
+    Tcl_DictObjPut(NULL, resultObj,
+                   Tcl_NewStringObj("servername", 10),
+                   Tcl_NewStringObj(SSL_get_servername(sslCtx->ssl, TLSEXT_NAMETYPE_host_name), TCL_INDEX_NONE));
 
     return resultObj;
 }
