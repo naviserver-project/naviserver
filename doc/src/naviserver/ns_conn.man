@@ -304,9 +304,8 @@ not explicitly send the ":port" part of the URL, the port number returned will b
 
 [call [cmd  "ns_conn protocol"]]
 
-Returns the protocol of the URL in the HTTP request line.
-This is only set, when the NaviServer is used as a proxy server.
-
+Returns the protocol of the current connection. When NaviServer is
+used as a proxy server, it contains the URL in the HTTP request line.
 
 [call [cmd  "ns_conn query"]]
 

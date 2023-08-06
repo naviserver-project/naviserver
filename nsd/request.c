@@ -380,6 +380,8 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
 
  done:
 
+    request->isProxyRequest = (request->host != NULL && request->protocol != NULL);
+
     Ns_Log(Warning, "Ns_ParseRequest <%s> -> ERROR", line);
     Ns_DStringFree(&ds);
     return NS_ERROR;

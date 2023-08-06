@@ -448,6 +448,7 @@ typedef struct Ns_Request {
     int             url_len;
     int             urlv_len;
     int             urlc;
+    bool            isProxyRequest;
     unsigned short  port;
     double          version;
 } Ns_Request;

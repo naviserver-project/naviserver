@@ -2202,7 +2202,9 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         }
 
     case CProtocolIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(connPtr->drvPtr->protocol, -1));
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(request->isProxyRequest
+                                                  ? request->protocol
+                                                  : connPtr->drvPtr->protocol, -1));
         break;
 
     case CHostIdx:
