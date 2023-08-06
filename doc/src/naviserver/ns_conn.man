@@ -298,8 +298,10 @@ Returns the current connection pool from the currently connected server.
 
 [call [cmd  "ns_conn port"]]
 
-Returns the port specified explicitly in the URL of the HTTP request. If the browser does
-not explicitly send the ":port" part of the URL, the port number returned will be 0.
+When NaviServer is used as a proxy server, it returns the port
+specified explicitly in the URL of the HTTP request. In all other
+cases (no explicit ":port" part in the URL, no proxy server
+request), the returned port number is 0.
 
 
 [call [cmd  "ns_conn protocol"]]
