@@ -1041,10 +1041,12 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
     NS_NONNULL_ASSERT(servPtr != NULL);
 
     if (servPtr->vhost.serverRootProc != NULL) {
-
-        /*
-         * Prefer to run a user-registered Ns_ServerRootProc.
-         */
+       /*
+        * Call the registered proc which is typically, a Tcl
+        * call. Therefore, make sure, the connection has already an
+        * interpreter associated.
+        */
+        Ns_GetConnInterp(conn);
 
         path = (servPtr->vhost.serverRootProc)(dest, rawHost, servPtr->vhost.serverRootArg);
 

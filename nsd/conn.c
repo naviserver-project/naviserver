@@ -761,6 +761,13 @@ Ns_ConnLocation(Ns_Conn *conn)
     const char     *location = NULL;
 
     if (servPtr->vhost.locationProc != NULL) {
+        /*
+         * Call the registered proc which is typically, a Tcl
+         * call. Therefore, make sure, the connection has already an
+         * interpreter associated.
+         */
+        Ns_GetConnInterp(conn);
+
         location = (*servPtr->vhost.locationProc)(conn);
     }
     if (location == NULL) {
@@ -810,7 +817,13 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
 
         /*
          * Prefer the new style Ns_ConnLocationProc.
+         *
+         * Call the registered proc which is typically, a Tcl
+         * call. Therefore, make sure, the connection has already an
+         * interpreter associated.
          */
+        Ns_GetConnInterp(conn);
+
         location = (*servPtr->vhost.connLocationProc)(conn, dest, servPtr->vhost.connLocationArg);
         Ns_Log(Debug, "Ns_ConnLocation: locationproc returned <%s>", location);
 
@@ -819,6 +832,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
         /*
          * Fall back to old style Ns_LocationProc.
          */
+        Ns_GetConnInterp(conn);
 
         location = (*servPtr->vhost.locationProc)(conn);
         if (location != NULL) {
