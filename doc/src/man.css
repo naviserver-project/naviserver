@@ -50,6 +50,21 @@ table {
    border-collapse: collapse;
 }
 
+/*
+table tr.doctools_idxheader th {
+    text-align:left;
+}
+table tr.#doctools_idxheader th {
+    text-align:left;
+}
+*/
+table tr th[colspan="2"] {
+    text-align:left;
+    padding: 20px 0px 10px 0px;
+    background-color: #eee;
+}
+
+
 table tr td {
    background-color: white;
    padding-bottom: .3em;
