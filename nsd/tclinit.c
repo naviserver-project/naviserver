@@ -533,6 +533,37 @@ Ns_TclDeAllocateInterp(Tcl_Interp *interp)
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsIdleCallback --
+ *
+ *      Callback called, when the server is idle. This is called by
+ *      NsConnThread() when a job finished and there s nothing urgent to do.
+ *      In such cases, it runs the Tcl callbacks registered via
+ *      NS_TCL_TRACE_IDLE.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Interp may be allocated, initialized and cached.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+NsIdleCallback(NsServer *servPtr)
+{
+    NsInterp *itPtr;
+
+    NS_NONNULL_ASSERT(servPtr != NULL);
+
+    itPtr = PopInterp(servPtr, NULL);
+    itPtr->nsconn.flags = 0u;
+    RunTraces(itPtr, NS_TCL_TRACE_IDLE);
+    PushInterp(itPtr);
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -570,19 +601,6 @@ Ns_GetConnInterp(Ns_Conn *conn)
         RunTraces(itPtr, NS_TCL_TRACE_GETCONN);
     }
     return connPtr->itPtr->interp;
-}
-
-void
-NsIdleCallback(NsServer *servPtr)
-{
-    NsInterp *itPtr;
-
-    NS_NONNULL_ASSERT(servPtr != NULL);
-
-    itPtr = PopInterp(servPtr, NULL);
-    itPtr->nsconn.flags = 0u;
-    RunTraces(itPtr, NS_TCL_TRACE_IDLE);
-    PushInterp(itPtr);
 }
 
 
