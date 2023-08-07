@@ -261,7 +261,7 @@ NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, const char *url)
     } else {
         Url2File *u2fPtr;
 
-        Ns_Log(Debug, "url2file: url '%s' use NsUrlSpecificGet to determine file name", url);
+        Ns_Log(Debug, "url2file: url '%s' use NsUrlSpecificGet to determine filename", url);
 
         Ns_MutexLock(&ulock);
         u2fPtr = NsUrlSpecificGet(servPtr, "x", url, uid, 0u, NS_URLSPACE_DEFAULT, NULL, NULL);
