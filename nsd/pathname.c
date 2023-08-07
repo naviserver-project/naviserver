@@ -1040,8 +1040,12 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
             path = dest->string;
         } else {
             /*
-             * Call the registered proc (typically, a Tcl call).
+             * Call the registered proc which is typically, a Tcl
+             * call. Therefore, make sure, the connection has already an
+             * interpreter associated.
              */
+            Ns_GetConnInterp(conn);
+
             path = (servPtr->vhost.serverRootProc)(dest, rawHost, servPtr->vhost.serverRootArg);
             if (conn != NULL && path != NULL) {
                 Ns_Log(Debug, "cache value <%s>", path);

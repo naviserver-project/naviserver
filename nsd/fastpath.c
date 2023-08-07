@@ -326,16 +326,6 @@ Ns_FastPathProc(const void *UNUSED(arg), Ns_Conn *conn)
     servPtr = connPtr->poolPtr->servPtr;
     url = conn->request.url;
 
-    /*
-     * When one of the callbacks is defined, we need the interpreter
-     * for this connection quite early during the request.
-     */
-    if (servPtr->vhost.serverRootProc != NULL
-        || servPtr->vhost.connLocationProc != NULL
-        ) {
-        (void)Ns_GetConnInterp(conn);
-    }
-
     Ns_DStringInit(&ds);
 
     if ((NsUrlToFile(&ds, servPtr, url) != NS_OK)
