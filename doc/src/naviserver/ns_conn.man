@@ -206,7 +206,7 @@ on the "HeaderCase" configuration
 parameter. By default, HeaderCase is "Preserve",
 which means case is preserved.
 
-[call [cmd  "ns_conn host"]]
+[call [cmd  "ns_conn host"] [opt [arg default]]]
 
 Returns the host part of the URL in the HTTP request line. This is
 only set, when the NaviServer is used as a proxy server.
@@ -304,11 +304,10 @@ Returns the current connection pool from the currently connected server.
 
 [call [cmd  "ns_conn port"]]
 
-When NaviServer is used as a proxy server, it returns the port
-specified explicitly in the URL of the HTTP request. In all other
-cases (no explicit ":port" part in the URL, no proxy server
-request), the returned port number is 0.
-
+Return the port as specified in the host header field or the default
+value for this protocol.  When NaviServer is used as a proxy server,
+it returns the port specified explicitly in the URL of the HTTP
+request or 0 (backwards portability).
 
 [call [cmd  "ns_conn protocol"]]
 
@@ -366,6 +365,11 @@ ns_time) format.
 
 Query or set the HTTP status code for the current connection.
 
+
+[call [cmd  "ns_conn target"]]
+
+Returns the URI target from the start line of the request. The result
+might contain query variables.
 
 [call [cmd  "ns_conn timeout"]]
 

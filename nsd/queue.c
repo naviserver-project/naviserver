@@ -2529,12 +2529,14 @@ ConnRun(Conn *connPtr)
          */
         Ns_GetTime(&connPtr->filterDoneTime);
         status = (*sockPtr->drvPtr->requestProc)(sockPtr->drvPtr->arg, conn);
-    } else if ((connPtr->request.protocol != NULL) && (connPtr->request.host != NULL)) {
+
+    } else if (connPtr->request.isProxyRequest) {
         /*
          * Run proxy request
          */
         Ns_GetTime(&connPtr->filterDoneTime);
         status = NsConnRunProxyRequest((Ns_Conn *) connPtr);
+
     } else {
         /*
          * Run classical HTTP requests

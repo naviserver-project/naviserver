@@ -233,8 +233,8 @@ static Ns_ReturnCode DriverInit(const char *server, const char *moduleName, cons
     NS_GNUC_NONNULL(7);
 static bool DriverModuleInitialized(const char *module)
     NS_GNUC_NONNULL(1);
-static const ServerMap *DriverLookupHost(Tcl_DString *hostDs, Driver *drvPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static const ServerMap *DriverLookupHost(Tcl_DString *hostDs, Ns_Request *requestPtr, Driver *drvPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
 static size_t PortsParse(Ns_DList *dlPtr, const char *listString, const char *path)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
@@ -715,6 +715,7 @@ ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
     NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(drvPtr != NULL);
 
+    Ns_Log(Debug, "ServerMapEntryAdd host '%s' server '%s'", host, servPtr->server);
     hPtr = Tcl_CreateHashEntry(&drvPtr->hosts, host, &isNew);
     if (isNew != 0) {
         (void) Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, (char *)0L);
@@ -850,6 +851,8 @@ void NsDriverMapVirtualServers(void)
         assert(defserver != NULL);
 
         drvPtr->defMapPtr = NULL;
+        Ns_Log(Debug, "driver <%s> defserver '%s' server with set %p size %ld",
+               moduleName, defserver, (void*)lset, Ns_SetSize(lset));
 
         Ns_DStringInit(dsPtr);
         for (j = 0u; j < Ns_SetSize(lset); ++j) {
@@ -861,6 +864,8 @@ void NsDriverMapVirtualServers(void)
             /*
              * Perform an explicit lookup of the server.
              */
+            Ns_Log(Debug, "driver <%s> server '%s'", moduleName, server);
+
             servPtr = NsGetServer(server);
             if (servPtr == NULL) {
                 Ns_Log(Error, "%s: no such server: %s", moduleName, server);
@@ -4679,6 +4684,99 @@ SockParse(Sock *sockPtr)
     return result;
 }
 
+
+static bool
+NormalizeHostEntry(Tcl_DString *hostDs, Driver *drvPtr, Ns_Request *requestPtr)
+{
+    char *hostStart, *portStart, *end;
+    bool  success = NS_TRUE;
+
+    NS_NONNULL_ASSERT(hostDs != NULL);
+    NS_NONNULL_ASSERT(drvPtr != NULL);
+
+    Ns_Log(Debug, "NormalizeHostEntry <%s> reqPtr %p", hostDs->string, (void*)requestPtr);
+
+    if (!Ns_HttpParseHost2(hostDs->string, NS_FALSE, &hostStart, &portStart, &end)) {
+        Ns_Log(Warning, "Cannot parse provided host header field <%s>", hostDs->string);
+        success = NS_FALSE;
+    } else {
+        bool   ipLiteral, stripDot = NS_FALSE;
+        size_t hostlen;
+
+        /*
+         * Remove trailing dot of host header field, since RFC 2976 allows fully
+         * qualified "absolute" DNS names in host fields (see e.g. §3.2.2).
+         *
+         */
+        hostlen = strlen(hostStart);
+
+        if (hostStart[hostlen-1] == '.') {
+            hostStart[hostlen-1] = 0;
+            stripDot = NS_TRUE;
+        }
+
+        if (requestPtr != NULL && !requestPtr->isProxyRequest) {
+
+            assert(requestPtr->host == NULL);
+            assert(requestPtr->port == 0);
+
+            requestPtr->host = ns_strdup(hostStart);
+            requestPtr->port = (portStart != NULL
+                                ? (unsigned short)strtol(portStart, NULL, 10)
+                                : drvPtr->port);
+        }
+
+        /*
+         * In IP-literal notation, we have to care about surrounding square
+         * braces.
+         */
+        ipLiteral = (hostStart != hostDs->string);
+
+        if (portStart == NULL) {
+            /*
+             * No port provided
+             */
+            if (ipLiteral) {
+                /*
+                 * Undo NUL chars from Ns_HttpParseHost2, do not check for last
+                 * character.
+                 */
+                hostDs->string[hostDs->length - 1] = ']';
+            } else {
+                /*
+                 * Dropped dot at end of hostname.
+                 */
+                if (stripDot) {
+                    Tcl_DStringSetLength(hostDs, hostDs->length - 1);
+                }
+            }
+            Ns_DStringPrintf(hostDs, ":%hu", drvPtr->port);
+        } else {
+            /*
+             * Port provided.
+             */
+            *(portStart-1) = ':';
+            if (ipLiteral) {
+                /*
+                 * Undo NUL chars from Ns_HttpParseHost2, do not check for last
+                 * character.
+                 */
+                *(portStart -2) = ']';
+            } else {
+                if (stripDot) {
+                    /*
+                     * Dropped dot at end of hostname.
+                     */
+                    memmove(portStart-2, portStart-1, hostDs->length + 1 - (portStart - hostDs->string));
+                    Tcl_DStringSetLength(hostDs, hostDs->length - 1);
+                }
+            }
+        }
+    }
+
+    return success;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -4696,79 +4794,27 @@ SockParse(Sock *sockPtr)
  *----------------------------------------------------------------------
  */
 static const ServerMap *
-DriverLookupHost(Tcl_DString *hostDs, Driver *drvPtr)
+DriverLookupHost(Tcl_DString *hostDs, Ns_Request *requestPtr, Driver *drvPtr)
 {
     const ServerMap     *result = NULL;
     const Tcl_HashEntry *hPtr;
-    char                *hostStart, *portStart, *end;
-    bool                ipLiteral;
 
     NS_NONNULL_ASSERT(hostDs != NULL);
     NS_NONNULL_ASSERT(drvPtr != NULL);
 
     Ns_Log(Debug, "driver lookup parse <%s>", hostDs->string);
 
-    if (!Ns_HttpParseHost2(hostDs->string, NS_FALSE, &hostStart, &portStart, &end)) {
+    if (!NormalizeHostEntry(hostDs, drvPtr, requestPtr)) {
         Ns_Log(Warning, "Cannot parse provided host header field <%s>", hostDs->string);
         return NULL;
     }
-    /*
-     * In IP-literal notation, we have to care about surrounding square
-     * braces.
-     */
-    ipLiteral = (hostStart != hostDs->string);
 
     /*
-     * Remove trailing dot of host header field, since RFC 2976 allows fully
-     * qualified "absolute" DNS names in host fields (see e.g. §3.2.2).
-     *
-     */
-    if (portStart == NULL) {
-        /*
-         * No port provided
-         */
-        if (ipLiteral) {
-            /*
-             * Undo NUL chars from Ns_HttpParseHost2, do not check for last
-             * character.
-             */
-             hostDs->string[hostDs->length - 1] = ']';
-        } else {
-            /*
-             * Drop last character if it is a dot.
-             */
-            if (hostDs->string[hostDs->length - 1] == '.') {
-                Tcl_DStringSetLength(hostDs, hostDs->length - 1);
-            }
-        }
-        Ns_DStringPrintf(hostDs, ":%hu", drvPtr->port);
-    } else {
-        /*
-         * Port provided.
-         */
-        *(portStart-1) = ':';
-        if (ipLiteral) {
-            /*
-             * Undo NUL chars from Ns_HttpParseHost2, do not check for last
-             * character.
-             */
-            *(portStart -2) = ']';
-        } else {
-            if (*(portStart -2) == '.') {
-                /*
-                 * Drop last character if it is a dot.
-                 */
-                memmove(portStart-2, portStart-1, hostDs->length + 1 - (portStart - hostDs->string));
-                Tcl_DStringSetLength(hostDs, hostDs->length - 1);
-            }
-        }
-    }
-
-    /*
-     * Convert provided host header field to lowercase before hash lookup.
+     * Convert the normalized host header field to lowercase before hash
+     * lookup.
      */
     Ns_StrToLower(hostDs->string);
-    Ns_Log(Debug, "lookup string <%s>", hostDs->string);
+    Ns_Log(Debug, "host table lookup <%s>", hostDs->string);
 
     hPtr = Tcl_FindHashEntry(&drvPtr->hosts, hostDs->string);
     Ns_Log(Debug, "SockSetServer driver '%s' host '%s' => %p",
@@ -4786,7 +4832,7 @@ DriverLookupHost(Tcl_DString *hostDs, Driver *drvPtr)
          * Host header field content is not found in the mapping table.
          */
         Ns_Log(Debug,
-               "cannot locate host header content '%s' in virtual hosts "
+               "cannot lookup host header content '%s' in virtual hosts "
                "table of driver '%s', fall back to default "
                "(default mapping or driver data)",
                hostDs->string, drvPtr->moduleName);
@@ -4833,7 +4879,7 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, const Ns_Driver
     NS_NONNULL_ASSERT(hostDs != NULL);
     NS_NONNULL_ASSERT(drvPtr != NULL);
 
-    mapPtr = DriverLookupHost(hostDs, driver);
+    mapPtr = DriverLookupHost(hostDs, NULL, driver);
 
     if (mapPtr == NULL && hostName != NULL) {
         const char *vhostcertificates, *path = driver->path;
@@ -4954,7 +5000,7 @@ SockSetServer(Sock *sockPtr)
     sockPtr->location = NULL;
 
     host = Ns_SetIGet(reqPtr->headers, "Host");
-    Ns_Log(DriverDebug, "SockSetServer host '%s' request line '%s' servPtr %p",
+    Ns_Log(DriverDebug, "SockSetServer: host '%s' request line '%s' servPtr %p",
            host, reqPtr->request.line, (void*)sockPtr->servPtr);
 
     if (unlikely((host == NULL) && (reqPtr->request.version >= 1.1))) {
@@ -4971,7 +5017,7 @@ SockSetServer(Sock *sockPtr)
 
         Tcl_DStringInit(&hostDs);
         Tcl_DStringAppend(&hostDs, host, TCL_INDEX_NONE);
-        mapPtr = DriverLookupHost(&hostDs, drvPtr);
+        mapPtr = DriverLookupHost(&hostDs, &sockPtr->reqPtr->request, drvPtr);
         Tcl_DStringFree(&hostDs);
     }
 
@@ -4981,6 +5027,7 @@ SockSetServer(Sock *sockPtr)
          * which has to be defined in this case.
          */
         mapPtr = drvPtr->defMapPtr;
+        Ns_Log(Debug, "SockSetServer: get default map entry %p", (void*)mapPtr);
     }
 
     if (mapPtr != NULL) {
@@ -4991,8 +5038,7 @@ SockSetServer(Sock *sockPtr)
             sockPtr->servPtr  = mapPtr->servPtr;
         }
         sockPtr->location = mapPtr->location;
-        Ns_Log(DriverDebug, "SockSetServer request line '%s' get location from mapping '%s'",
-               reqPtr->request.line, sockPtr->location);
+        Ns_Log(Debug, "SockSetServer: get location from mapping '%s'", sockPtr->location);
     } else {
         /*
          * There is no configured mapping.
@@ -5006,11 +5052,18 @@ SockSetServer(Sock *sockPtr)
          * Could not lookup the virtual host, get the default location from
          * the driver or from local side of the socket connection.
          */
+        Ns_Log(Debug, "SockSetServer: there is no predefined mapping for server '%s'", host);
+
         if (drvPtr->location != NULL) {
             sockPtr->location = drvPtr->location;
+            Ns_Log(Debug, "SockSetServer: there is no virtual host mapping for host '%s',"
+                   "fall back to configured location '%s'",
+                   host, drvPtr->location);
         } else {
             static NS_THREAD_LOCAL Tcl_DString locationDs;
             static NS_THREAD_LOCAL bool initialized;
+            const char *hostName = NULL;
+            unsigned short hostPort = 0;
 
             if (!initialized) {
                 Tcl_DStringInit(&locationDs);
@@ -5018,16 +5071,35 @@ SockSetServer(Sock *sockPtr)
             }
             Tcl_DStringSetLength(&locationDs, 0);
 
+            if (reqPtr != NULL) {
+                hostName = reqPtr->request.host;
+                hostPort = reqPtr->request.port;
+            }
             Ns_HttpLocationString(&locationDs,
                                   drvPtr->protocol,
-                                  Ns_SockGetAddr((Ns_Sock *)sockPtr),
-                                  Ns_SockGetPort((Ns_Sock *)sockPtr),
+                                  hostName != NULL ? hostName : Ns_SockGetAddr((Ns_Sock *)sockPtr),
+                                  hostPort != 0 ? hostPort : Ns_SockGetPort((Ns_Sock *)sockPtr),
                                   drvPtr->defport);
             sockPtr->location = locationDs.string;
+            if (hostName != NULL && sockPtr->servPtr != NULL) {
+                Ns_Log(Notice, "SockSetServer: serving request to server '%s'"
+                       " with untrusted location '%s'",
+                       sockPtr->servPtr->server, sockPtr->location);
+                if (drvPtr->server != NULL) {
+                    /*
+                     * per server-driver
+                     */
+                    Ns_Log(Notice, "... consider loading driver %s globally in section"
+                           "'ns/modules' and add 'ns_param %s %s:%hu' to section 'ns/module/%s/servers'",
+                           drvPtr->moduleName, drvPtr->server, hostName, hostPort, drvPtr->moduleName);
+                } else {
+                    Ns_Log(Notice, "... consider adding 'ns_param %s %s:%hu' to section 'ns/module/%s/servers'",
+                           sockPtr->servPtr->server, hostName, hostPort, drvPtr->moduleName);
+                }
+            }
         }
 
-        Ns_Log(DriverDebug, "SockSetServer request line '%s' get location from driver '%s'",
-               reqPtr->request.line, sockPtr->location);
+        Ns_Log(DriverDebug, "SockSetServer: get location from driver '%s'", sockPtr->location);
     }
 
     /*

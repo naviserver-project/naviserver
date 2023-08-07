@@ -1544,7 +1544,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
         "query",
         "ratelimit", "request",
         "server", "sock", "start", "status",
-        "timeout",
+        "target", "timeout",
         "url", "urlc", "urlencoding", "urlv",
         "version",
         "zipaccepted",
@@ -1576,7 +1576,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
         /* R */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
         /* S */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONNECTED, NS_CONN_REQUIRE_CONFIGURED,
         /* line continued */ NS_CONN_REQUIRE_CONFIGURED,
-        /* T */ NS_CONN_REQUIRE_CONFIGURED,
+        /* T */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
         /* U */ NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED, NS_CONN_REQUIRE_CONFIGURED,
         /* line continued */ NS_CONN_REQUIRE_CONFIGURED,
         /* V */ NS_CONN_REQUIRE_CONFIGURED,
@@ -1601,7 +1601,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
         CQueryIdx,
         CRatelimitIdx, CRequestIdx,
         CServerIdx, CSockIdx, CStartIdx, CStatusIdx,
-        CTimeoutIdx,
+        CTargetIdx,CTimeoutIdx,
         CUrlIdx, CUrlcIdx, CUrlEncodingIdx, CUrlvIdx,
         CVersionIdx,
         CZipacceptedIdx
@@ -2202,9 +2202,22 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
                                                   : connPtr->drvPtr->protocol, TCL_INDEX_NONE));
         break;
 
-    case CHostIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(request->host, TCL_INDEX_NONE));
+    case CHostIdx: {
+        char       *defaultValue = (char *)NS_EMPTY_STRING;
+        Ns_ObjvSpec largs[] = {
+            {"?default", Ns_ObjvString,  &defaultValue, NULL},
+            {NULL, NULL, NULL, NULL}
+        };
+        if (Ns_ParseObjv(NULL, largs, interp, 2, objc, objv) != NS_OK) {
+            result = TCL_ERROR;
+        } else {
+            Tcl_SetObjResult(interp,
+                             Tcl_NewStringObj(request->host == NULL
+                                              ? defaultValue
+                                              : request->host, TCL_INDEX_NONE));
+        }
         break;
+    }
 
     case CPortIdx:
         Tcl_SetObjResult(interp, Tcl_NewIntObj((int)request->port));
@@ -2281,6 +2294,34 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
         }
         break;
 
+    case CTargetIdx: {
+        Tcl_DString lineDs;
+        char       *p, *targetPtr;
+
+        Tcl_DStringInit(&lineDs);
+        Tcl_DStringAppend(&lineDs, request->line, TCL_INDEX_NONE);
+
+        /*
+         * Skip non-spaces + spaces from the left (HTTP method).
+         */
+        targetPtr = strchr(lineDs.string, INTCHAR(' '));
+        if (targetPtr != NULL) {
+            ++ targetPtr;
+            /*
+             * Skip non-spaces + space from the right (HTTP version)
+             */
+            p = strrchr(targetPtr, INTCHAR(' '));
+            if (p != NULL) {
+                *p = '\0';
+            }
+        } else {
+            targetPtr = lineDs.string;
+        }
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(targetPtr, TCL_INDEX_NONE));
+
+        Tcl_DStringFree(&lineDs);
+        break;
+    }
     case CTimeoutIdx:
         Tcl_SetObjResult(interp, Ns_TclNewTimeObj(Ns_ConnTimeout(conn)));
         break;
