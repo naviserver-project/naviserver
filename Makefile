@@ -28,6 +28,8 @@
 #
 #
 #
+MAN_CSS=man.css
+HEADER_INC=header.inc
 
 NSBUILD=1
 include include/Makefile.global
@@ -139,7 +141,7 @@ install-doc:
 		$(MKDIR) $(DESTDIR)$(NAVISERVER)/pages/doc/naviserver ; \
 		$(CP) doc/html/* $(DESTDIR)$(NAVISERVER)/pages/doc ; \
 		$(CP) contrib/banners/*.png $(DESTDIR)$(NAVISERVER)/pages/doc ; \
-		$(CP) doc/src/man.css $(DESTDIR)$(NAVISERVER)/pages/doc/naviserver/ ; \
+		$(CP) doc/src/$(MAN_CSS) $(DESTDIR)$(NAVISERVER)/pages/doc/naviserver/ ; \
 		echo "\nThe documentation is installed under: $(DESTDIR)$(NAVISERVER)/pages/doc" ; \
 	else \
 		echo "\nNo documentation is installed locally; either generate the documentation with" ; \
@@ -201,8 +203,12 @@ build-doc:
 	    else \
                $(CP) ../../version_include.man .; \
             fi; \
-	    $(DTPLITE) -merge -style ../src/man.css \
-                       -header ../src/header.inc \
+	    echo $(DTPLITE) -merge -style ../src/$(MAN_CSS) \
+                       -header ../src/$(HEADER_INC) \
+                       -footer ../src/footer.inc \
+                       -o ../html/ html $$srcdir; \
+	    $(DTPLITE) -merge -style ../src/$(MAN_CSS) \
+                       -header ../src/$(HEADER_INC) \
                        -footer ../src/footer.inc \
                        -o ../html/ html $$srcdir; \
 	    $(DTPLITE) -merge -o ../man/ nroff $$srcdir; \
@@ -327,7 +333,7 @@ dist: config.guess config.sub clean
 	find naviserver-$(NS_PATCH_LEVEL) -name '*.c-*' -exec rm \{} \;
 	find naviserver-$(NS_PATCH_LEVEL) -name '*.h-*' -exec rm \{} \;
 	find naviserver-$(NS_PATCH_LEVEL) -name '*~' -exec rm \{} \;
-	tar czf naviserver-$(NS_PATCH_LEVEL).tar.gz --disable-copyfile --exclude="._*" naviserver-$(NS_PATCH_LEVEL)
+	tar czf naviserver-$(NS_PATCH_LEVEL).tar.gz --no-xattrs --disable-copyfile --exclude="._*" naviserver-$(NS_PATCH_LEVEL)
 	$(RM) naviserver-$(NS_PATCH_LEVEL)
 
 
