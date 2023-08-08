@@ -710,7 +710,7 @@ OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
  *
  * OCSP_computeResponse --
  *
- *      Get OCSP_RESPONSE either from a cache file or from the cerificate
+ *      Get OCSP_RESPONSE either from a cache file or from the certificate
  *      issuing server via the DER encoded OCSP request. In case the disk
  *      lookup fails, but the request to the AIA server succeeds, the result
  *      is stored for caching in the filesystem.
@@ -834,7 +834,7 @@ OCSP_computeResponse(SSL *ssl, const SSLCertStatusArg *srctx, OCSP_RESPONSE **re
  *
  * OCSP_FromAIA --
  *
- *      Get OCSP_RESPONSE from the cerificate issuing server (Authority
+ *      Get OCSP_RESPONSE from the certificate issuing server (Authority
  *      Information Access) via the DER encoded OCSP request.
  *
  * Results:
