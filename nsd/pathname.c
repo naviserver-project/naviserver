@@ -1033,7 +1033,7 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
 {
     char           *safehost;
     const char     *path = NULL;
-    const Ns_Conn  *conn;
+    Ns_Conn        *conn;
     const Ns_Set   *headers;
     Ns_DString      ds;
 
@@ -1046,6 +1046,7 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
         * call. Therefore, make sure, the connection has already an
         * interpreter associated.
         */
+        conn = Ns_GetConn();
         Ns_GetConnInterp(conn);
 
         path = (servPtr->vhost.serverRootProc)(dest, rawHost, servPtr->vhost.serverRootArg);
