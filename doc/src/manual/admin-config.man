@@ -2,12 +2,12 @@
 [manpage_begin {admin-config} n [vset version]]
 [moddesc {NaviServer Manual}]
 
-[titledesc {NaviServer Configuration Reference}]
+[titledesc {NaviServer Configuration Guide}]
 
 [description]
 
 When NaviServer is started, typically a configuration file is provided
-providing certain settings for the server. The configuration file
+containing certain settings for the server. The configuration file
 includes network configuration options, log file information, loading
 of modules and database drivers and the like. Actually, the
 configuration file can contain the definition of multiple servers,
@@ -20,13 +20,12 @@ containing global configuration of the instance and sections for each
 server and module. The configuration file is actually a Tcl script,
 such that at user can set variables, defined procs to avoid repeated
 patterns and the like. Tcl variables are typically used to certain
-parameters at the begin of the file, which might be often
+parameters at the beginning of the file, which might be often
 changed. This eases the maintenance.
 
 [para] The following sample configuration files might be used as a
 starting point for site specific configurations:
 
-Sample documented configuration files:
 [list_begin itemized]
 [item] [uri \
 	https://bitbucket.org/naviserver/naviserver/raw/default/simple-config.tcl \
@@ -39,16 +38,15 @@ Sample documented configuration files:
 	openacs-config.tcl]
 [list_end]
 
-
-Several configuration hints and details can be found also on other
-spaces in the manual, such as e.g. in [term admin-tuning] or for
+Several configuration hints and details can be found also in other
+places in the manual, such as e.g. in [term admin-tuning] or for
 module specific parameters (which might not be necessary in every
-installation. Furthermore, the configuration mechanism of NaviServer
-is extensible, therefore, modules and applications can as well
-use the configuration file with its abstraction to define application
-specific parameters. So, a listing of the parameters can never
-complete. In this page, we primarily define introductory examples
-for typical usage scenarios.
+installation). Furthermore, the configuration mechanism of NaviServer
+is extensible, therefore, modules and applications can as well use the
+configuration file with its abstraction to define application specific
+parameters. So, a listing of the parameters can never complete. In
+this page, we primarily define introductory examples for typical usage
+scenarios.
 
 [para]
 The main sections of a configuration file are:
@@ -108,10 +106,10 @@ When reverse proxy mode is turned on, the server assumes it is running
 behind a reverse proxy server. In this case, commands referring to the
 client IP address will return on default the value as provided by the
 reverse proxy server (i.e. provided via the x-forwarded-for header
-field). This will effect the results of [cmd  "ns_conn peeraddr"]
-and various introspection commands.
+field). This will affect the results of [cmd "ns_conn peeraddr"] and
+various introspection commands.
 
-[para] Below we address some general design consideration when
+[para] Below, we address some general design considerations when
 tailoring your one configuration files.  Check for simple or real-live
 setups of larger installations by the provided sample configuration
 files.
@@ -133,8 +131,8 @@ extra modules, such as e.g. [term nsudp], [term nssmtpd]
 [subsection {Single Server, single address, single port}]
 
 In the simplest case, one defines in a configuration file a single
-server [emph s1] with single network driver [emph nssock]. In the
-example below the server is listening on port 8000.
+server [emph s1] with a single network driver [emph nssock]. In the
+example below, the server is listening on port 8000.
 
 [example_begin]
  ns_section ns/servers {
@@ -151,7 +149,7 @@ example below the server is listening on port 8000.
  }
 [example_end]
 
-In this example, the module is loaded for the server "s1". We show in
+In this example, the module is loaded for the server "s1". We show, in
 later examples, how to load a network driver globally, such that one
 network driver can be used for multiple servers.
 
@@ -160,7 +158,7 @@ network driver can be used for multiple servers.
 It is as well possible to define multiple servers in the same
 configuration file (here [emph s1] and [emph s2]). These servers
 use the same driver [emph nsock] but with different ports.
-In this case it is sufficient to load the driver once.
+In this case, it is sufficient to load the driver once.
 
 [example_begin]
  ns_section ns/servers {
@@ -232,9 +230,9 @@ a parameter value.
 [subsection {Single server listening on multiple ports}]
 
 Similarly, we can define a single server, listening on multiple
-ports. In this case, one can load multiple instances of the driver
+ports. In this case, one can load multiple instances of the driver,
 where each of the driver listens on a different port. In the following
-example we name the different instances of the network driver
+example, we name the different instances of the network driver
 [emph nssock1] and [emph nssock2].
 
 [example_begin]
@@ -265,13 +263,13 @@ different combinations of addresses and ports.
 
 [subsection {Single server registering on multiple drivers}]
 
-In the last two examples a single server is listening on different
-ports and or IP addresses but the configuration of the driver was
-otherwise identical. In case, different driver parameters are needed
+In the last two examples, a single server is listening on different
+ports and or IP addresses, but the configuration of the driver was
+otherwise identical. In case, different driver parameters are needed,
 it is possible to load the same driver multiple times for the same
 server with different driver names.
 
-In the following example we name the different instances of the
+In the following example, we name the different instances of the
 network driver [emph nssock1] and [emph nssock2].
 
 [example_begin]
@@ -455,7 +453,7 @@ certificates.
 
 [para] However, there might be cases, where a server listening on a
 single address has to provide different certificates for
-e.g. "foo.com" and "bar.com". For virtual hosting this is a
+e.g. "foo.com" and "bar.com". For virtual hosting, this is a
 chicken-egg problem: the right certificate is needed at the time the
 connection is opened, but  the virtual server can be only detected
 while reading the request header.
