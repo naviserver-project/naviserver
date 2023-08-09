@@ -1,4 +1,65 @@
 =======================================
+NaviServer 4.99.27, released 2023-08-09
+=======================================
+
+ 46 files changed, 739 insertions(+), 172 deletions(-)
+
+New Features:
+-------------
+ - None
+
+Bug Fixes:
+----------
+
+ - Bug fix: fixed potential crash when fallbackCharset is not defined
+   in the configuration file (using outdated configuration)
+
+ - Bug fix for fastpath in connection with "ns_serverrootproc"
+
+   Earlier versions of NaviServer initialized for fastpath the
+   interpreter with the connection conditionally, and rather late.
+   When "ns_serverrootproc" is configured, the interpreter with its
+   linkage to the connection is needed very early in the request.  Now
+   it is ensured, that the interpreted is registered for the
+   connection when the callback is issued.
+
+   NaviServer 5 will have more changes in this respect.
+
+   Many thanks to Georg Lehner for reporting this bug and testing.
+
+ - Fixed various spelling errors in source code and documentation
+
+ - Documentation:
+    * fixed documentation bugs
+    * modernized examples
+
+ - Ease debugging, how values for "ns_conn location" are determined
+
+Configuration Files:
+--------------------
+
+- Added sample section for charset mapping to sample-config.tcl
+
+Modules:
+--------
+The following list contains just bug fixes, new features will
+be documented with NaviServer 5.0.
+
+ - nsdbpg:
+    * Fixed potential crash in Tcl, when Database contains UTF-8
+      characters invalid to Tcl 8.6. Crash was observed in
+      "string tolower $var".
+    * Fixed potential crash, when bind variables are passed via
+      explicit "-bind" option, but variable binding was missing
+
+ - nsoracle:
+    * Reduced verbosity: For debug messages of the driver
+      implementation, use again "Debug" severity to avoid too much
+      verbosity, when looking for slow queries ("Debug(sql)" severity
+      of nsdb).
+
+
+=======================================
 NaviServer 4.99.26, released 2023-06-16
 =======================================
 
