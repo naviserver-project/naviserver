@@ -111,6 +111,7 @@ dl dt {
    margin:   0 -2em 1em -2em;
    padding: .1em 1em .1em 1em;
    display: flex;
+   font-size: smaller;
 }
 #man-header .right {
     margin-left: auto;
@@ -126,7 +127,6 @@ dl dt {
 #man-header a {
    color: #eee;
    text-decoration: none;
-   font-size: 16px;
 }
 
 #man-header img {
