@@ -387,7 +387,7 @@ proc ns_sendmail args {
 
         #
         # Tell remote server about recipients. Count all
-        # aknowledged ones
+        # acknowledged ones
         #
 
         set countok 0
@@ -624,7 +624,7 @@ proc _ns_smtp_recv {mode sock check {error 1}} {
                 return -code error "$mode: remote peer closed connection"
             }
         } else {
-            #puts stderr "#### _ns_smtp_recv reveived <$line>"
+            #puts stderr "#### _ns_smtp_recv received <$line>"
             #
             # Examine line of code returned by the server.
             # Normally the line has this form:
