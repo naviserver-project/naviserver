@@ -730,7 +730,7 @@ is to register the [const /.well-known] target via
 	SO_REUSEPORT TCP TCP_FASTOPEN \
 	"connection thread pools" \
 	nsssl driver prebind pagedir reverseproxy \
-        OCSP SNI initcmds letsencrypt]
+        OCSP SNI initcmds letsencrypt redirect]
 [see_also tcl-libraries tcl-overview]
 [manpage_end]
 
