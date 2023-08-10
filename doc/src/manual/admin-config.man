@@ -424,7 +424,7 @@ etc.
 
 [para] In order to define virtual servers with HTTPS, one can
 essentially use the definition of the previous section, and load as
-well the nsssl driver globally, and configure it accordingly.
+well the [term nsssl] driver globally, and configure it accordingly.
 
 [example_begin]
  #
@@ -531,10 +531,10 @@ definition assumes a directory structure like the following, where
  │   └── index.html
  ├── foo.com
  │   └── index.html
-...
+ ...
 [example_end]
 
-When the content of the host header field (not including the port) is
+When the content of the host header field (including the port) is
 found in the filesystem under [const /var/www], it is used as the
 pageroot for this request.  It is certainly possible, the extend the
 example and include the port as well in the directory name.
@@ -561,28 +561,34 @@ example and include the port as well in the directory name.
    ns_param serverdir /var/www
  }
  
- #
- # Register for this server a callback for determining the server root
- # depending on the contents of the "host" header field.
- #
  ns_section ns/server/s1/tcl {
    ns_param initcmds {
-     [cmd ns_serverrootproc] {
+     #
+     # Register callback for accessing the root directory:
+     #
+     ns_serverrootproc {
        set rootDir [lb]ns_server serverdir[rb]
        set dir default
        if {[lb]ns_conn isconnected[rb]} {
-         set rawHost [lb]ns_set iget [lb]ns_conn headers[rb] host[rb]
-         if {$rawHost ne ""} {
-           set hostDict [lb]ns_parsehostport $rawHost[rb]
-           if {[lb]::file isdirectory $rootDir/[lb]dict get $hostDict host[rb][rb]} {
-             set dir [lb]dict get $hostDict host[rb]
+         set host [lb]ns_conn host ""[rb]
+         if {$host ne ""} {
+           #
+           # A "host" header field was provided in the request,
+           # build the name of the root folder based on host and port.
+           #
+           set fullName $host:[lb]ns_conn port[rb]
+           if {[lb]::file isdirectory $rootDir/$fullName[rb]} {
+             #
+             # The folder exists in the filesystem, accept it.
+             #
+             set dir $fullName
            } else {
-             ns_log debug "... $rootDir/[lb]dict get $hostDict host[rb] does not exist, use default"
+             ns_log debug "... $rootDir/$fullName does not exist, fallback to $dir"
            }
          }
        }
        set rootDir $rootDir/$dir
-       ns_log debug "... final rootdir '$rootDir'"
+       ns_log debug "... setting rootdir '$rootDir'"
        return $rootDir
      }
    }
@@ -590,27 +596,141 @@ example and include the port as well in the directory name.
 [example_end]
 
 [para] This approach has the advantage that at runtime of NaviServer,
-new directories might be added or removed to server additional
+new directories might be added or removed to serve additional
 domains.
 
 [subsection {Single virtual server with mass virtual hosting using
 HTTPS and SNI}]
 
-While the previous section works for plain HTTP, the usage of HTTPS
-requires SNI and multiple certificates. This feature will be available
-in NaviServer 5.
+While the previous section works for mass virtual hosting with plain
+HTTP, the usage of HTTPS requires certificates, where multi-domain SAN
+certificates can't be used, since mass hosting is supposed to work
+without server restart. One cannot anticipate the domain names, which
+are added.
+
+[para] Starting with NaviServer 5, it is possible to specify a
+directory containing extra certificates for virtual hosts. When
+NaviServer receives a request with an SNI hostname, it will check at
+runtime for a certificate based on the SNI hostname, where ".pem" was
+added. This directory configured with the parameter
+[term vhostcertificates] of the [term nsssl] module.
+
+[example_begin]
+ set serverroot /var/www
+ set address 0.0.0.0
+ set httpsport 443
+ 
+ ns_section ns/server/s1/module/nsssl {
+   ns_param address            $address
+   ns_param port               $httpsport
+   ns_param certificate        $serverroot/default.pem
+   ns_param vhostcertificates  $serverroot
+ }
+[example_end]
+
+Note that in this setup only one a single server configuration
+is needed (in the example above, the server "s1"). Together with the
+definition of the [cmd ns_serverrootproc], will provide mass virtual
+hosting over HTTPS. Below is a minimal setup showing the directory
+structure for serving [const dotlrn.net] via this mechanism. Note he
+certificate ]const dotlrn.net.pem] at the top level directory.
+
+[example_begin]
+ /var/www/
+ ├── default
+ │   └── index.html
+ ├── dotlrn.net.pem
+ ├── dotlrn.net:443
+ │   ├── index.html
+ │   └── test
+ │       └── file
+ └── default.pem
+[example_end]
+
+[subsection {Redirecting from HTTP to HTTPS}]
+
+[para] It is a common requirement to redirect incoming traffic from
+HTTP to HTTPS. When a user has connected once via HTTPS, it is
+recommended to use HSTS ([uri \
+        https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security \
+        "HTTP Strict-Transport-Security"])
+to cause the browser to stay on the secure connection. This is
+recommended to avoid certain man-in-the-middle attacks.
+
+[para] One simple approach is to define a server configuration
+listening on the HTTP port, that redirects every request to HTTPS. In
+the following example, the server configuration is called
+"redirector", accepts requests for HTTP on port 80, and redirects all
+[const GET] requests to the same server to HTTPS (port 443).
+The same approach works as well for virtual hosts of any kind.
+
+[example_begin]
+ #
+ # Simple redirecting server
+ #
+ ns_section ns/servers {
+   ns_param    redirector      "Redirecting Server"
+ }
+ ns_section ns/server/redirector/modules {
+   ns_param    nssock          nssock
+ }
+ ns_section ns/server/redirector/module/nssock {
+   ns_param    address         0.0.0.0
+   ns_param    port            80
+ }
+
+ ns_section ns/server/redirector/tcl {
+   ns_param initcmds {
+     #
+     # Register an HTTP redirect for every GET request.
+     #
+     ns_register_proc GET /* {
+       set host [lb]ns_conn host localhost[rb]
+       ns_returnmoved https://$host:443[lb]ns_conn target[rb]
+     }
+   }
+ }
+[example_end]
+
+[para] For certain sites, it is desired that not all requests should
+be redirected to HTTPS, since e.g. letsencrypt requires requests over
+plain HTTP to the directory [const /.well-known]
+(see [uri https://datatracker.ietf.org/doc/html/rfc8615 "RFC 8615"]).
+The goal of the naming convention is to provide a common and
+consistent location for well-known services across servers.
+
+[para] In order to exclude this directory from the general redirection
+is to register the [const /.well-known] target via
+[cmd ns_register_fastpath]:
+
+[example_begin]
+ ns_section ns/server/redirector/tcl {
+   ns_param initcmds {
+     #
+     # Register an HTTP redirect for every GET request.
+     #
+     ns_register_proc GET /* {
+       set host [lb]ns_conn host localhost[rb]
+       ns_returnmoved https://$host:443[lb]ns_conn target[rb]
+     }
+     #
+     # Let requests for /.well-known get through. Remember to
+     # define page root, logging etc. for this server configuration.
+     #
+     ns_register_fastpath GET /.well-known
+   }
+ }
+[example_end]
+
 
 [para] More to come here...
-
-
-
 
 [keywords module nssock \
 	performance tuning configuration \
 	SO_REUSEPORT TCP TCP_FASTOPEN \
 	"connection thread pools" \
 	nsssl driver prebind pagedir reverseproxy \
-        OCSP SNI initcmds]
+        OCSP SNI initcmds letsencrypt]
 [see_also tcl-libraries tcl-overview]
 [manpage_end]
 

@@ -110,11 +110,16 @@ OCSP support requires OpenSSL 1.1.0 or newer.
 
 Optionally make OCSP requests more verbose in the log file.
 
+[def vhostcertificates]
+
+specify the directory for lookup of certificates for mass virtual hosting
+(see [uri ../../manual/files/admin-config.html#subsection10 admin-config]).
 
 [def extraheaders]
+
 can be used to specify additional header fields be sent on every
-request handled by this driver. The example above,
-HTTP Strict Transport Security (HSTS) is enabled.
+request handled by this driver. The example above, HTTP Strict
+Transport Security (HSTS) is enabled.
 
 [list_end]
 
@@ -170,6 +175,7 @@ For discussion and more examples see
 
 [see_also ns_log ns_write ns_http]
 [keywords module nsssl \
-	performance tuning configuration TCP_FASTOPEN HTTPS driver signal]
+	performance tuning configuration TCP_FASTOPEN HTTPS driver \
+        signal OCSP ]
 
 [manpage_end]
