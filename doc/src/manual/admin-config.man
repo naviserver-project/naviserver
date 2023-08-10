@@ -612,7 +612,7 @@ in NaviServer 5.
 	SO_REUSEPORT TCP TCP_FASTOPEN \
 	"connection thread pools" \
 	nsssl driver prebind pagedir reverseproxy \
-        OCSP SNI initcmds]
+        OCSP SNI initcmds letsencrypt redirect]
 [see_also tcl-libraries tcl-overview]
 [manpage_end]
 
