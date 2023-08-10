@@ -27,8 +27,8 @@
 [example_end]
 
 
-[see_also nsd]
-[keywords ns_browsertype {ns_conn headers}]
+[see_also nsd ns_conn]
+[keywords ns_browsertype]
 
 [manpage_end]
 
