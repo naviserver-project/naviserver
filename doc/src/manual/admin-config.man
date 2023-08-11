@@ -29,13 +29,13 @@ starting point for site specific configurations:
 Sample documented configuration files:
 [list_begin itemized]
 [item] [uri \
-	https://bitbucket.org/naviserver/naviserver/raw/default/simple-config.tcl \
+	https://bitbucket.org/naviserver/naviserver/raw/main/simple-config.tcl \
 	simple-config.tcl]
 [item] [uri \
-	https://bitbucket.org/naviserver/naviserver/raw/default/nsd-config.tcl \
+	https://bitbucket.org/naviserver/naviserver/raw/main/nsd-config.tcl \
 	nsd-config.tcl]
 [item] [uri \
-	https://bitbucket.org/naviserver/naviserver/raw/default/openacs-config.tcl \
+	https://bitbucket.org/naviserver/naviserver/raw/main/openacs-config.tcl \
 	openacs-config.tcl]
 [list_end]
 
