@@ -28,13 +28,13 @@ starting point for site specific configurations:
 
 [list_begin itemized]
 [item] [uri \
-	https://bitbucket.org/naviserver/naviserver/raw/default/simple-config.tcl \
+	https://bitbucket.org/naviserver/naviserver/raw/main/simple-config.tcl \
 	simple-config.tcl]
 [item] [uri \
-	https://bitbucket.org/naviserver/naviserver/raw/default/nsd-config.tcl \
+	https://bitbucket.org/naviserver/naviserver/raw/main/nsd-config.tcl \
 	nsd-config.tcl]
 [item] [uri \
-	https://bitbucket.org/naviserver/naviserver/raw/default/openacs-config.tcl \
+	https://bitbucket.org/naviserver/naviserver/raw/main/openacs-config.tcl \
 	openacs-config.tcl]
 [list_end]
 
@@ -513,8 +513,8 @@ for server "s1".
 The virtual servers defined in the last sections have the disadvantage
 that these require to know the server upfront, to include the server
 definition in the configuration file. Therefore, adding another
-virtual server requires a restart (which is quick, but still, will
-interrupt services). In case, the virtual hosts are very similar, it
+virtual server requires a restart which is quick, but still, will
+interrupt services. In case, the virtual hosts are very similar, it
 is possible to define a single virtual server hosting multiple
 domains, serving e.g. from different page directories.
 
@@ -534,10 +534,8 @@ definition assumes a directory structure like the following, where
  ...
 [example_end]
 
-When the content of the host header field (including the port) is
-found in the filesystem under [const /var/www], it is used as the
-pageroot for this request.  It is certainly possible, the extend the
-example and include the port as well in the directory name.
+When the content of the host header field is found in the filesystem
+under [const /var/www], it is used as the pageroot for this request.
 
 [example_begin]
  #
@@ -574,16 +572,15 @@ example and include the port as well in the directory name.
          if {$host ne ""} {
            #
            # A "host" header field was provided in the request,
-           # build the name of the root folder based on host and port.
+           # build the name of the root folder.
            #
-           set fullName $host:[lb]ns_conn port[rb]
-           if {[lb]::file isdirectory $rootDir/$fullName[rb]} {
+           if {[lb]::file isdirectory $rootDir/$host[rb]} {
              #
              # The folder exists in the filesystem, accept it.
              #
-             set dir $fullName
+             set dir $host
            } else {
-             ns_log debug "... $rootDir/$fullName does not exist, fallback to $dir"
+             ns_log debug "... $rootDir/$host does not exist, fallback to $dir"
            }
          }
        }
@@ -595,9 +592,8 @@ example and include the port as well in the directory name.
  }
 [example_end]
 
-[para] This approach has the advantage that at runtime of NaviServer,
-new directories might be added or removed to serve additional
-domains.
+[para] With this approach additional domains can be added at runtime
+of NaviServer by adding new directories for them.
 
 [subsection {Single virtual server with mass virtual hosting using
 HTTPS and SNI}]
@@ -609,11 +605,11 @@ without server restart. One cannot anticipate the domain names, which
 are added.
 
 [para] Starting with NaviServer 5, it is possible to specify a
-directory containing extra certificates for virtual hosts. When
-NaviServer receives a request with an SNI hostname, it will check at
-runtime for a certificate based on the SNI hostname, where ".pem" was
-added. This directory configured with the parameter
-[term vhostcertificates] of the [term nsssl] module.
+directory containing individual certificates for virtual hosts with
+the parameter [term vhostcertificates] in the [term nsssl]
+module definition. When NaviServer receives a request with an SNI hostname, it
+will search in this directory at runtime for a certificate file with
+the name based on the SNI hostname, where ".pem" was added
 
 [example_begin]
  set serverroot /var/www
@@ -628,19 +624,28 @@ added. This directory configured with the parameter
  }
 [example_end]
 
-Note that in this setup only one a single server configuration
-is needed (in the example above, the server "s1"). Together with the
-definition of the [cmd ns_serverrootproc], will provide mass virtual
-hosting over HTTPS. Below is a minimal setup showing the directory
-structure for serving [const dotlrn.net] via this mechanism. Note he
-certificate ]const dotlrn.net.pem] at the top level directory.
+Note that in this setup only a single server configuration is needed
+(in the example above, the server "s1"). Together with the definition
+of the [cmd ns_serverrootproc], it will provide mass virtual hosting over
+HTTPS. Below is a minimal setup showing the directory structure for
+serving [const dotlrn.net] via this mechanism. Note the certificates
+[const dotlrn.net.pem], [const example.com.pem], and [const default.pem]
+at the top level directory and their respective subdirectories from
+where the websites are served. Any request with a different host than
+[const example.com] or [const dotlrn.net] will be
+served from the [const default] directory with the [const default.pem]
+certificate.
+
 
 [example_begin]
  /var/www/
  ├── default
  │   └── index.html
+ ├── example.com.pem
+ ├── example.com
+ │   └── index.html
  ├── dotlrn.net.pem
- ├── dotlrn.net:443
+ ├── dotlrn.net
  │   ├── index.html
  │   └── test
  │       └── file
@@ -657,12 +662,13 @@ recommended to use HSTS ([uri \
 to cause the browser to stay on the secure connection. This is
 recommended to avoid certain man-in-the-middle attacks.
 
-[para] One simple approach is to define a server configuration
-listening on the HTTP port, that redirects every request to HTTPS. In
-the following example, the server configuration is called
-"redirector", accepts requests for HTTP on port 80, and redirects all
-[const GET] requests to the same server to HTTPS (port 443).
-The same approach works as well for virtual hosts of any kind.
+[para] One simple approach to do this is to define a server
+configuration listening on the HTTP port that redirects requests to
+the HTTPS port. In the following example, this server configuration is
+called "redirector". It accepts requests for HTTP on port 80, and
+redirects all [const GET] requests to the same server to HTTPS (port
+443).  This approach can be used for all described virtual host
+configurations.
 
 [example_begin]
  #
@@ -692,16 +698,16 @@ The same approach works as well for virtual hosts of any kind.
  }
 [example_end]
 
-[para] For certain sites, it is desired that not all requests should
-be redirected to HTTPS, since e.g. letsencrypt requires requests over
-plain HTTP to the directory [const /.well-known]
-(see [uri https://datatracker.ietf.org/doc/html/rfc8615 "RFC 8615"]).
-The goal of the naming convention is to provide a common and
-consistent location for well-known services across servers.
+[para] For certain sites, it is desired that HTTP request to some
+paths should be excluded from the HTTPS redirection.
+E.g., Let's Encrypt requires requests over plain HTTP to the directory
+[const /.well-known] for certificate management requests (see
+[uri https://datatracker.ietf.org/doc/html/rfc8615 "RFC 8615"] and
+[uri https://letsencrypt.org/docs/challenge-types/]).
+
 
 [para] In order to exclude this directory from the general redirection
-is to register the [const /.well-known] target via
-[cmd ns_register_fastpath]:
+register the [const /.well-known] target via [cmd ns_register_fastpath]:
 
 [example_begin]
  ns_section ns/server/redirector/tcl {
@@ -730,7 +736,7 @@ is to register the [const /.well-known] target via
 	SO_REUSEPORT TCP TCP_FASTOPEN \
 	"connection thread pools" \
 	nsssl driver prebind pagedir reverseproxy \
-        OCSP SNI initcmds letsencrypt]
+        OCSP SNI initcmds letsencrypt redirect]
 [see_also tcl-libraries tcl-overview]
 [manpage_end]
 
