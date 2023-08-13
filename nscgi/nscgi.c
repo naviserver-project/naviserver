@@ -798,26 +798,31 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
      */
 
     Ns_SetUpdateSz(cgiPtr->env, "SCRIPT_NAME", 11, cgiPtr->name, TCL_INDEX_NONE);
-    Ns_DString tmp;
-    Ns_DStringSetLength(dsPtr, 0);
-    Ns_DStringInit(&tmp);
     if (cgiPtr->pathinfo != NULL && *cgiPtr->pathinfo != '\0') {
+        Ns_DString tmp;
+
         if (Ns_UrlPathDecode(dsPtr, cgiPtr->pathinfo, NULL) != NULL) {
             Ns_SetUpdateSz(cgiPtr->env, "PATH_INFO", 9, dsPtr->string, dsPtr->length);
         } else {
             Ns_SetUpdateSz(cgiPtr->env, "PATH_INFO", 9, cgiPtr->pathinfo, TCL_INDEX_NONE);
         }
         (void)Ns_UrlToFile(dsPtr, modPtr->server, cgiPtr->pathinfo);
+
+        Ns_DStringInit(&tmp);
         if (Ns_UrlPathDecode(&tmp, dsPtr->string, NULL) != NULL) {
             Ns_SetUpdateSz(cgiPtr->env, "PATH_TRANSLATED", 15, tmp.string, tmp.length);
         } else {
             Ns_SetUpdateSz(cgiPtr->env, "PATH_TRANSLATED", 15, dsPtr->string, dsPtr->length);
         }
+        Ns_DStringSetLength(dsPtr, 0);
+        Ns_DStringFree(&tmp);
     } else {
+        /*
+         * We have no pathinfo, must be a wildcard map
+         */
         Ns_SetUpdateSz(cgiPtr->env, "PATH_INFO", 9, NS_EMPTY_STRING, 0);
         Ns_SetUpdateSz(cgiPtr->env, "PATH_TRANSLATED", 15, cgiPtr->path, TCL_INDEX_NONE);
     }
-    Ns_DStringFree(&tmp);
     if (cgiPtr->interp != NULL) {
         Ns_SetUpdateSz(cgiPtr->env, "REDIRECT_STATUS", 15, "1", 1);
     }
