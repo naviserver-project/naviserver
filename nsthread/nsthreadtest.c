@@ -239,9 +239,7 @@ MemThread(void *arg)
     for (i = 0; i < NA; ++i) {
         size_t n = (size_t)rand() % BS;
         if (arg != NULL) {
-            if (ptr != NULL) {
-                ns_free(ptr);
-            }
+            ns_free(ptr);
             ptr = ns_malloc(n);
         } else {
             if (ptr != NULL) {
