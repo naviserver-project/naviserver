@@ -396,7 +396,7 @@ This function requires OpenSSL 1.1.0.
 
 Sign a message according to the Voluntary Application Server
 Identification (VAPID) for Web Push
-https://tools.ietf.org/id/draft-ietf-webpush-vapid-03.html
+https://www.rfc-editor.org/rfc/rfc8292.html
 
 [para] Essentially, this is a special form of a signed message
 digest based on elliptic curve cryptography.
