@@ -836,6 +836,10 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         Ns_SetUpdateSz(cgiPtr->env, "PATH_TRANSLATED", 15, cgiPtr->path, TCL_INDEX_NONE);
     }
     if (cgiPtr->interp != NULL) {
+        /*
+         * We have a registered interpreter. In the PHP case, one has to
+         * communicate this fact via the "REDIRECT_STATUS" variable.
+         */
         Ns_SetUpdateSz(cgiPtr->env, "REDIRECT_STATUS", 15, "1", 1);
     }
     Ns_DStringSetLength(dsPtr, 0);
