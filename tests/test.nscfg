@@ -125,6 +125,7 @@ ns_section "ns/module/nsssl" {
 
 ns_section "ns/module/nssock/servers" {
     ns_param   test            test
+    ns_param   test            example.com
     ns_param   testvhost       testvhost
     ns_param   testvhost2      testvhost2
 }
