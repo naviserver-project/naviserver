@@ -105,7 +105,7 @@ static Ns_ReturnCode CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn
 
 static void          CgiRegister(Mod *modPtr, const char *map)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static Ns_DString   *CgiDs(Cgi *cgiPtr)                      NS_GNUC_NONNULL(1);
-static void          CgiFree(Cgi *cgiPtr)                       NS_GNUC_NONNULL(1);
+static Ns_ReturnCode CgiFree(Cgi *cgiPtr)                       NS_GNUC_NONNULL(1);
 static Ns_ReturnCode CgiExec(Cgi *cgiPtr, Ns_Conn *conn)        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static Ns_ReturnCode CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static Ns_ReturnCode CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -341,6 +341,8 @@ CgiRequest(const void *arg, Ns_Conn *conn)
      */
 
     status = CgiExec(&cgi, conn);
+    //Ns_Log(Notice, "CgiExec returned OK %d closed %d", status == NS_OK, Ns_ConnIsClosed(conn));
+
     if (status != NS_OK) {
         status = Ns_ConnTryReturnInternalError(conn, status, "nscgi: cgi exec failed");
     } else {
@@ -348,6 +350,7 @@ CgiRequest(const void *arg, Ns_Conn *conn)
     }
 
     Ns_Log(Ns_LogCGIDebug, "nscgi: cgi returned status %d", status);
+    //Ns_Log(Notice, "nscgi after COPY OK %d closed %d", status == NS_OK, Ns_ConnIsClosed(conn));
 
     /*
      * Release CGI access.
@@ -361,7 +364,29 @@ CgiRequest(const void *arg, Ns_Conn *conn)
     }
 
 done:
-    CgiFree(&cgi);
+    { Ns_ReturnCode reapStatus;
+
+        reapStatus = CgiFree(&cgi);
+        //Ns_Log(Notice, "CgiFree returned %d closed %d", reapStatus, Ns_ConnIsClosed(conn));
+        if (reapStatus != NS_OK) {
+            status = reapStatus;
+            //Ns_Log(Notice, "nscgi reap failed status %d closed %d", status, Ns_ConnIsClosed(conn));
+            status = Ns_ConnTryReturnInternalError(conn, status, "nscgi: cgi exec failed");
+
+        } else if (status != NS_OK) {
+            //Ns_Log(Notice, "nscgi: reap ok, but still, the status is not correct");
+            status = Ns_ConnTryReturnInternalError(conn, status, "nscgi: invalid response from CGI");
+        }
+    }
+
+    //Ns_Log(Notice, "nscgi done status %d closed %d", status, Ns_ConnIsClosed(conn));
+
+    /*
+     * Close connection unless it was closed earlier due to some error.
+     */
+    if (!Ns_ConnIsClosed(conn)) {
+        status = Ns_ConnClose(conn);
+    }
     return status;
 }
 
@@ -561,7 +586,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
     return NS_OK;
 
 err:
-    CgiFree(cgiPtr);
+    (void)CgiFree(cgiPtr);
     return NS_ERROR;
 }
 
@@ -669,9 +694,11 @@ CgiDs(Cgi *cgiPtr)
  *----------------------------------------------------------------------
  */
 
-static void
+static Ns_ReturnCode
 CgiFree(Cgi *cgiPtr)
 {
+    Ns_ReturnCode result = NS_OK;
+
     NS_NONNULL_ASSERT(cgiPtr != NULL);
 
     /*
@@ -701,10 +728,18 @@ CgiFree(Cgi *cgiPtr)
     /*
      * Reap the process.
      */
+    if (cgiPtr->pid != NS_INVALID_PID) {
+        int exitCode;
 
-    if (cgiPtr->pid != NS_INVALID_PID && Ns_WaitForProcessStatus(cgiPtr->pid, NULL, NULL) != NS_OK) {
-        Ns_Log(Error, "nscgi: wait for %s failed: %s",
-               cgiPtr->exec, strerror(errno));
+        if (Ns_WaitForProcessStatus(cgiPtr->pid, &exitCode, NULL) != NS_OK) {
+            Ns_Log(Error, "nscgi: wait for %s failed: %s",
+                   cgiPtr->exec, strerror(errno));
+        } else {
+            Ns_Log(Ns_LogCGIDebug, "exit code: %d", (int8_t)exitCode);
+            if (exitCode != 0) {
+                result = NS_ERROR;
+            }
+        }
     }
 
     /*
@@ -714,6 +749,7 @@ CgiFree(Cgi *cgiPtr)
     while (cgiPtr->nextds-- > 0) {
         Ns_DStringFree(&cgiPtr->ds[cgiPtr->nextds]);
     }
+    return result;
 }
 
 
@@ -1130,7 +1166,7 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
     Ns_ReturnCode   status;
     char           *value;
     Ns_Set         *hdrs;
-    ssize_t         n;
+    ssize_t         n, lines = 0;
 
     NS_NONNULL_ASSERT(cgiPtr != NULL);
     NS_NONNULL_ASSERT(conn != NULL);
@@ -1152,6 +1188,7 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
     httpstatus = 200;
     hdrs = conn->outputheaders;
     while ((n = CgiReadLine(cgiPtr, &ds)) > 0) {
+        Ns_Log(Ns_LogCGIDebug, "=== header line n %ld <%s>", n, ds.string);
 
         if (CHARTYPE(space, *ds.string) != 0) {
             /*
@@ -1164,6 +1201,7 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
                 continue;
             }
             SetAppend(hdrs, last, "\n", ds.string);
+            lines ++;
         } else {
             value = strchr(ds.string, INTCHAR(':'));
             if (value == NULL) {
@@ -1176,6 +1214,7 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
             while (CHARTYPE(space, *value) != 0) {
                 ++value;
             }
+            lines ++;
             if (STRIEQ(ds.string, "status")) {
                 httpstatus = (int)strtol(value, NULL, 10);
             } else if (STRIEQ(ds.string, "location")) {
@@ -1196,8 +1235,14 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
         Ns_DStringSetLength(&ds, 0);
     }
     Ns_DStringFree(&ds);
+    Ns_Log(Ns_LogCGIDebug, "=== header lines %ld", lines);
+
     if (n < 0) {
         status = Ns_ConnTryReturnInternalError(conn, NS_ERROR, "nscgi: reading client data failed");
+
+    } else if (lines == 0) {
+        status = NS_ERROR;
+
     } else {
 
         /*
@@ -1213,7 +1258,7 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
             vbuf.iov_len  = (size_t)cgiPtr->cnt;
             status = Ns_ConnWriteVData(conn, &vbuf, 1, NS_CONN_STREAM);
         } while (status == NS_OK && CgiRead(cgiPtr) > 0);
-
+#if 0
         /*
          * Close connection now so it will not linger on
          * waiting for process exit.
@@ -1222,6 +1267,7 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
         if (status == NS_OK) {
             status = Ns_ConnClose(conn);
         }
+#endif
     }
     return status;
 }
