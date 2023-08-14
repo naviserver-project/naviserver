@@ -733,7 +733,7 @@ ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
             Ns_Log(Notice, "%s: adding virtual host entry for host <%s> location: %s mapped to server: %s ctx %p",
                    drvPtr->threadName, host, mapPtr->location, servPtr->server, (void*)ctx);
 
-            if (addDefaultMapEntry) {
+            if (addDefaultMapEntry && drvPtr->defMapPtr == NULL) {
                 drvPtr->defMapPtr = mapPtr;
             }
         }
