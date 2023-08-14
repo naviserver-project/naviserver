@@ -1,0 +1,24 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+if {[ns_config test listenport] ne ""} {
+    testConstraint serverListen true
+}
+
+test nscgi-1.0 {basic request} -constraints serverListen -body {
+    nstest::http -http 1.1 -getbody 1 GET /hello.cgi 
+} -returnCodes {error ok} -match glob -result {*You are using NaviServer*}
+
+
+
+cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

@@ -299,13 +299,36 @@ ns_section "ns/server/test/module/nscp/users" {
     ns_param   user            "nsadmin:t2GqvvaiIUbF2:" ;# sample user="nsadmin", pw="x".
 }
 
+ns_section ns/server/test/module/nscgi {
+    ns_param    map                 "GET *.cgi"
+    ns_param    interps              CGIinterps
+    #ns_param   allowstaticresources true    ;# default false; serve static resources from cgi directories
+}
+
+ns_section ns/interps/CGIinterps {
+    #ns_param .cgi                /usr/local/ns/bin/tclsh8.6
+    set tclsh ""
+    foreach path {/usr/local/ns/bin /usr/local/bin /opt/local/bin /usr/bin} {
+        foreach version {tclsh8.6 tclsh8.7 tclsh9 tclsh} {
+            if {[file executable $path/$version]} {
+                set tclsh $path/$version
+                break
+            }
+        }
+        if {$tclsh ne ""} break
+    }
+    ns_log notice "Use tclsh for CGI tests <$tclsh>"
+    ns_param .cgi                $tclsh
+    ns_param .sh                 "/bin/bash"
+}
 
 ns_section "ns/server/test/modules" {
     ns_param   nslog           [ns_config "test" home]/../nslog/nslog[sharedlibextension]
     ns_param   nsdb            [ns_config "test" home]/../nsdb/nsdb[sharedlibextension]
     ns_param   nsproxy         [ns_config "test" home]/../nsproxy/nsproxy[sharedlibextension]
+    ns_param   nscgi           [ns_config "test" home]/../nscgi/nscgi[sharedlibextension]
     if {$nscp_port ne ""} {
-        ns_param nscp          [ns_config "test" home]/../nscp/nscp
+        ns_param nscp          [ns_config "test" home]/../nscp/nscp[sharedlibextension]
     }
 }
 
