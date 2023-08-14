@@ -854,35 +854,34 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     /*
      * Determine SERVER_NAME and SERVER_PORT from the conn location.
      */
-
     s = Ns_ConnLocationAppend(conn, dsPtr);
     s = strchr(s, INTCHAR(':'));
     s += 3;                        /* Get past the protocol "://"  */
     {
-        char *end, *portString;
-        bool  hostParsedOk = Ns_HttpParseHost2(s, NS_FALSE, NULL, &portString, &end);
+        char *end, *portString, *hostString;
+        bool  hostParsedOk = Ns_HttpParseHost2(s, NS_FALSE, &hostString, &portString, &end);
 
         if (!hostParsedOk) {
+            /*
+             * This should not happen, since in this cases, the fallback
+             * mechanism of the driver should have kicked in already.
+             */
             Ns_Log(Warning, "nscgi: invalid hostname: '%s'", s);
-        }
-
-        if (portString != NULL) {
-            TCL_SIZE_T j;
-
-            portString++;
-            Ns_SetUpdateSz(cgiPtr->env, "SERVER_PORT", 11, portString, TCL_INDEX_NONE);
-            for (j = 0; *portString != '\0'; ++portString, ++j) {
-                ;
-            }
-            Ns_DStringSetLength(dsPtr, j);
-        }
-        Ns_SetUpdateSz(cgiPtr->env, "SERVER_NAME", 11, dsPtr->string, dsPtr->length);
-        Ns_DStringSetLength(dsPtr, 0);
-        if (portString == NULL) {
+            Ns_SetUpdateSz(cgiPtr->env, "SERVER_NAME", 11, "", 0);
+            Ns_DStringSetLength(dsPtr, 0);
             Ns_DStringPrintf(dsPtr, "%hu", Ns_ConnPort(conn));
             Ns_SetUpdateSz(cgiPtr->env, "SERVER_PORT", 11, dsPtr->string, dsPtr->length);
-            Ns_DStringSetLength(dsPtr, 0);
+        } else {
+            Ns_SetUpdateSz(cgiPtr->env, "SERVER_NAME", 11, hostString, TCL_INDEX_NONE);
+            if (portString != NULL) {
+                Ns_SetUpdateSz(cgiPtr->env, "SERVER_PORT", 11, portString, TCL_INDEX_NONE);
+            } else {
+                Ns_DStringSetLength(dsPtr, 0);
+                Ns_DStringPrintf(dsPtr, "%hu", Ns_ConnPort(conn));
+                Ns_SetUpdateSz(cgiPtr->env, "SERVER_PORT", 11, dsPtr->string, dsPtr->length);
+            }
         }
+        Ns_DStringSetLength(dsPtr, 0);
     }
 
     /*

@@ -20,6 +20,29 @@ test nscgi-1.0 {basic request} -constraints {serverListen tclsh} -body {
     nstest::http -http 1.1 -getbody 1 GET /hello.cgi
 } -returnCodes {error ok} -match glob -result {*You are using NaviServer*}
 
+test nscgi-1.1 {check required and provided variables} -constraints {serverListen tclsh} -body {
+    nstest::http -http 1.1 -getbody 1 GET /info.cgi
+} -returnCodes {error ok} -match glob -result {*missing 0*}
+
+#
+# Check server names
+#
+test nscgi-1.2.0 {check SERVER_NAME} -constraints {serverListen tclsh} -body {
+    nstest::http -http 1.1 \
+                -getbody 1 GET /info.cgi?var=SERVER_NAME
+} -returnCodes {error ok} -match glob -result "*SERVER_NAME: test\n\}"
+
+test nscgi-1.2.1 {check SERVER_NAME with trusted virtual host} -constraints {serverListen tclsh} -body {
+    nstest::http -http 1.1 \
+                -setheaders [list Host example.com] \
+                -getbody 1 GET /info.cgi?var=SERVER_NAME
+} -returnCodes {error ok} -match glob -result "*SERVER_NAME: example.com\n\}"
+
+test nscgi-1.2.2 {check SERVER_NAME with untrusted virtual host} -constraints {serverListen tclsh} -body {
+    nstest::http -http 1.1 \
+                -setheaders [list Host hacker.com] \
+                -getbody 1 GET /info.cgi?var=SERVER_NAME
+} -returnCodes {error ok} -match glob -result "*SERVER_NAME: test\n\}"
 
 
 cleanupTests
