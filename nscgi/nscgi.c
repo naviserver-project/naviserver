@@ -283,8 +283,20 @@ CgiRequest(const void *arg, Ns_Conn *conn)
              * return these files directly.
              */
             status = Ns_ConnReturnFile(conn, 200, NULL, cgi.exec);
+
         } else {
-            status = Ns_ConnReturnNotFound(conn);
+            Ns_Log(Warning, "nscgi: cgi file not executable: %s", cgi.exec);
+
+            if ( STREQ(conn->request.method, "GET") ||
+                 STREQ(conn->request.method, "HEAD"))  {
+                /*
+                 * CGI_ALLOW_STATIC is not set, maybe the admin might want to
+                 * activate it?
+                 */
+                Ns_Log(Warning, "nscgi: if this is a static resource, consider"
+                       " setting 'allowstaticresources' in the CGI section"
+                       " of the CGI configuration section");
+            }
         }
         goto done;
 
