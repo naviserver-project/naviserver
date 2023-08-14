@@ -13,7 +13,8 @@ CGI (Common Gateway Interface) is a standard way of running programs
 from a Web server. Often, CGI programs are used to generate pages
 dynamically or to perform some other action when someone fills out an
 HTML form and clicks the submit button. NaviServer provides full
-support for CGI v1.1.
+support for CGI v1.1
+([uri https://datatracker.ietf.org/doc/html/rfc3875 "RFC 3875"]).
 
 
 [para]
@@ -141,13 +142,14 @@ Edit your NaviServer configuration file, usually named nsd.tcl.
 
 [enum]
 Choose the server for which you want to enable CGI (such as for
-example the server named [const Server1]). Then add the CGI
+example the server named [const s1]). Then add the CGI
 module to that server such it will be loaded at start time.
 For example:
 
 [example_begin]
- ns_section "ns/server/Server1/modules"
- ns_param nscgi nscgi.so
+ ns_section ns/server/s1/modules {
+   ns_param nscgi nscgi.so
+ }
 [example_end]
 
 
@@ -184,7 +186,7 @@ For example:
     For example:
 
 [example_begin]
- ns_section "ns/server/Server1/module/nscgi" {
+ ns_section ns/server/s1/module/nscgi {
    ns_param Map  "GET /cgi /usr/local/cgi"
    ns_param Map  "POST /*.cgi"
  }
@@ -202,7 +204,7 @@ If you want to call a CGI program (script) which requires an interpreter (e.g.,
         configuration section using e.g. the name [const CGIinterps].
 
 [example_begin]
- ns_section "ns/server/Server1/module/nscgi" {
+ ns_section ns/server/s1/module/nscgi {
    ns_param Map    "GET /cgi /usr/local/cgi"
    ns_param Map    "POST /*.cgi"
    ns_param Interps CGIinterps
@@ -218,7 +220,7 @@ If you want to call a CGI program (script) which requires an interpreter (e.g.,
 	the script via the named executables.
 
 [example_begin]
- ns_section "ns/interps/CGIinterps" {
+ ns_section ns/interps/CGIinterps {
    ns_param .pl  "c:\perl\bin\perl.exe"
    ns_param .sh  "c:\mks\mksnt\sh.exe(MKSenv)"
  }
@@ -227,11 +229,11 @@ If you want to call a CGI program (script) which requires an interpreter (e.g.,
        If no mapping of extensions to script interpreters is provided,
        the called script must have executable permissions.
 
-       [para] Files in the cgi directory without execute
+       [para] Files in the CGI directory without execute
        permissions are served as plain files when the parameter
        [const allowstaticresources] is set to true. This way
        images and such in can be served directly from
-       a cgi bin directory.
+       a cgi-bin directory.
 
 
 [list_end]
@@ -248,7 +250,7 @@ environment variables, one can define this via the module parameter
 
 
 [example_begin]
- ns_section "ns/server/Server1/module/nscgi" {
+ ns_section ns/server/s1/module/nscgi {
    ns_param Map         "GET /cgi /usr/local/cgi"
    ns_param Map         "POST /*.cgi"
    ns_param Interps     cgi
@@ -261,7 +263,7 @@ environment variables, one can define this via the module parameter
        containing the required environment variable definitions.
 
 [example_begin]
- ns_section "ns/environment/cgi" {
+ ns_section ns/environment/cgi {
    ns_param FOO BAR     ;# defines environment variable "FOO=BAR"
    ns_param TMP /tmp    ;# defines environment variable "TMP=/tmp"
  }
@@ -1319,15 +1321,17 @@ from the CGI program.
 
 
 [para]
-You can download lots of examples and working CGI programs from the Web. Here are some places to look:
+
+You can download many examples and working CGI programs from the
+Web. Here are some places to look:
 
 [list_begin itemized]
 
 [item] Yahoo's page of links to CGI information:
-    http://www.yahoo.com/Computers_and_Internet/Internet/World_Wide_Web/CGI___Common_Gateway_Interface/
+    [uri http://www.yahoo.com/Computers_and_Internet/Internet/World_Wide_Web/CGI___Common_Gateway_Interface/]
 
 [item] NCSA's ftp site:
-    ftp://ftp.ncsa.uiuc.edu/Web/httpd/Unix/ncsa_httpd/cgi/
+    [uri ftp://ftp.ncsa.uiuc.edu/Web/httpd/Unix/ncsa_httpd/cgi/]
 
 
 [para]
@@ -1336,13 +1340,13 @@ You can download lots of examples and working CGI programs from the Web. Here ar
     (ncsa-default.tar.Z), (cgi-lib.pl.Z), and Bourne shell scripts (AA-1.2.tar.Z).
 
 [item] List of Perl archives:
-    http://www.seas.upenn.edu/~mengwong/perlhtml.html
+    [uri http://www.seas.upenn.edu/~mengwong/perlhtml.html]
 
 [item] Virtual Library list of CGI resources:
-    http://www.charm.net/~web/Vlib/Providers/CGI.html
+    [uri http://www.charm.net/~web/Vlib/Providers/CGI.html]
 
 [item] Various script examples at MIT:
-    http://www-genome.wi.mit.edu/WWW/tools/scripting/
+    [uri http://www-genome.wi.mit.edu/WWW/tools/scripting/]
 
 [list_end]
 
