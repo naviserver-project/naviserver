@@ -188,7 +188,7 @@ Ns_WaitForProcessStatus(pid_t pid, int *exitcodePtr, int *waitstatusPtr)
 
         if (exitcode != 0) {
             Ns_Log(Warning, "process %d exited with nonzero exit code: %d",
-                   pid, exitcode);
+                   pid, (int8_t)exitcode);
         }
         if (exitcodePtr != NULL) {
             *exitcodePtr = exitcode;
