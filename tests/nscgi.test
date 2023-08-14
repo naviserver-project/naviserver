@@ -9,8 +9,15 @@ if {[ns_config test listenport] ne ""} {
     testConstraint serverListen true
 }
 
-test nscgi-1.0 {basic request} -constraints serverListen -body {
-    nstest::http -http 1.1 -getbody 1 GET /hello.cgi 
+#
+# Check configured tclsh from configuration file and set test
+# constraint based on this.
+#
+set tclsh [ns_config ns/interps/CGIinterps .cgi]
+testConstraint tclsh [expr {$tclsh ne ""}]
+
+test nscgi-1.0 {basic request} -constraints {serverListen tclsh} -body {
+    nstest::http -http 1.1 -getbody 1 GET /hello.cgi
 } -returnCodes {error ok} -match glob -result {*You are using NaviServer*}
 
 
