@@ -690,6 +690,8 @@ Ns_ConnTryReturnInternalError(Ns_Conn *conn, Ns_ReturnCode status, const char *c
                causeString, (int)status);
         result = status;
     } else {
+        Ns_Log(Warning, "internal error (HTTP status 500) (%s, return code %d)",
+               causeString, (int)status);
         result = Ns_ConnReturnInternalError(conn);
     }
     return result;
