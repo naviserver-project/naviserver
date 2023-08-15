@@ -936,8 +936,17 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     /*
      * Provide Authentication information
      */
+    {
+        const Ns_Set *authSet =  Ns_ConnAuth(conn);
 
-    Ns_SetUpdateSz(cgiPtr->env, "AUTH_TYPE", 9, "Basic", 5);
+        if (authSet != NULL) {
+            const char *authMethod = Ns_SetIGet(authSet, "AuthMethod");
+
+            Ns_SetUpdateSz(cgiPtr->env, "AUTH_TYPE", 9, authMethod ? authMethod : "", TCL_INDEX_NONE);
+        } else {
+            Ns_SetUpdateSz(cgiPtr->env, "AUTH_TYPE", 9, "", 0);
+        }
+    }
     Ns_SetUpdateSz(cgiPtr->env, "REMOTE_USER", 11, Ns_ConnAuthUser(conn), TCL_INDEX_NONE);
 
     {

@@ -19,7 +19,7 @@ if {[info exists ::env(QUERY_STRING)]} {
         puts "Content-type: text/plain"
         puts ""
         if {[info exists ::env($var)]} {
-            puts "$var: $::env($var)"
+            puts "$var: <$::env($var)>"
         } else {
             puts "$var does not exist"
         }

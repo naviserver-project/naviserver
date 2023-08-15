@@ -31,19 +31,19 @@ test nscgi-1.2.0 {check SERVER_NAME} -constraints {serverListen tclsh} -body {
     nstest::http -http 1.1 \
         -setheaders [list Host test] \
         -getbody 1 GET /info.cgi?var=SERVER_NAME
-} -returnCodes {error ok} -match glob -result "*SERVER_NAME: test\n\}"
+} -returnCodes {error ok} -match glob -result "*SERVER_NAME: <test>*}"
 
 test nscgi-1.2.1 {check SERVER_NAME with trusted virtual host} -constraints {serverListen tclsh} -body {
     nstest::http -http 1.1 \
                 -setheaders [list Host example.com] \
                 -getbody 1 GET /info.cgi?var=SERVER_NAME
-} -returnCodes {error ok} -match glob -result "*SERVER_NAME: example.com\n\}"
+} -returnCodes {error ok} -match glob -result "*SERVER_NAME: <example.com>*"
 
 test nscgi-1.2.2 {check SERVER_NAME with untrusted virtual host} -constraints {serverListen tclsh} -body {
     nstest::http -http 1.1 \
                 -setheaders [list Host hacker.com] \
                 -getbody 1 GET /info.cgi?var=SERVER_NAME
-} -returnCodes {error ok} -match glob -result "*SERVER_NAME: test\n\}"
+} -returnCodes {error ok} -match glob -result "*SERVER_NAME: <test>*"
 
 #
 # Nonzero return code
@@ -112,6 +112,22 @@ test nscgi-1.5.3 {
     #ns_logctl severity Debug(request) on
     nstest::http -http 1.1 -getheaders {Location} GET /info.cgi?location=http://www.php.net/&content=test
 } -returnCodes {error ok} -result {302 http://www.php.net/}
+
+
+#
+# AUTH_TYPE
+#
+test nscgi-1.6.1 {check empty AUTH_TYPE} -constraints {serverListen tclsh} -body {
+    nstest::http -http 1.1 \
+        -getbody 1 GET /info.cgi?var=AUTH_TYPE
+} -returnCodes {error ok} -match glob -result "*AUTH_TYPE: <>*"
+
+test nscgi-1.6.2 {check set AUTH_TYPE} -constraints {serverListen tclsh} -body {
+    set authString "Basic [ns_uuencode x:y]"
+    nstest::http -http 1.1 \
+        -setheaders [list authorization $authString] \
+        -getbody 1 GET /info.cgi?var=AUTH_TYPE
+} -returnCodes {error ok} -match glob -result "*AUTH_TYPE: <Basic>*"
 
 cleanupTests
 
