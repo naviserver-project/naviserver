@@ -43,7 +43,8 @@ namespace eval ::nstest {
             {body ""}
         } $args
 
-        set host [ns_config "test" loopback]
+        set addr [ns_config "test" loopback]
+        set host test
         switch $proto {
             "https" {
                 set port [ns_config "ns/module/nsssl" port]
@@ -61,6 +62,7 @@ namespace eval ::nstest {
 
         if {[info exists hostname]} {
             lappend extraFlags -hostname $hostname
+            set host $hostname
         }
         if {$partialresults} {
             lappend extraFlags -partialresults
@@ -106,7 +108,7 @@ namespace eval ::nstest {
         #    lappend extraFlags "-binary"
         #}
 
-        set fullUrl $proto://\[$host\]:$port/[string trimleft $url /]
+        set fullUrl $proto://\[$addr\]:$port/[string trimleft $url /]
         log url $fullUrl
         try {
             ns_http run \
