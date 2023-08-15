@@ -8,6 +8,8 @@
 set done 0
 if {[info exists ::env(QUERY_STRING)]} {
     set query ""
+    set content ""
+    set header ""
     foreach spec [split $::env(QUERY_STRING) &] {
         lassign [split $spec =] var value
         dict set query $var $value
@@ -21,6 +23,22 @@ if {[info exists ::env(QUERY_STRING)]} {
         } else {
             puts "$var does not exist"
         }
+        set done 1
+    }
+
+    if {[dict exists $query status]} {
+        lappend header "Status: [dict get $query status]"
+    }
+    if {[dict exists $query location]} {
+        lappend header "Location: [dict get $query location]"
+    }
+    if {[dict exists $query content]} {
+        set content [dict get $query content]
+    }
+
+    if {$header ne ""} {
+        set reply [join $header \n]\n\n$content
+        puts $reply
         set done 1
     }
     if {[dict exists $query rc]} {

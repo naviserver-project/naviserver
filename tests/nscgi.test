@@ -45,7 +45,9 @@ test nscgi-1.2.2 {check SERVER_NAME with untrusted virtual host} -constraints {s
                 -getbody 1 GET /info.cgi?var=SERVER_NAME
 } -returnCodes {error ok} -match glob -result "*SERVER_NAME: test\n\}"
 
-
+#
+# Nonzero return code
+#
 test nscgi-1.3.1 {
     Check behavior when scripts ends with nonzero return code
 } -constraints {serverListen tclsh} -body {
@@ -59,6 +61,57 @@ test nscgi-1.3.2 {
     #ns_logctl severity Debug(request) on
     nstest::http -http 1.1 GET /info.cgi?rc=0
 } -returnCodes {error ok} -result 500
+
+#
+# Status code settings
+#
+test nscgi-1.4.1 {
+    Setting an HTTP status code
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(request) on
+    nstest::http -http 1.1 GET /info.cgi?status=503&content=test
+} -returnCodes {error ok} -result 503
+
+test nscgi-1.4.2 {
+    Setting an HTTP status code and a location
+    https://bugs.php.net/bug.php?id=51749
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    #ns_logctl severity Debug(request) on
+    nstest::http -http 1.1 GET /info.cgi?status=503&location=http://www.php.net/
+} -returnCodes {error ok} -result 503
+
+#
+# Redirects
+#
+test nscgi-1.5.1 {
+    Local Redirect Response 6.2.2
+    https://datatracker.ietf.org/doc/html/rfc3875#section-6.2.2
+
+    Currently, Local Redirect Response behaves like Client Redirect Response
+} -constraints {serverListen tclsh knownBug} -body {
+    #ns_logctl severity Debug(cgi) on
+    #ns_logctl severity Debug(request) on
+    nstest::http -http 1.1 -getheaders {Location} GET /info.cgi?location=/test.html
+} -returnCodes {error ok} -result {200 {}}
+
+test nscgi-1.5.2 {
+    Client Redirect Response 6.2.3
+    https://datatracker.ietf.org/doc/html/rfc3875#section-6.2.3
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    #ns_logctl severity Debug(request) on
+    nstest::http -http 1.1 -getheaders {Location} GET /info.cgi?location=http://www.php.net/
+} -returnCodes {error ok} -result {302 http://www.php.net/}
+
+test nscgi-1.5.3 {
+    Client Redirect Response with Document 6.2.4
+    https://datatracker.ietf.org/doc/html/rfc3875#section-6.2.4
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    #ns_logctl severity Debug(request) on
+    nstest::http -http 1.1 -getheaders {Location} GET /info.cgi?location=http://www.php.net/&content=test
+} -returnCodes {error ok} -result {302 http://www.php.net/}
 
 cleanupTests
 

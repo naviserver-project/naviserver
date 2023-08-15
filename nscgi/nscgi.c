@@ -1180,6 +1180,7 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
     char           *value;
     Ns_Set         *hdrs;
     ssize_t         n, lines = 0;
+    bool            statusProvided = NS_FALSE;
 
     NS_NONNULL_ASSERT(cgiPtr != NULL);
     NS_NONNULL_ASSERT(conn != NULL);
@@ -1195,7 +1196,6 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
     /*
      * Read and parse headers up to the blank line or end of file.
      */
-
     Ns_DStringInit(&ds);
     last = -1;
     httpstatus = 200;
@@ -1229,9 +1229,13 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
             }
             lines ++;
             if (STRIEQ(ds.string, "status")) {
+                statusProvided = NS_TRUE;
                 httpstatus = (int)strtol(value, NULL, 10);
+
             } else if (STRIEQ(ds.string, "location")) {
-                httpstatus = 302;
+                if (!statusProvided) {
+                    httpstatus = 302;
+                }
                 if (*value == '/') {
                     Ns_DStringInit(&redir);
                     (void)Ns_ConnLocationAppend(conn, &redir);
