@@ -887,6 +887,19 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     Ns_SetUpdateSz(cgiPtr->env, "SERVER_PROTOCOL", 15, dsPtr->string, dsPtr->length);
     Ns_DStringSetLength(dsPtr, 0);
 
+#if 0
+    /*
+     * Determine SERVER_NAME and SERVER_PORT from the request information. The
+     * values in the request structure are already syntactically
+     * validated. However, the "request.host" will contain as well untrusted
+     * host header fields, whereas the location contains for untrusted hoost
+     * values the default name (see e.g., hacker.com) in nscgi.test
+     */
+    Ns_SetUpdateSz(cgiPtr->env, "SERVER_NAME", 11, conn->request.host, TCL_INDEX_NONE);
+    Ns_DStringPrintf(dsPtr, "%hu", conn->request.port);
+    Ns_SetUpdateSz(cgiPtr->env, "SERVER_PORT", 11, dsPtr->string, dsPtr->length);
+    Ns_DStringSetLength(dsPtr, 0);
+#else
     /*
      * Determine SERVER_NAME and SERVER_PORT from the conn location.
      */
@@ -919,7 +932,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         }
         Ns_DStringSetLength(dsPtr, 0);
     }
-
+#endif
     /*
      * Provide Authentication information
      */
