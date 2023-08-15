@@ -2,24 +2,29 @@
 # Check all the Meta-Variables as specified in
 # https://datatracker.ietf.org/doc/html/rfc3875#section-4.1
 #
+# Note, this is a plain Tcl scripts, no NaviServer commands are
+# allowed.
+#
 set done 0
 if {[info exists ::env(QUERY_STRING)]} {
-    switch -regexp -matchvar match $::env(QUERY_STRING) {
-        {^var=(.*)$} {
-            puts "Content-type: text/plain"
-            puts ""
-            set var [lindex $match end]
-            if {[info exists ::env($var)]} {
-                puts "$var: $::env($var)"
-            } else {
-                puts "$var does not exist"
-            }
-            set done 1
+    set query ""
+    foreach spec [split $::env(QUERY_STRING) &] {
+        lassign [split $spec =] var value
+        dict set query $var $value
+    }
+    if {[dict exists $query var]} {
+        set var [dict get $query var]
+        puts "Content-type: text/plain"
+        puts ""
+        if {[info exists ::env($var)]} {
+            puts "$var: $::env($var)"
+        } else {
+            puts "$var does not exist"
         }
-        {^return=(.*)$} {
-            set rc [lindex $match end]
-            exit $rc
-        }
+        set done 1
+    }
+    if {[dict exists $query rc]} {
+        exit [dict get $query rc]
     }
 }
 

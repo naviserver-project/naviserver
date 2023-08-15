@@ -29,7 +29,8 @@ test nscgi-1.1 {check required and provided variables} -constraints {serverListe
 #
 test nscgi-1.2.0 {check SERVER_NAME} -constraints {serverListen tclsh} -body {
     nstest::http -http 1.1 \
-                -getbody 1 GET /info.cgi?var=SERVER_NAME
+        -setheaders [list Host test] \
+        -getbody 1 GET /info.cgi?var=SERVER_NAME
 } -returnCodes {error ok} -match glob -result "*SERVER_NAME: test\n\}"
 
 test nscgi-1.2.1 {check SERVER_NAME with trusted virtual host} -constraints {serverListen tclsh} -body {
@@ -49,14 +50,14 @@ test nscgi-1.3.1 {
     Check behavior when scripts ends with nonzero return code
 } -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(request) on
-    nstest::http -http 1.1 GET /info.cgi?return=-1
+    nstest::http -http 1.1 GET /info.cgi?rc=-1
 } -returnCodes {error ok} -result 500
 
 test nscgi-1.3.2 {
     Check behavior when scripts ends with zero return code, but has no header and no content
 } -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(request) on
-    nstest::http -http 1.1 GET /info.cgi?return=0
+    nstest::http -http 1.1 GET /info.cgi?rc=0
 } -returnCodes {error ok} -result 500
 
 cleanupTests
