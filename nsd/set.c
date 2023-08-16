@@ -172,6 +172,8 @@ Ns_SetUpdateSz(Ns_Set *set, const char *keyString, ssize_t keyLength, const char
     } else {
         result = Ns_SetPutSz(set, keyString, keyLength, valueString, valueLength);
     }
+    Ns_Log(Ns_LogNsSetDebug, "Ns_SetUpdateSz %p '%s': index %ld key '%s' value '%s'",
+           (void*)set, set->name, index, keyString, valueString);
     return result;
 }
 
@@ -1084,6 +1086,7 @@ void Ns_SetClearValues(Ns_Set *set, int maxAlloc)
     }
 
 #else
+    (void)maxAlloc;
     for (i = 0u; i < set->size; ++i) {
         ns_free(set->fields[i].value);
         set->fields[i].value = NULL;
@@ -1438,6 +1441,8 @@ Ns_SetCopy(const Ns_Set *old)
                new->data.length, new->data.spaceAvl);
 # endif
 #endif
+        Ns_Log(Ns_LogNsSetDebug, "Ns_SetCopy %p '%s' to %p",
+               (void*)old, old->name, (void*)new);
     }
 
     return new;
