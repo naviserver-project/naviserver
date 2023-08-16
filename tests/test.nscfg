@@ -301,13 +301,13 @@ ns_section "ns/server/test/module/nscp/users" {
 }
 
 ns_section ns/server/test/module/nscgi {
+    ns_param    map                 "GET /cgi/*"
     ns_param    map                 "GET *.cgi"
     ns_param    interps              CGIinterps
     #ns_param   allowstaticresources true    ;# default false; serve static resources from cgi directories
 }
 
 ns_section ns/interps/CGIinterps {
-    #ns_param .cgi                /usr/local/ns/bin/tclsh8.6
     set tclsh ""
     foreach path {/usr/local/ns/bin /usr/local/bin /opt/local/bin /usr/bin} {
         foreach version {tclsh8.6 tclsh8.7 tclsh9 tclsh} {
@@ -320,6 +320,7 @@ ns_section ns/interps/CGIinterps {
     }
     ns_log notice "Use tclsh for CGI tests <$tclsh>"
     ns_param .cgi                $tclsh
+    ns_param .tclcgi             $tclsh
     ns_param .sh                 "/bin/bash"
 }
 

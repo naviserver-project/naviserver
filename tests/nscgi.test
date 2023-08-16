@@ -17,30 +17,30 @@ set tclsh [ns_config ns/interps/CGIinterps .cgi]
 testConstraint tclsh [expr {$tclsh ne ""}]
 
 test nscgi-1.0 {basic request} -constraints {serverListen tclsh} -body {
-    nstest::http -http 1.1 -getbody 1 GET /hello.cgi
+    nstest::http -getbody 1 GET /hello.cgi
 } -returnCodes {error ok} -match glob -result {*You are using NaviServer*}
 
 test nscgi-1.1 {check required and provided variables} -constraints {serverListen tclsh} -body {
-    nstest::http -http 1.1 -getbody 1 GET /info.cgi
+    nstest::http -getbody 1 GET /info.cgi
 } -returnCodes {error ok} -match glob -result {*missing 0*}
 
 #
 # Check server names
 #
 test nscgi-1.2.0 {check SERVER_NAME} -constraints {serverListen tclsh} -body {
-    nstest::http -http 1.1 \
+    nstest::http \
         -setheaders [list Host test] \
         -getbody 1 GET /info.cgi?var=SERVER_NAME
 } -returnCodes {error ok} -match glob -result "*SERVER_NAME: <test>*}"
 
 test nscgi-1.2.1 {check SERVER_NAME with trusted virtual host} -constraints {serverListen tclsh} -body {
-    nstest::http -http 1.1 \
+    nstest::http \
                 -setheaders [list Host example.com] \
                 -getbody 1 GET /info.cgi?var=SERVER_NAME
 } -returnCodes {error ok} -match glob -result "*SERVER_NAME: <example.com>*"
 
 test nscgi-1.2.2 {check SERVER_NAME with untrusted virtual host} -constraints {serverListen tclsh} -body {
-    nstest::http -http 1.1 \
+    nstest::http \
                 -setheaders [list Host hacker.com] \
                 -getbody 1 GET /info.cgi?var=SERVER_NAME
 } -returnCodes {error ok} -match glob -result "*SERVER_NAME: <test>*"
@@ -52,14 +52,14 @@ test nscgi-1.3.1 {
     Check behavior when scripts ends with nonzero return code
 } -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(request) on
-    nstest::http -http 1.1 GET /info.cgi?rc=-1
+    nstest::http GET /info.cgi?rc=-1
 } -returnCodes {error ok} -result 500
 
 test nscgi-1.3.2 {
     Check behavior when scripts ends with zero return code, but has no header and no content
 } -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(request) on
-    nstest::http -http 1.1 GET /info.cgi?rc=0
+    nstest::http GET /info.cgi?rc=0
 } -returnCodes {error ok} -result 500
 
 #
@@ -69,7 +69,7 @@ test nscgi-1.4.1 {
     Setting an HTTP status code
 } -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(request) on
-    nstest::http -http 1.1 GET /info.cgi?status=503&content=test
+    nstest::http GET /info.cgi?status=503&content=test
 } -returnCodes {error ok} -result 503
 
 test nscgi-1.4.2 {
@@ -78,7 +78,7 @@ test nscgi-1.4.2 {
 } -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(cgi) on
     #ns_logctl severity Debug(request) on
-    nstest::http -http 1.1 GET /info.cgi?status=503&location=http://www.php.net/
+    nstest::http GET /info.cgi?status=503&location=http://www.php.net/
 } -returnCodes {error ok} -result 503
 
 #
@@ -92,7 +92,7 @@ test nscgi-1.5.1 {
 } -constraints {serverListen tclsh knownBug} -body {
     #ns_logctl severity Debug(cgi) on
     #ns_logctl severity Debug(request) on
-    nstest::http -http 1.1 -getheaders {Location} GET /info.cgi?location=/test.html
+    nstest::http -getheaders {Location} GET /info.cgi?location=/test.html
 } -returnCodes {error ok} -result {200 {}}
 
 test nscgi-1.5.2 {
@@ -101,7 +101,7 @@ test nscgi-1.5.2 {
 } -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(cgi) on
     #ns_logctl severity Debug(request) on
-    nstest::http -http 1.1 -getheaders {Location} GET /info.cgi?location=http://www.php.net/
+    nstest::http -getheaders {Location} GET /info.cgi?location=http://www.php.net/
 } -returnCodes {error ok} -result {302 http://www.php.net/}
 
 test nscgi-1.5.3 {
@@ -110,7 +110,7 @@ test nscgi-1.5.3 {
 } -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(cgi) on
     #ns_logctl severity Debug(request) on
-    nstest::http -http 1.1 -getheaders {Location} GET /info.cgi?location=http://www.php.net/&content=test
+    nstest::http -getheaders {Location} GET /info.cgi?location=http://www.php.net/&content=test
 } -returnCodes {error ok} -result {302 http://www.php.net/}
 
 
@@ -118,16 +118,37 @@ test nscgi-1.5.3 {
 # AUTH_TYPE
 #
 test nscgi-1.6.1 {check empty AUTH_TYPE} -constraints {serverListen tclsh} -body {
-    nstest::http -http 1.1 \
-        -getbody 1 GET /info.cgi?var=AUTH_TYPE
+    nstest::http -getbody 1 GET /info.cgi?var=AUTH_TYPE
 } -returnCodes {error ok} -match glob -result "*AUTH_TYPE: <>*"
 
 test nscgi-1.6.2 {check set AUTH_TYPE} -constraints {serverListen tclsh} -body {
     set authString "Basic [ns_uuencode x:y]"
-    nstest::http -http 1.1 \
-        -setheaders [list authorization $authString] \
+    nstest::http -setheaders [list authorization $authString] \
         -getbody 1 GET /info.cgi?var=AUTH_TYPE
 } -returnCodes {error ok} -match glob -result "*AUTH_TYPE: <Basic>*"
+
+#
+# PATH_INFO and PATH_TRANSLATED
+#
+test nscgi-1.7.1.0 {check basic PATH_INFO} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /cgi/listdir.tclcgi?var=PATH_INFO
+} -returnCodes {error ok} -match glob -result "*PATH_INFO: <>*"
+
+test nscgi-1.7.1.1 {check basic PATH_INFO} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /info.cgi?var=PATH_INFO
+} -returnCodes {error ok} -match glob -result "*PATH_INFO: <>*"
+
+test nscgi-1.7.2.0 {check basic PATH_TRANSLATED} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /info.cgi?var=PATH_TRANSLATED
+} -returnCodes {error ok} -match glob -result "*PATH_TRANSLATED: <*pages/info.cgi>*"
+
+test nscgi-1.7.2.1 {check basic PATH_TRANSLATED} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /cgi/listdir.tclcgi?var=PATH_TRANSLATED
+} -returnCodes {error ok} -match glob -result "*PATH_TRANSLATED: <*pages/cgi/listdir.tclcgi>*"
 
 cleanupTests
 
