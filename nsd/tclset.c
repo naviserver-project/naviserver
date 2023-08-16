@@ -325,6 +325,10 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *con
         hPtr = Tcl_FirstHashEntry(tablePtr, &search);
         while (hPtr != NULL) {
             const char *key = Tcl_GetHashKey(tablePtr, hPtr);
+
+            Ns_Log(Ns_LogNsSetDebug, "ns_set cleanup key <%s> dynamic %d",
+                   key, IS_DYNAMIC(key));
+
             if (IS_DYNAMIC(key)) {
                 set = Tcl_GetHashValue(hPtr);
                 Ns_SetFree(set);
@@ -925,6 +929,9 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, Ns_TclSetType type)
     }
 
     Tcl_SetHashValue(hPtr, set);
+
+    Ns_Log(Ns_LogNsSetDebug, "EnterSet %p with name '%s'",
+           (void*)set, buf);
 
     return Tcl_NewStringObj(buf, len+1);
 }

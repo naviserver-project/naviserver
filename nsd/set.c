@@ -392,7 +392,13 @@ Ns_SetFree(Ns_Set *set)
                 set->data.length, set->data.spaceAvl, createdSets);
         Tcl_DStringFree(&set->data);
 #else
+        Ns_Log(Ns_LogNsSetDebug, "Ns_SetFree %p '%s': elements %ld",
+               (void*)set, set->name, set->size);
+
         for (i = 0u; i < set->size; ++i) {
+            Ns_Log(Ns_LogNsSetDebug, "... %ld: key <%s> value <%s>",
+                   i, set->fields[i].name, set->fields[i].value);
+
             ns_free(set->fields[i].name);
             ns_free(set->fields[i].value);
         }
@@ -449,6 +455,8 @@ Ns_SetPutSz(Ns_Set *set, const char *keyString, ssize_t keyLength, const char *v
     set->fields[idx].name = ns_strncopy(keyString, keyLength);
     set->fields[idx].value = ns_strncopy(valueString, valueLength);
 #endif
+    Ns_Log(Ns_LogNsSetDebug, "Ns_SetPut %p [%lu] key '%s' value '%s' size %ld",
+           (void*)set, idx, set->fields[idx].name, set->fields[idx].value, valueLength);
     return idx;
 }
 
@@ -937,13 +945,16 @@ Ns_SetPutValueSz(Ns_Set *set, size_t index, const char *value, ssize_t size)
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(value != NULL);
 
+    Ns_Log(Ns_LogNsSetDebug, "Ns_SetPutValue %p [%lu] key '%s' value '%s' size %ld",
+           (void*)set, index, set->fields[index].name, value, size);
+
     if (index < set->size) {
 #ifdef NS_SET_DSTRING
         if (size == -1) {
             size = (ssize_t)strlen(value);
         }
 #ifdef NS_SET_DEBUG
-        Ns_Log(Notice, "Ns_SetPutValue %p [%lu] key '%s' value '%s size %ld",
+        Ns_Log(Notice, "Ns_SetPutValue %p [%lu] key '%s' value '%s' size %ld",
                (void*)set, index, set->fields[index].name, value, size);
 #endif
 
