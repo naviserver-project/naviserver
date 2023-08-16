@@ -362,6 +362,9 @@ proc ns_openexcl {file} {
 
 proc ns_opentmpfile {varFilename {template ""}} {
     upvar $varFilename tmpFileName
+    if {$template eq ""} {
+        set template [ns_config ns/parameters tmpdir]/nsd-XXXXXX
+    }
     return [::file tempfile tmpFileName {*}$template]
 }
 
