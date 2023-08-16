@@ -72,15 +72,15 @@ automatically generate a page and send it back to your reader.
 
 
 [para]
-The METHOD controls how the information typed into the form is
-passed to your program. It can be "GET" or "POST". The ACTION
-determines which program should be run.
+The [const METHOD] controls how the information typed into the form is
+passed to your program. It can be [const GET] or [const POST].
+The [const ACTION] determines which program should be run.
 
 
 [para]
 Other ways for a reader to run a program are by providing a direct
 link to the program without allowing the reader to supply any
-variables through a form, or by using the ISINDEX tag.
+variables through a form, or by using the [const ISINDEX] tag.
 
 [enum] When NaviServer gets a request for a URL that maps to a CGI
      directory or a CGI file extension (as defined in the configuration
@@ -101,8 +101,8 @@ variables through a form, or by using the ISINDEX tag.
 
      In this example, the program takes the comments from the form as
      input and sends them to you as email. If
-     the form method is "GET", it gets the input from an
-     environment variable. If the form method is "POST", it
+     the form method is [const GET], it gets the input from an
+     environment variable. If the form method is [const POST], it
      gets the input from standard input. It also assembles an
      HTML page and sends it to standard output.
 
@@ -130,14 +130,14 @@ environment variables for each type of program you use.
 
 [para]
 Note that if you're defining multiple servers, you will need to
-configure the CGI interface for each server.
+configure the CGI interface for each server configuration.
 
 [para]
 To enable and configure CGI:
 
 [list_begin enum]
 [enum]
-Edit your NaviServer configuration file, usually named nsd.tcl.
+Edit your NaviServer configuration file, usually named [const nsd.tcl].
 
 [enum]
 Choose the server for which you want to enable CGI (such as for
@@ -166,8 +166,9 @@ For example:
       [arg method] [arg pattern] [arg ?path?]
 
     [para]
-    where [arg method] refers to the HTTP request method (i.e., HEAD,
-        GET, POST, etc.), [arg pattern] refers to either a relative
+    where [arg method] refers to the HTTP request method (i.e.,
+        [const HEAD],
+        [const GET], [const POST], etc.), [arg pattern] refers to either a relative
 	URL or a glob pattern to match on the HTTP request.  This is how nscgi
         determines whether a request is a CGI request.
         [arg path] is optional and indicates either
@@ -287,7 +288,7 @@ unlimited. Default: [const 0]
 
 [item] [const maxinput] is an integer parameter to indicate the
 maximum in bytes to accept in the HTTP request. [const 0] means unlimited.
-Mostly useful to limit the size of POST'ed data. Default: [const 1024000]
+Mostly useful to limit the size of [const POST]'ed data. Default: [const 1024000]
       
 [item] [const maxwait] is an integer parameter to indicate the amount
       of time to wait in seconds in the queue when the concurrency
@@ -355,7 +356,7 @@ There are several ways a Web page can run a CGI program:
 
     [item] The [const POST] method causes the field names and values to be
         passed to the program through standard input. If the input
-        from your form may be long, it is best to use the POST method
+        from your form may be long, it is best to use the [const POST] method
         because long strings can be truncated when they are assigned
         to an environment variable.
 
@@ -439,7 +440,7 @@ Here are some examples of URLs that could run a CGI program:
 [para]
    This URL runs the search program and passes it the word
    "navigate" as input. This URL doesn't include any field
-   names, so it might be passed by pages with an ISINDEX tag.
+   names, so it might be passed by pages with an [const ISINDEX] tag.
 
 [item] [const http://www.webcrawler.com/cgi-bin/WebQuery?searchText=word]
 
@@ -470,7 +471,7 @@ CGI programs can get input from these sources:
 [list_begin itemized]
 
 [item] Command line: The only type of input that go to the command line
-    of a CGI program are values typed into an ISINDEX field and
+    of a CGI program are values typed into an [const ISINDEX] field and
     query strings that do not contain an "=" sign (from a direct
     link). Forms cannot send variables to the command line.
 
@@ -478,10 +479,10 @@ CGI programs can get input from these sources:
     are always available to the CGI program. You can
     specify additional environment variables in the NaviServer
     configuration file. And, if the METHOD for a form
-    is GET, the field names and values are stored in the QUERY_STRING
-    environment variable.
+    is [const GET], the field names and values are stored in the
+    [const QUERY_STRING] environment variable.
 
-[item] Standard input: If the METHOD for a form is POST, the field names
+[item] Standard input: If the METHOD for a form is [const POST], the field names
     and values are sent to standard input.
 [list_end]
 
@@ -545,7 +546,7 @@ Example: Basic
 [emph CONTENT_LENGTH:]
 
 [para]
-If the CGI program is run by a form with the POST method, this
+If the CGI program is run by a form with the [const POST] method, this
 variable contains the length of the contents of standard input in
 bytes. There is no null or EOF character at the end of standard input,
 so in some languages (such as C and Perl) you should check this
@@ -561,7 +562,7 @@ Example: 442
 
 
 [para]
-If the CGI program is run by a form with the POST method, this
+If the CGI program is run by a form with the [const POST] method, this
 variable contains the MIME type of the information sent by the
 browser. Currently, all browsers should send the information as
 [const application/x-www-form-urlencoded].
@@ -705,9 +706,9 @@ situations:
 
 [list_begin itemized]
 
-[item]  The reader submitted a form that uses the GET method.
+[item]  The reader submitted a form that uses the [const GET] method.
 
-[item]  The reader submitted a query in a page with the ISINDEX tag.
+[item]  The reader submitted a query in a page with the [const ISINDEX] tag.
      (The text the user types is also decoded and sent to the program's
      command line in this situation. The QUERY_STRING provides the
      non-decoded information.)
@@ -873,9 +874,10 @@ Example: [const nsadmin]
 
 [para]
 The method used to send the request to the server. For direct links,
-the method is "GET". For requests from forms, the method may be "GET"
-or "POST". Another method is "HEAD", which CGI programs can treat like
-"GET" or can provide header information without page contents.
+the method is [const GET]. For requests from forms, the method may be
+[const GET] or [const POST]. Another method is [const HEAD],
+which CGI programs can treat like [const GET] or can provide
+header information without page contents.
 
 
 [para]
@@ -967,11 +969,11 @@ program in the NaviServer configuration file.
 
 
 [para]
-If a form uses the POST method to send a request, the field names and
+If a form uses the [const POST] method to send a request, the field names and
 values are sent to standard input and the length of this string is
-provided in the CONTENT_LENGTH environment variable. The format of the
-standard input string is the same as the format of the QUERY_STRING
-environment variable when the GET method is used.
+provided in the [const CONTENT_LENGTH] environment variable. The format of the
+standard input string is the same as the format of the [const QUERY_STRING]
+environment variable when the [const GET] method is used.
 
 
 [para]
