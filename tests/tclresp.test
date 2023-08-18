@@ -278,6 +278,18 @@ fghi
 
 }}
 
+test tclresp-2.6 {ns_return and alter output headers} -setup {
+    ns_register_proc GET /tclresp {
+        ns_set update [ns_conn outputheaders] content-type "text/html"
+        ns_return 200 text/plain "hello world"
+    }
+}  -body {
+    nstest::http -getbody 1 -getheaders {content-type} GET /tclresp
+} -cleanup {
+    ns_unregister_op GET /tclresp
+} -match glob -result {200 {text/plain; charset=utf-8} {hello world}}
+
+
 
 test tclresp-3.1 {ns_return} -constraints serverListen -setup {
     ns_register_proc GET /tclresp {ns_return 200 text/plain x}
