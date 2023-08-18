@@ -703,7 +703,7 @@ proc ns_getcontent {args} {
             # There is no content file, we have to create it and write
             # the content from [ns_conn content] into it.
             #
-            set F [ns_opentmpfile contentfile [ns_config ns/parameters tmpdir]/nsd-XXXXXX]
+            set F [ns_opentmpfile contentfile]
             if {$binary} {
                 fconfigure $F -translation binary
                 puts -nonewline $F [ns_conn content -binary]
@@ -723,7 +723,7 @@ proc ns_getcontent {args} {
                 # parameterized in the future.
                 #
                 set F [open $contentfile r]
-                set N [ns_opentmpfile ncontentfile [ns_config ns/parameters tmpdir]/nsd-XXXXXX]
+                set N [ns_opentmpfile ncontentfile]
                 fconfigure $F -translation binary
                 fconfigure $N -encoding utf-8
                 while {1} {
