@@ -111,7 +111,7 @@ Ns_SetIUpdateSz(Ns_Set *set,
          */
         if (*(set->fields[index].name) != *keyString) {
             if (keyLength == -1) {
-                keyLength = (ssize_t)strlen(keyString);
+                keyLength = (TCL_SIZE_T)strlen(keyString);
             }
             memcpy(set->fields[index].name, keyString, (size_t)keyLength);
         }
@@ -454,7 +454,7 @@ Ns_SetPutSz(Ns_Set *set,
     set->fields[idx].name = ns_strncopy(keyString, keyLength);
     set->fields[idx].value = ns_strncopy(valueString, valueLength);
 #endif
-    Ns_Log(Ns_LogNsSetDebug, "Ns_SetPut %p [%lu] key '%s' value '%s' size %ld",
+    Ns_Log(Ns_LogNsSetDebug, "Ns_SetPut %p [%lu] key '%s' value '%s' size %" PRITcl_Size,
            (void*)set, idx, set->fields[idx].name, set->fields[idx].value, valueLength);
     return idx;
 }
@@ -944,7 +944,7 @@ Ns_SetPutValueSz(Ns_Set *set, size_t index, const char *value, TCL_SIZE_T size)
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(value != NULL);
 
-    Ns_Log(Ns_LogNsSetDebug, "Ns_SetPutValue %p [%lu] key '%s' value '%s' size %ld",
+    Ns_Log(Ns_LogNsSetDebug, "Ns_SetPutValue %p [%lu] key '%s' value '%s' size %" PRITcl_Size,
            (void*)set, index, set->fields[index].name, value, size);
 
     if (index < set->size) {
