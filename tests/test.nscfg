@@ -305,8 +305,8 @@ ns_section ns/server/test/module/nscgi {
     ns_param    map                 "GET /cgi-dir [ns_config test home]/testserver/cgi"
     ns_param    map                 "GET *.cgi"
     ns_param    interps              CGIinterps
-    #ns_param   allowstaticresources true    ;# default false; serve static resources from cgi directories
-    ns_param    systemenvironment    true
+    ns_param    allowstaticresources true    ;# default false; serve static resources from cgi directories
+    ns_param    systemenvironment    true    ;# default false, provide interpreter environment to script
 }
 
 ns_section ns/interps/CGIinterps {

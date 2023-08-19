@@ -159,6 +159,15 @@ test nscgi-1.7.1.2 {
     nstest::http -getbody 1 GET /info.cgi?var=SCRIPT_NAME
 } -returnCodes {error ok} -match glob -result "*SCRIPT_NAME: </info.cgi>*"
 
+test nscgi-1.7.1.3 {
+    mapping based on extension
+    access static resource in same directory
+    needs no "allowstaticresources"
+} -constraints {serverListen tclsh} -body {
+    nstest::http -getbody 1 GET /10bytes
+} -returnCodes {error ok} -result {200 0123456789}
+
+
 #
 # Mapping with a wild-card directory.
 #
@@ -172,7 +181,7 @@ test nscgi-1.7.2.0a {
     nstest::http -getbody 1 GET /cgi-wc/listdir.tclcgi?var=PATH_INFO
 } -returnCodes {error ok} -match glob -result "*PATH_INFO: <>*"
 
-test nscgi-1.7.1.0b {
+test nscgi-1.7.2.0b {
     mapping based on wild-card directory using a subdirectory - PATH_INFO
 } -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(cgi) on
@@ -180,14 +189,14 @@ test nscgi-1.7.1.0b {
 } -returnCodes {error ok} -match glob -result "*PATH_INFO: <>*"
 
 
-test nscgi-1.7.1.1a {
+test nscgi-1.7.2.1a {
     mapping based on wild-card directory - PATH_TRANSLATED
 } -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(cgi) on
     nstest::http -getbody 1 GET /cgi-wc/listdir.tclcgi?var=PATH_TRANSLATED
 } -returnCodes {error ok} -match glob -result "*PATH_TRANSLATED: <*pages/cgi-wc/listdir.tclcgi>*"
 
-test nscgi-1.7.1.1b {
+test nscgi-1.7.2.1b {
     mapping based on wild-card directory using a subdirectory - PATH_TRANSLATED
 } -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(cgi) on
@@ -195,20 +204,27 @@ test nscgi-1.7.1.1b {
 } -returnCodes {error ok} -match glob -result "*PATH_TRANSLATED: <*pages/cgi-wc/sub/sub.tclcgi>*"
 
 
-test nscgi-1.7.1.3a {
+test nscgi-1.7.2.3a {
     mapping based on wild-card directory - SCRIPT_NAME
 } -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(cgi) on
     nstest::http -getbody 1 GET /cgi-wc/listdir.tclcgi?var=SCRIPT_NAME
 } -returnCodes {error ok} -match glob -result "*SCRIPT_NAME: </cgi-wc/listdir.tclcgi>*"
 
-test nscgi-1.7.1.3b {
+test nscgi-1.7.2.3b {
     mapping based on wild-card directory using a subdirectory - SCRIPT_NAME
 } -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(cgi) on
     nstest::http -getbody 1 GET /cgi-wc/sub/sub.tclcgi?var=SCRIPT_NAME
 } -returnCodes {error ok} -match glob -result "*SCRIPT_NAME: </cgi-wc/sub/sub.tclcgi>*"
 
+test nscgi-1.7.2.3 {
+    mapping based on wild-card directory
+    access static resource in same directory
+    needs no "allowstaticresources"
+} -constraints {serverListen tclsh} -body {
+    nstest::http -getbody 1 GET /cgi-wc/resource-cgi-wc.txt
+} -returnCodes {error ok} -result {200 0123456789}
 
 #
 # mapping with an extra directory
@@ -230,7 +246,7 @@ test nscgi-1.7.3.0b {
 
 
 test nscgi-1.7.3.1a {
-    mapping based on directory with path mapping - PATH_TRANSLATED
+    mapping based on directory - PATH_TRANSLATED
 } -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(cgi) on
     nstest::http -getbody 1 GET /cgi-dir/info.tclcgi?var=PATH_TRANSLATED
@@ -243,14 +259,14 @@ test nscgi-1.7.3.1b {
     nstest::http -getbody 1 GET /cgi-dir/info.tclcgi/foo?var=PATH_TRANSLATED
 } -returnCodes {error ok} -match glob -result "*PATH_TRANSLATED: <*tests/testserver/cgi/info.tclcgi>*"
 
-test nscgi-1.7.3.3a {
-    mapping based on directory with path mapping - SCRIPT_NAME
+test nscgi-1.7.3.2a {
+    mapping based on directory - SCRIPT_NAME
 } -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(cgi) on
     nstest::http -getbody 1 GET /cgi-dir/info.tclcgi?var=SCRIPT_NAME
 } -returnCodes {error ok} -match glob -result "*SCRIPT_NAME: </cgi-dir/info.tclcgi>*"
 
-test nscgi-1.7.3.3b {
+test nscgi-1.7.3.2b {
     mapping based on directory. CGI program is in the middle of the path - SCRIPT_NAME
 } -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(cgi) on
@@ -258,7 +274,22 @@ test nscgi-1.7.3.3b {
 } -returnCodes {error ok} -match glob -result "*SCRIPT_NAME: </cgi-dir/info.tclcgi>*"
 
 
+test nscgi-1.7.3.3a {
+    mapping based on directory
+    access static resource in same directory
+    needs "allowstaticresources"
+} -constraints {serverListen tclsh} -body {
+    nstest::http -getbody 1 GET /cgi-dir/resource-cgi.txt
+} -returnCodes {error ok} -result {200 0123456789}
 
+test nscgi-1.7.3.3b {
+    mapping based on directory
+    access static resource in a sub-directory
+    needs "allowstaticresources"
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /cgi-dir/sub/resource-cgi-sub.txt
+} -returnCodes {error ok} -match glob -result {500 *}
 
 
 
