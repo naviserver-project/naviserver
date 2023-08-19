@@ -45,6 +45,7 @@ test nscgi-1.2.2 {check SERVER_NAME with untrusted virtual host} -constraints {s
                 -getbody 1 GET /info.cgi?var=SERVER_NAME
 } -returnCodes {error ok} -match glob -result "*SERVER_NAME: <test>*"
 
+
 #
 # Nonzero return code
 #
@@ -128,27 +129,151 @@ test nscgi-1.6.2 {check set AUTH_TYPE} -constraints {serverListen tclsh} -body {
 } -returnCodes {error ok} -match glob -result "*AUTH_TYPE: <Basic>*"
 
 #
-# PATH_INFO and PATH_TRANSLATED
-#
-test nscgi-1.7.1.0 {check basic PATH_INFO} -constraints {serverListen tclsh} -body {
-    #ns_logctl severity Debug(cgi) on
-    nstest::http -getbody 1 GET /cgi/listdir.tclcgi?var=PATH_INFO
-} -returnCodes {error ok} -match glob -result "*PATH_INFO: <>*"
+# PATH_INFO, PATH_TRANSLATED, and SCRIPT_NAME based on three different scenarios
+# a) mapping based on file extension
+# b) mapping with a wild-card directory
+# c) mapping with an extra directory
 
-test nscgi-1.7.1.1 {check basic PATH_INFO} -constraints {serverListen tclsh} -body {
+#
+# Mapping based on file extension.
+# File can be everywhere in the URL space.
+#
+test nscgi-1.7.1.0 {
+    mapping based on extension - PATH_INFO
+} -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(cgi) on
     nstest::http -getbody 1 GET /info.cgi?var=PATH_INFO
 } -returnCodes {error ok} -match glob -result "*PATH_INFO: <>*"
 
-test nscgi-1.7.2.0 {check basic PATH_TRANSLATED} -constraints {serverListen tclsh} -body {
+test nscgi-1.7.1.1 {
+    mapping based on extension - PATH_TRANSLATED
+} -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(cgi) on
     nstest::http -getbody 1 GET /info.cgi?var=PATH_TRANSLATED
 } -returnCodes {error ok} -match glob -result "*PATH_TRANSLATED: <*pages/info.cgi>*"
 
-test nscgi-1.7.2.1 {check basic PATH_TRANSLATED} -constraints {serverListen tclsh} -body {
+test nscgi-1.7.1.2 {
+    mapping based on extension - SCRIPT_NAME
+} -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(cgi) on
-    nstest::http -getbody 1 GET /cgi/listdir.tclcgi?var=PATH_TRANSLATED
-} -returnCodes {error ok} -match glob -result "*PATH_TRANSLATED: <*pages/cgi/listdir.tclcgi>*"
+    nstest::http -getbody 1 GET /info.cgi?var=SCRIPT_NAME
+} -returnCodes {error ok} -match glob -result "*SCRIPT_NAME: </info.cgi>*"
+
+#
+# Mapping with a wild-card directory.
+#
+# CGI-interpretation happens on every file in the specified directory
+# and its subdirectorires
+
+test nscgi-1.7.2.0a {
+    mapping based on wild-card directory - PATH_INFO
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /cgi-wc/listdir.tclcgi?var=PATH_INFO
+} -returnCodes {error ok} -match glob -result "*PATH_INFO: <>*"
+
+test nscgi-1.7.1.0b {
+    mapping based on wild-card directory using a subdirectory - PATH_INFO
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /cgi-wc/sub/sub.tclcgi?var=PATH_INFO
+} -returnCodes {error ok} -match glob -result "*PATH_INFO: <>*"
+
+
+test nscgi-1.7.1.1a {
+    mapping based on wild-card directory - PATH_TRANSLATED
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /cgi-wc/listdir.tclcgi?var=PATH_TRANSLATED
+} -returnCodes {error ok} -match glob -result "*PATH_TRANSLATED: <*pages/cgi-wc/listdir.tclcgi>*"
+
+test nscgi-1.7.1.1b {
+    mapping based on wild-card directory using a subdirectory - PATH_TRANSLATED
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /cgi-wc/sub/sub.tclcgi?var=PATH_TRANSLATED
+} -returnCodes {error ok} -match glob -result "*PATH_TRANSLATED: <*pages/cgi-wc/sub/sub.tclcgi>*"
+
+
+test nscgi-1.7.1.3a {
+    mapping based on wild-card directory - SCRIPT_NAME
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /cgi-wc/listdir.tclcgi?var=SCRIPT_NAME
+} -returnCodes {error ok} -match glob -result "*SCRIPT_NAME: </cgi-wc/listdir.tclcgi>*"
+
+test nscgi-1.7.1.3b {
+    mapping based on wild-card directory using a subdirectory - SCRIPT_NAME
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /cgi-wc/sub/sub.tclcgi?var=SCRIPT_NAME
+} -returnCodes {error ok} -match glob -result "*SCRIPT_NAME: </cgi-wc/sub/sub.tclcgi>*"
+
+
+#
+# mapping with an extra directory
+#
+
+test nscgi-1.7.3.0a {
+    mapping based on directory with path mapping - PATH_INFO
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /cgi-dir/info.tclcgi?var=PATH_INFO
+} -returnCodes {error ok} -match glob -result "*PATH_INFO: <>*"
+
+test nscgi-1.7.3.0b {
+    mapping based on directory. CGI program is in the middle of the path - PATH_INFO
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /cgi-dir/info.tclcgi/foo?var=PATH_INFO
+} -returnCodes {error ok} -match glob -result "*PATH_INFO: </foo>*"
+
+
+test nscgi-1.7.3.1a {
+    mapping based on directory with path mapping - PATH_TRANSLATED
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /cgi-dir/info.tclcgi?var=PATH_TRANSLATED
+} -returnCodes {error ok} -match glob -result "*PATH_TRANSLATED: <*tests/testserver/cgi/info.tclcgi>*"
+
+test nscgi-1.7.3.1b {
+    mapping based on directory. CGI program is in the middle of the path - PATH_TRANSLATED
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /cgi-dir/info.tclcgi/foo?var=PATH_TRANSLATED
+} -returnCodes {error ok} -match glob -result "*PATH_TRANSLATED: <*tests/testserver/cgi/info.tclcgi>*"
+
+test nscgi-1.7.3.3a {
+    mapping based on directory with path mapping - SCRIPT_NAME
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /cgi-dir/info.tclcgi?var=SCRIPT_NAME
+} -returnCodes {error ok} -match glob -result "*SCRIPT_NAME: </cgi-dir/info.tclcgi>*"
+
+test nscgi-1.7.3.3b {
+    mapping based on directory. CGI program is in the middle of the path - SCRIPT_NAME
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /cgi-dir/info.tclcgi/foo?var=SCRIPT_NAME
+} -returnCodes {error ok} -match glob -result "*SCRIPT_NAME: </cgi-dir/info.tclcgi>*"
+
+
+
+
+
+
+#
+# Check effect of systemenvironment
+#
+test nscgi-1.8.0 {
+    Check results of activated "systemenvironment".
+    We assume, the system has a "USER" environment variable set.
+} -constraints {serverListen tclsh} -body {
+    set r [nstest::http -getbody 1 GET /info.cgi?var=USER]
+    #ns_log notice $r
+    return USER=[regexp {USER: <\S+>} $r]
+} -returnCodes {error return ok} -result "USER=1"
+
 
 cleanupTests
 

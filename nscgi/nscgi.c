@@ -467,7 +467,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
             goto err;
 
         } else if (S_ISDIR(st.st_mode)) {
-
+            Ns_Log(Ns_LogCGIDebug, "Path mapping is a directory");
             /*
              * Path mapping is a directory:
              *
@@ -553,6 +553,10 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
     }
     *s = '\0';
     cgiPtr->dir = Ns_DStringAppend(CgiDs(cgiPtr), cgiPtr->path);
+    Ns_Log(Ns_LogCGIDebug, "nscgi: dir <%s>", cgiPtr->dir);
+    Ns_Log(Ns_LogCGIDebug, "nscgi: path <%s>", cgiPtr->path);
+    Ns_Log(Ns_LogCGIDebug, "nscgi: name <%s>", cgiPtr->name);
+    Ns_Log(Ns_LogCGIDebug, "nscgi: pathinfo <%s>", cgiPtr->pathinfo);
     *s++ = '/';
     if (strncmp(s, "nph-", 4u) == 0) {
         cgiPtr->flags |= CGI_NPH;
@@ -813,14 +817,12 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
                 int idx;
 
                 *e = '\0';
+                /*
+                 * Do not overwrite already computed values in the Ns_Set.
+                 */
                 idx = Ns_SetFind(cgiPtr->env, s);
                 if (idx < 0) {
-                    /*
-                     * TODO: we should use Ns_SetPutSz instead, but this
-                     * change should be done once we have test cases for
-                     * nscgi.
-                     */
-                    (void)Ns_SetPut(cgiPtr->env, s, e+1);
+                    (void)Ns_SetPutSz(cgiPtr->env, s, (TCL_SIZE_T)(e-s), e+1, -1);
                 }
                 *e = '=';
             }
@@ -847,30 +849,20 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
 
     Ns_SetUpdateSz(cgiPtr->env, "SCRIPT_NAME", 11, cgiPtr->name, TCL_INDEX_NONE);
     if (cgiPtr->pathinfo != NULL && *cgiPtr->pathinfo != '\0') {
-        Ns_DString tmp;
 
         if (Ns_UrlPathDecode(dsPtr, cgiPtr->pathinfo, NULL) != NULL) {
             Ns_SetUpdateSz(cgiPtr->env, "PATH_INFO", 9, dsPtr->string, dsPtr->length);
         } else {
             Ns_SetUpdateSz(cgiPtr->env, "PATH_INFO", 9, cgiPtr->pathinfo, TCL_INDEX_NONE);
         }
-        (void)Ns_UrlToFile(dsPtr, modPtr->server, cgiPtr->pathinfo);
-
-        Ns_DStringInit(&tmp);
-        if (Ns_UrlPathDecode(&tmp, dsPtr->string, NULL) != NULL) {
-            Ns_SetUpdateSz(cgiPtr->env, "PATH_TRANSLATED", 15, tmp.string, tmp.length);
-        } else {
-            Ns_SetUpdateSz(cgiPtr->env, "PATH_TRANSLATED", 15, dsPtr->string, dsPtr->length);
-        }
-        Ns_DStringSetLength(dsPtr, 0);
-        Ns_DStringFree(&tmp);
     } else {
         /*
          * We have no pathinfo, must be a wildcard map
          */
         Ns_SetUpdateSz(cgiPtr->env, "PATH_INFO", 9, NS_EMPTY_STRING, 0);
-        Ns_SetUpdateSz(cgiPtr->env, "PATH_TRANSLATED", 15, cgiPtr->path, TCL_INDEX_NONE);
     }
+    Ns_SetUpdateSz(cgiPtr->env, "PATH_TRANSLATED", 15, cgiPtr->path, TCL_INDEX_NONE);
+
     if (cgiPtr->interp != NULL) {
         /*
          * We have a registered interpreter. In the PHP case, one has to
