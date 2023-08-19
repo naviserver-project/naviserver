@@ -110,7 +110,7 @@ Ns_SetIUpdateSz(Ns_Set *set,
          * If the capitalization of the key is different, keep the new one.
          */
         if (*(set->fields[index].name) != *keyString) {
-            if (keyLength == -1) {
+            if (keyLength == TCL_INDEX_NONE) {
                 keyLength = (TCL_SIZE_T)strlen(keyString);
             }
             memcpy(set->fields[index].name, keyString, (size_t)keyLength);
