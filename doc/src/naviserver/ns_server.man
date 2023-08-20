@@ -214,6 +214,9 @@ Undo the effect of a [cmd "ns_server map"] operation.  As a
 consequence formerly mapped requests will be served by the default
 connection pool.
 
+[para] Limitation: when the mapspec contains a context filter (see
+below) this is ignored, all entries with the specified HTTP method and
+path are unmapped.
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
