@@ -1,1 +1,1 @@
-../10bytes
+../resource-cgi.txt
