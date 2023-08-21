@@ -94,7 +94,7 @@ static const struct proc {
     { (ns_funcptr_t)NsShortcutFilterProc, "ns:shortcutfilter",   NULL},
     { (ns_funcptr_t)NsTclRequestProc,     "ns:tclrequest",       Ns_TclCallbackArgProc},
     { (ns_funcptr_t)NsAdpPageProc,        "ns:adppage",          NsAdpPageArgProc},
-    { (ns_funcptr_t)Ns_FastPathProc,      "ns:fastget",          NULL},
+    { (ns_funcptr_t)Ns_FastPathProc,      "ns:fastpath",         NULL},
     { (ns_funcptr_t)NsTclTraceProc,       "ns:tcltrace",         Ns_TclCallbackArgProc},
     { (ns_funcptr_t)NsTclUrl2FileProc,    "ns:tclurl2file",      Ns_TclCallbackArgProc},
     { (ns_funcptr_t)NsMountUrl2FileProc,  "ns:mounturl2file",    NsMountUrl2FileArgProc},
