@@ -1008,7 +1008,9 @@ WalkTrie(const Trie *triePtr, Ns_ArgProc func,
 
         }
 
-        Ns_DStringVarAppend(&subDs, " ", filter, " ", (char *)0L);
+        Tcl_DStringAppend(&subDs, " ", 1);
+        Tcl_DStringAppendElement(&subDs, filter);
+        Tcl_DStringAppend(&subDs, " ", 1);
 
         /*
          * Append a sublist for each type of proc.
