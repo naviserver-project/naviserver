@@ -91,6 +91,7 @@ NS_EXTERN const int Ns_ModuleVersion;
 NS_EXPORT const int Ns_ModuleVersion = 1;
 
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
+static Ns_TclTraceProc AddCmds;
 
 static const char *NS_EMPTY_STRING = "";
 
@@ -115,6 +116,7 @@ static char         *NextWord(char *s)                          NS_GNUC_NONNULL(
 static void          SetAppend(Ns_Set *set, int index, const char *sep, char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
+static TCL_OBJCMDPROC_T NsTclRegisterCGIObjCmd;
 
 /*
  *----------------------------------------------------------------------
@@ -132,6 +134,16 @@ static void          SetAppend(Ns_Set *set, int index, const char *sep, char *va
  *
  *----------------------------------------------------------------------
  */
+static int
+AddCmds(Tcl_Interp *interp, const void *arg)
+{
+    const Mod *modPtr = arg;
+
+    Ns_Log(Ns_LogCGIDebug, "nscgi: adding command ns_register_cgi");
+    (void)TCL_CREATEOBJCOMMAND(interp, "ns_register_cgi", NsTclRegisterCGIObjCmd, (ClientData)modPtr, NULL);
+
+    return TCL_OK;
+}
 
 NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
@@ -227,8 +239,21 @@ Ns_ModuleInit(const char *server, const char *module)
     }
     Ns_DStringFree(&ds);
 
+    if (server == NULL) {
+        Ns_Log(Warning, "nscgi: loaded as a global module,"
+               " module specific commands are not loaded");
+    } else {
+        if (Ns_TclRegisterTrace(server, AddCmds, modPtr,
+                                NS_TCL_TRACE_CREATE) != NS_OK) {
+        } else {
+            Ns_RegisterProcInfo((ns_funcptr_t)AddCmds, "nscgi:initinterp", NULL);
+        }
+        Ns_RegisterProcInfo((ns_funcptr_t)CgiRequest, "ns:cgirequest", NULL);
+    }
+
     return NS_OK;
 }
+
 
 
 /*
@@ -273,6 +298,9 @@ CgiRequest(const void *arg, Ns_Conn *conn)
         /*
          * Can't execute interpreter. Maybe return file a static file?
          */
+        Ns_Log(Ns_LogCGIDebug, "nscgi: cannot execute interpreter."
+               " Maybe a a static file <%s>", cgi.exec);
+
         if (((modPtr->flags & CGI_ALLOW_STATIC) != 0u) &&
             ( STREQ(conn->request.method, "GET") ||
               STREQ(conn->request.method, "HEAD")) ) {
@@ -1448,6 +1476,50 @@ SetAppend(Ns_Set *set, int index, const char *sep, char *value)
                         sep, value, (char *)0L);
     Ns_SetPutValueSz(set, (size_t)index, ds.string, ds.length);
     Ns_DStringFree(&ds);
+}
+
+
+static int
+NsTclRegisterCGIObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+{
+    char       *method, *url, *path = NULL;
+    int         noinherit = 0, result = TCL_OK;
+    Ns_ObjvSpec opts[] = {
+        {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_OP_NOINHERIT)},
+        {"-path",      Ns_ObjvString, &path,      NULL},
+        {"--",         Ns_ObjvBreak,  NULL,       NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"method",     Ns_ObjvString, &method, NULL},
+        {"url",        Ns_ObjvString, &url,    NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Map            *mapPtr;
+        Mod            *modPtr = clientData;
+        unsigned int    flags = 0u;
+
+        if (noinherit != 0) {
+            flags |= NS_OP_NOINHERIT;
+        }
+
+        mapPtr = ns_malloc(sizeof(Map));
+        mapPtr->modPtr = modPtr;
+        mapPtr->url = ns_strdup(url);
+        mapPtr->path = ns_strcopy(path);
+        Ns_Log(Notice, "nscgi: %s %s%s%s", method, url,
+               (path != NULL) ? " -> " : NS_EMPTY_STRING,
+               (path != NULL) ? path : NS_EMPTY_STRING);
+
+        Ns_RegisterRequest(modPtr->server, method, url,
+                           CgiRequest, CgiFreeMap, mapPtr, flags);
+    }
+
+    return result;
 }
 
 /*
