@@ -135,7 +135,6 @@ Ns_RegisterUrl2FileProc(const char *server, const char *url,
                         unsigned int flags)
 {
     NsServer *servPtr = NsGetServer(server);
-    Ns_Log(Warning, "Ns_RegisterUrl2FileProc CALLED for url '%s'", url);
 
     if (servPtr != NULL) {
         Url2File *u2fPtr;
@@ -309,8 +308,8 @@ void
 Ns_SetUrlToFileProc(const char *server, Ns_UrlToFileProc *procPtr)
 {
     NsServer *servPtr = NsGetServer(server);
-    Ns_Log(Warning, "DEPRECATED proc called");
 
+    Ns_Log(Warning, "DEPRECATED function Ns_SetUrlToFileProc called");
     if (servPtr != NULL) {
         servPtr->fastpath.url2file = procPtr;
     }
