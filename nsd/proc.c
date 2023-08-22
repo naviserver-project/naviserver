@@ -421,7 +421,11 @@ AppendAddr(Tcl_DString *dsPtr, const char *prefix, const void *addr)
     NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(prefix != NULL);
 
-    Ns_DStringPrintf(dsPtr, " %s:%p", prefix, addr);
+    if (addr == NULL) {
+        Ns_DStringPrintf(dsPtr, " %s:0x0", prefix);
+    } else {
+        Ns_DStringPrintf(dsPtr, " %s:%p", prefix, addr);
+    }
 }
 
 /*
