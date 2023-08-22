@@ -92,6 +92,7 @@ NS_EXPORT const int Ns_ModuleVersion = 1;
 
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 static Ns_TclTraceProc AddCmds;
+static Ns_ArgProc ArgProc;
 
 static const char *NS_EMPTY_STRING = "";
 
@@ -104,20 +105,83 @@ static Ns_Callback CgiFreeMap;
 static Ns_ReturnCode CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static void          CgiRegister(Mod *modPtr, const char *map)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static Ns_DString   *CgiDs(Cgi *cgiPtr)                      NS_GNUC_NONNULL(1);
-static Ns_ReturnCode CgiFree(Cgi *cgiPtr)                       NS_GNUC_NONNULL(1);
-static Ns_ReturnCode CgiExec(Cgi *cgiPtr, Ns_Conn *conn)        NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static Ns_ReturnCode CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static Ns_ReturnCode CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static ssize_t       CgiRead(Cgi *cgiPtr)                       NS_GNUC_NONNULL(1);
+static void          CgiRegister(Mod *modPtr, const char *map)   NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static Ns_DString   *CgiDs(Cgi *cgiPtr)                          NS_GNUC_NONNULL(1);
+static Ns_ReturnCode CgiFree(Cgi *cgiPtr)                        NS_GNUC_NONNULL(1);
+static Ns_ReturnCode CgiExec(Cgi *cgiPtr, Ns_Conn *conn)         NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static Ns_ReturnCode CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)  NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static Ns_ReturnCode CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)         NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static ssize_t       CgiRead(Cgi *cgiPtr)                        NS_GNUC_NONNULL(1);
 static ssize_t       CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static char         *NextWord(char *s)                          NS_GNUC_NONNULL(1);
+static char         *NextWord(char *s)                           NS_GNUC_NONNULL(1);
 static void          SetAppend(Ns_Set *set, int index, const char *sep, char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 static TCL_OBJCMDPROC_T NsTclRegisterCGIObjCmd;
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ArgProc --
+ *
+ *      Append listen port info for query callback.
+ *
+ * Results:
+ *      None
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ArgProc(Tcl_DString *dsPtr, const void *arg)
+{
+    const Map    *mapPtr = arg;
+
+    assert(mapPtr != NULL);
+
+    Tcl_DStringAppend(dsPtr, " url", 4);
+    Tcl_DStringAppendElement(dsPtr, mapPtr->url);
+    Tcl_DStringAppend(dsPtr, " path", 5);
+    Tcl_DStringAppendElement(dsPtr, mapPtr->path);
+
+    if (mapPtr->modPtr != NULL) {
+        Tcl_DStringAppend(dsPtr, " module", 7);
+        Tcl_DStringAppendElement(dsPtr, mapPtr->modPtr->module);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AddCmds --
+ *
+ *      Add the commands provided by the nscgi module.
+ *
+ * Results:
+ *      TCL_OK.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+AddCmds(Tcl_Interp *interp, const void *arg)
+{
+    const Mod *modPtr = arg;
+
+    Ns_Log(Ns_LogCGIDebug, "nscgi: adding command ns_register_cgi");
+    (void)TCL_CREATEOBJCOMMAND(interp, "ns_register_cgi",
+                               NsTclRegisterCGIObjCmd, (ClientData)modPtr,
+                               NULL);
+
+    return TCL_OK;
+}
+
+
 /*
  *----------------------------------------------------------------------
  *
@@ -134,17 +198,6 @@ static TCL_OBJCMDPROC_T NsTclRegisterCGIObjCmd;
  *
  *----------------------------------------------------------------------
  */
-static int
-AddCmds(Tcl_Interp *interp, const void *arg)
-{
-    const Mod *modPtr = arg;
-
-    Ns_Log(Ns_LogCGIDebug, "nscgi: adding command ns_register_cgi");
-    (void)TCL_CREATEOBJCOMMAND(interp, "ns_register_cgi", NsTclRegisterCGIObjCmd, (ClientData)modPtr, NULL);
-
-    return TCL_OK;
-}
-
 NS_EXPORT Ns_ReturnCode
 Ns_ModuleInit(const char *server, const char *module)
 {
@@ -248,7 +301,7 @@ Ns_ModuleInit(const char *server, const char *module)
         } else {
             Ns_RegisterProcInfo((ns_funcptr_t)AddCmds, "nscgi:initinterp", NULL);
         }
-        Ns_RegisterProcInfo((ns_funcptr_t)CgiRequest, "ns:cgirequest", NULL);
+        Ns_RegisterProcInfo((ns_funcptr_t)CgiRequest, "ns:cgirequest", ArgProc);
     }
 
     return NS_OK;
