@@ -264,7 +264,7 @@ test ns_server-2.14.3 {check, if cleanup of last test was successful} -body {
 #
 # Map some GET request, query the mapping, and unmap the GET requests
 #
-test ns_server-2.14.4 {mapping and unmapping of requests, return mapping} -setup {
+test ns_server-2.14.4a {mapping and unmapping of requests, return mapping} -setup {
     ns_server -pool emergency map "GET /foo"
     ns_server -pool emergency map "GET /* {X-NS-ip 127.0.0.1}"
 } -body {
@@ -273,16 +273,39 @@ test ns_server-2.14.4 {mapping and unmapping of requests, return mapping} -setup
     ns_server -pool emergency unmap "GET /foo"
 } -result {emergency}
 
+test ns_server-2.14.4b {mapping and unmapping of requests, return mapping} -setup {
+    ns_server -pool emergency map "GET /foo"
+    ns_server -pool emergency map "GET /* {X-NS-ip 127.0.0.1}"
+} -body {
+    ns_server mapped -all "GET /foo"
+} -cleanup {
+    ns_server -pool emergency unmap "GET /foo"
+} -result {pool emergency handler {ns:fastpath a:0x0}}
+
 #
 # Map some GET request, query the mapping, and unmap the GET requests
 #
-test ns_server-2.14.5 {mapping and unmapping of requests, return mapping with inheritance} -setup {
+test ns_server-2.14.5a {mapping and unmapping of requests, return mapping with inheritance} -setup {
     ns_server -pool emergency map "GET /foo/*.png"
 } -body {
-    return [list [ns_server mapped "GET /foo"] [ns_server mapped "GET /foo/1.png"] [ns_server mapped "GET /foo/bar/2.png"]]
+    return [list \
+                [ns_server mapped "GET /foo"] \
+                [ns_server mapped "GET /foo/1.png"] \
+                [ns_server mapped "GET /foo/bar/2.png"]]
 } -cleanup {
     ns_server -pool emergency unmap "GET /foo"
 } -result {{} emergency emergency}
+
+test ns_server-2.14.5b {mapping and unmapping of requests, return mapping with inheritance} -setup {
+    ns_server -pool emergency map "GET /foo/*.png"
+} -body {
+    return [list \
+                [ns_server mapped -all "GET /foo"] \
+                [ns_server mapped -all "GET /foo/1.png"] \
+                [ns_server mapped -all "GET /foo/bar/2.png"]]
+} -cleanup {
+    ns_server -pool emergency unmap "GET /foo"
+} -result {{pool {} handler {ns:fastpath a:0x0}} {pool emergency handler {ns:fastpath a:0x0}} {pool emergency handler {ns:fastpath a:0x0}}}
 
 
 #

@@ -1148,12 +1148,13 @@ static int
 ServerMappedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv,
                   NsServer *servPtr, TCL_OBJC_T nargs)
 {
-    int          result = TCL_OK, noinherit = 0, exact = 0;
+    int          result = TCL_OK, noinherit = 0, exact = 0, all = 0;
     Tcl_Obj     *mapspecObj = NULL;
     char        *method, *url;
     NsUrlSpaceContextSpec *specPtr;
     Ns_ObjvSpec  lopts[] = {
-        {"-exact",     Ns_ObjvBool,   &exact, INT2PTR(NS_TRUE)},
+        {"-all",       Ns_ObjvBool,   &all,       INT2PTR(NS_TRUE)},
+        {"-exact",     Ns_ObjvBool,   &exact,     INT2PTR(NS_TRUE)},
         {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_TRUE)},
         {NULL, NULL, NULL, NULL}
     };
@@ -1189,8 +1190,32 @@ ServerMappedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
         mappedPoolPtr = (ConnPool *)NsUrlSpecificGet(servPtr,  method, url, poolid, flags, op,
                                                      NULL, NULL);
         Ns_MutexUnlock(&servPtr->urlspace.lock);
+        if (mappedPoolPtr == NULL) {
+            mappedPoolPtr = servPtr->pools.defaultPtr;
+        }
 
-        if (mappedPoolPtr != NULL) {
+        if (all) {
+            Tcl_Obj     *dictObj = Tcl_NewDictObj();
+            Ns_OpProc   *procPtr;
+            Ns_Callback *deletePtr;
+            void        *argPtr;
+            unsigned int requestFlags;
+            Tcl_DString  ds;
+
+            Tcl_DStringInit(&ds);
+
+            Tcl_DictObjPut(interp, dictObj, Tcl_NewStringObj("pool", 4),
+                           Tcl_NewStringObj(mappedPoolPtr->pool, TCL_INDEX_NONE));
+
+            NsGetRequest2(servPtr, method, url, flags, op, NULL, NULL,
+                          &procPtr, &deletePtr, &argPtr, &requestFlags);
+            Ns_GetProcInfo(&ds, (ns_funcptr_t)procPtr, argPtr);
+
+            Tcl_DictObjPut(interp, dictObj, Tcl_NewStringObj("handler", 7),
+                           Tcl_NewStringObj(ds.string, ds.length));
+            Tcl_SetObjResult(interp, dictObj);
+            Tcl_DStringFree(&ds);
+        } else {
             Tcl_SetObjResult(interp, Tcl_NewStringObj(mappedPoolPtr->pool, TCL_INDEX_NONE));
         }
     }

@@ -1473,6 +1473,15 @@ NsUrlSpaceContextSpecAppend(Tcl_DString *dsPtr, NsUrlSpaceContextSpec *spec)
 
 NS_EXTERN NsUrlSpaceContextFilterProc NsUrlSpaceContextFilter;
 
+NS_EXTERN void
+NsGetRequest2(NsServer *servPtr, const char *method, const char *url,
+              unsigned int flags, NsUrlSpaceOp op,
+              NsUrlSpaceContextFilterProc proc, void *context,
+              Ns_OpProc **procPtr, Ns_Callback **deletePtr, void **argPtr,
+              unsigned int *flagsPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(2)
+    NS_GNUC_NONNULL(8) NS_GNUC_NONNULL(9) NS_GNUC_NONNULL(10) NS_GNUC_NONNULL(11);
+
 /*
  * dns.c interface
  */

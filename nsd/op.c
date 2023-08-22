@@ -131,10 +131,12 @@ Ns_RegisterRequest(const char *server, const char *method, const char *url,
 /*
  *----------------------------------------------------------------------
  *
- * Ns_GetRequest --
+ * Ns_GetRequest, NsGetRequest2 --
  *
  *      Return the procedures and context for a given method and url
- *      pattern.
+ *      pattern. While Ns_GetRequest() provides the legacy interface,
+ *      NsGetRequest2() gives more fine granular input to without exposing
+ *      static definitions.
  *
  * Results:
  *      None.
@@ -144,15 +146,16 @@ Ns_RegisterRequest(const char *server, const char *method, const char *url,
  *
  *----------------------------------------------------------------------
  */
-
 void
-Ns_GetRequest(const char *server, const char *method, const char *url,
+NsGetRequest2(NsServer *servPtr, const char *method, const char *url,
+              unsigned int flags, NsUrlSpaceOp op,
+              NsUrlSpaceContextFilterProc proc, void *context,
               Ns_OpProc **procPtr, Ns_Callback **deletePtr, void **argPtr,
               unsigned int *flagsPtr)
 {
     const RegisteredProc *regPtr;
 
-    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(method != NULL);
     NS_NONNULL_ASSERT(url != NULL);
     NS_NONNULL_ASSERT(procPtr != NULL);
@@ -160,8 +163,8 @@ Ns_GetRequest(const char *server, const char *method, const char *url,
     NS_NONNULL_ASSERT(flagsPtr != NULL);
 
     Ns_MutexLock(&ulock);
-    regPtr = NsUrlSpecificGet(NsGetServer(server), method, url, uid,
-                              0u, NS_URLSPACE_DEFAULT, NULL, NULL);
+    regPtr = NsUrlSpecificGet(servPtr, method, url,
+                              uid, flags, op, proc, context);
     if (regPtr != NULL) {
         *procPtr = regPtr->proc;
         *deletePtr = regPtr->deleteCallback;
@@ -174,6 +177,26 @@ Ns_GetRequest(const char *server, const char *method, const char *url,
         *flagsPtr = 0u;
     }
     Ns_MutexUnlock(&ulock);
+}
+
+
+void
+Ns_GetRequest(const char *server, const char *method, const char *url,
+              Ns_OpProc **procPtr, Ns_Callback **deletePtr, void **argPtr,
+              unsigned int *flagsPtr)
+{
+
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(method != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
+    NS_NONNULL_ASSERT(procPtr != NULL);
+    NS_NONNULL_ASSERT(argPtr != NULL);
+    NS_NONNULL_ASSERT(flagsPtr != NULL);
+
+    NsGetRequest2(NsGetServer(server), method, url,
+                  0u, NS_URLSPACE_DEFAULT,
+                  NULL, NULL,
+                  procPtr, deletePtr, argPtr, flagsPtr);
 }
 
 

@@ -128,17 +128,23 @@ and pool.
 [call [cmd  ns_server] \
 	[opt [option "-server [arg s]"]] \
 	[cmd mapped] \
+	[opt [option "-all"]] \
 	[opt [option "-exact"]] \
 	[opt [option "-noinherit"]] \
 	[arg "mapspec"] \
 	]
 
-Return the connection pool associated with the mapping specification
-(HTTP method and path).  When the option [option -exact] is used, the
-inheritance is deactivated, and only the values are returned directly
-assigned to the URL. When the option [option -noinherit] is specified,
-only values set with the [option -noinherit] flag are returned. For
-requests handled by the default connection pool, empty is returned.
+Per default, return the connection pool associated with the mapping
+specification (HTTP method and path). An empty value indicates the
+default connection pool.  When the [option -all] is specified, a dict
+is returned containing the keys [const pool] and [const handler]
+indicating the connection pool and the request handler handling this
+request.
+
+[para] When the option [option -exact] is used, the inheritance is
+deactivated, and only the values are returned directly assigned to the
+URL. When the option [option -noinherit] is specified, only values set
+with the [option -noinherit] flag are returned.
 
 
 [call [cmd  ns_server] \
