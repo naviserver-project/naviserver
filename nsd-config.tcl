@@ -35,8 +35,8 @@ dict set defaultConfig home [file dirname [file dirname [info nameofexecutable]]
 
 #
 # For all potential variables defined by the dict "defaultConfig",
-# allow environment variables such as "oacs_httpport" or
-# "oacs_ipaddress" to override local values.
+# allow environment variables such as "nsd_httpport" or
+# "nsd_ipaddress" to override local values.
 #
 source [file dirname [ns_info nsd]]/../tcl/init.tcl
 ns_configure_variables "nsd_" $defaultConfig
