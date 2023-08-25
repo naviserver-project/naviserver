@@ -26,7 +26,14 @@ h2 {
    width: 50em;
 }
 
-
+h3 {
+    margin-top: 1em;
+    color: #655;
+    text-transform: capitalize;
+    font-size: 1.2em;
+    font-weight: normal;
+    width: 50em;
+}
 
 hr {
    border: 0; height: 0; color: white; margin: 0;
