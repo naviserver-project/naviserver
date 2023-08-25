@@ -229,9 +229,10 @@ ns_section ns/server/default/fastpath {
     #ns_param   pagedir             pages
     #ns_param   serverdir           ""
     #ns_param   directoryfile       "index.adp index.tcl index.html index.htm"
+    #ns_param   directoryadp        dir.adp
     #ns_param   directoryproc       _ns_dirlist
-    ns_param    directorylisting    fancy    ;# default: simple
-    #ns_param   directoryadp       dir.adp
+    ns_param    directorylisting    fancy    ;# default: simple; parameter for _ns_dirlist
+    #ns_param   hidedotfiles        true     ;# default: false; parameter for _ns_dirlist
 }
 
 ns_section ns/server/default/vhost {

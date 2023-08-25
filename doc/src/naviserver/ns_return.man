@@ -216,7 +216,7 @@ false.
 option is activated, when the parameter [const cache] is set to true.
 [list_end]
 
-[subsection "Global fastpath configuration parameters"]
+[section "Global fastpath configuration parameters"]
 
 [list_begin definitions]
 
@@ -315,44 +315,67 @@ Example setting: "/usr/bin/yui-compressor --type js".  (string, defaults to "")
 
 [list_end]
 
-[subsection "Per-server fastpath configuration parameters"]
-[list_begin definitions]
+[section "Per-server fastpath configuration parameters"]
 
-[def directoryadp]
-Name of an ADP page to use to display directory listings.
-One can either specify [const directoryadp],
-or [const directoryproc], but not both.
+[subsection "File Locations"]
+
+The parameters [const serverdir] and [const pagedir]
+specify, from which locations in the filesystem
+pages should be served.
+
+[list_begin definitions]
+[def serverdir]
+Defines absolute or relative path to server's home directory. Relative
+names are relative to the [const home] in [const ns/parameters].
 (string, defaults to "")
+[para]
+Note: This parameter can be overloaded by defining a callback with
+[cmd ns_serverrootproc], e.g., for mass virtual hosting.
+
+[def pagedir]
+Defines absolute or relative path for serving content files. Relative
+names are relative to the [const serverdir]
+(string, defaults to [const pages])
+[list_end]
+
+
+[subsection "Directory Handling"]
+
+The parameters for directory handling specify what should happen, when the requested
+URL points to a directory. In a first step, NaviServer looks for a
+[const directoryfile] in this directory. If there is no such file,
+the server will try to serve a directory listing ADP, or - if no
+[const directoryadp] is configured - it will execute the Tcl proc
+specified by [const directoryproc].
+
+[list_begin definitions]
 
 [def directoryfile]
 Index files for directory
-(string, defaults to index.adp index.tcl index.html index.htm)
+(string, defaults to [const "index.adp index.tcl index.html index.htm"])
 
-[def directorylisting]
-Style of directory listings, Can be [const fancy], [const simple], or [const none].
-(string, defaults to simple)
+[def directoryadp]
+Name of an ADP page to use to display directory listings.
+(string, defaults to "")
 
 [def directoryproc]
 Name of Tcl proc to use to display directory listings.
 One can either specify [const directoryproc],
 or [const directoryadp], but not both.
-(string, defaults to _ns_dirlist)
+(string, defaults to [const _ns_dirlist])
+
+[def directorylisting]
+Style of directory listings. Can be [const fancy], [const simple], or
+[const none]. This value is a parameter for the directoryproc
+[const _ns_dirlist].
+(string, defaults to [const simple])
 
 [def hidedotfiles]
-Hide files starting with a dot in directory listings
-(boolean, defaults to false)
-
-[def pagedir]
-Defines absolute or relative path for serving content files. Relative
-names are relative to the [const serverdir]
-(string, defaults to serverdir/pages)
-
-[def serverdir]
-Defines absolute path to server's home directory.
-(string, defaults to "")
+Hide files starting with a dot in directory listings.
+This value is a parameter for the directoryproc [const _ns_dirlist].
+(boolean, defaults to [const false]).
 
 [list_end]
-
 
 
 

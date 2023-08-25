@@ -394,26 +394,38 @@ ns_section ns/server/${server}/tcl {
 
 ns_section ns/server/${server}/fastpath {
 
-    # Defines absolute path to server's home directory
-    ns_param		serverdir             ${serverdir}
+    # Defines absolute or relative path to server's home directory
+    # (relative to "home", default empty)
+    ns_param	serverdir               ${serverdir}
 
     # Defines absolute or relative to serverdir directory where all
-    # html/adp pages are located
-    ns_param		pagedir               ${pageroot}
+    # html/adp pages are located (relative to "serverdir", default "pages").
+    ns_param	pagedir                 ${pageroot}
 
     # Directory index/default page to look for.
     ns_param	directoryfile           "index.adp index.tcl index.html index.htm"
 
-    # Directory listing style. Optional, Can be "fancy" or "simple".
-    ns_param	directorylisting	fancy
+    # If the requested URL points to a directory, and no
+    # "directoryfile" was found in this directory, invoke a directory
+    # listing ADP by configuring "directoryadp", or invoke the Tcl
+    # proc specified by "directoryproc".
+    #
+    # Name of ADP page to use to display directory listings. Optional. You can either
+    # specify directoryadp or directoryproc - not both.
+    #ns_param	directoryadp		""
 
     # Name of Tcl proc to use to display directory listings. Optional, default is to use
     # _ns_dirlist. You can either specify directoryproc, or directoryadp - not both.
     ns_param	directoryproc           _ns_dirlist
 
-    # Name of ADP page to use to display directory listings. Optional. You can either
-    # specify directoryadp or directoryproc - not both.
-    #ns_param	directoryadp		""
+    # Directory listing style. Optional, can be "fancy", or "simple",
+    # or "none", defaults to "simple".  This value is a parameter for
+    # the directoryproc "_ns_dirlist".
+    ns_param	directorylisting	fancy
+
+    # Hide files starting with a dot in directory listings (boolean, defaults to false).
+    # This value is a parameter for the directoryproc "_ns_dirlist".
+    ns_param	hidedotfiles             true
 }
 
 ########################################################################
