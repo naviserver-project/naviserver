@@ -155,10 +155,6 @@ the URL space should be treated as a CGI request.
    ns_param map  "GET /*.cgi*"
  }
 [example_end]
-The match pattern with the trailing [const *] was chosen on
-purpose. A pattern without the trailing star, like e.g., [const /*.cgi]
-matches only requests ending with the extensions, but not, when
-the request URI contains query parameters or fragment identifiers.
 
 [para] One could also restrict the path to a certain subdirectory in the URL
 space, and/or define multiple HTTP methods and paths.
@@ -231,9 +227,9 @@ via the named executables.
 
 [example_begin]
  ns_section ns/server/s1/module/nscgi {
-   ns_param map    "GET /cgi/*.php*"
-   ns_param map    "POST /cgi/*.php*"
-   ns_param map    "GET /cgi/*.pl*"
+   ns_param map    "GET /cgi/*.php"
+   ns_param map    "POST /cgi/*.php"
+   ns_param map    "GET /cgi/*.pl"
    # ...
    ns_param Interps CGIinterps
  }
@@ -325,7 +321,7 @@ the PHP files.
 [example_begin]
  ns_section ns/server/s1/module/nscgi {
    foreach httpMethod {GET POST} {
-     ns_param map  "$httpMethod /wordpress/*.php* /usr/local/src/wordpress/"
+     ns_param map  "$httpMethod /wordpress/*.php /usr/local/src/wordpress/"
    }
    ns_param interps CGIinterps
  }
