@@ -304,6 +304,7 @@ file:
  ns_section "ns/server/${server}/pools" {
     ns_param fast "Fast lane pool"
     ns_param slow "Slow lane pool"
+    ns_param bots "Bot pool"
  }
  
  ns_section "ns/server/${server}/pool/fast" {
@@ -322,13 +323,49 @@ file:
     ns_param maxconnections 200
     ns_param rejectoverrun true
  }
+
+ns_section "ns/server/${server}/pool/bots" {
+    ns_param   map "GET  /* {user-agent *bot*}"
+    ns_param   map "GET  /* {user-agent *rawl*}"
+    ns_param   map "GET  /* {user-agent *pider*}"
+    ns_param   map "GET  /* {user-agent *baidu*}"
+    ns_param   minthreads 2
+    ns_param   maxthreads 2
+    ns_param   rejectoverrun true
+    ns_param   poolratelimit 1000    ;# 0; limit rate for pool to this amount (KB/s); 0 means unlimited
+}
 [example_end]
 
-Query a certain mapping:
+You might query a certain mapping at runtime:
 
 [example_begin]
  % ns_server mapped "GET /images/logo.png"
  fast
+[example_end]
+
+Mapping with context constraints can also be
+provided in the configuration file. We extend the example above by
+adding a bot pool.
+
+[example_begin]
+ ns_section "ns/server/${server}/pools" {
+    ns_param fast "Fast lane pool"
+    ns_param slow "Slow lane pool"
+    ns_param bots "Bot pool"
+ }
+ #
+ # ...
+ #
+ ns_section "ns/server/${server}/pool/bots" {
+    ns_param map "GET  /* {user-agent *bot*}"
+    ns_param map "GET  /* {user-agent *rawl*}"
+    ns_param map "GET  /* {user-agent *pider*}"
+    ns_param map "GET  /* {user-agent *baidu*}"
+    ns_param minthreads 2
+    ns_param maxthreads 2
+    ns_param rejectoverrun true
+    ns_param poolratelimit 1000    ;# limit rate for pool to this amount (KB/s)
+}
 [example_end]
 
 [see_also ns_conn ns_register]
