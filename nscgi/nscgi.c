@@ -499,6 +499,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
     struct stat     st;
     char           *e, *s;
     const char     *url, *server;
+    bool            prefixEqual;
 
     NS_NONNULL_ASSERT(cgiPtr != NULL);
     NS_NONNULL_ASSERT(mapPtr != NULL);
@@ -524,9 +525,32 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
 
     ulen = strlen(url);
     plen = strlen(mapPtr->url);
-    if ((strncmp(mapPtr->url, url, plen) == 0) &&
-        (ulen == plen || url[plen] == '/')) {
+    prefixEqual = strncmp(mapPtr->url, url, plen) == 0;
 
+    Ns_Log(Ns_LogCGIDebug, "compare mapped URL with provided URL:"
+           " prefix equal %d same length %d past mapping char is a slash %d"
+           "\n  mapped URL <%s>"
+           "\nprovided URL <%s> past mapping char '%c'",
+           prefixEqual, ulen == plen, ulen > plen && url[plen] == '/',
+           mapPtr->url, url, url[plen]);
+
+    /*
+     * When
+     *   (a) the prefix of the mapped URL and the provided URL matches and
+     *   (b1) either it is a literal match (all characters are equal), or
+     *   (b2) the character in the provided URL past the mapped length
+     *        is a slash,
+     * then perform an inside-path matching providing PATH_INFO.
+     *
+     * This assumes, that the provided path in the path in the mapping
+     * (1) does not end with a slash, and
+     * (2) does not contain wildcards.
+     */
+    if (prefixEqual && (ulen == plen || url[plen] == '/')) {
+
+        /*
+         * Inside-path matching.
+         */
         if (mapPtr->path == NULL) {
 
             /*
@@ -542,13 +566,14 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
             (void) Ns_UrlToFile(dsPtr, server, cgiPtr->name);
             cgiPtr->path =  dsPtr->string;
             cgiPtr->pathinfo = url + plen;
-            Ns_Log(Ns_LogCGIDebug, "nscgi: no path mapping exist, path: '%s'", cgiPtr->path);
+            Ns_Log(Ns_LogCGIDebug, "nscgi: no source path mapping exist, path: '%s'", cgiPtr->path);
 
-        } else if (stat(mapPtr->path, &st) != 0) {
+        } else if (!Ns_Stat(mapPtr->path, &st)) {
+            Ns_Log(Ns_LogCGIDebug, "stat of source path %s fails", mapPtr->path);
             goto err;
 
         } else if (S_ISDIR(st.st_mode)) {
-            Ns_Log(Ns_LogCGIDebug, "Path mapping is a directory");
+            Ns_Log(Ns_LogCGIDebug, "Source path mapping is a directory");
             /*
              * Path mapping is a directory:
              *
@@ -580,7 +605,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
                 cgiPtr->pathinfo = e;
             }
 
-            Ns_Log(Ns_LogCGIDebug, "nscgi: path mapping to a directory, path: '%s'", cgiPtr->path);
+            Ns_Log(Ns_LogCGIDebug, "nscgi: source path mapping to directory '%s'", cgiPtr->path);
 
         } else if (S_ISREG(st.st_mode)) {
 
@@ -596,7 +621,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
             cgiPtr->name = Ns_DStringAppend(CgiDs(cgiPtr), mapPtr->url);
             cgiPtr->pathinfo = url + plen;
 
-            Ns_Log(Ns_LogCGIDebug, "nscgi: path mapping to a file, path: '%s'", cgiPtr->path);
+            Ns_Log(Ns_LogCGIDebug, "nscgi: source path mapping to a file: '%s'", cgiPtr->path);
 
         } else {
             goto err;
@@ -620,7 +645,9 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
         cgiPtr->name = url;
         cgiPtr->pathinfo = url + ulen;
 
-        Ns_Log(Ns_LogCGIDebug, "nscgi: prefix did not match, path: '%s'", cgiPtr->path);
+        Ns_Log(Ns_LogCGIDebug,
+               "nscgi: wildcard mapping for '%s'; url2file determined '%s'",
+               url, cgiPtr->path);
     }
 
     /*
