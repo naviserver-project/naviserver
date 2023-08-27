@@ -91,14 +91,27 @@ test proc-3.5 {override noinherit} -setup {
 } -result {200 y}
 
 
-
-test proc-4.1 {glob} -setup {
-    ns_register_proc GET /proc-4.1* {ns_return 200 text/plain proc-4.1}
+test proc-4.1 {register with query variable} -setup {
+    ns_register_proc GET /proc-4.1 {ns_return 200 text/plain proc-4.1-NO_X}
+    ns_register_proc GET /proc-4.1?x=1 {ns_return 200 text/plain proc-4.1-x=1}
+    ns_register_proc GET /proc-4.1?x=2 {ns_return 200 text/plain proc-4.1-x=2}
 } -body {
-    nstest::http -getbody 1 GET /proc-4.1TEST
+    list \
+        [nstest::http -getbody 1 GET /proc-4.1?x=1] \
+        [nstest::http -getbody 1 GET /proc-4.1?x=2]
 } -cleanup {
-    ns_unregister_op GET /proc-4.1*
-} -result {200 proc-4.1}
+    ns_unregister_op GET /proc-4.1
+    ns_unregister_op GET /proc-4.1?x=1
+    ns_unregister_op GET /proc-4.1?x=2
+} -result {{200 proc-4.1-NO_X} {200 proc-4.1-NO_X}}
+
+test proc-4.2 {register with glob} -setup {
+    ns_register_proc GET /proc-4.2* {ns_return 200 text/plain proc-4.2}
+} -body {
+    nstest::http -getbody 1 GET /proc-4.2TEST
+} -cleanup {
+    ns_unregister_op GET /proc-4.2*
+} -result {200 proc-4.2}
 
 
 test proc-5.1 {fastpath} -setup {
