@@ -30,7 +30,7 @@ test ns_urlspace-1.5 {nothing set} -body {
 } -result {}
 
 
-test ns_urlspace-2.1 {flat set/get/unset/list} -setup {
+test ns_urlspace-2.1.0 {flat set/get/unset/list} -setup {
     ns_urlspace set / foo
 } -body {
     lappend _ \
@@ -40,10 +40,28 @@ test ns_urlspace-2.1 {flat set/get/unset/list} -setup {
         [ns_urlspace get /] \
         [ns_urlspace list]
 } -cleanup {
-    set v [expr {[info exists _] ? "<$_>" : "NO _"}]
     unset -nocomplain _
 } -result {foo 1 0 {} {}}
 
+test ns_urlspace-2.1.1 {flat set/get/unset/list, map with query variables} -setup {
+    ns_urlspace set / foo
+    ns_urlspace set /?x=1 bar
+    ns_urlspace set /?x=2 baz
+} -body {
+    lappend _ \
+        [ns_urlspace get /] \
+        [ns_urlspace get /?x=1] \
+        [ns_urlspace get /?x=2] \
+        [ns_urlspace unset /] \
+        [ns_urlspace unset /?x=1] \
+        [ns_urlspace unset /?x=2] \
+        [ns_urlspace get /] \
+        [ns_urlspace get /?x=1] \
+        [ns_urlspace get /?x=2] \
+        [ns_urlspace list]
+} -cleanup {
+    unset -nocomplain _
+} -result {foo bar baz 1 1 1 {} {} {} {}}
 
 
 test ns_urlspace-2.2.0 {flat noinherit set/list/unset/list} -setup {
