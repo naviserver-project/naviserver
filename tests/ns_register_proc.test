@@ -113,6 +113,34 @@ test proc-4.2 {register with glob} -setup {
     ns_unregister_op GET /proc-4.2*
 } -result {200 proc-4.2}
 
+#
+# Test cases having the registered proc in the middle of the request
+# path
+#
+test proc-4.3 {register without wild card, call with longer path} -setup {
+    ns_register_proc GET /foo/proc.cgi {ns_return 200 text/plain proc-4.3-[ns_conn url]}
+} -body {
+    nstest::http -getbody 1 GET /foo/proc.cgi/bar
+} -cleanup {
+    ns_unregister_op GET /foo/proc.cgi
+} -result {200 proc-4.3-/foo/proc.cgi/bar}
+
+test proc-4.4 {register with wild card, call with longer path} -setup {
+    ns_register_proc GET /foo/*.cgi {ns_return 200 text/plain proc-4.4-[ns_conn url]}
+} -body {
+    nstest::http GET /foo/proc.cgi/bar
+} -cleanup {
+    ns_unregister_op GET /foo/*.cgi
+} -result {404}
+
+test proc-4.5 {register with wild card, call with longer path} -setup {
+    ns_register_proc GET /foo/*.cgi* {ns_return 200 text/plain proc-4.5-[ns_conn url]}
+} -body {
+    nstest::http GET /foo/proc.cgi/bar
+} -cleanup {
+    ns_unregister_op GET /foo/*.cgi*
+} -result {404}
+
 
 test proc-5.1 {fastpath} -setup {
     ns_register_proc GET /10bytes {ns_return 200 text/plain error}
