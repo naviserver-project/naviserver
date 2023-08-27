@@ -27,8 +27,8 @@ h2 {
 }
 
 h3 {
-    margin-top: 1em;
-    color: #655;
+    margin-top: 1.5em;
+    margin-bottom: 0.7em;    color: #655;
     text-transform: capitalize;
     font-size: 1.2em;
     font-weight: normal;
@@ -218,3 +218,22 @@ div.doctools_section dl.doctools_definitions p {
 div.doctools_section dl.doctools_definitions dd {
     margin-left: 2em;
 }
+div.doctools_section ul.doctools_itemized,
+div.doctools_section ol.doctools_enumerated
+{ padding-left: 3em; }
+div.doctools_section dl.doctools_definitions
+{ padding-left: 2em; }
+
+div.doctools_section ul.doctools_itemized ul,
+div.doctools_section ol.doctools_enumerated ul,
+div.doctools_section ul.doctools_itemized ol,
+div.doctools_section ol.doctools_enumerated ol
+{ padding-left: 1.5em; }
+
+div.doctools_section ul.doctools_itemized li p,
+div.doctools_section ol.doctools_enumerated li p,
+div.doctools_section ol.doctools_enumerated li pre,
+div.doctools_section dl.doctools_definitions dd
+{ margin-left: 6px; }
+div.doctools_section dl.doctools_definitions p
+{ margin-left: 2em; }
