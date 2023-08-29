@@ -109,7 +109,10 @@ test url2file-6.1 {url2file info} -setup {
     ns_register_url2file /url1 script
     ns_register_fasturl2file /url2 /base
 } -body {
-    ns_info url2file
+    lmap entry [ns_info url2file] {
+        if {[lindex $entry 1] ni {/url1 /url2 /}} continue
+        set entry
+    }
 } -cleanup {
     ns_unregister_url2file /url1
     ns_unregister_url2file /url2
