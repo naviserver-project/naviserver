@@ -3425,6 +3425,9 @@ Ns_SetUrlToFileProc(const char *server, Ns_UrlToFileProc *procPtr)
     NS_GNUC_DEPRECATED_FOR(Ns_RegisterUrl2FileProc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+NS_EXTERN void
+Ns_RegisterFastUrl2File(const char *server, const char *url, const char *basePath, unsigned int flags)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_Url2FileProc Ns_FastUrl2FileProc;
 

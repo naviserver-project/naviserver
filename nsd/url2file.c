@@ -495,6 +495,49 @@ NsTclUnRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJ
  *
  * NsTclRegisterFastUrl2FileObjCmd --
  *
+ *      Register an Ns_RegisterUrl2FileProc() with either the
+ *      Ns_FastUrl2FileProc() or NsMountUrl2FileProc() depending on the
+ *      provided basePath.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Registed callback.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Ns_RegisterFastUrl2File(const char *server, const char *url, const char *basePath, unsigned int flags)
+{
+    NsServer *servPtr;
+
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
+
+    servPtr = NsGetServer(server);
+    if (likely(servPtr != NULL)) {
+        if (basePath == NULL) {
+            Ns_RegisterUrl2FileProc(server, url,
+                                    Ns_FastUrl2FileProc, NULL, servPtr, flags);
+        } else {
+            Mount *mPtr;
+
+            mPtr = ns_malloc(sizeof(Mount));
+            mPtr->basepath = ns_strdup(basePath);
+            mPtr->url = ns_strdup(url);
+            mPtr->server = server;
+            Ns_RegisterUrl2FileProc(server, url,
+                                    NsMountUrl2FileProc, FreeMount, mPtr, flags);
+        }
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclRegisterFastUrl2FileObjCmd --
+ *
  *      Implements "ns_register_fasturl2file".  Register the default fast
  *      url2file proc for the given URL.
  *
@@ -506,7 +549,6 @@ NsTclUnRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJ
  *
  *----------------------------------------------------------------------
  */
-
 int
 NsTclRegisterFastUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
@@ -531,21 +573,7 @@ NsTclRegisterFastUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_O
         if (noinherit != 0) {
             flags |= NS_OP_NOINHERIT;
         }
-
-        if (basepath == NULL) {
-            Ns_RegisterUrl2FileProc(itPtr->servPtr->server, url,
-                                    Ns_FastUrl2FileProc, NULL, itPtr->servPtr,
-                                    flags);
-        } else {
-            Mount *mPtr;
-
-            mPtr = ns_malloc(sizeof(Mount));
-            mPtr->basepath = ns_strdup(basepath);
-            mPtr->url = ns_strdup(url);
-            mPtr->server = itPtr->servPtr->server;
-            Ns_RegisterUrl2FileProc(itPtr->servPtr->server, url,
-                                    NsMountUrl2FileProc, FreeMount, mPtr, flags);
-        }
+        Ns_RegisterFastUrl2File(itPtr->servPtr->server, url, basepath, flags);
     }
     return result;
 }
