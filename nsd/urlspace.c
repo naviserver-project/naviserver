@@ -231,6 +231,7 @@ typedef struct {
 typedef struct {
     char  *filter;
     Trie   trie;
+    unsigned int flags;
 } Channel;
 
 /*
@@ -1648,7 +1649,8 @@ TrieFind(const Trie *triePtr, char *seq, NsUrlSpaceContextFilterProc proc, void 
     if (nodePtr != NULL) {
         if (
             (*seq == '\0') /* this makes "set -noinherit /x/ *.html foo" + "get /x/a.html" fail */
-            && (nodePtr->dataNoInherit != NULL)) {
+            && (nodePtr->dataNoInherit != NULL)
+            ) {
             data = nodePtr->dataNoInherit;
         } else {
             data = nodePtr->dataInherit;
@@ -2222,6 +2224,7 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, unsigned int flags,
     if (channelPtr == NULL) {
         channelPtr = ns_malloc(sizeof(Channel));
         channelPtr->filter = ns_strdup(dsFilter.string);
+        channelPtr->flags = flags;
         TrieInit(&channelPtr->trie);
 
 #ifndef __URLSPACE_OPTIMIZE__
@@ -2272,7 +2275,7 @@ JunctionFind(const Junction *juncPtr, char *seq, NsUrlSpaceContextFilterProc pro
 {
     const Channel *channelPtr;
     const char    *p;
-    size_t         i, l;
+    size_t         i, l, nrSegments;
     int            depth = 0;
     void          *data;
 
@@ -2284,8 +2287,11 @@ JunctionFind(const Junction *juncPtr, char *seq, NsUrlSpaceContextFilterProc pro
      * sequence.
      */
 
-    for (p = seq; p[l = NS_strlen(p) + 1u] != '\0'; p += l) {
-        ;
+    for (p = seq, nrSegments = 0; ; p += l, ++nrSegments) {
+        l = NS_strlen(p) + 1u;
+        if (p[l] == '\0') {
+            break;
+        }
     }
 
     /*
@@ -2303,6 +2309,8 @@ JunctionFind(const Junction *juncPtr, char *seq, NsUrlSpaceContextFilterProc pro
         return NULL;
     }
 
+    //Ns_Log(Notice, "JunctionFind: index count %ld", l);
+
     /*
      * For __URLSPACE_OPTIMIZE__
      * Basically if we use the optimize, let's reverse the order
@@ -2314,58 +2322,84 @@ JunctionFind(const Junction *juncPtr, char *seq, NsUrlSpaceContextFilterProc pro
 
 #ifndef __URLSPACE_OPTIMIZE__
     for (i = 0u; i < l; i++) {
-        bool doit;
+        bool match, noFilter;
+        void *candidateData = NULL;
+        int   candidateDepth = 0;
 
         channelPtr = Ns_IndexEl(&juncPtr->byuse, i);
 #else
     for (i = l; i > 0u; i--) {
-        bool doit;
+        bool match, noFilter;
+        void *candidateData = NULL;
+        int   candidateDepth = 0;
 
         channelPtr = Ns_IndexEl(&juncPtr->byname, i - 1u);
 #endif
 
-        doit = (
-                (*(channelPtr->filter) == '*' && *(channelPtr->filter + 1) == '\0')
-                || (NS_Tcl_StringMatch(p, channelPtr->filter) == 1)
-                );
+        noFilter = (*(channelPtr->filter) == '*' && *(channelPtr->filter + 1) == '\0');
+        match = (noFilter || (NS_Tcl_StringMatch(p, channelPtr->filter) == 1));
 
+        //Ns_Log(Notice, "Junction Filter tail <%s> match with <%s>", p, channelPtr->filter);
 #ifdef DEBUG
         fprintf(stderr, "JunctionFind: compare filter '%s' with channel filter '%s' => %d\n",
                 p, channelPtr->filter, doit);
 #endif
-        if (doit) {
+        if (match) {
             /*
              * We got here because this URL matches the filter
              * (for example, "*.adp").
              */
+            candidateData = TrieFind(&channelPtr->trie, seq, proc, context, &candidateDepth);
 
-            if (data == NULL) {
-                /*
-                 * Nothing has been found so far. Traverse the channel
-                 * and find the node; set data to that. Depth will be
-                 * set to the level of the node.
-                 */
+        } else if (!noFilter && (channelPtr->flags & NS_OP_SEGMENT_MATCH) != 0u) {
+            size_t  n;
+            ssize_t offset;
+            char   *segment;
 
-                depth = 0;
-                data = TrieFind(&channelPtr->trie, seq, proc, context, &depth);
-            } else {
-                void *candidate;
-                int   cdepth;
+            /*
+             * If we have a filter, but it did not match in the last
+             * segment, and NS_OP_SEGMENT_MATCH is set, try a segment
+             * match. Stop, when the last segment is reached, since we
+             * know already that it does not match from above.
+             */
 
-                /*
-                 * Let's see if this channel has a node that also
-                 * matches the sequence but is more specific (has a
-                 * greater depth) that the previously found node.
-                 */
+            for (segment = seq, offset = 0, n = 0;
+                 n < nrSegments;
+                 segment = seq + offset, ++n) {
+                //Ns_Log(Notice, "... segment[%ld/%ld] <%s> offset %ld depth %d",
+                //       n, nrSegments, segment, offset, depth);
 
-                cdepth = 0;
-                candidate = TrieFind(&channelPtr->trie, seq, proc, context, &cdepth);
-                if ((candidate != NULL) && (cdepth > depth)) {
-                    data = candidate;
-                    depth = cdepth;
+                if (NS_Tcl_StringMatch(segment, channelPtr->filter)) {
+                    candidateDepth = 0;
+                    candidateData = TrieFind(&channelPtr->trie, seq, proc, context, &candidateDepth);
+                    //Ns_Log(Notice, "JunctionFind: ===> path segment <%s> match with <%s>"
+                    //       " candidate depth %d candidate data %p channelPtr->flags %.4x",
+                    //       segment, channelPtr->filter, candidateDepth,(void*)candidateData,
+                    //       channelPtr->flags);
                 }
+                offset += NS_strlen(segment) + 1u;
             }
+            //Ns_Log(Notice, "JunctionFind: ... found cdepth %d data %p", p);
         }
+
+        /*
+         * Take candidate data either
+         * - when no data has been found so far, or
+         * - when data was found on a more specific node (i.e., it has a greater depth
+         *   than the previously found node)
+         */
+        if (candidateData != NULL
+            && (data == NULL || candidateDepth > depth)
+            ) {
+            //Ns_Log(Notice, "... take candidate data %p, old data %p, candidate depth %d old depth %d",
+            //       (void*)candidateData, data, candidateDepth, depth);
+            depth = candidateDepth;
+            data = candidateData;
+        }
+
+        //Ns_Log(Notice, "JunctionFind: doit %d, depth %d compare tail '%s' with channel filter '%s' => %d (%p)",
+        //               doit, depth,
+        //       p, channelPtr->filter, doit, (void*)data);
 
 #ifdef DEBUG
         if (depth > 0) {

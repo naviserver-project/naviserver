@@ -120,6 +120,7 @@
 #define NS_OP_NODELETE             0x04u /* Do call previous procs Ns_OpDeleteProc */
 #define NS_OP_RECURSE              0x08u /* Also destroy registered procs below given URL */
 #define NS_OP_ALLFILTERS           0x10u /* Also destroy all filters for this node */
+#define NS_OP_SEGMENT_MATCH        0x20u /* Also destroy all filters for this node */
 
 
 /*

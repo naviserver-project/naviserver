@@ -59,6 +59,22 @@ test ns_urlspace-2.1.1 {flat set/get/unset/list, map with query variables} -setu
         [ns_urlspace list]
 } -result {foo bar baz 1 1 1 {} {} {} {}}
 
+test ns_urlspace-2.1.2 {flat set/get/unset/list, map with query variables} -setup {
+    ns_urlspace set /foo foo
+    ns_urlspace set /foo/test.cgi foo.cgi
+    ns_urlspace set /bar/*.cgi bar.cgi
+} -body {
+    list  \
+        [ns_urlspace get /foo] \
+        [ns_urlspace get /foo/test.cgi] \
+        [ns_urlspace get /foo/test.cgi/baz] \
+        [ns_urlspace get /bar/test.cgi] \
+        [ns_urlspace get /bar/test.cgi/baz] \
+        [ns_urlspace unset /foo] \
+        [ns_urlspace unset /foo/test.cgi] \
+        [ns_urlspace unset /bar/*.cgi] \
+        [ns_urlspace list]
+} -result {foo foo.cgi foo.cgi bar.cgi {} 1 1 1 {}}
 
 test ns_urlspace-2.2.0 {flat noinherit set/list/unset/list} -setup {
     #ns_log notice "BEFORE <[ns_urlspace list]>"
