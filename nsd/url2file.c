@@ -503,7 +503,7 @@ NsTclUnRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJ
  *      None.
  *
  * Side effects:
- *      Registed callback.
+ *      Registered callback.
  *
  *----------------------------------------------------------------------
  */
