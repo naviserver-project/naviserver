@@ -118,27 +118,27 @@ test proc-4.2 {register with glob} -setup {
 # path
 #
 test proc-4.3 {register without wild card, call with longer path} -setup {
-    ns_register_proc GET /foo/proc.cgi {ns_return 200 text/plain proc-4.3-[ns_conn url]}
+    ns_register_proc GET /foo/proc.pl {ns_return 200 text/plain proc-4.3-[ns_conn url]}
 } -body {
-    nstest::http -getbody 1 GET /foo/proc.cgi/bar
+    nstest::http -getbody 1 GET /foo/proc.pl/bar
 } -cleanup {
-    ns_unregister_op GET /foo/proc.cgi
-} -result {200 proc-4.3-/foo/proc.cgi/bar}
+    ns_unregister_op GET /foo/proc.pl
+} -result {200 proc-4.3-/foo/proc.pl/bar}
 
 test proc-4.4 {register with wild card, call with longer path} -setup {
-    ns_register_proc GET /foo/*.cgi {ns_return 200 text/plain proc-4.4-[ns_conn url]}
+    ns_register_proc GET /foo/*.pl {ns_return 200 text/plain proc-4.4-[ns_conn url]}
 } -body {
-    nstest::http GET /foo/proc.cgi/bar
+    nstest::http GET /foo/proc.pl/bar
 } -cleanup {
-    ns_unregister_op GET /foo/*.cgi
+    ns_unregister_op GET /foo/*.pl
 } -result {404}
 
 test proc-4.5 {register with wild card, call with longer path} -setup {
-    ns_register_proc GET /foo/*.cgi* {ns_return 200 text/plain proc-4.5-[ns_conn url]}
+    ns_register_proc GET /foo/*.pl* {ns_return 200 text/plain proc-4.5-[ns_conn url]}
 } -body {
-    nstest::http GET /foo/proc.cgi/bar
+    nstest::http GET /foo/proc.pl/bar
 } -cleanup {
-    ns_unregister_op GET /foo/*.cgi*
+    ns_unregister_op GET /foo/*.pl*
 } -result {404}
 
 
