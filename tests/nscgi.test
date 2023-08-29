@@ -227,11 +227,12 @@ test nscgi-1.7.2.3 {
 } -returnCodes {error ok} -result {200 0123456789}
 
 #
-# mapping with an extra directory
+# Mapping with an extra directory
 #
 
 test nscgi-1.7.3.0a {
     mapping based on directory with path mapping - PATH_INFO
+    "GET /cgi-dir/*.tclcgi [ns_config test home]/testserver/cgi"
 } -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(cgi) on
     nstest::http -getbody 1 GET /cgi-dir/info.tclcgi?var=PATH_INFO
@@ -241,8 +242,16 @@ test nscgi-1.7.3.0b {
     mapping based on directory. CGI program is in the middle of the path - PATH_INFO
 } -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(cgi) on
+    ns_log notice "TRY GET /cgi-dir/info.tclcgi/foo?var=PATH_INFO"
     nstest::http -getbody 1 GET /cgi-dir/info.tclcgi/foo?var=PATH_INFO
 } -returnCodes {error ok} -match glob -result "*PATH_INFO: </foo>*"
+
+test nscgi-1.7.3.0c {
+    mapping based on directory. CGI program is in the middle of the path - PATH_INFO
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /cgi-dir/info.tclcgi/foo/bar?var=PATH_INFO
+} -returnCodes {error ok} -match glob -result "*PATH_INFO: </foo/bar>*"
 
 
 test nscgi-1.7.3.1a {
@@ -257,6 +266,13 @@ test nscgi-1.7.3.1b {
 } -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(cgi) on
     nstest::http -getbody 1 GET /cgi-dir/info.tclcgi/foo?var=PATH_TRANSLATED
+} -returnCodes {error ok} -match glob -result "*PATH_TRANSLATED: <*tests/testserver/cgi/info.tclcgi>*"
+
+test nscgi-1.7.3.1c {
+    mapping based on directory. CGI program is in the middle of the path - PATH_TRANSLATED
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /cgi-dir/info.tclcgi/foo/bar?var=PATH_TRANSLATED
 } -returnCodes {error ok} -match glob -result "*PATH_TRANSLATED: <*tests/testserver/cgi/info.tclcgi>*"
 
 test nscgi-1.7.3.2a {
@@ -277,7 +293,6 @@ test nscgi-1.7.3.2b {
 test nscgi-1.7.3.3a {
     mapping based on directory
     access static resource in same directory
-    needs "allowstaticresources"
 } -constraints {serverListen tclsh} -body {
     nstest::http -getbody 1 GET /cgi-dir/resource-cgi.txt
 } -returnCodes {error ok} -result {200 0123456789}
@@ -285,12 +300,10 @@ test nscgi-1.7.3.3a {
 test nscgi-1.7.3.3b {
     mapping based on directory
     access static resource in a sub-directory
-    needs "allowstaticresources"
 } -constraints {serverListen tclsh} -body {
     #ns_logctl severity Debug(cgi) on
     nstest::http -getbody 1 GET /cgi-dir/sub/resource-cgi-sub.txt
-} -returnCodes {error ok} -match glob -result {500 *}
-
+} -returnCodes {error ok} -result {200 0123456789}
 
 
 #

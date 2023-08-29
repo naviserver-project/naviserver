@@ -116,6 +116,8 @@ static ssize_t       CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr) NS_GNUC_NONNULL
 static char         *NextWord(char *s)                           NS_GNUC_NONNULL(1);
 static void          SetAppend(Ns_Set *set, int index, const char *sep, char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+static void          CgiRegisterFastUrl2File(const char *server, char *url, const char *path)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static TCL_OBJCMDPROC_T NsTclRegisterCGIObjCmd;
 
@@ -366,7 +368,7 @@ CgiRequest(const void *arg, Ns_Conn *conn)
             status = Ns_ConnReturnFile(conn, 200, NULL, cgi.exec);
 
         } else {
-            Ns_Log(Warning, "nscgi: cgi file not executable: %s", cgi.exec);
+            Ns_Log(Warning, "nscgi: CGI file not executable: %s", cgi.exec);
 
             if ( STREQ(conn->request.method, "GET") ||
                  STREQ(conn->request.method, "HEAD"))  {
@@ -425,12 +427,12 @@ CgiRequest(const void *arg, Ns_Conn *conn)
     //Ns_Log(Notice, "CgiExec returned OK %d closed %d", status == NS_OK, Ns_ConnIsClosed(conn));
 
     if (status != NS_OK) {
-        status = Ns_ConnTryReturnInternalError(conn, status, "nscgi: cgi exec failed");
+        status = Ns_ConnTryReturnInternalError(conn, status, "nscgi: CGI exec failed");
     } else {
         status = CgiCopy(&cgi, conn);
     }
 
-    Ns_Log(Ns_LogCGIDebug, "nscgi: cgi returned status %d", status);
+    Ns_Log(Ns_LogCGIDebug, "nscgi: CGI returned status %d", status);
     //Ns_Log(Notice, "nscgi after COPY OK %d closed %d", status == NS_OK, Ns_ConnIsClosed(conn));
 
     /*
@@ -452,7 +454,7 @@ done:
         if (reapStatus != NS_OK) {
             status = reapStatus;
             //Ns_Log(Notice, "nscgi reap failed status %d closed %d", status, Ns_ConnIsClosed(conn));
-            status = Ns_ConnTryReturnInternalError(conn, status, "nscgi: cgi exec failed");
+            status = Ns_ConnTryReturnInternalError(conn, status, "nscgi: CGI exec failed");
 
         } else if (status != NS_OK) {
             //Ns_Log(Notice, "nscgi: reap ok, but still, the status is not correct");
@@ -495,11 +497,9 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
     Mod            *modPtr;
     Ns_DString     *dsPtr;
     TCL_OBJC_T      i;
-    size_t          ulen, plen;
-    struct stat     st;
+    size_t          ulen;
     char           *e, *s;
-    const char     *url, *server;
-    bool            prefixEqual;
+    const char     *url, *server, *fileName, *lastMapSegment;
 
     NS_NONNULL_ASSERT(cgiPtr != NULL);
     NS_NONNULL_ASSERT(mapPtr != NULL);
@@ -522,133 +522,82 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
     /*
      * Determine the executable or script to run.
      */
-
     ulen = strlen(url);
-    plen = strlen(mapPtr->url);
-    prefixEqual = strncmp(mapPtr->url, url, plen) == 0;
+    fileName = url;
 
-    Ns_Log(Ns_LogCGIDebug, "compare mapped URL with provided URL:"
-           " prefix equal %d same length %d past mapping char is a slash %d"
-           "\n  mapped URL <%s>"
-           "\nprovided URL <%s> past mapping char '%c'",
-           prefixEqual, ulen == plen, ulen > plen && url[plen] == '/',
-           mapPtr->url, url, url[plen]);
+    Ns_Log(Ns_LogCGIDebug, "provided URL: '%s'", url);
 
-    /*
-     * When
-     *   (a) the prefix of the mapped URL and the provided URL matches and
-     *   (b1) either it is a literal match (all characters are equal), or
-     *   (b2) the character in the provided URL past the mapped length
-     *        is a slash,
-     * then perform an inside-path matching providing PATH_INFO.
-     *
-     * This assumes, that the provided path in the path in the mapping
-     * (1) does not end with a slash, and
-     * (2) does not contain wildcards.
-     */
-    if (prefixEqual && (ulen == plen || url[plen] == '/')) {
-
+    lastMapSegment = strrchr(mapPtr->url, INTCHAR('/'));
+    if (lastMapSegment != NULL && lastMapSegment[1] == '*' && lastMapSegment[2] == '\0') {
         /*
-         * Inside-path matching.
+         * Tail match (match on the last segment)
+         *    SCRIPT_NAME = URL
+         *    PATH_INFO   = ""
          */
-        if (mapPtr->path == NULL) {
+    } else if (lastMapSegment != NULL) {
+        int segments;
+        char *secondLastUrlSegment = NULL;
 
-            /*
-             * No path mapping, script in pages directory:
-             *
-             * 1. Path is Url2File up to the URL prefix.
-             * 2. SCRIPT_NAME is the URL prefix.
-             * 3. PATH_INFO is everything past SCRIPT_NAME in the URL.
-             */
+        for (segments = 0;; ++segments) {
+            char *lastUrlSegment = strrchr(url, INTCHAR('/'));
+            int match;
 
-            cgiPtr->name = Ns_DStringNAppend(CgiDs(cgiPtr), url, (TCL_SIZE_T)plen);
-            dsPtr = CgiDs(cgiPtr);
-            (void) Ns_UrlToFile(dsPtr, server, cgiPtr->name);
-            cgiPtr->path =  dsPtr->string;
-            cgiPtr->pathinfo = url + plen;
-            Ns_Log(Ns_LogCGIDebug, "nscgi: no source path mapping exist, path: '%s'", cgiPtr->path);
-
-        } else if (!Ns_Stat(mapPtr->path, &st)) {
-            Ns_Log(Ns_LogCGIDebug, "stat of source path %s fails", mapPtr->path);
-            goto err;
-
-        } else if (S_ISDIR(st.st_mode)) {
-            Ns_Log(Ns_LogCGIDebug, "Source path mapping is a directory");
-            /*
-             * Path mapping is a directory:
-             *
-             * 1. The script file is the first path element in the URL past
-             *    the mapping prefix.
-             * 2. SCRIPT_NAME is the URL up to and including the
-             *    script file.
-             * 3. PATH_INFO is everything in the URL past SCRIPT_NAME.
-             * 4. The script pathname is the script prefix plus the
-             *    script file.
-             */
-
-            if (plen == ulen) {
-                goto err;
+            if (lastUrlSegment == NULL) {
+                /*
+                 * No segment match in the full path.
+                 */
+                break;
             }
 
-            s = (char *)url + plen + 1;
-            e = strchr(s, INTCHAR('/'));
-            if (e != NULL) {
-                *e = '\0';
+            match = Tcl_StringMatch(lastUrlSegment, lastMapSegment);
+            Ns_Log(Ns_LogCGIDebug, "nscgi: url <%s> lastUrlSegment <%s> lastMapSegment <%s> match %d",
+                   url, lastUrlSegment, lastMapSegment, match);
+            if (match) {
+                if (segments == 0) {
+                    /*
+                     * Match on the last segment
+                     *    SCRIPT_NAME = URL
+                     *    PATH_INFO   = ""
+                     */
+                    Ns_Log(Ns_LogCGIDebug, "nscgi: double tail match ============= should never happen");
+
+                } else {
+                    /*
+                     * Match on an inner segment:
+                     * 1. SCRIPT_NAME is the URL prefix.
+                     * 2. PATH_INFO is everything in the URL past SCRIPT_NAME.
+                     */
+                    Ns_Log(Ns_LogCGIDebug, "segment match url <%s>"
+                           "lastUrlSegment <%s> secondLastUrlSegment <%s>",
+                           url, lastUrlSegment, secondLastUrlSegment+1);
+                    fileName = Ns_DStringAppend(CgiDs(cgiPtr), url);
+                    *secondLastUrlSegment = '/';
+                    ulen = (size_t)(secondLastUrlSegment - url);
+                }
+                break;
             }
-            cgiPtr->name = Ns_DStringAppend(CgiDs(cgiPtr), url);
-            cgiPtr->path = Ns_DStringVarAppend(CgiDs(cgiPtr),
-                                              mapPtr->path, "/", s, (char *)0L);
-            if (e == NULL) {
-                cgiPtr->pathinfo = NS_EMPTY_STRING;
-            } else {
-                *e = '/';
-                cgiPtr->pathinfo = e;
+            if (secondLastUrlSegment != NULL) {
+                *secondLastUrlSegment = '/';
             }
-
-            Ns_Log(Ns_LogCGIDebug, "nscgi: source path mapping to directory '%s'", cgiPtr->path);
-
-        } else if (S_ISREG(st.st_mode)) {
-
-            /*
-             * When the path mapping is (or at least could be) a file:
-             *
-             * 1. The script pathname is the mapping.
-             * 2. SCRIPT_NAME is the url prefix.
-             * 3. PATH_INFO is everything in the URL past SCRIPT_NAME.
-             */
-
-            cgiPtr->path = Ns_DStringAppend(CgiDs(cgiPtr), mapPtr->path);
-            cgiPtr->name = Ns_DStringAppend(CgiDs(cgiPtr), mapPtr->url);
-            cgiPtr->pathinfo = url + plen;
-
-            Ns_Log(Ns_LogCGIDebug, "nscgi: source path mapping to a file: '%s'", cgiPtr->path);
-
-        } else {
-            goto err;
+            *lastUrlSegment = '\0';
+            secondLastUrlSegment = lastUrlSegment;
         }
-
-    } else {
-
-        /*
-         * The prefix didn't match.  Assume the mapping was a wildcard
-         * mapping like *.cgi which was fetched by UrlSpecificGet() but
-         * skipped by strncmp() above. In this case:
-         *
-         * 1. The script pathname is the URL file in the pages directory.
-         * 2. SCRIPT_NAME is the URL.
-         * 3. PATH_INFO is "".
-         */
-
-        dsPtr = CgiDs(cgiPtr);
-        (void) Ns_UrlToFile(dsPtr, server, url);
-        cgiPtr->path = dsPtr->string;
-        cgiPtr->name = url;
-        cgiPtr->pathinfo = url + ulen;
-
-        Ns_Log(Ns_LogCGIDebug,
-               "nscgi: wildcard mapping for '%s'; url2file determined '%s'",
-               url, cgiPtr->path);
     }
+    /*
+     * Finally, perform the Url2File mapping invoking potentially
+     * registered callbacks and provide the CGI context with path, name,
+     * and pathinfo.
+     */
+
+    dsPtr = CgiDs(cgiPtr);
+    (void) Ns_UrlToFile(dsPtr, server, fileName);
+    cgiPtr->path = dsPtr->string;
+    cgiPtr->name = fileName;
+    cgiPtr->pathinfo = url + ulen;
+
+    Ns_Log(Ns_LogCGIDebug,
+           "nscgi: mapping for '%s'; url2file determined '%s'",
+           fileName, cgiPtr->path);
 
     /*
      * Copy the script directory and see if the script is NPH.
@@ -1432,6 +1381,46 @@ NextWord(char *s)
     return s;
 }
 
+/*----------------------------------------------------------------------
+ *
+ * CgiRegisterFastUrl2File -
+ *
+ *      Helper file for achieving consisten behavior when an FastUrl2File
+ *      handler is registered via the configuration file or via
+ *      NsTclRegisterCGIObjCmd (Tcl command "ns_register_cgi").
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      May register or re-register a mapping.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+CgiRegisterFastUrl2File(const char *server, char *url, const char *path)
+{
+    char *tailSegment;
+
+    NS_NONNULL_ASSERT(server != NULL);
+    NS_NONNULL_ASSERT(url != NULL);
+    NS_NONNULL_ASSERT(path != NULL);
+
+    tailSegment = strrchr(url, INTCHAR('/'));
+    /*
+     * When there is a tail segment and it contains a wildchard character,
+     * strip it away for the mapping. This means, that all files in this
+     * folder are mapped.
+     */
+    if (tailSegment != NULL && strchr(tailSegment, INTCHAR('*')) != NULL) {
+        *tailSegment = '\0';
+        Ns_RegisterFastUrl2File(server, url, path, 0u);
+        *tailSegment = '/';
+    } else {
+        Ns_RegisterFastUrl2File(server, url, path, 0u);
+    }
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1490,8 +1479,17 @@ CgiRegister(Mod *modPtr, const char *map)
     Ns_Log(Notice, "nscgi: %s %s%s%s", method, url,
            (path != NULL) ? " -> " : NS_EMPTY_STRING,
            (path != NULL) ? path : NS_EMPTY_STRING);
+
     Ns_RegisterRequest(modPtr->server, method, url,
-                       CgiRequest, CgiFreeMap, mapPtr, 0u);
+                       CgiRequest, CgiFreeMap, mapPtr, NS_OP_SEGMENT_MATCH);
+    if (path != NULL) {
+        /*
+         * When a path is provided, register it to the Url2File
+         * mappings. These are used for determining the source locations for
+         * static files and CGI programs.
+         */
+        CgiRegisterFastUrl2File(modPtr->server, url, mapPtr->path);
+    }
 
 done:
     Ns_DStringFree(&ds1);
@@ -1559,15 +1557,30 @@ SetAppend(Ns_Set *set, int index, const char *sep, char *value)
 }
 
 
+/*----------------------------------------------------------------------
+ *
+ * NsTclRegisterCGIObjCmd --
+ *
+ *      Implements "ns_register_cgi".
+ *
+ * Results:
+ *      Return TCL_OK upon success and TCL_ERROR otherwise.
+ *
+ * Side effects:
+ *      Might register CGI handlers.
+ *
+ *----------------------------------------------------------------------
+ */
 static int
 NsTclRegisterCGIObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     char       *method, *url, *path = NULL;
-    int         noinherit = 0, result = TCL_OK;
+    int         noinherit = 0, matchsegments = 0, result = TCL_OK;
     Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_OP_NOINHERIT)},
-        {"-path",      Ns_ObjvString, &path,      NULL},
-        {"--",         Ns_ObjvBreak,  NULL,       NULL},
+        {"-noinherit",     Ns_ObjvBool,   &noinherit,     INT2PTR(NS_OP_NOINHERIT)},
+        {"-matchsegments", Ns_ObjvBool,   &matchsegments, INT2PTR(NS_OP_NOINHERIT)},
+        {"-path",          Ns_ObjvString, &path,          NULL},
+        {"--",             Ns_ObjvBreak,  NULL,           NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -1586,6 +1599,9 @@ NsTclRegisterCGIObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T obj
         if (noinherit != 0) {
             flags |= NS_OP_NOINHERIT;
         }
+        if (matchsegments != 0) {
+            flags |= NS_OP_SEGMENT_MATCH;
+        }
 
         mapPtr = ns_malloc(sizeof(Map));
         mapPtr->modPtr = modPtr;
@@ -1597,6 +1613,14 @@ NsTclRegisterCGIObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T obj
 
         Ns_RegisterRequest(modPtr->server, method, url,
                            CgiRequest, CgiFreeMap, mapPtr, flags);
+        if (path != NULL) {
+            /*
+             * When a path is provided, register it to the Url2File
+             * mappings. These are used for determining the source locations
+             * for static files and CGI programs.
+             */
+            CgiRegisterFastUrl2File(modPtr->server, url, mapPtr->path);
+        }
     }
 
     return result;
