@@ -1,5 +1,5 @@
 [include version_include.man]
-[manpage_begin ns_setuser n [vset version]]
+[manpage_begin ns_setprivileges n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
 [titledesc {Set the current process privileges}]
