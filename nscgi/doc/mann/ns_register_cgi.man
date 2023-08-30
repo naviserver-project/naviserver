@@ -1,0 +1,52 @@
+[include version_include.man]
+[manpage_begin ns_register_cgi n [vset version]]
+[moddesc {nscgi Built-in Commands}]
+
+[titledesc {Register CGI handlers}]
+
+[description]
+This document describes how to register a CGI handler programmatically.
+
+[section COMMANDS]
+
+[list_begin definitions]
+
+[call [cmd ns_register_cgi] \
+     [opt [option -noinherit]] \
+     [opt [option -matchsegments]] \
+     [opt [option "-path [arg source-location]"]] \
+     [opt --] \
+     [arg method] \
+     [arg URL] \
+     ]
+
+The command registers a handler requests matching [arg method] and
+[arg URL] to be handled as CGI programs. The specified [arg URL] can
+contain a match pattern, which is handled by the NaviServer urlspace
+(like in [cmd ns_register_proc]). The match will always be a match on
+the last URL segment, unless [option -matchsegments] is specified.
+
+[para] If [option -noinherit] is specified, the request URL must match
+the directory of the registered URL.
+
+[para] If [option -matchsegments] is specified, the pattern will be
+matched with all segments of the request URL.
+
+[para] The [option -path] specifies the source location for the files
+in case the request URL matches the register URL. The provided source
+location is registered via [cmd ns_register_fasturl2file] such that
+[const fastpath] can resolve the request path against this source
+location.
+
+[para] Handlers registered with [cmd ns_register_cgi] can be
+unregistered via [cmd ns_unregister_op]. In case the [option -path]
+was specified, it can be unregistered with
+[cmd ns_unregister_url2file].
+
+
+[list_end]
+
+
+[see_also ns_unregister_op ns_register_fasturl2file ns_register]
+[keywords nscgi CGI request callback fastpath urlspace handler]
+[manpage_end]

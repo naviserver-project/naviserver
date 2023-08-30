@@ -353,7 +353,7 @@ CgiRequest(const void *arg, Ns_Conn *conn)
         /*
          * Can't execute interpreter. Maybe return file a static file?
          */
-        Ns_Log(Ns_LogCGIDebug, "nscgi: cannot execute interpreter."
+        Ns_Log(Ns_LogCGIDebug, "cannot execute interpreter."
                " Maybe a a static file <%s>", cgi.exec);
 
         if (((modPtr->flags & CGI_ALLOW_STATIC) != 0u) &&
@@ -365,6 +365,7 @@ CgiRequest(const void *arg, Ns_Conn *conn)
              * their cgi bin directory and they expect us to
              * return these files directly.
              */
+            Ns_Log(Ns_LogCGIDebug, "allowstaticresources returns static file: %s", cgi.exec);
             status = Ns_ConnReturnFile(conn, 200, NULL, cgi.exec);
 
         } else {
@@ -377,6 +378,7 @@ CgiRequest(const void *arg, Ns_Conn *conn)
                  * activate it?
                  */
                 Ns_Log(Warning, "nscgi: if this is a static resource, consider"
+                       " serving this file via fastpath, or"
                        " setting 'allowstaticresources' in the CGI section"
                        " of the CGI configuration section");
             }
@@ -1385,7 +1387,7 @@ NextWord(char *s)
  *
  * CgiRegisterFastUrl2File -
  *
- *      Helper file for achieving consisten behavior when an FastUrl2File
+ *      Helper file for achieving consistent behavior when an FastUrl2File
  *      handler is registered via the configuration file or via
  *      NsTclRegisterCGIObjCmd (Tcl command "ns_register_cgi").
  *

@@ -152,7 +152,7 @@ the URL space should be treated as a CGI request.
 
 [example_begin]
  ns_section ns/server/s1/module/nscgi {
-   ns_param map  "GET /*.cgi*"
+   ns_param map  "GET /*.cgi"
  }
 [example_end]
 
@@ -161,8 +161,8 @@ space, and/or define multiple HTTP methods and paths.
 
 [example_begin]
  ns_section ns/server/s1/module/nscgi {
-   ns_param map  "GET /cgi-bin/*.cgi*"
-   ns_param map  "POST /cgi-bin/*.cgi*"
+   ns_param map  "GET /cgi-bin/*.cgi"
+   ns_param map  "POST /cgi-bin/*.cgi"
    # ...
  }
 [example_end]
@@ -250,18 +250,30 @@ locations for certain CGI applications. The source location is
 typically a directory not under the page directory of NaviServer,
 and maybe managed via a package manager or a source code repository.
 
-[para] The source-code mapping can be achieved by specifying an
-additional argument to the value provided to the [const map] value.
+[para] The source-code mapping can be achieved by specifying
+additionally the path in the [const map] value.
 The following example specifies that requests for Perl scripts stating
 with [const /cgi] should be resolved by the specified source location.
 
 [example_begin]
  ns_section ns/server/s1/module/nscgi {
    # ...
-   ns_param map  "GET /cgi/*.pl* /server/perl-scripts"
+   ns_param map  "GET /cgi/*.pl /server/perl-scripts"
    # ...
  }
 [example_end]
+
+The provided source location is registered via
+[cmd ns_register_fasturl2file] such that [const fastpath]
+can resource the request path against this source location.
+
+
+[subsection {Register CGI Handlers from a Script}]
+
+Alternatively to the registration via the configuration file, CGI
+handlers can be as well be registered by the command [cmd ns_register_cgi].
+Loading the CGI module and specifying the CGI script interpreters have
+to be done via the configuration file.
 
 [subsection {Further configuration parameters}]
 
@@ -280,28 +292,33 @@ unlimited. Default: [const 0]
 
 [def maxinput] is an integer parameter to indicate the
 maximum in bytes to accept in the HTTP request. [const 0] means unlimited.
-Mostly useful to limit the size of [const POST]'ed data. Default: [const 1024000]
+Mostly useful to limit the size of [const POST]'ed data.
+Default: [const 1024000]
       
-[def maxwait] is an integer parameter to indicate the amount
-      of time to wait in seconds in the queue when the concurrency
-      limit has been reached.  Server will respond with a "503 Service
-      Unavailable" error on timeout.  If [const limit] is set to [const 0],
-      this setting will have no effect. Default: [const 30]
+[def maxwait] is an integer parameter to indicate the amount of time
+ to wait in seconds in the queue when the concurrency limit has been
+ reached.  Server will respond with a "503 Service Unavailable" error
+ on timeout.  If [const limit] is set to [const 0], this setting will
+ have no effect. Default: [const 30]
 
 [def systemenvironment] is a boolean parameter to specify, if all
  environment variables of the server process should be passed to the
  CGI program. See below for more information about environment
  variables. Default: [const false]
 
-[def allowstaticresources] is a boolean parameter to controls
-      whether static resources (e.g. images) can be served directly
-      by the [const nscgi] module.
+[def allowstaticresources]
 
-      [para] In general, this option is not needed, since static
-      content should be served via [const fastpath], providing all its
-      features (compressed output, etc.). The WordPress example on
-      this page shows a complex setup, where the static resources are
-      delivered from a non-standard location.  Default: [const false]
+  is a boolean parameter to controls
+  whether static resources (e.g. images) can be served directly
+  by the [const nscgi] module.
+
+  [para] In general, this option is not needed, since static content
+  should be served via [const fastpath], providing all its features
+  (caching, compressed output, etc.). The WordPress example on this
+  page shows a complex setup, where the static resources are delivered
+  from a non-standard location. Notice, that setting this resource
+  might be security relevant, since it can lead to deliver unexpectedly
+  configuration files etc. Default: [const false]
 
 [list_end]
 
@@ -331,31 +348,9 @@ the PHP files.
  }
 [example_end]
 
-This definition is not yet complete, two additional pieces are
-missing:
-[list_begin enum]
-[enum]  The [const wordpress] directory contains not
-only the [const .php] files, but as well static resources such as
-images, style files, etc. We have to specify that under the URL path
-[const /wordpress] the server should deliver these resources. With
-current versions of NaviServer, this has to be done using the command
-[cmd  ns_register_fasturl2file].
-
-[example_begin]
- ns_section ns/server/s1/tcl {
-   ns_param initcmds {
-     #
-     # Register for all files under "/wordpress" from where these
-     # file should be taken.
-     #
-     ns_register_fasturl2file /wordpress /usr/local/src/wordpress/
-   }
- }
-[example_end]
-
-[enum] WordPress expects for URLs pointing to a directory that
-[const index.php] is executed. Make sure to include this value in the
-[const fastpath] setup.
+This definition is not yet complete. WordPress expects for URLs
+pointing to a directory that [const index.php] is executed. Make sure
+to include this value in the [const fastpath] setup.
 
 [example_begin]
  ns_section ns/server/s1/fastpath {
@@ -364,7 +359,6 @@ current versions of NaviServer, this has to be done using the command
     # ...
  }
 [example_end]
-[list_end]
 
 
 

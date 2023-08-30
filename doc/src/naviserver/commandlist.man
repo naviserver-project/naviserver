@@ -359,6 +359,11 @@ List of all currently available NaviServer commands.
 [list_end]
 [call [cmd ns_shortcut_filter]]
 [call [cmd ns_urlspace]]
+[def "Module nscgi"]
+[list_begin definitions]
+[def [uri ../../nscgi/files/ns_register_cgi.html ns_register_cgi]]
+[list_end]
+
 [list_end]
 
 [section {Tcl Interpreter Management Commands}]
