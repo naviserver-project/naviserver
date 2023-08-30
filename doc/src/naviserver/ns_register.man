@@ -529,5 +529,5 @@ currently registered [term filters], [term traces] or [term procs].
 
 
 [see_also ns_adp ns_conn ns_server ns_shortcut_filter ns_time]
-[keywords "server built-in" ADP filter request callback fastpath]
+[keywords "server built-in" ADP filter request callback fastpath urlspace handler]
 [manpage_end]
