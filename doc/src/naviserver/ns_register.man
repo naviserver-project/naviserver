@@ -347,6 +347,7 @@ is used to return full path to the requested URL.
 [call [cmd ns_unregister_op] \
    [opt [option -noinherit]] \
    [opt [option -recurse]] \
+   [opt [option "-server [arg server]"]] \
    [opt --] \
    [arg method] \
    [arg URL]]
@@ -362,13 +363,21 @@ flag in ns_RegisterRequest) will be unregistered.  If [option -noinherit]
 is omitted, the function previously registered without the 
 [option -noinherit] flag (or the NS_OP_NOINHERIT flag) will be unregistered.
 
+[para] The option [option -noinherit] specifies the (virtual) server
+from where the handler should be unregistered. If this option is not
+specified, the current server is used.
+
 [call [cmd ns_unregister_url2file] \
-	[opt [option -noinherit]] \
-	[opt [option -recurse]] \
-	[opt --] \
-	[arg URL]]
+        [opt [option -noinherit]] \
+        [opt [option -recurse]] \
+        [opt [option "-server [arg server]"]] \
+        [opt --] \
+        [arg URL]]
 
 The command is the inverse command to [cmd ns_register_url2file].
+The option [option -noinherit] specifies the (virtual) server
+from where the resolver should be unregistered. If this option is not
+specified, the current server is used.
 
 [list_end]
 

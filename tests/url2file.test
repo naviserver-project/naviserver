@@ -21,7 +21,7 @@ test url2file-1.3 {basic syntax} -body {
 
 test url2file-1.4 {basic syntax} -body {
     ns_unregister_url2file
-} -returnCodes error -result {wrong # args: should be "ns_unregister_url2file ?-noinherit? ?-recurse? ?--? url"}
+} -returnCodes error -result {wrong # args: should be "ns_unregister_url2file ?-noinherit? ?-recurse? ?-server server? ?--? url"}
 
 
 
