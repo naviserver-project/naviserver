@@ -458,12 +458,15 @@ NsTclRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_
 int
 NsTclUnRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
-    char       *url = NULL;
-    int         noinherit = 0, recurse = 0, result = TCL_OK;
+    const NsInterp *itPtr = clientData;
+    NsServer       *servPtr = itPtr->servPtr;
+    char           *url = NULL;
+    int             noinherit = 0, recurse = 0, result = TCL_OK;
     Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_TRUE)},
-        {"-recurse",   Ns_ObjvBool,  &recurse,   INT2PTR(NS_TRUE)},
-        {"--",         Ns_ObjvBreak, NULL,   NULL},
+        {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_TRUE)},
+        {"-recurse",   Ns_ObjvBool,   &recurse,   INT2PTR(NS_TRUE)},
+        {"-server",    Ns_ObjvServer, &servPtr,   NULL},
+        {"--",         Ns_ObjvBreak,  NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -474,7 +477,6 @@ NsTclUnRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJ
         result = TCL_ERROR;
     } else {
         unsigned int    flags = 0u;
-        const NsInterp *itPtr = clientData;
 
         if (noinherit != 0) {
             flags |= NS_OP_NOINHERIT;
@@ -483,7 +485,7 @@ NsTclUnRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJ
             flags |= NS_OP_RECURSE;
         }
 
-        Ns_UnRegisterUrl2FileProc(itPtr->servPtr->server, url, flags);
+        Ns_UnRegisterUrl2FileProc(servPtr->server, url, flags);
     }
 
     return result;

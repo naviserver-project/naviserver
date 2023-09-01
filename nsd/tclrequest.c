@@ -236,12 +236,15 @@ NsTclRegisterFastPathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_
 int
 NsTclUnRegisterOpObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
-    char       *method = NULL, *url = NULL;
-    int         noinherit = 0, recurse = 0, result = TCL_OK;
+    char           *method = NULL, *url = NULL;
+    int             noinherit = 0, recurse = 0, result = TCL_OK;
+    const NsInterp *itPtr = clientData;
+    NsServer       *servPtr = itPtr->servPtr;
     Ns_ObjvSpec opts[] = {
-        {"-noinherit", Ns_ObjvBool,  &noinherit, INT2PTR(NS_OP_NOINHERIT)},
-        {"-recurse",   Ns_ObjvBool,  &recurse,   INT2PTR(NS_OP_RECURSE)},
-        {"--",         Ns_ObjvBreak, NULL,   NULL},
+        {"-noinherit", Ns_ObjvBool,   &noinherit, INT2PTR(NS_OP_NOINHERIT)},
+        {"-recurse",   Ns_ObjvBool,   &recurse,   INT2PTR(NS_OP_RECURSE)},
+        {"-server",    Ns_ObjvServer, &servPtr,   NULL},
+        {"--",         Ns_ObjvBreak,  NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -253,9 +256,7 @@ NsTclUnRegisterOpObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T ob
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        const NsInterp *itPtr = clientData;
-
-        Ns_UnRegisterRequestEx(itPtr->servPtr->server, method, url,
+        Ns_UnRegisterRequestEx(servPtr->server, method, url,
                                ((unsigned int)noinherit | (unsigned int)recurse));
     }
     return result;
