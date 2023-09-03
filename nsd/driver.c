@@ -5087,14 +5087,17 @@ SockSetServer(Sock *sockPtr)
                        sockPtr->servPtr->server, sockPtr->location);
                 if (drvPtr->server != NULL) {
                     /*
-                     * per server-driver
+                     * Per-server network driver
                      */
                     Ns_Log(Notice, "... consider loading driver %s globally in section"
-                           "'ns/modules' and add 'ns_param %s %s:%hu' to section 'ns/module/%s/servers'",
-                           drvPtr->moduleName, drvPtr->server, hostName, hostPort, drvPtr->moduleName);
+                           "'ns/modules' and add 'ns_param %s %s' to section 'ns/module/%s/servers'",
+                           drvPtr->moduleName, drvPtr->server, hostName, /*hostPort,*/ drvPtr->moduleName);
                 } else {
-                    Ns_Log(Notice, "... consider adding 'ns_param %s %s:%hu' to section 'ns/module/%s/servers'",
-                           sockPtr->servPtr->server, hostName, hostPort, drvPtr->moduleName);
+                    /*
+                     * Global network driver
+                     */
+                    Ns_Log(Notice, "... consider adding 'ns_param %s %s' to section 'ns/module/%s/servers'",
+                           sockPtr->servPtr->server, hostName, /*hostPort,*/ drvPtr->moduleName);
                 }
             }
         }
