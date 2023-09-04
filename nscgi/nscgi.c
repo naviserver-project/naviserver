@@ -530,13 +530,22 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
     Ns_Log(Ns_LogCGIDebug, "provided URL: '%s'", url);
 
     lastMapSegment = strrchr(mapPtr->url, INTCHAR('/'));
-    if (lastMapSegment != NULL && lastMapSegment[1] == '*' && lastMapSegment[2] == '\0') {
+
+    /*
+     * A match is a last-segment match, if we have a single element (no
+     * slash), or if we have a match-everything pattern, where the
+     * path-segment match is not applied.
+     */
+    if (lastMapSegment == NULL || (lastMapSegment[1] == '*' && lastMapSegment[2] == '\0')
+        ) {
         /*
          * Tail match (match on the last segment)
          *    SCRIPT_NAME = URL
          *    PATH_INFO   = ""
          */
-    } else if (lastMapSegment != NULL) {
+        Ns_Log(Ns_LogCGIDebug, "nscgi: lastMapSegment match <%s>", mapPtr->url);
+
+    } else /* if (lastMapSegment != NULL) */ {
         int segments;
         char *secondLastUrlSegment = NULL;
 
@@ -1334,6 +1343,8 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
             vbuf.iov_base = cgiPtr->ptr;
             vbuf.iov_len  = (size_t)cgiPtr->cnt;
             status = Ns_ConnWriteVData(conn, &vbuf, 1, NS_CONN_STREAM);
+            //Ns_Log(Ns_LogCGIDebug, "=== content %ld\n%s", cgiPtr->cnt, (char*)cgiPtr->ptr);
+
         } while (status == NS_OK && CgiRead(cgiPtr) > 0);
 #if 0
         /*
