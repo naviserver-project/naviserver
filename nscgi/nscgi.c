@@ -12,7 +12,7 @@
 #include "ns.h"
 
 #define BUFSIZE          4096
-#define NDSTRINGS        6
+#define NDSTRINGS        5
 
 #define CGI_NPH          0x01u
 #define CGI_GETHOST      0x02u
@@ -916,7 +916,8 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
      */
 
     Ns_SetUpdateSz(cgiPtr->env, "SCRIPT_NAME", 11, cgiPtr->name, TCL_INDEX_NONE);
-    Ns_SetUpdateSz(cgiPtr->env, "REQUEST_URI", 11, Ns_ConnTarget(conn, CgiDs(cgiPtr)), TCL_INDEX_NONE);
+    Ns_SetUpdateSz(cgiPtr->env, "REQUEST_URI", 11, Ns_ConnTarget(conn, dsPtr), TCL_INDEX_NONE);
+    Ns_DStringSetLength(dsPtr, 0);
 
     if (cgiPtr->pathinfo != NULL && *cgiPtr->pathinfo != '\0') {
 
