@@ -12,7 +12,7 @@
 #include "ns.h"
 
 #define BUFSIZE          4096
-#define NDSTRINGS        5
+#define NDSTRINGS        6
 
 #define CGI_NPH          0x01u
 #define CGI_GETHOST      0x02u
