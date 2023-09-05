@@ -1212,7 +1212,8 @@ NS_EXTERN bool           Ns_ConnUnmodifiedSince(const Ns_Conn *conn, time_t sinc
 
 NS_EXTERN Ns_ReturnCode  Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, Ns_TclCallback *cbPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN void           Ns_SetLocationProc(const char *server, Ns_LocationProc *proc) NS_GNUC_DEPRECATED_FOR(Ns_SetConnLocationProc);
-
+NS_EXTERN const char *   Ns_ConnTarget(Ns_Conn *conn, Tcl_DString *dsPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 
 /*
  * connio.c:

@@ -1525,6 +1525,37 @@ Ns_ConnSetCompression(Ns_Conn *conn, int level)
  *----------------------------------------------------------------------
  */
 
+const char *
+Ns_ConnTarget(Ns_Conn *conn, Tcl_DString *dsPtr)
+{
+    const char *targetPtr;
+
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+
+    Tcl_DStringAppend(dsPtr, conn->request.line, TCL_INDEX_NONE);
+
+    /*
+     * Skip non-spaces + spaces from the left (HTTP method).
+     */
+    targetPtr = strchr(dsPtr->string, INTCHAR(' '));
+    if (targetPtr != NULL) {
+        char *p;
+
+        ++ targetPtr;
+        /*
+         * Skip non-spaces + space from the right (HTTP version)
+         */
+        p = strrchr(targetPtr, INTCHAR(' '));
+        if (p != NULL) {
+            *p = '\0';
+        }
+    } else {
+        targetPtr = dsPtr->string;
+    }
+    return targetPtr;
+}
+
 int
 NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
@@ -2310,29 +2341,9 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
 
     case CTargetIdx: {
         Tcl_DString lineDs;
-        char       *p, *targetPtr;
 
         Tcl_DStringInit(&lineDs);
-        Tcl_DStringAppend(&lineDs, request->line, TCL_INDEX_NONE);
-
-        /*
-         * Skip non-spaces + spaces from the left (HTTP method).
-         */
-        targetPtr = strchr(lineDs.string, INTCHAR(' '));
-        if (targetPtr != NULL) {
-            ++ targetPtr;
-            /*
-             * Skip non-spaces + space from the right (HTTP version)
-             */
-            p = strrchr(targetPtr, INTCHAR(' '));
-            if (p != NULL) {
-                *p = '\0';
-            }
-        } else {
-            targetPtr = lineDs.string;
-        }
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(targetPtr, TCL_INDEX_NONE));
-
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ConnTarget(conn, &lineDs), TCL_INDEX_NONE));
         Tcl_DStringFree(&lineDs);
         break;
     }
