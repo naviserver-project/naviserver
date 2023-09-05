@@ -916,6 +916,8 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
      */
 
     Ns_SetUpdateSz(cgiPtr->env, "SCRIPT_NAME", 11, cgiPtr->name, TCL_INDEX_NONE);
+    Ns_SetUpdateSz(cgiPtr->env, "REQUEST_URI", 11, Ns_ConnTarget(conn, CgiDs(cgiPtr)), TCL_INDEX_NONE);
+
     if (cgiPtr->pathinfo != NULL && *cgiPtr->pathinfo != '\0') {
 
         if (Ns_UrlPathDecode(dsPtr, cgiPtr->pathinfo, NULL) != NULL) {
