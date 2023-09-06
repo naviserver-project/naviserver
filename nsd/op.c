@@ -135,7 +135,7 @@ int Ns_RegisterRequest2(Tcl_Interp *interp, const char *server, const char *meth
     Tcl_DString  ds;
 
     Tcl_DStringInit(&ds);
-    Tcl_DStringAppend(&ds, url, TCL_INDEX_NONE);
+    Tcl_DStringAppend(&ds, url, -1);
 
     if (Ns_ParseUrl(ds.string, NS_FALSE, &parsedUrl, &errorMsg) != NS_OK) {
         Tcl_DString errorDs;
