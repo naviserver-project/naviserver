@@ -587,7 +587,7 @@ The name and version number of the server software running the CGI
 program.
 
 [para]
-Example: [const NaviServer/4.99.25]
+Example: [const NaviServer/4.99.28]
 
 
 [def HTTP_*:]
