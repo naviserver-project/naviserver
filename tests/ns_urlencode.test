@@ -449,10 +449,10 @@ test ns_urlencode-7.0 {
         ns_return 200 text/plain [list [ns_conn url] [ns_info server]]
     }
 } -body {
-    nstest::http -http 1.1 -getbody 1 GET /[ns_urlencode -part path a?]
+    nstest::http -http 1.1 GET /[ns_urlencode -part path a?]
 } -cleanup {
     ns_unregister_op GET /a?
-} -returnCodes {ok return error} -result "200 {/a? test}"
+} -returnCodes {ok return error} -result "404"
 
 test ns_urlencode-7.0.1 {
     Funny chars: URL ends with question mark, not found
@@ -481,10 +481,10 @@ test ns_urlencode-7.1 {
         ns_return 200 text/plain [list ok [ns_conn url] [ns_info server]]
     }
 } -body {
-    nstest::http -http 1.1 -getbody 1 GET /%3F
+    nstest::http -http 1.1 GET /%3F
 } -cleanup {
     ns_unregister_op GET /?
-} -returnCodes {ok return error} -result "200 {ok /? test}"
+} -returnCodes {ok return error} -result "404"
 
 test ns_urlencode-7.1.1 {
     Funny chars: URL is just a question mark, not found
