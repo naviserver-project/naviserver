@@ -240,7 +240,7 @@ test ns_server-2.14.1a {basic operation with invalid pool} -body {
 
 test ns_server-2.14.1b {basic operation with invalid mapspec} -body {
     ns_server -pool emergency map "XXX"
-} -returnCodes error -result {invalid mapspec 'XXX'; must be 2- or 3-element list containing HTTP method, URL, and optionally a filtercontext}
+} -returnCodes error -result {invalid mapspec 'XXX'; must be 2- or 3-element list containing HTTP method, plain URL path, and optionally a filtercontext}
 
 
 #
@@ -306,6 +306,17 @@ test ns_server-2.14.5b {mapping and unmapping of requests, return mapping with i
 } -cleanup {
     ns_server -pool emergency unmap "GET /foo"
 } -result {{pool {} handler {ns:fastpath a:0x0}} {pool emergency handler {ns:fastpath a:0x0}} {pool emergency handler {ns:fastpath a:0x0}}}
+
+test ns_server-2.14.5c {providing invalid URL path} -setup {
+    ns_server -pool emergency map "GET /foo/*.png"
+} -body {
+    return [list \
+                [ns_server mapped -all "GET /foo?X=1"] \
+                [ns_server mapped -all "GET /foo/bar/2.png"]]
+} -cleanup {
+    ns_server -pool emergency unmap "GET /foo"
+} -returnCodes {error ok} -result {invalid mapspec 'GET /foo?X=1'; must be 2- or 3-element list containing HTTP method, plain URL path, and optionally a filtercontext}
+
 
 
 #

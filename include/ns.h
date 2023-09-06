@@ -3412,6 +3412,10 @@ NS_EXTERN Ns_ReturnCode
 Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *urlString, const char *baseString)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
+NS_EXTERN bool
+Ns_PlainUrlPath(const char *url, const char **errorMsgPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 /*
  * url2file.c:
  */
