@@ -393,7 +393,6 @@ static Tcl_DString defexec;             /* Stores full path of the proxy executa
  *
  *----------------------------------------------------------------------
  */
-#define stringify(s) #s
 void
 Nsproxy_LibInit(void)
 {

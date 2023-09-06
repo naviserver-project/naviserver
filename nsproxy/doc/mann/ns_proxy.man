@@ -30,8 +30,9 @@ a NaviServer virtual server by specifying an [emph nsproxy.so] entry
 in the server's module config entry, for example:
 
 [example_begin]
- [cmd ns_section] "ns/server/server1/modules"
- [cmd ns_param] nsproxy  nsproxy.so
+ [cmd ns_section] "ns/server/server1/modules" {
+   [cmd ns_param] nsproxy  nsproxy.so
+ }
 [example_end]
 
 [para]
@@ -143,8 +144,8 @@ The default is 0 milliseconds i.e. infinite.
 
 [opt_def -exec [arg program]]
 Specifies the filename of a worker proxy program.  The default is
-[emph nsproxy] in the [emph bin] subdirectory of the NaviServer
-run time. It is possible to create a custom program and enter the
+[const nsproxy-helper] in the [const bin] subdirectory of the NaviServer
+home. It is possible to create a custom program and enter the
 proxy event loop with the [emph Ns_ProxyMain] application startup
 routine; see the source code for details.
 
@@ -454,7 +455,7 @@ can be provided in the configuration file of NaviServer.
  # of the server.
  ns_section	ns/server/${server}/modules {
    # ...
-   ns_param	nsproxy			${homedir}/bin/nsproxy
+   ns_param	nsproxy			${homedir}/bin/nsproxy.so
    # ...
  }
  
@@ -462,7 +463,7 @@ can be provided in the configuration file of NaviServer.
  [cmd ns_section] ns/server/${server}/module/nsproxy {
  
    # Proxy program to start
-   ns_param	exec			${homedir}/bin/nsproxy
+   #ns_param	exec			${homedir}/bin/nsproxy-helper
  
    # Timeout when evaluating scripts
    ns_param	evaltimeout		0s
@@ -526,6 +527,6 @@ The following demonstrates using multiple proxies:
 
 
 [see_also ns_job]
-[keywords module nsproxy "server built-in" proxy exec pools]
+[keywords module nsproxy "server built-in" proxy exec pools background]
 
 [manpage_end]
