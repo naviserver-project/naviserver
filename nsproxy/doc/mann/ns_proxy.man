@@ -251,7 +251,10 @@ as the proxy is requested by some thread.
      [opt [option "-handles [arg n]"]] \
      [opt [option "-timeout [arg timeout]"]] ]
 
-Returns one or more handles to proxies from the specified [arg pool].
+Returns one or more handles to proxies from the specified [arg
+pool]. If no worker process has been started yet, or when additional
+worker processes are required, and it is permitted by the
+configuration, these worker processes will be started.
 
 [para]
 The [arg pool] will be created with default options if it does not
