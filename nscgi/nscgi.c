@@ -1496,8 +1496,8 @@ CgiRegister(Mod *modPtr, const char *map)
            (path != NULL) ? " -> " : NS_EMPTY_STRING,
            (path != NULL) ? path : NS_EMPTY_STRING);
 
-    Ns_RegisterRequest(modPtr->server, method, url,
-                       CgiRequest, CgiFreeMap, mapPtr, NS_OP_SEGMENT_MATCH);
+    (void) Ns_RegisterRequest2(NULL, modPtr->server, method, url,
+                               CgiRequest, CgiFreeMap, mapPtr, NS_OP_SEGMENT_MATCH);
     if (path != NULL) {
         /*
          * When a path is provided, register it to the Url2File
@@ -1627,8 +1627,8 @@ NsTclRegisterCGIObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T obj
                (path != NULL) ? " -> " : NS_EMPTY_STRING,
                (path != NULL) ? path : NS_EMPTY_STRING);
 
-        Ns_RegisterRequest(modPtr->server, method, url,
-                           CgiRequest, CgiFreeMap, mapPtr, flags);
+        result = Ns_RegisterRequest2(interp, modPtr->server, method, url,
+                                     CgiRequest, CgiFreeMap, mapPtr, flags);
         if (path != NULL) {
             /*
              * When a path is provided, register it to the Url2File

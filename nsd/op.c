@@ -89,10 +89,71 @@ ConfigServerProxy(const char *server)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_RegisterRequest2 --
+ *
+ *      Register a new procedure to be called to service matching given method
+ *      and URL path pattern. Before calling function Ns_RegisterRequest(),
+ *      this functions verifies, if the URL path is correct. In particular, in
+ *      the OP urlspace, query parameters or fragments are not allowed. For
+ *      smooth upgrades, such URLs are fixed, and error message is included in
+ *      the log. Future version might raise an exception in this case.
+ *
+ * Results:
+ *      TCL return code.
+ *
+ * Side effects:
+ *      In case of an error, the error message is left in ther result of the
+ *      interp.
+ *
+ *----------------------------------------------------------------------
+ */
+int Ns_RegisterRequest2(Tcl_Interp *interp, const char *server, const char *method, const char *url,
+                        Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg,
+                        unsigned int flags)
+{
+    Ns_URL       parsedUrl;
+    int          result = TCL_OK;
+    const char  *errorMsg = NULL;
+    Tcl_DString  ds;
+
+    Tcl_DStringInit(&ds);
+    Tcl_DStringAppend(&ds, url, TCL_INDEX_NONE);
+
+    if (Ns_ParseUrl(ds.string, NS_FALSE, &parsedUrl, &errorMsg) != NS_OK) {
+        Tcl_DString errorDs;
+        Tcl_DStringInit(&errorDs);
+        Ns_DStringPrintf(&errorDs, "could not parse provided url %s: %s", url, errorMsg);
+        if (interp != NULL) {
+            Tcl_DStringResult(interp, &errorDs);
+        } else {
+            Ns_Log(Error, "register request handler: %s", errorDs.string);
+            Tcl_DStringFree(&errorDs);
+        }
+        result = TCL_ERROR;
+    } else {
+        /*Ns_Log(Notice, "Ns_ParseURL of '%s' returned OK, path '%s' tail '%s', query '%s' fragment %s",
+          url, parsedUrl.path, parsedUrl.tail, parsedUrl.query, parsedUrl.fragment);*/
+
+        if (parsedUrl.query != NULL || parsedUrl.fragment != NULL) {
+            Ns_Log(Warning, "register request handler: request path '%s'"
+                   " contains query and/or fragment, which is not allowed;"
+                   " the register operation is ignored'", url);
+        } else {
+            Ns_RegisterRequest(server, method, url, proc, deleteCallback, arg, flags);
+        }
+    }
+    Tcl_DStringFree(&ds);
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_RegisterRequest --
  *
  *      Register a new procedure to be called to service matching
- *      given method and url pattern.
+ *      given method and URL path pattern.
  *
  * Results:
  *      None.
@@ -103,7 +164,6 @@ ConfigServerProxy(const char *server)
  *
  *----------------------------------------------------------------------
  */
-
 void
 Ns_RegisterRequest(const char *server, const char *method, const char *url,
                    Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg,
