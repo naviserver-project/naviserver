@@ -127,7 +127,7 @@ NsTclRegisterProcObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
         }
         cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)NsTclRequestProc, scriptObj,
                                   remain, objv + (objc - remain));
-        Ns_RegisterRequest(itPtr->servPtr->server, method, url,
+        result = Ns_RegisterRequest2(interp, itPtr->servPtr->server, method, url,
                            NsTclRequestProc, Ns_TclFreeCallback, cbPtr, flags);
     }
     return result;
@@ -225,8 +225,8 @@ NsTclRegisterFastPathObjCmd(ClientData clientData, Tcl_Interp *interp, int objc,
             flags |= NS_OP_NOINHERIT;
         }
 
-        Ns_RegisterRequest(itPtr->servPtr->server, method, url,
-                           Ns_FastPathProc, NULL, NULL, flags);
+        result = Ns_RegisterRequest2(interp, itPtr->servPtr->server, method, url,
+                                     Ns_FastPathProc, NULL, NULL, flags);
     }
 
     return result;

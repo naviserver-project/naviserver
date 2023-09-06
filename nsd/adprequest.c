@@ -361,10 +361,8 @@ RegisterPage(const ClientData clientData,
     }
     adp->flags = aflags;
 
-    Ns_RegisterRequest(itPtr->servPtr->server, method, url,
-                       NsAdpPageProc, ns_free, adp, rflags);
-
-    return TCL_OK;
+    return Ns_RegisterRequest2(itPtr->interp, itPtr->servPtr->server, method, url,
+                               NsAdpPageProc, ns_free, adp, rflags);
 }
 
 

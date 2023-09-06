@@ -1310,8 +1310,8 @@ CgiRegister(Mod *modPtr, const char *map)
     Ns_Log(Notice, "nscgi: %s %s%s%s", method, url,
            (path != NULL) ? " -> " : NS_EMPTY_STRING,
            (path != NULL) ? path : NS_EMPTY_STRING);
-    Ns_RegisterRequest(modPtr->server, method, url,
-                       CgiRequest, CgiFreeMap, mapPtr, 0u);
+    (void)Ns_RegisterRequest2(NULL, modPtr->server, method, url,
+                              CgiRequest, CgiFreeMap, mapPtr, 0u);
 
 done:
     Ns_DStringFree(&ds1);

@@ -2170,6 +2170,14 @@ Ns_RegisterRequest(const char *server, const char *method, const char *url,
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3)
     NS_GNUC_NONNULL(4);
 
+
+NS_EXTERN int Ns_RegisterRequest2(Tcl_Interp *interp,
+                                  const char *server, const char *method, const char *url,
+                                  Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg,
+                                  unsigned int flags)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4)
+    NS_GNUC_NONNULL(5);
+
 NS_EXTERN void
 Ns_RegisterProxyRequest(const char *server, const char *method, const char *protocol,
                         Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg)
