@@ -120,8 +120,8 @@ ConfigServerProxy(const char *server)
  *      TCL return code.
  *
  * Side effects:
- *      In case of an error, the error message is left in ther result of the
- *      interp.
+ *      When raiseError is set, in case of an error, the error message is left
+ *      in the result of the interp.
  *
  *----------------------------------------------------------------------
  */
@@ -129,38 +129,32 @@ int Ns_RegisterRequest2(Tcl_Interp *interp, const char *server, const char *meth
                         Ns_OpProc *proc, Ns_Callback *deleteCallback, void *arg,
                         unsigned int flags)
 {
-    Ns_URL       parsedUrl;
     int          result = TCL_OK;
     const char  *errorMsg = NULL;
-    Tcl_DString  ds;
 
-    Tcl_DStringInit(&ds);
-    Tcl_DStringAppend(&ds, url, -1);
-
-    if (Ns_ParseUrl(ds.string, NS_FALSE, &parsedUrl, &errorMsg) != NS_OK) {
+    if (!Ns_PlainUrlPath(url, &errorMsg)) {
         Tcl_DString errorDs;
+        bool raiseError;
+
+        /*
+         * Raising errors is deactivated for the time being to improve
+         * backwards compatibility.
+         */
+        raiseError = NS_FALSE;
+
         Tcl_DStringInit(&errorDs);
-        Ns_DStringPrintf(&errorDs, "could not parse provided url %s: %s", url, errorMsg);
-        if (interp != NULL) {
+        Ns_DStringPrintf(&errorDs, "invalid URL path %s: %s", url, errorMsg);
+        if (raiseError && interp != NULL) {
             Tcl_DStringResult(interp, &errorDs);
+            result = TCL_ERROR;
         } else {
             Ns_Log(Error, "register request handler: %s", errorDs.string);
             Tcl_DStringFree(&errorDs);
         }
-        result = TCL_ERROR;
-    } else {
-        /*Ns_Log(Notice, "Ns_ParseURL of '%s' returned OK, path '%s' tail '%s', query '%s' fragment %s",
-          url, parsedUrl.path, parsedUrl.tail, parsedUrl.query, parsedUrl.fragment);*/
 
-        if (parsedUrl.query != NULL || parsedUrl.fragment != NULL) {
-            Ns_Log(Warning, "register request handler: request path '%s'"
-                   " contains query and/or fragment, which is not allowed;"
-                   " the register operation is ignored'", url);
-        } else {
-            Ns_RegisterRequest(server, method, url, proc, deleteCallback, arg, flags);
-        }
+    } else {
+        Ns_RegisterRequest(server, method, url, proc, deleteCallback, arg, flags);
     }
-    Tcl_DStringFree(&ds);
 
     return result;
 }

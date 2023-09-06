@@ -956,6 +956,44 @@ NsTclAbsoluteUrlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * Ns_PlainUrlPath --
+ *
+ *    Checks, it the provides URL path is valid and does not contain
+ *    query variables or fragments.
+ *
+ * Results:
+ *    Boolean.
+ *
+ * Side effects:
+ *    none
+ *
+ *----------------------------------------------------------------------
+ */
+bool Ns_PlainUrlPath(const char *url, const char **errorMsgPtr)
+{
+    Ns_URL       parsedUrl;
+    bool         result = NS_TRUE;
+    Tcl_DString  ds;
+
+    NS_NONNULL_ASSERT(url != NULL);
+    NS_NONNULL_ASSERT(errorMsgPtr != NULL);
+
+    Tcl_DStringInit(&ds);
+    Tcl_DStringAppend(&ds, url, TCL_INDEX_NONE);
+
+    if (Ns_ParseUrl(ds.string, NS_FALSE, &parsedUrl, errorMsgPtr) != NS_OK) {
+        result = NS_FALSE;
+    } else if (parsedUrl.query != NULL || parsedUrl.fragment != NULL) {
+        *errorMsgPtr = "request patch contains query and/or fragment, which is not allowed";
+        result = NS_FALSE;
+    }
+    Tcl_DStringFree(&ds);
+
+    return result;
+}
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

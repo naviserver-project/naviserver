@@ -969,29 +969,35 @@ MapspecParse(Tcl_Interp *interp, Tcl_Obj *mapspecObj, char **method, char **url,
 
     if (Tcl_ListObjGetElements(NULL, mapspecObj, &oc, &ov) == TCL_OK) {
         if (oc == 2 || oc == 3) {
-            status = NS_OK;
-            *method = Tcl_GetString(ov[0]);
-            *url = Tcl_GetString(ov[1]);
-            if (oc == 3) {
-                int        oc2;
-                Tcl_Obj  **ov2;
+            const char *errorMsg;
 
-                if (Tcl_ListObjGetElements(NULL, ov[2], &oc2, &ov2) == TCL_OK && oc2 == 2) {
-                    *specPtr = NsUrlSpaceContextSpecNew(Tcl_GetString(ov2[0]),
-                                                        Tcl_GetString(ov2[1]));
-
-                } else {
-                    status = NS_ERROR;
-                }
+            if (!Ns_PlainUrlPath(Tcl_GetString(ov[1]), &errorMsg)) {
+                status = NS_ERROR;
             } else {
-                *specPtr = NULL;
+                status = NS_OK;
+                *method = Tcl_GetString(ov[0]);
+                *url = Tcl_GetString(ov[1]);
+                if (oc == 3) {
+                    TCL_SIZE_T oc2;
+                    Tcl_Obj  **ov2;
+
+                    if (Tcl_ListObjGetElements(NULL, ov[2], &oc2, &ov2) == TCL_OK && oc2 == 2) {
+                        *specPtr = NsUrlSpaceContextSpecNew(Tcl_GetString(ov2[0]),
+                                                            Tcl_GetString(ov2[1]));
+
+                    } else {
+                        status = NS_ERROR;
+                    }
+                } else {
+                    *specPtr = NULL;
+                }
             }
         }
     }
     if (unlikely(status == NS_ERROR) && interp != NULL) {
         Ns_TclPrintfResult(interp,
                            "invalid mapspec '%s'; must be 2- or 3-element list "
-                           "containing HTTP method, URL, and optionally a filtercontext",
+                           "containing HTTP method, plain URL path, and optionally a filtercontext",
                            Tcl_GetString(mapspecObj));
     }
 
