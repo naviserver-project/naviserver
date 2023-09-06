@@ -1,4 +1,83 @@
 =======================================
+NaviServer 4.99.28, released 2023-09-06
+=======================================
+
+ 49 files changed, 851 insertions(+), 328 deletions(-)
+
+New Features:
+-------------
+ - None
+
+Bug Fixes:
+----------
+
+  - Fixed incorrect list quoting for "filter" in urlspace
+    introspection. This lead to display problems, e.g. in the nsstats
+    module.
+
+  - Fixed naming Inconsistency: Unified the term "fastpath" across
+    configuration, API-interface, and documentation.
+
+  - Fixed potential crash in Ns_SetIUpdateSz(): Fixed a bug that could
+    lead to a crash when updating the content-type header field with a
+    lowercase field name via the old C API.
+
+    Many thanks to Brian Fenton for reporting the problem and his help
+    for debugging it.
+
+Code Maintenance:
+-----------------
+
+  - New API Function Ns_PlainUrlPath: Checks if a given URL path is
+    "plain," meaning it doesn't contain a query or fragment. Useful
+    for data validation in configuration files and Tcl API calls.
+
+  - Improved Validation when registering request handler. Previously,
+    it was possible to register request handlers for paths containing
+    query variables and fragments, which were never matched.
+
+  - Added Missing "-server" Argument: The "-server" argument was added
+    to ns_unregister_op and ns_unregister_url2file, allowing for more
+    centralized management (e.g. from the nsstats module).
+
+  - Added a more Portable Way of Printing NULL Pointer: Improved
+    portability for printing NULL pointers across different compilers,
+    which could lead to false positives in the regression test.
+
+  - Extended and Simplified Test Cases: Several commits were made to
+    improve and extend test cases across different modules and
+    scenarios.
+
+  - Improved and corrected documentation, including styling changes,
+    bug fixes, and providing more detailed information.
+
+
+Modules:
+--------
+The following list contains the most important changes:
+
+ - Extending nsstats:
+
+   - Introduced templating to improve style-ability
+   - Provided a more ,odern GUI based on the CSS classes from w3schools
+   - Added management of request handlers
+   - Added management of url2file mappings
+
+ - Rework of module nsdbbdb:
+    * properly initializing mutex variables (many thanks to John Buckman)
+    * support for LMDB (Lightning Memory-Mapped Database)
+    * Improved configurability for Makefile
+    * Modernization of C code (better following style guide)
+    * Added debug support via Debug(bdb)
+
+     Build nsdbbdb with Berkeley DB 6.2.32 (results in nsdbbdb.so)
+        make DBINCLUDE=/opt/local/include/db62  DBLIB=/opt/local/lib/db62/
+
+     Build nsdbbdb with LMDB (Lightning Memory-Mapped Database) (results in nsdblmdb.so)
+        make LMDB=1 DBINCLUDE=/opt/local/include DBLIB=/opt/local/lib/
+
+
+=======================================
 NaviServer 4.99.27, released 2023-08-09
 =======================================
 
