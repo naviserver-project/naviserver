@@ -981,7 +981,7 @@ bool Ns_PlainUrlPath(const char *url, const char **errorMsgPtr)
     NS_NONNULL_ASSERT(errorMsgPtr != NULL);
 
     Tcl_DStringInit(&ds);
-    Tcl_DStringAppend(&ds, url, TCL_INDEX_NONE);
+    Tcl_DStringAppend(&ds, url, -1);
 
     if (Ns_ParseUrl(ds.string, NS_FALSE, &parsedUrl, errorMsgPtr) != NS_OK) {
         result = NS_FALSE;
