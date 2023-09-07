@@ -90,19 +90,51 @@ proc _ns_dirlist {} {
     }
 
     set prefix "${loc}${url}"
-    set uptree "<a href=..>..</a>"
+    set uptree "<a href='..'>..</a>"
+    set html [ns_trim -delimiter | {
+        |<style type="text/css">
+        |body {
+        |    font-family: Arial, sans-serif;
+        |    margin: 20px;
+        |}
+        |.directory-listing {
+        |    width: 100%;
+        |    max-width: 600px;
+        |    border: 1px solid #e0e0e0;
+        |}
+        |.header, .item {
+        |    display: flex;
+        |    justify-content: space-between;
+        |    padding: 10px 15px;
+        |    border-bottom: 1px solid #e0e0e0;
+        |}
+        |.header {
+        |    background-color: #f5f5f5;
+        |    font-weight: bold;
+        |}
+        |.item-name {flex-basis: 60%;}
+        |.date-modified {flex-basis: 30%;}
+        |.size {flex-basis: 10%;text-align: right;}
+        |</style>
+    }]
 
     if {$simple} {
-        append html "
-<pre>
-$uptree
-"
+        append html [subst [ns_trim -delimiter | {
+            |<pre>
+            |$uptree
+        }]]
     } else {
-        append html "
-<table>
-<tr align=left><th>File</th><th>Size</th><th>Date</th></tr>
-<tr align=left><td colspan=3>$uptree</td></tr>
-"
+        append html [subst [ns_trim -delimiter | {
+            |<div class="directory-listing">
+            | <div class="header">
+            |  <div class="item-name">Item Name</div>
+            |  <div class="date-modified">Date Modified</div>
+            |  <div class="size">Size</div>
+            | </div>
+            | <div class="item">
+            |  <div class="item-name">$uptree</div>
+            | </div>
+        }]]
     }
 
     if {[nsv_get _ns_fastpath hidedot]} {
@@ -117,7 +149,7 @@ $uptree
 
     foreach f [lsort $files] {
         set tail [file tail $f]
-        if {[file isdirectory $f]} { 
+        if {[file isdirectory $f]} {
             append tail "/"
         }
         set link "<a href=\"${prefix}${tail}\">${tail}</a>"
@@ -125,25 +157,27 @@ $uptree
             append html $link \n
         } else {
             if {[catch {file stat $f stat}]} {
-                append html "
-<tr align=left><td>$link</td><td>N/A</td><td>N/A</td></tr>
-" \n
+                set size N/A
+                set time N/A
             } else {
                 set size  [expr {$stat(size)/1000 + 1}]K
                 set mtime $stat(mtime)
                 set time  [clock format $mtime -format "%d-%h-%Y %H:%M"]
-                append html "
-<tr align=left><td>$link</td><td>$size</td><td>$time</td></tr>
-" \n
             }
+            append html [subst [ns_trim -delimiter | {
+                | <div class="item">
+                |  <div class="item-name">$link</div>
+                |  <div class="date-modified">$time</div>
+                |  <div class="size">$size</div>
+                | </div>
+            }]]
         }
     }
     if {$simple} {
         append html "</pre>"
     } else {
-        append html "</table>"
+        append html "</div>"
     }
-    
     ns_returnnotice 200 $url $html
 }
 
