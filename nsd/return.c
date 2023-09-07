@@ -690,8 +690,11 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
     servPtr = ((Conn *) conn)->poolPtr->servPtr;
     Ns_DStringInit(&ds);
     Ns_DStringAppend(&ds,
-                     "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 4.01//EN\">\n"
-                     "<html>\n<head>\n"
+                     "<!DOCTYPE html>\n"
+                     "<html lang='en'>\n"
+                     "<head>\n"
+                     "<meta charset='UTF-8'>\n"
+                     "<meta name='viewport' content='width=device-width, initial-scale=1.0'>\n"
                      "<title>");
     Ns_QuoteHtml(&ds, title);
     Ns_DStringAppend(&ds,
@@ -706,12 +709,12 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
      */
 
     if (servPtr->opts.noticedetail) {
-        Ns_DStringVarAppend(&ds, "<p align='right'><small><i>",
+        Ns_DStringVarAppend(&ds, "<p style='text-align: right; font-size: small; font-style: italic;'>",
                             Ns_InfoServerName(), "/",
                             Ns_InfoServerVersion(), " on ",
                             (char *)0L);
         (void) Ns_ConnLocationAppend(conn, &ds);
-        Ns_DStringAppend(&ds, "</i></small></p>\n");
+        Ns_DStringAppend(&ds, "</p>\n");
     }
 
     /*
