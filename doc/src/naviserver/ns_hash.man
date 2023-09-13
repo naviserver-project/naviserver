@@ -17,7 +17,7 @@ an integer value suitable as input for various functions.
 
 [para]
 The command is useful in combination of the modulo function
-e.g. for hash-based patitioning.
+e.g. for hash-based partitioning.
 
 [section {COMMANDS}]
 
