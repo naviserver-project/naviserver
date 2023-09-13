@@ -1211,6 +1211,7 @@ NS_EXTERN TCL_OBJCMDPROC_T
     NsTclCacheTransactionCommitObjCmd,
     NsTclCacheTransactionRollbackObjCmd,
     NsTclCancelObjCmd,
+    NsTclCertCtlObjCmd,
     NsTclChanObjCmd,
     NsTclCharsetsObjCmd,
     NsTclCondObjCmd,

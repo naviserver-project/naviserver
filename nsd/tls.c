@@ -2168,6 +2168,138 @@ Ns_SSLSetErrorCode(Tcl_Interp *interp, unsigned long sslERRcode)
     return errorMsg;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsCertCtlListCmd - subcommand of NsTclCertCtlObjCmd --
+ *
+ *      Implements "ns_certctl list" command.
+ *      List loaded certificates.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+NsCertCtlListCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+{
+    int result = TCL_OK;
+
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Tcl_HashEntry  *hPtr;
+        Tcl_HashSearch  search;
+        Tcl_Obj        *resultListObj = Tcl_NewListObj(0, NULL);
+        Tcl_DString     ds;
+
+        Tcl_DStringInit(&ds);
+        Ns_MasterLock();
+        hPtr = Tcl_FirstHashEntry(&certTable, &search);
+        while (hPtr != NULL) {
+            Tcl_Obj         *listObj = Tcl_NewListObj(0, NULL);
+            NS_TLS_SSL_CTX  *ctx = Tcl_GetHashKey(&certTable, hPtr);
+            const char      *cert = Tcl_GetHashValue(hPtr);
+            X509            *x509 = SSL_CTX_get0_certificate(ctx);
+            const ASN1_TIME *notAfter = X509_get0_notAfter(x509);
+            int              remaining_days = 0, remaining_seconds = 0, rc;
+
+            Tcl_ListObjAppendElement(interp, listObj,
+                                     Tcl_NewStringObj(cert, TCL_INDEX_NONE));
+            rc = ASN1_TIME_diff(&remaining_days, &remaining_seconds, NULL, notAfter);
+            if (rc == 1) {
+                Tcl_ListObjAppendElement(interp, listObj,
+                                         Tcl_NewStringObj("remaining_days", 14));
+                Ns_DStringPrintf(&ds, "%5.2f",
+                                 remaining_days + (remaining_seconds/(60*60*24.0)));
+                Tcl_ListObjAppendElement(interp, listObj,
+                                         Tcl_NewStringObj(ds.string, ds.length));
+
+                Tcl_ListObjAppendElement(interp, resultListObj, listObj);
+                Tcl_DStringSetLength(&ds, 0);
+            }
+            hPtr = Tcl_NextHashEntry(&search);
+        }
+        Ns_MasterUnlock();
+        Tcl_DStringFree(&ds);
+
+        Tcl_SetObjResult(interp, resultListObj);
+
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsCertCtlListCmd - subcommand of NsTclCertCtlObjCmd --
+ *
+ *      Implements "ns_certctl reload" command.
+ *      Reload certificates.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+NsCertCtlReloadCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+{
+    int result;
+
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        void *arg = NULL;
+
+        CertTableReload(arg);
+        result = TCL_OK;
+
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclICtlObjCmd --
+ *
+ *      Implements "ns_certctl". This command is used to manage
+ *      information about tls interactions, include certificate
+ *      management.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      Depends on the subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+NsTclCertCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+{
+    const Ns_SubCmdSpec subcmds[] = {
+        {"list",                 NsCertCtlListCmd},
+        {"reload",               NsCertCtlReloadCmd},
+        {NULL, NULL}
+    };
+
+    return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
+}
+
 
 
 #else

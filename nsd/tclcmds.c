@@ -53,6 +53,7 @@ static const Cmd basicCmds[] = {
     {"ns_base64urlencode",       NULL, NsTclBase64UrlEncodeObjCmd},
     {"ns_baseunit" ,             NULL, NsTclBaseUnitObjCmd},
     {"ns_cancel",                NULL, NsTclCancelObjCmd},
+    {"ns_certctl",               NULL, NsTclCertCtlObjCmd},
     {"ns_charsets",              NULL, NsTclCharsetsObjCmd},
     {"ns_config",                NULL, NsTclConfigObjCmd},
     {"ns_configsection",         NULL, NsTclConfigSectionObjCmd},
