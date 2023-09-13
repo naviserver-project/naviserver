@@ -1616,7 +1616,11 @@ static void CertTableAdd(const NS_TLS_SSL_CTX *ctx, const char *cert)
     Ns_MasterLock();
     hPtr = Tcl_CreateHashEntry(&certTable, (char *)ctx, &isNew);
     if (isNew != 0) {
-        Tcl_SetHashValue(hPtr, cert);
+        /*
+         * Keep a local copy of the certificate string in case the
+         * passed-in value is volatile.
+         */
+        Tcl_SetHashValue(hPtr, ns_strdup(cert));
         Ns_Log(Debug, "CertTableAdd: sslCtx %p cert '%s'", (void *)ctx, cert);
     }
     Ns_MasterUnlock();
