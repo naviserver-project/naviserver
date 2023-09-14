@@ -239,7 +239,7 @@ initiate shutdown.
 [item] Background mode:
 
 [example_begin]
-  bin/nsd -t conf/nsd-config.tcl -u [emph nsadmin]-g [emph nsadmin]
+  bin/nsd -t conf/nsd-config.tcl -u [emph nsadmin] -g [emph nsadmin]
 [example_end]
 
 [para]
