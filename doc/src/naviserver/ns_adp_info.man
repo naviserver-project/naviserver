@@ -8,7 +8,7 @@
 
  This command returns the currently processing ADP filename with its size and
  modification date. This can be useful inside the ADP for generating conditional
- Tcl code for tempalting for example.
+ Tcl code for templating for example.
 
 [section {COMMANDS}]
 
