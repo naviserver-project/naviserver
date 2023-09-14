@@ -110,12 +110,12 @@ log file.
 The nslog module is loaded per-server.
 
 [example_begin]
-ns_section "ns/server/server1/modules" {
-  ns_param   nslog   nslog.so
-}
-ns_section "ns/server/server1/module/nslog" {
-  ns_param   ...
-}
+ ns_section "ns/server/server1/modules" {
+   ns_param   nslog   nslog.so
+ }
+ ns_section "ns/server/server1/module/nslog" {
+   ns_param   ...
+ }
 [example_end]
 
 

@@ -262,8 +262,9 @@ external driver to interface with the Sybase proxy daemon.
 
 [example_begin]
  ns_section ns/db/driver/extsyb {
-   ns_param LocalDaemon nssybpd
-   ns_param Param SYBASE-env-variable
+   ns_param LocalDaemon nssybpd {
+     ns_param Param SYBASE-env-variable
+   }
  }
 [example_end]
 
@@ -338,10 +339,11 @@ daemon on a remote machine.
   example:
 
 [example_begin]
- ns_section ns/db/driver/extsyb
- ns_param RemoteHost host-name
- ns_param RemotePort port-number
- ns_param Param SYBASE-env-variable
+ ns_section ns/db/driver/extsyb {
+   ns_param RemoteHost host-name
+   ns_param RemotePort port-number
+   ns_param Param SYBASE-env-variable
+ }
 [example_end]
 
  [enum] Run nssybpd, or configure inetd as shown in the next step instead.
