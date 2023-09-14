@@ -682,13 +682,68 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
     const NsServer  *servPtr;
     Ns_DString       ds;
     Ns_ReturnCode    result;
+    struct stat      fileInfo;
+    const char      *fileName;
 
     NS_NONNULL_ASSERT(conn != NULL);
     NS_NONNULL_ASSERT(title != NULL);
     NS_NONNULL_ASSERT(notice != NULL);
 
-    servPtr = ((Conn *) conn)->poolPtr->servPtr;
     Ns_DStringInit(&ds);
+    servPtr = ((Conn *) conn)->poolPtr->servPtr;
+    fileName = servPtr->opts.noticeADP;
+
+    /*
+     * Check, if there is a returnnotice.adp file. If it exists, and the ADP
+     * file evaluates without error, return it. Otherwise fall back to the
+     * old-style hardcoded fallback.
+     */
+    if (Ns_Stat(fileName, &fileInfo)) {
+        Tcl_Interp *interp = Ns_GetConnInterp(conn);
+        NsInterp   *itPtr = NsGetInterpData(interp);
+        Tcl_Obj    *fileObj;
+
+        /*
+         * Set Tcl variables "title", "notice", and "noticedetail".
+         */
+        Tcl_SetVar2Ex(interp, "title",  NULL,
+                      Tcl_NewStringObj(title, TCL_INDEX_NONE), 0);
+        Tcl_SetVar2Ex(interp, "notice",  NULL,
+                      Tcl_NewStringObj(notice, TCL_INDEX_NONE), 0);
+        Tcl_SetVar2Ex(interp, "noticedetail",  NULL,
+                      Tcl_NewBooleanObj(servPtr->opts.noticedetail), 0);
+        fileObj = Tcl_NewStringObj(fileName, TCL_INDEX_NONE);
+        result = NsAdpSource(itPtr, 1, &fileObj, NULL);
+        Tcl_DecrRefCount(fileObj);
+
+        if (result == TCL_OK) {
+            Tcl_Obj    *resultObj;
+            char       *resultString;
+            TCL_SIZE_T  resultLen;
+
+            resultObj = Tcl_GetObjResult(interp);
+            resultString = Tcl_GetStringFromObj(resultObj, &resultLen);
+            result = Ns_ConnReturnCharData(conn, status,
+                                           resultString, (ssize_t)resultLen,
+                                           "text/html");
+            Ns_DStringFree(&ds);
+            return result;
+
+        } else {
+            Ns_Log(Warning, "%s returned error: %s", fileName,
+                   Tcl_GetString(Tcl_GetObjResult(interp)));
+        }
+    } else {
+        /*
+         * There is no returnnotice ADP file
+         */
+    }
+
+    /*
+     * Old-style hard-coded template for ns_returnnotice.
+     */
+    Tcl_DStringSetLength(&ds, 0);
+
     Ns_DStringAppend(&ds,
                      "<!DOCTYPE html>\n"
                      "<html lang='en'>\n"

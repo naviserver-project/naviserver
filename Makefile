@@ -98,7 +98,7 @@ install-dirs: all
 
 install-config: all
 	@mkdir -p $(DESTDIR)$(NAVISERVER)/conf $(DESTDIR)$(NAVISERVER)/pages/
-	@for i in nsd-config.tcl sample-config.tcl simple-config.tcl openacs-config.tcl ; do \
+	@for i in returnnotice.adp nsd-config.tcl sample-config.tcl simple-config.tcl openacs-config.tcl ; do \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/conf/; \
 	done
 	@for i in index.adp bitbucket-install.tcl; do \

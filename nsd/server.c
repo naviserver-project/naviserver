@@ -274,6 +274,20 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     servPtr->opts.realm = ns_strcopy(Ns_ConfigString(path, "realm", server));
     servPtr->opts.modsince = Ns_ConfigBool(path, "checkmodifiedsince", NS_TRUE);
     servPtr->opts.noticedetail = Ns_ConfigBool(path, "noticedetail", NS_TRUE);
+    servPtr->opts.noticeADP = Ns_ConfigString(path, "noticeadp", "returnnotice.adp");
+
+    if (Ns_PathIsAbsolute(servPtr->opts.noticeADP) == NS_FALSE
+        && *servPtr->opts.noticeADP != '\0') {
+        Tcl_DString  ds;
+        const char  *fileName;
+
+        Tcl_DStringInit(&ds);
+        fileName = Ns_HomePath(&ds, "conf", "/",
+                               servPtr->opts.noticeADP, (char *)0L);
+        servPtr->opts.noticeADP = ns_strcopy(fileName);
+        Tcl_DStringFree(&ds);
+    }
+
     servPtr->opts.errorminsize = (int)Ns_ConfigMemUnitRange(path, "errorminsize", NULL, 514, 0, INT_MAX);
     servPtr->filter.rwlocks = Ns_ConfigBool(path, "filterrwlocks", NS_TRUE);
 

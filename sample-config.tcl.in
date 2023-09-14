@@ -319,6 +319,12 @@ ns_section ns/server/${server} {
     #ns_param	highwatermark	100     ;# 80; allow concurrent creates above this queue-is percentage
                                         ;# 100 means to disable concurrent creates
 
+    #
+    # Configuration of replies
+    #
+    # ns_param	noticedetail	false	;# true, return detail information in server reply
+    # ns_param	noticeadp	returnnotice.adp ;# ADP file for ns_returnnotice.
+    
     # Compress response character data: ns_return, ADP etc.
     ns_param	compressenable		off     ;# Default; use ns_conn compress to override
     ns_param	compresslevel		4       ;# 1-9 where 9 is high compression, high overhead

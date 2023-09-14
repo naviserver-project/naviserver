@@ -773,6 +773,7 @@ typedef struct NsServer {
     struct {
         const char *realm;
         const Ns_Set *extraHeaders;
+        const char *noticeADP;
         int  errorminsize;
         Ns_HeaderCaseDisposition hdrcase;
         bool flushcontent;
