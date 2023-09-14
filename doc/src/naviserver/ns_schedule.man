@@ -182,14 +182,14 @@ NaviServer configuration file:
 
 [example_begin]
  [cmd ns_section] ns/parameters {
- # ...
- # How many jobs to run in any schedule thread before thread exit.
- ns_param schedsperthread 1000
- #
- # Log the system log when a scheduled job takes longer than
- # this time period
- ns_param schedlogminduration  2s
- # ...
+   # ...
+   # How many jobs to run in any schedule thread before thread exit.
+   ns_param schedsperthread 1000
+   #
+   # Log the system log when a scheduled job takes longer than
+   # this time period
+   ns_param schedlogminduration  2s
+   # ...
  }
 [example_end]
 

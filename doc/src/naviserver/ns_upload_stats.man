@@ -26,8 +26,9 @@ supported by nginx, lighttpd and by apache (mod_passenger).
 [list_end]
 
 [section CONFIGURATION]
-ns_section ns/parameters
-ns_param progressminsize 2kB
+ ns_section ns/parameters {
+   ns_param progressminsize 2kB
+ }
 [section EXAMPLES]
 
 [example_begin]

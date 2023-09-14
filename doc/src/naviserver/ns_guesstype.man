@@ -23,18 +23,20 @@ Return the MIME type for the provided [arg filename] based on its file extension
  NaviServer configuration file, and new mappings can be added, e.g.
 
 [example_begin]
- ns_section "ns/mimetypes"
- ns_param  ".xls"        "application/vnd.ms-excel"     ;# Add a mapping for Excel files
- ns_param  ".sjis_html"  "text/html; charset=shift_jis" ;# Adding a mapping, specifying charset
- ns_param  ".adp"        "text/html; charset=UTF-8"     ;# Overriding an existing mapping
+ ns_section "ns/mimetypes" {
+   ns_param  ".xls"       "application/vnd.ms-excel"     ;# Add a mapping for Excel files
+   ns_param  ".sjis_html" "text/html; charset=shift_jis" ;# Adding a mapping, specifying charset
+   ns_param  ".adp"       "text/html; charset=UTF-8"     ;# Overriding an existing mapping
+ }
 [example_end]
 
  The MIME type to be returned for files with unrecognized or missing extensions can also be specified in the "ns/mimetypes" section of the configuration file, e.g.
 
 [example_begin]
- ns_section "ns/mimetypes"
- ns_param  default      "*/*"   ;# MIME type for unrecognized extension.
- ns_param  noextension  "*/*"   ;# MIME type for missing extension.
+ ns_section "ns/mimetypes" {
+   ns_param  default      "*/*"   ;# MIME type for unrecognized extension.
+   ns_param  noextension  "*/*"   ;# MIME type for missing extension.
+ }
 [example_end]
 
  If default is not configured, "*/*" will be returned for files with unrecognized extensions.  If noextension is not configured, the MIME type configured as default (or "*/*") will be used.
