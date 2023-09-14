@@ -2356,6 +2356,13 @@ Ns_TLS_CtxFree(NS_TLS_SSL_CTX *UNUSED(ctx))
 {
     /* dummy stub */
 }
+
+int
+NsTclCertCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+{
+    ReportError(interp, "ns_certctl failed: no support for OpenSSL built in");
+    return TCL_ERROR;
+}
 #endif
 
 /*
