@@ -492,6 +492,7 @@ client requests.
 
 
 [see_also ns_httptime ns_set ns_urlencode nslog]
-[keywords "global built-in" HTTP-client HTTP HTTPS nssock spooling SNI configuration nslog]
+[keywords "global built-in" HTTP-client HTTP HTTPS nssock \
+        spooling SNI configuration nslog TLS certificate]
 
 [manpage_end]
