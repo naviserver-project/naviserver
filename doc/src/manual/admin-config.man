@@ -736,7 +736,7 @@ register the [const /.well-known] target via [cmd ns_register_fastpath]:
 	SO_REUSEPORT TCP TCP_FASTOPEN \
 	"connection thread pools" \
 	nsssl driver prebind pagedir reverseproxy \
-        OCSP SNI initcmds letsencrypt redirect]
+        certificate TLS HTTPS OCSP SNI initcmds letsencrypt redirect]
 [see_also tcl-libraries tcl-overview]
 [manpage_end]
 

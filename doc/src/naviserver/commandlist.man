@@ -137,6 +137,7 @@ List of all currently available NaviServer commands.
 
 [section {Hashing and Encryption Commands}]
 [list_begin definitions]
+[call [cmd ns_certctl]]
 [call [cmd ns_crypt]]
 [call [cmd ns_crypto]]
 [list_begin definitions]

@@ -1,0 +1,28 @@
+[include version_include.man]
+[manpage_begin ns_certctl n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {ADP control command}]
+[description]
+
+This command is used for managing (server) certificates loaded into NaviServer.
+
+[section COMMANDS]
+
+[list_begin definitions]
+
+[call [cmd "ns_certctl list"] ]
+
+List the loaded certificates and their expiry dates.
+
+[call [cmd "ns_certctl reload"] ]
+
+Reload the used certificates from the disk. This is e.g. needed, when
+expired certificates are renewed and should be loaded into a running
+NaviServer instance.
+
+[list_end]
+
+[see_also ]
+[keywords "server built-in" HTTPS certificate TLS]
+[manpage_end]
