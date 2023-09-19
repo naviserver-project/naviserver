@@ -74,7 +74,7 @@ and [term admin-tuning].
 [list_end]
 
 
-[section EXAMPLES]
+[section {Server Configuration}]
 
 In general, when modifying configuration files, it is always a good
 idea to check whether a configuration file is syntactically correct
@@ -731,12 +731,70 @@ register the [const /.well-known] target via [cmd ns_register_fastpath]:
 
 [para] More to come here...
 
+[section {Basic Templating Configuration}]
+
+In certain situations, NaviServer returns dynamic content, which is
+not user generated. Such situations are, e.g., error messages,
+directorly listings, or other situations, where a developer choses
+to use [cmd ns_returnnotice].
+
+[para] The output can be configured via the ADP template
+[const SERVERHOME/conf/returnnotice.adp] which receives the variables
+[const title], [const notice], and [const noticedetail]. For custom
+styling, other templates can be configured via the configuration
+parameter [const noticeadp] in the [const server] section in the
+configuration file (here, for the server configuration [emph s1]).
+
+[example_begin]
+ ns_section ns/server/s1 {
+   # ...
+   ns_param noticeadp    returnnotice.adp ;# ADP file for ns_returnnotice
+   #ns_param noticedetail false	          ;# return detail information in server reply
+
+   # ...
+ }
+[example_end]
+
+ When the configured value for name [const noticeadp]
+ is not absolute, it is assumed to be located in
+ the directory [const SERVERHOME/conf/].
+ When the parameter is set to an empty string,
+ the old-style hard-coded template is used.
+
+[para] When the custom template leads to an error, a hardcoded basic
+ template is used.
+
+[para] The configuration parameter [const noticedetail] can be used
+ to control, whether the detailed server version information should be
+ included in these server retplies (revealing this kind of information
+ is often not wanted for security reasons).
+
+
+[section {Tempating depending on error status codes}]
+
+In addition to the basic templating configuration, on can provide
+tailored error messages depending on the HTTP status codes.
+
+[example_begin]
+ #---------------------------------------------------------------------
+ # Special HTTP pages
+ #---------------------------------------------------------------------
+ ns_section ns/server/s1/redirects {
+   ns_param   404 /shared/404
+   ns_param   403 /shared/403
+   ns_param   503 /shared/503
+   ns_param   500 /shared/500
+ }
+[example_end]
+
+
 [keywords module nssock \
 	performance tuning configuration \
 	SO_REUSEPORT TCP TCP_FASTOPEN \
 	"connection thread pools" \
 	nsssl driver prebind pagedir reverseproxy \
-        certificate TLS HTTPS OCSP SNI initcmds letsencrypt redirect]
+        certificate TLS HTTPS OCSP SNI initcmds letsencrypt redirect \
+        ADP templates]
 [see_also tcl-libraries tcl-overview]
 [manpage_end]
 
