@@ -770,7 +770,7 @@ configuration file (here, for the server configuration [emph s1]).
  is often not wanted for security reasons).
 
 
-[section {Tempating depending on error status codes}]
+[section {Templating depending on error status codes}]
 
 In addition to the basic templating configuration, on can provide
 tailored error messages depending on the HTTP status codes.
