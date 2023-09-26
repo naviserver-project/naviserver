@@ -496,12 +496,13 @@ done:
 static Ns_ReturnCode
 CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
 {
-    Mod            *modPtr;
-    Ns_DString     *dsPtr;
-    TCL_OBJC_T      i;
-    size_t          ulen;
-    char           *e, *s;
-    const char     *url, *server, *fileName, *lastMapSegment;
+    Mod                        *modPtr;
+    Ns_DString                 *dsPtr;
+    TCL_OBJC_T                  i;
+    size_t                      ulen;
+    char                       *e, *s;
+    const char                 *url, *server, *fileName;
+    const Ns_UrlSpaceMatchInfo *matchInfoPtr;
 
     NS_NONNULL_ASSERT(cgiPtr != NULL);
     NS_NONNULL_ASSERT(mapPtr != NULL);
@@ -524,20 +525,18 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
     /*
      * Determine the executable or script to run.
      */
+    matchInfoPtr = Ns_ConnGetUrlSpaceMatchInfo(conn);
     ulen = strlen(url);
     fileName = url;
 
     Ns_Log(Ns_LogCGIDebug, "provided URL: '%s'", url);
 
-    lastMapSegment = strrchr(mapPtr->url, INTCHAR('/'));
-
     /*
-     * A match is a last-segment match, if we have a single element (no
-     * slash), or if we have a match-everything pattern, where the
-     * path-segment match is not applied.
+     * The returned matchInfoPtr provides information, whether we have am
+     * (inner) segment match. In this case PATH_INFO is the reminder of the
+     * path.
      */
-    if (lastMapSegment == NULL || (lastMapSegment[1] == '*' && lastMapSegment[2] == '\0')
-        ) {
+    if (matchInfoPtr->isSegmentMatch == NS_FALSE) {
         /*
          * Tail match (match on the last segment)
          *    SCRIPT_NAME = URL
@@ -545,55 +544,28 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
          */
         Ns_Log(Ns_LogCGIDebug, "nscgi: lastMapSegment match <%s>", mapPtr->url);
 
-    } else /* if (lastMapSegment != NULL) */ {
-        int segments;
-        char *secondLastUrlSegment = NULL;
+    } else {
+        ssize_t offset;
+        /*
+         * Match on an inner segment:
+         * 1. SCRIPT_NAME is the URL prefix.
+         * 2. PATH_INFO is everything in the URL past SCRIPT_NAME.
+         *
+         * The provided offset is the determined on the request line including
+         * the method. Therefore, we have to reduce the provided value by the
+         * length of the method.
+         */
+        offset = matchInfoPtr->offset - (ssize_t)strlen(conn->request.method);
 
-        for (segments = 0;; ++segments) {
-            char *lastUrlSegment = strrchr(url, INTCHAR('/'));
-            int match;
+        Ns_Log(Ns_LogCGIDebug, "nscgi: url <%s> isSegmentMatch %d, offset %ld length %ld segment <%s>",
+               url, matchInfoPtr->isSegmentMatch,
+               matchInfoPtr->offset, matchInfoPtr->segmentLength, &url[offset]);
 
-            if (lastUrlSegment == NULL) {
-                /*
-                 * No segment match in the full path.
-                 */
-                break;
-            }
-
-            match = Tcl_StringMatch(lastUrlSegment, lastMapSegment);
-            Ns_Log(Ns_LogCGIDebug, "nscgi: url <%s> lastUrlSegment <%s> lastMapSegment <%s> match %d",
-                   url, lastUrlSegment, lastMapSegment, match);
-            if (match) {
-                if (segments == 0) {
-                    /*
-                     * Match on the last segment
-                     *    SCRIPT_NAME = URL
-                     *    PATH_INFO   = ""
-                     */
-                    Ns_Log(Ns_LogCGIDebug, "nscgi: double tail match ============= should never happen");
-
-                } else {
-                    /*
-                     * Match on an inner segment:
-                     * 1. SCRIPT_NAME is the URL prefix.
-                     * 2. PATH_INFO is everything in the URL past SCRIPT_NAME.
-                     */
-                    Ns_Log(Ns_LogCGIDebug, "segment match url <%s>"
-                           "lastUrlSegment <%s> secondLastUrlSegment <%s>",
-                           url, lastUrlSegment, secondLastUrlSegment+1);
-                    fileName = Ns_DStringAppend(CgiDs(cgiPtr), url);
-                    *secondLastUrlSegment = '/';
-                    ulen = (size_t)(secondLastUrlSegment - url);
-                }
-                break;
-            }
-            if (secondLastUrlSegment != NULL) {
-                *secondLastUrlSegment = '/';
-            }
-            *lastUrlSegment = '\0';
-            secondLastUrlSegment = lastUrlSegment;
-        }
+        dsPtr = CgiDs(cgiPtr);
+        ulen = (size_t)offset + matchInfoPtr->segmentLength;
+        fileName = Tcl_DStringAppend(dsPtr, url, (TCL_SIZE_T)ulen);
     }
+
     /*
      * Finally, perform the Url2File mapping invoking potentially
      * registered callbacks and provide the CGI context with path, name,
@@ -613,7 +585,6 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
     /*
      * Copy the script directory and see if the script is NPH.
      */
-
     s = strrchr(cgiPtr->path, INTCHAR('/'));
     if (s == NULL || access(cgiPtr->path, R_OK) != 0) {
         Ns_Log(Ns_LogCGIDebug, "nscgi: no such file: '%s'", cgiPtr->path);

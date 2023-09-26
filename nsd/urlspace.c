@@ -373,6 +373,7 @@ static void JunctionAdd(Junction *juncPtr, char *seq, void *data,
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void *JunctionFind(const Junction *juncPtr, char *seq,
+                          Ns_UrlSpaceMatchInfo *matchInfoPtr,
                           NsUrlSpaceContextFilterProc proc, void *context)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -725,7 +726,7 @@ Ns_UrlSpecificGet(const char *server, const char *method, const char *url, int i
 
     servPtr = NsGetServer(server);
     return (likely(servPtr != NULL)) ?
-        NsUrlSpecificGet(servPtr, method, url, id, 0u, NS_URLSPACE_DEFAULT, NULL, NULL)
+        NsUrlSpecificGet(servPtr, method, url, id, 0u, NS_URLSPACE_DEFAULT, NULL, NULL, NULL)
         : NULL;
 }
 
@@ -743,7 +744,7 @@ Ns_UrlSpecificGetFast(const char *server, const char *method, const char *url, i
 
     servPtr = NsGetServer(server);
     return likely(servPtr != NULL) ?
-        NsUrlSpecificGet(servPtr, method, url, id, 0u, NS_URLSPACE_FAST, NULL, NULL)
+        NsUrlSpecificGet(servPtr, method, url, id, 0u, NS_URLSPACE_FAST, NULL, NULL, NULL)
         : NULL;
 }
 
@@ -759,7 +760,7 @@ Ns_UrlSpecificGetExact(const char *server, const char *method, const char *url,
 
     servPtr = NsGetServer(server);
     return likely(servPtr != NULL) ?
-        NsUrlSpecificGet(servPtr, method, url, id, flags, NS_URLSPACE_EXACT, NULL, NULL)
+        NsUrlSpecificGet(servPtr, method, url, id, flags, NS_URLSPACE_EXACT, NULL, NULL, NULL)
         : NULL;
 }
 
@@ -787,6 +788,7 @@ Ns_UrlSpecificGetExact(const char *server, const char *method, const char *url,
 void *
 NsUrlSpecificGet(NsServer *servPtr, const char *method, const char *url, int id,
                  unsigned int flags, NsUrlSpaceOp op,
+                 Ns_UrlSpaceMatchInfo *matchInfoPtr,
                  NsUrlSpaceContextFilterProc proc, void *context)
 {
     Ns_DString      ds, *dsPtr = &ds;
@@ -810,7 +812,7 @@ NsUrlSpecificGet(NsServer *servPtr, const char *method, const char *url, int id,
     switch (op) {
 
     case NS_URLSPACE_DEFAULT:
-        data = JunctionFind(junction, dsPtr->string, proc, context);
+        data = JunctionFind(junction, dsPtr->string, matchInfoPtr, proc, context);
         break;
 
     case NS_URLSPACE_EXACT:
@@ -821,7 +823,7 @@ NsUrlSpecificGet(NsServer *servPtr, const char *method, const char *url, int id,
         /*
          * Deprecated branch.
          */
-        data = JunctionFind(junction, dsPtr->string, proc, context);
+        data = JunctionFind(junction, dsPtr->string, matchInfoPtr, proc, context);
         break;
 
     }
@@ -2269,9 +2271,10 @@ JunctionAdd(Junction *juncPtr, char *seq, void *data, unsigned int flags,
  *
  *----------------------------------------------------------------------
  */
-
 static void *
-JunctionFind(const Junction *juncPtr, char *seq, NsUrlSpaceContextFilterProc proc, void *context)
+JunctionFind(const Junction *juncPtr, char *seq,
+             Ns_UrlSpaceMatchInfo *matchInfoPtr,
+             NsUrlSpaceContextFilterProc proc, void *context)
 {
     const Channel *channelPtr;
     const char    *p;
@@ -2322,16 +2325,20 @@ JunctionFind(const Junction *juncPtr, char *seq, NsUrlSpaceContextFilterProc pro
 
 #ifndef __URLSPACE_OPTIMIZE__
     for (i = 0u; i < l; i++) {
-        bool match, noFilter;
-        void *candidateData = NULL;
-        int   candidateDepth = 0;
+        bool    match, noFilter, candidateIsSegmentMatch;
+        void   *candidateData = NULL;
+        int     candidateDepth = 0;
+        ssize_t candidateOffset = 0;
+        size_t  candidateSegmentLength = 0u;
 
         channelPtr = Ns_IndexEl(&juncPtr->byuse, i);
 #else
     for (i = l; i > 0u; i--) {
-        bool match, noFilter;
-        void *candidateData = NULL;
-        int   candidateDepth = 0;
+        bool    match, noFilter, candidateIsSegmentMatch;
+        void   *candidateData = NULL;
+        int     candidateDepth = 0;
+        ssize_t candidateOffset = 0;
+        size_t  candidateSegmentLength = 0u;
 
         channelPtr = Ns_IndexEl(&juncPtr->byname, i - 1u);
 #endif
@@ -2350,11 +2357,14 @@ JunctionFind(const Junction *juncPtr, char *seq, NsUrlSpaceContextFilterProc pro
              * (for example, "*.adp").
              */
             candidateData = TrieFind(&channelPtr->trie, seq, proc, context, &candidateDepth);
+            candidateOffset = 0;
+            candidateSegmentLength = 0u;
+            candidateIsSegmentMatch = NS_FALSE;
 
         } else if (!noFilter && (channelPtr->flags & NS_OP_SEGMENT_MATCH) != 0u) {
             size_t  n;
-            ssize_t offset;
             char   *segment;
+            ssize_t segmentOffset;
 
             /*
              * If we have a filter, but it did not match in the last
@@ -2363,21 +2373,27 @@ JunctionFind(const Junction *juncPtr, char *seq, NsUrlSpaceContextFilterProc pro
              * know already that it does not match from above.
              */
 
-            for (segment = seq, offset = 0, n = 0;
+            for (segment = seq, segmentOffset = 0, n = 0;
                  n < nrSegments;
-                 segment = seq + offset, ++n) {
+                 segment = seq + segmentOffset, ++n) {
+                size_t segmentLength = NS_strlen(segment);
+
                 //Ns_Log(Notice, "... segment[%ld/%ld] <%s> offset %ld depth %d",
-                //       n, nrSegments, segment, offset, depth);
+                //       n, nrSegments, segment, segmentOffset, depth);
 
                 if (NS_Tcl_StringMatch(segment, channelPtr->filter)) {
                     candidateDepth = 0;
                     candidateData = TrieFind(&channelPtr->trie, seq, proc, context, &candidateDepth);
+                    candidateOffset = segmentOffset;
+                    candidateSegmentLength = segmentLength;
+                    candidateIsSegmentMatch = NS_TRUE;
+
                     //Ns_Log(Notice, "JunctionFind: ===> path segment <%s> match with <%s>"
                     //       " candidate depth %d candidate data %p channelPtr->flags %.4x",
                     //       segment, channelPtr->filter, candidateDepth,(void*)candidateData,
                     //       channelPtr->flags);
                 }
-                offset += NS_strlen(segment) + 1u;
+                segmentOffset += segmentLength + 1u;
             }
             //Ns_Log(Notice, "JunctionFind: ... found cdepth %d data %p", p);
         }
@@ -2395,6 +2411,11 @@ JunctionFind(const Junction *juncPtr, char *seq, NsUrlSpaceContextFilterProc pro
             //       (void*)candidateData, data, candidateDepth, depth);
             depth = candidateDepth;
             data = candidateData;
+            if (matchInfoPtr != NULL) {
+                matchInfoPtr->offset = candidateOffset;
+                matchInfoPtr->isSegmentMatch = candidateIsSegmentMatch;
+                matchInfoPtr->segmentLength = candidateSegmentLength;
+            }
         }
 
         //Ns_Log(Notice, "JunctionFind: doit %d, depth %d compare tail '%s' with channel filter '%s' => %d (%p)",
@@ -2931,7 +2952,7 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
 #endif
             //Ns_Log(Notice, "UrlSpaceGetObjCmd context %p context %p", (void*)context, (void*)ctxPtr);
             Ns_RWLockRdLock(&servPtr->urlspace.idlocks[id]);
-            data = NsUrlSpecificGet(servPtr, key, url, id, flags, op, NsUrlSpaceContextFilter, ctxPtr);
+            data = NsUrlSpecificGet(servPtr, key, url, id, flags, op, NULL, NsUrlSpaceContextFilter, ctxPtr);
             Ns_RWLockUnlock(&servPtr->urlspace.idlocks[id]);
 
             Tcl_SetObjResult(interp, Tcl_NewStringObj(data, TCL_INDEX_NONE));

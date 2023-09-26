@@ -208,6 +208,7 @@ NsGetRequest2(NsServer *servPtr, const char *method, const char *url,
               unsigned int *flagsPtr)
 {
     const RegisteredProc *regPtr;
+    Ns_UrlSpaceMatchInfo  matchInfo;
 
     NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(method != NULL);
@@ -218,7 +219,9 @@ NsGetRequest2(NsServer *servPtr, const char *method, const char *url,
 
     Ns_MutexLock(&ulock);
     regPtr = NsUrlSpecificGet(servPtr, method, url,
-                              uid, flags, op, proc, context);
+                              uid, flags, op, &matchInfo, proc, context);
+    Ns_Log(Notice, "NsGetRequest2 %s %s -> %p",  method, url, (void*)regPtr);
+
     if (regPtr != NULL) {
         *procPtr = regPtr->proc;
         *deletePtr = regPtr->deleteCallback;
@@ -363,12 +366,17 @@ Ns_ConnRunRequest(Ns_Conn *conn)
          */
 
         if ((conn->request.method != NULL) && (conn->request.url != NULL)) {
-            RegisteredProc *regPtr;
+            RegisteredProc       *regPtr;
+            Ns_UrlSpaceMatchInfo  matchInfo;
 
             Ns_MutexLock(&ulock);
             regPtr = NsUrlSpecificGet(connPtr->poolPtr->servPtr,
                                       conn->request.method, conn->request.url, uid,
-                                      0u, NS_URLSPACE_DEFAULT, NULL, NULL);
+                                      0u, NS_URLSPACE_DEFAULT, &matchInfo, NULL, NULL);
+            /*Ns_Log(Notice, "Ns_ConnRunRequest %s %s -> %p (isSegmentMatch %d, offset %ld)",
+                   conn->request.method, conn->request.url, (void*)regPtr,
+                   matchInfo.isSegmentMatch, matchInfo.offset);*/
+
             if (regPtr == NULL) {
                 Ns_MutexUnlock(&ulock);
                 if (STREQ(conn->request.method, "BAD")) {
@@ -379,6 +387,7 @@ Ns_ConnRunRequest(Ns_Conn *conn)
             } else {
                 ++regPtr->refcnt;
                 Ns_MutexUnlock(&ulock);
+                connPtr->matchInfo = matchInfo;
                 status = (*regPtr->proc) (regPtr->arg, conn);
 
                 Ns_MutexLock(&ulock);

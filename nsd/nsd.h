@@ -620,6 +620,7 @@ typedef struct Conn {
     Ns_Set *query;
     Ns_Set *formData;
 
+    Ns_UrlSpaceMatchInfo matchInfo;
     Tcl_HashTable files;
     void *cls[NS_CONN_MAXCLS];
 
@@ -1462,6 +1463,7 @@ NS_EXTERN void NsWakeupDriver(const Driver *drvPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void *
 NsUrlSpecificGet(NsServer *servPtr, const char *method,
                  const char *url, int id, unsigned int flags, NsUrlSpaceOp op,
+                 Ns_UrlSpaceMatchInfo *matchInfoPtr,
                  NsUrlSpaceContextFilterProc proc, void *context)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 

@@ -457,6 +457,15 @@ typedef struct Ns_URL {
 } Ns_URL;
 
 /*
+ * Match-information from UrlSpaceMatches
+ */
+typedef struct Ns_UrlSpaceMatchInfo {
+    ssize_t offset;
+    size_t  segmentLength;
+    bool    isSegmentMatch;
+} Ns_UrlSpaceMatchInfo;
+
+/*
  * The connection structure.
  */
 
@@ -1214,7 +1223,8 @@ NS_EXTERN Ns_ReturnCode  Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, Ns_Tc
 NS_EXTERN void           Ns_SetLocationProc(const char *server, Ns_LocationProc *proc) NS_GNUC_DEPRECATED_FOR(Ns_SetConnLocationProc);
 NS_EXTERN const char *   Ns_ConnTarget(Ns_Conn *conn, Tcl_DString *dsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
-
+NS_EXTERN const Ns_UrlSpaceMatchInfo *Ns_ConnGetUrlSpaceMatchInfo(const Ns_Conn *conn)
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 /*
  * connio.c:
  */

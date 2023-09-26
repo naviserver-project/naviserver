@@ -2764,6 +2764,31 @@ NsConnRequire(Tcl_Interp *interp, unsigned int flags, Ns_Conn **connPtr)
     return status;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ConnGetUrlSpaceMatchInfo --
+ *
+ *      Accessor function to return a pointer to the UrlSpaceMatchInfo member.
+ *      If the matchInfo is not set, the members of are matchInfo are NULL.
+ *
+ * Results:
+ *      Pointer to member.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+const Ns_UrlSpaceMatchInfo *
+Ns_ConnGetUrlSpaceMatchInfo(const Ns_Conn *conn)
+{
+    NS_NONNULL_ASSERT(conn != NULL);
+
+    return &((const Conn *) conn)->matchInfo;
+}
+
 
 /*
  * Local Variables:

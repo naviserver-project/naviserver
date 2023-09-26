@@ -543,6 +543,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
                                    sockPtr->reqPtr->request.method,
                                    sockPtr->reqPtr->request.url,
                                    poolid, 0u, NS_URLSPACE_DEFAULT,
+                                   NULL,
                                    NsUrlSpaceContextFilter, &ctx);
         sockPtr->poolPtr = poolPtr;
     } else if (sockPtr->poolPtr != NULL) {
@@ -1194,7 +1195,7 @@ ServerMappedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
 
         Ns_MutexLock(&servPtr->urlspace.lock);
         mappedPoolPtr = (ConnPool *)NsUrlSpecificGet(servPtr,  method, url, poolid, flags, op,
-                                                     NULL, NULL);
+                                                     NULL, NULL, NULL);
         Ns_MutexUnlock(&servPtr->urlspace.lock);
         if (mappedPoolPtr == NULL) {
             mappedPoolPtr = servPtr->pools.defaultPtr;
