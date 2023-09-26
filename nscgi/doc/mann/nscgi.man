@@ -328,7 +328,7 @@ Default: [const 1024000]
 [para] In the following example, we provide the definitions for
 running the popular [uri https://wordpress.com/ WordPress] package
 under NaviServer via CGI. We assume, the WordPress sources have been
-downloaded in the directory [const /usr/local/src/wordpress/]. The
+downloaded in the directory [const /var/www/wordpress/]. The
 following definition specifies, that for [const GET] and [const POST]
 requests in the directory [const /wordpress] with the extension
 [const .php], the source files should be taken from the downloaded
@@ -338,12 +338,12 @@ the PHP files.
 [example_begin]
  ns_section ns/server/s1/module/nscgi {
    foreach httpMethod {GET POST} {
-     ns_param map  "$httpMethod /wordpress/*.php /usr/local/src/wordpress/"
+     ns_param map  "$httpMethod /wordpress/*.php /var/www/wordpress/"
    }
-   ns_param interps CGIinterps
+   ns_param interps php8
  }
  
- ns_section ns/interps/CGIinterps {
+ ns_section ns/interps/php8 {
    ns_param .php    "/opt/local/bin/php-cgi83"
  }
 [example_end]
@@ -360,6 +360,25 @@ to include this value in the [const fastpath] setup.
  }
 [example_end]
 
+[subsection {Sample Configuration for Joomla}]
+
+The setup for [uri https://www.joomla.org/ Joomla]
+is very similar to the setup for WordPress. Using this setup,
+the Joomla system will be available
+on the web server under the URL  [const /joomla].
+in the setup, we reuse the CGI interpreter section [const php8] and the
+[const directoryfile] from the WordPress setup. The definition assumes
+that the Joomla source code is installed on the server
+in the directory [const /var/www/joomla].
+
+[example_begin]
+ ns_section ns/server/s1/module/nscgi {
+   foreach httpMethod {GET POST} {
+     ns_param map  "$httpMethod /joomla/*.php /var/www/joomla/"
+   }
+   ns_param interps php8
+ }
+[example_end]
 
 
 [section {Environment Variables passed to CGI programs}]
