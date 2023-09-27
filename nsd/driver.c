@@ -4717,6 +4717,18 @@ NormalizeHostEntry(Tcl_DString *hostDs, Driver *drvPtr, Ns_Request *requestPtr)
 
         if (requestPtr != NULL && !requestPtr->isProxyRequest) {
 
+            /*
+             * The following clause is for debugging only and should be removed later.
+             */
+            if (requestPtr->host != NULL) {
+                Ns_Log(Warning, "NormalizeHostEntry old %p <%s> new raw <%s> processed <%s>"
+                       " THIS SHOULD NOT HAPPEN",
+                       (void*)requestPtr->host, requestPtr->host,
+                       hostDs->string, hostStart);
+                ns_free((char *)requestPtr->host);
+                requestPtr->host = NULL;
+            }
+
             assert(requestPtr->host == NULL);
             assert(requestPtr->port == 0);
 
