@@ -4779,7 +4779,8 @@ NormalizeHostEntry(Tcl_DString *hostDs, Driver *drvPtr, Ns_Request *requestPtr)
                     /*
                      * Dropped dot at end of hostname.
                      */
-                    memmove(portStart-2, portStart-1, hostDs->length + 1 - (portStart - hostDs->string));
+                    memmove(portStart-2, portStart-1,
+                            (size_t)(hostDs->length + 1 - (portStart - hostDs->string)));
                     Tcl_DStringSetLength(hostDs, hostDs->length - 1);
                 }
             }

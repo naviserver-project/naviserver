@@ -2393,7 +2393,7 @@ JunctionFind(const Junction *juncPtr, char *seq,
                     //       segment, channelPtr->filter, candidateDepth,(void*)candidateData,
                     //       channelPtr->flags);
                 }
-                segmentOffset += segmentLength + 1u;
+                segmentOffset += (ssize_t)segmentLength + 1;
             }
             //Ns_Log(Notice, "JunctionFind: ... found cdepth %d data %p", p);
         }
