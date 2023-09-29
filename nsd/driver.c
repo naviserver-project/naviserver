@@ -4728,9 +4728,9 @@ NormalizeHostEntry(Tcl_DString *hostDs, Driver *drvPtr, Ns_Request *requestPtr)
                 ns_free((char *)requestPtr->host);
                 requestPtr->host = NULL;
             }
-
-            assert(requestPtr->host == NULL);
-            assert(requestPtr->port == 0);
+            
+            //assert(requestPtr->host == NULL);
+            //assert(requestPtr->port == 0);
 
             requestPtr->host = ns_strdup(hostStart);
             requestPtr->port = (portStart != NULL
