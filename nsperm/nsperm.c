@@ -215,7 +215,7 @@ Ns_ModuleInit(const char *server, const char *UNUSED(module))
  *      Add Tcl commands for perms
  *
  * Results:
- *      NS_OK
+ *      TCL_OK
  *
  * Side effects:
  *      Adds Tcl commands
@@ -223,7 +223,7 @@ Ns_ModuleInit(const char *server, const char *UNUSED(module))
  *----------------------------------------------------------------------
  */
 
-static Ns_ReturnCode AddCmds(Tcl_Interp *interp, const void *arg)
+static int AddCmds(Tcl_Interp *interp, const void *arg)
 {
   Tcl_CreateObjCommand(interp, "ns_perm", PermObjCmd, (ClientData)arg, NULL);
     return NS_OK;

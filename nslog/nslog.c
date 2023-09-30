@@ -306,7 +306,7 @@ Ns_ModuleInit(const char *server, const char *module)
     return result;
 }
 
-static Ns_ReturnCode
+static int
 AddCmds(Tcl_Interp *interp, const void *arg)
 {
     const Log *logPtr = arg;

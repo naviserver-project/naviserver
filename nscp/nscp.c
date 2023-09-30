@@ -730,14 +730,14 @@ ExitObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* 
  *----------------------------------------------------------------------
  */
 
-static Ns_ReturnCode
+static int
 NscpAddCmds(Tcl_Interp *interp, const void *UNUSED(arg))
 {
     /*const char *server = arg;*/
 
     (void)Tcl_CreateObjCommand(interp, "nscp", NsTclNscpObjCmd, NULL, NULL);
 
-    return NS_OK;
+    return TCL_OK;
 }
 /*
  *----------------------------------------------------------------------

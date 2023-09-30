@@ -677,7 +677,7 @@ Ns_ProxyMain(int argc, char *const*argv, Tcl_AppInitProc *init)
  *      held in the current interp
  *
  * Results:
- *      Standard Tcl result.
+ *      Tcl return code.
  *
  * Side effects:
  *      None.
