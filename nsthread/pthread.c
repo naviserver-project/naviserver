@@ -42,7 +42,16 @@ static void *ThreadMain(void *arg);
  */
 
 #if defined(__sun__)
-#define PTHREAD_STACK_MIN  ((size_t)sysconf(_SC_THREAD_STACK_MIN))
+# define PTHREAD_STACK_MIN ((size_t)sysconf(_SC_THREAD_STACK_MIN))
+#endif
+
+#ifndef PTHREAD_STACK_MIN
+/*
+ * Starting with glibc Version 2.34, PTHREAD_STACK_MIN is no longer constant
+ * and is redefined to sysconf(_SC_THREAD_STACK_MIN).  This supports dynamic
+ * sized register sets for modern architectural features like Arm SVE.
+ */
+# define PTHREAD_STACK_MIN sysconf(_SC_THREAD_STACK_MIN)
 #endif
 
 /*
