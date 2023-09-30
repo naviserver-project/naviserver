@@ -131,7 +131,7 @@ ns_section ns/parameters {
     # Print duractions of long mutex calls to stderr.
     ns_param    mutexlocktrace          true  ;# default: false
 
-    # Reject output operations on already closed connections
+    # Reject output operations on already closed or detached connections
     # (e.g. subsequent ns_return statements)
     #ns_param    rejectalreadyclosedconn  false ;# default: true
 
