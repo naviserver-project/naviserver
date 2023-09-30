@@ -3160,7 +3160,7 @@ HttpConnect(
             unsigned short rport = portNr;
             Tcl_DString    persistentKeyDs;
             bool           lookupSuccessful;
-            NsHttpTask    *waitingHttpPtr;
+            NsHttpTask    *waitingHttpPtr = NULL;
 
             if (httpProxy == NS_TRUE) {
                 rhost = pHost;
