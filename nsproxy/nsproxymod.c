@@ -111,7 +111,7 @@ Ns_ModuleInit(const char *server, const char *module)
  *      Initialize interpreter
  *
  * Results:
- *      Ns_ReturnCode
+ *      Tcl return code.
  *
  * Side effects:
  *      None.
@@ -119,11 +119,11 @@ Ns_ModuleInit(const char *server, const char *module)
  *----------------------------------------------------------------------
  */
 
-static Ns_ReturnCode
+static int
 InitInterp(Tcl_Interp *interp, const void *arg)
 {
     const SrvMod *smPtr = arg;
-    Ns_ReturnCode status = NS_OK;
+    int           status = TCL_OK;
 
     if (Ns_ProxyTclInit(interp) == TCL_OK) {
         InterpData *idataPtr = Tcl_GetAssocData(interp, ASSOC_DATA, NULL);

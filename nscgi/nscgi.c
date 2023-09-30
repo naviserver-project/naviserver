@@ -179,7 +179,6 @@ AddCmds(Tcl_Interp *interp, const void *arg)
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_register_cgi",
                                NsTclRegisterCGIObjCmd, (ClientData)modPtr,
                                NULL);
-
     return TCL_OK;
 }
 
