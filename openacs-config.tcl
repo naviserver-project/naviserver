@@ -54,7 +54,7 @@ set defaultConfig {
 
     server     "openacs"
     serverroot	/var/www/$server
-    logroot	$serverroot/log/
+    logroot	$serverroot/log
     homedir	/usr/local/ns
     bindir	$homedir/bin
     db_name	$server
@@ -226,7 +226,7 @@ ns_section ns/parameters {
 
     #ns_param       mutexlocktrace       true   ;# default false; print durations of long mutex calls to stderr
 
-    # Reject output operations on already closed connections (e.g. subsequent ns_return statements)
+    # Reject output operations on already closed or detached connections (e.g. subsequent ns_return statements)
     #ns_param       rejectalreadyclosedconn false ;# default: true
 
     # Allow concurrent create operations of Tcl interpreters.

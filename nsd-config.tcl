@@ -39,7 +39,7 @@ ns_section ns/parameters {
     #ns_param   progressminsize     1MB      ;# default: 0
     #ns_param   listenbacklog       256      ;# default: 32; backlog for ns_socket commands
 
-    # Reject output operations on already closed connections (e.g. subsequent ns_return statements)
+    # Reject output operations on already closed or detached connections (e.g. subsequent ns_return statements)
     #ns_param   rejectalreadyclosedconn false;# default: true
     #ns_param   reverseproxymode    true     ;# running behind a reverse proxy server? (default: false
 

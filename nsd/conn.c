@@ -2683,13 +2683,14 @@ NsConnRequire(Tcl_Interp *interp, unsigned int flags, Ns_Conn **connPtr)
         status = NS_ERROR;
 
     } else if (((flags & NS_CONN_REQUIRE_CONNECTED) != 0u)
-               && (Ns_ConnSockPtr(conn) == NULL)) {
+               && (Ns_ConnSockPtr(conn) == NULL)
+               && nsconf.reject_already_closed_or_detached_connection) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj("connection socket is detached", -1));
         status = NS_ERROR;
 
     } else if (((flags & NS_CONN_REQUIRE_OPEN) != 0u)
                && ((conn->flags & NS_CONN_CLOSED) != 0u)
-               && nsconf.reject_already_closed_connection) {
+               && nsconf.reject_already_closed_or_detached_connection) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj("connection already closed", -1));
         status = NS_ERROR;
 

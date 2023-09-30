@@ -160,7 +160,7 @@ struct nsconf {
     Ns_Time     shutdowntimeout;
     int         backlog;
     int         sanitize_logfiles;
-    bool        reject_already_closed_connection;
+    bool        reject_already_closed_or_detached_connection;
     bool        reverseproxymode;
     bool        nocache;
 
