@@ -425,6 +425,12 @@ typedef struct Ns_Set {
  * The request structure.
  */
 
+typedef enum {
+    NS_REQUEST_TYPE_PLAIN =       0x00u, /* request target is path */
+    NS_REQUEST_TYPE_PROXY =       0x01u, /* request target has scheme+host+port */
+    NS_REQUEST_TYPE_CONNECT =     0x02u  /* request target has host+port */
+} Ns_RequestType;
+
 typedef struct Ns_Request {
     const char     *line;
     const char     *method;
@@ -437,7 +443,7 @@ typedef struct Ns_Request {
     TCL_SIZE_T      url_len;
     TCL_SIZE_T      urlv_len;
     TCL_SIZE_T      urlc;
-    bool            isProxyRequest;
+    Ns_RequestType  requestType;
     unsigned short  port;
     double          version;
 } Ns_Request;

@@ -3571,6 +3571,9 @@ SockSendResponse(Sock *sockPtr, int statusCode, const char *errMsg, const char *
     NS_NONNULL_ASSERT(sockPtr != NULL);
     NS_NONNULL_ASSERT(errMsg != NULL);
 
+    Ns_Log(Debug, "SockSendResponse terminates request with status code %d msg <%s> headers <%s>",
+           statusCode, errMsg, headers);
+
     snprintf(firstline, sizeof(firstline), "HTTP/1.0 %d ", statusCode);
     iov[0].iov_base = firstline;
     iov[0].iov_len  = strlen(firstline);
@@ -4715,22 +4718,13 @@ NormalizeHostEntry(Tcl_DString *hostDs, Driver *drvPtr, Ns_Request *requestPtr)
             stripDot = NS_TRUE;
         }
 
-        if (requestPtr != NULL && !requestPtr->isProxyRequest) {
+        /*
+         * For proxy and CONNECT requests, we have host and port already set. Leave
+         * host and port as it is.
+         */
+        if (requestPtr != NULL && requestPtr->requestType != NS_REQUEST_TYPE_PLAIN) {
 
-            /*
-             * The following clause is for debugging only and should be removed later.
-             */
-            if (requestPtr->host != NULL) {
-                Ns_Log(Warning, "NormalizeHostEntry old %p <%s> new raw <%s> processed <%s>"
-                       " THIS SHOULD NOT HAPPEN",
-                       (void*)requestPtr->host, requestPtr->host,
-                       hostDs->string, hostStart);
-                ns_free((char *)requestPtr->host);
-                requestPtr->host = NULL;
-            }
-            
-            //assert(requestPtr->host == NULL);
-            //assert(requestPtr->port == 0);
+            assert(requestPtr->host == NULL);
 
             requestPtr->host = ns_strdup(hostStart);
             requestPtr->port = (portStart != NULL
@@ -5005,6 +4999,20 @@ SockSetServer(Sock *sockPtr)
 
     reqPtr = sockPtr->reqPtr;
     assert(reqPtr != NULL);
+
+    if (sockPtr->reqPtr->request.host != NULL) {
+        /*
+         * This is transitional code, for the case, we have missed something,
+         * when e.g. a vulnerability checker fires at us with invalid
+         * requests.
+         */
+        Ns_Log(Notice, "REQPTR: SockSetServer reqPtr %p with host %p of sockPtr %p line '%s'"
+               " (should not happen)",
+               (void*)reqPtr,
+               (void*)reqPtr->request.host,
+               (void*)sockPtr,
+               reqPtr->request.line);
+    }
 
     drvPtr = sockPtr->drvPtr;
     assert(drvPtr != NULL);

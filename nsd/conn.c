@@ -2242,7 +2242,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
         }
 
     case CProtocolIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(request->isProxyRequest
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(request->requestType == NS_REQUEST_TYPE_PROXY
                                                   ? request->protocol
                                                   : connPtr->drvPtr->protocol, TCL_INDEX_NONE));
         break;

@@ -159,6 +159,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
 {
     char       *url, *l, *p;
     Ns_DString  ds;
+    const char *errorMsg = "unknown error";
 
     NS_NONNULL_ASSERT(line != NULL);
 
@@ -213,7 +214,8 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
     Ns_DStringNAppend(&ds, line, (TCL_SIZE_T)len);
     l = Ns_StrTrim(ds.string);
     if (*l == '\0') {
-        goto done;
+        errorMsg = "empty request line";
+        goto error;
     }
 
     /*
@@ -234,7 +236,8 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
         ++url;
     }
     if (*url == '\0') {
-        goto done;
+        errorMsg = "no method found";
+        goto error;
     }
 
     /*
@@ -250,7 +253,8 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
         ++url;
     }
     if (*url == '\0') {
-        goto done;
+        errorMsg = "no version information found";
+        goto error;
     }
 
 
@@ -284,7 +288,8 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
              * The last token does not have the form of an HTTP-version
              * string. Report result as invalid request.
              */
-            goto done;
+            errorMsg = "version information invalid";
+            goto error;
         }
     } else {
         /*
@@ -292,13 +297,15 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
          * slash. HTTP 0.9 did not have proxy functionality.
          */
         if (*url != '/') {
-            goto done;
+            errorMsg = "HTTP 0.9 URL does not start with a slash";
+            goto error;
         }
     }
 
     url = Ns_StrTrimRight(url);
     if (*url == '\0') {
-        goto done;
+        errorMsg = "URL is empty";
+        goto error;
     }
 
     /*
@@ -309,63 +316,123 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
     request->port = 0u;
 
     if (*url != '/') {
+
+        /*
+         * Check for the scheme of the URL. The RFC 3986
+         * defines the scheme as
+         *
+         *      ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
+         *
+         * but since we support just a subset of protocols, where all of these
+         * contain just ALPHA, we restrict to these. This has the advantacge
+         * that we can deal here with request lines for CONNECT, such as e.g.
+         *
+         *      CONNECT google.com:443 HTTP/1.1
+         *
+         * where "google.com" would be syntactically correct scheme. It sounds
+         * more locally to provide "google.com" as "host" and the "443" as
+         * port.
+         *
+         *      curl -v -X CONNECT http://localhost:8080 --request-target www.google.com:443
+         *      curl -v -x http://localhost:8080  https://someotherhost:8088/index.tcl
+         */
         p = url;
-        while (*p != '\0' && *p != '/' && *p != ':') {
+        while ((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z')) {
             ++p;
         }
         if (*p == ':') {
 
             /*
-             * Found a protocol - copy it and search for host:port.
+             * Found a scheme; this must be a proxy request. Copy the scheme
+             * and search for host:port.
              */
-
+            request->requestType = NS_REQUEST_TYPE_PROXY;
             *p++ = '\0';
             request->protocol = ns_strdup(url);
-            url = p;
-            if ((strlen(url) > 3u)
-                && (*p++ == '/')
-                && (*p++ == '/')
-                && (*p != '\0')
-                && (*p != '/') ) {
-                bool  hostParsedOk;
-                char *h = p, *end;
 
-                while ((*p != '\0') && (*p != '/')) {
-                    p++;
-                }
-                if (*p == '/') {
-                    *p++ = '\0';
-                }
-                url = p;
-
-                /*
-                 * Check for port
-                 */
-                hostParsedOk = Ns_HttpParseHost2(h, NS_FALSE, NULL, &p, &end);
-                if (hostParsedOk) {
-                    if (p != NULL) {
-                        *p++ = '\0';
-                        request->port = (unsigned short)strtol(p, NULL, 10);
-                    }
-                    request->host = ns_strdup(h);
-                } else {
-                    ns_free((char*)request->protocol);
-                    request->protocol = NULL;
-                    goto done;
-                }
+            if (*p == '/' && *(p+1) == '/') {
+                p += 2;
             }
+        } else {
+            request->requestType = NS_REQUEST_TYPE_CONNECT;
+            p = url;
+        }
+        /*
+         * Parse host:port.
+         */
+        if (*p != '\0' && *p != '/') {
+            bool  hostParsedOk;
+            char *h = p, *end;
+
+            /*
+             * Search for the next slash
+             */
+            p = strchr(p, INTCHAR('/'));
+            if (p != NULL) {
+                //*p++ = '\0';
+                url = p;
+            } else {
+                url = (char*)"";
+            }
+
+            /*
+             * Parse actually host and port
+             */
+            hostParsedOk = Ns_HttpParseHost2(h, NS_FALSE, NULL, &p, &end);
+            if (hostParsedOk) {
+                //Ns_Log(Notice, "Parse host+port <%s> -> %d p <%s> end <%s>", h, hostParsedOk, p, end);
+                if (p != NULL) {
+                    /*
+                     * We know, the port string is terminated by a slash or NUL.
+                     */
+                    request->port = (unsigned short)strtol(p, NULL, 10);
+                }
+                request->host = ns_strdup(h);
+            }
+
+            /*
+             * Here, the request is either a proxy request, or a CONNECT
+             * request (url == "") or something is wrong.
+             */
+            if (request->requestType == NS_REQUEST_TYPE_PROXY && *url == '\0') {
+                errorMsg = "invalid proxy request";
+                Ns_Log(Warning, "%s, path must not be empty"
+                       " setting host '%s' port %hu protocol '%s' path '%s' from line '%s'",
+                       errorMsg, request->host, request->port, request->protocol, url, line);
+                goto error;
+
+            } else if (request->requestType == NS_REQUEST_TYPE_CONNECT && *url != '\0') {
+                errorMsg = "invalid CONNECT request";
+                Ns_Log(Warning, "%s, path must be empty"
+                       " setting host '%s' port %hu protocol '%s' path '%s' from line '%s'",
+                       errorMsg, request->host, request->port, request->protocol, url, line);
+                goto error;
+            }
+
+            Ns_Log(Notice /*Ns_LogRequestDebug*/, "Ns_ParseRequest processes valid proxy request"
+                   " setting host '%s' port %hu protocol '%s' requestType '%d' path '%s' line '%s'",
+                   request->host, request->port, request->protocol, request->requestType,
+                   url,line);
         }
     }
 
     SetUrl(request, url);
     Ns_DStringFree(&ds);
+
     return NS_OK;
 
- done:
+ error:
+    Ns_Log(Warning, "Ns_ParseRequest <%s> cannot parse request line: %s", line, errorMsg);
 
-    request->isProxyRequest = (request->host != NULL && request->protocol != NULL);
+    if (request->protocol != NULL) {
+        ns_free((char*)request->protocol);
+        request->protocol = NULL;
+    }
+    if (request->host != NULL) {
+        ns_free((char*)request->host);
+        request->host = NULL;
+    }
 
-    Ns_Log(Warning, "Ns_ParseRequest <%s> -> ERROR", line);
     Ns_DStringFree(&ds);
     return NS_ERROR;
 }
