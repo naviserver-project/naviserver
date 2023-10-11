@@ -4722,7 +4722,7 @@ NormalizeHostEntry(Tcl_DString *hostDs, Driver *drvPtr, Ns_Request *requestPtr)
          * For proxy and CONNECT requests, we have host and port already set. Leave
          * host and port as it is.
          */
-        if (requestPtr != NULL && requestPtr->requestType != NS_REQUEST_TYPE_PLAIN) {
+        if (requestPtr != NULL && requestPtr->requestType == NS_REQUEST_TYPE_PLAIN) {
 
             assert(requestPtr->host == NULL);
 
@@ -5000,10 +5000,10 @@ SockSetServer(Sock *sockPtr)
     reqPtr = sockPtr->reqPtr;
     assert(reqPtr != NULL);
 
-    if (sockPtr->reqPtr->request.host != NULL) {
+    if (reqPtr->request.host != NULL && reqPtr->request.requestType == NS_REQUEST_TYPE_PLAIN) {
         /*
          * This is transitional code, for the case, we have missed something,
-         * when e.g. a vulnerability checker fires at us with invalid
+         * when, e.g., a vulnerability checker fires at us with invalid
          * requests.
          */
         Ns_Log(Notice, "REQPTR: SockSetServer reqPtr %p with host %p of sockPtr %p line '%s'"
