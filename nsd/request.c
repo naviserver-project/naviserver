@@ -394,12 +394,20 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
              * Here, the request is either a proxy request, or a CONNECT
              * request (url == "") or something is wrong.
              */
-            if (request->requestType == NS_REQUEST_TYPE_PROXY && *url == '\0') {
+            if (request->requestType == NS_REQUEST_TYPE_PROXY) {
                 errorMsg = "invalid proxy request";
-                Ns_Log(Warning, "%s, path must not be empty"
-                       " setting host '%s' port %hu protocol '%s' path '%s' from line '%s'",
-                       errorMsg, request->host, request->port, request->protocol, url, line);
-                goto error;
+                if (url == NULL || *url == '\0') {
+                    Ns_Log(Warning, "%s, path must not be empty"
+                           " setting host '%s' port %hu protocol '%s' path '%s' from line '%s'",
+                           errorMsg, request->host, request->port, request->protocol, url, line);
+                    goto error;
+                }
+                if (request->protocol == NULL) {
+                    Ns_Log(Warning, "%s, protocol must be specified"
+                           " setting host '%s' port %hu protocol '%s' path '%s' from line '%s'",
+                           errorMsg, request->host, request->port, request->protocol, url, line);
+                    goto error;
+                }
 
             } else if (request->requestType == NS_REQUEST_TYPE_CONNECT && *url != '\0') {
                 errorMsg = "invalid CONNECT request";
@@ -409,8 +417,11 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
                 goto error;
             }
 
-            Ns_Log(Notice /*Ns_LogRequestDebug*/, "Ns_ParseRequest processes valid proxy request"
+            Ns_Log(Ns_LogRequestDebug, "Ns_ParseRequest processes valid %s request"
                    " setting host '%s' port %hu protocol '%s' requestType '%d' path '%s' line '%s'",
+                   request->requestType == NS_REQUEST_TYPE_PLAIN ? "plain"
+                   : request->requestType == NS_REQUEST_TYPE_PROXY ? "proxy"
+                   : "CONNECT",
                    request->host, request->port, request->protocol, request->requestType,
                    url,line);
         }
