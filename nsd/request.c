@@ -315,6 +315,15 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
     request->host = NULL;
     request->port = 0u;
 
+    /*
+     * If the content of "url" starts with a sluash, this is an "origin-form"
+     *
+     *    https://www.rfc-editor.org/rfc/rfc9112#name-origin-form
+     *
+     * Otherwise, it might be "absolute-form" (NS_REQUEST_TYPE_PROXY),
+     * "authority-form" (NS_REQUEST_TYPE_CONNECT) or "asterisk-form"
+     * (NS_REQUEST_TYPE_ASTERISK).
+     */
     if (*url != '/') {
 
         /*
@@ -354,7 +363,11 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
                 p += 2;
             }
         } else {
-            request->requestType = NS_REQUEST_TYPE_CONNECT;
+            if (strcmp(url, "*") == 0) {
+                request->requestType = NS_REQUEST_TYPE_ASTERISK;
+            } else if (strcasecmp(request->method, "connect") == 0) {
+                request->requestType = NS_REQUEST_TYPE_CONNECT;
+            }
             p = url;
         }
         /*
@@ -394,9 +407,18 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
              * Here, the request is either a proxy request, or a CONNECT
              * request (url == "") or something is wrong.
              */
-            if (request->requestType == NS_REQUEST_TYPE_PROXY) {
+            if (request->requestType == NS_REQUEST_TYPE_PLAIN) {
+                errorMsg = "invalid request";
+                if (*url != '/') {
+                    Ns_Log(Warning, "%s, request target must start with a slash"
+                           " setting host '%s' port %hu protocol '%s' path '%s' from line '%s'",
+                           errorMsg, request->host, request->port, request->protocol, url, line);
+                    goto error;
+                }
+
+            } else if (request->requestType == NS_REQUEST_TYPE_PROXY) {
                 errorMsg = "invalid proxy request";
-                if (url == NULL || *url == '\0') {
+                if (*url == '\0') {
                     Ns_Log(Warning, "%s, path must not be empty"
                            " setting host '%s' port %hu protocol '%s' path '%s' from line '%s'",
                            errorMsg, request->host, request->port, request->protocol, url, line);
@@ -415,13 +437,23 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
                        " setting host '%s' port %hu protocol '%s' path '%s' from line '%s'",
                        errorMsg, request->host, request->port, request->protocol, url, line);
                 goto error;
+
+            } else if (request->requestType == NS_REQUEST_TYPE_ASTERISK
+                       && strcasecmp(request->method, "OPTIONS") != 0) {
+                errorMsg = "invalid ASTERISK request, can only be used with method OPTIONS";
+                Ns_Log(Warning, "%s, path must be empty"
+                       " setting host '%s' port %hu protocol '%s' path '%s' from line '%s'",
+                       errorMsg, request->host, request->port, request->protocol, url, line);
+                goto error;
             }
+
 
             Ns_Log(Ns_LogRequestDebug, "Ns_ParseRequest processes valid %s request"
                    " setting host '%s' port %hu protocol '%s' requestType '%d' path '%s' line '%s'",
                    request->requestType == NS_REQUEST_TYPE_PLAIN ? "plain"
                    : request->requestType == NS_REQUEST_TYPE_PROXY ? "proxy"
-                   : "CONNECT",
+                   : request->requestType == NS_REQUEST_TYPE_CONNECT ? "CONNECT"
+                   : "asterisk",
                    request->host, request->port, request->protocol, request->requestType,
                    url,line);
         }

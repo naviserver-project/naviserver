@@ -426,9 +426,10 @@ typedef struct Ns_Set {
  */
 
 typedef enum {
-    NS_REQUEST_TYPE_PLAIN =       0x00u, /* request target is path */
+    NS_REQUEST_TYPE_PLAIN =       0x00u, /* request target is path              */
     NS_REQUEST_TYPE_PROXY =       0x01u, /* request target has scheme+host+port */
-    NS_REQUEST_TYPE_CONNECT =     0x02u  /* request target has host+port */
+    NS_REQUEST_TYPE_CONNECT =     0x02u, /* request target has host+port        */
+    NS_REQUEST_TYPE_ASTERISK =    0x03u  /* asterisk-form, just a '*' character */
 } Ns_RequestType;
 
 typedef struct Ns_Request {
@@ -2297,7 +2298,6 @@ Ns_RegisterProcInfo(ns_funcptr_t procAddr, const char *desc, Ns_ArgProc *argProc
 NS_EXTERN void
 Ns_GetProcInfo(Tcl_DString *dsPtr, ns_funcptr_t procAddr, const void *arg)
     NS_GNUC_NONNULL(1);
-
 
 NS_EXTERN void
 Ns_StringArgProc(Tcl_DString *dsPtr, const void *arg)
