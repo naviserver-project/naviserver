@@ -488,6 +488,41 @@ NsGetTraces(Tcl_DString *dsPtr, const char *server)
 }
 
 /*
+ *----------------------------------------------------------------------
+ * NsGetTraceProcArg --
+ *
+ *      Returns the "arg" value which was registered for the specified
+ *      function pointer. If not found, NULL is returned.
+ *
+ * Results:
+ *      Void pointer or NULL.
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+void *
+NsGetTraceProcArg(NsServer *servPtr, ns_funcptr_t proc)
+{
+    const Trace *tracePtr;
+    void        *result;
+
+    NS_NONNULL_ASSERT(servPtr != NULL);
+    NS_NONNULL_ASSERT(proc != NULL);
+
+    tracePtr = servPtr->filter.firstTracePtr;
+    while (tracePtr != NULL) {
+        if ((ns_funcptr_t)tracePtr->proc == proc) {
+            result = tracePtr->arg;
+        }
+        tracePtr = tracePtr->nextPtr;
+    }
+
+    return result;
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

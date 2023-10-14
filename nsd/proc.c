@@ -267,6 +267,46 @@ Ns_RegisterProcInfo(ns_funcptr_t procAddr, const char *desc, Ns_ArgProc *argProc
     infoPtr->proc = argProc;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsGetProcFunction --
+ *
+ *      Return the function pointer of a function with the specified
+ *      description value.
+ *
+ * Results:
+ *      function pointer or NULL
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+ns_funcptr_t
+NsGetProcFunction(const char *description)
+{
+    const Tcl_HashEntry *hPtr;
+    Tcl_HashSearch       search;
+    ns_funcptr_t         result = NULL;
+
+    NS_NONNULL_ASSERT(description != NULL);
+
+    hPtr = Tcl_FirstHashEntry(&infoHashTable, &search);
+    while (hPtr != NULL) {
+        const Info *infoPtr;
+
+        infoPtr = Tcl_GetHashValue(hPtr);
+        if (strcmp(infoPtr->desc, description) == 0) {
+            Ns_Log(Debug, "... function desc: '%s' => %d",
+                   infoPtr->desc, strcmp(infoPtr->desc, description));
+            result = (ns_funcptr_t)Tcl_GetHashKey(&infoHashTable, hPtr);
+        }
+        hPtr = Tcl_NextHashEntry(&search);
+    }
+    return result;
+}
+
 
 /*
  *----------------------------------------------------------------------

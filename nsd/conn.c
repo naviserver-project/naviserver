@@ -115,7 +115,7 @@ Ns_ConnAuth(const Ns_Conn *conn)
  *      Get the authenticated user
  *
  * Results:
- *      A pointer to a string with the username
+ *      A pointer to a string with the username or NULL
  *
  * Side effects:
  *      None
@@ -598,7 +598,7 @@ Ns_ConnPeer(const Ns_Conn *conn)
  */
 
 const char *
-Ns_ConnSetPeer(const Ns_Conn *conn, const struct sockaddr *saPtr, const struct sockaddr *clientsaPtr)
+Ns_ConnSetPeer(Ns_Conn *conn, const struct sockaddr *saPtr, const struct sockaddr *clientsaPtr)
 {
     Conn *connPtr;
 

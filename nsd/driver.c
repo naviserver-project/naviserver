@@ -334,6 +334,9 @@ static void WriterPerPoolRates(WriterSock *writePtr, Tcl_HashTable *pools)
 static ConnPoolInfo *WriterGetInfoPtr(WriterSock *curPtr, Tcl_HashTable *pools)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static void AddNslogEntry(Sock *sockPtr, int statusCode, const char *errMsg, const char *headers)
+    NS_GNUC_NONNULL(1);
+
 /*
  * Global variables defined in this file.
  */
@@ -3545,6 +3548,130 @@ SockError(Sock *sockPtr, SockState reason, int err)
 /*
  *----------------------------------------------------------------------
  *
+ * AddNslogEntry --
+ *
+ *      Add an entry to the access log, when the request is not handled by the
+ *      trace of a connection thread.
+ *
+ *      Applications:
+ *       - direct replies from the driver thread (via SockSendResponse())
+ *       - 100 CONTINUE,
+ *       - cases where the TRACE is not called in the connection thread.
+ *
+ *       Currently, the function is just used for the first two cases.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Potentially adding an entry to the access.log file.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+AddNslogEntry(Sock *sockPtr, int statusCode, const char *UNUSED(errMsg), const char *UNUSED(headers))
+{
+    ns_funcptr_t proc;
+
+    NS_NONNULL_ASSERT(sockPtr != NULL);
+
+    /*
+     * Get the function pointer with the description of the nslog trace
+     * proc. If no such pointer is found, the "nslog" module is not loaded.
+     */
+
+    proc = NsGetProcFunction("nslog:conntrace");
+    if (proc != NULL) {
+        NsServer *servPtr = sockPtr->servPtr;
+        void *arg;
+
+        /*
+         * We have the function pointer. We have still to check, whether this
+         * function was registered as a trace-proc on the current server. This
+         * can be achieved by obtaining for the current server the "arg" value
+         * (the log configuration) from the trace procs of this server.
+         */
+        arg = NsGetTraceProcArg(servPtr, proc);
+
+        if (arg != NULL && sockPtr->reqPtr != NULL && sockPtr->reqPtr->headers != NULL) {
+            Conn        conn;
+            const char *auth;
+
+            /*
+             * Now we could call LogTrace(), but we have to create a fake
+             * connection structure, since this is created, when the request
+             * is handed over to a connections thread. The connection
+             * structure contains the relevant information for the access.log
+             * entry.
+             */
+            memset(&conn, 0, sizeof(conn));
+
+            conn.drvPtr = sockPtr->drvPtr;
+            conn.reqPtr = sockPtr->reqPtr;
+            conn.request = sockPtr->reqPtr->request;
+
+            conn.headers = conn.reqPtr->headers;
+            conn.responseStatus = statusCode;
+            conn.acceptTime = sockPtr->acceptTime;
+            conn.requestQueueTime = sockPtr->acceptTime;
+            conn.requestDequeueTime = sockPtr->acceptTime;
+            conn.filterDoneTime = sockPtr->acceptTime;
+
+            Ns_ConnSetPeer((Ns_Conn*)&conn,
+                           (struct sockaddr *)&(sockPtr->sa),
+                           (struct sockaddr *)&(sockPtr->clientsa)
+                           );
+            /*
+             * If the request managed to be parsed successfully by
+             * Ns_ParseHeader(), the request headers are set up. This is not
+             * the case when, e.g., the request line is already invalid.
+             * Even, when Ns_ParseHeader() fails during request parsing, we
+             * have a valid but empty Ns_Set for the headers.
+             *
+             * We could parse the provided header string into the output
+             * headers in the future.
+             */
+
+            Ns_Log(Debug, "AddNslogEntry headers: # %ld output headers %p",
+                   conn.headers->size, (void*)conn.outputheaders);
+            //Ns_SetPrint(conn.headers);
+
+            auth = Ns_SetIGet(conn.headers, "authorization");
+            if (auth != NULL) {
+                NsParseAuth(&conn, auth);
+            }
+            /*
+              Ns_Log(Notice, "AddNslogEntry request line: '%s'", sockPtr->reqPtr->request.line);
+              Ns_Log(Notice, "AddNslogEntry user: '%s'", Ns_ConnAuthUser((Ns_Conn *)&conn));
+              Ns_Log(Notice, "AddNslogEntry status: %d", Ns_ConnResponseStatus((Ns_Conn *)&conn));
+              Ns_Log(Notice, "AddNslogEntry sent: %ld", Ns_ConnContentSent((Ns_Conn *)&conn));
+            */
+            Ns_Log(Notice, "--- non-trace access log entry: %s \"%s\" %d %ld",
+                   Ns_ConnAuthUser((Ns_Conn *)&conn),
+                   conn.request.line,
+                   Ns_ConnResponseStatus((Ns_Conn *)&conn),
+                   Ns_ConnContentSent((Ns_Conn *)&conn));
+            /*
+             * Finally call the trace proc with the constructed conn entry.
+             */
+            (*(Ns_TraceProc*)proc)(arg, (Ns_Conn *)&conn);
+
+        } else if (arg != NULL) {
+            /*
+             * The following condition is not true:
+             *
+             *    sockPtr->reqPtr != NULL && sockPtr->reqPtr->headers != NULL
+             *
+             * This means, that the function is called in a situation, where
+             * the initialization of the connection was not finished.
+             */
+        }
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * SockSendResponse --
  *
  *      Send an HTTP response directly to the client using the
@@ -3571,8 +3698,10 @@ SockSendResponse(Sock *sockPtr, int statusCode, const char *errMsg, const char *
     NS_NONNULL_ASSERT(sockPtr != NULL);
     NS_NONNULL_ASSERT(errMsg != NULL);
 
-    Ns_Log(Debug, "SockSendResponse terminates request with status code %d msg <%s> headers <%s>",
+    Ns_Log(Debug, "SockSendResponse finishes request with status code %d msg <%s> headers <%s>",
            statusCode, errMsg, headers);
+
+    AddNslogEntry(sockPtr, statusCode, errMsg, headers);
 
     snprintf(firstline, sizeof(firstline), "HTTP/1.0 %d ", statusCode);
     iov[0].iov_base = firstline;
@@ -4463,6 +4592,8 @@ SockParse(Sock *sockPtr)
                      * Reply with "100 continue".
                      */
                     Ns_Log(Ns_LogRequestDebug, "100-continue: reply CONTINUE");
+                    AddNslogEntry(sockPtr, 100, "reply CONTINUE", NULL);
+                    Ns_Log(Notice, "**** 100-continue line <%s>",sockPtr->reqPtr->request.line);
 
                     iov[0].iov_base = (char *)"HTTP/1.1 100 Continue\r\n\r\n";
                     iov[0].iov_len = strlen(iov[0].iov_base);
@@ -4520,6 +4651,7 @@ SockParse(Sock *sockPtr)
                 /*
                  * Check for max number of headers
                  */
+
                 if (unlikely(Ns_SetSize(reqPtr->headers) > (size_t)drvPtr->maxheaders)) {
                     Ns_Log(DriverDebug, "SockParse (%d): maxheaders reached of %d bytes",
                            sockPtr->sock, drvPtr->maxheaders);
