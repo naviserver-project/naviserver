@@ -426,8 +426,8 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
                 }
                 if (request->protocol == NULL) {
                     Ns_Log(Warning, "%s, protocol must be specified"
-                           " setting host '%s' port %hu protocol '%s' path '%s' from line '%s'",
-                           errorMsg, request->host, request->port, request->protocol, url, line);
+                           " setting host '%s' port %hu path '%s' from line '%s'",
+                           errorMsg, request->host, request->port,  url, line);
                     goto error;
                 }
 

@@ -506,7 +506,7 @@ void *
 NsGetTraceProcArg(NsServer *servPtr, ns_funcptr_t proc)
 {
     const Trace *tracePtr;
-    void        *result;
+    void        *result = NULL;
 
     NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(proc != NULL);
