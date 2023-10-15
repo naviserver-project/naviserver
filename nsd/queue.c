@@ -2651,7 +2651,10 @@ ConnRun(Conn *connPtr)
             NsRunTraces(conn);
         }
     } else {
-        Ns_Log(Notice, "not running NS_FILTER_TRACE status %d", status);
+        NsAddNslogEntry(sockPtr, connPtr->responseStatus, conn, NULL);
+
+        Ns_Log(Notice, "not running NS_FILTER_TRACE status %d http status code %d",
+               status, connPtr->responseStatus);
     }
 
     /*

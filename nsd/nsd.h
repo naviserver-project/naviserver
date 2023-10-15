@@ -1823,6 +1823,8 @@ NS_EXTERN void NsTclRunAtClose(NsInterp *itPtr)              NS_GNUC_NONNULL(1);
 
 NS_EXTERN void *NsGetTraceProcArg(NsServer *servPtr, ns_funcptr_t proc)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN void NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *headers)
+    NS_GNUC_NONNULL(1);
 
 /*
  * Upload progress routines.
