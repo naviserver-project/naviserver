@@ -90,6 +90,8 @@ OCSP_ResponseIsValid(OCSP_RESPONSE *resp, OCSP_CERTID *id)
 
 static void ReportError(Tcl_Interp *interp, const char *fmt, ...)
     NS_GNUC_NONNULL(2) NS_GNUC_PRINTF(2,3);
+static void DrainErrorStack(Ns_LogSeverity severity, const char *errorContext, unsigned long sslERRcode)
+    NS_GNUC_NONNULL(2);
 
 static Ns_ReturnCode WaitFor(NS_SOCKET sock, unsigned int st, Ns_Time *timeoutPtr);
 
@@ -1347,6 +1349,35 @@ ReportError(Tcl_Interp *interp, const char *fmt, ...)
 /*
  *----------------------------------------------------------------------
  *
+ * DrainErrorStack --
+ *
+ *      Report 0 to n errors from the OpenSSL error stack. This
+ *      function reports the errors and clears it as well.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Error reporting.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+DrainErrorStack(Ns_LogSeverity severity, const char *errorContext, unsigned long sslERRcode)
+{
+    char errorBuffer[256];
+
+    while (sslERRcode != 0u) {
+        Ns_Log(severity, "%s: OpenSSL errorCode:%lu errorString: %s",
+               errorContext, sslERRcode, ERR_error_string(sslERRcode, errorBuffer));
+
+        sslERRcode = ERR_get_error();
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsSSLConfigNew --
  *
  *      Creates a new NsSSLConfig structure and sets standard
@@ -1755,18 +1786,21 @@ Ns_TLS_CtxServerCreate(Tcl_Interp *interp,
     SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE|SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
     SSL_CTX_set_default_passwd_cb(ctx, SSLPassword);
+    DrainErrorStack(Warning, "Ns_TLS_CtxServerCreate", ERR_get_error());
 
     if (cert != NULL) {
         /*
          * Load certificate and private key
          */
         if (SSL_CTX_use_certificate_chain_file(ctx, cert) != 1) {
-            ReportError(interp, "certificate load error: %s", ERR_error_string(ERR_get_error(), NULL));
+            ReportError(interp, "certificate '%s' load chain error: %s",
+                        cert, ERR_error_string(ERR_get_error(), NULL));
             goto fail;
         }
 
         if (SSL_CTX_use_PrivateKey_file(ctx, cert, SSL_FILETYPE_PEM) != 1) {
-            ReportError(interp, "private key load error: %s", ERR_error_string(ERR_get_error(), NULL));
+            ReportError(interp, "certificate '%s' private key load error: %s",
+                        cert, ERR_error_string(ERR_get_error(), NULL));
             goto fail;
         }
         /*
@@ -2046,12 +2080,10 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
          * Report all sslERRcodes from the OpenSSL error stack as
          * "notices" in the system log file.
          */
-        while (sslERRcode != 0u) {
-            Ns_Log(Notice, "SSL_read(%d) error received:%d, got:%d, err:%d,"
-                   " get_error:%lu, %s", sock, n, got, err, sslERRcode,
-                   ERR_error_string(sslERRcode, errorBuffer));
-
-            sslERRcode = ERR_get_error();
+        if (sslERRcode != 0u) {
+            Ns_Log(Notice, "SSL_read(%d) error received:%d, got:%d, err:%d",
+                   sock, n, got, err);
+            DrainErrorStack(Notice, "... SSL_read error", sslERRcode);
         }
 
         SSL_set_shutdown(sslPtr, SSL_RECEIVED_SHUTDOWN);
