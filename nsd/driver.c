@@ -3568,135 +3568,108 @@ SockError(Sock *sockPtr, SockState reason, int err)
 void
 NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *UNUSED(headers))
 {
-    ns_funcptr_t proc;
+    bool isConnConstructed;
+    Conn conn;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
-    /*
-     * Get the function pointer with the description of the nslog trace
-     * proc. If no such pointer is found, the "nslog" module is not loaded.
-     */
-
-    proc = NsGetProcFunction("nslog:conntrace");
-    if (proc != NULL) {
-        NsServer *servPtr = sockPtr->servPtr;
-        void     *arg;
-
+    if (connPtr == NULL) {
         /*
-         * We have the function pointer. We have still to check, whether this
-         * function was registered as a trace-proc on the current server. This
-         * can be achieved by obtaining for the current server the "arg" value
-         * (the log configuration) from the trace procs of this server.
+         * We want to call LogTrace(), but we have no connPtr structure. The
+         * connection structure contains the relevant information for the
+         * access.log entry. If possible, construct a connPtr on the fly based
+         * on the information provided by sockPtr.
          */
-        arg = NsGetTraceProcArg(servPtr, proc);
+        if (sockPtr->reqPtr != NULL && sockPtr->reqPtr->headers != NULL) {
+            const char *auth;
+            const NsServer *servPtr;
+            /*
+             * It is possible to create a connection structure on the
+             * fly.
+             */
+            isConnConstructed = NS_TRUE;
+            connPtr = (Ns_Conn *)&conn;
 
-        if (arg != NULL) {
-            bool isConnConstructed;
-            Conn conn;
+            memset(&conn, 0, sizeof(conn));
 
-            if (connPtr == NULL) {
-                /*
-                 * We want to call LogTrace(), but we have no connPtr
-                 * structure. The connection structure contains the relevant
-                 * information for the access.log entry. If possible,
-                 * construct one on the fly based on the information provided
-                 * by sockPtr.
-                 */
-                if (sockPtr->reqPtr != NULL && sockPtr->reqPtr->headers != NULL) {
-                    const char *auth;
+            conn.drvPtr             = sockPtr->drvPtr;
+            conn.reqPtr             = sockPtr->reqPtr;
+            conn.request            = sockPtr->reqPtr->request;
+            conn.headers            = conn.reqPtr->headers;
+            conn.responseStatus     = statusCode;
+            conn.acceptTime         = sockPtr->acceptTime;
+            conn.requestQueueTime   = sockPtr->acceptTime;
+            conn.requestDequeueTime = sockPtr->acceptTime;
+            conn.filterDoneTime     = sockPtr->acceptTime;
 
-                    /*
-                     * It is possible to create a connection structure on the
-                     * fly.
-                     */
-                    isConnConstructed = NS_TRUE;
-                    connPtr = (Ns_Conn *)&conn;
-
-                    memset(&conn, 0, sizeof(conn));
-
-                    conn.drvPtr = sockPtr->drvPtr;
-                    conn.reqPtr = sockPtr->reqPtr;
-                    conn.request = sockPtr->reqPtr->request;
-
-                    conn.headers = conn.reqPtr->headers;
-                    conn.responseStatus = statusCode;
-                    conn.acceptTime = sockPtr->acceptTime;
-                    conn.requestQueueTime = sockPtr->acceptTime;
-                    conn.requestDequeueTime = sockPtr->acceptTime;
-                    conn.filterDoneTime = sockPtr->acceptTime;
-
-                    Ns_ConnSetPeer((Ns_Conn*)&conn,
-                                   (struct sockaddr *)&(sockPtr->sa),
-                                   (struct sockaddr *)&(sockPtr->clientsa)
-                                   );
-                    /*
-                     * If the request managed to be parsed successfully by
-                     * Ns_ParseHeader(), the request headers are set up. This is not
-                     * the case when, e.g., the request line is already invalid.
-                     * Even, when Ns_ParseHeader() fails during request parsing, we
-                     * have a valid but empty Ns_Set for the headers.
-                     *
-                     * We could parse the provided header string into the output
-                     * headers in the future.
-                     */
-
-                    Ns_Log(Debug, "AddNslogEntry headers: # %ld output headers %p",
-                           conn.headers->size, (void*)conn.outputheaders);
-                    //Ns_SetPrint(conn.headers);
-
-                    auth = Ns_SetIGet(conn.headers, "authorization");
-                    if (auth != NULL) {
-                        NsParseAuth(&conn, auth);
-                    }
-                } else {
-                    /*
-                     * We want to construct a connection structure, but we
-                     * cannot fill it with the necessary information.  This
-                     * means, that the function is called in a situation,
-                     * where the initialization of the connection was not
-                     * finished. In this case connPtr is still NULL;
-                     */
-                    Ns_Log(Warning, "--- non-trace access log entry: status code %d"
-                           " cannot add log entry; request provided %d headers provided %d",
-                           statusCode, sockPtr->reqPtr != NULL,
-                           sockPtr->reqPtr != NULL && sockPtr->reqPtr->headers != NULL);
-                    isConnConstructed = NS_FALSE;
-                    assert(connPtr == NULL);
-                }
-            } else {
-                /*
-                 * connPtr was provided.
-                 */
-                assert(connPtr != NULL);
-                isConnConstructed = NS_FALSE;
+            /*
+             * We need the server to determine the poolPtr. When not already
+             * set in the sockPtr, we have to get it via driver and defMapPtr,
+             * since for global servers, drvPtr->servPtr == NULL.
+             */
+            servPtr = sockPtr->servPtr;
+            if (servPtr == NULL) {
+                servPtr = sockPtr->drvPtr->defMapPtr->servPtr;
             }
-            if (connPtr != NULL) {
-                /*
-                  Ns_Log(Notice, "AddNslogEntry request line: '%s'", sockPtr->reqPtr->request.line);
-                  Ns_Log(Notice, "AddNslogEntry user: '%s'", Ns_ConnAuthUser((Ns_Conn *)&conn));
-                  Ns_Log(Notice, "AddNslogEntry status: %d", Ns_ConnResponseStatus((Ns_Conn *)&conn));
-                  Ns_Log(Notice, "AddNslogEntry sent: %ld", Ns_ConnContentSent((Ns_Conn *)&conn));
-                */
-                Ns_Log(Notice, "--- non-trace access log entry: constructed %d user '%s' \"%s\" %d %ld",
-                       isConnConstructed,
-                       Ns_ConnAuthUser(connPtr),
-                       connPtr->request.line,
-                       Ns_ConnResponseStatus(connPtr),
-                       Ns_ConnContentSent(connPtr));
-                /*
-                 * Finally call the trace proc LogTrace() with the provided or
-                 * constructed connection.
-                 */
-                (*(Ns_TraceProc*)proc)(arg, connPtr);
-            }
+            conn.poolPtr = servPtr->pools.defaultPtr;
 
+            Ns_ConnSetPeer((Ns_Conn*)&conn,
+                           (struct sockaddr *)&(sockPtr->sa),
+                           (struct sockaddr *)&(sockPtr->clientsa)
+                           );
+            /*
+             * If the request managed to be parsed successfully by
+             * Ns_ParseHeader(), the request headers are set up. This is not
+             * the case when, e.g., the request line is already invalid.
+             * Even, when Ns_ParseHeader() fails during request parsing, we
+             * have a valid but empty Ns_Set for the headers.
+             *
+             * We could parse the provided header string into the output
+             * headers in the future.
+             */
+
+            Ns_Log(Debug, "AddNslogEntry headers: # %ld output headers %p",
+                   conn.headers->size, (void*)conn.outputheaders);
+            //Ns_SetPrint(conn.headers);
+
+            auth = Ns_SetIGet(conn.headers, "authorization");
+            if (auth != NULL) {
+                NsParseAuth(&conn, auth);
+            }
         } else {
             /*
-             * We could not determine the argument to the callback. Probably
-             * no ns-log module registered for this server.
+             * We want to construct a connection structure, but we
+             * cannot fill it with the necessary information.  This
+             * means, that the function is called in a situation,
+             * where the initialization of the connection was not
+             * finished. In this case connPtr is still NULL;
              */
-            Ns_Log(Debug, "Cannot add log entry to access.log. Probably no ns-log module registered");
+            Ns_Log(Warning, "--- non-trace access log entry: status code %d"
+                   " cannot add log entry; request provided %d headers provided %d",
+                   statusCode, sockPtr->reqPtr != NULL,
+                   sockPtr->reqPtr != NULL && sockPtr->reqPtr->headers != NULL);
+            isConnConstructed = NS_FALSE;
+            assert(connPtr == NULL);
         }
+    } else {
+        /*
+         * connPtr was provided.
+         */
+        assert(connPtr != NULL);
+        isConnConstructed = NS_FALSE;
+    }
+    if (connPtr != NULL) {
+        Ns_Log(Notice, "--- non-trace access log entry: constructed %d user '%s' \"%s\" %d %ld",
+               isConnConstructed,
+               Ns_ConnAuthUser(connPtr),
+               connPtr->request.line,
+               Ns_ConnResponseStatus(connPtr),
+               Ns_ConnContentSent(connPtr));
+        /*
+         * Finally call the trace proc LogTrace() with the provided or
+         * constructed connection.
+         */
+        NsRunSelectedTraces(connPtr, "nslog:conntrace");
     }
 }
 
@@ -4987,7 +4960,7 @@ DriverLookupHost(Tcl_DString *hostDs, Ns_Request *requestPtr, Driver *drvPtr)
     Ns_Log(Debug, "host table lookup <%s>", hostDs->string);
 
     hPtr = Tcl_FindHashEntry(&drvPtr->hosts, hostDs->string);
-    Ns_Log(Debug, "SockSetServer driver '%s' host '%s' => %p",
+    Ns_Log(Debug, "DriverLookupHost module '%s' host '%s' => %p",
            drvPtr->moduleName, hostDs->string, (void*)hPtr);
 
     if (hPtr != NULL) {

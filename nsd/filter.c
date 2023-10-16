@@ -43,6 +43,9 @@ static Trace *NewTrace(Ns_TraceProc *proc, void *arg)
 static void RunTraces(Ns_Conn *conn, const Trace *tracePtr)
     NS_GNUC_NONNULL(1);
 
+static void RunSelectedTraces(Ns_Conn *conn, const Trace *tracePtr, Ns_TraceProc *traceProc)
+     NS_GNUC_NONNULL(1)  NS_GNUC_NONNULL(3);
+
 static void *RegisterCleanup(NsServer *servPtr, Ns_TraceProc *proc, void *arg)
     NS_GNUC_NONNULL(2);
 
@@ -373,6 +376,53 @@ RunTraces(Ns_Conn *conn, const Trace *tracePtr)
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ * RunSelectedTraces, NsRunSelectedTraces --
+ *
+ *      Execute each registered trace matching the traceProcDescriptiion
+ *      (e.g., "nslog:conntrace");
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Depends on registered traces, if any.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsRunSelectedTraces(Ns_Conn *conn, const char *traceProcDescription)
+{
+    Ns_TraceProc *traceProc;
+
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(traceProcDescription != NULL);
+
+    traceProc = (Ns_TraceProc *)NsGetProcFunction(traceProcDescription /*"nslog:conntrace"*/);
+    if (traceProc != NULL) {
+        const ConnPool *poolPtr = ((const Conn *) conn)->poolPtr;
+
+        if (likely(poolPtr != NULL)) {
+            RunSelectedTraces(conn, poolPtr->servPtr->filter.firstTracePtr, traceProc);
+        } else {
+            Ns_Log(Warning, "NsRunSelectedTraces was called without pool, traces ignored");
+        }
+    }
+}
+
+static void
+RunSelectedTraces(Ns_Conn *conn, const Trace *tracePtr, Ns_TraceProc *traceProc)
+{
+    NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(traceProc != NULL);
+
+    while (tracePtr != NULL && tracePtr->proc == traceProc) {
+        (*tracePtr->proc)(tracePtr->arg, conn);
+        tracePtr = tracePtr->nextPtr;
+    }
+}
 
 /*
  *----------------------------------------------------------------------
@@ -485,41 +535,6 @@ NsGetTraces(Tcl_DString *dsPtr, const char *server)
             tracePtr = tracePtr->nextPtr;
         }
     }
-}
-
-/*
- *----------------------------------------------------------------------
- * NsGetTraceProcArg --
- *
- *      Returns the "arg" value which was registered for the specified
- *      function pointer. If not found, NULL is returned.
- *
- * Results:
- *      Void pointer or NULL.
- *
- * Side effects:
- *      None
- *
- *----------------------------------------------------------------------
- */
-void *
-NsGetTraceProcArg(NsServer *servPtr, ns_funcptr_t proc)
-{
-    const Trace *tracePtr;
-    void        *result = NULL;
-
-    NS_NONNULL_ASSERT(servPtr != NULL);
-    NS_NONNULL_ASSERT(proc != NULL);
-
-    tracePtr = servPtr->filter.firstTracePtr;
-    while (tracePtr != NULL) {
-        if ((ns_funcptr_t)tracePtr->proc == proc) {
-            result = tracePtr->arg;
-        }
-        tracePtr = tracePtr->nextPtr;
-    }
-
-    return result;
 }
 
 /*

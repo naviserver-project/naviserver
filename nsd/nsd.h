@@ -1814,6 +1814,8 @@ NS_EXTERN void NsTclInitMemUnitType(void);
 NS_EXTERN Ns_ReturnCode NsRunFilters(Ns_Conn *conn, Ns_FilterType why) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsRunCleanups(Ns_Conn *conn)                   NS_GNUC_NONNULL(1);
 NS_EXTERN void NsRunTraces(Ns_Conn *conn)                     NS_GNUC_NONNULL(1);
+NS_EXTERN void NsRunSelectedTraces(Ns_Conn *conn, const char *traceProcDescription)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN void NsRunPreStartupProcs(void);
 NS_EXTERN void NsRunSignalProcs(void);
 NS_EXTERN void NsRunStartupProcs(void);
@@ -1821,8 +1823,6 @@ NS_EXTERN void NsRunAtReadyProcs(void);
 NS_EXTERN void NsRunAtExitProcs(void);
 NS_EXTERN void NsTclRunAtClose(NsInterp *itPtr)              NS_GNUC_NONNULL(1);
 
-NS_EXTERN void *NsGetTraceProcArg(NsServer *servPtr, ns_funcptr_t proc)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN void NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *headers)
     NS_GNUC_NONNULL(1);
 
