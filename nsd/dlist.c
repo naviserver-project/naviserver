@@ -88,7 +88,7 @@ Ns_DListFree(Ns_DList *dlPtr)
  *
  * Ns_DListSaveString --
  *
- *      Keep copies of potentially volatile strings in a Ns_DList. This
+ *      Keep copies of potentially volatile strings in an Ns_DList. This
  *      function can be used for saving multiple volatile strings, which can
  *      be freed later by freeing the single API call Ns_DList via
  *      Ns_DListFreeStrings().

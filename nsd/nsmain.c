@@ -574,12 +574,13 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     }
 
     /*
-     * This is the first place, where we can use values from the configuration file.
+     * This is the first place, where we can use values from the configuration
+     * file.
      *
-     * Turn on logging of long mutex calls if desired. For whatever reason, we
-     * can't access NS_mutexlocktrace from here (unknown external symbol),
-     * although it is defined exactly like NS_finalshutdown;
+     * In order to debug configuration values, the following severity setting
+     * might be useful.
      */
+    /*Ns_LogSeveritySetEnabled(Ns_LogNsSetDebug, NS_TRUE);*/
 
     /*
      * Internationalized programs must call setlocale() to initiate specific
@@ -629,7 +630,11 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         Ns_Log(Notice, "initialized locale %s from %s", localeString, source);
     }
 
-
+    /*
+     * Turn on logging of long mutex calls if desired. For whatever reason, we
+     * can't access NS_mutexlocktrace from here (unknown external symbol),
+     * although it is defined exactly like NS_finalshutdown;
+     */
 #ifndef _WIN32
     NS_mutexlocktrace = Ns_ConfigBool(NS_GLOBAL_CONFIG_PARAMETERS, "mutexlocktrace", NS_FALSE);
 #endif
