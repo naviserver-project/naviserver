@@ -70,6 +70,7 @@ Ns_DListAppend(Ns_DList *dlPtr, void *element)
     }
     dlPtr->avail --;
     dlPtr->data[dlPtr->size] = element;
+    Ns_Log(Notice, "DL set %lu value %p", dlPtr->size, element);
     dlPtr->size ++;
 }
 
@@ -80,6 +81,66 @@ Ns_DListFree(Ns_DList *dlPtr)
         ckfree((char*)dlPtr->data);
     }
     Ns_DListInit(dlPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_DListSaveString --
+ *
+ *      Keep copies of potentially volatile strings in a Ns_DList. This
+ *      function can be used for saving multiple volatile strings, which can
+ *      be freed later by freeing the single API call Ns_DList via
+ *      Ns_DListFreeStrings().
+ *
+ * Results:
+ *      Copy of the provided string or NULL
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+char *
+Ns_DListSaveString(Ns_DList *dlPtr, const char *string)
+{
+    char *result;
+
+    if (string != NULL) {
+        result = ns_strdup(string);
+        Ns_DListAppend(dlPtr, result);
+    } else {
+        result = NULL;
+    }
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_DListFreeElements --
+ *
+ *      Free every Ns_DList element via ns_free() and free finally the Ns_DList
+ *      as well.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Freeing memory
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Ns_DListFreeElements(Ns_DList *dlPtr)
+{
+    size_t element;
+
+    for (element = 0; element < dlPtr->size; element ++) {
+        ns_free((char*)dlPtr->data[element]);
+    }
+    Ns_DListFree(dlPtr);
 }
 
 /*

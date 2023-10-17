@@ -1846,6 +1846,12 @@ NS_EXTERN void Ns_DListAppend(Ns_DList *dlPtr, void *element)
 NS_EXTERN void Ns_DListFree(Ns_DList *dlPtr)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN char * Ns_DListSaveString(Ns_DList *dlPtr, const char *string)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN void Ns_DListFreeElements(Ns_DList *dlPtr)
+    NS_GNUC_NONNULL(1);
+
 /*
  * watchdog.c
  */
