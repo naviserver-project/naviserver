@@ -49,37 +49,37 @@
 void
 Ns_DListInit(Ns_DList *dlPtr)
 {
-  dlPtr->data = &dlPtr->static_data[0];
-  dlPtr->avail = Ns_NrElements(dlPtr->static_data);
-  dlPtr->size = 0u;
+    dlPtr->data = &dlPtr->static_data[0];
+    dlPtr->avail = Ns_NrElements(dlPtr->static_data);
+    dlPtr->size = 0u;
 }
 
 void
 Ns_DListAppend(Ns_DList *dlPtr, void *element)
 {
-  if (dlPtr->avail < 1) {
-    size_t requiredSize = dlPtr->size * 2u;
+    if (dlPtr->avail < 1) {
+        size_t requiredSize = dlPtr->size * 2u;
 
-    if (dlPtr->data != &dlPtr->static_data[0]) {
-      dlPtr->data = (void *)ckrealloc((char *)dlPtr->data, sizeof(dlPtr->data[0]) * requiredSize);
-    } else {
-      dlPtr->data = (void *)ckalloc(sizeof(dlPtr->data[0]) * requiredSize);
-      memcpy(dlPtr->data, &dlPtr->static_data[0], dlPtr->size * sizeof(dlPtr->data[0]));
+        if (dlPtr->data != &dlPtr->static_data[0]) {
+            dlPtr->data = (void *)ckrealloc((char *)dlPtr->data, sizeof(dlPtr->data[0]) * requiredSize);
+        } else {
+            dlPtr->data = (void *)ckalloc(sizeof(dlPtr->data[0]) * requiredSize);
+            memcpy(dlPtr->data, &dlPtr->static_data[0], dlPtr->size * sizeof(dlPtr->data[0]));
+        }
+        dlPtr->avail = requiredSize - dlPtr->size;
     }
-    dlPtr->avail = requiredSize - dlPtr->size;
-  }
-  dlPtr->avail --;
-  dlPtr->data[dlPtr->size] = element;
-  dlPtr->size ++;
+    dlPtr->avail --;
+    dlPtr->data[dlPtr->size] = element;
+    dlPtr->size ++;
 }
 
 void
 Ns_DListFree(Ns_DList *dlPtr)
 {
-  if (dlPtr->data != &dlPtr->static_data[0]) {
-    ckfree((char*)dlPtr->data);
-  }
-  Ns_DListInit(dlPtr);
+    if (dlPtr->data != &dlPtr->static_data[0]) {
+        ckfree((char*)dlPtr->data);
+    }
+    Ns_DListInit(dlPtr);
 }
 
 /*
