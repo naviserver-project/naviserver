@@ -4860,7 +4860,12 @@ NormalizeHostEntry(Tcl_DString *hostDs, Driver *drvPtr, Ns_Request *requestPtr)
          */
         if (requestPtr != NULL && requestPtr->requestType == NS_REQUEST_TYPE_PLAIN) {
 
-            assert(requestPtr->host == NULL);
+            //assert(requestPtr->host == NULL);
+            if (requestPtr->host != NULL) {
+                Ns_Log(Warning, "NormalizeHostEntry called with host already set to '%s'"
+                       " in a plain request", requestPtr->host);
+                ns_free((char *)requestPtr->host);
+            }
 
             requestPtr->host = ns_strdup(hostStart);
             requestPtr->port = (portStart != NULL
