@@ -70,7 +70,6 @@ Ns_DListAppend(Ns_DList *dlPtr, void *element)
     }
     dlPtr->avail --;
     dlPtr->data[dlPtr->size] = element;
-    Ns_Log(Notice, "DL set %lu value %p", dlPtr->size, element);
     dlPtr->size ++;
 }
 
