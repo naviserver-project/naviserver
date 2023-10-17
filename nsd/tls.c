@@ -1437,10 +1437,18 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
         result = NS_ERROR;
     } else {
         const char *ciphers, *ciphersuites, *protocols;
+        Ns_DList dl, *dlPtr = &dl;
 
-        ciphers      = Ns_ConfigGetValue(path, "ciphers");
-        ciphersuites = Ns_ConfigGetValue(path, "ciphersuites");
-        protocols    = Ns_ConfigGetValue(path, "protocols");
+        /*
+         * Keep configuration values in an Ns_DList to protect against
+         * potential changes in the configuration Ns_Set.
+         */
+        Ns_DListInit(dlPtr);
+
+        cert         = Ns_DListSaveString(dlPtr, cert);
+        ciphers      = Ns_DListSaveString(dlPtr, Ns_ConfigGetValue(path, "ciphers"));
+        ciphersuites = Ns_DListSaveString(dlPtr, Ns_ConfigGetValue(path, "ciphersuites"));
+        protocols    = Ns_DListSaveString(dlPtr, Ns_ConfigGetValue(path, "protocols"));
 
         Ns_Log(Debug, "Ns_TLS_CtxServerInit calls Ns_TLS_CtxServerCreate with app data %p",
                (void*) app_data);
@@ -1603,6 +1611,7 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
             }
 #endif
         }
+        Ns_DListFreeElements(dlPtr);
     }
     return result;
 }
