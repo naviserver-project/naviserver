@@ -583,6 +583,21 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
          * binding to and/or the HTTP location string.
          */
         defserver = Ns_ConfigGetValue(path, "defaultserver");
+        if (defserver == NULL) {
+            TCL_SIZE_T    argc = 0;
+            const char  **argv = NULL;
+
+            if (Tcl_SplitList(NULL, nsconf.servers.string, &argc, &argv) == TCL_OK) {
+                if (argc == 1) {
+                    /*
+                     * Just one server provided, this must be the default server
+                     */
+                    defserver = nsconf.servers.string;
+                }
+                Tcl_Free((char *) argv);
+            }
+
+        }
 
         address = Ns_ConfigString(path, "address", NULL);
         host = Ns_ConfigString(path, "hostname", NULL);
