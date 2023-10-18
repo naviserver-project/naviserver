@@ -118,8 +118,8 @@ files.
 One of the core components of the configuration file are the network
 drivers: what protocols should be used, on which addresses/ports
 should be used, or how to set up virtual servers. The most important
-network drivers of NaviServer are [term nssock] and
-[term nsssl].
+network drivers of NaviServer are [term nssock] (for HTTP connections)
+and [term nsssl] (for HTTPS connections).
 
 [para] Several additional network drivers are available via
 extra modules, such as e.g. [term nsudp], [term nssmtpd]
@@ -131,8 +131,9 @@ extra modules, such as e.g. [term nsudp], [term nssmtpd]
 [subsection {Single Server, single address, single port}]
 
 In the simplest case, one defines in a configuration file a single
-server [emph s1] with a single network driver [emph nssock]. In the
-example below, the server is listening on port 8000.
+server [emph s1] with a single network driver [emph nssock] used for
+plain HTTP connections. In the example below, the server is listening
+on port 8000.
 
 [example_begin]
  ns_section ns/servers {
@@ -140,16 +141,17 @@ example below, the server is listening on port 8000.
  }
  
  ns_section ns/server/s1/modules {
-   ns_param nssock  nssock.so
+   ns_param http nssock.so
  }
  
- ns_section ns/server/s1/module/nssock {
+ ns_section ns/server/s1/module/http {
    ns_param address 0.0.0.0
    ns_param port    8000
  }
 [example_end]
 
-In this example, the module is loaded for the server "s1". We show, in
+In this example, the module [emph nssock] is loaded for the
+server "s1" under the name "http". We show, in
 later examples, how to load a network driver globally, such that one
 network driver can be used for multiple servers.
 
@@ -170,10 +172,10 @@ In this case, it is sufficient to load the driver once.
  # Server s1
  #
  ns_section ns/server/s1/modules {
-   ns_param nssock  nssock.so
+   ns_param http nssock.so
  }
  
- ns_section ns/server/s1/module/nssock {
+ ns_section ns/server/s1/module/http {
    ns_param address  0.0.0.0
    ns_param port     8000
  }
@@ -182,10 +184,10 @@ In this case, it is sufficient to load the driver once.
  # Server s2
  #
  ns_section ns/server/s2/modules {
-   ns_param nssock   nssock.so
+   ns_param http  nssock.so
  }
  
- ns_section ns/server/s2/module/nssock {
+ ns_section ns/server/s2/module/http {
    ns_param address  0.0.0.0
    ns_param port     8001
  }
@@ -218,10 +220,10 @@ a parameter value.
  }
  
  ns_section ns/server/s1/modules {
-   ns_param nssock  nssock.so
+   ns_param http nssock.so
  }
  
- ns_section ns/server/s1/module/nssock {
+ ns_section ns/server/s1/module/http {
    ns_param address "137.208.116.31 2001:628:404:74::31"
    ns_param port    8000
  }
@@ -231,37 +233,35 @@ a parameter value.
 
 Similarly, we can define a single server, listening on multiple
 ports. In this case, one can load multiple instances of the driver,
-where each of the driver listens on a different port. In the following
-example, we name the different instances of the network driver
-[emph nssock1] and [emph nssock2].
+where each of the driver listens on a different port.
 
 [example_begin]
  #
  # Server s1, using listening on two ports
  #
  ns_section ns/server/s1/modules {
-   ns_param   nssock   nssock.so
+   ns_param http nssock.so
  }
  
- ns_section ns/server/s1/module/nssock {
+ ns_section ns/server/s1/module/http {
    ns_param address   0.0.0.0
    ns_param port      "8000 8001"
  }
 [example_end]
 
-When multiple IP addresses and multiple ports are specified, the
+[para] When multiple IP addresses and multiple ports are specified, the
 server will be listening for every specified address on every
 specified port. In the following example, it will listen on four
 different combinations of addresses and ports.
 
 [example_begin]
- ns_section ns/server/s1/module/nssock {
+ ns_section ns/server/s1/module/http {
    ns_param address "137.208.116.31 2001:628:404:74::31"
    ns_param port    "8000 8001"
  }
 [example_end]
 
-[subsection {Single server registering on multiple drivers}]
+[subsection {Single server registering multiple drivers}]
 
 In the last two examples, a single server is listening on different
 ports and or IP addresses, but the configuration of the driver was
@@ -270,7 +270,7 @@ it is possible to load the same driver multiple times for the same
 server with different driver names.
 
 In the following example, we name the different instances of the
-network driver [emph nssock1] and [emph nssock2].
+network driver [emph http1] and [emph http1].
 
 [example_begin]
  #
@@ -278,23 +278,23 @@ network driver [emph nssock1] and [emph nssock2].
  # different addresses.
  #
  ns_section ns/server/s1/modules {
-   ns_param nssock1   nssock.so
-   ns_param nssock2   nssock.so
+   ns_param http1  nssock.so
+   ns_param http2  nssock.so
  }
  
- ns_section ns/server/s1/module/nssock1 {
+ ns_section ns/server/s1/module/http1 {
    ns_param address   0.0.0.0
    ns_param port      8000
  }
  
- ns_section ns/server/s1/module/nssock2 {
+ ns_section ns/server/s1/module/http2 {
    ns_param address   127.0.0.1
    ns_param port      8001
  }
 [example_end]
 
 It would be as well possible to register multiple addresses for every
-network driver instance (here "nssock1" and "nssock2"). In general, by
+network driver instance (here "http1" and "http2"). In general, by
 loading a network driver multiple times, all the of parameters of the
 driver modules (here [term nssock]) can be modified per driver
 instance.
@@ -352,11 +352,11 @@ server "s1" and "s2" such that "s1" should receive requests from
 definitions.
 
 [para] For defining virtual servers, the network driver has to be
-loaded globally (i.e., as module [const ns/module/nssock]).  For
+loaded globally (i.e., as module [const ns/module/http]).  For
 requests with missing/invalid host header fields, we have to define a
 [term defaultserver] to handle such requests in the global definition.
 
-In the section [const ns/module/nssock/servers] we define the mapping
+In the section [const ns/module/http/servers] we define the mapping
 between the hostnames and the defined servers.
 
 [example_begin]
@@ -375,7 +375,7 @@ between the hostnames and the defined servers.
  }
  
  #
- # Define a global nssock driver,
+ # Define a global nssock driver named "http",
  # directing requests to the virtual servers
  # based on the "Host:" header field.
  #
@@ -383,9 +383,9 @@ between the hostnames and the defined servers.
  # for requests without a "Host:" header field.
  #
  ns_section ns/modules {
-   ns_param nssock nssock.so
+   ns_param http nssock.so
  }
- ns_section ns/module/nssock {
+ ns_section ns/module/http {
    ns_param port          8000
    ns_param defaultserver s1
  }
@@ -393,7 +393,7 @@ between the hostnames and the defined servers.
  #
  # Define the mapping between the DNS names and the servers.
  #
- ns_section ns/module/nssock/servers {
+ ns_section ns/module/http/servers {
    #
    # Domain names for s1
    #
@@ -417,30 +417,32 @@ directed to it.
 [subsection {Virtual servers with HTTPS}]
 
 In general, the logic of the definition of servers and network drivers
-is the same for HTTP ([term nssock]) and HTTPS ([term nsssl]), except
-that the latter has some more configuration parameters, such as
+is the same for HTTP (driver [term nssock]) and
+HTTPS (driver [term nsssl]), except that the latter has some
+additional configuration parameters, such as
 e.g. the certificate, or a special configuration of the ciphers,
 etc.
 
 [para] In order to define virtual servers with HTTPS, one can
 essentially use the definition of the previous section, and load as
-well the [term nsssl] driver globally, and configure it accordingly.
+well the [term nsssl] driver globally with the name "https",
+and configure it accordingly.
 
 [example_begin]
  #
- # Define a global nsssl driver
+ # Define a global nsssl driver named https
  #
  ns_section ns/modules {
-   ns_param nssock nsssl.so
+   ns_param https nsssl.so
  }
  
- ns_section ns/module/nsssl {
+ ns_section ns/module/https {
    ns_param port          8433
    ns_param defaultserver s1
-   ns_param certificate   /usr/local/ns/modules/nsssl/server.pem
+   ns_param certificate   /usr/local/ns/modules/https/server.pem
  }
  
- ns_section ns/module/nsssl/servers {
+ ns_section ns/module/https/servers {
    ns_param s1 foo.com
    ns_param s2 bar.com
    ns_param s2 baz.com
@@ -474,17 +476,17 @@ server "s1" separately ([const foo.com.pem]).
 
 [example_begin]
  #
- # Define a global nsssl driver
+ # Define a global nsssl driver named "https"
  #
  ns_section ns/modules {
-   ns_param nssock nsssl.so
+   ns_param https nsssl.so
  }
- ns_section ns/module/nsssl {
+ ns_section ns/module/https {
    ns_param port          8433
    ns_param defaultserver s1
-   ns_param certificate   /usr/local/ns/modules/nsssl/server.pem
+   ns_param certificate   /usr/local/ns/modules/https/server.pem
  }
- ns_section ns/module/nsssl/servers {
+ ns_section ns/module/https/servers {
    ns_param s1 foo.com
    ns_param s2 bar.com
    ns_param s2 baz.com
@@ -494,8 +496,8 @@ server "s1" separately ([const foo.com.pem]).
  # Define a server-specific certificate to enable SNI.
  # Furthermore, activate for server "s1" also OCSP stapling.
  # 
- ns_section ns/server/s1/module/nsssl {
-   ns_param certificate   /usr/local/ns/modules/nsssl/foo.com.pem
+ ns_section ns/server/s1/module/https {
+   ns_param certificate   /usr/local/ns/modules/https/foo.com.pem
    ns_param OCSPstapling  on
  }
 [example_end]
@@ -548,9 +550,9 @@ under [const /var/www], it is used as the pageroot for this request.
    ns_param s1        "Sample Server"
  }
  ns_section ns/server/s1/modules {
-   ns_param nssock    nssock
+   ns_param http      nssock.so
  }
- ns_section ns/server/s1/module/nssock {
+ ns_section ns/server/s1/module/http {
    ns_param address   0.0.0.0
    ns_param port      8000
  }
@@ -616,7 +618,7 @@ the name based on the SNI hostname, where ".pem" was added
  set address 0.0.0.0
  set httpsport 443
  
- ns_section ns/server/s1/module/nsssl {
+ ns_section ns/server/s1/module/https {
    ns_param address            $address
    ns_param port               $httpsport
    ns_param certificate        $serverroot/default.pem
@@ -678,9 +680,9 @@ configurations.
    ns_param    redirector      "Redirecting Server"
  }
  ns_section ns/server/redirector/modules {
-   ns_param    nssock          nssock
+   ns_param    http            nssock.so
  }
- ns_section ns/server/redirector/module/nssock {
+ ns_section ns/server/redirector/module/http {
    ns_param    address         0.0.0.0
    ns_param    port            80
  }
@@ -788,11 +790,11 @@ tailored error messages depending on the HTTP status codes.
 [example_end]
 
 
-[keywords module nssock \
+[keywords module nssock nsssl \
 	performance tuning configuration \
 	SO_REUSEPORT TCP TCP_FASTOPEN \
 	"connection thread pools" \
-	nsssl driver prebind pagedir reverseproxy \
+	driver prebind pagedir reverseproxy \
         certificate TLS HTTPS OCSP SNI initcmds letsencrypt redirect \
         ADP templates]
 [see_also tcl-libraries tcl-overview]
