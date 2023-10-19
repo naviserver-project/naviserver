@@ -826,8 +826,44 @@ void NsDriverMapVirtualServers(void)
                     Ns_Fatal("%s: virtual servers configured,"
                              " but '%s' has no defaultserver defined", moduleName, path);
                 }
-            }
+            } else {
+                /*
+                 * We have a per-server driver module. Add server map entry
+                 * for Ns_InfoHostname() and drvPtr->address with and without
+                 * port.
+                 */
+                Tcl_DString hostDString;
+                ServerMap  *mapPtr;
+                NsServer   *servPtr = NsGetServer(drvPtr->server);
 
+                Tcl_DStringInit(dsPtr);
+                Tcl_DStringInit(&hostDString);
+
+                Tcl_DStringAppend(&hostDString, Ns_InfoHostname(), -1);
+                Ns_Log(Debug, "add localhost server %s location '%s' address '%s' port %hu",
+                       drvPtr->server, drvPtr->location, drvPtr->address, drvPtr->port);
+
+                mapPtr = ServerMapEntryAdd(dsPtr, hostDString.string, servPtr, drvPtr,
+                                           NULL, NS_TRUE);
+                Ns_DStringPrintf(&hostDString, ":%hu", drvPtr->port);
+                ServerMapEntryAdd(dsPtr, hostDString.string, servPtr, drvPtr,
+                                  mapPtr->ctx, NS_FALSE);
+
+                if (drvPtr->address != NULL) {
+                    Tcl_DStringSetLength(&hostDString, 0);
+                    Tcl_DStringAppend(&hostDString, drvPtr->address, -1);
+
+                    ServerMapEntryAdd(dsPtr, hostDString.string, servPtr, drvPtr, mapPtr->ctx, NS_FALSE);
+                    Ns_DStringPrintf(&hostDString, ":%hu", drvPtr->port);
+                    ServerMapEntryAdd(dsPtr, hostDString.string, servPtr, drvPtr,
+                                      mapPtr->ctx, NS_FALSE);
+                }
+                Tcl_DStringFree(dsPtr);
+                Tcl_DStringFree(&hostDString);
+            }
+            /*
+             * Advance to the next driver.
+             */
             continue;
         }
 
