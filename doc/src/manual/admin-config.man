@@ -74,7 +74,7 @@ and [term admin-tuning].
 [list_end]
 
 
-[section {Server Configuration}]
+[section {Server Network Configuration}]
 
 In general, when modifying configuration files, it is always a good
 idea to check whether a configuration file is syntactically correct
@@ -729,6 +729,95 @@ register the [const /.well-known] target via [cmd ns_register_fastpath]:
    }
  }
 [example_end]
+
+[subsection {Adding extra header fields}]
+
+For security reasons, it is a common requirement to provide additional
+header fields to the responses of a server. For scripted pages, such
+additional header fields can be added depending on the needs of these
+pages (e.g., by providing page specific CSP policies). However, there
+are as well requirements for adding response header fields for all
+requests. The following response header fields are often recommended:
+
+[example_begin]
+ X-Frame-Options            "SAMEORIGIN"
+ X-Content-Type-Options     "nosniff"
+ X-XSS-Protection           "1; mode=block"
+ Referrer-Policy            "strict-origin"
+[example_end]
+
+or for HTTPS requests
+
+[example_begin]
+  Strict-Transport-Security "max-age=31536000; includeSubDomains"
+[example_end]
+
+or, e.g., CSP rules on static pages to address the security threads of
+SVG files.
+
+[para] In the NaviServer configuration file, one can specify extra
+response header files for drivers and/or for servers, as the following
+example shows. The specified header files are merged together. In
+case, the same header field is provided at the level of the driver and
+the server, the more specific (i.e., the server-specific) value is
+used.
+
+[example_begin]
+ ns_section ns/servers {
+   ns_param s1  "Server s1"
+ }
+ ns_section ns/modules {
+   ns_param http  nssock.so
+   ns_param https nsssl.so
+ }
+ ns_section ns/module/http {
+   ns_param address localhost
+   ns_param port    8081
+   #
+   # Driver-specific extra response header fields for HTTP requests
+   #
+   ns_param extraheaders {
+     X-driver-extra http
+     X-extra driver-http
+   }
+ }
+ ns_section ns/module/https {
+   ns_param address localhost
+   ns_param port    8441
+   ns_param certificate  /var/www/default.pem
+   #
+   # Driver-specific extra response header fields for HTTPS requests
+   #
+   ns_param extraheaders {
+     X-driver-extra https
+     X-extra driver-https
+   }
+ }
+ ns_section ns/server/s1/fastpath {ns_param pagedir /var/www/s1}
+ ns_section ns/server/s1/adp      {ns_param map "/*.adp"}
+ 
+ #
+ # Server-specific extra response header fields for all requests to
+ # this server.
+ #
+ ns_section ns/server/s1 {
+   ns_param extraheaders {
+     X-server-extra s1
+     X-extra server-s1
+   }
+ }
+[example_end]
+
+When the configuration above is used, all requests via HTTPS
+will be served with the following extra response header fields.
+
+[example_begin]
+  X-driver-extra https
+  X-server-extra s1
+  X-extra        server-s1
+[example_end]
+
+[para]
 
 
 [para] More to come here...
