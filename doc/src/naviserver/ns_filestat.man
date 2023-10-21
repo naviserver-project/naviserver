@@ -29,7 +29,7 @@ command uses direct system call stat and is much faster.
 [call [cmd ns_filestat] [arg FileName] [opt [arg VarName]]]
 
 If VarName is not specified, then ns_filestat behaves similar to file exists, just returns
-1 if file exisst, 0 if not accesable
+1 if file exist, 0 if not accessible
 
 [list_end]
 
