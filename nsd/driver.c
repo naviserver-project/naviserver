@@ -818,7 +818,7 @@ void NsDriverMapVirtualServers(void)
                  */
                 if (servPtr != NULL) {
                     Tcl_DStringInit(dsPtr);
-                    ServerMapEntryAdd(dsPtr, Ns_InfoHostname(), servPtr, drvPtr, NULL, NS_TRUE);
+                    (void)ServerMapEntryAdd(dsPtr, Ns_InfoHostname(), servPtr, drvPtr, NULL, NS_TRUE);
                     Tcl_DStringFree(dsPtr);
                 } else {
                     /*
@@ -854,17 +854,18 @@ void NsDriverMapVirtualServers(void)
                 mapPtr = ServerMapEntryAdd(dsPtr, hostDString.string, servPtr, drvPtr,
                                            NULL, NS_TRUE);
                 Ns_DStringPrintf(&hostDString, ":%hu", drvPtr->port);
-                ServerMapEntryAdd(dsPtr, hostDString.string, servPtr, drvPtr,
-                                  mapPtr->ctx, NS_FALSE);
+                (void)ServerMapEntryAdd(dsPtr, hostDString.string, servPtr, drvPtr,
+                                        mapPtr->ctx, NS_FALSE);
 
                 if (drvPtr->address != NULL) {
                     Tcl_DStringSetLength(&hostDString, 0);
                     Tcl_DStringAppend(&hostDString, drvPtr->address, -1);
 
-                    ServerMapEntryAdd(dsPtr, hostDString.string, servPtr, drvPtr, mapPtr->ctx, NS_FALSE);
+                    (void)ServerMapEntryAdd(dsPtr, hostDString.string, servPtr, drvPtr,
+                                            mapPtr->ctx, NS_FALSE);
                     Ns_DStringPrintf(&hostDString, ":%hu", drvPtr->port);
-                    ServerMapEntryAdd(dsPtr, hostDString.string, servPtr, drvPtr,
-                                      mapPtr->ctx, NS_FALSE);
+                    (void)ServerMapEntryAdd(dsPtr, hostDString.string, servPtr, drvPtr,
+                                            mapPtr->ctx, NS_FALSE);
                 }
                 Tcl_DStringFree(dsPtr);
                 Tcl_DStringFree(&hostDString);
@@ -992,8 +993,8 @@ void NsDriverMapVirtualServers(void)
                      * protocol.
                      */
                     if (drvPtr->port == drvPtr->defport) {
-                        ServerMapEntryAdd(dsPtr, host, servPtr, drvPtr, ctx,
-                                          (bool)STREQ(defserver, server));
+                        (void)ServerMapEntryAdd(dsPtr, host, servPtr, drvPtr, ctx,
+                                                (bool)STREQ(defserver, server));
                     }
 
                     /*
@@ -1007,10 +1008,10 @@ void NsDriverMapVirtualServers(void)
                     for (pNum = 0u; pNum < drvPtr->ports.size; pNum ++) {
                         unsigned short port = DriverGetPort(drvPtr, pNum);
 
-                        (void) Ns_DStringPrintf(&hostDString, ":%hu", port);
+                        (void)Ns_DStringPrintf(&hostDString, ":%hu", port);
 
-                        ServerMapEntryAdd(dsPtr, hostDString.string, servPtr, drvPtr, ctx,
-                                          (bool)STREQ(defserver, server));
+                        (void)ServerMapEntryAdd(dsPtr, hostDString.string, servPtr, drvPtr, ctx,
+                                                (bool)STREQ(defserver, server));
                         Tcl_DStringSetLength(&hostDString, prefixLength);
                     }
 
@@ -1029,8 +1030,8 @@ void NsDriverMapVirtualServers(void)
                      * without the port.
                      */
                     if (providedPort == drvPtr->defport) {
-                        ServerMapEntryAdd(dsPtr, hostName, servPtr, drvPtr, ctx,
-                                          (bool)STREQ(defserver, server));
+                        (void)ServerMapEntryAdd(dsPtr, hostName, servPtr, drvPtr, ctx,
+                                                (bool)STREQ(defserver, server));
                     }
 
                     /*
@@ -1041,8 +1042,8 @@ void NsDriverMapVirtualServers(void)
                         unsigned short port = DriverGetPort(drvPtr, pNum);
 
                         if (providedPort == port) {
-                            ServerMapEntryAdd(dsPtr, host, servPtr, drvPtr, ctx,
-                                              (bool)STREQ(defserver, server));
+                            (void)ServerMapEntryAdd(dsPtr, host, servPtr, drvPtr, ctx,
+                                                    (bool)STREQ(defserver, server));
                             entryAdded = NS_TRUE;
                         }
                     }
