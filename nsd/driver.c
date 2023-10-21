@@ -337,10 +337,10 @@ static void RequestFree(Sock *sockPtr)
 static void LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buffer, size_t len)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static void ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
-                              NsServer *servPtr, Driver *drvPtr,
-                              NS_TLS_SSL_CTX *ctx,
-                              bool addDefaultMapEntry)
+static ServerMap *ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
+                                   NsServer *servPtr, Driver *drvPtr,
+                                   NS_TLS_SSL_CTX *ctx,
+                                   bool addDefaultMapEntry)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 static Driver *LookupDriver(Tcl_Interp *interp, const char* protocol, const char *driverName)
@@ -732,11 +732,12 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
  *----------------------------------------------------------------------
  */
 
-static void
+static ServerMap *
 ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
                   NsServer *servPtr, Driver *drvPtr,
                   NS_TLS_SSL_CTX *ctx,
                   bool addDefaultMapEntry) {
+    ServerMap     *mapPtr = NULL;
     Tcl_HashEntry *hPtr;
     int            isNew;
 
@@ -747,8 +748,6 @@ ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
 
     hPtr = Tcl_CreateHashEntry(&drvPtr->hosts, host, &isNew);
     if (isNew != 0) {
-        ServerMap *mapPtr;
-
         (void) Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, (char *)0L);
         mapPtr = ns_malloc(sizeof(ServerMap) + (size_t)dsPtr->length);
         if (likely(mapPtr != NULL)) {
@@ -772,6 +771,7 @@ ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
         Ns_Log(Notice, "%s: ignore duplicate virtual host entry: %s",
                drvPtr->threadName, host);
     }
+    return mapPtr;
 }
 
 
