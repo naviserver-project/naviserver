@@ -148,13 +148,13 @@ ns_section ns/servers {
 }
 
 #
-# Global modules (for all servers)
+# Global network modules (for all servers)
 #
 ns_section ns/modules {
-    ns_param    nssock              nssock
+    ns_param    http              nssock
 }
 
-ns_section ns/module/nssock {
+ns_section ns/module/http {
     ns_param    defaultserver            default
     ns_param    port                     $httpport
     ns_param    address                  $ipaddress   ;# Space separated list of IP addresses
@@ -191,7 +191,7 @@ ns_section ns/module/nssock {
 # server. In our case for example, the host "localhost" is mapped to
 # the nsd server named "default".
 #
-ns_section ns/module/nssock/servers {
+ns_section ns/module/http/servers {
     ns_param default    localhost
     ns_param default    [ns_info hostname]
 }

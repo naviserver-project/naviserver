@@ -113,17 +113,17 @@ set max_file_upload_min        5
 # Set headers that should be included in every response from the
 # server.
 #
-set nssock_extraheaders {
+set http_extraheaders {
     X-Frame-Options            "SAMEORIGIN"
     X-Content-Type-Options     "nosniff"
     X-XSS-Protection           "1; mode=block"
     Referrer-Policy            "strict-origin"
 }
 
-set nsssl_extraheaders {
+set https_extraheaders {
     Strict-Transport-Security "max-age=31536000; includeSubDomains"
 }
-append nsssl_extraheaders $nssock_extraheaders
+append https_extraheaders $http_extraheaders
 
 ######################################################################
 #
@@ -282,13 +282,13 @@ ns_section ns/servers {
 if {[info exists httpport] && $httpport ne ""} {
     #
     # We have an "httpport" configured, so load and configure the
-    # module "nssock" as a global server module.
+    # module "nssock" as a global server module with the name "http".
     #
     ns_section ns/modules {
-         ns_param nssock ${bindir}/nssock
+         ns_param http ${bindir}/nssock
     }
 
-    ns_section ns/module/nssock {
+    ns_section ns/module/http {
         ns_param	defaultserver	$server
         ns_param	address		$ipaddress
         ns_param	hostname	$hostname
@@ -328,14 +328,14 @@ if {[info exists httpport] && $httpport ne ""} {
         # Extra driver-specific response headers fields to be added for
         # every request.
         #
-        ns_param    extraheaders    $nssock_extraheaders
+        ns_param    extraheaders    $http_extraheaders
     }
     #
     # Define, which "host" (as supplied by the "host:" header
     # field) accepted over this driver should be associated with
     # which server.
     #
-    ns_section ns/module/nssock/servers {
+    ns_section ns/module/http/servers {
         ns_param $server $hostname
         foreach address $ipaddress {
             ns_param $server $address
@@ -353,13 +353,13 @@ if {[info exists httpsport] && $httpsport ne ""} {
     #
     #
     # We have an "httpsport" configured, so load and configure the
-    # module "nsssl" as a global server module.
+    # module "nsssl" as a global server module with the name "https".
     #
     ns_section ns/modules {
-        ns_param nsssl  ${bindir}/nsssl
+        ns_param https  ${bindir}/nsssl
     }
 
-    ns_section ns/module/nsssl {
+    ns_section ns/module/https {
         ns_param defaultserver	$server
         ns_param address	$ipaddress
         ns_param port		$httpsport
@@ -379,7 +379,7 @@ if {[info exists httpsport] && $httpsport ne ""} {
         # ns_param deferaccept	true    ;# false, Performance optimization
         # ns_param nodelay	false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted
         ns_param maxinput	${max_file_upload_mb}MB   ;# Maximum file size for uploads in bytes
-        ns_param extraheaders	$nsssl_extraheaders
+        ns_param extraheaders	$https_extraheaders
         ns_param OCSPstapling   on        ;# off; activate OCSP stapling
         # ns_param OCSPstaplingVerbose  on ;# off; make OCSP stapling more verbose
     }
@@ -390,7 +390,7 @@ if {[info exists httpsport] && $httpsport ne ""} {
     # register the $hostname and the $address (in case, the server is
     # addressed via its IP address).
     #
-    ns_section ns/module/nsssl/servers {
+    ns_section ns/module/https/servers {
         ns_param $server $hostname
         foreach address $ipaddress {
             ns_param $server $address

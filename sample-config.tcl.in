@@ -69,7 +69,7 @@ set	pagedir			$serverdir/$pageroot
 ########################################################################
 
 ns_section ns/server/${server}/modules {
-    ns_param	nssock			${homedir}/bin/nssock
+    ns_param	http			${homedir}/bin/nssock
     ns_param	nslog			${homedir}/bin/nslog
     ns_param	nscgi			${homedir}/bin/nscgi
     ns_param	nsperm			${homedir}/bin/nsperm
@@ -470,10 +470,10 @@ ns_section ns/fastpath {
 }
 
 ########################################################################
-# Socket driver module (HTTP)  -- nssock
+# Socket driver module nssock for HTTP connections
 ########################################################################
 
-ns_section ns/server/${server}/module/nssock {
+ns_section ns/server/${server}/module/http {
 
     # TCP port server will listen on
     ns_param	port			$port
@@ -664,13 +664,13 @@ ns_section ns/server/${server}/module/nscp/users {
 #
 ########################################################################
 
-ns_section ns/module/nssock {
+ns_section ns/module/http {
     ns_param	port			$port
     ns_param	hostname		$hostname
     ns_param	address			$address     ;# Space separated list of IP addresses
     ns_param	defaultserver		$server
 }
-ns_section ns/module/nssock/servers {
+ns_section ns/module/http/servers {
     ns_param	$server		$hostname
 }
 
