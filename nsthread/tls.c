@@ -24,7 +24,7 @@
  * this value has no effect.
  */
 
-static uintptr_t nsThreadMaxTls = NS_THREAD_MAXTLS;
+static const uintptr_t nsThreadMaxTls = NS_THREAD_MAXTLS;
 
 /*
  * Static functions defined in this file.
@@ -195,7 +195,7 @@ NsCleanupTls(void **slots)
                     retry = NS_TRUE;
                 }
             }
-        } while (retry && tries++ < 5);
+        } while (retry && (tries++ < 5));
     }
 }
 
