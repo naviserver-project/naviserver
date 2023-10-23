@@ -5732,16 +5732,30 @@ PersistentConnectionLookup(NsHttpTask *httpPtr, NsHttpTask **waitingHttpPtrPtr)
         if (hPtr != NULL) {
             NsHttpTask *waitingHttpPtr = (NsHttpTask *)Tcl_GetHashValue(hPtr);
 
-            Ns_Log(Ns_LogTaskDebug, "Forcing cancel on %p (wait task)", (void*)waitingHttpPtr->task);
-            Ns_TaskCancel(waitingHttpPtr->task);
-            waitingHttpPtr->task = NULL;
+            if (likely(waitingHttpPtr->task != NULL)) {
+                Ns_Log(Ns_LogTaskDebug, "Forcing cancel on %p (wait task)", (void*)waitingHttpPtr->task);
+                Ns_TaskCancel(waitingHttpPtr->task);
+                waitingHttpPtr->task = NULL;
+                /*
+                 * Delete the entry which is to be reused. This prevents concurrent
+                 * double reuse.
+                 */
+                Tcl_DeleteHashEntry(hPtr);
+                *waitingHttpPtrPtr = waitingHttpPtr;
+            } {
+                /*
+                 * Something is fishy, we should not get here: When a
+                 * waitingHttpPtr is provided, it should have as well a task
+                 * assigned, but here, it is NULL.
+                 *
+                 * We treat this situation as if the lookup was not
+                 * successful, so this entry won't be touched.
+                 */
+                Ns_Log(Warning, "persistent key %s has a waiting structure"
+                       " without an assigend task", httpPtr->persistentKey);
+                hPtr = NULL;
+            }
 
-            /*
-             * Delete the entry which is to be reused. This prevents concurrent
-             * double reuse.
-             */
-            Tcl_DeleteHashEntry(hPtr);
-            *waitingHttpPtrPtr = waitingHttpPtr;
         }
         Ns_MutexUnlock(&servPtr->httpclient.lock);
     }
