@@ -710,7 +710,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
 # elif defined(__clang__)
             Ns_DStringPrintf(&ds, "clang %s",__clang_version__);
 # else
-            Ns_DStringPrintf(&ds, "GCC %d.%d.%d", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)
+            Ns_DStringPrintf(&ds, "GCC %d.%d.%d", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
 # endif
 #elif defined(_MSC_VER)
             Ns_DStringPrintf(&ds, "MSC %d", _MSC_VER);
