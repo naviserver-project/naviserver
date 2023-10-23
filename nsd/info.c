@@ -517,7 +517,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
     Tcl_DString     ds;
 
     static const char *const opts[] = {
-        "address", "argv0", "boottime", "builddate", "callbacks",
+        "address", "argv0", "boottime", "builddate", "buildinfo", "callbacks",
         "config", "home", "hostname", "ipv6", "locks", "log",
         "major", "minor", "mimetypes", "name", "nsd", "pagedir",
         "pageroot", "patchlevel", "pid", "platform", "pools",
@@ -528,7 +528,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
     };
 
     enum {
-        IAddressIdx, IArgv0Idx, IBoottimeIdx, IBuilddateIdx, ICallbacksIdx,
+        IAddressIdx, IArgv0Idx, IBoottimeIdx, IBuilddateIdx, IBuildinfoIdx, ICallbacksIdx,
         IConfigIdx, IHomeIdx, IHostNameIdx, IIpv6Idx, ILocksIdx, ILogIdx,
         IMajorIdx, IMinorIdx, IMimeIdx, INameIdx, INsdIdx,
         IPageDirIdx, IPageRootIdx, IPatchLevelIdx,
@@ -696,6 +696,53 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
     case ISSLIdx:
         Tcl_SetObjResult(interp, Tcl_NewBooleanObj(Ns_InfoSSL()));
         break;
+
+    case IBuildinfoIdx:
+        {
+            Tcl_Obj *dictObj = Tcl_NewDictObj();
+
+            /*
+             * Detect the compiler.
+             */
+#if defined(__GNUC__)
+# if defined (__MINGW32__)
+            Ns_DStringPrintf(&ds, "MinGW GCC %d.%d.%d", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+# elif defined(__clang__)
+            Ns_DStringPrintf(&ds, "clang %s",__clang_version__);
+# else
+            Ns_DStringPrintf(&ds, "GCC %d.%d.%d", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)
+# endif
+#elif defined(_MSC_VER)
+            Ns_DStringPrintf(&ds, "MSC %d", _MSC_VER);
+#else
+            Tcl_DStringAppend(&ds, "unknown", 7);
+#endif
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("compiler", 8),
+                           Tcl_NewStringObj(ds.string, ds.length));
+            /*
+             * Build with assertion support? actually, without -DNDEBUG.
+             */
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("assertions", 10),
+                           Tcl_NewIntObj(
+#if defined(NDEBUG)
+                                         0
+#else
+                                         1
+#endif
+                                         ));
+            /*
+             * The nsd binary was built against this version of Tcl
+             */
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("tcl", 3),
+                           Tcl_NewStringObj(TCL_PATCH_LEVEL, -1));
+
+            Tcl_SetObjResult(interp, dictObj);
+            Tcl_DStringFree(&ds);
+            break;
+        }
 
     default:
         /* cases handled below */
