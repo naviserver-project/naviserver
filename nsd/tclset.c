@@ -277,7 +277,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_O
         "icput", "idelkey", "ifind", "iget", "imerge",
         "isnull", "iunique", "iupdate", "key", "keys", "list",
         "merge", "move", "name", "new", "print", "put",
-        "size", "split", "truncate", "unique", "update",
+        "size", "split", "stats", "truncate", "unique", "update",
         "value", "values", NULL,
     };
     enum {
@@ -286,7 +286,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_O
         SICPutIdx, SIDelkeyIdx, SIFindIdx, SIGetIdx, SIMergeIdx,
         SIsNullIdx, SIUniqueIdx, SIUpdateIdx, SKeyIdx, SKeysIdx, SListIdx,
         SMergeIdx, SMoveIdx, sINameIdx, SNewIdx, SPrintIdx, SPutIdx,
-        SSizeIdx, SSplitIdx, STruncateIdx, SUniqueIdx, SUpdateIdx,
+        SSizeIdx, SSplitIdx, SStatsIdx, STruncateIdx, SUniqueIdx, SUpdateIdx,
         SValueIdx, SValuesIdx
     };
 
@@ -337,6 +337,61 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_O
             Tcl_SetObjResult(interp, listObj);
         }
         break;
+
+    case SStatsIdx:
+        {
+            Tcl_Obj *resultObj = Tcl_NewListObj(0, NULL);
+            size_t nr_dynamic = 0, size_dynamic = 0, allocated_dynamic = 0;
+            size_t nr_static = 0,  size_static = 0,  allocated_static = 0;
+
+            tablePtr = &itPtr->sets;
+            for (hPtr = Tcl_FirstHashEntry(tablePtr, &search);
+                 hPtr != NULL;
+                 hPtr = Tcl_NextHashEntry(&search)
+                 ) {
+                const char *key = Tcl_GetHashKey(tablePtr, hPtr);
+                set = (Ns_Set *) Tcl_GetHashValue(hPtr);
+                if (IS_DYNAMIC(key)) {
+                    nr_dynamic ++;
+#ifdef NS_SET_DSTRING
+                    allocated_dynamic += (size_t)set->data.spaceAvl;
+                    size_dynamic += (size_t)set->data.length;
+#endif
+                } else {
+                    nr_static++;
+#ifdef NS_SET_DSTRING
+                    allocated_static += (size_t)set->data.spaceAvl;
+                    size_static += (size_t)set->data.length;
+#endif
+                }
+            }
+
+            Tcl_DictObjPut(NULL, resultObj,
+                        Tcl_NewStringObj("nr_dynamic", 10),
+                        Tcl_NewWideIntObj((Tcl_WideInt)nr_dynamic));
+            Tcl_DictObjPut(NULL, resultObj,
+                        Tcl_NewStringObj("size_dynamic", 12),
+                        Tcl_NewWideIntObj((Tcl_WideInt)size_dynamic));
+            Tcl_DictObjPut(NULL, resultObj,
+                        Tcl_NewStringObj("allocated_dynamic", 17),
+                        Tcl_NewWideIntObj((Tcl_WideInt)allocated_dynamic));
+
+            Tcl_DictObjPut(NULL, resultObj,
+                        Tcl_NewStringObj("nr_static", 9),
+                        Tcl_NewWideIntObj((Tcl_WideInt)nr_static));
+            Tcl_DictObjPut(NULL, resultObj,
+                        Tcl_NewStringObj("size_static", 11),
+                        Tcl_NewWideIntObj((Tcl_WideInt)size_static));
+            Tcl_DictObjPut(NULL, resultObj,
+                        Tcl_NewStringObj("allocated_static", 16),
+                        Tcl_NewWideIntObj((Tcl_WideInt)allocated_static));
+
+            Tcl_SetObjResult(interp, resultObj);
+        }
+        break;
+
+
+
 
     case SNewIdx:   NS_FALL_THROUGH; /* fall through */
     case SCopyIdx:  NS_FALL_THROUGH; /* fall through */
