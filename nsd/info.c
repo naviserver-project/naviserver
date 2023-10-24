@@ -706,11 +706,11 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
              */
 #if defined(__GNUC__)
 # if defined (__MINGW32__)
-            Ns_DStringPrintf(&ds, "MinGW GCC %d.%d.%d", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+            Ns_DStringPrintf(&ds, "MinGW gcc %d.%d.%d", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
 # elif defined(__clang__)
             Ns_DStringPrintf(&ds, "clang %s",__clang_version__);
 # else
-            Ns_DStringPrintf(&ds, "GCC %d.%d.%d", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+            Ns_DStringPrintf(&ds, "gcc %d.%d.%d", __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
 # endif
 #elif defined(_MSC_VER)
             Ns_DStringPrintf(&ds, "MSC %d", _MSC_VER);
@@ -721,7 +721,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
                            Tcl_NewStringObj("compiler", 8),
                            Tcl_NewStringObj(ds.string, ds.length));
             /*
-             * Build with assertion support? actually, without -DNDEBUG.
+             * Compiled with assertion support? Actually, without -DNDEBUG.
              */
             Tcl_DictObjPut(NULL, dictObj,
                            Tcl_NewStringObj("assertions", 10),
@@ -730,6 +730,18 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
                                          0
 #else
                                          1
+#endif
+                                         ));
+            /*
+             * Compiled with SYSTEM_MALLOC.
+             */
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("system_malloc", 13),
+                           Tcl_NewIntObj(
+#if defined(SYSTEM_MALLOC)
+                                         1
+#else
+                                         0
 #endif
                                          ));
             /*
