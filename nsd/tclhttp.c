@@ -2636,7 +2636,7 @@ HttpCheckSpool(
                  * No content-length provided and not chunked, assume
                  * streaming HTML.
                  */
-                Ns_Log(Notice, "SET STREADMING status %d", httpPtr->status);
+                Ns_Log(Ns_LogTaskDebug, "ns_http: assume streaming HTML, status %d", httpPtr->status);
                 httpPtr->flags |= NS_HTTP_STREAMING;
             }
         }
@@ -3966,8 +3966,10 @@ CloseWaitProc(
     case NS_SOCK_WRITE:     NS_FALL_THROUGH; /* fall through */
     case NS_SOCK_EXCEPTION: NS_FALL_THROUGH; /* fall through */
     case NS_SOCK_AGAIN:
-    Ns_Log(Notice, "CloseWaitProc: unexpected condition %04x httpPtr->task %p task %p, key <%s> flags %.6x",
-           why, (void*)httpPtr->task, (void*)task, httpPtr->persistentKey, httpPtr->flags);
+    Ns_Log(Warning, "CloseWaitProc: unexpected condition %04x httpPtr->task:%p closeWait:%p"
+           " task:%p key <%s> flags %.6x",
+           why, (void*)httpPtr->task, (void*)httpPtr->closeWaitTask, (void*)task,
+           httpPtr->persistentKey, httpPtr->flags);
     break;
     }
 }
@@ -4073,8 +4075,9 @@ HttpClose(
 ) {
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
-    Ns_Log(Ns_LogTaskDebug, "HttpClose: http:%p, task:%p sock %d",
-           (void*)httpPtr, (void*)httpPtr->task, httpPtr->sock);
+    Ns_Log(Ns_LogTaskDebug, "HttpClose: http:%p, task:%p closeWait:%p sock %d",
+           (void*)httpPtr, (void*)httpPtr->task, (void*)httpPtr->closeWaitTask,
+           httpPtr->sock);
 
     /*
      * When HttpConnect runs into a failure, it might not have httpPtr->task
@@ -4089,31 +4092,43 @@ HttpClose(
         if (httpPtr->sock != NS_INVALID_SOCKET
             && (httpPtr->flags & NS_HTTP_KEEPALIVE) != 0u
            ) {
-            httpPtr->task = Ns_TaskTimedCreate(httpPtr->sock, CloseWaitProc, httpPtr,
-                                               &httpPtr->keepAliveTimeout);
-            LogDebug("HttpClose", httpPtr, "keepalive");
+            const char *reason;
 
-            assert(taskQueue != NULL);
+            if (PersistentConnectionAdd(httpPtr, &reason)) {
+                httpPtr->closeWaitTask = Ns_TaskTimedCreate(httpPtr->sock, CloseWaitProc, httpPtr,
+                                                            &httpPtr->keepAliveTimeout);
+                LogDebug("HttpClose", httpPtr, "keepalive");
 
-            if (Ns_TaskEnqueue(httpPtr->task, taskQueue) != NS_OK) {
-                Ns_Log(Error, "Could not enqueue CloseWait task");
-            } else {
-                const char *reason;
+                assert(taskQueue != NULL);
 
-                if (PersistentConnectionAdd(httpPtr, &reason)) {
-                    Ns_Log(Ns_LogTaskDebug, "Added persistent connection entry <%s> for %p",
-                           httpPtr->persistentKey, (void*)httpPtr);
-                } else {
-                    Ns_Log(Warning, "Could not add persistent connection (reason %s, key %s)",
-                           reason, httpPtr->persistentKey);
+                if (Ns_TaskEnqueue(httpPtr->closeWaitTask, taskQueue) != NS_OK) {
+                    Ns_Log(Error, "Could not enqueue CloseWait task");
                 }
+
+                Ns_Log(Ns_LogTaskDebug, "Added persistent connection entry <%s> for %p",
+                       httpPtr->persistentKey, (void*)httpPtr);
+            } else {
+                Ns_Log(Warning, "Could not add persistent connection (reason %s, key %s, closeWait %d)",
+                       reason, httpPtr->persistentKey, (httpPtr->persistentKey != NULL));
+                /*
+                 * Clear keep-alive flag.
+                 */
+                httpPtr->flags &= ~NS_HTTP_KEEPALIVE;
+
             }
             HttpCleanupPerRequestData(httpPtr);
             return;
-            
+
         } else {
-            Ns_Log(Ns_LogTaskDebug, "TaskFree %p in HttpClose", (void*)(httpPtr->task));
+            Ns_Log(Ns_LogTaskDebug, "TaskFree %p in HttpClose", (void*)(httpPtr->closeWaitTask));
             LogDebug("HttpClose", httpPtr, "no keepalive");
+
+            if (httpPtr->closeWaitTask != NULL) {
+                Ns_Log(Warning, "ns_http close: no keepalive set, detected unexpected closeWaitTask for %s",
+                       httpPtr->persistentKey);
+                (void) Ns_TaskFree(httpPtr->closeWaitTask);
+                httpPtr->closeWaitTask = NULL;
+            }
             (void) Ns_TaskFree(httpPtr->task);
             httpPtr->task = NULL;
         }
@@ -4172,6 +4187,11 @@ HttpCancel(
 
     (void) Ns_TaskCancel(httpPtr->task);
     Ns_TaskWaitCompleted(httpPtr->task);
+
+    if (httpPtr->closeWaitTask != NULL) {
+        (void) Ns_TaskCancel(httpPtr->closeWaitTask);
+        Ns_TaskWaitCompleted(httpPtr->closeWaitTask);
+    }
 }
 
 
@@ -5732,29 +5752,23 @@ PersistentConnectionLookup(NsHttpTask *httpPtr, NsHttpTask **waitingHttpPtrPtr)
         if (hPtr != NULL) {
             NsHttpTask *waitingHttpPtr = (NsHttpTask *)Tcl_GetHashValue(hPtr);
 
-            if (likely(waitingHttpPtr->task != NULL)) {
-                Ns_Log(Ns_LogTaskDebug, "Forcing cancel on %p (wait task)", (void*)waitingHttpPtr->task);
-                Ns_TaskCancel(waitingHttpPtr->task);
-                waitingHttpPtr->task = NULL;
-                /*
-                 * Delete the entry which is to be reused. This prevents concurrent
-                 * double reuse.
-                 */
-                Tcl_DeleteHashEntry(hPtr);
-                *waitingHttpPtrPtr = waitingHttpPtr;
-            } {
-                /*
-                 * Something is fishy, we should not get here: When a
-                 * waitingHttpPtr is provided, it should have as well a task
-                 * assigned, but here, it is NULL.
-                 *
-                 * We treat this situation as if the lookup was not
-                 * successful, so this entry won't be touched.
-                 */
-                Ns_Log(Warning, "persistent key %s has a waiting structure"
+            if (likely(waitingHttpPtr->closeWaitTask != NULL)) {
+                Ns_Log(Ns_LogTaskDebug, "Forcing cancel on wait task %p", (void*)waitingHttpPtr->closeWaitTask);
+                Ns_TaskCancel(waitingHttpPtr->closeWaitTask);
+                waitingHttpPtr->closeWaitTask = NULL;
+                /*Ns_Log(Notice, "persistent key %s has already a waiting structure"
+                  " with an assigend task (forced cancel)", httpPtr->persistentKey);*/
+            } else {
+                /* TODO: should be removed before the release */
+                Ns_Log(Notice, "========================= persistent key %s has a waiting structure"
                        " without an assigend task", httpPtr->persistentKey);
-                hPtr = NULL;
             }
+            /*
+             * Delete the entry which is to be reused. This prevents concurrent
+             * double reuse.
+             */
+            Tcl_DeleteHashEntry(hPtr);
+            *waitingHttpPtrPtr = waitingHttpPtr;
 
         }
         Ns_MutexUnlock(&servPtr->httpclient.lock);

@@ -1073,6 +1073,7 @@ struct _NsHttpChunk;
 
 typedef struct {
     Ns_Task           *task;             /* Task handle */
+    Ns_Task           *closeWaitTask;    /* Task handle for handling persisten connections */
     NS_SOCKET          sock;             /* socket to the remote peer */
     int                status;           /* HTTP response status */
     const char        *method;           /* request method */
