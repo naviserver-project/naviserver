@@ -17,12 +17,23 @@
 
 #include "nsd.h"
 
+#ifndef _MSC_VER
+# include <dlfcn.h>
+#endif
+
 /*
  * Static variables defined in this file.
  */
 
 static Ns_ThreadArgProc ThreadArgProc;
+#ifndef _MSC_VER
+typedef void (*MallocExtension_GetStats_t)(char *, int);
+static MallocExtension_GetStats_t MallocExtensionGetStats = NULL;
+static void* preload_library_handle = NULL;
+static const char *preload_library_name = NULL;
+static const char *mallocLibraryVersionString = "unknown";
 
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -495,6 +506,96 @@ Ns_InfoSSL(void)
 /*
  *----------------------------------------------------------------------
  *
+ * NsInitInfo --
+ *
+ *      Initialize the elements of the nsconf structure which may
+ *      require Ns_Log to be initialized first.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsInitInfo(void)
+{
+    Ns_DString addr;
+
+    if (gethostname((char *)nsconf.hostname, sizeof(nsconf.hostname)) != 0) {
+        memcpy(nsconf.hostname, "localhost", 10u);
+    }
+    Ns_DStringInit(&addr);
+    if (Ns_GetAddrByHost(&addr, nsconf.hostname)) {
+        assert(addr.length < (int)sizeof(nsconf.address));
+        memcpy(nsconf.address, addr.string, (size_t)addr.length + 1u);
+    } else {
+        memcpy(nsconf.address, NS_IP_UNSPECIFIED, strlen(NS_IP_UNSPECIFIED));
+    }
+    Ns_DStringFree(&addr);
+
+
+#ifndef _MSC_VER
+    {
+
+        preload_library_name = getenv("LD_PRELOAD");
+
+        if (preload_library_name != NULL) {
+            typedef const char *(*MallocExtension_GetVersion_t)(int *, int *, const char**);
+            static MallocExtension_GetVersion_t MallocExtensionGetVersion = NULL;
+
+            /*
+             * Get a handle to the malloc library to be able to obtain
+             * symbols from there. The library is kept open, it could be
+             * closed during shutdown with "dlclose(preload_library_handle)".
+             */
+            preload_library_handle = dlopen(preload_library_name, RTLD_LAZY);
+            if (preload_library_handle == NULL) {
+                Ns_Log(Warning, "could not open preload library '%s'", preload_library_name);
+            } else {
+                void *symbol;
+
+                symbol = dlsym(preload_library_handle, "MallocExtension_GetStats");
+                memcpy(&MallocExtensionGetStats, &symbol, sizeof(ns_funcptr_t));
+
+                symbol = dlsym(preload_library_handle, "tc_version");
+                memcpy(&MallocExtensionGetVersion, &symbol, sizeof(ns_funcptr_t));
+
+                if (MallocExtensionGetVersion != NULL) {
+                    mallocLibraryVersionString = MallocExtensionGetVersion(NULL, NULL, NULL);
+                }
+
+                Ns_Log(Notice, "preload library '%s' opened, version %s, found stats symbol: %d",
+                       preload_library_name, mallocLibraryVersionString, MallocExtensionGetStats != NULL);
+# if 0
+                {
+                    int i = 0;
+                    const char *symbol, *tab[] =  {
+                        "malloc",
+                        "free",
+                        "MallocExtension_GetStats",
+                        "malloc_stats",
+                        "tc_version",
+                        NULL
+                    };
+                    for (symbol = tab[i]; symbol != NULL; i++, symbol=tab[i]) {
+                        Ns_Log(Notice, "symbol lookup %s -> %p",
+                               symbol, dlsym(preload_library_handle, symbol));
+                    }
+                }
+# endif
+            }
+        }
+    }
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclInfoObjCmd --
  *
  *      Implements "ns_info".
@@ -519,7 +620,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
     static const char *const opts[] = {
         "address", "argv0", "boottime", "builddate", "buildinfo", "callbacks",
         "config", "home", "hostname", "ipv6", "locks", "log",
-        "major", "minor", "mimetypes", "name", "nsd", "pagedir",
+        "major", "meminfo", "minor", "mimetypes", "name", "nsd", "pagedir",
         "pageroot", "patchlevel", "pid", "platform", "pools",
         "scheduled", "server", "servers",
         "sockcallbacks", "ssl", "tag", "tcllib", "threads", "uptime",
@@ -530,7 +631,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
     enum {
         IAddressIdx, IArgv0Idx, IBoottimeIdx, IBuilddateIdx, IBuildinfoIdx, ICallbacksIdx,
         IConfigIdx, IHomeIdx, IHostNameIdx, IIpv6Idx, ILocksIdx, ILogIdx,
-        IMajorIdx, IMinorIdx, IMimeIdx, INameIdx, INsdIdx,
+        IMajorIdx, IMeminfoIdx, IMinorIdx, IMimeIdx, INameIdx, INsdIdx,
         IPageDirIdx, IPageRootIdx, IPatchLevelIdx,
         IPidIdx, IPlatformIdx, IPoolsIdx,
         IScheduledIdx, IServerIdx, IServersIdx,
@@ -755,6 +856,30 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
             Tcl_DStringFree(&ds);
             break;
         }
+
+    case IMeminfoIdx: {
+        Tcl_Obj    *resultObj = Tcl_NewDictObj();
+#ifndef _MSC_VER
+        char        memStatsBuffer[10000] = {0};
+
+        if (preload_library_name != NULL && preload_library_handle != NULL) {
+            if (MallocExtensionGetStats != NULL) {
+                MallocExtensionGetStats(memStatsBuffer, sizeof(memStatsBuffer));
+            }
+        }
+        Tcl_DictObjPut(NULL, resultObj,
+                       Tcl_NewStringObj("preload", 7),
+                       Tcl_NewStringObj(preload_library_name != NULL ? preload_library_name : "", TCL_INDEX_NONE));
+        Tcl_DictObjPut(NULL, resultObj,
+                       Tcl_NewStringObj("version", 7),
+                       Tcl_NewStringObj(mallocLibraryVersionString, TCL_INDEX_NONE));
+        Tcl_DictObjPut(NULL, resultObj,
+                       Tcl_NewStringObj("stats", 5),
+                       Tcl_NewStringObj(memStatsBuffer, TCL_INDEX_NONE));
+#endif
+        Tcl_SetObjResult(interp, resultObj);
+        break;
+    }
 
     default:
         /* cases handled below */

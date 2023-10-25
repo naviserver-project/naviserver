@@ -76,42 +76,6 @@ NsInitConf(void)
 /*
  *----------------------------------------------------------------------
  *
- * NsInitInfo --
- *
- *      Initialize the elements of the nsconf structure which may
- *      require Ns_Log to be initialized first.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-NsInitInfo(void)
-{
-    Ns_DString addr;
-
-    if (gethostname((char *)nsconf.hostname, sizeof(nsconf.hostname)) != 0) {
-        memcpy(nsconf.hostname, "localhost", 10u);
-    }
-    Ns_DStringInit(&addr);
-    if (Ns_GetAddrByHost(&addr, nsconf.hostname)) {
-        assert(addr.length < (int)sizeof(nsconf.address));
-        memcpy(nsconf.address, addr.string, (size_t)addr.length + 1u);
-    } else {
-        memcpy(nsconf.address, NS_IP_UNSPECIFIED, strlen(NS_IP_UNSPECIFIED));
-    }
-    Ns_DStringFree(&addr);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * NsConfUpdate --
  *
  *      Update various elements of the nsconf structure now that
