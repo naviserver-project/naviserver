@@ -1,3 +1,4 @@
+
 # -*- Tcl -*-
 
 package require tcltest 2.2
@@ -8,8 +9,8 @@ test ns_set-1.1 {basic syntax ns_set} -body {
 } -returnCodes error -result {wrong # args: should be "ns_set option ?arg ...?"}
 
 test ns_set-1.2 {basic syntax ns_set} -body {
-    ns_set 123
-} -returnCodes error -result {bad option "123": must be array, cleanup, copy, cput, create, delete, delkey, find, free, get, icput, idelkey, ifind, iget, imerge, isnull, iunique, iupdate, key, keys, list, merge, move, name, new, print, put, size, split, truncate, unique, update, value, or values}
+    ns_set ""
+} -returnCodes error -result {ambiguous option "": must be array, cleanup, copy, cput, create, delete, delkey, find, free, get, icput, idelkey, ifind, iget, imerge, isnull, iunique, iupdate, key, keys, list, merge, move, name, new, print, put, size, split, stats, truncate, unique, update, value, or values}
 
 test ns_set-1.6 {basic syntax ns_set array} -body {
     ns_set array
