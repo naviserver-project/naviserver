@@ -527,6 +527,7 @@ typedef int ns_sockerrno_t;
 # define ns_read                    read
 # define ns_write                   write
 # define ns_lseek                   lseek
+# define ns_getline                 getline
 
 #ifdef HAVE_MEMMEM
 # define ns_memmem                  memmem

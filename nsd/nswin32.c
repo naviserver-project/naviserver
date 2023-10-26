@@ -1349,8 +1349,120 @@ ns_send(NS_SOCKET socket, const void *buffer, size_t length, int flags)
     return send(socket, buffer, (int)length, flags);
 }
 
+
+// MSVC specific implementation
+static void fseterr(FILE *fp)
+{
+    struct file { // Undocumented implementation detail
+        unsigned char *_ptr;
+        unsigned char *_base;
+        int _cnt;
+        int _flag;
+        int _file;
+        int _charbuf;
+        int _bufsiz;
+    };
+    #define _IOERR 0x10
+
+    ((struct file *)fp)->_flag |= _IOERR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ns_getline --
+ *
+ *      Basic implementation of the POSIX function getline for windows.
+ *
+ * Results:
+ *      For details, see getline man pages.
+ *
+ * Side effects:
+ *      Potentially allocating / reallocating memory.
+ *
+ *----------------------------------------------------------------------
+ */
+ssize_t
+ns_getline(char **lineptr, size_t *n, FILE *stream)
+{
+    ssize_t nread = 0;
+    int c = EOF;
+
+    /*
+     * Check input parameters
+     */
+    if (lineptr == NULL || n == NULL || stream == NULL || (*lineptr == NULL && *n != 0)) {
+        errno = EINVAL;
+        return -1;
+    }
+    /*
+     * Return -1, when we are at EOF or in an error state of the stream.
+     */
+    if (feof(stream) || ferror(stream)) {
+        return -1;
+    }
+
+    /*
+     * If there is no buffer provided, allocate one via malloc()
+     */
+    if (*lineptr == NULL) {
+        *n = 256;
+        *lineptr = malloc(*n);
+        if (*lineptr == NULL) {
+            fseterr(stream);
+            errno = ENOMEM;
+            return -1;
+        }
+    }
+    /*
+     * Read char by char until we reach a newline. We could do
+     * performance-wise better than this, but this is straightforward for EOF
+     * handling, and eay to understand.
+     */
+    while (c != '\n') {
+        c = fgetc(stream);
+        if (c == EOF) {
+            break;
+        }
+
+        /*
+         * In case, the buffer was filled up, double it via realloc().
+         */
+        if (nread >= (ssize_t)(*n - 1)) {
+            size_t newn = *n * 2;
+            char  *newptr = realloc(*lineptr, newn);
+
+            if (newptr == NULL) {
+                /*
+                 * When realloc() failed, give up.
+                 */
+                fseterr(stream);
+                errno = ENOMEM;
+                return -1;
+            }
+            *lineptr = newptr;
+            *n = newn;
+        }
+        (*lineptr)[nread++] = (char)c;
+    }
+    /*
+     * When we reach EOF or we could not read anything, return -1.
+     */
+    if (c == EOF && nread == 0) {
+        return -1;
+    }
+    /*
+     * Terminate the returned string with a NUL character.
+     */
+    (*lineptr)[nread] = 0;
+
+    return nread;
+}
+
 #else
-/* avoid empty translation unit */
+/*
+ * Avoid empty translation unit
+ */
    typedef void empty;
 #endif
 
