@@ -78,7 +78,14 @@ Nsd_LibInit(void)
         NsInitUrl2File();
         NsInitHttptime();
         NsInitDNS();
+#ifndef _WIN32
+        /*
+         * NsInitRandom() creates a thread. For whatever reason, this does not
+         * work when called so early under windows. So, the initialization
+         * happens in Ns_DRand();
+         */
         NsInitRandom();
+#endif
     }
     //fprintf(stderr, "==== Nsd_LibInit %d  ================================ DONE\n", initialized);
 }

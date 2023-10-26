@@ -117,10 +117,11 @@ NsTclRandObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T ob
 double
 Ns_DRand(void)
 {
-
     if (!initialized) {
+#ifndef _WIN32
         fprintf(stderr, "Ns_DRand: called before initialization. "
                 "This should not happen, call NsInitRandom() before this call\n");
+#endif
         NsInitRandom();
     }
 #if defined(HAVE_ARC4RANDOM)
