@@ -450,7 +450,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
             * we need to re-init the notifier after the fork.
             * Failing to do so will make Tcl_ThreadAlert (et.al.)
             * unusable since the notifier subsystem may not be
-            * initialized. The problematic behavior may be exibited
+            * initialized. The problematic behavior may be exhibited
             * for any loadable module that creates threads using the
             * Tcl API but never calls directly into Tcl_CreateInterp
             * that handles the notifier initialization indirectly.

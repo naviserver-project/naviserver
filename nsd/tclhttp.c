@@ -5757,11 +5757,11 @@ PersistentConnectionLookup(NsHttpTask *httpPtr, NsHttpTask **waitingHttpPtrPtr)
                 Ns_TaskCancel(waitingHttpPtr->closeWaitTask);
                 waitingHttpPtr->closeWaitTask = NULL;
                 /*Ns_Log(Notice, "persistent key %s has already a waiting structure"
-                  " with an assigend task (forced cancel)", httpPtr->persistentKey);*/
+                  " with an assigned task (forced cancel)", httpPtr->persistentKey);*/
             } else {
                 /* TODO: should be removed before the release */
                 Ns_Log(Notice, "========================= persistent key %s has a waiting structure"
-                       " without an assigend task", httpPtr->persistentKey);
+                       " without an assigned task", httpPtr->persistentKey);
             }
             /*
              * Delete the entry which is to be reused. This prevents concurrent
