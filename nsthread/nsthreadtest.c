@@ -437,8 +437,10 @@ int main(int argc, char *argv[])
     Ns_RWLockSetName2(&rwlock, "rwlock", NULL);
     Ns_CsInit(&cs);
     Ns_CondInit(&cond);
-    Ns_CondInit(&pcond);
     Ns_CondInit(&dcond);
+#if PTHREAD_TEST
+    Ns_CondInit(&pcond);
+#endif
 
     Ns_ThreadStackSize(81920);
     Ns_SemaInit(&sema, 3);
