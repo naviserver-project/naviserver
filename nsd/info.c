@@ -28,7 +28,9 @@
 static Ns_ThreadArgProc ThreadArgProc;
 #ifndef _MSC_VER
 typedef void (*MallocExtension_GetStats_t)(char *, int);
+typedef void (*MallocExtension_ReleaseFreeMemory_t)(void);
 static MallocExtension_GetStats_t MallocExtensionGetStats = NULL;
+static MallocExtension_ReleaseFreeMemory_t MallocExtensionReleaseFreeMemory = NULL;
 static void* preload_library_handle = NULL;
 static const char *preload_library_name = NULL;
 static const char *mallocLibraryVersionString = "unknown";
@@ -564,6 +566,9 @@ NsInitInfo(void)
                 symbol = dlsym(preload_library_handle, "tc_version");
                 memcpy(&MallocExtensionGetVersion, &symbol, sizeof(ns_funcptr_t));
 
+                symbol = dlsym(preload_library_handle, "MallocExtension_ReleaseFreeMemory");
+                memcpy(&MallocExtensionReleaseFreeMemory, &symbol, sizeof(ns_funcptr_t));
+
                 if (MallocExtensionGetVersion != NULL) {
                     mallocLibraryVersionString = MallocExtensionGetVersion(NULL, NULL, NULL);
                 }
@@ -573,17 +578,18 @@ NsInitInfo(void)
 # if 0
                 {
                     int i = 0;
-                    const char *symbol, *tab[] =  {
+                    const char *symbolName, *tab[] =  {
                         "malloc",
                         "free",
                         "MallocExtension_GetStats",
+                        "MallocExtension_ReleaseFreeMemory",
                         "malloc_stats",
                         "tc_version",
                         NULL
                     };
-                    for (symbol = tab[i]; symbol != NULL; i++, symbol=tab[i]) {
+                    for (symbolName = tab[0]; symbolName != NULL; symbolName=tab[++i]) {
                         Ns_Log(Notice, "symbol lookup %s -> %p",
-                               symbol, dlsym(preload_library_handle, symbol));
+                               symbolName, dlsym(preload_library_handle, symbolName));
                     }
                 }
 # endif
@@ -640,12 +646,16 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
         IUrl2FileIdx, IShutdownPendingIdx, IStartedIdx
     };
 
-    if (unlikely(objc != 2)) {
+    if (unlikely(objc < 2)) {
         Tcl_WrongNumArgs(interp, 1, objv, "option");
         return TCL_ERROR;
-    }
-    if (unlikely(Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
+    } else if (unlikely(Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
                                      &opt) != TCL_OK)) {
+        return TCL_ERROR;
+    }
+    if ((opt != IMeminfoIdx && objc != 2)
+        || (opt == IMeminfoIdx && (objc < 2 || objc > 3))) {
+        Tcl_WrongNumArgs(interp, 1, objv, "option");
         return TCL_ERROR;
     }
 
@@ -860,9 +870,23 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
     case IMeminfoIdx: {
         Tcl_Obj    *resultObj = Tcl_NewDictObj();
 #ifndef _MSC_VER
-        char        memStatsBuffer[10000] = {0};
+        char        memStatsBuffer[20000] = {0};
+        int         release = 0;
+        Ns_ObjvSpec flags[] = {
+            {"-release", Ns_ObjvBool, &release,  INT2PTR(NS_TRUE)},
+            {NULL,       NULL,        NULL,      NULL}
+        };
+
+        if (Ns_ParseObjv(flags, NULL, interp, 2, objc, objv) != NS_OK) {
+            Tcl_DecrRefCount(resultObj);
+            return TCL_ERROR;
+        }
 
         if (preload_library_name != NULL && preload_library_handle != NULL) {
+            if (MallocExtensionReleaseFreeMemory != NULL && release != 0) {
+                Ns_Log(Notice, "MallocExtension_ReleaseFreeMemory");
+                MallocExtensionReleaseFreeMemory();
+            }
             if (MallocExtensionGetStats != NULL) {
                 MallocExtensionGetStats(memStatsBuffer, sizeof(memStatsBuffer));
             }
