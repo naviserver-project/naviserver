@@ -153,7 +153,7 @@ Ns_RegisterUrl2FileProc(const char *server, const char *url,
                         unsigned int flags)
 {
     NsServer *servPtr = NsGetServer(server);
-    Ns_Log(Warning, "Ns_RegisterUrl2FileProc CALLED for url '%s'", url);
+    /*Ns_Log(Warning, "Ns_RegisterUrl2FileProc CALLED for url '%s'", url);*/
 
     if (servPtr != NULL) {
         Url2File *u2fPtr;
