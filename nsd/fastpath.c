@@ -579,7 +579,7 @@ CompressExternalFile(Tcl_Interp *interp, const char *cmdName, const char *fileNa
  * CheckStaticCompressedDelivery --
  *
  *      Check, if there is a static compressed file available for
- *      delivery. When it is there but outdated, try to referesh it,
+ *      delivery. When it is there but outdated, try to refresh it,
  *      when this is allowed be the configuration.
  *
  * Results:
