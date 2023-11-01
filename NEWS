@@ -1,4 +1,53 @@
 =======================================
+NaviServer 4.99.29, released 2023-11-01
+=======================================
+
+ 34 files changed, 256 insertions(+), 127 deletions(-)
+
+New Features:
+-------------
+ - Eased configuration of simple setups
+   * don't require to specify a "defaultserver" when a single
+     server is in use.
+
+   * reduce warnings for per-server network drivers. This is a not
+     recommended but possible configuration, global network drivers
+     should be used.
+
+ - The configuration option "rejectalreadyclosedconn", which warns
+   about attempts to send data to the web client at times, when the
+   connection is not available anymore, is now applied on closed and
+   detached connections. Before it was only applied on closed
+   connections, causing potentially many warnings for legacy
+   applications.
+
+Bug Fixes:
+----------
+
+  - Fixed a potential memory leak introduced two releases ago (in
+    4.99.27).
+
+  - Fixed a potential compilation problem with glibc 2.38 or newer
+    (released 31 Jul 2023)
+
+  - Fixed reloading of certificates for mass virtual hosting
+
+Code Maintenance:
+-----------------
+
+  - fixed typos
+  - fixed enum/int conversion flagged by gcc13
+
+
+Modules:
+--------
+The following list contains the most important changes:
+
+ - module nsdbpg:
+   fixed memory leak (see above).
+
+
+=======================================
 NaviServer 4.99.28, released 2023-09-06
 =======================================
 
