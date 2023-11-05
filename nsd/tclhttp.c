@@ -36,6 +36,31 @@
 #define CHUNK_SIZE 16384
 
 /*
+ * Defnition of close-waiting infrastructure
+ */
+typedef enum {
+    CW_FREE,
+    CW_WAITING,
+    CW_INUSE
+} CloseWaitingState;
+
+typedef struct {
+    Ns_Time            expire;
+    size_t             pos;
+    NS_TLS_SSL_CTX    *ctx;              /* SSL context handle */
+    NS_TLS_SSL        *ssl;              /* SSL connection handle */
+    const char        *host;
+    NS_SOCKET          sock;             /* socket to the remote peer */
+    CloseWaitingState  state;
+    unsigned short     port;
+} CloseWaitingData;
+
+
+static Ns_Mutex closeWaitingMutex = NULL;  // TODO: maybe an rwlock
+static Ns_DList closeWaitingList;
+static Ns_SchedProc CloseWaitingCheckExpire;
+
+/*
  * String equivalents of some methods, header keys
  */
 static const char *transferEncodingHeader = "Transfer-Encoding";
@@ -63,10 +88,22 @@ static const char *errorCodeTimeoutString = "NS_TIMEOUT";
 static uint64_t httpClientRequestCount = 0u; /* MT: static variable! */
 static Ns_TaskQueue *taskQueue = NULL; /* MT: static variable! */
 
+#ifdef MEM_RECORD_DEBUG
+/*
+ * For mem/task debugging
+ */
+static Ns_Mutex ckMutex = NULL;
+static Tcl_HashTable ckPointerTable;
+static Tcl_HashTable ckPointerDeletionTable;
+#endif
+
 /*
  * Local functions defined in this file
  */
-static bool InitializeTaskQueue(void);
+static bool InitOnceHttp(void);
+
+static void CloseWaitingDataClean(CloseWaitingData *cwDataPtr)
+    NS_GNUC_NONNULL(1);
 
 static int HttpQueue(
     NsInterp *itPtr,
@@ -109,7 +146,8 @@ static void HttpClose(
 ) NS_GNUC_NONNULL(1);
 
 static void HttpCleanupPerRequestData(
-    NsHttpTask *httpPtr
+    NsHttpTask *httpPtr,
+    const char *context
 )  NS_GNUC_NONNULL(1);
 
 static void HttpCancel(
@@ -217,15 +255,29 @@ static NS_SOCKET HttpTunnel(
 ) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 
-static bool PersistentConnectionLookup(NsHttpTask *httpPtr, NsHttpTask **waitingHttpPtrPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static bool PersistentConnectionLookup(const char *remoteHost, unsigned short remotePort,
+                                       CloseWaitingData *cwDataPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 static bool PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
-    NS_GNUC_NONNULL(1);
-static bool PersistentConnectionDelete(NsHttpTask *httpPtr)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 
 static void LogDebug(const char *before, NsHttpTask *httpPtr, const char *after)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+#ifdef MEM_RECORD_DEBUG
+static void CkAlloc(const void *ptr, const char *label)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static void CkFree(const void *ptr, const char *message)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+static const char *CkCheck(const void *ptr)
+    NS_GNUC_NONNULL(1);
+#else
+# define CkAlloc(arg1,arg2)
+# define CkFree(arg1,arg2)
+# define CkCheck(arg1) ("")
+#endif
+
 
 static Ns_LogCallbackProc HttpClientLogOpen;
 static Ns_LogCallbackProc HttpClientLogClose;
@@ -234,7 +286,6 @@ static Ns_SchedProc       SchedLogRollCallback;
 static Ns_ArgProc         SchedLogArg;
 
 static Ns_TaskProc HttpProc;
-static Ns_TaskProc CloseWaitProc;
 
 /*
  * Function implementing the Tcl interface.
@@ -242,19 +293,22 @@ static Ns_TaskProc CloseWaitProc;
 static TCL_OBJCMDPROC_T HttpCancelObjCmd;
 static TCL_OBJCMDPROC_T HttpCleanupObjCmd;
 static TCL_OBJCMDPROC_T HttpListObjCmd;
-static TCL_OBJCMDPROC_T HttpStatsObjCmd;
+#ifdef MEM_RECORD_DEBUG
+static TCL_OBJCMDPROC_T HttpMeminfoObjCmd;
+#endif
 static TCL_OBJCMDPROC_T HttpQueueObjCmd;
 static TCL_OBJCMDPROC_T HttpRunObjCmd;
+static TCL_OBJCMDPROC_T HttpStatsObjCmd;
 static TCL_OBJCMDPROC_T HttpWaitObjCmd;
 
-static NsHttpParseProc ParseCRProc;
-static NsHttpParseProc ParseLFProc;
-static NsHttpParseProc ParseLengthProc;
 static NsHttpParseProc ChunkInitProc;
 static NsHttpParseProc ParseBodyProc;
-static NsHttpParseProc TrailerInitProc;
-static NsHttpParseProc ParseTrailerProc;
+static NsHttpParseProc ParseCRProc;
 static NsHttpParseProc ParseEndProc;
+static NsHttpParseProc ParseLFProc;
+static NsHttpParseProc ParseLengthProc;
+static NsHttpParseProc ParseTrailerProc;
+static NsHttpParseProc TrailerInitProc;
 
 static char* SkipDigits(char *chars) NS_GNUC_NONNULL(1);
 static char *DStringAppendHttpFlags(Tcl_DString *dsPtr, unsigned int flags) NS_GNUC_NONNULL(1);
@@ -416,9 +470,7 @@ NsInitHttp(NsServer *servPtr)
     Ns_MutexInit(&servPtr->httpclient.lock);
     Ns_MutexSetName2(&servPtr->httpclient.lock, "httpclient", servPtr->server);
 
-    Tcl_InitHashTable(&servPtr->httpclient.pconns, TCL_STRING_KEYS);
-
-    NS_INIT_ONCE(InitializeTaskQueue);
+    NS_INIT_ONCE(InitOnceHttp);
 
     path = Ns_ConfigSectionPath(NULL, servPtr->server, NULL, "httpclient", (char *)0L);
     Ns_ConfigTimeUnitRange(path, "keepalive",
@@ -1139,6 +1191,9 @@ NsTclHttpObjCmd(
         {"cancel",   HttpCancelObjCmd},
         {"cleanup",  HttpCleanupObjCmd},
         {"list",     HttpListObjCmd},
+#ifdef MEM_RECORD_DEBUG
+        {"meminfo",  HttpMeminfoObjCmd},
+#endif
         {"queue",    HttpQueueObjCmd},
         {"run",      HttpRunObjCmd},
         {"stats",    HttpStatsObjCmd},
@@ -1665,6 +1720,47 @@ HttpListObjCmd(
     return result;
 }
 
+#ifdef MEM_RECORD_DEBUG
+static int
+HttpMeminfoObjCmd(
+    ClientData  UNUSED(clientData),
+    Tcl_Interp *interp,
+    TCL_OBJC_T         UNUSED(objc),
+    Tcl_Obj    *const* UNUSED(objv)
+) {
+    int            result = TCL_OK;
+    Tcl_Obj       *resultObj;
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+    Tcl_DString    ds;
+
+    resultObj = Tcl_NewListObj(0, NULL);
+    Tcl_DStringInit(&ds);
+
+    Ns_MutexLock(&ckMutex);
+
+    for (hPtr = Tcl_FirstHashEntry(&ckPointerTable, &search);
+         hPtr != NULL;
+         hPtr = Tcl_NextHashEntry(&search) ) {
+        void       *ptr   = Tcl_GetHashKey(&ckPointerTable, hPtr);
+        const char *label = Tcl_GetHashValue(hPtr);
+
+        //Ns_Log(Notice, "CkMeminfo: ptr %p label %s", ptr, label);
+        Ns_DStringPrintf(&ds, "%p %s", ptr, label);
+
+        Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(ds.string, ds.length));
+        Tcl_DStringSetLength(&ds,0);
+    }
+
+    Ns_MutexUnlock(&ckMutex);
+
+    Tcl_SetObjResult(interp, resultObj);
+    Tcl_DStringFree(&ds);
+
+    return result;
+}
+#endif
+
 
 /*
  *----------------------------------------------------------------------
@@ -1818,26 +1914,69 @@ HttpStatsObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * InitializeTaskQueue --
+ * InitOnceHttp --
  *
- *      Make sure that we have a task queue defined.
+ *      Make sure that we have a task queue defined, the mutexes initialized,
+ *      the close-waiting list and the janitor task defined.
  *
  * Results:
- *      Standard Tcl result.
+ *      NS_TRUE.
  *
  * Side effects:
- *      May queue an HTTP request.
+ *      Initializing the module.
  *
  *----------------------------------------------------------------------
  */
+static bool InitOnceHttp(void) {
+    Ns_Time interval;
 
-static bool InitializeTaskQueue(void) {
+    interval.sec = 1;
+    interval.usec = 0;
 
-    //fprintf(stderr, "============== TaskQueueRequire %p ==============\n", (void*)taskQueue);
+    //fprintf(stderr, "============== InitOnceHttp %p ==============\n", (void*)taskQueue);
     taskQueue = Ns_CreateTaskQueue("tclhttp");
+
+    Ns_DListInit(&closeWaitingList);
+    Ns_MutexInit(&closeWaitingMutex);
+    Ns_MutexSetName2(&closeWaitingMutex, "ns:closewaiting", NULL);
+
+    (void) Ns_ScheduleProcEx(CloseWaitingCheckExpire, NULL /*poolPtr*/, 0, &interval, NULL);
+
+#ifdef MEM_RECORD_DEBUG
+    Ns_MutexInit(&ckMutex);
+    Tcl_InitHashTable(&ckPointerTable, TCL_ONE_WORD_KEYS);
+    Tcl_InitHashTable(&ckPointerDeletionTable, TCL_ONE_WORD_KEYS);
+#endif
 
     return NS_TRUE;
 }
+
+static void
+CloseWaitingCheckExpire(void *UNUSED(arg), int UNUSED(id)) {
+    size_t  i;
+    Ns_Time now;
+
+    Ns_GetTime(&now);
+
+    Ns_MutexLock(&closeWaitingMutex);
+    for (i = 0; i < closeWaitingList.size; i ++) {
+        CloseWaitingData *currentCwDataPtr = closeWaitingList.data[i];
+        long              diff;
+
+        if (currentCwDataPtr->state == CW_FREE) {
+            continue;
+        }
+        diff = Ns_DiffTime(&now, &currentCwDataPtr->expire, NULL);
+        if (diff > -1) {
+            Ns_Log(Notice, "CloseWaitingCheckExpire closes sock %d host %s:%hu in state %d",
+                   currentCwDataPtr->sock, currentCwDataPtr->host, currentCwDataPtr->port,
+            currentCwDataPtr->state);
+            CloseWaitingDataClean(currentCwDataPtr);
+        }
+    }
+    Ns_MutexUnlock(&closeWaitingMutex);
+}
+
 
 
 /*
@@ -2054,6 +2193,7 @@ HttpQueue(
         httpPtr->servPtr = itPtr->servPtr;
 
         httpPtr->task = Ns_TaskTimedCreate(httpPtr->sock, HttpProc, httpPtr, expirePtr);
+        CkAlloc((void *)httpPtr->task, "task (queue)");
 
         if (run == NS_TRUE) {
 
@@ -2918,6 +3058,8 @@ HttpConnect(
      * if something goes wrong, we must HttpClose().
      */
     httpPtr = ns_calloc(1u, sizeof(NsHttpTask));
+    CkAlloc((void *)httpPtr, "NsHttpTask");
+
     httpPtr->chunk = ns_calloc(1u, sizeof(NsHttpChunk));
     httpPtr->bodyFileFd = NS_INVALID_FD;
     httpPtr->spoolFd = NS_INVALID_FD;
@@ -3156,20 +3298,21 @@ HttpConnect(
                 goto fail;
             }
         } else {
-            char          *rhost = u.host;
-            unsigned short rport = portNr;
-            Tcl_DString    persistentKeyDs;
-            bool           lookupSuccessful;
-            NsHttpTask    *waitingHttpPtr = NULL;
+            char            *rhost = u.host;
+            unsigned short   rport = portNr;
+            //Tcl_DString    persistentKeyDs;
+            bool             reuseConnection;
+            //NsHttpTask      *waitingHttpPtr = NULL;
+            CloseWaitingData cwData;
 
             if (httpProxy == NS_TRUE) {
                 rhost = pHost;
                 rport = pPortNr;
             }
 
-            Tcl_DStringInit(&persistentKeyDs);
-            Ns_DStringPrintf(&persistentKeyDs, "%s:%hu", rhost, rport);
-            httpPtr->persistentKey = Ns_DStringExport(&persistentKeyDs);
+            //Tcl_DStringInit(&persistentKeyDs);
+            //Ns_DStringPrintf(&persistentKeyDs, "%s:%hu", rhost, rport);
+            //httpPtr->persistentKey = Ns_DStringExport(&persistentKeyDs);
 
             if (strcasecmp(httpPtr->method, "HEAD") == 0) {
                 /*
@@ -3178,30 +3321,31 @@ HttpConnect(
                 httpPtr->flags |= NS_HTTP_FLAG_EMPTY;
             }
 
-            lookupSuccessful = PersistentConnectionLookup(httpPtr, &waitingHttpPtr);
-            Ns_Log(Ns_LogTaskDebug, "PersistentConnectionLookup persistent key <%s> -> %d",
-                   httpPtr->persistentKey, lookupSuccessful);
+            httpPtr->host = ns_strdup(rhost);
+            httpPtr->port = rport;
+            reuseConnection = PersistentConnectionLookup(rhost, rport, &cwData);
 
-            if (lookupSuccessful) {
+            if (reuseConnection) {
                 /*
-                 * We can reuse the connection data.
+                 * We can reuse the connection data. Add one to pos, such that
+                 * pos == 0 indicates that no data was reused. We need
+                 * invalidation of the cached entry for HttpCancel()
+                 * operations.
                  */
-                httpPtr->sock = waitingHttpPtr->sock;
-                httpPtr->ctx = waitingHttpPtr->ctx;
-                httpPtr->ssl = waitingHttpPtr->ssl;
-                Ns_Log(Ns_LogTaskDebug, "PersistentConnectionLookup REUSE sock %d ctx %p ssl %p",
-                       httpPtr->sock, (void*) httpPtr->ctx, (void*) httpPtr->ssl);
-                /*
-                 * Invalidate reused members in waitingHttpPtr.
-                 */
-                waitingHttpPtr->sock = NS_INVALID_SOCKET;
-                waitingHttpPtr->ctx = NULL;
-                waitingHttpPtr->ssl = NULL;
+                httpPtr->sock = cwData.sock;
+                httpPtr->ctx = cwData.ctx;
+                httpPtr->ssl = cwData.ssl;
+                httpPtr->pos = cwData.pos + 1;
+                /*Ns_Log(Notice, "HttpConnect: PersistentConnectionLookup REUSE sock %d ctx %p ssl %p",
+                  httpPtr->sock, (void*) httpPtr->ctx, (void*) httpPtr->ssl);*/
+
             } else {
                 /*
-                 * Setup fresh connection data.
+                 * PersistentConnectionLookup failed, setup fresh connection.
                  */
                 httpPtr->sock = Ns_SockTimedConnect2(rhost, rport, NULL, 0, toPtr, &rc);
+                /*Ns_Log(Notice, "HttpConnect: reuse failed, Ns_SockTimedConnect2 opened sock %d", httpPtr->sock);*/
+
                 if (httpPtr->sock == NS_INVALID_SOCKET) {
                     Ns_SockConnectError(interp, rhost, rport, rc);
                     if (rc == NS_TIMEOUT) {
@@ -3896,83 +4040,6 @@ HttpAppendChunked(
     return result;
 }
 
-
-/*
- *----------------------------------------------------------------------
- *
- * CloseWaitProc --
- *
- *        Task Proc for connection-close handling.
- *
- * Results:
- *        None
- *
- * Side effects:
- *        DONE handler calls Ns_TaskFree()
- *
- *----------------------------------------------------------------------
- */
-static void
-CloseWaitProc(
-    Ns_Task *task,
-    NS_SOCKET UNUSED(sock),
-    void *arg,
-    Ns_SockState why
-) {
-    NsHttpTask  *httpPtr;
-
-    NS_NONNULL_ASSERT(task != NULL);
-    NS_NONNULL_ASSERT(arg != NULL);
-
-    httpPtr = (NsHttpTask *)arg;
-
-    switch (why) {
-    case NS_SOCK_INIT: {
-        Ns_Log(Ns_LogTaskDebug, "CloseWaitProc: INIT %p, key <%s> flags %.6x",
-               (void*)task, httpPtr->persistentKey, httpPtr->flags);
-        break;
-    }
-
-    case NS_SOCK_TIMEOUT: {
-        Ns_Log(Ns_LogTaskDebug, "CloseWaitProc: TIMEOUT %p, key <%s> flags %.6x",
-               (void*)task, httpPtr->persistentKey, httpPtr->flags);
-
-        httpPtr->flags &= ~NS_HTTP_KEEPALIVE;
-        HttpClose(httpPtr);
-        break;
-    }
-
-    case NS_SOCK_CANCEL: {
-        Ns_Log(Ns_LogTaskDebug, "CloseWaitProc: CANCEL %p, key <%s> flags %.6x",
-               (void*)task, httpPtr->persistentKey, httpPtr->flags);
-        httpPtr->flags &= ~NS_HTTP_KEEPALIVE;
-        /*
-         * CANCEL will be followed by DONE.
-         */
-        break;
-    }
-
-    case NS_SOCK_DONE: {
-        Ns_Log(Ns_LogTaskDebug, "CloseWaitProc: DONE %p, key <%s> flags %.6x",
-               (void*)task, httpPtr->persistentKey, httpPtr->flags);
-        httpPtr->flags &= ~NS_HTTP_KEEPALIVE;
-        Ns_Log(Ns_LogTaskDebug, "TaskFree %p in CloseWaitProc DONE", (void*)task);
-        (void) Ns_TaskFree(task);
-        break;
-    }
-    case NS_SOCK_READ:      NS_FALL_THROUGH; /* fall through */
-    case NS_SOCK_EXIT:      NS_FALL_THROUGH; /* fall through */
-    case NS_SOCK_NONE:      NS_FALL_THROUGH; /* fall through */
-    case NS_SOCK_WRITE:     NS_FALL_THROUGH; /* fall through */
-    case NS_SOCK_EXCEPTION: NS_FALL_THROUGH; /* fall through */
-    case NS_SOCK_AGAIN:
-    Ns_Log(Warning, "CloseWaitProc: unexpected condition %04x httpPtr->task:%p closeWait:%p"
-           " task:%p key <%s> flags %.6x",
-           why, (void*)httpPtr->task, (void*)httpPtr->closeWaitTask, (void*)task,
-           httpPtr->persistentKey, httpPtr->flags);
-    break;
-    }
-}
 
 /*
  *----------------------------------------------------------------------
@@ -3992,10 +4059,14 @@ CloseWaitProc(
  */
 static void
 HttpCleanupPerRequestData(
-    NsHttpTask *httpPtr
+    NsHttpTask *httpPtr,
+    const char *context
 ) {
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
+
+    Ns_Log(Ns_LogTaskDebug, "HttpCleanupPerRequestData httpPtr %p (%s) task %p host %s",
+           (void*)httpPtr, context, (void*)httpPtr->task, httpPtr->host);
 
     if (httpPtr->spoolFileName != NULL) {
         ns_free((void *)httpPtr->spoolFileName);
@@ -4052,6 +4123,7 @@ HttpCleanupPerRequestData(
         ns_free((void *)httpPtr->chunk);
         httpPtr->chunk = NULL;
     }
+    /*Ns_Log(Notice, "... HttpCleanupPerRequestData %s %p DONE", httpPtr->persistentKey, (void*)httpPtr);*/
 }
 
 /*
@@ -4075,9 +4147,10 @@ HttpClose(
 ) {
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
-    Ns_Log(Ns_LogTaskDebug, "HttpClose: http:%p, task:%p closeWait:%p sock %d",
-           (void*)httpPtr, (void*)httpPtr->task, (void*)httpPtr->closeWaitTask,
-           httpPtr->sock);
+    assert(CkCheck(httpPtr) != NULL);
+
+    Ns_Log(Ns_LogTaskDebug, "HttpClose: http:%p task:%p host %s sock %d",
+           (void*)httpPtr, (void*)httpPtr->task, httpPtr->host, httpPtr->sock);
 
     /*
      * When HttpConnect runs into a failure, it might not have httpPtr->task
@@ -4088,49 +4161,47 @@ HttpClose(
       httpPtr->bodyFileFd,  httpPtr->spoolFd);*/
 
     if (httpPtr->task != NULL) {
+        Ns_Log(Ns_LogTaskDebug, "=== close %p, Ns_TaskFree main task %p",
+               (void*)httpPtr, (void*)httpPtr->task);
+
+        (void) Ns_TaskFree(httpPtr->task);
+        CkFree(httpPtr->task, "HttpClose (with task)");
+        httpPtr->task = NULL;
 
         if (httpPtr->sock != NS_INVALID_SOCKET
             && (httpPtr->flags & NS_HTTP_KEEPALIVE) != 0u
            ) {
             const char *reason;
 
-            if (PersistentConnectionAdd(httpPtr, &reason)) {
-                httpPtr->closeWaitTask = Ns_TaskTimedCreate(httpPtr->sock, CloseWaitProc, httpPtr,
-                                                            &httpPtr->keepAliveTimeout);
-                LogDebug("HttpClose", httpPtr, "keepalive");
-
-                assert(taskQueue != NULL);
-
-                if (Ns_TaskEnqueue(httpPtr->closeWaitTask, taskQueue) != NS_OK) {
-                    Ns_Log(Error, "Could not enqueue CloseWait task");
-                }
-
-                Ns_Log(Ns_LogTaskDebug, "Added persistent connection entry <%s> for %p",
-                       httpPtr->persistentKey, (void*)httpPtr);
-            } else {
-                Ns_Log(Warning, "Could not add persistent connection (reason %s, key %s, closeWait %d)",
-                       reason, httpPtr->persistentKey, (httpPtr->persistentKey != NULL));
+            if (!PersistentConnectionAdd(httpPtr, &reason)) {
+                Ns_Log(Warning, "Could not add persistent connection (reason %s, host %s:%hu)",
+                       reason, httpPtr->host, httpPtr->port);
                 /*
                  * Clear keep-alive flag.
                  */
                 httpPtr->flags &= ~NS_HTTP_KEEPALIVE;
-
+            } else {
+                //Ns_Log(Notice, "HttpClose persistent connection added ");
             }
-            HttpCleanupPerRequestData(httpPtr);
-            return;
 
         } else {
-            Ns_Log(Ns_LogTaskDebug, "TaskFree %p in HttpClose", (void*)(httpPtr->closeWaitTask));
+            /*
+             * We have either an invalid socket or no keepalive.
+             */
+            //Ns_Log(Ns_LogTaskDebug, "TaskFree %p in HttpClose", (void*)(httpPtr->closeWaitTask));
             LogDebug("HttpClose", httpPtr, "no keepalive");
-
+#if 0
             if (httpPtr->closeWaitTask != NULL) {
                 Ns_Log(Warning, "ns_http close: no keepalive set, detected unexpected closeWaitTask for %s",
                        httpPtr->persistentKey);
+                Ns_Log(Notice, "=== close %p, no keepalive, Ns_TaskFree closeWait task %p",
+                       (void*)httpPtr, (void*)httpPtr->closeWaitTask);
                 (void) Ns_TaskFree(httpPtr->closeWaitTask);
+                CkFree(httpPtr->closeWaitTask, "HttpClose no keepalive (closeWaitTask)");
+
                 httpPtr->closeWaitTask = NULL;
             }
-            (void) Ns_TaskFree(httpPtr->task);
-            httpPtr->task = NULL;
+#endif
         }
     }
 #ifdef HAVE_OPENSSL_EVP_H
@@ -4148,15 +4219,14 @@ HttpClose(
         ns_sockclose(httpPtr->sock);
         httpPtr->sock = NS_INVALID_SOCKET;
     }
-    if (httpPtr->persistentKey != NULL) {
-        if (PersistentConnectionDelete(httpPtr)) {
-            /*Ns_Log(Warning, "persistent connections: deleting persistent key");*/
-        }
-        ns_free((void *)httpPtr->persistentKey);
-        httpPtr->persistentKey = NULL;
+    HttpCleanupPerRequestData(httpPtr, "HttpClose");
+    if (httpPtr->host != NULL) {
+        ns_free((void *)httpPtr->host);
     }
-    HttpCleanupPerRequestData(httpPtr);
 
+    /*Ns_Log(Notice, "=== HttpClose frees finally httpPtr %p", (void*)httpPtr);*/
+
+    CkFree((void *)httpPtr, "finalising HttpClose");
     ns_free((void *)httpPtr);
 }
 
@@ -4182,15 +4252,25 @@ static void
 HttpCancel(
     NsHttpTask *httpPtr
 ) {
+    Ns_Task *task;
+
     NS_NONNULL_ASSERT(httpPtr != NULL);
     assert(httpPtr->task != NULL);
 
-    (void) Ns_TaskCancel(httpPtr->task);
-    Ns_TaskWaitCompleted(httpPtr->task);
+    task = httpPtr->task;
+    (void) Ns_TaskCancel(task);
+    Ns_TaskWaitCompleted(task);
 
-    if (httpPtr->closeWaitTask != NULL) {
-        (void) Ns_TaskCancel(httpPtr->closeWaitTask);
-        Ns_TaskWaitCompleted(httpPtr->closeWaitTask);
+    Ns_Log(Notice, "HttpCancel host %s pos %ld", httpPtr->host,  httpPtr->pos);
+    if (httpPtr->pos > 0) {
+        Ns_MutexLock(&closeWaitingMutex);
+        if (closeWaitingList.size < httpPtr->pos) {
+            Ns_Log(Error, "HttpCancel sees invalid position  %ld", httpPtr->pos);
+        } else {
+            /*Ns_Log(Notice, "=========== HttpCancel invalidates entry at position %ld", httpPtr->pos-1);*/
+            CloseWaitingDataClean(closeWaitingList.data[httpPtr->pos - 1]);
+        }
+        Ns_MutexUnlock(&closeWaitingMutex);
     }
 }
 
@@ -4435,6 +4515,7 @@ HttpProc(
     NS_NONNULL_ASSERT(arg != NULL);
 
     httpPtr = (NsHttpTask *)arg;
+    assert(CkCheck(httpPtr) != NULL);
 
     Ns_Log(Ns_LogTaskDebug, "HttpProc: enter socket state %.2x", why);
 
@@ -4492,6 +4573,11 @@ HttpProc(
                 ssize_t nb = 0;
 
                 httpPtr->next += n;
+                Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE task %p on httpPtr %p lock %p"
+                       " will send dsPtr:%p, next:%p, remain:%" PRIuz,
+                       (void*)task, (void*)httpPtr, (void*)&httpPtr->lock,
+                       (void*)httpPtr->ds.string, (void*)httpPtr->next, remain);
+
                 Ns_MutexLock(&httpPtr->lock);
                 httpPtr->sent += (size_t)n;
                 nb = (ssize_t)(httpPtr->sent - httpPtr->requestHeaderSize);
@@ -4792,6 +4878,11 @@ HttpProc(
 
             } else if (n > 0) {
                 int result;
+
+                Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_READ task %p on httpPtr %p lock %p"
+                       " got some bytes %ld",
+                       (void*)task, (void*)httpPtr, (void*)&httpPtr->lock,
+                       n);
 
                 /*
                  * Most likely case: we got some bytes.
@@ -5266,6 +5357,8 @@ HttpTunnel(
      * Run the task, on success hijack the socket.
      */
     httpPtr->task = Ns_TaskCreate(httpPtr->sock, HttpProc, httpPtr);
+    CkAlloc((void *)httpPtr, "task (tunnel)");
+
     Ns_TaskRun(httpPtr->task);
     if (httpPtr->status == 200) {
         result = httpPtr->sock;
@@ -5721,8 +5814,8 @@ TrailerInitProc(
  * PersistentConnectionLookup --
  *
  *        Check, if for the connection key (host + port) an already open
- *        connection exists in the form of a task in theclose wait queue.  On
- *        success, delete the connection entry and return it to the
+ *        connection exists in the form of a task in the close-waitin list.
+ *        On success, delete the connection entry and return it to the
  *        caller. This prevents double-reuses.
  *
  * Results:
@@ -5734,90 +5827,43 @@ TrailerInitProc(
  *----------------------------------------------------------------------
  */
 static bool
-PersistentConnectionLookup(NsHttpTask *httpPtr, NsHttpTask **waitingHttpPtrPtr)
+PersistentConnectionLookup(const char *remoteHost, unsigned short remotePort,
+                           CloseWaitingData *cwDataPtr)
 {
-    Tcl_HashEntry *hPtr;
-    NsServer      *servPtr = httpPtr->servPtr;
+    bool   success = NS_FALSE;
+    size_t i;
 
-    NS_NONNULL_ASSERT(httpPtr != NULL);
-    NS_NONNULL_ASSERT(waitingHttpPtrPtr != NULL);
+    NS_NONNULL_ASSERT(remoteHost != NULL);
+    NS_NONNULL_ASSERT(cwDataPtr != NULL);
 
-    if (unlikely(httpPtr->servPtr == NULL)) {
-        hPtr = NULL;
-    } else {
-        assert(httpPtr->persistentKey != NULL);
+    /*Ns_Log(Notice, "PersistentConnectionLookup host '%s:%hu'", remoteHost, remotePort);*/
 
-        Ns_MutexLock(&servPtr->httpclient.lock);
-        hPtr = Tcl_FindHashEntry(&servPtr->httpclient.pconns, httpPtr->persistentKey);
-        if (hPtr != NULL) {
-            NsHttpTask *waitingHttpPtr = (NsHttpTask *)Tcl_GetHashValue(hPtr);
+    Ns_MutexLock(&closeWaitingMutex);
+    for (i = 0; i < closeWaitingList.size; i ++) {
+        CloseWaitingData *currentCwDataPtr = closeWaitingList.data[i];
 
-            if (likely(waitingHttpPtr->closeWaitTask != NULL)) {
-                Ns_Log(Ns_LogTaskDebug, "Forcing cancel on wait task %p", (void*)waitingHttpPtr->closeWaitTask);
-                Ns_TaskCancel(waitingHttpPtr->closeWaitTask);
-                waitingHttpPtr->closeWaitTask = NULL;
-                /*Ns_Log(Notice, "persistent key %s has already a waiting structure"
-                  " with an assigned task (forced cancel)", httpPtr->persistentKey);*/
-            } else {
-                /* TODO: should be removed before the release */
-                Ns_Log(Notice, "========================= persistent key %s has a waiting structure"
-                       " without an assigned task", httpPtr->persistentKey);
-            }
+        /*Ns_Log(Notice, "... compare with host '%s:%hu' state %d",
+          currentCwDataPtr->host, currentCwDataPtr->port, currentCwDataPtr->state);*/
+
+        if (currentCwDataPtr->state == CW_WAITING
+            && strcmp(remoteHost, currentCwDataPtr->host) == 0
+            && currentCwDataPtr->port == remotePort) {
             /*
-             * Delete the entry which is to be reused. This prevents concurrent
-             * double reuse.
+             * We copy more than necessary, but KISS.
              */
-            Tcl_DeleteHashEntry(hPtr);
-            *waitingHttpPtrPtr = waitingHttpPtr;
-
+            *cwDataPtr = *currentCwDataPtr;
+            currentCwDataPtr->state = CW_INUSE;
+            success = NS_TRUE;
+            break;
         }
-        Ns_MutexUnlock(&servPtr->httpclient.lock);
+    }
+    Ns_MutexUnlock(&closeWaitingMutex);
+    if (success) {
+        Ns_Log(Notice, "PersistentConnectionLookup host '%s:%hu' -> %d",
+               remoteHost, remotePort, success);
     }
 
-    return (hPtr != NULL);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * PersistentConnectionDelete --
- *
- *        Delete potentially the connection key from the lookup table.
- *
- * Results:
- *        Boolean value indicating success.
- *
- * Side effects:
- *        Potentially free up memory.
-
- *----------------------------------------------------------------------
- */
-static bool
-PersistentConnectionDelete(NsHttpTask *httpPtr)
-{
-    Tcl_HashEntry *hPtr;
-    NsServer      *servPtr;
-
-    NS_NONNULL_ASSERT(httpPtr != NULL);
-
-    servPtr = httpPtr->servPtr;
-    if (unlikely(servPtr == NULL)) {
-        hPtr = NULL;
-    } else {
-        /*
-         * Make sure to delete the persistent connection entry, don't care about
-         * the rest.
-         */
-        assert(httpPtr->persistentKey != NULL);
-
-        Ns_MutexLock(&servPtr->httpclient.lock);
-        hPtr = Tcl_FindHashEntry(&servPtr->httpclient.pconns, httpPtr->persistentKey);
-        if (hPtr != NULL) {
-            Tcl_DeleteHashEntry(hPtr);
-        }
-        Ns_MutexUnlock(&servPtr->httpclient.lock);
-    }
-    return (hPtr != NULL);
+    return success;
 }
 
 /*
@@ -5825,48 +5871,214 @@ PersistentConnectionDelete(NsHttpTask *httpPtr)
  *
  * PersistentConnectionAdd --
  *
- *        Add the persistent connection keys to the lookup table.
+ *        Add the persistent connection data to the lookup table.
  *
  * Results:
- *        Boolean value indicating this is a fresh entry.
+ *        Boolean value indicating that the lookup was successful.
  *
  * Side effects:
- *        Adding an entry to the lookup table.
+ *        Potentially adding a slot to the free-waiting list.
 
  *----------------------------------------------------------------------
  */
 static bool
 PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
 {
-    NsServer *servPtr = httpPtr->servPtr;
-    int       isNew = 0;
+    CloseWaitingData *cwDataPtr = NULL;
+    size_t            i;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
+    NS_NONNULL_ASSERT(reasonPtr != NULL);
 
-    if (likely(httpPtr->servPtr != NULL)) {
-        if (likely(httpPtr->persistentKey != NULL)) {
-            Tcl_HashEntry *hPtr;
+    /*Ns_Log(Notice,"PersistentConnectionAdd host %s input pos %ld input sock %d",
+      httpPtr->host, httpPtr->pos, httpPtr->sock);*/
 
-            Ns_MutexLock(&servPtr->httpclient.lock);
-            hPtr = Tcl_CreateHashEntry(&servPtr->httpclient.pconns, httpPtr->persistentKey, &isNew);
-
-            if (likely(isNew != 0)) {
-                Tcl_SetHashValue(hPtr, httpPtr);
-            } else {
-                *reasonPtr = "duplicate persistent key";
-            }
-            Ns_MutexUnlock(&servPtr->httpclient.lock);
-        } else {
-            Ns_Log(Error, "PersistentConnectionAdd: persistent key of %p already deleted."
-                   " Code must be debugged with Debug(task) turned on and sent to the"
-                   " NaviServer developers", (void*)httpPtr);
-            *reasonPtr = "key deleted";
-        }
-    } else {
-        *reasonPtr = "no server defined for this task";
+    if (httpPtr->sock == NS_INVALID_SOCKET
+        || Ns_SockErrorCode(NULL, httpPtr->sock) != 0
+        ) {
+       *reasonPtr = "cannot add invalid socket to close waiting list";
+       return NS_FALSE;
     }
-    return (isNew != 0);
+
+    Ns_MutexLock(&closeWaitingMutex);
+    for (i = 0; i < closeWaitingList.size; i ++) {
+        CloseWaitingData *currentCwDataPtr = closeWaitingList.data[i];
+        int               errorCode = Ns_SockErrorCode(NULL, currentCwDataPtr->sock);
+
+        Ns_Log(Ns_LogTaskDebug, "PersistentConnectionAdd: [%ld] compare with host '%s:%hu'"
+            " state %d sock %d error code %d",
+            i, currentCwDataPtr->host, currentCwDataPtr->port, currentCwDataPtr->state,
+            currentCwDataPtr->sock, errorCode );
+        if (errorCode != 0) {
+            Ns_Log(Notice, "PersistentConnectionAdd: reuse slot [%ld] with stale socket !!!", i);
+            CloseWaitingDataClean(currentCwDataPtr);
+            cwDataPtr = currentCwDataPtr;
+            break;
+
+        } else if (currentCwDataPtr->state == CW_FREE || currentCwDataPtr->sock == httpPtr->sock) {
+            cwDataPtr = currentCwDataPtr;
+            break;
+        }
+    }
+    if (cwDataPtr == NULL) {
+        cwDataPtr = ns_calloc(1u, sizeof(CloseWaitingData));
+        cwDataPtr->pos = closeWaitingList.size;
+        Ns_Log(Notice, "PersistentConnectionAdd: allocate new slot on pos %ld", cwDataPtr->pos);
+        Ns_DListAppend(&closeWaitingList, cwDataPtr);
+    }
+
+    cwDataPtr->state = CW_WAITING;
+    cwDataPtr->sock = httpPtr->sock;
+    cwDataPtr->ssl = httpPtr->ssl;
+    cwDataPtr->ctx = httpPtr->ctx;
+
+    Ns_GetTime(&cwDataPtr->expire);
+    Ns_IncrTime(&cwDataPtr->expire, httpPtr->keepAliveTimeout.sec, httpPtr->keepAliveTimeout.usec);
+
+    if (cwDataPtr->host != NULL) {
+        ns_free((char*)cwDataPtr->host);
+    }
+    cwDataPtr->host = ns_strdup(httpPtr->host);
+    cwDataPtr->port = httpPtr->port;
+
+    Ns_MutexUnlock(&closeWaitingMutex);
+
+    httpPtr->sock = NS_INVALID_SOCKET;
+    httpPtr->ctx = NULL;
+    httpPtr->ssl = NULL;
+
+    Ns_Log(Notice,"PersistentConnectionAdd added persistent connection for %s on pos %ld with expire %ld",
+        httpPtr->host, cwDataPtr->pos, cwDataPtr->expire.sec);
+
+    return NS_TRUE;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CloseWaitingDataClean --
+ *
+ *        Clean the passed-in CloseWaitingData. It closes the socket, shuts
+ *        down the OpenSSL connection and frees the stored hostname. Finally,
+ *        the state of the slot is make reusable (set to state CW_FREE).
+ *
+ *        This function is supposed to be called under a closeWaitingMutex
+ *        lock.
+ *
+ * Results:
+ *        None.
+ *
+ * Side effects:
+ *        Potentially closing socket and freeing memory.
+
+ *----------------------------------------------------------------------
+ */
+static void
+CloseWaitingDataClean(CloseWaitingData *cwDataPtr)
+{
+    NS_NONNULL_ASSERT(cwDataPtr != NULL);
+
+#ifdef HAVE_OPENSSL_EVP_H
+    if (cwDataPtr->ssl != NULL) {
+        SSL_shutdown(cwDataPtr->ssl);
+        SSL_free(cwDataPtr->ssl);
+        cwDataPtr->ssl = NULL;
+    }
+    if (cwDataPtr->ctx != NULL) {
+        SSL_CTX_free(cwDataPtr->ctx);
+        cwDataPtr->ctx = NULL;
+    }
+#endif
+    if (cwDataPtr->sock != NS_INVALID_SOCKET) {
+        ns_sockclose(cwDataPtr->sock);
+        cwDataPtr->sock = NS_INVALID_SOCKET;
+    }
+    if (cwDataPtr->host != NULL) {
+        ns_free((char *)cwDataPtr->host);
+        cwDataPtr->host = NULL;
+    }
+    cwDataPtr->state = CW_FREE;
+}
+
+
+#ifdef MEM_RECORD_DEBUG
+/*
+ *----------------------------------------------------------------------
+ *
+ * CkAlloc --
+ *
+ *        Debug function, recording alloc operation
+ *
+ * Results:
+ *        None.
+ *
+ * Side effects:
+ *        Record the pointer and a label in the debug table.
+
+ *----------------------------------------------------------------------
+ */
+static void CkAlloc(const void *ptr, const char *label)
+{
+    Tcl_HashEntry *hPtr;
+    int            isNew;
+
+    //Ns_Log(Notice, "--- CkAlloc %p (%s)", ptr, label);
+
+    Ns_MutexLock(&ckMutex);
+    hPtr = Tcl_CreateHashEntry(&ckPointerTable, ptr, &isNew);
+
+    if (likely(isNew != 0)) {
+        Tcl_SetHashValue(hPtr, label);
+    } else {
+        Ns_Log(Error, "CkAlloc: cannot add pointer %p, value exists already", ptr);
+    }
+    Ns_MutexUnlock(&ckMutex);
+}
+
+static const char *CkCheck(const void *ptr)
+{
+    Tcl_HashEntry *hPtr;
+    const char    *result = NULL;
+
+    Ns_MutexLock(&ckMutex);
+    hPtr = Tcl_FindHashEntry(&ckPointerTable, ptr);
+
+    if (hPtr != NULL) {
+        result = (const char *)Tcl_GetHashValue(hPtr);
+    }
+    Ns_MutexUnlock(&ckMutex);
+    //Ns_Log(Notice, "--- CkCheck %p -> %s", ptr, result);
+    return result;
+}
+
+static void CkFree(const void *ptr, const char *message)
+{
+    Tcl_HashEntry *hPtr, *hPtr2;
+
+    //Ns_Log(Notice, "--- CkFree %p", ptr);
+
+    Ns_MutexLock(&ckMutex);
+    hPtr = Tcl_FindHashEntry(&ckPointerTable, ptr);
+
+    if (likely(hPtr != NULL)) {
+        int isNew;
+
+        hPtr2 = Tcl_CreateHashEntry(&ckPointerDeletionTable, ptr, &isNew);
+        Tcl_SetHashValue(hPtr, message);
+        Tcl_DeleteHashEntry(hPtr);
+    } else {
+        Ns_Log(Error, "--- CkFree: cannot free pointer %p, value does not exist: %s", ptr, message);
+        hPtr2 = Tcl_FindHashEntry(&ckPointerDeletionTable, ptr);
+        if (hPtr2 != NULL) {
+            Ns_Log(Error, "... pointer was already deleted at: %s", (char*)Tcl_GetHashValue(hPtr2));
+        } else {
+            Ns_Log(Error, "... pointer was never allocated");
+        }
+    }
+    Ns_MutexUnlock(&ckMutex);
+}
+#endif
 
 /*
  * Local Variables:

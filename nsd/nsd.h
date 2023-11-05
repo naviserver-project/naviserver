@@ -963,7 +963,6 @@ typedef struct NsServer {
         Ns_Mutex lock;
         const char *logFileName;
         const char *logRollfmt;
-        Tcl_HashTable pconns;      /* Hash table for persistent connections */
         TCL_SIZE_T logMaxbackup;
         Ns_Time    keepaliveTimeout;
         int  fd;
@@ -1073,13 +1072,12 @@ struct _NsHttpChunk;
 
 typedef struct {
     Ns_Task           *task;             /* Task handle */
-    Ns_Task           *closeWaitTask;    /* Task handle for handling persistent connections */
     NS_SOCKET          sock;             /* socket to the remote peer */
     int                status;           /* HTTP response status */
     const char        *method;           /* request method */
     const char        *url;              /* request URL */
     const char        *error;            /* holds error string */
-    const char        *persistentKey;    /* key for persistent connections */
+    const char        *host;             /* hostname for persistent connections */
     char              *next;             /* write buffer */
     size_t             requestLength;    /* size of the complete request */
     size_t             replyLength;      /* content-length of the reply */
@@ -1093,6 +1091,7 @@ typedef struct {
     Ns_Set            *replyHeaders;     /* ns_set for response headers */
     Tcl_WideInt        spoolLimit;       /* spool content above this limit */
     int                spoolFd;          /* fd of spool file */
+    unsigned short     port;
     char              *spoolFileName;    /* filename of the spool file */
     Tcl_Channel        spoolChan;        /* channel where to spool */
     Ns_Mutex           lock;             /* sync with task thread */
@@ -1113,6 +1112,7 @@ typedef struct {
     NsServer          *servPtr;          /* Server for doneCallback */
     NS_TLS_SSL_CTX    *ctx;              /* SSL context handle */
     NS_TLS_SSL        *ssl;              /* SSL connection handle */
+    size_t             pos;              /* needed only for HttpCancel() */
     Tcl_DString        ds;               /* for assembling request string */
     struct _NsHttpChunk *chunk;          /* for parsing chunked encodings */
 } NsHttpTask;

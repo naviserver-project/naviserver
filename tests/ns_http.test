@@ -2139,7 +2139,9 @@ test http-8.3 {ns_return with UTF-8 3 byte char with impure bytearray} -constrai
     unset -nocomplain r
 } -result {200 3 ☃}
 
-test http-8.4.0 {ns_http queue + expire, ns_http wait + timeout, with timeout} -constraints {serverListen} -setup {
+test http-8.4.0a {
+    ns_http queue + expire, ns_http wait + timeout, with timeout
+} -constraints {serverListen} -setup {
     ns_register_proc GET /slow {
         ns_sleep 2s
         ns_return 200 text/plain OK
@@ -2161,6 +2163,61 @@ test http-8.4.0 {ns_http queue + expire, ns_http wait + timeout, with timeout} -
     ns_unregister_op GET /get
     unset r
 } -result {NS_TIMEOUT}
+
+test http-8.4.0b {
+    ns_http queue + expire, ns_http wait + timeout, with timeout and persistent connection with cancel
+} -constraints {serverListen} -setup {
+    ns_register_proc GET /slow {
+        ns_sleep 2s
+        ns_return 200 text/plain OK
+    }
+    ns_register_proc GET /get {ns_return 200 text/plain OK}
+} -body {
+    set d1 [ns_http run -keepalive 5s [ns_config test listenurl]/get]
+    try {
+        set q [ns_http queue -keepalive 5s -expire 1 [ns_config test listenurl]/slow]
+        ns_http wait -timeout 2 $q
+    } on error {errorMsg} {
+        set r $::errorCode
+    } on ok {result} {
+        set r "no timeout"
+    }
+    set d2 [ns_http run -keepalive 5s [ns_config test listenurl]/get]
+    return [list [dict get $d1 body] $r [dict get $d2 body]]
+} -cleanup {
+    ns_http run [ns_config test listenurl]/get
+    ns_unregister_op GET /slow
+    ns_unregister_op GET /get
+    unset r
+} -result {OK NS_TIMEOUT OK}
+
+
+test http-8.4.0c {
+    ns_http queue + expire, ns_http wait + timeout, with timeout and persistent connection
+} -constraints {serverListen} -setup {
+    ns_register_proc GET /slow {
+        ns_sleep 2s
+        ns_return 200 text/plain OK
+    }
+    ns_register_proc GET /get {ns_return 200 text/plain OK}
+} -body {
+    set d1 [ns_http run -keepalive 5s [ns_config test listenurl]/get]
+    try {
+        ns_http run -keepalive 5s -expire 1s [ns_config test listenurl]/slow
+    } on error {errorMsg} {
+        set r $::errorCode
+    } on ok {result} {
+        set r "no timeout"
+    }
+    set d2 [ns_http run -keepalive 5s [ns_config test listenurl]/get]
+    return [list [dict get $d1 body] $r [dict get $d2 body]]
+} -cleanup {
+    ns_http run [ns_config test listenurl]/get
+    ns_unregister_op GET /slow
+    ns_unregister_op GET /get
+    unset r
+} -result {OK NS_TIMEOUT OK}
+
 
 test http-8.4.1 {ns_http queue + expire, ns_http wait, with timeout} -constraints {serverListen} -setup {
     ns_register_proc GET /slow {
@@ -2561,7 +2618,9 @@ test http-11.1.3b {GET with 204 answer raw + no keepalive} -constraints serverLi
 
 
 
-test http-11.2.1 {HTTP/1.0 GET + many reply header fields} -constraints serverListen -setup {
+test http-11.2.1 {
+    HTTP/1.0 GET + many reply header fields
+} -constraints serverListen -setup {
     ns_register_proc GET /many-reply-header-fields {
         for {set i 0} {$i < 2000} {incr i} {ns_set put [ns_conn outputheaders] X-extra-$i $i}
         ns_return 200 text/plain "OK"
@@ -2575,7 +2634,10 @@ test http-11.2.1 {HTTP/1.0 GET + many reply header fields} -constraints serverLi
     unset -nocomplain i r0 r1
 } -returnCodes {error ok} -result {200 200 2000}
 
-test http-11.2.2 {HTTP/1.0 GET + many reply header fields + keepalive} -constraints serverListen -setup {
+
+test http-11.2.2 {
+    HTTP/1.0 GET + many reply header fields + keepalive
+} -constraints serverListen -setup {
     ns_register_proc GET /many-reply-header-fields {
         for {set i 0} {$i < 2000} {incr i} {ns_set put [ns_conn outputheaders] X-extra-$i $i}
         ns_return 200 text/plain "OK"
