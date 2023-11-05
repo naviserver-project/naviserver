@@ -2678,7 +2678,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
              * Further ingredients:
              *
              *  pkey        : private key, from PEM, EVP_PKEY
-             *  peerKeyEC   : peer key locally regnerated, same curve as pkey, get filled with octets
+             *  peerKeyEC   : peer key locally regenerated, same curve as pkey, get filled with octets
              *  peerKey     : peer key as EVP_PKEY, filled with peerKeyEC
              *  pctx        : parameter generation contenxt
              *  params      : parameter object
