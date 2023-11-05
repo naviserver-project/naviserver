@@ -510,6 +510,7 @@ GetMutex(Ns_Mutex *mutex, const char *caller)
         fprintf(stderr, "%s: called with uninitialized lock pointer. "
                 "This should not happen, call Ns_MutexInit() before this call\n",
                 caller);
+        //{char *p = NULL; *p = 0;}
         //Ns_MutexInit(mutex);
     }
 
