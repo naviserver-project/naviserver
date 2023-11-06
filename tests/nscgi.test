@@ -167,6 +167,13 @@ test nscgi-1.7.1.3 {
     nstest::http -getbody 1 GET /10bytes
 } -returnCodes {error ok} -result {200 0123456789}
 
+test nscgi-1.7.1.4 {
+    mapping based on extension - SCRIPT_FILENAME
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /info.cgi?var=SCRIPT_FILENAME
+} -returnCodes {error ok} -match glob -result "*SCRIPT_FILENAME: <*pages/info.cgi>*"
+
 
 #
 # Mapping with a wild-card directory.
@@ -218,13 +225,30 @@ test nscgi-1.7.2.3b {
     nstest::http -getbody 1 GET /cgi-wc/sub/sub.tclcgi?var=SCRIPT_NAME
 } -returnCodes {error ok} -match glob -result "*SCRIPT_NAME: </cgi-wc/sub/sub.tclcgi>*"
 
-test nscgi-1.7.2.3 {
+test nscgi-1.7.2.3c {
     mapping based on wild-card directory
     access static resource in same directory
     needs no "allowstaticresources"
 } -constraints {serverListen tclsh} -body {
     nstest::http -getbody 1 GET /cgi-wc/resource-cgi-wc.txt
 } -returnCodes {error ok} -result {200 0123456789}
+
+
+test nscgi-1.7.2.4a {
+    mapping based on wild-card directory - SCRIPT_FILENAME
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /cgi-wc/listdir.tclcgi?var=SCRIPT_FILENAME
+} -returnCodes {error ok} -match glob -result "*SCRIPT_FILENAME: <*pages/cgi-wc/listdir.tclcgi>*"
+
+test nscgi-1.7.2.4b {
+    mapping based on wild-card directory using a subdirectory - SCRIPT_FILENAME
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /cgi-wc/sub/sub.tclcgi?var=SCRIPT_FILENAME
+} -returnCodes {error ok} -match glob -result "*SCRIPT_FILENAME: <*pages/cgi-wc/sub/sub.tclcgi>*"
+
+
 
 #
 # Mapping with an extra directory
@@ -288,6 +312,13 @@ test nscgi-1.7.3.2b {
     #ns_logctl severity Debug(cgi) on
     nstest::http -getbody 1 GET /cgi-dir/info.tclcgi/foo?var=SCRIPT_NAME
 } -returnCodes {error ok} -match glob -result "*SCRIPT_NAME: </cgi-dir/info.tclcgi>*"
+
+test nscgi-1.7.3.2c {
+    mapping based on directory. CGI program is in the middle of the path (segment match) - SCRIPT_FILENAME
+} -constraints {serverListen tclsh} -body {
+    #ns_logctl severity Debug(cgi) on
+    nstest::http -getbody 1 GET /cgi-dir/info.tclcgi/foo?var=SCRIPT_FILENAME
+} -returnCodes {error ok} -match glob -result "*SCRIPT_FILENAME: <*testserver/cgi/info.tclcgi>*"
 
 
 test nscgi-1.7.3.3a {
