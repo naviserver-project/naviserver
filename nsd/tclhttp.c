@@ -36,7 +36,7 @@
 #define CHUNK_SIZE 16384
 
 /*
- * Defnition of close-waiting infrastructure
+ * Definition of close-waiting infrastructure
  */
 typedef enum {
     CW_FREE,
