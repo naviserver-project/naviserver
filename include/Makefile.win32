@@ -318,13 +318,18 @@ PGMLIBS  = $(PGMLIBS) $(DLLLIB)
 #
 # Update options for release or debug build.
 #
+# /GS, GuardStack info:
+#   https://learn.microsoft.com/en-us/archive/msdn-magazine/2017/december/c-visual-c-support-for-stack-based-buffer-protection
+# /RTC1, Native Run-Time Checks:
+#   https://learn.microsoft.com/en-us/previous-versions/ms856580(v=msdn.10)
+#   https://learn.microsoft.com/en-us/previous-versions/visualstudio/visual-studio-2012/8wtf2dfz(v=vs.110)
 
 !if "$(DEBUG)" == "1"
-COPTS	= $(COPTS) /MDd /Od /Zi /RTC1
+COPTS	= $(COPTS) /MDd /Od /Zi /RTC1 /GS
 DEFS	= $(DEFS) /D "_DEBUG"
 LOPTS	= $(LOPTS) /DEBUG
 !else
-COPTS	= $(COPTS) /MD /O2
+COPTS	= $(COPTS) /MD /O2 /GS
 DEFS	= $(DEFS) /D "NDEBUG"
 !endif
 
