@@ -2257,7 +2257,6 @@ ConnChanReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
             /*
              * The provided channel exists.
              */
-            ssize_t      nRead;
             char         buffer[16384]; //buffer[16384];
 
             if (!connChanPtr->binary) {
@@ -2266,7 +2265,8 @@ ConnChanReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
             }
 
             if ( webSocketFrame == 0 || connChanPtr->frameNeedsData) {
-                nRead = ConnChanReadBuffer(connChanPtr, buffer, sizeof(buffer));
+                ssize_t nRead = ConnChanReadBuffer(connChanPtr, buffer, sizeof(buffer));
+
                 if (nRead < 0) {
                     const char *errorMsg;
 
