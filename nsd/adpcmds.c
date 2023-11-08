@@ -1030,7 +1030,6 @@ NsTclAdpBindArgsObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_
 int
 NsTclAdpExceptionObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    const NsInterp *itPtr = clientData;
     Tcl_Obj        *varnameObj = NULL;
     int             result = TCL_OK;
     Ns_ObjvSpec     args[] = {
@@ -1041,6 +1040,8 @@ NsTclAdpExceptionObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
+        const NsInterp *itPtr = clientData;
+
         Tcl_SetObjResult(interp, Tcl_NewBooleanObj((itPtr->adp.exception == ADP_OK)));
 
         if (varnameObj != NULL) {
