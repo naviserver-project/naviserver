@@ -1,4 +1,3 @@
-
 [include version_include.man]
 
 [manpage_begin ns_proxy n [vset version]]
@@ -200,7 +199,7 @@ the worker state. The default is no script.
 [opt_def -recvtimeout [arg timeout]]
 Specifies the maximum time to wait to send a script and receive a
 result from a proxy.  The default is 1 second which assumes
-minimal delay sending and receiving reasonably sized scripts and 
+minimal delay sending and receiving reasonably sized scripts and
 results over the connecting pipe.
 
 [opt_def -waittimeout [arg timeout]]
@@ -303,13 +302,6 @@ the startup of the proxy under some alternative UID/GID may/will fail.
 Returns list of all proxies allocated for the current interpreter.
 
 
-[call [cmd "ns_proxy pids"]  [arg pool]]
-
-Returns a list of the process IDs of proxy helpers for the specified
-pool. These pids can be used for further analysis (e.g., checking
-memory footprints, etc.)
-
-
 [call [cmd "ns_proxy ping"] [arg handle]]
 
 This command sends a null request to the proxy specified by the
@@ -353,7 +345,7 @@ Sends [arg script] to the proxy specified by [arg handle].
 
 [call [cmd "ns_proxy stats"] [arg pool]]
 
-Provide usage statistics in form of a dict from the specified pool.
+Provide summative usage statistics in form of a dict from the specified pool.
 The dict contains the following keys:
 [term proxies],
 [term waiting],
@@ -361,7 +353,7 @@ The dict contains the following keys:
 [term free],
 [term used],
 [term requests],
-[term processes],
+[term processes], and
 [term runtime].
 
 
@@ -379,6 +371,22 @@ The optional [arg timeout] argument specifies a maximum time
 to wait for the command to complete before raising an
 error (see ERROR HANDLING below for details on handling errors).
 
+[call [cmd "ns_proxy workers"] [arg pool]]
+
+Returns a list of the workers of the proxy pool, where
+every element contains a dict containing the following keys:
+[term id],
+[term pid],
+[term created],
+[term runs], and
+[term state].
+
+The command can be used for fine-tuing the number of workers for an
+application by checking their load. Creating workers at startup helps
+to keep the time of spawning low, especially when the memory footprint
+of the server is large and the server is running in a virtual
+machine. The value of [term created] stands for the number of spawn
+operations for the workers.
 [list_end]
 
 All time units can be specified with and without a time unit
