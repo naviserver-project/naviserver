@@ -462,7 +462,7 @@ ns_section ns/server/$server {
     # ns_param	maxthreads	10       ;# 10; maximal number of connection threads
     ns_param	minthreads	2        ;# 1; minimal number of connection threads
 
-    ns_param	connsperthread	1000     ;# 10000; number of connections (requests) handled per thread
+    #ns_param	connsperthread	1000     ;# 10000; number of connections (requests) handled per thread
     ;# Setting connsperthread to > 0 will cause the thread to
     ;# graciously exit, after processing that many requests, thus
     ;# initiating kind-of Tcl-level garbage collection.
