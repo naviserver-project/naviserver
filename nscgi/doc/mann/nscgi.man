@@ -569,7 +569,7 @@ which CGI programs can treat like [const GET] or can provide
 header information without page contents.
 
 [def SCRIPT_FILENAME:] This variable contains the absolute pathname of
-the currently executing script in the file system.
+the currently executing script in the filesystem.
 
 [def SCRIPT_NAME:] This variable might be empty or the part of the
 request leading to the CGI program.

@@ -13,7 +13,7 @@
 <h1>Example applications and scripts for NaviServer</h1>
 
 <ul>
-<li> <a href="upload.tcl">Upload</a> page with progress statistcs, shows percentage
+<li> <a href="upload.tcl">Upload</a> page with progress statistics, shows percentage
      of completion during the upload.
 
 <li> <a href="writer.tcl">Writer</A> page with example how writer threads can be used
