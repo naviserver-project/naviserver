@@ -1675,8 +1675,10 @@ NsTclAtCloseObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, T
         Tcl_WrongNumArgs(interp, 1, objv, "script ?args?");
         result = TCL_ERROR;
 
-    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, NULL) != NS_OK) {
-        result = TCL_ERROR;
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, NULL, &result) != NS_OK) {
+        /*
+         * Might be a soft error.
+         */
 
     } else {
         atPtr = ns_malloc(sizeof(AtClose));

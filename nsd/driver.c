@@ -7375,11 +7375,10 @@ WriterSubmitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK
-        || NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK) {
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
-    } else {
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
         int            size;
         unsigned char *data = Tcl_GetByteArrayFromObj(dataObj, &size);
 
@@ -7524,10 +7523,13 @@ WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OB
         {NULL, NULL, NULL, NULL}
     };
 
-    if (unlikely(Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK)
-        || NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK) {
+    if (unlikely(Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK)) {
         result = TCL_ERROR;
 
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) != NS_OK) {
+        /*
+         * Might be a soft error
+         */
     } else if (unlikely( Ns_ConnSockPtr(conn) == NULL )) {
         Ns_Log(Warning,
                "NsWriterQueue: called without valid sockPtr, maybe connection already closed");
@@ -7644,10 +7646,13 @@ WriterSubmitFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_O
         {NULL, NULL, NULL, NULL}
     };
 
-    if (unlikely(Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK)
-        || NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK) {
+    if (unlikely(Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK)) {
         result = TCL_ERROR;
 
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) != NS_OK) {
+        /*
+         * Might be a soft error.
+         */
     } else if (unlikely( Ns_ConnSockPtr(conn) == NULL )) {
         Ns_Log(Warning,
                "NsWriterQueue: called without valid sockPtr, "
@@ -7934,9 +7939,10 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T o
         result = TCL_ERROR;
 
     } else if ((driverObj == NULL)
-               && NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK) {
-        result = TCL_ERROR;
-
+               && NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) != NS_OK) {
+        /*
+         * Might be a soft error.
+         */
     } else {
         DrvWriter *wrPtr;
 
@@ -8018,8 +8024,10 @@ WriterStreamingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         result = TCL_ERROR;
 
     } else if ((driverObj == NULL)
-               && NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK) {
-        result = TCL_ERROR;
+               && NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) != NS_OK) {
+        /*
+         * Might be a soft error.
+         */
 
     } else {
         DrvWriter *wrPtr;
@@ -8575,7 +8583,6 @@ AsyncLogfileWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_O
     } else {
         const char   *buffer;
         TCL_SIZE_T    length;
-        Ns_ReturnCode rc;
 
         if (binary == (int)NS_TRUE || NsTclObjIsByteArray(stringObj)) {
             buffer = (const char *) Tcl_GetByteArrayFromObj(stringObj, &length);
@@ -8583,6 +8590,8 @@ AsyncLogfileWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_O
             buffer = Tcl_GetStringFromObj(stringObj, &length);
         }
         if (length > 0) {
+            Ns_ReturnCode rc;
+
             if (sanitize > 0) {
                 Tcl_DString ds;
                 bool        lastCharNewline = (buffer[length-1] == '\n');

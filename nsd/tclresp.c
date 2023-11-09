@@ -74,11 +74,10 @@ NsTclHeadersObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, T
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK
-        || NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK
-        ) {
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
-    } else {
+
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
         NsInterp   *itPtr = clientData;
 
         Ns_ConnSetResponseStatus(conn, httpStatus);
@@ -143,16 +142,14 @@ NsTclStartContentObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T ob
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(opts, NULL, interp, 1, objc, objv) != NS_OK
-        || NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK
-        ) {
+    if (Ns_ParseObjv(opts, NULL, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else if (charset != NULL && type != NULL) {
         Ns_TclPrintfResult(interp, "only one of -charset or -type may be specified");
         result = TCL_ERROR;
 
-    } else {
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
         NsInterp *itPtr = clientData;
 
         Ns_LogDeprecated(objv, 1, "ns_headers ...", NULL);
@@ -218,10 +215,7 @@ NsTclWriteObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl
         Tcl_WrongNumArgs(interp, 1, objv, "data ?data ...?");
         result = TCL_ERROR;
 
-    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK) {
-        result = TCL_ERROR;
-
-    } else {
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
         objv++;
         objc--;
 
@@ -335,12 +329,9 @@ NsTclReturnObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T 
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK
-        || NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK
-        ) {
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
-
-    } else {
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
         const char *data;
         TCL_SIZE_T  len;
 
@@ -353,7 +344,7 @@ NsTclReturnObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T 
         }
     }
 
-    return  result;
+    return result;
 }
 
 
@@ -398,10 +389,13 @@ NsTclRespondObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(opts, NULL, interp, 1, objc, objv) != NS_OK
-        || NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK
-        ) {
+    if (Ns_ParseObjv(opts, NULL, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
+
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) != NS_OK) {
+        /*
+         * Might be a soft error.
+         */
 
     } else if (chanid != NULL && length < 0) {
         Ns_TclPrintfResult(interp, "length required when -fileid is used");
@@ -497,12 +491,10 @@ NsTclReturnFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJ
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK
-        || NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK
-        ) {
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
-    } else {
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
         result = Result(interp, Ns_ConnReturnFile(conn, httpStatus, mimeType, fileName));
     }
 
@@ -543,12 +535,10 @@ NsTclReturnFpObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK
-        || NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK
-        ) {
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
-    } else {
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
         result = Ns_TclGetOpenChannel(interp, channelName, 0, NS_TRUE, &chan);
         if (likely( result == TCL_OK )) {
             result = Result(interp, Ns_ConnReturnOpenChannel(conn, httpStatus, mimeType,
@@ -590,12 +580,10 @@ NsTclConnSendFpObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJ
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK
-        || NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK
-        ) {
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
-    } else {
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
         result = Ns_TclGetOpenChannel(interp, channelName, 0, NS_TRUE, &chan);
         if (likely( result == TCL_OK )) {
             Ns_ReturnCode status;
@@ -645,10 +633,7 @@ NsTclReturnBadRequestObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
         Tcl_WrongNumArgs(interp, 1, objv, "reason");
         result = TCL_ERROR;
 
-    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK) {
-        result = TCL_ERROR;
-
-    } else {
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
         result = Result(interp, Ns_ConnReturnBadRequest(conn, Tcl_GetString(objv[1])));
     }
 
@@ -685,9 +670,7 @@ ReturnObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
     NS_NONNULL_ASSERT(interp != NULL);
 
-    if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK) {
-        result = TCL_ERROR;
-    } else {
+    if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
         result = Result(interp, (*proc)(conn));
     }
     return result;
@@ -754,11 +737,10 @@ NsTclReturnErrorObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OB
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK
-        || NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK
-        ) {
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
-    } else {
+
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
         result = Result(interp, Ns_ConnReturnNotice(conn, httpStatus, "Request Error", message));
     }
     return result;
@@ -792,11 +774,10 @@ NsTclReturnMovedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OB
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK
-        || NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK
-        ) {
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
-    } else {
+
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
         result = Result(interp, Ns_ConnReturnMoved(conn, location));
     }
 
@@ -833,11 +814,10 @@ NsTclReturnNoticeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_O
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK
-        || NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK
-        ) {
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
-    } else {
+
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
         result = Result(interp, Ns_ConnReturnNotice(conn, httpStatus, title, message));
     }
     return result;
@@ -872,11 +852,10 @@ NsTclReturnRedirectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK
-        || NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK
-        ) {
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
-    } else {
+
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
         result = Result(interp, Ns_ConnReturnRedirect(conn, location));
     }
 
@@ -910,12 +889,10 @@ NsTclInternalRedirectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK
-        || NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn) != NS_OK
-        ) {
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
-    } else {
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) != NS_OK) {
         result = Result(interp, Ns_ConnRedirect(conn, location));
     }
 

@@ -4188,20 +4188,7 @@ HttpClose(
             /*
              * We have either an invalid socket or no keepalive.
              */
-            //Ns_Log(Ns_LogTaskDebug, "TaskFree %p in HttpClose", (void*)(httpPtr->closeWaitTask));
             LogDebug("HttpClose", httpPtr, "no keepalive");
-#if 0
-            if (httpPtr->closeWaitTask != NULL) {
-                Ns_Log(Warning, "ns_http close: no keepalive set, detected unexpected closeWaitTask for %s",
-                       httpPtr->persistentKey);
-                Ns_Log(Notice, "=== close %p, no keepalive, Ns_TaskFree closeWait task %p",
-                       (void*)httpPtr, (void*)httpPtr->closeWaitTask);
-                (void) Ns_TaskFree(httpPtr->closeWaitTask);
-                CkFree(httpPtr->closeWaitTask, "HttpClose no keepalive (closeWaitTask)");
-
-                httpPtr->closeWaitTask = NULL;
-            }
-#endif
         }
     }
 #ifdef HAVE_OPENSSL_EVP_H
