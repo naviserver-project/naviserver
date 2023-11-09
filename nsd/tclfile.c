@@ -408,9 +408,10 @@ NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
                && Tcl_GetWideIntFromObj(interp, objv[2], &nbytes) != TCL_OK) {
 
         result = TCL_ERROR;
-    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, NULL) != NS_OK) {
-        result = TCL_ERROR;
-
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, NULL, &result) != NS_OK) {
+        /*
+         * Might be a soft error.
+         */
     } else {
 
         /*

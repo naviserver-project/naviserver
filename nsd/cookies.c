@@ -642,11 +642,9 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK
-        || NsConnRequire(interp, NS_CONN_REQUIRE_CONFIGURED, &conn) != NS_OK) {
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
-
-    } else {
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_CONFIGURED, &conn, &result) == NS_OK) {
         unsigned int   flags = 0u;
         time_t         maxage;
 
@@ -748,15 +746,14 @@ NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK
-        || NsConnRequire(interp, NS_CONN_REQUIRE_CONFIGURED, &conn) != NS_OK) {
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         status = TCL_ERROR;
 
     } else if (withSetCookies == (int)NS_TRUE && withAll == (int)NS_TRUE) {
         Ns_TclPrintfResult(interp, "%s", "invalid combination of flags -include_set_cookies and -all");
         status = TCL_ERROR;
 
-    } else {
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_CONFIGURED, &conn, &status) == NS_OK) {
         Ns_DString     ds;
         int            idx = -1;
 
@@ -830,11 +827,10 @@ NsTclDeleteCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK
-        || NsConnRequire(interp, NS_CONN_REQUIRE_CONFIGURED, &conn) != NS_OK) {
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
-    } else {
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_CONFIGURED, &conn, &result) == NS_OK) {
         unsigned int flags = 0u;
 
         if (replace != 0) {

@@ -1654,9 +1654,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
         /*
          * We have to check the connection requirements.
          */
-        if (NsConnRequire(interp, required_flags[opt], NULL) != NS_OK) {
-            result = TCL_ERROR;
-        } else {
+        if (NsConnRequire(interp, required_flags[opt], NULL, &result) == NS_OK) {
             /*
              * We know that connPtr can't be NULL.
              */
@@ -2277,13 +2275,10 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
             int               oc = 2, status;
             Ns_ObjvSpec       spec = {"?status", Ns_ObjvInt, &status, &statusRange};
 
-            if (NsConnRequire(interp, NS_CONN_REQUIRE_CONNECTED, &conn) != NS_OK) {
+            if (Ns_ObjvInt(&spec, interp, &oc, &objv[2]) == TCL_OK) {
                 result = TCL_ERROR;
 
-            } else if (Ns_ObjvInt(&spec, interp, &oc, &objv[2]) != TCL_OK) {
-                result = TCL_ERROR;
-
-            } else {
+            } else if (NsConnRequire(interp, NS_CONN_REQUIRE_CONNECTED, &conn, &result) == NS_OK) {
                 Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_ConnResponseStatus(conn)));
                 Ns_ConnSetResponseStatus(conn, status);
             }
@@ -2456,9 +2451,10 @@ NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl
         {NULL,       NULL,          NULL,      NULL}
     };
 
-    if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, NULL) != NS_OK
-        || Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
+
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, NULL, &result) != NS_OK) {
 
     } else if (GetChan(interp, chanName, &chan) != TCL_OK) {
         result = TCL_ERROR;
@@ -2656,9 +2652,13 @@ MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
  *      - when the sockPtr of the connection was detachted, or
  *      - when the connection is already closed,
  *
- *      return NS_ERROR and set an appropriate error message, If connPtr is
- *      valid, the function return NS_OK and returns the connPtr in its second
- *      argument.
+ *      return NS_ERROR and set an appropriate error message when
+ *      rejectalreadyclosedconn is true (default). When this parameter is set
+ *      to false, it causes a soft error and returns the tcl status code as
+ *      last argument.
+ *
+ *      If the connection is valid, the function return NS_OK and returns the connPtr
+ *      in its thirg argument.
  *
  * Results:
  *      NaviServer result code
@@ -2670,10 +2670,11 @@ MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
  */
 
 Ns_ReturnCode
-NsConnRequire(Tcl_Interp *interp, unsigned int flags, Ns_Conn **connPtr)
+NsConnRequire(Tcl_Interp *interp, unsigned int flags, Ns_Conn **connPtr, int *tclResultPtr)
 {
     Ns_Conn      *conn;
     Ns_ReturnCode status;
+    bool          softError = NS_FALSE;
 
     NS_NONNULL_ASSERT(interp != NULL);
 
@@ -2683,14 +2684,14 @@ NsConnRequire(Tcl_Interp *interp, unsigned int flags, Ns_Conn **connPtr)
         status = NS_ERROR;
 
     } else if (((flags & NS_CONN_REQUIRE_CONNECTED) != 0u)
-               && (Ns_ConnSockPtr(conn) == NULL)
-               && nsconf.reject_already_closed_or_detached_connection) {
+               && (Ns_ConnSockPtr(conn) == NULL)) {
+        softError = (!nsconf.reject_already_closed_or_detached_connection);
         Tcl_SetObjResult(interp, Tcl_NewStringObj("connection socket is detached", -1));
         status = NS_ERROR;
 
     } else if (((flags & NS_CONN_REQUIRE_OPEN) != 0u)
-               && ((conn->flags & NS_CONN_CLOSED) != 0u)
-               && nsconf.reject_already_closed_or_detached_connection) {
+               && ((conn->flags & NS_CONN_CLOSED) != 0u)) {
+        softError = (!nsconf.reject_already_closed_or_detached_connection);
         Tcl_SetObjResult(interp, Tcl_NewStringObj("connection already closed", -1));
         status = NS_ERROR;
 
@@ -2706,6 +2707,17 @@ NsConnRequire(Tcl_Interp *interp, unsigned int flags, Ns_Conn **connPtr)
         status = NS_OK;
     }
 
+    if (tclResultPtr != NULL) {
+        *tclResultPtr = TCL_OK;
+        if (status == NS_ERROR) {
+            if (softError) {
+                Tcl_ResetResult(interp);
+                Ns_Log(Notice, "skip output due to rejectalreadyclosedconn == false");
+            } else {
+                *tclResultPtr = TCL_ERROR;
+            }
+        }
+    }
     return status;
 }
 
