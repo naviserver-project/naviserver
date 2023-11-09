@@ -1150,6 +1150,17 @@ AC_DEFUN([TEA_CONFIG_CFLAGS], [
 	    # which requires x86|amd64|ia64.
 	    MACHINE="X86"
 	    if test "$do64bit" != "no" ; then
+                case "$do64bit" in
+                    amd64|x64|yes)
+                        MACHINE="AMD64" ; # default to AMD64 64-bit build
+                        ;;
+                    arm64|aarch64)
+                        MACHINE="ARM64"
+                        ;;
+                    ia64)
+                        MACHINE="IA64"
+                        ;;
+                esac
 		if test "x${MSSDK}x" = "xx" ; then
 		    MSSDK="C:/Progra~1/Microsoft Platform SDK"
 		fi
@@ -1317,6 +1328,13 @@ AC_DEFUN([TEA_CONFIG_CFLAGS], [
 				RANLIB="x86_64-w64-mingw32-ranlib"
 				RC="x86_64-w64-mingw32-windres"
 			    ;;
+                            arm64|aarch64)
+                                CC="aarch64-w64-mingw32-clang"
+                                LD="aarch64-w64-mingw32-ld"
+                                AR="aarch64-w64-mingw32-ar"
+                                RANLIB="aarch64-w64-mingw32-ranlib"
+                                RC="aarch64-w64-mingw32-windres"
+                            ;;
 			    *)
 				CC="i686-w64-mingw32-gcc"
 				LD="i686-w64-mingw32-ld"
