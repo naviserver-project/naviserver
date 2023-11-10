@@ -292,6 +292,7 @@ static Ns_TaskProc HttpProc;
  */
 static TCL_OBJCMDPROC_T HttpCancelObjCmd;
 static TCL_OBJCMDPROC_T HttpCleanupObjCmd;
+static TCL_OBJCMDPROC_T HttpKeepalivesObjCmd;
 static TCL_OBJCMDPROC_T HttpListObjCmd;
 #ifdef MEM_RECORD_DEBUG
 static TCL_OBJCMDPROC_T HttpMeminfoObjCmd;
@@ -1188,17 +1189,18 @@ NsTclHttpObjCmd(
     Tcl_Obj *const* objv
 ) {
     const Ns_SubCmdSpec subcmds[] = {
-        {"cancel",   HttpCancelObjCmd},
-        {"cleanup",  HttpCleanupObjCmd},
-        {"list",     HttpListObjCmd},
+        {"cancel",     HttpCancelObjCmd},
+        {"cleanup",    HttpCleanupObjCmd},
+        {"keepalives", HttpKeepalivesObjCmd},
+        {"list",       HttpListObjCmd},
 #ifdef MEM_RECORD_DEBUG
-        {"meminfo",  HttpMeminfoObjCmd},
+        {"meminfo",    HttpMeminfoObjCmd},
 #endif
-        {"queue",    HttpQueueObjCmd},
-        {"run",      HttpRunObjCmd},
-        {"stats",    HttpStatsObjCmd},
-        {"wait",     HttpWaitObjCmd},
-        {NULL,       NULL}
+        {"queue",      HttpQueueObjCmd},
+        {"run",        HttpRunObjCmd},
+        {"stats",      HttpStatsObjCmd},
+        {"wait",       HttpWaitObjCmd},
+        {NULL,         NULL}
     };
 
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
@@ -1910,6 +1912,87 @@ HttpStatsObjCmd(
 
     return result;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HttpKeepalivesObjCmd
+ *
+ *      Implements "ns_http keepalives".
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+HttpKeepalivesObjCmd(
+    ClientData  clientData,
+    Tcl_Interp *interp,
+    TCL_OBJC_T         objc,
+    Tcl_Obj    *const* objv
+) {
+    int            result = TCL_OK;
+    Tcl_Obj       *resultObj = NULL;
+    size_t         i;
+    Ns_Time        now;
+    Tcl_DString    ds;
+
+    Ns_GetTime(&now);
+    Tcl_DStringInit(&ds);
+    resultObj = Tcl_NewListObj(0, NULL);
+
+    Ns_MutexLock(&closeWaitingMutex);
+    for (i = 0; i < closeWaitingList.size; i ++) {
+        Tcl_Obj          *entryObj = Tcl_NewDictObj();
+        CloseWaitingData *currentCwDataPtr = closeWaitingList.data[i];
+        Ns_Time           diffTime;
+
+        (void) Tcl_DictObjPut(interp, entryObj,
+                              Tcl_NewStringObj("slot", 4),
+                              Tcl_NewLongObj(i));
+
+        (void) Tcl_DictObjPut(interp, entryObj,
+                              Tcl_NewStringObj("state", 5),
+                              Tcl_NewStringObj(currentCwDataPtr->state == CW_FREE ? "free"
+                                               : currentCwDataPtr->state == CW_INUSE ? "inuse"
+                                               : currentCwDataPtr->state == CW_WAITING ? "waiting"
+                                               : "unknown", TCL_INDEX_NONE));
+
+        if (currentCwDataPtr->state != CW_FREE) {
+            (void) Ns_DiffTime(&currentCwDataPtr->expire, &now, &diffTime);
+
+            Ns_DStringPrintf(&ds, NS_TIME_FMT, (int64_t)diffTime.sec, diffTime.usec);
+            (void) Tcl_DictObjPut(interp, entryObj,
+                                  Tcl_NewStringObj("expire", 6),
+                                  Tcl_NewStringObj(ds.string, ds.length));
+
+            Tcl_DStringSetLength(&ds, 0);
+            Ns_DStringPrintf(&ds, "%s:%hu", currentCwDataPtr->host, currentCwDataPtr->port);
+            (void) Tcl_DictObjPut(interp, entryObj,
+                                  Tcl_NewStringObj("peer", 4),
+                                  Tcl_NewStringObj(ds.string, ds.length));
+            Tcl_DStringSetLength(&ds, 0);
+
+            (void) Tcl_DictObjPut(interp, entryObj,
+                                  Tcl_NewStringObj("sock", 4),
+                                  Tcl_NewIntObj((int)currentCwDataPtr->sock));
+        }
+
+        Tcl_ListObjAppendElement(interp, resultObj, entryObj);
+    }
+    Ns_MutexUnlock(&closeWaitingMutex);
+
+    Tcl_SetObjResult(interp, resultObj);
+    Tcl_DStringFree(&ds);
+
+    return result;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -5916,7 +5999,8 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
     if (cwDataPtr == NULL) {
         cwDataPtr = ns_calloc(1u, sizeof(CloseWaitingData));
         cwDataPtr->pos = closeWaitingList.size;
-        Ns_Log(Notice, "PersistentConnectionAdd: allocate new slot on pos %ld", cwDataPtr->pos);
+        Ns_Log(Notice, "PersistentConnectionAdd: allocate new slot for '%s:%hu' on pos %ld",
+               httpPtr->host, httpPtr->port, cwDataPtr->pos);
         Ns_DListAppend(&closeWaitingList, cwDataPtr);
     }
 
