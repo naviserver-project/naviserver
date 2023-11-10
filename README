@@ -106,7 +106,7 @@ macOS 10.2+ and Windows. To compile and install:
         $ make
         $ su -c 'make install'
 
-    The server's configure script takes the following options:
+    The configure script takes the following options:
 
     --with-tcl=/usr/local/ns/lib
 
