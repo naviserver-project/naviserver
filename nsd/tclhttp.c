@@ -1968,10 +1968,16 @@ CloseWaitingCheckExpire(void *UNUSED(arg), int UNUSED(id)) {
         }
         diff = Ns_DiffTime(&now, &currentCwDataPtr->expire, NULL);
         if (diff > -1) {
-            Ns_Log(Notice, "CloseWaitingCheckExpire closes sock %d host %s:%hu in state %d",
-                   currentCwDataPtr->sock, currentCwDataPtr->host, currentCwDataPtr->port,
-            currentCwDataPtr->state);
-            CloseWaitingDataClean(currentCwDataPtr);
+            if (currentCwDataPtr->state == CW_INUSE) {
+                Ns_Log(Notice, "CloseWaitingCheckExpire sock %d host %s:%hu expired,"
+                       " but still marked as INUSE",
+                       currentCwDataPtr->sock, currentCwDataPtr->host, currentCwDataPtr->port);
+            } else {
+                Ns_Log(Notice, "CloseWaitingCheckExpire closes sock %d host %s:%hu in state %d",
+                       currentCwDataPtr->sock, currentCwDataPtr->host, currentCwDataPtr->port,
+                       currentCwDataPtr->state);
+                CloseWaitingDataClean(currentCwDataPtr);
+            }
         }
     }
     Ns_MutexUnlock(&closeWaitingMutex);
