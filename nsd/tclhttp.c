@@ -2054,13 +2054,23 @@ CloseWaitingCheckExpire(void *UNUSED(arg), int UNUSED(id)) {
             if (currentCwDataPtr->state == CW_INUSE) {
                 int errorCode = Ns_SockErrorCode(NULL, currentCwDataPtr->sock);
 
-                Ns_Log(Notice, "CloseWaitingCheckExpire sock %d host %s:%hu expired,"
+                /*
+                 * Check, if the socket is in an error state. Checking as well
+                 * the OpenSSL error code won't work here, since the errors
+                 * are kept per thread, and the janitor is working in a different thread.
+                 */
+
+                /*Ns_Log(Notice, "CloseWaitingCheckExpire sock %d host %s:%hu expired,"
                        " but still marked as INUSE, errorCode %d",
                        currentCwDataPtr->sock, currentCwDataPtr->host, currentCwDataPtr->port,
-                       errorCode);
+                       errorCode);*/
 
                 if (errorCode != 0) {
-                    Ns_Log(Notice, "CloseWaitingCheckExpire: forces close in error state");
+                    Ns_Log(Notice, "CloseWaitingCheckExpire: forces close in state INUSE for"
+                           " sock %d host %s:%hu due to sock error %d",
+                           currentCwDataPtr->sock, currentCwDataPtr->host, currentCwDataPtr->port,
+                           errorCode
+                          );
                     CloseWaitingDataClean(currentCwDataPtr);
                 }
 
@@ -2556,6 +2566,7 @@ HttpGetResult(
         } else {
 #if defined(TCLHTTP_USE_EXTERNALTOUTF)
             Tcl_DString ds;
+
             Tcl_DStringInit(&ds);
             (void)Tcl_ExternalToUtfDString(encoding, cData, cSize, &ds);
             replyBodyObj = Tcl_NewStringObj(Tcl_DStringValue(&ds), TCL_INDEX_NONE);
@@ -2594,6 +2605,14 @@ HttpGetResult(
             if (strncasecmp(field, "close", 5) == 0) {
                 httpPtr->flags &= ~NS_HTTP_KEEPALIVE;
             }
+        }
+
+        /*
+         * Close the connection as well when httpPtr->error is set to avoid
+         * keep-alive for sockets in error states.
+         */
+        if (httpPtr->error != NULL) {
+            httpPtr->flags &= ~NS_HTTP_KEEPALIVE;
         }
         /*
          * Sanity check: When the keep-alive flag is still set, we should have
