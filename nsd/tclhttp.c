@@ -2052,9 +2052,18 @@ CloseWaitingCheckExpire(void *UNUSED(arg), int UNUSED(id)) {
         diff = Ns_DiffTime(&now, &currentCwDataPtr->expire, NULL);
         if (diff > -1) {
             if (currentCwDataPtr->state == CW_INUSE) {
+                int errorCode = Ns_SockErrorCode(NULL, currentCwDataPtr->sock);
+
                 Ns_Log(Notice, "CloseWaitingCheckExpire sock %d host %s:%hu expired,"
-                       " but still marked as INUSE",
-                       currentCwDataPtr->sock, currentCwDataPtr->host, currentCwDataPtr->port);
+                       " but still marked as INUSE, errorCode %d",
+                       currentCwDataPtr->sock, currentCwDataPtr->host, currentCwDataPtr->port,
+                       errorCode);
+
+                if (errorCode != 0) {
+                    Ns_Log(Notice, "CloseWaitingCheckExpire: forces close in error state");
+                    CloseWaitingDataClean(currentCwDataPtr);
+                }
+
             } else {
                 Ns_Log(Notice, "CloseWaitingCheckExpire closes sock %d host %s:%hu in state %d",
                        currentCwDataPtr->sock, currentCwDataPtr->host, currentCwDataPtr->port,
