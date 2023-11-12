@@ -3365,6 +3365,13 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_O
 }
 
 int
+NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+{
+    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 1.1.1 built into NaviServer");
+    return TCL_ERROR;
+}
+
+int
 NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 3.2 built into NaviServer");

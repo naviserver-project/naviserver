@@ -491,8 +491,7 @@ pseudorandom function (PRF) and with dkLen == output length of
 HMAC == output length of the digest function.
 
 [para]
-The function has less requirements on the version of
-OpenSSL than [cmd "ns_crypto::scrypt"].
+The function requires at least OpenSSL 1.1.1.
 
 [para]
 When the option [option -binary] is specified, it applies to
