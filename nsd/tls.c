@@ -35,6 +35,48 @@
 
 #include "nsd.h"
 
+static void ReportError(Tcl_Interp *interp, const char *fmt, ...)
+    NS_GNUC_NONNULL(2) NS_GNUC_PRINTF(2,3);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReportError --
+ *
+ *      Error reporting function for this file.  The function has the
+ *      fprintf interface (format string plus arguments) and leaves an
+ *      error message in the interpreter's result object, when an
+ *      interpreter is provided. Otherwise, it outputs a warning to
+ *      the system log.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Error reporting.
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+ReportError(Tcl_Interp *interp, const char *fmt, ...)
+{
+    va_list     ap;
+    Tcl_DString ds;
+
+    NS_NONNULL_ASSERT(fmt != NULL);
+
+    Tcl_DStringInit(&ds);
+    va_start(ap, fmt);
+    Ns_DStringVPrintf(&ds, fmt, ap);
+    va_end(ap);
+    if (interp != NULL) {
+        Tcl_DStringResult(interp, &ds);
+    } else {
+        Ns_Log(Warning, "%s", ds.string);
+        Tcl_DStringFree(&ds);
+    }
+}
+
 #ifdef HAVE_OPENSSL_EVP_H
 # include "nsopenssl.h"
 # include <openssl/ssl.h>
@@ -105,9 +147,6 @@ static bool
 OCSP_ResponseIsValid(OCSP_RESPONSE *resp, OCSP_CERTID *id)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 # endif
-
-static void ReportError(Tcl_Interp *interp, const char *fmt, ...)
-    NS_GNUC_NONNULL(2) NS_GNUC_PRINTF(2,3);
 
 static Ns_ReturnCode WaitFor(NS_SOCKET sock, unsigned int st, Ns_Time *timeoutPtr);
 
@@ -1321,45 +1360,6 @@ SSLPassword(char *buf, int num, int UNUSED(rwflag), void *UNUSED(userdata))
     fprintf(stdout, "Enter SSL password:");
     pwd = fgets(buf, num, stdin);
     return (pwd != NULL ? (int)strlen(buf) : 0);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * ReportError --
- *
- *      Error reporting function for this file.  The function has the
- *      fprintf interface (format string plus arguments) and leaves an
- *      error message in the interpreter's result object, when an
- *      interpreter is provided. Otherwise, it outputs a warning to
- *      the system log.
- *
- * Results:
- *      None.
- *
- * Side effects:
- *      Error reporting.
- *
- *----------------------------------------------------------------------
- */
-static void
-ReportError(Tcl_Interp *interp, const char *fmt, ...)
-{
-    va_list     ap;
-    Tcl_DString ds;
-
-    NS_NONNULL_ASSERT(fmt != NULL);
-
-    Tcl_DStringInit(&ds);
-    va_start(ap, fmt);
-    Ns_DStringVPrintf(&ds, fmt, ap);
-    va_end(ap);
-    if (interp != NULL) {
-        Tcl_DStringResult(interp, &ds);
-    } else {
-        Ns_Log(Warning, "%s", ds.string);
-        Tcl_DStringFree(&ds);
-    }
 }
 
 /*
