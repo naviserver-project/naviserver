@@ -30,8 +30,11 @@ test ns_log-2.2 {basic syntax} -body {
 
 ns_logctl hold
 ns_logctl trunc
-set logdebug [ns_logctl severity debug on]
-set logdev [ns_logctl severity dev on]
+
+set logdebug   [ns_logctl severity debug on]
+set logdev     [ns_logctl severity dev on]
+set lognotice  [ns_logctl severity notice on]
+set logwarning [ns_logctl severity warning on]
 
 test ns_log-3.1 {severity} -body {
     ns_log notice test
@@ -208,10 +211,13 @@ test ns_log-7.0 {two callbacks test} -body {
 
 ns_logctl trunc
 ns_logctl release
-ns_logctl severity debug $logdebug
-ns_logctl severity dev $logdev
 
-unset logdebug logdev
+ns_logctl severity debug   $logdebug
+ns_logctl severity dev     $logdev
+ns_logctl severity notice  $lognotice
+ns_logctl severity warning $logwarning
+
+unset logdebug logdev lognotice logwarning
 
 
 cleanupTests

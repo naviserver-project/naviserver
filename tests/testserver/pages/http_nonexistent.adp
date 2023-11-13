@@ -14,7 +14,7 @@ if {0} {
         ns_adp_puts $r
         set r
     } trap NS_TIMEOUT {r} {
-        puts stderr "REQUEST ends in Timeout"
+        #puts stderr "REQUEST ends in Timeout"
         ns_log notice "Trap NS_TIMEOUT $r"
     } on error {errorMsg} {
         puts stderr "REQUEST ends in ERROR: $errorMsg"

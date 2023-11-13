@@ -75,6 +75,11 @@ proc tcltest::cleanupTestsHook {} {
 #ns_logctl severity Debug(ns:driver) true
 #ns_logctl severity debug on
 
+if {"start" in [configure -verbose]} {
+    ns_logctl severity notice on
+    ns_logctl severity warning on
+}
+
 runAllTests
 
 #
