@@ -105,6 +105,9 @@ static bool InitOnceHttp(void);
 static void CloseWaitingDataClean(CloseWaitingData *cwDataPtr)
     NS_GNUC_NONNULL(1);
 
+static const char* CloseWaitingDataPrettyState(CloseWaitingData *cwDataPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+
 static int HttpQueue(
     NsInterp *itPtr,
     TCL_OBJC_T objc,
@@ -1958,10 +1961,8 @@ HttpKeepalivesObjCmd(
 
         (void) Tcl_DictObjPut(interp, entryObj,
                               Tcl_NewStringObj("state", 5),
-                              Tcl_NewStringObj(currentCwDataPtr->state == CW_FREE ? "free"
-                                               : currentCwDataPtr->state == CW_INUSE ? "inuse"
-                                               : currentCwDataPtr->state == CW_WAITING ? "waiting"
-                                               : "unknown", TCL_INDEX_NONE));
+                              Tcl_NewStringObj(CloseWaitingDataPrettyState(currentCwDataPtr),
+                                               TCL_INDEX_NONE));
 
         if (currentCwDataPtr->state != CW_FREE) {
             (void) Ns_DiffTime(&currentCwDataPtr->expire, &now, &diffTime);
@@ -2034,6 +2035,25 @@ static bool InitOnceHttp(void) {
     return NS_TRUE;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * CloseWaitingCheckExpire --
+ *
+ *      Janitor proc of type "Ns_SchedProc" which checks for expired items in
+ *      the close waitin list. The list is typically very short (up to max 10
+ *      elements) therefore the linear search over all items sounds
+ *      sufficient. In case the list gets longer, we might consider compacting
+ *      or recording the position of the last active item.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
 static void
 CloseWaitingCheckExpire(void *UNUSED(arg), int UNUSED(id)) {
     size_t  i;
@@ -2075,9 +2095,9 @@ CloseWaitingCheckExpire(void *UNUSED(arg), int UNUSED(id)) {
                 }
 
             } else {
-                Ns_Log(Notice, "CloseWaitingCheckExpire closes sock %d host %s:%hu in state %d",
+                Ns_Log(Notice, "CloseWaitingCheckExpire closes sock %d host %s:%hu in state %s",
                        currentCwDataPtr->sock, currentCwDataPtr->host, currentCwDataPtr->port,
-                       currentCwDataPtr->state);
+                       CloseWaitingDataPrettyState(currentCwDataPtr));
                 CloseWaitingDataClean(currentCwDataPtr);
             }
         }
@@ -2085,6 +2105,29 @@ CloseWaitingCheckExpire(void *UNUSED(arg), int UNUSED(id)) {
     Ns_MutexUnlock(&closeWaitingMutex);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * CloseWaitingDataPrettyState --
+ *
+ *      Provide a human readable form of the state of a CloseWaiting entry.
+ *
+ * Results:
+ *      String.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static const char*
+CloseWaitingDataPrettyState(CloseWaitingData *cwDataPtr)
+{
+    return cwDataPtr->state == CW_FREE ? "free"
+        : cwDataPtr->state == CW_INUSE ? "inuse"
+        : cwDataPtr->state == CW_WAITING ? "waiting"
+        : "unknown";
+}
 
 
 /*
@@ -6010,9 +6053,10 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
         int               errorCode = Ns_SockErrorCode(NULL, currentCwDataPtr->sock);
 
         Ns_Log(Ns_LogTaskDebug, "PersistentConnectionAdd: [%ld] compare with host '%s:%hu'"
-            " state %d sock %d error code %d",
-            i, currentCwDataPtr->host, currentCwDataPtr->port, currentCwDataPtr->state,
-            currentCwDataPtr->sock, errorCode );
+               " state %s sock %d error code %d",
+               i, currentCwDataPtr->host, currentCwDataPtr->port,
+               CloseWaitingDataPrettyState(currentCwDataPtr),
+               currentCwDataPtr->sock, errorCode );
         if (errorCode != 0) {
             Ns_Log(Notice, "PersistentConnectionAdd: reuse slot [%ld] with stale socket !!!", i);
             CloseWaitingDataClean(currentCwDataPtr);
