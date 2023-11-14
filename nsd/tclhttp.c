@@ -2087,9 +2087,9 @@ CloseWaitingCheckExpire(void *UNUSED(arg), int UNUSED(id)) {
 
                 if (errorCode != 0) {
                     Ns_Log(Notice, "CloseWaitingCheckExpire: forces close in state INUSE for"
-                           " sock %d host %s:%hu due to sock error %d",
+                           " sock %d host %s:%hu due to sock error: %s",
                            currentCwDataPtr->sock, currentCwDataPtr->host, currentCwDataPtr->port,
-                           errorCode
+                           strerror(errorCode)
                           );
                     CloseWaitingDataClean(currentCwDataPtr);
                 }
@@ -6050,20 +6050,13 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
     Ns_MutexLock(&closeWaitingMutex);
     for (i = 0; i < closeWaitingList.size; i ++) {
         CloseWaitingData *currentCwDataPtr = closeWaitingList.data[i];
-        int               errorCode = Ns_SockErrorCode(NULL, currentCwDataPtr->sock);
 
-        Ns_Log(Ns_LogTaskDebug, "PersistentConnectionAdd: [%ld] compare with host '%s:%hu'"
-               " state %s sock %d error code %d",
-               i, currentCwDataPtr->host, currentCwDataPtr->port,
-               CloseWaitingDataPrettyState(currentCwDataPtr),
-               currentCwDataPtr->sock, errorCode );
-        if (errorCode != 0) {
-            Ns_Log(Notice, "PersistentConnectionAdd: reuse slot [%ld] with stale socket !!!", i);
-            CloseWaitingDataClean(currentCwDataPtr);
-            cwDataPtr = currentCwDataPtr;
-            break;
-
-        } else if (currentCwDataPtr->state == CW_FREE || currentCwDataPtr->sock == httpPtr->sock) {
+        if (currentCwDataPtr->state == CW_FREE) {
+            /*
+             * Reuse free slot. We could also check for other reuse/cleanup
+             * conditions in error states, but this proved to be tricky due to
+             * potential crashes in OpenSSL during cleanup.
+             */
             cwDataPtr = currentCwDataPtr;
             break;
         }
