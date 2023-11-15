@@ -120,11 +120,11 @@ proc ns_sendmail args {
         set cbody [encoding convertto $encoding $body]
         set csubj [encoding convertto $encoding $subject]
 
-        if {[string length $subject] != [string bytelength $csubj]} {
+        if {[string length $subject] != [string length [encoding convertto utf-8 $csubj]]} {
             set quotemsg 1
             set subject "=?$encoding?Q?[_ns_sendmail_qp $csubj]?="
         }
-        if {[string length $body] != [string bytelength $cbody]} {
+        if {[string length $body] != [string length [encoding convertto utf-8 $cbody]]} {
             set quotemsg 1
             set body [_ns_sendmail_breaklines [_ns_sendmail_qp $cbody]]
         }
