@@ -7,7 +7,7 @@ switch -exact $pageName {
         if {![file readable $page]} {
             set outputfile /tmp/bitbucket-download-[pid].tar.gz
             ns_http run -outputfile $outputfile -spoolsize 0 $source
-            if {$tcl_platform(os) eq "Darwin"} {
+            if {$::tcl_platform(os) eq "Darwin"} {
                 set tar "exec tar Ozxvf $outputfile *$pageName > $page"
             } else {
                 set tar "exec tar -Ozxvf $outputfile --wildcards *$pageName > $page"

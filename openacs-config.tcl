@@ -145,8 +145,8 @@ ns_configure_variables "oacs_" $defaultConfig
 # otherwise some programs called via exec might try to write into the
 # root home directory.
 #
-set env(HOME) $homedir
-set env(LANG) en_US.UTF-8
+set ::env(HOME) $homedir
+set ::env(LANG) en_US.UTF-8
 
 
 ns_logctl severity "Debug(ns:driver)" $debug
@@ -1000,7 +1000,7 @@ ns_section ns/server/$server/modules {
     }
 
     # authorize-gateway package requires dqd_utils
-    # ns_param	dqd_utils dqd_utils[expr {int($tcl_version)}]
+    # ns_param	dqd_utils dqd_utils[expr {int($::tcl_version)}]
 
     # LDAP authentication
     # ns_param	nsldap             ${bindir}/nsldap
@@ -1162,5 +1162,5 @@ ns_logctl severity "Debug(sql)" $verboseSQL
 #
 #ns_log notice "nsd.tcl: ns_rlimit coresize [ns_rlimit coresize unlimited]"
 
-ns_log notice "nsd.tcl: using threadsafe tcl: [info exists tcl_platform(threaded)]"
+ns_log notice "nsd.tcl: using threadsafe tcl: [info exists ::tcl_platform(threaded)]"
 ns_log notice "nsd.tcl: finished reading configuration file."

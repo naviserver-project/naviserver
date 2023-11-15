@@ -92,8 +92,7 @@ proc check_file_normalize_ok_p {ff {only_unix_p 1}} {
    # If you run on Unix for debugging, [file normalize {C:/foo/bar}] gives
    # weird results, presumably because the path is bogus there.
    if { $only_unix_p } {
-      global tcl_platform
-      if {{unix} ne $tcl_platform(platform)} { return 1 }
+      if {{unix} ne $::tcl_platform(platform)} { return 1 }
    }
    set dd [file normalize [pwd]]
    if {[string match "${dd}*" $ff]} { return 0 } else { return 1 }

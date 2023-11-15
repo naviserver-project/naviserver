@@ -628,8 +628,8 @@ includes a file, executes another ADP, and uses streaming.
  %>
  
  Number of accesses since server start: <%= $count %><br>
- tcl_version: <%= $tcl_version %><br>
- tcl_library: <%= $tcl_library %><br>
+ tcl_version: <%= $::tcl_version %><br>
+ tcl_library: <%= $::tcl_library %><br>
  Host: <%= $host %><br>
  
  <!-- Include the contents of a file: -->

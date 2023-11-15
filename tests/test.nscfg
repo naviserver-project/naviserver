@@ -6,7 +6,7 @@
 #
 # Make sure, the testfile runs with an expected locale
 #
-set env(LANG) en_US.UTF-8
+set ::env(LANG) en_US.UTF-8
 
 
 #

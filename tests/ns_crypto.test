@@ -10,7 +10,7 @@ namespace import -force ::tcltest::*
 #
 tcltest::testConstraint crypto [ns_info ssl]
 tcltest::testConstraint nsf [expr {[info commands ::nsf::proc] ne ""}]
-tcltest::testConstraint tcl86 [expr {$tcl_version >= 8.6}]
+tcltest::testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
 tcltest::testConstraint scrypt [expr {![catch {::ns_crypto::scrypt -salt NaCl -secret 42}]}]
 tcltest::testConstraint argon2 [expr {![catch {::ns_crypto::argon2 -variant ARGON2D -salt saltsalt -secret 42}]}]
 
