@@ -56,9 +56,6 @@ if {$::tcl_platform(platform) eq "windows"} {
 # The trick with cleanupTestsHook works for Tcl 8.5 and newer.
 # The more modern variant of this is to use
 #
-# The trick with cleanupTestsHook works for Tcl 8.5 and newer.
-# The more modern variant of this is to use
-#
 #   set code [runAllTests]
 #
 # but requires Tcl 8.6.
