@@ -1934,10 +1934,10 @@ HttpStatsObjCmd(
 
 static int
 HttpKeepalivesObjCmd(
-    ClientData  clientData,
-    Tcl_Interp *interp,
-    TCL_OBJC_T         objc,
-    Tcl_Obj    *const* objv
+    ClientData         UNUSED(clientData),
+    Tcl_Interp        *interp,
+    TCL_OBJC_T         UNUSED(objc),
+    Tcl_Obj    *const* UNUSED(objv)
 ) {
     int            result = TCL_OK;
     Tcl_Obj       *resultObj = NULL;
@@ -1957,7 +1957,7 @@ HttpKeepalivesObjCmd(
 
         (void) Tcl_DictObjPut(interp, entryObj,
                               Tcl_NewStringObj("slot", 4),
-                              Tcl_NewLongObj(i));
+                              Tcl_NewLongObj((long)i));
 
         (void) Tcl_DictObjPut(interp, entryObj,
                               Tcl_NewStringObj("state", 5),
@@ -6064,8 +6064,8 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
     if (cwDataPtr == NULL) {
         cwDataPtr = ns_calloc(1u, sizeof(CloseWaitingData));
         cwDataPtr->pos = closeWaitingList.size;
-        Ns_Log(Notice, "PersistentConnectionAdd: allocate new slot for '%s:%hu' on pos %ld",
-               httpPtr->host, httpPtr->port, cwDataPtr->pos);
+        Ns_Log(Notice, "PersistentConnectionAdd: allocate new slot for '%s:%hu' on pos %ld sock %d",
+               httpPtr->host, httpPtr->port, cwDataPtr->pos, httpPtr->sock);
         Ns_DListAppend(&closeWaitingList, cwDataPtr);
     }
 
