@@ -6033,6 +6033,7 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
 {
     CloseWaitingData *cwDataPtr = NULL;
     size_t            i;
+    int               errorCode;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(reasonPtr != NULL);
@@ -6045,6 +6046,16 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
         ) {
        *reasonPtr = "cannot add invalid socket to close waiting list";
        return NS_FALSE;
+    }
+
+    errorCode = Ns_SockErrorCode(NULL, httpPtr->sock);
+    /*
+     * Check, if the socket is in an error state. We could also check here for
+     * additional error states from OpenSSL, which are kept per thread.
+     */
+    if (errorCode != 0) {
+        *reasonPtr = "cannot add socket in error state to close waiting list";
+        return NS_FALSE;
     }
 
     Ns_MutexLock(&closeWaitingMutex);
