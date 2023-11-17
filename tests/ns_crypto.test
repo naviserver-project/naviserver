@@ -346,14 +346,15 @@ test hmac-md-1.1 {test results of ns_crypto::hmac passed to ns_md} -body {
 test base64-md5.0 {
     ns_base64encode and decode with 2 byte UTF-8 character "ü"
 } -body {
+    set profile [expr {$::tcl_version < 9.0 ? "" : " -profile tcl8"}]
     set string "ü"
-    ns_log notice 00-literal-ü
+    #ns_log notice 00-literal-ü
     set m00 [ns_md5 "ü"]
     #ns_log notice 01-var-string-before-convertfrom
     #ns_log notice "obj(inp0) [nsf::__db_get_obj $string]"
     set m01 [ns_md5 $string]
     #ns_log notice "obj(inp1) [nsf::__db_get_obj $string]"
-    set s1 [encoding convertfrom utf-8 $string]
+    set s1 [encoding convertfrom {*}$profile utf-8 $string]
     #ns_log notice 02-var-string-after-convertfrom
     #ns_log notice "obj(inp2) [nsf::__db_get_obj $string]"
     set m02 [ns_md5 $string]
@@ -367,7 +368,7 @@ test base64-md5.0 {
     set decoded [ns_base64decode $encoded]
     set m1 [ns_md5 $decoded]
     #ns_log notice "obj(dec1) [nsf::__db_get_obj $decoded] $m1 $decoded"
-    set decoded2 [encoding convertfrom utf-8 $decoded]; # FAILS with TIP 657 branch
+    set decoded2 [encoding convertfrom {*}$profile utf-8 $decoded]; # FAILS with TIP 657 branch
     set m2 [ns_md5 $decoded2]
     #ns_log notice "obj(dec2) [nsf::__db_get_obj $decoded] $m2 $decoded2"
     list $m01 $m1 [string equal $m01 $m1] [string equal $m01 $m2]

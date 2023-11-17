@@ -1837,8 +1837,9 @@ test http-7.1a {
         ns_return 200 $contentType "<$contentType> AÄA[ns_conn content]ZÜZ"
     }
 } -body {
+    set profile [expr {$::tcl_version < 9.0 ? "" : " -profile replace"}]
     set encoding iso8859-1
-    set string [encoding convertto $encoding "Testing 'äöüß☀'"]
+    set string [encoding convertto {*}$profile $encoding "Testing 'äöüß☀'"]
     #set string [encoding convertto $encoding [binary format a* "Testing 'äöüß☀'"]]
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type "text/plain; $encoding"
@@ -1869,8 +1870,9 @@ test http-7.1b {
         ns_return 200 $contentType "<$contentType> AÄA${content}ZÜZ"
     }
 } -body {
+    set profile [expr {$::tcl_version < 9.0 ? "" : " -profile replace"}]
     set encoding iso8859-1
-    set string [encoding convertto $encoding "Testing 'äöüß☀'"]
+    set string [encoding convertto {*}$profile $encoding "Testing 'äöüß☀'"]
     #set string [encoding convertto $encoding [binary format a* "Testing 'äöüß☀'"]]
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type "text/plain; $encoding"
