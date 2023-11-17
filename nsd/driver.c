@@ -7379,7 +7379,7 @@ WriterSubmitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
         result = TCL_ERROR;
 
     } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
-        int            size;
+        TCL_SIZE_T     size;
         unsigned char *data = Tcl_GetByteArrayFromObj(dataObj, &size);
 
         if (data != NULL) {

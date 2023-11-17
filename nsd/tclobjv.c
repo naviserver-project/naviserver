@@ -718,7 +718,7 @@ Ns_ObjvByteArray(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
     if (likely(*objcPtr > 0)) {
         const unsigned char **dest = spec->dest;
 
-        *dest = Tcl_GetByteArrayFromObj(objv[0], (int *) spec->arg);
+        *dest = Tcl_GetByteArrayFromObj(objv[0], (TCL_SIZE_T *) spec->arg);
         *objcPtr -= 1;
         result = TCL_OK;
     } else {

@@ -972,7 +972,7 @@ OCSP_FromAIA(OCSP_REQUEST *req, const char *aiaURL, int req_timeout)
                     }
                     if (status == NS_OK) {
                         if (Tcl_DictObjGet(interp, resultObj, bodyObj, &valueObj) == TCL_OK) {
-                            int                  length;
+                            TCL_SIZE_T           length;
                             const unsigned char *bytes;
 
                             bytes = Tcl_GetByteArrayFromObj(valueObj, &length);
