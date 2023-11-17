@@ -102,16 +102,18 @@ foreach charset $charsets {
     set content ""
     for {set i 0x80} {$i <= 0xFF} {incr i} {
         set char [encoding convertfrom {*}$nocomplain $encoding [format %c $i]]
-        if {[string is print $char] && [encoding convertfrom $encoding [encoding convertto $encoding $char]] ne "?"} {
+        if {[string is print $char]
+            && [encoding convertfrom {*}$nocomplain $encoding [encoding convertto {*}$nocomplain $encoding $char]] ne "?"
+        } {
             append content $char
         } else {
             append content "."
         }
     }
-#   puts $content
+    #   puts $content
 
     test http_charsets-3.$charset.ns_http-and-utf "8-bit chars from $charset, ns_http gets utf-8 text" -setup {
-         ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} "utf-8" $content]
+        ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} "utf-8" $content]
     } -body {
         set result [ns_http run [ns_config test listenurl]/get]
         dict get $result body
@@ -121,7 +123,7 @@ foreach charset $charsets {
 
 
     test http_charsets-3.$charset.ns_http-default "8-bit chars from $charset, ns_http and 'encoding convertfrom'" -constraints !usingExternalToUtf -setup {
-         ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+        ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
     } -body {
         set result [ns_http run [ns_config test listenurl]/get]
         encoding convertfrom $encoding [dict get $result body]
@@ -131,7 +133,7 @@ foreach charset $charsets {
 
 
     test http_charsets-3.$charset.ns_http-externl "8-bit chars from $charset, ns_http autodecode" -constraints usingExternalToUtf -setup {
-         ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+        ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
     } -body {
         set result [ns_http run [ns_config test listenurl]/get]
         dict get $result body
@@ -141,7 +143,7 @@ foreach charset $charsets {
 
 
     test http_charsets-3.$charset.ns_http-1binary "8-bit chars from $charset, ns_http run -binary and 'encoding convertfrom'" -setup {
-         ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+        ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
     } -body {
         set result [ns_http run -binary [ns_config test listenurl]/get]
         encoding convertfrom $encoding [dict get $result body]
@@ -151,7 +153,7 @@ foreach charset $charsets {
 
 
     test http_charsets-3.$charset.ns_http-2binary "8-bit chars from $charset, ns_http queue -binary and 'encoding convertfrom'" -setup {
-         ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+        ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
     } -body {
         set result [ns_http wait [ns_http queue -binary [ns_config test listenurl]/get]]
         encoding convertfrom $encoding [dict get $result body]
@@ -161,7 +163,7 @@ foreach charset $charsets {
 
 
     test http_charsets-3.$charset.ns_http--binary "8-bit chars from $charset, ns_http wait -binary and 'encoding convertfrom'" -setup {
-         ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+        ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
     } -body {
         set result [ns_http wait [ns_http queue -binary [ns_config test listenurl]/get]]
         encoding convertfrom $encoding [dict get $result body]
@@ -186,103 +188,106 @@ unset -nocomplain charset encoding char content i
 
 if {![testConstraint pairsTest]} {
 
-puts "pairsTest not set, tests skipped"
+    ns_log notice "pairsTest not set, tests skipped"
 
 }  else {
+    #ns_log notice "running pairsTest"
 
-foreach charset $charsets {
-    set encoding [ns_encodingforcharset $charset]
-    for {set i 0x80} {$i <= 0xFF} {incr i} {
-        set char1 [encoding convertfrom $encoding [format %c $i]]
-        if {!([string is print $char1] && [encoding convertfrom $encoding [encoding convertto $encoding $char1]] ne "?")} {
-            continue
-        }
-        set content ""
-        for {set j 0x80} {$j <= 0xFF} {incr j} {
-            set char2 [encoding convertfrom $encoding [format %c $j]]
-            if {!([string is print $char2] && [encoding convertfrom $encoding [encoding convertto $encoding $char2]] ne "?")} {
+    foreach charset $charsets {
+        set encoding [ns_encodingforcharset $charset]
+        set profile [expr {$::tcl_version < 9.0 ? "" : " -profile tcl8"}]
+        ns_log notice "XXX"
+        for {set i 0x80} {$i <= 0xFF} {incr i} {
+            set char1 [encoding convertfrom {*}$profile $encoding [format %c $i]]
+            if {!([string is print $char1] && [encoding convertfrom {*}$profile $encoding [encoding convertto {*}$profile $encoding $char1]] ne "?")} {
                 continue
-                append content " " $char1 "."
-            } else {
-                append content " " $char1 $char2
             }
+            set content ""
+            for {set j 0x80} {$j <= 0xFF} {incr j} {
+                set char2 [encoding convertfrom {*}$profile $encoding [format %c $j]]
+                if {!([string is print $char2] && [encoding convertfrom {*}$profile $encoding [encoding convertto {*}$profile $encoding $char2]] ne "?")} {
+                    continue
+                    append content " " $char1 "."
+                } else {
+                    append content " " $char1 $char2
+                }
+            }
+            set x [format %2X $i]
+            ns_log notice "content: <$content>"
+
+            test http_charsets-4.$charset.$x.ns_http-and-utf "8-bit pairs starting with '$char1' from $charset, ns_http gets utf-8 text" -constraints !usingExternalToUtf -setup {
+                ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} "utf-8" $content]
+            } -body {
+                set result [ns_http run [ns_config test listenurl]/get]
+                dict get $result body
+            } -cleanup {
+                ns_unregister_op GET /get
+            } -result $content
+
+
+            test http_charsets-4.$charset.$x.ns_http-default "8-bit pairs starting with '$char1' from $charset, ns_http and 'encoding convertfrom'" -constraints !usingExternalToUtf -setup {
+                ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+            } -body {
+                set result [ns_http run [ns_config test listenurl]/get]
+                encoding convertfrom {*}$profile $encoding [dict get $result body]
+            } -cleanup {
+                ns_unregister_op GET /get
+            } -result $content
+
+
+            test http_charsets-4.$charset.$x.ns_http-externl "8-bit pairs starting with '$char1' from $charset, ns_http autodecode" -constraints usingExternalToUtf -setup {
+                ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+            } -body {
+                set result [ns_http run [ns_config test listenurl]/get]
+                dict get $result body
+            } -cleanup {
+                ns_unregister_op GET /get
+            } -result $content
+
+
+            test http_charsets-4.$charset.$x.ns_http--binary "8-bit pairs starting with '$char1' from $charset, 'ns_http run -binary' and 'encoding convertfrom'" -setup {
+                ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+            } -body {
+                set result [ns_http run -binary [ns_config test listenurl]/get]
+                encoding convertfrom $encoding [dict get $result body]
+            } -cleanup {
+                ns_unregister_op GET /get
+            } -result $content
+
+
+            test http_charsets-4.$charset.$x.ns_http-1binary "8-bit pairs starting with '$char1' from $charset, ns_http queue -binary and 'encoding convertfrom'" -setup {
+                ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+            } -body {
+                set result [ns_http wait [ns_http queue -binary [ns_config test listenurl]/get]]
+                encoding convertfrom $encoding [dict get $result body]
+            } -cleanup {
+                ns_unregister_op GET /get
+            } -result $content
+
+
+            test http_charsets-4.$charset.$x.ns_http-2binary "8-bit pairs starting with '$char1' from $charset, ns_http wait -binary and 'encoding convertfrom'" -setup {
+                ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+            } -body {
+                set result [ns_http wait [ns_http queue -binary [ns_config test listenurl]/get]]
+                encoding convertfrom $encoding [dict get $result body]
+            } -cleanup {
+                ns_unregister_op GET /get
+            } -result $content
+
+
+            test http_charsets-4.$charset.$x.curl-pipe-iconv "8-bit pairs starting with '$char1' from $charset, curl decoded by iconv" -constraints {curl iconv} -setup {
+                ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
+            } -body {
+                exec curl -gs [ns_config test listenurl]/get | iconv -f $charset
+            } -cleanup {
+                ns_unregister_op GET /get
+            } -result $content
+
+
         }
-        set x [format %2X $i]
-#       puts $content
-
-        test http_charsets-4.$charset.$x.ns_http-and-utf "8-bit pairs starting with '$char1' from $charset, ns_http gets utf-8 text" -constraints !usingExternalToUtf -setup {
-             ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} "utf-8" $content]
-        } -body {
-            set result [ns_http run [ns_config test listenurl]/get]
-            dict get $result body
-        } -cleanup {
-            ns_unregister_op GET /get
-        } -result $content
-
-
-        test http_charsets-4.$charset.$x.ns_http-default "8-bit pairs starting with '$char1' from $charset, ns_http and 'encoding convertfrom'" -constraints !usingExternalToUtf -setup {
-             ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
-        } -body {
-            set result [ns_http run [ns_config test listenurl]/get]
-            encoding convertfrom $encoding [dict get $result body]
-        } -cleanup {
-            ns_unregister_op GET /get
-        } -result $content
-
-
-        test http_charsets-4.$charset.$x.ns_http-externl "8-bit pairs starting with '$char1' from $charset, ns_http autodecode" -constraints usingExternalToUtf -setup {
-             ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
-        } -body {
-            set result [ns_http run [ns_config test listenurl]/get]
-            dict get $result body
-        } -cleanup {
-            ns_unregister_op GET /get
-        } -result $content
-
-
-        test http_charsets-4.$charset.$x.ns_http--binary "8-bit pairs starting with '$char1' from $charset, 'ns_http run -binary' and 'encoding convertfrom'" -setup {
-             ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
-        } -body {
-            set result [ns_http run -binary [ns_config test listenurl]/get]
-            encoding convertfrom $encoding [dict get $result body]
-        } -cleanup {
-            ns_unregister_op GET /get
-        } -result $content
-
-
-        test http_charsets-4.$charset.$x.ns_http-1binary "8-bit pairs starting with '$char1' from $charset, ns_http queue -binary and 'encoding convertfrom'" -setup {
-             ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
-        } -body {
-            set result [ns_http wait [ns_http queue -binary [ns_config test listenurl]/get]]
-            encoding convertfrom $encoding [dict get $result body]
-        } -cleanup {
-            ns_unregister_op GET /get
-        } -result $content
-
-
-        test http_charsets-4.$charset.$x.ns_http-2binary "8-bit pairs starting with '$char1' from $charset, ns_http wait -binary and 'encoding convertfrom'" -setup {
-             ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
-        } -body {
-            set result [ns_http wait [ns_http queue -binary [ns_config test listenurl]/get]]
-            encoding convertfrom $encoding [dict get $result body]
-        } -cleanup {
-            ns_unregister_op GET /get
-        } -result $content
-
-
-        test http_charsets-4.$charset.$x.curl-pipe-iconv "8-bit pairs starting with '$char1' from $charset, curl decoded by iconv" -constraints {curl iconv} -setup {
-            ns_register_proc GET /get [format {ns_return 200 "text/plain; charset=%s" "%s"} $charset $content]
-        } -body {
-            exec curl -gs [ns_config test listenurl]/get | iconv -f $charset
-        } -cleanup {
-            ns_unregister_op GET /get
-        } -result $content
-
-
     }
-}
 
-unset -nocomplain charset encoding char1 char2 content i j
+    unset -nocomplain charset encoding char1 char2 content i j
 
 }
 
@@ -525,9 +530,9 @@ test encoding_ns_http-3.5 {
     File in iso-8859-1 encoding should produce output with default OutputCharset;
     Content-Type-Header will be changed
 } -constraints usingExternalToUtf -body {
-#   nstest::http -getbody 1 \
-#       -getheaders {Content-Type Content-Length} \
-#       GET "/encoding.iso_adp"
+    #   nstest::http -getbody 1 \
+                                             #       -getheaders {Content-Type Content-Length} \
+                                             #       GET "/encoding.iso_adp"
     set result [ns_http run [ns_config test listenurl]/encoding.iso_adp]
     set headers [dict get $result headers]
     list [dict get $result status] \
@@ -543,9 +548,9 @@ test encoding_ns_http-3.6 {
     File in utf-8 encoding should produce output with default OutputCharset;
     Content-Type-Header will be changed
 } -constraints usingExternalToUtf -body {
-#   nstest::http -getbody 1 \
-#       -getheaders {Content-Type Content-Length} \
-#       GET "/encoding.utf_adp"
+    #   nstest::http -getbody 1 \
+                                             #       -getheaders {Content-Type Content-Length} \
+                                             #       GET "/encoding.utf_adp"
     set result [ns_http run [ns_config test listenurl]/encoding.utf_adp]
     set headers [dict get $result headers]
     list [dict get $result status] \
@@ -640,15 +645,15 @@ test encoding_ns_http-6.1 {
         ns_return 200 "text/plain; charset=utf-8" [string repeat x 8193]
     }
 } -body {
-#   set result [nstest::http -getbody 1 -getheaders content-type GET /encoding]
-#       list [lindex $result 0] [lindex $result 1] [string length [lindex $result 2]]
+    #   set result [nstest::http -getbody 1 -getheaders content-type GET /encoding]
+    #       list [lindex $result 0] [lindex $result 1] [string length [lindex $result 2]]
     set result [ns_http run [ns_config test listenurl]/encoding]
     set headers [dict get $result headers]
     list [dict get $result status] \
         [ns_set iget $headers Content-Type] \
         [ns_set iget $headers Content-Length]
 } -cleanup {
-        unset -nocomplain result
+    unset -nocomplain result
     ns_unregister_op GET /encoding
 } -result {200 {text/plain; charset=utf-8} 8193}
 
@@ -661,7 +666,7 @@ test encoding_ns_http-6.1 {
 test encoding_ns_http-7.1 {
     A text/* mime-type.
 } -constraints usingExternalToUtf -body {
-#   nstest::http -getbody 1 -getheaders content-type GET /hello.html
+    #   nstest::http -getbody 1 -getheaders content-type GET /hello.html
     set result [ns_http run [ns_config test listenurl]/hello.html]
     set headers [dict get $result headers]
     list [dict get $result status] \
@@ -672,7 +677,7 @@ test encoding_ns_http-7.1 {
 test encoding_ns_http-7.2 {
     An application/* mime-type for a text document.
 } -constraints usingExternalToUtf -body {
-#   nstest::http -getbody 1 -getheaders content-type GET /hello.xhtml
+    #   nstest::http -getbody 1 -getheaders content-type GET /hello.xhtml
     set result [ns_http run [ns_config test listenurl]/hello.xhtml]
     set headers [dict get $result headers]
     list [dict get $result status] \
