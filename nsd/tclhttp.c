@@ -6062,11 +6062,12 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
     for (i = 0; i < closeWaitingList.size; i ++) {
         CloseWaitingData *currentCwDataPtr = closeWaitingList.data[i];
 
-        if (currentCwDataPtr->state == CW_FREE) {
+        if (currentCwDataPtr->state == CW_FREE || currentCwDataPtr->sock == httpPtr->sock) {
             /*
-             * Reuse free slot. We could also check for other reuse/cleanup
-             * conditions in error states, but this proved to be tricky due to
-             * potential crashes in OpenSSL during cleanup.
+             * Reuse free slot or slot, where the keep-alive time is being
+             * extended (same value vor "sock"). We could also check for other
+             * reuse/cleanup conditions in error states, but this proved to be
+             * tricky due to potential crashes in OpenSSL during cleanup.
              */
             cwDataPtr = currentCwDataPtr;
             break;
@@ -6100,8 +6101,11 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
     httpPtr->ctx = NULL;
     httpPtr->ssl = NULL;
 
-    Ns_Log(Notice,"PersistentConnectionAdd added persistent connection for %s on pos %ld with expire %ld",
-        httpPtr->host, cwDataPtr->pos, cwDataPtr->expire.sec);
+    Ns_Log(Notice,"PersistentConnectionAdd added persistent connection for %s on pos %ld"
+           " with keepalive " NS_TIME_FMT " expire %ld",
+           httpPtr->host, cwDataPtr->pos,
+           (int64_t) httpPtr->keepAliveTimeout.sec, httpPtr->keepAliveTimeout.usec,
+           cwDataPtr->expire.sec);
 
     return NS_TRUE;
 }
@@ -6132,6 +6136,11 @@ CloseWaitingDataClean(CloseWaitingData *cwDataPtr)
 {
     NS_NONNULL_ASSERT(cwDataPtr != NULL);
 
+    /*Ns_Log(Notice, "CloseWaitingDataClean pos %ld called with sock %d host %s:%hu in state %s",
+           cwDataPtr->pos,
+           cwDataPtr->sock, cwDataPtr->host, cwDataPtr->port,
+           CloseWaitingDataPrettyState(cwDataPtr));*/
+
 #ifdef HAVE_OPENSSL_EVP_H
     if (cwDataPtr->ssl != NULL) {
         SSL_shutdown(cwDataPtr->ssl);
@@ -6152,6 +6161,10 @@ CloseWaitingDataClean(CloseWaitingData *cwDataPtr)
         cwDataPtr->host = NULL;
     }
     cwDataPtr->state = CW_FREE;
+
+    /*Ns_Log(Notice, "CloseWaitingDataClean pos %ld ... final state %s",
+           cwDataPtr->pos,
+           CloseWaitingDataPrettyState(cwDataPtr));*/
 }
 
 
