@@ -4309,8 +4309,8 @@ HttpClose(
 
     assert(CkCheck(httpPtr) != NULL);
 
-    Ns_Log(Ns_LogTaskDebug, "HttpClose: http:%p task:%p host %s sock %d",
-           (void*)httpPtr, (void*)httpPtr->task, httpPtr->host, httpPtr->sock);
+    Ns_Log(Ns_LogTaskDebug, "HttpClose: http:%p task:%p host %s sock %d flags %.6x",
+           (void*)httpPtr, (void*)httpPtr->task, httpPtr->host, httpPtr->sock, httpPtr->flags);
 
     /*
      * When HttpConnect runs into a failure, it might not have httpPtr->task
@@ -6059,21 +6059,42 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
     }
 
     Ns_MutexLock(&closeWaitingMutex);
-    for (i = 0; i < closeWaitingList.size; i ++) {
-        CloseWaitingData *currentCwDataPtr = closeWaitingList.data[i];
 
-        if (currentCwDataPtr->state == CW_FREE || currentCwDataPtr->sock == httpPtr->sock) {
-            /*
-             * Reuse free slot or slot, where the keep-alive time is being
-             * extended (same value vor "sock"). We could also check for other
-             * reuse/cleanup conditions in error states, but this proved to be
-             * tricky due to potential crashes in OpenSSL during cleanup.
-             */
-            cwDataPtr = currentCwDataPtr;
-            break;
+    if (httpPtr->pos != 0) {
+        /*
+         * The incoming httpPtr has already a slot assignment. Reuse it.
+         */
+        if (unlikely(httpPtr->pos > closeWaitingList.size)) {
+            *reasonPtr = "provided slot position is invalid";
+            Ns_MutexUnlock(&closeWaitingMutex);
+            return NS_FALSE;
+        }
+        cwDataPtr = closeWaitingList.data[httpPtr->pos-1];
+        /*Ns_Log(Notice,"PersistentConnectionAdd host '%s:%hu' reuse slot on input pos %ld",
+          httpPtr->host, httpPtr->port, httpPtr->pos);*/
+    } else {
+        /*
+         * Get a slot which can be reused.
+         */
+        for (i = 0; i < closeWaitingList.size; i ++) {
+            CloseWaitingData *currentCwDataPtr = closeWaitingList.data[i];
+
+            if (currentCwDataPtr->state == CW_FREE) {
+                /*
+                 * Reuse free slot or slot. We could also check for other
+                 * reuse/cleanup conditions in error states, but this proved
+                 * to be tricky due to potential crashes in OpenSSL during
+                 * cleanup.
+                 */
+                cwDataPtr = currentCwDataPtr;
+                break;
+            }
         }
     }
     if (cwDataPtr == NULL) {
+        /*
+         * Re-using a slot did not succeed. Allocate a new slot.
+         */
         cwDataPtr = ns_calloc(1u, sizeof(CloseWaitingData));
         cwDataPtr->pos = closeWaitingList.size;
         Ns_Log(Notice, "PersistentConnectionAdd: allocate new slot for '%s:%hu' on pos %ld sock %d",
