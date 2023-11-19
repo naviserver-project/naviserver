@@ -32,7 +32,10 @@ test ns_writer-1.4 {basic operation} -body {
 } -match exact -result {wrong # args: should be "ns_writer list ?-server server?"}
 
 test ns_writer-2.1 {basic operation} -body {
-    expr {[ns_writer list] eq ""}
+    # Since we cannot guarantee that no writer operation runs in the
+    # background, we just test, whether the command does not lead to
+    # an error and returns a well-formed list.
+    expr {[llength [ns_writer list]] >= 0}
 } -match exact -result 1
 
 test ns_writer-2.2 {basic operation} -body {
