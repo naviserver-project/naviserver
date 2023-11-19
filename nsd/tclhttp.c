@@ -263,7 +263,8 @@ static bool PersistentConnectionLookup(const char *remoteHost, unsigned short re
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 static bool PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
+static void HttpCloseWaitingDataRelease(NsHttpTask *httpPtr)
+    NS_GNUC_NONNULL(1);
 
 static void LogDebug(const char *before, NsHttpTask *httpPtr, const char *after)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -2103,6 +2104,7 @@ CloseWaitingCheckExpire(void *UNUSED(arg), int UNUSED(id)) {
         }
     }
     Ns_MutexUnlock(&closeWaitingMutex);
+
 }
 
 /*
@@ -4305,6 +4307,8 @@ static void
 HttpClose(
     NsHttpTask *httpPtr
 ) {
+    bool clearSlot = NS_TRUE;
+
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
     assert(CkCheck(httpPtr) != NULL);
@@ -4342,6 +4346,7 @@ HttpClose(
                  */
                 httpPtr->flags &= ~NS_HTTP_KEEPALIVE;
             } else {
+                clearSlot = NS_FALSE;
                 //Ns_Log(Notice, "HttpClose persistent connection added ");
             }
 
@@ -4352,30 +4357,71 @@ HttpClose(
             LogDebug("HttpClose", httpPtr, "no keepalive");
         }
     }
+
+    /*Ns_Log(Notice, "=== HttpClose frees finally httpPtr %p", (void*)httpPtr);*/
+
+    if (clearSlot) {
+        //Ns_Log(Notice, "=== clearslot calls HttpCloseWaitingDataRelease");
+        HttpCloseWaitingDataRelease(httpPtr);
+    } else {
 #ifdef HAVE_OPENSSL_EVP_H
-    if (httpPtr->ssl != NULL) {
-        SSL_shutdown(httpPtr->ssl);
-        SSL_free(httpPtr->ssl);
-        httpPtr->ssl = NULL;
-    }
-    if (httpPtr->ctx != NULL) {
-        SSL_CTX_free(httpPtr->ctx);
-        httpPtr->ctx = NULL;
-    }
+        if (httpPtr->ssl != NULL) {
+            SSL_shutdown(httpPtr->ssl);
+            SSL_free(httpPtr->ssl);
+        }
+        if (httpPtr->ctx != NULL) {
+            SSL_CTX_free(httpPtr->ctx);
+        }
 #endif
-    if (httpPtr->sock != NS_INVALID_SOCKET) {
-        ns_sockclose(httpPtr->sock);
-        httpPtr->sock = NS_INVALID_SOCKET;
+        if (httpPtr->sock != NS_INVALID_SOCKET) {
+            ns_sockclose(httpPtr->sock);
+        }
     }
+    httpPtr->ssl = NULL;
+    httpPtr->ctx = NULL;
+    httpPtr->sock = NS_INVALID_SOCKET;
+
     HttpCleanupPerRequestData(httpPtr, "HttpClose");
     if (httpPtr->host != NULL) {
         ns_free((void *)httpPtr->host);
     }
 
-    /*Ns_Log(Notice, "=== HttpClose frees finally httpPtr %p", (void*)httpPtr);*/
-
     CkFree((void *)httpPtr, "finalising HttpClose");
     ns_free((void *)httpPtr);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HttpCloseWaitingDataRelease --
+ *
+ *        Release the close-waiting data potentially still owned by the
+ *        httpPtr (when httpPtr->pos > 0).
+ *
+ * Results:
+ *        None.
+ *
+ * Side effects:
+ *        May free slot in close-waiting list.
+ *
+ *----------------------------------------------------------------------
+ */
+static void HttpCloseWaitingDataRelease(NsHttpTask *httpPtr)
+{
+    if (httpPtr->pos > 0u) {
+
+        Ns_MutexLock(&closeWaitingMutex);
+        if (unlikely(closeWaitingList.size < httpPtr->pos)) {
+            Ns_Log(Error, "HttpCloseWaitingDataRelease sees invalid position  %ld", httpPtr->pos);
+        } else {
+            Ns_Log(Notice, "HttpCloseWaitingDataRelease invalidates entry at position %ld", httpPtr->pos-1);
+            CloseWaitingDataClean(closeWaitingList.data[httpPtr->pos - 1]);
+        }
+        Ns_MutexUnlock(&closeWaitingMutex);
+
+        httpPtr->pos = 0u;
+    }
 }
 
 
@@ -4395,7 +4441,6 @@ HttpClose(
  *
  *----------------------------------------------------------------------
  */
-
 static void
 HttpCancel(
     NsHttpTask *httpPtr
@@ -4410,16 +4455,7 @@ HttpCancel(
     Ns_TaskWaitCompleted(task);
 
     Ns_Log(Notice, "HttpCancel host %s:%hu pos %ld", httpPtr->host,  httpPtr->port, httpPtr->pos);
-    if (httpPtr->pos > 0) {
-        Ns_MutexLock(&closeWaitingMutex);
-        if (closeWaitingList.size < httpPtr->pos) {
-            Ns_Log(Error, "HttpCancel sees invalid position  %ld", httpPtr->pos);
-        } else {
-            /*Ns_Log(Notice, "=========== HttpCancel invalidates entry at position %ld", httpPtr->pos-1);*/
-            CloseWaitingDataClean(closeWaitingList.data[httpPtr->pos - 1]);
-        }
-        Ns_MutexUnlock(&closeWaitingMutex);
-    }
+    HttpCloseWaitingDataRelease(httpPtr);
 }
 
 
@@ -6006,6 +6042,7 @@ PersistentConnectionLookup(const char *remoteHost, unsigned short remotePort,
         }
     }
     Ns_MutexUnlock(&closeWaitingMutex);
+
     if (success) {
         Ns_Log(Notice, "PersistentConnectionLookup host %s:%hu -> %d",
                remoteHost, remotePort, success);
@@ -6128,8 +6165,9 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
     httpPtr->ssl = NULL;
 
     Ns_Log(Notice,"PersistentConnectionAdd %s persistent connection for host %s:%hu on pos %ld"
-           " with keepalive " NS_TIME_FMT " expire %ld",
+           " sock %d state %s with keepalive " NS_TIME_FMT " expire %ld",
            operation, httpPtr->host, httpPtr->port, cwDataPtr->pos,
+           cwDataPtr->sock, CloseWaitingDataPrettyState(cwDataPtr),
            (int64_t) httpPtr->keepAliveTimeout.sec, httpPtr->keepAliveTimeout.usec,
            cwDataPtr->expire.sec);
 
