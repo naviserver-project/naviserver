@@ -4225,8 +4225,8 @@ HttpCleanupPerRequestData(
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
-    Ns_Log(Ns_LogTaskDebug, "HttpCleanupPerRequestData httpPtr %p (%s) task %p host %s",
-           (void*)httpPtr, context, (void*)httpPtr->task, httpPtr->host);
+    Ns_Log(Ns_LogTaskDebug, "HttpCleanupPerRequestData httpPtr %p (%s) task %p host %s:%hu",
+           (void*)httpPtr, context, (void*)httpPtr->task, httpPtr->host, httpPtr->port);
 
     if (httpPtr->spoolFileName != NULL) {
         ns_free((void *)httpPtr->spoolFileName);
@@ -4309,8 +4309,9 @@ HttpClose(
 
     assert(CkCheck(httpPtr) != NULL);
 
-    Ns_Log(Ns_LogTaskDebug, "HttpClose: http:%p task:%p host %s sock %d flags %.6x",
-           (void*)httpPtr, (void*)httpPtr->task, httpPtr->host, httpPtr->sock, httpPtr->flags);
+    Ns_Log(Ns_LogTaskDebug, "HttpClose: http:%p task:%p host %s:%hu sock %d flags %.6x",
+           (void*)httpPtr, (void*)httpPtr->task, httpPtr->host, httpPtr->port,
+           httpPtr->sock, httpPtr->flags);
 
     /*
      * When HttpConnect runs into a failure, it might not have httpPtr->task
@@ -4408,7 +4409,7 @@ HttpCancel(
     (void) Ns_TaskCancel(task);
     Ns_TaskWaitCompleted(task);
 
-    Ns_Log(Notice, "HttpCancel host %s pos %ld", httpPtr->host,  httpPtr->pos);
+    Ns_Log(Notice, "HttpCancel host %s:%hu pos %ld", httpPtr->host,  httpPtr->port, httpPtr->pos);
     if (httpPtr->pos > 0) {
         Ns_MutexLock(&closeWaitingMutex);
         if (closeWaitingList.size < httpPtr->pos) {
@@ -5983,13 +5984,13 @@ PersistentConnectionLookup(const char *remoteHost, unsigned short remotePort,
     NS_NONNULL_ASSERT(remoteHost != NULL);
     NS_NONNULL_ASSERT(cwDataPtr != NULL);
 
-    /*Ns_Log(Notice, "PersistentConnectionLookup host '%s:%hu'", remoteHost, remotePort);*/
+    /*Ns_Log(Notice, "PersistentConnectionLookup host %s:%hu", remoteHost, remotePort);*/
 
     Ns_MutexLock(&closeWaitingMutex);
     for (i = 0; i < closeWaitingList.size; i ++) {
         CloseWaitingData *currentCwDataPtr = closeWaitingList.data[i];
 
-        /*Ns_Log(Notice, "... compare with host '%s:%hu' state %d",
+        /*Ns_Log(Notice, "... compare with host %s:%hu state %d",
           currentCwDataPtr->host, currentCwDataPtr->port, currentCwDataPtr->state);*/
 
         if (currentCwDataPtr->state == CW_WAITING
@@ -6006,7 +6007,7 @@ PersistentConnectionLookup(const char *remoteHost, unsigned short remotePort,
     }
     Ns_MutexUnlock(&closeWaitingMutex);
     if (success) {
-        Ns_Log(Notice, "PersistentConnectionLookup host '%s:%hu' -> %d",
+        Ns_Log(Notice, "PersistentConnectionLookup host %s:%hu -> %d",
                remoteHost, remotePort, success);
     }
 
@@ -6034,12 +6035,13 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
     CloseWaitingData *cwDataPtr = NULL;
     size_t            i;
     int               errorCode;
+    const char       *operation;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(reasonPtr != NULL);
 
-    /*Ns_Log(Notice,"PersistentConnectionAdd host %s input pos %ld input sock %d",
-      httpPtr->host, httpPtr->pos, httpPtr->sock);*/
+    /*Ns_Log(Notice,"PersistentConnectionAdd host %s:%hu input pos %ld input sock %d",
+      httpPtr->host, httpPtr->port, httpPtr->pos, httpPtr->sock);*/
 
     if (httpPtr->sock == NS_INVALID_SOCKET
         || Ns_SockErrorCode(NULL, httpPtr->sock) != 0
@@ -6070,7 +6072,8 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
             return NS_FALSE;
         }
         cwDataPtr = closeWaitingList.data[httpPtr->pos-1];
-        /*Ns_Log(Notice,"PersistentConnectionAdd host '%s:%hu' reuse slot on input pos %ld",
+        operation = "reuse";
+        /*Ns_Log(Notice,"PersistentConnectionAdd host %s:%hu reuse slot on input pos %ld",
           httpPtr->host, httpPtr->port, httpPtr->pos);*/
     } else {
         /*
@@ -6087,6 +6090,7 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
                  * cleanup.
                  */
                 cwDataPtr = currentCwDataPtr;
+                operation = "recycled";
                 break;
             }
         }
@@ -6100,6 +6104,7 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
         Ns_Log(Notice, "PersistentConnectionAdd: allocate new slot for '%s:%hu' on pos %ld sock %d",
                httpPtr->host, httpPtr->port, cwDataPtr->pos, httpPtr->sock);
         Ns_DListAppend(&closeWaitingList, cwDataPtr);
+        operation = "added";
     }
 
     cwDataPtr->state = CW_WAITING;
@@ -6122,9 +6127,9 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
     httpPtr->ctx = NULL;
     httpPtr->ssl = NULL;
 
-    Ns_Log(Notice,"PersistentConnectionAdd added persistent connection for %s on pos %ld"
+    Ns_Log(Notice,"PersistentConnectionAdd %s persistent connection for host %s:%hu on pos %ld"
            " with keepalive " NS_TIME_FMT " expire %ld",
-           httpPtr->host, cwDataPtr->pos,
+           operation, httpPtr->host, httpPtr->port, cwDataPtr->pos,
            (int64_t) httpPtr->keepAliveTimeout.sec, httpPtr->keepAliveTimeout.usec,
            cwDataPtr->expire.sec);
 
