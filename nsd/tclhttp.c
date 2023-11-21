@@ -2453,7 +2453,7 @@ HttpClientLogWrite(
 
         Tcl_DStringInit(&logString);
         Ns_DStringPrintf(&logString, "%s %s %d %s %s " NS_TIME_FMT
-                         " %" PRIdz " %" PRIdz " %s\n",
+                         " %" PRIdz " %" PRIdz " %d %s\n",
                          Ns_LogTime(buf),
                          Ns_ThreadGetName(),
                          httpPtr->status == 0 ? 408 : httpPtr->status,
@@ -2462,6 +2462,7 @@ HttpClientLogWrite(
                          (int64_t)diff.sec, diff.usec,
                          httpPtr->sent,
                          httpPtr->received,
+                         (httpPtr->pos > 0),
                          causeString
                         );
 
