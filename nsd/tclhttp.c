@@ -3515,6 +3515,10 @@ HttpConnect(
                     }
                     goto fail;
                 }
+#ifdef NS_HTTP_TRACE_SOCKET_OPS
+                Ns_Log(Notice, "ns_http socket %d open host %s:%hu method %s url %s",
+                       httpPtr->sock, httpPtr->host, httpPtr->port, method, url);
+#endif
                 if (Ns_SockSetNonBlocking(httpPtr->sock) != NS_OK) {
                     Ns_TclPrintfResult(interp, "can't set socket nonblocking mode");
                     goto fail;
@@ -4360,7 +4364,7 @@ HttpClose(
 
     /*Ns_Log(Notice, "=== HttpClose frees finally httpPtr %p", (void*)httpPtr);*/
 
-    if (clearSlot) {
+    if (clearSlot && httpPtr->pos > 0u) {
         //Ns_Log(Notice, "=== clearslot calls HttpCloseWaitingDataRelease");
         HttpCloseWaitingDataRelease(httpPtr);
     } else {
@@ -4375,6 +4379,10 @@ HttpClose(
 #endif
         if (httpPtr->sock != NS_INVALID_SOCKET) {
             ns_sockclose(httpPtr->sock);
+#ifdef NS_HTTP_TRACE_SOCKET_OPS
+            Ns_Log(Notice, "ns_http socket %d close host %s:%hu HttpClose pos %ld",
+                   httpPtr->sock, httpPtr->host, httpPtr->port, httpPtr->pos);
+#endif
         }
     }
     httpPtr->ssl = NULL;
@@ -6218,6 +6226,10 @@ CloseWaitingDataClean(CloseWaitingData *cwDataPtr)
 #endif
     if (cwDataPtr->sock != NS_INVALID_SOCKET) {
         ns_sockclose(cwDataPtr->sock);
+#ifdef NS_HTTP_TRACE_SOCKET_OPS
+        Ns_Log(Notice, "ns_http socket %d close host %s:%hu CloseWaitingDataClean pos %ld",
+               cwDataPtr->sock, cwDataPtr->host, cwDataPtr->port, cwDataPtr->pos);
+#endif
         cwDataPtr->sock = NS_INVALID_SOCKET;
     }
     if (cwDataPtr->host != NULL) {
