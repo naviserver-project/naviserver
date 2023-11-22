@@ -51,8 +51,8 @@
 
     <repository>
         <GitRepository>
-            <browse rdf:resource="https://bitbucket.org/naviserver/naviserver/" />
-            <anon-root rdf:resource="https://bitbucket.org/naviserver/naviserver/" />
+            <browse rdf:resource="https://github.com/naviserver-project/naviserver/" />
+            <anon-root rdf:resource="https://github.com/naviserver-project/naviserver/" />
         </GitRepository>
     </repository>
 

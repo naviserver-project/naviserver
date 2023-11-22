@@ -70,17 +70,17 @@ main source code files with the same version.
 
 Latest development version of NaviServer and the
 modules is available from the
-[uri https://sourceforge.net/projects/naviserver/ {Bitbucket NaviServer repository}]
+[uri https://sourceforge.net/projects/naviserver/ {GitHub NaviServer repository}]
 and can be downloaded via:
 
 [example_begin]
- git clone https:/bitbucket.org/naviserver/naviserver.git
+ git clone https://github.com/naviserver-project/naviserver.git
 [example_end]
 
 or for the modules with
 
 [example_begin]
- git clone https://bitbucket.org/naviserver/[emph modulname]
+ git clone https://github.com/naviserver-project/[emph modulname]
 [example_end]
 
 [section {Building}]
@@ -135,7 +135,7 @@ the binaries to the [emph {/usr/local/ns/bin}] directory, and finish.
 
 [section {Compiling and Installing Modules}]
 
-Download modules from sourceforge releases or Bitbucket as described
+Download modules from sourceforge releases or GitHub as described
 above. Note that you should first install the main NaviServer package
 before installing the optional modules. Some part of the configuration
 of the modules is taken from previously installed NaviServer
@@ -157,7 +157,7 @@ At this moment the following modules are available:
 [emph {nsaccess nsclamav nsdbi nsdbmysql nsdhcpd nsicmp nsmemcache nssip nsstats nsvfs nsaspell nsconf nsdbilite nsdbpg nsdns nsimap nsphp nssmtpd nssyslogd nszlib nsauthpam nsconfigrw nsdbimy nsdbsqlite nsexpat nsldapd nsradiusd nssnmp nstftpd nschartdir nsdbbdb nsdbipg nsdbtds nsgdchart nsloopctl nsrtsp nsssl nsoracle nsudp}]
 
 [para]
-To check what modules are available go to http://bitbucket.org/naviserver/.
+To check what modules are available go to: https://github.com/orgs/naviserver-project/repositories
 
 [para]
 

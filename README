@@ -23,9 +23,9 @@ database is located on the SourceForge site:
 
     https://sourceforge.net/projects/naviserver
 
-Source code is available from the Bitbucket site:
+Source code is available from the GitHub site:
 
-    https://bitbucket.org/naviserver/
+    https://github.com/orgs/naviserver-project/naviserver
 
 Another resource is the Tcl wiki:
 
@@ -92,9 +92,9 @@ macOS 10.2+ and Windows. To compile and install:
 
     Latest development source code (Git repository):
 
-        https://bitbucket.org/naviserver/naviserver/
+        https://github.com/naviserver-project/naviserver/
 
-    Note, that the main branches on the Git repository are:
+    Note that the main branches on the Git repository are:
         - main (the latest development code)
         - release/4.99 (bug fixes for NaviServer 4.99.*)
 
@@ -140,12 +140,12 @@ macOS 10.2+ and Windows. To compile and install:
 
         make PURIFY="purify -cache-dir=/home/joe/my-cache-dir" install
 
-    Alternatively, NaviServer can be installed directly from Bitbucket
+    Alternatively, NaviServer can be installed directly from GitHub
     via the git version control system installed.  Git is
     available for most Linux distributions: e.g. "yum install git".
     For e.g. Windows binaries, see https://git-scm.com/downloads
 
-    If you checked out the source directly from Bitbucket, replace
+    If you checked out the source directly from GitHub, replace
     "./configure" in the example above with "./autogen.sh" to get the
     initial makefiles created.
 
@@ -196,13 +196,14 @@ macOS 10.2+ and Windows. To compile and install:
         $ make install NAVISERVER=/usr/local/ns
 
     Alternatively, modules can be obtained from the code repository at
-    Bitbucket via git. To get a module "nsfoo" via git
+    GitHub via git. To get a module "nsfoo" via git
 
-        $ git clone https://bitbucket.org/naviserver/nsfoo.git
+        $ git clone https://github.com/naviserver-project/nsfoo.git
         $ cd nsfoo
         $ make install NAVISERVER=/usr/local/ns
 
-    See: https://bitbucket.org/naviserver/ for a full list of modules.
+    See: https://github.com/orgs/naviserver-project/repositories
+    for a full list of modules.
 
 
 3g. To compile for Windows with Msys + Mingw
