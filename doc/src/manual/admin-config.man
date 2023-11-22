@@ -29,13 +29,13 @@ starting point for site specific configurations:
 Sample documented configuration files:
 [list_begin itemized]
 [item] [uri \
-	https://bitbucket.org/naviserver/naviserver/raw/main/simple-config.tcl \
+	https://raw.githubusercontent.com/naviserver-project/naviserver/main/simple-config.tcl \
 	simple-config.tcl]
 [item] [uri \
-	https://bitbucket.org/naviserver/naviserver/raw/main/nsd-config.tcl \
+	https://raw.githubusercontent.com/naviserver-project/naviserver/main/nsd-config.tcl \
 	nsd-config.tcl]
 [item] [uri \
-	https://bitbucket.org/naviserver/naviserver/raw/main/openacs-config.tcl \
+	https://raw.githubusercontent.com/naviserver-project/naviserver/main/openacs-config.tcl \
 	openacs-config.tcl]
 [list_end]
 
@@ -126,7 +126,7 @@ network drivers of NaviServer are [term nssock] and
 [para] Several additional network drivers are available via
 extra modules, such as e.g. [term nsudp], [term nssmtpd]
 (for a full list of modules, see the [uri \
-	https://bitbucket.org/naviserver/workspace/projects/PROJ \
+	https://github.com/orgs/naviserver-project/repositories \
 	"module repository"]).
 
 
