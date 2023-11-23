@@ -2912,7 +2912,7 @@ HttpConnect(
             httpPtr->sock = Ns_SockTimedConnect2(rhost, rport, NULL, 0, toPtr, &rc);
             if (httpPtr->sock == NS_INVALID_SOCKET) {
                 Ns_SockConnectError(interp, rhost, rport, rc);
-                if (rc == NS_TIMEOUT) {  
+                if (rc == NS_TIMEOUT) {
                     Ns_GetTime(&httpPtr->etime);
                     HttpClientLogWrite(httpPtr, "connecttimeout");
                 }
@@ -2969,7 +2969,7 @@ HttpConnect(
                 } else {
                     Ns_Log(Ns_LogTaskDebug, "Ns_TLS_SSLConnect remaining timeout " NS_TIME_FMT,
                            (int64_t)remainingTime.sec, remainingTime.usec);
-                    
+
                     rc = Ns_TLS_SSLConnect(interp, httpPtr->sock, ctx,
                                            sniHostname, &remainingTime, &ssl);
                     if (rc == NS_TIMEOUT) {
@@ -2981,14 +2981,14 @@ HttpConnect(
                         HttpClientLogWrite(httpPtr, "tlsconnecttimeout");
                         Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
                         goto fail;
-                        
+
                     } else if (rc == NS_ERROR) {
                         result = TCL_ERROR;
                     } else {
                         result = TCL_OK;
                     }
                 }
-                
+
                 if (likely(result == TCL_OK)) {
                     httpPtr->ssl = ssl;
 #ifdef HAVE_OPENSSL_EVP_H
