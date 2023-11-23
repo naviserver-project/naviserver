@@ -2524,13 +2524,10 @@ HttpGetResult(
 
     if (httpPtr->error != NULL) {
         errorObj = Tcl_NewStringObj(httpPtr->error, TCL_INDEX_NONE);
-        /*
-         * Write always httpCLientLog file with "socktimeout" and system log entry.
-         */
         if (httpPtr->finalSockState == NS_SOCK_TIMEOUT) {
             Ns_Log(Ns_LogTimeoutDebug, "ns_http request '%s' runs into timeout",
                    httpPtr->url);
-            HttpClientLogWrite(httpPtr, "socktimeout");
+            HttpClientLogWrite(httpPtr, "tasktimeout");
         } else {
             HttpClientLogWrite(httpPtr, "error");
         }
@@ -3512,6 +3509,7 @@ HttpConnect(
                 if (httpPtr->sock == NS_INVALID_SOCKET) {
                     Ns_SockConnectError(interp, rhost, rport, rc);
                     if (rc == NS_TIMEOUT) {
+                        Ns_GetTime(&httpPtr->etime);
                         HttpClientLogWrite(httpPtr, "connecttimeout");
                     }
                     goto fail;
@@ -3561,6 +3559,7 @@ HttpConnect(
                             Ns_Log(Ns_LogTaskDebug, "Ns_TLS_SSLConnect negative remaining timeout " NS_TIME_FMT,
                                    (int64_t)remainingTime.sec, remainingTime.usec);
                             Ns_TclPrintfResult(interp, "timeout waiting for TLS setup");
+                            Ns_GetTime(&httpPtr->etime);
                             HttpClientLogWrite(httpPtr, "tlssetuptimeout");
                             Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
                             goto fail;
@@ -3583,6 +3582,7 @@ HttpConnect(
                                  * Ns_TLS_SSLConnect ran into a timeout.
                                  */
                                 Ns_TclPrintfResult(interp, "timeout waiting for TLS handshake");
+                                Ns_GetTime(&httpPtr->etime);
                                 HttpClientLogWrite(httpPtr, "tlsconnecttimeout");
                                 Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
                                 goto fail;
@@ -5209,9 +5209,6 @@ HttpProc(
          */
         taskDone = (httpPtr->doneCallback != NULL);
         LogDebug("HttpProc: NS_SOCK_TIMEOUT", httpPtr, "");
-        //Ns_TaskCancel(httpPtr->task);
-        //taskDone = NS_FALSE;
-
         httpPtr->error = "http request timeout";
 
         break;
@@ -5511,6 +5508,7 @@ HttpTunnel(
         if (httpPtr->sock == NS_INVALID_SOCKET) {
             Ns_SockConnectError(interp, proxyhost, proxyport, rc);
             if (rc == NS_TIMEOUT) {
+                Ns_GetTime(&httpPtr->etime);
                 HttpClientLogWrite(httpPtr, "connecttimeout");
                 Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
             }
@@ -5524,6 +5522,7 @@ HttpTunnel(
         if (rc != NS_OK) {
             if (rc == NS_TIMEOUT) {
                 Ns_TclPrintfResult(interp, "timeout waiting for writable socket");
+                Ns_GetTime(&httpPtr->etime);
                 HttpClientLogWrite(httpPtr, "writetimeout");
                 Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
             } else {
