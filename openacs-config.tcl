@@ -191,10 +191,12 @@ ns_section ns/parameters {
 
     # Configuration of incoming connections
     #
-    # ns_param listenbacklog   256  ;# default: 32; backlog for ns_socket commands
+    # ns_param listenbacklog   256  ;# default: 32; global backlog for ns_socket commands
+                                     # and global default for drivers; can be refined
+                                     # by driver parameter "backlog".
     ns_param sockacceptlog       3  ;# default: 2; report, when one accept operation receives
-                                     # more than this threshold number of sockets
-
+                                     # more than this threshold number of sockets; can be refined
+                                     # by driver parameter with the same name.
     #
     # Configuration of error.log
     #
@@ -304,9 +306,11 @@ if {[info exists httpport] && $httpport ne ""} {
         # ns_param	maxline		8192	;# 8192, max size of a header line
         # ns_param	maxheaders	128	;# 128, max number of header lines
         # ns_param	uploadpath	/tmp	;# directory for uploads
+        # ns_param	maxqueuesize	256	;# 1024, maximum size of the queue of preprocessed requests
         # ns_param	backlog		256	;# 256, backlog for listen operations
-        # ns_param	maxqueuesize	256	;# 1024, maximum size of the queue
-        # ns_param	acceptsize	10	;# Maximum number of requests accepted at once.
+        # ns_param	acceptsize	10	;# backlog; Maximum number of requests accepted at once.
+        # ns_param      sockacceptlog   3       ;# ns/param sockacceptlog; report, when one accept operation
+                                                 # receives more than this threshold number of sockets
         # ns_param	deferaccept     true    ;# false, Performance optimization, may cause recvwait to be ignored
         # ns_param	bufsize		16kB	;# 16kB, buffersize
         # ns_param	readahead	16kB	;# value of bufsize, size of readahead for requests
@@ -381,6 +385,10 @@ if {[info exists httpsport] && $httpsport ne ""} {
         # ns_param writerstreaming	true	;# false
         # ns_param spoolerthreads	1	;# 0, number of upload spooler threads
         # ns_param maxupload	100kB	;# 0, when specified, spool uploads larger than this value to a temp file
+        # ns_param backlog	256	;# 256, backlog for listen operations
+        # ns_param acceptsize	10	;# backlog; Maximum number of requests accepted at once.
+        # ns_param sockacceptlog 3      ;# ns/param sockacceptlog; report, when one accept operation
+                                         # receives more than this threshold number of sockets
         # ns_param deferaccept	true    ;# false, Performance optimization
         # ns_param nodelay	false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted
         ns_param maxinput	${max_file_upload_mb}MB   ;# Maximum file size for uploads in bytes

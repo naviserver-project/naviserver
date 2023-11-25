@@ -1261,10 +1261,11 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     Ns_ConfigTimeUnitRange(path, "keepwait",
                            "5s", 0, 0, INT_MAX, 0, &drvPtr->keepwait);
 
-    drvPtr->backlog        = Ns_ConfigIntRange(path, "backlog",       256,   1, INT_MAX);
+    drvPtr->backlog        = Ns_ConfigIntRange(path, "backlog",         nsconf.listenbacklog, 1, INT_MAX);
     drvPtr->driverthreads  = Ns_ConfigIntRange(path, "driverthreads",   1,   1, 32);
     drvPtr->reuseport      = Ns_ConfigBool(path,     "reuseport",       NS_FALSE);
-    drvPtr->acceptsize     = Ns_ConfigIntRange(path, "acceptsize", drvPtr->backlog, 1, INT_MAX);
+    drvPtr->acceptsize     = Ns_ConfigIntRange(path, "acceptsize",      drvPtr->backlog, 1, INT_MAX);
+    drvPtr->sockacceptlog  = Ns_ConfigIntRange(path, "sockacceptlog",   2,  2, drvPtr->backlog);
 
     drvPtr->keepmaxuploadsize   = (size_t)Ns_ConfigMemUnitRange(path, "keepalivemaxuploadsize",
                                                                 "0MB", 0, 0, INT_MAX);
@@ -2678,8 +2679,8 @@ DriverThread(void *arg)
             bool acceptMore = NS_TRUE;
 
             accepted = 0;
-            while (acceptMore &&
-                   accepted < drvPtr->acceptsize
+            while (acceptMore
+                   && accepted < drvPtr->acceptsize
                    && drvPtr->queuesize < drvPtr->maxqueuesize ) {
                 bool gotRequests = NS_FALSE;
 
@@ -2758,7 +2759,7 @@ DriverThread(void *arg)
                     }
                 }
             }
-            if (accepted >= nsconf.sockacceptlog ) {
+            if (accepted >= drvPtr->sockacceptlog ) {
                 Ns_Log(Notice, "... sockAccept accepted %d connections", accepted);
             }
         }
