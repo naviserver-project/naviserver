@@ -191,7 +191,8 @@ NsConfUpdate(void)
      * binder.c, win32.c
      */
 
-    nsconf.backlog = Ns_ConfigIntRange(path, "listenbacklog", 32, 0, INT_MAX);
+    nsconf.listenbacklog = Ns_ConfigIntRange(path, "listenbacklog", 32, 0, INT_MAX);
+    nsconf.sockacceptlog = Ns_ConfigIntRange(path, "sockacceptlog", 2,  2, 100);
 
     /*
      * tcljob.c

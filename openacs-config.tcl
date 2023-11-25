@@ -187,7 +187,13 @@ ns_section ns/parameters {
     # jobs finish.  When this time limit is exceeded the server shuts
     # down immediately.
     #
-    # ns_param    shutdowntimeout 20s      ;# 20s is the default
+    # ns_param shutdowntimeout 20s  ;# 20s is the default
+
+    # Configuration of incoming connections
+    #
+    # ns_param listenbacklog   256  ;# default: 32; backlog for ns_socket commands
+    ns_param sockacceptlog       3  ;# default: 2; report, when one accept operation receives
+                                     # more than this threshold number of sockets
 
     #
     # Configuration of error.log
