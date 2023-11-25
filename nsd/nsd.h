@@ -135,7 +135,8 @@ struct nsconf {
     char        hostname[255];
     char        address[NS_IPADDR_SIZE];
     Ns_Time     shutdowntimeout;
-    int         backlog;
+    int         listenbacklog;
+    int         sockacceptlog;
     int         sanitize_logfiles;
     bool        reject_already_closed_or_detached_connection;
     bool        reverseproxymode;

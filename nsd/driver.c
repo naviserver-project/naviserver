@@ -2777,7 +2777,7 @@ DriverThread(void *arg)
                     }
                 }
             }
-            if (accepted > 1) {
+            if (accepted >= nsconf.sockacceptlog ) {
                 Ns_Log(Notice, "... sockAccept accepted %d connections", accepted);
             }
         }
