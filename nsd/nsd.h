@@ -423,6 +423,7 @@ typedef struct Driver {
     int queuesize;                      /* Current number of sockets in the queue */
     int maxqueuesize;                   /* Maximum number of sockets in the queue */
     int acceptsize;                     /* Number requests to accept at once */
+    int sockacceptlog;                  /* Report, when more than this sockets are received in one step */
     int driverthreads;                  /* Number of identical driver threads to be created */
     unsigned int loggingFlags;          /* Logging control flags */
 
