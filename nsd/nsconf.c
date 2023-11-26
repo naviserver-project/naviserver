@@ -138,7 +138,7 @@ NsConfUpdate(void)
      */
 
     nsconf.listenbacklog = Ns_ConfigIntRange(path, "listenbacklog", 32, 0, INT_MAX);
-    nsconf.sockacceptlog = Ns_ConfigIntRange(path, "sockacceptlog", 2,  2, 100);
+    nsconf.sockacceptlog = Ns_ConfigIntRange(path, "sockacceptlog", 4,  2, 100);
 
     /*
      * tcljob.c

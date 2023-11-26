@@ -194,7 +194,7 @@ ns_section ns/parameters {
     # ns_param listenbacklog   256  ;# default: 32; global backlog for ns_socket commands
                                      # and global default for drivers; can be refined
                                      # by driver parameter "backlog".
-    ns_param sockacceptlog       3  ;# default: 2; report, when one accept operation receives
+    # ns_param sockacceptlog     3  ;# default: 4; report, when one accept operation receives
                                      # more than this threshold number of sockets; can be refined
                                      # by driver parameter with the same name.
     #
