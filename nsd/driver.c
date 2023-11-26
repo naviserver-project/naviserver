@@ -1265,7 +1265,7 @@ DriverInit(const char *server, const char *moduleName, const char *threadName,
     drvPtr->driverthreads  = Ns_ConfigIntRange(path, "driverthreads",   1,   1, 32);
     drvPtr->reuseport      = Ns_ConfigBool(path,     "reuseport",       NS_FALSE);
     drvPtr->acceptsize     = Ns_ConfigIntRange(path, "acceptsize",      drvPtr->backlog, 1, INT_MAX);
-    drvPtr->sockacceptlog  = Ns_ConfigIntRange(path, "sockacceptlog",   2,  2, drvPtr->backlog);
+    drvPtr->sockacceptlog  = Ns_ConfigIntRange(path, "sockacceptlog",   nsconf.sockacceptlog, 2, drvPtr->backlog);
 
     drvPtr->keepmaxuploadsize   = (size_t)Ns_ConfigMemUnitRange(path, "keepalivemaxuploadsize",
                                                                 "0MB", 0, 0, INT_MAX);
