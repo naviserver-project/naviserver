@@ -2096,7 +2096,7 @@ CloseWaitingCheckExpire(void *UNUSED(arg), int UNUSED(id)) {
                 }
 
             } else {
-                Ns_Log(Notice, "CloseWaitingCheckExpire closes sock %d host %s:%hu in state %s",
+                Ns_Log(Ns_LogTaskDebug, "CloseWaitingCheckExpire closes sock %d host %s:%hu in state %s",
                        currentCwDataPtr->sock, currentCwDataPtr->host, currentCwDataPtr->port,
                        CloseWaitingDataPrettyState(currentCwDataPtr));
                 CloseWaitingDataClean(currentCwDataPtr);
@@ -3460,19 +3460,13 @@ HttpConnect(
         } else {
             char            *rhost = u.host;
             unsigned short   rport = portNr;
-            //Tcl_DString    persistentKeyDs;
             bool             reuseConnection;
-            //NsHttpTask      *waitingHttpPtr = NULL;
             CloseWaitingData cwData;
 
             if (httpProxy == NS_TRUE) {
                 rhost = pHost;
                 rport = pPortNr;
             }
-
-            //Tcl_DStringInit(&persistentKeyDs);
-            //Ns_DStringPrintf(&persistentKeyDs, "%s:%hu", rhost, rport);
-            //httpPtr->persistentKey = Ns_DStringExport(&persistentKeyDs);
 
             if (strcasecmp(httpPtr->method, "HEAD") == 0) {
                 /*
@@ -4290,7 +4284,6 @@ HttpCleanupPerRequestData(
         ns_free((void *)httpPtr->chunk);
         httpPtr->chunk = NULL;
     }
-    /*Ns_Log(Notice, "... HttpCleanupPerRequestData %s %p DONE", httpPtr->persistentKey, (void*)httpPtr);*/
 }
 
 /*
@@ -4424,7 +4417,7 @@ static void HttpCloseWaitingDataRelease(NsHttpTask *httpPtr)
         if (unlikely(closeWaitingList.size < httpPtr->pos)) {
             Ns_Log(Error, "HttpCloseWaitingDataRelease sees invalid position  %ld", httpPtr->pos);
         } else {
-            Ns_Log(Notice, "HttpCloseWaitingDataRelease invalidates entry at position %ld", httpPtr->pos-1);
+            Ns_Log(Ns_LogTaskDebug, "HttpCloseWaitingDataRelease invalidates entry at position %ld", httpPtr->pos-1);
             CloseWaitingDataClean(closeWaitingList.data[httpPtr->pos - 1]);
         }
         Ns_MutexUnlock(&closeWaitingMutex);
@@ -6051,10 +6044,10 @@ PersistentConnectionLookup(const char *remoteHost, unsigned short remotePort,
     }
     Ns_MutexUnlock(&closeWaitingMutex);
 
-    if (success) {
+    /*if (success) {
         Ns_Log(Notice, "PersistentConnectionLookup host %s:%hu -> %d",
                remoteHost, remotePort, success);
-    }
+               }*/
 
     return success;
 }
@@ -6172,7 +6165,7 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
     httpPtr->ctx = NULL;
     httpPtr->ssl = NULL;
 
-    Ns_Log(Notice,"PersistentConnectionAdd %s persistent connection for host %s:%hu on pos %ld"
+    Ns_Log(Ns_LogTaskDebug,"PersistentConnectionAdd %s persistent connection for host %s:%hu on pos %ld"
            " sock %d state %s with keepalive " NS_TIME_FMT " expire %ld",
            operation, httpPtr->host, httpPtr->port, cwDataPtr->pos,
            cwDataPtr->sock, CloseWaitingDataPrettyState(cwDataPtr),
