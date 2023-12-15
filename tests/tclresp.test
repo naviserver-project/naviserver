@@ -420,6 +420,7 @@ test tclresp-5.2 {ns_returnfile} -constraints serverListen -setup {
 } -result 404
 
 test tclresp-5.3 {ns_returnfile fastpath cache collision} -constraints serverListen -setup {
+    _ns_mktemp_win_temp_dir
     nsv_set fast_coll count 0
     # this mutex isn't necessary; it only serves as an assurance that
     # the problem is in fact a cache collision and not a race condition
