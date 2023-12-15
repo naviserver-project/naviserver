@@ -848,7 +848,9 @@ NsWaitTaskQueueShutdown(const Ns_Time *toPtr)
     }
 
     if (status != NS_OK) {
-        Ns_Log(Warning, "timeout waiting for task queues shutdown");
+        Ns_Log(Warning, "timeout waiting for task queues shutdown"
+               " (timeout " NS_TIME_FMT ")",
+               (int64_t)nsconf.shutdowntimeout.sec, nsconf.shutdowntimeout.usec);
     }
 
     return;

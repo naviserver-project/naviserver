@@ -560,7 +560,9 @@ NsWaitSchedShutdown(const Ns_Time *toPtr)
     }
     Ns_MutexUnlock(&lock);
     if (status != NS_OK) {
-        Ns_Log(Warning, "sched: timeout waiting for sched exit");
+        Ns_Log(Warning, "sched: timeout waiting for sched exit"
+               " (timeout " NS_TIME_FMT ")",
+               (int64_t)nsconf.shutdowntimeout.sec, nsconf.shutdowntimeout.usec);
     } else if (schedThread != NULL) {
         Ns_ThreadJoin(&schedThread, NULL);
     }
