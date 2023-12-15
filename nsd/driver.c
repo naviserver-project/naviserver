@@ -3861,7 +3861,12 @@ SockSendResponse(Sock *sockPtr, int statusCode, const char *errMsg, const char *
 static void
 SockTrigger(NS_SOCKET sock)
 {
-    if (send(sock, NS_EMPTY_STRING, 1, 0) != 1) {
+    /*
+     * In case the trigger was not properly set up, ignore the triggering
+     * attempt. This might happen in some error conditions or during startup
+     * and shutdown.
+     */
+    if ((sock != 0) && send(sock, NS_EMPTY_STRING, 1, 0) != 1) {
         const char *errstr = ns_sockstrerror(ns_sockerrno);
 
         Ns_Log(Error, "driver: trigger send() failed: %s", errstr);
@@ -5582,9 +5587,19 @@ SpoolerQueueStop(SpoolerQueue *queuePtr, const Ns_Time *timeoutPtr, const char *
 
         Ns_MutexLock(&queuePtr->lock);
         if (!queuePtr->stopped && !queuePtr->shutdown) {
-            Ns_Log(Debug, "%s%d: triggering shutdown", name, queuePtr->id);
+            Ns_Log(Debug, "%s%d: triggering shutdown pipe %d", name, queuePtr->id, queuePtr->pipe[1]);
             queuePtr->shutdown = NS_TRUE;
-            SockTrigger(queuePtr->pipe[1]);
+            /*
+             * In case queuePtr->pipe was not properly set up, the value of
+             * pipe[1] will be zero. In such cases, not try to send data to
+             * this pipe.
+             */
+            if (queuePtr->pipe[1] != 0) {
+                Ns_Log(Debug, "%s%d: triggering shutdown Trigger pipe %d", name, queuePtr->id, queuePtr->pipe[1]);
+                SockTrigger(queuePtr->pipe[1]);
+            } else {
+                queuePtr->stopped = NS_TRUE;
+            }
         }
         status = NS_OK;
         while (!queuePtr->stopped && status == NS_OK) {
