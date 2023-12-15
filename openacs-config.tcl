@@ -85,20 +85,20 @@ set proxy_mode	false
 #
 set database  postgres
 
+#
+# For Oracle, some of the defaults have to be adjusted,
+# make also sure that certain environment variables are set
+#
 if { $database eq "oracle" } {
-    set db_password "openacs"
+    dict set defaultConfig db_password "openacs"
+    dict set defaultConfig db_name openacs
+    dict set defaultConfig db_port 1521
 
     set ::env(ORACLE_HOME) /opt/oracle/product/19c/dbhome_1
     set ::env(NLS_DATE_FORMAT) YYYY-MM-DD
     set ::env(NLS_TIMESTAMP_FORMAT) "YYYY-MM-DD HH24:MI:SS.FF6"
     set ::env(NLS_TIMESTAMP_TZ_FORMAT) "YYYY-MM-DD HH24:MI:SS.FF6 TZH:TZM"
     set ::env(NLS_LANG) American_America.UTF8
-
-    if {$db_port eq ""} {
-        set db_port 1521
-    }
-    #set datasource ""
-    set datasource ${db_host}:${db_port}/$db_name ;# name of the pluggable database / service
 }
 
 #---------------------------------------------------------------------
@@ -140,6 +140,14 @@ append https_extraheaders $http_extraheaders
 source [file dirname [ns_info nsd]]/../tcl/init.tcl
 ns_configure_variables "oacs_" $defaultConfig
 
+#
+# For Oracle, we set the datasource to values which might be
+# changed via environment variables. So, this has to happen
+# after "ns_configure_variables"
+#
+if { $database eq "oracle" } {
+    set datasource ${db_host}:${db_port}/$db_name ;# name of the pluggable database / service
+}
 #---------------------------------------------------------------------
 # Set environment variables HOME and LANG. HOME is needed since
 # otherwise some programs called via exec might try to write into the
