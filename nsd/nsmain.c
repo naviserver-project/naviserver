@@ -1012,7 +1012,6 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
     NsStopDrivers();
     NsStopServers(&timeout);
-    NsStopSpoolers();
 
     /*
      * Next, start simultaneous shutdown in other systems and wait
@@ -1039,6 +1038,13 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      */
 
     NsRunAtExitProcs();
+
+    /*
+     * In case, the callbacks above require spool operations, they might need
+     * still working spoolers. But they are finished now and we can stop the
+     * spoolers.
+     */
+    NsStopSpoolers();
 
     /*
      * Remove the pid maker file, print a final "server exiting"
