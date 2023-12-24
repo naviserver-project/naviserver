@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <link rel="stylesheet" href="doc/naviserver/man.css" type="text/css">
+  <meta charset='UTF-8'>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>NaviServer <%=[ns_info patchlevel]%></title>
+  <link rel="stylesheet" href="doc/naviserver/man.css" type="text/css">
   <style>
    strong {color: #000080;}
    #man-header strong {color: #ffffff;}
@@ -10,7 +12,7 @@
 </head>
 <body>
  <div id="man-header">
-  <a href="https://wiki.tcl-lang.org/page/NaviServer"><span class="logo"></span><strong>NaviServer</strong></a>
+  <a href="/"><span class="logo">&nbsp;</span><strong>NaviServer</strong></a>
   - programmable web server
  </div>
 
