@@ -106,8 +106,8 @@ if { $database eq "oracle" } {
 set debug false
 set verboseSQL false
 
-set max_file_upload_mb        20
-set max_file_upload_min        5
+set max_file_upload_size      20mb
+set max_file_upload_duration   5m
 
 #---------------------------------------------------------------------
 # Set headers that should be included in every response from the
@@ -308,9 +308,9 @@ if {[info exists httpport] && $httpport ne ""} {
         ns_param	defaultserver	$server
         ns_param	address		$ipaddress
         ns_param	hostname	$hostname
-        ns_param	port		$httpport                ;# default 80
-        ns_param	maxinput	${max_file_upload_mb}MB  ;# 1MB, maximum size for inputs (uploads)
-        ns_param	recvwait	${max_file_upload_min}m  ;# 30s, timeout for receive operations
+        ns_param	port		$httpport                  ;# default 80
+        ns_param	maxinput	$max_file_upload_size      ;# 1MB, maximum size for inputs (uploads)
+        ns_param	recvwait	$max_file_upload_duration  ;# 30s, timeout for receive operations
         # ns_param	maxline		8192	;# 8192, max size of a header line
         # ns_param	maxheaders	128	;# 128, max number of header lines
         # ns_param	uploadpath	/tmp	;# directory for uploads
@@ -400,7 +400,8 @@ if {[info exists httpsport] && $httpsport ne ""} {
                                          # receives more than this threshold number of sockets
         # ns_param deferaccept	true    ;# false, Performance optimization
         # ns_param nodelay	false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted
-        ns_param maxinput	${max_file_upload_mb}MB   ;# Maximum file size for uploads in bytes
+        ns_param maxinput	$max_file_upload_size   ;# Maximum file size for uploads in bytes
+        ns_param recvwait	$max_file_upload_duration  ;# 30s, timeout for receive operations
         ns_param extraheaders	$https_extraheaders
         ns_param OCSPstapling   on        ;# off; activate OCSP stapling
         # ns_param OCSPstaplingVerbose  on ;# off; make OCSP stapling more verbose
@@ -666,12 +667,12 @@ ns_section ns/server/$server/fastpath {
     #
     # Directory listing options
     #
-    # ns_param	directoryfile	  "index.adp index.tcl index.html index.htm"
-    # ns_param	directoryadp	  $pageroot/dirlist.adp ;# default ""
-    # ns_param	directoryproc	  _ns_dirlist           ;# default "_ns_dirlist"
+    # ns_param	directoryfile     "index.adp index.tcl index.html index.htm"
+    # ns_param	directoryadp      $pageroot/dirlist.adp ;# default ""
+    # ns_param	directoryproc     _ns_dirlist           ;# default "_ns_dirlist"
     # ns_param	directorylisting  fancy ;# default "simple"; can be "simple",
     #                                   ;# "fancy" or "none"; parameter for _ns_dirlist
-    # ns_param	hidedotfiles	  true  ;# default false; parameter for _ns_dirlist
+    # ns_param	hidedotfiles      true  ;# default false; parameter for _ns_dirlist
     #
 }
 

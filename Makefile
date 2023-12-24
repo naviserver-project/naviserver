@@ -56,7 +56,7 @@ help:
 	@echo
 
 install: install-dirs install-include install-tcl install-modules \
-	install-config install-doc install-examples install-notice
+	install-config install-certificate install-doc install-examples install-notice
 
 HAVE_NSADMIN := $(shell id -u nsadmin 2> /dev/null)
 
@@ -105,6 +105,11 @@ install-config: all
 		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/pages/; \
 	done
 	$(INSTALL_SH) install-sh $(DESTDIR)$(INSTBIN)/
+
+install-certificate: $(PEM_FILE)
+	for i in $(PEM_FILE) ; do \
+		$(INSTALL_DATA) $(PEM_FILE) $(DESTDIR)$(NAVISERVER)/etc/; \
+	done
 
 install-modules: all
 	@for i in $(dirs); do \
