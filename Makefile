@@ -244,6 +244,7 @@ $(PEM_FILE): $(PEM_PRIVATE)
 $(PEM_PRIVATE):
 	openssl genrsa -out $(PEM_PRIVATE) 512
 	openssl rsa -in $(PEM_PRIVATE) -pubout > $(PEM_PUBLIC)
+	chmod 644 $(PEM_PRIVATE)
 
 check: test
 
