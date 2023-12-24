@@ -110,6 +110,7 @@ install-config: all
 	$(INSTALL_SH) install-sh $(DESTDIR)$(INSTBIN)/
 
 install-certificate: $(PEM_FILE)
+	@mkdir -p $(DESTDIR)$(NAVISERVER)/etc
 	for i in $(PEM_FILE) ; do \
 		$(INSTALL_DATA) $(PEM_FILE) $(DESTDIR)$(NAVISERVER)/etc/; \
 	done
