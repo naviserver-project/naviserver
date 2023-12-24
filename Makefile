@@ -34,6 +34,9 @@ all:
 	@for i in $(dirs); do \
 		( cd $$i && $(MAKE) all ) || exit 1; \
 	done
+	@if [ -n "${PEM_FILE}" ]; then \
+		$(MAKE) $(PEM_FILE) ; \
+	fi
 
 help:
 	@echo 'Commonly used make targets:'
@@ -74,7 +77,7 @@ install-notice:
 		echo "  useradd nsadmin"; \
 		echo ""; \
 	    else \
-	        if [ ! `sudo -u nsadmin test -w $(NAVISERVER)/logs && echo 1` ] ; then \
+		if [ ! `sudo -u nsadmin test -w $(NAVISERVER)/logs && echo 1` ] ; then \
 		    echo "The permissions for log directory have to be set up:"; \
 		    echo ""; \
 		    echo "  chown -R nsadmin:nsadmin $(NAVISERVER)/logs"; \
@@ -175,36 +178,36 @@ build-doc:
 		       nsperm \
 		       nssock \
 		       nsssl \
-                       doc/src/manual \
-                       doc/src/naviserver \
-                       modules/nsexpat \
-                       modules/nsconfigrw \
-                       modules/nsdbi \
-                       modules/nsloopctl \
-                       modules/nsvfs; do \
+		       doc/src/manual \
+		       doc/src/naviserver \
+		       modules/nsexpat \
+		       modules/nsconfigrw \
+		       modules/nsdbi \
+		       modules/nsloopctl \
+		       modules/nsvfs; do \
 		if [ -d $$srcdir ]; then \
 		   echo $$srcdir; \
-                   $(MKDIR) doc/tmp/`basename $$srcdir`; \
-	           find $$srcdir -name '*.man' -exec $(CP) "{}" doc/tmp/`basename $$srcdir` ";"; \
+		   $(MKDIR) doc/tmp/`basename $$srcdir`; \
+		   find $$srcdir -name '*.man' -exec $(CP) "{}" doc/tmp/`basename $$srcdir` ";"; \
 		fi; \
 	done
 	$(CP) doc/images/manual/*.png doc/tmp/manual/
 	@cd doc/tmp; \
 	for srcdir in `ls`; do \
 	    echo $$srcdir; \
-            if [ -f $$srcdir/version_include.man ]; then \
-               $(CP) $$srcdir/version_include.man .; \
+	    if [ -f $$srcdir/version_include.man ]; then \
+	       $(CP) $$srcdir/version_include.man .; \
 	    else \
-               $(CP) ../../version_include.man .; \
-            fi; \
+	       $(CP) ../../version_include.man .; \
+	    fi; \
 	    echo $(DTPLITE) -merge -style ../src/$(MAN_CSS) \
-                       -header ../src/$(HEADER_INC) \
-                       -footer ../src/footer.inc \
-                       -o ../html/ html $$srcdir; \
+		       -header ../src/$(HEADER_INC) \
+		       -footer ../src/footer.inc \
+		       -o ../html/ html $$srcdir; \
 	    $(DTPLITE) -merge -style ../src/$(MAN_CSS) \
-                       -header ../src/$(HEADER_INC) \
-                       -footer ../src/footer.inc \
-                       -o ../html/ html $$srcdir; \
+		       -header ../src/$(HEADER_INC) \
+		       -footer ../src/footer.inc \
+		       -o ../html/ html $$srcdir; \
 	    $(DTPLITE) -merge -o ../man/ nroff $$srcdir; \
 	done
 	$(RM) doc/tmp
@@ -258,7 +261,7 @@ gdbtest: all
 	rm gdb.run
 
 lldbtest: all
-	$(NS_LD_LIBRARY_PATH) lldb -- ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL) 
+	$(NS_LD_LIBRARY_PATH) lldb -- ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
 
 lldb-sample: all
 	lldb -o run -- $(DESTDIR)$(NAVISERVER)/bin/nsd -f -u nsadmin -t $(DESTDIR)$(NAVISERVER)/conf/nsd-config.tcl
@@ -334,4 +337,6 @@ dist: config.guess config.sub clean
 	$(RM) naviserver-$(NS_PATCH_LEVEL)
 
 
-.PHONY: all install install-binaries install-doc install-tests clean distclean
+.PHONY: all install clean distclean \
+	install-dirs install-include install-tcl install-modules \
+	install-config install-certificate install-doc install-examples install-notice
