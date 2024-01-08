@@ -116,7 +116,7 @@ Ns_ModuleInit(const char *server, const char *module)
      * and it is valid, activate NS_DRIVER_SNI.
      */
     vhostcertificates = Ns_ConfigGetValue(path, "vhostcertificates");
-    if (vhostcertificates != NULL) {
+    if (vhostcertificates != NULL && *vhostcertificates != '\0') {
         struct stat st;
 
         if (stat(vhostcertificates, &st) != 0) {
