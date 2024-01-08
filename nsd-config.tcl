@@ -28,12 +28,14 @@
 #       the root directory, containng the subdirecturies
 #       "pages", "logs", "lib", "bin", "tcl", ....
 #
-dict set defaultConfig ipaddress 0.0.0.0
-dict set defaultConfig httpport 8080
-dict set defaultConfig httpsport ""
-dict set defaultConfig nscpport ""
-dict set defaultConfig home [file dirname [file dirname [info nameofexecutable]]]
-dict set defaultConfig hostname localhost
+dict set defaultConfig ipaddress   0.0.0.0
+dict set defaultConfig httpport    8080
+dict set defaultConfig httpsport   ""
+dict set defaultConfig nscpport    ""
+dict set defaultConfig home        [file dirname [file dirname [info nameofexecutable]]]
+dict set defaultConfig hostname    localhost
+dict set defaultConfig pagedir     {$home/pages}
+dict set defaultConfig certificate {$home/etc/server.pem}
 
 #
 # For all potential variables defined by the dict "defaultConfig",
@@ -297,7 +299,7 @@ if {[info exists httpsport] && $httpsport ne ""} {
         ns_param ciphers	"ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305"
         #ns_param ciphersuites  "TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256"
         ns_param protocols	"!SSLv2:!SSLv3:!TLSv1.0:!TLSv1.1"
-        ns_param certificate	$home/etc/server.pem
+        ns_param certificate	$certificate
         #ns_param vhostcertificates $home/etc/certificates ;# directory for vhost certificates of the default server
         ns_param verify		0
 
@@ -362,7 +364,7 @@ ns_section ns/server/default/modules {
 }
 
 ns_section ns/server/default/fastpath {
-    #ns_param   pagedir             pages
+    ns_param   pagedir              $pagedir
     #ns_param   serverdir           ""
     #ns_param   directoryfile       "index.adp index.tcl index.html index.htm"
     #ns_param   directoryadp        dir.adp
