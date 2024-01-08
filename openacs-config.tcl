@@ -54,9 +54,11 @@ set defaultConfig {
 
     server     "openacs"
     serverroot	/var/www/$server
-    logroot	$serverroot/log
+    logdir	$serverroot/log
     homedir	/usr/local/ns
     bindir	$homedir/bin
+    certificate	$serverroot/etc/certfile.pem
+    vhostcertificates $serverroot/etc/certificates
     db_name	$server
     db_user	nsadmin
     db_host	localhost
@@ -172,8 +174,8 @@ set directoryfile             "index.tcl index.adp index.html index.htm"
 # Global server parameters
 #---------------------------------------------------------------------
 ns_section ns/parameters {
-    ns_param	serverlog	${logroot}/error.log
-    ns_param	pidfile		${logroot}/nsd.pid
+    ns_param	serverlog	${logdir}/error.log
+    ns_param	pidfile		${logdir}/nsd.pid
     ns_param	home		$homedir
     ns_param	debug		$debug
 
@@ -385,8 +387,8 @@ if {[info exists httpsport] && $httpsport ne ""} {
         ns_param ciphers	"ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305"
         #ns_param ciphersuites  "TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256"
         ns_param protocols	"!SSLv2:!SSLv3:!TLSv1.0:!TLSv1.1"
-        ns_param certificate	$serverroot/etc/certfile.pem
-        #ns_param vhostcertificates $serverroot/etc/certificates ;# directory for vhost certificates of the default server
+        ns_param certificate	$certificate
+        ns_param vhostcertificates $vhostcertificates ;# directory for vhost certificates of the default server
         ns_param verify		0
         ns_param writerthreads	2
         ns_param writersize	1kB
@@ -689,7 +691,7 @@ ns_section ns/server/$server/httpclient {
     # Configure log file for outgoing ns_http requests
     #
     ns_param	logging		on       ;# default: off
-    ns_param	logfile		${logroot}/httpclient.log
+    ns_param	logfile		${logdir}/httpclient.log
     ns_param	logrollfmt	%Y-%m-%d ;# format appended to log filename
     #ns_param	logmaxbackup	100      ;# 10, max number of backup log files
     #ns_param	logroll		true     ;# true, should server log files automatically
@@ -813,7 +815,7 @@ ns_section ns/server/$server/module/nslog {
     #
     # General parameters for access.log
     #
-    ns_param	file			${logroot}/access.log
+    ns_param	file			${logdir}/access.log
     # ns_param	maxbuffer		100	;# 0, number of logfile entries to keep in memory before flushing to disk
     #
     # Control what to log
@@ -1160,7 +1162,7 @@ ns_section "ns/server/${server}/module/nssmtpd" {
     #ns_param ciphers "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305"
 
     ns_param logging on ;# default: off
-    #ns_param logfile ${logroot}/smtpsend.log
+    ns_param logfile ${logdir}/smtpsend.log
     ns_param logrollfmt %Y-%m-%d ;# format appended to log filename
     #ns_param logmaxbackup 100 ;# 10, max number of backup log files
     #ns_param logroll true ;# true, should server log files automatically
