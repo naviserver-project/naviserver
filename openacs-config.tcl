@@ -309,7 +309,7 @@ if {[info exists httpport] && $httpport ne ""} {
     ns_section ns/module/http {
         ns_param	defaultserver	$server
         ns_param	address		$ipaddress
-        ns_param	hostname	$hostname
+        ns_param	hostname	[lindex $hostname 0]
         ns_param	port		$httpport                  ;# default 80
         ns_param	maxinput	$max_file_upload_size      ;# 1MB, maximum size for inputs (uploads)
         ns_param	recvwait	$max_file_upload_duration  ;# 30s, timeout for receive operations
@@ -356,7 +356,10 @@ if {[info exists httpport] && $httpport ne ""} {
     # which server.
     #
     ns_section ns/module/http/servers {
-        ns_param $server $hostname
+        ns_param $server [lindex $hostname 0]
+        foreach domainname [lrange $hostname 1 end] {
+            ns_param $server $domainname
+        }
         foreach address $ipaddress {
             ns_param $server $address
         }
@@ -416,7 +419,10 @@ if {[info exists httpsport] && $httpsport ne ""} {
     # addressed via its IP address).
     #
     ns_section ns/module/https/servers {
-        ns_param $server $hostname
+        ns_param $server [lindex $hostname 0]
+        foreach domainname [lrange $hostname 1 end] {
+            ns_param $server $domainname
+        }
         foreach address $ipaddress {
             ns_param $server $address
         }
