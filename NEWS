@@ -3057,7 +3057,7 @@ Bug Fixes:
   - nslog:
     * Abort in error situation with an error message instead of crashing
     * Added server name in log entries to make it easier to distinguish
-      messages per-server during bootup
+      messages per-server during boot up
 
   - Range requests:
     * Fixed potential problem with too many non-contiguous byte ranges
