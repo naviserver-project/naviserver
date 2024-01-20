@@ -2,19 +2,68 @@
 # Sample configuration file for NaviServer
 ########################################################################
 
+# All default variables in "defaultConfig" can be overloaded by:
 #
-# Set the IP-address and port, on which the server listens:
+# 1) Setting these variables explicitly in this file after
+#    "ns_configure_variables" (highest precedence)
 #
-set port 8080
-set address "0.0.0.0"  ;# one might use as well for IPv6: set address ::
+# 2) Setting these variables as environment variables with the "nsd_"
+#    prefix (suitable for e.g. docker setups).  The lookup for
+#    environment variables happens in "ns_configure_variables".
+#
+# 3) Alter/override the variables in the "defaultConfig"
+#    (lowest precedence)
+#
+# Some comments:
+#   "ipaddress":
+#       specify an IPv4 or IPv6 address, or a blank separated
+#       list of such addresses
+#   "httpport":
+#       might be as well a list of ports, when listening on
+#       multiple ports
+#   "nscpport":
+#       when nonempty, load the nscp module and listen
+#       on the specified port
+#   "home":
+#       the root directory, containng the subdirecturies
+#       "pages", "logs", "lib", "bin", "tcl", ....
+#
+dict set defaultConfig ipaddress   0.0.0.0
+dict set defaultConfig httpport    8080
+dict set defaultConfig httpsport   ""
+dict set defaultConfig nscpport    ""
+dict set defaultConfig home        [file dirname [file dirname [info nameofexecutable]]]
+dict set defaultConfig hostname    localhost
+dict set defaultConfig pagedir     {$home/pages}
+dict set defaultConfig logdir      {$home/logs}
+dict set defaultConfig certificate {$home/etc/server.pem}
+dict set defaultConfig vhostcertificates {$home/etc/certificates}
+#
+# For all potential variables defined by the dict "defaultConfig",
+# allow environment variables such as "nsd_httpport" or
+# "nsd_ipaddress" to override local values.
+#
+source [file dirname [ns_info nsd]]/../tcl/init.tcl
+ns_configure_variables "nsd_" $defaultConfig
 
-#
-# Get the "home" directory from the currently executing binary.
-# We could do alternatively:
-#    set home /usr/local/ns
-#
-set home [file dirname [file dirname [info nameofexecutable]]]
+set max_file_upload_size       20mb
+set max_file_upload_duration   5m
 
+#---------------------------------------------------------------------
+# Set headers that should be included in every response from the
+# server.
+#
+set http_extraheaders {
+    X-Frame-Options            "SAMEORIGIN"
+    X-Content-Type-Options     "nosniff"
+    X-XSS-Protection           "1; mode=block"
+    Referrer-Policy            "strict-origin"
+}
+
+set https_extraheaders {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains"
+}
+append https_extraheaders $http_extraheaders
 
 ########################################################################
 # Global settings (for all servers)
@@ -53,7 +102,7 @@ ns_section ns/parameters {
     #
     # Log settings (systemlog aka error.log)
     #
-    ns_param    serverlog           error.log
+    ns_param    serverlog           $logdir/error.log
     #ns_param   logdebug            true     ;# default: false
     #ns_param   logroll             false    ;# default: true
     #ns_param	logrollfmt          %Y-%m-%d ;# format appended to log filename
@@ -123,50 +172,165 @@ ns_section ns/servers {
 }
 
 #
-# Global modules (for all servers)
+# Global network modules (for all servers)
 #
-ns_section ns/modules {
-    ns_param    nssock              nssock
+
+if {[info exists httpport] && $httpport ne ""} {
+    #
+    # We have an "httpport" configured, so configure this module.
+    #
+    ns_section ns/modules {
+        ns_param http nssock
+    }
+
+    ns_section ns/module/http {
+        ns_param defaultserver  default
+        ns_param port           $httpport
+        ns_param address        $ipaddress   ;# Space separated list of IP addresses
+        #ns_param hostname      [ns_info hostname]
+
+        #ns_param backlog       1024         ;# default: 256; backlog for listen operations
+        #ns_param acceptsize    10           ;# default: value of "backlog"; max number of accepted (but unqueued) requests
+        #ns_param sockacceptlog 3            ;# ns/param sockacceptlog; report, when one accept operation
+                                             ;# receives more than this threshold number of sockets
+        #ns_param closewait     0s           ;# default: 2s; timeout for close on socket
+        #ns_param keepwait      5s           ;# 5s, timeout for keep-alive
+        #ns_param maxqueuesize  1024         ;# default: 1024; maximum size of the queue
+
+        #ns_param readahead     1MB          ;# default: 16384; size of readahead for requests
+        #ns_param maxupload     1MB          ;# default: 0, when specified, spool uploads larger than this value to a temp file
+
+        ns_param maxinput	$max_file_upload_size      ;# Maximum file size for uploads
+        ns_param recvwait	$max_file_upload_duration  ;# 30s, timeout for receive operations
+        #ns_param keepalivemaxuploadsize   0.5MB           ;# 0, don't allow keep-alive for upload content larger than this
+        #ns_param keepalivemaxdownloadsize 1MB             ;# 0, don't allow keep-alive for download content larger than this
+
+        #
+        # Spooling Threads
+        #
+        ns_param  writerthreads   1		;# default: 0, number of writer threads
+        #ns_param writersize      1KB           ;# default: 1MB, use writer threads for files larger than this value
+        #ns_param writerbufsize   16kB          ;# default: 8kB, buffer size for writer threads
+        #ns_param writerstreaming true          ;# false;  activate writer for streaming HTML output (e.g. ns_writer)
+
+        #ns_param spoolerthreads  1		;# default: 0; number of upload spooler threads
+        #ns_param driverthreads   2		;# default: 1, number of driver threads (requires support of SO_REUSEPORT)
+
+        #
+        # TCP tuning
+        #
+        #ns_param nodelay         false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted
+        #ns_param deferaccept	true    ;# false, Performance optimization
+    }
+
+    #
+    # Define, which "host" (as supplied by the "host:" header field)
+    # accepted over this driver should be associated with which
+    # server. This parameter is for virtual servers. Here we have just
+    # the "default" server and we register the $hostname and the
+    # $address (in case, the server is addressed via its IP address).
+    #
+    ns_section ns/module/http/servers {
+        ns_param default $hostname
+        ns_param default [ns_info hostname]
+        foreach address $ipaddress {
+            ns_param default $address
+        }
+    }
 }
 
-ns_section ns/module/nssock {
-    ns_param    defaultserver            default
-    ns_param    port                     $port
-    ns_param    address                  $address     ;# Space separated list of IP addresses
-    #ns_param    hostname                [ns_info hostname]
-    ns_param    maxinput                 10MB         ;# default: 1MB, maximum size for inputs (uploads)
-    #ns_param   readahead                1MB          ;# default: 16384; size of readahead for requests
-    ns_param    backlog                  1024         ;# default: 256; backlog for listen operations
-    ns_param    acceptsize               10           ;# default: value of "backlog"; max number of accepted (but unqueued) requests
-    ns_param    closewait                0s           ;# default: 2s; timeout for close on socket
-    #ns_param   maxqueuesize             1024         ;# default: 1024; maximum size of the queue
-    #ns_param   keepwait                 5s           ;# 5s, timeout for keep-alive
-    ns_param    keepalivemaxuploadsize   0.5MB        ;# 0, don't allow keep-alive for upload content larger than this
-    ns_param    keepalivemaxdownloadsize 1MB          ;# 0, don't allow keep-alive for download content larger than this
-    #
-    # TCP tuning
-    #
-    #ns_param  nodelay         false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted
-    #
-    # Spooling Threads
-    #
-    #ns_param   spoolerthreads		1	;# default: 0; number of upload spooler threads
-    ns_param    maxupload		1MB     ;# default: 0, when specified, spool uploads larger than this value to a temp file
-    ns_param    writerthreads		1	;# default: 0, number of writer threads
-    #ns_param   writersize		1MB	;# default: 1MB, use writer threads for files larger than this value
-    #ns_param   writerbufsize		8kB	;# default: 8kB, buffer size for writer threads
-    #ns_param   driverthreads           2	;# default: 1, number of driver threads (requires support of SO_REUSEPORT)
+ns_log notice "HTTPSPORT=[info exists httpsport]"
 
-    # Extra driver-specific response header fields (probably for nsssl)
-    #ns_param   extraheaders  {Strict-Transport-Security "max-age=31536000; includeSubDomains"}
+if {[info exists httpsport] && $httpsport ne ""} {
+    #
+    # We have an "httpsport" configured, so configure this module.
+    #
+    #
+    # We have an "httpsport" configured, so load and configure the
+    # module "nsssl" as a global server module with the name "https".
+    #
+    ns_log notice "HTTPSPORT=[info exists httpsport] => <$httpsport>"
+
+    ns_section ns/modules {
+        ns_param https nsssl
+    }
+
+    ns_section ns/module/https {
+        ns_param defaultserver	default
+        ns_param port		$httpsport
+        ns_param address	$ipaddress
+        #ns_param hostname	[ns_info hostname]
+
+        #ns_param backlog       1024         ;# default: 256; backlog for listen operations
+        #ns_param acceptsize    10           ;# default: value of "backlog"; max number of accepted (but unqueued) requests
+        #ns_param sockacceptlog 3            ;# ns/param sockacceptlog; report, when one accept operation
+                                             ;# receives more than this threshold number of sockets
+        #ns_param closewait     0s           ;# default: 2s; timeout for close on socket
+        #ns_param keepwait      5s           ;# 5s, timeout for keep-alive
+        #ns_param maxqueuesize  1024         ;# default: 1024; maximum size of the queue
+
+        #ns_param readahead     1MB          ;# default: 16384; size of readahead for requests
+        #ns_param maxupload     1MB          ;# default: 0, when specified, spool uploads larger than this value to a temp file
+
+        ns_param maxinput	$max_file_upload_size      ;# Maximum file size for uploads
+        ns_param recvwait	$max_file_upload_duration  ;# 30s, timeout for receive operations
+        #ns_param keepalivemaxuploadsize   0.5MB           ;# 0, don't allow keep-alive for upload content larger than this
+        #ns_param keepalivemaxdownloadsize 1MB             ;# 0, don't allow keep-alive for download content larger than this
+
+        #
+        # Spooling Threads
+        #
+        ns_param  writerthreads   1		;# default: 0, number of writer threads
+        #ns_param writersize      1KB           ;# default: 1MB, use writer threads for files larger than this value
+        #ns_param writerbufsize   16kB          ;# default: 8kB, buffer size for writer threads
+        #ns_param writerstreaming true          ;# false;  activate writer for streaming HTML output (e.g. ns_writer)
+
+        #ns_param spoolerthreads  1		;# default: 0; number of upload spooler threads
+        #ns_param driverthreads   2		;# default: 1, number of driver threads (requires support of SO_REUSEPORT)
+
+        #
+        # TCP tuning
+        #
+        #ns_param nodelay       false   ;# true; deactivate TCP_NODELAY if Nagle algorithm is wanted
+        #ns_param deferaccept	true    ;# false, Performance optimization
+
+        #
+        # SSL/TLS parameters
+        #
+        ns_param ciphers	"ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305"
+        #ns_param ciphersuites  "TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256"
+        ns_param protocols	"!SSLv2:!SSLv3:!TLSv1.0:!TLSv1.1"
+        ns_param certificate	$certificate
+        #ns_param vhostcertificates $home/etc/certificates ;# directory for vhost certificates of the default server
+        ns_param verify		0
+
+        ns_param extraheaders	$https_extraheaders
+        ns_param OCSPstapling   on        ;# off; activate OCSP stapling
+        # ns_param OCSPstaplingVerbose  on ;# off; make OCSP stapling more verbose
+    }
+    #
+    # Define, which "host" (as supplied by the "host:" header field)
+    # accepted over this driver should be associated with which
+    # server. This parameter is for virtual servers. Here we have just
+    # the "default" server and we register the $hostname and the
+    # $address (in case, the server is addressed via its IP address).
+    #
+    ns_section ns/module/https/servers {
+        ns_param default $hostname
+        ns_param default [ns_info hostname]
+        foreach address $ipaddress {
+            ns_param default $address
+        }
+    }
 }
+
 
 #
 # The following section defines, which hostnames map to which
 # server. In our case for example, the host "localhost" is mapped to
 # the nsd server named "default".
 #
-ns_section ns/module/nssock/servers {
+ns_section ns/module/http/servers {
     ns_param default    localhost
     ns_param default    [ns_info hostname]
 }
@@ -195,13 +359,13 @@ ns_section ns/server/default {
 }
 
 ns_section ns/server/default/modules {
-    ns_param    nscp                nscp
+    if {$nscpport ne ""} {ns_param nscp nscp}
     ns_param    nslog               nslog
     ns_param    nscgi               nscgi
 }
 
 ns_section ns/server/default/fastpath {
-    #ns_param    pagedir             pages
+    ns_param   pagedir              $pagedir
     #ns_param   serverdir           ""
     #ns_param   directoryfile       "index.adp index.tcl index.html index.htm"
     #ns_param   directoryadp        dir.adp
@@ -254,7 +418,7 @@ ns_section ns/interps/CGIinterps {
 }
 
 ns_section ns/server/default/module/nslog {
-    #ns_param   file                access.log
+    ns_param   file                 $logdir/access.log
     #ns_param   rolllog             true     ;# default: true; should server log files automatically
     #ns_param   rollonsignal        false    ;# default: false; perform roll on a sighup
     #ns_param   rollhour            0        ;# default: 0; specify at which hour to roll
@@ -270,7 +434,7 @@ ns_section ns/server/default/module/nslog {
 }
 
 ns_section ns/server/default/module/nscp {
-    ns_param   port     4080
+    ns_param   port     $nscpport
     #ns_param   address  0.0.0.0
 }
 
