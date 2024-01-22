@@ -108,7 +108,7 @@ if { $database eq "oracle" } {
 set debug false
 set verboseSQL false
 
-set max_file_upload_size      20mb
+set max_file_upload_size      20MB
 set max_file_upload_duration   5m
 
 #---------------------------------------------------------------------
