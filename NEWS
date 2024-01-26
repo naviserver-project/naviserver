@@ -2,7 +2,7 @@
 NaviServer 4.99.30, released 2024-01-26
 =======================================
 
- 34 files changed, 687 insertions(+), 324 deletions(-)
+ 35 files changed, 700 insertions(+), 333 deletions(-)
 
 New Features:
 -------------
@@ -56,9 +56,10 @@ Misc Improvements:
       fc3ee12b): Moved library initialization to occur after command
       line processing to avoid potential unexpected output.
 
-
     - Timeout Information in Warning Messages (Commit 12fe7805):
       Enhanced warning messages to include timeout value information.
+
+    - Improved Robustness of Regression Rest (Commit bcc309716)
 
     - Compatibility Improvements:
       * Improved Forward Compatibility for Tcl9 (Commit d9e15fb6)
