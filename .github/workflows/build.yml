@@ -42,7 +42,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ${CC}
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: naviserver-project/naviserver
           #token: ${{ secrets.PAT }}
