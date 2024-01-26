@@ -1,4 +1,76 @@
 =======================================
+NaviServer 4.99.30, released 2024-01-26
+=======================================
+
+ 34 files changed, 687 insertions(+), 324 deletions(-)
+
+New Features:
+-------------
+
+  - Global Parameter "sockacceptlog" (Commit a8b5f33c):
+
+    Introduced a new global parameter "sockacceptlog" to define a
+    threshold for logging, when to inform the user about a high number
+    of incoming connections in a single accept callback.
+
+Bug Fixes:
+----------
+
+    - Compilation Issues (Commit 0b72baa7): Fixed compilation issues
+      when compiled without OpenSSL or zlib support.
+
+    - Meaningful End-Times on Connection Errors (Commit 929d55be):
+      Ensured meaningful end-times are provided during connection
+      errors in ns_http.
+
+    - Rework of "rejectalreadyclosedconn" (Commit f0963834): Reworked
+      the "rejectalreadyclosedconn" for safer operations and logging.
+
+    - Shutdown Callbacks and Spoolers (Commit 0f0ea439): Change
+      shutdown order to let shutdown callbacks use spoolers. This is
+      beneficial for cluster mode in OpenACS, where other cluster
+      nodes should be be informed about the shutdown of a node (Used
+      by OpenACS).
+
+Changes in Sample Configuration Files:
+--------------------------------------
+
+    - Oracle Startup Configurable (Commit 1ee7fef): Made startup
+      configuration for Oracle databases adjustable in
+      openacs-config.tcl.
+
+    - Use Uppercase Memory Units (Commit 2f96dc62): Standardized
+      memory units to uppercase in openacs-config.tcl.
+
+    - Removed Custom Setting for "connsperthread" (Commit 823b68b2):
+      Removed the custom setting for "connsperthread" in
+      openacs-config.tcl to avoid misconceptions.
+
+    - Backported nsd-config.tcl and openacs-config.tcl from main
+      branch to improve maintainability
+
+Misc Improvements:
+------------------
+
+    - Library Initialization After Command Line Processing (Commit
+      fc3ee12b): Moved library initialization to occur after command
+      line processing to avoid potential unexpected output.
+
+
+    - Timeout Information in Warning Messages (Commit 12fe7805):
+      Enhanced warning messages to include timeout value information.
+
+    - Compatibility Improvements:
+      * Improved Forward Compatibility for Tcl9 (Commit d9e15fb6)
+      * Improved Cross Compilation for certain ARM Processors in .m4
+        setup (Commit e1071fcf)
+      * Improved Include Path for macOS (Commit 120dcafce): Updated
+        the include path for cppcheck under newer macOS versions.
+
+
+
+
+=======================================
 NaviServer 4.99.29, released 2023-11-01
 =======================================
 

@@ -153,7 +153,7 @@ The session responds with:
 
 [example_begin]
  Welcome to server1 running at /usr/local/ns/bin/nsd (pid 22413)
- NaviServer/4.99.29 for linux built on MON/DAY/YEAR at HH:MM:SS
+ NaviServer/4.99.30 for linux built on MON/DAY/YEAR at HH:MM:SS
 
  server1:nscp 1>
 [example_end]
