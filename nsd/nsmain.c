@@ -132,20 +132,6 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     Tcl_FindExecutable(argv[0]);
 
     /*
-     * Initialize the Nsd library.
-     */
-
-    Nsd_LibInit();
-
-    /*
-     * Mark the server stopped until initialization is complete.
-     */
-
-    Ns_MutexLock(&nsconf.state.lock);
-    nsconf.state.started = NS_FALSE;
-    Ns_MutexUnlock(&nsconf.state.lock);
-
-    /*
      * When run as a Win32 service, Ns_Main will be re-entered
      * in the service main thread. In this case, jump past the
      * point where the initial thread blocked when connected to
@@ -275,6 +261,20 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         printf("   Platform:        %s\n", Ns_InfoPlatform());
         return 0;
     }
+
+    /*
+     * Initialize the Nsd library.
+     */
+
+    Nsd_LibInit();
+
+    /*
+     * Mark the server stopped until initialization is complete.
+     */
+
+    Ns_MutexLock(&nsconf.state.lock);
+    nsconf.state.started = NS_FALSE;
+    Ns_MutexUnlock(&nsconf.state.lock);
 
     if (testMode) {
         const char *fileContent;
