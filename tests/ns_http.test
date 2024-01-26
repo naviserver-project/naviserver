@@ -2126,12 +2126,15 @@ test http-8.2 {ns_return with UTF-8 3 byte char with fresh bytearray} -constrain
 test http-8.3 {ns_return with UTF-8 3 byte char with impure bytearray} -constraints {serverListen} -setup {
     ns_register_proc GET /get {
         set v "☃"
-        set fn [ns_config ns/parameters tmpdir]/sun
-        set F [open $fn w]
-        fconfigure $F -translation binary
-        puts -nonewline $F [binary format a* $v]
-        close $F
-        file delete $fn
+        set fn [ns_config ns/parameters tmpdir]sun-[clock clicks -microseconds]
+        try {
+            set F [open $fn w]
+            fconfigure $F -translation binary
+            puts -nonewline $F [binary format a* $v]
+            close $F
+        } finally {
+            file delete $fn
+        }
         ns_return 200 "text/plain" $v
     }
 } -body {
