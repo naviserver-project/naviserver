@@ -111,7 +111,12 @@ NsTclHeadersObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
             conn->flags |= NS_CONN_WRITE_ENCODED;
         }
 
-        Ns_ConnSetLengthHeader(conn, (size_t)length, NS_FALSE);
+        if (length > -1) {
+            /*
+             * A "-length" value was provided.
+             */
+            Ns_ConnSetLengthHeader(conn, (size_t)length, NS_FALSE);
+        }
 
         /*
          * Request HTTP headers from ns_write etc.
