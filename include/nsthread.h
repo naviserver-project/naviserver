@@ -820,6 +820,14 @@ typedef int bool;
 # define UIO_SMALLIOV 8
 #endif
 
+#ifdef TCL_WIDE_INT_IS_LONG
+# define WIDE_INT_MAX (LONG_MAX)
+# define WIDE_INT_MIN (LONG_MIN)
+#else
+# define WIDE_INT_MAX (LLONG_MAX)
+# define WIDE_INT_MIN (LLONG_MIN)
+#endif
+
 /*
  * Some systems (Solaris) lack useful MIN/MAX macros
  * normally defined in sys/param.h so define them here.
