@@ -15,7 +15,7 @@ testConstraint http09 true
 
 test tclresp-1.1.1 {basic syntax} -body {
     ns_headers
-} -returnCodes error -result {wrong # args: should be "ns_headers ?-binary? ?--? status[100,599] ?type? ?length[0,2147483647]?"}
+} -returnCodes error -result {wrong # args: should be "ns_headers ?-binary? ?--? status[100,599] ?type? ?length[0,LLONG_MAX]?"}
 
 test tclresp-1.1.2 {basic syntax} -body {
     ns_headers 200
@@ -31,7 +31,7 @@ test tclresp-1.2.2 {basic syntax} -body {
 
 test tclresp-1.3.1 {basic syntax} -body {
     ns_respond -x
-} -returnCodes error -result {wrong # args: should be "ns_respond ?-status status[100,599]? ?-type type? ?-length length[0,2147483647]? ?-headers headers? ?-string string? ?-file file? ?-fileid fileid? ?-binary binary?"}
+} -returnCodes error -result {wrong # args: should be "ns_respond ?-status status[100,599]? ?-type type? ?-length length[0,LLONG_MAX]? ?-headers headers? ?-string string? ?-file file? ?-fileid fileid? ?-binary binary?"}
 
 test tclresp-1.3.2 {basic syntax} -body {
     ns_respond -string x
@@ -97,7 +97,7 @@ test tclresp-1.4.2 {basic syntax} -body {
 
 test tclresp-1.5.1 {basic syntax} -body {
     ns_returnfp
-} -returnCodes error -result {wrong # args: should be "ns_returnfp status[100,599] type channel length[0,2147483647]"}
+} -returnCodes error -result {wrong # args: should be "ns_returnfp status[100,599] type channel length[0,LLONG_MAX]"}
 
 test tclresp-1.5.2 {basic syntax} -body {
     ns_returnfp 200 text/plain x 0
@@ -157,7 +157,7 @@ test tclresp-1.13.2 {basic syntax} -body {
 
 test tclresp-1.14.1 {basic syntax} -body {
     ns_connsendfp
-} -returnCodes error -result {wrong # args: should be "ns_connsendfp channel length[0,2147483647]"}
+} -returnCodes error -result {wrong # args: should be "ns_connsendfp channel length[0,LLONG_MAX]"}
 
 test tclresp-1.14.2 {basic syntax} -body {
     ns_connsendfp x 0
