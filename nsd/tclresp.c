@@ -77,18 +77,19 @@ int
 NsTclHeadersObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Ns_Conn          *conn = NULL;
-    int               httpStatus = 0, length = -1, binary = (int)NS_FALSE, result;
+    int               httpStatus = 0, binary = (int)NS_FALSE, result;
+    Tcl_WideInt       length = -1;
     char             *mimeType = NULL;
-    Ns_ObjvValueRange lengthRange = {0, INT_MAX};
+    Ns_ObjvValueRange lengthRange = {0, SSIZE_MAX};
     Ns_ObjvSpec       opts[] = {
         {"-binary", Ns_ObjvBool,  &binary, INT2PTR(NS_TRUE)},
         {"--",      Ns_ObjvBreak, NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"status",  Ns_ObjvInt,    &httpStatus, &statusRange},
-        {"?type",   Ns_ObjvString, &mimeType,   NULL},
-        {"?length", Ns_ObjvInt,    &length,     &lengthRange},
+        {"status",  Ns_ObjvInt,     &httpStatus, &statusRange},
+        {"?type",   Ns_ObjvString,  &mimeType,   NULL},
+        {"?length", Ns_ObjvWideInt, &length,     &lengthRange},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -110,9 +111,7 @@ NsTclHeadersObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
             conn->flags |= NS_CONN_WRITE_ENCODED;
         }
 
-        if (length > -1) {
-            Ns_ConnSetLengthHeader(conn, (size_t)length, NS_FALSE);
-        }
+        Ns_ConnSetLengthHeader(conn, (size_t)length, NS_FALSE);
 
         /*
          * Request HTTP headers from ns_write etc.
@@ -387,16 +386,17 @@ int
 NsTclRespondObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     Ns_Conn          *conn = NULL;
-    int               result = TCL_OK, httpStatus = 200, length = -1;
+    int               result = TCL_OK, httpStatus = 200;
+    Tcl_WideInt       length = -1;
     char             *type = (char *)"*/*", *setid = NULL;
     char             *chars = NULL, *filename = NULL, *chanid = NULL, *binary = NULL;
     const Ns_Set     *set = NULL;
     Tcl_Channel       chan;
-    Ns_ObjvValueRange lengthRange = {0, INT_MAX};
+    Ns_ObjvValueRange lengthRange = {0, SSIZE_MAX};
     Ns_ObjvSpec       opts[] = {
         {"-status",   Ns_ObjvInt,       &httpStatus, &statusRange},
         {"-type",     Ns_ObjvString,    &type,       NULL},
-        {"-length",   Ns_ObjvInt,       &length,     &lengthRange},
+        {"-length",   Ns_ObjvWideInt,   &length,     &lengthRange},
         {"-headers",  Ns_ObjvString,    &setid,      NULL},
         {"-string",   Ns_ObjvString,    &chars,      NULL},
         {"-file",     Ns_ObjvString,    &filename,   NULL},
@@ -538,16 +538,17 @@ NsTclReturnFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 int
 NsTclReturnFpObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
-    int               length = 0, httpStatus = 0, result;
+    int               httpStatus = 0, result;
+    Tcl_WideInt       length = 0;
     char             *mimeType, *channelName;
     Ns_Conn          *conn = NULL;
     Tcl_Channel       chan = NULL;
-    Ns_ObjvValueRange lengthRange = {0, INT_MAX};
+    Ns_ObjvValueRange lengthRange = {0, SSIZE_MAX};
     Ns_ObjvSpec       args[] = {
-        {"status",  Ns_ObjvInt,    &httpStatus,  &statusRange},
-        {"type",    Ns_ObjvString, &mimeType,    NULL},
-        {"channel", Ns_ObjvString, &channelName, NULL},
-        {"length",  Ns_ObjvInt,    &length,     &lengthRange},
+        {"status",  Ns_ObjvInt,     &httpStatus,  &statusRange},
+        {"type",    Ns_ObjvString,  &mimeType,    NULL},
+        {"channel", Ns_ObjvString,  &channelName, NULL},
+        {"length",  Ns_ObjvWideInt, &length,     &lengthRange},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -587,12 +588,13 @@ NsTclConnSendFpObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
 {
     Ns_Conn          *conn = NULL;
     Tcl_Channel       chan = NULL;
-    int               length = 0, result;
+    Tcl_WideInt       length = 0;
+    int               result;
     char             *channelName;
-    Ns_ObjvValueRange lengthRange = {0, INT_MAX};
+    Ns_ObjvValueRange lengthRange = {0, SSIZE_MAX};
     Ns_ObjvSpec  args[] = {
         {"channel", Ns_ObjvString,  &channelName, NULL},
-        {"length",  Ns_ObjvInt,     &length,      &lengthRange},
+        {"length",  Ns_ObjvWideInt, &length,      &lengthRange},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -610,7 +612,7 @@ NsTclConnSendFpObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int obj
             status = Ns_ConnSendChannel(conn, chan, (ssize_t)length);
 
             if (status != NS_OK) {
-                Ns_TclPrintfResult(interp, "could not send %d bytes from channel %s",
+                Ns_TclPrintfResult(interp, "could not send %ld bytes from channel %s",
                                    length, channelName);
                 result = TCL_ERROR;
             }
