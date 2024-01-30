@@ -400,7 +400,10 @@ test http-5.0 {ns_conn content} -constraints {} -setup {
 } -cleanup {
     ns_unregister_op GET /get
     unset -nocomplain r
-} -result {200 {<wrong # args: should be "ns_conn content ?-binary? ?offset[0,2147483647]? ?length[1,2147483647]?">}}
+} -result [expr {$::tcl_version < 9.0
+                 ? {200 {<wrong # args: should be "ns_conn content ?-binary? ?offset[0,2147483647]? ?length[1,2147483647]?">}}
+                 : {200 {<wrong # args: should be "ns_conn content ?-binary? ?offset[0,LLONG_MAX]? ?length[1,LLONG_MAX]?">}}
+             }]
 
 #
 # Test earlier crash condition, where "ns_conn content" caused a crash
