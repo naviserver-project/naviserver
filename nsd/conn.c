@@ -1706,7 +1706,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
         {
             Ns_ObjvValueRange keepRange = {0, 1};
             TCL_SIZE_T  oc = 1;
-            Ns_ObjvSpec spec = {"?size", Ns_ObjvInt, &connPtr->keep, &keepRange};
+            Ns_ObjvSpec spec = {"?value", Ns_ObjvInt, &connPtr->keep, &keepRange};
 
             if (objc > 2 && Ns_ObjvInt(&spec, interp, &oc, &objv[2]) != TCL_OK) {
                 result = TCL_ERROR;
