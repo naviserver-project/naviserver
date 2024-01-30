@@ -19,7 +19,8 @@
 #include "nsd.h"
 
 static Ns_ObjvValueRange posintRange0 = {0, INT_MAX};
-static Ns_ObjvValueRange posintRange1 = {1, INT_MAX};
+static Ns_ObjvValueRange posSizeRange0 = {0, TCL_SIZE_MAX};
+static Ns_ObjvValueRange posSizeRange1 = {1, TCL_SIZE_MAX};
 
 /*
  * Static functions defined in this file.
@@ -1818,7 +1819,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
 
     case CContentIdx:
         {
-            int         binary = (int)NS_FALSE, given_length = -1, given_offset = 0;
+            int         binary = (int)NS_FALSE;
+            Tcl_WideInt given_length = -1, given_offset = 0;
             TCL_SIZE_T  length = TCL_INDEX_NONE, requiredLength, offset = 0;
             Tcl_DString encDs;
             Ns_ObjvSpec lopts[] = {
@@ -1826,8 +1828,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
                 {NULL, NULL, NULL, NULL}
             };
             Ns_ObjvSpec args[] = {
-                {"?offset", Ns_ObjvInt, &given_offset, &posintRange0},
-                {"?length", Ns_ObjvInt, &given_length, &posintRange1},
+                {"?offset", Ns_ObjvWideInt, &given_offset, &posSizeRange0},
+                {"?length", Ns_ObjvWideInt, &given_length, &posSizeRange1},
                 {NULL, NULL, NULL, NULL}
             };
 
@@ -2489,7 +2491,7 @@ NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T ob
 {
     const NsInterp   *itPtr = clientData;
     int               result = TCL_OK;
-    TCL_SIZE_T        toCopy = 0;
+    Tcl_WideInt       toCopy = 0;
     char             *chanName;
     Tcl_Channel       chan;
 
@@ -2498,9 +2500,9 @@ NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T ob
      */
 
     Ns_ObjvSpec opts[] = {
-        {"-bytes",   Ns_ObjvInt,   &toCopy, &posintRange0},
-        {"--",       Ns_ObjvBreak, NULL,    NULL},
-        {NULL,       NULL,         NULL,    NULL}
+        {"-bytes",   Ns_ObjvWideInt, &toCopy, &posSizeRange0},
+        {"--",       Ns_ObjvBreak,    NULL,    NULL},
+        {NULL,       NULL,            NULL,    NULL}
     };
     Ns_ObjvSpec args[] = {
         {"channel",  Ns_ObjvString, &chanName, NULL},

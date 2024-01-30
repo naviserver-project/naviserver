@@ -640,6 +640,7 @@ typedef int ns_sockerrno_t;
 
 #ifdef NS_TCL_PRE9
 # define TCL_SIZE_T           int
+# define TCL_SIZE_MAX         INT_MAX
 #else
 # define TCL_SIZE_T           Tcl_Size
 #endif

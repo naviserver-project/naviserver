@@ -20,7 +20,7 @@
 /*
  * Static variables defined in this file.
  */
-static Ns_ObjvValueRange posintRange0 = {0, INT_MAX};
+static Ns_ObjvValueRange posintRange0 = {0, TCL_SIZE_MAX};
 
 /*
  * Local functions defined in this file.
@@ -205,19 +205,20 @@ NsTclAdpIdentObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, 
 static int
 AdpCtlBufSizeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
-    int               intVal = -1, result = TCL_OK;
+    int               result = TCL_OK;
+    Tcl_WideInt       size = -1;
     NsInterp         *itPtr = clientData;
-    Ns_ObjvValueRange bufsizeRange = {1, INT_MAX};
+    Ns_ObjvValueRange bufsizeRange = {1, SSIZE_MAX};
     Ns_ObjvSpec args[] = {
-        {"?size", Ns_ObjvInt,  &intVal, &bufsizeRange},
+        {"?size", Ns_ObjvWideInt,  &size, &bufsizeRange},
         {NULL, NULL, NULL, NULL}
     };
 
     if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        if (intVal > -1) {
-            itPtr->adp.bufsize = (size_t)intVal;
+        if (size > -1) {
+            itPtr->adp.bufsize = (size_t)size;
         }
         Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)itPtr->adp.bufsize));
     }
@@ -751,9 +752,9 @@ NsTclAdpTruncObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, 
 {
     Tcl_DString      *dsPtr;
     int               result = TCL_OK;
-    TCL_SIZE_T        length = 0;
+    Tcl_WideInt       length = 0;
     Ns_ObjvSpec  args[] = {
-        {"?length",  Ns_ObjvInt, &length, &posintRange0},
+        {"?length",  Ns_ObjvWideInt, &length, &posintRange0},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -764,7 +765,7 @@ NsTclAdpTruncObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, 
         if (GetOutput(clientData, &dsPtr) != TCL_OK) {
             result = TCL_ERROR;
         } else {
-            Ns_DStringSetLength(dsPtr, length);
+            Ns_DStringSetLength(dsPtr, (TCL_SIZE_T)length);
         }
     }
     return result;
@@ -919,9 +920,10 @@ NsTclAdpArgvObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, T
 {
     AdpFrame         *framePtr = NULL;
     Tcl_Obj          *defaultObj = NULL;
-    int               idx = 0, result = TCL_OK;
+    int               result = TCL_OK;
+    Tcl_WideInt       idx = 0;
     Ns_ObjvSpec       args[] = {
-        {"?index",   Ns_ObjvInt, &idx,        &posintRange0},
+        {"?index",   Ns_ObjvWideInt, &idx,   &posintRange0},
         {"?default", Ns_ObjvObj, &defaultObj, NULL},
         {NULL, NULL, NULL, NULL}
     };

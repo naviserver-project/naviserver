@@ -22,6 +22,7 @@
  * Static variables defined in this file.
  */
 static Ns_ObjvValueRange posintRange0 = {0, INT_MAX};
+static Ns_ObjvValueRange posSizeRange0 = {0, TCL_SIZE_MAX};
 
 /*
  * Structure handling one registered channel for the [ns_chan] command
@@ -434,10 +435,11 @@ int
 NsTclTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     char             *fileString;
-    int               length = 0, result = TCL_OK;
-    Ns_ObjvSpec args[] = {
-        {"file",      Ns_ObjvString, &fileString, NULL},
-        {"?length",   Ns_ObjvInt,    &length, &posintRange0},
+    int               result = TCL_OK;
+    Tcl_WideInt       length = 0;
+    Ns_ObjvSpec       args[] = {
+        {"file",      Ns_ObjvString,  &fileString, NULL},
+        {"?length",   Ns_ObjvWideInt, &length, &posSizeRange0},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -474,11 +476,12 @@ NsTclTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_
 int
 NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
-    int               fd, length = 0, result = TCL_OK;
+    int               fd, result = TCL_OK;
+    Tcl_WideInt       length = 0;
     char             *fileIdString;
     Ns_ObjvSpec args[] = {
-        {"fileId",    Ns_ObjvString, &fileIdString, NULL},
-        {"?length",   Ns_ObjvInt,    &length,       &posintRange0},
+        {"fileId",    Ns_ObjvString,  &fileIdString, NULL},
+        {"?length",   Ns_ObjvWideInt, &length,       &posSizeRange0},
         {NULL, NULL, NULL, NULL}
     };
 
