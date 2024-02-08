@@ -34,12 +34,13 @@ jobs:
             nsf_version: HEAD
             tdom_version: 0.9.3
 
-    #      - os: ubuntu-latest
-    #        compiler: gcc-12
+          - os: ubuntu-latest
+            compiler: gcc-12
     #        tcltag: core-9-0-b1-rc
-    #        ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl
-    #        nsf_version: HEAD
-    #        tdom_version: 0.9.3
+             tcltag: core-8-6-14-rc
+            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl
+            nsf_version: HEAD
+            tdom_version: 0.9.3
 
     defaults:
       run:
