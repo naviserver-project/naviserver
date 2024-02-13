@@ -259,9 +259,10 @@ runtest: all
 	$(NS_LD_LIBRARY_PATH) ./nsd/nsd $(NS_TEST_CFG)
 
 gdbtest: all
-	@echo set args $(NS_TEST_CFG) $(NS_TEST_ALL) > gdb.run
-	$(NS_LD_LIBRARY_PATH) gdb -x gdb.run ./nsd/nsd
-	rm gdb.run
+	$(NS_LD_LIBRARY_PATH) gdb -ex=run --args ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
+#	@echo set args $(NS_TEST_CFG) $(NS_TEST_ALL) > gdb.run
+#	$(NS_LD_LIBRARY_PATH) gdb -x gdb.run ./nsd/nsd
+#	rm gdb.run
 
 lldbtest: all
 	$(NS_LD_LIBRARY_PATH) lldb -- ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL) 
