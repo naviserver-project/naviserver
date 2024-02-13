@@ -506,6 +506,15 @@ test ns_base64decode-4.0 {
 } -result {64 128 1}
 
 
+test ns_base64decode-4.1 {
+    Check skipping white space.
+    This was a problem with musl on aarch64.
+} -constraints {nsf} -body {
+    binary scan [ns_base64decode -binary "iV\n AAAF=="] H* hex1
+    binary scan [ns_base64decode -binary "iVAAAF=="] H* hex2
+    list $hex1 $hex2
+} -result {89500000 89500000}
+
 
 cleanupTests
 
