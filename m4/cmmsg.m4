@@ -50,3 +50,25 @@ AC_DEFUN([_AX_HAVE_CMMSG],
 #include <sys/types.h>
 #include <sys/socket.h>
 ]], [[struct msghdr msg; msg.msg_control = 0;]])], [$1],[$2])])
+
+
+AC_DEFUN([AX_CHECK_SIZEOF_MSG_IOVLEN], [
+  AC_MSG_CHECKING([size of msghdr.msg_iovlen])
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <sys/types.h>
+#include <sys/socket.h>
+]], [[
+struct msghdr msg;
+return (sizeof(msg.msg_iovlen) == sizeof(size_t));
+]])],
+  [dnl If the compilation succeeds, we check the output to determine the type
+   AC_MSG_RESULT([`sizeof(msg.msg_iovlen)` bytes])
+   AS_IF([test "x$ac_cv_prog_cc_c99" = "xyes"], [
+     AC_DEFINE([NS_MSG_IOVLEN_IS_SIZE_T], [1], [Define to 1 if msghdr.msg_iovlen is of type size_t.])
+   ], [
+     AC_DEFINE([NS_MSG_IOVLEN_IS_SIZE_T], [0], [msghdr.msg_iovlen is not of type size_t.])
+   ])
+  ],
+  [AC_MSG_RESULT([no])
+   AC_DEFINE([NS_MSG_IOVLEN_IS_SIZE_T], [0], [Could not determine if msghdr.msg_iovlen is of type size_t.])]
+)])

@@ -264,6 +264,9 @@
 /* Define to 1 if the native crypt library should be used */
 #undef NS_HAVE_CRYPT
 
+/* Could not determine if msghdr.msg_iovlen is of type size_t. */
+#undef NS_MSG_IOVLEN_IS_SIZE_T
+
 /* type of second ns_poll() argument */
 #undef NS_POLL_NFDS_TYPE
 
