@@ -486,7 +486,11 @@ typedef int ns_sockerrno_t;
 #   define S6_ADDR16(x) ((uint16_t*)(x).s6_addr16)
 #  endif
 #  define NS_INITGROUPS_GID_T gid_t
-#  define NS_MSG_IOVLEN_T size_t
+#  if NS_MSG_IOVLEN_IS_SIZE_T
+#   define NS_MSG_IOVLEN_T size_z
+#  else
+#   define NS_MSG_IOVLEN_T int
+#  endif
 # endif
 
 # ifdef __OpenBSD__
