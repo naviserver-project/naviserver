@@ -2058,9 +2058,9 @@ test http-8.0.2u {
         set contentType [ns_set iget [ns_conn headers] content-type]
         ns_return 200 text/plain "[ns_conn encoding] <$contentType> <[ns_getcontent -as_file false]>"
     }
-    set fn [ns_mktemp]
-    set fo [ns_mktemp]
-    set ch [open $fn w]
+    set fnInput [ns_mktemp]
+    set fnOutput [ns_mktemp]
+    set ch [open $fnInput w]
     puts $ch 123
     close $ch
 } -body {
@@ -2071,8 +2071,8 @@ test http-8.0.2u {
     # the PUT request to the server, which cannot reply to it. So even
     # "-partialresults" does not help.
     #
-    set ch [open $fn r]
-    set co [open $fo w]
+    set ch [open $fnInput r]
+    set co [open $fnOutput w]
     set queryHeaders [ns_set create]
     ns_set update $queryHeaders Content-Type text/plain
     #ns_logctl severity Debug(task) on
@@ -2084,7 +2084,7 @@ test http-8.0.2u {
                [ns_config test listenurl]/put]
     close [dict get $d body_chan]
     close [dict get $d outputchan]
-    set co [open $fo r]
+    set co [open $fnOutput r]
     set bo [read $co]
     close $co
     list [dict get $d status] $bo
@@ -2092,9 +2092,9 @@ test http-8.0.2u {
     if {$ch in [file channels]} {close $ch}
     if {$co in [file channels]} {close $co}
     file delete $fn
-    file delete $fo
+    file delete $fnOutput
     ns_unregister_op PUT /put
-    unset -nocomplain d fn fo ch co bo
+    unset -nocomplain d fnInput fnOutput ch co bo
 } -returnCodes {error ok} -result {200 {utf-8 <text/plain> <123>}}
 
 #
