@@ -293,6 +293,7 @@ ns_section "ns/server/test/module/nsproxy" {
 
 ns_section "ns/server/test/module/nscp" {
     ns_param   port            $nscp_port
+    ns_param   address         [ns_config "test" loopback]
 }
 
 ns_section "ns/server/test/module/nscp/users" {
