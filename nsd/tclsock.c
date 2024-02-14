@@ -527,7 +527,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_
         }
 
         /*
-         * Perform the connection.
+         * Perform the connect call depending on the flags.
          */
 
         if (async != 0) {
