@@ -1780,7 +1780,7 @@ test http-8.0.2u {ns_http with body_chan and outputchan run} -constraints {serve
     set co [open $fnOutput r]
     set bo [read $co]
     close $co
-    return [list [dict get $d status] $bo]
+    list [dict get $d status] $bo
 } -cleanup {
     file delete $fn
     file delete $fnOutput
