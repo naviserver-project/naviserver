@@ -475,7 +475,12 @@ ns_inet_ntop(const struct sockaddr *NS_RESTRICT saPtr, char *NS_RESTRICT buffer,
 
                     if (len > 6 && len < size) {
                         tail ++;
-                        memcpy(buffer, tail, len);
+                        /*
+                         * The memory is overlapping. Do not use memcpy()
+                         * since this might fail on some platforms with a hard
+                         * trap (e.g., aarch64 musl).
+                         */
+                        memmove(buffer, tail, len);
                         buffer[len] = '\0';
                     }
                 }
