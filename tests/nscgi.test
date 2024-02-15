@@ -342,12 +342,12 @@ test nscgi-1.7.3.3b {
 #
 test nscgi-1.8.0 {
     Check results of activated "systemenvironment".
-    We assume, the system has a "USER" environment variable set.
+    We assume, the system has a "HOME" environment variable set.
 } -constraints {serverListen tclsh} -body {
-    set r [nstest::http -getbody 1 GET /info.cgi?var=USER]
+    set r [nstest::http -getbody 1 GET /info.cgi?var=HOME]
     #ns_log notice $r
-    return USER=[regexp {USER: <\S+>} $r]
-} -returnCodes {error return ok} -result "USER=1"
+    return HOME=[regexp {HOME: <\S+>} $r]
+} -returnCodes {error return ok} -result "HOME=1"
 
 
 cleanupTests
