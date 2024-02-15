@@ -588,7 +588,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      */
     {
         char *localeString =  getenv("LC_ALL");
-        const char *source = "unknown source", *response;
+        const char *source = "environment variable LC_ALL", *response;
 
         if (localeString == NULL) {
             source = "environment variable LC_COLLATE";
