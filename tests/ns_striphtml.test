@@ -11,7 +11,7 @@ test ns_striphtml-1.0 {basic test} -body {
 
 test ns_striphtml-2.0.1 {nbsp entity} -body {
     ns_striphtml {hello&nbsp;world}
-} -result "hello world"
+} -result "hello world"
 test ns_striphtml-2.0.2 {bare less sign} -body {
     ns_striphtml {hello&lt;world}
 } -result "hello<world"
@@ -73,6 +73,8 @@ test ns_striphtml-2.4b {yen numeric entity} -body {
 
 test ns_striphtml-3.0 {table} -body {
     set t {
+        {"lates",   5, "⪭︀",   6},
+        
                                 {"AElig",   5, "Æ", 2},
                                 {"Aacute",  6, "Á", 2},
                                 {"Acirc",   5, "Â", 2},
@@ -201,7 +203,7 @@ test ns_striphtml-3.0 {table} -body {
                                 {"kappa",   5, "κ", 2},
                                 {"lArr",    4, "⇐", 2},
                                 {"lambda",  6, "λ", 2},
-                                {"lang",    4, "〈", 2},
+                                {"lang",    4, "⟨", 2},
                                 {"laquo",   5, "«", 2},
                                 {"larr",    4, "←", 2},
                                 {"lceil",   5, "⌈", 2},
@@ -216,7 +218,7 @@ test ns_striphtml-3.0 {table} -body {
                                 {"minus",   5, "−", 2},
                                 {"mu",      2, "μ", 2},
                                 {"nabla",   5, "∇", 2},
-                                {"nbsp",    4, " ", 1},
+                                {"nbsp",    4, " ", 2},
                                 {"ne",      2, "≠", 2},
                                 {"ni",      2, "∋", 2},
                                 {"not",     3, "¬", 2},
@@ -253,7 +255,7 @@ test ns_striphtml-3.0 {table} -body {
                                 {"quot",    4, "\"", 1},
                                 {"rArr",    4, "⇒", 2},
                                 {"radic",   5, "√", 2},
-                                {"rang",    4, "〉", 2},
+                                {"rang",    4, "⟩", 2},
                                 {"raquo",   5, "»", 2},
                                 {"rarr",    4, "→", 2},
                                 {"rceil",   5, "⌉", 2},
@@ -298,9 +300,14 @@ test ns_striphtml-3.0 {table} -body {
                                 {"yacute",  6, "ý", 2},
                                 {"yen",     3, "¥", 2},
                                 {"yuml",    4, "ÿ", 2},
-                                {"zeta",    4, "ζ", 2},
-                                {NULL,      4, "", 0}
+                                {"zeta",    4, "ζ", 2}
     }
+    append t \
+        [subst {{"Tab",        3, "\t", 1}}], \n \
+        [subst {{"ThickSpace", 10, "\u205F\u200A", 6}}], \n \
+        [subst {{"nsce",        4, "\u2AB0\u0338", 6}}] \n \
+
+    
     regsub -all {{NULL,    0, "", 0}} $t "" t
     regsub -all {,} $t " " t
     set string ""
@@ -308,7 +315,7 @@ test ns_striphtml-3.0 {table} -body {
     foreach l $t {
         lassign $l name len value valueLen
         if {$len ne [string length $name]} {
-            ns_log notice "name length of <$name> incorrect, should be [string length $name]"
+            ns_log notice "name length $len of <$name> incorrect, should be [string length $name]"
         }
         append string   "&$name; "
         append expected "$value "
@@ -316,13 +323,17 @@ test ns_striphtml-3.0 {table} -body {
     set got [ns_striphtml $string]
     set result [expr {$expected eq $got}]
     if {$result eq 0} {
-        ns_log notice "\nexp: $expected\ngot: $got"
+        #ns_log notice "\nexp: $expected\ngot: $got"
+        set p 0
         foreach e [split $expected " "] g [split $got " "] {
-            ns_log notice "e $e g $g eq [expr {$e eq $g}]"
+            if {$e ne $g} {
+                ns_log notice "pos $p: e $e g $g eq [expr {$e eq $g}]"
+            }
+            incr p
         }
     }
     return $result
-} -result "1"
+} -returnCodes {error return ok} -result "1"
 
 test ns_striphtml-4.0 {strip HTML comment} -body {
     ns_striphtml {hello<!-- SOME COMMENT -->World}
