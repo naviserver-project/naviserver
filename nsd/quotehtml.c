@@ -25,13 +25,13 @@ static void QuoteHtml(Ns_DString *dsPtr, const char *breakChar, const char *html
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static bool WordEndsInSemi(const char *word, size_t *lengthPtr)
-    NS_GNUC_NONNULL(1);
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static int ToUTF8(long value, char *outPtr)
     NS_GNUC_NONNULL(2);
 
-static size_t EntityDecode(const char *entity, size_t length, bool *needEncodePtr, char *outPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+static size_t EntityDecode(const char *entity, ssize_t length, bool *needEncodePtr, char *outPtr, const char **toParse)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 static void
 HtmlFinishElement(Tcl_Obj *listObj, const char* what, const char *lastStart,
@@ -41,6 +41,7 @@ static Tcl_Obj *
 HtmlParseTagAtts(const char *string, ptrdiff_t length)
     NS_GNUC_NONNULL(1);
 
+static bool InitOnce(void);
 
 /*
  *----------------------------------------------------------------------
@@ -225,7 +226,9 @@ NsTclUnquoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OB
 
     } else {
         Ns_DString  ds, *dsPtr = &ds;
-        const char *htmlString = Tcl_GetString(htmlObj);
+        TCL_SIZE_T  htmlLength;
+        const char *htmlString = Tcl_GetStringFromObj(htmlObj, &htmlLength);
+        const char *endOfString = htmlString + htmlLength;
         bool        needEncode = NS_FALSE;
 
         Ns_DStringInit(&ds);
@@ -242,8 +245,9 @@ NsTclUnquoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OB
                     break;
 
                 } else {
-                    size_t     length = 0u;
+                    size_t     entityLength = 0u, decoded = 0u;
                     TCL_SIZE_T prefixLength = (TCL_SIZE_T)(possibleEntity - htmlString);
+                    TCL_SIZE_T oldLength;
 
                     /*
                      * Add the string leading to the ampersand to the output
@@ -253,25 +257,26 @@ NsTclUnquoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OB
                         Ns_DStringNAppend(dsPtr, htmlString, prefixLength);
                         htmlString += prefixLength;
                     }
+                    oldLength = dsPtr->length;
 
-                    if (WordEndsInSemi(possibleEntity, &length)) {
-                        size_t     decoded;
-                        TCL_SIZE_T oldLength = dsPtr->length;
+                    /*
+                     * The appended characters are max 8 bytes; make sure, we
+                     * have this space in the Tcl_DString.
+                     */
+                    Tcl_DStringSetLength(dsPtr, oldLength + 8);
 
-                        /*
-                         * The appended characters are max 4 bytes; make sure, we
-                         * have this space in the Tcl_DString.
-                         */
-                        Tcl_DStringSetLength(dsPtr, oldLength + 4);
-                        decoded = EntityDecode(possibleEntity + 1u, length, &needEncode,
-                                               dsPtr->string + oldLength);
-                        Tcl_DStringSetLength(dsPtr, oldLength + (TCL_SIZE_T)decoded);
+                    if (likely(WordEndsInSemi(possibleEntity, &entityLength))) {
+                        decoded = EntityDecode(possibleEntity + 1u, (ssize_t)entityLength, &needEncode,
+                                               dsPtr->string + oldLength, &htmlString);
+                    }
+                    if (unlikely(decoded == 0)) {
+                        decoded = EntityDecode(possibleEntity + 1u, - (endOfString - (possibleEntity + 1)), &needEncode,
+                                               dsPtr->string + oldLength, &htmlString);
+                    }
+                    Tcl_DStringSetLength(dsPtr, oldLength + (TCL_SIZE_T)decoded);
 
-                        /*
-                         * Include the boundary characters "&" and ";" in the
-                         * length calculation.
-                         */
-                        htmlString += (length + 2);
+                    if (likely(decoded > 0)) {
+                        htmlString++;
                     } else {
                         Ns_DStringNAppend(dsPtr, "&", 1);
                         htmlString ++;
@@ -372,6 +377,8 @@ ToUTF8(long value, char *outPtr)
  *
  *----------------------------------------------------------------------
  */
+static size_t entityIndexTable[256] = {0};
+static size_t legacyEntityIndexTable[256] = {0};
 
 typedef struct namedEntity_t {
     const char *name;
@@ -2510,20 +2517,159 @@ static const namedEntity_t namedEntities[] = {
     {NULL,                               0, "",                            0}
 };
 
+static const namedEntity_t namedLegacyEntities[] = {
+    {"AElig",                            5, "\xc3\x86",                    2},    /* "Æ" U+000C6  */
+    {"AMP",                              3, "\x26",                        1},    /* "&" U+00026  */
+    {"Aacute",                           6, "\xc3\x81",                    2},    /* "Á" U+000C1  */
+    {"Acirc",                            5, "\xc3\x82",                    2},    /* "Â" U+000C2  */
+    {"Agrave",                           6, "\xc3\x80",                    2},    /* "À" U+000C0  */
+    {"Aring",                            5, "\xc3\x85",                    2},    /* "Å" U+000C5  */
+    {"Atilde",                           6, "\xc3\x83",                    2},    /* "Ã" U+000C3  */
+    {"Auml",                             4, "\xc3\x84",                    2},    /* "Ä" U+000C4  */
+    {"COPY",                             4, "\xc2\xa9",                    2},    /* "©" U+000A9  */
+    {"Ccedil",                           6, "\xc3\x87",                    2},    /* "Ç" U+000C7  */
+    {"ETH",                              3, "\xc3\x90",                    2},    /* "Ð" U+000D0  */
+    {"Eacute",                           6, "\xc3\x89",                    2},    /* "É" U+000C9  */
+    {"Ecirc",                            5, "\xc3\x8a",                    2},    /* "Ê" U+000CA  */
+    {"Egrave",                           6, "\xc3\x88",                    2},    /* "È" U+000C8  */
+    {"Euml",                             4, "\xc3\x8b",                    2},    /* "Ë" U+000CB  */
+    {"GT",                               2, "\x3e",                        1},    /* ">" U+0003E  */
+    {"Iacute",                           6, "\xc3\x8d",                    2},    /* "Í" U+000CD  */
+    {"Icirc",                            5, "\xc3\x8e",                    2},    /* "Î" U+000CE  */
+    {"Igrave",                           6, "\xc3\x8c",                    2},    /* "Ì" U+000CC  */
+    {"Iuml",                             4, "\xc3\x8f",                    2},    /* "Ï" U+000CF  */
+    {"LT",                               2, "\x3c",                        1},    /* "<" U+0003C  */
+    {"Ntilde",                           6, "\xc3\x91",                    2},    /* "Ñ" U+000D1  */
+    {"Oacute",                           6, "\xc3\x93",                    2},    /* "Ó" U+000D3  */
+    {"Ocirc",                            5, "\xc3\x94",                    2},    /* "Ô" U+000D4  */
+    {"Ograve",                           6, "\xc3\x92",                    2},    /* "Ò" U+000D2  */
+    {"Oslash",                           6, "\xc3\x98",                    2},    /* "Ø" U+000D8  */
+    {"Otilde",                           6, "\xc3\x95",                    2},    /* "Õ" U+000D5  */
+    {"Ouml",                             4, "\xc3\x96",                    2},    /* "Ö" U+000D6  */
+    {"QUOT",                             4, "\x22",                        1},    /* """ U+00022  */
+    {"REG",                              3, "\xc2\xae",                    2},    /* "®" U+000AE  */
+    {"THORN",                            5, "\xc3\x9e",                    2},    /* "Þ" U+000DE  */
+    {"Uacute",                           6, "\xc3\x9a",                    2},    /* "Ú" U+000DA  */
+    {"Ucirc",                            5, "\xc3\x9b",                    2},    /* "Û" U+000DB  */
+    {"Ugrave",                           6, "\xc3\x99",                    2},    /* "Ù" U+000D9  */
+    {"Uuml",                             4, "\xc3\x9c",                    2},    /* "Ü" U+000DC  */
+    {"Yacute",                           6, "\xc3\x9d",                    2},    /* "Ý" U+000DD  */
+    {"aacute",                           6, "\xc3\xa1",                    2},    /* "á" U+000E1  */
+    {"acirc",                            5, "\xc3\xa2",                    2},    /* "â" U+000E2  */
+    {"acute",                            5, "\xc2\xb4",                    2},    /* "´" U+000B4  */
+    {"aelig",                            5, "\xc3\xa6",                    2},    /* "æ" U+000E6  */
+    {"agrave",                           6, "\xc3\xa0",                    2},    /* "à" U+000E0  */
+    {"amp",                              3, "\x26",                        1},    /* "&" U+00026  */
+    {"aring",                            5, "\xc3\xa5",                    2},    /* "å" U+000E5  */
+    {"atilde",                           6, "\xc3\xa3",                    2},    /* "ã" U+000E3  */
+    {"auml",                             4, "\xc3\xa4",                    2},    /* "ä" U+000E4  */
+    {"brvbar",                           6, "\xc2\xa6",                    2},    /* "¦" U+000A6  */
+    {"ccedil",                           6, "\xc3\xa7",                    2},    /* "ç" U+000E7  */
+    {"cedil",                            5, "\xc2\xb8",                    2},    /* "¸" U+000B8  */
+    {"cent",                             4, "\xc2\xa2",                    2},    /* "¢" U+000A2  */
+    {"copy",                             4, "\xc2\xa9",                    2},    /* "©" U+000A9  */
+    {"curren",                           6, "\xc2\xa4",                    2},    /* "¤" U+000A4  */
+    {"deg",                              3, "\xc2\xb0",                    2},    /* "°" U+000B0  */
+    {"divide",                           6, "\xc3\xb7",                    2},    /* "÷" U+000F7  */
+    {"eacute",                           6, "\xc3\xa9",                    2},    /* "é" U+000E9  */
+    {"ecirc",                            5, "\xc3\xaa",                    2},    /* "ê" U+000EA  */
+    {"egrave",                           6, "\xc3\xa8",                    2},    /* "è" U+000E8  */
+    {"eth",                              3, "\xc3\xb0",                    2},    /* "ð" U+000F0  */
+    {"euml",                             4, "\xc3\xab",                    2},    /* "ë" U+000EB  */
+    {"frac12",                           6, "\xc2\xbd",                    2},    /* "½" U+000BD  */
+    {"frac14",                           6, "\xc2\xbc",                    2},    /* "¼" U+000BC  */
+    {"frac34",                           6, "\xc2\xbe",                    2},    /* "¾" U+000BE  */
+    {"gt",                               2, "\x3e",                        1},    /* ">" U+0003E  */
+    {"iacute",                           6, "\xc3\xad",                    2},    /* "í" U+000ED  */
+    {"icirc",                            5, "\xc3\xae",                    2},    /* "î" U+000EE  */
+    {"iexcl",                            5, "\xc2\xa1",                    2},    /* "¡" U+000A1  */
+    {"igrave",                           6, "\xc3\xac",                    2},    /* "ì" U+000EC  */
+    {"iquest",                           6, "\xc2\xbf",                    2},    /* "¿" U+000BF  */
+    {"iuml",                             4, "\xc3\xaf",                    2},    /* "ï" U+000EF  */
+    {"laquo",                            5, "\xc2\xab",                    2},    /* "«" U+000AB  */
+    {"lt",                               2, "\x3c",                        1},    /* "<" U+0003C  */
+    {"macr",                             4, "\xc2\xaf",                    2},    /* "¯" U+000AF  */
+    {"micro",                            5, "\xc2\xb5",                    2},    /* "µ" U+000B5  */
+    {"middot",                           6, "\xc2\xb7",                    2},    /* "·" U+000B7  */
+    {"nbsp",                             4, "\xc2\xa0",                    2},    /* " " U+000A0  */
+    {"not",                              3, "\xc2\xac",                    2},    /* "¬" U+000AC  */
+    {"ntilde",                           6, "\xc3\xb1",                    2},    /* "ñ" U+000F1  */
+    {"oacute",                           6, "\xc3\xb3",                    2},    /* "ó" U+000F3  */
+    {"ocirc",                            5, "\xc3\xb4",                    2},    /* "ô" U+000F4  */
+    {"ograve",                           6, "\xc3\xb2",                    2},    /* "ò" U+000F2  */
+    {"ordf",                             4, "\xc2\xaa",                    2},    /* "ª" U+000AA  */
+    {"ordm",                             4, "\xc2\xba",                    2},    /* "º" U+000BA  */
+    {"oslash",                           6, "\xc3\xb8",                    2},    /* "ø" U+000F8  */
+    {"otilde",                           6, "\xc3\xb5",                    2},    /* "õ" U+000F5  */
+    {"ouml",                             4, "\xc3\xb6",                    2},    /* "ö" U+000F6  */
+    {"para",                             4, "\xc2\xb6",                    2},    /* "¶" U+000B6  */
+    {"plusmn",                           6, "\xc2\xb1",                    2},    /* "±" U+000B1  */
+    {"pound",                            5, "\xc2\xa3",                    2},    /* "£" U+000A3  */
+    {"quot",                             4, "\x22",                        1},    /* """ U+00022  */
+    {"raquo",                            5, "\xc2\xbb",                    2},    /* "»" U+000BB  */
+    {"reg",                              3, "\xc2\xae",                    2},    /* "®" U+000AE  */
+    {"sect",                             4, "\xc2\xa7",                    2},    /* "§" U+000A7  */
+    {"shy",                              3, "\xc2\xad",                    2},    /* "­" U+000AD  */
+    {"sup1",                             4, "\xc2\xb9",                    2},    /* "¹" U+000B9  */
+    {"sup2",                             4, "\xc2\xb2",                    2},    /* "²" U+000B2  */
+    {"sup3",                             4, "\xc2\xb3",                    2},    /* "³" U+000B3  */
+    {"szlig",                            5, "\xc3\x9f",                    2},    /* "ß" U+000DF  */
+    {"thorn",                            5, "\xc3\xbe",                    2},    /* "þ" U+000FE  */
+    {"times",                            5, "\xc3\x97",                    2},    /* "×" U+000D7  */
+    {"uacute",                           6, "\xc3\xba",                    2},    /* "ú" U+000FA  */
+    {"ucirc",                            5, "\xc3\xbb",                    2},    /* "û" U+000FB  */
+    {"ugrave",                           6, "\xc3\xb9",                    2},    /* "ù" U+000F9  */
+    {"uml",                              3, "\xc2\xa8",                    2},    /* "¨" U+000A8  */
+    {"uuml",                             4, "\xc3\xbc",                    2},    /* "ü" U+000FC  */
+    {"yacute",                           6, "\xc3\xbd",                    2},    /* "ý" U+000FD  */
+    {"yen",                              3, "\xc2\xa5",                    2},    /* "¥" U+000A5  */
+    {"yuml",                             4, "\xc3\xbf",                    2},    /* "ÿ" U+000FF  */
+
+    {NULL,                               0, "",                            0}
+};
+
+static bool InitOnce(void) {
+    size_t i;
+    char   lastChar;
+
+    for (i = 0u, lastChar = 0; namedEntities[i].name != NULL; i++) {
+        char firstChar = *namedEntities[i].name;
+
+        if (lastChar != firstChar) {
+            entityIndexTable[UCHAR(firstChar)] = i+1;
+            lastChar = firstChar;
+        }
+    }
+
+    for (i = 0u, lastChar = 0; namedLegacyEntities[i].name != NULL; i++) {
+        char firstChar = *namedLegacyEntities[i].name;
+
+        if (lastChar != firstChar) {
+            legacyEntityIndexTable[UCHAR(firstChar)] = i+1;
+            lastChar = firstChar;
+        }
+    }
+
+    return NS_TRUE;
+}
 
 static size_t
-EntityDecode(const char *entity, size_t length, bool *needEncodePtr, char *outPtr)
+EntityDecode(const char *entity, ssize_t length, bool *needEncodePtr, char *outPtr, const char **toParse)
 {
     size_t decoded = 0u;
 
     NS_NONNULL_ASSERT(entity != NULL);
     NS_NONNULL_ASSERT(outPtr != NULL);
     NS_NONNULL_ASSERT(needEncodePtr != NULL);
+    NS_NONNULL_ASSERT(toParse != NULL);
 
+    NS_INIT_ONCE(InitOnce);
+
+    assert( *entity != '\0');
     /*
      * Handle numeric entities.
      */
-    if (*entity == '#') {
+    if (*entity == '#' && length > 0) {
         long value;
 
         if (CHARTYPE(digit, *(entity + 1)) != 0) {
@@ -2562,38 +2708,69 @@ EntityDecode(const char *entity, size_t length, bool *needEncodePtr, char *outPt
              */
             Ns_Log(Notice, "entity decode: ignore numeric entity with value %ld", value);
         }
+        *toParse = entity + length;
     } else {
-        size_t i;
+        /*
+         * Named entities.
+         */
+        bool   found = NS_FALSE;
+        char   firstCharOfEntity = *entity;
+        size_t i = entityIndexTable[UCHAR(firstCharOfEntity)];
 
-        for (i = 0; namedEntities[i].name != NULL; i++) {
-            char firstChar = *namedEntities[i].name;
+        if (length > 0 && i > 0) {
+            char   secondCharOfEntity = *(entity + 1);
+            size_t len = (size_t)length;
 
-            if (firstChar == *entity
-                && length == namedEntities[i].length
-                && strncmp(entity, namedEntities[i].name, length) == 0) {
+            for (--i; namedEntities[i].name != NULL
+                     && firstCharOfEntity == *namedEntities[i].name;
+                 i++) {
 
-                /*if (strlen(entities[i].value) != entities[i].outputLength) {
-                  fprintf(stderr, "--> name %s found l = %lu\n",
-                  entities[i].name, strlen(entities[i].value));
-                  }*/
-                if (namedEntities[i].outputLength > 1) {
-
+                if (len == namedEntities[i].length
+                    && secondCharOfEntity == *(namedEntities[i].name + 1)
+                    && strncmp(entity, namedEntities[i].name, len) == 0
+                    ) {
+                    found = NS_TRUE;
                     memcpy(outPtr, namedEntities[i].value, namedEntities[i].outputLength);
                     decoded += namedEntities[i].outputLength;
-                } else {
-                    *outPtr = *namedEntities[i].value;
-                    decoded++;
+                    *toParse = entity + length;
+                    break;
                 }
-                break;
             }
+        } else {
+            i = legacyEntityIndexTable[UCHAR(firstCharOfEntity)];
+            if (i > 0) {
+                char secondCharOfEntity = *(entity + 1);
+                size_t len;
 
-            if (firstChar > *entity) {
-                Ns_Log(Warning, "ignore unknown named entity '%s'", entity);
-                break;
+                assert(length < 0);
+
+                len = (size_t)(-length);
+
+                for (--i; namedLegacyEntities[i].name != NULL
+                         && firstCharOfEntity == *namedLegacyEntities[i].name;
+                     i++) {
+                    /*fprintf(stderr, "[%lu] legacy entity: first %c second %c compare with table entry 2nd %c len %lu full comparison %d\n",
+                            i, firstCharOfEntity, secondCharOfEntity, *(namedLegacyEntities[i].name + 1),  namedLegacyEntities[i].length,
+                            (length >= namedLegacyEntities[i].length && secondCharOfEntity == *(namedLegacyEntities[i].name + 1))
+                            );*/
+                    if (len >= namedLegacyEntities[i].length
+                        && secondCharOfEntity == *(namedLegacyEntities[i].name + 1)
+                        && (strncmp(entity, namedLegacyEntities[i].name, namedLegacyEntities[i].length) == 0)
+                        ) {
+                        found = NS_TRUE;
+                        memcpy(outPtr, namedLegacyEntities[i].value, namedLegacyEntities[i].outputLength);
+                        decoded += namedLegacyEntities[i].outputLength;
+                        *toParse = entity + namedLegacyEntities[i].length - 1;
+                        break;
+                    }
+                }
             }
         }
-    }
 
+        if (!found) {
+            Ns_Log(Debug, "ignore unknown named entity '%s'", entity);
+        }
+    }
     return decoded;
 }
 
@@ -2620,6 +2797,7 @@ WordEndsInSemi(const char *word, size_t *lengthPtr)
     const char *start;
 
     NS_NONNULL_ASSERT(word != NULL);
+    NS_NONNULL_ASSERT(lengthPtr != NULL);
 
     /*
      * Advance past the first '&' so we can check for a second
@@ -2629,12 +2807,25 @@ WordEndsInSemi(const char *word, size_t *lengthPtr)
         word++;
     }
     start = word;
+
+#if 0
+    word = strpbrk(word, " ;&");
+    if (word != NULL) {
+        *lengthPtr = (size_t)(word - start);
+
+        return (*word == ';');
+    } else {
+        return NS_FALSE;
+    }
+    return result;
+#else
     while((*word != '\0') && (*word != ' ') && (*word != ';') && (*word != '&')) {
         word++;
     }
     *lengthPtr = (size_t)(word - start);
 
     return (*word == ';');
+#endif
 }
 
 
@@ -2659,9 +2850,9 @@ int
 NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
-    char        *htmlString = (char *)NS_EMPTY_STRING;
+    Tcl_Obj     *htmlObj;
     Ns_ObjvSpec  args[] = {
-        {"html", Ns_ObjvString,  &htmlString, NULL},
+        {"html", Ns_ObjvObj,  &htmlObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -2669,6 +2860,9 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC
         result = TCL_ERROR;
 
     } else {
+        TCL_SIZE_T  htmlLength;
+        const char *htmlString = Tcl_GetStringFromObj(htmlObj, &htmlLength);
+        const char *endOfString;
         bool        intag;     /* flag to see if are we inside a tag */
         bool        incomment; /* flag to see if we are inside a comment */
         char       *inString;  /* copy of input string */
@@ -2677,9 +2871,11 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC
         bool        needEncode;
 
         /*
-         * Make a copy of the input and point the moving and output ptrs to it.
+         * Make a copy of the input and point the moving and output pointers to it.
          */
         inString   = ns_strdup(htmlString);
+        endOfString = inString + htmlLength;
+
         inPtr      = inString;
         outPtr     = inString;
         intag      = NS_FALSE;
@@ -2716,15 +2912,25 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC
                  */
 
                 if (*inPtr == '&') {
-                    size_t length = 0u;
+                    size_t entityLength = 0u, decoded = 0u;
 
                     /*
                      * Starting an entity.
                      */
-                    if (WordEndsInSemi(inPtr, &length)) {
-                        size_t decoded = EntityDecode(inPtr + 1u, length, &needEncode, outPtr);
+                    if (likely(WordEndsInSemi(inPtr, &entityLength))) {
+                        /*
+                         * Regular entity candiate, ends with a semicolon. In
+                         * case, decoded > 0, it was a registered entity.
+                         */
+                        decoded = EntityDecode(inPtr + 1u, (ssize_t)entityLength, &needEncode, outPtr, &inPtr);
+                    }
 
-                        inPtr += (length + 1u);
+                    if (unlikely(decoded == 0)) {
+                        decoded = EntityDecode(inPtr + 1u, - (endOfString - (inPtr + 1u)), &needEncode, outPtr, &inPtr);
+                    }
+                    if (unlikely(decoded == 0)) {
+                        *outPtr++ = *inPtr;
+                    } else {
                         outPtr += decoded;
                     }
                     Ns_Log(Debug, "...... after entity inptr '%c' intag %d incomment %d string <%s> needEncode %d",

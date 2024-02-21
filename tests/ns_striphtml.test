@@ -40,9 +40,31 @@ test ns_striphtml-2.0.9 {two entity next to each other} -body {
 test ns_striphtml-2.0.10 {entity immediately followed by opening tag} -body {
     ns_striphtml {a<a href='h'>b</a>c&amp;<a href='h'>d</a>e}
 } -result "abc&de"
-test ns_striphtml-2.0.11 {unknown entity} -body {
+test ns_striphtml-2.0.11 {legacy entity, terminating char ";" is not terminating it} -body {
     ns_striphtml {a&ltxxx;b}
-} -result "ab"
+} -result "a<xxx;b"
+test ns_striphtml-2.0.12 {legacy entity} -body {
+    ns_striphtml {a&ltb}
+} -result "a<b"
+test ns_striphtml-2.0.13 {legacy entity at the end of the line} -body {
+    ns_striphtml {a&lt}
+} -result "a<"
+test ns_striphtml-2.0.14 {unknown entity with semicolon is passed through} -body {
+    ns_striphtml {eee&xxxx;eee}
+} -result "eee&xxxx;eee"
+test ns_striphtml-2.0.15 {unknown entity with out semicolon is passed through} -body {
+    ns_striphtml {fff&xxxxfff}
+} -result "fff&xxxxfff"
+test ns_striphtml-2.0.16 {ampersand semicolon  at the end of the line} -body {
+    ns_striphtml {a&;}
+} -result "a&;"
+test ns_striphtml-2.0.17 {ampersand at the end of the line} -body {
+    ns_striphtml {a&}
+} -result "a&"
+test ns_striphtml-2.0.18 {only ampersand} -body {
+    ns_striphtml {&}
+} -result "&"
+
 
 
 test ns_striphtml-2.1 {euro entity} -body {
@@ -383,6 +405,31 @@ test ns_unquotehtml-2.2 {ns_unquotehtml with mermaids with different skin tones}
     ns_unquotehtml {&#129500;&#127995; Light skin tone; &#129500;&#127998; Medium Dark skin tone.}
 } -result {🧜🏻 Light skin tone; 🧜🏾 Medium Dark skin tone.}
 
+
+test ns_unquotehtml-3.0.1 {legacy entity, terminating char ";" is not terminating it} -body {
+    ns_unquotehtml {a&ltxxx;b}
+} -result "a<xxx;b"
+test ns_unquotehtml-3.0.2 {legacy entity} -body {
+    ns_unquotehtml {a&ltb}
+} -result "a<b"
+test ns_unquotehtml-3.0.3 {legacy entity at the end of the line} -body {
+    ns_unquotehtml {a&lt}
+} -result "a<"
+test ns_unquotehtml-3.0.4 {unknown entity with semicolon is passed through} -body {
+    ns_unquotehtml {eee&xxxx;eee}
+} -result "eee&xxxx;eee"
+test ns_unquotehtml-3.0.5 {unknown entity with out semicolon is passed through} -body {
+    ns_unquotehtml {fff&xxxxfff}
+} -result "fff&xxxxfff"
+test ns_unquotehtml-3.0.6 {ampersand semicolon  at the end of the line} -body {
+    ns_unquotehtml {a&;}
+} -result "a&;"
+test ns_unquotehtml-3.0.7 {ampersand at the end of the line} -body {
+    ns_unquotehtml {a&}
+} -result "a&"
+test ns_unquotehtml-3.0.8 {only ampersand} -body {
+    ns_unquotehtml {&}
+} -result "&"
 
 #######################################################################################
 #  test ns_parsehtml
