@@ -65,8 +65,6 @@ test ns_striphtml-2.0.18 {only ampersand} -body {
     ns_striphtml {&}
 } -result "&"
 
-
-
 test ns_striphtml-2.1 {euro entity} -body {
     ns_striphtml {hello&euro;world}
 } -result "hello€world"
@@ -357,6 +355,12 @@ test ns_striphtml-3.0 {table} -body {
     return $result
 } -returnCodes {error return ok} -result "1"
 
+test ns_striphtml-3.1.0 {growing byte representation} -body {
+    set s1 [string repeat "&nGt;" 1000]
+    set s2 [ns_striphtml $s1]
+    list [string length $s1] [string length $s2] [string length [encoding convertto utf-8 $s2]]
+} -result {5000 2000 6000}
+
 test ns_striphtml-4.0 {strip HTML comment} -body {
     ns_striphtml {hello<!-- SOME COMMENT -->World}
 } -result "helloWorld"
@@ -430,6 +434,12 @@ test ns_unquotehtml-3.0.7 {ampersand at the end of the line} -body {
 test ns_unquotehtml-3.0.8 {only ampersand} -body {
     ns_unquotehtml {&}
 } -result "&"
+
+test ns_unquotehtml-3.1.0 {growing byte representation} -body {
+    set s1 [string repeat "&nGt;" 1000]
+    set s2 [ns_unquotehtml $s1]
+    list [string length $s1] [string length $s2] [string length [encoding convertto utf-8 $s2]]
+} -result {5000 2000 6000}
 
 #######################################################################################
 #  test ns_parsehtml

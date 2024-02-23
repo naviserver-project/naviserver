@@ -2690,14 +2690,11 @@ EntityDecode(const char *entity, ssize_t length, bool *needEncodePtr, char *outP
         }
 
         if (value >= 32) {
-            int outLength;
-
-            outLength = ToUTF8(value, outPtr);
-            decoded += (size_t)outLength;
+            decoded = (size_t)ToUTF8(value, outPtr);
 
             Ns_Log(Debug, "entity decode: code point %.2lx %.2lx "
-                   "corresponds to %d UTF-8 characters",
-                   ((value >> 8) & 0xff), (value & 0xff), outLength);
+                   "corresponds to %ld UTF-8 characters",
+                   ((value >> 8) & 0xff), (value & 0xff), decoded);
 
             if (value > 127) {
                 *needEncodePtr = NS_TRUE;
@@ -2731,7 +2728,7 @@ EntityDecode(const char *entity, ssize_t length, bool *needEncodePtr, char *outP
                     ) {
                     found = NS_TRUE;
                     memcpy(outPtr, namedEntities[i].value, namedEntities[i].outputLength);
-                    decoded += namedEntities[i].outputLength;
+                    decoded = namedEntities[i].outputLength;
                     *toParse = entity + length;
                     break;
                 }
@@ -2759,7 +2756,7 @@ EntityDecode(const char *entity, ssize_t length, bool *needEncodePtr, char *outP
                         ) {
                         found = NS_TRUE;
                         memcpy(outPtr, namedLegacyEntities[i].value, namedLegacyEntities[i].outputLength);
-                        decoded += namedLegacyEntities[i].outputLength;
+                        decoded = namedLegacyEntities[i].outputLength;
                         *toParse = entity + namedLegacyEntities[i].length - 1;
                         break;
                     }
@@ -2865,19 +2862,22 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC
         const char *endOfString;
         bool        intag;     /* flag to see if are we inside a tag */
         bool        incomment; /* flag to see if we are inside a comment */
-        char       *inString;  /* copy of input string */
         char       *outPtr;    /* moving pointer to output string */
         const char *inPtr;     /* moving pointer to input string */
         bool        needEncode;
+        Tcl_DString outputDs, *outputDsPtr = &outputDs;
 
         /*
-         * Make a copy of the input and point the moving and output pointers to it.
+         * Remember the endPosition for dealing with the length.
          */
-        inString   = ns_strdup(htmlString);
-        endOfString = inString + htmlLength;
+        endOfString = htmlString + htmlLength;
 
-        inPtr      = inString;
-        outPtr     = inString;
+        Tcl_DStringInit(outputDsPtr);
+        Tcl_DStringSetLength(outputDsPtr, (TCL_SIZE_T)htmlLength + 1);
+        Tcl_DStringSetLength(outputDsPtr, 0);
+
+        inPtr      = htmlString;
+        outPtr     = outputDsPtr->string;
         intag      = NS_FALSE;
         incomment  = NS_FALSE;
         needEncode = NS_FALSE;
@@ -2912,11 +2912,19 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC
                  */
 
                 if (*inPtr == '&') {
-                    size_t entityLength = 0u, decoded = 0u;
-
                     /*
                      * Starting an entity.
                      */
+
+                    size_t     entityLength = 0u, decoded = 0u;
+                    TCL_SIZE_T oldLength;
+
+                    oldLength = outputDsPtr->length;
+                    Tcl_DStringSetLength(outputDsPtr, oldLength + (TCL_SIZE_T)entityLength + 6);
+                    Tcl_DStringSetLength(outputDsPtr, oldLength);
+
+                    outPtr = outputDsPtr->string + oldLength;
+                    // ns_striphtml "a&lt;b"
                     if (likely(WordEndsInSemi(inPtr, &entityLength))) {
                         /*
                          * Regular entity candiate, ends with a semicolon. In
@@ -2929,9 +2937,13 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC
                         decoded = EntityDecode(inPtr + 1u, - (endOfString - (inPtr + 1u)), &needEncode, outPtr, &inPtr);
                     }
                     if (unlikely(decoded == 0)) {
-                        *outPtr++ = *inPtr;
+                        /*
+                         * Copy ampersand literally;
+                         */
+                        Ns_DStringNAppend(outputDsPtr, "&", 1);
+
                     } else {
-                        outPtr += decoded;
+                        Tcl_DStringSetLength(outputDsPtr, oldLength + (TCL_SIZE_T)decoded);
                     }
                     Ns_Log(Debug, "...... after entity inptr '%c' intag %d incomment %d string <%s> needEncode %d",
                            *inPtr, intag, incomment, inPtr, needEncode);
@@ -2939,7 +2951,7 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC
                     /*
                      * Plain Text output
                      */
-                    *outPtr++ = *inPtr;
+                    Ns_DStringNAppend(outputDsPtr, inPtr, 1);
                 }
 
             } else {
@@ -2951,20 +2963,21 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC
         }
 
         /*
-         * Terminate output string.
+         * Make sure the output string is NUL termeinated
          */
-        *outPtr = '\0';
+        *(outputDsPtr->string + outputDsPtr->length) = '\0';
 
         if (needEncode) {
             Tcl_DString ds;
+            //fprintf(stderr, "needEncode\n");
 
             (void)Tcl_ExternalToUtfDString(Ns_GetCharsetEncoding("utf-8"),
-                                           inString, (TCL_SIZE_T)strlen(inString), &ds);
+                                           outputDsPtr->string, outputDsPtr->length, &ds);
             Tcl_DStringResult(interp, &ds);
+            Tcl_DStringFree(outputDsPtr);
         } else {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(inString, TCL_INDEX_NONE));
+            Tcl_DStringResult(interp, outputDsPtr);
         }
-        ns_free(inString);
     }
     return result;
 }
