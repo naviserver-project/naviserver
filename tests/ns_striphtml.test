@@ -93,7 +93,7 @@ test ns_striphtml-2.4b {yen numeric entity} -body {
 
 test ns_striphtml-3.0 {table} -body {
     set t {
-        {"lates",   5, "⪭︀",   6},
+        {"lates",   5, "⪭︀",   6, "/* U+02AAD U+0FE00 */"},
         
                                 {"AElig",   5, "Æ", 2},
                                 {"Aacute",  6, "Á", 2},
@@ -178,7 +178,7 @@ test ns_striphtml-3.0 {table} -body {
                                 {"copy",    4, "©", 2},
                                 {"crarr",   5, "↵", 2},
                                 {"cup",     3, "∪", 2},
-                                {"curren",  6, "¤", 2},
+                                {"curren",  6, "¤", 2, "/* U+000A4 */"},
                                 {"dArr",    4, "⇓", 2},
                                 {"darr",    4, "↓", 2},
                                 {"deg",     3, "°", 2},
@@ -242,7 +242,7 @@ test ns_striphtml-3.0 {table} -body {
                                 {"ne",      2, "≠", 2},
                                 {"ni",      2, "∋", 2},
                                 {"not",     3, "¬", 2},
-                                {"notin",   5, "∉", 2},
+                                {"notin",   5, "∉", 2, "/* U+02209 */"},
                                 {"nsub",    4, "⊄", 2},
                                 {"ntilde",  6, "ñ", 2},
                                 {"nu",      2, "ν", 2},
