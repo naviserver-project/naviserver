@@ -2042,7 +2042,7 @@ static bool InitOnceHttp(void) {
  * CloseWaitingCheckExpire --
  *
  *      Janitor proc of type "Ns_SchedProc" which checks for expired items in
- *      the close waitin list. The list is typically very short (up to max 10
+ *      the close waiting list. The list is typically very short (up to max 10
  *      elements) therefore the linear search over all items sounds
  *      sufficient. In case the list gets longer, we might consider compacting
  *      or recording the position of the last active item.
@@ -5999,7 +5999,7 @@ TrailerInitProc(
  * PersistentConnectionLookup --
  *
  *        Check, if for the connection key (host + port) an already open
- *        connection exists in the form of a task in the close-waitin list.
+ *        connection exists in the form of a task in the close-waiting list.
  *        On success, delete the connection entry and return it to the
  *        caller. This prevents double-reuses.
  *

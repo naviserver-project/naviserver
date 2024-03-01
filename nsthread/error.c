@@ -56,7 +56,7 @@ NsThreadFatal(const char *func, const char *osfunc, int err)
  *      functions defined in nsthread use this.
  *
  * Results:
- *      return number of "written" chars (not including null character)
+ *      return number of "written" chars (not including NUL character)
  *
  * Side effects:
  *      None.
