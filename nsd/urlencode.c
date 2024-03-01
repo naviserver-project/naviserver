@@ -1326,7 +1326,7 @@ PercentDecode(char *dest, const char *source, char part)
         if (unlikely(p[0] == '%')) {
             /*
              * Decode percent code and make sure not to read date after
-             * the NULL character.
+             * the NUL character.
              */
             c1 = p[1];
             if (c1 != '\0') {

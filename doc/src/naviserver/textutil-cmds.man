@@ -6,8 +6,8 @@
 
 [description]
 
-These commands support common tasks of processin text chunks in
-webserver applications.
+These commands support common tasks of processing text chunks in
+NaviServer applications.
 
 [section {COMMANDS}]
 

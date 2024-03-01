@@ -464,7 +464,7 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
      * encoded OCSP request.
      *
      * In failure cases, avoid a too eager generation of error
-     * messages in the logfile by performin also retries to obtain the
+     * messages in the logfile by performing also retries to obtain the
      * OCSP response based on the timeout.
      */
 
