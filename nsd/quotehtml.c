@@ -18,6 +18,8 @@
 
 #include "nsd.h"
 
+static const char *htmlQuoteChars = "<>&'\"";
+
 /*
  * Static functions defined in this file.
  */
@@ -102,7 +104,7 @@ QuoteHtml(Ns_DString *dsPtr, const char *breakChar, const char *htmlString)
          * Check for further protected characters.
          */
         toProcess = breakChar + 1;
-        breakChar = strpbrk(toProcess, "<>&'\"");
+        breakChar = strpbrk(toProcess, htmlQuoteChars);
 
     } while (breakChar != NULL);
 
@@ -122,13 +124,13 @@ Ns_QuoteHtml(Ns_DString *dsPtr, const char *htmlString)
     NS_NONNULL_ASSERT(htmlString != NULL);
 
     /*
-     * If the first character is a null character, there is nothing to do.
+     * If the first character is a NUL character, there is nothing to do.
      */
     if (*htmlString != '\0') {
-        const char *breakChar = strpbrk(htmlString, "<>&'\"");
+        const char *breakChar = strpbrk(htmlString, htmlQuoteChars);
 
         if (breakChar != NULL) {
-            QuoteHtml(dsPtr, strpbrk(htmlString, "<>&'\""), htmlString);
+            QuoteHtml(dsPtr, strpbrk(htmlString, htmlQuoteChars), htmlString);
         } else {
             Ns_DStringAppend(dsPtr, htmlString);
         }
@@ -170,7 +172,7 @@ NsTclQuoteHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC
         const char *htmlString = Tcl_GetString(htmlObj);
 
         if (*htmlString != '\0') {
-            const char *breakChar = strpbrk(htmlString, "<>&'\"");
+            const char *breakChar = strpbrk(htmlString, htmlQuoteChars);
 
             if (breakChar == NULL) {
                 /*
@@ -2927,7 +2929,7 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC
                     // ns_striphtml "a&lt;b"
                     if (likely(WordEndsInSemi(inPtr, &entityLength))) {
                         /*
-                         * Regular entity candiate, ends with a semicolon. In
+                         * Regular entity candidate, ends with a semicolon. In
                          * case, decoded > 0, it was a registered entity.
                          */
                         decoded = EntityDecode(inPtr + 1u, (ssize_t)entityLength, &needEncode, outPtr, &inPtr);
