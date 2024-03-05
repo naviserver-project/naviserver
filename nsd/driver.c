@@ -3049,7 +3049,7 @@ RequestFree(Sock *sockPtr)
         /*
          * Here it is safe to move the data in the buffer, although the
          * reqPtr->content might point to it, since we re-init the content. In
-         * case the terminating null character was written to the end of the
+         * case the terminating NUL character was written to the end of the
          * previous buffer, we have to restore the first character.
          */
         memmove(reqPtr->buffer.string, offset, leftover);
@@ -4701,7 +4701,7 @@ SockParse(Sock *sockPtr)
         reqPtr->next = reqPtr->content;
 
         /*
-         * Add a terminating null character. The content might be from the receive
+         * Add a terminating NUL character. The content might be from the receive
          * buffer (Tcl_DString) or from the mmapped file. Non-mmapped files are handled
          * above.
          */
