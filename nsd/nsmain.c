@@ -256,8 +256,8 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     if (mode == 'V') {
         printf("%s/%s\n", PACKAGE_NAME, PACKAGE_VERSION);
         printf("   Tag:             %s\n", Ns_InfoTag());
-        printf("   Built:           %s\n", Ns_InfoBuildDate());
-        printf("   Tcl version:     %s\n", nsconf.tcl.version);
+        printf("   Built:           %s\n", nsBuildDate);
+        printf("   Tcl version:     %s\n", TCL_PATCH_LEVEL);
         printf("   Platform:        %s\n", Ns_InfoPlatform());
         return 0;
     }
