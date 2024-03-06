@@ -1084,7 +1084,14 @@ NsInitOpenSSL(void)
         OPENSSL_init_ssl(0, NULL);
 #  endif
         initialized = 1;
-        Ns_Log(Notice, "%s initialized", SSLeay_version(SSLEAY_VERSION));
+        /*
+         * We do not want to get this message when, e.g., the nsproxy
+         * helper is started.
+         */
+        if (nsconf.argv0 != NULL) {
+            Ns_Log(Notice, "%s initialized (pid %d)",
+                   SSLeay_version(SSLEAY_VERSION), getpid());
+        }
 
         CertTableInit();
     }
