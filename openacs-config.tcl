@@ -63,8 +63,11 @@ set defaultConfig {
     db_user	nsadmin
     db_host	localhost
     db_port	""
-    CookieNamespace ad_
-    cachingmode full
+
+    CookieNamespace  ad_
+    cachingmode      full
+    reverseproxymode false
+    serverprettyname "My OpenACS Instance"
 }
 
 #
@@ -76,11 +79,6 @@ set defaultConfig {
 # namespace for the cookies.
 #
 #dict set defaultConfig CookieNamespace ad_8000_
-
-set servername	"New OpenACS Installation - Development"
-
-# Are we running behind a proxy?
-set proxy_mode	false
 
 #---------------------------------------------------------------------
 # Which database do you want to use? PostgreSQL or Oracle?
@@ -283,7 +281,7 @@ ns_section ns/parameters {
     ns_param dnscachemaxsize 500KB  ;# max size of DNS cache in memory units; default: 500KB
 
     # Running behind proxy? Used also by OpenACS...
-    ns_param reverseproxymode	$proxy_mode
+    ns_param reverseproxymode	$reverseproxymode
 }
 
 #---------------------------------------------------------------------
@@ -291,7 +289,7 @@ ns_section ns/parameters {
 # virtual hosting should be used).
 #---------------------------------------------------------------------
 ns_section ns/servers {
-    ns_param $server $servername
+    ns_param $server $serverprettyname
 }
 
 #---------------------------------------------------------------------

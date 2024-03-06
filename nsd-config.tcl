@@ -38,6 +38,10 @@ dict set defaultConfig pagedir     {$home/pages}
 dict set defaultConfig logdir      {$home/logs}
 dict set defaultConfig certificate {$home/etc/server.pem}
 dict set defaultConfig vhostcertificates {$home/etc/certificates}
+dict set defaultConfig reverseproxymode false
+dict set defaultConfig serverprettyname "My NaviServer Instance"
+
+
 #
 # For all potential variables defined by the dict "defaultConfig",
 # allow environment variables such as "nsd_httpport" or
@@ -90,7 +94,7 @@ ns_section ns/parameters {
 
     # Reject output operations on already closed or detached connections (e.g. subsequent ns_return statements)
     #ns_param   rejectalreadyclosedconn false;# default: true
-    #ns_param   reverseproxymode    true     ;# running behind a reverse proxy server? (default: false
+    ns_param    reverseproxymode $reverseproxymode   ;# running behind a reverse proxy server? (default: false
 
     #
     # Tcl settings
@@ -168,7 +172,7 @@ ns_section ns/fastpath {
 }
 
 ns_section ns/servers {
-    ns_param default "My First NaviServer Instance"
+    ns_param default $serverprettyname
 }
 
 #
