@@ -157,8 +157,14 @@ GenSeeds(unsigned long seeds[], int nseeds)
 {
     Ns_Thread thr;
 
-    Ns_Log(Notice, "random: generating %d seed%s", nseeds,
-        nseeds == 1 ? NS_EMPTY_STRING : "s");
+    /*
+     * We do not want to get this message when, e.g., the nsproxy
+     * helper is started.
+     */
+    if (nsconf.argv0 != NULL) {
+        Ns_Log(Notice, "random: generating %d seed%s", nseeds,
+               nseeds == 1 ? NS_EMPTY_STRING : "s");
+    }
     Ns_CsEnter(&lock);
     Ns_SemaInit(&sema, 0);
     fRun = NS_TRUE;
