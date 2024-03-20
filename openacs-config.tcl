@@ -65,6 +65,7 @@ set defaultConfig {
     db_port	""
 
     CookieNamespace  ad_
+    ClusterSecret    ""
     cachingmode      full
     reverseproxymode false
     serverprettyname "My OpenACS Instance"
@@ -751,7 +752,7 @@ ns_section ns/server/$server/acs {
     # Cluster secret for intra-cluster communications. Clustering will
     # not be enabled if no value is provided.
     #
-    #ns_param ClusterSecret "please change me"
+    ns_param ClusterSecret $ClusterSecret
 }
 
 
