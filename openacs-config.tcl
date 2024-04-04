@@ -755,6 +755,11 @@ ns_section ns/server/$server/acs {
     # not be enabled if no value is provided.
     #
     ns_param clusterSecret $clusterSecret
+
+    #
+    # "parameterSecret" is needed for signed query and form parameters
+    #
+    ns_param parameterSecret             $parameterSecret
 }
 
 
@@ -769,10 +774,6 @@ ns_section ns/server/$server/acs/acs-tcl {
     # ns_param SiteNodesChildenCacheSize  100000
     # ns_param SiteNodesPrefetch  {/file /changelogs /munin}
     # ns_param UserInfoCacheSize          2000000
-    #
-    # "parameterSecret" is needed for signed query and form parameters
-    #
-    ns_param parameterSecret             $parameterSecret
 }
 
 #
