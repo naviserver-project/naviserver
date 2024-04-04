@@ -65,10 +65,12 @@ set defaultConfig {
     db_port	""
 
     CookieNamespace  ad_
-    ClusterSecret    ""
     cachingmode      full
     reverseproxymode false
     serverprettyname "My OpenACS Instance"
+
+    clusterSecret    ""
+    parameterSecret  ""
 }
 
 #
@@ -84,7 +86,7 @@ set defaultConfig {
 #---------------------------------------------------------------------
 # Which database do you want to use? PostgreSQL or Oracle?
 #
-set database  postgres
+set database postgres
 
 #
 # For Oracle, some of the defaults have to be adjusted,
@@ -752,7 +754,7 @@ ns_section ns/server/$server/acs {
     # Cluster secret for intra-cluster communications. Clustering will
     # not be enabled if no value is provided.
     #
-    ns_param ClusterSecret $ClusterSecret
+    ns_param clusterSecret $clusterSecret
 }
 
 
@@ -767,6 +769,10 @@ ns_section ns/server/$server/acs/acs-tcl {
     # ns_param SiteNodesChildenCacheSize  100000
     # ns_param SiteNodesPrefetch  {/file /changelogs /munin}
     # ns_param UserInfoCacheSize          2000000
+    #
+    # "parameterSecret" is needed for signed query and form parameters
+    #
+    ns_param parameterSecret             $parameterSecret
 }
 
 #

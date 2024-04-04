@@ -63,7 +63,7 @@ CFLAGS_CONVERSION = -Wconversion -Wsign-conversion -Wsign-compare
 CFLAGS_DEFINITION = -Wwrite-strings -Wdeclaration-after-statement -Wendif-labels -Wshadow -Wmissing-prototypes -Wstrict-prototypes
 CFLAGS_TIDY       = -Wno-missing-braces -Wundef -Wunreachable-code -Wswitch-enum -Wpointer-arith -Wold-style-definition -Wmissing-format-attribute -Wformat-security
 #CFLAGS_FORTIFY    = -D_FORTIFY_SOURCE=2 -fstack-protector $(SANITIZE)
-CFLAGS_FORTIFY    = -fstack-protector $(SANITIZE)
+CFLAGS_FORTIFY    = -fstack-protector $(SANITIZE) -fwrapv -ftrapv
 #CFLAGS_DEFAULT    = @CFLAGS_DEFAULT@
 #CFLAGS_DEFAULT   = -pedantic -g -Wextra
 #CFLAGS_DEFAULT   = -pedantic -g -Wextra $(CFLAGS_CONVERSION) $(CFLAGS_DEFINITION) $(CFLAGS_TIDY) $(CFLAGS_FORTIFY)
