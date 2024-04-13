@@ -2140,7 +2140,6 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
                 } else {
                     char *content = connPtr->reqPtr->content + offset;
 
-                    length = (TCL_SIZE_T)lengthValue;
 #ifdef NS_SKIPBOM
                     Ns_Log(Notice, "NS_CONN COPY offset %d length %d chan '%s'\n",
                            offset, length, Tcl_GetString(objv[4]));
