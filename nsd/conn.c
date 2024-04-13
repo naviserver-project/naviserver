@@ -2164,8 +2164,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
                     }
 
                 } else {
-                        char *content = connPtr->reqPtr->content + offset;
-                        content = connPtr->reqPtr->content + offset;
+                    char *content = connPtr->reqPtr->content + offset;
+
                     length = (TCL_SIZE_T)lengthValue;
 #ifdef NS_SKIPBOM
                     Ns_Log(Notice, "NS_CONN COPY offset %d length %d chan '%s'\n",
