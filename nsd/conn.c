@@ -855,7 +855,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
     }
 
     /*
-     * If everything above failed, try the location form the connPtr. This is
+     * If everything above failed, try the location from the connPtr. This is
      * actually determine from sockPtr->location which comes from
      * mapPtr->location, which comes from the virtual hosts mapping table.
      */
@@ -2128,8 +2128,19 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
                 } else if (GetChan(interp, Tcl_GetString(objv[4]), &chan) != TCL_OK) {
                     result = TCL_ERROR;
 
+                } else if (connPtr->reqPtr->content == NULL) {
+                    if (Ns_ConnContentFile(conn) != NULL) {
+                        Ns_TclPrintfResult(interp, "content was spooled to a file, cannot use 'ns_conn copy'"
+                                           "in this situation; must be handled on the Tcl layer");
+                        result = TCL_ERROR;
+                    } else {
+                        Ns_Log(Warning, "No-op: No content was uploaded, nothing to copy");
+                    }
+
                 } else {
                     char *content = connPtr->reqPtr->content + offset;
+
+                    length = (TCL_SIZE_T)lengthValue;
 #ifdef NS_SKIPBOM
                     Ns_Log(Notice, "NS_CONN COPY offset %d length %d chan '%s'\n",
                            offset, length, Tcl_GetString(objv[4]));
