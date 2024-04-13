@@ -445,7 +445,7 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
 
     /*
      * If we have no in-memory cached OCSP response, fetch the value
-     * either form the disk cache or from the URL provided via the DER
+     * either from the disk cache or from the URL provided via the DER
      * encoded OCSP request.
      *
      * In failure cases, avoid a too eager generation of error

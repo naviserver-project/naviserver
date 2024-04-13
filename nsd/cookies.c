@@ -377,7 +377,7 @@ GetAllNamedCookies(Ns_DString *dest, const Ns_Set *hdrs, const char *setName,
  *
  * DeleteNamedCookies --
  *
- *      Delete all cookies with the specified name form the given set.
+ *      Delete all cookies with the specified name from the given set.
  *
  * Results:
  *      Boolean value.
