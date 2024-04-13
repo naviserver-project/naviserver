@@ -3792,7 +3792,7 @@ SockClose(Sock *sockPtr, int keep)
  *
  * ChunkedDecode --
  *
- *      Reads the content form the incoming request buffer and tries
+ *      Reads the content from the incoming request buffer and tries
  *      to decode chunked encoding parts. The function can be called
  *      repeatedly and with incomplete input and overwrites the buffer
  *      with the decoded data optionally. The decoded data is always
