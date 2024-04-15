@@ -67,6 +67,15 @@ Returns a list of the currently defined traces.
 
 Returns a list of the mappings from URLs to files.
 
+[call [cmd ns_server] \
+	[opt [option "-server [arg s]"]] \
+	[cmd vhostenabled]]
+
+Returns a Boolean value to indicate whether virtual hosting is enabled
+for this server. The setting of this value influences e.g. the result
+of [cmd "ns_conn location"].
+
+
 
 [call [cmd ns_server] \
 	[opt [option "-server [arg s]"]] \
@@ -371,6 +380,6 @@ adding a bot pool.
 [see_also ns_conn ns_register]
 [keywords \
 	"server built-in" configuration "connection thread pools" \
-	pools pagedir tuning reverseproxy]
+	pools pagedir tuning reverseproxy "virtual hosting"]
 
 [manpage_end]

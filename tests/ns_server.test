@@ -11,7 +11,7 @@ test ns_server-1.1 {basic syntax: plain call} -body {
 
 test ns_server-1.2 {basic syntax: wrong argument} -body {
     ns_server ?
-} -returnCodes error -result {bad option "?": must be active, all, connectionratelimit, connections, filters, keepalive, map, mapped, maxthreads, minthreads, pagedir, poolratelimit, pools, queued, requestprocs, serverdir, stats, tcllib, threads, traces, unmap, url2file, or waiting}
+} -returnCodes error -result {bad option "?": must be active, all, connectionratelimit, connections, filters, keepalive, map, mapped, maxthreads, minthreads, pagedir, poolratelimit, pools, queued, requestprocs, serverdir, stats, tcllib, threads, traces, unmap, url2file, vhostenabled, or waiting}
 
 test ns_server-1.3.1 {plain call, option but no argument} -body {
     ns_server -pool {}
@@ -223,6 +223,16 @@ test ns_server-2.13.3 {basic operation} -body {
 test ns_server-2.13.4 {basic operation} -body {
     ns_server -server testvhost2 serverdir
 } -match "glob" -result "*tests/testserver"
+
+
+test ns_server-2.14.1 {query alternate pool from default server} -body {
+    ns_server -server test vhostenabled
+} -match exact -result 0
+
+test ns_server-2.14.2 {query alternate pool from specified server} -body {
+    ns_server -server testvhost vhostenabled
+} -match exact -result 1
+
 
 #
 # Test mapping/unmapping of requests to connection pools.

@@ -1473,7 +1473,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
         SServerdirIdx, SStatsIdx,
         STcllibIdx, SThreadsIdx, STracesIdx,
         SUnmapIdx,
-        SUrl2fileIdx, SWaitingIdx
+        SUrl2fileIdx, SVhostenabledIdx, SWaitingIdx
     };
 
     static Ns_ObjvTable subcmds[] = {
@@ -1499,6 +1499,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
         {"traces",              (unsigned int)STracesIdx},
         {"unmap",               (unsigned int)SUnmapIdx},
         {"url2file",            (unsigned int)SUrl2fileIdx},
+        {"vhostenabled",        (unsigned int)SVhostenabledIdx},
         {"waiting",             (unsigned int)SWaitingIdx},
         {NULL,                  0u}
     };
@@ -1522,7 +1523,8 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
          || subcmd == SFiltersIdx
          || subcmd == SPagedirIdx
          || subcmd == SRequestprocsIdx
-         || subcmd == SUrl2fileIdx)
+         || subcmd == SUrl2fileIdx
+         || subcmd == SVhostenabledIdx)
         && pool != NULL) {
             Ns_TclPrintfResult(interp, "option -pool is not allowed for this subcommand");
             return TCL_ERROR;
@@ -1571,7 +1573,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
 
     switch (subcmd) {
         /*
-         * These subcommands are server specific (do not allow -pool option)
+         * The following subcommands are server specific (do not allow -pool option)
          */
     case SPoolsIdx:
         {
@@ -1624,8 +1626,12 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
         Tcl_DStringResult(interp, dsPtr);
         break;
 
+    case SVhostenabledIdx:
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(servPtr->vhost.enabled));
+        break;
+
         /*
-         * These subcommands are pool-specific (allow -pool option)
+         * The following subcommands are pool-specific (allow -pool option)
          */
 
     case SWaitingIdx:
