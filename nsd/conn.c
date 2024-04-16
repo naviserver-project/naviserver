@@ -475,7 +475,7 @@ Ns_ConnForwardedPeerAddr(const Ns_Conn *conn)
  *
  * Ns_ConnPeerAddr, Ns_ConnForwardedPeerAddr --
  *
- *      This is a mode specifoc function for determining the IP address of the
+ *      This is a mode specific function for determining the IP address of the
  *      communication peer. In reverse proxy mode, try to get the forwarded IP
  *      address.  In case, this fails, return the direct IP address. When
  *      reverse proxy mode is turned off, return the direct IP address.
