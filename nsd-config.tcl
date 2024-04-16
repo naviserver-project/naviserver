@@ -233,9 +233,13 @@ if {[info exists httpport] && $httpport ne ""} {
     # server. This parameter is for virtual servers. Here we have just
     # the "default" server and we register the $hostname and the
     # $address (in case, the server is addressed via its IP address).
+    # The variable "hostname" can contain multiple host names (domain
+    # names) which are all registered for the server "default".
     #
     ns_section ns/module/http/servers {
-        ns_param default $hostname
+        foreach domainname $hostname {
+            ns_param default $domainname
+        }
         ns_param default [ns_info hostname]
         foreach address $ipaddress {
             ns_param default $address
@@ -318,9 +322,13 @@ if {[info exists httpsport] && $httpsport ne ""} {
     # server. This parameter is for virtual servers. Here we have just
     # the "default" server and we register the $hostname and the
     # $address (in case, the server is addressed via its IP address).
+    # The variable "hostname" can contain multiple host names (domain
+    # names) which are all registered for the server "default".
     #
     ns_section ns/module/https/servers {
-        ns_param default $hostname
+        foreach domainname $hostname {
+            ns_param default $domainname
+        }
         ns_param default [ns_info hostname]
         foreach address $ipaddress {
             ns_param default $address
