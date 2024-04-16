@@ -21,10 +21,12 @@ ns_log notice "nsd.tcl: starting to read configuration file..."
 # must be started by root, and the run script must contain the flag
 # '-b address:port' which matches the configured address and port.
 #
-# The "hostname" and "ipaddress" should be set to actual values such
-# that the server is reachable over the Internet. The default values
-# are fine for testing purposes. One can specify for the "ipaddress"
-# also multiple values (e.g. IPv4 and IPv6).
+# The "hostname" (e.h. domain names) and "ipaddress" should be set to
+# actual values such that the server is reachable over the
+# Internet. The default values are fine for testing purposes. One can
+# specify for "hostname" and "ipaddress" also multiple values
+# (e.g. IPv4 and IPv6). Multiple hostnames are used as alternative
+# domain names names for the "http" and "https" server sections.
 #
 #    hostname	localhost
 #    ipaddress	127.0.0.1  ;# listen on loopback via IPv4
@@ -288,11 +290,23 @@ ns_section ns/parameters {
 }
 
 #---------------------------------------------------------------------
-# Definition of NaviServer servers (add more, when true NaviServer
-# virtual hosting should be used).
-#---------------------------------------------------------------------
+# Definition of NaviServer servers (add more servers, when true
+# NaviServer virtual hosting should be used).
+# ---------------------------------------------------------------------
 ns_section ns/servers {
     ns_param $server $serverprettyname
+}
+
+#
+# In case, a docker mapping is provided, source it to make it
+# accessible during configuration. The mapping file is a Tcl script
+# providing at least the Tcl dict ::docker::containerMapping
+# containing the docker mapping. A dict key like "8080/tcp" (internal
+# port) will return a dict containing the keys "host", "port" and
+# "proto" (e.g. proto https host 192.168.1.192 port 58115).
+#
+if {[file exists /scripts/docker-dict.tcl]} {
+    source /scripts/docker-dict.tcl
 }
 
 #---------------------------------------------------------------------
@@ -352,17 +366,23 @@ if {[info exists httpport] && $httpport ne ""} {
         ns_param    extraheaders    $http_extraheaders
     }
     #
-    # Define, which "host" (as supplied by the "host:" header
-    # field) accepted over this driver should be associated with
-    # which server.
+    # Define, which "host" (as supplied by the "host:" header field)
+    # accepted over this driver should be associated with which
+    # server. The variable hostname can contain multiple host names
+    # (domain names) which are registered below.
     #
     ns_section ns/module/http/servers {
-        ns_param $server [lindex $hostname 0]
-        foreach domainname [lrange $hostname 1 end] {
+        foreach domainname $hostname {
             ns_param $server $domainname
         }
         foreach address $ipaddress {
             ns_param $server $address
+        }
+        if {[info exists ::docker::containerMapping] && [dict exists $::docker::containerMapping $httpport/tcp]} {
+            set __host [dict get $::docker::containerMapping $httpport/tcp host]
+            set __port [dict get $::docker::containerMapping $httpport/tcp port]
+            ns_log notice "added white-listed address '${__host}:${__port}' for server $server on HTTP driver"
+            ns_param $server ${__host}:${__port}
         }
     }
 }
@@ -420,12 +440,17 @@ if {[info exists httpsport] && $httpsport ne ""} {
     # addressed via its IP address).
     #
     ns_section ns/module/https/servers {
-        ns_param $server [lindex $hostname 0]
-        foreach domainname [lrange $hostname 1 end] {
+        foreach domainname $hostname {
             ns_param $server $domainname
         }
         foreach address $ipaddress {
             ns_param $server $address
+        }
+        if {[info exists ::docker::containerMapping] && [dict exists $::docker::containerMapping $httpsport/tcp]} {
+            set __host [dict get $::docker::containerMapping $httpsport/tcp host]
+            set __port [dict get $::docker::containerMapping $httpsport/tcp port]
+            ns_log notice "added white-listed address '${__host}:${__port}' for server $server on HTTPS driver"
+            ns_param $server ${__host}:${__port}
         }
     }
 }
