@@ -24,9 +24,6 @@ The subcommands of ns_conn are (in alphabetical order):
 
 Returns the compression formats accepted by the client.
 
-[call [cmd  "ns_conn addr"]]
-Returns the local IP address (IPv4 or IPv6) of the current connection.
-
 [call [cmd  "ns_conn auth"]]
 Returns the authorization header content as an [cmd ns_set]. For
 [term Basic] authentication there are reserved keys:
@@ -116,8 +113,18 @@ Returns or sets the number of bytes in the content to be sent.
 
 [call [cmd  "ns_conn copy"] [arg off] [arg len] [arg chan]]
 
-Copies number of bytes from the current connection starting
-at the given offset to a Tcl channel.
+Copies number of bytes from the current connection string data to a
+Tcl channel.  The arguments [arg off] and [arg len] denote an offset
+in this string and the length to be copied. If no string data is
+provided, an exception is raised.
+
+[call [cmd  "ns_conn currentaddr"]]
+Returns the local IP address (IPv4 or IPv6) of the current connection
+(the destination IP address of the current socket).
+
+[call [cmd  "ns_conn currentport"]]
+Returns the local port of the current connection
+(the destination port of the current socket).
 
 
 [call [cmd  "ns_conn driver"]]
@@ -274,13 +281,13 @@ For example:
 
 [call [cmd  "ns_conn peeraddr"] [opt [option "-source configured|direct|forwarded"]]]
 
-Returns the IP address of the client, i.e. the "other side" of the
-HTTP connection. An IPv4 address is returned in the form of a string
-separated with periods (e.g., 155.164.59.75), an IPv6 address is
-returned in the form of a string separated with colons (e.g.,
+Returns the IP address of the client, i.e., the "other side" of the
+current HTTP connection. An IPv4 address is returned in the form of a
+string separated with periods (e.g., 155.164.59.75), an IPv6 address
+is returned in the form of a string separated with colons (e.g.,
 2001:628:404:74::31).  In reverse proxy mode the IP address is
 determined by the value forwarded by the reverse proxy server (via the
-x-fowarded-for header field).
+[term x-fowarded-for] header field).
 
 [para] The result can be influenced by the [option "-source"] to
 return the result as configured by the reverse proxy mode (default),
@@ -288,7 +295,8 @@ or to return always the direct or forwarded IP address.
 
 [call [cmd  "ns_conn  peerport"]]
 
-Returns the port of the client, i.e. the "other side" of the HTTP connection. 
+Returns the port of the client, i.e., the "other side" of the current
+HTTP connection.
 
 
 [call [cmd  "ns_conn pool"]]
