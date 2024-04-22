@@ -456,6 +456,7 @@ RegisterAt(Callback **firstPtrPtr, ns_funcptr_t proc, void *arg, bool fifo)
     cbPtr->proc = (ns_funcptr_t)proc;
     cbPtr->arg = arg;
 
+    Ns_MutexLock(&lock);
     if (shutdownPending) {
         ns_free(cbPtr);
         cbPtr = NULL;
