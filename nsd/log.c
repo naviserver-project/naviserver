@@ -96,7 +96,11 @@ static void LogEntriesFree(void *arg);
  */
 
 static Ns_TlsCleanup FreeCache;
-static Tcl_PanicProc Panic;
+static
+#ifndef NS_TCL_PRE9
+ TCL_NORETURN1
+#endif
+Tcl_PanicProc Panic;
 
 static Ns_LogFilter LogToFile;
 static Ns_LogFilter LogToTcl;
