@@ -2421,6 +2421,9 @@ NsTclStrcollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, 
  *
  *      Implements "ns_subnetmatch".
  *
+ *      Example:
+ *          ns_subnetmatch 137.208.0.0/16 137.208.116.31
+ *
  * Results:
  *      Tcl result code
  *
@@ -2465,9 +2468,6 @@ NsTclSubnetmatchObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int ob
     }
     return result;
 }
-#if 0
-ns_subnetmatch 137.208.0.0/16 137.208.116.31
-#endif
 
 /*
  * Local Variables:
