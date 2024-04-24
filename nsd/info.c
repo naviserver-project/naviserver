@@ -811,6 +811,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
     case IBuildinfoIdx:
         {
             Tcl_Obj *dictObj = Tcl_NewDictObj();
+            int defined_NDEBUG, defined_SYSTEM_MALLOC;
 
             /*
              * Detect the compiler.
@@ -832,29 +833,38 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
                            Tcl_NewStringObj("compiler", 8),
                            Tcl_NewStringObj(ds.string, ds.length));
             /*
-             * Compiled with assertion support? Actually, without -DNDEBUG.
+             * Compiled with assertion support? Actually, without
+             * -DNDEBUG.
+             *
+             * Note: we use the variables defined_NDEBUG and
+             * defined_SYSTEM_MALLOC since Tcl_NewIntObj() is defined
+             * as a macro since using the ifdef check as arguments
+             * leads to an undefined behavior. Tcl 9 uses macros more
+             * extensively for the API.
              */
-            Tcl_DictObjPut(NULL, dictObj,
-                           Tcl_NewStringObj("assertions", 10),
-                           Tcl_NewIntObj(
+            defined_NDEBUG =
 #if defined(NDEBUG)
                                          0
 #else
                                          1
 #endif
-                                         ));
+                ;
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("assertions", 10),
+                           Tcl_NewIntObj(defined_NDEBUG));
             /*
              * Compiled with SYSTEM_MALLOC.
              */
-            Tcl_DictObjPut(NULL, dictObj,
-                           Tcl_NewStringObj("system_malloc", 13),
-                           Tcl_NewIntObj(
+            defined_SYSTEM_MALLOC =
 #if defined(SYSTEM_MALLOC)
                                          1
 #else
                                          0
 #endif
-                                         ));
+                ;
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("system_malloc", 13),
+                           Tcl_NewIntObj(defined_SYSTEM_MALLOC));
             /*
              * The nsd binary was built against this version of Tcl
              */
