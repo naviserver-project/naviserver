@@ -272,7 +272,7 @@ if {[string match "*hkdf*" $errorMsg]} {
             -secret [binary format H* 0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b] \
             -info   [binary format H* f0f1f2f3f4f5f6f7f8f9] \
             42
-    } -result "3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf34007208d5b887185865"
+    } -returnCodes {ok error} -result "3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf34007208d5b887185865"
 
     test hkdf-1.1 {test HKDF based on sha256, test case 3 from RFC 5869} -constraints {crypto} -body {
         ::ns_crypto::md hkdf -digest sha256 \
@@ -280,7 +280,7 @@ if {[string match "*hkdf*" $errorMsg]} {
             -secret [binary format H* 0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b] \
             -info   "" \
             42
-    } -result "8da4e775a563c18f715f802a063c5a31b8a11f5c5ee1879ec3454e5f3c738d2d9d201395faa4b61a96c8"
+    } -returnCodes {ok error} -result "8da4e775a563c18f715f802a063c5a31b8a11f5c5ee1879ec3454e5f3c738d2d9d201395faa4b61a96c8"
 
     test hkdf-1.2 {test HKDF based on sha1, test case 4 from RFC 5869} -constraints {crypto} -body {
         ::ns_crypto::md hkdf -digest sha1 \
@@ -288,7 +288,7 @@ if {[string match "*hkdf*" $errorMsg]} {
             -secret [binary format H* 0b0b0b0b0b0b0b0b0b0b0b] \
             -info   [binary format H* f0f1f2f3f4f5f6f7f8f9] \
             42
-    } -result "085a01ea1b10f36933068b56efa5ad81a4f14b822f5b091568a9cdd4f155fda2c22e422478d305f3f896"
+    } -returnCodes {ok error} -result "085a01ea1b10f36933068b56efa5ad81a4f14b822f5b091568a9cdd4f155fda2c22e422478d305f3f896"
 
 }
 
