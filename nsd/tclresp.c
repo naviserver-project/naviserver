@@ -602,7 +602,7 @@ NsTclConnSendFpObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJ
 
             if (status != NS_OK) {
                 Ns_TclPrintfResult(interp, "could not send %ld bytes from channel %s",
-                                   length, channelName);
+                                   (ssize_t)length, channelName);
                 result = TCL_ERROR;
             }
         }
