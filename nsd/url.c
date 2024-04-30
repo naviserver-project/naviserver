@@ -986,7 +986,7 @@ bool Ns_PlainUrlPath(const char *url, const char **errorMsgPtr)
     if (Ns_ParseUrl(ds.string, NS_FALSE, &parsedUrl, errorMsgPtr) != NS_OK) {
         result = NS_FALSE;
     } else if (parsedUrl.query != NULL || parsedUrl.fragment != NULL) {
-        *errorMsgPtr = "request patch contains query and/or fragment, which is not allowed";
+        *errorMsgPtr = "request path contains query and/or fragment, which is not allowed";
         result = NS_FALSE;
     }
     Tcl_DStringFree(&ds);
