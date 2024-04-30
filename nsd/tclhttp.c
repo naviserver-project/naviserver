@@ -3240,7 +3240,7 @@ HttpConnect(
      * Take keep-alive timeout either from provided flag, or from
      * configuration file.
      */
-    if (keepAliveTimeoutPtr == NULL &&
+    if (keepAliveTimeoutPtr == NULL && itPtr->servPtr != NULL &&
         (itPtr->servPtr->httpclient.keepaliveTimeout.sec != 0
          || itPtr->servPtr->httpclient.keepaliveTimeout.usec != 0
         )) {
