@@ -23,7 +23,7 @@
  * Constants
  */
 
-#define NS_GLOBAL_CONFIG_PARAMETERS           "ns/parameters"
+#define NS_GLOBAL_CONFIG_PARAMETERS    "ns/parameters"
 #define NS_CONFIG_THREADS              "ns/threads"
 
 NS_EXTERN const char *NS_EMPTY_STRING;
@@ -139,7 +139,6 @@ struct nsconf {
     int         sockacceptlog;
     int         sanitize_logfiles;
     bool        reject_already_closed_or_detached_connection;
-    bool        reverseproxymode;
     bool        nocache;
 
     /*
@@ -198,6 +197,12 @@ struct nsconf {
         Ns_Time logminduration;
         int     jobsperthread;
     } job;
+
+    struct {
+        const char *trustedservers;
+        bool skipnonpublic;
+        bool enabled;
+    } reverseproxymode;
 };
 
 NS_EXTERN struct nsconf nsconf;

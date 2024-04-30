@@ -478,7 +478,7 @@ Ns_ConnConfiguredPeerAddr(const Ns_Conn *conn)
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    if (nsconf.reverseproxymode) {
+    if (nsconf.reverseproxymode.enabled) {
         p = Ns_ConnForwardedPeerAddr(conn);
         if (*p == '\0') {
             p = Ns_ConnPeerAddr(conn);

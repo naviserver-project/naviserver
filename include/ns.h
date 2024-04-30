@@ -3089,6 +3089,14 @@ Ns_SockaddrMaskedMatch(const struct sockaddr *addr,
                        const struct sockaddr *masked)
         NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
+NS_EXTERN bool
+Ns_SockaddrPublicIpAddress(const struct sockaddr *saPtr)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN bool
+Ns_SockaddrTrustedReverseProxy(const struct sockaddr *saPtr)
+    NS_GNUC_NONNULL(1);
+
 /*
  * sockcallback.c:
  */

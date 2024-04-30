@@ -528,7 +528,7 @@ NsQueueConn(Sock *sockPtr, const Ns_Time *nowPtr)
         NsUrlSpaceContext ctx;
 
         ctx.headers = sockPtr->reqPtr->headers;
-        if (nsconf.reverseproxymode
+        if (nsconf.reverseproxymode.enabled
             && ((struct sockaddr *)&sockPtr->clientsa)->sa_family != 0
             ) {
             ctx.saPtr = (struct sockaddr *)&(sockPtr->clientsa);

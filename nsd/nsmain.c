@@ -57,6 +57,11 @@ extern void NsthreadsInit();
 extern void NsdInit();
 #endif
 
+static const char *configParametersReverseproxySection = "ns/parameters/reverseproxymode";
+
+/*
+ * Used by other files as well.
+ */
 const char *NS_EMPTY_STRING = "";
 
 
@@ -733,8 +738,29 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         Ns_ConfigBool(NS_GLOBAL_CONFIG_PARAMETERS, "rejectalreadyclosedconn", NS_TRUE);
     nsconf.sanitize_logfiles =
         Ns_ConfigIntRange(NS_GLOBAL_CONFIG_PARAMETERS, "sanitizelogfiles", 2, 0, 2);
-    nsconf.reverseproxymode =
+    /*
+     * Old-style, backward compatible. Can be overridden by "ns/params/reverseproxy"
+     */
+    nsconf.reverseproxymode.enabled =
         Ns_ConfigBool(NS_GLOBAL_CONFIG_PARAMETERS, "reverseproxymode", NS_FALSE);
+
+    /*
+     * New-style reverse proxy server configuration. Overridden old-style.
+     */
+
+    nsconf.reverseproxymode.enabled =
+        Ns_ConfigBool(configParametersReverseproxySection, "enabled", NS_FALSE);
+    nsconf.reverseproxymode.skipnonpublic =
+        Ns_ConfigBool(configParametersReverseproxySection, "skipnonpublic", NS_FALSE);
+    nsconf.reverseproxymode.trustedservers =
+        Ns_ConfigGetValue(configParametersReverseproxySection, "trustedservers");
+    if (nsconf.reverseproxymode.trustedservers != NULL) {
+        if (*nsconf.reverseproxymode.trustedservers == '\0') {
+            nsconf.reverseproxymode.trustedservers = NULL;
+        } else {
+            nsconf.reverseproxymode.trustedservers = ns_strdup(nsconf.reverseproxymode.trustedservers);
+        }
+    }
 
     {
         /*
