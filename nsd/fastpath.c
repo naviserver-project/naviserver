@@ -220,6 +220,10 @@ ConfigServerFastpath(const char *server)
                                        &servPtr->fastpath.dirv) != TCL_OK) {
             Ns_Log(Error, "fastpath[%s]: directoryfile is not a list: %s", server, p);
         }
+        /*
+         * The string in servPtr->fastpath.dirv should be freed with
+         * Tcl_Free() in case the server is reconfigured or deleted.
+         */
 
         servPtr->fastpath.serverdir =
             ns_strcopy(Ns_ConfigString(path, "serverdir", NS_EMPTY_STRING));

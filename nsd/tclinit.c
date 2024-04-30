@@ -331,8 +331,10 @@ ConfigServerTcl(const char *server)
             && Tcl_SplitList(NULL, p, &n, &servPtr->tcl.errorLogHeaders) != TCL_OK) {
             Ns_Log(Error, "config: errorlogheaders is not a list: %s", p);
         }
-
         /*
+         * The string in servPtr->tcl.errorLogHeaders should be freed with
+         * Tcl_Free() in case the server is reconfigured or deleted.
+         *
          * Initialize the Tcl detached channel support.
          */
 
