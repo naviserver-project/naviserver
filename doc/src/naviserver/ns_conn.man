@@ -30,15 +30,15 @@ Returns the authorization header content as an [cmd ns_set]. For
 Username and Password, these are the keys returned by
 [cmd "ns_conn authuser"] and [cmd "ns_conn authpassword"].
 
-[para] In case of [term Digest] authentication, all the fields
-provided are returned in the ns_set. For [term Bearer] authentication
-the base65 encoded Token is returned in the ns_set.
+[para] For digest authentication, all the fields provided in the
+ns_set are returned. For bearer authentication, the base64 encoded
+token is returned in the ns_set.
 
 [para] This ns_set can be updated.
 
 [para] For other authorization schemes, the
 [term Authorization] header field can be handled
-like all other request header fields:
+like any other request header field:
 
 [example_begin]
  set auth_header [lb]ns_set iget [lb]ns_conn headers[rb] Authorization ""[rb]
@@ -62,20 +62,20 @@ Returns the Tcl channel name for the current connection.
 
 [call [cmd  "ns_conn clientdata"] [opt [arg value]]]
 
-Query or set the client date of the current connection. The client
+Query or set the client data for the current connection. The client
 data is provided by the application and is potentially passed to
 different threads and can be used to establish the context with the
 connection thread. For example, the writer thread outputs the client
-data when listing running connections (one can determine e.g. which
-user has initiated the delivery, etc.).
+data when listing running connections (e.g. to determine which
+user initiated the delivery, etc.).
 
 
 [call [cmd  "ns_conn close"]]
 
-Closes the connection so the script (or ADP) can do any time-consuming processing
-without making the client wait. If you use ns_conn close in an ADP, streaming
-should be turned on before closing the connection (i.e. <SCRIPT RUNAT=SERVER STREAM=ON>)
-or nothing will get sent out at all.
+Closes the connection so that the script (or ADP) can do any time-consuming processing
+without keeping the client waiting. When using ns_conn close in an ADP, streaming
+should be turned on before  the connection is closed (i.e. <SCRIPT RUNAT=SERVER STREAM=ON>)
+or nothing will ve sent out at all.
 
 [call [cmd  "ns_conn compress"] [opt [arg level]]]
 
