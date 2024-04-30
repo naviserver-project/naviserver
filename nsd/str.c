@@ -702,7 +702,7 @@ Ns_GetBinaryString(Tcl_Obj *obj, bool forceBinary, int *lengthPtr, Tcl_DString *
 `*/
 static void
 InvalidUtf8ErrorMessage(Tcl_DString *dsPtr, const unsigned char *bytes, size_t nrBytes,
-                 size_t index, int atMost, bool isTruncated)
+                 size_t index, int nrMaxBytes, bool isTruncated)
 {
     if (dsPtr != NULL) {
         long prefixLen = MIN(10, (long)index);
@@ -714,7 +714,7 @@ InvalidUtf8ErrorMessage(Tcl_DString *dsPtr, const unsigned char *bytes, size_t n
             Tcl_DStringAppend(dsPtr, (char *)bytes, (int)index-1);
         }
         Tcl_DStringAppend(dsPtr, "|", 1);
-        Tcl_DStringAppend(dsPtr, (char *)(bytes+index-1), MIN(atMost, (int)(nrBytes-(index-1))));
+        Tcl_DStringAppend(dsPtr, (char *)(bytes+index-1), MIN(nrMaxBytes, (int)(nrBytes-(index-1))));
         Tcl_DStringAppend(dsPtr, "|", 1);
         if (!isTruncated) {
             Tcl_DStringAppend(dsPtr, "...", 3);
