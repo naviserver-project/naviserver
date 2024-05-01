@@ -195,8 +195,7 @@ Tcl_GetKeyedListKeys(Tcl_Interp *interp, const char *subFieldName, const char *k
         }
     } else if (status == TCL_OK) {
         if (keysArgcPtr != NULL && keysArgvPtr != NULL) {
-            int        sumKeySize = 0;
-            TCL_SIZE_T keySize, keyCount, ii;
+            TCL_SIZE_T sumKeySize = 0, keySize, keyCount, ii;
             char     **keyArgv, *nextByte;
             Tcl_Obj  **objValues;
 
