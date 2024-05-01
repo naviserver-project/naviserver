@@ -4608,7 +4608,8 @@ EndOfHeader(Sock *sockPtr)
             }
             ns_free(parseString);
         }
-        Ns_Log(Debug, "x-forwarded-for: accept IP address from '%s' -> %d", s, success);
+        Ns_Log(Debug, "x-forwarded-for: accept IP address from '%s' -> %d",
+               (s == NULL ? "(null)" : s), success);
 
         if (success <= 0) {
             s = NULL;
