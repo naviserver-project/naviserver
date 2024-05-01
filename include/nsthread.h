@@ -487,7 +487,7 @@ typedef int ns_sockerrno_t;
 #  endif
 #  define NS_INITGROUPS_GID_T gid_t
 #  if NS_MSG_IOVLEN_IS_SIZE_T
-#   define NS_MSG_IOVLEN_T size_z
+#   define NS_MSG_IOVLEN_T size_t
 #  else
 #   define NS_MSG_IOVLEN_T int
 #  endif
