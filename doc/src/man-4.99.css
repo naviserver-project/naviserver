@@ -100,6 +100,9 @@ dl dt {
    max-width:    50em;
 }
 
+dd>dl.doctools_options {
+    margin-left: 2em;
+}
 
 .sample {
    background-color: #f9f6f6;
