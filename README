@@ -79,14 +79,15 @@ flexible than the regsub approach sketched above:
         nsf::proc backend_reply_callback { -url -replyHeaders -status } {...}
 
 
-In case the naviserver does not configure the respective driver for a listenting socket it can be
-loaded without one. The following configuration follows the /shiny/ example above:
+In case the naviserver does not configure the respective driver for a
+listenting socket it can be loaded without one. The following
+configuration follows the /shiny/ example above:
 
     ns_section "ns/server/${server}/modules"
        ns_param revproxy tcl
        ns_param nsssl nsssl
        
-   ns_section "ns/server/${server}/module/nsssl"
+    ns_section "ns/server/${server}/module/nsssl"
        ns_param port 0
 
 
