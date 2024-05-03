@@ -4498,10 +4498,6 @@ EndOfHeader(Sock *sockPtr)
                 && !Ns_SockaddrPublicIpAddress((struct sockaddr *)&sockPtr->clientsa)) {
                 s = NULL;
             }
-            if (nsconf.reverseproxymode.trustedservers != NULL
-                && Ns_SockaddrTrustedReverseProxy((struct sockaddr *)&sockPtr->clientsa)) {
-                s = NULL;
-            }
 
         } else {
             /*
@@ -4546,7 +4542,16 @@ EndOfHeader(Sock *sockPtr)
                         Ns_Log(Warning, "invalid content in X-Forwarded-For header: '%s'", token);
                         break;
                     }
-                    if (!Ns_SockaddrTrustedReverseProxy((struct sockaddr *)&sockPtr->clientsa)) {
+                    if (i == 1) {
+                        /*
+                         * The last entry, check only skipnonpublic if necessary
+                         */
+                        if (nsconf.reverseproxymode.skipnonpublic
+                            && !Ns_SockaddrPublicIpAddress((struct sockaddr *)&sockPtr->clientsa)) {
+                            Ns_Log(Debug, "... skip last non-public token %s", token);
+                            success = -1;
+                        }
+                    } else if (!Ns_SockaddrTrustedReverseProxy((struct sockaddr *)&sockPtr->clientsa)) {
 
                         /*Ns_Log(Notice, "... token %s not trusted, skipnonpublic %d public %d", token,
                                nsconf.reverseproxymode.skipnonpublic,
@@ -4555,8 +4560,8 @@ EndOfHeader(Sock *sockPtr)
                          * It is not a trusted reverse proxy. Do we want to
                          * skip non-public addresses?
                          */
-                        if (nsconf.reverseproxymode.skipnonpublic /*1*/
-                            && !Ns_SockaddrPublicIpAddress((struct sockaddr *)&sockPtr->clientsa) /* 0 */) {
+                        if (nsconf.reverseproxymode.skipnonpublic
+                            && !Ns_SockaddrPublicIpAddress((struct sockaddr *)&sockPtr->clientsa)) {
                             Ns_Log(Debug, "... skip non-public token %s", token);
                             success = -1;
                         } else {
@@ -4574,9 +4579,10 @@ EndOfHeader(Sock *sockPtr)
             } else {
 
                 /*
-                 * Here we assume that the data we get from the proxy server
-                 * can be trusted. We get the first (leftmost) IP address from
-                 * a comma separated list (classical, default NaviServer behaviour).
+                 * No trusted severs were configured. Here we assume that the
+                 * data we get from the proxy server can be trusted. We get
+                 * the first (leftmost) IP address from a comma separated list
+                 * (classical, default NaviServer behaviour).
                  */
 
                 while (token != NULL) {
