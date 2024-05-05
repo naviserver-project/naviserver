@@ -173,6 +173,7 @@ proc ns_parsetime {option time} {
 #
 
 proc getformdata {formVar} {
+    ns_deprecated "ns_conn form"
 
     upvar 1 $formVar form
 
@@ -219,6 +220,7 @@ proc Paren {val} {
 #
 
 proc issmallint {val} {
+    ns_deprecated "ns_issmallint"
     ns_issmallint $val
 }
 
