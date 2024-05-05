@@ -177,8 +177,8 @@ result." if there are no rows:
 
 [list_end]
 
-[see_also ns_adp ns_adp_include]
-[keywords "server built-in" ADP]
+[see_also ns_register ns_adp ns_adp_include]
+[keywords "server built-in" ADP tag]
 
 [manpage_end]
 

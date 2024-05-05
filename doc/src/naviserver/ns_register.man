@@ -537,6 +537,6 @@ currently registered [term filters], [term traces] or [term procs].
 [example_end]
 
 
-[see_also ns_adp ns_conn ns_server ns_shortcut_filter ns_time]
+[see_also ns_adp ns_adp_register ns_conn ns_server ns_shortcut_filter ns_time]
 [keywords "server built-in" ADP filter request callback fastpath urlspace handler]
 [manpage_end]
