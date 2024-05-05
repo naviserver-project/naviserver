@@ -26,23 +26,23 @@ described in the  ns_adp  man page.
 
 This command registers an ADP
 code fragment to be invoked when the specified tag is
-encountered while parsing an ADP. The  [arg tag]  argument
+encountered while parsing an ADP. The  [arg tag] argument
 specifies the tag that will trigger invocation of the ADP
-fragment, which is specified by the  [arg adpstring]  argument.
+fragment, which is specified by the  [arg adpstring] argument.
 
 [para]
-If the  endtag  argument is specified, then the ADP fragment
+If the [arg endtag] argument is specified, then the ADP fragment
 will be invoked with two arguments: The first will be the
 enclosed content, and the second will be the name of an
 ns_set with any attributes specified in the tag. If no
-endtag  argument is specified, the ADP fragment will
+[arg endtag] argument is specified, the ADP fragment will
 only be passed the name of the ns_set. The arguments may be
 retrieved using  ns_adp_bindargs  or  ns_adp_argc
 and  ns_adp_argv .
 
 [para]
 When the ADP fragment is invoked, its result is inserted in the output
-instead of the tag (or, if the  endtag  was specified,
+instead of the tag (or, if the [arg endtag] was specified,
 in place of the tag, end tag, and the enclosed content).
 
 
@@ -72,19 +72,19 @@ Once defined, typically in a startup script, you could simple include  <example>
 
 This command registers a Tcl procedure to be evaluated when the given
 tag is encountered. The tag argument specifies the tag that will
-trigger a call to the procedure specified by the proc argument.
+trigger a call to the procedure specified by the [arg proc] argument.
 
 [para]
 The procedure will be called with a variable number of arguments,
-one for each of the attributes provided in the tag. If the  endtag
-argument is specified, the procedure will also receive a
+one for each of the attributes provided in the tag. If the
+[arg endtag] argument is specified, the procedure will also receive a
 final argument with the contents of the text enclosed
 between the tags. No evaluation of the content will be
 performed, it will be passed as a single text block.
 
 [para]
 When the procedure is invoked, its result is inserted in the
-output instead of the tag (or, if the  endtag  was specified, in place of
+output instead of the tag (or, if the [arg endtag] was specified, in place of
 the tag, end tag, and the enclosed content).
 
 
@@ -94,21 +94,21 @@ the tag, end tag, and the enclosed content).
 	[arg script]]
 
 This command registers a Tcl script to be evaluated when the
-given tag is encountered. The  tag  argument specifies the tag that
+given tag is encountered. The [arg tag] argument specifies the tag that
 will trigger evaluation of the script specified by the
-script  argument.
+[arg script] argument.
 
 [para]
-If the  endtag  argument is specified, then the script will be
+If the [arg endtag] argument is specified, then the script will be
 modified with two arguments appended: The first will be the
 enclosed content, and the second will be the name of an
 ns_set with any attributes specified in the tag. If no
- endtag  argument is specified, the script will be
+[arg endtag]  argument is specified, the script will be
 modified with just the name of the ns_set appended.
 
 [para]
 When the script is evaluated, its result is inserted in the output
-instead of the tag (or, if the  endtag  was specified, in place of
+instead of the tag (or, if the [arg endtag]  was specified, in place of
 the tag, end tag, and the enclosed content).
 
 [para]
