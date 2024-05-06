@@ -84,10 +84,16 @@ Frees the specified set. Sets are
 automatically freed when the transaction ends, but for loops with many iterations
 it might be useful to free sets manually.
 
-[call [cmd "ns_set get"] [arg setId] [arg key] [opt [arg default]]]
+[call [cmd "ns_set get"] \
+        [arg setId] \
+        [opt [option "-all"]] \
+        [opt [arg "--"]] \
+        [arg key] \
+        [opt [arg default]]]
 
 Returns the first value associated with key.  If key isn't in the set,
-the default or an empty string is returned.
+the default or an empty string is returned. When the optional
+[option "-all"] is provided, a list of values for the key is returned.
 
 [call [cmd "ns_set icput"] [arg setId] [arg key] [arg value]]
 
@@ -101,7 +107,13 @@ Case-insensitive counterpart of [cmd "ns_set delkey"].
 
 Case-insensitive counterpart of [cmd "ns_set find"].
 
-[call [cmd "ns_set iget"] [arg setId] [arg key] [opt [arg default]]]
+
+[call [cmd "ns_set iget"] \
+        [arg setId] \
+        [opt [option "-all"]] \
+        [opt [arg "--"]] \
+        [arg key] \
+        [opt [arg default]]]
 
 Case-insensitive counterpart of [cmd "ns_set get"].
 
