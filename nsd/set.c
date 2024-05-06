@@ -589,6 +589,53 @@ Ns_SetGetCmp(const Ns_Set *set, const char *key, StringCmpProc cmp)
 /*
  *----------------------------------------------------------------------
  *
+ * NsSetGetCmpDListAppend --
+ *
+ *      Retrieve one or all values for a key from an Ns_Set. The function
+ *      returns the number of elements retrieved depending on the Boolean
+ *      argument "all". The resulting list contains pointers to the actual
+ *      string values in the Ns_Set structure. The strings are volatile and
+ *      should be copied immediately in case the Ns_Set is modified in the
+ *      same call.
+ *
+ * Results:
+ *      Number of matching keys in the set.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+size_t
+NsSetGetCmpDListAppend(const Ns_Set *set, const char *key, bool all, StringCmpProc cmp, Ns_DList *dlPtr)
+{
+    size_t idx, count = 0u;
+
+    NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(key != NULL);
+    NS_NONNULL_ASSERT(cmp != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+
+    for (idx = 0u; idx < set->size; idx++) {
+        const char *name = set->fields[idx].name;
+
+        assert(name != NULL);
+        if (((*cmp) (key, name)) == 0) {
+            count ++;
+            Ns_DListAppend(dlPtr, set->fields[idx].value);
+            if (!all) {
+                break;
+            }
+        }
+    }
+    return count;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_SetUnique --
  *
  *      Check if a key in a set is unique (case sensitive).

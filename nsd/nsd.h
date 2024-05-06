@@ -1889,6 +1889,16 @@ NS_EXTERN bool NsTclTimeoutException(Tcl_Interp *interp)
     NS_GNUC_NONNULL(1);
 
 /*
+ * set.c
+ */
+
+NS_EXTERN size_t NsSetGetCmpAppend(const Ns_Set *set, const char *key, bool all, int (*cmp)(const char *, const char *), Tcl_DString *dsPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+
+NS_EXTERN size_t NsSetGetCmpDListAppend(const Ns_Set *set, const char *key, bool all, int (*cmp)(const char *, const char *), Ns_DList *dlPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+
+/*
  * str.c
  */
 NS_EXTERN void NsHexPrint(const char *msg, const unsigned char *octets, size_t octetLength,

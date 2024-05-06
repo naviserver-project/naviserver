@@ -36,8 +36,8 @@ static void FreeSpecs(Ns_ObjvSpec *specPtr)
 static int SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static void WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec,
-                         Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv);
+static void WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
+                         TCL_OBJC_T preObjc, TCL_OBJC_T objc, Tcl_Obj *const* objv);
 
 static int GetOptIndexObjvSpec(Tcl_Obj *obj, const Ns_ObjvSpec *tablePtr, int *idxPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -190,12 +190,27 @@ Ns_ReturnCode
 Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
              TCL_OBJC_T offset, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
-    Ns_ObjvSpec  *specPtr;
-    int           optIndex;
-    TCL_OBJC_T    requiredArgs = 0;
-    TCL_SIZE_T    remain = (TCL_SIZE_T)(objc - offset);
+    return Ns_ParseObjv2(optSpec, argSpec, interp,
+                         offset, 0,
+                         objc, objv);
+}
+
+Ns_ReturnCode
+Ns_ParseObjv2(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
+              TCL_OBJC_T parseOffset,
+              TCL_OBJC_T leadOffset,
+              TCL_OBJC_T objc, Tcl_Obj *const* objv)
+{
+    Ns_ObjvSpec    *specPtr;
+    int             optIndex;
+    Tcl_Obj *const* parseObjv;
+    TCL_OBJC_T      requiredArgs = 0, parseObjc, remain;
 
     NS_NONNULL_ASSERT(interp != NULL);
+
+    parseObjc = objc - leadOffset;
+    parseObjv = objv + leadOffset;
+    remain = (TCL_SIZE_T)(parseObjc - parseOffset);
 
     /*
      * In case, the number of actual arguments is equal to the number
@@ -214,7 +229,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
             }
             requiredArgs++;
         }
-        if (requiredArgs+offset == objc) {
+        if (requiredArgs+parseOffset == parseObjc) {
             /*
              * No need to process optional parameters.
              */
@@ -225,7 +240,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
     if (likely(optSpec != NULL) && likely(optSpec->key != NULL)) {
 
         while (remain > 0) {
-            Tcl_Obj *obj = objv[objc - (TCL_OBJC_T)remain];
+            Tcl_Obj *obj = parseObjv[parseObjc - (TCL_OBJC_T)remain];
             int      result;
 
 #ifdef NS_TCL_PRE87
@@ -255,7 +270,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
 
             --remain;
             specPtr = optSpec + optIndex;
-            result = specPtr->proc(specPtr, interp, &remain, objv + ((TCL_SIZE_T)objc - remain));
+            result = specPtr->proc(specPtr, interp, &remain, parseObjv + ((TCL_SIZE_T)parseObjc - remain));
 
             if (result == TCL_BREAK) {
                 break;
@@ -267,7 +282,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
     if (unlikely(argSpec == NULL)) {
         if (remain > 0) {
         badargs:
-            WrongNumArgs(optSpec, argSpec, interp, offset, objv);
+            WrongNumArgs(optSpec, argSpec, interp, leadOffset, parseOffset-leadOffset, objv);
             return NS_ERROR;
         }
         return NS_OK;
@@ -280,7 +295,7 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
             }
             return NS_OK;
         }
-        if (unlikely(specPtr->proc(specPtr, interp, &remain, objv + ((TCL_SIZE_T)objc - remain)))
+        if (unlikely(specPtr->proc(specPtr, interp, &remain, parseObjv + ((TCL_SIZE_T)parseObjc - remain)))
             != TCL_OK) {
             return NS_ERROR;
         }
@@ -1801,7 +1816,7 @@ static void AppendRange(Ns_DString *dsPtr, const Ns_ObjvValueRange *r)
 
 static void
 WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
-             TCL_OBJC_T objc, Tcl_Obj *const* objv)
+               TCL_OBJC_T preObjc, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     const Ns_ObjvSpec *specPtr;
     Ns_DString         ds;
@@ -1850,8 +1865,8 @@ WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *inter
 
     if (ds.length > 0) {
         Ns_DStringSetLength(&ds, ds.length - 1);
-        /*Ns_Log(Notice, ".... call tclwrongnumargs %ld size %ld <%s>", objc, sizeof(objc), ds.string);*/
-        Tcl_WrongNumArgs(interp, (TCL_SIZE_T)objc, objv, ds.string);
+        /*Ns_Log(Notice, ".... call tclwrongnumargs %d size %lu <%s>", objc+preObjc, sizeof(objc), ds.string);*/
+        Tcl_WrongNumArgs(interp, (TCL_SIZE_T)objc+preObjc, objv, ds.string);
     } else {
         Tcl_WrongNumArgs(interp, (TCL_SIZE_T)objc, objv, NULL);
     }

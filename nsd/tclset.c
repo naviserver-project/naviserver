@@ -608,30 +608,48 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_O
             }
 
             case SGetIdx:  NS_FALL_THROUGH; /* fall through */
-            case SIGetIdx:
-                if (unlikely(objc < 4)) {
-                    Tcl_WrongNumArgs(interp, 2, objv, "setId get ?default?");
+            case SIGetIdx: {
+                char *keyString = NULL, *defaultString = NULL;
+                int   all = 0;
+                Ns_ObjvSpec argOpts[] = {
+                    {"-all",  Ns_ObjvBool,  &all,  INT2PTR(NS_TRUE)},
+                    {NULL, NULL, NULL, NULL}
+                };
+                Ns_ObjvSpec  args[] = {
+                    {"setId",       Ns_ObjvString, &keyString, NULL},
+                    {"?default",    Ns_ObjvString, &defaultString, NULL},
+                    {NULL, NULL, NULL, NULL}
+                };
+
+                if (Ns_ParseObjv2(argOpts, args, interp, 2, 1, objc, objv) != NS_OK) {
+                    //NsWrongNumArgs(argOpts, args, interp, 2, objv, objc-1, objv+1);
                     result = TCL_ERROR;
                 } else {
-                    const char *def = (objc > 4 ? Tcl_GetString(objv[4]) : NULL);
-                    const char *key = Tcl_GetString(objv[3]);
+                    Ns_DList    dl, *dlPtr = &dl;
+                    size_t      count;
 
-                    switch (opt) {
-                    case SGetIdx:
-                        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_SetGetValue(set, key, def), TCL_INDEX_NONE));
-                        break;
+                    Ns_DListInit(dlPtr);
 
-                    case SIGetIdx:
-                        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_SetIGetValue(set, key, def), TCL_INDEX_NONE));
-                        break;
+                    count = NsSetGetCmpDListAppend(set, keyString, all, opt == SGetIdx ? strcmp : strcasecmp, dlPtr);
 
-                    default:
-                        /* unexpected value */
-                        assert(opt && 0);
-                        break;
+                    if (count == 0) {
+                        Tcl_SetObjResult(interp, Tcl_NewStringObj(defaultString, TCL_INDEX_NONE));
+                    } else if (all == NS_FALSE) {
+                        Tcl_SetObjResult(interp, Tcl_NewStringObj(dlPtr->data[0], TCL_INDEX_NONE));
+                    } else {
+                        Tcl_Obj *resultObj = Tcl_NewListObj((TCL_SIZE_T)count, NULL);
+                        size_t   i;
+
+                        for (i = 0u; i<count; i++) {
+                            Tcl_ListObjAppendElement(interp, resultObj, Tcl_NewStringObj(dlPtr->data[i], TCL_INDEX_NONE));
+                        }
+                        Tcl_SetObjResult(interp, resultObj);
                     }
+
+                    Ns_DListFree(dlPtr);
                 }
                 break;
+            }
 
             case SFindIdx:    NS_FALL_THROUGH; /* fall through */
             case SIFindIdx:   NS_FALL_THROUGH; /* fall through */

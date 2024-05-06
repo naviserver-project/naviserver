@@ -1,4 +1,3 @@
-
 # -*- Tcl -*-
 
 package require tcltest 2.2
@@ -50,9 +49,15 @@ test ns_set-1.14 {basic syntax ns_set free} -body {
     ns_set free
 } -returnCodes error -result {wrong # args: should be "ns_set free setId ?args?"}
 
-test ns_set-1.15 {basic syntax ns_set get} -body {
+test ns_set-1.15.1 {basic syntax ns_set get} -body {
     ns_set get
 } -returnCodes error -result {wrong # args: should be "ns_set get setId ?args?"}
+
+test ns_set-1.15.2 {basic syntax ns_set get} -body {
+    ns_set get [ns_set create]
+} -cleanup {
+    ns_set cleanup
+} -returnCodes {error ok} -result {wrong # args: should be "ns_set get ?-all? setId ?default?"}
 
 test ns_set-1.16 {basic syntax ns_set icput} -body {
     ns_set icput
@@ -66,9 +71,15 @@ test ns_set-1.19 {basic syntax ns_set ifind} -body {
     ns_set ifind
 } -returnCodes error -result {wrong # args: should be "ns_set ifind setId ?args?"}
 
-test ns_set-1.20 {basic syntax ns_set iget} -body {
+test ns_set-1.20.1 {basic syntax ns_set iget} -body {
     ns_set iget
 } -returnCodes error -result {wrong # args: should be "ns_set iget setId ?args?"}
+
+test ns_set-1.20.2 {basic syntax ns_set iget} -body {
+    ns_set iget [ns_set create]
+} -cleanup {
+    ns_set cleanup
+} -returnCodes error -result {wrong # args: should be "ns_set iget ?-all? setId ?default?"}
 
 test ns_set-1.21 {basic syntax ns_set isnull} -body {
     ns_set isnull
@@ -204,41 +215,55 @@ test ns_set-2.2.2 {ns_set resize} -body {
 }
 
 
-test ns_set-2.3 {basic operation ns_set} -body {
+test ns_set-2.3 {basic operation ns_set name} -body {
     ns_set name [ns_set create tEsTsEt foo bar moo baz]
 } -result tEsTsEt -cleanup {
     ns_set cleanup
 }
 
-test ns_set-2.4 {basic operation ns_set} -body {
+test ns_set-2.4.1 {basic operation ns_set get} -body {
     set setid [ns_set create testset foo bar moo baz]
     ns_set get $setid moo
 } -result baz -cleanup {
     ns_set cleanup
 }
 
-test ns_set-2.5 {basic operation ns_set} -body {
+test ns_set-2.4.2 {basic operation ns_set get ... -all} -body {
+    set setid [ns_set create testset foo bar moo baz foo 2]
+    ns_set get $setid -all foo
+} -result "bar 2" -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.5.1 {basic operation ns_set iget} -body {
     set setid [ns_set create testset A 1 B 2 a 3 b 4]
     ns_set iget $setid a
 } -result 1 -cleanup {
     ns_set cleanup
 }
 
-test ns_set-2.6 {basic operation ns_set} -body {
+test ns_set-2.5.2 {basic operation ns_set iget ... -all} -body {
+    set setid [ns_set create testset A 1 B 2 a 3 b 4]
+    ns_set iget $setid -all a
+} -result "1 3" -cleanup {
+    ns_set cleanup
+}
+
+test ns_set-2.6 {basic operation ns_set unique} -body {
     set setid [ns_set create testset A 1 B 2 a 3 b 4]
     ns_set unique $setid a
 } -result 1 -cleanup {
     ns_set cleanup
 }
 
-test ns_set-2.7 {basic operation ns_set} -body {
+test ns_set-2.7 {basic operation ns_set iunique} -body {
     set setid [ns_set create testset A 1 B 2 a 3 b 4]
     ns_set iunique $setid a
 } -result 0 -cleanup {
     ns_set cleanup
 }
 
-test ns_set-2.8 {basic operation ns_set trunc} -body {
+test ns_set-2.8 {basic operation ns_set truncate} -body {
     set x [ns_set create testset foo bar moo baz]
     ns_set truncate $x 1
     ns_set get $x foo
@@ -246,7 +271,7 @@ test ns_set-2.8 {basic operation ns_set trunc} -body {
     ns_set cleanup
 }
 
-test ns_set-2.9 {basic operation ns_set trunc} -body {
+test ns_set-2.9 {basic operation ns_set truncate} -body {
     set x [ns_set create testset foo bar moo baz]
     ns_set truncate $x 1
     ns_set get $x moo

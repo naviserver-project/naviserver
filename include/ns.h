@@ -1838,6 +1838,11 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec,
              Tcl_Interp *interp, TCL_OBJC_T offset, TCL_OBJC_T objc, Tcl_Obj *const* objv)
     NS_GNUC_NONNULL(3);
 
+NS_EXTERN Ns_ReturnCode
+Ns_ParseObjv2(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec,
+              Tcl_Interp *interp, TCL_OBJC_T offset, TCL_OBJC_T leadOffset, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+    NS_GNUC_NONNULL(3);
+
 NS_EXTERN Ns_ObjvProc Ns_ObjvArgs;
 NS_EXTERN Ns_ObjvProc Ns_ObjvBool;
 NS_EXTERN Ns_ObjvProc Ns_ObjvBreak NS_GNUC_CONST;
