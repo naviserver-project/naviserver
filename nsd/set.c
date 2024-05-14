@@ -615,7 +615,7 @@ NsSetGetCmpDListAppend(const Ns_Set *set, const char *key, bool all, StringCmpPr
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
     NS_NONNULL_ASSERT(cmp != NULL);
-    NS_NONNULL_ASSERT(dsPtr != NULL);
+    NS_NONNULL_ASSERT(dlPtr != NULL);
 
     for (idx = 0u; idx < set->size; idx++) {
         const char *name = set->fields[idx].name;
