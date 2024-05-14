@@ -493,8 +493,15 @@ ConnInfo(Ns_Sock *sock)
 {
     SSLContext *sslCtx = sock->arg;
     Tcl_Obj    *resultObj;
+    char        ipString[NS_IPADDR_SIZE];
 
     resultObj = Tcl_NewDictObj();
+    (void)ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString, NS_IPADDR_SIZE);
+    Tcl_DictObjPut(NULL, resultObj,
+                   Tcl_NewStringObj("currentaddr", 11),
+                   Tcl_NewStringObj(ipString, -1));
+
+    (void)Ns_SockaddrAddToDictIpProperties((struct sockaddr *)&(sock->sa), resultObj);
 
     /*Tcl_DictObjPut(NULL, resultObj,
                    Tcl_NewStringObj("protocol", 8),

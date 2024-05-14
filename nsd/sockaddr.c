@@ -944,6 +944,47 @@ Ns_SockaddrPublicIpAddress(const struct sockaddr *saPtr) {
 }
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockaddrAddToDictIpProperties --
+ *
+ *      Add for the speicied IP address properties to the provided dict.
+ *
+ * Results:
+ *      TCL_OK;
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+int
+Ns_SockaddrAddToDictIpProperties(const struct sockaddr *ipPtr, Tcl_Obj *dictObj) {
+    bool     isPublic = Ns_SockaddrPublicIpAddress(ipPtr);
+    bool     isTrusted = Ns_SockaddrTrustedReverseProxy(ipPtr);
+    Tcl_Obj *typeValueObj;
+
+    Tcl_DictObjPut(NULL, dictObj,
+                   Tcl_NewStringObj("public", 6),
+                   Tcl_NewBooleanObj(isPublic));
+    Tcl_DictObjPut(NULL, dictObj,
+                   Tcl_NewStringObj("trusted", 7),
+                   Tcl_NewBooleanObj(isTrusted));
+    if (ipPtr->sa_family == AF_INET) {
+        typeValueObj = Tcl_NewStringObj("IPv4", 4);
+    } else if (ipPtr->sa_family == AF_INET6) {
+        typeValueObj = Tcl_NewStringObj("IPv6", 4);
+    } else {
+        typeValueObj = Tcl_NewStringObj("unknown", 7);
+    }
+    Tcl_DictObjPut(NULL, dictObj,
+                   Tcl_NewStringObj("type", 4),
+                   typeValueObj);
+    return TCL_OK;
+}
+
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

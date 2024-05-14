@@ -38,6 +38,7 @@ static Ns_DriverSendProc SockSend;
 static Ns_DriverCloseProc SockClose;
 static Ns_DriverSendFileProc SendFile;
 static Ns_DriverKeepProc Keep;
+static Ns_DriverConnInfoProc ConnInfo;
 
 NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 
@@ -81,6 +82,7 @@ Ns_ModuleInit(const char *server, const char *module)
     init.sendProc     = SockSend;
     init.sendFileProc = SendFile;
     init.keepProc     = Keep;
+    init.connInfoProc = ConnInfo;
     init.requestProc  = NULL;
     init.closeProc    = SockClose;
     init.opts         = NS_DRIVER_ASYNC;
@@ -320,6 +322,41 @@ SockClose(Ns_Sock *sock)
         sock->sock = NS_INVALID_SOCKET;
     }
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConnInfo --
+ *
+ *      Return Tcl_Obj hinting connection details
+ *
+ * Results:
+ *      Tcl_Obj *
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_Obj*
+ConnInfo(Ns_Sock *sock)
+{
+    Tcl_Obj *resultObj;
+    char     ipString[NS_IPADDR_SIZE];
+
+    resultObj = Tcl_NewDictObj();
+    (void)ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString, NS_IPADDR_SIZE);
+    Tcl_DictObjPut(NULL, resultObj,
+                   Tcl_NewStringObj("currentaddr", 11),
+                   Tcl_NewStringObj(ipString, -1));
+
+    (void)Ns_SockaddrAddToDictIpProperties((struct sockaddr *)&(sock->sa), resultObj);
+
+    return resultObj;
+}
+
 
 /*
  * Local Variables:

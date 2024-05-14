@@ -2477,9 +2477,9 @@ IpMatchObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc
 static int
 IpPropertiesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
-    int         result = TCL_OK;
     struct NS_SOCKADDR_STORAGE ip;
     struct sockaddr *ipPtr = (struct sockaddr *)&ip;
+    int         result = TCL_OK;
     char       *ipString;
     Ns_ObjvSpec args[] = {
         {"ipaddr", Ns_ObjvString, &ipString, NULL},
@@ -2494,27 +2494,9 @@ IpPropertiesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
         result = TCL_ERROR;
 
     } else {
-        bool     isPublic = Ns_SockaddrPublicIpAddress(ipPtr);
-        bool     isTrusted = Ns_SockaddrTrustedReverseProxy(ipPtr);
-        Tcl_Obj *dictObj = Tcl_NewDictObj(), *typeValueObj;
+        Tcl_Obj *dictObj = Tcl_NewDictObj();
 
-        Tcl_DictObjPut(NULL, dictObj,
-                       Tcl_NewStringObj("public", 6),
-                       Tcl_NewBooleanObj(isPublic));
-        Tcl_DictObjPut(NULL, dictObj,
-                       Tcl_NewStringObj("trusted", 7),
-                       Tcl_NewBooleanObj(isTrusted));
-        if (ipPtr->sa_family == AF_INET) {
-            typeValueObj = Tcl_NewStringObj("IPv4", 4);
-        } else if (ipPtr->sa_family == AF_INET6) {
-            typeValueObj = Tcl_NewStringObj("IPv6", 4);
-        } else {
-            typeValueObj = Tcl_NewStringObj("unknown", 7);
-        }
-        Tcl_DictObjPut(NULL, dictObj,
-                       Tcl_NewStringObj("type", 4),
-                       typeValueObj);
-
+        (void)Ns_SockaddrAddToDictIpProperties(ipPtr, dictObj);
         Tcl_SetObjResult(interp, dictObj);
     }
     return result;

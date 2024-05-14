@@ -3102,6 +3102,10 @@ NS_EXTERN bool
 Ns_SockaddrTrustedReverseProxy(const struct sockaddr *saPtr)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN int
+Ns_SockaddrAddToDictIpProperties(const struct sockaddr *ipPtr, Tcl_Obj *dictObj)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 /*
  * sockcallback.c:
  */
