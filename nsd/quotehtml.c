@@ -2667,7 +2667,8 @@ EntityDecode(const char *entity, ssize_t length, bool *needEncodePtr, char *outP
 
     NS_INIT_ONCE(InitOnce);
 
-    assert( *entity != '\0');
+    assert(length == 0 || *entity != '\0');
+
     /*
      * Handle numeric entities.
      */
