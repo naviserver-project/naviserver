@@ -872,14 +872,16 @@ Ns_SockaddrTrustedReverseProxy(const struct sockaddr *saPtr) {
 
     NS_INIT_ONCE(SockAddrInit);
 
-    for (i = 0u; trustedServersEntries[i].cdirString != NULL; i++) {
-        //Ns_Log(Notice, "[%ld] trusted reverse proxy check %p> ", i, (void*)trustedServersEntries[i].cdirString) ;
-        //Ns_Log(Notice, "[%ld] trusted reverse proxy check <%s> ", i, trustedServersEntries[i].cdirString);
-        if (Ns_SockaddrMaskedMatch(saPtr,
-                                   (struct sockaddr *) &trustedServersEntries[i].mask,
-                                   (struct sockaddr *) &trustedServersEntries[i].masked)) {
-            success = NS_TRUE;
-            break;
+    if (trustedServersEntries != NULL) {
+        for (i = 0u; trustedServersEntries[i].cdirString != NULL; i++) {
+            //Ns_Log(Notice, "[%ld] trusted reverse proxy check %p> ", i, (void*)trustedServersEntries[i].cdirString) ;
+            //Ns_Log(Notice, "[%ld] trusted reverse proxy check <%s> ", i, trustedServersEntries[i].cdirString);
+            if (Ns_SockaddrMaskedMatch(saPtr,
+                                       (struct sockaddr *) &trustedServersEntries[i].mask,
+                                       (struct sockaddr *) &trustedServersEntries[i].masked)) {
+                success = NS_TRUE;
+                break;
+            }
         }
     }
 #if 0

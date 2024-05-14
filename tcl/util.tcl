@@ -534,6 +534,20 @@ proc ns_updateheader {key value} {
     ns_set update [ns_conn outputheaders] $key $value
 }
 
+
+#
+# ns_subnetmatch /cidr/ /ipaddr/ --
+#
+#   Returns true if ipaddr (IPv4 or IPv6) matches the CDIR (Classless
+#   Inter-Domain Routing) range.
+#   https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing
+#
+
+proc ns_subnetmatch {cidr ipaddr} {
+    #ns_deprecated "ns_ip match"
+    ns_ip match $cidr $ipaddr
+}
+
 # Local variables:
 #    mode: tcl
 #    tcl-indent-level: 4

@@ -1,6 +1,6 @@
 # -*- Tcl -*-
 
-package require tcltest 2.2
+package require tcltest 2.5
 namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
@@ -184,22 +184,65 @@ test ns_valid_utf8-1.4 {invalid utf8, containing x85 in the middle} -body {
     set errorString
 } -result {mot|\x85r|...}
 
+
 #######################################################################################
-#  test ns_subnetmatch
+#  test ns_ip
 #######################################################################################
 
-test ns_subnetmatch-1.0 {ns_subnetmatch IPv4} -body {
-    return [ns_subnetmatch 137.208.0.0/16 137.208.116.31]
+test ns_ip-1.0.1 {ns_ip general} -body {
+    ns_ip
+} -returnCodes error -result {wrong # args: should be "ns_ip command ?args?"}
+
+test ns_ip-1.0.2 {ns_ip wrong subcommand} -body {
+    ns_ip x
+} -returnCodes error -result {bad subcmd "x": must be match, properties, public, trusted, or valid}
+
+test ns_ip-1.1.1 {ns_ip properties general} -body {
+    ns_ip properties
+} -returnCodes error -result {wrong # args: should be "ns_ip properties ipaddr"}
+test ns_ip-1.1.2 {ns_ip public general} -body {
+    ns_ip public
+} -returnCodes error -result {wrong # args: should be "ns_ip public ipaddr"}
+test ns_ip-1.1.3 {ns_ip trusted general} -body {
+    ns_ip trusted
+} -returnCodes error -result {wrong # args: should be "ns_ip trusted ipaddr"}
+test ns_ip-1.1.4 {ns_ip valid general} -body {
+    ns_ip valid
+} -returnCodes error -result {wrong # args: should be "ns_ip valid ?-type type? ?--? ipaddr"}
+
+test ns_ip-1.2.1 {ns_ip properties particular address} -body {
+   ns_ip properties 127.0.0.1
+} -match glob -result {public 0 trusted [01] type IPv4}
+
+test ns_ip-1.3.1 {ns_ip public} -body {
+    lmap ip {192.168.64.1 127.0.0.1 ::1 0.0.0.0 ::
+        137.208.116.31 2001:628:404:74::31} {ns_ip public $ip}
+} -result {0 0 0 0 0 1 1}
+
+test ns_ip-1.4.1 {ns_ip trusted} -body {
+    lmap ip {137.208.116.31 2001:628:404:74::31} {ns_ip trusted $ip}
+} -result {0 0}
+
+test ns_ip-1.5.1 {ns_ip valid} -body {
+    lmap ip {192.168.64.1 127.0.0.1 ::1 0.0.0.0 :: 137.208.116.31 2001:628:404:74::31
+        1.1.1.1.1 openacs.org } {ns_ip valid $ip}
+} -result {1 1 1 1 1 1 1 0 0}
+
+#
+#  test ns_ip match
+#
+test ns_ip_match--1.0 {ns_ip match IPv4} -body {
+    return [ns_ip match 137.208.0.0/16 137.208.116.31]
 } -result 1
 
-test ns_subnetmatch-1.1 {ns_subnetmatch IPv4 invalid cidr} -body {
-    ns_subnetmatch 137.208/16 137.208.116.31
+test ns_ip_match--1.1 {ns_ip match IPv4 invalid cidr} -body {
+    ns_ip match 137.208/16 137.208.116.31
 } -returnCodes error  -result {'137.208/16' is not a valid CIDR string for IPv4 or IPv6}
-test ns_subnetmatch-1.2 {ns_subnetmatch IPv4 invalid ip} -body {
-    ns_subnetmatch 137.208.0.0/16 137.208.116
+test ns_ip_match--1.2 {ns_ip match IPv4 invalid ip} -body {
+    ns_ip match 137.208.0.0/16 137.208.116
 } -returnCodes error  -result {'137.208.116' is not a valid IPv4 or IPv6 address}
 
-test ns_subnetmatch-1.3 {ns_subnetmatch IPv4} -body {
+test ns_ip_match--1.3 {ns_ip match IPv4} -body {
     lmap ip {
         137.208.215.0
         137.208.216.0
@@ -207,10 +250,10 @@ test ns_subnetmatch-1.3 {ns_subnetmatch IPv4} -body {
         137.208.220.0
         137.208.223.0
         137.208.224.0
-    } {ns_subnetmatch 137.208.216.0/21 $ip}
+    } {ns_ip match 137.208.216.0/21 $ip}
 } -result {0 1 1 1 1 0}
 
-test ns_subnetmatch-1.4 {ns_subnetmatch IPv4} -body {
+test ns_ip_match--1.4 {ns_ip match IPv4} -body {
     lmap ip {
         137.208.215.0
         137.208.216.0
@@ -218,32 +261,34 @@ test ns_subnetmatch-1.4 {ns_subnetmatch IPv4} -body {
         137.208.220.0
         137.208.223.0
         137.208.224.0
-    } {ns_subnetmatch 0.0.0.0/0 $ip}
+    } {ns_ip match 0.0.0.0/0 $ip}
 } -result {1 1 1 1 1 1}
 
-test ns_subnetmatch-2.0 {ns_subnetmatch IPv6} -body {
-    return [ns_subnetmatch 2001:4860:4860::8888/32 2001:4860:6666:6666:6666:6666:6666:66FF]
+test ns_ip_match--2.0 {ns_ip match IPv6} -body {
+    return [ns_ip match 2001:4860:4860::8888/32 2001:4860:6666:6666:6666:6666:6666:66FF]
 } -result 1
 
-test ns_subnetmatch-2.1 {ns_subnetmatch IPv6 invalid cidr} -body {
-    ns_subnetmatch 2001:4860:4860:8888/32 2001:4860:6666:6666:6666:6666:6666:66FF
+test ns_ip_match--2.1 {ns_ip match IPv6 invalid cidr} -body {
+    ns_ip match 2001:4860:4860:8888/32 2001:4860:6666:6666:6666:6666:6666:66FF
 } -returnCodes error  -result {'2001:4860:4860:8888/32' is not a valid CIDR string for IPv4 or IPv6}
 
-test ns_subnetmatch-2.2 {ns_subnetmatch IPv6 invalid ip} -body {
-    ns_subnetmatch 2001:4860:4860::8888/32 2001:4860:6666:6666:6666:6666:6666
+test ns_ip_match--2.2 {ns_ip match IPv6 invalid ip} -body {
+    ns_ip match 2001:4860:4860::8888/32 2001:4860:6666:6666:6666:6666:6666
 } -returnCodes error  -result {'2001:4860:6666:6666:6666:6666:6666' is not a valid IPv4 or IPv6 address}
 
-test ns_subnetmatch-2.3 {ns_subnetmatch comparing IPv4 with IPv6} -body {
-    ns_subnetmatch 2001:628:404:74::31/64 137.206.1.1
+test ns_ip_match--2.3 {ns_ip match comparing IPv4 with IPv6} -body {
+    ns_ip match 2001:628:404:74::31/64 137.206.1.1
 } -result 0
 
-test ns_subnetmatch-2.4 {ns_subnetmatch IPv4} -body {
+test ns_ip_match--2.4 {ns_ip match IPv4} -body {
     lmap ip {
         2001:628:404:74::31
         ::1
         ::0
-    } {ns_subnetmatch ::/0 $ip}
+    } {ns_ip match ::/0 $ip}
 } -result {1 1 1}
+
+
 
 #
 # Local variables:

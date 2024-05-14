@@ -22,6 +22,12 @@
  * Local functions defined in this file
  */
 
+static TCL_OBJCMDPROC_T   IpMatchObjCmd;
+static TCL_OBJCMDPROC_T   IpPropertiesObjCmd;
+static TCL_OBJCMDPROC_T   IpPublicObjCmd;
+static TCL_OBJCMDPROC_T   IpTrustedObjCmd;
+static TCL_OBJCMDPROC_T   IpValidObjCmd;
+
 static void SHAByteSwap(uint32_t *dest, const uint8_t *src, unsigned int words)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static void SHATransform(Ns_CtxSHA1 *sha)
@@ -2394,7 +2400,7 @@ NsTclStrcollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
 /*
  *----------------------------------------------------------------------
  *
- * NsTclSubnetmatchObjCmd --
+ * IpMatchObjCmd --
  *
  *      Checks whether an IP address (IPv4 or IPV6) is in a given CIDR
  *      (Classless Inter-Domain Routing) range. CIDR supports variable-length
@@ -2402,10 +2408,10 @@ NsTclStrcollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
  *      character, and a decimal number representing the significant bits of
  *      the IP address.
  *
- *      Implements "ns_subnetmatch".
+ *      Implements "ns_ip match /cidr/ /ipaddr/".
  *
  *      Example:
- *          ns_subnetmatch 137.208.0.0/16 137.208.116.31
+ *          ns_ip match 137.208.0.0/16 137.208.116.31
  *
  * Results:
  *      Tcl result code
@@ -2415,8 +2421,8 @@ NsTclStrcollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
  *
  *----------------------------------------------------------------------
  */
-int
-NsTclSubnetmatchObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+static int
+IpMatchObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
     char        *cidrString, *ipString;
@@ -2433,7 +2439,7 @@ NsTclSubnetmatchObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OB
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else if (ns_inet_pton(ipPtr, ipString) != 1) {
@@ -2450,6 +2456,243 @@ NsTclSubnetmatchObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OB
         Tcl_SetObjResult(interp, Tcl_NewBooleanObj(success));
     }
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IpPropertiesObjCmd --
+ *
+ *      Implements "ns_ip properties". In case a valid IP address is provided
+ *      it returns a dict containing members "trusted", "public" and "type".
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+IpPropertiesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    struct NS_SOCKADDR_STORAGE ip;
+    struct sockaddr *ipPtr = (struct sockaddr *)&ip;
+    char       *ipString;
+    Ns_ObjvSpec args[] = {
+        {"ipaddr", Ns_ObjvString, &ipString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (ns_inet_pton(ipPtr, ipString) != 1) {
+        Ns_TclPrintfResult(interp, "'%s' is not a valid IPv4 or IPv6 address", ipString);
+        result = TCL_ERROR;
+
+    } else {
+        bool     isPublic = Ns_SockaddrPublicIpAddress(ipPtr);
+        bool     isTrusted = Ns_SockaddrTrustedReverseProxy(ipPtr);
+        Tcl_Obj *dictObj = Tcl_NewDictObj(), *typeValueObj;
+
+        Tcl_DictObjPut(NULL, dictObj,
+                       Tcl_NewStringObj("public", 6),
+                       Tcl_NewBooleanObj(isPublic));
+        Tcl_DictObjPut(NULL, dictObj,
+                       Tcl_NewStringObj("trusted", 7),
+                       Tcl_NewBooleanObj(isTrusted));
+        if (ipPtr->sa_family == AF_INET) {
+            typeValueObj = Tcl_NewStringObj("IPv4", 4);
+        } else if (ipPtr->sa_family == AF_INET6) {
+            typeValueObj = Tcl_NewStringObj("IPv6", 4);
+        } else {
+            typeValueObj = Tcl_NewStringObj("unknown", 7);
+        }
+        Tcl_DictObjPut(NULL, dictObj,
+                       Tcl_NewStringObj("type", 4),
+                       typeValueObj);
+
+        Tcl_SetObjResult(interp, dictObj);
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IpPublicObjCmd --
+ *
+ *      Implements "ns_ip public", returning a boolean value in case the
+ *      provided IP address is valid.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+IpPublicObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    struct NS_SOCKADDR_STORAGE ip;
+    struct sockaddr *ipPtr = (struct sockaddr *)&ip;
+    char       *ipString;
+    Ns_ObjvSpec args[] = {
+        {"ipaddr", Ns_ObjvString, &ipString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (ns_inet_pton(ipPtr, ipString) != 1) {
+        Ns_TclPrintfResult(interp, "'%s' is not a valid IPv4 or IPv6 address", ipString);
+        result = TCL_ERROR;
+
+    } else {
+        bool isPublic = Ns_SockaddrPublicIpAddress(ipPtr);
+
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(isPublic));
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IpTrustedObjCmd --
+ *
+ *      Implements "ns_ip trusted", returning a boolean value in case the
+ *      provided IP address is valid.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+IpTrustedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    struct NS_SOCKADDR_STORAGE ip;
+    struct sockaddr *ipPtr = (struct sockaddr *)&ip;
+    char       *ipString;
+    Ns_ObjvSpec args[] = {
+        {"ipaddr", Ns_ObjvString, &ipString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (ns_inet_pton(ipPtr, ipString) != 1) {
+        Ns_TclPrintfResult(interp, "'%s' is not a valid IPv4 or IPv6 address", ipString);
+        result = TCL_ERROR;
+
+    } else {
+        bool isTrusted = Ns_SockaddrTrustedReverseProxy(ipPtr);
+
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(isTrusted));
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * IpValidObjCmd --
+ *
+ *      Implements "ns_ip valid", returning a boolean value indicating if the
+ *      provided IP address is valid. One can provide "-type ipv4" or "-type
+ *      ipv6" to constrain the result to these address families.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Ns_ObjvTable addressTypeSet[] = {
+    {"IPv4",    4u},
+    {"IPv6",    6u},
+    {"ipv4",    4u},
+    {"ipv6",    6u},
+    {NULL,      0u}
+};
+
+static int
+IpValidObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+{
+    struct NS_SOCKADDR_STORAGE ip;
+    struct sockaddr *ipPtr = (struct sockaddr *)&ip;
+    int         result = TCL_OK, addressType = 0;
+    char       *ipString;
+    Ns_ObjvSpec lopts[] = {
+        {"-type", Ns_ObjvIndex, &addressType, addressTypeSet},
+        {"--",    Ns_ObjvBreak, NULL,         NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"ipaddr", Ns_ObjvString, &ipString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        bool valid = (ns_inet_pton(ipPtr, ipString) == 1);
+        if (valid && addressType != 0) {
+            valid = (   ((addressType == 4) && (ipPtr->sa_family == AF_INET))
+                     || ((addressType == 5) && (ipPtr->sa_family == AF_INET6))
+                     );
+        }
+        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(valid));
+    }
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclIpObjCmd --
+ *
+ *      Implements "ns_ip".
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      Depends on subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclIpObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+{
+    const Ns_SubCmdSpec subcmds[] = {
+        {"match",      IpMatchObjCmd},
+        {"properties", IpPropertiesObjCmd},
+        {"public",     IpPublicObjCmd},
+        {"trusted",    IpTrustedObjCmd},
+        {"valid",      IpValidObjCmd},
+        /*ns_ip lookup ?-all? /ipaddr/        {NULL, NULL}*/
+        {NULL, NULL}
+    };
+    return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 
 /*
