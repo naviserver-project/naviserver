@@ -491,17 +491,23 @@ Keep(Ns_Sock *sock)
 static Tcl_Obj*
 ConnInfo(Ns_Sock *sock)
 {
-    SSLContext *sslCtx = sock->arg;
+    SSLContext *sslCtx;
     Tcl_Obj    *resultObj;
     char        ipString[NS_IPADDR_SIZE];
+    struct sockaddr *ipPtr;
+
+    NS_NONNULL_ASSERT(sock != NULL);
 
     resultObj = Tcl_NewDictObj();
-    (void)ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString, NS_IPADDR_SIZE);
+    sslCtx = sock->arg;
+    ipPtr = Ns_SockGetConfiguredSockAddr(sock);
+    (void)ns_inet_ntop(ipPtr, ipString, NS_IPADDR_SIZE);
+
     Tcl_DictObjPut(NULL, resultObj,
                    Tcl_NewStringObj("currentaddr", 11),
                    Tcl_NewStringObj(ipString, -1));
 
-    (void)Ns_SockaddrAddToDictIpProperties((struct sockaddr *)&(sock->sa), resultObj);
+    (void)Ns_SockaddrAddToDictIpProperties(ipPtr, resultObj);
 
     /*Tcl_DictObjPut(NULL, resultObj,
                    Tcl_NewStringObj("protocol", 8),

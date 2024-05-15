@@ -3038,6 +3038,14 @@ const char *
 Ns_PosixSetErrorCode(Tcl_Interp *interp, int errorNum)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN struct sockaddr *
+Ns_SockGetClientSockAddr(Ns_Sock *sock)
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+
+NS_EXTERN struct sockaddr *
+Ns_SockGetConfiguredSockAddr(Ns_Sock *sock)
+    NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+
 /*
  * sockaddr.c:
  */

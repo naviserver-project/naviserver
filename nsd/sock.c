@@ -2129,6 +2129,48 @@ SockSend(NS_SOCKET sock, const struct iovec *bufs, int nbufs, unsigned int flags
     return numBytes;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockGetClientSockAddr, Ns_SockGetConfiguredSockAddr --
+ *
+ *      Return the client sockaddr (private member) or the configured
+ *      (dependnet on reverse proxy mode) sock addr.
+ *
+ * Results:
+ *      Socket address.
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+struct sockaddr *
+Ns_SockGetClientSockAddr(Ns_Sock *sock)
+{
+    Sock *sockPtr;
+
+    NS_NONNULL_ASSERT(sock != NULL);
+
+    sockPtr = (Sock *)sock;
+    return (struct sockaddr *)&(sockPtr->clientsa);
+}
+
+struct sockaddr *
+Ns_SockGetConfiguredSockAddr(Ns_Sock *sock)
+{
+    Sock *sockPtr;
+
+    NS_NONNULL_ASSERT(sock != NULL);
+
+    sockPtr = (Sock *)sock;
+    return (nsconf.reverseproxymode.enabled
+            ? (struct sockaddr *)&(sockPtr->clientsa)
+            : (struct sockaddr *)&(sockPtr->sa));
+}
+
+
 /*
  *----------------------------------------------------------------------
  *

@@ -346,8 +346,10 @@ ConnInfo(Ns_Sock *sock)
     Tcl_Obj *resultObj;
     char     ipString[NS_IPADDR_SIZE];
 
+    NS_NONNULL_ASSERT(sock != NULL);
+
     resultObj = Tcl_NewDictObj();
-    (void)ns_inet_ntop((struct sockaddr *)&(sock->sa), ipString, NS_IPADDR_SIZE);
+    (void)ns_inet_ntop(Ns_SockGetConfiguredSockAddr(sock), ipString, NS_IPADDR_SIZE);
     Tcl_DictObjPut(NULL, resultObj,
                    Tcl_NewStringObj("currentaddr", 11),
                    Tcl_NewStringObj(ipString, -1));
