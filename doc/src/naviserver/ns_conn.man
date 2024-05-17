@@ -130,8 +130,10 @@ Returns the local port of the current connection
 
 Returns a dict with driver specific details concerning the current
 connection. For all requests, the dict includes the current IP
-address, its type, and whether it is public and
-configured to be trusted. For HTTPS connections, the result includes
+address, its [term type], whether it is [term public] and
+configured to be [term trusted], and whether the connection comes via a
+reverse proxy ([term proxied]).
+For HTTPS connections, the result includes
 the negotiated protocol [term sslversion], [term cipher], and the
 [term servername] (as provided via SNI).
 

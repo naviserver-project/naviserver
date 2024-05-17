@@ -2310,8 +2310,15 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
 
     case CDetailsIdx:
         if (connPtr->drvPtr->connInfoProc != NULL) {
-            Tcl_SetObjResult(interp,
-                             connPtr->drvPtr->connInfoProc(Ns_ConnSockPtr(conn)));
+            Ns_Sock         *sockPtr = Ns_ConnSockPtr(conn);
+            Tcl_Obj         *dictObj = connPtr->drvPtr->connInfoProc(sockPtr);
+            struct sockaddr *saPtr = Ns_SockGetClientSockAddr(sockPtr);
+
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("proxied", 7),
+                           Tcl_NewBooleanObj(saPtr->sa_family != 0));
+
+            Tcl_SetObjResult(interp, dictObj);
         }
         break;
 
