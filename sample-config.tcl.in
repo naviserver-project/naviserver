@@ -135,11 +135,6 @@ ns_section ns/parameters {
     # (e.g. subsequent ns_return statements)
     #ns_param    rejectalreadyclosedconn  false ;# default: true
 
-    # Is the server running behind a reverse proxy server?  When
-    # activated, determine the client IP address per default via the
-    # value provided by the reverse proxy server.
-    #ns_param   reverseproxymode    true     ;# default: false
-
     #
     # I18N Parameters
     #
@@ -189,6 +184,33 @@ ns_section ns/parameters {
     ns_param dnswaittimeout 5s      ;# time for waiting for a DNS reply; default: 5s
     ns_param dnscachetimeout 1h     ;# time to keep entries in cache; default: 1h
     ns_param dnscachemaxsize 500kB  ;# max size of DNS cache in memory units; default: 500kB
+}
+
+
+#
+# When running behind a reverse proxy, use the following parameters
+#
+ns_section ns/parameters/reverseproxymode {
+    #
+    # Is the server running behind a reverse proxy server?
+    #
+    ns_param enabled true ;# default: false
+    #
+    # When defining "trustedservers", the X-Forwarded-For header field
+    # is only accepted in requests received from one of the specified
+    # servers. The list of servers can be provided by using IP
+    # addresses or CIDR masks. Additionally, the processing mode of
+    # the contents of the X-Forwarded-For contents switches to
+    # right-to-left, skipping trusted servers. So, the dangerof
+    # obtaining spoofed addresses can be reduced.
+    #
+    #ns_param trustedservers {192.168.0.0/16}
+    #
+    # Optionally, non-public entries in the content of X-Forwarded-For
+    # can be ignored. These are not useful for e.g. geo-location
+    # analysis.
+    #
+    #ns_param skipnonpublic  false
 }
 
 ########################################################################

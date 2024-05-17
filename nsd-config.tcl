@@ -38,9 +38,9 @@ dict set defaultConfig pagedir     {$home/pages}
 dict set defaultConfig logdir      {$home/logs}
 dict set defaultConfig certificate {$home/etc/server.pem}
 dict set defaultConfig vhostcertificates {$home/etc/certificates}
-dict set defaultConfig reverseproxymode false
 dict set defaultConfig serverprettyname "My NaviServer Instance"
-
+dict set defaultConfig reverseproxymode false
+dict set defaultConfig trustedservers ""
 
 #
 # For all potential variables defined by the dict "defaultConfig",
@@ -94,7 +94,6 @@ ns_section ns/parameters {
 
     # Reject output operations on already closed or detached connections (e.g. subsequent ns_return statements)
     #ns_param   rejectalreadyclosedconn false;# default: true
-    ns_param    reverseproxymode $reverseproxymode   ;# running behind a reverse proxy server? (default: false
 
     #
     # Tcl settings
@@ -147,6 +146,33 @@ ns_section ns/parameters {
     ns_param    smtpauthuser        ""
     ns_param    smtpauthpassword    ""
 }
+
+#
+# When running behind a reverse proxy, use the following parameters
+#
+ns_section ns/parameters/reverseproxymode {
+    #
+    # Is the server running behind a reverse proxy server?
+    #
+    ns_param enabled $reverseproxymode
+    #
+    # When defining "trustedservers", the X-Forwarded-For header field
+    # is only accepted in requests received from one of the specified
+    # servers. The list of servers can be provided by using IP
+    # addresses or CIDR masks. Additionally, the processing mode of
+    # the contents of the X-Forwarded-For contents switches to
+    # right-to-left, skipping trusted servers. So, the dangerof
+    # obtaining spoofed addresses can be reduced.
+    #
+    ns_param trustedservers $trustedservers
+    #
+    # Optionally, non-public entries in the content of X-Forwarded-For
+    # can be ignored. These are not useful for e.g. geo-location
+    # analysis.
+    #
+    #ns_param skipnonpublic  false
+}
+
 
 ns_section ns/threads {
     ns_param    stacksize           512kB

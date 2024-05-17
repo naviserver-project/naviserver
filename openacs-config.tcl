@@ -68,8 +68,10 @@ set defaultConfig {
 
     CookieNamespace  ad_
     cachingmode      full
-    reverseproxymode false
     serverprettyname "My OpenACS Instance"
+
+    reverseproxymode false
+    trustedservers   ""
 
     clusterSecret    ""
     parameterSecret  ""
@@ -285,8 +287,33 @@ ns_section ns/parameters {
     #ns_param dnscachetimeout 60m     ;# time to keep entries in cache; default: 1h
     ns_param dnscachemaxsize 500KB  ;# max size of DNS cache in memory units; default: 500KB
 
-    # Running behind proxy? Used also by OpenACS...
+    # Running behind proxy? Used also by OpenACS.  This parameter is
+    # outdated and kept here for backward compatibility. Use the
+    # section ns/parameters/reverseproxymode instead.
     ns_param reverseproxymode	$reverseproxymode
+}
+
+#
+# When running behind a reverse proxy, use the following parameters
+#
+ns_section ns/parameters/reverseproxymode {
+    ns_param enabled        $reverseproxymode
+    #
+    # When defining "trustedservers", the X-Forwarded-For header field
+    # is only accepted in requests received from one of the specified
+    # servers. The list of servers can be provided by using IP
+    # addresses or CIDR masks. Additionally, the processing mode of
+    # the contents of the X-Forwarded-For contents switches to
+    # right-to-left, skipping trusted servers. So, the dangerof
+    # obtaining spoofed addresses can be reduced.
+    #
+    ns_param trustedservers $trustedservers
+    #
+    # Optionally, non-public entries in the content of X-Forwarded-For
+    # can be ignored. These are not useful for e.g. geo-location
+    # analysis.
+    #
+    #ns_param skipnonpublic  false
 }
 
 #---------------------------------------------------------------------
