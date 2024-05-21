@@ -1136,7 +1136,7 @@ Ns_SockTimedConnect2(const char *host, unsigned short port, const char *lhost,
      * milliseconds. The number of attempts is determined by the timeoutPtr.
      */
     count = (int)Ns_TimeToMilliseconds(timeoutPtr)/ms;
-    Ns_Log(Debug, "Ns_SockTimedConnect2 for %s:%hu MS %ld count %d",
+    Ns_Log(Debug, "Ns_SockTimedConnect2 for [%s]:%hu MS %ld count %d",
            host, port, Ns_TimeToMilliseconds(timeoutPtr), count);
 
     sock = SockConnect(host, port, lhost, lport, NS_TRUE, count, ms, &status);
