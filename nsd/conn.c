@@ -2341,12 +2341,19 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
             int               status;
             Ns_ObjvSpec       spec = {"?status", Ns_ObjvInt, &status, &statusRange};
 
-            if (Ns_ObjvInt(&spec, interp, &oc, &objv[2]) == TCL_OK) {
+            if (Ns_ObjvInt(&spec, interp, &oc, &objv[2]) != TCL_OK) {
                 result = TCL_ERROR;
 
             } else if (NsConnRequire(interp, NS_CONN_REQUIRE_CONNECTED, &conn, &result) == NS_OK) {
+
                 Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_ConnResponseStatus(conn)));
                 Ns_ConnSetResponseStatus(conn, status);
+
+            } else {
+                /*
+                 * The error message is provided by NsConnRequire()
+                 */
+                result = TCL_ERROR;
             }
         } else {
             Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_ConnResponseStatus(conn)));
