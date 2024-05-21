@@ -178,17 +178,19 @@ or ADP. These redirects are used for providing customized (templated)
 error pages.
 
 [example_begin]
- [cmd ns_section] "ns/server/server1/redirects"
- [cmd ns_param]   404    /notfound.adp
- [cmd ns_param]   503    /busy.html
+ [cmd ns_section] "ns/server/server1/redirects" {
+   [cmd ns_param]   404    /notfound.adp
+   [cmd ns_param]   503    /busy.html
+ }
 [example_end]
 
 [para]
 The realm used for HTTP Basic authentication is set server-wide:
 
 [example_begin]
- [cmd ns_section] "ns/server"
- [cmd ns_param]   realm  "Example"
+ [cmd ns_section] "ns/server" {
+   [cmd ns_param]   realm  "Example"
+ }
 [example_end]
 
 
