@@ -25,7 +25,15 @@ proc __ns_get_free_port {addr startPort maxPort} {
     return ""
 }
 
-foreach loopback [expr {[ns_info ipv6] ? [list ::1 "127.0.0.1"] : "127.0.0.1"}] {
+#
+# At least with the debian image from debian-bookworm, we cannot
+# lookup "::1", but "127.0.0.1" works. Error for ::1:
+#
+#  dns: getaddrinfo failed for ::1: Address family for hostname not supported
+#
+foreach loopback [expr {[ns_info ipv6] && ![catch {ns_addrbyhost ::1}]
+                        ? [list ::1 "127.0.0.1"]
+                        : "127.0.0.1"}] {
     set port [__ns_get_free_port $loopback 8000 8100]
     if {$port ne ""} {
         break

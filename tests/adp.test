@@ -44,12 +44,11 @@ if {[ns_config test listenport]} {
 
 ns_adp_ctl channel stdout
 
-
-
+#ns_logctl severity Debug(task) on
 
 test adp-1.1 {Simple Tcl page} -body {
     nstest::http -getbody 1 GET /helloworld.tcl
-} -result {200 {Hello World!}}
+} -returnCodes {ok error} -result {200 {Hello World!}}
 
 
 test adp-1.2 {Simple Tcl page returning large data} -body {
