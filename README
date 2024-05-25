@@ -7,7 +7,7 @@ Release 0.15
     neumann@wu-wien.ac.at
 
 This is a NaviServer module that implements a reverse proxy for
-NaviServer based on the ns_connchan command. The revproxy module
+NaviServer based on the ns_connchan command. The "revproxy" module
 provides filter procs, which can be registered for all or for a view
 selected URLs via wildcards, that will redirect the incoming requests
 to some backend service. It is also possible to call the
@@ -16,21 +16,22 @@ allowing so e.g. in OpenACS only authenticated users or certain user
 groups (admins) to use certain backend services.
 
 When the filter procs are registered as "postauth" filters, it is
-possible to use NaviServer (or e.g. OpenACS) as authenticating reverse
-proxy server. It is possible to specify for every registered filter
-- a target url,
-- a list of regsub patterns (to e.g. remove certain parts from the current url),
+possible to use NaviServer (or, e.g., OpenACS) as an authenticating
+reverse proxy server. It is possible to specify for every registered
+filter
+- a target URL,
+- a list of regsub patterns (to e.g. remove certain parts from the current URL),
 - a timeout for establishing connections,
 - a validation callback (to validate access of the service), and
-- a exception callback (e.g. for returning tailored error pages).
+- an exception callback (e.g. for returning tailored error pages).
 - a url_rewrite_callback (e.g. for composing the final upstream URL).
 - a backend_reply_callback (e.g. for modifying backend header fields)
 
-Both the incoming and upstream connections might be based on http or
-https. The implementation works as well with WebSockets (including
+Both the incoming and upstream connections might be based on HTTP or
+HTTPS. The implementation works as well with WebSockets (including
 secure WebSockets).
 
-The nssock or nsssl driver must be loaded for http or https backends
+The nssock or nsssl driver must be loaded for HTTP or HTTPS backends
 respectively, see the man page for ns_connchan for some information.
 
 The module requires at least NaviServer 4.99.21. The implementation is
@@ -44,13 +45,14 @@ Configuration:
 In order to configure the reverse proxy, add the following lines to the
 config file of NaviServer to make the ::revproxy::* functions available:
 
-    ns_section "ns/server/${server}/modules"
+    ns_section "ns/server/${server}/modules" {
        ns_param revproxy tcl
+    }
 
 During startup of the server register the ::revproxy::upstream
 function for some URLs, like in the following example, where GET and
 POST requests  with /shiny/ are tunneled to some back end service
-(here via https to my.backend.com).
+(here via HTTPS to my.backend.com).
 
     ns_register_filter postauth GET  /shiny/* ::revproxy::upstream -target https://my.backend.com/ -regsubs {{/shiny ""}}
     ns_register_filter postauth POST /shiny/* ::revproxy::upstream -target https://my.backend.com/ -regsubs {{/shiny ""}}
@@ -59,11 +61,12 @@ The registration of the filter might be done e.g.
 - in any kind of initialization script of the server (in an OpenACS context in a *-init.tcl file), or
 - via the config file of the server, like in:
 
-    ns_section "ns/server/${server}/module/revproxy"
+    ns_section "ns/server/${server}/module/revproxy" {
        ns_param filters {
          ns_register_filter postauth GET  /shiny/* ::revproxy::upstream -target https://my.backend.com/ -regsubs {{/shiny ""}}
          ns_register_filter postauth POST /shiny/* ::revproxy::upstream -target https://my.backend.com/ -regsubs {{/shiny ""}}
        }
+    }
 
 The registration of ::revproxy::upstream filter can be configured with
 the following callbacks (see above) for a tailored behavior, more
@@ -79,16 +82,19 @@ flexible than the regsub approach sketched above:
         nsf::proc backend_reply_callback { -url -replyHeaders -status } {...}
 
 
-In case the naviserver does not configure the respective driver for a
-listenting socket it can be loaded without one. The following
+Note, that for all protocols used in the backend connections, the
+network drivers (typically "nssock" or "nsssl") must be loaded and
+configured. In case, it is not wanted for a driver to listen on a
+port, the port can be configured with the value 0. The following
 configuration follows the /shiny/ example above:
 
-    ns_section "ns/server/${server}/modules"
+    ns_section "ns/server/${server}/modules" {
        ns_param revproxy tcl
        ns_param nsssl nsssl
-       
-    ns_section "ns/server/${server}/module/nsssl"
+    }
+    ns_section "ns/server/${server}/module/nsssl" {
        ns_param port 0
+    }
 
 
 
