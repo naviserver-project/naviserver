@@ -30,6 +30,9 @@ Both the incoming and upstream connections might be based on http or
 https. The implementation works as well with WebSockets (including
 secure WebSockets).
 
+The nssock or nsssl driver must be loaded for http or https backends
+respectively, see the man page for ns_connchan for some information.
+
 The module requires at least NaviServer 4.99.21. The implementation is
 based on nsf, which is available from e.g.  http://next-scripting.org/
 
@@ -52,7 +55,7 @@ POST requests  with /shiny/ are tunneled to some back end service
     ns_register_filter postauth GET  /shiny/* ::revproxy::upstream -target https://my.backend.com/ -regsubs {{/shiny ""}}
     ns_register_filter postauth POST /shiny/* ::revproxy::upstream -target https://my.backend.com/ -regsubs {{/shiny ""}}
 
-The registration of the folter might me happening e.g.
+The registration of the filter might be done e.g.
 - in any kind of initialization script of the server (in an OpenACS context in a *-init.tcl file), or
 - via the config file of the server, like in:
 
@@ -74,6 +77,19 @@ flexible than the regsub approach sketched above:
 
     -backend_reply_callback (default "")
         nsf::proc backend_reply_callback { -url -replyHeaders -status } {...}
+
+
+In case the naviserver does not configure the respective driver for a
+listenting socket it can be loaded without one. The following
+configuration follows the /shiny/ example above:
+
+    ns_section "ns/server/${server}/modules"
+       ns_param revproxy tcl
+       ns_param nsssl nsssl
+       
+    ns_section "ns/server/${server}/module/nsssl"
+       ns_param port 0
+
 
 
 Installation:
