@@ -2,10 +2,11 @@
 [manpage_begin {commandlist} n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {NaviServer Commands}]
+[titledesc {Full List of NaviServer Commands}]
 
 [description]
-List of all currently available NaviServer commands.
+List of all currently available NaviServer commands, grouped into
+sections of related commands.
 
 [section {ADP Commands}]
 [list_begin definitions]
