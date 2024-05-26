@@ -482,10 +482,6 @@ sections of related commands.
 [list_end]
 [list_end]
 
-[section {Access Log}]
-[list_begin definitions]
-[list_end]
-
 [section {Unsorted}]
 [list_begin definitions]
 [call [cmd ns_rand]]
