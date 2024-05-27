@@ -534,7 +534,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_O
                     }
 
                     case SPrintIdx:
-                        Ns_SetPrint(set);
+                        Ns_SetPrint(NULL, set);
                         break;
 
                     case SFreeIdx:

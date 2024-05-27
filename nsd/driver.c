@@ -906,6 +906,9 @@ void NsDriverMapVirtualServers(void)
         Ns_Log(Debug, "driver <%s> defserver '%s' server with set %p size %ld",
                moduleName, defserver, (void*)lset, Ns_SetSize(lset));
 
+        /*
+         * Iterating over set of server names.
+         */
         Ns_DStringInit(dsPtr);
         for (j = 0u; j < Ns_SetSize(lset); ++j) {
             const char     *server  = Ns_SetKey(lset, j);
@@ -913,11 +916,11 @@ void NsDriverMapVirtualServers(void)
             NsServer       *servPtr;
             NS_TLS_SSL_CTX *ctx = NULL;
 
+            Ns_Log(Notice, "... work on driver <%s> server '%s' host '%s'",
+                   moduleName, server, host);
             /*
              * Perform an explicit lookup of the server.
              */
-            Ns_Log(Debug, "driver <%s> server '%s'", moduleName, server);
-
             servPtr = NsGetServer(server);
             if (servPtr == NULL) {
                 Ns_Log(Error, "%s: no such server: %s", moduleName, server);
@@ -1060,7 +1063,7 @@ void NsDriverMapVirtualServers(void)
 
         if (drvPtr->defMapPtr == NULL) {
             fprintf(stderr, "--- Server Map: ---\n");
-            Ns_SetPrint(lset);
+            Ns_SetPrint(NULL, lset);
             Ns_Fatal("%s: default server '%s' not defined in '%s'", moduleName, defserver, path);
         }
     }
@@ -4748,7 +4751,16 @@ SockParse(Sock *sockPtr)
             /*
              * We are at end of headers.
              */
+
             reqPtr->coff = EndOfHeader(sockPtr);
+            if (Ns_LogSeverityEnabled(Ns_LogRequestDebug)) {
+                Tcl_DString ds;
+
+                Tcl_DStringInit(&ds);
+                Ns_SetPrint(&ds, reqPtr->headers);
+                Ns_Log(Ns_LogRequestDebug, "request headers %s", ds.string);
+                Tcl_DStringFree(&ds);
+            }
 
             /*
              * In cases the client sent "expect: 100-continue", report back that

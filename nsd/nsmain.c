@@ -676,8 +676,8 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         if (idx < 0) {
             Ns_Log(Error, "nsmain: no such server '%s' in configuration file '%s'",
                    server, nsconf.configFile);
-            Ns_Log(Warning, "nsmain: Writing the server names we DO have to stderr now:");
-            Ns_SetPrint(servers);
+            Ns_Log(Warning, "nsmain: Writing known server names stderr:");
+            Ns_SetPrint(NULL, servers);
             Ns_Fatal("nsmain: no such server '%s'", server);
         }
         server = Ns_SetKey(servers, idx);

@@ -878,7 +878,7 @@ Ns_SetTrunc(Ns_Set *set, size_t size)
 
 # ifdef NS_SET_DEBUG
             hexPrint("before trunc", (unsigned char *)set->data.string, (size_t)set->data.length);
-            Ns_SetPrint(set);
+            Ns_SetPrint(NULL, set);
 # endif
             //Ns_Log(Notice, "... initial endPtr %p len %ld", (void*)endPtr, endPtr-set->data.string);
             for (i = 0; i <= size; i++) {
@@ -896,7 +896,7 @@ Ns_SetTrunc(Ns_Set *set, size_t size)
 
 # ifdef NS_SET_DEBUG
             hexPrint("after trunc", (unsigned char *)set->data.string, (size_t)set->data.length);
-            Ns_SetPrint(set);
+            Ns_SetPrint(NULL, set);
 # endif
 
         }
@@ -1716,25 +1716,47 @@ Ns_SetRecreate2(Ns_Set **toPtr, Ns_Set *from)
  */
 
 void
-Ns_SetPrint(const Ns_Set *set)
+Ns_SetPrint(Tcl_DString *outputDsPtr, const Ns_Set *set)
 {
-    size_t  i;
+    size_t       i;
+    Tcl_DString  ds, *dsPtr;
+    const char  *leadString, *separatorString;
 
     NS_NONNULL_ASSERT(set != NULL);
+
+    if (outputDsPtr == NULL) {
+        dsPtr = &ds;
+        Tcl_DStringInit(dsPtr);
+        leadString = "\t";
+        separatorString = " = ";
+    } else {
+        dsPtr = outputDsPtr;
+        leadString = "";
+        separatorString = ": ";
+    }
+
     if (set->name != NULL) {
-        fprintf(stderr, "%s:\n", set->name);
+        Ns_DStringPrintf(dsPtr, "%s:\n", set->name);
     }
     for (i = 0u; i < set->size; ++i) {
+        Tcl_DStringAppend(dsPtr, leadString, -1);
         if (set->fields[i].name == NULL) {
-            fprintf(stderr, "\t(null) = ");
+            Tcl_DStringAppend(dsPtr, "(null)", 6);
         } else {
-            fprintf(stderr, "\t%s = ", set->fields[i].name);
+            Tcl_DStringAppend(dsPtr, set->fields[i].name, -1);
         }
+        Tcl_DStringAppend(dsPtr, separatorString, -1);
         if (set->fields[i].value == NULL) {
-            fprintf(stderr, "(null)\n");
+            Tcl_DStringAppend(dsPtr, "(null)", 6);
         } else {
-            fprintf(stderr, "%s\n", set->fields[i].value);
+            Tcl_DStringAppend(dsPtr, set->fields[i].value, -1);
         }
+        Tcl_DStringAppend(dsPtr, "\n", 1);
+    }
+
+    if (outputDsPtr == NULL) {
+        fprintf(stderr, "%s", dsPtr->string);
+        Tcl_DStringFree(dsPtr);
     }
 }
 

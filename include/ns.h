@@ -2755,8 +2755,8 @@ Ns_SetMove(Ns_Set *to, Ns_Set *from)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN void
-Ns_SetPrint(const Ns_Set *set)
-    NS_GNUC_NONNULL(1);
+Ns_SetPrint(Tcl_DString *outputDsPtr, const Ns_Set *set)
+    NS_GNUC_NONNULL(2);
 
 NS_EXTERN const char *
 Ns_SetGetValue(const Ns_Set *set, const char *key, const char *def)
