@@ -796,6 +796,11 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
     servPtr = connPtr->poolPtr->servPtr;
     assert(servPtr != NULL);
 
+    Ns_Log(Debug, "Ns_ConnLocation: connLocationProc %p vhost.enabled %d behind revproxy %d",
+           (void*)servPtr->vhost.connLocationProc,
+           servPtr->vhost.enabled,
+           nsconf.reverseproxymode.enabled);
+
     if (servPtr->vhost.connLocationProc != NULL) {
 
         /*
@@ -835,7 +840,10 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
             location = Ns_HttpLocationString(dest, connPtr->drvPtr->protocol, host, 0u, 0u);
             Ns_Log(Debug, "Ns_ConnLocation: vhost - location based on host header field <%s>", location);
         }
+    } else if (nsconf.reverseproxymode.enabled) {
+        location = Ns_DStringAppend(dest, "");
     }
+
 
     /*
      * If everything above failed, try the location from the connPtr. This is
