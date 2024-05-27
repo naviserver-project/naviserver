@@ -1021,7 +1021,7 @@ void NsDriverMapVirtualServers(void)
                      * The provided host entry does contain a port.
                      */
                     size_t         pNum;
-                    unsigned short providedPort = (unsigned short)strtol(portStart+1, NULL, 10);
+                    unsigned short providedPort = (unsigned short)strtol(portStart, NULL, 10);
                     bool           entryAdded = NS_FALSE;
 
                     /*
