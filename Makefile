@@ -14,6 +14,8 @@ MODNAME = revproxy
 # List of components to be installed as the the Tcl module section
 #
 TCL =	revproxy-procs.tcl \
+	revproxy-ns-http-procs.tcl \
+	revproxy-ns-connchan-procs.tcl \
 	README
 
 #

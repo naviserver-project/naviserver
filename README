@@ -1,7 +1,7 @@
 Reverse Proxy Module for NaviServer
 ===================================
 
-Release 0.15
+Release 0.20
 ------------
 
     neumann@wu-wien.ac.at
@@ -49,24 +49,87 @@ config file of NaviServer to make the ::revproxy::* functions available:
        ns_param revproxy tcl
     }
 
-During startup of the server register the ::revproxy::upstream
-function for some URLs, like in the following example, where GET and
-POST requests  with /shiny/ are tunneled to some back end service
-(here via HTTPS to my.backend.com).
+The revproxy functionality can be configured as a NaviServer filter
+scripts or as procs registered for a method/URL pair (see
+https://naviserver.sourceforge.io/n/naviserver/files/ns_register.html).
+In essence, the difference is that filters are run on all requests,
+potentially before authentication, wheras procs are run as normal
+requests after the authentication/permission checking performed
+typically via filters.
 
-    ns_register_filter postauth GET  /shiny/* ::revproxy::upstream -target https://my.backend.com/ -regsubs {{/shiny ""}}
-    ns_register_filter postauth POST /shiny/* ::revproxy::upstream -target https://my.backend.com/ -regsubs {{/shiny ""}}
+The following example uses the filter method as a "postauth" filter,
+where it strips part of the actual URLs before forwarding it to the
+backend server. Here, we strip the prefix "/shiny" before forwarding
+the requests to https://my.backend.com/.
 
 The registration of the filter might be done e.g.
-- in any kind of initialization script of the server (in an OpenACS context in a *-init.tcl file), or
-- via the config file of the server, like in:
+- in any kind of initialization script of the server (in an OpenACS
+  context in a *-init.tcl file), or
+- via the config file of NaviServer, like in:
 
     ns_section "ns/server/${server}/module/revproxy" {
        ns_param filters {
-         ns_register_filter postauth GET  /shiny/* ::revproxy::upstream -target https://my.backend.com/ -regsubs {{/shiny ""}}
-         ns_register_filter postauth POST /shiny/* ::revproxy::upstream -target https://my.backend.com/ -regsubs {{/shiny ""}}
+         ns_register_filter preauth GET  /shiny/* ::revproxy::upstream -target https://my.backend.com/ -regsubs {{/shiny ""}}
+         ns_register_filter preauth POST /shiny/* ::revproxy::upstream -target https://my.backend.com/ -regsubs {{/shiny ""}}
        }
     }
+
+In the 2nd example, we register the revproxy functionality
+as a regular proc for GET requests to URLs starting with /doc,
+where the full path is passed on to two different backend servers.
+
+    ns_section ns/server/default/module/revproxy {
+       set target {http://server1.local:8080/ http://server2.local:8080/}
+       ns_param filters [subst {
+           ns_register_proc GET /doc {
+               ::revproxy::upstream proc -timeout 1s -target [list ${target}]
+           }
+        }]
+    }
+
+Note, currently, the specification of multiple backends is just for
+load distribution. Later versions of this module will provide also
+improved availability by sending requests only to servers currently
+working.
+
+The revproxy implementation supports two different methods to connect
+to the backend. The classical method is mostly Tcl based using
+"ns_connchan", whereas the newer (experimental version) uses
+"ns_http". The behavior can be configured via the "backendconnection"
+parameter:
+
+    ns_section ns/server/default/module/revproxy {
+       ...
+       ns_param backendconnection ns_http  ;# default is "ns_connchan"
+
+    }
+
+Advantages of backend connection via "ns_http"
+
+- Partial read/write operations are handled in C instead of Tcl. Since
+  such kind of issues are already done in ns_http anyway, the code to
+  handle this in Tcl is saved-
+
+- "ns_http" supports persistent connections (cross-threads) in
+  NaviServer 5.*, which makes repeated connections to the same server
+  much more performant. This is very often the case for reverse proxy
+  applications.
+
+- Delivery to the client takes place via writer-threads and therefore
+  also scales very well
+
+- "ns_http" provides separate log files/statistics for the connections
+  to the backend, making it easier to detect and address errors or
+  temporary bottlenecks.
+
+Advantages of backend connection via "ns_connchan"
+
+- Long time in usage (probably, more bulletproof)
+
+- Whereas "ns_http" receives a full requests, "ns_connchan" works on
+  available data (event driven). This has the consequence that it
+  supports streaming HTML and WebSockets
+
 
 The registration of ::revproxy::upstream filter can be configured with
 the following callbacks (see above) for a tailored behavior, more
@@ -82,7 +145,7 @@ flexible than the regsub approach sketched above:
         nsf::proc backend_reply_callback { -url -replyHeaders -status } {...}
 
 
-Note, that for all protocols used in the backend connections, the
+Note that for all protocols used in the backend connections, the
 network drivers (typically "nssock" or "nsssl") must be loaded and
 configured. In case, it is not wanted for a driver to listen on a
 port, the port can be configured with the value 0. The following
