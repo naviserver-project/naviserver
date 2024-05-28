@@ -569,7 +569,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
     /*
      * End of headers.
      */
-    Ns_Log(Ns_LogRequestDebug, "headers:\n%s", dsPtr->string);
+    Ns_Log(Ns_LogRequestDebug, "response headers:\n%s", dsPtr->string);
 
     Ns_DStringNAppend(dsPtr, "\r\n", 2);
 }
