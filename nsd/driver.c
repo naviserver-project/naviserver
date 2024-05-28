@@ -916,7 +916,7 @@ void NsDriverMapVirtualServers(void)
             NsServer       *servPtr;
             NS_TLS_SSL_CTX *ctx = NULL;
 
-            Ns_Log(Notice, "... work on driver <%s> server '%s' host '%s'",
+            Ns_Log(Debug, "... work on driver <%s> server '%s' host '%s'",
                    moduleName, server, host);
             /*
              * Perform an explicit lookup of the server.
