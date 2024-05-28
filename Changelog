@@ -1,3 +1,11 @@
+commit d5728567ec533addd87545da82ccf72e0809a89e
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2023-07-13
+
+    improved spelling
+
+M	revproxy-procs.tcl
+
 commit 3b57f8850120eee2925d6378486c820f89587f75
 Author: Gustaf Neumann <neumann@wu-wien.ac.at>
 Date:   2022-06-13
