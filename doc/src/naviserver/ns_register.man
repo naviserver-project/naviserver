@@ -252,7 +252,7 @@ reverse proxy server available as NaviServer module.
          set port 80
      }
      set url http://[lb]ns_conn host[rb]:$port[lb]ns_conn url[rb]?[lb]ns_conn query[rb]
-     set d [lb]ns_http $url[rb]
+     set d [lb]ns_http run $url[rb]
      set content_type [lb]ns_set iget [lb]dict get $d headers[rb] content-type[rb]
      ns_return [lb][lb]dict get $d status[rb] $content_type [lb]dict get $d body[rb][rb]
  }
