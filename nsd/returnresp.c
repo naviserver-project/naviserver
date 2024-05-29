@@ -212,9 +212,11 @@ Ns_ConnReturnMoved(Ns_Conn *conn, const char *url)
         Tcl_DStringInit(&urlDs);
         Tcl_DStringInit(&msgDs);
 
+#if defined(NS_ALLOW_RELATIVE_REDIRECTS) && NS_ALLOW_RELATIVE_REDIRECTS
         if (*url == '/') {
             (void) Ns_ConnLocationAppend(conn, &urlDs);
         }
+#endif
         Tcl_DStringAppend(&urlDs, url, TCL_INDEX_NONE);
         Ns_ConnSetHeaders(conn, "Location", urlDs.string);
 
@@ -288,9 +290,11 @@ Ns_ConnReturnRedirect(Ns_Conn *conn, const char *url)
         Tcl_DStringInit(&urlDs);
         Tcl_DStringInit(&msgDs);
 
+#if defined(NS_ALLOW_RELATIVE_REDIRECTS) && NS_ALLOW_RELATIVE_REDIRECTS
         if (*url == '/') {
             (void) Ns_ConnLocationAppend(conn, &urlDs);
         }
+#endif
         Tcl_DStringAppend(&urlDs, url, TCL_INDEX_NONE);
 
         Ns_UrlEncodingWarnUnencoded("header field location", urlDs.string);

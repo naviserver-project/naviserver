@@ -934,15 +934,17 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     Ns_SetUpdateSz(cgiPtr->env, "SERVER_PORT", 11, dsPtr->string, dsPtr->length);
     Ns_DStringSetLength(dsPtr, 0);
 #else
-    /*
-     * Determine SERVER_NAME and SERVER_PORT from the conn location.
-     */
     s = Ns_ConnLocationAppend(conn, dsPtr);
-    s = strchr(s, INTCHAR(':'));
-    s += 3;                        /* Get past the protocol "://"  */
-    {
+    if (likely(*s != '\0')) {
+        /*
+         * Determine SERVER_NAME and SERVER_PORT from the conn location.
+         */
         char *end, *portString, *hostString;
-        bool  hostParsedOk = Ns_HttpParseHost2(s, NS_FALSE, &hostString, &portString, &end);
+        bool  hostParsedOk;
+
+        s = strchr(s, INTCHAR(':'));
+        s += 3;                        /* Get past the protocol "://"  */
+        hostParsedOk = Ns_HttpParseHost2(s, NS_FALSE, &hostString, &portString, &end);
 
         if (!hostParsedOk) {
             /*
@@ -964,8 +966,17 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
                 Ns_SetUpdateSz(cgiPtr->env, "SERVER_PORT", 11, dsPtr->string, dsPtr->length);
             }
         }
-        Ns_DStringSetLength(dsPtr, 0);
+    } else {
+        /*
+         * If for whatever reason the location cannot be determined (e.g.,
+         * running behind a proxy server, where we cannot validate the host
+         * header field), use the provided information.
+         */
+        Ns_SetUpdateSz(cgiPtr->env, "SERVER_NAME", 11, conn->request.host, TCL_INDEX_NONE);
+        Ns_DStringPrintf(dsPtr, "%hu", conn->request.port);
+        Ns_SetUpdateSz(cgiPtr->env, "SERVER_PORT", 11, dsPtr->string, dsPtr->length);
     }
+    Ns_DStringSetLength(dsPtr, 0);
 #endif
     /*
      * Provide Authentication information
@@ -1217,7 +1228,7 @@ CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr)
 static Ns_ReturnCode
 CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
 {
-    Ns_DString      ds, redir;
+    Ns_DString      ds;
     int             last, httpstatus;
     Ns_ReturnCode   status;
     char           *value;
@@ -1279,7 +1290,12 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
                 if (!statusProvided) {
                     httpstatus = 302;
                 }
+#if defined(NS_ALLOW_RELATIVE_REDIRECTS) && NS_ALLOW_RELATIVE_REDIRECTS
+                last = (int)Ns_SetPut(hdrs, ds.string, value);
+#else
                 if (*value == '/') {
+                    Ns_DString redir;
+
                     Ns_DStringInit(&redir);
                     (void)Ns_ConnLocationAppend(conn, &redir);
                     Ns_DStringAppend(&redir, value);
@@ -1288,6 +1304,7 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
                 } else {
                     last = (int)Ns_SetPut(hdrs, ds.string, value);
                 }
+#endif
             } else {
                 last = (int)Ns_SetPut(hdrs, ds.string, value);
             }

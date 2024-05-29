@@ -33,6 +33,22 @@
 #endif
 
 /*
+ * Do we allow relative URI is the "Location" header field?
+ *
+ * RFC 2616 required an absolute URI in the "Location" header field. However,
+ * in June 2014, RFC 2616 was replaced by RFC 7231, supporting relative
+ * location URLs (https://www.rfc-editor.org/rfc/rfc7231#section-7.1.2).
+ *
+ * Allowing relative location URLs eases the construction of the location,
+ * especially in situations, where it is hard (or often impossible) to provide
+ * a validated location prefix of a URL.
+ *
+ * To obtain the old-style (RFC 2616) semantics, set the following flag to 0.
+ */
+
+#define NS_ALLOW_RELATIVE_REDIRECTS 1
+
+/*
  * NS_INIT_ONCE: handle one-time initialization in a thread-safe manner.  The
  * macro addresses the concerns expressed in the "Double-checked Locking"
  * pattern (https://en.wikipedia.org/wiki/Double-checked_locking)
@@ -1299,7 +1315,6 @@ NS_EXTERN int     ns_snprintf(char *buf, size_t len, const char *fmt, ...);
 #if (TCL_MAJOR_VERSION < 8) || ((TCL_MAJOR_VERSION == 8) && (TCL_MINOR_VERSION < 6))
 #define Tcl_GetErrorLine(interp) ((interp)->errorLine)
 #endif
-
 
 NS_EXTERN int NS_finalshutdown;
 NS_EXTERN bool NS_mutexlocktrace;
