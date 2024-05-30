@@ -51,8 +51,8 @@ namespace eval ::revproxy::ns_http {
             lappend extraArgs -binary
         }
 
-        log notice "final request headers passed to ns_http"
-        ns_set print $queryHeaders
+        #log notice "final request headers passed to ns_http"
+        #ns_set print $queryHeaders
         
         if {[catch {
             try {
