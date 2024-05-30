@@ -35,7 +35,8 @@ return one.
 [para]
 NOTE: The script does not end at the time these commands are invoked.
 When used in an ADP page, [cmd ns_adp_abort] or [cmd ns_adp_return]
-should be called to end script processing after ns_returnredirect. 
+should be called to end script processing after e.g.
+[cmd ns_returnredirect].
 
 
 [section COMMANDS]
@@ -66,9 +67,8 @@ instead of the old one in the future.
 
 Return a response with status code [term 302], [term Found]. The [term Location]
 header will be set to the [arg url] if given. For non-fully qualified
-target addresses, the URL is completed with either the location
-configured via [cmd ns_locationproc] or via the [term location] configured in the
-network driver module (see [cmd nssock]).
+target addresses, the URL is completed with the location when
+configured via [cmd ns_locationproc].
 
 [para]
 Use this response to signal that the resource identified by the requested URL has

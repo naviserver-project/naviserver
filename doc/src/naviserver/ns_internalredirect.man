@@ -34,7 +34,7 @@ the existing connection and using the same Tcl interp.
  }
 [example_end]
 
-[see_also nsd ns_returnredirect]
+[see_also nsd returnstatus-cmds]
 [keywords "server built-in" redirect]
 
 [manpage_end]
