@@ -20,14 +20,16 @@
 
 #define MAX_RECURSION 3 /* Max redirect recursion limit. */
 
-
 /*
  * Local functions defined in this file
  */
 
 static Ns_ServerInitProc ConfigServerRedirects;
-static bool ReturnRedirect(Ns_Conn *conn, int httpStatus, Ns_ReturnCode *resultPtr)
+static bool ReturnRedirectInternal(Ns_Conn *conn, int httpStatus, Ns_ReturnCode *resultPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+static Ns_ReturnCode RedirectResponse(Ns_Conn *conn, const char *url, int statusCode,
+                                      const char *statusPharse, const char *comment)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 
 /*
@@ -149,7 +151,7 @@ Ns_ConnReturnStatus(Ns_Conn *conn, int httpStatus)
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    if (!ReturnRedirect(conn, httpStatus, &result)) {
+    if (!ReturnRedirectInternal(conn, httpStatus, &result)) {
         Ns_ConnSetResponseStatus(conn, httpStatus);
         result = Ns_ConnWriteVData(conn, NULL, 0, 0u);
     }
@@ -185,59 +187,6 @@ Ns_ConnReturnOk(Ns_Conn *conn)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnReturnMoved --
- *
- *      Return a 301 "Redirection" to the client, or 204 "No Content" if
- *      URL is null.
- *
- * Results:
- *      NS_OK/NS_ERROR
- *
- * Side effects:
- *      Will close connection.
- *
- *----------------------------------------------------------------------
- */
-
-Ns_ReturnCode
-Ns_ConnReturnMoved(Ns_Conn *conn, const char *url)
-{
-    Ns_ReturnCode result;
-
-    NS_NONNULL_ASSERT(conn != NULL);
-
-    if (url != NULL) {
-        Ns_DString urlDs, msgDs;
-
-        Tcl_DStringInit(&urlDs);
-        Tcl_DStringInit(&msgDs);
-
-#if defined(NS_ALLOW_RELATIVE_REDIRECTS) && NS_ALLOW_RELATIVE_REDIRECTS
-        if (*url == '/') {
-            (void) Ns_ConnLocationAppend(conn, &urlDs);
-        }
-#endif
-        Tcl_DStringAppend(&urlDs, url, TCL_INDEX_NONE);
-        Ns_ConnSetHeaders(conn, "Location", urlDs.string);
-
-        Tcl_DStringAppend(&msgDs, "<a href=\"", 9);
-        Ns_QuoteHtml(&msgDs, urlDs.string);
-        Tcl_DStringAppend(&msgDs, "\">The requested URL has moved permanently here.</a>", TCL_INDEX_NONE);
-
-        result = Ns_ConnReturnNotice(conn, 301, "Redirection", msgDs.string);
-
-        Tcl_DStringFree(&msgDs);
-        Tcl_DStringFree(&urlDs);
-    } else {
-        result = Ns_ConnReturnNotice(conn, 204, "No Content", NS_EMPTY_STRING);
-    }
-
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Ns_ConnReturnNoResponse --
  *
  *      Return a status message to the client.
@@ -263,10 +212,15 @@ Ns_ConnReturnNoResponse(Ns_Conn *conn)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnReturnRedirect --
+ * RedirectResponse, Ns_ConnReturnMoved, Ns_ConnReturnRedirect --
  *
- *      Return a 302 Redirection to the client, or 204 "No Content" if
- *      URL is null.
+ *      RedirectResponse(): helper function for the two following functions.
+ *
+ *      Ns_ConnReturnMoved sends a 301 Redirection to the client, or 204 "No
+ *      Content" if URL is null.
+ *
+ *      Ns_ConnReturnRedirect sends a 302 Redirection to the client, or 204 "No
+ *      Content" if URL is null.
  *
  * Results:
  *      NS_OK/NS_ERROR
@@ -276,44 +230,79 @@ Ns_ConnReturnNoResponse(Ns_Conn *conn)
  *
  *----------------------------------------------------------------------
  */
-
-Ns_ReturnCode
-Ns_ConnReturnRedirect(Ns_Conn *conn, const char *url)
+static Ns_ReturnCode
+RedirectResponse(Ns_Conn *conn, const char *url, int statusCode, const char *statusPharse,
+                 const char *comment)
 {
     Ns_ReturnCode result;
 
     NS_NONNULL_ASSERT(conn != NULL);
+    NS_NONNULL_ASSERT(statusPharse != NULL);
+    NS_NONNULL_ASSERT(comment != NULL);
 
     if (url != NULL) {
-        Tcl_DString urlDs, msgDs;
-
-        Tcl_DStringInit(&urlDs);
-        Tcl_DStringInit(&msgDs);
+        const char *finalURL;
+        Tcl_DString  msgDs;
 
 #if defined(NS_ALLOW_RELATIVE_REDIRECTS) && NS_ALLOW_RELATIVE_REDIRECTS
+        /*
+         * No need to prepend location to URL.
+         */
+        finalURL = url;
+#else
+        Tcl_DString urlDs;
+
+        Tcl_DStringInit(&urlDs);
         if (*url == '/') {
             (void) Ns_ConnLocationAppend(conn, &urlDs);
         }
-#endif
         Tcl_DStringAppend(&urlDs, url, TCL_INDEX_NONE);
+        finalURL = urlDs.string;
+#endif
 
-        Ns_UrlEncodingWarnUnencoded("header field location", urlDs.string);
-        Ns_ConnSetHeaders(conn, "Location", urlDs.string);
+        Ns_UrlEncodingWarnUnencoded("header field location",finalURL);
+        Ns_ConnSetHeaders(conn, "Location", finalURL);
+
+        Tcl_DStringInit(&msgDs);
 
         Tcl_DStringAppend(&msgDs, "<a href=\"", 9);
-        Ns_QuoteHtml(&msgDs, urlDs.string);
-        Tcl_DStringAppend(&msgDs, "\">The requested URL has moved here.</a>", TCL_INDEX_NONE);
+        Ns_QuoteHtml(&msgDs, finalURL);
+        Tcl_DStringAppend(&msgDs, "\">", 2);
+        Tcl_DStringAppend(&msgDs, comment, TCL_INDEX_NONE);
+        Tcl_DStringAppend(&msgDs, "</a>", 4);
 
-        result = Ns_ConnReturnNotice(conn, 302, "Redirection", msgDs.string);
+        result = Ns_ConnReturnNotice(conn, statusCode, statusPharse, msgDs.string);
 
         Tcl_DStringFree(&msgDs);
+
+#if defined(NS_ALLOW_RELATIVE_REDIRECTS) && NS_ALLOW_RELATIVE_REDIRECTS
+#else
         Tcl_DStringFree(&urlDs);
+#endif
 
     } else {
         result = Ns_ConnReturnNotice(conn, 204, "No Content", NS_EMPTY_STRING);
     }
 
     return result;
+}
+
+Ns_ReturnCode
+Ns_ConnReturnMoved(Ns_Conn *conn, const char *url)
+{
+    NS_NONNULL_ASSERT(conn != NULL);
+
+    return RedirectResponse(conn, url, 301, "Moved Permanently",
+                            "The requested URL has moved permanently here.");
+}
+
+Ns_ReturnCode
+Ns_ConnReturnRedirect(Ns_Conn *conn, const char *url)
+{
+    NS_NONNULL_ASSERT(conn != NULL);
+
+    return RedirectResponse(conn, url, 302, "Found",
+                            "The requested URL has moved here.");
 }
 
 
@@ -341,7 +330,7 @@ Ns_ConnReturnBadRequest(Ns_Conn *conn, const char *reason)
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    if (!ReturnRedirect(conn, 400, &result)) {
+    if (!ReturnRedirectInternal(conn, 400, &result)) {
         Ns_DString    ds;
 
         Ns_DStringInit(&ds);
@@ -391,7 +380,7 @@ Ns_ConnReturnUnauthorized(Ns_Conn *conn)
         Ns_ConnSetHeaders(conn, "WWW-Authenticate", ds.string);
         Ns_DStringFree(&ds);
     }
-    if (!ReturnRedirect(conn, 401, &result)) {
+    if (!ReturnRedirectInternal(conn, 401, &result)) {
         result = Ns_ConnReturnNotice(conn, 401, "Access Denied",
                                      "The requested URL cannot be accessed because a "
                                      "valid username and password are required.");
@@ -423,7 +412,7 @@ Ns_ConnReturnForbidden(Ns_Conn *conn)
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    if (!ReturnRedirect(conn, 403, &result)) {
+    if (!ReturnRedirectInternal(conn, 403, &result)) {
         result = Ns_ConnReturnNotice(conn, 403, "Forbidden",
                                      "The requested URL cannot be accessed by this server.");
     }
@@ -456,7 +445,7 @@ Ns_ConnReturnNotFound(Ns_Conn *conn)
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    if (!ReturnRedirect(conn, 404, &result)) {
+    if (!ReturnRedirectInternal(conn, 404, &result)) {
         result = Ns_ConnReturnNotice(conn, 404, "Not Found",
                                      "The requested URL was not found on this server.");
     }
@@ -488,7 +477,7 @@ Ns_ConnReturnInvalidMethod(Ns_Conn *conn)
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    if (!ReturnRedirect(conn, 405, &result)) {
+    if (!ReturnRedirectInternal(conn, 405, &result)) {
         result = Ns_ConnReturnNotice(conn, 405, "Method Not Allowed",
                                      "The requested method is not allowed on this server.");
     }
@@ -541,7 +530,7 @@ Ns_ConnReturnEntityTooLarge(Ns_Conn *conn)
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    if (!ReturnRedirect(conn, 413, &result)) {
+    if (!ReturnRedirectInternal(conn, 413, &result)) {
         result = Ns_ConnReturnNotice(conn, 413, "Request Entity Too Large",
                                      "The request entity (e.g. file to be uploaded) is too large.");
     }
@@ -570,7 +559,7 @@ Ns_ConnReturnRequestURITooLong(Ns_Conn *conn)
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    if (!ReturnRedirect(conn, 414, &result)) {
+    if (!ReturnRedirectInternal(conn, 414, &result)) {
         result = Ns_ConnReturnNotice(conn, 414, "Request-URI Too Long",
                                      "The request URI is too long. You might "
                                      "consider to provide a larger value for "
@@ -601,7 +590,7 @@ Ns_ConnReturnHeaderLineTooLong(Ns_Conn *conn)
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    if (!ReturnRedirect(conn, 431, &result)) {
+    if (!ReturnRedirectInternal(conn, 431, &result)) {
         result = Ns_ConnReturnNotice(conn, 431, "Request Header Fields Too Large",
                                      "A provided request header line is too long. "
                                      "You might consider to provide a larger value "
@@ -633,7 +622,7 @@ Ns_ConnReturnNotImplemented(Ns_Conn *conn)
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    if (!ReturnRedirect(conn, 501, &result)) {
+    if (!ReturnRedirectInternal(conn, 501, &result)) {
         result = Ns_ConnReturnNotice(conn, 501, "Not Implemented",
                                      "The requested URL or method is not implemented "
                                      "by this server.");
@@ -708,7 +697,7 @@ Ns_ConnReturnInternalError(Ns_Conn *conn)
     NS_NONNULL_ASSERT(conn != NULL);
 
     Ns_SetTrunc(conn->outputheaders, 0u);
-    if (!ReturnRedirect(conn, 500, &result)) {
+    if (!ReturnRedirectInternal(conn, 500, &result)) {
         result = Ns_ConnReturnNotice(conn, 500, "Server Error",
                                      "The requested URL cannot be accessed "
                                      "due to a system error on this server.");
@@ -741,7 +730,7 @@ Ns_ConnReturnUnavailable(Ns_Conn *conn)
     NS_NONNULL_ASSERT(conn != NULL);
 
     Ns_SetTrunc(conn->outputheaders, 0u);
-    if (!ReturnRedirect(conn, 503, &result)) {
+    if (!ReturnRedirectInternal(conn, 503, &result)) {
         result = Ns_ConnReturnNotice(conn, 503, "Service Unavailable",
                                      "The server is temporarily unable to service your request. "
                                      "Please try again later.");
@@ -753,7 +742,7 @@ Ns_ConnReturnUnavailable(Ns_Conn *conn)
 /*
  *----------------------------------------------------------------------
  *
- * ReturnRedirect --
+ * ReturnRedirectInternal --
  *
  *      Redirect internally to the URL registered for the given status.
  *
@@ -768,7 +757,7 @@ Ns_ConnReturnUnavailable(Ns_Conn *conn)
  */
 
 static bool
-ReturnRedirect(Ns_Conn *conn, int httpStatus, Ns_ReturnCode *resultPtr)
+ReturnRedirectInternal(Ns_Conn *conn, int httpStatus, Ns_ReturnCode *resultPtr)
 {
     Conn *connPtr;
     bool  result = NS_FALSE;
@@ -799,7 +788,8 @@ ReturnRedirect(Ns_Conn *conn, int httpStatus, Ns_ReturnCode *resultPtr)
                     ns_free((char *)connPtr->request.method);
                     connPtr->request.method = ns_strdup("GET");
                 }
-                Ns_Log(Debug, "ReturnRedirect '%s' to '%s'", connPtr->request.line, (const char *)Tcl_GetHashValue(hPtr));
+                Ns_Log(Debug, "ReturnRedirectInternal '%s' to '%s'",
+                       connPtr->request.line, (const char *)Tcl_GetHashValue(hPtr));
                 *resultPtr = Ns_ConnRedirect(conn, Tcl_GetHashValue(hPtr));
                 result = NS_TRUE;
             }
