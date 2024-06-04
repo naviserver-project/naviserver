@@ -74,7 +74,7 @@ Ns_ModuleInit(const char *server, const char *module)
     drvCfgPtr->deferaccept = Ns_ConfigBool(path, "deferaccept", NS_FALSE);
     drvCfgPtr->nodelay = Ns_ConfigBool(path, "nodelay", NS_TRUE);
 
-    init.version = NS_DRIVER_VERSION_4;
+    init.version = NS_DRIVER_VERSION_5;
     init.name         = "nssock";
     init.listenProc   = SockListen;
     init.acceptProc   = SockAccept;
