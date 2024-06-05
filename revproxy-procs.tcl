@@ -51,11 +51,33 @@ namespace eval ::revproxy {
         if {[llength $target] > 0} {
             set md5 [ns_md5 $target]
             set count [nsv_incr module:revproxy:proxyset $md5]
-            ::revproxy::log notice "===== upstream [ns_info server] <$target> count $count"
+            #::revproxy::log notice "===== upstream [ns_info server] <$target> count $count"
             set target [lindex $target [expr {$count % [llength $target]}]]
         }
         nsv_incr module:revproxy:target $target
-        ::revproxy::log notice "===== upstream [ns_info server] ===== $target"
+        ::revproxy::log notice "===== upstream [ns_info server] ===== [ns_conn method] $target"
+
+        if {[ns_set iget [ns_conn headers] Upgrade] eq "websocket"} {
+            #
+            # We received a WebSocket upgrade response from the
+            # server. WebSocket use long open connections, we can
+            # support these only via "ns_connchan", since "ns_http"
+            # gets the data in one sweep. So force the ns_connchan
+            # handler if necessary.
+            #
+            log notice "WebsScket upgrade, forcing long timeouts"
+            if {$backendconnection ne "ns_connchan"} {
+                log notice "switch backend connection from '$backendconnection'" \
+                    "to 'ns_connchan', since a WebSocket upgrade was received."
+                set backendconnection ns_connchan
+            }
+            #
+            # WebSockets are long running requests, where no data
+            # might be received for a long time. Therefore, we force a
+            # long timeout.
+            #
+            set timeout 1y
+        }
 
         #
         # Assemble URL in two steps:
@@ -90,7 +112,7 @@ namespace eval ::revproxy {
                      -target $target \
                      -url $url \
                      -query [ns_conn query]]
-        log notice "===== submit via ${backendconnection}, final URL: $url"
+        log notice "===== submit via ${backendconnection}, [ns_conn method] $url"
 
         #
         # When the callback decides, we have to cancel this request,
@@ -199,7 +221,8 @@ namespace eval ::revproxy {
         eval $filters
     }
 
-    ns_log notice "revproxy module version $version loaded for server '[ns_info server]'"
+    ns_log notice "revproxy module version $version loaded for server '[ns_info server]'" \
+        "using [ns_config ns/server/[ns_info server]/module/revproxy backendconnection ns_connchan]"
 }
 
 
