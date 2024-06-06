@@ -148,6 +148,7 @@ namespace eval ::revproxy {
     }
 
     nsf::proc upstream_send_failed {
+        {-status 503}
         -errorMsg
         -frontendChan
         -backendChan
@@ -156,7 +157,7 @@ namespace eval ::revproxy {
     } {
         ns_log error "revproxy::upstream: error during establishing connections to $url: $errorMsg"
         if {$exception_callback ne ""} {
-            {*}$exception_callback -error $errorMsg -url $url
+            {*}$exception_callback -status $status -error $errorMsg -url $url
         }
         foreach chan {frontendChan backendChan} {
             if {[info exists $chan]} {
@@ -169,10 +170,17 @@ namespace eval ::revproxy {
     # Default exception handler for reporting error messages to the
     # browser.
     #
-    nsf::proc exception { -error -url } {
-        ns_returnerror 503 \
-            "Error during opening connection to backend [ns_quotehtml $url] failed. \
-         <br>Error message: [ns_quotehtml $error]"
+    nsf::proc exception {
+        {-status 503}
+        {-msg ""}
+        -error
+        -url
+    } {
+        if {$msg eq ""} {
+            ns_log warning "Opening connection to backend [ns_quotehtml $url] failed with status $status"
+            set msg "Backend error: [ns_quotehtml $error]"
+        }
+        ns_returnerror $status $msg
     }
 
     #
