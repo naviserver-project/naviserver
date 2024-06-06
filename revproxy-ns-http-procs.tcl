@@ -42,7 +42,7 @@ namespace eval ::revproxy::ns_http {
                 } elseif {$binary} {
                     lappend extraArgs -body [ns_conn content -binary]
                 } else {
-                            lappend extraArgs -body [ns_conn content]
+                    lappend extraArgs -body [ns_conn content]
                 }
             }
             default {}
@@ -54,9 +54,10 @@ namespace eval ::revproxy::ns_http {
         #log notice "final request headers passed to ns_http"
         #ns_set print $queryHeaders
 
+        #{*}[expr {[ns_info version]>=5 ?  "-partialresults" : ""}] 
+
         try {
             ns_http run \
-                {*}[expr {[ns_info version]>=5 ?  "-partialresults" : ""}] \
                 -keep_host_header \
                 -spoolsize 100kB \
                 -method [ns_conn method] \
@@ -88,7 +89,7 @@ namespace eval ::revproxy::ns_http {
                 # This request was sent with -partialresults enabled
                 #
                 set errorMsg [dict get $r error]
-                log notice "RESULT contains error: '$errorMsg' /$::errorCode/"
+                log notice "RESULT contains error: '$errorMsg' /$::errorCode/\n$r"
                 if {[string match *timeout* $errorMsg]} {
                     if {[ns_set iget $replyHeaders content-length ""] eq ""} {
                         #
