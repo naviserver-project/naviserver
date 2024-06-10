@@ -345,6 +345,9 @@ ConfigServerTcl(const char *server)
         Tcl_InitHashTable(&servPtr->connchans.table, TCL_STRING_KEYS);
         Ns_RWLockInit(&servPtr->connchans.lock);
         Ns_RWLockSetName2(&servPtr->connchans.lock, "nstcl:connchans", server);
+
+        Tcl_InitHashTable(&servPtr->hosts, TCL_STRING_KEYS);
+
         result = NS_OK;
     }
     return result;

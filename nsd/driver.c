@@ -733,6 +733,8 @@ ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
     Ns_Log(Debug, "ServerMapEntryAdd host '%s' server '%s'", host, servPtr->server);
     hPtr = Tcl_CreateHashEntry(&drvPtr->hosts, host, &isNew);
     if (isNew != 0) {
+        Tcl_CreateHashEntry(&servPtr->hosts, host, &isNew);
+
         (void) Ns_DStringVarAppend(dsPtr, drvPtr->protocol, "://", host, (char *)0L);
         mapPtr = ns_malloc(sizeof(ServerMap) + (size_t)dsPtr->length);
         if (likely(mapPtr != NULL)) {
@@ -742,8 +744,9 @@ ServerMapEntryAdd(Tcl_DString *dsPtr, const char *host,
 
             Tcl_SetHashValue(hPtr, mapPtr);
             /*
-             * Use threadName here, since this function is used as well during
-             * startup, when the thread name is not part if the Ns_Log entry.
+             * Use threadName in the log entry, since this function is used as
+             * well during startup, when the thread name is not part if the
+             * Ns_Log entry.
              */
             Ns_Log(Notice, "%s: adding virtual host entry for host <%s> location: %s mapped to server: %s ctx %p",
                    drvPtr->threadName, host, mapPtr->location, servPtr->server, (void*)ctx);
@@ -931,7 +934,7 @@ void NsDriverMapVirtualServers(void)
                 writableHost = ns_strdup(host);
                 hostParsedOk = Ns_HttpParseHost2(writableHost, NS_TRUE, &hostName, &portStart, &end);
                 if (!hostParsedOk) {
-                    Ns_Log(Warning, "server map: invalid hostname: '%s'", writableHost);
+                    Ns_Log(Warning, "server map: ignore invalid hostname: '%s'", writableHost);
                     continue;
                 }
 
@@ -1023,9 +1026,7 @@ void NsDriverMapVirtualServers(void)
                     /*
                      * The provided host entry does contain a port.
                      */
-                    size_t         pNum;
                     unsigned short providedPort = (unsigned short)strtol(portStart, NULL, 10);
-                    bool           entryAdded = NS_FALSE;
 
                     /*
                      * In case, the provided port is equal to the default
@@ -1037,24 +1038,38 @@ void NsDriverMapVirtualServers(void)
                                                 (bool)STREQ(defserver, server));
                     }
 
-                    /*
-                     * In case, the provided port is equal to one of the
-                     * configured ports of the driver, add an entry.
-                     */
-                    for (pNum = 0u; pNum < drvPtr->ports.size && !entryAdded; pNum ++) {
-                        unsigned short port = DriverGetPort(drvPtr, pNum);
+#if defined(ADD_ONLY_ENTRIES_WITH_CONFIGURED_PORTS_TO_HOSTS)
+                    {
+                        size_t pNum;
+                        bool   entryAdded = NS_FALSE;
 
-                        if (providedPort == port) {
-                            (void)ServerMapEntryAdd(dsPtr, host, servPtr, drvPtr, ctx,
-                                                    (bool)STREQ(defserver, server));
-                            entryAdded = NS_TRUE;
+                        /*
+                         * In case, the provided port is equal to one of the
+                         * configured ports of the driver, add an entry.
+                         */
+                        for (pNum = 0u; pNum < drvPtr->ports.size && !entryAdded; pNum ++) {
+                            unsigned short port = DriverGetPort(drvPtr, pNum);
+
+                            if (providedPort == port) {
+                                (void)ServerMapEntryAdd(dsPtr, host, servPtr, drvPtr, ctx,
+                                                        (bool)STREQ(defserver, server));
+                                entryAdded = NS_TRUE;
+                            }
+                        }
+                        if (!entryAdded) {
+                            Ns_Log(Warning, "%s: driver is not listening on port %hu; "
+                                   "virtual host entry %s ignored",
+                                   moduleName, providedPort, host);
                         }
                     }
-                    if (!entryAdded) {
-                        Ns_Log(Warning, "%s: driver is not listening on port %hu; "
-                               "virtual host entry %s ignored",
-                               moduleName, providedPort, host);
-                    }
+#else
+                    /*
+                     * Add entry with port no matter if we are listening or
+                     * not on this port.
+                     */
+                    (void)ServerMapEntryAdd(dsPtr, host, servPtr, drvPtr, ctx,
+                                            (bool)STREQ(defserver, server));
+#endif
                 }
                 ns_free(writableHost);
             }

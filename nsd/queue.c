@@ -1464,6 +1464,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
         SActiveIdx, SAllIdx,
         SConnectionsIdx, SConnectionRateLimitIdx,
         SFiltersIdx,
+        SHostsIdx,
         SKeepaliveIdx,
         SMapIdx, SMappedIdx,
         SMaxthreadsIdx, SMinthreadsIdx,
@@ -1482,6 +1483,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
         {"connectionratelimit", (unsigned int)SConnectionRateLimitIdx},
         {"connections",         (unsigned int)SConnectionsIdx},
         {"filters",             (unsigned int)SFiltersIdx},
+        {"hosts",               (unsigned int)SHostsIdx},
         {"keepalive",           (unsigned int)SKeepaliveIdx},
         {"map",                 (unsigned int)SMapIdx},
         {"mapped",              (unsigned int)SMappedIdx},
@@ -1521,6 +1523,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
 
     if ((subcmd == SPoolsIdx
          || subcmd == SFiltersIdx
+         || subcmd == SHostsIdx
          || subcmd == SPagedirIdx
          || subcmd == SRequestprocsIdx
          || subcmd == SUrl2fileIdx
@@ -1590,6 +1593,22 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
         Tcl_DStringInit(dsPtr);
         NsGetFilters(dsPtr, servPtr->server);
         Tcl_DStringResult(interp, dsPtr);
+        break;
+
+    case SHostsIdx:
+        {
+            Tcl_HashSearch  search;
+            Tcl_HashEntry  *hPtr;
+            Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
+
+            hPtr = Tcl_FirstHashEntry(&servPtr->hosts, &search);
+            while (hPtr != NULL) {
+                Tcl_ListObjAppendElement(interp, listObj,
+                                         Tcl_NewStringObj(Tcl_GetHashKey(&servPtr->hosts, hPtr), TCL_INDEX_NONE));
+                hPtr = Tcl_NextHashEntry(&search);
+            }
+            Tcl_SetObjResult(interp, listObj);
+        }
         break;
 
     case SPagedirIdx:

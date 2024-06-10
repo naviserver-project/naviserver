@@ -976,6 +976,7 @@ typedef struct NsServer {
         bool logging;
     } httpclient;
 
+    Tcl_HashTable hosts;
 } NsServer;
 
 /*
