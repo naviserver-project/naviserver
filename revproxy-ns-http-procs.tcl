@@ -54,10 +54,12 @@ namespace eval ::revproxy::ns_http {
         #log notice "final request headers passed to ns_http"
         #ns_set print $queryHeaders
 
-        #{*}[expr {[ns_info version]>=5 ?  "-partialresults" : ""}] 
+        #set partialresultsFlag ""
+        set partialresultsFlag [expr {[ns_info version]>=5 ?  "-partialresults" : ""}]
 
         try {
             ns_http run \
+                {*}$partialresultsFlag \
                 -keep_host_header \
                 -spoolsize 100kB \
                 -method [ns_conn method] \
@@ -66,13 +68,39 @@ namespace eval ::revproxy::ns_http {
                 {*}$extraArgs \
                 $url
 
-        } trap {NS_TIMEOUT} {errorMsg} {
+        } trap {NS_TIMEOUT} {r} {
+            log notice "TIMEOUT during send to $url ($r) "
+            if {$partialresultsFlag ne "" && [dict exists $r error]} {
+                #
+                # This request was sent with "-partialresults" enabled
+                #
+                set errorMsg [dict get $r error]
+                set replyHeaders [dict get $r headers]
+                #log notice "RESULT contains error: '$errorMsg' /$::errorCode/\n$r"
+
+                if {[ns_set iget $replyHeaders content-length ""] eq ""} {
+                    #
+                    # We have a timeout, and not content length. This
+                    # is potentially a streaming HTML request, which
+                    # cannot be handled currently by ns_http. Diagnose
+                    # this condition in the log file, but still raise
+                    # an error.
+                    #
+                    ns_log error "revproxy: streaming HTML attempt detected on ns_http for URL $url." \
+                        "Please switch for this request to the ns_connchan interface!"
+                    set errorMsg "streaming HTML not supported on this interface"
+                }
+            } else {
+                set errorMsg $r
+            }
+
             log notice "TIMEOUT during send to $url ($errorMsg) "
             ::revproxy::upstream_send_failed \
                 -status 504 \
                 -errorMsg $errorMsg \
                 -url $url \
                 -exception_callback $exception_callback
+            #return filter_return
 
         } on ok {r} {
             set replyHeaders [dict get $r headers]
@@ -84,40 +112,6 @@ namespace eval ::revproxy::ns_http {
                 {*}$backend_reply_callback -url $url -replyHeaders $replyHeaders -status $status
             }
 
-            if {[dict exists $r error]} {
-                #
-                # This request was sent with -partialresults enabled
-                #
-                set errorMsg [dict get $r error]
-                log notice "RESULT contains error: '$errorMsg' /$::errorCode/\n$r"
-                if {[string match *timeout* $errorMsg]} {
-                    if {[ns_set iget $replyHeaders content-length ""] eq ""} {
-                        #
-                        # We have a timeout, and not content
-                        # length. This is potentially a streaming
-                        # HTML request, which cannot be handled
-                        # currently by ns_http. Diagnose this
-                        # condition in the log file, but still
-                        # raise an error.
-                        #
-                        ns_log error "revproxy: streaming HTML attempt detected on ns_http for URL $url." \
-                            "Please switch for this request to the ns_connchan interface!"
-                    }
-
-                    log notice "TIMEOUT during send to $url ($errorMsg) "
-                    ::revproxy::upstream_send_failed \
-                        -status 504 \
-                        -errorMsg $errorMsg \
-                        -url $url \
-                        -exception_callback $exception_callback
-                } else {
-                    ::revproxy::upstream_send_failed \
-                        -errorMsg $errorMsg \
-                        -url $url \
-                        -exception_callback $exception_callback
-                }
-                return filter_return
-            }
             foreach {key value} [ns_set array [dict get $r headers]] {
                 if {[string tolower $key] ni {
                     connection date server
