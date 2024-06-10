@@ -220,7 +220,7 @@ NsGetRequest2(NsServer *servPtr, const char *method, const char *url,
     Ns_MutexLock(&ulock);
     regPtr = NsUrlSpecificGet(servPtr, method, url,
                               uid, flags, op, &matchInfo, proc, context);
-    Ns_Log(Notice, "NsGetRequest2 %s %s -> %p",  method, url, (void*)regPtr);
+    Ns_Log(Debug, "NsGetRequest2 %s %s -> %p",  method, url, (void*)regPtr);
 
     if (regPtr != NULL) {
         *procPtr = regPtr->proc;
