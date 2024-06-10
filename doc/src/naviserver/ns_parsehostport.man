@@ -36,8 +36,11 @@ following elements: [term host], [term port].
  % ns_parsehostport openacs.org:443
  host openacs.org port 443
  
- % ns_parsehostport {[lb]::1[rb]}
- host ::1 port 80
+ % ns_parsehostport localhost
+ host localhost
+ 
+ % ns_parsehostport {[lb] 2001:628:404:74::31]:443[rb]}
+ host 2001:628:404:74::31 port 443
 [example_end]
 
 [see_also ns_absoluteurl ns_parsefieldvalue ns_parseheader ns_parseurl]
