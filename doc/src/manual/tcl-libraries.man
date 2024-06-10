@@ -79,7 +79,7 @@ listed below are well-suited to the Tcl libraries approach.
  of URLs, you would register a filter using the ns_register_filter
  function.
 
-[def "Re-using Tcl Scripts:"] If there are Tcl scripts that you want to
+[def "Reusing Tcl Scripts:"] If there are Tcl scripts that you want to
  use in multiple situations, you can store them in a Tcl library
  and invoke them from within any ADP or Tcl script.
 
