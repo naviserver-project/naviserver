@@ -144,7 +144,7 @@ NsInitFd(void)
 #endif /* _WIN32 */
 
     /*
-     * Open a fd on /dev/null which can be later re-used.
+     * Open a fd on /dev/null which can be later reused.
      */
 
     devNull = ns_open(DEVNULL, O_RDWR | O_CLOEXEC, 0);
