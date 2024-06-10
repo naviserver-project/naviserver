@@ -2532,14 +2532,6 @@ HttpGetResult(
             HttpClientLogWrite(httpPtr, "error");
         }
 
-        if ((httpPtr->flags & NS_HTTP_PARTIAL_RESULTS) == 0u) {
-            Tcl_SetObjResult(interp, errorObj);
-            if (httpPtr->finalSockState == NS_SOCK_TIMEOUT) {
-                Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
-            }
-            result = TCL_ERROR;
-            goto err;
-        }
     } else {
         HttpClientLogWrite(httpPtr, "ok");
     }
@@ -2689,7 +2681,6 @@ HttpGetResult(
     replyHeadersObj = Tcl_GetObjResult(interp);
     Tcl_IncrRefCount(replyHeadersObj);
 
-
     /*
      * Assemble the resulting dictionary
      */
@@ -2733,7 +2724,35 @@ HttpGetResult(
                        Tcl_NewStringObj(chanName, TCL_INDEX_NONE));
     }
 
-    Tcl_SetObjResult(interp, resultObj);
+    if (likely(errorObj == NULL)) {
+        /*
+         * There was no error.
+         */
+        Tcl_SetObjResult(interp, resultObj);
+
+    } else {
+        /*
+         * There was an error. Set error code before resultObj.
+         */
+         if (httpPtr->finalSockState == NS_SOCK_TIMEOUT) {
+            Ns_Log(Debug, "... setting errorCode to NS_SOCK_TIMEOUT");
+            Tcl_SetErrorCode(interp, errorCodeTimeoutString, (char *)0L);
+        }
+        /*
+         * "-partialresults" returns whatever we have (including the dict
+         * member "error").
+         */
+        if ((httpPtr->flags & NS_HTTP_PARTIAL_RESULTS) != 0u) {
+            Tcl_SetObjResult(interp, Tcl_DuplicateObj(resultObj));
+        } else {
+            /*
+             * Return just the we received.
+             */
+            //Ns_Log(Notice, "... setting errorObj as result, dict has refcount %d", resultObj->refCount);
+            Tcl_SetObjResult(interp, errorObj);
+        }
+        result = TCL_ERROR;
+    }
 
     Tcl_DecrRefCount(replyHeadersObj);
 
@@ -4134,7 +4153,7 @@ HttpAppendContent(
  *        machine by simply invoking the registered procs.
  *
  *        Due to its universal nature, this code can be made
- *        independent of NsHttp and re-used elsewhere.
+ *        independent of NsHttp and reused elsewhere.
  *
  * Results:
  *        Tcl result code
@@ -6135,7 +6154,7 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
     }
     if (cwDataPtr == NULL) {
         /*
-         * Re-using a slot did not succeed. Allocate a new slot.
+         * Reusing a slot did not succeed. Allocate a new slot.
          */
         cwDataPtr = ns_calloc(1u, sizeof(CloseWaitingData));
         cwDataPtr->pos = closeWaitingList.size;
