@@ -51,11 +51,11 @@ namespace eval ::revproxy {
         if {[llength $target] > 0} {
             set md5 [ns_md5 $target]
             set count [nsv_incr module:revproxy:proxyset $md5]
-            #::revproxy::log notice "===== upstream [ns_info server] <$target> count $count"
+            # log notice "===== upstream [ns_info server] <$target> count $count"
             set target [lindex $target [expr {$count % [llength $target]}]]
         }
         nsv_incr module:revproxy:target $target
-        ::revproxy::log notice "===== upstream [ns_info server] ===== [ns_conn method] $target"
+        log notice "===== upstream [ns_info server] ===== [ns_conn method] $target"
 
         if {[ns_set iget [ns_conn headers] Upgrade] eq "websocket"} {
             #
@@ -65,7 +65,7 @@ namespace eval ::revproxy {
             # gets the data in one sweep. So force the ns_connchan
             # handler if necessary.
             #
-            log notice "WebsScket upgrade, forcing long timeouts"
+            log notice "WebSocket upgrade, forcing long timeouts"
             if {$backendconnection ne "ns_connchan"} {
                 log notice "switch backend connection from '$backendconnection'" \
                     "to 'ns_connchan', since a WebSocket upgrade was received."
@@ -124,13 +124,21 @@ namespace eval ::revproxy {
             return filter_return
         }
         #
-        # Get header fields from request, add X-Forwarded-For.
+        # Get header fields from request, add X-Forwarded-For,
+        # X-Forwarded-Proto, and X-SSL-Request (if appropriate).
         #
         set queryHeaders [ns_conn headers]
+
         set XForwardedFor [split [ns_set iget $queryHeaders "X-Forwarded-For" ""] " ,"]
         set XForwardedFor [lmap e $XForwardedFor {if {$e eq ""} continue}]
         lappend XForwardedFor [ns_conn peeraddr]
         ns_set update $queryHeaders X-Forwarded-For [join $XForwardedFor ","]
+
+        set proto [dict get [ns_parseurl $url] proto]
+        ns_set update $queryHeaders X-Forwarded-Proto $proto
+        if {$proto eq "https"} {
+            ns_set update $queryHeaders X-SSL-Request 1
+        }
 
         #
         # Finally, start the transmission to the backend via the
