@@ -74,6 +74,7 @@ static const Cmd basicCmds[] = {
     {"ns_fastpath_cache_stats",  NULL, NsTclFastPathCacheStatsObjCmd},
     {"ns_filestat",              NULL, NsTclFileStatObjCmd},
     {"ns_fmttime",               NULL, NsTclStrftimeObjCmd},
+    {"ns_fseekchars",            NULL, NsTclFSeekCharsObjCmd},
     {"ns_ftruncate",             NULL, NsTclFTruncateObjCmd},
     {"ns_gifsize",               NULL, NsTclGifSizeObjCmd},
     {"ns_gmtime",                NULL, NsTclGmTimeObjCmd},

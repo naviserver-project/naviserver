@@ -430,6 +430,8 @@ proc ns_parseformfile {args} {
     if { [catch { set fp [open $file r] } errmsg] } {
         ns_log warning "ns_parseformfile could not open $file for reading"
     }
+    #file copy -force $file /tmp/up.load
+
     #
     # Separate content-type and options
     #
@@ -585,16 +587,42 @@ proc ns_parseformfile {args} {
             #
             # Read lines of data until another boundary is found.
             #
-            while { ![eof $fp] } {
-                if { [string match $boundary* [string trim [gets $fp]]] } {
-                    break
-                }
-                set end [tell $fp]
+            if {1} {
+                seek $fp $start
+                set t1 [time {
+                    set seekChar [ns_fseekchars $fp \n$boundary]
+                    #ns_log notice "===== start $start fseekchars $seekChar diff [expr {$seekChar-$start}] blen [string length $boundary]"
+                    if {$seekChar == -1} {
+                        error "boundary not found"
+                    }
+                    set end    [expr {$seekChar - [string length $boundary]}]
+                    set length [expr {$end - $start - 2}]
+                }]
+                #ns_log notice "================== ns_fseekchars start $start end $end length $length // $t1"
             }
-            set length [expr {$end - $start - 2}]
+
+            if {0} {
+                seek $fp $start
+                set end $start
+                set t0 [time {
+                    while { ![eof $fp] } {
+                        #ns_log notice "..... gets from [tell $fp]"
+                        set l [gets $fp]
+                        #ns_log notice ".... returns <[string range $l 0 10]>"
+                        if { [string match $boundary* [string trim $l]] } {
+                            #ns_log notice "=================================== GOT boundary <$boundary>"
+                            break
+                        }
+                        set end [tell $fp]
+                        #ns_log notice "===== start $start fseekchar [ns_fseekchar $fp \n] end $end"
+                    }
+                    set length [expr {$end - $start - 2}]
+                }]
+                #ns_log notice "================== old           start $start end $end length $length // $t0"
+            }
 
             # Create a temp file for the content, which will be
-            # deleted when the connection close.
+            # deleted when the connection closes.
             #
             # Note that so far the output is written always in
             # binary, no matter what the embedded file-type is.
