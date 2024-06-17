@@ -516,6 +516,121 @@ NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
 
     return result;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclFSeekCharsObjCmd --
+ *
+ *      Search in the open file from the current position for the
+ *      provided string. When the string is found, set the result to
+ *      the position of the first character. Otherwise set to result
+ *      to -1.
+ *
+ *      Implements "ns_fseekchars".
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      See docs.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclFSeekCharsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+{
+    static const int  bufferSize = 32768; //256;
+    int               result = TCL_OK;
+    Tcl_Channel       channel;
+    char             *channelString, *charString;
+    Ns_ObjvSpec args[] = {
+        {"fileId",       Ns_ObjvString,  &channelString, NULL},
+        {"searchstring", Ns_ObjvString,  &charString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (strlen(charString) > bufferSize-1 || *charString == '\0') {
+        Ns_TclPrintfResult(interp, "searchstring <%s> must be at least one and at most %d characters", charString, bufferSize-1);
+        result = TCL_ERROR;
+
+    } else if (Ns_TclGetOpenChannel(interp, channelString, 0, NS_FALSE, &channel) != TCL_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Tcl_WideInt startPos = Tcl_Tell(channel);
+        ClientData  channelData;
+
+        if (Tcl_GetChannelHandle(channel, TCL_READABLE, &channelData) != TCL_OK) {
+            Ns_TclPrintfResult(interp, "could not get handle for channel: %s", channelString);
+            result = TCL_ERROR;
+
+        } else {
+            int     fd = PTR2INT(channelData);
+            char    buffer[bufferSize];
+            ssize_t bytesRead;
+            off_t   offset = 0;
+            bool    done = NS_FALSE;
+            size_t  searchLength = strlen(charString), moveLength = searchLength - 1, movedSize = 0u;
+
+            /*
+             * Initial read
+             */
+            bytesRead = ns_read(fd, buffer, bufferSize);
+
+            while (bytesRead > 0) {
+                char *p;
+
+                /*
+                 * Search within the current buffer
+                 */
+                p = ns_memmem(buffer, (size_t)bytesRead + movedSize, charString, searchLength);
+                if (p != NULL) {
+                    offset += (p - buffer)+1;
+                    done = NS_TRUE;
+                    break;
+                }
+                offset += bytesRead;
+
+                /*
+                 * Move the potential overlap part of the buffer to
+                 * the beginning.  When bytesRead was already shorter
+                 * than the searchLength, then we are at the end of
+                 * the file already. The move is not needed.
+                 */
+                if ((size_t)bytesRead >= searchLength) {
+                    /*
+                     * The move length is the length of the search
+                     * string minus 1. Without the -1, we would have
+                     * found the search string already.
+                     */
+                    memmove(buffer, &buffer[(size_t)bytesRead - moveLength], moveLength);
+                    movedSize = moveLength;
+                    bytesRead = ns_read(fd, buffer + moveLength, bufferSize - moveLength);
+                } else {
+                    movedSize = 0;
+                    bytesRead = ns_read(fd, buffer, bufferSize);
+                }
+            }
+            if (done) {
+                Tcl_WideInt foundPos = startPos + offset;
+
+                Tcl_SetObjResult(interp, Tcl_NewWideIntObj(foundPos));
+                Tcl_Seek(channel, foundPos, SEEK_SET) ;
+                //Ns_Log(Notice, "......... returning file pos %ld", (long)foundPos);
+            } else {
+                Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
+            }
+        }
+    }
+
+    return result;
+}
+
+
 
 /*
  *----------------------------------------------------------------------

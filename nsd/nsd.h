@@ -1254,6 +1254,7 @@ NS_EXTERN Tcl_ObjCmdProc
     NsTclDriverObjCmd,
     NsTclEncodingForCharsetObjCmd,
     NsTclEnvObjCmd,
+    NsTclFSeekCharsObjCmd,
     NsTclFTruncateObjCmd,
     NsTclFastPathCacheStatsObjCmd,
     NsTclFileStatObjCmd,
