@@ -10,7 +10,7 @@ This command seeks in a Tcl opened by  Tcl channel [arg fileId] for the
 provided string [arg searchstring]. The search starts from the
 current position in the file. When the string is found, the command
 returns the position of the first character in the file and moves the
-file pointer to the begin of this string. Therefore, the command can be
+file pointer to the start of this string. Therefore, the command can be
 used for multiple search operations in the file.
 
 If the string is not found, -1 is returned and the file position is at
@@ -26,7 +26,7 @@ end-of-file.
 
 
 [see_also nsd]
-[keywords "global built-in" seek search]
+[keywords "global built-in" file seek search]
 
 [manpage_end]
 
