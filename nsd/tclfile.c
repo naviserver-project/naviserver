@@ -538,7 +538,7 @@ NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc
  *----------------------------------------------------------------------
  */
 int
-NsTclFSeekCharsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclFSeekCharsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
 {
     static const int  bufferSize = 32768; //256;
     int               result = TCL_OK;

@@ -509,6 +509,10 @@ typedef int ns_sockerrno_t;
 # define ns_write                   write
 # define ns_lseek                   lseek
 
+#ifdef HAVE_MEMMEM
+# define ns_memmem                  memmem
+#endif
+
 # if __GNUC__
 #  if defined(__x86_64__) || defined(__ppc64__)
 #   define HAVE_64BIT 1
@@ -1047,6 +1051,11 @@ NS_EXTERN char *ns_strcopy(const char *string) NS_GNUC_MALLOC;
 NS_EXTERN char *ns_strncopy(const char *string, ssize_t size) NS_GNUC_MALLOC;
 NS_EXTERN int   ns_uint32toa(char *buffer, uint32_t n) NS_GNUC_NONNULL(1);
 NS_EXTERN int   ns_uint64toa(char *buffer, uint64_t n) NS_GNUC_NONNULL(1);
+
+#ifndef HAVE_MEMMEM
+NS_EXTERN void *ns_memmem(const void *haystack, size_t haystackLength, const void *const needle, const size_t needleLength)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+#endif
 
 /*
  * mutex.c:

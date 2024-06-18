@@ -280,6 +280,46 @@ ns_uint64toa(
 
     return len;
 }
+
+#ifndef HAVE_MEMMEM
+/*
+ *----------------------------------------------------------------------
+ *
+ * ns_memmem --
+ *
+ *      Locate a byte substring in a byte string. The function locates the
+ *      first occurrence of the octet sequence "needle" in the octet sequence
+ *      "haystack" .
+ *
+ * Results:
+ *      In success, a pointer to the first character of the first occurrence
+ *      of needed is returned. Otherwise the result is NULL.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+void *
+ns_memmem(const void *haystack, size_t haystackLength,
+          const void *const needle, const size_t needleLength)
+{
+    NS_NONNULL_ASSERT(haystack != NULL);
+    NS_NONNULL_ASSERT(needle != NULL);
+
+    if (haystackLength > 0 && needleLength > 0) {
+        const char *p;
+
+        for (p = (const char *)haystack; haystackLength >= needleLength; ++p, --haystackLength) {
+            if (memcmp(p, needle, needleLength) == 0) {
+                return (void *)p;
+            }
+        }
+    }
+    return NULL;
+}
+#endif
+
 /*
  * Local Variables:
  * mode: c
