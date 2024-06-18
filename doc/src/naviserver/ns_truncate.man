@@ -11,19 +11,19 @@ This command truncates a given file to the given length.
 
 [list_begin definitions]
 
-[call [cmd ns_truncate] [arg file] [opt [arg length]]]
+[call [cmd ns_truncate] [arg filename] [opt [arg length]]]
 
 [para]
-[arg file]
-File to be truncated
+[arg filename]
+File to be truncated.
 
 [para]
 [arg length]
-If specified, truncate up to this length otherwise make file 0 size
+If specified, truncate up to this length otherwise make file 0 size.
 
 [list_end]
 
 [see_also nsd]
-[keywords "global built-in" NaviServer]
+[keywords "global built-in" NaviServer file truncate]
 [manpage_end]
 

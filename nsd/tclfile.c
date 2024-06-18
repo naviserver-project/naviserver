@@ -454,7 +454,7 @@ NsTclTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc,
     char             *fileString;
     int               length = 0, result = TCL_OK;
     Ns_ObjvSpec args[] = {
-        {"file",      Ns_ObjvString, &fileString, NULL},
+        {"filename",  Ns_ObjvString,  &fileString, NULL},
         {"?length",   Ns_ObjvInt,    &length, &posintRange0},
         {NULL, NULL, NULL, NULL}
     };
