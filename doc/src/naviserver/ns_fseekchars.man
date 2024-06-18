@@ -1,0 +1,33 @@
+[include version_include.man]
+[manpage_begin ns_fseekchars n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Seek in an open file for a string}]
+
+[description]
+
+This command seeks in a Tcl opened by  Tcl channel [arg fileId] for the
+provided string [arg searchstring]. The search starts from the
+current position in the file. When the string is found, the command
+returns the position of the first character in the file and moves the
+file pointer to the begin of this string. Therefore, the command can be
+used for multiple search operations in the file.
+
+If the string is not found, -1 is returned and the file position is at
+end-of-file.
+ 
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_fseekchars] [arg fileId] [arg searchstring]]
+
+[list_end]
+
+
+[see_also nsd]
+[keywords "global built-in" seek search]
+
+[manpage_end]
+
+
