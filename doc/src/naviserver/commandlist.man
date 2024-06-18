@@ -127,6 +127,7 @@ sections of related commands.
 [section {Files and Filesystem Commands}]
 [list_begin definitions]
 [call [cmd ns_filestat]]
+[call [cmd ns_fseekchars]]
 [call [cmd ns_ftruncate]]
 [call [cmd ns_hashpath]]
 [call [cmd ns_mktemp]]
