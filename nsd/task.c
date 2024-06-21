@@ -1401,7 +1401,7 @@ TaskThread(void *arg)
                  */
                 if (maxFds <= (size_t)nFds) {
                     maxFds  = (size_t)nFds + 100u;
-                    pFds = (struct pollfd *)ns_realloc(pFds, maxFds);
+                    pFds = (struct pollfd *)ns_realloc(pFds, maxFds * sizeof(struct pollfd));
                 }
 
                 taskPtr->idx = nFds;
