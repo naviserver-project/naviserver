@@ -14,7 +14,7 @@ test ns_base64encode-0.1 {basic syntax: plain call} -body {
 
 test ns_base64decode-0.1 {basic syntax: plain call} -body {
      ns_base64decode
-} -returnCodes error -result {wrong # args: should be "ns_base64decode ?-binary? ?--? string"}
+} -returnCodes error -result {wrong # args: should be "ns_base64decode ?-binary? ?-strict? ?--? string"}
 
 
 test ns_base64encode-1.1 {ns_base64encode basic functionality} -body {
@@ -329,12 +329,26 @@ test ns_base64decode-2.7.1 {
     lmap string {YWJj YWJjA YW|Jj YWJj|} {ns_base64urldecode $string}
 } -result {abc abc abc abc}
 
-test ns_base64decode-2.72 {
+test ns_base64decode-2.7.2 {
     Check trailing characters (trailing alphabet char, non-alphabet char)
     Detected "injection" by acunetix
 } -constraints {nsf} -body {
     lmap string {YWJj YWJjA YW|Jj YWJj|} {ns_base64decode $string}
 } -result {abc abc abc abc}
+
+test ns_base64decode-3.7.1 {
+    Check trailing characters (trailing alphabet char, non-alphabet char) -strict
+    Detected "injection" by acunetix
+} -constraints {nsf} -body {
+    lmap string {YWJj YWJjA YW|Jj YWJj|} {catch {ns_base64urldecode -strict $string}}
+} -result {0 1 1 1}
+
+test ns_base64decode-3.7.2 {
+    Check trailing characters (trailing alphabet char, non-alphabet char) -strict
+    Detected "injection" by acunetix
+} -constraints {nsf} -body {
+    lmap string {YWJj YWJjA YW|Jj YWJj|} {catch {ns_base64decode -strict $string}}
+} -result {0 1 1 1}
 
 
 test ns_base64encode-3.0 {

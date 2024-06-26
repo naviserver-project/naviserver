@@ -829,10 +829,11 @@ static int
 Base64DecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv,
                    int encoding)
 {
-    int      result = TCL_OK, isBinary = 0;
+    int      result = TCL_OK, isBinary = 0, isStrict = 0;
     Tcl_Obj *charsObj;
     Ns_ObjvSpec opts[] = {
         {"-binary", Ns_ObjvBool, &isBinary, INT2PTR(NS_TRUE)},
+        {"-strict", Ns_ObjvBool, &isStrict, INT2PTR(NS_TRUE)},
         {"--",      Ns_ObjvBreak, NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -852,20 +853,21 @@ Base64DecodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
 
         size = (size_t)len + 3u;
         decoded = (unsigned char *)ns_malloc(size);
-        size = Ns_HtuuDecode2(chars, decoded, size, encoding);
+        result = Ns_HtuuDecode2(interp, chars, decoded, size, encoding, isStrict != 0, &size);
         //NsHexPrint("base64 decoded", decoded, size, 30, NS_FALSE);
 
-        if (isBinary) {
-            Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, (TCL_SIZE_T)size));
+        if (result == TCL_OK) {
+            if (isBinary) {
+                Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(decoded, (TCL_SIZE_T)size));
 
-        } else {
-            Tcl_DString ds, *dsPtr = &ds;
+            } else {
+                Tcl_DString ds, *dsPtr = &ds;
 
-            Tcl_DStringInit(dsPtr);
-            (void)Tcl_ExternalToUtfDString(NULL, (char *)decoded, (TCL_SIZE_T)size, dsPtr);
-            Tcl_DStringResult(interp, dsPtr);
+                Tcl_DStringInit(dsPtr);
+                (void)Tcl_ExternalToUtfDString(NULL, (char *)decoded, (TCL_SIZE_T)size, dsPtr);
+                Tcl_DStringResult(interp, dsPtr);
+            }
         }
-
         ns_free(decoded);
     }
 
