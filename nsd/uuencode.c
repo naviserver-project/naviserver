@@ -233,8 +233,8 @@ Ns_HtuuEncode(const unsigned char *input, size_t inputSize, char *buf)
  *
  * Side effects:
  *      Decoded characters are placed in output which must be
- *    large enough for the result, i.e., (3 + (len * 3) / 4)
- *    bytes.
+ *      large enough for the result, i.e., (3 + (len * 3) / 4)
+ *      bytes.
  *
  *----------------------------------------------------------------------
  */
@@ -283,6 +283,17 @@ Ns_HtuuDecode2(const char *input, unsigned char *buf, size_t bufSize, int encodi
                 *q++ = UCHAR(Decode(decode_table, chars[2]) << 6) | Decode(decode_table, chars[3]);
                 n = 0;
             }
+        } else if (!CHARTYPE(space, *p) && *p != '=')  {
+            ptrdiff_t pos = 1 + p - (const unsigned char*)input;
+
+            if (pos < 60) {
+                /*
+                 * Print only shorter strings to the log file.
+                 */
+                Ns_Log(Warning, "Decode invalid character '%c' at position %ld: '%s'", *p, pos, input);
+            } else {
+                Ns_Log(Warning, "Decode invalid character '%c' at position %ld", *p, pos);
+            }
         }
         p++;
     }
@@ -290,8 +301,10 @@ Ns_HtuuDecode2(const char *input, unsigned char *buf, size_t bufSize, int encodi
     /*
      * Decode remaining 2 or 3 bytes.
      */
+    if (n == 1) {
+        Ns_Log(Warning, "Ignore trailing character '%c'", chars[0]);
 
-    if (n > 1) {
+    } else if (n > 1) {
         *q++ = UCHAR(Decode(decode_table, chars[0]) << 2) | Decode(decode_table, chars[1]) >> 4;
     }
     if (n > 2) {

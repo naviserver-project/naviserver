@@ -322,6 +322,21 @@ test ns_base64encode-2.6r {ns_base64encode identity mass encoding} -body {
 } -result 300000
 
 
+test ns_base64decode-2.7.1 {
+    Check trailing characters (trailing alphabet char, non-alphabet char)
+    Detected "injection" by acunetix
+} -constraints {nsf} -body {
+    lmap string {YWJj YWJjA YW|Jj YWJj|} {ns_base64urldecode $string}
+} -result {abc abc abc abc}
+
+test ns_base64decode-2.72 {
+    Check trailing characters (trailing alphabet char, non-alphabet char)
+    Detected "injection" by acunetix
+} -constraints {nsf} -body {
+    lmap string {YWJj YWJjA YW|Jj YWJj|} {ns_base64decode $string}
+} -result {abc abc abc abc}
+
+
 test ns_base64encode-3.0 {
     UTF-8 data, from string or file,
     binary or not,
