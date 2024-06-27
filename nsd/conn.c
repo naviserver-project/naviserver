@@ -784,7 +784,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
     const Conn     *connPtr;
     const NsServer *servPtr;
     const Ns_Set   *headers;
-    const char     *host;
+    const char     *host = NULL;
     char           *location = NULL;
 
     NS_NONNULL_ASSERT(conn != NULL);
@@ -802,7 +802,6 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
            nsconf.reverseproxymode.enabled);
 
     if (servPtr->vhost.connLocationProc != NULL) {
-
         /*
          * Prefer the new style Ns_ConnLocationProc.
          *
@@ -816,7 +815,6 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
         Ns_Log(Debug, "Ns_ConnLocation: locationproc returned <%s>", location);
 
     } else if (servPtr->vhost.locationProc != NULL) {
-
         /*
          * Fall back to old style Ns_LocationProc.
          */
@@ -831,19 +829,41 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
     } else if (servPtr->vhost.enabled
                && ((headers = Ns_ConnHeaders(conn)) != NULL)
                && ((host = Ns_SetIGet(headers, "Host")) != NULL)
+               && (*host != '\0')
+               && Ns_StrIsValidHostHeaderContent(host)) {
+        /*
+         * NaviServer "vhosting" is enabled, and host header field is given
+         * and syntactically valid. Construct a location string based on
+         * driver information. Do not append an extra port (must be included
+         * in "host" if necessary).
+         */
+        location = Ns_HttpLocationString(dest, connPtr->drvPtr->protocol, host, 0u, 0u);
+        Ns_Log(Debug, "Ns_ConnLocation: vhost - location based on host header field <%s>", location);
+    } else if (nsconf.reverseproxymode.enabled
+               && ((headers = Ns_ConnHeaders(conn)) != NULL)
+               && ((host = Ns_SetIGet(headers, "Host")) != NULL)
                && (*host != '\0')) {
         /*
-         * Construct a location string from the HTTP "host" header field
-         * without using port and default port.
+         * NaviServer "reverseproxymode" is enabled, and host header field is
+         * given. The field content is checked against the hash table of valid
+         * host header fields. Do not append an extra port (must be included
+         * in "host" if necessary).
          */
-        if (Ns_StrIsValidHostHeaderContent(host)) {
+        Tcl_HashEntry  *hPtr = Tcl_FindHashEntry((Tcl_HashTable *)&servPtr->hosts, host);
+        if (hPtr != NULL) {
             location = Ns_HttpLocationString(dest, connPtr->drvPtr->protocol, host, 0u, 0u);
-            Ns_Log(Debug, "Ns_ConnLocation: vhost - location based on host header field <%s>", location);
         }
-    } else if (nsconf.reverseproxymode.enabled) {
-        location = Ns_DStringAppend(dest, "");
+    } else if (servPtr->vhost.enabled || nsconf.reverseproxymode.enabled) {
+        /*
+         * When relying on the "host" header fields, but it is invalid or not
+         * provided, complain about this in the log file.
+         */
+        if (host != NULL) {
+            Ns_Log(Warning, "Ns_ConnLocation: ignore invalid or untrusted host header field: '%s'", host);
+        } else {
+            Ns_Log(Warning, "Ns_ConnLocation: required host header field is missing");
+        }
     }
-
 
     /*
      * If everything above failed, try the location from the connPtr. This is
@@ -876,6 +896,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
         location = Ns_HttpLocationString(dest, connPtr->drvPtr->protocol,
                                          addr, port, connPtr->drvPtr->defport);
     }
+    Ns_Log(Debug, "Ns_ConnLocation: final value '%s'", location);
 
     return location;
 }
