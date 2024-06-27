@@ -88,12 +88,6 @@ ConfigServerVhost(const char *server)
         path = Ns_ConfigGetPath(server, NULL, "vhost", (char *)0L);
 
         servPtr->vhost.enabled = Ns_ConfigBool(path, "enabled", NS_FALSE);
-        if (servPtr->vhost.enabled
-            && Ns_PathIsAbsolute(servPtr->fastpath.pagedir) == NS_TRUE) {
-            Ns_Log(Error, "vhost[%s]: disabled, pagedir not relative: %s",
-                   server, servPtr->fastpath.pagedir);
-            servPtr->vhost.enabled = NS_FALSE;
-        }
         if (Ns_ConfigBool(path, "stripwww", NS_TRUE)) {
             servPtr->vhost.opts |= NSD_STRIP_WWW;
         }
