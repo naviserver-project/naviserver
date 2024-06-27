@@ -33,6 +33,10 @@
 # include <AvailabilityMacros.h>
 #endif
 
+#ifndef _WIN32
+# include <sys/un.h>
+#endif
+
 
 /*
  * Local functions defined in this file
@@ -1038,6 +1042,48 @@ Ns_SockConnect2(const char *host, unsigned short port, const char *lhost, unsign
 
     return SockConnect(host, port, lhost, lport, NS_FALSE, 20, 100, NULL);
 }
+
+NS_SOCKET
+Ns_SockConnectUnix(const char *path, int socktype)
+{
+    NS_SOCKET sock;
+
+#ifdef _WIN32
+    result = NS_INVALID_SOCKET
+#else
+    struct sockaddr_un server_addr;
+    size_t             pathLength = strlen(path);
+
+    NS_NONNULL_ASSERT(path != NULL);
+
+    sock = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (sock == NS_INVALID_SOCKET) {
+        Ns_Log(Error, "Ns_SockUnixConnect: could not create socket");
+
+    } else if (pathLength >= sizeof(server_addr.sun_path)) {
+        Ns_Log(Error, "Ns_SockUnixConnect: provided path exceeds maximum length: %s\n", path);
+        ns_close(sock);
+        sock = NS_INVALID_SOCKET;
+
+    } else {
+        int connect_rc;
+
+        memset(&server_addr, 0, sizeof(server_addr));
+        server_addr.sun_family = AF_UNIX;
+        memcpy(server_addr.sun_path, path, pathLength + 1);
+
+        sock = socket(AF_UNIX, socktype > 0 ? socktype : SOCK_STREAM, 0);
+
+        connect_rc = connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr));
+        if (connect_rc == -1) {
+            ns_close(sock);
+            sock = NS_INVALID_SOCKET;
+        }
+    }
+#endif
+    return sock;
+}
+
 
 
 /*

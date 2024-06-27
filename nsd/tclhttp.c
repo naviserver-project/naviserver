@@ -129,13 +129,14 @@ static int HttpConnect(
     const char *caFile,
     const char *caPath,
     const char *sniHostname,
+    const char *udsPath,
     bool verifyCert,
     bool keepHostHdr,
     Ns_Time *timeoutPtr,
     Ns_Time *expirePtr,
     Ns_Time *keepAliveTimeoutPtr,
     NsHttpTask **httpPtrPtr
-) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(18);
+) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(19);
 
 static bool HttpGet(
     NsInterp *itPtr,
@@ -2170,6 +2171,7 @@ HttpQueue(
                *caFile = NULL,
                *caPath = NULL,
                *sniHostname = NULL,
+               *udsPath = NULL,
                *outputFileName = NULL,
                *outputChanName = NULL,
                *method = (char *)"GET",
@@ -2207,6 +2209,7 @@ HttpQueue(
         {"-spoolsize",        Ns_ObjvMemUnit, &spoolLimit,     NULL},
         {"-expire",           Ns_ObjvTime,    &expirePtr,      NULL},
         {"-timeout",          Ns_ObjvTime,    &timeoutPtr,     NULL},
+        {"-unix_socket",      Ns_ObjvString,  &udsPath,        NULL},
         {"-verify",           Ns_ObjvBool,    &verifyCert,     INT2PTR(NS_TRUE)},
         {"-proxy",            Ns_ObjvObj,     &proxyObj,       NULL},
         {NULL, NULL,  NULL, NULL}
@@ -2288,6 +2291,7 @@ HttpQueue(
                              caFile,
                              caPath,
                              sniHostname,
+                             udsPath,
                              (verifyCert  == 1),
                              (keepHostHdr == 1),
                              timeoutPtr,
@@ -2354,7 +2358,9 @@ HttpQueue(
              * Run the task and collect the result in one go.
              * The task is executed in the current thread.
              */
+            Ns_Log(Ns_LogTaskDebug, "... HttpQueue calls run %p", (void*)httpPtr->task);
             Ns_TaskRun(httpPtr->task);
+            Ns_Log(Ns_LogTaskDebug, "... HttpQueue calls run %p DONE", (void*)httpPtr->task);
             result = HttpGetResult(interp, httpPtr);
             HttpSpliceChannels(interp, httpPtr);
             HttpClose(httpPtr);
@@ -3203,6 +3209,7 @@ HttpConnect(
     const char *caFile,
     const char *caPath,
     const char *sniHostname,
+    const char *udsPath,
     bool verifyCert,
     bool keepHostHdr,
     Ns_Time *timeoutPtr,
@@ -3352,6 +3359,38 @@ HttpConnect(
         portNr = defPortNr;
     }
 
+    if (udsPath != NULL) {
+#ifdef _WIN32
+        Ns_TclPrintfResult(interp, "argument -unix_socket is not supported under Windows");
+        goto fail;
+#else
+        Ns_Log(Ns_LogTaskDebug, "Unix Domain Socket <%s> was specified", udsPath);
+        if (*udsPath != '/') {
+            Ns_TclPrintfResult(interp, "Unix Domain Socket must start with a slash \"%s\"", udsPath);
+            goto fail;
+        }
+
+        httpPtr->sock = Ns_SockConnectUnix(udsPath, 0);
+        if (httpPtr->sock == NS_INVALID_SOCKET) {
+            Ns_TclPrintfResult(interp, "Could not create socket");
+            goto fail;
+        }
+
+        httpPtr->host = ns_strdup(u.host);
+        httpPtr->port = portNr;
+
+        /*
+         * Maybe refactor to reduce redundancy?
+         */
+        if (strcasecmp(httpPtr->method, "HEAD") == 0) {
+            /*
+             * Do not expect a response content.
+             */
+            httpPtr->flags |= NS_HTTP_FLAG_EMPTY;
+        }
+#endif
+    }
+
     /*
      * For request body optionally open the backing file.
      */
@@ -3444,11 +3483,15 @@ HttpConnect(
     }
 
     /*
-     * Now we are ready to attempt the connection.
-     * If no timeout given, assume 5 seconds.
+     * In case, the sock is not already bound via Unix Domain Socket, open the
+     * connection.
      */
 
-    {
+    if (httpPtr->sock == NS_INVALID_SOCKET) {
+        /*
+         * Now we are ready to attempt the connection.
+         * If no timeout given, assume 5 seconds.
+         */
         Ns_ReturnCode rc;
         Ns_Time       defaultTimout = {5, 0}, *toPtr = NULL, startTime;
 
@@ -4745,7 +4788,7 @@ HttpProc(
         nextState = why; /* We may switch to read state below */
 
         Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE sendSpoolMode:%d,"
-               " fd:%d, chan:%s", httpPtr->sendSpoolMode, httpPtr->bodyFileFd,
+               " body file fd:%d, chan:%s", httpPtr->sendSpoolMode, httpPtr->bodyFileFd,
                httpPtr->bodyChan ? Tcl_GetChannelName(httpPtr->bodyChan) : "(none)");
 
         if (httpPtr->sendSpoolMode == NS_FALSE) {
@@ -5278,6 +5321,8 @@ HttpProc(
 
         break;
     }
+
+    Ns_Log(Ns_LogTaskDebug, "HttpProc: DONE httpPtr %p state %.2x", (void*)httpPtr, why);
 
     if (httpPtr != NULL) {
         httpPtr->finalSockState = why;
