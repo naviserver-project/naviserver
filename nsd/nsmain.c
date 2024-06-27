@@ -745,15 +745,15 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         Ns_ConfigBool(NS_GLOBAL_CONFIG_PARAMETERS, "reverseproxymode", NS_FALSE);
 
     /*
-     * New-style reverse proxy server configuration. Overridden old-style.
+     * New-style reverse proxy server configuration. Use old-style value as default.
      */
-
     nsconf.reverseproxymode.enabled =
-        Ns_ConfigBool(configParametersReverseproxySection, "enabled", NS_FALSE);
+        Ns_ConfigBool(configParametersReverseproxySection, "enabled", nsconf.reverseproxymode.enabled);
     nsconf.reverseproxymode.skipnonpublic =
         Ns_ConfigBool(configParametersReverseproxySection, "skipnonpublic", NS_FALSE);
     nsconf.reverseproxymode.trustedservers =
         Ns_ConfigGetValue(configParametersReverseproxySection, "trustedservers");
+
     if (nsconf.reverseproxymode.trustedservers != NULL) {
         if (*nsconf.reverseproxymode.trustedservers == '\0') {
             nsconf.reverseproxymode.trustedservers = NULL;
