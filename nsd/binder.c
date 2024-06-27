@@ -593,11 +593,12 @@ Ns_SockBindUnix(const char *path, int socktype, unsigned short mode)
 #ifdef _WIN32
     return NS_INVALID_SOCKET;
 #else
-    NS_SOCKET sock;
+    NS_SOCKET          sock;
     struct sockaddr_un addr;
-    size_t pathLength;
+    size_t             pathLength;
 
     NS_NONNULL_ASSERT(path != NULL);
+
     pathLength = strlen(path);
 
     if (pathLength >= sizeof(addr.sun_path)) {
