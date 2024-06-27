@@ -605,6 +605,8 @@ proc ns_parseformfile {args} {
                     if {$seekChar == -1} {
                         error "boundary not found"
                     }
+                    # move beyond the leading newline
+                    incr seekChar
                     set end    [expr {$seekChar - [string length $boundary]}]
                     set length [expr {$end - $start - 2}]
                 }]
