@@ -53,7 +53,7 @@ The revproxy functionality can be configured as a NaviServer filter
 scripts or as procs registered for a method/URL pair (see
 https://naviserver.sourceforge.io/n/naviserver/files/ns_register.html).
 In essence, the difference is that filters are run on all requests,
-potentially before authentication, wheras procs are run as normal
+potentially before authentication, whereas procs are run as normal
 requests after the authentication/permission checking performed
 typically via filters.
 
