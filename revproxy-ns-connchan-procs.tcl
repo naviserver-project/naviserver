@@ -37,13 +37,21 @@ namespace eval ::revproxy::ns_connchan {
         #
         # We might have to take more precautions for WebSockets here.
         #
-        set queryHeaders [ns_conn headers]        
+        set queryHeaders [ns_conn headers]
         ns_set update $queryHeaders Connection close
 
         #ns_log notice queryHeaders=[ns_set array $queryHeaders]
 
         if {$validation_callback ne ""} {
             {*}$validation_callback -url $url
+        }
+
+        if {[regexp {^unix:(/[^|]+)[|](.+)$} $url . socketPath .url]} {
+            ::revproxy::ns_connchan::upstream_send_failed \
+                -errorMsg "unix domain sockets are not supported via the ns_connchan interface" \
+                -url $url \
+                -exception_callback $exception_callback
+            return filter_return
         }
 
         if {[catch {

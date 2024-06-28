@@ -51,6 +51,18 @@ namespace eval ::revproxy::ns_http {
             lappend extraArgs -binary
         }
 
+        #
+        # Support for Unix Domain Sockets
+        # Syntax: unix:/home/www.socket|http://localhost/whatever/
+        # modeled after: https://httpd.apache.org/docs/trunk/mod/mod_proxy.html#proxypass
+
+        if {[regexp {^unix:(/[^|]+)[|](.+)$} $url . socketPath url]} {
+            set unixSocketArg [list -unix_socket $socketPath]
+        } else {
+            set unixSocketArg ""
+        }
+
+        #
         #log notice "final request headers passed to ns_http"
         #ns_set print $queryHeaders
 
@@ -60,6 +72,7 @@ namespace eval ::revproxy::ns_http {
         try {
             ns_http run \
                 {*}$partialresultsFlag \
+                {*}$unixSocketArg \
                 -keep_host_header \
                 -spoolsize 100kB \
                 -method [ns_conn method] \
