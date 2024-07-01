@@ -354,7 +354,7 @@ static Ns_ReturnCode AuthProc(const char *server, const char *method, const char
                               const char *user, const char *pwd, const char *peer)
 {
     Ns_ReturnCode  status;
-    Ns_Set        *set;
+    const Ns_Set  *set;
     Server        *servPtr;
     Perm          *permPtr;
     User          *userPtr;
@@ -586,7 +586,7 @@ ValidateUserAddr(User *userPtr, const char *peer)
 
     hPtr = Tcl_FirstHashEntry(&userPtr->masks, &search);
     while (hPtr != NULL) {
-        struct sockaddr *maskPtr;
+        const struct sockaddr *maskPtr;
         Tcl_HashEntry *entryPtr;
 
         maskPtr = (struct sockaddr *)Tcl_GetHashKey(&userPtr->masks, hPtr);

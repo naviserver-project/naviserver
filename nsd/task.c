@@ -384,7 +384,8 @@ Ns_TaskTimedCreate(NS_SOCKET sock, Ns_TaskProc *proc, void *arg, Ns_Time *expPtr
     taskPtr = (Task *)Ns_TaskCreate(sock, proc, arg);
 
     if (expPtr != NULL) {
-        Ns_Time atime, *expirePtr;
+        Ns_Time        atime;
+        const Ns_Time *expirePtr;
 
         expirePtr = Ns_AbsoluteTime(&atime, expPtr);
         taskPtr->flags |= TASK_EXPIRE;
@@ -514,7 +515,7 @@ Ns_TaskRun(Ns_Task *task)
     flags |= (TASK_TIMEDOUT|TASK_EXPIRED);
 
     while (status == NS_OK && (taskPtr->flags & (flags|TASK_DONE)) == 0u) {
-        Ns_Time *timeoutPtr = NULL;
+        const Ns_Time *timeoutPtr = NULL;
 
         if ((taskPtr->flags & TASK_TIMEOUT) != 0u) {
             timeoutPtr = &taskPtr->timeout;
@@ -621,7 +622,8 @@ Ns_TaskWait(Ns_Task *task, Ns_Time *timeoutPtr)
 {
     Task          *taskPtr;
     TaskQueue     *queuePtr;
-    Ns_Time        atime, *toPtr = NULL;
+    Ns_Time        atime;
+    const Ns_Time *toPtr = NULL;
     unsigned int   flags = 0u;
     Ns_ReturnCode  result = NS_OK;
 
@@ -798,7 +800,8 @@ Ns_TaskCallback(Ns_Task *task, Ns_SockState when, const Ns_Time *timeoutPtr)
     if (timeoutPtr == NULL) {
         taskPtr->flags &= ~(TASK_TIMEOUT);
     } else {
-        Ns_Time atime, *timePtr;
+        Ns_Time        atime;
+        const Ns_Time *timePtr;
 
         timePtr = Ns_AbsoluteTime(&atime, (Ns_Time *)timeoutPtr);
         taskPtr->timeout = *timePtr;

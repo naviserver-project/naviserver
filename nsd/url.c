@@ -26,7 +26,7 @@
  * Local functions defined in this file
  */
 
-static char* ParseUpTo(char *chars, char ch)
+static char* ParseUpTo(const char *chars, char ch)
     NS_GNUC_NONNULL(1);
 
 
@@ -190,7 +190,7 @@ ParseUserInfo(char *chars, char **userinfo)
  */
 
 static char *
-ParseUpTo(char *chars, char ch)
+ParseUpTo(const char *chars, char ch)
 {
     char *p = strchr(chars, INTCHAR(ch));
 

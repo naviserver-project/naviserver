@@ -558,7 +558,7 @@ NsInitInfo(void)
             if (preload_library_handle == NULL) {
                 Ns_Log(Warning, "could not open preload library '%s'", preload_library_name);
             } else {
-                void *symbol;
+                const void *symbol;
 
                 symbol = dlsym(preload_library_handle, "MallocExtension_GetStats");
                 memcpy(&MallocExtensionGetStats, &symbol, sizeof(ns_funcptr_t));

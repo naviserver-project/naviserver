@@ -116,7 +116,7 @@ static ssize_t       CgiReadLine(Cgi *cgiPtr, Ns_DString *dsPtr) NS_GNUC_NONNULL
 static char         *NextWord(char *s)                           NS_GNUC_NONNULL(1);
 static void          SetAppend(Ns_Set *set, int index, const char *sep, char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
-static void          CgiRegisterFastUrl2File(const char *server, char *url, const char *path)
+static void          CgiRegisterFastUrl2File(const char *server, const char *url, const char *path)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static TCL_OBJCMDPROC_T NsTclRegisterCGIObjCmd;
@@ -285,9 +285,9 @@ Ns_ModuleInit(const char *server, const char *module)
     set = Ns_ConfigGetSection(path);
     for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
         const char *key   = Ns_SetKey(set, i);
-        const char *value = Ns_SetValue(set, i);
 
         if (STRIEQ(key, "map")) {
+            const char *value = Ns_SetValue(set, i);
             CgiRegister(modPtr, value);
         }
     }
@@ -1402,7 +1402,7 @@ NextWord(char *s)
  *----------------------------------------------------------------------
  */
 static void
-CgiRegisterFastUrl2File(const char *server, char *url, const char *path)
+CgiRegisterFastUrl2File(const char *server, const char *url, const char *path)
 {
     char *tailSegment;
 

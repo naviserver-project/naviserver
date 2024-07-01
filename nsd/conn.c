@@ -849,7 +849,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
          * host header fields. Do not append an extra port (must be included
          * in "host" if necessary).
          */
-        Tcl_HashEntry  *hPtr = Tcl_FindHashEntry((Tcl_HashTable *)&servPtr->hosts, host);
+        const Tcl_HashEntry  *hPtr = Tcl_FindHashEntry((Tcl_HashTable *)&servPtr->hosts, host);
         if (hPtr != NULL) {
             location = Ns_HttpLocationString(dest, connPtr->drvPtr->protocol, host, 0u, 0u);
         }

@@ -504,7 +504,7 @@ ConnInfo(Ns_Sock *sock)
     SSLContext *sslCtx;
     Tcl_Obj    *resultObj;
     char        ipString[NS_IPADDR_SIZE];
-    struct sockaddr *ipPtr;
+    const struct sockaddr *ipPtr;
 
     NS_NONNULL_ASSERT(sock != NULL);
 
