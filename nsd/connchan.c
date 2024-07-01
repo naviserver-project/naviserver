@@ -1062,15 +1062,16 @@ ConnChanOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
     Sock         *sockPtr = NULL;
     Ns_Set       *hdrPtr = NULL;
     char         *url, *method = (char *)"GET", *version = (char *)"1.0",
-                 *driverName = NULL, *sniHostname = NULL;
+        *driverName = NULL, *sniHostname = NULL, *udsPath = NULL;
     Ns_Time       timeout = {1, 0}, *timeoutPtr = &timeout;
     Ns_ObjvSpec   lopts[] = {
-        {"-driver",   Ns_ObjvString, &driverName, NULL},
-        {"-headers",  Ns_ObjvSet,    &hdrPtr, NULL},
-        {"-hostname", Ns_ObjvString, &sniHostname,    NULL},
-        {"-method",   Ns_ObjvString, &method, NULL},
-        {"-timeout",  Ns_ObjvTime,   &timeoutPtr,  NULL},
-        {"-version",  Ns_ObjvString, &version, NULL},
+        {"-driver",      Ns_ObjvString, &driverName,  NULL},
+        {"-headers",     Ns_ObjvSet,    &hdrPtr,      NULL},
+        {"-hostname",    Ns_ObjvString, &sniHostname, NULL},
+        {"-method",      Ns_ObjvString, &method,      NULL},
+        {"-timeout",     Ns_ObjvTime,   &timeoutPtr,  NULL},
+        {"-unix_socket", Ns_ObjvString, &udsPath,     NULL},
+        {"-version",     Ns_ObjvString, &version,     NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec   largs[] = {
@@ -1088,7 +1089,8 @@ ConnChanOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
         Ns_URL       parsedUrl;
 
         Tcl_DStringInit(&ds);
-        result = NSDriverClientOpen(interp, driverName, url, method, version, timeoutPtr, &ds,
+        result = NSDriverClientOpen(interp, driverName, url, method, version, udsPath,
+                                    timeoutPtr, &ds,
                                     &parsedUrl, &sockPtr);
         if (likely(result == TCL_OK)) {
 

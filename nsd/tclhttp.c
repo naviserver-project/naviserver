@@ -2183,6 +2183,7 @@ HttpQueue(
     Tcl_Obj    *bodyObj = NULL, *proxyObj = NULL;
     Ns_Time    *timeoutPtr = NULL, *expirePtr = NULL, *keepAliveTimeoutPtr = NULL;
     Tcl_WideInt bodySize = 0;
+
     Tcl_Channel bodyChan = NULL, spoolChan = NULL;
     Ns_ObjvValueRange sizeRange = {0, LLONG_MAX};
 
@@ -3370,7 +3371,7 @@ HttpConnect(
             goto fail;
         }
 
-        httpPtr->sock = Ns_SockConnectUnix(udsPath, 0);
+        httpPtr->sock = Ns_SockConnectUnix(udsPath, 0, NULL);
         if (httpPtr->sock == NS_INVALID_SOCKET) {
             Ns_TclPrintfResult(interp, "Could not create socket");
             goto fail;

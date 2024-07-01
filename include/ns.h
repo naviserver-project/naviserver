@@ -2964,7 +2964,7 @@ Ns_SockConnect2(const char *host, unsigned short port,
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_SOCKET
-Ns_SockConnectUnix(const char *path, int socktype)
+Ns_SockConnectUnix(const char *path, int socktype, Ns_ReturnCode *statusPtr)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN NS_SOCKET

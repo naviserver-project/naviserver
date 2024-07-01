@@ -1044,7 +1044,7 @@ Ns_SockConnect2(const char *host, unsigned short port, const char *lhost, unsign
 }
 
 NS_SOCKET
-Ns_SockConnectUnix(const char *path, int socktype)
+Ns_SockConnectUnix(const char *path, int socktype, Ns_ReturnCode *statusPtr)
 {
     NS_SOCKET sock;
 
@@ -1053,16 +1053,12 @@ Ns_SockConnectUnix(const char *path, int socktype)
 #else
     struct sockaddr_un server_addr;
     size_t             pathLength = strlen(path);
+    Ns_ReturnCode      status = NS_OK;
 
     NS_NONNULL_ASSERT(path != NULL);
 
-    sock = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (sock == NS_INVALID_SOCKET) {
-        Ns_Log(Error, "Ns_SockUnixConnect: could not create socket");
-
-    } else if (pathLength >= sizeof(server_addr.sun_path)) {
+    if (pathLength >= sizeof(server_addr.sun_path)) {
         Ns_Log(Error, "Ns_SockUnixConnect: provided path exceeds maximum length: %s\n", path);
-        ns_close(sock);
         sock = NS_INVALID_SOCKET;
 
     } else {
@@ -1077,9 +1073,19 @@ Ns_SockConnectUnix(const char *path, int socktype)
         connect_rc = connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr));
         if (connect_rc == -1) {
             ns_close(sock);
+            status = NS_ERROR;
             sock = NS_INVALID_SOCKET;
         }
     }
+
+    /*
+     * When a statusPtr is provided, return the status code. The client can
+     * determine, if e.g. a timeout occurred.
+     */
+    if (statusPtr != NULL) {
+        *statusPtr = status;
+    }
+
 #endif
     return sock;
 }

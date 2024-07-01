@@ -205,14 +205,24 @@ static NS_SOCKET
 Listen(Ns_Driver *driver, const char *address, unsigned short port, int backlog, bool reuseport)
 {
     NS_SOCKET sock;
+    bool      unixDomainSocket;
 
-    sock = Ns_SockListenEx(address, port, backlog, reuseport);
-    if (sock != NS_INVALID_SOCKET) {
-        const NsSSLConfig *drvCfgPtr = driver->arg;
+    unixDomainSocket = (*address == '/');
 
-        (void) Ns_SockSetNonBlocking(sock);
-        if (drvCfgPtr->deferaccept) {
-            Ns_SockSetDeferAccept(sock, (long)driver->recvwait.sec);
+    if (unixDomainSocket) {
+        Ns_Log(Error, "nsssl driver does not support unix domain socket: unix:%s", address);
+        sock = NS_INVALID_SOCKET;
+    } else {
+        sock = Ns_SockListenEx(address, port, backlog, reuseport);
+        if (sock != NS_INVALID_SOCKET) {
+            const NsSSLConfig *drvCfgPtr = driver->arg;
+
+            (void) Ns_SockSetNonBlocking(sock);
+            if (drvCfgPtr->deferaccept) {
+                Ns_SockSetDeferAccept(sock, (long)driver->recvwait.sec);
+            }
+
+            Ns_Log(Notice, "listening on [%s]:%d (sock %d)", address, port, (int)sock);
         }
     }
     return sock;

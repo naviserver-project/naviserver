@@ -115,16 +115,30 @@ static NS_SOCKET
 SockListen(Ns_Driver *driver, const char *address, unsigned short port, int backlog, bool reuseport)
 {
     NS_SOCKET sock;
+    bool      unixDomainSocket;
 
-    sock = Ns_SockListenEx(address, port, backlog, reuseport);
+    unixDomainSocket = (*address == '/');
+    if (unixDomainSocket) {
+        sock = Ns_SockListenUnix(address, backlog, 0 /*mode*/);
+    } else {
+        sock = Ns_SockListenEx(address, port, backlog, reuseport);
+    }
+
     if (sock != NS_INVALID_SOCKET) {
         const Config *drvCfgPtr = driver->arg;
 
         (void) Ns_SockSetNonBlocking(sock);
-        if (drvCfgPtr->deferaccept != 0) {
+        if (drvCfgPtr->deferaccept != 0 && !unixDomainSocket) {
             Ns_SockSetDeferAccept(sock, (long)driver->recvwait.sec);
         }
+
+        if (unixDomainSocket) {
+            Ns_Log(Notice, "listening on unix:%s (sock %d)", address, (int)sock);
+        } else {
+            Ns_Log(Notice, "listening on [%s]:%d (sock %d)", address, port, (int)sock);
+        }
     }
+
     return sock;
 }
 

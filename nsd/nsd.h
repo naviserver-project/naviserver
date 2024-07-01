@@ -1523,10 +1523,11 @@ NS_EXTERN ssize_t NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, u
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 NS_EXTERN int NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
                                  const char *url, const char *httpMethod, const char *version,
+                                 const char *udsPath,
                                  const Ns_Time *timeoutPtr, Tcl_DString *dsPtr,
                                  Ns_URL *parsedUrlPtr, Sock **sockPtrPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5)
-    NS_GNUC_NONNULL(6) NS_GNUC_NONNULL(7) NS_GNUC_NONNULL(8) NS_GNUC_NONNULL(9);
+    NS_GNUC_NONNULL(7) NS_GNUC_NONNULL(8) NS_GNUC_NONNULL(9) NS_GNUC_NONNULL(10);
 
 NS_EXTERN int NSDriverSockNew(Tcl_Interp *interp, NS_SOCKET sock,
                               const char *protocol, const char *driverName, const char *methodName,
