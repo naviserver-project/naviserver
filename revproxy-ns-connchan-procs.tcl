@@ -46,12 +46,15 @@ namespace eval ::revproxy::ns_connchan {
             {*}$validation_callback -url $url
         }
 
-        if {[regexp {^unix:(/[^|]+)[|](.+)$} $url . socketPath .url]} {
-            ::revproxy::ns_connchan::upstream_send_failed \
-                -errorMsg "unix domain sockets are not supported via the ns_connchan interface" \
-                -url $url \
-                -exception_callback $exception_callback
-            return filter_return
+        #
+        # Support for Unix Domain Sockets
+        # Syntax: unix:/home/www.socket|http://localhost/whatever/
+        # modeled after: https://httpd.apache.org/docs/trunk/mod/mod_proxy.html#proxypass
+
+        if {[regexp {^unix:(/[^|]+)[|](.+)$} $url . socketPath url]} {
+            set unixSocketArg [list -unix_socket $socketPath]
+        } else {
+            set unixSocketArg ""
         }
 
         if {[catch {
@@ -59,6 +62,7 @@ namespace eval ::revproxy::ns_connchan {
             # Open backend channel, get frontend channel and connect these.
             #
             set backendChan [ns_connchan open \
+                                 {*}$unixSocketArg \
                                  -method [ns_conn method] \
                                  -headers $queryHeaders \
                                  -timeout $timeout \
