@@ -107,6 +107,7 @@ NsConfUpdate(void)
     NsConfigRedirects();
     NsConfigVhost();
     NsConfigEncodings();
+    NsConfigTclHttp();
 
     /*
      * Set a default stacksize, if specified. Use OS default otherwise.

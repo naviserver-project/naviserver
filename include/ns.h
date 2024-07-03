@@ -1788,6 +1788,10 @@ NS_EXTERN NS_SOCKET
 Ns_TaskFree(Ns_Task *task)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN int
+Ns_TaskQueueLength(Ns_TaskQueue *queue)
+    NS_GNUC_NONNULL(1);
+
 /*
  * tclobj.c:
  */
