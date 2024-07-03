@@ -29,7 +29,7 @@ static Tcl_SetFromAnyProc   SetAddrFromAny;
  * Local variables defined in this file.
  */
 
-static const Tcl_ObjType addrType = {
+static CONST86 Tcl_ObjType addrType = {
     "ns:addr",
     NULL,
     NULL,
@@ -40,8 +40,8 @@ static const Tcl_ObjType addrType = {
 #endif
 };
 
-static const Tcl_ObjType *byteArrayTypePtr; /* For NsTclObjIsByteArray(). */
-static const Tcl_ObjType *properByteArrayTypePtr;  /* For NsTclObjIsByteArray(). */
+static CONST86 Tcl_ObjType *byteArrayTypePtr; /* For NsTclObjIsByteArray(). */
+static CONST86 Tcl_ObjType *properByteArrayTypePtr;  /* For NsTclObjIsByteArray(). */
 
 /*
  *----------------------------------------------------------------------
