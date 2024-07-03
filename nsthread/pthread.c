@@ -802,6 +802,9 @@ Ns_CondTimedWait(Ns_Cond *cond, Ns_Mutex *mutex, const Ns_Time *timePtr)
         status = NS_TIMEOUT;
     } else if (err != 0) {
         NsThreadFatal("Ns_CondTimedWait", "pthread_cond_timedwait", err);
+#ifdef NS_TCL_PRE86
+        status = NS_ERROR;
+#endif
     } else {
         status = NS_OK;
     }
