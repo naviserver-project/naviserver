@@ -593,6 +593,17 @@ typedef int ns_sockerrno_t;
 #define TCL_OBJCMDPROC_T     Tcl_ObjCmdProc
 #define TCL_CREATEOBJCOMMAND Tcl_CreateObjCommand
 #define PRITcl_Size "d"
+/*
+ * The intended meaning of CONST86 is: some type is defined as "const" in Tcl
+ * 8.6, but was NOT defined as such in Tcl 8.5.
+ */
+#ifndef CONST86
+# ifdef NS_TCL_PRE86
+#  define CONST86
+# else
+#  define CONST86 const
+# endif
+#endif
 
 #if !defined(NS_POLL_NFDS_TYPE)
 # define NS_POLL_NFDS_TYPE unsigned int
