@@ -203,6 +203,16 @@ struct nsconf {
         bool skipnonpublic;
         bool enabled;
     } reverseproxymode;
+
+    /*
+     * This maintains the number of task queues
+     * allocated for the [ns_http] command.
+     */
+
+    struct {
+        int numqueues;
+        Ns_TaskQueue **queues;
+    } tclhttptasks;
 };
 
 NS_EXTERN struct nsconf nsconf;
@@ -1448,6 +1458,7 @@ NS_EXTERN void NsConfigRedirects(void);
 NS_EXTERN void NsConfigVhost(void);
 NS_EXTERN void NsConfigEncodings(void);
 NS_EXTERN void NsConfigTcl(void);
+NS_EXTERN void NsConfigTclHttp(void);
 
 /*
  * Virtual server management routines.

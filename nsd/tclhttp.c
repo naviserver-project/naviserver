@@ -86,7 +86,6 @@ static const char *errorCodeTimeoutString = "NS_TIMEOUT";
  * For http task mutex naming
  */
 static uint64_t httpClientRequestCount = 0u; /* MT: static variable! */
-static Ns_TaskQueue *taskQueue = NULL; /* MT: static variable! */
 
 #ifdef MEM_RECORD_DEBUG
 /*
@@ -100,6 +99,11 @@ static Tcl_HashTable ckPointerDeletionTable;
 /*
  * Local functions defined in this file
  */
+
+static Ns_TaskQueue* HttpGetTaskQueue(
+    void
+);
+
 static bool InitOnceHttp(void);
 
 static void CloseWaitingDataClean(CloseWaitingData *cwDataPtr)
@@ -356,6 +360,50 @@ static NsHttpParseProc* EndParsers[] = {
     &ParseEndProc,
     NULL
 };
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsConfigTclHttp --
+ *
+ *      Configure server-wide task queues for the [ns_http] command.
+ *      For general Internet usage a single task queue suffices, as
+ *      it is operating in event-loop mode. Where it becomes necessary
+ *      to increase this is when running over very fast 10/100G
+ *      interfaces for high-speed file up/download. Normally one would
+ *      not want to start more tasks queues then the number of cores.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      A (number of) task-queue servicing thread(s) is/are started.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+NsConfigTclHttp(void)
+{
+    int nq, idx;
+    Ns_DString ds;
+
+    nq = Ns_ConfigInt(NS_GLOBAL_CONFIG_PARAMETERS, "numtclhttptaskqueues", 1);
+    nsconf.tclhttptasks.numqueues = nq;
+    nsconf.tclhttptasks.queues = ns_calloc(nq, sizeof(Ns_TaskQueue*));
+
+    Ns_DStringInit(&ds);
+
+    for (idx = 0; idx < nq; idx++) {
+        char *qName;
+        Ns_DStringPrintf(&ds, "tclhttp.%d", idx);
+        qName = Ns_DStringExport(&ds);
+        nsconf.tclhttptasks.queues[idx] = Ns_CreateTaskQueue(qName);
+    }
+
+    return;
+}
 
 /*----------------------------------------------------------------------
  *
@@ -2002,7 +2050,7 @@ HttpKeepalivesObjCmd(
  *
  * InitOnceHttp --
  *
- *      Make sure that we have a task queue defined, the mutexes initialized,
+ *      Make sure that we have the mutexes initialized,
  *      the close-waiting list and the janitor task defined.
  *
  * Results:
@@ -2018,9 +2066,6 @@ static bool InitOnceHttp(void) {
 
     interval.sec = 1;
     interval.usec = 0;
-
-    //fprintf(stderr, "============== InitOnceHttp %p ==============\n", (void*)taskQueue);
-    taskQueue = Ns_CreateTaskQueue("tclhttp");
 
     Ns_DListInit(&closeWaitingList);
     Ns_MutexInit(&closeWaitingMutex);
@@ -2368,10 +2413,13 @@ HttpQueue(
 
         } else {
 
+            Ns_TaskQueue *taskQueue;
+
             /*
              * Enqueue the task, optionally returning the taskID
              */
-            assert(taskQueue != NULL);
+
+            taskQueue = HttpGetTaskQueue();
 
             if (Ns_TaskEnqueue(httpPtr->task, taskQueue) != NS_OK) {
                 HttpSpliceChannels(interp, httpPtr);
@@ -6057,6 +6105,51 @@ TrailerInitProc(
     return TCL_OK;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * HttpGetTaskQueue --
+ *
+ *        Get (one) task queue for queueing requests.
+ *        If many task queues present, the queue with
+ *        the smallest number of tasks is returned.
+ *
+ * Results:
+ *        Task queue pointer.
+ *
+ * Side effects:
+ *        None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Ns_TaskQueue *
+HttpGetTaskQueue(void)
+{
+    Ns_TaskQueue *queuePtr = NULL;
+
+    if (nsconf.tclhttptasks.numqueues == 1) {
+        queuePtr = nsconf.tclhttptasks.queues[0];
+    } else {
+        int idx, tql, ltql = INT_MAX;
+
+        for (idx = 0; idx < nsconf.tclhttptasks.numqueues; idx++) {
+            tql = Ns_TaskQueueLength(nsconf.tclhttptasks.queues[idx]);
+            if (tql < ltql) {
+                queuePtr = nsconf.tclhttptasks.queues[idx];
+                if (tql == 0) {
+                    break;
+                }
+                ltql = tql;
+            }
+        }
+    }
+
+    NS_NONNULL_ASSERT(queuePtr != NULL);
+
+    return queuePtr;
+}
 
 /*
  *----------------------------------------------------------------------
