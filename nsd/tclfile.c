@@ -525,7 +525,7 @@ NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC
 int
 NsTclFSeekCharsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
-    static const int  bufferSize = 32768; //256;
+    static const unsigned int bufferSize = 32768; //256;
     int               result = TCL_OK;
     Tcl_Channel       channel;
     char             *channelString, *charString;

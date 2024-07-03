@@ -386,18 +386,19 @@ static NsHttpParseProc* EndParsers[] = {
 void
 NsConfigTclHttp(void)
 {
-    int nq, idx;
+    size_t     nq, idx;
     Ns_DString ds;
 
-    nq = Ns_ConfigInt(NS_GLOBAL_CONFIG_PARAMETERS, "numtclhttptaskqueues", 1);
-    nsconf.tclhttptasks.numqueues = nq;
+    nq = (size_t)Ns_ConfigWideIntRange(NS_GLOBAL_CONFIG_PARAMETERS, "numtclhttptaskqueues", 1, 1, 10000);
+    nsconf.tclhttptasks.numqueues = (int)nq;
     nsconf.tclhttptasks.queues = ns_calloc(nq, sizeof(Ns_TaskQueue*));
 
     Ns_DStringInit(&ds);
 
     for (idx = 0; idx < nq; idx++) {
         char *qName;
-        Ns_DStringPrintf(&ds, "tclhttp.%d", idx);
+
+        Ns_DStringPrintf(&ds, "tclhttp.%lu", idx);
         qName = Ns_DStringExport(&ds);
         nsconf.tclhttptasks.queues[idx] = Ns_CreateTaskQueue(qName);
     }
