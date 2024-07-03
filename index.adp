@@ -38,7 +38,7 @@
   <li>The NaviServer <a href="examples/">Examples</a> include a few useful scripts and tricks.<p>
 
   <%
-   ns_adp_puts {<li>The NaviServer <a href="nsstats.tcl">Statistics page</a> can be
+   ns_adp_puts {<li>The NaviServer <a href="nsstats.tcl">Administration and Statistics pages</a> can be
                     useful in resolving performance issues.}
 
    if { ![file exists [ns_server pagedir]/nsstats.tcl] } {
