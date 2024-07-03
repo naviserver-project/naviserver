@@ -125,7 +125,7 @@ NsTclInitAddrType(void)
  */
 
 void
-Ns_TclResetObjType(Tcl_Obj *objPtr, const Tcl_ObjType *newTypePtr)
+Ns_TclResetObjType(Tcl_Obj *objPtr, CONST86 Tcl_ObjType *newTypePtr)
 {
     const Tcl_ObjType *typePtr;
 
