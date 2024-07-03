@@ -25,7 +25,7 @@
  * Local functions defined in this file.
  */
 
-static void SetUrl(Ns_Request *request, char *url)
+static Ns_ReturnCode SetUrl(Ns_Request *request, char *url)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static void FreeUrl(Ns_Request *request)
@@ -459,7 +459,10 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
         }
     }
 
-    SetUrl(request, url);
+    if (SetUrl(request, url) != NS_OK) {
+        errorMsg = "invalid UTF-8 in request URL";
+        goto error;
+    }
     Ns_DStringFree(&ds);
 
     return NS_OK;
@@ -529,7 +532,7 @@ Ns_SkipUrl(const Ns_Request *request, int n)
  *    Set the URL in a request structure.
  *
  * Results:
- *    None.
+ *    NS_OK or NS_ERROR (on encoding errors)
  *
  * Side effects:
  *    Makes a copy of URL.
@@ -537,10 +540,11 @@ Ns_SkipUrl(const Ns_Request *request, int n)
  *----------------------------------------------------------------------
  */
 
-void
+Ns_ReturnCode
 Ns_SetRequestUrl(Ns_Request *request, const char *url)
 {
-    Ns_DString      ds;
+    Ns_DString    ds;
+    Ns_ReturnCode status;
 
     NS_NONNULL_ASSERT(request != NULL);
     NS_NONNULL_ASSERT(url != NULL);
@@ -548,8 +552,10 @@ Ns_SetRequestUrl(Ns_Request *request, const char *url)
     FreeUrl(request);
     Ns_DStringInit(&ds);
     Ns_DStringAppend(&ds, url);
-    SetUrl(request, ds.string);
+    status = SetUrl(request, ds.string);
     Ns_DStringFree(&ds);
+
+    return status;
 }
 
 
@@ -602,19 +608,19 @@ FreeUrl(Ns_Request *request)
  *----------------------------------------------------------------------
  */
 
-static void
+static Ns_ReturnCode
 SetUrl(Ns_Request *request, char *url)
 {
-    Tcl_DString  ds1, ds2;
-    char        *p;
-    const char  *encodedPath;
-    Tcl_Encoding encoding;
+    Tcl_DString   ds1;
+    char         *p;
+    const char   *encodedPath;
+    Tcl_Encoding  encoding;
+    Ns_ReturnCode status = NS_OK;
 
     NS_NONNULL_ASSERT(request != NULL);
     NS_NONNULL_ASSERT(url != NULL);
 
     Tcl_DStringInit(&ds1);
-    Tcl_DStringInit(&ds2);
 
     /*
      * Look for a query string at the end of the URL.
@@ -634,76 +640,87 @@ SetUrl(Ns_Request *request, char *url)
      */
     encodedPath = url;
     encoding = Ns_GetUrlEncoding(NULL);
-    Ns_Log(Debug, "### Request SetUrl calls Ns_UrlPathDecode '%s'", encodedPath);
     p = Ns_UrlPathDecode(&ds1, encodedPath, encoding);
-    Ns_Log(Debug, " ### decoded path '%s'", p);
+    Ns_Log(Debug, "### Request SetUrl '%s' decoded path '%s' length %ld", encodedPath, p, (long)ds1.length);
 
     if (p == NULL) {
         p = url;
+
+    } else if (ds1.length == 0) {
+        Ns_Log(Debug, "### Request SetUrl '%s' is invalid", encodedPath);
+        status = NS_ERROR;
     }
-    (void)Ns_NormalizeUrl(&ds2, p);
-    Tcl_DStringSetLength(&ds1, 0);
 
-    /*
-     * Append a trailing slash to the normalized URL if the original URL
-     * ended in slash that wasn't also the leading slash.
-     */
+    if (status == NS_OK) {
+        Tcl_DString ds2;
 
-    while (*url == '/') {
-        ++url;
-    }
-    if (*url != '\0' && url[strlen(url) - 1u] == '/') {
-        Tcl_DStringAppend(&ds2, "/", 1);
-    }
-    request->url = ns_strdup(ds2.string);
-    request->url_len = ds2.length;
-    Tcl_DStringFree(&ds2);
+        Tcl_DStringInit(&ds2);
+        (void)Ns_NormalizeUrl(&ds2, p);
+        Tcl_DStringSetLength(&ds1, 0);
 
-    /*
-     * Build the urlv and set urlc.
-     */
-    {
-        Tcl_Obj *listPtr, *segmentObj;
-
-        listPtr = Tcl_NewListObj(0, NULL);
-        Tcl_IncrRefCount(listPtr);
         /*
-         * Skip the leading slash.
+         * Append a trailing slash to the normalized URL if the original URL
+         * ended in slash that wasn't also the leading slash.
          */
-        encodedPath++;
 
-        while (*encodedPath != '\0') {
-            p = strchr(encodedPath, INTCHAR('/'));
-            if (p == NULL) {
-                break;
+        while (*url == '/') {
+            ++url;
+        }
+        if (*url != '\0' && url[strlen(url) - 1u] == '/') {
+            Tcl_DStringAppend(&ds2, "/", 1);
+        }
+        request->url = ns_strdup(ds2.string);
+        request->url_len = ds2.length;
+        Tcl_DStringFree(&ds2);
+
+        /*
+         * Build the urlv and set urlc.
+         */
+        {
+            Tcl_Obj *listPtr, *segmentObj;
+
+            listPtr = Tcl_NewListObj(0, NULL);
+            Tcl_IncrRefCount(listPtr);
+            /*
+             * Skip the leading slash.
+             */
+            encodedPath++;
+
+            while (*encodedPath != '\0') {
+                p = strchr(encodedPath, INTCHAR('/'));
+                if (p == NULL) {
+                    break;
+                }
+                *p = '\0';
+                Ns_UrlPathDecode(&ds1, encodedPath, encoding);
+                segmentObj = Tcl_NewStringObj(ds1.string, ds1.length);
+                Tcl_ListObjAppendElement(NULL, listPtr, segmentObj);
+                Tcl_DStringSetLength(&ds1, 0);
+                encodedPath = p + 1;
             }
-            *p = '\0';
-            Ns_UrlPathDecode(&ds1, encodedPath, encoding);
-            segmentObj = Tcl_NewStringObj(ds1.string, ds1.length);
-            Tcl_ListObjAppendElement(NULL, listPtr, segmentObj);
-            Tcl_DStringSetLength(&ds1, 0);
-            encodedPath = p + 1;
-        }
-        /*
-         * Append last segment if not empty (for compatibility with previous
-         * versions).
-         */
-        if (*encodedPath != '\0') {
-            Ns_UrlPathDecode(&ds1, encodedPath, encoding);
-            segmentObj = Tcl_NewStringObj(ds1.string, ds1.length);
-            Tcl_ListObjAppendElement(NULL, listPtr, segmentObj);
-        }
+            /*
+             * Append last segment if not empty (for compatibility with previous
+             * versions).
+             */
+            if (*encodedPath != '\0') {
+                Ns_UrlPathDecode(&ds1, encodedPath, encoding);
+                segmentObj = Tcl_NewStringObj(ds1.string, ds1.length);
+                Tcl_ListObjAppendElement(NULL, listPtr, segmentObj);
+            }
 
-        /*
-         * Set request->urlc and request->urlv based on the listPtr.
-         */
-        Tcl_ListObjLength(NULL, listPtr, &request->urlc);
-        request->urlv = ns_strdup(Tcl_GetString(listPtr));
-        request->urlv_len = (TCL_SIZE_T)strlen(request->urlv);
+            /*
+             * Set request->urlc and request->urlv based on the listPtr.
+             */
+            Tcl_ListObjLength(NULL, listPtr, &request->urlc);
+            request->urlv = ns_strdup(Tcl_GetString(listPtr));
+            request->urlv_len = (TCL_SIZE_T)strlen(request->urlv);
 
-        Tcl_DecrRefCount(listPtr);
+            Tcl_DecrRefCount(listPtr);
+        }
     }
     Tcl_DStringFree(&ds1);
+
+    return status;
 }
 
 

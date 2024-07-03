@@ -2343,7 +2343,7 @@ NS_EXTERN const char *
 Ns_SkipUrl(const Ns_Request *request, int n)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN void
+NS_EXTERN Ns_ReturnCode
 Ns_SetRequestUrl(Ns_Request *request, const char *url)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
