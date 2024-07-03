@@ -1,6 +1,6 @@
 # -*- Tcl -*-
 
-package require tcltest 2.5
+package require tcltest 2.2
 namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv

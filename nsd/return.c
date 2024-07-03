@@ -479,7 +479,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
 
         sockPtr = Ns_ConnSockPtr(conn);
         if (sockPtr != NULL) {
-            NsServer *servPtr = ((Sock *)sockPtr)->servPtr;
+            const NsServer *servPtr = ((Sock *)sockPtr)->servPtr;
 
             if (servPtr->opts.extraHeaders != NULL) {
                 /*
@@ -718,7 +718,7 @@ Ns_ConnReturnNotice(Ns_Conn *conn, int status,
 
         if (result == TCL_OK) {
             Tcl_Obj    *resultObj;
-            char       *resultString;
+            const char *resultString;
             TCL_SIZE_T  resultLen;
 
             resultObj = Tcl_GetObjResult(interp);

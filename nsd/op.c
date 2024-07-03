@@ -431,19 +431,20 @@ Ns_ConnRedirect(Ns_Conn *conn, const char *url)
     /*
      * Update the request URL.
      */
+    status = Ns_SetRequestUrl(&conn->request, url);
 
-    Ns_SetRequestUrl(&conn->request, url);
+    if (status == NS_OK) {
+        /*
+         * Re-authorize and run the request.
+         */
+        status = Ns_AuthorizeRequest(Ns_ConnServer(conn),
+                                     conn->request.method,
+                                     conn->request.url,
+                                     Ns_ConnAuthUser(conn),
+                                     Ns_ConnAuthPasswd(conn),
+                                     Ns_ConnPeerAddr(conn));
+    }
 
-    /*
-     * Re-authorize and run the request.
-     */
-
-    status = Ns_AuthorizeRequest(Ns_ConnServer(conn),
-                                 conn->request.method,
-                                 conn->request.url,
-                                 Ns_ConnAuthUser(conn),
-                                 Ns_ConnAuthPasswd(conn),
-                                 Ns_ConnPeerAddr(conn));
     switch (status) {
     case NS_OK:
         status = Ns_ConnRunRequest(conn);

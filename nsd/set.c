@@ -229,8 +229,8 @@ ShiftData(Ns_Set *set, const char *oldDataStart) {
 static char *
 AppendData(Ns_Set *set, size_t index, const char *value, TCL_SIZE_T valueSize)
 {
-    char      *oldDataStart;
-    TCL_SIZE_T oldLength, oldAvail;
+    const char *oldDataStart;
+    TCL_SIZE_T  oldLength, oldAvail;
 
     oldDataStart = set->data.string;
     oldLength = set->data.length;

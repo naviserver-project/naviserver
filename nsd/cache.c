@@ -231,7 +231,7 @@ Ns_CacheFindEntryT(Ns_Cache *cache, const char *key, const Ns_CacheTransactionSt
             ++cachePtr->stats.nmiss;
 
         } else {
-            void *value;
+            const void *value;
 
             if (ePtr->value == NULL) {
                 value = Ns_CacheGetValueT((Ns_Entry *) ePtr, transactionStackPtr);

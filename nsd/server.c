@@ -197,7 +197,7 @@ NsInitServer(const char *server, Ns_ServerInitProc *initProc)
     NsServer          *servPtr;
     const ServerInit  *initPtr;
     const char        *path, *p;
-    Ns_Set            *set = NULL;
+    const Ns_Set      *set = NULL;
     size_t             i;
     int                n;
 

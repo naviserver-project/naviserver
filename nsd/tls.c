@@ -133,7 +133,7 @@ OCSP_ResponseIsValid(OCSP_RESPONSE *resp, OCSP_CERTID *id)
 static void DrainErrorStack(Ns_LogSeverity severity, const char *errorContext, unsigned long sslERRcode)
     NS_GNUC_NONNULL(2);
 
-static Ns_ReturnCode WaitFor(NS_SOCKET sock, unsigned int st, Ns_Time *timeoutPtr);
+static Ns_ReturnCode WaitFor(NS_SOCKET sock, unsigned int st, const Ns_Time *timeoutPtr);
 
 static void CertTableInit(void);
 static void CertTableReload(void *UNUSED(arg));
@@ -1195,7 +1195,7 @@ Ns_TLS_CtxFree(NS_TLS_SSL_CTX *ctx)
  *----------------------------------------------------------------------
  */
 static Ns_ReturnCode
-WaitFor(NS_SOCKET sock, unsigned int st, Ns_Time *timeoutPtr)
+WaitFor(NS_SOCKET sock, unsigned int st, const Ns_Time *timeoutPtr)
 {
     Ns_Time timeout;
     if (timeoutPtr == NULL) {
