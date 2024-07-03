@@ -1793,16 +1793,16 @@ Ns_TaskFree(Ns_Task *task)
  */
 
 NS_EXTERN void
-Ns_TclResetObjType(Tcl_Obj *objPtr, const Tcl_ObjType *newTypePtr)
+Ns_TclResetObjType(Tcl_Obj *objPtr, CONST86 Tcl_ObjType *newTypePtr)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_TclSetTwoPtrValue(Tcl_Obj *objPtr, const Tcl_ObjType *newTypePtr,
+Ns_TclSetTwoPtrValue(Tcl_Obj *objPtr, CONST86 Tcl_ObjType *newTypePtr,
                      void *ptr1, void *ptr2)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
-Ns_TclSetOtherValuePtr(Tcl_Obj *objPtr, const Tcl_ObjType *newTypePtr, void *value)
+Ns_TclSetOtherValuePtr(Tcl_Obj *objPtr, CONST86 Tcl_ObjType *newTypePtr, void *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
