@@ -56,7 +56,7 @@ static void AppendRange(Ns_DString *dsPtr, const Ns_ObjvValueRange *r)
 /*
  * Static variables defined in this file.
  */
-static const Tcl_ObjType specType = {
+static CONST86 Tcl_ObjType specType = {
     "ns:spec",
     FreeSpecObj,
     DupSpec,
@@ -67,7 +67,7 @@ static const Tcl_ObjType specType = {
 #endif
 };
 
-static const Tcl_ObjType memUnitType = {
+static CONST86 Tcl_ObjType memUnitType = {
     "ns:mem_unit",
     NULL,
     NULL,

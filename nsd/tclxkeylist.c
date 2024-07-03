@@ -48,7 +48,7 @@ static bool TclX_IsNullObj(Tcl_Obj *objPtr) NS_GNUC_NONNULL(1);
  * listType is used in TclX_IsNullObj() in read-only mode
  * therefore no need to mutex protect them (see below).
  */
-static const Tcl_ObjType *listType;
+static CONST86 Tcl_ObjType *listType;
 
 /*
  * This is called once from InitInterp() call in tclinit.c
@@ -481,7 +481,7 @@ static Tcl_SetFromAnyProc      SetKeyedListFromAny;
 /*
  * Type definition.
  */
-static const Tcl_ObjType keyedListType = {
+static CONST86 Tcl_ObjType keyedListType = {
     "keyedList",              /* name */
     FreeKeyedListInternalRep, /* freeIntRepProc */
     DupKeyedListInternalRep,  /* dupIntRepProc */

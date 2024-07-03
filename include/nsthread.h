@@ -643,6 +643,17 @@ typedef int ns_sockerrno_t;
 # define TCL_HASH_TYPE unsigned
 #endif
 
+/*
+ * The intended meaning of CONST86 is: some type is defined as "const" in Tcl
+ * 8.6, but was NOT defined as such in Tcl 8.5.
+ */
+#ifndef CONST86
+# ifdef NS_TCL_PRE86
+#  define CONST86
+# else
+#  define CONST86 const
+# endif
+#endif
 
 #ifndef NS_TCL_HAVE_TIP629
 # define TCL_OBJC_T           int
