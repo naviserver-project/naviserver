@@ -151,6 +151,7 @@ namespace eval ::revproxy::ns_http {
             } elseif {[dict exists $r file]} {
                 log notice "submit file <[dict get $r file]>"
                 ns_writer submitfile [dict get $r file]
+                file delete [dict get $r file]
             } else {
                 error "REVERSE PROXY <$url>: invalid return dict with keys <[dict keys $r]"
             }
