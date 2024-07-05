@@ -719,7 +719,7 @@ namespace eval ::revproxy::ns_connchan {
         return $result
     }
 
-    interp alias {} log {} ::revproxy::log
+    interp alias {} [namespace current]::log {} ::revproxy::log
 
 }
 

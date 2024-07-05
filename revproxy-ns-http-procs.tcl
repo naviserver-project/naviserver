@@ -165,7 +165,7 @@ namespace eval ::revproxy::ns_http {
         return filter_return
     }
 
-    interp alias {} log {} ::revproxy::log
+    interp alias {} [namespace current]::log {} ::revproxy::log
 }
 
 #
