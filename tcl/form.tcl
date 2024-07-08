@@ -205,7 +205,7 @@ proc ns_getform {args}  {
                     #set nocomplain [expr {$::tcl_version < 9.0 ? "" : "-profile tcl8"}]
                     set nocomplain "" ;# Tcl9 is a moving target, not sure yet, how this will end up when released
                     try {
-                        fconfigure $fp {*}$nocomplain -encoding binary -translation binary
+                        fconfigure $fp {*}$nocomplain -translation binary
                     } on error {errorMsg} {
                         ns_log warning "ns_getform: fconfigure of temporary file returned: $errorMsg"
                     }
@@ -493,7 +493,7 @@ proc ns_parseformfile {args} {
     #
     # Everything below is just for content-type "multipart/form-data"
     #
-    fconfigure $fp -encoding binary -translation binary
+    fconfigure $fp -translation binary
     set boundary "--$b"
 
     #ns_log notice "PARSE multipart inputfile $fp [fconfigure $fp -encoding]"
@@ -630,7 +630,7 @@ proc ns_parseformfile {args} {
             # binary, no matter what the embedded file-type is.
 
             set tmp [ns_opentmpfile tmpfile]
-            catch {fconfigure $tmp -encoding binary -translation binary}
+            catch {fconfigure $tmp -translation binary}
 
             if { $length > 0 } {
                 seek $fp $start
