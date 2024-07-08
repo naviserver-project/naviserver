@@ -219,7 +219,7 @@ proc ns_getform {args}  {
                 foreach off $offs len $lens hdr $hdrs {
 
                     set fp [ns_opentmpfile tmpfile]
-                    catch {fconfigure $fp -encoding binary -translation binary}
+                    catch {fconfigure $fp -translation binary}
 
                     ns_atclose [list file delete -- $tmpfile]
                     ns_conn copy $off $len $fp
@@ -503,7 +503,7 @@ proc ns_parseformfile {args} {
     #
     # Everything below is just for content-type "multipart/form-data"
     #
-    fconfigure $fp -encoding binary -translation binary
+    fconfigure $fp -translation binary
     set boundary "--$b"
 
     #ns_log notice "PARSE multipart inputfile $fp [fconfigure $fp -encoding]"
@@ -638,7 +638,7 @@ proc ns_parseformfile {args} {
             # binary, no matter what the embedded file-type is.
 
             set tmp [ns_opentmpfile tmpfile]
-            catch {fconfigure $tmp -encoding binary -translation binary}
+            catch {fconfigure $tmp -translation binary}
 
             if { $length > 0 } {
                 seek $fp $start
