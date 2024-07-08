@@ -358,7 +358,7 @@ test ns_base64encode-3.0 {
 } -constraints {nsf} -body {
     set fn testserver/pages/utf-8-chars
     set a "äüö☀"
-    set F [open $fn]; fconfigure $F -encoding binary -translation binary; set b [read $F]; close $F
+    set F [open $fn]; fconfigure $F -translation binary; set b [read $F]; close $F
     set F [open $fn]; set c [read $F]; close $F
     ns_log notice "obj(a) [nsf::__db_get_obj $a]"
     ns_log notice "obj(b) [nsf::__db_get_obj $b]"
@@ -381,7 +381,7 @@ test ns_base64encode-3.0 {
     # operation, even when everything is set to binary. The "puts"
     # operations were converting the tcl objs to bytearrays.
     #
-    #set F [::open [ns_mktemp] wb]; ::fconfigure $F -encoding binary -translation binary
+    #set F [::open [ns_mktemp] wb]; ::fconfigure $F -translation binary
     #::puts -nonewline $F $a
     #::puts -nonewline $F $b
     #::puts -nonewline $F $c
@@ -435,7 +435,7 @@ test ns_base64encode-3.1 {
     # operation, even when everything is set to binary.  The "puts"
     # operations were converting the tcl objs to bytearrays.
     #
-    #set F [::open [ns_mktemp] wb]; ::fconfigure $F -encoding binary -translation binary
+    #set F [::open [ns_mktemp] wb]; ::fconfigure $F -translation binary
     #::puts -nonewline $F $a
     #::puts -nonewline $F $b
     #::puts -nonewline $F $c
@@ -476,7 +476,7 @@ test ns_base64encode-3.2 {
     # Tcl9 raises an error with invalid byte sequence for the puts operation,
     # even when everything is set to binary
     #
-    #set F [::open [ns_mktemp] wb]; ::fconfigure $F -encoding binary -translation binary
+    #set F [::open [ns_mktemp] wb]; ::fconfigure $F -translation binary
     #::puts -nonewline $F $a
     #::puts -nonewline $F $b
     #::close $F
@@ -496,7 +496,7 @@ test ns_base64encode-3.3 {binary data, from file or memory} -constraints {nsf} -
     set fn testserver/pages/binary
     set _ "\u0000\u0001\u0002\u0003☀"       ;# incorrect encoded binary string
     set a [encoding convertto utf-8 $_]     ;# correct encoded binary string
-    set F [open $fn]; fconfigure $F -encoding binary -translation binary; set b [read $F]; close $F
+    set F [open $fn]; fconfigure $F -translation binary; set b [read $F]; close $F
     set F [open $fn]; set c [read $F]; close $F
     ns_log notice "obj(_) [nsf::__db_get_obj $_]"
     ns_log notice "obj(a) [nsf::__db_get_obj $a]"
@@ -525,7 +525,7 @@ test ns_base64encode-3.3 {binary data, from file or memory} -constraints {nsf} -
     # Tcl9 raises an error with invalid byte sequence for the puts operation,
     # even when everything is set to binary
     #
-    #set F [::open [ns_mktemp] wb]; ::fconfigure $F -encoding binary -translation binary
+    #set F [::open [ns_mktemp] wb]; ::fconfigure $F -translation binary
     #::puts -nonewline $F $_
     #::puts -nonewline $F $a
     #::puts -nonewline $F $b

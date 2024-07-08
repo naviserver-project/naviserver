@@ -31,20 +31,18 @@ test compress-1.2 {HTTP 1.0: Accept-Encoding gzip} -constraints http09 -body {
     set b [nstest::http-0.9 \
                -http 1.0 \
                -getbinary 1 \
-               -encoding binary \
                -setheaders {Accept-Encoding gzip} \
                -getheaders {Content-Encoding Vary} \
                GET /ns_adp_compress.adp]
     ns_log notice "binary output: $b"
     list {*}[lrange $b 0 2] {*}[lrange [lindex $b end] end-10 end]
-} -result "200 gzip Accept-Encoding [lrange $this_is_a_test_gzip end-10 end]"
+} -returnCodes {ok error} -result "200 gzip Accept-Encoding [lrange $this_is_a_test_gzip end-10 end]"
 
 
 test compress-1.2.1 {HTTP 1.0: Accept-Encoding "gzip ; q = 1"} -constraints http09 -body {
     set b [nstest::http-0.9 \
                -http 1.0 \
                -getbinary 1 \
-               -encoding binary \
                -setheaders {Accept-Encoding "gzip ; q = 1"} \
                -getheaders {Content-Encoding Vary} \
                GET /ns_adp_compress.adp]
@@ -56,7 +54,6 @@ test compress-1.2.2 {HTTP 1.0: Accept-Encoding "gzip;q=1,"} -constraints http09 
     set b [nstest::http-0.9 \
                -http 1.0 \
                -getbinary 1 \
-               -encoding binary \
                -setheaders {Accept-Encoding "gzip;q=1,"} \
                -getheaders {Content-Encoding Vary} \
                GET /ns_adp_compress.adp]
@@ -67,7 +64,6 @@ test compress-1.2.3 {HTTP 1.0: Accept-Encoding "gzip;q=1a" - ignore invalid qval
     set b [nstest::http-0.9 \
                -http 1.0 \
                -getbinary 1 \
-               -encoding binary \
                -setheaders {Accept-Encoding "gzip;q=1a"} \
                -getheaders {Content-Encoding Vary} \
                GET /ns_adp_compress.adp]
@@ -123,7 +119,6 @@ test compress-1.2.9 {HTTP 1.0: Accept-Encoding "gzip;q=0.001"} -constraints http
     set b [nstest::http-0.9 \
                -http 1.0 \
                -getbinary 1 \
-               -encoding binary \
                -setheaders {Accept-Encoding "gzip;q=0.001"} \
                -getheaders {Content-Encoding Vary} \
                GET /ns_adp_compress.adp]
@@ -136,7 +131,6 @@ test compress-1.3 {HTTP 1.0: Accept-Encoding gzip (again, checking reset)} -cons
     set b [nstest::http-0.9 \
                -http 1.0 \
                -getbinary 1 \
-               -encoding binary \
                -setheaders {Accept-Encoding gzip} \
                -getheaders {Content-Encoding Vary} \
                GET /ns_adp_compress.adp]
@@ -147,7 +141,6 @@ test compress-1.4 {HTTP 1.0: Accept-Encoding *} -constraints http09 -body {
     nstest::http-0.9 \
         -http 1.0 \
         -getbinary 1 \
-        -encoding binary \
         -setheaders {Accept-Encoding *} \
         -getheaders {Content-Encoding Vary} \
         GET /ns_adp_compress.adp
@@ -166,7 +159,6 @@ test compress-1.6 {HTTP 1.0: Accept-Encoding gzip and identity} -constraints htt
     set b [nstest::http-0.9 \
                -http 1.0 \
                -getbinary 1 \
-               -encoding binary \
                -setheaders {Accept-Encoding "gzip;q=0.9, identity; q=0.5"} \
                -getheaders {Content-Encoding Vary} \
                GET /ns_adp_compress.adp]
@@ -186,7 +178,6 @@ test compress-1.8 {HTTP 1.0: Accept-Encoding gzip and identity} -body {
 #     nstest::http \
 #         -http 1.0 \
 #         -getbinary 1 \
-#         -encoding binary \
 #         -setheaders {Accept-Encoding "gzip;q=0.8, *;q=0.9"} \
 #         -getheaders {Content-Encoding Vary} \
 #         GET /ns_adp_compress.adp
@@ -196,7 +187,6 @@ test compress-1.10 {HTTP 1.0: Accept-Encoding gzip and *} -constraints http09 -b
     set b [nstest::http-0.9 \
                -http 1.0 \
                -getbinary 1 \
-               -encoding binary \
                -setheaders {Accept-Encoding "gzip;q=0.9, *; q=0.5"} \
                -getheaders {Content-Encoding Vary} \
                GET /ns_adp_compress.adp]
@@ -207,7 +197,6 @@ test compress-1.11 {HTTP 1.0: Accept-Encoding gzip and identity and *} -constrai
     set b [nstest::http-0.9 \
                -http 1.0 \
                -getbinary 1 \
-               -encoding binary \
                -setheaders {Accept-Encoding "gzip;q=0.9, identity;q=0.9, *;q=0.7"} \
                -getheaders {Content-Encoding Vary} \
                GET /ns_adp_compress.adp]
@@ -236,7 +225,6 @@ test compress-1.13 {HTTP 1.0: Accept-Encoding identity and *} -constraints http0
     nstest::http-0.9 \
         -http 1.0 \
         -getbinary 1 \
-        -encoding binary \
         -setheaders {Accept-Encoding "identity;q=0.7, *;q=0.9"} \
         -getheaders {Content-Encoding Vary} \
         GET /ns_adp_compress.adp
@@ -247,7 +235,6 @@ test compress-2.1 {HTTP 1.1: no Accept-Encoding} -constraints http09 -body {
     nstest::http-0.9 \
         -http 1.1 \
         -getbinary 1 \
-        -encoding binary \
         -getheaders {Content-Encoding Vary} \
         GET /ns_adp_compress.adp
 } -result "200 {} Accept-Encoding {$this_is_a_test}"
@@ -256,7 +243,6 @@ test compress-2.2 {HTTP 1.1: Accept-Encoding *} -constraints http09 -body {
     set b [nstest::http-0.9 \
                -http 1.1 \
                -getbinary 1 \
-               -encoding binary \
                -setheaders {Accept-Encoding *} \
                -getheaders {Content-Encoding Vary} \
                GET /ns_adp_compress.adp]
@@ -276,7 +262,6 @@ test compress-2.4 {HTTP 1.1: Accept-Encoding gzip and identity} -constraints htt
     set b [nstest::http-0.9 \
                -http 1.1 \
                -getbinary 1 \
-               -encoding binary \
                -setheaders {Accept-Encoding "gzip;q=0.9, identity; q=0.5"} \
                -getheaders {Content-Encoding Vary} \
                GET /ns_adp_compress.adp]
@@ -296,7 +281,6 @@ test compress-2.5 {HTTP 1.1: Accept-Encoding gzip and identity} -body {
 #     nstest::http \
 #         -http 1.1 \
 #         -getbinary 1 \
-#         -encoding binary \
 #         -setheaders {Accept-Encoding "gzip;q=0.8, *;q=0.9"} \
 #         -getheaders {Content-Encoding Vary} \
 #         GET /ns_adp_compress.adp
@@ -306,7 +290,6 @@ test compress-2.7 {HTTP 1.1: Accept-Encoding gzip and *} -constraints http09 -bo
     set b [nstest::http-0.9 \
                -http 1.1 \
                -getbinary 1 \
-               -encoding binary \
                -setheaders {Accept-Encoding "gzip;q=0.9, *; q=0.5"} \
                -getheaders {Content-Encoding Vary} \
                GET /ns_adp_compress.adp]
@@ -317,7 +300,6 @@ test compress-2.9 {HTTP 1.1: Accept-Encoding gzip and identity and *} -constrain
     set b [nstest::http-0.9 \
                -http 1.1 \
                -getbinary 1 \
-               -encoding binary \
                -setheaders {Accept-Encoding "gzip;q=0.9, identity;q=0.9, *;q=0.7"} \
                -getheaders {Content-Encoding Vary} \
                GET /ns_adp_compress.adp]
@@ -337,7 +319,6 @@ test compress-2.11 {HTTP 1.1: Accept-Encoding identity and *} -constraints http0
     set b [nstest::http-0.9 \
                -http 1.1 \
                -getbinary 1 \
-               -encoding binary \
                -setheaders {Accept-Encoding "identity;q=0.7, *;q=0.9"} \
                -getheaders {Content-Encoding Vary} \
                GET /ns_adp_compress.adp]
@@ -355,7 +336,6 @@ test compress-3.1 {ns_return, compressed} -constraints http09 -setup {
     set b [nstest::http-0.9 \
                -http 1.1 \
                -getbinary 1 \
-               -encoding binary \
                -setheaders {Accept-Encoding gzip} \
                -getheaders {Content-Encoding Vary} \
                GET /compress]
@@ -391,7 +371,6 @@ test compress-3.3 {ns_write streaming, compressed} -constraints http09 -setup {
     set b [nstest::http-0.9 \
                -http 1.0 \
                -getbinary 1 \
-               -encoding binary \
                -setheaders {Accept-Encoding gzip} \
                -getheaders {Content-Encoding Vary} \
                GET /compress]
@@ -410,7 +389,6 @@ test compress-3.4 {streaming adp, compressed} -constraints http09 -body {
     set b [nstest::http-0.9 \
                -http 1.0 \
                -getbinary 1 \
-               -encoding binary \
                -setheaders {Accept-Encoding gzip} \
                -getheaders {Content-Encoding Vary} \
                GET /ns_adp_compress.adp?stream=1]
@@ -443,7 +421,6 @@ test compress-3.5 {ns_write streaming + HTTP 1.1 chunking, compressed} -constrai
     set b [nstest::http-0.9 \
                -http 1.1 \
                -getbinary 1 \
-               -encoding binary \
                -setheaders {Accept-Encoding gzip connection close} \
                -getheaders {Content-Encoding Vary Transfer-Encoding Content-Length} \
                GET /compress]

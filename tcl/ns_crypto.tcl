@@ -26,7 +26,7 @@ nx::Class create ::ns_crypto::HashFunctions {
         # function on every block.
         #
         set F [open $filename]
-        fconfigure $F -encoding binary -translation binary
+        fconfigure $F -translation binary
         while (1) {
             set block [read $F 32768]
             :add $block

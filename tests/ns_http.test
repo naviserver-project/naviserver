@@ -538,7 +538,7 @@ test http-5.2.0-b {
     set string "\u0000\u0001\u0002\u0003☀"
     set a [encoding convertto utf-8 $string]
     if {[info commands nsf::__db_get_obj] ne ""} {
-        set F [open testserver/pages/binary ]; fconfigure $F -encoding binary -translation binary; set b [read $F]; close $F
+        set F [open testserver/pages/binary ]; fconfigure $F -translation binary; set b [read $F]; close $F
         ns_log notice "l(a)=[llength [split $a {}]] ... Tcl_Obj from string notation"
         ns_log notice "l(b)=[llength [split $b {}]] ... Tcl_Obj from binary file"
         ns_log notice "obj(string) [nsf::__db_get_obj $string]"
