@@ -22,6 +22,11 @@
 #include <openssl/err.h>
 #endif
 
+#ifndef NS_TCLHTTP_MAXTHREADS
+# define NS_TCLHTTP_MAXTHREADS 64
+#endif
+
+
 #define TCLHTTP_USE_EXTERNALTOUTF 1
 
 /*
@@ -389,7 +394,7 @@ NsConfigTclHttp(void)
     size_t     nq, idx;
     Ns_DString ds;
 
-    nq = (size_t)Ns_ConfigWideIntRange(NS_GLOBAL_CONFIG_PARAMETERS, "numtclhttptaskqueues", 1, 1, 10000);
+    nq = (size_t)Ns_ConfigWideIntRange(NS_GLOBAL_CONFIG_PARAMETERS, "numtclhttptaskqueues", 1, 1, NS_TCLHTTP_MAXTHREADS);
     nsconf.tclhttptasks.numqueues = (int)nq;
     nsconf.tclhttptasks.queues = ns_calloc(nq, sizeof(Ns_TaskQueue*));
 
