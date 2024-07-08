@@ -59,6 +59,9 @@ namespace eval ::nstest {
         #
         # Force a specific encoding (utf-8 default).
         #
+        if {$getbinary} {
+            set encoding iso8859-1
+        }
 
         fconfigure $rfd -encoding $encoding
         fconfigure $wfd -encoding $encoding
