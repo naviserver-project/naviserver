@@ -18,6 +18,9 @@ if {$::tcl_version eq "8.5"} {
 #
 
 namespace eval ::revproxy {
+    variable version
+    variable verbose
+    variable filters
 
     set version 0.20
     set verbose [ns_config ns/server/[ns_info server]/module/revproxy verbose 0]
