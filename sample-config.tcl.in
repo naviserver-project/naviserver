@@ -138,8 +138,7 @@ ns_section ns/parameters {
     # Configure number of tclhttp task queues. For common (Internet) usage
     # leave it on the default (1). For high-speed file uploads/downloads
     # in LAN 10/100G networks and to/from fast SSD storage you may get
-    # some more performance by setting this parameter up to the number of
-    # CPU cores of your system or less.
+    # better performance by defining multiple threads.
     ns_param    numtclhttptaskqueues  1
 
     #
