@@ -682,9 +682,13 @@ Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *urlString, const char *baseString)
     Ns_DStringInit(&baseDs);
 
     /*
-     * The first part does not have to be a valid URL.
+     * The first part does not have to be a valid URL. If it is just empty,
+     * interprete it as "/".
      */
     Ns_DStringAppend(&urlDs, urlString);
+    if (unlikely(urlDs.length == 0)) {
+        Tcl_DStringAppend(&urlDs, "/", 1);
+    }
     (void) Ns_ParseUrl(urlDs.string, NS_FALSE, &url, &errorMsg);
 
     Ns_DStringAppend(&baseDs, baseString);
