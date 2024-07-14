@@ -857,7 +857,7 @@ configuration file (here, for the server configuration [emph s1]).
 
 [para] The configuration parameter [const noticedetail] can be used
  to control, whether the detailed server version information should be
- included in these server retplies (revealing this kind of information
+ included in these server replies (revealing this kind of information
  is often not wanted for security reasons).
 
 

@@ -683,7 +683,7 @@ Ns_AbsoluteUrl(Ns_DString *dsPtr, const char *urlString, const char *baseString)
 
     /*
      * The first part does not have to be a valid URL. If it is just empty,
-     * interprete it as "/".
+     * interpret it as "/".
      */
     Ns_DStringAppend(&urlDs, urlString);
     if (unlikely(urlDs.length == 0)) {
