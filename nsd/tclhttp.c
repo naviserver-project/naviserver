@@ -2114,6 +2114,8 @@ CloseWaitingCheckExpire(void *UNUSED(arg), int UNUSED(id)) {
 
     Ns_GetTime(&now);
 
+    Ns_Log(Ns_LogTaskDebug, "CloseWaitingCheckExpire called");
+
     Ns_MutexLock(&closeWaitingMutex);
     for (i = 0; i < closeWaitingList.size; i ++) {
         CloseWaitingData *currentCwDataPtr = closeWaitingList.data[i];
@@ -2125,13 +2127,16 @@ CloseWaitingCheckExpire(void *UNUSED(arg), int UNUSED(id)) {
         diff = Ns_DiffTime(&now, &currentCwDataPtr->expire, NULL);
         if (diff > -1) {
             if (currentCwDataPtr->state == CW_INUSE) {
-                int errorCode = Ns_SockErrorCode(NULL, currentCwDataPtr->sock);
+                int errorCode;
 
                 /*
                  * Check, if the socket is in an error state. Checking as well
                  * the OpenSSL error code won't work here, since the errors
                  * are kept per thread, and the janitor is working in a different thread.
                  */
+                errorCode = Ns_SockErrorCode(NULL, currentCwDataPtr->sock);
+                Ns_Log(Ns_LogTaskDebug, "CloseWaitingCheckExpire check [%lu] state %s diff %ld errorCode %d",
+                       i, CloseWaitingDataPrettyState(currentCwDataPtr), diff, errorCode);
 
                 /*Ns_Log(Notice, "CloseWaitingCheckExpire sock %d host %s:%hu expired,"
                        " but still marked as INUSE, errorCode %d",
@@ -2156,6 +2161,7 @@ CloseWaitingCheckExpire(void *UNUSED(arg), int UNUSED(id)) {
         }
     }
     Ns_MutexUnlock(&closeWaitingMutex);
+    Ns_Log(Ns_LogTaskDebug, "CloseWaitingCheckExpire done");
 
 }
 
@@ -4528,6 +4534,10 @@ HttpClose(
  */
 static void HttpCloseWaitingDataRelease(NsHttpTask *httpPtr)
 {
+    NS_NONNULL_ASSERT(httpPtr != NULL);
+
+    Ns_Log(Ns_LogTaskDebug, "HttpCloseWaitingDataRelease gets pos %ld", httpPtr->pos);
+
     if (httpPtr->pos > 0u) {
 
         Ns_MutexLock(&closeWaitingMutex);
@@ -6185,7 +6195,7 @@ PersistentConnectionLookup(const char *remoteHost, unsigned short remotePort,
     NS_NONNULL_ASSERT(remoteHost != NULL);
     NS_NONNULL_ASSERT(cwDataPtr != NULL);
 
-    /*Ns_Log(Notice, "PersistentConnectionLookup host %s:%hu", remoteHost, remotePort);*/
+    Ns_Log(Ns_LogTaskDebug, "PersistentConnectionLookup host %s:%hu", remoteHost, remotePort);
 
     Ns_MutexLock(&closeWaitingMutex);
     for (i = 0; i < closeWaitingList.size; i ++) {
@@ -6197,21 +6207,41 @@ PersistentConnectionLookup(const char *remoteHost, unsigned short remotePort,
         if (currentCwDataPtr->state == CW_WAITING
             && strcmp(remoteHost, currentCwDataPtr->host) == 0
             && currentCwDataPtr->port == remotePort) {
+            char    buffer[1];
+            ssize_t nread;
+
             /*
-             * We copy more than necessary, but KISS.
+             * Check for liveliness of the socket. The other side might have
+             * closed the connection for various reasons. We can detect this,
+             * when recv() returns 0 (similar EOF). Since the recv() operation
+             * is quite fast, we can do this operation within the mutex
+             * lock. When lock times become too high, we might reconsider
+             * this.
              */
-            *cwDataPtr = *currentCwDataPtr;
-            currentCwDataPtr->state = CW_INUSE;
-            success = NS_TRUE;
-            break;
+
+            nread = ns_recv(currentCwDataPtr->sock, buffer, 1, MSG_PEEK);
+            //Ns_Log(Notice, "... liveliness nread %ld on sock %d", nread, currentCwDataPtr->sock);
+
+            if (likely(nread != 0)) {
+                /*
+                 * We copy more than necessary, but KISS.
+                 */
+                *cwDataPtr = *currentCwDataPtr;
+                currentCwDataPtr->state = CW_INUSE;
+                success = NS_TRUE;
+                break;
+
+            } else {
+                Ns_Log(Ns_LogTaskDebug, "... compare with host %s:%hu state %d socket %d cannot be reused"
+                       " (other side closed connection)",
+                       currentCwDataPtr->host, currentCwDataPtr->port, currentCwDataPtr->state,
+                       currentCwDataPtr->sock);
+            }
         }
     }
     Ns_MutexUnlock(&closeWaitingMutex);
-
-    /*if (success) {
-        Ns_Log(Notice, "PersistentConnectionLookup host %s:%hu -> %d",
-               remoteHost, remotePort, success);
-               }*/
+    Ns_Log(Ns_LogTaskDebug, "PersistentConnectionLookup host %s:%hu -> %d",
+           remoteHost, remotePort, success);
 
     return success;
 }
@@ -6242,8 +6272,8 @@ PersistentConnectionAdd(NsHttpTask *httpPtr, const char **reasonPtr)
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(reasonPtr != NULL);
 
-    /*Ns_Log(Notice,"PersistentConnectionAdd host %s:%hu input pos %ld input sock %d",
-      httpPtr->host, httpPtr->port, httpPtr->pos, httpPtr->sock);*/
+    Ns_Log(Ns_LogTaskDebug,"PersistentConnectionAdd called host %s:%hu input pos %ld input sock %d",
+      httpPtr->host, httpPtr->port, httpPtr->pos, httpPtr->sock);
 
     if (httpPtr->sock == NS_INVALID_SOCKET
         || Ns_SockErrorCode(NULL, httpPtr->sock) != 0
