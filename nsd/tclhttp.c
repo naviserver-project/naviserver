@@ -373,11 +373,13 @@ static NsHttpParseProc* EndParsers[] = {
  * NsConfigTclHttp --
  *
  *      Configure server-wide task queues for the [ns_http] command.
- *      For general Internet usage a single task queue suffices, as
- *      it is operating in event-loop mode. Where it becomes necessary
- *      to increase this is when running over very fast 10/100G
- *      interfaces for high-speed file up/download. Normally one would
- *      not want to start more tasks queues then the number of cores.
+ *
+ *      We configure the number of taskqueues, which corresponds to the number
+ *      of task threads.  For general Internet usage a single task queue
+ *      suffices, as it is operating in event-loop mode. Where it becomes
+ *      necessary to increase this is when running over very fast 10/100G
+ *      interfaces for high-speed file up/download. Normally one would not
+ *      want to start more tasks queues then the number of cores.
  *
  * Results:
  *      None.
@@ -394,7 +396,8 @@ NsConfigTclHttp(void)
     size_t     nq, idx;
     Ns_DString ds;
 
-    nq = (size_t)Ns_ConfigWideIntRange(NS_GLOBAL_CONFIG_PARAMETERS, "numtclhttptaskqueues", 1, 1, NS_TCLHTTP_MAXTHREADS);
+    nq = (size_t)Ns_ConfigWideIntRange(NS_GLOBAL_CONFIG_PARAMETERS, "nshttptaskthreads",
+                                       1, 1, NS_TCLHTTP_MAXTHREADS);
     nsconf.tclhttptasks.numqueues = (int)nq;
     nsconf.tclhttptasks.queues = ns_calloc(nq, sizeof(Ns_TaskQueue*));
 

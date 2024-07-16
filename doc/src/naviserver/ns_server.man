@@ -23,7 +23,7 @@ Returns a list of the currently defined filters.
 	[opt [option "-server [arg s]"]] \
 	[cmd hosts]]
 
-Returns a list of the registered host names for this server. This
+Returns a list of the registered hostnames for this server. This
 result list can be used as a white-list of configured and therefore
 secure contents accepted in the host header field of a request.
 

@@ -70,7 +70,7 @@ set https_extraheaders {
 append https_extraheaders $http_extraheaders
 
 ########################################################################
-# Global settings (for all servers)
+# Global NaviServer parameters (for all servers)
 ########################################################################
 
 ns_section ns/parameters {
@@ -133,7 +133,14 @@ ns_section ns/parameters {
 
     #ns_param   dbcloseonexit       off      ;# default: off; from nsdb
 
-    # configure SMTP module
+    #
+    # Configure the number of task threads for ns_http
+    #
+    # ns_param    nshttptaskthreads  2     ;# default: 1; number of task threads for ns_http
+
+    #
+    # Configure SMTP module
+    #
     ns_param    smtphost            "localhost"
     ns_param    smtpport            25
     ns_param    smtptimeout         60
@@ -145,6 +152,7 @@ ns_section ns/parameters {
     ns_param    smtpauthmode        ""
     ns_param    smtpauthuser        ""
     ns_param    smtpauthpassword    ""
+
 }
 
 #

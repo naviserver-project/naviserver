@@ -82,7 +82,7 @@ ns_section ns/server/${server}/modules {
 }
 
 ########################################################################
-# Global server parameters
+# Global NaviServer parameters
 ########################################################################
 
 ns_section ns/parameters {
@@ -135,11 +135,13 @@ ns_section ns/parameters {
     # (e.g. subsequent ns_return statements)
     #ns_param    rejectalreadyclosedconn  false ;# default: true
 
-    # Configure number of tclhttp task queues. For common (Internet) usage
-    # leave it on the default (1). For high-speed file uploads/downloads
-    # in LAN 10/100G networks and to/from fast SSD storage you may get
-    # better performance by defining multiple threads.
-    ns_param    numtclhttptaskqueues  1
+    # Configure the number of task threads for HTTP client requests
+    # via ns_http. Per task thread, a separate queue is defined. For
+    # common (Internet) usage, the default value of 1 is fully
+    # sufficient.  For high-speed file uploads/downloads (10/100G
+    # networks, fast I/O) the performance might be increased by
+    # defining multiple task threads.
+    #ns_param    nshttptaskthreads  2     ;# default: 1
 
     #
     # I18N Parameters

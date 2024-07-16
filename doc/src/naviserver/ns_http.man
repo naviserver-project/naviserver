@@ -461,11 +461,33 @@ otherwise stored in memory.
 [section CONFIGURATION]
 
 The behavior of [cmd ns_http] can be influenced by optional settings in the
-NaviServer configuration file. One can specify the default keep-alive
-timeout for outgoing HTTP requests, and the logging behavior. When
-logging is activated, the log file will contain information similar to
-the access.log of NaviServer (see [cmd nslog] module), but for HTTP
-client requests.
+NaviServer configuration file. The behavior can be tailored partially globally
+(for all servers) and per server definition. Globally, the number of
+threads ns_http threads can be configured.
+
+[example_begin]
+ #---------------------------------------------------------------------
+ # Global NaviServer parameters
+ #---------------------------------------------------------------------
+ ns_section ns/parameters {
+    # ...
+    # Configure the number of task threads for HTTP client requests
+    # via ns_http. Per task thread, a separate queue is defined. For
+    # common (Internet) usage, the default value of 1 is fully
+    # sufficient.  For high-speed file uploads/downloads (10/100G
+    # networks, fast I/O) the performance might be increased by
+    # defining multiple task threads.
+    #
+    #ns_param    nshttptaskthreads  2     ;# default: 1
+    # ...
+ }
+[example_end]
+
+On the per-server configuration level, one can specify the default
+keep-alive timeout for outgoing HTTP requests, and the logging
+behavior. When logging is activated, the log file will contain
+information similar to the access.log of NaviServer (see [cmd nslog]
+module), but for HTTP client requests.
 
 [example_begin]
  #---------------------------------------------------------------------
