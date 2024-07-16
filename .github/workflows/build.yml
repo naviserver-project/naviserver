@@ -32,7 +32,7 @@ jobs:
             tcltag: main
             ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl
             nsf_version: HEAD
-            tdom_version: trunk
+            tdom_version: 0.9.3
 
 #          - os: ubuntu-latest
 #            compiler: gcc-12
