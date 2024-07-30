@@ -589,6 +589,10 @@ typedef int ns_sockerrno_t;
 # define NS_TCL_PRE9
 #endif
 
+#ifndef TCL_INDEX_NONE
+# define TCL_INDEX_NONE -1
+#endif
+
 #define TCL_SIZE_T           int
 #define TCL_OBJCMDPROC_T     Tcl_ObjCmdProc
 #define TCL_CREATEOBJCOMMAND Tcl_CreateObjCommand
