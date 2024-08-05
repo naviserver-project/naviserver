@@ -13,7 +13,7 @@ if {[ns_config test listenport]} {
 
 set port [ns_config "test" listenport]
 
-test ns_conn_location-1.1 {default location} -constraints serverListen -setup {
+test ns_conn_host-1.1 {default location} -constraints serverListen -setup {
     ns_register_proc GET /location {
         ns_return 200 text/plain [ns_conn location]
     }
@@ -25,7 +25,7 @@ test ns_conn_location-1.1 {default location} -constraints serverListen -setup {
 
 
 
-test ns_conn_location-2.1 {virtual host location} -constraints serverListen -setup {
+test ns_conn_host-2.1 {virtual host location} -constraints serverListen -setup {
     ns_register_proc GET /location {
         ns_return 200 text/plain [ns_conn location]
     }
@@ -33,11 +33,20 @@ test ns_conn_location-2.1 {virtual host location} -constraints serverListen -set
     nstest::http -getbody 1 -setheaders [list Host testvhost:$port] -- GET /location
 } -result [list 200 http://testvhost:$port]
 
-# 2.2: Test bad host headers..?
+# Test bad host headers
+
+test ns_conn_host-2.2 {multiple host header fields} -constraints serverListen -setup {
+    ns_register_proc GET /location {
+        ns_return 200 text/plain [ns_conn location]
+    }
+} -body {
+    nstest::http -getbody 1 -setheaders [list Host testvhost:$port Host testvhost2:$port] -- GET /location
+} -result {400}
 
 
+# Custom location
 
-test ns_conn_location-3.1 {custom location} -constraints serverListen -body {
+test ns_conn_host-3.1 {custom location} -constraints serverListen -body {
     nstest::http -getbody 1 -setheaders [list Host testvhost2:$port] -- GET /location
 } -result {200 testlocation.arg}
 

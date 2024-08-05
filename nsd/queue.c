@@ -2572,7 +2572,9 @@ ConnRun(Conn *connPtr)
             }
         }
     }
-    auth = Ns_SetIGet(connPtr->headers, "authorization");
+    //auth = Ns_SetIGet(connPtr->headers, "authorization");
+    auth = sockPtr->extractedHeaderFields[NS_EXTRACTED_HEADER_AUTHORIZATION];
+
     if (auth != NULL) {
         NsParseAuth(connPtr, auth);
     }

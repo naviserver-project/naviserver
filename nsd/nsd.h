@@ -469,6 +469,20 @@ typedef struct Driver {
 
 } Driver;
 
+
+/*
+ * Define, which request header fields should be extracted directly into the
+ * sock structure.
+ */
+typedef enum {
+    NS_EXTRACTED_HEADER_AUTHORIZATION =   0,
+    NS_EXTRACTED_HEADER_CONTENT_LENGTH =  1,
+    NS_EXTRACTED_HEADER_HOST =            2,
+    NS_EXTRACTED_HEADER_EXPECT =          3,
+    NS_EXTRACTED_NONE =                   4
+} NsExtractedHeaderIndex;
+
+
 /*
  * The following structure maintains a socket to a
  * connected client.  The socket is used to maintain state
@@ -507,10 +521,10 @@ typedef struct Sock {
     size_t              tsize;           /* Size of mmap region */
     char               *tfile;           /* Name of regular temporary file */
     unsigned long       recvErrno;       /* Last error number in read operation (can fit OpenSSL errors) */
+    const char         *extractedHeaderFields[NS_EXTRACTED_NONE];
     Ns_SockState        recvSockState;   /* Results from the last recv operation */
     int                 tfd;             /* File descriptor with request contents */
     bool                keep;            /* Keep alive handling */
-
     void               *sls[1];          /* Slots for sls storage */
 
 } Sock;

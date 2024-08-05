@@ -69,6 +69,26 @@ typedef struct {
     SockState    sockState;
 } SpoolerStateMap;
 
+
+const struct {
+    const char     *name;
+    NsExtractedHeaderIndex  extract;
+} singletonRequestHeaderFields[] = {
+    { "authorization",       NS_EXTRACTED_HEADER_AUTHORIZATION},
+    { "content-length",      NS_EXTRACTED_HEADER_CONTENT_LENGTH},
+    { "content-type",        NS_EXTRACTED_NONE},
+    { "expect",              NS_EXTRACTED_HEADER_EXPECT},
+    { "host",                NS_EXTRACTED_HEADER_HOST},
+    { "if-match",            NS_EXTRACTED_NONE},
+    { "if-modified-since",   NS_EXTRACTED_NONE},
+    { "if-none-match",       NS_EXTRACTED_NONE},
+    { "if-range",            NS_EXTRACTED_NONE},
+    { "if-unmodified-since", NS_EXTRACTED_NONE},
+    { "origin",              NS_EXTRACTED_NONE},
+    { "upgrade",             NS_EXTRACTED_NONE},
+    { "user-agent",          NS_EXTRACTED_NONE}
+};
+
 /*
  * ServerMap maintains Host header to server mappings.
  */
@@ -212,6 +232,9 @@ static TCL_OBJCMDPROC_T AsyncLogfileWriteObjCmd;
 static TCL_OBJCMDPROC_T AsyncLogfileOpenObjCmd;
 static TCL_OBJCMDPROC_T AsyncLogfileCloseObjCmd;
 
+static Ns_ReturnCode CheckSingletonHeaderFields(Sock*sockPtr)
+    NS_GNUC_NONNULL(1);
+
 static Ns_ReturnCode DriverWriterFromObj(Tcl_Interp *interp, Tcl_Obj *driverObj,
                                          const Ns_Conn *conn, DrvWriter **wrPtrPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
@@ -241,7 +264,7 @@ static size_t PortsParse(Ns_DList *dlPtr, const char *listString, const char *pa
 static char *PortsPrint(Tcl_DString *dsPtr, const Ns_DList *dlPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static void  SockSetServer(Sock *sockPtr)
+static Ns_ReturnCode SockSetServer(Sock *sockPtr)
     NS_GNUC_NONNULL(1);
 static SockState SockAccept(Driver *drvPtr, NS_SOCKET sock, Sock **sockPtrPtr, const Ns_Time *nowPtr)
     NS_GNUC_NONNULL(1);
@@ -3202,16 +3225,20 @@ SockQueue(Sock *sockPtr, const Ns_Time *timePtr)
      */
     assert(sockPtr->reqPtr != NULL);
 
-    SockSetServer(sockPtr);
-    assert(sockPtr->servPtr != NULL);
+    result = SockSetServer(sockPtr);
+    if (likely(result == NS_OK)) {
+        assert(sockPtr->servPtr != NULL || *sockPtr->reqPtr->request.method == 'B');
 
-    /*
-     *  Actual queueing. When we receive NS_ERROR or NS_TIMEOUT, the queuing
-     *  did not succeed.
-     */
-    result = NsQueueConn(sockPtr, timePtr);
-    if (result == NS_ERROR) {
-        SockRelease(sockPtr, SOCK_QUEUEFULL, 0);
+        /*
+         *  Actual queueing. When we receive NS_ERROR or NS_TIMEOUT, the queuing
+         *  did not succeed.
+         */
+        result = NsQueueConn(sockPtr, timePtr);
+        if (unlikely(result == NS_ERROR)) {
+            SockRelease(sockPtr, SOCK_QUEUEFULL, 0);
+        }
+    } else {
+        SockRelease(sockPtr, SOCK_BADHEADER, 0);
     }
 
     return result;
@@ -3695,7 +3722,8 @@ NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *UNU
                    conn.headers->size, (void*)conn.outputheaders);
             //Ns_SetPrint(conn.headers);
 
-            auth = Ns_SetIGet(conn.headers, "authorization");
+            //auth = Ns_SetIGet(conn.headers, "authorization");
+            auth = sockPtr->extractedHeaderFields[NS_EXTRACTED_HEADER_AUTHORIZATION];
             if (auth != NULL) {
                 NsParseAuth(&conn, auth);
             }
@@ -4370,7 +4398,8 @@ EndOfHeader(Sock *sockPtr)
      * pipelining.
      */
     sockPtr->flags &= ~(NS_CONN_CONTINUE);
-    s = Ns_SetIGet(reqPtr->headers, "expect");
+    //s = Ns_SetIGet(reqPtr->headers, "expect");
+    s = sockPtr->extractedHeaderFields[NS_EXTRACTED_HEADER_EXPECT];
     if (s != NULL) {
         if (*s == '1' && *(s+1) == '0' && *(s+2) == '0' && *(s+3) == '-') {
             char *dup = ns_strdup(s+4);
@@ -4388,7 +4417,8 @@ EndOfHeader(Sock *sockPtr)
      * Clear length specific error flags.
      */
     sockPtr->flags &= ~(NS_CONN_ENTITYTOOLARGE);
-    s = Ns_SetIGet(reqPtr->headers, "content-length");
+    //s = Ns_SetIGet(reqPtr->headers, "content-length");
+    s = sockPtr->extractedHeaderFields[NS_EXTRACTED_HEADER_CONTENT_LENGTH];
     if (s == NULL) {
         s = Ns_SetIGet(reqPtr->headers, "Transfer-Encoding");
 
@@ -4758,6 +4788,11 @@ SockParse(Sock *sockPtr)
             /*
              * We are at end of headers.
              */
+            if (CheckSingletonHeaderFields(sockPtr) == NS_ERROR) {
+                return SOCK_BADREQUEST;
+            }
+            /*Ns_Log(Notice, "Extracted HOST <%s>",
+              sockPtr->extractedHeaderFields[NS_EXTRACTED_HEADER_HOST]);*/
 
             reqPtr->coff = EndOfHeader(sockPtr);
             if (Ns_LogSeverityEnabled(Ns_LogRequestDebug)) {
@@ -5319,6 +5354,83 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, const Ns_Driver
 /*
  *----------------------------------------------------------------------
  *
+ * CheckSingletonHeaderFields --
+ *
+ *      Check if the singleton request header fields are provided only once.
+ *      Certain header field values, which are often used are extracted into
+ *      "extractedHeaderFields".
+ *
+ *      Note that these strings are only guaranteed to be correct as long the
+ *      underlying Ns_Set is not changed. This typically the case just in the
+ *      driver.
+ *
+ * Results:
+ *      NS_OK or NS_ERROR when duplicates are found,
+ *
+ * Side effects:
+ *
+ *      sockPtr->extractedHeaderFields is updated.
+ *
+ *----------------------------------------------------------------------
+ */
+static Ns_ReturnCode
+CheckSingletonHeaderFields(Sock *sockPtr)
+{
+    size_t        i, idx;
+    Ns_Set       *headers = sockPtr->reqPtr->headers;
+    int           counts[Ns_NrElements(singletonRequestHeaderFields)] = {0};
+    const char **singeltonFields = sockPtr->extractedHeaderFields;
+
+    memset(sockPtr->extractedHeaderFields, 0, sizeof(sockPtr->extractedHeaderFields));
+    /*
+     * Iterate just once over the host header fields. This is more efficient,
+     * than for calling for all of these fields Ns_Set*Get functions, since
+     * these iterate as well over the header fields.
+     */
+    for (idx = 0u; idx < headers->size; idx++) {
+        const char *name       = headers->fields[idx].name;
+        char        first_char = (CHARTYPE(lower, *name) != 0) ? *name : CHARCONV(lower, *name);
+
+        for (i = 0; i < Ns_NrElements(singletonRequestHeaderFields); i++) {
+            const char *singletonName = singletonRequestHeaderFields[i].name;
+            int         cmp;
+
+            /*
+             * Call strcasecmp() only, when the first char is equal.
+             */
+            if (first_char != *singletonName) {
+                continue;
+            }
+            cmp = strcasecmp(singletonName, name);
+            //Ns_Log(Notice, "cmd %s vs %s -> %d",name, singletonName, cmp);
+
+            if (cmp == 0) {
+                if (++counts[i] > 1) {
+                    Ns_Log(Warning, "request header field \"%s\" is provided more than once. Request: \"%s\"\n",
+                           singletonName, sockPtr->reqPtr->request.line);
+                    return NS_ERROR;
+
+                }
+                if (singletonRequestHeaderFields[i].extract != NS_EXTRACTED_NONE) {
+                    singeltonFields[singletonRequestHeaderFields[i].extract] = headers->fields[idx].value;
+                }
+                break;
+            } else if (cmp > 0) {
+                /*
+                 * The fields in singletonRequestHeaderFields are
+                 * sorted. Later values can't match.
+                 */
+                break;
+            }
+        }
+    }
+    return NS_OK;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * SockSetServer --
  *
  *      Set virtual server from driver context or Host header.
@@ -5335,12 +5447,11 @@ NsDriverLookupHostCtx(Tcl_DString *hostDs, const char *hostName, const Ns_Driver
  *----------------------------------------------------------------------
  */
 
-static void
+static Ns_ReturnCode
 SockSetServer(Sock *sockPtr)
 {
-    const char      *host;
+    const char      *host = NULL;
     Request         *reqPtr;
-    bool             bad_request = NS_FALSE;
     Driver          *drvPtr;
     const ServerMap *mapPtr = NULL;
 
@@ -5369,27 +5480,31 @@ SockSetServer(Sock *sockPtr)
     sockPtr->servPtr  = drvPtr->servPtr;
     sockPtr->location = NULL;
 
-    host = Ns_SetIGet(reqPtr->headers, "Host");
-    Ns_Log(DriverDebug, "SockSetServer: host '%s' request line '%s' servPtr %p",
-           host, reqPtr->request.line, (void*)sockPtr->servPtr);
-
-    if (unlikely((host == NULL) && (reqPtr->request.version >= 1.1))) {
+    host = sockPtr->extractedHeaderFields[NS_EXTRACTED_HEADER_HOST];
+    if (host == NULL && (reqPtr->request.version >= 1.1)) {
         /*
          * HTTP/1.1 requires host header
          */
-        Ns_Log(Notice, "request header field \"Host\" is missing in HTTP/1.1 request: \"%s\"\n",
+        Ns_Log(Warning, "request header field \"Host\" is missing in HTTP/1.1 request: \"%s\"\n",
                reqPtr->request.line);
-        bad_request = NS_TRUE;
+        goto bad_request;
     }
 
     if (host != NULL) {
         Tcl_DString hostDs;
 
+        /*
+         * DriverLookupHost() requires a writeable string in the form of a
+         * Tcl_DString.
+         */
         Tcl_DStringInit(&hostDs);
         Tcl_DStringAppend(&hostDs, host, TCL_INDEX_NONE);
         mapPtr = DriverLookupHost(&hostDs, &sockPtr->reqPtr->request, drvPtr);
         Tcl_DStringFree(&hostDs);
     }
+
+    Ns_Log(DriverDebug, "SockSetServer: host '%s' request line '%s' servPtr %p",
+           host, reqPtr->request.line, (void*)sockPtr->servPtr);
 
     if (mapPtr == NULL && sockPtr->servPtr == NULL) {
         /*
@@ -5416,7 +5531,7 @@ SockSetServer(Sock *sockPtr)
         if (sockPtr->servPtr == NULL) {
             Ns_Log(Warning, "cannot determine server for request: \"%s\" (host \"%s\")\n",
                    reqPtr->request.line, host);
-            bad_request = NS_TRUE;
+            goto bad_request;
         }
         /*
          * Could not lookup the virtual host, get the default location from
@@ -5490,18 +5605,19 @@ SockSetServer(Sock *sockPtr)
                            strlen(reqPtr->request.url), NULL)) {
             Ns_Log(Warning, "Invalid UTF-8 encoding in url '%s'",
                    reqPtr->request.url);
-            bad_request = NS_TRUE;
+            goto bad_request;
         }
-    }
-
-    if (unlikely(bad_request)) {
-        Ns_Log(DriverDebug, "SockSetServer sets method to BAD");
-        ns_free((char *)reqPtr->request.method);
-        reqPtr->request.method = ns_strdup("BAD");
     }
 
     Ns_Log(DriverDebug, "SockSetServer host '%s' request line '%s' final location '%s'",
            host, reqPtr->request.line, sockPtr->location);
+    return NS_OK;
+
+ bad_request:
+    Ns_Log(DriverDebug, "SockSetServer sets method to BAD");
+    ns_free((char *)reqPtr->request.method);
+    reqPtr->request.method = ns_strdup("BAD");
+    return NS_ERROR;
 }
 
 /*
@@ -5627,8 +5743,12 @@ SpoolerThread(void *arg)
                 case SOCK_READY:
                     assert(sockPtr->reqPtr != NULL);
                     Ns_Log(DriverDebug, "spooler thread done with request");
-                    SockSetServer(sockPtr);
-                    Push(sockPtr, waitPtr);
+                    if (likely(SockSetServer(sockPtr) == NS_OK)) {
+                        Push(sockPtr, waitPtr);
+                    } else {
+                        SockRelease(sockPtr, SOCK_BADHEADER, 0);
+                        queuePtr->queuesize--;
+                    }
                     break;
 
                 case SOCK_BADHEADER:      NS_FALL_THROUGH; /* fall through */
