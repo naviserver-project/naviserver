@@ -1934,6 +1934,12 @@ NS_EXTERN void NsHexPrint(const char *msg, const unsigned char *octets, size_t o
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 /*
+ * tclmisc.c
+ */
+NS_EXTERN size_t NsTclHash(const char *inputString)
+    NS_GNUC_NONNULL(1);
+
+/*
  * (HTTP) Proxy support
  */
 

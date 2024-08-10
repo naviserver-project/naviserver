@@ -2067,11 +2067,63 @@ LogToDString(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
  *
  *----------------------------------------------------------------------
  */
-
 static Ns_ReturnCode
 LogToFile(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
           const char *msg, size_t len)
 {
+#if defined(NS_THREAD_LOCAL)
+    int        fd = PTR2INT(arg);
+    static NS_THREAD_LOCAL size_t sameLineCount = 1u;
+    static NS_THREAD_LOCAL size_t lastLen = 0u;
+    static NS_THREAD_LOCAL size_t lastHash = 0u;
+    size_t hash = 0u;
+
+    NS_NONNULL_ASSERT(arg != NULL);
+    NS_NONNULL_ASSERT(stamp != NULL);
+    NS_NONNULL_ASSERT(msg != NULL);
+
+    hash = NsTclHash(msg);
+    //fprintf(stderr, "LOG compute hash len %lu MSG <%s> hash %lu\n", len, msg, hash);
+
+    if (hash == lastHash && lastLen == len) {
+        /*
+         * The last message was the same.
+         */
+        sameLineCount++;
+        //fprintf(stderr, "LOG suppress len %lu MSG <%s> hash %lu\n", len, msg, NsTclHash(msg));
+    } else {
+        /*
+         * The last message was different. If we have sameLineCount >
+         * 0, add a message telling telling how often the last message
+         * was repeated, before reporting the actual message.
+         */
+        Ns_DString ds;
+
+        Ns_DStringInit(&ds);
+
+        //fprintf(stderr, "LOG len %lu MSG <%s> hash %lu same line count %lu\n", len, msg, hash, sameLineCount);
+
+        if (sameLineCount > 1) {
+            Ns_DString dsRepeat;
+
+            Ns_DStringInit(&dsRepeat);
+            Ns_DStringPrintf(&dsRepeat, "last log entry in this thread was repeated %lu times", sameLineCount);
+            (void) LogToDString(&ds, severity, stamp, dsRepeat.string, (size_t)dsRepeat.length);
+            (void) NsAsyncWrite(fd, Ns_DStringValue(&ds), (size_t)Ns_DStringLength(&ds));
+            Ns_DStringFree(&dsRepeat);
+
+            Tcl_DStringSetLength(&ds, 0);
+            sameLineCount = 1u;
+        }
+
+        (void) LogToDString(&ds, severity, stamp, msg, len);
+        (void) NsAsyncWrite(fd, Ns_DStringValue(&ds), (size_t)Ns_DStringLength(&ds));
+        Ns_DStringFree(&ds);
+
+        lastLen = len;
+        lastHash = hash;
+    }
+#else
     int        fd = PTR2INT(arg);
     Ns_DString ds;
 
@@ -2085,6 +2137,8 @@ LogToFile(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     (void) NsAsyncWrite(fd, Ns_DStringValue(&ds), (size_t)Ns_DStringLength(&ds));
 
     Ns_DStringFree(&ds);
+#endif
+
     return NS_OK;
 }
 

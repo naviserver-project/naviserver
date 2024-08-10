@@ -2102,7 +2102,7 @@ NsTclRlimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T 
 /*
  *----------------------------------------------------------------------
  *
- * NsTclHashObjCmd --
+ * NsTclHash --
  *
  *      Produce a numeric hash value from a given string.  This function uses
  *      the Tcl built-in hash function which is commented in Tcl as follows:
@@ -2128,8 +2128,6 @@ NsTclRlimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T 
  *          this function *is* very cheap, even by comparison with
  *          industry-standard hashes like FNV.
  *
- *       Implements "ns_hash".
- *
  * Results:
  *      Numeric hash value.
  *
@@ -2138,6 +2136,39 @@ NsTclRlimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T 
  *
  *----------------------------------------------------------------------
  */
+size_t
+NsTclHash(const char *inputString)
+{
+    size_t hashValue;
+
+    if ((hashValue = UCHAR(*inputString)) != 0) {
+        char c;
+
+        while ((c = *++inputString) != 0) {
+            hashValue += (hashValue << 3) + UCHAR(c);
+        }
+    }
+    return hashValue;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclHashObjCmd --
+ *
+ *      Implements "ns_hash". Tcl function to produce numeric hash value from
+ *      a given string based on the algorithm that is used in Tcl internally
+ *      for hashing. This is not a secure hash, but fast.
+ *
+ * Results:
+ *      Hash value
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 NsTclHashObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
@@ -2151,16 +2182,7 @@ NsTclHashObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T ob
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        unsigned int hashValue;
-
-        if ((hashValue = UCHAR(*inputString)) != 0) {
-            char c;
-
-            while ((c = *++inputString) != 0) {
-                hashValue += (hashValue << 3) + UCHAR(c);
-            }
-        }
-        Tcl_SetObjResult(interp, Tcl_NewLongObj(hashValue));
+        Tcl_SetObjResult(interp, Tcl_NewLongObj((long)NsTclHash(inputString)));
     }
     return result;
 
