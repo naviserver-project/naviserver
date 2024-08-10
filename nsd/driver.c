@@ -5501,10 +5501,13 @@ SockSetServer(Sock *sockPtr)
         Tcl_DStringAppend(&hostDs, host, TCL_INDEX_NONE);
         mapPtr = DriverLookupHost(&hostDs, &sockPtr->reqPtr->request, drvPtr);
         Tcl_DStringFree(&hostDs);
-    }
 
-    Ns_Log(DriverDebug, "SockSetServer: host '%s' request line '%s' servPtr %p",
-           host, reqPtr->request.line, (void*)sockPtr->servPtr);
+        Ns_Log(DriverDebug, "SockSetServer: host '%s' request line '%s' servPtr %p",
+               host, reqPtr->request.line, (void*)sockPtr->servPtr);
+    } else {
+        Ns_Log(DriverDebug, "SockSetServer: no host header field available, request line '%s' servPtr %p",
+               reqPtr->request.line, (void*)sockPtr->servPtr);
+    }
 
     if (mapPtr == NULL && sockPtr->servPtr == NULL) {
         /*
