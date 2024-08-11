@@ -237,9 +237,10 @@ Ns_ModuleInit(const char *server, const char *module)
     set = Ns_ConfigGetSection(path);
     for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
         const char *key   = Ns_SetKey(set, i);
-        const char *value = Ns_SetValue(set, i);
 
         if (STRIEQ(key, "map")) {
+            const char *value = Ns_SetValue(set, i);
+            
             CgiRegister(modPtr, value);
         }
     }
