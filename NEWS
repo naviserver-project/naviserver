@@ -1,4 +1,75 @@
 =======================================
+NaviServer 4.99.31, released 2024-08-11
+=======================================
+
+ 71 files changed, 897 insertions(+), 303 deletions(-)
+
+New Features:
+-------------
+
+  - Added auto-SNI support to "ns_http" and "ns_connchan open": When
+    opening an TLS-connection to named target, the used hostname is
+    automatically used as a default value for the SNI-host.  The
+    automatically derived values has a lower priority than the
+    parameter "-hostname" of "ns_http run" or "ns_connchan open".
+
+    This change eases of use with cloud services and affects all
+    packages using, e.g., "ns_http", including reverse proxies.
+
+  - Introduced experimental command "ns_fseekchars": This changes
+    Improves file-based parsing of multipart/form-data, supporting
+    files larger than 4GB, reducing memory usage, and speeding up
+    processing..
+
+
+Bug Fixes:
+----------
+
+    - Fixed invalid memory reallocation of pool descriptors array
+      [commit 7efaafe4].
+
+    - Fixed potential issue for move operation with overlapping memory
+      areas. This change is which was critical for ARM architecture
+      when musl is used (Alpine Linux) [commit 20438ed4].
+
+    - Fixed potential crash in "ns_conn copy" to handle cases where an
+      incoming request contains no content [commit 79b8cb8a].
+
+
+Changes in Sample Configuration Files:
+--------------------------------------
+
+    - Sample configuration file updates for handling container
+      mappings and whitelisting domain names [commits ece849ac,
+      9a102a97, 86a176ab].
+
+    - Backported from NaviServer 5: Includes multiple changes to
+      configuration files and scripts [commit 0d32e5ea].
+
+Misc Improvements:
+------------------
+
+    - Improved forward compatibility to ease backports [commit ef8b4386].
+
+    - Improved spelling and documentation across multiple files to
+      enhance readability and understanding [multiple commits e.g.,
+      a2cdaa10, 15253120].
+
+    - Improved portability by not assuming that type "char" is the
+      same as "unsigned char", important for compatibility with
+      different architectures [commit 7635ef00].
+
+    - Made testing more robust for docker images with partial IPv6
+      setups to improve reliability in varied deployment environments
+      [commit 516ca38c].
+
+    - Removed misleading and unneeded "-encoding binary": This command
+      was a no-op since many Tcl releases and was removed in Tcl9 at
+      all. This change clarifies code usage [commit a36d15b1].
+
+
+
+=======================================
 NaviServer 4.99.30, released 2024-01-26
 =======================================
 
