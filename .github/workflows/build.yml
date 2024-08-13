@@ -25,14 +25,14 @@ jobs:
             tcltag: core-8-7-a5
             ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd
             nsf_version: 2.4.0
-            tdom_version: 0.9.3
+            tdom_version: 0.9.4
 
           - os: ubuntu-latest
             compiler: gcc-12
             tcltag: main
             ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl
             nsf_version: HEAD
-            tdom_version: 0.9.3
+            tdom_version: trunk
 
 #          - os: ubuntu-latest
 #            compiler: gcc-12
