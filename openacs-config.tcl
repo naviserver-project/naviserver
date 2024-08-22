@@ -61,6 +61,7 @@ set defaultConfig {
     bindir            $homedir/bin
     certificate       $serverroot/etc/certfile.pem
     vhostcertificates $serverroot/etc/certificates
+
     db_name           $server
     db_user           nsadmin
     db_host           localhost
@@ -89,15 +90,15 @@ set defaultConfig {
 #dict set defaultConfig CookieNamespace ad_8000_
 
 #---------------------------------------------------------------------
-# Which database do you want to use? PostgreSQL or Oracle?
+# Which DBMS do you want to use? PostgreSQL or Oracle?
 #
-set database postgres
+set dbms postgres
 
 #
 # For Oracle, some of the defaults have to be adjusted,
 # make also sure that certain environment variables are set
 #
-if { $database eq "oracle" } {
+if { $dbms eq "oracle" } {
     dict set defaultConfig db_password "openacs"
     dict set defaultConfig db_name openacs
     dict set defaultConfig db_port 1521
@@ -167,8 +168,10 @@ if {$db_passwordfile ne "" && [file readable $db_passwordfile]} {
 # changed via environment variables. So, this has to happen
 # after "ns_configure_variables"
 #
-if { $database eq "oracle" } {
+if { $dbms eq "oracle" } {
     set datasource ${db_host}:${db_port}/$db_name ;# name of the pluggable database / service
+} else {
+    set datasource ${db_host}:${db_port}:dbname=${db_name}:password=${db_password}
 }
 #---------------------------------------------------------------------
 # Set environment variables HOME and LANG. HOME is needed since
@@ -984,14 +987,14 @@ ns_section ns/server/$server/module/nslog {
 
 #---------------------------------------------------------------------
 #
-# Database drivers:
+# Dbms drivers:
 #
 # Make sure the drivers are compiled and put it in $bindir.
 #
 #---------------------------------------------------------------------
 ns_section ns/db/drivers {
 
-    if { $database eq "oracle" } {
+    if { $dbms eq "oracle" } {
         ns_param	nsoracle           ${bindir}/nsoracle
     } else {
         ns_param	postgres       ${bindir}/nsdbpg
@@ -999,7 +1002,7 @@ ns_section ns/db/drivers {
         ns_logctl severity "Debug(sql)" -color blue $verboseSQL
     }
 
-    if { $database eq "oracle" } {
+    if { $dbms eq "oracle" } {
         ns_section ns/db/driver/nsoracle
         ns_param	maxStringLogLength -1
         ns_param	LobBufferSize      32768
@@ -1038,14 +1041,13 @@ ns_section ns/db/pool/pool1 {
     ns_param	connections        15
     ns_param    LogMinDuration     10ms  ;# when SQL logging is on, log only statements above this duration
     ns_param	logsqlerrors       $debug
-    if { $database eq "oracle" } {
+    ns_param	datasource         $datasource
+    if { $dbms eq "oracle" } {
         ns_param	driver             nsoracle
-        ns_param	datasource         $datasource
         ns_param	user               $db_name
         ns_param	password           $db_password
     } else {
         ns_param	driver             postgres
-        ns_param	datasource         ${db_host}:${db_port}:dbname=${db_name}
         ns_param	user               $db_user
         ns_param	password           ""
     }
@@ -1065,14 +1067,14 @@ ns_section ns/db/pool/pool2 {
     ns_param	connections        5
     ns_param    LogMinDuration     10ms  ;# when SQL logging is on, log only statements above this duration
     ns_param	logsqlerrors       $debug
-    if { $database eq "oracle" } {
+    ns_param	datasource         $datasource
+    if { $dbms eq "oracle" } {
         ns_param	driver             nsoracle
         ns_param	datasource         $datasource
         ns_param	user               $db_name
         ns_param	password           $db_password
     } else {
         ns_param	driver             postgres
-        ns_param	datasource         ${db_host}:${db_port}:dbname=${db_name}
         ns_param	user               $db_user
         ns_param	password           ""
     }
@@ -1085,14 +1087,14 @@ ns_section ns/db/pool/pool3 {
     ns_param	connections        5
     # ns_param  LogMinDuration     0ms  ;# when SQL logging is on, log only statements above this duration
     ns_param	logsqlerrors       $debug
-    if { $database eq "oracle" } {
+    ns_param	datasource         $datasource
+    if { $dbms eq "oracle" } {
         ns_param	driver             nsoracle
         ns_param	datasource         $datasource
         ns_param	user               $db_name
         ns_param	password           $db_password
     } else {
         ns_param	driver             postgres
-        ns_param	datasource         ${db_host}:${db_port}:dbname=${db_name}
         ns_param	user               $db_user
         ns_param	password           ""
     }
@@ -1124,9 +1126,6 @@ ns_section ns/server/$server/modules {
         ns_param	libthread $libthread
         ns_log notice "Use Tcl thread library $libthread"
     }
-
-    # authorize-gateway package requires dqd_utils
-    # ns_param	dqd_utils dqd_utils[expr {int($::tcl_version)}]
 
     # LDAP authentication
     # ns_param	nsldap             ${bindir}/nsldap
