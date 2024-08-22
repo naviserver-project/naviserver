@@ -54,27 +54,28 @@ set defaultConfig {
     nscpport    ""
     smtpdport   ""
 
-    server     "openacs"
-    serverroot	/var/www/$server
-    logdir	$serverroot/log
-    homedir	/usr/local/ns
-    bindir	$homedir/bin
-    certificate	$serverroot/etc/certfile.pem
+    server           "openacs"
+    serverroot        /var/www/$server
+    logdir            $serverroot/log
+    homedir           /usr/local/ns
+    bindir            $homedir/bin
+    certificate       $serverroot/etc/certfile.pem
     vhostcertificates $serverroot/etc/certificates
-    db_name	$server
-    db_user	nsadmin
-    db_host	localhost
-    db_port	""
+    db_name           $server
+    db_user           nsadmin
+    db_host           localhost
+    db_port           ""
+    db_passwordfile   ""
 
-    CookieNamespace  ad_
-    cachingmode      full
-    serverprettyname "My OpenACS Instance"
+    CookieNamespace   ad_
+    cachingmode       full
+    serverprettyname  "My OpenACS Instance"
 
-    reverseproxymode false
-    trustedservers   ""
+    reverseproxymode  false
+    trustedservers    ""
 
-    clusterSecret    ""
-    parameterSecret  ""
+    clusterSecret     ""
+    parameterSecret   ""
 }
 
 #
@@ -148,6 +149,20 @@ source [file dirname [ns_info nsd]]/../tcl/init.tcl
 ns_configure_variables "oacs_" $defaultConfig
 
 #
+# In case we have a db_passwordfile, use the content of the file as
+# the database password. Can be used, e.g., for docker secrets.
+#
+if {$db_passwordfile ne "" && [file readable $db_passwordfile]} {
+    try {
+        set F [open $db_passwordfile]
+        set db_password [string trim [read $F]]
+    } finally {
+        close $F
+        unset F
+    }
+}
+
+#
 # For Oracle, we set the datasource to values which might be
 # changed via environment variables. So, this has to happen
 # after "ns_configure_variables"
@@ -176,7 +191,7 @@ set pageroot                  ${serverroot}/www
 set directoryfile             "index.tcl index.adp index.html index.htm"
 
 #---------------------------------------------------------------------
-# Global server parameters
+# Global NaviServer parameters
 #---------------------------------------------------------------------
 ns_section ns/parameters {
     ns_param	serverlog	${logdir}/error.log
@@ -212,6 +227,13 @@ ns_section ns/parameters {
     # ns_param sockacceptlog     3  ;# default: 4; report, when one accept operation receives
                                      # more than this threshold number of sockets; can be refined
                                      # by driver parameter with the same name.
+
+    #
+    # Configuration of outgoing requests via ns_http
+    #
+    # ns_param    nshttptaskthreads  2     ;# default: 1; number of task threads for ns_http when running detached
+    # ns_param    autosni            false ;# default: true
+
     #
     # Configuration of error.log
     #
@@ -395,7 +417,7 @@ if {[info exists httpport] && $httpport ne ""} {
     #
     # Define, which "host" (as supplied by the "host:" header field)
     # accepted over this driver should be associated with which
-    # server. The variable hostname can contain multiple host names
+    # server. The variable hostname can contain multiple hostnames
     # (domain names) which are registered below.
     #
     ns_section ns/module/http/servers {
@@ -780,6 +802,21 @@ ns_section ns/server/$server/acs {
     ns_param StaticCSP {
         image/svg+xml "script-src 'none'"
     }
+
+    #
+    # The configuration file might contain white-listed hosts to be
+    # accepted as value of the host header field (typically domain
+    # name with optional port). Validation is needed, e.g., to avoid
+    # accepting spoofed host header fields causing hijacking to a
+    # different web site via redirects. Setting these values is
+    # typically necessary when running behind a proxy server and/or in
+    # containerized environments, where the host header field does not
+    # match any driver configuration.
+    #
+    # Watch out for "ignore untrusted host header field" in the error
+    # log for cases, where a value might be missing.
+    #
+    ns_param whitelistedHosts {}
 
     #
     # The following option should causes on acs-admin/server-restart
