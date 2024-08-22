@@ -2107,7 +2107,7 @@ LogToFile(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
             Ns_DString dsRepeat;
 
             Ns_DStringInit(&dsRepeat);
-            Ns_DStringPrintf(&dsRepeat, "last log entry in this thread was repeated %lu times", sameLineCount);
+            Ns_DStringPrintf(&dsRepeat, "last log entry for this thread was repeated %lu times", sameLineCount);
             (void) LogToDString(&ds, severity, stamp, dsRepeat.string, (size_t)dsRepeat.length);
             (void) NsAsyncWrite(fd, Ns_DStringValue(&ds), (size_t)Ns_DStringLength(&ds));
             Ns_DStringFree(&dsRepeat);
