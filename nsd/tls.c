@@ -144,7 +144,7 @@ static void CertTableAdd(const NS_TLS_SSL_CTX *ctx, const char *cert)  NS_GNUC_N
 static int OCSP_FromCacheFile(Tcl_DString *dsPtr, OCSP_CERTID *id, OCSP_RESPONSE **resp)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static OCSP_CERTID *OCSP_get_cert_id(const SSL *ssl, X509 *cert)
+static OCSP_CERTID *OCSP_get_cert_id(const SSL *ssl, X509 *cert, bool *selfSignedPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static int OCSP_computeResponse(SSL *ssl, const SSLCertStatusArg *srctx, OCSP_RESPONSE **resp)
@@ -420,7 +420,7 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
             Ns_Log(Notice, "cert_status: must validate OCSP response " NS_TIME_FMT " sec",
                     (int64_t) diff.sec, diff.usec);
 
-            cert_id = OCSP_get_cert_id(ssl, SSL_get_certificate(ssl));
+            cert_id = OCSP_get_cert_id(ssl, SSL_get_certificate(ssl), NULL);
             if (cert_id == NULL) {
                 Ns_Log(Warning, "cert_status: OCSP validation: certificate id is unknown");
                 flush = NS_TRUE;
@@ -521,6 +521,7 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
         result = SSL_TLSEXT_ERR_NOACK;
 
         ERR_clear_error();
+
         Ns_Log(Notice, "cert_status: OCSP cannot validate the certificate");
     }
 
@@ -552,7 +553,7 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
  *----------------------------------------------------------------------
  */
 static OCSP_CERTID *
-OCSP_get_cert_id(const SSL *ssl, X509 *cert)
+OCSP_get_cert_id(const SSL *ssl, X509 *cert, bool *selfSignedPtr)
 {
     X509_STORE_CTX *store_ctx;
     OCSP_CERTID    *result = NULL;
@@ -579,7 +580,6 @@ OCSP_get_cert_id(const SSL *ssl, X509 *cert)
             Ns_Log(Warning, "cert_status: OCSP stapling ignored, "
                    "issuer certificate not found");
         }
-
         x509_obj = X509_STORE_CTX_get_obj_by_subject(store_ctx, X509_LU_X509,
                                             X509_get_issuer_name(cert));
         if (x509_obj == NULL) {
@@ -588,6 +588,10 @@ OCSP_get_cert_id(const SSL *ssl, X509 *cert)
         } else {
             result = OCSP_cert_to_id(NULL, cert, X509_OBJECT_get0_X509(x509_obj));
             X509_OBJECT_free(x509_obj);
+        }
+        if (selfSignedPtr != NULL) {
+            *selfSignedPtr = (X509_NAME_hash_ex(X509_get_issuer_name(cert), NULL, NULL, NULL)
+                              == X509_NAME_hash_ex(X509_get_subject_name(cert), NULL, NULL, NULL));
         }
     }
 
@@ -756,6 +760,7 @@ OCSP_computeResponse(SSL *ssl, const SSLCertStatusArg *srctx, OCSP_RESPONSE **re
     OCSP_CERTID    *id;
     OCSP_REQUEST   *req = NULL;
     int             rc, result = SSL_TLSEXT_ERR_NOACK;
+    bool            selfSigned = NS_FALSE;
     Tcl_DString     cachedResponseFile;
     STACK_OF(OPENSSL_STRING) *aia = NULL; /* Authority Information Access (AIA) Extension */
 
@@ -766,8 +771,8 @@ OCSP_computeResponse(SSL *ssl, const SSLCertStatusArg *srctx, OCSP_RESPONSE **re
     Tcl_DStringInit(&cachedResponseFile);
 
     cert = SSL_get_certificate(ssl);
-    id = OCSP_get_cert_id(ssl, cert);
-    if (id == NULL) {
+    id = OCSP_get_cert_id(ssl, cert, &selfSigned);
+    if (id == NULL || selfSigned) {
         goto err;
     }
 
@@ -2074,7 +2079,7 @@ Ns_SSLRecvBufs2(SSL *sslPtr, struct iovec *bufs, int UNUSED(nbufs),
             }
 #endif
             if (reasonCode == SSL_R_SSLV3_ALERT_CERTIFICATE_UNKNOWN) {
-                Ns_Log(Notice, "SSL_read(%d) client complains: CERTIFICATE_UNKNOWN", sock);
+                Ns_Log(Debug, "SSL_read(%d) client complains: CERTIFICATE_UNKNOWN", sock);
                 nRead = 0;
                 sockState = NS_SOCK_AGAIN;
                 break;
