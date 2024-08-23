@@ -102,6 +102,10 @@ if { $dbms eq "oracle" } {
     dict set defaultConfig db_password "openacs"
     dict set defaultConfig db_name openacs
     dict set defaultConfig db_port 1521
+    #
+    # Traditionally, the old configs have all db_user set to the
+    # db_name, e.g. "openacs".
+    dict set defaultConfig db_user $server
 
     set ::env(ORACLE_HOME) /opt/oracle/product/19c/dbhome_1
     set ::env(NLS_DATE_FORMAT) YYYY-MM-DD
@@ -171,7 +175,7 @@ if {$db_passwordfile ne "" && [file readable $db_passwordfile]} {
 if { $dbms eq "oracle" } {
     set datasource ${db_host}:${db_port}/$db_name ;# name of the pluggable database / service
 } else {
-    set datasource ${db_host}:${db_port}:dbname=${db_name}:password=${db_password}
+    set datasource ${db_host}:${db_port}:dbname=${db_name}
 }
 #---------------------------------------------------------------------
 # Set environment variables HOME and LANG. HOME is needed since
@@ -1042,14 +1046,12 @@ ns_section ns/db/pool/pool1 {
     ns_param    LogMinDuration     10ms  ;# when SQL logging is on, log only statements above this duration
     ns_param	logsqlerrors       $debug
     ns_param	datasource         $datasource
+    ns_param	user               $db_user
+    ns_param	password           $db_password
     if { $dbms eq "oracle" } {
         ns_param	driver             nsoracle
-        ns_param	user               $db_name
-        ns_param	password           $db_password
     } else {
         ns_param	driver             postgres
-        ns_param	user               $db_user
-        ns_param	password           ""
     }
 }
 #
@@ -1068,15 +1070,12 @@ ns_section ns/db/pool/pool2 {
     ns_param    LogMinDuration     10ms  ;# when SQL logging is on, log only statements above this duration
     ns_param	logsqlerrors       $debug
     ns_param	datasource         $datasource
+    ns_param	user               $db_user
+    ns_param	password           $db_password
     if { $dbms eq "oracle" } {
         ns_param	driver             nsoracle
-        ns_param	datasource         $datasource
-        ns_param	user               $db_name
-        ns_param	password           $db_password
     } else {
         ns_param	driver             postgres
-        ns_param	user               $db_user
-        ns_param	password           ""
     }
 }
 
@@ -1088,15 +1087,12 @@ ns_section ns/db/pool/pool3 {
     # ns_param  LogMinDuration     0ms  ;# when SQL logging is on, log only statements above this duration
     ns_param	logsqlerrors       $debug
     ns_param	datasource         $datasource
+    ns_param	user               $db_user
+    ns_param	password           $db_password
     if { $dbms eq "oracle" } {
         ns_param	driver             nsoracle
-        ns_param	datasource         $datasource
-        ns_param	user               $db_name
-        ns_param	password           $db_password
     } else {
         ns_param	driver             postgres
-        ns_param	user               $db_user
-        ns_param	password           ""
     }
 }
 
