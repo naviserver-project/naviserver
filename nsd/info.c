@@ -542,8 +542,42 @@ NsInitInfo(void)
 
 #ifndef _MSC_VER
     {
+        char *preloadString = getenv("LD_PRELOAD");
 
-        preload_library_name = getenv("LD_PRELOAD");
+        if (preloadString != NULL) {
+            Tcl_DString ds;
+            char       *token;
+
+            /*
+             * The content of LD_PRELOAD might contain multiple
+             * libraries.  Look for the first one with a plausible
+             * name and just open this library later.
+             */
+            Tcl_DStringInit(&ds);
+            Tcl_DStringAppend(&ds, preloadString, TCL_INDEX_NONE);
+            token = ns_strtok(ds.string, ": ");
+
+            if (token == NULL) {
+                /*
+                 * Single token.
+                 */
+                if (ns_memmem(ds.string, (size_t)ds.length, "tcmalloc", 8)) {
+                    preload_library_name = ns_strdup(ds.string);
+                }
+            } else {
+                /*
+                 * Multiple tokens.
+                 */
+                while (token != NULL) {
+                    if (ns_memmem(token, strlen(token), "tcmalloc", 8)) {
+                        preload_library_name = ns_strdup(token);
+                        break;
+                    }
+                    token = ns_strtok(NULL, ": ");
+                }
+            }
+            Tcl_DStringFree(&ds);
+        }
 
         if (preload_library_name != NULL) {
             typedef const char *(*MallocExtension_GetVersion_t)(int *, int *, const char**);
