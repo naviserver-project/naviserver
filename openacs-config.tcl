@@ -64,6 +64,7 @@ set defaultConfig {
 
     db_name           $server
     db_user           nsadmin
+    db_password       ""
     db_host           localhost
     db_port           ""
     db_passwordfile   ""
@@ -374,7 +375,7 @@ if {[info exists httpport] && $httpport ne ""} {
     # module "nssock" as a global server module with the name "http".
     #
     ns_section ns/modules {
-         ns_param http ${bindir}/nssock
+        ns_param http ${bindir}/nssock
     }
 
     ns_section ns/module/http {
@@ -586,7 +587,7 @@ ns_section ns/server/$server {
 
     # ns_param	lowwatermark	10       ;# 10; create additional threads above this queue-full percentage
     ns_param	highwatermark	100      ;# 80; allow concurrent creates above this queue-is percentage
-                                         ;# 100 means to disable concurrent creates
+                                          # 100 means to disable concurrent creates
     #ns_param    connectionratelimit 200 ;# 0; limit rate per connection to this amount (KB/s); 0 means unlimited
     #ns_param    poolratelimit   200     ;# 0; limit rate for pool to this amount (KB/s); 0 means unlimited
 
@@ -785,7 +786,7 @@ ns_section ns/server/$server/httpclient {
     #ns_param	logroll		true     ;# true, should server log files automatically
     #ns_param	logrollonsignal	true     ;# false, perform roll on a sighup
     #ns_param	logrollhour	0        ;# 0, specify at which hour to roll
- }
+}
 
 #---------------------------------------------------------------------
 # OpenACS specific settings (per server)
@@ -999,7 +1000,7 @@ ns_section ns/server/$server/module/nslog {
 ns_section ns/db/drivers {
 
     if { $dbms eq "oracle" } {
-        ns_param	nsoracle           ${bindir}/nsoracle
+        ns_param	nsoracle       ${bindir}/nsoracle
     } else {
         ns_param	postgres       ${bindir}/nsdbpg
         #
@@ -1054,13 +1055,6 @@ ns_section ns/db/pool/pool1 {
         ns_param	driver             postgres
     }
 }
-#
-# In case, you want to activate (more intense) SQL logging at runtime,
-# consider the two commands (e.g. entered over ds/shell)
-#
-#    ns_logctl severity "Debug(sql)" on
-#    ns_db logminduration pool1  10ms
-#
 
 ns_section ns/db/pool/pool2 {
     # ns_param	maxidle            0
@@ -1279,6 +1273,13 @@ ns_logctl severity debug $debug
 ns_logctl severity "Debug(sql)" $verboseSQL
 
 #
+# In case, you want to activate (more intense) SQL logging at runtime,
+# consider the two commands (e.g. entered over ds/shell)
+#
+#    ns_logctl severity "Debug(sql)" on
+#    ns_db logminduration pool1  10ms
+#
+
 # If you want to activate core dumps, one can use the following command
 #
 #ns_log notice "nsd.tcl: ns_rlimit coresize [ns_rlimit coresize unlimited]"
