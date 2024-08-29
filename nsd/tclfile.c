@@ -269,6 +269,53 @@ NsTclMkTempObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T 
 /*
  *----------------------------------------------------------------------
  *
+ * NsTclMkdTempObjCmd --
+ *
+ *      Implements "ns_mkdtemp". The function generates a unique
+ *      temporary directory using optionally a template as argument.
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      Allocates potentially memory for the filename.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclMkdTempObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+{
+    int          result = TCL_OK;
+    char        *templateString = (char *)NS_EMPTY_STRING;
+    Ns_ObjvSpec  args[] = {
+        {"?template", Ns_ObjvString, &templateString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (objc == 1) {
+        char buffer[PATH_MAX] = "";
+
+        snprintf(buffer, sizeof(buffer), "%s/nsd-XXXXXX", nsconf.tmpDir);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(ns_mkdtemp(buffer), TCL_INDEX_NONE));
+
+    } else /*if (objc == 2)*/ {
+        char *buffer;
+
+        assert(templateString != NULL);
+        buffer = ns_strdup(templateString);
+        Tcl_SetResult(interp, ns_mkdtemp(buffer), (Tcl_FreeProc *)ns_free);
+    }
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * NsTclKillObjCmd --
  *
  *      Implements "ns_kill".

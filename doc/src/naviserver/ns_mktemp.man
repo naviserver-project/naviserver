@@ -17,6 +17,9 @@ system's man pages if this might be an issue to you. In order to create
 temp files, the Tcl command [term "file tempfile"] should be used
 (introduced in Tcl 8.6), which is safe against race conditions.
 
+[para]
+For creating temporary directories, use [cmd ns_mkdtemp].
+
 [section {COMMANDS}]
 
 [list_begin definitions]
@@ -45,11 +48,11 @@ like
 [section EXAMPLES]
 
 [example_begin]
- % ns_mktemp /tmp/aol-XXXXXX
- /tmp/aol-rhaGGx
+ % ns_mktemp /tmp/foo-XXXXXX
+ /tmp/foo-rhaGGx
 [example_end]
 
-
+[see_also ns_mkdtemp]
 [keywords "global built-in" tmp tmpfile]
 
 [manpage_end]

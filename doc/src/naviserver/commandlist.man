@@ -131,6 +131,7 @@ sections of related commands.
 [call [cmd ns_ftruncate]]
 [call [cmd ns_hashpath]]
 [call [cmd ns_mktemp]]
+[call [cmd ns_mkdtemp]]
 [call [cmd ns_normalizepath]]
 [call [cmd ns_rollfile]]
 [call [cmd ns_symlink]]

@@ -99,6 +99,7 @@ static const Cmd basicCmds[] = {
     {"ns_logctl",                NULL, NsTclLogCtlObjCmd},
     {"ns_logroll",               NULL, NsTclLogRollObjCmd},
     {"ns_md5",                   NULL, NsTclMD5ObjCmd},
+    {"ns_mkdtemp",               NULL, NsTclMkdTempObjCmd},
     {"ns_mktemp",                NULL, NsTclMkTempObjCmd},
     {"ns_modulepath",            NULL, NsTclModulePathObjCmd},
     {"ns_normalizepath",         NULL, NsTclNormalizePathObjCmd},

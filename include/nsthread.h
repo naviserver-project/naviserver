@@ -531,6 +531,9 @@ typedef int ns_sockerrno_t;
 # define NS_MMAP_READ               (PROT_READ)
 # define NS_MMAP_WRITE              (PROT_WRITE)
 
+# ifdef HAVE_MKDTEMP
+#  define ns_mkdtemp                 mkdtemp
+# endif
 # define ns_mkstemp                 mkstemp
 
 # define ns_recv                    recv

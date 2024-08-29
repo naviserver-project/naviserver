@@ -3653,6 +3653,12 @@ NS_EXTERN int
 ns_mkstemp(char *charTemplate);
 #endif
 
+#ifndef HAVE_MKDTEMP
+NS_EXTERN char *
+ns_mkdtemp(char *charTemplate)
+    NS_GNUC_NONNULL(1);
+#endif
+
 NS_EXTERN int
 ns_poll(struct pollfd *fds, NS_POLL_NFDS_TYPE nfds, long timo)
     NS_GNUC_NONNULL(1);

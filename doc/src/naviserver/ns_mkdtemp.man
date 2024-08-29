@@ -1,0 +1,50 @@
+[include version_include.man]
+[manpage_begin ns_mkdtemp n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+
+[titledesc {Make a unique temporary directory}]
+
+[description] This command is a wrapper around the POSIX mkdtemp(3)
+function in the C standard library, or a NaviServer callback function,
+in case it is not available.  This function generates a unique
+temporary directoryfrom an optional template.
+
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_mkdtemp] [opt [arg template]]]
+
+[para]
+
+This command generates a unique temporary directory using optionally a
+template as argument, which is a string whose last six characters must
+be XXXXXX, and returns a new string where those are replaced with
+random characters such as to make the string a unique directory
+entry.
+
+[para]
+If this command is called without the optional parameter it behaves
+like
+[example_begin]
+ ns_mkdtemp [lb]ns_config ns/parameters tmpdir[rb]/nsd-XXXXXX
+[example_end]
+
+Don't forget to delete the directory when not needed anymore
+[list_end]
+
+
+[section EXAMPLES]
+
+[example_begin]
+ % ns_mkdtemp /tmp/foo-XXXXXX
+ /tmp/foo-rhaGGx
+[example_end]
+
+[see_also ns_mktemp]
+[keywords "global built-in" tmp directory]
+
+[manpage_end]
+

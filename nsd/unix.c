@@ -1072,6 +1072,93 @@ inet_ntop(int af, const void *src, char *dst, socklen_t size)
 }
 #endif
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * inet_ntop --
+ *
+ *      In case, we have no inet_ntop(), define it in terms of ns_inet_ntoa
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      A core file will be left wherever the server was running.
+ *
+ *----------------------------------------------------------------------
+ */
+
+
+#if !defined(HAVE_MKDTEMP)
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ns_mkdtemp --
+ *
+ *      Create a temporary directory based on the provided character template and
+ *      return its name.  This is a poor man's replacement for mkdtemp() under
+ *      POSIX systems.
+ *
+ * Results:
+ *      fd if ok, NS_INVALID_FD on error.
+ *
+ * Side effects:
+ *      Opens a temporary file.
+ *
+ *----------------------------------------------------------------------
+ */
+# if defined(_WIN32)
+int
+ns_mkdtemp(char *charTemplate)
+{
+    int   err;
+    char *result;
+
+    err = _mktemp_s(charTemplate, strlen(charTemplate));
+
+    if (err == 0) {
+        /*
+         * We had for a while _O_TEMPORARY here as well, which deletes the
+         * file, when he file when the last file descriptor is
+         * closed. It is removed here for compatibility reasons.
+         *
+         * Note that O_TMPFILE (since Linux 3.11) has different semantics.
+         */
+        err = CreateDirectory(charTemplate, NULL);
+    }
+
+    return (err == 0) ? charTemplate : NULL;
+}
+# else
+/*
+ * HAVE_MKDTEMP not defined, and no _WIN32
+ *
+ * This callback function should not be used on unix-like system, where most
+ * systems have mkdtemp() natively supported. This implementation is based on
+ * mktemp().  In general, the function mktemp() is not recommended, since
+ * there is a time gap between the generation of a filename and the generation
+ * of the directory with the name. This can result in race conditions or
+ * attacks. However, using this function is still better than home-brewed
+ * solutions for the same task.
+ */
+char *
+ns_mkdtemp(char *charTemplate)
+{
+    Tcl_Obj *dirpathObj;
+    int      rc;
+
+    fprintf(stderr, "MANUAL FALLBACK");
+    dirpathObj = Tcl_NewStringObj(mktemp(charTemplate), TCL_INDEX_NONE);
+    Tcl_IncrRefCount(dirpathObj);
+    rc = Tcl_FSCreateDirectory(dirpathObj);
+    Tcl_DecrRefCount(dirpathObj);
+
+    return (rc == TCL_OK) ? charTemplate : NULL;
+}
+# endif
+#endif
 
 
 /*

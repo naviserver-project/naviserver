@@ -50,3 +50,13 @@ AC_DEFUN([AX_HAVE_MEMMEM],
     AC_DEFINE([HAVE_MEMMEM],[1],[Define to 1 if memmem is available.])
   ])]
 )
+
+dnl
+dnl Check to see whether we have the mkdtemp available.
+dnl
+
+AC_DEFUN([AX_HAVE_MKDTEMP],
+  [AC_CHECK_FUNC([mkdtemp], [
+    AC_DEFINE([HAVE_MKDTEMP],[1],[Define to 1 if mkdtemp is available.])
+  ])]
+)
