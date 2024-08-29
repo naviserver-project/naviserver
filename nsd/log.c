@@ -2076,6 +2076,7 @@ LogToFile(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     static NS_THREAD_LOCAL size_t sameLineCount = 1u;
     static NS_THREAD_LOCAL size_t lastLen = 0u;
     static NS_THREAD_LOCAL size_t lastHash = 0u;
+    static NS_THREAD_LOCAL size_t lastSeverity = 0u;
     size_t hash = 0u;
 
     NS_NONNULL_ASSERT(arg != NULL);
@@ -2085,7 +2086,7 @@ LogToFile(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     hash = NsTclHash(msg);
     //fprintf(stderr, "LOG compute hash len %lu MSG <%s> hash %lu\n", len, msg, hash);
 
-    if (hash == lastHash && lastLen == len) {
+    if (hash == lastHash && lastLen == len && lastSeverity == severity) {
         /*
          * The last message was the same.
          */
@@ -2108,7 +2109,7 @@ LogToFile(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
 
             Ns_DStringInit(&dsRepeat);
             Ns_DStringPrintf(&dsRepeat, "last log entry for this thread was repeated %lu times", sameLineCount);
-            (void) LogToDString(&ds, severity, stamp, dsRepeat.string, (size_t)dsRepeat.length);
+            (void) LogToDString(&ds, lastSeverity, stamp, dsRepeat.string, (size_t)dsRepeat.length);
             (void) NsAsyncWrite(fd, Ns_DStringValue(&ds), (size_t)Ns_DStringLength(&ds));
             Ns_DStringFree(&dsRepeat);
 
@@ -2122,6 +2123,7 @@ LogToFile(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
 
         lastLen = len;
         lastHash = hash;
+        lastSeverity = severity;
     }
 #else
     int        fd = PTR2INT(arg);
