@@ -790,10 +790,21 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 
     nsconf.tmpDir = ns_strcopy(Ns_ConfigGetValue(NS_GLOBAL_CONFIG_PARAMETERS, "tmpdir"));
     if (nsconf.tmpDir == NULL) {
+        size_t dirNameLength;
+
         nsconf.tmpDir = getenv("TMPDIR");
         if (nsconf.tmpDir == NULL) {
             nsconf.tmpDir = P_tmpdir;
         }
+        dirNameLength = strlen(nsconf.tmpDir);
+        fprintf(stderr, "DIRNAME <%s> last %c\n", nsconf.tmpDir, nsconf.tmpDir[dirNameLength-1]);
+        if (nsconf.tmpDir[dirNameLength-1] == '/') {
+            char *tmpDirName = ns_strdup(nsconf.tmpDir);
+
+            tmpDirName[dirNameLength-1] = '\0';
+            nsconf.tmpDir = tmpDirName;
+        }
+
         Ns_SetUpdateSz(set, "tmpdir", 6, nsconf.tmpDir, TCL_INDEX_NONE);
     }
 
