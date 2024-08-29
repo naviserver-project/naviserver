@@ -2251,18 +2251,6 @@ NsTclValidUtf8ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC
     return result;
 }
 
-#if 0
-set s "hello world"
-time {time {ns_valid_utf8 $s} 1000} 1000  ;# 251mms ;# 229
-set s [string repeat x 1000]
-time {time {ns_valid_utf8 $s} 1000} 1000  ;# 4328.282139999999 ; 1535.6498230000002
-
-ns_valid_utf8 [encoding convertto utf-8 motörhead]
-ns_valid_utf8 "foo\x85"
-ns_valid_utf8 [encoding convertto utf-8 "foo\x85"]
-ns_valid_utf8 "foo\xc3\x85"
-
-#endif
 
 /*
  *----------------------------------------------------------------------
