@@ -5379,7 +5379,7 @@ CheckSingletonHeaderFields(Sock *sockPtr)
     size_t        i, idx;
     Ns_Set       *headers = sockPtr->reqPtr->headers;
     int           counts[Ns_NrElements(singletonRequestHeaderFields)] = {0};
-    const char **singeltonFields = sockPtr->extractedHeaderFields;
+    const char **singletonFields = sockPtr->extractedHeaderFields;
 
     memset(sockPtr->extractedHeaderFields, 0, sizeof(sockPtr->extractedHeaderFields));
     /*
@@ -5412,7 +5412,7 @@ CheckSingletonHeaderFields(Sock *sockPtr)
 
                 }
                 if (singletonRequestHeaderFields[i].extract != NS_EXTRACTED_NONE) {
-                    singeltonFields[singletonRequestHeaderFields[i].extract] = headers->fields[idx].value;
+                    singletonFields[singletonRequestHeaderFields[i].extract] = headers->fields[idx].value;
                 }
                 break;
             } else if (cmp > 0) {
@@ -5494,7 +5494,7 @@ SockSetServer(Sock *sockPtr)
         Tcl_DString hostDs;
 
         /*
-         * DriverLookupHost() requires a writeable string in the form of a
+         * DriverLookupHost() requires a writable string in the form of a
          * Tcl_DString.
          */
         Tcl_DStringInit(&hostDs);
