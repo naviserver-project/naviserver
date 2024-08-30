@@ -1079,7 +1079,7 @@ NsConfigRead(const char *file)
             const char *data = Tcl_GetStringFromObj(buf, &length);
 
             fileContent = ns_strncopy(data, (ssize_t)length);
-            Ns_Log(Notice, "configuration file '%s' loaded", file);
+            Ns_Log(Notice, "using configuration file '%s'", file);
         }
     }
 
