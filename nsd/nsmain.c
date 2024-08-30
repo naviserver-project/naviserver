@@ -797,7 +797,6 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
             nsconf.tmpDir = P_tmpdir;
         }
         dirNameLength = strlen(nsconf.tmpDir);
-        fprintf(stderr, "DIRNAME <%s> last %c\n", nsconf.tmpDir, nsconf.tmpDir[dirNameLength-1]);
         if (nsconf.tmpDir[dirNameLength-1] == '/') {
             char *tmpDirName = ns_strdup(nsconf.tmpDir);
 
