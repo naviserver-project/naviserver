@@ -658,7 +658,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
     Tcl_DString     ds;
 
     static const char *const opts[] = {
-        "address", "argv0", "boottime", "builddate", "buildinfo", "callbacks",
+        "address", "argv", "argv0", "boottime", "builddate", "buildinfo", "callbacks",
         "config", "home", "hostname", "ipv6", "locks", "log",
         "major", "meminfo", "minor", "mimetypes", "name", "nsd", "pagedir",
         "pageroot", "patchlevel", "pid", "platform", "pools",
@@ -669,7 +669,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
     };
 
     enum {
-        IAddressIdx, IArgv0Idx, IBoottimeIdx, IBuilddateIdx, IBuildinfoIdx, ICallbacksIdx,
+        IAddressIdx, IArgvIdx, IArgv0Idx, IBoottimeIdx, IBuilddateIdx, IBuildinfoIdx, ICallbacksIdx,
         IConfigIdx, IHomeIdx, IHostNameIdx, IIpv6Idx, ILocksIdx, ILogIdx,
         IMajorIdx, IMeminfoIdx, IMinorIdx, IMimeIdx, INameIdx, INsdIdx,
         IPageDirIdx, IPageRootIdx, IPatchLevelIdx,
@@ -696,6 +696,10 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
     Tcl_DStringInit(&ds);
 
     switch (opt) {
+    case IArgvIdx:
+        Tcl_SetObjResult(interp, nsconf.argvObj);
+        break;
+
     case IArgv0Idx:
         Tcl_SetObjResult(interp, Tcl_NewStringObj(nsconf.argv0, TCL_INDEX_NONE));
         break;

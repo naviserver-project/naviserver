@@ -121,6 +121,7 @@ typedef struct NsWriterSock NsWriterSock;
 
 struct nsconf {
     const char *argv0;
+    Tcl_Obj    *argvObj;
     const char *nsd;
     const char *name;
     const char *version;

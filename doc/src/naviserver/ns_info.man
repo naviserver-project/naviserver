@@ -28,6 +28,13 @@ Returns the primary IP address of the hostname of this machine, or
 the unspecified IP address (for IPv4 "0.0.0.0", for IPv6 "::") if
 unable to determine.
 
+[call [cmd  "ns_info argv"]]
+
+Returns the argument vector from the invocation of nsd (excluding the
+first argument) in form of a list. This is similar to Tcl's $argv, but
+global variables in the top level namespace are cleaned up after every
+request.
+
 [call [cmd  "ns_info argv0"]]
 
 Returns file path to executable binary

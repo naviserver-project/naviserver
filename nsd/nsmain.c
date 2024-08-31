@@ -133,6 +133,13 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 #endif
 
     nsconf.argv0 = argv[0];
+    nsconf.argvObj = Tcl_NewListObj(0, NULL);
+    Tcl_IncrRefCount(nsconf.argvObj);
+    for (optionIndex = 1; optionIndex < argc; optionIndex++) {
+        Tcl_ListObjAppendElement(NULL, nsconf.argvObj,
+                                 Tcl_NewStringObj( argv[optionIndex], TCL_INDEX_NONE));
+    }
+
 
     /*
      * Parse the command line arguments.
