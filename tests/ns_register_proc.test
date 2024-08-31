@@ -93,9 +93,11 @@ test proc-3.5 {override noinherit} -setup {
 
 test proc-4.1 {register with query variable} -setup {
     ns_register_proc GET /proc-4.1 {ns_return 200 text/plain proc-4.1-NO_X}
+    dict set oldSeverity error [ns_logctl severity error 0]
     ns_register_proc GET /proc-4.1?x=1 {ns_return 200 text/plain proc-4.1-x=1}
     ns_register_proc GET /proc-4.1?x=2 {ns_return 200 text/plain proc-4.1-x=2}
     ns_register_proc GET /foo/proc-4.1?x=3 {ns_return 200 text/plain proc-4.1-x=3}
+    foreach {severity level} $oldSeverity { ns_logctl severity $severity $level }
 } -body {
     list \
         [nstest::http -getbody 1 GET /proc-4.1?x=1] \

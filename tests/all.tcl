@@ -28,16 +28,15 @@ package require tcltest 2.2
 namespace import tcltest::*
 configure {*}$argv -singleproc true -testdir [file dirname [info script]]
 
+set verboseTest 0
 
-
-rename tcltest::test tcltest::__test
-
-proc tcltest::test args {
-
-    ns_log dev >->-> \
-        [format "%-16s" "[lindex $args 0]:"] ([string trim [lindex $args 1]])
-
-    uplevel 1 tcltest::__test $args
+if {$verboseTest} {
+    rename tcltest::test tcltest::__test
+    proc tcltest::test args {
+        ns_log dev >->-> \
+            [format "%-16s" "[lindex $args 0]:"] ([string trim [lindex $args 1]])
+        uplevel 1 tcltest::__test $args
+    }
 }
 
 

@@ -445,9 +445,11 @@ test ns_urlencode-6.0 {security check: see, if we can sneek in a binary 0 to tri
 test ns_urlencode-7.0 {
     Funny chars: URL ends with question mark
 } -constraints {serverListen} -setup {
+    dict set oldSeverity error [ns_logctl severity error 0]
     ns_register_proc GET /a? {
         ns_return 200 text/plain [list [ns_conn url] [ns_info server]]
     }
+    foreach {severity level} $oldSeverity { ns_logctl severity $severity $level }
 } -body {
     nstest::http -http 1.1 GET /[ns_urlencode -part path a?]
 } -cleanup {
@@ -477,9 +479,11 @@ test ns_urlencode-7.0.2 {
 test ns_urlencode-7.1 {
     Funny chars: URL is just a question mark
 } -constraints {serverListen} -setup {
+    dict set oldSeverity error [ns_logctl severity error 0]
     ns_register_proc GET /? {
         ns_return 200 text/plain [list ok [ns_conn url] [ns_info server]]
     }
+    foreach {severity level} $oldSeverity { ns_logctl severity $severity $level }
 } -body {
     nstest::http -http 1.1 GET /%3F
 } -cleanup {

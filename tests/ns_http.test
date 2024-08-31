@@ -1299,9 +1299,12 @@ content of file
 
 test http-6.5.1a {ns_getform and ns_getformfile + 2KB file} -constraints {curl serverListen} -setup {
     ns_register_proc POST /post {
+        ns_log warning 0
+
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType     [ns_set iget [ns_conn headers] content-type]
         set contentLength   [ns_set iget [ns_conn headers] content-length]
+        ns_log warning 0.1 [lmap s [ns_logctl severities] {list $s [ns_logctl severity $s]}]
         set haveFile        [expr {[ns_getformfile file] ne ""}]
         set haveContentFile [expr {[ns_conn contentfile] ne ""}]
         set maxUpload       [ns_config [ns_driversection -driver nssock] maxupload]
@@ -1309,7 +1312,9 @@ test http-6.5.1a {ns_getform and ns_getformfile + 2KB file} -constraints {curl s
         set ct              [lindex $contentType 0]
         set formValues      [ns_set array [ns_conn form]]
         set f2              [ns_set get [ns_conn form] f2 ""]
+        ns_log warning 1
         ns_return 200 text/plain "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile f2 '$f2'"
+        ns_log warning 2
     }
 } -body {
     #
@@ -1333,7 +1338,13 @@ test http-6.5.1a {ns_getform and ns_getformfile + 2KB file} -constraints {curl s
         |\xFC
         |--$boundary--
     }]]
-    nstest::http -setheaders [list content-type $ct] POST /post $body
+    try {
+        dict set oldSeverity error [ns_logctl severity error 0]
+        #dict set oldSeverity warning [ns_logctl severity warning 0]
+        nstest::http -setheaders [list content-type $ct] POST /post $body
+    } finally {
+        foreach {severity level} $oldSeverity { ns_logctl severity $severity $level }
+    }
 
 } -cleanup {
     ns_unregister_op POST /post
