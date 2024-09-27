@@ -4,11 +4,12 @@ jobs:
   naviserver:
     runs-on: ubuntu-latest
     env:
-      CC:           ${{ matrix.compiler }}
-      TCLTAG:       ${{ matrix.tcltag }}
-      NSF_VERSION:  ${{ matrix.nsf_version }}
-      NS_MODULES:   ${{ matrix.ns_modules }}
-      TDOM_VERSION: ${{ matrix.tdom_version }}
+      CC:             ${{ matrix.compiler }}
+      TCLTAG:         ${{ matrix.tcltag }}
+      TCLLIB_VERSION: ${{ matrix.tcllib_version }}
+      NSF_VERSION:    ${{ matrix.nsf_version }}
+      NS_MODULES:     ${{ matrix.ns_modules }}
+      TDOM_VERSION:   ${{ matrix.tdom_version }}
 
     strategy:
       fail-fast: false
@@ -34,13 +35,13 @@ jobs:
             nsf_version: HEAD
             tdom_version: trunk
 
-#          - os: ubuntu-latest
-#            compiler: gcc-12
-#           tcltag: core-9-0-b1-rc
-#            tcltag: core-8-6-14-rc
-#            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl
-#            nsf_version: HEAD
-#            tdom_version: 0.9.3
+          - os: ubuntu-latest
+            compiler: gcc-12
+            tcltag: 9.0.0
+            nsf_version: HEAD
+            tcllib_version: 2.0
+            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl
+            tdom_version: 0.9.4
 
     defaults:
       run:
@@ -73,6 +74,7 @@ jobs:
             version_ns=.. \
             version_modules=GIT \
             version_tcl=${TCLTAG} \
+            version_tcllib=${TCLLIB_VERSION} \
             version_xotcl=${NSF_VERSION} \
             version_tdom=${TDOM_VERSION} \
             ns_modules="${NS_MODULES}" \
