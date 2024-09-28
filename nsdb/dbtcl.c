@@ -171,12 +171,12 @@ NsDbAddCmds(Tcl_Interp *interp, const void *arg)
         Tcl_Obj *tmpObj = Tcl_NewIntObj(0);
 
         NS_intTypePtr = tmpObj->typePtr;
-        fprintf(stderr, "==== NsDbAddCmds has NS_intTypePtr %p\n", (void*)NS_intTypePtr);
+        Ns_Log(Warning, "NsDbAddCmds: obtain Tcl int type from temporary object");
         Tcl_DecrRefCount(tmpObj);
 
         if (NS_intTypePtr == NULL) {
             // Tcl_Panic("NsDbAddCmds: no int type");
-            Ns_Log(Warning, "NsDbAddCmds: no int type");
+            Ns_Log(Warning, "NsDbAddCmds: cannot determine Tcl int type");
         }
     }
 

@@ -57,6 +57,10 @@ static CONST86 Tcl_ObjType *listType;
 void NsTclInitKeylistType(void)
 {
     listType = Tcl_GetObjType("list");
+
+    if (listType == NULL) {
+        Ns_Log(Warning, "tclxkeylist: cannot determine Tcl list type");
+    }
 }
 
 /*-----------------------------------------------------------------------------
