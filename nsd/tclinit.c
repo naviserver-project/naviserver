@@ -2167,6 +2167,7 @@ static bool InitializeInterpData(void) {
 
     //fprintf(stderr, "==== InitializeInterpData\n");
     NS_intTypePtr = tmpObj->typePtr;
+    fprintf(stderr, "==== InitializeInterpData %p\n", (void*)NS_intTypePtr);
     Tcl_DecrRefCount(tmpObj);
 
 #if defined(_WIN32) || defined(HAVE_PTHREAD)

@@ -164,7 +164,19 @@ NsDbAddCmds(Tcl_Interp *interp, const void *arg)
     Tcl_SetAssocData(interp, datakey, FreeData, idataPtr);
 
     if (NS_intTypePtr == NULL) {
-        Tcl_Panic("NsTclInitObjs: no int type");
+        /*
+         * Not sure, why we see a problem with tcl9 here, maybe the
+         * initialization order has to be checked.
+         */
+        Tcl_Obj *tmpObj = Tcl_NewIntObj(0);
+
+        NS_intTypePtr = tmpObj->typePtr;
+        fprintf(stderr, "==== NsDbAddCmds has NS_intTypePtr %p\n", (void*)NS_intTypePtr);
+        Tcl_DecrRefCount(tmpObj);
+
+        if (NS_intTypePtr == NULL) {
+            Tcl_Panic("NsTclInitObjs: no int type");
+        }
     }
 
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_db", DbObjCmd, idataPtr, NULL);
