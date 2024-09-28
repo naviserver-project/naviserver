@@ -175,7 +175,8 @@ NsDbAddCmds(Tcl_Interp *interp, const void *arg)
         Tcl_DecrRefCount(tmpObj);
 
         if (NS_intTypePtr == NULL) {
-            Tcl_Panic("NsTclInitObjs: no int type");
+            // Tcl_Panic("NsDbAddCmds: no int type");
+            Ns_Log(Warning, "NsDbAddCmds: no int type");
         }
     }
 
@@ -1216,6 +1217,10 @@ QuoteSqlValue(Tcl_DString *dsPtr, Tcl_Obj *valueObj, int valueType)
     NS_NONNULL_ASSERT(valueObj != NULL);
 
     valueString = Tcl_GetStringFromObj(valueObj, &valueLength);
+
+    if (NS_intTypePtr == NULL) {
+        Tcl_Panic("QuoteSqlValue: no int type");
+    }
 
     if (valueObj->typePtr == NS_intTypePtr) {
         /*
