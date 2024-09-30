@@ -1108,7 +1108,7 @@ ns_section ns/server/$server/modules {
     #
     set libthread [lindex [lsort [glob -nocomplain $homedir/lib/thread*/libthread-ns*[info sharedlibextension]]] end]
     if {$libthread eq ""} {
-        set libthread [lindex [lsort [glob -nocomplain $homedir/lib/thread*/libthread*[info sharedlibextension]]] end]
+        set libthread [lindex [lsort [glob -nocomplain $homedir/lib/thread*/lib*thread*[info sharedlibextension]]] end]
     }
     if {$libthread eq ""} {
         ns_log notice "No Tcl thread library installed in $homedir/lib/"
