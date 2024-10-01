@@ -2076,7 +2076,7 @@ LogToFile(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     static NS_THREAD_LOCAL size_t sameLineCount = 1u;
     static NS_THREAD_LOCAL size_t lastLen = 0u;
     static NS_THREAD_LOCAL size_t lastHash = 0u;
-    static NS_THREAD_LOCAL size_t lastSeverity = 0u;
+    static NS_THREAD_LOCAL Ns_LogSeverity lastSeverity = 0u;
     size_t hash = 0u;
 
     NS_NONNULL_ASSERT(arg != NULL);
