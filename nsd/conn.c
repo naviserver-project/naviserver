@@ -1587,7 +1587,7 @@ Ns_ConnTarget(Ns_Conn *conn, Tcl_DString *dsPtr)
 }
 
 int
-NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     NsInterp            *itPtr = clientData;
     Conn                *connPtr;
@@ -2499,7 +2499,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
  */
 
 int
-NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const NsServer *servPtr = NsGetInitServer();
     int             result = TCL_OK;
@@ -2540,7 +2540,7 @@ NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_O
  */
 
 int
-NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const NsInterp   *itPtr = clientData;
     int               result = TCL_OK;

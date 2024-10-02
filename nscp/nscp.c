@@ -678,7 +678,7 @@ Login(const Sess *sessPtr, Tcl_DString *unameDSPtr)
  */
 
 static int
-ExitObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+ExitObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -737,7 +737,7 @@ NscpAddCmds(Tcl_Interp *interp, const void *UNUSED(arg))
  *----------------------------------------------------------------------
  */
 static int
-NscpUsersObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NscpUsersObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -778,7 +778,7 @@ NscpUsersObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T ob
  */
 
 static int
-NsTclNscpObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclNscpObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"users", NscpUsersObjCmd},

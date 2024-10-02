@@ -181,7 +181,7 @@ NsCleanupTls(void **slots)
 
         tries = 0;
         do {
-            TCL_OBJC_T i;
+            TCL_SIZE_T i;
 
             retry = NS_FALSE;
             i = NS_THREAD_MAXTLS;

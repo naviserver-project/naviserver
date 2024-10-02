@@ -497,7 +497,7 @@ CgiInit(Cgi *cgiPtr, const Map *mapPtr, const Ns_Conn *conn)
 {
     Mod                        *modPtr;
     Ns_DString                 *dsPtr;
-    TCL_OBJC_T                  i;
+    TCL_SIZE_T                  i;
     size_t                      ulen;
     char                       *e, *s;
     const char                 *url, *server, *fileName;
@@ -1576,7 +1576,7 @@ SetAppend(Ns_Set *set, int index, const char *sep, char *value)
  *----------------------------------------------------------------------
  */
 static int
-NsTclRegisterCGIObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclRegisterCGIObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     char       *method, *url, *path = NULL;
     int         noinherit = 0, matchsegments = 0, result = TCL_OK;

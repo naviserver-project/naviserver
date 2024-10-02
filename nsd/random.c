@@ -72,7 +72,7 @@ static void GenSeeds(unsigned long seeds[], int nseeds);
  */
 
 int
-NsTclRandObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclRandObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int               maxValue = -1, result = TCL_OK;
     Ns_ObjvValueRange range = {1, INT_MAX};
@@ -239,7 +239,7 @@ CounterThread(void *UNUSED(arg))
 static unsigned long
 TrueRand(void)
 {
-    TCL_OBJC_T i;
+    TCL_SIZE_T i;
 
     for (i = 0; i < ROULETTE_PRE_ITERS; i++) {
         (void) Roulette();

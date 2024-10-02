@@ -151,7 +151,7 @@ NsTclCreateBuckets(const NsServer *servPtr, int nbuckets)
 
 int
 NsTclNsvGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                  TCL_OBJC_T objc, Tcl_Obj *const* objv)
+                  TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -214,7 +214,7 @@ NsTclNsvGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
 int
 NsTclNsvExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                     TCL_OBJC_T objc, Tcl_Obj *const* objv)
+                     TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int result;
 
@@ -279,7 +279,7 @@ SetResultToOldValue(Tcl_Interp *interp, Array *arrayPtr, const char *key)
 
 int
 NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                  TCL_OBJC_T objc, Tcl_Obj *const* objv)
+                  TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int      result = TCL_OK, doReset = 0, doDefault = 0;
     Array   *arrayPtr;
@@ -422,7 +422,7 @@ NsTclNsvSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
 int
 NsTclNsvIncrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                   TCL_OBJC_T objc, Tcl_Obj *const* objv)
+                   TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int  result, count = 1;
 
@@ -469,7 +469,7 @@ NsTclNsvIncrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
 int
 NsTclNsvLappendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                      TCL_OBJC_T objc, Tcl_Obj *const* objv)
+                      TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -480,7 +480,7 @@ NsTclNsvLappendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         Array         *arrayPtr;
         Tcl_HashEntry *hPtr;
         int            isNew;
-        TCL_OBJC_T     i;
+        TCL_SIZE_T     i;
         Tcl_DString    ds;
 
         arrayPtr = LockArrayObj(interp, objv[1], NS_TRUE, NS_WRITE);
@@ -524,7 +524,7 @@ NsTclNsvLappendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
 int
 NsTclNsvAppendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                     TCL_OBJC_T objc, Tcl_Obj *const* objv)
+                     TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -534,7 +534,7 @@ NsTclNsvAppendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     } else {
         Array         *arrayPtr;
         Tcl_HashEntry *hPtr;
-        TCL_OBJC_T     i;
+        TCL_SIZE_T     i;
         int            isNew;
         Tcl_DString    ds;
 
@@ -583,7 +583,7 @@ NsTclNsvAppendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
 int
 NsTclNsvUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                    TCL_OBJC_T objc, Tcl_Obj *const* objv)
+                    TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Tcl_Obj    *arrayObj;
     char       *keyString = NULL;
@@ -669,7 +669,7 @@ NsTclNsvUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  */
 
 int
-NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -747,7 +747,7 @@ NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, 
 
 int
 NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                    TCL_OBJC_T objc, Tcl_Obj *const* objv)
+                    TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                      opt, result = TCL_OK;
     static const char *const opts[] = {
@@ -944,7 +944,7 @@ GetArrayAndKey(Tcl_Interp *interp, Tcl_Obj *arrayObj, const char *keyString,
 
 int
 NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                    TCL_OBJC_T objc, Tcl_Obj *const* objv)
+                    TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                      opt, result;
     static const char *const opts[] = {
@@ -1121,7 +1121,7 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                             Tcl_SetObjResult(interp, dictObj);
                         }
                     } else {
-                        TCL_OBJC_T lastObjc = (opt == CGetdefIdx ? objc -1 : objc);
+                        TCL_SIZE_T lastObjc = (opt == CGetdefIdx ? objc -1 : objc);
                         Tcl_Obj   *dictValueObj = NULL;
 
                         if (nargs == 0) {
@@ -2086,7 +2086,7 @@ LockArrayObj(Tcl_Interp *interp, Tcl_Obj *arrayObj, bool create, NS_RW rw)
  */
 
 int
-NsTclNsvBucketObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclNsvBucketObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const NsInterp   *itPtr = clientData;
     const NsServer   *servPtr = itPtr->servPtr;

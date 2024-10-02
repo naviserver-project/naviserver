@@ -1291,7 +1291,7 @@ TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl
  *-----------------------------------------------------------------------------
  */
 int
-TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Tcl_Obj    *keylPtr, *valuePtr;
     int         status;
@@ -1371,7 +1371,7 @@ TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, T
  *-----------------------------------------------------------------------------
  */
 int
-TclX_KeylsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+TclX_KeylsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
 
@@ -1381,7 +1381,7 @@ TclX_KeylsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
     } else {
         Tcl_Obj    *keylVarPtr, *newVarObj;
         TCL_SIZE_T  keyLen;
-        TCL_OBJC_T  i;
+        TCL_SIZE_T  i;
 
         /*
          * Get the variable that we are going to update.  If the var
@@ -1432,7 +1432,7 @@ TclX_KeylsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
  *----------------------------------------------------------------------------
  */
 int
-TclX_KeyldelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+TclX_KeyldelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -1465,7 +1465,7 @@ TclX_KeyldelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
                 }
             }
             if (result == TCL_OK) {
-                TCL_OBJC_T i;
+                TCL_SIZE_T i;
 
                 keylPtr = keylVarPtr;
 
@@ -1497,7 +1497,7 @@ TclX_KeyldelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
  *-----------------------------------------------------------------------------
  */
 int
-TclX_KeylkeysObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+TclX_KeylkeysObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result;
 

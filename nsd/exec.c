@@ -393,7 +393,7 @@ Ns_ExecArgv(const char *exec, const char *dir, int fdin, int fdout,
     if (argv == NULL) {
         args = NULL;
     } else {
-        TCL_OBJC_T i;
+        TCL_SIZE_T i;
 
         for (i = 0; argv[i] != NULL; ++i) {
           Ns_DStringNAppend(&ads, argv[i], (int)strlen(argv[i]) + 1);

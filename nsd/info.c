@@ -650,7 +650,7 @@ NsInitInfo(void)
  */
 
 int
-NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int             opt, result = TCL_OK;
     bool            done = NS_TRUE;
@@ -1046,7 +1046,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_
  */
 
 int
-NsTclLibraryObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclLibraryObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
     char        *kindString = (char *)NS_EMPTY_STRING, *moduleString = NULL;

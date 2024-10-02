@@ -2870,7 +2870,7 @@ WalkCallback(Ns_DString *dsPtr, const void *arg)
  *----------------------------------------------------------------------
  */
 static int
-UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
@@ -2977,7 +2977,7 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
  *----------------------------------------------------------------------
  */
 static int
-UrlSpaceListObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+UrlSpaceListObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
@@ -3024,7 +3024,7 @@ UrlSpaceListObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, T
  *----------------------------------------------------------------------
  */
 static int
-UrlSpaceNewObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+UrlSpaceNewObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
@@ -3064,7 +3064,7 @@ UrlSpaceNewObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
  *----------------------------------------------------------------------
  */
 static int
-UrlSpaceSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+UrlSpaceSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
@@ -3146,7 +3146,7 @@ UrlSpaceSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
  *----------------------------------------------------------------------
  */
 static int
-UrlSpaceUnsetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+UrlSpaceUnsetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = clientData;
     NsServer       *servPtr = itPtr->servPtr;
@@ -3222,7 +3222,7 @@ UrlSpaceUnsetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, 
  */
 
 int
-NsTclUrlSpaceObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclUrlSpaceObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"get",   UrlSpaceGetObjCmd},

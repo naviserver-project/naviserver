@@ -1802,13 +1802,13 @@ NS_EXTERN int NsAdpFlush(NsInterp *itPtr, bool doStream)
 NS_EXTERN int NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *procs)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int NsAdpEval(NsInterp *itPtr, TCL_OBJC_T objc, Tcl_Obj *const* objv, const char *resvar)
+NS_EXTERN int NsAdpEval(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *resvar)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int NsAdpSource(NsInterp *itPtr, TCL_OBJC_T objc, Tcl_Obj *const* objv, const char *resvar)
+NS_EXTERN int NsAdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *resvar)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN int NsAdpInclude(NsInterp *itPtr, TCL_OBJC_T objc, Tcl_Obj *const* objv,
+NS_EXTERN int NsAdpInclude(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv,
                            const char *file, const Ns_Time *expiresPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 

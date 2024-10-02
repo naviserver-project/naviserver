@@ -70,7 +70,7 @@ static TCL_OBJCMDPROC_T
     QuoteListToListObjCmd,
     QuoteValueObjCmd;
 
-static int ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv, char cmd);
+static int ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, char cmd);
 
 /*
  * Importing from the DLL requires NS_IMPORT under windows. NS_IMPORT
@@ -295,7 +295,7 @@ CurrentHandles( Tcl_Interp *interp, Tcl_HashTable *tablePtr, Tcl_Obj *dictObj)
  */
 
 static int
-DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     InterpData     *idataPtr = clientData;
     char            tmpbuf[32] = "";
@@ -1014,7 +1014,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *co
  */
 
 static int
-ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv, char cmd)
+ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, char cmd)
 {
     InterpData  *idataPtr = clientData;
     Ns_DbHandle *handle;
@@ -1038,13 +1038,13 @@ ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj 
 }
 
 static int
-DbErrorCodeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+DbErrorCodeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     return ErrorObjCmd(clientData, interp, objc, objv, 'c');
 }
 
 static int
-DbErrorMsgObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+DbErrorMsgObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     return ErrorObjCmd(clientData, interp, objc, objv, 'm');
 }
@@ -1068,7 +1068,7 @@ DbErrorMsgObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl
  */
 
 static int
-DbConfigPathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+DbConfigPathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int               result = TCL_OK;
 
@@ -1103,7 +1103,7 @@ DbConfigPathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, T
  */
 
 static int
-PoolDescriptionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+PoolDescriptionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -1136,7 +1136,7 @@ PoolDescriptionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJ
  */
 
 static int
-QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
 
@@ -1295,7 +1295,7 @@ QuoteSqlValue(Tcl_DString *dsPtr, Tcl_Obj *valueObj, int valueType)
  *----------------------------------------------------------------------
  */
 static int
-QuoteValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+QuoteValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result, valueType = INTCHAR('q');
     Tcl_Obj    *valueObj;
@@ -1354,7 +1354,7 @@ QuoteValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T o
  */
 
 static int
-QuoteListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+QuoteListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK, valueType = INTCHAR('q');
     Tcl_Obj    *listObj;
@@ -1432,7 +1432,7 @@ FinishElement(Tcl_DString *elemPtr, Tcl_DString *colsPtr, bool quoted)
 
 
 static int
-GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int           trimUnquoted = 0, result = TCL_OK;
     char         *delimiter = (char *)",", *quoteString = (char *)"\"", *fileId, *varName;

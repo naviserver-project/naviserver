@@ -29,7 +29,7 @@
 
 static Ns_ServerInitProc ConfigServerVhost;
 
-static int PathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv, char cmd)
+static int PathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, char cmd)
     NS_GNUC_NONNULL(2);
 
 static char *MakePath(Ns_DString *dest, va_list *pap)
@@ -716,7 +716,7 @@ NsPageRoot(Ns_DString *dsPtr, const NsServer *servPtr, const char *host)
 
 
 int
-NsTclHashPathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclHashPathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int               levels = 1, result = TCL_OK;
     char             *inputString;
@@ -759,7 +759,7 @@ NsTclHashPathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_
  */
 
 int
-NsTclModulePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclModulePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -769,7 +769,7 @@ NsTclModulePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJ
 
     } else {
         Ns_DString  ds;
-        TCL_OBJC_T  i;
+        TCL_SIZE_T  i;
         const char *module = objc > 2 ? Tcl_GetString(objv[2]) : NULL;
 
         Ns_DStringInit(&ds);
@@ -807,19 +807,19 @@ NsTclModulePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJ
 
 
 int
-NsTclServerPathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclServerPathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     return PathObjCmd(clientData, interp, objc, objv, 's');
 }
 
 int
-NsTclPagePathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclPagePathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     return PathObjCmd(clientData, interp, objc, objv, 'p');
 }
 
 static int
-PathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv, char cmd)
+PathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, char cmd)
 {
     char       *host = NULL;
     TCL_SIZE_T  npaths = 0;
@@ -852,7 +852,7 @@ PathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *
 
         } else {
             Ns_DString  ds;
-            TCL_OBJC_T  i;
+            TCL_SIZE_T  i;
 
             Ns_DStringInit(&ds);
             if (cmd == 'p') {
@@ -860,7 +860,7 @@ PathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *
             } else {
                 (void) ServerRoot(&ds, servPtr, host);
             }
-            for (i = objc - (TCL_OBJC_T)npaths; i < objc; ++i) {
+            for (i = objc - (TCL_SIZE_T)npaths; i < objc; ++i) {
                 Ns_MakePath(&ds, Tcl_GetString(objv[i]), (char *)0L);
             }
             Tcl_DStringResult(interp, &ds);
@@ -888,7 +888,7 @@ PathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *
  */
 
 int
-NsTclServerRootProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclServerRootProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const NsServer *servPtr = NsGetInitServer();
     int             result = TCL_OK;

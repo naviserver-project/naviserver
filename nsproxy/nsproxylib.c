@@ -1683,7 +1683,7 @@ Import(Tcl_Interp *interp, const Tcl_DString *dsPtr, int *resultPtr)
  *----------------------------------------------------------------------
  */
 static int
-StatsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+StatsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
     char       *pool;
@@ -1746,7 +1746,7 @@ StatsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj 
  *----------------------------------------------------------------------
  */
 static int
-PidsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+PidsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK, details = 0;
     char       *pool;
@@ -1808,7 +1808,7 @@ PidsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *
 }
 
 static int
-WorkersObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+WorkersObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
     char       *pool;
@@ -1880,7 +1880,7 @@ WorkersObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Ob
  *----------------------------------------------------------------------
  */
 static int
-StopObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+StopObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
     char       *pool, *handle = NULL;
@@ -1939,7 +1939,7 @@ StopObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *
  */
 
 static int
-ClearObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+ClearObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
     char       *pool, *handle = NULL;
@@ -2000,7 +2000,7 @@ ClearObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj 
  */
 
 static int
-ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     InterpData    *idataPtr = data;
     Pool          *poolPtr;
@@ -2263,7 +2263,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const
  */
 
 static int
-ConfigureObjCmd(ClientData data, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+ConfigureObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     InterpData *idataPtr = data;
     Pool       *poolPtr;
@@ -2297,7 +2297,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *c
             goto err;
         }
     } else if (objc > 4) {
-        TCL_OBJC_T  i;
+        TCL_SIZE_T  i;
         const char *str;
 
         for (i = 3; i < (objc - 1); ++i) {
@@ -2571,7 +2571,7 @@ AppendObj(Tcl_Obj *listObj, const char *flag, Tcl_Obj *obj)
  */
 
 static int
-GetObjCmd(ClientData data, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+GetObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     InterpData    *idataPtr = data;
     Proxy         *proxyPtr, *firstPtr;
@@ -3798,7 +3798,7 @@ ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr)
  */
 
 static int
-RunProxyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+RunProxyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     char       *scriptString;
     int         result;

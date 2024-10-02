@@ -658,25 +658,15 @@ typedef int ns_sockerrno_t;
 # endif
 #endif
 
-#ifndef NS_TCL_HAVE_TIP629
-# define TCL_OBJC_T           int
-# define TCL_OBJCMDPROC_T     Tcl_ObjCmdProc
-# define TCL_CREATEOBJCOMMAND Tcl_CreateObjCommand
-#else
-/*
- * Support for TIP 627
- * https://core.tcl-lang.org/tips/doc/trunk/tip/627.md
-*/
-# define TCL_OBJC_T           Tcl_Size
-# define TCL_OBJCMDPROC_T     Tcl_ObjCmdProc2
-# define TCL_CREATEOBJCOMMAND Tcl_CreateObjCommand2
-#endif
-
 #ifdef NS_TCL_PRE9
 # define TCL_SIZE_T           int
 # define TCL_SIZE_MAX         INT_MAX
+# define TCL_OBJCMDPROC_T     Tcl_ObjCmdProc
+# define TCL_CREATEOBJCOMMAND Tcl_CreateObjCommand
 #else
 # define TCL_SIZE_T           Tcl_Size
+# define TCL_OBJCMDPROC_T     Tcl_ObjCmdProc2
+# define TCL_CREATEOBJCOMMAND Tcl_CreateObjCommand2
 #endif
 
 #if !defined(NS_POLL_NFDS_TYPE)

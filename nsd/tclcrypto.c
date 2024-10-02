@@ -555,7 +555,7 @@ GetEckeyFromPem(Tcl_Interp *interp, char *pemFileName, const char *passPhrase, b
  *----------------------------------------------------------------------
  */
 static int
-CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result, isBinary = 0;
     char       *digestName = (char *)"sha256";
@@ -617,7 +617,7 @@ CryptoHmacNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_
  *----------------------------------------------------------------------
  */
 static int
-CryptoHmacAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+CryptoHmacAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK, isBinary = 0;
     HMAC_CTX   *ctx;
@@ -672,7 +672,7 @@ CryptoHmacAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_
  *----------------------------------------------------------------------
  */
 static int
-CryptoHmacGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+CryptoHmacGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result = TCL_OK, encodingInt = -1;
     HMAC_CTX          *ctx;
@@ -733,7 +733,7 @@ CryptoHmacGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_
  *----------------------------------------------------------------------
  */
 static int
-CryptoHmacFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+CryptoHmacFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int            result = TCL_OK;
     HMAC_CTX      *ctx;
@@ -780,7 +780,7 @@ CryptoHmacFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC
  *----------------------------------------------------------------------
  */
 static int
-CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result, isBinary = 0, encodingInt = -1;
     Tcl_Obj           *keyObj, *messageObj;
@@ -870,7 +870,7 @@ CryptoHmacStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OB
  */
 
 int
-NsTclCryptoHmacObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclCryptoHmacObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"string",  CryptoHmacStringObjCmd},
@@ -910,7 +910,7 @@ NsTclCryptoHmacObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc
  *----------------------------------------------------------------------
  */
 static int
-CryptoMdNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+CryptoMdNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int           result;
     char         *digestName = (char *)"sha256";
@@ -959,7 +959,7 @@ CryptoMdNewObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T 
  *----------------------------------------------------------------------
  */
 static int
-CryptoMdAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+CryptoMdAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int            result = TCL_OK, isBinary = 0;
     EVP_MD_CTX    *mdctx;
@@ -1015,7 +1015,7 @@ CryptoMdAddObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T 
  *----------------------------------------------------------------------
  */
 static int
-CryptoMdGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+CryptoMdGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result = TCL_OK, encodingInt = -1;
     EVP_MD_CTX        *mdctx;
@@ -1076,7 +1076,7 @@ CryptoMdGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T 
  *----------------------------------------------------------------------
  */
 static int
-CryptoMdFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+CryptoMdFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int            result = TCL_OK;
     EVP_MD_CTX    *mdctx;
@@ -1122,7 +1122,7 @@ CryptoMdFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
  *----------------------------------------------------------------------
  */
 static int
-CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result, isBinary = 0, encodingInt = -1;
     Tcl_Obj           *messageObj, *signatureObj = NULL, *resultObj = NULL;
@@ -1365,7 +1365,7 @@ CryptoMdStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC
  *----------------------------------------------------------------------
  */
 static int
-CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result, isBinary = 0, encodingInt = -1;
     Tcl_Obj           *messageObj;
@@ -1517,7 +1517,7 @@ CryptoMdVapidSignObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_O
  */
 
 static int
-CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result, isBinary = 0, outLength = 0, encodingInt = -1;
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL, *infoObj = NULL;
@@ -1681,7 +1681,7 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
  *----------------------------------------------------------------------
  */
 int
-NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"string",    CryptoMdStringObjCmd},
@@ -1732,7 +1732,7 @@ NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, 
  *----------------------------------------------------------------------
  */
 int
-NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result, isBinary = 0, nValue = 1024, rValue = 8, pValue = 16, encodingInt = -1;
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL;
@@ -1859,7 +1859,7 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_O
 }
 # else
 int
-NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
+NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 3.0 built into NaviServer");
     return TCL_ERROR;
@@ -1901,7 +1901,7 @@ NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_O
 #include <openssl/thread.h>         /* OSSL_set_max_threads */
 
 int
-NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result, isBinary = 0, encodingInt = -1,
                        memcost = 1024, iter = 3, lanes = 1, threads = 1, outlen = 64;
@@ -2061,7 +2061,7 @@ NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_O
 }
 # else
 int
-NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
+NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 3.2 built into NaviServer");
     return TCL_ERROR;
@@ -2094,7 +2094,7 @@ NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_O
  *----------------------------------------------------------------------
  */
 int
-NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result, isBinary = 0, encodingInt = -1, iter = 4096, dkLength = -1;
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL;
@@ -2240,7 +2240,7 @@ NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
  *----------------------------------------------------------------------
  */
 static int
-CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+CryptoEckeyPrivObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result, encodingInt = -1;
     char              *pemFile = NULL,
@@ -2345,7 +2345,7 @@ SetResultFromEC_POINT(
  *----------------------------------------------------------------------
  */
 static int
-CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result, encodingInt = -1;
     char              *pemFile = NULL,
@@ -2427,7 +2427,7 @@ CryptoEckeyPubObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC
  *----------------------------------------------------------------------
  */
 static int
-CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result, isBinary = 0, encodingInt = -1;
     Tcl_Obj           *importObj = NULL;
@@ -2519,7 +2519,7 @@ CryptoEckeyImportObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_O
  *----------------------------------------------------------------------
  */
 static int
-CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result, nid;
     char              *curvenameString = (char *)"prime256v1", *pemFileName = NULL;
@@ -2596,7 +2596,7 @@ CryptoEckeyGenerateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
  *----------------------------------------------------------------------
  */
 static int
-CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result, isBinary = 0, encodingInt = -1;
     char              *pemFileName = NULL,
@@ -2821,7 +2821,7 @@ CryptoEckeySharedsecretObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
  *----------------------------------------------------------------------
  */
 int
-NsTclCryptoEckeyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclCryptoEckeyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"generate",     CryptoEckeyGenerateObjCmd},
@@ -2869,7 +2869,7 @@ NsTclCryptoEckeyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T obj
 
 static int
 CryptoAeadStringGetArguments(
-    Tcl_Interp           *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv, bool encrypt,
+    Tcl_Interp           *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, bool encrypt,
     Tcl_DString          *ivDsPtr, Tcl_DString *keyDsPtr, Tcl_DString *aadDsPtr,
     Tcl_DString          *tagDsPtr, Tcl_DString *inputDsPtr,
     const unsigned char **keyStringPtr,   TCL_SIZE_T *keyLengthPtr,
@@ -2990,7 +2990,7 @@ CryptoAeadStringGetArguments(
  */
 
 static int
-CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv, bool encrypt)
+CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, bool encrypt)
 {
     int                  result;
     const EVP_CIPHER    *cipher = NULL;
@@ -3197,12 +3197,12 @@ CryptoAeadStringObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OB
 }
 
 static int
-CryptoAeadEncryptStringObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+CryptoAeadEncryptStringObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     return CryptoAeadStringObjCmd(clientData, interp, objc, objv, NS_TRUE);
 }
 static int
-CryptoAeadDecryptStringObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+CryptoAeadDecryptStringObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     return CryptoAeadStringObjCmd(clientData, interp, objc, objv, NS_FALSE);
 }
@@ -3226,7 +3226,7 @@ CryptoAeadDecryptStringObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJ
  *----------------------------------------------------------------------
  */
 int
-NsTclCryptoAeadEncryptObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclCryptoAeadEncryptObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"string",  CryptoAeadEncryptStringObjCmd},
@@ -3236,7 +3236,7 @@ NsTclCryptoAeadEncryptObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 int
-NsTclCryptoAeadDecryptObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclCryptoAeadDecryptObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"string",  CryptoAeadDecryptStringObjCmd},
@@ -3265,7 +3265,7 @@ NsTclCryptoAeadDecryptObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC
  *----------------------------------------------------------------------
  */
 int
-NsTclCryptoRandomBytesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclCryptoRandomBytesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                result, nrBytes = 0, encodingInt = -1;
     Ns_ObjvValueRange  lengthRange = {1, INT_MAX};
@@ -3304,7 +3304,7 @@ NsTclCryptoRandomBytesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
 
 # ifdef OPENSSL_NO_EC
 int
-NsTclCryptoEckeyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
+NsTclCryptoEckeyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "The used version of OpenSSL was built without EC support");
     return TCL_ERROR;
@@ -3317,62 +3317,62 @@ NsTclCryptoEckeyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OB
  */
 
 int
-NsTclCryptoHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
+NsTclCryptoHmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
     return TCL_ERROR;
 }
 
 int
-NsTclCryptoMdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
+NsTclCryptoMdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
     return TCL_ERROR;
 }
 
 int
-NsTclCryptoAeadDecryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
+NsTclCryptoAeadDecryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
     return TCL_ERROR;
 }
 int
-NsTclCryptoAeadEncryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
-{
-    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
-    return TCL_ERROR;
-}
-
-int
-NsTclCryptoRandomBytesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
+NsTclCryptoAeadEncryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
     return TCL_ERROR;
 }
 
 int
-NsTclCryptoEckeyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
+NsTclCryptoRandomBytesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
     return TCL_ERROR;
 }
 
 int
-NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
+NsTclCryptoEckeyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
+{
+    Ns_TclPrintfResult(interp, "Command requires support for OpenSSL built into NaviServer");
+    return TCL_ERROR;
+}
+
+int
+NsTclCryptoScryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 3.0 built into NaviServer");
     return TCL_ERROR;
 }
 
 int
-NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclCryptoPbkdf2hmacObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 1.1.1 built into NaviServer");
     return TCL_ERROR;
 }
 
 int
-NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
+NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
 {
     Ns_TclPrintfResult(interp, "Command requires support for OpenSSL 3.2 built into NaviServer");
     return TCL_ERROR;

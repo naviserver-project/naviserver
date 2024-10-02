@@ -1022,7 +1022,7 @@ static Ns_ObjvTable encodingset[] = {
 
 int
 NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                     TCL_OBJC_T objc, Tcl_Obj *const* objv)
+                     TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int          upperCase = 0, result = TCL_OK, part = INTCHAR('q');
     TCL_SIZE_T   nargs = 0;
@@ -1090,7 +1090,7 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
 int
 NsTclUrlDecodeObjCmd(ClientData clientData, Tcl_Interp *interp,
-                     TCL_OBJC_T objc, Tcl_Obj *const* objv)
+                     TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     NsInterp    *itPtr = clientData;
     int          result = TCL_OK, part = INTCHAR('q');

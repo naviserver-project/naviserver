@@ -1122,7 +1122,7 @@ LogTime(LogCache *cachePtr, const Ns_Time *timePtr, bool gmt)
  */
 
 int
-NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     void *addrPtr;
     int   result = TCL_OK;
@@ -1139,7 +1139,7 @@ NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T obj
         if (likely(objc == 3)) {
             Ns_Log(severity, "%s", Tcl_GetString(objv[2]));
         } else {
-            TCL_OBJC_T i;
+            TCL_SIZE_T i;
 
             Ns_DStringInit(&ds);
             for (i = 2; i < objc; ++i) {
@@ -1171,7 +1171,7 @@ NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T obj
  */
 
 static int
-LogCtlSeverityObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+LogCtlSeverityObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Ns_LogSeverity    severity = 0; /* default value for the error cases */
     void             *addrPtr = NULL;
@@ -1327,7 +1327,7 @@ StripColorCodes(char *line, ssize_t len, TCL_SIZE_T *resultLen)
  */
 
 static int
-LogCtlGrepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+LogCtlGrepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int          result = TCL_OK;
     char        *string, *filename = (char *)logfileName;
@@ -1441,7 +1441,7 @@ LogCtlGrepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T o
  */
 
 int
-NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int             result = TCL_OK, opt, i;
     Ns_DString      ds;
@@ -1623,7 +1623,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tc
 
 int
 NsTclLogRollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                   TCL_OBJC_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
+                   TCL_SIZE_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
 {
     if (Ns_LogRoll() != NS_OK) {
         Ns_TclPrintfResult(interp, "could not roll server log");

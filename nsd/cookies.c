@@ -599,7 +599,7 @@ Ns_ConnGetCookie(Ns_DString *dest, const Ns_Conn *conn, const char *name)
 
 int
 NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                     TCL_OBJC_T objc, Tcl_Obj *const* objv)
+                     TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Ns_Conn       *conn;
     char          *name, *data, *domain = NULL, *path = NULL;
@@ -708,7 +708,7 @@ NsTclSetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
 int
 NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                     TCL_OBJC_T objc, Tcl_Obj *const* objv)
+                     TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Ns_Conn       *conn;
     char          *nameString;
@@ -789,7 +789,7 @@ NsTclGetCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
 int
 NsTclDeleteCookieObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                        TCL_OBJC_T objc, Tcl_Obj *const* objv)
+                        TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Ns_Conn        *conn;
     char           *name, *domain = NULL, *path = NULL;

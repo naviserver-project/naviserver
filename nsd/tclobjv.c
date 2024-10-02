@@ -37,7 +37,7 @@ static int SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static void WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
-                         TCL_OBJC_T preObjc, TCL_OBJC_T objc, Tcl_Obj *const* objv);
+                         TCL_SIZE_T preObjc, TCL_SIZE_T objc, Tcl_Obj *const* objv);
 
 static int GetOptIndexObjvSpec(Tcl_Obj *obj, const Ns_ObjvSpec *tablePtr, int *idxPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -188,7 +188,7 @@ GetOptIndexObjvSpec(Tcl_Obj *obj, const Ns_ObjvSpec *tablePtr, int *idxPtr)
  */
 Ns_ReturnCode
 Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
-             TCL_OBJC_T offset, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+             TCL_SIZE_T offset, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     return Ns_ParseObjv2(optSpec, argSpec, interp,
                          offset, 0,
@@ -197,14 +197,14 @@ Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
 
 Ns_ReturnCode
 Ns_ParseObjv2(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
-              TCL_OBJC_T parseOffset,
-              TCL_OBJC_T leadOffset,
-              TCL_OBJC_T objc, Tcl_Obj *const* objv)
+              TCL_SIZE_T parseOffset,
+              TCL_SIZE_T leadOffset,
+              TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Ns_ObjvSpec    *specPtr;
     int             optIndex;
     Tcl_Obj *const* parseObjv;
-    TCL_OBJC_T      requiredArgs = 0, parseObjc, remain;
+    TCL_SIZE_T      requiredArgs = 0, parseObjc, remain;
 
     NS_NONNULL_ASSERT(interp != NULL);
 
@@ -240,7 +240,7 @@ Ns_ParseObjv2(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
     if (likely(optSpec != NULL) && likely(optSpec->key != NULL)) {
 
         while (remain > 0) {
-            Tcl_Obj *obj = parseObjv[parseObjc - (TCL_OBJC_T)remain];
+            Tcl_Obj *obj = parseObjv[parseObjc - (TCL_SIZE_T)remain];
             int      result;
 
 #ifdef NS_TCL_PRE87
@@ -1281,7 +1281,7 @@ Ns_ObjvServer(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Ob
  */
 
 int
-NsTclParseArgsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclParseArgsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Tcl_Obj  **argv, *argsObj;
     TCL_SIZE_T argc;
@@ -1312,7 +1312,7 @@ NsTclParseArgsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC
 
         opts = objv[1]->internalRep.twoPtrValue.ptr1;
         args = objv[1]->internalRep.twoPtrValue.ptr2;
-        if (Ns_ParseObjv(opts, args, interp, 0, (TCL_OBJC_T)argc, argv) != NS_OK) {
+        if (Ns_ParseObjv(opts, args, interp, 0, (TCL_SIZE_T)argc, argv) != NS_OK) {
             status = TCL_ERROR;
 
         } else {
@@ -1816,7 +1816,7 @@ static void AppendRange(Ns_DString *dsPtr, const Ns_ObjvValueRange *r)
 
 static void
 WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
-               TCL_OBJC_T preObjc, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+               TCL_SIZE_T preObjc, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const Ns_ObjvSpec *specPtr;
     Ns_DString         ds;
@@ -1892,7 +1892,7 @@ WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *inter
  */
 int
 Ns_SubcmdObjv(const Ns_SubCmdSpec *subcmdSpec, ClientData clientData, Tcl_Interp *interp,
-              TCL_OBJC_T objc, Tcl_Obj *const* objv)
+              TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int opt = 0, result;
 

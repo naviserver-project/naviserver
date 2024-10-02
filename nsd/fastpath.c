@@ -1029,7 +1029,7 @@ FreeEntry(void *arg)
  *----------------------------------------------------------------------
  */
 int
-NsTclFastPathCacheStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclFastPathCacheStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         contents = (int)NS_FALSE, reset = (int)NS_FALSE, result = TCL_OK;
     Ns_ObjvSpec opts[] = {

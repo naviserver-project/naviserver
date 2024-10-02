@@ -24,7 +24,7 @@
 
 typedef struct Args {
     char     **argv;
-    TCL_OBJC_T argc;
+    TCL_SIZE_T argc;
 } Args;
 
 /*
@@ -1175,7 +1175,7 @@ Ns_StopServer(char *server)
  */
 
 int
-NsTclShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         sig = NS_SIGTERM, result = TCL_OK;
     Ns_Time    *timeoutPtr = NULL;

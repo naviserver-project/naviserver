@@ -261,7 +261,7 @@ Ns_SetCreateFromDict(Tcl_Interp *interp, const char *name, Tcl_Obj *listObj)
  */
 
 int
-NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     NsInterp            *itPtr = clientData;
     Ns_Set              *set = NULL;
@@ -396,7 +396,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_O
     case SNewIdx:   NS_FALL_THROUGH; /* fall through */
     case SCopyIdx:  NS_FALL_THROUGH; /* fall through */
     case SSplitIdx: {
-        TCL_OBJC_T    offset = 2;
+        TCL_SIZE_T    offset = 2;
         const char   *name;
 
         /*
@@ -448,7 +448,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_O
                 Tcl_Obj     *listObj = Tcl_NewListObj(0, NULL);
                 Ns_Set     **sets;
                 const char  *split;
-                TCL_OBJC_T   i;
+                TCL_SIZE_T   i;
 
                 split = (offset < objc) ? Tcl_GetString(objv[offset]) : ".";
                 sets = Ns_SetSplit(set, *split);
@@ -880,7 +880,7 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_O
  */
 
 int
-NsTclParseHeaderObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclParseHeaderObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     NsInterp    *itPtr = clientData;
     int          result = TCL_OK;

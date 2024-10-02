@@ -102,7 +102,7 @@ NS_EXPORT Ns_ModuleInitProc Ns_ModuleInit;
 static int AllowDenyObjCmd(
     ClientData data,
     Tcl_Interp *interp,
-    TCL_OBJC_T objc,
+    TCL_SIZE_T objc,
     Tcl_Obj *const* objv,
     bool allow,
     bool user
@@ -228,7 +228,7 @@ static int AddCmds(Tcl_Interp *interp, const void *arg)
  *----------------------------------------------------------------------
  */
 
-static int PermObjCmd(ClientData data, Tcl_Interp * interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+static int PermObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Server *servPtr = data;
     int opt, status = TCL_OK;
@@ -749,7 +749,7 @@ FreeUserInfo(User *userPtr, const char *name)
  *----------------------------------------------------------------------
  */
 
-static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Server             *servPtr = data;
     User               *userPtr;
@@ -886,7 +886,7 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, TCL_OBJC_T objc, 
  *----------------------------------------------------------------------
  */
 
-static int DelUserObjCmd(ClientData data, Tcl_Interp * interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+static int DelUserObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Server        *servPtr = data;
     char          *name = NULL;
@@ -930,7 +930,7 @@ static int DelUserObjCmd(ClientData data, Tcl_Interp * interp, TCL_OBJC_T objc, 
  *----------------------------------------------------------------------
  */
 
-static int ListUsersObjCmd(ClientData data, Tcl_Interp * interp, TCL_OBJC_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
+static int ListUsersObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
 {
     Server         *servPtr = data;
     Tcl_HashSearch  search, msearch;
@@ -1009,7 +1009,7 @@ static int ListUsersObjCmd(ClientData data, Tcl_Interp * interp, TCL_OBJC_T UNUS
  *----------------------------------------------------------------------
  */
 
-static int AddGroupObjCmd(ClientData data, Tcl_Interp * interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+static int AddGroupObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Server        *servPtr = data;
     char          *name, *user;
@@ -1018,7 +1018,7 @@ static int AddGroupObjCmd(ClientData data, Tcl_Interp * interp, TCL_OBJC_T objc,
     Tcl_HashSearch search;
     Tcl_HashEntry *hPtr;
     int            isNew;
-    TCL_OBJC_T     param;
+    TCL_SIZE_T     param;
 
     if (objc < 4) {
         Tcl_WrongNumArgs(interp, 2, objv, "name user ?user ...?");
@@ -1119,7 +1119,7 @@ static int AddGroupObjCmd(ClientData data, Tcl_Interp * interp, TCL_OBJC_T objc,
  *----------------------------------------------------------------------
  */
 
-static int DelGroupObjCmd(ClientData data, Tcl_Interp * interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+static int DelGroupObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Server *servPtr = data;
     char *name = NULL;
@@ -1176,7 +1176,7 @@ static int DelGroupObjCmd(ClientData data, Tcl_Interp * interp, TCL_OBJC_T objc,
  *----------------------------------------------------------------------
  */
 
-static int ListGroupsObjCmd(ClientData data, Tcl_Interp * interp, TCL_OBJC_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
+static int ListGroupsObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
 {
     Server         *servPtr = data;
     Tcl_HashSearch  search;
@@ -1242,7 +1242,7 @@ static int ListGroupsObjCmd(ClientData data, Tcl_Interp * interp, TCL_OBJC_T UNU
 static int AllowDenyObjCmd(
     ClientData data,
     Tcl_Interp *interp,
-    TCL_OBJC_T objc,
+    TCL_SIZE_T objc,
     Tcl_Obj *const* objv,
     bool allow,
     bool user
@@ -1347,7 +1347,7 @@ static int AllowDenyObjCmd(
  *----------------------------------------------------------------------
  */
 
-static int DelPermObjCmd(ClientData data, Tcl_Interp * interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+static int DelPermObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Server      *servPtr = data;
     Perm        *permPtr;
@@ -1417,7 +1417,7 @@ static int DelPermObjCmd(ClientData data, Tcl_Interp * interp, TCL_OBJC_T objc, 
  *----------------------------------------------------------------------
  */
 
-static int ListPermsObjCmd(ClientData data, Tcl_Interp * interp, TCL_OBJC_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
+static int ListPermsObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
 {
     Server *servPtr = data;
     Ns_DString ds;
@@ -1484,7 +1484,7 @@ static void WalkCallback(Tcl_DString * dsPtr, const void *arg)
  */
 
 static int
-CheckPassObjCmd(ClientData data, Tcl_Interp * interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+CheckPassObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Server *servPtr = data;
     int rc = TCL_ERROR;
@@ -1543,7 +1543,7 @@ CheckPassObjCmd(ClientData data, Tcl_Interp * interp, TCL_OBJC_T objc, Tcl_Obj *
  */
 
 static int
-SetPassObjCmd(ClientData data, Tcl_Interp * interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+SetPassObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Server        *servPtr = data;
     int            rc = 0;

@@ -991,7 +991,7 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
  *----------------------------------------------------------------------
  */
 static int
-ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = clientData;
     Conn           *connPtr = (Conn *)itPtr->conn;
@@ -1056,7 +1056,7 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc,
  *----------------------------------------------------------------------
  */
 static int
-ConnChanOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+ConnChanOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int           result;
     Sock         *sockPtr = NULL;
@@ -1206,7 +1206,7 @@ ConnChanOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
  *----------------------------------------------------------------------
  */
 static int
-ConnChanConnectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+ConnChanConnectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int            result, doTLS = (int)NS_FALSE;
     unsigned short portNr = 0u;
@@ -1316,7 +1316,7 @@ ConnChanConnectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJ
  */
 
 static int
-ConnChanListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+ConnChanListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     //const NsInterp *itPtr = clientData;
     NsServer       *servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
@@ -1509,7 +1509,7 @@ SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why))
  *----------------------------------------------------------------------
  */
 static int
-ConnChanListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+ConnChanListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     //const NsInterp *itPtr = clientData;
     NsServer       *servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
@@ -1597,7 +1597,7 @@ ConnChanListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
  *----------------------------------------------------------------------
  */
 static int
-ConnChanStatusObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+ConnChanStatusObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     //const NsInterp *itPtr = clientData;
     NsServer       *servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
@@ -1686,7 +1686,7 @@ ConnChanStatusObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC
  *----------------------------------------------------------------------
  */
 static int
-ConnChanCloseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+ConnChanCloseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     //const NsInterp *itPtr = clientData;
     NsServer       *servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
@@ -1736,7 +1736,7 @@ ConnChanCloseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_
  *----------------------------------------------------------------------
  */
 static int
-ConnChanCallbackObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+ConnChanCallbackObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int      result = TCL_OK;
     char    *name = (char*)NS_EMPTY_STRING,
@@ -1855,7 +1855,7 @@ ConnChanCallbackObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OB
  *----------------------------------------------------------------------
  */
 static int
-ConnChanExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+ConnChanExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     char         *name = (char*)NS_EMPTY_STRING;
     int           result = TCL_OK;
@@ -2234,7 +2234,7 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
  *----------------------------------------------------------------------
  */
 static int
-ConnChanReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+ConnChanReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     char        *name = (char*)NS_EMPTY_STRING;
     int          result = TCL_OK, webSocketFrame = 0;
@@ -2318,7 +2318,7 @@ ConnChanReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
  *----------------------------------------------------------------------
  */
 static int
-ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     char       *name = (char*)NS_EMPTY_STRING;
     int         result = TCL_OK, buffered = 0;
@@ -2630,7 +2630,7 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_
  */
 
 static int
-ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                      result = TCL_OK, isBinary = 0, opcode = 1, fin = 1, masked = 0;
     static Ns_ObjvValueRange finRange = {0, 1};
@@ -2784,7 +2784,7 @@ ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OB
  */
 
 int
-NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclConnChanObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"callback", ConnChanCallbackObjCmd},

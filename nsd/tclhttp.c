@@ -119,7 +119,7 @@ static const char* CloseWaitingDataPrettyState(CloseWaitingData *cwDataPtr)
 
 static int HttpQueue(
     NsInterp *itPtr,
-    TCL_OBJC_T objc,
+    TCL_SIZE_T objc,
     Tcl_Obj *const*
     objv,
     bool run
@@ -1247,7 +1247,7 @@ int
 NsTclHttpObjCmd(
     ClientData clientData,
     Tcl_Interp *interp,
-    TCL_OBJC_T objc,
+    TCL_SIZE_T objc,
     Tcl_Obj *const* objv
 ) {
     const Ns_SubCmdSpec subcmds[] = {
@@ -1289,7 +1289,7 @@ static int
 HttpRunObjCmd(
     ClientData clientData,
     Tcl_Interp *UNUSED(interp),
-    TCL_OBJC_T objc,
+    TCL_SIZE_T objc,
     Tcl_Obj *const* objv
 ) {
     return HttpQueue(clientData, objc, objv, NS_TRUE);
@@ -1316,7 +1316,7 @@ static int
 HttpQueueObjCmd(
     ClientData clientData,
     Tcl_Interp *UNUSED(interp),
-    TCL_OBJC_T objc,
+    TCL_SIZE_T objc,
     Tcl_Obj *const* objv
 ) {
     return HttpQueue(clientData, objc, objv, NS_FALSE);
@@ -1393,7 +1393,7 @@ static int
 HttpWaitObjCmd(
     ClientData  clientData,
     Tcl_Interp *interp,
-    TCL_OBJC_T         objc,
+    TCL_SIZE_T         objc,
     Tcl_Obj    *const* objv
 ) {
     NsInterp   *itPtr = clientData;
@@ -1592,7 +1592,7 @@ static int
 HttpCancelObjCmd(
     ClientData  clientData,
     Tcl_Interp *interp,
-    TCL_OBJC_T         objc,
+    TCL_SIZE_T         objc,
     Tcl_Obj    *const* objv
 ) {
     NsInterp    *itPtr = clientData;
@@ -1644,7 +1644,7 @@ static int
 HttpCleanupObjCmd(
     ClientData  clientData,
     Tcl_Interp *interp,
-    TCL_OBJC_T         objc,
+    TCL_SIZE_T         objc,
     Tcl_Obj    *const* objv
 ) {
     NsInterp    *itPtr = clientData;
@@ -1730,7 +1730,7 @@ static int
 HttpListObjCmd(
     ClientData  clientData,
     Tcl_Interp *interp,
-    TCL_OBJC_T         objc,
+    TCL_SIZE_T         objc,
     Tcl_Obj    *const* objv
 ) {
     NsInterp      *itPtr = clientData;
@@ -1789,7 +1789,7 @@ static int
 HttpMeminfoObjCmd(
     ClientData  UNUSED(clientData),
     Tcl_Interp *interp,
-    TCL_OBJC_T         UNUSED(objc),
+    TCL_SIZE_T         UNUSED(objc),
     Tcl_Obj    *const* UNUSED(objv)
 ) {
     int            result = TCL_OK;
@@ -1846,7 +1846,7 @@ static int
 HttpStatsObjCmd(
     ClientData  clientData,
     Tcl_Interp *interp,
-    TCL_OBJC_T         objc,
+    TCL_SIZE_T         objc,
     Tcl_Obj    *const* objv
 ) {
     NsInterp      *itPtr = clientData;
@@ -1995,7 +1995,7 @@ static int
 HttpKeepalivesObjCmd(
     ClientData         UNUSED(clientData),
     Tcl_Interp        *interp,
-    TCL_OBJC_T         UNUSED(objc),
+    TCL_SIZE_T         UNUSED(objc),
     Tcl_Obj    *const* UNUSED(objv)
 ) {
     int            result = TCL_OK;
@@ -2218,7 +2218,7 @@ CloseWaitingDataPrettyState(CloseWaitingData *cwDataPtr)
 static int
 HttpQueue(
     NsInterp *itPtr,
-    TCL_OBJC_T objc,
+    TCL_SIZE_T objc,
     Tcl_Obj *const* objv,
     bool run
 ) {

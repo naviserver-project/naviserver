@@ -2241,7 +2241,7 @@ Ns_SSLSetErrorCode(Tcl_Interp *interp, unsigned long sslERRcode)
  */
 
 static int
-NsCertCtlListCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsCertCtlListCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
 
@@ -2307,7 +2307,7 @@ NsCertCtlListCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T o
  *----------------------------------------------------------------------
  */
 static int
-NsCertCtlReloadCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsCertCtlReloadCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int result;
 
@@ -2343,7 +2343,7 @@ NsCertCtlReloadCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T
  */
 
 int
-NsTclCertCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclCertCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
         {"list",                 NsCertCtlListCmd},
@@ -2412,7 +2412,7 @@ Ns_TLS_CtxFree(NS_TLS_SSL_CTX *UNUSED(ctx))
 }
 
 int
-NsTclCertCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclCertCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     ReportError(interp, "ns_certctl failed: no support for OpenSSL built in");
     return TCL_ERROR;

@@ -418,7 +418,7 @@ ParseExtendedHeaders(Log *logPtr, const char *str)
  */
 
 static int
-LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const char    *strarg;
     int            rc, cmd, result = TCL_OK;

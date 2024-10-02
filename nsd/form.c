@@ -408,7 +408,7 @@ Ns_QueryToSet(char *query, Ns_Set *set, Tcl_Encoding encoding)
  */
 
 int
-NsTclParseQueryObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclParseQueryObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int       result;
     NsInterp *itPtr = clientData;

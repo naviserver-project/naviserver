@@ -78,7 +78,7 @@ Ns_TclRequest(Ns_Conn *conn, const char *name)
  */
 
 int
-NsTclRegisterProcObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclRegisterProcObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Tcl_Obj      *scriptObj;
     char         *method, *url;
@@ -134,7 +134,7 @@ NsTclRegisterProcObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T ob
  */
 
 int
-NsTclRegisterProxyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclRegisterProxyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const NsInterp *itPtr = clientData;
     Tcl_Obj        *scriptObj;
@@ -184,7 +184,7 @@ NsTclRegisterProxyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T o
  */
 
 int
-NsTclRegisterFastPathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclRegisterFastPathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     char       *method, *url;
     int         noinherit = 0, result = TCL_OK;
@@ -234,7 +234,7 @@ NsTclRegisterFastPathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_
  */
 
 int
-NsTclUnRegisterOpObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclUnRegisterOpObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     char           *method = NULL, *url = NULL;
     int             noinherit = 0, recurse = 0, result = TCL_OK;
@@ -280,7 +280,7 @@ NsTclUnRegisterOpObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T ob
  */
 
 int
-NsTclRegisterFilterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclRegisterFilterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     char         *method, *urlPattern;
     Tcl_Obj      *scriptObj;
@@ -333,7 +333,7 @@ NsTclRegisterFilterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T 
  */
 
 int
-NsTclShortcutFilterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclShortcutFilterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     char           *method, *urlPattern;
     unsigned int    when = 0u;
@@ -376,7 +376,7 @@ NsTclShortcutFilterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T 
  */
 
 int
-NsTclRegisterTraceObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+NsTclRegisterTraceObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     char       *method, *urlPattern;
     Tcl_Obj    *scriptObj;

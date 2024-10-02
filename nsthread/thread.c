@@ -344,7 +344,7 @@ Ns_ThreadList(Tcl_DString *dsPtr, Ns_ThreadArgProc *proc)
                 Tcl_DStringAppend(dsPtr, " ", 1);
             } else {
                 unsigned char addrBuffer[sizeof(thrPtr->proc)];
-                TCL_OBJC_T i;
+                TCL_SIZE_T i;
 
                 /*
                  * Obtain the hex value of the function pointer;
