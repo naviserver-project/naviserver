@@ -9,22 +9,31 @@
 in the C standard library.  This function generates a unique temporary
 filename from an optional template.  
 
-[para]
-Note that some implementations of mktemp are not safe (creating
-predictable/only a small number of variations) against attacks and
-race conditions - please consult your 
-system's man pages if this might be an issue to you. In order to create
-temp files, the Tcl command [term "file tempfile"] should be used
-(introduced in Tcl 8.6), which is safe against race conditions.
+[para] In general, the pattern of creating a temporary file name
+based on it occurrence in a directory followed by writing to this file
+is prone to a race condition and can provide security
+issues. Therefore, the command us deprecated and will issue an entry to
+the log file unless [opt [arg -nocomplain]] is used.
 
 [para]
-For creating temporary directories, use [cmd ns_mkdtemp].
+In order to create temp files, the Tcl command [term "file tempfile"]
+should be used (introduced in Tcl 8.6), which is safe against race
+conditions. For creating temporary directories, use [cmd ns_mkdtemp]
+(introduced in NaviServer 5) or [term "file tempdir "] in Tcl9.
+
+[para]
+There are certain situations, where it is not easy to replace
+[cmd ns_mktemp], e.g. in situations, where unique names are passed
+to external programs. This situation can often be solved by changing
+the logic by e.g. writing to a temporary file and then pass the name
+to the external program, or by using other means for creating
+unique names, such as [cmd ns_uuid].
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[call [cmd ns_mktemp] [opt [arg template]]]
+[call [cmd ns_mktemp] [opt [arg -nocomplain]] [opt [arg template]]]
 
 [para]
 
@@ -35,8 +44,8 @@ random characters such as to make the string a unique filename. It is
 commonly used to create temporary filenames.
 
 [para]
-If this command is called without the optional parameter it behaves
-like
+If this command is called without the optional [arg template]
+parameter, it behaves like
 [example_begin]
  ns_mktemp [lb]ns_config ns/parameters tmpdir[rb]/ns-XXXXXX
 [example_end]
@@ -52,8 +61,7 @@ like
  /tmp/foo-rhaGGx
 [example_end]
 
-[see_also ns_mkdtemp]
+[see_also ns_mkdtemp ns_uuid]
 [keywords "global built-in" tmp tmpfile]
 
 [manpage_end]
-

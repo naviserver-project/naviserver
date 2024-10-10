@@ -238,28 +238,55 @@ NsTclPurgeFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
 int
 NsTclMkTempObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int          result = TCL_OK;
+    int          result = TCL_OK, nocomplain = (int)NS_FALSE;
     char        *templateString = (char *)NS_EMPTY_STRING;
+    Ns_ObjvSpec opts[] = {
+        {"-nocomplain", Ns_ObjvBool,  &nocomplain, INT2PTR(NS_TRUE)},
+        {"--",          Ns_ObjvBreak, NULL, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
     Ns_ObjvSpec  args[] = {
         {"?template", Ns_ObjvString, &templateString, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
-    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
-    } else if (objc == 1) {
+    } else {
         char buffer[PATH_MAX] = "";
+        int  fd;
 
-        snprintf(buffer, sizeof(buffer), "%s/ns-XXXXXX", nsconf.tmpDir);
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(mktemp(buffer), TCL_INDEX_NONE));
+        if (*templateString == '\0') {
+            snprintf(buffer, sizeof(buffer), "%s/ns-XXXXXX", nsconf.tmpDir);
+        } else {
+            strncpy(buffer, templateString, PATH_MAX);
+        }
+        fd = ns_mkstemp(buffer);
+        if (fd > -1) {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(buffer, TCL_INDEX_NONE));
+            /*
+             * Delete and close the file, that we do not need.
+             */
+            (void) unlink(buffer);
+            (void) close(fd);
+            if (nocomplain == (int)NS_FALSE) {
+                Tcl_DString ds;
 
-    } else /*if (objc == 2)*/ {
-        char *buffer;
+                Tcl_DStringInit(&ds);
+                if (*templateString != '\0') {
+                    Tcl_DStringAppend(&ds, " ", 1);
+                    Tcl_DStringAppend(&ds, templateString, TCL_INDEX_NONE);
+                }
+                Ns_Log(Notice, "'ns_mktemp%s' is deprecated since it poses a potential race condition and securitry risc;"
+                       " consider using 'ns_uuid' or 'file tempfile' instead", ds.string);
+                Tcl_DStringFree(&ds);
+            }
 
-        assert(templateString != NULL);
-        buffer = ns_strdup(templateString);
-        Tcl_SetResult(interp, mktemp(buffer), (Tcl_FreeProc *)ns_free);
+        } else {
+            Ns_TclPrintfResult(interp, "could create file '%s': %s", buffer, ns_sockstrerror(errno));
+            result = TCL_ERROR;
+        }
     }
 
     return result;
