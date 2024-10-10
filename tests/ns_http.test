@@ -1579,7 +1579,7 @@ test http-6.5.2d {ns_getform and ns_getformfile + 16KB file multipart, explicit 
     unset -nocomplain body ct boundary
 } -returnCodes {ok  error} -result [subst {200 {multipart/form-data; contentFile $contentfile needSpool 1 file 1 f2 'ü'}}]
 
-test http-6.5.2e {ns_getform and ns_getformfile + 16KB file multipart, explicit charset iso8859-1} -constraints {serverListen} -setup {
+test http-6.5.2e {ns_getform and ns_getformfile + 16KB file multipart, explicit charset iso8859-1} -constraints {tcl86 serverListen} -setup {
     ns_register_proc POST /post {
         ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType     [ns_set iget [ns_conn headers] content-type]
