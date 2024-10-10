@@ -21,11 +21,11 @@ namespace import -force ::tcltest::*
 if {[ns_config test listenport] ne ""} {
     testConstraint serverListen true
 }
-if {$::tcl_version < 8.6} {package require try}
 if {$::tcl_version >= 8.6} {
     testConstraint tcl86 true
 } else {
     package require try
+    package require throw
 }
 testConstraint http09 true
 
@@ -944,7 +944,7 @@ test http-5.7.2a {
 
     Invalid encoding (mixed utf-8 and iso8859-1) in multipart multipart via ns_http
 
-} -constraints {serverListen} -setup {
+} -constraints {tcl86 serverListen} -setup {
     ns_register_proc POST /POST {
         set contentType [ns_set iget [ns_conn headers] content-type]
         try {
@@ -985,7 +985,7 @@ test http-5.7.2b {
 
     Mixed encoding (utf-8 and iso8859-1) with default charset in multipart multipart via ns_http
 
-} -constraints {serverListen} -setup {
+} -constraints {tcl86 serverListen} -setup {
     ns_register_proc POST /POST {
         set contentType [ns_set iget [ns_conn headers] content-type]
         try {
@@ -1400,7 +1400,7 @@ test http-6.5.1b {ns_getform and ns_getformfile + 2KB file} -constraints {curl s
     unset -nocomplain r boundary body
 } -result {200 {multipart/form-data; contentFile 0 needSpool 0 file 1 f2 'ü'}}
 
-test http-6.5.1c {ns_getform and ns_getformfile + 2KB file with binary NUL} -constraints {curl serverListen} -setup {
+test http-6.5.1c {ns_getform and ns_getformfile + 2KB file with binary NUL} -constraints {tcl86 curl serverListen} -setup {
     ns_register_proc POST /post {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType     [ns_set iget [ns_conn headers] content-type]
@@ -1661,7 +1661,7 @@ test http-6.5.2e {ns_getform and ns_getformfile + 16KB file multipart, explicit 
     unset -nocomplain d S C response
 } -returnCodes {ok return error} -result {f2 ü charset iso8859-1}
 
-test http-6.5.2f {ns_getform and ns_getformfile + 16KB file with binary NUL} -constraints {curl serverListen} -setup {
+test http-6.5.2f {ns_getform and ns_getformfile + 16KB file with binary NUL} -constraints {tcl86 curl serverListen} -setup {
     ns_register_proc POST /post {
         #ns_log notice "conn encoding [ns_conn encoding] headers <[ns_set array [ns_conn headers]] c='[ns_conn content]'"
         set contentType     [ns_set iget [ns_conn headers] content-type]

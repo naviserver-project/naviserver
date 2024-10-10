@@ -7,6 +7,7 @@ if {0} {
     ns_adp_puts $r
     set r
 } {
+    if {$::tcl_version < 8.6} {package require try}
     try {
         ns_log notice "REQUEST START"
         set r [ns_http run http://192.0.2.1/]

@@ -20,7 +20,6 @@ if {[ns_config test listenport]} {
     testConstraint serverListen true
 }
 
-
 #
 # The following allows us to use ADP without a connection.
 #

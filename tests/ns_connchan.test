@@ -9,6 +9,7 @@ if {[ns_config test listenport] ne ""} {
 if {[ns_info ssl] ne ""} {
     testConstraint serverListenHTTPS true
 }
+tcltest::testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
 
 ::tcltest::configure {*}$argv
 
@@ -47,7 +48,7 @@ test ns_connchan-1.3 {detach connection} -setup {
 } -cleanup {
     nsv_unset -nocomplain connchan
     ns_unregister_op GET /conn
-} -result {conn0-1-10}
+} -returnCodes {ok return error} -result {conn0-1-10}
 
 test ns_connchan-1.4 {detached connection, return result via "ns_connchan write"} -setup {
     ns_register_proc GET /conn {
@@ -228,12 +229,12 @@ test ns_connchan-2.0 {ns_connchan wsencode, basic command flags} -body {
 } -returnCodes {error ok
 } -result {wrong # args: should be "ns_connchan wsencode ?-binary? ?-fin fin[0,1]? ?-mask? ?-opcode opcode? message"}
 
-test ns_connchan-2.1.1 {ns_connchan wsencode with text} -body {
+test ns_connchan-2.1.1 {ns_connchan wsencode with text} -constraints tcl86 -body {
     binary encode hex [ns_connchan wsencode -opcode text "Hello Wörld"]
 } -returnCodes {error ok
 } -result {810c48656c6c6f2057c3b6726c64}
 
-test ns_connchan-2.1.2 {ns_connchan wsencode with binary data fin bit cleared} -body {
+test ns_connchan-2.1.2 {ns_connchan wsencode with binary data fin bit cleared} -constraints tcl86 -body {
     binary encode hex [ns_connchan wsencode -fin 0 -opcode binary "Hello World"]
 } -returnCodes {error ok
 } -result {020b48656c6c6f20576f726c64}

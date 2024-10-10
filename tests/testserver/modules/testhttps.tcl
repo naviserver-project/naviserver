@@ -14,6 +14,7 @@
 #     Routines for opening HTTP connections through
 #     the Tcl socket interface.
 #
+if {$::tcl_version < 8.6} {package require try}
 
 namespace eval ::nstest {
 

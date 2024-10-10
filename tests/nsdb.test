@@ -31,8 +31,8 @@ test ns_dbquotevalue-5 {passing in value with objType "int"} -body {
     ns_dbquotevalue [expr {123}]
 } -returnCodes {ok error} -result '123'
 test ns_dbquotevalue-6 {string containing invalid value} -body {
-    ns_dbquotevalue "1\x002"
-} -returnCodes {ok error} -result "input string '1\x002' contains invalid characters"
+    ns_dbquotevalue "1\x00\x02"
+} -returnCodes {ok error} -result "input string '1\x00\x02' contains invalid characters"
 
 
 test ns_dbquotelist-1 {basic syntax} -body {
@@ -58,8 +58,8 @@ test ns_dbquotelist-5 {passing in value with objType "int"} -body {
     ns_dbquotelist [list [expr {123}] 456]
 } -returnCodes {ok error} -result {'123','456'}
 test ns_dbquotelist-6 {string containing invalid value} -body {
-    ns_dbquotelist "1\x002"
-} -returnCodes {ok error} -result "input string '1\x002' contains invalid characters"
+    ns_dbquotelist "1\x00\x02"
+} -returnCodes {ok error} -result "input string '1\x00\x02' contains invalid characters"
 
 test ns_db-2.0 {nsdb gethandle} -body {
     set h [ns_db gethandle -timeout 2.5s]

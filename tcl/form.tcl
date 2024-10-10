@@ -286,33 +286,35 @@ proc ns_getform {args}  {
 #   None.
 #
 
-if {[info command lmap] eq {}} {
-    proc lmap {vars list body} {
-        set _r {}
-        set _l {}
-        foreach _v $vars {
-            set _n v[incr _x]
-            lappend _l $_n
-            upvar 1 $_v $_n
+if {$::tcl_version < 8.6} {
+    #
+    # A version before lmap
+    #
+    proc ns_getformfile {name} {
+        set result {}
+        set form [ns_getform]
+        if {[ns_set find $form $name.tmpfile] > -1} {
+            foreach {k v} [ns_set array $form] {
+                if {$k ne "$name.tmpfile"} continue
+                lappend result $v
+            }
         }
-        foreach $_l $list {
-            lappend _r [uplevel 1 $body]
+        return $result
+    }
+} else {
+    #
+    # More modern version
+    #
+    proc ns_getformfile {name} {
+        set form [ns_getform]
+        if {[ns_set find $form $name.tmpfile] > -1} {
+            return [lmap {k v} [ns_set array $form] {
+                if {$k ne "$name.tmpfile"} continue
+                set v
+            }]
         }
-        return $_r
     }
 }
-
-proc ns_getformfile {name} {
-
-    set form [ns_getform]
-    if {[ns_set find $form $name.tmpfile] > -1} {
-        return [lmap {k v} [ns_set array $form] {
-            if {$k ne "$name.tmpfile"} continue
-            set v
-        }]
-    }
-}
-
 
 #
 # ns_openexcl --
@@ -340,22 +342,24 @@ proc ns_openexcl {file} {
     return $fp
 }
 
-#
-# For users of Tcl 8.5, the following should be sufficiently
-# equivalent. Not sure, we have to support still Tcl 8.5.
-#
-#proc ns_opentmpfile {varFilename {template ""} {
-#    upvar $varFilename tmpFileName
-#    set tmpFileName [ns_mktemp {*}$template]
-#    set fp [ns_openexcl $tmpFileName]
-#}
-
-proc ns_opentmpfile {varFilename {template ""}} {
-    upvar $varFilename tmpFileName
-    if {$template eq ""} {
-        set template [ns_config ns/parameters tmpdir]/nsd-XXXXXX
+if {$::tcl_version < 8.6} {
+    #
+    # For users of Tcl 8.5, the following should be sufficiently
+    # equivalent.
+    #
+    proc ns_opentmpfile {varFilename {template ""}} {
+        upvar $varFilename tmpFileName
+        set tmpFileName [ns_mktemp {*}$template]
+        set fp [ns_openexcl $tmpFileName]
     }
-    return [::file tempfile tmpFileName {*}$template]
+} else {
+    proc ns_opentmpfile {varFilename {template ""}} {
+        upvar $varFilename tmpFileName
+        if {$template eq ""} {
+            set template [ns_config ns/parameters tmpdir]/nsd-XXXXXX
+        }
+        return [::file tempfile tmpFileName {*}$template]
+    }
 }
 
 #

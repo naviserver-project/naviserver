@@ -4,6 +4,7 @@ package require tcltest 2.2
 namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
+testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
 
 test ns_time-1.0 {basic syntax: plain call} -body {
     string is integer -strict [ns_time]
@@ -114,7 +115,7 @@ test ns_time-format-2.1 {ns_time format negative second} -body {
     list [ns_time format -1:0] [ns_time format -1s]
 } -result {-1 -1}
 
-test ns_time-format-2.2 {ns_time format negative second with fraction} -body {
+test ns_time-format-2.2 {ns_time format negative second with fraction} -constraints tcl86 -body {
     list [ns_time format -1:100000] [ns_time format -1.1s]
 } -result {-1.1 -1.1}
 
@@ -127,7 +128,7 @@ test ns_time-format-2.4 {ns_time format negative microsecond} -body {
     list [ns_time format 0:-1] [ns_time format -0.001ms]
 } -result {-0.000001 -0.000001}
 
-test ns_time-format-2.4-0.001ms {ns_time format negative microsecond} -body {
+test ns_time-format-2.4-0.001ms {ns_time format negative microsecond} -constraints tcl86 -body {
     list \
         [ns_time format -0.001ms] \
         [ns_time format -0.01ms] \

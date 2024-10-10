@@ -3,6 +3,7 @@
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 if {$::tcl_version < 8.6} {package require try}
+testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
 
 test ns_nsv-1.1 {basic syntax nsv_set} -body {
     nsv_set
@@ -511,7 +512,7 @@ test nsv-dict-get.1 {nsv_dict get} -body {
     nsv_unset -nocomplain a1
 } -result {1 2 {key "z" not known in dictionary} {x 1 y 2}}
 
-test nsv-dict-get.2 {nsv_dict get with nested dicts} -body {
+test nsv-dict-get.2 {nsv_dict get with nested dicts} -constraints tcl86 -body {
     nsv_dict set a1 k1 l1 l2 v1
     try {
         nsv_dict get a1 k1 l1 l2 l3
@@ -579,7 +580,7 @@ test nsv-dict-getdef.2 {nsv_dict getwithdefault} -body {
     nsv_unset -nocomplain a1
 } -result {1 defy}
 
-test nsv-dict-getdef.3 {nsv_dict getdef with nested dicts} -body {
+test nsv-dict-getdef.3 {nsv_dict getdef with nested dicts} -constraints tcl86 -body {
     nsv_dict set a1 k1 l1 l2 v1
     nsv_dict set a1 k1 x2 v2
     try {
