@@ -37,6 +37,14 @@ jobs:
 
           - os: ubuntu-latest
             compiler: gcc-12
+            tcltag: core-8-5-branch
+            nsf_version: HEAD
+            tcllib_version: "2.0"
+            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl
+            tdom_version: 0.9.4
+
+          - os: ubuntu-latest
+            compiler: gcc-12
             tcltag: 9.0.0
             nsf_version: HEAD
             tcllib_version: "2.0"
