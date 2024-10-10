@@ -260,7 +260,7 @@ NsTclMkTempObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
         if (*templateString == '\0') {
             snprintf(buffer, sizeof(buffer), "%s/ns-XXXXXX", nsconf.tmpDir);
         } else {
-            strncpy(buffer, templateString, PATH_MAX);
+            strncpy(buffer, templateString, PATH_MAX-1);
         }
         fd = ns_mkstemp(buffer);
         if (fd > -1) {
