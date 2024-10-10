@@ -4,6 +4,7 @@ package require tcltest 2.2
 namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
+if {$::tcl_version < 8.6} {package require try}
 
 # rfc2396 unreserved URI characters, except for + which receives
 # special treatment by the HTTP URL scheme.

@@ -8,6 +8,7 @@ namespace import -force ::tcltest::*
 if {[ns_config test listenport]} {
     testConstraint serverListen true
 }
+if {$::tcl_version < 8.6} {package require try}
 
 test ns_listencallback-1.0 {register} -constraints {serverListen} -setup {
     #
