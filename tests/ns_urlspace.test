@@ -9,24 +9,24 @@ namespace import -force ::tcltest::*
 # ns_urlspace
 #
 test ns_urlspace-1.0 {basic operation} -body {
-     ns_urlspace
+    ns_urlspace
 } -returnCodes error -result {wrong # args: should be "ns_urlspace command ?args?"}
 
 test ns_urlspace-1.1 {basic operation} -body {
-     ns_urlspace x
+    ns_urlspace x
 } -returnCodes error -result {bad subcmd "x": must be get, list, new, set, or unset}
 
 test ns_urlspace-1.2 {basic operation get} -body {
-     ns_urlspace get
+    ns_urlspace get
 } -returnCodes error -result {wrong # args: should be "ns_urlspace get ?-context context? ?-exact? ?-id id[-1,16]? ?-key key? ?-noinherit? URL"}
 test ns_urlspace-1.3 {basic operation set} -body {
-     ns_urlspace set
+    ns_urlspace set
 } -returnCodes error -result {wrong # args: should be "ns_urlspace set ?-contextfilter contextfilter? ?-id id[-1,16]? ?-key key? ?-noinherit? URL data"}
 test ns_urlspace-1.4 {basic operation unset} -body {
-     ns_urlspace unset
+    ns_urlspace unset
 } -returnCodes error -result {wrong # args: should be "ns_urlspace unset ?-allfilters? ?-id id[-1,16]? ?-key key? ?-noinherit? ?-recurse? URL"}
 test ns_urlspace-1.5 {nothing set} -body {
-     ns_urlspace get /
+    ns_urlspace get /
 } -result {}
 
 
@@ -131,7 +131,7 @@ test ns_urlspace-2.3 {tree set/get/unset/list} -setup {
         [ns_urlspace get /x/a] \
         [ns_urlspace get /x/a.tcl] \
         [ns_urlspace get /x/a.html]
-    } -result {{} foo foo foo foo 1 {} {} {} {}}
+} -result {{} foo foo foo foo 1 {} {} {} {}}
 
 test ns_urlspace-2.4 {tree noinherit set/get/unset/list} -setup {
     ns_urlspace set -noinherit /x foo
@@ -147,7 +147,7 @@ test ns_urlspace-2.4 {tree noinherit set/get/unset/list} -setup {
         [ns_urlspace get /x/a] \
         [ns_urlspace get /x/a.tcl] \
         [ns_urlspace get /x/a.html]
-    } -result {{} foo {} {} {} 1 {} {} {} {}}
+} -result {{} foo {} {} {} 1 {} {} {} {}}
 
 test ns_urlspace-2.5 {tree+constant-filter set/get/unset/list} -setup {
     ns_urlspace set /x/a.html foo
@@ -165,7 +165,7 @@ test ns_urlspace-2.5 {tree+constant-filter set/get/unset/list} -setup {
         [ns_urlspace get /x/a] \
         [ns_urlspace get /x/a.tcl] \
         [ns_urlspace get /x/a.html]
-    } -result {{} {} {} {} foo 0 0 1 {} {} {} {}}
+} -result {{} {} {} {} foo 0 0 1 {} {} {} {}}
 
 test ns_urlspace-2.6 {tree+constant-filter noinherit set/get/unset/list} -setup {
     ns_urlspace set -noinherit /x/a.html foo
@@ -183,7 +183,7 @@ test ns_urlspace-2.6 {tree+constant-filter noinherit set/get/unset/list} -setup 
         [ns_urlspace get /x/a] \
         [ns_urlspace get /x/a.tcl] \
         [ns_urlspace get /x/a.html]
-    } -result {{} {} {} {} foo 0 0 1 {} {} {} {}}
+} -result {{} {} {} {} foo 0 0 1 {} {} {} {}}
 
 test ns_urlspace-2.6 {tree+wild-card-filter set/list/unset/list} -setup {
     ns_urlspace set /x/*.html foo
@@ -201,7 +201,7 @@ test ns_urlspace-2.6 {tree+wild-card-filter set/list/unset/list} -setup {
         [ns_urlspace get /x/a] \
         [ns_urlspace get /x/a.tcl] \
         [ns_urlspace get /x/a.html]
-    } -result {{} {} {} {} foo 0 0 1 {} {} {} {}}
+} -result {{} {} {} {} foo 0 0 1 {} {} {} {}}
 
 ### i would expect in test 2-8 in element 5 and 6 a value
 ### "... set -noinherit /x/*.html foo" + ".... get /x/a.html"  ... should return a value
@@ -222,7 +222,7 @@ test ns_urlspace-2.8 {tree+wild-card-filter noinherit set/list/unset/list} -setu
         [ns_urlspace get /x/a] \
         [ns_urlspace get /x/a.tcl] \
         [ns_urlspace get /x/a.html]
-    } -result {{} {} {} {} {} {} 0 0 1 {} {} {} {}}
+} -result {{} {} {} {} {} {} 0 0 1 {} {} {} {}}
 
 test ns_urlspace-2.9 {tree+wild-card-filter} -setup {
     ns_urlspace set /foo* 123
@@ -326,11 +326,11 @@ test ns_urlspace-3.3 {tree+wild-card-filter key set/list/unset/list} -setup {
         [ns_urlspace get -key * /x/a.tcl] \
         [ns_urlspace get -key * /x/a.html] \
         [ns_urlspace get -key * /x/y/a.html]
-    } -cleanup {
-        ns_urlspace unset -key . /x/*.html
-        ns_urlspace unset -key a /x/*.html
-        ns_urlspace unset -key b /x/*.tcl
-    } -result {: {} foo foo a: {} bar bar *: {} {} {}}
+} -cleanup {
+    ns_urlspace unset -key . /x/*.html
+    ns_urlspace unset -key a /x/*.html
+    ns_urlspace unset -key b /x/*.tcl
+} -result {: {} foo foo a: {} bar bar *: {} {} {}}
 
 
 #
@@ -581,7 +581,7 @@ test ns_urlspace-6.1.4 {
 test ns_urlspace-6.1.5.1 {
 
     Context filters: same setup as in 6.1.3 with additionally one more
-    rule for /* with a different filter (we have no two different
+    rule for /* with a different filter; we have two different
     filters for the same pattern. With a context matching the first
     pattern, we expect the same results as in 6.1.3.
 
@@ -610,7 +610,7 @@ test ns_urlspace-6.1.5.1 {
 test ns_urlspace-6.1.5.2 {
 
     Context filters: same setup as in 6.1.3 with additionally one more
-    rule for /* with a different filter (we have no two different
+    rule for /* with a different filter; we have  two different
     filters for the same pattern. With a context matching the first
     pattern, we expect the same results as in 6.1.3.
 
@@ -641,7 +641,7 @@ test ns_urlspace-6.1.5.3 {
 
     Context filters: same setup as in 6.1.3 with additionally one more
     rule for /* with a multiple filter (we have no two different
-    filters for the same pattern). It shows that the order of the
+                                        filters for the same pattern). It shows that the order of the
     context pattern is not significant. Always the more specific url
     path pattern have the higher weight.
 
@@ -763,13 +763,13 @@ test ns_urlspace-6.1.6 {
     ns_urlspace unset -key 6.1 /*.adp
     ns_urlspace unset -key 6.1 -allfilters /*
     ns_urlspace unset -key 6.1 /static/*
-} -result {6.1 / *.adp inherit A
-6.1 /static * inherit B
-6.1 / * inherit D
-6.1 / * inherit {user-agent {googlebot v1}} C4
-6.1 / * inherit {user-agent *googlebot*} C3
-6.1 / * inherit {user-agent *crawl*} C2
-6.1 / * inherit {user-agent *bot*} C1}
+} -result [ns_trim {6.1 / *.adp inherit A
+    6.1 /static * inherit B
+    6.1 / * inherit D
+    6.1 / * inherit {user-agent {googlebot v1}} C4
+    6.1 / * inherit {user-agent *googlebot*} C3
+    6.1 / * inherit {user-agent *crawl*} C2
+    6.1 / * inherit {user-agent *bot*} C1}]
 
 test ns_urlspace-6.2.0 {
 
@@ -796,17 +796,17 @@ test ns_urlspace-6.2.0 {
     #ns_log notice "===== cleanup of 6.2.0"
     ns_urlspace unset -key 6.1 -allfilters /*
     #ns_log notice "===== cleanup of 6.2.0 DONE"
-} -result {6.1 / * inherit {X-NS-ip 2a03:2880:f107:83:face:b00c:0:25de} C7
-6.1 / * inherit {X-NS-ip 2a03:2880::/29} C8
-6.1 / * inherit {X-NS-ip 137.208.116.33} C10
-6.1 / * inherit {X-NS-ip 137.208.116.31} C9
-6.1 / * inherit {X-NS-ip 137.208.1.1} C4
-6.1 / * inherit {X-NS-ip 137.208.116.31/24} C3
-6.1 / * inherit {X-NS-ip 137.208.1.0/16} C2
-6.1 / * inherit {user-agent {googlebot v1}} C5
-6.1 / * inherit {user-agent *googlebot*} C6
-6.1 / * inherit {user-agent *mozilla*6*} C11
-6.1 / * inherit {user-agent *bot*} C1}
+} -result [ns_trim {6.1 / * inherit {X-NS-ip 2a03:2880:f107:83:face:b00c:0:25de} C7
+    6.1 / * inherit {X-NS-ip 2a03:2880::/29} C8
+    6.1 / * inherit {X-NS-ip 137.208.116.33} C10
+    6.1 / * inherit {X-NS-ip 137.208.116.31} C9
+    6.1 / * inherit {X-NS-ip 137.208.1.1} C4
+    6.1 / * inherit {X-NS-ip 137.208.116.31/24} C3
+    6.1 / * inherit {X-NS-ip 137.208.1.0/16} C2
+    6.1 / * inherit {user-agent {googlebot v1}} C5
+    6.1 / * inherit {user-agent *googlebot*} C6
+    6.1 / * inherit {user-agent *mozilla*6*} C11
+    6.1 / * inherit {user-agent *bot*} C1}]
 
 
 
