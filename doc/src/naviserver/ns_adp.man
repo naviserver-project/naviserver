@@ -79,12 +79,13 @@ stack to the underlying C-level request processing code.
 
 NaviServer can be configured to execute ADP's placed with other static
 files within a virtual server's pages directory via
-the  map  parameter in the ADP server config
+the map  parameter in the ADP server config
 section, for example:
 
 [example_begin]
  ns_section ns/server/server1/adp {
-   ns_param map /*.adp ns_param map {/stories/*.adp 60}
+   ns_param map /*.adp
+   ns_param map {/stories/*.adp 60}
  }
 [example_end]
 
@@ -222,8 +223,8 @@ can be used to override the encoding if necessary.
 ADP pages can be enabled per-virtual-server in the configuration file.
 
 [example_begin]
- [cmd ns_section] "ns/server/server1/adp" {
-   [cmd ns_param]   map     /*.adp
+ [cmd ns_section] ns/server/server1/adp {
+   [cmd ns_param]  map     /*.adp
     ...
  }
 [example_end]

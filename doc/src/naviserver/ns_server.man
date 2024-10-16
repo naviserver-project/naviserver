@@ -268,13 +268,22 @@ only exactly this path, but no sub-paths are mapped.
 
 [opt_def mapspec ""]
 A list of two or three arguments, containing an HTTP method, a path
-and optionally a context filter.
+and optionally a context filter. The following example contains a HTTP
+method and a URL path.
 
 Example:
 [example_begin]
  GET /*.tcl
 [example_end]
 
+In this example, [const GET] is used as a key in the URL tree, the
+path is [const /] and the match filter is [const *.tcl] (see also
+[cmd ns_urlspace]). If no wildcard is provided, the default match filter is
+[const *] (i.e., match all). The option [opt -noinherit] is mostly
+useful for these situations, since the option can avoid matching the elements
+in the subtree.
+
+[para]
 When the [term mapspec] is used as three element list, the last
 argument is the context filter, containing a request header-field and
 a value for matching.  The pseudo request header-field "X-NS-ip" is
@@ -318,9 +327,11 @@ HTTP method and path will be served from this connection pool.
 
 The connection thread pools are defined in the configuration file. In
 these sections, also the mapping of requests to the pools can be
-defined with the configuration values [term map] and [term noinherit].
-The latter one corresponst to the [option "-noinherit"] as described
-above.
+defined with the configuration values
+[term map-inherit] and [term map-noinherit].
+The term [term map] is is short form of [term map-inherit]
+The specification using [term map-noinherit] corresponds
+to the [option "-noinherit"] as described above.
 
 [example_begin]
  ns_section "ns/server/${server}/pools" {
@@ -337,7 +348,7 @@ above.
     ns_param map "GET /*.png"
     ns_param map "GET /*.jpg"
     ns_param map "GET /*.pdf"
-    ns_param noinherit "GET /*thumnails"
+    ns_param map-noinherit "GET /dotlrn/mt"
  }
  
  ns_section "ns/server/${server}/pool/slow" {
@@ -394,6 +405,6 @@ adding a bot pool.
 [see_also ns_conn ns_register ns_urlspace]
 [keywords \
 	"server built-in" configuration "connection thread pools" \
-	pools pagedir tuning reverseproxy "virtual hosting"]
+	mapspec pools pagedir tuning reverseproxy "virtual hosting"]
 
 [manpage_end]

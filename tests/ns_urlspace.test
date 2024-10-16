@@ -203,7 +203,7 @@ test ns_urlspace-2.6 {tree+wild-card-filter set/list/unset/list} -setup {
         [ns_urlspace get /x/a.html]
 } -result {{} {} {} {} foo 0 0 1 {} {} {} {}}
 
-### i would expect in test 2-8 in element 5 and 6 a value
+### I would expect in test 2-8 in element 5 and 6 a value
 ### "... set -noinherit /x/*.html foo" + ".... get /x/a.html"  ... should return a value
 test ns_urlspace-2.8 {tree+wild-card-filter noinherit set/list/unset/list} -setup {
     ns_urlspace set -noinherit /x/*.html foo

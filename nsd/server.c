@@ -452,11 +452,14 @@ CreatePool(NsServer *servPtr, const char *pool)
         section = Ns_ConfigGetPath(servPtr->server, NULL, "pool", pool,  (char *)0L);
         set = Ns_ConfigGetSection2(section, NS_FALSE);
         for (i = 0u; set != NULL && i < Ns_SetSize(set); ++i) {
-            if (strcasecmp(Ns_SetKey(set, i), "map") == 0) {
+            const char *key = Ns_SetKey(set, i);
+
+            if ( strcasecmp(key, "map") == 0
+                || strcasecmp(key, "map-inherit") == 0 ) {
                 NsConfigMarkAsRead(section, i);
                 NsMapPool(poolPtr, Ns_SetValue(set, i), 0u);
             }
-            if (strcasecmp(Ns_SetKey(set, i), "noinherit") == 0) {
+            if (strcasecmp(key, "map-noinherit") == 0) {
                 NsConfigMarkAsRead(section, i);
                 NsMapPool(poolPtr, Ns_SetValue(set, i), NS_OP_NOINHERIT);
             }

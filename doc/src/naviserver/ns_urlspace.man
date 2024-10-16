@@ -17,8 +17,9 @@
  capabilities.
 	
 [para]
- The command allows e.g. to implement access control (like the nsperm
- module) on the Tcl level. Other applications are e.g. blacklisting of
+ The command allows e.g. to implement access control (like the
+ [uri ../../nsperm/files/nsperm.html "nsperm module"])
+ on the Tcl level. Other applications are e.g. blacklisting of
  certain parts of the URL tree from statistics, or to assign different
  master templates to different parts of the URL tree.
 
@@ -29,7 +30,7 @@ For example, the mapping of requests to connection thread pools is
 performed over the same mechanism. In this case, the mapping of URLs
 to pools can be performed via the command [cmd ns_server],
 or it can be provided via configuration variables in the pool section
-(see e.g. [uri ../../manual/files/admin-tuning.html "Tuning NaviServer"]).
+(see, e.g., [uri ../../manual/files/admin-tuning.html "Tuning NaviServer"]).
 
 
 [section {COMMANDS}]
@@ -117,7 +118,7 @@ Every URL has a key assigned, which is logically part of the URL
 space. Using this key, one could for example use the HTTP methods
 [term GET] or [term POST] to assign different values to a URL
 for GET or POST requests. The key can be used as well for other
-purposes. If no key is specified, it default to the constant
+purposes. If no key is specified, it defaults to the constant
 "[const .]" (dot character).
 
 [list_end]

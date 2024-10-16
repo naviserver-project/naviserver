@@ -151,7 +151,7 @@ ns_section ns/parameters {
     # output is performed. (default: utf-8)
     #ns_param	outputcharset		utf-8
 
-    # Default Charset for Url Encode/Decode. When none specified, no character
+    # Default Charset for URL Encode/Decode. When none specified, no character
     # set encoding is performed. (default: utf-8)
     #ns_param	urlcharset		utf-8
 
