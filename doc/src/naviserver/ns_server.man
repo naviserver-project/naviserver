@@ -161,7 +161,8 @@ request.
 [para] When the option [option -exact] is used, the inheritance is
 deactivated, and only the values are returned directly assigned to the
 URL. When the option [option -noinherit] is specified, only values set
-with the [option -noinherit] flag are returned.
+with the [option -noinherit] flag are returned, not the files below
+in the subtree.
 
 
 [call [cmd  ns_server] \
@@ -315,8 +316,12 @@ HTTP method and path will be served from this connection pool.
  }
 [example_end]
 
-The connection thread pools can be defined as usual in the config
-file:
+The connection thread pools are defined in the configuration file. In
+these sections, also the mapping of requests to the pools can be
+defined with the configuration values [term map] and [term noinherit].
+The latter one corresponst to the [option "-noinherit"] as described
+above.
+
 [example_begin]
  ns_section "ns/server/${server}/pools" {
     ns_param fast "Fast lane pool"
@@ -332,6 +337,7 @@ file:
     ns_param map "GET /*.png"
     ns_param map "GET /*.jpg"
     ns_param map "GET /*.pdf"
+    ns_param noinherit "GET /*thumnails"
  }
  
  ns_section "ns/server/${server}/pool/slow" {
@@ -385,7 +391,7 @@ adding a bot pool.
 }
 [example_end]
 
-[see_also ns_conn ns_register]
+[see_also ns_conn ns_register ns_urlspace]
 [keywords \
 	"server built-in" configuration "connection thread pools" \
 	pools pagedir tuning reverseproxy "virtual hosting"]

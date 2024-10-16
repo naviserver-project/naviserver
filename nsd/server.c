@@ -456,6 +456,10 @@ CreatePool(NsServer *servPtr, const char *pool)
                 NsConfigMarkAsRead(section, i);
                 NsMapPool(poolPtr, Ns_SetValue(set, i), 0u);
             }
+            if (strcasecmp(Ns_SetKey(set, i), "noinherit") == 0) {
+                NsConfigMarkAsRead(section, i);
+                NsMapPool(poolPtr, Ns_SetValue(set, i), NS_OP_NOINHERIT);
+            }
         }
     }
 

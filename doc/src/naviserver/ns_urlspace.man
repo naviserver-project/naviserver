@@ -5,11 +5,11 @@
 [titledesc {Assign Application Data to URLs.}]
 
 [description] The command [cmd ns_urlspace] allows one to
- assign/query/list/delete data to the trie representing the URL
- space. The command supports filters and inheritance such one can
- e.g. assign data to certain patterns of pages (e.g. to .adp-pages) or
- such one can assign data to a higher level node which can be
- inherited to all nodes below this one.
+ assign/query/list/delete data to the trie data structure representing
+ the URL space. The command supports filters and inheritance, such one
+ can, e.g., assign data to certain patterns of pages
+ (e.g. to .adp-pages) or such one can assign data to a higher level
+ node which can be inherited to all nodes below this one.
  
  [para] The values assigned to the URL space are shared among all
  threads of a server. So this command is somewhat similar to the set
@@ -21,6 +21,16 @@
  module) on the Tcl level. Other applications are e.g. blacklisting of
  certain parts of the URL tree from statistics, or to assign different
  master templates to different parts of the URL tree.
+
+[para]
+The command [cmd "ns_urlspace"] provides scripting
+access to functionality provided by NaviServer since a long time.
+For example, the mapping of requests to connection thread pools is
+performed over the same mechanism. In this case, the mapping of URLs
+to pools can be performed via the command [cmd ns_server],
+or it can be provided via configuration variables in the pool section
+(see e.g. [uri ../../manual/files/admin-tuning.html "Tuning NaviServer"]).
+
 
 [section {COMMANDS}]
 
@@ -113,8 +123,7 @@ purposes. If no key is specified, it default to the constant
 [list_end]
 
 
-
-[see_also nsv]
+[see_also nsv ns_server]
 [keywords "server built-in" trie urlspace shared variables "data structure"]
 
 [manpage_end]
