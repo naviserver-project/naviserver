@@ -283,6 +283,15 @@ path is [const /] and the match filter is [const *.tcl] (see also
 useful for these situations, since the option can avoid matching the elements
 in the subtree.
 
+[para] Note that the following three [term mapspec] definitions are
+equivalent, the path is always [const /foo/bar] and the match filter is [const *].
+
+[example_begin]
+ GET /foo/bar
+ GET /foo/bar/
+ GET /foo/bar/*
+[example_end]
+
 [para]
 When the [term mapspec] is used as three element list, the last
 argument is the context filter, containing a request header-field and
