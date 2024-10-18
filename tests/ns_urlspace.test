@@ -224,6 +224,30 @@ test ns_urlspace-2.8 {tree+wild-card-filter noinherit set/list/unset/list} -setu
         [ns_urlspace get /x/a.html]
 } -result {{} {} {} {} {} {} 0 0 1 {} {} {} {}}
 
+
+#
+# Trying to address the case "noinherit wild card match" (2.8.1.2),
+# while preserving unquestionable behavior
+#
+test ns_urlspace-2.8.1.0 {noinherit full match, not questionable} -setup {
+    ns_urlspace set -noinherit /x/y foo
+} -body {
+    list [ns_urlspace get /x/y] [ns_urlspace unset -noinherit /x/y]
+} -result {foo 1}
+
+test ns_urlspace-2.8.1.1 {noinherit partial path, not questionable} -setup {
+    ns_urlspace set -noinherit /X foo
+} -body {
+    list [ns_urlspace get /X/a] [ns_urlspace unset -noinherit /X]
+} -result {{} 1}
+
+test ns_urlspace-2.8.1.2 {noinherit wild card match, questionable} -setup {
+    ns_urlspace set -noinherit /x/*.html bar
+} -body {
+    list [ns_urlspace get /x/a.html] [ns_urlspace unset -noinherit /x/*.html]
+} -result {{} 1}
+
+
 test ns_urlspace-2.9 {tree+wild-card-filter} -setup {
     ns_urlspace set /foo* 123
     ns_urlspace set /TOP/foo* 345
