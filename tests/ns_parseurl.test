@@ -207,10 +207,17 @@ test ns_parseurl-2.1.2 {relative URL} -body {
     ns_parseurl /?x=1
 } -returnCodes {error ok} -result {path {} tail {} query x=1}
 
-test ns_parseurl-2.1.2 {relative URL} -body {
+test ns_parseurl-2.1.3 {relative URL} -body {
     ns_parseurl index?url=http://www.test.com
 } -returnCodes {error ok} -result {tail index query url=http://www.test.com}
 
+test ns_parseurl-2.1.4 {relative URL without leading slash, whith empty query} -body {
+    ns_parseurl dummy?
+} -returnCodes {error ok} -result {tail dummy query {}}
+
+test ns_parseurl-2.1.5 {relative URL with leading slash, whith empty query} -body {
+    ns_parseurl /dummy?
+} -returnCodes {error ok} -result {path {} tail dummy query {}}
 
 #
 # Legacy NaviServer behavior (putting remainder into "tail"), kept for
