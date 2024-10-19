@@ -541,7 +541,7 @@ namespace eval ::revproxy::ns_connchan {
                 #
                 # All was sent, fall back to normal read-event driven handler
                 #
-                ns_log notice "revproxy::ns_connchan::write_once all was written to '$to' resume reading from '$from'"
+                log notice "revproxy::ns_connchan::write_once all was written to '$to' resume reading from '$from'"
                 #    "\nFROM Status: [ns_connchan status $from]" \
                 #    "\n... old callback [dict get [ns_connchan status $from] callback]" \
                 #    "\n... new callback [list ::revproxy::spool $from $to $url $timeouts 0]"
