@@ -918,7 +918,7 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                      * Partial write operation: part of the iovec has
                      * been sent, we have to retransmit the rest.
                      */
-                    Ns_Log(Notice,
+                    Ns_Log(Ns_LogConnchanDebug,
                            "%s ConnchanDriverSend partial write operation, sent %" PRIdz
                            " (so far %" PRIdz ") remaining %" PRIdz
                            " bytes, full length %" PRIdz,
@@ -2595,7 +2595,7 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
                          * Non-buffered case, there might be a partial send operation
                          */
                         if (remaining != 0) {
-                            Ns_Log(Notice, "... partial write: to send %" PRIdz
+                            Ns_Log(Ns_LogConnchanDebug, "... partial write: to send %" PRIdz
                                    " sent %" PRIdz " remaining %" PRIdz,
                                    toSend, nSent, remaining);
                         }
