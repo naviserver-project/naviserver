@@ -6765,10 +6765,17 @@ WriterThread(void *arg)
                             } else if (newRate < 5) {
                                 newRate = 5;
                             }
-                            Ns_Log(Notice, "... pool '%s' new rate limit changed from %d to %d KB/s (delta %d%%)",
-                                   curPtr->poolPtr->pool, curPtr->rateLimit, newRate,
-                                   curPtr->infoPtr->deltaPercentage);
-                            curPtr->rateLimit = newRate;
+                            /*
+                             * It we were already at some limits, new and old
+                             * rate might be the same. There is no need to
+                             * tell this to the user.
+                             */
+                            if (curPtr->rateLimit != newRate) {
+                                Ns_Log(Notice, "... pool '%s' new rate limit changed from %d to %d KB/s (delta %d%%)",
+                                       curPtr->poolPtr->pool, curPtr->rateLimit, newRate,
+                                       curPtr->infoPtr->deltaPercentage);
+                                curPtr->rateLimit = newRate;
+                            }
                         }
                     }
 
