@@ -49,11 +49,15 @@ help reduce memory consumption and cleanup Tcl resources.
 [para] The parameter [option -timeout] defines maximum idle time for the
 job worker thread. When the timeout expires, the thread exits like
 when [option -jobsperthread] runs out. When the [option -timeout] is 0, the
-there will be no timeout.
+there will be no timeout. The value of [option -timeout] can be specified in the form
+[arg secs[opt :microsecs]], or [arg secs.fraction],
+or as a number with a time unit.
 
 [para] The parameter [option -logminduration] defines a time limit for
 logging the system log. When a job takes longer than the time limit
-it will be logged.
+it will be logged. The value can be specified in the form
+[arg secs[opt :microsecs]], or [arg secs.fraction],
+or as a number with a time unit.
 
 [para] Without any arguments, the command just returns current
 settings values in form of a dict.
@@ -202,8 +206,10 @@ Returns a list of the thread pool's fields.
 Wait for the specified queued or running job to finish.
 [cmd "ns_job wait"] returns the results of the script.
 
-[para] An error is thrown if the specified timeout period (given in
-seconds and fractions of seconds) is reached.
+[para] An error is thrown if the specified timeout period is reached.
+The value of [option -timeout] can be specified in the form
+[arg secs[opt :microsecs]], or [arg secs.fraction],
+or as a number with a time unit.
 
 
 [call [cmd "ns_job waitany"] \
@@ -212,8 +218,10 @@ seconds and fractions of seconds) is reached.
 
 Wait for any job on the queue complete.
 
-[para] An error is thrown if the specified timeout period (given in
-seconds and fractions of seconds) is reached.
+[para] An error is thrown if the specified timeout period is reached.
+The value of [option -timeout] can be specified in the form
+[arg secs[opt :microsecs]], or [arg secs.fraction],
+or as a number with a time unit.
 
 [list_end]
 
