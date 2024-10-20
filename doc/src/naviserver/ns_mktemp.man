@@ -9,7 +9,7 @@
 in the C standard library.  This function generates a unique temporary
 filename from an optional template.  
 
-[para] In general, the pattern of creating a temporary file name based
+[para] In general, the pattern of creating a temporary filename based
 on its non-occurrence in a directory followed by creating this file is
 prone to a race condition and can provide security issues. Therefore,
 the command is deprecated and will issue an entry to the log file

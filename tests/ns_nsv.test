@@ -126,7 +126,7 @@ test ns_nsv-2.11.1 {"nsv_set -default" with pre-existing value} -body {
     nsv_unset -nocomplain a
 } -result {123 1}
 
-test ns_nsv-2.11.2 {"nsv_set -default" check full live-cylce} -body {
+test ns_nsv-2.11.2 {"nsv_set -default" check full live-cycle} -body {
     set key k0
     set r0 [nsv_exists a $key]
     set r1 [nsv_set -default a $key ""] ;# set empty value for a(k) when it does does not exist

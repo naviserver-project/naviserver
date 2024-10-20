@@ -268,7 +268,7 @@ only exactly this path, but no sub-paths are mapped.
 
 [opt_def mapspec ""]
 A list of two or three arguments, containing an HTTP method, a path
-and optionally a context filter. The following example contains a HTTP
+and optionally a context filter. The following example contains an HTTP
 method and a URL path.
 
 Example:
@@ -338,7 +338,7 @@ The connection thread pools are defined in the configuration file. In
 these sections, also the mapping of requests to the pools can be
 defined with the configuration values
 [term map-inherit] and [term map-noinherit].
-The term [term map] is is short form of [term map-inherit]
+The term [term map] is the short form of [term map-inherit]
 The specification using [term map-noinherit] corresponds
 to the [option "-noinherit"] as described above.
 
