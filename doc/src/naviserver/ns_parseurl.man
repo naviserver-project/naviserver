@@ -63,7 +63,7 @@ URL as implied by the dict members.
  % ns_parseurl /top/query?x=1&y=2#pos1
  path top tail query query x=1&y=2 fragment pos1
 
- % ns_joinurl [ns_parseurl http://openacs.org/projects/openacs/download/]
+ % ns_joinurl [lb]ns_parseurl http://openacs.org/projects/openacs/download/[rb]
  http://openacs.org/projects/openacs/download/
 
 [example_end]

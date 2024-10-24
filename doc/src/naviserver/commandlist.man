@@ -215,6 +215,10 @@ sections of related commands.
 [call [cmd ns_parsehostport]]
 [call [cmd ns_parsequery]]
 [call [cmd ns_parseurl]]
+[list_begin definitions]
+[call [cmd ns_joinurl]]
+[list_end]
+
 [call [cmd ns_url2file]]
 [call [cmd ns_urldecode]]
 [call [cmd ns_urlencode]]
