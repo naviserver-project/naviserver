@@ -316,6 +316,73 @@ test ns_parseurl-5.0 {URL with colon in the path, but no port provided} -body {
 } -result {proto https host fcm.googleapis.com path fcm/send tail c707XIVXbcY:APA91bEgMg8DNeNapWNKby}
 
 #
+# ns_joinurl
+#
+
+test ns_joinurl-1.2 {full URL, no port} -body {
+    ns_joinurl [ns_parseurl http://openacs.org:80/www/t.html]
+} -returnCodes {error ok} -result {http://openacs.org:80/www/t.html}
+
+test ns_joinurl-1.3 {full URL, no port, no component} -body {
+    ns_joinurl [ns_parseurl http://openacs.org/]
+} -result {http://openacs.org/}
+
+
+test ns_joinurl-1.9.1 {full URL, IP literal without slash (RFC 3986), no port, query} -body {
+    ns_joinurl [ns_parseurl {http://[::1]?x=1}]
+} -returnCodes {error ok} -result {http://[::1]/?x=1}
+
+
+test ns_joinurl-2.1.0a {relative URL} -body {
+    ns_joinurl [ns_parseurl /www/t.html]
+} -returnCodes {error ok} -result {/www/t.html}
+
+test ns_joinurl-2.1.0b {relative URL} -body {
+    ns_joinurl [ns_parseurl www/t.html]
+} -returnCodes {error ok} -result {www/t.html}
+
+test ns_joinurl-2.1.1 {relative URL} -body {
+    ns_joinurl [ns_parseurl /]
+} -returnCodes {error ok} -result {/}
+
+test ns_joinurl-2.1.2 {relative URL} -body {
+    ns_joinurl [ns_parseurl /?x=1]
+} -returnCodes {error ok} -result {/?x=1}
+
+
+
+
+test ns_joinurl-2.3.1 {relative URL containing colon - legacy behavior} -body {
+    ns_joinurl [ns_parseurl ./foo:bar]
+} -result {./foo:bar}
+
+test ns_joinurl-2.3.2 {relative URL containing colon} -body {
+    ns_joinurl [ns_parseurl /foo:bar]
+} -result {/foo:bar}
+
+test ns_joinurl-2.3.3 {URL starting with other char containing colon} -body {
+    ns_joinurl [ns_parseurl foo:bar]
+} -returnCodes {error ok} -result {key 'proto' (value foo) was provided without a key 'host'}
+
+
+test ns_joinurl-3.1 {protocol relative URL with port} -body {
+    ns_joinurl [ns_parseurl //openacs.org/www/t.html]
+} -result {//openacs.org/www/t.html}
+
+test ns_joinurl-4.0 {URL with query part} -body {
+    ns_joinurl [ns_parseurl https://google.com/search?q=1234&f=567]
+} -result {https://google.com/search?q=1234&f=567}
+
+test ns_joinurl-4.1 {URL with query part and fragment} -body {
+    ns_joinurl [ns_parseurl https://google.com/search?q=1234&f=567#end]
+} -result {https://google.com/search?q=1234&f=567#end}
+
+test ns_joinurl-4.2 {URL with fragment} -body {
+    ns_joinurl [ns_parseurl https://google.com/search#end]
+} -result {https://google.com/search#end}
+
+
+#
 # ns_absoluteurl
 #
 

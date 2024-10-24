@@ -140,6 +140,64 @@ proc ns_findset {sets name} {
     }
 }
 
+
+proc ns_joinurl {dict} {
+    #
+    # Inverse operation of ns_parseurl
+    #
+    set valid_keys {proto userinfo host port path tail query fragment}
+    if {!([string is list $dict] && ([llength $dict] & 1) == 0)} {
+        error "the provided argument is not a dict: $dict"
+    }
+    foreach key [dict keys $dict] {
+        if {$key ni $valid_keys} {
+            error "the provided dict contains invalid key: $key"
+        }
+    }
+    set URL ""
+    dict with dict {
+        if {[info exists host]} {
+            if {[info exists proto]} {
+                append URL [expr {$proto ne "" ? "$proto:" : ""}]
+            }
+            append URL //
+            if {[info exists userinfo] && $userinfo ne ""} {
+                append URL $userinfo @
+            }
+            append URL [expr {[string match *:* $host] ? "\[$host\]" : $host}]
+            if {[info exists port]} {
+                append URL : $port
+            }
+        } else {
+            if {[info exists proto]} {
+                error "key 'proto' (value $proto) was provided without a key 'host'"
+            } elseif {[info exists userinfo]} {
+                error "key 'userinfo' (value $userinfo) was provided without a key 'host'"
+            } elseif {[info exists port]} {
+                error "key 'port' (value $port) was provided without a key 'host'"
+            }
+        }
+        if {[info exists path]} {
+            if { $path ne ""} {
+                append URL /
+            }
+            append URL $path /
+        }
+
+        if {[info exists tail] && $tail ne ""} {
+            append URL $tail
+        }
+
+        if {[info exists query] && $query ne ""} {
+            append URL ? $query
+        }
+        if {[info exists fragment] && $fragment ne ""} {
+            append URL # $fragment
+        }
+    }
+    return $URL
+}
+
 #=============================================================================
 #
 #     **** Please reconsider removal of the code below this marker *****
