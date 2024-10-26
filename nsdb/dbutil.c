@@ -209,7 +209,10 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
     status = NS_OK;
     inquote = 0;
     c = '\n';
-    while ((i = getc(fp)) != EOF) {
+    while (!feof(fp)) {
+        if (ferror(fp) || ((i = getc(fp)) == EOF)) {
+            break;
+        }
         lastc = c;
         c = (char) i;
  loopstart:
@@ -217,7 +220,7 @@ Ns_DbInterpretSqlFile(Ns_DbHandle *handle, const char *filename)
             if (c != '\'') {
                 Ns_DStringNAppend(&dsSql, &c, 1);
             } else {
-              i = getc(fp);
+                i = getc(fp);
                 if (i == EOF) {
                     break;
                 }

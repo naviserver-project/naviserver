@@ -1778,6 +1778,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         break;
 
     case CUrlvIdx:
+        assert(request != NULL);
         if (objc == 2) {
             Tcl_SetObjResult(interp, Tcl_NewStringObj(request->urlv, request->urlv_len));
         } else {
@@ -2243,10 +2244,12 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         break;
 
     case CRequestIdx:
+        assert(request != NULL);
         Tcl_SetObjResult(interp, Tcl_NewStringObj(request->line, TCL_INDEX_NONE));
         break;
 
     case CMethodIdx:
+        assert(request != NULL);
         Tcl_SetObjResult(interp, Tcl_NewStringObj(request->method, TCL_INDEX_NONE));
         break;
 
@@ -2281,6 +2284,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         }
 
     case CProtocolIdx:
+        assert(request != NULL);
         Tcl_SetObjResult(interp, Tcl_NewStringObj(request->requestType == NS_REQUEST_TYPE_PROXY
                                                   ? request->protocol
                                                   : connPtr->drvPtr->protocol, TCL_INDEX_NONE));
@@ -2295,6 +2299,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         if (Ns_ParseObjv(NULL, largs, interp, 2, objc, objv) != NS_OK) {
             result = TCL_ERROR;
         } else {
+            assert(request != NULL);
             Tcl_SetObjResult(interp,
                              Tcl_NewStringObj(request->host == NULL
                                               ? defaultValue
@@ -2304,22 +2309,27 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
     }
 
     case CPortIdx:
+        assert(request != NULL);
         Tcl_SetObjResult(interp, Tcl_NewIntObj((int)request->port));
         break;
 
     case CUrlIdx:
+        assert(request != NULL);
         Tcl_SetObjResult(interp, Tcl_NewStringObj(request->url, request->url_len));
         break;
 
     case CQueryIdx:
+        assert(request != NULL);
         Tcl_SetObjResult(interp, Tcl_NewStringObj(request->query, TCL_INDEX_NONE));
         break;
 
     case CUrlcIdx:
+        assert(request != NULL);
         Tcl_SetObjResult(interp, Tcl_NewIntObj(request->urlc));
         break;
 
     case CVersionIdx:
+        assert(request != NULL);
         Tcl_SetObjResult(interp, Tcl_NewDoubleObj(request->version));
         break;
 

@@ -1038,7 +1038,7 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
              */
             Tcl_DStringAppend(dest, conn->request.serverRoot, TCL_INDEX_NONE);
             path = dest->string;
-        } else {
+        } else if (conn != NULL) {
             /*
              * Call the registered proc which is typically, a Tcl
              * call. Therefore, make sure, the connection has already an
@@ -1047,7 +1047,7 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
             Ns_GetConnInterp(conn);
 
             path = (servPtr->vhost.serverRootProc)(dest, rawHost, servPtr->vhost.serverRootArg);
-            if (conn != NULL && path != NULL) {
+            if (path != NULL) {
                 Ns_Log(Debug, "cache value <%s>", path);
                 conn->request.serverRoot = ns_strdup(path);
             }

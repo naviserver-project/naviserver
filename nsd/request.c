@@ -159,7 +159,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
 {
     char       *url, *l, *p;
     Ns_DString  ds;
-    const char *errorMsg = "unknown error";
+    const char *errorMsg;
 
     NS_NONNULL_ASSERT(line != NULL);
 

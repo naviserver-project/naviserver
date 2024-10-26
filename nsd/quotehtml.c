@@ -2865,7 +2865,6 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
         const char *endOfString;
         bool        intag;     /* flag to see if are we inside a tag */
         bool        incomment; /* flag to see if we are inside a comment */
-        char       *outPtr;    /* moving pointer to output string */
         const char *inPtr;     /* moving pointer to input string */
         bool        needEncode;
         Tcl_DString outputDs, *outputDsPtr = &outputDs;
@@ -2880,7 +2879,6 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
         Tcl_DStringSetLength(outputDsPtr, 0);
 
         inPtr      = htmlString;
-        outPtr     = outputDsPtr->string;
         intag      = NS_FALSE;
         incomment  = NS_FALSE;
         needEncode = NS_FALSE;
@@ -2918,7 +2916,7 @@ NsTclStripHtmlObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
                     /*
                      * Starting an entity.
                      */
-
+                    char      *outPtr;    /* moving pointer to output string */
                     size_t     entityLength = 0u, decoded = 0u;
                     TCL_SIZE_T oldLength;
 

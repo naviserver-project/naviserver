@@ -1475,7 +1475,7 @@ Binder(void)
         if (n != RESPONSE_SIZE) {
             Ns_Fatal("binder: sendmsg() failed: sent %" PRIdz " bytes, '%s'", n, strerror(errno));
         }
-        if (sock != -1) {
+        if (sock >= -1) {
             /*
              * Close the socket as it won't be needed in the child.
              */

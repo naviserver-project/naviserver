@@ -9189,7 +9189,7 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
         Driver        *drvPtr;
         unsigned short portNr = 0u; /* make static checker happy */
         NS_SOCKET      sock = NS_INVALID_SOCKET;
-        Ns_ReturnCode  status;
+        Ns_ReturnCode  status = NS_OK;
         const char    *address;
 
         assert(parsedUrlPtr->protocol != NULL);

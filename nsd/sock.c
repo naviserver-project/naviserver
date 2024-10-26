@@ -996,7 +996,7 @@ Ns_SockBind(const struct sockaddr *saPtr, bool reusePort)
             sock = NS_INVALID_SOCKET;
         }
 
-        if (port == 0u) {
+        if (port == 0u && sock != NS_INVALID_SOCKET) {
             /*
              * Refetch the socket structure containing the potentially fresh port
              */
@@ -1070,11 +1070,13 @@ Ns_SockConnectUnix(const char *path, int socktype, Ns_ReturnCode *statusPtr)
 
         sock = socket(AF_UNIX, socktype > 0 ? socktype : SOCK_STREAM, 0);
 
-        connect_rc = connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr));
-        if (connect_rc == -1) {
-            ns_close(sock);
-            status = NS_ERROR;
-            sock = NS_INVALID_SOCKET;
+        if (sock != NS_INVALID_SOCKET) {
+            connect_rc = connect(sock, (struct sockaddr *)&server_addr, sizeof(server_addr));
+            if (connect_rc == -1) {
+                ns_close(sock);
+                status = NS_ERROR;
+                sock = NS_INVALID_SOCKET;
+            }
         }
     }
 

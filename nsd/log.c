@@ -1367,7 +1367,7 @@ LogCtlGrepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
              * Read the file line by line.
              */
             while (1) {
-                size_t  len;
+                size_t  len = 0;
                 ssize_t read;
 
                 read = ns_getline(&line, &len, file);
