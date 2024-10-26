@@ -24,7 +24,7 @@ jobs:
           - os: ubuntu-latest
             compiler: gcc-12
             tcltag: core-8-7-a5
-            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd
+            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsauthpam
             nsf_version: 2.4.0
             tdom_version: 0.9.5
 
@@ -40,7 +40,7 @@ jobs:
             tcltag: core-8-5-branch
             nsf_version: HEAD
             tcllib_version: "2.0"
-            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl
+            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl nsauthpam
             tdom_version: 0.9.5
 
           - os: ubuntu-latest
@@ -48,7 +48,7 @@ jobs:
             tcltag: 9.0.0
             nsf_version: HEAD
             tcllib_version: "2.0"
-            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl
+            ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl nsauthpam
             tdom_version: 0.9.5
 
     defaults:
@@ -64,7 +64,7 @@ jobs:
         run: |
           sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          sudo apt-get install -y ${CC}
+          sudo apt-get install -y ${CC} libpam0g-dev
       - name: Checkout
         #if: github.event.pull_request.head.repo.full_name == github.repository
         uses: actions/checkout@v4
