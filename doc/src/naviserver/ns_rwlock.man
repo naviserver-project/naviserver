@@ -125,6 +125,7 @@ simultaneously, but only one thread should modify the data at a
 time. This allows efficient concurrent reads while ensuring data
 consistency during writes.
 
+[para]
 Priority Rules:
 [list_begin enum]
 [enum] Read locks: Multiple read locks can be acquired simultaneously
@@ -144,6 +145,8 @@ concurrently, while updates are safely managed by blocking until the
 current read operations complete and preventing new reads during the
 update.
 
-[see_also nsd]
-[keywords "server built-in" NaviServer]
+[see_also ns_cond ns_critsec ns_mutex ns_sema ns_thread ]
+[keywords "server built-in" wrlock thread synchronization]
+
+
 [manpage_end]

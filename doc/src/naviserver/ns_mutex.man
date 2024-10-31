@@ -106,8 +106,8 @@ At shutdown (for example, in your shutdown procedure registered with
  nsv_unset mutex foo
 [example_end]
 
-[see_also ns_atsignal]
-[keywords "server built-in" mutex thread]
+[see_also ns_atsignal ns_cond ns_critsec ns_rwlock ns_sema ns_thread ]
+[keywords "server built-in" mutex thread synchronization]
 
 [manpage_end]
 

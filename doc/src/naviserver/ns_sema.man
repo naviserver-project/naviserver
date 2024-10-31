@@ -52,8 +52,9 @@ this is true.  Decrements the counter by one when the counter is greater than ze
 [example_end]
 
 
-[see_also nsd]
-[keywords "server built-in" ns_cond ns_critsec ns_event ns_mutex ns_thread]
+[see_also ns_cond ns_critsec ns_mutex ns_rwlock ns_thread ]
+[keywords "server built-in" semaphore thread synchronization]
+
 
 [manpage_end]
 
