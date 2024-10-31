@@ -15,37 +15,33 @@ implemented with a mutex and a counter.  The allowed options (which may be abbre
 
 [list_begin definitions]
 
-
- [call [cmd ns_sema] [opt [arg {arg arg ...}]]]
-
-
-[list_end]
-
-[list_begin definitions]
-
 [call [cmd  "ns_sema create"] [opt [arg count]]]
 
 Initializes a new semaphore whose count is initialized to zero by default
-or count otherwise.  Returns a handle to the semaphore object.
+or [arg count] otherwise.  Returns a handle to the semaphore object.
 
-[call [cmd  "ns_sema destroy"] [arg object]]
+[call [cmd  "ns_sema destroy"] [arg handle]]
 
-Destroys the semaphore object and frees any resources it was using.
+Destroys the semaphore [arg handle] and frees any resources it was
+using. Actually, in the current implementation, this operation is a
+no-op, the semaphore will live until the server shuts down.
 
-[call [cmd  "ns_sema release"] [arg object] [opt [arg count]]]
 
-Releases the semaphore object by incrementing the counter by one by default
-or by count otherwise.  The thread will wake any threads blocking on this 
-semaphore when count is equal to one.
 
-This is what is commonly referred to as "semaphore up".
+[call [cmd  "ns_sema release"] [arg handle] [opt [arg count]]]
 
-[call [cmd  "ns_sema wait"] [arg object]]
+Releases the semaphore [arg handle] by incrementing the counter by one by default
+or by [arg count] otherwise.  The thread will wake any threads blocking on this
+semaphore when [arg count] is equal to one.
 
-Waits for a semaphore object to be greater than zero.  Will block the thread until
+[para] This is what is commonly referred to as "semaphore up".
+
+[call [cmd  "ns_sema wait"] [arg handle]]
+
+Waits for a semaphore [arg handle] to be greater than zero.  Will block the thread until
 this is true.  Decrements the counter by one when the counter is greater than zero.
 
-This is what is commonly referred to as "semaphore down".
+[para] This is what is commonly referred to as "semaphore down".
 
 [list_end]
 

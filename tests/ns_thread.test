@@ -11,15 +11,21 @@ test ns_thread-1.1 {basic syntax} -body {
 
 test ns_thread-1.2 {basic syntax} -body {
     ns_mutex ?
-} -returnCodes error -result {bad cmd "?": must be create, destroy, eval, lock, trylock, or unlock}
+} -returnCodes error -result {bad subcmd "?": must be create, destroy, eval, lock, trylock, or unlock}
 
 test ns_thread-1.3 {basic syntax} -body {
     ns_critsec ?
 } -returnCodes error -result {bad cmd "?": must be create, destroy, enter, eval, or leave}
 
-test ns_thread-1.4 {basic syntax} -body {
+test ns_thread-1.4.0 {basic syntax} -body {
     ns_sema ?
-} -returnCodes error -result {bad cmd "?": must be create, destroy, release, or wait}
+} -returnCodes error -result {bad subcmd "?": must be create, destroy, release, or wait}
+test ns_thread-1.4.1 {basic syntax} -body {
+    ns_sema release
+} -returnCodes error -result {wrong # args: should be "ns_sema release handle ?count?"}
+test ns_thread-1.4.2 {basic syntax} -body {
+    ns_sema release .
+} -returnCodes error -result {ns_sema: could not convert '.' to semaphore object}
 
 test ns_thread-1.5 {basic syntax} -body {
     ns_cond ?
@@ -75,26 +81,35 @@ test ns_thread-3.1 {create and destroy a mutex} -body {
     set mutex
 }  -cleanup {
     unset -nocomplain -- mutex
-} -match regexp -result {ns:mutex:tcl:[0-9]+}
+} -returnCodes {ok error} -match regexp -result {ns:mutex:tcl:[0-9]+}
 
-test ns_thread-3.2 {mutex locking} -body {
+test ns_thread-3.2 {mutex locking, unnamed create} -body {
     set mutex [ns_mutex create]
     ns_mutex lock $mutex
     ns_mutex unlock $mutex
     ns_mutex destroy $mutex
 }  -cleanup {
     unset -nocomplain -- mutex
-} -match glob -result {ns:mutex*}
+} -returnCodes {ok error} -match glob -result {ns:mutex*}
 
-test ns_thread-3.3 {named mutex locking} -body {
+test ns_thread-3.2.2 {mutex locking, named create} -body {
+    set mutex [ns_mutex create mymutex]
+    ns_mutex lock $mutex
+    ns_mutex unlock $mutex
+    ns_mutex destroy $mutex
+}  -cleanup {
+    unset -nocomplain -- mutex
+} -returnCodes {ok error} -match glob -result {ns:mutex*}
+
+test ns_thread-3.3 {named mutex locking, no create operation} -body {
     ns_mutex lock test:mutex
     ns_mutex unlock test:mutex
     ns_mutex destroy test:mutex
-} -result test:mutex
+} -returnCodes {ok error} -result test:mutex
 
 test ns_thread-3.4 {destroy a named mutex which doesn't exist} -body {
     ns_mutex destroy test:namedoesnotexist
-} -result test:namedoesnotexist
+} -returnCodes {ok error} -result {ns_mutex: could not convert 'test:namedoesnotexist' to mutex object}
 
 test ns_thread-3.5 {mutex eval locked} -body {
     ns_mutex eval test:evalmutex {
@@ -102,11 +117,15 @@ test ns_thread-3.5 {mutex eval locked} -body {
     }
 } -cleanup {
     unset -nocomplain a
-} -result b
+} -returnCodes {ok error}  -result b
 
 test ns_thread-3.6 {mutex eval args} -body {
     ns_mutex eval test:evalmutex
-} -returnCodes error -result {wrong # args: should be "ns_mutex eval test:evalmutex script"}
+} -returnCodes {ok error} -result {wrong # args: should be "ns_mutex eval mutexid script"}
+
+test ns_thread-3.7 {mutex eval args} -body {
+    ns_mutex unlock mutex-[clock microseconds]
+} -returnCodes {ok error} -match glob -result {ns_mutex: could not convert 'mutex-*' to mutex object}
 
 
 
@@ -154,6 +173,13 @@ test ns_thread-5.1 {create and destroy a semaphore} -body {
 }  -cleanup {
     unset -nocomplain -- sema
 } -match regexp -result {ns:semaphore:tcl:[0-9]+}
+
+test ns_thread-5.2 {create a semaphore with a count value} -body {
+    set sema [ns_sema create 5]
+}  -cleanup {
+    unset -nocomplain -- sema
+} -match regexp -result {ns:semaphore:tcl:[0-9]+}
+
 
 
 

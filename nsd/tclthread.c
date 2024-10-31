@@ -49,6 +49,21 @@ static void *CreateSynchObject(const NsInterp *itPtr,
 static void ThreadArgFree(void *arg)
     NS_GNUC_NONNULL(1);
 
+static Ns_ObjvProc ObjvMutexObj;
+static Ns_ObjvProc ObjvSemaObj;
+
+static TCL_OBJCMDPROC_T MutexCreateObjCmd;
+static TCL_OBJCMDPROC_T MutexDestroyObjCmd;
+static TCL_OBJCMDPROC_T MutexEvalObjCmd;
+static TCL_OBJCMDPROC_T MutexLockObjCmd;
+static TCL_OBJCMDPROC_T MutexTrylockObjCmd;
+static TCL_OBJCMDPROC_T MutexUnlockObjCmd;
+
+static TCL_OBJCMDPROC_T SemaCreateObjCmd;
+static TCL_OBJCMDPROC_T SemaDestroyObjCmd;
+static TCL_OBJCMDPROC_T SemaReleaseObjCmd;
+static TCL_OBJCMDPROC_T SemaWaitObjCmd;
+
 
 /*
  * Local variables defined in this file.
@@ -60,6 +75,102 @@ static const char *const semaType   = "ns:semaphore";
 static const char *const condType   = "ns:condition";
 static const char *const rwType     = "ns:rwlock";
 static const char *const threadType = "ns:thread";
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ObjvSemaObj --
+ *
+ *      objv converter for Ns_Sema*.
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ObjvSemaObj(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj *const* objv)
+{
+    int result = TCL_ERROR;
+
+    NS_NONNULL_ASSERT(spec != NULL);
+
+    if (likely(*objcPtr > 0)) {
+        const NsInterp *itPtr = NsGetInterpData(interp);
+        NsServer       *servPtr = itPtr->servPtr;
+        Ns_Sema       **dest = spec->dest;
+
+        *dest = CreateSynchObject(itPtr,
+                                  &servPtr->tcl.synch.semaTable,
+                                  &servPtr->tcl.synch.semaId,
+                                  NULL,
+                                  semaType,
+                                  objv[0],
+                                  TCL_INDEX_NONE);
+        //fprintf(stderr, "result of conversion %p\n",(void*)*dest);
+        if (*dest == NULL) {
+            Ns_TclPrintfResult(interp, "ns_sema: could not convert '%s' to semaphore object", Tcl_GetString(objv[0]));
+        } else {
+            *objcPtr -= 1;
+            result = TCL_OK;
+        }
+    }
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ObjvMutexObj --
+ *
+ *      objv converter for Ns_Mutex*.
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ObjvMutexObj(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj *const* objv)
+{
+    int result = TCL_ERROR;
+
+    NS_NONNULL_ASSERT(spec != NULL);
+
+    if (likely(*objcPtr > 0)) {
+        const NsInterp *itPtr = NsGetInterpData(interp);
+        NsServer       *servPtr = itPtr->servPtr;
+        Ns_Mutex      **dest = spec->dest;
+
+        /*
+         * When spec->arg is set this means, that the syncobj mut
+         * pre-exist and is not created on the fly.
+         */
+        *dest = CreateSynchObject(itPtr,
+                                  &servPtr->tcl.synch.mutexTable,
+                                  &servPtr->tcl.synch.mutexId,
+                                  PTR2INT(spec->arg) == NS_TRUE ? NULL : (Ns_Callback *) Ns_MutexInit,
+                                  mutexType,
+                                  objv[0],
+                                  TCL_INDEX_NONE);
+        if (*dest == NULL) {
+            Ns_TclPrintfResult(interp, "ns_mutex: could not convert '%s' to mutex object", Tcl_GetString(objv[0]));
+        } else {
+            *objcPtr -= 1;
+            result = TCL_OK;
+        }
+    }
+
+    return result;
+}
 
 
 /*
@@ -298,6 +409,179 @@ NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
  *----------------------------------------------------------------------
  */
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * MutexCreateObjCmd, MutexDestroyObjCmd, MutexEvalObjCmd, MutexLockObjCmd,
+ * MutexTrylockObjCmd, MutexUnlockObjCmd --
+ *
+ *      Implements subcommands of "ns_mutex", i.e.,
+ *         "ns_mutex create"
+ *         "ns_mutex destroy"
+ *         "ns_mutex eval"
+ *         "ns_mutex lock"
+ *         "ns_mutex trylock"
+ *         "ns_mutex unlock"
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      Depends on subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+MutexCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    char       *nameString = NULL;
+    Ns_ObjvSpec args[] = {
+        {"?name", Ns_ObjvString, &nameString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_Mutex       *lockPtr;
+        const NsInterp *itPtr = clientData;
+        NsServer       *servPtr = itPtr->servPtr;
+
+        lockPtr = CreateSynchObject(itPtr,
+                                    &servPtr->tcl.synch.mutexTable,
+                                    &servPtr->tcl.synch.mutexId,
+                                    (Ns_Callback *) Ns_MutexInit,
+                                    mutexType,
+                                    NULL,
+                                    TCL_INDEX_NONE);
+        if (nameString != NULL) {
+            /*
+             * If a name was provided, name the mutex created with
+             * CreateSynchObject().
+             */
+            Ns_MutexSetName(lockPtr, nameString);
+        } else {
+            Ns_Log(Notice, "created unnamed syncobj %s %p",Ns_MutexGetName(lockPtr), (void*)lockPtr);
+        }
+    }
+    return result;
+}
+
+static int
+MutexDestroyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    Ns_Mutex   *lockPtr = NULL;
+    Ns_ObjvSpec args[] = {
+        {"mutexid", ObjvMutexObj, &lockPtr, INT2PTR(NS_TRUE)},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        /*
+         * This is here a no-op, since the synchronization objects are
+         * normally created at process startup and exist until the
+         * process exits.
+         */
+    }
+    return result;
+}
+
+static int
+MutexEvalObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    Ns_Mutex   *lockPtr = NULL;
+    Tcl_Obj    *scriptObj = NULL;
+    Ns_ObjvSpec args[] = {
+        {"mutexid", ObjvMutexObj, &lockPtr, NULL},
+        {"script",  Ns_ObjvObj,   &scriptObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_MutexLock(lockPtr);
+        result = Tcl_EvalObjEx(interp, scriptObj, 0);
+        Ns_MutexUnlock(lockPtr);
+    }
+    return result;
+}
+
+static int
+MutexLockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    Ns_Mutex   *lockPtr = NULL;
+    Ns_ObjvSpec args[] = {
+        {"mutexid", ObjvMutexObj, &lockPtr, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_MutexLock(lockPtr);
+    }
+    return result;
+}
+
+static int
+MutexTrylockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    Ns_Mutex   *lockPtr = NULL;
+    Ns_ObjvSpec args[] = {
+        {"mutexid", ObjvMutexObj, &lockPtr, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_MutexTryLock(lockPtr)));
+    }
+    return result;
+}
+
+static int
+MutexUnlockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    Ns_Mutex   *lockPtr = NULL;
+    Ns_ObjvSpec args[] = {
+        {"mutexid", ObjvMutexObj, &lockPtr, INT2PTR(NS_TRUE)},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_MutexUnlock(lockPtr);
+    }
+    return result;
+}
+
+int
+NsTclMutexObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    const Ns_SubCmdSpec subcmds[] = {
+        {"create",  MutexCreateObjCmd},
+        {"destroy", MutexDestroyObjCmd},
+        {"eval",    MutexEvalObjCmd},
+        {"lock",    MutexLockObjCmd},
+        {"trylock", MutexTrylockObjCmd},
+        {"unlock",  MutexUnlockObjCmd},
+        {NULL, NULL}
+    };
+    return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
+}
+
+#if 0
 int
 NsTclMutexObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -332,7 +616,7 @@ NsTclMutexObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl
         case MCreateIdx:
             if (objc > 2) {
                 /*
-                 * If a name was provided, name the mutex created with
+                 * If a name was provided, name the new mutex via
                  * CreateSynchObject().
                  */
                 Ns_MutexSetName(lockPtr, Tcl_GetString(objv[2]));
@@ -376,6 +660,7 @@ NsTclMutexObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl
     }
     return result;
 }
+#endif
 
 
 /*
@@ -461,93 +746,123 @@ NsTclCritSecObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
     return result;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
- * NsTclSemaObjCmd --
+ * SemaCreateObjCmd, SemaDestroyObjCmd, SemaReleaseObjCmd, SemaWaitObjCmd --
  *
- *      Implements "ns_sema".
+ *      Implements subcommands of "ns_sema", i.e.,
+ *         "ns_sema create"
+ *         "ns_sema destroy"
+ *         "ns_sema release"
+ *         "ns_sema wait"
  *
  * Results:
- *      Tcl result.
+ *      A standard Tcl result.
  *
  * Side effects:
- *      See docs.
+ *      Depends on subcommand.
  *
  *----------------------------------------------------------------------
  */
-
-int
-NsTclSemaObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+static int
+SemaCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int                      opt = 0, result = TCL_OK;
-    long                     cnt = 0;
-    static const char *const opts[] = {
-        "create", "destroy", "release", "wait", NULL
-    };
-    enum {
-        SCreateIdx, SDestroyIdx, SReleaseIdx, SWaitIdx
+    int         result = TCL_OK;
+    long        count = TCL_INDEX_NONE;
+    Ns_ObjvSpec args[] = {
+        {"?count", Ns_ObjvLong, &count, NULL},
+        {NULL, NULL, NULL, NULL}
     };
 
-    if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "cmd ?arg ...?");
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
-
-    } else if (Tcl_GetIndexFromObj(interp, objv[1], opts, "cmd", 1, &opt) != TCL_OK) {
-        result = TCL_ERROR;
-
-    } else if (opt == SCreateIdx && objc == 3) {
-        if (Tcl_GetLongFromObj(interp, objv[2], &cnt) != TCL_OK) {
-            result = TCL_ERROR;
-        }
-    }
-
-    if (result == TCL_OK) {
-        Ns_Sema        *semaPtr;
+    } else {
         const NsInterp *itPtr = clientData;
         NsServer       *servPtr = itPtr->servPtr;
 
-        semaPtr = CreateSynchObject(itPtr,
-                                    &servPtr->tcl.synch.semaTable,
-                                    &servPtr->tcl.synch.semaId,
-                                    NULL,
-                                    semaType,
-                                    (objc == 3) ? objv[2] : NULL,
-                                    (TCL_SIZE_T)cnt);
-        switch (opt) {
-        case SCreateIdx:
-            /* Handled above. */
-            break;
+        (void) CreateSynchObject(itPtr,
+                                 &servPtr->tcl.synch.semaTable,
+                                 &servPtr->tcl.synch.semaId,
+                                 NULL,
+                                 semaType,
+                                 NULL,
+                                 (TCL_SIZE_T)count);
+    }
+    return result;
+}
+static int
+SemaDestroyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    Ns_Sema    *semaPtr = NULL;
+    Ns_ObjvSpec args[] = {
+        {"handle", ObjvSemaObj, &semaPtr, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-        case SReleaseIdx:
-            if (objc < 4) {
-                cnt = 1;
-            } else if (Tcl_GetLongFromObj(interp, objv[3], &cnt) != TCL_OK) {
-                result = TCL_ERROR;
-            }
-            if (result == TCL_OK) {
-                Ns_SemaPost(semaPtr, (TCL_SIZE_T)cnt);
-            }
-            break;
-
-        case SWaitIdx:
-            Ns_SemaWait(semaPtr);
-            break;
-
-        case SDestroyIdx:
-            /* No-op. */
-            break;
-
-        default:
-            /* unexpected value */
-            assert(opt && 0);
-            break;
-        }
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        /*
+         * This is here a no-op, since the synchronization objects are
+         * normally created at process startup and exist until the
+         * process exits.
+         */
     }
     return result;
 }
 
+static int
+SemaReleaseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    long        count = 1;
+    Ns_Sema    *semaPtr = NULL;
+    Ns_ObjvSpec args[] = {
+        {"handle", ObjvSemaObj, &semaPtr, NULL},
+        {"?count", Ns_ObjvLong, &count,   NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_SemaPost(semaPtr, (TCL_SIZE_T)count);
+    }
+    return result;
+}
+
+static int
+SemaWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    Ns_Sema    *semaPtr = NULL;
+    Ns_ObjvSpec args[] = {
+        {"handle", ObjvSemaObj, &semaPtr, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_SemaWait(semaPtr);
+    }
+    return result;
+}
+
+int
+NsTclSemaObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    const Ns_SubCmdSpec subcmds[] = {
+        {"create",  SemaCreateObjCmd},
+        {"destroy", SemaDestroyObjCmd},
+        {"release", SemaReleaseObjCmd},
+        {"wait",    SemaWaitObjCmd},
+        {NULL, NULL}
+    };
+    return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
+}
 
 
 /*
@@ -1064,14 +1379,25 @@ CreateSynchObject(const NsInterp *itPtr,
             Tcl_SetObjResult(interp, objPtr);
             Ns_DStringFree(&ds);
 
-        } else {
+        } else if (likely(initProc != NULL)) {
+            /*
+             * When an initProc is specified, create automatically a
+             * sync object, even it it does not pre-exist.
+             */
             hPtr = Tcl_CreateHashEntry(typeTable, Tcl_GetString(objPtr), &isNew);
-            Tcl_SetObjResult(interp, objPtr);
+            //fprintf(stderr, "Lookup from obj '%s' -> isNew %d\n", Tcl_GetString(objPtr), isNew);
+            //Tcl_SetObjResult(interp, objPtr);
+        } else {
+            /*
+             * Perform just a lookup.
+             */
+            hPtr = Tcl_FindHashEntry(typeTable, Tcl_GetString(objPtr));
+            isNew = 0;
         }
 
         if (isNew != 0) {
             addr = ns_calloc(1u, sizeof(void *));
-            if (cnt != TCL_INDEX_NONE) {
+            if (type == semaType && cnt != TCL_INDEX_NONE) {
                 Ns_SemaInit((Ns_Sema *) addr, cnt);
             } else if (initProc != NULL) {
                 (*initProc)(addr);
@@ -1084,8 +1410,10 @@ CreateSynchObject(const NsInterp *itPtr,
             }
             Tcl_SetHashValue(hPtr, addr);
             Ns_TclSetOpaqueObj(objPtr, type, addr);
-        } else {
+        } else if (hPtr != NULL) {
             addr = Tcl_GetHashValue(hPtr);
+        } else {
+            addr = NULL;
         }
         Ns_MutexUnlock(&servPtr->tcl.synch.lock);
     }
