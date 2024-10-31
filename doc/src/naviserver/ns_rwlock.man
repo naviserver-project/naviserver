@@ -13,66 +13,136 @@ Create, destroy, and manipulate read/write locks.
 [list_begin definitions]
 
 [call [cmd "ns_rwlock create"]]
-Initialize a read/write lock and returns an ID for it.
+Initializes a read/write lock and returns an ID for it.
 
 [call [cmd "ns_rwlock destroy"] [arg rwlockid]]
 
-Free the resources associated with the specified read/write lock. The
-rwlockid argument is the read/write lock ID returned by
-[cmd ns_rwlock] create when the lock was created.
+Releases the resources associated with the specified read/write lock. The
+[arg rwlockid] argument is the read/write lock ID returned by
+[cmd "ns_rwlock create"] when the lock was created.
+
+[para] In the current implementation, this operation is effectively a
+no-op, meaning the semaphore remains until the server shuts down.
+
+
+[call [cmd  "ns_rwlock readeval"] [arg rwlockid] [arg script]]
+
+A convenience function to lock the specified [arg rwlockid] for
+reading, runs the [arg script], and releases the lock. The command
+returns the result and any error condition of the executed
+[arg script].
+
+If [arg rwlockid] does not exist, it will be auto-created, although
+this is generally not recommended.
+
 
 [call [cmd "ns_rwlock readlock"] [arg rwlockid]]
 
-Acquire a read lock. Any number of read locks can be pending.  If
-there's a write lock active, the read lock acquisition blocks until
-the write lock is released.
-
+Acquires a read lock. Multiple read locks can run concurrently without
+blocking each other. If a write lock is active, the acquisition of a
+read lock will block until the write lock is released.
 
 [call [cmd "ns_rwlock readunlock"] [arg rwlockid]]
 
-Release a read lock.
+Releases a read lock. Internally, this operation is equivalent to
+calling [cmd "ns_rwlock unlock"].
 
+
+[call [cmd "ns_rwlock unlock"] [arg rwlockid]]
+
+Unlocks the rwlock [arg rwlockid] regardless of whether it is a read
+or write lock.
+
+
+[call [cmd  "ns_rwlock writeeval"] [arg rwlockid] [arg script]]
+
+A convenience function to lock the specified [arg rwlockid] for
+writing, runs the [arg script] and then releases the lock. The command
+returns the result and any error condition of the executed [arg script].
+
+If [arg rwlockid] does not exist, it will be auto-created, although
+this is generally not recommended.
 
 [call [cmd "ns_rwlock writelock"] [arg rwlockid]]
 
-Acquire a write lock. Only one write lock can be in effect.
-If there are pending read locks active, the write lock acquisition blocks until
-all of the read locks drain. If a subsequent read lock acquisition attempt is made,
-the write lock has priority.
+Acquires a write lock. Only one write lock can be active at any given
+time. If there are active or pending read locks, the write lock
+acquisition will block until all read locks are released. Write locks
+take priority over subsequent read lock acquisition attempts.
 
 
 [call [cmd "ns_rwlock writeunlock"] [arg rwlockid]] 
 
-Release a write lock.
+Releases a write lock. Internally, this operation is equivalent to
+calling [cmd "ns_rwlock unlock"].
+
 
 [list_end]
 
+
 [section EXAMPLES]
 
+Basic Read Lock:
 [example_begin]
- Put some examples here to illustrate command usage.
+ set rwlockid [lb]ns_rwlock create[rb]
+ ns_rwlock readlock $rwlockid
+ # Perform read-only operations here
+ ns_rwlock readunlock $rwlockid
+[example_end]
+
+Running a script under a Read Lock:
+[example_begin]
+ set result [lb]ns_rwlock readeval $rwlockid {
+    # Read-only operations
+    return "Read operation result"
+ }[rb]
+[example_end]
+
+Basic Write Lock:
+[example_begin]
+ set rwlockid [lb]ns_rwlock create[rb]
+ ns_rwlock writelock $rwlockid
+ # Perform write operations here
+ ns_rwlock writeunlock $rwlockid
+[example_end]
+
+Running a script under a Write Lock:
+[example_begin]
+ set result [lb]ns_rwlock writeeval $rwlockid {
+    # Write operations
+    return "Write operation result"
+ }[rb]
 [example_end]
 
 [section NOTES]
 About Read/Write Locks
 
 [para]
-Read/write locks are a serialization mechanism for using data structures
-where multiple reads can happen simultaneously, but where writes must
-happen singly. For example, suppose you have a hash table that is
-heavily used but doesn't change very often. You'd like to have multiple
-threads be able to read from the table without blocking on each other,
-but when you need to update the table, you can do so safely without
-having to worry about other threads reading incorrect data.
 
-[para]
-The principal feature of read/write locks is the mechanism of which locks
-have priority and which locks must wait. Any number of read locks can be
-pending. If there's a write lock active, the read lock acquisition blocks
-until the write lock is released. Also, only one write lock can be in effect.
-If there are pending read locks active, the write lock acquisition blocks until
-all of the read locks drain. If a subsequent read lock acquisition attempt is
-made while a write lock is waiting to acquire, the write lock has priority.
+Read/write locks are a synchronization mechanism designed for
+scenarios where multiple threads need to read shared data
+simultaneously, but only one thread should modify the data at a
+time. This allows efficient concurrent reads while ensuring data
+consistency during writes.
+
+Priority Rules:
+[list_begin enum]
+[enum] Read locks: Multiple read locks can be acquired simultaneously
+    without blocking. However, they will block if a write lock is
+    active.
+
+[enum] Write locks: Only one write lock can be active at a time. A write
+    lock will wait for any active read locks to be released and will
+    block any new read locks until it completes. Write locks take
+    precedence over pending read locks.
+[list_end]
+
+Use Case Example: A heavily accessed hash table that is read
+frequently but updated infrequently can benefit from read/write
+locks. This allows multiple threads to read from the table
+concurrently, while updates are safely managed by blocking until the
+current read operations complete and preventing new reads during the
+update.
 
 [see_also nsd]
 [keywords "server built-in" NaviServer]

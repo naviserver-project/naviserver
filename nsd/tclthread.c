@@ -64,6 +64,13 @@ static TCL_OBJCMDPROC_T SemaDestroyObjCmd;
 static TCL_OBJCMDPROC_T SemaReleaseObjCmd;
 static TCL_OBJCMDPROC_T SemaWaitObjCmd;
 
+static TCL_OBJCMDPROC_T RWLockCreateObjCmd;
+static TCL_OBJCMDPROC_T RWLockDestroyObjCmd;
+static TCL_OBJCMDPROC_T RWLockReadevalObjCmd;
+static TCL_OBJCMDPROC_T RWLockReadlockObjCmd;
+static TCL_OBJCMDPROC_T RWLockUnlockObjCmd;
+static TCL_OBJCMDPROC_T RWLockWriteevalObjCmd;
+static TCL_OBJCMDPROC_T RWLockWritelockObjCmd;
 
 /*
  * Local variables defined in this file.
@@ -163,6 +170,55 @@ ObjvMutexObj(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj
                                   TCL_INDEX_NONE);
         if (*dest == NULL) {
             Ns_TclPrintfResult(interp, "ns_mutex: could not convert '%s' to mutex object", Tcl_GetString(objv[0]));
+        } else {
+            *objcPtr -= 1;
+            result = TCL_OK;
+        }
+    }
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ObjvRWLockObj --
+ *
+ *      objv converter for Ns_RWLock*.
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ObjvRWLockObj(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj *const* objv)
+{
+    int result = TCL_ERROR;
+
+    NS_NONNULL_ASSERT(spec != NULL);
+
+    if (likely(*objcPtr > 0)) {
+        const NsInterp *itPtr = NsGetInterpData(interp);
+        NsServer       *servPtr = itPtr->servPtr;
+        Ns_RWLock     **dest = spec->dest;
+
+        /*
+         * When spec->arg is set this means, that the syncobj mut
+         * pre-exist and is not created on the fly.
+         */
+        *dest = CreateSynchObject(itPtr,
+                                  &servPtr->tcl.synch.rwTable,
+                                  &servPtr->tcl.synch.rwId,
+                                  PTR2INT(spec->arg) == NS_TRUE ? NULL : (Ns_Callback *) Ns_RWLockInit,
+                                  rwType,
+                                  objv[0],
+                                  TCL_INDEX_NONE);
+        if (*dest == NULL) {
+            Ns_TclPrintfResult(interp, "ns_rwlock: could not convert '%s' to RWLock object", Tcl_GetString(objv[0]));
         } else {
             *objcPtr -= 1;
             result = TCL_OK;
@@ -396,22 +452,6 @@ NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 /*
  *----------------------------------------------------------------------
  *
- * NsTclMutexObjCmd --
- *
- *      Implements "ns_mutex".
- *
- * Results:
- *      Tcl result.
- *
- * Side effects:
- *      See docs.
- *
- *----------------------------------------------------------------------
- */
-
-/*
- *----------------------------------------------------------------------
- *
  * MutexCreateObjCmd, MutexDestroyObjCmd, MutexEvalObjCmd, MutexLockObjCmd,
  * MutexTrylockObjCmd, MutexUnlockObjCmd --
  *
@@ -581,88 +621,193 @@ NsTclMutexObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 
-#if 0
-int
-NsTclMutexObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * RWLockCreateObjCmd, RWLockDestroyObjCmd,RWLockReadevalObjCmd,
+ * RWLockReadlockObjCmd, RWLockUnlockObjCmd, RWLockWriteevalkObjCmd,
+ * RWLockWriteunlockObjCmd --
+ *
+ *      Implements subcommands of "ns_rwlock", i.e.,
+ *         "ns_rwlock create"
+ *         "ns_rwlock destroy"
+ *         "ns_rwlock readeval"
+ *         "ns_rwlock readlock"
+ *         "ns_rwlock readunlock"
+ *         "ns_rwlock unlock"
+ *         "ns_rwlock writeeval"
+ *         "ns_rwlock writelock"
+ *         "ns_rwlock writeunlock"
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      Depends on subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+RWLockCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int opt, result = TCL_OK;
+    int         result = TCL_OK;
 
-    static const char *const opts[] = {
-        "create", "destroy", "eval", "lock", "trylock", "unlock", NULL
-    };
-    enum {
-        MCreateIdx, MDestroyIdx, MEvalIdx, MLockIdx, MTryLockIdx, MUnlockIdx
-    };
-    if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "cmd ?arg ...?");
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
-
-    } else if (Tcl_GetIndexFromObj(interp, objv[1], opts, "cmd", 1, &opt) != TCL_OK) {
-        result = TCL_ERROR;
-
     } else {
-        Ns_Mutex       *lockPtr;
         const NsInterp *itPtr = clientData;
         NsServer       *servPtr = itPtr->servPtr;
 
-        lockPtr = CreateSynchObject(itPtr,
-                                    &servPtr->tcl.synch.mutexTable,
-                                    &servPtr->tcl.synch.mutexId,
-                                    (Ns_Callback *) Ns_MutexInit,
-                                    mutexType,
-                                    (objc >= 3) ? objv[2] : NULL,
-                                    TCL_INDEX_NONE);
-        switch (opt) {
-        case MCreateIdx:
-            if (objc > 2) {
-                /*
-                 * If a name was provided, name the new mutex via
-                 * CreateSynchObject().
-                 */
-                Ns_MutexSetName(lockPtr, Tcl_GetString(objv[2]));
-            } else {
-                Ns_Log(Notice, "created unnamed syncobj %s",Ns_MutexGetName(lockPtr));
-            }
-            break;
-
-        case MLockIdx:
-            Ns_MutexLock(lockPtr);
-            break;
-
-        case MTryLockIdx:
-            Tcl_SetObjResult(interp, Tcl_NewIntObj(Ns_MutexTryLock(lockPtr)));
-            break;
-
-        case MUnlockIdx:
-            Ns_MutexUnlock(lockPtr);
-            break;
-
-        case MEvalIdx:
-            if (objc != 4) {
-                Tcl_WrongNumArgs(interp, 3, objv, "script");
-                result = TCL_ERROR;
-            } else {
-                Ns_MutexLock(lockPtr);
-                result = Tcl_EvalObjEx(interp, objv[3], 0);
-                Ns_MutexUnlock(lockPtr);
-            }
-            break;
-
-        case MDestroyIdx:
-            /* No-op. */
-            break;
-
-        default:
-            /* unexpected value */
-            assert(opt && 0);
-            break;
-        }
+        (void) CreateSynchObject(itPtr,
+                                 &servPtr->tcl.synch.rwTable,
+                                 &servPtr->tcl.synch.rwId,
+                                 (Ns_Callback *) Ns_RWLockInit,
+                                 rwType,
+                                 NULL,
+                                 TCL_INDEX_NONE);
     }
     return result;
 }
-#endif
 
-
+static int
+RWLockDestroyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    Ns_RWLock  *lockPtr = NULL;
+    Ns_ObjvSpec args[] = {
+        {"rwlockid", ObjvRWLockObj, &lockPtr, INT2PTR(NS_TRUE)},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        /*
+         * This is here a no-op, since the synchronization objects are
+         * normally created at process startup and exist until the
+         * process exits.
+         */
+    }
+    return result;
+}
+
+static int
+RWLockReadlockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    Ns_RWLock  *lockPtr = NULL;
+    Ns_ObjvSpec args[] = {
+        {"rwlockid", ObjvRWLockObj, &lockPtr, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_RWLockRdLock(lockPtr);
+    }
+    return result;
+}
+
+static int
+RWLockReadevalObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    Ns_RWLock  *lockPtr = NULL;
+    Tcl_Obj    *scriptObj = NULL;
+    Ns_ObjvSpec args[] = {
+        {"rwlockid", ObjvRWLockObj, &lockPtr, NULL},
+        {"script",   Ns_ObjvObj,    &scriptObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_RWLockRdLock(lockPtr);
+        result = Tcl_EvalObjEx(interp, scriptObj, 0);
+        Ns_RWLockUnlock(lockPtr);
+    }
+    return result;
+}
+
+static int
+RWLockWritelockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    Ns_RWLock  *lockPtr = NULL;
+    Ns_ObjvSpec args[] = {
+        {"rwlockid", ObjvRWLockObj, &lockPtr, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_RWLockWrLock(lockPtr);
+    }
+    return result;
+}
+
+static int
+RWLockWriteevalObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    Ns_RWLock  *lockPtr = NULL;
+    Tcl_Obj    *scriptObj = NULL;
+    Ns_ObjvSpec args[] = {
+        {"rwlockid", ObjvRWLockObj, &lockPtr, NULL},
+        {"script",   Ns_ObjvObj,    &scriptObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_RWLockWrLock(lockPtr);
+        result = Tcl_EvalObjEx(interp, scriptObj, 0);
+        Ns_RWLockUnlock(lockPtr);
+    }
+    return result;
+}
+
+static int
+RWLockUnlockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    Ns_RWLock   *lockPtr = NULL;
+    Ns_ObjvSpec args[] = {
+        {"rwlockid", ObjvRWLockObj, &lockPtr, INT2PTR(NS_TRUE)},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_RWLockUnlock(lockPtr);
+    }
+    return result;
+}
+
+int
+NsTclRWLockObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    const Ns_SubCmdSpec subcmds[] = {
+        {"create",      RWLockCreateObjCmd},
+        {"destroy",     RWLockDestroyObjCmd},
+        {"readeval",    RWLockReadevalObjCmd},
+        {"readlock",    RWLockReadlockObjCmd},
+        {"readunlock",  RWLockUnlockObjCmd},
+        {"unlock",      RWLockUnlockObjCmd},
+        {"writeeval",   RWLockWriteevalObjCmd},
+        {"writelock",   RWLockWritelockObjCmd},
+        {"writeunlock", RWLockUnlockObjCmd},
+        {NULL, NULL}
+    };
+    return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -791,6 +936,7 @@ SemaCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl
     }
     return result;
 }
+
 static int
 SemaDestroyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -997,110 +1143,6 @@ NsTclCondObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         break;
     }
 
-    return result;
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclRWLockObjCmd --
- *
- *      Implements "ns_rwlock".
- *
- * Results:
- *      Tcl result.
- *
- * Side effects:
- *      See docs.
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclRWLockObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
-{
-    int             opt, result = TCL_OK;
-
-    static const char *const opts[] = {
-        "create", "destroy", "readlock", "readunlock", "readeval",
-        "writelock", "writeunlock", "writeeval", "unlock", NULL
-    };
-    enum {
-        RCreateIdx, RDestroyIdx, RReadLockIdx, RReadUnlockIdx, RReadEvalIdx,
-        RWriteLockIdx, RWriteUnlockIdx, RWriteEvalIdx, RUnlockIdx
-    };
-    if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "cmd ?arg ...?");
-        result = TCL_ERROR;
-
-    } else if (Tcl_GetIndexFromObj(interp, objv[1], opts, "cmd", 1, &opt) != TCL_OK) {
-        result = TCL_ERROR;
-
-    } else {
-        const NsInterp *itPtr   = clientData;
-        NsServer       *servPtr = itPtr->servPtr;
-        Ns_RWLock      *rwlockPtr = CreateSynchObject(itPtr,
-                                                      &servPtr->tcl.synch.rwTable,
-                                                      &servPtr->tcl.synch.rwId,
-                                                      (Ns_Callback *) Ns_RWLockInit,
-                                                      rwType,
-                                                      (objc == 3) ? objv[2] : NULL,
-                                                      TCL_INDEX_NONE);
-        switch (opt) {
-        case RCreateIdx:
-            /* Handled above. */
-            Ns_RWLockSetName2(rwlockPtr, "rw:ns_rwlock", servPtr->server);
-            break;
-
-        case RReadLockIdx:
-            Ns_RWLockRdLock(rwlockPtr);
-            break;
-
-        case RWriteLockIdx:
-            Ns_RWLockWrLock(rwlockPtr);
-            break;
-
-        case RReadUnlockIdx:
-            NS_FALL_THROUGH; /* fall through */
-        case RWriteUnlockIdx:
-            NS_FALL_THROUGH; /* fall through */
-        case RUnlockIdx:
-            Ns_RWLockUnlock(rwlockPtr);
-            break;
-
-        case RReadEvalIdx:
-            if (objc != 4) {
-                Tcl_WrongNumArgs(interp, 3, objv, "script");
-                result = TCL_ERROR;
-            } else {
-                Ns_RWLockRdLock(rwlockPtr);
-                result = Tcl_EvalObjEx(interp, objv[3], 0);
-                Ns_RWLockUnlock(rwlockPtr);
-            }
-            break;
-
-        case RWriteEvalIdx:
-            if (objc != 4) {
-                Tcl_WrongNumArgs(interp, 3, objv, "script");
-                result = TCL_ERROR;
-            } else {
-                Ns_RWLockWrLock(rwlockPtr);
-                result = Tcl_EvalObjEx(interp, objv[3], 0);
-                Ns_RWLockUnlock(rwlockPtr);
-            }
-            break;
-
-        case RDestroyIdx:
-            /* No-op. */
-            break;
-
-        default:
-            /* unexpected value */
-            assert(opt && 0);
-            break;
-        }
-    }
     return result;
 }
 

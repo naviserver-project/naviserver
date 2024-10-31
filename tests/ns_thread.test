@@ -33,7 +33,7 @@ test ns_thread-1.5 {basic syntax} -body {
 
 test ns_thread-1.6 {basic syntax} -body {
     ns_rwlock ?
-} -returnCodes error -result {bad cmd "?": must be create, destroy, readlock, readunlock, readeval, writelock, writeunlock, writeeval, or unlock}
+} -returnCodes error -result {bad subcmd "?": must be create, destroy, readeval, readlock, readunlock, unlock, writeeval, writelock, or writeunlock}
 
 
 
@@ -235,11 +235,11 @@ test ns_thread-6.6 {rwlock eval write-locked} -body {
 
 test ns_thread-6.7 {rwlock readeval args} -body {
     ns_rwlock readeval test:rwlock
-} -returnCodes error -result {wrong # args: should be "ns_rwlock readeval test:rwlock script"}
+} -returnCodes error -result {wrong # args: should be "ns_rwlock readeval rwlockid script"}
 
 test ns_thread-6.8 {rwlock writeeval args} -body {
     ns_rwlock writeeval test:rwlock
-} -returnCodes error -result {wrong # args: should be "ns_rwlock writeeval test:rwlock script"}
+} -returnCodes error -result {wrong # args: should be "ns_rwlock writeeval rwlockid script"}
 
 
 
