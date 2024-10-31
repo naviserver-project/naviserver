@@ -118,7 +118,7 @@ ObjvSemaObj(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj 
                                   semaType,
                                   objv[0],
                                   TCL_INDEX_NONE);
-        //fprintf(stderr, "result of conversion %p\n",(void*)*dest);
+        //fprintf(stderr, "ns_sema: result of conversion %p\n",(void*)*dest);
         if (*dest == NULL) {
             Ns_TclPrintfResult(interp, "ns_sema: could not convert '%s' to semaphore object", Tcl_GetString(objv[0]));
         } else {
@@ -914,7 +914,7 @@ static int
 SemaCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
-    long        count = TCL_INDEX_NONE;
+    long        count = 0;
     Ns_ObjvSpec args[] = {
         {"?count", Ns_ObjvLong, &count, NULL},
         {NULL, NULL, NULL, NULL}
