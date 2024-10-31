@@ -17,15 +17,18 @@ implemented with a mutex and a counter.  The allowed options (which may be abbre
 
 [call [cmd  "ns_sema create"] [opt [arg count]]]
 
-Initializes a new semaphore whose count is initialized to zero by default
-or [arg count] otherwise.  Returns a handle to the semaphore object.
+Initializes a new semaphore object. The [arg count] argument specifies
+the initial value of the semaphore's counter. If [arg count] is not
+provided, the counter is initialized to zero. The command returns a
+handle for the semaphore object to be use by the other commands.
+
 
 [call [cmd  "ns_sema destroy"] [arg handle]]
 
 Destroys the semaphore [arg handle] and frees any resources it was
-using. Actually, in the current implementation, this operation is a
-no-op, the semaphore will live until the server shuts down.
-
+using. Note: In the current implementation, this command is
+effectively a no-op; the semaphore will continue to exist until the
+server shuts down.
 
 
 [call [cmd  "ns_sema release"] [arg handle] [opt [arg count]]]
@@ -47,13 +50,26 @@ this is true.  Decrements the counter by one when the counter is greater than ze
 
 [section EXAMPLES]
 
+Using a semaphore to synchronize threads
+
 [example_begin]
- # need an example here
+ set sema [lb]ns_sema create[rb]
+
+ # Start a thread that waits for the semaphore
+ ns_thread begin [lb]subst {
+    ns_log notice "... thread waits for $sema"
+    ns_sema wait $sema
+    ns_log notice "... thread got semaphore"
+ }[rb]
+
+ # Release the semaphore in two seconds to allow the waiting thread to proceed
+ ns_sleep 2s
+ ns_sema release $sema
 [example_end]
 
 
 [see_also ns_cond ns_critsec ns_mutex ns_rwlock ns_thread ]
-[keywords "server built-in" semaphore thread synchronization]
+[keywords "server built-in" semaphore mutex threading synchronization concurrency]
 
 
 [manpage_end]
