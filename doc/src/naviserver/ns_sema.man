@@ -54,14 +54,14 @@ Using a semaphore to synchronize threads
 
 [example_begin]
  set sema [lb]ns_sema create[rb]
-
+ 
  # Start a thread that waits for the semaphore
  ns_thread begin [lb]subst {
     ns_log notice "... thread waits for $sema"
     ns_sema wait $sema
-    ns_log notice "... thread got semaphore"
+    ns_log notice "... thread proceeds"
  }[rb]
-
+ 
  # Release the semaphore in two seconds to allow the waiting thread to proceed
  ns_sleep 2s
  ns_sema release $sema
