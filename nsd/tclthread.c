@@ -72,6 +72,15 @@ static TCL_OBJCMDPROC_T RWLockUnlockObjCmd;
 static TCL_OBJCMDPROC_T RWLockWriteevalObjCmd;
 static TCL_OBJCMDPROC_T RWLockWritelockObjCmd;
 
+
+static TCL_OBJCMDPROC_T CondAbswaitObjCmd;
+static TCL_OBJCMDPROC_T CondBroadcastObjCmd;
+static TCL_OBJCMDPROC_T CondCreateObjCmd;
+static TCL_OBJCMDPROC_T CondDestroyObjCmd;
+static TCL_OBJCMDPROC_T CondSignalObjCmd;
+static TCL_OBJCMDPROC_T CondWaitObjCmd;
+
+
 /*
  * Local variables defined in this file.
  */
@@ -182,6 +191,55 @@ ObjvMutexObj(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj
 /*
  *----------------------------------------------------------------------
  *
+ * ObjvCondObj --
+ *
+ *      objv converter for Ns_Mutex*.
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ObjvCondObj(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj *const* objv)
+{
+    int result = TCL_ERROR;
+
+    NS_NONNULL_ASSERT(spec != NULL);
+
+    if (likely(*objcPtr > 0)) {
+        const NsInterp *itPtr = NsGetInterpData(interp);
+        NsServer       *servPtr = itPtr->servPtr;
+        Ns_Cond       **dest = spec->dest;
+
+        /*
+         * When spec->arg is set this means, that the syncobj mut
+         * pre-exist and is not created on the fly.
+         */
+        *dest = CreateSynchObject(itPtr,
+                                  &servPtr->tcl.synch.condTable,
+                                  &servPtr->tcl.synch.condId,
+                                  PTR2INT(spec->arg) == NS_TRUE ? NULL : (Ns_Callback *) Ns_CondInit,
+                                  condType,
+                                  objv[0],
+                                  TCL_INDEX_NONE);
+        if (*dest == NULL) {
+            Ns_TclPrintfResult(interp, "ns_cond: could not convert '%s' to condition object", Tcl_GetString(objv[0]));
+        } else {
+            *objcPtr -= 1;
+            result = TCL_OK;
+        }
+    }
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ObjvRWLockObj --
  *
  *      objv converter for Ns_RWLock*.
@@ -226,6 +284,30 @@ ObjvRWLockObj(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Ob
     }
 
     return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * DestroyHelper --
+ *
+ *      Factored-out code used identical in many of the ns_* sync
+ *      interfaces as a delete operation.  The destroy operation a
+ *      no-op, since the synchronization objects are normally created
+ *      at process startup and exist until the process exits.
+ *
+ * Results:
+ *      NS_OK or NS_ERROR.  String result of script available via interp.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+DestroyHelper(Ns_ObjvSpec args[], Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv ) {
+    return ((Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) ? TCL_ERROR : TCL_OK);
 }
 
 
@@ -511,24 +593,14 @@ MutexCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 static int
 MutexDestroyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int         result = TCL_OK;
-    Ns_Mutex   *lockPtr = NULL;
+    Ns_Mutex   *lockPtr;
     Ns_ObjvSpec args[] = {
         {"mutexid", ObjvMutexObj, &lockPtr, INT2PTR(NS_TRUE)},
         {NULL, NULL, NULL, NULL}
     };
-
-    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
-    } else {
-        /*
-         * This is here a no-op, since the synchronization objects are
-         * normally created at process startup and exist until the
-         * process exits.
-         */
-    }
-    return result;
+    return DestroyHelper(args, interp, objc, objv);
 }
+
 
 static int
 MutexEvalObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
@@ -621,6 +693,195 @@ NsTclMutexObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * CondAbswaitObjCmd. CondBroadcastObjCmd. CondCreateObjCmd,
+ * CondDestroyObjCmd, CondSignalObjCmd, CondWaitObjCmd --
+ *
+ *      Implements subcommands of "ns_cond", i.e.,
+ *         "ns_cond abswait"
+ *         "ns_cond broadcast"
+ *         "ns_cond create"
+ *         "ns_cond destroy"
+ *         "ns_cond set"
+ *         "ns_cond signal"
+ *         "ns_cond wait"
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      Depends on subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+CondBroadcastObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int        result = TCL_OK;
+    Ns_Cond   *condPtr = NULL;
+    Ns_ObjvSpec args[] = {
+        {"condid", ObjvCondObj, &condPtr, INT2PTR(NS_TRUE)},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_CondBroadcast(condPtr);
+    }
+    return result;
+}
+
+static int
+CondCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        const NsInterp *itPtr = clientData;
+        NsServer       *servPtr = itPtr->servPtr;
+
+        (void) CreateSynchObject(itPtr,
+                                 &servPtr->tcl.synch.condTable,
+                                 &servPtr->tcl.synch.condId,
+                                 (Ns_Callback *) Ns_CondInit,
+                                 condType,
+                                 NULL,
+                                 TCL_INDEX_NONE);
+    }
+    return result;
+}
+
+static int
+CondDestroyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    Ns_Cond    *lockPtr;
+    Ns_ObjvSpec args[] = {
+        {"condid", ObjvCondObj, &lockPtr, INT2PTR(NS_TRUE)},
+        {NULL, NULL, NULL, NULL}
+    };
+    return DestroyHelper(args, interp, objc, objv);
+}
+
+
+static int
+CondSignalObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    Ns_Cond    *condPtr = NULL;
+    Ns_ObjvSpec args[] = {
+        {"condid", ObjvCondObj, &condPtr, INT2PTR(NS_TRUE)},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_CondSignal(condPtr);
+    }
+    return result;
+}
+
+static int
+CondAbswaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    Ns_Cond    *condPtr = NULL;
+    Ns_Mutex   *lockPtr = NULL;
+    Ns_Time     timeout = {0, 0};
+    long        epoch = -1;
+    Ns_ObjvSpec args[] = {
+        {"condid",   ObjvCondObj,  &condPtr, INT2PTR(NS_TRUE)},
+        {"mutexid",  ObjvMutexObj, &lockPtr, INT2PTR(NS_TRUE)},
+        {"?epoch",  Ns_ObjvLong,   &epoch, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_ReturnCode status;
+        /*
+         * Absolute time wait: ns_cond abswait
+         */
+        if (epoch >= 0 ) {
+            timeout.sec = epoch;
+        }
+        status = Ns_CondTimedWait(condPtr, lockPtr, &timeout);
+
+        if (status == NS_OK) {
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
+        } else if (status == NS_TIMEOUT) {
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+        } else {
+            result = TCL_ERROR;
+        }
+    }
+    return result;
+}
+
+static int
+CondWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    Ns_Cond    *condPtr = NULL;
+    Ns_Mutex   *lockPtr = NULL;
+    Ns_Time    *timeoutPtr = NULL;
+    Ns_ObjvSpec args[] = {
+        {"condid",   ObjvCondObj,  &condPtr, INT2PTR(NS_TRUE)},
+        {"mutexid",  ObjvMutexObj, &lockPtr, INT2PTR(NS_TRUE)},
+        {"?timeout", Ns_ObjvTime,  &timeoutPtr, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        /*
+         * Relative time wait: ns_cond wait
+         */
+        if (timeoutPtr == NULL) {
+            Ns_CondWait(condPtr, lockPtr);
+        } else {
+            Ns_Time       abstime;
+            Ns_ReturnCode status;
+
+            Ns_GetTime(&abstime);
+            Ns_IncrTime(&abstime, timeoutPtr->sec, timeoutPtr->usec);
+            status = Ns_CondTimedWait(condPtr, lockPtr, &abstime);
+
+            if (status == NS_OK) {
+                Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
+            } else if (status == NS_TIMEOUT) {
+                Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+            } else {
+                result = TCL_ERROR;
+            }
+        }
+    }
+    return result;
+}
+
+int
+NsTclCondObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    const Ns_SubCmdSpec subcmds[] = {
+        {"abswait",   CondAbswaitObjCmd},
+        {"broadcast", CondBroadcastObjCmd},
+        {"create",    CondCreateObjCmd},
+        {"destroy",   CondDestroyObjCmd},
+        {"set",       CondSignalObjCmd},
+        {"signal",    CondSignalObjCmd},
+        {"wait",      CondWaitObjCmd},
+        {NULL, NULL}
+    };
+    return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -673,23 +934,12 @@ RWLockCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
 static int
 RWLockDestroyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int         result = TCL_OK;
-    Ns_RWLock  *lockPtr = NULL;
+    Ns_RWLock  *lockPtr;
     Ns_ObjvSpec args[] = {
         {"rwlockid", ObjvRWLockObj, &lockPtr, INT2PTR(NS_TRUE)},
         {NULL, NULL, NULL, NULL}
     };
-
-    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
-    } else {
-        /*
-         * This is here a no-op, since the synchronization objects are
-         * normally created at process startup and exist until the
-         * process exits.
-         */
-    }
-    return result;
+    return DestroyHelper(args, interp, objc, objv);
 }
 
 static int
@@ -940,23 +1190,12 @@ SemaCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl
 static int
 SemaDestroyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int         result = TCL_OK;
-    Ns_Sema    *semaPtr = NULL;
+    Ns_Sema    *lockPtr;
     Ns_ObjvSpec args[] = {
-        {"handle", ObjvSemaObj, &semaPtr, NULL},
+        {"handle", ObjvSemaObj, &lockPtr, INT2PTR(NS_TRUE)},
         {NULL, NULL, NULL, NULL}
     };
-
-    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
-    } else {
-        /*
-         * This is here a no-op, since the synchronization objects are
-         * normally created at process startup and exist until the
-         * process exits.
-         */
-    }
-    return result;
+    return DestroyHelper(args, interp, objc, objv);
 }
 
 static int
@@ -1008,142 +1247,6 @@ NsTclSemaObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         {NULL, NULL}
     };
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * NsTclCondObjCmd --
- *
- *      Implements "ns_cond".
- *
- * Results:
- *      Tcl result.
- *
- * Side effects:
- *      See docs.
- *
- *----------------------------------------------------------------------
- */
-
-int
-NsTclCondObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
-{
-    const NsInterp *itPtr   = clientData;
-    NsServer       *servPtr = itPtr->servPtr;
-    Ns_Cond        *condPtr;
-    Ns_Time         timeout, abstime;
-    int             opt, result = TCL_OK;
-
-    static const char *const opts[] = {
-        "abswait", "broadcast", "create", "destroy", "set",
-        "signal", "wait", NULL
-    };
-    enum {
-        EAbsWaitIdx, EBroadcastIdx, ECreateIdx, EDestroyIdx, ESetIdx,
-        ESignalIdx, EWaitIdx
-    };
-    if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "cmd ?arg ...?");
-        return TCL_ERROR;
-    }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "cmd", 1, &opt) != TCL_OK) {
-        return TCL_ERROR;
-    }
-
-    condPtr = CreateSynchObject(itPtr,
-                                &servPtr->tcl.synch.condTable,
-                                &servPtr->tcl.synch.condId,
-                                (Ns_Callback *) Ns_CondInit,
-                                condType,
-                                (objc >= 3) ? objv[2] : NULL,
-                                TCL_INDEX_NONE);
-    switch (opt) {
-    case ECreateIdx:
-        /* Handled above. */
-        break;
-
-    case EAbsWaitIdx:
-        NS_FALL_THROUGH; /* fall through */
-    case EWaitIdx:
-        if (objc != 4 && objc != 5) {
-            Tcl_WrongNumArgs(interp, 2, objv, "condId mutexId ?timeout?");
-            result = TCL_ERROR;
-
-        } else {
-            Ns_Mutex       *lockPtr;
-
-            lockPtr = CreateSynchObject(itPtr,
-                                        &servPtr->tcl.synch.mutexTable,
-                                        &servPtr->tcl.synch.mutexId,
-                                        (Ns_Callback *) Ns_MutexInit,
-                                        mutexType,
-                                        objv[3],
-                                        TCL_INDEX_NONE);
-            if (objc == 4) {
-                timeout.sec = timeout.usec = 0;
-            } else if (Ns_TclGetTimeFromObj(interp, objv[4], &timeout) != TCL_OK) {
-                result = TCL_ERROR;
-            }
-
-            if (result == TCL_OK) {
-                Ns_ReturnCode   status;
-
-                /*
-                 * Get timeout and wait.
-                 */
-                if (opt == EAbsWaitIdx) {
-                    /*
-                     * Absolute time wait: ns_cond abswait
-                     */
-                    status = Ns_CondTimedWait(condPtr, lockPtr, &timeout);
-                } else {
-                    /*
-                     * Relative time wait: ns_cond wait
-                     */
-                    if (objc == 4 || (timeout.sec == 0 && timeout.usec == 0)) {
-                        Ns_CondWait(condPtr, lockPtr);
-                        status = NS_OK;
-                    } else {
-                        Ns_GetTime(&abstime);
-                        Ns_IncrTime(&abstime, timeout.sec, timeout.usec);
-                        status = Ns_CondTimedWait(condPtr, lockPtr, &abstime);
-                    }
-                }
-
-                if (status == NS_OK) {
-                    Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
-                } else if (status == NS_TIMEOUT) {
-                    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-                } else {
-                    result = TCL_ERROR;
-                }
-            }
-        }
-        break;
-
-    case EBroadcastIdx:
-        Ns_CondBroadcast(condPtr);
-        break;
-
-    case ESetIdx:
-        NS_FALL_THROUGH; /* fall through */
-    case ESignalIdx:
-        Ns_CondSignal(condPtr);
-        break;
-
-    case EDestroyIdx:
-        /* No-op. */
-        break;
-
-    default:
-        /* unexpected value */
-        assert(opt && 0);
-        break;
-    }
-
-    return result;
 }
 
 

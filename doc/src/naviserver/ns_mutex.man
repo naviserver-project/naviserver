@@ -107,7 +107,7 @@ At shutdown (for example, in your shutdown procedure registered with
 [example_end]
 
 [see_also ns_atsignal ns_cond ns_critsec ns_rwlock ns_sema ns_thread ]
-[keywords "server built-in" mutex thread synchronization]
+[keywords "server built-in" mutex threading synchronization concurrency]
 
 [manpage_end]
 

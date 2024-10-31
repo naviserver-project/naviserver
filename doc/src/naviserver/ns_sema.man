@@ -56,7 +56,7 @@ Using a semaphore to synchronize threads
  set sema [lb]ns_sema create[rb]
  
  # Start a thread that waits for the semaphore
- ns_thread begin [lb]subst {
+ ns_thread begindetached [lb]subst {
     ns_log notice "... thread waits for $sema"
     ns_sema wait $sema
     ns_log notice "... thread proceeds"

@@ -146,7 +146,7 @@ current read operations complete and preventing new reads during the
 update.
 
 [see_also ns_cond ns_critsec ns_mutex ns_sema ns_thread ]
-[keywords "server built-in" wrlock thread synchronization]
+[keywords "server built-in" rwlock threading synchronization concurrency]
 
 
 [manpage_end]

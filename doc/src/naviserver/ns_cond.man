@@ -6,59 +6,100 @@
 
 [description]
 
-This command provides a mechanism to manipulate condition variables.
-
-[list_begin definitions]
-
-
-[call [cmd ns_cond] [arg option] [opt [arg {arg arg ...}]]]
-
-
-[list_end]
+The [cmd "ns_cond"] command provides mechanisms for manipulating
+condition variables, which are essential for thread
+synchronization. Condition variables allow threads to wait for
+specific conditions to be met while holding a mutex for coordination
+with other threads.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[call [cmd  "ns_cond broadcast"] [arg object]]
+[call [cmd  "ns_cond broadcast"] [arg condId]]
 
-Wakes up all threads waiting on the specified object.
+Wakes up all threads currently waiting on the specified condition
+variable identified by [arg condId]. This is used when multiple threads need
+to be notified simultaneously that a condition has changed.
+
 
 [call [cmd  "ns_cond create"]]
 
-Initializes a new condition variable and returns a handle to it.
+Initializes a new condition variable and returns a handle
+([arg condId]) that can be used in subsequent [cmd ns_cond] commands.
 
-[call [cmd  "ns_cond destroy"] [arg object]]
 
-Destroys the condition variable and frees any resources it was using.
+[call [cmd  "ns_cond destroy"] [arg condId]]
 
-NOTE: No threads must be waiting on the condition variable, or else the behavior
-is undefined and will likely crash the server.
+Destroys the condition variable identified by [arg condId] and
+releases any associated resources.
 
-[call [cmd  "ns_cond set"] [arg object}]]
+Note: Ensure that no threads are waiting on the condition variable
+when calling this command, as undefined behavior (such as server
+crashes) can occur. Currently, this operation is a no-op, meaning the
+condition variable will persist until the server shuts down.
 
-Wakes up one thread waiting on the specified object.  If more than one thread
-is waiting, only one is woken up.  If no threads are waiting, nothing happens.
+
+[call [cmd  "ns_cond set"] [arg condId]]
+
+Synonym for [cmd  "ns_cond signal"].
+
+[call [cmd  "ns_cond signal"] [arg condId]]
+
+Wakes up one thread waiting on the specified [arg condId].  If more
+than one thread is waiting, only one will be notified.  If no threads
+are waiting, the operation has no effect.
+
+
 
 [call [cmd  "ns_cond abswait"] [arg condId] [arg mutexId] [opt [arg timeout]]]
 
-Waits on a condition variable. If [arg timeout] is specified, it
-refers to an absolute time in Unix seconds to wait until.  
-If not specified, timeout defaults to 0, which causes the command
-to not sleep at all.  Returns 1 on success or 0 on timeout.
+Waits on the condition variable [arg condId] while holding the mutex
+identified by [arg mutexId]. The timeout specifies an absolute time
+in Unix epoch seconds to wait until.
+
+Returns 1 on success (condition met) or 0 on timeout.
 
 [call [cmd  "ns_cond wait"] [arg condId] [arg mutexId] [opt [arg timeout]]]
 
-Waits on a condition variable.  If [arg timeout] is not specified, the thread will sleep
-indefinitely.  Otherwise, the thread will wait up to timeout seconds.  Returns 1
-on success or 0 on timeout.
+Waits on the condition variable [arg condId] while holding the mutex
+[arg mutexId]. If [arg timeout] is provided, the thread will wait for up to
+timeout seconds; otherwise, it waits indefinitely until the condition
+is signaled.
+
+Returns 1 on success (condition met) or 0 on timeout.
 
 [list_end]
 
 [section EXAMPLES]
 
-[see_also nsd ns_event ns_mutex ns_thread]
-[keywords "server built-in" mutex thread]
+[example_begin]
+ # Create a condition variable and a mutex
+ set condId [lb]ns_cond create[rb]
+ set mutexId [lb]ns_mutex create condition-example[rb]
+ 
+ #
+ # Thread 1: Wait for the condition
+ #
+ ns_thread begindetached [lb]subst {
+    ns_mutex lock $mutexId
+    if {[lb]ns_cond wait $condId $mutexId 10[rb] == 1} {
+        ns_log notice "==============  thread 1: Condition met, resuming work"
+    } else {
+        ns_log notice "==============  thread 1: Timed out waiting for condition"
+    }
+    ns_mutex unlock $mutexId
+ }[rb]
+ 
+ #
+ # Thread 2: Signal the condition, after a little sleep
+ #
+ ns_sleep 2s
+ ns_cond signal $condId
+[example_end]
+
+[see_also ns_sema ns_critsec ns_mutex ns_rwlock ns_thread ]
+[keywords "server built-in" semaphore mutex threading synchronization concurrency]
 
 [manpage_end]
 

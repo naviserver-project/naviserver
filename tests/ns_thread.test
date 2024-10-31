@@ -29,7 +29,7 @@ test ns_thread-1.4.2 {basic syntax} -body {
 
 test ns_thread-1.5 {basic syntax} -body {
     ns_cond ?
-} -returnCodes error -result {bad cmd "?": must be abswait, broadcast, create, destroy, set, signal, or wait}
+} -returnCodes error -result {bad subcmd "?": must be abswait, broadcast, create, destroy, set, signal, or wait}
 
 test ns_thread-1.6 {basic syntax} -body {
     ns_rwlock ?
