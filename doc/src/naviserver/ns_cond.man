@@ -81,7 +81,7 @@ Returns 1 on success (condition met) or 0 on timeout.
  #
  # Thread 1: Wait for the condition
  #
- ns_thread begindetached [lb]subst {
+ ns_thread create -detached [lb]subst {
     ns_mutex lock $mutexId
     if {[lb]ns_cond wait $condId $mutexId 10[rb] == 1} {
         ns_log notice "==============  thread 1: Condition met, resuming work"

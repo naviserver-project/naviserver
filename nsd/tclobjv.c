@@ -1169,7 +1169,7 @@ Ns_ObjvFlags(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
  *
  * Ns_ObjvBreak --
  *
- *          Handle '--' option/argument separator.
+ *          Handle "--" option/argument separator.
  *
  * Results:
  *      Always TCL_BREAK.

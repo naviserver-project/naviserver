@@ -88,9 +88,9 @@ is already in the critical section.
  # (assuming, the proc "log_message" was loaded before and is
  # available in all threads)
  #
- ns_thread begindetached { log_message "Thread 1: Starting process" }
- ns_thread begindetached { log_message "Thread 2: Completed task A" }
- ns_thread begindetached { log_message "Thread 3: Encountered an error" }
+ ns_thread create -detached { log_message "Thread 1: Starting process" }
+ ns_thread create -detached { log_message "Thread 2: Completed task A" }
+ ns_thread create -detached { log_message "Thread 3: Encountered an error" }
 [example_end]
 
 Explanation:
@@ -100,11 +100,9 @@ Explanation:
 [item] Each thread can safely call [term log_message], and the critical section guarantees exclusive access during the write operation.
 [list_end]
 
-[see_also ns_cond ns_event ns_mutex ns_thread]
-[keywords "server built-in" mutex thread]
-
-see_also ns_cond ns_sema ns_mutex ns_rwlock ns_thread ]
+[see_also ns_cond ns_sema ns_mutex ns_rwlock ns_thread ]
 [keywords "server built-in" threading synchronization concurrency]
+
 
 
 [manpage_end]

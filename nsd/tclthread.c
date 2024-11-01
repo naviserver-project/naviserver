@@ -337,6 +337,44 @@ ObjvCsObj(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj *c
     return result;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * ObjvThreadObj --
+ *
+ *      objv converter for Ns_Thread*.
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ObjvThreadObj(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj *const* objv)
+{
+    int result = TCL_ERROR;
+
+    NS_NONNULL_ASSERT(spec != NULL);
+
+    if (likely(*objcPtr > 0)) {
+        void          **dest = spec->dest;
+
+        if (Ns_TclGetAddrFromObj(interp, objv[0], threadType, dest) == TCL_OK) {
+            if (*dest == NULL) {
+                Ns_TclPrintfResult(interp, "ns_thread: could not convert '%s' to Ns_Thread object",
+                                   Tcl_GetString(objv[0]));
+            } else {
+                *objcPtr -= 1;
+                result = TCL_OK;
+            }
+        }
+    }
+
+    return result;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -436,150 +474,232 @@ Ns_TclDetachedThread(Tcl_Interp *interp, const char *script)
  *
  *----------------------------------------------------------------------
  */
+/*
+ *----------------------------------------------------------------------
+ *
+ * ThreadCreateObjCmd, ThreadHandlObjCmd, ThreadIdObjCmd, ThreadNameObjCmd,
+ * ThreadStackinfoObjCmd, ThreadWaitObjCmd, ThreadYieldObjCmd --
+ *
+ *      Implements subcommands of "ns_thread", i.e.,
+ *         "ns_thread create"
+ *         "ns_thread handle"
+ *         "ns_thread id"
+ *         "ns_thread name"
+ *         "ns_thread stackinfo"
+ *         "ns_muthreadtex wait"
+ *         "ns_muthreadtex yield"
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      Depends on subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ThreadCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    const NsInterp *itPtr = clientData;
+    int             result = TCL_OK, isDetached = (int)NS_FALSE;
+    char           *threadName = (char *)"nsthread", *scriptString;
+    Ns_ObjvSpec opts[] = {
+        {"-detached", Ns_ObjvBool,   &isDetached, INT2PTR(NS_TRUE)},
+        {"-name",     Ns_ObjvString, &threadName, NULL},
+        {"--",        Ns_ObjvBreak,  NULL,        NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec args[] = {
+        {"script", Ns_ObjvString, &scriptString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (objc > 1) {
+        const char  *subcmdName = Tcl_GetString(objv[1]);
+
+        if (*subcmdName == 'b' && strcmp(subcmdName, "begin") == 0) {
+            Ns_LogDeprecated(objv, 2, "ns_thread create ...", NULL);
+        } else if (*subcmdName == 'b' && strcmp(subcmdName, "begindetached") == 0) {
+            Ns_LogDeprecated(objv, 2, "ns_thread create -detached ...", NULL);
+            isDetached = (int)NS_TRUE;
+        }
+    }
+
+    if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_ReturnCode status;
+        Ns_Thread     tid;
+
+        if (isDetached == (int)NS_TRUE) {
+            status = CreateTclThread(itPtr, scriptString, NS_TRUE, threadName, NULL);
+        } else {
+            status = CreateTclThread(itPtr, scriptString, NS_FALSE, threadName, &tid);
+            if (status == NS_OK) {
+                Ns_TclSetAddrObj(Tcl_GetObjResult(interp), threadType, tid);
+            }
+        }
+        if (status != NS_OK) {
+            Ns_TclPrintfResult(interp, "cannot create thread");
+            result = TCL_ERROR;
+        }
+    }
+    return result;
+}
+
+static int
+ThreadHandleObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int result = TCL_OK;
+
+    if (objc > 1) {
+        const char  *subcmdName = Tcl_GetString(objv[1]);
+        if (*subcmdName == 'g' && strcmp(subcmdName, "get") == 0) {
+            Ns_LogDeprecated(objv, 2, "ns_thread handle ...", NULL);
+        }
+    }
+
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_Thread threadPtr;
+
+        Ns_ThreadSelf(&threadPtr);
+        assert(threadPtr != NULL);
+        Ns_TclSetAddrObj(Tcl_GetObjResult(interp), threadType, threadPtr);
+    }
+    return result;
+}
+
+static int
+ThreadIdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int result = TCL_OK;
+
+    if (objc > 1) {
+        const char  *subcmdName = Tcl_GetString(objv[1]);
+        if (*subcmdName == 'g' && strcmp(subcmdName, "getid") == 0) {
+            Ns_LogDeprecated(objv, 2, "ns_thread id ...", NULL);
+        }
+    }
+
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_TclPrintfResult(interp, "%" PRIxPTR, Ns_ThreadId());
+    }
+    return result;
+}
+
+static int
+ThreadNameObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    char       *nameString = NULL;
+    Ns_ObjvSpec args[] = {
+        {"?name", Ns_ObjvString, &nameString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        if (nameString != NULL) {
+            Ns_ThreadSetName("%s", nameString);
+        }
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ThreadGetName(), TCL_INDEX_NONE));
+    }
+    return result;
+}
+
+static int
+ThreadStackinfoObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int result = TCL_OK;
+
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        size_t maxStackSize, estimatedSize;
+
+        Ns_ThreadGetThreadInfo(&maxStackSize, &estimatedSize);
+        Ns_TclPrintfResult(interp, "max %" PRIdz " free %" PRIdz,
+                           maxStackSize, maxStackSize - estimatedSize);
+        Ns_TclPrintfResult(interp, "%" PRIxPTR, Ns_ThreadId());
+    }
+    return result;
+}
+
+static int
+ThreadYieldObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int result = TCL_OK;
+
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_ThreadYield();
+    }
+    return result;
+}
+
+static int
+ThreadWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    Ns_Thread   thread;
+    Ns_ObjvSpec args[] = {
+        {"threadid", ObjvThreadObj, &thread, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (strcmp(Tcl_GetString(objv[1]), "join") == 0) {
+        Ns_LogDeprecated(objv, 2, "ns_thread wait ...", NULL);
+    }
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        void *arg;
+        char *resultPtr;
+
+        Ns_ThreadJoin(&thread, &arg);
+        /*
+         * The joined thread might provide a result string,
+         * generated by NsTclThread() via
+         * Ns_DStringExport(&ds). If this is the case, set the
+         * result to that string and use ns_free() for cleanup.
+         */
+        resultPtr = Ns_ThreadResult(arg);
+        Ns_Log(Debug, "=== WAIT for %p -> join DONE got arg %p result %p",
+               (void*)thread, (void*)arg, (void*)resultPtr);
+        if (resultPtr != NULL) {
+            Tcl_SetResult(interp, resultPtr,
+                          (Tcl_FreeProc *)ns_free);
+        }
+    }
+    return result;
+}
 
 int
 NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    const NsInterp *itPtr = clientData;
-    void           *tidArg;
-    Ns_Thread       tid;
-    int             opt, result = TCL_OK;
-
-    static const char *const opts[] = {
-        "begin", "begindetached", "create", "wait", "join",
-        "name", "get", "getid", "handle", "id", "yield",
-        "stackinfo", NULL
+    const Ns_SubCmdSpec subcmds[] = {
+        {"begin",         ThreadCreateObjCmd},
+        {"begindetached", ThreadCreateObjCmd},
+        {"create",        ThreadCreateObjCmd},
+        {"get",           ThreadHandleObjCmd},
+        {"getid",         ThreadIdObjCmd},
+        {"handle",        ThreadHandleObjCmd},
+        {"id",            ThreadIdObjCmd},
+        {"join",          ThreadWaitObjCmd},
+        {"name",          ThreadNameObjCmd},
+        {"stackinfo",     ThreadStackinfoObjCmd},
+        {"wait",          ThreadWaitObjCmd},
+        {"yield",         ThreadYieldObjCmd},
+        {NULL, NULL}
     };
-    enum {
-        TBeginIdx, TBeginDetachedIdx, TCreateIdx, TWaitIdx, TJoinIdx,
-        TNameIdx, TGetIdx, TGetIdIdx, THandleIdx, TIdIdx, TYieldIdx,
-        TStackinfoIdx
-    };
-
-    if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "cmd ?arg ...?");
-        result = TCL_ERROR;
-
-    } else if (Tcl_GetIndexFromObj(interp, objv[1], opts, "cmd", 0, &opt) != TCL_OK) {
-        result = TCL_ERROR;
-
-    } else {
-        switch (opt) {
-        case TCreateIdx:
-            Ns_LogDeprecated(objv, 2, "ns_thread begin ...", NULL);
-            NS_FALL_THROUGH; /* fall through */
-        case TBeginIdx:
-            NS_FALL_THROUGH; /* fall through */
-        case TBeginDetachedIdx:
-            {
-                char          *threadName = (char *)"nsthread", *script;
-                Ns_ReturnCode  status;
-                Ns_ObjvSpec lopts[] = {
-                    {"-name", Ns_ObjvString, &threadName, NULL},
-                    {"--",    Ns_ObjvBreak,  NULL,    NULL},
-                    {NULL, NULL, NULL, NULL}
-                };
-                Ns_ObjvSpec args[] = {
-                    {"script", Ns_ObjvString, &script, NULL},
-                    {NULL, NULL, NULL, NULL}
-                };
-
-                if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
-                    result = TCL_ERROR;
-                    status = NS_ERROR;
-                } else if (opt == TBeginDetachedIdx) {
-                    status = CreateTclThread(itPtr, script, NS_TRUE, threadName, NULL);
-                } else {
-                    status = CreateTclThread(itPtr, script, NS_FALSE, threadName, &tid);
-                    if (status == NS_OK) {
-                        Ns_TclSetAddrObj(Tcl_GetObjResult(interp), threadType, tid);
-                    }
-                }
-                if (status != NS_OK) {
-                    Ns_TclPrintfResult(interp, "cannot create thread");
-                    result = TCL_ERROR;
-                }
-                break;
-            }
-
-        case TJoinIdx:
-            Ns_LogDeprecated(objv, 2, "ns_thread wait ...", NULL);
-            NS_FALL_THROUGH; /* fall through */
-
-        case TWaitIdx:
-            if (objc != 3) {
-                Tcl_WrongNumArgs(interp, 2, objv, "tid");
-                result = TCL_ERROR;
-
-            } else if (Ns_TclGetAddrFromObj(interp, objv[2], threadType, &tidArg) != TCL_OK) {
-                result = TCL_ERROR;
-
-            } else {
-                void *arg;
-                char *resultPtr;
-
-                tid = tidArg;
-                Ns_ThreadJoin(&tid, &arg);
-                /*
-                 * The joined thread might provide a result string,
-                 * generated by NsTclThread() via
-                 * Ns_DStringExport(&ds). If this is the case, set the
-                 * result to that string and use ns_free() for cleanup.
-                 */
-                resultPtr = Ns_ThreadResult(arg);
-                Ns_Log(Debug, "=== WAIT for %p -> join DONE got arg %p result %p",
-                       (void*)tidArg, (void*)arg, (void*)resultPtr);
-                if (resultPtr != NULL) {
-                    Tcl_SetResult(interp, resultPtr,
-                                  (Tcl_FreeProc *)ns_free);
-                }
-            }
-            break;
-
-
-        case TGetIdx:
-            Ns_LogDeprecated(objv, 2, "ns_thread handle ...", NULL);
-            NS_FALL_THROUGH; /* fall through */
-        case THandleIdx:
-            Ns_ThreadSelf(&tid);
-            assert(tid != NULL);
-            Ns_TclSetAddrObj(Tcl_GetObjResult(interp), threadType, tid);
-            break;
-
-
-        case TGetIdIdx:
-            Ns_LogDeprecated(objv, 2, "ns_thread id ...", NULL);
-            NS_FALL_THROUGH; /* fall through */
-        case TIdIdx:
-            Ns_TclPrintfResult(interp, "%" PRIxPTR, Ns_ThreadId());
-            break;
-
-        case TNameIdx:
-            if (objc > 2) {
-                Ns_ThreadSetName("%s", Tcl_GetString(objv[2]));
-            }
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_ThreadGetName(), TCL_INDEX_NONE));
-            break;
-
-        case TStackinfoIdx: {
-            size_t maxStackSize, estimatedSize;
-            Ns_ThreadGetThreadInfo(&maxStackSize, &estimatedSize);
-            Ns_TclPrintfResult(interp, "max %" PRIdz " free %" PRIdz,
-                               maxStackSize, maxStackSize - estimatedSize);
-            break;
-        }
-
-        case TYieldIdx:
-            Ns_ThreadYield();
-            break;
-
-        default:
-            /* unexpected value */
-            assert(opt && 0);
-            break;
-        }
-    }
-    return result;
+    return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 
 
@@ -931,6 +1051,15 @@ NsTclCondObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         {"wait",      CondWaitObjCmd},
         {NULL, NULL}
     };
+
+    if (objc > 1) {
+        const char  *cmdName = Tcl_GetString(objv[0]);
+
+        if (strcmp(cmdName, "ns_event") == 0) {
+            Ns_LogDeprecated(objv, 2, "ns_cond ...", NULL);
+        }
+    }
+
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 
@@ -1114,8 +1243,8 @@ NsTclRWLockObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 /*
  *----------------------------------------------------------------------
  *
- * CsCreateObjCmd, CsDestroyObjCmd, CsEvalObjCmd, CsLockObjCmd,
- * CsTrylockObjCmd, CsUnlockObjCmd --
+ * CsCreateObjCmd, CsDestroyObjCmd, CsEnterObjCmd, CsEvalObjCmd,
+ * CsLeaveObjCmd --
  *
  *      Implements subcommands of "ns_critsec", i.e.,
  *         "ns_critsec create"

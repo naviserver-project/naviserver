@@ -7,7 +7,7 @@ namespace import -force ::tcltest::*
 
 test ns_thread-1.1 {basic syntax} -body {
     ns_thread ?
-} -returnCodes error -result {bad cmd "?": must be begin, begindetached, create, wait, join, name, get, getid, handle, id, yield, or stackinfo}
+} -returnCodes error -result {bad subcmd "?": must be begin, begindetached, create, get, getid, handle, id, join, name, stackinfo, wait, or yield}
 
 test ns_thread-1.2 {basic syntax} -body {
     ns_mutex ?
@@ -38,11 +38,11 @@ test ns_thread-1.6 {basic syntax} -body {
 
 
 test ns_thread-2.1 {detached thread} -body {
-    ns_thread begindetached {return ok}
+    ns_thread create -detached {return ok}
 } -result {}
 
 test ns_thread-2.2 {wait for thread thread} -body {
-    set tid [ns_thread begin {return ok}]
+    set tid [ns_thread create {return ok}]
     set result [ns_thread wait $tid]
     list $tid $result
 } -cleanup {
@@ -54,12 +54,12 @@ test ns_thread-2.3 {get thread id of self} -body {
 } -match regexp -result {[0-9]+}
 
 test ns_thread-2.4 {thread name} -body {
-    ns_thread wait [ns_thread begin {ns_thread name threadtest}]
+    ns_thread wait [ns_thread create {ns_thread name threadtest}]
 } -result {threadtest}
 
 test ns_thread-2.5 {thread yield} -body {
     for {set i 0} {$i < 100} {incr i} {
-        ns_thread begindetached {
+        ns_thread create -detached {
             for {set i 0} {$i < 100} {incr i} {
                 set x y
                 ns_thread yield
