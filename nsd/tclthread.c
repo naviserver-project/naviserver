@@ -841,26 +841,26 @@ CondWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
     if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
+        Ns_ReturnCode status;
         /*
          * Relative time wait: ns_cond wait
          */
         if (timeoutPtr == NULL) {
             Ns_CondWait(condPtr, lockPtr);
+            status = NS_OK;
         } else {
             Ns_Time       abstime;
-            Ns_ReturnCode status;
 
             Ns_GetTime(&abstime);
             Ns_IncrTime(&abstime, timeoutPtr->sec, timeoutPtr->usec);
             status = Ns_CondTimedWait(condPtr, lockPtr, &abstime);
-
-            if (status == NS_OK) {
-                Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
-            } else if (status == NS_TIMEOUT) {
-                Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-            } else {
-                result = TCL_ERROR;
-            }
+        }
+        if (status == NS_OK) {
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
+        } else if (status == NS_TIMEOUT) {
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+        } else {
+            result = TCL_ERROR;
         }
     }
     return result;
