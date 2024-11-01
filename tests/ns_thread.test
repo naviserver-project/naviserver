@@ -15,7 +15,7 @@ test ns_thread-1.2 {basic syntax} -body {
 
 test ns_thread-1.3 {basic syntax} -body {
     ns_critsec ?
-} -returnCodes error -result {bad cmd "?": must be create, destroy, enter, eval, or leave}
+} -returnCodes error -result {bad subcmd "?": must be create, destroy, enter, eval, or leave}
 
 test ns_thread-1.4.0 {basic syntax} -body {
     ns_sema ?
@@ -154,15 +154,15 @@ test ns_thread-4.3 {enter and then leave a named critical section} -body {
 
 test ns_thread-4.4 {critical section eval} -body {
     ns_critsec eval test:evalcs {
-        set a b
+        set x 1
     }
 } -cleanup {
-    unset -nocomplain a
-} -result b
+    unset -nocomplain x
+} -result 1
 
 test ns_thread-4.5 {critical section eval args} -body {
     ns_critsec eval test:evalcs
-} -returnCodes error -result {wrong # args: should be "ns_critsec eval test:evalcs script"}
+} -returnCodes error -result {wrong # args: should be "ns_critsec eval csid script"}
 
 
 

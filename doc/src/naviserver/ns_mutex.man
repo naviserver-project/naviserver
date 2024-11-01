@@ -29,7 +29,7 @@ using. NOTE: The mutex must be unlocked, or else the behavior is
 undefined and will likely crash the server.
 
 Actually, in the current implementation, this operation is a
-no-op, the semaphore will live until the server shuts down.
+no-op, the mutex object will live until the server shuts down.
 
 [call [cmd "ns_mutex lock"] [arg mutexid]]
 

@@ -51,6 +51,9 @@ static void ThreadArgFree(void *arg)
 
 static Ns_ObjvProc ObjvMutexObj;
 static Ns_ObjvProc ObjvSemaObj;
+static Ns_ObjvProc ObjvRWLockObj;
+static Ns_ObjvProc ObjvCondObj;
+static Ns_ObjvProc ObjvCsObj;
 
 static TCL_OBJCMDPROC_T MutexCreateObjCmd;
 static TCL_OBJCMDPROC_T MutexDestroyObjCmd;
@@ -71,7 +74,6 @@ static TCL_OBJCMDPROC_T RWLockReadlockObjCmd;
 static TCL_OBJCMDPROC_T RWLockUnlockObjCmd;
 static TCL_OBJCMDPROC_T RWLockWriteevalObjCmd;
 static TCL_OBJCMDPROC_T RWLockWritelockObjCmd;
-
 
 static TCL_OBJCMDPROC_T CondAbswaitObjCmd;
 static TCL_OBJCMDPROC_T CondBroadcastObjCmd;
@@ -193,7 +195,7 @@ ObjvMutexObj(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj
  *
  * ObjvCondObj --
  *
- *      objv converter for Ns_Mutex*.
+ *      objv converter for Ns_Cond*.
  *
  * Results:
  *      TCL_OK or TCL_ERROR.
@@ -285,6 +287,56 @@ ObjvRWLockObj(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Ob
 
     return result;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ObjvCsObj --
+ *
+ *      objv converter for Ns_Cs*.
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ObjvCsObj(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj *const* objv)
+{
+    int result = TCL_ERROR;
+
+    NS_NONNULL_ASSERT(spec != NULL);
+
+    if (likely(*objcPtr > 0)) {
+        const NsInterp *itPtr = NsGetInterpData(interp);
+        NsServer       *servPtr = itPtr->servPtr;
+        Ns_Cs         **dest = spec->dest;
+
+        /*
+         * When spec->arg is set this means, that the syncobj mut
+         * pre-exist and is not created on the fly.
+         */
+        *dest = CreateSynchObject(itPtr,
+                                  &servPtr->tcl.synch.csTable,
+                                  &servPtr->tcl.synch.csId,
+                                  PTR2INT(spec->arg) == NS_TRUE ? NULL : (Ns_Callback *) Ns_CsInit,
+                                  csType,
+                                  objv[0],
+                                  TCL_INDEX_NONE);
+        if (*dest == NULL) {
+            Ns_TclPrintfResult(interp, "ns_critsec: could not convert '%s' to critsec object", Tcl_GetString(objv[0]));
+        } else {
+            *objcPtr -= 1;
+            result = TCL_OK;
+        }
+    }
+
+    return result;
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1058,87 +1110,131 @@ NsTclRWLockObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 
+
 /*
  *----------------------------------------------------------------------
  *
- * NsTclCritSecObjCmd --
+ * CsCreateObjCmd, CsDestroyObjCmd, CsEvalObjCmd, CsLockObjCmd,
+ * CsTrylockObjCmd, CsUnlockObjCmd --
  *
- *      Implements "ns_critsec".
+ *      Implements subcommands of "ns_critsec", i.e.,
+ *         "ns_critsec create"
+ *         "ns_critsec destroy"
+ *         "ns_critsec enter"
+ *         "ns_critsec eval"
+ *         "ns_critsec leave"
  *
  * Results:
- *      Tcl result.
+ *      A standard Tcl result.
  *
  * Side effects:
- *      See doc.
+ *      Depends on subcommand.
  *
  *----------------------------------------------------------------------
  */
+static int
+CsCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        const NsInterp *itPtr = clientData;
+        NsServer       *servPtr = itPtr->servPtr;
+
+        (void) CreateSynchObject(itPtr,
+                                 &servPtr->tcl.synch.csTable,
+                                 &servPtr->tcl.synch.csId,
+                                 (Ns_Callback *) Ns_CsInit,
+                                 csType,
+                                 NULL,
+                                 TCL_INDEX_NONE);
+    }
+    return result;
+}
+
+static int
+CsDestroyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    Ns_Cs   *lockPtr;
+    Ns_ObjvSpec args[] = {
+        {"csid", ObjvCsObj, &lockPtr, INT2PTR(NS_TRUE)},
+        {NULL, NULL, NULL, NULL}
+    };
+    return DestroyHelper(args, interp, objc, objv);
+}
+
+static int
+CsEnterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    Ns_Cs      *csPtr = NULL;
+    Ns_ObjvSpec args[] = {
+        {"csid", ObjvCsObj, &csPtr, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_CsEnter(csPtr);
+    }
+    return result;
+}
+
+static int
+CsEvalObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    Ns_Cs      *csPtr = NULL;
+    Tcl_Obj    *scriptObj = NULL;
+    Ns_ObjvSpec args[] = {
+        {"csid",   ObjvCsObj,  &csPtr, NULL},
+        {"script", Ns_ObjvObj, &scriptObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_CsEnter(csPtr);
+        result = Tcl_EvalObjEx(interp, scriptObj, 0);
+        Ns_CsLeave(csPtr);
+    }
+    return result;
+}
+
+static int
+CsLeaveObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    Ns_Cs      *csPtr = NULL;
+    Ns_ObjvSpec args[] = {
+        {"csid", ObjvCsObj, &csPtr, INT2PTR(NS_TRUE)},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        Ns_CsLeave(csPtr);
+    }
+    return result;
+}
 
 int
 NsTclCritSecObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int opt, result = TCL_OK;
-    static const char *const opts[] = {
-        "create", "destroy", "enter", "eval", "leave", NULL
+    const Ns_SubCmdSpec subcmds[] = {
+        {"create",  CsCreateObjCmd},
+        {"destroy", CsDestroyObjCmd},
+        {"enter",   CsEnterObjCmd},
+        {"eval",    CsEvalObjCmd},
+        {"leave",   CsLeaveObjCmd},
+        {NULL, NULL}
     };
-    enum {
-        CCreateIdx, CDestroyIdx, CEnterIdx, CEvalIdx, CLeaveIdx
-    };
-
-    if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "cmd ?arg ...?");
-        result = TCL_ERROR;
-
-    } else if (Tcl_GetIndexFromObj(interp, objv[1], opts, "cmd", 1, &opt) != TCL_OK) {
-        result = TCL_ERROR;
-
-    } else {
-        const NsInterp *itPtr   = clientData;
-        NsServer       *servPtr = itPtr->servPtr;
-        Ns_Cs          *csPtr;
-
-        csPtr = CreateSynchObject(itPtr,
-                                  &servPtr->tcl.synch.csTable,
-                                  &servPtr->tcl.synch.csId,
-                                  (Ns_Callback *) Ns_CsInit,
-                                  csType,
-                                  (objc >= 3) ? objv[2] : NULL,
-                                  TCL_INDEX_NONE);
-        switch (opt) {
-        case CCreateIdx:
-            /* Handled above. */
-            break;
-
-        case CEnterIdx:
-            Ns_CsEnter(csPtr);
-            break;
-
-        case CLeaveIdx:
-            Ns_CsLeave(csPtr);
-            break;
-
-        case CEvalIdx:
-            if (objc != 4) {
-                Tcl_WrongNumArgs(interp, 3, objv, "script");
-                result = TCL_ERROR;
-            } else {
-                Ns_CsEnter(csPtr);
-                result = Tcl_EvalObjEx(interp, objv[3], 0);
-                Ns_CsLeave(csPtr);
-            }
-            break;
-
-        case CDestroyIdx:
-            /* No-op. */
-            break;
-
-        default:
-            /* unexpected value */
-            assert(opt && 0);
-            break;
-        }
-    }
-    return result;
+    return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 
 /*
