@@ -21,7 +21,7 @@ proc tst_cond_master {} {
     nsv_array set {ct1_done} [list]
     nsv_set {ct1_work_queue} 0 0
 
-    set tid [ns_thread begindetached {
+    set tid [ns_thread create -detached {
         # If necessary due to running this code in a different environment, you
         # can have the newly spawned worker thread first source this file here.
         tst_cond_worker
