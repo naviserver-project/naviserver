@@ -375,7 +375,7 @@ if {[info exists httpport] && $httpport ne ""} {
     # module "nssock" as a global server module with the name "http".
     #
     ns_section ns/modules {
-        ns_param http ${bindir}/nssock
+        ns_param http nssock
     }
 
     ns_section ns/module/http {
@@ -457,7 +457,7 @@ if {[info exists httpsport] && $httpsport ne ""} {
     # module "nsssl" as a global server module with the name "https".
     #
     ns_section ns/modules {
-        ns_param https  ${bindir}/nsssl
+        ns_param https nsssl
     }
 
     ns_section ns/module/https {
@@ -966,7 +966,7 @@ ns_section ns/server/$server/module/nslog {
 #
 #---------------------------------------------------------------------
 # ns_section ns/server/$server/modules {
-#     ns_param	nscgi ${bindir}/nscgi
+#     ns_param	nscgi nscgi
 # }
 # ns_section ns/server/$server/module/nscgi {
 #     ns_param  map	"GET  /cgi-bin ${serverroot}/cgi-bin"
@@ -984,7 +984,7 @@ ns_section ns/server/$server/module/nslog {
 #
 #---------------------------------------------------------------------
 # ns_section ns/server/$server/modules {
-#     ns_param	nspam ${bindir}/nspam
+#     ns_param	nspam nspam
 # }
 # ns_section ns/server/$server/module/nspam {
 #     ns_param	PamDomain "pam_domain"
@@ -1000,9 +1000,9 @@ ns_section ns/server/$server/module/nslog {
 ns_section ns/db/drivers {
 
     if { $dbms eq "oracle" } {
-        ns_param	nsoracle       ${bindir}/nsoracle
+        ns_param	nsoracle       nsoracle
     } else {
-        ns_param	postgres       ${bindir}/nsdbpg
+        ns_param	postgres       nsdbpg
         #
         ns_logctl severity "Debug(sql)" -color blue $verboseSQL
     }
@@ -1097,9 +1097,9 @@ ns_section ns/db/pool/pool3 {
 # installed.
 
 ns_section ns/server/$server/modules {
-    ns_param nslog ${bindir}/nslog
-    ns_param nsdb ${bindir}/nsdb
-    ns_param nsproxy ${bindir}/nsproxy
+    ns_param nslog   nslog
+    ns_param nsdb    nsdb
+    ns_param nsproxy nsproxy
 
     #
     # Determine, if libthread is installed. First check for a version
@@ -1118,10 +1118,10 @@ ns_section ns/server/$server/modules {
     }
 
     # LDAP authentication
-    # ns_param	nsldap             ${bindir}/nsldap
+    # ns_param	nsldap             nsldap
 
     # These modules aren't used in standard OpenACS installs
-    # ns_param	nsperm             ${bindir}/nsperm
+    # ns_param	nsperm             nsperm
 }
 
 #---------------------------------------------------------------------
