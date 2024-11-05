@@ -57,8 +57,8 @@ set defaultConfig {
     server           "openacs"
     serverroot        /var/www/$server
     logdir            $serverroot/log
-    homedir           /usr/local/ns
-    bindir            $homedir/bin
+    bindir            "[file dirname [ns_info nsd]]"
+    homedir           "[file dirname $bindir]"
     certificate       $serverroot/etc/certfile.pem
     vhostcertificates $serverroot/etc/certificates
 
