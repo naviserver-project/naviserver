@@ -1199,7 +1199,7 @@ NsTclAdpMimeTypeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
         if (mimetypeString != NULL) {
             Ns_ConnSetEncodedTypeHeader(conn, mimetypeString);
         }
-        type = Ns_SetIGet(conn->outputheaders, "Content-Type");
+        type = Ns_SetIGet(conn->outputheaders, "content-type");
         Tcl_SetObjResult(interp, Tcl_NewStringObj(type, TCL_INDEX_NONE));
     }
     return result;

@@ -242,6 +242,7 @@ RedirectResponse(Ns_Conn *conn, const char *url, int statusCode, const char *sta
 
     if (url != NULL) {
         const char *finalURL;
+        TCL_SIZE_T  finalUrlLength;
         Tcl_DString  msgDs;
 
 #if defined(NS_ALLOW_RELATIVE_REDIRECTS) && NS_ALLOW_RELATIVE_REDIRECTS
@@ -249,6 +250,7 @@ RedirectResponse(Ns_Conn *conn, const char *url, int statusCode, const char *sta
          * No need to prepend location to URL.
          */
         finalURL = url;
+        finalUrlLength = (TCL_SIZE_T)strlen(url);
 #else
         Tcl_DString urlDs;
 
@@ -258,10 +260,11 @@ RedirectResponse(Ns_Conn *conn, const char *url, int statusCode, const char *sta
         }
         Tcl_DStringAppend(&urlDs, url, TCL_INDEX_NONE);
         finalURL = urlDs.string;
+        finalUrlLength = urlDs.length;
 #endif
 
         Ns_UrlEncodingWarnUnencoded("header field location",finalURL);
-        Ns_ConnSetHeaders(conn, "Location", finalURL);
+        Ns_ConnSetHeadersSz(conn, "location", 8, finalURL, finalUrlLength);
 
         Tcl_DStringInit(&msgDs);
 
@@ -373,11 +376,11 @@ Ns_ConnReturnUnauthorized(Ns_Conn *conn)
 
     NS_NONNULL_ASSERT(conn != NULL);
 
-    if (Ns_SetIGet(conn->outputheaders, "WWW-Authenticate") == NULL) {
+    if (Ns_SetIGet(conn->outputheaders, "www-authenticate") == NULL) {
         Ns_DStringInit(&ds);
         Ns_DStringVarAppend(&ds, "Basic realm=\"",
                             connPtr->poolPtr->servPtr->opts.realm, "\"", (char *)0L);
-        Ns_ConnSetHeaders(conn, "WWW-Authenticate", ds.string);
+        Ns_ConnSetHeadersSz(conn, "www-authenticate", 16, ds.string, ds.length);
         Ns_DStringFree(&ds);
     }
     if (!ReturnRedirectInternal(conn, 401, &result)) {

@@ -26,7 +26,7 @@ test tclconnio-3.1 {thread detach, raw} -constraints Thread -setup {
         ns_return 200 text/plain 1
     }
 } -body {
-    nstest::http -getbody 1 -getheaders {Content-Length Connection} GET /tclconnio
+    nstest::http -getbody 1 -getheaders {content-length connection} GET /tclconnio
 } -cleanup {
     ns_unregister_op GET /tclconnio
 } -result {200 1 close 1}

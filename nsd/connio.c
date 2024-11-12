@@ -168,7 +168,7 @@ Ns_ConnWriteVChars(Ns_Conn *conn, struct iovec *bufs, int nbufs, unsigned int fl
  *      compress level 0-9
  *
  * Side effects:
- *      May set the Content-Encoding and Vary headers.
+ *      May set the content-encoding and Vary headers.
  *
  *----------------------------------------------------------------------
  */
@@ -202,10 +202,10 @@ CheckCompress(const Conn *connPtr, const struct iovec *bufs, int nbufs, unsigned
              */
             if (((connPtr->flags & NS_CONN_SENTHDRS) == 0u)
                 && ((connPtr->flags & NS_CONN_SKIPBODY) == 0u)) {
-                Ns_ConnSetHeaders(conn, "Vary", "Accept-Encoding");
+                Ns_ConnSetHeadersSz(conn, "vary", 4, "accept-encoding", 15);
 
                 if ((connPtr->flags & NS_CONN_ZIPACCEPTED) != 0u) {
-                    Ns_ConnSetHeaders(conn, "Content-Encoding", "gzip");
+                    Ns_ConnSetHeadersSz(conn, "content-encoding", 16, "gzip", 4);
                     compressionLevel = configuredCompressionLevel;
                 }
             }
@@ -1257,6 +1257,7 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
         success = NS_FALSE;
     } else {
         const char *keepString;
+        TCL_SIZE_T  keepStringLength;
 
         /*
          * Check for streaming vs. non-streaming.
@@ -1269,7 +1270,7 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
             if ((connPtr->responseLength < 0)
                 && (conn->request.version > 1.0)
                 && (connPtr->keep != 0)
-                && (HdrEq(connPtr->outputheaders, "Content-Type",
+                && (HdrEq(connPtr->outputheaders, "content-type",
                           "multipart/byteranges") == NS_FALSE)) {
                 conn->flags |= NS_CONN_CHUNK;
             }
@@ -1285,13 +1286,15 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
         connPtr->keep = (CheckKeep(connPtr) ? 1 : 0);
         if (connPtr->keep != 0) {
             keepString = "keep-alive";
+            keepStringLength = 10;
         } else {
             keepString = "close";
+            keepStringLength = 5;
         }
-        Ns_ConnSetHeaders(conn, "Connection", keepString);
+        Ns_ConnSetHeadersSz(conn, "connection", 10, keepString, keepStringLength);
 
         if ((conn->flags & NS_CONN_CHUNK) != 0u) {
-            Ns_ConnSetHeaders(conn, "Transfer-Encoding", "chunked");
+            Ns_ConnSetHeadersSz(conn, "transfer-encoding", 17, "chunked", 7);
         }
         Ns_ConnConstructHeaders(conn, dsPtr);
         success = NS_TRUE;
@@ -1355,7 +1358,7 @@ CheckKeep(const Conn *connPtr)
                      * to allow keep-alive.
                      */
                     if ((connPtr->contentLength > 0u)
-                        && (Ns_SetIGet(connPtr->headers, "Content-Length") == NULL)) {
+                        && (Ns_SetIGet(connPtr->headers, "content-length") == NULL)) {
                         /*
                          * No content length -> disallow.
                          */
@@ -1386,8 +1389,8 @@ CheckKeep(const Conn *connPtr)
                      * variants or a valid content-length header.
                      */
                     if (((connPtr->flags & NS_CONN_CHUNK) != 0u)
-                        || (Ns_SetIGet(connPtr->outputheaders, "Content-Length") != NULL)
-                        || (HdrEq(connPtr->outputheaders, "Content-Type", "multipart/byteranges") == NS_TRUE)) {
+                        || (Ns_SetIGet(connPtr->outputheaders, "content-length") != NULL)
+                        || (HdrEq(connPtr->outputheaders, "content-type", "multipart/byteranges") == NS_TRUE)) {
 
                         result = NS_TRUE;
                         break;

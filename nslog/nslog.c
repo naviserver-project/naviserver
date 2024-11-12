@@ -304,10 +304,10 @@ AddCmds(Tcl_Interp *interp, const void *arg)
  *      The string might be:
  *
  *       - a Tcl list of plain request header fields, like e.g.
- *         {Referer X-Forwarded-For}
+ *         {Referer x-forwarded-for}
  *
  *       - a Tcl list of header fields with tags to denote request or response
- *          header fields, like e.g. {req:Referer response:Content-Type}
+ *          header fields, like e.g. {req:Referer response:content-type}
  *
  * Results:
  *      None

@@ -21,9 +21,9 @@ test http-persist-1 {simple setup} -constraints {serverListen} -body {
     foreach {k} [lsort -decreasing -integer [dict keys $d]] {
         set bytes [dict get $d $k bytes]
         set connection ""
-        regexp {Connection:\s+(\S+)\s} $bytes . connection
+        regexp -nocase -- {connection:\s+(\S+)\s} $bytes . connection
         set contentLength ""
-        regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
+        regexp -nocase -- {content-length:\s+(\d+)\s} $bytes . contentLength
         lappend result connection $connection \
             content-length [string compare $contentLength ""]
     }
@@ -45,7 +45,7 @@ test http-persist-2 {three requests in two chunks} -constraints {serverListen} -
     foreach {k} [lsort -decreasing -integer [dict keys $d]] {
         set bytes [dict get $d $k bytes]
         set contentLength ""
-        regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
+        regexp -nocase -- {content-length:\s+(\d+)\s} $bytes . contentLength
         lappend result content-length [string compare $contentLength ""]
     }
 
@@ -65,7 +65,7 @@ test http-persist-3 {three requests in one chunk} -constraints {serverListen} -b
     foreach {k} [lsort -decreasing -integer [dict keys $d]] {
         set bytes [dict get $d $k bytes]
         set contentLength ""
-        regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
+        regexp -nocase --  {content-length:\s+(\d+)\s} $bytes . contentLength
         lappend result content-length [string compare $contentLength ""]
 
     }
@@ -88,7 +88,7 @@ test http-persist-4 {three requests in three chunks, broken strangely} -constrai
     foreach {k} [lsort -decreasing -integer [dict keys $d]] {
         set bytes [dict get $d $k bytes]
         set contentLength ""
-        regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
+        regexp -nocase -- {content-length:\s+(\d+)\s} $bytes . contentLength
         lappend result content-length [string compare $contentLength ""]
     }
 
@@ -101,7 +101,7 @@ test http-persist-4 {three requests in three chunks, broken strangely} -constrai
 test http-persist-5 {three requests in two chunks, one with content} -constraints {serverListen} -body {
 
     set d [tcltest::client 3 {
-        "GET /1 HTTP/1.1\nHost: localhost\nContent-length: 2\n\nabGET /2 HTTP/1.1\nHost: localhost\n\n"
+        "GET /1 HTTP/1.1\nHost: localhost\ncontent-length: 2\n\nabGET /2 HTTP/1.1\nHost: localhost\n\n"
         "GET /3 HTTP/1.1\nHost: localhost\n\n"
     }]
 
@@ -109,7 +109,7 @@ test http-persist-5 {three requests in two chunks, one with content} -constraint
     foreach {k} [lsort -decreasing -integer [dict keys $d]] {
         set bytes [dict get $d $k bytes]
         set contentLength ""
-        regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
+        regexp -nocase -- {content-length:\s+(\d+)\s} $bytes . contentLength
         lappend result content-length  [string compare $contentLength ""]
     }
 
@@ -122,14 +122,14 @@ test http-persist-5 {three requests in two chunks, one with content} -constraint
 test http-persist-6 {two requests in one chunk, both with content} -constraints {serverListen} -body {
 
     set d [tcltest::client 2 {
-        "GET /1 HTTP/1.1\nHost: localhost\nContent-length: 2\n\nabGET /2 HTTP/1.1\nHost: localhost\nContent-length: 3\n\nXYZ"
+        "GET /1 HTTP/1.1\nHost: localhost\ncontent-length: 2\n\nabGET /2 HTTP/1.1\nHost: localhost\ncontent-length: 3\n\nXYZ"
     }]
 
     set result {}
     foreach {k} [lsort -decreasing -integer [dict keys $d]] {
         set bytes [dict get $d $k bytes]
         set contentLength ""
-        regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
+        regexp -nocase -- {content-length:\s+(\d+)\s} $bytes . contentLength
         lappend result content-length  [string compare $contentLength ""]
     }
 
@@ -142,14 +142,14 @@ test http-persist-6 {two requests in one chunk, both with content} -constraints 
 test http-persist-7 {two requests in one chunk, both with content, trailing junk} -constraints {serverListen} -body {
 
     set d [tcltest::client 3 {
-        "GET /1 HTTP/1.1\nHost: localhost\nContent-length: 2\n\nabGET /2 HTTP/1.1\nHost: localhost\nContent-length: 3\n\nXYZTOOMUCH\n"
+        "GET /1 HTTP/1.1\nHost: localhost\ncontent-length: 2\n\nabGET /2 HTTP/1.1\nHost: localhost\ncontent-length: 3\n\nXYZTOOMUCH\n"
     }]
 
     set result {}
     foreach {k} [lsort -decreasing -integer [dict keys $d]] {
         set bytes [dict get $d $k bytes]
         set contentLength ""
-        regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
+        regexp -nocase -- {content-length:\s+(\d+)\s} $bytes . contentLength
         lappend result content-length [string compare $contentLength ""]
     }
 
@@ -174,7 +174,7 @@ test http-persist-8 {one request in six chunks} -constraints {serverListen} -bod
     foreach {k} [lsort -decreasing -integer [dict keys $d]] {
         set bytes [dict get $d $k bytes]
         set contentLength ""
-        regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
+        regexp -nocase -- {content-length:\s+(\d+)\s} $bytes . contentLength
         lappend result content-length [string compare $contentLength ""]
     }
 
@@ -187,8 +187,8 @@ test http-persist-8 {one request in six chunks} -constraints {serverListen} -bod
 test http-persist-9 {two requests with content, broken to 3 arbitrary chunks} -constraints {serverListen} -body {
 
     set d [tcltest::client 2 {
-        "GET /1 HTTP/1.1\nHost: localhost\nContent-length: 20\n\n0123456789"
-        "0123456789GET /2 HTTP/1.1\nHost: localhost\nContent-length: 5\n\nA"
+        "GET /1 HTTP/1.1\nHost: localhost\ncontent-length: 20\n\n0123456789"
+        "0123456789GET /2 HTTP/1.1\nHost: localhost\ncontent-length: 5\n\nA"
         "BCDE"
     }]
 
@@ -196,7 +196,7 @@ test http-persist-9 {two requests with content, broken to 3 arbitrary chunks} -c
     foreach {k} [lsort -decreasing -integer [dict keys $d]] {
         set bytes [dict get $d $k bytes]
         set contentLength ""
-        regexp {Content-Length:\s+(\d+)\s} $bytes . contentLength
+        regexp -nocase -- {content-length:\s+(\d+)\s} $bytes . contentLength
         lappend result content-length [string compare $contentLength ""]
     }
 

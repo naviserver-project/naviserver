@@ -39,7 +39,7 @@ test tclconnio-2.1 {ns_conn channel, no length, 1.0} -setup {
     }
 } -body {
     #ns_logctl severity Debug(task) on
-    nstest::http -http 1.0 -getbody 1 -getheaders {Content-Length Connection} \
+    nstest::http -http 1.0 -getbody 1 -getheaders {content-length connection} \
         GET /tclconnio
 } -cleanup {
     ns_unregister_op GET /tclconnio
@@ -62,7 +62,7 @@ test tclconnio-2.2 {ns_conn channel, no length, 1.1} -constraints knownBug -setu
         flush $chan
     }
 } -body {
-    nstest::http -http 1.1 -getbody 1 -getheaders {Content-Length Connection} \
+    nstest::http -http 1.1 -getbody 1 -getheaders {content-length connection} \
         GET /tclconnio
 } -cleanup {
     ns_unregister_op GET /tclconnio
@@ -88,7 +88,7 @@ test tclconnio-2.3 {ns_conn channel w/length, 1.0} -setup {
         flush $chan
     }
 } -body {
-    nstest::http -http 1.0 -getbody 1 -getheaders {Content-Length Connection} \
+    nstest::http -http 1.0 -getbody 1 -getheaders {content-length connection} \
         GET /tclconnio
 } -cleanup {
     ns_unregister_op GET /tclconnio
@@ -106,7 +106,7 @@ test tclconnio-2.4 {ns_conn channel w/length, 1.1} -constraints http09 -setup {
         flush $chan
     }
 } -body {
-    nstest::http-0.9 -http 1.1 -getbody 1 -getheaders {Content-Length Connection} \
+    nstest::http-0.9 -http 1.1 -getbody 1 -getheaders {content-length connection} \
         GET /tclconnio
 } -cleanup {
     ns_unregister_op GET /tclconnio
@@ -123,7 +123,7 @@ test tclconnio-2.5 {ns_conn channel, raw} -constraints http09 -setup {
         flush $chan
     }
 } -body {
-    nstest::http-0.9 -getbody 1 -getheaders {Content-Length Connection} \
+    nstest::http-0.9 -getbody 1 -getheaders {content-length connection} \
         GET /tclconnio
 } -cleanup {
     ns_unregister_op GET /tclconnio
@@ -152,7 +152,7 @@ test tclconnio-3.1 {thread detach, raw} -constraints {Thread http09} -setup {
         thread::release $tid
     }
 } -body {
-    nstest::http-0.9 -getbody 1 -getheaders {Content-Length Connection} \
+    nstest::http-0.9 -getbody 1 -getheaders {content-length connection} \
         GET /tclconnio
 } -cleanup {
     ns_unregister_op GET /tclconnio

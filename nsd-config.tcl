@@ -58,14 +58,14 @@ set max_file_upload_duration   5m
 # server.
 #
 set http_extraheaders {
-    X-Frame-Options            "SAMEORIGIN"
-    X-Content-Type-Options     "nosniff"
-    X-XSS-Protection           "1; mode=block"
-    Referrer-Policy            "strict-origin"
+    x-frame-options            "SAMEORIGIN"
+    x-content-type-options     "nosniff"
+    x-xss-protection           "1; mode=block"
+    referrer-policy            "strict-origin"
 }
 
 set https_extraheaders {
-    Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    strict-transport-security "max-age=31536000; includeSubDomains"
 }
 append https_extraheaders $http_extraheaders
 
@@ -164,17 +164,17 @@ ns_section ns/parameters/reverseproxymode {
     #
     ns_param enabled $reverseproxymode
     #
-    # When defining "trustedservers", the X-Forwarded-For header field
+    # When defining "trustedservers", the x-forwarded-for header field
     # is only accepted in requests received from one of the specified
     # servers. The list of servers can be provided by using IP
     # addresses or CIDR masks. Additionally, the processing mode of
-    # the contents of the X-Forwarded-For contents switches to
+    # the contents of the x-forwarded-for contents switches to
     # right-to-left, skipping trusted servers. So, the dangerof
     # obtaining spoofed addresses can be reduced.
     #
     ns_param trustedservers $trustedservers
     #
-    # Optionally, non-public entries in the content of X-Forwarded-For
+    # Optionally, non-public entries in the content of x-forwarded-for
     # can be ignored. These are not useful for e.g. geo-location
     # analysis.
     #
@@ -401,7 +401,7 @@ ns_section ns/server/default {
     #ns_param    poolratelimit       200  ;# 0; limit rate for pool to this amount (KB/s); 0 means unlimited
 
     # Extra server-specific response header fields
-    #ns_param   extraheaders  {Referrer-Policy "strict-origin"}
+    #ns_param   extraheaders  {referrer-policy "strict-origin"}
 }
 
 ns_section ns/server/default/modules {

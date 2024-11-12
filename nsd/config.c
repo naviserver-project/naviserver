@@ -35,7 +35,7 @@ typedef enum {
 
 /*
  * Older versions of gcc (and probably some other compilers as well)
- * do not accept const variables as const expressions. Therefore, we 
+ * do not accept const variables as const expressions. Therefore, we
  * introduced here the const expression NS_BITELEMENTS.
  */
 #define NS_BITELEMENTS (sizeof(uintmax_t) * 8)
@@ -114,7 +114,7 @@ Ns_ConfigString(const char *section, const char *key, const char *defaultValue)
  *
  * Ns_ConfigSet --
  *
- *      Return an Ns_Set *from a config value specified as Tcl list. The list
+ *      Return an Ns_Set from a config value specified as Tcl list. The list
  *      has to be a flat list with attributes and values (also a Tcl dict).
  *
  * Results:
@@ -144,6 +144,7 @@ Ns_ConfigSet(const char *section, const char *key, const char *name)
         Tcl_Obj *valueObj = Tcl_NewStringObj(value, TCL_INDEX_NONE);
 
         setPtr = Ns_SetCreateFromDict(NULL, name, valueObj);
+        fprintf(stderr, "Ns_ConfigSet CREATE FROM DICT '%s'\n",value);
         Tcl_DecrRefCount(valueObj);
     } else {
         setPtr = NULL;
@@ -1284,7 +1285,8 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defaultS
     sectionPtr = GetSection(section, NS_FALSE);
 
     if (sectionPtr != NULL && sectionPtr->set != NULL) {
-        int idx;
+        TCL_SIZE_T keyLength = (TCL_SIZE_T)strlen(key);
+        int        idx;
 
         if (exact) {
             idx = Ns_SetFind(sectionPtr->set, key);
@@ -1308,7 +1310,7 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defaultS
              * startup when we there is a single thread. Changing ns_sets is
              * not thread safe.
              */
-            idx = (int)Ns_SetPutSz(sectionPtr->set, key, TCL_INDEX_NONE,
+            idx = (int)Ns_SetPutSz(sectionPtr->set, key, keyLength,
                                  defaultString, defaultString == NULL ? 0 : TCL_INDEX_NONE);
             ConfigMark(sectionPtr, (size_t)idx, value_defaulted);
             s = Ns_SetValue(sectionPtr->set, idx);
@@ -1320,7 +1322,7 @@ ConfigGet(const char *section, const char *key, bool exact, const char *defaultS
             ConfigMark(sectionPtr, (size_t)idx, value_read);
             if (defaultString != NULL) {
                 (void)Ns_SetPutSz(sectionPtr->defaults,
-                                  key, TCL_INDEX_NONE,
+                                  key, keyLength,
                                   defaultString, TCL_INDEX_NONE);
             }
         }
@@ -1346,6 +1348,7 @@ NsConfigSectionGetFiltered(const char *section, char filter)
             Ns_Set *set = sectionPtr->set;
 
             result = Ns_SetCreate(section);
+            result->flags |= NS_SET_OPTION_NOCASE;
             for (i = 0u; i < set->size; i++) {
 
                 if (i < maxBitElements) {
@@ -1357,14 +1360,14 @@ NsConfigSectionGetFiltered(const char *section, char filter)
                         /*fprintf(stderr, "unused parameter: %s/%s (%lu)\n",
                           section, set->fields[i].name, i);*/
                         Ns_SetPutSz(result,
-                                    set->fields[i].name, TCL_INDEX_NONE,
+                                    set->fields[i].name, (TCL_SIZE_T)strlen(set->fields[i].name),
                                     set->fields[i].value, TCL_INDEX_NONE);
                     } else if  (filter == 'd' && (sectionPtr->defaultArray[index] & mask) != 0u) {
                         /*fprintf(stderr, "defaulted parameter: %s/%s (%lu) defaults %p mask %p\n",
                           section, set->fields[i].name, i,
                           (void*)sectionPtr->defaultArray[0], (void*)mask);*/
                         Ns_SetPutSz(result,
-                                    set->fields[i].name, TCL_INDEX_NONE,
+                                    set->fields[i].name, (TCL_SIZE_T)strlen(set->fields[i].name),
                                     set->fields[i].value, TCL_INDEX_NONE);
                     }
                 }
@@ -1441,6 +1444,7 @@ GetSection(const char *section, bool create)
             sectionPtr = ns_calloc(1u, sizeof(Section));
             sectionPtr->defaults = Ns_SetCreate(section);
             sectionPtr->set = Ns_SetCreate(section);
+            sectionPtr->set->flags |= NS_SET_OPTION_NOCASE;
             Tcl_SetHashValue(hPtr, sectionPtr);
         }
     }

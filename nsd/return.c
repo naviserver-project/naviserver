@@ -114,7 +114,7 @@ static const size_t nreasons = (sizeof(reasons) / sizeof(reasons[0]));
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnSetHeaders --
+ * Ns_ConnSetHeaders, Ns_ConnSetHeadersSz --
  *
  *      Add an output header.
  *
@@ -130,7 +130,15 @@ static const size_t nreasons = (sizeof(reasons) / sizeof(reasons[0]));
 void
 Ns_ConnSetHeaders(const Ns_Conn *conn, const char *field, const char *value)
 {
-    (void) Ns_SetPutSz(conn->outputheaders, field, TCL_INDEX_NONE, value, TCL_INDEX_NONE);
+    (void) Ns_SetPutSz(conn->outputheaders, field, (TCL_SIZE_T)strlen(field), value, TCL_INDEX_NONE);
+}
+
+void
+Ns_ConnSetHeadersSz(const Ns_Conn *conn,
+                    const char *field, TCL_SIZE_T fieldLength,
+                    const char *value, TCL_SIZE_T valueLength)
+{
+    (void) Ns_SetPutSz(conn->outputheaders, field, fieldLength, value, valueLength);
 }
 
 /*
@@ -152,7 +160,15 @@ Ns_ConnSetHeaders(const Ns_Conn *conn, const char *field, const char *value)
 void
 Ns_ConnUpdateHeaders(const Ns_Conn *conn, const char *field, const char *value)
 {
-    Ns_SetIUpdate(conn->outputheaders, field, value);
+    Ns_SetIUpdateSz(conn->outputheaders, field, (TCL_SIZE_T)strlen(field), value, TCL_INDEX_NONE);
+
+}
+void
+Ns_ConnUpdateHeadersSz(const Ns_Conn *conn,
+                       const char *field, TCL_SIZE_T fieldLength,
+                       const char *value, TCL_SIZE_T valueLength)
+{
+    Ns_SetIUpdateSz(conn->outputheaders, field, fieldLength, value, valueLength);
 }
 
 /*
@@ -181,7 +197,7 @@ Ns_ConnPrintfHeaders(const Ns_Conn *conn, const char *field, const char *fmt,...
     va_start(ap, fmt);
     Ns_DStringVPrintf(&ds, fmt, ap);
     va_end(ap);
-    (void) Ns_SetPutSz(conn->outputheaders, field, TCL_INDEX_NONE, ds.string, ds.length);
+    (void) Ns_SetPutSz(conn->outputheaders, field, (TCL_SIZE_T)strlen(field), ds.string, ds.length);
     Ns_DStringFree(&ds);
 }
 
@@ -189,7 +205,7 @@ Ns_ConnPrintfHeaders(const Ns_Conn *conn, const char *field, const char *fmt,...
 /*
  *----------------------------------------------------------------------
  *
- * Ns_ConnCondSetHeaders --
+ * Ns_ConnCondSetHeaders, Ns_ConnCondSetHeadersSz --
  *
  *      Add an output header, only if it doesn't already exist.
  *
@@ -207,8 +223,19 @@ Ns_ConnCondSetHeaders(const Ns_Conn *conn, const char *field, const char *value)
 {
     if (Ns_SetIGet(conn->outputheaders, field) == NULL) {
         (void) Ns_SetPutSz(conn->outputheaders,
-                           field, TCL_INDEX_NONE,
+                           field, (TCL_SIZE_T)strlen(field),
                            value, TCL_INDEX_NONE);
+    }
+}
+void
+Ns_ConnCondSetHeadersSz(const Ns_Conn *conn,
+                        const char *field, TCL_SIZE_T fieldLength,
+                        const char *value, TCL_SIZE_T valueLength)
+{
+    if (Ns_SetIGet(conn->outputheaders, field) == NULL) {
+        (void) Ns_SetPutSz(conn->outputheaders,
+                           field, fieldLength,
+                           value, valueLength);
     }
 }
 
@@ -243,7 +270,7 @@ Ns_ConnReplaceHeaders(Ns_Conn *conn, const Ns_Set *newheaders)
  *
  * Ns_ConnSetTypeHeader --
  *
- *      Sets the Content-Type HTTP output header
+ *      Sets the content-type HTTP output header
  *
  * Results:
  *      None.
@@ -257,7 +284,7 @@ Ns_ConnReplaceHeaders(Ns_Conn *conn, const Ns_Set *newheaders)
 void
 Ns_ConnSetTypeHeader(const Ns_Conn *conn, const char *mimeType)
 {
-    Ns_ConnUpdateHeaders(conn, "Content-Type", mimeType);
+    Ns_ConnUpdateHeadersSz(conn, "content-type", 12, mimeType, (TCL_SIZE_T)strlen(mimeType));
 }
 
 
@@ -266,7 +293,7 @@ Ns_ConnSetTypeHeader(const Ns_Conn *conn, const char *mimeType)
  *
  * Ns_ConnSetEncodedTypeHeader --
  *
- *      Sets the Content-Type HTTP output header and charset for
+ *      Sets the content-type HTTP output header and charset for
  *      text and other types which may need to be transcoded.
  *
  * Results:
@@ -312,7 +339,7 @@ Ns_ConnSetEncodedTypeHeader(Ns_Conn *conn, const char *mimeType)
  *
  * Ns_ConnSetLengthHeader --
  *
- *      Set the Content-Length output header.
+ *      Set the content-length output header.
  *
  * Results:
  *      None.
@@ -332,13 +359,13 @@ Ns_ConnSetLengthHeader(Ns_Conn *conn, size_t length, bool doStream)
         char buffer[TCL_INTEGER_SPACE];
 
         snprintf(buffer, sizeof(buffer), "%" PRIuz, length);
-        Ns_ConnUpdateHeaders(conn, "Content-Length", buffer);
+        Ns_ConnUpdateHeadersSz(conn, "content-length", 14, buffer, (TCL_SIZE_T)strlen(buffer));
         connPtr->responseLength = (ssize_t)length;
     } else {
         /*
-         * In the streaming case, make sure no Content-Length is set.
+         * In the streaming case, make sure no content-length is set.
          */
-        Ns_SetIDeleteKey(conn->outputheaders, "Content-Length");
+        Ns_SetIDeleteKey(conn->outputheaders, "content-length");
         connPtr->responseLength = -1;
     }
 }
@@ -369,7 +396,8 @@ Ns_ConnSetLastModifiedHeader(const Ns_Conn *conn, const time_t *mtime)
     NS_NONNULL_ASSERT(mtime != NULL);
 
     Ns_DStringInit(&ds);
-    Ns_ConnCondSetHeaders(conn, "Last-Modified", Ns_HttpTime(&ds, mtime));
+    Ns_HttpTime(&ds, mtime);
+    Ns_ConnCondSetHeadersSz(conn, "last-modified", 14, ds.string, ds.length);
     Ns_DStringFree(&ds);
 }
 
@@ -393,7 +421,7 @@ Ns_ConnSetLastModifiedHeader(const Ns_Conn *conn, const time_t *mtime)
 void
 Ns_ConnSetExpiresHeader(const Ns_Conn *conn, const char *expires)
 {
-    Ns_ConnSetHeaders(conn, "Expires", expires);
+    Ns_ConnSetHeadersSz(conn, "expires", (TCL_SIZE_T)7, expires, (TCL_SIZE_T)strlen(expires));
 }
 
 

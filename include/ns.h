@@ -390,16 +390,15 @@ typedef struct Ns_SetField {
  */
 #define NS_SET_WITH_NAMES 1
 
-
 #ifdef NS_SET_WITH_NAMES
 # define NS_SET_NAME_AUTH "auth"
-# define NS_SET_NAME_CLIENT_RESPONSE "clresp"
+# define NS_SET_NAME_CLIENT_RESPONSE "client-response"
 # define NS_SET_NAME_DB "db"
 # define NS_SET_NAME_MP "mp"
 # define NS_SET_NAME_PARSEQ "parseq"
 # define NS_SET_NAME_QUERY "query"
-# define NS_SET_NAME_REQ "req"
-# define NS_SET_NAME_RESPONSE "resp"
+# define NS_SET_NAME_REQUEST "request headers"
+# define NS_SET_NAME_RESPONSE "response headers"
 #else
 # define NS_SET_NAME_AUTH NULL
 # define NS_SET_NAME_CLIENT_RESPONSE NULL
@@ -407,9 +406,11 @@ typedef struct Ns_SetField {
 # define NS_SET_NAME_MP NULL
 # define NS_SET_NAME_PARSEQ NULL
 # define NS_SET_NAME_QUERY NULL
-# define NS_SET_NAME_REQ NULL
+# define NS_SET_NAME_REQUEST NULL
 # define NS_SET_NAME_RESPONSE NULL
 #endif
+
+#define NS_SET_OPTION_NOCASE 0x01
 
 typedef struct Ns_Set {
     const char  *name;
@@ -419,6 +420,7 @@ typedef struct Ns_Set {
     Tcl_DString  data;
 #endif
     Ns_SetField *fields;
+    unsigned int flags;
 } Ns_Set;
 
 /*
@@ -2370,12 +2372,30 @@ Ns_ConnSetHeaders(const Ns_Conn *conn, const char *field, const char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
+Ns_ConnSetHeadersSz(const Ns_Conn *conn,
+                    const char *field, TCL_SIZE_T fieldLength,
+                    const char *value, TCL_SIZE_T valueLength)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+
+NS_EXTERN void
 Ns_ConnUpdateHeaders(const Ns_Conn *conn, const char *field, const char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN void
+Ns_ConnUpdateHeadersSz(const Ns_Conn *conn,
+                       const char *field, TCL_SIZE_T fieldLength,
+                       const char *value, TCL_SIZE_T valueLength)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
+
+NS_EXTERN void
 Ns_ConnCondSetHeaders(const Ns_Conn *conn, const char *field, const char *value)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
+NS_EXTERN void
+Ns_ConnCondSetHeadersSz(const Ns_Conn *conn,
+                        const char *field, TCL_SIZE_T fieldLength,
+                        const char *value, TCL_SIZE_T valueLength)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 NS_EXTERN void
 Ns_ConnReplaceHeaders(Ns_Conn *conn, const Ns_Set *newheaders)
@@ -2710,8 +2730,8 @@ NS_EXTERN void
 Ns_SetTrunc(Ns_Set *set, size_t size)
     NS_GNUC_NONNULL(1);
 
-NS_EXTERN void
-Ns_SetDelete(Ns_Set *set, int index)
+NS_EXTERN bool
+Ns_SetDelete(Ns_Set *set, ssize_t index)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN void
@@ -2722,17 +2742,22 @@ NS_EXTERN void
 Ns_SetPutValueSz(Ns_Set *set, size_t index, const char *value, TCL_SIZE_T size)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
 
-NS_EXTERN void
+NS_EXTERN bool
 Ns_SetDeleteKey(Ns_Set *set, const char *key)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN void
+NS_EXTERN bool
 Ns_SetIDeleteKey(Ns_Set *set, const char *key)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_Set *
 Ns_SetListFind(Ns_Set *const*sets, const char *name)
     NS_GNUC_NONNULL(1) NS_GNUC_PURE;
+
+NS_EXTERN const char*
+Ns_SetFormat(Tcl_DString *outputDsPtr, const Ns_Set *set, bool withName,
+             const char *leadString, const char *separator)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
 
 NS_EXTERN Ns_Set **
 Ns_SetSplit(const Ns_Set *set, char sep)
@@ -2760,6 +2785,7 @@ Ns_SetMove(Ns_Set *to, Ns_Set *from)
 NS_EXTERN void
 Ns_SetPrint(Tcl_DString *outputDsPtr, const Ns_Set *set)
     NS_GNUC_NONNULL(2);
+
 
 NS_EXTERN const char *
 Ns_SetGetValue(const Ns_Set *set, const char *key, const char *def)
@@ -3204,6 +3230,10 @@ Ns_Valid_UTF8(const unsigned char *bytes, size_t nrBytes, Tcl_DString *dsPtr)
 
 NS_EXTERN bool
 Ns_Is7bit(const char *bytes, size_t nrBytes)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN ssize_t
+Ns_UpperCharPos(const char *bytes, size_t nrBytes)
     NS_GNUC_NONNULL(1);
 
 /*

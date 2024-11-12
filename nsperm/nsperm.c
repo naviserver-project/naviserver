@@ -395,7 +395,7 @@ static Ns_ReturnCode AuthProc(const char *server, const char *method, const char
 
     set = Ns_ConnAuth(conn);
     if (set != NULL) {
-        auth = Ns_SetIGet(set, "AuthMethod");
+        auth = Ns_SetIGet(set, "authmethod");
     }
     if (auth == NULL) {
         auth = "Basic";
@@ -1751,7 +1751,7 @@ CreateHeader(const Server *servPtr, const Ns_Conn *conn, bool stale)
         if (stale) {
             Ns_DStringVarAppend(&ds, ", stale=\"true\"", (char *)0L);
         }
-        Ns_ConnSetHeaders(conn, "WWW-Authenticate", ds.string);
+        Ns_ConnSetHeadersSz(conn, "www-authenticate", 16, ds.string, ds.length);
     }
     return status;
 }

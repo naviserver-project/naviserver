@@ -652,7 +652,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
 #endif
 
     nsconf.formFallbackCharset =
-        ns_strcopy(Ns_ConfigString(NS_GLOBAL_CONFIG_PARAMETERS, "FormFallbackCharset", NULL));
+        ns_strcopy(Ns_ConfigString(NS_GLOBAL_CONFIG_PARAMETERS, "formfallbackcharset", NULL));
     if (nsconf.formFallbackCharset != NULL
         && *nsconf.formFallbackCharset == '\0') {
         nsconf.formFallbackCharset  = NULL;
@@ -693,7 +693,6 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     /*
      * Verify and change to the home directory.
      */
-
     nsconf.home = Ns_ConfigGetValue(NS_GLOBAL_CONFIG_PARAMETERS, "home");
     if (nsconf.home == NULL && mode != 'c') {
 
@@ -787,7 +786,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
      */
 
     set = Ns_ConfigCreateSection(NS_GLOBAL_CONFIG_PARAMETERS);
-    Ns_SetUpdateSz(set, "home", 4, nsconf.home, TCL_INDEX_NONE);
+    Ns_SetIUpdateSz(set, "home", 4, nsconf.home, TCL_INDEX_NONE);
 
     /*
      * Update core config values.
@@ -811,7 +810,7 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
             nsconf.tmpDir = tmpDirName;
         }
 
-        Ns_SetUpdateSz(set, "tmpdir", 6, nsconf.tmpDir, TCL_INDEX_NONE);
+        Ns_SetIUpdateSz(set, "tmpdir", 6, nsconf.tmpDir, TCL_INDEX_NONE);
     }
 
 #ifdef _WIN32

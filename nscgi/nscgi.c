@@ -985,7 +985,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         const Ns_Set *authSet =  Ns_ConnAuth(conn);
 
         if (authSet != NULL) {
-            const char *authMethod = Ns_SetIGet(authSet, "AuthMethod");
+            const char *authMethod = Ns_SetIGet(authSet, "authmethod");
 
             Ns_SetUpdateSz(cgiPtr->env, "AUTH_TYPE", 9, authMethod ? authMethod : "", TCL_INDEX_NONE);
         } else {
@@ -1017,7 +1017,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
     Ns_SetUpdateSz(cgiPtr->env, "REQUEST_METHOD", 14, conn->request.method, TCL_INDEX_NONE);
     Ns_SetUpdateSz(cgiPtr->env, "QUERY_STRING", 12, conn->request.query, TCL_INDEX_NONE);
 
-    value = Ns_SetIGet(conn->headers, "Content-Type");
+    value = Ns_SetIGet(conn->headers, "content-type");
     if (value == NULL) {
         if (STREQ("POST", conn->request.method)) {
             value = "application/x-www-form-urlencoded";
@@ -1057,7 +1057,7 @@ CgiExec(Cgi *cgiPtr, Ns_Conn *conn)
         }
         idx = Ns_SetFind(cgiPtr->env, dsPtr->string);
         if (idx < 0) {
-            (void)Ns_SetPut(cgiPtr->env, dsPtr->string, e);
+            (void)Ns_SetPutSz(cgiPtr->env, dsPtr->string, dsPtr->length, e, TCL_INDEX_NONE);
         } else {
             SetAppend(cgiPtr->env, idx, ", ", e);
         }
@@ -1291,7 +1291,7 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
                     httpstatus = 302;
                 }
 #if defined(NS_ALLOW_RELATIVE_REDIRECTS) && NS_ALLOW_RELATIVE_REDIRECTS
-                last = (int)Ns_SetPut(hdrs, ds.string, value);
+                last = (int)Ns_SetPutSz(hdrs, ds.string, ds.length, value, TCL_INDEX_NONE);
 #else
                 if (*value == '/') {
                     Ns_DString redir;
@@ -1299,14 +1299,14 @@ CgiCopy(Cgi *cgiPtr, Ns_Conn *conn)
                     Ns_DStringInit(&redir);
                     (void)Ns_ConnLocationAppend(conn, &redir);
                     Ns_DStringAppend(&redir, value);
-                    last = (int)Ns_SetPut(hdrs, ds.string, redir.string);
+                    last = (int)Ns_SetPutSz(hdrs, ds.string, ds.length, redir.string, TCL_INDEX_NONE);
                     Ns_DStringFree(&redir);
                 } else {
-                    last = (int)Ns_SetPut(hdrs, ds.string, value);
+                    last = (int)Ns_SetPutSz(hdrs, ds.string, ds.length, value, TCL_INDEX_NONE);
                 }
 #endif
             } else {
-                last = (int)Ns_SetPut(hdrs, ds.string, value);
+                last = (int)Ns_SetPutSz(hdrs, ds.string, ds.length, value, TCL_INDEX_NONE);
             }
         }
         Ns_DStringSetLength(&ds, 0);

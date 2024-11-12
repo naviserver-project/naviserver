@@ -105,10 +105,10 @@ proc ns_httpopen {method url {rqset ""} {timeout 30} {pdata ""}} {
             }
 
             if {$pdata ne {}} {
-                set pdlen [ns_set iget $rqset "Content-Length"]
+                set pdlen [ns_set iget $rqset "content-length"]
                 if {$pdlen eq {}} {
                     set pdlen [string length $pdata]
-                    _ns_http_puts $timeout $wfd "Content-Length: $pdlen"
+                    _ns_http_puts $timeout $wfd "content-length: $pdlen"
                 }
             }
 
@@ -119,13 +119,13 @@ proc ns_httpopen {method url {rqset ""} {timeout 30} {pdata ""}} {
             # of required headers.
             #
 
-            _ns_http_puts $timeout $wfd "Accept: */*"
+            _ns_http_puts $timeout $wfd "accept: */*"
             _ns_http_puts $timeout $wfd \
-                "User-Agent: [ns_info name]-Tcl/[ns_info version]"
+                "user-agent: [ns_info name]-Tcl/[ns_info version]"
             
             if {$pdata ne {}} {
                 set pdlen [string length $pdata]
-                _ns_http_puts $timeout $wfd "Content-Length: $pdlen"
+                _ns_http_puts $timeout $wfd "content-length: $pdlen"
             }
         }
 
@@ -225,15 +225,15 @@ proc ns_httppost {url {rqset ""} {qsset ""} {type ""} {timeout 30}} {
         #
         
         set rqset [ns_set new rqset]
-        ns_set put $rqset "Accept" "*/*"
-        ns_set put $rqset "User-Agent" "[ns_info name]-Tcl/[ns_info version]"
+        ns_set put $rqset "accept" "*/*"
+        ns_set put $rqset "user-agent" "[ns_info name]-Tcl/[ns_info version]"
     }
 
     if {$type eq {}} {
         set type "application/x-www-form-urlencoded"
     }
 
-    ns_set put $rqset "Content-type" "$type"
+    ns_set put $rqset "content-type" "$type"
 
     #
     # Build the query string to POST with.
@@ -242,7 +242,7 @@ proc ns_httppost {url {rqset ""} {qsset ""} {type ""} {timeout 30}} {
     set pdata {}
 
     if {$qsset eq {}} {
-        ns_set put $rqset "Content-length" "0"
+        ns_set put $rqset "content-length" "0"
     } else {
         for {set i 0} {$i < [ns_set size $qsset]} {incr i} {
             set key [ns_set key   $qsset $i]
@@ -252,7 +252,7 @@ proc ns_httppost {url {rqset ""} {qsset ""} {type ""} {timeout 30}} {
             }
             append pdata $key "=" [ns_urlencode $val]
         }
-        ns_set put $rqset "Content-length" [string length $pdata]
+        ns_set put $rqset "content-length" [string length $pdata]
     }
 
     #
@@ -264,7 +264,7 @@ proc ns_httppost {url {rqset ""} {qsset ""} {type ""} {timeout 30}} {
     set wfd [lindex $fds 1]; close $wfd
 
     set headers [lindex $fds 2]
-    set length  [ns_set iget $headers "Content-Length"]
+    set length  [ns_set iget $headers "content-length"]
     ns_set free $headers
 
     if {$length eq {}} {
@@ -321,7 +321,7 @@ proc ns_httpget {url {timeout 30} {depth 0} {rqset ""}} {
         # The response was a redirect, recurse.
         #
 
-        set location [ns_set iget $headers "Location"]
+        set location [ns_set iget $headers "location"]
         if {$location ne {}} {
             ns_set free $headers
             close $rfd
@@ -340,8 +340,8 @@ proc ns_httpget {url {timeout 30} {depth 0} {rqset ""}} {
         }
     }
 
-    set length [ns_set iget $headers "Content-Length"]
-    set encoding [ns_set iget $headers "Transfer-Encoding"]
+    set length [ns_set iget $headers "content-length"]
+    set encoding [ns_set iget $headers "transfer-encoding"]
     ns_set free $headers
 
     if {$length eq {}} {
@@ -621,7 +621,7 @@ proc ns_proxy_handler_http {args} {
     set headers  [lindex $fds 2]
     set response [ns_set name $headers]
     set status   [lindex $response 1]
-    set length   [ns_set iget $headers "Content-Length"]
+    set length   [ns_set iget $headers "content-length"]
     if {$length eq {}} {
         set length -1
     }

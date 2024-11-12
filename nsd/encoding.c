@@ -260,7 +260,7 @@ ConfigServerEncodings(const char *server)
         path = Ns_ConfigSectionPath(NULL, server, NULL, (char *)0L);
 
         servPtr->encoding.urlCharset =
-            ns_strcopy(Ns_ConfigString(path, "urlCharset", "utf-8"));
+            ns_strcopy(Ns_ConfigString(path, "urlcharset", "utf-8"));
 
         servPtr->encoding.urlEncoding =
             Ns_GetCharsetEncoding(servPtr->encoding.urlCharset);
@@ -270,7 +270,7 @@ ConfigServerEncodings(const char *server)
                    servPtr->encoding.urlCharset);
         }
         servPtr->encoding.formFallbackCharset =
-            ns_strcopy(Ns_ConfigString(path, "FormFallbackCharset", NULL));
+            ns_strcopy(Ns_ConfigString(path, "formfallbackcharset", NULL));
         if (servPtr->encoding.formFallbackCharset != NULL
             && *servPtr->encoding.formFallbackCharset == '\0') {
             servPtr->encoding.formFallbackCharset  = NULL;
@@ -281,7 +281,7 @@ ConfigServerEncodings(const char *server)
          */
 
         servPtr->encoding.outputCharset =
-            ns_strcopy(Ns_ConfigString(path, "outputCharset", "utf-8"));
+            ns_strcopy(Ns_ConfigString(path, "outputcharset", "utf-8"));
 
         servPtr->encoding.outputEncoding =
             Ns_GetCharsetEncoding(servPtr->encoding.outputCharset);
@@ -345,7 +345,7 @@ Ns_GetFileEncoding(const char *file)
  *
  * Ns_GetTypeEncoding --
  *
- *      Return the Tcl_Encoding for the given Content-type header,
+ *      Return the Tcl_Encoding for the given content-type header,
  *      e.g., "text/html; charset=iso-8859-1" returns Tcl_Encoding
  *      for iso8859-1.
  *

@@ -54,6 +54,7 @@ static Ns_ObjvProc ObjvSemaObj;
 static Ns_ObjvProc ObjvRWLockObj;
 static Ns_ObjvProc ObjvCondObj;
 static Ns_ObjvProc ObjvCsObj;
+static Ns_ObjvProc ObjvThreadObj;
 
 static TCL_OBJCMDPROC_T MutexCreateObjCmd;
 static TCL_OBJCMDPROC_T MutexDestroyObjCmd;

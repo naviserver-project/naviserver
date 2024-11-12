@@ -83,27 +83,27 @@ namespace eval ::nstest {
             # Default Headers (unless pre HTTP/1.0)
             #
             if {$http ne "" && $http >= "1.0"} {
-                ns_set icput $hdrs Accept */*
-                ns_set icput $hdrs User-Agent "[ns_info name]-Tcl/[ns_info version]"
+                ns_set icput $hdrs accept */*
+                ns_set icput $hdrs user-agent "[ns_info name]-Tcl/[ns_info version]"
 
                 if {$http eq "1.0"} {
-                    ns_set icput $hdrs Connection close
+                    ns_set icput $hdrs connection close
                 }
 
                 if {[string match "*:*" $host]} {
                     set host "\[$host\]"
                 }
                 if {$port eq "80"} {
-                    ns_set icput $hdrs Host $host
+                    ns_set icput $hdrs host $host
                 } else {
-                    ns_set icput $hdrs Host $host:$port
+                    ns_set icput $hdrs host $host:$port
                 }
             }
 
             if {$body ne {}} {
                 set blen [string length $body]
                 if {$omitcontentlength == 0} {
-                    ns_set icput $hdrs Content-Length $blen
+                    ns_set icput $hdrs content-length $blen
                 }
             }
 
@@ -235,12 +235,13 @@ namespace eval ::nstest {
         #
         # Return the requested parts of the response.
         #
-
+ns_log notice "XXXXX http-09 GETHEADERS"
         if {[info exists getheaders]} {
             foreach h $getheaders {
                 lappend response [ns_set iget $hdrs $h]
             }
         }
+ns_log notice "XXXXX http-09 GETHEADERS DONE"
         if {[info exists getmultiheaders]} {
             foreach h $getmultiheaders {
                 for {set i 0} {$i < [ns_set size $hdrs]} {incr i} {

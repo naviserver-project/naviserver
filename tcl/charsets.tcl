@@ -312,7 +312,7 @@ proc ns_choosecharset {args} {
 
 proc _ns_multipartformdata_p {} {
 
-    set type [string tolower [ns_set iget [ns_conn headers] Content-Type]]
+    set type [string tolower [ns_set iget [ns_conn headers] content-type]]
     set glob {*multipart/form-data*}
 
     return [expr {[ns_conn method] eq {POST} && [string match $glob $type]}]

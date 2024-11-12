@@ -5,15 +5,15 @@ namespace import -force ::tcltest::*
 
 test ns_set-1.1 {basic syntax ns_set} -body {
     ns_set
-} -returnCodes error -result {wrong # args: should be "ns_set option ?arg ...?"}
+} -returnCodes error -result {wrong # args: should be "ns_set subcommand ?args?"}
 
 test ns_set-1.2 {basic syntax ns_set} -body {
     ns_set ""
-} -returnCodes error -result {ambiguous option "": must be array, cleanup, copy, cput, create, delete, delkey, find, free, get, icput, idelkey, ifind, iget, imerge, isnull, iunique, iupdate, key, keys, list, merge, move, name, new, print, put, size, split, stats, truncate, unique, update, value, or values}
+} -returnCodes error -result {bad subcommand "": must be array, cleanup, copy, cput, create, delete, delkey, find, format, free, get, icput, idelkey, ifind, iget, imerge, isnull, iunique, iupdate, key, keys, list, merge, move, name, new, print, put, size, split, stats, truncate, unique, update, value, or values}
 
 test ns_set-1.6 {basic syntax ns_set array} -body {
     ns_set array
-} -returnCodes error -result {wrong # args: should be "ns_set array setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set array setId"}
 
 test ns_set-1.7 {basic syntax ns_set cleanup} -body {
     ns_set cleanup
@@ -25,73 +25,73 @@ test ns_set-1.8 {basic syntax ns_set copy} -body {
 
 test ns_set-1.9 {basic syntax ns_set cput} -body {
     ns_set cput
-} -returnCodes error -result {wrong # args: should be "ns_set cput setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set cput ?-nocase? ?--? setId key value"}
 
 test ns_set-1.10 {basic syntax ns_set create} -body {
     expr {[ns_set create] ne ""}
-} -result 1 -cleanup {
+} -returnCodes {ok error} -result 1 -cleanup {
     ns_set cleanup
 }
 
 test ns_set-1.11 {basic syntax ns_set delete} -body {
     ns_set delete
-} -returnCodes error -result {wrong # args: should be "ns_set delete setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set delete setId fieldNumber[0,LLONG_MAX]"}
 
 test ns_set-1.12 {basic syntax ns_set delkey} -body {
     ns_set delkey
-} -returnCodes error -result {wrong # args: should be "ns_set delkey setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set delkey ?-nocase? ?--? setId key"}
 
 test ns_set-1.13 {basic syntax ns_set find} -body {
     ns_set find
-} -returnCodes error -result {wrong # args: should be "ns_set find setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set find ?-nocase? ?--? setId key"}
 
 test ns_set-1.14 {basic syntax ns_set free} -body {
     ns_set free
-} -returnCodes error -result {wrong # args: should be "ns_set free setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set free setId"}
 
 test ns_set-1.15.1 {basic syntax ns_set get} -body {
     ns_set get
-} -returnCodes error -result {wrong # args: should be "ns_set get setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set get ?-all? ?-nocase? ?--? setId key ?default?"}
 
 test ns_set-1.15.2 {basic syntax ns_set get} -body {
     ns_set get [ns_set create]
 } -cleanup {
     ns_set cleanup
-} -returnCodes {error ok} -result {wrong # args: should be "ns_set get ?-all? setId ?default?"}
+} -returnCodes {error ok} -result {wrong # args: should be "ns_set get ?-all? ?-nocase? ?--? setId key ?default?"}
 
 test ns_set-1.16 {basic syntax ns_set icput} -body {
     ns_set icput
-} -returnCodes error -result {wrong # args: should be "ns_set icput setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set icput ?-nocase? ?--? setId key value"}
 
 test ns_set-1.18 {basic syntax ns_set idelkey} -body {
     ns_set idelkey
-} -returnCodes error -result {wrong # args: should be "ns_set idelkey setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set idelkey ?-nocase? ?--? setId key"}
 
 test ns_set-1.19 {basic syntax ns_set ifind} -body {
     ns_set ifind
-} -returnCodes error -result {wrong # args: should be "ns_set ifind setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set ifind ?-nocase? ?--? setId key"}
 
 test ns_set-1.20.1 {basic syntax ns_set iget} -body {
     ns_set iget
-} -returnCodes error -result {wrong # args: should be "ns_set iget setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set iget ?-all? ?-nocase? ?--? setId key ?default?"}
 
 test ns_set-1.20.2 {basic syntax ns_set iget} -body {
     ns_set iget [ns_set create]
 } -cleanup {
     ns_set cleanup
-} -returnCodes error -result {wrong # args: should be "ns_set iget ?-all? setId ?default?"}
+} -returnCodes error -result {wrong # args: should be "ns_set iget ?-all? ?-nocase? ?--? setId key ?default?"}
 
 test ns_set-1.21 {basic syntax ns_set isnull} -body {
     ns_set isnull
-} -returnCodes error -result {wrong # args: should be "ns_set isnull setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set isnull setId fieldNumber[0,LLONG_MAX]"}
 
 test ns_set-1.22 {basic syntax ns_set iunique} -body {
     ns_set iunique
-} -returnCodes error -result {wrong # args: should be "ns_set iunique setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set iunique ?-nocase? ?--? setId key"}
 
 test ns_set-1.23 {basic syntax ns_set key } -body {
     ns_set key
-} -returnCodes error -result {wrong # args: should be "ns_set key setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set key setId fieldNumber[0,LLONG_MAX]"}
 
 test ns_set-1.24 {basic syntax ns_set list} -body {
     ns_set list
@@ -99,15 +99,15 @@ test ns_set-1.24 {basic syntax ns_set list} -body {
 
 test ns_set-1.25 {basic syntax ns_set merge} -body {
     ns_set merge
-} -returnCodes error -result {wrong # args: should be "ns_set merge setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set merge ?-nocase? ?--? setId1 setId2"}
 
 test ns_set-1.26 {basic syntax ns_set move} -body {
     ns_set move
-} -returnCodes error -result {wrong # args: should be "ns_set move setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set move setId1 setId2"}
 
 test ns_set-1.27 {basic syntax ns_set name} -body {
     ns_set name
-} -returnCodes error -result {wrong # args: should be "ns_set name setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set name setId"}
 
 test ns_set-1.28 {basic syntax ns_set new} -body {
     expr {[ns_set new] ne ""}
@@ -117,39 +117,43 @@ test ns_set-1.28 {basic syntax ns_set new} -body {
 
 test ns_set-1.29 {basic syntax ns_set pri} -body {
     ns_set print
-} -returnCodes error -result {wrong # args: should be "ns_set print setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set print setId"}
 
 test ns_set-1.31 {basic syntax ns_set put} -body {
     ns_set put
-} -returnCodes error -result {wrong # args: should be "ns_set put setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set put setId key value"}
 
 test ns_set-1.32 {basic syntax ns_set size} -body {
     ns_set size
-} -returnCodes error -result {wrong # args: should be "ns_set size setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set size setId ?nrElements[0,LLONG_MAX]? ?bufferSize[200,LLONG_MAX]?"}
 
 test ns_set-1.33 {basic syntax ns_set split} -body {
     ns_set split
-} -returnCodes error -result {wrong # args: should be "ns_set split setId ?splitChar"}
+} -returnCodes error -result {wrong # args: should be "ns_set split setId ?splitChar?"}
 
 test ns_set-1.34 {basic syntax ns_set truncate} -body {
     ns_set truncate
-} -returnCodes error -result {wrong # args: should be "ns_set truncate setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set truncate setId fieldNumber[0,LLONG_MAX]"}
 
 test ns_set-1.35 {basic syntax ns_set unique} -body {
     ns_set unique
-} -returnCodes error -result {wrong # args: should be "ns_set unique setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set unique ?-nocase? ?--? setId key"}
 
 test ns_set-1.36 {basic syntax ns_set update} -body {
     ns_set update
-} -returnCodes error -result {wrong # args: should be "ns_set update setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set update ?-nocase? ?--? setId key value"}
 
 test ns_set-1.37 {basic syntax ns_set value} -body {
     ns_set value
-} -returnCodes error -result {wrong # args: should be "ns_set value setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set value setId fieldNumber[0,LLONG_MAX]"}
 
 test ns_set-1.38 {basic syntax ns_set imerge} -body {
     ns_set imerge
-} -returnCodes error -result {wrong # args: should be "ns_set imerge setId ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set imerge ?-nocase? ?--? setId1 setId2"}
+
+test ns_set-1.39 {basic syntax ns_set format} -body {
+    ns_set format
+} -returnCodes error -result {wrong # args: should be "ns_set format ?-noname? ?-lead lead? ?-separator separator? ?--? setId"}
 
 
 
@@ -195,6 +199,42 @@ test ns_set-2.1.2 {basic operation ns_set + updates - boundary case for reallocs
     unset -nocomplain s k v
 }
 
+test ns_set-2.1.3 {basic operation "ns_set create" with name and different argument options} -body {
+    ns_set cleanup
+    lmap cmd {
+        {ns_set create s1 x 1}
+        {ns_set create s2 x 1 y 2}
+        {ns_set create -nocase s3 x 1}
+        {ns_set create -nocase s4 x 1 x 2}
+        {ns_set create -nocase -- s5 x 1}
+        {ns_set create -nocase -- s6 x 1 x 2}
+        {ns_set create -- s7 x 1}
+        {ns_set create -- s8 x 1 x 2}
+        {ns_set create -- s9}
+    } {{*}$cmd}
+} -result {d0 d1 d2 d3 d4 d5 d6 d7 d8} -cleanup {
+    ns_set cleanup
+    unset -nocomplain cmd
+}
+
+test ns_set-2.1.4 {basic operation "ns_set create" with NO name and different argument options} -body {
+    ns_set cleanup
+    lmap cmd {
+        {ns_set create x 1}
+        {ns_set create x 1 y 2}
+        {ns_set create -nocase x 1}
+        {ns_set create -nocase x 1 x 2}
+        {ns_set create -nocase -- x 1}
+        {ns_set create -nocase -- x 1 x 2}
+        {ns_set create -- x 1}
+        {ns_set create -- x 1 x 2}
+        {ns_set create -- }
+    } {{*}$cmd}
+} -result {d0 d1 d2 d3 d4 d5 d6 d7 d8} -cleanup {
+    ns_set cleanup
+    unset -nocomplain cmd
+}
+
 
 
 test ns_set-2.2.1 {ns_set size} -body {
@@ -203,7 +243,7 @@ test ns_set-2.2.1 {ns_set size} -body {
     ns_set cleanup
 }
 
-test ns_set-2.2.2 {ns_set resize} -body {
+test ns_set-2.2.2 {"ns_set size" for resizing} -body {
     set s [ns_set create foo a 1 b 2 c 3]
     set size0 [ns_set size $s]
     set size1 [ns_set size $s 2 1000]
@@ -230,8 +270,8 @@ test ns_set-2.4.1 {basic operation ns_set get} -body {
 
 test ns_set-2.4.2 {basic operation ns_set get ... -all} -body {
     set setid [ns_set create testset foo bar moo baz foo 2]
-    ns_set get $setid -all foo
-} -result "bar 2" -cleanup {
+    ns_set get -all $setid foo
+} -returnCodes {ok error} -result "bar 2" -cleanup {
     ns_set cleanup
 }
 
@@ -244,7 +284,7 @@ test ns_set-2.5.1 {basic operation ns_set iget} -body {
 
 test ns_set-2.5.2 {basic operation ns_set iget ... -all} -body {
     set setid [ns_set create testset A 1 B 2 a 3 b 4]
-    ns_set iget $setid -all a
+    ns_set iget -all $setid a
 } -result "1 3" -cleanup {
     ns_set cleanup
 }
@@ -279,19 +319,19 @@ test ns_set-2.9 {basic operation ns_set truncate} -body {
     ns_set cleanup
 }
 
-test ns_set-2.9.1 {basic operation ns_set trunc} -body {
+test ns_set-2.9.1 {basic operation ns_set trunc (also convering ns_set update)} -body {
     set x [ns_set create a 1 b 2 c 3]
     set _ [list [ns_set array $x]]
     ns_set update $x a LONG.a
     ns_set update $x b LONG.b
     ns_set update $x c LONG.c
     lappend _ [ns_set array $x]
-    ns_set trunc $x 2
+    ns_set truncate $x 2
     lappend _ [ns_set array $x]
-} -result {{a 1 b 2 c 3} {a LONG.a b LONG.b c LONG.c} {a LONG.a b LONG.b}} -cleanup {
+} -returnCodes {error ok} -cleanup {
     ns_set cleanup
     unset -nocomplain x _
-}
+} -result {{a 1 b 2 c 3} {a LONG.a b LONG.b c LONG.c} {a LONG.a b LONG.b}}
 
 test ns_set-2.10 {basic operation ns_set} -body {
     set x [ns_set create testset . 0 a 1 b 2 c 3 d 4 e 5 f 6 e 7 g 8]

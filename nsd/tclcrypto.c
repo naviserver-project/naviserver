@@ -1537,7 +1537,7 @@ CryptoMdHkdfObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
         {NULL, NULL, NULL, NULL}
     };
     /*
-      ::ns_crypto::md hkdf -digest sha256 -salt foo -secret var -info "Content-Encoding: auth" 10
+      ::ns_crypto::md hkdf -digest sha256 -salt foo -secret var -info "content-encoding: auth" 10
 
       # test case 1 from RFC 5869
       ::ns_crypto::md hkdf -digest sha256 \

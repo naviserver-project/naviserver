@@ -167,7 +167,7 @@ NsConfUpdate(void)
         ns_free((void*)nsconf.tcl.sharedlibrary);
         nsconf.tcl.sharedlibrary = Ns_DStringExport(&ds);
 
-        Ns_SetUpdateSz(set, "tcllibrary", 10, nsconf.tcl.sharedlibrary, length);
+        Ns_SetIUpdateSz(set, "tcllibrary", 10, nsconf.tcl.sharedlibrary, length);
     }
     nsconf.tcl.lockoninit = Ns_ConfigBool(path, "tclinitlock", NS_FALSE);
     Ns_DStringFree(&ds);

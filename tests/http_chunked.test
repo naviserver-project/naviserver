@@ -26,24 +26,24 @@ testConstraint http09 true
 test http_chunked-1.1 {
     ADP streaming w/chunks to HTTP/1.1 client
 } -constraints {serverListen http09} -body {
-    nstest::http-0.9 -http 1.1 -setheaders {Connection keep-alive} \
-                -getbody 1 -getheaders {Transfer-Encoding Connection Content-Length} \
+    nstest::http-0.9 -http 1.1 -setheaders {connection keep-alive} \
+                -getbody 1 -getheaders {transfer-encoding connection content-length} \
         GET /http_chunked.adp?stream=1
 } -result "200 chunked keep-alive {} {a\n0123456789\n5\n01234\n0\n\n}"
 
 test http_chunked-1.2 {
     ADP with short buffered response
 } -constraints {serverListen http09} -body {
-    nstest::http-0.9 -http 1.1 -setheaders {Connection keep-alive} \
-                -getheaders {Transfer-Encoding Connection Content-Length} -getbody t \
+    nstest::http-0.9 -http 1.1 -setheaders {connection keep-alive} \
+                -getheaders {transfer-encoding connection content-length} -getbody t \
         GET /http_chunked.adp?stream=0
 } -result "200 {} keep-alive 15 012345678901234"
 
 test http_chunked-1.3 {
     ADP with longer partly-buffered response and auto-streaming
 } -constraints {serverListen http09} -body {
-    nstest::http-0.9 -http 1.1 -setheaders {Connection keep-alive} \
-                -getheaders {Transfer-Encoding Connection Content-Length} -getbody t \
+    nstest::http-0.9 -http 1.1 -setheaders {connection keep-alive} \
+                -getheaders {transfer-encoding connection content-length} -getbody t \
         GET /http_chunked.adp?stream=0&bufsize=8
 } -result "200 chunked keep-alive {} {a\n0123456789\n5\n01234\n0\n\n}"
 
@@ -51,8 +51,8 @@ test http_chunked-1.3 {
 test http_chunked-1.4 {
     ADP auto-streaming to HTTP/1.0 client
 } -constraints serverListen -body {
-    nstest::http -http 1.0 -setheaders {Connection keep-alive} \
-        -getheaders {Transfer-Encoding Connection Content-Length} -getbody t \
+    nstest::http -http 1.0 -setheaders {connection keep-alive} \
+        -getheaders {transfer-encoding connection content-length} -getbody t \
         GET /http_chunked.adp?stream=1&bufsize=8
 } -returnCodes {error ok} -result {200 {} close {} 012345678901234}
 
@@ -66,7 +66,7 @@ test http_chunked-2.1 {
         ns_write 01234
     }
 } -body {
-    nstest::http-0.9 -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
+    nstest::http-0.9 -http 1.1 -getheaders {transfer-encoding content-length} -getbody 1 \
         GET /tclchunked
 } -cleanup {
     ns_unregister_op GET /tclchunked
@@ -82,7 +82,7 @@ test http_chunked-2.1.1 {
         ns_write [binary format a5 01234]
     }
 } -body {
-    nstest::http-0.9 -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
+    nstest::http-0.9 -http 1.1 -getheaders {transfer-encoding content-length} -getbody 1 \
         GET /tclchunked
 } -cleanup {
     ns_unregister_op GET /tclchunked
@@ -96,7 +96,7 @@ test http_chunked-2.2 {Tcl streaming to HTTP/1.0 client} -constraints serverList
         ns_write 01234
     }
 } -body {
-    nstest::http -http 1.0 -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
+    nstest::http -http 1.0 -getheaders {transfer-encoding content-length} -getbody 1 \
         GET /tclchunked
 } -cleanup {
     ns_unregister_op GET /tclchunked
@@ -108,7 +108,7 @@ test http_chunked-2.3 {
 } -constraints serverListen -setup {
     ns_register_proc GET /tclchunked {ns_return 200 text/plain 01234}
 } -body {
-    nstest::http -http 1.1 -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
+    nstest::http -http 1.1 -getheaders {transfer-encoding content-length} -getbody 1 \
         GET /tclchunked
 } -cleanup {
     ns_unregister_op GET /tclchunked
@@ -129,8 +129,8 @@ test http_chunked-2.4.0 {
 } -body {
     nstest::http-0.9 -http 1.1 \
         -omitcontentlength 1 \
-        -setheaders {Transfer-Encoding Chunked} \
-        -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
+        -setheaders {transfer-encoding Chunked} \
+        -getheaders {transfer-encoding content-length} -getbody 1 \
         PUT /tclchunked "-1\r\nchunk\r\n0\r\n\r\n"
 } -cleanup {
     ns_unregister_op PUT /tclchunked
@@ -151,8 +151,8 @@ test http_chunked-2.4.1 {
 } -body {
     nstest::http-0.9 -http 1.1 \
         -omitcontentlength 1 \
-        -setheaders {Transfer-Encoding Chunked} \
-        -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
+        -setheaders {transfer-encoding Chunked} \
+        -getheaders {transfer-encoding content-length} -getbody 1 \
         PUT /tclchunked "x\r\nD\r\n0\r\n\r\n"
 } -cleanup {
     ns_unregister_op PUT /tclchunked
@@ -177,8 +177,8 @@ test http_chunked-2.4.2 {
     try {
         nstest::http-0.9 -http 1.1 \
             -omitcontentlength 1 \
-            -setheaders {Transfer-Encoding Chunked Connections close} \
-            -getheaders {Transfer-Encoding Content-Length} \
+            -setheaders {transfer-encoding Chunked connection close} \
+            -getheaders {transfer-encoding content-length} \
             PUT /tclchunked "ffffffff\r\nchunk\r\n0\r\n\r\n"
     } on error {errorMsg} {
     } on ok {result} {
@@ -203,8 +203,8 @@ test http_chunked-2.4.3 {
 } -body {
     nstest::http-0.9 -http 1.1 \
         -omitcontentlength 1 \
-        -setheaders {Transfer-Encoding Chunked} \
-        -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
+        -setheaders {transfer-encoding Chunked} \
+        -getheaders {transfer-encoding content-length} -getbody 1 \
         PUT /tclchunked "1;last\r\nD\r\n0\r\n\r\n"
 } -cleanup {
     ns_unregister_op PUT /tclchunked
@@ -214,7 +214,7 @@ test http_chunked-2.4.3 {
 
 test http_chunked-3.1 {
 
-    PUT with Transfer-Encoding Chunked and unknown Content-Length (but
+    PUT with transfer-encoding Chunked and unknown content-length (but
     provided X-Expected-Entity-Length). This is the format that WebDAV
     client of macOS uses (via Finder).
 
@@ -227,8 +227,8 @@ test http_chunked-3.1 {
 } -body {
     nstest::http-0.9 -http 1.1 \
         -omitcontentlength 1 \
-        -setheaders {Transfer-Encoding Chunked X-Expected-Entity-Length 13} \
-        -getheaders {Transfer-Encoding Content-Length} -getbody 1 \
+        -setheaders {transfer-encoding Chunked X-Expected-Entity-Length 13} \
+        -getheaders {transfer-encoding content-length} -getbody 1 \
         PUT /tclchunked "0A\r\n1234567890\r\n03\r\nabc"
 } -cleanup {
     ns_unregister_op PUT /tclchunked

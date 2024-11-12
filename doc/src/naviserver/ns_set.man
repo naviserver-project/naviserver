@@ -2,441 +2,513 @@
 [manpage_begin ns_set n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {Manipulate sets of key-value pairs}]
+[titledesc {Data Structure for Multimap with Potentially Case-insentitive Key-value Pairs}]
 
 [description]
 
-This command is used to manipulate sets of key-value pairs or "fields". 
-The fields in the set are ordered by number.  The field numbers start at
-zero and increase by one, up to the total number of fields.  An ns_set is
-actually a multiset - in other words, the same key can appear multiple times
-in the same set.  This data structure is particularly useful for things like
-HTTP headers which have this same property.
+  This command provides functions for manipulating sets of key-value
+  pairs, or "fields".  Fields in the set are ordered numerically,
+  starting at zero and increasing by one up to the total number of
+  fields.  An [cmd ns_set] is actually a multimap (also called
+  multiset, or bag), meaning the same key can appear
+  multiple times within the same set.
 
-The allowed options (which may be abbreviated) are:
+  Optionally, sets can be defined to be case-insensitive, meaning that
+  mixed and uppercase keys are treated exactly like
+  lowercase keys (for details, see [sectref {Case Sensitivity}]).
+
+[para] The [cmd ns_set] data structure is especially useful for
+  handling data like HTTP headers, which are per definition case
+  insensitive and may have repeated keys.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-
-[call [cmd ns_set] [opt [arg {arg arg ...}]]]
-
-
-[list_end]
-
-[list_begin definitions]
-
-
 [call [cmd "ns_set array"] [arg setId]]
 
-Returns the contents of the setId in a string representation similar
-to Tcl's array get format.  This is useful for converting an ns_set
-to an array or for iterating over the key-value pairs with foreach.
-Since ns_sets can contain the same key multiple times, converting
-an ns_set to an array can result in an array that is not exactly
-the same as the original ns_set as keys in an array are unique.
+ Returns the contents of the [arg setId] in a string format similar to
+ Tcl's array-get syntax.  This is helpful for iterating over
+ key-value pairs with [cmd foreach].  The result can also be used for
+ creating a Tcl [cmd dict] or a Tcl [cmd array]. Note that since
+ [cmd ns_set] can contain duplicate keys, these conversion may
+ lose duplicates, as keys in dicts and arrays are unique.
+
+[example_begin]
+ # Ouput HTTP request headers as string
+ set headers [lb]ns_conn headers[rb]
+ set output ""
+  foreach {key value} [lb]ns_set array $headers[rb] {
+    append output "$key = $value \n"
+  }
+  set output
+[example_end]
+
 
 [call [cmd "ns_set cleanup"]]
 
-Frees all sets in the current interp.
-This command is autoamtically executed by [cmd ns_cleanup],
-which runs after every request, freeing all sets created via
-[cmd ns_set].
+  Deletes all sets in the current interpreter.
+  See also the section [sectref {Storage Management}] below.
+
 
 [call [cmd "ns_set copy"] [arg setId]]
 
-Returns a new set that has the same name and contents as the set referenced
-in setId.  The new set is automatically freed when
-the transaction ends.
+  Returns a new set with the same name and contents as the specified
+  [arg setId]. See also the section [sectref {Storage Management}] below.
 
-[call [cmd "ns_set cput"] [arg setId] [arg key] [arg value]]
 
-Appends a new field to the set with key and value, if the field does
-not already exist in the set (conditional put).  If the field already
-exists in the set, the set is unchanged.  Returns the field number of
-the new field, or the field number of the existing field if it already
-exists in the set.
+[call [cmd "ns_set cput"] [opt [option -nocase]] [opt "--"] [arg setId] [arg key] [arg value]]
 
-[call [cmd "ns_set create"] [opt [arg name]] [opt [arg key]] [opt [arg value]] ...]
+  Conditionally appends a new field to the set with the specified
+  [arg key] and [arg value], only if the key does not already exist in the set.
+  Returns the field number of the newly added field, or the field
+  number of the existing field if it already exists.
 
-Allocates memory for a new set and returns the setId for the new set.  
-The new set is automatically freed when the transaction ends.
+
+[call [cmd "ns_set create"] \
+        [opt [option -nocase]] [opt "--"] \
+        [opt [arg name]] [opt [arg key]] [opt [arg value]] ...]
+
+  Creates a new set and returns its [arg setId].
+
+  [para] If a [arg name] is provided, it sets the name of the set. You
+  can also initialize the set with [arg key]/[arg value] pairs by
+  providing them as additional arguments.
+
+  [para] If the [option -nocase] option is used, the set becomes
+  case-insensitive for all commands that accept a [arg key] parameter.
+  Keys are stored in case-insensitive sets in lowercase and returned
+  in lowercase.
+
+[example_begin]
+ # Create a case-insensitive set with initial values
+ set mySet [lb]ns_set create -nocase mySetName a 1 B 2 c 3[rb]
+[example_end]
+
 
 [call [cmd "ns_set delete"] [arg setId] [arg fieldNumber]]
 
-Deletes the field in the set at field number fieldNumber.
+  Deletes the field in the set at the specified field number.
 
-[call [cmd "ns_set delkey"] [arg setId] [arg key]]
 
-Removes the first field in the set whose key is key.  Note that there could be
-multiple fields in the set with this key; this command only removes the first occurrence.
+[call [cmd "ns_set delkey"] [opt [option -nocase]] [opt "--"] [arg setId] [arg key]]
 
-[call [cmd "ns_set find"] [arg setId] [arg key]]
+  Removes the first occurrence of a field in the set with the
+  specified [arg key]. Note that multiple fields with the same key may
+  exist; this command only removes the first occurrence.
 
-Returns the index of the first field in the specified setId whose key matches
-the specified key.  Indexing starts at zero.  If no matching fields are found,
-ns_set find returns -1.
+
+[call [cmd "ns_set find"] [opt [option -nocase]] [opt "--"] [arg setId] [arg key]]
+
+  Returns the index of the first field in the specified [arg setId]
+  with a matching [arg key]. If no matching field is found, returns -1.
+
+[call [cmd "ns_set format"] \
+        [opt [option -noname]] \
+        [opt [option "-lead [arg lead]"]] \
+        [opt [option "-separator [arg separator]"]] \
+        [opt "--"] \
+        [arg setId] ]
+
+  Formats the specified set in a human-friendly way and returns the
+  string as result. Option [option -noname] will omit the name from
+  the output. When [arg lead] is specified, every key in the output
+  will be preceded by this lead string (default is ""). When
+  [arg separator] is specified, every key in the output will be followed by
+  this separator string (default is ": ").
+
+[example_begin]
+ # Example of ns_set format
+ % set mySet [lb]ns_set create mySetName a 1 b 2 c 3[rb]
+ % ns_set format $mySet
+ mySetName:
+   a: 1
+   b: 2
+   c: 3
+ 
+ # Using options
+ % ns_set format -noname -lead "-> " -separator " = " $mySet
+ -> a = 1
+ -> b = 2
+ -> c = 3
+[example_end]
+
 
 [call [cmd "ns_set free"] [arg setId]]
 
-Frees the specified set. Sets are
-automatically freed when the transaction ends, but for loops with many iterations
-it might be useful to free sets manually.
+  Frees (deletes) the specified set. Although sets are automatically
+  freed at the end of the request (see section
+  [sectref {Storage Management}]), freeing sets manually can
+  save temporary memory within loops with many iterations.
 
 [call [cmd "ns_set get"] \
         [arg setId] \
         [opt [option "-all"]] \
-        [opt [arg "--"]] \
+        [opt [option -nocase]] [opt "--"] \
         [arg key] \
         [opt [arg default]]]
 
-Returns the first value associated with key.  If key isn't in the set,
-the default or an empty string is returned. When the optional
-[option "-all"] is provided, a list of values for the key is returned.
+  Returns the first value associated with the specified [arg key]. If the
+  key is not found, the default value or an empty string is returned.
+  With the [option "-all"] option, all values for the key are returned
+  as a list.
 
-[call [cmd "ns_set icput"] [arg setId] [arg key] [arg value]]
+[example_begin]
+ % set mySet [lb]ns_set create mySetName a 1 b 2 c 3 a 4[rb]
+ # Get the first value for key 'a'
+ % ns_set get $mySet a
+ 1
+ 
+ # Get all values for key 'a' (if there are duplicates)
+ % ns_set get -all $mySet a
+ 1 4
+ 
+ # Case-insensitive get
+ % ns_set get -nocase $mySet A
+ 1
+[example_end]
 
-Case-insensitive counterpart of [cmd "ns_set cput"].
-
-[call [cmd "ns_set idelkey"] [arg setId] [arg key]]
-
-Case-insensitive counterpart of [cmd "ns_set delkey"].
-
-[call [cmd "ns_set ifind"] [arg setId] [arg key]]
-
-Case-insensitive counterpart of [cmd "ns_set find"].
-
-
-[call [cmd "ns_set iget"] \
-        [arg setId] \
-        [opt [option "-all"]] \
-        [opt [arg "--"]] \
-        [arg key] \
-        [opt [arg default]]]
-
-Case-insensitive counterpart of [cmd "ns_set get"].
-
-[call [cmd "ns_set imerge"] [arg high] [arg low]]
-
-Merges two sets. This is the case insensitive version of
-[cmd "ns_set merge"].
 
 [call [cmd "ns_set isnull"] [arg setId] [arg fieldNumber]]
 
-Returns 1 if the value of the field specified by fieldNumber is null
-and 0 if it is not.  Note that an empty string is not the same as a
-null.  [cmd "ns_set isnull"] will return 0 if the value is an empty
-string.
-
-[call [cmd "ns_set iunique"] [arg setId] [arg key]]
-
-Case-insensitive counterpart of [cmd "ns_set unique"].
-
-[call [cmd "ns_set iupdate"] [arg setId] [arg key] [arg value]]
-
-Case-insensitive counterpart of [cmd "ns_set update"].
+  Returns 1 if the field specified by [arg fieldNumber] is null, and 0
+  if it is not.  Note that an empty string is distinct from null; this
+  command returns 0 for an empty string.
 
 
 [call [cmd "ns_set key"] [arg setId] [arg fieldNumber]]
 
-Returns the key for the field numbered fieldNumber.  This command is useful
-when looping through all the key-value pairs in the set in order.
-
+  Returns the key for the field at the specified [arg fieldNumber].
 
 [call [cmd "ns_set keys"] [arg setId] [opt [arg pattern]]]
 
-Returns a list of all keys in the given ns_set.
-If a pattern is supplied, only those keys that match it
-(according to the Tcl rules of string match) will be returned.
-
+  Returns a list of all keys in the specified [arg setId]. If a
+  [arg pattern] is provided, only keys matching the pattern are returned,
+  following Tcl's string match rules.
 
 
 [call [cmd "ns_set list"] ]
 
-Returns the list of all ns_sets. 
-
-[call [cmd "ns_set merge"] [arg high] [arg low]]
-
-Merges two sets.  Any fields in the low set are appended to the high set if a
-field with the same key name does not already exist in the high set.
+  Returns a list of all [cmd ns_set] instances in the current interpreter.
 
 
-[call [cmd "ns_set move"] [arg to] [arg from]]
+[call [cmd "ns_set merge"] [arg setId1] [arg setId2]]
 
-Moves all fields from the from set to the end of the to set, leaving
-the from set a valid, empty set.
+  Merges [arg setId2] into [arg setId1]. Fields from [arg setId2] are
+  appended to [arg setId1] only if their keys do not already exist in
+  [arg setId1].
+
+[example_begin]
+ # Example of ns_set merge
+ # Create two sets
+ % set set1 [lb]ns_set create key1 value1 key2 value2[rb]
+ % set set2 [lb]ns_set create key2 value2_new key3 value3[rb]
+ 
+ # Merge set2 into set1
+ % ns_set merge $set1 $set2
+
+ # Now set1 contains key1, key2 (original value), and key3
+ % ns_set keys $set1
+ key1 key2 key3
+ [example_end]
+
+[call [cmd "ns_set move"] [arg setId1] [arg setId2]]
+
+  Moves all fields from [arg setId2] to the end of [arg setId1],
+  leaving [arg setId2] as an empty but valid set.
+
+[example_begin]
+ # Example of ns_set move
+ # Create two sets
+ % set set1 [lb]ns_set create key1 value1[rb]
+ % set set2 [lb]ns_set create key2 value2 key3 value3[rb]
+ 
+ # Move fields from set2 to set1
+ % ns_set move $set1 $set2
+ 
+ # Now set1 contains key1, key2, key3
+ % ns_set keys $set1
+ key1 key2 key3
+ 
+ # set2 is empty
+ % ns_set size $set2
+ 0
+[example_end]
 
 [call [cmd "ns_set name"] [arg setId]]
 
-Returns the name of the set.  Returns an empty string if no name has been set.
+  Returns the name of the set or an empty string if no name has been
+  set.
 
-[call [cmd "ns_set print"] [arg setId]]
-
-Prints the specified set to stderr which should go to the server log.  This
-is useful for debugging, but [cmd "ns_set array"] may be more useful in actual code.
 
 [call [cmd "ns_set put"] [arg setId] [arg key] [arg value]]
 
-Appends a new field to the set with key and value.  Note that the field is
-appended so if a previous field has the same key as the new field, the previous
-field will be returned by [cmd "ns_set get"].
-The field number of the new field is returned.
+  Appends a new field with the specified [arg key] and [arg value] to
+  the set and returns the field number of the new field. Use
+  [cmd "ns_set update"] if you want to update a field with a certain key.
+
 
 [call [cmd "ns_set size"] [arg setId]]
 
-Returns the number of fields in the set.
+  Returns the number of fields in the set.
+
 
 [call [cmd "ns_set split"] [arg setId] [opt [arg splitChar]]]
 
-Splits one set into multiple sets based on the splitChar as described
-below, and returns a Tcl list of IDs for the newly-allocated sets.  It
-assumes that the keys in the source setId contain a specific character
-(splitChar) that can be used to separate the name of a new set and the
-key in the new set.  The default splitChar is a period ".".
+  Splits one set into multiple sets based on a specific character,
+  [arg splitChar] used in the key, and returns a list of
+  IDs for the newly created sets.
+  Defaults to using a period (".") as the split character.
+
+[example_begin]
+ # Create a set with keys containing periods
+ % set s1 [lb]ns_set create[rb]
+ % ns_set put $s1 dog.food "Yummy dog food!"
+ % ns_set put $s1 cat.food "Yummy cat food!"
+ 
+ % ns_set format $s1
+ dog.food: Yummy dog food!
+ cat.food: Yummy cat food!
+ 
+ # Split the set into multiple (actually 2) sets based on '.' in the key
+ % set newSets [lb]ns_set split $s1[rb]
+ d2 d3
+ 
+ # Show the result of the created new sets
+ % set result ""
+ % foreach s $newSets {
+ %   append result [lb]ns_set format $s[rb]
+ % }
+ % set result
+ dog:
+   food: Yummy dog food!
+ cat:
+   food: Yummy cat food!
+[example_end]
+
 
 [call [cmd "ns_set truncate"] [arg setId] [arg fieldNumber]]
 
-Removes any fields with index fieldNumber or greater and frees any memory allocated for them.
+  Removes all fields from [arg fieldNumber] onward.
 
-[call [cmd "ns_set unique"] [arg setId] [arg key]]
 
-Returns 1 if the specified key is unique in the specified set and 0 if
-it is not.  For example, a web browser could send multiple "Accept:"
-headers which would end up in the header set for the connection.
+[call [cmd "ns_set unique"] [opt [option -nocase]] [opt "--"] [arg setId] [arg key]]
 
-[cmd "ns_set unique"] would return 0 for the "Accept:" key, because there
-are multiple fields with the key "Accept:".  The test for uniqueness
-is performed case-sensitively.
+  Returns 1 if the specified [arg key] is unique in the set and 0 if it is
+  not.
 
-[call [cmd "ns_set update"] [arg setId] [arg key] [arg value]]
+[example_begin]
+ # Create a set with duplicate keys
+ % set headers [lb]ns_set create[rb]
+ % ns_set put $headers Accept "text/html"
+ % ns_set put $headers Accept "application/xml"
+ % ns_set put $headers Host "www.example.com"
+ 
+ # Check if 'Accept' header is unique
+ % ns_set unique $headers Accept
+ 0
+ 
+ # Check if 'Host' header is unique
+ % ns_set unique $headers Host
+ 1
+[example_end]
 
-Updates the first field in the specified set whose key is key and
-replaces its value with value.  This is roughly equivalent to
-[cmd "ns_set delkey"] followed by [cmd "ns_set put"]. Only the first
-occurrence of the named field is updated.
+
+[call [cmd "ns_set update"] [opt [option -nocase]] [opt "--"] [arg setId] [arg key] [arg value]]
+
+  Updates the first occurrence of a field with the specified [arg key],
+  replacing its value with the new [arg value]. Equivalent to
+  [cmd "ns_set delkey"] followed by [cmd "ns_set put"].
+
 
 [call [cmd "ns_set value"] [arg setId] [arg fieldNumber]]
 
-Returns the value of the set at field number fieldNumber.  This command is useful
-when looping through all the key-value pairs in the set.
+  Returns the value of the field at the specified [arg fieldNumber].
+
 
 [call [cmd "ns_set values"] [arg setId] [opt [arg pattern]]]
 
-Returns a list of all values in the given ns_set.
-If a pattern is supplied, only those values that match it
-(according to the Tcl rules of string match) will be returned.
+  Returns a list of all values in the set. If a [arg pattern] is specified,
+  only values matching the pattern are returned.
 
 
 [list_end]
 
+
+[section OPTIONS]
+
+  The option [option -nocase] is valid for multiple commands.  The options
+  valid for just a single command are described above.
+
+[list_begin options]
+[opt_def -nocase]
+
+  When specified on a submethod accepting a [arg key] the lookup for
+  the key will be case-insensitive, even if the underlying set is
+  case-sensitive.
+
+[list_end]
+
 [section EXAMPLES]
+Basic operations on ns_sets:
 
 [example_begin]
+ # Create an ns_set with several fields, named "mySetName"
  % set mySet [lb]ns_set create mySetName a b c d e f A Joe B John C Jeff[rb]
- d0
-[example_end]
-
-[example_begin]
  % ns_set size $mySet
  6
-[example_end]
-
-[example_begin]
+ 
+ # Get the name of the ns_set
  % ns_set name $mySet
  mySetName
-[example_end]
-
-[example_begin]
+ 
+ # Get all keys and values of the ns_set
  % ns_set array $mySet
  a b c d e f A Joe B John C Jeff
-[example_end]
-
-[example_begin]
+ 
  % ns_set keys $mySet
  a c e A B C
-[example_end]
-
-[example_begin]
+ 
  % ns_set values $mySet
  b d f Joe John Jeff
-[example_end]
-
-
-[example_begin]
+ 
+ # Get the value of the field with key 'A'
  % ns_set get $mySet A
  Joe
-[example_end]
-
-[example_begin]
- % ns_set iget $mySet a
+ 
+ # Get the value of the field with key 'a'
+ % ns_set get $mySet a
  b
-[example_end]
-
-[example_begin]
+ 
+ # Is the key 'a' unique in the ns_set?
  % ns_set unique $mySet a
  1
-[example_end]
-
-[example_begin]
- % ns_set iunique $mySet a
- 0
-[example_end]
-
-[example_begin]
- % ns_set truncate $mySet 3
  
- % ns_set print $mySet
+ # Is the key 'a' unique in the ns_set, when the case is ignored?
+ % ns_set unique -nocase $mySet a
+ 0
+ 
+ # Truncate the set after the third field
+ % ns_set truncate $mySet 3
+ % ns_set format $mySet
  mySetName:
-      a = b
-      c = d
-      e = f
-[example_end]
-
-[example_begin]
+   a: b
+   c: d
+   e: f
+ 
+ # Update the value of the field with key "c"
  % ns_set update $mySet c "Hello World!"
  2
-[example_end]
-
-[example_begin]
- % ns_set print $mySet
+ % ns_set format $mySet
  mySetName:
-      a = b
-      e = f
-      c = Hello World!
-[example_end]
-
-[example_begin]
+   a: b
+   c: Hello World!
+   e: f
+ 
+ # Lookup position of existing key
  % ns_set find $mySet c
- 2
-[example_end]
-
-[example_begin]
+ 1
+ 
+ # Lookup position of non-existing key
  % ns_set find $mySet nokey
  -1
-[example_end]
-
-[example_begin]
+ 
+ # Delete the field at position 0
  % ns_set delete $mySet 0
-[example_end]
-
-[example_begin]
- % ns_set array $mySet
- e f c {Hello World!}
-[example_end]
-
-[para]
-
-[example_begin]
- % set anotherSet [lb]ns_set create[rb]
- d1
-[example_end]
-
-[example_begin]
- % ns_set list
- d0 d1
-[example_end]
-
-[example_begin]
- % ns_set put $anotherSet dog.food "Yummy dog food!"
- 0
-[example_end]
-
-[example_begin]
- % ns_set put $anotherSet cat.food "Yummy cat food!"
- 1
-[example_end]
-
-[example_begin]
- % ns_set print $anotherSet
-      dog.food = Yummy dog food!
-      cat.food = Yummy cat food!
-[example_end]
-
-[example_begin]
- % set newSets [lb]ns_set split $anotherSet[rb]
- d2 d3
+ % ns_set format $mySet
+ mySetName:
+   c: Hello World!
+   e: f
 [example_end]
 
 [para]
+Iterating over the fields of an ns_set:
 
 [example_begin]
- % foreach s $newSets { ns_set print $s }
- dog:
-      food = Yummy dog food!
- cat:
-      food = Yummy cat food!
-[example_end]
-
-[example_begin]
- % ns_set key $anotherSet 0
- dog.food
-[example_end]
-
-[example_begin]
- % ns_set value $anotherSet 1
- Yummy cat food!
-[example_end]
-
-[example_begin]
- % ns_set move $mySet $anotherSet
- d0
-[example_end]
-
-[example_begin]
- % ns_set array $mySet
- e f c {Hello World!} dog.food {Yummy dog food!} cat.food {Yummy cat food!}
-[example_end]
-
-[example_begin]
- % ns_set array $anotherSet
-[example_end]
-
-[example_begin]
- % set thirdSet [lb]ns_set new[rb]
- d4
-[example_end]
-
-[example_begin]
- % ns_set move $thirdSet $mySet
- d4
-[example_end]
-
-[example_begin]
- % ns_set array $thirdSet
- e f c {Hello World!} dog.food {Yummy dog food!} cat.food {Yummy cat food!}
-[example_end]
-
-[example_begin]
- % array set testArray [lb]ns_set array $thirdSet[rb]
-[example_end]
-
-[example_begin]
- # to run through an ns_set
+ # Run through an ns_set based on key/value pairs
+ foreach {key value} [lb]ns_set array $myset[rb]} {
+   ns_log notice "key: $key, value: $value"
+ }
+ 
+ # Run through an ns_set based on indicies
  for {set i 0} {$i < [lb]ns_set size $myset[rb]} {incr i} {
    set key [lb]ns_set key $myset $i[rb]
    set value [lb]ns_set value $myset $i[rb]
+   ns_log notice "key: $key, value: $value"
  }
 [example_end]
+
+
+[section {Case Sensitivity}]
+
+[para]
+
+  Sets can be defined to be case-sensitive (default) or
+  case-insensitive. When a set is defined case-insensitive, all keys
+  are converted internally to lowercase. Every lookup operation with
+  an upper or mixed case key will then succeed when the key in
+  lowercase exists.
+
+[para]
+  Case-sensitive and case-insensitive sets can be
+  created either from Tcl or from C.
+  To create a case-insensitive set from Tcl, use the option
+  [option -nocase] for the [cmd "ns_set create"] command.
+  When a case-insensitive set is duplicated via [cmd "ns_set copy"] or
+  [cmd "ns_set split"], the resulting set is also case-insensitive.
+  The sets used for HTTP request headers and configuration values are
+  created automatically from C as case-insensitive.
+
+[para]
+  Even, when a set is defined as case-sensitive, all subcommands of
+  [cmd ns_set] receiving a key as input include the option [option -nocase],
+  to make a single lookup case-insensitive.
+
+[para]
+
+  Legacy: previous versions of NaviServer have used special names for
+  the subcommands where the keys should be treated
+  case-insensitive. These subcommand names were prefixed with the
+  character "i" and were named "icput", "idelkey", "ifind", "iget",
+  "imerge", "iunique", and "iupdate". These names are still supported
+  for compatibility, but it is recommended to use the option
+  [option -nocase] instead.
+
+
+[section {Storage Management}]
+
+[para]
+
+  Sets created via the Tcl interface using [cmd "ns_set"] and the
+  subcommands [cmd "create"], [cmd "copy"], and [cmd "split"] are
+  automatically deleted after each request, or when
+  [cmd "ns_set cleanup"] is executed. The cleanup is performed
+  automatically after every request by the command [cmd ns_cleanup].
+
+  [para] It is also possible to delete a specified set with the command
+  [cmd "ns_set free"].
 
 [section {NOTES}]
 
 [para]
-NULL values, distinct from empty strings, are useful when
-representing a database row as an [cmd ns_set].  Currently, it is difficult
-to get a NULL value in an [cmd ns_set] through the Tcl API.  You may get a
-NULL value in the set created by [cmd ns_parsequery] or by omitting the last
-value when seeding the [cmd ns_set] in the create/new subcommand, etc.  It
-is possible to create NULL-valued fields through the C API.
+
+  NULL values, distinct from empty strings, are useful when
+  representing a database row as an [cmd ns_set]. Currently, obtaining
+  a NULL value in an [cmd ns_set] through the Tcl API can be
+  challenging.  NULL values may occur in sets created by
+  [cmd ns_parsequery] or by omitting the last value when seeding an
+  [cmd ns_set] in the create subcommand, among other scenarios.
+  NULL-valued fields can also be created through the C API.
 
 [para]
-[cmd ns_set] is intended for relatively small amounts of data.  (Keys
-are found by a linear search through the whole underlying C array.)
-If you stuff very large amounts of data into an [cmd ns_set],
-performance will be poor - use a Tcl Array or a Tcl dict instead.
 
-[see_also ns_findset ns_ictl ns_cleanup]
-[keywords "global built-in" ns_set "data structure"]
+  [cmd ns_set] is intended for relatively small amounts of data.
+  Since keys are found by linear search, loading very large datasets
+  into an [cmd ns_set] may result in poor performance. In such cases,
+  consider using a Tcl array or dict structure instead.
+
+[see_also ns_findset ns_ictl ns_cleanup ns_conn ns_parsequery]
+[keywords "global built-in" multimap multiset bag ns_set "data structure"]
 
 [manpage_end]
 

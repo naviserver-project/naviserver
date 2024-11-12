@@ -447,7 +447,7 @@ NsConfigLog(void)
         length = ds.length;
         ns_free((void*)logfileName);
         logfileName = Ns_DStringExport(&ds);
-        Ns_SetUpdateSz(set, "serverlog", 9, logfileName, length);
+        Ns_SetIUpdateSz(set, "serverlog", 9, logfileName, length);
     }
 
     rollfmt = ns_strcopy(Ns_ConfigString(path, "logrollfmt", NS_EMPTY_STRING));

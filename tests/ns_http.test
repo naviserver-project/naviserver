@@ -101,7 +101,7 @@ test http-1.5c {bad method 3 args} -constraints {serverListen http09} -body {
 # HEAD requests for existing + non-existing page
 #
 test http-1.6.0 {HTTP/1.0 HEAD existing} -constraints serverListen -body {
-    nstest::http -getbody 1 -getheaders {Content-Length} HEAD /10bytes
+    nstest::http -getbody 1 -getheaders {content-length} HEAD /10bytes
 } -match glob -result {200 10}
 
 test http-1.6.1 {HTTP/1.0 HEAD not-existing} -constraints serverListen -body {
@@ -113,15 +113,15 @@ test http-1.6.1 {HTTP/1.0 HEAD not-existing} -constraints serverListen -body {
 #
 test http-1.6.2 { HTTP/1.0 GET not-existing vhost + custom error page} -constraints serverListen -body {
     nstest::http -getbody 1 \
-        -setheaders [list Host testvhost:[ns_config test listenport]] \
-        -getheaders {Content-Length} \
+        -setheaders [list host testvhost:[ns_config test listenport]] \
+        -getheaders {content-length} \
         GET /noexist
 } -match glob -result {404 15 {CUSTOM 404 page}}
 
 test http-1.6.3 { HTTP/1.0 HEAD not-existing vhost + custom error page} -constraints serverListen -body {
     nstest::http -getbody 1 \
-        -setheaders [list Host testvhost:[ns_config test listenport]] \
-        -getheaders {Content-Length} \
+        -setheaders [list host testvhost:[ns_config test listenport]] \
+        -getheaders {content-length} \
         HEAD /noexist
 } -match glob -result {404 15}
 
@@ -131,22 +131,22 @@ test http-1.6.3 { HTTP/1.0 HEAD not-existing vhost + custom error page} -constra
 #
 test http-1.6.4 { HTTP/1.0 GET not-existing vhost + custom error page + query} -constraints serverListen -body {
     nstest::http -getbody 1 \
-        -setheaders [list Host testvhost:[ns_config test listenport]] \
-        -getheaders {Content-Length} \
+        -setheaders [list host testvhost:[ns_config test listenport]] \
+        -getheaders {content-length} \
         GET /noexist?x=1
 } -match glob -result {404 15 {CUSTOM 404 page}}
 
 test http-1.6.5 { HTTP/1.0 HEAD not-existing vhost + custom error page + query} -constraints serverListen -body {
     nstest::http -getbody 1 \
-        -setheaders [list Host testvhost:[ns_config test listenport]] \
-        -getheaders {Content-Length} \
+        -setheaders [list host testvhost:[ns_config test listenport]] \
+        -getheaders {content-length} \
         HEAD /noexist?x=1
 } -match glob -result {404 15}
 
 test http-1.6.6 { HTTP/1.0 POST not-existing vhost + custom error page + query} -constraints serverListen -body {
     nstest::http -getbody 1 \
-        -setheaders [list Host testvhost:[ns_config test listenport]] \
-        -getheaders {Content-Length} \
+        -setheaders [list host testvhost:[ns_config test listenport]] \
+        -getheaders {content-length} \
         POST /noexist x=1&y=2
 } -match glob -result {404 15 {CUSTOM 404 page}}
 
@@ -155,8 +155,8 @@ test http-1.6.7 { HTTP/1.0 POST not-existing vhost + custom error page + huge qu
         lappend query "x$i=$i"
     }
     nstest::http -getbody 1 -partialresults 1 \
-        -setheaders [list Host testvhost:[ns_config test listenport]] \
-        -getheaders {Content-Length} \
+        -setheaders [list host testvhost:[ns_config test listenport]] \
+        -getheaders {content-length} \
         POST /noexist [join $query]
 } -cleanup {
     unset i query
@@ -170,14 +170,14 @@ test http-1.6.7 { HTTP/1.0 POST not-existing vhost + custom error page + huge qu
 #
 test http-1.6.8 { HTTP/1.0 PUT not allowed} -constraints serverListen -body {
     nstest::http -getbody 0 \
-        -getheaders {Content-Length} \
+        -getheaders {content-length} \
         PUT /noexist
 } -match glob -result {405 5*}
 
 test http-1.6.9 { HTTP/1.0 PUT not allowed vhost + custom error page} -constraints serverListen -body {
     nstest::http -getbody 1 \
-        -setheaders [list Host testvhost:[ns_config test listenport]] \
-        -getheaders {Content-Length} \
+        -setheaders [list host testvhost:[ns_config test listenport]] \
+        -getheaders {content-length} \
         PUT /noexist
 } -match glob -result {405 15 {CUSTOM 405 page}}
 
@@ -194,7 +194,7 @@ test http-2.2 {HTTP/1.1 GET large file sent via writer threads} \
 } -result {200 01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567}
 
 test http-2.3 {HTTP/1.1 GET file larger than IOBUFSZ (connio.c)} -body {
-    nstest::http -http 1.1 -getbody 0 -getheaders {Content-Length} GET /16480bytes
+    nstest::http -http 1.1 -getbody 0 -getheaders {content-length} GET /16480bytes
 } -result {200 16480}
 
 test http-2.4 {HTTP/0.9 GET small} -constraints {serverListen http09} -body {
@@ -690,7 +690,7 @@ test http-5.3c {
     }
 } -body {
     set string {{"name":"Colchões"}}
-    exec curl -g -s -H "Content-Type: application/json; charset=utf-8" --data @- [ns_config test listenurl]/json << $string 2> $devnull
+    exec curl -g -s -H "content-type: application/json; charset=utf-8" --data @- [ns_config test listenurl]/json << $string 2> $devnull
 } -cleanup {
     ns_unregister_op POST /json
     unset -nocomplain l
@@ -1041,7 +1041,7 @@ test http-6.0 {
       ns_return 200 text/plain $result
     }
 } -body {
-  set r [nstest::http -http 1.0 -setheaders {Content-Type multipart/form-data;boundary=AA} \
+  set r [nstest::http -http 1.0 -setheaders {content-type multipart/form-data;boundary=AA} \
              -getbody t \
              POST /form {--AA
 content-disposition: form-data; name="field1"
@@ -1049,7 +1049,7 @@ content-disposition: form-data; name="field1"
 f1
 --AA
 content-disposition: form-data; name="file"; filename=error.log
-Content-Type: text/plain
+content-type: text/plain
 
 content of file
 --AA--}]
@@ -1073,11 +1073,11 @@ test http-6.1a {
       ns_return 200 text/plain $result
     }
 } -body {
-  set r [nstest::http -http 1.0 -setheaders {Content-Type multipart/form-data;boundary=AA} \
+  set r [nstest::http -http 1.0 -setheaders {content-type multipart/form-data;boundary=AA} \
              -getbody t \
              POST /form {--AA
 content-disposition: form-data; name="file"; filename="error.log"
-Content-Type: text/plain
+content-type: text/plain
 
 content of file
 --AA--}]
@@ -1101,11 +1101,11 @@ test http-6.1b {
       ns_return 200 text/plain $result
     }
 } -body {
-  set r [nstest::http -http 1.0 -setheaders {Content-Type multipart/form-data;boundary=AA} \
+  set r [nstest::http -http 1.0 -setheaders {content-type multipart/form-data;boundary=AA} \
              -getbody t \
              PUT /form {--AA
 content-disposition: form-data; name="file"; filename="error.log"
-Content-Type: text/plain
+content-type: text/plain
 
 content of file
 --AA--}]
@@ -1129,11 +1129,11 @@ test http-6.2a {
       ns_return 200 text/plain $result
     }
 } -body {
-  set r [nstest::http -http 1.0 -setheaders {Content-Type multipart/form-data;boundary=AA} \
+  set r [nstest::http -http 1.0 -setheaders {content-type multipart/form-data;boundary=AA} \
              -getbody t \
              POST /form {--AA
 content-disposition: form-data; name="file"; filename="error \"test\".log"
-Content-Type: text/plain
+content-type: text/plain
 
 content of file
 --AA--}]
@@ -1154,11 +1154,11 @@ test http-6.2b {
       ns_return 200 text/plain $result
     }
 } -body {
-  set r [nstest::http -http 1.0 -setheaders {Content-Type multipart/form-data;boundary=AA} \
+  set r [nstest::http -http 1.0 -setheaders {content-type multipart/form-data;boundary=AA} \
              -getbody t \
              POST /form {--AA
 content-disposition: form-data; name="file"; filename='error \'test\'.log'
-Content-Type: text/plain
+content-type: text/plain
 
 content of file
 --AA--}]
@@ -1179,11 +1179,11 @@ test http-6.2c {
       ns_return 200 text/plain $result
     }
 } -body {
-  nstest::http -http 1.0 -setheaders {Content-Type multipart/form-data;boundary=AA} \
+  nstest::http -http 1.0 -setheaders {content-type multipart/form-data;boundary=AA} \
       -getbody t \
       POST /form {--AA
 content-disposition: form-data; name="file"; filename='error "test.log'
-Content-Type: text/plain
+content-type: text/plain
 
 content of file
 --AA--}
@@ -1203,11 +1203,11 @@ test http-6.2d {
       ns_return 200 text/plain $result
     }
 } -body {
-  nstest::http -http 1.0 -setheaders {Content-Type multipart/form-data;boundary=AA} \
+  nstest::http -http 1.0 -setheaders {content-type multipart/form-data;boundary=AA} \
       -getbody t \
       POST /form {--AA
 content-disposition: form-data; name="file"; filename="error 'test.log"
-Content-Type: text/plain
+content-type: text/plain
 
 content of file
 --AA--}
@@ -1231,11 +1231,11 @@ test http-6.3 {
       ns_return 200 text/plain $result
     }
 } -body {
-  set r [nstest::http -http 1.0 -setheaders {Content-Type multipart/form-data;boundary=AA} \
+  set r [nstest::http -http 1.0 -setheaders {content-type multipart/form-data;boundary=AA} \
              -getbody t \
              POST /form {--AA
 content-disposition: form-data; name="file"; filename="error test.log"
-Content-Type: text/plain
+content-type: text/plain
 
 content of file
 --AA--}]
@@ -1259,11 +1259,11 @@ test http-6.4 {
       ns_return 200 text/plain $result
     }
 } -body {
-  set r [nstest::http -http 1.0 -setheaders {Content-Type multipart/form-data;boundary=AA} \
+  set r [nstest::http -http 1.0 -setheaders {content-type multipart/form-data;boundary=AA} \
              -getbody t \
              POST /form {--AA
 content-disposition: form-data; name="file"; filename=error test.log
-Content-Type: text/plain
+content-type: text/plain
 
 content of file
 --AA--}]
@@ -1330,7 +1330,7 @@ test http-6.5.1a {ns_getform and ns_getformfile + 2KB file} -constraints {curl s
     set body [subst [ns_trim -delimiter | {
         |--$boundary
         |Content-Disposition: form-data; name="file"; filename="file.txt"
-        |Content-Type: text/plain
+        |content-type: text/plain
         |
         |[string repeat x 2048]
         |--$boundary
@@ -1380,7 +1380,7 @@ test http-6.5.1b {ns_getform and ns_getformfile + 2KB file} -constraints {curl s
     set body [subst [ns_trim -delimiter | {
         |--$boundary
         |Content-Disposition: form-data; name="file"; filename="file.txt"
-        |Content-Type: text/plain
+        |content-type: text/plain
         |
         |[string repeat x 2048]
         |--$boundary
@@ -1427,7 +1427,7 @@ test http-6.5.1c {ns_getform and ns_getformfile + 2KB file with binary NUL} -con
     set body [subst [ns_trim -delimiter | {
         |--$boundary
         |Content-Disposition: form-data; name="file"; filename="file.txt"
-        |Content-Type: text/plain
+        |content-type: text/plain
         |
         |[string repeat x 2048]
         |--$boundary
@@ -1521,7 +1521,7 @@ test http-6.5.2c {ns_getform and ns_getformfile + 16KB file multipart} -constrai
     set body [subst [ns_trim -delimiter | {
         |--$boundary
         |Content-Disposition: form-data; name="file"; filename="file.txt"
-        |Content-Type: text/plain
+        |content-type: text/plain
         |
         |[string repeat x 16480]
         |--$boundary
@@ -1560,7 +1560,7 @@ test http-6.5.2d {ns_getform and ns_getformfile + 16KB file multipart, explicit 
     set body [subst [ns_trim -delimiter | {
         |--$boundary
         |Content-Disposition: form-data; name="file"; filename="file.txt"
-        |Content-Type: text/plain
+        |content-type: text/plain
         |
         |[string repeat x 16480]
         |--$boundary
@@ -1599,7 +1599,7 @@ test http-6.5.2e1 {ns_getform and ns_getformfile + 16KB file multipart, explicit
     set body [binary format a* [subst [ns_trim -delimiter | {
         |--$boundary
         |Content-Disposition: form-data; name="file"; filename="file.txt"
-        |Content-Type: text/plain
+        |content-type: text/plain
         |
         |[string repeat x 16480]
         |--$boundary
@@ -1688,7 +1688,7 @@ test http-6.5.2f {ns_getform and ns_getformfile + 16KB file with binary NUL} -co
     set body [subst [ns_trim -delimiter | {
         |--$boundary
         |Content-Disposition: form-data; name="file"; filename="file.txt"
-        |Content-Type: text/plain
+        |content-type: text/plain
         |
         |[string repeat x 16480]
         |--$boundary
@@ -1731,7 +1731,7 @@ test http-6.5.3a {
     }
 } -body {
     set string "ü"
-    exec curl -g -s -H "Content-Type: application/x-www-form-urlencoded; charset=utf-8" \
+    exec curl -g -s -H "content-type: application/x-www-form-urlencoded; charset=utf-8" \
         --data-urlencode "f1=[string repeat hello 4000]" \
         --data-urlencode _charset_=utf-8 --data-urlencode f2@- \
         << $string [ns_config test listenurl]/post 2> $devnull
@@ -1761,7 +1761,7 @@ test http-6.5.3b {
             "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile fields $fields f2 '$f2'"
     }
 } -body {
-    exec curl -g -s -H "Content-Type: application/x-www-form-urlencoded; charset=utf-8" \
+    exec curl -g -s -H "content-type: application/x-www-form-urlencoded; charset=utf-8" \
         --data-urlencode "f1=[string repeat hello 4000]" \
         --data _charset_=iso8859-1 --data f2=%fc \
         [ns_config test listenurl]/post 2> $devnull
@@ -1788,7 +1788,7 @@ test http-6.5.4a {ns_getform and ns_getformfile + 16KB file urlencoded iso8859-1
             "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile fields $fields f2 '$f2'"
     }
 } -body {
-    exec curl -g -s -H "Content-Type: application/x-www-form-urlencoded; charset=iso8859-1" \
+    exec curl -g -s -H "content-type: application/x-www-form-urlencoded; charset=iso8859-1" \
         --data-urlencode "f1=[string repeat hello 4000]" --data f2=%fc \
         [ns_config test listenurl]/post 2> $devnull
 } -cleanup {
@@ -1813,7 +1813,7 @@ test http-6.5.4b {ns_getform and ns_getformfile + 16KB file urlencoded iso8859-1
             "$ct contentFile $haveContentFile needSpool $needSpool file $haveFile fields $fields f2 '$f2'"
     }
 } -body {
-    exec curl -g -s -H "Content-Type: application/x-www-form-urlencoded" \
+    exec curl -g -s -H "content-type: application/x-www-form-urlencoded" \
         --data-urlencode "f1=[string repeat hello 4000]" --data _charset_=iso8859-1 --data f2=%fc \
         [ns_config test listenurl]/post 2> $devnull
 } -cleanup {
@@ -1831,7 +1831,7 @@ test http-7.0 {ns_http with body and text datatype} -constraints {serverListen} 
 } -body {
     set string "Testing 'äöüß☀'"
     set queryHeaders [ns_set create]
-    ns_set update $queryHeaders Content-Type text/plain
+    ns_set update $queryHeaders content-type text/plain
     set result [ns_http run -headers $queryHeaders -body $string -method POST \
                     [ns_config test listenurl]/post]
     return [list [dict get $result status] [dict get $result body]]
@@ -1858,7 +1858,7 @@ test http-7.1a {
     set string [encoding convertto {*}$profile $encoding "Testing 'äöüß☀'"]
     #set string [encoding convertto $encoding [binary format a* "Testing 'äöüß☀'"]]
     set queryHeaders [ns_set create]
-    ns_set update $queryHeaders Content-Type "text/plain; $encoding"
+    ns_set update $queryHeaders content-type "text/plain; $encoding"
     set result [ns_http run -headers $queryHeaders -body $string -method POST \
                     [ns_config test listenurl]/post]
     return [list [dict get $result status] [dict get $result body]]
@@ -1891,7 +1891,7 @@ test http-7.1b {
     set string [encoding convertto {*}$profile $encoding "Testing 'äöüß☀'"]
     #set string [encoding convertto $encoding [binary format a* "Testing 'äöüß☀'"]]
     set queryHeaders [ns_set create]
-    ns_set update $queryHeaders Content-Type "text/plain; $encoding"
+    ns_set update $queryHeaders content-type "text/plain; $encoding"
     set result [ns_http run -headers $queryHeaders -body $string -method POST \
                     [ns_config test listenurl]/post]
     return [list [dict get $result status] [dict get $result body]]
@@ -1909,7 +1909,7 @@ test http-7.2a {ns_http with body and binary datataype} -constraints {serverList
 } -body {
     set string "\x00\x01\x02\r"
     set queryHeaders [ns_set create]
-    ns_set update $queryHeaders Content-Type application/octet-stream
+    ns_set update $queryHeaders content-type application/octet-stream
     set result [ns_http run -headers $queryHeaders -body $string -method POST \
                     [ns_config test listenurl]/post]
     set R [dict get $result body]
@@ -1932,7 +1932,7 @@ test http-7.2b {ns_http with body and binary datataype, no bytearray} -constrain
 } -body {
     set string "\x00\x01\x02\r"
     set queryHeaders [ns_set create]
-    ns_set update $queryHeaders Content-Type application/octet-stream
+    ns_set update $queryHeaders content-type application/octet-stream
     set result [ns_http run -headers $queryHeaders -body $string -method POST \
                     [ns_config test listenurl]/post]
     set R [dict get $result body]
@@ -1955,7 +1955,7 @@ test http-8.0.1q {ns_http no body_file queue} -constraints {serverListen} -setup
     }
 } -body {
     set queryHeaders [ns_set create]
-    ns_set update $queryHeaders Content-Type text/plain
+    ns_set update $queryHeaders content-type text/plain
     set h [ns_http queue -headers $queryHeaders -method GET [ns_config test listenurl]/get]
     set result [ns_http wait $h]
     return [list [dict get $result status] [dict get $result body]]
@@ -1969,7 +1969,7 @@ test http-8.0.1r {ns_http no body_file run} -constraints {serverListen} -setup {
     }
 } -body {
     set queryHeaders [ns_set create]
-    ns_set update $queryHeaders Content-Type text/plain
+    ns_set update $queryHeaders content-type text/plain
     set d [ns_http run -headers $queryHeaders -method GET \
                [ns_config test listenurl]/get]
     return [list [dict get $d status] [dict get $d body]]
@@ -1987,7 +1987,7 @@ test http-8.0.2q {ns_http with body_file queue} -constraints {serverListen} -set
     }
 } -body {
     set queryHeaders [ns_set create]
-    ns_set update $queryHeaders Content-Type text/plain
+    ns_set update $queryHeaders content-type text/plain
     if {[catch {set h [ns_http queue -headers $queryHeaders -body_file testserver/pages/123 -method PUT \
                            [ns_config test listenurl]/put]} errorMsg]} {
         puts stderr ERROR-$errorMsg
@@ -2006,7 +2006,7 @@ test http-8.0.2r {ns_http with body_file run} -constraints {serverListen} -setup
     }
 } -body {
     set queryHeaders [ns_set create]
-    ns_set update $queryHeaders Content-Type text/plain
+    ns_set update $queryHeaders content-type text/plain
     set d [ns_http run -headers $queryHeaders -body_file testserver/pages/123 -method PUT \
                [ns_config test listenurl]/put]
     return [list [dict get $d status] [dict get $d body]]
@@ -2026,7 +2026,7 @@ test http-8.0.2s {ns_http with body_chan queue} -constraints {serverListen} -set
 } -body {
     set ch [open $fn r]
     set queryHeaders [ns_set create]
-    ns_set update $queryHeaders Content-Type text/plain
+    ns_set update $queryHeaders content-type text/plain
     if {[catch {set h [ns_http queue -headers $queryHeaders -body_size 3 -body_chan $ch -method PUT \
                            [ns_config test listenurl]/put]} errorMsg]} {
         puts stderr ERROR-$errorMsg
@@ -2052,7 +2052,7 @@ test http-8.0.2t {ns_http with body_chan run} -constraints {serverListen} -setup
 } -body {
     set ch [open $fn r]
     set queryHeaders [ns_set create]
-    ns_set update $queryHeaders Content-Type text/plain
+    ns_set update $queryHeaders content-type text/plain
     set d [ns_http run -headers $queryHeaders -body_size 3 -body_chan $ch -method PUT \
                [ns_config test listenurl]/put]
     close [dict get $d body_chan]
@@ -2087,7 +2087,7 @@ test http-8.0.2u {
     set ch [open $fnInput r]
     set co [open $fnOutput w]
     set queryHeaders [ns_set create]
-    ns_set update $queryHeaders Content-Type text/plain
+    ns_set update $queryHeaders content-type text/plain
     #ns_logctl severity Debug(task) on
     #ns_logctl severity Debug(request) on
     #ns_logctl severity Debug(ns:driver) on
@@ -2120,7 +2120,7 @@ test http-8.1 {ns_return with UTF-8 3 byte char} -constraints {serverListen} -se
         ns_return 200 "text/plain" $v
     }
 } -body {
-    nstest::http -getbody 1 -getheaders {Content-Length} GET /get
+    nstest::http -getbody 1 -getheaders {content-length} GET /get
 } -cleanup {
     ns_unregister_op GET /get
     unset -nocomplain r
@@ -2133,7 +2133,7 @@ test http-8.2 {ns_return with UTF-8 3 byte char with fresh bytearray} -constrain
         ns_return 200 "text/plain" $v
     }
 } -body {
-    nstest::http -getbody 1 -getheaders {Content-Length} GET /get
+    nstest::http -getbody 1 -getheaders {content-length} GET /get
 } -cleanup {
     ns_unregister_op GET /get
     unset -nocomplain r
@@ -2154,7 +2154,7 @@ test http-8.3 {ns_return with UTF-8 3 byte char with impure bytearray} -constrai
         ns_return 200 "text/plain" $v
     }
 } -body {
-    nstest::http -getbody 1 -getheaders {Content-Length} GET /get
+    nstest::http -getbody 1 -getheaders {content-length} GET /get
 } -cleanup {
     ns_unregister_op GET /get
     unset -nocomplain r
@@ -2430,7 +2430,7 @@ test http-9.0 {GET for static compressed file via fastpath} -constraints {server
     nstest::http \
         -getbody 0 \
         -setheaders {accept-encoding gzip} \
-        -getheaders {Content-Length Content-Type Content-Encoding} \
+        -getheaders {content-length content-type content-encoding} \
         GET /test.html
 } -cleanup {
 } -result {200 89 text/html gzip}
@@ -2529,7 +2529,7 @@ test http-10.1.3b {GET with 204 answer raw + keepalive} -constraints serverListe
 
 test http-10.2.0 {POST with 100-continue raw + keepalive} -constraints serverListen -setup {
     ns_register_proc POST /post {
-        ns_write "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK"
+        ns_write "HTTP/1.1 200 OK\r\ncontent-length: 2\r\n\r\nOK"
     }
 } -body {
     set r0 [ns_http run -keepalive 0s -method GET [ns_config test listenurl]/10bytes]
@@ -2553,7 +2553,7 @@ test http-10.2.0 {POST with 100-continue raw + keepalive} -constraints serverLis
 
 test http-10.2.1 {POST with 100-continue raw + keepalive} -constraints serverListen -setup {
     ns_register_proc POST /post {
-        ns_write "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nOK"
+        ns_write "HTTP/1.1 200 OK\r\ncontent-length: 2\r\n\r\nOK"
     }
 } -body {
     set r0 [ns_http run -keepalive 10s -method GET [ns_config test listenurl]/10bytes]

@@ -159,7 +159,7 @@ test ns_conn-4.0 {behind proxy peer} -setup {
         ns_return 200 text/plain <[ns_conn peeraddr -source forwarded]>
     }
 } -body {
-    nstest::http -getbody 1 -setheaders [list X-Forwarded-For 1.2.3.4] \
+    nstest::http -getbody 1 -setheaders [list x-forwarded-for 1.2.3.4] \
         GET /foo
 } -cleanup {
     ns_unregister_op GET /foo
@@ -180,7 +180,7 @@ test ns_conn-4.2 {behind proxy peer} -setup {
         ns_return 200 text/plain <[ns_conn peeraddr -source forwarded]>
     }
 } -body {
-    nstest::http -getbody 1 -setheaders [list X-Forwarded-For "1.2.3.4, 5.6.7.8"] \
+    nstest::http -getbody 1 -setheaders [list x-forwarded-for "1.2.3.4, 5.6.7.8"] \
         GET /foo
 } -cleanup {
     ns_unregister_op GET /foo

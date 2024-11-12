@@ -26,7 +26,7 @@ main(int argc, char **argv)
     if (strstr(argv[0], "nph-") != NULL) {
         printf("HTTP/1.0 200 OK\r\nServer: %s\r\n", argv[0]);
     }
-    printf("Content-type: text/plain\r\n\r\n");
+    printf("content-type: text/plain\r\n\r\n");
     puts("\nArgs:");
     for (i = 0; i < argc; ++i) {
         puts(argv[i]);

@@ -66,12 +66,12 @@ proc ns_setexpires {args} {
     set secs [lindex $args end]
     if {[lindex $args 0] eq "-cache-control"} {
         set cache_control [lindex $args 1]
-        ns_set update $headers Cache-Control "max-age=$secs, [lindex $args 1]"
+        ns_set iupdate $headers cache-control "max-age=$secs, [lindex $args 1]"
     } elseif {[llength $args] > 1} {
         error "usage: ns_setexpires ?-cache-control public|private|no-cache|no-store|no-transform|must-revalidate|proxy-revalidate? secs"
     }
     set when [ns_httptime [expr {$secs + [clock seconds]}]]
-    ns_set update $headers Expires $when
+    ns_set iupdate $headers expires $when
 }
 
 

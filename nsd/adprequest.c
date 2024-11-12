@@ -574,7 +574,7 @@ NsAdpFlush(NsInterp *itPtr, bool doStream)
                 struct iovec sbuf;
 
                 if ((flags & ADP_FLUSHED) == 0u && (flags & ADP_EXPIRE) != 0u) {
-                    Ns_ConnCondSetHeaders(conn, "Expires", "now");
+                    Ns_ConnCondSetHeadersSz(conn, "expires", 7, "now", 3);
                 }
 
                 if ((conn->flags & NS_CONN_SKIPBODY) != 0u) {

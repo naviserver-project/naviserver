@@ -18,11 +18,11 @@ tcltest::testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
 #
 test ns_connchan-1.0 {basic operation} -body {
      ns_connchan
-} -returnCodes error -result {wrong # args: should be "ns_connchan command ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_connchan subcommand ?args?"}
 
 test ns_connchan-1.1 {basic operation} -body {
      ns_connchan x
-} -returnCodes error -result {bad subcmd "x": must be callback, connect, close, detach, exists, list, listen, open, read, status, write, or wsencode}
+} -returnCodes error -result {bad subcommand "x": must be callback, connect, close, detach, exists, list, listen, open, read, status, write, or wsencode}
 
 test ns_connchan-1.2 {detach without connection} -body {
      ns_connchan detach
@@ -140,7 +140,7 @@ test ns_connchan-1.8.1 {detach connection, return success "ns_conn url"} -setup 
 test ns_connchan-1.8.2 {detach connection, return success "ns_conn headers"} -setup {
     ns_register_proc GET /conn {
         set handle [ns_connchan detach]
-        catch {ns_set iget [ns_conn headers] User-Agent} errorMsg
+        catch {ns_set iget [ns_conn headers] user-agent} errorMsg
         ns_connchan write $handle "HTTP/1.0 200 OK\r\n\r\n$errorMsg"
         ns_connchan close $handle
     }

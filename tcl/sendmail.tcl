@@ -137,11 +137,11 @@ proc ns_sendmail args {
             if {[ns_set iget $headers $key] eq ""} {
                 ns_set put $headers $key "1.0"
             }
-            set key "Content-Type"
+            set key "content-type"
             if {[ns_set iget $headers $key] eq ""} {
                 ns_set put $headers $key "text/plain; charset=\"${encoding}\""
             }
-            set key "Content-Transfer-Encoding"
+            set key "Content-transfer-encoding"
             if {[ns_set iget $headers $key] eq ""} {
                 ns_set put $headers $key "quoted-printable"
             }

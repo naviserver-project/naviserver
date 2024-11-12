@@ -38,7 +38,7 @@ test limits-2.3 {get noexist} -body {
 
 test limits-2.4 {list} -body {
     lsort [ns_limits_list]
-} -result {confLimit1 confLimit2 default l1}
+} -result {conflimit1 conflimit2 default l1}
 
 test limits-2.5 {set maxrun} -body {
     ns_limits_set -maxrun 99 l1

@@ -151,7 +151,7 @@ NsTclConfigObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
                     TCL_SIZE_T  defLength;
                     const char *defString = Tcl_GetStringFromObj(defObj, &defLength);
 
-                    Ns_SetUpdateSz(set, keyString, keyLength, defString, defLength);
+                    Ns_SetIUpdateSz(set, keyString, keyLength, defString, defLength);
                 }
             }
             if (status == TCL_OK) {

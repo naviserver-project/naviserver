@@ -2441,7 +2441,8 @@ Ns_Set *NsHeaderSetGet(size_t size)
 {
     Ns_Set *result;
 
-    result = Ns_SetCreateSz(NS_SET_NAME_REQ, MAX(10, size));
+    result = Ns_SetCreateSz(NS_SET_NAME_REQUEST, MAX(10, size));
+    result->flags |= NS_SET_OPTION_NOCASE;
 #ifdef NS_SET_DSTRING
     Ns_SetDataPrealloc(result, 4095);
 #endif
@@ -2556,6 +2557,7 @@ ConnRun(Conn *connPtr)
 
     if (connPtr->outputheaders == NULL) {
         connPtr->outputheaders = Ns_SetCreate(NS_SET_NAME_RESPONSE);
+        connPtr->outputheaders->flags |= NS_SET_OPTION_NOCASE;
     }
 
     if (connPtr->request.version < 1.0) {

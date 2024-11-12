@@ -50,7 +50,7 @@ test https-1.3 {longer request} -constraints {serverListen} -setup {
         ns_return 200 text/plain [string repeat "0123456789" 100]
     }
 } -body {
-    nstest::https -getbody 0 -getheaders {Content-Length} GET /get
+    nstest::https -getbody 0 -getheaders {content-length} GET /get
 } -cleanup {
     ns_unregister_op GET /get
 } -result "200 1000"
@@ -61,7 +61,7 @@ test https-1.4 {via writer} -constraints {serverListen} -setup {
         ns_return 200 text/plain [string repeat "0123456789" 500]
     }
 } -body {
-    nstest::https -http 1.1 -getbody 0 -getheaders {Content-Length} GET /get
+    nstest::https -http 1.1 -getbody 0 -getheaders {content-length} GET /get
 } -cleanup {
     ns_unregister_op GET /get
 } -result "200 5000"
@@ -72,7 +72,7 @@ test https-1.5 {via writer 500k} -constraints {serverListen} -setup {
         ns_return 200 text/plain [string repeat "0123456789" 50000]
     }
 } -body {
-    nstest::https -http 1.1 -getbody 0 -getheaders {Content-Length} GET /get
+    nstest::https -http 1.1 -getbody 0 -getheaders {content-length} GET /get
 } -cleanup {
     ns_unregister_op GET /get
 } -result "200 500000"
@@ -110,7 +110,7 @@ test https-7.0 {ns_http with body and text datatype} -constraints {serverListen}
 } -body {
     set string "Testing 'äöüß'"
     set queryHeaders [ns_set create]
-    ns_set update $queryHeaders Content-Type text/plain
+    ns_set update $queryHeaders content-type text/plain
     #ns_log notice "queueing request for [ns_config test listenurl]/post"
     set result [ns_http run -headers $queryHeaders -body $string -method POST \
                     [ns_config test listenurl]/post]
@@ -130,7 +130,7 @@ test https-7.1 {ns_http with body and text datatype with encoding} -constraints 
     set encoding iso8859-1
     set string [encoding convertto $encoding "Testing 'äöüß'"]
     set queryHeaders [ns_set create]
-    ns_set update $queryHeaders Content-Type "text/plain; $encoding"
+    ns_set update $queryHeaders content-type "text/plain; $encoding"
     set result [ns_http run -headers $queryHeaders -body $string -method POST \
                     [ns_config test listenurl]/post]
     return [list [dict get $result status] [dict get $result body]]
@@ -147,7 +147,7 @@ test https-7.2a {ns_http with body and binary datataype} -constraints {serverLis
 } -body {
     set string "\x00\x01\x02\r"
     set queryHeaders [ns_set create]
-    ns_set update $queryHeaders Content-Type application/octet-stream
+    ns_set update $queryHeaders content-type application/octet-stream
     set result [ns_http run -headers $queryHeaders -body $string -method POST \
                     [ns_config test listenurl]/post]
     set R [dict get $result body]
@@ -173,7 +173,7 @@ test https-7.2b {ns_http with body and binary datataype} -constraints {serverLis
 } -body {
     set string "\x00\x01\x02\r"
     set queryHeaders [ns_set create]
-    ns_set update $queryHeaders Content-Type application/octet-stream
+    ns_set update $queryHeaders content-type application/octet-stream
     set result [ns_http run -headers $queryHeaders -body $string \
                     -method POST [ns_config test listenurl]/post]
     set R [dict get $result body]
@@ -196,7 +196,7 @@ test https-8.0 {ns_http with body_file} -constraints {serverListen} -setup {
     }
 } -body {
     set queryHeaders [ns_set create]
-    ns_set update $queryHeaders Content-Type text/plain
+    ns_set update $queryHeaders content-type text/plain
     #ns_log notice "queueing request for [ns_config test listenurl]/put in dir [pwd]"
     set result [ns_http run -headers $queryHeaders -body_file testserver/pages/123 -method PUT \
                     [ns_config test listenurl]/put]

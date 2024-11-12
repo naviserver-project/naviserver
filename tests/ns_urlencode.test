@@ -471,7 +471,7 @@ test ns_urlencode-7.0.2 {
     test on vhost with custom error page
 } -constraints {serverListen} -body {
     set r [nstest::http -http 1.1 -getbody 1 \
-               -setheaders [list Host testvhost:[ns_config test listenport]] \
+               -setheaders [list host testvhost:[ns_config test listenport]] \
                GET /[ns_urlencode -part path a?]]
     #ns_log notice r=$r
     string match "404*CUSTOM 404 page*" $r
@@ -505,7 +505,7 @@ test ns_urlencode-7.1.2 {
     test on vhost with custom error page
 } -constraints {serverListen} -body {
     set r [nstest::http -http 1.1 -getbody 1 \
-               -setheaders [list Host testvhost:[ns_config test listenport]] \
+               -setheaders [list host testvhost:[ns_config test listenport]] \
                GET /%3F]
     #ns_log notice r=$r
     string match "404*CUSTOM 404 page*" $r

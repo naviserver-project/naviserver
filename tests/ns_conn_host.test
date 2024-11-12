@@ -30,7 +30,7 @@ test ns_conn_host-2.1 {virtual host location} -constraints serverListen -setup {
         ns_return 200 text/plain [ns_conn location]
     }
 } -body {
-    nstest::http -getbody 1 -setheaders [list Host testvhost:$port] -- GET /location
+    nstest::http -getbody 1 -setheaders [list host testvhost:$port] -- GET /location
 } -result [list 200 http://testvhost:$port]
 
 # Test bad host headers
@@ -40,14 +40,14 @@ test ns_conn_host-2.2 {multiple host header fields} -constraints serverListen -s
         ns_return 200 text/plain [ns_conn location]
     }
 } -body {
-    nstest::http -getbody 1 -setheaders [list Host testvhost:$port Host testvhost2:$port] -- GET /location
+    nstest::http -getbody 1 -setheaders [list host testvhost:$port Host testvhost2:$port] -- GET /location
 } -result {400}
 
 
 # Custom location
 
 test ns_conn_host-3.1 {custom location} -constraints serverListen -body {
-    nstest::http -getbody 1 -setheaders [list Host testvhost2:$port] -- GET /location
+    nstest::http -getbody 1 -setheaders [list host testvhost2:$port] -- GET /location
 } -result {200 testlocation.arg}
 
 

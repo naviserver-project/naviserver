@@ -128,7 +128,7 @@ const char *
 Ns_ConnAuthUser(const Ns_Conn *conn)
 {
     NS_NONNULL_ASSERT(conn != NULL);
-    return (conn->auth != NULL) ? Ns_SetIGet(conn->auth, "Username") : NULL;
+    return (conn->auth != NULL) ? Ns_SetIGet(conn->auth, "username") : NULL;
 }
 
 
@@ -152,7 +152,7 @@ const char *
 Ns_ConnAuthPasswd(const Ns_Conn *conn)
 {
     NS_NONNULL_ASSERT(conn != NULL);
-    return (conn->auth != NULL) ? Ns_SetIGet(conn->auth, "Password") : NULL;
+    return (conn->auth != NULL) ? Ns_SetIGet(conn->auth, "password") : NULL;
 }
 
 
@@ -426,7 +426,7 @@ Ns_ConnResponseLength(const Ns_Conn *conn)
  *
  *      Get the peer's direct or forwarded IP address.
  *      The forwarded IP address is determined by the
- *      X-Forwarded-For header.
+ *      x-forwarded-for header.
  *
  * Results:
  *      A string IP address
@@ -828,7 +828,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
 
     } else if (servPtr->vhost.enabled
                && ((headers = Ns_ConnHeaders(conn)) != NULL)
-               && ((host = Ns_SetIGet(headers, "Host")) != NULL)
+               && ((host = Ns_SetIGet(headers, "host")) != NULL)
                && (*host != '\0')
                && Ns_StrIsValidHostHeaderContent(host)) {
         /*
@@ -841,7 +841,7 @@ Ns_ConnLocationAppend(Ns_Conn *conn, Ns_DString *dest)
         Ns_Log(Debug, "Ns_ConnLocation: vhost - location based on host header field <%s>", location);
     } else if (nsconf.reverseproxymode.enabled
                && ((headers = Ns_ConnHeaders(conn)) != NULL)
-               && ((host = Ns_SetIGet(headers, "Host")) != NULL)
+               && ((host = Ns_SetIGet(headers, "host")) != NULL)
                && (*host != '\0')) {
         /*
          * NaviServer "reverseproxymode" is enabled, and host header field is
@@ -1390,7 +1390,7 @@ Ns_ConnModifiedSince(const Ns_Conn *conn, time_t since)
     assert(poolPtr->servPtr != NULL);
 
     if (poolPtr->servPtr->opts.modsince) {
-        const char *hdr = Ns_SetIGet(conn->headers, "If-Modified-Since");
+        const char *hdr = Ns_SetIGet(conn->headers, "if-modified-since");
 
         if ((hdr != NULL) && (Ns_ParseHttpTime(hdr) >= since)) {
             result = NS_FALSE;
@@ -1422,7 +1422,7 @@ Ns_ConnUnmodifiedSince(const Ns_Conn *conn, time_t since)
     const char *hdr;
     bool        result = NS_TRUE;
 
-    hdr = Ns_SetIGet(conn->headers, "If-Unmodified-Since");
+    hdr = Ns_SetIGet(conn->headers, "if-unmodified-since");
     if ((hdr != NULL) && (Ns_ParseHttpTime(hdr) < since)) {
         result = NS_FALSE;
     }

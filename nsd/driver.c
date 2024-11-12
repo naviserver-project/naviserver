@@ -672,7 +672,7 @@ Ns_DriverInit(const char *server, const char *module, const Ns_DriverInitData *i
         }
 
         if (host != NULL) {
-            (void) Ns_SetUpdateSz(set, "hostname", 8, host, TCL_INDEX_NONE);
+            (void) Ns_SetIUpdateSz(set, "hostname", 8, host, TCL_INDEX_NONE);
         }
 
         /*
@@ -815,7 +815,7 @@ void NsDriverMapVirtualServers(void)
     Tcl_InitHashTable(&serverTable, TCL_STRING_KEYS);
 
     for (drvPtr = firstDrvPtr; drvPtr != NULL;  drvPtr = drvPtr->nextPtr) {
-        const Ns_Set *lset;
+        const Ns_Set *serverMapSet;
         size_t        j;
         Tcl_DString   ds, *dsPtr = &ds;
         const char   *path, *defserver, *moduleName;
@@ -827,9 +827,9 @@ void NsDriverMapVirtualServers(void)
          * Check for a "/servers" section for this driver module.
          */
         path = Ns_ConfigSectionPath(NULL, NULL, moduleName, "servers", (char *)0L);
-        lset = Ns_ConfigGetSection(path);
+        serverMapSet = Ns_ConfigGetSection(path);
 
-        if (lset == NULL || Ns_SetSize(lset) == 0u) {
+        if (serverMapSet == NULL || Ns_SetSize(serverMapSet) == 0u) {
             /*
              * The driver module has no (or empty) ".../servers" section.
              * There is no mapping from hostname to virtual server defined.
@@ -930,15 +930,15 @@ void NsDriverMapVirtualServers(void)
 
         drvPtr->defMapPtr = NULL;
         Ns_Log(Debug, "driver <%s> defserver '%s' server with set %p size %ld",
-               moduleName, defserver, (void*)lset, Ns_SetSize(lset));
+               moduleName, defserver, (void*)serverMapSet, Ns_SetSize(serverMapSet));
 
         /*
          * Iterating over set of server names.
          */
         Ns_DStringInit(dsPtr);
-        for (j = 0u; j < Ns_SetSize(lset); ++j) {
-            const char     *server  = Ns_SetKey(lset, j);
-            const char     *host    = Ns_SetValue(lset, j);
+        for (j = 0u; j < Ns_SetSize(serverMapSet); ++j) {
+            const char     *server  = Ns_SetKey(serverMapSet, j);
+            const char     *host    = Ns_SetValue(serverMapSet, j);
             NsServer       *servPtr;
             NS_TLS_SSL_CTX *ctx = NULL;
 
@@ -1101,7 +1101,7 @@ void NsDriverMapVirtualServers(void)
 
         if (drvPtr->defMapPtr == NULL) {
             fprintf(stderr, "--- Server Map: ---\n");
-            Ns_SetPrint(NULL, lset);
+            Ns_SetPrint(NULL, serverMapSet);
             Ns_Fatal("%s: default server '%s' not defined in '%s'", moduleName, defserver, path);
         }
     }
@@ -3720,7 +3720,7 @@ NsAddNslogEntry(Sock *sockPtr, int statusCode, Ns_Conn *connPtr, const char *UNU
 
             Ns_Log(Debug, "AddNslogEntry headers: # %ld output headers %p",
                    conn.headers->size, (void*)conn.outputheaders);
-            //Ns_SetPrint(conn.headers);
+            //Ns_SetPrint(NULL, conn.headers);
 
             //auth = Ns_SetIGet(conn.headers, "authorization");
             auth = sockPtr->extractedHeaderFields[NS_EXTRACTED_HEADER_AUTHORIZATION];
@@ -4420,7 +4420,7 @@ EndOfHeader(Sock *sockPtr)
     //s = Ns_SetIGet(reqPtr->headers, "content-length");
     s = sockPtr->extractedHeaderFields[NS_EXTRACTED_HEADER_CONTENT_LENGTH];
     if (s == NULL) {
-        s = Ns_SetIGet(reqPtr->headers, "Transfer-Encoding");
+        s = Ns_SetIGet(reqPtr->headers, "transfer-encoding");
 
         if (s != NULL) {
             /* Lower case is in the standard, capitalized by macOS */
@@ -4434,7 +4434,7 @@ EndOfHeader(Sock *sockPtr)
                 /*
                  * We need reqPtr->expectedLength for safely terminating read loop.
                  */
-                s = Ns_SetIGet(reqPtr->headers, "X-Expected-Entity-Length");
+                s = Ns_SetIGet(reqPtr->headers, "x-expected-entity-length");
 
                 if ((s != NULL)
                     && (Ns_StrToWideInt(s, &expected) == NS_OK)
@@ -4480,7 +4480,7 @@ EndOfHeader(Sock *sockPtr)
      */
     sockPtr->flags &= ~(NS_CONN_ZIPACCEPTED|NS_CONN_BROTLIACCEPTED);
 
-    s = Ns_SetIGet(reqPtr->headers, "Accept-Encoding");
+    s = Ns_SetIGet(reqPtr->headers, "accept-encoding");
     if (s != NULL) {
         bool gzipAccept, brotliAccept;
 
@@ -4492,7 +4492,7 @@ EndOfHeader(Sock *sockPtr)
             /*
              * Don't allow compression formats for Range requests.
              */
-            s = Ns_SetIGet(reqPtr->headers, "Range");
+            s = Ns_SetIGet(reqPtr->headers, "range");
             if (s == NULL) {
                 if (gzipAccept) {
                     sockPtr->flags |= NS_CONN_ZIPACCEPTED;
@@ -4506,12 +4506,12 @@ EndOfHeader(Sock *sockPtr)
 
     /*
      * Determine the peer address for clients coming via reverse proxy
-     * servers, based on the content of the "X-Forwarded-For" header. If
+     * servers, based on the content of the "x-forwarded-for" header. If
      * trusted reverse proxy servers are specified, accept the field only from
      * these.
      */
 
-    s = Ns_SetIGet(reqPtr->headers, "X-Forwarded-For");
+    s = Ns_SetIGet(reqPtr->headers, "x-forwarded-for");
     if (s != NULL && !strcasecmp(s, "unknown")) {
         s = NULL;
     }
@@ -4579,7 +4579,7 @@ EndOfHeader(Sock *sockPtr)
                         /*
                          * The chunk before the comma was not a valid IP address.
                          */
-                        Ns_Log(Warning, "invalid content in X-Forwarded-For header: '%s'", token);
+                        Ns_Log(Warning, "invalid content in x-forwarded-for header: '%s'", token);
                         break;
                     }
                     if (i == 1) {
@@ -4634,7 +4634,7 @@ EndOfHeader(Sock *sockPtr)
                         /*
                          * The chunk before the comma was not a valid IP address.
                          */
-                        Ns_Log(Warning, "invalid content in X-Forwarded-For header: '%s'", token);
+                        Ns_Log(Warning, "invalid content in x-forwarded-for header: '%s'", token);
                         break;
                     }
                     if (nsconf.reverseproxymode.skipnonpublic) {
@@ -4670,7 +4670,7 @@ EndOfHeader(Sock *sockPtr)
      */
     if (reqPtr->contentLength != 0u) {
         /*
-         * Content-Length was provided, use it
+         * content-length was provided, use it
          */
         reqPtr->length = reqPtr->contentLength;
     }
@@ -4799,7 +4799,7 @@ SockParse(Sock *sockPtr)
                 Tcl_DString ds;
 
                 Tcl_DStringInit(&ds);
-                Ns_SetPrint(&ds, reqPtr->headers);
+                Ns_SetFormat(&ds, reqPtr->headers, NS_TRUE, "  ", ": ");
                 Ns_Log(Ns_LogRequestDebug, "request headers %s", ds.string);
                 Tcl_DStringFree(&ds);
             }

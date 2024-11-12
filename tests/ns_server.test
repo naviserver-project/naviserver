@@ -75,7 +75,7 @@ test ns_server-2.0.4.2 {get values from an active connection with -checkforproxy
         ns_return 200 text/plain [ns_server active -checkforproxy]
     }
 } -body {
-    nstest::http -http 1.1 -getbody 1 -setheaders [list X-Forwarded-For 1.2.3.4] GET /run
+    nstest::http -http 1.1 -getbody 1 -setheaders [list x-forwarded-for 1.2.3.4] GET /run
 } -cleanup {
     ns_unregister_op GET /run
 } -match glob -result "200 *cns*1.2.3.4*running GET /run *"
@@ -356,7 +356,7 @@ test ns_server-3.2 {
         ns_return 200 text/plain OK
     }
 } -body {
-    nstest::http -getheaders {Content-Length} GET /ns_server-3.2
+    nstest::http -getheaders {content-length} GET /ns_server-3.2
 } -result {200 2}
 
 test ns_server-3.3 {
@@ -381,7 +381,7 @@ test ns_server-3.4 {
         ns_return 200 text/plain ok
     }
 } -body {
-    nstest::http -getheaders {Content-Length} GET /ns_server-3.4
+    nstest::http -getheaders {content-length} GET /ns_server-3.4
 } -result {200 2}
 
 

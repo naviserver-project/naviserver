@@ -617,7 +617,7 @@ CheckStaticCompressedDelivery(
 
 
     if (Ns_Stat(compressedFileName, &gzStat)) {
-        Ns_ConnCondSetHeaders(conn, "Vary", "Accept-Encoding");
+        Ns_ConnCondSetHeadersSz(conn, "vary", 4, "accept-encoding", 15);
         //fprintf(stderr, "=== we have the file <%s> compressed <%s>\n", fileName, compressedFileName);
 
         /*
@@ -642,7 +642,7 @@ CheckStaticCompressedDelivery(
              */
             connPtr->fileInfo = gzStat;
             result = compressedFileName;
-            Ns_ConnCondSetHeaders(conn, "Content-Encoding", encoding);
+            Ns_ConnCondSetHeadersSz(conn, "content-encoding", 16, encoding, (TCL_SIZE_T)strlen(encoding));
         } else {
             Ns_Log(Warning, "gzip: the gzip file %s is older than the uncompressed file",
                    compressedFileName);

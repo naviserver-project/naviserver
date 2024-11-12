@@ -198,7 +198,7 @@ test tclresp-2.1 {ns_headers, status, HTTP/1.0} -constraints serverListen -setup
         ns_write x
     }
 } -body {
-    nstest::http -http 1.0 -setheaders {Connection keep-alive} \
+    nstest::http -http 1.0 -setheaders {connection keep-alive} \
         -getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
         GET /tclresp
 } -cleanup {
@@ -211,7 +211,7 @@ test tclresp-2.2 {ns_headers, status, type, HTTP/1.0} -constraints serverListen 
         ns_write x
     }
 } -body {
-    nstest::http -http 1.0 -setheaders {Connection keep-alive} \
+    nstest::http -http 1.0 -setheaders {connection keep-alive} \
         -getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
         GET /tclresp
 } -cleanup {
@@ -224,7 +224,7 @@ test tclresp-2.3 {ns_headers, status, type, length, HTTP/1.0 keep-alive} -setup 
         ns_write abcdefghi
     }
 } -constraints http09 -body {
-    nstest::http-0.9 -http 1.0 -setheaders {Connection keep-alive} \
+    nstest::http-0.9 -http 1.0 -setheaders {connection keep-alive} \
         -getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
         GET /tclresp
 } -cleanup {
@@ -251,7 +251,7 @@ test tclresp-2.4 {ns_headers, status, type, length, HTTP/1.1} -setup {
         ns_write fghi
     }
 } -constraints http09 -body {
-    nstest::http-0.9 -http 1.1 -setheaders {Connection keep-alive} \
+    nstest::http-0.9 -http 1.1 -setheaders {connection keep-alive} \
         -getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
         GET /tclresp
 } -cleanup {
@@ -265,7 +265,7 @@ test tclresp-2.5 {ns_headers, status, type, HTTP/1.1} -constraints serverListen 
         ns_write fghi
     }
 } -constraints http09 -body {
-    nstest::http-0.9 -http 1.1 -setheaders {Connection keep-alive} \
+    nstest::http-0.9 -http 1.1 -setheaders {connection keep-alive} \
         -getbody 1 -getheaders {content-type connection transfer-encoding content-length} \
         GET /tclresp
 } -cleanup {
@@ -280,7 +280,7 @@ fghi
 
 test tclresp-2.6 {ns_return and alter output headers} -setup {
     ns_register_proc GET /tclresp {
-        ns_set update [ns_conn outputheaders] content-type "text/html"
+        ns_set iupdate [ns_conn outputheaders] content-type "text/html"
         ns_return 200 text/plain "hello world"
     }
 }  -body {
@@ -604,7 +604,7 @@ test tclresp-12.3.1 {
         ns_write [binary format a x]
     }
 } -body {
-    nstest::http -http 1.1 -getbody 1 -getheaders {Content-Length Content-Type} \
+    nstest::http -http 1.1 -getbody 1 -getheaders {content-length content-type} \
         GET /tclresp
 } -cleanup {
     ns_unregister_op GET /tclresp
@@ -643,18 +643,18 @@ test tclresp-12.5 {
 test tclresp-13.1 {ns_write without headers} -setup {
     ns_register_proc GET /tclresp ns_write x
 } -constraints http09  -body {
-    nstest::http-0.9 -getbody 1 -getheaders {Content-Type} GET /tclresp
+    nstest::http-0.9 -getbody 1 -getheaders {content-type} GET /tclresp
 } -cleanup {
     ns_unregister_op GET /tclresp
 } -result {{} x}
 
 test tclresp-13.2 {ns_write w/ manual headers} -setup {
     ns_register_proc GET /tclresp {
-        ns_write "HTTP/1.0 200 OK\r\nContent-Length: 1\r\n\r\n"
+        ns_write "HTTP/1.0 200 OK\r\ncontent-length: 1\r\n\r\n"
         ns_write x
     }
 } -constraints http09 -body {
-    nstest::http-0.9 -getbody 1 -getheaders {Content-Length} GET /tclresp
+    nstest::http-0.9 -getbody 1 -getheaders {content-length} GET /tclresp
 } -cleanup {
     ns_unregister_op GET /tclresp
 } -result {200 1 x}
@@ -700,12 +700,12 @@ test tclresp-14.2 {ns_writefp Tcl channel, byte count} -setup {
 #### ns_startcontent is deprecated
 # test tclresp-13.3 {ns_startcontent w/ manual headers} -setup {
 #     ns_register_proc GET /tclresp {
-#         ns_write "HTTP/1.0 200 OK\r\nContent-Length: 1\r\n\r\n"
+#         ns_write "HTTP/1.0 200 OK\r\ncontent-length: 1\r\n\r\n"
 #         ns_startcontent
 #         ns_write x
 #     }
 # } -body {
-#     nstest::http -getbody 1 -getheaders {Content-Length} GET /tclresp
+#     nstest::http -getbody 1 -getheaders {content-length} GET /tclresp
 # } -cleanup {
 #     ns_unregister_op GET /tclresp
 # } -result {200 1 x}

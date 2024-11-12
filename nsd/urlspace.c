@@ -2920,7 +2920,7 @@ UrlSpaceGetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
             op = NS_URLSPACE_DEFAULT;
         }
         if (context != NULL) {
-            const char *ipString = Ns_SetIGet(context, "X-NS-ip");
+            const char *ipString = Ns_SetIGet(context, "x-ns-ip");
             if (ipString != NULL) {
                 struct sockaddr *ipPtr = (struct sockaddr *)&ip;
                 int validIP = ns_inet_pton(ipPtr, ipString);

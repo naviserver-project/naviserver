@@ -283,7 +283,7 @@ ConfigServerTcl(const char *server)
             n = ds.length;
             ns_free((void*)servPtr->tcl.library);
             servPtr->tcl.library = Ns_DStringExport(&ds);
-            Ns_SetUpdateSz(set, "library", 7, servPtr->tcl.library, n);
+            Ns_SetIUpdateSz(set, "library", 7, servPtr->tcl.library, n);
         }
 
         initFileString = ns_strcopy(Ns_ConfigString(path, "initfile", "bin/init.tcl"));
@@ -292,7 +292,7 @@ ConfigServerTcl(const char *server)
             ns_free((void*)initFileString);
             initFileString = Ns_DStringExport(&ds);
             n = ds.length;
-            Ns_SetUpdateSz(set, "initfile", 8, initFileString, n);
+            Ns_SetIUpdateSz(set, "initfile", 8, initFileString, n);
             initFileStringCopied = NS_TRUE;
         }
         servPtr->tcl.initfile = Tcl_NewStringObj(initFileString, TCL_INDEX_NONE);

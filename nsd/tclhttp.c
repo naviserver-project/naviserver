@@ -68,15 +68,15 @@ static Ns_SchedProc CloseWaitingCheckExpire;
 /*
  * String equivalents of some methods, header keys
  */
-static const char *transferEncodingHeader = "Transfer-Encoding";
-static const char *acceptEncodingHeader   = "Accept-Encoding";
-static const char *contentEncodingHeader  = "Content-Encoding";
-static const char *contentTypeHeader      = "Content-Type";
-static const char *contentLengthHeader    = "Content-Length";
-static const char *connectionHeader       = "Connection";
-static const char *trailersHeader         = "Trailers";
-static const char *hostHeader             = "Host";
-static const char *userAgentHeader        = "User-Agent";
+static const char *transferEncodingHeader = "transfer-encoding";
+static const char *acceptEncodingHeader   = "accept-encoding";
+static const char *contentEncodingHeader  = "content-encoding";
+static const char *contentTypeHeader      = "content-type";
+static const char *contentLengthHeader    = "content-length";
+static const char *connectionHeader       = "connection";
+static const char *trailersHeader         = "trailers";
+static const char *hostHeader             = "host";
+static const char *userAgentHeader        = "user-agent";
 static const char *connectMethod          = "CONNECT";
 
 static const int acceptEncodingHeaderLength = 15;
@@ -1911,7 +1911,7 @@ HttpStatsObjCmd(
             /*
              * This element is a misnomer, but we leave it for the
              * sake of backwards compatibility. Actually, this is
-             * the value of the returned Content-Length header.
+             * the value of the returned content-length header.
              */
             (void) Tcl_DictObjPut
                 (interp, entryObj, Tcl_NewStringObj("replylength", 11),
@@ -2737,7 +2737,7 @@ HttpGetResult(
                (httpPtr->flags & NS_HTTP_KEEPALIVE) != 0u ? "keep-alive" : "close");
     }
     /* Ns_Log(Notice, "replyHeaders");
-       Ns_SetPrint(httpPtr->replyHeaders); */
+       Ns_SetPrint(NULL, httpPtr->replyHeaders); */
 
     /*
      * Add reply headers set into the interp
@@ -2989,7 +2989,7 @@ HttpCheckSpool(
         }
 
         /*
-         * Check the returned Content-Length
+         * Check the returned content-length
          */
         header = Ns_SetIGet(httpPtr->replyHeaders, contentLengthHeader);
         if (header != NULL) {
@@ -3007,7 +3007,7 @@ HttpCheckSpool(
         } else {
 
             /*
-             * If none, see if we have Transfer-Encoding.
+             * If none, see if we have transfer-encoding.
              * For now, we support "chunked" encoding only.
              */
             header = Ns_SetIGet(httpPtr->replyHeaders, transferEncodingHeader);
@@ -3317,9 +3317,10 @@ HttpConnect(
     httpPtr->spoolLimit = -1;
     httpPtr->url = ns_strdup(url);
     httpPtr->method = ns_strdup(method);
-    httpPtr->replyHeaders = Ns_SetCreate(NS_SET_NAME_CLIENT_RESPONSE);
     httpPtr->servPtr = itPtr->servPtr;
     httpPtr->flags = NS_HTTP_HEADERS_PENDING;
+    httpPtr->replyHeaders = Ns_SetCreate(NS_SET_NAME_CLIENT_RESPONSE);
+    httpPtr->replyHeaders->flags |= NS_SET_OPTION_NOCASE;
 
     if (timeoutPtr != NULL) {
         httpPtr->timeout = ns_calloc(1u, sizeof(Ns_Time));
@@ -3763,7 +3764,7 @@ HttpConnect(
 
     /*
      * Add provided headers, remove headers we are providing explicitly,
-     * check User-Agent header existence.
+     * check user-agent header existence.
      */
     if (ownHeaders == NS_FALSE && hdrPtr != NULL) {
         size_t ii;
@@ -3787,7 +3788,7 @@ HttpConnect(
     }
 
     /*
-     * If User-Agent header not supplied, add our own
+     * If user-agent header not supplied, add our own
      */
     if (haveUserAgent == NS_FALSE) {
         Ns_DStringPrintf(dsPtr, "%s: %s/%s\r\n", userAgentHeader,
@@ -3818,7 +3819,7 @@ HttpConnect(
            u.protocol, dsPtr->string);
 
     /*
-     * Calculate Content-Length header, handle in-memory body
+     * Calculate content-length header, handle in-memory body
      */
     if (bodyObj == NULL && bodySize == 0) {
 
@@ -3842,9 +3843,9 @@ HttpConnect(
              * which was too strong due to the following paragraph in RFC 7231:
              *
              *    A sender that generates a message containing a payload body
-             *    SHOULD generate a Content-Type header field in that message
+             *    SHOULD generate a content-type header field in that message
              *    unless the intended media type of the enclosed
-             *    representation is unknown to the sender.  If a Content-Type
+             *    representation is unknown to the sender.  If a content-type
              *    header field is not present, the recipient MAY either assume
              *    a media type of "application/octet-stream" ([RFC2046],
              *    Section 4.5.1) or examine the data to determine its type.
@@ -3868,7 +3869,7 @@ HttpConnect(
 
             /*
              * Append in-memory body to the requests string
-             * and calculate correct Content-Length header.
+             * and calculate correct content-length header.
              * We do not anticipate in-memory body to be
              * 2GB+ hence the signed int type suffices.
              */
@@ -5104,7 +5105,7 @@ HttpProc(
                             /*
                              * We read less than chunksize bytes, the source
                              * is on EOF, so what to do?  Since we can't
-                             * rectify Content-Length, receiver expects us
+                             * rectify content-length, receiver expects us
                              * to send more...
                              * This situation can only happen:
                              * WHEN fed with the wrong (too large) bodySize
@@ -5593,8 +5594,9 @@ HttpTunnel(
     httpPtr->url = ns_strdup(url);
     httpPtr->flags |= NS_HTTP_FLAG_EMPTY; /* Do not expect response content */
     httpPtr->method = ns_strdup(connectMethod);
-    httpPtr->replyHeaders = Ns_SetCreate(NS_SET_NAME_CLIENT_RESPONSE); /* Ignored */
     httpPtr->servPtr = itPtr->servPtr;
+    httpPtr->replyHeaders = Ns_SetCreate(NS_SET_NAME_CLIENT_RESPONSE); /* Ignored */
+    httpPtr->replyHeaders->flags |= NS_SET_OPTION_NOCASE;
 
     if (timeout != NULL) {
         httpPtr->timeout = ns_calloc(1u, sizeof(Ns_Time));

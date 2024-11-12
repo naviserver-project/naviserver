@@ -109,7 +109,7 @@ test ns_config-4.8 {int max def oob} -body {
 
 
 
-test ns_config-5.1 {exact} -body {
+test ns_config-5.1 {no exact} -body {
     ns_config ns/testconfig camelcase
 } -result ok
 
@@ -118,12 +118,16 @@ test ns_config-5.2 {exact} -body {
 } -result ok
 
 test ns_config-5.3 {exact} -body {
+    # The config set has the nocase option, so "-exact" is ignored and
+    # the key is found.
     ns_config -exact ns/testconfig camelcase
-} -result {}
+} -result {ok}
 
 test ns_config-5.4 {exact} -body {
+    # The config set has the nocase option, so "-exact" is ignored,
+    # and the key is found
     ns_config -exact ns/testconfig camelcase default
-} -result default
+} -result ok
 
 
 
@@ -151,7 +155,7 @@ test ns_config-7.4.0 {section} -body {
 
 test ns_config-7.4.1 {section} -body {
     ns_set array [ns_configsection -filter "unread" ns/testconfig]
-} -returnCodes {error ok} -result {trueval yes intval 42 notbool this-is-not-a-bool notint this-is-not-an-int CamelCase ok wideint 12345678900 isTestServer true}
+} -returnCodes {error ok} -result {trueval yes intval 42 notbool this-is-not-a-bool notint this-is-not-an-int camelcase ok wideint 12345678900 istestserver true}
 
 test ns_config-7.4.2 {section} -body {
     ns_set size [ns_configsection -filter "defaulted" ns/server/testvhost]
@@ -167,15 +171,15 @@ test ns_config-8.1 {missing -set} -body {
 } -result {missing}
 
 test ns_config-8.2 {missing -set} -body {
-    ns_config ns/testconfig missing 
+    ns_config ns/testconfig missing
 } -result {}
 
 test ns_config-8.3 {missing -set} -body {
-    ns_config ns/testconfig missing here 
+    ns_config ns/testconfig missing here
 } -result {here}
 
 test ns_config-8.4 {missing -set} -body {
-    ns_config ns/testconfig missing here 
+    ns_config ns/testconfig missing here
 } -result {here}
 
 

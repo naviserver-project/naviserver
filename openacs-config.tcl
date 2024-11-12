@@ -128,14 +128,14 @@ set max_file_upload_duration   5m
 # server.
 #
 set http_extraheaders {
-    X-Frame-Options            "SAMEORIGIN"
-    X-Content-Type-Options     "nosniff"
-    X-XSS-Protection           "1; mode=block"
-    Referrer-Policy            "strict-origin"
+    x-frame-options            "SAMEORIGIN"
+    x-content-type-options     "nosniff"
+    x-xss-protection           "1; mode=block"
+    referrer-policy            "strict-origin"
 }
 
 set https_extraheaders {
-    Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    strict-transport-security "max-age=31536000; includeSubDomains"
 }
 append https_extraheaders $http_extraheaders
 
@@ -329,17 +329,17 @@ ns_section ns/parameters {
 ns_section ns/parameters/reverseproxymode {
     ns_param enabled        $reverseproxymode
     #
-    # When defining "trustedservers", the X-Forwarded-For header field
+    # When defining "trustedservers", the x-forwarded-for header field
     # is only accepted in requests received from one of the specified
     # servers. The list of servers can be provided by using IP
     # addresses or CIDR masks. Additionally, the processing mode of
-    # the contents of the X-Forwarded-For contents switches to
+    # the contents of the x-forwarded-for contents switches to
     # right-to-left, skipping trusted servers. So, the dangerof
     # obtaining spoofed addresses can be reduced.
     #
     ns_param trustedservers $trustedservers
     #
-    # Optionally, non-public entries in the content of X-Forwarded-For
+    # Optionally, non-public entries in the content of x-forwarded-for
     # can be ignored. These are not useful for e.g. geo-location
     # analysis.
     #
@@ -935,7 +935,7 @@ ns_section ns/server/$server/module/nslog {
     ns_param    logthreadname   true    ;# default: false; include thread name for linking with error.log
     # ns_param	formattedtime	true	;# true, timestamps formatted or in secs (unix time)
     # ns_param	logcombined	true	;# true, Log in NSCA Combined Log Format (referer, user-agent)
-    ns_param	checkforproxy	$reverseproxymode ;# false, check for proxy header (X-Forwarded-For)
+    ns_param	checkforproxy	$reverseproxymode ;# false, check for proxy header (x-forwarded-for)
     ns_param	masklogaddr     true    ;# false, mask IP address in log file for GDPR (like anonip IP anonymizer)
     ns_param	maskipv4        255.255.255.0  ;# mask for IPv4 addresses
     ns_param	maskipv6        ff:ff:ff:ff::  ;# mask for IPv6 addresses
@@ -945,7 +945,7 @@ ns_section ns/server/$server/module/nslog {
     # list of request header fields in "extendedheaders"
     #
     if {[ns_config "ns/server/$server/acs" LogIncludeUserId 0]} {
-        ns_param   extendedheaders    "X-User-Id"
+        ns_param   extendedheaders    "x-user-id"
     }
 
     #

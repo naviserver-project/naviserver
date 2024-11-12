@@ -1056,7 +1056,7 @@ ServerRoot(Ns_DString *dest, const NsServer *servPtr, const char *rawHost)
                && (rawHost != NULL
                    || ((conn = Ns_GetConn()) != NULL
                        && (headers = Ns_ConnHeaders(conn)) != NULL
-                       && (rawHost = Ns_SetIGet(headers, "Host")) != NULL))
+                       && (rawHost = Ns_SetIGet(headers, "host")) != NULL))
                && *rawHost != '\0') {
 
         /*

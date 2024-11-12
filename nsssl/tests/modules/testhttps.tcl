@@ -46,17 +46,17 @@ namespace eval ::nstest {
         # Default Headers.
         #
 
-        ns_set icput $hdrs Accept */*
-        ns_set icput $hdrs User-Agent "[ns_info name]-Tcl/[ns_info version]"
+        ns_set icput $hdrs accept */*
+        ns_set icput $hdrs user-agent "[ns_info name]-Tcl/[ns_info version]"
 
         if {$http eq "1.0"} {
-            ns_set icput $hdrs Connection close
+            ns_set icput $hdrs connection close
         }
 
         if {$port eq "80"} {
-            ns_set icput $hdrs Host $host
+            ns_set icput $hdrs host $host
         } else {
-            ns_set icput $hdrs Host $host:$port
+            ns_set icput $hdrs host $host:$port
         }
         if {[string is true $getbinary]} {
             set binaryFlag "-binary"

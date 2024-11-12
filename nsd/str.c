@@ -897,6 +897,22 @@ bool Ns_Is7bit(const char *bytes, size_t nrBytes)
     return ((mask1 | mask2 | mask3 | mask4 | last_mask) & 0x8080808080808080u) == 0u;
 }
 
+ssize_t Ns_UpperCharPos(const char *bytes, size_t nrBytes)
+{
+    size_t  i;
+    ssize_t result = -1;
+
+    NS_NONNULL_ASSERT(bytes != NULL);
+
+    for (i = 0; i < nrBytes; i++) {
+        if (CHARTYPE(upper, bytes[i]) != 0) {
+            result = (ssize_t)i;
+            break;
+        }
+    }
+    return result;
+}
+
 
 /*
  *----------------------------------------------------------------------

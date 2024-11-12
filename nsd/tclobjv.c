@@ -1903,7 +1903,7 @@ Ns_SubcmdObjv(const Ns_SubCmdSpec *subcmdSpec, ClientData clientData, Tcl_Interp
          * GetOptIndexSubcmdSpec()) we could list the available
          * options, but that is just used for shared objects.
          */
-        Tcl_WrongNumArgs(interp, 1, objv, "command ?args?");
+        Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?args?");
         result = TCL_ERROR;
     } else {
         Tcl_Obj *selectorObj = objv[1];
@@ -1911,8 +1911,8 @@ Ns_SubcmdObjv(const Ns_SubCmdSpec *subcmdSpec, ClientData clientData, Tcl_Interp
          * If the obj is shared, don't trust its internal representation.
          */
         result = Tcl_IsShared(selectorObj)
-            ? GetOptIndexSubcmdSpec(interp, selectorObj, "subcmd", subcmdSpec, &opt)
-            : Tcl_GetIndexFromObjStruct(interp, objv[1], subcmdSpec, sizeof(Ns_SubCmdSpec), "subcmd",
+            ? GetOptIndexSubcmdSpec(interp, selectorObj, "subcommand", subcmdSpec, &opt)
+            : Tcl_GetIndexFromObjStruct(interp, objv[1], subcmdSpec, sizeof(Ns_SubCmdSpec), "subcommand",
                                         TCL_EXACT, &opt);
         if (likely(result == TCL_OK)) {
             result = (*subcmdSpec[opt].proc)(clientData, interp, objc, objv);

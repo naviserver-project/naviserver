@@ -49,7 +49,7 @@ namespace eval ::tcltest {
             #client_log "STRING <$::tcltest::received>"
             #client_log "HEAD <$head>"
             #client_log "rest <$rest>"
-            regexp {Content-Length:\s+(\d+)\s} $head . contentLength
+            regexp {content-length:\s+(\d+)\s} $head . contentLength
             if {$contentLength > 0} {
                 if {[string length $rest] >= $contentLength} {
                     set bytes $head\n\n[string range $rest 0 $contentLength-1]

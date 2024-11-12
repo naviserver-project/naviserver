@@ -39,6 +39,12 @@ static const char *SetGetValueCmp(const Ns_Set *set, const char *key, const char
 
 static Ns_Set *SetCreate(const char *name, size_t size);
 
+static const char *DStringLowerStringWhenNeeded(Tcl_DString *dsPtr, const char *inputString, size_t stringLength)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static char *LowerStringWhenNeeded(char *inputString, size_t stringLength)
+    NS_GNUC_NONNULL(1);
+
 #ifdef NS_SET_DSTRING
 static void ShiftData(Ns_Set *set, const char *oldDataStart)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -79,12 +85,68 @@ static void hexPrint(const char *msg, const unsigned char *octets, size_t octetL
 /*
  *----------------------------------------------------------------------
  *
+ * DStringLowerStringWhenNeeded, LowerStringWhenNeeded --
+ *
+ *      Lower the input key when needed.
+ *
+ *      The function DStringLowerStringWhenNeeded () initializes the provided
+ *      Tcl_DString also when needed. The caller has to free the Tcl_DString,
+ *      when the result of this function is different to the input string.
+ *
+ *      The function LowerStringWhenNeeded lowers the string inline, when
+ *      needed.
+ *
+ * Results:
+ *      input string in lower case.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static const char *
+DStringLowerStringWhenNeeded(Tcl_DString *dsPtr, const char *inputString, size_t stringLength)
+{
+    const char *result;
+    ssize_t     posOfUpperChar = Ns_UpperCharPos(inputString, stringLength);
+
+    if (posOfUpperChar > -1)  {
+        Ns_Log(Ns_LogNsSetDebug, "DStringLowerStringWhenNeeded <%s> len %ld posOfUpperChar %ld",
+               inputString, stringLength, posOfUpperChar);
+        Tcl_DStringInit(dsPtr);
+        Tcl_DStringAppend(dsPtr, inputString, (TCL_SIZE_T)stringLength);
+        Ns_StrToLower(dsPtr->string + posOfUpperChar);
+        result = dsPtr->string;
+    } else {
+        result = inputString;
+    }
+    return result;
+}
+
+static char *
+LowerStringWhenNeeded(char *inputString, size_t stringLength)
+{
+    ssize_t posOfUpperChar = Ns_UpperCharPos(inputString, stringLength);
+
+    if (posOfUpperChar > -1)  {
+        Ns_Log(Ns_LogNsSetDebug, "LowerStringWhenNeeded <%s>  len %ld posOfUpperChar %ld",
+               inputString, stringLength, posOfUpperChar);
+        Ns_StrToLower(inputString + posOfUpperChar);
+    }
+    return inputString;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_SetIUpdate --
  *
  *      Update tuple or add it (case insensitive)
  *
  * Results:
- *      None.
+ *      index of the updated/inserted element.
  *
  * Side effects:
  *      None.
@@ -136,7 +198,7 @@ Ns_SetIUpdate(Ns_Set *set, const char *keyString, const char *valueString)
  *      Update tuple or add it (case sensitive)
  *
  * Results:
- *      Index value.
+ *      index of the updated/inserted element.
  *
  * Side effects:
  *      None.
@@ -294,9 +356,11 @@ NsSetResize(Ns_Set *set, size_t newSize, int bufferSize)
                                  sizeof(Ns_SetField) * set->maxSize);
     }
 #ifdef NS_SET_DSTRING
-    oldDataStart = set->data.string;
-    Ns_SetDataPrealloc(set, (TCL_SIZE_T)bufferSize);
-    ShiftData(set, oldDataStart);
+    if (bufferSize > TCL_DSTRING_STATIC_SIZE) {
+        oldDataStart = set->data.string;
+        Ns_SetDataPrealloc(set, (TCL_SIZE_T)bufferSize);
+        ShiftData(set, oldDataStart);
+    }
 #endif
 }
 
@@ -331,7 +395,7 @@ SetCreate(const char *name, size_t size)
 #ifdef NS_SET_DSTRING
     Tcl_DStringInit(&setPtr->data);
 #endif
-
+    setPtr->flags = 0u;
 #ifdef NS_SET_DEBUG
     Ns_Log(Notice, "SetCreate %p '%s': size %ld/%ld (created %ld)",
            (void*)setPtr, setPtr->name, size, setPtr->maxSize, createdSets);
@@ -454,6 +518,12 @@ Ns_SetPutSz(Ns_Set *set,
     set->fields[idx].name = ns_strncopy(keyString, keyLength);
     set->fields[idx].value = ns_strncopy(valueString, valueLength);
 #endif
+    if ((set->flags & NS_SET_OPTION_NOCASE) != 0u) {
+        LowerStringWhenNeeded(set->fields[idx].name,
+                              unlikely(keyLength == TCL_INDEX_NONE)
+                              ? strlen(set->fields[idx].name)
+                              : (size_t)keyLength);
+    }
     Ns_Log(Ns_LogNsSetDebug, "Ns_SetPut %p [%lu] key '%s' value '%s' size %" PRITcl_Size,
            (void*)set, idx, set->fields[idx].name, set->fields[idx].value, valueLength);
     return idx;
@@ -489,17 +559,34 @@ Ns_SetPut(Ns_Set *set, const char *key, const char *value)
 bool
 Ns_SetUniqueCmp(const Ns_Set *set, const char *key, StringCmpProc cmp)
 {
-    size_t i;
-    bool   found, result = NS_TRUE;
+    const char *inputKey = key;
+    bool        found, result = NS_TRUE;
+    Tcl_DString ds;
+    size_t      i;
 
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
     NS_NONNULL_ASSERT(cmp != NULL);
 
+    if ((set->flags & NS_SET_OPTION_NOCASE) != 0u) {
+        key = DStringLowerStringWhenNeeded(&ds, key, strlen(key));
+        if (cmp == strcasecmp) {
+            /*fprintf(stderr, "Ns_SetUniqueCmp I strcasecmp set '%s' key '%s' (set marked NOCASE) switch to strcmp\n",
+              set->name, key);*/
+            cmp = strcmp;
+        } else {
+            Ns_Log(Warning, "Ns_SetUniqueCmp I strcmp set '%s' key '%s' (set marked NOCASE) -> potential bug", set->name, key);
+        }
+    }
+
     found = NS_FALSE;
     for (i = 0u; i < set->size; ++i) {
         const char *name = set->fields[i].name;
 
+        if (cmp == strcasecmp) {
+            Ns_Log(Ns_LogNsSetDebug, "Ns_SetUniqueCmp strcasecmp set '%s' key '%s' <-> '%s' -> %d",
+                   set->name, key, name, ((*cmp) (key, name)));
+        }
         if ((name == NULL) || (((*cmp) (key, name)) == 0)) {
 
             if (found) {
@@ -509,7 +596,9 @@ Ns_SetUniqueCmp(const Ns_Set *set, const char *key, StringCmpProc cmp)
             found = NS_TRUE;
         }
     }
-
+    if (inputKey != key) {
+        Tcl_DStringFree(&ds);
+    }
     return result;
 }
 
@@ -534,23 +623,57 @@ Ns_SetUniqueCmp(const Ns_Set *set, const char *key, StringCmpProc cmp)
 int
 Ns_SetFindCmp(const Ns_Set *set, const char *key, StringCmpProc cmp)
 {
-    size_t i;
-    int    result = -1;
+    size_t      i;
+    Tcl_DString ds;
+    int         result = -1;
+    const char *inputKey = key;
 
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
     NS_NONNULL_ASSERT(cmp != NULL);
 
+    if ((set->flags & NS_SET_OPTION_NOCASE) != 0u) {
+        key = DStringLowerStringWhenNeeded(&ds, key, strlen(key));
+        if (cmp == strcasecmp) {
+            /*fprintf(stderr, "Ns_SetFindCmp I strcasecmp set '%s' key '%s' (set marked NOCASE) switch to strcmp\n",
+              set->name, key);*/
+            cmp = strcmp;
+        } else {
+            Ns_Log(Warning, "Ns_SetFindCmp I strcmp set '%s' key '%s' (set marked NOCASE) -> potential bug",
+                   set->name, key);
+        }
+#ifdef NS_SET_OPTIMZE_APPLICATION
+    } else {
+        if (cmp == strcasecmp) {
+            Ns_Log(Notice, "Ns_SetFindCmp I strcasecmp set '%s' key '%s' (set NOT marked as NOCASE)", set->name, key);
+        }
+#endif
+    }
+
     for (i = 0u; i < set->size; i++) {
         const char *name = set->fields[i].name;
 
         assert(name != NULL);
-        if (((*cmp) (key, name)) == 0) {
+
+        if (cmp == strcasecmp) {
+            Ns_Log(Ns_LogNsSetDebug, "Ns_SetFindCmp strcasecmp set '%s' key '%s' <-> '%s' -> %d",
+                   set->name, key, name, ((*cmp) (key, name)));
+        }
+
+        if (cmp == strcmp) {
+            if (*key == *name && strcmp(key, name) == 0) {
+                result = (int)i;
+                break;
+            }
+        } else if (((*cmp) (key, name)) == 0) {
             result = (int)i;
             break;
         }
     }
 
+    if (key != inputKey) {
+        Tcl_DStringFree(&ds);
+    }
     return result;
 }
 
@@ -610,24 +733,60 @@ Ns_SetGetCmp(const Ns_Set *set, const char *key, StringCmpProc cmp)
 size_t
 NsSetGetCmpDListAppend(const Ns_Set *set, const char *key, bool all, StringCmpProc cmp, Ns_DList *dlPtr)
 {
-    size_t idx, count = 0u;
+    Tcl_DString ds;
+    size_t      idx, count = 0u;
+    const char *inputKey = key;
 
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
     NS_NONNULL_ASSERT(cmp != NULL);
     NS_NONNULL_ASSERT(dlPtr != NULL);
 
+    if ((set->flags & NS_SET_OPTION_NOCASE) != 0u) {
+        key = DStringLowerStringWhenNeeded(&ds, key, strlen(key));
+        if (cmp == strcasecmp) {
+            /*fprintf(stderr, "NsSetGetCmpDListAppend I strcasecmp set '%s' key '%s' (set marked NOCASE) switch to strcmp\n",
+              set->name, key);*/
+            cmp = strcmp;
+        } else {
+            Ns_Log(Warning, "NsSetGetCmpDListAppend I strcmp set '%s' key '%s' (set marked NOCASE) -> potential bug",
+                   set->name, key);
+            // {char *p = NULL; *p=0;}
+        }
+        /*} else {
+          if (cmp == strcasecmp) {
+            ssize_t upperPos = Ns_UpperCharPos(key, strlen(key));
+            fprintf(stderr, "NsSetGetCmpDListAppend I strcasecmp set '%s' key '%s' (set NOT marked NOCASE) upper %ld\n", set->name, key, upperPos);
+            }*/
+    }
+
     for (idx = 0u; idx < set->size; idx++) {
         const char *name = set->fields[idx].name;
+        bool        found = NS_FALSE;
 
         assert(name != NULL);
-        if (((*cmp) (key, name)) == 0) {
+#ifdef NS_SET_OPTIMZE_APPLICATION
+        if (cmp == strcasecmp) {
+            Ns_Log(Notice, "NsSetGetCmpDListAppend strcasecmp set '%s' key '%s' <-> '%s'",
+                   set->name, key, name);
+        }
+#endif
+        if (cmp == strcmp) {
+            found = (*key == *name && strcmp(key, name) == 0);
+        } else {
+            found = (((*cmp) (key, name)) == 0);
+        }
+
+        if (found) {
             count ++;
             Ns_DListAppend(dlPtr, set->fields[idx].value);
             if (!all) {
                 break;
             }
         }
+    }
+    if (key != inputKey) {
+        Tcl_DStringFree(&ds);
     }
     return count;
 }
@@ -743,6 +902,8 @@ Ns_SetIFind(const Ns_Set *set, const char *key)
  * Ns_SetGet --
  *
  *      Return the value associated with a key, case sensitive.
+ *      Similar to Ns_SetGetValue() but returns NULL instead of a
+ *      default value in case of failure.
  *
  * Results:
  *      A value or NULL if key not found.
@@ -769,6 +930,8 @@ Ns_SetGet(const Ns_Set *set, const char *key)
  * Ns_SetIGet --
  *
  *      Return the value associated with a key, case insensitive.
+ *      Similar to Ns_SetIGetValue() but returns NULL instead of a
+ *      default value in case of failure.
  *
  * Results:
  *      A value or NULL if key not found.
@@ -795,7 +958,7 @@ Ns_SetIGet(const Ns_Set *set, const char *key)
  *
  *      Return the value associated with a key. The variant SetIGetValue is
  *      not case sensitive.  If no value found or it is empty, return provided
- *      default value
+ *      default value.
  *
  * Results:
  *      A value or NULL if key not found or default is NULL
@@ -922,11 +1085,11 @@ Ns_SetTrunc(Ns_Set *set, size_t size)
  *
  * Ns_SetDelete --
  *
- *      Delete a tuple from a set. If index is -1, this function does
+ *      Delete an entry from a set. If index is -1, this function does
  *      nothing.
  *
  * Results:
- *      None.
+ *      Boolean value expressing success.
  *
  * Side effects:
  *      Will free tuple memory.
@@ -934,16 +1097,18 @@ Ns_SetTrunc(Ns_Set *set, size_t size)
  *----------------------------------------------------------------------
  */
 
-void
-Ns_SetDelete(Ns_Set *set, int index)
+bool
+Ns_SetDelete(Ns_Set *set, ssize_t index)
 {
+    bool result = NS_TRUE;
+
     NS_NONNULL_ASSERT(set != NULL);
 
-    if ((index != -1) && (index < (int)set->size)) {
+    if ((index != -1) && (index < (ssize_t)set->size)) {
         size_t i;
 
 #ifdef NS_SET_DSTRING
-        Ns_Log(Ns_LogNsSetDebug, "Ns_SetDelete %p '%s': on %d %s: '%s'",
+        Ns_Log(Ns_LogNsSetDebug, "Ns_SetDelete %p '%s': on %ld %s: '%s'",
                (void*)set, set->name, index,
                set->fields[index].name,
                set->fields[index].value);
@@ -960,7 +1125,10 @@ Ns_SetDelete(Ns_Set *set, int index)
             set->fields[i].name = set->fields[i + 1u].name;
             set->fields[i].value = set->fields[i + 1u].value;
         }
+    } else {
+        result = NS_FALSE;
     }
+    return result;
 }
 
 
@@ -1153,7 +1321,7 @@ void Ns_SetClearValues(Ns_Set *set, TCL_SIZE_T maxAlloc)
  *      Delete a tuple from the set (case sensitive).
  *
  * Results:
- *      None.
+ *      Boolean value expressing success.
  *
  * Side effects:
  *      Will free tuple memory.
@@ -1161,13 +1329,13 @@ void Ns_SetClearValues(Ns_Set *set, TCL_SIZE_T maxAlloc)
  *----------------------------------------------------------------------
  */
 
-void
+bool
 Ns_SetDeleteKey(Ns_Set *set, const char *key)
 {
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    Ns_SetDelete(set, Ns_SetFind(set, key));
+    return Ns_SetDelete(set, Ns_SetFind(set, key));
 }
 
 
@@ -1179,7 +1347,7 @@ Ns_SetDeleteKey(Ns_Set *set, const char *key)
  *      Delete a tuple from the set (case insensitive).
  *
  * Results:
- *      None.
+ *      Boolean value expressing success.
  *
  * Side effects:
  *      Will free tuple memory.
@@ -1187,13 +1355,13 @@ Ns_SetDeleteKey(Ns_Set *set, const char *key)
  *----------------------------------------------------------------------
  */
 
-void
+bool
 Ns_SetIDeleteKey(Ns_Set *set, const char *key)
 {
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(key != NULL);
 
-    Ns_SetDelete(set, Ns_SetIFind(set, key));
+    return Ns_SetDelete(set, Ns_SetIFind(set, key));
 }
 
 
@@ -1274,10 +1442,14 @@ Ns_SetSplit(const Ns_Set *set, char sep)
     Ns_DStringNAppend(&ds, (char *) &end, (TCL_SIZE_T)sizeof(Ns_Set *));
 
     for (i = 0u; i < set->size; ++i) {
-        Ns_Set     *next;
+        Ns_Set     *targetSet;
         const char *name;
         char       *key;
 
+        /*
+         * Take the name of the new set from part of the key before the
+         * separator, or, if not found, use no name.
+         */
         key = strchr(set->fields[i].name, (int)sep);
         if (key != NULL) {
             *key++ = '\0';
@@ -1286,16 +1458,21 @@ Ns_SetSplit(const Ns_Set *set, char sep)
             key = set->fields[i].name;
             name = NULL;
         }
-        next = Ns_SetListFind((Ns_Set **) ds.string, name);
-        if (next == NULL) {
+        /*
+         * Find sets with the given name. If none found (most likely), create
+         * a new one, otherwise use put the keys to the found set.
+         */
+        targetSet = Ns_SetListFind((Ns_Set **) ds.string, name);
+        if (targetSet == NULL) {
             Ns_Set        **sp;
 
-            next = Ns_SetCreate(name);
+            targetSet = Ns_SetCreate(name);
+            targetSet->flags = set->flags;
             sp = (Ns_Set **) (ds.string + ds.length - sizeof(Ns_Set *));
-            *sp = next;
+            *sp = targetSet;
             Ns_DStringNAppend(&ds, (char *) &end, (TCL_SIZE_T)sizeof(Ns_Set *));
         }
-        (void)Ns_SetPut(next, key, set->fields[i].value);
+        (void)Ns_SetPut(targetSet, key, set->fields[i].value);
         if (name != NULL) {
             *(key-1) = sep;
         }
@@ -1309,8 +1486,8 @@ Ns_SetSplit(const Ns_Set *set, char sep)
  *
  * Ns_DStringAppendSet --
  *
- *      Add the content (not including the name) to the
- *      provided Ns_DString, which has to be initialized.
+ *      Add the content (not including the name) of an Ns_Set to
+ *      the provided Ns_DString, which has to be initialized.
  *
  * Results:
  *      None.
@@ -1394,7 +1571,9 @@ SetMerge(Ns_Set *high, const Ns_Set *low, SetFindProc findProc)
     for (i = 0u; i < low->size; ++i) {
         int j = (*findProc)(high, low->fields[i].name);
         if (j == -1) {
-            (void)Ns_SetPut(high, low->fields[i].name, low->fields[i].value);
+            (void)Ns_SetPutSz(high,
+                              low->fields[i].name, (TCL_SIZE_T)strlen(low->fields[i].name),
+                              low->fields[i].value, (TCL_SIZE_T)strlen(low->fields[i].value));
         }
     }
 }
@@ -1476,6 +1655,7 @@ Ns_SetCopy(const Ns_Set *old)
         size_t i;
 
         new = SetCreate(old->name, old->size + 1); /* maybe maxSize? */
+        new->flags = old->flags;
 #ifdef NS_SET_DSTRING
         Ns_SetDataPrealloc(new, old->data.length + 1);
 #endif
@@ -1698,44 +1878,36 @@ Ns_SetRecreate2(Ns_Set **toPtr, Ns_Set *from)
 #endif
     return newSet;
 }
+
 
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SetPrint --
+ * Ns_SetFormat --
  *
- *      Dump the contents of a set to stderr.
+ *      Format the contents of a set based on leadString and separtor
+ *      to the provided Tcl_DString.
  *
  * Results:
- *      None.
+ *      Formatted character string.
  *
  * Side effects:
- *      Will write to stderr.
+ *      None.
  *
  *----------------------------------------------------------------------
  */
-
-void
-Ns_SetPrint(Tcl_DString *outputDsPtr, const Ns_Set *set)
+const char*
+Ns_SetFormat(Tcl_DString *dsPtr, const Ns_Set *set, bool withName,
+             const char *leadString, const char *separatorString)
 {
-    size_t       i;
-    Tcl_DString  ds, *dsPtr;
-    const char  *leadString, *separatorString;
+    size_t i;
 
+    NS_NONNULL_ASSERT(outputDsPtr != NULL);
     NS_NONNULL_ASSERT(set != NULL);
+    NS_NONNULL_ASSERT(leadString != NULL);
+    NS_NONNULL_ASSERT(separator != NULL);
 
-    if (outputDsPtr == NULL) {
-        dsPtr = &ds;
-        Tcl_DStringInit(dsPtr);
-        leadString = "\t";
-        separatorString = " = ";
-    } else {
-        dsPtr = outputDsPtr;
-        leadString = "";
-        separatorString = ": ";
-    }
-
-    if (set->name != NULL) {
+    if (withName && set->name != NULL) {
         Ns_DStringPrintf(dsPtr, "%s:\n", set->name);
     }
     for (i = 0u; i < set->size; ++i) {
@@ -1753,10 +1925,40 @@ Ns_SetPrint(Tcl_DString *outputDsPtr, const Ns_Set *set)
         }
         Tcl_DStringAppend(dsPtr, "\n", 1);
     }
+    return dsPtr->string;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SetPrint --
+ *
+ *      Dump the contents of a set to stderr or into the
+ *      provided Tcl_DString.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Will write to stderr.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Ns_SetPrint(Tcl_DString *outputDsPtr, const Ns_Set *set)
+{
+    Tcl_DString  ds;
+
+    NS_NONNULL_ASSERT(set != NULL);
 
     if (outputDsPtr == NULL) {
-        fprintf(stderr, "%s", dsPtr->string);
-        Tcl_DStringFree(dsPtr);
+        Tcl_DStringInit(&ds);
+        Ns_SetFormat(&ds, set, NS_TRUE, "\t", " = ");
+        fprintf(stderr, "%s", ds.string);
+        Tcl_DStringFree(&ds);
+    } else {
+        Ns_SetFormat(outputDsPtr, set, NS_TRUE, "", ": ");
     }
 }
 

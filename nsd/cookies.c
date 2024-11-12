@@ -485,7 +485,7 @@ Ns_ConnSetCookieEx(const Ns_Conn *conn, const char *name, const char *value,
     }
 
 
-    Ns_ConnSetHeaders(conn, "Set-Cookie", cookie.string);
+    Ns_ConnSetHeadersSz(conn, "set-cookie", 10, cookie.string, cookie.length);
     Ns_DStringFree(&cookie);
 }
 
