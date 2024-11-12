@@ -4,9 +4,11 @@
 
 [titledesc {Returns a decimal-coded one-time password (HOTP)}]
 
-[description] The function returns a one time password based on a
-HMAC algorithm (HOTP) as described in RFC-4226, where the 
-message algorithm can be specified.
+[description]
+
+  The function returns a one-time password based on the HMAC algorithm
+  (HOTP) as described in RFC-4226, allowing the choice of message
+  digest algorithm and the number of digits for the truncated output.
 
 [para]
 RFC-4226 defines HOTP as:
@@ -17,14 +19,14 @@ RFC-4226 defines HOTP as:
  C: counter (moving factor for one time passwd)
 [example_end]     
 
-The implemented function [cmd ns_hotp] is a generalization over RFC by
-allowing to specify the message digest algorithm and the number of
-characters of the returned truncated value.
 
+The implemented function [cmd ns_hotp] is an extension of the standard
+RFC by allowing you to specify the message digest algorithm and the
+number of characters in the truncated output.
 
-[para] The listed commands is available in installations when
-NaviServer is compiled with OpenSSL support and where
-the nsf package is installed.
+[para]
+The command is available when NaviServer is compiled with OpenSSL
+support and the nsf package is installed.
 
 [section {COMMANDS}]
 
@@ -37,8 +39,8 @@ the nsf package is installed.
 	[arg data]]
 
 [para]
-[arg data]
-is the moving factor for the one time password ("C" in the formula above).
+ [arg data] specifies the moving factor for the one-time password
+ (referred to as "C" in the formula above).
 
 [list_end]
 
@@ -46,19 +48,21 @@ is the moving factor for the one time password ("C" in the formula above).
 [list_begin options]
 
 [opt_def -digest [arg digest]]
- Digest algorithm for the checksum computation. The available algorithms
- are implemented in OpenSSL. The current versions of OpenSSL supports
- the following message digest algorithms: "dsa dsa-sha ecdsa-with-sha1
- md4 md5 mdc2 ripemd160 sha sha1 sha224 sha256 sha384 sha512
- whirlpool".  The default value is "sha256"
+ Specifies the digest algorithm used for the HMAC
+ computation. Available algorithms are provided by OpenSSL and
+ include: "dsa", "dsa-sha", "ecdsa-with-sha1", "md4", "md5", "mdc2",
+ "ripemd160", "sha", "sha1", "sha224", "sha256", "sha384", "sha512",
+ and "whirlpool". The default algorithm is "sha256".
 
 [opt_def -digits [arg digits]]
-specifies the number of digits of the returned one time password.
-The default value is 6.
+ Specifies the number of digits for the resulting one-time
+ password. The default is 6 digits.
+
 
 [opt_def -key [arg key]]
-specifies the secret used for creating one time passwords.
-("K" in the formula above).
+ Specifies the secret key used to generate the one-time password
+ (corresponds to "K" in the formula above).
+
 [list_end]
 
 [example_begin]
