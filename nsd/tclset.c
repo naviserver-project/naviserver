@@ -1665,7 +1665,7 @@ LookupSet(NsInterp *itPtr, const char *id, bool deleteEntry, Ns_Set **setPtr)
         }
     }
     if (unlikely(set == NULL)) {
-        Ns_TclPrintfResult(itPtr->interp, "no such set: %s", id);
+        Ns_TclPrintfResult(itPtr->interp, "no such set: '%s'", id);
         result = TCL_ERROR;
     } else {
         *setPtr = set;
