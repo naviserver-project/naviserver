@@ -38,7 +38,7 @@ namespace eval ::revproxy::ns_connchan {
         # We might have to take more precautions for WebSockets here.
         #
         set queryHeaders [ns_conn headers]
-        ns_set update $queryHeaders Connection close
+        ns_set iupdate $queryHeaders connection close
 
         #ns_log notice queryHeaders=[ns_set array $queryHeaders]
 
@@ -678,7 +678,7 @@ namespace eval ::revproxy::ns_connchan {
                         append reply "[ns_set key $replyHeaders $i]: [ns_set value $replyHeaders $i]\r\n"
                     }
                     log notice "backendReply: from $url\n$reply"
-                    set l [ns_set iget $replyHeaders Content-Length ""]
+                    set l [ns_set iget $replyHeaders content-length ""]
                     if {$l ne ""} {
                         # log notice "backendReply: set tospool($to) -> $l"
                         set ::revproxy::tospool($to) $l

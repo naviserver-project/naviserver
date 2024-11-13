@@ -134,7 +134,7 @@ namespace eval ::revproxy::ns_http {
                     log notice "adding to output headers: <$key> <$value>"
                 }
             }
-            #ns_set update $outputHeaders Connection close
+            #ns_set iupdate $outputHeaders Connection close
             #
             # Pass the status code
             #
