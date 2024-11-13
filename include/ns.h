@@ -1840,12 +1840,7 @@ NS_EXTERN Tcl_SetFromAnyProc Ns_TclSetFromAnyError;
 
 NS_EXTERN Ns_ReturnCode
 Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec,
-             Tcl_Interp *interp, TCL_SIZE_T offset, TCL_SIZE_T objc, Tcl_Obj *const* objv)
-    NS_GNUC_NONNULL(3);
-
-NS_EXTERN Ns_ReturnCode
-Ns_ParseObjv2(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec,
-              Tcl_Interp *interp, TCL_SIZE_T offset, TCL_SIZE_T leadOffset, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+             Tcl_Interp *interp, TCL_SIZE_T parseOffset, TCL_SIZE_T objc, Tcl_Obj *const* objv)
     NS_GNUC_NONNULL(3);
 
 NS_EXTERN Ns_ObjvProc Ns_ObjvArgs;

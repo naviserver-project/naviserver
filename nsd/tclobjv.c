@@ -188,23 +188,13 @@ GetOptIndexObjvSpec(Tcl_Obj *obj, const Ns_ObjvSpec *tablePtr, int *idxPtr)
  */
 Ns_ReturnCode
 Ns_ParseObjv(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
-             TCL_SIZE_T offset, TCL_SIZE_T objc, Tcl_Obj *const* objv)
-{
-    return Ns_ParseObjv2(optSpec, argSpec, interp,
-                         offset, 0,
-                         objc, objv);
-}
-
-Ns_ReturnCode
-Ns_ParseObjv2(Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
-              TCL_SIZE_T parseOffset,
-              TCL_SIZE_T leadOffset,
-              TCL_SIZE_T objc, Tcl_Obj *const* objv)
+             TCL_SIZE_T parseOffset, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Ns_ObjvSpec    *specPtr;
     int             optIndex;
     Tcl_Obj *const* parseObjv;
     TCL_SIZE_T      requiredArgs = 0, parseObjc, remain;
+    TCL_SIZE_T      leadOffset = 0;
 
     NS_NONNULL_ASSERT(interp != NULL);
 
