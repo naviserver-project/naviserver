@@ -496,7 +496,7 @@ test ns_set-2.29 {basic operation ns_set} -body {
     set x [ns_set create firstset a 1]
     ns_set free $x
     ns_set get $x 0
-} -returnCodes error -result {no such set: d0} -cleanup {
+} -returnCodes error -result {no such set: 'd0'} -cleanup {
     ns_set cleanup
 }
 
