@@ -127,20 +127,20 @@ namespace eval ::revproxy {
             return filter_return
         }
         #
-        # Get header fields from request, add X-Forwarded-For,
-        # X-Forwarded-Proto, and X-SSL-Request (if appropriate).
+        # Get header fields from request, add x-forwarded-for,
+        # x-forwarded-proto, and x-ssl-request (if appropriate).
         #
         set queryHeaders [ns_conn headers]
 
-        set XForwardedFor [split [ns_set iget $queryHeaders "X-Forwarded-For" ""] " ,"]
+        set XForwardedFor [split [ns_set iget $queryHeaders "x-forwarded-for" ""] " ,"]
         set XForwardedFor [lmap e $XForwardedFor {if {$e eq ""} continue}]
         lappend XForwardedFor [ns_conn peeraddr]
-        ns_set update $queryHeaders X-Forwarded-For [join $XForwardedFor ","]
+        ns_set iupdate $queryHeaders x-forwarded-for [join $XForwardedFor ","]
 
         set proto [dict get [ns_parseurl $url] proto]
-        ns_set update $queryHeaders X-Forwarded-Proto $proto
+        ns_set iupdate $queryHeaders x-forwarded-proto $proto
         if {$proto eq "https"} {
-            ns_set update $queryHeaders X-SSL-Request 1
+            ns_set iupdate $queryHeaders x-ssl-request 1
         }
 
         #
