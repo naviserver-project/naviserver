@@ -40,7 +40,7 @@ are not specified, the [arg values] themselves will be used as the OPTION labels
 [call [cmd ns_htmlselect] \
         [opt [option -multi]] \
         [opt [option {-sort}]] \
-        [opt [option {-labels [arg labels]}]] \
+        [opt [option "-labels [arg labels]"]] \
         [arg name] \
         [arg values] \
         [opt [arg selectedData]]]
