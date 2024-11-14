@@ -63,8 +63,6 @@ static TCL_OBJCMDPROC_T Set_TYPE_SetidKeyValueObjCmd;
 
 static int LookupSet(NsInterp *itPtr, const char *id, bool deleteEntry, Ns_Set **setPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
-static int LookupObjSet(NsInterp *itPtr, Tcl_Obj *idPtr, bool deleteEntry, Ns_Set **setPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 static int LookupInterpSet(Tcl_Interp *interp, const char *id, bool deleteEntry, Ns_Set **setPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 static Tcl_Obj *EnterSet(NsInterp *itPtr, Ns_Set *set, Ns_TclSetType type)
@@ -302,69 +300,6 @@ static int StartsWithI(const char *nameString) {
 /*
  *----------------------------------------------------------------------
  *
- * NsTclSetObjCmd --
- *
- *      Implements "ns_set".
- *
- * Results:
- *      Tcl result.
- *
- * Side effects:
- *      See docs.
- *
- *----------------------------------------------------------------------
- */
-
-/*
- *----------------------------------------------------------------------
- *
- * ObjvSetObj --
- *
- *      objv converter for Ns_Set *.
- *
- * Results:
- *      TCL_OK or TCL_ERROR.
- *
- * Side effects:
- *      None.
- *
- *----------------------------------------------------------------------
- */
-static Ns_ObjvProc ObjvSetObj;
-
-static int
-ObjvSetObj(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr, Tcl_Obj *const* objv)
-{
-    int result = TCL_ERROR;
-
-    NS_NONNULL_ASSERT(spec != NULL);
-
-    if (likely(*objcPtr > 0)) {
-        NsInterp *itPtr = NsGetInterpData(interp);
-        Ns_Set  **dest = spec->dest;
-
-        //int i; for (i=0; i < *objcPtr; i++) {
-        //    fprintf(stderr, "... [%d] '%s'\n", i, Tcl_GetString(objv[i]));
-        //}
-        if (likely(LookupObjSet(itPtr, objv[0], NS_FALSE, dest) == TCL_OK)) {
-            if (*dest == NULL) {
-                Ns_TclPrintfResult(interp, "ns_set: could not convert '%s' to Ns_Set object",
-                                   Tcl_GetString(objv[0]));
-            } else {
-                *objcPtr -= 1;
-                result = TCL_OK;
-            }
-        }
-        /*fprintf(stderr, "... ObjvSetObj lookup of set <%s> -> %p ok %d\n",
-          Tcl_GetString(objv[0]), (void*)*dest, result == TCL_OK);*/
-    }
-
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * ThreadCreateObjCmd, ThreadHandlObjCmd, ThreadIdObjCmd, ThreadNameObjCmd,
  * ThreadStackinfoObjCmd, ThreadWaitObjCmd, ThreadYieldObjCmd --
  *
@@ -399,7 +334,7 @@ static int SetArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
     int         result = TCL_OK;
     Ns_Set     *set;
     Ns_ObjvSpec args[] = {
-        {"setId",  ObjvSetObj, &set, NULL},
+        {"setId",  Ns_ObjvSet, &set, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -469,7 +404,7 @@ static int SetCopyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T o
     NsInterp   *itPtr = clientData;
     Ns_Set     *set;
     Ns_ObjvSpec args[] = {
-        {"setId",  ObjvSetObj, &set, NULL},
+        {"setId",  Ns_ObjvSet, &set, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -561,7 +496,7 @@ static int SetDeleteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TC
     long        idx;
     Ns_Set     *set;
     Ns_ObjvSpec args[] = {
-        {"setId",       ObjvSetObj,  &set, NULL},
+        {"setId",       Ns_ObjvSet,  &set, NULL},
         {"fieldNumber", Ns_ObjvLong, &idx, &maxIdxRange},
         {NULL, NULL, NULL, NULL}
     };
@@ -599,7 +534,7 @@ static int SetDelkeyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TC
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec  args[] = {
-        {"setId",       ObjvSetObj,    &set, NULL},
+        {"setId",       Ns_ObjvSet,    &set, NULL},
         {"key",         Ns_ObjvString, &keyString, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -637,7 +572,7 @@ static int SetFormatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TC
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"setId",  ObjvSetObj, &set, NULL},
+        {"setId",  Ns_ObjvSet, &set, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -666,7 +601,7 @@ static int SetFreeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_
     int         result = TCL_OK;
     Ns_Set     *set;
     Ns_ObjvSpec args[] = {
-        {"setId",  ObjvSetObj, &set, NULL},
+        {"setId",  Ns_ObjvSet, &set, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -697,7 +632,7 @@ static int SetFindObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec  args[] = {
-        {"setId",       ObjvSetObj,    &set, NULL},
+        {"setId",       Ns_ObjvSet,    &set, NULL},
         {"key",         Ns_ObjvString, &keyString, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -727,7 +662,7 @@ static int SetIsnullObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TC
     long        idx;
     Ns_Set     *set;
     Ns_ObjvSpec args[] = {
-        {"setId",       ObjvSetObj,  &set, NULL},
+        {"setId",       Ns_ObjvSet,  &set, NULL},
         {"fieldNumber", Ns_ObjvLong, &idx, &maxIdxRange},
         {NULL, NULL, NULL, NULL}
     };
@@ -767,7 +702,7 @@ static int SetGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec  args[] = {
-        {"setId",       ObjvSetObj,    &set, NULL},
+        {"setId",       Ns_ObjvSet,    &set, NULL},
         {"key",         Ns_ObjvString, &keyString, NULL},
         {"?default",    Ns_ObjvString, &defaultString, NULL},
         {NULL, NULL, NULL, NULL}
@@ -817,7 +752,7 @@ static int SetKeyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
     long        idx;
     Ns_Set     *set;
     Ns_ObjvSpec args[] = {
-        {"setId",       ObjvSetObj,  &set, NULL},
+        {"setId",       Ns_ObjvSet,  &set, NULL},
         {"fieldNumber", Ns_ObjvLong, &idx, &maxIdxRange},
         {NULL, NULL, NULL, NULL}
     };
@@ -849,7 +784,7 @@ static int SetKeysObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_
     char       *patternString = NULL;
     Ns_Set     *set;
     Ns_ObjvSpec args[] = {
-        {"setId",    ObjvSetObj, &set, NULL},
+        {"setId",    Ns_ObjvSet, &set, NULL},
         {"?pattern", Ns_ObjvString, &patternString, NULL},
 
         {NULL, NULL, NULL, NULL}
@@ -924,8 +859,8 @@ static int SetMergeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"setId1",  ObjvSetObj, &set1, NULL},
-        {"setId2",  ObjvSetObj, &set2, NULL},
+        {"setId1",  Ns_ObjvSet, &set1, NULL},
+        {"setId2",  Ns_ObjvSet, &set2, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -955,8 +890,8 @@ static int SetMoveObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_
     int         result = TCL_OK;
     Ns_Set     *set1, *set2;
     Ns_ObjvSpec args[] = {
-        {"setId1",  ObjvSetObj, &set1, NULL},
-        {"setId2",  ObjvSetObj, &set2, NULL},
+        {"setId1",  Ns_ObjvSet, &set1, NULL},
+        {"setId2",  Ns_ObjvSet, &set2, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -983,7 +918,7 @@ static int SetNameObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_
     int         result = TCL_OK;
     Ns_Set     *set;
     Ns_ObjvSpec args[] = {
-        {"setId",  ObjvSetObj, &set, NULL},
+        {"setId",  Ns_ObjvSet, &set, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -1008,7 +943,7 @@ static int SetPrintObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
     int         result = TCL_OK;
     Ns_Set     *set;
     Ns_ObjvSpec args[] = {
-        {"setId",  ObjvSetObj, &set, NULL},
+        {"setId",  Ns_ObjvSet, &set, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -1035,7 +970,7 @@ static int SetPutObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
     Tcl_Obj    *keyObj, *valueObj;
     Ns_Set     *set;
     Ns_ObjvSpec args[] = {
-        {"setId",  ObjvSetObj, &set, NULL},
+        {"setId",  Ns_ObjvSet, &set, NULL},
         {"key",    Ns_ObjvObj, &keyObj,   NULL},
         {"value",  Ns_ObjvObj, &valueObj, NULL},
         {NULL, NULL, NULL, NULL}
@@ -1075,7 +1010,7 @@ static int SetSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_
     Ns_ObjvValueRange posintRange = {0, LLONG_MAX};
     Ns_ObjvValueRange posintRange200 = {TCL_DSTRING_STATIC_SIZE, LLONG_MAX};
     Ns_ObjvSpec args[] = {
-        {"setId",       ObjvSetObj,  &set, NULL},
+        {"setId",       Ns_ObjvSet,  &set, NULL},
         {"?nrElements", Ns_ObjvLong, &nrElements, &posintRange},
         {"?bufferSize", Ns_ObjvLong, &bufferSize, &posintRange200},
         {NULL, NULL, NULL, NULL}
@@ -1110,7 +1045,7 @@ static int SetSplitObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
     char       *splitString = (char *)".";
     Ns_Set     *set;
     Ns_ObjvSpec args[] = {
-        {"setId",      ObjvSetObj,    &set,         NULL},
+        {"setId",      Ns_ObjvSet,    &set,         NULL},
         {"?splitChar", Ns_ObjvString, &splitString, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -1224,7 +1159,7 @@ static int SetTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
     long        idx;
     Ns_Set     *set;
     Ns_ObjvSpec args[] = {
-        {"setId",       ObjvSetObj,  &set, NULL},
+        {"setId",       Ns_ObjvSet,  &set, NULL},
         {"fieldNumber", Ns_ObjvLong, &idx, &maxIdxRange},
         {NULL, NULL, NULL, NULL}
     };
@@ -1261,7 +1196,7 @@ static int SetUniqueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TC
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec  args[] = {
-        {"setId",       ObjvSetObj,    &set, NULL},
+        {"setId",       Ns_ObjvSet,    &set, NULL},
         {"key",         Ns_ObjvString, &keyString, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -1293,7 +1228,7 @@ static int SetValueObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
     long        idx;
     Ns_Set     *set;
     Ns_ObjvSpec args[] = {
-        {"setId",       ObjvSetObj,  &set, NULL},
+        {"setId",       Ns_ObjvSet,  &set, NULL},
         {"fieldNumber", Ns_ObjvLong, &idx, &maxIdxRange},
         {NULL, NULL, NULL, NULL}
     };
@@ -1326,7 +1261,7 @@ static int SetValuesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TC
     char       *patternString = NULL;
     Ns_Set     *set;
     Ns_ObjvSpec args[] = {
-        {"setId",    ObjvSetObj,    &set, NULL},
+        {"setId",    Ns_ObjvSet,    &set, NULL},
         {"?pattern", Ns_ObjvString, &patternString, NULL},
 
         {NULL, NULL, NULL, NULL}
@@ -1373,7 +1308,7 @@ static int Set_TYPE_SetidKeyValueObjCmd(ClientData UNUSED(clientData), Tcl_Inter
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"setId",  ObjvSetObj, &set, NULL},
+        {"setId",  Ns_ObjvSet, &set, NULL},
         {"key",    Ns_ObjvObj, &keyObj,   NULL},
         {"value",  Ns_ObjvObj, &valueObj, NULL},
         {NULL, NULL, NULL, NULL}
@@ -1416,7 +1351,21 @@ static int Set_TYPE_SetidKeyValueObjCmd(ClientData UNUSED(clientData), Tcl_Inter
     return result;
 }
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclSetObjCmd --
+ *
+ *      Implements "ns_set".
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      See docs.
+ *
+ *----------------------------------------------------------------------
+ */
 int
 NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1601,29 +1550,23 @@ EnterSet(NsInterp *itPtr, Ns_Set *set, Ns_TclSetType type)
 /*
  *----------------------------------------------------------------------
  *
- * LookupSet --
+ * LookupInterpSet --
  *
- *      Take a Tcl set handle and return a matching Set.
+ *      Take an ns_set name, look it up in the interpreter, and return it in
+ *      the last argument. The function is similar to LookupSet(), but handles
+ *      the case, where the Tcl Interp is not a NaviServer interpreter
+ *      (NsInterp).
  *
  * Results:
  *      TCL_OK or TCL_ERROR.
  *
  * Side effects:
- *      If deleteEntry is set, then the hash entry will be removed.
- *      Set will be returned in given setPtr.
+ *      If deleteEntry is set, then the hash entry will be removed.  Set will
+ *      be returned in given setPtr. In case of error, the error message is
+ *      left in the interpreter result.
  *
  *----------------------------------------------------------------------
  */
-
-static int
-LookupObjSet(NsInterp *itPtr, Tcl_Obj *idPtr, bool deleteEntry, Ns_Set **setPtr)
-{
-    NS_NONNULL_ASSERT(itPtr != NULL);
-    NS_NONNULL_ASSERT(idPtr != NULL);
-    NS_NONNULL_ASSERT(setPtr != NULL);
-
-    return LookupSet(itPtr, Tcl_GetString(idPtr), deleteEntry, setPtr);
-}
 
 static int
 LookupInterpSet(Tcl_Interp *interp, const char *id, bool deleteEntry, Ns_Set **setPtr)
@@ -1645,6 +1588,25 @@ LookupInterpSet(Tcl_Interp *interp, const char *id, bool deleteEntry, Ns_Set **s
 
     return result;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * LookupSet --
+ *
+ *      Take an ns_set name, look it up in the interpreter, and return it in
+ *      the last argument.
+ *
+ * Results:
+ *      TCL_OK or TCL_ERROR.
+ *
+ * Side effects:
+ *      If deleteEntry is set, then the hash entry will be removed.  Set will
+ *      be returned in given setPtr. In case of error, the error message is
+ *      left in the interpreter result.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static int
 LookupSet(NsInterp *itPtr, const char *id, bool deleteEntry, Ns_Set **setPtr)
