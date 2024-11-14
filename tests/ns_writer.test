@@ -11,7 +11,7 @@ if {[ns_config test listenport]} {
 
 test ns_writer-1.1 {basic syntax: plain call} -body {
      ns_writer
-} -returnCodes error -result {wrong # args: should be "ns_writer subcommand ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_writer /subcommand/ ?args?"}
 
 test ns_writer-1.2 {basic syntax: wrong argument} -body {
      ns_writer ?

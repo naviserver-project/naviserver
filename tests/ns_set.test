@@ -5,7 +5,7 @@ namespace import -force ::tcltest::*
 
 test ns_set-1.1 {basic syntax ns_set} -body {
     ns_set
-} -returnCodes error -result {wrong # args: should be "ns_set subcommand ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set /subcommand/ ?args?"}
 
 test ns_set-1.2 {basic syntax ns_set} -body {
     ns_set ""

@@ -1965,7 +1965,7 @@ Ns_SubcmdObjv(const Ns_SubCmdSpec *subcmdSpec, ClientData clientData, Tcl_Interp
          * GetOptIndexSubcmdSpec()) we could list the available
          * options, but that is just used for shared objects.
          */
-        Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?args?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?args?");
         result = TCL_ERROR;
     } else {
         Tcl_Obj *selectorObj = objv[1];

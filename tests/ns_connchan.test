@@ -18,7 +18,7 @@ tcltest::testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
 #
 test ns_connchan-1.0 {basic operation} -body {
      ns_connchan
-} -returnCodes error -result {wrong # args: should be "ns_connchan subcommand ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_connchan /subcommand/ ?args?"}
 
 test ns_connchan-1.1 {basic operation} -body {
      ns_connchan x

@@ -191,7 +191,7 @@ test ns_valid_utf8-1.4 {invalid utf8, containing x85 in the middle} -body {
 
 test ns_ip-1.0.1 {ns_ip general} -body {
     ns_ip
-} -returnCodes error -result {wrong # args: should be "ns_ip subcommand ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_ip /subcommand/ ?args?"}
 
 test ns_ip-1.0.2 {ns_ip wrong subcommand} -body {
     ns_ip x
