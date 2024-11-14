@@ -35,7 +35,7 @@
  lose duplicates, as keys in dicts and arrays are unique.
 
 [example_begin]
- # Ouput HTTP request headers as string
+ # Output HTTP request headers as string
  set headers [lb]ns_conn headers[rb]
  set output ""
   foreach {key value} [lb]ns_set array $headers[rb] {
@@ -430,7 +430,7 @@ Iterating over the fields of an ns_set:
    ns_log notice "key: $key, value: $value"
  }
  
- # Run through an ns_set based on indicies
+ # Run through an ns_set based on indices
  for {set i 0} {$i < [lb]ns_set size $myset[rb]} {incr i} {
    set key [lb]ns_set key $myset $i[rb]
    set value [lb]ns_set value $myset $i[rb]

@@ -13,7 +13,7 @@
  should be used instead.
 
 [para]
- NOTE: This stype of encodeing is sometimes called "htuu". This
+ NOTE: This type of encoding is sometimes called "htuu". This
  command converts the specified argument to RFC 1113 printable
  encoding format. This technique is similar to the familiar Unix
  uuencode format in that it maps 6 binary bits to one ASCII character
