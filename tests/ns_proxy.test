@@ -62,7 +62,7 @@ test ns_proxy-2.9 {configuration options types} -body {
 
 test ns_proxy-2.10 {clear slaves basic syntax} -body {
     ns_proxy clear
-} -returnCodes error -result {wrong # args: should be "ns_proxy clear pool ?handle?"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy clear /pool/ ?handle?"}
 
 test ns_proxy-3.1 {get base syntax} -body {
     ns_proxy get

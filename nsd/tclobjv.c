@@ -53,6 +53,10 @@ static int SetMemUnitFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 static void AppendRange(Ns_DString *dsPtr, const Ns_ObjvValueRange *r)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static void AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_T separatorLength,
+                            bool withRange, const Ns_ObjvSpec *specPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
+
 /*
  * Static variables defined in this file.
  */
@@ -780,7 +784,7 @@ Ns_ObjvObj(Ns_ObjvSpec *spec, Tcl_Interp *interp, TCL_SIZE_T *objcPtr,
  * Ns_ObjvTime --
  *
  *      Consume exactly one argument, returning a pointer to the
- *      Ns_Time into *spec->dest.
+ *      convertred Ns_Time* into *spec->dest.
  *
  * Results:
  *      TCL_OK or TCL_ERROR.
@@ -1805,6 +1809,90 @@ static void AppendRange(Ns_DString *dsPtr, const Ns_ObjvValueRange *r)
 }
 
 static void
+AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_T separatorLength,
+                bool withRange, const Ns_ObjvSpec *specPtr)
+{
+    const char *name = specPtr->key;
+    const char  firstChar = *name;
+    TCL_SIZE_T  nameLength = (TCL_SIZE_T)strlen(name);
+
+    /*
+     * For optional parameter, use always the question mark as
+     * separator.
+     */
+    if (firstChar == '?') {
+        separator = "?";
+        separatorLength = 1;
+        nameLength --;
+        name++;
+    }
+
+    Tcl_DStringAppend(dsPtr, separator, separatorLength);
+    Tcl_DStringAppend(dsPtr, name, nameLength);
+
+    if (firstChar == '-') {
+        /*
+         * Is this a Boolean switch? If not, output the argument of the
+         * non positional parameter.
+         */
+        if (specPtr->proc != Ns_ObjvBool || specPtr->arg == NULL) {
+            Ns_ObjvProc *objvProc = specPtr->proc;
+            bool         literalValues = (objvProc == Ns_ObjvIndex || objvProc == Ns_ObjvBool);
+
+            if (literalValues) {
+                Tcl_DStringAppend(dsPtr, " ", 1);
+            } else {
+                Tcl_DStringAppend(dsPtr, " /", 2);
+            }
+
+            if (objvProc == Ns_ObjvString) {
+                Tcl_DStringAppend(dsPtr, "string", 6);
+            } else if (objvProc == Ns_ObjvByteArray) {
+                Tcl_DStringAppend(dsPtr, "data", 4);
+            } else if (objvProc == Ns_ObjvMemUnit) {
+                Tcl_DStringAppend(dsPtr, "memory-unit", 11);
+            } else if (objvProc == Ns_ObjvSet) {
+                Tcl_DStringAppend(dsPtr, "ns_set", 6);
+            } else if (objvProc == Ns_ObjvServer) {
+                Tcl_DStringAppend(dsPtr, "server", 6);
+            } else if (objvProc == Ns_ObjvWideInt || objvProc == Ns_ObjvInt || objvProc == Ns_ObjvLong) {
+                Tcl_DStringAppend(dsPtr, "integer", 7);
+
+            } else if (objvProc == Ns_ObjvIndex) {
+                Ns_ObjvTable *values = specPtr->arg;
+                const char *key;
+                for (key = values->key; key != NULL; key = (++values)->key) {
+                    Tcl_DStringAppend(dsPtr, key, TCL_INDEX_NONE);
+                    Tcl_DStringAppend(dsPtr, "|", 1);
+                }
+                Ns_DStringSetLength(dsPtr, dsPtr->length - 1);
+            } else if (objvProc == Ns_ObjvBool) {
+                Tcl_DStringAppend(dsPtr, "true|false", 10);
+            } else {
+                /*fprintf(stderr, "PARAMETER PRINT: fall back to <%s> %s\n", name + 1,
+                  objvProc == Ns_ObjvObj ? "(generic object)" : "");*/
+                Tcl_DStringAppend(dsPtr, name + 1, nameLength - 1);
+            }
+
+            if (withRange) {
+                AppendRange(dsPtr, specPtr->arg);
+            }
+            if (!literalValues) {
+                Tcl_DStringAppend(dsPtr, "/", 1);
+            }
+        }
+    }  else if (withRange) {
+        AppendRange(dsPtr, specPtr->arg);
+    }
+    Tcl_DStringAppend(dsPtr, separator, separatorLength);
+
+    /*
+     * Append space at the end
+     */
+    Tcl_DStringAppend(dsPtr, " ", 1);
+}
+
+static void
 WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
                TCL_SIZE_T preObjc, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1817,43 +1905,27 @@ WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *inter
         for (specPtr = optSpec; specPtr->key != NULL; ++specPtr) {
             if (STREQ(specPtr->key, "--")) {
                 Ns_DStringAppend(&ds, "?--? ");
-            } else if (specPtr->proc == Ns_ObjvBool && specPtr->arg != NULL) {
-                Ns_DStringPrintf(&ds, "?%s? ", specPtr->key);
             } else {
-                const char *p = specPtr->key;
-                if (*specPtr->key == '-') {
-                    ++p;
-                }
-                Ns_DStringPrintf(&ds, "?%s %s", specPtr->key, p);
-
-                if ((specPtr->proc == Ns_ObjvInt
+                AppendParameter(&ds, "?", 1, ((specPtr->proc == Ns_ObjvInt
                      || specPtr->proc == Ns_ObjvLong
                      || specPtr->proc == Ns_ObjvWideInt
-                     ) && specPtr->arg != NULL) {
-                    AppendRange(&ds, specPtr->arg);
-                }
-                Tcl_DStringAppend(&ds, "? ", 2);
+                     ) && specPtr->arg != NULL), specPtr);
             }
         }
     }
     if (argSpec != NULL) {
         for (specPtr = argSpec; specPtr->key != NULL; ++specPtr) {
-            Tcl_DStringAppend(&ds, specPtr->key, TCL_INDEX_NONE);
-
-            if ((specPtr->proc == Ns_ObjvInt
-                 || specPtr->proc == Ns_ObjvLong
-                 || specPtr->proc == Ns_ObjvWideInt
-                 ) && specPtr->arg != NULL) {
-                AppendRange(&ds, specPtr->arg);
-            }
-            if (*specPtr->key == '?') {
-                Tcl_DStringAppend(&ds, "?", 1);
-            }
-            Tcl_DStringAppend(&ds, " ", 1);
+            AppendParameter(&ds, "/", 1, ((specPtr->proc == Ns_ObjvInt
+                                     || specPtr->proc == Ns_ObjvLong
+                                     || specPtr->proc == Ns_ObjvWideInt
+                                     ) && specPtr->arg != NULL), specPtr);
         }
     }
 
     if (ds.length > 0) {
+        /*
+         * Strip last blank character.
+         */
         Ns_DStringSetLength(&ds, ds.length - 1);
         /*Ns_Log(Notice, ".... call tclwrongnumargs %d size %lu <%s>", objc+preObjc, sizeof(objc), ds.string);*/
         Tcl_WrongNumArgs(interp, (TCL_SIZE_T)objc+preObjc, objv, ds.string);

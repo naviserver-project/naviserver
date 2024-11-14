@@ -22,14 +22,14 @@ test ns_writer-1.3 {basic operation} -body {
     set _ $errorMsg
 } -cleanup {
     unset -nocomplain _
-} -match exact -result {wrong # args: should be "ns_writer list ?-server server?"}
+} -match exact -result {wrong # args: should be "ns_writer list ?-server /server/?"}
 
 test ns_writer-1.4 {basic operation} -body {
     catch {ns_writer list -server test foo} errorMsg
     set _ $errorMsg
 } -cleanup {
     unset -nocomplain _
-} -match exact -result {wrong # args: should be "ns_writer list ?-server server?"}
+} -match exact -result {wrong # args: should be "ns_writer list ?-server /server/?"}
 
 test ns_writer-2.1 {basic operation} -body {
     # Since we cannot guarantee that no writer operation runs in the

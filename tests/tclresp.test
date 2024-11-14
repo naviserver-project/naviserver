@@ -15,7 +15,7 @@ testConstraint http09 true
 
 test tclresp-1.1.1 {basic syntax} -body {
     ns_headers
-} -returnCodes error -result {wrong # args: should be "ns_headers ?-binary? ?--? status[100,599] ?type? ?length[0,LLONG_MAX]?"}
+} -returnCodes error -result {wrong # args: should be "ns_headers ?-binary? ?--? /status[100,599]/ ?type? ?length[0,LLONG_MAX]?"}
 
 test tclresp-1.1.2 {basic syntax} -body {
     ns_headers 200
@@ -23,7 +23,7 @@ test tclresp-1.1.2 {basic syntax} -body {
 
 test tclresp-1.2.1 {basic syntax} -body {
     ns_return
-} -returnCodes error -result {wrong # args: should be "ns_return ?-binary? status[100,599] type data"}
+} -returnCodes error -result {wrong # args: should be "ns_return ?-binary? /status[100,599]/ /type/ /data/"}
 
 test tclresp-1.2.2 {basic syntax} -body {
     ns_return 200 text/plain x
@@ -31,7 +31,7 @@ test tclresp-1.2.2 {basic syntax} -body {
 
 test tclresp-1.3.1 {basic syntax} -body {
     ns_respond -x
-} -returnCodes error -result {wrong # args: should be "ns_respond ?-status status[100,599]? ?-type type? ?-length length[0,LLONG_MAX]? ?-headers headers? ?-string string? ?-file file? ?-fileid fileid? ?-binary binary?"}
+} -returnCodes error -result {wrong # args: should be "ns_respond ?-status /integer[100,599]/? ?-type /string/? ?-length /integer[0,LLONG_MAX]/? ?-headers /string/? ?-string /string/? ?-file /string/? ?-fileid /string/? ?-data /data/? ?-binary /data/?"}
 
 test tclresp-1.3.2 {basic syntax} -body {
     ns_respond -string x
@@ -51,7 +51,7 @@ test tclresp-1.3.3-c {basic syntax connected} -constraints serverListen -setup {
     nstest::http -getbody 1 GET /tclresp
 } -cleanup {
     ns_unregister_op GET /tclresp
-} -result {200 {must specify only one of -string, -file, -binary or -fileid}}
+} -result {200 {must specify only one of -string, -file, -data or -fileid}}
 
 
 test tclresp-1.3.4 {basic syntax} -body {
@@ -89,7 +89,7 @@ test tclresp-1.3.5-c {basic syntax connected} -constraints serverListen -setup {
 
 test tclresp-1.4.1 {basic syntax} -body {
     ns_returnfile
-} -returnCodes error -result {wrong # args: should be "ns_returnfile status[100,599] type filename"}
+} -returnCodes error -result {wrong # args: should be "ns_returnfile /status[100,599]/ /type/ /filename/"}
 
 test tclresp-1.4.2 {basic syntax} -body {
     ns_returnfile 200 text/plain x
@@ -97,7 +97,7 @@ test tclresp-1.4.2 {basic syntax} -body {
 
 test tclresp-1.5.1 {basic syntax} -body {
     ns_returnfp
-} -returnCodes error -result {wrong # args: should be "ns_returnfp status[100,599] type channel length[0,LLONG_MAX]"}
+} -returnCodes error -result {wrong # args: should be "ns_returnfp /status[100,599]/ /type/ /channel/ /length[0,LLONG_MAX]/"}
 
 test tclresp-1.5.2 {basic syntax} -body {
     ns_returnfp 200 text/plain x 0
@@ -125,7 +125,7 @@ test tclresp-1.9.1 {basic syntax} -body {
 
 test tclresp-1.10.1 {basic syntax} -body {
     ns_returnerror
-} -returnCodes error -result {wrong # args: should be "ns_returnerror status[100,599] message"}
+} -returnCodes error -result {wrong # args: should be "ns_returnerror /status[100,599]/ /message/"}
 
 test tclresp-1.10.2 {basic syntax} -body {
     ns_returnerror 200 x
@@ -133,7 +133,7 @@ test tclresp-1.10.2 {basic syntax} -body {
 
 test tclresp-1.11.1 {basic syntax} -body {
     ns_returnnotice
-} -returnCodes error -result {wrong # args: should be "ns_returnnotice status[100,599] title message"}
+} -returnCodes error -result {wrong # args: should be "ns_returnnotice /status[100,599]/ /title/ /message/"}
 
 test tclresp-1.11.2 {basic syntax} -body {
     ns_returnnotice 200 x y
@@ -141,7 +141,7 @@ test tclresp-1.11.2 {basic syntax} -body {
 
 test tclresp-1.12.1 {basic syntax} -body {
     ns_returnredirect
-} -returnCodes error -result {wrong # args: should be "ns_returnredirect location"}
+} -returnCodes error -result {wrong # args: should be "ns_returnredirect /location/"}
 
 test tclresp-1.12.2 {basic syntax} -body {
     ns_returnredirect http://example.com/
@@ -157,7 +157,7 @@ test tclresp-1.13.2 {basic syntax} -body {
 
 test tclresp-1.14.1 {basic syntax} -body {
     ns_connsendfp
-} -returnCodes error -result {wrong # args: should be "ns_connsendfp channel length[0,LLONG_MAX]"}
+} -returnCodes error -result {wrong # args: should be "ns_connsendfp /channel/ /length[0,LLONG_MAX]/"}
 
 test tclresp-1.14.2 {basic syntax} -body {
     ns_connsendfp x 0

@@ -22,7 +22,7 @@ test ns_thread-1.4.0 {basic syntax} -body {
 } -returnCodes error -result {bad subcommand "?": must be create, destroy, release, or wait}
 test ns_thread-1.4.1 {basic syntax} -body {
     ns_sema release
-} -returnCodes error -result {wrong # args: should be "ns_sema release handle ?count?"}
+} -returnCodes error -result {wrong # args: should be "ns_sema release /handle/ ?count?"}
 test ns_thread-1.4.2 {basic syntax} -body {
     ns_sema release .
 } -returnCodes error -result {ns_sema: could not convert '.' to semaphore object}
@@ -121,7 +121,7 @@ test ns_thread-3.5 {mutex eval locked} -body {
 
 test ns_thread-3.6 {mutex eval args} -body {
     ns_mutex eval test:evalmutex
-} -returnCodes {ok error} -result {wrong # args: should be "ns_mutex eval mutexid script"}
+} -returnCodes {ok error} -result {wrong # args: should be "ns_mutex eval /mutexid/ /script/"}
 
 test ns_thread-3.7 {mutex eval args} -body {
     ns_mutex unlock mutex-[clock microseconds]
@@ -162,7 +162,7 @@ test ns_thread-4.4 {critical section eval} -body {
 
 test ns_thread-4.5 {critical section eval args} -body {
     ns_critsec eval test:evalcs
-} -returnCodes error -result {wrong # args: should be "ns_critsec eval csid script"}
+} -returnCodes error -result {wrong # args: should be "ns_critsec eval /csid/ /script/"}
 
 
 
@@ -235,11 +235,11 @@ test ns_thread-6.6 {rwlock eval write-locked} -body {
 
 test ns_thread-6.7 {rwlock readeval args} -body {
     ns_rwlock readeval test:rwlock
-} -returnCodes error -result {wrong # args: should be "ns_rwlock readeval rwlockid script"}
+} -returnCodes error -result {wrong # args: should be "ns_rwlock readeval /rwlockid/ /script/"}
 
 test ns_thread-6.8 {rwlock writeeval args} -body {
     ns_rwlock writeeval test:rwlock
-} -returnCodes error -result {wrong # args: should be "ns_rwlock writeeval rwlockid script"}
+} -returnCodes error -result {wrong # args: should be "ns_rwlock writeeval /rwlockid/ /script/"}
 
 
 

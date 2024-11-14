@@ -8,7 +8,7 @@ namespace import -force ::tcltest::*
 
 test ns_hashpath-1.1 {basic syntax} -body {
     ns_hashpath
-} -returnCodes error -result {wrong # args: should be "ns_hashpath string levels[1,2147483647]"}
+} -returnCodes error -result {wrong # args: should be "ns_hashpath /string/ /levels[1,2147483647]/"}
 
 test ns_hashpath-1.2 {basic syntax} -body {
     ns_hashpath "" 0

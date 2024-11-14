@@ -17,7 +17,7 @@ namespace import -force ::tcltest::*
 
 test ns_hrefs-1.1 {syntax} -body {
     ns_hrefs
-} -returnCodes error -result {wrong # args: should be "ns_hrefs html"}
+} -returnCodes error -result {wrong # args: should be "ns_hrefs /html/"}
 
 test ns_hrefs-1.2 {syntax} -body {
     ns_hrefs {}

@@ -11,7 +11,7 @@ namespace import -force ::tcltest::*
 
 test ns_parsefieldvalue-1.0 {basic syntax: plain call} -body {
     ns_parsefieldvalue
-} -returnCodes error -result {wrong # args: should be "ns_parsefieldvalue ?-lower? ?-single? ?-strict? ?--? fieldvalue"}
+} -returnCodes error -result {wrong # args: should be "ns_parsefieldvalue ?-lower? ?-single? ?-strict? ?--? /fieldvalue/"}
 
 
 test ns_parsefieldvalue-1.1 {single attribute value pair} -body {

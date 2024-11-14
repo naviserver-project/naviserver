@@ -10,15 +10,15 @@ namespace import -force ::tcltest::*
 
 test limits-1.1 {get} -body {
     ns_limits_get
-} -returnCodes error -result {wrong # args: should be "ns_limits_get limits"}
+} -returnCodes error -result {wrong # args: should be "ns_limits_get /limits/"}
 
 test limits-1.2 {set} -body {
     ns_limits_set
-} -returnCodes error -result {wrong # args: should be "ns_limits_set ?-maxrun maxrun[0,2147483647]? ?-maxwait maxwait[0,2147483647]? ?-maxupload maxupload[0,2147483647]? ?-timeout timeout[0,2147483647]? ?--? limits"}
+} -returnCodes error -result {wrong # args: should be "ns_limits_set ?-maxrun /integer[0,2147483647]/? ?-maxwait /integer[0,2147483647]/? ?-maxupload /integer[0,2147483647]/? ?-timeout /integer[0,2147483647]/? ?--? /limits/"}
 
 test limits-1.3 {basic syntax} -body {
     ns_limits_register
-} -returnCodes error -result {wrong # args: should be "ns_limits_register ?-noinherit? ?-server server? ?--? limits method url"}
+} -returnCodes error -result {wrong # args: should be "ns_limits_register ?-noinherit? ?-server /server/? ?--? /limits/ /method/ /url/"}
 
 
 

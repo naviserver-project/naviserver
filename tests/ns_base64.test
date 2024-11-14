@@ -10,11 +10,11 @@ tcltest::testConstraint pre_tcl90 [expr {$::tcl_version < 9.0}]
 
 test ns_base64encode-0.1 {basic syntax: plain call} -body {
      ns_base64encode
-} -returnCodes error -result {wrong # args: should be "ns_base64encode ?-binary? ?--? string"}
+} -returnCodes error -result {wrong # args: should be "ns_base64encode ?-binary? ?--? /string/"}
 
 test ns_base64decode-0.1 {basic syntax: plain call} -body {
      ns_base64decode
-} -returnCodes error -result {wrong # args: should be "ns_base64decode ?-binary? ?-strict? ?--? string"}
+} -returnCodes error -result {wrong # args: should be "ns_base64decode ?-binary? ?-strict? ?--? /string/"}
 
 
 test ns_base64encode-1.1 {ns_base64encode basic functionality} -body {

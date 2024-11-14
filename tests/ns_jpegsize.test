@@ -12,7 +12,7 @@ set testdir [ns_config test home]
 
 test ns_jpegsize-1.1 {syntax} -body {
     ns_jpegsize
-} -returnCodes error -result {wrong # args: should be "ns_jpegsize jpeg_file"}
+} -returnCodes error -result {wrong # args: should be "ns_jpegsize /jpeg_file/"}
 
 
 test ns_jpegsize-2.1 {file does not exist} -body {

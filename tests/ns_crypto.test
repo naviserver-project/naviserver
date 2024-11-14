@@ -99,7 +99,7 @@ test ns_hmac_sha2-1.1 {basic syntax: plain call} -constraints crypto -body {
 } -returnCodes error -result {wrong # args: should be "ns_crypto::hmac subcommand ?args?"}
 test ns_hmac_sha2-1.2 {basic syntax: plain call} -constraints crypto -body {
     ns_crypto::hmac string -digest sha123 x
-} -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string ?-binary? ?-digest digest? ?-encoding encoding? ?--? key message"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string ?-binary? ?-digest /string/? ?-encoding hex|base64url|base64|binary? ?--? /key/ /message/"}
 test ns_hmac_sha2-1.3 {basic syntax: plain call} -constraints crypto -body {
     ns_crypto::hmac string -digest sha123 x y
 } -returnCodes error -match glob -result {Unknown value for digest "sha123", valid: *}

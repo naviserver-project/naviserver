@@ -14,47 +14,47 @@ ns_cache_create -expires 100.1s -timeout 1s -- c4 [expr 1024 * 1024]
 
 test cache-1.1 {basic syntax} -body {
     ns_cache_keys
-} -returnCodes error -result {wrong # args: should be "ns_cache_keys ?-exact? ?--? cache ?pattern?"}
+} -returnCodes error -result {wrong # args: should be "ns_cache_keys ?-exact? ?--? /cache/ ?pattern?"}
 
 test cache-1.2 {basic syntax} -body {
     ns_cache_flush
-} -returnCodes error -result {wrong # args: should be "ns_cache_flush ?-glob? ?--? cache ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_cache_flush ?-glob? ?--? /cache/ ?args?"}
 
 test cache-1.3 {basic syntax} -body {
     ns_cache_stats
-} -returnCodes error -result {wrong # args: should be "ns_cache_stats ?-contents? ?-reset? ?--? cache"}
+} -returnCodes error -result {wrong # args: should be "ns_cache_stats ?-contents? ?-reset? ?--? /cache/"}
 
 test cache-1.4 {basic syntax} -body {
     ns_cache_create
-} -returnCodes error -result {wrong # args: should be "ns_cache_create ?-timeout timeout? ?-expires expires? ?-maxentry maxentry? ?--? cache size"}
+} -returnCodes error -result {wrong # args: should be "ns_cache_create ?-timeout /timeout/? ?-expires /expires/? ?-maxentry /memory-unit/? ?--? /cache/ /size/"}
 
 test cache-1.5 {basic syntax} -body {
     ns_cache_eval
-} -returnCodes error -result {wrong # args: should be "ns_cache_eval ?-timeout timeout? ?-expires expires? ?-force? ?--? cache key args"}
+} -returnCodes error -result {wrong # args: should be "ns_cache_eval ?-timeout /timeout/? ?-expires /expires/? ?-force? ?--? /cache/ /key/ /args/"}
 
 test cache-1.6 {basic syntax} -body {
     ns_cache_incr
-} -returnCodes error -result {wrong # args: should be "ns_cache_incr ?-timeout timeout? ?-expires expires? ?--? cache key ?incr?"}
+} -returnCodes error -result {wrong # args: should be "ns_cache_incr ?-timeout /timeout/? ?-expires /expires/? ?--? /cache/ /key/ ?incr?"}
 
 test cache-1.7 {basic syntax} -body {
     ns_cache_append
-} -returnCodes error -result {wrong # args: should be "ns_cache_append ?-timeout timeout? ?-expires expires? ?--? cache key args"}
+} -returnCodes error -result {wrong # args: should be "ns_cache_append ?-timeout /timeout/? ?-expires /expires/? ?--? /cache/ /key/ /args/"}
 
 test cache-1.8 {basic syntax} -body {
     ns_cache_lappend
-} -returnCodes error -result {wrong # args: should be "ns_cache_lappend ?-timeout timeout? ?-expires expires? ?--? cache key args"}
+} -returnCodes error -result {wrong # args: should be "ns_cache_lappend ?-timeout /timeout/? ?-expires /expires/? ?--? /cache/ /key/ /args/"}
 
 test cache-1.10 {basic syntax} -body {
     ns_memoize
-} -returnCodes error -result {wrong # args: should be "?-timeout timeout? ?-expires expires? ?--? script ?args?"}
+} -returnCodes error -result {wrong # args: should be "?-timeout /timeout/? ?-expires /expires/? ?--? /script/ ?args?"}
 
 test cache-1.11 {basic syntax} -body {
     ns_cache_configure
-} -returnCodes error -result {wrong # args: should be "ns_cache_configure cache ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_cache_configure /cache/ ?args?"}
 
 test cache-1.12 {basic syntax} -body {
     ns_cache_exists
-} -returnCodes error -result {wrong # args: should be "ns_cache_exists cache"}
+} -returnCodes error -result {wrong # args: should be "ns_cache_exists /cache/"}
 
 
 

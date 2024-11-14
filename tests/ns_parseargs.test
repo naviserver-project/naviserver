@@ -122,19 +122,19 @@ test ns_parseargs-6.1 {-- ends option parsing} -body {
 
 test ns_parseargs-7.1 {Bad Args} -body {
     ns_parseargs {-a x} {}
-} -returnCodes error -result {wrong # args: should be "?-a a? x"}
+} -returnCodes error -result {wrong # args: should be "?-a /a/? /x/"}
 
 test ns_parseargs-7.2 {Bad Args} -body {
     ns_parseargs {-a x} {x y}
-} -returnCodes error -result {wrong # args: should be "?-a a? x"}
+} -returnCodes error -result {wrong # args: should be "?-a /a/? /x/"}
 
 test ns_parseargs-7.3 {Bad Args} -body {
     ns_parseargs {-a x} {-b x}
-} -returnCodes error -result {wrong # args: should be "?-a a? x"}
+} -returnCodes error -result {wrong # args: should be "?-a /a/? /x/"}
 
 test ns_parseargs-7.4 {Bad Args} -body {
     ns_parseargs {-a x} {-a a -- x}
-} -returnCodes error -result {wrong # args: should be "?-a a? x"}
+} -returnCodes error -result {wrong # args: should be "?-a /a/? /x/"}
 
 
 

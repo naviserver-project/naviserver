@@ -15,11 +15,11 @@ namespace import -force ::tcltest::*
 
 test ns_uuencode-0.1 {basic syntax: plain call} -body {
      ns_uuencode
-} -returnCodes error -result {wrong # args: should be "ns_uuencode ?-binary? ?--? string"}
+} -returnCodes error -result {wrong # args: should be "ns_uuencode ?-binary? ?--? /string/"}
 
 test ns_uudecode-0.2 {basic syntax: plain call} -body {
      ns_uudecode
-} -returnCodes error -result {wrong # args: should be "ns_uudecode ?-binary? ?-strict? ?--? string"}
+} -returnCodes error -result {wrong # args: should be "ns_uudecode ?-binary? ?-strict? ?--? /string/"}
 
 test ns_uuencode-1.1 {long string} -body {
     ns_uuencode 1234567890

@@ -10,7 +10,7 @@ namespace import -force ::tcltest::*
 test ns_config-1.1 {basic syntax} -body {
     ns_config
 } -returnCodes error -result \
-    {wrong # args: should be "ns_config ?-bool? ?-int? ?-min min? ?-max max? ?-exact? ?-set? ?--? section key ?default?"}
+    {wrong # args: should be "ns_config ?-bool? ?-int? ?-min /integer/? ?-max /integer/? ?-exact? ?-set? ?--? /section/ /key/ ?default?"}
 
 
 
@@ -139,7 +139,7 @@ test ns_config-6.1 {sections} -body {
 
 test ns_config-7.1 {section} -body {
     ns_configsection
-} -returnCodes error -result {wrong # args: should be "ns_configsection ?-filter filter? ?--? section"}
+} -returnCodes error -result {wrong # args: should be "ns_configsection ?-filter unread|defaulted|defaults? ?--? /section/"}
 
 test ns_config-7.2 {section} -body {
     ns_set array [ns_configsection ns/testconfig]

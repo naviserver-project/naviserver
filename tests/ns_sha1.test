@@ -7,7 +7,7 @@ namespace import -force ::tcltest::*
 
 test ns_sha1-1.1 {basic syntax: plain call} -body {
      ns_sha1
-} -returnCodes error -result {wrong # args: should be "ns_sha1 ?-binary? ?--? string"}
+} -returnCodes error -result {wrong # args: should be "ns_sha1 ?-binary? ?--? /string/"}
 
 
 test ns_sha1-2.1 {basic operation} -body {

@@ -7,7 +7,7 @@ namespace import -force ::tcltest::*
 
 test ns_md5-1.1 {basic syntax: plain call} -body {
      ns_md5
-} -returnCodes error -result {wrong # args: should be "ns_md5 ?-binary? ?--? string"}
+} -returnCodes error -result {wrong # args: should be "ns_md5 ?-binary? ?--? /string/"}
 
 test ns_md5-1.2 {basic syntax: plain call} -body {
      ns_md5 -binary

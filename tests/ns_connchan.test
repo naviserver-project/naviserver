@@ -227,7 +227,7 @@ test ns_connchan-2.0 {ns_connchan wsencode, basic command flags} -body {
 } -cleanup {
     ns_unregister_op GET /conn
 } -returnCodes {error ok
-} -result {wrong # args: should be "ns_connchan wsencode ?-binary? ?-fin fin[0,1]? ?-mask? ?-opcode opcode? message"}
+} -result {wrong # args: should be "ns_connchan wsencode ?-binary? ?-fin /integer[0,1]/? ?-mask? ?-opcode continue|text|binary|close|ping|pong? /message/"}
 
 test ns_connchan-2.1.1 {ns_connchan wsencode with text} -constraints tcl86 -body {
     binary encode hex [ns_connchan wsencode -opcode text "Hello Wörld"]
