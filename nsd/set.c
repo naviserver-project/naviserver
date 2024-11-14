@@ -97,7 +97,7 @@ static void hexPrint(const char *msg, const unsigned char *octets, size_t octetL
  *      needed.
  *
  * Results:
- *      input string in lower case.
+ *      input string in lowercase.
  *
  * Side effects:
  *      None.
@@ -1885,7 +1885,7 @@ Ns_SetRecreate2(Ns_Set **toPtr, Ns_Set *from)
  *
  * Ns_SetFormat --
  *
- *      Format the contents of a set based on leadString and separtor
+ *      Format the contents of a set based on leadString and separator
  *      to the provided Tcl_DString.
  *
  * Results:
