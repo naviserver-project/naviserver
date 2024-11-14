@@ -378,7 +378,7 @@ NsTclRespondObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     int               result = TCL_OK, httpStatus = 200;
     Tcl_WideInt       length = -1;
     char             *type = (char *)"*/*", *setid = NULL;
-    char             *chars = NULL, *filename = NULL, *chanid = NULL, *binary = NULL;
+    char             *chars = NULL, *filename = NULL, *chanid = NULL, *binary = NULL, *data = NULL;
     const Ns_Set     *set = NULL;
     Tcl_Channel       chan;
     Ns_ObjvValueRange lengthRange = {0, SSIZE_MAX};
@@ -390,7 +390,8 @@ NsTclRespondObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
         {"-string",   Ns_ObjvString,    &chars,      NULL},
         {"-file",     Ns_ObjvString,    &filename,   NULL},
         {"-fileid",   Ns_ObjvString,    &chanid,     NULL},
-        {"-binary",   Ns_ObjvByteArray, &binary,    &length},
+        {"-data",     Ns_ObjvByteArray, &data,       &length},
+        {"-binary",   Ns_ObjvByteArray, &binary,     &length},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -406,13 +407,13 @@ NsTclRespondObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
         Ns_TclPrintfResult(interp, "length required when -fileid is used");
         result = TCL_ERROR;
 
-    } else if ((binary != NULL)
-        + (chars != NULL)
-        + (filename != NULL)
-        + (chanid != NULL) != 1
-        ) {
+    } else if (((data != NULL) || (binary != NULL))
+               + (chars != NULL)
+               + (filename != NULL)
+               + (chanid != NULL) != 1
+               ) {
         Ns_TclPrintfResult(interp, "must specify only one of -string, "
-                           "-file, -binary or -fileid");
+                           "-file, -data or -fileid");
         result = TCL_ERROR;
 
     } else if (setid != NULL) {
@@ -423,7 +424,16 @@ NsTclRespondObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
         }
     }
     if (result == TCL_OK) {
-        Ns_ReturnCode  status;
+        Ns_ReturnCode status;
+
+        if (binary != NULL) {
+            if (data != NULL) {
+                Ns_Log(Warning, "ns_respond: you can't use both, -data and -binary. Latter value ignored");
+            } else {
+                Ns_Log(Warning, "ns_respond ... -binary ... deprecated: use -data instead");
+                data = binary;
+            }
+        }
 
         if (set != NULL) {
             Ns_ConnReplaceHeaders(conn, set);
@@ -445,11 +455,11 @@ NsTclRespondObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
              */
             status = Ns_ConnReturnFile(conn, httpStatus, type, filename);
 
-        } else if (binary != NULL) {
+        } else if (data != NULL) {
             /*
              * We'll be returning a binary data
              */
-            status = Ns_ConnReturnData(conn, httpStatus, binary, length, type);
+            status = Ns_ConnReturnData(conn, httpStatus, data, length, type);
 
         } else {
             /*
