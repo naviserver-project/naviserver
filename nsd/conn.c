@@ -2770,19 +2770,19 @@ MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
  *      In case that interp is
  *
  *      - not connected at all (e.g. no connection thread), or
- *      - when the sockPtr of the connection was detachted, or
+ *      - when the sockPtr of the connection was detached, or
  *      - when the connection is already closed,
  *
  *      return NS_ERROR and set an appropriate error message when
  *      rejectalreadyclosedconn is true (default). When this parameter is set
- *      to false, it causes a soft error and returns the tcl status code as
+ *      to false, it causes a soft error and returns the Tcl status code as
  *      last argument.
  *
  *      If the connection is valid, the function return NS_OK and returns the connPtr
- *      in its thirg argument.
+ *      in its third argument.
  *
  * Results:
- *      NaviServer result code
+ *      NaviServer result code.
  *
  * Side effects:
  *      Sets Tcl result on error.
