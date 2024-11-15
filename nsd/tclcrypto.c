@@ -1689,11 +1689,11 @@ NsTclCryptoMdObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
         {"add",       CryptoMdAddObjCmd},
         {"get",       CryptoMdGetObjCmd},
         {"free",      CryptoMdFreeObjCmd},
-# ifndef OPENSSL_NO_EC
-        {"vapidsign", CryptoMdVapidSignObjCmd},
-# endif
 # ifdef HAVE_OPENSSL_HKDF
         {"hkdf",      CryptoMdHkdfObjCmd},
+# endif
+# ifndef OPENSSL_NO_EC
+        {"vapidsign", CryptoMdVapidSignObjCmd},
 # endif
         {NULL, NULL}
     };

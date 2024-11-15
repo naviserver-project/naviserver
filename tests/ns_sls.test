@@ -6,10 +6,9 @@ namespace import -force ::tcltest::*
 ::tcltest::configure {*}$argv
 
 
-
 test sls-1.1 {basic syntax} -body {
     ns_sls
-} -returnCodes error -result {No connection available}
+} -returnCodes error -result {wrong # args: should be "ns_sls array|get|set|unset ?args?"}
 
 test sls-1.2 {basic syntax} -setup {
     ns_register_proc GET /sls-1.2 {
@@ -21,7 +20,7 @@ test sls-1.2 {basic syntax} -setup {
     nstest::http -getbody 1 GET /sls-1.2
 } -cleanup {
     ns_unregister_op GET /sls-1.2
-} -result {200 {wrong # args: should be "ns_sls command"}}
+} -result {200 {wrong # args: should be "ns_sls array|get|set|unset ?args?"}}
 
 test sls-1.3 {basic syntax} -setup {
     ns_register_proc GET /sls-1.3 {
@@ -33,7 +32,7 @@ test sls-1.3 {basic syntax} -setup {
     nstest::http -getbody 1 GET /sls-1.3
 } -cleanup {
     ns_unregister_op GET /sls-1.3
-} -result {200 {bad command "?": must be array, get, set, or unset}}
+} -result {200 {ns_sls: bad subcommand "?": must be array, get, set, or unset}}
 
 
 

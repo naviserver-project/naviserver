@@ -7,11 +7,11 @@ namespace import -force ::tcltest::*
 
 test ns_driver-1.1 {basic syntax: plain call} -body {
      ns_driver
-} -returnCodes error -result {wrong # args: should be "ns_driver /subcommand/ ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_driver info|names|threads|stats ?args?"}
 
 test ns_driver-1.2 {basic syntax: wrong key} -body {
      ns_driver 123
-} -returnCodes error -result {bad subcommand "123": must be info, names, threads, or stats}
+} -returnCodes error -result {ns_driver: bad subcommand "123": must be info, names, threads, or stats}
 
 
 test ns_driver-1.3a {basic syntax: key but too many arguments} -body {

@@ -7,19 +7,19 @@ namespace import -force ::tcltest::*
 
 test ns_thread-1.1 {basic syntax} -body {
     ns_thread ?
-} -returnCodes error -result {bad subcommand "?": must be begin, begindetached, create, get, getid, handle, id, join, name, stackinfo, wait, or yield}
+} -returnCodes error -result {ns_thread: bad subcommand "?": must be begin, begindetached, create, get, getid, handle, id, join, name, stackinfo, wait, or yield}
 
 test ns_thread-1.2 {basic syntax} -body {
     ns_mutex ?
-} -returnCodes error -result {bad subcommand "?": must be create, destroy, eval, lock, trylock, or unlock}
+} -returnCodes error -result {ns_mutex: bad subcommand "?": must be create, destroy, eval, lock, trylock, or unlock}
 
 test ns_thread-1.3 {basic syntax} -body {
     ns_critsec ?
-} -returnCodes error -result {bad subcommand "?": must be create, destroy, enter, eval, or leave}
+} -returnCodes error -result {ns_critsec: bad subcommand "?": must be create, destroy, enter, eval, or leave}
 
 test ns_thread-1.4.0 {basic syntax} -body {
     ns_sema ?
-} -returnCodes error -result {bad subcommand "?": must be create, destroy, release, or wait}
+} -returnCodes error -result {ns_sema: bad subcommand "?": must be create, destroy, release, or wait}
 test ns_thread-1.4.1 {basic syntax} -body {
     ns_sema release
 } -returnCodes error -result {wrong # args: should be "ns_sema release /handle/ ?count?"}
@@ -29,11 +29,11 @@ test ns_thread-1.4.2 {basic syntax} -body {
 
 test ns_thread-1.5 {basic syntax} -body {
     ns_cond ?
-} -returnCodes error -result {bad subcommand "?": must be abswait, broadcast, create, destroy, set, signal, or wait}
+} -returnCodes error -result {ns_cond: bad subcommand "?": must be abswait, broadcast, create, destroy, set, signal, or wait}
 
 test ns_thread-1.6 {basic syntax} -body {
     ns_rwlock ?
-} -returnCodes error -result {bad subcommand "?": must be create, destroy, readeval, readlock, readunlock, unlock, writeeval, writelock, or writeunlock}
+} -returnCodes error -result {ns_rwlock: bad subcommand "?": must be create, destroy, readeval, readlock, readunlock, unlock, writeeval, writelock, or writeunlock}
 
 
 

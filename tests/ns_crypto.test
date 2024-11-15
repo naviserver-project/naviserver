@@ -20,7 +20,7 @@ tcltest::testConstraint argon2 [expr {![catch {::ns_crypto::argon2 -variant ARGO
 
 test ns_crypto_sha2-1.1 {basic syntax: plain call} -constraints crypto -body {
      ns_crypto::md
-} -returnCodes error -result {wrong # args: should be "ns_crypto::md /subcommand/ ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::md string|new|add|get|free|hkdf|vapidsign ?args?"}
 test ns_crypto_sha2-1.2 {basic syntax: plain call} -constraints crypto -body {
      ns_crypto::md string -digest sha123 x
 } -returnCodes error  -match glob -result {Unknown value for digest "sha123", valid: *}
@@ -96,7 +96,7 @@ test ns_crypto_signature_verify-1.0 {basic operation} -constraints crypto -body 
 
 test ns_hmac_sha2-1.1 {basic syntax: plain call} -constraints crypto -body {
     ns_crypto::hmac
-} -returnCodes error -result {wrong # args: should be "ns_crypto::hmac /subcommand/ ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string|new|add|get|free ?args?"}
 test ns_hmac_sha2-1.2 {basic syntax: plain call} -constraints crypto -body {
     ns_crypto::hmac string -digest sha123 x
 } -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string ?-binary? ?-digest /string/? ?-encoding hex|base64url|base64|binary? ?--? /key/ /message/"}

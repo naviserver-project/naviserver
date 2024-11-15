@@ -216,7 +216,7 @@ NsTclWriteObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl
     struct iovec   *sbufs = iov;
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "data ?data ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/data/ ?data ...?");
         result = TCL_ERROR;
 
     } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
@@ -605,7 +605,7 @@ NsTclConnSendFpObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
         if (likely( result == TCL_OK )) {
             Ns_ReturnCode status;
 
-            Ns_LogDeprecated(objv, 3, "ns_writefp fileid ?nbytes?", NULL);
+            Ns_LogDeprecated(objv, 3, "ns_writefp /fileid/ ?nbytes?", NULL);
 
             conn->flags |= NS_CONN_SKIPHDRS;
             status = Ns_ConnSendChannel(conn, chan, (ssize_t)length);
@@ -647,7 +647,7 @@ NsTclReturnBadRequestObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
     int           result;
 
     if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "reason");
+        Tcl_WrongNumArgs(interp, 1, objv, "/reason/");
         result = TCL_ERROR;
 
     } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {

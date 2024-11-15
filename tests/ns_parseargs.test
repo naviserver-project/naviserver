@@ -8,7 +8,7 @@ namespace import -force ::tcltest::*
 
 test ns_parseargs-1.1 {basic syntax} -body {
     ns_parseargs
-} -returnCodes error -result {wrong # args: should be "ns_parseargs specification args"}
+} -returnCodes error -result {wrong # args: should be "ns_parseargs /specification/ /args/"}
 
 test ns_parseargs-1.2 {basic syntax} -body {
     ns_parseargs {} {}

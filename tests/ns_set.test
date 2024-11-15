@@ -5,11 +5,11 @@ namespace import -force ::tcltest::*
 
 test ns_set-1.1 {basic syntax ns_set} -body {
     ns_set
-} -returnCodes error -result {wrong # args: should be "ns_set /subcommand/ ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set array|cleanup|copy|cput|create|delete|delkey|find|format|free|get|icput|idelkey|ifind|iget|imerge|isnull|iunique|iupdate|key|keys|list|merge|move|name|new|print|put|size|split|stats|truncate|unique|update|value|values ?args?"}
 
 test ns_set-1.2 {basic syntax ns_set} -body {
     ns_set ""
-} -returnCodes error -result {bad subcommand "": must be array, cleanup, copy, cput, create, delete, delkey, find, format, free, get, icput, idelkey, ifind, iget, imerge, isnull, iunique, iupdate, key, keys, list, merge, move, name, new, print, put, size, split, stats, truncate, unique, update, value, or values}
+} -returnCodes error -result {ns_set: bad subcommand "": must be array, cleanup, copy, cput, create, delete, delkey, find, format, free, get, icput, idelkey, ifind, iget, imerge, isnull, iunique, iupdate, key, keys, list, merge, move, name, new, print, put, size, split, stats, truncate, unique, update, value, or values}
 
 test ns_set-1.6 {basic syntax ns_set array} -body {
     ns_set array
@@ -319,7 +319,7 @@ test ns_set-2.9 {basic operation ns_set truncate} -body {
     ns_set cleanup
 }
 
-test ns_set-2.9.1 {basic operation ns_set trunc (also convering ns_set update)} -body {
+test ns_set-2.9.1 {basic operation ns_set trunc (also covering ns_set update)} -body {
     set x [ns_set create a 1 b 2 c 3]
     set _ [list [ns_set array $x]]
     ns_set update $x a LONG.a

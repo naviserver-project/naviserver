@@ -105,7 +105,7 @@ test tclresp-1.5.2 {basic syntax} -body {
 
 test tclresp-1.6.1 {basic syntax} -body {
     ns_returnbadrequest
-} -returnCodes error -result {wrong # args: should be "ns_returnbadrequest reason"}
+} -returnCodes error -result {wrong # args: should be "ns_returnbadrequest /reason/"}
 
 test tclresp-1.6.2 {basic syntax} -body {
     ns_returnbadrequest x
@@ -149,7 +149,7 @@ test tclresp-1.12.2 {basic syntax} -body {
 
 test tclresp-1.13.1 {basic syntax} -body {
     ns_write
-} -returnCodes error -result {wrong # args: should be "ns_write data ?data ...?"}
+} -returnCodes error -result {wrong # args: should be "ns_write /data/ ?data ...?"}
 
 test tclresp-1.13.2 {basic syntax} -body {
     ns_write x
@@ -165,7 +165,7 @@ test tclresp-1.14.2 {basic syntax} -body {
 
 test tclresp-1.15.1 {basic syntax} -body {
     ns_writefp
-} -returnCodes error -result {wrong # args: should be "ns_writefp fileid ?nbytes?"}
+} -returnCodes error -result {wrong # args: should be "ns_writefp /fileid/ ?nbytes?"}
 
 test tclresp-1.15.2 {basic syntax} -body {
     ns_writefp junk

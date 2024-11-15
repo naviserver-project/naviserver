@@ -57,6 +57,9 @@ static void AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_
                             bool withRange, const Ns_ObjvSpec *specPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
 
+static char *GetOptEnumeration(Tcl_DString *dsPtr, const Ns_SubCmdSpec *tablePtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 /*
  * Static variables defined in this file.
  */
@@ -1282,7 +1285,7 @@ NsTclParseArgsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
     int        status = TCL_OK;
 
     if (objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "specification args");
+        Tcl_WrongNumArgs(interp, 1, objv, "/specification/ /args/");
         return TCL_ERROR;
     }
     /*
@@ -1939,6 +1942,34 @@ WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *inter
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_SubcmdObjvGetOptEnumeration --
+ *
+ *      Get an enumation string containing the key items of the input
+ *      table separated by vertical bars into the provided Tcl_DString.
+ *
+ * Results:
+ *      string
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+static char *
+GetOptEnumeration(Tcl_DString *dsPtr, const Ns_SubCmdSpec *tablePtr) {
+    const Ns_SubCmdSpec *entryPtr;
+
+    for (entryPtr = tablePtr; entryPtr->key != NULL;  entryPtr++) {
+        Tcl_DStringAppend(dsPtr, entryPtr->key, TCL_INDEX_NONE);
+        Tcl_DStringAppend(dsPtr, "|", 1);
+    }
+    Ns_DStringSetLength(dsPtr, dsPtr->length - 1);
+    return dsPtr->string;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Ns_SubcmdObjv --
  *
  *      Call subcommand based on the provided name and associated
@@ -1952,6 +1983,7 @@ WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *inter
  *
  *----------------------------------------------------------------------
  */
+
 int
 Ns_SubcmdObjv(const Ns_SubCmdSpec *subcmdSpec, ClientData clientData, Tcl_Interp *interp,
               TCL_SIZE_T objc, Tcl_Obj *const* objv)
@@ -1961,11 +1993,20 @@ Ns_SubcmdObjv(const Ns_SubCmdSpec *subcmdSpec, ClientData clientData, Tcl_Interp
     if (objc < 2) {
         /*
          * The command was called without selector for the
-         * subcmd. With out own machinery (as used in
+         * subcmd. With our own machinery (as used in
          * GetOptIndexSubcmdSpec()) we could list the available
          * options, but that is just used for shared objects.
          */
-        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?args?");
+        Tcl_DString ds;
+
+        Tcl_DStringInit(&ds);
+        (void)GetOptEnumeration(&ds, subcmdSpec);
+        Tcl_DStringAppend(&ds, " ?args?", 7);
+
+        Tcl_WrongNumArgs(interp, 1, objv, ds.string);
+        //Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?args?");
+
+        Tcl_DStringFree(&ds);
         result = TCL_ERROR;
     } else {
         Tcl_Obj *selectorObj = objv[1];
@@ -1978,6 +2019,13 @@ Ns_SubcmdObjv(const Ns_SubCmdSpec *subcmdSpec, ClientData clientData, Tcl_Interp
                                         TCL_EXACT, &opt);
         if (likely(result == TCL_OK)) {
             result = (*subcmdSpec[opt].proc)(clientData, interp, objc, objv);
+        } else {
+            /*
+             * Include the main command name in the error message.
+             */
+            Ns_TclPrintfResult(interp, "%s: %s",
+                               Tcl_GetString(objv[0]),
+                               Tcl_GetString(Tcl_GetObjResult(interp)));
         }
     }
     return result;
@@ -2002,6 +2050,7 @@ Ns_SubcmdObjv(const Ns_SubCmdSpec *subcmdSpec, ClientData clientData, Tcl_Interp
  *
  *----------------------------------------------------------------------
  */
+
 static int
 GetOptIndexSubcmdSpec(Tcl_Interp *interp, Tcl_Obj *obj, const char *msg, const Ns_SubCmdSpec *tablePtr, int *idxPtr)
 {

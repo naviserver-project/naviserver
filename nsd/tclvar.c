@@ -156,7 +156,7 @@ NsTclNsvGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     int result = TCL_OK;
 
     if (unlikely(objc < 3 || objc > 4)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "array key ?varName?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/array/ /key/ ?varName?");
         result = TCL_ERROR;
 
     } else {
@@ -219,7 +219,7 @@ NsTclNsvExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     int result;
 
     if (unlikely(objc != 3)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "array key");
+        Tcl_WrongNumArgs(interp, 1, objv, "/array/ /key/");
         result = TCL_ERROR;
     } else {
         bool   exists = NS_FALSE;
@@ -427,7 +427,7 @@ NsTclNsvIncrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     int  result, count = 1;
 
     if (unlikely(objc != 3 && objc != 4)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "array key ?increment?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/array/ /key/ ?increment?");
         result = TCL_ERROR;
 
     } else if (unlikely(objc == 4 && Tcl_GetIntFromObj(interp, objv[3], &count) != TCL_OK)) {
@@ -474,7 +474,7 @@ NsTclNsvLappendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     int result = TCL_OK;
 
     if (unlikely(objc < 4)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "array key value ?value ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/array/ /key/ /value/ ?value ...?");
         result = TCL_ERROR;
     } else {
         Array         *arrayPtr;
@@ -529,7 +529,7 @@ NsTclNsvAppendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     int result = TCL_OK;
 
     if (unlikely(objc < 4)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "array key value ?value ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/array/ /key/ /value/ ?value ...?");
         result = TCL_ERROR;
     } else {
         Array         *arrayPtr;
@@ -758,10 +758,10 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     };
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "option ...");
+        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ...");
         result = TCL_ERROR;
 
-    } else if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
+    } else if (Tcl_GetIndexFromObj(interp, objv[1], opts, "subcommand", 0,
                             &opt) != TCL_OK) {
         result = TCL_ERROR;
 
@@ -774,7 +774,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         case CSetIdx:   NS_FALL_THROUGH; /* fall through */
         case CResetIdx:
             if (objc != 4) {
-                Tcl_WrongNumArgs(interp, 2, objv, "array valueList");
+                Tcl_WrongNumArgs(interp, 2, objv, "/array/ /valueList/");
                 result = TCL_ERROR;
 
             } else if (Tcl_ListObjGetElements(interp, objv[3], &lobjc, &lobjv) != TCL_OK) {
