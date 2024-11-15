@@ -10,7 +10,7 @@
  */
 
 
-/* 
+/*
  * sls.c --
  *
  *      Socket local storage: data which persists for the lifetime of a
@@ -21,14 +21,14 @@
 
 #include "nsd.h"
 
-/* 
+/*
  * Static functions defined in this file.
  */
 
 static void **GetSlot(const Ns_Sls *slsPtr, Ns_Sock *sock) NS_GNUC_PURE;
 static Ns_Callback CleanupKeyed;
 
-/* 
+/*
  * Static variables defined in this file.
  */
 
@@ -215,7 +215,7 @@ Ns_SlsGetKeyed(Ns_Sock *sock, const char *key)
     tblPtr = Ns_SlsGet(&kslot, sock);
     if (tblPtr != NULL) {
         const Tcl_HashEntry *hPtr = Tcl_FindHashEntry(tblPtr, key);
-        
+
         if (hPtr != NULL) {
             value = Tcl_GetHashValue(hPtr);
         }
@@ -312,91 +312,132 @@ Ns_SlsUnsetKeyed(Ns_Sock *sock, const char *key)
  *----------------------------------------------------------------------
  */
 
-int
-NsTclSlsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+static int
+SlsArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    const Ns_Conn *conn;
-    Ns_Sock       *sock = NULL;
-    Ns_DString     ds;
-    int            cmd, result = TCL_OK;
+    int      result = TCL_OK;
+    Ns_Conn *conn;
 
-    static const char *const cmds[] = {
-        "array", "get", "set", "unset", NULL
-    };
-    enum ISubCmdIdx {
-        CArrayIdx, CGetIdx, CSetIdx, CUnsetIdx
-    };
-
-    conn = Ns_TclGetConn(interp);
-    if (conn != NULL) {
-        sock = Ns_ConnSockPtr(conn);
-    }
-    if (sock == NULL) {
-        Ns_TclPrintfResult(interp, "No connection available");
-        result = TCL_ERROR;
-        
-    } else if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "command");
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
-    } else if (Tcl_GetIndexFromObj(interp, objv[1], cmds, "command", 0, &cmd) != TCL_OK) {
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_OPEN, &conn, NULL) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
+        Tcl_DString ds;
 
-        switch (cmd) {
+        Ns_DStringInit(&ds);
+        (void) Ns_SlsAppendKeyed(&ds, Ns_ConnSockPtr(conn));
+        Tcl_DStringResult(interp, &ds);
+    }
+    return result;
+}
 
-        case CArrayIdx:
-            Ns_DStringInit(&ds);
-            (void) Ns_SlsAppendKeyed(&ds, sock);
-            Tcl_DStringResult(interp, &ds);
-            break;
+static int
+SlsGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    Tcl_Obj    *defaultObj = NULL;
+    char       *keyString;
+    Ns_Conn    *conn;
+    Ns_ObjvSpec args[] = {
+        {"key",      Ns_ObjvString, &keyString,  NULL},
+        {"?default", Ns_ObjvObj,    &defaultObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-        case CGetIdx:
-            if (objc < 3 || objc > 4) {
-                Tcl_WrongNumArgs(interp, 2, objv, "key ?default?");
-                result = TCL_ERROR;
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_OPEN, &conn, NULL) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        const char *data = Ns_SlsGetKeyed(Ns_ConnSockPtr(conn), keyString);
+
+        if (data == NULL) {
+            if (defaultObj != NULL) {
+                Tcl_SetObjResult(interp, defaultObj);
             } else {
-                const char *data = Ns_SlsGetKeyed(sock, Tcl_GetString(objv[2]));
-            
-                if (data == NULL) {
-                    if (objc == 4) {
-                        Tcl_SetObjResult(interp, objv[3]);
-                    } else {
-                        Ns_TclPrintfResult(interp, "key does not exist and no default given");
-                        result =  TCL_ERROR;
-                    }
-                } else {
-                    Tcl_SetObjResult(interp, Tcl_NewStringObj(data, TCL_INDEX_NONE));
-                }
+                Ns_TclPrintfResult(interp, "key does not exist and no default given");
+                result =  TCL_ERROR;
             }
-            break;
-
-        case CSetIdx:
-            if (objc != 4) {
-                Tcl_WrongNumArgs(interp, 2, objv, "key value");
-                result = TCL_ERROR;
-            } else {
-                Ns_SlsSetKeyed(sock, Tcl_GetString(objv[2]), Tcl_GetString(objv[3]));
-            }
-            break;
-
-        case CUnsetIdx:
-            if (objc != 3) {
-                Tcl_WrongNumArgs(interp, 2, objv, "key");
-                result = TCL_ERROR;
-            } else {
-                Ns_SlsUnsetKeyed(sock, Tcl_GetString(objv[2]));
-            }
-            break;
-
-        default:
-            /* unexpected value */
-            assert(cmd && 0);
-            break;
+        } else {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(data, TCL_INDEX_NONE));
         }
     }
     return result;
+}
+
+static int
+SlsSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    char       *keyString, *valueString;
+    Ns_Conn    *conn;
+    Ns_ObjvSpec args[] = {
+        {"key",    Ns_ObjvString, &keyString,   NULL},
+        {"value",  Ns_ObjvString, &valueString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_OPEN, &conn, NULL) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Ns_SlsSetKeyed(Ns_ConnSockPtr(conn), keyString, valueString);
+    }
+    return result;
+}
+
+static int
+SlsUnsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int         result = TCL_OK;
+    char       *keyString;
+    Ns_Conn    *conn;
+    Ns_ObjvSpec args[] = {
+        {"key",    Ns_ObjvString, &keyString,   NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_OPEN, &conn, NULL) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Ns_SlsUnsetKeyed(Ns_ConnSockPtr(conn), keyString);
+    }
+    return result;
+}
+
+
+int
+NsTclSlsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    const Ns_SubCmdSpec subcmds[] = {
+        {"array", SlsArrayObjCmd},
+        {"get",   SlsGetObjCmd},
+        {"set",   SlsSetObjCmd},
+        {"unset", SlsUnsetObjCmd},
+        {NULL, NULL}
+    };
+
+    if (objc > 1) {
+        const char  *cmdName = Tcl_GetString(objv[0]);
+
+        if (strcmp(cmdName, "ns_event") == 0) {
+            Ns_LogDeprecated(objv, 2, "ns_cond ...", NULL);
+        }
+    }
+
+    return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 
 
@@ -425,7 +466,7 @@ NsSlsCleanup(Sock *sockPtr)
     int   tries, retry;
 
     NS_NONNULL_ASSERT(sockPtr != NULL);
-    
+
     tries = 0;
     do {
         uintptr_t i = nsconf.nextSlsId;
@@ -513,4 +554,3 @@ CleanupKeyed(void *arg)
  * indent-tabs-mode: nil
  * End:
  */
-
