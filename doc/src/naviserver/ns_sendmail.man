@@ -33,12 +33,12 @@ In case of an error the error code and message are returned.
 [list_begin definitions]
 [call [cmd ns_sendmail] \
 	[option "-to"] \
-	[option "-from from"] \
-	[option "-subject subject"] \
-	[option "-body body"] \
-	[opt [option "-headers headers"]] \
-	[opt [option "-bcc bcc"]] \
-	[opt [option "-cc cc"]]]
+	[option "-from [arg from]"] \
+	[option "-subject [arg subject]"] \
+	[option "-body [arg body]"] \
+	[opt [option "-headers [arg headers]"]] \
+	[opt [option "-bcc [arg bcc]"]] \
+	[opt [option "-cc [arg cc]"]]]
 
 [option -to]
 	Email address of recipient. To send a real name along with the address
@@ -70,9 +70,10 @@ In case of an error the error code and message are returned.
 
 [call [cmd ns_sendmail_config] [opt log]]
 
-ns_sendmail_config returns the current configuration that is
-set up in the configuration file. Returns either an 
-array usable by "array get" or logs to the server logfile.
+Returns the current configuration that is
+set up in the configuration file. When the [opt log] is specified,
+the result is written to the system log, otherwise the result is
+returned as a flat key value list.
 
 
 [list_end]

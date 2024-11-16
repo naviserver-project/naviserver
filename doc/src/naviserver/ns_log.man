@@ -88,24 +88,22 @@ reached a stable point.
 
 
 
-[call [cmd ns_logctl] \
-	  [method count] ]
+[call [cmd "ns_logctl count" ]]
 
 Returns a count of buffered messages for the current thread. The
 message buffering can be turned on subcommand  [method hold].
 
-[call [cmd ns_logctl] \
-	  [method flush] ]
+[call [cmd "ns_logctl flush" ]]
 
 Write buffered log messages from the current thread to the log file. Do not
 disable buffering enabled by [arg hold].
 
-[call [cmd ns_logctl] [method get] ]
+[call [cmd "ns_logctl get" ]]
 
 Return all buffered log messages, removing them from the buffer
 without writing them to the log file.
 
-[call [cmd ns_logctl] [method grep] \
+[call [cmd "ns_logctl grep"] \
    [opt "[option -filename] [arg filename]"] \
    [arg string]]
 
@@ -115,33 +113,28 @@ returns all lines containing the specified string.
 When [option -filename] is specified, the search is performed on
 the specified file.  The specified filename should be fully qualified.
 
-[call [cmd ns_logctl] \
-	  [method hold] ]
+[call [cmd "ns_logctl hold"] ]
 
 Buffer log messages originating in the current thread indefinitely. Log messages
 are no longer written directly to the server log. Use the subcommand
 [method release] to disable buffering.
 
-[call [cmd ns_logctl] \
-	  [method peek] ]
+[call [cmd "ns_logctl peek"] ]
 
 Return a copy of any buffered log messages for the current thread.
 
 
-[call [cmd ns_logctl] \
-	  [method release] ]
+[call [cmd "ns_logctl release"] ]
 
 Write buffered log messages from the current thread to the log file and disable
 buffering. Future log messages will not be buffered.
 
-[call [cmd ns_logctl] \
-	  [method severities] ]
+[call [cmd "ns_logctl severities"] ]
 
 Return a list of available severity-levels. The result includes the 7 predefined
 levels and those created with [cmd ns_logctl] or via C code.
 
-[call [cmd ns_logctl] \
-      [method severity] \
+[call [cmd "ns_logctl severity"] \
       [arg severity-level] \
       [opt "[option -color] [arg color]"] \
       [opt "[option -intensity] [arg intensity]"] \
@@ -163,19 +156,16 @@ configuration file.
 If [arg severity-level] does not already exist and more arguments arg given, then the
 new severity is created. Future calls to [cmd ns_log] may use new [arg severity-level].
 
-[call [cmd ns_logctl] \
-	  [method stats] ]
+[call [cmd "ns_logctl stats"] ]
 
 Return statistics from calls to [cmd ns_log] by severity-level.
 
-[call [cmd ns_logctl] \
-	  [method truncate] \
+[call [cmd "ns_logctl truncate"] \
 	  [arg count] ]
 
 Discard this thread's buffered messages, leaving [arg count] untouched.
 
-[call [cmd ns_logctl] \
-      [method register] \
+[call [cmd "ns_logctl register"] \
       [arg script] \
       [opt [arg "script-args ..."]] ]
 
@@ -185,8 +175,7 @@ Register a log filter [arg script] with the given [arg script-args] where
 A [arg handle] will be returned which can be used to unregister the filter script.
 
 
-[call [cmd ns_logctl] \
-      [method unregister] \
+[call [cmd "ns_logctl unregister"] \
       [arg handle] ]
 
 Unregister the previously registered log filter script identified by
