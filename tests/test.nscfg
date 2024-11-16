@@ -257,6 +257,19 @@ ns_section "ns/server/test/tcl" {
     ns_param   initfile        ../nsd/init.tcl
     ns_param   library         [ns_config "test" home]/testserver/modules
     ns_param   cachetimeout    360
+
+    ns_param initcmds {
+        #
+        # The NaviServer internal modules are not "installed" for the
+        # testserver, so load it for being able to test the commands
+        # defined by these files.
+        #
+        foreach module {nsdb nsperm} {
+            foreach file [glob [ns_config "test" home]/../$module/*.tcl] {
+                source $file
+            }
+        }
+    }
 }
 
 ns_section "ns/server/test/adp" {
@@ -341,6 +354,7 @@ ns_section "ns/server/test/modules" {
     ns_param   nsdb            [ns_config "test" home]/../nsdb/nsdb[sharedlibextension]
     ns_param   nsproxy         [ns_config "test" home]/../nsproxy/nsproxy[sharedlibextension]
     ns_param   nscgi           [ns_config "test" home]/../nscgi/nscgi[sharedlibextension]
+    ns_param   nsperm          [ns_config "test" home]/../nsperm/nsperm[sharedlibextension]
     if {$nscp_port ne ""} {
         ns_param nscp          [ns_config "test" home]/../nscp/nscp[sharedlibextension]
     }
