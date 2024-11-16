@@ -726,7 +726,7 @@ NscpAddCmds(Tcl_Interp *interp, const void *UNUSED(arg))
  *
  * NscpUsersObjCmd --
  *
- *      Implements "nscp users".
+ *      Implements "nscp users". Lists all users known to nscp.
  *
  * Results:
  *      A standard Tcl result.
