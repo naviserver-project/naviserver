@@ -750,6 +750,10 @@ ns_section ns/server/$server/tcl {
     ns_param	debug		$debug
     # ns_param	nsvbuckets	16       ;# default: 8
     # ns_param	nsvrwlocks      false    ;# default: true
+
+    # ns_param initcmds {
+    #    ns_log notice "=== Hello World === server: [ns_info server]"
+    # }
 }
 
 ns_section ns/server/$server/fastpath {
