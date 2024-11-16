@@ -29,16 +29,28 @@ execute database commands while the server is running, you must also
 configure database services for the server, including database drivers
 and pools.
 
+[section {COMMANDS}]
+
+The [term nscp] modules defines a single command:
+
+[list_begin definitions]
+
+[call [cmd "nscp users"]]
+
+ Returns the names of the users which are allowed to
+ connect via nscp.
+
+[list_end]
+
 
 [section {Configuring the Control Port Interface}]
-
 
 [para]
 An example configuration for the control port interface is shown
 below. Three sections of the configuration file are included. The nscp
-module is loaded into the /modules section for $server. The
-/module/nscp section defines the control port parameters, and the
-/module/nscp/users section defines the users who can log into the
+module is loaded into the [term /modules] section for [term {$server}]. The
+[term /module/nscp] section defines the control port parameters, and the
+[term /module/nscp/users] section defines the users who can log into the
 control port.
 
 
@@ -74,19 +86,19 @@ Some things to notice about the configuration are:
 
 [list_begin itemized]
 
-[item]  The port parameter defines the port that the interface will listen
+[item]  The port [term parameter] defines the port that the interface will listen
      on. The default is 9999.
 
 
-[item]  The address parameter defines the hostname to bind to. The default
+[item]  The  [term address] parameter defines the hostname to bind to. The default
      is 127.0.0.1 so that you can only connect to the control port if
      you are already logged on to the computer where the server is
      running.
 
-[item]  The user parameter defines users who can log into the control
+[item]  The [term user] parameter defines users who can log into the control
      port. There are three semicolon-separated fields. The first is
      username (nsadmin); the second is a Unix-like password hash.  You
-     can create a password by typing "ns_crypt mypasswd salt".  As with
+     can create a password by typing "ns_crypt /mypasswd/ /salt/".  As with
      Unix, only the first four characters are used.
 
 [list_end]
@@ -106,7 +118,7 @@ To use the control port interface, follow these steps:
 [list_begin enum]
 
 [enum] Telnet to the address and port number defined in the
-     /module/nscp section for the server. For example:
+     [term /module/nscp] section for the server. For example:
 
 [example_begin]
  telnet localhost 9999
@@ -128,7 +140,7 @@ To use the control port interface, follow these steps:
 
 
 [enum] At the login prompt, type a valid username. The username must be
-     one of the usernames defined in the /module/nscp/users section of
+     one of the usernames defined in the [term /module/nscp/users] section of
      the configuration file. For example:
 
 
@@ -176,7 +188,7 @@ Type "lsort [lb]info commands[rb]" for a complete list of commands available
 to you.  You can type nearly any Tcl command available to NaviServer
 Tcl libraries and ADPs, including the complete Tcl core and
 nearly any ns_* commands.  Type "lsort [lb]info commands ns*[rb]" for a
-sorted list of available NaviServer Tcl commands.
+sorted list of available NaviServer Tcl commands in an nscp session.
 
 
 [para]
@@ -196,7 +208,7 @@ Useful commands:
 
 [list_end]
 
-[see_also admin-maintenance]
+[see_also admin-maintenance ns_shutdown ns_info]
 [keywords module nscp configuration]
 
 [manpage_end]
