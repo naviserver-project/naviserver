@@ -8,7 +8,7 @@ namespace import -force ::tcltest::*
 
 test ns_guesstype-5.1 {basic syntax: ns_guesstype} -body {
      ns_guesstype
-} -returnCodes error -result {wrong # args: should be "ns_guesstype filename"}
+} -returnCodes error -result {wrong # args: should be "ns_guesstype /filename/"}
 
 test ns_guesstype-5.2 {no extension} -body {
      ns_guesstype x

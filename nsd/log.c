@@ -1128,7 +1128,7 @@ NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
     int   result = TCL_OK;
 
     if (objc < 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "severity string ?string ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/severity/ /string/ ?string ...?");
         result = TCL_ERROR;
     } else if (unlikely(GetSeverityFromObj(interp, objv[1], &addrPtr) != TCL_OK)) {
         result = TCL_ERROR;
@@ -1188,7 +1188,7 @@ LogCtlSeverityObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
     };
 
     if (likely(objc < 3)) {
-        Tcl_WrongNumArgs(interp, 2, objv, "severity-level ?-color color? ?-intensity intensity? ?bool?");
+        Tcl_WrongNumArgs(interp, 2, objv, "/severity/ ?-color /color/? ?-intensity /intensity/? ?bool?");
         result = TCL_ERROR;
 
     } else if (GetSeverityFromObj(interp, objv[2], &addrPtr) == TCL_OK) {
@@ -1484,10 +1484,10 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     };
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "option ?arg?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?arg?");
         result = TCL_ERROR;
 
-    } else if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
+    } else if (Tcl_GetIndexFromObj(interp, objv[1], opts, "subcommand", 0,
                             &opt) != TCL_OK) {
         result = TCL_ERROR;
 
@@ -1503,7 +1503,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 
         case CRegisterIdx:
             if (objc < 3) {
-                Tcl_WrongNumArgs(interp, 2, objv, "script ?arg?");
+                Tcl_WrongNumArgs(interp, 2, objv, "/script/ ?arg?");
                 result = TCL_ERROR;
             } else {
                 cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)Ns_TclCallbackProc,
@@ -1515,7 +1515,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 
         case CUnregisterIdx:
             if (objc != 3) {
-                Tcl_WrongNumArgs(interp, 2, objv, "handle");
+                Tcl_WrongNumArgs(interp, 2, objv, "/handle/");
                 result = TCL_ERROR;
             } else if (Ns_TclGetAddrFromObj(interp, objv[2], filterType, &addr) != TCL_OK) {
                 result = TCL_ERROR;

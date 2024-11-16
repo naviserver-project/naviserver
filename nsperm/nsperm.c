@@ -252,10 +252,10 @@ static int PermObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc, Tcl
     };
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "option ?args ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?args ...?");
         return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0, &opt) != TCL_OK) {
+    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "subcommand", 0, &opt) != TCL_OK) {
         return TCL_ERROR;
     }
 
@@ -1021,7 +1021,7 @@ static int AddGroupObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc,
     TCL_SIZE_T     param;
 
     if (objc < 4) {
-        Tcl_WrongNumArgs(interp, 2, objv, "name user ?user ...?");
+        Tcl_WrongNumArgs(interp, 2, objv, "/group/ /user/ ?user ...?");
         return TCL_ERROR;
     }
 
@@ -1493,7 +1493,7 @@ CheckPassObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc, Tcl_Obj *
     Tcl_HashEntry *hPtr;
 
     if (objc != 4) {
-        Tcl_WrongNumArgs(interp, 2, objv, "user pwd");
+        Tcl_WrongNumArgs(interp, 2, objv, "/user/ /pwd/");
         return TCL_ERROR;
     }
     user = Tcl_GetString(objv[2]);
@@ -1553,7 +1553,7 @@ SetPassObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc, Tcl_Obj *co
     char           buf[NS_ENCRYPT_BUFSIZE];
 
     if (objc < 4) {
-        Tcl_WrongNumArgs(interp, 2, objv, "user pwd ?salt?");
+        Tcl_WrongNumArgs(interp, 2, objv, "/user/ /pwd/ ?salt?");
         return TCL_ERROR;
     }
     user = Tcl_GetString(objv[2]);

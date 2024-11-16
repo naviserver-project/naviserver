@@ -369,7 +369,7 @@ NsTclUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
     int result = TCL_OK;
 
     if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "url");
+        Tcl_WrongNumArgs(interp, 1, objv, "/url/");
         result = TCL_ERROR;
     } else {
         Ns_DString      ds;

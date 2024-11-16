@@ -265,7 +265,7 @@ NsTclSockNReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
     int result = TCL_OK;
 
     if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "sockId");
+        Tcl_WrongNumArgs(interp, 1, objv, "/sockId/");
         result = TCL_ERROR;
 
     } else {
@@ -377,7 +377,7 @@ NsTclSockAcceptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
     int       result;
 
     if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "sockId");
+        Tcl_WrongNumArgs(interp, 1, objv, "/sockId/");
         result = TCL_ERROR;
 
     } else if (Ns_TclGetOpenFd(interp, Tcl_GetString(objv[1]), 0, (int *) &sock) != TCL_OK) {
@@ -430,7 +430,7 @@ NsTclSockCheckObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
     NS_SOCKET  sock;
 
     if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "sockId");
+        Tcl_WrongNumArgs(interp, 1, objv, "/sockId/");
         result = TCL_ERROR;
 
     } else if (Ns_TclGetOpenFd(interp, Tcl_GetString(objv[1]), 1, (int *) &sock) != TCL_OK) {
@@ -969,7 +969,7 @@ SockSetBlocking(const char *value, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj 
     NS_NONNULL_ASSERT(interp != NULL);
 
     if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "sockId");
+        Tcl_WrongNumArgs(interp, 1, objv, "/sockId/");
         result = TCL_ERROR;
 
     } else {

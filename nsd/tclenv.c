@@ -162,10 +162,10 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
     };
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "command ?args ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?args ...?");
         result = TCL_ERROR;
 
-    } else if (Tcl_GetIndexFromObj(interp, objv[1], opts, "command", 0,
+    } else if (Tcl_GetIndexFromObj(interp, objv[1], opts, "subcommand", 0,
                             &opt) != TCL_OK) {
         result = TCL_ERROR;
 
@@ -181,7 +181,7 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
         switch (opt) {
         case IExistsIdx:
             if (objc != 3) {
-                Tcl_WrongNumArgs(interp, 2, objv, "name");
+                Tcl_WrongNumArgs(interp, 2, objv, "/name/");
                 result = TCL_ERROR;
             } else {
                 Tcl_SetObjResult(interp, Tcl_NewBooleanObj((getenv(Tcl_GetString(objv[2])) != NULL) ? 1 : 0));
@@ -207,7 +207,7 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
 
         case ISetIdx:
             if (objc != 4) {
-                Tcl_WrongNumArgs(interp, 2, objv, "name value");
+                Tcl_WrongNumArgs(interp, 2, objv, "/name/ /value/");
                 result = TCL_ERROR;
 
             } else if (PutEnv(interp, Tcl_GetString(objv[2]), Tcl_GetString(objv[3])) != TCL_OK) {
@@ -218,14 +218,14 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
         case IGetIdx:
         case IUnsetIdx:
             if (objc != 3 && objc != 4) {
-                Tcl_WrongNumArgs(interp, 2, objv, "?-nocomplain? name");
+                Tcl_WrongNumArgs(interp, 2, objv, "?-nocomplain? /name/");
                 result = TCL_ERROR;
 
             } else if (objc == 4) {
                 const char *arg = Tcl_GetString(objv[2]);
 
                 if (!STREQ(arg, "-nocomplain")) {
-                    Tcl_WrongNumArgs(interp, 2, objv, "?-nocomplain? name");
+                    Tcl_WrongNumArgs(interp, 2, objv, "?-nocomplain? /name/");
                     result = TCL_ERROR;
                 }
             }

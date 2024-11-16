@@ -804,7 +804,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
         case CSizeIdx:
             if (objc != 3) {
-                Tcl_WrongNumArgs(interp, 2, objv, "array");
+                Tcl_WrongNumArgs(interp, 2, objv, "/array/");
                 result = TCL_ERROR;
 
             } else {
@@ -821,7 +821,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
         case CExistsIdx:
             if (objc != 3) {
-                Tcl_WrongNumArgs(interp, 2, objv, "array");
+                Tcl_WrongNumArgs(interp, 2, objv, "/array/");
                 result = TCL_ERROR;
 
             } else {
@@ -839,7 +839,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         case CGetIdx:   NS_FALL_THROUGH; /* fall through */
         case CNamesIdx:
             if (objc != 3 && objc != 4) {
-                Tcl_WrongNumArgs(interp, 2, objv, "array ?pattern?");
+                Tcl_WrongNumArgs(interp, 2, objv, "/array/ ?pattern?");
                 result = TCL_ERROR;
 
             } else {
@@ -976,10 +976,10 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     };
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "option ...");
+        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ...");
         result = TCL_ERROR;
 
-    } else if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
+    } else if (Tcl_GetIndexFromObj(interp, objv[1], opts, "subcommand", 0,
                             &opt) != TCL_OK) {
         result = TCL_ERROR;
 

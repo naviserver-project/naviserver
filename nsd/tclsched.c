@@ -109,7 +109,7 @@ SchedObjCmd(Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, char cmd)
     int id, result = TCL_OK;
 
     if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "id");
+        Tcl_WrongNumArgs(interp, 1, objv, "/id/");
         result = TCL_ERROR;
 
     } else if (Tcl_GetIntFromObj(interp, objv[1], &id) != TCL_OK) {

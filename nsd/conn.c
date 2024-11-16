@@ -1687,11 +1687,11 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
     connPtr = (Conn *)conn;
 
     if (unlikely(objc < 2)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "option");
+        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/");
         opt = (int)CIsConnectedIdx; /* silence static checker */
         result = TCL_ERROR;
 
-    } else if (unlikely(Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
+    } else if (unlikely(Tcl_GetIndexFromObj(interp, objv[1], opts, "subcommand", 0,
                                             &opt) != TCL_OK)) {
         result = TCL_ERROR;
     } else if (required_flags[opt] != 0u) {
@@ -2160,7 +2160,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
 
     case CCopyIdx:
         if (objc != 5) {
-            Tcl_WrongNumArgs(interp, 2, objv, "off len chan");
+            Tcl_WrongNumArgs(interp, 2, objv, "/offset/ /length/ /channel/");
             result = TCL_ERROR;
 
         } else {
@@ -2515,7 +2515,7 @@ NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
     int             result = TCL_OK;
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "script ?args?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/script/ ?args?");
         result = TCL_ERROR;
 
     } else if (servPtr == NULL) {

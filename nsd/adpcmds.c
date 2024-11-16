@@ -259,12 +259,12 @@ NsTclAdpCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     };
 
     if (unlikely(objc < 2)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?arg ...?");
         result = TCL_ERROR;
 
     } else if (Tcl_GetIndexFromObjStruct(interp, objv[1], adpCtlOpts,
                                          (int)sizeof(adpCtlOpts[0]),
-                                         "option", TCL_EXACT, &opt
+                                         "subcommand", TCL_EXACT, &opt
                                          ) != TCL_OK) {
         result = TCL_ERROR;
     } else {
@@ -278,7 +278,7 @@ NsTclAdpCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 
         case CChanIdx:
             if (objc != 3) {
-                Tcl_WrongNumArgs(interp, 2, objv, "channel");
+                Tcl_WrongNumArgs(interp, 2, objv, "/channel/");
                 result = TCL_ERROR;
             } else {
                 const char  *id = Tcl_GetString(objv[2]);
@@ -547,7 +547,7 @@ NsTclAdpAppendObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
     int       result = TCL_OK;
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "string ?string ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/string/ ?string ...?");
         result = TCL_ERROR;
     } else {
         TCL_SIZE_T i;
@@ -973,7 +973,7 @@ NsTclAdpBindArgsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
     int       result = TCL_OK;
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "varName ?varName ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/varName/ ?varName ...?");
         result = TCL_ERROR;
 
     } else if (GetFrame(clientData, &framePtr) != TCL_OK) {

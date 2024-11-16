@@ -1423,7 +1423,7 @@ NsTclGuessTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
     int         result = TCL_OK;
 
     if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "filename");
+        Tcl_WrongNumArgs(interp, 1, objv, "/filename/");
         result = TCL_ERROR;
     } else {
         const char *type = Ns_GetMimeType(Tcl_GetString(objv[1]));

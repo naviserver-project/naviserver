@@ -9,7 +9,7 @@ namespace import -force ::tcltest::*
 
 test url2file-1.1 {basic syntax} -body {
     ns_url2file
-} -returnCodes error -result {wrong # args: should be "ns_url2file url"}
+} -returnCodes error -result {wrong # args: should be "ns_url2file /url/"}
 
 test ns_log-1.2 {basic syntax} -body {
     ns_register_url2file

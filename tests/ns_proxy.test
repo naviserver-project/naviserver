@@ -18,15 +18,15 @@ namespace import -force ::tcltest::*
 
 test ns_proxy-1.1 {basic syntax} -body {
     ns_proxy
-} -returnCodes error -result {wrong # args: should be "ns_proxy option ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy /subcommand/ ?args?"}
 
 test ns_proxy-1.2 {basic syntax} -body {
     ns_proxy ?
-} -returnCodes error -result {bad option "?": must be active, cleanup, clear, configure, eval, free, get, handles, pids, ping, pools, put, recv, release, send, stats, stop, wait, or workers}
+} -returnCodes error -result {bad subcommand "?": must be active, cleanup, clear, configure, eval, free, get, handles, pids, ping, pools, put, recv, release, send, stats, stop, wait, or workers}
 
 test ns_proxy-2.1 {configuration syntax} -body {
     ns_proxy config
-} -returnCodes error -result {wrong # args: should be "ns_proxy configure pool ?opt? ?val? ?opt val?..."}
+} -returnCodes error -result {wrong # args: should be "ns_proxy configure /pool/ ?opt? ?val? ?opt val?..."}
 
 test ns_proxy-2.2 {configuration options} -body {
     ns_proxy configure testpool
@@ -66,7 +66,7 @@ test ns_proxy-2.10 {clear slaves basic syntax} -body {
 
 test ns_proxy-3.1 {get base syntax} -body {
     ns_proxy get
-} -returnCodes error -result {wrong # args: should be "ns_proxy get pool ?-opt val -opt val ...?"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy get /pool/ ?-opt /val/ -opt /val/ ...?"}
 
 test ns_proxy-3.2 {get w/o options} -body {
     set proxy [ns_proxy get testpool]
@@ -75,7 +75,7 @@ test ns_proxy-3.2 {get w/o options} -body {
 
 test ns_proxy-3.3 {put base syntax} -body {
     ns_proxy put
-} -returnCodes error -result {wrong # args: should be "ns_proxy put handle"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy put /handle/"}
 
 test ns_proxy-3.4 {put handle} -body {
     ns_proxy put $proxy
@@ -160,7 +160,7 @@ test ns_proxy-3.13 {put with bad re-init} -constraints {macOrUnix} -body {
 
 test ns_proxy-4.0 {ping syntax} -constraints {macOrUnix} -body {
     ns_proxy ping
-} -returnCodes error -result {wrong # args: should be "ns_proxy ping handle"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy ping /handle/"}
 
 test ns_proxy-4.1 {ping with bad handle} -constraints {macOrUnix} -body {
     ns_proxy ping dummy

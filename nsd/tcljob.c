@@ -491,7 +491,7 @@ JobDeleteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
     int     result = TCL_OK;
 
     if (objc != 3) {
-        Tcl_WrongNumArgs(interp, 2, objv, "queueId");
+        Tcl_WrongNumArgs(interp, 2, objv, "/queueId/");
         result = TCL_ERROR;
 
     } else if (LookupQueue(interp, Tcl_GetString(objv[2]),

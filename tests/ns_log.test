@@ -10,7 +10,7 @@ namespace import -force ::tcltest::*
 
 test ns_log-1.1 {basic syntax} -body {
     ns_log
-} -returnCodes error -result {wrong # args: should be "ns_log severity string ?string ...?"}
+} -returnCodes error -result {wrong # args: should be "ns_log /severity/ /string/ ?string ...?"}
 
 test ns_log-1.2 {basic syntax} -body {
     ns_log ? ?
@@ -20,11 +20,11 @@ test ns_log-1.2 {basic syntax} -body {
 
 test ns_log-2.1 {basic syntax} -body {
     ns_logctl
-} -returnCodes error -result {wrong # args: should be "ns_logctl option ?arg?"}
+} -returnCodes error -result {wrong # args: should be "ns_logctl /subcommand/ ?arg?"}
 
 test ns_log-2.2 {basic syntax} -body {
     ns_logctl ?
-} -returnCodes error -result {bad option "?": must be count, flush, get, grep, hold, peek, register, release, severities, severity, stats, truncate, or unregister}
+} -returnCodes error -result {bad subcommand "?": must be count, flush, get, grep, hold, peek, register, release, severities, severity, stats, truncate, or unregister}
 
 
 
@@ -153,7 +153,7 @@ test ns_log-5.9 {flush} -body {
 
 test ns_log-6.1 {configuration} -body {
     ns_logctl severity
-} -returnCodes error -result {wrong # args: should be "ns_logctl severity severity-level ?-color color? ?-intensity intensity? ?bool?"}
+} -returnCodes error -result {wrong # args: should be "ns_logctl severity /severity/ ?-color /color/? ?-intensity /intensity/? ?bool?"}
 
 test ns_log-6.2 {configuration} -body {
     ns_logctl severity ?

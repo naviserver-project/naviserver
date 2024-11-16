@@ -2025,10 +2025,10 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
     };
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "option ?args?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?args?");
         return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
+    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "subcommand", 0,
                             &opt) != TCL_OK) {
         return TCL_ERROR;
     }
@@ -2038,7 +2038,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
     case PPutIdx:       NS_FALL_THROUGH; /* fall through */
     case PPingIdx:
         if (objc != 3) {
-            Tcl_WrongNumArgs(interp, 2, objv, "handle");
+            Tcl_WrongNumArgs(interp, 2, objv, "/handle/");
             result = TCL_ERROR;
         } else {
             proxyId  = Tcl_GetString(objv[2]);
@@ -2073,7 +2073,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
 
     case PSendIdx:
         if (objc != 4) {
-            Tcl_WrongNumArgs(interp, 2, objv, "handle script");
+            Tcl_WrongNumArgs(interp, 2, objv, "/handle/ /script/");
             result = TCL_ERROR;
         } else {
             proxyId = Tcl_GetString(objv[2]);
@@ -2090,7 +2090,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
 
     case PWaitIdx:
         if (objc != 3 && objc != 4) {
-            Tcl_WrongNumArgs(interp, 2, objv, "handle ?timeout?");
+            Tcl_WrongNumArgs(interp, 2, objv, "/handle/ ?timeout?");
             result = TCL_ERROR;
         } else {
             Ns_Time *timeoutPtr = NULL;
@@ -2112,7 +2112,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
 
     case PRecvIdx:
         if (objc != 3) {
-            Tcl_WrongNumArgs(interp, 2, objv, "handle");
+            Tcl_WrongNumArgs(interp, 2, objv, "/handle/");
             result = TCL_ERROR;
         } else {
             proxyId = Tcl_GetString(objv[2]);
@@ -2132,7 +2132,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
 
     case PEvalIdx:
         if (objc != 4 && objc != 5) {
-            Tcl_WrongNumArgs(interp, 2, objv, "handle script");
+            Tcl_WrongNumArgs(interp, 2, objv, "/handle/ /script/");
             result = TCL_ERROR;
         } else {
             Ns_Time *timeoutPtr = NULL;
@@ -2153,7 +2153,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
 
     case PFreeIdx:
         if (objc != 3) {
-            Tcl_WrongNumArgs(interp, 2, objv, "pool");
+            Tcl_WrongNumArgs(interp, 2, objv, "/pool/");
             result = TCL_ERROR;
         } else {
             listObj = Tcl_NewListObj(0, NULL);
@@ -2189,7 +2189,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
 
     case PActiveIdx:
         if (objc < 3 || objc > 4) {
-            Tcl_WrongNumArgs(interp, 2, objv, "pool ?handle?");
+            Tcl_WrongNumArgs(interp, 2, objv, "/pool/ ?handle?");
             result = TCL_ERROR;
         } else {
             poolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
@@ -2284,7 +2284,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
     };
 
     if (objc < 3) {
-        Tcl_WrongNumArgs(interp, 2, objv, "pool ?opt? ?val? ?opt val?...");
+        Tcl_WrongNumArgs(interp, 2, objv, "/pool/ ?opt? ?val? ?opt val?...");
         return TCL_ERROR;
     }
 
@@ -2587,7 +2587,7 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* 
     };
 
     if (objc < 3 || (objc % 2) != 1) {
-        Tcl_WrongNumArgs(interp, 2, objv, "pool ?-opt val -opt val ...?");
+        Tcl_WrongNumArgs(interp, 2, objv, "/pool/ ?-opt /val/ -opt /val/ ...?");
         return TCL_ERROR;
     }
 

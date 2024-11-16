@@ -1677,7 +1677,7 @@ NsTclAtCloseObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
     int        result = TCL_OK;
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "script ?args?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/script/ ?args?");
         result = TCL_ERROR;
 
     } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, NULL, &result) != NS_OK) {

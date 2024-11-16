@@ -1493,7 +1493,7 @@ NsTclFileStatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
     struct stat st;
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "file ?varname?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/file/ ?varname?");
         result = TCL_ERROR;
     }
     if (stat(Tcl_GetString(objv[1]), &st) != 0) {
@@ -1931,7 +1931,7 @@ NsTclSetUserObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     int result = TCL_OK;
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "user");
+        Tcl_WrongNumArgs(interp, 1, objv, "/user/");
         result = TCL_ERROR;
 
     } else {
@@ -1948,7 +1948,7 @@ NsTclSetGroupObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     int result = TCL_OK;
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "group");
+        Tcl_WrongNumArgs(interp, 1, objv, "/group/");
         result = TCL_ERROR;
 
     } else {
@@ -2041,7 +2041,7 @@ NsTclRlimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
     };
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "command ?args?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/command/ ?args?");
         return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], opts,

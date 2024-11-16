@@ -1944,7 +1944,7 @@ WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *inter
  *
  * Ns_SubcmdObjvGetOptEnumeration --
  *
- *      Get an enumation string containing the key items of the input
+ *      Get an enumeration string containing the key items of the input
  *      table separated by vertical bars into the provided Tcl_DString.
  *
  * Results:

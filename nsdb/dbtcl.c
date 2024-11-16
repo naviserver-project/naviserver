@@ -390,10 +390,10 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
     };
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?arg ...?");
         return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], subcmd, "option", 0, &cmd) != TCL_OK) {
+    if (Tcl_GetIndexFromObj(interp, objv[1], subcmd, "subcommand", 0, &cmd) != TCL_OK) {
         return TCL_ERROR;
     }
 
@@ -418,7 +418,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
 
     case BOUNCEPOOL:
         if (objc != 3) {
-            Tcl_WrongNumArgs(interp, 2, objv, "pool");
+            Tcl_WrongNumArgs(interp, 2, objv, "/pool/");
             result = TCL_ERROR;
 
         } else if (Ns_DbBouncePool(Tcl_GetString(objv[2])) == NS_ERROR) {
@@ -581,7 +581,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
 
     case EXCEPTION:
         if (objc != 3) {
-            Tcl_WrongNumArgs(interp, 2, objv, "dbId");
+            Tcl_WrongNumArgs(interp, 2, objv, "/dbId/");
             result = TCL_ERROR;
 
         } else if (DbGetHandle(idataPtr, interp, Tcl_GetString(objv[2]), &handlePtr, NULL) != TCL_OK) {
@@ -624,7 +624,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
     case SESSIONID:
 
         if (objc < 3) {
-            Tcl_WrongNumArgs(interp, 2, objv, "dbId");
+            Tcl_WrongNumArgs(interp, 2, objv, "/dbId/");
             return TCL_ERROR;
         }
         if (DbGetHandle(idataPtr, interp, Tcl_GetString(objv[2]), &handlePtr, &hPtr) != TCL_OK) {
@@ -776,13 +776,13 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
 
             if (objc != 4) {
                 if (cmd == INTERPRETSQLFILE) {
-                    Tcl_WrongNumArgs(interp, 2, objv, "dbId sqlfile");
+                    Tcl_WrongNumArgs(interp, 2, objv, "/dbId/ /sqlfile/");
 
                 } else if (cmd == GETROW) {
-                    Tcl_WrongNumArgs(interp, 2, objv, "dbId row");
+                    Tcl_WrongNumArgs(interp, 2, objv, "/dbId/ /setId/");
 
                 } else {
-                    Tcl_WrongNumArgs(interp, 2, objv, "dbId sql");
+                    Tcl_WrongNumArgs(interp, 2, objv, "/dbId/ /sql/");
                 }
                 return TCL_ERROR;
             }
@@ -934,7 +934,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
 
     case SETEXCEPTION:
         if (objc != 5) {
-            Tcl_WrongNumArgs(interp, 2, objv, "dbId code message");
+            Tcl_WrongNumArgs(interp, 2, objv, "/dbId/ /code/ /message/");
             result = TCL_ERROR;
 
         } else if (DbGetHandle(idataPtr, interp, Tcl_GetString(objv[2]), &handlePtr, NULL) != TCL_OK) {
@@ -958,7 +958,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
 
     case SP_SETPARAM:
         if (objc != 7) {
-            Tcl_WrongNumArgs(interp, 2, objv, "dbId paramname type in|out value");
+            Tcl_WrongNumArgs(interp, 2, objv, "/dbId/ /paramname/ /type/ in|out /value/");
             result = TCL_ERROR;
         } else {
             const char *arg5 = Tcl_GetString(objv[5]);
@@ -1021,7 +1021,7 @@ ErrorObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj 
     int          result = TCL_OK;
 
     if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "dbId");
+        Tcl_WrongNumArgs(interp, 1, objv, "/dbId/");
         result = TCL_ERROR;
 
     } else if (DbGetHandle(idataPtr, interp, Tcl_GetString(objv[1]), &handle, NULL) != TCL_OK) {
@@ -1108,7 +1108,7 @@ PoolDescriptionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
     int result = TCL_OK;
 
     if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "poolname");
+        Tcl_WrongNumArgs(interp, 1, objv, "/pool/");
         result = TCL_ERROR;
     } else {
         Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_DbPoolDescription(Tcl_GetString(objv[1])), TCL_INDEX_NONE));
@@ -1141,7 +1141,7 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
     int         result = TCL_OK;
 
     if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "quotelist");
+        Tcl_WrongNumArgs(interp, 1, objv, "/quotelist/");
         result = TCL_ERROR;
     } else {
         const char *quotelist;

@@ -713,7 +713,7 @@ NsTclNormalizePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_
     int        result = TCL_OK;
 
     if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "path");
+        Tcl_WrongNumArgs(interp, 1, objv, "/path/");
         result = TCL_ERROR;
 
     } else {

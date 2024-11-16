@@ -104,7 +104,7 @@ NsTclProgressObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
     int result = TCL_OK;
 
     if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "url");
+        Tcl_WrongNumArgs(interp, 1, objv, "/url/");
         result = TCL_ERROR;
 
     } else if (progressMinSize > 0u) {

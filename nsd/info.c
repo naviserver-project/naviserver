@@ -681,15 +681,15 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
     };
 
     if (unlikely(objc < 2)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "option");
+        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/");
         return TCL_ERROR;
-    } else if (unlikely(Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
+    } else if (unlikely(Tcl_GetIndexFromObj(interp, objv[1], opts, "subcommand", 0,
                                      &opt) != TCL_OK)) {
         return TCL_ERROR;
     }
     if ((opt != IMeminfoIdx && objc != 2)
         || (opt == IMeminfoIdx && (objc < 2 || objc > 3))) {
-        Tcl_WrongNumArgs(interp, 1, objv, "option");
+        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/");
         return TCL_ERROR;
     }
 

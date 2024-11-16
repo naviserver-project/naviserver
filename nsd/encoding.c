@@ -579,7 +579,7 @@ NsTclEncodingForCharsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     int result = TCL_OK;
 
     if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "charset");
+        Tcl_WrongNumArgs(interp, 1, objv, "/charset/");
         result =  TCL_ERROR;
     } else {
         TCL_SIZE_T   encodingNameLen;

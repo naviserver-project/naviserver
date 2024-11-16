@@ -19,7 +19,7 @@ namespace import -force ::tcltest::*
 
 test progress-1.1 {basic command} -body {
     ns_upload_stats
-} -returnCodes error -result {wrong # args: should be "ns_upload_stats url"}
+} -returnCodes error -result {wrong # args: should be "ns_upload_stats /url/"}
 
 test progress-1.2 {no progress} -body {
     ns_upload_stats url-which-does-not-exist
