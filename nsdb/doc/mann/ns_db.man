@@ -30,7 +30,7 @@ is returned.
 
 [call [cmd "ns_db bindrow"] [arg handle]]
 
-ns_db bindrow returns an ns_set structure whose key names are the column names
+Returns an ns_set structure whose key names are the column names
 of the rows returned by the SQL command previously-executed with ns_db exec.
 If the database is not currently returning rows (i.e., a status other than
 NS_ROWS was returned by ns_db exec), an error is thrown. The handle argument is
@@ -46,14 +46,7 @@ database will be reset.
 
 [call [cmd "ns_db cancel"] [arg handle]]
 
-ns_db cancel cancels the current operation.
-
-
-[call [cmd "ns_db close"] [arg handle]]
-
-Closes the connection. Use this function only on handles that were obtained by
-the ns_db open function. The server automatically close handles when the
-operation is complete, so you don't normally have to call this function.
+Cancel the current operation.
 
 
 [call [cmd "ns_db connected"] [arg handle]]
@@ -62,7 +55,7 @@ Returns a boolean value indicating whether the connection to the database pool i
 
 [call [cmd "ns_db currenthandles"]]
 
-Return information about handles currently allocated to the thread
+Returns information about handles currently allocated to the thread
 performing this call. The result contains a dict with the pools,
 from which handles were allocated, the names of the handles and their
 "active" state (a handle is active between a "ns_db select" and the
@@ -93,7 +86,7 @@ Returns the database type for the database pool.
 
 [call [cmd "ns_db dml"] [arg handle] [arg sql]]
 
-ns_db dml executes the provided SQL DML statement that should be data
+Executes the provided SQL DML statement that should be data
 manipulation language such as an insert or update, or data definition
 language such as a create table.
 
@@ -105,7 +98,7 @@ Returns the name of the driver of the handle.
 
 [call [cmd "ns_db exception"] [arg handle]]
 
-ns_db exception returns the most recent exception for the database pool.
+Returns the most recent exception for the database pool.
 
 
 [call [cmd "ns_db exec"] [arg handle] [arg sqlcommand]]
@@ -118,7 +111,7 @@ what kind of SQL command will be executed.
 
 [call [cmd "ns_db flush"] [arg handle]]
 
-ns_db flush flushes the results of an SQL select so you do not need to use ns_db
+Flushes the results of an SQL select so you do not need to use ns_db
 getrow to get all the rows and throw them away.
 
 
@@ -127,7 +120,7 @@ getrow to get all the rows and throw them away.
      [arg poolname] \
      [opt [arg nhandles]] ]
 
-ns_db gethandle returns the specified number of handles from the specified pool.
+Returns the specified number of handles from the specified pool.
 If poolname is not specified, the Defaultpool from the configuration file is
 used. If nhandles is not specified, 1 handle is returned. (Note that if you
 specify nhandles, you must also specify a poolname.) If not enough handles are
@@ -152,7 +145,7 @@ or as a number with the time units ms, s, m, d.
 
 [call [cmd "ns_db getrow"] [arg handle] [arg setId]]
 
-ns_db getrow fetches the next row waiting to be retrieved after an ns_db select.
+Fetches the next row waiting to be retrieved after an ns_db select.
 The data is dumped right into the set associated with SETID, which should be the
 set returned by the ns_db select. It returns "1" if there are more rows waiting
 and returns "0" otherwise. If you call ns_db getrow again after already
@@ -160,17 +153,12 @@ receiving "0" on the previous call, an error is returned.
 
 [call [cmd "ns_db logminduration"] [arg pool] [opt [arg duration]]]
 
-Query or set a threshold for logging of SQL statements. Log only
+Queries or sets a threshold for logging of SQL statements. Log only
 statements in the error.log, when SQL logging is turned on in general
 (via "ns_logctl severity Debug(sql) ...") and the statement took at
 least the specified duration. The [arg duration] can be specified in
 the form [arg secs[opt :microsecs]], or [arg secs.fraction], or as a
 number with the time units ms, s, m, d.
-
-
-[call [cmd "ns_db open"] [arg driver] [arg datasource] [arg user] [arg password]]
-
-ns_db open returns a handle at a lower level, circumventing the pools.
 
 
 [call [cmd "ns_db password"] [arg handle]]
@@ -180,12 +168,12 @@ Returns the password of the user for the database pool.
 
 [call [cmd "ns_db poolname"] [arg handle]]
 
-ns_db poolname returns the database pool that this handle came from.
+Returns the database pool that this handle came from.
 
 
 [call [cmd "ns_db pools"]]
 
-ns_db pools returns a list of all database pools.
+Returns a list of all database pools.
 
 
 [call [cmd "ns_db releasehandle"] [arg handle]]
@@ -288,26 +276,26 @@ for the database pool.
 
 [call [cmd "ns_db verbose"] [arg handle] [opt [arg enabled]]]
 
-Change the verbose setting (the Verbose parameter in the configuration file) for
+Changes the verbose setting (the Verbose parameter in the configuration file) for
 the given pool.
 
 
 [call [cmd "ns_dberrorcode"] [arg handle]]
 
-Return the database error code for the specified database handle.
+Returns the database error code for the specified database handle.
 
 [call [cmd "ns_dberrormsg"] [arg handle]]
 
-Return the database error message for the specified database handle.
+Returns the database error message for the specified database handle.
 
 [call [cmd "ns_dbconfigpath"]]
 
-Return the database section name file for the nsdb module from the
+Returns the database section name file for the nsdb module from the
 configuration file.
 
 [call [cmd "ns_pooldescription"] [arg poolname]]
 
-Return the description of the provided database pool name from the
+Returns the description of the provided database pool name from the
 [lb]ns/db/pools[rb] section in the configuration file.
 
 [list_end]
