@@ -605,23 +605,24 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
         }
         break;
 
-    case POOLNAME:       NS_FALL_THROUGH; /* fall through */
-    case PASSWORD:       NS_FALL_THROUGH; /* fall through */
-    case USER:           NS_FALL_THROUGH; /* fall through */
-    case DATASOURCE:     NS_FALL_THROUGH; /* fall through */
-    case DISCONNECT:     NS_FALL_THROUGH; /* fall through */
-    case DBTYPE:         NS_FALL_THROUGH; /* fall through */
-    case DRIVER:         NS_FALL_THROUGH; /* fall through */
-    case CANCEL:         NS_FALL_THROUGH; /* fall through */
     case BINDROW:        NS_FALL_THROUGH; /* fall through */
+    case CANCEL:         NS_FALL_THROUGH; /* fall through */
+    case CONNECTED:      NS_FALL_THROUGH; /* fall through */
+    case DATASOURCE:     NS_FALL_THROUGH; /* fall through */
+    case DBTYPE:         NS_FALL_THROUGH; /* fall through */
+    case DISCONNECT:     NS_FALL_THROUGH; /* fall through */
+    case DRIVER:         NS_FALL_THROUGH; /* fall through */
     case FLUSH:          NS_FALL_THROUGH; /* fall through */
+    case PASSWORD:       NS_FALL_THROUGH; /* fall through */
+    case POOLNAME:       NS_FALL_THROUGH; /* fall through */
     case RELEASEHANDLE:  NS_FALL_THROUGH; /* fall through */
     case RESETHANDLE:    NS_FALL_THROUGH; /* fall through */
-    case CONNECTED:      NS_FALL_THROUGH; /* fall through */
+    case ROWCOUNT:       NS_FALL_THROUGH; /* fall through */
+    case SESSIONID:      NS_FALL_THROUGH; /* fall through */
     case SP_EXEC:        NS_FALL_THROUGH; /* fall through */
     case SP_GETPARAMS:   NS_FALL_THROUGH; /* fall through */
     case SP_RETURNCODE:  NS_FALL_THROUGH; /* fall through */
-    case SESSIONID:
+    case USER:
 
         if (objc < 3) {
             Tcl_WrongNumArgs(interp, 2, objv, "/dbId/");
