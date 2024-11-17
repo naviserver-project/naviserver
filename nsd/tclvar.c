@@ -673,7 +673,7 @@ NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
 {
     int result = TCL_OK;
 
-    if (unlikely(objc != 1 && objc !=2)) {
+    if (unlikely(objc > 2)) {
         Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
         result = TCL_ERROR;
 
