@@ -24,6 +24,11 @@ test nscgi-1.1 {check required and provided variables} -constraints {serverListe
     nstest::http -getbody 1 GET /info.cgi
 } -returnCodes {error ok} -match glob -result {*missing 0*}
 
+test nscgi-1.1 {check syntax} -body {
+    ns_register_cgi
+} -returnCodes {error ok} -result {wrong # args: should be "ns_register_cgi ?-noinherit? ?-matchsegments? ?-path /string/? ?--? /method/ /url/"}
+
+
 #
 # Check server names
 #

@@ -369,8 +369,11 @@ test ns_striphtml-4.0 {strip HTML comment} -body {
 #######################################################################################
 #  test ns_quotehtml
 #######################################################################################
+test ns_quotehtml-1.0 {ns_unquotehtml syntax} -body {
+    ns_quotehtml
+} -returnCodes error -result {wrong # args: should be "ns_quotehtml /html/"}
 
-test ns_quotehtml-1.0 {ns_quotehtml with typical value} -body {
+test ns_quotehtml-1.1 {ns_quotehtml with typical value} -body {
     return [ns_quotehtml {<span class="foo">}]
 } -result {&lt;span class=&#34;foo&#34;&gt;}
 
@@ -378,21 +381,25 @@ test ns_quotehtml-1.0 {ns_quotehtml with typical value} -body {
 #  test ns_unquotehtml
 #######################################################################################
 
-test ns_unquotehtml-1.0 {ns_unquotehtml with typical value} -body {
+test ns_unquotehtml-1.0 {ns_unquotehtml syntax} -body {
+    ns_unquotehtml
+} -returnCodes error -result {wrong # args: should be "ns_unquotehtml /html/"}
+
+test ns_unquotehtml-1.1 {ns_unquotehtml with typical value} -body {
     return [ns_unquotehtml [ns_quotehtml {<span class="foo">...</span>}]]
 } -result {<span class="foo">...</span>}
 
-test ns_unquotehtml-1.1 {ns_unquotehtml with typical value} -body {
+test ns_unquotehtml-1.2 {ns_unquotehtml with typical value} -body {
     return [ns_unquotehtml [ns_quotehtml {aaa<span class='foo'>...</span>zzz}]]
 } -result {aaa<span class='foo'>...</span>zzz}
 
-test ns_unquotehtml-1.2 {ns_unquotehtml with named UTF-8 entity} -body {
+test ns_unquotehtml-1.3 {ns_unquotehtml with named UTF-8 entity} -body {
     return [ns_unquotehtml {a&otimes;b}]
 } -result {a⊗b}
-test ns_unquotehtml-1.3 {two entities next to each other} -body {
+test ns_unquotehtml-1.4 {two entities next to each other} -body {
     ns_unquotehtml {&lt;&gt;}
 } -result "<>"
-test ns_unquotehtml-1.4 {two entities next to each other. embedded} -body {
+test ns_unquotehtml-1.5 {two entities next to each other. embedded} -body {
     ns_unquotehtml {hello&lt;&gt;world}
 } -result "hello<>world"
 

@@ -1799,13 +1799,20 @@ SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
 static void AppendRange(Ns_DString *dsPtr, const Ns_ObjvValueRange *r)
 {
     if (r->minValue == LLONG_MIN) {
-        Tcl_DStringAppend(dsPtr, "[LLONG_MIN,", 11);
+        Tcl_DStringAppend(dsPtr, "[MIN,", 5);
     } else {
         Ns_DStringPrintf(dsPtr, "[%" TCL_LL_MODIFIER "d,", r->minValue);
     }
 
-    if (r->maxValue == LLONG_MAX) {
-        Tcl_DStringAppend(dsPtr, "LLONG_MAX]", 10);
+    if (r->maxValue == TCL_SIZE_MAX) {
+        Tcl_DStringAppend(dsPtr, "MAX]", 4);
+
+    } else if (r->maxValue == LLONG_MAX) {
+        Tcl_DStringAppend(dsPtr, "MAX]", 4);
+
+    } else if (r->maxValue == INT_MAX) {
+        Tcl_DStringAppend(dsPtr, "MAX]", 4);
+
     } else {
         Ns_DStringPrintf(dsPtr, "%" TCL_LL_MODIFIER "d]", r->maxValue);
     }

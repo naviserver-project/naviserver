@@ -18,10 +18,14 @@ tcltest::testConstraint argon2 [expr {![catch {::ns_crypto::argon2 -variant ARGO
 #  Message digests: sha1, sha224, sha256, sha512
 #######################################################################################
 
-test ns_crypto_sha2-1.1 {basic syntax: plain call} -constraints crypto -body {
+test ns_crypto_sha2-1.1 {ns_crypto::md syntax} -constraints crypto -body {
      ns_crypto::md
 } -returnCodes error -result {wrong # args: should be "ns_crypto::md string|new|add|get|free|hkdf|vapidsign ?args?"}
-test ns_crypto_sha2-1.2 {basic syntax: plain call} -constraints crypto -body {
+test ns_crypto_sha2-1.2 {ns_crypto::md string syntax} -constraints crypto -body {
+     ns_crypto::md string
+} -returnCodes error -result {wrong # args: should be "ns_crypto::md string ?-binary? ?-digest /string/? ?-encoding hex|base64url|base64|binary? ?-passphrase /string/? ?-sign /string/? ?-signature /signature/? ?-verify /string/? ?--? /message/"}
+
+test ns_crypto_sha2-1.3 {basic syntax: plain call} -constraints crypto -body {
      ns_crypto::md string -digest sha123 x
 } -returnCodes error  -match glob -result {Unknown value for digest "sha123", valid: *}
 
@@ -94,13 +98,17 @@ test ns_crypto_signature_verify-1.0 {basic operation} -constraints crypto -body 
 #  RFC 2104 https://tools.ietf.org/html/rfc2104
 #######################################################################################
 
-test ns_hmac_sha2-1.1 {basic syntax: plain call} -constraints crypto -body {
+test ns_hmac-1.1 {syntax ns_crypto::hmac} -constraints crypto -body {
     ns_crypto::hmac
 } -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string|new|add|get|free ?args?"}
-test ns_hmac_sha2-1.2 {basic syntax: plain call} -constraints crypto -body {
+test ns_hmac-1.2 {syntax ns_crypto::hmac string} -constraints crypto -body {
+    ns_crypto::hmac string
+} -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string ?-binary? ?-digest /string/? ?-encoding hex|base64url|base64|binary? ?--? /key/ /message/"}
+
+test ns_hmac_sha2-1.3 {basic syntax: plain call} -constraints crypto -body {
     ns_crypto::hmac string -digest sha123 x
 } -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string ?-binary? ?-digest /string/? ?-encoding hex|base64url|base64|binary? ?--? /key/ /message/"}
-test ns_hmac_sha2-1.3 {basic syntax: plain call} -constraints crypto -body {
+test ns_hmac_sha2-1.4 {basic syntax: plain call} -constraints crypto -body {
     ns_crypto::hmac string -digest sha123 x y
 } -returnCodes error -match glob -result {Unknown value for digest "sha123", valid: *}
 
@@ -141,13 +149,16 @@ test ns_hmac_sha1-1.3 {binary operation (example from RFC 4226, appendix D)} -co
 #######################################################################################
 #  HMAC and MD file test
 #######################################################################################
+test ns_hmac_file-1.0 {syntax ns_crypto::hmac file} -constraints crypto -body {
+    ns_crypto::hmac file
+} -returnCodes error -result {ns_crypto::hmac: bad subcommand "file": must be string, new, add, get, or free}
 
-test ns_hmac-file-1.0 {ns_hmac file function} -constraints {crypto nsf} -body {
+test ns_hmac-file-1.1 {ns_hmac file function} -constraints {crypto nsf} -body {
     catch {ns_hmac file -digest sha256 foo [ns_server pagedir]/16480bytes} result
     set result
 } -result "a3d3b7ad986f84a8e4b170ec576747361b31596b63c9135b049624612126ffd7"
 
-test ns_md-file-1.0 {ns_hmac file function} -constraints {crypto nsf} -body {
+test ns_md-file-1.2 {ns_hmac file function} -constraints {crypto nsf} -body {
     catch {ns_md file -digest sha256 [ns_server pagedir]/16480bytes} result
     set result
 } -result "53deaf2e6c268ed0aae583e1c6f8679eedf08fb1218914530fa09b954c4bd621"
@@ -159,6 +170,9 @@ test ns_md-file-1.0 {ns_hmac file function} -constraints {crypto nsf} -body {
 # Test Cases for pbkdf2-hmac-sha1 based on RFC 6070
 # (PKCS #5_ Password-Based Key Derivation Function 2 (PBKDF2) Test Vectors)
 ############################################################################
+test pbkdf2_hmac-sha1.0 {syntax ns_crypto::pbkdf2_hmac} -constraints crypto -body {
+    ns_crypto::pbkdf2_hmac ""
+} -returnCodes error -result {wrong # args: should be "ns_crypto::pbkdf2_hmac ?-binary? ?-digest /string/? ?-dklen /integer[1,MAX]/? ?-iterations /integer[1,MAX]/? ?-salt /salt/? ?-secret /secret/? ?-encoding hex|base64url|base64|binary?"}
 
 test pbkdf2_hmac-sha1.0 {Testcase 1 for pbkdf2-hmac-sha1 based on RFC 6070} -body {
     ::ns_crypto::pbkdf2_hmac -secret "password" -iterations 1 -salt "salt" -digest sha1
@@ -235,7 +249,14 @@ test hotp-1 {
 #  RFC 6238 https://tools.ietf.org/html/rfc6238
 #######################################################################################
 
-test totp-1 {
+test ns_totp-1.0 {ns_totp syntax} -constraints {crypto nsf} -body {
+    ns_totp -x
+} -returnCodes error -result {invalid non-positional argument '-x', valid are: -digest, -digits, -interval, -user_id, -key, -time;
+ should be "ns_totp ?-digest /value/? ?-digits /integer/? ?-interval /integer/? ?-user_id /integer/? ?-key /value/? ?-time /value/?"}
+# ns_totp is an nsf proc: nsd message should be {wrong # args: should be "ns_totp ?-digest /value/? ?-digits /integer/? ?-interval /integer/? ?-user_id /integer/? ?-key /value/? ?-time /value/?"}
+
+
+test ns_totp-1.1 {
 
     Test for HOTP based on testvector from Appendix B of RFC 6238
     https://tools.ietf.org/html/rfc6238

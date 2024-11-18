@@ -5,12 +5,80 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
-test ns_mktemp-1.0 {call without argument} -body {
+
+test ns_rollfile-1.0 {ns_rollfile syntax} -body {
+    ns_rollfile
+} -returnCodes error -result {wrong # args: should be "ns_rollfile /path/ /maxbackups[0,1000]/"}
+
+test ns_mkdtemp-1.0 {ns_mkdtemp syntax} -body {
+    ns_mkdtemp ? ?
+} -returnCodes error -result {wrong # args: should be "ns_mkdtemp ?template?"}
+
+test ns_fseekchars-1.0 {ns_fseekchars syntax} -body {
+    ns_fseekchars
+} -returnCodes error -result {wrong # args: should be "ns_fseekchars /fileId/ /searchstring/"}
+
+test ns_ftruncate-1.0 {ns_ftruncate syntax} -body {
+    ns_ftruncate ? ?
+} -returnCodes error -result {expected integer but got "?"}
+
+test ns_kill-1.0 {ns_kill syntax} -body {
+    ns_kill
+} -returnCodes error -result {wrong # args: should be "ns_kill ?-nocomplain? /pid/ /sig[0,MAX]/"}
+
+test ns_normalizepath-1.0 {ns_normalizepath syntax} -body {
+    ns_normalizepath
+} -returnCodes error -result {wrong # args: should be "ns_normalizepath /path/"}
+
+test ns_symlink-1.0 {ns_symlink syntax} -body {
+    ns_symlink
+} -returnCodes error -result {wrong # args: should be "ns_symlink ?-nocomplain? ?--? /file1/ /file2/"}
+
+test ns_truncate-1.0 {ns_truncate syntax} -body {
+    ns_truncate
+} -returnCodes error -result {wrong # args: should be "ns_truncate /filename/ ?length[0,MAX]?"}
+
+test ns_writefp-1.0 {ns_writefp syntax} -body {
+    ns_writefp
+} -returnCodes error -result {wrong # args: should be "ns_writefp /fileid/ ?nbytes?"}
+
+
+# ns_chan
+test ns_chan-1.0 {ns_chan syntax} -body {
+    ns_chan ? ?
+} -returnCodes error -result {ns_chan: bad subcommand "?": must be cleanup, list, create, put, or get}
+
+test ns_chan-cleanup-1.0 {ns_chan cleanup syntax} -body {
+    ns_chan cleanup -
+} -returnCodes error -result {wrong # args: should be "ns_chan cleanup ?-shared?"}
+
+test ns_chan-create-1.0 {ns_chan create syntax} -body {
+    ns_chan create -
+} -returnCodes error -result {wrong # args: should be "ns_chan create /channel/ /name/"}
+
+test ns_chan-get-1.0 {ns_chan get syntax} -body {
+    ns_chan get
+} -returnCodes error -result {wrong # args: should be "ns_chan get /name/"}
+
+test ns_chan-list-1.0 {ns_chan list syntax} -body {
+    ns_chan list -
+} -returnCodes error -result {wrong # args: should be "ns_chan list ?-shared?"}
+
+test ns_chan-put-1.0 {ns_chan put syntax} -body {
+    ns_chan put
+} -returnCodes error -result {wrong # args: should be "ns_chan put /name/"}
+
+# ns_mktemp
+test ns_mktemp-1.0 {ns_mktemp syntax} -body {
+    ns_mktemp ? ?
+} -returnCodes error -result {wrong # args: should be "ns_mktemp ?-nocomplain? ?--? ?template?"}
+
+test ns_mktemp-1.1 {call without argument} -body {
     set t [ns_mktemp]
     return [list [file exists $t] [file readable $t]  [file isdirectory $t]]
 } -result {0 0 0}
 
-test ns_mktemp-1.1 {call with argument} -body {
+test ns_mktemp-1.2 {call with argument} -body {
     set t [ns_mktemp [ns_config ns/parameters tmpdir]/ns-XXXXXX]
     return [list [file exists $t] [file readable $t]  [file isdirectory $t]]
 } -result {0 0 0}

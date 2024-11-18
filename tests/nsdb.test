@@ -7,24 +7,167 @@ namespace import -force ::tcltest::*
 
 
 
-test ns_db-1.1 {basic syntax} -body {
+test nsdb-1.0 {ns_db syntax} -body {
     ns_db
 } -returnCodes error -result {wrong # args: should be "ns_db /subcommand/ ?arg ...?"}
 
-test ns_dbquotevalue-1 {basic syntax} -body {
+test nsdb-1.0.1 {ns_db bindrow bouncepool} -body {
+    ns_db bouncepool
+} -returnCodes error -result {wrong # args: should be "ns_db bouncepool /pool/"}
+
+test nsdb-1.0.2 {ns_db cancel syntax} -body {
+    ns_db cancel
+} -returnCodes error -result {wrong # args: should be "ns_db cancel /dbId/"}
+
+test nsdb-1.0.4 {ns_db connected syntax} -body {
+    ns_db connected
+} -returnCodes error -result {wrong # args: should be "ns_db connected /dbId/"}
+
+test nsdb-1.0.5 {ns_db currenthandles syntax} -body {
+    ns_db currenthandles ?
+} -returnCodes error -result {wrong # args: should be "ns_db currenthandles"}
+
+test nsdb-1.0.6 {ns_db datasource syntax} -body {
+    ns_db datasource
+} -returnCodes error -result {wrong # args: should be "ns_db datasource /dbId/"}
+
+test nsdb-1.0.7 {ns_db bindrow syntax} -body {
+    ns_db bindrow
+} -returnCodes error -result {wrong # args: should be "ns_db bindrow /dbId/"}
+
+test nsdb-1.0.8 {ns_db dbtype syntax} -body {
+    ns_db dbtype
+} -returnCodes error -result {wrong # args: should be "ns_db dbtype /dbId/"}
+
+test nsdb-1.0.9 {ns_db dml syntax} -body {
+    ns_db dml
+} -returnCodes error -result {wrong # args: should be "ns_db dml /dbId/ /sql/"}
+
+test nsdb-1.0.10 {ns_db driver syntax} -body {
+    ns_db driver
+} -returnCodes error -result {wrong # args: should be "ns_db driver /dbId/"}
+
+test nsdb-1.0.11 {ns_db exception syntax} -body {
+    ns_db exception
+} -returnCodes error -result {wrong # args: should be "ns_db exception /dbId/"}
+
+test nsdb-1.0.12 {ns_db exec syntax} -body {
+    ns_db exec
+} -returnCodes error -result {wrong # args: should be "ns_db exec /dbId/ /sql/"}
+
+test nsdb-1.0.13 {ns_db flush syntax} -body {
+    ns_db flush
+} -returnCodes error -result {wrong # args: should be "ns_db flush /dbId/"}
+
+test nsdb-1.0.14 {ns_db gethandle syntax} -body {
+    ns_db gethandle ?
+} -returnCodes error -result {no access to pool: "?"}
+
+test nsdb-1.0.15 {ns_db getrow syntax} -body {
+    ns_db getrow
+} -returnCodes error -result {wrong # args: should be "ns_db getrow /dbId/ /setId/"}
+
+test nsdb-1.0.16 {ns_db logminduration syntax} -body {
+    ns_db logminduration ?
+} -returnCodes error -result {Invalid pool '?'}
+
+test nsdb-1.0.18 {ns_db password syntax} -body {
+    ns_db password
+} -returnCodes error -result {wrong # args: should be "ns_db password /dbId/"}
+
+test nsdb-1.0.19 {ns_db poolname syntax} -body {
+    ns_db poolname
+} -returnCodes error -result {wrong # args: should be "ns_db poolname /dbId/"}
+
+test nsdb-1.0.20 {ns_db pools syntax} -body {
+    ns_db pools ?
+} -returnCodes error -result {wrong # args: should be "ns_db pools"}
+
+test nsdb-1.0.21 {ns_db releasehandle syntax} -body {
+    ns_db releasehandle
+} -returnCodes error -result {wrong # args: should be "ns_db releasehandle /dbId/"}
+
+test nsdb-1.0.22 {ns_db rowcount syntax} -body {
+    ns_db rowcount
+} -returnCodes error -result {wrong # args: should be "ns_db rowcount /dbId/"}
+
+test nsdb-1.0.23 {ns_db select syntax} -body {
+    ns_db select
+} -returnCodes error -result {wrong # args: should be "ns_db select /dbId/ /sql/"}
+
+test nsdb-1.0.24 {ns_db setexception syntax} -body {
+    ns_db setexception
+} -returnCodes error -result {wrong # args: should be "ns_db setexception /dbId/ /code/ /message/"}
+
+test nsdb-1.0.25 {ns_db sp_exec syntax} -body {
+    ns_db sp_exec
+} -returnCodes error -result {wrong # args: should be "ns_db sp_exec /dbId/"}
+
+test nsdb-1.0.26 {ns_db sp_getparams syntax} -body {
+    ns_db sp_getparams
+} -returnCodes error -result {wrong # args: should be "ns_db sp_getparams /dbId/"}
+
+test nsdb-1.0.27 {ns_db sp_returncode syntax} -body {
+    ns_db sp_returncode
+} -returnCodes error -result {wrong # args: should be "ns_db sp_returncode /dbId/"}
+
+test nsdb-1.0.28 {ns_db sp_setparam syntax} -body {
+    ns_db sp_setparam
+} -returnCodes error -result {wrong # args: should be "ns_db sp_setparam /dbId/ /paramname/ /type/ in|out /value/"}
+
+test nsdb-1.0.29 {ns_db sp_start syntax} -body {
+    ns_db sp_start
+} -returnCodes error -result {wrong # args: should be "ns_db sp_start /dbId/ /sql/"}
+
+test nsdb-1.0.30 {ns_db stats syntax} -body {
+    ns_db stats ?
+} -returnCodes error -result {wrong # args: should be "ns_db stats"}
+
+test nsdb-1.0.31 {ns_db user syntax} -body {
+    ns_db user
+} -returnCodes error -result {wrong # args: should be "ns_db user /dbId/"}
+
+test nsdb-1.0.32 {ns_db verbose syntax} -body {
+    ns_db verbose
+} -returnCodes error -result {wrong # args: should be "ns_db verbose /dbID/ ?verbose?"}
+
+
+
+test nsdb-1.1 {ns_dbquotevalue syntax} -body {
     ns_dbquotevalue
 } -returnCodes error -result {wrong # args: should be "ns_dbquotevalue /value/ ?type?"}
 
-test ns_dbquotevalue-2 {basic syntax} -body {
+test nsdb-1.2 {ns_dbquotelist syntax} -body {
+    ns_dbquotelist
+} -returnCodes error -result {wrong # args: should be "ns_dbquotelist /list/ ?type?"}
+
+test nsdb-1.3 {ns_dbconfigpath syntax} -body {
+    ns_dbconfigpath ?
+} -returnCodes error -result {wrong # args: should be ""}
+
+test nsdb-1.4 {ns_dberrorcode syntax} -body {
+    ns_dberrorcode
+} -returnCodes error -result {wrong # args: should be "ns_dberrorcode /dbId/"}
+
+test nsdb-1.5 {ns_dberrormsg syntax} -body {
+    ns_dberrormsg
+} -returnCodes {ok error} -result {wrong # args: should be "ns_dberrormsg /dbId/"}
+
+test nsdb-1.6 {ns_dbquotename syntax} -body {
+    ns_dbquotename
+} -returnCodes error -result {wrong # args: should be "ns_dbquotename name"}
+
+
+test ns_dbquotevalue-2 {empty string} -body {
     ns_dbquotevalue ""
 } -returnCodes {ok error} -result {NULL}
-test ns_dbquotevalue-3 {basic syntax} -body {
+test ns_dbquotevalue-3 {dbquotevalue number} -body {
     ns_dbquotevalue 10
 } -returnCodes {ok error} -result {'10'}
-test ns_dbquotevalue-3 {basic syntax} -body {
+test ns_dbquotevalue-3 {dbquotevalue string with space} -body {
     ns_dbquotevalue "hello world"
 } -returnCodes {ok error} -result {'hello world'}
-test ns_dbquotevalue-4 {basic syntax} -body {
+test ns_dbquotevalue-4 {dbquotevalue string with quote} -body {
     ns_dbquotevalue "hello o'toole"
 } -returnCodes {ok error} -result {'hello o''toole'}
 test ns_dbquotevalue-5 {passing in value with objType "int"} -body {
@@ -35,23 +178,20 @@ test ns_dbquotevalue-6 {string containing invalid value} -body {
 } -returnCodes {ok error} -result "input string '1\x00\x02' contains invalid characters"
 
 
-test ns_dbquotelist-1 {basic syntax} -body {
-    ns_dbquotelist
-} -returnCodes error -result {wrong # args: should be "ns_dbquotelist /list/ ?type?"}
 
-test ns_dbquotelist-2 {basic syntax} -body {
+test ns_dbquotelist-2 {dbquotelist empty} -body {
     ns_dbquotelist ""
 } -returnCodes {ok error} -result {}
-test ns_dbquotelist-3.1 {basic syntax} -body {
+test ns_dbquotelist-3.1 {dbquotelist integer} -body {
     ns_dbquotelist 10
 } -returnCodes {ok error} -result {'10'}
-test ns_dbquotelist-3.2 {basic syntax} -body {
+test ns_dbquotelist-3.2 {dbquotelist list of integers} -body {
     ns_dbquotelist {1 2 3}
 } -returnCodes {ok error} -result {'1','2','3'}
-test ns_dbquotelist-3 {basic syntax} -body {
+test ns_dbquotelist-3 {dbquotelist list of strings} -body {
     ns_dbquotelist "hello world"
 } -returnCodes {ok error} -result {'hello','world'}
-test ns_dbquotelist-4 {basic syntax} -body {
+test ns_dbquotelist-4 {dbquotelist list with quote} -body {
     ns_dbquotelist "hello o'toole"
 } -returnCodes {ok error} -result {'hello','o''toole'}
 test ns_dbquotelist-5 {passing in value with objType "int"} -body {
@@ -60,6 +200,16 @@ test ns_dbquotelist-5 {passing in value with objType "int"} -body {
 test ns_dbquotelist-6 {string containing invalid value} -body {
     ns_dbquotelist "1\x00\x02"
 } -returnCodes {ok error} -result "input string '1\x00\x02' contains invalid characters"
+
+
+test ns_dbquotename-1 {dbquotelist empty} -body {
+    ns_dbquotename hello
+} -returnCodes {ok error} -result {hello}
+
+test ns_dbquotename-2 {dbquotelist empty} -body {
+    ns_dbquotename "pretty name"
+} -returnCodes {ok error} -result {"pretty name"}
+
 
 test ns_db-2.0 {nsdb gethandle} -body {
     set h [ns_db gethandle -timeout 2.5s]

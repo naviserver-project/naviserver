@@ -2170,21 +2170,26 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
         break;
 
     case PHandlesIdx:
-        if (objc == 3) {
-            poolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
+        if (objc > 3) {
+            Tcl_WrongNumArgs(interp, 2, objv, "?handle?");
+            result = TCL_ERROR;
         } else {
-            poolPtr = NULL;
-        }
-        listObj = Tcl_NewListObj(0, NULL);
-        hPtr = Tcl_FirstHashEntry(&idataPtr->ids, &search);
-        while (hPtr != NULL) {
-            proxyPtr = (Proxy *)Tcl_GetHashValue(hPtr);
-            if (poolPtr == NULL || poolPtr == proxyPtr->poolPtr) {
-                Tcl_ListObjAppendElement(interp, listObj, StringObj(proxyPtr->id));
+            if (objc == 3) {
+                poolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
+            } else {
+                poolPtr = NULL;
             }
-            hPtr = Tcl_NextHashEntry(&search);
+            listObj = Tcl_NewListObj(0, NULL);
+            hPtr = Tcl_FirstHashEntry(&idataPtr->ids, &search);
+            while (hPtr != NULL) {
+                proxyPtr = (Proxy *)Tcl_GetHashValue(hPtr);
+                if (poolPtr == NULL || poolPtr == proxyPtr->poolPtr) {
+                    Tcl_ListObjAppendElement(interp, listObj, StringObj(proxyPtr->id));
+                }
+                hPtr = Tcl_NextHashEntry(&search);
+            }
+            Tcl_SetObjResult(interp, listObj);
         }
-        Tcl_SetObjResult(interp, listObj);
         break;
 
     case PActiveIdx:
@@ -2213,7 +2218,12 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
         break;
 
     case PClearIdx:
-        result = ClearObjCmd(data, interp, objc, objv);
+        if (objc < 3 || objc > 4) {
+            Tcl_WrongNumArgs(interp, 2, objv, "/pool/ ?handle?");
+            result = TCL_ERROR;
+        } else {
+            result = ClearObjCmd(data, interp, objc, objv);
+        }
         break;
 
     case PPidsIdx:
@@ -2221,16 +2231,21 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
         break;
 
     case PPoolsIdx:
-        listObj = Tcl_NewListObj(0, NULL);
-        Ns_MutexLock(&plock);
-        hPtr = Tcl_FirstHashEntry(&pools, &search);
-        while (hPtr != NULL) {
-            poolPtr = (Pool *)Tcl_GetHashValue(hPtr);
-            Tcl_ListObjAppendElement(interp, listObj,  StringObj(poolPtr->name));
-            hPtr = Tcl_NextHashEntry(&search);
+        if (objc >= 2) {
+            Tcl_WrongNumArgs(interp, 2, objv, "");
+            result = TCL_ERROR;
+        } else {
+            listObj = Tcl_NewListObj(0, NULL);
+            Ns_MutexLock(&plock);
+            hPtr = Tcl_FirstHashEntry(&pools, &search);
+            while (hPtr != NULL) {
+                poolPtr = (Pool *)Tcl_GetHashValue(hPtr);
+                Tcl_ListObjAppendElement(interp, listObj,  StringObj(poolPtr->name));
+                hPtr = Tcl_NextHashEntry(&search);
+            }
+            Ns_MutexUnlock(&plock);
+            Tcl_SetObjResult(interp, listObj);
         }
-        Ns_MutexUnlock(&plock);
-        Tcl_SetObjResult(interp, listObj);
         break;
 
     case PStatsIdx:

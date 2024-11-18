@@ -930,66 +930,72 @@ static int DelUserObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc, 
  *----------------------------------------------------------------------
  */
 
-static int ListUsersObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
+static int ListUsersObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    Server         *servPtr = data;
-    Tcl_HashSearch  search, msearch;
-    Tcl_HashEntry  *hPtr;
-    Tcl_DString     ds;
+    int result = TCL_OK;
 
-    Tcl_DStringInit(&ds);
-    Ns_RWLockRdLock(&servPtr->lock);
-    hPtr = Tcl_FirstHashEntry(&servPtr->users, &search);
+    if (objc != 2) {
+        Tcl_WrongNumArgs(interp, 2, objv, "");
+        result = TCL_ERROR;
+    } else {
+        Server         *servPtr = data;
+        Tcl_HashSearch  search, msearch;
+        Tcl_HashEntry  *hPtr;
+        Tcl_DString     ds;
 
-    while (hPtr != NULL) {
-        char              ipString[NS_IPADDR_SIZE];
-        User             *userPtr = Tcl_GetHashValue(hPtr);
-        Tcl_HashEntry    *mPtr;
-        struct sockaddr  *netPtr;
+        Tcl_DStringInit(&ds);
+        Ns_RWLockRdLock(&servPtr->lock);
+        hPtr = Tcl_FirstHashEntry(&servPtr->users, &search);
 
-        Ns_DStringPrintf(&ds, "{%s} {%s} {",
-                         (const char*)Tcl_GetHashKey(&servPtr->users, hPtr),
-                         userPtr->pwd);
+        while (hPtr != NULL) {
+            char              ipString[NS_IPADDR_SIZE];
+            User             *userPtr = Tcl_GetHashValue(hPtr);
+            Tcl_HashEntry    *mPtr;
+            struct sockaddr  *netPtr;
 
-        if (userPtr->hosts.numEntries > 0 || userPtr->masks.numEntries > 0 || userPtr->nets.numEntries > 0) {
-            Ns_DStringPrintf(&ds, " %s ", ((userPtr->flags & USER_FILTER_ALLOW) != 0u) ? "-allow" : "-deny");
+            Ns_DStringPrintf(&ds, "{%s} {%s} {",
+                             (const char*)Tcl_GetHashKey(&servPtr->users, hPtr),
+                             userPtr->pwd);
+
+            if (userPtr->hosts.numEntries > 0 || userPtr->masks.numEntries > 0 || userPtr->nets.numEntries > 0) {
+                Ns_DStringPrintf(&ds, " %s ", ((userPtr->flags & USER_FILTER_ALLOW) != 0u) ? "-allow" : "-deny");
+            }
+            /*
+             * Append all values from networks
+             */
+            mPtr = Tcl_FirstHashEntry(&userPtr->nets, &msearch);
+            while (mPtr != NULL) {
+                netPtr = (struct sockaddr *)Tcl_GetHashKey(&userPtr->nets, hPtr);
+                Ns_DStringPrintf(&ds, "%s ", ns_inet_ntop(netPtr, ipString, sizeof(ipString)));
+                mPtr = Tcl_NextHashEntry(&msearch);
+            }
+
+            /*
+             * Append all values from masks
+             */
+            mPtr = Tcl_FirstHashEntry(&userPtr->masks, &msearch);
+            while (mPtr != NULL) {
+                netPtr = (struct sockaddr *)Tcl_GetHashKey(&userPtr->nets, hPtr);
+                Ns_DStringPrintf(&ds, "%s ", ns_inet_ntop(netPtr, ipString, sizeof(ipString)));
+                mPtr = Tcl_NextHashEntry(&msearch);
+            }
+
+            /*
+             * Append all values from hosts
+             */
+            mPtr = Tcl_FirstHashEntry(&userPtr->hosts, &msearch);
+            while (mPtr != NULL) {
+                Ns_DStringPrintf(&ds, "%s ", (const char*)Tcl_GetHashKey(&userPtr->hosts, mPtr));
+                mPtr = Tcl_NextHashEntry(&msearch);
+            }
+            Ns_DStringNAppend(&ds, "} ", 2);
+
+            hPtr = Tcl_NextHashEntry(&search);
         }
-        /*
-         * Append all values from networks
-         */
-        mPtr = Tcl_FirstHashEntry(&userPtr->nets, &msearch);
-        while (mPtr != NULL) {
-            netPtr = (struct sockaddr *)Tcl_GetHashKey(&userPtr->nets, hPtr);
-            Ns_DStringPrintf(&ds, "%s ", ns_inet_ntop(netPtr, ipString, sizeof(ipString)));
-            mPtr = Tcl_NextHashEntry(&msearch);
-        }
-
-        /*
-         * Append all values from masks
-         */
-        mPtr = Tcl_FirstHashEntry(&userPtr->masks, &msearch);
-        while (mPtr != NULL) {
-            netPtr = (struct sockaddr *)Tcl_GetHashKey(&userPtr->nets, hPtr);
-            Ns_DStringPrintf(&ds, "%s ", ns_inet_ntop(netPtr, ipString, sizeof(ipString)));
-            mPtr = Tcl_NextHashEntry(&msearch);
-        }
-
-        /*
-         * Append all values from hosts
-         */
-        mPtr = Tcl_FirstHashEntry(&userPtr->hosts, &msearch);
-        while (mPtr != NULL) {
-            Ns_DStringPrintf(&ds, "%s ", (const char*)Tcl_GetHashKey(&userPtr->hosts, mPtr));
-            mPtr = Tcl_NextHashEntry(&msearch);
-        }
-        Ns_DStringNAppend(&ds, "} ", 2);
-
-        hPtr = Tcl_NextHashEntry(&search);
+        Ns_RWLockUnlock(&servPtr->lock);
+        Tcl_DStringResult(interp, &ds);
     }
-    Ns_RWLockUnlock(&servPtr->lock);
-    Tcl_DStringResult(interp, &ds);
-
-    return TCL_OK;
+    return result;
 }
 
 
@@ -1176,42 +1182,49 @@ static int DelGroupObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc,
  *----------------------------------------------------------------------
  */
 
-static int ListGroupsObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
+static int ListGroupsObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    Server         *servPtr = data;
-    Tcl_HashSearch  search;
-    Tcl_HashEntry  *hPtr;
-    Tcl_DString     ds;
+    int result = TCL_OK;
 
-    Tcl_DStringInit(&ds);
-    Ns_RWLockRdLock(&servPtr->lock);
-    hPtr = Tcl_FirstHashEntry(&servPtr->groups, &search);
-    while (hPtr != NULL) {
-        Tcl_HashSearch usearch;
-        Tcl_HashEntry *uhPtr;
-        Group         *groupPtr = Tcl_GetHashValue(hPtr);
+    if (objc != 2) {
+        Tcl_WrongNumArgs(interp, 2, objv, "");
+        result = TCL_ERROR;
 
-        Ns_DStringPrintf(&ds, "%s { ",
-                         (const char *)Tcl_GetHashKey(&servPtr->groups, hPtr));
+    } else {
+        Server         *servPtr = data;
+        Tcl_HashSearch  search;
+        Tcl_HashEntry  *hPtr;
+        Tcl_DString     ds;
 
-        /*
-         * All users for this group
-         */
+        Tcl_DStringInit(&ds);
+        Ns_RWLockRdLock(&servPtr->lock);
+        hPtr = Tcl_FirstHashEntry(&servPtr->groups, &search);
+        while (hPtr != NULL) {
+            Tcl_HashSearch usearch;
+            Tcl_HashEntry *uhPtr;
+            Group         *groupPtr = Tcl_GetHashValue(hPtr);
 
-        uhPtr = Tcl_FirstHashEntry(&groupPtr->users, &usearch);
-        while (uhPtr != NULL) {
-            Ns_DStringPrintf(&ds, "\"%s\" ",
-                             (const char *)Tcl_GetHashKey(&groupPtr->users, uhPtr));
-            uhPtr = Tcl_NextHashEntry(&usearch);
+            Ns_DStringPrintf(&ds, "%s { ",
+                             (const char *)Tcl_GetHashKey(&servPtr->groups, hPtr));
+
+            /*
+             * All users for this group
+             */
+
+            uhPtr = Tcl_FirstHashEntry(&groupPtr->users, &usearch);
+            while (uhPtr != NULL) {
+                Ns_DStringPrintf(&ds, "\"%s\" ",
+                                 (const char *)Tcl_GetHashKey(&groupPtr->users, uhPtr));
+                uhPtr = Tcl_NextHashEntry(&usearch);
+            }
+            Ns_DStringNAppend(&ds, "} ", 2);
+
+            hPtr = Tcl_NextHashEntry(&search);
         }
-        Ns_DStringNAppend(&ds, "} ", 2);
-
-        hPtr = Tcl_NextHashEntry(&search);
+        Ns_RWLockUnlock(&servPtr->lock);
+        Tcl_DStringResult(interp, &ds);
     }
-    Ns_RWLockUnlock(&servPtr->lock);
-    Tcl_DStringResult(interp, &ds);
-
-    return TCL_OK;
+    return result;
 }
 
 
@@ -1223,9 +1236,9 @@ static int ListGroupsObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T UNU
  *      Implements:
  *
  *         "ns_perm allowuser"
- *         "nsperm allowgroup"
- *         "nsperm denyuser"
- *         "nsperm denygroup"
+ *         "ns_perm allowgroup"
+ *         "ns_perm denyuser"
+ *         "ns_perm denygroup"
  *
  *      Adds/removes a record that will allow or deny access to
  *      the specified URL.
@@ -1248,7 +1261,7 @@ static int AllowDenyObjCmd(
     bool user
 ) {
     char      *method = NULL, *url = NULL;
-    int        noinherit = 0, result;
+    int        noinherit = 0, result = TCL_OK;
     TCL_SIZE_T nargs = 0;
 
     Ns_ObjvSpec opts[] = {
@@ -1264,8 +1277,9 @@ static int AllowDenyObjCmd(
     };
 
 
-    result = Ns_ParseObjv(opts, args, interp, 2, objc, objv);
-    if (likely(result == NS_OK)) {
+    if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
         Server      *servPtr = data;
         Perm        *permPtr;
         Ns_DString   base;
@@ -1417,18 +1431,25 @@ static int DelPermObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc, 
  *----------------------------------------------------------------------
  */
 
-static int ListPermsObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
+static int ListPermsObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    Server *servPtr = data;
-    Ns_DString ds;
+    int result = TCL_OK;
 
-    Ns_DStringInit(&ds);
-    Ns_RWLockRdLock(&servPtr->lock);
-    Ns_UrlSpecificWalk(uskey, servPtr->server, WalkCallback, &ds);
-    Ns_RWLockUnlock(&servPtr->lock);
+    if (objc != 2) {
+        Tcl_WrongNumArgs(interp, 2, objv, "");
+        result = TCL_ERROR;
+    } else {
+        Server *servPtr = data;
+        Ns_DString ds;
 
-    Tcl_DStringResult(interp, &ds);
-    return TCL_OK;
+        Ns_DStringInit(&ds);
+        Ns_RWLockRdLock(&servPtr->lock);
+        Ns_UrlSpecificWalk(uskey, servPtr->server, WalkCallback, &ds);
+        Ns_RWLockUnlock(&servPtr->lock);
+
+        Tcl_DStringResult(interp, &ds);
+    }
+    return result;
 }
 
 static void WalkCallback(Tcl_DString * dsPtr, const void *arg)

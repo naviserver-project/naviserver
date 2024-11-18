@@ -292,7 +292,7 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
         return TCL_OK;
     }
 
-    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
+    if (Tcl_GetIndexFromObj(interp, objv[1], opts, "subcommand", 0,
                             &opt) != TCL_OK) {
         return TCL_ERROR;
     }
@@ -300,8 +300,12 @@ NsTclTimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
     switch (opt) {
     case TGetIdx:
         {
-            Ns_GetTime(&resultTime);
-            Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&resultTime));
+            if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+                rc = TCL_ERROR;
+            } else {
+                Ns_GetTime(&resultTime);
+                Tcl_SetObjResult(interp, Ns_TclNewTimeObj(&resultTime));
+            }
         }
         break;
 

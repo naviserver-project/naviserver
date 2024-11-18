@@ -1,0 +1,28 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+testConstraint nscpLoaded [expr {[info commands ::nscp] ne ""}]
+
+test nscp-1.0 {basic syntax "nscp"} -constraints nscpLoaded -body {
+    nscp
+} -returnCodes error -result {wrong # args: should be "nscp users ?args?"}
+
+test nscp-1.1 {basic syntax "nscp users"} -constraints nscpLoaded -body {
+    nscp users x
+} -returnCodes error -result {wrong # args: should be "nscp users"}
+
+test nscp-2.0 {return users from config file} -constraints nscpLoaded -body {
+    nscp users
+} -returnCodes {ok error} -result {{} nsadmin}
+
+cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

@@ -6,7 +6,54 @@ namespace import -force ::tcltest::*
 ::tcltest::configure {*}$argv
 testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
 
-test ns_time-1.0 {basic syntax: plain call} -body {
+#
+# Syntax
+#
+
+test ns_time-1.0 {syntax: ns_time} -body {
+    ns_time ?
+} -returnCodes error -result {bad subcommand "?": must be adjust, diff, format, get, incr, make, seconds, or microseconds}
+
+# "ns_time" alone is valid and does not trigger an error message. syntax i {wrong # args: should be "ns_time"}
+
+
+test ns_time-1.1 {syntax: ns_time adjust} -body {
+    ns_time adjust
+} -returnCodes error -result {wrong # args: should be "ns_time adjust /time/"}
+
+test ns_time-1.2 {syntax: ns_time diff} -body {
+    ns_time diff
+} -returnCodes error -result {wrong # args: should be "ns_time diff /time1/ /time2/"}
+
+test ns_time-1.3 {syntax: ns_time format} -body {
+    ns_time format
+} -returnCodes error -result {wrong # args: should be "ns_time format /time/"}
+
+test ns_time-1.4 {syntax: ns_time get} -body {
+    ns_time get ?
+} -returnCodes error -result {wrong # args: should be "ns_time get"}
+
+test ns_time-1.5 {syntax: ns_time incr} -body {
+    ns_time incr
+} -returnCodes error -result {wrong # args: should be "ns_time incr /time/ /sec[0,MAX]/ ?usec[0,MAX]?"}
+
+test ns_time-1.6 {syntax: ns_time make} -body {
+    ns_time make
+} -returnCodes error -result {wrong # args: should be "ns_time make /sec[0,MAX]/ ?usec[0,MAX]?"}
+
+test ns_time-1.7 {syntax: ns_time microseconds} -body {
+    ns_time microseconds
+} -returnCodes error -result {wrong # args: should be "ns_time microseconds /time/"}
+
+test ns_time-1.8 {syntax: ns_time seconds} -body {
+    ns_time seconds
+} -returnCodes error -result {wrong # args: should be "ns_time seconds /time/"}
+
+
+#
+# Functionality
+#
+test ns_time-result-1.0 {basic syntax: plain call} -body {
     string is integer -strict [ns_time]
 } -result {1}
 

@@ -2539,6 +2539,7 @@ NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
  * NsTclWriteContentObjCmd --
  *
  *      Implements "ns_conncptofp".
+ *      Implements "ns_writecontent".
  *
  * Results:
  *      Standard Tcl result.

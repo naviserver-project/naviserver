@@ -46,8 +46,9 @@ proc ns_dbshutdown { args } {
 #
 # ns_dbquotename -
 #
-#    If name contains a space, then it is surrounded by double quotes.
-#    This is useful for names in SQL statements that may contain spaces.
+#    If name (SQL identifier) contains a space, then it is surrounded
+#    by double quotes.  This is useful for names in SQL statements
+#    that may contain spaces.
 #
 
 proc ns_dbquotename {name} {

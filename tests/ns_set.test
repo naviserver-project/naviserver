@@ -35,7 +35,7 @@ test ns_set-1.10 {basic syntax ns_set create} -body {
 
 test ns_set-1.11 {basic syntax ns_set delete} -body {
     ns_set delete
-} -returnCodes error -result {wrong # args: should be "ns_set delete /setId/ /fieldNumber[0,LLONG_MAX]/"}
+} -returnCodes error -result {wrong # args: should be "ns_set delete /setId/ /fieldNumber[0,MAX]/"}
 
 test ns_set-1.12 {basic syntax ns_set delkey} -body {
     ns_set delkey
@@ -83,7 +83,7 @@ test ns_set-1.20.2 {basic syntax ns_set iget} -body {
 
 test ns_set-1.21 {basic syntax ns_set isnull} -body {
     ns_set isnull
-} -returnCodes error -result {wrong # args: should be "ns_set isnull /setId/ /fieldNumber[0,LLONG_MAX]/"}
+} -returnCodes error -result {wrong # args: should be "ns_set isnull /setId/ /fieldNumber[0,MAX]/"}
 
 test ns_set-1.22 {basic syntax ns_set iunique} -body {
     ns_set iunique
@@ -91,7 +91,7 @@ test ns_set-1.22 {basic syntax ns_set iunique} -body {
 
 test ns_set-1.23 {basic syntax ns_set key } -body {
     ns_set key
-} -returnCodes error -result {wrong # args: should be "ns_set key /setId/ /fieldNumber[0,LLONG_MAX]/"}
+} -returnCodes error -result {wrong # args: should be "ns_set key /setId/ /fieldNumber[0,MAX]/"}
 
 test ns_set-1.24 {basic syntax ns_set list} -body {
     ns_set list
@@ -125,7 +125,7 @@ test ns_set-1.31 {basic syntax ns_set put} -body {
 
 test ns_set-1.32 {basic syntax ns_set size} -body {
     ns_set size
-} -returnCodes error -result {wrong # args: should be "ns_set size /setId/ ?nrElements[0,LLONG_MAX]? ?bufferSize[200,LLONG_MAX]?"}
+} -returnCodes error -result {wrong # args: should be "ns_set size /setId/ ?nrElements[0,MAX]? ?bufferSize[200,MAX]?"}
 
 test ns_set-1.33 {basic syntax ns_set split} -body {
     ns_set split
@@ -133,7 +133,7 @@ test ns_set-1.33 {basic syntax ns_set split} -body {
 
 test ns_set-1.34 {basic syntax ns_set truncate} -body {
     ns_set truncate
-} -returnCodes error -result {wrong # args: should be "ns_set truncate /setId/ /fieldNumber[0,LLONG_MAX]/"}
+} -returnCodes error -result {wrong # args: should be "ns_set truncate /setId/ /fieldNumber[0,MAX]/"}
 
 test ns_set-1.35 {basic syntax ns_set unique} -body {
     ns_set unique
@@ -145,7 +145,7 @@ test ns_set-1.36 {basic syntax ns_set update} -body {
 
 test ns_set-1.37 {basic syntax ns_set value} -body {
     ns_set value
-} -returnCodes error -result {wrong # args: should be "ns_set value /setId/ /fieldNumber[0,LLONG_MAX]/"}
+} -returnCodes error -result {wrong # args: should be "ns_set value /setId/ /fieldNumber[0,MAX]/"}
 
 test ns_set-1.38 {basic syntax ns_set imerge} -body {
     ns_set imerge

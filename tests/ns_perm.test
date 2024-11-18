@@ -1,0 +1,80 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+
+test ns_perm-1.1 {basic syntax} -body {
+    ns_perm
+} -returnCodes error -result {wrong # args: should be "ns_perm /subcommand/ ?args ...?"}
+
+test ns_perm-2.1 {adduser syntax} -body {
+    ns_perm adduser
+} -returnCodes error -result {wrong # args: should be "ns_perm adduser ?-allow? ?-deny? ?-clear? ?-salt /string/? ?--? /name/ /pwd/ /field/ ?hosts?"}
+
+test ns_perm-2.2 {deluser syntax} -body {
+    ns_perm deluser
+} -returnCodes error -result {wrong # args: should be "ns_perm deluser /name/"}
+
+test ns_perm-2.3 {addgroup syntax} -body {
+    ns_perm addgroup
+} -returnCodes error -result {wrong # args: should be "ns_perm addgroup /group/ /user/ ?user ...?"}
+
+test ns_perm-2.4 {delgroup syntax} -body {
+    ns_perm delgroup
+} -returnCodes error -result {wrong # args: should be "ns_perm delgroup /name/"}
+
+test ns_perm-2.5 {allowuser syntax} -body {
+    ns_perm allowuser
+} -returnCodes {ok error} -result {wrong # args: should be "ns_perm allowuser ?-noinherit? ?--? /method/ /url/ /users/"}
+
+test ns_perm-2.6 {denyuser} -body {
+    ns_perm denyuser
+} -returnCodes error -result {wrong # args: should be "ns_perm denyuser ?-noinherit? ?--? /method/ /url/ /users/"}
+
+test ns_perm-2.7 {allowgroup syntax} -body {
+    ns_perm allowgroup
+} -returnCodes error -result {wrong # args: should be "ns_perm allowgroup ?-noinherit? ?--? /method/ /url/ /users/"}
+
+test ns_perm-2.8 {denygroup syntax} -body {
+    ns_perm denygroup
+} -returnCodes error -result {wrong # args: should be "ns_perm denygroup ?-noinherit? ?--? /method/ /url/ /users/"}
+
+test ns_perm-2.9 {checkpass syntax} -body {
+    ns_perm checkpass
+} -returnCodes error -result {wrong # args: should be "ns_perm checkpass /user/ /pwd/"}
+
+test ns_perm-2.10 {setpass syntax} -body {
+    ns_perm setpass
+} -returnCodes error -result {wrong # args: should be "ns_perm setpass /user/ /pwd/ ?salt?"}
+
+test ns_perm-2.11 {listusers syntax} -body {
+    ns_perm listusers ?
+} -returnCodes error -result {wrong # args: should be "ns_perm listusers "}
+
+test ns_perm-2.12 {listgroups syntax} -body {
+    ns_perm listgroups ?
+} -returnCodes error -result {wrong # args: should be "ns_perm listgroups "}
+
+test ns_perm-2.13 {listperms syntax} -body {
+    ns_perm listperms ?
+} -returnCodes error -result {wrong # args: should be "ns_perm listperms "}
+
+test ns_perm-2.14 {ns_permreload syntax} -body {
+    ns_permreload ?
+} -returnCodes error -result {wrong # args: should be "ns_permreload"}
+
+test ns_perm-2.15 {ns_permpasswd syntax} -body {
+    ns_permpasswd
+} -returnCodes error -result {wrong # args: should be "ns_permpasswd targetuser oldpass newpass"}
+
+
+cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

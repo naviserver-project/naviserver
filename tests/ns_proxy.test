@@ -60,9 +60,62 @@ test ns_proxy-2.9 {configuration options types} -body {
     ns_proxy configure testpool -maxruns dummy
 } -returnCodes error -result {expected integer but got "dummy"}
 
-test ns_proxy-2.10 {clear slaves basic syntax} -body {
+test ns_proxy-2.10 {active basic syntax} -body {
+    ns_proxy active
+} -returnCodes error -result {wrong # args: should be "ns_proxy active /pool/ ?handle?"}
+
+test ns_proxy-2.11 {cleanup basic syntax} -body {
+    ns_proxy cleanup ?
+} -returnCodes error -result {wrong # args: should be "ns_proxy cleanup"}
+
+test ns_proxy-2.12 {clear basic syntax} -body {
     ns_proxy clear
 } -returnCodes error -result {wrong # args: should be "ns_proxy clear /pool/ ?handle?"}
+
+test ns_proxy-2.13 {eval basic syntax} -body {
+    ns_proxy eval
+} -returnCodes error -result {wrong # args: should be "ns_proxy eval /handle/ /script/"}
+
+test ns_proxy-2.14 {free basic syntax} -body {
+    ns_proxy free
+} -returnCodes error -result {wrong # args: should be "ns_proxy free /pool/"}
+
+test ns_proxy-2.15 {handles basic syntax} -body {
+    ns_proxy handles ? ?
+} -returnCodes error -result {wrong # args: should be "ns_proxy handles ?handle?"}
+
+test ns_proxy-2.16 {pools basic syntax} -body {
+    ns_proxy pools ?
+} -returnCodes error -result {wrong # args: should be "ns_proxy pools "}
+
+test ns_proxy-2.17 {recv basic syntax} -body {
+    ns_proxy recv
+} -returnCodes error -result {wrong # args: should be "ns_proxy recv /handle/"}
+
+test ns_proxy-2.18 {release basic syntax} -body {
+    ns_proxy release
+} -returnCodes error -result {wrong # args: should be "ns_proxy release /handle/"}
+
+test ns_proxy-2.19 {send basic syntax} -body {
+    ns_proxy send
+} -returnCodes error -result {wrong # args: should be "ns_proxy send /handle/ /script/"}
+
+test ns_proxy-2.20 {stats basic syntax} -body {
+    ns_proxy stats
+} -returnCodes error -result {wrong # args: should be "ns_proxy stats /pool/"}
+
+test ns_proxy-2.21 {stop basic syntax} -body {
+    ns_proxy stop
+} -returnCodes error -result {wrong # args: should be "ns_proxy stop /pool/ ?handle?"}
+
+test ns_proxy-2.22 {wait basic syntax} -body {
+    ns_proxy wait
+} -returnCodes error -result {wrong # args: should be "ns_proxy wait /handle/ ?timeout?"}
+
+test ns_proxy-2.23 {workers basic syntax} -body {
+    ns_proxy workers
+} -returnCodes error -result {wrong # args: should be "ns_proxy workers /pool/"}
+
 
 test ns_proxy-3.1 {get base syntax} -body {
     ns_proxy get

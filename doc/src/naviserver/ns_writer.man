@@ -106,7 +106,6 @@ latency and disk usage).
 	[opt [option "-driver driver"]] \
 	[opt [arg size]]]
 
-
 [para]
 Query or set configuration parameter [term writersize] of the
 writer(s) of the current or specified driver. When [option "-driver"]

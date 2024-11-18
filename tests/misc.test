@@ -162,24 +162,28 @@ test ns_strcoll-3.3 {sort with upper and lowercase characters, locale C} \
 #  test ns_valid_utf8
 #######################################################################################
 
-test ns_valid_utf8-1.0 {ns_valid_utf8 with typical value} -body {
+test ns_valid_utf8-1.0 {ns_valid_utf8 basic syntax} -body {
+    ns_valid_utf8 - - -
+} -returnCodes error -result {wrong # args: should be "ns_valid_utf8 /string/ ?error?"}
+
+test ns_valid_utf8-1.1 {ns_valid_utf8 with typical value} -body {
     return [ns_valid_utf8 "hello world"]
 } -result 1
 
-test ns_valid_utf8-1.1 {invalid utf8, containing x85 at the end} -body {
+test ns_valid_utf8-1.2 {invalid utf8, containing x85 at the end} -body {
     return [ns_valid_utf8 "forschungsprojek\x85"]
 } -result 0
 
-test ns_valid_utf8-1.2 {valid utf8, containing x85 at the end} -body {
+test ns_valid_utf8-1.3 {valid utf8, containing x85 at the end} -body {
     return [ns_valid_utf8 "forschungsprojek\xc3\x85"]
 } -result 1
 
-test ns_valid_utf8-1.3 {invalid utf8, containing xF0 at the end} -body {
+test ns_valid_utf8-1.4 {invalid utf8, containing xF0 at the end} -body {
     ns_valid_utf8 "forschungsprojek\xF0" errorString
     set errorString
 } -result {forschungs...|\xf0|}
 
-test ns_valid_utf8-1.4 {invalid utf8, containing x85 in the middle} -body {
+test ns_valid_utf8-1.5 {invalid utf8, containing x85 in the middle} -body {
     ns_valid_utf8 "mot\x85rhead" errorString
     set errorString
 } -result {mot|\x85r|...}
@@ -289,6 +293,15 @@ test ns_ip_match--2.4 {ns_ip match IPv4} -body {
 } -result {1 1 1}
 
 
+#######################################################################################
+#  Other commands, in part defined in Tcl
+#######################################################################################
+
+test ns_urlcharset-1.0 {ns_urlcharset basic syntax} -body {
+    ns_urlcharset
+} -returnCodes error -result {wrong # args: should be "ns_urlcharset charset"}
+
+# ns_urlcharset is a Tcl proc: message should be {wrong # args: should be "ns_urlcharset /charset/"}
 
 #
 # Local variables:
