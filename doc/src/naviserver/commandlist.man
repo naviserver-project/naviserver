@@ -346,7 +346,6 @@ sections of related commands.
 [call [cmd ns_httptime]]
 [call [cmd ns_localtime]]
 [call [cmd ns_parsehttptime]]
-[call [cmd ns_parsetime]]
 [call [cmd ns_time]]
 [list_end]
 
@@ -550,6 +549,7 @@ sections of related commands.
 [call [cmd "ns_isformcached"]]          Obsolete.
 [call [cmd "ns_link"]]                  Use [cmd "file link -hard ..."] instead.
 [call [cmd "ns_mkdir"]]                 Use [cmd "file mkdir"] instead.
+[call [cmd "ns_parsetime"]]             Use [cmd "clock format ..."] instead.
 [call [cmd "ns_passwordcheck"]]         Use [cmd "ns_perm checkpass"] instead.
 [call [cmd "ns_puts"]]                  Use [cmd "ns_adp_puts"] instead.
 [call [cmd "ns_register_adptag"]]       Use [cmd "ns_adp_registerscript"] instead.

@@ -211,6 +211,7 @@ proc ns_joinurl {dict} {
 #
 
 proc ns_parsetime {option time} {
+    ns_deprecated "clock format"
 
     set parts {sec min hour mday mon year wday yday isdst}
     set pos [lsearch -exact $parts $option]
