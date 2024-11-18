@@ -21,12 +21,6 @@ or as a number with a time unit. Valid time units are
 
 [list_begin definitions]
 
-[call [cmd ns_time] [opt [arg {arg arg ...}]]]
-
-[list_end]
-
-[list_begin definitions]
-
 [call [cmd  {ns_time}]]
 
 Returns the seconds portion of the current time.
