@@ -2231,7 +2231,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
         break;
 
     case PPoolsIdx:
-        if (objc >= 2) {
+        if (objc > 2) {
             Tcl_WrongNumArgs(interp, 2, objv, "");
             result = TCL_ERROR;
         } else {
