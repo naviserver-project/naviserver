@@ -155,6 +155,18 @@ test ns_set-1.39 {basic syntax ns_set format} -body {
     ns_set format
 } -returnCodes error -result {wrong # args: should be "ns_set format ?-noname? ?-lead /string/? ?-separator /string/? ?--? /setId/"}
 
+test ns_set-1.40 {basic syntax ns_set keys } -body {
+    ns_set keys
+} -returnCodes error -result {wrong # args: should be "ns_set keys /setId/ ?pattern?"}
+
+test ns_set-1.41 {basic syntax ns_set values } -body {
+    ns_set values
+} -returnCodes error -result {wrong # args: should be "ns_set values /setId/ ?pattern?"}
+
+test ns_set-1.41 {basic syntax ns_set list } -body {
+    ns_set list x
+} -returnCodes error -result {wrong # args: should be "ns_set list"}
+
 
 
 test ns_set-2.0 {basic operation ns_set create without args} -body {

@@ -1526,28 +1526,48 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
             break;
 
         case CHoldIdx:
-            cachePtr->hold = NS_TRUE;
+            if (objc > 2) {
+                Tcl_WrongNumArgs(interp, 2, objv, NULL);
+                result = TCL_ERROR;
+            } else {
+                cachePtr->hold = NS_TRUE;
+            }
             break;
 
         case CPeekIdx: NS_FALL_THROUGH; /* fall through */
         case CGetIdx:
-            memset(filterPtr, 0, sizeof(*filterPtr));
-            filterPtr->proc = LogToDString;
-            filterPtr->arg  = &ds;
-            Ns_DStringInit(&ds);
-            LogFlush(cachePtr, filterPtr, -1, (opt == CGetIdx), NS_FALSE);
-            Tcl_DStringResult(interp, &ds);
+            if (objc > 2) {
+                Tcl_WrongNumArgs(interp, 2, objv, NULL);
+                result = TCL_ERROR;
+            } else {
+                memset(filterPtr, 0, sizeof(*filterPtr));
+                filterPtr->proc = LogToDString;
+                filterPtr->arg  = &ds;
+                Ns_DStringInit(&ds);
+                LogFlush(cachePtr, filterPtr, -1, (opt == CGetIdx), NS_FALSE);
+                Tcl_DStringResult(interp, &ds);
+            }
             break;
 
         case CReleaseIdx:
             cachePtr->hold = NS_FALSE;
             NS_FALL_THROUGH; /* fall through */
         case CFlushIdx:
-            LogFlush(cachePtr, filters, -1, NS_TRUE, NS_TRUE);
+            if (objc > 2) {
+                Tcl_WrongNumArgs(interp, 2, objv, NULL);
+                result = TCL_ERROR;
+            } else {
+                LogFlush(cachePtr, filters, -1, NS_TRUE, NS_TRUE);
+            }
             break;
 
         case CCountIdx:
-            Tcl_SetObjResult(interp, Tcl_NewIntObj(cachePtr->count));
+            if (objc > 2) {
+                Tcl_WrongNumArgs(interp, 2, objv, NULL);
+                result = TCL_ERROR;
+            } else {
+                Tcl_SetObjResult(interp, Tcl_NewIntObj(cachePtr->count));
+            }
             break;
 
         case CTruncIdx: {
@@ -1575,22 +1595,32 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
             break;
 
         case CSeveritiesIdx:
-            /*
-             * Return all registered severities in a list
-             */
-            objPtr = Tcl_GetObjResult(interp);
-            for (i = 0; i < severityIdx; i++) {
-                if (Tcl_ListObjAppendElement(interp, objPtr,
-                                             Tcl_NewStringObj(severityConfig[i].label, TCL_INDEX_NONE))
-                    != TCL_OK) {
-                    result = TCL_ERROR;
-                    break;
+            if (objc > 2) {
+                Tcl_WrongNumArgs(interp, 2, objv, NULL);
+                result = TCL_ERROR;
+            } else {
+                /*
+                 * Return all registered severities in a list
+                 */
+                objPtr = Tcl_GetObjResult(interp);
+                for (i = 0; i < severityIdx; i++) {
+                    if (Tcl_ListObjAppendElement(interp, objPtr,
+                                                 Tcl_NewStringObj(severityConfig[i].label, TCL_INDEX_NONE))
+                        != TCL_OK) {
+                        result = TCL_ERROR;
+                        break;
+                    }
                 }
             }
             break;
 
         case CStatsIdx:
-            Tcl_SetObjResult(interp, LogStats());
+            if (objc > 2) {
+                Tcl_WrongNumArgs(interp, 2, objv, NULL);
+                result = TCL_ERROR;
+            } else {
+                Tcl_SetObjResult(interp, LogStats());
+            }
             break;
 
         default:

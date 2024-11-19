@@ -18,15 +18,66 @@ test ns_log-1.2 {basic syntax} -body {
 
 
 
-test ns_log-2.1 {basic syntax} -body {
+test ns_logctl-1.0 {basic syntax} -body {
     ns_logctl
 } -returnCodes error -result {wrong # args: should be "ns_logctl /subcommand/ ?arg?"}
 
-test ns_log-2.2 {basic syntax} -body {
+test ns_logctl-1.1 {basic syntax} -body {
     ns_logctl ?
 } -returnCodes error -result {bad subcommand "?": must be count, flush, get, grep, hold, peek, register, release, severities, severity, stats, truncate, or unregister}
 
+test ns_logctl-1.2 {syntax: ns_logctl count} -body {
+    ns_logctl count -
+} -returnCodes error -result {wrong # args: should be "ns_logctl count"}
 
+test ns_logctl-1.3 {syntax: ns_logctl flush} -body {
+    ns_logctl flush -
+} -returnCodes error -result {wrong # args: should be "ns_logctl flush"}
+
+test ns_logctl-1.5 {syntax: ns_logctl grep} -body {
+    ns_logctl grep -
+} -returnCodes error -result {Unable to open the file '/usr/local/src/naviserver/tests/nsd.log'}
+
+test ns_logctl-1.6 {syntax: ns_logctl hold} -body {
+    ns_logctl hold -
+} -returnCodes error -result {wrong # args: should be "ns_logctl hold"}
+
+test ns_logctl-1.7 {syntax: ns_logctl peek} -body {
+    ns_logctl peek -
+} -returnCodes error -result {wrong # args: should be "ns_logctl peek"}
+
+test ns_logctl-1.8 {syntax: ns_logctl register} -body {
+    ns_logctl register
+} -returnCodes error -result {wrong # args: should be "ns_logctl register /script/ ?arg?"}
+
+test ns_logctl-1.9 {syntax: ns_logctl release} -body {
+    ns_logctl release -
+} -returnCodes error -result {wrong # args: should be "ns_logctl release"}
+
+test ns_logctl-1.10 {syntax: ns_logctl severities} -body {
+    ns_logctl severities -
+} -returnCodes error -result {wrong # args: should be "ns_logctl severities"}
+
+test ns_logctl-1.11 {syntax: ns_logctl severity} -body {
+    ns_logctl severity
+} -returnCodes error -result {wrong # args: should be "ns_logctl severity /severity/ ?-color /color/? ?-intensity /intensity/? ?bool?"}
+
+test ns_logctl-1.12 {syntax: ns_logctl stats} -body {
+    ns_logctl stats -
+} -returnCodes error -result {wrong # args: should be "ns_logctl stats"}
+
+test ns_logctl-1.13 {syntax: ns_logctl truncate} -body {
+    ns_logctl truncate 1 -
+} -returnCodes error -result {wrong # args: should be "ns_logctl truncate ?count[0,MAX]?"}
+
+test ns_logctl-1.14 {syntax: ns_logctl unregister} -body {
+    ns_logctl unregister
+} -returnCodes error -result {wrong # args: should be "ns_logctl unregister /handle/"}
+
+
+#
+# general tests
+#
 
 ns_logctl hold
 ns_logctl trunc

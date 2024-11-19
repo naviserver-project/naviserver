@@ -1462,7 +1462,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 
     enum {
         SActiveIdx, SAllIdx,
-        SConnectionsIdx, SConnectionRateLimitIdx,
+        SConnectionRateLimitIdx, SConnectionsIdx,
         SFiltersIdx,
         SHostsIdx,
         SKeepaliveIdx,
@@ -1527,31 +1527,66 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
          || subcmd == SPagedirIdx
          || subcmd == SRequestprocsIdx
          || subcmd == SUrl2fileIdx
-         || subcmd == SVhostenabledIdx)
+         || subcmd == SVhostenabledIdx
+         )
         && pool != NULL) {
             Ns_TclPrintfResult(interp, "option -pool is not allowed for this subcommand");
             return TCL_ERROR;
     }
 
-    if (subcmd != SMinthreadsIdx
-        && subcmd != SMaxthreadsIdx
-        && subcmd != SMapIdx
-        && subcmd != SMappedIdx
-        && subcmd != SUnmapIdx
-        && subcmd != SActiveIdx
-        && subcmd != SQueuedIdx
-        && subcmd != SAllIdx
-        && subcmd != SPoolRateLimitIdx
-        && subcmd != SConnectionRateLimitIdx
+    /*
+     * Legacy handling for the following commands:
+     *
+     *    ns_server active ?pool?
+     *    ns_server all ?pool?
+     *    ns_server queued ?pool?
+     *    ns_server connections ?pool?
+     *    ns_server keepalive ?pool?
+     *    ns_server pools ?pattern?
+     *    ns_server waiting ?pool?
+     */
+
+    if (subcmd == SActiveIdx
+        || subcmd == SAllIdx
+        || subcmd == SQueuedIdx
+        || subcmd == SConnectionsIdx
+        || subcmd == SKeepaliveIdx
+        || subcmd == SPoolsIdx
+        || subcmd == SQueuedIdx
+        || subcmd == SWaitingIdx
         ) {
         /*
          * Just for backwards compatibility
          */
         if (nargs > 0) {
-            Ns_LogDeprecated(objv, objc, "ns_server ?-pool p? ...",
-                             "Passing pool as second argument is deprecated.");
-            optArg = Tcl_GetString(objv[objc-1]);
-            pool = optArg;
+            const char *last = Tcl_GetString(objv[objc-1]);
+            bool        validPoolSyntax = (*last != '-');
+            bool        legacy = NS_FALSE;
+
+            if (objc >= 1) {
+                const char *subCmdName = subcmds[subcmd].key;
+                const char *secondLast = Tcl_GetString(objv[objc-2]);
+
+                if (strcmp(subCmdName, secondLast) == 0 && validPoolSyntax) {
+                    legacy = NS_TRUE;
+                }
+            }
+
+            if (legacy) {
+                Ns_LogDeprecated(objv, objc, "ns_server ?-pool p? ...",
+                                 "Passing pool as second argument is deprecated.");
+                optArg = Tcl_GetString(objv[objc-1]);
+                pool = optArg;
+
+            } else if (validPoolSyntax) {
+                /*
+                 * trigger usage error
+                 */
+                //fprintf(stderr, "... trigger early error validPoolSyntax %d\n", validPoolSyntax);
+                if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
+                    return TCL_ERROR;
+                }
+            }
         }
     }
 
@@ -1579,7 +1614,9 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
          * The following subcommands are server specific (do not allow -pool option)
          */
     case SPoolsIdx:
-        {
+        if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
+            return TCL_ERROR;
+        } else {
             Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
 
             for (poolPtr = servPtr->pools.firstPtr; poolPtr != NULL; poolPtr = poolPtr->nextPtr) {
@@ -1590,13 +1627,19 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         break;
 
     case SFiltersIdx:
-        Tcl_DStringInit(dsPtr);
-        NsGetFilters(dsPtr, servPtr->server);
-        Tcl_DStringResult(interp, dsPtr);
+        if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
+            return TCL_ERROR;
+        } else {
+            Tcl_DStringInit(dsPtr);
+            NsGetFilters(dsPtr, servPtr->server);
+            Tcl_DStringResult(interp, dsPtr);
+        }
         break;
 
     case SHostsIdx:
-        {
+        if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
+            return TCL_ERROR;
+        } else {
             Tcl_HashSearch  search;
             Tcl_HashEntry  *hPtr;
             Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
@@ -1612,41 +1655,69 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         break;
 
     case SPagedirIdx:
-        Tcl_DStringInit(dsPtr);
-        NsPageRoot(dsPtr, servPtr, NULL);
-        Tcl_DStringResult(interp, dsPtr);
+        if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
+            return TCL_ERROR;
+        } else {
+            Tcl_DStringInit(dsPtr);
+            NsPageRoot(dsPtr, servPtr, NULL);
+            Tcl_DStringResult(interp, dsPtr);
+        }
         break;
 
     case SServerdirIdx:
-        Tcl_DStringInit(dsPtr);
-        Tcl_DStringAppend(dsPtr, servPtr->fastpath.serverdir, TCL_INDEX_NONE);
-        Tcl_DStringResult(interp, dsPtr);
+        if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
+            return TCL_ERROR;
+        } else {
+            Tcl_DStringInit(dsPtr);
+            Tcl_DStringAppend(dsPtr, servPtr->fastpath.serverdir, TCL_INDEX_NONE);
+            Tcl_DStringResult(interp, dsPtr);
+        }
         break;
 
     case SRequestprocsIdx:
-        Tcl_DStringInit(dsPtr);
-        NsGetRequestProcs(dsPtr, servPtr->server);
-        Tcl_DStringResult(interp, dsPtr);
+        if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
+            return TCL_ERROR;
+        } else {
+            Tcl_DStringInit(dsPtr);
+            NsGetRequestProcs(dsPtr, servPtr->server);
+            Tcl_DStringResult(interp, dsPtr);
+        }
         break;
 
     case STracesIdx:
-        Tcl_DStringInit(dsPtr);
-        NsGetTraces(dsPtr, servPtr->server);
-        Tcl_DStringResult(interp, dsPtr);
+        if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
+            return TCL_ERROR;
+        } else {
+            Tcl_DStringInit(dsPtr);
+            NsGetTraces(dsPtr, servPtr->server);
+            Tcl_DStringResult(interp, dsPtr);
+        }
         break;
 
     case STcllibIdx:
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(servPtr->tcl.library, TCL_INDEX_NONE));
+        if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
+            return TCL_ERROR;
+        } else {
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(servPtr->tcl.library, TCL_INDEX_NONE));
+        }
         break;
 
     case SUrl2fileIdx:
-        Tcl_DStringInit(dsPtr);
-        NsGetUrl2FileProcs(dsPtr, servPtr->server);
-        Tcl_DStringResult(interp, dsPtr);
+        if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
+            return TCL_ERROR;
+        } else {
+            Tcl_DStringInit(dsPtr);
+            NsGetUrl2FileProcs(dsPtr, servPtr->server);
+            Tcl_DStringResult(interp, dsPtr);
+        }
         break;
 
     case SVhostenabledIdx:
-        Tcl_SetObjResult(interp, Tcl_NewBooleanObj(servPtr->vhost.enabled));
+        if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
+            return TCL_ERROR;
+        } else {
+            Tcl_SetObjResult(interp, Tcl_NewBooleanObj(servPtr->vhost.enabled));
+        }
         break;
 
         /*
@@ -1658,8 +1729,12 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         break;
 
     case SKeepaliveIdx:
-        Ns_LogDeprecated(objv, objc, "ns_conn keepalive", NULL);
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+        if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
+            return TCL_ERROR;
+        } else {
+            Ns_LogDeprecated(objv, objc, "ns_conn keepalive", NULL);
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+        }
         break;
 
     case SMapIdx:
@@ -1691,44 +1766,56 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         break;
 
     case SConnectionsIdx:
-        Tcl_SetObjResult(interp, Tcl_NewLongObj((long)poolPtr->stats.processed));
+        if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
+            return TCL_ERROR;
+        } else {
+            Tcl_SetObjResult(interp, Tcl_NewLongObj((long)poolPtr->stats.processed));
+        }
         break;
 
     case SStatsIdx:
-        Tcl_DStringInit(dsPtr);
+        if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
+            return TCL_ERROR;
+        } else {
+            Tcl_DStringInit(dsPtr);
 
-        Ns_DStringPrintf(dsPtr, "requests %lu ", poolPtr->stats.processed);
-        Ns_DStringPrintf(dsPtr, "spools %lu ", poolPtr->stats.spool);
-        Ns_DStringPrintf(dsPtr, "queued %lu ", poolPtr->stats.queued);
-        Ns_DStringPrintf(dsPtr, "dropped %lu ", poolPtr->stats.dropped);
-        Ns_DStringPrintf(dsPtr, "sent %" TCL_LL_MODIFIER "d ", poolPtr->rate.bytesSent);
-        Ns_DStringPrintf(dsPtr, "connthreads %lu", poolPtr->stats.connthreads);
+            Ns_DStringPrintf(dsPtr, "requests %lu ", poolPtr->stats.processed);
+            Ns_DStringPrintf(dsPtr, "spools %lu ", poolPtr->stats.spool);
+            Ns_DStringPrintf(dsPtr, "queued %lu ", poolPtr->stats.queued);
+            Ns_DStringPrintf(dsPtr, "dropped %lu ", poolPtr->stats.dropped);
+            Ns_DStringPrintf(dsPtr, "sent %" TCL_LL_MODIFIER "d ", poolPtr->rate.bytesSent);
+            Ns_DStringPrintf(dsPtr, "connthreads %lu", poolPtr->stats.connthreads);
 
-        Ns_DStringAppend(dsPtr, " accepttime ");
-        Ns_DStringAppendTime(dsPtr, &poolPtr->stats.acceptTime);
+            Ns_DStringAppend(dsPtr, " accepttime ");
+            Ns_DStringAppendTime(dsPtr, &poolPtr->stats.acceptTime);
 
-        Ns_DStringAppend(dsPtr, " queuetime ");
-        Ns_DStringAppendTime(dsPtr, &poolPtr->stats.queueTime);
+            Ns_DStringAppend(dsPtr, " queuetime ");
+            Ns_DStringAppendTime(dsPtr, &poolPtr->stats.queueTime);
 
-        Ns_DStringAppend(dsPtr, " filtertime ");
-        Ns_DStringAppendTime(dsPtr, &poolPtr->stats.filterTime);
+            Ns_DStringAppend(dsPtr, " filtertime ");
+            Ns_DStringAppendTime(dsPtr, &poolPtr->stats.filterTime);
 
-        Ns_DStringAppend(dsPtr, " runtime ");
-        Ns_DStringAppendTime(dsPtr, &poolPtr->stats.runTime);
+            Ns_DStringAppend(dsPtr, " runtime ");
+            Ns_DStringAppendTime(dsPtr, &poolPtr->stats.runTime);
 
-        Ns_DStringAppend(dsPtr, " tracetime ");
-        Ns_DStringAppendTime(dsPtr, &poolPtr->stats.traceTime);
+            Ns_DStringAppend(dsPtr, " tracetime ");
+            Ns_DStringAppendTime(dsPtr, &poolPtr->stats.traceTime);
 
-        Tcl_DStringResult(interp, dsPtr);
+            Tcl_DStringResult(interp, dsPtr);
+        }
         break;
 
     case SThreadsIdx:
-        Ns_MutexLock(&poolPtr->threads.lock);
-        Ns_TclPrintfResult(interp,
-                           "min %d max %d current %d idle %d stopping 0",
-                           poolPtr->threads.min, poolPtr->threads.max,
-                           poolPtr->threads.current, poolPtr->threads.idle);
-        Ns_MutexUnlock(&poolPtr->threads.lock);
+        if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
+            return TCL_ERROR;
+        } else {
+            Ns_MutexLock(&poolPtr->threads.lock);
+            Ns_TclPrintfResult(interp,
+                               "min %d max %d current %d idle %d stopping 0",
+                               poolPtr->threads.min, poolPtr->threads.max,
+                               poolPtr->threads.current, poolPtr->threads.idle);
+            Ns_MutexUnlock(&poolPtr->threads.lock);
+        }
         break;
 
     case SActiveIdx:

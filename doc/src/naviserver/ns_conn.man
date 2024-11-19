@@ -10,12 +10,6 @@ This command is used to retrieve various pieces of information about a connectio
 
 [section {COMMANDS}]
 
-[list_begin definitions]
-
-[call [cmd ns_conn] [arg option] [opt [arg {arg arg ...}]]]
-
-[list_end]
-
 The subcommands of ns_conn are (in alphabetical order):
 
 [list_begin definitions]

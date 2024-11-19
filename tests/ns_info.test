@@ -5,13 +5,177 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
-test ns_info-1.1 {basic syntax: plain call} -body {
+test ns_info-1.0 {basic syntax: plain call} -body {
     ns_info
 } -returnCodes error -result {wrong # args: should be "ns_info /subcommand/"}
 
-test ns_info-1.2 {basic syntax: wrong argument} -body {
+test ns_info-1.1 {basic syntax: wrong argument} -body {
     ns_info ?
 } -returnCodes error -result {bad subcommand "?": must be address, argv, argv0, boottime, builddate, buildinfo, callbacks, config, home, hostname, ipv6, locks, log, major, meminfo, minor, mimetypes, name, nsd, pagedir, pageroot, patchlevel, pid, platform, pools, scheduled, server, servers, sockcallbacks, ssl, tag, tcllib, threads, uptime, version, winnt, filters, traces, requestprocs, url2file, shutdownpending, or started}
+
+
+test ns_info-1.2 {syntax: ns_info argv} -body {
+    ns_info argv x
+} -returnCodes error -result {wrong # args: should be "ns_info argv"}
+
+test ns_info-1.3 {syntax: ns_info argv0} -body {
+    ns_info argv0 x
+} -returnCodes error -result {wrong # args: should be "ns_info argv0"}
+
+test ns_info-1.4 {syntax: ns_info boottime} -body {
+    ns_info boottime x
+} -returnCodes error -result {wrong # args: should be "ns_info boottime"}
+
+test ns_info-1.5 {syntax: ns_info builddate} -body {
+    ns_info builddate x
+} -returnCodes error -result {wrong # args: should be "ns_info builddate"}
+
+test ns_info-1.6 {syntax: ns_info buildinfo} -body {
+    ns_info buildinfo x
+} -returnCodes error -result {wrong # args: should be "ns_info buildinfo"}
+
+test ns_info-1.7 {syntax: ns_info callbacks} -body {
+    ns_info callbacks x
+} -returnCodes error -result {wrong # args: should be "ns_info callbacks"}
+
+test ns_info-1.8 {syntax: ns_info config} -body {
+    ns_info config x
+} -returnCodes error -result {wrong # args: should be "ns_info config"}
+
+test ns_info-1.9 {syntax: ns_info filters} -body {
+    ns_info filters x
+} -returnCodes error -result {wrong # args: should be "ns_info filters"}
+
+test ns_info-1.10 {syntax: ns_info home} -body {
+    ns_info home x
+} -returnCodes error -result {wrong # args: should be "ns_info home"}
+
+test ns_info-1.11 {syntax: ns_info hostname} -body {
+    ns_info hostname x
+} -returnCodes error -result {wrong # args: should be "ns_info hostname"}
+
+test ns_info-1.12 {syntax: ns_info ipv6} -body {
+    ns_info ipv6 x
+} -returnCodes error -result {wrong # args: should be "ns_info ipv6"}
+
+test ns_info-1.13 {syntax: ns_info locks} -body {
+    ns_info locks x
+} -returnCodes error -result {wrong # args: should be "ns_info locks"}
+
+test ns_info-1.14 {syntax: ns_info log} -body {
+    ns_info log x
+} -returnCodes error -result {wrong # args: should be "ns_info log"}
+
+test ns_info-1.15 {syntax: ns_info major} -body {
+    ns_info major x
+} -returnCodes error -result {wrong # args: should be "ns_info major"}
+
+test ns_info-1.16 {syntax: ns_info meminfo} -body {
+    ns_info meminfo x
+} -returnCodes error -result {wrong # args: should be "ns_info meminfo ?-release?"}
+
+test ns_info-1.17 {syntax: ns_info mimetypes} -body {
+    ns_info mimetypes x
+} -returnCodes error -result {wrong # args: should be "ns_info mimetypes"}
+
+test ns_info-1.18 {syntax: ns_info minor} -body {
+    ns_info minor x
+} -returnCodes error -result {wrong # args: should be "ns_info minor"}
+
+test ns_info-1.19 {syntax: ns_info name} -body {
+    ns_info name x
+} -returnCodes error -result {wrong # args: should be "ns_info name"}
+
+test ns_info-1.20 {syntax: ns_info nsd} -body {
+    ns_info nsd x
+} -returnCodes error -result {wrong # args: should be "ns_info nsd"}
+
+test ns_info-1.21 {syntax: ns_info pagedir} -body {
+    ns_info pagedir x
+} -returnCodes error -result {wrong # args: should be "ns_info pagedir"}
+
+test ns_info-1.22 {syntax: ns_info pageroot} -body {
+    ns_info pageroot x
+} -returnCodes error -result {wrong # args: should be "ns_info pageroot"}
+
+test ns_info-1.23 {syntax: ns_info patchlevel} -body {
+    ns_info patchlevel x
+} -returnCodes error -result {wrong # args: should be "ns_info patchlevel"}
+
+test ns_info-1.24 {syntax: ns_info pid} -body {
+    ns_info pid x
+} -returnCodes error -result {wrong # args: should be "ns_info pid"}
+
+test ns_info-1.25 {syntax: ns_info platform} -body {
+    ns_info platform x
+} -returnCodes error -result {wrong # args: should be "ns_info platform"}
+
+test ns_info-1.26 {syntax: ns_info pools} -body {
+    ns_info pools x
+} -returnCodes error -result {wrong # args: should be "ns_info pools"}
+
+test ns_info-1.27 {syntax: ns_info requestprocs} -body {
+    ns_info requestprocs x
+} -returnCodes error -result {wrong # args: should be "ns_info requestprocs"}
+
+test ns_info-1.28 {syntax: ns_info scheduled} -body {
+    ns_info scheduled x
+} -returnCodes error -result {wrong # args: should be "ns_info scheduled"}
+
+test ns_info-1.29 {syntax: ns_info server} -body {
+    ns_info server x
+} -returnCodes error -result {wrong # args: should be "ns_info server"}
+
+test ns_info-1.30 {syntax: ns_info servers} -body {
+    ns_info servers x
+} -returnCodes error -result {wrong # args: should be "ns_info servers"}
+
+test ns_info-1.31 {syntax: ns_info shutdownpending} -body {
+    ns_info shutdownpending x
+} -returnCodes error -result {wrong # args: should be "ns_info shutdownpending"}
+
+test ns_info-1.33 {syntax: ns_info ssl} -body {
+    ns_info ssl x
+} -returnCodes error -result {wrong # args: should be "ns_info ssl"}
+
+test ns_info-1.34 {syntax: ns_info started} -body {
+    ns_info started x
+} -returnCodes error -result {wrong # args: should be "ns_info started"}
+
+test ns_info-1.35 {syntax: ns_info tag} -body {
+    ns_info tag x
+} -returnCodes error -result {wrong # args: should be "ns_info tag"}
+
+test ns_info-1.36 {syntax: ns_info tcllib} -body {
+    ns_info tcllib x
+} -returnCodes error -result {wrong # args: should be "ns_info tcllib"}
+
+test ns_info-1.37 {syntax: ns_info threads} -body {
+    ns_info threads x
+} -returnCodes error -result {wrong # args: should be "ns_info threads"}
+
+test ns_info-1.38 {syntax: ns_info traces} -body {
+    ns_info traces x
+} -returnCodes error -result {wrong # args: should be "ns_info traces"}
+
+test ns_info-1.39 {syntax: ns_info uptime} -body {
+    ns_info uptime x
+} -returnCodes error -result {wrong # args: should be "ns_info uptime"}
+
+test ns_info-1.40 {syntax: ns_info url2file} -body {
+    ns_info url2file x
+} -returnCodes error -result {wrong # args: should be "ns_info url2file"}
+
+test ns_info-1.41 {syntax: ns_info version} -body {
+    ns_info version x
+} -returnCodes error -result {wrong # args: should be "ns_info version"}
+
+test ns_info-1.42 {syntax: ns_info winnt} -body {
+    ns_info winnt x
+} -returnCodes error -result {wrong # args: should be "ns_info winnt"}
+
+
+
 
 test ns_info-2.1.1 {basic operation} -body {
     set addr [ns_info address]

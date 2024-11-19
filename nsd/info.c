@@ -689,8 +689,12 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
     }
     if ((opt != IMeminfoIdx && objc != 2)
         || (opt == IMeminfoIdx && (objc < 2 || objc > 3))) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/");
-        return TCL_ERROR;
+        if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+            return TCL_ERROR;
+        } else {
+            Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/");
+            return TCL_ERROR;
+        }
     }
 
     Tcl_DStringInit(&ds);

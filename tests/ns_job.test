@@ -1,0 +1,152 @@
+# -*- Tcl -*-
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+#
+# The Initial Developer of the Original Code and related documentation
+# is America Online, Inc. Portions created by AOL are Copyright (C) 1999
+# America Online, Inc. All Rights Reserved.
+#
+# 
+
+#
+# This file tests our expectations about the pristine state of Tcl interps
+# as controlled by the code in nsd/init.tcl.
+#
+# Support code for these tests lives in: tests/testserver/modules/init-test.tcl
+#
+
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+#
+# Syntax tests
+#
+
+test ns_job-1.0 {syntax ns_job} -body {
+     ns_job
+} -returnCodes error -result {wrong # args: should be "ns_job cancel|configure|create|delete|exists|genid|joblist|jobs|queue|queuelist|queues|threadlist|wait|waitany ?args?"}
+
+test ns_job-1.1 {syntax ns_job subcommands} -body {
+     ns_job ""
+} -returnCodes error -result {ns_job: bad subcommand "": must be cancel, configure, create, delete, exists, genid, joblist, jobs, queue, queuelist, queues, threadlist, wait, or waitany}
+
+test ns_job-1.2 {syntax: ns_job cancel} -body {
+    ns_job cancel
+} -returnCodes error -result {wrong # args: should be "ns_job cancel /queueId/ /jobId/"}
+
+test ns_job-1.3 {syntax: ns_job configure} -body {
+    ns_job configure x
+} -returnCodes error -result {wrong # args: should be "ns_job configure ?-jobsperthread /integer[0,MAX]/? ?-timeout /timeout/? ?-logminduration /logminduration/?"}
+
+test ns_job-1.4 {syntax: ns_job create} -body {
+    ns_job create
+} -returnCodes error -result {wrong # args: should be "ns_job create ?-desc /string/? /queueId/ ?maxThreads[1,MAX]?"}
+
+test ns_job-1.6 {syntax: ns_job exists} -body {
+    ns_job exists
+} -returnCodes error -result {wrong # args: should be "ns_job exists /queueId/ /jobId/"}
+
+test ns_job-1.7 {syntax: ns_job genid} -body {
+    ns_job genid x
+} -returnCodes error -result {wrong # args: should be "ns_job genid"}
+
+test ns_job-1.8 {syntax: ns_job joblist} -body {
+    ns_job joblist
+} -returnCodes error -result {wrong # args: should be "ns_job joblist /queueId/"}
+
+test ns_job-1.9 {syntax: ns_job jobs} -body {
+    ns_job jobs
+} -returnCodes error -result {wrong # args: should be "ns_job jobs /queueId/"}
+
+test ns_job-1.10 {syntax: ns_job queue} -body {
+    ns_job queue
+} -returnCodes error -result {wrong # args: should be "ns_job queue ?-detached? ?-head? ?-jobid /string/? /queueId/ /script/"}
+
+test ns_job-1.11 {syntax: ns_job queuelist} -body {
+    ns_job queuelist x
+} -returnCodes error -result {wrong # args: should be "ns_job queuelist"}
+
+test ns_job-1.12 {syntax: ns_job queues} -body {
+    ns_job queues x
+} -returnCodes error -result {wrong # args: should be "ns_job queues"}
+
+test ns_job-1.13 {syntax: ns_job threadlist} -body {
+    ns_job threadlist x
+} -returnCodes error -result {wrong # args: should be "ns_job threadlist"}
+
+test ns_job-1.14 {syntax: ns_job wait} -body {
+    ns_job wait
+} -returnCodes error -result {wrong # args: should be "ns_job wait ?-timeout /timeout/? /queueId/ /jobId/"}
+
+test ns_job-1.15 {syntax: ns_job waitany} -body {
+    ns_job waitany
+} -returnCodes error -result {wrong # args: should be "ns_job waitany ?-timeout /timeout/? /queueId/"}
+
+
+
+#
+# Functional tests
+#
+
+set qid [ns_job create init-test]
+
+test init-1.1 {procs get cloned} -body {
+    ns_job wait $qid [ns_job queue $qid { info proc testproc1 }]
+} -result testproc1
+
+
+test init-1.2 {namespaced procs get cloned} -body {
+    ns_job wait $qid [ns_job queue $qid { info proc testnamespace::testproc2 }]
+} -result ::testnamespace::testproc2
+
+
+test init-1.3 {global variables do not get cloned} -body {
+    ns_job wait $qid [ns_job queue $qid { info exists testglobalvariable }]
+} -result 0
+
+test init-1.4 {namespace variables do not get cloned} -body {
+    ns_job wait $qid [ns_job queue $qid { info exists testnamespace::testvariable2 }]
+} -result 1
+
+
+
+unset -nocomplain qid
+
+
+
+foreach {n command alias comment} {
+    1 ::testproc1                ::testalias1                 {global alias}
+    2 ::testnamespace::testproc2 ::testnamespace::testalias2  {namespace alias}
+    3 ::testproc1                ::testalias11                {global alias, no leading ::}
+} {
+    test init-2.$n $comment {
+       list [info commands $command] [catch $command result] $result [info commands $alias] [catch $alias result] $result
+    } [list $command 0 {} $alias 0 {}]
+}
+
+foreach {n command alias comment} {
+    4 ::testnamespace::testproc2 ::testnamespace::testalias12 {namespace alias, no leading ::}
+} {
+    test init-2.$n $comment copyAliasBug {
+       list [info commands $command] [catch $command result] $result [info commands $alias] [catch $alias result] $result
+    } [list $command 0 {} $alias 0 {}]
+}
+
+
+
+unset -nocomplain n command alias comment result
+
+
+
+cleanupTests
+
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

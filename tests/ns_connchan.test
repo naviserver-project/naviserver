@@ -16,9 +16,62 @@ tcltest::testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
 #
 # ns_connchan
 #
-test ns_connchan-1.0 {basic operation} -body {
+test ns_connchan-1.0 {syntax ns_connchan} -body {
      ns_connchan
 } -returnCodes error -result {wrong # args: should be "ns_connchan callback|connect|close|detach|exists|list|listen|open|read|status|write|wsencode ?args?"}
+
+test ns_connchan-1.1.0 {syntax ns_connchan subcommands} -body {
+     ns_connchan ""
+} -returnCodes error -result {ns_connchan: bad subcommand "": must be callback, connect, close, detach, exists, list, listen, open, read, status, write, or wsencode}
+
+test ns_connchan-1.1.1 {syntax: ns_connchan callback} -body {
+    ns_connchan callback
+} -returnCodes error -result {wrong # args: should be "ns_connchan callback ?-timeout /timeout/? ?-receivetimeout /receivetimeout/? ?-sendtimeout /sendtimeout/? /channel/ /script/ /when/"}
+
+test ns_connchan-1.1.3 {syntax: ns_connchan connect} -body {
+    ns_connchan connect
+} -returnCodes error -result {wrong # args: should be "ns_connchan connect ?-tls? ?-timeout /timeout/? /host/ /port/"}
+
+test ns_connchan-1.1.4 {syntax: ns_connchan detach} -body {
+    ns_connchan detach x
+} -returnCodes error -result {wrong # args: should be "ns_connchan detach"}
+
+test ns_connchan-1.1.5 {syntax: ns_connchan exists} -body {
+    ns_connchan exists
+} -returnCodes error -result {wrong # args: should be "ns_connchan exists /channel/"}
+
+test ns_connchan-1.1.6 {syntax: ns_connchan list} -body {
+    ns_connchan list x
+} -returnCodes error -result {wrong # args: should be "ns_connchan list ?-server /server/?"}
+
+test ns_connchan-1.1.7 {syntax: ns_connchan listen} -body {
+    ns_connchan listen
+} -returnCodes error -result {wrong # args: should be "ns_connchan listen ?-driver /string/? ?-server /server/? ?-bind? /address/ /port/ /script/"}
+
+test ns_connchan-1.1.8 {syntax: ns_connchan open} -body {
+    ns_connchan open
+} -returnCodes error -result {wrong # args: should be "ns_connchan open ?-driver /string/? ?-headers /ns_set/? ?-hostname /string/? ?-method /string/? ?-timeout /timeout/? ?-unix_socket /string/? ?-version /string/? /url/"}
+
+test ns_connchan-1.1.9 {syntax: ns_connchan read} -body {
+    ns_connchan read
+} -returnCodes error -result {wrong # args: should be "ns_connchan read ?-websocket? /channel/"}
+
+test ns_connchan-1.1.10 {syntax: ns_connchan status} -body {
+    ns_connchan status
+} -returnCodes error -result {wrong # args: should be "ns_connchan status ?-server /server/? /channel/"}
+
+test ns_connchan-1.1.11 {syntax: ns_connchan write} -body {
+    ns_connchan write
+} -returnCodes error -result {wrong # args: should be "ns_connchan write ?-buffered? /channel/ /msg/"}
+
+test ns_connchan-1.1.12 {syntax: ns_connchan wsencode} -body {
+    ns_connchan wsencode
+} -returnCodes error -result {wrong # args: should be "ns_connchan wsencode ?-binary? ?-fin /integer[0,1]/? ?-mask? ?-opcode continue|text|binary|close|ping|pong? /message/"}
+
+
+#
+# General tests
+#
 
 test ns_connchan-1.1 {basic operation} -body {
      ns_connchan x
