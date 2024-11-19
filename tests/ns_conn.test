@@ -4,15 +4,235 @@ package require tcltest 2.2
 namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
+#
+# Syntax tests
+#
 
-test ns_conn-1.1 {basic syntax: plain call} -body {
+test ns_conn-1.0 {basic syntax: plain call} -body {
      ns_conn
 } -returnCodes error -result {wrong # args: should be "ns_conn /subcommand/"}
 
-test ns_conn-1.2 {basic syntax: wrong argument} -body {
+test ns_conn-1.1 {basic syntax: wrong argument} -body {
      ns_conn 123
 } -returnCodes error -result {bad subcommand "123": must be acceptedcompression, auth, authpassword, authuser, channel, clientdata, close, compress, content, contentfile, contentlength, contentsentlength, copy, currentaddr, currentport, details, driver, encoding, fileheaders, filelength, fileoffset, files, flags, form, headerlength, headers, host, id, isconnected, keepalive, location, method, outputheaders, partialtimes, peeraddr, peerport, pool, port, protocol, query, ratelimit, request, server, sock, start, status, target, timeout, url, urlc, urlencoding, urlv, version, or zipaccepted}
 
+
+test ns_conn-1.1.1 {syntax: ns_conn acceptedcompression} -body {
+    ns_conn acceptedcompression x
+} -returnCodes error -result {wrong # args: should be "ns_conn acceptedcompression"}
+
+test ns_conn-1.1.2 {syntax: ns_conn auth} -body {
+    ns_conn auth x
+} -returnCodes error -result {wrong # args: should be "ns_conn auth"}
+
+test ns_conn-1.1.3 {syntax: ns_conn authpassword} -body {
+    ns_conn authpassword x
+} -returnCodes error -result {wrong # args: should be "ns_conn authpassword"}
+
+test ns_conn-1.1.4 {syntax: ns_conn authuser} -body {
+    ns_conn authuser x
+} -returnCodes error -result {wrong # args: should be "ns_conn authuser"}
+
+test ns_conn-1.1.5 {syntax: ns_conn channel} -body {
+    ns_conn channel x
+} -returnCodes error -result {wrong # args: should be "ns_conn channel"}
+
+test ns_conn-1.1.6 {syntax: ns_conn clientdata} -body {
+    ns_conn clientdata x y
+} -returnCodes error -result {wrong # args: should be "ns_conn clientdata ?value?"}
+
+test ns_conn-1.1.7 {syntax: ns_conn close} -body {
+    ns_conn close x
+} -returnCodes error -result {wrong # args: should be "ns_conn close"}
+
+test ns_conn-1.1.8 {syntax: ns_conn compress} -body {
+    ns_conn compress 1 x
+} -returnCodes error -result {wrong # args: should be "ns_conn compress ?level[0,9]?"}
+
+test ns_conn-1.1.9 {syntax: ns_conn content} -body {
+    ns_conn content 1 1 x
+} -returnCodes error -result {wrong # args: should be "ns_conn content ?-binary? ?offset[0,MAX]? ?length[1,MAX]?"}
+
+test ns_conn-1.1.10 {syntax: ns_conn contentfile} -body {
+    ns_conn contentfile x
+} -returnCodes error -result {wrong # args: should be "ns_conn contentfile"}
+
+test ns_conn-1.1.11 {syntax: ns_conn contentlength} -body {
+    ns_conn contentlength x
+} -returnCodes error -result {wrong # args: should be "ns_conn contentlength"}
+
+test ns_conn-1.1.12 {syntax: ns_conn contentsentlength} -body {
+    ns_conn contentsentlength 1 x
+} -returnCodes error -result {wrong # args: should be "ns_conn contentsentlength ?idx[0,MAX]?"}
+
+test ns_conn-1.1.13 {syntax: ns_conn copy} -body {
+    ns_conn copy
+} -returnCodes error -result {wrong # args: should be "ns_conn copy /offset[0,MAX]/ /length[0,MAX]/ /channelId/"}
+
+test ns_conn-1.1.14 {syntax: ns_conn currentaddr} -body {
+    ns_conn currentaddr x
+} -returnCodes error -result {wrong # args: should be "ns_conn currentaddr"}
+
+test ns_conn-1.1.15 {syntax: ns_conn currentport} -body {
+    ns_conn currentport x
+} -returnCodes error -result {wrong # args: should be "ns_conn currentport"}
+
+test ns_conn-1.1.16 {syntax: ns_conn details} -body {
+    ns_conn details x
+} -returnCodes error -result {wrong # args: should be "ns_conn details"}
+
+test ns_conn-1.1.17 {syntax: ns_conn driver} -body {
+    ns_conn driver x
+} -returnCodes error -result {wrong # args: should be "ns_conn driver"}
+
+test ns_conn-1.1.18 {syntax: ns_conn encoding} -body {
+    ns_conn encoding x y
+} -returnCodes error -result {wrong # args: should be "ns_conn encoding ?encoding?"}
+
+test ns_conn-1.1.19 {syntax: ns_conn fileheaders} -body {
+    ns_conn fileheaders
+} -returnCodes error -result {wrong # args: should be "ns_conn fileheaders /file/"}
+
+test ns_conn-1.1.20 {syntax: ns_conn filelength} -body {
+    ns_conn filelength
+} -returnCodes error -result {wrong # args: should be "ns_conn filelength /file/"}
+
+test ns_conn-1.1.21 {syntax: ns_conn fileoffset} -body {
+    ns_conn fileoffset
+} -returnCodes error -result {wrong # args: should be "ns_conn fileoffset /file/"}
+
+test ns_conn-1.1.22 {syntax: ns_conn files} -body {
+    ns_conn files x
+} -returnCodes error -result {wrong # args: should be "ns_conn files"}
+
+test ns_conn-1.1.23 {syntax: ns_conn flags} -body {
+    ns_conn flags x
+} -returnCodes error -result {wrong # args: should be "ns_conn flags"}
+
+test ns_conn-1.1.24 {syntax: ns_conn form} -body {
+    ns_conn form x
+} -returnCodes error -result {wrong # args: should be "ns_conn form ?-fallbackcharset /fallbackcharset/?"}
+
+test ns_conn-1.1.25 {syntax: ns_conn headerlength} -body {
+    ns_conn headerlength x
+} -returnCodes error -result {wrong # args: should be "ns_conn headerlength"}
+
+test ns_conn-1.1.26 {syntax: ns_conn headers} -body {
+    ns_conn headers x
+} -returnCodes error -result {wrong # args: should be "ns_conn headers"}
+
+test ns_conn-1.1.27 {syntax: ns_conn host} -body {
+    ns_conn host x y
+} -returnCodes error -result {wrong # args: should be "ns_conn host ?default?"}
+
+test ns_conn-1.1.28 {syntax: ns_conn id} -body {
+    ns_conn id x
+} -returnCodes error -result {wrong # args: should be "ns_conn id"}
+
+test ns_conn-1.1.29 {syntax: ns_conn isconnected} -body {
+    ns_conn isconnected x
+} -returnCodes error -result {wrong # args: should be "ns_conn isconnected"}
+
+test ns_conn-1.1.30 {syntax: ns_conn keepalive} -body {
+    ns_conn keepalive 0 y
+} -returnCodes error -result {wrong # args: should be "ns_conn keepalive ?value[0,1]?"}
+
+test ns_conn-1.1.31 {syntax: ns_conn location} -body {
+    ns_conn location x
+} -returnCodes error -result {wrong # args: should be "ns_conn location"}
+
+test ns_conn-1.1.32 {syntax: ns_conn method} -body {
+    ns_conn method x
+} -returnCodes error -result {wrong # args: should be "ns_conn method"}
+
+test ns_conn-1.1.33 {syntax: ns_conn outputheaders} -body {
+    ns_conn outputheaders x
+} -returnCodes error -result {wrong # args: should be "ns_conn outputheaders"}
+
+test ns_conn-1.1.34 {syntax: ns_conn partialtimes} -body {
+    ns_conn partialtimes x
+} -returnCodes error -result {wrong # args: should be "ns_conn partialtimes"}
+
+test ns_conn-1.1.35 {syntax: ns_conn peeraddr} -body {
+    ns_conn peeraddr x
+} -returnCodes error -result {wrong # args: should be "ns_conn peeraddr ?-source configured|direct|forwarded?"}
+
+test ns_conn-1.1.36 {syntax: ns_conn peerport} -body {
+    ns_conn peerport x
+} -returnCodes error -result {wrong # args: should be "ns_conn peerport"}
+
+test ns_conn-1.1.37 {syntax: ns_conn pool} -body {
+    ns_conn pool x
+} -returnCodes error -result {wrong # args: should be "ns_conn pool"}
+
+test ns_conn-1.1.38 {syntax: ns_conn port} -body {
+    ns_conn port x
+} -returnCodes error -result {wrong # args: should be "ns_conn port"}
+
+test ns_conn-1.1.39 {syntax: ns_conn protocol} -body {
+    ns_conn protocol x
+} -returnCodes error -result {wrong # args: should be "ns_conn protocol"}
+
+test ns_conn-1.1.40 {syntax: ns_conn query} -body {
+    ns_conn query x
+} -returnCodes error -result {wrong # args: should be "ns_conn query"}
+
+test ns_conn-1.1.41 {syntax: ns_conn ratelimit} -body {
+    ns_conn ratelimit 10 y
+} -returnCodes error -result {wrong # args: should be "ns_conn ratelimit ?ratelimit[0,MAX]?"}
+
+test ns_conn-1.1.42 {syntax: ns_conn request} -body {
+    ns_conn request x
+} -returnCodes error -result {wrong # args: should be "ns_conn request"}
+
+test ns_conn-1.1.43 {syntax: ns_conn server} -body {
+    ns_conn server x
+} -returnCodes error -result {wrong # args: should be "ns_conn server"}
+
+test ns_conn-1.1.45 {syntax: ns_conn start} -body {
+    ns_conn start x
+} -returnCodes error -result {wrong # args: should be "ns_conn start"}
+
+test ns_conn-1.1.46 {syntax: ns_conn status} -body {
+    ns_conn status 100 y
+} -returnCodes error -result {wrong # args: should be "ns_conn status ?status[100,599]?"}
+
+test ns_conn-1.1.47 {syntax: ns_conn target} -body {
+    ns_conn target x
+} -returnCodes error -result {wrong # args: should be "ns_conn target"}
+
+test ns_conn-1.1.48 {syntax: ns_conn timeout} -body {
+    ns_conn timeout x
+} -returnCodes error -result {wrong # args: should be "ns_conn timeout"}
+
+test ns_conn-1.1.49 {syntax: ns_conn url} -body {
+    ns_conn url x
+} -returnCodes error -result {wrong # args: should be "ns_conn url"}
+
+test ns_conn-1.1.50 {syntax: ns_conn urlc} -body {
+    ns_conn urlc x
+} -returnCodes error -result {wrong # args: should be "ns_conn urlc"}
+
+test ns_conn-1.1.51 {syntax: ns_conn urlencoding} -body {
+    ns_conn urlencoding x y
+} -returnCodes error -result {wrong # args: should be "ns_conn urlencoding ?encoding?"}
+
+test ns_conn-1.1.52 {syntax: ns_conn urlv} -body {
+    ns_conn urlv 1 x
+} -returnCodes error -result {wrong # args: should be "ns_conn urlv ?idx[0,MAX]?"}
+
+test ns_conn-1.1.53 {syntax: ns_conn version} -body {
+    ns_conn version x
+} -returnCodes error -result {wrong # args: should be "ns_conn version"}
+
+test ns_conn-1.1.54 {syntax: ns_conn zipaccepted} -body {
+    ns_conn zipaccepted x
+} -returnCodes error -result {wrong # args: should be "ns_conn zipaccepted"}
+
+
+#
+# Functional tests
+#
 test ns_conn-1.3.1 {pool} -setup {
     ns_register_proc GET /conn {ns_return 200 text/plain /[ns_conn isconnected]/ }
 } -body {
@@ -133,7 +353,7 @@ test ns_conn-3.2 {digest authentication} -setup {
         uri="/dir/index.html",qop=auth,nc=00000001,cnonce="0a4f113b",response="6629fae49393a05397450978507c4ef1",
         opaque="5ccc069c403ebaf9f0171e9517f40e41"}
     regsub -all \n\s+ $authString "" authString
-        
+
     nstest::http -getbody 1 -setheaders [list authorization $authString] \
         GET /digest
 } -cleanup {
