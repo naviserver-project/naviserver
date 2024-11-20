@@ -35,6 +35,6 @@ This command looks in the query data for the specified key.  If the key exists,
 [example_end]
 
 [keywords  form query]
-[see_also  ns_query ns_querygetall ns_getform]
+[see_also  ns_queryget ns_querygetall ns_getform]
 
 [manpage_end]
