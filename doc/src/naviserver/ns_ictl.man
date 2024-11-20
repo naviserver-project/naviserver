@@ -255,8 +255,9 @@ behavior of [cmd ns_ictl]
 [example_end]
 
 
-[see_also ns_atclose]
+[see_also ns_atclose ns_atexit ns_atprestartup ns_atshutdown \
+        ns_atsignal ns_atstartup ns_runonce]
 [keywords "server built-in" interpreter trace module ns_eval ns_reinit \
-ns_cleanup callback configuration]
+        ns_cleanup callback configuration]
 
 [manpage_end]

@@ -27,6 +27,10 @@ if {$::tcl_platform(os) eq "Darwin"} {
 
 tcltest::testConstraint noOldDarwin $::noOldDarwin
 
+test ns_hostbyaddr-1.0 {syntax: ns_hostbyaddr} -constraints {macOrUnix} -body {
+    ns_hostbyaddr
+} -returnCodes {error ok} -result {wrong # args: should be "ns_hostbyaddr /address/"}
+
 test ns_hostbyaddr-1.1 {good address} -constraints noOldDarwin -body {
     ns_hostbyaddr [ns_config test loopback] ;#127.0.0.1
 } -match glob -result *

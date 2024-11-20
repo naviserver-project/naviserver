@@ -10,6 +10,12 @@ if {[ns_config test listenport]} {
 }
 if {$::tcl_version < 8.6} {package require try}
 
+
+test ns_sockopen-1.0 {syntax: ns_sockopen} -body {
+    ns_sockopen
+} -returnCodes {error ok} -result {wrong # args: should be "ns_sockopen ?-async? ?-localhost /string/? ?-localport /localport/? ?-nonblock? ?-timeout /timeout/? ?--? /host/ /port/"}
+
+
 test ns_listencallback-1.0 {register} -constraints {serverListen} -setup {
     #
     # Register listen callback with Tcl handler

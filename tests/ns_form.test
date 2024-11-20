@@ -29,11 +29,43 @@ test ns_queryget-1.0  {syntax: ns_queryget} -body {
 #  test ns_querygetall
 #######################################################################################
 
-test ns_querygetall-1.0  {syntax: ns_queryget} -body {
+test ns_querygetall-1.0  {syntax: ns_querygetall} -body {
     ns_querygetall
 } -returnCodes error -result {wrong # args: should be "ns_querygetall key ?default?"}
 
 # Tcl proc ns_queryget; message should be {wrong # args: should be "ns_querygetall /key/ ?default?"}
+
+
+#######################################################################################
+#  test ns_getform
+#######################################################################################
+
+test ns_getform-1.0  {syntax: ns_getform} -body {
+    ns_getform x y
+} -returnCodes error -result {wrong # args: should be "?-fallbackcharset /fallbackcharset/? ?charset?"}
+
+# Tcl proc ns_getform; message should be {wrong # args: should be "ns_getform ?-fallbackcharset /fallbackcharset/? ?charset?"}
+
+#######################################################################################
+#  test ns_getformfile
+#######################################################################################
+
+test ns_getformfile-1.0  {syntax: ns_getformfile} -body {
+    ns_getformfile
+} -returnCodes error -result {wrong # args: should be "ns_getformfile name"}
+
+# Tcl proc ns_getformfile; message should be {wrong # args: should be "ns_getformfile /name/"}
+
+#######################################################################################
+#  test ns_getcontent
+#######################################################################################
+
+test ns_getcontent-1.0  {syntax: ns_getformfile} -body {
+    ns_getcontent x
+} -returnCodes error -result {wrong # args: should be "?-as_file /as_file/? ?-binary /binary/?"}
+
+# Tcl proc ns_getcontent; message should be {wrong # args: should be "ns_getcontent ?-as_file /as_file/? ?-binary /binary/?"}
+
 
 
 cleanupTests

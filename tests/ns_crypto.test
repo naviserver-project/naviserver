@@ -98,50 +98,73 @@ test ns_crypto_signature_verify-1.0 {basic operation} -constraints crypto -body 
 #  RFC 2104 https://tools.ietf.org/html/rfc2104
 #######################################################################################
 
-test ns_hmac-1.1 {syntax ns_crypto::hmac} -constraints crypto -body {
+test ns_crypto::ns_hmac-1.1 {syntax ns_crypto::hmac} -constraints crypto -body {
     ns_crypto::hmac
 } -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string|new|add|get|free ?args?"}
-test ns_hmac-1.2 {syntax ns_crypto::hmac string} -constraints crypto -body {
+
+test ns_crypto::hmac-1.2 {syntax: ns_crypto::hmac add} -body {
+    ns_crypto::hmac add
+} -returnCodes error -result {wrong # args: should be "ns_crypto::hmac add ?-binary? ?--? /ctx/ /message/"}
+
+test ns_crypto::hmac-1.3 {syntax: ns_crypto::hmac free} -body {
+    ns_crypto::hmac free
+} -returnCodes error -result {wrong # args: should be "ns_crypto::hmac free /ctx/"}
+
+test ns_crypto::hmac-1.4 {syntax: ns_crypto::hmac get} -body {
+    ns_crypto::hmac get
+} -returnCodes error -result {wrong # args: should be "ns_crypto::hmac get ?-encoding hex|base64url|base64|binary? /ctx/"}
+
+test ns_crypto::hmac-1.5 {syntax: ns_crypto::hmac new} -body {
+    ns_crypto::hmac new
+} -returnCodes error -result {wrong # args: should be "ns_crypto::hmac new ?-binary? ?--? /digest/ /key/"}
+
+test ns_crypto::hmac-1.6 {syntax: ns_crypto::hmac string} -body {
     ns_crypto::hmac string
 } -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string ?-binary? ?-digest /string/? ?-encoding hex|base64url|base64|binary? ?--? /key/ /message/"}
 
-test ns_hmac_sha2-1.3 {basic syntax: plain call} -constraints crypto -body {
+
+test ns_hmac-2.1 {syntax ns_crypto::hmac string} -constraints crypto -body {
+    ns_crypto::hmac string
+} -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string ?-binary? ?-digest /string/? ?-encoding hex|base64url|base64|binary? ?--? /key/ /message/"}
+
+test ns_hmac-2.3 {hmac string with unknown digest} -constraints crypto -body {
     ns_crypto::hmac string -digest sha123 x
 } -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string ?-binary? ?-digest /string/? ?-encoding hex|base64url|base64|binary? ?--? /key/ /message/"}
-test ns_hmac_sha2-1.4 {basic syntax: plain call} -constraints crypto -body {
+
+test ns_hmac-2.4 {hmac string with unknown digest} -constraints crypto -body {
     ns_crypto::hmac string -digest sha123 x y
 } -returnCodes error -match glob -result {Unknown value for digest "sha123", valid: *}
 
-test ns_hmac_sha2-2.0 {basic operation} -constraints crypto -body {
+test ns_hmac_sha2-2.0 {ns_hmac with sha2 digest} -constraints crypto -body {
     ns_crypto::hmac string "Jefe" "what do ya want for nothing?"
 } -result "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843"
 
-test ns_hmac_sha2-2.1 {basic operation} -constraints crypto -body {
+test ns_hmac_sha2-2.1 {ns_hmac with sha224 digest} -constraints crypto -body {
     ns_crypto::hmac string -digest sha224 "Jefe" "what do ya want for nothing?"
 } -result "a30e01098bc6dbbf45690f3a7e9e6d0f8bbea2a39e6148008fd05e44"
 
-test ns_hmac_sha2-2.2 {basic operation} -constraints crypto -body {
+test ns_hmac_sha2-2.2 {ns_hmac with sha256 digest} -constraints crypto -body {
     ns_crypto::hmac string -digest sha256 "Jefe" "what do ya want for nothing?"
 } -result "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843"
 
-test ns_hmac_sha2-2.3 {basic operation} -constraints crypto -body {
+test ns_hmac_sha2-2.3 {ns_hmac with sha384 digest} -constraints crypto -body {
     ns_crypto::hmac string -digest sha384 "Jefe" "what do ya want for nothing?"
 } -result "af45d2e376484031617f78d2b58a6b1b9c7ef464f5a01b47e42ec3736322445e8e2240ca5e69e2c78b3239ecfab21649"
 
-test ns_hmac_sha2-2.4 {basic operation} -constraints crypto -body {
+test ns_hmac_sha2-2.4 {ns_hmac with sha512 digest} -constraints crypto -body {
     ns_crypto::hmac string -digest sha512 "Jefe" "what do ya want for nothing?"
 } -result "164b7a7bfcf819e2e395fbe73b56e0a387bd64222e831fd610270cd7ea2505549758bf75c05a994a6d034f65f8f0e6fdcaeab1a34d4a6b4b636e070a38bce737"
 
 
-test ns_hmac_sha1-1.1 {basic operation} -constraints crypto -body {
+test ns_hmac_sha1-1.1 {ns_hmac with sha1 digest} -constraints crypto -body {
      ns_crypto::hmac string -digest sha1 "Jefe" "what do ya want for nothing?"
 } -result "effcdf6ae5eb2fa2d27416d5f184df9c259a7c79"
 
-test ns_hmac_sha1-1.2 {binary operation (example from RFC 4226, appendix D)} -constraints crypto -body {
+test ns_hmac_sha1-1.2 {ns_hmac binary operation (example from RFC 4226, appendix D)} -constraints crypto -body {
      ns_crypto::hmac string -digest sha1 12345678901234567890 [binary format W 0]
 } -result "cc93cf18508d94934c64b65d8ba7667fb7cde4b0"
 
-test ns_hmac_sha1-1.3 {binary operation (example from RFC 4226, appendix D)} -constraints crypto -body {
+test ns_hmac_sha1-1.3 {ns_hmac binary operation (example from RFC 4226, appendix D)} -constraints crypto -body {
     ns_crypto::hmac string -digest sha1 12345678901234567890 [binary format W 1]
 } -result "75a48a19d4cbe100644e8ac1397eea747a2d33ab"
 
@@ -149,6 +172,12 @@ test ns_hmac_sha1-1.3 {binary operation (example from RFC 4226, appendix D)} -co
 #######################################################################################
 #  HMAC and MD file test
 #######################################################################################
+
+
+test ns_md-1.0 {syntax: ns_md} -constraints crypto -body {
+    ns_md x
+} -returnCodes error -result {method 'x' unknown for ::ns_md; in order to create an instance of class ::ns_md, consider using '::ns_md create x ?...?'}
+
 test ns_hmac_file-1.0 {syntax ns_crypto::hmac file} -constraints crypto -body {
     ns_crypto::hmac file
 } -returnCodes error -result {ns_crypto::hmac: bad subcommand "file": must be string, new, add, get, or free}

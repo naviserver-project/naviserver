@@ -14,6 +14,10 @@
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
+test ns_addrbyhost-1.0 {syntax: ns_addrbyhost} -body {
+    ns_addrbyhost
+} -returnCodes {error ok} -result {wrong # args: should be "ns_addrbyhost ?-all? ?--? /host/"}
+
 test ns_addrbyhost-1.1 {good host} -body {
     set addr [ns_addrbyhost localhost]
     expr {[string match *.*.*.* $addr] || [string match *:* $addr]}

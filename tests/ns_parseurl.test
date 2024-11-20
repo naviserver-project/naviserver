@@ -315,9 +315,16 @@ test ns_parseurl-5.0 {URL with colon in the path, but no port provided} -body {
     ns_parseurl https://fcm.googleapis.com/fcm/send/c707XIVXbcY:APA91bEgMg8DNeNapWNKby
 } -result {proto https host fcm.googleapis.com path fcm/send tail c707XIVXbcY:APA91bEgMg8DNeNapWNKby}
 
-#
-# ns_joinurl
-#
+
+#######################################################################################
+#  ns_joinurl
+#######################################################################################
+test ns_joinurl-1.0 {syntax: ns_joinurl} -body {
+    ns_joinurl
+} -returnCodes error -result {wrong # args: should be "ns_joinurl dict"}
+
+# ns_joinurl is a Tcl proc: message should be {wrong # args: should be "ns_joinurl /dict/"}
+
 
 test ns_joinurl-1.2 {full URL, no port} -body {
     ns_joinurl [ns_parseurl http://openacs.org:80/www/t.html]

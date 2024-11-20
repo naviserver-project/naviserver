@@ -23,9 +23,15 @@ set vhosts [ns_config "ns/server/testvhost/vhost" hostprefix]
 set port   [ns_config "test" listenport]
 
 
+
 test ns_serverpath-1.1 {basic path} -body {
     ns_serverpath
 } -result $serverroot
+
+# ns_serverpath processes all input parameters, we cannot trigger a
+# message with invalid input. Therefore, provide a manual entry:
+# message should be {wrong # args: should be "ns_serverpath ?host? ?--? ?pathelements ...?"}
+
 
 test ns_serverpath-1.2 {basic path} -body {
     ns_serverpath --

@@ -189,6 +189,10 @@ test ns_conn-1.1.43 {syntax: ns_conn server} -body {
     ns_conn server x
 } -returnCodes error -result {wrong # args: should be "ns_conn server"}
 
+test ns_conn-1.1.44 {syntax: ns_conn sock} -body {
+    ns_conn sock x
+} -returnCodes error -result {wrong # args: should be "ns_conn sock"}
+
 test ns_conn-1.1.45 {syntax: ns_conn start} -body {
     ns_conn start x
 } -returnCodes error -result {wrong # args: should be "ns_conn start"}
@@ -228,6 +232,11 @@ test ns_conn-1.1.53 {syntax: ns_conn version} -body {
 test ns_conn-1.1.54 {syntax: ns_conn zipaccepted} -body {
     ns_conn zipaccepted x
 } -returnCodes error -result {wrong # args: should be "ns_conn zipaccepted"}
+
+
+test ns_conncptofp-1.0 {syntax: ns_conncptofp} -body {
+    ns_conncptofp
+} -returnCodes error -result {wrong # args: should be "ns_conncptofp ?-bytes /integer[0,MAX]/? ?--? /channel/"}
 
 
 #

@@ -70,6 +70,10 @@ test ns_server-1.2.14 {syntax: ns_server pools} -body {
     ns_server pools "" -
 } -returnCodes error -result {wrong # args: should be "ns_server pools"}
 
+test ns_server-1.2.15 {syntax: ns_server queued} -body {
+    ns_server queued ""
+} -returnCodes error -result {wrong # args: should be "ns_server queued"}
+
 test ns_server-1.2.16 {syntax: ns_server requestprocs} -body {
     ns_server requestprocs -
 } -returnCodes error -result {wrong # args: should be "ns_server requestprocs"}

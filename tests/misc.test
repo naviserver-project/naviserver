@@ -8,13 +8,16 @@ namespace import -force ::tcltest::*
 #######################################################################################
 #  test ns_parsefieldvalue
 #######################################################################################
+test ns_rand-1.0 {syntax: ns_rand} -body {
+    ns_rand 1 x
+} -returnCodes error -result {wrong # args: should be "ns_rand ?maximum[1,MAX]?"}
 
-test ns_random-1.0 {ns_rand with 1 arg - integer} -body {
+test ns_rand-1.0 {ns_rand with 1 arg - integer} -body {
     set rand [ns_rand 10]
     return [list [expr {$rand < 10}] [string is integer -strict $rand] ]
 } -result {1 1}
 
-test ns_random-1.1 {ns_rand with 0 arg - float} -body {
+test ns_randx-1.1 {ns_rand with 0 arg - float} -body {
     set rand [ns_rand]
     return [list [expr {$rand < 1}] [string is double -strict $rand] ]
 } -result {1 1}
@@ -23,7 +26,11 @@ test ns_random-1.1 {ns_rand with 0 arg - float} -body {
 #  test ns_fmttime
 #######################################################################################
 
-test ns_fmttime-1.0 {ns_fmttime without format} -body {
+test ns_fmttime-1.0 {syntax: ns_fmttime} -body {
+    ns_fmttime
+} -returnCodes error -result {wrong # args: should be "ns_fmttime /time[0,MAX]/ ?fmt?"}
+
+test ns_fmttime-1.1 {ns_fmttime without format} -body {
     #
     # "ns_fmttime" depends on the local time-zone. Since we cannot
     # pass the timezone as an argument, we make a rough test here.
@@ -31,7 +38,7 @@ test ns_fmttime-1.0 {ns_fmttime without format} -body {
     return [llength [ns_fmttime 1563812758]]
 } -result {5}
 
-test ns_fmttime-1.1 {ns_rand with 0 arg - float} -body {
+test ns_fmttime-1.2 {ns_rand with 0 arg - float} -body {
     #
     # The year information is in all timezones for this timestamp
     # identical.
@@ -43,9 +50,10 @@ test ns_fmttime-1.1 {ns_rand with 0 arg - float} -body {
 #  test ns_trim
 #######################################################################################
 
-test ns_trim-0.0 {ns_trim without arguments} -body {
+test ns_trim-0.0 {syntax: ns_trim} -body {
     ns_trim
 } -returnCodes error -result {wrong # args: should be "ns_trim ?-subst? ?-delimiter /string/? ?-prefix /string/? ?--? /text/"}
+
 test ns_trim-0.1 {ns_trim with invalid delimiter} -body {
     ns_trim -delimiter aa "hello world"
 } -returnCodes error -result {invalid arguments: -delimiter must be a single character}
@@ -82,6 +90,10 @@ test ns_trim-2.2 {trim with delimiter and no occurrence of prefix} -body {
 testConstraint collateFold [expr {$::tcl_platform(os) in {Linux}}]
 testConstraint localeCollate [expr {$::tcl_platform(os) in {Darwin Linux}}]
 
+test ns_strcoll-1.0 {syntax: ns_strcoll} -body {
+    ns_strcoll
+} -returnCodes error -result {wrong # args: should be "ns_strcoll ?-locale /string/? ?--? /string1/ /string2/"}
+
 #
 # The constraint 'collateFold' means to sort upper and lower character
 # right next to each other and to ignore certain characters
@@ -89,28 +101,28 @@ testConstraint localeCollate [expr {$::tcl_platform(os) in {Darwin Linux}}]
 # strcoll_l on these systems is based on the ICU library
 # (International Components for Unicode).
 #
-test ns_strcoll-1.0.0 {ns_strcoll without locale (assuming en_US.UTF-8)} \
+test ns_strcoll-1.2 {ns_strcoll without locale (assuming en_US.UTF-8)} \
     -constraints localeCollate -body {
         return [expr {[ns_strcoll Bär Bor] < 0}]
     } -result 1
 
-test ns_strcoll-1.0.1 {ns_strcoll with locale C} \
+test ns_strcoll-1.3 {ns_strcoll with locale C} \
     -body {
         return [expr {[ns_strcoll -locale C Bär Bor] > 0}]
     } -result 1
 
-test ns_strcoll-1.0.2 {ns_strcoll with locale en_US.UTF-8 } \
+test ns_strcoll-1.4 {ns_strcoll with locale en_US.UTF-8 } \
     -constraints localeCollate -body {
         return [expr {[ns_strcoll -locale en_US.UTF-8 Bär Bor] < 0}]
     } -result 1
 
-test ns_strcoll-1.1 {ns_strcoll without locale specified} \
+test ns_strcoll-1.5 {ns_strcoll without locale specified} \
     -constraints localeCollate -body {
         set l {Önce Ince Once Ance Adam Çengel Art Ceb Dora Pravda Правда Omikron ό Zeppelin Bar Bor Bär}
         return [lsort -command ns_strcoll $l]
     } -result {Adam Ance Art Bar Bär Bor Ceb Çengel Dora Ince Omikron Once Önce Pravda Zeppelin ό Правда}
 
-test ns_strcoll-1.2 {ns_strcoll with locale en_US.UTF-8} \
+test ns_strcoll-1.6 {ns_strcoll with locale en_US.UTF-8} \
     -constraints localeCollate -body {
         set l {Önce Ince Once Ance Adam Çengel Art Ceb Dora Pravda Правда Omikron ό Zeppelin Bar Bor Bär}
         return [lsort -command {ns_strcoll -locale en_US.UTF-8 --} $l]
@@ -162,7 +174,7 @@ test ns_strcoll-3.3 {sort with upper and lowercase characters, locale C} \
 #  test ns_valid_utf8
 #######################################################################################
 
-test ns_valid_utf8-1.0 {ns_valid_utf8 basic syntax} -body {
+test ns_valid_utf8-1.0 {syntax: ns_valid_utf8} -body {
     ns_valid_utf8 - - -
 } -returnCodes error -result {wrong # args: should be "ns_valid_utf8 /string/ ?error?"}
 
@@ -193,11 +205,11 @@ test ns_valid_utf8-1.5 {invalid utf8, containing x85 in the middle} -body {
 #  test ns_ip
 #######################################################################################
 
-test ns_ip-1.0.1 {ns_ip general} -body {
+test ns_ip-1.0.1 {syntax: ns_ip} -body {
     ns_ip
 } -returnCodes error -result {wrong # args: should be "ns_ip match|properties|public|trusted|valid ?args?"}
 
-test ns_ip-1.0.2 {ns_ip wrong subcommand} -body {
+test ns_ip-1.0.2 {syntax: ns_ip subcommand} -body {
     ns_ip x
 } -returnCodes error -result {ns_ip: bad subcommand "x": must be match, properties, public, trusted, or valid}
 
@@ -407,6 +419,18 @@ test ns_paren-1.0 {syntax: ns_paren} -body {
     ns_paren x y
 } -returnCodes error -result {wrong # args: should be "ns_paren val"}
 # ns_paren is a Tcl proc: message should be {wrong # args: should be "ns_paren /val/"}
+
+
+test ns_tagelement-1.0 {syntax: ns_tagelement} -body {
+    ns_tagelement
+} -returnCodes error -result {wrong # args: should be "ns_tagelement tag key"}
+# ns_tagelement is a Tcl proc: message should be {wrong # args: should be "ns_tagelement /tag/ /key/"}
+
+test ns_tagelementset-1.0 {syntax: ns_tagelement} -body {
+    ns_tagelementset
+} -returnCodes error -result {wrong # args: should be "ns_tagelementset tagvar key value"}
+# ns_tagelementset is a Tcl proc: message should be {wrong # args: should be "ns_tagelementset /tagvar/ /key/ /value/"}
+
 
 
 cleanupTests
