@@ -106,7 +106,7 @@ server.
 Return the list of modules to be loaded for the current virtual server.
 
 
-[call [cmd "ns_ictl gettrace"] ]
+[call [cmd "ns_ictl gettraces"] [arg when]]
 Return the script of the specified trace.
 
 
