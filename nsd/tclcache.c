@@ -774,7 +774,7 @@ CacheAppendObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
  */
 
 int
-NsTclCacheNamesObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
+NsTclCacheNamesObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
 {
     const NsInterp      *itPtr = clientData;
     NsServer            *servPtr = itPtr->servPtr;

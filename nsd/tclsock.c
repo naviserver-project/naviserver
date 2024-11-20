@@ -738,7 +738,7 @@ done:
  */
 
 int
-NsTclSocketPairObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(ojbc),
+NsTclSocketPairObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(objc),
                       Tcl_Obj *const* UNUSED(objv))
 {
     NS_SOCKET socks[2];
