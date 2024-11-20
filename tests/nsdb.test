@@ -7,157 +7,178 @@ namespace import -force ::tcltest::*
 
 
 
-test nsdb-1.0 {ns_db syntax} -body {
+test nsdb-1.0 {syntax: ns_db} -body {
     ns_db
 } -returnCodes error -result {wrong # args: should be "ns_db /subcommand/ ?arg ...?"}
 
-test nsdb-1.0.1 {ns_db bindrow bouncepool} -body {
+test nsdb-1.0.1 {syntax: ns_db bouncepool} -body {
     ns_db bouncepool
 } -returnCodes error -result {wrong # args: should be "ns_db bouncepool /pool/"}
 
-test nsdb-1.0.2 {ns_db cancel syntax} -body {
+test nsdb-1.0.2 {syntax: ns_db cancel} -body {
     ns_db cancel
 } -returnCodes error -result {wrong # args: should be "ns_db cancel /dbId/"}
 
-test nsdb-1.0.4 {ns_db connected syntax} -body {
+test nsdb-1.0.4 {syntax: ns_db connected} -body {
     ns_db connected
 } -returnCodes error -result {wrong # args: should be "ns_db connected /dbId/"}
 
-test nsdb-1.0.5 {ns_db currenthandles syntax} -body {
+test nsdb-1.0.5 {syntax: ns_db currenthandles} -body {
     ns_db currenthandles ?
 } -returnCodes error -result {wrong # args: should be "ns_db currenthandles"}
 
-test nsdb-1.0.6 {ns_db datasource syntax} -body {
+test nsdb-1.0.6 {syntax: ns_db datasource} -body {
     ns_db datasource
 } -returnCodes error -result {wrong # args: should be "ns_db datasource /dbId/"}
 
-test nsdb-1.0.7 {ns_db bindrow syntax} -body {
+test nsdb-1.0.7 {syntax: ns_db bindrow} -body {
     ns_db bindrow
 } -returnCodes error -result {wrong # args: should be "ns_db bindrow /dbId/"}
 
-test nsdb-1.0.8 {ns_db dbtype syntax} -body {
+test nsdb-1.0.8 {syntax: ns_db dbtype} -body {
     ns_db dbtype
 } -returnCodes error -result {wrong # args: should be "ns_db dbtype /dbId/"}
 
-test nsdb-1.0.9 {ns_db dml syntax} -body {
+test nsdb-1.0.9 {syntax: ns_db dml} -body {
     ns_db dml
 } -returnCodes error -result {wrong # args: should be "ns_db dml /dbId/ /sql/"}
 
-test nsdb-1.0.10 {ns_db driver syntax} -body {
+test nsdb-1.0.10 {syntax: ns_db driver} -body {
     ns_db driver
 } -returnCodes error -result {wrong # args: should be "ns_db driver /dbId/"}
 
-test nsdb-1.0.11 {ns_db exception syntax} -body {
+test nsdb-1.0.11 {syntax: ns_db exception} -body {
     ns_db exception
 } -returnCodes error -result {wrong # args: should be "ns_db exception /dbId/"}
 
-test nsdb-1.0.12 {ns_db exec syntax} -body {
+test nsdb-1.0.12 {syntax: ns_db exec} -body {
     ns_db exec
 } -returnCodes error -result {wrong # args: should be "ns_db exec /dbId/ /sql/"}
 
-test nsdb-1.0.13 {ns_db flush syntax} -body {
+test nsdb-1.0.13 {syntax: ns_db flush} -body {
     ns_db flush
 } -returnCodes error -result {wrong # args: should be "ns_db flush /dbId/"}
 
-test nsdb-1.0.14 {ns_db gethandle syntax} -body {
-    ns_db gethandle ?
-} -returnCodes error -result {no access to pool: "?"}
+test nsdb-1.0.14 {syntax: ns_db gethandle} -body {
+    ns_db gethandle "" 1 ?
+} -returnCodes error -result {wrong # args: should be "ns_db gethandle ?-timeout /timeout/? ?--? ?pool? ?nhandles[1,MAX]?"}
 
-test nsdb-1.0.15 {ns_db getrow syntax} -body {
+test nsdb-1.0.15 {syntax: ns_db getrow} -body {
     ns_db getrow
 } -returnCodes error -result {wrong # args: should be "ns_db getrow /dbId/ /setId/"}
 
-test nsdb-1.0.16 {ns_db logminduration syntax} -body {
-    ns_db logminduration ?
-} -returnCodes error -result {Invalid pool '?'}
+test nsdb-1.0.16 {syntax: ns_db logminduration} -body {
+    ns_db logminduration "" 1s ?
+} -returnCodes error -result {wrong # args: should be "ns_db logminduration ?pool? ?minduration?"}
 
-test nsdb-1.0.18 {ns_db password syntax} -body {
+test nsdb-1.0.18 {syntax: ns_db password} -body {
     ns_db password
 } -returnCodes error -result {wrong # args: should be "ns_db password /dbId/"}
 
-test nsdb-1.0.19 {ns_db poolname syntax} -body {
+test nsdb-1.0.19 {syntax: ns_db poolname} -body {
     ns_db poolname
 } -returnCodes error -result {wrong # args: should be "ns_db poolname /dbId/"}
 
-test nsdb-1.0.20 {ns_db pools syntax} -body {
+test nsdb-1.0.20 {syntax: ns_db pools} -body {
     ns_db pools ?
 } -returnCodes error -result {wrong # args: should be "ns_db pools"}
 
-test nsdb-1.0.21 {ns_db releasehandle syntax} -body {
+test nsdb-1.0.21 {syntax: ns_db releasehandle} -body {
     ns_db releasehandle
 } -returnCodes error -result {wrong # args: should be "ns_db releasehandle /dbId/"}
 
-test nsdb-1.0.22 {ns_db rowcount syntax} -body {
+test nsdb-1.0.22 {syntax: ns_db rowcount} -body {
     ns_db rowcount
 } -returnCodes error -result {wrong # args: should be "ns_db rowcount /dbId/"}
 
-test nsdb-1.0.23 {ns_db select syntax} -body {
+test nsdb-1.0.23 {syntax: ns_db select} -body {
     ns_db select
 } -returnCodes error -result {wrong # args: should be "ns_db select /dbId/ /sql/"}
 
-test nsdb-1.0.24 {ns_db setexception syntax} -body {
+test nsdb-1.0.24 {syntax: ns_db setexception} -body {
     ns_db setexception
 } -returnCodes error -result {wrong # args: should be "ns_db setexception /dbId/ /code/ /message/"}
 
-test nsdb-1.0.25 {ns_db sp_exec syntax} -body {
+test nsdb-1.0.25 {syntax: ns_db sp_exec} -body {
     ns_db sp_exec
 } -returnCodes error -result {wrong # args: should be "ns_db sp_exec /dbId/"}
 
-test nsdb-1.0.26 {ns_db sp_getparams syntax} -body {
+test nsdb-1.0.26 {syntax: ns_db sp_getparams} -body {
     ns_db sp_getparams
 } -returnCodes error -result {wrong # args: should be "ns_db sp_getparams /dbId/"}
 
-test nsdb-1.0.27 {ns_db sp_returncode syntax} -body {
+test nsdb-1.0.27 {syntax: ns_db sp_returncode} -body {
     ns_db sp_returncode
 } -returnCodes error -result {wrong # args: should be "ns_db sp_returncode /dbId/"}
 
-test nsdb-1.0.28 {ns_db sp_setparam syntax} -body {
+test nsdb-1.0.28 {syntax: ns_db sp_setparam} -body {
     ns_db sp_setparam
 } -returnCodes error -result {wrong # args: should be "ns_db sp_setparam /dbId/ /paramname/ /type/ in|out /value/"}
 
-test nsdb-1.0.29 {ns_db sp_start syntax} -body {
+test nsdb-1.0.29 {syntax: ns_db sp_start} -body {
     ns_db sp_start
 } -returnCodes error -result {wrong # args: should be "ns_db sp_start /dbId/ /sql/"}
 
-test nsdb-1.0.30 {ns_db stats syntax} -body {
+test nsdb-1.0.30 {syntax: ns_db stats} -body {
     ns_db stats ?
 } -returnCodes error -result {wrong # args: should be "ns_db stats"}
 
-test nsdb-1.0.31 {ns_db user syntax} -body {
+test nsdb-1.0.31 {syntax: ns_db user} -body {
     ns_db user
 } -returnCodes error -result {wrong # args: should be "ns_db user /dbId/"}
 
-test nsdb-1.0.32 {ns_db verbose syntax} -body {
+test nsdb-1.0.32 {syntax: ns_db verbose} -body {
     ns_db verbose
 } -returnCodes error -result {wrong # args: should be "ns_db verbose /dbID/ ?verbose?"}
 
 
 
-test nsdb-1.1 {ns_dbquotevalue syntax} -body {
+test nsdb-1.1 {syntax: ns_dbquotevalue} -body {
     ns_dbquotevalue
 } -returnCodes error -result {wrong # args: should be "ns_dbquotevalue /value/ ?type?"}
 
-test nsdb-1.2 {ns_dbquotelist syntax} -body {
+test nsdb-1.2 {syntax: ns_dbquotelist} -body {
     ns_dbquotelist
 } -returnCodes error -result {wrong # args: should be "ns_dbquotelist /list/ ?type?"}
 
-test nsdb-1.3 {ns_dbconfigpath syntax} -body {
+test nsdb-1.3 {syntax: ns_dbconfigpath} -body {
     ns_dbconfigpath ?
-} -returnCodes error -result {wrong # args: should be ""}
+} -returnCodes error -result {wrong # args: should be "ns_dbconfigpath"}
 
-test nsdb-1.4 {ns_dberrorcode syntax} -body {
+test nsdb-1.4 {syntax: ns_dberrorcode} -body {
     ns_dberrorcode
 } -returnCodes error -result {wrong # args: should be "ns_dberrorcode /dbId/"}
 
-test nsdb-1.5 {ns_dberrormsg syntax} -body {
+test nsdb-1.5 {syntax: ns_dberrormsg} -body {
     ns_dberrormsg
 } -returnCodes {ok error} -result {wrong # args: should be "ns_dberrormsg /dbId/"}
 
-test nsdb-1.6 {ns_dbquotename syntax} -body {
+test nsdb-1.6 {syntax: ns_dbquotename} -body {
     ns_dbquotename
 } -returnCodes error -result {wrong # args: should be "ns_dbquotename name"}
+# Tcl proc ns_dbquotename_ message should be {wrong # args: should be "ns_dbquotename /name/"}
+
+test nsdb-1.7 {syntax: ns_quotelisttolist} -body {
+    ns_quotelisttolist
+} -returnCodes error -result {wrong # args: should be "ns_quotelisttolist /quotelist/"}
+
+test nsdb-1.8 {syntax: ns_localsqltimestamp} -body {
+    ns_localsqltimestamp x
+} -returnCodes error -result {wrong # args: should be "ns_localsqltimestamp"}
+
+test nsdb-1.9 {syntax: ns_buildsqldate} -body {
+    ns_buildsqldate x
+} -returnCodes error -result {wrong # args: should be "ns_buildsqldate month day year"}
+# Tcl proc ns_buildsqldate message should be {wrong # args: should be "ns_buildsqldate /month/ /day/ /year/"}
+
+test nsdb-1.10 {syntax: ns_dbpooldescription} -body {
+    ns_dbpooldescription 
+} -returnCodes error -result {wrong # args: should be "ns_dbpooldescription /pool/"}
 
 
+#
+# Functional tests
+#
 test ns_dbquotevalue-2 {empty string} -body {
     ns_dbquotevalue ""
 } -returnCodes {ok error} -result {NULL}
@@ -228,46 +249,6 @@ test ns_db-2.2 {"dml"} -body {
 test ns_db-2.9 {nsdb releasehandle} -body {
     set h [ns_db releasehandle $h]
 } -returnCodes {ok error} -result {}
-
-
-test ns_getcsv-1.0 {ns_getcsv} -body {
-    set csvFile [ns_server pagedir]/csv
-    set f [open $csvFile]
-
-    while {1} {
-        set r [ns_getcsv $f line]
-        switch $r {
-           -1       {break}
-            0       {}
-            default {lappend lines $line}
-        }
-    }
-    close $f
-    set lines
-} -cleanup {
-    unset -nocomplain lines r f
-} -returnCodes {ok error} -result {{aaa bbb ccc} {aaa {b
-bb} ccc} {zzz yyy xxx} {{ 1 } { 2 } { 3 }} {includes(\")quote {quoted includes (") quote}} {elm2 {} empty} single {last3 empty {} {} {}}} ;# "
-
-
-test ns_getcsv-1.1 {ns_getcsv with trim} -body {
-    set csvFile [ns_server pagedir]/csv
-    set f [open $csvFile]
-
-    while {1} {
-        set r [ns_getcsv -trim $f line]
-        switch $r {
-           -1       {break}
-            0       {}
-            default {lappend lines $line}
-        }
-    }
-    close $f
-    set lines
-} -cleanup {
-    unset -nocomplain lines r f
-} -returnCodes {ok error} -result {{aaa bbb ccc} {aaa {b
-bb} ccc} {zzz yyy xxx} {1 2 3} {includes(\")quote {quoted includes (") quote}} {elm2 {} empty} single {last3 empty {} {} {}}} ;# "
 
 
 cleanupTests

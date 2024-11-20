@@ -300,10 +300,12 @@ AddCmds(Tcl_Interp *interp, const void *arg)
  *
  * ParseExtendedHeaders --
  *
- *      Parse a string specifying the extended parameters.
+ *      Parse a string specifying the extended parameters and set on success
+ *      logPtr->extendedHeaders.
+ *
  *      The string might be:
  *
- *       - a Tcl list of plain request header fields, like e.g.
+ *       - a Tcl list of plain request header fields, like, e.g.,
  *         {Referer x-forwarded-for}
  *
  *       - a Tcl list of header fields with tags to denote request or response
@@ -444,96 +446,124 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
     }
 
     switch (cmd) {
-    case ROLLFMT:
-        Ns_MutexLock(&logPtr->lock);
-        if (objc > 2) {
-            strarg = ns_strdup(Tcl_GetString(objv[2]));
-            ns_free((char *)logPtr->rollfmt);
-            logPtr->rollfmt = strarg;
-        }
-        strarg = logPtr->rollfmt;
-        Ns_MutexUnlock(&logPtr->lock);
-        if (strarg != NULL) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(strarg, TCL_INDEX_NONE));
-        }
-        break;
 
-    case MAXBACKUP:
-        {
-            int intarg = 0;
+    case ROLLFMT: {
+        char       *fmt = NULL;
+        Ns_ObjvSpec largs[] = {
+            {"?timeformat", Ns_ObjvString, &fmt, NULL},
+            {NULL, NULL, NULL, NULL}
+        };
 
-            if (objc > 2) {
-                if (Tcl_GetIntFromObj(interp, objv[2], &intarg) != TCL_OK) {
-                    result = TCL_ERROR;
-                } else {
-                    if (intarg < 1) {
-                        intarg = 100;
-                    }
-                }
-            }
-            if (result == TCL_OK) {
-                Ns_MutexLock(&logPtr->lock);
-                if (objc > 2) {
-                    logPtr->maxbackup = (TCL_SIZE_T)intarg;
-                } else {
-                    intarg = (int)logPtr->maxbackup;
-                }
-                Ns_MutexUnlock(&logPtr->lock);
-                Tcl_SetObjResult(interp, Tcl_NewIntObj(intarg));
-            }
-        }
-        break;
+        if (Ns_ParseObjv(NULL, largs, interp, 2, objc, objv) != NS_OK) {
+            result = TCL_ERROR;
 
-    case MAXBUFFER:
-        {
-            int intarg = 0;
-
-            if (objc > 2) {
-                if (Tcl_GetIntFromObj(interp, objv[2], &intarg) != TCL_OK) {
-                    result = TCL_ERROR;
-                } else {
-                    if (intarg < 0) {
-                        intarg = 0;
-                    }
-                }
-            }
-            if (result == TCL_OK) {
-                Ns_MutexLock(&logPtr->lock);
-                if (objc > 2) {
-                    logPtr->maxlines = intarg;
-                } else {
-                    intarg = logPtr->maxlines;
-                }
-                Ns_MutexUnlock(&logPtr->lock);
-                Tcl_SetObjResult(interp, Tcl_NewIntObj(intarg));
-            }
-        }
-        break;
-
-    case EXTHDRS:
-        {
+        } else {
             Ns_MutexLock(&logPtr->lock);
-            if (objc > 2) {
-                result = ParseExtendedHeaders(logPtr, Tcl_GetString(objv[2]));
+
+            if (fmt != NULL) {
+                ns_free((char *)logPtr->rollfmt);
+                logPtr->rollfmt = ns_strdup(fmt);
+            }
+            fmt = (char *)logPtr->rollfmt;
+            Ns_MutexUnlock(&logPtr->lock);
+            if (fmt != NULL) {
+                Tcl_SetObjResult(interp, Tcl_NewStringObj(fmt, TCL_INDEX_NONE));
+            }
+        }
+        break;
+    }
+
+    case MAXBACKUP: {
+        int               nrFiles = -1;
+        Ns_ObjvValueRange nrFilesRange = {1, INT_MAX};
+        Ns_ObjvSpec largs[] = {
+            {"?nrfiles", Ns_ObjvInt, &nrFiles, &nrFilesRange},
+            {NULL, NULL, NULL, NULL}
+        };
+
+        if (Ns_ParseObjv(NULL, largs, interp, 2, objc, objv) != NS_OK) {
+            result = TCL_ERROR;
+
+        } else {
+            Ns_MutexLock(&logPtr->lock);
+            if (nrFiles != -1) {
+                logPtr->maxbackup = (TCL_SIZE_T)nrFiles;
+            } else {
+                nrFiles = (int)logPtr->maxbackup;
+            }
+            Ns_MutexUnlock(&logPtr->lock);
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(nrFiles));
+        }
+        break;
+    }
+
+    case MAXBUFFER: {
+        int               nrLines = -1;
+        Ns_ObjvValueRange nrLinesRange = {0, INT_MAX};
+        Ns_ObjvSpec largs[] = {
+            {"?nrlines", Ns_ObjvInt, &nrLines, &nrLinesRange},
+            {NULL, NULL, NULL, NULL}
+        };
+
+        if (Ns_ParseObjv(NULL, largs, interp, 2, objc, objv) != NS_OK) {
+            result = TCL_ERROR;
+
+        } else {
+
+            Ns_MutexLock(&logPtr->lock);
+            if (nrLines != -1) {
+                logPtr->maxlines = nrLines;
+            } else {
+                nrLines = logPtr->maxlines;
+            }
+            Ns_MutexUnlock(&logPtr->lock);
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(nrLines));
+        }
+        break;
+    }
+
+    case EXTHDRS: {
+        char       *headers = NULL;
+        Ns_ObjvSpec largs[] = {
+            {"?headers", Ns_ObjvString, &headers, NULL},
+            {NULL, NULL, NULL, NULL}
+        };
+
+        if (Ns_ParseObjv(NULL, largs, interp, 2, objc, objv) != NS_OK) {
+            result = TCL_ERROR;
+
+        } else {
+            Ns_MutexLock(&logPtr->lock);
+            if (headers != NULL) {
+                if (ParseExtendedHeaders(logPtr, headers) != NS_OK) {
+                    Ns_TclPrintfResult(interp, "invalid header specification: '%s'", headers);
+                }
             }
             if (result == TCL_OK) {
                 Tcl_SetObjResult(interp, Tcl_NewStringObj(logPtr->extendedHeaders, TCL_INDEX_NONE));
-            } else {
-                Ns_TclPrintfResult(interp, "invalid value: %s",
-                                   Tcl_GetString(objv[2]));
             }
             Ns_MutexUnlock(&logPtr->lock);
         }
         break;
+    }
 
-    case FLAGS:
-        {
+    case FLAGS: {
+        char       *flagString = NULL;
+        Ns_ObjvSpec largs[] = {
+            {"?flags", Ns_ObjvString, &flagString, NULL},
+            {NULL, NULL, NULL, NULL}
+        };
+
+        if (Ns_ParseObjv(NULL, largs, interp, 2, objc, objv) != NS_OK) {
+            result = TCL_ERROR;
+
+        } else {
             unsigned int flags;
 
             Tcl_DStringInit(&ds);
-            if (objc > 2) {
+            if (flagString != NULL) {
                 flags = 0u;
-                Tcl_DStringAppend(&ds, Tcl_GetString(objv[2]), TCL_INDEX_NONE);
+                Tcl_DStringAppend(&ds, flagString, TCL_INDEX_NONE);
                 Ns_StrToLower(ds.string);
                 if (strstr(ds.string, "logcombined")) {
                     flags |= LOG_COMBINED;
@@ -554,6 +584,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
                     flags |= LOG_SUPPRESSQUERY;
                 }
                 Tcl_DStringSetLength(&ds, 0);
+
                 Ns_MutexLock(&logPtr->lock);
                 logPtr->flags = flags;
                 Ns_MutexUnlock(&logPtr->lock);
@@ -562,6 +593,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
                 flags = logPtr->flags;
                 Ns_MutexUnlock(&logPtr->lock);
             }
+
             if ((flags & LOG_COMBINED)) {
                 Tcl_DStringAppend(&ds, "logcombined ", TCL_INDEX_NONE);
             }
@@ -583,39 +615,61 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
             Tcl_DStringResult(interp, &ds);
         }
         break;
+    }
 
-    case FILE:
-        if (objc > 2) {
-            Tcl_DStringInit(&ds);
-            strarg = Tcl_GetString(objv[2]);
-            if (Ns_PathIsAbsolute(strarg) == NS_FALSE) {
-                Ns_HomePath(&ds, strarg, (char *)0L);
-                strarg = ds.string;
-            }
-            Ns_MutexLock(&logPtr->lock);
-            LogClose(logPtr);
-            ns_free((char *)logPtr->filename);
-            logPtr->filename = ns_strdup(strarg);
-            Tcl_DStringFree(&ds);
-            LogOpen(logPtr);
+
+    case FILE: {
+        char       *filepath = NULL;
+        Ns_ObjvSpec largs[] = {
+            {"?filepath", Ns_ObjvString, &filepath, NULL},
+            {NULL, NULL, NULL, NULL}
+        };
+
+        if (Ns_ParseObjv(NULL, largs, interp, 2, objc, objv) != NS_OK) {
+            result = TCL_ERROR;
         } else {
             Ns_MutexLock(&logPtr->lock);
-        }
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(logPtr->filename, TCL_INDEX_NONE));
-        Ns_MutexUnlock(&logPtr->lock);
-        break;
 
-    case ROLL:
-        {
+            if (filepath != NULL) {
+                Tcl_DStringInit(&ds);
+                if (Ns_PathIsAbsolute(filepath) == NS_FALSE) {
+                    Ns_HomePath(&ds, filepath, (char *)0L);
+                    strarg = ds.string;
+                } else {
+                    strarg = filepath;
+                }
+                LogClose(logPtr);
+                ns_free((char *)logPtr->filename);
+                logPtr->filename = ns_strdup(strarg);
+                Tcl_DStringFree(&ds);
+                LogOpen(logPtr);
+            }
+
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(logPtr->filename, TCL_INDEX_NONE));
+            Ns_MutexUnlock(&logPtr->lock);
+        }
+        break;
+    }
+
+    case ROLL: {
+        char       *filepath = NULL;
+        Ns_ObjvSpec largs[] = {
+            {"?filepath", Ns_ObjvString, &filepath, NULL},
+            {NULL, NULL, NULL, NULL}
+        };
+
+        if (Ns_ParseObjv(NULL, largs, interp, 2, objc, objv) != NS_OK) {
+            result = TCL_ERROR;
+        } else {
             Ns_ReturnCode status = NS_ERROR;
 
             Ns_MutexLock(&logPtr->lock);
-            if (objc == 2) {
+            if (filepath == NULL) {
                 status = LogRoll(logPtr);
-            } else if (objc > 2) {
-                strarg = Tcl_GetString(objv[2]);
+            } else  {
+                strarg = filepath;
                 if (Tcl_FSAccess(objv[2], F_OK) == 0) {
-                    status = Ns_RollFile(strarg, logPtr->maxbackup);
+                    status = Ns_RollFile(filepath, logPtr->maxbackup);
                 } else {
                     Tcl_Obj *path = Tcl_NewStringObj(logPtr->filename, TCL_INDEX_NONE);
 
@@ -641,7 +695,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
         }
         break;
     }
-
+    }
     return result;
 }
 

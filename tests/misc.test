@@ -201,16 +201,19 @@ test ns_ip-1.0.2 {ns_ip wrong subcommand} -body {
     ns_ip x
 } -returnCodes error -result {ns_ip: bad subcommand "x": must be match, properties, public, trusted, or valid}
 
-test ns_ip-1.1.1 {ns_ip properties general} -body {
+test ns_ip-1.1.0 {syntax: ns_ip match} -body {
+    ns_ip match
+} -returnCodes error -result {wrong # args: should be "ns_ip match /cidr/ /ipaddr/"}
+test ns_ip-1.1.1 {syntax: ns_ip properties} -body {
     ns_ip properties
 } -returnCodes error -result {wrong # args: should be "ns_ip properties /ipaddr/"}
-test ns_ip-1.1.2 {ns_ip public general} -body {
+test ns_ip-1.1.2 {syntax: ns_ip public} -body {
     ns_ip public
 } -returnCodes error -result {wrong # args: should be "ns_ip public /ipaddr/"}
-test ns_ip-1.1.3 {ns_ip trusted general} -body {
+test ns_ip-1.1.3 {syntax: ns_ip trusted} -body {
     ns_ip trusted
 } -returnCodes error -result {wrong # args: should be "ns_ip trusted /ipaddr/"}
-test ns_ip-1.1.4 {ns_ip valid general} -body {
+test ns_ip-1.1.4 {syntax: ns_ip valid} -body {
     ns_ip valid
 } -returnCodes error -result {wrong # args: should be "ns_ip valid ?-type IPv4|IPv6|ipv4|ipv6? ?--? /ipaddr/"}
 
@@ -294,6 +297,98 @@ test ns_ip_match--2.4 {ns_ip match IPv4} -body {
 
 
 #######################################################################################
+#  test ns_rlimit
+#######################################################################################
+
+test ns_rlimit-1.0 {ns_rlimit general} -body {
+    ns_rlimit
+} -returnCodes error -result {wrong # args: should be "ns_rlimit /subcommand/ ?args?"}
+
+test ns_rlimit-1.1 {ns_rlimit wrong subcommand} -body {
+    ns_rlimit ?
+} -returnCodes error -result {bad subcommand "?": must be coresize, datasize, files, filesize, or vmsize}
+
+test ns_rlimit-1.2 {syntax: ns_rlimit coresize} -body {
+    ns_rlimit coresize 1 ?
+} -returnCodes error -result {wrong # args: should be "ns_rlimit coresize ?value?"}
+
+test ns_rlimit-1.3 {syntax: ns_rlimit datasize} -body {
+    ns_rlimit datasize 1 ?
+} -returnCodes error -result {wrong # args: should be "ns_rlimit datasize ?value?"}
+
+test ns_rlimit-1.4 {syntax: ns_rlimit files} -body {
+    ns_rlimit files 1 ?
+} -returnCodes error -result {wrong # args: should be "ns_rlimit files ?value?"}
+
+test ns_rlimit-1.5 {syntax: ns_rlimit filesize} -body {
+    ns_rlimit filesize 1 ?
+} -returnCodes error -result {wrong # args: should be "ns_rlimit filesize ?value?"}
+
+test ns_rlimit-1.6 {syntax: ns_rlimit vmsize} -body {
+    ns_rlimit vmsize 1 ?
+} -returnCodes error -result {wrong # args: should be "ns_rlimit vmsize ?value?"}
+
+#######################################################################################
+#  ns_setprivileges
+#######################################################################################
+
+test ns_setgroup-1.0 {syntax: ns_setgroup} -body {
+    ns_setgroup
+} -returnCodes error -result {wrong # args: should be "ns_setgroup /group/"}
+
+test ns_setuser-1.0 {syntax: ns_setuser} -body {
+    ns_setuser
+} -returnCodes error -result {wrong # args: should be "ns_setuser /user/"}
+
+
+#######################################################################################
+#  test ns_getcsv
+#######################################################################################
+
+test ns_getcsv-1.0 {syntax: ns_getcsv} -body {
+    ns_getcsv
+} -returnCodes error -result {wrong # args: should be "ns_getcsv ?-delimiter /string/? ?-trim? ?-quotechar /string/? ?--? /fileId/ /varName/"}
+
+test ns_getcsv-2.0 {ns_getcsv} -body {
+    set csvFile [ns_server pagedir]/csv
+    set f [open $csvFile]
+
+    while {1} {
+        set r [ns_getcsv $f line]
+        switch $r {
+           -1       {break}
+            0       {}
+            default {lappend lines $line}
+        }
+    }
+    close $f
+    set lines
+} -cleanup {
+    unset -nocomplain lines r f
+} -returnCodes {ok error} -result {{aaa bbb ccc} {aaa {b
+bb} ccc} {zzz yyy xxx} {{ 1 } { 2 } { 3 }} {includes(\")quote {quoted includes (") quote}} {elm2 {} empty} single {last3 empty {} {} {}}} ;# "
+
+test ns_getcsv-2.1 {ns_getcsv with trim} -body {
+    set csvFile [ns_server pagedir]/csv
+    set f [open $csvFile]
+
+    while {1} {
+        set r [ns_getcsv -trim $f line]
+        switch $r {
+           -1       {break}
+            0       {}
+            default {lappend lines $line}
+        }
+    }
+    close $f
+    set lines
+} -cleanup {
+    unset -nocomplain lines r f
+} -returnCodes {ok error} -result {{aaa bbb ccc} {aaa {b
+bb} ccc} {zzz yyy xxx} {1 2 3} {includes(\")quote {quoted includes (") quote}} {elm2 {} empty} single {last3 empty {} {} {}}} ;# "
+
+
+#######################################################################################
 #  Other commands, in part defined in Tcl
 #######################################################################################
 
@@ -302,6 +397,19 @@ test ns_urlcharset-1.0 {ns_urlcharset basic syntax} -body {
 } -returnCodes error -result {wrong # args: should be "ns_urlcharset charset"}
 
 # ns_urlcharset is a Tcl proc: message should be {wrong # args: should be "ns_urlcharset /charset/"}
+
+test ns_issmallint-1.0 {syntax: ns_issmallint} -body {
+    ns_issmallint
+} -returnCodes error -result {wrong # args: should be "ns_issmallint val"}
+# ns_issmallint is a Tcl proc: message should be {wrong # args: should be "ns_issmallint /val/"}
+
+test ns_paren-1.0 {syntax: ns_paren} -body {
+    ns_paren x y
+} -returnCodes error -result {wrong # args: should be "ns_paren val"}
+# ns_paren is a Tcl proc: message should be {wrong # args: should be "ns_paren /val/"}
+
+
+cleanupTests
 
 #
 # Local variables:

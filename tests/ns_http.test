@@ -52,12 +52,57 @@ proc test_case_name {} {
     return $name
 }
 
+#
+# Syntax tests
+#
+test ns_http-1.0  {syntax: ns_http} -body {
+    ns_http
+} -returnCodes error -result {wrong # args: should be "ns_http cancel|cleanup|keepalives|list|queue|run|stats|wait ?args?"}
+
+test ns_http-1.1  {syntax: ns_http subcommands} -body {
+    ns_http ?
+} -returnCodes error -result {ns_http: bad subcommand "?": must be cancel, cleanup, keepalives, list, queue, run, stats, or wait}
+
+test ns_http-1.2 {syntax: ns_http cancel} -body {
+    ns_http cancel
+} -returnCodes error -result {wrong # args: should be "ns_http cancel /id/"}
+
+test ns_http-1.3 {syntax: ns_http cleanup} -body {
+    ns_http cleanup ?
+} -returnCodes error -result {wrong # args: should be "ns_http cleanup"}
+
+test ns_http-1.4 {syntax: ns_http keepalives} -body {
+    ns_http keepalives "" ?
+} -returnCodes error -result {wrong # args: should be "ns_http keepalives"}
+
+test ns_http-1.5 {syntax: ns_http list} -body {
+    ns_http list "" ?
+} -returnCodes error -result {wrong # args: should be "ns_http list ?id?"}
+
+test ns_http-1.6 {syntax: ns_http queue} -body {
+    ns_http queue
+} -returnCodes error -result {wrong # args: should be "ns_http queue ?-binary? ?-body /body/? ?-body_chan /string/? ?-body_file /string/? ?-body_size /integer[0,MAX]/? ?-cafile /string/? ?-capath /string/? ?-cert /string/? ?-raw? ?-decompress? ?-donecallback /string/? ?-headers /ns_set/? ?-hostname /string/? ?-keepalive /keepalive/? ?-keep_host_header? ?-method /string/? ?-outputchan /string/? ?-outputfile /string/? ?-partialresults? ?-spoolsize /memory-unit/? ?-expire /expire/? ?-timeout /timeout/? ?-unix_socket /string/? ?-verify? ?-proxy /proxy/? /url/"}
+
+test ns_http-1.7 {syntax: ns_http run} -body {
+    ns_http run
+} -returnCodes error -result {wrong # args: should be "ns_http run ?-binary? ?-body /body/? ?-body_chan /string/? ?-body_file /string/? ?-body_size /integer[0,MAX]/? ?-cafile /string/? ?-capath /string/? ?-cert /string/? ?-raw? ?-decompress? ?-donecallback /string/? ?-headers /ns_set/? ?-hostname /string/? ?-keepalive /keepalive/? ?-keep_host_header? ?-method /string/? ?-outputchan /string/? ?-outputfile /string/? ?-partialresults? ?-spoolsize /memory-unit/? ?-expire /expire/? ?-timeout /timeout/? ?-unix_socket /string/? ?-verify? ?-proxy /proxy/? /url/"}
+
+test ns_http-1.8 {syntax: ns_http stats} -body {
+    ns_http stats "" ?
+} -returnCodes error -result {wrong # args: should be "ns_http stats ?id?"}
+
+test ns_http-1.9 {syntax: ns_http wait} -body {
+    ns_http wait
+} -returnCodes error -result {wrong # args: should be "ns_http wait ?-binary? ?-decompress? ?-elapsed /elapsed/? ?-file /file/? ?-headers /ns_set/? ?-outputfile /string/? ?-result /result/? ?-spoolsize /memory-unit/? ?-status /status/? ?-timeout /timeout/? /id/"}
+
+
+#
+# Functional tests
+#
 
 test http-1.1 {bad request} -constraints serverListen -body {
     nstest::http bogus
 } -result {405}
-
-
 
 test http-1.2 {HTTP/0.9 GET} -constraints {serverListen http09} -body {
     nstest::http-0.9 -http "" -getbody 1 GET /noexist

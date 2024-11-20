@@ -603,7 +603,7 @@ proc ns_updateheader {key value} {
 #
 
 proc ns_subnetmatch {cidr ipaddr} {
-    #ns_deprecated "ns_ip match"
+    ns_deprecated "ns_ip match"
     ns_ip match $cidr $ipaddr
 }
 

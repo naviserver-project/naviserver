@@ -1,0 +1,96 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+#######################################################################################
+#  test ns_ictl 
+#######################################################################################
+
+test ns_ictl-1.0  {syntax: ns_ictl} -body {
+    ns_ictl
+} -returnCodes error -result {wrong # args: should be "ns_ictl addmodule|cleanup|epoch|get|getmodules|gettraces|markfordelete|maxconcurrentupdates|oncleanup|oncreate|ondelete|oninit|runtraces|save|trace|update ?args?"}
+
+test ns_ictl-1.1  {syntax: ns_ictl subcommands} -body {
+    ns_ictl ?
+} -returnCodes error -result {ns_ictl: bad subcommand "?": must be addmodule, cleanup, epoch, get, getmodules, gettraces, markfordelete, maxconcurrentupdates, oncleanup, oncreate, ondelete, oninit, runtraces, save, trace, or update}
+
+test ns_ictl-1.2 {syntax: ns_ictl addmodule} -body {
+    ns_ictl addmodule
+} -returnCodes error -result {wrong # args: should be "ns_ictl addmodule /module/"}
+
+test ns_ictl-1.3 {syntax: ns_ictl cleanup} -body {
+    ns_ictl cleanup x
+} -returnCodes error -result {wrong # args: should be "ns_ictl cleanup"}
+
+test ns_ictl-1.4 {syntax: ns_ictl epoch} -body {
+    ns_ictl epoch x
+} -returnCodes error -result {wrong # args: should be "ns_ictl epoch"}
+
+test ns_ictl-1.5 {syntax: ns_ictl get} -body {
+    ns_ictl get x
+} -returnCodes error -result {wrong # args: should be "ns_ictl get"}
+
+test ns_ictl-1.6 {syntax: ns_ictl getmodules} -body {
+    ns_ictl getmodules x
+} -returnCodes error -result {wrong # args: should be "ns_ictl getmodules"}
+
+test ns_ictl-1.7 {syntax: ns_ictl gettraces} -body {
+    ns_ictl gettraces
+} -returnCodes error -result {wrong # args: should be "ns_ictl gettraces /when/"}
+
+test ns_ictl-1.8 {syntax: ns_ictl markfordelete} -body {
+    ns_ictl markfordelete x
+} -returnCodes error -result {wrong # args: should be "ns_ictl markfordelete"}
+
+test ns_ictl-1.9 {syntax: ns_ictl maxconcurrentupdates} -body {
+    ns_ictl maxconcurrentupdates 1 x
+} -returnCodes error -result {wrong # args: should be "ns_ictl maxconcurrentupdates ?max[1,MAX]?"}
+
+test ns_ictl-1.10 {syntax: ns_ictl oncleanup} -body {
+    ns_ictl oncleanup
+} -returnCodes error -result {wrong # args: should be "ns_ictl oncleanup /script/ ?args?"}
+
+test ns_ictl-1.11 {syntax: ns_ictl oncreate} -body {
+    ns_ictl oncreate
+} -returnCodes error -result {wrong # args: should be "ns_ictl oncreate /script/ ?args?"}
+
+test ns_ictl-1.12 {syntax: ns_ictl ondelete} -body {
+    ns_ictl ondelete
+} -returnCodes error -result {wrong # args: should be "ns_ictl ondelete /script/ ?args?"}
+
+test ns_ictl-1.13 {syntax: ns_ictl oninit} -body {
+    ns_ictl oninit
+} -returnCodes error -result {wrong # args: should be "ns_ictl oninit /script/ ?args?"}
+
+test ns_ictl-1.14 {syntax: ns_ictl runtraces} -body {
+    ns_ictl runtraces
+} -returnCodes error -result {wrong # args: should be "ns_ictl runtraces /when/"}
+
+test ns_ictl-1.15 {syntax: ns_ictl save} -body {
+    ns_ictl save
+} -returnCodes error -result {wrong # args: should be "ns_ictl save /script/"}
+
+test ns_ictl-1.16 {syntax: ns_ictl trace} -body {
+    ns_ictl trace
+} -returnCodes error -result {wrong # args: should be "ns_ictl trace /when/ /script/ ?args?"}
+
+test ns_ictl-1.17 {syntax: ns_ictl update} -body {
+    ns_ictl update x
+} -returnCodes error -result {wrong # args: should be "ns_ictl update"}
+
+
+
+
+
+
+cleanupTests
+
+#
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

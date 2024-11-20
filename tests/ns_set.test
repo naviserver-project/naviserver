@@ -3,6 +3,10 @@
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
+#
+# Syntax tests
+#
+
 test ns_set-1.1 {basic syntax ns_set} -body {
     ns_set
 } -returnCodes error -result {wrong # args: should be "ns_set array|cleanup|copy|cput|create|delete|delkey|find|format|free|get|icput|idelkey|ifind|iget|imerge|isnull|iunique|iupdate|key|keys|list|merge|move|name|new|print|put|size|split|stats|truncate|unique|update|value|values ?args?"}
@@ -16,8 +20,8 @@ test ns_set-1.6 {basic syntax ns_set array} -body {
 } -returnCodes error -result {wrong # args: should be "ns_set array /setId/"}
 
 test ns_set-1.7 {basic syntax ns_set cleanup} -body {
-    ns_set cleanup
-} -result {}
+    ns_set cleanup x
+} -returnCodes error -result {wrong # args: should be "ns_set cleanup"}
 
 test ns_set-1.8 {basic syntax ns_set copy} -body {
     ns_set copy
@@ -167,7 +171,9 @@ test ns_set-1.41 {basic syntax ns_set list } -body {
     ns_set list x
 } -returnCodes error -result {wrong # args: should be "ns_set list"}
 
-
+#
+# Functional tests
+#
 
 test ns_set-2.0 {basic operation ns_set create without args} -body {
     ns_set cleanup

@@ -70,6 +70,8 @@ test ns_perm-2.15 {ns_permpasswd syntax} -body {
     ns_permpasswd
 } -returnCodes error -result {wrong # args: should be "ns_permpasswd targetuser oldpass newpass"}
 
+# Tcl proc ns_permpasswd: message should be {wrong # args: should be "ns_permpasswd /targetuser/ /oldpass/ /newpass/"}
+
 
 cleanupTests
 

@@ -68,18 +68,18 @@ proc ns_queryget {key {value ""}}  {
 #   Get all values of the same key name from the http form.
 #
 # Results:
-#   Values of the key or def_result if no value found.
+#   Values of the key or default if no value found.
 #
 # Side effects:
 #   May cache current form.
 #
 
-proc ns_querygetall {key {def_result ""}} {
+proc ns_querygetall {key {default ""}} {
 
     set form [ns_getform]
 
     if {$form eq {}} {
-        set result $def_result
+        set result $default
     } else {
         set result {}
         set size [ns_set size $form]
@@ -99,8 +99,8 @@ proc ns_querygetall {key {def_result ""}} {
                 }
             }
         }
-        if {$result eq {}} {
-            set result $def_result
+        if {$result eq ""} {
+            set result $default
         }
     }
 

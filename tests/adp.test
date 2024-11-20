@@ -26,6 +26,181 @@ if {[ns_config test listenport]} {
 
 ns_adp_ctl channel stdout
 
+#
+# Syntax tests
+#
+test ns_adp_ctl-1.0 {basic syntax} -body {
+    ns_adp_ctl
+} -returnCodes error -result {wrong # args: should be "ns_adp_ctl /subcommand/ ?arg ...?"}
+
+test ns_adp_ctl-1.1 {basic syntax} -body {
+    ns_adp_ctl ?
+} -returnCodes error -result {bad subcommand "?": must be bufsize, channel, autoabort, cache, detailerror, displayerror, expire, safe, singlescript, stream, stricterror, trace, or trimspace}
+
+
+test ns_adp_ctl-1.2 {syntax: ns_adp_ctl autoabort} -body {
+    ns_adp_ctl autoabort 1 x
+} -returnCodes error -result {wrong # args: should be "ns_adp_ctl autoabort ?bool?"}
+
+test ns_adp_ctl-1.3 {syntax: ns_adp_ctl bufsize} -body {
+    ns_adp_ctl bufsize 1 x
+} -returnCodes error -result {wrong # args: should be "ns_adp_ctl bufsize ?size[1,MAX]?"}
+
+test ns_adp_ctl-1.4 {syntax: ns_adp_ctl cache} -body {
+    ns_adp_ctl cache 1 x
+} -returnCodes error -result {wrong # args: should be "ns_adp_ctl cache ?bool?"}
+
+test ns_adp_ctl-1.5 {syntax: ns_adp_ctl channel} -body {
+    ns_adp_ctl channel "" x
+} -returnCodes error -result {wrong # args: should be "ns_adp_ctl channel /channel/"}
+
+test ns_adp_ctl-1.6 {syntax: ns_adp_ctl detailerror} -body {
+    ns_adp_ctl detailerror 1 x
+} -returnCodes error -result {wrong # args: should be "ns_adp_ctl detailerror ?bool?"}
+
+test ns_adp_ctl-1.7 {syntax: ns_adp_ctl displayerror} -body {
+    ns_adp_ctl displayerror 1 x
+} -returnCodes error -result {wrong # args: should be "ns_adp_ctl displayerror ?bool?"}
+
+test ns_adp_ctl-1.8 {syntax: ns_adp_ctl expire} -body {
+    ns_adp_ctl expire 1 x
+} -returnCodes error -result {wrong # args: should be "ns_adp_ctl expire ?bool?"}
+
+test ns_adp_ctl-1.9 {syntax: ns_adp_ctl safe} -body {
+    ns_adp_ctl safe 1 x
+} -returnCodes error -result {wrong # args: should be "ns_adp_ctl safe ?bool?"}
+
+test ns_adp_ctl-1.10 {syntax: ns_adp_ctl singlescript} -body {
+    ns_adp_ctl singlescript 1 x
+} -returnCodes error -result {wrong # args: should be "ns_adp_ctl singlescript ?bool?"}
+
+test ns_adp_ctl-1.11 {syntax: ns_adp_ctl stream} -body {
+    ns_adp_ctl stream 1 x
+} -returnCodes error -result {wrong # args: should be "ns_adp_ctl stream ?bool?"}
+
+test ns_adp_ctl-1.12 {syntax: ns_adp_ctl stricterror} -body {
+    ns_adp_ctl stricterror 1 x
+} -returnCodes error -result {wrong # args: should be "ns_adp_ctl stricterror ?bool?"}
+
+test ns_adp_ctl-1.13 {syntax: ns_adp_ctl trace} -body {
+    ns_adp_ctl trace 1 x
+} -returnCodes error -result {wrong # args: should be "ns_adp_ctl trace ?bool?"}
+
+test ns_adp_ctl-1.14 {syntax: ns_adp_ctl trimspace} -body {
+    ns_adp_ctl trimspace 1 x
+} -returnCodes error -result {wrong # args: should be "ns_adp_ctl trimspace ?bool?"}
+
+
+
+test ns_adp_abort-1.0 {syntax: ns_adp_abort} -body {
+    ns_adp_abort ? ?
+} -returnCodes error -result {wrong # args: should be "ns_adp_abort ?retval?"}
+
+test ns_adp_argv-1.0 {syntax: ns_adp_argv} -body {
+    ns_adp_argv 1 ? ?
+} -returnCodes error -result {wrong # args: should be "ns_adp_argv ?index[0,MAX]? ?default?"}
+
+test ns_adp_close-1.0 {syntax: ns_adp_close} -body {
+    ns_adp_close ?
+} -returnCodes error -result {wrong # args: should be "ns_adp_close"}
+
+test ns_adp_dir-1.0 {syntax: ns_adp_dir} -body {
+    ns_adp_dir ?
+} -returnCodes error -result {wrong # args: should be "ns_adp_dir"}
+
+test ns_adp_dump-1.0 {syntax: ns_adp_dump} -body {
+    ns_adp_dump ?
+} -returnCodes error -result {wrong # args: should be "ns_adp_dump"}
+
+test ns_adp_info-1.0 {syntax: ns_adp_info} -body {
+    ns_adp_info ?
+} -returnCodes error -result {wrong # args: should be "ns_adp_info"}
+
+test ns_adp_registeradp-1.0 {syntax: ns_adp_registeradp} -body {
+    ns_adp_registeradp
+} -returnCodes error -result {wrong # args: should be "ns_adp_registeradp /tag/ ?endtag? adp|proc"}
+
+test ns_adp_registerproc-1.0 {syntax: ns_adp_registerproc} -body {
+    ns_adp_registerproc
+} -returnCodes error -result {wrong # args: should be "ns_adp_registerproc /tag/ ?endtag? adp|proc"}
+
+test ns_adp_registerscript-1.0 {syntax: ns_adp_registerscript} -body {
+    ns_adp_registerscript
+} -returnCodes error -result {wrong # args: should be "ns_adp_registerscript /tag/ ?endtag? adp|proc"}
+
+test ns_adp_return-1.0 {syntax: ns_adp_return} -body {
+    ns_adp_return ? ?
+} -returnCodes error -result {wrong # args: should be "ns_adp_return ?retval?"}
+
+
+test ns_adp_append-1.0 {syntax: ns_adp_append} -body {
+    ns_adp_append
+} -returnCodes error -result {wrong # args: should be "ns_adp_append /string/ ?string ...?"}
+
+test ns_adp_argc-1.0 {syntax: ns_adp_argc} -body {
+    ns_adp_argc ?
+} -returnCodes error -result {wrong # args: should be "ns_adp_argc"}
+
+test ns_adp_bind_args-1.0 {syntax: ns_adp_bind_args} -body {
+    ns_adp_bind_args
+} -returnCodes error -result {wrong # args: should be "ns_adp_bind_args /varName/ ?varName ...?"}
+
+test ns_adp_break-1.0 {syntax: ns_adp_break} -body {
+    ns_adp_break ? ?
+} -returnCodes error -result {wrong # args: should be "ns_adp_break ?retval?"}
+
+test ns_adp_debug-1.0 {syntax: ns_adp_debug} -body {
+    ns_adp_debug ? ? ? ?
+} -returnCodes error -result {wrong # args: should be "ns_adp_debug ?-host /string/? ?-port /string/? ?-procs /string/? ?--? ?host? ?port? ?procs?"}
+
+test ns_adp_exception-1.0 {syntax: ns_adp_exception} -body {
+    ns_adp_exception ? ?
+} -returnCodes error -result {wrong # args: should be "ns_adp_exception ?varName?"}
+
+test ns_adp_flush-1.0 {syntax: ns_adp_flush} -body {
+    ns_adp_flush ?
+} -returnCodes error -result {wrong # args: should be "ns_adp_flush"}
+
+test ns_adp_include-1.0 {syntax: ns_adp_include} -body {
+    ns_adp_include
+} -returnCodes error -result {wrong # args: should be "_ns_adp_include ?-cache /cache/? ?-nocache? ?-tcl? ?--? /fileName/ ?args?"}
+# ns_adp_include is a Tcl proc: message should be {wrong # args: should be "ns_adp_include ?-cache /cache/? ?-nocache? ?-tcl? ?--? /fileName/ ?args?"}
+
+test ns_adp_mimetype-1.0 {syntax: ns_adp_mimetype} -body {
+    ns_adp_mimetype ? ?
+} -returnCodes error -result {wrong # args: should be "ns_adp_mimetype ?mimetype?"}
+
+test ns_adp_parse-1.0 {syntax: ns_adp_parse} -body {
+    ns_adp_parse
+} -returnCodes error -result {wrong # args: should be "ns_adp_parse ?-cwd /string/? ?-file? ?-safe? ?-string? ?-tcl? ?--? /args/"}
+
+test ns_adp_puts-1.0 {syntax: ns_adp_puts} -body {
+    ns_adp_puts
+} -returnCodes error -result {wrong # args: should be "ns_adp_puts ?-nonewline? ?--? /string/"}
+
+test ns_adp_stats-1.0 {syntax: ns_adp_stats} -body {
+    ns_adp_stats ?
+} -returnCodes error -result {wrong # args: should be "ns_adp_stats"}
+
+test ns_adp_tell-1.0 {syntax: ns_adp_tell} -body {
+    ns_adp_tell ?
+} -returnCodes error -result {wrong # args: should be "ns_adp_tell"}
+
+test ns_adp_trunc-1.0 {syntax: ns_adp_trunc} -body {
+    ns_adp_trunc 1 ?
+} -returnCodes error -result {wrong # args: should be "ns_adp_trunc ?length[0,MAX]?"}
+
+test ns_register_adp-1.0 {syntax: ns_register_adp} -body {
+    ns_register_adp
+} -returnCodes error -result {wrong # args: should be "ns_register_adp ?-noinherit? ?-expires /expires/? ?-options /options/? ?--? /method/ /url/ ?file?"}
+
+
+
+
+#
+# Functional tests
+#
+
 #ns_logctl severity Debug(task) on
 
 test adp-1.1 {Simple Tcl page} -body {

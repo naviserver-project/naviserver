@@ -1733,53 +1733,53 @@ HttpListObjCmd(
     TCL_SIZE_T         objc,
     Tcl_Obj    *const* objv
 ) {
-    NsInterp      *itPtr = clientData;
     char          *idString = NULL;
     int            result = TCL_OK;
-    Tcl_Obj       *resultObj;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
+    Ns_ObjvSpec    args[] = {
+        {"?id", Ns_ObjvObj, &idString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    /*
-     * Syntax: ns_http list ?id?
-     */
-    if (objc == 3) {
-        idString = Tcl_GetString(objv[2]);
-    }
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
 
-    resultObj = Tcl_NewListObj(0, NULL);
+    } else {
+        NsInterp      *itPtr = clientData;
+        Tcl_HashEntry *hPtr;
+        Tcl_HashSearch search;
+        Tcl_Obj       *resultObj = Tcl_NewListObj(0, NULL);
 
-    for (hPtr = Tcl_FirstHashEntry(&itPtr->httpRequests, &search);
-         hPtr != NULL;
-         hPtr = Tcl_NextHashEntry(&search) ) {
-        char *taskString = Tcl_GetHashKey(&itPtr->httpRequests, hPtr);
+        for (hPtr = Tcl_FirstHashEntry(&itPtr->httpRequests, &search);
+             hPtr != NULL;
+             hPtr = Tcl_NextHashEntry(&search) ) {
+            char *taskString = Tcl_GetHashKey(&itPtr->httpRequests, hPtr);
 
-        if (idString == NULL || STREQ(taskString, idString)) {
-            const char *taskState;
-            NsHttpTask *httpPtr = (NsHttpTask *)Tcl_GetHashValue(hPtr);
+            if (idString == NULL || STREQ(taskString, idString)) {
+                const char *taskState;
+                NsHttpTask *httpPtr = (NsHttpTask *)Tcl_GetHashValue(hPtr);
 
-            assert(httpPtr != NULL);
+                assert(httpPtr != NULL);
 
-            if (Ns_TaskCompleted(httpPtr->task) == NS_TRUE) {
-                taskState = "done";
-            } else if (httpPtr->error != NULL) {
-                taskState = "error";
-            } else {
-                taskState = "running";
+                if (Ns_TaskCompleted(httpPtr->task) == NS_TRUE) {
+                    taskState = "done";
+                } else if (httpPtr->error != NULL) {
+                    taskState = "error";
+                } else {
+                    taskState = "running";
+                }
+
+                Tcl_ListObjAppendElement
+                    (interp, resultObj, Tcl_NewStringObj(taskString, TCL_INDEX_NONE));
+
+                Tcl_ListObjAppendElement
+                    (interp, resultObj, Tcl_NewStringObj(httpPtr->url, TCL_INDEX_NONE));
+
+                Tcl_ListObjAppendElement
+                    (interp, resultObj, Tcl_NewStringObj(taskState, TCL_INDEX_NONE));
             }
-
-            Tcl_ListObjAppendElement
-                (interp, resultObj, Tcl_NewStringObj(taskString, TCL_INDEX_NONE));
-
-            Tcl_ListObjAppendElement
-                (interp, resultObj, Tcl_NewStringObj(httpPtr->url, TCL_INDEX_NONE));
-
-            Tcl_ListObjAppendElement
-                (interp, resultObj, Tcl_NewStringObj(taskState, TCL_INDEX_NONE));
         }
+        Tcl_SetObjResult(interp, resultObj);
     }
-
-    Tcl_SetObjResult(interp, resultObj);
 
     return result;
 }
@@ -1849,129 +1849,131 @@ HttpStatsObjCmd(
     TCL_SIZE_T         objc,
     Tcl_Obj    *const* objv
 ) {
-    NsInterp      *itPtr = clientData;
     char          *idString = NULL;
     int            result = TCL_OK;
-    Tcl_Obj       *resultObj = NULL;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
+    Ns_ObjvSpec    args[] = {
+        {"?id", Ns_ObjvObj, &idString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    /*
-     * Syntax: ns_http stats ?id?
-     */
-    if (objc == 3) {
-        idString = Tcl_GetString(objv[2]);
-    }
+    if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
 
-    if (idString == NULL) {
-        resultObj = Tcl_NewListObj(0, NULL);
-    }
+    } else {
+        NsInterp      *itPtr = clientData;
+        Tcl_Obj       *resultObj = NULL;
+        Tcl_HashEntry *hPtr;
+        Tcl_HashSearch search;
 
-    for (hPtr = Tcl_FirstHashEntry(&itPtr->httpRequests, &search);
-         hPtr != NULL;
-         hPtr = Tcl_NextHashEntry(&search)) {
+        if (idString == NULL) {
+            resultObj = Tcl_NewListObj(0, NULL);
+        }
 
-        const char *taskString;
+        for (hPtr = Tcl_FirstHashEntry(&itPtr->httpRequests, &search);
+             hPtr != NULL;
+             hPtr = Tcl_NextHashEntry(&search)) {
 
-        taskString = Tcl_GetHashKey(&itPtr->httpRequests, hPtr);
+            const char *taskString;
 
-        if (idString == NULL || STREQ(taskString, idString)) {
-            NsHttpTask *httpPtr;
-            Tcl_Obj    *entryObj;
+            taskString = Tcl_GetHashKey(&itPtr->httpRequests, hPtr);
 
-            httpPtr = (NsHttpTask *)Tcl_GetHashValue(hPtr);
-            NS_NONNULL_ASSERT(httpPtr != NULL);
+            if (idString == NULL || STREQ(taskString, idString)) {
+                NsHttpTask *httpPtr;
+                Tcl_Obj    *entryObj;
 
-            entryObj = Tcl_NewDictObj();
+                httpPtr = (NsHttpTask *)Tcl_GetHashValue(hPtr);
+                NS_NONNULL_ASSERT(httpPtr != NULL);
 
-            /*
-             * Following are not being changed by the task thread
-             * so we need no extra lock here.
-             */
+                entryObj = Tcl_NewDictObj();
 
-            (void) Tcl_DictObjPut
-                (interp, entryObj, Tcl_NewStringObj("task", 4),
-                 Tcl_NewStringObj(taskString, TCL_INDEX_NONE));
+                /*
+                 * Following are not being changed by the task thread
+                 * so we need no extra lock here.
+                 */
 
-            (void) Tcl_DictObjPut
-                (interp, entryObj, Tcl_NewStringObj("url", 3),
-                 Tcl_NewStringObj(httpPtr->url, TCL_INDEX_NONE));
+                (void) Tcl_DictObjPut
+                    (interp, entryObj, Tcl_NewStringObj("task", 4),
+                     Tcl_NewStringObj(taskString, TCL_INDEX_NONE));
 
-            (void) Tcl_DictObjPut
-                (interp, entryObj, Tcl_NewStringObj("requestlength", 13),
-                 Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->requestLength));
+                (void) Tcl_DictObjPut
+                    (interp, entryObj, Tcl_NewStringObj("url", 3),
+                     Tcl_NewStringObj(httpPtr->url, TCL_INDEX_NONE));
 
-            /*
-             * Following may be subject to change by the task thread
-             * so we sync-up on the mutex.
-             */
+                (void) Tcl_DictObjPut
+                    (interp, entryObj, Tcl_NewStringObj("requestlength", 13),
+                     Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->requestLength));
 
-            Ns_MutexLock(&httpPtr->lock);
+                /*
+                 * Following may be subject to change by the task thread
+                 * so we sync-up on the mutex.
+                 */
 
-            /*
-             * This element is a misnomer, but we leave it for the
-             * sake of backwards compatibility. Actually, this is
-             * the value of the returned content-length header.
-             */
-            (void) Tcl_DictObjPut
-                (interp, entryObj, Tcl_NewStringObj("replylength", 11),
-                 Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->replyLength));
+                Ns_MutexLock(&httpPtr->lock);
 
-            /*
-             * Counter of bytes of the request sent so far.
-             * It includes all of the request (status line, headers, body).
-             */
-            (void) Tcl_DictObjPut
-                (interp, entryObj, Tcl_NewStringObj("sent", 4),
-                 Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->sent));
+                /*
+                 * This element is a misnomer, but we leave it for the
+                 * sake of backwards compatibility. Actually, this is
+                 * the value of the returned content-length header.
+                 */
+                (void) Tcl_DictObjPut
+                    (interp, entryObj, Tcl_NewStringObj("replylength", 11),
+                     Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->replyLength));
 
-            /*
-             * Counter of bytes of the reply received so far.
-             * It includes all of the reply (status line, headers, body).
-             */
-            (void) Tcl_DictObjPut
-                (interp, entryObj, Tcl_NewStringObj("received", 8),
-                 Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->received));
+                /*
+                 * Counter of bytes of the request sent so far.
+                 * It includes all of the request (status line, headers, body).
+                 */
+                (void) Tcl_DictObjPut
+                    (interp, entryObj, Tcl_NewStringObj("sent", 4),
+                     Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->sent));
 
-            /*
-             * Counter of the request body sent so far.
-             */
-            (void) Tcl_DictObjPut
-                (interp, entryObj, Tcl_NewStringObj("sendbodysize", 12),
-                 Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->sendBodySize));
+                /*
+                 * Counter of bytes of the reply received so far.
+                 * It includes all of the reply (status line, headers, body).
+                 */
+                (void) Tcl_DictObjPut
+                    (interp, entryObj, Tcl_NewStringObj("received", 8),
+                     Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->received));
 
-            /*
-             * Counter of processed (potentially deflated)
-             * reply body received so far.
-             */
-            (void) Tcl_DictObjPut
-                (interp, entryObj, Tcl_NewStringObj("replybodysize", 13),
-                 Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->replyBodySize));
+                /*
+                 * Counter of the request body sent so far.
+                 */
+                (void) Tcl_DictObjPut
+                    (interp, entryObj, Tcl_NewStringObj("sendbodysize", 12),
+                     Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->sendBodySize));
 
-            /*
-             * Counter of the non-processed (potentially compressed)
-             * reply body received so far.
-             * For compressed but not deflated reply content
-             * the replybodysize and replysize will be equal.
-             */
-            (void) Tcl_DictObjPut
-                (interp, entryObj, Tcl_NewStringObj("replysize", 9),
-                 Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->replySize));
+                /*
+                 * Counter of processed (potentially deflated)
+                 * reply body received so far.
+                 */
+                (void) Tcl_DictObjPut
+                    (interp, entryObj, Tcl_NewStringObj("replybodysize", 13),
+                     Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->replyBodySize));
 
-            Ns_MutexUnlock(&httpPtr->lock);
+                /*
+                 * Counter of the non-processed (potentially compressed)
+                 * reply body received so far.
+                 * For compressed but not deflated reply content
+                 * the replybodysize and replysize will be equal.
+                 */
+                (void) Tcl_DictObjPut
+                    (interp, entryObj, Tcl_NewStringObj("replysize", 9),
+                     Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->replySize));
 
-            if (resultObj == NULL) {
-                Tcl_SetObjResult(interp, entryObj);
-            } else {
-                (void) Tcl_ListObjAppendElement(interp, resultObj, entryObj);
+                Ns_MutexUnlock(&httpPtr->lock);
+
+                if (resultObj == NULL) {
+                    Tcl_SetObjResult(interp, entryObj);
+                } else {
+                    (void) Tcl_ListObjAppendElement(interp, resultObj, entryObj);
+                }
             }
         }
-    }
 
-    if (resultObj != NULL) {
-        Tcl_SetObjResult(interp, resultObj);
+        if (resultObj != NULL) {
+            Tcl_SetObjResult(interp, resultObj);
+        }
     }
-
     return result;
 }
 
@@ -1995,61 +1997,66 @@ static int
 HttpKeepalivesObjCmd(
     ClientData         UNUSED(clientData),
     Tcl_Interp        *interp,
-    TCL_SIZE_T         UNUSED(objc),
-    Tcl_Obj    *const* UNUSED(objv)
+    TCL_SIZE_T         objc,
+    Tcl_Obj    *const* objv
 ) {
     int            result = TCL_OK;
-    Tcl_Obj       *resultObj = NULL;
-    size_t         i;
-    Ns_Time        now;
-    Tcl_DString    ds;
 
-    Ns_GetTime(&now);
-    Tcl_DStringInit(&ds);
-    resultObj = Tcl_NewListObj(0, NULL);
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
 
-    Ns_MutexLock(&closeWaitingMutex);
-    for (i = 0; i < closeWaitingList.size; i ++) {
-        Tcl_Obj          *entryObj = Tcl_NewDictObj();
-        CloseWaitingData *currentCwDataPtr = closeWaitingList.data[i];
-        Ns_Time           diffTime;
+    } else {
+        Tcl_Obj    *resultObj = NULL;
+        size_t      i;
+        Ns_Time     now;
+        Tcl_DString ds;
 
-        (void) Tcl_DictObjPut(interp, entryObj,
-                              Tcl_NewStringObj("slot", 4),
-                              Tcl_NewLongObj((long)i));
+        Ns_GetTime(&now);
+        Tcl_DStringInit(&ds);
+        resultObj = Tcl_NewListObj(0, NULL);
 
-        (void) Tcl_DictObjPut(interp, entryObj,
-                              Tcl_NewStringObj("state", 5),
-                              Tcl_NewStringObj(CloseWaitingDataPrettyState(currentCwDataPtr),
-                                               TCL_INDEX_NONE));
-
-        if (currentCwDataPtr->state != CW_FREE) {
-            (void) Ns_DiffTime(&currentCwDataPtr->expire, &now, &diffTime);
-
-            Ns_DStringPrintf(&ds, NS_TIME_FMT, (int64_t)diffTime.sec, diffTime.usec);
-            (void) Tcl_DictObjPut(interp, entryObj,
-                                  Tcl_NewStringObj("expire", 6),
-                                  Tcl_NewStringObj(ds.string, ds.length));
-
-            Tcl_DStringSetLength(&ds, 0);
-            Ns_DStringPrintf(&ds, "%s:%hu", currentCwDataPtr->host, currentCwDataPtr->port);
-            (void) Tcl_DictObjPut(interp, entryObj,
-                                  Tcl_NewStringObj("peer", 4),
-                                  Tcl_NewStringObj(ds.string, ds.length));
-            Tcl_DStringSetLength(&ds, 0);
+        Ns_MutexLock(&closeWaitingMutex);
+        for (i = 0; i < closeWaitingList.size; i ++) {
+            Tcl_Obj          *entryObj = Tcl_NewDictObj();
+            CloseWaitingData *currentCwDataPtr = closeWaitingList.data[i];
+            Ns_Time           diffTime;
 
             (void) Tcl_DictObjPut(interp, entryObj,
-                                  Tcl_NewStringObj("sock", 4),
-                                  Tcl_NewIntObj((int)currentCwDataPtr->sock));
+                                  Tcl_NewStringObj("slot", 4),
+                                  Tcl_NewLongObj((long)i));
+
+            (void) Tcl_DictObjPut(interp, entryObj,
+                                  Tcl_NewStringObj("state", 5),
+                                  Tcl_NewStringObj(CloseWaitingDataPrettyState(currentCwDataPtr),
+                                                   TCL_INDEX_NONE));
+
+            if (currentCwDataPtr->state != CW_FREE) {
+                (void) Ns_DiffTime(&currentCwDataPtr->expire, &now, &diffTime);
+
+                Ns_DStringPrintf(&ds, NS_TIME_FMT, (int64_t)diffTime.sec, diffTime.usec);
+                (void) Tcl_DictObjPut(interp, entryObj,
+                                      Tcl_NewStringObj("expire", 6),
+                                      Tcl_NewStringObj(ds.string, ds.length));
+
+                Tcl_DStringSetLength(&ds, 0);
+                Ns_DStringPrintf(&ds, "%s:%hu", currentCwDataPtr->host, currentCwDataPtr->port);
+                (void) Tcl_DictObjPut(interp, entryObj,
+                                      Tcl_NewStringObj("peer", 4),
+                                      Tcl_NewStringObj(ds.string, ds.length));
+                Tcl_DStringSetLength(&ds, 0);
+
+                (void) Tcl_DictObjPut(interp, entryObj,
+                                      Tcl_NewStringObj("sock", 4),
+                                      Tcl_NewIntObj((int)currentCwDataPtr->sock));
+            }
+
+            Tcl_ListObjAppendElement(interp, resultObj, entryObj);
         }
+        Ns_MutexUnlock(&closeWaitingMutex);
 
-        Tcl_ListObjAppendElement(interp, resultObj, entryObj);
+        Tcl_SetObjResult(interp, resultObj);
+        Tcl_DStringFree(&ds);
     }
-    Ns_MutexUnlock(&closeWaitingMutex);
-
-    Tcl_SetObjResult(interp, resultObj);
-    Tcl_DStringFree(&ds);
-
     return result;
 }
 

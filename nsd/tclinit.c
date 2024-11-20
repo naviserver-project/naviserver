@@ -1485,16 +1485,16 @@ ICtlCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
  */
 
 static int
-ICtlOnCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
-{
-    Ns_LogDeprecated(objv, 2, "ns_ictl trace create ...", NULL);
-    return ICtlAddTrace(clientData, interp, objc, objv, NS_TCL_TRACE_CREATE);
-}
-static int
 ICtlOnCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Ns_LogDeprecated(objv, 2, "ns_ictl trace deallocate ...", NULL);
     return ICtlAddTrace(clientData, interp, objc, objv, NS_TCL_TRACE_DEALLOCATE);
+}
+static int
+ICtlOnCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    Ns_LogDeprecated(objv, 2, "ns_ictl trace create ...", NULL);
+    return ICtlAddTrace(clientData, interp, objc, objv, NS_TCL_TRACE_CREATE);
 }
 static int
 ICtlOnDeleteObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)

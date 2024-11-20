@@ -34,6 +34,53 @@ test sls-1.3 {basic syntax} -setup {
     ns_unregister_op GET /sls-1.3
 } -result {200 {ns_sls: bad subcommand "?": must be array, get, set, or unset}}
 
+test sls-1.4 {syntax: ns_sls get} -setup {
+    ns_register_proc GET /sls-1.4 {
+        set msg ""
+        catch {ns_sls get} msg
+        ns_return 200 text/plain $msg
+    }
+} -body {
+    nstest::http -getbody 1 GET /sls-1.4
+} -cleanup {
+    ns_unregister_op GET /sls-1.4
+} -result {200 {wrong # args: should be "ns_sls get /key/ ?default?"}}
+
+test sls-1.5 {syntax: ns_sls set} -setup {
+    ns_register_proc GET /sls-1.5 {
+        set msg ""
+        catch {ns_sls set} msg
+        ns_return 200 text/plain $msg
+    }
+} -body {
+    nstest::http -getbody 1 GET /sls-1.5
+} -cleanup {
+    ns_unregister_op GET /sls-1.5
+} -result {200 {wrong # args: should be "ns_sls set /key/ /value/"}}
+
+test sls-1.6 {syntax: ns_sls unset} -setup {
+    ns_register_proc GET /sls-1.6 {
+        set msg ""
+        catch {ns_sls unset} msg
+        ns_return 200 text/plain $msg
+    }
+} -body {
+    nstest::http -getbody 1 GET /sls-1.6
+} -cleanup {
+    ns_unregister_op GET /sls-1.6
+} -result {200 {wrong # args: should be "ns_sls unset /key/"}}
+
+test sls-1.7 {syntax: ns_sls array} -setup {
+    ns_register_proc GET /sls-1.7 {
+        set msg ""
+        catch {ns_sls array x} msg
+        ns_return 200 text/plain $msg
+    }
+} -body {
+    nstest::http -getbody 1 GET /sls-1.7
+} -cleanup {
+    ns_unregister_op GET /sls-1.7
+} -result {200 {wrong # args: should be "ns_sls array"}}
 
 
 test sls-2.1 {set/get} -setup {

@@ -780,36 +780,41 @@ NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *proc
 
 int
 NsTclAdpStatsObjCmd(ClientData clientData, Tcl_Interp *interp,
-                    TCL_SIZE_T UNUSED(ojbc), Tcl_Obj *const* UNUSED(objv))
+                    TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    const NsInterp *itPtr = clientData;
-    NsServer       *servPtr = itPtr->servPtr;
-    Ns_DString      ds;
-    Tcl_HashSearch  search;
-    Tcl_HashEntry  *hPtr;
+    int result = TCL_OK;
 
-    Ns_DStringInit(&ds);
+    if (Ns_ParseObjv(NULL, NULL, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
 
-    Ns_MutexLock(&servPtr->adp.pagelock);
-    hPtr = Tcl_FirstHashEntry(&servPtr->adp.pages, &search);
-    while (hPtr != NULL) {
-        const Page *pagePtr = Tcl_GetHashValue(hPtr);
-        char       *file    = Tcl_GetHashKey(&servPtr->adp.pages, hPtr);
+    } else {
+        const NsInterp *itPtr = clientData;
+        NsServer       *servPtr = itPtr->servPtr;
+        Ns_DString      ds;
+        Tcl_HashSearch  search;
+        Tcl_HashEntry  *hPtr;
 
-        Ns_DStringPrintf(&ds, "{%s} "
-            "{dev %" PRIu64 " ino %" PRIu64 " mtime %" PRIu64 " "
-            "refcnt %d evals %d size %" PROTd" blocks %d scripts %d} ",
-            file,
-            (uint64_t) pagePtr->dev, (uint64_t) pagePtr->ino, (uint64_t) pagePtr->mtime,
-            pagePtr->refcnt, pagePtr->evals, pagePtr->size,
-            pagePtr->code.nblocks, pagePtr->code.nscripts);
-        hPtr = Tcl_NextHashEntry(&search);
+        Ns_DStringInit(&ds);
+        Ns_MutexLock(&servPtr->adp.pagelock);
+        hPtr = Tcl_FirstHashEntry(&servPtr->adp.pages, &search);
+        while (hPtr != NULL) {
+            const Page *pagePtr = Tcl_GetHashValue(hPtr);
+            char       *file    = Tcl_GetHashKey(&servPtr->adp.pages, hPtr);
+
+            Ns_DStringPrintf(&ds, "{%s} "
+                             "{dev %" PRIu64 " ino %" PRIu64 " mtime %" PRIu64 " "
+                             "refcnt %d evals %d size %" PROTd" blocks %d scripts %d} ",
+                             file,
+                             (uint64_t) pagePtr->dev, (uint64_t) pagePtr->ino, (uint64_t) pagePtr->mtime,
+                             pagePtr->refcnt, pagePtr->evals, pagePtr->size,
+                             pagePtr->code.nblocks, pagePtr->code.nscripts);
+            hPtr = Tcl_NextHashEntry(&search);
+        }
+        Ns_MutexUnlock(&servPtr->adp.pagelock);
+
+        Tcl_DStringResult(interp, &ds);
     }
-    Ns_MutexUnlock(&servPtr->adp.pagelock);
-
-    Tcl_DStringResult(interp, &ds);
-
-    return TCL_OK;
+    return result;
 }
 
 

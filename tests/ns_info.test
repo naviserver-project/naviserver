@@ -14,6 +14,10 @@ test ns_info-1.1 {basic syntax: wrong argument} -body {
 } -returnCodes error -result {bad subcommand "?": must be address, argv, argv0, boottime, builddate, buildinfo, callbacks, config, home, hostname, ipv6, locks, log, major, meminfo, minor, mimetypes, name, nsd, pagedir, pageroot, patchlevel, pid, platform, pools, scheduled, server, servers, sockcallbacks, ssl, tag, tcllib, threads, uptime, version, winnt, filters, traces, requestprocs, url2file, shutdownpending, or started}
 
 
+test ns_info-1.2a {syntax: ns_info address} -body {
+    ns_info address x
+} -returnCodes error -result {wrong # args: should be "ns_info address"}
+
 test ns_info-1.2 {syntax: ns_info argv} -body {
     ns_info argv x
 } -returnCodes error -result {wrong # args: should be "ns_info argv"}
@@ -133,6 +137,10 @@ test ns_info-1.30 {syntax: ns_info servers} -body {
 test ns_info-1.31 {syntax: ns_info shutdownpending} -body {
     ns_info shutdownpending x
 } -returnCodes error -result {wrong # args: should be "ns_info shutdownpending"}
+
+test ns_info-1.31a {syntax: ns_info  sockcallbacks} -body {
+    ns_info  sockcallbacks x
+} -returnCodes error -result {wrong # args: should be "ns_info sockcallbacks"}
 
 test ns_info-1.33 {syntax: ns_info ssl} -body {
     ns_info ssl x

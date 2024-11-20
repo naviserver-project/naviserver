@@ -1,0 +1,46 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+#######################################################################################
+#  test ns_queryexists
+#######################################################################################
+
+test ns_queryexists-1.0  {syntax: ns_queryexists} -body {
+    ns_queryexists
+} -returnCodes error -result {wrong # args: should be "ns_queryexists key"}
+
+# Tcl proc ns_queryexists; message should be {wrong # args: should be "ns_queryexists /key/"}
+
+#######################################################################################
+#  test ns_queryget
+#######################################################################################
+
+test ns_queryget-1.0  {syntax: ns_queryget} -body {
+    ns_queryget
+} -returnCodes error -result {wrong # args: should be "ns_queryget key ?value?"}
+
+# Tcl proc ns_queryget; message should be {wrong # args: should be "ns_queryget /key/ ?value?"}
+
+#######################################################################################
+#  test ns_querygetall
+#######################################################################################
+
+test ns_querygetall-1.0  {syntax: ns_queryget} -body {
+    ns_querygetall
+} -returnCodes error -result {wrong # args: should be "ns_querygetall key ?default?"}
+
+# Tcl proc ns_queryget; message should be {wrong # args: should be "ns_querygetall /key/ ?default?"}
+
+
+cleanupTests
+
+#
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:
