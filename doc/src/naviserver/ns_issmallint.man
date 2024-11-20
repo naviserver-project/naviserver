@@ -12,7 +12,7 @@ from 1 to 6 digits. False is returned in all other cases.
 [section {COMMANDS}]
 
 [list_begin definitions]
-[call [cmd ns_smallint] [arg value]]
+[call [cmd ns_issmallint] [arg value]]
 [list_end]
 
 
