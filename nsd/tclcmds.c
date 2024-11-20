@@ -76,6 +76,7 @@ static const Cmd basicCmds[] = {
     {"ns_fmttime",               NULL, NsTclStrftimeObjCmd},
     {"ns_fseekchars",            NULL, NsTclFSeekCharsObjCmd},
     {"ns_ftruncate",             NULL, NsTclFTruncateObjCmd},
+    {"ns_getcsv",                NULL, NsTclGetCsvObjCmd},
     {"ns_gifsize",               NULL, NsTclGifSizeObjCmd},
     {"ns_gmtime",                NULL, NsTclGmTimeObjCmd},
     {"ns_guesstype",             NULL, NsTclGuessTypeObjCmd},

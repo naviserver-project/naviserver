@@ -49,10 +49,6 @@ static int DbGetHandle(InterpData *idataPtr, Tcl_Interp *interp, const char *han
 static Ns_ReturnCode QuoteSqlValue(Tcl_DString *dsPtr, Tcl_Obj *valueObj, int valueType)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static void
-FinishElement(Tcl_DString *elemPtr, Tcl_DString *colsPtr, bool quoted)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-
 #if !defined(NS_TCL_PRE85)
 static Ns_ReturnCode CurrentHandles( Tcl_Interp *interp, Tcl_HashTable *tablePtr, Tcl_Obj *dictObj)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
@@ -64,7 +60,6 @@ static TCL_OBJCMDPROC_T
     DbErrorCodeObjCmd,
     DbErrorMsgObjCmd,
     DbObjCmd,
-    GetCsvObjCmd,
     PoolDescriptionObjCmd,
     QuoteListObjCmd,
     QuoteListToListObjCmd,
@@ -186,7 +181,6 @@ NsDbAddCmds(Tcl_Interp *interp, const void *arg)
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_dberrormsg", DbErrorMsgObjCmd, idataPtr, NULL);
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_dbquotevalue", QuoteValueObjCmd, idataPtr, NULL);
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_dbquotelist", QuoteListObjCmd, idataPtr, NULL);
-    (void)TCL_CREATEOBJCOMMAND(interp, "ns_getcsv", GetCsvObjCmd, idataPtr, NULL);
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_pooldescription", PoolDescriptionObjCmd, idataPtr, NULL);
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_quotelisttolist", QuoteListToListObjCmd, idataPtr, NULL);
 
@@ -1399,160 +1393,6 @@ QuoteListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
 
         } else {
             result = TCL_ERROR;
-        }
-    }
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * GetCsvObjCmd --
- *
- *      Implements "ns_getcsv". The command reads a single line from a
- *      CSV file and parses the results into a Tcl list variable.
- *
- * Results:
- *      A standard Tcl result.
- *
- * Side effects:
- *      One line is read for given open channel.
- *
- *----------------------------------------------------------------------
- */
-static void
-FinishElement(Tcl_DString *elemPtr, Tcl_DString *colsPtr, bool quoted)
-{
-    if (!quoted) {
-        Tcl_DStringAppendElement(colsPtr, Ns_StrTrim(elemPtr->string));
-    } else {
-        Tcl_DStringAppendElement(colsPtr, elemPtr->string);
-    }
-    Tcl_DStringSetLength(elemPtr, 0);
-}
-
-
-static int
-GetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
-{
-    int           trimUnquoted = 0, result = TCL_OK;
-    char         *delimiter = (char *)",", *quoteString = (char *)"\"", *fileId, *varName;
-    Tcl_Channel   chan;
-    Ns_ObjvSpec   opts[] = {
-        {"-delimiter", Ns_ObjvString,   &delimiter,    NULL},
-        {"-trim",      Ns_ObjvBool,     &trimUnquoted, INT2PTR(NS_TRUE)},
-        {"-quotechar", Ns_ObjvString,   &quoteString,  NULL},
-        {"--",         Ns_ObjvBreak,    NULL,          NULL},
-        {NULL, NULL, NULL, NULL}
-    };
-    Ns_ObjvSpec   args[] = {
-        {"fileId",     Ns_ObjvString, &fileId,   NULL},
-        {"varName",    Ns_ObjvString, &varName,  NULL},
-        {NULL, NULL, NULL, NULL}
-    };
-
-    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
-        result = TCL_ERROR;
-
-    } else if (Ns_TclGetOpenChannel(interp, fileId, 0, NS_FALSE, &chan) == TCL_ERROR) {
-        result = TCL_ERROR;
-
-    } else {
-        int             ncols;
-        bool            inquote, quoted, emptyElement;
-        const char     *p, *value;
-        Tcl_DString     line, cols, elem;
-        char            c, quote = *quoteString;
-
-        Tcl_DStringInit(&line);
-        Tcl_DStringInit(&cols);
-        Tcl_DStringInit(&elem);
-
-        ncols = 0;
-        inquote = NS_FALSE;
-        quoted = NS_FALSE;
-        emptyElement = NS_TRUE;
-
-        for (;;) {
-            if (Tcl_Gets(chan, &line) == TCL_IO_FAILURE) {
-                Tcl_DStringFree(&line);
-                Tcl_DStringFree(&cols);
-                Tcl_DStringFree(&elem);
-
-                if (Tcl_Eof(chan) == 0) {
-                    Ns_TclPrintfResult(interp, "could not read from %s: %s",
-                                       fileId, Tcl_PosixError(interp));
-                    return TCL_ERROR;
-                }
-                Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
-                return TCL_OK;
-            }
-
-            p = line.string;
-            while (*p != '\0') {
-                c = *p++;
-            loopstart:
-                if (inquote) {
-                    if (c == quote) {
-                        c = *p++;
-                        if (c == '\0') {
-                            /*
-                             * Line ends after quote
-                             */
-                            inquote = NS_FALSE;
-                            break;
-                        }
-                        if (c == quote) {
-                            /*
-                             * We have a quote in the quote.
-                             */
-                            Tcl_DStringAppend(&elem, &c, 1);
-                        } else {
-                            inquote = NS_FALSE;
-                            goto loopstart;
-                        }
-                    } else {
-                        Tcl_DStringAppend(&elem, &c, 1);
-                    }
-                } else {
-                    if (c == quote && emptyElement) {
-                        inquote = NS_TRUE;
-                        quoted = NS_TRUE;
-                        emptyElement = NS_FALSE;
-                    } else if (strchr(delimiter, INTCHAR(c)) != NULL) {
-                        FinishElement(&elem, &cols, (trimUnquoted ? quoted : 1));
-                        ncols++;
-                        quoted = NS_FALSE;
-                        emptyElement = NS_TRUE;
-                    } else {
-                        emptyElement = NS_FALSE;
-                        if (!quoted) {
-                            Tcl_DStringAppend(&elem, &c, 1);
-                        }
-                    }
-                }
-            }
-            if (inquote) {
-                Tcl_DStringAppend(&elem, "\n", 1);
-                Tcl_DStringSetLength(&line, 0);
-                continue;
-            }
-            break;
-        }
-
-        if (!(ncols == 0 && emptyElement)) {
-            FinishElement(&elem, &cols, (trimUnquoted ? quoted : 1));
-            ncols++;
-        }
-        value = Tcl_SetVar(interp, varName, cols.string, TCL_LEAVE_ERR_MSG);
-        Tcl_DStringFree(&line);
-        Tcl_DStringFree(&cols);
-        Tcl_DStringFree(&elem);
-
-        if (value == NULL) {
-            result = TCL_ERROR;
-        } else {
-            Tcl_SetObjResult(interp, Tcl_NewIntObj(ncols));
         }
     }
     return result;

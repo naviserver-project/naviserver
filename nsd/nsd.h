@@ -1279,6 +1279,7 @@ NS_EXTERN TCL_OBJCMDPROC_T
     NsTclFileStatObjCmd,
     NsTclGetAddrObjCmd,
     NsTclGetCookieObjCmd,
+    NsTclGetCsvObjCmd,
     NsTclGetHostObjCmd,
     NsTclGetLimitsObjCmd,
     NsTclGetUrlObjCmd,
