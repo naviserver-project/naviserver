@@ -404,7 +404,7 @@ bb} ccc} {zzz yyy xxx} {1 2 3} {includes(\")quote {quoted includes (") quote}} {
 #  Other commands, in part defined in Tcl
 #######################################################################################
 
-test ns_urlcharset-1.0 {ns_urlcharset basic syntax} -body {
+test ns_urlcharset-1.0 {syntax: ns_urlcharset} -body {
     ns_urlcharset
 } -returnCodes error -result {wrong # args: should be "ns_urlcharset charset"}
 
@@ -431,7 +431,9 @@ test ns_tagelementset-1.0 {syntax: ns_tagelement} -body {
 } -returnCodes error -result {wrong # args: should be "ns_tagelementset tagvar key value"}
 # ns_tagelementset is a Tcl proc: message should be {wrong # args: should be "ns_tagelementset /tagvar/ /key/ /value/"}
 
-
+test ns_modulepath-1.0 {syntax: ns_modulepath} -body {
+    ns_modulepath
+} -returnCodes error -result {wrong # args: should be "ns_modulepath /server/ ?module ...?"}
 
 cleanupTests
 

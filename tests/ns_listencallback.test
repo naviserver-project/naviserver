@@ -10,12 +10,57 @@ if {[ns_config test listenport]} {
 }
 if {$::tcl_version < 8.6} {package require try}
 
+#
+# syntax tests
+#
+test ns_sockaccept-1.0 {syntax: ns_sockaccept} -body {
+    ns_sockaccept
+} -returnCodes error -result {wrong # args: should be "ns_sockaccept /sockId/"}
+
+test ns_socklisten-1.0 {syntax: ns_socklisten} -body {
+    ns_socklisten
+} -returnCodes {error ok} -result {wrong # args: should be "ns_socklisten /address/ /port/"}
+
+test ns_sockblocking-1.0 {syntax: ns_sockblocking} -body {
+    ns_sockblocking
+} -returnCodes error -result {wrong # args: should be "ns_sockblocking /sockId/"}
+
+test ns_sockcallback-1.0 {syntax: ns_sockcallback} -body {
+    ns_sockcallback
+} -returnCodes error -result {wrong # args: should be "ns_sockcallback /sockId/ /script/ /when/ ?timeout?"}
+
+test ns_sockcheck-1.0 {syntax: ns_sockcheck} -body {
+    ns_sockcheck
+} -returnCodes error -result {wrong # args: should be "ns_sockcheck /sockId/"}
+
+test ns_socketpair-1.0 {syntax: ns_socketpair} -body {
+    ns_socketpair x
+} -returnCodes error -result {wrong # args: should be "ns_socketpair"}
+
+test ns_socklistencallback-1.0 {syntax: ns_socklistencallback} -body {
+    ns_socklistencallback
+} -returnCodes error -result {wrong # args: should be "ns_socklistencallback /address/ /port/ /script/"}
+
+test ns_socknonblocking-1.0 {syntax: ns_socknonblocking} -body {
+    ns_socknonblocking
+} -returnCodes error -result {wrong # args: should be "ns_socknonblocking /sockId/"}
+
+test ns_socknread-1.0 {syntax: ns_socknread} -body {
+    ns_socknread
+} -returnCodes error -result {wrong # args: should be "ns_socknread /sockId/"}
 
 test ns_sockopen-1.0 {syntax: ns_sockopen} -body {
     ns_sockopen
 } -returnCodes {error ok} -result {wrong # args: should be "ns_sockopen ?-async? ?-localhost /string/? ?-localport /localport/? ?-nonblock? ?-timeout /timeout/? ?--? /host/ /port/"}
 
+test ns_sockselect-1.0 {syntax: ns_sockselect} -body {
+    ns_sockselect
+} -returnCodes {error ok} -result {wrong # args: should be "ns_sockselect ?-timeout timeout? rfds wfds efds"}
 
+
+#
+# functional tests
+#
 test ns_listencallback-1.0 {register} -constraints {serverListen} -setup {
     #
     # Register listen callback with Tcl handler

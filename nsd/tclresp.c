@@ -679,7 +679,7 @@ NsTclReturnBadRequestObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, T
 
 static int
 ReturnObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-             TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv),
+             TCL_SIZE_T objc, Tcl_Obj *const* objv,
              Ns_ReturnCode (*proc) (Ns_Conn *conn))
 {
     Ns_Conn *conn = NULL;
@@ -687,7 +687,9 @@ ReturnObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
 
     NS_NONNULL_ASSERT(interp != NULL);
 
-    if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
+    if (Ns_ParseObjv(NULL, NULL, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
         result = Result(interp, (*proc)(conn));
     }
     return result;

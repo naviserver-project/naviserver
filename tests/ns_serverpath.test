@@ -19,17 +19,18 @@ namespace import -force ::tcltest::*
 
 set serverroot [file join [ns_config "test" home] \
                     [ns_config "ns/server/testvhost/fastpath" serverdir]]
+set pageroot [ns_server -server testvhost pagedir]
 set vhosts [ns_config "ns/server/testvhost/vhost" hostprefix]
 set port   [ns_config "test" listenport]
 
 
 
-test ns_serverpath-1.1 {basic path} -body {
+test ns_serverpath-1.1 {ns_serverpath basic operation} -body {
     ns_serverpath
 } -result $serverroot
 
 # ns_serverpath processes all input parameters, we cannot trigger a
-# message with invalid input. Therefore, provide a manual entry:
+# syntax error message. Therefore, provide a manual entry:
 # message should be {wrong # args: should be "ns_serverpath ?host? ?--? ?pathelements ...?"}
 
 
@@ -130,11 +131,23 @@ test ns_serverpath-5.7 {bad host} -body {
     ns_serverpath -host ... 3dots
 } -result ${serverroot}/3dots
 
-
-
 unset -nocomplain serverroot vhosts
 
+#######################################################################################
+#  ns_pagepath
+#######################################################################################
 
+test ns_pagepath-1.0 {syntax: ns_pagepath} -body {
+    ns_pagepath
+} -result $pageroot
+
+# ns_pagepath processes all input parameters, we cannot trigger a
+# syntax error message. Therefore, provide a manual entry:
+# message should be {wrong # args: should be "ns_pagepath ?pathelements ...?"}
+
+test ns_pagepath-1.1 {syntax: ns_pagepath} -body {
+    ns_pagepath x
+} -result $pageroot/x
 
 cleanupTests
 

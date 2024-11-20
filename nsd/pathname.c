@@ -753,7 +753,7 @@ NsTclHashPathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
  *  Tcl result.
  *
  * Side effects:
- *  None (deprecated)
+ *  None
  *
  *----------------------------------------------------------------------
  */

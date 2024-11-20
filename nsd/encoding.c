@@ -166,7 +166,7 @@ static const struct {
      * The following entries are strictly speaking not needed, since the
      * IANA name is identical with the Tcl charset name. We add these to
      * be able to return full set of supported IANA charsets via
-     * [ns_charset].
+     * [ns_charsets].
      *
      * See: https://www.iana.org/assignments/character-sets/character-sets.xml
      */
@@ -536,22 +536,29 @@ NsFindCharset(const char *mimetype, size_t *lenPtr)
 
 int
 NsTclCharsetsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                    TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
+                    TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    const Tcl_HashEntry *hPtr;
-    Tcl_HashSearch       search;
-    Tcl_Obj             *listObj = Tcl_NewListObj(0, NULL);
+    int result = TCL_OK;
 
-    for (hPtr = Tcl_FirstHashEntry(&charsets, &search);
-         hPtr != NULL;
-         hPtr = Tcl_NextHashEntry(&search)
-         ) {
-        const char *key = Tcl_GetHashKey(&charsets, hPtr);
-        Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(key, TCL_INDEX_NONE));
+    if (Ns_ParseObjv(NULL, NULL, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        const Tcl_HashEntry *hPtr;
+        Tcl_HashSearch       search;
+        Tcl_Obj             *listObj = Tcl_NewListObj(0, NULL);
+
+        for (hPtr = Tcl_FirstHashEntry(&charsets, &search);
+             hPtr != NULL;
+             hPtr = Tcl_NextHashEntry(&search)
+             ) {
+            const char *key = Tcl_GetHashKey(&charsets, hPtr);
+            Tcl_ListObjAppendElement(interp, listObj, Tcl_NewStringObj(key, TCL_INDEX_NONE));
+        }
+        Tcl_SetObjResult(interp, listObj);
     }
-    Tcl_SetObjResult(interp, listObj);
 
-    return TCL_OK;
+    return result;
 }
 
 

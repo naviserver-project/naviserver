@@ -178,6 +178,45 @@ test ns_md-1.0 {syntax: ns_md} -constraints crypto -body {
     ns_md x
 } -returnCodes error -result {method 'x' unknown for ::ns_md; in order to create an instance of class ::ns_md, consider using '::ns_md create x ?...?'}
 
+test ns_md-1.1 {syntax: ns_md new} -constraints crypto -body {
+    ns_md new -x
+} -returnCodes error -match glob -result {* ?-digest /value/? *}
+# "ns_md new: don't advertise all {wrong # args: should be "ns_md new ?-digest /value/?"}
+
+test ns_md-1.2 {syntax: ns_md file} -constraints crypto -body {
+    ns_md file
+} -returnCodes error -match glob -result {*ns_md file ?-digest /value/? ?-encoding /value/? /filename/ ?/arg .../?}
+# "ns_md file" don't advertise all {wrong # args: should be "ns_md file ?-digest /value/? ?-encoding /value/? /filename/ ?/arg .../?"}
+
+test ns_md-1.3 {syntax: ns_md string} -constraints crypto -body {
+    ns_md string
+} -returnCodes error -match glob -result {*ns_md string ?-digest /value/? ?-encoding /value/? /message/}
+# "ns_md string" don't advertise all {wrong # args: should be "ns_md string ?-digest /value/? ?-encoding /value/? /message/"}
+
+
+test ns_hmac-1.0 {syntax: ns_hmac} -constraints crypto -body {
+    ns_hmac x
+} -returnCodes error -result {method 'x' unknown for ::ns_hmac; in order to create an instance of class ::ns_hmac, consider using '::ns_hmac create x ?...?'}
+
+test ns_hmac-1.1 {syntax: ns_hmac new} -constraints crypto -body {
+    ns_hmac new -x
+} -returnCodes error -match glob -result {* ?-digest /value/? *}
+# "ns_hmac new: don't advertise all {wrong # args: should be "ns_hmac new ?-digest /value/?"}
+
+test ns_hmac-1.2 {syntax: ns_hmac file} -constraints crypto -body {
+    ns_hmac file
+} -returnCodes error -match glob -result {*ns_hmac file ?-digest /value/? ?-encoding /value/? /key/ /filename/ ?/arg .../?}
+# "ns_hmac file" don't advertise all {wrong # args: should be "ns_hmac file ?-digest /value/? ?-encoding /value/?  /key/ /filename/ ?/arg .../?"}
+
+test ns_hmac-1.3 {syntax: ns_hmac string} -constraints crypto -body {
+    ns_hmac string
+} -returnCodes error -match glob -result {*ns_hmac string ?-digest /value/? ?-encoding /value/? /key/ /message/}
+# "ns_hmac string" don't advertise all {wrong # args: should be "ns_hmac string ?-digest /value/? ?-encoding /value/? /key/ /message/"}
+
+#
+# functional tests
+#
+
 test ns_hmac_file-1.0 {syntax ns_crypto::hmac file} -constraints crypto -body {
     ns_crypto::hmac file
 } -returnCodes error -result {ns_crypto::hmac: bad subcommand "file": must be string, new, add, get, or free}

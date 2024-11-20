@@ -72,7 +72,9 @@ nx::Class create ns_md -superclass ::ns_crypto::HashFunctions {
         set :ctx [::ns_crypto::md new ${:digest}]
     }
     :public method destroy {} {
-        ::ns_crypto::md free ${:ctx}
+        if {[info exists :ctx]} {
+            ::ns_crypto::md free ${:ctx}
+        }
         next
     }
 
@@ -118,7 +120,9 @@ nx::Class create ns_hmac -superclass ::ns_crypto::HashFunctions {
         set :ctx [::ns_crypto::hmac new ${:digest} ${:key}]
     }
     :public method destroy {} {
-        ::ns_crypto::hmac free ${:ctx}
+        if {[info exists :ctx]} {
+            ::ns_crypto::hmac free ${:ctx}
+        }
         next
     }
 

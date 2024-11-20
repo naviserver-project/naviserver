@@ -24,6 +24,20 @@ testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
 # testConstraint pairsTest true ;# test characters pairs, long time process
 # testConstraint usingExternalToUtf true ;# true if HttpGetResult uses ExternalToUtf; will be assigned in http_charsets-0.0
 
+#
+# syntax tests
+#
+test ns_charsets-1.0 {syntax: ns_charsets} -body {
+    ns_charsets x
+} -returnCodes error -result {wrong # args: should be "ns_charsets"}
+
+test ns_encodingforcharset-1.0 {syntax: ns_encodingforcharset} -body {
+    ns_encodingforcharset
+} -returnCodes error -result {wrong # args: should be "ns_encodingforcharset /charset/"}
+
+#
+# functional tests
+#
 
 test http_charsets-0.0 "test whether HttpGetResult uses ExternalToUtf" -constraints !usingExternalToUtf -setup {
     ns_register_proc GET /get {ns_return 200 "text/plain; charset=iso-8859-2" "Ł"}
