@@ -1066,6 +1066,7 @@ ICtlAddTrace(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj
         Ns_ObjvSpec     legacyAddTraceArgs[] = {
             {"script",     Ns_ObjvObj,    &scriptObj, NULL},
             {"?args",      Ns_ObjvArgs,   &remain,    NULL},
+            {NULL, NULL, NULL, NULL}
         };
         status = Ns_ParseObjv(NULL, legacyAddTraceArgs, interp, 2, objc, objv);
     }
