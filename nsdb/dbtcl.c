@@ -181,6 +181,7 @@ NsDbAddCmds(Tcl_Interp *interp, const void *arg)
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_dberrormsg", DbErrorMsgObjCmd, idataPtr, NULL);
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_dbquotevalue", QuoteValueObjCmd, idataPtr, NULL);
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_dbquotelist", QuoteListObjCmd, idataPtr, NULL);
+    (void)TCL_CREATEOBJCOMMAND(interp, "ns_dbpooldescription", PoolDescriptionObjCmd, idataPtr, NULL);
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_pooldescription", PoolDescriptionObjCmd, idataPtr, NULL);
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_quotelisttolist", QuoteListToListObjCmd, idataPtr, NULL);
 
@@ -1067,8 +1068,7 @@ DbConfigPathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
 {
     int               result = TCL_OK;
 
-    if (objc != 1) {
-        Tcl_WrongNumArgs(interp, 0, objv, NULL);
+    if (Ns_ParseObjv(NULL, NULL, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
         const InterpData *idataPtr = clientData;
@@ -1084,7 +1084,7 @@ DbConfigPathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
  *----------------------------------------------------------------------
  * PoolDescriptionObjCmd --
  *
- *      Implements "ns_pooldescription". Returns the pool's
+ *      Implements "ns_dbpooldescription". Returns the DB pool's
  *      description string.
  *
  * Results:
@@ -1106,6 +1106,12 @@ PoolDescriptionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
         Tcl_WrongNumArgs(interp, 1, objv, "/pool/");
         result = TCL_ERROR;
     } else {
+        const char *subcmdName = Tcl_GetString(objv[0]);
+
+        if (strcmp(subcmdName, "ns_pooldescription") == 0) {
+            Ns_LogDeprecated(objv, 2, "ns_dbpooldescription ...", NULL);
+        }
+
         Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_DbPoolDescription(Tcl_GetString(objv[1])), TCL_INDEX_NONE));
     }
 

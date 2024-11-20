@@ -293,7 +293,7 @@ Returns the database error message for the specified database handle.
 Returns the database section name file for the nsdb module from the
 configuration file.
 
-[call [cmd "ns_pooldescription"] [arg poolname]]
+[call [cmd "ns_dbpooldescription"] [arg poolname]]
 
 Returns the description of the provided database pool name from the
 [lb]ns/db/pools[rb] section in the configuration file.
