@@ -738,31 +738,35 @@ done:
  */
 
 int
-NsTclSocketPairObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T UNUSED(objc),
-                      Tcl_Obj *const* UNUSED(objv))
+NsTclSocketPairObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc,
+                      Tcl_Obj *const* objv)
 {
-    NS_SOCKET socks[2];
-    int       result;
-    Tcl_Obj  *listObj = Tcl_NewListObj(0, NULL);
+    int result = TCL_OK;
 
-
-    if (ns_sockpair(socks) != 0) {
-        Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-                               "ns_sockpair failed:  ",
-                               Tcl_PosixError(interp), (char *)0L);
-        result = TCL_ERROR;
-
-    } else if (EnterSock(interp, socks[0], listObj) != TCL_OK) {
-        ns_sockclose(socks[1]);
+    if (Ns_ParseObjv(NULL, NULL, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
     } else {
-        result = EnterSock(interp, socks[1], listObj);
-    }
-    if (result == TCL_OK) {
-        Tcl_SetObjResult(interp, listObj);
-    } else {
-        Tcl_DecrRefCount(listObj);
+        NS_SOCKET socks[2];
+        Tcl_Obj  *listObj = Tcl_NewListObj(0, NULL);
+
+        if (ns_sockpair(socks) != 0) {
+            Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
+                                   "ns_sockpair failed:  ",
+                                   Tcl_PosixError(interp), (char *)0L);
+            result = TCL_ERROR;
+        } else if (EnterSock(interp, socks[0], listObj) != TCL_OK) {
+            ns_sockclose(socks[1]);
+            result = TCL_ERROR;
+
+        } else {
+            result = EnterSock(interp, socks[1], listObj);
+        }
+        if (result == TCL_OK) {
+            Tcl_SetObjResult(interp, listObj);
+        } else {
+            Tcl_DecrRefCount(listObj);
+        }
     }
     return result;
 }
@@ -832,12 +836,14 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
                            "should be one/more of r, w, e, or x", whenString);
         result = TCL_ERROR;
 
-    } else if (GetSocketFromChannel(interp, sockId,
-                                    (when & (unsigned int)NS_SOCK_WRITE) != 0u,
-                                    &sock) != NS_OK) {
+    } else if (result == TCL_OK
+               && GetSocketFromChannel(interp, sockId,
+                                       (when & (unsigned int)NS_SOCK_WRITE) != 0u,
+                                       &sock) != NS_OK) {
         result = TCL_ERROR;
 
-    } else {
+    }
+    if (result == TCL_OK) {
         if (timeoutPtr != NULL) {
             /*
              * timeout was specified, set is just in case the timeout was not 0:0
