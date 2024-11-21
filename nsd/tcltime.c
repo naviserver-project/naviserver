@@ -456,7 +456,7 @@ TmObjCmd(ClientData isGmt, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* 
     NS_NONNULL_ASSERT(interp != NULL);
 
     if (objc != 1) {
-        Tcl_WrongNumArgs(interp, 1, objv, NS_EMPTY_STRING);
+        Tcl_WrongNumArgs(interp, 1, objv, NULL);
         rc = TCL_ERROR;
     } else {
         time_t           now;

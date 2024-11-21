@@ -935,7 +935,7 @@ static int ListUsersObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc
     int result = TCL_OK;
 
     if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 2, objv, "");
+        Tcl_WrongNumArgs(interp, 2, objv, NULL);
         result = TCL_ERROR;
     } else {
         Server         *servPtr = data;
@@ -1187,7 +1187,7 @@ static int ListGroupsObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T obj
     int result = TCL_OK;
 
     if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 2, objv, "");
+        Tcl_WrongNumArgs(interp, 2, objv, NULL);
         result = TCL_ERROR;
 
     } else {
@@ -1436,7 +1436,7 @@ static int ListPermsObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc
     int result = TCL_OK;
 
     if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 2, objv, "");
+        Tcl_WrongNumArgs(interp, 2, objv, NULL);
         result = TCL_ERROR;
     } else {
         Server *servPtr = data;

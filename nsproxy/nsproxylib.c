@@ -2232,7 +2232,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
 
     case PPoolsIdx:
         if (objc > 2) {
-            Tcl_WrongNumArgs(interp, 2, objv, "");
+            Tcl_WrongNumArgs(interp, 2, objv, NULL);
             result = TCL_ERROR;
         } else {
             listObj = Tcl_NewListObj(0, NULL);
