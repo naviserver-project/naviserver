@@ -189,18 +189,22 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
             break;
 
         case INamesIdx:
-            envp = Ns_GetEnviron();
-            resultObj = Tcl_GetObjResult(interp);
-            for (i = 0; envp[i] != NULL; ++i) {
-                Tcl_Obj *obj;
+            if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+                result = TCL_ERROR;
+            } else {
+                envp = Ns_GetEnviron();
+                resultObj = Tcl_GetObjResult(interp);
+                for (i = 0; envp[i] != NULL; ++i) {
+                    Tcl_Obj *obj;
 
-                name = envp[i];
-                value = strchr(name, INTCHAR('='));
-                obj = Tcl_NewStringObj(name,
-                                       (value != NULL) ? (TCL_SIZE_T)(value - name) : TCL_INDEX_NONE);
-                if (Tcl_ListObjAppendElement(interp, resultObj, obj) != TCL_OK) {
-                    result = TCL_ERROR;
-                    break;
+                    name = envp[i];
+                    value = strchr(name, INTCHAR('='));
+                    obj = Tcl_NewStringObj(name,
+                                           (value != NULL) ? (TCL_SIZE_T)(value - name) : TCL_INDEX_NONE);
+                    if (Tcl_ListObjAppendElement(interp, resultObj, obj) != TCL_OK) {
+                        result = TCL_ERROR;
+                        break;
+                    }
                 }
             }
             break;

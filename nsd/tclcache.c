@@ -774,13 +774,19 @@ CacheAppendObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
  */
 
 int
-NsTclCacheNamesObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
+NsTclCacheNamesObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    const NsInterp      *itPtr = clientData;
-    NsServer            *servPtr = itPtr->servPtr;
+    int result = TCL_OK;
 
-    Tcl_SetObjResult(interp, GetCacheNames(servPtr, NS_FALSE));
-    return TCL_OK;
+    if (Ns_ParseObjv(NULL, NULL, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        const NsInterp      *itPtr = clientData;
+        NsServer            *servPtr = itPtr->servPtr;
+
+        Tcl_SetObjResult(interp, GetCacheNames(servPtr, NS_FALSE));
+    }
+    return result;
 }
 
 
