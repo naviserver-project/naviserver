@@ -21,8 +21,8 @@ This function rolls the specified file, keeping a number of backup copies up to 
 [example_end]
 
 
-[see_also nsd]
-[keywords "global built-in" NaviServer]
+[see_also nsd ns_purgefiles]
+[keywords "global built-in" NaviServer log]
 [manpage_end]
 
 

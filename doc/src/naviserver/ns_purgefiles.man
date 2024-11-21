@@ -22,8 +22,8 @@ Specifies how many backup files to keep
 
 [list_end]
 
-[see_also nsd]
-[keywords "global built-in" NaviServer]
+[see_also nsd ns_rollfile]
+[keywords "global built-in" NaviServer log]
 [manpage_end]
 
 

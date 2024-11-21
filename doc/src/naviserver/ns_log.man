@@ -392,7 +392,7 @@ Create a new severity-level.
 [example_end]
 
 
-[see_also ns_accesslog ns_info ns_rollfile ns_asynclogfile ns_http ns_connchan]
+[see_also ns_accesslog ns_info ns_rollfile ns_purgefiles ns_asynclogfile ns_http ns_connchan]
 [keywords "global built-in" log path error configuration nscgi nsdb nsproxy]
 
 
