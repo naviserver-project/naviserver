@@ -1494,29 +1494,33 @@ int
 NsTclFileStatObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
+    char       *filenameString, *varnameString = NULL;
     struct stat st;
+    Ns_ObjvSpec args[] = {
+        {"filename", Ns_ObjvString, &filenameString, NULL},
+        {"?varname", Ns_ObjvString, &varnameString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-    if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/file/ ?varname?");
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
-    }
-    if (stat(Tcl_GetString(objv[1]), &st) != 0) {
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-    } else {
-        if (objc > 2) {
-            const char *name = Tcl_GetString(objv[2]);
 
-            (void)Tcl_SetVar2Ex(interp, name, "dev",   Tcl_NewWideIntObj((Tcl_WideInt)st.st_dev), 0);
-            (void)Tcl_SetVar2Ex(interp, name, "ino",   Tcl_NewWideIntObj((Tcl_WideInt)st.st_ino), 0);
-            (void)Tcl_SetVar2Ex(interp, name, "nlink", Tcl_NewWideIntObj((Tcl_WideInt)st.st_nlink), 0);
-            (void)Tcl_SetVar2Ex(interp, name, "uid",   Tcl_NewWideIntObj((Tcl_WideInt)st.st_uid), 0);
-            (void)Tcl_SetVar2Ex(interp, name, "gid",   Tcl_NewWideIntObj((Tcl_WideInt)st.st_gid), 0);
-            (void)Tcl_SetVar2Ex(interp, name, "size",  Tcl_NewWideIntObj((Tcl_WideInt)st.st_size), 0);
-            (void)Tcl_SetVar2Ex(interp, name, "atime", Tcl_NewWideIntObj((Tcl_WideInt)st.st_atime), 0);
-            (void)Tcl_SetVar2Ex(interp, name, "ctime", Tcl_NewWideIntObj((Tcl_WideInt)st.st_ctime), 0);
-            (void)Tcl_SetVar2Ex(interp, name, "mtime", Tcl_NewWideIntObj((Tcl_WideInt)st.st_mtime), 0);
-            (void)Tcl_SetVar2Ex(interp, name, "mode",  Tcl_NewWideIntObj((Tcl_WideInt)st.st_mode), 0);
-            (void)Tcl_SetVar2Ex(interp, name, "type",  Tcl_NewStringObj(
+    } else if (stat(filenameString, &st) != 0) {
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+
+    } else {
+        if (varnameString != NULL) {
+            (void)Tcl_SetVar2Ex(interp, varnameString, "dev",   Tcl_NewWideIntObj((Tcl_WideInt)st.st_dev), 0);
+            (void)Tcl_SetVar2Ex(interp, varnameString, "ino",   Tcl_NewWideIntObj((Tcl_WideInt)st.st_ino), 0);
+            (void)Tcl_SetVar2Ex(interp, varnameString, "nlink", Tcl_NewWideIntObj((Tcl_WideInt)st.st_nlink), 0);
+            (void)Tcl_SetVar2Ex(interp, varnameString, "uid",   Tcl_NewWideIntObj((Tcl_WideInt)st.st_uid), 0);
+            (void)Tcl_SetVar2Ex(interp, varnameString, "gid",   Tcl_NewWideIntObj((Tcl_WideInt)st.st_gid), 0);
+            (void)Tcl_SetVar2Ex(interp, varnameString, "size",  Tcl_NewWideIntObj((Tcl_WideInt)st.st_size), 0);
+            (void)Tcl_SetVar2Ex(interp, varnameString, "atime", Tcl_NewWideIntObj((Tcl_WideInt)st.st_atime), 0);
+            (void)Tcl_SetVar2Ex(interp, varnameString, "ctime", Tcl_NewWideIntObj((Tcl_WideInt)st.st_ctime), 0);
+            (void)Tcl_SetVar2Ex(interp, varnameString, "mtime", Tcl_NewWideIntObj((Tcl_WideInt)st.st_mtime), 0);
+            (void)Tcl_SetVar2Ex(interp, varnameString, "mode",  Tcl_NewWideIntObj((Tcl_WideInt)st.st_mode), 0);
+            (void)Tcl_SetVar2Ex(interp, varnameString, "type",  Tcl_NewStringObj(
                   (S_ISREG(st.st_mode) ? "file" :
                         S_ISDIR(st.st_mode) ? "directory" :
 #ifdef S_ISCHR
