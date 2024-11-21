@@ -207,8 +207,6 @@ proc ns_joinurl {dict} {
 #
 # ns_parsetime --
 #
-#   <TBD>
-#
 
 proc ns_parsetime {option time} {
     ns_deprecated "clock format"
@@ -262,8 +260,6 @@ proc ns_paren {val} {
 
 #
 # Paren --
-#
-#   <TBD>
 #
 
 proc Paren {val} {
@@ -570,8 +566,6 @@ proc ns_browsermatch {pattern} {
 #
 # ns_set_precision --
 #
-#   <TBD>
-#
 
 proc ns_set_precision {precision} {
     ns_deprecated {set ::tcl_precision $precision}
@@ -581,8 +575,6 @@ proc ns_set_precision {precision} {
 
 #
 # ns_updateheader --
-#
-#   <TBD>
 #
 
 proc ns_updateheader {key value} {
