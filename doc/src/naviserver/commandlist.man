@@ -104,15 +104,17 @@ sections of related commands.
 [list_end]
 [list_end]
 
-[section {Concurrent Programming, Background Jobs}]
+[section {Concurrent Programming, Process control}]
 [list_begin definitions]
 [call [cmd ns_cond]]
+[call [cmd ns_crash]]
 [call [cmd ns_critsec]]
 [call [cmd ns_job]]
 [call [cmd ns_kill]]
 [call [cmd ns_mutex]]
 [call [cmd ns_rwlock]]
 [call [cmd ns_sema]]
+[call [cmd ns_shutdown]]
 [call [cmd ns_sleep]]
 [call [cmd ns_thread]]
 [list_end]
@@ -404,12 +406,6 @@ sections of related commands.
 [call [cmd ns_server]]
 [list_end]
 
-[section {Suicide Commands}]
-[list_begin definitions]
-[call [cmd ns_shutdown]]
-[call [cmd ns_crash]]
-[list_end]
-
 [section {Socket Commands}]
 [list_begin definitions]
 [call [cmd ns_sls]]
@@ -537,6 +533,10 @@ sections of related commands.
 [call [cmd "ns_httpget"]]               Use [cmd "ns_http"] instead.
 [call [cmd "ns_httpopen"]]              Use [cmd "ns_http"] instead.
 [call [cmd "ns_httppost"]]              Use [cmd "ns_http"] instead.
+[call [cmd "ns_ictl oncleanup"]]        Use [cmd "ns_ictl trace deallocate ..."] instead.
+[call [cmd "ns_ictl oncreate"]]         Use [cmd "ns_ictl trace create ..."] instead.
+[call [cmd "ns_ictl ondelete"]]         Use [cmd "ns_ictl trace delete ..."] instead.
+[call [cmd "ns_ictl oninit"]]           Use [cmd "ns_ictl trace create ..."] instead.
 [call [cmd "ns_info filters"]]          Use [cmd "ns_server filters"] instead.
 [call [cmd "ns_info pagedir"]]          Use [cmd "ns_server pagedir"] instead.
 [call [cmd "ns_info pageroot"]]         Use [cmd "ns_server pagedir"] instead.
@@ -558,6 +558,7 @@ sections of related commands.
 [call [cmd "ns_returnadminnotice"]]     Use [cmd "ns_returnnotice"] instead.
 [call [cmd "ns_rmdir"]]                 Use [cmd "file delete"] instead.
 [call [cmd "ns_server keepalive"]]      Use [cmd "ns_conn keepalive"] instead.
+[call [cmd "ns_set new"]]               Use [cmd "ns_conn create"] instead.
 [call [cmd "ns_set print"]]             Use [cmd "ns_conn format"] instead.
 [call [cmd "ns_sha2"]]                  Use [cmd "ns_crypto::md string"] instead.
 [call [cmd "ns_startcontent"]]          Use [cmd "ns_headers"] instead.
