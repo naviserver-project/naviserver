@@ -562,11 +562,8 @@ proc ns_htmlselect args {
 #   <TBD>
 #
 
-proc ns_browsermatch {args} {
-
-    set glob [lindex $args end]
-    set agnt [ns_set iget [ns_conn headers] user-agent]
-    string match $glob $agnt
+proc ns_browsermatch {pattern} {
+    string match $pattern [ns_set iget [ns_conn headers] user-agent] $agnt
 }
 
 

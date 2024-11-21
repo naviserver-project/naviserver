@@ -6,14 +6,15 @@
 
 [description]
 
- This command returns a boolean indicating if the pattern matches the User-Agent header on the current HTTP request.
+ This command returns a boolean indicating if the pattern matches the
+ User-Agent header on the current HTTP request.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
 
-[call [cmd ns_browsermatch] [opt [arg connId]] [arg pattern]]
+[call [cmd ns_browsermatch] [arg pattern]]
 
 
 [list_end]
