@@ -16,6 +16,27 @@ services and REST interfaces.
 
 [list_begin definitions]
 
+[call [cmd "ns_http cancel"] [arg id]]
+
+Cancel queued HTTP/HTTPS request by the ID (of the request)
+as returned by [cmd "ns_http queue"] command. The command returns
+an empty result. The sense behind this command is to be able to
+terminate runaway requests or requests that have been timed out.
+Even completed requests can be cancelled if nobody is interested
+in the request result.
+
+[list_begin arguments]
+[arg_def "" id]
+ID of the HTTP request to cancel.
+[list_end]
+
+[call [cmd "ns_http cleanup"]]
+
+Cancel all pending HTTP/HTTPS requests issued in the current
+interpreter. At this point, any Tcl channels that have been
+optionally assigned to a task, will be automatically closed.
+
+
 [call [cmd "ns_http keepalives"]]
 
  Returns the number and slot (socket) usages for active or recent ns_http
@@ -31,7 +52,23 @@ services and REST interfaces.
 
  The returned information is useful for monitoring and debugging busy HTTP client operations.
 
-   
+
+[call [cmd "ns_http list"] ?[arg id]?]
+
+If [arg id] was specified, returns a single list in form
+of: "id url status".
+If [arg id] was not specified, returns a list of N elements,
+where each element is in itself a list in the form of: "id url status".
+The status can be one of: "done", "running", "error".
+
+[list_begin arguments]
+[arg_def "" id]
+Optional ID of the HTTP request to list.
+[list_end]
+
+
+
+
 [call [cmd "ns_http queue"] \
 	[opt [option "-binary"]] \
 	[opt [option "-body_size [arg size]"]] \
@@ -255,75 +292,6 @@ Send an HTTP request and wait for the result.  The command [cmd "ns_http run"]
 is similar to [cmd "ns_http queue"] followed by [cmd "ns_http wait"].
 The HTTP request is run in the same thread as the caller.
 
-[call [cmd "ns_http wait"] \
-	[opt [option "-timeout [arg T]"]] \
-	[arg id] \
-  ]
-
-[para]
-Waits for the queued command specified by the [term id] returned from
-[cmd "ns_http queue"] to complete. Returns a Tcl dictionary with the
-following keys: [term status], [term time], [term headers].
-The [term status] contains HTTP/HTTPS status code (200, 201, 400, etc).
-The [term time] contains elapsed request ns_time.
-The [term headers] contains the name of the set with response headers.
-If the request body was given over a Tcl channel, it will add the key
-[term body_chan] to the result dictionary.
-If the response was not spooled in the file nor channel, it will return
-[term body] key with the response data. Otherwise it will return either
-[term file] if the response was spooled into the named (or temporary) file
-or [term outputchan] if the request was spooled into a Tcl channel.
-For HTTPS requests, it will add [term https] with some low-level TLS
-parameters in a Tcl dictionary format.
-
-The specified [option -timeout] specified the maximum duration of
-the request to complete. The time can be specified
-in any supported ns_time format.
-
-[para]
-On success, [cmd "ns_http wait"] returns the same dictionary as the
-[cmd "ns_http run"]. On error, leaves a descriptive error message
-in the interpreter result. On timeout, sets the Tcl [variable ::errorCode]
-variable to NS_TIMEOUT in addition to leaving the error message.
-
-[list_begin arguments]
-[arg_def "" id]
-ID of the HTTP request to wait for.
-[list_end]
-
-[call [cmd "ns_http cancel"] [arg id]]
-
-Cancel queued HTTP/HTTPS request by the ID (of the request)
-as returned by [cmd "ns_http queue"] command. The command returns
-an empty result. The sense behind this command is to be able to
-terminate runaway requests or requests that have been timed out.
-Even completed requests can be cancelled if nobody is interested
-in the request result.
-
-[list_begin arguments]
-[arg_def "" id]
-ID of the HTTP request to cancel.
-[list_end]
-
-[call [cmd "ns_http cleanup"]]
-
-Cancel all pending HTTP/HTTPS requests issued in the current
-interpreter. At this point, any Tcl channels that have been
-optionally assigned to a task, will be automatically closed.
-
-[call [cmd "ns_http list"] ?[arg id]?]
-
-If [arg id] was specified, returns a single list in form
-of: "id url status".
-If [arg id] was not specified, returns a list of N elements,
-where each element is in itself a list in the form of: "id url status".
-The status can be one of: "done", "running", "error".
-
-[list_begin arguments]
-[arg_def "" id]
-Optional ID of the HTTP request to list.
-[list_end]
-
 [call [cmd "ns_http stats"] ?[arg id]?]
 
 Returns statistics from the currently running request in the form of
@@ -361,6 +329,45 @@ and [term replybodysize] will have the same value.
 [arg_def "" id]
 Optional ID of the HTTP request to get statistics for.
 [list_end]
+
+[call [cmd "ns_http wait"] \
+	[opt [option "-timeout [arg T]"]] \
+	[arg id] \
+  ]
+
+[para]
+Waits for the queued command specified by the [term id] returned from
+[cmd "ns_http queue"] to complete. Returns a Tcl dictionary with the
+following keys: [term status], [term time], [term headers].
+The [term status] contains HTTP/HTTPS status code (200, 201, 400, etc).
+The [term time] contains elapsed request ns_time.
+The [term headers] contains the name of the set with response headers.
+If the request body was given over a Tcl channel, it will add the key
+[term body_chan] to the result dictionary.
+If the response was not spooled in the file nor channel, it will return
+[term body] key with the response data. Otherwise it will return either
+[term file] if the response was spooled into the named (or temporary) file
+or [term outputchan] if the request was spooled into a Tcl channel.
+For HTTPS requests, it will add [term https] with some low-level TLS
+parameters in a Tcl dictionary format.
+
+The specified [option -timeout] specified the maximum duration of
+the request to complete. The time can be specified
+in any supported ns_time format.
+
+[para]
+On success, [cmd "ns_http wait"] returns the same dictionary as the
+[cmd "ns_http run"]. On error, leaves a descriptive error message
+in the interpreter result. On timeout, sets the Tcl [variable ::errorCode]
+variable to NS_TIMEOUT in addition to leaving the error message.
+
+[list_begin arguments]
+[arg_def "" id]
+ID of the HTTP request to wait for.
+[list_end]
+
+
+
 [list_end]
 
 [section EXAMPLES]
