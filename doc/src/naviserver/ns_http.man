@@ -16,6 +16,22 @@ services and REST interfaces.
 
 [list_begin definitions]
 
+[call [cmd "ns_http keepalives"]]
+
+ Returns the number and slot (socket) usages for active or recent ns_http
+ requests. The following example shows, how the socket opened to google.com
+ is kept for about 5 seconds. The slots for the sockets are allocated
+ dynamically depending on the system load
+  
+[example_begin]
+ % ns_http run https://google.com/
+ % ns_http keepalives
+  {slot 0 state waiting expire 4.999983 peer google.com:443 sock 82} {slot 1 state free}
+[example_end]
+
+ The returned information is useful for monitoring and debugging busy HTTP client operations.
+
+   
 [call [cmd "ns_http queue"] \
 	[opt [option "-binary"]] \
 	[opt [option "-body_size [arg size]"]] \
