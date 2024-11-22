@@ -1902,10 +1902,10 @@ Ns_SetFormat(Tcl_DString *dsPtr, const Ns_Set *set, bool withName,
 {
     size_t i;
 
-    NS_NONNULL_ASSERT(outputDsPtr != NULL);
+    NS_NONNULL_ASSERT(dsPtr != NULL);
     NS_NONNULL_ASSERT(set != NULL);
     NS_NONNULL_ASSERT(leadString != NULL);
-    NS_NONNULL_ASSERT(separator != NULL);
+    NS_NONNULL_ASSERT(separatorString != NULL);
 
     if (withName && set->name != NULL) {
         Ns_DStringPrintf(dsPtr, "%s:\n", set->name);
