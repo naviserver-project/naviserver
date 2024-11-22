@@ -582,7 +582,7 @@ test aead-1.1 {aead::encrypt and decrypt} -body {
 ############################################################################
 # Test Cases for ns_crypto::scrypt
 ############################################################################
-test ns_crypto::scrypt-1.0 {syntax: ns_crypto::scrypt} -body {
+test ns_crypto::scrypt-1.0 {syntax: ns_crypto::scrypt} -constraints {crypto scrypt} -body {
     ns_crypto::scrypt ?
 } -returnCodes error -result {wrong # args: should be "ns_crypto::scrypt ?-binary? ?-salt /salt/? ?-secret /secret/? ?-n /integer[1,MAX]/? ?-p /integer[1,MAX]/? ?-r /integer[1,MAX]/? ?-encoding hex|base64url|base64|binary?"}
 
@@ -607,7 +607,7 @@ test scrypt-1.2 {
 ############################################################################
 # Test Cases for ns_crypto::argon2
 ############################################################################
-test ns_crypto::argon2-1.0 {syntax: ns_crypto::argon2} -body {
+test ns_crypto::argon2-1.0 {syntax: ns_crypto::argon2} -constraints {crypto argon2} -body {
     ns_crypto::argon2 ?
 } -returnCodes error -result {wrong # args: should be "ns_crypto::argon2 ?-binary? ?-ad /ad/? ?-iter /integer[1,MAX]/? ?-lanes /integer[1,MAX]/? ?-memcost /integer[1,MAX]/? ?-outlen /integer[1,MAX]/? ?-password /password/? ?-salt /salt/? ?-secret /secret/? ?-threads /integer/? ?-variant /string/? ?-encoding hex|base64url|base64|binary?"}
 
