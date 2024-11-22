@@ -7,27 +7,31 @@ namespace import -force ::tcltest::*
 
 
 
-test ns_env-1.1 {basic syntax} -body {
+test ns_env-1.1 {syntax: ns_env} -body {
      ns_env
 } -returnCodes error -result {wrong # args: should be "ns_env /subcommand/ ?args ...?"}
 
-test ns_env-1.2 {basic syntax} -body {
+test ns_env-1.2 {syntax: ns_env subcommands} -body {
      ns_env ?
 } -returnCodes error -result {bad subcommand "?": must be exists, names, get, set, or unset}
 
-test ns_env-1.3 {basic syntax} -body {
+test ns_env-1.3 {syntax: ns_env exists} -body {
      ns_env exists
 } -returnCodes error -result {wrong # args: should be "ns_env exists /name/"}
 
-test ns_env-1.4 {basic syntax} -body {
+test ns_env-1.4 {syntax: ns_env names} -body {
+     ns_env names ?
+} -returnCodes error -result {wrong # args: should be "ns_env names"}
+
+test ns_env-1.5 {syntax: ns_env get} -body {
      ns_env get
 } -returnCodes error -result {wrong # args: should be "ns_env get ?-nocomplain? /name/"}
 
-test ns_env-1.5 {basic syntax} -body {
+test ns_env-1.6 {syntax: ns_env set} -body {
      ns_env set
 } -returnCodes error -result {wrong # args: should be "ns_env set /name/ /value/"}
 
-test ns_env-1.6 {basic syntax} -body {
+test ns_env-1.7 {syntax: ns_env unset} -body {
      ns_env unset
 } -returnCodes error -result {wrong # args: should be "ns_env unset ?-nocomplain? /name/"}
 

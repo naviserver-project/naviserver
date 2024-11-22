@@ -6,21 +6,28 @@ namespace import -force ::tcltest::*
 ::tcltest::configure {*}$argv
 
 #######################################################################################
-#  test ns_parsefieldvalue
+#  test ns_rand
 #######################################################################################
 test ns_rand-1.0 {syntax: ns_rand} -body {
     ns_rand 1 x
 } -returnCodes error -result {wrong # args: should be "ns_rand ?maximum[1,MAX]?"}
 
-test ns_rand-1.0 {ns_rand with 1 arg - integer} -body {
+test ns_rand-1.1 {ns_rand with 1 arg - integer} -body {
     set rand [ns_rand 10]
     return [list [expr {$rand < 10}] [string is integer -strict $rand] ]
 } -result {1 1}
 
-test ns_randx-1.1 {ns_rand with 0 arg - float} -body {
+test ns_rand-1.2 {ns_rand with 0 arg - float} -body {
     set rand [ns_rand]
     return [list [expr {$rand < 1}] [string is double -strict $rand] ]
 } -result {1 1}
+
+#######################################################################################
+#  test ns_parseheader
+#######################################################################################
+test ns_parseheader-1.0 {syntax: ns_parseheader} -body {
+    ns_parseheader
+} -returnCodes error -result {wrong # args: should be "ns_parseheader ?-prefix /string/? /set/ /headerline/ ?disposition?"}
 
 #######################################################################################
 #  test ns_fmttime
@@ -341,6 +348,14 @@ test ns_rlimit-1.6 {syntax: ns_rlimit vmsize} -body {
 } -returnCodes error -result {wrong # args: should be "ns_rlimit vmsize ?value?"}
 
 #######################################################################################
+#  ns_baseunit
+#######################################################################################
+
+test ns_baseunit-1.0 {syntax: ns_baseunit} -body {
+    ns_baseunit ?
+} -returnCodes error -result {wrong # args: should be "ns_baseunit ?-size /memory-unit/? ?-time /time/?"}
+
+#######################################################################################
 #  ns_setprivileges
 #######################################################################################
 
@@ -351,6 +366,84 @@ test ns_setgroup-1.0 {syntax: ns_setgroup} -body {
 test ns_setuser-1.0 {syntax: ns_setuser} -body {
     ns_setuser
 } -returnCodes error -result {wrong # args: should be "ns_setuser /user/"}
+
+#######################################################################################
+#  Other commands, in part defined in Tcl
+#######################################################################################
+
+test ns_browsermatch-1.0 {syntax: ns_hash} -body {
+    ns_browsermatch
+} -returnCodes error -result {wrong # args: should be "ns_browsermatch pattern"}
+# ns_browsermatch is a Tcl proc: message should be {wrong # args: should be "ns_browsermatch /pattern/"}
+
+test ns_htmlselect-1.0 {syntax: ns_htmlselect} -body {
+    ns_htmlselect
+} -match glob -result {*<select name=*}
+# "ns_htmlselect" is a Tcl proc: message should be {wrong # args: should be "ns_htmlselect ?-multi? ?-sort? ?-labels labels? /key/ /values/ ?selecteddata?"}
+
+
+test ns_hash-1.0 {syntax: ns_hash} -body {
+    ns_hash
+} -returnCodes error -result {wrong # args: should be "ns_hash /string/"}
+
+test ns_urlcharset-1.0 {syntax: ns_urlcharset} -body {
+    ns_urlcharset
+} -returnCodes error -result {wrong # args: should be "ns_urlcharset charset"}
+
+# ns_urlcharset is a Tcl proc: message should be {wrong # args: should be "ns_urlcharset /charset/"}
+
+test ns_issmallint-1.0 {syntax: ns_issmallint} -body {
+    ns_issmallint
+} -returnCodes error -result {wrong # args: should be "ns_issmallint val"}
+# ns_issmallint is a Tcl proc: message should be {wrong # args: should be "ns_issmallint /val/"}
+
+test ns_paren-1.0 {syntax: ns_paren} -body {
+    ns_paren x y
+} -returnCodes error -result {wrong # args: should be "ns_paren val"}
+# ns_paren is a Tcl proc: message should be {wrong # args: should be "ns_paren /val/"}
+
+
+test ns_setexpires-1.0 {syntax: ns_setexpires} -body {
+    ns_setexpires x y
+} -returnCodes error -result {usage: ns_setexpires ?-cache-control public|private|no-cache|no-store|no-transform|must-revalidate|proxy-revalidate? secs}
+# ns_setexpires is a Tcl proc: message should be {wrong # args: should be "ns_setexpires ?-cache-control public|private|no-cache|no-store|no-transform|must-revalidate|proxy-revalidate? /secs/"}
+
+test ns_tagelement-1.0 {syntax: ns_tagelement} -body {
+    ns_tagelement
+} -returnCodes error -result {wrong # args: should be "ns_tagelement tag key"}
+# ns_tagelement is a Tcl proc: message should be {wrong # args: should be "ns_tagelement /tag/ /key/"}
+
+test ns_tagelementset-1.0 {syntax: ns_tagelement} -body {
+    ns_tagelementset
+} -returnCodes error -result {wrong # args: should be "ns_tagelementset tagvar key value"}
+# ns_tagelementset is a Tcl proc: message should be {wrong # args: should be "ns_tagelementset /tagvar/ /key/ /value/"}
+
+test ns_cookiecharset-1.0 {syntax: ns_cookiecharset} -body {
+    ns_cookiecharset
+} -returnCodes error -result {wrong # args: should be "ns_cookiecharset name"}
+
+# ns_cookiecharset is a Tcl proc: message should be {wrong # args: should be "ns_cookiecharset /name/"}
+
+test ns_choosecharset-1.0 {syntax: ns_choosecharset} -body {
+    ns_choosecharset x
+} -returnCodes error -result {Usage: ns_choosecharset ?-preference charset-list?}
+
+# ns_choosecharset is a Tcl proc: message should be {wrong # args: should be "ns_choosecharset ?-preference /charset-list/?"}
+
+test ns_formfieldcharset-1.0 {syntax: ns_formfieldcharset} -body {
+    ns_formfieldcharset
+} -returnCodes error -result {wrong # args: should be "ns_formfieldcharset name"}
+
+# ns_formfieldcharset is a Tcl proc: message should be {wrong # args: should be "ns_formfieldcharset /name/"}
+
+test ns_sendmail_config-1.0 {syntax: ns_sendmail_config} -body {
+    ns_sendmail_config ? ?
+} -returnCodes error -result {wrong # args: should be "ns_sendmail_config ?mode?"}
+
+test ns_sendmail-1.0 {syntax: ns_sendmail} -body {
+    ns_sendmail -? ?
+} -returnCodes error -result {wrong # args: should be "?-to /to/? ?-from /from/? ?-subject /subject/? ?-body /body/? ?-headers /headers/? ?-bcc /bcc/? ?-cc /cc/?"}
+# ns_sendmail is a Tcl proc: message should be {wrong # args: should be "ns_sendmail ?-to /to/? ?-from /from/? ?-subject /subject/? ?-body /body/? ?-headers /headers/? ?-bcc /bcc/? ?-cc /cc/?"}
 
 
 #######################################################################################
@@ -400,40 +493,6 @@ test ns_getcsv-2.1 {ns_getcsv with trim} -body {
 bb} ccc} {zzz yyy xxx} {1 2 3} {includes(\")quote {quoted includes (") quote}} {elm2 {} empty} single {last3 empty {} {} {}}} ;# "
 
 
-#######################################################################################
-#  Other commands, in part defined in Tcl
-#######################################################################################
-
-test ns_urlcharset-1.0 {syntax: ns_urlcharset} -body {
-    ns_urlcharset
-} -returnCodes error -result {wrong # args: should be "ns_urlcharset charset"}
-
-# ns_urlcharset is a Tcl proc: message should be {wrong # args: should be "ns_urlcharset /charset/"}
-
-test ns_issmallint-1.0 {syntax: ns_issmallint} -body {
-    ns_issmallint
-} -returnCodes error -result {wrong # args: should be "ns_issmallint val"}
-# ns_issmallint is a Tcl proc: message should be {wrong # args: should be "ns_issmallint /val/"}
-
-test ns_paren-1.0 {syntax: ns_paren} -body {
-    ns_paren x y
-} -returnCodes error -result {wrong # args: should be "ns_paren val"}
-# ns_paren is a Tcl proc: message should be {wrong # args: should be "ns_paren /val/"}
-
-
-test ns_tagelement-1.0 {syntax: ns_tagelement} -body {
-    ns_tagelement
-} -returnCodes error -result {wrong # args: should be "ns_tagelement tag key"}
-# ns_tagelement is a Tcl proc: message should be {wrong # args: should be "ns_tagelement /tag/ /key/"}
-
-test ns_tagelementset-1.0 {syntax: ns_tagelement} -body {
-    ns_tagelementset
-} -returnCodes error -result {wrong # args: should be "ns_tagelementset tagvar key value"}
-# ns_tagelementset is a Tcl proc: message should be {wrong # args: should be "ns_tagelementset /tagvar/ /key/ /value/"}
-
-test ns_modulepath-1.0 {syntax: ns_modulepath} -body {
-    ns_modulepath
-} -returnCodes error -result {wrong # args: should be "ns_modulepath /server/ ?module ...?"}
 
 cleanupTests
 

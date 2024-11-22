@@ -493,7 +493,7 @@ if {$use_trace_inits} {
         set len [llength $args]
         set sync 0
         if {$len == 0} {
-            return
+            error {wrong # args: should be "ns_eval ?-sync? ?-pending? /script/ ?args?"}
         }
         if {$len > 1 && [lindex $args 0] eq "-sync"} {
             set sync 1

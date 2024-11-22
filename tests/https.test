@@ -23,6 +23,30 @@ if {[ns_info ssl] ne ""} {
     testConstraint serverListen true
 }
 
+#
+# Syntax tests
+#
+test ns_certctl-1.0 {syntax: ns_certctl} -body {
+    ns_certctl
+} -returnCodes error -result {wrong # args: should be "ns_certctl list|reload ?args?"}
+
+test ns_certctl-1.0 {syntax: ns_certctl} -body {
+    ns_certctl ""
+} -returnCodes error -result {ns_certctl: bad subcommand "": must be list or reload}
+
+test ns_certctl-1.2 {syntax: ns_certctl list} -body {
+    ns_certctl list ?
+} -returnCodes error -result {wrong # args: should be "ns_certctl list"}
+
+test ns_certctl-1.3 {syntax: ns_certctl reload} -body {
+    ns_certctl reload ?
+} -returnCodes error -result {wrong # args: should be "ns_certctl reload"}
+
+
+#
+# Functional tests
+#
+
 test https-1.1 {short request 1.0} -constraints {serverListen} -setup {
     ns_register_proc GET /get {
         ns_return 200 text/plain "Hello World"

@@ -5,14 +5,46 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
+#######################################################################################
+#  Syntax Tests
+#######################################################################################
 
-
-test ns_config-1.1 {basic syntax} -body {
+test ns_config-1.1 {syntax: ns_config} -body {
     ns_config
-} -returnCodes error -result \
-    {wrong # args: should be "ns_config ?-bool? ?-int? ?-min /integer/? ?-max /integer/? ?-exact? ?-set? ?--? /section/ /key/ ?default?"}
+} -returnCodes error -result {wrong # args: should be "ns_config ?-bool? ?-int? ?-min /integer/? ?-max /integer/? ?-exact? ?-set? ?--? /section/ /key/ ?default?"}
+
+test ns_configsection-1.0 {syntax: ns_configsection} -body {
+    ns_configsection
+} -returnCodes error -result {wrong # args: should be "ns_configsection ?-filter unread|defaulted|defaults? ?--? /section/"}
+
+test ns_configsections-1.0 {syntax: ns_configsections} -body {
+    ns_configsections ?
+} -returnCodes error -result {wrong # args: should be "ns_configsections"}
+
+test ns_library-1.0 {syntax: ns_library} -body {
+    ns_library
+} -returnCodes error -result {wrong # args: should be "ns_library /kind/ ?module?"}
+
+test ns_modulepath-1.0 {syntax: ns_modulepath} -body {
+    ns_modulepath
+} -returnCodes error -result {wrong # args: should be "ns_modulepath /server/ ?module ...?"}
+
+# The following commands are available only from the configuration file.
+
+test ns_section-1.0 {syntax: ns_section} -body {
+    ns_section
+} -returnCodes error -result {invalid command name "ns_section"}
+# "ns_section" message should be {wrong # args: should be "ns_section /name/"}
+
+test ns_section-1.0 {syntax: ns_param} -body {
+    ns_param
+} -returnCodes error -result {invalid command name "ns_param"}
+# "ns_section" message should be {wrong # args: should be "ns_param /key/ /value/"}
 
 
+#######################################################################################
+#  Functional Tests
+#######################################################################################
 
 test ns_config-2.1 {bool} -body {
     expr {[ns_config -bool ns/testconfig trueval] ? 1 : 0}
@@ -137,9 +169,6 @@ test ns_config-6.1 {sections} -body {
 
 
 
-test ns_config-7.1 {section} -body {
-    ns_configsection
-} -returnCodes error -result {wrong # args: should be "ns_configsection ?-filter unread|defaulted|defaults? ?--? /section/"}
 
 test ns_config-7.2 {section} -body {
     ns_set array [ns_configsection ns/testconfig]

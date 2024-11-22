@@ -7,175 +7,187 @@ namespace import -force ::tcltest::*
 # Syntax tests
 #
 
-test ns_set-1.1 {basic syntax ns_set} -body {
+test ns_set-1.0 {syntax: ns_set} -body {
     ns_set
 } -returnCodes error -result {wrong # args: should be "ns_set array|cleanup|copy|cput|create|delete|delkey|find|format|free|get|icput|idelkey|ifind|iget|imerge|isnull|iunique|iupdate|key|keys|list|merge|move|name|new|print|put|size|split|stats|truncate|unique|update|value|values ?args?"}
 
-test ns_set-1.2 {basic syntax ns_set} -body {
+test ns_set-1.1 {syntax: ns_set subcommands} -body {
     ns_set ""
 } -returnCodes error -result {ns_set: bad subcommand "": must be array, cleanup, copy, cput, create, delete, delkey, find, format, free, get, icput, idelkey, ifind, iget, imerge, isnull, iunique, iupdate, key, keys, list, merge, move, name, new, print, put, size, split, stats, truncate, unique, update, value, or values}
 
-test ns_set-1.6 {basic syntax ns_set array} -body {
+test ns_set-1.2 {syntax: ns_set array} -body {
     ns_set array
 } -returnCodes error -result {wrong # args: should be "ns_set array /setId/"}
 
-test ns_set-1.7 {basic syntax ns_set cleanup} -body {
+test ns_set-1.3 {syntax: ns_set cleanup} -body {
     ns_set cleanup x
 } -returnCodes error -result {wrong # args: should be "ns_set cleanup"}
 
-test ns_set-1.8 {basic syntax ns_set copy} -body {
+test ns_set-1.4 {syntax: ns_set copy} -body {
     ns_set copy
 } -returnCodes error -result {wrong # args: should be "ns_set copy /setId/"}
 
-test ns_set-1.9 {basic syntax ns_set cput} -body {
+test ns_set-1.5 {syntax: ns_set cput} -body {
     ns_set cput
 } -returnCodes error -result {wrong # args: should be "ns_set cput ?-nocase? ?--? /setId/ /key/ /value/"}
 
-test ns_set-1.10 {basic syntax ns_set create} -body {
+test ns_set-1.6 {syntax: ns_set create} -body {
     expr {[ns_set create] ne ""}
 } -returnCodes {ok error} -result 1 -cleanup {
     ns_set cleanup
 }
 
-test ns_set-1.11 {basic syntax ns_set delete} -body {
+test ns_set-1.7 {syntax: ns_set delete} -body {
     ns_set delete
 } -returnCodes error -result {wrong # args: should be "ns_set delete /setId/ /fieldNumber[0,MAX]/"}
 
-test ns_set-1.12 {basic syntax ns_set delkey} -body {
+test ns_set-1.8 {syntax: ns_set delkey} -body {
     ns_set delkey
 } -returnCodes error -result {wrong # args: should be "ns_set delkey ?-nocase? ?--? /setId/ /key/"}
 
-test ns_set-1.13 {basic syntax ns_set find} -body {
+test ns_set-1.9 {syntax: ns_set find} -body {
     ns_set find
 } -returnCodes error -result {wrong # args: should be "ns_set find ?-nocase? ?--? /setId/ /key/"}
 
-test ns_set-1.14 {basic syntax ns_set free} -body {
+test ns_set-1.10 {syntax: ns_set free} -body {
     ns_set free
 } -returnCodes error -result {wrong # args: should be "ns_set free /setId/"}
 
-test ns_set-1.15.1 {basic syntax ns_set get} -body {
+test ns_set-1.11 {syntax: ns_set get} -body {
     ns_set get
 } -returnCodes error -result {wrong # args: should be "ns_set get ?-all? ?-nocase? ?--? /setId/ /key/ ?default?"}
 
-test ns_set-1.15.2 {basic syntax ns_set get} -body {
-    ns_set get [ns_set create]
-} -cleanup {
-    ns_set cleanup
-} -returnCodes {error ok} -result {wrong # args: should be "ns_set get ?-all? ?-nocase? ?--? /setId/ /key/ ?default?"}
-
-test ns_set-1.16 {basic syntax ns_set icput} -body {
+test ns_set-1.12 {syntax: ns_set icput} -body {
     ns_set icput
 } -returnCodes error -result {wrong # args: should be "ns_set icput ?-nocase? ?--? /setId/ /key/ /value/"}
 
-test ns_set-1.18 {basic syntax ns_set idelkey} -body {
+test ns_set-1.13 {syntax: ns_set idelkey} -body {
     ns_set idelkey
 } -returnCodes error -result {wrong # args: should be "ns_set idelkey ?-nocase? ?--? /setId/ /key/"}
 
-test ns_set-1.19 {basic syntax ns_set ifind} -body {
+test ns_set-1.14 {syntax: ns_set ifind} -body {
     ns_set ifind
 } -returnCodes error -result {wrong # args: should be "ns_set ifind ?-nocase? ?--? /setId/ /key/"}
 
-test ns_set-1.20.1 {basic syntax ns_set iget} -body {
+test ns_set-1.15 {syntax: ns_set iget} -body {
     ns_set iget
 } -returnCodes error -result {wrong # args: should be "ns_set iget ?-all? ?-nocase? ?--? /setId/ /key/ ?default?"}
 
-test ns_set-1.20.2 {basic syntax ns_set iget} -body {
+test ns_set-1.16 {syntax: ns_set iget} -body {
     ns_set iget [ns_set create]
 } -cleanup {
     ns_set cleanup
 } -returnCodes error -result {wrong # args: should be "ns_set iget ?-all? ?-nocase? ?--? /setId/ /key/ ?default?"}
 
-test ns_set-1.21 {basic syntax ns_set isnull} -body {
+test ns_set-1.17 {syntax: ns_set isnull} -body {
     ns_set isnull
 } -returnCodes error -result {wrong # args: should be "ns_set isnull /setId/ /fieldNumber[0,MAX]/"}
 
-test ns_set-1.22 {basic syntax ns_set iunique} -body {
+test ns_set-1.18 {syntax: ns_set iunique} -body {
     ns_set iunique
 } -returnCodes error -result {wrong # args: should be "ns_set iunique ?-nocase? ?--? /setId/ /key/"}
 
-test ns_set-1.23 {basic syntax ns_set key } -body {
+test ns_set-1.19 {syntax: ns_set key } -body {
     ns_set key
 } -returnCodes error -result {wrong # args: should be "ns_set key /setId/ /fieldNumber[0,MAX]/"}
 
-test ns_set-1.24 {basic syntax ns_set list} -body {
-    ns_set list
-} -result ""
+test ns_set-1.20 {syntax: ns_set list } -body {
+    ns_set list x
+} -returnCodes error -result {wrong # args: should be "ns_set list"}
 
-test ns_set-1.25 {basic syntax ns_set merge} -body {
+test ns_set-1.21 {syntax: ns_set merge} -body {
     ns_set merge
 } -returnCodes error -result {wrong # args: should be "ns_set merge ?-nocase? ?--? /setId1/ /setId2/"}
 
-test ns_set-1.26 {basic syntax ns_set move} -body {
+test ns_set-1.22 {syntax: ns_set move} -body {
     ns_set move
 } -returnCodes error -result {wrong # args: should be "ns_set move /setId1/ /setId2/"}
 
-test ns_set-1.27 {basic syntax ns_set name} -body {
+test ns_set-1.23 {syntax: ns_set name} -body {
     ns_set name
 } -returnCodes error -result {wrong # args: should be "ns_set name /setId/"}
 
-test ns_set-1.28 {basic syntax ns_set new} -body {
+test ns_set-1.24 {syntax: ns_set new} -body {
     expr {[ns_set new] ne ""}
 } -result 1 -cleanup {
     ns_set cleanup
 }
+# "ns_set new" accepts from 0 to n arguments: message should be {wrong # args: should be "ns_set new /args/"}
 
-test ns_set-1.29 {basic syntax ns_set pri} -body {
+
+test ns_set-1.25 {syntax: ns_set pri} -body {
     ns_set print
 } -returnCodes error -result {wrong # args: should be "ns_set print /setId/"}
 
-test ns_set-1.31 {basic syntax ns_set put} -body {
+test ns_set-1.26 {syntax: ns_set put} -body {
     ns_set put
 } -returnCodes error -result {wrong # args: should be "ns_set put /setId/ /key/ /value/"}
 
-test ns_set-1.32 {basic syntax ns_set size} -body {
+test ns_set-1.27 {syntax: ns_set size} -body {
     ns_set size
 } -returnCodes error -result {wrong # args: should be "ns_set size /setId/ ?nrElements[0,MAX]? ?bufferSize[200,MAX]?"}
 
-test ns_set-1.33 {basic syntax ns_set split} -body {
+test ns_set-1.28 {syntax: ns_set split} -body {
     ns_set split
 } -returnCodes error -result {wrong # args: should be "ns_set split /setId/ ?splitChar?"}
 
-test ns_set-1.34 {basic syntax ns_set truncate} -body {
+test ns_set-1.29 {syntax: ns_set truncate} -body {
     ns_set truncate
 } -returnCodes error -result {wrong # args: should be "ns_set truncate /setId/ /fieldNumber[0,MAX]/"}
 
-test ns_set-1.35 {basic syntax ns_set unique} -body {
+test ns_set-1.30 {syntax: ns_set unique} -body {
     ns_set unique
 } -returnCodes error -result {wrong # args: should be "ns_set unique ?-nocase? ?--? /setId/ /key/"}
 
-test ns_set-1.36 {basic syntax ns_set update} -body {
+test ns_set-1.31 {syntax: ns_set update} -body {
     ns_set update
 } -returnCodes error -result {wrong # args: should be "ns_set update ?-nocase? ?--? /setId/ /key/ /value/"}
 
-test ns_set-1.37 {basic syntax ns_set value} -body {
+test ns_set-1.32 {syntax: ns_set value} -body {
     ns_set value
 } -returnCodes error -result {wrong # args: should be "ns_set value /setId/ /fieldNumber[0,MAX]/"}
 
-test ns_set-1.38 {basic syntax ns_set imerge} -body {
+test ns_set-1.33 {syntax: ns_set imerge} -body {
     ns_set imerge
 } -returnCodes error -result {wrong # args: should be "ns_set imerge ?-nocase? ?--? /setId1/ /setId2/"}
 
-test ns_set-1.39 {basic syntax ns_set format} -body {
+test ns_set-1.34 {syntax: ns_set format} -body {
     ns_set format
 } -returnCodes error -result {wrong # args: should be "ns_set format ?-noname? ?-lead /string/? ?-separator /string/? ?--? /setId/"}
 
-test ns_set-1.40 {basic syntax ns_set keys } -body {
+test ns_set-1.35 {syntax: ns_set keys } -body {
     ns_set keys
 } -returnCodes error -result {wrong # args: should be "ns_set keys /setId/ ?pattern?"}
 
-test ns_set-1.41 {basic syntax ns_set values } -body {
+test ns_set-1.36 {syntax: ns_set values } -body {
     ns_set values
 } -returnCodes error -result {wrong # args: should be "ns_set values /setId/ ?pattern?"}
 
-test ns_set-1.41 {basic syntax ns_set list } -body {
-    ns_set list x
-} -returnCodes error -result {wrong # args: should be "ns_set list"}
+
+test ns_findset-1.0 {syntax: ns_findset} -body {
+    ns_findset
+} -returnCodes error -result {wrong # args: should be "ns_findset sets name"}
+
+# "ns_findset" is a tcl proc: message should be {wrong # args: should be "ns_findset /sets/ /name/"}
+
+
 
 #
 # Functional tests
 #
 
-test ns_set-2.0 {basic operation ns_set create without args} -body {
+test ns_set-1.24 {syntax: ns_set list} -body {
+    ns_set list
+} -result ""
+
+
+test ns_set-2.0 {basic operation: ns_set get} -body {
+    ns_set get [ns_set create]
+} -cleanup {
+    ns_set cleanup
+} -returnCodes {error ok} -result {wrong # args: should be "ns_set get ?-all? ?-nocase? ?--? /setId/ /key/ ?default?"}
+
+test ns_set-2.0.0 {basic operation ns_set create without args} -body {
     ns_set cleanup
     ns_set create; ns_set create; ns_set create
     ns_set cleanup

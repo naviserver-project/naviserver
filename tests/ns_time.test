@@ -50,6 +50,17 @@ test ns_time-1.8 {syntax: ns_time seconds} -body {
 } -returnCodes error -result {wrong # args: should be "ns_time seconds /time/"}
 
 
+test ns_localtime-1.0 {syntax: ns_localtime} -body {
+    ns_localtime x
+} -returnCodes error -result {wrong # args: should be "ns_localtime"}
+
+test ns_gmtime-1.0 {syntax: ns_localtime} -body {
+    ns_gmtime x
+} -returnCodes error -result {wrong # args: should be "ns_gmtime"}
+
+
+
+
 #
 # Functionality
 #

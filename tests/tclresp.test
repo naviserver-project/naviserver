@@ -91,6 +91,15 @@ test ns_returnunavailable-1.0 {syntax: ns_returnunavailable} -body {
     ns_returnunavailable x
 } -returnCodes error -result {wrong # args: should be "ns_returnunavailable"}
 
+test ns_returnredirect-1.0 {syntax: ns_returnredirect} -body {
+    ns_returnredirect
+} -returnCodes error -result {wrong # args: should be "ns_returnredirect /location/"}
+
+test ns_internalredirect-1.0 {syntax: ns_internalredirect} -body {
+    ns_internalredirect
+} -returnCodes error -result {wrong # args: should be "ns_internalredirect /location/"}
+
+
 #
 # functional tests
 #
@@ -161,10 +170,6 @@ test tclresp-1.3.5-c {basic syntax connected} -constraints serverListen -setup {
 test tclresp-1.11.2 {basic syntax} -body {
     ns_returnnotice 200 x y
 } -returnCodes error -result {no connection}
-
-test tclresp-1.12.1 {basic syntax} -body {
-    ns_returnredirect
-} -returnCodes error -result {wrong # args: should be "ns_returnredirect /location/"}
 
 test tclresp-1.12.2 {basic syntax} -body {
     ns_returnredirect http://example.com/

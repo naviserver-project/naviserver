@@ -381,8 +381,6 @@ test cookie-4.9d {get all named cookies, multiple cookies, no spaces, terminator
 # TODO: exercise the cookie parser with bad input...
 #
 
-
-
 cleanupTests
 
 # Local variables:

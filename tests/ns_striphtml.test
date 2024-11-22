@@ -5,7 +5,11 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
-test ns_striphtml-1.0 {basic test} -body {
+test ns_striphtml-1.0 {syntax: ns_striphtml} -body {
+    ns_striphtml
+} -returnCodes error -result {wrong # args: should be "ns_striphtml /html/"}
+
+test ns_striphtml-1.1 {basic operation} -body {
     ns_striphtml {hello <b>world</b>}
 } -result "hello world"
 
@@ -93,8 +97,7 @@ test ns_striphtml-2.4b {yen numeric entity} -body {
 
 test ns_striphtml-3.0 {table} -body {
     set t {
-        {"lates",   5, "⪭︀",   6, "/* U+02AAD U+0FE00 */"},
-        
+                                {"lates",   5, "⪭︀",   6, "/* U+02AAD U+0FE00 */"},
                                 {"AElig",   5, "Æ", 2},
                                 {"Aacute",  6, "Á", 2},
                                 {"Acirc",   5, "Â", 2},
@@ -327,7 +330,6 @@ test ns_striphtml-3.0 {table} -body {
         [subst {{"ThickSpace", 10, "\u205F\u200A", 6}}], \n \
         [subst {{"nsce",        4, "\u2AB0\u0338", 6}}] \n \
 
-    
     regsub -all {{NULL,    0, "", 0}} $t "" t
     regsub -all {,} $t " " t
     set string ""

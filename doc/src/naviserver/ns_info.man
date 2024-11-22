@@ -43,9 +43,16 @@ Returns file path to executable binary
 
 Returns the time in epoch seconds since the current server was started
 
+[call [cmd  "ns_info buildinfo"]]
+
+Returns returns information about compiler, assertions and Tcl
+version in form of a dict, e.g.,
+"compiler {clang 16.0.0 (clang-1600.0.26.4)} assertions 0 system_malloc 1 tcl 9.0.1"
+
 [call [cmd  "ns_info builddate"]]
 
 Returns the date and time at which the current server was compiled, e.g.: "Jul 20 2004 at 14:57:20"
+
 
 [call [cmd  "ns_info callbacks"]]
 
@@ -85,6 +92,10 @@ Returns the name of the error log file. The name is specified by the
 [call [cmd  "ns_info major"]]
 
 Returns the major version number.
+
+[call [cmd  "ns_info meminfo"]]
+
+Returns memory statistics from tcmalloc when available.
 
 [call [cmd  "ns_info minor"]]
 

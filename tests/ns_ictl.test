@@ -108,10 +108,26 @@ test ns_atstartup-1.0 {syntax: ns_atstartup} -body {
     ns_atstartup
 } -returnCodes error -result {wrong # args: should be "ns_atstartup /script/ ?args?"}
 
+
+test ns_cleanup-1.0 {syntax: ns_cleanup} -body {
+    ns_cleanup ?
+} -returnCodes error -result {wrong # args: should be "ns_cleanup"}
+
+test ns_reinit-1.0 {syntax: ns_reinit} -body {
+    ns_reinit ?
+} -returnCodes error -result {wrong # args: should be "ns_reinit"}
+
 test ns_runonce-1.0 {syntax: ns_runonce} -body {
     ns_runonce
 } -returnCodes error -result {wrong # args: should be "ns_runonce ?-global? ?--? /script/"}
 
+test ns_moduleload-1.0 {syntax: ns_moduleload} -body {
+    ns_moduleload
+} -returnCodes error -result {wrong # args: should be "ns_moduleload ?-global? ?-init /string/? ?--? /module/ /file/"}
+
+test ns_eval-1.0 {syntax: ns_eval} -body {
+    ns_eval
+} -returnCodes error -result {wrong # args: should be "ns_eval ?-sync? ?-pending? /script/ ?args?"}
 
 
 cleanupTests

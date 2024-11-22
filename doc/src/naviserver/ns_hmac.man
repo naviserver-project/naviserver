@@ -31,13 +31,8 @@ is installed.
 	[arg key] \
 	[arg message]]
 
-[para]
-[arg key]
-Secret in the HMAC computation.
-
-[para]
-[arg message]
-Data from which the HMAC is to be computed.
+Returns the HMAC based on the provided secret [arg key] and the string
+[arg message].
 
 [call [cmd "ns_hmac file"] \
     [opt [option "-digest [arg digest]"]] \
@@ -45,32 +40,24 @@ Data from which the HMAC is to be computed.
     [arg key] [arg filename] [arg args] \
 ]
 
-[para]
-[arg key]
-Secret in the HMAC computation
-
-[para]
-[arg filename]
-Path of a file containing the data from which the HMAC
-is to be computed. The file is read incrementally.
- 
-[arg args]
-Optional paths to other files to be processed.
-The resulting HMAC is calculated cumulatively.
+Returns the HMAC from the provided secret [arg key], the file
+[arg filename] and the optional provided additional filenames in
+[arg args].  The files are read incrementally to keep storage requirements
+for large files low. The resulting HMAC is calculated cumulatively.
 
 [call [cmd "ns_hmac new"] \
     [opt [option "-digest [arg digest]"]] \
     [option "-key [arg key]"] \
 ]
 
-Create and return a new HMAC object for incremental operations.
+Creates and returns a new HMAC object for incremental operations.
 The option [option "-digest"] defaults to "sha256"
 the option [option "-key"] has to be always specified.
 
 
 [call [arg \$hmac_object] [cmd "add"] [arg data]]
 
-Add [arg data] incrementally to the HMAC object, which was created
+Adds [arg data] incrementally to the HMAC object, which was created
 previously with [cmd "ns_hmac new"].
 
 [call [arg \$hmac_object] \
@@ -78,12 +65,12 @@ previously with [cmd "ns_hmac new"].
 	[opt [option "-encoding [arg encoding]"]] \
 ]
 
-Return the current HMAC value from the HMAC object, 
+Returns the current HMAC value from the HMAC object,
 to which data was added previously with the method [cmd "add"].
 
 [call [arg \$hmac_object] [cmd "destroy"]]
 
-Delete the HMAC object (used for incremental operations).
+Deletes the HMAC object (used for incremental operations).
 
 [list_end]
 
@@ -111,6 +98,53 @@ Possible encodings are [term hex], [term base64url],
   nscp 2> ns_hmac string -digest sha256 "Jefe" "what do ya want for nothing?"
   5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843
 [example_end]
+
+
+[section {LOW LEVEL COMMANDS}]
+
+While the command [cmd "ns_hmac"] provides a high-level, object oriented
+interface mostly based on the MD objects, the lower level
+implementation provides more options for certain specialized operations.
+
+[list_begin definitions]
+
+[call [cmd "ns_crypto::hmac add"] \
+    [opt [option "-binary"]] \
+    [arg "ctx"] \
+    [arg message] \
+]
+
+[call [cmd "ns_crypto::hmac free"] \
+    [arg "ctx"] \
+]
+
+[call [cmd "ns_crypto::hmac get"] \
+    [opt [option "-encoding hex|base64url|base64|binary"]] \
+    [arg "ctx"] \
+]
+
+[call [cmd "ns_crypto::hmac new"] \
+    [opt [option "-binary"]] \
+    [arg "digest"] \
+    [arg "key"] \
+]
+
+[call [cmd "ns_crypto::hmac string"] \
+    [opt [option "-binary"]] \
+    [opt [option "-digest [arg digest]"]] \
+    [opt [option "-encoding hex|base64url|base64|binary"]] \
+    [arg "key"] \
+    [arg "message"] \
+]
+
+[list_end]
+
+Example for an HMAC based on [term sha384] with key [term Jefe]:
+[example_begin]
+ % ns_crypto::hmac string -digest sha384 "Jefe" "what do ya want for nothing?"
+ af45d2e376484031617f78d2b58a6b1b9c7ef464f5a01b47e42ec3736322445e8e2240ca5e69e2c78b3239ecfab21649
+[example_end]
+
 
 [see_also nsd ns_hotp ns_totp ns_md ns_md5 ns_sha1 ns_sha ns_crypt ns_crypto ns_rand]
 [keywords encoding crypto HMAC nsf]

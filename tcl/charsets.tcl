@@ -71,6 +71,8 @@ proc ns_setformencoding {charset} {
 #   the data is encoded.  If this field is found, use that charset to
 #   set the urlencoding for the current connection.
 #
+#   <TBD>
+#
 # Results:
 #    None.
 #
@@ -108,6 +110,8 @@ proc ns_formfieldcharset {name} {
 #   character set that the data is encoded.  If this cookie
 #   is found, use that charset to set the urlencoding for the
 #   current connection.
+#
+#   <TBD>
 #
 # Results:
 #    None.
@@ -148,13 +152,13 @@ proc ns_cookiecharset {name} {
 #   None.
 #
 
-proc ns_encodingfortype {type} {
+proc ns_encodingfortype {mimetype} {
     
-    set type [string trim [string tolower $type]]
+    set mimetype [string trim [string tolower $mimetype]]
     
-    if {[regexp {;[ \t\r\n]*charset[ \t\r\n]*=([^;]*)} $type junk set]} {
+    if {[regexp {;[ \t\r\n]*charset[ \t\r\n]*=([^;]*)} $mimetype junk set]} {
         return [ns_encodingforcharset [string trim $set]]
-    } elseif {[string match "text/*" $type]} {
+    } elseif {[string match "text/*" $mimetype]} {
         set set [ns_config -set ns/parameters OutputCharset iso-8859-1]
         return [ns_encodingforcharset $set]
     } else {
@@ -169,6 +173,8 @@ proc ns_encodingfortype {type} {
 #   Performs an analysis of the request's accepted charsets, against
 #   either the given charset list, or the configured default preferred
 #   character set list (ns/parameters/PreferredCharsets).
+#
+#   <TBD>
 #
 # Results:
 #    One character set name.

@@ -1457,7 +1457,6 @@ ICtlCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 /*
  *----------------------------------------------------------------------
  *
- * ICtlOnInitObjCmd
  * ICtlOnCreateObjCmd
  * ICtlOnCleanupObjCmd
  * ICtlOnDeleteObjCmd

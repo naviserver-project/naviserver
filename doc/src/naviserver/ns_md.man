@@ -19,7 +19,7 @@ content which is too large to be kept in memory.
 NaviServer is compiled with OpenSSL support and where the NSF
 package is installed. The command [cmd ns_md] is a generalization
 of [cmd ns_md5] and [cmd ns_sha1] since it provides a much larger
-set of cryptogrphic algorithms, output formats and provides 
+set of cryptogrphic algorithms, output formats and provides
 the incremental interface.
 
 [section {COMMANDS}]
@@ -32,10 +32,7 @@ the incremental interface.
     [arg message] \
 ]
 
-[para]
-
-[arg message]
-Data from which the digest is to be computed.
+Returns the message digest from the provided string [arg message].
 
 [call [cmd "ns_md file"] \
     [opt [option "-digest [arg digest]"]] \
@@ -43,40 +40,37 @@ Data from which the digest is to be computed.
     [arg filename] [arg args] \
 ]
 
-[para] 
+[para]
 
-[arg filename]
-Path of a file containing the data from which the digest
-is to be computed. The file is read incrementally.
-
-[arg args]
-Optional paths to other files to be processed. 
-The resulting message digest is calculated cumulatively.
+Returns the message digest from the provided file [arg filename] and
+the optional provided additional filenames in [arg args].
+The files are read incrementally to keep storage requirements for large
+files low. The resulting message digest is calculated cumulatively.
 
 [call [cmd "ns_md new"] \
     [opt [option "-digest [arg digest]"]] \
 ]
 
-Create and return a new MD object for incremental operations.
-The option [option "-digest"] defaults to "sha256".
+Creates and returns a new MD object for incremental operations.
+The option [option "-digest"] defaults to [term sha256].
 
 [call [arg \$md_object] [cmd "add"] \
     [arg data] \
 ]
 
-Add [arg data] incrementally to the MD object, which was created
+Adds [arg data] incrementally to the MD object, which was created
 previously with [cmd "ns_md new"].
 
 [call [arg \$md_object] [cmd "get"] \
     [opt [option "-encoding [arg encoding]"]] \
 ]
 
-Return the current digest value from the MD object, to which data was
+Returns the current digest value from the MD object, to which data was
 added previously with the method [cmd "add"].
 
 [call [arg \$md_object] [cmd "destroy"]]
 
-Delete the MD object (used for incremental operations).
+Deletes the MD object (used for incremental operations).
 
 [list_end]
 
@@ -107,13 +101,77 @@ Possible encodings are [term hex], [term base64url],
 [list_end]
 
 [example_begin]
-  nscp 2> ns_md string -digest sha256 "what do ya want for nothing?"
+  % ns_md string -digest sha256 "what do ya want for nothing?"
   b381e7fec653fc3ab9b178272366b8ac87fed8d31cb25ed1d0e1f3318644c89c
 [example_end]
+
+[section {LOW LEVEL COMMANDS}]
+
+While the command [cmd "ns_md"] provides a high-level, object oriented
+interface mostly based on the MD objects, the lower level
+implementation provides more options for certain specialized operations.
+
+[list_begin definitions]
+
+[call [cmd "ns_crypto::md add"] \
+    [opt [option "-binary"]] \
+    [arg "ctx"] \
+    [arg message] \
+]
+
+[call [cmd "ns_crypto::md free"] \
+    [arg "ctx"] \
+]
+
+[call [cmd "ns_crypto::md get"] \
+    [opt [option "-encoding hex|base64url|base64|binary"]] \
+    [arg "ctx"] \
+]
+
+[call [cmd "ns_crypto::md hkdf"] \
+    [opt [option "-binary"]] \
+    [opt [option "-digest [arg digest]"]] \
+    [opt [option "-salt [arg string]"]] \
+    [opt [option "-secret [arg string]"]] \
+    [opt [option "-info [arg info]"]] \
+    [opt [option "-encoding hex|base64url|base64|binary"]] \
+    [arg "length"] \
+]
+
+[call [cmd "ns_crypto::md new"] \
+    [arg "digest"] \
+]
+
+[call [cmd "ns_crypto::md string"] \
+    [opt [option "-binary"]] \
+    [opt [option "-digest [arg digest]"]] \
+    [opt [option "-encoding hex|base64url|base64|binary"]] \
+    [opt [option "-passphrase [arg string]"]] \
+    [opt [option "-sign [arg string]"]] \
+    [opt [option "-signature [arg string]"]] \
+    [opt [option "-verify [arg string]"]] \
+    [arg "message"] \
+]
+
+[call [cmd "ns_crypto::md vapidsign"] \
+    [opt [option "-binary"]] \
+    [opt [option "-digest [arg digest]"]] \
+    [opt [option "-encoding hex|base64url|base64|binary"]] \
+    [opt [option "-passphrase [arg string]"]] \
+    [opt [option "-pem [arg pemfile]"]] \
+    [arg "message"] \
+]
+[list_end]
+
+Example for signing and signature verification based on [cmd "::ns_crypto::md string"]:
+[example_begin]
+  % set sig [lb]::ns_crypto::md string -digest sha1 -encoding binary -sign $path/myprivate.pem "abcdefghijklmnopqrstuxvwxyz\n"[rb]
+  % ::ns_crypto::md string -digest sha1 -encoding binary -verify $path/mypublic.pem -signature $sig "abcdefghijklmnopqrstuxvwxyz\n"
+  1
+[example_end]
+
 
 [see_also nsd ns_hmac ns_crypt ns_crypto ns_md5 ns_rand ns_sha1 ns_sha]
 [keywords encoding crypto MD nsf]
 
 [manpage_end]
-
-

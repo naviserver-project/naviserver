@@ -1,0 +1,32 @@
+# -*- Tcl -*-
+
+package require tcltest 2.2
+namespace import -force ::tcltest::*
+
+::tcltest::configure {*}$argv
+
+#######################################################################################
+#  test ns_requestauthorize
+#######################################################################################
+test ns_requestauthorize-1.0 {syntax: ns_requestauthorize} -body {
+    ns_requestauthorize
+} -returnCodes error -result {wrong # args: should be "ns_requestauthorize /method/ /url/ /authuser/ /authpasswd/ ?ipaddr?"}
+
+#######################################################################################
+#  test ns_checkurl
+#######################################################################################
+test ns_checkurl-1.0 {syntax: ns_checkurl} -body {
+    ns_checkurl
+} -returnCodes error -result {wrong # args: should be "ns_checkurl /method/ /url/ /authuser/ /authpasswd/ ?ipaddr?"}
+
+
+
+
+cleanupTests
+
+#
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:

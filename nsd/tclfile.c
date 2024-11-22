@@ -145,7 +145,7 @@ Ns_TclGetOpenFd(Tcl_Interp *interp, const char *chanId, int write, int *fdPtr)
  *
  * NsTclRollFileObjCmd --
  *
- *      Implements "ns_rollfile".
+ *      Implements "ns_rollfile" and "ns_purgefiles".
  *
  * Results:
  *      Tcl result.

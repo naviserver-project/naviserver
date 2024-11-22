@@ -62,16 +62,15 @@ proc ns_adp_include {args} {
 #
 
 proc ns_setexpires {args} {
-    set headers [ns_conn outputheaders]
     set secs [lindex $args end]
     if {[lindex $args 0] eq "-cache-control"} {
         set cache_control [lindex $args 1]
-        ns_set iupdate $headers cache-control "max-age=$secs, [lindex $args 1]"
+        ns_set iupdate [ns_conn outputheaders] cache-control "max-age=$secs, [lindex $args 1]"
     } elseif {[llength $args] > 1} {
         error "usage: ns_setexpires ?-cache-control public|private|no-cache|no-store|no-transform|must-revalidate|proxy-revalidate? secs"
     }
     set when [ns_httptime [expr {$secs + [clock seconds]}]]
-    ns_set iupdate $headers expires $when
+    ns_set iupdate [ns_conn outputheaders] expires $when
 }
 
 
@@ -479,7 +478,7 @@ proc _ns_paircmp {pair1 pair2} {
 #
 # ns_htmlselect --
 #
-#   ns_htmlselect ?-multi? ?-sort? ?-labels labels? key values ?selecteddata?
+#   ns_htmlselect ?-multi? ?-sort? ?-labels labels? /key/ /values/ ?selecteddata?
 #
 
 proc ns_htmlselect args {

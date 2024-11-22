@@ -166,6 +166,15 @@ The following example shows how to set parameter values for the [emph foo]
 module.
 
 [example_begin]
+ [cmd ns_section] "ns/server/server1/modules/foo" {
+   [cmd ns_param]   enabled   true
+   [cmd ns_param]   map       /some/url
+   [cmd ns_param]   map       /some-other/url
+ }
+[example_end]
+
+The section content can be also specified without braces (old style):
+[example_begin]
  [cmd ns_section] "ns/server/server1/modules/foo"
  [cmd ns_param]   enabled   true
  [cmd ns_param]   map       /some/url
@@ -184,9 +193,7 @@ used to register a handler for the [arg url], which is the parameter value.
  set path ns/server/[lb][cmd ns_info] server[rb]/modules/foo
  
  if {[lb][cmd ns_config] -bool $path enabled false[rb]} {
- 
     set section [lb][cmd ns_configsection] $path[rb]
- 
     foreach {key value} [lb][cmd ns_set] array $section[rb] {
         if {$key eq "map"} {
             [cmd ns_register_proc] GET $value foo_module_handler
@@ -202,18 +209,13 @@ the configuration file.
 
 [example_begin]
  [cmd ns_register_proc] GET /config-print {
- 
     set config ""
- 
     foreach section [lb][cmd ns_configsections][rb] {
- 
         append config "section: [lb][cmd ns_set] name $section[rb]\n"
- 
         foreach {key value} [lb][cmd ns_set] array $section[rb] {
             append config "$key: $value\n"
         }
     }
- 
     [cmd ns_return] 200 text/plain $config
  }
 [example_end]

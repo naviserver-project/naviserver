@@ -1653,13 +1653,20 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 
 int
 NsTclLogRollObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
-                   TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
+                   TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    if (Ns_LogRoll() != NS_OK) {
-        Ns_TclPrintfResult(interp, "could not roll server log");
+    int result = TCL_OK;
+
+    if (objc > 1) {
+        Tcl_WrongNumArgs(interp, 1, objv, NULL);
+        result = TCL_ERROR;
+    } else {
+        if (Ns_LogRoll() != NS_OK) {
+            Ns_TclPrintfResult(interp, "could not roll server log");
+        }
     }
 
-    return TCL_OK;
+    return result;
 }
 
 

@@ -1843,7 +1843,7 @@ ConnFormObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
 
     } else if ((itPtr->nsconn.flags & CONN_TCLFORM) != 0u) {
         /*
-         * We know, it the value has beeen computed already.
+         * We know, if the value has been computed already.
          */
         Tcl_SetResult(interp, itPtr->nsconn.form, TCL_STATIC);
 

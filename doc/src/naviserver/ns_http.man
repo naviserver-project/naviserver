@@ -41,13 +41,13 @@ optionally assigned to a task, will be automatically closed.
 
  Returns the number and slot (socket) usages for active or recent ns_http
  requests. The following example shows, how the socket opened to google.com
- is kept for about 5 seconds. The slots for the sockets are allocated
+ is kept still for about 2 seconds. The slots for the sockets are allocated
  dynamically depending on the system load
   
 [example_begin]
- % ns_http run https://google.com/
+ % ns_http run  -keepalive 2s https://google.com/
  % ns_http keepalives
-  {slot 0 state waiting expire 4.999983 peer google.com:443 sock 82} {slot 1 state free}
+  {slot 0 state waiting expire 1.999983 peer google.com:443 sock 82} {slot 1 state free}
 [example_end]
 
  The returned information is useful for monitoring and debugging busy HTTP client operations.

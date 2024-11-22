@@ -35,6 +35,19 @@ test ns_encodingforcharset-1.0 {syntax: ns_encodingforcharset} -body {
     ns_encodingforcharset
 } -returnCodes error -result {wrong # args: should be "ns_encodingforcharset /charset/"}
 
+test ns_setformencoding-1.0 {syntax: ns_setformencoding} -body {
+    ns_setformencoding
+} -returnCodes error -result {wrong # args: should be "ns_setformencoding charset"}
+
+# ns_setformencoding is a Tcl proc: message should be {wrong # args: should be "ns_setformencoding /charset/"}
+
+test ns_encodingfortype-1.0 {syntax: ns_encodingfortype} -body {
+    ns_encodingfortype
+} -returnCodes error -result {wrong # args: should be "ns_encodingfortype mimetype"}
+
+# ns_encodingfortype is a Tcl proc: message should be {wrong # args: should be "ns_encodingfortype /mimetype/"}
+
+
 #
 # functional tests
 #
