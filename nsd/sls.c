@@ -429,14 +429,6 @@ NsTclSlsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
         {NULL, NULL}
     };
 
-    if (objc > 1) {
-        const char  *cmdName = Tcl_GetString(objv[0]);
-
-        if (strcmp(cmdName, "ns_event") == 0) {
-            Ns_LogDeprecated(objv, 2, "ns_cond ...", NULL);
-        }
-    }
-
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 

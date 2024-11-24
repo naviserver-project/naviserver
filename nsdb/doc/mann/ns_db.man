@@ -274,12 +274,6 @@ Returns the user (as specified for the User parameter of the configuration file)
 for the database pool.
 
 
-[call [cmd "ns_db verbose"] [arg handle] [opt [arg enabled]]]
-
-Changes the verbose setting (the Verbose parameter in the configuration file) for
-the given pool.
-
-
 [call [cmd "ns_dberrorcode"] [arg handle]]
 
 Returns the database error code for the specified database handle.
@@ -330,6 +324,22 @@ These are valid uses of ns_db gethandle:
  # 5 handles from poolname, 2.0 sec timeout
 [example_end]
 
+Change the verbosity level to show all SQL commands or only these taking
+longer:
+[example_begin]
+ #
+ # Increase verbosity of SQL
+ #
+ ns_logctl debug(sql) on
+ 
+ #
+ # Set for every pool the longminduration to 0 to show all
+ # SQL commands (or e.g. to 10ms, meaning: show SQL commands
+ # taking longer than 10 milliseconds).
+ #
+ foreach pool [lb]ns_db pools[rb] {ns_db logminduration $pool 0}
+[example_end]
+
 
 
 [example_begin]
@@ -355,6 +365,7 @@ These are valid uses of ns_db gethandle:
  #
  set ret [lb]ns_db sp_exec $db[rb]
 [example_end]
+
 
 
 [section CONFIGURATION]

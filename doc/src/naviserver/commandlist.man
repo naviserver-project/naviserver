@@ -184,7 +184,6 @@ sections of related commands.
 [call [cmd ns_returnfp]]
 [call [cmd ns_respond]]
 [list_end]
-
 [call [cmd returnstatus-cmds]]
 [list_begin definitions]
 [call [cmd ns_returnbadrequest]]
@@ -197,6 +196,7 @@ sections of related commands.
 [call [cmd ns_returnredirect]]
 [call [cmd ns_returnunauthorized]]
 [call [cmd ns_returnunavailable]]
+[call [cmd ns_sls]]
 [list_end]
 
 [call [cmd ns_setexpires]]
@@ -408,7 +408,6 @@ sections of related commands.
 
 [section {Socket Commands}]
 [list_begin definitions]
-[call [cmd ns_sls]]
 [call [cmd ns_sockaccept]]
 [call [cmd ns_sockblocking]]
 [call [cmd ns_sockcallback]]
@@ -526,6 +525,7 @@ sections of related commands.
 [call [cmd "ns_connsendfp"]]            Use [cmd "ns_writefp"] instead.
 [call [cmd "ns_cp"]]                    Use [cmd "file copy"] instead.
 [call [cmd "ns_cpfp"]]                  Use [cmd "fcopy"] instead.
+[call [cmd "ns_db verbose"]]            Use [cmd "ns_logctl debug(sql) ..."] instead.
 [call [cmd "ns_event"]]                 Use [cmd "ns_cond"] instead.
 [call [cmd "ns_getchannels"]]           Use [cmd "file channels"] instead.
 [call [cmd "ns_geturl"]]                Use [cmd "ns_http"] instead.
@@ -551,6 +551,7 @@ sections of related commands.
 [call [cmd "ns_mkdir"]]                 Use [cmd "file mkdir"] instead.
 [call [cmd "ns_parsetime"]]             Use [cmd "clock format ..."] instead.
 [call [cmd "ns_passwordcheck"]]         Use [cmd "ns_perm checkpass"] instead.
+[call [cmd "ns_pooldescription"]]       Use [cmd "ns_dbpooldescription"] instead.
 [call [cmd "ns_puts"]]                  Use [cmd "ns_adp_puts"] instead.
 [call [cmd "ns_register_adptag"]]       Use [cmd "ns_adp_registerscript"] instead.
 [call [cmd "ns_rename"]]                Use [cmd "file rename"] instead.
@@ -573,7 +574,6 @@ sections of related commands.
 [call [cmd "ns_unregister_proc"]]       Use [cmd "ns_unregister_op"] instead.
 [call [cmd "ns_updateheader"]]          Use [cmd "ns_set update"] [lb]ns_conn outputheaders[rb] instead.
 [call [cmd "ns_var"]]                   Use [cmd "nsv_*"] instead.
-
 [list_end]
 
 [see_also nsd]
