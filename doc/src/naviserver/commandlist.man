@@ -168,7 +168,6 @@ sections of related commands.
 [call [cmd ns_browsermatch]]
 [call [cmd ns_conn]]
 [call [cmd ns_connchan]]
-[call [cmd ns_conncptofp]]
 [call [cmd ns_formvalueput]]
 [call [cmd ns_getcontent]]
 [call [cmd ns_getform]]
@@ -202,7 +201,6 @@ sections of related commands.
 [call [cmd ns_setexpires]]
 [call [cmd ns_tagelement]]
 [call [cmd ns_tagelementset]]
-[call [cmd ns_writecontent]]
 [call [cmd ns_writer]]
 [list_end]
 
@@ -523,6 +521,8 @@ sections of related commands.
 [call [cmd "ns_cancel"]]                Use [cmd "ns_unschedule_proc"] instead.
 [call [cmd "ns_chmod"]]                 Use [cmd "file attributes"] instead.
 [call [cmd "ns_connsendfp"]]            Use [cmd "ns_writefp"] instead.
+[call [cmd "ns_conncptofp"]]            Use [cmd "ns_conn copy"] instead.
+[call [cmd "ns_writecontent"]]          Use [cmd "ns_conn copy"] instead.
 [call [cmd "ns_cp"]]                    Use [cmd "file copy"] instead.
 [call [cmd "ns_cpfp"]]                  Use [cmd "fcopy"] instead.
 [call [cmd "ns_db verbose"]]            Use [cmd "ns_logctl debug(sql) ..."] instead.
