@@ -454,7 +454,11 @@ test ns_unquotehtml-3.1.0 {growing byte representation} -body {
 #  test ns_parsehtml
 #######################################################################################
 
-test ns_parsehtml-1.0 {ns_parsehtml just with tags} -body {
+test ns_parsehtml-1.0 {syntax: ns_parsehtml} -body {
+    ns_parsehtml
+} -returnCodes error -result {wrong # args: should be "ns_parsehtml ?-noangle? ?-onlytags? ?--? /html/"}
+
+test ns_parsehtml-1.1 {ns_parsehtml just with tags} -body {
     set text {hello <b>foo</b> anchor <a href="/foo">world</a>.}
     ns_parsehtml $text
 } -result {{text {hello }} {tag <b> {b {}}} {text foo} {tag </b> /b} {text { anchor }} {tag {<a href="/foo">} {a {href /foo}}} {text world} {tag </a> /a} {text .}}
