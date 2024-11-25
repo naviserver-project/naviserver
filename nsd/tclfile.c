@@ -554,7 +554,7 @@ NsTclFTruncateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
     Tcl_WideInt       length = 0;
     char             *fileIdString;
     Ns_ObjvSpec args[] = {
-        {"fileId",    Ns_ObjvString,  &fileIdString, NULL},
+        {"channelId", Ns_ObjvString,  &fileIdString, NULL},
         {"?length",   Ns_ObjvWideInt, &length,       &posSizeRange0},
         {NULL, NULL, NULL, NULL}
     };

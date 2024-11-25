@@ -28,7 +28,7 @@ test ns_filestat-1.0 {syntax: ns_filestat} -body {
 
 test ns_ftruncate-1.0 {syntax: ns_ftruncate} -body {
     ns_ftruncate id1 1 extra
-} -returnCodes error -result {wrong # args: should be "ns_ftruncate /fileId/ ?/length[0,MAX]/?"}
+} -returnCodes error -result {wrong # args: should be "ns_ftruncate /channelId/ ?/length[0,MAX]/?"}
 
 test ns_kill-1.0 {syntax: ns_kill} -body {
     ns_kill
@@ -57,7 +57,7 @@ test ns_truncate-1.0 {syntax: ns_truncate} -body {
 
 test ns_writefp-1.0 {syntax: ns_writefp} -body {
     ns_writefp
-} -returnCodes error -result {wrong # args: should be "ns_writefp /fileid/ ?/nbytes/?"}
+} -returnCodes error -result {wrong # args: should be "ns_writefp /channelId/ ?/nbytes/?"}
 
 
 # ns_chan

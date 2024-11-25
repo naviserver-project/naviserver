@@ -193,7 +193,7 @@ test tclresp-1.14.2 {basic syntax} -body {
 
 test tclresp-1.15.1 {basic syntax} -body {
     ns_writefp
-} -returnCodes error -result {wrong # args: should be "ns_writefp /fileid/ ?/nbytes/?"}
+} -returnCodes error -result {wrong # args: should be "ns_writefp /channelId/ ?/nbytes/?"}
 
 test tclresp-1.15.2 {basic syntax} -body {
     ns_writefp junk
