@@ -27,8 +27,8 @@ file id's, and file id's with exceptions, respectively.
 
 [example_begin]
  # Start nonblocking connect()'s to www01 through
- # www09.foo.com and remember the read fileid which
- # corresponds to each write fileid.
+ # www09.foo.com and remember the read channelId which
+ # corresponds to each write channelId.
  
  for {set n 1} {$n < 10} {incr n} {
    set host [lb]format "www%2d.foo.com" $n[rb]

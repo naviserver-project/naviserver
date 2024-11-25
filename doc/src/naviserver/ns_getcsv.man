@@ -16,11 +16,11 @@ This command parses lines of CSV files.
 	[opt [option "-delimiter [arg char]"]] \
 	[opt [option "-quotechar [arg char]"]] \
 	[opt [option "-trim"]] \
-	[arg fileid] \
+	[arg channelId] \
 	[arg varname]]
 
 Read a single tuple (line) from an open CSV file (denoted by
-[arg fileid]) and parse the results into
+[arg channelId]) and parse the results into
 the Tcl list variable named in the last argument
 ([arg varname]). The command returns
 the number of parsed fields or -1 on end of file.

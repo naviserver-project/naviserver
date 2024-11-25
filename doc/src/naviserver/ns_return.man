@@ -101,7 +101,7 @@ continues to execute code.
      [opt [option "-string [arg body]"]] \
      [opt [option "-binary [arg body]"]] \
      [opt [option "-file [arg filepath]"]] \
-     [opt [option "-fileid [arg channel]"]] ]
+     [opt [option "-fileid [arg channelId]"]] ]
 
 Return a complete response to the client using exactly one of [option -string],
 [option -binary], [option -file] or [option -fileid] as the body.

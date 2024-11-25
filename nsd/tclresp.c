@@ -605,7 +605,7 @@ NsTclConnSendFpObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
         if (likely( result == TCL_OK )) {
             Ns_ReturnCode status;
 
-            Ns_LogDeprecated(objv, 3, "ns_writefp /fileid/ ?/nbytes/?", NULL);
+            Ns_LogDeprecated(objv, 3, "ns_writefp /channelId/ ?/nbytes/?", NULL);
 
             conn->flags |= NS_CONN_SKIPHDRS;
             status = Ns_ConnSendChannel(conn, chan, (ssize_t)length);

@@ -7,7 +7,7 @@
 [description]
 
 [cmd ns_sockcheck] uses recv() or send() calls to check if a socket is still
-connected. The fileid is the read or write file id returned by
+connected. The [arg channelId] is the read or write file id returned by
 ns_sockopen. This function is useful if you used the
 [option -nonblock] option with ns_sockopen after calling ns_sockselect.
 
@@ -16,7 +16,7 @@ ns_sockopen. This function is useful if you used the
 
 [list_begin definitions]
 
-[call [cmd ns_sockcheck] [arg fileid]]
+[call [cmd ns_sockcheck] [arg channelId]]
 
 [list_end]
 

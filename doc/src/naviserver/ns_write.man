@@ -69,7 +69,7 @@ the calling connection thread.
 
 
 [call [cmd ns_writefp] \
-	[arg fileid] \
+	[arg channelId] \
 	[opt [arg nbytes]]]
 
 The command [cmd ns_writefp] writes the contents of the specified file

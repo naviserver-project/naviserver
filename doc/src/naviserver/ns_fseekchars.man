@@ -6,7 +6,7 @@
 
 [description]
 
-This command seeks in a Tcl opened by  Tcl channel [arg fileId] for the
+This command seeks in a Tcl opened by  Tcl channel [arg channelId] for the
 provided string [arg searchstring]. The search starts from the
 current position in the file. When the string is found, the command
 returns the position of the first character in the file and moves the
@@ -20,7 +20,7 @@ end-of-file.
 
 [list_begin definitions]
 
-[call [cmd ns_fseekchars] [arg fileId] [arg searchstring]]
+[call [cmd ns_fseekchars] [arg channelId] [arg searchstring]]
 
 [list_end]
 
