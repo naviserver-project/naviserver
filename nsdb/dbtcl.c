@@ -385,7 +385,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
     };
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?arg ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?/args/?");
         return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], subcmd, "subcommand", 0, &cmd) != TCL_OK) {

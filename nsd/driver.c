@@ -8221,7 +8221,7 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
                 objc == 4)) {
             args = argsLegacy;
             opts = NULL;
-            Ns_LogDeprecated(objv, objc, "ns_writer size ?-driver drv? ?size?", NULL);
+            Ns_LogDeprecated(objv, objc, "ns_writer size ?-driver drv? ?/size/?", NULL);
         } else {
             args = argsNew;
             opts = optsNew;
@@ -8306,7 +8306,7 @@ WriterStreamingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 objc == 4)) {
             args = argsLegacy;
             opts = NULL;
-            Ns_LogDeprecated(objv, objc, "ns_writer streaming ?-driver drv? ?value?", NULL);
+            Ns_LogDeprecated(objv, objc, "ns_writer streaming ?-driver drv? ?/value/?", NULL);
         } else {
             args = argsNew;
             opts = optsNew;

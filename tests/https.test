@@ -28,7 +28,7 @@ if {[ns_info ssl] ne ""} {
 #
 test ns_certctl-1.0 {syntax: ns_certctl} -body {
     ns_certctl
-} -returnCodes error -result {wrong # args: should be "ns_certctl list|reload ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_certctl list|reload ?/args/"}
 
 test ns_certctl-1.0 {syntax: ns_certctl} -body {
     ns_certctl ""

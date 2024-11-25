@@ -11,7 +11,7 @@ namespace import -force ::tcltest::*
 
 test ns_config-1.1 {syntax: ns_config} -body {
     ns_config
-} -returnCodes error -result {wrong # args: should be "ns_config ?-bool? ?-int? ?-min /integer/? ?-max /integer/? ?-exact? ?-set? ?--? /section/ /key/ ?default?"}
+} -returnCodes error -result {wrong # args: should be "ns_config ?-bool? ?-int? ?-min /integer/? ?-max /integer/? ?-exact? ?-set? ?--? /section/ /key/ ?/default/?"}
 
 test ns_configsection-1.0 {syntax: ns_configsection} -body {
     ns_configsection
@@ -23,11 +23,11 @@ test ns_configsections-1.0 {syntax: ns_configsections} -body {
 
 test ns_library-1.0 {syntax: ns_library} -body {
     ns_library
-} -returnCodes error -result {wrong # args: should be "ns_library /kind/ ?module?"}
+} -returnCodes error -result {wrong # args: should be "ns_library /kind/ ?/module/?"}
 
 test ns_modulepath-1.0 {syntax: ns_modulepath} -body {
     ns_modulepath
-} -returnCodes error -result {wrong # args: should be "ns_modulepath /server/ ?module ...?"}
+} -returnCodes error -result {wrong # args: should be "ns_modulepath /server/ ?/module/ ...?"}
 
 # The following commands are available only from the configuration file.
 

@@ -1817,7 +1817,7 @@ static void AppendRange(Ns_DString *dsPtr, const Ns_ObjvValueRange *r)
         Ns_DStringPrintf(dsPtr, "%" TCL_LL_MODIFIER "d]", r->maxValue);
     }
 }
-
+#if 1
 static void
 AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_T separatorLength,
                 bool withRange, const Ns_ObjvSpec *specPtr)
@@ -1833,14 +1833,115 @@ AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_T separatorL
     if (firstChar == '?') {
         separator = "?";
         separatorLength = 1;
-        nameLength --;
-        name++;
     }
 
     Tcl_DStringAppend(dsPtr, separator, separatorLength);
-    Tcl_DStringAppend(dsPtr, name, nameLength);
 
     if (firstChar == '-') {
+        Tcl_DStringAppend(dsPtr, name, nameLength);
+
+        /*
+         * Is this a Boolean switch? If not, output the argument of the
+         * non positional parameter.
+         */
+        if (specPtr->proc != Ns_ObjvBool || specPtr->arg == NULL) {
+            Ns_ObjvProc *objvProc = specPtr->proc;
+
+            Tcl_DStringAppend(dsPtr, " ", 1);
+            if (objvProc == Ns_ObjvBool) {
+                Tcl_DStringAppend(dsPtr, "true|false", 10);
+            } else if (objvProc == Ns_ObjvIndex) {
+                Ns_ObjvTable *values = specPtr->arg;
+                const char *key;
+
+                for (key = values->key; key != NULL; key = (++values)->key) {
+                    Tcl_DStringAppend(dsPtr, key, TCL_INDEX_NONE);
+                    Tcl_DStringAppend(dsPtr, "|", 1);
+                }
+                Ns_DStringSetLength(dsPtr, dsPtr->length - 1);
+            } else {
+                /*
+                 * Non-literal cases. Use placeholder syntax.
+                 */
+                Tcl_DStringAppend(dsPtr, "/", 1);
+
+                if (objvProc == Ns_ObjvString) {
+                    Tcl_DStringAppend(dsPtr, "string", 6);
+                } else if (objvProc == Ns_ObjvByteArray) {
+                    Tcl_DStringAppend(dsPtr, "data", 4);
+                } else if (objvProc == Ns_ObjvMemUnit) {
+                    Tcl_DStringAppend(dsPtr, "memory-size", 11);
+                } else if (objvProc == Ns_ObjvTime) {
+                    Tcl_DStringAppend(dsPtr, "time", 4);
+                } else if (objvProc == Ns_ObjvSet) {
+                    Tcl_DStringAppend(dsPtr, "ns_set", 6);
+                } else if (objvProc == Ns_ObjvServer) {
+                    Tcl_DStringAppend(dsPtr, "server", 6);
+                } else if (objvProc == Ns_ObjvWideInt || objvProc == Ns_ObjvInt || objvProc == Ns_ObjvLong) {
+                    Tcl_DStringAppend(dsPtr, "integer", 7);
+                } else {
+                    /*
+                     * No type information, repeat the variable name
+                     */
+                    /*fprintf(stderr, "PARAMETER PRINT: fall back to <%s> %s\n", name + 1,
+                      objvProc == Ns_ObjvObj ? "(generic object)" : "");*/
+                    Tcl_DStringAppend(dsPtr, name + 1, nameLength - 1);
+                }
+                if (withRange) {
+                    AppendRange(dsPtr, specPtr->arg);
+                }
+                Tcl_DStringAppend(dsPtr, "/", 1);
+            }
+        }
+    } else if (firstChar == '?') {
+        /*
+         * Optional positional parameter, just placeholder are supported.
+         */
+        Tcl_DStringAppend(dsPtr, "/", 1);
+        Tcl_DStringAppend(dsPtr, name + 1, nameLength - 1);
+        if (withRange) {
+            AppendRange(dsPtr, specPtr->arg);
+        }
+        Tcl_DStringAppend(dsPtr, "/", 1);
+    } else {
+        /*
+         * Required positional parameter, just placeholder are supported.
+         */
+        Tcl_DStringAppend(dsPtr, name, nameLength);
+        if (withRange) {
+            AppendRange(dsPtr, specPtr->arg);
+        }
+    }
+    Tcl_DStringAppend(dsPtr, separator, separatorLength);
+
+    /*
+     * Append space at the end
+     */
+    Tcl_DStringAppend(dsPtr, " ", 1);
+}
+#else
+static void
+AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_T separatorLength,
+                bool withRange, const Ns_ObjvSpec *specPtr)
+{
+    const char *name = specPtr->key;
+    const char  firstChar = *name;
+    TCL_SIZE_T  nameLength = (TCL_SIZE_T)strlen(name);
+
+    /*
+     * For optional parameter, use always the question mark as
+     * separator.
+     */
+    if (firstChar == '?') {
+        separator = "?";
+        separatorLength = 1;
+    }
+
+    Tcl_DStringAppend(dsPtr, separator, separatorLength);
+
+    if (firstChar == '-') {
+        Tcl_DStringAppend(dsPtr, name, nameLength);
+
         /*
          * Is this a Boolean switch? If not, output the argument of the
          * non positional parameter.
@@ -1849,10 +1950,12 @@ AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_T separatorL
             Ns_ObjvProc *objvProc = specPtr->proc;
             bool         literalValues = (objvProc == Ns_ObjvIndex || objvProc == Ns_ObjvBool);
 
-            if (literalValues) {
-                Tcl_DStringAppend(dsPtr, " ", 1);
-            } else {
-                Tcl_DStringAppend(dsPtr, " /", 2);
+            Tcl_DStringAppend(dsPtr, " ", 1);
+            if (!literalValues) {
+                /*
+                 * Add placeholder syntax.
+                 */
+                Tcl_DStringAppend(dsPtr, "/", 1);
             }
 
             if (objvProc == Ns_ObjvString) {
@@ -1883,16 +1986,34 @@ AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_T separatorL
                   objvProc == Ns_ObjvObj ? "(generic object)" : "");*/
                 Tcl_DStringAppend(dsPtr, name + 1, nameLength - 1);
             }
-
             if (withRange) {
                 AppendRange(dsPtr, specPtr->arg);
             }
             if (!literalValues) {
+                /*
+                 * close placeholder
+                 */
                 Tcl_DStringAppend(dsPtr, "/", 1);
             }
         }
-    }  else if (withRange) {
-        AppendRange(dsPtr, specPtr->arg);
+    } else if (firstChar == '?') {
+        /*
+         * Optional positional parameter, just placeholder are supported.
+         */
+        Tcl_DStringAppend(dsPtr, "/", 1);
+        Tcl_DStringAppend(dsPtr, name + 1, nameLength - 1);
+        if (withRange) {
+            AppendRange(dsPtr, specPtr->arg);
+        }
+        Tcl_DStringAppend(dsPtr, "/", 1);
+    } else {
+        /*
+         * Required positional parameter, just placeholder are supported.
+         */
+        Tcl_DStringAppend(dsPtr, name, nameLength);
+        if (withRange) {
+            AppendRange(dsPtr, specPtr->arg);
+        }
     }
     Tcl_DStringAppend(dsPtr, separator, separatorLength);
 
@@ -1901,7 +2022,7 @@ AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_T separatorL
      */
     Tcl_DStringAppend(dsPtr, " ", 1);
 }
-
+#endif
 static void
 WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
                TCL_SIZE_T preObjc, TCL_SIZE_T objc, Tcl_Obj *const* objv)
@@ -2008,10 +2129,10 @@ Ns_SubcmdObjv(const Ns_SubCmdSpec *subcmdSpec, ClientData clientData, Tcl_Interp
 
         Tcl_DStringInit(&ds);
         (void)GetOptEnumeration(&ds, subcmdSpec);
-        Tcl_DStringAppend(&ds, " ?args?", 7);
+        Tcl_DStringAppend(&ds, " ?/args/?", 8);
 
         Tcl_WrongNumArgs(interp, 1, objv, ds.string);
-        //Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?args?");
+        //Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?/args/?");
 
         Tcl_DStringFree(&ds);
         result = TCL_ERROR;

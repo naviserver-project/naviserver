@@ -7,7 +7,7 @@ namespace import -force ::tcltest::*
 
 test ns_driver-1.1 {basic syntax: plain call} -body {
      ns_driver
-} -returnCodes error -result {wrong # args: should be "ns_driver info|names|threads|stats ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_driver info|names|threads|stats ?/args/"}
 
 test ns_driver-1.2 {basic syntax: wrong key} -body {
      ns_driver 123

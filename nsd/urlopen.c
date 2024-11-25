@@ -257,7 +257,7 @@ NsTclGetUrlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     int             code;
 
     if ((objc != 3) && (objc != 2)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/url/ ?headersSetIdVar?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/url/ ?/headersSetIdVar/?");
         code = TCL_ERROR;
 
     } else {

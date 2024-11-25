@@ -15,7 +15,7 @@ testConstraint http09 true
 
 test ns_headers-1.0 {syntax: ns_headers} -body {
     ns_headers
-} -returnCodes error -result {wrong # args: should be "ns_headers ?-binary? ?--? /status[100,599]/ ?type? ?length[0,MAX]?"}
+} -returnCodes error -result {wrong # args: should be "ns_headers ?-binary? ?--? /status[100,599]/ ?/type/? ?/length[0,MAX]/?"}
 
 test ns_return-1.0 {syntax: ns_return} -body {
     ns_return
@@ -177,7 +177,7 @@ test tclresp-1.12.2 {basic syntax} -body {
 
 test tclresp-1.13.1 {basic syntax} -body {
     ns_write
-} -returnCodes error -result {wrong # args: should be "ns_write /data/ ?data ...?"}
+} -returnCodes error -result {wrong # args: should be "ns_write /data/ ?/data/ ...?"}
 
 test tclresp-1.13.2 {basic syntax} -body {
     ns_write x
@@ -193,7 +193,7 @@ test tclresp-1.14.2 {basic syntax} -body {
 
 test tclresp-1.15.1 {basic syntax} -body {
     ns_writefp
-} -returnCodes error -result {wrong # args: should be "ns_writefp /fileid/ ?nbytes?"}
+} -returnCodes error -result {wrong # args: should be "ns_writefp /fileid/ ?/nbytes/?"}
 
 test tclresp-1.15.2 {basic syntax} -body {
     ns_writefp junk

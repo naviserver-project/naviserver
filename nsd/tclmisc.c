@@ -2055,7 +2055,7 @@ NsTclRlimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
     };
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?args?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?/args/?");
         return TCL_ERROR;
     }
 

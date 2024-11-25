@@ -9,7 +9,7 @@ testConstraint nscpLoaded [expr {[info commands ::nscp] ne ""}]
 
 test nscp-1.0 {basic syntax "nscp"} -constraints nscpLoaded -body {
     nscp
-} -returnCodes error -result {wrong # args: should be "nscp users ?args?"}
+} -returnCodes error -result {wrong # args: should be "nscp users ?/args/"}
 
 test nscp-1.1 {basic syntax "nscp users"} -constraints nscpLoaded -body {
     nscp users x

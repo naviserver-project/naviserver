@@ -29,7 +29,7 @@ test ns_crypto::randombytes-1.0 {syntax: ns_crypto::randombytes} -body {
 
 test ns_crypto_md-1.1 {syntax: ns_crypto::md} -constraints crypto -body {
      ns_crypto::md
-} -returnCodes error -result {wrong # args: should be "ns_crypto::md string|new|add|get|free|hkdf|vapidsign ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::md string|new|add|get|free|hkdf|vapidsign ?/args/"}
 
 test ns_crypto::md-1.2 {syntax: ns_crypto::md add} -body {
     ns_crypto::md add
@@ -136,7 +136,7 @@ test ns_crypto_signature_verify-1.0 {basic operation} -constraints crypto -body 
 
 test ns_crypto::ns_hmac-1.1 {syntax: ns_crypto::hmac} -constraints crypto -body {
     ns_crypto::hmac
-} -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string|new|add|get|free ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string|new|add|get|free ?/args/"}
 
 test ns_crypto::hmac-1.2 {syntax: ns_crypto::hmac add} -body {
     ns_crypto::hmac add
@@ -550,7 +550,7 @@ test base64-md5.2 {
 
 test ns_crypto::aead::encrypt-1.0 {syntax: ns_crypto::aead::encrypt} -body {
     ns_crypto::aead::encrypt
-} -returnCodes error -result {wrong # args: should be "ns_crypto::aead::encrypt string ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::aead::encrypt string ?/args/"}
 
 test ns_crypto::aead::encrypt-1.1 {syntax: ns_crypto::aead::encrypt string} -body {
     ns_crypto::aead::encrypt string
@@ -558,7 +558,7 @@ test ns_crypto::aead::encrypt-1.1 {syntax: ns_crypto::aead::encrypt string} -bod
 
 test ns_crypto::aead::decrypt-1.0 {syntax: ns_crypto::aead::decrypt} -body {
     ns_crypto::aead::decrypt
-} -returnCodes error -result {wrong # args: should be "ns_crypto::aead::decrypt string ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::aead::decrypt string ?/args/"}
 
 test ns_crypto::aead::decrypt-1.1 {syntax: ns_crypto::aead::decrypt string} -body {
     ns_crypto::aead::decrypt string
@@ -714,7 +714,7 @@ test argon2-1.6 {
 
 test ns_crypto:eckey-1.0 {syntax: ns_crypto::eckey} -body {
     ns_crypto::eckey
-} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey generate|import|priv|sharedsecret|pub ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey generate|import|priv|sharedsecret|pub ?/args/"}
 
 test ns_crypto:eckey-1.1 {syntax: ns_crypto::eckey subcommands} -body {
     ns_crypto::eckey ?

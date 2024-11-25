@@ -39,7 +39,7 @@ test ns_conn-1.1.5 {syntax: ns_conn channel} -body {
 
 test ns_conn-1.1.6 {syntax: ns_conn clientdata} -body {
     ns_conn clientdata x y
-} -returnCodes error -result {wrong # args: should be "ns_conn clientdata ?value?"}
+} -returnCodes error -result {wrong # args: should be "ns_conn clientdata ?/value/?"}
 
 test ns_conn-1.1.7 {syntax: ns_conn close} -body {
     ns_conn close x
@@ -47,11 +47,11 @@ test ns_conn-1.1.7 {syntax: ns_conn close} -body {
 
 test ns_conn-1.1.8 {syntax: ns_conn compress} -body {
     ns_conn compress 1 x
-} -returnCodes error -result {wrong # args: should be "ns_conn compress ?level[0,9]?"}
+} -returnCodes error -result {wrong # args: should be "ns_conn compress ?/level[0,9]/?"}
 
 test ns_conn-1.1.9 {syntax: ns_conn content} -body {
     ns_conn content 1 1 x
-} -returnCodes error -result {wrong # args: should be "ns_conn content ?-binary? ?offset[0,MAX]? ?length[1,MAX]?"}
+} -returnCodes error -result {wrong # args: should be "ns_conn content ?-binary? ?/offset[0,MAX]/? ?/length[1,MAX]/?"}
 
 test ns_conn-1.1.10 {syntax: ns_conn contentfile} -body {
     ns_conn contentfile x
@@ -63,7 +63,7 @@ test ns_conn-1.1.11 {syntax: ns_conn contentlength} -body {
 
 test ns_conn-1.1.12 {syntax: ns_conn contentsentlength} -body {
     ns_conn contentsentlength 1 x
-} -returnCodes error -result {wrong # args: should be "ns_conn contentsentlength ?idx[0,MAX]?"}
+} -returnCodes error -result {wrong # args: should be "ns_conn contentsentlength ?/idx[0,MAX]/?"}
 
 test ns_conn-1.1.13 {syntax: ns_conn copy} -body {
     ns_conn copy
@@ -87,7 +87,7 @@ test ns_conn-1.1.17 {syntax: ns_conn driver} -body {
 
 test ns_conn-1.1.18 {syntax: ns_conn encoding} -body {
     ns_conn encoding x y
-} -returnCodes error -result {wrong # args: should be "ns_conn encoding ?encoding?"}
+} -returnCodes error -result {wrong # args: should be "ns_conn encoding ?/encoding/?"}
 
 test ns_conn-1.1.19 {syntax: ns_conn fileheaders} -body {
     ns_conn fileheaders
@@ -123,7 +123,7 @@ test ns_conn-1.1.26 {syntax: ns_conn headers} -body {
 
 test ns_conn-1.1.27 {syntax: ns_conn host} -body {
     ns_conn host x y
-} -returnCodes error -result {wrong # args: should be "ns_conn host ?default?"}
+} -returnCodes error -result {wrong # args: should be "ns_conn host ?/default/?"}
 
 test ns_conn-1.1.28 {syntax: ns_conn id} -body {
     ns_conn id x
@@ -135,7 +135,7 @@ test ns_conn-1.1.29 {syntax: ns_conn isconnected} -body {
 
 test ns_conn-1.1.30 {syntax: ns_conn keepalive} -body {
     ns_conn keepalive 0 y
-} -returnCodes error -result {wrong # args: should be "ns_conn keepalive ?value[0,1]?"}
+} -returnCodes error -result {wrong # args: should be "ns_conn keepalive ?/value[0,1]/?"}
 
 test ns_conn-1.1.31 {syntax: ns_conn location} -body {
     ns_conn location x
@@ -179,7 +179,7 @@ test ns_conn-1.1.40 {syntax: ns_conn query} -body {
 
 test ns_conn-1.1.41 {syntax: ns_conn ratelimit} -body {
     ns_conn ratelimit 10 y
-} -returnCodes error -result {wrong # args: should be "ns_conn ratelimit ?ratelimit[0,MAX]?"}
+} -returnCodes error -result {wrong # args: should be "ns_conn ratelimit ?/ratelimit[0,MAX]/?"}
 
 test ns_conn-1.1.42 {syntax: ns_conn request} -body {
     ns_conn request x
@@ -199,7 +199,7 @@ test ns_conn-1.1.45 {syntax: ns_conn start} -body {
 
 test ns_conn-1.1.46 {syntax: ns_conn status} -body {
     ns_conn status 100 y
-} -returnCodes error -result {wrong # args: should be "ns_conn status ?status[100,599]?"}
+} -returnCodes error -result {wrong # args: should be "ns_conn status ?/status[100,599]/?"}
 
 test ns_conn-1.1.47 {syntax: ns_conn target} -body {
     ns_conn target x
@@ -219,11 +219,11 @@ test ns_conn-1.1.50 {syntax: ns_conn urlc} -body {
 
 test ns_conn-1.1.51 {syntax: ns_conn urlencoding} -body {
     ns_conn urlencoding x y
-} -returnCodes error -result {wrong # args: should be "ns_conn urlencoding ?encoding?"}
+} -returnCodes error -result {wrong # args: should be "ns_conn urlencoding ?/encoding/?"}
 
 test ns_conn-1.1.52 {syntax: ns_conn urlv} -body {
     ns_conn urlv 1 x
-} -returnCodes error -result {wrong # args: should be "ns_conn urlv ?idx[0,MAX]?"}
+} -returnCodes error -result {wrong # args: should be "ns_conn urlv ?/idx[0,MAX]/?"}
 
 test ns_conn-1.1.53 {syntax: ns_conn version} -body {
     ns_conn version x

@@ -161,7 +161,7 @@ NsTclListLimitsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
     int result = TCL_OK;
 
     if (objc > 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
+        Tcl_WrongNumArgs(interp, 1, objv, "?/pattern/?");
         result = TCL_ERROR;
     } else {
         const Tcl_HashEntry *hPtr;

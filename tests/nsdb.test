@@ -9,7 +9,7 @@ namespace import -force ::tcltest::*
 
 test nsdb-1.0 {syntax: ns_db} -body {
     ns_db
-} -returnCodes error -result {wrong # args: should be "ns_db /subcommand/ ?arg ...?"}
+} -returnCodes error -result {wrong # args: should be "ns_db /subcommand/ ?/args/?"}
 
 test nsdb-1.0.1 {syntax: ns_db bouncepool} -body {
     ns_db bouncepool
@@ -61,7 +61,7 @@ test nsdb-1.0.13 {syntax: ns_db flush} -body {
 
 test nsdb-1.0.14 {syntax: ns_db gethandle} -body {
     ns_db gethandle "" 1 ?
-} -returnCodes error -result {wrong # args: should be "ns_db gethandle ?-timeout /timeout/? ?--? ?pool? ?nhandles[1,MAX]?"}
+} -returnCodes error -result {wrong # args: should be "ns_db gethandle ?-timeout /time/? ?--? ?/pool/? ?/nhandles[1,MAX]/?"}
 
 test nsdb-1.0.15 {syntax: ns_db getrow} -body {
     ns_db getrow
@@ -69,7 +69,7 @@ test nsdb-1.0.15 {syntax: ns_db getrow} -body {
 
 test nsdb-1.0.16 {syntax: ns_db logminduration} -body {
     ns_db logminduration "" 1s ?
-} -returnCodes error -result {wrong # args: should be "ns_db logminduration ?pool? ?minduration?"}
+} -returnCodes error -result {wrong # args: should be "ns_db logminduration ?/pool/? ?/minduration/?"}
 
 test nsdb-1.0.18 {syntax: ns_db password} -body {
     ns_db password
@@ -129,17 +129,17 @@ test nsdb-1.0.31 {syntax: ns_db user} -body {
 
 test nsdb-1.0.32 {syntax: ns_db verbose} -body {
     ns_db verbose
-} -returnCodes error -result {wrong # args: should be "ns_db verbose /dbID/ ?verbose?"}
+} -returnCodes error -result {wrong # args: should be "ns_db verbose /dbID/ ?/verbose/?"}
 
 
 
 test nsdb-1.1 {syntax: ns_dbquotevalue} -body {
     ns_dbquotevalue
-} -returnCodes error -result {wrong # args: should be "ns_dbquotevalue /value/ ?type?"}
+} -returnCodes error -result {wrong # args: should be "ns_dbquotevalue /value/ ?/type/?"}
 
 test nsdb-1.2 {syntax: ns_dbquotelist} -body {
     ns_dbquotelist
-} -returnCodes error -result {wrong # args: should be "ns_dbquotelist /list/ ?type?"}
+} -returnCodes error -result {wrong # args: should be "ns_dbquotelist /list/ ?/type/?"}
 
 test nsdb-1.3 {syntax: ns_dbconfigpath} -body {
     ns_dbconfigpath ?

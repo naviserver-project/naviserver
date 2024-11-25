@@ -16,7 +16,7 @@ test ns_rollfile-1.0 {syntax: ns_rollfile} -body {
 
 test ns_mkdtemp-1.0 {syntax: ns_mkdtemp} -body {
     ns_mkdtemp ? ?
-} -returnCodes error -result {wrong # args: should be "ns_mkdtemp ?template?"}
+} -returnCodes error -result {wrong # args: should be "ns_mkdtemp ?/template/?"}
 
 test ns_fseekchars-1.0 {syntax: ns_fseekchars} -body {
     ns_fseekchars
@@ -24,11 +24,11 @@ test ns_fseekchars-1.0 {syntax: ns_fseekchars} -body {
 
 test ns_filestat-1.0 {syntax: ns_filestat} -body {
     ns_filestat
-} -returnCodes error -result {wrong # args: should be "ns_filestat /filename/ ?varname?"}
+} -returnCodes error -result {wrong # args: should be "ns_filestat /filename/ ?/varname/?"}
 
 test ns_ftruncate-1.0 {syntax: ns_ftruncate} -body {
     ns_ftruncate id1 1 extra
-} -returnCodes error -result {wrong # args: should be "ns_ftruncate /fileId/ ?length[0,MAX]?"}
+} -returnCodes error -result {wrong # args: should be "ns_ftruncate /fileId/ ?/length[0,MAX]/?"}
 
 test ns_kill-1.0 {syntax: ns_kill} -body {
     ns_kill
@@ -40,7 +40,7 @@ test ns_normalizepath-1.0 {syntax: ns_normalizepath} -body {
 
 test ns_shutdown-1.0 {syntax: ns_shutdown} -body {
     ns_shutdown 1 ?
-} -returnCodes error -result {wrong # args: should be "ns_shutdown ?-restart? ?--? ?timeout?"}
+} -returnCodes error -result {wrong # args: should be "ns_shutdown ?-restart? ?--? ?/timeout/?"}
 
 test ns_sleep-1.0 {syntax: ns_sleep} -body {
     ns_sleep 1 ?
@@ -53,11 +53,11 @@ test ns_symlink-1.0 {syntax: ns_symlink} -body {
 
 test ns_truncate-1.0 {syntax: ns_truncate} -body {
     ns_truncate
-} -returnCodes error -result {wrong # args: should be "ns_truncate /filename/ ?length[0,MAX]?"}
+} -returnCodes error -result {wrong # args: should be "ns_truncate /filename/ ?/length[0,MAX]/?"}
 
 test ns_writefp-1.0 {syntax: ns_writefp} -body {
     ns_writefp
-} -returnCodes error -result {wrong # args: should be "ns_writefp /fileid/ ?nbytes?"}
+} -returnCodes error -result {wrong # args: should be "ns_writefp /fileid/ ?/nbytes/?"}
 
 
 # ns_chan
@@ -88,7 +88,7 @@ test ns_chan-put-1.0 {syntax: ns_chan put} -body {
 # ns_mktemp
 test ns_mktemp-1.0 {syntax: ns_mktemp} -body {
     ns_mktemp ? ?
-} -returnCodes error -result {wrong # args: should be "ns_mktemp ?-nocomplain? ?--? ?template?"}
+} -returnCodes error -result {wrong # args: should be "ns_mktemp ?-nocomplain? ?--? ?/template/?"}
 
 test ns_mktemp-1.1 {call without argument} -body {
     set t [ns_mktemp]

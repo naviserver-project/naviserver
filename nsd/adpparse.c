@@ -216,7 +216,7 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
 
 
     if (objc != 4 && objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/tag/ ?endtag? adp|proc");
+        Tcl_WrongNumArgs(interp, 1, objv, "/tag/ ?/endtag/? adp|proc");
         result = TCL_ERROR;
 
     } else {

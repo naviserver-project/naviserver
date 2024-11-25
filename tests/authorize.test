@@ -10,14 +10,14 @@ namespace import -force ::tcltest::*
 #######################################################################################
 test ns_requestauthorize-1.0 {syntax: ns_requestauthorize} -body {
     ns_requestauthorize
-} -returnCodes error -result {wrong # args: should be "ns_requestauthorize /method/ /url/ /authuser/ /authpasswd/ ?ipaddr?"}
+} -returnCodes error -result {wrong # args: should be "ns_requestauthorize /method/ /url/ /authuser/ /authpasswd/ ?/ipaddr/?"}
 
 #######################################################################################
 #  test ns_checkurl
 #######################################################################################
 test ns_checkurl-1.0 {syntax: ns_checkurl} -body {
     ns_checkurl
-} -returnCodes error -result {wrong # args: should be "ns_checkurl /method/ /url/ /authuser/ /authpasswd/ ?ipaddr?"}
+} -returnCodes error -result {wrong # args: should be "ns_checkurl /method/ /url/ /authuser/ /authpasswd/ ?/ipaddr/?"}
 
 
 

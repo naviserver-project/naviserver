@@ -29,7 +29,7 @@ namespace import -force ::tcltest::*
 
 test ns_job-1.0 {syntax ns_job} -body {
      ns_job
-} -returnCodes error -result {wrong # args: should be "ns_job cancel|configure|create|delete|exists|genid|joblist|jobs|queue|queuelist|queues|threadlist|wait|waitany ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_job cancel|configure|create|delete|exists|genid|joblist|jobs|queue|queuelist|queues|threadlist|wait|waitany ?/args/"}
 
 test ns_job-1.1 {syntax ns_job subcommands} -body {
      ns_job ""
@@ -41,11 +41,11 @@ test ns_job-1.2 {syntax: ns_job cancel} -body {
 
 test ns_job-1.3 {syntax: ns_job configure} -body {
     ns_job configure x
-} -returnCodes error -result {wrong # args: should be "ns_job configure ?-jobsperthread /integer[0,MAX]/? ?-timeout /timeout/? ?-logminduration /logminduration/?"}
+} -returnCodes error -result {wrong # args: should be "ns_job configure ?-jobsperthread /integer[0,MAX]/? ?-timeout /time/? ?-logminduration /time/?"}
 
 test ns_job-1.4 {syntax: ns_job create} -body {
     ns_job create
-} -returnCodes error -result {wrong # args: should be "ns_job create ?-desc /string/? /queueId/ ?maxThreads[1,MAX]?"}
+} -returnCodes error -result {wrong # args: should be "ns_job create ?-desc /string/? /queueId/ ?/maxThreads[1,MAX]/?"}
 
 test ns_job-1.5 {syntax: ns_job delete} -body {
     ns_job delete
@@ -85,11 +85,11 @@ test ns_job-1.13 {syntax: ns_job threadlist} -body {
 
 test ns_job-1.14 {syntax: ns_job wait} -body {
     ns_job wait
-} -returnCodes error -result {wrong # args: should be "ns_job wait ?-timeout /timeout/? /queueId/ /jobId/"}
+} -returnCodes error -result {wrong # args: should be "ns_job wait ?-timeout /time/? /queueId/ /jobId/"}
 
 test ns_job-1.15 {syntax: ns_job waitany} -body {
     ns_job waitany
-} -returnCodes error -result {wrong # args: should be "ns_job waitany ?-timeout /timeout/? /queueId/"}
+} -returnCodes error -result {wrong # args: should be "ns_job waitany ?-timeout /time/? /queueId/"}
 
 
 

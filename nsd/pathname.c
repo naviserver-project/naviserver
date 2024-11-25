@@ -764,7 +764,7 @@ NsTclModulePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
     int result = TCL_OK;
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/server/ ?module ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/server/ ?/module/ ...?");
         result = TCL_ERROR;
 
     } else {
@@ -894,7 +894,7 @@ NsTclServerRootProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
     int             result = TCL_OK;
 
     if (unlikely(objc < 2)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/script/ ?args?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/script/ ?/args/?");
         result = TCL_ERROR;
 
     } else if (unlikely(servPtr == NULL)) {

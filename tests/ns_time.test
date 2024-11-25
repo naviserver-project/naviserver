@@ -35,11 +35,11 @@ test ns_time-1.4 {syntax: ns_time get} -body {
 
 test ns_time-1.5 {syntax: ns_time incr} -body {
     ns_time incr
-} -returnCodes error -result {wrong # args: should be "ns_time incr /time/ /sec[0,MAX]/ ?usec[0,MAX]?"}
+} -returnCodes error -result {wrong # args: should be "ns_time incr /time/ /sec[0,MAX]/ ?/usec[0,MAX]/?"}
 
 test ns_time-1.6 {syntax: ns_time make} -body {
     ns_time make
-} -returnCodes error -result {wrong # args: should be "ns_time make /sec[0,MAX]/ ?usec[0,MAX]?"}
+} -returnCodes error -result {wrong # args: should be "ns_time make /sec[0,MAX]/ ?/usec[0,MAX]/?"}
 
 test ns_time-1.7 {syntax: ns_time microseconds} -body {
     ns_time microseconds

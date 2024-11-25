@@ -18,7 +18,7 @@ namespace import -force ::tcltest::*
 
 test ns_proxy-1.1 {syntax: ns_proxy} -body {
     ns_proxy
-} -returnCodes error -result {wrong # args: should be "ns_proxy /subcommand/ ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy /subcommand/ ?/args/?"}
 
 test ns_proxy-1.2 {syntax: ns_proxy subcommands} -body {
     ns_proxy ?
@@ -27,7 +27,7 @@ test ns_proxy-1.2 {syntax: ns_proxy subcommands} -body {
 
 test ns_proxy-2.10 {syntax: ns_proxy active} -body {
     ns_proxy active
-} -returnCodes error -result {wrong # args: should be "ns_proxy active /pool/ ?handle?"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy active /pool/ ?/handle/?"}
 
 test ns_proxy-2.11 {syntax: ns_proxy cleanup} -body {
     ns_proxy cleanup ?
@@ -35,7 +35,7 @@ test ns_proxy-2.11 {syntax: ns_proxy cleanup} -body {
 
 test ns_proxy-2.12 {syntax: ns_proxy clear} -body {
     ns_proxy clear
-} -returnCodes error -result {wrong # args: should be "ns_proxy clear /pool/ ?handle?"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy clear /pool/ ?/handle/?"}
 
 test ns_proxy-2.13 {syntax: ns_proxy eval} -body {
     ns_proxy eval
@@ -47,7 +47,7 @@ test ns_proxy-2.14 {syntax: ns_proxy free} -body {
 
 test ns_proxy-2.15 {syntax: ns_proxy handles} -body {
     ns_proxy handles ? ?
-} -returnCodes error -result {wrong # args: should be "ns_proxy handles ?handle?"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy handles ?/handle/?"}
 
 test ns_proxy-2.16 {syntax: ns_proxy pools} -body {
     ns_proxy pools ?
@@ -71,11 +71,11 @@ test ns_proxy-2.20 {syntax: ns_proxy stats} -body {
 
 test ns_proxy-2.21 {syntax: ns_proxy stop} -body {
     ns_proxy stop
-} -returnCodes error -result {wrong # args: should be "ns_proxy stop /pool/ ?handle?"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy stop /pool/ ?/handle/?"}
 
 test ns_proxy-2.22 {syntax: ns_proxy wait} -body {
     ns_proxy wait
-} -returnCodes error -result {wrong # args: should be "ns_proxy wait /handle/ ?timeout?"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy wait /handle/ ?/timeout/?"}
 
 test ns_proxy-2.23 {syntax: ns_proxy workers} -body {
     ns_proxy workers
@@ -83,7 +83,7 @@ test ns_proxy-2.23 {syntax: ns_proxy workers} -body {
 
 test ns_proxy-2.1 {syntax: ns_proxy config} -body {
     ns_proxy config
-} -returnCodes error -result {wrong # args: should be "ns_proxy configure /pool/ ?opt? ?val? ?opt val?..."}
+} -returnCodes error -result {wrong # args: should be "ns_proxy configure /pool/ ?/opt/? ?/val/? ..."}
 
 
 
@@ -123,7 +123,7 @@ test ns_proxy-2.9 {configuration options types} -body {
 
 test ns_proxy-3.1 {get base syntax} -body {
     ns_proxy get
-} -returnCodes error -result {wrong # args: should be "ns_proxy get /pool/ ?-opt /val/ -opt /val/ ...?"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy get /pool/ ?-/opt/ /val/ ...?"}
 
 test ns_proxy-3.2 {get w/o options} -body {
     set proxy [ns_proxy get testpool]

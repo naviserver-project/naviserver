@@ -156,7 +156,7 @@ NsTclNsvGetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     int result = TCL_OK;
 
     if (unlikely(objc < 3 || objc > 4)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/array/ /key/ ?varName?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/array/ /key/ ?/varName/?");
         result = TCL_ERROR;
 
     } else {
@@ -427,7 +427,7 @@ NsTclNsvIncrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     int  result, count = 1;
 
     if (unlikely(objc != 3 && objc != 4)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/array/ /key/ ?increment?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/array/ /key/ ?/increment/?");
         result = TCL_ERROR;
 
     } else if (unlikely(objc == 4 && Tcl_GetIntFromObj(interp, objv[3], &count) != TCL_OK)) {
@@ -474,7 +474,7 @@ NsTclNsvLappendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     int result = TCL_OK;
 
     if (unlikely(objc < 4)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/array/ /key/ /value/ ?value ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/array/ /key/ /value/ ?/value/ ...?");
         result = TCL_ERROR;
     } else {
         Array         *arrayPtr;
@@ -529,7 +529,7 @@ NsTclNsvAppendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     int result = TCL_OK;
 
     if (unlikely(objc < 4)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/array/ /key/ /value/ ?value ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/array/ /key/ /value/ ?/value/ ...?");
         result = TCL_ERROR;
     } else {
         Array         *arrayPtr;
@@ -674,7 +674,7 @@ NsTclNsvNamesObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
     int result = TCL_OK;
 
     if (unlikely(objc > 2)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
+        Tcl_WrongNumArgs(interp, 1, objv, "?/pattern/?");
         result = TCL_ERROR;
 
     } else {
@@ -839,7 +839,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         case CGetIdx:   NS_FALL_THROUGH; /* fall through */
         case CNamesIdx:
             if (objc != 3 && objc != 4) {
-                Tcl_WrongNumArgs(interp, 2, objv, "/array/ ?pattern?");
+                Tcl_WrongNumArgs(interp, 2, objv, "/array/ ?/pattern/?");
                 result = TCL_ERROR;
 
             } else {

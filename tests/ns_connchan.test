@@ -18,7 +18,7 @@ tcltest::testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
 #
 test ns_connchan-1.0 {syntax ns_connchan} -body {
      ns_connchan
-} -returnCodes error -result {wrong # args: should be "ns_connchan callback|connect|close|detach|exists|list|listen|open|read|status|write|wsencode ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_connchan callback|connect|close|detach|exists|list|listen|open|read|status|write|wsencode ?/args/"}
 
 test ns_connchan-1.1.0 {syntax ns_connchan subcommands} -body {
      ns_connchan ""
@@ -26,11 +26,11 @@ test ns_connchan-1.1.0 {syntax ns_connchan subcommands} -body {
 
 test ns_connchan-1.1.1 {syntax: ns_connchan callback} -body {
     ns_connchan callback
-} -returnCodes error -result {wrong # args: should be "ns_connchan callback ?-timeout /timeout/? ?-receivetimeout /receivetimeout/? ?-sendtimeout /sendtimeout/? /channel/ /script/ /when/"}
+} -returnCodes error -result {wrong # args: should be "ns_connchan callback ?-timeout /time/? ?-receivetimeout /time/? ?-sendtimeout /time/? /channel/ /script/ /when/"}
 
 test ns_connchan-1.1.3 {syntax: ns_connchan connect} -body {
     ns_connchan connect
-} -returnCodes error -result {wrong # args: should be "ns_connchan connect ?-tls? ?-timeout /timeout/? /host/ /port/"}
+} -returnCodes error -result {wrong # args: should be "ns_connchan connect ?-tls? ?-timeout /time/? /host/ /port/"}
 
 test ns_connchan-1.1.3 {syntax: ns_connchan close} -body {
     ns_connchan close
@@ -54,7 +54,7 @@ test ns_connchan-1.1.7 {syntax: ns_connchan listen} -body {
 
 test ns_connchan-1.1.8 {syntax: ns_connchan open} -body {
     ns_connchan open
-} -returnCodes error -result {wrong # args: should be "ns_connchan open ?-driver /string/? ?-headers /ns_set/? ?-hostname /string/? ?-method /string/? ?-timeout /timeout/? ?-unix_socket /string/? ?-version /string/? /url/"}
+} -returnCodes error -result {wrong # args: should be "ns_connchan open ?-driver /string/? ?-headers /ns_set/? ?-hostname /string/? ?-method /string/? ?-timeout /time/? ?-unix_socket /string/? ?-version /string/? /url/"}
 
 test ns_connchan-1.1.9 {syntax: ns_connchan read} -body {
     ns_connchan read

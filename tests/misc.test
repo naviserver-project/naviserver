@@ -10,7 +10,7 @@ namespace import -force ::tcltest::*
 #######################################################################################
 test ns_rand-1.0 {syntax: ns_rand} -body {
     ns_rand 1 x
-} -returnCodes error -result {wrong # args: should be "ns_rand ?maximum[1,MAX]?"}
+} -returnCodes error -result {wrong # args: should be "ns_rand ?/maximum[1,MAX]/?"}
 
 test ns_rand-1.1 {ns_rand with 1 arg - integer} -body {
     set rand [ns_rand 10]
@@ -27,7 +27,7 @@ test ns_rand-1.2 {ns_rand with 0 arg - float} -body {
 #######################################################################################
 test ns_parseheader-1.0 {syntax: ns_parseheader} -body {
     ns_parseheader
-} -returnCodes error -result {wrong # args: should be "ns_parseheader ?-prefix /string/? /set/ /headerline/ ?disposition?"}
+} -returnCodes error -result {wrong # args: should be "ns_parseheader ?-prefix /string/? /set/ /headerline/ ?/disposition/?"}
 
 #######################################################################################
 #  test ns_fmttime
@@ -35,7 +35,7 @@ test ns_parseheader-1.0 {syntax: ns_parseheader} -body {
 
 test ns_fmttime-1.0 {syntax: ns_fmttime} -body {
     ns_fmttime
-} -returnCodes error -result {wrong # args: should be "ns_fmttime /time[0,MAX]/ ?fmt?"}
+} -returnCodes error -result {wrong # args: should be "ns_fmttime /time[0,MAX]/ ?/fmt/?"}
 
 test ns_fmttime-1.1 {ns_fmttime without format} -body {
     #
@@ -183,7 +183,7 @@ test ns_strcoll-3.3 {sort with upper and lowercase characters, locale C} \
 
 test ns_valid_utf8-1.0 {syntax: ns_valid_utf8} -body {
     ns_valid_utf8 - - -
-} -returnCodes error -result {wrong # args: should be "ns_valid_utf8 /string/ ?error?"}
+} -returnCodes error -result {wrong # args: should be "ns_valid_utf8 /string/ ?/error/?"}
 
 test ns_valid_utf8-1.1 {ns_valid_utf8 with typical value} -body {
     return [ns_valid_utf8 "hello world"]
@@ -214,7 +214,7 @@ test ns_valid_utf8-1.5 {invalid utf8, containing x85 in the middle} -body {
 
 test ns_ip-1.0.1 {syntax: ns_ip} -body {
     ns_ip
-} -returnCodes error -result {wrong # args: should be "ns_ip match|properties|public|trusted|valid ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_ip match|properties|public|trusted|valid ?/args/"}
 
 test ns_ip-1.0.2 {syntax: ns_ip subcommand} -body {
     ns_ip x
@@ -321,7 +321,7 @@ test ns_ip_match--2.4 {ns_ip match IPv4} -body {
 
 test ns_rlimit-1.0 {ns_rlimit general} -body {
     ns_rlimit
-} -returnCodes error -result {wrong # args: should be "ns_rlimit /subcommand/ ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_rlimit /subcommand/ ?/args/?"}
 
 test ns_rlimit-1.1 {ns_rlimit wrong subcommand} -body {
     ns_rlimit ?
@@ -329,23 +329,23 @@ test ns_rlimit-1.1 {ns_rlimit wrong subcommand} -body {
 
 test ns_rlimit-1.2 {syntax: ns_rlimit coresize} -body {
     ns_rlimit coresize 1 ?
-} -returnCodes error -result {wrong # args: should be "ns_rlimit coresize ?value?"}
+} -returnCodes error -result {wrong # args: should be "ns_rlimit coresize ?/value/?"}
 
 test ns_rlimit-1.3 {syntax: ns_rlimit datasize} -body {
     ns_rlimit datasize 1 ?
-} -returnCodes error -result {wrong # args: should be "ns_rlimit datasize ?value?"}
+} -returnCodes error -result {wrong # args: should be "ns_rlimit datasize ?/value/?"}
 
 test ns_rlimit-1.4 {syntax: ns_rlimit files} -body {
     ns_rlimit files 1 ?
-} -returnCodes error -result {wrong # args: should be "ns_rlimit files ?value?"}
+} -returnCodes error -result {wrong # args: should be "ns_rlimit files ?/value/?"}
 
 test ns_rlimit-1.5 {syntax: ns_rlimit filesize} -body {
     ns_rlimit filesize 1 ?
-} -returnCodes error -result {wrong # args: should be "ns_rlimit filesize ?value?"}
+} -returnCodes error -result {wrong # args: should be "ns_rlimit filesize ?/value/?"}
 
 test ns_rlimit-1.6 {syntax: ns_rlimit vmsize} -body {
     ns_rlimit vmsize 1 ?
-} -returnCodes error -result {wrong # args: should be "ns_rlimit vmsize ?value?"}
+} -returnCodes error -result {wrong # args: should be "ns_rlimit vmsize ?/value/?"}
 
 #######################################################################################
 #  ns_baseunit
@@ -353,7 +353,7 @@ test ns_rlimit-1.6 {syntax: ns_rlimit vmsize} -body {
 
 test ns_baseunit-1.0 {syntax: ns_baseunit} -body {
     ns_baseunit ?
-} -returnCodes error -result {wrong # args: should be "ns_baseunit ?-size /memory-unit/? ?-time /time/?"}
+} -returnCodes error -result {wrong # args: should be "ns_baseunit ?-size /memory-size/? ?-time /time/?"}
 
 #######################################################################################
 #  ns_setprivileges

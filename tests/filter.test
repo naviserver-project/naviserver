@@ -12,11 +12,11 @@ namespace import -force ::tcltest::*
 
 test ns_register_filter-1.0 {syntax: ns_register_filter} -body {
     ns_register_filter
-} -returnCodes error -result {wrong # args: should be "ns_register_filter ?-first? ?--? /when/ /method/ /urlPattern/ /script/ ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_register_filter ?-first? ?--? /when/ /method/ /urlPattern/ /script/ ?/args/?"}
 
 test ns_register_trace-1.0 {syntax: ns_register_trace} -body {
     ns_register_trace
-} -returnCodes error -result {wrong # args: should be "ns_register_trace /method/ /urlPattern/ /script/ ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_register_trace /method/ /urlPattern/ /script/ ?/args/?"}
 
 test ns_shortcut_filter-1.0 {syntax: ns_shortcut_filter} -body {
     ns_shortcut_filter

@@ -1287,7 +1287,7 @@ TclX_KeyedListGetKeys(Tcl_Interp *interp, Tcl_Obj *keylPtr, const char *key, Tcl
 /*-----------------------------------------------------------------------------
  * Tcl_KeylgetObjCmd --
  *     Implements the Tcl keylget command:
- *         keylget listvar ?key? ?retvar | {}?
+ *         keylget listvar ?/key/? ?/retvar/ | {}?
  *-----------------------------------------------------------------------------
  */
 int
@@ -1298,7 +1298,7 @@ TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
     TCL_SIZE_T  keyLen;
 
     if ((objc < 2) || (objc > 4)) {
-        status = TclX_WrongArgs(interp, objv[0], "listvar ?key? ?retvar | {}?");
+        status = TclX_WrongArgs(interp, objv[0], "listvar ?/key/? ?/retvar/ | {}?");
 
     } else if (objc == 2) {
         /*
@@ -1367,7 +1367,7 @@ TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
 /*-----------------------------------------------------------------------------
  * Tcl_KeylsetObjCmd --
  *     Implements the Tcl keylset command:
- *         keylset listvar key value ?key value...?
+ *         keylset listvar /key/ /value/ ?/key/ /value/ ...?
  *-----------------------------------------------------------------------------
  */
 int
@@ -1377,7 +1377,7 @@ TclX_KeylsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
 
     if ((objc < 4) || ((objc % 2) != 0)) {
         result = TclX_WrongArgs(interp, objv[0],
-                                "listvar key value ?key value...?");
+                                "listvar /key/ /value/ ?/key//value/ ...?");
     } else {
         Tcl_Obj    *keylVarPtr, *newVarObj;
         TCL_SIZE_T  keyLen;
@@ -1428,7 +1428,7 @@ TclX_KeylsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
 /*-----------------------------------------------------------------------------
  * Tcl_KeyldelObjCmd --
  *     Implements the Tcl keyldel command:
- *         keyldel listvar key ?key ...?
+ *         keyldel listvar /key/ ?/key/ ...?
  *----------------------------------------------------------------------------
  */
 int
@@ -1437,7 +1437,7 @@ TclX_KeyldelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     int result = TCL_OK;
 
     if (objc < 3) {
-        result = TclX_WrongArgs(interp, objv[0], "listvar key ?key ...?");
+        result = TclX_WrongArgs(interp, objv[0], "listvar /key/ ?/key/ ...?");
 
     } else {
         Tcl_Obj *keylVarPtr;
@@ -1493,7 +1493,7 @@ TclX_KeyldelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
 /*-----------------------------------------------------------------------------
  * Tcl_KeylkeysObjCmd --
  *     Implements the Tcl keylkeys command:
- *         keylkeys listvar ?key?
+ *         keylkeys listvar ?/key/?
  *-----------------------------------------------------------------------------
  */
 int
@@ -1502,7 +1502,7 @@ TclX_KeylkeysObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
     int         result;
 
     if ((objc < 2) || (objc > 3)) {
-        result = TclX_WrongArgs(interp, objv[0], "listvar ?key?");
+        result = TclX_WrongArgs(interp, objv[0], "listvar ?/key/?");
     } else {
         const char *varName = Tcl_GetString(objv[1]);
         Tcl_Obj    *keylPtr = Tcl_GetVar2Ex(interp, varName, NULL, TCL_LEAVE_ERR_MSG);

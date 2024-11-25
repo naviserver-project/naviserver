@@ -10,7 +10,7 @@ namespace import -force ::tcltest::*
 #
 test ns_urlspace-1.0 {basic operation} -body {
     ns_urlspace
-} -returnCodes error -result {wrong # args: should be "ns_urlspace get|list|new|set|unset ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_urlspace get|list|new|set|unset ?/args/"}
 
 test ns_urlspace-1.1 {basic operation} -body {
     ns_urlspace x

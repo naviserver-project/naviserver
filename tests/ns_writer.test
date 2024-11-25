@@ -11,7 +11,7 @@ if {[ns_config test listenport]} {
 
 test ns_writer-1.1 {basic syntax: plain call} -body {
      ns_writer
-} -returnCodes error -result {wrong # args: should be "ns_writer list|size|streaming|submit|submitfile|submitfiles ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_writer list|size|streaming|submit|submitfile|submitfiles ?/args/"}
 
 test ns_writer-1.2.0 {basic syntax: wrong argument} -body {
      ns_writer ?
@@ -23,16 +23,16 @@ test ns_writer-1.2.1 {ns_writer list syntax} -body {
 
 test ns_writer-1.2.2 {ns_writer size syntax} -body {
      ns_writer size -driver default 1024 ?
-} -returnCodes error -result {wrong # args: should be "ns_writer size ?-driver /driver/? ?value?"}
+} -returnCodes error -result {wrong # args: should be "ns_writer size ?-driver /driver/? ?/value/?"}
 test ns_writer-1.2.3 {ns_writer streaming syntax} -body {
      ns_writer streaming 1 - -
-} -returnCodes error -result {wrong # args: should be "ns_writer streaming ?-driver /driver/? ?value?"}
+} -returnCodes error -result {wrong # args: should be "ns_writer streaming ?-driver /driver/? ?/value/?"}
 test ns_writer-1.2.4 {ns_writer submit syntax} -body {
      ns_writer submit
 } -returnCodes error -result {wrong # args: should be "ns_writer submit /data/"}
 test ns_writer-1.2.5 {ns_writer submitfile syntax} -body {
      ns_writer submitfile
-} -returnCodes error -result {wrong # args: should be "ns_writer submitfile ?-headers? ?-offset /memory-unit/? ?-size /memory-unit/? /file/"}
+} -returnCodes error -result {wrong # args: should be "ns_writer submitfile ?-headers? ?-offset /memory-size/? ?-size /memory-size/? /file/"}
 test ns_writer-1.2.6 {ns_writer submitfiles syntax} -body {
      ns_writer submitfiles
 } -returnCodes error -result {wrong # args: should be "ns_writer submitfiles ?-headers? /files/"}

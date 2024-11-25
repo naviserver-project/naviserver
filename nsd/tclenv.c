@@ -162,7 +162,7 @@ NsTclEnvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
     };
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?args ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?/args/?");
         result = TCL_ERROR;
 
     } else if (Tcl_GetIndexFromObj(interp, objv[1], opts, "subcommand", 0,

@@ -163,7 +163,7 @@ NsTclAdpIdentObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
     int       result = TCL_OK;
 
     if (objc != 1 && objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "?ident?");
+        Tcl_WrongNumArgs(interp, 1, objv, "?/ident/?");
         result = TCL_ERROR;
 
     } else if (GetFrame(clientData, &framePtr) != TCL_OK) {
@@ -259,7 +259,7 @@ NsTclAdpCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     };
 
     if (unlikely(objc < 2)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?arg ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?/args/?");
         result = TCL_ERROR;
 
     } else if (Tcl_GetIndexFromObjStruct(interp, objv[1], adpCtlOpts,
@@ -307,7 +307,7 @@ NsTclAdpCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
              */
 
             if (objc != 2 && objc !=3 ) {
-                Tcl_WrongNumArgs(interp, 2, objv, "?bool?");
+                Tcl_WrongNumArgs(interp, 2, objv, "?true|false?");
                 result = TCL_ERROR;
 
             } else {
@@ -547,7 +547,7 @@ NsTclAdpAppendObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
     int       result = TCL_OK;
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/string/ ?string ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/string/ ?/string/ ...?");
         result = TCL_ERROR;
     } else {
         TCL_SIZE_T i;
@@ -973,7 +973,7 @@ NsTclAdpBindArgsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
     int       result = TCL_OK;
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/varName/ ?varName ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/varName/ ?/varName/ ...?");
         result = TCL_ERROR;
 
     } else if (GetFrame(clientData, &framePtr) != TCL_OK) {

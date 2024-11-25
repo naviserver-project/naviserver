@@ -454,7 +454,7 @@ NsTclWriteFpObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
     int         result = TCL_OK;
 
     if (unlikely(objc < 2 || objc > 3)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/fileid/ ?nbytes?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/fileid/ ?/nbytes/?");
         result = TCL_ERROR;
 
     } else if (/*objc >= 2*/

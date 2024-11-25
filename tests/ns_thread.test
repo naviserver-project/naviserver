@@ -7,7 +7,7 @@ namespace import -force ::tcltest::*
 
 test ns_thread-1.0 {syntax: ns_thread} -body {
     ns_thread
-} -returnCodes error -result {wrong # args: should be "ns_thread begin|begindetached|create|get|getid|handle|id|join|name|stackinfo|wait|yield ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_thread begin|begindetached|create|get|getid|handle|id|join|name|stackinfo|wait|yield ?/args/"}
 
 test ns_thread-1.1 {syntax: ns_thread subcommands} -body {
     ns_thread ?
@@ -27,7 +27,7 @@ test ns_thread-1.4 {syntax: ns_thread id} -body {
 
 test ns_thread-1.5 {syntax: ns_thread name} -body {
     ns_thread name - -
-} -returnCodes error -result {wrong # args: should be "ns_thread name ?name?"}
+} -returnCodes error -result {wrong # args: should be "ns_thread name ?/name/?"}
 
 test ns_thread-1.6 {syntax: ns_thread stackinfo} -body {
     ns_thread stackinfo -
@@ -45,7 +45,7 @@ test ns_thread-1.8 {syntax: ns_thread yield} -body {
 
 test ns_mutex-1.0 {syntax: ns_mutex} -body {
     ns_mutex
-} -returnCodes error -result {wrong # args: should be "ns_mutex create|destroy|eval|lock|trylock|unlock ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_mutex create|destroy|eval|lock|trylock|unlock ?/args/"}
 
 test ns_mutex-1.1 {syntax: ns_mutex subcommands} -body {
     ns_mutex ?
@@ -53,7 +53,7 @@ test ns_mutex-1.1 {syntax: ns_mutex subcommands} -body {
 
 test ns_mutex-1.2 {syntax: ns_mutex create} -body {
     ns_mutex create - -
-} -returnCodes error -result {wrong # args: should be "ns_mutex create ?name?"}
+} -returnCodes error -result {wrong # args: should be "ns_mutex create ?/name/?"}
 
 test ns_mutex-1.3 {syntax: ns_mutex destroy} -body {
     ns_mutex destroy
@@ -79,7 +79,7 @@ test ns_mutex-1.7 {syntax: ns_mutex unlock} -body {
 
 test ns_critsec-1.0 {syntax: ns_critsec} -body {
     ns_critsec
-} -returnCodes error -result {wrong # args: should be "ns_critsec create|destroy|enter|eval|leave ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_critsec create|destroy|enter|eval|leave ?/args/"}
 
 test ns_critsec-1.1 {syntax: ns_critsec subcommands} -body {
     ns_critsec ?
@@ -110,14 +110,14 @@ test ns_critsec-1.6 {syntax: ns_critsec leave} -body {
 
 test ns_sema-1.0 {syntax: ns_sema} -body {
     ns_sema
-} -returnCodes error -result {wrong # args: should be "ns_sema create|destroy|release|wait ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_sema create|destroy|release|wait ?/args/"}
 test ns_sema-1.1 {syntax: ns_sema subcommands} -body {
     ns_sema ?
 } -returnCodes error -result {ns_sema: bad subcommand "?": must be create, destroy, release, or wait}
 
 test ns_sema-1.2 {syntax: ns_sema create} -body {
     ns_sema create 1 -
-} -returnCodes error -result {wrong # args: should be "ns_sema create ?count?"}
+} -returnCodes error -result {wrong # args: should be "ns_sema create ?/count/?"}
 
 test ns_sema-1.3 {syntax: ns_sema destroy} -body {
     ns_sema destroy
@@ -125,7 +125,7 @@ test ns_sema-1.3 {syntax: ns_sema destroy} -body {
 
 test ns_sema-1.4 {syntax: ns_sema release} -body {
     ns_sema release
-} -returnCodes error -result {wrong # args: should be "ns_sema release /handle/ ?count?"}
+} -returnCodes error -result {wrong # args: should be "ns_sema release /handle/ ?/count/?"}
 
 test ns_sema-1.5 {syntax: ns_sema wait} -body {
     ns_sema wait
@@ -136,7 +136,7 @@ test ns_sema-1.5 {syntax: ns_sema wait} -body {
 
 test ns_cond-1.0 {syntax: ns_cond} -body {
     ns_cond
-} -returnCodes error -result {wrong # args: should be "ns_cond abswait|broadcast|create|destroy|set|signal|wait ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_cond abswait|broadcast|create|destroy|set|signal|wait ?/args/"}
 
 test ns_cond-1.1 {syntax: ns_cond subcommands} -body {
     ns_cond ?
@@ -144,7 +144,7 @@ test ns_cond-1.1 {syntax: ns_cond subcommands} -body {
 
 test ns_cond-1.2 {syntax: ns_cond abswait} -body {
     ns_cond abswait
-} -returnCodes error -result {wrong # args: should be "ns_cond abswait /condid/ /mutexid/ ?epoch?"}
+} -returnCodes error -result {wrong # args: should be "ns_cond abswait /condid/ /mutexid/ ?/epoch/?"}
 
 test ns_cond-1.3 {syntax: ns_cond broadcast} -body {
     ns_cond broadcast
@@ -168,14 +168,14 @@ test ns_cond-1.7 {syntax: ns_cond signal} -body {
 
 test ns_cond-1.8 {syntax: ns_cond wait} -body {
     ns_cond wait
-} -returnCodes error -result {wrong # args: should be "ns_cond wait /condid/ /mutexid/ ?timeout?"}
+} -returnCodes error -result {wrong # args: should be "ns_cond wait /condid/ /mutexid/ ?/timeout/?"}
 
 
 # ns_rwlock
 
 test ns_rwlock-1.0 {syntax: ns_rwlock} -body {
     ns_rwlock
-} -returnCodes error -result {wrong # args: should be "ns_rwlock create|destroy|readeval|readlock|readunlock|unlock|writeeval|writelock|writeunlock ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_rwlock create|destroy|readeval|readlock|readunlock|unlock|writeeval|writelock|writeunlock ?/args/"}
 
 test ns_rwlock-1.1 {syntax: ns_rwlock subcommands} -body {
     ns_rwlock ?

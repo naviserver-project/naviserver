@@ -9,7 +9,7 @@ namespace import -force ::tcltest::*
 
 test ns_set-1.0 {syntax: ns_set} -body {
     ns_set
-} -returnCodes error -result {wrong # args: should be "ns_set array|cleanup|copy|cput|create|delete|delkey|find|format|free|get|icput|idelkey|ifind|iget|imerge|isnull|iunique|iupdate|key|keys|list|merge|move|name|new|print|put|size|split|stats|truncate|unique|update|value|values ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_set array|cleanup|copy|cput|create|delete|delkey|find|format|free|get|icput|idelkey|ifind|iget|imerge|isnull|iunique|iupdate|key|keys|list|merge|move|name|new|print|put|size|split|stats|truncate|unique|update|value|values ?/args/"}
 
 test ns_set-1.1 {syntax: ns_set subcommands} -body {
     ns_set ""
@@ -55,7 +55,7 @@ test ns_set-1.10 {syntax: ns_set free} -body {
 
 test ns_set-1.11 {syntax: ns_set get} -body {
     ns_set get
-} -returnCodes error -result {wrong # args: should be "ns_set get ?-all? ?-nocase? ?--? /setId/ /key/ ?default?"}
+} -returnCodes error -result {wrong # args: should be "ns_set get ?-all? ?-nocase? ?--? /setId/ /key/ ?/default/?"}
 
 test ns_set-1.12 {syntax: ns_set icput} -body {
     ns_set icput
@@ -71,13 +71,13 @@ test ns_set-1.14 {syntax: ns_set ifind} -body {
 
 test ns_set-1.15 {syntax: ns_set iget} -body {
     ns_set iget
-} -returnCodes error -result {wrong # args: should be "ns_set iget ?-all? ?-nocase? ?--? /setId/ /key/ ?default?"}
+} -returnCodes error -result {wrong # args: should be "ns_set iget ?-all? ?-nocase? ?--? /setId/ /key/ ?/default/?"}
 
 test ns_set-1.16 {syntax: ns_set iget} -body {
     ns_set iget [ns_set create]
 } -cleanup {
     ns_set cleanup
-} -returnCodes error -result {wrong # args: should be "ns_set iget ?-all? ?-nocase? ?--? /setId/ /key/ ?default?"}
+} -returnCodes error -result {wrong # args: should be "ns_set iget ?-all? ?-nocase? ?--? /setId/ /key/ ?/default/?"}
 
 test ns_set-1.17 {syntax: ns_set isnull} -body {
     ns_set isnull
@@ -125,11 +125,11 @@ test ns_set-1.26 {syntax: ns_set put} -body {
 
 test ns_set-1.27 {syntax: ns_set size} -body {
     ns_set size
-} -returnCodes error -result {wrong # args: should be "ns_set size /setId/ ?nrElements[0,MAX]? ?bufferSize[200,MAX]?"}
+} -returnCodes error -result {wrong # args: should be "ns_set size /setId/ ?/nrElements[0,MAX]/? ?/bufferSize[200,MAX]/?"}
 
 test ns_set-1.28 {syntax: ns_set split} -body {
     ns_set split
-} -returnCodes error -result {wrong # args: should be "ns_set split /setId/ ?splitChar?"}
+} -returnCodes error -result {wrong # args: should be "ns_set split /setId/ ?/splitChar/?"}
 
 test ns_set-1.29 {syntax: ns_set truncate} -body {
     ns_set truncate
@@ -157,11 +157,11 @@ test ns_set-1.34 {syntax: ns_set format} -body {
 
 test ns_set-1.35 {syntax: ns_set keys } -body {
     ns_set keys
-} -returnCodes error -result {wrong # args: should be "ns_set keys /setId/ ?pattern?"}
+} -returnCodes error -result {wrong # args: should be "ns_set keys /setId/ ?/pattern/?"}
 
 test ns_set-1.36 {syntax: ns_set values } -body {
     ns_set values
-} -returnCodes error -result {wrong # args: should be "ns_set values /setId/ ?pattern?"}
+} -returnCodes error -result {wrong # args: should be "ns_set values /setId/ ?/pattern/?"}
 
 
 test ns_findset-1.0 {syntax: ns_findset} -body {
@@ -185,7 +185,7 @@ test ns_set-2.0 {basic operation: ns_set get} -body {
     ns_set get [ns_set create]
 } -cleanup {
     ns_set cleanup
-} -returnCodes {error ok} -result {wrong # args: should be "ns_set get ?-all? ?-nocase? ?--? /setId/ /key/ ?default?"}
+} -returnCodes {error ok} -result {wrong # args: should be "ns_set get ?-all? ?-nocase? ?--? /setId/ /key/ ?/default/?"}
 
 test ns_set-2.0.0 {basic operation ns_set create without args} -body {
     ns_set cleanup

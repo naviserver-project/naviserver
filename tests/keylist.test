@@ -126,7 +126,7 @@ test keylist-1.24 {keylget tests} -body {
 
 test keylist-1.25 {keylget tests} -body {
     keylget
-} -returnCodes error -result {wrong # args: keylget listvar ?key? ?retvar | {}?}
+} -returnCodes error -result {wrong # args: keylget listvar ?/key/? ?/retvar/ | {}?}
 
 test keylist-1.26 {keylget tests} -body {
     unset keyedlist
@@ -186,7 +186,7 @@ test keylist-2.7 {keylkeys tests} -body {
 
 test keylist-2.8 {keylkeys tests} -body {
     keylkeys
-} -returnCodes error -result {wrong # args: keylkeys listvar ?key?}
+} -returnCodes error -result {wrong # args: keylkeys listvar ?/key/?}
 
 test keylist-2.9 {keylkeys tests} -body {
     keylkeys list4
@@ -242,12 +242,12 @@ test keylist-3.4 {keylset tests} -body {
 test keylist-3.5 {keylset tests} -body {
     catch {unset keyedlist}
     keylset keyedlist keyA
-} -returnCodes error -result {wrong # args: keylset listvar key value ?key value...?}
+} -returnCodes error -result {wrong # args: keylset listvar /key/ /value/ ?/key//value/ ...?}
 
 test keylist-3.6 {keylset tests} -body {
     catch {unset keyedlist}
     keylset keyedlist keyA valueA keyB
-} -returnCodes error -result {wrong # args: keylset listvar key value ?key value...?}
+} -returnCodes error -result {wrong # args: keylset listvar /key/ /value/ ?/key//value/ ...?}
 
 test keylist-3.7 {keylset tests} -body {
     catch {unset keyedlist}
@@ -348,7 +348,7 @@ test keylist-4.4 {keyldel tests} -body {
 
 test keylist-4.5 {keyldel tests} -body {
     keyldel keyedlist
-} -returnCodes error -result {wrong # args: keyldel listvar key ?key ...?}
+} -returnCodes error -result {wrong # args: keyldel listvar /key/ ?/key/ ...?}
 
 test keylist-4.6 {keyldel tests} -body {
     set keyedlist $list3

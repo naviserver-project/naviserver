@@ -9,7 +9,7 @@ namespace import -force ::tcltest::*
 
 test ns_schedule-1.1 {basic syntax} -body {
     ns_schedule_proc
-} -returnCodes error -result {wrong # args: should be "ns_schedule_proc ?-once? ?-thread? ?--? /interval/ /script/ ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_schedule_proc ?-once? ?-thread? ?--? /interval/ /script/ ?/args/?"}
 
 test ns_schedule-1.2 {basic syntax} -body {
     ns_unschedule_proc
@@ -17,15 +17,15 @@ test ns_schedule-1.2 {basic syntax} -body {
 
 test ns_schedule-1.3 {basic syntax} -body {
     ns_schedule_daily
-} -returnCodes error -result {wrong # args: should be "ns_schedule_daily ?-once? ?-thread? ?--? /hour[0,23]/ /minute[0,59]/ /script/ ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_schedule_daily ?-once? ?-thread? ?--? /hour[0,23]/ /minute[0,59]/ /script/ ?/args/?"}
 
 test ns_schedule-1.4 {basic syntax} -body {
     ns_schedule_weekly
-} -returnCodes error -result {wrong # args: should be "ns_schedule_weekly ?-once? ?-thread? ?--? /day[0,6]/ /hour[0,23]/ /minute[0,59]/ /script/ ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_schedule_weekly ?-once? ?-thread? ?--? /day[0,6]/ /hour[0,23]/ /minute[0,59]/ /script/ ?/args/?"}
 
 test ns_schedule-1.5 {basic syntax} -body {
     ns_after
-} -returnCodes error -result {wrong # args: should be "ns_after /interval/ /script/ ?args?"}
+} -returnCodes error -result {wrong # args: should be "ns_after /interval/ /script/ ?/args/?"}
 
 test ns_schedule-1.6 {basic syntax} -body {
     ns_pause

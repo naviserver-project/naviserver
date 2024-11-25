@@ -2025,7 +2025,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
     };
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?args?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?/args/?");
         return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], opts, "subcommand", 0,
@@ -2090,7 +2090,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
 
     case PWaitIdx:
         if (objc != 3 && objc != 4) {
-            Tcl_WrongNumArgs(interp, 2, objv, "/handle/ ?timeout?");
+            Tcl_WrongNumArgs(interp, 2, objv, "/handle/ ?/timeout/?");
             result = TCL_ERROR;
         } else {
             Ns_Time *timeoutPtr = NULL;
@@ -2171,7 +2171,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
 
     case PHandlesIdx:
         if (objc > 3) {
-            Tcl_WrongNumArgs(interp, 2, objv, "?handle?");
+            Tcl_WrongNumArgs(interp, 2, objv, "?/handle/?");
             result = TCL_ERROR;
         } else {
             if (objc == 3) {
@@ -2194,7 +2194,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
 
     case PActiveIdx:
         if (objc < 3 || objc > 4) {
-            Tcl_WrongNumArgs(interp, 2, objv, "/pool/ ?handle?");
+            Tcl_WrongNumArgs(interp, 2, objv, "/pool/ ?/handle/?");
             result = TCL_ERROR;
         } else {
             poolPtr = GetPool(Tcl_GetString(objv[2]), idataPtr);
@@ -2219,7 +2219,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
 
     case PClearIdx:
         if (objc < 3 || objc > 4) {
-            Tcl_WrongNumArgs(interp, 2, objv, "/pool/ ?handle?");
+            Tcl_WrongNumArgs(interp, 2, objv, "/pool/ ?/handle/?");
             result = TCL_ERROR;
         } else {
             result = ClearObjCmd(data, interp, objc, objv);
@@ -2299,7 +2299,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
     };
 
     if (objc < 3) {
-        Tcl_WrongNumArgs(interp, 2, objv, "/pool/ ?opt? ?val? ?opt val?...");
+        Tcl_WrongNumArgs(interp, 2, objv, "/pool/ ?/opt/? ?/val/? ...");
         return TCL_ERROR;
     }
 
@@ -2602,7 +2602,7 @@ GetObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* 
     };
 
     if (objc < 3 || (objc % 2) != 1) {
-        Tcl_WrongNumArgs(interp, 2, objv, "/pool/ ?-opt /val/ -opt /val/ ...?");
+        Tcl_WrongNumArgs(interp, 2, objv, "/pool/ ?-/opt/ /val/ ...?");
         return TCL_ERROR;
     }
 
