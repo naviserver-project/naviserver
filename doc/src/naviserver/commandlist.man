@@ -559,7 +559,7 @@ sections of related commands.
 [call [cmd "ns_returnadminnotice"]]     Use [cmd "ns_returnnotice"] instead.
 [call [cmd "ns_rmdir"]]                 Use [cmd "file delete"] instead.
 [call [cmd "ns_server keepalive"]]      Use [cmd "ns_conn keepalive"] instead.
-[call [cmd "ns_set new"]]               Use [cmd "ns_conn create"] instead.
+[call [cmd "ns_set new"]]               Use [cmd "ns_set create"] instead.
 [call [cmd "ns_set print"]]             Use [cmd "ns_conn format"] instead.
 [call [cmd "ns_set_precision"]]         Use [cmd "set ::tcl_precision ..."] instead.
 [call [cmd "ns_sha2"]]                  Use [cmd "ns_crypto::md string"] instead.
