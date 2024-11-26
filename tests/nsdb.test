@@ -131,6 +131,13 @@ test nsdb-1.0.32 {syntax: ns_db verbose} -body {
     ns_db verbose
 } -returnCodes error -result {wrong # args: should be "ns_db verbose /handle/ ?/verbose/?"}
 
+test nsdb-1.0.33 {syntax: ns_db 1row} -body {
+    ns_db 1row
+} -returnCodes error -result {wrong # args: should be "ns_db 1row /handle/ /sql/"}
+
+test nsdb-1.0.34 {syntax: ns_db 0or1row} -body {
+    ns_db 0or1row
+} -returnCodes error -result {wrong # args: should be "ns_db 0or1row /handle/ /sql/"}
 
 
 test nsdb-1.1 {syntax: ns_dbquotevalue} -body {
