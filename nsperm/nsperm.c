@@ -771,9 +771,9 @@ static int AddUserObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc, 
     };
     Ns_ObjvSpec args[] = {
         {"name", Ns_ObjvString, &name, NULL},
-        {"pwd", Ns_ObjvString, &pwd, NULL},
-        {"field", Ns_ObjvString, &field, NULL},
-        {"?hosts", Ns_ObjvArgs, &nargs, NULL},
+        {"encpass", Ns_ObjvString, &pwd, NULL},
+        {"userfield", Ns_ObjvString, &field, NULL},
+        {"?host", Ns_ObjvArgs, &nargs, NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
@@ -1027,7 +1027,7 @@ static int AddGroupObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc,
     TCL_SIZE_T     param;
 
     if (objc < 4) {
-        Tcl_WrongNumArgs(interp, 2, objv, "/group/ /user/ ?/user/ ...?");
+        Tcl_WrongNumArgs(interp, 2, objv, "/group/ /user/ ?/user .../?");
         return TCL_ERROR;
     }
 
@@ -1272,7 +1272,7 @@ static int AllowDenyObjCmd(
     Ns_ObjvSpec args[] = {
         {"method", Ns_ObjvString, &method, NULL},
         {"url", Ns_ObjvString, &url, NULL},
-        {"users", Ns_ObjvArgs, &nargs, NULL},
+        {"user", Ns_ObjvArgs, &nargs, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -1574,7 +1574,7 @@ SetPassObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc, Tcl_Obj *co
     char           buf[NS_ENCRYPT_BUFSIZE];
 
     if (objc < 4) {
-        Tcl_WrongNumArgs(interp, 2, objv, "/user/ /pwd/ ?/salt/?");
+        Tcl_WrongNumArgs(interp, 2, objv, "/user/ /encpass/ ?/salt/?");
         return TCL_ERROR;
     }
     user = Tcl_GetString(objv[2]);

@@ -67,7 +67,7 @@ NsTclAfterObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
     Ns_ObjvSpec       args[] = {
         {"interval", Ns_ObjvTime, &interval,  (void*)&nonnegTimeRange},
         {"script",   Ns_ObjvObj,  &scriptObj, NULL},
-        {"?args",    Ns_ObjvArgs, &remain,    NULL},
+        {"?arg",     Ns_ObjvArgs, &remain,    NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -203,7 +203,7 @@ NsTclSchedDailyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
         {"hour",    Ns_ObjvInt,   &hour,      &hourRange},
         {"minute",  Ns_ObjvInt,   &minute,    &minuteRange},
         {"script",  Ns_ObjvObj,   &scriptObj, NULL},
-        {"?args",   Ns_ObjvArgs,  &remain,    NULL},
+        {"?arg",    Ns_ObjvArgs,  &remain,    NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -265,7 +265,7 @@ NsTclSchedWeeklyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
         {"hour",    Ns_ObjvInt,    &hour,      &hourRange},
         {"minute",  Ns_ObjvInt,    &minute,    &minuteRange},
         {"script",  Ns_ObjvObj,    &scriptObj, NULL},
-        {"?args",   Ns_ObjvArgs,   &remain,    NULL},
+        {"?arg",    Ns_ObjvArgs,   &remain,    NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
@@ -327,7 +327,7 @@ NsTclSchedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
     Ns_ObjvSpec args[] = {
         {"interval", Ns_ObjvTime,   &intervalPtr, (void*)&nonnegTimeRange},
         {"script",   Ns_ObjvObj,    &scriptObj,   NULL},
-        {"?args",    Ns_ObjvArgs,   &remain,      NULL},
+        {"?arg",     Ns_ObjvArgs,   &remain,      NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {

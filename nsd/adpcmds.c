@@ -259,7 +259,7 @@ NsTclAdpCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     };
 
     if (unlikely(objc < 2)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?/args/?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?/arg .../?");
         result = TCL_ERROR;
 
     } else if (Tcl_GetIndexFromObjStruct(interp, objv[1], adpCtlOpts,
@@ -370,7 +370,7 @@ NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
     };
     Ns_ObjvSpec args[] = {
         {"fileName", Ns_ObjvString, &fileName,  NULL},
-        {"?args",    Ns_ObjvArgs,   &nargs,     NULL},
+        {"?arg",     Ns_ObjvArgs,   &nargs,     NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
@@ -457,7 +457,7 @@ NsTclAdpParseObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"args", Ns_ObjvArgs, &nargs, NULL},
+        {"arg", Ns_ObjvArgs, &nargs, NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {

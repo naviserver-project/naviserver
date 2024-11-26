@@ -17,14 +17,15 @@ management for NaviServer.
 	[opt [option -allow]] \
 	[opt [option -deny]] \
 	[opt [option -clear]] \
-	[opt [option "-salt [arg s]"]] \
+	[opt [option "-salt [arg string]"]] \
+        [opt --] \
 	[arg name] \
-	[arg pass] \
+	[arg encpass] \
 	[arg userfield] \
-	[opt [arg host...]]]
+	[opt [arg "host ..."]]]
 
 Adds the user with the specified name and the
-encrypted password (encpass) and the specified user text (userfield)
+encrypted password [arg encpass] and the specified user text (userfield)
 into the users database.
 
 [para]
@@ -62,12 +63,12 @@ Delete user from the memory.
 
 
 [call [cmd "ns_perm addgroup"] \
-	[arg name] \
+	[arg group] \
 	[arg user] \
-	[opt [arg user...]]]
+	[opt [arg "user ..."]]]
 
-Create a new group with the specified name
-that includes the users listed after the name.
+Create a new [arg group] with the specified name
+that includes the users listed after the group name.
 
 
 [call [cmd "ns_perm delgroup"] \
@@ -77,7 +78,9 @@ Delete group from the memory.
 
 
 [call [cmd "ns_perm allowuser"] \
-	[opt [option -noinherit]]]
+	[opt [option -noinherit]] \
+        [opt --] \
+        ]
 
 Allow the specified user to access the
 specified method and URL combination.  If [option -noinherit] is specified,
@@ -86,9 +89,11 @@ URL are allowed as well.
 
 [call [cmd "ns_perm denyuser"] \
 	[opt [option -noinherit]] \
+        [opt --] \
 	[arg method] \
 	[arg url] \
-	[arg user...]]
+	[arg user...] \
+        ]
 
 Deny the specified user access to the
 specified method and URL combination.  If [option -noinherit] is specified,
@@ -97,6 +102,7 @@ are denied as well.
 
 [call [cmd "ns_perm allowgroup"] \
 	[opt [option -noinherit]] \
+        [opt --] \
 	[arg method] \
 	[arg url] \
 	[arg group...]]
@@ -108,6 +114,7 @@ URL are allowed as well.
 
 [call [cmd "ns_perm denygroup"] \
 	[opt [option -noinherit]] \
+        [opt --] \
 	[arg method] \
 	[arg url] \
 	[arg group...]]
@@ -126,7 +133,7 @@ it does not match.
 [call [cmd "ns_perm setpass"] [arg user] [arg encpass]]
 
 Updates the specified user's password to the
-encrypted password encpass. The password should be encrypted using
+encrypted password [arg encpass]. The password should be encrypted using
 ns_encrypt.
 
 [call [cmd "ns_perm listusers"]]

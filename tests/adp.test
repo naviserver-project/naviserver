@@ -31,7 +31,7 @@ ns_adp_ctl channel stdout
 #
 test ns_adp_ctl-1.0 {basic syntax} -body {
     ns_adp_ctl
-} -returnCodes error -result {wrong # args: should be "ns_adp_ctl /subcommand/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "ns_adp_ctl /subcommand/ ?/arg .../?"}
 
 test ns_adp_ctl-1.1 {basic syntax} -body {
     ns_adp_ctl ?
@@ -163,7 +163,7 @@ test ns_adp_flush-1.0 {syntax: ns_adp_flush} -body {
 
 test ns_adp_include-1.0 {syntax: ns_adp_include} -body {
     ns_adp_include
-} -returnCodes error -result {wrong # args: should be "_ns_adp_include ?-cache /time/? ?-nocache? ?-tcl? ?--? /fileName/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "_ns_adp_include ?-cache /time/? ?-nocache? ?-tcl? ?--? /fileName/ ?/arg .../?"}
 # ns_adp_include is a Tcl proc: message should be {wrong # args: should be "ns_adp_include ?-cache /cache/? ?-nocache? ?-tcl? ?--? /fileName/ ?args?"}
 
 test ns_adp_mimetype-1.0 {syntax: ns_adp_mimetype} -body {
@@ -172,7 +172,7 @@ test ns_adp_mimetype-1.0 {syntax: ns_adp_mimetype} -body {
 
 test ns_adp_parse-1.0 {syntax: ns_adp_parse} -body {
     ns_adp_parse
-} -returnCodes error -result {wrong # args: should be "ns_adp_parse ?-cwd /string/? ?-file? ?-safe? ?-string? ?-tcl? ?--? /args/"}
+} -returnCodes error -result {wrong # args: should be "ns_adp_parse ?-cwd /string/? ?-file? ?-safe? ?-string? ?-tcl? ?--? /arg .../"}
 
 test ns_adp_puts-1.0 {syntax: ns_adp_puts} -body {
     ns_adp_puts

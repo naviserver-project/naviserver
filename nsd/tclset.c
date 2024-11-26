@@ -434,7 +434,7 @@ static int SetCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec  args[] = {
-        {"?args",    Ns_ObjvArgs, &nargs, NULL},
+        {"?arg",     Ns_ObjvArgs, &nargs, NULL},
         {NULL, NULL, NULL, NULL}
     };
     const char  *subcmdName = Tcl_GetString(objv[1]);

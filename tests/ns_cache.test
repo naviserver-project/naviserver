@@ -9,11 +9,11 @@ namespace import -force ::tcltest::*
 
 test ns_cache_append-1.0 {syntax: ns_cache_append} -body {
     ns_cache_append
-} -returnCodes error -result {wrong # args: should be "ns_cache_append ?-timeout /time/? ?-expires /time/? ?--? /cache/ /key/ /args/"}
+} -returnCodes error -result {wrong # args: should be "ns_cache_append ?-timeout /time/? ?-expires /time/? ?--? /cache/ /key/ /arg .../"}
 
 test ns_cache_configure-1.0 {syntax: ns_cache_configure} -body {
     ns_cache_configure
-} -returnCodes error -result {wrong # args: should be "ns_cache_configure /cache/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "ns_cache_configure /cache/ ?/arg .../?"}
 
 test ns_cache_create-1.0 {syntax: ns_cache_create} -body {
     ns_cache_create
@@ -21,7 +21,7 @@ test ns_cache_create-1.0 {syntax: ns_cache_create} -body {
 
 test ns_cache_eval-1.0 {syntax: ns_cache_eval} -body {
     ns_cache_eval
-} -returnCodes error -result {wrong # args: should be "ns_cache_eval ?-timeout /time/? ?-expires /time/? ?-force? ?--? /cache/ /key/ /args/"}
+} -returnCodes error -result {wrong # args: should be "ns_cache_eval ?-timeout /time/? ?-expires /time/? ?-force? ?--? /cache/ /key/ /arg .../"}
 
 test ns_cache_exists-1.0 {syntax: ns_cache_exists} -body {
     ns_cache_exists
@@ -29,7 +29,7 @@ test ns_cache_exists-1.0 {syntax: ns_cache_exists} -body {
 
 test ns_cache_flush-1.0 {syntax: ns_cache_flush} -body {
     ns_cache_flush
-} -returnCodes error -result {wrong # args: should be "ns_cache_flush ?-glob? ?--? /cache/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "ns_cache_flush ?-glob? ?--? /cache/ ?/arg .../?"}
 
 test ns_cache_get-1.0 {syntax: ns_cache_get} -body {
     ns_cache_get
@@ -45,7 +45,7 @@ test ns_cache_keys-1.0 {syntax: ns_cache_keys} -body {
 
 test ns_cache_lappend-1.0 {syntax: ns_cache_lappend} -body {
     ns_cache_lappend
-} -returnCodes error -result {wrong # args: should be "ns_cache_lappend ?-timeout /time/? ?-expires /time/? ?--? /cache/ /key/ /args/"}
+} -returnCodes error -result {wrong # args: should be "ns_cache_lappend ?-timeout /time/? ?-expires /time/? ?--? /cache/ /key/ /arg .../"}
 
 test ns_cache_names-1.0 {syntax: ns_cache_names} -body {
     ns_cache_names x

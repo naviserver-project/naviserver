@@ -419,7 +419,7 @@ NsTclRegisterUrl2FileObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_
     Ns_ObjvSpec args[] = {
         {"url",        Ns_ObjvString, &url,       NULL},
         {"script",     Ns_ObjvObj,    &scriptObj, NULL},
-        {"?args",      Ns_ObjvArgs,   &remain,    NULL},
+        {"?arg",       Ns_ObjvArgs,   &remain,    NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {

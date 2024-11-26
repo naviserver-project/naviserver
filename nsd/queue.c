@@ -1513,7 +1513,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     };
     Ns_ObjvSpec args[] = {
         {"subcmd",  Ns_ObjvIndex,  &subcmd,   subcmds},
-        {"?args",   Ns_ObjvArgs,   &nargs,    NULL},
+        {"?arg",    Ns_ObjvArgs,   &nargs,    NULL},
         {NULL, NULL, NULL, NULL}
     };
 

@@ -93,7 +93,7 @@ NsTclRegisterProcObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
         {"method",     Ns_ObjvString, &method,    NULL},
         {"url",        Ns_ObjvString, &url,       NULL},
         {"script",     Ns_ObjvObj,    &scriptObj, NULL},
-        {"?args",      Ns_ObjvArgs,   &remain,    NULL},
+        {"?arg",       Ns_ObjvArgs,   &remain,    NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -150,7 +150,7 @@ NsTclRegisterProxyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T o
         {"method",     Ns_ObjvString, &method,    NULL},
         {"protocol",   Ns_ObjvString, &protocol,  NULL},
         {"script",     Ns_ObjvObj,    &scriptObj, NULL},
-        {"?args",      Ns_ObjvArgs,   &remain,    NULL},
+        {"?arg",       Ns_ObjvArgs,   &remain,    NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
@@ -297,7 +297,7 @@ NsTclRegisterFilterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
         {"method",     Ns_ObjvString, &method,     NULL},
         {"urlPattern", Ns_ObjvString, &urlPattern, NULL},
         {"script",     Ns_ObjvObj,    &scriptObj,  NULL},
-        {"?args",      Ns_ObjvArgs,   &remain,     NULL},
+        {"?arg",       Ns_ObjvArgs,   &remain,     NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -386,7 +386,7 @@ NsTclRegisterTraceObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T o
         {"method",     Ns_ObjvString, &method,     NULL},
         {"urlPattern", Ns_ObjvString, &urlPattern, NULL},
         {"script",     Ns_ObjvObj,    &scriptObj,  NULL},
-        {"?args",      Ns_ObjvArgs,   &remain,     NULL},
+        {"?arg",       Ns_ObjvArgs,   &remain,     NULL},
         {NULL, NULL, NULL, NULL}
     };
 

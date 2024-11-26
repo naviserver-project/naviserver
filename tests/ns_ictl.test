@@ -51,19 +51,19 @@ test ns_ictl-1.9 {syntax: ns_ictl maxconcurrentupdates} -body {
 
 test ns_ictl-1.10 {syntax: ns_ictl oncleanup} -body {
     ns_ictl oncleanup
-} -returnCodes error -result {wrong # args: should be "ns_ictl oncleanup /script/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "ns_ictl oncleanup /script/ ?/arg .../?"}
 
 test ns_ictl-1.11 {syntax: ns_ictl oncreate} -body {
     ns_ictl oncreate
-} -returnCodes error -result {wrong # args: should be "ns_ictl oncreate /script/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "ns_ictl oncreate /script/ ?/arg .../?"}
 
 test ns_ictl-1.12 {syntax: ns_ictl ondelete} -body {
     ns_ictl ondelete
-} -returnCodes error -result {wrong # args: should be "ns_ictl ondelete /script/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "ns_ictl ondelete /script/ ?/arg .../?"}
 
 test ns_ictl-1.13 {syntax: ns_ictl oninit} -body {
     ns_ictl oninit
-} -returnCodes error -result {wrong # args: should be "ns_ictl oninit /script/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "ns_ictl oninit /script/ ?/arg .../?"}
 
 test ns_ictl-1.14 {syntax: ns_ictl runtraces} -body {
     ns_ictl runtraces
@@ -75,7 +75,7 @@ test ns_ictl-1.15 {syntax: ns_ictl save} -body {
 
 test ns_ictl-1.16 {syntax: ns_ictl trace} -body {
     ns_ictl trace
-} -returnCodes error -result {wrong # args: should be "ns_ictl trace /when/ /script/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "ns_ictl trace /when/ /script/ ?/arg .../?"}
 
 test ns_ictl-1.17 {syntax: ns_ictl update} -body {
     ns_ictl update x

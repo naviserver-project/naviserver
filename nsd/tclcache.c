@@ -303,7 +303,7 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
     };
     Ns_ObjvSpec args[] = {
         {"cache",     ObjvCache,     &cPtr,   clientData},
-        {"?args",     Ns_ObjvArgs,   &nargs,  NULL},
+        {"?arg",      Ns_ObjvArgs,   &nargs,  NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -465,7 +465,7 @@ NsTclCacheEvalObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
     Ns_ObjvSpec args[] = {
         {"cache",    ObjvCache,     &cPtr,   clientData},
         {"key",      Ns_ObjvString, &key,    NULL},
-        {"args",     Ns_ObjvArgs,   &nargs,  NULL},
+        {"arg",      Ns_ObjvArgs,   &nargs,  NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -710,7 +710,7 @@ CacheAppendObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     Ns_ObjvSpec args[] = {
         {"cache", ObjvCache,     &cPtr,      clientData},
         {"key",   Ns_ObjvString, &key,       NULL},
-        {"args",  Ns_ObjvArgs,   &nelements, NULL},
+        {"arg",   Ns_ObjvArgs,   &nelements, NULL},
         {NULL, NULL, NULL, NULL}
     };
     args[0].arg = clientData; /* pass non-constant clientData for "cache" */
@@ -931,7 +931,7 @@ NsTclCacheFlushObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
     };
     Ns_ObjvSpec   args[] = {
         {"cache",    ObjvCache,    &cPtr,      clientData},
-        {"?args",    Ns_ObjvArgs,  &npatterns, NULL},
+        {"?arg",     Ns_ObjvArgs,  &npatterns, NULL},
         {NULL, NULL, NULL, NULL}
     };
     args[0].arg = clientData; /* pass non-constant clientData for "cache" */

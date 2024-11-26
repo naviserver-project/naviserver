@@ -1064,17 +1064,17 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             Ns_ObjvSpec getArgs[] = {
                 {"array",     Ns_ObjvObj,  &arrayObj,     NULL},
                 {"key",       Ns_ObjvObj,  &keyObj,       NULL},
-                {"?dictkeys", Ns_ObjvArgs, &nargs,        NULL},
+                {"?dictkey",  Ns_ObjvArgs, &nargs,        NULL},
                 {NULL, NULL, NULL, NULL}
             }, existsArgs[] = {
                 {"array",     Ns_ObjvObj,  &arrayObj,     NULL},
                 {"key",       Ns_ObjvObj,  &keyObj,       NULL},
-                {"dictkeys",  Ns_ObjvArgs, &nargs,        NULL},
+                {"dictkey" ,  Ns_ObjvArgs, &nargs,        NULL},
                 {NULL, NULL, NULL, NULL}
             }, getdefArgs[] = {
                 {"array",     Ns_ObjvObj,  &arrayObj,     NULL},
                 {"key",       Ns_ObjvObj,  &keyObj,       NULL},
-                {"args",      Ns_ObjvArgs, &nargs,        NULL},
+                {"arg",       Ns_ObjvArgs, &nargs,        NULL},
                 {NULL, NULL, NULL, NULL}
             };
             Ns_ObjvSpec getOpts[] = {
@@ -1267,13 +1267,13 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
                 {"array",     Ns_ObjvObj,  &arrayObj,     NULL},
                 {"key",       Ns_ObjvObj,  &keyObj,       NULL},
                 {"dictkey",   Ns_ObjvObj,  &dictKeyObj,   NULL},
-                {"args",      Ns_ObjvArgs, &nargs,        NULL},
+                {"arg",       Ns_ObjvArgs, &nargs,        NULL},
                 {NULL, NULL, NULL, NULL}
             }, appendArgs[] = {
                 {"array",     Ns_ObjvObj,  &arrayObj,     NULL},
                 {"key",       Ns_ObjvObj,  &keyObj,       NULL},
                 {"dictkey",   Ns_ObjvObj,  &dictKeyObj,   NULL},
-                {"?args",     Ns_ObjvArgs, &nargs,        NULL},
+                {"?arg",      Ns_ObjvArgs, &nargs,        NULL},
                 {NULL, NULL, NULL, NULL}
             }, incrArgs[] = {
                 {"array",      Ns_ObjvObj, &arrayObj,     NULL},

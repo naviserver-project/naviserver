@@ -477,7 +477,7 @@ test nsv-dict-set.0 {nsv_dict set - syntax test} -body {
     nsv_dict set a1
 } -cleanup {
     nsv_unset -nocomplain a1
-} -returnCodes {error} -result {wrong # args: should be "nsv_dict set /array/ /key/ /dictkey/ /args/"}
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict set /array/ /key/ /dictkey/ /arg .../"}
 
 test nsv-dict-set.1 {nsv_dict set new} -body {
     # Create an array, a key and a dict entry in one command
@@ -527,7 +527,7 @@ test nsv-dict-get.0 {nsv_dict get - syntax test} -body {
     nsv_dict get a1
 } -cleanup {
     nsv_unset -nocomplain a1
-} -returnCodes {error} -result {wrong # args: should be "nsv_dict get ?-varname /varname/? ?--? /array/ /key/ ?/dictkeys/?"}
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict get ?-varname /varname/? ?--? /array/ /key/ ?/dictkey .../?"}
 
 test nsv-dict-get.1 {nsv_dict get} -body {
     # add dict values for k1
@@ -585,13 +585,13 @@ test nsv-dict-getdef.0.1 {nsv_dict getdef - syntax test no key} -body {
     nsv_dict getdef a1
 } -cleanup {
     nsv_unset -nocomplain a1
-} -returnCodes {error} -result {wrong # args: should be "nsv_dict getdef ?-varname /varname/? ?--? /array/ /key/ /args/"}
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict getdef ?-varname /varname/? ?--? /array/ /key/ /arg .../"}
 
 test nsv-dict-getdef.0.2 {nsv_dict getdef - syntax test, key, no dict key, not default} -body {
     nsv_dict getdef a1 k1
 } -cleanup {
     nsv_unset -nocomplain a1
-} -returnCodes {error} -result {wrong # args: should be "nsv_dict getdef ?-varname /varname/? ?--? /array/ /key/ /args/"}
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict getdef ?-varname /varname/? ?--? /array/ /key/ /arg .../"}
 
 test nsv-dict-getdef.0.3 {nsv_dict getdef - syntax test, key, no dict key} -body {
     nsv_dict getdef a1 k1 default1
@@ -661,12 +661,12 @@ test nsv-dict-exists.0 {nsv_dict exists - syntax test} -body {
     nsv_dict exists a1
 } -cleanup {
     nsv_unset -nocomplain a1
-} -returnCodes {error} -result {wrong # args: should be "nsv_dict exists /array/ /key/ /dictkeys/"}
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict exists /array/ /key/ /dictkey .../"}
 test nsv-dict-exists.1 {nsv_dict exists - syntax test, nos such nsv key} -body {
     nsv_dict exists a1 k1
 } -cleanup {
     nsv_unset -nocomplain a1
-} -returnCodes {error} -result {wrong # args: should be "nsv_dict exists /array/ /key/ /dictkeys/"}
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict exists /array/ /key/ /dictkey .../"}
 
 test nsv-dict-exists.1 {nsv_dict exists} -body {
     # add dict values for k1
@@ -706,13 +706,13 @@ test nsv-dict-unset.0 {nsv_dict unset - syntax test} -body {
     nsv_dict unset a1
 } -cleanup {
     nsv_unset -nocomplain a1
-} -returnCodes {error} -result {wrong # args: should be "nsv_dict unset /array/ /key/ /dictkeys/"}
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict unset /array/ /key/ /dictkey .../"}
 
 test nsv-dict-unset.1 {nsv_dict unset - syntax test} -body {
     nsv_dict unset a1 k1
 } -cleanup {
     nsv_unset -nocomplain a1
-} -returnCodes {error} -result {wrong # args: should be "nsv_dict unset /array/ /key/ /dictkeys/"}
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict unset /array/ /key/ /dictkey .../"}
 
 test nsv-dict-unset.1 {nsv_dict unset} -body {
     # add dict values for k1
@@ -796,7 +796,7 @@ test nsv-dict-append.0 {nsv_dict append - syntax test} -body {
     nsv_dict append a1
 } -cleanup {
     nsv_unset -nocomplain a1
-} -returnCodes {error} -result {wrong # args: should be "nsv_dict append /array/ /key/ /dictkey/ ?/args/?"}
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict append /array/ /key/ /dictkey/ ?/arg .../?"}
 
 test nsv-dict-append.1 {nsv_dict append create new entry} -body {
     nsv_dict append a1 k1 x a
@@ -841,7 +841,7 @@ test nsv-dict-lappend.0 {nsv_dict lappend - syntax test} -body {
     nsv_dict lappend a1
 } -cleanup {
     nsv_unset -nocomplain a1
-} -returnCodes {error} -result {wrong # args: should be "nsv_dict lappend /array/ /key/ /dictkey/ ?/args/?"}
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict lappend /array/ /key/ /dictkey/ ?/arg .../?"}
 
 test nsv-dict-lappend.1 {nsv_dict lappend create new entry} -body {
     # add dict values for k1

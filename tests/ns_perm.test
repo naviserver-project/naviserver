@@ -12,7 +12,7 @@ test ns_perm-1.1 {syntax: ns_perm} -body {
 
 test ns_perm-2.1 {syntax: ns_perm adduser} -body {
     ns_perm adduser
-} -returnCodes error -result {wrong # args: should be "ns_perm adduser ?-allow? ?-deny? ?-clear? ?-salt /string/? ?--? /name/ /pwd/ /field/ ?/hosts/?"}
+} -returnCodes error -result {wrong # args: should be "ns_perm adduser ?-allow? ?-deny? ?-clear? ?-salt /string/? ?--? /name/ /encpass/ /userfield/ ?/host .../?"}
 
 test ns_perm-2.2 {syntax: ns_perm deluser} -body {
     ns_perm deluser
@@ -20,7 +20,7 @@ test ns_perm-2.2 {syntax: ns_perm deluser} -body {
 
 test ns_perm-2.3 {syntax: ns_perm addgroup} -body {
     ns_perm addgroup
-} -returnCodes error -result {wrong # args: should be "ns_perm addgroup /group/ /user/ ?/user/ ...?"}
+} -returnCodes error -result {wrong # args: should be "ns_perm addgroup /group/ /user/ ?/user .../?"}
 
 test ns_perm-2.4 {syntax: ns_perm delgroup} -body {
     ns_perm delgroup
@@ -28,19 +28,19 @@ test ns_perm-2.4 {syntax: ns_perm delgroup} -body {
 
 test ns_perm-2.5 {syntax: ns_perm allowuser} -body {
     ns_perm allowuser
-} -returnCodes {ok error} -result {wrong # args: should be "ns_perm allowuser ?-noinherit? ?--? /method/ /url/ /users/"}
+} -returnCodes {ok error} -result {wrong # args: should be "ns_perm allowuser ?-noinherit? ?--? /method/ /url/ /user .../"}
 
 test ns_perm-2.6 {syntax: ns_perm denyuser} -body {
     ns_perm denyuser
-} -returnCodes error -result {wrong # args: should be "ns_perm denyuser ?-noinherit? ?--? /method/ /url/ /users/"}
+} -returnCodes error -result {wrong # args: should be "ns_perm denyuser ?-noinherit? ?--? /method/ /url/ /user .../"}
 
 test ns_perm-2.7 {syntax: ns_perm allowgroup} -body {
     ns_perm allowgroup
-} -returnCodes error -result {wrong # args: should be "ns_perm allowgroup ?-noinherit? ?--? /method/ /url/ /users/"}
+} -returnCodes error -result {wrong # args: should be "ns_perm allowgroup ?-noinherit? ?--? /method/ /url/ /user .../"}
 
 test ns_perm-2.8 {syntax: ns_perm denygroup} -body {
     ns_perm denygroup
-} -returnCodes error -result {wrong # args: should be "ns_perm denygroup ?-noinherit? ?--? /method/ /url/ /users/"}
+} -returnCodes error -result {wrong # args: should be "ns_perm denygroup ?-noinherit? ?--? /method/ /url/ /user .../"}
 
 test ns_perm-2.9 {syntax: ns_perm checkpass} -body {
     ns_perm checkpass
@@ -48,7 +48,7 @@ test ns_perm-2.9 {syntax: ns_perm checkpass} -body {
 
 test ns_perm-2.10 {syntax: ns_perm setpass} -body {
     ns_perm setpass
-} -returnCodes error -result {wrong # args: should be "ns_perm setpass /user/ /pwd/ ?/salt/?"}
+} -returnCodes error -result {wrong # args: should be "ns_perm setpass /user/ /encpass/ ?/salt/?"}
 
 test ns_perm-2.11 {syntax: ns_perm listusers} -body {
     ns_perm listusers ?
