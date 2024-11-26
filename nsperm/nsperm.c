@@ -1269,13 +1269,19 @@ static int AllowDenyObjCmd(
         {"--",         Ns_ObjvBreak,  NULL,    NULL},
         {NULL, NULL, NULL, NULL}
     };
-    Ns_ObjvSpec args[] = {
+    Ns_ObjvSpec argsUser[] = {
         {"method", Ns_ObjvString, &method, NULL},
-        {"url", Ns_ObjvString, &url, NULL},
-        {"user", Ns_ObjvArgs, &nargs, NULL},
+        {"url",    Ns_ObjvString, &url, NULL},
+        {"user",   Ns_ObjvArgs, &nargs, NULL},
         {NULL, NULL, NULL, NULL}
     };
-
+    Ns_ObjvSpec argsGroup[] = {
+        {"method", Ns_ObjvString, &method, NULL},
+        {"url",    Ns_ObjvString, &url, NULL},
+        {"group",  Ns_ObjvArgs, &nargs, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+    Ns_ObjvSpec *args = user ? argsUser : argsGroup;
 
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
@@ -1514,7 +1520,7 @@ CheckPassObjCmd(ClientData data, Tcl_Interp * interp, TCL_SIZE_T objc, Tcl_Obj *
     Tcl_HashEntry *hPtr;
 
     if (objc != 4) {
-        Tcl_WrongNumArgs(interp, 2, objv, "/user/ /pwd/");
+        Tcl_WrongNumArgs(interp, 2, objv, "/user/ /passwd/");
         return TCL_ERROR;
     }
     user = Tcl_GetString(objv[2]);

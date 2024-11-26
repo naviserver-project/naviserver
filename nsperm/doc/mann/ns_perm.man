@@ -74,13 +74,15 @@ that includes the users listed after the group name.
 [call [cmd "ns_perm delgroup"] \
 	[arg name]]
 
-Delete group from the memory.
+Deletes group from the memory.
 
 
 [call [cmd "ns_perm allowuser"] \
 	[opt [option -noinherit]] \
         [opt --] \
-        ]
+	[arg method] \
+	[arg url] \
+	[arg "user ..."] ]
 
 Allow the specified user to access the
 specified method and URL combination.  If [option -noinherit] is specified,
@@ -92,7 +94,7 @@ URL are allowed as well.
         [opt --] \
 	[arg method] \
 	[arg url] \
-	[arg user...] \
+	[arg "user ..."] \
         ]
 
 Deny the specified user access to the
@@ -105,7 +107,7 @@ are denied as well.
         [opt --] \
 	[arg method] \
 	[arg url] \
-	[arg group...]]
+	[arg "group ..."]]
 
 Allow the specified group access to the
 specified method and URL combination.  If [option -noinherit] is specified,
@@ -117,36 +119,36 @@ URL are allowed as well.
         [opt --] \
 	[arg method] \
 	[arg url] \
-	[arg group...]]
+	[arg "group ..."]]
 
-Deny the specified group access to the
+Deny the specified [arg group] access to the
 specified method and URL combination.  If [option -noinherit] is specified,
 only access to the exact URL is denied; otherwise, URLs under that URL
 are denied as well.
 
 [call [cmd "ns_perm checkpass"] [arg user] [arg passwd]]
 
-Check if the specified plain-text
+Checks if the specified plain-text
 password is correct for the specified user.  A Tcl error is thrown if
 it does not match.
 
-[call [cmd "ns_perm setpass"] [arg user] [arg encpass]]
+[call [cmd "ns_perm setpass"] [arg user] [arg encpass] [opt [arg salt]]]
 
 Updates the specified user's password to the
-encrypted password [arg encpass]. The password should be encrypted using
-ns_encrypt.
+encrypted password [arg encpass] and the optional provided [arg salt].
+The password should be encrypted using [cmd ns_encrypt].
 
 [call [cmd "ns_perm listusers"]]
 
-Produce Tcl list of all current users in the format username password ....
+Returns a Tcl list of all current users in the format username password ....
 
 [call [cmd "ns_perm listgroups"]]
 
-Produce Tcl list with all registered groups in the format: groupname {user ...} ...
+Returns a Tcl list with all registered groups in the format: groupname {user ...} ...
 
 [call [cmd "ns_perm listperms"]]
 
-Produce Tcl list with all registered allow/deny statements for each url
+Returns a Tcl list with all registered allow/deny statements for each URL.
 
 
 [call [cmd ns_permreload]]
@@ -158,9 +160,9 @@ then loads files from the disk
 [call [cmd ns_permpasswd] \
 	[arg user] \
 	[arg oldpasswd] \
-	[arg newpassed]]
+	[arg newpasswd]]
 
-Update an existing user's password, both in the running
+Updates an existing user's password, both in the running
 server's memory as well as in the passwd file on disk. The user is the
 name of the user whose password is to be updated. The [arg oldpasswd]
 argument is the user's old password, or the nsadmin password, in plain

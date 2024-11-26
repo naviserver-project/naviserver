@@ -190,7 +190,7 @@ proc init_nsperm { } {
 # for the action to succeed.
 #
 
-proc ns_permpasswd { targetuser oldpass newpass } {
+proc ns_permpasswd { user oldpasswd newpasswd } {
 
     set dir [file join [ns_info home] modules nsperm]
     set filename [file join $dir passwd]
@@ -201,8 +201,8 @@ proc ns_permpasswd { targetuser oldpass newpass } {
     # Verify that this is an allowed action
     #
 
-    if {[catch {ns_perm checkpass $targetuser $oldpass} ignore] != 0} {
-        if {[catch {ns_perm checkpass nsadmin $oldpass} ignore] != 0} {
+    if {[catch {ns_perm checkpass $user $oldpasswd} ignore] != 0} {
+        if {[catch {ns_perm checkpass nsadmin $oldpasswd} ignore] != 0} {
             return "incorrect old password"
         }
     }
@@ -216,9 +216,9 @@ proc ns_permpasswd { targetuser oldpass newpass } {
                 if {[llength $list] != 7} {
                     ns_log error "ns_permpassword: bad line in $filename: $line"
                 } else {
-                    set user [lindex $list 0]
-                    if {$user == $targetuser} {
-                        set entryLine "[lindex $list 0]:[ns_crypt $newpass CU]:[lindex $list 2]:[lindex $list 3]:[lindex $list 4]:[lindex $list 5]:[lindex $list 6]"
+                    set u [lindex $list 0]
+                    if {$u eq $user} {
+                        set entryLine "[lindex $list 0]:[ns_crypt $newpasswd CU]:[lindex $list 2]:[lindex $list 3]:[lindex $list 4]:[lindex $list 5]:[lindex $list 6]"
                     }
                 }
             }
@@ -233,7 +233,7 @@ proc ns_permpasswd { targetuser oldpass newpass } {
     }
     close $file
 
-    ns_perm setpass $targetuser [ns_crypt $newpass CU]
+    ns_perm setpass $user [ns_crypt $newpasswd CU]
     return ""
 }
 

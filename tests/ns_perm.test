@@ -36,15 +36,15 @@ test ns_perm-2.6 {syntax: ns_perm denyuser} -body {
 
 test ns_perm-2.7 {syntax: ns_perm allowgroup} -body {
     ns_perm allowgroup
-} -returnCodes error -result {wrong # args: should be "ns_perm allowgroup ?-noinherit? ?--? /method/ /url/ /user .../"}
+} -returnCodes error -result {wrong # args: should be "ns_perm allowgroup ?-noinherit? ?--? /method/ /url/ /group .../"}
 
 test ns_perm-2.8 {syntax: ns_perm denygroup} -body {
     ns_perm denygroup
-} -returnCodes error -result {wrong # args: should be "ns_perm denygroup ?-noinherit? ?--? /method/ /url/ /user .../"}
+} -returnCodes error -result {wrong # args: should be "ns_perm denygroup ?-noinherit? ?--? /method/ /url/ /group .../"}
 
 test ns_perm-2.9 {syntax: ns_perm checkpass} -body {
     ns_perm checkpass
-} -returnCodes error -result {wrong # args: should be "ns_perm checkpass /user/ /pwd/"}
+} -returnCodes error -result {wrong # args: should be "ns_perm checkpass /user/ /passwd/"}
 
 test ns_perm-2.10 {syntax: ns_perm setpass} -body {
     ns_perm setpass
@@ -68,9 +68,9 @@ test ns_perm-2.14 {syntax: ns_perm ns_permreload} -body {
 
 test ns_perm-2.15 {syntax: ns_permpasswd} -body {
     ns_permpasswd
-} -returnCodes error -result {wrong # args: should be "ns_permpasswd targetuser oldpass newpass"}
+} -returnCodes error -result {wrong # args: should be "ns_permpasswd user oldpasswd newpasswd"}
 
-# Tcl proc ns_permpasswd: message should be {wrong # args: should be "ns_permpasswd /targetuser/ /oldpass/ /newpass/"}
+# Tcl proc ns_permpasswd: message should be {wrong # args: should be "ns_permpasswd /user/ /oldpasswd/ /newpasswd/"}
 
 
 cleanupTests
