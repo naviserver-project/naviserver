@@ -105,12 +105,25 @@ Returns the number of bytes in the content passed in.
 Returns or sets the number of bytes in the content to be sent. 
 
 
-[call [cmd  "ns_conn copy"] [arg off] [arg len] [arg channelId]]
+[call [cmd  "ns_conn copy"] [arg ofsetf] [arg length] [arg channelId]]
 
 Copies number of bytes from the current connection string data to a
-Tcl channel.  The arguments [arg off] and [arg len] denote an offset
+Tcl channel.  The arguments [arg offset] and [arg length] denote an offset
 in this string and the length to be copied. If no string data is
 provided, an exception is raised.
+
+[para] This operation is primarily suited for special operations, since
+it is only useful, since it gets the raw data of the received content,
+which is only available, when the received data is not spooled to a
+file. For general purpose applications, [cmd "ns_getcontent"] might be
+the better choice.
+
+[para]
+This operation is primarily designed for specialized use cases, as it
+retrieves the raw data of the received content. However, this raw data
+is accessible only when the received content is not spooled to a
+file. For general-purpose applications, using [cmd "ns_getcontent"] is
+likely a more suitable choice.
 
 [call [cmd  "ns_conn currentaddr"]]
 Returns the local IP address (IPv4 or IPv6) of the current connection
@@ -427,7 +440,7 @@ encoded response.
 [example_end]
 
 [see_also ns_adp ns_locationproc ns_getform ns_set ns_queryget \
-  ns_time ns_subnetmatch]
+  ns_time ns_getcontent]
 [keywords "server built-in" IPv4 IPv6 gzip connection reverseproxy SNI \
   "virtual hosting"]
 
