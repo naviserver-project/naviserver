@@ -13,15 +13,15 @@ test nsdb-1.0 {syntax: ns_db} -body {
 
 test nsdb-1.0.1 {syntax: ns_db bouncepool} -body {
     ns_db bouncepool
-} -returnCodes error -result {wrong # args: should be "ns_db bouncepool /pool/"}
+} -returnCodes error -result {wrong # args: should be "ns_db bouncepool /poolname/"}
 
 test nsdb-1.0.2 {syntax: ns_db cancel} -body {
     ns_db cancel
-} -returnCodes error -result {wrong # args: should be "ns_db cancel /dbId/"}
+} -returnCodes error -result {wrong # args: should be "ns_db cancel /handle/"}
 
 test nsdb-1.0.4 {syntax: ns_db connected} -body {
     ns_db connected
-} -returnCodes error -result {wrong # args: should be "ns_db connected /dbId/"}
+} -returnCodes error -result {wrong # args: should be "ns_db connected /handle/"}
 
 test nsdb-1.0.5 {syntax: ns_db currenthandles} -body {
     ns_db currenthandles ?
@@ -29,55 +29,55 @@ test nsdb-1.0.5 {syntax: ns_db currenthandles} -body {
 
 test nsdb-1.0.6 {syntax: ns_db datasource} -body {
     ns_db datasource
-} -returnCodes error -result {wrong # args: should be "ns_db datasource /dbId/"}
+} -returnCodes error -result {wrong # args: should be "ns_db datasource /handle/"}
 
 test nsdb-1.0.7 {syntax: ns_db bindrow} -body {
     ns_db bindrow
-} -returnCodes error -result {wrong # args: should be "ns_db bindrow /dbId/"}
+} -returnCodes error -result {wrong # args: should be "ns_db bindrow /handle/"}
 
 test nsdb-1.0.8 {syntax: ns_db dbtype} -body {
     ns_db dbtype
-} -returnCodes error -result {wrong # args: should be "ns_db dbtype /dbId/"}
+} -returnCodes error -result {wrong # args: should be "ns_db dbtype /handle/"}
 
 test nsdb-1.0.9 {syntax: ns_db dml} -body {
     ns_db dml
-} -returnCodes error -result {wrong # args: should be "ns_db dml /dbId/ /sql/"}
+} -returnCodes error -result {wrong # args: should be "ns_db dml /handle/ /sql/"}
 
 test nsdb-1.0.10 {syntax: ns_db driver} -body {
     ns_db driver
-} -returnCodes error -result {wrong # args: should be "ns_db driver /dbId/"}
+} -returnCodes error -result {wrong # args: should be "ns_db driver /handle/"}
 
 test nsdb-1.0.11 {syntax: ns_db exception} -body {
     ns_db exception
-} -returnCodes error -result {wrong # args: should be "ns_db exception /dbId/"}
+} -returnCodes error -result {wrong # args: should be "ns_db exception /handle/"}
 
 test nsdb-1.0.12 {syntax: ns_db exec} -body {
     ns_db exec
-} -returnCodes error -result {wrong # args: should be "ns_db exec /dbId/ /sql/"}
+} -returnCodes error -result {wrong # args: should be "ns_db exec /handle/ /sql/"}
 
 test nsdb-1.0.13 {syntax: ns_db flush} -body {
     ns_db flush
-} -returnCodes error -result {wrong # args: should be "ns_db flush /dbId/"}
+} -returnCodes error -result {wrong # args: should be "ns_db flush /handle/"}
 
 test nsdb-1.0.14 {syntax: ns_db gethandle} -body {
     ns_db gethandle "" 1 ?
-} -returnCodes error -result {wrong # args: should be "ns_db gethandle ?-timeout /time/? ?--? ?/pool/? ?/nhandles[1,MAX]/?"}
+} -returnCodes error -result {wrong # args: should be "ns_db gethandle ?-timeout /time/? ?--? ?/poolname/? ?/nhandles[1,MAX]/?"}
 
 test nsdb-1.0.15 {syntax: ns_db getrow} -body {
     ns_db getrow
-} -returnCodes error -result {wrong # args: should be "ns_db getrow /dbId/ /setId/"}
+} -returnCodes error -result {wrong # args: should be "ns_db getrow /handle/ /setId/"}
 
 test nsdb-1.0.16 {syntax: ns_db logminduration} -body {
     ns_db logminduration "" 1s ?
-} -returnCodes error -result {wrong # args: should be "ns_db logminduration ?/pool/? ?/minduration/?"}
+} -returnCodes error -result {wrong # args: should be "ns_db logminduration ?/poolname/? ?/minduration/?"}
 
 test nsdb-1.0.18 {syntax: ns_db password} -body {
     ns_db password
-} -returnCodes error -result {wrong # args: should be "ns_db password /dbId/"}
+} -returnCodes error -result {wrong # args: should be "ns_db password /handle/"}
 
 test nsdb-1.0.19 {syntax: ns_db poolname} -body {
     ns_db poolname
-} -returnCodes error -result {wrong # args: should be "ns_db poolname /dbId/"}
+} -returnCodes error -result {wrong # args: should be "ns_db poolname /handle/"}
 
 test nsdb-1.0.20 {syntax: ns_db pools} -body {
     ns_db pools ?
@@ -85,39 +85,39 @@ test nsdb-1.0.20 {syntax: ns_db pools} -body {
 
 test nsdb-1.0.21 {syntax: ns_db releasehandle} -body {
     ns_db releasehandle
-} -returnCodes error -result {wrong # args: should be "ns_db releasehandle /dbId/"}
+} -returnCodes error -result {wrong # args: should be "ns_db releasehandle /handle/"}
 
 test nsdb-1.0.22 {syntax: ns_db rowcount} -body {
     ns_db rowcount
-} -returnCodes error -result {wrong # args: should be "ns_db rowcount /dbId/"}
+} -returnCodes error -result {wrong # args: should be "ns_db rowcount /handle/"}
 
 test nsdb-1.0.23 {syntax: ns_db select} -body {
     ns_db select
-} -returnCodes error -result {wrong # args: should be "ns_db select /dbId/ /sql/"}
+} -returnCodes error -result {wrong # args: should be "ns_db select /handle/ /sql/"}
 
 test nsdb-1.0.24 {syntax: ns_db setexception} -body {
     ns_db setexception
-} -returnCodes error -result {wrong # args: should be "ns_db setexception /dbId/ /code/ /message/"}
+} -returnCodes error -result {wrong # args: should be "ns_db setexception /handle/ /code/ /message/"}
 
 test nsdb-1.0.25 {syntax: ns_db sp_exec} -body {
     ns_db sp_exec
-} -returnCodes error -result {wrong # args: should be "ns_db sp_exec /dbId/"}
+} -returnCodes error -result {wrong # args: should be "ns_db sp_exec /handle/"}
 
 test nsdb-1.0.26 {syntax: ns_db sp_getparams} -body {
     ns_db sp_getparams
-} -returnCodes error -result {wrong # args: should be "ns_db sp_getparams /dbId/"}
+} -returnCodes error -result {wrong # args: should be "ns_db sp_getparams /handle/"}
 
 test nsdb-1.0.27 {syntax: ns_db sp_returncode} -body {
     ns_db sp_returncode
-} -returnCodes error -result {wrong # args: should be "ns_db sp_returncode /dbId/"}
+} -returnCodes error -result {wrong # args: should be "ns_db sp_returncode /handle/"}
 
 test nsdb-1.0.28 {syntax: ns_db sp_setparam} -body {
     ns_db sp_setparam
-} -returnCodes error -result {wrong # args: should be "ns_db sp_setparam /dbId/ /paramname/ /type/ in|out /value/"}
+} -returnCodes error -result {wrong # args: should be "ns_db sp_setparam /handle/ /paramname/ /type/ in|out /value/"}
 
 test nsdb-1.0.29 {syntax: ns_db sp_start} -body {
     ns_db sp_start
-} -returnCodes error -result {wrong # args: should be "ns_db sp_start /dbId/ /sql/"}
+} -returnCodes error -result {wrong # args: should be "ns_db sp_start /handle/ /procname/"}
 
 test nsdb-1.0.30 {syntax: ns_db stats} -body {
     ns_db stats ?
@@ -125,11 +125,11 @@ test nsdb-1.0.30 {syntax: ns_db stats} -body {
 
 test nsdb-1.0.31 {syntax: ns_db user} -body {
     ns_db user
-} -returnCodes error -result {wrong # args: should be "ns_db user /dbId/"}
+} -returnCodes error -result {wrong # args: should be "ns_db user /handle/"}
 
 test nsdb-1.0.32 {syntax: ns_db verbose} -body {
     ns_db verbose
-} -returnCodes error -result {wrong # args: should be "ns_db verbose /dbID/ ?/verbose/?"}
+} -returnCodes error -result {wrong # args: should be "ns_db verbose /handle/ ?/verbose/?"}
 
 
 
@@ -147,11 +147,11 @@ test nsdb-1.3 {syntax: ns_dbconfigpath} -body {
 
 test nsdb-1.4 {syntax: ns_dberrorcode} -body {
     ns_dberrorcode
-} -returnCodes error -result {wrong # args: should be "ns_dberrorcode /dbId/"}
+} -returnCodes error -result {wrong # args: should be "ns_dberrorcode /handle/"}
 
 test nsdb-1.5 {syntax: ns_dberrormsg} -body {
     ns_dberrormsg
-} -returnCodes {ok error} -result {wrong # args: should be "ns_dberrormsg /dbId/"}
+} -returnCodes {ok error} -result {wrong # args: should be "ns_dberrormsg /handle/"}
 
 test nsdb-1.6 {syntax: ns_dbquotename} -body {
     ns_dbquotename
@@ -160,7 +160,7 @@ test nsdb-1.6 {syntax: ns_dbquotename} -body {
 
 test nsdb-1.7 {syntax: ns_quotelisttolist} -body {
     ns_quotelisttolist
-} -returnCodes error -result {wrong # args: should be "ns_quotelisttolist /quotelist/"}
+} -returnCodes error -result {wrong # args: should be "ns_quotelisttolist /string/"}
 
 test nsdb-1.8 {syntax: ns_localsqltimestamp} -body {
     ns_localsqltimestamp x
@@ -173,7 +173,7 @@ test nsdb-1.9 {syntax: ns_buildsqldate} -body {
 
 test nsdb-1.10 {syntax: ns_dbpooldescription} -body {
     ns_dbpooldescription 
-} -returnCodes error -result {wrong # args: should be "ns_dbpooldescription /pool/"}
+} -returnCodes error -result {wrong # args: should be "ns_dbpooldescription /poolname/"}
 
 
 #

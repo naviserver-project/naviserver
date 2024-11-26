@@ -101,7 +101,7 @@ Returns the name of the driver of the handle.
 Returns the most recent exception for the database pool.
 
 
-[call [cmd "ns_db exec"] [arg handle] [arg sqlcommand]]
+[call [cmd "ns_db exec"] [arg handle] [arg sql]]
 
 Executes the specified SQL command. It returns either NS_DML (if the SQL command
 is a DML or DDL command) or NS_ROWS (if the SQL command returns rows, such as
@@ -116,8 +116,9 @@ getrow to get all the rows and throw them away.
 
 
 [call [cmd "ns_db gethandle"] \
-     [opt [option "-timeout [arg t]"]] \
-     [arg poolname] \
+     [opt [option "-timeout [arg time]"]] \
+     [opt --] \
+     [opt [arg poolname]] \
      [opt [arg nhandles]] ]
 
 Returns the specified number of handles from the specified pool.
@@ -139,9 +140,10 @@ become available. If timeout is greater than zero, ns_db gethandle will either
 return with the handles within that time period, or return "" if the time period
 was exceeded, or generate a Tcl error.
 See the examples for [cmd "ns_db gethandle"], below.
-The argument [arg t] can be specified in the form
+The argument [arg time] can be specified in the form
 [arg secs[opt :microsecs]], or [arg secs.fraction],
 or as a number with the time units ms, s, m, d.
+
 
 [call [cmd "ns_db getrow"] [arg handle] [arg setId]]
 
@@ -151,12 +153,16 @@ set returned by the ns_db select. It returns "1" if there are more rows waiting
 and returns "0" otherwise. If you call ns_db getrow again after already
 receiving "0" on the previous call, an error is returned.
 
-[call [cmd "ns_db logminduration"] [arg pool] [opt [arg duration]]]
+
+[call [cmd "ns_db logminduration"] [opt [arg poolname]] [opt [arg minduration]]]
 
 Queries or sets a threshold for logging of SQL statements. Log only
 statements in the error.log, when SQL logging is turned on in general
 (via "ns_logctl severity Debug(sql) ...") and the statement took at
-least the specified duration. The [arg duration] can be specified in
+least the specified duration.
+
+If [arg poolname] is omitted, the operation is applied on all database
+pools. The [arg minduration] can be specified in
 the form [arg secs[opt :microsecs]], or [arg secs.fraction], or as a
 number with the time units ms, s, m, d.
 
@@ -191,7 +197,7 @@ statements to know how many records updated.
 
 [call [cmd "ns_db select"] [arg handle] [arg sql]]
 
-ns_db select executes the SQL statement on the database server. It returns an
+Executes the SQL statement on the database server. It returns an
 ns_set with the keys set to the column names that were selected. Use ns_db
 getrow to retrieve rows. You cannot perform nested select statements. Before you
 start a new select statement, you must first either retrieve all the rows from
@@ -201,27 +207,24 @@ yet retrieved.
 
 [call [cmd "ns_db setexception"] [arg handle] [arg code] [arg message]]
 
-ns_db setexception returns the specified status code and message to the client.
+Returns the specified status code and message to the client.
 
 
 [call [cmd "ns_db sp_exec"] [arg handle]]
 
-ns_db sp_exec executes a stored procedure that has been initialized with ns_db
-sp_start and ns_db sp_setparam. It returns "NS_DML" if the command was
+Executes a stored procedure that has been initialized with
+[cmd "ns_db sp_start"] and [cmd "ns_db sp_setparam"]. It returns "NS_DML" if the command was
 successfully executed but did not return rows, or it returns "NS_ROWS" if the
 command was successfully executed and did return rows (which can then be fetched
-with ns_db bindrow and ns_db getrow). It throws an error if the command failed.
+with [cmd "ns_db bindrow"] and [cmd "ns_db getrow"]). It throws an error if the command failed.
 This function is implemented only for the Sybase database driver. See the
 Examples section, below, for an example of this function.
 
 
-[call [cmd "ns_db sp_getparams"]]
-
-ns_db sp_getparams gets any output parameters set after executing a stored
-procedure with ns_db sp_exec. It returns an ns_set or throws an error on failure.
-This function is implemented only for the Sybase database driver. See the Examples
-section, below, for an example of this function.
-
+[call [cmd "ns_db sp_getparams"] [arg handle]]
+]
+Returns any output parameters set after executing a stored
+procedure with [cmd "ns_db sp_exec"]. It returns an ns_set or throws an error on failure.
 
 [call [cmd "ns_db sp_returncode"] [arg handle]]
 
@@ -233,17 +236,17 @@ this function.
 
 [call [cmd "ns_db sp_setparam"] \
      [arg handle] \
-     [arg varname] \
-     [arg vartype] \
-     [arg direction] \
+     [arg paramname] \
+     [arg type] \
+     [const in|out] \
      [arg value] ]
 
-ns_db sp_setparam sets a parameter for a call to a stored
-procedure. [arg varname] is the name of the variable, for example
-"@name".  [arg vartype] is the data type of this parameter, for
-example "varchar". The [arg direction] argument indicates whether it
-is an input or output parameter. It must be set to either "in" or
-"out".  [arg value] denotes the parameter value to send. This function
+Sets a parameter for a call to a stored
+procedure. [arg paramname] is the name of the parameter, for example
+[term @name].  [arg type] is the data type of this parameter, for
+example [term varchar]. The nextg arguemnt denotes the direction, whether it
+is an input or output parameter. It must be set to either [term in] or
+[term out].  [arg value] denotes the parameter value to send. This function
 returns 1 on success and throws an error on failure. This function is
 implemented only for the Sybase database driver. See the Examples
 section, below, for an example of this function.
@@ -251,7 +254,7 @@ section, below, for an example of this function.
 
 [call [cmd "ns_db sp_start"] [arg handle] [arg procname]]
 
-ns_db sp_start begins execution of the stored procedure called procname.
+Begins execution of the stored procedure called [arg procname].
 It returns 0 on success and throws an error on failure. This function is
 implemented only for the Sybase database driver. See the Examples section,
 below, for an example of this function.
@@ -370,7 +373,7 @@ longer:
 
 [section CONFIGURATION]
 
-The nsdb module is typically loaded per-server, where every server
+The [term nsdb] module is typically loaded per-server, where every server
 might use multiple database pools. Below is a sample configuration for
 PostgreSQL using the [term nsdbpg] driver, using two database pools
 where [term pool1] is the default pool.

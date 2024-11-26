@@ -38,7 +38,7 @@ of the list and combined the result with a comma.
 
 [call [cmd ns_quotelisttolist] [arg string]]
 
-Transform a string with single quoted elements into a proper Tcl
+Transform [arg string] with single quoted elements into a proper Tcl
 list. In this step, remove space, backslash and single quote
 characters in the given string.
 
