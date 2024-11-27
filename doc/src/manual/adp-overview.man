@@ -271,7 +271,7 @@ as it is ready. Streaming is useful when your script may take a long
 time to complete (such as a complex database query). Content is output
 to the page gradually (incrementally) as the script is running (this is also called
 "streaming HTML"). One disadvantage of streaming HTML is that the
-server cannot return a [term Content-length] header with the
+server cannot return a [term content-length] header with the
 response, such that persistent connections are not possible.
 
 [item] [example {<% ... %>}]

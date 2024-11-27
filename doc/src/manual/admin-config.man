@@ -659,8 +659,8 @@ certificate.
 [para] It is a common requirement to redirect incoming traffic from
 HTTP to HTTPS. When a user has connected once via HTTPS, it is
 recommended to use HSTS ([uri \
-        https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security \
-        "HTTP Strict-Transport-Security"])
+        https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/strict-transport-security \
+        "HTTP strict-transport-security"])
 to cause the browser to stay on the secure connection. This is
 recommended to avoid certain man-in-the-middle attacks.
 
@@ -740,16 +740,16 @@ are as well requirements for adding response header fields for all
 requests. The following response header fields are often recommended:
 
 [example_begin]
- X-Frame-Options            "SAMEORIGIN"
- X-Content-Type-Options     "nosniff"
- X-XSS-Protection           "1; mode=block"
- Referrer-Policy            "strict-origin"
+ x-frame-options            "SAMEORIGIN"
+ x-content-type-options     "nosniff"
+ x-xss-protection           "1; mode=block"
+ referrer-policy            "strict-origin"
 [example_end]
 
 or for HTTPS requests
 
 [example_begin]
-  Strict-Transport-Security "max-age=31536000; includeSubDomains"
+  strict-transport-security "max-age=31536000; includeSubDomains"
 [example_end]
 
 or, e.g., CSP rules on static pages to address the security threads of

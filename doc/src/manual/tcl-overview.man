@@ -396,7 +396,7 @@ better-suited to different situations:
     # * The value for a particular header line is extracted
     # with "ns_set iget" (case insensitive get).
  
-    ns_register_proc GET /showbrowser showheader User-Agent
+    ns_register_proc GET /showbrowser showheader user-agent
     ns_register_proc GET /showhost    showheader Host
  
     proc showheader {key} {
@@ -480,7 +480,7 @@ by the client within a Tcl script.
  #   with "ns_set iget", the case insensitive counterpart to
  #   "ns_set get".
  
- ns_register_proc GET /showbrowser showheader User-Agent
+ ns_register_proc GET /showbrowser showheader user-agent
  ns_register_proc GET /showhost    showheader Host
  
  proc showheader {key} {
@@ -747,8 +747,8 @@ code when sending raw data to the client.
    ns_write [lb]subst [lb]ns_trim -delimiter | {
         |HTTP/1.0 302 Document follows
         |MIME-Version: 1.0
-        |Content-Type: text/html
-        |Content-Length: [lb]string length $content[rb]
+        |content-type: text/html
+        |content-length: [lb]string length $content[rb]
         |Location: [lb]ns_conn location[rb]/example/finaldest
         |
         |$content
