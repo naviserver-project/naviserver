@@ -454,7 +454,7 @@ proc ns_tagelementset {tagvar key value} {
 
     regsub -all -nocase -- "$key=$qq" $tag {} tag
     regsub -all -nocase -- "$key *= *$pp" $tag {} tag
-    append tag " value=\"$value\""
+    append tag " $key=\"$value\""
 }
 
 
