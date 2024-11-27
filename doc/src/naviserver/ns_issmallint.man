@@ -6,8 +6,8 @@
 
 [description]
 
-This command returns true only if value consists entirely of digits, and contains 
-from 1 to 6 digits. False is returned in all other cases.
+Returns true if passed value fits into an unsigned 16-bit integer.
+False is returned in all other cases.
 
 [section {COMMANDS}]
 
