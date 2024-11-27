@@ -12,7 +12,7 @@ set testdir [ns_config test home]
 
 test ns_gifsize-1.1 {syntax} -body {
     ns_gifsize
-} -returnCodes error -result {wrong # args: should be "ns_gifsize /gif_file/"}
+} -returnCodes error -result {wrong # args: should be "ns_gifsize /filename/"}
 
 
 test ns_gifsize-2.1 {file does not exist} -body {

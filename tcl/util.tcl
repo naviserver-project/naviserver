@@ -282,12 +282,12 @@ proc issmallint {val} {
 #
 # ns_issmallint --
 #
-#   Returns true if passed value is a small integer (16 bits)
+#   Returns true if passed value fits into an unsigned 16-bit integer
 #
 
-proc ns_issmallint {val} {
-    expr {[string is integer -strict $val]
-          && $val <= 65535 && $val >= -65535}
+proc ns_issmallint {value} {
+    expr {[string is integer -strict $value]
+          && $value <= 65535 && $value >= -65535}
 }
 
 

@@ -119,13 +119,13 @@ body data from memory or from a named file.
 [opt_def -body [arg body]]
 transmit the content of the passed string as the request body.
 This option is mutually exclusive with [option -body_file] and [option -body_chan].
-The implementation will try to guess the "Content-Type" of the body by checking
+The implementation will try to guess the "content-type" of the body by checking
 the type of the passed [option body].
 
 [opt_def -body_file [arg fn]]
 transmit the file specified via filename as the request body.
 This option is mutually exclusive with [option -body] and [option -body_chan].
-The implementation will try to guess the "Content-Type" of the body by checking
+The implementation will try to guess the "content-type" of the body by checking
 the extension of the passed-in [option fn].
 
 [opt_def -body_chan [arg chan]]
@@ -133,7 +133,7 @@ transmit the content specified via Tcl channel, which must be opened for
 reading, as the request body. The channel must be in blocking mode and
 should be seekable (unless the [option -body_size] is specified).
 This option is mutually exclusive with [option -body] and [option -body_file].
-Caller should put "Content-Type" header in passed [option -headers] set
+Caller should put "content-type" header in passed [option -headers] set
 since the implementation cannot guess the correct value. If none found,
 the "application/octet-stream" will be assumed.
 For [cmd "ns_http queue"] command, the [option -body_chan] channel will be
@@ -307,7 +307,7 @@ The [term task] returns the ID of the HTTP task.
 The [term url] returns the URL for the given task.
 The [term requestlength] returns the length of the complete HTTP request,
 including header line, all the headers plus the optional request body.
-The [term replylength] returns the value of the Content-Length as
+The [term replylength] returns the value of the content-length as
 returned by the remote. This can be zero if the length of returned data
 is not known in advance.
 The member [term sent] returns the number of bytes sent to the remote. This includes
@@ -427,7 +427,7 @@ returns reply-headers.
  #######################
  # submit POST request
  #######################
- set requestHeaders [lb]ns_set create headers "Content-type" "application/x-www-form-urlencoded"[rb]
+ set requestHeaders [lb]ns_set create headers "content-type" "application/x-www-form-urlencoded"[rb]
  
  set r [lb]ns_http queue -method POST \
    -headers $requestHeaders \

@@ -617,7 +617,7 @@ lines received from the client, if any, are placed into the
 environment with the prefix [const HTTP_] followed by the header name. Any
 spaces in the header name are changed to underscores (_). The server
 may exclude any headers it has already processed, such as
-Content-type, and Content-length.
+content-type, and content-length.
 
 [list_end]
 
@@ -698,7 +698,7 @@ examples:
  #include <stdio.h>
  #include <stdlib.h>
  
- printf("Content-type: text/html\r\n\r\n");
+ printf("content-type: text/html\r\n\r\n");
  printf("<HEAD><TITLE>Hello</TITLE></HEAD>");
  printf("<BODY>You are using %s.</BODY>",
  getenv("HTTP_USER_AGENT") );
@@ -708,7 +708,7 @@ examples:
 
 [example_begin]
  #!/opt/local/bin/perl
- print "Content-type: text/plain\r\n\r\n";
+ print "content-type: text/plain\r\n\r\n";
  for my $var ( sort keys %ENV ) {
     printf "%s = \"%s\"\r\n", $var, $ENV{$var};
  }
@@ -718,7 +718,7 @@ examples:
 [emph {Bourne shell}]
 
 [example_begin]
- echo Content-type: text/html
+ echo content-type: text/html
  echo 
  echo \<HEAD\>\<TITLE\>Hello\</TITLE\>\</HEAD\>
  echo \<BODY\>
@@ -729,7 +729,7 @@ examples:
 [emph {Tcl}]
 
 [example_begin]
- puts "Content-type: text/html"
+ puts "content-type: text/html"
  puts ""
  puts "<head><title>Hello</title></head>"
  puts "<body>"

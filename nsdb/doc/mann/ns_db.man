@@ -244,7 +244,7 @@ this function.
 Sets a parameter for a call to a stored
 procedure. [arg paramname] is the name of the parameter, for example
 [term @name].  [arg type] is the data type of this parameter, for
-example [term varchar]. The nextg arguemnt denotes the direction, whether it
+example [term varchar]. The nextg argument denotes the direction, whether it
 is an input or output parameter. It must be set to either [term in] or
 [term out].  [arg value] denotes the parameter value to send. This function
 returns 1 on success and throws an error on failure. This function is

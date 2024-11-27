@@ -394,8 +394,8 @@ test ns_urlcharset-1.0 {syntax: ns_urlcharset} -body {
 
 test ns_issmallint-1.0 {syntax: ns_issmallint} -body {
     ns_issmallint
-} -returnCodes error -result {wrong # args: should be "ns_issmallint val"}
-# ns_issmallint is a Tcl proc: message should be {wrong # args: should be "ns_issmallint /val/"}
+} -returnCodes error -result {wrong # args: should be "ns_issmallint value"}
+# ns_issmallint is a Tcl proc: message should be {wrong # args: should be "ns_issmallint /value/"}
 
 test ns_paren-1.0 {syntax: ns_paren} -body {
     ns_paren x y

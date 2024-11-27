@@ -11,23 +11,36 @@ list of two file ids: the first one for reads and the second one for writes.
 
 [para]
 
-The [option -nonblock] option specifies that the command will return immediately,
+The [option -async] option specifies that the command will return immediately,
 while the connect is still in progress by the operating system. If you
-use [option -nonblock], you then can call [cmd ns_sockcheck] with the write file id to
+use [option -async], you then can call [cmd ns_sockcheck] with the write file id to
 see if the connect was actually completed.
 
 [para]
-The [option "-timeout [arg t]"] option specifies how long to wait for the
-connect to be made.
-The value [arg t] can be specified in the form
+The [option -nonblock] is implied by [option -async]. It can be used
+to connect to the target in a blocking fashion but it sends the socket
+to nonblocking, once it is connected.
+
+[para]
+The option [option -timeout] specifies how long to wait for the
+connect to be made. The value Can be specified in the form
 [arg secs[opt :microsecs]], or [arg secs.fraction],
-or as a number with a time unit.
+or as a number with a time unit. The option [option -timeout]
+is mutual exclusive with [option -async].
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[call [cmd ns_sockopen] [opt [option -nonblock]] [opt [option -timeout]] [arg host] [arg port]]
+[call [cmd ns_sockopen] \
+        [opt [option -async]] \
+        [opt [option "-localhost [arg string]"]] \
+        [opt [option "-localport [arg port]"]] \
+        [opt [option -nonblock]] \
+        [opt [option "-timeout [arg time]"]] \
+        [opt [option --]] \
+        [arg host] \
+        [arg port]]
 
 [list_end]
 

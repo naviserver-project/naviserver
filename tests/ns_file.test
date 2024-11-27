@@ -20,7 +20,7 @@ test ns_mkdtemp-1.0 {syntax: ns_mkdtemp} -body {
 
 test ns_fseekchars-1.0 {syntax: ns_fseekchars} -body {
     ns_fseekchars
-} -returnCodes error -result {wrong # args: should be "ns_fseekchars /fileId/ /searchstring/"}
+} -returnCodes error -result {wrong # args: should be "ns_fseekchars /channelId/ /searchstring/"}
 
 test ns_filestat-1.0 {syntax: ns_filestat} -body {
     ns_filestat

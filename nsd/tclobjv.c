@@ -1879,6 +1879,8 @@ AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_T separatorL
                     Tcl_DStringAppend(dsPtr, "server", 6);
                 } else if (objvProc == Ns_ObjvWideInt || objvProc == Ns_ObjvInt || objvProc == Ns_ObjvLong) {
                     Tcl_DStringAppend(dsPtr, "integer", 7);
+                } else if (objvProc == Ns_ObjvUShort) {
+                    Tcl_DStringAppend(dsPtr, "port", 4);
                 } else {
                     /*
                      * No type information, repeat the variable name

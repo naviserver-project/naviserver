@@ -507,17 +507,16 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
 
         /*
          * Provide error messages for invalid argument combinations.  Note that either
-         *     -nonblock | -async
+         *     -async
          * or
          *     -timeout time
          * are accepted as combinations.
          */
-        if (nonblock != 0 || async != 0) {
+        if (async != 0) {
             if (timeoutPtr != NULL) {
-                Ns_TclPrintfResult(interp, "-timeout can't be specified when -async or -nonblock are used");
+                Ns_TclPrintfResult(interp, "-timeout can't be specified when -async is used");
                 return TCL_ERROR;
             }
-            async = 1;
         }
 
         if (timeoutPtr != NULL) {
@@ -544,6 +543,14 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
 
         } else {
             Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
+
+            if (nonblock && !async) {
+                /*
+                 * In the async case, the socket is already
+                 * non-blocking.
+                 */
+                Ns_SockSetNonBlocking(sock);
+            }
 
             result = EnterDupedSocks(interp, sock, listObj);
             if (result == TCL_OK) {

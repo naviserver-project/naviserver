@@ -111,7 +111,7 @@ sub-command [arg all] returns the union of the running and queued
 requests.
 
 [para] When option [option -checkforproxy] is given, it tries to
-return the peer address from "X-Forwarded-For" header field. If this
+return the peer address from "x-forwarded-for" header field. If this
 is not possible (not given, or empty, or having the value "unknown") it falls
 back to the physical peer address.
 

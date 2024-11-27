@@ -114,7 +114,7 @@ literally,  either a key with a literally exact match or empty is returned.
 [call [cmd ns_cache_eval] \
      [opt [option "-timeout [arg t]"]] \
      [opt [option "-expires [arg t]"]] \
-     [opt [option "-force [arg bool]"]] \
+     [opt [option "-force true|false"]] \
      [opt [option --]] \
      [arg name] \
      [arg key] \

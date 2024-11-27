@@ -1869,7 +1869,7 @@ WaitForConnect(NS_SOCKET sock, int count, int ms)
  * SockConnect --
  *
  *      Open a TCP connection to a host/port sync or async.  "host" and
- *      "port" refer to the remote, "lhost" and "lport" to the local
+ *      "port" refer to a remote, "lhost" and "lport" to a local
  *      communication endpoint. "count" specifies the number of
  *      connections attempts (important for async operations), and "ms"
  *      determines the interval between attempts.

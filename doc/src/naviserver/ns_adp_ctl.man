@@ -16,7 +16,7 @@ given value and the previous value is returned.
 
 [list_begin definitions]
 
-[call [cmd "ns_adp_ctl autoabort"] [opt [arg bool]]]
+[call [cmd "ns_adp_ctl autoabort"] [opt true|false]]
 
 Query or set the autoabort option. When enabled, failure to flush a
 buffer (normally the result of a closed HTTP connection)
@@ -28,7 +28,7 @@ Return the currently
 ADP output buffer size, setting it to a new value if the
 optional [arg size] argument is specified.
 
-[call [cmd "ns_adp_ctl cache"] [opt [arg bool]]]
+[call [cmd "ns_adp_ctl cache"] [opt true|false]]
 
 Query or set the cache option. When disabled, all requests to cache
 executed ADP blocks via the [cmd "ns_adp_include -cache"] directive
@@ -42,7 +42,7 @@ is cleared. This capability can be useful for specialized uses of ADP
 outside the context of an HTTP connection, e.g., for debugging or
 testing. Use an empty argument to reset the channel.
 
-[call [cmd "ns_adp_ctl detailerror"] [opt [arg bool]]]
+[call [cmd "ns_adp_ctl detailerror"] [opt true|false]]
 
 Query or set the detailerror option. When enabled, errors in ADP pages
 are formatted with information about the context of the HTTP
@@ -52,7 +52,7 @@ cookie headers) contains personal or sensitive data. Errors
 are logged to the server log and, if [arg displayerror] is
 enabled, appended to the output buffer.
 
-[call [cmd "ns_adp_ctl displayerror"] [opt [arg bool]]]
+[call [cmd "ns_adp_ctl displayerror"] [opt true|false]]
 
 Query or set the displayerror option. When enabled, errors in ADP
 pages are formatted and appended to the output stream,
@@ -61,21 +61,21 @@ should generally be enabled in development and disabled in
 production.
 
 
-[call [cmd "ns_adp_ctl expire"] [opt [arg bool]]]
+[call [cmd "ns_adp_ctl expire"] [opt true|false]]
 
 Query or set the expire option. When enabled, the ADP request
 processing code adds an "Expires: now" header in the response buffer
 to disable any caching. In practice, more thoughtful cache control
 mechanisms should be used based on the HTTP/1.1 spec.
 
-[call [cmd "ns_adp_ctl safe"] [opt [arg bool]]]
+[call [cmd "ns_adp_ctl safe"] [opt true|false]]
 
 Query or set the safe option.
 When enabled, all code is executed in [arg safe]  mode,
 disabling and ignoring any code within registered
 tags.
 
-[call [cmd "ns_adp_ctl singlescript"] [opt [arg bool]]]
+[call [cmd "ns_adp_ctl singlescript"] [opt true|false]]
 
 Query or set the singlescript option. When enabled, ADP pages are
 converted from independent text-script blocks into a single
@@ -89,24 +89,24 @@ in production leaving it disabled provides a more defensive
 execution environment where minor errors in one ADP do not
 inhibit execution of the overall page.
 
-[call [cmd "ns_adp_ctl stream"] [opt [arg bool]]]
+[call [cmd "ns_adp_ctl stream"] [opt true|false]]
 
 Query or set the streaming option.
 When enabled, partial adp-outputs are returned to the user as soon as
 possible via chunked encoding.
 
-[call [cmd "ns_adp_ctl stricterror"] [opt [arg bool]]]
+[call [cmd "ns_adp_ctl stricterror"] [opt true|false]]
 
 Query or set the stricterror option. When enabled, the result is
 similar to that of singlescript in that an error in a
 particular block will return the entire page instead of
 continuing to the next text or script block.
 
-[call [cmd "ns_adp_ctl trace"] [opt [arg bool]]]
+[call [cmd "ns_adp_ctl trace"] [opt true|false]]
 
 Query or set the [arg trace] option which currently does nothing.
 
-[call [cmd "ns_adp_ctl trimspace"] [opt [arg bool]]]
+[call [cmd "ns_adp_ctl trimspace"] [opt true|false]]
 
 Query or set the trimspace option. When enabled, any white space at
 the start of the output buffer is eliminated. White space

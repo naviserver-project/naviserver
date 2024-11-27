@@ -604,7 +604,7 @@ NsTclFSeekCharsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
     Tcl_Channel       channel;
     char             *channelString, *charString;
     Ns_ObjvSpec args[] = {
-        {"fileId",       Ns_ObjvString,  &channelString, NULL},
+        {"channelId",    Ns_ObjvString,  &channelString, NULL},
         {"searchstring", Ns_ObjvString,  &charString, NULL},
         {NULL, NULL, NULL, NULL}
     };

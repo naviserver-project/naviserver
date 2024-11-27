@@ -144,9 +144,9 @@ below in the variable "server"):
     ns_param   verify         0
   
     ns_param   extraheaders {
-       Strict-Transport-Security "max-age=31536000; includeSubDomains"
-       X-Frame-Options SAMEORIGIN
-       X-Content-Type-Options nosniff
+       strict-transport-security "max-age=31536000; includeSubDomains"
+       x-frame-options SAMEORIGIN
+       x-content-type-options nosniff
     }
  }
 [example_end]

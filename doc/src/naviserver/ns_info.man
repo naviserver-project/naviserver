@@ -93,9 +93,15 @@ Returns the name of the error log file. The name is specified by the
 
 Returns the major version number.
 
-[call [cmd  "ns_info meminfo"]]
+[call [cmd  "ns_info meminfo"] [opt [option -release]]]
 
-Returns memory statistics from tcmalloc when available.
+Returns memory statistics from tcmalloc when available, i.e., when
+libtcmalloc (from Google perfools) is used and preloaded (we might add
+support for other alternative malloc libraries in the
+future). Otherwise the call is a no-op.
+
+[para] When the option [opt -release] is used, the releasable memory
+is released (also libtcmalloc only).
 
 [call [cmd  "ns_info minor"]]
 

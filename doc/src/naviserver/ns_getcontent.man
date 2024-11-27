@@ -18,8 +18,8 @@ memory problems on huge files.
 [list_begin definitions]
 
 [call [cmd ns_getcontent] \
-     [opt "[option -as_file] [arg bool]"] \
-     [opt "[option -binary] [arg bool]"]]
+     [opt "[option -as_file] true|false"] \
+     [opt "[option -binary] true|false"]]
 
 Returns as result the filename of the temporary file (when spooled to
 a file, default) or the content of the file (when [option -as_file] is false).
@@ -43,7 +43,7 @@ Tcl.
 
 [example_begin]
  if {[lb]ns_conn method[rb] in {PUT POST}
-    && [lb]ns_set iget [lb]ns_conn headers[rb] Content-Type] eq "application/json"
+    && [lb]ns_set iget [lb]ns_conn headers[rb] content-type] eq "application/json"
  } {
     package req json
  
@@ -61,7 +61,7 @@ localhost, the example above can be tested e.g. with the following
 command from the shell.
 
 [example_begin]
- curl --header "Content-Type: application/json" --request POST --data '{
+ curl --header "content-type: application/json" --request POST --data '{
    "username":"xyz","password":"xyz"
  }' http://localhost:8100/json-receiver.tcl
 [example_end]

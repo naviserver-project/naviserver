@@ -36,10 +36,10 @@ access log. If [opt [arg new-headers]] is given it replaces the existing
 setting.
 
 [para] By default, all specified header fields are request header
-fields (like e.g. {Referer X-Forwarded-For}). Optionally one can
+fields (like e.g. {Referer x-forwarded-for}). Optionally one can
 specify the request header fields with a prefix "request:" or "response"
 to denote request or response header fields. The prefix can be
-abbreviated to 3 characters (example: {req:Host response:Content-Type}).
+abbreviated to 3 characters (example: {req:Host response:content-type}).
 Note that always the request header fields are reported before the
 response header fields. Caveat: certain response header fields (e.g. "Date"
 or "Server" are not accessible this way).
@@ -121,7 +121,7 @@ The following are valid configuration parameters:
 [list_begin definitions]
 
 [def checkforproxy]
-If true then the value of the X-Forwarded-For HTTP header is logged as the IP
+If true then the value of the x-forwarded-for HTTP header is logged as the IP
 address of the client. Otherwise, the IP address of the directly
 connected host is logged. Default: false.
 

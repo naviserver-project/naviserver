@@ -138,10 +138,10 @@ levels and those created with [cmd ns_logctl] or via C code.
       [arg severity-level] \
       [opt "[option -color] [arg color]"] \
       [opt "[option -intensity] [arg intensity]"] \
-      [opt [arg bool]] ]
+      [opt true|false] ]
 
 Return true if the given [arg severity-level] is enabled, false if it is
-disabled. If [arg bool] is given it enables/disables the given
+disabled. If true|false is given it enables/disables the given
 [arg severity-level] for all future log messages, server-wide.
 The options [option -color] and [option -intensity] can be used
 to set the coloring when the logfile is colorized. The color can be

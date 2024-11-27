@@ -244,7 +244,7 @@ NsTclGifSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     char       *file = NULL;
     int         result;
     Ns_ObjvSpec args[] = {
-        {"gif_file", Ns_ObjvString, &file, NULL},
+        {"filename", Ns_ObjvString, &file, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -294,7 +294,7 @@ NsTclPngSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     char       *file = NULL;
     int         result;
     Ns_ObjvSpec args[] = {
-        {"png_file", Ns_ObjvString, &file, NULL},
+        {"filename", Ns_ObjvString, &file, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -344,7 +344,7 @@ NsTclJpegSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
     char       *file = NULL;
     int         result;
     Ns_ObjvSpec args[] = {
-        {"jpeg_file", Ns_ObjvString, &file, NULL},
+        {"filename", Ns_ObjvString, &file, NULL},
         {NULL, NULL, NULL, NULL}
     };
 

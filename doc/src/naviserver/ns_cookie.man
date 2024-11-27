@@ -25,13 +25,14 @@ is widely supported by user agents.
 [list_begin definitions]
 
 [call [cmd ns_setcookie] \
- [opt [option "-discard [arg bool]"]] \
- [opt [option "-domain [arg d]"]] \
- [opt [option "-expires [arg t]"]] \
- [opt [option "-path [arg p]"]] \
- [opt [option "-replace [arg bool]"]] \
- [opt [option "-scriptable [arg bool]"]] \
- [opt [option "-secure [arg bool]"]] \
+ [opt [option "-discard true|false"]] \
+ [opt [option "-domain [arg string]"]] \
+ [opt [option "-expires [arg time]"]] \
+ [opt [option "-path [arg string]"]] \
+ [opt [option "-replace true|false"]] \
+ [opt [option "-samesite strict|lax|none"]] \
+ [opt [option "-scriptable true|false"]] \
+ [opt [option "-secure true|false"]] \
  [opt [option --]] \
  [arg name] \
  [arg data]  ]
@@ -53,8 +54,8 @@ The [arg data] will be URL-encoded to escape special characters.
 
 
 [call [cmd ns_getcookie] \
-	[opt [option "-all [arg bool]"]] \
-	[opt [option "-include_set_cookies [arg bool]"]] \
+	[opt [option "-all true|false"]] \
+	[opt [option "-include_set_cookies true|false"]] \
 	[opt [option --]] \
 	[arg name]	\
 	[opt [arg default]]  ]
@@ -80,12 +81,12 @@ recommended to use a unique name for each restricted cookie.
 
 
 [call [cmd ns_deletecookie] \
-     [opt [option "-domain [arg d]"]] \
-     [opt [option "-path [arg p]"]] \
-     [opt [option "-replace [arg bool]"]] \
-     [opt [option "-samesite [arg t]"]] \
-     [opt [option "-secure [arg bool]"]] \
-     [opt [option --]] \
+     [opt [option "-domain [arg string]"]] \
+     [opt [option "-path [arg string]"]] \
+     [opt [option "-replace true|false"]] \
+     [opt [option "-samesite strict|lax|none"]] \
+     [opt [option "-secure true|false"]] \
+     [opt --] \
      [arg name]  ]
 
 Instruct the client to delete the cookie data identified by [arg name]. The
