@@ -381,7 +381,7 @@ If a pattern is supplied, only those values that match it
 [example_end]
 
 [example_begin]
- % set thirdSet [lb]ns_set new[rb]
+ % set thirdSet [lb]ns_set create[rb]
  d4
 [example_end]
 
