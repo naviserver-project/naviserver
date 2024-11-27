@@ -764,7 +764,7 @@ NsTclModulePathObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
     int result = TCL_OK;
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/server/ ?/module/ ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/server/ ?/module .../?");
         result = TCL_ERROR;
 
     } else {
@@ -830,7 +830,7 @@ PathObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"?path", Ns_ObjvArgs, &npaths, NULL},
+        {"?path-segment", Ns_ObjvArgs, &npaths, NULL},
         {NULL, NULL, NULL, NULL}
     };
     NS_NONNULL_ASSERT(interp != NULL);

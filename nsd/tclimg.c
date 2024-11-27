@@ -79,7 +79,7 @@ NsTclImgTypeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     char        *file = NULL;
     int          result;
     Ns_ObjvSpec  args[] = {
-        {"file",  Ns_ObjvString, &file, NULL},
+        {"filename",  Ns_ObjvString, &file, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -130,7 +130,7 @@ NsTclImgMimeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     char       *file = NULL;
     int         result;
     Ns_ObjvSpec args[] = {
-        {"file",  Ns_ObjvString, &file, NULL},
+        {"filename",  Ns_ObjvString, &file, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -182,7 +182,7 @@ NsTclImgSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     char       *file = NULL;
     int         result = TCL_OK;
     Ns_ObjvSpec args[] = {
-        {"file",  Ns_ObjvString, &file, NULL},
+        {"filename",  Ns_ObjvString, &file, NULL},
         {NULL, NULL, NULL, NULL}
     };
 

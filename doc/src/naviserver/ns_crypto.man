@@ -274,7 +274,7 @@ provided via [option "-passphrase"].
 
 [call [cmd "ns_crypto::hmac string"] \
      [opt [option -binary]] \
-     [opt [option "-digest [arg digest]"]] \
+     [opt [option "-digest [arg value]"]] \
      [opt [option "-encoding [arg encoding]"]] \
      [arg key] \
      [arg message]]

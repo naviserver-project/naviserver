@@ -20,7 +20,7 @@ test ns_urlencode-1.1.2 {basic syntax} -body {
 
 test ns_urlencode-1.2.1 {basic syntax} -body {
     ns_urldecode
-} -returnCodes error -result {wrong # args: should be "ns_urldecode ?-charset /string/? ?-fallbackcharset /fallbackcharset/? ?-part query|path|cookie|oauth1? ?--? /string/"}
+} -returnCodes error -result {wrong # args: should be "ns_urldecode ?-charset /string/? ?-fallbackcharset /string/? ?-part query|path|cookie|oauth1? ?--? /string/"}
 
 test ns_urlencode-1.2.2 {basic syntax} -body {
     ns_urldecode -part x y
@@ -518,7 +518,7 @@ test ns_urlencode-7.1.2 {
 #
 test ns_parsequery-1.0 {basic syntax} -body {
     ns_parsequery
-} -returnCodes error -result {wrong # args: should be "ns_parsequery ?-charset /string/? ?-fallbackcharset /fallbackcharset/? ?--? /querystring/"}
+} -returnCodes error -result {wrong # args: should be "ns_parsequery ?-charset /string/? ?-fallbackcharset /string/? ?--? /querystring/"}
 
 test ns_parsequery-1.1 {simple operation} -body {
     ns_set array [ns_parsequery a=1&b=2]

@@ -1865,7 +1865,7 @@ AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_T separatorL
                  */
                 Tcl_DStringAppend(dsPtr, "/", 1);
 
-                if (objvProc == Ns_ObjvString) {
+                if (objvProc == Ns_ObjvString || objvProc == Ns_ObjvObj) {
                     Tcl_DStringAppend(dsPtr, "string", 6);
                 } else if (objvProc == Ns_ObjvByteArray) {
                     Tcl_DStringAppend(dsPtr, "data", 4);

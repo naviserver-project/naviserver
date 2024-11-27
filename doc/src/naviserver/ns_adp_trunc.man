@@ -7,7 +7,10 @@
 [description]
 
  This command truncates the ADP output buffer.  Any data that was previously queued
- for sending using ns_adp_puts or other means is cleared from the buffer and will not be sent.
+ for sending using [cmd ns_adp_puts] or other means is cleared from the
+ buffer and will not be sent.
+ If the optional argument [arg length] is omitted, the truncation will
+ be to zero bytes.
 
 
 [section {COMMANDS}]
@@ -15,11 +18,11 @@
 [list_begin definitions]
 
 
-[call [cmd ns_adp_trunc]]
+[call [cmd ns_adp_trunc] [opt [arg length]]]
 
 [list_end]
 
-[see_also nsd]
+[see_also nsd ns_adp_puts]
 [keywords "server built-in" ADP]
 
 [manpage_end]

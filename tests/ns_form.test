@@ -64,7 +64,7 @@ test ns_getcontent-1.0  {syntax: ns_getformfile} -body {
     ns_getcontent x
 } -returnCodes error -result {wrong # args: should be "?-as_file /as_file/? ?-binary /binary/?"}
 
-# Tcl proc "ns_getcontent" - message should be {wrong # args: should be "ns_getcontent ?-as_file /as_file/? ?-binary /binary/?"}
+# Tcl proc "ns_getcontent" - message should be {wrong # args: should be "ns_getcontent ?-as_file true|false? ?-binary true|false?"}
 
 
 

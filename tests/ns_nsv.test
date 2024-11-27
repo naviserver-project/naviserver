@@ -527,7 +527,7 @@ test nsv-dict-get.0 {nsv_dict get - syntax test} -body {
     nsv_dict get a1
 } -cleanup {
     nsv_unset -nocomplain a1
-} -returnCodes {error} -result {wrong # args: should be "nsv_dict get ?-varname /varname/? ?--? /array/ /key/ ?/dictkey .../?"}
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict get ?-varname /string/? ?--? /array/ /key/ ?/dictkey .../?"}
 
 test nsv-dict-get.1 {nsv_dict get} -body {
     # add dict values for k1
@@ -585,13 +585,13 @@ test nsv-dict-getdef.0.1 {nsv_dict getdef - syntax test no key} -body {
     nsv_dict getdef a1
 } -cleanup {
     nsv_unset -nocomplain a1
-} -returnCodes {error} -result {wrong # args: should be "nsv_dict getdef ?-varname /varname/? ?--? /array/ /key/ /arg .../"}
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict getdef ?-varname /string/? ?--? /array/ /key/ /arg .../"}
 
 test nsv-dict-getdef.0.2 {nsv_dict getdef - syntax test, key, no dict key, not default} -body {
     nsv_dict getdef a1 k1
 } -cleanup {
     nsv_unset -nocomplain a1
-} -returnCodes {error} -result {wrong # args: should be "nsv_dict getdef ?-varname /varname/? ?--? /array/ /key/ /arg .../"}
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict getdef ?-varname /string/? ?--? /array/ /key/ /arg .../"}
 
 test nsv-dict-getdef.0.3 {nsv_dict getdef - syntax test, key, no dict key} -body {
     nsv_dict getdef a1 k1 default1

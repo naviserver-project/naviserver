@@ -2,7 +2,7 @@
 [manpage_begin ns_serverpath n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {Returns absolute path to current virtual server home}]
+[titledesc {Returns absolute path to current virtual server home directory}]
 
 [description]
 This is virtual hosting aware command that returns absolute path to the server home
@@ -12,18 +12,34 @@ for current virtual server context
 
 [list_begin definitions]
 
-[call [cmd ns_serverpath]]
+[call [cmd ns_serverpath] \
+	[opt [option "-host [arg string]"]] \
+	[opt --] \
+        [opt [arg "path-segment ..."]] \
+        ]
+
+Returns the absolute path to current virtual server home directory
+followed by the optional path segments.
+
+[para]
+The optional [option -host] parameter can be used to return the
+path for a certain virtual host. If not specified the value for the
+host is taken from the [term host] header field of the current
+request.
 
 [list_end]
 
 [section EXAMPLES]
 
 [example_begin]
- oss2:nscp 6> ns_serverpath
+ % ns_serverpath
  /usr/local/ns
+ 
+ % ns_serverpath foo bar
+ /usr/local/ns/foo/bar
 [example_end]
 
 
-[see_also nsd]
-[keywords "global built-in" NaviServer]
+[see_also nsd ns_pagepath]
+[keywords "global built-in" NaviServer "virtual host"]
 [manpage_end]

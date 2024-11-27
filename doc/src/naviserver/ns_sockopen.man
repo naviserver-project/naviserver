@@ -5,28 +5,8 @@
 [titledesc {Connect to a remote host on the specified port}]
 
 [description]
-[cmd ns_sockopen] uses socket(), bind(), and connect() calls to connect to the
-remote host (host) on the specified port (port). [cmd  ns_sockopen] returns a
-list of two file ids: the first one for reads and the second one for writes.
-
-[para]
-
-The [option -async] option specifies that the command will return immediately,
-while the connect is still in progress by the operating system. If you
-use [option -async], you then can call [cmd ns_sockcheck] with the write file id to
-see if the connect was actually completed.
-
-[para]
-The [option -nonblock] is implied by [option -async]. It can be used
-to connect to the target in a blocking fashion but it sends the socket
-to nonblocking, once it is connected.
-
-[para]
-The option [option -timeout] specifies how long to wait for the
-connect to be made. The value Can be specified in the form
-[arg secs[opt :microsecs]], or [arg secs.fraction],
-or as a number with a time unit. The option [option -timeout]
-is mutual exclusive with [option -async].
+[cmd ns_sockopen] uses socket(), bind(), and connect() calls to connect to a
+remote hosta the specified port.
 
 [section {COMMANDS}]
 
@@ -42,10 +22,46 @@ is mutual exclusive with [option -async].
         [arg host] \
         [arg port]]
 
+Connect to the remote host specified by [arg host] [arg port]. The
+command returns a list of two file-ids: the first one for read and
+the second one for write operations.
+
+[para]
+
+The [option -async] option specifies that the command will return immediately,
+while the connect operation is still in progress by the operating system. If you
+use [option -async], you then can call [cmd ns_sockcheck] with the write file-id to
+see if the connect operation was actually completed.
+
+[para]
+The [option -nonblock] is implied by [option -async]. It can be used
+to connect to the target in a blocking fashion, but it sends the socket
+to non-blocking, once it is connected.
+
+[para]
+The option [option -timeout] specifies how long to wait for the
+connect operation to be finished. The value can be specified in the form
+[arg secs[opt :microsecs]], or [arg secs.fraction],
+or as a number with a time unit. The option [option -timeout]
+is mutual exclusive with [option -async].
+
+[para]
+
+The options [option -localhost] and [option -localport] can be used to
+specify the local endpoints of the connection. In the following
+example, these option ensures that the outgoing connection to
+[term www.example.com] originates from the specified local
+IP address [term 192.168.1.100] and port [term 12345],
+replacing effectively the ephemeral port.
+
+[example_begin]
+ % ns_sockopen ... -myaddr 192.168.1.100 -myport 12345 ... www.example.com 80
+[example_end]
 [list_end]
 
 [section EXAMPLES]
 
+Usage Example:
 [example_begin]
  set fds [lb]ns_sockopen www.aolserver.com 80[rb]
  set rid [lb]lindex $fds 0[rb]
@@ -53,7 +69,7 @@ is mutual exclusive with [option -async].
  puts $wid "GET /index.htm HTTP/1.0\r\n\r"
  flush $wid
  while {[lb]set line [lb]string trim [lb]gets $rid[rb][rb][rb] != ""} {
-  lappend headers $line
+   lappend headers $line
  }
  set page [lb]read $rid[rb]
  close $rid

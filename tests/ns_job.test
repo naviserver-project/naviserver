@@ -41,11 +41,11 @@ test ns_job-1.2 {syntax: ns_job cancel} -body {
 
 test ns_job-1.3 {syntax: ns_job configure} -body {
     ns_job configure x
-} -returnCodes error -result {wrong # args: should be "ns_job configure ?-jobsperthread /integer[0,MAX]/? ?-timeout /time/? ?-logminduration /time/?"}
+} -returnCodes error -result {wrong # args: should be "ns_job configure ?-jobsperthread /integer[0,MAX]/? ?-logminduration /time/? ?-timeout /time/?"}
 
 test ns_job-1.4 {syntax: ns_job create} -body {
     ns_job create
-} -returnCodes error -result {wrong # args: should be "ns_job create ?-desc /string/? /queueId/ ?/maxThreads[1,MAX]/?"}
+} -returnCodes error -result {wrong # args: should be "ns_job create ?-desc /string/? /queueId/ ?/maxthreads[1,MAX]/?"}
 
 test ns_job-1.5 {syntax: ns_job delete} -body {
     ns_job delete

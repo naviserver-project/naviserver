@@ -7815,7 +7815,7 @@ WriterSubmitFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"file",      Ns_ObjvString, &fileNameString, NULL},
+        {"filename",  Ns_ObjvString, &fileNameString, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -7931,14 +7931,14 @@ WriterSubmitFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
     int         result = TCL_OK;
     Ns_Conn    *conn;
     int         headers = 0;
-    TCL_SIZE_T  nrFiles;
-    Tcl_Obj    *filesObj = NULL, **fileObjv;
+    TCL_SIZE_T  nrSpecDicts;
+    Tcl_Obj    *filespecsObj = NULL, **specDictObjv;
     Ns_ObjvSpec lopts[] = {
-        {"-headers",  Ns_ObjvBool,    &headers, INT2PTR(NS_TRUE)},
+        {"-headers",  Ns_ObjvBool, &headers, INT2PTR(NS_TRUE)},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"files",     Ns_ObjvObj, &filesObj, NULL},
+        {"filespecs", Ns_ObjvObj, &filespecsObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -7956,11 +7956,11 @@ WriterSubmitFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         Ns_TclPrintfResult(interp, "0");
         result = TCL_OK;
 
-    } else if (Tcl_ListObjGetElements(interp, filesObj, &nrFiles, &fileObjv) != TCL_OK) {
-        Ns_TclPrintfResult(interp, "not a valid list of files: '%s'", Tcl_GetString(filesObj));
+    } else if (Tcl_ListObjGetElements(interp, filespecsObj, &nrSpecDicts, &specDictObjv) != TCL_OK) {
+        Ns_TclPrintfResult(interp, "not a valid list of file specs: '%s'", Tcl_GetString(filespecsObj));
         result = TCL_ERROR;
 
-    } else if (nrFiles == 0) {
+    } else if (nrSpecDicts == 0) {
         Ns_TclPrintfResult(interp, "The provided list has to contain at least one file spec");
         result = TCL_ERROR;
 
@@ -7972,7 +7972,7 @@ WriterSubmitFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         Ns_ObjvValueRange offsetRange = {0, LLONG_MAX};
         Ns_ObjvValueRange sizeRange = {1, LLONG_MAX};
 
-        filebufs = (Ns_FileVec *)ns_calloc((size_t)nrFiles, sizeof(Ns_FileVec));
+        filebufs = (Ns_FileVec *)ns_calloc((size_t)nrSpecDicts, sizeof(Ns_FileVec));
         keys[0] = Tcl_NewStringObj("filename", 8);
         keys[1] = Tcl_NewStringObj("-offset", 7);
         keys[2] = Tcl_NewStringObj("-size", 5);
@@ -7981,14 +7981,14 @@ WriterSubmitFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         Tcl_IncrRefCount(keys[1]);
         Tcl_IncrRefCount(keys[2]);
 
-        for (i = 0u; i < (size_t)nrFiles; i++) {
+        for (i = 0u; i < (size_t)nrSpecDicts; i++) {
             filebufs[i].fd = NS_INVALID_FD;
         }
 
         /*
          * Iterate over the list of dicts.
          */
-        for (i = 0u; i < (size_t)nrFiles; i++) {
+        for (i = 0u; i < (size_t)nrSpecDicts; i++) {
             Tcl_WideInt offset = 0, size = 0;
             int         rc, fd = NS_INVALID_FD;
             const char *filenameString;
@@ -7998,10 +7998,10 @@ WriterSubmitFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
              * Get required "filename" element.
              */
             filenameObj = NULL;
-            rc = Tcl_DictObjGet(interp, fileObjv[i], keys[0], &filenameObj);
+            rc = Tcl_DictObjGet(interp, specDictObjv[i], keys[0], &filenameObj);
             if (rc != TCL_OK || filenameObj == NULL) {
                 Ns_TclPrintfResult(interp, "missing filename in dict '%s'",
-                                   Tcl_GetString(fileObjv[i]));
+                                   Tcl_GetString(specDictObjv[i]));
                 result = TCL_ERROR;
                 break;
             }
@@ -8014,11 +8014,11 @@ WriterSubmitFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
             /*
              * Get optional "-offset" and "-size" elements.
              */
-            if (WriterGetMemunitFromDict(interp, fileObjv[i], keys[1], &offsetRange, &offset) != TCL_OK) {
+            if (WriterGetMemunitFromDict(interp, specDictObjv[i], keys[1], &offsetRange, &offset) != TCL_OK) {
                 result = TCL_ERROR;
                 break;
             }
-            if (WriterGetMemunitFromDict(interp, fileObjv[i], keys[2], &sizeRange, &size) != TCL_OK) {
+            if (WriterGetMemunitFromDict(interp, specDictObjv[i], keys[2], &sizeRange, &size) != TCL_OK) {
                 result = TCL_ERROR;
                 break;
             }
@@ -8053,7 +8053,7 @@ WriterSubmitFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
                 Ns_ConnSetTypeHeader(conn, Ns_GetMimeType(firstFilenameString));
             }
             status = NsWriterQueue(conn, totalbytes, NULL, NULL, NS_INVALID_FD, NULL, 0,
-                                   filebufs, nrFiles, NS_TRUE);
+                                   filebufs, nrSpecDicts, NS_TRUE);
             /*
              * Provide a soft error like for "ns_writer submitfile".
              */
@@ -8065,7 +8065,7 @@ WriterSubmitFilesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
          * descriptors and the Ns_FileVec structure, so we have to cleanup
          * here.
          */
-        for (i = 0u; i < (size_t)nrFiles; i++) {
+        for (i = 0u; i < (size_t)nrSpecDicts; i++) {
             if (filebufs[i].fd != NS_INVALID_FD) {
                 (void) ns_close(filebufs[i].fd);
             }
@@ -8101,7 +8101,7 @@ WriterListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
     int          result = TCL_OK;
     NsServer    *servPtr = NULL;
     Ns_ObjvSpec  lopts[] = {
-        {"-server",  Ns_ObjvServer,    &servPtr, NULL},
+        {"-server",  Ns_ObjvServer, &servPtr, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -8205,12 +8205,12 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec   *args, argsNew[] = {
-        {"?value", Ns_ObjvMemUnit, &intValue, &range},
+        {"?size", Ns_ObjvMemUnit, &intValue, &range},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec   argsLegacy[] = {
         {"driver", Ns_ObjvObj,     &driverObj, NULL},
-        {"?value", Ns_ObjvMemUnit, &intValue, &range},
+        {"?size", Ns_ObjvMemUnit, &intValue, &range},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -8221,7 +8221,7 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
                 objc == 4)) {
             args = argsLegacy;
             opts = NULL;
-            Ns_LogDeprecated(objv, objc, "ns_writer size ?-driver drv? ?/size/?", NULL);
+            Ns_LogDeprecated(objv, objc, "ns_writer size ?-driver /string/? ?/size/?", NULL);
         } else {
             args = argsNew;
             opts = optsNew;

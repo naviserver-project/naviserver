@@ -364,8 +364,8 @@ NsTclKillObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"pid",  Ns_ObjvInt, &pid, NULL},
-        {"sig",  Ns_ObjvInt, &sig, &posintRange0},
+        {"pid",    Ns_ObjvInt, &pid, NULL},
+        {"signal", Ns_ObjvInt, &sig, &posintRange0},
         {NULL, NULL, NULL, NULL}
     };
 

@@ -63,7 +63,7 @@ test ns_conn-1.1.11 {syntax: ns_conn contentlength} -body {
 
 test ns_conn-1.1.12 {syntax: ns_conn contentsentlength} -body {
     ns_conn contentsentlength 1 x
-} -returnCodes error -result {wrong # args: should be "ns_conn contentsentlength ?/idx[0,MAX]/?"}
+} -returnCodes error -result {wrong # args: should be "ns_conn contentsentlength ?/bytes[0,MAX]/?"}
 
 test ns_conn-1.1.13 {syntax: ns_conn copy} -body {
     ns_conn copy
@@ -111,7 +111,7 @@ test ns_conn-1.1.23 {syntax: ns_conn flags} -body {
 
 test ns_conn-1.1.24 {syntax: ns_conn form} -body {
     ns_conn form x
-} -returnCodes error -result {wrong # args: should be "ns_conn form ?-fallbackcharset /fallbackcharset/?"}
+} -returnCodes error -result {wrong # args: should be "ns_conn form ?-fallbackcharset /string/?"}
 
 test ns_conn-1.1.25 {syntax: ns_conn headerlength} -body {
     ns_conn headerlength x
@@ -179,7 +179,7 @@ test ns_conn-1.1.40 {syntax: ns_conn query} -body {
 
 test ns_conn-1.1.41 {syntax: ns_conn ratelimit} -body {
     ns_conn ratelimit 10 y
-} -returnCodes error -result {wrong # args: should be "ns_conn ratelimit ?/ratelimit[0,MAX]/?"}
+} -returnCodes error -result {wrong # args: should be "ns_conn ratelimit ?/limit[0,MAX]/?"}
 
 test ns_conn-1.1.42 {syntax: ns_conn request} -body {
     ns_conn request x
@@ -199,7 +199,7 @@ test ns_conn-1.1.45 {syntax: ns_conn start} -body {
 
 test ns_conn-1.1.46 {syntax: ns_conn status} -body {
     ns_conn status 100 y
-} -returnCodes error -result {wrong # args: should be "ns_conn status ?/status[100,599]/?"}
+} -returnCodes error -result {wrong # args: should be "ns_conn status ?/status-code[100,599]/?"}
 
 test ns_conn-1.1.47 {syntax: ns_conn target} -body {
     ns_conn target x

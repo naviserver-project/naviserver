@@ -33,9 +33,10 @@ can not be cancelled.
 
 
 [call [cmd "ns_job configure"] \
-	[opt [option {-jobsperthread N}]] \
-	[opt [option {-logminduration T}]] \
-	[opt [option {-timeout T}]]]
+	[opt [option "-jobsperthread [arg integer]"]] \
+	[opt [option "-logminduration [arg time]"]] \
+	[opt [option "-timeout [arg time]"]] \
+        ]
 
 Configures jobs system, parameters are:
 
@@ -64,8 +65,9 @@ settings values in form of a dict.
 
 
 [call [cmd "ns_job create"] \
-	[opt [option {-desc description}]] \
-	[arg queueId] [opt [arg maxthreads]]]
+	[opt [option "-desc [arg string]"]] \
+	[arg queueId] \
+        [opt [arg maxthreads]]]
 
 Create a new job queue called queueId. If maxthreads is not specified,
 then the default of 4 is used.
@@ -132,10 +134,11 @@ Return a list of the job IDs.
 
 
 [call [cmd "ns_job queue"] \
-	[opt [option {-detached}]] \
+	[opt [option -detached]] \
 	[opt [option -head]] \
-	[opt [option {-jobid id}]] \
-	[arg queueId] [arg script]]
+	[opt [option "-jobid [arg string]"]] \
+	[arg queueId] \
+        [arg script]]
 
 Add a new job to the queue. When [opt [option {-head}]] is specified, add
 the new jab to the front of the queue. If there are less than
@@ -200,8 +203,9 @@ Returns a list of the thread pool's fields.
 
 
 [call [cmd "ns_job wait"] \
-	[opt [option {-timeout T}]] \
-	[arg queueId] [arg jobId]]
+	[opt [option "-timeout [arg time]"]] \
+	[arg queueId] \
+        [arg jobId]]
 
 Wait for the specified queued or running job to finish.
 [cmd "ns_job wait"] returns the results of the script.
@@ -213,7 +217,7 @@ or as a number with a time unit.
 
 
 [call [cmd "ns_job waitany"] \
-	[opt [option {-timeout T}]] \
+	[opt [option "-timeout [arg time]"]] \
 	[arg queueId]]
 
 Wait for any job on the queue complete.

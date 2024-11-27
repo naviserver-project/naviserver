@@ -183,7 +183,7 @@ test ns_strcoll-3.3 {sort with upper and lowercase characters, locale C} \
 
 test ns_valid_utf8-1.0 {syntax: ns_valid_utf8} -body {
     ns_valid_utf8 - - -
-} -returnCodes error -result {wrong # args: should be "ns_valid_utf8 /string/ ?/error/?"}
+} -returnCodes error -result {wrong # args: should be "ns_valid_utf8 /string/ ?/varname/?"}
 
 test ns_valid_utf8-1.1 {ns_valid_utf8 with typical value} -body {
     return [ns_valid_utf8 "hello world"]
@@ -400,7 +400,7 @@ test ns_issmallint-1.0 {syntax: ns_issmallint} -body {
 test ns_paren-1.0 {syntax: ns_paren} -body {
     ns_paren x y
 } -returnCodes error -result {wrong # args: should be "ns_paren val"}
-# ns_paren is a Tcl proc: message should be {wrong # args: should be "ns_paren /val/"}
+# ns_paren is a Tcl proc: message should be {wrong # args: should be "ns_paren /string/"}
 
 
 test ns_setexpires-1.0 {syntax: ns_setexpires} -body {
@@ -411,12 +411,12 @@ test ns_setexpires-1.0 {syntax: ns_setexpires} -body {
 test ns_tagelement-1.0 {syntax: ns_tagelement} -body {
     ns_tagelement
 } -returnCodes error -result {wrong # args: should be "ns_tagelement tag key"}
-# ns_tagelement is a Tcl proc: message should be {wrong # args: should be "ns_tagelement /tag/ /key/"}
+# ns_tagelement is a Tcl proc: message should be {wrong # args: should be "ns_tagelement /tag/ /attribute/"}
 
 test ns_tagelementset-1.0 {syntax: ns_tagelement} -body {
     ns_tagelementset
 } -returnCodes error -result {wrong # args: should be "ns_tagelementset tagvar key value"}
-# ns_tagelementset is a Tcl proc: message should be {wrong # args: should be "ns_tagelementset /tagvar/ /key/ /value/"}
+# ns_tagelementset is a Tcl proc: message should be {wrong # args: should be "ns_tagelementset /tagvar/ /attribute/ /value/"}
 
 test ns_cookiecharset-1.0 {syntax: ns_cookiecharset} -body {
     ns_cookiecharset

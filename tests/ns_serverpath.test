@@ -48,7 +48,7 @@ test ns_serverpath-1.1 {ns_serverpath basic operation} -body {
 
 # ns_serverpath processes all input parameters, we cannot trigger a
 # syntax error message. Therefore, provide a manual entry:
-# message should be {wrong # args: should be "ns_serverpath ?host? ?--? ?pathelements ...?"}
+# message should be {wrong # args: should be "ns_serverpath ?-host /string/? ?--? ?/path-segment .../?"}
 
 test ns_serverpath-1.2 {basic path} -body {
     ns_serverpath --
@@ -58,7 +58,7 @@ test ns_serverpath-1.3 {basic path} -body {
     ns_serverpath foo bar
 } -result ${serverroot}/foo/bar
 
-test ns_serverpath-1.4 {basic path} -body {
+test ns_serverpath-1.4 {basic path with argument separator} -body {
     ns_serverpath -- foo bar
 } -result ${serverroot}/foo/bar
 
@@ -118,7 +118,6 @@ test ns_serverpath-4.4 {custom serverroot} -body {
 
 
 
-
 test ns_serverpath-5.1 {bad host} -body {
     ns_serverpath -host " "
 } -result ${serverroot}
@@ -148,22 +147,6 @@ test ns_serverpath-5.7 {bad host} -body {
 } -result ${serverroot}/3dots
 
 unset -nocomplain serverroot vhosts
-
-#######################################################################################
-#  ns_pagepath
-#######################################################################################
-
-test ns_pagepath-1.0 {syntax: ns_pagepath} -body {
-    ns_pagepath
-} -result $pageroot
-
-# ns_pagepath processes all input parameters, we cannot trigger a
-# syntax error message. Therefore, provide a manual entry:
-# message should be {wrong # args: should be "ns_pagepath ?pathelements ...?"}
-
-test ns_pagepath-1.1 {syntax: ns_pagepath} -body {
-    ns_pagepath x
-} -result $pageroot/x
 
 cleanupTests
 

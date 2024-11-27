@@ -105,8 +105,8 @@
 
 [call [cmd "ns_set format"] \
         [opt [option -noname]] \
-        [opt [option "-lead [arg lead]"]] \
-        [opt [option "-separator [arg separator]"]] \
+        [opt [option "-lead [arg string]"]] \
+        [opt [option "-separator [arg string]"]] \
         [opt "--"] \
         [arg setId] ]
 
@@ -142,9 +142,9 @@
   save temporary memory within loops with many iterations.
 
 [call [cmd "ns_set get"] \
-        [arg setId] \
         [opt [option "-all"]] \
         [opt [option -nocase]] [opt "--"] \
+        [arg setId] \
         [arg key] \
         [opt [arg default]]]
 
@@ -192,7 +192,7 @@
   Returns a list of all [cmd ns_set] instances in the current interpreter.
 
 
-[call [cmd "ns_set merge"] [arg setId1] [arg setId2]]
+[call [cmd "ns_set merge"] [opt [option -nocase]] [opt "--"] [arg setId1] [arg setId2]]
 
   Merges [arg setId2] into [arg setId1]. Fields from [arg setId2] are
   appended to [arg setId1] only if their keys do not already exist in
@@ -248,9 +248,19 @@
   [cmd "ns_set update"] if you want to update a field with a certain key.
 
 
-[call [cmd "ns_set size"] [arg setId]]
+[call [cmd "ns_set size"] [arg setId] [opt [arg nrElements]] [opt [arg bufferSize]]]
 
   Returns the number of fields in the set.
+
+[para] The optional [arg nrElements] can be used to change the
+  internal size of the set, the number of elements can be increased or
+  decreased. A decrease * might entail a truncation of the set.
+
+[para] The optional [arg bufferSize] can be used to change the
+  internal buffer size to either free some memory, when the
+  set was previously used to store many large objects, or to
+  pre-allocate storage to avoid resource operations in the internal
+  string buffer.
 
 
 [call [cmd "ns_set split"] [arg setId] [opt [arg splitChar]]]

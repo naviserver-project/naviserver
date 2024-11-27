@@ -55,7 +55,7 @@ test ns_sockopen-1.0 {syntax: ns_sockopen} -body {
 
 test ns_sockselect-1.0 {syntax: ns_sockselect} -body {
     ns_sockselect
-} -returnCodes {error ok} -result {wrong # args: should be "ns_sockselect ?-timeout timeout? rfds wfds efds"}
+} -returnCodes {error ok} -result {wrong # args: should be "ns_sockselect ?-timeout /time/? /rfds/ /wfds/ /efds/"}
 
 
 #

@@ -33,9 +33,9 @@ support and the nsf package is installed.
 [list_begin definitions]
 
 [call [cmd "ns_hotp"] \
-	[opt [option "-digest [arg digest]"]] \
-	[opt [option "-digits [arg digits]"]] \
-	[opt [option "-key [arg key]"]] \
+	[opt [option "-digest [arg value]"]] \
+	[opt [option "-digits [arg integer]"]] \
+	[opt [option "-key [arg value]"]] \
 	[arg data]]
 
 [para]

@@ -375,8 +375,8 @@ JobConfigureObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     Ns_ObjvValueRange jptRange = {0, INT_MAX};
     Ns_ObjvSpec    lopts[] = {
         {"-jobsperthread",  Ns_ObjvInt,  &jpt,        &jptRange},
-        {"-timeout",        Ns_ObjvTime, &timeoutPtr, NULL},
         {"-logminduration", Ns_ObjvTime, &logminPtr,  NULL},
+        {"-timeout",        Ns_ObjvTime, &timeoutPtr, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -436,7 +436,7 @@ JobCreateObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
     };
     Ns_ObjvSpec args[] = {
         {"queueId",     Ns_ObjvObj,  &queueIdObj,  NULL},
-        {"?maxThreads", Ns_ObjvInt,  &maxThreads,  &maxThreadsRange},
+        {"?maxthreads", Ns_ObjvInt,  &maxThreads,  &maxThreadsRange},
         {NULL, NULL, NULL, NULL}
     };
 

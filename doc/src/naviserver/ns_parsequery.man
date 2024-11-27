@@ -13,9 +13,9 @@ Parse HTTP query parameters.
 [list_begin definitions]
 
  [call [cmd ns_parsequery] \
-     [opt [option "-charset [arg charset]"]] \
-     [opt [option "-fallbackcharset [arg fallbackcharset]"]] \
-     [opt [arg "--"]] \
+     [opt [option "-charset [arg string]"]] \
+     [opt [option "-fallbackcharset [arg string]"]] \
+     [opt --] \
      [arg querystring]]
 
 [list_end]

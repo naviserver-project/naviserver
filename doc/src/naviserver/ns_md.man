@@ -27,17 +27,17 @@ the incremental interface.
 [list_begin definitions]
 
 [call [cmd "ns_md string"] \
-    [opt [option "-digest [arg digest]"]] \
-    [opt [option "-encoding [arg encoding]"]] \
+    [opt [option "-digest [arg value]"]] \
+    [opt [option "-encoding [arg value]"]] \
     [arg message] \
 ]
 
 Returns the message digest from the provided string [arg message].
 
 [call [cmd "ns_md file"] \
-    [opt [option "-digest [arg digest]"]] \
-    [opt [option "-encoding [arg encoding]"]] \
-    [arg filename] [arg args] \
+    [opt [option "-digest [arg value]"]] \
+    [opt [option "-encoding [arg value]"]] \
+    [arg filename] [opt [arg "filename ..."]] \
 ]
 
 [para]
@@ -48,7 +48,7 @@ The files are read incrementally to keep storage requirements for large
 files low. The resulting message digest is calculated cumulatively.
 
 [call [cmd "ns_md new"] \
-    [opt [option "-digest [arg digest]"]] \
+    [opt [option "-digest [arg value]"]] \
 ]
 
 Creates and returns a new MD object for incremental operations.
@@ -115,17 +115,18 @@ implementation provides more options for certain specialized operations.
 
 [call [cmd "ns_crypto::md add"] \
     [opt [option "-binary"]] \
-    [arg "ctx"] \
+    [opt --] \
+    [arg ctx] \
     [arg message] \
 ]
 
 [call [cmd "ns_crypto::md free"] \
-    [arg "ctx"] \
+    [arg ctx] \
 ]
 
 [call [cmd "ns_crypto::md get"] \
     [opt [option "-encoding hex|base64url|base64|binary"]] \
-    [arg "ctx"] \
+    [arg ctx] \
 ]
 
 [call [cmd "ns_crypto::md hkdf"] \

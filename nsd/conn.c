@@ -2052,7 +2052,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
             Ns_ObjvValueRange sentRange = {0, LLONG_MAX};
             Tcl_WideInt       sent = -1;
             Ns_ObjvSpec largs[] = {
-                {"?idx", Ns_ObjvWideInt,  &sent, &sentRange},
+                {"?bytes", Ns_ObjvWideInt,  &sent, &sentRange},
                 {NULL, NULL, NULL, NULL}
             };
 
@@ -2213,7 +2213,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         case CRatelimitIdx: {
             int         rateLimit = -1;
             Ns_ObjvSpec largs[] = {
-                {"?ratelimit", Ns_ObjvInt, &rateLimit, &posintRange0},
+                {"?limit", Ns_ObjvInt, &rateLimit, &posintRange0},
                 {NULL, NULL, NULL, NULL}
             };
 
@@ -2234,7 +2234,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
             int               status = -1;
             Ns_ObjvValueRange statusRange = {100, 599};
             Ns_ObjvSpec       largs[] = {
-                {"?status", Ns_ObjvInt, &status, &statusRange},
+                {"?status-code", Ns_ObjvInt, &status, &statusRange},
                 {NULL, NULL, NULL, NULL}
             };
 

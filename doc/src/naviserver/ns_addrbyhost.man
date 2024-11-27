@@ -6,7 +6,7 @@
 
 [description]
 
- This command resolves a hostname to its IP address.  If the hostname cannot be resolved, it throws an error.
+ This command resolves a [arg hostname] to its IP address.  If the hostname cannot be resolved, it throws an error.
 
 [section {COMMANDS}]
 
@@ -14,6 +14,7 @@
 
 [call [cmd ns_addrbyhost] \
 	[opt [option -all]] \
+	[opt --] \
 	[arg hostname]]
 
 [para]

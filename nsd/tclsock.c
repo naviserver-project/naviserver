@@ -161,12 +161,12 @@ NsTclGetAddrObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     char       *host;
     int         all = 0, result = TCL_OK;
     Ns_ObjvSpec opts[] = {
-        {"-all",      Ns_ObjvBool,  &all, INT2PTR(NS_TRUE)},
-        {"--",        Ns_ObjvBreak, NULL, NULL},
+        {"-all",     Ns_ObjvBool,  &all, INT2PTR(NS_TRUE)},
+        {"--",       Ns_ObjvBreak, NULL, NULL},
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"host",  Ns_ObjvString, &host,    NULL},
+        {"hostname", Ns_ObjvString, &host,    NULL},
         {NULL, NULL, NULL, NULL}
     };
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
@@ -596,7 +596,7 @@ NsTclSelectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
 
     if (objc != 6 && objc != 4) {
     syntax:
-        Tcl_WrongNumArgs(interp, 1, objv, "?-timeout timeout? rfds wfds efds");
+        Tcl_WrongNumArgs(interp, 1, objv, "?-timeout /time/? /rfds/ /wfds/ /efds/");
         return TCL_ERROR;
     }
     if (objc == 4) {

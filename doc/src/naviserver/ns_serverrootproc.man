@@ -74,7 +74,7 @@ parameter [term initcmd] in the section [term tcl] of the server (here
 
 
 [see_also ns_locationproc ns_server ns_conn ns_set]
-[keywords "global built-in" callback virtual hosting]
+[keywords "global built-in" callback "virtual host"]
 [manpage_end]
 
 

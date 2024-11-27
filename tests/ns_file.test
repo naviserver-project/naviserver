@@ -32,7 +32,7 @@ test ns_ftruncate-1.0 {syntax: ns_ftruncate} -body {
 
 test ns_kill-1.0 {syntax: ns_kill} -body {
     ns_kill
-} -returnCodes error -result {wrong # args: should be "ns_kill ?-nocomplain? /pid/ /sig[0,MAX]/"}
+} -returnCodes error -result {wrong # args: should be "ns_kill ?-nocomplain? /pid/ /signal[0,MAX]/"}
 
 test ns_normalizepath-1.0 {syntax: ns_normalizepath} -body {
     ns_normalizepath

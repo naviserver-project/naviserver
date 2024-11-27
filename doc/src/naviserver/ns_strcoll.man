@@ -11,11 +11,12 @@
 [list_begin definitions]
 
 [call [cmd ns_strcoll] \
-        [opt [option "-locale [arg locale]"]] \
+        [opt [option "-locale [arg string]"]] \
+	[opt --] \
         [arg string1] \
         [arg string2]]
 
-[para] This command compares lexicographically string1 with string2
+[para] This command compares lexicographically [arg string1] with [arg string2]
   according to the current locale collation and returns an integer
   greater than, equal to, or less than 0, depending on whether string1
   is greater than, equal to, or less than string2. The command is
@@ -26,19 +27,19 @@
   function call.
 
 [para] When the option [option "-locale"] is not set, the LC_COLLATE
-value is determined by the operating system (looking into the settings
-of LC_ALL, LC_COLLATE and LANG). When locale is specified, it is
-recommended to use the specification consisting of language, territory
-and charset (e.g. [term en_US.UTF-8].
+  value is determined by the operating system (looking into the
+  settings of LC_ALL, LC_COLLATE and LANG). When locale is specified,
+  it is recommended to use the specification consisting of language,
+  territory and charset (e.g. [term en_US.UTF-8].
 
 [para] Note that the output of the command depends on correct
-installation of locales on the host. Furthermore, the output of the
-command varies depending on the C library's implementation. Some
-implementations support further advanced sorting features such as
-case-folding collation, ignoring preceding dashes etc. especially for
-UTF-8 locales, other implementations don't. Future versions of the
-function might consider using the ICU library (International
-Components for Unicode) for further cross-platform compatibility.
+  installation of locales on the host. Furthermore, the output of the
+  command varies depending on the C library's implementation. Some
+  implementations support further advanced sorting features such as
+  case-folding collation, ignoring preceding dashes etc. especially
+  for UTF-8 locales, other implementations don't. Future versions of
+  the function might consider using the ICU library (International
+  Components for Unicode) for further cross-platform compatibility.
 
 [list_end]
 

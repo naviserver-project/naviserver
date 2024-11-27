@@ -17,7 +17,7 @@ to the slow clients in separate thread.
 [list_begin definitions]
 
 [call [cmd "ns_writer list"] \
-	[opt [option {-server s}] ]]
+	[opt [option "-server [arg server]"] ]]
 
 [para] 
 Returns list of all currently submitted files. Every list entry
@@ -51,8 +51,8 @@ binary. On success the function returns 1, otherwise 0.
 
 [call [cmd "ns_writer submitfile"] \
 	[opt [option -headers]] \
-	[opt [option {-offset offset}]] \
-	[opt [option {-size size}]] \
+	[opt [option "-offset [arg memory-size]"]] \
+	[opt [option "-size [arg memory-size]"]] \
 	[arg filename]]
 
 [para]
@@ -85,12 +85,12 @@ The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB).
 
 [para]
 Submits multiple files to be submitted in a single chunk. This call is
-quite similar to [cmd "ns_writer submitfile"], butit accepts a list of
+quite similar to [cmd "ns_writer submitfile"], but it accepts a list of
 dicts as argument. Every dict element has to contain a [term filename]
 element and optionally an [term -offset] element and/or a [term -size]
 element.
 
-[para] This function is e.g. useful for video streaming applications,
+[para] This function is, e.g., useful for video streaming applications,
 where multiple video file chunks should be transferred (sometimes)
 concatenated in a single chunk. Therefore, this function avoids the
 necessity to concatenate these files in advance (causing increased
@@ -103,7 +103,7 @@ latency and disk usage).
 
 
 [call [cmd "ns_writer size"] \
-	[opt [option "-driver driver"]] \
+	[opt [option "-driver [arg string]"]] \
 	[opt [arg size]]]
 
 [para]
@@ -115,7 +115,7 @@ When the [arg size] is provided, it can be specified in memory units
 (kB, MB, GB, KiB, MiB, GiB).
 
 [call [cmd "ns_writer streaming"] \
-	[opt [option "-driver driver"]] \
+	[opt [option "-driver [arg string]"]] \
 	[opt [arg value]]]
 
 [para]

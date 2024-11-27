@@ -11,7 +11,7 @@ This function rolls the specified file, keeping a number of backup copies up to 
 
 [list_begin definitions]
 
-[call [cmd ns_rollfile] [arg file] [arg backupMax]]
+[call [cmd ns_rollfile] [arg path] [arg maxbackups]]
 
 [list_end]
 

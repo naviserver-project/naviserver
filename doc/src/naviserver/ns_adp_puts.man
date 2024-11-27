@@ -15,7 +15,10 @@
 [list_begin definitions]
 
 
-[call [cmd ns_adp_puts] [opt [option {-nonewline}]] [arg string]]
+[call [cmd ns_adp_puts] \
+        [opt [option -nonewline]] \
+        [opt --] \
+        [arg string]]
 
 
 [list_end]

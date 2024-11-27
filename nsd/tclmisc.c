@@ -2226,8 +2226,8 @@ NsTclValidUtf8ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
     int         result;
     Tcl_Obj    *stringObj = NULL, *errorVarnameObj = NULL;
     Ns_ObjvSpec args[] = {
-        {"string",    Ns_ObjvObj, &stringObj, NULL},
-        {"?error",    Ns_ObjvObj, &errorVarnameObj, NULL},
+        {"string",   Ns_ObjvObj, &stringObj, NULL},
+        {"?varname", Ns_ObjvObj, &errorVarnameObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
 

@@ -27,7 +27,7 @@ test ns_library-1.0 {syntax: ns_library} -body {
 
 test ns_modulepath-1.0 {syntax: ns_modulepath} -body {
     ns_modulepath
-} -returnCodes error -result {wrong # args: should be "ns_modulepath /server/ ?/module/ ...?"}
+} -returnCodes error -result {wrong # args: should be "ns_modulepath /server/ ?/module .../?"}
 
 # The following commands are available only from the configuration file.
 

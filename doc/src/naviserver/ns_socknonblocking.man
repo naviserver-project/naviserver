@@ -11,7 +11,7 @@ This function sets the socket for the specified sockId to nonblocking.
 
 [list_begin definitions]
 
-[call [cmd ns_socknonblocking] [arg sockid]]
+[call [cmd ns_socknonblocking] [arg sockId]]
 
 [list_end]
 

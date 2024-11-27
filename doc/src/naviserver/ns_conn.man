@@ -102,10 +102,10 @@ Returns the number of bytes in the content passed in.
 
 [call [cmd  "ns_conn contentsentlength"] [opt [arg bytes]]]
 
-Returns or sets the number of bytes in the content to be sent. 
+Returns or sets the specified number of [arg bytes] in the content to be sent.
 
 
-[call [cmd  "ns_conn copy"] [arg ofsetf] [arg length] [arg channelId]]
+[call [cmd  "ns_conn copy"] [arg offset] [arg length] [arg channelId]]
 
 Copies number of bytes from the current connection string data to a
 Tcl channel.  The arguments [arg offset] and [arg length] denote an offset
@@ -188,7 +188,7 @@ the flags might change over versions.
 
 
 [call [cmd  "ns_conn form"] \
-     [opt [option "-fallbackcharset [arg fallbackcharset]"]] \
+     [opt [option "-fallbackcharset [arg string]"]] \
 ]
 
 Returns any submitted form data as an [term ns_set]. This form data
@@ -349,7 +349,7 @@ during running of filters) and "runtime" (time spent so far during the
 main request).
 
 
-[call [cmd  "ns_conn ratelimit"] [opt limit]]
+[call [cmd  "ns_conn ratelimit"] [opt [arg limit]]]
 
 Query or set rate limit for the current connection. The value is
 provided in KB/s (kilobytes per second). A value of 0 means unlimited.
@@ -380,7 +380,7 @@ Returns the time the connection request started in "sec:usec" (aka
 ns_time) format.
 
 
-[call [cmd  "ns_conn status"] [opt [arg value]]]
+[call [cmd  "ns_conn status"] [opt [arg status-code]]]
 
 Query or set the HTTP status code for the current connection.
 
@@ -442,6 +442,6 @@ encoded response.
 [see_also ns_adp ns_locationproc ns_getform ns_set ns_queryget \
   ns_time ns_getcontent]
 [keywords "server built-in" IPv4 IPv6 gzip connection reverseproxy SNI \
-  "virtual hosting"]
+  "virtual host"]
 
 [manpage_end]

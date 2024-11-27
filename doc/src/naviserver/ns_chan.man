@@ -24,7 +24,7 @@
 
 
 [list_begin definitions]
-[call [cmd "ns_chan cleanup"] [opt [option {-shared}]]]
+[call [cmd "ns_chan cleanup"] [opt [option -shared]]]
 
  Closes all shared channels found in the per-virtual-server private table or current Tcl
  interpreter table, depending on the [option -shared] flag.  If the [option -shared] flag is not specified,
@@ -34,9 +34,9 @@
  not attached in any Tcl interpreter or thread.
 
 
-[call [cmd "ns_chan create"] [arg {channel name}]]
+[call [cmd "ns_chan create"] [arg channel] [arg name]]
 
- Given an existing Tcl channel handle, ns_chan create "unplugs" this channel from
+ Given an existing Tcl channel handle, this command "unplugs" this channel from
  the current interpreter, and stores it under the name in the per-virtual-server
  private table.  Any further attempt to use this channel from the current interpreter
  will fail by throwing a Tcl error.  On success, this command will return an empty string.
