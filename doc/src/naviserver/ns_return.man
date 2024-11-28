@@ -37,7 +37,7 @@ error situations (see [cmd returnstatus-cmds]).
 	[arg mime-type] \
 	[arg body] ]
 
-Return a complete response to the client consisting of the given [arg body]
+Sends a complete response to the client consisting of the given [arg body]
 and a set of HTTP headers. [arg status] is an integer HTTP status code such as
 200 (OK) or 404 (Not Found). When the optional flag [option {-binary}] is
 used, the content of the Tcl byte-array is transmitted.
@@ -64,7 +64,7 @@ continues to execute code.
    [arg mime-type] \
    [arg filepath] ]
 
-Return the given file as the complete response body. Headers are constructed
+Sends the given file as the complete response body. Headers are constructed
 using [arg status], [arg mime-type] and any pending headers set using
 [cmd "ns_conn outputheaders"]. The bytes of the file are not transformed in any
 way.
@@ -82,7 +82,7 @@ continues to execute code.
      [arg channel] \
      [arg length] ]
 
-Return [arg length] bytes from [arg channel] as the response body. The current
+Sends [arg length] bytes from [arg channel] as the response body. The current
 offset of the channel is the beginning of the body -- the offset will be left
 at [arg length] bytes. The bytes of the file are not transformed in any way.
 
@@ -103,7 +103,7 @@ continues to execute code.
      [opt [option "-file [arg filepath]"]] \
      [opt [option "-fileid [arg channelId]"]] ]
 
-Return a complete response to the client using exactly one of [option -string],
+Sends a complete response to the client using exactly one of [option -string],
 [option -binary], [option -file] or [option -fileid] as the body.
 
 [para]

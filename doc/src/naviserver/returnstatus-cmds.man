@@ -6,26 +6,26 @@
 
 [description]
 
-These commands return a complete response to the client using a variety of
+These commands sends a complete response to the client using a variety of
 different HTTP status codes. On contrary to the lower level commands
-like [cmd ns_return] these commands are designed to ease consistent
+like [cmd ns_respond] or [cmd ns_return] these commands are designed to ease consistent
 behavior in common success, redirect or error situations.
 
-Like with [cmd ns_return] all queued headers, such as those set by
-[cmd ns_setcookie] (see [cmd ns_cookie]) or via [cmd "ns_conn"] [cmd "outputheaders"] and 
+Like with all response commands, all queued headers, such as those set by
+[cmd ns_setcookie] (see [cmd ns_cookie]) or via [cmd "ns_conn outputheaders"] and
 [cmd "ns_set put"], are added to the default headers and sent in the response.
 
 [para]
 These commands return 0 (zero) if the response was successfully
 sent to the client and 1 if the write to the connection failed.
-They will raise an error if no connection is available, e.g. they are called from
-a non-connection thread or the response has already been sent and the connection
-closed.
+They will raise an error if no connection is available, e.g., when they are called from
+a background thread without connection, or when a response has already been sent.
+
 
 [para]
-After the command returns the connection is returned to the driver thread to be
+After these command finsh the connection is returned to the driver thread to be
 closed or monitored for keep-alive. The calling connection thread can then
-continue to execute code, e.g. to cleanup resources or for logging.
+continue to execute code, e.g., to cleanup resources or for logging.
 
 [para]
 Custom error pages may be specified in the server configuration file to
@@ -33,10 +33,12 @@ override the default HTML message which is returned, for those commands which
 return one.
 
 [para]
-NOTE: The script does not end at the time these commands are invoked.
-When used in an ADP page, [cmd ns_adp_abort] or [cmd ns_adp_return]
-should be called to end script processing after e.g.
-[cmd ns_returnredirect].
+NOTE: A script calling one of the respons sending commands does not end at
+the time these commands are invoked.  When used in an ADP page,
+[cmd ns_adp_abort] or [cmd ns_adp_return] should be called to end script
+processing after e.g. [cmd ns_returnredirect]. Some frameworks
+based on NaviServer have custom commands for this porpose. OpenACS
+uses [term ad_script_abort].
 
 
 [section COMMANDS]
@@ -45,41 +47,44 @@ should be called to end script processing after e.g.
 
 [call [cmd ns_returnok] ]
 
-Return a response with status code [term 200], [term OK]. No body content is
-sent.
-
+Sends a response with status code [term 200], [term OK] to the
+client with an empty body. Use [cmd ns_returnnotice],
+[cmd ns_response], or [cmd ns_return] to send results with
+this status code to the client.
 
 
 [call [cmd ns_returnmoved] \
-        [arg url] ]
+        [arg location] ]
 
-Return a response with status code [term 301], [term Moved]. A [term Location]
-header will be set with the given [arg url].
+Sends a response with status code [term 301], [term Moved] to the
+client.  The response header field [term Location] is supplied with
+the value the provided [arg location].  The [arg location] can be a
+relative or absolute URI.  When [cmd ns_locationproc] is configured,
+its result will be used.
 
 [para]
-Use this response to signal that the resource identified by the requested URL
-has permanently moved to a new location. The client should request the new URL
-instead of the old one in the future.
+Use this response to signal that the resource was permanently moved to
+a new location. For temporary redirects, use [cmd ns_returnredirect].
 
 
 [call [cmd ns_returnredirect] \
-        [arg url] ]
+        [arg location] ]
 
-Return a response with status code [term 302], [term Found]. The [term Location]
-header will be set to the [arg url] if given. For non-fully qualified
-target addresses, the URL is completed with the location when
-configured via [cmd ns_locationproc].
+Sends a response with status code [term 302], [term Found] to the
+client. The response header field [term Location]
+is supplied with the value the provided [arg location].
+The [arg location]  can be a relative or absolute URI.
+When [cmd ns_locationproc] is configured, its result will be used.
 
 [para]
-Use this response to signal that the resource identified by the requested URL has
-temporarily moved to a new location. The client should continue to request the
-old URL.
+Use this response to signal that the resource has temporarily moved to a new location. For
+permanent redirects, use [cmd ns_returnmoved].
 
 
 [call [cmd ns_returnbadrequest] \
         [arg reason] ]
 
-Return a response with status code [term 400], [term "Bad Request"] using the
+Sends a response with status code [term 400], [term "Bad Request"] using the
 given [arg reason] in the HTML message.
 
 [para]
@@ -90,7 +95,7 @@ not try again without modifications.
 
 [call [cmd ns_returnunauthorized] ]
 
-Return a response with status code [term 401], [term "Access Denied"]. A
+Sends a response with status code [term 401], [term "Access Denied"]. A
 [term WWW-Authenticate] header will be set using the [term realm] specified
 in the configuration file option [term ns/server:realm].
 
@@ -106,15 +111,16 @@ NB: The username and password will be sent in plain text.
 
 [call [cmd ns_returnforbidden] ]
 
-Return a response with status code [term 403], [term Forbidden].
+Sends a response with status code [term 403], [term Forbidden].
 
 [para]
 Use this response to signal that the authentication information the client
 supplied are insufficient to grant them access to the requested URL.
 
+
 [call [cmd ns_returnnotfound] ]
 
-Return a response with status code [term 404], [term "Not Found"].
+Sends a response with status code [term 404], [term "Not Found"].
 
 [para]
 Use this response to signal that the content the client requested could not be
@@ -124,7 +130,7 @@ located given the URL that was requested.
 
 [call [cmd ns_returnunavailable] ]
 
-Return a response with status code [term 503], [term "Unavailable"].
+Sends a response with status code [term 503], [term "Unavailable"].
 
 [para]
 Use this response to signal that the server is too busy to deliver the requested
@@ -136,7 +142,7 @@ resource or is undergoing maintenance.
         [arg status] \
         [arg message] ]
 
-Return a response with the given [arg status] code and the error [arg message]
+Sends a response with the given [arg status] code and the error [arg message]
 wrapped in HTML.
 
 [para]
@@ -150,7 +156,7 @@ covered by the above commands, or to customize the HTML message.
         [arg title] \
         [arg message] ]
 
-Return a response with the given [arg status] code and an HTML message with the
+Sends a response with the given [arg status] code and an HTML message with the
 given [arg title] and [arg message].
 
 [para]
@@ -164,10 +170,6 @@ variable, but it may not be what you expect.
 
 [list_end]
 
-
-[para] Note: The script does not end at the time this command is
-invoked. [cmd ns_adp_abort] or ]cmd ns_adp_return] should be called to
-end script processing after ns_returnforbidden.
 
 [section CONFIGURATION]
 
