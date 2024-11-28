@@ -246,11 +246,11 @@ proc getformdata {formVar} {
 #
 # ns_paren --
 #
-#   <TBD>
+#   deprecated
 #
 
 proc ns_paren {val} {
-
+    ns_deprecated "use standard Tcl functions" {one-liner}
     if {$val ne {}} {
         return "($val)"
     }
@@ -294,13 +294,11 @@ proc ns_issmallint {value} {
 #
 #  ns_formvalueput --
 #
-#   <TBD>
-#
-#   Special thanks to Brian Tivol at Hearst New Media Center and MIT
-#   for providing the core of this code.
+#   deprecated.
 #
 
 proc ns_formvalueput {htmlpiece dataname datavalue} {
+    ns_deprecated "standard API" {not sufficent for today's needs}
 
     set newhtml ""
 
@@ -420,10 +418,11 @@ proc ns_formvalueput {htmlpiece dataname datavalue} {
 #
 # ns_tagelement --
 #
-#   <TBD>
+#   deprecated
 #
 
 proc ns_tagelement {tag key} {
+    ns_deprecated "tDOM or similar for updating HTML snippets"
 
     set qq {"([^\"]*)"}               ; # Matches what's in quotes
     set pp {([^ >]*)}                 ; # Matches a word (mind yer pp and qq)
@@ -443,9 +442,10 @@ proc ns_tagelement {tag key} {
 #
 # ns_tagelementset --
 #
-#   <TBD>
+#   deprecated
 #
 proc ns_tagelementset {tagvar key value} {
+    ns_deprecated "tDOM or similar for updating HTML snippets"
 
     upvar $tagvar tag
 
@@ -554,13 +554,13 @@ proc ns_htmlselect args {
 #
 # ns_browsermatch --
 #
-#   <TBD>
+#   <deprecated>
 #
 
 proc ns_browsermatch {pattern} {
+    ns_deprecated "standard API" {one-liner}
     string match $pattern [ns_set iget [ns_conn headers] user-agent] $agnt
 }
-
 
 #
 # ns_set_precision --

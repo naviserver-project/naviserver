@@ -165,10 +165,8 @@ sections of related commands.
 
 [section {HTML, Form, Request related Commands}]
 [list_begin definitions]
-[call [cmd ns_browsermatch]]
 [call [cmd ns_conn]]
 [call [cmd ns_connchan]]
-[call [cmd ns_formvalueput]]
 [call [cmd ns_getcontent]]
 [call [cmd ns_getform]]
 [call [cmd ns_getformfile]]
@@ -199,8 +197,6 @@ sections of related commands.
 [list_end]
 
 [call [cmd ns_setexpires]]
-[call [cmd ns_tagelement]]
-[call [cmd ns_tagelementset]]
 [call [cmd ns_writer]]
 [list_end]
 
@@ -226,11 +222,8 @@ sections of related commands.
 [section {I18N - Internationalization Commands}]
 [list_begin definitions]
 [call [cmd ns_charsets]]
-[call [cmd ns_choosecharset]]
-[call [cmd ns_cookiecharset]]
 [call [cmd ns_encodingforcharset]]
 [call [cmd ns_encodingfortype]]
-[call [cmd ns_formfieldcharset]]
 [call [cmd ns_setformencoding]]
 [call [cmd ns_strcoll]]
 [call [cmd ns_urlcharset]]
@@ -496,7 +489,6 @@ sections of related commands.
 [call [cmd ns_issmallint]]
 [call [cmd ns_module]]
 [call [cmd ns_openexcl]]
-[call [cmd ns_paren]]
 [call [cmd ns_parseargs]]
 [call [cmd ns_purgefiles]]
 [call [cmd ns_filewrite]]
@@ -518,15 +510,19 @@ sections of related commands.
 [call [cmd "ns_adp_registertag"]]       Use [cmd "ns_adp_registeradp"] instead.
 [call [cmd "ns_adp_safeeval"]]          Use [cmd "ns_adp_parse -safe"] instead.
 [call [cmd "ns_adp_stream"]]            Use [cmd "ns_adp_ctl stream"] instead.
+[call [cmd "ns_browsermatch"]]          Use standard API instead.
 [call [cmd "ns_cancel"]]                Use [cmd "ns_unschedule_proc"] instead.
 [call [cmd "ns_chmod"]]                 Use [cmd "file attributes"] instead.
-[call [cmd "ns_connsendfp"]]            Use [cmd "ns_writefp"] instead.
+[call [cmd "ns_choosecharset"]]         Use standard internationalization commands instead.
 [call [cmd "ns_conncptofp"]]            Use [cmd "ns_conn copy"] instead.
-[call [cmd "ns_writecontent"]]          Use [cmd "ns_conn copy"] instead.
+[call [cmd "ns_connsendfp"]]            Use [cmd "ns_writefp"] instead.
+[call [cmd "ns_cookiecharset"]]         Use standard internationalization commands instead.
 [call [cmd "ns_cp"]]                    Use [cmd "file copy"] instead.
 [call [cmd "ns_cpfp"]]                  Use [cmd "fcopy"] instead.
 [call [cmd "ns_db verbose"]]            Use [cmd "ns_logctl debug(sql) ..."] instead.
 [call [cmd "ns_event"]]                 Use [cmd "ns_cond"] instead.
+[call [cmd "ns_formfieldcharset"]]      Use standard internationalization commands instead.
+[call [cmd "ns_formvalueput"]]          Not sufficent for today's needs; use standard API instead.
 [call [cmd "ns_getchannels"]]           Use [cmd "file channels"] instead.
 [call [cmd "ns_geturl"]]                Use [cmd "ns_http"] instead.
 [call [cmd "ns_hmac_sha2"]]             Use [cmd "ns_crypto::hmac string"] instead.
@@ -549,6 +545,7 @@ sections of related commands.
 [call [cmd "ns_isformcached"]]          Obsolete.
 [call [cmd "ns_link"]]                  Use [cmd "file link -hard ..."] instead.
 [call [cmd "ns_mkdir"]]                 Use [cmd "file mkdir"] instead.
+[call [cmd "ns_paren"]]                 One-liner. Use standard API instead.
 [call [cmd "ns_parsetime"]]             Use [cmd "clock format ..."] instead.
 [call [cmd "ns_passwordcheck"]]         Use [cmd "ns_perm checkpass"] instead.
 [call [cmd "ns_pooldescription"]]       Use [cmd "ns_dbpooldescription"] instead.
@@ -564,6 +561,8 @@ sections of related commands.
 [call [cmd "ns_set_precision"]]         Use [cmd "set ::tcl_precision ..."] instead.
 [call [cmd "ns_sha2"]]                  Use [cmd "ns_crypto::md string"] instead.
 [call [cmd "ns_startcontent"]]          Use [cmd "ns_headers"] instead.
+[call [cmd "ns_tagelement"]]            Use tDOM or similar for accessing HTML content.
+[call [cmd "ns_tagelementset"]]         Use tDOM or similar for updating HTML snippets.
 [call [cmd "ns_thread begin"]]          Use [cmd "ns_thread create ..."] instead.
 [call [cmd "ns_thread begindetached"]]  Use [cmd "ns_thread create -detached ..."] instead.
 [call [cmd "ns_thread get"]]            Use [cmd "ns_thread handle"]] instead.
@@ -574,6 +573,8 @@ sections of related commands.
 [call [cmd "ns_unregister_proc"]]       Use [cmd "ns_unregister_op"] instead.
 [call [cmd "ns_updateheader"]]          Use [cmd "ns_set update"] [lb]ns_conn outputheaders[rb] instead.
 [call [cmd "ns_var"]]                   Use [cmd "nsv_*"] instead.
+[call [cmd "ns_writecontent"]]          Use [cmd "ns_conn copy"] instead.
+
 [list_end]
 
 [see_also nsd]

@@ -71,7 +71,7 @@ proc ns_setformencoding {charset} {
 #   the data is encoded.  If this field is found, use that charset to
 #   set the urlencoding for the current connection.
 #
-#   <TBD>
+#   deprecated
 #
 # Results:
 #    None.
@@ -81,9 +81,10 @@ proc ns_setformencoding {charset} {
 #
 
 proc ns_formfieldcharset {name} {
+    ns_deprecated {standard internationalization commands}
 
     set charset ""
-    
+
     if {[_ns_multipartformdata_p]} {
         set form [ns_getform]
         if {$form ne {}} {
@@ -111,7 +112,7 @@ proc ns_formfieldcharset {name} {
 #   is found, use that charset to set the urlencoding for the
 #   current connection.
 #
-#   <TBD>
+#   deprecated
 #
 # Results:
 #    None.
@@ -121,6 +122,7 @@ proc ns_formfieldcharset {name} {
 #
 
 proc ns_cookiecharset {name} {
+    ns_deprecated {standard internationalization commands}
 
     set cookies [split [ns_set iget [ns_conn headers] cookie] ";"]
     set charset ""
@@ -131,7 +133,7 @@ proc ns_cookiecharset {name} {
             break
         }
     }
-    
+
     if {$charset ne {}} {
         ns_urlcharset $charset
     }
@@ -153,9 +155,9 @@ proc ns_cookiecharset {name} {
 #
 
 proc ns_encodingfortype {mimetype} {
-    
+
     set mimetype [string trim [string tolower $mimetype]]
-    
+
     if {[regexp {;[ \t\r\n]*charset[ \t\r\n]*=([^;]*)} $mimetype junk set]} {
         return [ns_encodingforcharset [string trim $set]]
     } elseif {[string match "text/*" $mimetype]} {
@@ -174,7 +176,7 @@ proc ns_encodingfortype {mimetype} {
 #   either the given charset list, or the configured default preferred
 #   character set list (ns/parameters/PreferredCharsets).
 #
-#   <TBD>
+#   Deprecated
 #
 # Results:
 #    One character set name.
@@ -184,13 +186,14 @@ proc ns_encodingfortype {mimetype} {
 #
 
 proc ns_choosecharset {args} {
+    ns_deprecated {standard internationalization commands}
 
     set preferred_charsets \
         [ns_config -set ns/parameters PreferredCharsets {utf-8 iso-8859-1}]
-    
+
     set default_charset \
         [ns_config -set ns/parameters OutputCharset iso-8859-1]
-    
+
     for {set i 0; set n [llength $args]} {$i < $n} {incr i} {
         set arg [lindex $args $i]
         switch -glob -- $arg {
@@ -226,7 +229,7 @@ proc ns_choosecharset {args} {
     }
 
     if {[string first ";q=" $accept_charset_header] == -1} {
-        
+
         #
         # No q values; just use the header order.
         #
@@ -264,7 +267,7 @@ proc ns_choosecharset {args} {
             lappend accept_charsets [lindex $pair 0]
         }
     }
-    
+
     if {[llength $accept_charsets] == 0} {
 
         #
@@ -273,7 +276,7 @@ proc ns_choosecharset {args} {
 
         return $default_charset
     }
-    
+
     foreach charset $preferred_charsets {
         if {$charset in $accept_charsets} {
 
@@ -285,12 +288,12 @@ proc ns_choosecharset {args} {
             return $charset
         }
     }
-    
+
     set supported_charsets [ns_charsets]
-    
+
     foreach charset $accept_charsets {
         if {$charset in $supported_charsets} {
-            
+
             #
             # Return the first acceptable charset
             # that we support.
@@ -299,7 +302,7 @@ proc ns_choosecharset {args} {
             return $charset
         }
     }
-    
+
     return $default_charset
 }
 
@@ -317,6 +320,7 @@ proc ns_choosecharset {args} {
 #
 
 proc _ns_multipartformdata_p {} {
+    ns_deprecated "" "helper of deprecated function"
 
     set type [string tolower [ns_set iget [ns_conn headers] content-type]]
     set glob {*multipart/form-data*}
