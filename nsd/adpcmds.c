@@ -369,7 +369,7 @@ NsTclAdpIncludeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"fileName", Ns_ObjvString, &fileName,  NULL},
+        {"filename", Ns_ObjvString, &fileName,  NULL},
         {"?arg",     Ns_ObjvArgs,   &nargs,     NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -979,7 +979,7 @@ NsTclAdpBindArgsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
     } else if (GetFrame(clientData, &framePtr) != TCL_OK) {
         result = TCL_ERROR;
 
-    } else if (objc != framePtr->objc) {
+    } else if (objc-1 != framePtr->objc) {
         Ns_TclPrintfResult(interp, "invalid #variables");
         result = TCL_ERROR;
 
@@ -987,7 +987,7 @@ NsTclAdpBindArgsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
         TCL_SIZE_T i;
 
         for (i = 1; i < objc; ++i) {
-            if (Tcl_ObjSetVar2(interp, objv[i], NULL, framePtr->objv[i],
+            if (Tcl_ObjSetVar2(interp, objv[i], NULL, framePtr->objv[i-1],
                                TCL_LEAVE_ERR_MSG) == NULL) {
                 result = TCL_ERROR;
                 break;
