@@ -2,13 +2,33 @@
 [manpage_begin ns_upload_stats n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {Return real-time statistic about being uploaded file}]
+[titledesc {Return Real-Time Statistics for an Ongoing File Upload}]
 
 [description]
-This command is useful in case of uploading big files and giving users some
-progress statistics about the process. It works by creating special counter for
-the uploaded url and keeps updating it while the file is being uploaded. Once
-file is uploaded completely these statistics are removed from the local cache.
+
+This command provides real-time statistics for large file uploads,
+enabling user interfaces to display progress information about uploads
+in progress.
+
+[para] Internally, an upload request is identified by a unique key, which is
+used to track statistics such as the current uploaded size and the
+total size. These statistics are dynamically updated throughout the
+upload process. Once the upload completes, the statistics are
+automatically discarded.
+
+[para] The upload key can be provided in several ways:
+
+[list_begin itemized]
+[item]    Recommended: Via the HTTP request header field [term X-Progress-ID] (see example below).
+[item]    Via a query parameter.
+[item]    Derived from the URL.
+[list_end]
+
+To enable upload progress statistics, the configuration parameter
+[term progressminsize] must be set. This ensures statistics are
+maintained only for files exceeding a specified minimum size, reducing
+unnecessary overhead for small files.
+
 
 [section {COMMANDS}]
 
@@ -16,24 +36,152 @@ file is uploaded completely these statistics are removed from the local cache.
 
 [call [cmd ns_upload_stats] [arg key]]
 
-[para]
-[arg key]
-The key is either the value provided via the query parameter
-"X-Progress-ID" (if provided) or the url with the query
-parameters. The convention with the query parameter "X-Progress-ID" is
-supported by nginx, lighttpd and by apache (mod_passenger).
+The [arg key] parameter is typically the value provided via the
+[term X-Progress-ID] request header, although query parameters or URLs can
+also be used. The convention of using the [term X-Progress-ID] header
+is widely supported by other web servers, including Nginx, Lighttpd,
+and Apache (with mod_passenger).
+
+[para] This command returns a list with two elements:
+[list_begin enum]
+[enum] The number of bytes uploaded so far.
+[enum] The total size of the file being uploaded.
+[list_end]
 
 [list_end]
 
 [section CONFIGURATION]
+
+To minimize unnecessary overhead for small uploads, progress
+statistics are only maintained for files larger than a configurable
+size. Set the [term progressminsize] parameter to specify the minimum
+file size (e.g., 2kB).
+
+[example_begin]
  ns_section ns/parameters {
    ns_param progressminsize 2kB
  }
+[example_end]
+
 [section EXAMPLES]
 
+JavaScript file for uploading a file, supplying for the upload a unique
+[term X-Progress-ID].
+
 [example_begin]
- Put some examples here to illustrate command usage.
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload with Progress</title>
+ </head>
+ <body>
+    <h1>File Upload with X-Progress-ID</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" name="file" id="fileInput" />
+        <button type="button" id="uploadButton">Upload</button>
+    </form>
+    <p id="progressText">Progress: 0%</p>
+    <div id="progressBar" style="width: 0%; height: 20px; background-color: green;"></div>
+
+    <script>
+        document.getElementById('uploadButton').addEventListener('click', function () {
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput.files.length === 0) {
+                alert('Please select a file to upload.');
+                return;
+            }
+
+            const progressId = generateUUID();
+            const formData = new FormData();
+            formData.append('file', fileInput.files[lb]0[rb]);
+
+            // Start the file upload with X-Progress-ID header
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/upload', true);
+            xhr.setRequestHeader('X-Progress-ID', progressId);
+            xhr.upload.addEventListener('loadstart', () => {
+                document.getElementById('progressText').innerText = 'Upload started...';
+            });
+            xhr.upload.addEventListener('error', () => {
+                document.getElementById('progressText').innerText = 'Error during upload.';
+            });
+            xhr.addEventListener('load', () => {
+                document.getElementById('progressText').innerText = 'Upload completed.';
+            });
+
+            xhr.send(formData);
+
+            // Query upload progress
+            const progressInterval = setInterval(() => {
+                fetch(`/progress?X-Progress-ID=${progressId}`)
+                    .then(response => {
+                        if (response.ok) {
+                            return response.json();
+                        } else if (response.status === 429) {
+                            // request block told us to slow down, could be handled differently
+                            return {status: "continue"}
+                        } else {
+                            console.warn(`Non-200 status code: ${response.status}`);
+                            return null;
+                        }
+                    })
+                    .then(data => {
+                        //console.log(data);
+                        if (data && data.total) {
+                           const percent = Math.round((data.current / data.total) * 100);
+                           document.getElementById('progressText').innerText = `Progress: ${percent}%`;
+                           document.getElementById('progressBar').style.width = `${percent}%`;
+                           if (percent === 100) {
+                               clearInterval(progressInterval);
+                            }
+                         }
+                    })
+                    .catch(err => {
+                        console.error('Error querying progress:', err);
+                        clearInterval(progressInterval);
+                    });
+            },250);
+        });
+
+        function generateUUID() {
+            // Simple UUID generator for X-Progress-ID
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[lb]xy[rb]/g, function (c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+    </script>
+ </body>
+ </html>
 [example_end]
+
+Server-side support:
+[example_begin]
+ # Upload handler
+ ns_register_proc POST /upload {
+   ns_return 200 text/plain "Upload successful"
+ }
+ 
+ # Progress handler
+ ns_register_proc GET /progress {
+   set progress_id [lb]ns_queryget X-Progress-ID[rb]
+   if {$progress_id ne ""} {
+     set stats [lb]ns_upload_stats $progress_id[rb]
+     if {[lb]llength $stats[rb] == 2} {
+       lassign $stats current total
+       ns_return 200 application/json [lb]subst {{"total":$total,"current":$current}}[rb]
+     } else {
+       ns_return 404 application/json {{"error": "No progress data available."}}
+     }
+   } else {
+     ns_return 400 application/json {{"error": "Missing X-Progress-ID."}}
+   }
+ }
+[example_end]
+
 
 
 [see_also nsd]
