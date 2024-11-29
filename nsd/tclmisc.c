@@ -2749,7 +2749,7 @@ NsTclGetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
     };
     Ns_ObjvSpec   args[] = {
         {"fileId",     Ns_ObjvString, &fileId,   NULL},
-        {"varName",    Ns_ObjvString, &varName,  NULL},
+        {"varname",    Ns_ObjvString, &varName,  NULL},
         {NULL, NULL, NULL, NULL}
     };
 

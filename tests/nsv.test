@@ -19,11 +19,11 @@ test ns_nsv-1.3 {basic syntax nsv_exists} -body {
 
 test ns_nsv-1.4 {basic syntax nsv_append} -body {
     nsv_append
-} -returnCodes error -result {wrong # args: should be "nsv_append /array/ /key/ /value/ ?/value/ ...?"}
+} -returnCodes error -result {wrong # args: should be "nsv_append /array/ /key/ /value .../"}
 
 test ns_nsv-1.5 {basic syntax nsv_lappend} -body {
     nsv_lappend
-} -returnCodes error -result {wrong # args: should be "nsv_lappend /array/ /key/ /value/ ?/value/ ...?"}
+} -returnCodes error -result {wrong # args: should be "nsv_lappend /array/ /key/ /value .../"}
 
 test ns_nsv-1.6 {basic syntax nsv_incr} -body {
     nsv_incr
@@ -60,11 +60,11 @@ test ns_nsv-1.9.3 {syntax nsv_array names} -body {
 
 test ns_nsv-1.9.4 {syntax nsv_array reset} -body {
     nsv_array reset
-} -returnCodes error -result {wrong # args: should be "nsv_array reset /array/ /valueList/"}
+} -returnCodes error -result {wrong # args: should be "nsv_array reset /array/ /list/"}
 
 test ns_nsv-1.9.5 {syntax nsv_array set} -body {
     nsv_array set
-} -returnCodes error -result {wrong # args: should be "nsv_array set /array/ /valueList/"}
+} -returnCodes error -result {wrong # args: should be "nsv_array set /array/ /list/"}
 
 test ns_nsv-1.9.6 {syntax nsv_array size} -body {
     nsv_array size
@@ -473,11 +473,12 @@ test nsv-names.1 {nsv_names} -body {
 #
 # nsv_dict set
 #
-test nsv-dict-set.0 {nsv_dict set - syntax test} -body {
+test nsv-dict-set.0 {syntax: nsv_dict set} -body {
     nsv_dict set a1
 } -cleanup {
     nsv_unset -nocomplain a1
 } -returnCodes {error} -result {wrong # args: should be "nsv_dict set /array/ /key/ /dictkey/ /arg .../"}
+# should be {wrong # args: should be "nsv_dict set /array/ /key/ /dictkey .../ /value/"}
 
 test nsv-dict-set.1 {nsv_dict set new} -body {
     # Create an array, a key and a dict entry in one command
@@ -592,6 +593,7 @@ test nsv-dict-getdef.0.2 {nsv_dict getdef - syntax test, key, no dict key, not d
 } -cleanup {
     nsv_unset -nocomplain a1
 } -returnCodes {error} -result {wrong # args: should be "nsv_dict getdef ?-varname /string/? ?--? /array/ /key/ /arg .../"}
+# should be {wrong # args: should be "nsv_dict getdef ?-varname /string/? ?--? /array/ /key/ /dictkey .../ /default/"}
 
 test nsv-dict-getdef.0.3 {nsv_dict getdef - syntax test, key, no dict key} -body {
     nsv_dict getdef a1 k1 default1
@@ -796,7 +798,7 @@ test nsv-dict-append.0 {nsv_dict append - syntax test} -body {
     nsv_dict append a1
 } -cleanup {
     nsv_unset -nocomplain a1
-} -returnCodes {error} -result {wrong # args: should be "nsv_dict append /array/ /key/ /dictkey/ ?/arg .../?"}
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict append /array/ /key/ /dictkey/ ?/value .../?"}
 
 test nsv-dict-append.1 {nsv_dict append create new entry} -body {
     nsv_dict append a1 k1 x a
@@ -841,7 +843,7 @@ test nsv-dict-lappend.0 {nsv_dict lappend - syntax test} -body {
     nsv_dict lappend a1
 } -cleanup {
     nsv_unset -nocomplain a1
-} -returnCodes {error} -result {wrong # args: should be "nsv_dict lappend /array/ /key/ /dictkey/ ?/arg .../?"}
+} -returnCodes {error} -result {wrong # args: should be "nsv_dict lappend /array/ /key/ /dictkey/ ?/value .../?"}
 
 test nsv-dict-lappend.1 {nsv_dict lappend create new entry} -body {
     # add dict values for k1

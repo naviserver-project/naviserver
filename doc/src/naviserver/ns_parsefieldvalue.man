@@ -14,7 +14,8 @@
      [opt [option "-lower"]] \
      [opt [option "-single"]] \
      [opt [option "-strict"]] \
-     [opt [arg fieldvalue]]]
+     [opt --] \
+     [arg fieldvalue]]
 
 [para] This function parses the provided field value (from an HTTP
 request or reply header field) into its parts and returns these in the

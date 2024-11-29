@@ -21,7 +21,7 @@ test ns_register_fastpath-1.0 {syntax: ns_register_fastpath} -body {
 
 test ns_register_proxy-1.0 {syntax: ns_register_proxy} -body {
     ns_register_proxy
-} -returnCodes error -result {wrong # args: should be "ns_register_proxy ?--? /method/ /protocol/ /script/ ?/arg .../?"}
+} -returnCodes error -result {wrong # args: should be "ns_register_proxy /method/ /protocol/ /script/ ?/arg .../?"}
 
 test ns_register_tcl-1.0 {syntax: ns_register_tcl} -body {
     ns_register_tcl

@@ -343,7 +343,7 @@ Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
  *
  * Ns_PurgeFiles, Ns_RollFileByDate --
  *
- *      Purge files by date, keeping max files.  The file parameter is
+ *      Purge files by date, keeping max files.  The file fileName is
  *      used as a basename to select files to purge.
  *
  *      Ns_RollFileByDate is deprecated and is a poorly named wrapper

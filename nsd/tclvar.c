@@ -474,7 +474,7 @@ NsTclNsvLappendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     int result = TCL_OK;
 
     if (unlikely(objc < 4)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/array/ /key/ /value/ ?/value/ ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/array/ /key/ /value .../");
         result = TCL_ERROR;
     } else {
         Array         *arrayPtr;
@@ -529,7 +529,7 @@ NsTclNsvAppendObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     int result = TCL_OK;
 
     if (unlikely(objc < 4)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/array/ /key/ /value/ ?/value/ ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/array/ /key/ /value .../");
         result = TCL_ERROR;
     } else {
         Array         *arrayPtr;
@@ -774,7 +774,7 @@ NsTclNsvArrayObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         case CSetIdx:   NS_FALL_THROUGH; /* fall through */
         case CResetIdx:
             if (objc != 4) {
-                Tcl_WrongNumArgs(interp, 2, objv, "/array/ /valueList/");
+                Tcl_WrongNumArgs(interp, 2, objv, "/array/ /list/");
                 result = TCL_ERROR;
 
             } else if (Tcl_ListObjGetElements(interp, objv[3], &lobjc, &lobjv) != TCL_OK) {
@@ -1264,16 +1264,16 @@ NsTclNsvDictObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
             int         increment = 1;
             TCL_SIZE_T  nargs = 0;
             Ns_ObjvSpec setArgs[] = {
-                {"array",     Ns_ObjvObj,  &arrayObj,     NULL},
-                {"key",       Ns_ObjvObj,  &keyObj,       NULL},
-                {"dictkey",   Ns_ObjvObj,  &dictKeyObj,   NULL},
-                {"arg",       Ns_ObjvArgs, &nargs,        NULL},
+                {"array",      Ns_ObjvObj,  &arrayObj,     NULL},
+                {"key",        Ns_ObjvObj,  &keyObj,       NULL},
+                {"dictkey",    Ns_ObjvObj,  &dictKeyObj,   NULL},
+                {"arg",        Ns_ObjvArgs, &nargs,        NULL},
                 {NULL, NULL, NULL, NULL}
             }, appendArgs[] = {
-                {"array",     Ns_ObjvObj,  &arrayObj,     NULL},
-                {"key",       Ns_ObjvObj,  &keyObj,       NULL},
-                {"dictkey",   Ns_ObjvObj,  &dictKeyObj,   NULL},
-                {"?arg",      Ns_ObjvArgs, &nargs,        NULL},
+                {"array",      Ns_ObjvObj,  &arrayObj,     NULL},
+                {"key",        Ns_ObjvObj,  &keyObj,       NULL},
+                {"dictkey",    Ns_ObjvObj,  &dictKeyObj,   NULL},
+                {"?value",     Ns_ObjvArgs, &nargs,        NULL},
                 {NULL, NULL, NULL, NULL}
             }, incrArgs[] = {
                 {"array",      Ns_ObjvObj, &arrayObj,     NULL},

@@ -33,7 +33,7 @@ test ns_querygetall-1.0  {syntax: ns_querygetall} -body {
     ns_querygetall
 } -returnCodes error -result {wrong # args: should be "ns_querygetall key ?default?"}
 
-# Tcl proc "ns_querygetall" - message should be {wrong # args: should be "ns_querygetall /key/ ?default?"}
+# Tcl proc "ns_querygetall" - message should be {wrong # args: should be "ns_querygetall /key/ ?/default/?"}
 
 
 #######################################################################################
@@ -44,7 +44,7 @@ test ns_getform-1.0  {syntax: ns_getform} -body {
     ns_getform x y
 } -returnCodes error -result {wrong # args: should be "?-fallbackcharset /fallbackcharset/? ?/charset/?"}
 
-# Tcl proc "ns_getform" - message should be {wrong # args: should be "ns_getform ?-fallbackcharset /fallbackcharset/? ?charset?"}
+# Tcl proc "ns_getform" - message should be {wrong # args: should be "ns_getform ?-fallbackcharset /charset/? ?/charset/?"}
 
 #######################################################################################
 #  test ns_getformfile

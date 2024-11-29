@@ -17,7 +17,7 @@ data.  If there is no form data, an empty [term ns_set] is created.
 
 [call [cmd ns_getform ] \
     [opt [option "-fallbackcharset [arg charset]"]] \
-    [opt [arg defaultcharset]] \
+    [opt [arg charset]] \
 ]
 
 [para]

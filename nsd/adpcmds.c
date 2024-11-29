@@ -547,7 +547,7 @@ NsTclAdpAppendObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
     int       result = TCL_OK;
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/string/ ?/string/ ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/string .../");
         result = TCL_ERROR;
     } else {
         TCL_SIZE_T i;
@@ -973,7 +973,7 @@ NsTclAdpBindArgsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
     int       result = TCL_OK;
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/varName/ ?/varName/ ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/varname .../");
         result = TCL_ERROR;
 
     } else if (GetFrame(clientData, &framePtr) != TCL_OK) {
@@ -1021,7 +1021,7 @@ NsTclAdpExceptionObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
     Tcl_Obj        *varnameObj = NULL;
     int             result = TCL_OK;
     Ns_ObjvSpec     args[] = {
-        {"?varName", Ns_ObjvObj, &varnameObj, NULL},
+        {"?varname", Ns_ObjvObj, &varnameObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
 

@@ -19,7 +19,7 @@ for current virtual server context
         ]
 
 Returns the absolute path to current virtual server home directory
-followed by the optional path segments.
+followed by the optional path segments. Similar to [cmd ns_pagepath].
 
 [para]
 The optional [option -host] parameter can be used to return the

@@ -410,8 +410,8 @@ NsTclSymlinkObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"file1",  Ns_ObjvString, &file1,  NULL},
-        {"file2",  Ns_ObjvString, &file2,  NULL},
+        {"filename1",  Ns_ObjvString, &file1,  NULL},
+        {"filename2",  Ns_ObjvString, &file2,  NULL},
         {NULL, NULL, NULL, NULL}
     };
 

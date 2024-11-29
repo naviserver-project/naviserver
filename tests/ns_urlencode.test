@@ -12,7 +12,7 @@ set unreservedChars "-.!~*'()0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNO
 
 test ns_urlencode-1.1.1 {basic syntax} -body {
     ns_urlencode
-} -returnCodes error -result {wrong # args: should be "ns_urlencode ?-charset /string/? ?-part query|path|cookie|oauth1? ?-uppercase? ?--? /arg .../"}
+} -returnCodes error -result {wrong # args: should be "ns_urlencode ?-charset /string/? ?-part query|path|cookie|oauth1? ?-uppercase? ?--? /component .../"}
 
 test ns_urlencode-1.1.2 {basic syntax} -body {
     ns_urlencode -part x y

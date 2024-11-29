@@ -1043,7 +1043,7 @@ NsTclCacheGetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
     Ns_ObjvSpec args[] = {
         {"cache",    ObjvCache,     &cPtr,        clientData},
         {"key",      Ns_ObjvString, &key,         NULL},
-        {"?varName", Ns_ObjvObj,    &varNameObj,  NULL},
+        {"?varname", Ns_ObjvObj,    &varNameObj,  NULL},
         {NULL, NULL, NULL, NULL}
     };
     args[0].arg = clientData; /* pass non-constant clientData for "cache" */

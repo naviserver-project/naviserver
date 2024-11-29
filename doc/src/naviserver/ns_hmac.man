@@ -26,8 +26,8 @@ is installed.
 [list_begin definitions]
 
 [call [cmd "ns_hmac string"] \
-	[opt [option "-digest [arg digest]"]] \
-	[opt [option "-encoding [arg encoding]"]] \
+	[opt [option "-digest [arg string]"]] \
+	[opt [option "-encoding [arg string]"]] \
 	[arg key] \
 	[arg message]]
 
@@ -35,9 +35,9 @@ Returns the HMAC based on the provided secret [arg key] and the string
 [arg message].
 
 [call [cmd "ns_hmac file"] \
-    [opt [option "-digest [arg digest]"]] \
-    [opt [option "-encoding [arg encoding]"]] \
-    [arg key] [arg filename] [arg args] \
+    [opt [option "-digest [arg string]"]] \
+    [opt [option "-encoding [arg string]"]] \
+    [arg key] [arg "filename ..."] \
 ]
 
 Returns the HMAC from the provided secret [arg key], the file
@@ -46,8 +46,8 @@ Returns the HMAC from the provided secret [arg key], the file
 for large files low. The resulting HMAC is calculated cumulatively.
 
 [call [cmd "ns_hmac new"] \
-    [opt [option "-digest [arg digest]"]] \
-    [option "-key [arg key]"] \
+    [opt [option "-digest [arg string]"]] \
+    [option "-key [arg string]"] \
 ]
 
 Creates and returns a new HMAC object for incremental operations.
@@ -110,6 +110,7 @@ implementation provides more options for certain specialized operations.
 
 [call [cmd "ns_crypto::hmac add"] \
     [opt [option "-binary"]] \
+    [opt --] \
     [arg "ctx"] \
     [arg message] \
 ]
@@ -125,13 +126,14 @@ implementation provides more options for certain specialized operations.
 
 [call [cmd "ns_crypto::hmac new"] \
     [opt [option "-binary"]] \
+    [opt --] \
     [arg "digest"] \
     [arg "key"] \
 ]
 
 [call [cmd "ns_crypto::hmac string"] \
     [opt [option "-binary"]] \
-    [opt [option "-digest [arg digest]"]] \
+    [opt [option "-digest [arg string]"]] \
     [opt [option "-encoding hex|base64url|base64|binary"]] \
     [arg "key"] \
     [arg "message"] \

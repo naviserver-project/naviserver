@@ -53,12 +53,12 @@ input. The default is taken from the global parameter
 [list_begin itemized]
 [item] The value of [term 0] means that no sanitize should happen.
 [item] The value [term 1] means that full sanitizing is in place,
-which means that non-printable characters are written as hex values.
-[item] The a sanitize value of [term 2] means that sanitizing happens
-in a human friendly fashion: newlines are preserved, but sanitizing
-makes sure that multiline content cannot not confused with different
-log file entries. After a new-line character a continuation character
-starts the new line followed by 4 spaces.
+  which means that non-printable characters are written as hex values.
+[item] The sanitize value of [term 2] means that sanitizing happens
+  in a human friendly fashion: newlines are preserved, but sanitizing
+  makes sure that multiline content cannot not confused with different
+  log file entries. After a new-line character a continuation character
+  starts the new line followed by 4 spaces.
 [list_end]
 
 [call [cmd "ns_asynclogfile close"] \

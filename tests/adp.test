@@ -135,7 +135,7 @@ test ns_adp_return-1.0 {syntax: ns_adp_return} -body {
 
 test ns_adp_append-1.0 {syntax: ns_adp_append} -body {
     ns_adp_append
-} -returnCodes error -result {wrong # args: should be "ns_adp_append /string/ ?/string/ ...?"}
+} -returnCodes error -result {wrong # args: should be "ns_adp_append /string .../"}
 
 test ns_adp_argc-1.0 {syntax: ns_adp_argc} -body {
     ns_adp_argc ?
@@ -143,7 +143,7 @@ test ns_adp_argc-1.0 {syntax: ns_adp_argc} -body {
 
 test ns_adp_bind_args-1.0 {syntax: ns_adp_bind_args} -body {
     ns_adp_bind_args
-} -returnCodes error -result {wrong # args: should be "ns_adp_bind_args /varName/ ?/varName/ ...?"}
+} -returnCodes error -result {wrong # args: should be "ns_adp_bind_args /varname .../"}
 
 test ns_adp_break-1.0 {syntax: ns_adp_break} -body {
     ns_adp_break ? ?
@@ -155,7 +155,7 @@ test ns_adp_debug-1.0 {syntax: ns_adp_debug} -body {
 
 test ns_adp_exception-1.0 {syntax: ns_adp_exception} -body {
     ns_adp_exception ? ?
-} -returnCodes error -result {wrong # args: should be "ns_adp_exception ?/varName/?"}
+} -returnCodes error -result {wrong # args: should be "ns_adp_exception ?/varname/?"}
 
 test ns_adp_flush-1.0 {syntax: ns_adp_flush} -body {
     ns_adp_flush ?
@@ -163,8 +163,8 @@ test ns_adp_flush-1.0 {syntax: ns_adp_flush} -body {
 
 test ns_adp_include-1.0 {syntax: ns_adp_include} -body {
     ns_adp_include
-} -returnCodes error -result {wrong # args: should be "_ns_adp_include ?-cache /time/? ?-nocache? ?-tcl? ?--? /fileName/ ?/arg .../?"}
-# ns_adp_include is a Tcl proc: message should be {wrong # args: should be "ns_adp_include ?-cache /cache/? ?-nocache? ?-tcl? ?--? /fileName/ ?args?"}
+} -returnCodes error -result {wrong # args: should be "_ns_adp_include ?-cache /time/? ?-nocache? ?-tcl? ?--? /filename/ ?/arg .../?"}
+# ns_adp_include is a Tcl proc: message should be {wrong # args: should be "ns_adp_include ?-cache /time/? ?-nocache? ?-tcl? ?--? /filename/ ?/arg .../?"}
 
 test ns_adp_mimetype-1.0 {syntax: ns_adp_mimetype} -body {
     ns_adp_mimetype ? ?

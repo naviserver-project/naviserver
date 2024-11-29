@@ -15,10 +15,10 @@
 
 
  [call [cmd ns_urldecode] \
-     [opt [option "-charset [arg charset]"]] \
-     [opt [option "-fallbackcharset [arg fallbackcharset]"]] \
-     [opt [option "-part [arg part]"]] \
-     [opt [arg "--"]] \
+     [opt [option "-charset [arg string]"]] \
+     [opt [option "-fallbackcharset [arg string]"]] \
+     [opt [option "-part query|path|cookie|oauth1"]] \
+     [opt --] \
      [arg string]]
 
 [list_end]

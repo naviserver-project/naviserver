@@ -10,31 +10,31 @@ exception state.
 
 [list_begin definitions]
 
-[call [cmd ns_adp_exception] [opt [arg state]]]
+[call [cmd ns_adp_exception] [opt [arg varname]]]
 
 [para]
 The function  returns 0 if the exception state is ok and 1 otherwise.
 
-[para] If the optional state argument is passed, a variable with that
-name will be set for the caller, and will contain the exception state
+[para] If the optional [arg varname] is passed, a variable with that
+name will be set for the caller containing the exception state
 with one of the following possible values:
 
 [list_begin itemized]
 
-[item] ok:
+[item] [term ok]:
 ADP was evaluated successfully
 
-[item] overflow:
+[item] [term overflow]:
 Stack overflow occurred.  This might happen, for example, if there was
 a recursive call to [cmd ns_adp_include].
 
-[item] abort:
+[item] [term abort]:
 An attempt to debug failed or ns_adp_abort was called.
 
-[item] break: 
+[item] [term break]: 
 ns_adp_break was called
 
-[item] unknown:
+[item] [term unknown]:
 Unrecognized exception status.  This should not occur.
 
 [list_end]

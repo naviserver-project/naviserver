@@ -22,7 +22,7 @@ test ns_pagepath-1.0 {basic path} -body {
 } -result ${serverroot}/${pagedir}
 # ns_pagepath processes all input parameters, we cannot trigger a
 # syntax error message. Therefore, provide a manual entry:
-# message should be {wrong # args: should be "ns_pagepath ?/path-segment .../?"}
+# message should be {wrong # args: should be "ns_pagepath ?-host /string/? ?--? ?/path-segment .../?"}
 
 test ns_pagepath-1.2 {basic path} -body {
     ns_pagepath x y

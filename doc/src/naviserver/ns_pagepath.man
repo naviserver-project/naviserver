@@ -12,7 +12,20 @@ pages for the current virtual server
 
 [list_begin definitions]
 
-[call [cmd ns_pagepath]]
+[call [cmd ns_pagepath] \
+	[opt [option "-host [arg string]"]] \
+	[opt --] \
+        [opt [arg "path-segment ..."]] \
+        ]
+
+Returns the absolute path to current virtual server page directory
+followed by the optional path segments. Similar to [cmd ns_serverpath].
+
+[para]
+The optional [option -host] parameter can be used to return the
+path for a certain virtual host. If not specified the value for the
+host is taken from the [term host] header field of the current
+request.
 
 [list_end]
 

@@ -75,7 +75,7 @@ static void AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *
 static int RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, int type)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static void AppendLengths(AdpCode *codePtr, const int *length, const int *line)
+static void AppendLengths(AdpCode *codePtr, const TCL_SIZE_T *length, const int *line)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static void GetTag(Tcl_DString *dsPtr, char *s, const char *e, char **aPtr)
@@ -312,7 +312,8 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
 
 static void
 AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const char* file) {
-    int size, line = 0;
+    int        line = 0;
+    TCL_SIZE_T size;
 
     NS_NONNULL_ASSERT(codePtr != NULL);
     NS_NONNULL_ASSERT(adp != NULL);
@@ -328,14 +329,7 @@ AdpParseTclFile(AdpCode *codePtr, const char *adp, unsigned int flags, const cha
         Ns_DStringPrintf(&codePtr->text, "} {0} {} {}]}}\nadp:%s %%>}", file);
     }
     codePtr->nblocks = codePtr->nscripts = 1;
-    /*
-     * The cast of "text.length" to "int" is dangerous (for really big
-     * strings). "size" should be TCL_SIZE_T, but we keep it so far due to the
-     * logic with the negative lengths.
-     *
-     * See also: keep "len" as int in AdpExec() in adpeval.c
-     */
-    size = -(int)codePtr->text.length;
+    size = -codePtr->text.length;
     AppendLengths(codePtr, &size, &line);
 }
 
@@ -800,17 +794,15 @@ AdpParseAdp(AdpCode *codePtr, NsServer *servPtr, char *adp, unsigned int flags)
 
     if ((flags & ADP_SINGLE) != 0u) {
         /*
-         * The cast of "text.length" to "int" is dangerous (for really big
-         * strings).
-         *
          * See also: AdpParseTclFile(), and AdpExec() in adpeval.c
          */
 
-        int line = 0, len = -(int)codePtr->text.length;
+        int line = 0;
+        TCL_SIZE_T len = -codePtr->text.length;
         codePtr->nscripts = codePtr->nblocks = 1;
         AppendLengths(codePtr, &len, &line);
     } else {
-        AppendLengths(codePtr, (const int *) parse.lengths.string,
+        AppendLengths(codePtr, (const TCL_SIZE_T *) parse.lengths.string,
                       (const int *) parse.lines.string);
     }
 
@@ -1284,7 +1276,7 @@ AppendTag(Parse *parsePtr, const Tag *tagPtr, char *as, const char *ae, char *se
  */
 
 static void
-AppendLengths(AdpCode *codePtr, const int *length, const int *line)
+AppendLengths(AdpCode *codePtr, const TCL_SIZE_T *length, const int *line)
 {
     Tcl_DString *textPtr;
     TCL_SIZE_T   start, ncopy;

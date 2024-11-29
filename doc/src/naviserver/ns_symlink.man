@@ -12,16 +12,17 @@ unless [option -nocomplain] is specified.
 
 This is a legacy command from when Tcl did not have this functionality. 
 It is now recommended you use Tcl's file link command instead.
+The reason is that we have still this command is that
+the Tcl [term "file link"] command always creates link target with
+absolute path to the linked file.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
-
-[call [cmd ns_symlink] [opt [option -nocomplain]] [arg filename1] [arg filename2]]
-
-
+[call [cmd ns_symlink] [opt [option -nocomplain]] [opt --] [arg filename1] [arg filename2]]
 [list_end]
 
+[section EXAMPLES]
 
 [example_begin]
  ns_symlink $file1 $file2
@@ -31,12 +32,6 @@ It is now recommended you use Tcl's file link command instead.
 
 [example_begin]
  file link -symbolic $file1 $file2
-[example_end]
-
-[section EXAMPLES]
-
-[example_begin]
- % ns_symlink 
 [example_end]
 
 [keywords "global built-in" filesystem]

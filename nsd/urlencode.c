@@ -1035,7 +1035,7 @@ NsTclUrlEncodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"arg",  Ns_ObjvArgs, &nargs, NULL},
+        {"component",  Ns_ObjvArgs, &nargs, NULL},
         {NULL, NULL, NULL, NULL}
     };
 

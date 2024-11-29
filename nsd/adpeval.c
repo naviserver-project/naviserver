@@ -1114,14 +1114,7 @@ AdpExec(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *file
     nscript = 0;
     result = TCL_OK;
     for (i = 0; itPtr->adp.exception == ADP_OK && i < nblocks; ++i) {
-        /*
-         * So far, we keep "len" as int and not as TCL_SIZE_T due to the
-         * logic with the negative lengths below.
-         *
-         * See also: comment "size" should be TCL_SIZE_T.
-         * in AdpParseTclFile() in adpparse.c.
-         */
-        int len;
+        TCL_SIZE_T len;
 
         frame.line = (unsigned short)AdpCodeLine(codePtr, i);
         len = AdpCodeLen(codePtr, i);

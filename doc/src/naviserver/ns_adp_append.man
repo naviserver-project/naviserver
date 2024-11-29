@@ -16,7 +16,7 @@
 [list_begin definitions]
 
 
-[call [cmd ns_adp_append] [arg string] [opt [arg {string ...}]]]
+[call [cmd ns_adp_append] [arg "string ..."]]
 
 
 [list_end]

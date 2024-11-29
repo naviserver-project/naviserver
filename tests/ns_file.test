@@ -49,7 +49,7 @@ test ns_sleep-1.0 {syntax: ns_sleep} -body {
 
 test ns_symlink-1.0 {syntax: ns_symlink} -body {
     ns_symlink
-} -returnCodes error -result {wrong # args: should be "ns_symlink ?-nocomplain? ?--? /file1/ /file2/"}
+} -returnCodes error -result {wrong # args: should be "ns_symlink ?-nocomplain? ?--? /filename1/ /filename2/"}
 
 test ns_truncate-1.0 {syntax: ns_truncate} -body {
     ns_truncate

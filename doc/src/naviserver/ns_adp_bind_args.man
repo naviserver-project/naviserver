@@ -18,7 +18,7 @@
 
 [list_begin definitions]
 
-[call [cmd ns_adp_bind_args] [arg varName] [opt [arg {varName ...}]]]
+[call [cmd ns_adp_bind_args] [arg "varname ..."]]
 
 [list_end]
 
@@ -34,7 +34,7 @@
  # In b.adp:
  <%
    ns_adp_bind_args x y z
-   list $x $y $z       ;# => {1 2 3}
+   ns_adp_puts "x=$x y=$y z=$z"      ;# => {1 2 3}
  %>
 [example_end]
 

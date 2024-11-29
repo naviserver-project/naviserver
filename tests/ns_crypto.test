@@ -217,17 +217,17 @@ test ns_md-1.0 {syntax: ns_md subcommands} -constraints crypto -body {
 test ns_md-1.1 {syntax: ns_md new} -constraints crypto -body {
     ns_md new -x
 } -returnCodes error -match glob -result {* ?-digest /value/? *}
-# "ns_md new: don't advertise all {wrong # args: should be "ns_md new ?-digest /value/?"}
+# "ns_md new: don't advertise all {wrong # args: should be "ns_md new ?-digest /string/?"}
 
 test ns_md-1.2 {syntax: ns_md file} -constraints crypto -body {
     ns_md file
 } -returnCodes error -match glob -result {*ns_md file ?-digest /value/? ?-encoding /value/? /filename/ ?/arg .../?}
-# "ns_md file" don't advertise all {wrong # args: should be "ns_md file ?-digest /value/? ?-encoding /value/? /filename/ ?/filename .../?"}
+# "ns_md file" don't advertise all {wrong # args: should be "ns_md file ?-digest /string/? ?-encoding /string/? /filename/ ?/filename .../?"}
 
 test ns_md-1.3 {syntax: ns_md string} -constraints crypto -body {
     ns_md string
 } -returnCodes error -match glob -result {*ns_md string ?-digest /value/? ?-encoding /value/? /message/}
-# "ns_md string" don't advertise all {wrong # args: should be "ns_md string ?-digest /value/? ?-encoding /value/? /message/"}
+# "ns_md string" don't advertise all {wrong # args: should be "ns_md string ?-digest /string/? ?-encoding /string/? /message/"}
 
 
 test ns_hmac-1.0 {syntax: ns_hmac sucommands} -constraints crypto -body {
@@ -236,18 +236,18 @@ test ns_hmac-1.0 {syntax: ns_hmac sucommands} -constraints crypto -body {
 
 test ns_hmac-1.1 {syntax: ns_hmac new} -constraints crypto -body {
     ns_hmac new -x
-} -returnCodes error -match glob -result {* ?-digest /value/? *}
-# "ns_hmac new: don't advertise all {wrong # args: should be "ns_hmac new ?-digest /value/?"}
+} -returnCodes error -match glob -result {* -key /value/ ?-digest /value/? *}
+# "ns_hmac new: don't advertise all {wrong # args: should be "ns_hmac new ?-digest /string/? -key /string/"}
 
 test ns_hmac-1.2 {syntax: ns_hmac file} -constraints crypto -body {
     ns_hmac file
 } -returnCodes error -match glob -result {*ns_hmac file ?-digest /value/? ?-encoding /value/? /key/ /filename/ ?/arg .../?}
-# "ns_hmac file" don't advertise all {wrong # args: should be "ns_hmac file ?-digest /value/? ?-encoding /value/?  /key/ /filename/ ?/filename .../?"}
+# "ns_hmac file" don't advertise all {wrong # args: should be "ns_hmac file ?-digest /string/? ?-encoding /string/?  /key/ /filename .../"}
 
 test ns_hmac-1.3 {syntax: ns_hmac string} -constraints crypto -body {
     ns_hmac string
 } -returnCodes error -match glob -result {*ns_hmac string ?-digest /value/? ?-encoding /value/? /key/ /message/}
-# "ns_hmac string" don't advertise all {wrong # args: should be "ns_hmac string ?-digest /value/? ?-encoding /value/? /key/ /message/"}
+# "ns_hmac string" don't advertise all {wrong # args: should be "ns_hmac string ?-digest /string/? ?-encoding /string/? /key/ /message/"}
 
 #
 # Functional tests
@@ -361,7 +361,7 @@ test ns_totp-1.0 {syntax: ns_totp} -constraints {crypto nsf} -body {
     ns_totp -x
 } -returnCodes error -result {invalid non-positional argument '-x', valid are: -digest, -digits, -interval, -user_id, -key, -time;
  should be "ns_totp ?-digest /value/? ?-digits /integer/? ?-interval /integer/? ?-user_id /integer/? ?-key /value/? ?-time /value/?"}
-# ns_totp is an nsf proc: nsd message should be {wrong # args: should be "ns_totp ?-digest /value/? ?-digits /integer/? ?-interval /integer/? ?-user_id /integer/? ?-key /value/? ?-time /value/?"}
+# ns_totp is an nsf proc: nsd message should be {wrong # args: should be "ns_totp ?-digest /string/? ?-digits /integer/? ?-interval /integer/? ?-user_id /integer/? ?-key /string/? ?-time /time/?"}
 
 
 test ns_totp-1.1 {

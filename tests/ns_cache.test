@@ -33,7 +33,7 @@ test ns_cache_flush-1.0 {syntax: ns_cache_flush} -body {
 
 test ns_cache_get-1.0 {syntax: ns_cache_get} -body {
     ns_cache_get
-} -returnCodes error -result {wrong # args: should be "ns_cache_get /cache/ /key/ ?/varName/?"}
+} -returnCodes error -result {wrong # args: should be "ns_cache_get /cache/ /key/ ?/varname/?"}
 
 test ns_cache_incr-1.0 {syntax: ns_cache_incr} -body {
     ns_cache_incr

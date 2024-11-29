@@ -5,13 +5,13 @@
 [titledesc {Stop processing url filters}]
 
 [description]
-Other filters that also match when+method+urlPattern will not run after this filter.
+Other filters that also match [arg when]+[arg method]+[arg urlpattern] will not run after this filter.
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[call [cmd ns_shortcut_filter] [arg when] [arg method] [arg urlPattern]]
+[call [cmd ns_shortcut_filter] [arg when] [arg method] [arg urlpattern]]
 
 [list_end]
 

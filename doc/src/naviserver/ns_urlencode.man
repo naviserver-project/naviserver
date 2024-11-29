@@ -22,29 +22,33 @@
 [list_begin definitions]
 
  [call [cmd ns_urlencode] \
-     [opt [option "-charset [arg charset]"]] \
-     [opt [option "-part [arg part]"]] \
-     [opt [arg "--"]] \
-     [arg components]]
+     [opt [option "-charset [arg string]"]] \
+     [opt [option "-part query|path|cookie|oauth1"]] \
+     [opt [option "-uppercase"]] \
+     [opt --] \
+     [arg "component ..."]]
 
 [list_end]
 
-The option [option -charset] can be used to specify the character set of
-the encode operation. Option [arg part] is used to specify the
-[arg query] (default) or [arg path] encoding. In the query mode, the
-components will be concatenated via "&", in the path mode the
-components are concatenated with "/".
+The option [option -charset] can be used to specify the character set
+of the encode operation. Option [arg part] is used to specify the type
+of encoding. The most common uses are [term query] or [term path],
+indicating that query components or path components are to be encoded.
+Multiple query components are concatenated via [term &], in the path
+components with [term /].
 
-[para] The part argument can be as well used for more percent
-encodings such as the cookie encoding (value "cookie", RFC 6265) or
-the oauth1 encoding (value "oauth1") as defined in RFC 5849 Section
-3.6 for the construction of the * signature base string and the
-"Authorization" header field.
+[para] The part argument can be as well used for additional percent
+encodings such as the cookie encoding (value [term cookie], RFC 6265) or
+the oauth1 encoding (value [term oauth1]) as defined in RFC 5849 Section
+3.6 for the construction of the signature base string and the
+[term Authorization] header field.
+
+[para] The default for option [option -charset] is [term query].
 
 [section {EXAMPLES}]
 
 The following example encodes the Tcl dict as
-application/x-www-form-urlencoded POST data
+[term application/x-www-form-urlencoded] POST data
 (https://www.w3.org/TR/html401/interact/forms.html#h-17.13.4)
 
 [example_begin]

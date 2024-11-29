@@ -20,9 +20,9 @@ facility.
 
 [call [cmd "nsv_array get"] [arg array] [opt [arg pattern]]]
 
-[call [cmd "nsv_array set"] [arg array] [arg value-list]]
+[call [cmd "nsv_array set"] [arg array] [arg list]]
 
-[call [cmd "nsv_array reset"] [arg array] [arg value-list]]
+[call [cmd "nsv_array reset"] [arg array] [arg list]]
 
 [call [cmd "nsv_array exists"] [arg array]]
 
@@ -57,10 +57,10 @@ ordinary variables.
 [example_end]
 
 
-[call [cmd nsv_bucket] [opt [arg bucket-nr]]]
+[call [cmd nsv_bucket] [opt [arg bucket-number]]]
 
 Return a list of all the array names with lock counts from the specified
-bucket. If no bucket-nr is specified, return a list of all arrays from
+bucket. If no [arg bucket-number] is specified, return a list of all arrays from
 all buckets.  This command is mainly for performance tuning. When e.g.
 the number of locks for a certain bucket is high one can use this
 command to determine the arrays with their usages from this bucket.
@@ -75,15 +75,16 @@ command to determine the arrays with their usages from this bucket.
 [example_end]
 
 [call [cmd "nsv_dict append"]  [arg array] [arg key] [arg dictkey] [opt [arg {value ...}]]]
-[call [cmd "nsv_dict exists"]  [arg array] [arg key] [arg dictkey] [opt [arg {dictkey ...}]]]
-[call [cmd "nsv_dict get"]     [opt "-varname [arg varname]"] [arg array] [arg key] [opt [arg {dictkey ...}]]]
-[call [cmd "nsv_dict getdef"]  [opt "-varname [arg varname]"] [arg array] [arg key] [opt [arg {dictkey ...}]] [arg default]]
-[call [cmd "nsv_dict incr"]    [arg array] [arg key] [opt [arg {increment}]]]
+[call [cmd "nsv_dict exists"]  [arg array] [arg key] [arg "dictkey ..."] ]
+[call [cmd "nsv_dict get"]     [opt "-varname [arg string]"] [opt --] [arg array] [arg key] [opt [arg {dictkey ...}]]]
+[call [cmd "nsv_dict getdef"]  [opt "-varname [arg string]"] [opt --] \
+        [arg array] [arg key] [arg "dictkey ..."] [arg default]]
+[call [cmd "nsv_dict incr"]    [arg array] [arg key] [arg dictkey] [opt [arg {increment}]]]
 [call [cmd "nsv_dict keys"]    [arg array] [arg key] [opt [arg {pattern}]]]
 [call [cmd "nsv_dict lappend"] [arg array] [arg key] [arg dictkey] [opt [arg {value ...}]]]
-[call [cmd "nsv_dict set"]     [arg array] [arg key] [arg dictkey] [opt [arg {dictkey ...}]] [arg value]]
+[call [cmd "nsv_dict set"]     [arg array] [arg key] [arg "dictkey ..."] [arg value]]
 [call [cmd "nsv_dict size"]    [arg array] [arg key]]
-[call [cmd "nsv_dict unset"]   [arg array] [arg key] [arg dictkey] [opt [arg {dictkey ...}]]]
+[call [cmd "nsv_dict unset"]   [arg array] [arg key] [arg "dictkey ..."]]
 
 Implementation of the Tcl [term dict] command for shared variables.
 The commands work similar as [cmd nsv_set] and [cmd nsv_get],
@@ -153,7 +154,7 @@ check for existence followed by a get operation.
 [example_end]
 
 
-[call [cmd nsv_incr] [arg arrayName] [arg key] [opt [arg increment]]]
+[call [cmd nsv_incr] [arg array] [arg key] [opt [arg increment]]]
 
 
 If increment is supplied then its value (which must be an integer) is added to the
@@ -169,7 +170,7 @@ of the element specified by key. Internally interlocked so it is thread safe, no
  0
 [example_end]
 
-[call [cmd nsv_append] [arg array] [arg key] [arg value] [opt [arg {value ...}]]]
+[call [cmd nsv_append] [arg array] [arg key] [arg "value ..."]]
 
 Append all of the value arguments to the current value of variable key in the array.
 If key doesn't exist, it is given a value equal to the concatenation of all the value arguments
@@ -180,7 +181,7 @@ If key doesn't exist, it is given a value equal to the concatenation of all the 
 [example_end]
 
 
-[call [cmd nsv_lappend] [arg array] [arg key] [arg value] [opt [arg {value ...}]]]
+[call [cmd nsv_lappend] [arg array] [arg key] [arg "value ..."]]
 
 
 Append all of the value arguments as list elements to variable key in the array.
@@ -207,6 +208,7 @@ matching nsvs are in use returns the empty string.
 [call [cmd nsv_set] \
 	[opt [option -default]] \
 	[opt [option -reset]] \
+        [opt --] \
 	[arg array] \
 	[arg key] \
 	[opt [arg value]]]

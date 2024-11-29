@@ -405,8 +405,8 @@ test ns_paren-1.0 {syntax: ns_paren} -body {
 
 test ns_setexpires-1.0 {syntax: ns_setexpires} -body {
     ns_setexpires x y
-} -returnCodes error -result {usage: ns_setexpires ?-cache-control public|private|no-cache|no-store|no-transform|must-revalidate|proxy-revalidate? secs}
-# ns_setexpires is a Tcl proc: message should be {wrong # args: should be "ns_setexpires ?-cache-control public|private|no-cache|no-store|no-transform|must-revalidate|proxy-revalidate? /secs/"}
+} -returnCodes error -result {usage: ns_setexpires ?-cache-control public|private|no-cache|no-store|no-transform|must-revalidate|proxy-revalidate? seconds}
+# ns_setexpires is a Tcl proc: message should be {wrong # args: should be "ns_setexpires ?-cache-control public|private|no-cache|no-store|no-transform|must-revalidate|proxy-revalidate? /seconds/"}
 
 test ns_tagelement-1.0 {syntax: ns_tagelement} -body {
     ns_tagelement
@@ -452,7 +452,7 @@ test ns_sendmail-1.0 {syntax: ns_sendmail} -body {
 
 test ns_getcsv-1.0 {syntax: ns_getcsv} -body {
     ns_getcsv
-} -returnCodes error -result {wrong # args: should be "ns_getcsv ?-delimiter /string/? ?-trim? ?-quotechar /string/? ?--? /fileId/ /varName/"}
+} -returnCodes error -result {wrong # args: should be "ns_getcsv ?-delimiter /string/? ?-trim? ?-quotechar /string/? ?--? /fileId/ /varname/"}
 
 test ns_getcsv-2.0 {ns_getcsv} -body {
     set csvFile [ns_server pagedir]/csv

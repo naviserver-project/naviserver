@@ -142,10 +142,6 @@ NsTclRegisterProxyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T o
     TCL_SIZE_T      remain = 0;
     int             result = TCL_OK;
 
-    Ns_ObjvSpec opts[] = {
-        {"--",         Ns_ObjvBreak, NULL,   NULL},
-        {NULL, NULL, NULL, NULL}
-    };
     Ns_ObjvSpec args[] = {
         {"method",     Ns_ObjvString, &method,    NULL},
         {"protocol",   Ns_ObjvString, &protocol,  NULL},
@@ -153,7 +149,7 @@ NsTclRegisterProxyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T o
         {"?arg",       Ns_ObjvArgs,   &remain,    NULL},
         {NULL, NULL, NULL, NULL}
     };
-    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
         Ns_TclCallback *cbPtr;
@@ -295,7 +291,7 @@ NsTclRegisterFilterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
     Ns_ObjvSpec   args[] = {
         {"when",       Ns_ObjvFlags,  &when,       filters},
         {"method",     Ns_ObjvString, &method,     NULL},
-        {"urlPattern", Ns_ObjvString, &urlPattern, NULL},
+        {"urlpattern", Ns_ObjvString, &urlPattern, NULL},
         {"script",     Ns_ObjvObj,    &scriptObj,  NULL},
         {"?arg",       Ns_ObjvArgs,   &remain,     NULL},
         {NULL, NULL, NULL, NULL}
@@ -341,7 +337,7 @@ NsTclShortcutFilterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
     Ns_ObjvSpec args[] = {
         {"when",       Ns_ObjvFlags,  &when,       filters},
         {"method",     Ns_ObjvString, &method,     NULL},
-        {"urlPattern", Ns_ObjvString, &urlPattern, NULL},
+        {"urlpattern", Ns_ObjvString, &urlPattern, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -384,7 +380,7 @@ NsTclRegisterTraceObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T o
     int         result = TCL_OK;
     Ns_ObjvSpec args[] = {
         {"method",     Ns_ObjvString, &method,     NULL},
-        {"urlPattern", Ns_ObjvString, &urlPattern, NULL},
+        {"urlpattern", Ns_ObjvString, &urlPattern, NULL},
         {"script",     Ns_ObjvObj,    &scriptObj,  NULL},
         {"?arg",       Ns_ObjvArgs,   &remain,     NULL},
         {NULL, NULL, NULL, NULL}
