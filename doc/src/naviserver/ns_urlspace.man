@@ -2,35 +2,40 @@
 [manpage_begin ns_urlspace n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {Assign Application Data to URLs.}]
+[titledesc {Assign Application Data to URLs}]
 
-[description] The command [cmd ns_urlspace] allows one to
- assign/query/list/delete data to the trie data structure representing
- the URL space. The command supports filters and inheritance, such one
- can, e.g., assign data to certain patterns of pages
- (e.g. to .adp-pages) or such one can assign data to a higher level
- node which can be inherited to all nodes below this one.
+[description]
+
+ The command [cmd ns_urlspace] allows you to assign, query, list, or
+ delete data in the trie data structure representing the URL space. It
+ supports filters and inheritance, enabling you to assign data to
+ specific URL patterns (e.g., all ".adp" pages) or to assign data to a
+ higher-level node, which can be inherited by all nodes below it.
+
+
+[para]
+
+ The values assigned to the URL space are shared among all threads of
+ a server. This using this command is somewhat similar to the use of
+ [cmd nsv] but differs in its inheritance and filtering capabilities.
+
+[para]
  
- [para] The values assigned to the URL space are shared among all
- threads of a server. So this command is somewhat similar to the set
- of [cmd nsv] commands, but differs in its inheritance and filtering
- capabilities.
-	
-[para]
- The command allows e.g. to implement access control (like the
- [uri ../../nsperm/files/nsperm.html "nsperm module"])
- on the Tcl level. Other applications are e.g. blacklisting of
- certain parts of the URL tree from statistics, or to assign different
- master templates to different parts of the URL tree.
+ This command allows you, for example, to implement access control
+ (similar to the [uri ../../nsperm/files/nsperm.html "nsperm module"])
+ at the Tcl level. Other applications include blacklisting certain
+ parts of the URL tree from statistics, or assigning different master
+ templates to different parts of the URL tree.
 
 [para]
-The command [cmd "ns_urlspace"] provides scripting
-access to functionality provided by NaviServer since a long time.
-For example, the mapping of requests to connection thread pools is
-performed over the same mechanism. In this case, the mapping of URLs
-to pools can be performed via the command [cmd ns_server],
-or it can be provided via configuration variables in the pool section
-(see, e.g., [uri ../../manual/files/admin-tuning.html "Tuning NaviServer"]).
+
+ The [cmd "ns_urlspace"] command provides scripting access to
+ functionality that has been part of NaviServer for a long time. For
+ example, the mapping of requests to connection thread pools is
+ performed using the same mechanism. In this case, the mapping of URLs
+ to pools can be performed via the command [cmd ns_server], or it can
+ be provided via configuration variables in the pool section (see,
+ e.g., [uri ../../manual/files/admin-tuning.html "Tuning NaviServer"]).
 
 
 [section {COMMANDS}]
@@ -38,94 +43,262 @@ or it can be provided via configuration variables in the pool section
 [list_begin definitions]
 
 [call [cmd "ns_urlspace set"] \
-	[opt [option "-id [arg id]"]] \
-	[opt [option "-key [arg key]"]] \
+        [opt [option "-contextfilter [arg string]"]] \
+	[opt [option "-id [arg integer]"]] \
+	[opt [option "-key [arg string]"]] \
 	[opt [option "-noinherit"]] \
-	[arg url] \
-	[arg value] \
+	[arg URL] \
+	[arg data] \
 ]
 
- Assign a value to a node in the URL space. Per default,
- the value is inherited to all sub-nodes, unless the option
- [option "-noinherit"] is specified.
+ Assigns a [arg value] to a node in the URL space specified by
+ [arg URL]. By default, the value is inherited by all sub-nodes, unless the
+ option [option "-noinherit"] is specified.
+
+[para]
+ The [arg URL] can include glob-style patterns (e.g., "/*.adp") to match multiple URLs.
+
+[para]
+ The option [option -contextfilter] allows you to
+ specify additional context constraints for the assignment (see
+ [sectref {Context Constraints}]).
+
+[example_begin]
+ # Assign values to URL patterns
+ ns_urlspace set /*.adp             A
+ ns_urlspace set /*.html            H
+ ns_urlspace set /internal/space/*  I
+
+ # Assign a value with a context filter
+ set contextFilter [lb]ns_set create "user-agent" "*bot*"[rb]
+ ns_urlspace set -contextfilter $contextFilter /*.adp C
+[example_end]
+
 
 [call [cmd "ns_urlspace get"] \
-	[opt [option "-id [arg id]"]] \
-	[opt [option "-key [arg key]"]] \
+	[opt [option "-context [arg setId]"]] \
 	[opt [option "-exact"]] \
+	[opt [option "-id [arg integer]"]] \
+	[opt [option "-key [arg string]"]] \
 	[opt [option "-noinherit"]] \
-	[arg url] \
-	[arg value] \
+	[arg URL] \
 ]
 
- Retrieve a value from the URL space for a specified URL. Per
- default, the returned values might be inherited from a parent node.
- When the option [option "-exact"] is used, the inheritance is
- deactivated, and only the values are returned directly assigned to
- the URL. When the option [option "-noinherit"] is specified, only
- values set with the [option "-noinherit"] flag are returned.
+ Retrieves a value from the URL space for a specified [arg URL]. By
+ default, the returned value might be inherited from a parent node in
+ the trie structure.
+
+ [para] When the option [option "-exact"] is used, inheritance is
+ deactivated, and only values directly assigned to the [arg URL] are
+ returned. When the option [option "-noinherit"] is specified, only
+ values set with the [option "-noinherit"] flag are considered.
+
+ [para] The option [option "-context [arg setId]"] allows you to
+ specify context constraints for the retrieval
+ (see [sectref {Context Constraints}]).
+
+[example_begin]
+ # Retrieve mappings without context
+ ns_urlspace get /test.adp
+ # Returns: A
+ 
+ ns_urlspace get /internal/space/documents/info.html
+ # Returns: I
+
+ # Retrieve mapping with context
+ set context [lb]ns_set create "user-agent" "googlebot"[rb]
+ ns_urlspace get -context $context /test.adp
+ # Returns: C
+[example_end]
+
 
 [call [cmd  "ns_urlspace list"] \
-	[opt [option "-id [arg id]"]] \	
+	[opt [option "-id [arg integer]"]] \
 ]
 
-List the values assigned to the URL space. The command returns a list
-of lists, containing for every item the 5 elements
+ Lists the values assigned to the URL space, which is either the
+ default URL space or the one specified by [option "-id"]. The command returns a
+ list of lists, where each item contains the following elements:
+
  [list_begin itemized]
-	[item] key
-	[item] path
-	[item] filter pattern
-	[item] the constants [const inherit] or [const noinherit]
-	[item] the assigned data
+    [item] [const key] — The key associated with the assignment.
+    [item] [const path] — The URL pattern (e.g., "/internal/space").
+    [item] [const "filter pattern"] — Any context filters applied
+    (e.g., "*.adp").
+    [item] [const inherit] or [const noinherit] — Whether inheritance is enabled.
+    [item] [opt contextfilter] — The optional contextfilter
+    [item] [const data] — The assigned value.
  [list_end]
+
+[example_begin]
+ ns_urlspace list
+ Returns: {. / *.html inherit H} {. / *.adp inherit A} {. / *.adp inherit {user-agent *bot*} C} {. /internal/space * inherit I}
+[example_end]
 
 
 [call [cmd "ns_urlspace unset"] \
-	[opt [option "-id [arg id]"]] \
-	[opt [option "-key [arg key]"]] \
+	[opt [option "-allfilters"]] \
+	[opt [option "-id [arg integer]"]] \
+	[opt [option "-key [arg string]"]] \
 	[opt [option "-noinherit"]] \
 	[opt [option "-recurse"]] \
-	[arg url] \
+	[arg URL] \
 ]
 
-Unset a value for a URL for the given or default key. This command
-undoes the effects of [cmd "ns_urlspace set"]. When the options
-[option "-noinherit"] is used the values set this way are deleted
-and vice versa. The option [option "-recurse"] performs the operation
-recursively. Unless [option "-recurse"] is specified, the command
-returns 1 or 0 on success or failure.
+ Unset a value for a [arg URL] for the given or default key. This
+ command undoes the effects of [cmd "ns_urlspace set"].
+
+[para] The option [option "-allfilters"] implies that all context
+ filters are deleted. When the option [option "-noinherit"] is used,
+ only the values set with [option "-noinherit"] are deleted, and vice
+ versa.
+
+[para] The option [option "-recurse"] performs the operation
+ recursively on all sub-nodes under the specified [arg URL]. Unless
+ [option "-recurse"] is specified, the command returns 1 on success or
+ 0 on failure.
 
 
 [call [cmd "ns_urlspace new"] ]
 
-Allocate a new URL space id. When the number of compile-time configured
-URL spaces runs out, a Tcl exception is raised.
+ Allocates a new URL space ID. When the number of compile-time
+ configured URL spaces runs out, a Tcl exception is raised.
+
+[example_begin]
+ # Allocate a new URL space
+ set newId [lb]ns_urlspace new[rb]
+ 
+ # Use the new URL space ID
+ ns_urlspace set -id $newId /*.php P
+[example_end]
 
 [list_end]
 
-[section OPTIONS]
+[section "COMMON OPTIONS"]
 [list_begin options]
 
-[opt_def -id [arg id]]
-ID of the URL space. In general, multiple different URL spaces
-could be used, which can be allocated with the command
-[cmd  "ns_urlspace new"]. The maximum number of available URL spaces
-is a compile time constant of NaviServer. When no ID is specified,
-NaviServer allocates automatically a default ID on first usage.
 
-[opt_def -key [arg key]]
-Every URL has a key assigned, which is logically part of the URL
-space. Using this key, one could for example use the HTTP methods
-[term GET] or [term POST] to assign different values to a URL
-for GET or POST requests. The key can be used as well for other
-purposes. If no key is specified, it defaults to the constant
-"[const .]" (dot character).
+[opt_def -id [arg integer]]
+
+  Specifies the ID of the URL space. Multiple different URL spaces can
+  be used, which can be allocated with the command
+  [cmd "ns_urlspace new"]. The maximum number of available URL spaces is a compile-time
+  constant of NaviServer. When no ID is specified, NaviServer
+  automatically allocates a default ID on first usage.
+
+[opt_def -key [arg string]]
+ 
+  Every URL assignment can have a key, which is logically part of the
+  URL space. Using this key, you could, for example, assign different
+  values to a URL for different HTTP methods like [term GET] or
+  [term POST]. The key can be used for other purposes as well. If no key is
+  specified, it defaults to the constant "[const .]" (dot character).
 
 [list_end]
 
+[section EXAMPLES]
 
-[see_also nsv ns_server]
-[keywords "server built-in" trie urlspace shared variables "data structure"]
+
+[example_begin]
+ # Define mappings in the default URL space
+ 
+ # Map all .adp files to "A"
+ ns_urlspace set /*.adp A
+ 
+ # Map all .html files to "H"
+ ns_urlspace set /*.html H
+ 
+ # Map a specific internal area to "I"
+ ns_urlspace set /internal/space/* I
+ 
+ # Query mappings
+ ns_urlspace get /test.adp
+ # Returns: A
+ 
+ ns_urlspace get /foo/bar/test.adp
+ # Returns: A
+ 
+ ns_urlspace get /foo/baz/info.html
+ # Returns: H
+ 
+ ns_urlspace get /foo/baz/info.text
+ # Returns: (no value assigned)
+ 
+ ns_urlspace get /internal/space/documents/info.html
+ # Returns: I
+[example_end]
+
+
+
+[section "Context Constraints"]
+
+In addition to the glob based URL space matching, NaviServer supports
+so-called context constraints or context filters. These constraints
+allow one to include additional information such as IP-addresses or header
+fields in the matching process. These constraints are applied after
+the classical URLspace processing and add more information to the
+matching process. The general rule the a more specific URL space rule
+dominates a less specific ones continues to hold.
+
+[para] By using context filers one can specify that when one is
+applying a matching from a URL to some data, not only the URL
+matters, but as well an additional context. One can use this for
+defining different access rules, when e.g. bots access your web
+server, or when internal requests are issued.
+
+[para] API-wise the context can be specified by an ns_set with keys
+being header fields of a request or some IP ranges. When the context
+filters are used in the connection pool definition, the connection
+information is taken directly from the incoming socket connections.
+
+[para] In the following example, we provide an explicit ns_set for the
+context and use a single URL pattern [term "/*.adp"] which is set
+once with a context constraint.
+ 
+[example_begin]
+ #
+ # Create a plain URL space mapping with the value of "A" and a rule
+ # with a context filter with the value "C"
+ #
+ % ns_urlspace set /*.adp A
+ % ns_urlspace set -contextfilter {user-agent *bot*} /*.adp C
+ 
+ # Get the mapping for a concrete URL without context
+ % ns_urlspace get /test.adp
+ A
+
+ # Create a context filter for user-agents containing "bot"
+ % set botContext [lb]ns_set create filter1 "user-agent" "googlebot"[rb]
+ 
+ # Get the mapping for a concrete URL based on the context
+ % ns_urlspace get -context $botContext /test.adp
+ C
+[example_end]
+
+See for a configuration example of context constraints for
+setting up a connection pool for bots in [cmd ns_server].
+
+
+
+
+[section {NOTES}]
+
+[para] The URL patterns used in [cmd ns_urlspace] commands support
+ glob-style patterns, allowing for flexible matching. Be cautious when
+ defining patterns to ensure they match the intended URLs.
+
+[para] The URL space is stored in a trie data structure for efficient
+ matching.
+
+[para] When using context filters, ensure that the context filter of
+ the [cmd "ns_urlspace set"] command and the [cmd ns_set] (or request
+ headers) accurately represent the request conditions you want to
+ match. For security reasons, you should not rely solely on untrusted
+ request header fields.
+
+[see_also nsv ns_server ns_set]
+[keywords "server built-in" trie urlspace shared variables \
+  "data structure" "context constraints"]
 
 [manpage_end]
 
