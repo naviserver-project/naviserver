@@ -266,7 +266,7 @@ AtObjCmd(AtProc *atProc, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* ob
     NS_NONNULL_ASSERT(interp != NULL);
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/script/ ?/args/?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/script/ ?/arg .../?");
         result = TCL_ERROR;
 
     } else {
@@ -333,7 +333,7 @@ NsTclAtShutdownObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
         initialized = NS_TRUE;
     }
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/script/ ?/args/?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/script/ ?/arg .../?");
         result = TCL_ERROR;
 
     } else {

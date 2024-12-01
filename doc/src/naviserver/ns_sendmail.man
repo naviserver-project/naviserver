@@ -32,18 +32,18 @@ In case of an error the error code and message are returned.
 [section COMMANDS]
 [list_begin definitions]
 [call [cmd ns_sendmail] \
-	[option "-to"] \
-	[option "-from [arg from]"] \
-	[option "-subject [arg subject]"] \
-	[option "-body [arg body]"] \
-	[opt [option "-headers [arg headers]"]] \
-	[opt [option "-bcc [arg bcc]"]] \
-	[opt [option "-cc [arg cc]"]]]
+	[option "-to [arg string]"] \
+	[option "-from [arg string]"] \
+	[opt [option "-subject [arg string]"]] \
+	[opt [option "-body [arg string]"]] \
+	[opt [option "-headers [arg string]"]] \
+	[opt [option "-bcc [arg string]"]] \
+	[opt [option "-cc [arg string]"]]]
 
 [option -to]
 	Email address of recipient. To send a real name along with the address
 	give the name and place the latter between "<" and ">" like "John Foo <j.foo@example.com>".
-	This also applies to [emph from], [emph cc] and [emph bcc].
+	This also applies to [option -from], [option -cc] and [option -bcc].
 	Can be a comma-separated string with multiple recipients.
 [para]
 [option -from]
@@ -135,7 +135,7 @@ Note: "boolean" in NaviServer configuration means value can be one of "true", "f
 [list_end]
 
 [section ALTERNATIVES]
-See the excellent Tcl Standard Library smtp and mime packages.
+See the excellent Tcl Standard Library smtp and MIME packages.
 
 [section EXAMPLES]
 [emph "Log current configuration to server log:"]
@@ -219,6 +219,6 @@ See the excellent Tcl Standard Library smtp and mime packages.
 
 [see_also nsd]
 
-[keywords NaviServer sendmail mail smtp RFC822 configuration]
+[keywords NaviServer sendmail mail SMTP RFC822 configuration]
 
 [manpage_end]

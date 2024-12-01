@@ -37,12 +37,12 @@
 
 [call [cmd "ns_asynclogfile write"] \
 	[opt [option -binary]] \
-	[opt [option "-sanitize sanitize"]] \
-	[arg handle] \
+	[opt [option "-sanitize 0|1|2"]] \
+	[arg fd] \
 	[arg line]]
 
 Write the provided [arg line] to an opened logfile denoted by the
-[arg handle]. If the line should be terminated by a new-line
+[arg fd] handle. If the line should be terminated by a new-line
 character, the caller has to provide this character.
 
 The option [option -binary] should be provided for binary data.
@@ -62,7 +62,7 @@ input. The default is taken from the global parameter
 [list_end]
 
 [call [cmd "ns_asynclogfile close"] \
-	[arg handle]]
+	[arg fd]]
 
  Close the logfile.
 

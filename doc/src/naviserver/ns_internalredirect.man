@@ -8,11 +8,11 @@
 
 The "ns_internalredirect" command enables re-authorization
 and restart of a connection as if it where originally for
-a different URL. 
+a different [arg location] (relative URI). 
 
-It is possible now to set new request url and re-process the
+It is possible now to set new request location and re-process the
 request from the beginning without using external redirect.
-Internal redirect assigns new url and calls registered proc for new url inside
+Internal redirect assigns new URL and calls registered proc for new URL inside
 the existing connection and using the same Tcl interp.
 
 [section {COMMANDS}]
@@ -20,7 +20,7 @@ the existing connection and using the same Tcl interp.
 [list_begin definitions]
 
 
-[call [cmd ns_internalredirect] [opt [arg url]]]
+[call [cmd ns_internalredirect] [arg location]]
 
 
 [list_end]

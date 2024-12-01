@@ -17,10 +17,16 @@ the module files.
 
 [list_begin definitions]
 
-[call [cmd ns_locationproc] [arg script]]
+[call [cmd ns_locationproc] [arg script] [opt [arg "arg ..."]]]
 
-[para] [arg script] Tcl script which result will be used to return the
-location string.
+[para] The Tcl [arg script] will be called returing the location
+string, containing the URL scheme (protocol) and the authority
+(hostname and port) in the syntax as specified by the HTTP RFCs.
+
+[para] When the optional arguments are provided, these are added to
+the command [arg script] to be executed. Therefore two invocation
+styles are supported: either providing a [arg script], or a command
+with additional arguments.
 
 [list_end]
 
@@ -35,7 +41,6 @@ location string.
         ns_log notice "LOCATION-PROC args <$args> - location <$location>"
         return $location
     }
-    ns_log notice "SOURCING location-procs.tcl <[lb]ns_info server[rb]>"
  }
 [example_end]
 

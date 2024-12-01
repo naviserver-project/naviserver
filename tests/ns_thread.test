@@ -7,7 +7,7 @@ namespace import -force ::tcltest::*
 
 test ns_thread-1.0 {syntax: ns_thread} -body {
     ns_thread
-} -returnCodes error -result {wrong # args: should be "ns_thread begin|begindetached|create|get|getid|handle|id|join|name|stackinfo|wait|yield ?/args/"}
+} -returnCodes error -result {wrong # args: should be "ns_thread begin|begindetached|create|get|getid|handle|id|join|name|stackinfo|wait|yield ?/arg .../"}
 
 test ns_thread-1.1 {syntax: ns_thread subcommands} -body {
     ns_thread ?
@@ -45,7 +45,7 @@ test ns_thread-1.8 {syntax: ns_thread yield} -body {
 
 test ns_mutex-1.0 {syntax: ns_mutex} -body {
     ns_mutex
-} -returnCodes error -result {wrong # args: should be "ns_mutex create|destroy|eval|lock|trylock|unlock ?/args/"}
+} -returnCodes error -result {wrong # args: should be "ns_mutex create|destroy|eval|lock|trylock|unlock ?/arg .../"}
 
 test ns_mutex-1.1 {syntax: ns_mutex subcommands} -body {
     ns_mutex ?
@@ -79,7 +79,7 @@ test ns_mutex-1.7 {syntax: ns_mutex unlock} -body {
 
 test ns_critsec-1.0 {syntax: ns_critsec} -body {
     ns_critsec
-} -returnCodes error -result {wrong # args: should be "ns_critsec create|destroy|enter|eval|leave ?/args/"}
+} -returnCodes error -result {wrong # args: should be "ns_critsec create|destroy|enter|eval|leave ?/arg .../"}
 
 test ns_critsec-1.1 {syntax: ns_critsec subcommands} -body {
     ns_critsec ?
@@ -110,7 +110,7 @@ test ns_critsec-1.6 {syntax: ns_critsec leave} -body {
 
 test ns_sema-1.0 {syntax: ns_sema} -body {
     ns_sema
-} -returnCodes error -result {wrong # args: should be "ns_sema create|destroy|release|wait ?/args/"}
+} -returnCodes error -result {wrong # args: should be "ns_sema create|destroy|release|wait ?/arg .../"}
 test ns_sema-1.1 {syntax: ns_sema subcommands} -body {
     ns_sema ?
 } -returnCodes error -result {ns_sema: bad subcommand "?": must be create, destroy, release, or wait}
@@ -136,7 +136,7 @@ test ns_sema-1.5 {syntax: ns_sema wait} -body {
 
 test ns_cond-1.0 {syntax: ns_cond} -body {
     ns_cond
-} -returnCodes error -result {wrong # args: should be "ns_cond abswait|broadcast|create|destroy|set|signal|wait ?/args/"}
+} -returnCodes error -result {wrong # args: should be "ns_cond abswait|broadcast|create|destroy|set|signal|wait ?/arg .../"}
 
 test ns_cond-1.1 {syntax: ns_cond subcommands} -body {
     ns_cond ?
@@ -175,7 +175,7 @@ test ns_cond-1.8 {syntax: ns_cond wait} -body {
 
 test ns_rwlock-1.0 {syntax: ns_rwlock} -body {
     ns_rwlock
-} -returnCodes error -result {wrong # args: should be "ns_rwlock create|destroy|readeval|readlock|readunlock|unlock|writeeval|writelock|writeunlock ?/args/"}
+} -returnCodes error -result {wrong # args: should be "ns_rwlock create|destroy|readeval|readlock|readunlock|unlock|writeeval|writelock|writeunlock ?/arg .../"}
 
 test ns_rwlock-1.1 {syntax: ns_rwlock subcommands} -body {
     ns_rwlock ?

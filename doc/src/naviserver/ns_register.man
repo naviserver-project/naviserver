@@ -303,7 +303,7 @@ client (i.e. not a Server Error). In addition, their return value is ignored.
 
 [para]
 
-The arguemnt [arg urlpattern] can contain standard string-matching characters. For example, these are valid values:
+The argument [arg urlpattern] can contain standard string-matching characters. For example, these are valid values:
 
 [example_begin]
  /employees/*.tcl

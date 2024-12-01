@@ -2025,7 +2025,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
     };
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?/args/?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?/arg .../?");
         return TCL_ERROR;
     }
     if (Tcl_GetIndexFromObj(interp, objv[1], opts, "subcommand", 0,

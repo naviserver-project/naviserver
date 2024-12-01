@@ -8,7 +8,7 @@ namespace import -force ::tcltest::*
 
 test sls-1.1 {basic syntax} -body {
     ns_sls
-} -returnCodes error -result {wrong # args: should be "ns_sls array|get|set|unset ?/args/"}
+} -returnCodes error -result {wrong # args: should be "ns_sls array|get|set|unset ?/arg .../"}
 
 test sls-1.2 {basic syntax} -setup {
     ns_register_proc GET /sls-1.2 {
@@ -20,7 +20,7 @@ test sls-1.2 {basic syntax} -setup {
     nstest::http -getbody 1 GET /sls-1.2
 } -cleanup {
     ns_unregister_op GET /sls-1.2
-} -result {200 {wrong # args: should be "ns_sls array|get|set|unset ?/args/"}}
+} -result {200 {wrong # args: should be "ns_sls array|get|set|unset ?/arg .../"}}
 
 test sls-1.3 {basic syntax} -setup {
     ns_register_proc GET /sls-1.3 {

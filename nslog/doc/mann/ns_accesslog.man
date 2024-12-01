@@ -32,7 +32,7 @@ the command [cmd "ns_accesslog"].
 	[opt [arg new-headers]]]
 
 Return a list of the HTTP header fields which will be appended to each entry in the
-access log. If [opt [arg new-headers]] is given it replaces the existing
+access log. If [arg new-headers] is given it replaces the existing
 setting.
 
 [para] By default, all specified header fields are request header
@@ -46,20 +46,22 @@ or "Server" are not accessible this way).
 
 
 [call [cmd "ns_accesslog file"] \
-	[opt [arg new-path]] ]
+	[opt [arg filepath]] ]
 
-Returns the path of the access log for the current virtual server.
+Sets or gets the [arg filepath] of the access log. When [arg filepath]
+is not provided, the command teturns the path of the access log for
+the current virtual server.
 
 [para]
-If [opt [arg new-path]] is given then the old log is closed and the log
-re-opened at the new location. All the components of [opt [arg new-path]] must
+If [arg filepath] is given then the old log is closed and the log
+re-opened at the new location. All the components of [arg filepath] must
 exist. If an error occurs logging will be disabled.
 
 
 [call [cmd "ns_accesslog flags"] \
 	[opt [arg flags]]]
 
-Return a list of the enabled logging options, or reset the list if a
+Returns a list of the enabled logging options, or reset the list if a
 new set of flags is given. Valid flags are: logcombined,
 formattedtime, logpartialtimes, logreqtime, checkforproxy, and
 suppressquery. They have the same meaning as the similarly named
@@ -67,35 +69,35 @@ configuration parameters.
 
 
 [call [cmd "ns_accesslog maxbackup"] \
-	[opt [arg keep]] ]
+	[opt [arg nrfiles]] ]
 
-Get the number of backup files which will be kept when log rolling is
-enabled. If [opt [arg keep]] is given it replaces any existing value.
+Sets or gets the number of backup files which will be kept when log rolling is
+enabled. If [arg nrfiles] is given it replaces any existing value.
 
 
 
 [call [cmd "ns_accesslog maxbuffer"] \
-	[opt [arg lines]] ]
+	[opt [arg nrlines]] ]
 
-Set or get the maximum number of lines to buffer before being flushed to the
+Sets or gets the maximum number of lines to buffer before being flushed to the
 log file.
 
 
 [call [cmd "ns_accesslog roll"] \
-	[opt [arg new-path]]]
+	[opt [arg filepath]]]
 
-Roll the access log (see [cmd ns_rollfile] for details). Keep [term maxbackup]
-old log files around.  If [opt [arg new-path]] is given then it overrides the
-configuration parameter 'file' as the new log file.
+Rolls the access log (see [cmd ns_rollfile] for details). Keep [term maxbackup]
+old log files around.  If [arg filepath] is given then it overrides the
+configuration parameter [term file] as the new log file.
 
 
 
 [call [cmd "ns_accesslog rollfmt"] \
-	[opt [arg time-format]] ]
+	[opt [arg timeformat]] ]
 
-Get the [opt [arg time-format]] which is appended to the log filename when
+Sets of gets the [arg timeformat] which is appended to the log filename when
 rolling. The format string is as understood by the Tcl [cmd clock] command.
-If [opt [arg time-format]] is given then it replaces any existing value.
+If [arg timeformat] is given then it replaces any existing value.
 
 
 [list_end]

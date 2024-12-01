@@ -78,9 +78,9 @@ address is taken from the value as provided by the reverse proxy
 server.
 
 [call [cmd "ns_connchan callback"] \
-	[opt [option "-timeout [arg t]"]] \
-	[opt [option "-receivetimeout [arg r]"]] \
-	[opt [option "-sendtimeout [arg s]"]] \
+	[opt [option "-timeout [arg time]"]] \
+	[opt [option "-receivetimeout [arg time]"]] \
+	[opt [option "-sendtimeout [arg time]"]] \
 	[arg channel] \
 	[arg command] \
 	[arg when] \
@@ -99,7 +99,7 @@ All timeouts values are specified in the form [arg secs[opt :microseconds]], or
 The argument [arg when] consist of one or more characters
 of r, w, e, or x, specifying, when the callback should fire.
 
-[para] When the callback is fired, the specified Tcl command will be
+[para] When the callback is fired, the specified Tcl [arg commands] will be
 called with an additional argument, which is an indicator for the
 reason of the call [arg when]. The value of [arg when] will be as
 follows:
@@ -126,7 +126,7 @@ interpreted as follows:
 
 [call [cmd "ns_connchan connect"] \
 	[opt [option "-tls"]] \
-	[opt [option "-timeout [arg t]"]] \
+	[opt [option "-timeout [arg time]"]] \
 	[arg host] \
 	[arg port] \
 ]
@@ -141,13 +141,13 @@ without sending any request data.
 [para] The option [option "-tls"] will connection via TLS, otherwise
 the connection is via plain socket. [option -timeout] specifies the
 timeout for establishing the connection (default 1 second).
-The timeout value [arg t] can be specified in the form
+The timeout value [arg time] can be specified in the form
 [arg secs[opt :microseconds]], or [arg secs.fraction],
 or as a number with a time unit.
 
 [call [cmd "ns_connchan listen"] \
-	[opt [option "-driver [arg d]"]] \
-	[opt [option "-server [arg s]"]] \
+	[opt [option "-driver [arg string]"]] \
+	[opt [option "-server [arg server]"]] \
 	[opt [option "-bind"]] \
 	[arg address] \
 	[arg port] \
@@ -159,7 +159,16 @@ connections. On success, this command returns a dict containing
 "channel", "port", "sock" and "address".
 
 
-[call [cmd "ns_connchan open"] [opt [arg options]] [arg url]]
+[call [cmd "ns_connchan open"] \
+	[opt [option "-driver [arg string]"]] \
+	[opt [option "-headers [arg setId]"]] \
+	[opt [option "-hostname [arg string]"]] \
+	[opt [option "-method [arg string]"]] \
+	[opt [option "-timeout [arg time]"]] \
+	[opt [option "-unix_socket [arg string]"]] \
+	[opt [option "-version [arg string]"]] \
+        [arg url] \
+]
 
 [para]
 Open a connection channel to the specified [arg url].  The URL can
@@ -173,23 +182,24 @@ The [arg options] can be any of:
 
 [para]
 [list_begin options]
-[opt_def -headers [arg headers]] A [type [term ns_set]] of request header
+[opt_def -headers [arg setId]] A [type [term ns_set]] of request header
 fields.
 
-[opt_def -hostname [arg hostname]] Required for connecting to a
+[opt_def -hostname [arg string]] Required for connecting to a
 server with virtual hosting that provides multiple certificates via
 SNI (Server Name Indication).
 
 [opt_def -method [arg method]] Specifies the HTTP method, by default
 [const GET].
 
-[opt_def -timeout [arg timeout]] Specifies the timeout for
+[opt_def -timeout [arg time]] Specifies the timeout for
 establishing the connection, by default 1 second. The timeout value
-[arg timeout] is specified in the form [arg secs[opt :microseconds]],
+[arg time] is specified in the form [arg secs[opt :microseconds]],
 or [arg secs.fraction], or as a number with a time unit.
 
-[opt_def -version [arg HTTP_version]] Specifies the HTTP version,
-by default [const 1.0]
+[opt_def -unix_socket [arg string]] a unix socket to connect to.
+
+[opt_def -version [arg string]] specifies the HTTP version (default 1.0).
 [list_end]
 
 
@@ -221,10 +231,11 @@ the [term payload] of the frame.
 
 
 [call [cmd "ns_connchan status"] \
+	[opt [option "-server [arg server]"]] \
 	[arg channel] \
 ]
 
-Query status information from the specified connection channel.
+Returns status information from the current or named [arg server].
 The command returns a dict containing the following elements:
 
 [para]
@@ -244,9 +255,9 @@ When a callback is defined for this channel, the dict contains as well the
 
 [call [cmd "ns_connchan wsencode"] \
 	[opt [option "-binary"]] \
-	[opt [option "-fin [arg 0|1]"]] \
+	[opt [option "-fin 0|1"]] \
 	[opt [option "-mask"]] \
-	[opt [option "-opcode [arg {continue|text|binary|close|ping|pong}]"]] \
+	[opt [option "-opcode continue|text|binary|close|ping|pong"]] \
 	[arg message] \
 ]
 
@@ -261,9 +272,9 @@ multi-segment messages, where later segments have the opcode
 
 
 [call [cmd "ns_connchan write"] \
-	[arg channel] \
 	[opt [option "-buffered"]] \
-	[arg string] \	
+	[arg channel] \
+	[arg message] \	
 ]
 
 Write to the specified connection channel. The function returns

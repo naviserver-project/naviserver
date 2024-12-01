@@ -309,7 +309,8 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
 
     /*
      * We want to have to configure options AFTER the cache name. So parse the
-     * argument vector in two parts.
+     * argument vector in two parts, first the cache name and the arguments,
+     * then the parameters after the cache name.
      */
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
@@ -325,7 +326,10 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
         Ns_TclPrintfResult(interp, "maxEntry must be a positive number");
         result = TCL_ERROR;
 
-    } else if (objc > 2) {
+    } else if (nargs > 0) {
+        /*
+         * Set parameter values for the cache.
+         */
         const NsInterp *itPtr = clientData;
         NsServer       *servPtr = itPtr->servPtr;
 
@@ -346,7 +350,10 @@ NsTclCacheConfigureObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
         }
         Ns_RWLockUnlock(&servPtr->tcl.cachelock);
 
-    } else if (objc == 2) {
+    } else /* if (nargs == 0) */ {
+        /*
+         * Return cache parameter values from the cache.
+         */
         const NsInterp *itPtr = clientData;
         NsServer       *servPtr = itPtr->servPtr;
         Tcl_Obj        *resultObj = Tcl_NewListObj(0, NULL);

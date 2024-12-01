@@ -214,7 +214,7 @@ test ns_valid_utf8-1.5 {invalid utf8, containing x85 in the middle} -body {
 
 test ns_ip-1.0.1 {syntax: ns_ip} -body {
     ns_ip
-} -returnCodes error -result {wrong # args: should be "ns_ip match|properties|public|trusted|valid ?/args/"}
+} -returnCodes error -result {wrong # args: should be "ns_ip match|properties|public|trusted|valid ?/arg .../"}
 
 test ns_ip-1.0.2 {syntax: ns_ip subcommand} -body {
     ns_ip x
@@ -321,7 +321,7 @@ test ns_ip_match--2.4 {ns_ip match IPv4} -body {
 
 test ns_rlimit-1.0 {ns_rlimit general} -body {
     ns_rlimit
-} -returnCodes error -result {wrong # args: should be "ns_rlimit /subcommand/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "ns_rlimit /subcommand/ ?/arg .../?"}
 
 test ns_rlimit-1.1 {ns_rlimit wrong subcommand} -body {
     ns_rlimit ?
@@ -439,11 +439,12 @@ test ns_formfieldcharset-1.0 {syntax: ns_formfieldcharset} -body {
 test ns_sendmail_config-1.0 {syntax: ns_sendmail_config} -body {
     ns_sendmail_config ? ?
 } -returnCodes error -result {wrong # args: should be "ns_sendmail_config ?mode?"}
+# should be  {wrong # args: should be "ns_sendmail_config ?log?"}
 
 test ns_sendmail-1.0 {syntax: ns_sendmail} -body {
     ns_sendmail -? ?
 } -returnCodes error -result {wrong # args: should be "?-to /to/? ?-from /from/? ?-subject /subject/? ?-body /body/? ?-headers /headers/? ?-bcc /bcc/? ?-cc /cc/?"}
-# ns_sendmail is a Tcl proc: message should be {wrong # args: should be "ns_sendmail ?-to /to/? ?-from /from/? ?-subject /subject/? ?-body /body/? ?-headers /headers/? ?-bcc /bcc/? ?-cc /cc/?"}
+# ns_sendmail is a Tcl proc: message should be {wrong # args: should be "ns_sendmail -to /string/ -from /string/ ?-subject /string/? ?-body /string/? ?-headers /string/? ?-bcc /string/? ?-cc /string/?"}
 
 
 #######################################################################################

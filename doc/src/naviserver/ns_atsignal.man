@@ -16,6 +16,11 @@ You can find out which callbacks are already registered with the
 [cmd "ns_info callbacks"] command. Further callbacks can be registered
 via [cmd "ns_ictl trace"].
 
+[para] These command receive as argument a [arg script] and optional
+arguments. When the optional arguments are provided, these are added
+to the command [arg script] to be executed. Therefore two invocation
+styles are supported: either providing a [arg script], or a command with
+additional arguments.
 
 [section {COMMANDS}]
 
@@ -23,7 +28,7 @@ via [cmd "ns_ictl trace"].
 
 [call [cmd ns_atprestartup] \
  [arg script] \
- [opt [arg args]]  ]
+ [opt [arg "arg ..."]]  ]
 
 Pre-startup procs are called in FIFO order after the configuration file has been
 parsed and all modules loaded, but before the driver starts listening for and
@@ -33,7 +38,7 @@ processing connections.
 
 [call [cmd ns_atstartup] \
  [arg script] \
- [opt [arg args]]  ]
+ [opt [arg "arg ..."]]  ]
 
 Startup procs are called in FIFO order just after the server is fully
 initialized and is listening for and processing connections.
@@ -42,7 +47,7 @@ initialized and is listening for and processing connections.
 
 [call [cmd ns_atsignal] \
  [arg script] \
- [opt [arg args]]  ]
+ [opt [arg "arg ..."]]  ]
 
 Signal procs are called in FIFO order whenever a [term HUP] signal is received
 by the server process.
@@ -61,7 +66,7 @@ statistics and reset whenever the server is signaled.
 
 [call [cmd ns_atshutdown] \
  [arg script] \
- [opt [arg args]]  ]
+ [opt [arg "arg ..."]]  ]
 
 At-shutdown procs are called in LIFO order when the server performs a controlled
 shutdown after all other subsystem have been stopped.
@@ -78,7 +83,7 @@ as the [cmd ns_job] command.
 
 [call [cmd ns_atexit] \
  [arg script] \
- [opt [arg args]]  ]
+ [opt [arg "arg ..."]]  ]
 
 At-exit procs are called in LIFO order after all [term shutdown] procs have been
 called and the server process is ready to exit.  The [term atexit] procs are

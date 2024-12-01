@@ -69,9 +69,9 @@ NsTclHeadersObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"status",  Ns_ObjvInt,     &httpStatus, &statusRange},
-        {"?type",   Ns_ObjvString,  &mimeType,   NULL},
-        {"?length", Ns_ObjvWideInt, &length,     &lengthRange},
+        {"status",    Ns_ObjvInt,     &httpStatus, &statusRange},
+        {"?mimetype", Ns_ObjvString,  &mimeType,   NULL},
+        {"?length",   Ns_ObjvWideInt, &length,     &lengthRange},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -216,7 +216,7 @@ NsTclWriteObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl
     struct iovec   *sbufs = iov;
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/data/ ?/data/ ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/data .../");
         result = TCL_ERROR;
 
     } else if (NsConnRequire(interp, NS_CONN_REQUIRE_ALL, &conn, &result) == NS_OK) {
@@ -328,7 +328,7 @@ NsTclReturnObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
     };
     Ns_ObjvSpec args[] = {
         {"status",   Ns_ObjvInt,    &httpStatus,  &statusRange},
-        {"type",     Ns_ObjvString, &mimeType,    NULL},
+        {"mimetype", Ns_ObjvString, &mimeType,    NULL},
         {"data",     Ns_ObjvObj,    &dataObj,     NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -377,7 +377,7 @@ NsTclRespondObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     Ns_Conn          *conn = NULL;
     int               result = TCL_OK, httpStatus = 200;
     Tcl_WideInt       length = -1;
-    char             *type = (char *)"*/*", *setid = NULL;
+    char             *type = (char *)"*/*";
     char             *chars = NULL, *filename = NULL, *chanid = NULL, *binary = NULL, *data = NULL;
     const Ns_Set     *set = NULL;
     Tcl_Channel       chan;
@@ -386,7 +386,7 @@ NsTclRespondObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
         {"-status",   Ns_ObjvInt,       &httpStatus, &statusRange},
         {"-type",     Ns_ObjvString,    &type,       NULL},
         {"-length",   Ns_ObjvWideInt,   &length,     &lengthRange},
-        {"-headers",  Ns_ObjvString,    &setid,      NULL},
+        {"-headers",  Ns_ObjvSet,       &set,        NULL},
         {"-string",   Ns_ObjvString,    &chars,      NULL},
         {"-file",     Ns_ObjvString,    &filename,   NULL},
         {"-fileid",   Ns_ObjvString,    &chanid,     NULL},
@@ -415,14 +415,8 @@ NsTclRespondObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
         Ns_TclPrintfResult(interp, "must specify only one of -string, "
                            "-file, -data or -fileid");
         result = TCL_ERROR;
-
-    } else if (setid != NULL) {
-        set = Ns_TclGetSet(interp, setid);
-        if (set == NULL) {
-            Ns_TclPrintfResult(interp, "invalid ns_set id: \"%s\"", setid);
-            result = TCL_ERROR;
-        }
     }
+
     if (result == TCL_OK) {
         Ns_ReturnCode status;
 
@@ -501,7 +495,7 @@ NsTclReturnFileObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
     char         *mimeType, *fileName;
     Ns_ObjvSpec   args[] = {
         {"status",   Ns_ObjvInt,    &httpStatus, &statusRange},
-        {"type",     Ns_ObjvString, &mimeType,   NULL},
+        {"mimetype", Ns_ObjvString, &mimeType,   NULL},
         {"filename", Ns_ObjvString, &fileName,   NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -544,10 +538,10 @@ NsTclReturnFpObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
     Tcl_Channel       chan = NULL;
     Ns_ObjvValueRange lengthRange = {0, SSIZE_MAX};
     Ns_ObjvSpec       args[] = {
-        {"status",  Ns_ObjvInt,     &httpStatus,  &statusRange},
-        {"type",    Ns_ObjvString,  &mimeType,    NULL},
-        {"channel", Ns_ObjvString,  &channelName, NULL},
-        {"length",  Ns_ObjvWideInt, &length,     &lengthRange},
+        {"status",   Ns_ObjvInt,     &httpStatus,  &statusRange},
+        {"mimetype", Ns_ObjvString,  &mimeType,    NULL},
+        {"channel",  Ns_ObjvString,  &channelName, NULL},
+        {"length",   Ns_ObjvWideInt, &length,     &lengthRange},
         {NULL, NULL, NULL, NULL}
     };
 

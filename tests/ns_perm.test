@@ -8,7 +8,7 @@ namespace import -force ::tcltest::*
 
 test ns_perm-1.1 {syntax: ns_perm} -body {
     ns_perm
-} -returnCodes error -result {wrong # args: should be "ns_perm /subcommand/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "ns_perm /subcommand/ ?/arg .../?"}
 
 test ns_perm-2.1 {syntax: ns_perm adduser} -body {
     ns_perm adduser

@@ -11,7 +11,7 @@
 [list_begin definitions]
 
 [call [cmd ns_baseunit] \
-        [opt [option "-size [arg size]"]] \
+        [opt [option "-size [arg memory-size]"]] \
         [opt [option "-time [arg time]"]] ]
 
 [para] Convert from memory units or from time units to its
@@ -23,7 +23,7 @@
   units to support uniform interfaces (e.g. calculating
   cache partition sizes base on values such as 2MB).
 
-[para] Either [option "-size [arg size]"] or
+[para] Either [option "-size [arg memory-size]"] or
   [option "-time [arg time]"] has to be specified.
   Valid time units are μs, ms, s, m, h, d, w, y.
   Valid size units are kB, MB, GB, KiB, MiB, GiB.

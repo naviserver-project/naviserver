@@ -19,7 +19,7 @@ copies up to [arg maxbackups].
 
 When the specified file is rolled, it gets renamed to
 [arg path][term .xyz], where [term 000] <= [term xyz] <= [term 999].
-Older files have higher numbers. Since 4 digits are used, the maxium
+Older files have higher numbers. Since 4 digits are used, the maximum
 number if back files is 1000.
 
 [list_end]

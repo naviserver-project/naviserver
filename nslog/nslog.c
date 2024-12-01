@@ -437,7 +437,7 @@ LogObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
     };
 
     if (objc < 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?/args/?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?/arg .../?");
         return TCL_ERROR;
     }
     rc = Tcl_GetIndexFromObj(interp, objv[1], subcmd, "subcommand", 0, &cmd);

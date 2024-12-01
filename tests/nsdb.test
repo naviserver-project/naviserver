@@ -9,7 +9,7 @@ namespace import -force ::tcltest::*
 
 test nsdb-1.0 {syntax: ns_db} -body {
     ns_db
-} -returnCodes error -result {wrong # args: should be "ns_db /subcommand/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "ns_db /subcommand/ ?/arg .../?"}
 
 test nsdb-1.0.1 {syntax: ns_db bouncepool} -body {
     ns_db bouncepool

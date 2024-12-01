@@ -152,6 +152,7 @@ test ns_adp_break-1.0 {syntax: ns_adp_break} -body {
 test ns_adp_debug-1.0 {syntax: ns_adp_debug} -body {
     ns_adp_debug ? ? ? ?
 } -returnCodes error -result {wrong # args: should be "ns_adp_debug ?-host /string/? ?-port /string/? ?-procs /string/? ?--? ?/host/? ?/port/? ?/procs/?"}
+# legacy syntax; should be {wrong # args: should be "ns_adp_debug ?-host /string/? ?-port /string/? ?-procs /string/?"}
 
 test ns_adp_exception-1.0 {syntax: ns_adp_exception} -body {
     ns_adp_exception ? ?

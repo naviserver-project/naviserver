@@ -11,7 +11,7 @@ if {[ns_config test listenport]} {
 
 test ns_writer-1.1 {basic syntax: plain call} -body {
      ns_writer
-} -returnCodes error -result {wrong # args: should be "ns_writer list|size|streaming|submit|submitfile|submitfiles ?/args/"}
+} -returnCodes error -result {wrong # args: should be "ns_writer list|size|streaming|submit|submitfile|submitfiles ?/arg .../"}
 
 test ns_writer-1.2.0 {basic syntax: wrong argument} -body {
      ns_writer ?

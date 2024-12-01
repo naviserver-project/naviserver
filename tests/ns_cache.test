@@ -5,15 +5,27 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
-
+#######################################################################################
+# Syntax tests
+#######################################################################################
 
 test ns_cache_append-1.0 {syntax: ns_cache_append} -body {
     ns_cache_append
 } -returnCodes error -result {wrong # args: should be "ns_cache_append ?-timeout /time/? ?-expires /time/? ?--? /cache/ /key/ /arg .../"}
 
-test ns_cache_configure-1.0 {syntax: ns_cache_configure} -body {
+test ns_cache_configure-1.0 {syntax: ns_cache_configure without arguments} -body {
     ns_cache_configure
 } -returnCodes error -result {wrong # args: should be "ns_cache_configure /cache/ ?/arg .../?"}
+
+
+# Dirty trick to get the syntax message for ns_cache_configure-1.1
+# right, without the need of adding an additional rule.
+ns_cache create /cache/
+
+test ns_cache_configure-1.1 {syntax: ns_cache_configure with wrong arguments} -body {
+    ns_cache_configure /cache/ -x
+    # we have currently no command to delete a cache
+} -returnCodes error -result {wrong # args: should be "ns_cache_configure /cache/ ?-timeout /time/? ?-expires /time/? ?-maxentry /memory-size/? ?-maxsize /memory-size/?"}
 
 test ns_cache_create-1.0 {syntax: ns_cache_create} -body {
     ns_cache_create
@@ -71,7 +83,7 @@ test ns_cache_transaction_rollback-1.0 {syntax: ns_cache_transaction_rollback} -
 
 test ns_fastpath_cache_stats-1.0 {syntax: ns_fastpath_cache_stats} -body {
     ns_fastpath_cache_stats ?
-} -returnCodes error -result {wrong # args: should be "ns_fastpath_cache_stats ?-contents? ?-reset? ?--?"}
+} -returnCodes error -result {wrong # args: should be "ns_fastpath_cache_stats ?-contents? ?-reset?"}
 
 
 
@@ -93,10 +105,7 @@ test ns_memoize_stats-1.0 {syntax: ns_memoize_stats} -body {
     ns_memoize_stats ?
 } -returnCodes error -result {wrong # args: should be "ns_memoize_stats"}
 
-
 #######################################################################################
-# Functional tests
-#
 # Create 4 caches, c1..c4
 #######################################################################################
 
@@ -105,10 +114,13 @@ ns_cache_create -maxentry 10 -- c1 1024
 ns_cache_create -expires 100 -- c2 [expr 1024 * 1024]
 ns_cache_create -expires 100.1s -timeout 1s -- c4 [expr 1024 * 1024]
 
+#######################################################################################
+# Functional tests
+#######################################################################################
 
 test cache-2.1 {cache names} -body {
     lsort [ns_cache_names]
-} -match glob -result {c0 c1 c2 *}
+} -match glob -result {/cache/ c0 c1 c2 *}
 
 
 

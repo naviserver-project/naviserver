@@ -522,7 +522,7 @@ sections of related commands.
 [call [cmd "ns_db verbose"]]            Use [cmd "ns_logctl debug(sql) ..."] instead.
 [call [cmd "ns_event"]]                 Use [cmd "ns_cond"] instead.
 [call [cmd "ns_formfieldcharset"]]      Use standard internationalization commands instead.
-[call [cmd "ns_formvalueput"]]          Not sufficent for today's needs; use standard API instead.
+[call [cmd "ns_formvalueput"]]          Not sufficient for today's needs; use standard API instead.
 [call [cmd "ns_getchannels"]]           Use [cmd "file channels"] instead.
 [call [cmd "ns_geturl"]]                Use [cmd "ns_http"] instead.
 [call [cmd "ns_hmac_sha2"]]             Use [cmd "ns_crypto::hmac string"] instead.

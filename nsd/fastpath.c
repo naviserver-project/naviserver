@@ -1035,7 +1035,6 @@ NsTclFastPathCacheStatsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     Ns_ObjvSpec opts[] = {
         {"-contents", Ns_ObjvBool,  &contents, INT2PTR(NS_TRUE)},
         {"-reset",    Ns_ObjvBool,  &reset,    INT2PTR(NS_TRUE)},
-        {"--",        Ns_ObjvBreak, NULL,      NULL},
         {NULL, NULL, NULL, NULL}
     };
 

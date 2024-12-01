@@ -29,7 +29,7 @@ namespace import -force ::tcltest::*
 
 test ns_job-1.0 {syntax ns_job} -body {
      ns_job
-} -returnCodes error -result {wrong # args: should be "ns_job cancel|configure|create|delete|exists|genid|joblist|jobs|queue|queuelist|queues|threadlist|wait|waitany ?/args/"}
+} -returnCodes error -result {wrong # args: should be "ns_job cancel|configure|create|delete|exists|genid|joblist|jobs|queue|queuelist|queues|threadlist|wait|waitany ?/arg .../"}
 
 test ns_job-1.1 {syntax ns_job subcommands} -body {
      ns_job ""

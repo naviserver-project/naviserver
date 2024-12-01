@@ -11,7 +11,7 @@ namespace import -force ::tcltest::*
 
 test ns_ictl-1.0  {syntax: ns_ictl} -body {
     ns_ictl
-} -returnCodes error -result {wrong # args: should be "ns_ictl addmodule|cleanup|epoch|get|getmodules|gettraces|markfordelete|maxconcurrentupdates|oncleanup|oncreate|ondelete|oninit|runtraces|save|trace|update ?/args/"}
+} -returnCodes error -result {wrong # args: should be "ns_ictl addmodule|cleanup|epoch|get|getmodules|gettraces|markfordelete|maxconcurrentupdates|oncleanup|oncreate|ondelete|oninit|runtraces|save|trace|update ?/arg .../"}
 
 test ns_ictl-1.1  {syntax: ns_ictl subcommands} -body {
     ns_ictl ?
@@ -86,27 +86,27 @@ test ns_ictl-1.17 {syntax: ns_ictl update} -body {
 
 test ns_atclose-1.0 {syntax: ns_atclose} -body {
     ns_atclose
-} -returnCodes error -result {wrong # args: should be "ns_atclose /script/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "ns_atclose /script/ ?/arg .../?"}
 
 test ns_atexit-1.0 {syntax: ns_atexit} -body {
     ns_atexit
-} -returnCodes error -result {wrong # args: should be "ns_atexit /script/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "ns_atexit /script/ ?/arg .../?"}
 
 test ns_atprestartup-1.0 {syntax: ns_atprestartup} -body {
     ns_atprestartup
-} -returnCodes error -result {wrong # args: should be "ns_atprestartup /script/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "ns_atprestartup /script/ ?/arg .../?"}
 
 test ns_atshutdown-1.0 {syntax: ns_atshutdown} -body {
     ns_atshutdown
-} -returnCodes error -result {wrong # args: should be "ns_atshutdown /script/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "ns_atshutdown /script/ ?/arg .../?"}
 
 test ns_atsignal-1.0 {syntax: ns_atsignal} -body {
     ns_atsignal
-} -returnCodes error -result {wrong # args: should be "ns_atsignal /script/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "ns_atsignal /script/ ?/arg .../?"}
 
 test ns_atstartup-1.0 {syntax: ns_atstartup} -body {
     ns_atstartup
-} -returnCodes error -result {wrong # args: should be "ns_atstartup /script/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "ns_atstartup /script/ ?/arg .../?"}
 
 
 test ns_cleanup-1.0 {syntax: ns_cleanup} -body {

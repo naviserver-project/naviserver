@@ -894,7 +894,7 @@ NsTclServerRootProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
     int             result = TCL_OK;
 
     if (unlikely(objc < 2)) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/script/ ?/args/?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/script/ ?/arg .../?");
         result = TCL_ERROR;
 
     } else if (unlikely(servPtr == NULL)) {

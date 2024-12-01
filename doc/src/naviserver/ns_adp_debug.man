@@ -11,7 +11,11 @@ to auto-instrument
 
 [list_begin definitions]
 
-[call [cmd ns_adp_debug] [arg procs] [arg host] [arg port]]]
+[call [cmd ns_adp_debug] \
+        [opt [option "-host [arg string]"]] \
+        [opt [option "-port [arg string]"]] \
+        [opt [option "-procs [arg string]"]] \
+        ]
 
 [para]
 [arg procs]

@@ -99,8 +99,7 @@ The main difference to plain Tcl is the option
 When this option is provided, the function returns 0 or 1 depending
 on success and returns in the success case the value in the provided
 variable. When the varname option is provided, the behavior is
-similar to the optional last argument in [cmd nsv_get] or
-[cmd ns_cache_get]
+similar to the optional last argument in [cmd nsv_get] or [cmd ns_cache_get].
 
 The option [opt "-varname [arg varname]"] has the advantage
 to test and get the value with a single locked command. This avoids

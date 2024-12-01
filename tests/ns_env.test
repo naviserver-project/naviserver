@@ -9,7 +9,7 @@ namespace import -force ::tcltest::*
 
 test ns_env-1.1 {syntax: ns_env} -body {
      ns_env
-} -returnCodes error -result {wrong # args: should be "ns_env /subcommand/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "ns_env /subcommand/ ?/arg .../?"}
 
 test ns_env-1.2 {syntax: ns_env subcommands} -body {
      ns_env ?

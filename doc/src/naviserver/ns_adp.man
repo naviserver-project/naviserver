@@ -55,9 +55,9 @@ below for details on configuring this mapping). The ADP
 request processing code allocates a Tcl interpreter and
 includes the corresponding ADP file. Output generated during
 execution of the ADP is sent as a normal HTTP response,
-using default status code of "200 OK" and the mime
+using default status code of "200 OK" and the MIME
 type which corresponds to the ADP file extensions, normally
-.adp and text/html (commands such as  ns_adp_mimetype
+.adp and text/html (commands such as  [cmd ns_adp_mimetype]
 can be used to control the eventual response type).
 
 [para]
@@ -208,11 +208,11 @@ enabled to support compression of ADP output.
  }
 [example_end]
 
-The ADP interface uses the server's mimetype configuration
+The ADP interface uses the server's MIME type configuration
 to map file extensions to charsets and corresponding encoding. This
 configuration is necessary to ensure the file text and
 script blocks are properly converted to UTF-8 for use
-internally. This mimetype is also used to set the character
+internally. This MIME type is also used to set the character
 output encoding although the  ns_conn encoding  option
 can be used to override the encoding if necessary.
 

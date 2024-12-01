@@ -14,7 +14,12 @@ The scripts are executed in the global scope in LIFO (last in, first out) order.
 
 [list_begin definitions]
 
-[call [cmd ns_atclose] [arg script] [opt [arg arg]]]
+[call [cmd ns_atclose] [arg script] [opt [arg "arg ..."]]]
+
+[para] When the optional arguments are provided, these are added to
+the command [arg script] to be executed. Therefore two invocation
+styles are supported: either providing a [arg script], or a command
+with additional arguments.
 
 [list_end]
 

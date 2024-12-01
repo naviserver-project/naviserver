@@ -19,11 +19,11 @@ response piecewise (in a streaming manner), to the client.
      [opt [option -binary]] \
      [opt --] \
      [arg status] \
-     [opt [arg mime-type]] \
+     [opt [arg mimetype]] \
      [opt [arg length]] \
      ]
 
-Set the HTTP response [arg status] code and [arg mime-type] header for the data
+Set the HTTP response [arg status] code and [arg mimetype] header for the data
 which is to be sent. The headers, including any extra headers set via the 
 [cmd "ns_conn"] outputheaders command, may not be flushed to the client until the
 first body data is written.
@@ -31,8 +31,8 @@ first body data is written.
 [para]
 
 The [option -binary] switch indicates that binary data is to be
-written, in which case the [arg mime-type] will be sent as
-given. Without this switch the [arg mime-type] will have the
+written, in which case the [arg mimetype] will be sent as
+given. Without this switch the [arg mimetype] will have the
 [term charset] for the current connection's encoding appended.
 When [arg length] is specified, it will be set as content-length.
 
@@ -40,8 +40,7 @@ When [arg length] is specified, it will be set as content-length.
 Returns 0.
 
 [call [cmd ns_write] \
-     [arg data] \
-     [opt [arg "data ..."]] ]
+     [arg "data ..."] ]
 
 Write all [arg data] directly to the client. No HTTP headers are sent unless
 [cmd ns_headers] has been called.

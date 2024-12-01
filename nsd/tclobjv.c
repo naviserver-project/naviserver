@@ -1285,7 +1285,7 @@ NsTclParseArgsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
     int        status = TCL_OK;
 
     if (objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/specification/ /args/");
+        Tcl_WrongNumArgs(interp, 1, objv, "/specification/ /arg .../");
         return TCL_ERROR;
     }
     /*
@@ -1874,7 +1874,7 @@ AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_T separatorL
                 } else if (objvProc == Ns_ObjvTime) {
                     Tcl_DStringAppend(dsPtr, "time", 4);
                 } else if (objvProc == Ns_ObjvSet) {
-                    Tcl_DStringAppend(dsPtr, "ns_set", 6);
+                    Tcl_DStringAppend(dsPtr, "setId", 5);
                 } else if (objvProc == Ns_ObjvServer) {
                     Tcl_DStringAppend(dsPtr, "server", 6);
                 } else if (objvProc == Ns_ObjvWideInt || objvProc == Ns_ObjvInt || objvProc == Ns_ObjvLong) {
@@ -2040,10 +2040,10 @@ Ns_SubcmdObjv(const Ns_SubCmdSpec *subcmdSpec, ClientData clientData, Tcl_Interp
 
         Tcl_DStringInit(&ds);
         (void)GetOptEnumeration(&ds, subcmdSpec);
-        Tcl_DStringAppend(&ds, " ?/args/?", 8);
+        Tcl_DStringAppend(&ds, " ?/arg .../?", 11);
 
         Tcl_WrongNumArgs(interp, 1, objv, ds.string);
-        //Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?/args/?");
+        //Tcl_WrongNumArgs(interp, 1, objv, "/subcommand/ ?/arg .../?");
 
         Tcl_DStringFree(&ds);
         result = TCL_ERROR;

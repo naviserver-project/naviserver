@@ -14,12 +14,16 @@ current connection.
 
 [list_begin definitions]
 
-[call [cmd ns_serverrootproc] [arg script] [opt [arg args]]]
+[call [cmd ns_serverrootproc] [arg script] [opt [arg "arg ..."]]]
 
 [para]
-The script registered with [cmd ns_serverrootproc] is registered for
-a server. At the time of the registry, some client data might be
-passed as arguments.
+Register a [arg script] which returns the location of the server root
+directory (directory path).
+
+[para] When the optional arguments are provided, these are added to
+the command [arg script] to be executed. Therefore two invocation
+styles are supported: either providing a [arg script], or a command
+with additional arguments.
 
 [list_end]
 

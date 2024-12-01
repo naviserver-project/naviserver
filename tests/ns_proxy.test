@@ -18,7 +18,7 @@ namespace import -force ::tcltest::*
 
 test ns_proxy-1.1 {syntax: ns_proxy} -body {
     ns_proxy
-} -returnCodes error -result {wrong # args: should be "ns_proxy /subcommand/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy /subcommand/ ?/arg .../?"}
 
 test ns_proxy-1.2 {syntax: ns_proxy subcommands} -body {
     ns_proxy ?

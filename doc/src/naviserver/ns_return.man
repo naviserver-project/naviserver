@@ -34,19 +34,20 @@ error situations (see [cmd returnstatus-cmds]).
 [call [cmd ns_return] \
 	[opt [option {-binary}]] \
 	[arg status] \
-	[arg mime-type] \
-	[arg body] ]
+	[arg mimetype] \
+	[arg data] ]
 
-Sends a complete response to the client consisting of the given [arg body]
-and a set of HTTP headers. [arg status] is an integer HTTP status code such as
-200 (OK) or 404 (Not Found). When the optional flag [option {-binary}] is
-used, the content of the Tcl byte-array is transmitted.
+Sends a complete response to the client consisting of the given
+[arg data] as response body and a set of HTTP headers. [arg status] is an
+integer HTTP status code such as 200 (OK) or 404 (Not Found). When the
+optional flag [option {-binary}] is used, the content of the Tcl
+byte-array is transmitted.
 
 [para]
-[arg mime-type] is the mime-type of the body. If a [term charset] attribute
-is included in the mime-type it will be used to set the encoding of the
+[arg mimetype] is the MIME type of the body. If a [term charset] attribute
+is included in the MIME type it will be used to set the encoding of the
 connection. Otherwise, the connection encoding will be used to
-construct a charset attribute for the mime-type.
+construct a charset attribute for the MIME type.
 
 [para]
 If [arg body] is Tcl byte-array object then no transcoding will take place.
@@ -61,11 +62,11 @@ continues to execute code.
 
 [call [cmd ns_returnfile] \
    [arg status] \
-   [arg mime-type] \
-   [arg filepath] ]
+   [arg mimetype] \
+   [arg filename] ]
 
 Sends the given file as the complete response body. Headers are constructed
-using [arg status], [arg mime-type] and any pending headers set using
+using [arg status], [arg mimetype] and any pending headers set using
 [cmd "ns_conn outputheaders"]. The bytes of the file are not transformed in any
 way.
 
@@ -78,7 +79,7 @@ continues to execute code.
 
 [call [cmd ns_returnfp] \
      [arg status] \
-     [arg mime-type] \
+     [arg mimetype] \
      [arg channel] \
      [arg length] ]
 
@@ -94,14 +95,15 @@ continues to execute code.
 
 
 [call [cmd ns_respond] \
-     [opt [option "-status [arg status]"]] \
-     [opt [option "-type [arg mime-type]"]] \
-     [opt [option "-length [arg int]"]] \
-     [opt [option "-headers [arg setid]"]] \
-     [opt [option "-string [arg body]"]] \
-     [opt [option "-binary [arg body]"]] \
-     [opt [option "-file [arg filepath]"]] \
-     [opt [option "-fileid [arg channelId]"]] ]
+     [opt [option "-status [arg integer]"]] \
+     [opt [option "-type [arg string]"]] \
+     [opt [option "-length [arg integer]"]] \
+     [opt [option "-headers [arg setId]"]] \
+     [opt [option "-string [arg string]"]] \
+     [opt [option "-file [arg string]"]] \
+     [opt [option "-fileid [arg string]"]] \
+     [opt [option "-data [arg data]"]] \
+     ]
 
 Sends a complete response to the client using exactly one of [option -string],
 [option -binary], [option -file] or [option -fileid] as the body.
@@ -113,33 +115,34 @@ continues to execute code.
 
 [list_begin options]
 
-[opt_def -status [arg status]]
+[opt_def -status]
 The HTTP status code. Default [const 200].
 
-[opt_def -type [arg mime-type]]
-The mime-type of the response body. Default [const */*].
+[opt_def -type]
+The MIME type of the response body. Default [const */*].
 
-[opt_def -headers [arg setid]]
-A set of headers which will replace any pending headers for the response.
+[opt_def -length]
+The number of bytes to send from the channel (in connection with
+[option -fileid]).
 
-[opt_def -string [arg body]]
+[opt_def -headers ]
+The [term setid] of an ns_set containing the headers which will replace any pending headers for the response.
+
+[opt_def -string]
 The Tcl string to send as the response body. The body may be encoded into
 an appropriate character set if required by the client and server settings.
 
-[opt_def -binary [arg body]]
+[opt_def -file]
+The file identified by the given filepath (fully qualified filename) will be sent as the response
+body. The bytes of the file will not be transformed in any way.
+
+[opt_def -fileid]
+The file identified by the given Tcl channel will be sent as the response
+body. The bytes of the file will not be transformed in any way.
+
+[opt_def -data [arg data]]
 The byte-array representation of the given Tcl object will be used as the
 response body. No character set conversion will be done.
-
-[opt_def -file [arg filepath]]
-The file identified by the given [arg filepath] will be sent as the response
-body. The bytes of the file will not be transformed in any way.
-
-[opt_def -fileid [arg channel]]
-The file identified by the given Tcl [arg channel] will be sent as the response
-body. The bytes of the file will not be transformed in any way.
-
-[opt_def -length [arg length]]
-Specifies the number of bytes to send from the channel.
 
 [list_end]
 

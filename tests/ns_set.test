@@ -9,7 +9,7 @@ namespace import -force ::tcltest::*
 
 test ns_set-1.0 {syntax: ns_set} -body {
     ns_set
-} -returnCodes error -result {wrong # args: should be "ns_set array|cleanup|copy|cput|create|delete|delkey|find|format|free|get|icput|idelkey|ifind|iget|imerge|isnull|iunique|iupdate|key|keys|list|merge|move|name|new|print|put|size|split|stats|truncate|unique|update|value|values ?/args/"}
+} -returnCodes error -result {wrong # args: should be "ns_set array|cleanup|copy|cput|create|delete|delkey|find|format|free|get|icput|idelkey|ifind|iget|imerge|isnull|iunique|iupdate|key|keys|list|merge|move|name|new|print|put|size|split|stats|truncate|unique|update|value|values ?/arg .../"}
 
 test ns_set-1.1 {syntax: ns_set subcommands} -body {
     ns_set ""

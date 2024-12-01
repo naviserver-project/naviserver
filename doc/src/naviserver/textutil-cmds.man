@@ -82,9 +82,10 @@ ASCII control characters are omitted.
 
 
 [call [cmd ns_reflow_text] \
-       	[opt [option "-width [arg width]"]] \
-       	[opt [option "-offset [arg offset]"]] \
-       	[opt [option "-prefix [arg prefix]"]] \
+        [opt [option "-width [arg integer]"]] \
+        [opt [option "-offset [arg integer]"]] \
+        [opt [option "-prefix [arg string]"]] \
+        [opt --] \
         [arg text]]
 
 Reflow a text to the specified length. The arguments
@@ -96,8 +97,9 @@ with a constant string.
 
 [call [cmd ns_trim] \
         [opt [option "-subst"]] \
-        [opt [option "-delimiter [arg delimiter]"]] \
-        [opt [option "-prefix [arg prefix]"]] \
+        [opt [option "-delimiter [arg string]"]] \
+        [opt [option "-prefix [arg string]"]] \
+        [opt --] \
         [arg text]]
 
 Multi-line trim with optional [arg delimiter] or [arg prefix].

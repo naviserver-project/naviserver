@@ -8854,16 +8854,22 @@ AsyncLogfileWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
     int               result = TCL_OK, binary = (int)NS_FALSE, sanitize;
     Tcl_Obj          *stringObj;
     int               fd = 0;
+    static Ns_ObjvTable sanitizeValues[] = {
+        {"0",  0u},
+        {"1",  1u},
+        {"2",  2u},
+        {NULL, 0u}
+    };
+
     Ns_ObjvValueRange fd_range = {0, INT_MAX};
-    Ns_ObjvValueRange sanitize_range = {0, 2};
     Ns_ObjvSpec opts[] = {
-        {"-binary",    Ns_ObjvBool, &binary,   INT2PTR(NS_TRUE)},
-        {"-sanitize",  Ns_ObjvInt,  &sanitize, &sanitize_range},
+        {"-binary",    Ns_ObjvBool,  &binary,   INT2PTR(NS_TRUE)},
+        {"-sanitize",  Ns_ObjvIndex, &sanitize, &sanitizeValues},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"fd",     Ns_ObjvInt, &fd,        &fd_range},
-        {"buffer", Ns_ObjvObj, &stringObj, NULL},
+        {"fd",   Ns_ObjvInt, &fd,        &fd_range},
+        {"line", Ns_ObjvObj, &stringObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -8958,7 +8964,7 @@ AsyncLogfileOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
     };
     Ns_ObjvSpec args[] = {
         {"filename", Ns_ObjvString, &fileNameString, NULL},
-        {"?flags", Ns_ObjvObj, &flagsObj, NULL},
+        {"?mode",    Ns_ObjvObj,    &flagsObj, NULL},
         //{"mode", Ns_ObjvString, &mode, NULL},
         {NULL, NULL, NULL, NULL}
     };

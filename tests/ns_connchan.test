@@ -18,7 +18,7 @@ tcltest::testConstraint tcl86 [expr {$::tcl_version >= 8.6}]
 #
 test ns_connchan-1.0 {syntax ns_connchan} -body {
      ns_connchan
-} -returnCodes error -result {wrong # args: should be "ns_connchan callback|connect|close|detach|exists|list|listen|open|read|status|write|wsencode ?/args/"}
+} -returnCodes error -result {wrong # args: should be "ns_connchan callback|connect|close|detach|exists|list|listen|open|read|status|write|wsencode ?/arg .../"}
 
 test ns_connchan-1.1.0 {syntax ns_connchan subcommands} -body {
      ns_connchan ""
@@ -26,7 +26,7 @@ test ns_connchan-1.1.0 {syntax ns_connchan subcommands} -body {
 
 test ns_connchan-1.1.1 {syntax: ns_connchan callback} -body {
     ns_connchan callback
-} -returnCodes error -result {wrong # args: should be "ns_connchan callback ?-timeout /time/? ?-receivetimeout /time/? ?-sendtimeout /time/? /channel/ /script/ /when/"}
+} -returnCodes error -result {wrong # args: should be "ns_connchan callback ?-timeout /time/? ?-receivetimeout /time/? ?-sendtimeout /time/? /channel/ /command/ /when/"}
 
 test ns_connchan-1.1.3 {syntax: ns_connchan connect} -body {
     ns_connchan connect
@@ -54,7 +54,7 @@ test ns_connchan-1.1.7 {syntax: ns_connchan listen} -body {
 
 test ns_connchan-1.1.8 {syntax: ns_connchan open} -body {
     ns_connchan open
-} -returnCodes error -result {wrong # args: should be "ns_connchan open ?-driver /string/? ?-headers /ns_set/? ?-hostname /string/? ?-method /string/? ?-timeout /time/? ?-unix_socket /string/? ?-version /string/? /url/"}
+} -returnCodes error -result {wrong # args: should be "ns_connchan open ?-driver /string/? ?-headers /setId/? ?-hostname /string/? ?-method /string/? ?-timeout /time/? ?-unix_socket /string/? ?-version /string/? /url/"}
 
 test ns_connchan-1.1.9 {syntax: ns_connchan read} -body {
     ns_connchan read
@@ -66,11 +66,11 @@ test ns_connchan-1.1.10 {syntax: ns_connchan status} -body {
 
 test ns_connchan-1.1.11 {syntax: ns_connchan write} -body {
     ns_connchan write
-} -returnCodes error -result {wrong # args: should be "ns_connchan write ?-buffered? /channel/ /msg/"}
+} -returnCodes error -result {wrong # args: should be "ns_connchan write ?-buffered? /channel/ /message/"}
 
 test ns_connchan-1.1.12 {syntax: ns_connchan wsencode} -body {
     ns_connchan wsencode
-} -returnCodes error -result {wrong # args: should be "ns_connchan wsencode ?-binary? ?-fin /integer[0,1]/? ?-mask? ?-opcode continue|text|binary|close|ping|pong? /message/"}
+} -returnCodes error -result {wrong # args: should be "ns_connchan wsencode ?-binary? ?-fin 0|1? ?-mask? ?-opcode continue|text|binary|close|ping|pong? /message/"}
 
 
 #
@@ -284,7 +284,7 @@ test ns_connchan-2.0 {ns_connchan wsencode, basic command flags} -body {
 } -cleanup {
     ns_unregister_op GET /conn
 } -returnCodes {error ok
-} -result {wrong # args: should be "ns_connchan wsencode ?-binary? ?-fin /integer[0,1]/? ?-mask? ?-opcode continue|text|binary|close|ping|pong? /message/"}
+} -result {wrong # args: should be "ns_connchan wsencode ?-binary? ?-fin 0|1? ?-mask? ?-opcode continue|text|binary|close|ping|pong? /message/"}
 
 test ns_connchan-2.1.1 {ns_connchan wsencode with text} -constraints tcl86 -body {
     binary encode hex [ns_connchan wsencode -opcode text "Hello Wörld"]

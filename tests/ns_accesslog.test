@@ -10,7 +10,7 @@ namespace import -force ::tcltest::*
 
 test ns_accesslog-1.0 {basic syntax} -body {
     ns_accesslog
-} -returnCodes error -result {wrong # args: should be "ns_accesslog /subcommand/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "ns_accesslog /subcommand/ ?/arg .../?"}
 
 test ns_accesslog-1.1 {basic syntax} -body {
     ns_accesslog ?

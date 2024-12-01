@@ -109,7 +109,7 @@ Returns the minor version number.
 
 [call [cmd  "ns_info mimetypes"]]
 
-Returns the current mime-type mappings.
+Returns the current MIME type mappings.
 
 [call [cmd  "ns_info name"]]
 

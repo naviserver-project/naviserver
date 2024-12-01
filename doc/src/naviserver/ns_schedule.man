@@ -18,10 +18,13 @@ procedures. This functionality is similar to Unix cron.
 [call [cmd ns_schedule_proc] \
         [opt [option {-once}]] \
         [opt [option -thread]] \
+        [opt --] \
         [arg interval] \
-        [arg script]]
+        [arg script] \
+        [opt [arg "arg ..."]] \
+        ]
 
-This command schedules a script to be run after a certain interval.
+This command schedules a script to be run after a certain [arg interval].
 Returns the ID of the newly scheduled script.  If [option -once] is
 specified, then the script is run once and then unscheduled, otherwise
 it will continue to run every interval time periods. The time interval
@@ -40,6 +43,9 @@ script is long-running, this may interfere with the running of other
 scheduled scripts, so long-running scripts should be run in their own
 threads.
 
+[para] When the optional arguments are provided, these are added to
+the command [arg script] to be executed.
+
 [example_begin]
  % set id [lb]ns_schedule_proc -once 60 { ns_log notice "this should run in 60 seconds" }[rb]
  123
@@ -49,13 +55,16 @@ threads.
 [call [cmd ns_schedule_weekly] \
         [opt [option -once]] \
         [opt [option -thread]] \
+        [opt --] \
         [arg day] \
         [arg hour] \
         [arg minute] \
-        [arg script]]
+        [arg script] \
+        [opt [arg "arg ..."]] \
+        ]
 
-This command schedules a script to be run on a certain day of the week at a
-certain hour and minute of that day.  Returns the ID of the newly scheduled script.
+This command schedules a script to be run on a certain [arg day] of the week at a
+certain [arg hour] and [arg minute] of that day.  Returns the ID of the newly scheduled script.
 The week starts on Sunday as day zero and runs to Saturday as day six.
 If [option -once] is
 specified, then the script is run once and then unscheduled, otherwise it will continue
@@ -65,8 +74,11 @@ will be run in its own thread, otherwise it will run in the scheduler's thread. 
 the script is long-running, this may interfere with the running of other scheduled
 scripts, so long-running scripts should be run in their own threads.
 
-NOTE: day, hour and minute are specified in local time.  Beware of Daylight Savings Time
+[para] NOTE: [arg day], [arg hour] and [arg minute] are specified in local time.  Beware of Daylight Savings Time
 shifts affecting the time of day when the script will execute.
+
+[para] When the optional arguments are provided, these are added to
+the command [arg script] to be executed.
 
 [example_begin]
  % set id [lb]ns_schedule_weekly -once 2 5 35 { ns_log notice "It is now Tuesday at 5:35 AM." }[rb]
@@ -79,11 +91,14 @@ shifts affecting the time of day when the script will execute.
 [call [cmd ns_schedule_daily] \
         [opt [option -once]] \
         [opt [option -thread]] \
+        [opt --] \
         [arg hour] \
         [arg minute] \
-        [arg script]]
+        [arg script] \
+        [opt [arg "arg ..."]] \
+        ]
 
-This command schedules a script to be run at a certain hour and minute of the day.
+This command schedules a [arg script] to be run at a certain [arg hour] and [arg minute] of the day.
 Returns the ID of the newly scheduled script.  If [option -once] is specified, then the script
 is run once and then unscheduled, otherwise it will continue to run every day at that
 time.  If [option -thread] is specified, then the script will be run in its own thread,
@@ -91,8 +106,12 @@ otherwise it will run in the scheduler's thread.  If the script is long-running,
 this may interfere with the running of other scheduled scripts, so long-running scripts should
 be run in their own threads.
 
-NOTE: hour and minute are specified in local time.  Beware of Daylight Savings Time
+[para]
+NOTE: [arg hour] and [arg minute] are specified in local time.  Beware of Daylight Savings Time
 shifts affecting the time of day when the script will execute.
+
+[para] When the optional arguments are provided, these are added to
+the command [arg script] to be executed.
 
 [example_begin]
  % set id [lb]ns_schedule_daily -once 5 35 { ns_log notice "It is now 5:35 AM." }[rb]
@@ -138,9 +157,11 @@ on success, 0 on failure.
 
 [call [cmd ns_after] \
         [arg interval] \
-        [arg script]]
+        [arg script]\
+        [opt [arg "arg ..."]] \
+        ]
 
-Execute a command after a time delay.  This command executes a script
+Execute a [arg script] after a time delay. This command executes a script
 in the background after [arg interval] time units.  It does this
 by scheduling a one-shot event in the scheduler.  Uncaught script
 errors will go to the server log.  It returns an ID which can be used
@@ -152,9 +173,16 @@ using [cmd ns_unschedule_proc].
  other scheduled scripts, in which case [cmd ns_schedule_proc] should
  be used instead of [cmd ns_after].
 
+[para] When the optional arguments are provided, these are added to
+the command [arg script] to be executed.
+
 [example_begin]
  % ns_after 5s { ns_log notice "ns_after script executed" }
  123
+
+ % set time 1s
+ % ns_after $time ns_log notice ns_after script executed after $time
+  
 [example_end]
 
 

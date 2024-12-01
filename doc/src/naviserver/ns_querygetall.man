@@ -19,7 +19,7 @@ Note that despite its name, ns_querygetall works on POST form data as well as qu
 
 [list_begin definitions]
 
- [call [cmd ns_querygetall] [arg key] [opt [arg def_result]]]
+ [call [cmd ns_querygetall] [arg key] [opt [arg default]]]
 
 [list_end]
 

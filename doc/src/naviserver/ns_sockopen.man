@@ -36,7 +36,7 @@ see if the connect operation was actually completed.
 [para]
 The [option -nonblock] is implied by [option -async]. It can be used
 to connect to the target in a blocking fashion, but it sends the socket
-to non-blocking, once it is connected.
+to nonblocking, once it is connected.
 
 [para]
 The option [option -timeout] specifies how long to wait for the

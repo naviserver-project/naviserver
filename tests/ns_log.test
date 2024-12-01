@@ -12,7 +12,7 @@ namespace import -force ::tcltest::*
 #######################################################################################
 test ns_asynclogfile-1.0 {syntax: ns_asynclogfile} -body {
     ns_asynclogfile
-} -returnCodes error -result {wrong # args: should be "ns_asynclogfile open|write|close ?/args/"}
+} -returnCodes error -result {wrong # args: should be "ns_asynclogfile open|write|close ?/arg .../"}
 
 test ns_asynclogfile-1.1 {syntax: ns_asynclogfile} -body {
     ns_asynclogfile ?
@@ -24,11 +24,11 @@ test ns_asynclogfile-1.2 {syntax: ns_asynclogfile close} -body {
 
 test ns_asynclogfile-1.3 {syntax: ns_asynclogfile open} -body {
     ns_asynclogfile open
-} -returnCodes error -result {wrong # args: should be "ns_asynclogfile open /filename/ ?/flags/?"}
+} -returnCodes error -result {wrong # args: should be "ns_asynclogfile open /filename/ ?/mode/?"}
 
 test ns_asynclogfile-1.4 {syntax: ns_asynclogfile write} -body {
     ns_asynclogfile write
-} -returnCodes error -result {wrong # args: should be "ns_asynclogfile write ?-binary? ?-sanitize /integer[0,2]/? /fd[0,MAX]/ /buffer/"}
+} -returnCodes error -result {wrong # args: should be "ns_asynclogfile write ?-binary? ?-sanitize 0|1|2? /fd[0,MAX]/ /line/"}
 
 
 #######################################################################################

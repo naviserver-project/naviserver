@@ -30,11 +30,11 @@ set port   [ns_config "test" listenport]
 
 test ns_locationproc-1.0 {syntax: ns_locationproc} -body {
     ns_locationproc
-} -returnCodes error -result {wrong # args: should be "ns_locationproc /script/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "ns_locationproc /script/ ?/arg .../?"}
 
 test ns_serverrootproc-1.0 {syntax: ns_serverrootproc} -body {
     ns_serverrootproc
-} -returnCodes error -result {wrong # args: should be "ns_serverrootproc /script/ ?/args/?"}
+} -returnCodes error -result {wrong # args: should be "ns_serverrootproc /script/ ?/arg .../?"}
 
 
 

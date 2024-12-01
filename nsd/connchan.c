@@ -1752,7 +1752,7 @@ ConnChanCallbackObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
     };
     Ns_ObjvSpec args[] = {
         {"channel", Ns_ObjvString, &name, NULL},
-        {"script",  Ns_ObjvString, &script, NULL},
+        {"command", Ns_ObjvString, &script, NULL},
         {"when",    Ns_ObjvString, &whenString, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -2329,7 +2329,7 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
     };
     Ns_ObjvSpec args[] = {
         {"channel", Ns_ObjvString, &name,   NULL},
-        {"msg",     Ns_ObjvObj,    &msgObj, NULL},
+        {"message", Ns_ObjvObj,    &msgObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -2633,8 +2633,12 @@ static int
 ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int                      result = TCL_OK, isBinary = 0, opcode = 1, fin = 1, masked = 0;
-    static Ns_ObjvValueRange finRange = {0, 1};
     Tcl_Obj                 *messageObj;
+    static Ns_ObjvTable      finValues[] = {
+        {"0",  0u},
+        {"1",  1u},
+        {NULL, 0u}
+    };
     static Ns_ObjvTable      opcodes[] = {
         {"continue",  0},
         {"text",      1},
@@ -2646,7 +2650,7 @@ ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
     };
     Ns_ObjvSpec opts[] = {
         {"-binary",     Ns_ObjvBool,  &isBinary, INT2PTR(NS_TRUE)},
-        {"-fin",        Ns_ObjvInt,   &fin,      &finRange},
+        {"-fin",        Ns_ObjvIndex, &fin,      &finValues},
         {"-mask",       Ns_ObjvBool,  &masked,   INT2PTR(NS_TRUE)},
         {"-opcode",     Ns_ObjvIndex, &opcode,   &opcodes},
         {NULL, NULL, NULL, NULL}

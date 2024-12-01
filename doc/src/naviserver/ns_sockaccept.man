@@ -5,13 +5,13 @@
 [titledesc {Accept a new socket connection}]
 
 [description]
-ns_sockaccept accepts a new connection pending on sockid.
+The command [cmd ns_sockaccept] accepts a new connection pending on [arg sockId].
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[call [cmd ns_sockaccept] [arg sockid]]
+[call [cmd ns_sockaccept] [arg sockId]]
 
 [list_end]
 
@@ -32,6 +32,6 @@ ns_sockaccept accepts a new connection pending on sockid.
 [example_end]
 
 
-[see_also nsd]
+[see_also nsd ns_socklisten]
 [keywords "global built-in" NaviServer socket accept]
 [manpage_end]
