@@ -57,23 +57,23 @@ test ns_mutex-1.2 {syntax: ns_mutex create} -body {
 
 test ns_mutex-1.3 {syntax: ns_mutex destroy} -body {
     ns_mutex destroy
-} -returnCodes error -result {wrong # args: should be "ns_mutex destroy /mutexid/"}
+} -returnCodes error -result {wrong # args: should be "ns_mutex destroy /mutexId/"}
 
 test ns_mutex-1.4 {syntax: ns_mutex eval} -body {
     ns_mutex eval
-} -returnCodes error -result {wrong # args: should be "ns_mutex eval /mutexid/ /script/"}
+} -returnCodes error -result {wrong # args: should be "ns_mutex eval /mutexId/ /script/"}
 
 test ns_mutex-1.5 {syntax: ns_mutex lock} -body {
     ns_mutex lock
-} -returnCodes error -result {wrong # args: should be "ns_mutex lock /mutexid/"}
+} -returnCodes error -result {wrong # args: should be "ns_mutex lock /mutexId/"}
 
 test ns_mutex-1.6 {syntax: ns_mutex trylock} -body {
     ns_mutex trylock
-} -returnCodes error -result {wrong # args: should be "ns_mutex trylock /mutexid/"}
+} -returnCodes error -result {wrong # args: should be "ns_mutex trylock /mutexId/"}
 
 test ns_mutex-1.7 {syntax: ns_mutex unlock} -body {
     ns_mutex unlock
-} -returnCodes error -result {wrong # args: should be "ns_mutex unlock /mutexid/"}
+} -returnCodes error -result {wrong # args: should be "ns_mutex unlock /mutexId/"}
 
 # ns_critsec
 
@@ -144,11 +144,11 @@ test ns_cond-1.1 {syntax: ns_cond subcommands} -body {
 
 test ns_cond-1.2 {syntax: ns_cond abswait} -body {
     ns_cond abswait
-} -returnCodes error -result {wrong # args: should be "ns_cond abswait /condid/ /mutexid/ ?/epoch/?"}
+} -returnCodes error -result {wrong # args: should be "ns_cond abswait /condId/ /mutexId/ ?/epoch/?"}
 
 test ns_cond-1.3 {syntax: ns_cond broadcast} -body {
     ns_cond broadcast
-} -returnCodes error -result {wrong # args: should be "ns_cond broadcast /condid/"}
+} -returnCodes error -result {wrong # args: should be "ns_cond broadcast /condId/"}
 
 test ns_cond-1.4 {syntax: ns_cond create} -body {
     ns_cond create -
@@ -156,19 +156,19 @@ test ns_cond-1.4 {syntax: ns_cond create} -body {
 
 test ns_cond-1.5 {syntax: ns_cond destroy} -body {
     ns_cond destroy
-} -returnCodes error -result {wrong # args: should be "ns_cond destroy /condid/"}
+} -returnCodes error -result {wrong # args: should be "ns_cond destroy /condId/"}
 
 test ns_cond-1.6 {syntax: ns_cond set} -body {
     ns_cond set
-} -returnCodes error -result {wrong # args: should be "ns_cond set /condid/"}
+} -returnCodes error -result {wrong # args: should be "ns_cond set /condId/"}
 
 test ns_cond-1.7 {syntax: ns_cond signal} -body {
     ns_cond signal
-} -returnCodes error -result {wrong # args: should be "ns_cond signal /condid/"}
+} -returnCodes error -result {wrong # args: should be "ns_cond signal /condId/"}
 
 test ns_cond-1.8 {syntax: ns_cond wait} -body {
     ns_cond wait
-} -returnCodes error -result {wrong # args: should be "ns_cond wait /condid/ /mutexid/ ?/timeout/?"}
+} -returnCodes error -result {wrong # args: should be "ns_cond wait /condId/ /mutexId/ ?/timeout/?"}
 
 
 # ns_rwlock
@@ -304,7 +304,7 @@ test ns_thread-3.5 {mutex eval locked} -body {
 
 test ns_thread-3.6 {mutex eval args} -body {
     ns_mutex eval test:evalmutex
-} -returnCodes {ok error} -result {wrong # args: should be "ns_mutex eval /mutexid/ /script/"}
+} -returnCodes {ok error} -result {wrong # args: should be "ns_mutex eval /mutexId/ /script/"}
 
 test ns_thread-3.7 {mutex eval args} -body {
     ns_mutex unlock mutex-[clock microseconds]

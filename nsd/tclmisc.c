@@ -2742,13 +2742,13 @@ NsTclGetCsvObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
     Tcl_Channel   chan;
     Ns_ObjvSpec   opts[] = {
         {"-delimiter", Ns_ObjvString,   &delimiter,    NULL},
-        {"-trim",      Ns_ObjvBool,     &trimUnquoted, INT2PTR(NS_TRUE)},
         {"-quotechar", Ns_ObjvString,   &quoteString,  NULL},
+        {"-trim",      Ns_ObjvBool,     &trimUnquoted, INT2PTR(NS_TRUE)},
         {"--",         Ns_ObjvBreak,    NULL,          NULL},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec   args[] = {
-        {"fileId",     Ns_ObjvString, &fileId,   NULL},
+        {"channelId",     Ns_ObjvString, &fileId,   NULL},
         {"varname",    Ns_ObjvString, &varName,  NULL},
         {NULL, NULL, NULL, NULL}
     };

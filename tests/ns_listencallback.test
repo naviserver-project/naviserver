@@ -27,7 +27,7 @@ test ns_sockblocking-1.0 {syntax: ns_sockblocking} -body {
 
 test ns_sockcallback-1.0 {syntax: ns_sockcallback} -body {
     ns_sockcallback
-} -returnCodes error -result {wrong # args: should be "ns_sockcallback /sockId/ /script/ /when/ ?/timeout/?"}
+} -returnCodes error -result {wrong # args: should be "ns_sockcallback /sockId/ /command/ /when/ ?/timeout/?"}
 
 test ns_sockcheck-1.0 {syntax: ns_sockcheck} -body {
     ns_sockcheck

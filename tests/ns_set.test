@@ -168,7 +168,7 @@ test ns_findset-1.0 {syntax: ns_findset} -body {
     ns_findset
 } -returnCodes error -result {wrong # args: should be "ns_findset sets name"}
 
-# "ns_findset" is a tcl proc: message should be {wrong # args: should be "ns_findset /sets/ /name/"}
+# "ns_findset" is a Tcl proc: message should be {wrong # args: should be "ns_findset /sets/ /name/"}
 
 
 

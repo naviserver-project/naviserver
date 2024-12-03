@@ -298,7 +298,7 @@ proc ns_issmallint {value} {
 #
 
 proc ns_formvalueput {htmlpiece dataname datavalue} {
-    ns_deprecated "standard API" {not sufficent for today's needs}
+    ns_deprecated "standard API" {not sufficient for today's needs}
 
     set newhtml ""
 

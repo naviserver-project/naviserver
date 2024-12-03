@@ -26,9 +26,9 @@ if {[ns_config test listenport]} {
 
 ns_adp_ctl channel stdout
 
-#
+############################################################################
 # Syntax tests
-#
+############################################################################
 test ns_adp_ctl-1.0 {basic syntax} -body {
     ns_adp_ctl
 } -returnCodes error -result {wrong # args: should be "ns_adp_ctl /subcommand/ ?/arg .../?"}
@@ -118,15 +118,15 @@ test ns_adp_info-1.0 {syntax: ns_adp_info} -body {
 
 test ns_adp_registeradp-1.0 {syntax: ns_adp_registeradp} -body {
     ns_adp_registeradp
-} -returnCodes error -result {wrong # args: should be "ns_adp_registeradp /tag/ ?/endtag/? adp|proc"}
+} -returnCodes error -result {wrong # args: should be "ns_adp_registeradp /tag/ ?/endtag/? /adpstring/"}
 
 test ns_adp_registerproc-1.0 {syntax: ns_adp_registerproc} -body {
     ns_adp_registerproc
-} -returnCodes error -result {wrong # args: should be "ns_adp_registerproc /tag/ ?/endtag/? adp|proc"}
+} -returnCodes error -result {wrong # args: should be "ns_adp_registerproc /tag/ ?/endtag/? /proc/"}
 
 test ns_adp_registerscript-1.0 {syntax: ns_adp_registerscript} -body {
     ns_adp_registerscript
-} -returnCodes error -result {wrong # args: should be "ns_adp_registerscript /tag/ ?/endtag/? adp|proc"}
+} -returnCodes error -result {wrong # args: should be "ns_adp_registerscript /tag/ ?/endtag/? /proc/"}
 
 test ns_adp_return-1.0 {syntax: ns_adp_return} -body {
     ns_adp_return ? ?
@@ -197,10 +197,9 @@ test ns_register_adp-1.0 {syntax: ns_register_adp} -body {
 
 
 
-
-#
+############################################################################
 # Functional tests
-#
+############################################################################
 
 #ns_logctl severity Debug(task) on
 
@@ -248,6 +247,85 @@ test adp-2.2 {Tcl page map} -setup {
 } -result {200 {Hello World!}}
 
 
+test adp-2.3 {simple ADP page} -body {
+    nstest::http -getbody 1 GET /helloworld.adp
+} -result {200 {Hello World!}}
+
+test adp-2.4 {ADP page with timed out ns_http request} -body {
+    #
+    # Here the invocation of the testcase times out
+    #
+    #ns_logctl severity Debug(task) on
+    nstest::http -timeout 2s -getbody 1 GET /http_nonexistent.adp
+} -returnCodes {ok return error} -match glob -result {000 {testcase NS_TIMEOUT: http request timeout}}
+
+test adp-2.5 {ADP page with timed out ns_http request followed by simple ADP page} -body {
+    try {ns_http run -timeout .5s http://192.0.2.1/} on error {errorMsg} {ns_log notice "run ends in $::errorCode '$errorMsg'"}
+    try {ns_http run http://192.0.2.1/} on error {errorMsg} {ns_log notice "run ends in $::errorCode '$errorMsg'"}
+    nstest::http -getbody 1 GET /helloworld.adp
+} -returnCodes {ok return error} -result {200 {Hello World!}}
+
+
+test adp-2.6 {ADP page with timed out ns_http request followed by simple ADP page} -body {
+    nstest::http -getbody 1 GET /http_returntimeout.adp
+} -returnCodes {ok return error} -match glob -result {503 *Service Unavailable*}
+
+test adp-2.7 {Nested ADP tags} -body {
+    string map {\r ""} [nstest::http -getbody 1 GET /nested.adp]
+} -result {200 {anything
+}}
+
+test adp-2.8 {Deeply nested ADP tags} -body {
+    string map {\r ""} [nstest::http -getbody 1 GET /deepnest.adp]
+} -result {200 {deep
+}}
+
+
+############################################################################
+# ns_adp_append
+############################################################################
+
+test adp-4.1a {ns_adp_append} -body {
+    ns_adp_parse {<% ns_adp_append adp-4.1 %>}
+} -result {adp-4.1}
+
+test adp-4.1b {ns_adp_append} -body {
+    ns_adp_parse {<% ns_adp_append adp-4.1' %>}
+} -result {adp-4.1'}
+
+
+############################################################################
+# ns_adp_puts
+############################################################################
+
+test ns_adp_puts-2.0 {ns_adp_puts with newline} -body {
+    ns_adp_parse {<% ns_adp_puts adp-4.2 %>}
+} -result "adp-4.2\n"
+
+test ns_adp_puts-2.1 {ns_adp_puts without newline} -body {
+    ns_adp_parse {<% ns_adp_puts -nonewline adp-4.3 %>}
+} -result {adp-4.3}
+
+############################################################################
+# ns_adp_dir
+############################################################################
+
+test ns_adp_dir-2.0 {ns_adp_dir (unset), outside ADP} -body {
+    ns_adp_dir
+} -result {}
+
+test ns_adp_dir-2.1 {ns_adp_dir (unset), inside ADP} -body {
+    ns_adp_parse {<% ns_adp_puts -nonewline .[ns_adp_dir]. %>}
+} -result {..}
+
+test ns_adp_dir-2.2 {ns_adp_dir (set), inside ADP} -body {
+    ns_adp_parse -cwd /tmp {<% ns_adp_puts -nonewline .[ns_adp_dir]. %>}
+} -result {./tmp.}
+
+
+############################################################################
+# ns_adp_ctl
+############################################################################
 
 test adp-3.1 {ns_adp_ctl} -body {
     # (enabled by default)
@@ -263,42 +341,9 @@ test adp-3.2 {ns_adp_ctl bufsize} -body {
 
 
 
-test adp-4.1a {ns_adp_append} -body {
-    ns_adp_parse {<% ns_adp_append adp-4.1 %>}
-} -result {adp-4.1}
-
-test adp-4.1b {ns_adp_append} -body {
-    ns_adp_parse {<% ns_adp_append adp-4.1' %>}
-} -result {adp-4.1'}
-
-
-test adp-4.2 {ns_adp_puts} -body {
-    ns_adp_parse {<% ns_adp_puts adp-4.2 %>}
-} -result "adp-4.2\n"
-
-test adp-4.3 {ns_adp_puts} -body {
-    ns_adp_parse {<% ns_adp_puts -nonewline adp-4.3 %>}
-} -result {adp-4.3}
-
-test adp-4.4 {ns_adp_dir (unset)} -body {
-    ns_adp_dir
-} -result {}
-
-
-test adp-5.1 {Nested ADP tags} -body {
-    string map {\r ""} [nstest::http -getbody 1 GET /nested.adp]
-} -result {200 {anything
-}}
-
-test adp-5.2 {Deeply nested ADP tags} -body {
-    string map {\r ""} [nstest::http -getbody 1 GET /deepnest.adp]
-} -result {200 {deep
-}}
-
-
-#
+############################################################################
 # ns_adp_parse
-#
+############################################################################
 
 test adp-6.1 {adp-parse string} -body {
     ns_adp_parse {2 + 2 = <%= [expr {2 + 2}] %> !!!}
@@ -450,6 +495,7 @@ test adp-8.2.2c {adp-parse script javascript case, broken tag inside script, tra
     ns_adp_parse {begin <script type="text/javascript"> begin <a ' end</script> <tag t=foo'> end}
 } -result {begin <script type="text/javascript"> begin <a ' end</script> <tag t=foo'> end}
 
+
 test adp-8.2.2d {adp-parse script javascript case, broken tag inside script, trailing registered tag, invalid tag name before} -body {
     proc ::test_tag_proc {params} {return RESULT}
     ns_adp_registerscript test822 ::test_tag_proc
@@ -491,8 +537,46 @@ test adp-8.2.5b {adp-parse script javascript case, </script> inside script} -bod
 } -result {begin <script type="text/javascript"> x= '</script>'; end}
 
 
+############################################################################
+# ns_adp_registerscript
+############################################################################
 
-test adp-8.3.0a {adp-parse string with tag and script} -body {
+test ns_adp_registerscript-2.1 {registerscript via proc, no attributes, no ending tag} -body {
+    proc ::test_tag_proc {params} {return "hello world with params '[ns_set array $params]'"}
+    ns_adp_registerscript test21 ::test_tag_proc
+    ns_adp_parse -string {start <b>x <test21> y</b> end}
+} -cleanup {
+    rename  ::test_tag_proc ""
+} -result {start <b>x hello world with params '' y</b> end}
+
+test ns_adp_registerscript-2.2 {registerscript via proc, attributes, no ending tag} -body {
+    proc ::test_tag_proc {params} {return "hello world with params '[ns_set array $params]'"}
+    ns_adp_registerscript test21 ::test_tag_proc
+    ns_adp_parse -string {start <b>x <test21 x=1> y</b> end}
+} -cleanup {
+    rename  ::test_tag_proc ""
+} -result {start <b>x hello world with params 'x 1' y</b> end}
+
+test ns_adp_registerscript-2.3 {registerscript via proc, no attributes, ending tag} -body {
+    proc ::test_tag_proc {content params} {return "hello world with params '[ns_set array $params]' c='$content'"}
+    ns_adp_registerscript test21 /test21 ::test_tag_proc
+    ns_adp_parse -string {start <b>x <test21> y </test21> z </b> end}
+} -cleanup {
+    rename  ::test_tag_proc ""
+} -result {start <b>x hello world with params '' c=' y ' z </b> end}
+
+test ns_adp_registerscript-2.4 {registerscript via proc, attributes, ending tag} -body {
+    proc ::test_tag_proc {content params} {return "hello world with params '[ns_set array $params]' c='$content'"}
+    ns_adp_registerscript test21 /test21 ::test_tag_proc
+    ns_adp_parse -string {start <b>x <test21 a="1"> y </test21> z </b> end}
+} -cleanup {
+    rename  ::test_tag_proc ""
+} -result {start <b>x hello world with params 'a 1' c=' y ' z </b> end}
+
+#
+# cases, where substitution happens inside tags
+#
+test ns_adp_registerscript-3.1 {adp-parse string with tag and script, tag inside argument of foo tag} -body {
     proc ::test_tag_proc {params} {return RESULT}
     ns_adp_registerscript test831 ::test_tag_proc
     ns_adp_parse -string {start <foo arg="<test831>"> end}
@@ -500,7 +584,7 @@ test adp-8.3.0a {adp-parse string with tag and script} -body {
     rename  ::test_tag_proc ""
 } -result {start <foo arg="RESULT"> end}
 
-test adp-8.3.0b {adp-parse string with tag and script} -body {
+test ns_adp_registerscript-3.2 {adp-parse string with tag and script, tag inside argument of script tag} -body {
     proc ::test_tag_proc {params} {return RESULT}
     ns_adp_registerscript test831 ::test_tag_proc
     ns_adp_parse -string {start <script arg="<test831>"></script> end}
@@ -509,7 +593,7 @@ test adp-8.3.0b {adp-parse string with tag and script} -body {
 } -result {start <script arg="RESULT"></script> end}
 
 
-test adp-8.3.1 {adp-parse string with tag and script} -body {
+test ns_adp_registerscript-3.3 {adp-parse string with tag and script, tag inside argument of foo and script tag} -body {
     proc ::test_tag_proc {params} {return RESULT}
     ns_adp_registerscript test831 ::test_tag_proc
     ns_adp_parse -string {start <foo arg="<test831>"> <script arg="<test831>"> end}
@@ -517,13 +601,133 @@ test adp-8.3.1 {adp-parse string with tag and script} -body {
     rename  ::test_tag_proc ""
 } -result {start <foo arg="RESULT"> <script arg="RESULT"> end}
 
-test adp-8.3.2 {adp-parse string with tag and script} -body {
+test ns_adp_registerscript-3.4 {adp-parse string with tag and script, tag inside tagname} -body {
     proc ::test_tag_proc {params} {return bar}
     ns_adp_registerscript test832 ::test_tag_proc
     ns_adp_parse -string {start <foo<test831>> end}
 } -cleanup {
     rename  ::test_tag_proc ""
 } -result {start <foobar> end}
+
+test ns_adp_registerscript-4.0 {registerscript with proc, attributes, ending tag, check case of attributes} -body {
+    proc ::reporttags {attributes} {ns_set array $attributes}
+    ns_adp_registerscript reporttags  ::reporttags
+    ns_adp_parse -string {<reporttags CamelCase Hello World x=X A=a>}
+} -cleanup {
+    rename  ::reporttags ""
+} -result {CamelCase CamelCase Hello Hello World World x X A a}
+
+
+
+############################################################################
+# ns_adp_registerproc
+############################################################################
+
+test ns_adp_registerproc-2.1 {registerproc with proc, no attributes, no ending tag} -body {
+    proc ::test_tag_proc {args} {return "hello world with args '$args'"}    
+    ns_adp_registerproc test21 ::test_tag_proc
+    ns_adp_parse -string {start <b>x <test21> y</b> end}
+} -cleanup {
+    rename  ::test_tag_proc ""
+} -result {start <b>x hello world with args '' y</b> end}
+
+
+test ns_adp_registerproc-2.2 {registerproc with proc, attributes, no ending tag} -body {
+    proc ::test_tag_proc {args} {return "hello world with args '$args'"}
+    ns_adp_registerproc test21 ::test_tag_proc
+    ns_adp_parse -string {start <b>x <test21 x=1 y=2> y</b> end}
+} -cleanup {
+    rename  ::test_tag_proc ""
+} -result {start <b>x hello world with args '1 2' y</b> end}
+
+test ns_adp_registerproc-2.3 {registerproc with proc, no attributes, ending tag} -body {
+    proc ::test_tag_proc {args} {return "hello world with args '$args'"}    
+    ns_adp_registerproc test21 /test21 ::test_tag_proc
+    ns_adp_parse -string {start <b>x <test21> y </test21> z </b> end}
+} -cleanup {
+    rename  ::test_tag_proc ""
+} -result {start <b>x hello world with args '{ y }' z </b> end}
+
+
+test ns_adp_registerproc-2.4 {registerproc with proc, attributes, ending tag} -body {
+    proc ::test_tag_proc {args} {return "hello world with args '$args'"}
+    ns_adp_registerproc test21 /test21 ::test_tag_proc
+    ns_adp_parse -string {start <b>x <test21 a="1" b=2> y </test21> z </b> end}
+} -cleanup {
+    rename  ::test_tag_proc ""
+} -result {start <b>x hello world with args '1 2 { y }' z </b> end}
+
+
+test ns_adp_registerproc-3.1 {registerproc with proc, no attributes, ending tag, call HTTP request} -body {
+    proc ::geturltag {args} {
+        set r [ns_http run {*}[lrange $args 0 end-1] [ns_config test listenurl]/[lindex $args end]]
+        dict get $r body
+    }
+    ns_adp_registerproc geturl /geturl ::geturltag
+    ns_adp_parse -string {start //<geturl>/hello.html</geturl>// end}
+} -cleanup {
+    rename  ::geturltag ""
+} -result {start //Hello World!// end}
+
+test ns_adp_registerproc-3.2 {registerproc with proc, attributes, ending tag, call HTTP request} -body {
+    proc ::geturltag {args} {
+        set r [ns_http run {*}[lrange $args 0 end-1] [ns_config test listenurl]/[lindex $args end]]
+        dict get $r body
+    }
+    ns_adp_registerproc geturl /geturl ::geturltag
+    ns_adp_parse -string {start //<geturl -timeout 3s >/hello.html</geturl>// end}
+} -cleanup {
+    rename  ::geturltag ""
+} -result {start //Hello World!// end}
+
+test ns_adp_registerproc-3.3 {registerproc with proc, attributes, ending tag, check case of attributes} -body {
+    proc ::reporttags {args} {return $args}
+    ns_adp_registerproc reporttags  ::reporttags
+    ns_adp_parse -string {<reporttags CamelCase Hello World x=X A=a>}
+} -cleanup {
+    rename  ::reporttags ""
+} -result {CamelCase Hello World X a}
+
+
+
+############################################################################
+# ns_adp_registeradp
+############################################################################
+
+test ns_adp_registeradp-2.1 {registeradp with adp-markup, no attributes, no ending tag} -body {
+    ns_adp_registeradp regadp {The current server is '<% ns_adp_puts -nonewline [ns_info server] %>'.}
+    ns_adp_parse -string {start <b>x <regadp> y</b> end}
+} -result {start <b>x the current server is 'test'. y</b> end}
+
+test ns_adp_registeradp-2.2 {registeradp with adp-markup, attributes, no ending tag} -body {
+    ns_adp_registeradp regadp {The current server is '<% ns_adp_puts -nonewline [ns_info server] %>'.}
+    # Attributes (a=1 b=2) are swallowed
+    ns_adp_parse -string {start <b>x <regadp a=1 b=2> y</b> end}
+} -result {start <b>x the current server is 'test'. y</b> end}
+
+test ns_adp_registeradp-2.3 {registeradp with adp-markup, no attributes, ending tag} -body {
+    ns_adp_registeradp regadp /regadp {The current server is '<% ns_adp_puts -nonewline [ns_info server] %>'.}
+    # Content between opening and closing tag (" y ") is swallowed
+    ns_adp_parse -string {start <b>x <regadp> y </regadp> z </b> end}
+} -result {start <b>x the current server is 'test'. z </b> end}
+
+test ns_adp_registeradp-2.4 {registeradp with adp-markup, attributes, ending tag} -body {
+    ns_adp_registeradp regadp  /regadp {The current server is '<% ns_adp_puts -nonewline [ns_info server] %>'.}
+    # Attributes (a=1 b=2) are swallowed
+    # Content between opening and closing tag (" y ") is swallowed
+    ns_adp_parse -string {start <b>x <regadp a="1" b=2> y </regadp> z </b> end}
+} -result {start <b>x the current server is 'test'. z </b> end}
+
+
+test ns_adp_registeradp-3.1 {registeradp with adp-file} -body {
+    ns_adp_registeradp regadp {<% ns_adp_include adp2.adp A B C %>}
+    ns_adp_parse -string {start <b>x <regadp a=1> y</b> end}
+} -returnCodes {error ok} -match glob -result {start <b>x*argv a b c* y</b> end}
+
+
+############################################################################
+# DONE
+############################################################################
 
 if {0} {
     #
@@ -534,28 +738,8 @@ if {0} {
 }
 
 
-test http_adp-2.0 {simple ADP page} -body {
-    nstest::http -getbody 1 GET /helloworld.adp
-} -result {200 {Hello World!}}
-
-test http_adp-2.1.1 {ADP page with timed out ns_http request} -body {
-    #
-    # Here the invocation of the testcase times out
-    #
-    #ns_logctl severity Debug(task) on
-    nstest::http -timeout 2s -getbody 1 GET /http_nonexistent.adp
-} -returnCodes {ok return error} -match glob -result {000 {testcase NS_TIMEOUT: http request timeout}}
-
-test http_adp-2.1.2 {ADP page with timed out ns_http request followed by simple ADP page} -body {
-    try {ns_http run -timeout .5s http://192.0.2.1/} on error {errorMsg} {ns_log notice "run ends in $::errorCode '$errorMsg'"}
-    try {ns_http run http://192.0.2.1/} on error {errorMsg} {ns_log notice "run ends in $::errorCode '$errorMsg'"}
-    nstest::http -getbody 1 GET /helloworld.adp
-} -returnCodes {ok return error} -result {200 {Hello World!}}
 
 
-test http_adp-2.2 {ADP page with timed out ns_http request followed by simple ADP page} -body {
-    nstest::http -getbody 1 GET /http_returntimeout.adp
-} -returnCodes {ok return error} -match glob -result {503 *Service Unavailable*}
 
 
 cleanupTests

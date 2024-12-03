@@ -13,9 +13,10 @@ This command parses lines of CSV files.
 [list_begin definitions]
 
 [call [cmd "ns_getcsv"] \
-	[opt [option "-delimiter [arg char]"]] \
-	[opt [option "-quotechar [arg char]"]] \
+	[opt [option "-delimiter [arg string]"]] \
+	[opt [option "-quotechar [arg string]"]] \
 	[opt [option "-trim"]] \
+        [opt --] \
 	[arg channelId] \
 	[arg varname]]
 
@@ -30,14 +31,13 @@ the number of parsed fields or -1 on end of file.
 [section OPTIONS]
 [list_begin options]
 
-[opt_def -delimiter [arg char]]
-
-The delimiter is the value defined for separating fields.
+[opt_def -delimiter [arg string]]
+The delimiter (single character string) for separating fields.
 Default: ,
 
-[opt_def -quotechar [arg char]]
+[opt_def -quotechar [arg string]]
 
-The quotechar is the symbol wrapping fields. It is especially needed,
+The single character string for wrapping fields. It is especially needed,
 when the field contains a delimiter. If the field contains a
 quotechar, it has to be repeated (two quote characters in sequence).
 Default: "

@@ -22,43 +22,43 @@ command returns a mutex ID which used as argument for the commands operating
 on this mutex.
 
 
-[call [cmd "ns_mutex destroy"] [arg mutexid]]
+[call [cmd "ns_mutex destroy"] [arg mutexId]]
 
-Destroys the mutex [arg mutexid] and frees any resources it was
+Destroys the mutex [arg mutexId] and frees any resources it was
 using. NOTE: The mutex must be unlocked, or else the behavior is
 undefined and will likely crash the server.
 
 Actually, in the current implementation, this operation is a
 no-op, the mutex object will live until the server shuts down.
 
-[call [cmd "ns_mutex lock"] [arg mutexid]]
+[call [cmd "ns_mutex lock"] [arg mutexId]]
 
 Acquires the specified mutual exclusion lock.
-If [arg mutexid] does not exist, it is auto-created (not recommended).
+If [arg mutexId] does not exist, it is auto-created (not recommended).
 
 
-[call [cmd "ns_mutex eval"] [arg mutexid] [arg script]]
+[call [cmd "ns_mutex eval"] [arg mutexId] [arg script]]
 
 A convenience function to lock the specified mutex, run the 
 [arg script] and unlock the mutex finally. The result and error condition of
 the [arg script] are returned by the command.
 
-If [arg mutexid] does not exist, it is auto-created (not recommended).
+If [arg mutexId] does not exist, it is auto-created (not recommended).
 
 
-[call [cmd "ns_mutex trylock"] [arg mutexid]]
+[call [cmd "ns_mutex trylock"] [arg mutexId]]
 
 Tries to acquire the specified mutual exclusion lock. If the mutex is locked
 successfully, return value of 0 is returned. Non-zero return value indicates that the mutex is
 already locked by someone else.
 
-If [arg mutexid] does not exist, it is auto-created (not recommended).
+If [arg mutexId] does not exist, it is auto-created (not recommended).
 
 
-[call [cmd "ns_mutex unlock"] [arg mutexid]]
+[call [cmd "ns_mutex unlock"] [arg mutexId]]
 
 Unlocks the specified mutual exclusion lock.
-The lock object [arg mutexid] must pre-exist.
+The lock object [arg mutexId] must pre-exist.
 
 [list_end]
 

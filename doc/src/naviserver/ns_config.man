@@ -34,11 +34,13 @@ configuration file.
 [list_begin definitions]
 
 [call [cmd ns_config] \
-      [opt "[option -bool] | [option -int]" ] \
-      [opt [option "-min [arg minint]"] ] \
-      [opt [option "-max [arg maxint]"] ] \
+      [opt [option -bool]] \
+      [opt [option -int]] \
+      [opt [option "-min [arg integer]"] ] \
+      [opt [option "-max [arg integer]"] ] \
       [opt [option -exact] ] \
-      [opt [option -set] ]\
+      [opt [option -set] ] \
+      [opt --] \
       [arg section] \
       [arg key] \
       [opt [arg default] ] ]
@@ -86,10 +88,11 @@ the default is later retrievable via [cmd ns_config].
 
 
 [call [cmd ns_configsection] \
-      [opt [option "-filter [arg filter]"] ] \
+      [opt [option "-filter unread|defaulted|defaults"] ] \
+      [opt --] \
       [arg section] ]
 
-Return the [cmd ns_set] which contains the actual values for all
+Returns the [cmd ns_set] which contains the actual values for all
 parameters defined in the specified [arg section].  If there is no
 matching section, an empty string is returned.
 
@@ -115,7 +118,7 @@ default values, e.g. in a web based interface.
 
 [call [cmd ns_configsections] ]
 
-Return a list of [cmd ns_set]s, one for every section in the configuration
+Returns a list of [cmd ns_set]s, one for every section in the configuration
 file.  The sets contain the key-value pairs for the configuration section that
 the set represents. The [cmd ns_set] name contains the [arg section].
 
@@ -134,9 +137,9 @@ evaluated once at server start-up.
 
 
 [call [cmd ns_section] \
-      [arg section]]
+      [arg name]]
 
-Begin a new section. Following calls to [cmd ns_param] place their
+Begins a new section with the specified [arg name]. Following calls to [cmd ns_param] place their
 parameters in this section, until another call to [cmd ns_section] with a
 different [arg section].
 
@@ -150,7 +153,7 @@ to build up a section in pieces.
       [arg key] \
       [arg value]]
 
-Set the given [arg key] and [arg value] in the currently active  section. Keys
+Sets the given [arg key] and [arg value] in the currently active  section. Keys
 need not be unique. Key matching is case-insensitive by default.
 
 

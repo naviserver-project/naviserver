@@ -128,6 +128,7 @@ test ns_moduleload-1.0 {syntax: ns_moduleload} -body {
 test ns_eval-1.0 {syntax: ns_eval} -body {
     ns_eval
 } -returnCodes error -result {wrong # args: should be "ns_eval ?-sync? ?-pending? /script/ ?args?"}
+# should be {wrong # args: should be "ns_eval ?-sync? ?-pending? /script/ ?/arg .../?"}
 
 
 cleanupTests

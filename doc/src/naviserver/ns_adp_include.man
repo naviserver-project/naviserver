@@ -48,7 +48,7 @@ result of accessing a slow databases or web services.
 [para] The option [option "-tcl"] can be used to wrap the .tcl file
 given by [arg filename] on the fly by an ADP page.
 
-[para] The optional arguents are passed to the included adp page, and
+[para] The optional arguments are passed to the included adp page, and
 can be accessed there by the [cmd ns_adp_argc], [cmd ns_adp_argv], and
 [cmd ns_adp_bind_args] functions.
 

@@ -453,7 +453,7 @@ test ns_sendmail-1.0 {syntax: ns_sendmail} -body {
 
 test ns_getcsv-1.0 {syntax: ns_getcsv} -body {
     ns_getcsv
-} -returnCodes error -result {wrong # args: should be "ns_getcsv ?-delimiter /string/? ?-trim? ?-quotechar /string/? ?--? /fileId/ /varname/"}
+} -returnCodes error -result {wrong # args: should be "ns_getcsv ?-delimiter /string/? ?-quotechar /string/? ?-trim? ?--? /channelId/ /varname/"}
 
 test ns_getcsv-2.0 {ns_getcsv} -body {
     set csvFile [ns_server pagedir]/csv

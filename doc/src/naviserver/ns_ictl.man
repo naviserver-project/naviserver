@@ -44,9 +44,9 @@ threads to avoid resource leaks and/or missed state changes.
 	 [opt [option -sync]] \
 	 [opt [option -pending]] \
 	 [arg script] \
-	 [opt [arg args]] ]
+	 [opt [arg "arg ..."]] ]
 
-Evaluate the given script and args and arrange for its side effects
+Evaluates the given [arg script] with the optional arguments and arrange for its side effects
 to propagate to all interpreters in all threads for the current
 virtual server. Use this to define new procs or to redefine existing
 procs once the server has started. A modified blueprint can be
@@ -75,13 +75,13 @@ to be folded into the interpreter initialization script are returned.
 
 
 
-[call [cmd "ns_ictl addmodule"] [arg modulename] ]
-Add a module to the list of modules to be initialized for the current virtual
+[call [cmd "ns_ictl addmodule"] [arg module] ]
+Adds a [arg module] to the list of modules to be initialized for the current virtual
 server and return the whole list.  The modules are loaded later.
 
 
-[call [cmd "ns_ictl cleanup"] [arg modulename] ]
-Invoke the legacy defer callbacks.
+[call [cmd "ns_ictl cleanup"] ]
+Invokes the legacy defer callbacks.
 
 [para] When during an update the maximum number of concurrent updates is
 reached, further updates are delayed until the count is again below
@@ -141,7 +141,7 @@ second), queueing will be inevitable (unless the number of concurrent
 updates is adjusted).
 
 
-[call [cmd "ns_ictl runtraces"] [arg tracewhen] ]
+[call [cmd "ns_ictl runtraces"] [arg when] ]
 Run the scripts of the specified trace.
 
 [call [cmd "ns_ictl save"] [arg script] ]
@@ -153,7 +153,7 @@ interpreters. Existing interpreters will be reinitialized when
 [cmd "ns_ictl update"] is called.
 
 
-[call [cmd "ns_ictl trace"] [arg tracewhen] [arg script] [opt [arg args]] ]
+[call [cmd "ns_ictl trace"] [arg when] [arg script] [opt [arg "arg ..."]] ]
 
 Register an interpreter [term trace] [arg script].
 

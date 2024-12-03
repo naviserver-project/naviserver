@@ -547,7 +547,7 @@ NsTclSockOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
             if (nonblock && !async) {
                 /*
                  * In the async case, the socket is already
-                 * non-blocking.
+                 * nonblocking.
                  */
                 Ns_SockSetNonBlocking(sock);
             }
@@ -810,7 +810,7 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
 
     Ns_ObjvSpec args[] = {
         {"sockId",      Ns_ObjvString,  &sockId,       NULL},
-        {"script",      Ns_ObjvString,  &script,       NULL},
+        {"command",     Ns_ObjvString,  &script,       NULL},
         {"when",        Ns_ObjvString,  &whenString,   NULL},
         {"?timeout",    Ns_ObjvTime,    &timeoutPtr,   NULL},
         {NULL, NULL, NULL, NULL}

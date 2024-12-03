@@ -24,7 +24,7 @@ procedures. This functionality is similar to Unix cron.
         [opt [arg "arg ..."]] \
         ]
 
-This command schedules a script to be run after a certain [arg interval].
+Schedules a script to be run after a certain [arg interval].
 Returns the ID of the newly scheduled script.  If [option -once] is
 specified, then the script is run once and then unscheduled, otherwise
 it will continue to run every interval time periods. The time interval
@@ -63,7 +63,7 @@ the command [arg script] to be executed.
         [opt [arg "arg ..."]] \
         ]
 
-This command schedules a script to be run on a certain [arg day] of the week at a
+Schedules a script to be run on a certain [arg day] of the week at a
 certain [arg hour] and [arg minute] of that day.  Returns the ID of the newly scheduled script.
 The week starts on Sunday as day zero and runs to Saturday as day six.
 If [option -once] is
@@ -98,7 +98,7 @@ the command [arg script] to be executed.
         [opt [arg "arg ..."]] \
         ]
 
-This command schedules a [arg script] to be run at a certain [arg hour] and [arg minute] of the day.
+Schedules a [arg script] to be run at a certain [arg hour] and [arg minute] of the day.
 Returns the ID of the newly scheduled script.  If [option -once] is specified, then the script
 is run once and then unscheduled, otherwise it will continue to run every day at that
 time.  If [option -thread] is specified, then the script will be run in its own thread,
@@ -125,7 +125,7 @@ the command [arg script] to be executed.
 
 [call [cmd ns_pause] [arg id]]
 
-Pause a scheduled script from running. This command pauses a scheduled
+Pauses a scheduled script from running. This command pauses a scheduled
 script from running at its next scheduled time.  Returns 1 on success,
 0 on failure.
 
@@ -139,7 +139,7 @@ script from running at its next scheduled time.  Returns 1 on success,
 
 [call [cmd ns_resume] [arg id]]
 
-Resume a previously paused scheduled script. This command resumes
+Resumes a previously paused scheduled script. This command resumes
 scheduling of a previously paused script via [cmd ns_pause].  Returns 1
 on success, 0 on failure.
 
@@ -161,7 +161,7 @@ on success, 0 on failure.
         [opt [arg "arg ..."]] \
         ]
 
-Execute a [arg script] after a time delay. This command executes a script
+Executes a [arg script] after a time delay. This command executes a script
 in the background after [arg interval] time units.  It does this
 by scheduling a one-shot event in the scheduler.  Uncaught script
 errors will go to the server log.  It returns an ID which can be used
@@ -189,7 +189,7 @@ the command [arg script] to be executed.
 
 [call [cmd ns_unschedule_proc] [arg id]]
 
-Unschedules a  previous  scheduled  script.
+Unschedules a previous  scheduled  script.
 The command returns a boolean result indicating
 success. When the [arg id] does not exist 0 is
 returned.

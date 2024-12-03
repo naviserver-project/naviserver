@@ -135,6 +135,7 @@ implementation provides more options for certain specialized operations.
     [opt [option "-binary"]] \
     [opt [option "-digest [arg string]"]] \
     [opt [option "-encoding hex|base64url|base64|binary"]] \
+    [opt --] \
     [arg "key"] \
     [arg "message"] \
 ]

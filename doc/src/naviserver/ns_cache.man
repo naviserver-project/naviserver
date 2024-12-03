@@ -63,7 +63,7 @@ Small values of [arg t] are treated as offsets, large values as absolute times.
 
 Queries or changes the parameters of a previously created [arg cache].  If none
 of the options are used, the current settings are returned in form of
-an attribute value list.  Te values for [option -maxentry] and [option -maxsize] can
+an attribute value list.  The values for [option -maxentry] and [option -maxsize] can
 be specified in memory units (kB, MB, GB, KiB, MiB, GiB).
 
 [call [cmd ns_cache_create] \
@@ -78,7 +78,7 @@ Creates a new Tcl [arg cache] with maximum size
 [arg size]. The size determines the number of entries that can be kept in
 this particular cache.
 
-[para] The maxumum size of a single entry can be speficied via the
+[para] The maximum size of a single entry can be specified via the
 option [option -maxentry], where the size of an entry is defined by
 the size of the key plus the size of the value and the internal
 overhead per cache entry (about 126 bytes on a 64-bit machine). When a

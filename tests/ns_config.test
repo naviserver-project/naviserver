@@ -23,7 +23,7 @@ test ns_configsections-1.0 {syntax: ns_configsections} -body {
 
 test ns_library-1.0 {syntax: ns_library} -body {
     ns_library
-} -returnCodes error -result {wrong # args: should be "ns_library /kind/ ?/module/?"}
+} -returnCodes error -result {wrong # args: should be "ns_library private|shared ?/module/?"}
 
 test ns_modulepath-1.0 {syntax: ns_modulepath} -body {
     ns_modulepath

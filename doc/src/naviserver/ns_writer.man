@@ -116,7 +116,7 @@ When the [arg size] is provided, it can be specified in memory units
 
 [call [cmd "ns_writer streaming"] \
 	[opt [option "-driver [arg string]"]] \
-	[opt [arg value]]]
+	[opt true|false]]
 
 [para]
 Query or set configuration parameter [term writerstreaming] of the

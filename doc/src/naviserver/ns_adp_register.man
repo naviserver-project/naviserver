@@ -147,7 +147,7 @@ Usage example in an ADP page:
  [arg proc] is called with two arguments: first, the enclosed content as a
  string, and second, the [cmd ns_set] with the tag's attributes.
  When registered without an end tag, the proc is called with a single
- agument (the ns_set with the arguments).
+ argument (the ns_set with the arguments).
 
 [para]
 When the tag is parsed, it is replaced by the result of the registered

@@ -14,35 +14,57 @@ connection pools and queues.  The allowed options (which may be abbreviated) are
 [list_begin definitions]
 
 [call [cmd ns_server] \
-	[opt [option "-server [arg s]"]] \
+	[opt [option "-server [arg server]"]] \
 	[cmd filters]]
 
 Returns a list of the currently defined filters.
 
 [call [cmd ns_server] \
-	[opt [option "-server [arg s]"]] \
+	[opt [option "-server [arg server]"]] \
 	[cmd hosts]]
 
 Returns a list of the registered hostnames for this server. This
 result list can be used as a white-list of configured and therefore
 secure contents accepted in the host header field of a request.
 
+[call [cmd  ns_server] \
+	[opt [option "-server [arg server]"]] \
+	[cmd mapped] \
+	[opt [option "-all"]] \
+	[opt [option "-exact"]] \
+	[opt [option "-noinherit"]] \
+	[arg "mapspec"] \
+	]
+
+Per default, returns the connection pool associated with the mapping
+specification (HTTP method and path). An empty value indicates the
+default connection pool.  When the [option -all] is specified, a dict
+is returned containing the keys [const pool] and [const handler]
+indicating the connection pool and the request handler handling this
+request.
+
+[para] When the option [option -exact] is used, the inheritance is
+deactivated, and only the values are returned directly assigned to the
+URL. When the option [option -noinherit] is specified, only values set
+with the [option -noinherit] flag are returned, not the files below
+in the subtree.
+
 
 [call [cmd ns_server] \
-	[opt [option "-server [arg s]"]] \
+	[opt [option "-server [arg server]"]] \
 	[cmd pagedir]]
 
 Returns the path of the virtual server's page directory root.
 
 
 [call [cmd ns_server] \
-	[opt [option "-server [arg s]"]] \
+	[opt [option "-server [arg server]"]] \
 	[cmd pools]]
 
 Returns a list of the pools defined for this server.
 
 [call [cmd ns_server] \
-	[opt [option "-server [arg s]"]] \
+	[opt [option "-server [arg server]"]] \
 	[cmd requestprocs]]
 
 Returns a list of the currently defined requestprocs  (the registered
@@ -50,33 +72,33 @@ procs for certain request patterns).
 
 
 [call [cmd ns_server] \
-	[opt [option "-server [arg s]"]] \
+	[opt [option "-server [arg server]"]] \
 	[cmd serverdir]]
 
 Returns the path of the virtual server's base directory.
 
 
 [call [cmd ns_server] \
-	[opt [option "-server [arg s]"]] \
+	[opt [option "-server [arg server]"]] \
 	[cmd tcllib]]
 
 Returns the path of the virtual server's private Tcl library.
 
 
 [call [cmd ns_server] \
-	[opt [option "-server [arg s]"]] \
+	[opt [option "-server [arg server]"]] \
 	[cmd traces]]
 
 Returns a list of the currently defined traces.
 
 [call [cmd ns_server] \
-	[opt [option "-server [arg s]"]] \
+	[opt [option "-server [arg server]"]] \
 	[cmd url2file]]
 
 Returns a list of the mappings from URLs to files.
 
 [call [cmd ns_server] \
-	[opt [option "-server [arg s]"]] \
+	[opt [option "-server [arg server]"]] \
 	[cmd vhostenabled]]
 
 Returns a Boolean value to indicate whether virtual hosting is enabled
@@ -86,20 +108,20 @@ of [cmd "ns_conn location"].
 
 
 [call [cmd ns_server] \
-	[opt [option "-server [arg s]"]] \
-	[opt [option "-pool [arg p]"]] \
+	[opt [option "-server [arg server]"]] \
+	[opt [option "-pool [arg string]"]] \
 	[cmd active] \
 	[opt [option "-checkforproxy"]] \
 	]
 [call [cmd ns_server] \
-	[opt [option "-server [arg s]"]] \
-	[opt [option "-pool [arg p]"]] \
+	[opt [option "-server [arg server]"]] \
+	[opt [option "-pool [arg string]"]] \
 	[cmd all] \
 	[opt [option "-checkforproxy"]] \
 	]
 [call [cmd ns_server] \
-	[opt [option "-server [arg s]"]] \
-	[opt [option "-pool [arg p]"]] \
+	[opt [option "-server [arg server]"]] \
+	[opt [option "-pool [arg string]"]] \
 	[cmd queued] \
 	]
 
@@ -116,8 +138,8 @@ is not possible (not given, or empty, or having the value "unknown") it falls
 back to the physical peer address.
 
 [call [cmd  ns_server] \
-	[opt [option "-server [arg s]"]] \
-	[opt [option "-pool [arg p]"]] \
+	[opt [option "-server [arg server]"]] \
+	[opt [option "-pool [arg string]"]] \
 	[cmd connections]]
 
 Returns the number of connection requests processed by this pool since
@@ -125,8 +147,8 @@ startup.
 
 
 [call [cmd  ns_server] \
-	[opt [option "-server [arg s]"]] \
-	[opt [option "-pool [arg p]"]] \
+	[opt [option "-server [arg server]"]] \
+	[opt [option "-pool [arg string]"]] \
 	[cmd map] \
 	[opt [option "-noinherit"]] \
 	[opt [arg "mapspec"]] \
@@ -143,31 +165,8 @@ and pool.
 
 
 [call [cmd  ns_server] \
-	[opt [option "-server [arg s]"]] \
-	[cmd mapped] \
-	[opt [option "-all"]] \
-	[opt [option "-exact"]] \
-	[opt [option "-noinherit"]] \
-	[arg "mapspec"] \
-	]
-
-Per default, return the connection pool associated with the mapping
-specification (HTTP method and path). An empty value indicates the
-default connection pool.  When the [option -all] is specified, a dict
-is returned containing the keys [const pool] and [const handler]
-indicating the connection pool and the request handler handling this
-request.
-
-[para] When the option [option -exact] is used, the inheritance is
-deactivated, and only the values are returned directly assigned to the
-URL. When the option [option -noinherit] is specified, only values set
-with the [option -noinherit] flag are returned, not the files below
-in the subtree.
-
-
-[call [cmd  ns_server] \
-	[opt [option "-server [arg s]"]] \
-	[opt [option "-pool [arg p]"]] \
+	[opt [option "-server [arg server]"]] \
+	[opt [option "-pool [arg string]"]] \
 	[cmd maxthreads] \
 	[opt [arg value]]]
 
@@ -177,8 +176,8 @@ the maximum number of connections.
 
 
 [call [cmd  ns_server] \
-	[opt [option "-server [arg s]"]] \
-	[opt [option "-pool [arg p]"]] \
+	[opt [option "-server [arg server]"]] \
+	[opt [option "-pool [arg string]"]] \
 	[cmd minthreads] \
 	[opt [arg value]]]
 
@@ -187,8 +186,8 @@ and pool. The value must be between 1 and [arg maxthreads].
 
 
 [call [cmd  ns_server] \
-	[opt [option "-server [arg s]"]] \
-	[opt [option "-pool [arg p]"]] \
+	[opt [option "-server [arg server]"]] \
+	[opt [option "-pool [arg string]"]] \
 	[cmd connectionratelimit] \
 	[opt [arg value]]]
 
@@ -196,8 +195,8 @@ Query or set the maximum transmission rate per connection when data is sent via
 writer threads. The value is provided as KB/s. 0 means no rate limit.
 
 [call [cmd  ns_server] \
-	[opt [option "-server [arg s]"]] \
-	[opt [option "-pool [arg p]"]] \
+	[opt [option "-server [arg server]"]] \
+	[opt [option "-pool [arg string]"]] \
 	[cmd poolratelimit] \
 	[opt [arg value]]]
 
@@ -209,8 +208,8 @@ are managed.
 
 
 [call [cmd  ns_server] \
-	[opt [option "-server [arg s]"]] \
-	[opt [option "-pool [arg p]"]] \
+	[opt [option "-server [arg server]"]] \
+	[opt [option "-pool [arg string]"]] \
 	[cmd stats]]
 
 Returns a list of attribute value pairs containing statistics for the
@@ -219,22 +218,22 @@ dropped requests (queue overruns), cumulative times,
 and the number of started threads.
 
 [call [cmd  ns_server] \
-	[opt [option "-server [arg s]"]] \
-	[opt [option "-pool [arg p]"]] \
+	[opt [option "-server [arg server]"]] \
+	[opt [option "-pool [arg string]"]] \
 	[cmd threads]]
 
 Returns a list of attribute value pairs containing information about the
 number of connection threads for the server and pool.
 
 [call [cmd  ns_server] \
-	[opt [option "-server [arg s]"]] \
-	[opt [option "-pool [arg p]"]] \
+	[opt [option "-server [arg server]"]] \
+	[opt [option "-pool [arg string]"]] \
 	[cmd unmap] \
 	[opt [option "-noinherit"]] \
 	[arg "mapspec"] \
 	]
 
-Undo the effect of a [cmd "ns_server map"] operation.  As a
+Undoes the effect of a [cmd "ns_server map"] operation.  As a
 consequence formerly mapped requests will be served by the default
 connection pool.
 
@@ -243,8 +242,8 @@ below) this is ignored, all entries with the specified HTTP method and
 path are unmapped.
 
 [call [cmd  ns_server] \
-	[opt [option "-server [arg s]"]] \
-	[opt [option "-pool [arg p]"]] \
+	[opt [option "-server [arg server]"]] \
+	[opt [option "-pool [arg string]"]] \
 	[cmd waiting]]
 
 Returns the number of connections waiting (i.e. queued) to be processed.
@@ -254,11 +253,11 @@ Returns the number of connections waiting (i.e. queued) to be processed.
 [section OPTIONS]
 [list_begin options]
 
-[opt_def -server [arg s]]
+[opt_def -server [arg server]]
 Specifies the (virtual) server to be queried. If this option is not
 specified, the current server is used as a source.
 
-[opt_def -pool [arg p]]
+[opt_def -pool [arg string]]
 Specifies the pool to be queried. If this option is not
 specified, the default pool of the server is used as a source.
 

@@ -22,6 +22,7 @@ it is specified, it must be a value >= 0.
 
 [call [cmd ns_shutdown] \
 	[opt [option -restart]] \
+        [opt --] \
 	[opt [arg timeout]]]
 
 [para]

@@ -5,28 +5,43 @@
 [titledesc {Register a socket callback script}]
 
 [description]
-ns_sockcallback registers a socket callback script. 
+Command for registering a socket callback script. 
 
 [section {COMMANDS}]
 
 [list_begin definitions]
 
-[call [cmd ns_sockcallback] [arg sockid] [arg script] [arg when] [opt [arg timeout]]]
+[call [cmd ns_sockcallback] \
+    [arg sockId] \
+    [arg command] \
+    [arg when] \
+    [opt [arg timeout]] \
+    ]
 
-The optional argument [arg when] can consist of one or more characters
-of r, w, e, or x, specifying, when the callback should fire.
+Registers [arg command] as socket callback, which is fired
+based on the information in the [arg when] parameter.
+This parameter can consist of one or more characters
+of [term r], [term w], [term e], or [term x],
+specifying, when the callback should fire. The meaning of these
+characters is as follows:
 
-The optional argument [arg "timeout"]
-can be specified in the form
+[list_begin itemized]
+[item] r - the socket is readable
+[item] w - the socket is writable
+[item] e - the socket has an exceptional condition
+[item] x - the server is shutting down
+[list_end]
+
+The optional argument [arg timeout] can be specified in the form
 [arg secs[opt :microsecs]], or [arg secs.fraction],
 or as a number with a time unit.
 
 [para]
-When the callback is fired, the specified [arg script] will be called
-with additional arguments [arg sockid] and [arg condition].
+When the callback is fired, the specified [arg command] is called
+with additional arguments [arg sockId] and [arg condition].
 The value of the reported [arg condition] will be as follows:
-[list_begin itemized]
 
+[list_begin itemized]
 [item] r - the socket is readable
 [item] w - the socket is writable
 [item] e - the socket has an exceptional condition
@@ -39,14 +54,23 @@ The value of the reported [arg condition] will be as follows:
 [section EXAMPLES]
 
 [example_begin]
+ #
+ # Opening a listen socket
+ #
  set sock [lb]ns_socklisten * 9000[rb]
+ #
+ # Register the proc "newconn", which is fired when the socket
+ # becomes readable. When this is the case (e.g. a connection
+ # arrives), "newconn" will be called as:  "newconn $sock r"
+ #
  ns_sockcallback $sock newconn r
  
  # Keep $sock from closing after connection ends
  detach $sock
  
- # When a connection arrives, newconn will be called as:
- # newconn $sock r
+ #
+ # Definition of the proc "newconn"
+ #
  proc newconn {sock when} {
   set fds [lb]ns_sockaccept $sock[rb]
   set rfd [lb]lindex $fds 0[rb]

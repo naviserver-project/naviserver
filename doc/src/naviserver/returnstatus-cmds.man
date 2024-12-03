@@ -23,7 +23,7 @@ a background thread without connection, or when a response has already been sent
 
 
 [para]
-After these command finsh the connection is returned to the driver thread to be
+After these command finish the connection is returned to the driver thread to be
 closed or monitored for keep-alive. The calling connection thread can then
 continue to execute code, e.g., to cleanup resources or for logging.
 
@@ -33,11 +33,11 @@ override the default HTML message which is returned, for those commands which
 return one.
 
 [para]
-NOTE: A script calling one of the respons sending commands does not end at
+NOTE: A script calling one of the response sending commands does not end at
 the time these commands are invoked.  When used in an ADP page,
 [cmd ns_adp_abort] or [cmd ns_adp_return] should be called to end script
 processing after e.g. [cmd ns_returnredirect]. Some frameworks
-based on NaviServer have custom commands for this porpose. OpenACS
+based on NaviServer have custom commands for this purpose. OpenACS
 uses [term ad_script_abort].
 
 

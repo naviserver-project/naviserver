@@ -16,7 +16,10 @@ are properly quoted depending on position: names or values.
 
 [list_begin definitions]
 
-[call [cmd ns_dbquotevalue] [arg value] [opt [arg type]]]
+[call [cmd ns_dbquotevalue] \
+        [arg value] \
+        [opt decimal|double|integer|int|real|smallint|bigint|bit|float|numeric|tinyint|text] \
+        ]
 
 Prepare the string [arg value] for inclusion in an SQL statement. If [arg value]
 is "", ns_dbquotevalue will return the string "NULL". If [arg value] is not "",
@@ -30,7 +33,10 @@ by single quotes, and any single quotes that it contains will be escaped by
 translation into two single quotes.
 
 
-[call [cmd ns_dbquotelist] [arg list] [opt [arg type]]]
+[call [cmd ns_dbquotelist] \
+        [arg list] \
+        [opt decimal|double|integer|int|real|smallint|bigint|bit|float|numeric|tinyint|text] \
+        ]
 
 Prepare the provided [arg list] for inclusion in an SQL statement. The
 command calls essentially [cmd ns_dbquotevalue] for every element

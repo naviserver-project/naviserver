@@ -52,12 +52,12 @@ are waiting, the operation has no effect.
 
 
 
-[call [cmd  "ns_cond abswait"] [arg condId] [arg mutexId] [opt [arg timeout]]]
+[call [cmd  "ns_cond abswait"] [arg condId] [arg mutexId] [opt [arg epoch]]]
 
 Waits on the condition variable [arg condId] while holding the mutex
-identified by [arg mutexId]. The timeout specifies an absolute time
+identified by [arg mutexId]. The [arg epoch] specifies an absolute time
 in Unix epoch seconds to wait until.
-
+[para]
 Returns 1 on success (condition met) or 0 on timeout.
 
 [call [cmd  "ns_cond wait"] [arg condId] [arg mutexId] [opt [arg timeout]]]

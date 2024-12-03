@@ -768,7 +768,7 @@ MutexDestroyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
 {
     Ns_Mutex   *lockPtr;
     Ns_ObjvSpec args[] = {
-        {"mutexid", ObjvMutexObj, &lockPtr, INT2PTR(NS_TRUE)},
+        {"mutexId", ObjvMutexObj, &lockPtr, INT2PTR(NS_TRUE)},
         {NULL, NULL, NULL, NULL}
     };
     return DestroyHelper(args, interp, objc, objv);
@@ -782,7 +782,7 @@ MutexEvalObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
     Ns_Mutex   *lockPtr = NULL;
     Tcl_Obj    *scriptObj = NULL;
     Ns_ObjvSpec args[] = {
-        {"mutexid", ObjvMutexObj, &lockPtr, NULL},
+        {"mutexId", ObjvMutexObj, &lockPtr, NULL},
         {"script",  Ns_ObjvObj,   &scriptObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -803,7 +803,7 @@ MutexLockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
     int         result = TCL_OK;
     Ns_Mutex   *lockPtr = NULL;
     Ns_ObjvSpec args[] = {
-        {"mutexid", ObjvMutexObj, &lockPtr, NULL},
+        {"mutexId", ObjvMutexObj, &lockPtr, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -821,7 +821,7 @@ MutexTrylockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     int         result = TCL_OK;
     Ns_Mutex   *lockPtr = NULL;
     Ns_ObjvSpec args[] = {
-        {"mutexid", ObjvMutexObj, &lockPtr, NULL},
+        {"mutexId", ObjvMutexObj, &lockPtr, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -839,7 +839,7 @@ MutexUnlockObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
     int         result = TCL_OK;
     Ns_Mutex   *lockPtr = NULL;
     Ns_ObjvSpec args[] = {
-        {"mutexid", ObjvMutexObj, &lockPtr, INT2PTR(NS_TRUE)},
+        {"mutexId", ObjvMutexObj, &lockPtr, INT2PTR(NS_TRUE)},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -895,7 +895,7 @@ CondBroadcastObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
     int        result = TCL_OK;
     Ns_Cond   *condPtr = NULL;
     Ns_ObjvSpec args[] = {
-        {"condid", ObjvCondObj, &condPtr, INT2PTR(NS_TRUE)},
+        {"condId", ObjvCondObj, &condPtr, INT2PTR(NS_TRUE)},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -934,7 +934,7 @@ CondDestroyObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
 {
     Ns_Cond    *lockPtr;
     Ns_ObjvSpec args[] = {
-        {"condid", ObjvCondObj, &lockPtr, INT2PTR(NS_TRUE)},
+        {"condId", ObjvCondObj, &lockPtr, INT2PTR(NS_TRUE)},
         {NULL, NULL, NULL, NULL}
     };
     return DestroyHelper(args, interp, objc, objv);
@@ -947,7 +947,7 @@ CondSignalObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
     int         result = TCL_OK;
     Ns_Cond    *condPtr = NULL;
     Ns_ObjvSpec args[] = {
-        {"condid", ObjvCondObj, &condPtr, INT2PTR(NS_TRUE)},
+        {"condId", ObjvCondObj, &condPtr, INT2PTR(NS_TRUE)},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -968,8 +968,8 @@ CondAbswaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T 
     Ns_Time     timeout = {0, 0};
     long        epoch = -1;
     Ns_ObjvSpec args[] = {
-        {"condid",   ObjvCondObj,  &condPtr, INT2PTR(NS_TRUE)},
-        {"mutexid",  ObjvMutexObj, &lockPtr, INT2PTR(NS_TRUE)},
+        {"condId",   ObjvCondObj,  &condPtr, INT2PTR(NS_TRUE)},
+        {"mutexId",  ObjvMutexObj, &lockPtr, INT2PTR(NS_TRUE)},
         {"?epoch",  Ns_ObjvLong,   &epoch, NULL},
         {NULL, NULL, NULL, NULL}
     };
@@ -1005,8 +1005,8 @@ CondWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
     Ns_Mutex   *lockPtr = NULL;
     Ns_Time    *timeoutPtr = NULL;
     Ns_ObjvSpec args[] = {
-        {"condid",   ObjvCondObj,  &condPtr, INT2PTR(NS_TRUE)},
-        {"mutexid",  ObjvMutexObj, &lockPtr, INT2PTR(NS_TRUE)},
+        {"condId",   ObjvCondObj,  &condPtr, INT2PTR(NS_TRUE)},
+        {"mutexId",  ObjvMutexObj, &lockPtr, INT2PTR(NS_TRUE)},
         {"?timeout", Ns_ObjvTime,  &timeoutPtr, NULL},
         {NULL, NULL, NULL, NULL}
     };

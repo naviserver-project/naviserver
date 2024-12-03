@@ -20,7 +20,7 @@ tcltest::testConstraint argon2 [expr {![catch {::ns_crypto::argon2 -variant ARGO
 #######################################################################################
 test ns_crypto::randombytes-1.0 {syntax: ns_crypto::randombytes} -body {
     ns_crypto::randombytes
-} -returnCodes error -result {wrong # args: should be "ns_crypto::randombytes ?-encoding hex|base64url|base64|binary? /bytes[1,MAX]/"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::randombytes ?-encoding hex|base64url|base64|binary? /nrbytes[1,MAX]/"}
 
 
 #######################################################################################
@@ -361,7 +361,7 @@ test ns_totp-1.0 {syntax: ns_totp} -constraints {crypto nsf} -body {
     ns_totp -x
 } -returnCodes error -result {invalid non-positional argument '-x', valid are: -digest, -digits, -interval, -user_id, -key, -time;
  should be "ns_totp ?-digest /value/? ?-digits /integer/? ?-interval /integer/? ?-user_id /integer/? ?-key /value/? ?-time /value/?"}
-# ns_totp is an nsf proc: nsd message should be {wrong # args: should be "ns_totp ?-digest /string/? ?-digits /integer/? ?-interval /integer/? ?-user_id /integer/? ?-key /string/? ?-time /time/?"}
+# ns_totp is an NSF proc: nsd message should be {wrong # args: should be "ns_totp ?-digest /string/? ?-digits /integer/? ?-interval /integer/? ?-user_id /integer/? ?-key /string/? ?-time /time/?"}
 
 
 test ns_totp-1.1 {
@@ -609,7 +609,7 @@ test scrypt-1.2 {
 ############################################################################
 test ns_crypto::argon2-1.0 {syntax: ns_crypto::argon2} -constraints {crypto argon2} -body {
     ns_crypto::argon2 ?
-} -returnCodes error -result {wrong # args: should be "ns_crypto::argon2 ?-binary? ?-ad /string/? ?-iter /integer[1,MAX]/? ?-lanes /integer[1,MAX]/? ?-memcost /integer[1,MAX]/? ?-outlen /integer[1,MAX]/? ?-password /string/? ?-salt /string/? ?-secret /string/? ?-threads /integer/? ?-variant /string/? ?-encoding hex|base64url|base64|binary?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::argon2 ?-ad /string/? ?-binary? ?-encoding hex|base64url|base64|binary? ?-iter /integer[1,MAX]/? ?-lanes /integer[1,MAX]/? ?-memcost /integer[1,MAX]/? ?-outlen /integer[1,MAX]/? ?-password /string/? ?-salt /string/? ?-secret /string/? ?-threads /integer/? ?-variant /string/?"}
 
 test argon2-1.1 {
     Test case from the OpenSSL EVP_KDF-ARGON2 manual page, using ARGON2D

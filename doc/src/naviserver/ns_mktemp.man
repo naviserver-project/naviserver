@@ -13,7 +13,7 @@ filename from an optional template.
 on its non-occurrence in a directory followed by creating this file is
 prone to a race condition and can provide security issues. Therefore,
 the command is deprecated and will issue an entry to the log file
-unless [opt [arg -nocomplain]] is used.
+unless [arg -nocomplain] is used.
 
 [para]
 In order to create temp files, the Tcl command [term "file tempfile"]
@@ -33,23 +33,24 @@ unique names, such as [cmd ns_uuid].
 
 [list_begin definitions]
 
-[call [cmd ns_mktemp] [opt [arg -nocomplain]] [opt [arg template]]]
+[call [cmd ns_mktemp] \
+    [opt -nocomplain] \
+    [opt --] \
+    [opt [arg template]]]
 
 [para]
 
-This command generates a unique temporary filename using optionally a
-template as argument, which is a string whose last six characters must
+Generates a unique temporary filename using optionally a
+[arg template], which is a string whose last six characters must
 be XXXXXX, and returns a new string where those are replaced with
 random characters such as to make the string a unique filename. It is
 commonly used to create temporary filenames.
 
-[para]
-If this command is called without the optional [arg template]
+[para] When this command is called without the optional [arg template]
 parameter, it behaves like
 [example_begin]
  ns_mktemp [lb]ns_config ns/parameters tmpdir[rb]/ns-XXXXXX
 [example_end]
-
 
 [list_end]
 

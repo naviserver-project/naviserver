@@ -18,7 +18,7 @@ via [cmd "ns_ictl trace"].
 
 [para] These command receive as argument a [arg script] and optional
 arguments. When the optional arguments are provided, these are added
-to the command [arg script] to be executed. Therefore two invocation
+to the command [arg script] to be executed. Therefore, two invocation
 styles are supported: either providing a [arg script], or a command with
 additional arguments.
 

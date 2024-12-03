@@ -1908,8 +1908,9 @@ NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
     Tcl_Obj           *saltObj = NULL, *secretObj = NULL, *adObj = NULL, *passObj = NULL;
     const char        *variant = "Argon2id";
     Ns_ObjvSpec lopts[] = {
-        {"-binary",   Ns_ObjvBool,    &isBinary,  INT2PTR(NS_TRUE)},
         {"-ad",       Ns_ObjvObj,     &adObj,      NULL},
+        {"-binary",   Ns_ObjvBool,    &isBinary,  INT2PTR(NS_TRUE)},
+        {"-encoding", Ns_ObjvIndex,   &encodingInt,binaryencodings},
         {"-iter",     Ns_ObjvInt,     &iter,       &posIntRange1},
         {"-lanes",    Ns_ObjvInt,     &lanes,      &posIntRange1},
         {"-memcost",  Ns_ObjvInt,     &memcost,    &posIntRange1},
@@ -1919,7 +1920,6 @@ NsTclCryptoArgon2ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         {"-secret",   Ns_ObjvObj,     &secretObj,  NULL},
         {"-threads",  Ns_ObjvInt,     &threads,    NULL},
         {"-variant",  Ns_ObjvString,  &variant,    NULL},
-        {"-encoding", Ns_ObjvIndex,   &encodingInt,binaryencodings},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -3274,7 +3274,7 @@ NsTclCryptoRandomBytesObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, 
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"bytes", Ns_ObjvInt, &nrBytes, &lengthRange},
+        {"nrbytes", Ns_ObjvInt, &nrBytes, &lengthRange},
         {NULL, NULL, NULL, NULL}
     };
 

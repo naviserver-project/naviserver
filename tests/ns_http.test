@@ -81,11 +81,16 @@ test ns_http-1.5 {syntax: ns_http list} -body {
 
 test ns_http-1.6 {syntax: ns_http queue} -body {
     ns_http queue
-} -returnCodes error -result {wrong # args: should be "ns_http queue ?-binary? ?-body /string/? ?-body_chan /string/? ?-body_file /string/? ?-body_size /integer[0,MAX]/? ?-cafile /string/? ?-capath /string/? ?-cert /string/? ?-raw? ?-decompress? ?-donecallback /string/? ?-headers /setId/? ?-hostname /string/? ?-keepalive /time/? ?-keep_host_header? ?-method /string/? ?-outputchan /string/? ?-outputfile /string/? ?-partialresults? ?-spoolsize /memory-size/? ?-expire /time/? ?-timeout /time/? ?-unix_socket /string/? ?-verify? ?-proxy /string/? /url/"}
+} -returnCodes error -result {wrong # args: should be "ns_http queue ?-binary? ?-body /string/? ?-body_chan /string/? ?-body_file /string/? ?-body_size /integer[0,MAX]/? ?-cafile /string/? ?-capath /string/? ?-cert /string/? ?-decompress? ?-donecallback /string/? ?-expire /time/? ?-headers /setId/? ?-hostname /string/? ?-keep_host_header? ?-keepalive /time/? ?-method /string/? ?-outputchan /string/? ?-outputfile /string/? ?-partialresults? ?-proxy /string/? ?-raw? ?-spoolsize /memory-size/? ?-timeout /time/? ?-unix_socket /string/? ?-verify? /url/"}
+# should be  -returnCodes error -result {wrong # args: should be "ns_http queue ?-binary? ?-body /string/? ?-body_chan /string/? ?-body_file /string/? ?-body_size /integer[0,MAX]/? ?-cafile /string/? ?-capath /string/? ?-cert /string/? ?-donecallback /string/? ?-expire /time/? ?-headers /setId/? ?-hostname /string/? ?-keep_host_header? ?-keepalive /time/? ?-method /string/? ?-outputchan /string/? ?-outputfile /string/? ?-partialresults? ?-proxy /string/? ?-raw? ?-spoolsize /memory-size/? ?-timeout /time/? ?-unix_socket /string/? ?-verify? /url/"}
+
 
 test ns_http-1.7 {syntax: ns_http run} -body {
     ns_http run
-} -returnCodes error -result {wrong # args: should be "ns_http run ?-binary? ?-body /string/? ?-body_chan /string/? ?-body_file /string/? ?-body_size /integer[0,MAX]/? ?-cafile /string/? ?-capath /string/? ?-cert /string/? ?-raw? ?-decompress? ?-donecallback /string/? ?-headers /setId/? ?-hostname /string/? ?-keepalive /time/? ?-keep_host_header? ?-method /string/? ?-outputchan /string/? ?-outputfile /string/? ?-partialresults? ?-spoolsize /memory-size/? ?-expire /time/? ?-timeout /time/? ?-unix_socket /string/? ?-verify? ?-proxy /string/? /url/"}
+} -returnCodes error -result {wrong # args: should be "ns_http run ?-binary? ?-body /string/? ?-body_chan /string/? ?-body_file /string/? ?-body_size /integer[0,MAX]/? ?-cafile /string/? ?-capath /string/? ?-cert /string/? ?-decompress? ?-donecallback /string/? ?-expire /time/? ?-headers /setId/? ?-hostname /string/? ?-keep_host_header? ?-keepalive /time/? ?-method /string/? ?-outputchan /string/? ?-outputfile /string/? ?-partialresults? ?-proxy /string/? ?-raw? ?-spoolsize /memory-size/? ?-timeout /time/? ?-unix_socket /string/? ?-verify? /url/"}
+
+# should be {wrong # args: should be "ns_http run ?-binary? ?-body /string/? ?-body_chan /string/? ?-body_file /string/? ?-body_size /integer[0,MAX]/? ?-cafile /string/? ?-capath /string/? ?-cert /string/? ?-donecallback /string/? ?-expire /time/? ?-headers /setId/? ?-hostname /string/? ?-keep_host_header? ?-keepalive /time/? ?-method /string/? ?-outputchan /string/? ?-outputfile /string/? ?-partialresults? ?-proxy /string/? ?-raw? ?-spoolsize /memory-size/? ?-timeout /time/? ?-unix_socket /string/? ?-verify? /url/"}
+
 
 test ns_http-1.8 {syntax: ns_http stats} -body {
     ns_http stats "" ?
@@ -95,6 +100,7 @@ test ns_http-1.9 {syntax: ns_http wait} -body {
     ns_http wait
 } -returnCodes error -result {wrong # args: should be "ns_http wait ?-binary? ?-decompress? ?-elapsed /string/? ?-file /string/? ?-headers /setId/? ?-outputfile /string/? ?-result /string/? ?-spoolsize /memory-size/? ?-status /string/? ?-timeout /time/? /id/"}
 
+# should be  {wrong # args: should be "ns_http wait ?-timeout /time/? /id/"}
 
 #
 # Functional tests

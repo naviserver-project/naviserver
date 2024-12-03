@@ -1052,27 +1052,28 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
 int
 NsTclLibraryObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int          result = TCL_OK;
-    char        *kindString = (char *)NS_EMPTY_STRING, *moduleString = NULL;
-    const char  *lib = NS_EMPTY_STRING;
+    int             result = TCL_OK, kind;
+    char           *moduleString = NULL;
+    const char     *lib = NS_EMPTY_STRING;
     const NsInterp *itPtr = clientData;
+    static Ns_ObjvTable kindTable[] = {
+        {"private",  1u},
+        {"shared",   2u},
+        {NULL,       0u}
+    };
     Ns_ObjvSpec  args[] = {
-        {"kind",    Ns_ObjvString,  &kindString, NULL},
-        {"?module", Ns_ObjvString,  &moduleString, NULL},
+        {"kind",    Ns_ObjvIndex,  &kind,         &kindTable},
+        {"?module", Ns_ObjvString, &moduleString, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
-    } else if (STREQ(kindString, "private")) {
+    } else if (kind == 1u) {
         lib = itPtr->servPtr->tcl.library;
-    } else if (STREQ(kindString, "shared")) {
+    } else /* if (kind == 2u)*/ {
         lib = nsconf.tcl.sharedlibrary;
-    } else {
-        Ns_TclPrintfResult(interp, "unknown library \"%s\":"
-                           " should be private or shared", kindString);
-        result = TCL_ERROR;
     }
 
     if (result == TCL_OK) {

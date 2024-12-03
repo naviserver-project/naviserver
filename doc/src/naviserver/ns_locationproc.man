@@ -19,12 +19,12 @@ the module files.
 
 [call [cmd ns_locationproc] [arg script] [opt [arg "arg ..."]]]
 
-[para] The Tcl [arg script] will be called returing the location
+[para] The Tcl [arg script] will be called returning the location
 string, containing the URL scheme (protocol) and the authority
 (hostname and port) in the syntax as specified by the HTTP RFCs.
 
 [para] When the optional arguments are provided, these are added to
-the command [arg script] to be executed. Therefore two invocation
+the command [arg script] to be executed. Therefore, two invocation
 styles are supported: either providing a [arg script], or a command
 with additional arguments.
 

@@ -129,39 +129,22 @@ implementation provides more options for certain specialized operations.
     [arg ctx] \
 ]
 
-[call [cmd "ns_crypto::md hkdf"] \
-    [opt [option "-binary"]] \
-    [opt [option "-digest [arg digest]"]] \
-    [opt [option "-salt [arg string]"]] \
-    [opt [option "-secret [arg string]"]] \
-    [opt [option "-info [arg info]"]] \
-    [opt [option "-encoding hex|base64url|base64|binary"]] \
-    [arg "length"] \
-]
-
 [call [cmd "ns_crypto::md new"] \
     [arg "digest"] \
 ]
 
 [call [cmd "ns_crypto::md string"] \
     [opt [option "-binary"]] \
-    [opt [option "-digest [arg digest]"]] \
+    [opt [option "-digest [arg string]"]] \
     [opt [option "-encoding hex|base64url|base64|binary"]] \
     [opt [option "-passphrase [arg string]"]] \
     [opt [option "-sign [arg string]"]] \
     [opt [option "-signature [arg string]"]] \
     [opt [option "-verify [arg string]"]] \
+    [opt --] \
     [arg "message"] \
 ]
 
-[call [cmd "ns_crypto::md vapidsign"] \
-    [opt [option "-binary"]] \
-    [opt [option "-digest [arg digest]"]] \
-    [opt [option "-encoding hex|base64url|base64|binary"]] \
-    [opt [option "-passphrase [arg string]"]] \
-    [opt [option "-pem [arg pemfile]"]] \
-    [arg "message"] \
-]
 [list_end]
 
 Example for signing and signature verification based on [cmd "::ns_crypto::md string"]:

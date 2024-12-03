@@ -216,7 +216,11 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
 
 
     if (objc != 4 && objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/tag/ ?/endtag/? adp|proc");
+        if (type != TAG_ADP) {
+            Tcl_WrongNumArgs(interp, 1, objv, "/tag/ ?/endtag/? /proc/");
+        } else {
+            Tcl_WrongNumArgs(interp, 1, objv, "/tag/ ?/endtag/? /adpstring/");
+        }
         result = TCL_ERROR;
 
     } else {
@@ -247,6 +251,9 @@ RegisterObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
             end = Tcl_GetStringFromObj(objv[2], &elen);
             ++elen;
         }
+        /*fprintf(stderr, "=========== RegisterObjCmd tag '%s', content '%s', end '%s'\n",
+                Tcl_GetString(objv[1]),
+                content, end);*/
 
         /*
          * Allocate piggybacked memory chunk containing

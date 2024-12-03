@@ -7,7 +7,7 @@ namespace import -force ::tcltest::*
 
 test ns_server-1.0 {basic syntax: plain call} -body {
     ns_server
-} -returnCodes error -result {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? ?--? /subcmd/ ?/arg .../?"}
+} -returnCodes error -result {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? ?--? active|all|connectionratelimit|connections|filters|hosts|keepalive|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
 
 test ns_server-1.1 {basic syntax: wrong argument} -body {
     ns_server ?
@@ -17,26 +17,32 @@ test ns_server-1.1 {basic syntax: wrong argument} -body {
 test ns_server-1.2.1 {syntax: ns_server active} -body {
     ns_server active "" -
 } -returnCodes error -result {wrong # args: should be "ns_server active ?-checkforproxy?"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? active ?-checkforproxy?"}
 
 test ns_server-1.2.2 {syntax: ns_server all} -body {
     ns_server all "" -
 } -returnCodes error -result {wrong # args: should be "ns_server all ?-checkforproxy?"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? all ?-checkforproxy?"}
 
 test ns_server-1.2.3 {syntax: ns_server connectionratelimit} -body {
     ns_server connectionratelimit 1 -
-} -returnCodes error -result {wrong # args: should be "ns_server connectionratelimit ?/connectionratelimit[-1,MAX]/?"}
+} -returnCodes error -result {wrong # args: should be "ns_server connectionratelimit ?/value[-1,MAX]/?"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? connectionratelimit ?/value[-1,MAX]/?"}
 
 test ns_server-1.2.4 {syntax: ns_server connections} -body {
     ns_server connections "" -
 } -returnCodes error -result {wrong # args: should be "ns_server connections"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? connections"}
 
 test ns_server-1.2.5 {syntax: ns_server filters} -body {
     ns_server filters "" -
 } -returnCodes error -result {wrong # args: should be "ns_server filters"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? filters"}
 
 test ns_server-1.2.6 {syntax: ns_server hosts} -body {
     ns_server hosts -
 } -returnCodes error -result {wrong # args: should be "ns_server hosts"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? hosts"}
 
 test ns_server-1.2.7 {syntax: ns_server keepalive} -body {
     ns_server keepalive "" -
@@ -45,94 +51,111 @@ test ns_server-1.2.7 {syntax: ns_server keepalive} -body {
 test ns_server-1.2.8 {syntax: ns_server map} -body {
     ns_server map - -
 } -returnCodes error -result {wrong # args: should be "ns_server map ?-noinherit? ?/mapspec/?"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? map ?-noinherit? ?/mapspec/?"}
 
 test ns_server-1.2.9 {syntax: ns_server mapped} -body {
     ns_server mapped
 } -returnCodes error -result {wrong # args: should be "ns_server mapped ?-all? ?-exact? ?-noinherit? /mapspec/"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? mapped ?-all? ?-exact? ?-noinherit? /mapspec/"}
 
 test ns_server-1.2.10 {syntax: ns_server maxthreads} -body {
     ns_server maxthreads 2 2 -
-} -returnCodes error -result {wrong # args: should be "ns_server maxthreads ?/maxthreads[2,100]/?"}
+} -returnCodes error -result {wrong # args: should be "ns_server maxthreads ?/value[2,100]/?"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? maxthreads ?/value[2,10]/?"}
 
 test ns_server-1.2.11 {syntax: ns_server minthreads} -body {
     ns_server minthreads 2 2 -
-} -returnCodes error -result {wrong # args: should be "ns_server minthreads ?/minthreads[1,10]/?"}
+} -returnCodes error -result {wrong # args: should be "ns_server minthreads ?/value[1,10]/?"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? minthreads ?/value[1,10]/?"}
 
 test ns_server-1.2.12 {syntax: ns_server pagedir} -body {
     ns_server pagedir -
 } -returnCodes error -result {wrong # args: should be "ns_server pagedir"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? pagedir"}
 
 test ns_server-1.2.13 {syntax: ns_server poolratelimit} -body {
     ns_server poolratelimit 1000 -
-} -returnCodes error -result {wrong # args: should be "ns_server poolratelimit ?/poolratelimit[-1,MAX]/?"}
+} -returnCodes error -result {wrong # args: should be "ns_server poolratelimit ?/value[-1,MAX]/?"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? poolratelimit ?/value[-1,MAX]/?"}
 
 test ns_server-1.2.14 {syntax: ns_server pools} -body {
     ns_server pools "" -
 } -returnCodes error -result {wrong # args: should be "ns_server pools"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? pools"}
 
 test ns_server-1.2.15 {syntax: ns_server queued} -body {
     ns_server queued ""
 } -returnCodes error -result {wrong # args: should be "ns_server queued"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? queued"}
 
 test ns_server-1.2.16 {syntax: ns_server requestprocs} -body {
     ns_server requestprocs -
 } -returnCodes error -result {wrong # args: should be "ns_server requestprocs"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? requestprocs"}
 
 test ns_server-1.2.17 {syntax: ns_server serverdir} -body {
     ns_server serverdir -
 } -returnCodes error -result {wrong # args: should be "ns_server serverdir"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? serverdir"}
 
 test ns_server-1.2.18 {syntax: ns_server stats} -body {
     ns_server stats -
 } -returnCodes error -result {wrong # args: should be "ns_server stats"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? stats"}
 
 test ns_server-1.2.19 {syntax: ns_server tcllib} -body {
     ns_server tcllib -
 } -returnCodes error -result {wrong # args: should be "ns_server tcllib"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? tcllib"}
 
 test ns_server-1.2.20 {syntax: ns_server threads} -body {
     ns_server threads "" x
 } -returnCodes error -result {wrong # args: should be "ns_server threads"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? threads"}
 
 test ns_server-1.2.21 {syntax: ns_server traces} -body {
     ns_server traces -
 } -returnCodes error -result {wrong # args: should be "ns_server traces"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? traces"}
 
 test ns_server-1.2.22 {syntax: ns_server unmap} -body {
     ns_server unmap
 } -returnCodes error -result {wrong # args: should be "ns_server unmap ?-noinherit? /mapspec/"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? unmap ?-noinherit? /mapspec/"}
 
 test ns_server-1.2.23 {syntax: ns_server url2file} -body {
     ns_server url2file -
 } -returnCodes error -result {wrong # args: should be "ns_server url2file"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? url2file"}
 
 test ns_server-1.2.24 {syntax: ns_server vhostenabled} -body {
     ns_server vhostenabled -
 } -returnCodes error -result {wrong # args: should be "ns_server vhostenabled"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? vhostenabled"}
 
 test ns_server-1.2.25 {syntax: ns_server waiting} -body {
     ns_server waiting - x
 } -returnCodes error -result {wrong # args: should be "ns_server waiting"}
-
+# falling into legacy syntax: should be {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? waiting"}
 
 
 
 
 test ns_server-1.3.1 {plain call, option but no argument} -body {
     ns_server -pool {}
-} -returnCodes error -result {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? ?--? /subcmd/ ?/arg .../?"}
+} -returnCodes error -result {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? ?--? active|all|connectionratelimit|connections|filters|hosts|keepalive|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
 
 test ns_server-1.3.2 {plain call, option but no argument} -body {
     ns_server -pool {} --
-} -returnCodes error -result {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? ?--? /subcmd/ ?/arg .../?"}
+} -returnCodes error -result {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? ?--? active|all|connectionratelimit|connections|filters|hosts|keepalive|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
 
 test ns_server-1.4.1 {plain call, option but no argument} -body {
     ns_server -server test
-} -returnCodes error -result {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? ?--? /subcmd/ ?/arg .../?"}
+} -returnCodes error -result {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? ?--? active|all|connectionratelimit|connections|filters|hosts|keepalive|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
 
 test ns_server-1.4.2 {plain call, option but no argument} -body {
     ns_server -server test --
-} -returnCodes error -result {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? ?--? /subcmd/ ?/arg .../?"}
+} -returnCodes error -result {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? ?--? active|all|connectionratelimit|connections|filters|hosts|keepalive|map|mapped|maxthreads|minthreads|pagedir|poolratelimit|pools|queued|requestprocs|serverdir|stats|tcllib|threads|traces|unmap|url2file|vhostenabled|waiting ?/arg .../?"}
 
 test ns_server-1.5 {provide invalid server argument} -body {
     ns_server -server foo
@@ -154,6 +177,7 @@ test ns_server-2.0.1 {provide valid "ns_server active" argument} -body {
 test ns_server-2.0.1 {provide invalid "ns_server active" argument} -body {
     ns_server active -dummy
 }  -returnCodes error -result {wrong # args: should be "ns_server active ?-checkforproxy?"}
+# leading parameters not handled: {wrong # args: should be "ns_server ?-server /server/? ?-pool /string/? active ?-checkforproxy?"}
 
 test ns_server-2.0.3 {get values from an active connection} -setup {
     ns_register_proc GET /run {
@@ -233,7 +257,7 @@ test ns_server-2.3.2 {query modified minthreads} -body {
 
 test ns_server-2.3.3 {provided too large minthreads value} -body {
     ns_server minthreads 100
-} -returnCodes error -result {expected integer in range [1,10] for '?minthreads', but got 100}
+} -returnCodes error -result {expected integer in range [1,10] for '?value', but got 100}
 
 test ns_server-2.3.4.1 {query alternate pool from default server} -body {
     ns_server -pool emergency maxthreads

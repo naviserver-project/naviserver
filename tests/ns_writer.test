@@ -26,7 +26,7 @@ test ns_writer-1.2.2 {ns_writer size syntax} -body {
 } -returnCodes error -result {wrong # args: should be "ns_writer size ?-driver /string/? ?/size/?"}
 test ns_writer-1.2.3 {ns_writer streaming syntax} -body {
      ns_writer streaming 1 - -
-} -returnCodes error -result {wrong # args: should be "ns_writer streaming ?-driver /string/? ?/value/?"}
+} -returnCodes error -result {wrong # args: should be "ns_writer streaming ?-driver /string/? ?true|false?"}
 test ns_writer-1.2.4 {ns_writer submit syntax} -body {
      ns_writer submit
 } -returnCodes error -result {wrong # args: should be "ns_writer submit /data/"}

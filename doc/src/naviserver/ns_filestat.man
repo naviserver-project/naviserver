@@ -7,16 +7,16 @@
 [description]
 
 Invokes the stat kernel call on name, and uses the variable given by
-varName to hold information returned from the kernel call.  VarName is
-treated as an array variable, and the following elements of that
-variable are set: atime, ctime, dev, gid, ino, mode, mtime, nlink,
-size, type, uid.  Each element except type is a decimal string with
-the value of the corresponding field from the stat return structure;
-see the manual entry for stat for details on the meanings of the
-values.  The type element gives the type of the file in the same form
-returned by the command file type.  This command returns 1 if system
-call was successful and array varianle is set or 0 in case of any
-error or file not found.
+the argument [arg varname] to hold information returned from the
+kernel call.  [arg varname] is treated as an array variable, and the
+following elements of that variable are set: atime, ctime, dev, gid,
+ino, mode, mtime, nlink, size, type, uid.  Each element except type is
+a decimal string with the value of the corresponding field from the
+stat return structure; see the manual entry for stat for details on
+the meanings of the values.  The type element gives the type of the
+file in the same form returned by the command file type.  This command
+returns 1 if system call was successful and array varianle is set or 0
+in case of any error or file not found.
 
 [para]
 If Tcl VFS was compiled this command is similar to Tcl file stat command. In case of no Tcl VFS, this
@@ -26,9 +26,9 @@ command uses direct system call stat and is much faster.
 
 [list_begin definitions]
 
-[call [cmd ns_filestat] [arg FileName] [opt [arg VarName]]]
+[call [cmd ns_filestat] [arg filename] [opt [arg varname]]]
 
-If VarName is not specified, then ns_filestat behaves similar to file exists, just returns
+If [arg varname] is not specified, then ns_filestat behaves similar to file exists, just returns
 1 if file exist, 0 if not accessible
 
 [list_end]

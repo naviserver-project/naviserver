@@ -21,7 +21,7 @@ Register a [arg script] which returns the location of the server root
 directory (directory path).
 
 [para] When the optional arguments are provided, these are added to
-the command [arg script] to be executed. Therefore two invocation
+the command [arg script] to be executed. Therefore, two invocation
 styles are supported: either providing a [arg script], or a command
 with additional arguments.
 

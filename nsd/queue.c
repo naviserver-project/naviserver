@@ -819,7 +819,7 @@ ServerMaxThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
     int               result = TCL_OK, value = 0;
     Ns_ObjvValueRange range = {poolPtr->threads.min, poolPtr->wqueue.maxconns};
     Ns_ObjvSpec       args[] = {
-        {"?maxthreads",   Ns_ObjvInt, &value, &range},
+        {"?value",   Ns_ObjvInt, &value, &range},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -858,7 +858,7 @@ ServerMinThreadsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
     int               result = TCL_OK, value = 0;
     Ns_ObjvValueRange range = {1, poolPtr->threads.max};
     Ns_ObjvSpec       args[] = {
-        {"?minthreads", Ns_ObjvInt, &value, &range},
+        {"?value", Ns_ObjvInt, &value, &range},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -881,7 +881,7 @@ ServerPoolRateLimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
     int               result = TCL_OK, value = 0;
     Ns_ObjvValueRange range = {-1, INT_MAX};
     Ns_ObjvSpec       args[] = {
-        {"?poolratelimit", Ns_ObjvInt, &value, &range},
+        {"?value", Ns_ObjvInt, &value, &range},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -903,7 +903,7 @@ ServerConnectionRateLimitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *inter
     int               result = TCL_OK, value = 0;
     Ns_ObjvValueRange range = {-1, INT_MAX};
     Ns_ObjvSpec       args[] = {
-        {"?connectionratelimit", Ns_ObjvInt, &value, &range},
+        {"?value", Ns_ObjvInt, &value, &range},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -1573,7 +1573,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
             }
 
             if (legacy) {
-                Ns_LogDeprecated(objv, objc, "ns_server ?-pool p? ...",
+                Ns_LogDeprecated(objv, objc, "ns_server ?-pool /string/? ...",
                                  "Passing pool as second argument is deprecated.");
                 optArg = Tcl_GetString(objv[objc-1]);
                 pool = optArg;
@@ -1582,7 +1582,6 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
                 /*
                  * trigger usage error
                  */
-                //fprintf(stderr, "... trigger early error validPoolSyntax %d\n", validPoolSyntax);
                 if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
                     return TCL_ERROR;
                 }

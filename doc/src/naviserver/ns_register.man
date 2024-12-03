@@ -170,7 +170,7 @@ registrations. Filters can be shortcutted via [cmd ns_shortcut_filter].
 Registers the proc or [arg script] to handle
 the specified method/URL combination.  When the server gets a matching
 request, it calls procname with the connection id and any arguments
-specified here. When [arg script] contails only a single Tcl word (no
+specified here. When [arg script] contains only a single Tcl word (no
 spaces), it is treated as a Tcl procedure (or short "proc").
 
 [para]

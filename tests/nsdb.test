@@ -129,7 +129,7 @@ test nsdb-1.0.31 {syntax: ns_db user} -body {
 
 test nsdb-1.0.32 {syntax: ns_db verbose} -body {
     ns_db verbose
-} -returnCodes error -result {wrong # args: should be "ns_db verbose /handle/ ?/verbose/?"}
+} -returnCodes error -result {wrong # args: should be "ns_db verbose /handle/ ?true|false?"}
 
 test nsdb-1.0.33 {syntax: ns_db 1row} -body {
     ns_db 1row
@@ -142,11 +142,11 @@ test nsdb-1.0.34 {syntax: ns_db 0or1row} -body {
 
 test nsdb-1.1 {syntax: ns_dbquotevalue} -body {
     ns_dbquotevalue
-} -returnCodes error -result {wrong # args: should be "ns_dbquotevalue /value/ ?/type/?"}
+} -returnCodes error -result {wrong # args: should be "ns_dbquotevalue /value/ ?decimal|double|integer|int|real|smallint|bigint|bit|float|numeric|tinyint|text?"}
 
 test nsdb-1.2 {syntax: ns_dbquotelist} -body {
     ns_dbquotelist
-} -returnCodes error -result {wrong # args: should be "ns_dbquotelist /list/ ?/type/?"}
+} -returnCodes error -result {wrong # args: should be "ns_dbquotelist /list/ ?decimal|double|integer|int|real|smallint|bigint|bit|float|numeric|tinyint|text?"}
 
 test nsdb-1.3 {syntax: ns_dbconfigpath} -body {
     ns_dbconfigpath ?
