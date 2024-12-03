@@ -52,7 +52,7 @@ test ns_getform-1.0  {syntax: ns_getform} -body {
 
 test ns_getformfile-1.0  {syntax: ns_getformfile} -body {
     ns_getformfile
-} -returnCodes error -result {wrong # args: should be "ns_getformfilename"}
+} -returnCodes error -result {wrong # args: should be "ns_getformfile name"}
 
 # Tcl proc "ns_getformfile" - message should be {wrong # args: should be "ns_getformfile /name/"}
 
