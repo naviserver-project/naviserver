@@ -24,12 +24,11 @@ process log messages.
 
 
 [call [cmd ns_log] \
-      [arg severity-level] \
-      [arg message] \
-      [opt [arg "message ..."]] ]
+      [arg severity] \
+      [arg "message ..."] ]
 
-Write a message to the error log file if the given
-[arg severity-level] is enabled (see [cmd ns_logctl]).
+Writes a message to the error log file if the given
+[arg severity] is enabled (see [cmd ns_logctl]).
 The [arg message]
 arguments are concatenated with connecting spaces. Note that this only
 queues messages for the log and does not actually guarantee that the
@@ -37,7 +36,7 @@ message is immediately written to the log. The server can be
 instructed to queue messages in the cache via [cmd "ns_logctl hold"].
 
 [para]
-The following are the predefined values of [arg severity-level].
+The following are the predefined values of [arg severity].
 
 [list_begin definitions]
 
@@ -100,15 +99,16 @@ disable buffering enabled by [arg hold].
 
 [call [cmd "ns_logctl get" ]]
 
-Return all buffered log messages, removing them from the buffer
+Returns all buffered log messages, removing them from the buffer
 without writing them to the log file.
 
 [call [cmd "ns_logctl grep"] \
-   [opt "[option -filename] [arg filename]"] \
+   [opt [option "-filename [arg string]"]] \
+   [opt --] \
    [arg string]]
 
-Read through the system log file, join continuation lines, strip color
-codes and grep in the result for the provided string. The function
+Reads through the system log file, joins continuation lines, strips color
+codes and greps in the result for the provided string. The function
 returns all lines containing the specified string.
 When [option -filename] is specified, the search is performed on
 the specified file.  The specified filename should be fully qualified.
@@ -123,6 +123,15 @@ are no longer written directly to the server log. Use the subcommand
 
 Return a copy of any buffered log messages for the current thread.
 
+[call [cmd "ns_logctl register"] \
+      [arg script] \
+      [opt [arg "arg ..."]] ]
+
+Registers a log filter [arg script] with the given [arg script-args] where
+[arg script] should have the signature:
+[emph script] [arg severity] [arg timestamp] [arg message] [opt [arg "script-args ..."]].
+A [arg handle] will be returned which can be used to unregister the filter script.
+
 
 [call [cmd "ns_logctl release"] ]
 
@@ -131,18 +140,19 @@ buffering. Future log messages will not be buffered.
 
 [call [cmd "ns_logctl severities"] ]
 
-Return a list of available severity-levels. The result includes the 7 predefined
+Returns a list of available severity levels. The result includes the 7 predefined
 levels and those created with [cmd ns_logctl] or via C code.
 
 [call [cmd "ns_logctl severity"] \
-      [arg severity-level] \
-      [opt "[option -color] [arg color]"] \
-      [opt "[option -intensity] [arg intensity]"] \
+      [arg severity] \
+      [opt [option "-color black|red|green|yellow|blue|magenta|cyan|gray|default"]] \
+      [opt [option "-intensity normal|bright"]] \
       [opt true|false] ]
 
-Return true if the given [arg severity-level] is enabled, false if it is
-disabled. If true|false is given it enables/disables the given
-[arg severity-level] for all future log messages, server-wide.
+Returns [term true] if the given [arg severity] is enabled,
+[term false] if it is
+disabled. If the last argument [opt true|false] is given it enables/disables the given
+[arg severity] for all future log messages, server-wide.
 The options [option -color] and [option -intensity] can be used
 to set the coloring when the logfile is colorized. The color can be
 [term black], [term red], [term green], [term yellow],
@@ -153,39 +163,31 @@ The logfile colorization can be controlled by setting
 configuration file.
 
 [para]
-If [arg severity-level] does not already exist and more arguments arg given, then the
-new severity is created. Future calls to [cmd ns_log] may use new [arg severity-level].
+If [arg severity] does not already exist and more arguments arg given, then the
+new severity is created. Future calls to [cmd ns_log] may use new [arg severity].
 
 [call [cmd "ns_logctl stats"] ]
 
-Return statistics from calls to [cmd ns_log] by severity-level.
+Returns statistics from calls to [cmd ns_log] grouped by severity.
 
 [call [cmd "ns_logctl truncate"] \
-	  [arg count] ]
+	  [opt [arg count]] \
+          ]
 
 Discard this thread's buffered messages, leaving [arg count] untouched.
-
-[call [cmd "ns_logctl register"] \
-      [arg script] \
-      [opt [arg "script-args ..."]] ]
-
-Register a log filter [arg script] with the given [arg script-args] where
-[arg script] should have the signature:
-[emph script] [arg severity] [arg timestamp] [arg message] [opt [arg "script-args ..."]].
-A [arg handle] will be returned which can be used to unregister the filter script.
 
 
 [call [cmd "ns_logctl unregister"] \
       [arg handle] ]
 
-Unregister the previously registered log filter script identified by
+Unregisters the previously registered log filter script identified by
 [arg handle].
 
 
 
 [call [cmd ns_logroll] ]
 
-Roll the server error log. The behavior is independent of the
+Rolls the server system log. The behavior is independent of the
 configuration parameter [emph logroll]. See [cmd ns_rollfile] for
 details of log rolling.
 
@@ -211,11 +213,11 @@ If true, log entries will be colorized using ANSI color codes
 Default: false.
 
 [def logdebug]
-If true messages of severity-level [emph Debug] are enabled.
+If true messages of severity [emph Debug] are enabled.
 Default: false.
 
 [def logdev]
-If true, messages of severity-level [emph Dev] are enabled.
+If true, messages of severity [emph Dev] are enabled.
 Default: false.
 
 [def logexpanded]
@@ -227,7 +229,7 @@ The number of old error log files to keep around if log rolling is enabled.
 Default: 10.
 
 [def lognotice]
-If true, messages of severity-level [emph Notice] are enabled.
+If true, messages of severity [emph Notice] are enabled.
 Default: true.
 
 [def logprefixcolor]
@@ -370,7 +372,7 @@ log file.
 
 
 
-Create a new severity-level.
+Create a new severity.
 
 [example_begin]
  nscp:1> [cmd ns_logctl] severities

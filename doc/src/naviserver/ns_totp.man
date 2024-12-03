@@ -31,11 +31,11 @@ the nsf package is installed.
 [list_begin definitions]
 
 [call [cmd "ns_totp"] \
-	[opt [option "-digest [arg digest]"]] \
-	[opt [option "-digits [arg digits]"]] \
-	[opt [option "-interval [arg interval]"]] \
-	[opt [option "-user_id [arg user_id]"]] \
-	[opt [option "-key [arg key]"]] \
+	[opt [option "-digest [arg string]"]] \
+	[opt [option "-digits [arg integer]"]] \
+	[opt [option "-interval [arg integer]"]] \
+	[opt [option "-user_id [arg integer]"]] \
+	[opt [option "-key [arg string]"]] \
 	[opt [option "-time [arg time]"]] \
 	]
 

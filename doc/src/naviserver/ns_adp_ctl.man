@@ -18,25 +18,25 @@ given value and the previous value is returned.
 
 [call [cmd "ns_adp_ctl autoabort"] [opt true|false]]
 
-Query or set the autoabort option. When enabled, failure to flush a
+Queries or sets the autoabort option. When enabled, failure to flush a
 buffer (normally the result of a closed HTTP connection)
 generates an ADP exception, unwinding the ADP call stack.
 
 [call [cmd "ns_adp_ctl bufsize"] [opt [arg size]]]
 
-Return the currently
+Returns the currently
 ADP output buffer size, setting it to a new value if the
 optional [arg size] argument is specified.
 
 [call [cmd "ns_adp_ctl cache"] [opt true|false]]
 
-Query or set the cache option. When disabled, all requests to cache
+Queries or sets the cache option. When disabled, all requests to cache
 executed ADP blocks via the [cmd "ns_adp_include -cache"] directive
 are ignored, resulting in normal execution of all code.
 
-[call [cmd "ns_adp_ctl channel"] [opt [arg chan]]]
+[call [cmd "ns_adp_ctl channel"] [arg channel]]
 
-Query or specify an open file channel to receive output when the
+Queries or specifies an open file [arg channel] to receive output when the
 buffer is flushed. If channel is the null string, the output channel
 is cleared. This capability can be useful for specialized uses of ADP
 outside the context of an HTTP connection, e.g., for debugging or
@@ -44,7 +44,7 @@ testing. Use an empty argument to reset the channel.
 
 [call [cmd "ns_adp_ctl detailerror"] [opt true|false]]
 
-Query or set the detailerror option. When enabled, errors in ADP pages
+Queries or sets the detailerror option. When enabled, errors in ADP pages
 are formatted with information about the context of the HTTP
 request. This can be very helpful in debugging ADP errors
 but potentially a security risk if the HTTP context (e.g.,
@@ -54,7 +54,7 @@ enabled, appended to the output buffer.
 
 [call [cmd "ns_adp_ctl displayerror"] [opt true|false]]
 
-Query or set the displayerror option. When enabled, errors in ADP
+Queries or sets the displayerror option. When enabled, errors in ADP
 pages are formatted and appended to the output stream,
 normally visible to a user's browser. This option
 should generally be enabled in development and disabled in
@@ -63,21 +63,21 @@ production.
 
 [call [cmd "ns_adp_ctl expire"] [opt true|false]]
 
-Query or set the expire option. When enabled, the ADP request
+Queries or sets the expire option. When enabled, the ADP request
 processing code adds an "Expires: now" header in the response buffer
 to disable any caching. In practice, more thoughtful cache control
 mechanisms should be used based on the HTTP/1.1 spec.
 
 [call [cmd "ns_adp_ctl safe"] [opt true|false]]
 
-Query or set the safe option.
+Queries or sets the safe option.
 When enabled, all code is executed in [arg safe]  mode,
 disabling and ignoring any code within registered
 tags.
 
 [call [cmd "ns_adp_ctl singlescript"] [opt true|false]]
 
-Query or set the singlescript option. When enabled, ADP pages are
+Queries or sets the singlescript option. When enabled, ADP pages are
 converted from independent text-script blocks into a single
 script, which text blocks replaced with a call to
 ns_adp_append with the given text. Functionally the
@@ -91,13 +91,13 @@ inhibit execution of the overall page.
 
 [call [cmd "ns_adp_ctl stream"] [opt true|false]]
 
-Query or set the streaming option.
+Queries or sets the streaming option.
 When enabled, partial adp-outputs are returned to the user as soon as
 possible via chunked encoding.
 
 [call [cmd "ns_adp_ctl stricterror"] [opt true|false]]
 
-Query or set the stricterror option. When enabled, the result is
+Queries or sets the stricterror option. When enabled, the result is
 similar to that of singlescript in that an error in a
 particular block will return the entire page instead of
 continuing to the next text or script block.
@@ -108,7 +108,7 @@ Query or set the [arg trace] option which currently does nothing.
 
 [call [cmd "ns_adp_ctl trimspace"] [opt true|false]]
 
-Query or set the trimspace option. When enabled, any white space at
+Queries or sets the trimspace option. When enabled, any white space at
 the start of the output buffer is eliminated. White space
 can show up in the output as a result of ADP pages which do
 nothing but include other ADPs in a way to reuse code

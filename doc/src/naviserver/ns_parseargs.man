@@ -13,7 +13,7 @@ and stores the resulting bindings in local Tcl variables.
 
 [list_begin definitions]
 
-[call [cmd ns_parseargs] [arg argspec] [arg arguments]]
+[call [cmd ns_parseargs] [arg argspec] [arg "arg ..."]]
 
 [arg argspec]
 argument specifications, which is a list of specifications

@@ -1128,7 +1128,7 @@ NsTclLogObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
     int   result = TCL_OK;
 
     if (objc < 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/severity/ /string/ ?/string/ ...?");
+        Tcl_WrongNumArgs(interp, 1, objv, "/severity/ /message .../");
         result = TCL_ERROR;
     } else if (unlikely(GetSeverityFromObj(interp, objv[1], &addrPtr) != TCL_OK)) {
         result = TCL_ERROR;
@@ -1188,7 +1188,17 @@ LogCtlSeverityObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
     };
 
     if (likely(objc < 3)) {
-        Tcl_WrongNumArgs(interp, 2, objv, "/severity/ ?-color /color/? ?-intensity /intensity/? ?/bool/?");
+        Tcl_DString  ds, *dsPtr = &ds;
+
+        Tcl_DStringInit(dsPtr);
+        Tcl_DStringAppend(dsPtr, "/severity/ ?-color ", TCL_INDEX_NONE);
+        Ns_ObjvTablePrint(dsPtr, colors);
+        Tcl_DStringAppend(&ds, "? ?-intensity ", TCL_INDEX_NONE);
+        Ns_ObjvTablePrint(dsPtr, intensities);
+        Tcl_DStringAppend(&ds, "? ?true|false?", TCL_INDEX_NONE);
+
+        Tcl_WrongNumArgs(interp, 2, objv, ds.string);
+        Tcl_DStringFree(dsPtr);
         result = TCL_ERROR;
 
     } else if (GetSeverityFromObj(interp, objv[2], &addrPtr) == TCL_OK) {
@@ -1503,7 +1513,7 @@ NsTclLogCtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 
         case CRegisterIdx:
             if (objc < 3) {
-                Tcl_WrongNumArgs(interp, 2, objv, "/script/ ?/arg/?");
+                Tcl_WrongNumArgs(interp, 2, objv, "/script/ ?/arg .../?");
                 result = TCL_ERROR;
             } else {
                 cbPtr = Ns_TclNewCallback(interp, (ns_funcptr_t)Ns_TclCallbackProc,

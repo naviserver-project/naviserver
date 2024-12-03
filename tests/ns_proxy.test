@@ -27,7 +27,7 @@ test ns_proxy-1.2 {syntax: ns_proxy subcommands} -body {
 
 test ns_proxy-2.10 {syntax: ns_proxy active} -body {
     ns_proxy active
-} -returnCodes error -result {wrong # args: should be "ns_proxy active /pool/ ?/handle/?"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy active /pool/ ?/proxyId/?"}
 
 test ns_proxy-2.11 {syntax: ns_proxy cleanup} -body {
     ns_proxy cleanup ?
@@ -35,19 +35,23 @@ test ns_proxy-2.11 {syntax: ns_proxy cleanup} -body {
 
 test ns_proxy-2.12 {syntax: ns_proxy clear} -body {
     ns_proxy clear
-} -returnCodes error -result {wrong # args: should be "ns_proxy clear /pool/ ?/handle/?"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy clear /pool/ ?/proxyId/?"}
 
 test ns_proxy-2.13 {syntax: ns_proxy eval} -body {
     ns_proxy eval
-} -returnCodes error -result {wrong # args: should be "ns_proxy eval /handle/ /script/"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy eval /proxyId/ /script/ ?/timeout/?"}
 
 test ns_proxy-2.14 {syntax: ns_proxy free} -body {
     ns_proxy free
 } -returnCodes error -result {wrong # args: should be "ns_proxy free /pool/"}
 
+test ns_proxy-2.14.1 {syntax: ns_proxy get} -body {
+    ns_proxy get
+} -returnCodes error -result {wrong # args: should be "ns_proxy get /pool/ ?-handles /integer/? ?-timeout /time/?"}
+
 test ns_proxy-2.15 {syntax: ns_proxy handles} -body {
     ns_proxy handles ? ?
-} -returnCodes error -result {wrong # args: should be "ns_proxy handles ?/handle/?"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy handles ?/pool/?"}
 
 test ns_proxy-2.16 {syntax: ns_proxy pools} -body {
     ns_proxy pools ?
@@ -55,15 +59,15 @@ test ns_proxy-2.16 {syntax: ns_proxy pools} -body {
 
 test ns_proxy-2.17 {syntax: ns_proxy recv} -body {
     ns_proxy recv
-} -returnCodes error -result {wrong # args: should be "ns_proxy recv /handle/"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy recv /proxyId/"}
 
 test ns_proxy-2.18 {syntax: ns_proxy release} -body {
     ns_proxy release
-} -returnCodes error -result {wrong # args: should be "ns_proxy release /handle/"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy release /proxyId/"}
 
 test ns_proxy-2.19 {syntax: ns_proxy send} -body {
     ns_proxy send
-} -returnCodes error -result {wrong # args: should be "ns_proxy send /handle/ /script/"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy send /proxyId/ /script/"}
 
 test ns_proxy-2.20 {syntax: ns_proxy stats} -body {
     ns_proxy stats
@@ -71,21 +75,23 @@ test ns_proxy-2.20 {syntax: ns_proxy stats} -body {
 
 test ns_proxy-2.21 {syntax: ns_proxy stop} -body {
     ns_proxy stop
-} -returnCodes error -result {wrong # args: should be "ns_proxy stop /pool/ ?/handle/?"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy stop /pool/ ?/proxyId/?"}
 
 test ns_proxy-2.22 {syntax: ns_proxy wait} -body {
     ns_proxy wait
-} -returnCodes error -result {wrong # args: should be "ns_proxy wait /handle/ ?/timeout/?"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy wait /proxyId/ ?/timeout/?"}
 
 test ns_proxy-2.23 {syntax: ns_proxy workers} -body {
     ns_proxy workers
 } -returnCodes error -result {wrong # args: should be "ns_proxy workers /pool/"}
 
-test ns_proxy-2.1 {syntax: ns_proxy config} -body {
+test ns_proxy-2.1.1 {syntax: ns_proxy config} -body {
     ns_proxy config
-} -returnCodes error -result {wrong # args: should be "ns_proxy configure /pool/ ?/opt/? ?/val/? ..."}
+} -returnCodes error -result {wrong # args: should be "ns_proxy configure /pool/ ?-env /setId/? ?-evaltimeout /time/? ?-exec /string/? ?-gettimeout /time/? ?-idletimeout /time/? ?-init /string/? ?-logminduration /time/? ?-maxruns /integer/? ?-maxslaves /integer/? ?-maxworkers /integer/? ?-recvtimeout /time/? ?-reinit /string/? ?-sendtimeout /time/? ?-waittimeout /time/?"}
 
-
+test ns_proxy-2.1.2 {syntax: ns_proxy config} -body {
+    ns_proxy config testpool x
+} -returnCodes error -result {bad flags "x": must be -init, -reinit, -maxslaves, -exec, -env, -gettimeout, -evaltimeout, -sendtimeout, -recvtimeout, -waittimeout, -idletimeout, -logminduration, -maxruns, or -maxworkers}
 
 test ns_proxy-2.2 {configuration options} -body {
     ns_proxy configure testpool
@@ -120,10 +126,11 @@ test ns_proxy-2.9 {configuration options types} -body {
 } -returnCodes error -result {expected integer but got "dummy"}
 
 
-
-test ns_proxy-3.1 {get base syntax} -body {
-    ns_proxy get
-} -returnCodes error -result {wrong # args: should be "ns_proxy get /pool/ ?-/opt/ /val/ ...?"}
+test ns_proxy-3.1 {get w/o options} -body {
+    set proxy [ns_proxy get testpool x 1]
+    info commands $proxy
+} -returnCodes error -result {wrong # args: should be "ns_proxy get testpool ?-handles /integer/? ?-timeout /time/?"}
+# generic {wrong # args: should be "ns_proxy get /pool/ ?-handles /integer/? ?-timeout /time/?"}
 
 test ns_proxy-3.2 {get w/o options} -body {
     set proxy [ns_proxy get testpool]
@@ -132,7 +139,7 @@ test ns_proxy-3.2 {get w/o options} -body {
 
 test ns_proxy-3.3 {put base syntax} -body {
     ns_proxy put
-} -returnCodes error -result {wrong # args: should be "ns_proxy put /handle/"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy put /proxyId/"}
 
 test ns_proxy-3.4 {put handle} -body {
     ns_proxy put $proxy
@@ -217,11 +224,11 @@ test ns_proxy-3.13 {put with bad re-init} -constraints {macOrUnix} -body {
 
 test ns_proxy-4.0 {ping syntax} -constraints {macOrUnix} -body {
     ns_proxy ping
-} -returnCodes error -result {wrong # args: should be "ns_proxy ping /handle/"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy ping /proxyId/"}
 
 test ns_proxy-4.1 {ping with bad handle} -constraints {macOrUnix} -body {
     ns_proxy ping dummy
-} -returnCodes error -result {no such handle: dummy}
+} -returnCodes error -result {no such proxyId: dummy}
 
 test ns_proxy-4.2 {ping normal} -constraints {macOrUnix} -body {
     ns_proxy configure testpool -gettimeout 0 -maxslaves 2

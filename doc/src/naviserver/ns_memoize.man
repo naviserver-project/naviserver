@@ -22,11 +22,11 @@ time or explicitly flush the result when the dependency changes.
 
 
 [call [cmd ns_memoize] \
-     [opt [option "-timeout [arg t]"]] \
-     [opt [option "-expires [arg t]"]] \
-     [opt    --] \
+     [opt [option "-timeout [arg time]"]] \
+     [opt [option "-expires [arg time ]"]] \
+     [opt --] \
      [arg script] \
-     [opt "args ..."] ]
+     [opt [arg "arg ..."]] ]
 
 Evaluate [arg script] and [arg args] and return the result. The result is
 cached so that future evaluations of the same [arg script] and [arg args] will

@@ -64,14 +64,14 @@ unit, seconds are assumed.
 
 [list_begin definitions]
 
-[call [cmd "ns_proxy active"] [arg pool] [opt [arg handle]]]
+[call [cmd "ns_proxy active"] [arg pool] [opt [arg proxyId]]]
 
 Returns a list of currently evaluating scripts in proxies for
 the given [arg pool].
 
 [para]
 The output is one or more lists, depending on the optional
-[opt handle] argument. If the optional argument is
+[opt proxyId] argument. If the optional argument is
 given, only the status of the proxy for the given handle is
 returned and the result is a one-element list. Otherwise, statuses of
 all active proxies for the given [arg pool] are returned and the
@@ -108,34 +108,49 @@ module registers a trace to release all handles via the
 after some transaction, for example, at the end of a connection.
 
 
-[call [cmd "ns_proxy clear"] [arg pool] [opt [arg handle]]]
+[call [cmd "ns_proxy clear"] [arg pool] [opt [arg proxyId]]]
 
 Stop all worker processes attached to free proxies for the given [arg pool].
-If the optional [arg handle] is given, it stops the process only for
-that handle.
+If the optional [arg proxyId] is given, it stops the process only for
+that proxyId.
 
 
-[call [cmd "ns_proxy configure"] [arg pool] [opt {-key val -key val...}]]
+[call [cmd "ns_proxy configure"] [arg pool] \
+    [opt [option "-env [arg setId]"]] \
+    [opt [option "-evaltimeout [arg time]"]] \
+    [opt [option "-exec [arg string]"]] \
+    [opt [option "-gettimeout [arg time]"]] \
+    [opt [option "-idletimeout [arg time]"]] \
+    [opt [option "-init [arg string]"]] \
+    [opt [option "-logminduration [arg time]"]] \
+    [opt [option "-maxruns [arg integer]"]] \
+    [opt [option "-maxslaves [arg integer]"]] \
+    [opt [option "-maxworkers [arg integer]"]] \
+    [opt [option "-recvtimeout [arg time]"]] \
+    [opt [option "-reinit [arg string]"]] \
+    [opt [option "-sendtimeout [arg time]"]] \
+    [opt [option "-waittimeout [arg time]"]] \
+    ]
 
-Configures options for the [arg pool]. The [arg pool] is created with
+Configures or queries options for the [arg pool]. The [arg pool] is created with
 default options if it does not already exist. Default options for the
 [arg pool] are taken from the NaviServer configuration file under the
 section "ns/server/$server/module/nsproxy". In case
 the library is loaded in plain Tcl shell, default configuration options
 are fixed and cannot be changed w/o recompiling the code.
 
+[para] When "ns_proxy configure" is called without the optional
+parameters, the configured values are returned.
 
-Configurable options include:
-
-
+[para] Configurable options include:
 [list_begin options]
 
 
-[opt_def -env [arg setname]]
+[opt_def -env [arg setId]]
 Initializes the worker's process environment with keys/values
 passed in the named NaviServer set (see command [cmd ns_set]).
 
-[opt_def -evaltimeout [arg timeout]]
+[opt_def -evaltimeout [arg time]]
 Specifies the maximum time to wait for a script to be evaluated in
 a proxy. This parameter can be overridden on a per-call basis with
 the optional [opt timeout] parameter to [cmd "ns_proxy eval"].
@@ -148,11 +163,11 @@ home. It is possible to create a custom program and enter the
 proxy event loop with the [emph Ns_ProxyMain] application startup
 routine; see the source code for details.
 
-[opt_def -gettimeout [arg timeout]]
+[opt_def -gettimeout [arg time]]
 Specifies the maximum time to wait to allocate handles from the pool.
 The default is 5 seconds.
 
-[opt_def -idletimeout [arg timeout]]
+[opt_def -idletimeout [arg time]]
 Specifies the maximum time for an idle worker process to live.
 Minimum value is 5 seconds. After expiry of the idle
 timeout, the reaper thread will close the connection pipe and
@@ -173,16 +188,16 @@ Specifies a script to evaluate when proxies are started.  This can
 be used to load additional libraries and/or source script files.
 The default is no script.
 
-[opt_def -logminduration [arg timeout]]
+[opt_def -logminduration [arg time]]
 Specifies a time limit for logging (long) eval operations to the system
 log (similar to "logminduration" in the db drivers). Set it to a high
 value to avoid logging (e.g. 1d). The default is 1s.
 
-[opt_def -maxruns [arg n]]
+[opt_def -maxruns [arg integer]]
 Sets the maximum number of activation of the proxy worker process.
 When the limit it reached, the worker process is automatically restarted.
 
-[opt_def -maxworkers [arg n]]
+[opt_def -maxworkers [arg integer]]
 Sets the maximum number of proxy worker processes. Requests for
 proxies beyond the maximum will result in requesting threads
 waiting for existing proxies to be available instead of creating
@@ -195,14 +210,14 @@ Specifies a script to evaluate after being allocated and before
 being returned to the caller. This can be used to re-initialize
 the worker state. The default is no script.
 
-[opt_def -sendtimeout [arg timeout]]
+[opt_def -sendtimeout [arg time]]
 [opt_def -recvtimeout [arg timeout]]
 Specifies the maximum time to wait to send a script and receive a
 result from a proxy.  The default is 1 second which assumes
 minimal delay sending and receiving reasonably sized scripts and
 results over the connecting pipe.
 
-[opt_def -waittimeout [arg timeout]]
+[opt_def -waittimeout [arg time]]
 Specifies the maximum time to wait for a proxy to exit. The wait
 is performed in a dedicated reaper thread. The reaper will close
 the connection pipe and wait the given timeout. If the timeout is
@@ -215,15 +230,15 @@ resulting in a more disruptive SIGTERM or SIGKILL.
 
 [list_end]
 
-[call [cmd "ns_proxy eval"] [arg handle] [arg script] [opt [arg timeout]]]
+[call [cmd "ns_proxy eval"] [arg proxyId] [arg script] [opt [arg timeout]]]
 
-Evaluates [arg script] in the proxy specified by [arg handle].  The
+Evaluates [arg script] in the proxy specified by [arg proxyId].  The
 optional [opt timeout] argument specifies a maximum time to wait for
 the command to complete before raising an error (see ERROR HANDLING
 below for details on handling errors).
 
 [para]
-Alternatively, the [arg handle] itself may be used as Tcl command like
+Alternatively, the [arg proxyId] itself may be used as Tcl command like
 in the example below:
 
 [example_begin]
@@ -247,8 +262,8 @@ as the proxy is requested by some thread.
 
 [call [cmd "ns_proxy get"] \
      [arg pool] \
-     [opt [option "-handles [arg n]"]] \
-     [opt [option "-timeout [arg timeout]"]] ]
+     [opt [option "-handles [arg integer]"]] \
+     [opt [option "-timeout [arg time]"]] ]
 
 Returns one or more handles to proxies from the specified
 [arg pool]. If no worker process has been started yet, or when additional
@@ -261,7 +276,7 @@ already exist. The optional [option -handle] can be used to
 specify the number of handles to allocate, the default being 1.
 
 [para]
-The optional [opt {-timeout timeout}] arguments specifies the maximum
+The optional [opt {-timeout}] arguments specifies the maximum
 time to wait for the handles to become
 available before raising an error (see ERROR HANDLING below
 for details on handling errors).
@@ -297,15 +312,17 @@ the startup of the proxy under some alternative UID/GID may/will fail.
 
 
 
-[call [cmd "ns_proxy handles"]]
+[call [cmd "ns_proxy handles"] [opt [arg pool]]]
 
 Returns list of all proxies allocated for the current interpreter.
+When the optional argument [arg pool] is specified, just handles from
+this pool are returned.
 
 
-[call [cmd "ns_proxy ping"] [arg handle]]
+[call [cmd "ns_proxy ping"] [arg proxyId]]
 
 This command sends a null request to the proxy specified by the
-[arg handle] argument. The proxy will be verified alive and restarted
+[arg proxyId] argument. The proxy will be verified alive and restarted
 if necessary.  This command is not normally required as the
 [cmd "ns_proxy eval"] command will also verify and restart proxies
 as needed.
@@ -316,20 +333,20 @@ as needed.
 Returns a list of all currently defined proxy pools.
 
 
-[call [cmd "ns_proxy put"] [arg handle]]
+[call [cmd "ns_proxy put"] [arg proxyId]]
 
 This command is alternate name for [cmd "ns_proxy release"].
 
 
-[call [cmd "ns_proxy recv"] [arg handle]]
+[call [cmd "ns_proxy recv"] [arg proxyId]]
 
-Reads result from the script from the proxy specified by [arg handle]
+Reads result from the script from the proxy specified by [arg proxyId]
 (see ERROR HANDLING below for details on handling errors).
 
 
-[call [cmd "ns_proxy release"] [arg handle]]
+[call [cmd "ns_proxy release"] [arg proxyId]]
 
-Return the proxy [arg handle] to the pool. All handles owned by a
+Return the proxy [arg proxyId] to the pool. All handles owned by a
 thread to the corresponding pool must be returned before any handles
 can be allocated again. Within the server, a call to this routine is
 recommended for clarity but not strictly necessary. NaviServer
@@ -337,9 +354,9 @@ installs a trace to release all handles at the end of every connection
 during interpreter deallocation.
 
 
-[call [cmd "ns_proxy send"] [arg handle] [arg script]]
+[call [cmd "ns_proxy send"] [arg proxyId] [arg script]]
 
-Sends [arg script] to the proxy specified by [arg handle].
+Sends [arg script] to the proxy specified by [arg proxyId].
 (see ERROR HANDLING below for details on handling errors).
 
 
@@ -357,16 +374,16 @@ The dict contains the following keys:
 [term runtime].
 
 
-[call [cmd "ns_proxy stop"] [arg pool] [opt [arg handle]]]
+[call [cmd "ns_proxy stop"] [arg pool] [opt [arg proxyId]]]
 
 Stop all worker processes attached to running proxies for the given [arg pool].
-If the optional [arg handle] is given, it stops the process only for
-that handle.
+If the optional [arg proxyId] is given, it stops the process only for
+that proxyId.
 
 
-[call [cmd "ns_proxy wait"] [arg handle] [opt [arg timeout]]]
+[call [cmd "ns_proxy wait"] [arg proxyId] [opt [arg timeout]]]
 
-Waits for results from the proxy specified by [arg handle].
+Waits for results from the proxy specified by [arg proxyId].
 The optional [arg timeout] argument specifies a maximum time
 to wait for the command to complete before raising an
 error (see ERROR HANDLING below for details on handling errors).

@@ -29,19 +29,19 @@ the command [cmd "ns_accesslog"].
 
 
 [call [cmd "ns_accesslog extendedheaders"] \
-	[opt [arg new-headers]]]
+	[opt [arg headers]]]
 
 Return a list of the HTTP header fields which will be appended to each entry in the
-access log. If [arg new-headers] is given it replaces the existing
+access log. If [arg headers] is given it replaces the existing
 setting.
 
 [para] By default, all specified header fields are request header
-fields (like e.g. {Referer x-forwarded-for}). Optionally one can
+fields (like e.g., {Referer x-forwarded-for}). Optionally one can
 specify the request header fields with a prefix "request:" or "response"
 to denote request or response header fields. The prefix can be
 abbreviated to 3 characters (example: {req:Host response:content-type}).
 Note that always the request header fields are reported before the
-response header fields. Caveat: certain response header fields (e.g. "Date"
+response header fields. Caveat: certain response header fields (e.g., "Date"
 or "Server" are not accessible this way).
 
 

@@ -16,14 +16,14 @@ NaviServer.
 
 [call [cmd  "ns_thread create"] \
 	[opt [option "-detached"]] \
-	[opt [option "-name [arg threadName]"]] \
+	[opt [option "-name [arg string]"]] \
 	[opt [option "--"]] \
 	[arg script]]
 
 
 Creates a new thread and executes the provided [arg script]. The optional
 [option -detached] flag specifies that the thread runs detached, meaning it
-cannot be joined or waited for. If [option "-name [arg threadName]"] is specified,
+cannot be joined or waited for. If [option "-name"] is specified,
 the thread is named in the format [term {-tcl-$name:$nr-}], where [term {$nr}] is a
 unique counter.
 
@@ -43,7 +43,7 @@ empty result for detached threads.
 [call [cmd  "ns_thread handle"]]
 
  Returns the handle for the current thread.
-
+ The handle is used as argument [arg threadid] in [cmd "ns_thread wait"].
 
 [call [cmd  "ns_thread id"]]
 
@@ -64,14 +64,14 @@ empty result for detached threads.
  Example result: [term "max 2048000 free 2024408"].
 
 
-[call [cmd  "ns_thread wait"] [arg handle]]
+[call [cmd  "ns_thread wait"] [arg threadid]]
 
- Waits for the thread identified by [arg handle] to complete. If the
+ Waits for the thread identified by [arg threadid] to complete. If the
  thread is still running, the caller blocks until the thread
  finishes. The command returns the result of the script executed by
  the joined thread.
 
- [para] Note: Waiting on an invalid handle or a handle that has
+ [para] Note: Waiting on an invalid threadid or a threadid that has
  already been joined will cause the server to abort with a fatal
  error.
 

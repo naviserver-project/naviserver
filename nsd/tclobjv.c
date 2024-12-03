@@ -1288,7 +1288,7 @@ NsTclParseArgsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
     int        status = TCL_OK;
 
     if (objc != 3) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/specification/ /arg .../");
+        Tcl_WrongNumArgs(interp, 1, objv, "/argspec/ /arg .../");
         return TCL_ERROR;
     }
     /*
@@ -1824,6 +1824,33 @@ AppendRange(Ns_DString *dsPtr, const Ns_ObjvValueRange *r)
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_ObjvTablePrint --
+ *
+ *      Append enumeration strings from Ns_ObjvTable to Tcl_DString.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Updating Tcl_DString.
+ *
+ *----------------------------------------------------------------------
+ */
+char *Ns_ObjvTablePrint(Tcl_DString *dsPtr, Ns_ObjvTable *values)
+{
+    const char *key;
+
+    for (key = values->key; key != NULL; key = (++values)->key) {
+        Tcl_DStringAppend(dsPtr, key, TCL_INDEX_NONE);
+        Tcl_DStringAppend(dsPtr, "|", 1);
+    }
+    Ns_DStringSetLength(dsPtr, dsPtr->length - 1);
+    return dsPtr->string;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * AppendLiteral --
  *
  *      Append literal value to Tcl_DString.
@@ -1837,21 +1864,13 @@ AppendRange(Ns_DString *dsPtr, const Ns_ObjvValueRange *r)
  *
  *----------------------------------------------------------------------
  */
-
 static void
 AppendLiteral(Tcl_DString *dsPtr, const Ns_ObjvSpec *specPtr)
 {
     if (specPtr->proc == Ns_ObjvBool) {
         Tcl_DStringAppend(dsPtr, "true|false", 10);
     } else if (specPtr->proc == Ns_ObjvIndex) {
-        Ns_ObjvTable *values = specPtr->arg;
-        const char   *key;
-
-        for (key = values->key; key != NULL; key = (++values)->key) {
-            Tcl_DStringAppend(dsPtr, key, TCL_INDEX_NONE);
-            Tcl_DStringAppend(dsPtr, "|", 1);
-        }
-        Ns_DStringSetLength(dsPtr, dsPtr->length - 1);
+        Ns_ObjvTablePrint(dsPtr, specPtr->arg);
     }
 }
 

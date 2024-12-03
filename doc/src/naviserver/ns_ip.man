@@ -19,9 +19,9 @@
 
 [list_begin definitions]
 
-[call [cmd "ns_ip match"] [arg subnet] [arg ipaddr]]
+[call [cmd "ns_ip match"] [arg cidr] [arg ipaddr]]
 
- The command validates the provided [arg subnet] specification (IPv4
+ Validates the provided [arg cidr] (subnet) specification (IPv4
  or IPv6 address followed by slash and number of significant bits) and
  the provided [arg ipaddr] and tests whether the IP address is in the
  implied range. The command returns a boolean value as the result. When
@@ -31,25 +31,28 @@
 
 [call [cmd "ns_ip properties"]  [arg ipaddr]]
 
- The command returns a dict with the members "trusted", "public", and
+ Returns a dict with the members "trusted", "public", and
  "type" for the provided [arg ipaddr].
 
 [call [cmd "ns_ip public"]  [arg ipaddr]]
 
- The command tests if the provided [arg ipaddr] is a public IP
+ Tests if the provided [arg ipaddr] is a public IP
  address, i.e., reachable from the public Internet. This excludes
  e.g. loopback, private, link-local addresses and networks.
 
 
 [call [cmd "ns_ip trusted"]  [arg ipaddr]]
 
- The command tests if the provided [arg ipaddr] was defined as a
+ Tests if the provided [arg ipaddr] was defined as a
  trusted IP address in the used configuration file. This is important
  for dealing with reverse proxy servers.
 
-[call [cmd "ns_ip valid"] [opt [option "-type [arg IPv4|IPv6]"]] [arg ipaddr]]
+[call [cmd "ns_ip valid"]\
+        [opt [option "-type ipv4|ipv6"]] \
+        [opt --] \
+        [arg ipaddr]]
 
- The command tests if the provided [arg ipaddr] is a valid IP
+ Tests if the provided [arg ipaddr] is a valid IP
  address. With the optional [opt [option "-type"]] argument the result
  can be constraint further to check, if the address is an IPv4 or an
  IPv6 address.
@@ -71,12 +74,12 @@
  
  # Is IP address a valid IPv6 address?
  % set ip [lb]ns_conn peeraddr[rb]
- % ns_ip valid -type IPv6 $ip
+ % ns_ip valid -type ipv6 $ip
  % ns_ip match ::/0 $ip
  % string equal IPv6 [lb]dict get [lb]ns_ip properties $ip[rb] type[rb]
  
  # Is IP address a valid IPv4 address?
- % ns_ip valid -type IPv4 $ip
+ % ns_ip valid -type ipv4 $ip
  % ns_ip match 0.0.0.0/0 $ip
  % string equal IPv4 [lb]dict get [lb]ns_ip properties $ip[rb] type[rb]
 

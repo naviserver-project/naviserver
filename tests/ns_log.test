@@ -37,7 +37,7 @@ test ns_asynclogfile-1.4 {syntax: ns_asynclogfile write} -body {
 
 test ns_log-1.0 {syntax: ns_log} -body {
     ns_log
-} -returnCodes error -result {wrong # args: should be "ns_log /severity/ /string/ ?/string/ ...?"}
+} -returnCodes error -result {wrong # args: should be "ns_log /severity/ /message .../"}
 
 #######################################################################################
 #  test ns_logroll
@@ -86,7 +86,7 @@ test ns_logctl-1.7 {syntax: ns_logctl peek} -body {
 
 test ns_logctl-1.8 {syntax: ns_logctl register} -body {
     ns_logctl register
-} -returnCodes error -result {wrong # args: should be "ns_logctl register /script/ ?/arg/?"}
+} -returnCodes error -result {wrong # args: should be "ns_logctl register /script/ ?/arg .../?"}
 
 test ns_logctl-1.9 {syntax: ns_logctl release} -body {
     ns_logctl release -
@@ -98,7 +98,7 @@ test ns_logctl-1.10 {syntax: ns_logctl severities} -body {
 
 test ns_logctl-1.11 {syntax: ns_logctl severity} -body {
     ns_logctl severity
-} -returnCodes error -result {wrong # args: should be "ns_logctl severity /severity/ ?-color /color/? ?-intensity /intensity/? ?/bool/?"}
+} -returnCodes error -result {wrong # args: should be "ns_logctl severity /severity/ ?-color black|red|green|yellow|blue|magenta|cyan|gray|default? ?-intensity normal|bright? ?true|false?"}
 
 test ns_logctl-1.12 {syntax: ns_logctl stats} -body {
     ns_logctl stats -
@@ -246,7 +246,7 @@ test ns_log-5.9 {flush} -body {
 
 test ns_log-6.1 {configuration} -body {
     ns_logctl severity
-} -returnCodes error -result {wrong # args: should be "ns_logctl severity /severity/ ?-color /color/? ?-intensity /intensity/? ?/bool/?"}
+} -returnCodes error -result {wrong # args: should be "ns_logctl severity /severity/ ?-color black|red|green|yellow|blue|magenta|cyan|gray|default? ?-intensity normal|bright? ?true|false?"}
 
 test ns_log-6.2 {configuration} -body {
     ns_logctl severity ?

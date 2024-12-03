@@ -23,7 +23,7 @@ test ns_queryget-1.0  {syntax: ns_queryget} -body {
     ns_queryget
 } -returnCodes error -result {wrong # args: should be "ns_queryget key ?value?"}
 
-# Tcl proc "ns_queryget" - message should be {wrong # args: should be "ns_queryget /key/ ?value?"}
+# Tcl proc "ns_queryget" - message should be {wrong # args: should be "ns_queryget /key/ ?/value/?"}
 
 #######################################################################################
 #  test ns_querygetall

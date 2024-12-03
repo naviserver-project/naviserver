@@ -95,11 +95,11 @@ test ns_memoize-1.0 {syntax: ns_memoize} -body {
     ns_memoize
 } -returnCodes error -result {wrong # args: should be "?-timeout /timeout/? ?-expires /expires/? ?--? /script/ ?/args/?"}
 
-# ns_memoize is a Tcl proc: message should be {wrong # args: should be "ns_memoize ?-timeout /timeout/? ?-expires /expires/? ?--? /script/ ?args?""}
+# ns_memoize is a Tcl proc: message should be {wrong # args: should be "ns_memoize ?-timeout /time/? ?-expires /time/? ?--? /script/ ?/arg .../?""}
 
 test ns_memoize_flush-1.0 {syntax: ns_memoize_flush} -body {
     ns_memoize_flush x ?
-} -returnCodes error -result {wrong # args: should be "ns_memoize_flush ?pattern?"}
+} -returnCodes error -result {wrong # args: should be "ns_memoize_flush ?/pattern/?"}
 
 test ns_memoize_stats-1.0 {syntax: ns_memoize_stats} -body {
     ns_memoize_stats ?

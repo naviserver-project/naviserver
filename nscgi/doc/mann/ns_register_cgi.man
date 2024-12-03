@@ -14,14 +14,14 @@ This document describes how to register a CGI handler programmatically.
 [call [cmd ns_register_cgi] \
      [opt [option -noinherit]] \
      [opt [option -matchsegments]] \
-     [opt [option "-path [arg source-location]"]] \
+     [opt [option "-path [arg string]"]] \
      [opt --] \
      [arg method] \
-     [arg URL] \
+     [arg url] \
      ]
 
 The command registers a handler requests matching [arg method] and
-[arg URL] to be handled as CGI programs. The specified [arg URL] can
+[arg URL] to be handled as CGI programs. The specified [arg url] can
 contain a match pattern, which is handled by the NaviServer urlspace
 (like in [cmd ns_register_proc]). The match will always be a match on
 the last URL segment, unless [option -matchsegments] is specified.

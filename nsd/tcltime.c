@@ -520,7 +520,7 @@ NsTclSleepObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
     int          rc = TCL_OK;
     Ns_Time     *tPtr = NULL;
     Ns_ObjvSpec  args[] = {
-        {"timespec", Ns_ObjvTime, &tPtr, &nonnegTimeRange},
+        {"duration", Ns_ObjvTime, &tPtr, &nonnegTimeRange},
         {NULL, NULL, NULL, NULL}
     };
 

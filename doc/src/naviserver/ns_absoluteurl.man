@@ -2,7 +2,7 @@
 [manpage_begin ns_absoluteurl n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {Construct a completed URL from an incomplete URL based on a base URL}]
+[titledesc {Construct a completed URL from an partial URL based on a base URL}]
 
 [description]
 
@@ -10,9 +10,9 @@
 
 [list_begin definitions]
 
-[call [cmd ns_absoluteurl] [arg incompleteurl] [arg baseurl]]
+[call [cmd ns_absoluteurl] [arg partialurl] [arg baseurl]]
 
-[para] Construct a completed URL from a incomplete (e.g. relative) URL
+[para] Constructs a completed URL from a partial (incomplete, e.g., relative) URL
 by taking as many parts as possible from the provided base URL. The
 function uses internally [cmd ns_parseurl] for parsing the provided
 URLs into its components.

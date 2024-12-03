@@ -15,7 +15,10 @@
 [list_begin definitions]
 
 
-[call [cmd ns_adp_argv] [opt [arg index]]]
+[call [cmd ns_adp_argv] \
+        [opt [arg index]] \
+        [opt [arg default]] \
+        ]
 
 
 [list_end]

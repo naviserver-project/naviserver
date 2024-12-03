@@ -44,7 +44,7 @@ test ns_shutdown-1.0 {syntax: ns_shutdown} -body {
 
 test ns_sleep-1.0 {syntax: ns_sleep} -body {
     ns_sleep 1 ?
-} -returnCodes error -result {wrong # args: should be "ns_sleep /timespec/"}
+} -returnCodes error -result {wrong # args: should be "ns_sleep /duration/"}
 
 
 test ns_symlink-1.0 {syntax: ns_symlink} -body {

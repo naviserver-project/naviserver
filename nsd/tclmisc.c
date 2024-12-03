@@ -2634,8 +2634,8 @@ IpTrustedObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
  */
 
 static Ns_ObjvTable addressTypeSet[] = {
-    {"IPv4",    4u},
-    {"IPv6",    6u},
+    // {"IPv4",    4u},  /* we have in other enumeration no case-insensitivity */
+    // {"IPv6",    6u},
     {"ipv4",    4u},
     {"ipv6",    6u},
     {NULL,      0u}
