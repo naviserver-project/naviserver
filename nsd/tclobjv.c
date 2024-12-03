@@ -53,6 +53,9 @@ static int SetMemUnitFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr)
 static void AppendRange(Ns_DString *dsPtr, const Ns_ObjvValueRange *r)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
+static void AppendLiteral(Tcl_DString *dsPtr, const Ns_ObjvSpec *specPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
 static void AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_T separatorLength,
                             bool withRange, bool withDots, const Ns_ObjvSpec *specPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(6);
@@ -1779,24 +1782,24 @@ SetValue(Tcl_Interp *interp, const char *key, Tcl_Obj *valueObj)
     return result;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
- * WrongNumArgs --
+ * AppendRange --
  *
- *          Leave a usage message in the interpreters result.
+ *      Append Range notation to Tcl_DString.
  *
  * Results:
- *          None.
+ *      None.
  *
  * Side effects:
- *          None.
+ *      Updating Tcl_DString.
  *
  *----------------------------------------------------------------------
  */
 
-static void AppendRange(Ns_DString *dsPtr, const Ns_ObjvValueRange *r)
+static void
+AppendRange(Ns_DString *dsPtr, const Ns_ObjvValueRange *r)
 {
     if (r->minValue == LLONG_MIN) {
         Tcl_DStringAppend(dsPtr, "[MIN,", 5);
@@ -1818,13 +1821,66 @@ static void AppendRange(Ns_DString *dsPtr, const Ns_ObjvValueRange *r)
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * AppendLiteral --
+ *
+ *      Append literal value to Tcl_DString.
+ *      Supported are Booleans and enumeration types.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Updating Tcl_DString.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AppendLiteral(Tcl_DString *dsPtr, const Ns_ObjvSpec *specPtr)
+{
+    if (specPtr->proc == Ns_ObjvBool) {
+        Tcl_DStringAppend(dsPtr, "true|false", 10);
+    } else if (specPtr->proc == Ns_ObjvIndex) {
+        Ns_ObjvTable *values = specPtr->arg;
+        const char   *key;
+
+        for (key = values->key; key != NULL; key = (++values)->key) {
+            Tcl_DStringAppend(dsPtr, key, TCL_INDEX_NONE);
+            Tcl_DStringAppend(dsPtr, "|", 1);
+        }
+        Ns_DStringSetLength(dsPtr, dsPtr->length - 1);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AppendParameter --
+ *
+ *      Append a single parameter Tcl_DString.  Supported are
+ *      positional and non-positional, optional and non-optional
+ *      parameters.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      Updating Tcl_DString.
+ *
+ *----------------------------------------------------------------------
+ */
+
 static void
 AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_T separatorLength,
                 bool withRange, bool withDots, const Ns_ObjvSpec *specPtr)
 {
-    const char *name = specPtr->key;
-    const char  firstChar = *name;
-    TCL_SIZE_T  nameLength = (TCL_SIZE_T)strlen(name);
+    const char  *name = specPtr->key;
+    const char   firstChar = *name;
+    TCL_SIZE_T   nameLength = (TCL_SIZE_T)strlen(name);
+    bool         isLiteral = (specPtr->proc == Ns_ObjvBool || specPtr->proc == Ns_ObjvIndex);
 
     /*
      * For optional parameter, use always the question mark as
@@ -1835,9 +1891,8 @@ AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_T separatorL
         separatorLength = 1;
     }
 
-    Tcl_DStringAppend(dsPtr, separator, separatorLength);
-
     if (firstChar == '-') {
+        Tcl_DStringAppend(dsPtr, separator, separatorLength);
         Tcl_DStringAppend(dsPtr, name, nameLength);
 
         /*
@@ -1848,17 +1903,8 @@ AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_T separatorL
             Ns_ObjvProc *objvProc = specPtr->proc;
 
             Tcl_DStringAppend(dsPtr, " ", 1);
-            if (objvProc == Ns_ObjvBool) {
-                Tcl_DStringAppend(dsPtr, "true|false", 10);
-            } else if (objvProc == Ns_ObjvIndex) {
-                Ns_ObjvTable *values = specPtr->arg;
-                const char *key;
-
-                for (key = values->key; key != NULL; key = (++values)->key) {
-                    Tcl_DStringAppend(dsPtr, key, TCL_INDEX_NONE);
-                    Tcl_DStringAppend(dsPtr, "|", 1);
-                }
-                Ns_DStringSetLength(dsPtr, dsPtr->length - 1);
+            if (isLiteral) {
+                AppendLiteral(dsPtr, specPtr);
             } else {
                 /*
                  * Non-literal cases. Use placeholder syntax.
@@ -1897,36 +1943,77 @@ AppendParameter(Tcl_DString *dsPtr, const char *separator, TCL_SIZE_T separatorL
                 Tcl_DStringAppend(dsPtr, "/", 1);
             }
         }
+        Tcl_DStringAppend(dsPtr, separator, separatorLength);
+
     } else if (firstChar == '?') {
         /*
          * Optional positional parameter, just placeholder are supported.
          */
-        Tcl_DStringAppend(dsPtr, "/", 1);
-        Tcl_DStringAppend(dsPtr, name + 1, nameLength - 1);
-        if (withRange) {
-            AppendRange(dsPtr, specPtr->arg);
-        } else if (withDots) {
-            Tcl_DStringAppend(dsPtr, " ...", 4);
+        if (isLiteral) {
+            /*
+             * We have to provide question marks in the literal case
+             * manually.
+             */
+            Tcl_DStringAppend(dsPtr, "?", 1);
+            AppendLiteral(dsPtr, specPtr);
+            Tcl_DStringAppend(dsPtr, "?", 1);
+        } else {
+            /*
+             * Placeholder notation
+             */
+            Tcl_DStringAppend(dsPtr, separator, separatorLength);
+            Tcl_DStringAppend(dsPtr, "/", 1);
+            Tcl_DStringAppend(dsPtr, name + 1, nameLength - 1);
+            if (withRange) {
+                AppendRange(dsPtr, specPtr->arg);
+            } else if (withDots) {
+                Tcl_DStringAppend(dsPtr, " ...", 4);
+            }
+            Tcl_DStringAppend(dsPtr, "/", 1);
+            Tcl_DStringAppend(dsPtr, separator, separatorLength);
         }
-        Tcl_DStringAppend(dsPtr, "/", 1);
     } else {
         /*
-         * Required positional parameter, just placeholder are supported.
+         * Required positional parameter.
          */
-        Tcl_DStringAppend(dsPtr, name, nameLength);
-        if (withRange) {
-            AppendRange(dsPtr, specPtr->arg);
-        } else if (withDots) {
-            Tcl_DStringAppend(dsPtr, " ...", 4);
+        if (isLiteral) {
+            AppendLiteral(dsPtr, specPtr);
+        } else {
+            /*
+             * Placeholder notation
+             */
+            Tcl_DStringAppend(dsPtr, separator, separatorLength);
+            Tcl_DStringAppend(dsPtr, name, nameLength);
+            if (withRange) {
+                AppendRange(dsPtr, specPtr->arg);
+            } else if (withDots) {
+                Tcl_DStringAppend(dsPtr, " ...", 4);
+            }
+            Tcl_DStringAppend(dsPtr, separator, separatorLength);
         }
     }
-    Tcl_DStringAppend(dsPtr, separator, separatorLength);
 
     /*
-     * Append space at the end
+     * Append space at the end.
      */
     Tcl_DStringAppend(dsPtr, " ", 1);
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WrongNumArgs --
+ *
+ *          Leave a usage message in the interpreters result.
+ *
+ * Results:
+ *          None.
+ *
+ * Side effects:
+ *          None.
+ *
+ *----------------------------------------------------------------------
+ */
 
 static void
 WrongNumArgs(const Ns_ObjvSpec *optSpec, Ns_ObjvSpec *argSpec, Tcl_Interp *interp,
