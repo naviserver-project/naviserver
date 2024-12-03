@@ -2,18 +2,29 @@
 [manpage_begin   ns_adp_register n [vset version]]
 [moddesc  {NaviServer Built-in Commands}]
 
-[titledesc {Creating custom ADP tags}]
+[titledesc {Creating Custom ADP Tags}]
 
 [description]
 
-These commands enable definition of HTML tags within an ADP file
-which are expanded and evaluated by the server before returning output
-to the client. Tags are defined as either a single tag with
-options, e.g.,  <mytag a=b c=d>  or as an
-opening/closing tag pair, e.g.,  <mytag> text
-</mytag> . This approach is an alternative to
-direct calls via the  <% script %>  syntax as
-described in the  ns_adp  man page.
+
+
+ These commands enable the definition of custom ADP tags
+ (application-specific, XML-like tags) which are expanded whenever ADP
+ content (.adp files or ADP strings processed via [cmd ns_adp_parse])
+ is processed. Registering application-specific ADP tags is a means to
+ include script-driven, application-specific content in a web page,
+ providing an alternative to embedding scripts in ADP pages via the
+ [const <%] script [const %>] syntax as described in the
+ [uri ../../manual/files/adp-overview.html "ADP Overview"] man page.
+
+
+[para] Registered tags can either be tags with content -- consisting of
+ an opening and a closing tag -- or tags defining empty elements, where
+ no closing tag is defined. When both the [arg tag] and the
+ [arg endtag] are specified in the registering command, the tags must have
+ content; when the [arg endtag] is omitted in the registering command,
+ empty elements are defined.
+
 
 [section COMMANDS]
 
@@ -24,45 +35,39 @@ described in the  ns_adp  man page.
 	[opt [arg endtag]] \
 	[arg adpstring]]
 
-This command registers an ADP
-code fragment to be invoked when the specified tag is
-encountered while parsing an ADP. The  [arg tag] argument
-specifies the tag that will trigger invocation of the ADP
-fragment, which is specified by the  [arg adpstring] argument.
+ Registers an ADP snippet [arg adpstring] to be included when the
+ specified [arg tag] is encountered while parsing the ADP content. The
+ [arg tag] argument specifies the tag that will trigger the inclusion
+ of the parsed ADP fragment [arg adpstring].
 
-[para]
-If the [arg endtag] argument is specified, then the ADP fragment
-will be invoked with two arguments: The first will be the
-enclosed content, and the second will be the name of an
-ns_set with any attributes specified in the tag. If no
-[arg endtag] argument is specified, the ADP fragment will
-only be passed the name of the ns_set. The arguments may be
-retrieved using  ns_adp_bindargs  or  ns_adp_argc
-and  ns_adp_argv .
+[para] If the optional [arg endtag] argument is specified, the content
+ between the opening and closing tags is replaced by the
+ [arg adpstring], and the enclosed content is discarded. This behavior
+ differs from the other tag registering commands, where the enclosed
+ content can be processed or passed to the handler.
 
-[para]
-When the ADP fragment is invoked, its result is inserted in the output
-instead of the tag (or, if the [arg endtag] was specified,
-in place of the tag, end tag, and the enclosed content).
+[para] Note: Attributes specified in the tag are not accessible when
+ using [cmd ns_adp_registeradp]. If you need to access attributes or
+ the enclosed content, consider using [cmd ns_adp_registerproc] or
+ [cmd ns_adp_registerscript].
 
 
-[para]
-Note: Care must be taken when using this function from inside an ADP, because
-the ADP string  is likely to contain script delimiters
-( <% ... %> ) which will prematurely terminate
-script fragments. It is probably easier to restrict use of
-this function to .tcl files.
 
 [example_begin]
- ns_adp_registeradp example example.adp
- 
+ # Register an ADP snippet to display the current date as tag "printdate"
  ns_adp_registeradp printdate {
       The current date is: <% ns_adp_puts [lb]ns_httptime [lb]ns_time[rb][rb] %>
  }
 [example_end]
 
-Once defined, typically in a startup script, you could simple include  <example> or
-<printdate> in ADP pages.
+Usage example in an ADP page:
+
+[example_begin]
+ ... header ...
+ <p>This is my page.</p>
+  <printdate>
+ ... footer ...
+[example_end]
 
 
 [call [cmd ns_adp_registerproc] \
@@ -70,55 +75,157 @@ Once defined, typically in a startup script, you could simple include  <example>
 	[opt [arg endtag]] \
 	[arg proc]]
 
-This command registers a Tcl procedure to be evaluated when the given
-tag is encountered. The tag argument specifies the tag that will
-trigger a call to the procedure specified by the [arg proc] argument.
+ Registers a Tcl procedure to be evaluated when the given [arg tag] is
+ encountered in ADP content. The procedure [arg proc] will be called
+ with a variable number of arguments, one for each attribute value
+ provided in the tag. If the [arg endtag] argument is specified, the
+ procedure will also receive a final argument containing the content
+ enclosed between the tags. No evaluation of the enclosed content is
+ performed; it is passed as a single text block.
 
-[para]
-The procedure will be called with a variable number of arguments,
-one for each of the attributes provided in the tag. If the
-[arg endtag] argument is specified, the procedure will also receive a
-final argument with the contents of the text enclosed
-between the tags. No evaluation of the content will be
-performed, it will be passed as a single text block.
+[para] When the procedure is invoked, its result replaces the tag (and
+ the enclosed content, if [arg endtag] is specified) in the output.
 
-[para]
-When the procedure is invoked, its result is inserted in the
-output instead of the tag (or, if the [arg endtag] was specified, in place of
-the tag, end tag, and the enclosed content).
+
+[example_begin]
+ # Define the tag handler
+ proc geturltag {args} {
+    # Extract the URL from the last argument
+    set url [lb]lindex $args end[rb]
+    # Extract any options (attributes)
+    set options [lb]lrange $args 0 end-1[rb]
+    # Perform an HTTP GET request
+    set response [lb]ns_http run {*}$options $url[rb]
+    # Return the response body
+    dict get $response body
+ }
+ 
+ # Register the tag handler with an opening and closing tag
+ ns_adp_registerproc geturl /geturl geturltag
+[example_end]
+
+Usage example in an ADP page:
+[example_begin]
+ ... header ...
+ <p>This is my page.
+ 
+ <geturl -timeout 3s >https://example.com/hello.html</geturl>
+ 
+ <p>Next paragraph.</p>
+ ... footer ...
+[example_end]
+
+[para] Note:
+
+ When using this registration command, the attribute values specified
+ in the tag are passed as arguments to the Tcl procedure. The
+ attribute names are not passed, only their values, and they are
+ provided in the order they appear in the tag.
+
+[example_begin]
+ proc ::reporttags {args} {
+   return $args
+ }
+ ns_adp_registerproc reporttags  ::reporttags
+ 
+ ns_adp_parse -string {<reporttags CamelCase x=X A=a>}
+ # Returns: CamelCase X a
+[example_end]
 
 
 [call [cmd ns_adp_registerscript] \
 	[arg tag] \
 	[opt [arg endtag]] \
-	[arg script]]
+	[arg proc]]
 
-This command registers a Tcl script to be evaluated when the
-given tag is encountered. The [arg tag] argument specifies the tag that
-will trigger evaluation of the script specified by the
-[arg script] argument.
+ Registers a Tcl procedure [arg proc] to be evaluated when the given
+ [arg tag] is encountered. This command provides access to both the
+ attribute names and values, as well as the enclosed content if an
+ [arg endtag] is specified.
 
-[para]
-If the [arg endtag] argument is specified, then the script will be
-modified with two arguments appended: The first will be the
-enclosed content, and the second will be the name of an
-ns_set with any attributes specified in the tag. If no
-[arg endtag]  argument is specified, the script will be
-modified with just the name of the ns_set appended.
+[para] When the tag is registered with an [arg endtag], the Tcl
+ [arg proc] is called with two arguments: first, the enclosed content as a
+ string, and second, the [cmd ns_set] with the tag's attributes.
+ When registered without an end tag, the proc is called with a single
+ agument (the ns_set with the arguments).
 
 [para]
-When the script is evaluated, its result is inserted in the output
-instead of the tag (or, if the [arg endtag]  was specified, in place of
-the tag, end tag, and the enclosed content).
+When the tag is parsed, it is replaced by the result of the registered
+[arg proc].
+
+[para]
+
+[example_begin]
+ # Define the tag handler
+ proc onday {string attributes} {
+   # Get the 'day' attribute
+   set day [lb]ns_set iget $attributes day[rb]
+   
+   # Check if the current date matches the specified day
+   if {[lb]ns_fmttime [lb]ns_time[rb] "%m/%d"[rb] eq $day} {
+     return $string
+   }
+ }
+ 
+ # Register the tag handler with an opening and closing tag #
+ ns_adp_registerscript onday /onday onday
+[example_end]
+
+
+Usage example in an ADP page:
+
+[example_begin]
+ ... header ...
+ <p>This is my page.</p>
+ 
+ <onday day="12/25"><p>Merry Christmas and a Happy New Year</p></onday>
+ 
+ <p>Next paragraph.</p>
+ ... footer ...
+[example_end]
+
+Note: The major differences between [cmd ns_adp_registerscript] and
+[cmd ns_adp_registerproc] are the calling conventions and the passing
+of attributes:
+
+[list_begin itemized]
+[item] With [cmd ns_adp_registerproc], only the values of the
+       attributes are passed to the procedure, without the attribute
+       names.
+
+[item] With [cmd ns_adp_registerscript], both attribute names and
+       values are available, passed as an [cmd ns_set].
+
+[item] Attributes without a value (no equals sign) inside the tag are
+       assigned their name as the value in the [cmd ns_set].
+[list_end]
+
+[para] This command is useful when you need to access both attribute
+ names and values, or when you need to process the enclosed content.
+
+[example_begin]
+ proc ::reporttags {attributes} {
+   # Convert the ns_set to a list for display
+   ns_set array $attributes
+ }
+ ns_adp_registerscript reporttags  ::reporttags
+ 
+ ns_adp_parse -string {<reporttags CamelCase x=X A=a>}
+ # Returns: CamelCase CamelCase x X A a
+[example_end]
+
+
 
 [para]
 The following is a simple way of handling conditional content in ADPs:
 
+
+
 [example_begin]
+ # Store content in a global variable
  proc remember {input tagset} {
- 
    set tagname [lb]ns_set iget $tagset name[rb]
-   if {[lb]string match "" $tagname[rb]} {
+   if {$tagname eq ""} {
      set ::_adp_memory($tagname) $input
      return ""
    } else {
@@ -126,8 +233,8 @@ The following is a simple way of handling conditional content in ADPs:
    }
  }
  
+ # Retrieve and parse stored content
  proc recall {name} {
- 
    if {[lb]info exists ::_adp_memory($name)[rb]} {
      set parsecommand [lb]list ns_adp_parse -string[rb]
      lappend parsecommand $::_adp_memory($name)
@@ -162,8 +269,8 @@ result." if there are no rows:
  <remember name="norows">
  
  <%
-  if {[lb]llength $rows[rb]  >  0}  {
-    recall  "hasrows_header"
+  if {[lb]llength $rows[rb] > 0}  {
+    recall "hasrows_header"
     foreach row $rows {
       set column $row
       recall "hasrows_rows"
@@ -175,10 +282,15 @@ result." if there are no rows:
  %>
 [example_end]
 
+ In this example, the `remember` procedure stores different parts of
+ the output, and the `recall` procedure retrieves and processes them
+ conditionally based on whether there are rows from the database
+ query.
+
 [list_end]
 
-[see_also ns_register ns_adp ns_adp_include]
-[keywords "server built-in" ADP tag]
+[see_also ns_register ns_adp ns_adp_include ns_set]
+[keywords "server built-in" ADP tag "custom tags"]
 
 [manpage_end]
 
