@@ -12,7 +12,7 @@
  [para] The [cmd ns_adp_puts] command is similar to [cmd ns_write],
  but there are important differences. While [cmd ns_write] writes
  directly to the client's connection and allows you to send header
- fields and control the output stream at a low level,
+ fields and control the output stream at a low-level,
  [cmd ns_adp_puts] operates at a higher level by writing to the ADP output
  buffer and automatically appending newlines by default. Therefore,
  [cmd ns_adp_puts] should be used for output within ADP pages, as it
