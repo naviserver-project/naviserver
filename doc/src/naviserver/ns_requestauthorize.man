@@ -2,91 +2,57 @@
 [manpage_begin ns_requestauthorize n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {Perform authorization check}]
+[titledesc {Authorization check}]
 
 [description]
 
-This function does the same permission check that the NaviServer does
-before serving a URL via the nsperm module. If the nsperm module is
-loaded, the algorithm is as follows. See Chapter 6 in the NaviServer
-Administrator's Guide for information on access control, including
-permissions.
+This function does the same permission check that NaviServer does
+before serving a URL. In order to perform permission checks,
+authentication procs have to be registered.
 
-[section {COMMANDS}]
+[para] One implementation which registers such callbacks is the nsperm
+module to perform basic HTTP authorization. For configuration and
+setup details of the [term nsperm] module see
+[uri ../../nsperm/files/admin-tuning.html \
+"nsperm - NaviServer Permissions and Access Control Guide"].
+
+[para] The permission and authorization checks of NaviServer
+are not hard-coded. Many packages based on NaviServer (such as e.g.,
+[uri https://openacs.org/ OpenACS])
+provide their own permissiion checking logic.
+
+[section COMMANDS]
 
 [list_begin definitions]
 
-
 [call [cmd ns_requestauthorize] \
-	[arg method] \
-	[arg url] \
-	[arg authuser] \
-	[arg authpasswd] \
-	[opt [arg ipaddr]]]
+        [arg method] \
+        [arg url] \
+        [arg authuser] \
+        [arg authpasswd] \
+        [opt [arg ipaddr]] \
+        ]
+Performs the same permission check that NaviServer does
+before serving a URL, but performs it in the provided context,
+checking permission for the provided [arg method], [arg url],
+[arg authuser] and [arg authpasswd], and optionally an [arg ipaddr].
 
-[list_end]
-
-[list_begin enumerated]
-
-[enum] If the authuser is "nsadmin", the password is correct, and the
-IP address of the client is allowed nsadmin access, then access is
-authorized.
-
-[enum]  Find the relevant permission record. If an exact match for the
-method and URL combination is not found, the end of the URL is pared
-down until a match is found. For example, if there is no match for
-"/products/cereals/raisin_bran.html," then the server looks for a
-permission record for the URL "/products/cereals." If that permission
-record is specified as "Exact URL match is NOT required," then that
-permission record is used.
-
-[list_end]
-
-[para] By default, the modules is predefined with an entry that says
-GET on "/" is open to the world. If no relevant permission record is
-found, access is denied (forbidden).
-
-[list_begin enumerated]
-
-[enum] If the authuser is in the "Allow Users" list, access is
-permitted. If the authuser is a member of a group in the "Allow
-Groups" list and not in the "Deny Users" list, access is permitted.
-
-[enum] If the host is in the "Hosts to allow" list, access is
-permitted. If the host is in the "Hosts to deny" list, access is
-denied.
-
-[enum] If the request does not come in with authorization data, access
-is denied.
-
-[enum] The user and password are verified. If there is no password
-specified in the database, any password is accepted.
-
-[enum] Otherwise, access is denied.
-
-[list_end]
-
-
-
-[section {RETURN VALUES}]
-The following values can be returned by [cmd ns_requestauthorize].
+[para]
+The following values can be returned:
 
 [list_begin itemized]
 [item] OK - The user has permission to execute this URL and method
-
 [item] ERROR - There was an error performing the check.
-
 [item] FORBIDDEN - There is no possible user/password/IP address
-combination that would give authorization.
-
+       combination that would give authorization.
 [item] UNAUTHORIZED - The user does not have permission to execute this
-URL and method.
-
+       URL and method.
 [list_end]
 
 
-[see_also nsd]
-[keywords "server built-in" ns_checkurl nsperm]
+[list_end]
+
+[keywords "server built-in" nsperm]
 
 [manpage_end]
 

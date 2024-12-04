@@ -512,6 +512,7 @@ sections of related commands.
 [call [cmd "ns_adp_stream"]]            Use [cmd "ns_adp_ctl stream"] instead.
 [call [cmd "ns_browsermatch"]]          Use standard API instead.
 [call [cmd "ns_cancel"]]                Use [cmd "ns_unschedule_proc"] instead.
+[call [cmd "ns_checkurl"]]              Use [cmd "ns_requestauthorize"] instead.
 [call [cmd "ns_chmod"]]                 Use [cmd "file attributes"] instead.
 [call [cmd "ns_choosecharset"]]         Use standard internationalization commands instead.
 [call [cmd "ns_conncptofp"]]            Use [cmd "ns_conn copy"] instead.
