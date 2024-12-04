@@ -202,7 +202,7 @@ variant of the command.  The default value is "Argon2id".
 
 [call [cmd "ns_crypto::eckey generate"] \
      [opt [option "-name [arg value]"]] \
-     [option [option "-pem [arg value]"]] \
+     [opt [option "-pem [arg value]"]] \
      ]
 
 Generate an EC pemfile without the need of an external command.
