@@ -173,7 +173,7 @@ Track all user agents which ever visited our site:
  ns_register_filter preauth GET /* browser_tracking_filter
 [example_end]
 
-[see_also ns_cookiecharset ns_time]
+[see_also ns_time]
 [keywords "server built-in" cookie session]
 
 [manpage_end]

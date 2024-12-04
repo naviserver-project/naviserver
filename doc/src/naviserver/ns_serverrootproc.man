@@ -53,7 +53,7 @@ parameter [term initcmd] in the section [term tcl] of the server (here
          # active connection.
          #
          if {[lb]ns_conn isconnected[rb]} {
-           set rawHost [lb]ns_set iget [lb]ns_conn headers[rb] host[rb]
+           set rawHost [lb]ns_set get -nocase [lb]ns_conn headers[rb] host[rb]
            ns_log notice "serverroot <$args>" \
               server  '[lb]ns_info server[rb]' \
               host    '$rawHost' \

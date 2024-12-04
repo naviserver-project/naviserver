@@ -35,7 +35,7 @@ token is returned in the ns_set.
 like any other request header field:
 
 [example_begin]
- set auth_header [lb]ns_set iget [lb]ns_conn headers[rb] Authorization ""[rb]
+ set auth_header [lb]ns_set get -nocase [lb]ns_conn headers[rb] Authorization ""[rb]
 [example_end]
 
 

@@ -8,10 +8,10 @@
 
 This command returns the path to the private and shared Tcl libraries, optionally specifying a module as well.
 
-library must either be "private" or "shared".  The private library is the same
-as what's returned from ns_info tcllib as defined in the config .tcl at server
-start-up.  The shared library is relative to the path specified by ns_info home,
-in the "modules/tcl" subdirectory.
+The second argument must either be "private" or "shared".  The private library is the same
+as what's returned from [cmd "ns_server tcllib"] as defined in the config .tcl at server
+start-up.  The shared library is relative to the path specified by
+[cmd "ns_info home"], in the [const modules/tcl] subdirectory.
 
 The optional module is simply concatenated to the path returned from ns_library.
 
@@ -44,13 +44,13 @@ The optional module is simply concatenated to the path returned from ns_library.
 [example_end]
 
 [example_begin]
- % file join [lb]ns_info tcllib[rb] exampleModule
+ % file join [lb]ns_server tcllib[rb] exampleModule
  /home/ns/servers/exampleServer/tcl/exampleModule
 [example_end]
 
 
-[see_also nsd]
-[keywords "server built-in" ns_info home ns_info tcllib]
+[see_also nsd ns_info ns_server]
+[keywords "server built-in"tcllib]
 
 [manpage_end]
 

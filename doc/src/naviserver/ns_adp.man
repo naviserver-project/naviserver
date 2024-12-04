@@ -186,7 +186,7 @@ compressed first.
 
 [para]
 Alternatively, an incremental response can be generated either
-in response to calling the  ns_adp_stream  or  ns_adp_flush
+in response to calling the  [cmd "ns_adp_ctl stream"] or  ns_adp_flush
 commands or automatically due to buffer overflow. In this
 case, an HTTP response will be generated on the first flush
 which specifies incremental content using HTTP/1.1

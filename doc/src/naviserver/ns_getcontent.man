@@ -43,7 +43,7 @@ Tcl.
 
 [example_begin]
  if {[lb]ns_conn method[rb] in {PUT POST}
-    && [lb]ns_set iget [lb]ns_conn headers[rb] content-type] eq "application/json"
+    && [lb]ns_set get -nocase [lb]ns_conn headers[rb] content-type] eq "application/json"
  } {
     package req json
  

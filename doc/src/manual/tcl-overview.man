@@ -394,13 +394,13 @@ better-suited to different situations:
     # ns_conn function.
     #
     # * The value for a particular header line is extracted
-    # with "ns_set iget" (case insensitive get).
+    # with "ns_set get -nocase" (case insensitive get).
  
     ns_register_proc GET /showbrowser showheader user-agent
     ns_register_proc GET /showhost    showheader Host
  
     proc showheader {key} {
-          set value [lb]ns_set iget [lb]ns_conn headers[rb] $key[rb]
+          set value [lb]ns_set get -nocase [lb]ns_conn headers[rb] $key[rb]
           ns_return 200 text/plain "$key: $value"
     }
 [example_end]
@@ -477,14 +477,13 @@ by the client within a Tcl script.
  #   ns_conn function.
  #
  # * The value for a particular header line is extracted
- #   with "ns_set iget", the case insensitive counterpart to
- #   "ns_set get".
+ #   with "ns_set get -nocase", case insensitive.
  
  ns_register_proc GET /showbrowser showheader user-agent
  ns_register_proc GET /showhost    showheader Host
  
  proc showheader {key} {
-    set value [lb]ns_set iget [lb]ns_conn headers[rb] $key[rb]
+    set value [lb]ns_set get -nocase [lb]ns_conn headers[rb] $key[rb]
     ns_return 200 text/plain "$key: $value"
  }
 [example_end]
@@ -728,7 +727,7 @@ code when sending raw data to the client.
  proc not_here {} {
    ns_respond -status 302 -type text/plain \
       -string "Redirection" \
-      -headers [lb]ns_set new myheaders \
+      -headers [lb]ns_set create -nocase myheaders \
          Location [lb]ns_conn location[rb]/example/finaldest[rb] \
          [rb]
  }
@@ -959,7 +958,7 @@ this is necessary).
  
     # Copy the request content to the input file.
     set fp [lb]open $inp w[rb]
-    ns_writecontent $fp
+    ns_conn copy 0 [lb]ns_conn contentlength[rb] $fp
     set len [lb]tell $fp[rb]
     close $fp
  

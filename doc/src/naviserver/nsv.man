@@ -296,7 +296,7 @@ and within an ADP page, instead of:
 [example_begin]
  <%
   ns_share myshare
-  ns_puts $myshare(key1)
+  ns_adp_puts $myshare(key1)
  %>
  
  <%=$myshare(key2)%>
@@ -307,7 +307,7 @@ use:
 
 [example_begin]
  <%
- ns_puts [lb]nsv_get myshare key1[rb]
+ ns_adp_puts [lb]nsv_get myshare key1[rb]
  %>
  
  <%=[lb]nsv_get myshare key2[rb]%>

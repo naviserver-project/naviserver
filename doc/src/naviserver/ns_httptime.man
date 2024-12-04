@@ -22,7 +22,7 @@
 [list_end]
 
 [keywords "global built-in" time]
-[see_also ns_fmttime ns_localtime ns_parsehttptime ns_parsetime ns_time]
+[see_also ns_fmttime ns_localtime ns_parsehttptime ns_time]
 
 [manpage_end]
 

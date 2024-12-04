@@ -30,7 +30,7 @@ Cleanup and initialize the interpreter. This is used for long running detached
 threads to avoid resource leaks and/or missed state changes.
 
 [example_begin]
- ns_thread begin {
+ ns_thread create {
    while {1} {
       ns_reinit
       # ... long running work ...

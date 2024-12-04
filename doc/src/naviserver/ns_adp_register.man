@@ -159,7 +159,7 @@ When the tag is parsed, it is replaced by the result of the registered
  # Define the tag handler
  proc onday {string attributes} {
    # Get the 'day' attribute
-   set day [lb]ns_set iget $attributes day[rb]
+   set day [lb]ns_set get -nocase $attributes day[rb]
    
    # Check if the current date matches the specified day
    if {[lb]ns_fmttime [lb]ns_time[rb] "%m/%d"[rb] eq $day} {
@@ -224,7 +224,7 @@ The following is a simple way of handling conditional content in ADPs:
 [example_begin]
  # Store content in a global variable
  proc remember {input tagset} {
-   set tagname [lb]ns_set iget $tagset name[rb]
+   set tagname [lb]ns_set get -nocase $tagset name[rb]
    if {$tagname eq ""} {
      set ::_adp_memory($tagname) $input
      return ""
@@ -238,7 +238,7 @@ The following is a simple way of handling conditional content in ADPs:
    if {[lb]info exists ::_adp_memory($name)[rb]} {
      set parsecommand [lb]list ns_adp_parse -string[rb]
      lappend parsecommand $::_adp_memory($name)
-     ns_puts -nonewline [lb]uplevel $parsecommand[rb]
+     ns_adp_puts -nonewline [lb]uplevel $parsecommand[rb]
    } else {
      ns_log Error "[lb]ns_adp_argv 0[rb]: Unable to recall"
    }

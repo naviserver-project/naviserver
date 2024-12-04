@@ -37,7 +37,7 @@ with additional arguments.
     ns_locationproc ::nstest::location
 
     ad_proc ::nstest::location {args} {
-        set location [lb]ns_conn protocol[rb]://[lb]ns_set iget [lb]ns_conn headers[rb] host[rb]
+        set location [lb]ns_conn protocol[rb]://[lb]ns_set get -nocase [lb]ns_conn headers[rb] host[rb]
         ns_log notice "LOCATION-PROC args <$args> - location <$location>"
         return $location
     }

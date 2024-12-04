@@ -620,7 +620,7 @@ includes a file, executes another ADP, and uses streaming.
  <%
   ## Proxies should cache this page for a maximum of 1 hour:
   ns_setexpires 3600
-  set host [lb]ns_set iget [lb]ns_conn headers[rb] host[rb]
+  set host [lb]ns_set get -nocase [lb]ns_conn headers[rb] host[rb]
  
   ## How many times has this page been accessed
   ## since the server was started?
@@ -675,7 +675,7 @@ The time.adp file referenced in the example looks like this:
 Because of the streaming used in the last script, the output "1...", "2...",
 "3!" and "End" will be displayed incrementally in the page.
 
-[see_also ns_adp ns_adp_puts ns_adp_eval ns_adp_argv ns_adp_include ns_sleep ns_adp_register]
+[see_also ns_adp ns_adp_puts ns_adp_argv ns_adp_include ns_sleep ns_adp_register]
 [keywords ADP configuration templates]
 
 [manpage_end]
