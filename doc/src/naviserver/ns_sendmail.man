@@ -32,13 +32,13 @@ In case of an error the error code and message are returned.
 [section COMMANDS]
 [list_begin definitions]
 [call [cmd ns_sendmail] \
-	[option "-to [arg string]"] \
-	[option "-from [arg string]"] \
-	[opt [option "-subject [arg string]"]] \
-	[opt [option "-body [arg string]"]] \
-	[opt [option "-headers [arg string]"]] \
-	[opt [option "-bcc [arg string]"]] \
-	[opt [option "-cc [arg string]"]]]
+	[option "-to [arg value]"] \
+	[option "-from [arg value]"] \
+	[opt [option "-subject [arg value]"]] \
+	[opt [option "-body [arg value]"]] \
+	[opt [option "-headers [arg value]"]] \
+	[opt [option "-bcc [arg value]"]] \
+	[opt [option "-cc [arg value]"]]]
 
 [option -to]
 	Email address of recipient. To send a real name along with the address

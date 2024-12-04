@@ -167,7 +167,7 @@ test nsdb-1.6 {syntax: ns_dbquotename} -body {
 
 test nsdb-1.7 {syntax: ns_quotelisttolist} -body {
     ns_quotelisttolist
-} -returnCodes error -result {wrong # args: should be "ns_quotelisttolist /string/"}
+} -returnCodes error -result {wrong # args: should be "ns_quotelisttolist /value/"}
 
 test nsdb-1.8 {syntax: ns_localsqltimestamp} -body {
     ns_localsqltimestamp x

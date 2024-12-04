@@ -105,8 +105,8 @@
 
 [call [cmd "ns_set format"] \
         [opt [option -noname]] \
-        [opt [option "-lead [arg string]"]] \
-        [opt [option "-separator [arg string]"]] \
+        [opt [option "-lead [arg value]"]] \
+        [opt [option "-separator [arg value]"]] \
         [opt "--"] \
         [arg setId] ]
 

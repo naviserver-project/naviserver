@@ -12,7 +12,7 @@ test ns_perm-1.1 {syntax: ns_perm} -body {
 
 test ns_perm-2.1 {syntax: ns_perm adduser} -body {
     ns_perm adduser
-} -returnCodes error -result {wrong # args: should be "ns_perm adduser ?-allow? ?-deny? ?-clear? ?-salt /string/? ?--? /name/ /encpass/ /userfield/ ?/host .../?"}
+} -returnCodes error -result {wrong # args: should be "ns_perm adduser ?-allow? ?-deny? ?-clear? ?-salt /value/? ?--? /name/ /encpass/ /userfield/ ?/host .../?"}
 
 test ns_perm-2.2 {syntax: ns_perm deluser} -body {
     ns_perm deluser

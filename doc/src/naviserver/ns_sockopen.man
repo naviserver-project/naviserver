@@ -14,7 +14,7 @@ remote hosta the specified port.
 
 [call [cmd ns_sockopen] \
         [opt [option -async]] \
-        [opt [option "-localhost [arg string]"]] \
+        [opt [option "-localhost [arg value]"]] \
         [opt [option "-localport [arg port]"]] \
         [opt [option -nonblock]] \
         [opt [option "-timeout [arg time]"]] \

@@ -17,7 +17,7 @@ management for NaviServer.
 	[opt [option -allow]] \
 	[opt [option -deny]] \
 	[opt [option -clear]] \
-	[opt [option "-salt [arg string]"]] \
+	[opt [option "-salt [arg value]"]] \
         [opt --] \
 	[arg name] \
 	[arg encpass] \

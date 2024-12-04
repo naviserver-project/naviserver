@@ -14,7 +14,7 @@ This document describes how to register a CGI handler programmatically.
 [call [cmd ns_register_cgi] \
      [opt [option -noinherit]] \
      [opt [option -matchsegments]] \
-     [opt [option "-path [arg string]"]] \
+     [opt [option "-path [arg value]"]] \
      [opt --] \
      [arg method] \
      [arg url] \

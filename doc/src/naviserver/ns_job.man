@@ -65,7 +65,7 @@ settings values in form of a dict.
 
 
 [call [cmd "ns_job create"] \
-	[opt [option "-desc [arg string]"]] \
+	[opt [option "-desc [arg value]"]] \
 	[arg queueId] \
         [opt [arg maxthreads]]]
 
@@ -136,7 +136,7 @@ Return a list of the job IDs.
 [call [cmd "ns_job queue"] \
 	[opt [option -detached]] \
 	[opt [option -head]] \
-	[opt [option "-jobid [arg string]"]] \
+	[opt [option "-jobid [arg value]"]] \
 	[arg queueId] \
         [arg script]]
 

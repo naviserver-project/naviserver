@@ -27,7 +27,7 @@ test ns_rand-1.2 {ns_rand with 0 arg - float} -body {
 #######################################################################################
 test ns_parseheader-1.0 {syntax: ns_parseheader} -body {
     ns_parseheader
-} -returnCodes error -result {wrong # args: should be "ns_parseheader ?-prefix /string/? /set/ /headerline/ ?/disposition/?"}
+} -returnCodes error -result {wrong # args: should be "ns_parseheader ?-prefix /value/? /set/ /headerline/ ?/disposition/?"}
 
 #######################################################################################
 #  test ns_fmttime
@@ -59,7 +59,7 @@ test ns_fmttime-1.2 {ns_rand with 0 arg - float} -body {
 
 test ns_trim-0.0 {syntax: ns_trim} -body {
     ns_trim
-} -returnCodes error -result {wrong # args: should be "ns_trim ?-subst? ?-delimiter /string/? ?-prefix /string/? ?--? /text/"}
+} -returnCodes error -result {wrong # args: should be "ns_trim ?-subst? ?-delimiter /value/? ?-prefix /value/? ?--? /text/"}
 
 test ns_trim-0.1 {ns_trim with invalid delimiter} -body {
     ns_trim -delimiter aa "hello world"
@@ -99,7 +99,7 @@ testConstraint localeCollate [expr {$::tcl_platform(os) in {Darwin Linux}}]
 
 test ns_strcoll-1.0 {syntax: ns_strcoll} -body {
     ns_strcoll
-} -returnCodes error -result {wrong # args: should be "ns_strcoll ?-locale /string/? ?--? /string1/ /string2/"}
+} -returnCodes error -result {wrong # args: should be "ns_strcoll ?-locale /value/? ?--? /string1/ /string2/"}
 
 #
 # The constraint 'collateFold' means to sort upper and lower character
@@ -384,7 +384,7 @@ test ns_htmlselect-1.0 {syntax: ns_htmlselect} -body {
 
 test ns_hash-1.0 {syntax: ns_hash} -body {
     ns_hash
-} -returnCodes error -result {wrong # args: should be "ns_hash /string/"}
+} -returnCodes error -result {wrong # args: should be "ns_hash /value/"}
 
 test ns_urlcharset-1.0 {syntax: ns_urlcharset} -body {
     ns_urlcharset
@@ -400,7 +400,7 @@ test ns_issmallint-1.0 {syntax: ns_issmallint} -body {
 test ns_paren-1.0 {syntax: ns_paren} -body {
     ns_paren x y
 } -returnCodes error -result {wrong # args: should be "ns_paren val"}
-# ns_paren is a Tcl proc: message should be {wrong # args: should be "ns_paren /string/"}
+# ns_paren is a Tcl proc: message should be {wrong # args: should be "ns_paren /value/"}
 
 
 test ns_setexpires-1.0 {syntax: ns_setexpires} -body {
@@ -444,7 +444,7 @@ test ns_sendmail_config-1.0 {syntax: ns_sendmail_config} -body {
 test ns_sendmail-1.0 {syntax: ns_sendmail} -body {
     ns_sendmail -? ?
 } -returnCodes error -result {wrong # args: should be "?-to /to/? ?-from /from/? ?-subject /subject/? ?-body /body/? ?-headers /headers/? ?-bcc /bcc/? ?-cc /cc/?"}
-# ns_sendmail is a Tcl proc: message should be {wrong # args: should be "ns_sendmail -to /string/ -from /string/ ?-subject /string/? ?-body /string/? ?-headers /string/? ?-bcc /string/? ?-cc /string/?"}
+# ns_sendmail is a Tcl proc: message should be {wrong # args: should be "ns_sendmail -to /value/ -from /value/ ?-subject /value/? ?-body /value/? ?-headers /value/? ?-bcc /value/? ?-cc /value/?"}
 
 
 #######################################################################################
@@ -453,7 +453,7 @@ test ns_sendmail-1.0 {syntax: ns_sendmail} -body {
 
 test ns_getcsv-1.0 {syntax: ns_getcsv} -body {
     ns_getcsv
-} -returnCodes error -result {wrong # args: should be "ns_getcsv ?-delimiter /string/? ?-quotechar /string/? ?-trim? ?--? /channelId/ /varname/"}
+} -returnCodes error -result {wrong # args: should be "ns_getcsv ?-delimiter /value/? ?-quotechar /value/? ?-trim? ?--? /channelId/ /varname/"}
 
 test ns_getcsv-2.0 {ns_getcsv} -body {
     set csvFile [ns_server pagedir]/csv

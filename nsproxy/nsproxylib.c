@@ -2302,16 +2302,16 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
         Tcl_WrongNumArgs(interp, 2, objv, "/pool/"
                          " ?-env /setId/?"
                          " ?-evaltimeout /time/?"
-                         " ?-exec /string/?"
+                         " ?-exec /value/?"
                          " ?-gettimeout /time/?"
                          " ?-idletimeout /time/?"
-                         " ?-init /string/?"
+                         " ?-init /value/?"
                          " ?-logminduration /time/?"
                          " ?-maxruns /integer/?"
                          " ?-maxslaves /integer/?"
                          " ?-maxworkers /integer/?"
                          " ?-recvtimeout /time/?"
-                         " ?-reinit /string/?"
+                         " ?-reinit /value/?"
                          " ?-sendtimeout /time/?"
                          " ?-waittimeout /time/?"
                          );
@@ -2429,7 +2429,7 @@ ConfigureObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *c
             case CEnvIdx:
                 if (poolPtr->env) {
                     Ns_SetFree(poolPtr->env);
-                    poolPtr->env = NULL
+                    poolPtr->env = NULL;
                 }
                 poolPtr->env = Ns_SetCopy(Ns_TclGetSet(interp, str));
                 break;

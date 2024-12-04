@@ -84,7 +84,7 @@ ASCII control characters are omitted.
 [call [cmd ns_reflow_text] \
         [opt [option "-width [arg integer]"]] \
         [opt [option "-offset [arg integer]"]] \
-        [opt [option "-prefix [arg string]"]] \
+        [opt [option "-prefix [arg value]"]] \
         [opt --] \
         [arg text]]
 
@@ -97,8 +97,8 @@ with a constant string.
 
 [call [cmd ns_trim] \
         [opt [option "-subst"]] \
-        [opt [option "-delimiter [arg string]"]] \
-        [opt [option "-prefix [arg string]"]] \
+        [opt [option "-delimiter [arg value]"]] \
+        [opt [option "-prefix [arg value]"]] \
         [opt --] \
         [arg text]]
 

@@ -15,7 +15,7 @@ test ns_thread-1.1 {syntax: ns_thread subcommands} -body {
 
 test ns_thread-1.2 {syntax: ns_thread create} -body {
     ns_thread create
-} -returnCodes error -result {wrong # args: should be "ns_thread create ?-detached? ?-name /string/? ?--? /script/"}
+} -returnCodes error -result {wrong # args: should be "ns_thread create ?-detached? ?-name /value/? ?--? /script/"}
 
 test ns_thread-1.3 {syntax: ns_thread handle} -body {
     ns_thread handle -

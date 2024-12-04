@@ -96,12 +96,12 @@ continues to execute code.
 
 [call [cmd ns_respond] \
      [opt [option "-status [arg integer]"]] \
-     [opt [option "-type [arg string]"]] \
+     [opt [option "-type [arg value]"]] \
      [opt [option "-length [arg integer]"]] \
      [opt [option "-headers [arg setId]"]] \
-     [opt [option "-string [arg string]"]] \
-     [opt [option "-file [arg string]"]] \
-     [opt [option "-fileid [arg string]"]] \
+     [opt [option "-string [arg value]"]] \
+     [opt [option "-file [arg value]"]] \
+     [opt [option "-fileid [arg value]"]] \
      [opt [option "-data [arg data]"]] \
      ]
 

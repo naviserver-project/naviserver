@@ -123,7 +123,7 @@ test ns_runonce-1.0 {syntax: ns_runonce} -body {
 
 test ns_moduleload-1.0 {syntax: ns_moduleload} -body {
     ns_moduleload
-} -returnCodes error -result {wrong # args: should be "ns_moduleload ?-global? ?-init /string/? ?--? /module/ /file/"}
+} -returnCodes error -result {wrong # args: should be "ns_moduleload ?-global? ?-init /value/? ?--? /module/ /file/"}
 
 test ns_eval-1.0 {syntax: ns_eval} -body {
     ns_eval

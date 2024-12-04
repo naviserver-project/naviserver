@@ -26,7 +26,7 @@ test nscgi-1.1 {check required and provided variables} -constraints {serverListe
 
 test nscgi-1.1 {check syntax} -body {
     ns_register_cgi
-} -returnCodes {error ok} -result {wrong # args: should be "ns_register_cgi ?-noinherit? ?-matchsegments? ?-path /string/? ?--? /method/ /url/"}
+} -returnCodes {error ok} -result {wrong # args: should be "ns_register_cgi ?-noinherit? ?-matchsegments? ?-path /value/? ?--? /method/ /url/"}
 
 
 #

@@ -103,7 +103,7 @@ Returns all buffered log messages, removing them from the buffer
 without writing them to the log file.
 
 [call [cmd "ns_logctl grep"] \
-   [opt [option "-filename [arg string]"]] \
+   [opt [option "-filename [arg value]"]] \
    [opt --] \
    [arg string]]
 

@@ -76,8 +76,8 @@ command to determine the arrays with their usages from this bucket.
 
 [call [cmd "nsv_dict append"]  [arg array] [arg key] [arg dictkey] [opt [arg {value ...}]]]
 [call [cmd "nsv_dict exists"]  [arg array] [arg key] [arg "dictkey ..."] ]
-[call [cmd "nsv_dict get"]     [opt "-varname [arg string]"] [opt --] [arg array] [arg key] [opt [arg {dictkey ...}]]]
-[call [cmd "nsv_dict getdef"]  [opt "-varname [arg string]"] [opt --] \
+[call [cmd "nsv_dict get"]     [opt "-varname [arg value]"] [opt --] [arg array] [arg key] [opt [arg {dictkey ...}]]]
+[call [cmd "nsv_dict getdef"]  [opt "-varname [arg value]"] [opt --] \
         [arg array] [arg key] [arg "dictkey ..."] [arg default]]
 [call [cmd "nsv_dict incr"]    [arg array] [arg key] [arg dictkey] [opt [arg {increment}]]]
 [call [cmd "nsv_dict keys"]    [arg array] [arg key] [opt [arg {pattern}]]]

@@ -13,8 +13,8 @@ This command parses lines of CSV files.
 [list_begin definitions]
 
 [call [cmd "ns_getcsv"] \
-	[opt [option "-delimiter [arg string]"]] \
-	[opt [option "-quotechar [arg string]"]] \
+	[opt [option "-delimiter [arg value]"]] \
+	[opt [option "-quotechar [arg value]"]] \
 	[opt [option "-trim"]] \
         [opt --] \
 	[arg channelId] \
@@ -31,11 +31,11 @@ the number of parsed fields or -1 on end of file.
 [section OPTIONS]
 [list_begin options]
 
-[opt_def -delimiter [arg string]]
+[opt_def -delimiter [arg value]]
 The delimiter (single character string) for separating fields.
 Default: ,
 
-[opt_def -quotechar [arg string]]
+[opt_def -quotechar [arg value]]
 
 The single character string for wrapping fields. It is especially needed,
 when the field contains a delimiter. If the field contains a
@@ -78,10 +78,10 @@ sample.cvs
 [example_begin]
 "aaa","bbb","ccc"
 "aaa","b
-bb","ccc" 
+bb","ccc"
 zzz,yyy,xxx
  1 , 2 , 3 
-includes(")quote,"quoted includes ("") quote" 
+includes(")quote,"quoted includes ("") quote"
 elm2,,empty
 single
 last3,empty,,,

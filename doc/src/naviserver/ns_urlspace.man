@@ -43,9 +43,9 @@
 [list_begin definitions]
 
 [call [cmd "ns_urlspace set"] \
-        [opt [option "-contextfilter [arg string]"]] \
+        [opt [option "-contextfilter [arg value]"]] \
 	[opt [option "-id [arg integer]"]] \
-	[opt [option "-key [arg string]"]] \
+	[opt [option "-key [arg value]"]] \
 	[opt [option "-noinherit"]] \
 	[arg URL] \
 	[arg data] \
@@ -79,7 +79,7 @@
 	[opt [option "-context [arg setId]"]] \
 	[opt [option "-exact"]] \
 	[opt [option "-id [arg integer]"]] \
-	[opt [option "-key [arg string]"]] \
+	[opt [option "-key [arg value]"]] \
 	[opt [option "-noinherit"]] \
 	[arg URL] \
 ]
@@ -139,7 +139,7 @@
 [call [cmd "ns_urlspace unset"] \
 	[opt [option "-allfilters"]] \
 	[opt [option "-id [arg integer]"]] \
-	[opt [option "-key [arg string]"]] \
+	[opt [option "-key [arg value]"]] \
 	[opt [option "-noinherit"]] \
 	[opt [option "-recurse"]] \
 	[arg URL] \
@@ -186,7 +186,7 @@
   constant of NaviServer. When no ID is specified, NaviServer
   automatically allocates a default ID on first usage.
 
-[opt_def -key [arg string]]
+[opt_def -key [arg value]]
  
   Every URL assignment can have a key, which is logically part of the
   URL space. Using this key, you could, for example, assign different

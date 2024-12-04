@@ -27,11 +27,11 @@ Note: some common options are described in a separate section below.
 
 [call [cmd "ns_crypto::aead::encrypt string"] \
      [opt [option -binary]] \
-     [opt [option "-aad [arg string]"]] \
-     [opt [option "-cipher [arg string]"]] \
+     [opt [option "-aad [arg value]"]] \
+     [opt [option "-cipher [arg value]"]] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
-     [opt [option "-iv [arg string]"]] \
-     [opt [option "-key [arg string]"]] \
+     [opt [option "-iv [arg value]"]] \
+     [opt [option "-key [arg value]"]] \
      [opt --] \
      [arg input]]
 
@@ -90,12 +90,12 @@ encryption.
 
 [call [cmd "ns_crypto::aead::decrypt string"] \
      [opt [option -binary]] \
-     [opt [option "-aad [arg string]"]] \
-     [opt [option "-cipher [arg string]"]] \
+     [opt [option "-aad [arg value]"]] \
+     [opt [option "-cipher [arg value]"]] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
-     [opt [option "-iv [arg string]"]] \
-     [opt [option "-key [arg string]"]] \
-     [opt [option "-tag [arg string]"]] \
+     [opt [option "-iv [arg value]"]] \
+     [opt [option "-key [arg value]"]] \
+     [opt [option "-tag [arg value]"]] \
      [opt --] \
      [arg input]]
 
@@ -120,18 +120,18 @@ The argument [arg input] (the cipher text) is always treated as byte array.
 
 
 [call [cmd "ns_crypto::argon2"] \
-     [opt [option "-ad [arg string]"]] \
+     [opt [option "-ad [arg value]"]] \
      [opt [option "-binary"]] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
      [opt [option "-iter [arg integer]"]] \
      [opt [option "-lanes [arg integer]"]] \
      [opt [option "-memcost [arg integer]"]] \
      [opt [option "-outlen [arg integer]"]] \
-     [opt [option "-password [arg string]"]] \
-     [opt [option "-salt [arg string]"]] \
-     [opt [option "-secret [arg string]"]] \
+     [opt [option "-password [arg value]"]] \
+     [opt [option "-salt [arg value]"]] \
+     [opt [option "-secret [arg value]"]] \
      [opt [option "-threads [arg integer]"]] \
-     [opt [option "-variant [arg string]"]] \
+     [opt [option "-variant [arg value]"]] \
 ]
 
 Computes a password hash or a derived key based on the Argon2 family
@@ -201,8 +201,8 @@ variant of the command.  The default value is "Argon2id".
 
 
 [call [cmd "ns_crypto::eckey generate"] \
-     [opt [option "-name [arg string]"]] \
-     [option [option "-pem [arg string]"]] \
+     [opt [option "-name [arg value]"]] \
+     [option [option "-pem [arg value]"]] \
      ]
 
 Generate an EC pemfile without the need of an external command.
@@ -221,7 +221,7 @@ This function requires OpenSSL compiled with EC support enabled.
 
 [call [cmd "ns_crypto::eckey import"] \
      [opt [option -binary]] \
-     [opt [option "-string [arg string]"]] \
+     [opt [option "-string [arg value]"]] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
      ]
 
@@ -232,8 +232,8 @@ This function requires OpenSSL compiled with EC support enabled.
 
 [call [cmd "ns_crypto::eckey priv"] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
-     [opt [option "-passphrase [arg string]"]] \
-     [opt [option "-pem [arg string]"]] \
+     [opt [option "-passphrase [arg value]"]] \
+     [opt [option "-pem [arg value]"]] \
      ]
 
 Obtain the private key in various encodings from an elliptic curve
@@ -247,8 +247,8 @@ enabled.
 [call [cmd "ns_crypto::eckey sharedsecret"] \
      [opt [option "-binary"]] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
-     [opt [option "-passphrase [arg string]"]] \
-     [opt [option "-pem [arg string]"]] \
+     [opt [option "-passphrase [arg value]"]] \
+     [opt [option "-pem [arg value]"]] \
      [opt --] \
      [arg pubkey]]
 
@@ -265,8 +265,8 @@ support enabled.
 
 [call [cmd "ns_crypto::eckey pub"] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
-     [opt [option "-passphrase [arg string]"]] \
-     [opt [option "-pem [arg string]"]] \
+     [opt [option "-passphrase [arg value]"]] \
+     [opt [option "-pem [arg value]"]] \
     ]
 
 Obtain the public key in various encodings from an elliptic curves PEM
@@ -278,7 +278,7 @@ provided via [option "-passphrase"].
 
 [call [cmd "ns_crypto::hmac string"] \
      [opt [option -binary]] \
-     [opt [option "-digest [arg string]"]] \
+     [opt [option "-digest [arg value]"]] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
      [arg key] \
      [arg message]]
@@ -305,7 +305,7 @@ be in memory). In order to compute HMACs on large data, use
 
 
 [call [cmd "ns_crypto::md string"] \
-     [opt [option "-digest [arg string]"]] \
+     [opt [option "-digest [arg value]"]] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
      [opt [option "-passphrase [arg passphrase]"]] \
      [opt [option "-sign [arg pemfile]"]] \
@@ -371,10 +371,10 @@ the following key types: CMAC, DSA, ECDSA, HMAC and RSA.
 
 [call [cmd "ns_crypto::md hkdf"] \
      [opt [option -binary]] \
-     [opt [option "-digest [arg string]"]] \
-     [opt [option "-salt [arg string]"]] \
-     [opt [option "-secret [arg string]"]] \
-     [opt [option "-info [arg string]"]] \
+     [opt [option "-digest [arg value]"]] \
+     [opt [option "-salt [arg value]"]] \
+     [opt [option "-secret [arg value]"]] \
+     [opt [option "-info [arg value]"]] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
      [opt --] \
      [arg length]]
@@ -393,10 +393,10 @@ This function requires OpenSSL 1.1.0.
 
 [call [cmd "ns_crypto::md vapidsign"] \
      [opt [option -binary]] \
-     [opt [option "-digest [arg string]"]] \
+     [opt [option "-digest [arg value]"]] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
-     [opt [option "-passphrase [arg string]"]] \
-     [opt [option "-pem [arg string]"]] \
+     [opt [option "-passphrase [arg value]"]] \
+     [opt [option "-pem [arg value]"]] \
      [opt --] \
      [arg message]]
 
@@ -436,8 +436,8 @@ Returns the specified number of random bytes in the specified encoding
 
 [call [cmd "ns_crypto::scrypt"] \
      [opt [option -binary]] \
-     [opt [option "-salt [arg string]"]] \
-     [opt [option "-secret [arg string]"]] \
+     [opt [option "-salt [arg value]"]] \
+     [opt [option "-secret [arg value]"]] \
      [opt [option "-n [arg integer]"]] \
      [opt [option "-p [arg integer]"]] \
      [opt [option "-r [arg integer]"]] \
@@ -479,11 +479,11 @@ When the option [option -binary] is specified, it applies to
 
 [call [cmd "ns_crypto::pbkdf2_hmac"] \
      [opt [option -binary]] \
-     [opt [option "-digest [arg string]"]] \
+     [opt [option "-digest [arg value]"]] \
      [opt [option "-dklen [arg integer]"]] \
      [opt [option "-iterations [arg integer]"]] \
-     [opt [option "-salt [arg string]"]] \
-     [opt [option "-secret [arg string]"]] \
+     [opt [option "-salt [arg value]"]] \
+     [opt [option "-secret [arg value]"]] \
      [opt [option "-encoding hex|base64url|base64|binary"]] \
      ]
 
@@ -526,7 +526,7 @@ The option [option -iterations] specifies the number of iterations
 [section OPTIONS]
 [list_begin options]
 
-[opt_def -digest [arg string]]
+[opt_def -digest [arg value]]
 
 [para] Digest algorithm for the checksum computation. The available
 algorithms are implemented in OpenSSL. The current versions of OpenSSL

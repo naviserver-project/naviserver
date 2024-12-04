@@ -87,7 +87,7 @@ test ns_proxy-2.23 {syntax: ns_proxy workers} -body {
 
 test ns_proxy-2.1.1 {syntax: ns_proxy config} -body {
     ns_proxy config
-} -returnCodes error -result {wrong # args: should be "ns_proxy configure /pool/ ?-env /setId/? ?-evaltimeout /time/? ?-exec /string/? ?-gettimeout /time/? ?-idletimeout /time/? ?-init /string/? ?-logminduration /time/? ?-maxruns /integer/? ?-maxslaves /integer/? ?-maxworkers /integer/? ?-recvtimeout /time/? ?-reinit /string/? ?-sendtimeout /time/? ?-waittimeout /time/?"}
+} -returnCodes error -result {wrong # args: should be "ns_proxy configure /pool/ ?-env /setId/? ?-evaltimeout /time/? ?-exec /value/? ?-gettimeout /time/? ?-idletimeout /time/? ?-init /value/? ?-logminduration /time/? ?-maxruns /integer/? ?-maxslaves /integer/? ?-maxworkers /integer/? ?-recvtimeout /time/? ?-reinit /value/? ?-sendtimeout /time/? ?-waittimeout /time/?"}
 
 test ns_proxy-2.1.2 {syntax: ns_proxy config} -body {
     ns_proxy config testpool x

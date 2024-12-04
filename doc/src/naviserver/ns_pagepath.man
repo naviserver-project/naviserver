@@ -13,7 +13,7 @@ pages for the current virtual server
 [list_begin definitions]
 
 [call [cmd ns_pagepath] \
-	[opt [option "-host [arg string]"]] \
+	[opt [option "-host [arg value]"]] \
 	[opt --] \
         [opt [arg "path-segment ..."]] \
         ]

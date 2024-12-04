@@ -42,9 +42,9 @@ Prepare the provided [arg list] for inclusion in an SQL statement. The
 command calls essentially [cmd ns_dbquotevalue] for every element
 of the list and combined the result with a comma.
 
-[call [cmd ns_quotelisttolist] [arg string]]
+[call [cmd ns_quotelisttolist] [arg value]]
 
-Transform [arg string] with single quoted elements into a proper Tcl
+Transform [arg value] with single quoted elements into a proper Tcl
 list. In this step, remove space, backslash and single quote
 characters in the given string.
 

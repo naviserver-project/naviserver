@@ -22,7 +22,7 @@
 [list_begin definitions]
 
  [call [cmd ns_urlencode] \
-     [opt [option "-charset [arg string]"]] \
+     [opt [option "-charset [arg value]"]] \
      [opt [option "-part query|path|cookie|oauth1"]] \
      [opt [option "-uppercase"]] \
      [opt --] \

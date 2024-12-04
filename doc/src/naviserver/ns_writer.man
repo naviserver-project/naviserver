@@ -103,7 +103,7 @@ latency and disk usage).
 
 
 [call [cmd "ns_writer size"] \
-	[opt [option "-driver [arg string]"]] \
+	[opt [option "-driver [arg value]"]] \
 	[opt [arg size]]]
 
 [para]
@@ -115,7 +115,7 @@ When the [arg size] is provided, it can be specified in memory units
 (kB, MB, GB, KiB, MiB, GiB).
 
 [call [cmd "ns_writer streaming"] \
-	[opt [option "-driver [arg string]"]] \
+	[opt [option "-driver [arg value]"]] \
 	[opt true|false]]
 
 [para]

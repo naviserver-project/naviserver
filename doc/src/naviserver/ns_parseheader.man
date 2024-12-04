@@ -14,7 +14,7 @@ This function parses a single HTTP header line into a predefined
 [list_begin definitions]
 
 [call [cmd ns_parseheader] \
-        [opt [option "-prefix [arg string]"]] \
+        [opt [option "-prefix [arg value]"]] \
         [arg set] [arg headerline] \
         [opt [arg disposition]] ]
 

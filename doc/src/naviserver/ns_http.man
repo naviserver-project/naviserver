@@ -71,28 +71,28 @@ Optional ID of the HTTP request to list.
 
 [call [cmd "ns_http queue"] \
 	[opt [option "-binary"]] \
-	[opt [option "-body [arg string]"]] \
-	[opt [option "-body_chan [arg string]"]] \
-	[opt [option "-body_file [arg string]"]] \
+	[opt [option "-body [arg value]"]] \
+	[opt [option "-body_chan [arg value]"]] \
+	[opt [option "-body_file [arg value]"]] \
 	[opt [option "-body_size [arg integer]"]] \
-	[opt [option "-cafile [arg string]"]] \
-	[opt [option "-capath [arg string]"]] \
-	[opt [option "-cert [arg string]"]] \
-	[opt [option "-donecallback [arg string]"]] \
+	[opt [option "-cafile [arg value]"]] \
+	[opt [option "-capath [arg value]"]] \
+	[opt [option "-cert [arg value]"]] \
+	[opt [option "-donecallback [arg value]"]] \
 	[opt [option "-expire [arg time]"]] \
 	[opt [option "-headers [arg setId]"]] \
-	[opt [option "-hostname [arg string ]"]] \
+	[opt [option "-hostname [arg value ]"]] \
 	[opt [option "-keep_host_header"]] \
 	[opt [option "-keepalive [arg time]"]] \
-	[opt [option "-method [arg string]"]] \
-	[opt [option "-outputchan [arg string]"]] \
-	[opt [option "-outputfile [arg string]"]] \
+	[opt [option "-method [arg value]"]] \
+	[opt [option "-outputchan [arg value]"]] \
+	[opt [option "-outputfile [arg value]"]] \
 	[opt [option "-partialresults"]] \
-	[opt [option "-proxy [arg string]"]] \
+	[opt [option "-proxy [arg value]"]] \
 	[opt [option "-raw"]] \
 	[opt [option "-spoolsize [arg memory-size]"]] \
 	[opt [option "-timeout [arg time]"]] \
-	[opt [option "-unix_socket [arg string]"]] \
+	[opt [option "-unix_socket [arg value]"]] \
 	[opt [option "-verify"]] \
 	[arg url] \
 	]
@@ -124,13 +124,13 @@ This option is mutually exclusive with [option -body_file] and [option -body_cha
 The implementation will try to guess the "content-type" of the body by checking
 the type of the passed [option body].
 
-[opt_def -body_file [arg string]]
+[opt_def -body_file [arg value]]
 transmit the file with the specified filename as the request body.
 This option is mutually exclusive with [option -body] and [option -body_chan].
 The implementation will try to guess the "content-type" of the body by checking
 the extension of the passed-in [option fn].
 
-[opt_def -body_chan [arg string]]
+[opt_def -body_chan [arg value]]
 transmit the content with the specified Tcl channel, which must be opened for
 reading, as the request body. The channel must be in blocking mode and
 should be seekable (unless the [option -body_size] is specified).
@@ -145,21 +145,21 @@ the channel is tossed back to the running interpreter and can be manipulated.
 It is the caller's responsibility to close the channel when not needed any more.
 The implementation will not do that (see [cmd "ns_http cleanup"] for exception).
 
-[opt_def "-cafile" [arg string]]
+[opt_def "-cafile" [arg value]]
 used for HTTPS URIs to specify the locations, at which CA
 certificates for verification purposes are located. The certificates
 available via [term cafile] and [term capath] are trusted.
 The [term cafile] points to a file of CA certificates in PEM format.
 The file can contain several CA certificates.
 
-[opt_def "-capath" [arg string]]
+[opt_def "-capath" [arg value]]
 allows for HTTPS URIs to specify the locations, at which CA
 certificates for verification purposes are located. [term capath] points to a
 directory containing CA certificates in PEM format. The files each
 contain one CA certificate. For more details, see
 https://www.openssl.org/docs/manmaster/ssl/SSL_CTX_load_verify_locations.html
 
-[opt_def "-cert" [arg string]]
+[opt_def "-cert" [arg value]]
 used for HTTPS URIs to use the specified client certificate. The
 certificates must be in PEM format and must be sorted starting with
 the subject's certificate (actual client or server certificate),
@@ -169,7 +169,7 @@ the highest level (root) CA.
 [opt_def -raw]
 delivers the content as-is (unmodified), regardless of the content encoding.
 
-[opt_def -donecallback [arg string]]
+[opt_def -donecallback [arg value]]
 this callback argument will be executed as Tcl script when the request
 is completed.  The provided [arg call] is appended with two arguments,
 a flag indicating a Tcl error or not (integer value 1 or 0), and the
@@ -181,7 +181,7 @@ dictionary as returned by [cmd "ns_http run"]. When this option is used,
 headers is the ns_set ID containing the additional headers to include
 in the request.
 
-[opt_def -hostname [arg string]]
+[opt_def -hostname [arg value]]
 used for HTTPS URIs to specify the hostname for the server
 certificate. This option has to be used, when the host supports
 virtual hosting, is configured with multiple certificates and supports
@@ -195,7 +195,7 @@ specified in any supported ns_time format.
 allows the Host: header field for the request to be passed in via
 the [option -headers] argument, otherwise it is overwritten.
 
-[opt_def -method [arg string]]
+[opt_def -method [arg value]]
 Standard HTTP/HTTPS request method such as GET, POST, HEAD, PUT etc.
 
 [opt_def -spoolsize [arg memory-size]]
@@ -204,11 +204,11 @@ temporary file, a named file (see [option -outputfile]) or the Tcl
 channel (see [option -outputchan]).
 The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB).
 
-[opt_def -outputfile [arg string]]
+[opt_def -outputfile [arg value]]
 receive the response content into the specified filename.
 This option is mutually exclusive with [option -outputchan].
 
-[opt_def -outputchan [arg string]]
+[opt_def -outputchan [arg value]]
 receive the response content into the specified Tcl channel, which must be
 opened for writing. The channel must be in blocking mode.
 This option is mutually exclusive with [option -outputfile].
@@ -225,11 +225,11 @@ returned in the dict member [term error].  This option is useful to
 inspect partial results also when e.g. the server terminates the
 connection unexpectedly.
 
-[opt_def -proxy [arg string]]
+[opt_def -proxy [arg value]]
 When specified, a dict is passed containing the keys
 [term host] and [term port] and optionally the key [term tunnel].
 
-[opt_def -unix_socket [arg string]]
+[opt_def -unix_socket [arg value]]
 When specified, this parameter should contain the Unix Domain Socket
 (UDS) to connect to. For example, when a web server is listening on a Unix domain socket
 named [const "/tmp/http.socket"], ns_http can be used as the
@@ -260,7 +260,7 @@ immediately terminated with an alert message containing the reason for
 the verification failure. If no server certificate is sent, because an
 anonymous cipher is used, this option is ignored.
 
-[opt_def -proxy [arg string]]
+[opt_def -proxy [arg value]]
 Controls whether to handle HTTP/HTTPS requests over an intermediate proxy.
 The argument must be a valid Tcl dictionary with (at least) the following
 keys: [term host], [term port]. Optionally, a [term tunnel] boolean key
@@ -282,28 +282,28 @@ Currently, no proxy authentication is supported. This will be added later.
 
 [call [cmd "ns_http run"] \
 	[opt [option "-binary"]] \
-	[opt [option "-body [arg string]"]] \
-	[opt [option "-body_chan [arg string]"]] \
-	[opt [option "-body_file [arg string]"]] \
+	[opt [option "-body [arg value]"]] \
+	[opt [option "-body_chan [arg value]"]] \
+	[opt [option "-body_file [arg value]"]] \
 	[opt [option "-body_size [arg integer]"]] \
-	[opt [option "-cafile [arg string]"]] \
-	[opt [option "-capath [arg string]"]] \
-	[opt [option "-cert [arg string]"]] \
-	[opt [option "-donecallback [arg string]"]] \
+	[opt [option "-cafile [arg value]"]] \
+	[opt [option "-capath [arg value]"]] \
+	[opt [option "-cert [arg value]"]] \
+	[opt [option "-donecallback [arg value]"]] \
 	[opt [option "-expire [arg time]"]] \
 	[opt [option "-headers [arg setId]"]] \
-	[opt [option "-hostname [arg string ]"]] \
+	[opt [option "-hostname [arg value ]"]] \
 	[opt [option "-keep_host_header"]] \
 	[opt [option "-keepalive [arg time]"]] \
-	[opt [option "-method [arg string]"]] \
-	[opt [option "-outputchan [arg string]"]] \
-	[opt [option "-outputfile [arg string]"]] \
+	[opt [option "-method [arg value]"]] \
+	[opt [option "-outputchan [arg value]"]] \
+	[opt [option "-outputfile [arg value]"]] \
 	[opt [option "-partialresults"]] \
-	[opt [option "-proxy [arg string]"]] \
+	[opt [option "-proxy [arg value]"]] \
 	[opt [option "-raw"]] \
 	[opt [option "-spoolsize [arg memory-size]"]] \
 	[opt [option "-timeout [arg time]"]] \
-	[opt [option "-unix_socket [arg string]"]] \
+	[opt [option "-unix_socket [arg value]"]] \
         [opt [option "-verify"]] \
 	[arg url] \
 	]

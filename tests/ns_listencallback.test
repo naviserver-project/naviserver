@@ -51,7 +51,7 @@ test ns_socknread-1.0 {syntax: ns_socknread} -body {
 
 test ns_sockopen-1.0 {syntax: ns_sockopen} -body {
     ns_sockopen
-} -returnCodes {error ok} -result {wrong # args: should be "ns_sockopen ?-async? ?-localhost /string/? ?-localport /port/? ?-nonblock? ?-timeout /time/? ?--? /host/ /port/"}
+} -returnCodes {error ok} -result {wrong # args: should be "ns_sockopen ?-async? ?-localhost /value/? ?-localport /port/? ?-nonblock? ?-timeout /time/? ?--? /host/ /port/"}
 
 test ns_sockselect-1.0 {syntax: ns_sockselect} -body {
     ns_sockselect

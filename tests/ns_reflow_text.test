@@ -17,7 +17,7 @@ namespace import -force ::tcltest::*
 
 test ns_reflow_text-1.1 {syntax} -body {
     ns_reflow_text
-} -returnCodes error -result {wrong # args: should be "ns_reflow_text ?-width /integer[5,MAX]/? ?-offset /integer[0,MAX]/? ?-prefix /string/? ?--? /text/"}
+} -returnCodes error -result {wrong # args: should be "ns_reflow_text ?-width /integer[5,MAX]/? ?-offset /integer[0,MAX]/? ?-prefix /value/? ?--? /text/"}
 
 test ns_reflow_text-1.2 {empty content} -body {
     ns_reflow_text {}

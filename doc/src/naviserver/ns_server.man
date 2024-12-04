@@ -109,19 +109,19 @@ of [cmd "ns_conn location"].
 
 [call [cmd ns_server] \
 	[opt [option "-server [arg server]"]] \
-	[opt [option "-pool [arg string]"]] \
+	[opt [option "-pool [arg value]"]] \
 	[cmd active] \
 	[opt [option "-checkforproxy"]] \
 	]
 [call [cmd ns_server] \
 	[opt [option "-server [arg server]"]] \
-	[opt [option "-pool [arg string]"]] \
+	[opt [option "-pool [arg value]"]] \
 	[cmd all] \
 	[opt [option "-checkforproxy"]] \
 	]
 [call [cmd ns_server] \
 	[opt [option "-server [arg server]"]] \
-	[opt [option "-pool [arg string]"]] \
+	[opt [option "-pool [arg value]"]] \
 	[cmd queued] \
 	]
 
@@ -139,7 +139,7 @@ back to the physical peer address.
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg server]"]] \
-	[opt [option "-pool [arg string]"]] \
+	[opt [option "-pool [arg value]"]] \
 	[cmd connections]]
 
 Returns the number of connection requests processed by this pool since
@@ -148,7 +148,7 @@ startup.
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg server]"]] \
-	[opt [option "-pool [arg string]"]] \
+	[opt [option "-pool [arg value]"]] \
 	[cmd map] \
 	[opt [option "-noinherit"]] \
 	[opt [arg "mapspec"]] \
@@ -166,7 +166,7 @@ and pool.
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg server]"]] \
-	[opt [option "-pool [arg string]"]] \
+	[opt [option "-pool [arg value]"]] \
 	[cmd maxthreads] \
 	[opt [arg value]]]
 
@@ -177,7 +177,7 @@ the maximum number of connections.
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg server]"]] \
-	[opt [option "-pool [arg string]"]] \
+	[opt [option "-pool [arg value]"]] \
 	[cmd minthreads] \
 	[opt [arg value]]]
 
@@ -187,7 +187,7 @@ and pool. The value must be between 1 and [arg maxthreads].
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg server]"]] \
-	[opt [option "-pool [arg string]"]] \
+	[opt [option "-pool [arg value]"]] \
 	[cmd connectionratelimit] \
 	[opt [arg value]]]
 
@@ -196,7 +196,7 @@ writer threads. The value is provided as KB/s. 0 means no rate limit.
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg server]"]] \
-	[opt [option "-pool [arg string]"]] \
+	[opt [option "-pool [arg value]"]] \
 	[cmd poolratelimit] \
 	[opt [arg value]]]
 
@@ -209,7 +209,7 @@ are managed.
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg server]"]] \
-	[opt [option "-pool [arg string]"]] \
+	[opt [option "-pool [arg value]"]] \
 	[cmd stats]]
 
 Returns a list of attribute value pairs containing statistics for the
@@ -219,7 +219,7 @@ and the number of started threads.
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg server]"]] \
-	[opt [option "-pool [arg string]"]] \
+	[opt [option "-pool [arg value]"]] \
 	[cmd threads]]
 
 Returns a list of attribute value pairs containing information about the
@@ -227,7 +227,7 @@ number of connection threads for the server and pool.
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg server]"]] \
-	[opt [option "-pool [arg string]"]] \
+	[opt [option "-pool [arg value]"]] \
 	[cmd unmap] \
 	[opt [option "-noinherit"]] \
 	[arg "mapspec"] \
@@ -243,7 +243,7 @@ path are unmapped.
 
 [call [cmd  ns_server] \
 	[opt [option "-server [arg server]"]] \
-	[opt [option "-pool [arg string]"]] \
+	[opt [option "-pool [arg value]"]] \
 	[cmd waiting]]
 
 Returns the number of connections waiting (i.e. queued) to be processed.
@@ -257,7 +257,7 @@ Returns the number of connections waiting (i.e. queued) to be processed.
 Specifies the (virtual) server to be queried. If this option is not
 specified, the current server is used as a source.
 
-[opt_def -pool [arg string]]
+[opt_def -pool [arg value]]
 Specifies the pool to be queried. If this option is not
 specified, the default pool of the server is used as a source.
 

@@ -13,8 +13,8 @@ Parse HTTP query parameters.
 [list_begin definitions]
 
  [call [cmd ns_parsequery] \
-     [opt [option "-charset [arg string]"]] \
-     [opt [option "-fallbackcharset [arg string]"]] \
+     [opt [option "-charset [arg value]"]] \
+     [opt [option "-fallbackcharset [arg value]"]] \
      [opt --] \
      [arg querystring]]
 

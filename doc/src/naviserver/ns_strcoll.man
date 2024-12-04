@@ -11,7 +11,7 @@
 [list_begin definitions]
 
 [call [cmd ns_strcoll] \
-        [opt [option "-locale [arg string]"]] \
+        [opt [option "-locale [arg value]"]] \
 	[opt --] \
         [arg string1] \
         [arg string2]]

@@ -14,7 +14,7 @@ The usual way to specify them in the configuration file.
 
 [call [cmd ns_moduleload] \
         [opt [option -global]] \
-        [opt [option "-init [arg string]"]] \
+        [opt [option "-init [arg value]"]] \
         [opt --] \
         [arg module] \
         [arg file]]

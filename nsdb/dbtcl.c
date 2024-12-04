@@ -1145,7 +1145,7 @@ QuoteListToListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
     int         result = TCL_OK;
 
     if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "/string/");
+        Tcl_WrongNumArgs(interp, 1, objv, "/value/");
         result = TCL_ERROR;
     } else {
         const char *quotelist;

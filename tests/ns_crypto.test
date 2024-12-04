@@ -45,7 +45,7 @@ test ns_crypto::md-1.4 {syntax: ns_crypto::md get} -body {
 
 test ns_crypto::md-1.5 {syntax: ns_crypto::md hkdf} -body {
     ns_crypto::md hkdf
-} -returnCodes error -result {wrong # args: should be "ns_crypto::md hkdf ?-binary? ?-digest /string/? ?-salt /string/? ?-secret /string/? ?-info /string/? ?-encoding hex|base64url|base64|binary? ?--? /length[0,MAX]/"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::md hkdf ?-binary? ?-digest /value/? ?-salt /value/? ?-secret /value/? ?-info /value/? ?-encoding hex|base64url|base64|binary? ?--? /length[0,MAX]/"}
 
 test ns_crypto::md-1.6 {syntax: ns_crypto::md new} -body {
     ns_crypto::md new
@@ -53,11 +53,11 @@ test ns_crypto::md-1.6 {syntax: ns_crypto::md new} -body {
 
 test ns_crypto::md-1.7 {syntax: ns_crypto::md string} -body {
     ns_crypto::md string
-} -returnCodes error -result {wrong # args: should be "ns_crypto::md string ?-binary? ?-digest /string/? ?-encoding hex|base64url|base64|binary? ?-passphrase /string/? ?-sign /string/? ?-signature /string/? ?-verify /string/? ?--? /message/"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::md string ?-binary? ?-digest /value/? ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? ?-sign /value/? ?-signature /value/? ?-verify /value/? ?--? /message/"}
 
 test ns_crypto::md-1.8 {syntax: ns_crypto::md vapidsign} -body {
     ns_crypto::md vapidsign
-} -returnCodes error -result {wrong # args: should be "ns_crypto::md vapidsign ?-binary? ?-digest /string/? ?-encoding hex|base64url|base64|binary? ?-passphrase /string/? ?-pem /string/? ?--? /message/"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::md vapidsign ?-binary? ?-digest /value/? ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? ?-pem /value/? ?--? /message/"}
 
 
 test ns_crypto_sha2-1.3 {operation with invalid digest} -constraints crypto -body {
@@ -156,16 +156,16 @@ test ns_crypto::hmac-1.5 {syntax: ns_crypto::hmac new} -body {
 
 test ns_crypto::hmac-1.6 {syntax: ns_crypto::hmac string} -body {
     ns_crypto::hmac string
-} -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string ?-binary? ?-digest /string/? ?-encoding hex|base64url|base64|binary? ?--? /key/ /message/"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string ?-binary? ?-digest /value/? ?-encoding hex|base64url|base64|binary? ?--? /key/ /message/"}
 
 
 test ns_hmac-2.1 {syntax: ns_crypto::hmac string} -constraints crypto -body {
     ns_crypto::hmac string
-} -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string ?-binary? ?-digest /string/? ?-encoding hex|base64url|base64|binary? ?--? /key/ /message/"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string ?-binary? ?-digest /value/? ?-encoding hex|base64url|base64|binary? ?--? /key/ /message/"}
 
 test ns_hmac-2.3 {hmac string with unknown digest} -constraints crypto -body {
     ns_crypto::hmac string -digest sha123 x
-} -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string ?-binary? ?-digest /string/? ?-encoding hex|base64url|base64|binary? ?--? /key/ /message/"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::hmac string ?-binary? ?-digest /value/? ?-encoding hex|base64url|base64|binary? ?--? /key/ /message/"}
 
 test ns_hmac-2.4 {hmac string with unknown digest} -constraints crypto -body {
     ns_crypto::hmac string -digest sha123 x y
@@ -217,17 +217,17 @@ test ns_md-1.0 {syntax: ns_md subcommands} -constraints crypto -body {
 test ns_md-1.1 {syntax: ns_md new} -constraints crypto -body {
     ns_md new -x
 } -returnCodes error -match glob -result {* ?-digest /value/? *}
-# "ns_md new: don't advertise all {wrong # args: should be "ns_md new ?-digest /string/?"}
+# "ns_md new: don't advertise all {wrong # args: should be "ns_md new ?-digest /value/?"}
 
 test ns_md-1.2 {syntax: ns_md file} -constraints crypto -body {
     ns_md file
 } -returnCodes error -match glob -result {*ns_md file ?-digest /value/? ?-encoding /value/? /filename/ ?/arg .../?}
-# "ns_md file" don't advertise all {wrong # args: should be "ns_md file ?-digest /string/? ?-encoding /string/? /filename/ ?/filename .../?"}
+# "ns_md file" don't advertise all {wrong # args: should be "ns_md file ?-digest /value/? ?-encoding /value/? /filename/ ?/filename .../?"}
 
 test ns_md-1.3 {syntax: ns_md string} -constraints crypto -body {
     ns_md string
 } -returnCodes error -match glob -result {*ns_md string ?-digest /value/? ?-encoding /value/? /message/}
-# "ns_md string" don't advertise all {wrong # args: should be "ns_md string ?-digest /string/? ?-encoding /string/? /message/"}
+# "ns_md string" don't advertise all {wrong # args: should be "ns_md string ?-digest /value/? ?-encoding /value/? /message/"}
 
 
 test ns_hmac-1.0 {syntax: ns_hmac sucommands} -constraints crypto -body {
@@ -237,17 +237,17 @@ test ns_hmac-1.0 {syntax: ns_hmac sucommands} -constraints crypto -body {
 test ns_hmac-1.1 {syntax: ns_hmac new} -constraints crypto -body {
     ns_hmac new -x
 } -returnCodes error -match glob -result {* -key /value/ ?-digest /value/? *}
-# "ns_hmac new: don't advertise all {wrong # args: should be "ns_hmac new ?-digest /string/? -key /string/"}
+# "ns_hmac new: don't advertise all {wrong # args: should be "ns_hmac new ?-digest /value/? -key /value/"}
 
 test ns_hmac-1.2 {syntax: ns_hmac file} -constraints crypto -body {
     ns_hmac file
 } -returnCodes error -match glob -result {*ns_hmac file ?-digest /value/? ?-encoding /value/? /key/ /filename/ ?/arg .../?}
-# "ns_hmac file" don't advertise all {wrong # args: should be "ns_hmac file ?-digest /string/? ?-encoding /string/?  /key/ /filename .../"}
+# "ns_hmac file" don't advertise all {wrong # args: should be "ns_hmac file ?-digest /value/? ?-encoding /value/?  /key/ /filename .../"}
 
 test ns_hmac-1.3 {syntax: ns_hmac string} -constraints crypto -body {
     ns_hmac string
 } -returnCodes error -match glob -result {*ns_hmac string ?-digest /value/? ?-encoding /value/? /key/ /message/}
-# "ns_hmac string" don't advertise all {wrong # args: should be "ns_hmac string ?-digest /string/? ?-encoding /string/? /key/ /message/"}
+# "ns_hmac string" don't advertise all {wrong # args: should be "ns_hmac string ?-digest /value/? ?-encoding /value/? /key/ /message/"}
 
 #
 # Functional tests
@@ -276,7 +276,7 @@ test ns_md-file-1.2 {ns_hmac file function} -constraints {crypto nsf} -body {
 ############################################################################
 test pbkdf2_hmac-sha1.0 {syntax: ns_crypto::pbkdf2_hmac} -constraints crypto -body {
     ns_crypto::pbkdf2_hmac ""
-} -returnCodes error -result {wrong # args: should be "ns_crypto::pbkdf2_hmac ?-binary? ?-digest /string/? ?-dklen /integer[1,MAX]/? ?-iterations /integer[1,MAX]/? ?-salt /string/? ?-secret /string/? ?-encoding hex|base64url|base64|binary?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::pbkdf2_hmac ?-binary? ?-digest /value/? ?-dklen /integer[1,MAX]/? ?-iterations /integer[1,MAX]/? ?-salt /value/? ?-secret /value/? ?-encoding hex|base64url|base64|binary?"}
 
 test pbkdf2_hmac-sha1.0 {Testcase 1 for pbkdf2-hmac-sha1 based on RFC 6070} -body {
     ::ns_crypto::pbkdf2_hmac -secret "password" -iterations 1 -salt "salt" -digest sha1
@@ -361,7 +361,7 @@ test ns_totp-1.0 {syntax: ns_totp} -constraints {crypto nsf} -body {
     ns_totp -x
 } -returnCodes error -result {invalid non-positional argument '-x', valid are: -digest, -digits, -interval, -user_id, -key, -time;
  should be "ns_totp ?-digest /value/? ?-digits /integer/? ?-interval /integer/? ?-user_id /integer/? ?-key /value/? ?-time /value/?"}
-# ns_totp is an NSF proc: nsd message should be {wrong # args: should be "ns_totp ?-digest /string/? ?-digits /integer/? ?-interval /integer/? ?-user_id /integer/? ?-key /string/? ?-time /time/?"}
+# ns_totp is an NSF proc: nsd message should be {wrong # args: should be "ns_totp ?-digest /value/? ?-digits /integer/? ?-interval /integer/? ?-user_id /integer/? ?-key /value/? ?-time /time/?"}
 
 
 test ns_totp-1.1 {
@@ -554,7 +554,7 @@ test ns_crypto::aead::encrypt-1.0 {syntax: ns_crypto::aead::encrypt} -body {
 
 test ns_crypto::aead::encrypt-1.1 {syntax: ns_crypto::aead::encrypt string} -body {
     ns_crypto::aead::encrypt string
-} -returnCodes error -result {wrong # args: should be "ns_crypto::aead::encrypt string ?-binary? ?-aad /string/? ?-cipher /string/? ?-encoding hex|base64url|base64|binary? ?-iv /string/? ?-key /string/? ?--? /input/"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::aead::encrypt string ?-binary? ?-aad /value/? ?-cipher /value/? ?-encoding hex|base64url|base64|binary? ?-iv /value/? ?-key /value/? ?--? /input/"}
 
 test ns_crypto::aead::decrypt-1.0 {syntax: ns_crypto::aead::decrypt} -body {
     ns_crypto::aead::decrypt
@@ -562,7 +562,7 @@ test ns_crypto::aead::decrypt-1.0 {syntax: ns_crypto::aead::decrypt} -body {
 
 test ns_crypto::aead::decrypt-1.1 {syntax: ns_crypto::aead::decrypt string} -body {
     ns_crypto::aead::decrypt string
-} -returnCodes error -result {wrong # args: should be "ns_crypto::aead::decrypt string ?-binary? ?-aad /string/? ?-cipher /string/? ?-encoding hex|base64url|base64|binary? ?-iv /string/? ?-key /string/? ?-tag /string/? ?--? /input/"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::aead::decrypt string ?-binary? ?-aad /value/? ?-cipher /value/? ?-encoding hex|base64url|base64|binary? ?-iv /value/? ?-key /value/? ?-tag /value/? ?--? /input/"}
 
 test aead-1.0 {aead::encrypt} -body {
     set d [ns_crypto::aead::encrypt string -cipher aes-128-gcm -iv 123456789 -key secret "hello world"]
@@ -584,7 +584,7 @@ test aead-1.1 {aead::encrypt and decrypt} -body {
 ############################################################################
 test ns_crypto::scrypt-1.0 {syntax: ns_crypto::scrypt} -constraints {crypto scrypt} -body {
     ns_crypto::scrypt ?
-} -returnCodes error -result {wrong # args: should be "ns_crypto::scrypt ?-binary? ?-salt /string/? ?-secret /string/? ?-n /integer[1,MAX]/? ?-p /integer[1,MAX]/? ?-r /integer[1,MAX]/? ?-encoding hex|base64url|base64|binary?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::scrypt ?-binary? ?-salt /value/? ?-secret /value/? ?-n /integer[1,MAX]/? ?-p /integer[1,MAX]/? ?-r /integer[1,MAX]/? ?-encoding hex|base64url|base64|binary?"}
 
 test scrypt-1.1 {
     Test case from RFC 7914 (example 2 in sect 12)
@@ -609,7 +609,7 @@ test scrypt-1.2 {
 ############################################################################
 test ns_crypto::argon2-1.0 {syntax: ns_crypto::argon2} -constraints {crypto argon2} -body {
     ns_crypto::argon2 ?
-} -returnCodes error -result {wrong # args: should be "ns_crypto::argon2 ?-ad /string/? ?-binary? ?-encoding hex|base64url|base64|binary? ?-iter /integer[1,MAX]/? ?-lanes /integer[1,MAX]/? ?-memcost /integer[1,MAX]/? ?-outlen /integer[1,MAX]/? ?-password /string/? ?-salt /string/? ?-secret /string/? ?-threads /integer/? ?-variant /string/?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::argon2 ?-ad /value/? ?-binary? ?-encoding hex|base64url|base64|binary? ?-iter /integer[1,MAX]/? ?-lanes /integer[1,MAX]/? ?-memcost /integer[1,MAX]/? ?-outlen /integer[1,MAX]/? ?-password /value/? ?-salt /value/? ?-secret /value/? ?-threads /integer/? ?-variant /value/?"}
 
 test argon2-1.1 {
     Test case from the OpenSSL EVP_KDF-ARGON2 manual page, using ARGON2D
@@ -722,23 +722,23 @@ test ns_crypto:eckey-1.1 {syntax: ns_crypto::eckey subcommands} -body {
 
 test ns_crypto::eckey-1.2 {syntax: ns_crypto::eckey generate} -body {
     ns_crypto::eckey generate ?
-} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey generate ?-name /string/? ?-pem /string/?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey generate ?-name /value/? ?-pem /value/?"}
 
 test ns_crypto::eckey-1.3 {syntax: ns_crypto::eckey import} -body {
     ns_crypto::eckey import ?
-} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey import ?-binary? ?-string /string/? ?-encoding hex|base64url|base64|binary?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey import ?-binary? ?-string /value/? ?-encoding hex|base64url|base64|binary?"}
 
 test ns_crypto::eckey-1.4 {syntax: ns_crypto::eckey priv} -body {
     ns_crypto::eckey priv ?
-} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey priv ?-encoding hex|base64url|base64|binary? ?-passphrase /string/? ?-pem /string/?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey priv ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? ?-pem /value/?"}
 
 test ns_crypto::eckey-1.5 {syntax: ns_crypto::eckey pub} -body {
     ns_crypto::eckey pub ?
-} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey pub ?-encoding hex|base64url|base64|binary? ?-passphrase /string/? ?-pem /string/?"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey pub ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? ?-pem /value/?"}
 
 test ns_crypto::eckey-1.6 {syntax: ns_crypto::eckey sharedsecret} -body {
     ns_crypto::eckey sharedsecret
-} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey sharedsecret ?-binary? ?-encoding hex|base64url|base64|binary? ?-passphrase /string/? ?-pem /string/? ?--? /pubkey/"}
+} -returnCodes error -result {wrong # args: should be "ns_crypto::eckey sharedsecret ?-binary? ?-encoding hex|base64url|base64|binary? ?-passphrase /value/? ?-pem /value/? ?--? /pubkey/"}
 
 
 #

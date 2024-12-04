@@ -23,7 +23,7 @@ e.g. for hash-based partitioning.
 
 [list_begin definitions]
 
-[call [cmd ns_hash] [arg string]]
+[call [cmd ns_hash] [arg value]]
 
 [list_end]
 

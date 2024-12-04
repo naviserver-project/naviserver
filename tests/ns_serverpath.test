@@ -48,7 +48,7 @@ test ns_serverpath-1.1 {ns_serverpath basic operation} -body {
 
 # ns_serverpath processes all input parameters, we cannot trigger a
 # syntax error message. Therefore, provide a manual entry:
-# message should be {wrong # args: should be "ns_serverpath ?-host /string/? ?--? ?/path-segment .../?"}
+# message should be {wrong # args: should be "ns_serverpath ?-host /value/? ?--? ?/path-segment .../?"}
 
 test ns_serverpath-1.2 {basic path} -body {
     ns_serverpath --

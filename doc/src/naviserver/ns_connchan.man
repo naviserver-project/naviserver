@@ -146,7 +146,7 @@ The timeout value [arg time] can be specified in the form
 or as a number with a time unit.
 
 [call [cmd "ns_connchan listen"] \
-	[opt [option "-driver [arg string]"]] \
+	[opt [option "-driver [arg value]"]] \
 	[opt [option "-server [arg server]"]] \
 	[opt [option "-bind"]] \
 	[arg address] \
@@ -160,13 +160,13 @@ connections. On success, this command returns a dict containing
 
 
 [call [cmd "ns_connchan open"] \
-	[opt [option "-driver [arg string]"]] \
+	[opt [option "-driver [arg value]"]] \
 	[opt [option "-headers [arg setId]"]] \
-	[opt [option "-hostname [arg string]"]] \
-	[opt [option "-method [arg string]"]] \
+	[opt [option "-hostname [arg value]"]] \
+	[opt [option "-method [arg value]"]] \
 	[opt [option "-timeout [arg time]"]] \
-	[opt [option "-unix_socket [arg string]"]] \
-	[opt [option "-version [arg string]"]] \
+	[opt [option "-unix_socket [arg value]"]] \
+	[opt [option "-version [arg value]"]] \
         [arg url] \
 ]
 
@@ -185,7 +185,7 @@ The [arg options] can be any of:
 [opt_def -headers [arg setId]] A [type [term ns_set]] of request header
 fields.
 
-[opt_def -hostname [arg string]] Required for connecting to a
+[opt_def -hostname [arg value]] Required for connecting to a
 server with virtual hosting that provides multiple certificates via
 SNI (Server Name Indication).
 
@@ -197,9 +197,9 @@ establishing the connection, by default 1 second. The timeout value
 [arg time] is specified in the form [arg secs[opt :microseconds]],
 or [arg secs.fraction], or as a number with a time unit.
 
-[opt_def -unix_socket [arg string]] a unix socket to connect to.
+[opt_def -unix_socket [arg value]] a unix socket to connect to.
 
-[opt_def -version [arg string]] specifies the HTTP version (default 1.0).
+[opt_def -version [arg value]] specifies the HTTP version (default 1.0).
 [list_end]
 
 

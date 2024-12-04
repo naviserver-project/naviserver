@@ -23,8 +23,8 @@ test ns_return-1.0 {syntax: ns_return} -body {
 
 test ns_respond-1.1 {syntax: ns_respond} -body {
     ns_respond -x
-} -returnCodes error -result {wrong # args: should be "ns_respond ?-status /integer[100,599]/? ?-type /string/? ?-length /integer[0,MAX]/? ?-headers /setId/? ?-string /string/? ?-file /string/? ?-fileid /string/? ?-data /data/? ?-binary /data/?"}
-# contains deprecated argument; {wrong # args: should be "ns_respond ?-status /integer[100,599]/? ?-type /string/? ?-length /integer[0,MAX]/? ?-headers /setId/? ?-string /string/? ?-file /string/? ?-fileid /string/? ?-data /data/?"}
+} -returnCodes error -result {wrong # args: should be "ns_respond ?-status /integer[100,599]/? ?-type /value/? ?-length /integer[0,MAX]/? ?-headers /setId/? ?-string /value/? ?-file /value/? ?-fileid /value/? ?-data /data/? ?-binary /data/?"}
+# contains deprecated argument; {wrong # args: should be "ns_respond ?-status /integer[100,599]/? ?-type /value/? ?-length /integer[0,MAX]/? ?-headers /setId/? ?-string /value/? ?-file /value/? ?-fileid /value/? ?-data /data/?"}
 
 test ns_returnfile-1.0 {syntax: ns_returnfile} -body {
     ns_returnfile

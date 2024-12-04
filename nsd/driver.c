@@ -8221,7 +8221,7 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
                 objc == 4)) {
             args = argsLegacy;
             opts = NULL;
-            Ns_LogDeprecated(objv, objc, "ns_writer size ?-driver /string/? ?/size/?", NULL);
+            Ns_LogDeprecated(objv, objc, "ns_writer size ?-driver /value/? ?/size/?", NULL);
         } else {
             args = argsNew;
             opts = optsNew;

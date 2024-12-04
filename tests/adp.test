@@ -151,8 +151,8 @@ test ns_adp_break-1.0 {syntax: ns_adp_break} -body {
 
 test ns_adp_debug-1.0 {syntax: ns_adp_debug} -body {
     ns_adp_debug ? ? ? ?
-} -returnCodes error -result {wrong # args: should be "ns_adp_debug ?-host /string/? ?-port /string/? ?-procs /string/? ?--? ?/host/? ?/port/? ?/procs/?"}
-# legacy syntax; should be {wrong # args: should be "ns_adp_debug ?-host /string/? ?-port /string/? ?-procs /string/?"}
+} -returnCodes error -result {wrong # args: should be "ns_adp_debug ?-host /value/? ?-port /value/? ?-procs /value/? ?--? ?/host/? ?/port/? ?/procs/?"}
+# legacy syntax; should be {wrong # args: should be "ns_adp_debug ?-host /value/? ?-port /value/? ?-procs /value/?"}
 
 test ns_adp_exception-1.0 {syntax: ns_adp_exception} -body {
     ns_adp_exception ? ?
@@ -173,7 +173,7 @@ test ns_adp_mimetype-1.0 {syntax: ns_adp_mimetype} -body {
 
 test ns_adp_parse-1.0 {syntax: ns_adp_parse} -body {
     ns_adp_parse
-} -returnCodes error -result {wrong # args: should be "ns_adp_parse ?-cwd /string/? ?-file? ?-safe? ?-string? ?-tcl? ?--? /arg .../"}
+} -returnCodes error -result {wrong # args: should be "ns_adp_parse ?-cwd /value/? ?-file? ?-safe? ?-string? ?-tcl? ?--? /arg .../"}
 
 test ns_adp_puts-1.0 {syntax: ns_adp_puts} -body {
     ns_adp_puts

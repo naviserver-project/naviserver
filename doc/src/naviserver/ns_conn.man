@@ -188,7 +188,7 @@ the flags might change over versions.
 
 
 [call [cmd  "ns_conn form"] \
-     [opt [option "-fallbackcharset [arg string]"]] \
+     [opt [option "-fallbackcharset [arg value]"]] \
 ]
 
 Returns any submitted form data as an [term ns_set]. This form data

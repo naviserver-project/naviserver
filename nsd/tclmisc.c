@@ -2190,7 +2190,7 @@ NsTclHashObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
     int          result = TCL_OK;
     char        *inputString = (char*)"";
     Ns_ObjvSpec  args[] = {
-        {"string", Ns_ObjvString,  &inputString, NULL},
+        {"value", Ns_ObjvString,  &inputString, NULL},
         {NULL, NULL, NULL, NULL}
     };
 

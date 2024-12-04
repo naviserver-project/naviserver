@@ -50,11 +50,11 @@ test ns_connchan-1.1.6 {syntax: ns_connchan list} -body {
 
 test ns_connchan-1.1.7 {syntax: ns_connchan listen} -body {
     ns_connchan listen
-} -returnCodes error -result {wrong # args: should be "ns_connchan listen ?-driver /string/? ?-server /server/? ?-bind? /address/ /port/ /script/"}
+} -returnCodes error -result {wrong # args: should be "ns_connchan listen ?-driver /value/? ?-server /server/? ?-bind? /address/ /port/ /script/"}
 
 test ns_connchan-1.1.8 {syntax: ns_connchan open} -body {
     ns_connchan open
-} -returnCodes error -result {wrong # args: should be "ns_connchan open ?-driver /string/? ?-headers /setId/? ?-hostname /string/? ?-method /string/? ?-timeout /time/? ?-unix_socket /string/? ?-version /string/? /url/"}
+} -returnCodes error -result {wrong # args: should be "ns_connchan open ?-driver /value/? ?-headers /setId/? ?-hostname /value/? ?-method /value/? ?-timeout /time/? ?-unix_socket /value/? ?-version /value/? /url/"}
 
 test ns_connchan-1.1.9 {syntax: ns_connchan read} -body {
     ns_connchan read

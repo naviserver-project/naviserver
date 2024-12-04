@@ -23,10 +23,10 @@ test ns_writer-1.2.1 {ns_writer list syntax} -body {
 
 test ns_writer-1.2.2 {ns_writer size syntax} -body {
      ns_writer size -driver default 1024 ?
-} -returnCodes error -result {wrong # args: should be "ns_writer size ?-driver /string/? ?/size/?"}
+} -returnCodes error -result {wrong # args: should be "ns_writer size ?-driver /value/? ?/size/?"}
 test ns_writer-1.2.3 {ns_writer streaming syntax} -body {
      ns_writer streaming 1 - -
-} -returnCodes error -result {wrong # args: should be "ns_writer streaming ?-driver /string/? ?true|false?"}
+} -returnCodes error -result {wrong # args: should be "ns_writer streaming ?-driver /value/? ?true|false?"}
 test ns_writer-1.2.4 {ns_writer submit syntax} -body {
      ns_writer submit
 } -returnCodes error -result {wrong # args: should be "ns_writer submit /data/"}

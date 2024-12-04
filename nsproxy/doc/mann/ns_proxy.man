@@ -118,16 +118,16 @@ that proxyId.
 [call [cmd "ns_proxy configure"] [arg pool] \
     [opt [option "-env [arg setId]"]] \
     [opt [option "-evaltimeout [arg time]"]] \
-    [opt [option "-exec [arg string]"]] \
+    [opt [option "-exec [arg value]"]] \
     [opt [option "-gettimeout [arg time]"]] \
     [opt [option "-idletimeout [arg time]"]] \
-    [opt [option "-init [arg string]"]] \
+    [opt [option "-init [arg value]"]] \
     [opt [option "-logminduration [arg time]"]] \
     [opt [option "-maxruns [arg integer]"]] \
     [opt [option "-maxslaves [arg integer]"]] \
     [opt [option "-maxworkers [arg integer]"]] \
     [opt [option "-recvtimeout [arg time]"]] \
-    [opt [option "-reinit [arg string]"]] \
+    [opt [option "-reinit [arg value]"]] \
     [opt [option "-sendtimeout [arg time]"]] \
     [opt [option "-waittimeout [arg time]"]] \
     ]

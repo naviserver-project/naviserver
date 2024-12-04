@@ -1573,7 +1573,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
             }
 
             if (legacy) {
-                Ns_LogDeprecated(objv, objc, "ns_server ?-pool /string/? ...",
+                Ns_LogDeprecated(objv, objc, "ns_server ?-pool /value/? ...",
                                  "Passing pool as second argument is deprecated.");
                 optArg = Tcl_GetString(objv[objc-1]);
                 pool = optArg;

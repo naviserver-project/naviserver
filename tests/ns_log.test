@@ -74,7 +74,7 @@ test ns_logctl-1.4 {syntax: ns_logctl get} -body {
 
 test ns_logctl-1.5 {syntax: ns_logctl grep} -body {
     ns_logctl grep - -
-} -returnCodes error -result {wrong # args: should be "ns_logctl grep ?-filename /string/? ?--? /string/"}
+} -returnCodes error -result {wrong # args: should be "ns_logctl grep ?-filename /value/? ?--? /string/"}
 
 test ns_logctl-1.6 {syntax: ns_logctl hold} -body {
     ns_logctl hold -

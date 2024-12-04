@@ -26,8 +26,8 @@ is installed.
 [list_begin definitions]
 
 [call [cmd "ns_hmac string"] \
-	[opt [option "-digest [arg string]"]] \
-	[opt [option "-encoding [arg string]"]] \
+	[opt [option "-digest [arg value]"]] \
+	[opt [option "-encoding [arg value]"]] \
 	[arg key] \
 	[arg message]]
 
@@ -35,8 +35,8 @@ Returns the HMAC based on the provided secret [arg key] and the string
 [arg message].
 
 [call [cmd "ns_hmac file"] \
-    [opt [option "-digest [arg string]"]] \
-    [opt [option "-encoding [arg string]"]] \
+    [opt [option "-digest [arg value]"]] \
+    [opt [option "-encoding [arg value]"]] \
     [arg key] [arg "filename ..."] \
 ]
 
@@ -46,8 +46,8 @@ Returns the HMAC from the provided secret [arg key], the file
 for large files low. The resulting HMAC is calculated cumulatively.
 
 [call [cmd "ns_hmac new"] \
-    [opt [option "-digest [arg string]"]] \
-    [option "-key [arg string]"] \
+    [opt [option "-digest [arg value]"]] \
+    [option "-key [arg value]"] \
 ]
 
 Creates and returns a new HMAC object for incremental operations.
@@ -133,7 +133,7 @@ implementation provides more options for certain specialized operations.
 
 [call [cmd "ns_crypto::hmac string"] \
     [opt [option "-binary"]] \
-    [opt [option "-digest [arg string]"]] \
+    [opt [option "-digest [arg value]"]] \
     [opt [option "-encoding hex|base64url|base64|binary"]] \
     [opt --] \
     [arg "key"] \

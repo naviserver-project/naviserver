@@ -16,7 +16,7 @@ NaviServer.
 
 [call [cmd  "ns_thread create"] \
 	[opt [option "-detached"]] \
-	[opt [option "-name [arg string]"]] \
+	[opt [option "-name [arg value]"]] \
 	[opt [option "--"]] \
 	[arg script]]
 

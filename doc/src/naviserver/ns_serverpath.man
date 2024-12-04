@@ -13,7 +13,7 @@ for current virtual server context
 [list_begin definitions]
 
 [call [cmd ns_serverpath] \
-	[opt [option "-host [arg string]"]] \
+	[opt [option "-host [arg value]"]] \
 	[opt --] \
         [opt [arg "path-segment ..."]] \
         ]

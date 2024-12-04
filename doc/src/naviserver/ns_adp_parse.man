@@ -24,7 +24,7 @@ enclosing script.
 [list_begin definitions]
 
 [call [cmd ns_adp_parse] \
-	[opt [option "-cwd [arg string]"]] \
+	[opt [option "-cwd [arg value]"]] \
 	[opt [option {-file}]] \
 	[opt [option {-safe}]] \
 	[opt [option {-string}]] \

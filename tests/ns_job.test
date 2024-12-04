@@ -45,7 +45,7 @@ test ns_job-1.3 {syntax: ns_job configure} -body {
 
 test ns_job-1.4 {syntax: ns_job create} -body {
     ns_job create
-} -returnCodes error -result {wrong # args: should be "ns_job create ?-desc /string/? /queueId/ ?/maxthreads[1,MAX]/?"}
+} -returnCodes error -result {wrong # args: should be "ns_job create ?-desc /value/? /queueId/ ?/maxthreads[1,MAX]/?"}
 
 test ns_job-1.5 {syntax: ns_job delete} -body {
     ns_job delete
@@ -69,7 +69,7 @@ test ns_job-1.9 {syntax: ns_job jobs} -body {
 
 test ns_job-1.10 {syntax: ns_job queue} -body {
     ns_job queue
-} -returnCodes error -result {wrong # args: should be "ns_job queue ?-detached? ?-head? ?-jobid /string/? /queueId/ /script/"}
+} -returnCodes error -result {wrong # args: should be "ns_job queue ?-detached? ?-head? ?-jobid /value/? /queueId/ /script/"}
 
 test ns_job-1.11 {syntax: ns_job queuelist} -body {
     ns_job queuelist x
