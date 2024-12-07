@@ -3459,7 +3459,7 @@ NS_EXTERN int Ns_TclGetSet2(Tcl_Interp *interp, const char *setId, Ns_Set **setP
 NS_EXTERN int Ns_TclFreeSet(Tcl_Interp *interp, const char *setId)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-NS_EXTERN Ns_Set *Ns_SetCreateFromDict(Tcl_Interp *interp, const char *name, Tcl_Obj *listObj)
+NS_EXTERN Ns_Set *Ns_SetCreateFromDict(Tcl_Interp *interp, const char *name, Tcl_Obj *listObj, unsigned int flags)
     NS_GNUC_NONNULL(3);
 
 /*

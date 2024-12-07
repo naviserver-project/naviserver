@@ -143,7 +143,7 @@ Ns_ConfigSet(const char *section, const char *key, const char *name)
     if (value != NULL) {
         Tcl_Obj *valueObj = Tcl_NewStringObj(value, TCL_INDEX_NONE);
 
-        setPtr = Ns_SetCreateFromDict(NULL, name, valueObj);
+        setPtr = Ns_SetCreateFromDict(NULL, name, valueObj, NS_SET_OPTION_NOCASE);
         fprintf(stderr, "Ns_ConfigSet CREATE FROM DICT '%s'\n",value);
         Tcl_DecrRefCount(valueObj);
     } else {

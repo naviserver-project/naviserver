@@ -231,7 +231,7 @@ Ns_TclFreeSet(Tcl_Interp *interp, const char *setId)
  *----------------------------------------------------------------------
  */
 Ns_Set *
-Ns_SetCreateFromDict(Tcl_Interp *interp, const char *name, Tcl_Obj *listObj)
+Ns_SetCreateFromDict(Tcl_Interp *interp, const char *name, Tcl_Obj *listObj, unsigned int flags)
 {
     int        result;
     TCL_SIZE_T objc;
@@ -262,6 +262,8 @@ Ns_SetCreateFromDict(Tcl_Interp *interp, const char *name, Tcl_Obj *listObj)
         TCL_SIZE_T i;
 
         setPtr = Ns_SetCreate(name);
+        setPtr->flags = flags;
+
         for (i = 0; i < objc; i += 2) {
             const char *keyString, *valueString;
             TCL_SIZE_T  keyLength, valueLength;
