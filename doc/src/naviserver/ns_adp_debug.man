@@ -2,12 +2,29 @@
 [manpage_begin ns_adp_debug n [vset version]]
 [moddesc {NaviServer Built-in Commands}]
 
-[titledesc {Connect to the TclPro debugger if not already connected}]
+[titledesc {Connect to the TclPro Debugger if not already connected}]
 
 [description]
-Initialize the debugger by calling the debug init proc with
-the hostname and port of the debugger and a pattern of procs
-to auto-instrument
+
+ The [cmd ns_adp_debug] command integrates NaviServer with the
+ [uri https://www.tcl.tk/software/tclpro/debugger.html {TclPro Debugger}],
+ a graphical debugging tool for Tcl code. It allows you to connect to
+ a running debugger process and step through code, inspect variables,
+ and examine the call stack. By default, it uses information from the
+ current request to determine the debugger host if not explicitly
+ provided, and defaults to port [arg 2576] unless otherwise specified.
+
+ [para] You can use [cmd ns_adp_debug] to:
+
+ [list_begin itemized]
+ [item] Connect to a remote TclPro Debugger instance running on a
+        specified host and port
+ [item] Inspect the call stack and local variables at breakpoints
+ [item] Step through Tcl procedures. This process requires
+        instrumentation, which can be enabled via command-line
+        parameters or through the TclPro Debugger GUI
+        ("View->Procedures...").
+ [list_end]
 
 [list_begin definitions]
 
@@ -17,21 +34,180 @@ to auto-instrument
         [opt [option "-procs [arg value]"]] \
         ]
 
-[para]
-[arg procs]
-Pattern of procs to be debugged
-
-[para]
-[arg host]
-Host where TclProc is running
-
-[para]
-[arg port]
-Port TcPro is listening
+ Connects to a running TclPro Debugger process. By default, if
+ [arg host] is not provided, [cmd ns_adp_debug] uses the [term Host]
+ header field from the incoming request. If the debugger is running on
+ a port different to the default 2576, you must specify
+ the [arg -port] option. If [arg -procs] is provided, it should
+ be a glob-style pattern indicating which Tcl procedures
+ to automatically instrument for debugging.
 
 [list_end]
 
+[subsection {Example Usage of the TclPro Debugger}]
+
+ Below is an example of using the TclPro Debugger to debug the start
+ page of the [cmd nsstats] module.
+
+[para][image tclpro-nsstats "nsstats startpage from TclPro Debugger"]
+
+
+[subsection {Background and Availability of the TclPro Debugger}]
+
+[para]
+
+ The TclPro Debugger was originally developed as a commercial product
+ by Scriptics. After Scriptics was acquired by Sun Microsystems, the
+ development moved to ActiveState as part of the TclDevKit tool
+ suite. When ActiveState discontinued TclDevKit, the TclPro Debugger
+ sources were released as open source. Currently, multiple open-source
+ variants exist:
+
+[list_begin itemized]
+[item] Open-sourced TDK from ActiveState:
+       [uri https://github.com/activestate/tdk]
+[item] FlightAware fork, upgraded from TclPro Debugger 1.5 to version 2.0:
+       [uri https://github.com/flightaware/TclProDebug]
+[item] A fork of the FlightAware version, updated to version 3.0, supporting
+       the Microsoft Debug Adapter Protocol (usable with Vimspector,
+       Visual Studio, etc.):
+       [uri https://github.com/puremourning/TclProDebug]
+[item] A fork of the FlightAware version (2.0) adapted for Tcl 9:
+       [uri https://github.com/apnadkarni/TclProDebug]
+[list_end]
+
+[subsection {Installation of the TclPro Debugger}]
+
+[para] The TclPro Debugger is a Tk-based GUI application that
+ communicates with NaviServer over a network socket. You can run the
+ debugger on a separate machine from the server, provided you have
+ appropriate network access and a means to display the GUI (e.g., X
+ forwarding or remote desktop).
+
+[para] The steps below demonstrate how to install Tcl, Tk, and
+ TclProDebug from source into a dedicated directory, avoiding
+ interference with system-wide installations. The example uses Tcl 9
+ on a Unix-like system. You may adapt these instructions for Tcl 8.6
+ or different paths as needed.
+
+[para] First, define the paths for the source and installation
+ directories, assuming Tcl, Tk, and TclProDebug are downloaded to the
+ specified locations.
+
+[example_begin]
+ INSTALL_DIR=/usr/local/ns9
+ # Uncomment TKFLAG if compiling under macOS with Aqua support
+ #TKFLAG=--enable-aqua
+ TCL_SRC=/usr/local/src/tcl9.0.0
+ TK_SRC=/usr/local/src/tk9.0.0
+ TCLDB_SRC=/usr/local/src/TclProDebug
+[example_end]
+
+Install Tcl9:
+[example_begin]
+ (cd ${TCL_SRC}/unix && ./configure --prefix=${INSTALL_DIR} --with-tcl=${INSTALL_DIR}/lib/ && sudo make install)
+[example_end]
+
+Install Tk9:
+[example_begin]
+ (cd ${TK_SRC}/unix && ./configure --prefix=${INSTALL_DIR} --with-tcl=${INSTALL_DIR}/lib/ ${TKFLAG} && sudo make install)
+[example_end]
+
+Install the Tcl parser from TclPro Debugger:
+[example_begin]
+ cd ${TCLDB_SRC}
+ (cd lib/tclparser/ && autoreconf && ./configure --prefix=${INSTALL_DIR} --with-tcl=${INSTALL_DIR}/lib && sudo make install)
+[example_end]
+
+ Make the remote debugging adapter available to NaviServer by linking
+ it into NaviServer’s [const tcl] directory (assuming NaviServer and the
+ debugger run on the same machine):
+
+[example_begin]
+ ln -s ${TCLDB_SRC}/lib/remotedebug/initdebug.tcl ${INSTALL_DIR}/tcl/
+[example_end]
+
+ Start the TclPro Debugger GUI (here using wish from the Tk 9 installation):
+
+[example_begin]
+ ${INSTALL_DIR}/bin/wish9.0 bin/prodebug
+[example_end]
+
+In the TclPro Debugger GUI:
+[example_begin]
+  File -> New Project
+    Select "Remote Debugging"
+    Leave Port 2576 (default)
+  File -> Save Project As...
+[example_end]
+
+
+[subsection {Basic operation of the TclPro Debugger with NaviServer}]
+
+NaviServer supports two primary modes for debugging ADP pages:
+
+[list_begin itemized]
+[item] [emph {Full-page Debugging:}]
+   In this mode, a full page can be debugged.
+
+   [list_begin enumerated]
+   [enum] Enable ADP debugging in the NaviServer configuration file
+   for the server configuration.
+
+[example_begin]
+ ns_section ns/server/$server/adp {
+   ...
+   ns_param   enabledebug         true     ;# default: false
+   ...
+ }
+[example_end]
+
+   [enum] To debug a page, append a [term debug] query variable to the page’s URL.
+     For example:
+[example_begin]
+ http://...../foo.adp?debug=*
+[example_end]
+
+     The wildcard pattern matches the file to be debugged (useful for
+     complex ADP includes).  Additional query parameters like
+     [term dprocs], [term dhost], and [term dport] can override
+     defaults for procedure patterns, debugger host, and port, respectively.
+
+     [para] Note: Full-page debugging is recommended only for
+     development environments not accessible from the public Internet,
+     as it can expose source code and internal variable states to any
+     client requesting the [term debug] parameter.
+  [list_end]
+
+[item] [emph {Debugging via Breakpoints:}]
+
+ If you prefer not to enable full-page debugging, insert
+ [cmd ns_adp_debug] calls in your code at specific points to initiate a
+ debugger connection.  This method does not require changes to the
+ NaviServer configuration.  If needed, you can specify [arg host],
+ [arg port], and [arg procs] arguments just as in full-page debugging
+ mode. All parameters are optional.
+
+[list_end]
+
+ By default, the [arg host] is derived from the request’s Host header
+ field.  If you need a different host or a non-default port, specify
+ them in the [cmd ns_adp_debug] call or via query parameters.
+
+[subsection {Limitations}]
+
+ The TclPro Debugger was designed primarily for debugging plain Tcl
+ scripts.  While it works reasonably well for basic debugging needs
+ for NaviServer and ADP pages, there are certain limitations when
+ dealing with large frameworks or complex code bases.  For instance,
+ stepping through code relies on instrumentation that serializes and
+ re-sources the procedures. This approach may be adequate for small
+ applications but can become cumbersome for larger frameworks (e.g.,
+ OpenACS) that define procedures via [cmd ad_proc], employ
+ object-oriented extensions, or similar. Instrumentalization is
+ currently limited to Tcl procedures.
+
 [see_also nsd]
-[keywords "server built-in" NaviServer]
+[keywords "server built-in" NaviServer Debugger TclPro]
 [manpage_end]
 

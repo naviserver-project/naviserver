@@ -465,16 +465,27 @@ AdpSource(NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv, const char *fi
                && itPtr->adp.debugFile != NULL
                && (p = strrchr(file, INTCHAR('/'))) != NULL
                && Tcl_StringMatch(p+1, itPtr->adp.debugFile) != 0) {
-        const Ns_Set *hdrs;
+        const Ns_Set *query;
         const char   *host, *port, *procs;
 
-        hdrs = Ns_ConnGetQuery(interp, itPtr->conn, NULL, NULL); /* currently ignoring encoding errors */
-        host = Ns_SetIGet(hdrs, "dhost");
-        port = Ns_SetIGet(hdrs, "dport");
-        procs = Ns_SetIGet(hdrs, "dprocs");
+        query = Ns_ConnGetQuery(interp, itPtr->conn, NULL, NULL); /* currently ignoring encoding errors */
+        host = Ns_SetIGet(query, "dhost");
+        port = Ns_SetIGet(query, "dport");
+        procs = Ns_SetIGet(query, "dprocs");
         if (NsAdpDebug(itPtr, host, port, procs) != TCL_OK) {
-            (void) Ns_ConnReturnNotice(itPtr->conn, 200, "Debug Init Failed",
-                                       Tcl_GetStringResult(interp));
+            /*
+             * In case the debugger setup is not correct, avoid a call to
+             * Ns_ConnReturnNotice() which triggers an ADP page, running most
+             * likely again into the same ADP setup error.  Therefore, stick to
+             * the lower-level, non-templating variant of the response.
+             */
+            Tcl_DString ds;
+
+            Tcl_DStringInit(&ds);
+            Ns_DStringPrintf(&ds, "TclPro Debug Init Failed: %s", Tcl_GetString(Tcl_GetObjResult(interp)));
+            result = Ns_ConnReturnCharData(itPtr->conn, 200, ds.string, ds.length, "text/plain");
+            Tcl_DStringFree(&ds);
+
             itPtr->adp.exception = ADP_ABORT;
             goto done;
         }
@@ -717,10 +728,9 @@ done:
  */
 
 int
-NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *procs)
+NsAdpDebug(NsInterp *itPtr, const char *debugHost, const char *debugPort, const char *debugProcs)
 {
     Tcl_Interp  *interp;
-    Tcl_DString  ds;
     int          result;
 
     NS_NONNULL_ASSERT(itPtr != NULL);
@@ -729,14 +739,39 @@ NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *proc
     result = TCL_OK;
 
     if (itPtr->adp.debugInit == 0) {
+        Tcl_DString  ds, scratch;
+
+        Tcl_DStringInit(&scratch);
+        if (debugHost == NULL) {
+            if (itPtr->conn == NULL) {
+                Ns_Log(Warning, "NsAdpDebug no connection available,"
+                       "please provide debug host explicitly");
+                debugHost = "localhost";
+            } else {
+                const char *errorMsg;
+                Ns_URL      url;
+
+                /*
+                 * Using Ns_ConnLocationAppend() might look like an overkill,
+                 * since it returns more information the necessary. However,
+                 * it deals with host header field validation, virtual
+                 * hosting, default value management, etc.
+                 */
+                Ns_ConnLocationAppend(itPtr->conn, &scratch);
+                Ns_ParseUrl(scratch.string, NS_FALSE, &url, &errorMsg);
+                debugHost = url.host;
+            }
+        }
+
         itPtr->deleteInterp = NS_TRUE;
         Tcl_DStringInit(&ds);
         Tcl_DStringAppendElement(&ds, itPtr->servPtr->adp.debuginit);
-        Tcl_DStringAppendElement(&ds, (procs != NULL) ? procs : NS_EMPTY_STRING);
-        Tcl_DStringAppendElement(&ds, (host  != NULL) ? host : NS_EMPTY_STRING);
-        Tcl_DStringAppendElement(&ds, (port  != NULL) ? port : NS_EMPTY_STRING);
+        Tcl_DStringAppendElement(&ds, (debugProcs != NULL) ? debugProcs : NS_EMPTY_STRING);
+        Tcl_DStringAppendElement(&ds, debugHost);
+        Tcl_DStringAppendElement(&ds, (debugPort != NULL && *debugPort == '\0') ? debugPort : "2576");
         result = Tcl_EvalEx(interp, ds.string, ds.length, 0);
         Tcl_DStringFree(&ds);
+        Tcl_DStringFree(&scratch);
         if (result != TCL_OK) {
             NsAdpLogError(itPtr);
             result = TCL_ERROR;
@@ -746,10 +781,10 @@ NsAdpDebug(NsInterp *itPtr, const char *host, const char *port, const char *proc
              * Link the ADP output buffer result to a global variable
              * which can be monitored with a variable watch.
              */
-
             if (Tcl_LinkVar(interp, "ns_adp_output",
                             (char *) &itPtr->adp.output.string,
                             TCL_LINK_STRING | TCL_LINK_READ_ONLY) != TCL_OK) {
+                Ns_Log(Notice,"NsAdpDebug provides linkage to ns_adp_output variable, calling NsAdpLogError()");
                 NsAdpLogError(itPtr);
             }
 

@@ -193,6 +193,7 @@ build-doc:
 		fi; \
 	done
 	$(CP) doc/images/manual/*.png doc/tmp/manual/
+	$(CP) doc/images/naviserver/*.png doc/tmp/naviserver/
 	@cd doc/tmp; \
 	for srcdir in `ls`; do \
 	    echo $$srcdir; \
