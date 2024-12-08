@@ -2768,8 +2768,8 @@ ConnRun(Conn *connPtr)
     } else {
         NsAddNslogEntry(sockPtr, connPtr->responseStatus, conn, NULL);
 
-        Ns_Log(Notice, "not running NS_FILTER_TRACE status %d http status code %d",
-               status, connPtr->responseStatus);
+        Ns_Log(Notice, "not running NS_FILTER_TRACE status %d http status code %d: %s",
+               status, connPtr->responseStatus, connPtr->request.url);
     }
 
     /*
