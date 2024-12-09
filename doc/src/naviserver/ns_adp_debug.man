@@ -57,11 +57,11 @@
 [para]
 
  The TclPro Debugger was originally developed as a commercial product
- by Scriptics. After Scriptics was acquired by Sun Microsystems, the
- development moved to ActiveState as part of the TclDevKit tool
- suite. When ActiveState discontinued TclDevKit, the TclPro Debugger
- sources were released as open source. Currently, multiple open-source
- variants exist:
+ by Scriptics. After Scriptics was renamed to Ajuba and was later
+ acquired by Interwoven, the development moved to ActiveState as part
+ of the TclDevKit tool suite. When ActiveState discontinued TclDevKit,
+ the TclPro Debugger sources were released as open source. Currently,
+ multiple open-source variants exist:
 
 [list_begin itemized]
 [item] Open-sourced TDK from ActiveState:
@@ -87,8 +87,9 @@
 [para] The steps below demonstrate how to install Tcl, Tk, and
  TclProDebug from source into a dedicated directory, avoiding
  interference with system-wide installations. The example uses Tcl 9
- on a Unix-like system. You may adapt these instructions for Tcl 8.6
- or different paths as needed.
+ on a Unix-like system, based on the last of the mentioned
+ variants. You may adapt these instructions for Tcl 8.6 or different
+ paths as needed.
 
 [para] First, define the paths for the source and installation
  directories, assuming Tcl, Tk, and TclProDebug are downloaded to the
