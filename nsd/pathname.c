@@ -42,8 +42,30 @@ static const char *ServerRoot(Ns_DString *dest, const NsServer *servPtr, const c
 static const char *NormalizePath(Ns_DString *dsPtr, const char *path, bool url)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_RETURNS_NONNULL;
 
+static bool IsSlashInPath(bool inUrl, const char c)
+    NS_GNUC_PURE;
 
-
+/*
+ *----------------------------------------------------------------------
+ *
+ * IsSlashInPath() --
+ *
+ *      Should a chacter in a path treated as as slash? There are different
+ *      semantics for URLs and file paths.
+ *
+ * Results:
+ *      Boolean value.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static bool
+IsSlashInPath(bool inUrl, const char c) {
+    return inUrl ? (c == '/') : ISSLASH(c);
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -215,23 +237,22 @@ NormalizePath(Ns_DString *dsPtr, const char *path, bool url)
     /*
      * Move past leading slash(es)
      */
-
-    while (ISSLASH(*src)) {
+    while (IsSlashInPath(url, *src)) {
         ++src;
     }
+
     do {
-        register const char *part = src;
+        const char *part = src;
 
         /*
          * Move to next slash
          */
-
-        while (*src != '\0' && !ISSLASH(*src)) {
+        while (*src != '\0' && !IsSlashInPath(url, *src)) {
             ++src;
         }
+
         end = *src;
         *src++ = '\0';
-
         if (part[0] == '.' && part[1] == '.' && part[2] == '\0') {
 
             /*

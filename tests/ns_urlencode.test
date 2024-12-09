@@ -333,7 +333,10 @@ test ns_urlencode-3.3 {
 } -result {200 {URL /foo URLV foo}}
 
 
-test ns_urlencode-4.0 {test request with encoded path segments} -constraints {serverListen} -setup {
+#
+# "ns_conn url" and "ns_conn urlv" with encoded paths
+#
+test ns_urlencode-4.0 {test request with encoded path segments containing space} -constraints {serverListen} -setup {
     ns_register_proc GET /foo/* {
         ns_return 200 text/plain [list URL [ns_conn url] URLV [ns_conn urlv]]
     }
@@ -343,18 +346,41 @@ test ns_urlencode-4.0 {test request with encoded path segments} -constraints {se
     ns_unregister_op GET /foo/*
 } -result {200 {URL {/foo/bar baz.tcl} URLV {foo {bar baz.tcl}}}}
 
-test ns_urlencode-4.1 {test request with encoded path segments} -constraints {serverListen} -setup {
+test ns_urlencode-4.1 {test request with encoded path segments containing slash} -constraints {serverListen} -setup {
     ns_register_proc GET /foo/* {
         ns_return 200 text/plain [list URL [ns_conn url] URLV [ns_conn urlv]]
     }
 } -body {
-    nstest::http -http 1.1 -getbody 1 GET /foo/bar%2fbaz.tcl
+    nstest::http -getbody 1 GET /foo/bar%2fbaz.tcl
 } -cleanup {
     ns_unregister_op GET /foo/*
 } -result {200 {URL /foo/bar/baz.tcl URLV {foo bar/baz.tcl}}}
 
+test ns_urlencode-4.2 {test request with encoded path segments containing backslash} -constraints {serverListen} -setup {
+    ns_register_proc GET /foo/* {
+        ns_return 200 text/plain [list URL [ns_conn url] URLV [ns_conn urlv]]
+    }
+} -body {
+    nstest::http -getbody 1 GET /foo/bar%5cbaz.tcl
+} -cleanup {
+    ns_unregister_op GET /foo/*
+} -result {200 {URL {/foo/bar\baz.tcl} URLV {foo {bar\baz.tcl}}}}
+
+test ns_urlencode-4.3 {test request with encoded path segments containing leading backslash} -constraints {serverListen} -setup {
+    ns_register_proc GET /*.ttcl {
+        ns_return 200 text/plain [list URL [ns_conn url] URLV [ns_conn urlv]]
+    }
+} -body {
+    nstest::http -getbody 1 GET %5c/baz.ttcl
+} -cleanup {
+    ns_unregister_op GET /*.ttcl
+} -result {200 {URL {/\/baz.ttcl} URLV {\\ baz.ttcl}}}
 
 
+
+#
+# encoding/decoding path segments
+#
 test ns_urlencode-5.0 {encode and unencode character sequence with percent codes - path segment} -constraints {serverListen} -setup {
     ns_register_proc GET /encode-decode {
         set s "/%20,'\".=+"
