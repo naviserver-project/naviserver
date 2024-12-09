@@ -651,7 +651,7 @@ err:
 static Ns_ReturnCode
 CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
 {
-    int           fd;
+    int           fd = NS_INVALID_FD;
     Ns_ReturnCode status;
     size_t        len;
     const char   *content, *err = NULL;
@@ -661,18 +661,29 @@ CgiSpool(Cgi *cgiPtr, const Ns_Conn *conn)
 
     len = conn->contentLength;
     content = Ns_ConnContent(conn);
-    fd = Ns_GetTemp();
-    if (fd == NS_INVALID_FD) {
-        Ns_Log(Error, "nscgi: could not allocate temp file.");
-    } else if (ns_write(fd, content, len) != (ssize_t)len) {
-        err = "write";
-    } else if (ns_lseek(fd, 0, SEEK_SET) != 0) {
-        err = "lseek";
-    }
-    if (err != NULL) {
-        Ns_Log(Error, "nscgi: temp file %s failed: %s", err, strerror(errno));
-        (void) ns_close(fd);
-        fd = NS_INVALID_FD;
+    if (content == NULL) {
+        if (Ns_ConnContentFile(conn) == NULL) {
+            Ns_Log(Error, "nscgi: unable to access content.");
+        } else {
+            fd = ns_open(Ns_ConnContentFile(conn), O_RDONLY | O_BINARY | O_CLOEXEC, 0);
+            if (fd == NS_INVALID_FD) {
+                Ns_Log(Error, "nscgi: could not open content file: %s", strerror(errno));
+            }
+        }
+    } else {
+        fd = Ns_GetTemp();
+        if (fd == NS_INVALID_FD) {
+            Ns_Log(Error, "nscgi: could not allocate temp file.");
+        } else if (ns_write(fd, content, len) != (ssize_t)len) {
+            err = "write";
+        } else if (ns_lseek(fd, 0, SEEK_SET) != 0) {
+            err = "lseek";
+        }
+        if (err != NULL) {
+            Ns_Log(Error, "nscgi: temp file %s failed: %s", err, strerror(errno));
+            (void) ns_close(fd);
+            fd = NS_INVALID_FD;
+        }
     }
 
     if (fd == NS_INVALID_FD) {

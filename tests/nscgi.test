@@ -354,6 +354,20 @@ test nscgi-1.8.0 {
     return HOME=[regexp {HOME: <\S+>} $r]
 } -returnCodes {error return ok} -result "HOME=1"
 
+# POST request
+
+test nscgi-2.0 {small POST} -constraints {serverListen tclsh} -body {
+    nstest::http POST /info.cgi "x"
+} -result 200
+
+test nscgi-2.1 {not so large POST} -constraints {serverListen tclsh} -body {
+    nstest::http POST /info.cgi [string repeat "x" [expr {[ns_config "ns/module/nssock" maxupload]}]]
+} -result 200
+
+test nscgi-2.2 {large POST} -constraints {serverListen tclsh} -body {
+    nstest::http POST /info.cgi [string repeat "x" [expr {[ns_config "ns/module/nssock" maxupload]+1}]]
+} -result 200
+
 
 cleanupTests
 

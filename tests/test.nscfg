@@ -327,6 +327,7 @@ ns_section ns/server/test/module/nscgi {
     ns_param    map                 "GET /cgi-wc/*"
     ns_param    map                 "GET /cgi-dir/*.tclcgi [ns_config test home]/testserver/cgi"
     ns_param    map                 "GET *.cgi"
+    ns_param    map                 "POST *.cgi"
     ns_param    interps              CGIinterps
     ns_param    allowstaticresources true    ;# default false; serve static resources from cgi directories
     ns_param    systemenvironment    true    ;# default false, provide interpreter environment to script
