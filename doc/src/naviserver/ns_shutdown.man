@@ -45,8 +45,8 @@ send an interrupt signal to the server, leading to a nonzero exit code.
  ns_shutdown 30s
 [example_end]
 
-[see_also ns_kill ns_time]
-[keywords "server built-in" restart]
+[see_also ns_kill ns_time ns_atsignal]
+[keywords "server built-in" restart shutdown signals]
 
 [manpage_end]
 

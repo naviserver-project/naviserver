@@ -176,6 +176,6 @@ For discussion and more examples see
 [see_also ns_log ns_write ns_http]
 [keywords module nsssl \
 	performance tuning configuration TCP_FASTOPEN HTTPS driver \
-        signal OCSP TLS certificate ]
+        signals OCSP TLS certificate ]
 
 [manpage_end]

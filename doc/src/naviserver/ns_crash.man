@@ -1,0 +1,44 @@
+[include version_include.man]
+
+[manpage_begin ns_crash n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Platform-independent Command to Trigger a Segmentation Fault}]
+
+[description]
+
+ The [cmd ns_crash] command is intended for debugging purposes. It
+ deliberately causes a segmentation violation (SEGV) in a
+ platform-independent manner, ensuring that the server process is
+ interrupted and a core dump is generated. This allows developers and
+ system administrators to analyze the state of the server at the time
+ of the crash using a C-level debugger, examining call stacks and
+ variables as they were at the moment the command was issued.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+[call [cmd ns_crash]]
+
+ Forces a segmentation fault, creating a core dump if the server is
+ configured to allow it. The resulting core file can be analyzed using
+ tools like [cmd gdb] to investigate the cause and server state.
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+ % ns_crash
+[example_end]
+
+ When invoked, the above command will immediately cause the server to
+ crash, generating a core dump (if allowed by the system and
+ configuration). This can then be used to diagnose issues in server
+ code or extensions running within NaviServer.
+
+[see_also nsd ns_kill ns_shutdown]
+[keywords "global built-in" NaviServer debug crash segmentation-fault]
+[manpage_end]
+
+

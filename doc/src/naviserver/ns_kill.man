@@ -6,9 +6,9 @@
 
 [description]
 
-This command sends the process pid the signal [term signal].  If [option -nocomplain] is specified,
-no error will be returned on failure.  [term signal] should be an integer, i.e., 1 for SIGHUP,
-9 for SIGKILL, 15 for SIGTERM, etc.
+ The [cmd ns_kill] command sends a signal to a process identified by
+ its process ID (PID). Although signals are a Unix concept, a minimal
+ form of signal handling is emulated on Windows platforms.
 
 [section {COMMANDS}]
 
@@ -17,13 +17,41 @@ no error will be returned on failure.  [term signal] should be an integer, i.e.,
 
 [call [cmd ns_kill] [opt [option {-nocomplain}]] [arg pid] [arg signal]]
 
+ Sends the specified [arg signal] to the process with the given [arg pid].
+ The [arg signal] must be provided as an integer. If the [option -nocomplain]
+ option is used, the command will not return an error if it fails to send
+ the signal.
+
+[para]
+ Common signal values (for Unix-like systems) include:
+
+[list_begin itemized]
+[item] SIGHUP: 1
+[item] SIGQUIT: 3
+[item] SIGABORT: 6
+[item] SIGKILL: 9
+[item] SIGUSR1: 10
+[item] SIGUSR2: 12
+[item] SIGTERM: 15
+[list_end]
+
+[para] On Windows, only SIGTERM, SIGABRT, and SIGKILL are supported
+ through an emulation layer. Under Unix-like systems, SIGQUIT,
+ SIGKILL, and SIGABRT generate a core dump and can be used similarly
+ to the [cmd ns_crash] command. Internally, [cmd ns_shutdown] uses
+ SIGTERM to request a graceful shutdown of the server.
 
 [list_end]
 
+[section EXAMPLES]
+
+[example_begin]
+ % ns_kill [pid] 10
+[example_end]
 
 
-[see_also ns_shutdown ns_job]
-[keywords "global built-in" restart]
+[see_also ns_shutdown ns_job ns_crash]
+[keywords "global built-in" restart signals shutdown]
 
 [manpage_end]
 
