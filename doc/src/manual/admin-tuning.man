@@ -6,77 +6,140 @@
 
 [description]
 
-NaviServer is immensely scalable because it has to be. It is based on the web server
-for the most heavily-used production environment in the world --
-AOL. The sections below refer to various configuration parameters.
-For a complete reference, see the sample configuration files sample-config.tcl.
+
+ NaviServer is designed for high scalability. It originally served as
+ the core of web infrastructures supporting some of the most heavily
+ visited environments in the world, such as AOL. The sections below
+ discuss various configuration parameters and techniques that can help
+ you optimize and scale your NaviServer deployment.  For a complete
+ reference, see the [file sample-config.tcl] configuration file.
 
 
-[subsection {Only load modules you need}]
+[subsection {Configure Spooling Threads}]
 
 
-Modules like [term nsperm] register extra requests that are checked on each connection,
-for example. Other modules like nscgi and nscp do not need to be loaded
-if you're not actually using CGI or the control port, respectively.
+ This section is especially relevant for sites requiring high
+ throughput. Throughput refers to the number of requests handled in a
+ given time interval. NaviServer scales by using a combination of
+ event-driven I/O handling (spooling techniques) and connection worker
+ threads which are responsible for the heavy lifting. The spooling
+ threads can efficiently manage large numbers of concurrent requests
+ with a relatively small number of lightweight threads.
+
+ [para] NaviServer treats sending and receiving data over network
+ connections as an I/O-driven process. The server’s event-driven model
+ triggers actions based on the arrival of incoming data or the
+ readiness of the kernel’s send queues. This approach assumes that I/O
+ operations require relatively little CPU time, allowing a single
+ thread to handle many concurrent connections. However, if a thread
+ performs CPU-intensive operations or waits on locks, all requests
+ managed by that thread are blocked as well for this time. This might
+ not be acceptable for serving latency sensitive data such as live
+ video streams via NaviServer.
+
+ [para] While static page serving is mostly I/O bound, real-world web
+ applications often perform CPU-intensive operations, such as database
+ queries, middleware interactions, and legacy backend
+ integrations. For example, NaviServer is known to handle up to 16,000
+ SQL queries per second on mid-range servers using OpenACS,
+ illustrating the need to efficiently handle mixed I/O and CPU loads.
+
+ [para]
+ Processing an HTTP/HTTPS request happens in three phases:
+ [list_begin itemized]
+ [item] Receive the request
+ [item] Process the request (e.g., run scripts, queries, etc.)
+ [item] Deliver the response
+ [list_end]
+
+[para][image request-phases "Phases of Request Processing"]
+[para]Figure 1: Request Phases
+
+ Without spooling threads, all three phases tie up a single connection
+ thread. This can become a bottleneck if, for example, a client is
+ slow to receive data or large uploads are involved. Slow-read or
+ slow-write attacks exploit this behavior by forcing the server to
+ keep a connection thread occupied a long time.
+
+ [para]
+ NaviServer uses spooling threads to mitigate such bottlenecks:
+ [list_begin itemized]
+ [item] [emph driver] threads accept requests
+ [item] [emph spooler] threads handle large uploads during the receive phase, offloading this work from driver threads
+ [item] [emph writer] threads manage response delivery to clients
+ [list_end]
+
+ Multiple of these spooling threads can be configured for each network driver (e.g., HTTP, HTTPS).
+
+ [para] Figure 2 illustrates how three concurrent requests (r0, r1,
+ r2) interact with spooling threads. By delegating I/O-intensive tasks
+ to driver and writer threads, connection threads spend less time
+ waiting and more time processing. This approach allows one connection
+ thread to handle many more requests per second.  Remember, every
+ spooling thread is capable to server a high number of concurrent
+ requests without latency degradation for the client. Only the process
+ phases (marked in orange) occupy time in the connection thread.
+
+[para][image concurrent-requests1 "Concurrent Requests with Spooling Threads"]
+[para]Figure 2: Concurrent Request with Spooling Threads
+
+[para] Only the processing phase requires always a connection
+thread. By reducing the time required in the connection thread, the
+scalability improves, the same number of connection threads is able to
+process more requests.
+Figure 3 shows how six requests are served by four connection threads.
+
+[para][image concurrent-requests2 "Concurrent Requests and Scalability"]
+[para]Figure 3: Concurrent Requests and Scalability
+
+[para] Actually, thanks to reduced processing time, these connection
+threads could serve much more requests.
+
+Without spooling threads, the server throughput is roughly:
+[example_begin]
+(total requests/sec) ≈ (number of connection threads * (1 / avg total request time))
+[example_end]
+
+With spooling threads, the server throughput approximates:
+[example_begin]
+(total requests/sec) ≈ (number of connection threads * (1 / avg process phase time))
+[example_end]
 
 
-[subsection {Turn off DNS lookups wherever possible}]
+Example:
+[list_begin itemized]
+[item] Average total time per request: 25 ms
+[item] Average process-phase time per request: 4 ms
+[item] Without spooling:
+  [list_begin itemized]
+    [item] Per thread: 1000ms/25ms = 40 requests/sec
+    [item] With 4 connection threads: 160 requests/sec
+  [list_end]
+[item] With spooling:
+  [list_begin itemized]
+    [item] Per thread: 1000ms/4ms = 250 requests/sec
+    [item] With 4 connection threads: 1000 requests/sec
+  [list_end]
+[list_end]
 
-
-The nslog module has these turned off by default, but it helps to see if
-it your configuration has it turned off. Also, the nsperm module uses DNS
-lookups for access control -- turn this off if you don't use host access
-control rules with nsperm. The nscgi module also can use DNS but, again,
-it is off by default (gethostbyaddr setting). If you must use DNS, NaviServer
-has a DNS cache that can be tweaked -- see [term dnscache],
-[term dnswaittimeout] and
-[term dnscachetimeout] in the config reference.
-
-
-[subsection {Experiment with the ADP cache}]
-
-In the ns/server/$server/adp section, the parameters are
-[term cache], [term cachesize], and [term threadcache].
-Use the appropriate [term {$server}]
-for you installation (maybe the name [term default]).
-
-NaviServer defaults to a 10 MB ADP cache. This cache
-is used to store parsed ADP pages -- as a consequence such ADP scripts are only
-parsed once and every subsequent time they are run directly out of memory.
-This means, though, that you should have a fair amount of core memory on
-your system to accommodate the cache if you decide to make it very large.
-
-[subsection {Experiment with the FastPath cache}]
-
-This is a separate cache used to store static HTML pages. The section is
-ns/server/$server/fastpath, and the options are
-[term cache], [term cachemaxentry], and [term cachemaxsize].
-The default is 10 MB.
-On some systems enabling the [term mmap] parameter can make it work even faster.
-
-
-[subsection {Disable CheckModifiedSince}]
-
-
-Is your site updated rarely or often? On some slower systems, setting
-[term checkmodifiedsince]
-to false in the
-[term {ns/server/$server}] section can speed up things considerably
-as NaviServer reads all scripts and data directly from the in-memory cache
-without checking to see if the file has changed each time a cache entry
-is hit.
+Actual figures depend on application complexity, database performance,
+network conditions, and more. Use the [cmd nsstats] module to gather
+metrics and understand your environment better. For determining the
+right number of, e.g., the right number of connection threads, the
+[cmd nsstats] module provides statistics for average queueing time,
+filter and run time, etc.
 
 
 [subsection {Tune the Connection Threads}]
 
-Thread settings are sometimes helpful, sometimes not. If one is
-running a small configuration (e.g. 100K requests per day), the
-default settings provided by the sample configuration files are typically
-sufficient.
-For larger or very constraint setups the paramamter for the
-connection theads can and should be tuned. The following parameters can be
-altered in the section "ns/server/$server"
-(for a server named "$server"):
+ For smaller deployments (e.g., 100K requests/day), the default
+ settings in [file sample-config.tcl] or [file openacs-config.tcl] are
+ often sufficient. For larger or more resource-constrained setups, you
+ may need to adjust parameters in the [term {ns/server/$server}]
+ section:
+
+[para]
+Key parameters include:
 [term connsperthread],
 [term highwatermark], 
 [term lowwatermark], 
@@ -88,49 +151,32 @@ altered in the section "ns/server/$server"
 [term poolratelimit],
 [term connectionratelimit] and
 [term threadtimeout].
-See also
-[term "connection thread pools"].
 
-[para] As mentioned, in most cases the defaults are fine, with the exception of
-[term minthreads] and
-[term maxthreads] which should be
-carefully adjusted based on your load. When
-[term minthreads] and [term maxthreads] are sent to different
-values, NaviServer tries to adjust the number of running threads
-according to the current load. When running applications with
-a large Tcl blueprint (e.g. OpenACS), starting of new threads
-can be costly, such that a frequent starting and stopping of threads
-might not be the best either. Therefore, it is sometimes better to
-set [term minthreads] equals to[term maxthreads].
+ See also the section [term "connection thread pools"] in the keywords section.
 
-[para]
-The parameter [term maxconnections] defines the queue length of
-a connection pool. This means, requests are received in a situation
-where no connection thread is available, these requests are
-added to this queue. Since this queue has a limited
-size, it might as well overrun. In this situation,
-one can fine tune the behavior. When [term rejectoverrun]
-is set, NaviServer will send a 503 (service unavailable)
-reply to the client. When additionally the parameter
-[term retryafter] is set, NaviServer provides it value
-as a "Retry-After" hint to the client. When
-[term rejectoverrun] is false the NaviServer keeps
-an additional waiting list, causing eagerly to retry
-such requests automatically. The latter can lead to
-a memory bloat on flooding attacks. However, for internal
-servers (or connection pools), such behavior might be
-still favorable.
+ [para] In most cases, the defaults work well, but [term minthreads]
+ and [term maxthreads] need often tuning. Setting these parameters
+ carefully based on load is essential.  Frequent starting and stopping
+ of threads can be costly if your application initializes large Tcl
+ environments. Sometimes it’s best to set
+ [term minthreads] = [term maxthreads] to avoid thread startup overhead.
 
-[para] On busy machines, one can define multiple connection thread
-pools and use the configuration option [term map] to map HTTP method,
-URL and context filter patterns to certain pools (for details about
-the mapping specs, the documentation of
-[term "connection thread pools"] and the command
-[cmd ns_server].
+ [para] [term maxconnections] defines the length of the connection
+ queue for a pool. If no connection thread is available, requests
+ queue up. If the queue overflows and [term rejectoverrun] is true, a
+ 503 error is returned to the client. If [term retryafter] is set, a
+ "Retry-After" header field is also provided. When [term rejectoverrun] is
+ false, NaviServer retries requests more aggressively, which can
+ consume memory if exploited by flooding attacks. For internal
+ servers, this behavior may still be desirable.
 
-By default, the settings are for the default connection threads
-pool. Additional connection thread pools can be created via
-[term pools].
+ [para] On busy machines, define multiple connection thread pools and
+ map certain HTTP methods, URLs, or context filters to them. See the
+ documentation of "connection thread pools" and the [cmd ns_server]
+ command for details.  You can create additional pools via in the
+ [term pools] section in the configuration file and configure them
+ separately.
+
 
 [example_begin]
  ns_section ns/server/$server/pools {
@@ -138,8 +184,8 @@ pool. Additional connection thread pools can be created via
    # To activate connection thread pools, uncomment one of the
    # following lines and/or add other pools.
  
-   ns_param   monitor	"Monitoring actions to check healthiness of the system"
-   ns_param   fast	"Fast requests, e.g. less than 10ms"
+   ns_param   monitor	"Monitoring actions"
+   ns_param   fast	"Fast requests (e.g., <10ms)"
  }
  
  ns_section ns/server/$server/pool/monitor {
@@ -180,78 +226,123 @@ pool. Additional connection thread pools can be created via
  }
 [example_end]
 
-Different pools can be configured with different parameters. It is for
-example possible to specify the maximum outgoing traffic rate per for
-every connection of the pool, or for the total of currently running
-connections of a pool.
 
-[subsection {Monitor the Memory}]
+ Different pools can have distinct parameters, including limiting
+ outgoing traffic rates per connection or for the entire pool.
 
 
-Memory considerations are paramount on heavily-used servers. Use the "ps
--leaf" on most systems to look at the "nsd" processes. Nearly all the memory
-used by nsd should be in RSS (resident set size). If the RSS size of
-the nsd process
-is less than 2/3 its SZ, then there is a good chance that your operating system
-is thrashing, meaning it is spending more time managing memory than allowing
-the system to work to its capacity. Some operating systems actually limit
-the total RSS used by any one process. That 1-gigabyte machine might only 
-allow NaviServer to use 500 megabytes of core at any one time -- this is 
-especially the case with SGI servers.
+[subsection {Only Load Modules You Need}]
+
+ Loading unnecessary modules can introduce overhead. For instance:
+ [list_begin itemized]
+ [item] [term nsperm] adds extra checks per request.
+ [item] [term nscgi] and [term nscp] are not needed if you don’t run CGI or the control port.
+ [list_end]
+
+ The general rule is not to load modules not used by your application to reduce overhead.
+
+
+
+[subsection {Turn Off DNS Lookups if Possible}]
+
+ DNS lookups can slow down request handling. By default, [term nslog]
+ disables them, but verify your configuration. If you’re not using
+ host-based access controls with [term nsperm], disable DNS lookups
+ there as well. For [term nscgi], DNS is off by default, but check for
+ gethostbyaddr settings. If you must use DNS, tune [term dnscache],
+ [term dnswaittimeout], and [term dnscachetimeout] to improve
+ performance.
+
+
+
+[subsection {Experiment with the ADP Cache}]
+
+ In the [term {ns/server/$server/adp}] section, parameters like
+ [term cache], [term cachesize], and [term threadcache] control the ADP
+ cache. The default is a 10 MB cache, which stores parsed ADP pages in
+ memory, reducing the need to re-parse on each request. Adjust these
+ settings based on memory availability and application needs.
+
+
+
+[subsection {Experiment with the FastPath Cache}]
+
+ The FastPath cache stores static HTML pages. In
+ [term {ns/server/$server/fastpath}], adjust [term cache],
+ [term cachemaxentry], and [term cachemaxsize]. Default is 10 MB.  On some
+ systems, enabling [term mmap] can improve performance further.
+
+
+[subsection {Disable CheckModifiedSince if Appropriate}]
+
+ If your site rarely updates its content, you can disable
+ [term checkmodifiedsince] in section [term {ns/server/$server}]. This prevents NaviServer
+ from checking file modification times on every cached entry, potentially boosting
+ performance on slower systems.
+
+
+[subsection {Monitor Memory Usage}]
+
+ Monitor memory usage with tools like "ps -leaf". Ideally, the
+ Resident Set Size (RSS) of the nsd process should be large compared
+ to its allocated size to avoid thrashing.  Operating system policies
+ or memory constraints can limit how much memory nsd can use
+ efficiently.
+
+ [para] The extra NaviServer module [term nsstats] offers detailed
+ memory analysis, including memory used for caching, [term nsv], or
+ statistics from the system memory allocator, when, e.g., TCmalloc
+ from Google's perftools is used.
+
 
 [subsection {Beware the Database}]
 
-Databases are a bottleneck. Do you use lots of simple queries that return
-a hoard of data? Investigate using stored procedures or finely-tuned queries
-so that you get only the data you actually want and make the database do
-the work it was designed to do. Don't make your system spend its time putting
-together those ns_getrow structures.
+ Databases are often the main bottleneck of web
+ applications. Streamline queries and use stored procedures to
+ minimize round-trips and ensure only the required data is
+ retrieved. Check the statistics such as sequential tuple scans and
+ the like and optimize your database indices. This reduces the
+ server’s overhead in assembling [cmd ns_getrow] structures.
 
-[subsection {Collect metrics and use them}]
 
-NaviServer has a built-in statistics-gathering system that collects data on
-the caches, Tcl interps, threads, and other interesting data. We use these
-at AOL to gather an immense amount of data on how the systems are working
-and where they need to be improved (more cache, less cache, more memory,
-more threads, etc).  The module [term nsstats] can be dropped into any
-running server to get a snapshot of how it is doing. The module is available
-in the modules repository.
 
-[subsection {Further parameters for tuning}]
+[subsection {Collect Metrics and Use Them}]
 
-A few further parameters might be used for tuning the performance of
-NaviServer in a certain application specific context.
+ NaviServer’s built-in statistics system (e.g., via module
+ [term nsstats]) provides insight into caching behavior, Tcl interpreters,
+ thread usage, and more. These metrics are invaluable for informed
+ tuning and capacity planning.
 
-[para] Administrators might consider allowing concurrent Tcl
-interpreter create operations.  Versions of Tcl up to at least 8.5 are
-known to crash in case two threads create interpreters at the same
-time. These crashes were hard to reproduce, but serializing
-interpreter creation helped. For Tcl versions starting with
-Tcl 8.6, the default is set to true.
+[subsection {Further Parameters for Tuning}]
+
+
+ Additional parameters may improve performance in certain
+ contexts. For example, concurrent interpreter creation can now be
+ enabled with Tcl 8.6+:
 
 [example_begin]
  ns_section ns/parameters {
-    ns_param concurrentinterpcreate true  ;# default false
+   ns_param concurrentinterpcreate true  ;# default: false
  }
 [example_end]
 
-Sample documented configuration files:
+ When this is activated, multiple threads containing Tcl interpreters
+ can be created concurrently. In previous version, the interpereter
+ creation had to be serialized to avoid crashes.
+
+
+[para]
+Check the sample configuration files for more hints:
 [list_begin itemized]
-[item] [uri \
-	https://raw.githubusercontent.com/naviserver-project/naviserver/main/nsd-config.tcl \
-	nsd-config.tcl]
-[item] [uri \
-	https://raw.githubusercontent.com/naviserver-project/naviserver/main/simple-config.tcl \
-	simple-config.tcl]
-[item] [uri \
-	https://raw.githubusercontent.com/naviserver-project/naviserver/main/openacs-config.tcl \
-	openacs-config.tcl]
+[item][uri https://raw.githubusercontent.com/naviserver-project/naviserver/main/nsd-config.tcl nsd-config.tcl]
+[item][uri https://raw.githubusercontent.com/naviserver-project/naviserver/main/simple-config.tcl simple-config.tcl]
+[item][uri https://raw.githubusercontent.com/naviserver-project/naviserver/main/openacs-config.tcl openacs-config.tcl]
 [list_end]
 
-
-[keywords module nssock \
+[keywords module nssock nsssl \
 	performance tuning configuration \
 	SO_REUSEPORT TCP TCP_FASTOPEN \
+        "spooling threads" \
 	"connection thread pools" \
 	nsssl driver prebind pagedir \
         blueprint]
