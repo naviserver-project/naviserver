@@ -907,15 +907,21 @@ NsTclBase64UrlDecodeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T
  */
 
 int
-NsTclCrashObjCmd(ClientData UNUSED(clientData), Tcl_Interp *UNUSED(interp),
-                 TCL_SIZE_T UNUSED(objc), Tcl_Obj *const* UNUSED(objv))
+NsTclCrashObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
+                 TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    char *death;
+    int result;
 
-    death = NULL;
-    *death = 'x';
+    if (Ns_ParseObjv(NULL, NULL, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        char *death;
 
-    return TCL_ERROR;
+        death = NULL;
+        *death = 'x';
+        result = TCL_OK;
+    }
+    return result;
 }
 
 

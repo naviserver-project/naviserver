@@ -386,6 +386,10 @@ test ns_hash-1.0 {syntax: ns_hash} -body {
     ns_hash
 } -returnCodes error -result {wrong # args: should be "ns_hash /value/"}
 
+test ns_crash-1.0 {syntax: ns_crash} -body {
+    ns_crash ?
+} -returnCodes error -result {wrong # args: should be "ns_crash"}
+
 test ns_urlcharset-1.0 {syntax: ns_urlcharset} -body {
     ns_urlcharset
 } -returnCodes error -result {wrong # args: should be "ns_urlcharset charset"}
