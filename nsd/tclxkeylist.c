@@ -1297,6 +1297,8 @@ TclX_KeylgetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
     int         status;
     TCL_SIZE_T  keyLen;
 
+    Ns_LogDeprecated(objv, 1, "dict ...", NULL);
+
     if ((objc < 2) || (objc > 4)) {
         status = TclX_WrongArgs(interp, objv[0], "listvar ?/key/? ?/retvar/ | {}?");
 
@@ -1375,6 +1377,8 @@ TclX_KeylsetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
 {
     int         result = TCL_OK;
 
+    Ns_LogDeprecated(objv, 1, "dict ...", NULL);
+
     if ((objc < 4) || ((objc % 2) != 0)) {
         result = TclX_WrongArgs(interp, objv[0],
                                 "listvar /key/ /value/ ?/key//value/ ...?");
@@ -1435,6 +1439,8 @@ int
 TclX_KeyldelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int result = TCL_OK;
+
+    Ns_LogDeprecated(objv, 1, "dict ...", NULL);
 
     if (objc < 3) {
         result = TclX_WrongArgs(interp, objv[0], "listvar /key/ ?/key/ ...?");
@@ -1500,6 +1506,8 @@ int
 TclX_KeylkeysObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result;
+
+    Ns_LogDeprecated(objv, 1, "dict ...", NULL);
 
     if ((objc < 2) || (objc > 3)) {
         result = TclX_WrongArgs(interp, objv[0], "listvar ?/key/?");

@@ -575,7 +575,10 @@ sections of related commands.
 [call [cmd "ns_updateheader"]]          Use [cmd "ns_set update"] [lb]ns_conn outputheaders[rb] instead.
 [call [cmd "ns_var"]]                   Use [cmd "nsv_*"] instead.
 [call [cmd "ns_writecontent"]]          Use [cmd "ns_conn copy"] instead.
-
+[call [cmd "keyldel"]]                  Use Tcl [cmd "dict"] instead.
+[call [cmd "keylget"]]                  Use Tcl [cmd "dict"] instead.
+[call [cmd "keylkeys"]]                 Use Tcl [cmd "dict"] instead.
+[call [cmd "keylset"]]                  Use Tcl [cmd "dict"] instead.
 [list_end]
 
 [see_also nsd]
