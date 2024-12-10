@@ -192,7 +192,7 @@ NaviServer supports two primary modes for debugging ADP pages:
 [list_end]
 
  By default, the [arg host] is derived from the request’s Host header
- field.  If you need a different host or a non-default port, specify
+ field.  If you need a different host or a nondefault port, specify
  them in the [cmd ns_adp_debug] call or via query parameters.
 
 [subsection {Limitations}]
