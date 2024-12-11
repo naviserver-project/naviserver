@@ -46,6 +46,7 @@
 [section EXAMPLES]
 
 [example_begin]
+ # Send signal SIGUSR1 to the own process
  % ns_kill [pid] 10
 [example_end]
 
