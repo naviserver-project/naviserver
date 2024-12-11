@@ -515,6 +515,7 @@ ThreadCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
         {NULL, NULL, NULL, NULL}
     };
 
+#ifdef NS_WITH_DEPRECATED
     if (objc > 1) {
         const char  *subcmdName = Tcl_GetString(objv[1]);
 
@@ -525,6 +526,7 @@ ThreadCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
             isDetached = (int)NS_TRUE;
         }
     }
+#endif
 
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
@@ -553,12 +555,14 @@ ThreadHandleObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
 {
     int result = TCL_OK;
 
+#ifdef NS_WITH_DEPRECATED
     if (objc > 1) {
         const char  *subcmdName = Tcl_GetString(objv[1]);
         if (*subcmdName == 'g' && strcmp(subcmdName, "get") == 0) {
             Ns_LogDeprecated(objv, 2, "ns_thread handle ...", NULL);
         }
     }
+#endif
 
     if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
@@ -577,12 +581,14 @@ ThreadIdObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T obj
 {
     int result = TCL_OK;
 
+#ifdef NS_WITH_DEPRECATED
     if (objc > 1) {
         const char  *subcmdName = Tcl_GetString(objv[1]);
         if (*subcmdName == 'g' && strcmp(subcmdName, "getid") == 0) {
             Ns_LogDeprecated(objv, 2, "ns_thread id ...", NULL);
         }
     }
+#endif
 
     if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
@@ -654,9 +660,11 @@ ThreadWaitObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
         {NULL, NULL, NULL, NULL}
     };
 
+#ifdef NS_WITH_DEPRECATED
     if (strcmp(Tcl_GetString(objv[1]), "join") == 0) {
         Ns_LogDeprecated(objv, 2, "ns_thread wait ...", NULL);
     }
+#endif
 
     if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
@@ -686,14 +694,20 @@ int
 NsTclThreadObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     const Ns_SubCmdSpec subcmds[] = {
+#ifdef NS_WITH_DEPRECATED
         {"begin",         ThreadCreateObjCmd},
         {"begindetached", ThreadCreateObjCmd},
+#endif
         {"create",        ThreadCreateObjCmd},
+#ifdef NS_WITH_DEPRECATED
         {"get",           ThreadHandleObjCmd},
         {"getid",         ThreadIdObjCmd},
+#endif
         {"handle",        ThreadHandleObjCmd},
         {"id",            ThreadIdObjCmd},
+#ifdef NS_WITH_DEPRECATED
         {"join",          ThreadWaitObjCmd},
+#endif
         {"name",          ThreadNameObjCmd},
         {"stackinfo",     ThreadStackinfoObjCmd},
         {"wait",          ThreadWaitObjCmd},
@@ -1053,6 +1067,7 @@ NsTclCondObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         {NULL, NULL}
     };
 
+#ifdef NS_WITH_DEPRECATED
     if (objc > 1) {
         const char  *cmdName = Tcl_GetString(objv[0]);
 
@@ -1060,7 +1075,7 @@ NsTclCondObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
             Ns_LogDeprecated(objv, 2, "ns_cond ...", NULL);
         }
     }
-
+#endif
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
 }
 

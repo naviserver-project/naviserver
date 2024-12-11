@@ -43,7 +43,7 @@ test ns_parseargs-2.2 {object type conversion / display} -body {
 } -result {}
 
 test ns_parseargs-2.3 {object type conversion / display} -body {
-    set tid [ns_thread begin {
+    set tid [ns_thread create {
         proc x {} {
             ns_parseargs {-a} {-a A}
         }

@@ -3,17 +3,27 @@
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
-#
+testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
+
+#######################################################################################
 # Syntax tests
-#
+#######################################################################################
 
 test ns_set-1.0 {syntax: ns_set} -body {
     ns_set
-} -returnCodes error -result {wrong # args: should be "ns_set array|cleanup|copy|cput|create|delete|delkey|find|format|free|get|icput|idelkey|ifind|iget|imerge|isnull|iunique|iupdate|key|keys|list|merge|move|name|new|print|put|size|split|stats|truncate|unique|update|value|values ?/arg .../"}
+} -returnCodes error \
+    -result [expr {[testConstraint with_deprecated]
+                   ? {wrong # args: should be "ns_set array|cleanup|copy|cput|create|delete|delkey|find|format|free|get|icput|idelkey|ifind|iget|imerge|isnull|iunique|iupdate|key|keys|list|merge|move|name|new|print|put|size|split|stats|truncate|unique|update|value|values ?/arg .../"}
+                   : {wrong # args: should be "ns_set array|cleanup|copy|cput|create|delete|delkey|find|format|free|get|icput|idelkey|ifind|iget|imerge|isnull|iunique|iupdate|key|keys|list|merge|move|name|put|size|split|stats|truncate|unique|update|value|values ?/arg .../"}
+               }]
 
 test ns_set-1.1 {syntax: ns_set subcommands} -body {
     ns_set ""
-} -returnCodes error -result {ns_set: bad subcommand "": must be array, cleanup, copy, cput, create, delete, delkey, find, format, free, get, icput, idelkey, ifind, iget, imerge, isnull, iunique, iupdate, key, keys, list, merge, move, name, new, print, put, size, split, stats, truncate, unique, update, value, or values}
+} -returnCodes error \
+    -result [expr {[testConstraint with_deprecated]
+                   ? {ns_set: bad subcommand "": must be array, cleanup, copy, cput, create, delete, delkey, find, format, free, get, icput, idelkey, ifind, iget, imerge, isnull, iunique, iupdate, key, keys, list, merge, move, name, new, print, put, size, split, stats, truncate, unique, update, value, or values}
+                   : {ns_set: bad subcommand "": must be array, cleanup, copy, cput, create, delete, delkey, find, format, free, get, icput, idelkey, ifind, iget, imerge, isnull, iunique, iupdate, key, keys, list, merge, move, name, put, size, split, stats, truncate, unique, update, value, or values}
+               }]
 
 test ns_set-1.2 {syntax: ns_set array} -body {
     ns_set array
@@ -107,7 +117,7 @@ test ns_set-1.23 {syntax: ns_set name} -body {
     ns_set name
 } -returnCodes error -result {wrong # args: should be "ns_set name /setId/"}
 
-test ns_set-1.24 {syntax: ns_set new} -body {
+test ns_set-1.24 {syntax: ns_set new} -constraints with_deprecated -body {
     expr {[ns_set new] ne ""}
 } -result 1 -cleanup {
     ns_set cleanup
@@ -115,7 +125,7 @@ test ns_set-1.24 {syntax: ns_set new} -body {
 # "ns_set new" accepts from 0 to n arguments: message should be {wrong # args: should be "ns_set new /args/"}
 
 
-test ns_set-1.25 {syntax: ns_set pri} -body {
+test ns_set-1.25 {syntax: ns_set pri} -constraints with_deprecated -body {
     ns_set print
 } -returnCodes error -result {wrong # args: should be "ns_set print /setId/"}
 
@@ -172,9 +182,9 @@ test ns_findset-1.0 {syntax: ns_findset} -body {
 
 
 
-#
+#######################################################################################
 # Functional tests
-#
+#######################################################################################
 
 test ns_set-1.24 {syntax: ns_set list} -body {
     ns_set list

@@ -23,446 +23,449 @@ proc ns_deprecated {{alternative ""} {explanation ""}} {
     ns_log Warning $msg
 }
 
-#
-# ns_getchannels --
-#
-#   Returns all opened channels.
-#
-# Results:
-#   List of opened channel handles.
-#
-# Side effects:
-#   None.
-#
 
-proc ns_getchannels {} {
-    ns_deprecated "file channels"
-    file channels
-}
+if {[dict get [ns_info buildinfo] with_deprecated]} {
 
-#
-# ns_cpfp --
-#
-#   Copies ncopy bytes from input to output channel.
-#
-# Results:
-#   Number of bytes copied.
-#
-# Side effects:
-#   None.
-#
+    #
+    # ns_getchannels --
+    #
+    #   Returns all opened channels.
+    #
+    # Results:
+    #   List of opened channel handles.
+    #
+    # Side effects:
+    #   None.
+    #
 
-proc ns_cpfp {chanin chanout {ncopy -1}} {
-    ns_deprecated "fcopy"
-    fcopy $chanin $chanout -size $ncopy
-}
-
-
-#
-# ns_cp --
-#
-#   Copies srcfile to dstfile.
-#   Syntax: ns_cp ?-preserve? srcfile dstfile
-#
-# Results:
-#   None.
-#
-# Side effects:
-#   Assures that the dstfile has the same modification,
-#   access time and attributes as the srcfile if the
-#   optional "-preserve" argument is given.
-#
-
-proc ns_cp {args} {
-    ns_deprecated "file copy"
-    set nargs [llength $args]
-    if {$nargs == 2} {
-        set pre 0
-        set src [lindex $args 0]
-        set dst [lindex $args 1]
-    } elseif {$nargs == 3 && [string match "-pre*" [lindex $args 0]]} {
-        set pre 1
-        set src [lindex $args 1]
-        set dst [lindex $args 2]
-    } else {
-        error "wrong # args: should be \"ns_cp ?-preserve? srcfile dstfile\""
-    }
-    file copy -force -- $src $dst
-    if {$pre} {
-        file stat $src sbuf
-        file mtime $dst $sbuf(mtime)
-        file atime $dst $sbuf(atime)
-        eval file attributes [list $dst] [file attributes $src]
-    }
-}
-
-
-#
-# ns_mkdir --
-#
-#   Creates a directory.
-#
-# Results:
-#   None.
-#
-# Side effects:
-#   None.
-#
-
-proc ns_mkdir {dir} {
-    ns_deprecated "file mkdir"
-    file mkdir $dir
-}
-
-
-#
-# ns_rmdir --
-#
-#   Deletes a directory, complaining if the passed path does not
-#   point to an empty directory.
-#
-# Results:
-#   None.
-#
-# Side effects:
-#   None.
-#
-
-proc ns_rmdir {dir} {
-    ns_deprecated "file delete"
-    if {![file isdirectory $dir]} {
-        error "error deleting \"$dir\": not a directory"
-    }
-    file delete -- $dir
-}
-
-
-#
-# ns_unlink --
-#
-#   Deletes a file, optionally complaining if the file is missing.
-#   It always complains if the passed path points to a directory.
-#
-#   Syntax: ns_unlink ?-nocomplain? file
-#
-# Results:
-#   None.
-#
-# Side effects:
-#   None.
-#
-
-proc ns_unlink {args} {
-    ns_deprecated "file delete"
-    set nargs [llength $args]
-    if {$nargs == 1} {
-        set complain 1
-        set filepath [lindex $args 0]
-    } elseif {$nargs == 2 && [string match "-no*" [lindex $args 0]]} {
-        set complain 0
-        set filepath [lindex $args 1]
-    } else {
-        error "wrong # args: should be \"ns_unlink ?-nocomplain? file\""
-    }
-    if {[file isdirectory $filepath]} {
-        error "error deleting \"$filepath\": file is a directory"
-    }
-    if {$complain && ![file exists $filepath]} {
-        error "error deleting \"$filepath\": no such file"
-    }
-    file delete -- $filepath
-}
-
-
-#
-# ns_link --
-#
-#   Hard-link the path to a link, eventually complaining.
-#   Syntax: ns_link ?-nocomplain? path link
-#
-# Results:
-#   None.
-#
-# Side effects:
-#   None.
-#
-
-proc ns_link {args} {
-    ns_deprecated "file link -hard ..."
-    set nargs [llength $args]
-    if {$nargs == 2} {
-        set cpl 1
-        set src [lindex $args 0]
-        set lnk [lindex $args 1]
-    } elseif {$nargs == 3 && [string match "-no*" [lindex $args 0]]} {
-        set cpl 0
-        set src [lindex $args 1]
-        set lnk [lindex $args 2]
-    } else {
-        error "wrong # args: should be \"ns_link ?-nocomplain? path link\""
-    }
-    if {$cpl} {
-        file link -hard $lnk $src
-    } else {
-        catch {file link -hard $lnk $src}
+    proc ns_getchannels {} {
+        ns_deprecated "file channels"
+        file channels
     }
 
-    return
-}
+    #
+    # ns_cpfp --
+    #
+    #   Copies ncopy bytes from input to output channel.
+    #
+    # Results:
+    #   Number of bytes copied.
+    #
+    # Side effects:
+    #   None.
+    #
 
-#
-# ns_rename --
-#
-#   As we are re-implementing the ns_rename (which actually calls rename())
-#   with Tcl [file], lets spend couple of words on the compatibility...
-#
-#   This is what "man 2 rename" says (among other things):
-#
-#     The rename() causes the link named "from" to be renamed as "to".
-#     If "to" exists, it is first removed.
-#     Both "from" and "to" must be of the same type (that is, both dirs
-#     or both non-dirs), and must reside on the same filesystem.
-#
-#   What we cannot guarantee is:
-#
-#       "must reside on the same filesystem"
-#
-#   This is because there is no portable means in Tcl to assure this
-#   and because Tcl [file rename] is clever enough to copy-then-delete
-#   when renaming files residing on different filesystems.
-#
-# Results:
-#   None.
-#
-# Side effects:
-#   None.
-#
+    proc ns_cpfp {chanin chanout {ncopy -1}} {
+        ns_deprecated "fcopy"
+        fcopy $chanin $chanout -size $ncopy
+    }
 
-proc ns_rename {from to} {
-    ns_deprecated "file rename"
-    if {[file exists $to]} {
-        if {[file type $from] != [file type $to]} {
-            error "rename (\"$from\", \"$to\"): not of the same type"
-        } elseif {$from == $to} {
-            error "error renaming \"$from\": file already exists"
+
+    #
+    # ns_cp --
+    #
+    #   Copies srcfile to dstfile.
+    #   Syntax: ns_cp ?-preserve? srcfile dstfile
+    #
+    # Results:
+    #   None.
+    #
+    # Side effects:
+    #   Assures that the dstfile has the same modification,
+    #   access time and attributes as the srcfile if the
+    #   optional "-preserve" argument is given.
+    #
+
+    proc ns_cp {args} {
+        ns_deprecated "file copy"
+        set nargs [llength $args]
+        if {$nargs == 2} {
+            set pre 0
+            set src [lindex $args 0]
+            set dst [lindex $args 1]
+        } elseif {$nargs == 3 && [string match "-pre*" [lindex $args 0]]} {
+            set pre 1
+            set src [lindex $args 1]
+            set dst [lindex $args 2]
+        } else {
+            error "wrong # args: should be \"ns_cp ?-preserve? srcfile dstfile\""
         }
-        file delete -- $to
-    }
-    file rename -- $from $to
-}
-
-
-#
-# ns_chmod --
-#
-#   Sets permissions mask of the "file" to "mode".
-#
-# Results:
-#   None.
-#
-# Side effects:
-#   None.
-#
-
-proc ns_chmod {file mode} {
-    ns_deprecated "file attributes"
-    file attributes $file -permissions $mode
-}
-
-
-#
-# ns_truncate --
-#
-#   This is still implemented in the server code. The reason is that
-#   the Tcl has no portable equivalent; nsd/tclfile.c:NsTclFTruncateObjCmd()
-#
-
-#
-# ns_ftruncate --
-#
-#   This is still implemented in the server code. The reason is that
-#   the Tcl has no portable equivalent; nsd/tclfile.c:NsTclTruncateObjCmd()
-#
-
-#
-# ns_mktemp --
-#
-#   This is still implemented in the server code. The reason is that
-#   the Tcl has no portable equivalent; nsd/tclfile.c:NsTclMkTempObjCmd()
-#
-
-#
-# ns_symlink --
-#
-#   This is still implemented in the server code. The reason is that
-#   the Tcl [file link] command always creates link target with
-#   absolute path to the linked file; nsd/tclfile.c:NsTclSymlinkObjCmd()
-#
-
-#
-# ns_adp_compress --
-#
-#   See: ns_conn
-#
-
-proc ns_adp_compress {{bool 1}} {
-    ns_deprecated "ns_conn compress"
-    ns_conn compress $bool
-    return ""
-}
-
-#
-# ns_adp_stream --
-#
-#   See: ns_adp_ctl, ns_adp_flush.
-#
-
-proc ns_adp_stream {{bool 1}} {
-    ns_deprecated "ns_adp_ctl stream"
-    ns_adp_ctl stream $bool
-    ns_adp_flush
-}
-
-#
-# ns_unregister_proc --
-#
-#   ns_unregister_op unregisters any kind of registered
-#   request, including C, Tcl, ADP etc.
-#
-
-proc ns_unregister_proc {args} {
-    ns_deprecated "ns_unregister_op"
-    uplevel [list ns_unregister_op {*}$args]
-}
-
-#
-# ns_var --
-#
-#   Tcl shared variables. Use nsv_* instead.
-#
-proc ns_var {cmd {key ""} {value ""}} {
-    ns_deprecated "nsv_*"
-    switch $cmd {
-
-        exists { return [nsv_exists ns:var $key] }
-        list   { return [nsv_list   ns:var] }
-        get    { return [nsv_get    ns:var $key] }
-        set    { return [nsv_set    ns:var $key $value] }
-        unset  { return [nsv_unset  ns:var $key] }
-
-        default {
-            error "unknown command \"$cmd\", should be exists, list, get, set, or unset"
+        file copy -force -- $src $dst
+        if {$pre} {
+            file stat $src sbuf
+            file mtime $dst $sbuf(mtime)
+            file atime $dst $sbuf(atime)
+            eval file attributes [list $dst] [file attributes $src]
         }
     }
+
+
+    #
+    # ns_mkdir --
+    #
+    #   Creates a directory.
+    #
+    # Results:
+    #   None.
+    #
+    # Side effects:
+    #   None.
+    #
+
+    proc ns_mkdir {dir} {
+        ns_deprecated "file mkdir"
+        file mkdir $dir
+    }
+
+
+    #
+    # ns_rmdir --
+    #
+    #   Deletes a directory, complaining if the passed path does not
+    #   point to an empty directory.
+    #
+    # Results:
+    #   None.
+    #
+    # Side effects:
+    #   None.
+    #
+
+    proc ns_rmdir {dir} {
+        ns_deprecated "file delete"
+        if {![file isdirectory $dir]} {
+            error "error deleting \"$dir\": not a directory"
+        }
+        file delete -- $dir
+    }
+
+
+    #
+    # ns_unlink --
+    #
+    #   Deletes a file, optionally complaining if the file is missing.
+    #   It always complains if the passed path points to a directory.
+    #
+    #   Syntax: ns_unlink ?-nocomplain? file
+    #
+    # Results:
+    #   None.
+    #
+    # Side effects:
+    #   None.
+    #
+
+    proc ns_unlink {args} {
+        ns_deprecated "file delete"
+        set nargs [llength $args]
+        if {$nargs == 1} {
+            set complain 1
+            set filepath [lindex $args 0]
+        } elseif {$nargs == 2 && [string match "-no*" [lindex $args 0]]} {
+            set complain 0
+            set filepath [lindex $args 1]
+        } else {
+            error "wrong # args: should be \"ns_unlink ?-nocomplain? file\""
+        }
+        if {[file isdirectory $filepath]} {
+            error "error deleting \"$filepath\": file is a directory"
+        }
+        if {$complain && ![file exists $filepath]} {
+            error "error deleting \"$filepath\": no such file"
+        }
+        file delete -- $filepath
+    }
+
+
+    #
+    # ns_link --
+    #
+    #   Hard-link the path to a link, eventually complaining.
+    #   Syntax: ns_link ?-nocomplain? path link
+    #
+    # Results:
+    #   None.
+    #
+    # Side effects:
+    #   None.
+    #
+
+    proc ns_link {args} {
+        ns_deprecated "file link -hard ..."
+        set nargs [llength $args]
+        if {$nargs == 2} {
+            set cpl 1
+            set src [lindex $args 0]
+            set lnk [lindex $args 1]
+        } elseif {$nargs == 3 && [string match "-no*" [lindex $args 0]]} {
+            set cpl 0
+            set src [lindex $args 1]
+            set lnk [lindex $args 2]
+        } else {
+            error "wrong # args: should be \"ns_link ?-nocomplain? path link\""
+        }
+        if {$cpl} {
+            file link -hard $lnk $src
+        } else {
+            catch {file link -hard $lnk $src}
+        }
+
+        return
+    }
+
+    #
+    # ns_rename --
+    #
+    #   As we are re-implementing the ns_rename (which actually calls rename())
+    #   with Tcl [file], lets spend couple of words on the compatibility...
+    #
+    #   This is what "man 2 rename" says (among other things):
+    #
+    #     The rename() causes the link named "from" to be renamed as "to".
+    #     If "to" exists, it is first removed.
+    #     Both "from" and "to" must be of the same type (that is, both dirs
+    #     or both non-dirs), and must reside on the same filesystem.
+    #
+    #   What we cannot guarantee is:
+    #
+    #       "must reside on the same filesystem"
+    #
+    #   This is because there is no portable means in Tcl to assure this
+    #   and because Tcl [file rename] is clever enough to copy-then-delete
+    #   when renaming files residing on different filesystems.
+    #
+    # Results:
+    #   None.
+    #
+    # Side effects:
+    #   None.
+    #
+
+    proc ns_rename {from to} {
+        ns_deprecated "file rename"
+        if {[file exists $to]} {
+            if {[file type $from] != [file type $to]} {
+                error "rename (\"$from\", \"$to\"): not of the same type"
+            } elseif {$from == $to} {
+                error "error renaming \"$from\": file already exists"
+            }
+            file delete -- $to
+        }
+        file rename -- $from $to
+    }
+
+
+    #
+    # ns_chmod --
+    #
+    #   Sets permissions mask of the "file" to "mode".
+    #
+    # Results:
+    #   None.
+    #
+    # Side effects:
+    #   None.
+    #
+
+    proc ns_chmod {file mode} {
+        ns_deprecated "file attributes"
+        file attributes $file -permissions $mode
+    }
+
+
+    #
+    # ns_truncate --
+    #
+    #   This is still implemented in the server code. The reason is that
+    #   the Tcl has no portable equivalent; nsd/tclfile.c:NsTclFTruncateObjCmd()
+    #
+
+    #
+    # ns_ftruncate --
+    #
+    #   This is still implemented in the server code. The reason is that
+    #   the Tcl has no portable equivalent; nsd/tclfile.c:NsTclTruncateObjCmd()
+    #
+
+    #
+    # ns_mktemp --
+    #
+    #   This is still implemented in the server code. The reason is that
+    #   the Tcl has no portable equivalent; nsd/tclfile.c:NsTclMkTempObjCmd()
+    #
+
+    #
+    # ns_symlink --
+    #
+    #   This is still implemented in the server code. The reason is that
+    #   the Tcl [file link] command always creates link target with
+    #   absolute path to the linked file; nsd/tclfile.c:NsTclSymlinkObjCmd()
+    #
+
+    #
+    # ns_adp_compress --
+    #
+    #   See: ns_conn
+    #
+
+    proc ns_adp_compress {{bool 1}} {
+        ns_deprecated "ns_conn compress"
+        ns_conn compress $bool
+        return ""
+    }
+
+    #
+    # ns_adp_stream --
+    #
+    #   See: ns_adp_ctl, ns_adp_flush.
+    #
+
+    proc ns_adp_stream {{bool 1}} {
+        ns_deprecated "ns_adp_ctl stream"
+        ns_adp_ctl stream $bool
+        ns_adp_flush
+    }
+
+    #
+    # ns_unregister_proc --
+    #
+    #   ns_unregister_op unregisters any kind of registered
+    #   request, including C, Tcl, ADP etc.
+    #
+
+    proc ns_unregister_proc {args} {
+        ns_deprecated "ns_unregister_op"
+        uplevel [list ns_unregister_op {*}$args]
+    }
+
+    #
+    # ns_var --
+    #
+    #   Tcl shared variables. Use nsv_* instead.
+    #
+    proc ns_var {cmd {key ""} {value ""}} {
+        ns_deprecated "nsv_*"
+        switch $cmd {
+
+            exists { return [nsv_exists ns:var $key] }
+            list   { return [nsv_list   ns:var] }
+            get    { return [nsv_get    ns:var $key] }
+            set    { return [nsv_set    ns:var $key $value] }
+            unset  { return [nsv_unset  ns:var $key] }
+
+            default {
+                error "unknown command \"$cmd\", should be exists, list, get, set, or unset"
+            }
+        }
+    }
+
+    #
+    # ns_hmac_sha2 --
+    #
+    #   compute a HMAC for key and message
+    #   use "::ns_crypto::hmac string -digest ..." instead
+    #
+    proc ns_hmac_sha2 args {
+        set length 256
+
+        ns_parseargs {
+            {-length 256}
+            key
+            message
+        } $args
+
+        ns_deprecated "::ns_crypto::hmac string -digest sha$length ..."
+        uplevel [list ::ns_crypto::hmac string -digest sha$length $key $message]
+    }
+
+    #
+    # ns_sha2 --
+    #
+    #   compute a SHA2 digest for message
+    #   use "::ns_crypto::md string -digest ..." instead
+    #
+    proc ns_sha2 args {
+        set length 256
+
+        ns_parseargs {
+            {-length 256}
+            message
+        } $args
+
+        ns_deprecated "ns_crypto::md string -digest sha$length ..."
+        uplevel [list ns_crypto::md string -digest sha$length $message]
+    }
+
+    #
+    # ns_tmpnam --
+    #
+    #   return a name of a temporary file
+    #   use "::ns_mktemp" instead
+    #
+    proc ns_tmpnam {} {
+        ns_deprecated "ns_mktemp"
+        return [ns_mktemp]
+    }
+
+    #
+    # env --
+    #
+    #   deprecated version of ns_env
+    #   use "::ns_env" instead
+    #
+    proc env {args} {
+        ns_deprecated "ns_env"
+        return [ns_env {*}$args]
+    }
+
+    #
+    # ns_puts --
+    #
+    #   deprecated version of ns_adp_puts
+    #   use "::ns_adp_puts" instead
+    #
+    proc ns_puts {args} {
+        ns_deprecated "ns_adp_puts"
+        return [ns_adp_puts {*}$args]
+    }
+
+    #
+    # ns_returnadminnotice --
+    #
+    #   deprecated version of ns_returnnotice
+    #   use "ns_returnnotice" instead
+    #
+    proc ns_returnadminnotice {args} {
+        ns_deprecated "ns_returnnotice"
+        return [ns_returnnotice {*}$args]
+    }
+
+    #
+    # ns_adp_eval, ns_adp_safeeval --
+    #
+    #   deprecated versions of ns_adp_parse
+    #   use "ns_adp_parse ..." instead
+    #
+    proc ns_adp_eval {args} {
+        ns_deprecated "ns_adp_parse"
+        return [ns_adp_parse -- {*}$args]
+    }
+    proc ns_adp_safeeval {args} {
+        ns_deprecated "ns_adp_parse -safe"
+        return [ns_adp_parse -safe -- {*}$args]
+    }
+
+    #
+    # ns_adp_mime --
+    #
+    #   deprecated version of ns_adp_mimetype
+    #   use "ns_adp_mimetype ..." instead
+    #
+    proc ns_adp_mime {args} {
+        ns_deprecated "ns_adp_mimetype"
+        return [ns_adp_mimetype {*}$args]
+    }
 }
-
-#
-# ns_hmac_sha2 --
-#
-#   compute a HMAC for key and message
-#   use "::ns_crypto::hmac string -digest ..." instead
-#
-proc ns_hmac_sha2 args {
-    set length 256
-
-    ns_parseargs {
-        {-length 256}
-        key
-        message
-    } $args
-
-    ns_deprecated "::ns_crypto::hmac string -digest sha$length ..."
-    uplevel [list ::ns_crypto::hmac string -digest sha$length $key $message]
-}
-
-#
-# ns_sha2 --
-#
-#   compute a SHA2 digest for message
-#   use "::ns_crypto::md string -digest ..." instead
-#
-proc ns_sha2 args {
-    set length 256
-
-    ns_parseargs {
-        {-length 256}
-        message
-    } $args
-
-    ns_deprecated "ns_crypto::md string -digest sha$length ..."
-    uplevel [list ns_crypto::md string -digest sha$length $message]
-}
-
-#
-# ns_tmpnam --
-#
-#   return a name of a temporary file
-#   use "::ns_mktemp" instead
-#
-proc ns_tmpnam {} {
-    ns_deprecated "ns_mktemp"
-    return [ns_mktemp]
-}
-
-#
-# env --
-#
-#   deprecated version of ns_env
-#   use "::ns_env" instead
-#
-proc env {args} {
-    ns_deprecated "ns_env"
-    return [ns_env {*}$args]
-}
-
-#
-# ns_puts --
-#
-#   deprecated version of ns_adp_puts
-#   use "::ns_adp_puts" instead
-#
-proc ns_puts {args} {
-    ns_deprecated "ns_adp_puts"
-    return [ns_adp_puts {*}$args]
-}
-
-#
-# ns_returnadminnotice --
-#
-#   deprecated version of ns_returnnotice
-#   use "ns_returnnotice" instead
-#
-proc ns_returnadminnotice {args} {
-    ns_deprecated "ns_returnnotice"
-    return [ns_returnnotice {*}$args]
-}
-
-#
-# ns_adp_eval, ns_adp_safeeval --
-#
-#   deprecated versions of ns_adp_parse
-#   use "ns_adp_parse ..." instead
-#
-proc ns_adp_eval {args} {
-    ns_deprecated "ns_adp_parse"
-    return [ns_adp_parse -- {*}$args]
-}
-proc ns_adp_safeeval {args} {
-    ns_deprecated "ns_adp_parse -safe"
-    return [ns_adp_parse -safe -- {*}$args]
-}
-
-#
-# ns_adp_mime --
-#
-#   deprecated version of ns_adp_mimetype
-#   use "ns_adp_mimetype ..." instead
-#
-proc ns_adp_mime {args} {
-    ns_deprecated "ns_adp_mimetype"
-    return [ns_adp_mimetype {*}$args]
-}
-
 # Local variables:
 #    mode: tcl
 #    tcl-indent-level: 4

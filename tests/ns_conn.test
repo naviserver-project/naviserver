@@ -4,6 +4,10 @@ package require tcltest 2.2
 namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
+
+ns_log notice "XXXXXXXXXXXXXXXXXXXXX <[ns_info buildinfo]>"
+testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
+
 #
 # Syntax tests
 #
@@ -233,8 +237,7 @@ test ns_conn-1.1.54 {syntax: ns_conn zipaccepted} -body {
     ns_conn zipaccepted x
 } -returnCodes error -result {wrong # args: should be "ns_conn zipaccepted"}
 
-
-test ns_conncptofp-1.0 {syntax: ns_conncptofp} -body {
+test ns_conncptofp-1.0 {syntax: ns_conncptofp} -constraints with_deprecated -body {
     ns_conncptofp
 } -returnCodes error -result {wrong # args: should be "ns_conncptofp ?-bytes /integer[0,MAX]/? ?--? /channel/"}
 

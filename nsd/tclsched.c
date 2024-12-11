@@ -119,10 +119,12 @@ SchedObjCmd(Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, char cmd)
         bool ok;
 
         switch (cmd) {
+#ifdef NS_WITH_DEPRECATED
         case 'c':
             Ns_LogDeprecated(objv, 1, "ns_unschedule_proc ...", NULL);
             ok = Ns_Cancel(id);
             break;
+#endif
         case 'u':
             ok = Ns_Cancel(id);
             break;
@@ -146,11 +148,13 @@ SchedObjCmd(Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv, char cmd)
     return result;
 }
 
+#ifdef NS_WITH_DEPRECATED
 int
 NsTclCancelObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     return SchedObjCmd(interp, objc, objv, 'c');
 }
+#endif
 
 int
 NsTclPauseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)

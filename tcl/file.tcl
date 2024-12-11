@@ -49,65 +49,71 @@ proc ns_tcl_abort {} {
     error ns_tcl_abort "" NS_TCL_ABORT
 }
 
-#
-# ns_sourceproc --
-#
-#   Callback for sourcing Tcl pages.
-#
-#   Get the contents of a file from the cache or disk
-#   and source it. Uses tricks to cache Tcl bytecodes
-#   and hope to gain some percent of speed that way.
-#
-#   After 4.99.17, "ns_sourceproc" is deprecated. One should use
-#      ns_register_tcl $method /*.tcl
-#   instead of
-#      ns_register_proc $method /*.tcl ns_sourceproc"
-#
-# Results:
-#   None.
-#
-# Side effects:
-#   May create new cached content in memory.
-#
+#######################################################################################
+# Deprecated procs
+#######################################################################################
 
-proc ns_sourceproc {args} {
+if {[dict get [ns_info buildinfo] with_deprecated]} {
+    #
+    # ns_sourceproc --
+    #
+    #   Callback for sourcing Tcl pages.
+    #
+    #   Get the contents of a file from the cache or disk
+    #   and source it. Uses tricks to cache Tcl bytecodes
+    #   and hope to gain some percent of speed that way.
+    #
+    #   After 4.99.17, "ns_sourceproc" is deprecated. One should use
+    #      ns_register_tcl $method /*.tcl
+    #   instead of
+    #      ns_register_proc $method /*.tcl ns_sourceproc"
+    #
+    # Results:
+    #   None.
+    #
+    # Side effects:
+    #   May create new cached content in memory.
+    #
 
-    #ns_deprecated "ns_register_tcl" "Use ns_register_tcl ... instead of ns_register_proc ... ns_sourceproc"
+    proc ns_sourceproc {args} {
 
-    set path [ns_url2file [ns_conn url]]
-    if {![ns_filestat $path stat]} {
-        ns_returnnotfound
-        return
-    }
+        #ns_deprecated "ns_register_tcl" "Use ns_register_tcl ... instead of ns_register_proc ... ns_sourceproc"
 
-    set code [catch {
-
-        # Tcl file signature
-        set cookie0 $stat(mtime):$stat(ino):$stat(dev)
-        set proc0 [info commands ns:tclcache.$path]
-
-        # Verify file modification time
-        if {$proc0 eq "" || [$proc0] ne $cookie0} {
-            proc ns:tclcache_$path {} [ns_fileread $path]
-            proc ns:tclcache.$path {} "return $cookie0"
+        set path [ns_url2file [ns_conn url]]
+        if {![ns_filestat $path stat]} {
+            ns_returnnotfound
+            return
         }
-        # Run the proc
-        ns:tclcache_$path
 
-    } errmsg]
+        set code [catch {
 
-    if {$code == 1 && $::errorCode ne "NS_TCL_ABORT"} {
+            # Tcl file signature
+            set cookie0 $stat(mtime):$stat(ino):$stat(dev)
+            set proc0 [info commands ns:tclcache.$path]
 
-        # Invalidate proc
-        rename ns:tclcache_$path ""
-        rename ns:tclcache.$path ""
+            # Verify file modification time
+            if {$proc0 eq "" || [$proc0] ne $cookie0} {
+                proc ns:tclcache_$path {} [ns_fileread $path]
+                proc ns:tclcache.$path {} "return $cookie0"
+            }
+            # Run the proc
+            ns:tclcache_$path
 
-        # Show custom errropage if defined
-        set errp [nsv_get ns:tclfile errorpage]
-        if {$errp eq {}} {
-            return -code 1 -errorcode $::errorCode -errorinfo $::errorInfo $errmsg
+        } errmsg]
+
+        if {$code == 1 && $::errorCode ne "NS_TCL_ABORT"} {
+
+            # Invalidate proc
+            rename ns:tclcache_$path ""
+            rename ns:tclcache.$path ""
+
+            # Show custom errropage if defined
+            set errp [nsv_get ns:tclfile errorpage]
+            if {$errp eq {}} {
+                return -code 1 -errorcode $::errorCode -errorinfo $::errorInfo $errmsg
+            }
+            source $errp
         }
-        source $errp
     }
 }
 

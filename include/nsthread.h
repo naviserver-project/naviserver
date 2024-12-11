@@ -89,6 +89,10 @@
 #define UCHAR(c)                   ((unsigned char)(c))
 #define INTCHAR(c)                 ((int)UCHAR((c)))
 
+#ifndef NS_NO_DEPRECATED
+# define NS_WITH_DEPRECATED
+#endif
+
 /*
  * AFAICT, there is no reason to conditionalize NSTHREAD_EXPORTS
  * depending on the compiler used, it should ALWAYS be set:

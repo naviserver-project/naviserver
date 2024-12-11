@@ -5,17 +5,27 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
+testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
+
 #######################################################################################
-#  test ns_ictl 
+#  Syntax tests
 #######################################################################################
 
 test ns_ictl-1.0  {syntax: ns_ictl} -body {
     ns_ictl
-} -returnCodes error -result {wrong # args: should be "ns_ictl addmodule|cleanup|epoch|get|getmodules|gettraces|markfordelete|maxconcurrentupdates|oncleanup|oncreate|ondelete|oninit|runtraces|save|trace|update ?/arg .../"}
+} -returnCodes error \
+    -result [expr {[testConstraint with_deprecated]
+                   ? {wrong # args: should be "ns_ictl addmodule|cleanup|epoch|get|getmodules|gettraces|markfordelete|maxconcurrentupdates|oncleanup|oncreate|ondelete|oninit|runtraces|save|trace|update ?/arg .../"}
+                   : {wrong # args: should be "ns_ictl addmodule|cleanup|epoch|get|getmodules|gettraces|markfordelete|maxconcurrentupdates|runtraces|save|trace|update ?/arg .../"}
+               }]
 
 test ns_ictl-1.1  {syntax: ns_ictl subcommands} -body {
     ns_ictl ?
-} -returnCodes error -result {ns_ictl: bad subcommand "?": must be addmodule, cleanup, epoch, get, getmodules, gettraces, markfordelete, maxconcurrentupdates, oncleanup, oncreate, ondelete, oninit, runtraces, save, trace, or update}
+} -returnCodes error \
+    -result [expr {[testConstraint with_deprecated]
+                   ? {ns_ictl: bad subcommand "?": must be addmodule, cleanup, epoch, get, getmodules, gettraces, markfordelete, maxconcurrentupdates, oncleanup, oncreate, ondelete, oninit, runtraces, save, trace, or update}
+                   : {ns_ictl: bad subcommand "?": must be addmodule, cleanup, epoch, get, getmodules, gettraces, markfordelete, maxconcurrentupdates, runtraces, save, trace, or update}
+               }]
 
 test ns_ictl-1.2 {syntax: ns_ictl addmodule} -body {
     ns_ictl addmodule
@@ -49,19 +59,19 @@ test ns_ictl-1.9 {syntax: ns_ictl maxconcurrentupdates} -body {
     ns_ictl maxconcurrentupdates 1 x
 } -returnCodes error -result {wrong # args: should be "ns_ictl maxconcurrentupdates ?/max[1,MAX]/?"}
 
-test ns_ictl-1.10 {syntax: ns_ictl oncleanup} -body {
+test ns_ictl-1.10 {syntax: ns_ictl oncleanup} -constraints with_deprecated -body {
     ns_ictl oncleanup
 } -returnCodes error -result {wrong # args: should be "ns_ictl oncleanup /script/ ?/arg .../?"}
 
-test ns_ictl-1.11 {syntax: ns_ictl oncreate} -body {
+test ns_ictl-1.11 {syntax: ns_ictl oncreate} -constraints with_deprecated  -body {
     ns_ictl oncreate
 } -returnCodes error -result {wrong # args: should be "ns_ictl oncreate /script/ ?/arg .../?"}
 
-test ns_ictl-1.12 {syntax: ns_ictl ondelete} -body {
+test ns_ictl-1.12 {syntax: ns_ictl ondelete} -constraints with_deprecated -body {
     ns_ictl ondelete
 } -returnCodes error -result {wrong # args: should be "ns_ictl ondelete /script/ ?/arg .../?"}
 
-test ns_ictl-1.13 {syntax: ns_ictl oninit} -body {
+test ns_ictl-1.13 {syntax: ns_ictl oninit} -constraints with_deprecated -body {
     ns_ictl oninit
 } -returnCodes error -result {wrong # args: should be "ns_ictl oninit /script/ ?/arg .../?"}
 

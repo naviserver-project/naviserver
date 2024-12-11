@@ -185,7 +185,7 @@ test ns_proxy-3.9 {get deadlock} -constraints {macOrUnix} -body {
 test ns_proxy-3.10 {get with timeout on pool} -constraints {macOrUnix} -body {
     ns_proxy configure testpool -gettimeout 100ms
     ns_proxy get testpool -handles 2
-    ns_thread wait [ns_thread begin {
+    ns_thread wait [ns_thread create {
         set code [catch {ns_proxy get testpool} result]
         list $code $result $::errorCode
     }]
@@ -196,7 +196,7 @@ test ns_proxy-3.10 {get with timeout on pool} -constraints {macOrUnix} -body {
 
 test ns_proxy-3.11 {get with timeout on command} -constraints {macOrUnix} -body {
     ns_proxy get testpool -handles 2
-    ns_thread wait [ns_thread begin {
+    ns_thread wait [ns_thread create {
         set code [catch {ns_proxy get testpool -timeout 100ms} result]
         list $code $result $::errorCode
     }]

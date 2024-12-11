@@ -5,7 +5,11 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
+testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
 
+#######################################################################################
+# Syntax tests
+#######################################################################################
 
 test nsdb-1.0 {syntax: ns_db} -body {
     ns_db
@@ -127,7 +131,7 @@ test nsdb-1.0.31 {syntax: ns_db user} -body {
     ns_db user
 } -returnCodes error -result {wrong # args: should be "ns_db user /handle/"}
 
-test nsdb-1.0.32 {syntax: ns_db verbose} -body {
+test nsdb-1.0.32 {syntax: ns_db verbose} -constraints with_deprecated -body {
     ns_db verbose
 } -returnCodes error -result {wrong # args: should be "ns_db verbose /handle/ ?true|false?"}
 
@@ -182,10 +186,10 @@ test nsdb-1.10 {syntax: ns_dbpooldescription} -body {
     ns_dbpooldescription 
 } -returnCodes error -result {wrong # args: should be "ns_dbpooldescription /poolname/"}
 
-
-#
+#######################################################################################
 # Functional tests
-#
+#######################################################################################
+
 test ns_dbquotevalue-2 {empty string} -body {
     ns_dbquotevalue ""
 } -returnCodes {ok error} -result {NULL}

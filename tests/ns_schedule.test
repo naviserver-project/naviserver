@@ -5,41 +5,48 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
+testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
 
+#######################################################################################
+#  Syntax tests
+#######################################################################################
 
-test ns_schedule-1.1 {basic syntax} -body {
+test ns_schedule-1.1 {syntax: ns_schedule_proc} -body {
     ns_schedule_proc
 } -returnCodes error -result {wrong # args: should be "ns_schedule_proc ?-once? ?-thread? ?--? /interval/ /script/ ?/arg .../?"}
 
-test ns_schedule-1.2 {basic syntax} -body {
+test ns_schedule-1.2 {syntax: ns_unschedule_proc} -body {
     ns_unschedule_proc
 } -returnCodes error -result {wrong # args: should be "ns_unschedule_proc /id/"}
 
-test ns_schedule-1.3 {basic syntax} -body {
+test ns_schedule-1.3 {syntax: ns_schedule_daily} -body {
     ns_schedule_daily
 } -returnCodes error -result {wrong # args: should be "ns_schedule_daily ?-once? ?-thread? ?--? /hour[0,23]/ /minute[0,59]/ /script/ ?/arg .../?"}
 
-test ns_schedule-1.4 {basic syntax} -body {
+test ns_schedule-1.4 {syntax: ns_schedule_weekly} -body {
     ns_schedule_weekly
 } -returnCodes error -result {wrong # args: should be "ns_schedule_weekly ?-once? ?-thread? ?--? /day[0,6]/ /hour[0,23]/ /minute[0,59]/ /script/ ?/arg .../?"}
 
-test ns_schedule-1.5 {basic syntax} -body {
+test ns_schedule-1.5 {syntax: ns_after} -body {
     ns_after
 } -returnCodes error -result {wrong # args: should be "ns_after /interval/ /script/ ?/arg .../?"}
 
-test ns_schedule-1.6 {basic syntax} -body {
+test ns_schedule-1.6 {syntax: ns_pause} -body {
     ns_pause
 } -returnCodes error -result {wrong # args: should be "ns_pause /id/"}
 
-test ns_schedule-1.7 {basic syntax} -body {
+test ns_schedule-1.7 {syntax: ns_cancel} -constraints with_deprecated -body {
     ns_cancel
 } -returnCodes error -result {wrong # args: should be "ns_cancel /id/"}
 
-test ns_schedule-1.8 {basic syntax} -body {
+test ns_schedule-1.8 {syntax: ns_resume} -body {
     ns_resume
 } -returnCodes error -result {wrong # args: should be "ns_resume /id/"}
 
 
+#######################################################################################
+#  Functional tests
+#######################################################################################
 
 test ns_schedule-2.0.1 {schedule proc: interval} -body {
     ns_schedule_proc 0s {ns_log notice ok}

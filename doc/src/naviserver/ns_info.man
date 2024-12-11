@@ -13,15 +13,6 @@ This command provides information about the current state of the running NaviSer
 
 [list_begin definitions]
 
-
-[call [cmd ns_info] [arg option] [opt [arg {arg arg ...}]]]
-
-
-[list_end]
-
-
-[list_begin definitions]
-
 [call [cmd  "ns_info address"]]
 
 Returns the primary IP address of the hostname of this machine, or
@@ -46,8 +37,18 @@ Returns the time in epoch seconds since the current server was started
 [call [cmd  "ns_info buildinfo"]]
 
 Returns returns information about compiler, assertions and Tcl
-version in form of a dict, e.g.,
-"compiler {clang 16.0.0 (clang-1600.0.26.4)} assertions 0 system_malloc 1 tcl 9.0.1"
+version in form of a dict, containing the keys
+[term compiler],
+[term assertions],
+[term system_malloc],
+[term with_deprecated], and
+[term tcl].
+
+[example_begin]
+ % ns_info buildinfo
+ compiler {clang 16.0.0 (clang-1600.0.26.4)} assertions 0 system_malloc 1 with_deprecated 0 tcl 9.0.1
+[example_end]
+
 
 [call [cmd  "ns_info builddate"]]
 
@@ -102,6 +103,22 @@ future). Otherwise the call is a no-op.
 
 [para] When the option [opt -release] is used, the releasable memory
 is released (also libtcmalloc only).
+
+[example_begin]
+ % ns_info meminfo
+ reload /usr/lib/x86_64-linux-gnu/libtcmalloc_minimal.so.4 version {gperftools 2.7} stats {------------------------------------------------
+ MALLOC:     1015860976 (  968.8 MiB) Bytes in use by application
+ MALLOC: +    113090560 (  107.9 MiB) Bytes in page heap freelist
+ MALLOC: +    123400496 (  117.7 MiB) Bytes in central cache freelist
+ MALLOC: +      4785408 (    4.6 MiB) Bytes in transfer cache freelist
+ MALLOC: +     29514464 (   28.1 MiB) Bytes in thread cache freelists
+ MALLOC: +      7602176 (    7.2 MiB) Bytes in malloc metadata
+ MALLOC:   ------------
+ MALLOC: =   1294254080 ( 1234.3 MiB) Actual memory used (physical + swap)
+ MALLOC: +      1335296 (    1.3 MiB) Bytes released to OS (aka unmapped)
+ MALLOC:   ------------
+ MALLOC: =   1295589376 ( 1235.6 MiB) Virtual address space used
+[example_end]
 
 [call [cmd  "ns_info minor"]]
 
@@ -197,6 +214,7 @@ listening callback for the nscp module. Each list element is itself a
 4-element list like this: 
 
 [example_begin]
+ % ns_info sockcallbacks
  {11 {read exit} nscp {127.0.0.1 9999} 0}
 [example_end]
 

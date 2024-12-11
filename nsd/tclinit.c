@@ -117,9 +117,11 @@ static TCL_OBJCMDPROC_T ICtlGetModulesObjCmd;
 static TCL_OBJCMDPROC_T ICtlGetObjCmd;
 static TCL_OBJCMDPROC_T ICtlGetTracesObjCmd;
 static TCL_OBJCMDPROC_T ICtlMarkForDeleteObjCmd;
+#ifdef NS_WITH_DEPRECATED
 static TCL_OBJCMDPROC_T ICtlOnCleanupObjCmd;
 static TCL_OBJCMDPROC_T ICtlOnCreateObjCmd;
 static TCL_OBJCMDPROC_T ICtlOnDeleteObjCmd;
+#endif
 static TCL_OBJCMDPROC_T ICtlRunTracesObjCmd;
 static TCL_OBJCMDPROC_T ICtlSaveObjCmd;
 static TCL_OBJCMDPROC_T ICtlTraceObjCmd;
@@ -1482,13 +1484,14 @@ ICtlCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
  *
  *----------------------------------------------------------------------
  */
-
+#ifdef NS_WITH_DEPRECATED
 static int
 ICtlOnCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Ns_LogDeprecated(objv, 2, "ns_ictl trace deallocate ...", NULL);
     return ICtlAddTrace(clientData, interp, objc, objv, NS_TCL_TRACE_DEALLOCATE);
 }
+
 static int
 ICtlOnCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1501,6 +1504,8 @@ ICtlOnDeleteObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
     Ns_LogDeprecated(objv, 2, "ns_ictl trace delete ...", NULL);
     return ICtlAddTrace(clientData, interp, objc, objv, NS_TCL_TRACE_DELETE);
 }
+#endif
+
 static int
 ICtlTraceObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1636,10 +1641,12 @@ NsTclICtlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         {"gettraces",            ICtlGetTracesObjCmd},
         {"markfordelete",        ICtlMarkForDeleteObjCmd},
         {"maxconcurrentupdates", ICtlMaxconcurrentupdatesObjCmd},
+#ifdef NS_WITH_DEPRECATED
         {"oncleanup",            ICtlOnCleanupObjCmd},
         {"oncreate",             ICtlOnCreateObjCmd},
         {"ondelete",             ICtlOnDeleteObjCmd},
         {"oninit",               ICtlOnCreateObjCmd},
+#endif
         {"runtraces",            ICtlRunTracesObjCmd},
         {"save",                 ICtlSaveObjCmd},
         {"trace",                ICtlTraceObjCmd},
@@ -2177,7 +2184,9 @@ static bool InitializeInterpData(void) {
     NsTclInitAddrType();
     NsTclInitTimeType();
     NsTclInitMemUnitType();
+#ifdef NS_WITH_DEPRECATED
     NsTclInitKeylistType();
+#endif
 
 #if defined(_WIN32) || defined(HAVE_PTHREAD)
      Ns_MasterUnlock();

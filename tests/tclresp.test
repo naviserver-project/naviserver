@@ -10,8 +10,11 @@ if {[ns_config test listenport]} {
     testConstraint serverListen true
 }
 testConstraint http09 true
+testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
 
-
+#######################################################################################
+# Syntax tests
+#######################################################################################
 
 test ns_headers-1.0 {syntax: ns_headers} -body {
     ns_headers
@@ -39,18 +42,10 @@ test ns_returnbadrequest-1.0 {syntax: ns_returnbadrequest} -body {
     ns_returnbadrequest
 } -returnCodes error -result {wrong # args: should be "ns_returnbadrequest /reason/"}
 
-test ns_returnbadrequest-1.1 {basic operation} -body {
-    ns_returnbadrequest x
-} -returnCodes error -result {no connection}
-
-
 test ns_returnnotfound-1.0 {syntax: ns_returnnotfound} -body {
     ns_returnnotfound -x
 } -returnCodes error -result {wrong # args: should be "ns_returnnotfound"}
 
-test ns_returnnotfound-1.1 {basic operation ns_returnnotfound} -body {
-    ns_returnnotfound
-} -returnCodes error -result {no connection}
 
 test ns_returnok-1.0 {syntax: ns_returnok} -body {
     ns_returnok x
@@ -60,25 +55,14 @@ test ns_returnunauthorized-1.0 {syntax: ns_returnunauthorized} -body {
     ns_returnunauthorized x
 } -returnCodes error -result {wrong # args: should be "ns_returnunauthorized"}
 
-test ns_returnunauthorized-1.1 {syntax: ns_returnunauthorized} -body {
-    ns_returnunauthorized
-} -returnCodes error -result {no connection}
 
 test ns_returnforbidden-1.0 {syntax: ns_returnforbidden} -body {
     ns_returnforbidden x
 } -returnCodes error -result {wrong # args: should be "ns_returnforbidden"}
 
-test ns_returnforbidden-1.1 {syntax: ns_returnforbidden} -body {
-    ns_returnforbidden
-} -returnCodes error -result {no connection}
-
 test ns_returnerror-1.0 {syntax: ns_returnerror} -body {
     ns_returnerror
 } -returnCodes error -result {wrong # args: should be "ns_returnerror /status[100,599]/ /message/"}
-
-test ns_returnerror-1.1 {basic operation} -body {
-    ns_returnerror 200 x
-} -returnCodes error -result {no connection}
 
 test ns_returnmoved-1.0 {syntax: ns_returnmoved} -body {
     ns_returnmoved
@@ -101,9 +85,32 @@ test ns_internalredirect-1.0 {syntax: ns_internalredirect} -body {
 } -returnCodes error -result {wrong # args: should be "ns_internalredirect /location/"}
 
 
-#
-# functional tests
-#
+#######################################################################################
+# Functional tests
+#######################################################################################
+
+test ns_returnbadrequest-1.1 {ns_returnbadrequest} -body {
+    ns_returnbadrequest x
+} -returnCodes error -result {no connection}
+
+test ns_returnerror-1.1 {ns_returnerror with wrong argument and no connection} -body {
+    ns_returnerror 200 x
+} -returnCodes error -result {no connection}
+
+test ns_returnforbidden-1.1 {ns_returnforbidden correct syntax, no connection} -body {
+    ns_returnforbidden
+} -returnCodes error -result {no connection}
+
+test ns_returnunauthorized-1.1 {ns_returnunauthorized correct syntax, no connection} -body {
+    ns_returnunauthorized
+} -returnCodes error -result {no connection}
+
+test ns_returnnotfound-1.1 {ns_returnnotfound correct syntax, no connection} -body {
+    ns_returnnotfound
+} -returnCodes error -result {no connection}
+
+
+
 test ns_headers-1.1 {basic operation} -body {
     ns_headers 200
 } -returnCodes error -result {no connection}
@@ -184,11 +191,11 @@ test tclresp-1.13.2 {basic syntax} -body {
     ns_write x
 } -returnCodes error -result {no connection}
 
-test tclresp-1.14.1 {basic syntax} -body {
+test tclresp-1.14.1 {basic syntax} -constraints with_deprecated -body {
     ns_connsendfp
 } -returnCodes error -result {wrong # args: should be "ns_connsendfp /channel/ /length[0,MAX]/"}
 
-test tclresp-1.14.2 {basic syntax} -body {
+test tclresp-1.14.2 {basic syntax} -constraints with_deprecated -body {
     ns_connsendfp x 0
 } -returnCodes error -result {no connection}
 

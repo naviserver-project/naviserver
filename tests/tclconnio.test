@@ -5,6 +5,7 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
+
 #
 # Enable the channel detach/attach test if the Tcl Thread package is available.
 #
@@ -12,9 +13,10 @@ if {![catch {package require Thread}]} {
     testConstraint Thread true
 }
 testConstraint http09 true
+testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
 
 
-test tclconnio-1.1 {ns_connsendfp} -constraints http09 -setup {
+test tclconnio-1.1 {ns_connsendfp} -constraints {http09 with_deprecated} -setup {
     ns_register_proc GET /tclconnio {
         ns_connsendfp [open [ns_pagepath 10bytes]] 5
     }
@@ -24,6 +26,15 @@ test tclconnio-1.1 {ns_connsendfp} -constraints http09 -setup {
     ns_unregister_op GET /tclconnio
 } -result 01234
 
+test tclconnio-1.2 {ns_writefp (works with nstest::http, in contrary to ns_connsendfp)} -setup {
+    ns_register_proc GET /tclconnio {
+        ns_writefp [open [ns_pagepath 10bytes]] 5
+    }
+} -body {
+    nstest::http -getbody 1 GET /tclconnio
+} -cleanup {
+    ns_unregister_op GET /tclconnio
+} -result {200 01234}
 
 
 test tclconnio-2.1 {ns_conn channel, no length, 1.0} -setup {

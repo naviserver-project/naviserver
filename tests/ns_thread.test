@@ -5,13 +5,27 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
+testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
+
+#######################################################################################
+# Syntax tests
+#######################################################################################
+
 test ns_thread-1.0 {syntax: ns_thread} -body {
     ns_thread
-} -returnCodes error -result {wrong # args: should be "ns_thread begin|begindetached|create|get|getid|handle|id|join|name|stackinfo|wait|yield ?/arg .../"}
+} -returnCodes error \
+    -result [expr {[testConstraint with_deprecated]
+                   ? {wrong # args: should be "ns_thread begin|begindetached|create|get|getid|handle|id|join|name|stackinfo|wait|yield ?/arg .../"}
+                   : {wrong # args: should be "ns_thread create|handle|id|name|stackinfo|wait|yield ?/arg .../"}
+               }]
 
 test ns_thread-1.1 {syntax: ns_thread subcommands} -body {
     ns_thread ?
-} -returnCodes error -result {ns_thread: bad subcommand "?": must be begin, begindetached, create, get, getid, handle, id, join, name, stackinfo, wait, or yield}
+} -returnCodes error \
+    -result [expr {[testConstraint with_deprecated]
+                   ? {ns_thread: bad subcommand "?": must be begin, begindetached, create, get, getid, handle, id, join, name, stackinfo, wait, or yield}
+                   : {ns_thread: bad subcommand "?": must be create, handle, id, name, stackinfo, wait, or yield}
+               }]
 
 test ns_thread-1.2 {syntax: ns_thread create} -body {
     ns_thread create
@@ -218,7 +232,10 @@ test ns_rwlock-1.10 {syntax: ns_rwlock writeunlock} -body {
 } -returnCodes error -result {wrong # args: should be "ns_rwlock writeunlock /rwlockid/"}
 
 
-# general testing
+#######################################################################################
+# Functional tests
+#######################################################################################
+
 
 test ns_thread-2.1 {detached thread} -body {
     ns_thread create -detached {return ok}

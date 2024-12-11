@@ -24,6 +24,7 @@
 
 #include "nsd.h"
 
+#ifdef NS_WITH_DEPRECATED
 static int  TclX_WrongArgs(Tcl_Interp *interp, Tcl_Obj *commandNameObj, const char *msg);
 static bool TclX_IsNullObj(Tcl_Obj *objPtr) NS_GNUC_NONNULL(1);
 
@@ -1551,6 +1552,7 @@ TclX_KeylkeysObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
     }
     return result;
 }
+#endif
 
 /*
  * Local Variables:

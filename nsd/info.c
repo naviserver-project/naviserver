@@ -660,24 +660,34 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
     static const char *const opts[] = {
         "address", "argv", "argv0", "boottime", "builddate", "buildinfo", "callbacks",
         "config", "home", "hostname", "ipv6", "locks", "log",
-        "major", "meminfo", "minor", "mimetypes", "name", "nsd", "pagedir",
-        "pageroot", "patchlevel", "pid", "platform", "pools",
+        "major", "meminfo", "minor", "mimetypes", "name", "nsd",
+        "patchlevel", "pid", "pools",
         "scheduled", "server", "servers",
-        "sockcallbacks", "ssl", "tag", "tcllib", "threads", "uptime",
-        "version", "winnt", "filters", "traces", "requestprocs",
-        "url2file", "shutdownpending", "started", NULL
+        "sockcallbacks", "ssl", "tag", "threads", "uptime",
+        "version",
+        "shutdownpending", "started",
+#ifdef NS_WITH_DEPRECATED
+        "filters", "pagedir", "pageroot", "platform", "traces",
+        "requestprocs", "tcllib", "url2file", "winnt",
+#endif
+        NULL
     };
 
     enum {
         IAddressIdx, IArgvIdx, IArgv0Idx, IBoottimeIdx, IBuilddateIdx, IBuildinfoIdx, ICallbacksIdx,
         IConfigIdx, IHomeIdx, IHostNameIdx, IIpv6Idx, ILocksIdx, ILogIdx,
         IMajorIdx, IMeminfoIdx, IMinorIdx, IMimeIdx, INameIdx, INsdIdx,
-        IPageDirIdx, IPageRootIdx, IPatchLevelIdx,
-        IPidIdx, IPlatformIdx, IPoolsIdx,
+        IPatchLevelIdx,
+        IPidIdx, IPoolsIdx,
         IScheduledIdx, IServerIdx, IServersIdx,
-        ISockCallbacksIdx, ISSLIdx, ITagIdx, ITclLibIdx, IThreadsIdx, IUptimeIdx,
-        IVersionIdx, IWinntIdx, IFiltersIdx, ITracesIdx, IRequestProcsIdx,
-        IUrl2FileIdx, IShutdownPendingIdx, IStartedIdx
+        ISockCallbacksIdx, ISSLIdx, ITagIdx, IThreadsIdx, IUptimeIdx,
+        IVersionIdx,
+        IShutdownPendingIdx, IStartedIdx,
+#ifdef NS_WITH_DEPRECATED
+        IFiltersIdx, IPageDirIdx, IPageRootIdx, IPlatformIdx, ITracesIdx,
+        IRequestProcsIdx, ITclLibIdx, IUrl2FileIdx, IWinntIdx,
+#endif
+        INULL
     };
 
     if (unlikely(objc < 2)) {
@@ -768,11 +778,6 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         }
         break;
 
-    case IPlatformIdx:
-        Ns_LogDeprecated(objv, 2, "$::tcl_platform(platform)", NULL);
-        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoPlatform(), TCL_INDEX_NONE));
-        break;
-
     case IHostNameIdx:
         Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoHostname(), TCL_INDEX_NONE));
         break;
@@ -822,15 +827,6 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoHomePath(), TCL_INDEX_NONE));
         break;
 
-    case IWinntIdx:
-        Ns_LogDeprecated(objv, 2, "$::tcl_platform(platform)", NULL);
-#ifdef _WIN32
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
-#else
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-#endif
-        break;
-
     case IBuilddateIdx:
         Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoBuildDate(), TCL_INDEX_NONE));
         break;
@@ -853,7 +849,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
     case IBuildinfoIdx:
         {
             Tcl_Obj *dictObj = Tcl_NewDictObj();
-            int defined_NDEBUG, defined_SYSTEM_MALLOC;
+            int defined_NDEBUG, defined_SYSTEM_MALLOC, defined_NS_WITH_DEPRECATED;
 
             /*
              * Detect the compiler.
@@ -895,7 +891,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
                            Tcl_NewStringObj("assertions", 10),
                            Tcl_NewIntObj(defined_NDEBUG));
             /*
-             * Compiled with SYSTEM_MALLOC.
+             * Compiled with SYSTEM_MALLOC?
              */
             defined_SYSTEM_MALLOC =
 #if defined(SYSTEM_MALLOC)
@@ -907,6 +903,21 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
             Tcl_DictObjPut(NULL, dictObj,
                            Tcl_NewStringObj("system_malloc", 13),
                            Tcl_NewIntObj(defined_SYSTEM_MALLOC));
+
+            /*
+             * Compiled with NS_WITH_DEPRECATED?
+             */
+            defined_NS_WITH_DEPRECATED =
+#if defined(NS_WITH_DEPRECATED)
+                                         1
+#else
+                                         0
+#endif
+                ;
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("with_deprecated", 15),
+                           Tcl_NewIntObj(defined_NS_WITH_DEPRECATED));
+
             /*
              * The nsd binary was built against this version of Tcl
              */
@@ -916,8 +927,8 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
 
             Tcl_SetObjResult(interp, dictObj);
             Tcl_DStringFree(&ds);
-            break;
         }
+        break;
 
     case IMeminfoIdx: {
         Tcl_Obj    *resultObj = Tcl_NewDictObj();
@@ -957,6 +968,25 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         break;
     }
 
+#ifdef NS_WITH_DEPRECATED
+        /*
+         * All following cases are deprecated.
+         */
+    case IPlatformIdx:
+        Ns_LogDeprecated(objv, 2, "$::tcl_platform(platform)", NULL);
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_InfoPlatform(), TCL_INDEX_NONE));
+        break;
+
+    case IWinntIdx:
+        Ns_LogDeprecated(objv, 2, "$::tcl_platform(platform)", NULL);
+# ifdef _WIN32
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
+# else
+        Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+# endif
+        break;
+#endif
+
     default:
         /* cases handled below */
         done = NS_FALSE;
@@ -982,10 +1012,10 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
                 Tcl_SetObjResult(interp,  Tcl_NewStringObj(server, TCL_INDEX_NONE));
                 break;
 
+#ifdef NS_WITH_DEPRECATED
                 /*
                  * All following cases are deprecated.
                  */
-
             case IPageDirIdx: NS_FALL_THROUGH; /* fall through */
             case IPageRootIdx:
                 Ns_LogDeprecated(objv, 2, "ns_server ?-server s? pagedir", NULL);
@@ -1022,6 +1052,7 @@ NsTclInfoObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
                 Tcl_DStringResult(interp, &ds);
                 break;
 
+#endif
             default:
                 Tcl_SetObjResult(interp, Tcl_NewStringObj("unrecognized option", TCL_INDEX_NONE));
                 result = TCL_ERROR;

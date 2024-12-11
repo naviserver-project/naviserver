@@ -233,7 +233,7 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
     return status;
 }
 
-
+#ifdef NS_WITH_DEPRECATED
 /*
  *----------------------------------------------------------------------
  *
@@ -305,6 +305,7 @@ NsTclGetUrlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 
     return code;
 }
+#endif
 
 
 /*

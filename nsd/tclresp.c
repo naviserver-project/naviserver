@@ -110,7 +110,7 @@ NsTclHeadersObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
     return result;
 }
 
-
+#ifdef NS_WITH_DEPRECATED
 /*
  *----------------------------------------------------------------------
  *
@@ -181,6 +181,7 @@ NsTclStartContentObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
     }
     return result;
 }
+#endif
 
 
 /*
@@ -558,7 +559,7 @@ NsTclReturnFpObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
     return result;
 }
 
-
+#ifdef NS_WITH_DEPRECATED
 /*
  *----------------------------------------------------------------------
  *
@@ -614,6 +615,7 @@ NsTclConnSendFpObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
 
     return result;
 }
+#endif
 
 
 /*

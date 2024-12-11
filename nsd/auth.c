@@ -128,9 +128,11 @@ NsTclRequestAuthorizeObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_
         {NULL, NULL, NULL, NULL}
     };
 
+#ifdef NS_WITH_DEPRECATED
     if (strcmp(Tcl_GetString(objv[0]), "ns_checkurl") == 0) {
         Ns_LogDeprecated(objv, 1, "ns_requestauthorize ...", NULL);
     }
+#endif
 
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;

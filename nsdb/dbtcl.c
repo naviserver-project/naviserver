@@ -182,7 +182,9 @@ NsDbAddCmds(Tcl_Interp *interp, const void *arg)
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_dbquotevalue", QuoteValueObjCmd, idataPtr, NULL);
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_dbquotelist", QuoteListObjCmd, idataPtr, NULL);
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_dbpooldescription", PoolDescriptionObjCmd, idataPtr, NULL);
+#ifdef NS_WITH_DEPRECATED
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_pooldescription", PoolDescriptionObjCmd, idataPtr, NULL);
+#endif
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_quotelisttolist", QuoteListToListObjCmd, idataPtr, NULL);
 
     return TCL_OK;
@@ -338,8 +340,10 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
         SP_SETPARAM,
         SP_START,
         STATS,
-        USER,
-        VERBOSE
+        USER
+#ifdef NS_WITH_DEPRECATED
+        ,VERBOSE
+#endif
     };
 
     static const char *const subcmd[] = {
@@ -380,7 +384,9 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
         "sp_start",
         "stats",
         "user",
+#ifdef NS_WITH_DEPRECATED
         "verbose",
+#endif
         NULL
     };
 
@@ -901,6 +907,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
         }
         break;
 
+#ifdef NS_WITH_DEPRECATED
     case VERBOSE:
         {
             int         verbose = 0;
@@ -930,6 +937,7 @@ DbObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *co
             }
         }
         break;
+#endif
 
     case SETEXCEPTION:
         if (objc != 5) {
@@ -1109,11 +1117,13 @@ PoolDescriptionObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
         Tcl_WrongNumArgs(interp, 1, objv, "/poolname/");
         result = TCL_ERROR;
     } else {
+#ifdef NS_WITH_DEPRECATED
         const char *subcmdName = Tcl_GetString(objv[0]);
 
         if (strcmp(subcmdName, "ns_pooldescription") == 0) {
             Ns_LogDeprecated(objv, 2, "ns_dbpooldescription ...", NULL);
         }
+#endif
 
         Tcl_SetObjResult(interp, Tcl_NewStringObj(Ns_DbPoolDescription(Tcl_GetString(objv[1])), TCL_INDEX_NONE));
     }

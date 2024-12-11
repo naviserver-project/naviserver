@@ -5,6 +5,8 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
+testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
+
 #######################################################################################
 #  test ns_rand
 #######################################################################################
@@ -371,7 +373,7 @@ test ns_setuser-1.0 {syntax: ns_setuser} -body {
 #  Other commands, in part defined in Tcl
 #######################################################################################
 
-test ns_browsermatch-1.0 {syntax: ns_hash} -body {
+test ns_browsermatch-1.0 {syntax: ns_hash} -constraints with_deprecated -body {
     ns_browsermatch
 } -returnCodes error -result {wrong # args: should be "ns_browsermatch pattern"}
 # ns_browsermatch is a Tcl proc: message should be {wrong # args: should be "ns_browsermatch /pattern/"}
@@ -401,7 +403,7 @@ test ns_issmallint-1.0 {syntax: ns_issmallint} -body {
 } -returnCodes error -result {wrong # args: should be "ns_issmallint value"}
 # ns_issmallint is a Tcl proc: message should be {wrong # args: should be "ns_issmallint /value/"}
 
-test ns_paren-1.0 {syntax: ns_paren} -body {
+test ns_paren-1.0 {syntax: ns_paren} -constraints with_deprecated -body {
     ns_paren x y
 } -returnCodes error -result {wrong # args: should be "ns_paren val"}
 # ns_paren is a Tcl proc: message should be {wrong # args: should be "ns_paren /value/"}
@@ -412,29 +414,29 @@ test ns_setexpires-1.0 {syntax: ns_setexpires} -body {
 } -returnCodes error -result {usage: ns_setexpires ?-cache-control public|private|no-cache|no-store|no-transform|must-revalidate|proxy-revalidate? seconds}
 # ns_setexpires is a Tcl proc: message should be {wrong # args: should be "ns_setexpires ?-cache-control public|private|no-cache|no-store|no-transform|must-revalidate|proxy-revalidate? /seconds/"}
 
-test ns_tagelement-1.0 {syntax: ns_tagelement} -body {
+test ns_tagelement-1.0 {syntax: ns_tagelement} -constraints with_deprecated -body {
     ns_tagelement
 } -returnCodes error -result {wrong # args: should be "ns_tagelement tag key"}
 # ns_tagelement is a Tcl proc: message should be {wrong # args: should be "ns_tagelement /tag/ /attribute/"}
 
-test ns_tagelementset-1.0 {syntax: ns_tagelement} -body {
+test ns_tagelementset-1.0 {syntax: ns_tagelement} -constraints with_deprecated -body {
     ns_tagelementset
 } -returnCodes error -result {wrong # args: should be "ns_tagelementset tagvar key value"}
 # ns_tagelementset is a Tcl proc: message should be {wrong # args: should be "ns_tagelementset /tagvar/ /attribute/ /value/"}
 
-test ns_cookiecharset-1.0 {syntax: ns_cookiecharset} -body {
+test ns_cookiecharset-1.0 {syntax: ns_cookiecharset} -constraints with_deprecated -body {
     ns_cookiecharset
 } -returnCodes error -result {wrong # args: should be "ns_cookiecharset name"}
 
 # ns_cookiecharset is a Tcl proc: message should be {wrong # args: should be "ns_cookiecharset /name/"}
 
-test ns_choosecharset-1.0 {syntax: ns_choosecharset} -body {
+test ns_choosecharset-1.0 {syntax: ns_choosecharset} -constraints with_deprecated -body {
     ns_choosecharset x
 } -returnCodes error -result {Usage: ns_choosecharset ?-preference charset-list?}
 
 # ns_choosecharset is a Tcl proc: message should be {wrong # args: should be "ns_choosecharset ?-preference /charset-list/?"}
 
-test ns_formfieldcharset-1.0 {syntax: ns_formfieldcharset} -body {
+test ns_formfieldcharset-1.0 {syntax: ns_formfieldcharset} -constraints with_deprecated -body {
     ns_formfieldcharset
 } -returnCodes error -result {wrong # args: should be "ns_formfieldcharset name"}
 

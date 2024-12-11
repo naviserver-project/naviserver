@@ -363,53 +363,6 @@ if {$::tcl_version < 8.6} {
 }
 
 #
-# ns_resetcachedform --
-#
-#   Reset the http form set currently cached (if any),
-#   optionally to be replaced by the given form set.
-#
-# Results:
-#   None.
-#
-# Side effects:
-#   This procedure is deprecated as connection forms
-#   are already cached on the C-level
-#
-
-proc ns_resetcachedform {{newform ""}} {
-    ns_deprecated "" "Forms are cached on the C level."
-
-    if {[info exists ::_ns_form]} {
-        unset ::_ns_form
-    }
-    if {$newform ne {}} {
-        set ::_ns_form $newform
-    }
-}
-
-
-#
-# ns_isformcached --
-#
-#   Predicate function to answer whether there is
-#   a http form set currently cached.
-#
-# Result:
-#   True of form is already cached, false otherwise.
-#
-# Side effects:
-#   This procedure is deprecated as connection forms
-#   are already cached on the C-level
-#
-
-proc ns_isformcached {} {
-    ns_deprecated "" "Forms are cached on the C level."
-
-    return [info exists ::_ns_form]
-}
-
-
-#
 # ns_parseformfile --
 #
 #   Parse a multi-part form data file, this proc does the same
@@ -798,6 +751,53 @@ proc ns_getcontent {args} {
         }
     }
     return $result
+}
+
+if {[dict get [ns_info buildinfo] with_deprecated]} {
+    #
+    # ns_resetcachedform --
+    #
+    #   Reset the http form set currently cached (if any),
+    #   optionally to be replaced by the given form set.
+    #
+    # Results:
+    #   None.
+    #
+    # Side effects:
+    #   This procedure is deprecated as connection forms
+    #   are already cached on the C-level
+    #
+
+    proc ns_resetcachedform {{newform ""}} {
+        ns_deprecated "" "Forms are cached on the C level."
+
+        if {[info exists ::_ns_form]} {
+            unset ::_ns_form
+        }
+        if {$newform ne {}} {
+            set ::_ns_form $newform
+        }
+    }
+
+    #
+    # ns_isformcached --
+    #
+    #   Predicate function to answer whether there is
+    #   a http form set currently cached.
+    #
+    # Result:
+    #   True of form is already cached, false otherwise.
+    #
+    # Side effects:
+    #   This procedure is deprecated as connection forms
+    #   are already cached on the C-level
+    #
+
+    proc ns_isformcached {} {
+        ns_deprecated "" "Forms are cached on the C level."
+
+        return [info exists ::_ns_form]
+    }
 }
 
 # Local variables:

@@ -2716,7 +2716,7 @@ NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
     return result;
 }
 
-
+#ifdef NS_WITH_DEPRECATED
 /*
  *----------------------------------------------------------------------
  *
@@ -2724,6 +2724,8 @@ NsTclLocationProcObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
  *
  *      Implements "ns_conncptofp".
  *      Implements "ns_writecontent".
+ *
+ *      Both commands are deprecated.
  *
  * Results:
  *      Standard Tcl result.
@@ -2788,6 +2790,7 @@ NsTclWriteContentObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
 
     return result;
 }
+#endif
 
 
 /*

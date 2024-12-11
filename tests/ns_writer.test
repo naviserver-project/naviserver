@@ -5,38 +5,54 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
+testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
 if {[ns_config test listenport]} {
     testConstraint serverListen true
 }
 
-test ns_writer-1.1 {basic syntax: plain call} -body {
+#######################################################################################
+# Syntax tests
+#######################################################################################
+
+test ns_writer-1.1 {syntax: plain call} -body {
      ns_writer
 } -returnCodes error -result {wrong # args: should be "ns_writer list|size|streaming|submit|submitfile|submitfiles ?/arg .../"}
 
-test ns_writer-1.2.0 {basic syntax: wrong argument} -body {
+test ns_writer-1.2.0 {syntax: wrong subcommand} -body {
      ns_writer ?
 } -returnCodes error -result {ns_writer: bad subcommand "?": must be list, size, streaming, submit, submitfile, or submitfiles}
 
-test ns_writer-1.2.1 {ns_writer list syntax} -body {
+test ns_writer-1.2.1 {syntax: ns_writer list} -body {
      ns_writer list ?
 } -returnCodes error -result {wrong # args: should be "ns_writer list ?-server /server/?"}
 
-test ns_writer-1.2.2 {ns_writer size syntax} -body {
+test ns_writer-1.2.2 {syntax: ns_writer size} -body {
      ns_writer size -driver default 1024 ?
 } -returnCodes error -result {wrong # args: should be "ns_writer size ?-driver /value/? ?/size/?"}
-test ns_writer-1.2.3 {ns_writer streaming syntax} -body {
+
+test ns_writer-1.2.3 {syntax: ns_writer streaming} -body {
      ns_writer streaming 1 - -
 } -returnCodes error -result {wrong # args: should be "ns_writer streaming ?-driver /value/? ?true|false?"}
-test ns_writer-1.2.4 {ns_writer submit syntax} -body {
+
+test ns_writer-1.2.4 {syntax: ns_writer submit} -body {
      ns_writer submit
 } -returnCodes error -result {wrong # args: should be "ns_writer submit /data/"}
-test ns_writer-1.2.5 {ns_writer submitfile syntax} -body {
+
+test ns_writer-1.2.5 {syntax: ns_writer submitfile} -body {
      ns_writer submitfile
 } -returnCodes error -result {wrong # args: should be "ns_writer submitfile ?-headers? ?-offset /memory-size/? ?-size /memory-size/? /filename/"}
-test ns_writer-1.2.6 {ns_writer submitfiles syntax} -body {
+
+test ns_writer-1.2.6 {syntax: ns_writer submitfiles} -body {
      ns_writer submitfiles
 } -returnCodes error -result {wrong # args: should be "ns_writer submitfiles ?-headers? /filespecs/"}
 
+test ns_writecontent-1.0 {ns_writecontent basic syntax} -constraints with_deprecated -body {
+     ns_writecontent
+} -returnCodes error -result {wrong # args: should be "ns_writecontent ?-bytes /integer[0,MAX]/? ?--? /channel/"}
+
+#######################################################################################
+# Functional tests
+#######################################################################################
 
 test ns_writer-1.3 {basic operation} -body {
     catch {ns_writer list -foo} errorMsg
@@ -253,9 +269,6 @@ test ns_writer-4.2.4 {10 file chunks larger than writerbufsize} -constraints ser
 } -returnCodes {error ok} -match exact -result {200 164800}
 
 
-test ns_writecontent-1.0 {ns_writecontent basic syntax} -body {
-     ns_writecontent
-} -returnCodes error -result {wrong # args: should be "ns_writecontent ?-bytes /integer[0,MAX]/? ?--? /channel/"}
 
 
 

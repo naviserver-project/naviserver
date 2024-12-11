@@ -5,6 +5,8 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
+testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
+
 #######################################################################################
 #  test ns_requestauthorize
 #######################################################################################
@@ -15,7 +17,7 @@ test ns_requestauthorize-1.0 {syntax: ns_requestauthorize} -body {
 #######################################################################################
 #  test ns_checkurl
 #######################################################################################
-test ns_checkurl-1.0 {syntax: ns_checkurl} -body {
+test ns_checkurl-1.0 {syntax: ns_checkurl} -constraints with_deprecated -body {
     ns_checkurl
 } -returnCodes error -result {wrong # args: should be "ns_checkurl /method/ /url/ /authuser/ /authpasswd/ ?/ipaddr/?"}
 

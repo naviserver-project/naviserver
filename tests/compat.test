@@ -5,9 +5,9 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
+testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
 
-
-test ns_cp-1.1 {basic copy} -setup {
+test ns_cp-1.1 {basic copy} -constraints with_deprecated -setup {
     makeFile "data" f1
 } -body {
     ns_cp f1 f2

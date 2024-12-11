@@ -34,10 +34,12 @@ typedef struct Cmd {
  */
 
 static const Cmd basicCmds[] = {
+#ifdef NS_WITH_DEPRECATED
     {"keyldel",                  NULL, TclX_KeyldelObjCmd},
     {"keylget",                  NULL, TclX_KeylgetObjCmd},
     {"keylkeys",                 NULL, TclX_KeylkeysObjCmd},
     {"keylset",                  NULL, TclX_KeylsetObjCmd},
+#endif
     {"ns_absoluteurl",           NULL, NsTclAbsoluteUrlObjCmd},
     {"ns_addrbyhost",            NULL, NsTclGetAddrObjCmd},
     {"ns_after",                 NULL, NsTclAfterObjCmd},
@@ -52,7 +54,9 @@ static const Cmd basicCmds[] = {
     {"ns_base64urldecode",       NULL, NsTclBase64UrlDecodeObjCmd},
     {"ns_base64urlencode",       NULL, NsTclBase64UrlEncodeObjCmd},
     {"ns_baseunit" ,             NULL, NsTclBaseUnitObjCmd},
+#ifdef NS_WITH_DEPRECATED
     {"ns_cancel",                NULL, NsTclCancelObjCmd},
+#endif
     {"ns_certctl",               NULL, NsTclCertCtlObjCmd},
     {"ns_charsets",              NULL, NsTclCharsetsObjCmd},
     {"ns_config",                NULL, NsTclConfigObjCmd},
@@ -186,7 +190,9 @@ static const Cmd servCmds[] = {
     {"ns_adp_registeradp",       NULL, NsTclAdpRegisterAdpObjCmd},
     {"ns_adp_registerproc",      NULL, NsTclAdpRegisterProcObjCmd},
     {"ns_adp_registerscript",    NULL, NsTclAdpRegisterScriptObjCmd},
+#ifdef NS_WITH_DEPRECATED
     {"ns_adp_registertag",       NULL, NsTclAdpRegisterTagObjCmd},
+#endif
     {"ns_adp_return",            NULL, NsTclAdpReturnObjCmd},
     {"ns_adp_stats",             NULL, NsTclAdpStatsObjCmd},
     {"ns_adp_tell",              NULL, NsTclAdpTellObjCmd},
@@ -208,18 +214,26 @@ static const Cmd servCmds[] = {
     {"ns_cache_transaction_commit", NULL, NsTclCacheTransactionCommitObjCmd},
     {"ns_cache_transaction_rollback", NULL, NsTclCacheTransactionRollbackObjCmd},
     {"ns_chan",                  NULL, NsTclChanObjCmd},
+#ifdef NS_WITH_DEPRECATED
     {"ns_checkurl",              NULL, NsTclRequestAuthorizeObjCmd},
+#endif
     {"ns_cond",                  NULL, NsTclCondObjCmd},
     {"ns_conn",                  NULL, NsTclConnObjCmd},
     {"ns_connchan",              NULL, NsTclConnChanObjCmd},
+#ifdef NS_WITH_DEPRECATED
     {"ns_conncptofp",            NULL, NsTclWriteContentObjCmd},
     {"ns_connsendfp",            NULL, NsTclConnSendFpObjCmd},
+#endif
     {"ns_critsec",               NULL, NsTclCritSecObjCmd},
     {"ns_deletecookie",          NULL, NsTclDeleteCookieObjCmd},
     {"ns_driver",                NULL, NsTclDriverObjCmd},
+#ifdef NS_WITH_DEPRECATED
     {"ns_event",                 NULL, NsTclCondObjCmd},
+#endif
     {"ns_getcookie",             NULL, NsTclGetCookieObjCmd},
+#ifdef NS_WITH_DEPRECATED
     {"ns_geturl",                NULL, NsTclGetUrlObjCmd},
+#endif
     {"ns_headers",               NULL, NsTclHeadersObjCmd},
     {"ns_ictl",                  NULL, NsTclICtlObjCmd},
     {"ns_internalredirect",      NULL, NsTclInternalRedirectObjCmd},
@@ -234,7 +248,9 @@ static const Cmd servCmds[] = {
     {"ns_parsequery",            NULL, NsTclParseQueryObjCmd},
     {"ns_reflow_text",           NULL, NsTclReflowTextObjCmd},
     {"ns_register_adp",          NULL, NsTclRegisterAdpObjCmd},
+#ifdef NS_WITH_DEPRECATED
     {"ns_register_adptag",       NULL, NsTclAdpRegisterAdptagObjCmd},
+#endif
     {"ns_register_fastpath",     NULL, NsTclRegisterFastPathObjCmd},
     {"ns_register_fasturl2file", NULL, NsTclRegisterFastUrl2FileObjCmd},
     {"ns_register_filter",       NULL, NsTclRegisterFilterObjCmd},
@@ -264,7 +280,9 @@ static const Cmd servCmds[] = {
     {"ns_setcookie",             NULL, NsTclSetCookieObjCmd},
     {"ns_setgroup",              NULL, NsTclSetGroupObjCmd},
     {"ns_setuser",               NULL, NsTclSetUserObjCmd},
+#ifdef NS_WITH_DEPRECATED
     {"ns_startcontent",          NULL, NsTclStartContentObjCmd},
+#endif
     {"ns_trim",                  NULL, NsTclTrimObjCmd},
     {"ns_unregister_op",         NULL, NsTclUnRegisterOpObjCmd},
     {"ns_unregister_url2file",   NULL, NsTclUnRegisterUrl2FileObjCmd},
@@ -272,7 +290,9 @@ static const Cmd servCmds[] = {
     {"ns_url2file",              NULL, NsTclUrl2FileObjCmd},
     {"ns_urlspace",              NULL, NsTclUrlSpaceObjCmd},
     {"ns_write",                 NULL, NsTclWriteObjCmd},
+#ifdef NS_WITH_DEPRECATED
     {"ns_writecontent",          NULL, NsTclWriteContentObjCmd},
+#endif
     {"ns_writer",                NULL, NsTclWriterObjCmd},
     {"nsv_append",               NULL, NsTclNsvAppendObjCmd},
     {"nsv_array",                NULL, NsTclNsvArrayObjCmd},

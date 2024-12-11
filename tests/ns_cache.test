@@ -286,7 +286,7 @@ test cache-5.7 {flush expired key w/glob (Ns_CacheFirstEntry, Ns_CacheNextEntry)
 
 test cache-5.8 {cache flush concurrent} -body {
     ns_cache_eval -expires [ns_time incr [ns_time get] 1] c1 k1 {return a}
-    ns_thread begindetached {
+    ns_thread create -detached {
         ns_sleep 1.2s
         ns_cache_eval c1 k1 {ns_sleep 1s; return b}
     }
@@ -349,7 +349,7 @@ test cache-6.4.2 {eval maxentry size} -body {
 # t2 F  F  F  F  F  F  F
 test cache-6.4.3 {flush during ns_cache_eval} -body {
     nsv_set sync . .
-    ns_thread begindetached {
+    ns_thread create -detached {
         set x 0
         nsv_set sync t1 started
         while {[nsv_get sync t2 result] == 0} {ns_log notice "t1 waits";ns_sleep 1ms}
@@ -359,7 +359,7 @@ test cache-6.4.3 {flush during ns_cache_eval} -body {
         nsv_unset sync t1
         ns_log notice "t1 DONE"
     }
-    ns_thread begindetached {
+    ns_thread create -detached {
         set x 0
         nsv_set sync t2 started
         while {[nsv_get sync t1 result] == 0} {ns_log notice "t2 waits";ns_sleep 1ms}
@@ -381,7 +381,7 @@ test cache-6.4.3 {flush during ns_cache_eval} -body {
 
 test cache-6.4.4 {flush during ns_cache_eval -force} -body {
     nsv_set sync . .
-    ns_thread begindetached {
+    ns_thread create -detached {
         set x 0
         nsv_set sync t1 started
         while {[nsv_get sync t2 result] == 0} {ns_log notice "t1 waits";ns_sleep 1ms}
@@ -391,7 +391,7 @@ test cache-6.4.4 {flush during ns_cache_eval -force} -body {
         nsv_unset sync t1
         ns_log notice "t1 DONE"
     }
-    ns_thread begindetached {
+    ns_thread create -detached {
         set x 0
         nsv_set sync t2 started
         while {[nsv_get sync t1 result] == 0} {ns_log notice "t2 waits";ns_sleep 1ms}
@@ -417,7 +417,7 @@ test cache-6.4.4 {flush during ns_cache_eval -force} -body {
 # t2 sccD sccD sccD sccD
 test cache-6.4.5 {interleaving ns_cache_eval -force} -body {
     nsv_set sync . .
-    ns_thread begindetached {
+    ns_thread create -detached {
         set x 0
         nsv_set sync t1 started
         while {[nsv_get sync t2 result] == 0} {ns_log notice "t1 waits";ns_sleep 1ms}
@@ -427,7 +427,7 @@ test cache-6.4.5 {interleaving ns_cache_eval -force} -body {
         nsv_unset sync t1
         ns_log notice "t1 DONE"
     }
-    ns_thread begindetached {
+    ns_thread create -detached {
         set x 0
         nsv_set sync t2 started
         while {[nsv_get sync t1 result] == 0} {ns_log notice "t2 waits";ns_sleep 1ms}
@@ -449,7 +449,7 @@ test cache-6.4.5 {interleaving ns_cache_eval -force} -body {
 
 
 test cache-6.5 {eval: wait timeout absolute} -body {
-    ns_thread begindetached {
+    ns_thread create -detached {
         ns_cache_eval -- c1 k1 {ns_sleep 3s; return a}
     }
     ns_sleep 1s
@@ -460,7 +460,7 @@ test cache-6.5 {eval: wait timeout absolute} -body {
 } -returnCodes error -result "timeout waiting for concurrent update: k1"
 
 test cache-6.5.1 {eval: wait timeout relative} -body {
-    ns_thread begindetached {
+    ns_thread create -detached {
         ns_cache_eval -- c1 k1 {ns_sleep 3s; return a}
     }
     ns_sleep 1s

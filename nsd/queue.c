@@ -1457,15 +1457,20 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
     TCL_SIZE_T      nargs = 0;
     NsServer       *servPtr = NULL;
     ConnPool       *poolPtr;
-    char           *pool = NULL, *optArg = NULL;
+    char           *pool = NULL;
     Tcl_DString     ds, *dsPtr = &ds;
+#ifdef NS_WITH_DEPRECATED
+    char           *optArg = NULL;
+#endif
 
     enum {
         SActiveIdx, SAllIdx,
         SConnectionRateLimitIdx, SConnectionsIdx,
         SFiltersIdx,
         SHostsIdx,
+#ifdef NS_WITH_DEPRECATED
         SKeepaliveIdx,
+#endif
         SMapIdx, SMappedIdx,
         SMaxthreadsIdx, SMinthreadsIdx,
         SPagedirIdx, SPoolRateLimitIdx, SPoolsIdx,
@@ -1484,7 +1489,9 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         {"connections",         (unsigned int)SConnectionsIdx},
         {"filters",             (unsigned int)SFiltersIdx},
         {"hosts",               (unsigned int)SHostsIdx},
+#ifdef NS_WITH_DEPRECATED
         {"keepalive",           (unsigned int)SKeepaliveIdx},
+#endif
         {"map",                 (unsigned int)SMapIdx},
         {"mapped",              (unsigned int)SMappedIdx},
         {"maxthreads",          (unsigned int)SMaxthreadsIdx},
@@ -1534,6 +1541,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
             return TCL_ERROR;
     }
 
+#ifdef NS_WITH_DEPRECATED
     /*
      * Legacy handling for the following commands:
      *
@@ -1588,6 +1596,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
             }
         }
     }
+#endif
 
     if (servPtr == NULL) {
         servPtr = itPtr->servPtr;
@@ -1724,9 +1733,15 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
          */
 
     case SWaitingIdx:
-        Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->wqueue.wait.num));
+        fprintf(stderr, "SECOND SWAITING\n");
+        if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
+            return TCL_ERROR;
+        } else {
+            Tcl_SetObjResult(interp, Tcl_NewIntObj(poolPtr->wqueue.wait.num));
+        }
         break;
 
+#ifdef NS_WITH_DEPRECATED
     case SKeepaliveIdx:
         if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
             return TCL_ERROR;
@@ -1735,6 +1750,7 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
             Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
         }
         break;
+#endif
 
     case SMapIdx:
         result = ServerMapObjCmd(clientData, interp, objc, objv, servPtr, poolPtr, (TCL_SIZE_T)nargs);

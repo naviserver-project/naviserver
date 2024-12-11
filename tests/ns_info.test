@@ -5,13 +5,23 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
+testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
+
+#######################################################################################
+#  Syntax tests
+#######################################################################################
+
 test ns_info-1.0 {basic syntax: plain call} -body {
     ns_info
 } -returnCodes error -result {wrong # args: should be "ns_info /subcommand/"}
 
 test ns_info-1.1 {basic syntax: wrong argument} -body {
     ns_info ?
-} -returnCodes error -result {bad subcommand "?": must be address, argv, argv0, boottime, builddate, buildinfo, callbacks, config, home, hostname, ipv6, locks, log, major, meminfo, minor, mimetypes, name, nsd, pagedir, pageroot, patchlevel, pid, platform, pools, scheduled, server, servers, sockcallbacks, ssl, tag, tcllib, threads, uptime, version, winnt, filters, traces, requestprocs, url2file, shutdownpending, or started}
+} -returnCodes error \
+    -result [expr {[testConstraint with_deprecated]
+                   ? {bad subcommand "?": must be address, argv, argv0, boottime, builddate, buildinfo, callbacks, config, home, hostname, ipv6, locks, log, major, meminfo, minor, mimetypes, name, nsd, patchlevel, pid, pools, scheduled, server, servers, sockcallbacks, ssl, tag, threads, uptime, version, shutdownpending, started, filters, pagedir, pageroot, platform, traces, requestprocs, tcllib, url2file, or winnt}
+                   : {bad subcommand "?": must be address, argv, argv0, boottime, builddate, buildinfo, callbacks, config, home, hostname, ipv6, locks, log, major, meminfo, minor, mimetypes, name, nsd, patchlevel, pid, pools, scheduled, server, servers, sockcallbacks, ssl, tag, threads, uptime, version, shutdownpending, or started}
+               }]
 
 
 test ns_info-1.2a {syntax: ns_info address} -body {
@@ -46,7 +56,7 @@ test ns_info-1.8 {syntax: ns_info config} -body {
     ns_info config x
 } -returnCodes error -result {wrong # args: should be "ns_info config"}
 
-test ns_info-1.9 {syntax: ns_info filters} -body {
+test ns_info-1.9 {syntax: ns_info filters} -constraints with_deprecated -body {
     ns_info filters x
 } -returnCodes error -result {wrong # args: should be "ns_info filters"}
 
@@ -94,11 +104,11 @@ test ns_info-1.20 {syntax: ns_info nsd} -body {
     ns_info nsd x
 } -returnCodes error -result {wrong # args: should be "ns_info nsd"}
 
-test ns_info-1.21 {syntax: ns_info pagedir} -body {
+test ns_info-1.21 {syntax: ns_info pagedir} -constraints with_deprecated -body {
     ns_info pagedir x
 } -returnCodes error -result {wrong # args: should be "ns_info pagedir"}
 
-test ns_info-1.22 {syntax: ns_info pageroot} -body {
+test ns_info-1.22 {syntax: ns_info pageroot} -constraints with_deprecated -body {
     ns_info pageroot x
 } -returnCodes error -result {wrong # args: should be "ns_info pageroot"}
 
@@ -110,7 +120,7 @@ test ns_info-1.24 {syntax: ns_info pid} -body {
     ns_info pid x
 } -returnCodes error -result {wrong # args: should be "ns_info pid"}
 
-test ns_info-1.25 {syntax: ns_info platform} -body {
+test ns_info-1.25 {syntax: ns_info platform} -constraints with_deprecated -body {
     ns_info platform x
 } -returnCodes error -result {wrong # args: should be "ns_info platform"}
 
@@ -118,7 +128,7 @@ test ns_info-1.26 {syntax: ns_info pools} -body {
     ns_info pools x
 } -returnCodes error -result {wrong # args: should be "ns_info pools"}
 
-test ns_info-1.27 {syntax: ns_info requestprocs} -body {
+test ns_info-1.27 {syntax: ns_info requestprocs} -constraints with_deprecated -body {
     ns_info requestprocs x
 } -returnCodes error -result {wrong # args: should be "ns_info requestprocs"}
 
@@ -154,7 +164,7 @@ test ns_info-1.35 {syntax: ns_info tag} -body {
     ns_info tag x
 } -returnCodes error -result {wrong # args: should be "ns_info tag"}
 
-test ns_info-1.36 {syntax: ns_info tcllib} -body {
+test ns_info-1.36 {syntax: ns_info tcllib} -constraints with_deprecated -body {
     ns_info tcllib x
 } -returnCodes error -result {wrong # args: should be "ns_info tcllib"}
 
@@ -162,7 +172,7 @@ test ns_info-1.37 {syntax: ns_info threads} -body {
     ns_info threads x
 } -returnCodes error -result {wrong # args: should be "ns_info threads"}
 
-test ns_info-1.38 {syntax: ns_info traces} -body {
+test ns_info-1.38 {syntax: ns_info traces} -constraints with_deprecated -body {
     ns_info traces x
 } -returnCodes error -result {wrong # args: should be "ns_info traces"}
 
@@ -170,7 +180,7 @@ test ns_info-1.39 {syntax: ns_info uptime} -body {
     ns_info uptime x
 } -returnCodes error -result {wrong # args: should be "ns_info uptime"}
 
-test ns_info-1.40 {syntax: ns_info url2file} -body {
+test ns_info-1.40 {syntax: ns_info url2file} -constraints with_deprecated -body {
     ns_info url2file x
 } -returnCodes error -result {wrong # args: should be "ns_info url2file"}
 
@@ -178,58 +188,60 @@ test ns_info-1.41 {syntax: ns_info version} -body {
     ns_info version x
 } -returnCodes error -result {wrong # args: should be "ns_info version"}
 
-test ns_info-1.42 {syntax: ns_info winnt} -body {
+test ns_info-1.42 {syntax: ns_info winnt} -constraints with_deprecated -body {
     ns_info winnt x
 } -returnCodes error -result {wrong # args: should be "ns_info winnt"}
 
 
+#######################################################################################
+#  Functional tests
+#######################################################################################
 
-
-test ns_info-2.1.1 {basic operation} -body {
+test ns_info-2.1 {basic operation} -body {
     set addr [ns_info address]
     expr {[string match *.*.*.* $addr] || [string match *:* $addr]}
 } -result 1
 
-test ns_info-2.2.1 {basic operation} -body {
+test ns_info-2.2 {basic operation} -body {
     ns_info argv0
 } -match glob -result *nsd*
 
-test ns_info-2.3.1 {basic operation} -body {
+test ns_info-2.3 {basic operation} -body {
     string is integer -strict [ns_info boottime]
 } -result 1
 
-test ns_info-2.4.1 {basic operation builddate: positive if builddate = day of test} -body {
+test ns_info-2.4 {basic operation builddate: positive if builddate = day of test} -body {
     foreach {month day year blub time} [split [ns_info builddate]] {break}
     regexp {[0-9]{10}} [clock scan "$month $day $year"] match
 } -result 1
 
-test ns_info-2.5.1 {basic operation} -body {
+test ns_info-2.5 {basic operation} -body {
     string is integer -strict [llength [ns_info callbacks]]
 } -result 1
 
-test ns_info-2.6.1 {basic operation} -body {
+test ns_info-2.6 {basic operation} -body {
     ns_info config
 } -match "glob" -result "*.nscfg"
 
-test ns_info-2.7.1 {basic operation} -body {
+test ns_info-2.7 {basic operation} -body {
     expr {[string length [ns_info home]]>1}
 } -result 1
 
-test ns_info-2.8.1 {basic operation} -setup {
+test ns_info-2.8 {basic operation} -setup {
     set hostname_by_exec [exec hostname]
 } -body {
     string match [ns_info hostname] $hostname_by_exec
 } -result 1
 
-test ns_info-2.9.1 {basic operation} -body {
+test ns_info-2.9 {basic operation} -body {
     expr {[llength [ns_info locks]]>0}
 } -result 1
 
-test ns_info-2.10.1 {basic operation} -body {
+test ns_info-2.10 {basic operation} -body {
     expr {[file tail [ns_info log]] ne ""}
 } -result 1
 
-test ns_info-2.11.1 {basic operation} -body {
+test ns_info-2.11 {basic operation} -body {
     ns_info major
 } -result 5
 
@@ -241,40 +253,40 @@ test ns_info-2.12.2 {mimetypes} -body {
     lindex [ns_info mimetypes] 0
 } -match regexp -result {\.[A-z0-9]+}
 
-test ns_info-2.13.1 {basic operation} -body {
+test ns_info-2.13 {basic operation} -body {
     ns_info name
 } -result "NaviServer"
 
-test ns_info-2.14.1 {basic operation} -body {
+test ns_info-2.14 {basic operation} -body {
     file tail [ns_info nsd]
 } -match glob -result "*nsd*"
 
-test ns_info-2.16.1 {basic operation} -body {
+test ns_info-2.16 {basic operation} -body {
     ns_info patchlevel
 } -match "glob" -result "5.*.*"
 
-test ns_info-2.17.1 {basic operation} -body {
+test ns_info-2.17 {basic operation} -body {
     expr {[ns_info pid] == [pid]}
 } -result 1
 
-#test ns_info-2.18.1 {basic operation} -body {
+#test ns_info-2.18 {basic operation} -body {
 #     expr {[ns_info platform] ne ""}
 #} -result 1
 
-test ns_info-2.19.1 {basic operation} -body {
+test ns_info-2.19 {basic operation} -body {
     expr {[llength [ns_info pools]] == 0
           || [string match thread* [lindex [ns_info pools] 0 0]]}
 } -result 1
 
-test ns_info-2.20.1 {basic operation} -body {
+test ns_info-2.20 {basic operation} -body {
     string is integer -strict [llength [ns_info scheduled]]
 } -result 1
 
-test ns_info-2.21.1 {basic operation} -body {
+test ns_info-2.21 {basic operation} -body {
     ns_info server
 } -result "test"
 
-test ns_info-2.22.1 {basic operation} -body {
+test ns_info-2.22 {basic operation} -body {
     ns_info servers
 } -match "regexp" -result "testvhost|testvhost2|test"
 
@@ -283,19 +295,19 @@ test ns_info-2.22.1 {basic operation} -body {
 # In case we have the nscp driver loaded, it will be listening and
 # show up in the sockcallbacks.
 #
-test ns_info-2.23.1 {basic operation} -body {
+test ns_info-2.23 {ns_info sockcallbacks reasonable result} -body {
     llength [ns_info sockcallbacks]
 } -result [llength [info commands "::nscp"]]
 
-test ns_info-2.24.1 {basic operation} -body {
+test ns_info-2.24 {ns_info tag reasonable result} -body {
     expr {[ns_info tag] ne ""}
 } -result 1
 
-test ns_info-2.26.1 {basic operation} -body {
+test ns_info-2.26 {ns_info threads reasonable result} -body {
     expr {[llength [ns_info threads]]>2}
 } -result 1
 
-test ns_info-2.27.1 {basic operation} -body {
+test ns_info-2.27 {ns_info threads reasonable result} -body {
     set expected_threads 0
     foreach _thread [ns_info threads] {
         switch -- [lindex $_thread 0] {
@@ -308,19 +320,18 @@ test ns_info-2.27.1 {basic operation} -body {
     set expected_threads
 } -result 1
 
-test ns_info-2.28.1 {basic operation} -body {
+test ns_info-2.28 {ns_info uptime reasonable} -body {
     ns_sleep 2
     expr {[ns_info uptime]>1}
 } -result 1
 
-test ns_info-2.29.1 {basic operation} -body {
+test ns_info-2.29 {ns_info version result} -body {
     ns_info version
 } -result "5.0"
 
-#test ns_info-2.30.1 {basic operation} -body {
-#     string is integer -strict [ns_info winnt]
-#} -result 1
-
+test ns_info-2.30 {ns_info buildinfo keys} -body {
+    lsort [dict keys [ns_info buildinfo]]
+} -returnCodes ok -result {assertions compiler system_malloc tcl with_deprecated}
 
 
 

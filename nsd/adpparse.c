@@ -177,12 +177,14 @@ NsTclAdpRegisterAdpObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T 
     return RegisterObjCmd(clientData, interp, objc, objv, TAG_ADP);
 }
 
+#ifdef NS_WITH_DEPRECATED
 int
 NsTclAdpRegisterTagObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Ns_LogDeprecated(objv, 1, "ns_adp_registeradp", NULL);
     return RegisterObjCmd(clientData, interp, objc, objv, TAG_ADP);
 }
+#endif
 
 int
 NsTclAdpRegisterProcObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
@@ -196,12 +198,14 @@ NsTclAdpRegisterScriptObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE
     return RegisterObjCmd(clientData, interp, objc, objv, TAG_SCRIPT);
 }
 
+#ifdef NS_WITH_DEPRECATED
 int
 NsTclAdpRegisterAdptagObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     Ns_LogDeprecated(objv, 1, "ns_adp_registerscript", NULL);
     return RegisterObjCmd(clientData, interp, objc, objv, TAG_SCRIPT);
 }
+#endif
 
 /*
  * The actual function doing the hard work.

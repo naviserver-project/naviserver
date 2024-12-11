@@ -46,7 +46,9 @@ static TCL_OBJCMDPROC_T SetListObjCmd;
 static TCL_OBJCMDPROC_T SetMergeObjCmd;
 static TCL_OBJCMDPROC_T SetMoveObjCmd;
 static TCL_OBJCMDPROC_T SetNameObjCmd;
+#ifdef NS_WITH_DEPRECATED
 static TCL_OBJCMDPROC_T SetPrintObjCmd;
+#endif
 static TCL_OBJCMDPROC_T SetPutObjCmd;
 static TCL_OBJCMDPROC_T SetSizeObjCmd;
 static TCL_OBJCMDPROC_T SetSplitObjCmd;
@@ -439,15 +441,14 @@ static int SetCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T
         {"?arg",     Ns_ObjvArgs, &nargs, NULL},
         {NULL, NULL, NULL, NULL}
     };
+
+#ifdef NS_WITH_DEPRECATED
     const char  *subcmdName = Tcl_GetString(objv[1]);
 
     if (*subcmdName == 'n' && strcmp(subcmdName, "new") == 0) {
         Ns_LogDeprecated(objv, 2, "ns_set create ...", NULL);
     }
-
-    if (*subcmdName == 'n') {
-        nocase = 1;
-    }
+#endif
 
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
@@ -455,8 +456,6 @@ static int SetCreateObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T
         const char *name;
         TCL_SIZE_T offset = objc-nargs;
         Ns_Set    *set;
-
-        //fprintf(stderr, "SetCreateObjCmd subcmd '%s' nargs %d offset %ld\n", subcmdName, nargs, offset);
 
         if (nargs % 2 == 0 || nargs < 1) {
             /*
@@ -932,6 +931,7 @@ static int SetNameObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_
     return result;
 }
 
+#ifdef NS_WITH_DEPRECATED
 /*
  *----------------------------------------------------------------------
  * SetPrintObjCmd --
@@ -957,6 +957,7 @@ static int SetPrintObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL
     }
     return result;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1397,8 +1398,10 @@ NsTclSetObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
         {"merge",    SetMergeObjCmd},
         {"move",     SetMoveObjCmd},
         {"name",     SetNameObjCmd},
+#ifdef NS_WITH_DEPRECATED
         {"new",      SetCreateObjCmd},
         {"print",    SetPrintObjCmd},
+#endif
         {"put",      SetPutObjCmd},
         {"size",     SetSizeObjCmd},
         {"split",    SetSplitObjCmd},

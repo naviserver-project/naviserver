@@ -8198,7 +8198,6 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
     Tcl_Obj          *driverObj = NULL;
     Ns_Conn          *conn = NULL;
     Tcl_WideInt       intValue = -1;
-    const char       *firstArgString;
     Ns_ObjvValueRange range = {1024, INT_MAX};
     Ns_ObjvSpec   *opts, optsNew[] = {
         {"-driver", Ns_ObjvObj, &driverObj, NULL},
@@ -8208,6 +8207,8 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
         {"?size", Ns_ObjvMemUnit, &intValue, &range},
         {NULL, NULL, NULL, NULL}
     };
+#ifdef NS_WITH_DEPRECATED
+    const char   *firstArgString;
     Ns_ObjvSpec   argsLegacy[] = {
         {"driver", Ns_ObjvObj,     &driverObj, NULL},
         {"?size", Ns_ObjvMemUnit, &intValue, &range},
@@ -8230,6 +8231,10 @@ WriterSizeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
         args = argsNew;
         opts = optsNew;
     }
+#else
+    args = argsNew;
+    opts = optsNew;
+#endif
 
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
@@ -8283,7 +8288,6 @@ WriterStreamingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
     int          boolValue = -1, result = TCL_OK;
     Tcl_Obj     *driverObj = NULL;
     Ns_Conn     *conn = NULL;
-    const char  *firstArgString;
     Ns_ObjvSpec *opts, optsNew[] = {
         {"-driver", Ns_ObjvObj, &driverObj, NULL},
         {NULL, NULL, NULL, NULL}
@@ -8292,6 +8296,8 @@ WriterStreamingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         {"?value", Ns_ObjvBool, &boolValue, NULL},
         {NULL, NULL, NULL, NULL}
     };
+#ifdef NS_WITH_DEPRECATED
+    const char  *firstArgString;
     Ns_ObjvSpec  argsLegacy[] = {
         {"driver", Ns_ObjvObj,  &driverObj, NULL},
         {"?value", Ns_ObjvBool, &boolValue, NULL},
@@ -8315,7 +8321,10 @@ WriterStreamingObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp,
         args = argsNew;
         opts = optsNew;
     }
-
+#else
+    args = argsNew;
+    opts = optsNew;
+#endif
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 

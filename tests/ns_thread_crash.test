@@ -11,7 +11,7 @@ if {![catch {package require Thread}]} {
 #ns_log notice "====================starting t1"
 
 test t-1 {object type conversion / display} -body {
-    set tid [ns_thread begin {set x 1}]
+    set tid [ns_thread create {set x 1}]
     ns_thread wait $tid
 } -cleanup {
     unset -nocomplain -- tid
