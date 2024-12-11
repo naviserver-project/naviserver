@@ -4,12 +4,13 @@ jobs:
   naviserver:
     runs-on: ubuntu-latest
     env:
-      CC:             ${{ matrix.compiler }}
-      TCLTAG:         ${{ matrix.tcltag }}
-      TCLLIB_VERSION: ${{ matrix.tcllib_version }}
-      NSF_VERSION:    ${{ matrix.nsf_version }}
-      NS_MODULES:     ${{ matrix.ns_modules }}
-      TDOM_VERSION:   ${{ matrix.tdom_version }}
+      CC:              ${{ matrix.compiler }}
+      TCLTAG:          ${{ matrix.tcltag }}
+      TCLLIB_VERSION:  ${{ matrix.tcllib_version }}
+      NSF_VERSION:     ${{ matrix.nsf_version }}
+      NS_MODULES:      ${{ matrix.ns_modules }}
+      TDOM_VERSION:    ${{ matrix.tdom_version }}
+      WITH_DEPRECATED: ${{ matrix.with_deprecated }}
 
     strategy:
       fail-fast: false
@@ -20,6 +21,7 @@ jobs:
             tcltag: core-8-6-15
             nsf_version: 2.3.0
             tdom_version: 0.9.1
+            with_deprecated: 1
 
           - os: ubuntu-latest
             compiler: gcc-12
@@ -27,6 +29,7 @@ jobs:
             ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsauthpam
             nsf_version: 2.4.0
             tdom_version: 0.9.5
+            with_deprecated: 1
 
           #- os: ubuntu-latest
           #  compiler: gcc-12
@@ -34,6 +37,7 @@ jobs:
           #  ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl
           #  nsf_version: HEAD
           #  tdom_version: trunk
+          #  with_deprecated: 1
 
           - os: ubuntu-latest
             compiler: gcc-12
@@ -42,6 +46,7 @@ jobs:
             tcllib_version: "2.0"
             ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl nsauthpam
             tdom_version: 0.9.5
+            with_deprecated: 1
 
           - os: ubuntu-latest
             compiler: gcc-12
@@ -50,6 +55,8 @@ jobs:
             tcllib_version: "2.0"
             ns_modules: nsdbpg nsdbi nsdbipg nsudp nscoap nssmtpd nsloopctl nsauthpam
             tdom_version: 0.9.5
+            with_deprecated: 0
+
 
     defaults:
       run:
@@ -86,6 +93,7 @@ jobs:
             version_xotcl=${NSF_VERSION} \
             version_tdom=${TDOM_VERSION} \
             ns_modules="${NS_MODULES}" \
+            with_deprecated="${WITH_DEPRECATED}" \
             CC=${CC} \
             with_postgres=0 with_postgres_driver=1 with_ns_doc=0 \
             bash install-ns.sh build
