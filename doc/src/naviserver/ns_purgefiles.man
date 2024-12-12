@@ -24,7 +24,7 @@ appending a numeric suffix.
 [list_end]
 
 [see_also nsd ns_rollfile]
-[keywords "global built-in" NaviServer log backup]
+[keywords "global built-in" NaviServer logging backup]
 [manpage_end]
 
 

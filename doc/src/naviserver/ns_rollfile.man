@@ -26,7 +26,7 @@ number if back files is 1000.
 
 
 [see_also nsd ns_purgefiles]
-[keywords "global built-in" NaviServer log backup]
+[keywords "global built-in" NaviServer logging backup]
 [manpage_end]
 
 

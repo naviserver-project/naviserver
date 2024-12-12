@@ -503,8 +503,8 @@ regular truncation. However, while debugging new applications, you
 should set the Verbose parameter in the ns/module/nsdb/pool/pool-name
 section in the configuration file to on instead of off (the
 default). Every SQL statement sent to the database is logged in the
-error log and causes the file to grow much more quickly. In this case
-you may want to back up the error log.
+system log and causes the file to grow much more quickly. In this case
+you may want to back up the system log.
 
 
 [subsection {Back Up the Tcl Scripts Directory}]

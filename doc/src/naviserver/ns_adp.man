@@ -275,7 +275,7 @@ Default: 1MB.
 
 [def tracesize]
 The number of bytes of each text and script block which will be dumped to the
-error log when the [term trace] option is enabled. Default: 40.
+system log when the [term trace] option is enabled. Default: 40.
 
 [list_end]
 

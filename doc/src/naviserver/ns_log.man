@@ -3,7 +3,7 @@
 
 [manpage_begin ns_log n [vset version]]
 [moddesc   {NaviServer Built-in Commands}]
-[titledesc {Global server error log}]
+[titledesc {Global server system log}]
 
 [description]
 
@@ -27,7 +27,7 @@ process log messages.
       [arg severity] \
       [arg "message ..."] ]
 
-Writes a message to the error log file if the given
+Writes a message to the system log file if the given
 [arg severity] is enabled (see [cmd ns_logctl]).
 The [arg message]
 arguments are concatenated with connecting spaces. Note that this only
@@ -53,7 +53,7 @@ engineering guidelines are of such type.
 
 [def Error] Something bad occurred.  An [term error] is a malfunction, that
 must be investigated by a developer. An error is an unhandled
-exception.  The error.log file should be free of errors.
+exception.  The system log file should be free of errors.
  
 [def Fatal]
 Something extremely bad occurred. The server will shut down after
@@ -196,7 +196,7 @@ details of log rolling.
 
 [section CONFIGURATION]
 
-The error log is configured globally for the whole server process.
+The system log is configured globally for the whole server process.
 
 [example_begin]
  [cmd ns_section] ns/parameters
@@ -225,7 +225,7 @@ If true, an extra newline is added to each log entry.
 Default: false.
 
 [def logmaxbackup]
-The number of old error log files to keep around if log rolling is enabled.
+The number of old system log files to keep around if log rolling is enabled.
 Default: 10.
 
 [def lognotice]
@@ -254,7 +254,7 @@ to the name. When within the granularity two log files are generated
 these are numbered.
 
 [def serverlog]
-Path to error log file. If the path is not fully qualified it is assumed to be
+Path to system log file. If the path is not fully qualified it is assumed to be
 relative to the server home directory ([lb][cmd ns_info] home[rb]). All the components of
 the path must exist. The server will fail to start if the log file cannot be
 opened.
@@ -348,7 +348,7 @@ Enable debug logging while the server is running.
 
 
 
-Report log messages at the end of an ADP page, as well as log them to the error
+Report log messages at the end of an ADP page, as well as log them to the system
 log file.
 
 [example_begin]
@@ -395,7 +395,7 @@ Create a new severity.
 
 
 [see_also ns_accesslog ns_info ns_rollfile ns_purgefiles ns_asynclogfile ns_http ns_connchan]
-[keywords "global built-in" log path error configuration nscgi nsdb nsproxy]
+[keywords "global built-in" logging "system log" path error configuration nscgi nsdb nsproxy]
 
 
 [manpage_end]
