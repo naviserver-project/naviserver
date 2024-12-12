@@ -17,7 +17,7 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            compiler: gcc-10
+            compiler: gcc-12
             tcltag: core-8-6-15
             nsf_version: 2.3.0
             tdom_version: 0.9.1
@@ -40,7 +40,7 @@ jobs:
           #  with_deprecated: 1
 
           - os: ubuntu-latest
-            compiler: gcc-12
+            compiler: gcc-13
             tcltag: core-8-5-branch
             nsf_version: HEAD
             tcllib_version: "2.0"
@@ -49,7 +49,7 @@ jobs:
             with_deprecated: 1
 
           - os: ubuntu-latest
-            compiler: gcc-12
+            compiler: gcc-13
             tcltag: 9.0.0
             nsf_version: HEAD
             tcllib_version: "2.0"
