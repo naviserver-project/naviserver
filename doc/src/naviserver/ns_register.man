@@ -241,8 +241,9 @@ Registers a Tcl script as a handler for the specified method/protocol
 combination.
 
 [para]
-Example of a trivial HTTP proxy server (there is a much more elaborate
-reverse proxy server available as NaviServer module.
+Example of a trivial HTTP proxy server (Note: there is a much more elaborate
+reverse proxy server available as NaviServer module, which might
+serve as a model for this forward proxy).
 
 [example_begin]
  ns_register_proxy GET http http_proxy_handler
@@ -538,6 +539,6 @@ currently registered [term filters], [term traces] or [term procs].
 [example_end]
 
 
-[see_also ns_adp ns_adp_register ns_conn ns_server ns_shortcut_filter ns_time]
+[see_also ns_adp ns_adp_register ns_conn ns_http ns_server ns_shortcut_filter ns_time]
 [keywords "server built-in" ADP filter request callback fastpath urlspace handler]
 [manpage_end]
