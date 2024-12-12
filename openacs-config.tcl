@@ -263,7 +263,7 @@ ns_section ns/parameters {
     #ns_param	logdebug	trueug   ;# debug messages
     #ns_param	logdev		true     ;# development message
     #ns_param   lognotice       true     ;# informational messages
-    #ns_param   sanitizelogfiles 2       ;# default: 2; 0: none, 1: full, 2: human-friendly
+    #ns_param   sanitizelogfiles 2       ;# default: 2; 0: none, 1: full, 2: human-friendly, 3: 2 with tab expansion
 
     # ns_param	mailhost            localhost
 

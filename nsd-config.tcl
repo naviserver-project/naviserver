@@ -113,7 +113,7 @@ ns_section ns/parameters {
     #ns_param   logusec             true     ;# add timestamps in microsecond (usec) resolution (default: false)
     #ns_param   logusecdiff         true     ;# add timestamp diffs since in microsecond (usec) resolution (default: false)
     #ns_param   logthread           false    ;# add thread-info the log file lines (default: true)
-    #ns_param   sanitizelogfiles    1        ;# default: 2; 0: none, 1: full, 2: human-friendly
+    #ns_param   sanitizelogfiles    1        ;# default: 2; 0: none, 1: full, 2: human-friendly, 3: 2 with tab expansion
 
     #
     # Encoding settings

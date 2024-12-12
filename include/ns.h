@@ -1441,8 +1441,8 @@ Ns_DStringAppendArgv(Ns_DString *dsPtr)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN char *
-Ns_DStringAppendPrintable(Tcl_DString *dsPtr, bool indentMode, const char *buffer, size_t len)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3);
+Ns_DStringAppendPrintable(Tcl_DString *dsPtr, bool indentMode, bool tabExpandMode, const char *buffer, size_t len)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(4);
 
 NS_EXTERN char *
 Ns_DStringAppendTime(Tcl_DString *dsPtr, const Ns_Time *timePtr)

@@ -2083,7 +2083,10 @@ LogToDString(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
         len = strlen(msg);
     }
     if (nsconf.sanitize_logfiles > 0) {
-        Ns_DStringAppendPrintable(dsPtr, nsconf.sanitize_logfiles == 2, msg, len);
+        Ns_DStringAppendPrintable(dsPtr,
+                                  nsconf.sanitize_logfiles == 2,
+                                  nsconf.sanitize_logfiles == 3,
+                                  msg, len);
     } else {
         Ns_DStringNAppend(dsPtr, msg, (TCL_SIZE_T)len);
     }

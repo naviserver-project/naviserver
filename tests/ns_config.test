@@ -6,6 +6,7 @@ namespace import -force ::tcltest::*
 ::tcltest::configure {*}$argv
 
 testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
+ns_log notice XXXXXXXXXXXXXXXXXXX  [ns_info buildinfo]
 
 #######################################################################################
 #  Syntax Tests
@@ -190,7 +191,7 @@ test ns_config-7.4.1 {section} -body {
 
 test ns_config-7.4.2 {section} -body {
     ns_set size [ns_configsection -filter "defaulted" ns/server/testvhost]
-} -returnCodes {error ok} -result [expr {[testConstraint with_deprecated] ? 25 : 24}]
+} -returnCodes {error ok} -result {25}
 
 test ns_config-7.4.3 {section} -body {
     ns_set size [ns_configsection -filter "defaults" ns/server/testvhost]

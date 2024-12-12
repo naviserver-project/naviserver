@@ -2254,7 +2254,7 @@ NsTclValidUtf8ObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
                 Tcl_DString outputDS;
 
                 Tcl_DStringInit(&outputDS);
-                Ns_DStringAppendPrintable(&outputDS, NS_FALSE,
+                Ns_DStringAppendPrintable(&outputDS, NS_FALSE, NS_FALSE,
                                           errorDS.string, (size_t)errorDS.length);
 
                 Tcl_ObjSetVar2(interp, errorVarnameObj, NULL,

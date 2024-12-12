@@ -3861,7 +3861,7 @@ SockSendResponse(Sock *sockPtr, int statusCode, const char *errMsg, const char *
                        " write %" PRIuz " content %" PRIuz " avail %" PRIuz,
                        statusCode, errMsg,
                        peer,
-                       Ns_DStringAppendPrintable(&dsReqLine, NS_FALSE, requestLine, strlen(requestLine)),
+                       Ns_DStringAppendPrintable(&dsReqLine, NS_FALSE, NS_FALSE, requestLine, strlen(requestLine)),
                        reqPtr->roff,
                        reqPtr->woff,
                        reqPtr->coff,
@@ -4355,7 +4355,7 @@ LogBuffer(Ns_LogSeverity severity, const char *msg, const char *buffer, size_t l
         Tcl_DStringInit(&ds);
         Tcl_DStringAppend(&ds, msg, TCL_INDEX_NONE);
         Tcl_DStringAppend(&ds, ": ", 2);
-        (void)Ns_DStringAppendPrintable(&ds, NS_FALSE, buffer, len);
+        (void)Ns_DStringAppendPrintable(&ds, NS_FALSE, NS_FALSE, buffer, len);
 
         Ns_Log(severity, "%s", ds.string);
         Tcl_DStringFree(&ds);
@@ -8867,6 +8867,7 @@ AsyncLogfileWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         {"0",  0u},
         {"1",  1u},
         {"2",  2u},
+        {"3",  3u},
         {NULL, 0u}
     };
 
@@ -8911,7 +8912,10 @@ AsyncLogfileWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
                 if (lastCharNewline) {
                     length --;
                 }
-                Ns_DStringAppendPrintable(&ds, sanitize == 2, buffer, (size_t)length);
+                Ns_DStringAppendPrintable(&ds,
+                                          sanitize == 2,
+                                          sanitize == 3,
+                                          buffer, (size_t)length);
                 if (lastCharNewline) {
                     Tcl_DStringAppend(&ds, "\n", 1);
                 }

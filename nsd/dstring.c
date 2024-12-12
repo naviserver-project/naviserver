@@ -383,7 +383,7 @@ Ns_DStringPush(Ns_DString *dsPtr)
  *----------------------------------------------------------------------
  */
 char *
-Ns_DStringAppendPrintable(Tcl_DString *dsPtr, bool indentMode, const char *buffer, size_t len)
+Ns_DStringAppendPrintable(Tcl_DString *dsPtr, bool indentMode, bool tabExpandMode, const char *buffer, size_t len)
 {
     size_t i;
 
@@ -395,6 +395,8 @@ Ns_DStringAppendPrintable(Tcl_DString *dsPtr, bool indentMode, const char *buffe
 
         if (c == '\n' && indentMode) {
             Tcl_DStringAppend(dsPtr, "\n:    ", 6);
+        } else if (c == '\t' && tabExpandMode) {
+            Tcl_DStringAppend(dsPtr, "    ", 4);
         } else if ((CHARTYPE(print, c) == 0) || (c > UCHAR(127))) {
             Ns_DStringPrintf(dsPtr, "\\x%.2x", (c & 0xffu));
         } else {

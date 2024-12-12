@@ -28,7 +28,7 @@ test ns_asynclogfile-1.3 {syntax: ns_asynclogfile open} -body {
 
 test ns_asynclogfile-1.4 {syntax: ns_asynclogfile write} -body {
     ns_asynclogfile write
-} -returnCodes error -result {wrong # args: should be "ns_asynclogfile write ?-binary? ?-sanitize 0|1|2? /fd[0,MAX]/ /line/"}
+} -returnCodes error -result {wrong # args: should be "ns_asynclogfile write ?-binary? ?-sanitize 0|1|2|3? /fd[0,MAX]/ /line/"}
 
 
 #######################################################################################

@@ -3949,7 +3949,7 @@ HttpConnect(
         Tcl_DStringInit(&d);
         Ns_Log(Ns_LogRequestDebug, "full request (len %" PRITcl_Size ") <%s>",
                dsPtr->length,
-               Ns_DStringAppendPrintable(&d, NS_TRUE, dsPtr->string,
+               Ns_DStringAppendPrintable(&d, NS_TRUE, NS_FALSE, dsPtr->string,
                                          (size_t)dsPtr->length));
         Tcl_DStringFree(&d);
     }
