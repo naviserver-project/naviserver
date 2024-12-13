@@ -1781,8 +1781,8 @@ ConnCopyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
             Ns_Log(Warning, "No-op 'ns_conn copy': No content was uploaded, nothing to copy");
         }
     } else {
-        TCL_SIZE_T        length;
-        char *content = connPtr->reqPtr->content + offset;
+        TCL_SIZE_T length;
+        char      *content = connPtr->reqPtr->content + offset;
 
         length = (TCL_SIZE_T)lengthValue;
 #ifdef NS_SKIPBOM
@@ -1803,8 +1803,8 @@ ConnCopyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
         }
 #endif
         if (Tcl_Write(chan, content, length) != length) {
-            Ns_TclPrintfResult(interp, "could not write %d bytes to %s: %s",
-                               length, channelString, Tcl_PosixError(interp));
+            Ns_TclPrintfResult(interp, "could not write %ld bytes to %s: %s",
+                               (long)length, channelString, Tcl_PosixError(interp));
             result = TCL_ERROR;
         }
     }
