@@ -93,7 +93,7 @@ jobs:
             version_xotcl=${NSF_VERSION} \
             version_tdom=${TDOM_VERSION} \
             ns_modules="${NS_MODULES}" \
-            with_deprecated="${WITH_DEPRECATED}" \
+            with_ns_deprecated="${WITH_DEPRECATED}" \
             CC=${CC} \
             with_postgres=0 with_postgres_driver=1 with_ns_doc=0 \
             bash install-ns.sh build
