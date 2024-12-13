@@ -5,7 +5,6 @@ namespace import -force ::tcltest::*
 
 ::tcltest::configure {*}$argv
 
-ns_log notice "XXXXXXXXXXXXXXXXXXXXX <[ns_info buildinfo]>"
 testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
 
 #
