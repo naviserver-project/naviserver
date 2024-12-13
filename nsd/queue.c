@@ -1733,7 +1733,6 @@ NsTclServerObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
          */
 
     case SWaitingIdx:
-        fprintf(stderr, "SECOND SWAITING\n");
         if (Ns_ParseObjv(NULL, NULL, interp, objc-nargs, objc, objv) != NS_OK) {
             return TCL_ERROR;
         } else {
