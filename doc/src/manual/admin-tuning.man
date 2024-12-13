@@ -245,8 +245,9 @@ Key parameters include:
 
 [subsection {Turn Off DNS Lookups if Possible}]
 
- DNS lookups can slow down request handling. By default, [term nslog]
- disables them, but verify your configuration. If you’re not using
+ Although NaviServer performs DNS caching, DNS lookups can slow down
+ request handling, especially for failed lookups. By default, [term nslog]
+ performs no DNS lookups, but verify your configuration. If you’re not using
  host-based access controls with [term nsperm], disable DNS lookups
  there as well. For [term nscgi], DNS is off by default, but check for
  gethostbyaddr settings. If you must use DNS, tune [term dnscache],
