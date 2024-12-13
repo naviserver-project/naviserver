@@ -56,7 +56,7 @@ Returns the Tcl channel name for the current connection.
 
 [call [cmd  "ns_conn clientdata"] [opt [arg value]]]
 
-Query or set the client data for the current connection. The client
+Queries or sets the client data for the current connection. The client
 data is provided by the application and is potentially passed to
 different threads and can be used to establish the context with the
 connection thread. For example, the writer thread outputs the client
@@ -73,7 +73,7 @@ or nothing will ve sent out at all.
 
 [call [cmd  "ns_conn compress"] [opt [arg level]]]
 
-Either set or query the compression level for the current connection.
+Queries or sets the compression level for the current connection.
 Use [cmd  "ns_conn compress 0"] to indicate that compression should be
 deactivated
 
@@ -152,7 +152,7 @@ communications driver for this connection.
 
 [call [cmd  "ns_conn encoding"] [opt [arg encoding]]]
 
-Query or set the encoding for the current connection.
+Queries or sets the encoding for the current connection.
 
 
 [call [cmd  "ns_conn fileheaders"]  [arg file]]
@@ -243,7 +243,7 @@ you're in a schedule procedure) and you are not allowed to make calls to ns_conn
 
 [call [cmd  "ns_conn keepalive"] [opt [arg value]]]
 
-Query or set the keepalive for the current connection.
+Queries or sets the keepalive for the current connection.
 
 
 [call [cmd  "ns_conn location"]]
@@ -351,7 +351,7 @@ main request).
 
 [call [cmd  "ns_conn ratelimit"] [opt [arg limit]]]
 
-Query or set rate limit for the current connection. The value is
+Queries or sets rate limit for the current connection. The value is
 provided in KB/s (kilobytes per second). A value of 0 means unlimited.
 Default values can be provided per connection pool
 (parameter [term ratelimit]) or on the driver level
@@ -382,7 +382,7 @@ ns_time) format.
 
 [call [cmd  "ns_conn status"] [opt [arg status-code]]]
 
-Query or set the HTTP status code for the current connection.
+Queries or sets the HTTP status code for the current connection.
 
 
 [call [cmd  "ns_conn target"]]
@@ -409,7 +409,7 @@ Returns the number of elements (delimited by `/') in the URL of the HTTP request
 
 [call [cmd  "ns_conn urlencoding"] [opt [arg encoding]]]
 
-Query or set the url encoding for the current connection.
+Queries or sets the url encoding for the current connection.
 
 
 [call [cmd  "ns_conn urlv"] [opt [arg idx]]]
