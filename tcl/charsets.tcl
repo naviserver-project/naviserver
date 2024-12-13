@@ -323,7 +323,7 @@ if {[dict get [ns_info buildinfo] with_deprecated]} {
     #
 
     proc _ns_multipartformdata_p {} {
-        ns_deprecated "" "helper of deprecated function"
+        ns_deprecated "" "helper of deprecated proc"
 
         set type [string tolower [ns_set iget [ns_conn headers] content-type]]
         set glob {*multipart/form-data*}
