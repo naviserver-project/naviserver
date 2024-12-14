@@ -1256,6 +1256,8 @@ void
 Ns_SockConnectError(Tcl_Interp *interp, const char *host, unsigned short portNr,
                     Ns_ReturnCode status)
 {
+    bool haveResult = (*(Tcl_GetStringResult(interp)) != '\0');
+
     NS_NONNULL_ASSERT(host != NULL);
 
     if (status == NS_TIMEOUT) {
@@ -1268,17 +1270,28 @@ Ns_SockConnectError(Tcl_Interp *interp, const char *host, unsigned short portNr,
         Ns_Log(Ns_LogTimeoutDebug, "connect to %s port %hu runs into timeout",
                host, portNr);
         Tcl_SetErrorCode(interp, "NS_TIMEOUT", (char *)0L);
+
+    } else if (haveResult && portNr == 0) {
+        /*
+         * This was most likely a protocol lookup failure, the error message
+         * is already supplied, no need to append more - potentially
+         * misleading - error details.
+         */
     } else {
         const char *err;
         char buf[TCL_INTEGER_SPACE];
 
         /*
+         * Add an additional error message.
+         *
          * Tcl_PosixError() maintains errorCode variable
          */
         err = (Tcl_GetErrno() != 0) ? Tcl_PosixError(interp) : "reason unknown";
         ns_uint32toa(buf, (uint32_t)portNr);
 
-        Tcl_AppendResult(interp, "can't connect to ", host, " port ", buf,
+        Tcl_AppendResult(interp,
+                         (haveResult ? " - " : ""),
+                         "can't connect to ", host, " port ", buf,
                          ": ", err, (char *)0L);
     }
 }

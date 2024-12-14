@@ -9142,9 +9142,9 @@ LookupDriver(Tcl_Interp *interp, const char* protocol, const char *driverName)
 
     if (drvPtr == NULL) {
         if (driverName != NULL) {
-            Ns_TclPrintfResult(interp, "no driver for protocol '%s' & driver name '%s' found", protocol, driverName);
+            Ns_TclPrintfResult(interp, "no driver for protocol '%s' & driver name '%s' found.", protocol, driverName);
         } else {
-            Ns_TclPrintfResult(interp, "no driver for protocol '%s' found", protocol);
+            Ns_TclPrintfResult(interp, "no driver for protocol '%s' found.", protocol);
         }
     }
 
