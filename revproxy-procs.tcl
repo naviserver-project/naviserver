@@ -60,7 +60,7 @@ namespace eval ::revproxy {
         nsv_incr module:revproxy:target $target
         log notice "===== upstream [ns_info server] ===== [ns_conn method] $target"
 
-        if {[ns_set iget [ns_conn headers] Upgrade] eq "websocket"} {
+        if {[ns_set iget [ns_conn headers] upgrade] eq "websocket"} {
             #
             # We received a WebSocket upgrade response from the
             # server. WebSocket use long open connections, we can
