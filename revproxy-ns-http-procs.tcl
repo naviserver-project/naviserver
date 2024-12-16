@@ -1,5 +1,5 @@
 #-------------------------------------------------------------------------------
-# Implementation of the reversse proxy backend connection vis "ns_http"
+# Implementation of the reverse proxy backend connection vis "ns_http"
 #-------------------------------------------------------------------------------
 
 namespace eval ::revproxy {}
