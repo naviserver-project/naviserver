@@ -222,7 +222,7 @@ namespace eval ::revproxy::ns_connchan {
         -url
         {-exception_callback ""}
     } {
-        ns_log error "revproxy::upstream: error during establishing connections to $url: $errorMsg"
+        ns_log error "revproxy::upstream: error during establishing connection to $url: $errorMsg"
         if {$exception_callback ne ""} {
             {*}$exception_callback -error $errorMsg -url $url
         }
@@ -302,7 +302,9 @@ namespace eval ::revproxy::ns_connchan {
             # returning 0 means automatic cleanup on $from
             return 0
         } elseif {$condition ne "r"} {
-            log notice "unexpected condition $condition while spooling $from to $to"
+            log notice "::revproxy::ns_connchan::spool unexpected condition '$condition' while spooling $from to $to"
+            #log notice "... timeouts <$timeouts> arg <$arg>"
+            #log notice "... read channel status <[ns_connchan status $from]>"
             channelCleanup -close $to
             return 0
         }
@@ -479,7 +481,7 @@ namespace eval ::revproxy::ns_connchan {
             # returning 0 means automatic cleanup on $to
             return 0
         } elseif {$condition ne "w"} {
-            log warning "revproxy::ns_connchan::write_once unexpected condition $condition while writing to $to ($url)"
+            log warning "revproxy::ns_connchan::write_once unexpected condition '$condition' while writing to $to ($url)"
             return 0
         }
 
@@ -604,7 +606,7 @@ namespace eval ::revproxy::ns_connchan {
             set msg ""
 
         } else {
-            log notice "unexpected condition $condition while processing backend reply"
+            log notice "::revproxy::ns_connchan::backendReply unexpected condition '$condition' while processing backend reply"
             set msg ""
         }
 
