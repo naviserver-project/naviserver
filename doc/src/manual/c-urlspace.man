@@ -134,5 +134,11 @@ ns_UrlSpecificSet("server1", "GET", "/foo/bar/*.html", myID, myData,
   deleteFuncNoInherit: VOID(*)(VOID*)    0
 [example_end]
 
+[para] The functionality of the URLspace is available from Tcl via the
+[cmd ns_urlspace] command.
+
+
+[see_also ns_urlspace]
+[keywords urlspace trie]
 
 [manpage_end]
