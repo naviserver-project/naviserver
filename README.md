@@ -12,8 +12,8 @@ Additionally, you can invoke the proxy functionality (`revproxy::upstream`) dire
 
 The revproxy functionality can be integrated into NaviServer’s request handling in three ways:
 
-1. **As a Filter (`ns_register_filter`)**: Filters are applied early in the request lifecycle.  
-2. **As a Request Handler (`ns_register_proc`)**: Handlers run after authentication and permission checks.  
+1. **As a Filter (`ns_register_filter`)**: Filters are applied early in the request lifecycle.
+2. **As a Request Handler (`ns_register_proc`)**: Handlers run after authentication and permission checks.
 3. **Direct Invocation in Server-Side Code**: Useful for fine-grained control over which requests are proxied.
 
 Depending on your requirements—e.g., whether you need pre-authentication proxying or only after user authentication—you can choose the method that best fits your site’s security and performance model.
@@ -38,22 +38,6 @@ You can choose the backend connection type by setting the `backendconnection` pa
 
 ---
 
-### Parameters for the Proxy Handler
-
-The `revproxy::upstream` command supports various parameters for fine-grained control:
-
-- **Target URL:** The backend server(s) to which requests are forwarded.
-- **Regsub Patterns (`-regsubs`):** Rewrite incoming URLs before forwarding.
-- **URL Rewrite Callback (`-url_rewrite_callback`):** Dynamically construct the final upstream URL.
-- **Exception Callback (`-exception_callback`):** Produce custom error pages on connection failures or other issues.
-- **Validation Callback (`-validation_callback`):** Perform access checks before forwarding requests.
-- **Backend Reply Callback (`-backend_reply_callback`):** Modify backend response headers before returning them to the client.
-- **Connection Timeout (`-timeout`):** Control how long to wait when establishing the backend connection.
-
-These callbacks and parameters make it easy to tailor the proxying behavior to your application’s needs.
-
-
----
 
 ## Configuration
 
@@ -107,11 +91,39 @@ ns_section ns/server/default/module/revproxy {
 
 ---
 
-### Callbacks for Advanced Customization
+### Advanced Customization
+
+The behavior of a proxy setup is defined over tge parameters for the
+proxy handler `revproxy::upstream`.
+This command supports various parameters for fine-grained control:
+
+- **Target URL:** The backend server(s) to which requests are forwarded.
+- **Regsub Patterns (`-regsubs`):** Rewrite incoming URLs before forwarding.
+- **URL Rewrite Callback (`-url_rewrite_callback`):** Dynamically construct the final upstream URL.
+- **Exception Callback (`-exception_callback`):** Produce custom error pages on connection failures or other issues.
+- **Validation Callback (`-validation_callback`):** Perform access checks before forwarding requests.
+- **Backend Reply Callback (`-backend_reply_callback`):** Modify backend response headers before returning them to the client.
+- **Connection Timeout (`-timeout`):** Control how long to wait when establishing the backend connection.
+
+These callbacks and parameters make it easy to tailor the proxying behavior to your application’s needs.
+
+Note that many of such proxy handler can be defined with different
+parameter configurations, some over filters, some over request
+handlers, as the application requires.
+
+
+Part of the advanced configuration is the setup of callbacks.
+These callbacks can be freely defined by the application developer,
+but the have to follow the signatures described below.
 
 **URL Rewrite Callback (default: `::revproxy::rewrite_url`):**
 
+This callback can be used to dynamically compute the target URL (including query parameters).
+
 ```tcl
+#
+# Definition of the default URL rewrite callback
+#
 nsf::proc ::revproxy::rewrite_url { -target -url {-query ""}} {
   set url [string trimright $target /]/[string trimleft $url /.]
   if {$query ne ""} {append url ?$query}
@@ -121,7 +133,12 @@ nsf::proc ::revproxy::rewrite_url { -target -url {-query ""}} {
 
 **Exception Callback (default: `::revproxy::exception`):**
 
+This callback can be used to handle errors and generate custom error pages.
+
 ```tcl
+#
+# Definition of the default exception callback
+#
 nsf::proc ::revproxy::exception {
   {-status 503}
   {-msg ""}
@@ -138,7 +155,14 @@ nsf::proc ::revproxy::exception {
 
 **Validation Callback (no default):**
 
+This callback can be used to perform access control based on the
+details of the rewritten URL.  This is really the final check, after
+also all the request headers for the backend have been set.
+
 ```tcl
+#
+# Define your own validation callback with a signature like this:
+#
 nsf::proc ::my_validation_callback {
   -url
 } {
@@ -148,7 +172,13 @@ nsf::proc ::my_validation_callback {
 
 **Backend Reply Callback (no default):**
 
+This callback can be used to modify headers returned by the backend
+before sending the response to the client.
+
 ```tcl
+#
+# Define your own backend reply callback with a signature like this:
+#
 nsf::proc ::my_backend_replay_callback {
   -url
   -replyHeaders
@@ -325,7 +355,7 @@ ns_section ns/server/default/module/revproxy {
     #
     ns_param backendconnection $revproxy_backendconnection  ;# default ns_connchan
     #ns_param verbose 1
-    
+
     set usefilter 0
     if {$usefilter} {
         ns_param filters [subst {
