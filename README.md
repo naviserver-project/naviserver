@@ -199,12 +199,8 @@ make install
 
 ---
 
-## Author
 
-Gustaf Neumann <neumann@wu-wien.ac.at>
-```
-
-**Full Configuration File:**
+## Configuring NaviServer as a Reverse Proxy Server (Full Configuration File):
 
 ```tcl
 ########################################################################
@@ -212,13 +208,17 @@ Gustaf Neumann <neumann@wu-wien.ac.at>
 #
 # Per default, the reverse proxy server uses the following configuration:
 #
-#  http                48080
-#  https               48443
-#  revproxy_target     http://127.0.0.1:8080
-#  backend connection  ns_connchan
+#    http                48080
+#    https               48443
+#    revproxy_target     http://127.0.0.1:8080
+#    backend connection  ns_connchan
+#
+# These values can be overloaded via environment variables, when starting
+# the server e.g. via
+#
+#    nsd_revproxy_target=https://localhost:8445 /usr/local/ns/bin/nsd -f ...
 #
 ########################################################################
-ns_log notice "Current Environment Variables: [lsort [array names env]]"
 set http_port  [expr {[info exists env(nsd_httpport)]  ? $env(nsd_httpport)  : 48000}]
 set https_port [expr {[info exists env(nsd_httpsport)] ? $env(nsd_httpsport) : 48443}]
 set revproxy_target [expr {[info exists env(nsd_revproxy_target)] ? $env(nsd_revproxy_target) : "http://127.0.0.1:8080"}]
@@ -226,8 +226,6 @@ set revproxy_backendconnection [expr {[info exists env(nsd_revproxy_backendconne
 
 set address "0.0.0.0"  ;# one might use as well for IPv6: set address ::
 set home [file dirname [file dirname [info nameofexecutable]]]
-
-ns_log notice "FINAL revproxy_target <$revproxy_target> via $revproxy_backendconnection"
 
 ########################################################################
 # Global settings (for all servers)
@@ -326,7 +324,7 @@ ns_section ns/server/default/module/revproxy {
     #   - ns_http: features persistent connections to the backend server, provide statistics
     #
     ns_param backendconnection $revproxy_backendconnection  ;# default ns_connchan
-    ns_param verbose 1
+    #ns_param verbose 1
     
     set usefilter 0
     if {$usefilter} {
@@ -354,3 +352,9 @@ set ::env(LANG) en_US.UTF-8
 #ns_logctl severity Debug(sql) on
 #ns_logctl severity Debug on
 ```
+
+---
+
+## Author
+
+Gustaf Neumann <neumann@wu-wien.ac.at>
