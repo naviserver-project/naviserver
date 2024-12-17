@@ -197,9 +197,15 @@ namespace eval ::revproxy::ns_connchan {
         try {
             set timeouts [list -timeout $timeout -sendtimeout $sendtimeout -receivetimeout $receivetimeout]
             log notice "===== Set callbacks [ns_info server] frontendChan $frontendChan backendChan $backendChan"
+            #
+            # We had before instead of $url the constant
+            # client. However, for the end user messages, it is more
+            # friendly to provide the upstream URL and not
+            # necessarily the target URL.
+            #
             ns_connchan callback \
                 -timeout $timeout -sendtimeout $sendtimeout -receivetimeout $receivetimeout \
-                $frontendChan [list ::revproxy::ns_connchan::spool $frontendChan $backendChan client $timeouts 0] rex
+                $frontendChan [list ::revproxy::ns_connchan::spool $frontendChan $backendChan $url $timeouts ""] rex
             ns_connchan callback \
                 -timeout $timeout -sendtimeout $sendtimeout -receivetimeout $receivetimeout \
                 $backendChan [list ::revproxy::ns_connchan::backendReply -callback $backend_reply_callback \
@@ -233,22 +239,21 @@ namespace eval ::revproxy::ns_connchan {
         }
     }
 
-    nsf::proc gateway_timeout { from msg } {
+    nsf::proc gateway_timeout { from url msg } {
         log notice "revproxy: $msg"
         #
         # We received a timeout and we might send a "504 Gateway
         # Timeout" to the client. However, this can be only done, when
-        # on the outgoing channel no data was sent so far. If the
-        # timeout occurs in the middle of the datastream, the timeout
-        # will be logged and the connection terminated (by the
-        # caller).
+        # on the outgoing channel no data was sent so far. In any
+        # case, the gateway timeout will be logged and the connection
+        # terminated (by the caller).
         #
         foreach entry [ns_connchan list] {
             if {[lindex $entry 0] eq $from} {
                 lassign $entry . . . . . sent received
-                # revproxy::log notice "FROM channel <$entry> sent $sent received $received"
+                log notice "gateway_timeout from channel <$entry> sent $sent received $received ($msg)"
                 if {$sent == 0} {
-                    ns_connchan write $from "HTTP/1.0 504 Gateway Timeout\r\n\r\n"
+                    ns_connchan write $from "HTTP/1.0 504 Gateway Timeout\r\n\r\n504 Gateway Timeout: $url"
                 }
             }
         }
@@ -281,6 +286,7 @@ namespace eval ::revproxy::ns_connchan {
             set spooled 0
         }
         log notice "cleanup channel $chan, spooled $spooled bytes (to spool $tospool) $closeMsg"
+        unset -nocomplain ::revproxy::replyheaderSent($chan)
     }
 
     #
@@ -292,11 +298,11 @@ namespace eval ::revproxy::ns_connchan {
     # automatically closed.
     #
     nsf::proc spool { from to url timeouts arg condition } {
-        log notice "spool from $from (exists [ns_connchan exists $from]) to $to " \
+        log notice "::revproxy::ns_connchan::spool from $from (exists [ns_connchan exists $from]) to $to " \
             "(exists [ns_connchan exists $to]): condition $condition"
-
+        log notice "... ARG <$arg> URL <$url>"
         if {$condition eq "t"} {
-            ::revproxy::ns_connchan::gateway_timeout $from "timeout occurred while spooling $from to $to"
+            ::revproxy::ns_connchan::gateway_timeout $from $url "spool timeout occurred while spooling $from to $to"
             log notice "revproxy: spool timeout (MANUAL cleanup on $from to $to needed?)"
             channelCleanup -close $to
             # returning 0 means automatic cleanup on $from
@@ -310,6 +316,13 @@ namespace eval ::revproxy::ns_connchan {
         }
 
         if {[ns_connchan exists $from]} {
+
+            if {$arg ne "" && ![info exists ::revproxy::replyheaderSent($to)]} {
+                log notice "send reply header to $to"
+                {*}$arg
+                log notice "send reply header to $to DONE"
+                set ::revproxy::replyheaderSent($to) 1
+            }
             channelSetup $from
 
             try {
@@ -475,7 +488,7 @@ namespace eval ::revproxy::ns_connchan {
         log notice "revproxy::ns_connchan::write_once: condition $condition"
 
         if {$condition eq "t"} {
-            ::revproxy::ns_connchan::gateway_timeout $to "timeout occurred while writing once $from to $to"
+            ::revproxy::ns_connchan::gateway_timeout $to $url "timeout occurred while writing once $from to $to"
             log notice "revproxy::ns_connchan::write_once timeout (MANUAL cleanup on $from to $to needed?)"
             channelCleanup -close $from
             # returning 0 means automatic cleanup on $to
@@ -551,7 +564,7 @@ namespace eval ::revproxy::ns_connchan {
                     -timeout [dict get $timeouts -timeout] \
                     -sendtimeout [dict get $timeouts -sendtimeout] \
                     -receivetimeout [dict get $timeouts -receivetimeout] \
-                    $from [list ::revproxy::ns_connchan::spool $from $to $url $timeouts 0] rex
+                    $from [list ::revproxy::ns_connchan::spool $from $to $url $timeouts ""] rex
                 #
                 # Return 2 to signal to deactivate the writable callback.
                 #
@@ -572,6 +585,86 @@ namespace eval ::revproxy::ns_connchan {
         return $continue
     }
 
+    nsf::proc sendReplyHeader {
+        -from
+        -to
+        -url
+        -callback
+        -status_line
+        -header
+        -body
+    } {
+        log notice "backendReply: status line <$status_line> header <$header>"
+        set status [lindex $status_line 1]
+        #
+        # For most error codes, we want to make sure that the
+        # connection is closed after every request. This is currently
+        # necessary, since for persistent connections, we can't
+        # substitute the request URL inside the stream without
+        # continuous parsing.
+        #
+        # For informational status codes (1xx) there is no need to
+        # close the connection (e.g. WebSockets).
+        #
+        if {$status >= 200} {
+            #
+            # Parse the header lines line by line. The current code is
+            # slightly over-optimistic, since it does not handle
+            # request header continuation lines.
+            #
+            set replyHeaders [ns_set create]
+            foreach line [split $header \n] {
+                set line [string trimright $line \r]
+                # log notice "backendReply: [list ns_parseheader $replyHeaders $line]"
+                ns_parseheader $replyHeaders $line preserve
+            }
+
+            #
+            # In case, a backendReplyCallback is set, call it with
+            # "-status" and "-replyHeaders". The callback can modify
+            # the ns_set with the reply headers, maybe, stripping
+            # upstream headers etc.
+            #
+            if {$callback ne ""} {
+                {*}$callback -url $url -replyHeaders $replyHeaders -status $status
+            }
+
+            #
+            # Make sure to close the connection
+            #
+            ns_set iupdate $replyHeaders connection close
+
+            #
+            # Build the reply
+            #
+            set reply $status_line\r\n
+            set size [ns_set size $replyHeaders]
+            for {set i 0} {$i < $size} {incr i} {
+                append reply "[ns_set key $replyHeaders $i]: [ns_set value $replyHeaders $i]\r\n"
+            }
+            log notice "backendReply: from $url\n$reply"
+            set l [ns_set iget $replyHeaders content-length ""]
+            if {$l ne ""} {
+                # log notice "backendReply: set tospool($to) -> $l"
+                set ::revproxy::tospool($to) $l
+            }
+            set headerLength [string length $reply]
+            append reply \r\n$body
+            set toWrite [string length $reply]
+            set written [ns_connchan write $to $reply]
+            incr ::revproxy::spooled($to) [expr {$written - ($headerLength + 2)}]
+            log notice "backendReply: from $from to $to towrite $toWrite written $written " \
+                "spooled($to) $::revproxy::spooled($to)"
+            #record $to-rewritten $reply
+
+        } else {
+            #
+            # e.g. HTTP/1.1 101 Switching Protocols
+            #
+            ns_connchan write $to [string cat $status_line \r\n $header \r\n\r\n $body]
+        }
+    }
+
     #
     # Handle backend replies in order to be able to post-process the
     # reply header fields. This is e.g. necessary to downgrade to
@@ -588,7 +681,7 @@ namespace eval ::revproxy::ns_connchan {
         arg
         condition
     } {
-        log notice "===== backendReply [ns_info server]"
+        log notice "::revproxy::ns_connchan::backendReply condition '$condition' server [ns_info server]"
         if { $condition eq "r" } {
             #
             # Read from backend
@@ -599,9 +692,9 @@ namespace eval ::revproxy::ns_connchan {
 
         } elseif { $condition eq "t" } {
             #
-            # Timeout
+            # Connection Timeout
             #
-            ::revproxy::ns_connchan::gateway_timeout $to "timeout occurred while waiting for backend reply $from to $to"
+            ::revproxy::ns_connchan::gateway_timeout $to $url "connection timeout occurred while waiting for backend reply $from to $to"
             channelCleanup -close $to
             set msg ""
 
@@ -630,76 +723,9 @@ namespace eval ::revproxy::ns_connchan {
             log notice "backendReply: send [string length $msg] bytes from $from to $to ($url)"
             #record $to $msg
 
-            if {[regexp {^([^\n]+)\r\n(.*?)\r\n\r\n(.*)$} $msg . first header body]} {
-                log notice "backendReply: first <$first> HEAD <$header>"
-                set status [lindex $first 1]
-                #
-                # For most error codes, we want to make sure that the
-                # connection is closed after every request. This is
-                # currently necessary, since for persistent
-                # connections, we can't substitute the request URL
-                # inside the stream without continuous parsing.
-                #
-                # For informational status codes (1xx) there is no
-                # need to close the connection (e.g. WebSockets).
-                #
-                if {$status >= 200} {
-                    #
-                    # Parse the header lines line by line. The current
-                    # code is slightly over-optimistic, since it does
-                    # not handle request header continuation lines.
-                    #
-                    set replyHeaders [ns_set create]
-                    foreach line [split $header \n] {
-                        set line [string trimright $line \r]
-                        # log notice "backendReply: [list ns_parseheader $replyHeaders $line]"
-                        ns_parseheader $replyHeaders $line preserve
-                    }
-
-                    #
-                    # In case, a backendReplyCallback is set, call it
-                    # with "-status" and "-replyHeaders". The callback
-                    # can modify the ns_set with the reply headers,
-                    # maybe, stripping upstream headers etc.
-                    #
-                    if {$callback ne ""} {
-                        {*}$callback -url $url -replyHeaders $replyHeaders -status $status
-                    }
-
-                    #
-                    # Make sure to close the connection
-                    #
-                    ns_set iupdate $replyHeaders connection close
-
-                    #
-                    # Build the reply
-                    #
-                    set reply $first\r\n
-                    set size [ns_set size $replyHeaders]
-                    for {set i 0} {$i < $size} {incr i} {
-                        append reply "[ns_set key $replyHeaders $i]: [ns_set value $replyHeaders $i]\r\n"
-                    }
-                    log notice "backendReply: from $url\n$reply"
-                    set l [ns_set iget $replyHeaders content-length ""]
-                    if {$l ne ""} {
-                        # log notice "backendReply: set tospool($to) -> $l"
-                        set ::revproxy::tospool($to) $l
-                    }
-                    set headerLength [string length $reply]
-                    append reply \r\n$body
-                    set toWrite [string length $reply]
-                    set written [ns_connchan write $to $reply]
-                    incr ::revproxy::spooled($to) [expr {$written - ($headerLength + 2)}]
-                    log notice "backendReply: from $from to $to towrite $toWrite written $written " \
-                        "spooled($to) $::revproxy::spooled($to)"
-                    #record $to-rewritten $reply
-
-                } else {
-                    #
-                    # e.g. HTTP/1.1 101 Switching Protocols
-                    #
-                    ns_connchan write $to $msg
-                }
+            if {[regexp {^([^\n]+)\r\n(.*?)\r\n\r\n(.*)$} $msg . status_line header body]} {
+                #sendReplyHeader -from $from -to $to -url $url -callback $callback -status_line $status_line -header $header -body $body
+                set cmd [list sendReplyHeader -from $from -to $to -url $url -callback $callback -status_line $status_line -header $header -body $body]
                 #
                 # Change the callback to regular spooling for the
                 # future requests.
@@ -708,7 +734,7 @@ namespace eval ::revproxy::ns_connchan {
                     -timeout [dict get $timeouts -timeout] \
                     -sendtimeout [dict get $timeouts -sendtimeout] \
                     -receivetimeout [dict get $timeouts -receivetimeout] \
-                    $from [list ::revproxy::ns_connchan::spool $from $to $url $timeouts 0] rex
+                    $from [list ::revproxy::ns_connchan::spool $from $to $url $timeouts $cmd] rex
                 set result 1
             } else {
                 log notice "backendReply: could not parse header <$msg>"
