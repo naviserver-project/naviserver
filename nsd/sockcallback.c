@@ -442,6 +442,10 @@ SockCallbackThread(void *UNUSED(arg))
                      * Call Ns_SockProc to notify about timeout. For the
                      * time being, ignore boolean result.
                      */
+                    Ns_Log(Notice, "sockcallback: fd %d timeout " NS_TIME_FMT " exceeded by " NS_TIME_FMT,
+                           cbPtr->sock, (int64_t) cbPtr->timeout.sec, cbPtr->timeout.usec,
+                           (int64_t) diff.sec, diff.usec
+                           );
                     (void) (*cbPtr->proc)(cbPtr->sock, cbPtr->arg, (unsigned int)NS_SOCK_TIMEOUT);
                     cbPtr->when = 0u;
                 }
