@@ -87,7 +87,8 @@ server.
 ]
 
 Register a Tcl callback for the named connection [arg channel].
-[option -timeout] is the poll timeout, [option -receivetimeout] is a
+[option -timeout] is the poll timeout (the maximum time between
+two events), [option -receivetimeout] is a
 timeout for incoming packets, [option -sendtimeout] is the timeout for
 outgoing packets.  When [option -sendtimeout] has the value of 0, a
 read operation might return the empty string. A value larger than 0
