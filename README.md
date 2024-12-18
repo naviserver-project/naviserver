@@ -46,6 +46,10 @@ differently for every reverse proxy handler instance via parameter for
 
 ## Configuration
 
+The configuration of the reverse proxy module happens via extending a
+standard NaviServer configuration file. Below, a full sample
+configuration files is provided.
+
 To enable the reverse proxy functionality, load the module in your NaviServer configuration:
 
 ```tcl
