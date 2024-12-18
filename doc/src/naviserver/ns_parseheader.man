@@ -19,7 +19,7 @@ This function parses a single HTTP header line into a predefined
         [opt [arg disposition]] ]
 
 [para] The [arg headerline] specifies a line containing HTTP
-header fields, where the field name is parased into a key of the
+header fields, where the field name is parsed into a key of the
 [cmd ns_set] and the field value to the value of the entry.
 
 [para]
