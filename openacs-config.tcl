@@ -148,10 +148,9 @@ append https_extraheaders $http_extraheaders
 ######################################################################
 #
 # For all potential variables defined by the dict "defaultConfig",
-# allow environment variables such as "oacs_httpport" or
-# "oacs_ipaddress" to override local values.
+# allow environment variables with the prefix "oacs_" (such as
+# "oacs_httpport" or "oacs_ipaddress") to override local values.
 #
-source [file dirname [ns_info nsd]]/../tcl/init.tcl
 ns_configure_variables "oacs_" $defaultConfig
 
 #

@@ -44,10 +44,9 @@ dict set defaultConfig trustedservers ""
 
 #
 # For all potential variables defined by the dict "defaultConfig",
-# allow environment variables such as "nsd_httpport" or
-# "nsd_ipaddress" to override local values.
+# allow environment variables with the prefix "nsd_" (such as
+# "nsd_httpport" or "nsd_ipaddress") to override local values.
 #
-source [file dirname [ns_info nsd]]/../tcl/init.tcl
 ns_configure_variables "nsd_" $defaultConfig
 
 set max_file_upload_size       20mb
