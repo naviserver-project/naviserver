@@ -69,7 +69,7 @@ URL as implied by the dict members.
 [example_end]
 
 [see_also ns_absoluteurl ns_parsequery ns_parsefieldvalue ns_parseheader ns_parsehostport]
-[keywords "global built-in" url parse encoding]
+[keywords "global built-in" URL parse encoding]
 [manpage_end]
 
 

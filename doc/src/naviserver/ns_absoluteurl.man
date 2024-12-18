@@ -33,7 +33,7 @@ URLs into its components.
 [example_end]
 
 [see_also ns_parseurl]
-[keywords "global built-in" url]
+[keywords "global built-in" URL]
 [manpage_end]
 
 

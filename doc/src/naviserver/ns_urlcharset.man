@@ -30,7 +30,7 @@
 
 
 [see_also nsd]
-[keywords charset url i18n]
+[keywords charset URL i18n]
 
 [manpage_end]
 
