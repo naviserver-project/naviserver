@@ -33,6 +33,8 @@ The revproxy module supports two methods to connect to the backend:
    - Supports persistent connections (NaviServer 5.x+), improving performance for repeated connections to the same backend.
    - Integrates with writer threads, scaling well under heavy load.
    - Provides separate logs and statistics for backend connections.
+   - For certain types of requests (e.g., the websocket upgrade
+     request), we have to fall back to `ns_connchan`
 
 You can choose the backend connection type by setting the `backendconnection` parameter.
 
