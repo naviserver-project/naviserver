@@ -36,7 +36,10 @@ The revproxy module supports two methods to connect to the backend:
    - For certain types of requests (e.g., the websocket upgrade
      request), we have to fall back to `ns_connchan`
 
-You can choose the backend connection type by setting the `backendconnection` parameter.
+You can choose the backend connection type by setting the
+`backendconnection` parameter in the confguration file or set it
+differently for every reverse proxy handler instance via parameter for
+`revproxy::upstream` (see below).
 
 ---
 
@@ -87,6 +90,9 @@ perform availability checks.
 
 ### Choosing the Backend Connection Method
 
+The default Backend Connection Method can be set via a configuration
+variable or per handler (see Advanced Customization).
+
 ```tcl
 ns_section ns/server/default/module/revproxy {
    ns_param backendconnection ns_http  ;# default is ns_connchan
@@ -108,6 +114,8 @@ This command supports various parameters for fine-grained control:
 - **Validation Callback (`-validation_callback`):** Perform access checks before forwarding requests.
 - **Backend Reply Callback (`-backend_reply_callback`):** Modify backend response headers before returning them to the client.
 - **Timeout (`-timeout` defaults to `10s`):** Control how long to wait between events (connection, read or write)
+- **Backend Connection Method (`-backendconnection`):** Control
+  per-handler backend Connection method (overrides configuration variable).
 
 These callbacks and parameters make it easy to tailor the proxying behavior to your application’s needs.
 
@@ -238,28 +246,36 @@ make install
 
 ```tcl
 ########################################################################
+#
 # Sample configuration file for NaviServer with reverse proxy setup.
 #
-# Per default, the reverse proxy server uses the following configuration:
-#
-#    http                48080
-#    https               48443
-#    revproxy_target     http://127.0.0.1:8080
-#    backend connection  ns_connchan
-#
-# These values can be overloaded via environment variables, when starting
-# the server e.g. via
+########################################################################
+set home [file dirname [file dirname [info nameofexecutable]]]
+
+if {[info commands ::ns_configure_variables] eq ""} {
+    ns_log notice "backward compatibility hook (pre NaviServer 5): have to source init.tcl"
+    source [file normalize $home/tcl/init.tcl]
+}
+
+########################################################################
+# Per default, the reverse proxy server uses the following
+# configuration variables. Their values can be overloaded on startup
+# via environment variables with the "nsd_" prefix, when starting the
+# server, e.g., setting a different "revproxy_target" via:
 #
 #    nsd_revproxy_target=https://localhost:8445 /usr/local/ns/bin/nsd -f ...
 #
 ########################################################################
-set http_port  [expr {[info exists env(nsd_httpport)]  ? $env(nsd_httpport)  : 48000}]
-set https_port [expr {[info exists env(nsd_httpsport)] ? $env(nsd_httpsport) : 48443}]
-set revproxy_target [expr {[info exists env(nsd_revproxy_target)] ? $env(nsd_revproxy_target) : "http://127.0.0.1:8080"}]
-set revproxy_backendconnection [expr {[info exists env(nsd_revproxy_backendconnection)] ? $env(nsd_revproxy_backendconnection) : "ns_connchan"}]
 
-set address "0.0.0.0"  ;# one might use as well for IPv6: set address ::
-set home [file dirname [file dirname [info nameofexecutable]]]
+dict set defaultConfig http_port                  48000
+dict set defaultConfig https_port                 48443
+dict set defaultConfig revproxy_target            http://127.0.0.1:8080
+dict set defaultConfig revproxy_backendconnection ns_connchan
+dict set defaultConfig address                    0.0.0.0      ;# one might use as well for IPv6, namely "::"
+
+# Set the configuration variables:
+ns_configure_variables "nsd_" $defaultConfig
+
 
 ########################################################################
 # Global settings (for all servers)
