@@ -81,7 +81,9 @@ ns_section ns/server/default/module/revproxy {
 }
 ```
 
-This setup supports load distribution across multiple backends.
+This setup supports a simple form of load distribution across multiple
+backends based on a round robin principle. Currently, it does not
+perform availability checks.
 
 ### Choosing the Backend Connection Method
 
@@ -95,7 +97,7 @@ ns_section ns/server/default/module/revproxy {
 
 ### Advanced Customization
 
-The behavior of a proxy setup is defined over tge parameters for the
+The behavior of a proxy setup is defined by the parameters for the
 proxy handler `revproxy::upstream`.
 This command supports various parameters for fine-grained control:
 
@@ -105,7 +107,7 @@ This command supports various parameters for fine-grained control:
 - **Exception Callback (`-exception_callback`):** Produce custom error pages on connection failures or other issues.
 - **Validation Callback (`-validation_callback`):** Perform access checks before forwarding requests.
 - **Backend Reply Callback (`-backend_reply_callback`):** Modify backend response headers before returning them to the client.
-- **Connection Timeout (`-timeout`):** Control how long to wait when establishing the backend connection.
+- **Timeout (`-timeout` defaults to `10s`):** Control how long to wait between events (connection, read or write)
 
 These callbacks and parameters make it easy to tailor the proxying behavior to your application’s needs.
 
@@ -358,15 +360,19 @@ ns_section ns/server/default/module/revproxy {
     ns_param backendconnection $revproxy_backendconnection  ;# default ns_connchan
     #ns_param verbose 1
 
+    #
+    # Just for demonstration: use either request filter or request
+    # handlers to register the callbacks.
+    #
     set usefilter 0
     if {$usefilter} {
-        ns_param filters [subst {
-            ns_register_filter postauth GET  /* ::revproxy::upstream -timeout 1s -target [list $revproxy_target]
+        ns_param register [subst {
+            ns_register_filter postauth GET  /* ::revproxy::upstream -target [list $revproxy_target]
             ns_register_filter postauth POST /* ::revproxy::upstream -target [list $revproxy_target]
         }]
     } else {
-        ns_param filters [subst {
-            ns_register_proc GET /* { ::revproxy::upstream proc -timeout 1s -target [list ${revproxy_target}] }
+        ns_param register [subst {
+            ns_register_proc GET /* { ::revproxy::upstream proc -target [list ${revproxy_target}] }
             ns_register_proc POST /* { ::revproxy::upstream proc -target [list ${revproxy_target}] }
         }]
     }
