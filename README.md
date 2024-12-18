@@ -68,14 +68,14 @@ ns_section "ns/server/${server}/module/revproxy" {
 
 ### Example: Using a Request Handler
 
-Forward `GET /doc/*` requests to two backend servers with a 1-second timeout:
+Forward `GET /doc/*` requests to two backend servers with a 20-second timeout:
 
 ```tcl
 ns_section ns/server/default/module/revproxy {
    set target {http://server1.local:8080/ http://server2.local:8080/}
    ns_param filters [subst {
        ns_register_proc GET /doc {
-           ::revproxy::upstream proc -timeout 1s -target [list ${target}]
+           ::revproxy::upstream proc -timeout 20s -target [list ${target}]
        }
    }]
 }
