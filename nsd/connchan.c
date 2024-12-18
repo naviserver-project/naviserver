@@ -2290,6 +2290,7 @@ ConnChanReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
                      * internally by a timeout counter, but for the time
                      * being no application has usage for it.
                      */
+                    /*Ns_Log(Notice, "ns_connchan read received no data, maybe a receive timeout or EOF");*/
                 }
             } else {
                 Tcl_SetObjResult(interp, GetWebsocketFrame(connChanPtr, buffer, 0));
