@@ -1130,6 +1130,10 @@ NsConfigEval(const char *config, const char *configFileName,
      */
 
     interp = Ns_TclCreateInterp();
+
+    (void) Tcl_EvalEx(interp, "source [file normalize [file dirname [ns_info nsd]]/../tcl/init.tcl]",
+                      TCL_INDEX_NONE, 0);
+
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_section", SectionObjCmd, &sectionPtr, NULL);
     (void)TCL_CREATEOBJCOMMAND(interp, "ns_param", ParamObjCmd, &sectionPtr, NULL);
     for (i = 0; argv[i] != NULL; ++i) {
