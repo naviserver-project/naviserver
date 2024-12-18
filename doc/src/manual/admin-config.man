@@ -879,7 +879,7 @@ tailored error messages depending on the HTTP status codes.
 [example_end]
 
 
-[keywords module nssock nsssl \
+[keywords module nssock nsssl "network driver" \
 	performance tuning configuration \
 	SO_REUSEPORT TCP TCP_FASTOPEN \
 	"connection thread pools" \

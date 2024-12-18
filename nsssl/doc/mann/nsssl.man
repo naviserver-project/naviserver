@@ -2,7 +2,7 @@
 
 [manpage_begin nsssl n [vset version]]
 [moddesc   {NaviServer Modules}]
-[titledesc {Configuring HTTPS socket communications}]
+[titledesc {Network Driver for HTTPS socket communications}]
 
 [description]
 
@@ -174,7 +174,7 @@ For discussion and more examples see
 
 
 [see_also ns_log ns_write ns_http]
-[keywords module nsssl \
+[keywords module nsssl "network driver" \
 	performance tuning configuration TCP_FASTOPEN HTTPS driver \
         signals OCSP TLS certificate ]
 

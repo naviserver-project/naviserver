@@ -44,7 +44,7 @@
 	[opt [option "-server [arg server]"]] \
 	[arg channel]]
 
- Close the named connection channel. The [option "-server"] can be
+ Closes the named connection channel. The [option "-server"] can be
  used for cleanup of stale handles.
 
 [call [cmd "ns_connchan exists"] [arg channel]]
@@ -54,7 +54,7 @@
 [call [cmd "ns_connchan list"] \
 	[opt [option "-server [arg server]"]] ]
 
-  Return a list of the currently detached connection channels for the
+  Returns a list of the currently detached connection channels for the
   current or named [arg server].
 
 [para]
@@ -86,7 +86,7 @@ server.
 	[arg when] \
 ]
 
-Register a Tcl callback for the named connection [arg channel].
+Registers a Tcl callback for the named connection [arg channel].
 [option -timeout] is the poll timeout (the maximum time between
 two events), [option -receivetimeout] is a
 timeout for incoming packets, [option -sendtimeout] is the timeout for
@@ -132,7 +132,7 @@ interpreted as follows:
 	[arg port] \
 ]
 
-Open a client connection channel to the specified [arg host]
+Opens a client connection channel to the specified [arg host]
 and [arg port].  The command is similar to [cmd "ns_connchan open"],
 but does less: While
 [cmd "ns_connchan open"] sends an HTTP request to the server denoted by
@@ -146,6 +146,7 @@ The timeout value [arg time] can be specified in the form
 [arg secs[opt :microseconds]], or [arg secs.fraction],
 or as a number with a time unit.
 
+
 [call [cmd "ns_connchan listen"] \
 	[opt [option "-driver [arg value]"]] \
 	[opt [option "-server [arg server]"]] \
@@ -155,9 +156,9 @@ or as a number with a time unit.
 	[arg script] \
 ]
 
-Open listening socket. Call the [arg script] callback on incoming
+Opens a listening socket. Call the [arg script] callback on incoming
 connections. On success, this command returns a dict containing
-"channel", "port", "sock" and "address".
+[term channel], [term port], [term sock] and [term address].
 
 
 [call [cmd "ns_connchan open"] \
@@ -172,11 +173,12 @@ connections. On success, this command returns a dict containing
 ]
 
 [para]
-Open a connection channel to the specified [arg url].  The URL can
-either be an HTTP or an HTTPS URL.  The [term driver] for the protocol
-of the [arg url] must be loaded: [term nssock] for HTTP, [term nsssl]
-for HTTPS.  A driver can be loaded without configuring a socket for it
-by setting the [option port] to [const 0].
+Opens a connection channel to the specified [arg url].  The URL can
+either be an HTTP or an HTTPS URL.
+
+[para] Note that the network [arg driver] for the used protocol
+specified in the [arg url] must be loaded. For details, see
+[sectref {CONFIGURATION}].
 
 [para]
 The [arg options] can be any of:
@@ -209,7 +211,7 @@ or [arg secs.fraction], or as a number with a time unit.
 	[arg channel] \
 ]
 
-Read from the specified connection channel and return the received data.
+Reads from the specified connection channel and returns the received data.
 
 [para]
 When the option [option "-websocket"] is used, then the command
@@ -262,7 +264,7 @@ When a callback is defined for this channel, the dict contains as well the
 	[arg message] \
 ]
 
-returns a binary websocket frame based on the provided information
+Returns a binary websocket frame based on the provided information
 in the form of a Tcl byte array.
 When [option "-mask"] is specified, the data will be masked with
 random information. For the opcode [arg binary], the input is treated
@@ -278,7 +280,7 @@ multi-segment messages, where later segments have the opcode
 	[arg message] \	
 ]
 
-Write to the specified connection channel. The function returns
+Writes to the specified connection channel. The function returns
 the number of bytes sent, which might be less than the input length.
 
 [para] When the option [option "-buffered"] is used, then for partial
@@ -290,10 +292,18 @@ last argument). By using the buffered mode, the Tcl programmer does not
 have to care about sending the non-sent chunk again and to concatenate
 this with potentially more data from other write operations.
 
-
 [list_end]
 
+[section CONFIGURATION]
+
+The [cmd ns_connchan] comman uses the network driver configuration of
+NaviServer. Therefore, the used network driver for the protocol must by
+loaded via the NaviServer configuration file. When e.g. an outgoing
+HTTPS request should be made, but the site administrator does not want
+to listen on an HTTPS port, specify in the configuration of HTTPS the
+[term port] with value [const 0].
+
 [see_also ns_conn ns_chan ns_sockcallback ns_write ns_time nssock nsssl]
-[keywords "server built-in" channels socket driver reverseproxy websocket]
+[keywords "server built-in" channels socket driver "network driver" reverseproxy websocket]
 
 [manpage_end]

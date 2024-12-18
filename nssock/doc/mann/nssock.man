@@ -2,7 +2,7 @@
 
 [manpage_begin nssock n [vset version]]
 [moddesc   {NaviServer Modules}]
-[titledesc {Configuring HTTP socket communications}]
+[titledesc {Network driver for HTTP socket communications}]
 
 [description]
 
@@ -212,7 +212,7 @@ For discussion and examples see
 
 [see_also ns_log ns_write ns_http nsssl]
 
-[keywords module nssock \
+[keywords module nssock "network driver" \
 	performance tuning configuration \
 	SO_REUSEPORT TCP TCP_FASTOPEN \
 	nsssl driver prebind pagedir redirect]

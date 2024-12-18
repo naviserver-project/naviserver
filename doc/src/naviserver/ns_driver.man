@@ -73,7 +73,8 @@ number of errors.
 [list_end]
 
 [see_also ns_info ns_server ]
-[keywords "server built-in" address nssock socket driver configuration SO_REUSEPORT]
+[keywords "server built-in" address nssock socket driver \
+        "network driver" configuration SO_REUSEPORT]
 
 [manpage_end]
 
