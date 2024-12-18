@@ -7,9 +7,9 @@ namespace eval ::revproxy::ns_http {
 
     nsf::proc upstream {
         -url
-        {-timeout 15.0}
-        {-sendtimeout 0.0}
-        {-receivetimeout 0.5}
+        {-timeout 15.0s}
+        {-sendtimeout 0.5s}
+        {-receivetimeout 0.5s}
         {-validation_callback ""}
         {-exception_callback "::revproxy::exception"}
         {-backend_reply_callback ""}
@@ -116,7 +116,8 @@ namespace eval ::revproxy::ns_http {
             #return filter_return
 
         } on ok {r} {
-            set replyHeaders [dict get $r headers]
+            set replyHeaders  [dict get $r headers]
+            set status        [dict get $r status]
             set outputHeaders [ns_conn outputheaders]
             #ns_log notice "RESULT of query: $r"
             #ns_log notice "... reply headers  <$replyHeaders> <[ns_set array $replyHeaders]>"
@@ -125,7 +126,7 @@ namespace eval ::revproxy::ns_http {
                 {*}$backend_reply_callback -url $url -replyHeaders $replyHeaders -status $status
             }
 
-            foreach {key value} [ns_set array [dict get $r headers]] {
+            foreach {key value} [ns_set array $replyHeaders] {
                 if {[string tolower $key] ni {
                     connection date server
                     content-length content-encoding
@@ -138,8 +139,8 @@ namespace eval ::revproxy::ns_http {
             #
             # Pass the status code
             #
-            log notice "backend status code [dict get $r status]"
-            ns_headers [dict get $r status]
+            log notice "backend status code $status"
+            ns_headers $status
 
             #
             # Get the content either as a string or from a spool

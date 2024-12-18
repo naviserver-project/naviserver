@@ -359,6 +359,7 @@ ns_section ns/server/default/module/revproxy {
     #
     ns_param backendconnection $revproxy_backendconnection  ;# default ns_connchan
     #ns_param verbose 1
+    #ns_param streamingHtmlTimeout 2m
 
     #
     # Just for demonstration: use either request filter or request

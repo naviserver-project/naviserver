@@ -22,7 +22,7 @@ namespace eval ::revproxy {
     variable verbose
     variable filters
 
-    set version 0.20
+    set version 0.21
     set verbose [ns_config ns/server/[ns_info server]/module/revproxy verbose 0]
 
     #ns_logctl severity Debug(connchan) on
@@ -36,9 +36,9 @@ namespace eval ::revproxy {
     nsf::proc upstream {
         when
         -target
-        {-timeout 10.0}
-        {-sendtimeout 0.0}
-        {-receivetimeout 0.5}
+        {-timeout 10.0s}
+        {-sendtimeout 0.5s}
+        {-receivetimeout 0.5s}
         {-validation_callback ""}
         {-regsubs:0..n ""}
         {-exception_callback "::revproxy::exception"}
@@ -46,6 +46,12 @@ namespace eval ::revproxy {
         {-backend_reply_callback ""}
         {-backendconnection ""}
     } {
+        #
+        # @param when indicates, how the callback was invoked. When
+        #        the callback was registered via filter, typical
+        #        values are "preauth" or postauth. When registered as
+        #        a proc, the value will be "proc"
+        #
 
         if {$backendconnection eq ""} {
             set backendconnection \
@@ -58,7 +64,7 @@ namespace eval ::revproxy {
             set target [lindex $target [expr {$count % [llength $target]}]]
         }
         nsv_incr module:revproxy:target $target
-        log notice "===== upstream [ns_info server] ===== [ns_conn method] $target"
+        log notice "===== starting upstream server [ns_info server] using $backendconnection connection ===== [ns_conn method] $target"
 
         if {[ns_set iget [ns_conn headers] upgrade] eq "websocket"} {
             #
@@ -115,7 +121,7 @@ namespace eval ::revproxy {
                      -target $target \
                      -url $url \
                      -query [ns_conn query]]
-        log notice "===== submit via ${backendconnection}, [ns_conn method] $url"
+        #log notice "===== submit via ${backendconnection}, [ns_conn method] $url"
 
         #
         # When the callback decides, we have to cancel this request,
@@ -234,10 +240,17 @@ namespace eval ::revproxy {
     #
     # Get configured URLs
     #
-    set filters [ns_config ns/server/[ns_info server]/module/revproxy filters]
-    if {$filters ne ""} {
-        ns_log notice "==== revproxy registers filters\n$filters"
-        eval $filters
+    set register_callbacks [ns_config ns/server/[ns_info server]/module/revproxy register]
+    if {$register_callbacks eq ""} {
+        set register_callbacks [ns_config ns/server/[ns_info server]/module/revproxy filters]
+        if {$register_callbacks ne ""} {
+            ns_log warning "Using deprecated configuration parameter 'filters';" \
+                "use parameter 'register' instead"
+        }
+    }
+    if {$register_callbacks ne ""} {
+        ns_log notice "revproxy registers callbacks\n$register_callbacks"
+        eval $register_callbacks
     }
 
     ns_log notice "revproxy module version $version loaded for server '[ns_info server]'" \
