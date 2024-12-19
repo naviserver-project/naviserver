@@ -163,7 +163,7 @@ namespace eval ::nstest {
             binary scan $body "H*" binary
             lappend response [regexp -all -inline {..} $binary]
         }
-
+        ns_set cleanup
         return $response
     }
 
