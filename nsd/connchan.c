@@ -120,7 +120,7 @@ static ssize_t ConnChanReadBuffer(NsConnChan *connChanPtr, char *buffer, size_t 
 static NsConnChan *ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static Ns_ReturnCode SockCallbackRegister(NsConnChan *connChanPtr, const char *script,
+static Ns_ReturnCode SockCallbackRegister(NsConnChan *connChanPtr, Tcl_Obj *scriptObj,
                                           unsigned int when, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
@@ -734,18 +734,18 @@ ArgProc(Tcl_DString *dsPtr, const void *arg)
  */
 
 static Ns_ReturnCode
-SockCallbackRegister(NsConnChan *connChanPtr, const char *script,
+SockCallbackRegister(NsConnChan *connChanPtr, Tcl_Obj *scriptObj,
                      unsigned int when, const Ns_Time *timeoutPtr)
 {
     Callback     *cbPtr;
-    size_t        scriptLength;
+    TCL_SIZE_T    scriptLength;
     Ns_ReturnCode result;
-    const char   *p;
+    const char   *p, *scriptString;
 
     NS_NONNULL_ASSERT(connChanPtr != NULL);
-    NS_NONNULL_ASSERT(script != NULL);
+    NS_NONNULL_ASSERT(scriptObj != NULL);
 
-    scriptLength = strlen(script);
+    scriptString = Tcl_GetStringFromObj(scriptObj, &scriptLength);
 
     /*
      * If there is already a callback registered, free and cancel
@@ -754,13 +754,13 @@ SockCallbackRegister(NsConnChan *connChanPtr, const char *script,
      * callbacks registered for the associated socket.
      */
     if (connChanPtr->cbPtr != NULL) {
-        cbPtr = ns_realloc(connChanPtr->cbPtr, sizeof(Callback) + scriptLength);
+        cbPtr = ns_realloc(connChanPtr->cbPtr, sizeof(Callback) + (size_t)scriptLength);
 
     } else {
-        cbPtr = ns_malloc(sizeof(Callback) + scriptLength);
+        cbPtr = ns_malloc(sizeof(Callback) + (size_t)scriptLength);
     }
-    memcpy(cbPtr->script, script, scriptLength + 1u);
-    cbPtr->scriptLength = scriptLength;
+    memcpy(cbPtr->script, scriptString, (size_t)scriptLength + 1u);
+    cbPtr->scriptLength = (size_t)scriptLength;
 
     /*
      * Keep the length of the cmd name for introspection and debugging
@@ -1322,7 +1322,8 @@ ConnChanListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
     NsServer       *servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
     int             result, doBind = (int)NS_FALSE;
     unsigned short  port = 0u;
-    char           *driverName = NULL, *addr = (char*)NS_EMPTY_STRING, *script;
+    char           *driverName = NULL, *addr = (char*)NS_EMPTY_STRING;
+    Tcl_Obj        *scriptObj;
     Ns_ObjvSpec     lopts[] = {
         {"-driver",  Ns_ObjvString, &driverName, NULL},
         {"-server",  Ns_ObjvServer, &servPtr, NULL},
@@ -1332,7 +1333,7 @@ ConnChanListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
     Ns_ObjvSpec     largs[] = {
         {"address", Ns_ObjvString, &addr, NULL},
         {"port",    Ns_ObjvUShort, &port, NULL},
-        {"script",  Ns_ObjvString, &script, NULL},
+        {"script",  Ns_ObjvObj,    &scriptObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -1341,20 +1342,20 @@ ConnChanListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
 
     } else {
         ListenCallback *lcbPtr;
-        size_t          scriptLength;
+        TCL_SIZE_T      scriptLength;
+        char           *scriptString = Tcl_GetStringFromObj(scriptObj, &scriptLength);
         NS_SOCKET       sock;
 
         if (STREQ(addr, "*")) {
             addr = NULL;
         }
-        scriptLength = strlen(script);
-        lcbPtr = ns_malloc(sizeof(ListenCallback) + scriptLength);
+        lcbPtr = ns_malloc(sizeof(ListenCallback) + (size_t)scriptLength);
         if (unlikely(lcbPtr == NULL)) {
             return TCL_ERROR;
         }
 
         lcbPtr->server = servPtr->server;
-        memcpy(lcbPtr->script, script, scriptLength + 1u);
+        memcpy(lcbPtr->script, scriptString, (size_t)scriptLength + 1u);
         lcbPtr->driverName = ns_strcopy(driverName);
         sock = Ns_SockListenCallback(addr, port, SockListenCallback, doBind, lcbPtr);
 
@@ -1739,11 +1740,9 @@ static int
 ConnChanCallbackObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int      result = TCL_OK;
-    char    *name = (char*)NS_EMPTY_STRING,
-            *script = (char*)NS_EMPTY_STRING,
-            *whenString = (char*)NS_EMPTY_STRING;
+    char    *name = (char*)NS_EMPTY_STRING;
     Ns_Time *pollTimeoutPtr = NULL, *recvTimeoutPtr = NULL, *sendTimeoutPtr = NULL;
-
+    Tcl_Obj *whenObj, *scriptObj;
     Ns_ObjvSpec lopts[] = {
         {"-timeout",        Ns_ObjvTime, &pollTimeoutPtr, NULL},
         {"-receivetimeout", Ns_ObjvTime, &recvTimeoutPtr, NULL},
@@ -1751,9 +1750,9 @@ ConnChanCallbackObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
-        {"channel", Ns_ObjvString, &name, NULL},
-        {"command", Ns_ObjvString, &script, NULL},
-        {"when",    Ns_ObjvString, &whenString, NULL},
+        {"channel", Ns_ObjvString, &name,      NULL},
+        {"command", Ns_ObjvObj,    &scriptObj, NULL},
+        {"when",    Ns_ObjvObj,    &whenObj,   NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -1763,9 +1762,8 @@ ConnChanCallbackObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
         //const NsInterp *itPtr = clientData;
         NsServer       *servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
         NsConnChan     *connChanPtr = ConnChanGet(interp, servPtr, name);
-        size_t          whenStrlen = strlen(whenString);
-
-        assert(whenString != NULL);
+        TCL_SIZE_T      whenStrlen;
+        char           *whenString = Tcl_GetStringFromObj(whenObj, &whenStrlen);
 
         if (unlikely(connChanPtr == NULL)) {
             result = TCL_ERROR;
@@ -1823,7 +1821,7 @@ ConnChanCallbackObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
                  * connChanPtr->sockPtr and we have to pass the
                  * servPtr to ConnChanFree().
                  */
-                status = SockCallbackRegister(connChanPtr, script, when, pollTimeoutPtr);
+                status = SockCallbackRegister(connChanPtr, scriptObj, when, pollTimeoutPtr);
 
                 if (unlikely(status != NS_OK)) {
                     Ns_TclPrintfResult(interp, "could not register callback");

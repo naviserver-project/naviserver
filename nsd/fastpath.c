@@ -68,7 +68,8 @@ CheckStaticCompressedDelivery(
     const char *ext,
     const char *cmdName,
     const char *fileName,
-    const char *encoding
+    const char *encoding,
+    size_t encodingLength
 ) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6) NS_GNUC_NONNULL(7);
 
 
@@ -594,7 +595,8 @@ CheckStaticCompressedDelivery(
     const char *ext,
     const char *cmdName,
     const char *fileName,
-    const char *encoding
+    const char *encoding,
+    size_t      encodingLength
 ) {
     const char  *result = NULL;
     struct stat  gzStat;
@@ -642,7 +644,7 @@ CheckStaticCompressedDelivery(
              */
             connPtr->fileInfo = gzStat;
             result = compressedFileName;
-            Ns_ConnCondSetHeadersSz(conn, "content-encoding", 16, encoding, (TCL_SIZE_T)strlen(encoding));
+            Ns_ConnCondSetHeadersSz(conn, "content-encoding", 16, encoding, (TCL_SIZE_T)encodingLength);
         } else {
             Ns_Log(Warning, "gzip: the gzip file %s is older than the uncompressed file",
                    compressedFileName);
@@ -729,14 +731,14 @@ FastReturn(Ns_Conn *conn, int statusCode, const char *mimeType, const char *file
     if (useBrotli && (connPtr->flags & NS_CONN_BROTLIACCEPTED) != 0u) {
         compressedFileName = CheckStaticCompressedDelivery(conn, dsPtr, useBrotliRefresh,
                                                            ".br", "::ns_brotlifile",
-                                                           fileName, "br");
+                                                           fileName, "br", 2u);
     }
 
     if (compressedFileName == NULL && useGzip && (connPtr->flags & NS_CONN_ZIPACCEPTED) != 0u) {
         Tcl_DStringSetLength(dsPtr, 0);
         compressedFileName = CheckStaticCompressedDelivery(conn, dsPtr, useGzipRefresh,
                                                            ".gz", "::ns_gzipfile",
-                                                           fileName, "gzip");
+                                                           fileName, "gzip", 4u);
     }
 
     if (compressedFileName != NULL) {

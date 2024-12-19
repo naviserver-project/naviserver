@@ -2078,10 +2078,7 @@ LogToDString(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
     /*
      * Add the log message
      */
-
-    if (len == 0u) {
-        len = strlen(msg);
-    }
+    assert(len != 0u);
     if (nsconf.sanitize_logfiles > 0) {
         Ns_DStringAppendPrintable(dsPtr,
                                   nsconf.sanitize_logfiles == 2,
@@ -2252,7 +2249,7 @@ LogToTcl(const void *arg, Ns_LogSeverity severity, const Ns_Time *stamp,
         interp = Ns_TclAllocateInterp(cbPtr->server);
         if (interp == NULL) {
             (void)LogToFile(logfile, Error, stamp,
-                            "LogToTcl: can't get interpreter", 0u);
+                            "LogToTcl: can't get interpreter", 31u);
             status = NS_ERROR;
         } else {
 

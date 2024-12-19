@@ -35,8 +35,9 @@ static const char *GetQvalue(const char *str, int *lenPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static const char *GetEncodingFormat(const char *encodingString,
-                                     const char *encodingFormat, double *qValue)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+                                     const char *encodingFormat, size_t encodingFormatLength,
+                                     double *qValue)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4);
 
 static void RequestCleanupMembers(Ns_Request *request)
     NS_GNUC_NONNULL(1);
@@ -941,7 +942,7 @@ GetQvalue(const char *str, int *lenPtr) {
  *----------------------------------------------------------------------
  */
 static const char *
-GetEncodingFormat(const char *encodingString, const char *encodingFormat, double *qValue) {
+GetEncodingFormat(const char *encodingString, const char *encodingFormat, size_t encodingFormatLength, double *qValue) {
     const char *encodingStr;
 
     NS_NONNULL_ASSERT(encodingString != NULL);
@@ -952,7 +953,7 @@ GetEncodingFormat(const char *encodingString, const char *encodingFormat, double
 
     if (encodingStr != NULL) {
         int         len = 0;
-        const char *qValueString = GetQvalue(encodingStr + strlen(encodingFormat), &len);
+        const char *qValueString = GetQvalue(encodingStr + encodingFormatLength, &len);
 
         if (qValueString != NULL) {
             *qValue = strtod(qValueString, NULL);
@@ -1053,10 +1054,10 @@ NsParseAcceptEncoding(double version, const char *hdr, bool *gzipAcceptPtr, bool
     NS_NONNULL_ASSERT(gzipAcceptPtr != NULL);
     NS_NONNULL_ASSERT(brotliAcceptPtr != NULL);
 
-    gzipFormat    = GetEncodingFormat(hdr, "gzip", &gzipQvalue);
-    brotliFormat  = GetEncodingFormat(hdr, "br", &brotliQvalue);
-    starFormat    = GetEncodingFormat(hdr, "*", &starQvalue);
-    (void)GetEncodingFormat(hdr, "identity", &identityQvalue);
+    gzipFormat    = GetEncodingFormat(hdr, "gzip", 4u, &gzipQvalue);
+    brotliFormat  = GetEncodingFormat(hdr, "br", 2u, &brotliQvalue);
+    starFormat    = GetEncodingFormat(hdr, "*", 1u, &starQvalue);
+    (void)GetEncodingFormat(hdr, "identity", 8u, &identityQvalue);
 
     //fprintf(stderr, "hdr line <%s> gzipFormat <%s> brotliFormat <%s>\n", hdr, gzipFormat, brotliFormat);
     if ((gzipFormat != NULL) || (brotliFormat != NULL)) {

@@ -643,6 +643,7 @@ Ns_UrlEncodingWarnUnencoded(const char *msg, const char *chars)
 {
     static bool initialized = NS_FALSE;
     static bool mustBeEncoded[256];
+    size_t charLength;
     size_t i;
 
     NS_NONNULL_ASSERT(msg != NULL);
@@ -682,7 +683,8 @@ Ns_UrlEncodingWarnUnencoded(const char *msg, const char *chars)
         Ns_MasterUnlock();
     }
 
-    for (i = 0u; i < strlen(chars); i++) {
+    charLength = strlen(chars);
+    for (i = 0u; i < charLength; i++) {
         if (mustBeEncoded[UCHAR(chars[i])]) {
             Ns_Log(Warning, "%s value '%s': byte with binary value 0x%.2x must be URL-encoded",
                    msg, chars, UCHAR(chars[i]));

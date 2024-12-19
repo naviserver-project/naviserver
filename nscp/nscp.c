@@ -385,9 +385,9 @@ EvalThread(void *arg)
     Tcl_DString ds, unameDS;
     char        ipString[NS_IPADDR_SIZE];
     int         ncmd, stop;
-    size_t      len;
+    TCL_SIZE_T  len;
     Sess       *sessPtr = arg;
-    const char *res, *server = sessPtr->modPtr->server;
+    const char *server = sessPtr->modPtr->server;
 
     /*
      * Initialize the thread and login the user.
@@ -423,7 +423,8 @@ EvalThread(void *arg)
 
     ncmd = 0;
     while (stop == 0) {
-        char buf[64];
+        const char *resultString;
+        char        buf[64];
 
         Tcl_DStringSetLength(&ds, 0);
         ++ncmd;
@@ -453,15 +454,14 @@ retry:
             (void) Ns_TclLogErrorInfo(interp, "\n(context: nscp)");
         }
         Tcl_AppendResult(interp, "\r\n", (char *)0L);
-        res = Tcl_GetStringResult(interp);
-        len = strlen(res);
-        while (len > 0u) {
-            ssize_t sent = ns_send(sessPtr->sock, res, len, 0);
+        resultString = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &len);
+        while (len > 0) {
+            ssize_t sent = ns_send(sessPtr->sock, resultString, (size_t)len, 0);
             if (sent <= 0) {
                 goto done;
             }
-            len -= (size_t)sent;
-            res += sent;
+            len -= sent;
+            resultString += sent;
         }
 
         if (sessPtr->modPtr->commandLogging) {

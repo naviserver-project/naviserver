@@ -359,19 +359,19 @@ int
 NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int               result = TCL_OK, lineWidth = 80, offset = 0;
-    char             *textString = (char *)NS_EMPTY_STRING, *prefixString = NULL;
+    Tcl_Obj          *textObj, *prefixObj = NULL;
     Ns_ObjvValueRange widthRange = {5, INT_MAX};
     Ns_ObjvValueRange offsetRange = {0, INT_MAX};
     Ns_ObjvSpec       opts[] = {
-        {"-width",  Ns_ObjvInt,     &lineWidth,    &widthRange},
-        {"-offset", Ns_ObjvInt,     &offset,       &offsetRange},
-        {"-prefix", Ns_ObjvString,  &prefixString, NULL},
-        {"--",      Ns_ObjvBreak,    NULL,         NULL},
+        {"-width",  Ns_ObjvInt,     &lineWidth,  &widthRange},
+        {"-offset", Ns_ObjvInt,     &offset,     &offsetRange},
+        {"-prefix", Ns_ObjvObj,     &prefixObj,  NULL},
+        {"--",      Ns_ObjvBreak,    NULL,       NULL},
         {NULL, NULL, NULL, NULL}
     };
 
     Ns_ObjvSpec  args[] = {
-        {"text", Ns_ObjvString,  &textString, NULL},
+        {"text", Ns_ObjvObj, &textObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -380,12 +380,13 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
 
     } else {
         Tcl_DString ds, *dsPtr = &ds;
-        size_t      k, inputPos, outputPos, textLength, prefixLength, currentWidth, nrPrefixes, nrNewLines = 1u;
+        size_t      k, inputPos, outputPos, currentWidth, nrPrefixes, nrNewLines = 1u;
         bool        done = NS_FALSE;
         const char *p;
+        TCL_SIZE_T  textLength, prefixLength = 0;
+        const char *textString = Tcl_GetStringFromObj(textObj, &textLength);
+        const char *prefixString = (prefixObj == NULL ? NULL : Tcl_GetStringFromObj(prefixObj, &prefixLength));
 
-        textLength   = strlen(textString);
-        prefixLength = (prefixString == NULL ? 0u : strlen(prefixString));
         Tcl_DStringInit(dsPtr);
 
         p = textString;
@@ -395,14 +396,14 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
         }
 
         inputPos = 0u;
-        if (offset == 0 && prefixLength > 0u) {
+        if (offset == 0 && prefixLength > 0) {
             /*
              * When we have an offset (in an incremental operation) adding a
              * prefix automatically makes little sense. When needed, the
              * prefix could be easily done on the client side.
              */
             memcpy(dsPtr->string, prefixString, prefixLength);
-            outputPos = prefixLength;
+            outputPos = (size_t)prefixLength;
             nrPrefixes = nrNewLines;
         } else {
             outputPos = 0u;
@@ -413,9 +414,9 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
          * Set the length of the Tcl_DString to the same size as the input
          * string plus for every linebreak+1 the prefixString.
          */
-        Tcl_DStringSetLength(dsPtr, (TCL_SIZE_T)(textLength + nrPrefixes * prefixLength));
+        Tcl_DStringSetLength(dsPtr, textLength + (TCL_SIZE_T)nrPrefixes * prefixLength);
 
-        while (inputPos < textLength && !done) {
+        while (inputPos < (size_t)textLength && !done) {
             size_t processedPos;
 
             /*
@@ -424,7 +425,7 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
             processedPos = inputPos;
             for (currentWidth = (size_t)offset; (int)currentWidth < lineWidth; currentWidth++)  {
 
-                if ( inputPos < textLength) {
+                if ( inputPos < (size_t)textLength) {
                     dsPtr->string[outputPos] = textString[inputPos];
 
                     /*
@@ -435,9 +436,9 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
                      */
                     outputPos++;
                     if ( textString[inputPos] == '\n') {
-                        if (prefixLength > 0u) {
+                        if (prefixLength > 0) {
                             memcpy(&dsPtr->string[outputPos], prefixString, prefixLength);
-                            outputPos += prefixLength;
+                            outputPos += (size_t)prefixLength;
                         }
                         currentWidth = 0u;
                         processedPos = inputPos;
@@ -467,7 +468,7 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
                          * prefix string; we have to make sure that the dsPtr
                          * can held the additional prefix as well.
                          */
-                        InsertFreshNewline(dsPtr, prefixString, prefixLength, &outputPos);
+                        InsertFreshNewline(dsPtr, prefixString, (size_t)prefixLength, &outputPos);
                         /*
                          * Reset the inputPositon
                          */
@@ -483,9 +484,9 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
                      * find a space, and continue as usual.
                      */
                     outputPos = origOutputPos;
-                    for (k = inputPos; k < textLength; k++) {
+                    for (k = inputPos; k < (size_t)textLength; k++) {
                         if ( CHARTYPE(space, textString[k]) != 0) {
-                            InsertFreshNewline(dsPtr, prefixString, prefixLength, &outputPos);
+                            InsertFreshNewline(dsPtr, prefixString, (size_t)prefixLength, &outputPos);
                             inputPos++;
                             break;
                         } else {
@@ -527,13 +528,13 @@ int
 NsTclTrimObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int               result = TCL_OK, substInt = 0;
-    Tcl_Obj          *textObj;
-    char             *delimiterString = NULL, *prefixString = NULL;
+    Tcl_Obj          *textObj, *prefixObj = NULL;
+    char             *delimiterString = NULL;
     Ns_ObjvSpec       opts[] = {
-        {"-subst",     Ns_ObjvBool,   &substInt,     INT2PTR(NS_TRUE)},
+        {"-subst",     Ns_ObjvBool,   &substInt,        INT2PTR(NS_TRUE)},
         {"-delimiter", Ns_ObjvString, &delimiterString, NULL},
-        {"-prefix",    Ns_ObjvString, &prefixString, NULL},
-        {"--",         Ns_ObjvBreak,  NULL,         NULL},
+        {"-prefix",    Ns_ObjvObj,    &prefixObj,       NULL},
+        {"--",         Ns_ObjvBreak,  NULL,             NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -545,7 +546,7 @@ NsTclTrimObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
-    } else if (delimiterString != NULL && prefixString != NULL) {
+    } else if (delimiterString != NULL && prefixObj != NULL) {
         Ns_TclPrintfResult(interp, "invalid arguments: either -prefix or -delimiter can be specified");
         result = TCL_ERROR;
 
@@ -567,15 +568,16 @@ NsTclTrimObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T ob
         p = Tcl_GetStringFromObj(textObj, &textLength);
         endOfString = p + textLength;
 
-        if (prefixString != NULL) {
-            size_t prefixLength = strlen(prefixString);
+        if (prefixObj != NULL) {
+            TCL_SIZE_T  prefixLength;
+            const char *prefixString = Tcl_GetStringFromObj(prefixObj, &prefixLength);
 
             while(likely(p < endOfString)) {
                 const char *eolString;
                 char       *j;
                 ptrdiff_t   length;
 
-                if (strncmp(p, prefixString, prefixLength) == 0) {
+                if (strncmp(p, prefixString, (size_t)prefixLength) == 0) {
                     j = p + prefixLength;
                 } else {
                     j = p;
@@ -945,10 +947,11 @@ int
 NsTclCryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int  result = TCL_OK;
-    char       *keyString, *saltString;
+    char       *keyString;
+    Tcl_Obj    *saltObj;
     Ns_ObjvSpec args[] = {
         {"key",  Ns_ObjvString, &keyString, NULL},
-        {"salt", Ns_ObjvString, &saltString, NULL},
+        {"salt", Ns_ObjvObj,    &saltObj,   NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -956,7 +959,10 @@ NsTclCryptObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T o
         result = TCL_ERROR;
 
     } else {
-        if (strlen(saltString) != 2 ) {
+        TCL_SIZE_T  saltLength;
+        const char *saltString = Tcl_GetStringFromObj(saltObj, &saltLength);
+
+        if (saltLength != 2 ) {
            Ns_TclPrintfResult(interp, "salt string must be 2 characters long");
            result = TCL_ERROR;
 

@@ -799,10 +799,10 @@ NsTclSocketPairObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
 int
 NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    char           *script, *sockId, *whenString = (char*)NS_EMPTY_STRING;
+    char           *sockId, *whenString = (char*)NS_EMPTY_STRING;
     NS_SOCKET       sock;
     int             result = TCL_OK;
-    size_t          scriptLength;
+    Tcl_Obj        *scriptObj;
     Ns_Time        *timeoutPtr = NULL;
     unsigned int    when = 0u;
     Callback       *cbPtr;
@@ -810,7 +810,7 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
 
     Ns_ObjvSpec args[] = {
         {"sockId",      Ns_ObjvString,  &sockId,       NULL},
-        {"command",     Ns_ObjvString,  &script,       NULL},
+        {"command",     Ns_ObjvObj,     &scriptObj,    NULL},
         {"when",        Ns_ObjvString,  &whenString,   NULL},
         {"?timeout",    Ns_ObjvTime,    &timeoutPtr,   NULL},
         {NULL, NULL, NULL, NULL}
@@ -851,6 +851,9 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
 
     }
     if (result == TCL_OK) {
+        TCL_SIZE_T  scriptLength;
+        const char *scriptString = Tcl_GetStringFromObj(scriptObj, &scriptLength);
+
         if (timeoutPtr != NULL) {
             /*
              * timeout was specified, set is just in case the timeout was not 0:0
@@ -869,13 +872,12 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
          */
 
         sock = ns_sockdup(sock);
-        scriptLength = strlen(script);
 
         cbPtr = ns_malloc(sizeof(Callback) + (size_t)scriptLength);
         cbPtr->server = (itPtr->servPtr != NULL ? itPtr->servPtr->server : NULL);
         cbPtr->chan = NULL;
         cbPtr->when = when;
-        memcpy(cbPtr->script, script, (size_t)scriptLength + 1u);
+        memcpy(cbPtr->script, scriptString, (size_t)scriptLength + 1u);
 
         if (Ns_SockCallbackEx(sock, NsTclSockProc, cbPtr,
                               when | (unsigned int)NS_SOCK_EXIT,
@@ -912,13 +914,14 @@ NsTclSockCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T ob
 int
 NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    char           *addr =  (char*)NS_EMPTY_STRING, *script = (char*)NS_EMPTY_STRING;
+    char           *addr =  (char*)NS_EMPTY_STRING;
+    Tcl_Obj        *scriptObj;
     unsigned short  port = 0u;
     int             result = TCL_OK;
     Ns_ObjvSpec     args[] = {
-        {"address", Ns_ObjvString, &addr, NULL},
-        {"port",    Ns_ObjvUShort, &port, NULL},
-        {"script",  Ns_ObjvString, &script, NULL},
+        {"address", Ns_ObjvString, &addr,      NULL},
+        {"port",    Ns_ObjvUShort, &port,      NULL},
+        {"script",  Ns_ObjvObj,    &scriptObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -928,22 +931,22 @@ NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZ
     } else {
         const NsInterp *itPtr = clientData;
         ListenCallback *lcbPtr;
-        size_t          scriptLength;
+        TCL_SIZE_T      scriptLength;
+        const char     *scriptString = Tcl_GetStringFromObj(scriptObj, &scriptLength);
 
         assert(script != NULL);
 
         if (STREQ(addr, "*")) {
             addr = (char *)NS_IP_UNSPECIFIED;
         }
-        scriptLength = strlen(script);
-        lcbPtr = ns_malloc(sizeof(ListenCallback) + scriptLength);
+        lcbPtr = ns_malloc(sizeof(ListenCallback) + (size_t)scriptLength);
         if (unlikely(lcbPtr == NULL)) {
             result = TCL_ERROR;
         } else {
             Ns_ReturnCode  status;
 
             lcbPtr->server = (itPtr->servPtr != NULL ? itPtr->servPtr->server : NULL);
-            memcpy(lcbPtr->script, script, scriptLength + 1u);
+            memcpy(lcbPtr->script, scriptString, (size_t)scriptLength + 1u);
             status = Ns_SockListenCallback(addr, port, SockListenCallback, NS_FALSE, lcbPtr);
             if (status == NS_INVALID_SOCKET) {
                 Ns_TclPrintfResult(interp, "could not register callback");

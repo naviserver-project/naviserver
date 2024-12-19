@@ -306,10 +306,10 @@ static Err    PopProxy(Pool *poolPtr, Proxy **proxyPtrPtr, int nwant, const Ns_T
 static void   PushProxy(Proxy *proxyPtr) NS_GNUC_NONNULL(1);
 static Proxy* GetProxy(const char *proxyId, InterpData *idataPtr) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static int    Eval(Tcl_Interp *interp, Proxy *proxyPtr, const char *script, const Ns_Time *timeoutPtr)
+static int    Eval(Tcl_Interp *interp, Proxy *proxyPtr, const char *scriptString, TCL_SIZE_T scriptLength, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static Err    Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script)
+static Err    Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *scriptString, TCL_SIZE_T scriptLength)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 static Err    Wait(Tcl_Interp *interp, Proxy *proxyPtr, const Ns_Time *timeoutPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
@@ -880,7 +880,7 @@ Ns_ProxyPut(PROXY handle)
 
 int Ns_ProxyEval(Tcl_Interp *interp, PROXY handle, const char *script, const Ns_Time *timeoutPtr)
 {
-    return Eval(interp, (Proxy *)handle, script, timeoutPtr);
+    return Eval(interp, (Proxy *)handle, script, TCL_INDEX_NONE, timeoutPtr);
 }
 
 /*
@@ -1020,7 +1020,7 @@ SetExpire(Worker *workerPtr, const Ns_Time *timePtr)
  */
 
 static int
-Eval(Tcl_Interp *interp, Proxy *proxyPtr, const char *script, const Ns_Time *timeoutPtr)
+Eval(Tcl_Interp *interp, Proxy *proxyPtr, const char *scriptString, TCL_SIZE_T scriptLength, const Ns_Time *timeoutPtr)
 {
     Err     err;
     int     status = TCL_ERROR;
@@ -1031,7 +1031,7 @@ Eval(Tcl_Interp *interp, Proxy *proxyPtr, const char *script, const Ns_Time *tim
 
     Ns_GetTime(&startTime);
 
-    err = Send(interp, proxyPtr, script);
+    err = Send(interp, proxyPtr, scriptString, scriptLength);
     if (err == ENone) {
         err = Wait(interp, proxyPtr, timeoutPtr);
         if (err == ENone) {
@@ -1040,17 +1040,18 @@ Eval(Tcl_Interp *interp, Proxy *proxyPtr, const char *script, const Ns_Time *tim
         /*
          * Don't count check-proxy calls (script == NULL)
          */
-        if (script != NULL) {
+        if (scriptString != NULL) {
             Ns_Time endTime, diffTime;
 
             Ns_GetTime(&endTime);
             (void)Ns_DiffTime(&endTime, &startTime, &diffTime);
             if (Ns_DiffTime(&proxyPtr->conf.logminduration, &diffTime, NULL) < 1) {
                 Ns_Log(Notice, "nsproxy %s duration " NS_TIME_FMT " secs: '%s'",
-                       proxyPtr->poolPtr->name, (int64_t)diffTime.sec, diffTime.usec, script);
+                       proxyPtr->poolPtr->name, (int64_t)diffTime.sec, diffTime.usec,
+                       scriptString);
             }
 
-            Ns_Log(Debug, "Eval calls GetStats <%s>", script);
+            Ns_Log(Debug, "Eval calls GetStats <%s>", scriptString);
             GetStats(proxyPtr);
         }
     }
@@ -1104,7 +1105,7 @@ GetStats(const Proxy *proxyPtr)
  */
 
 static Err
-Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script)
+Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *scriptString, TCL_SIZE_T scriptLength)
 {
     Err err = ENone;
     Req req;
@@ -1117,7 +1118,7 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script)
     } else if (proxyPtr->state != Idle) {
         err = EBusy;
     } else {
-        if (script != NULL) {
+        if (scriptString != NULL) {
             proxyPtr->numruns++;
         }
         if (proxyPtr->conf.maxruns > 0
@@ -1128,14 +1129,13 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script)
             err = CreateWorker(interp, proxyPtr);
         }
         if (err == ENone) {
-            TCL_SIZE_T len = script == NULL ? 0 : (TCL_SIZE_T)strlen(script);
 
-            req.len   = htonl((uint32_t)len);
+            req.len   = htonl((uint32_t)scriptLength);
             req.major = htons(MAJOR_VERSION);
             req.minor = htons(MINOR_VERSION);
             Tcl_DStringSetLength(&proxyPtr->in, 0);
             Tcl_DStringAppend(&proxyPtr->in, (char *) &req, sizeof(req));
-            Tcl_DStringAppend(&proxyPtr->in, script, len);
+            Tcl_DStringAppend(&proxyPtr->in, scriptString, scriptLength);
             proxyPtr->state = Busy;
 
             /*
@@ -1150,10 +1150,10 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script)
             proxyPtr->poolPtr->runPtr = proxyPtr;
             Ns_MutexUnlock(&proxyPtr->poolPtr->lock);
 
-            if (script != NULL) {
+            if (scriptString != NULL) {
                 Ns_Log(Ns_LogNsProxyDebug, "proxy pool %s id worker %s %ld send: %s",
                        proxyPtr->poolPtr->name, proxyPtr->id,
-                       (long)proxyPtr->workerPtr->pid, script);
+                       (long)proxyPtr->workerPtr->pid, scriptString);
             }
 
             if (SendBuf(proxyPtr->workerPtr, &proxyPtr->conf.tsend,
@@ -1165,7 +1165,7 @@ Send(Tcl_Interp *interp, Proxy *proxyPtr, const char *script)
 
     if (err != ENone) {
         Ns_TclPrintfResult(interp, "could not send script \"%s\" to proxy \"%s\": %s",
-                           script == NULL ? NS_EMPTY_STRING : script,
+                           scriptString == NULL ? NS_EMPTY_STRING : scriptString,
                            proxyPtr->id, errMsg[err]);
         ProxyError(interp, err);
     }
@@ -2049,7 +2049,7 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
             } else if (opt == PPutIdx || opt == PReleaseIdx) {
                 result = ReleaseProxy(interp, proxyPtr);
             } else /* opt == PPingIdx */ {
-                result = Eval(interp, proxyPtr, NULL, NULL);
+                result = Eval(interp, proxyPtr, NULL, 0, NULL);
             }
         }
         break;
@@ -2082,7 +2082,10 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
                 Ns_TclPrintfResult(interp, "no such proxyId: %s", proxyId);
                 result = TCL_ERROR;
             } else {
-                err = Send(interp, proxyPtr, Tcl_GetString(objv[3]));
+                TCL_SIZE_T  scriptLength;
+                const char *scriptString= Tcl_GetStringFromObj(objv[3], &scriptLength);
+
+                err = Send(interp, proxyPtr, scriptString, scriptLength);
                 result = (err == ENone) ? TCL_OK : TCL_ERROR;
             }
         }
@@ -2146,7 +2149,10 @@ ProxyObjCmd(ClientData data, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const
                     result = TCL_ERROR;
             }
             if (result == TCL_OK) {
-                result = Eval(interp, proxyPtr, Tcl_GetString(objv[3]), timeoutPtr);
+                TCL_SIZE_T  scriptLength;
+                const char *scriptString = Tcl_GetStringFromObj(objv[3], &scriptLength);
+
+                result = Eval(interp, proxyPtr, scriptString, scriptLength, timeoutPtr);
             }
         }
         break;
@@ -3069,7 +3075,7 @@ CheckProxy(Tcl_Interp *interp, Proxy *proxyPtr)
     NS_NONNULL_ASSERT(proxyPtr != NULL);
 
     if ((proxyPtr->workerPtr != NULL)
-        && (Eval(interp, proxyPtr, NULL, NULL) != TCL_OK)
+        && (Eval(interp, proxyPtr, NULL, 0, NULL) != TCL_OK)
         ) {
         CloseProxy(proxyPtr);
         Tcl_ResetResult(interp);
@@ -3123,11 +3129,11 @@ CreateWorker(Tcl_Interp *interp, Proxy *proxyPtr)
     if (proxyPtr->workerPtr == NULL) {
         err = EExec;
     } else if (init != 0
-               && (Eval(interp, proxyPtr, Tcl_DStringValue(&ds), NULL) != TCL_OK)
+               && (Eval(interp, proxyPtr, ds.string, ds.length, NULL) != TCL_OK)
                ) {
         CloseProxy(proxyPtr);
         err = EInit;
-    } else if (Eval(interp, proxyPtr, NULL, NULL) != TCL_OK) {
+    } else if (Eval(interp, proxyPtr, NULL, 0, NULL) != TCL_OK) {
         CloseProxy(proxyPtr);
         err = EInit;
     } else {
@@ -3777,7 +3783,7 @@ ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr)
         }
         Ns_MutexUnlock(&proxyPtr->poolPtr->lock);
         if (reinit != 0) {
-            result = Eval(interp, proxyPtr, Tcl_DStringValue(&ds), NULL);
+            result = Eval(interp, proxyPtr, ds.string, ds.length, NULL);
         }
         Tcl_DStringFree(&ds);
 
@@ -3831,12 +3837,12 @@ ReleaseProxy(Tcl_Interp *interp, Proxy *proxyPtr)
 static int
 RunProxyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    char       *scriptString;
-    int         result;
-    Ns_Time          *timeoutPtr = NULL;
+    int        result;
+    Tcl_Obj   *scriptObj;
+    Ns_Time    *timeoutPtr = NULL;
     Ns_ObjvSpec args[] = {
-        {"script",    Ns_ObjvString, &scriptString, NULL},
-        {"?timeout",  Ns_ObjvTime,   &timeoutPtr,   NULL},
+        {"script",    Ns_ObjvObj,  &scriptObj, NULL},
+        {"?timeout",  Ns_ObjvTime, &timeoutPtr,   NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -3845,8 +3851,10 @@ RunProxyObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
 
     } else {
         Proxy *proxyPtr = (Proxy *)clientData;
+        TCL_SIZE_T  scriptLength;
+        const char *scriptString = Tcl_GetStringFromObj(scriptObj, &scriptLength);
 
-        result = Eval(interp, proxyPtr, scriptString, timeoutPtr);
+        result = Eval(interp, proxyPtr, scriptString, scriptLength, timeoutPtr);
     }
     return result;
 }

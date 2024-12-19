@@ -52,8 +52,8 @@ static char *NextBoundary(const Tcl_DString *boundaryDsPtr, char *s, const char 
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_PURE;
 #endif
 
-static bool GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePtr, char *uPtr)
-    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5);
+static bool GetValue(const char *hdr, const char *att, size_t attLength, const char **vsPtr, const char **vePtr, char *uPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(5) NS_GNUC_NONNULL(6);
 
 
 
@@ -670,7 +670,7 @@ ParseMultipartEntry(Conn *connPtr, Tcl_Encoding valueEncoding, const char *start
      */
 
     disp = Ns_SetGet(set, "content-disposition");
-    if (disp != NULL && GetValue(disp, "name=", &ks, &ke, &unescape) == NS_TRUE) {
+    if (disp != NULL && GetValue(disp, "name=", 5u, &ks, &ke, &unescape) == NS_TRUE) {
         const char *key = Ext2utf(&kds, ks, (size_t)(ke - ks), encoding, unescape);
         const char *value, *fs = NULL, *fe = NULL;
 
@@ -680,7 +680,7 @@ ParseMultipartEntry(Conn *connPtr, Tcl_Encoding valueEncoding, const char *start
         }
         Ns_Log(Debug, "ParseMultipartEntry disp '%s'", disp);
 
-        if (GetValue(disp, "filename=", &fs, &fe, &unescape) == NS_FALSE) {
+        if (GetValue(disp, "filename=", 9u, &fs, &fe, &unescape) == NS_FALSE) {
             /*
              * Plain (non-file) entry.
              */
@@ -883,7 +883,7 @@ NextBoundary(const Tcl_DString *boundaryDsPtr, char *s, const char *e)
  */
 
 static bool
-GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePtr, char *uPtr)
+GetValue(const char *hdr, const char *att, size_t attLength, const char **vsPtr, const char **vePtr, char *uPtr)
 {
     const char *s;
     bool        success = NS_TRUE;
@@ -900,7 +900,7 @@ GetValue(const char *hdr, const char *att, const char **vsPtr, const char **vePt
     } else {
         const char *e;
 
-        s += strlen(att);
+        s += attLength;
         e = s;
         if (*s != '"' && *s != '\'') {
             /*

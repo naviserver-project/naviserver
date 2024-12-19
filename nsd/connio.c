@@ -52,7 +52,7 @@ static bool CheckKeep(const Conn *connPtr)
 static int CheckCompress(const Conn *connPtr, const struct iovec *bufs, int nbufs, unsigned int ioflags)
     NS_GNUC_NONNULL(1);
 
-static bool HdrEq(const Ns_Set *set, const char *name, const char *value)
+static bool HdrEq(const Ns_Set *set, const char *name, const char *value, size_t valueLength)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 
@@ -1271,7 +1271,7 @@ Ns_CompleteHeaders(Ns_Conn *conn, size_t dataLength,
                 && (conn->request.version > 1.0)
                 && (connPtr->keep != 0)
                 && (HdrEq(connPtr->outputheaders, "content-type",
-                          "multipart/byteranges") == NS_FALSE)) {
+                          "multipart/byteranges", 20 ) == NS_FALSE)) {
                 conn->flags |= NS_CONN_CHUNK;
             }
 
@@ -1348,9 +1348,9 @@ CheckKeep(const Conn *connPtr)
                  * HTTP 1.0/1.1 keep-alive header checks.
                  */
                 if ((   (connPtr->request.version == 1.0)
-                        && (HdrEq(connPtr->headers, "connection", "keep-alive") == NS_TRUE) )
+                        && (HdrEq(connPtr->headers, "connection", "keep-alive", 10) == NS_TRUE) )
                     ||  (   (connPtr->request.version > 1.0)
-                            && (HdrEq(connPtr->headers, "connection", "close") == NS_FALSE) )
+                            && (HdrEq(connPtr->headers, "connection", "close", 5) == NS_FALSE) )
                     ) {
 
                     /*
@@ -1390,7 +1390,7 @@ CheckKeep(const Conn *connPtr)
                      */
                     if (((connPtr->flags & NS_CONN_CHUNK) != 0u)
                         || (Ns_SetIGet(connPtr->outputheaders, "content-length") != NULL)
-                        || (HdrEq(connPtr->outputheaders, "content-type", "multipart/byteranges") == NS_TRUE)) {
+                        || (HdrEq(connPtr->outputheaders, "content-type", "multipart/byteranges", 20) == NS_TRUE)) {
 
                         result = NS_TRUE;
                         break;
@@ -1413,7 +1413,8 @@ CheckKeep(const Conn *connPtr)
  * HdrEq --
  *
  *      Test if given set contains a key which matches given value.
- *      Value is matched at the beginning of the header value only.
+ *      Value is matched at the beginning of the header value string
+ *      only. The comparison of the value is case-insensitive.
  *
  * Results:
  *      NS_TRUE if there is a match, NS_FALSE otherwise.
@@ -1425,7 +1426,7 @@ CheckKeep(const Conn *connPtr)
  */
 
 static bool
-HdrEq(const Ns_Set *set, const char *name, const char *value)
+HdrEq(const Ns_Set *set, const char *name, const char *value, size_t valueLength)
 {
     const char *hdrvalue;
 
@@ -1435,7 +1436,7 @@ HdrEq(const Ns_Set *set, const char *name, const char *value)
 
     hdrvalue = Ns_SetIGet(set, name);
 
-    return ((hdrvalue != NULL) && (strncasecmp(hdrvalue, value, strlen(value)) == 0));
+    return ((hdrvalue != NULL) && (strncasecmp(hdrvalue, value, valueLength) == 0));
 }
 
 /*
