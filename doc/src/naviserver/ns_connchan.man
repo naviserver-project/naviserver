@@ -296,7 +296,7 @@ this with potentially more data from other write operations.
 
 [section CONFIGURATION]
 
-The [cmd ns_connchan] comman uses the network driver configuration of
+The [cmd ns_connchan] command uses the network driver configuration of
 NaviServer. Therefore, the used network driver for the protocol must by
 loaded via the NaviServer configuration file. When e.g. an outgoing
 HTTPS request should be made, but the site administrator does not want
