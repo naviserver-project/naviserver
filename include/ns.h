@@ -2865,7 +2865,7 @@ Ns_SlsGet(const Ns_Sls *slsPtr, Ns_Sock *sock)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_PURE;
 
 NS_EXTERN void
-Ns_SlsSetKeyed(Ns_Sock *sock, const char *key, const char *value)
+Ns_SlsSetKeyed(Ns_Sock *sock, const char *key, Tcl_Obj *valueObj)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 NS_EXTERN const char *

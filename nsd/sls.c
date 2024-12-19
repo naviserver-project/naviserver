@@ -167,13 +167,14 @@ Ns_SlsGet(const Ns_Sls *slsPtr, Ns_Sock *sock)
  */
 
 void
-Ns_SlsSetKeyed(Ns_Sock *sock, const char *key, const char *value)
+Ns_SlsSetKeyed(Ns_Sock *sock, const char *key, Tcl_Obj *valueObj)
 {
     Tcl_HashTable *tblPtr;
     Tcl_HashEntry *hPtr;
     char          *old, *new;
-    size_t        len;
     int           created;
+    TCL_SIZE_T    valueLength;
+    const char   *valueString = Tcl_GetStringFromObj(valueObj, &valueLength);
 
     tblPtr = Ns_SlsGet(&kslot, sock);
     if (tblPtr == NULL) {
@@ -182,10 +183,9 @@ Ns_SlsSetKeyed(Ns_Sock *sock, const char *key, const char *value)
         Ns_SlsSet(&kslot, sock, tblPtr);
     }
     hPtr = Tcl_CreateHashEntry(tblPtr, key, &created);
-    len = strlen(value);
     old = Tcl_GetHashValue(hPtr);
-    new = ns_realloc(old, len + 1u);
-    memcpy(new, value, len + 1u);
+    new = ns_realloc(old, (size_t)valueLength + 1u);
+    memcpy(new, valueString, (size_t)valueLength + 1u);
     Tcl_SetHashValue(hPtr, new);
 }
 
@@ -374,11 +374,12 @@ static int
 SlsSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int         result = TCL_OK;
-    char       *keyString, *valueString;
+    char       *keyString;
+    Tcl_Obj    *valueObj;
     Ns_Conn    *conn;
     Ns_ObjvSpec args[] = {
         {"key",    Ns_ObjvString, &keyString,   NULL},
-        {"value",  Ns_ObjvString, &valueString, NULL},
+        {"value",  Ns_ObjvObj,    &valueObj, NULL},
         {NULL, NULL, NULL, NULL}
     };
 
@@ -389,7 +390,7 @@ SlsSetObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc,
         result = TCL_ERROR;
 
     } else {
-        Ns_SlsSetKeyed(Ns_ConnSockPtr(conn), keyString, valueString);
+        Ns_SlsSetKeyed(Ns_ConnSockPtr(conn), keyString, valueObj);
     }
     return result;
 }
