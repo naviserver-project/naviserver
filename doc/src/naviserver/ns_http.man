@@ -18,12 +18,11 @@ services and REST interfaces.
 
 [call [cmd "ns_http cancel"] [arg id]]
 
-Cancel queued HTTP/HTTPS request by the ID (of the request)
-as returned by [cmd "ns_http queue"] command. The command returns
-an empty result. The sense behind this command is to be able to
-terminate runaway requests or requests that have been timed out.
-Even completed requests can be cancelled if nobody is interested
-in the request result.
+Cancels queued HTTP/HTTPS request indntified by the [arg id] (of the
+request).  The command returns an empty result. The purpose of this
+command is to terminate runaway requests or requests that
+have been timed out.  Even completed requests can be cancelled if
+nobody is interested in the request result.
 
 [list_begin arguments]
 [arg_def "" id]
@@ -32,7 +31,7 @@ ID of the HTTP request to cancel.
 
 [call [cmd "ns_http cleanup"]]
 
-Cancel all pending HTTP/HTTPS requests issued in the current
+Cancels all pending HTTP/HTTPS requests issued in the current
 interpreter. At this point, any Tcl channels that have been
 optionally assigned to a task, will be automatically closed.
 
@@ -53,13 +52,13 @@ optionally assigned to a task, will be automatically closed.
  The returned information is useful for monitoring and debugging busy HTTP client operations.
 
 
-[call [cmd "ns_http list"] ?[arg id]?]
+[call [cmd "ns_http list"] [opt [arg id]]]
 
-If [arg id] was specified, returns a single list in form
-of: "id url status".
-If [arg id] was not specified, returns a list of N elements,
-where each element is in itself a list in the form of: "id url status".
-The status can be one of: "done", "running", "error".
+Lists running ns_http requests. When [arg id] was specified, returns a
+single list in form of: [term "id url status"].  If [arg id] was not
+specified, returns a list of lists is return, where the elements have
+the described format. The value of the status can be one
+of [term done], [term running], or  [term error].
 
 [list_begin arguments]
 [arg_def "" id]
@@ -99,14 +98,14 @@ Optional ID of the HTTP request to list.
 
 
 [para]
-The command [cmd "ns_http queue"] opens a connection to the web server
-denoted in the [arg url] and returns (unless a [option -donecallback] is
+Opens a connection to the web server denoted in the [arg url] and
+returns (unless a [option -donecallback] is
 specified) an [arg id], which might be used later in [cmd "ns_http wait"]
 or [cmd "ns_http cancel"] to refer to this request. The command supports
 both HTTP and HTTPS URIs.  The request is run in the default task queue
 in a dedicated per-queue thread.
 
-[para] For the description of the available options, see also the section [sectref {OPTIONS}] below.
+[para] The description of the available options is in the section [sectref {OPTIONS}] below.
 
 [call [cmd "ns_http run"] \
 	[opt [option "-binary"]] \
@@ -137,13 +136,13 @@ in a dedicated per-queue thread.
 	]
 
 [para]
-Send an HTTP request and wait for the result.  The command [cmd "ns_http run"]
+Sends an HTTP or HTTPS request and waits for the result.  The command [cmd "ns_http run"]
 is similar to [cmd "ns_http queue"] followed by [cmd "ns_http wait"].
 The HTTP request is run in the same thread as the caller.
 
 [para] The description of the available options is in the section [sectref {OPTIONS}] below.
 
-[call [cmd "ns_http stats"] ?[arg id]?]
+[call [cmd "ns_http stats"] [opt [arg id]]]
 
 Returns statistics from the currently running request in the form of
 a list of Tcl dictionaries.  If the optional [arg id] was specified, just
@@ -180,6 +179,7 @@ and [term replybodysize] will have the same value.
 [arg_def "" id]
 Optional ID of the HTTP request to get statistics for.
 [list_end]
+
 
 [call [cmd "ns_http wait"] \
 	[opt [option "-timeout [arg time]"]] \
