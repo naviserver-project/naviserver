@@ -18,7 +18,6 @@
 
 #include "nsd.h"
 
-
 static void
 InvalidUtf8ErrorMessage(Tcl_DString *dsPtr, const unsigned char *bytes, size_t nrBytes,
                  size_t index, TCL_SIZE_T nrMaxBytes, bool isTruncated);
@@ -953,7 +952,53 @@ void NsHexPrint(const char *msg, const unsigned char *octets, size_t octetLength
     }
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_ReturnCodeString, Ns_TclReturnCodeString --
+ *
+ *      Debugging functions, map internal codes to human readable strings.
+ *
+ * Results:
+ *      String.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+const char *Ns_ReturnCodeString(Ns_ReturnCode code)
+{
+    const char  *result;
 
+    switch (code) {
+    case NS_OK:            result = "NS_OK"; break;
+    case NS_ERROR:         result = "NS_ERROR"; break;
+    case NS_TIMEOUT:       result = "NS_TIMEOUT"; break;
+    case NS_UNAUTHORIZED:  result = "NS_UNAUTHORIZED"; break;
+    case NS_FORBIDDEN:     result = "NS_FORBIDDEN"; break;
+    case NS_FILTER_BREAK:  result = "NS_FILTER_BREAK"; break;
+    case NS_FILTER_RETURN: result = "NS_FILTER_RETURN"; break;
+    default: result = "Unknown NaviServer Result Code";
+    }
+
+    return result;
+}
+
+const char *Ns_TclReturnCodeString(int code)
+{
+    const char *result;
+
+    switch (code) {
+    case TCL_OK:       result = "TCL_OK"; break;
+    case TCL_ERROR:    result = "TCL_ERROR"; break;
+    case TCL_RETURN:   result = "TCL_RETURN"; break;
+    case TCL_BREAK:    result = "TCL_BREAK"; break;
+    case TCL_CONTINUE: result = "TCL_CONTINUE"; break;
+    default: result = "Unknown Tcl Result Code";
+    }
+    return result;
+}
 /*
  * Local Variables:
  * mode: c
