@@ -356,7 +356,9 @@ HTTP and HTTPS connections.
 Currently, no proxy authentication is supported. This will be added later.
 
 [opt_def -raw]
-delivers the content as-is (unmodified), regardless of the content encoding.
+delivers the content as-is (unmodified), regardless of the content
+encoding. This option is useful for tunneling modes.
+
 
 [opt_def -spoolsize [arg memory-size]]
 In case the result is larger than the given value, it will be spooled to a
