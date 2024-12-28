@@ -304,6 +304,30 @@ typedef struct Ns_DList {
     void    *static_data[30];
 } Ns_DList;
 
+/*
+ * Structure for connection channels for the [ns_connchan]
+ * family of commands.
+ */
+typedef struct {
+    const char      *channelName;
+    char             peer[NS_IPADDR_SIZE];  /* Client peer address */
+    size_t           rBytes;
+    size_t           wBytes;
+    bool             binary;
+    Ns_Time          startTime;
+    struct Sock     *sockPtr;
+    Ns_Time          recvTimeout;
+    Ns_Time          sendTimeout;
+    const char      *clientData;
+    struct Callback *cbPtr;
+    Tcl_DString     *sendBuffer;       /* For unsent bytes in "ns_connchan write -buffered" */
+    Tcl_DString     *frameBuffer;      /* Buffer of for a single WebSocket frame */
+    Tcl_DString     *fragmentsBuffer;  /* Buffer for multiple WebSocket segments */
+    int              fragmentsOpcode;  /* Opcode of the first WebSocket segment */
+    bool             frameNeedsData;   /* Indicator, if additional reads are required */
+} NsConnChan;
+
+
 
 /*
  * The following structure defines the entire request
@@ -1637,6 +1661,11 @@ NS_EXTERN Ns_UrlToFileProc NsUrlToFileProc NS_GNUC_DEPRECATED_FOR(Ns_FastUrl2Fil
 NS_EXTERN Ns_Url2FileProc NsTclUrl2FileProc;
 NS_EXTERN Ns_Url2FileProc NsMountUrl2FileProc;
 NS_EXTERN Ns_ArgProc NsMountUrl2FileArgProc;
+
+NS_EXTERN NsConnChan *NsConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+NS_EXTERN int NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgString, TCL_SIZE_T msgLength, bool buffered, ssize_t *nSentPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(6);
 
 NS_EXTERN void NsGetCallbacks(Tcl_DString *dsPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN void NsGetSockCallbacks(Tcl_DString *dsPtr) NS_GNUC_NONNULL(1);

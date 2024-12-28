@@ -18,6 +18,9 @@
 # include <openssl/rand.h>
 #endif
 
+/*#define WS_RECORD_OUTPUT 1*/
+
+
 /*
  * Handling of network byte order (big endian).
  */
@@ -51,29 +54,6 @@
 #  define htobe64(x) htonll(x)
 # endif
 #endif
-
-/*
- * Structure handling one registered channel for the [ns_connchan]
- * command.
- */
-typedef struct {
-    const char      *channelName;
-    char             peer[NS_IPADDR_SIZE];  /* Client peer address */
-    size_t           rBytes;
-    size_t           wBytes;
-    bool             binary;
-    Ns_Time          startTime;
-    Sock            *sockPtr;
-    Ns_Time          recvTimeout;
-    Ns_Time          sendTimeout;
-    const char      *clientData;
-    struct Callback *cbPtr;
-    Tcl_DString     *sendBuffer;       /* For unsent bytes in "ns_connchan write -buffered" */
-    Tcl_DString     *frameBuffer;      /* Buffer of for a single WebSocket frame */
-    Tcl_DString     *fragmentsBuffer;  /* Buffer for multiple WebSocket segments */
-    int              fragmentsOpcode;  /* Opcode of the first WebSocket segment */
-    bool             frameNeedsData;   /* Indicator, if additional reads are required */
-} NsConnChan;
 
 #define ConnChanBufferSize(connChanPtr, buf) ((connChanPtr)->buf != NULL ? (connChanPtr)->buf->length : 0)
 
@@ -151,7 +131,6 @@ static TCL_OBJCMDPROC_T   ConnChanWriteObjCmd;
 static TCL_OBJCMDPROC_T   ConnChanWsencodeObjCmd;
 
 static Ns_SockProc CallbackFree;
-
 
 
 /*
@@ -479,6 +458,12 @@ ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name) {
     }
 
     return connChanPtr;
+}
+
+NsConnChan *NsConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name)
+{
+    return ConnChanGet(interp, servPtr, name);
+
 }
 
 
@@ -1035,7 +1020,8 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
         connPtr->flags |= NS_CONN_CLOSED;
 
         Tcl_SetObjResult(interp, Tcl_NewStringObj(connChanPtr->channelName, TCL_INDEX_NONE));
-        Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan detach returns %d", connChanPtr->channelName, result);
+        Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan detach returns %s",
+               connChanPtr->channelName, Ns_TclReturnCodeString(result));
     }
     return result;
 }
@@ -1186,7 +1172,7 @@ ConnChanOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
         if (unlikely(result != TCL_OK && sockPtr != NULL && sockPtr->sock > 0)) {
             ns_sockclose(sockPtr->sock);
         }
-        Ns_Log(Ns_LogConnchanDebug, "ns_connchan open %s returns %d", url, result);
+        Ns_Log(Ns_LogConnchanDebug, "ns_connchan open %s returns %s", url, Ns_TclReturnCodeString(result));
     }
     return result;
 }
@@ -1293,7 +1279,8 @@ ConnChanConnectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
         if (unlikely(result != TCL_OK && sockPtr != NULL && sockPtr->sock > 0)) {
             ns_sockclose(sockPtr->sock);
         }
-        Ns_Log(Ns_LogConnchanDebug, "ns_connchan connect %s %hu returns %d", host, portNr, result);
+        Ns_Log(Ns_LogConnchanDebug, "ns_connchan connect %s %hu returns %s",
+               host, portNr, Ns_TclReturnCodeString(result));
     }
     return result;
 }
@@ -1411,7 +1398,7 @@ ConnChanListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
             }
         }
     }
-    Ns_Log(Ns_LogConnchanDebug, "ns_connchan listen %s %hu returns %d", addr, port, result);
+    Ns_Log(Ns_LogConnchanDebug, "ns_connchan listen %s %hu returns %s", addr, port, Ns_TclReturnCodeString(result));
     return result;
 }
 
@@ -1717,7 +1704,7 @@ ConnChanCloseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
         }
 
     }
-    Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan close returns %d", name, result);
+    Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan close returns %s", name, Ns_TclReturnCodeString(result));
     return result;
 }
 
@@ -1833,7 +1820,7 @@ ConnChanCallbackObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
             }
         }
     }
-    Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan callback returns %d", name, result);
+    Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan callback returns %s", name, Ns_TclReturnCodeString(result));
     return result;
 }
 
@@ -1873,7 +1860,7 @@ ConnChanExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
         Tcl_SetObjResult(interp, Tcl_NewBooleanObj(connChanPtr != NULL));
     }
 
-    Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan exists returns %d", name, result);
+    Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan exists returns %s", name, Ns_TclReturnCodeString(result));
     return result;
 }
 
@@ -2296,7 +2283,7 @@ ConnChanReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
         }
     }
 
-    Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan read returns %d", name, result);
+    Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan read returns %s", name, Ns_TclReturnCodeString(result));
 
     return result;
 }
@@ -2316,6 +2303,299 @@ ConnChanReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
  *
  *----------------------------------------------------------------------
  */
+int
+NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgString, TCL_SIZE_T msgLength, bool buffered, ssize_t *nSentPtr)
+{
+    //const NsInterp *itPtr = clientData;
+    NsServer    *servPtr;
+    NsConnChan  *connChanPtr;
+    int          result = TCL_OK;
+    ssize_t      nSent = 0;
+
+    servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
+    connChanPtr = ConnChanGet(interp, servPtr, connChanName);
+
+    if (unlikely(connChanPtr == NULL)) {
+        result = TCL_ERROR;
+    } else {
+        /*
+         * The provided channel name exists.
+         */
+        struct iovec bufs[2];
+        size_t       toSend;
+        int          nBufs = 1;
+#ifdef WS_RECORD_OUTPUT
+        static int FD;
+        static char fnbuffer[100];
+#endif
+        //if (!connChanPtr->binary) {
+        //    Ns_Log(Warning, "ns_connchan: only binary channels are currently supported. "
+        //           "Channel %s is not binary", connChanName);
+        //}
+
+#ifdef WS_RECORD_OUTPUT
+        if (connChanPtr->wBytes == 0) {
+            snprintf(fnbuffer, sizeof(fnbuffer), "/tmp/OUT-XXXXXX");
+            FD = ns_mkstemp(fnbuffer);
+            fprintf(stderr, "CREATED file %s fd %d\n", fnbuffer, FD);
+        }
+#endif
+
+        /*
+         * When buffered was not specified, but we have a
+         * sendbuffer, fall outmatically into buffered mode.
+         */
+        if (buffered == 0 && connChanPtr->sendBuffer != NULL) {
+            Ns_Log(Notice, "ns_connchan send %s: force buffered", connChanName);
+            buffered = 1;
+        }
+
+        Ns_Log(Ns_LogConnchanDebug, "%s new message length %" PRITcl_Size " buffered %d",
+               connChanName, msgLength, buffered);
+
+        /*
+         * Write the data via the "send" operation of the driver.
+         */
+        if (msgLength > 0 && buffered && ConnChanBufferSize(connChanPtr, sendBuffer) > 0) {
+            bufs[0].iov_base = (void *)connChanPtr->sendBuffer->string;
+            bufs[0].iov_len = (size_t)connChanPtr->sendBuffer->length;
+            bufs[1].iov_base = (void *)msgString;
+            bufs[1].iov_len = (size_t)msgLength;
+            nBufs = 2;
+            toSend = (size_t)msgLength + (size_t)connChanPtr->sendBuffer->length;
+            Ns_Log(Ns_LogConnchanDebug,
+                   "WS: send buffered only msgLength > 0, buf length %zu toSend %" PRIdz,
+                   bufs[0].iov_len, toSend);
+
+        } else if (msgLength == 0 && buffered && ConnChanBufferSize(connChanPtr, sendBuffer) > 0) {
+            bufs[0].iov_base = (void *)connChanPtr->sendBuffer->string;
+            bufs[0].iov_len = (size_t)connChanPtr->sendBuffer->length;
+            bufs[1].iov_len = 0u;
+            toSend = (size_t)connChanPtr->sendBuffer->length;
+            Ns_Log(Ns_LogConnchanDebug,
+                   "WS: send buffered only msgLength == 0, buf length %zu toSend %" PRIdz,
+                   bufs[0].iov_len, toSend);
+
+        } else {
+            bufs[0].iov_base = (void *)msgString;
+            bufs[0].iov_len = (size_t)msgLength;
+            bufs[1].iov_len = 0u;
+            Ns_Log(Ns_LogConnchanDebug, "WS: send msgLength toSend %ld", bufs[0].iov_len);
+            toSend = (size_t)msgLength;
+        }
+
+        Ns_Log(Ns_LogConnchanDebug, "%s new message length %" PRITcl_Size
+               " buffered length %" PRITcl_Size
+               " total %" PRIdz,
+               connChanName, msgLength, connChanPtr->sendBuffer != NULL ? connChanPtr->sendBuffer->length : 0,
+               toSend);
+
+        if (toSend > 0) {
+            nSent = ConnchanDriverSend(interp, connChanPtr, bufs, nBufs, 0u,
+                                       &connChanPtr->sendTimeout);
+        } else {
+            nSent = 0;
+        }
+
+        Ns_Log(Ns_LogConnchanDebug, "%s after ConnchanDriverSend nbufs %d len[0] %" PRIdz
+               ", len[1] %" PRIdz " sent %" PRIdz,
+               connChanName, nBufs, bufs[0].iov_len, bufs[1].iov_len, nSent);
+
+        if (nSent > -1) {
+            size_t remaining = (size_t)toSend - (size_t)nSent;
+
+#ifdef WS_RECORD_OUTPUT
+            fprintf(stderr, "WRITE %ld FIRST ATTEMPT written %ld remaining %ld buf1\n", nSent, nSent, remaining);
+            write(FD, msgString, (size_t)nSent);
+            write(FD, "-----CUT-HERE-----\n", 19u);
+#endif
+            /*Ns_Log(Notice, "WS: send buffered %d msgLength %d nbufs %d to send %d sent %" PRIdz
+              " remaining %d errno %d %s (BYTES from %" PRIdz " to %" PRIdz ")",
+              buffered, msgLength, nBufs, toSend, nSent, remaining,
+              ns_sockerrno, ns_sockstrerror(ns_sockerrno),
+              connChanPtr->wBytes, connChanPtr->wBytes + (size_t)MIN(0,nSent));*/
+
+            connChanPtr->wBytes += (size_t)nSent;
+            Tcl_SetObjResult(interp, Tcl_NewLongObj((long)nSent));
+
+            if (buffered && remaining > 0) {
+                TCL_SIZE_T freshDataRemaining;
+
+                RequireDsBuffer(&connChanPtr->sendBuffer);
+                /*
+                 * Compact old data. How much of the (old) sendBuffer was sent?
+                 */
+                if (nBufs == 2) {
+                    Ns_Log(Ns_LogConnchanDebug, "... two-buffer old buffer length %"
+                           PRITcl_Size " + new %" PRITcl_Size
+                           " = %" PRIdz " sent %ld (old not fully sent %d)",
+                           connChanPtr->sendBuffer->length, msgLength,
+                           (size_t)connChanPtr->sendBuffer->length + (size_t)msgLength,
+                           nSent,
+                           (connChanPtr->sendBuffer->length > (TCL_SIZE_T)nSent));
+                    if (connChanPtr->sendBuffer->length > (TCL_SIZE_T)nSent) {
+                        /*
+                         * The old send buffer was not completely
+                         * sent.
+                         *
+                         * bufs[0].len is the unsent length,
+                         * bufs[0].base points to the start of the
+                         * unset buffer.
+                         */
+                        assert(bufs[0].iov_len > 0);
+
+                        freshDataRemaining = msgLength;
+
+                        if (nSent > 0) {
+                            Ns_Log(Ns_LogConnchanDebug,
+                                   "... have sent part of old buffer %ld "
+                                   "(BYTES from %" PRIdz " to %" PRIdz ")",
+                                   nSent,
+                                   connChanPtr->wBytes - (size_t)nSent,
+                                   connChanPtr->wBytes);
+#ifdef WS_RECORD_OUTPUT
+                            fprintf(stderr, "WRITE %ld REMAINING\n", nSent);
+                            write(FD, connChanPtr->sendBuffer->string, (size_t)nSent);
+                            //write(2, connChanPtr->sendBuffer->string, (size_t)nSent);
+                            fprintf(stderr, "\n");
+#endif
+                            memmove(connChanPtr->sendBuffer->string,
+                                    bufs[0].iov_base,
+                                    bufs[0].iov_len);
+                            Tcl_DStringSetLength(connChanPtr->sendBuffer, (TCL_SIZE_T)bufs[0].iov_len);
+                        }
+                    } else {
+                        /*
+                         * The old send buffer was fully sent, and
+                         * maybe some of the fresh data.
+                         */
+                        assert(bufs[0].iov_len == 0);
+                        Tcl_DStringSetLength(connChanPtr->sendBuffer, 0);
+
+                        freshDataRemaining = msgLength - ((TCL_SIZE_T)nSent - connChanPtr->sendBuffer->length);
+                        Ns_Log(Ns_LogConnchanDebug,
+                               "... have sent all of old buffer %" PRITcl_Size
+                               " and %" PRITcl_Size " of new buffer "
+                               "(BYTES from %" PRIdz " to %" PRIdz ")",
+                               connChanPtr->sendBuffer->length,
+                               ((TCL_SIZE_T)nSent - connChanPtr->sendBuffer->length),
+                               connChanPtr->wBytes - (size_t)nSent,
+                               connChanPtr->wBytes);
+#ifdef WS_RECORD_OUTPUT
+                        fprintf(stderr, "WRITE %ld OLD BUFFER ALL SENT\n", connChanPtr->sendBuffer->length + (nSent - connChanPtr->sendBuffer->length));
+                        write(FD, connChanPtr->sendBuffer->string, (size_t)connChanPtr->sendBuffer->length);
+                        write(FD, msgString, (size_t)(nSent - connChanPtr->sendBuffer->length));
+#endif
+                    }
+                } else if (msgLength == 0) {
+                    /*
+                     * There was only some data from the sendBuffer, no new Data;
+                     */
+                    assert(bufs[0].iov_len > 0);
+
+                    freshDataRemaining = 0;
+                    Ns_Log(Ns_LogConnchanDebug,
+                           "... have sent from old buffer %" PRIdz " no new data "
+                           "(BYTES from %" PRIdz " to %" PRIdz ")",
+                           nSent,
+                           connChanPtr->wBytes - (size_t)nSent, connChanPtr->wBytes);
+#ifdef WS_RECORD_OUTPUT
+                    fprintf(stderr, "WRITE %ld OLD BUFFER\n",nSent);
+                    write(FD, connChanPtr->sendBuffer->string, (size_t)nSent);
+#endif
+                    memmove(connChanPtr->sendBuffer->string,
+                            bufs[0].iov_base,
+                            bufs[0].iov_len);
+                    Tcl_DStringSetLength(connChanPtr->sendBuffer, (TCL_SIZE_T)bufs[0].iov_len);
+                } else {
+                    /*
+                     * There is only fresh data.
+                     */
+                    freshDataRemaining = msgLength - (TCL_SIZE_T)nSent;
+#ifdef WS_RECORD_OUTPUT
+                    if (nSent > 0) {
+                        write(FD, msgString, (size_t)nSent);
+                        fprintf(stderr, "WRITE %ld ONLY FRESH\n",nSent);
+                        Ns_Log(Ns_LogConnchanDebug, "... have sent only fresh data %" PRIdz
+                               " (BYTES from %" PRIdz " to %" PRIdz ")",
+                               nSent,
+                               connChanPtr->wBytes - (size_t)nSent, connChanPtr->wBytes);
+                    }
+#endif
+                }
+
+                if (freshDataRemaining > 0) {
+                    Ns_Log(Ns_LogConnchanDebug, "... appending to sendbuffer old %" PRITcl_Size
+                           " + remaining %" PRITcl_Size
+                           " will be %" PRITcl_Size,
+                           connChanPtr->sendBuffer->length, freshDataRemaining,
+                           connChanPtr->sendBuffer->length + freshDataRemaining);
+                    Tcl_DStringAppend(connChanPtr->sendBuffer,
+                                      msgString + (msgLength - freshDataRemaining),
+                                      freshDataRemaining);
+                    Ns_Log(Ns_LogConnchanDebug, "... keep for later %" PRITcl_Size
+                           " bytes of %" PRITcl_Size
+                           " (buffered %" PRITcl_Size ") will be BYTES from %" PRIdz
+                           " to %" PRIdz,
+                           freshDataRemaining,
+                           msgLength,
+                           connChanPtr->sendBuffer->length,
+                           connChanPtr->wBytes,
+                           connChanPtr->wBytes + (size_t)connChanPtr->sendBuffer->length);
+                }
+            } else {
+                /*
+                 * not (buffered && remaining > 0)
+                 */
+                if (buffered) {
+                    /*
+                     * Everything was sent
+                     */
+                    TCL_SIZE_T buffedLen = ConnChanBufferSize(connChanPtr, sendBuffer);
+
+                    Ns_Log(Ns_LogConnchanDebug, "... buffered %d buffedLen %" PRITcl_Size
+                           " msgLength %" PRITcl_Size
+                           " everything was sent, remaining %" PRIdz
+                           ", (BYTES from %" PRIdz " to %" PRIdz ")",
+                           buffered, buffedLen, msgLength, remaining,
+                           connChanPtr->wBytes - (size_t)nSent, connChanPtr->wBytes);
+                    assert(remaining == 0);
+
+                    if (buffedLen > 0) {
+#ifdef WS_RECORD_OUTPUT
+                        fprintf(stderr, "WRITE %ld not buffered, but BUFFERED content\n",(long)buffedLen);
+                        write(FD, connChanPtr->sendBuffer->string, (size_t)buffedLen);
+#endif
+                        Tcl_DStringSetLength(connChanPtr->sendBuffer, 0);
+                    }
+#ifdef WS_RECORD_OUTPUT
+                    if (msgLength > 0) {
+                        fprintf(stderr, "WRITE %ld not buffered\n",nSent);
+                        write(FD, msgString, (size_t)nSent);
+                    }
+#endif
+                } else {
+                    /*
+                     * Non-buffered case, there might be a partial send operation
+                     */
+                    if (remaining != 0) {
+                        Ns_Log(Ns_LogConnchanDebug, "... partial write: to send %" PRIdz
+                               " sent %" PRIdz " remaining %" PRIdz,
+                               toSend, nSent, remaining);
+                    }
+                }
+            }
+        } else {
+            result = TCL_ERROR;
+        }
+    }
+    Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan write returns %s", connChanName, Ns_TclReturnCodeString(result));
+
+    *nSentPtr = nSent;
+    return result;
+}
+
+
 static int
 ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -2336,277 +2616,13 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
         result = TCL_ERROR;
 
     } else {
-        //const NsInterp *itPtr = clientData;
-        NsServer       *servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
-        NsConnChan     *connChanPtr = ConnChanGet(interp, servPtr, name);
+        ssize_t      nSent;
+        TCL_SIZE_T   msgLength;
+        const char  *msgString = (const char *)Tcl_GetByteArrayFromObj(msgObj, &msgLength);
 
-        if (unlikely(connChanPtr == NULL)) {
-            result = TCL_ERROR;
-        } else {
-            /*
-             * The provided channel name exists.
-             */
-            struct iovec bufs[2];
-            ssize_t      nSent;
-            size_t       toSend;
-            int          nBufs = 1;
-            TCL_SIZE_T   msgLen;
-            const char  *msgString = (const char *)Tcl_GetByteArrayFromObj(msgObj, &msgLen);
-#ifdef WS_RECORD_OUTPUT
-            static int FD;
-            static char fnbuffer[100];
-#endif
-            //if (!connChanPtr->binary) {
-            //    Ns_Log(Warning, "ns_connchan: only binary channels are currently supported. "
-            //           "Channel %s is not binary", name);
-            //}
-
-#ifdef WS_RECORD_OUTPUT
-            if (connChanPtr->wBytes == 0) {
-                snprintf(fnbuffer, sizeof(fnbuffer), "/tmp/OUT-XXXXXX");
-                mktemp(fnbuffer);
-                FD = open("/tmp/OUT", O_APPEND | O_WRONLY | O_CREAT | O_TRUNC, 0644);
-                fprintf(stderr, "CREATED file %s fd %d\n", fnbuffer, FD);
-            }
-#endif
-
-            /*
-             * When buffered was not specified, but we have a
-             * sendbuffer, fall outmatically into buffered mode.
-             */
-            if (buffered == 0 && connChanPtr->sendBuffer != NULL) {
-                Ns_Log(Notice, "ns_connchan send %s: force buffered", name);
-                buffered = 1;
-            }
-
-            Ns_Log(Ns_LogConnchanDebug, "%s new message length %" PRITcl_Size " buffered %d",
-                   name, msgLen, buffered);
-
-            /*
-             * Write the data via the "send" operation of the driver.
-             */
-            if (msgLen > 0 && buffered && ConnChanBufferSize(connChanPtr, sendBuffer) > 0) {
-                bufs[0].iov_base = (void *)connChanPtr->sendBuffer->string;
-                bufs[0].iov_len = (size_t)connChanPtr->sendBuffer->length;
-                bufs[1].iov_base = (void *)msgString;
-                bufs[1].iov_len = (size_t)msgLen;
-                nBufs = 2;
-                toSend = (size_t)msgLen + (size_t)connChanPtr->sendBuffer->length;
-
-            } else if (msgLen == 0 && buffered && ConnChanBufferSize(connChanPtr, sendBuffer) > 0) {
-                bufs[0].iov_base = (void *)connChanPtr->sendBuffer->string;
-                bufs[0].iov_len = (size_t)connChanPtr->sendBuffer->length;
-                bufs[1].iov_len = 0u;
-                toSend = (size_t)connChanPtr->sendBuffer->length;
-                Ns_Log(Ns_LogConnchanDebug,
-                       "WS: send buffered only msgLen == 0, buf length %zu toSend %" PRIdz,
-                       bufs[0].iov_len, toSend);
-
-            } else {
-                bufs[0].iov_base = (void *)msgString;
-                bufs[0].iov_len = (size_t)msgLen;
-                bufs[1].iov_len = 0u;
-                Ns_Log(Ns_LogConnchanDebug, "WS: send msgLen toSend %ld", bufs[0].iov_len);
-                toSend = (size_t)msgLen;
-            }
-
-            Ns_Log(Ns_LogConnchanDebug, "%s new message length %" PRITcl_Size
-                   " buffered length %" PRITcl_Size
-                   " total %" PRIdz,
-                   name, msgLen, connChanPtr->sendBuffer != NULL ? connChanPtr->sendBuffer->length : 0,
-                   toSend);
-
-            if (toSend > 0) {
-                nSent = ConnchanDriverSend(interp, connChanPtr, bufs, nBufs, 0u,
-                                           &connChanPtr->sendTimeout);
-            } else {
-                nSent = 0;
-            }
-
-            Ns_Log(Ns_LogConnchanDebug, "%s after ConnchanDriverSend nbufs %d len[0] %" PRIdz
-                   ", len[1] %" PRIdz " sent %" PRIdz,
-                   name, nBufs, bufs[0].iov_len, bufs[1].iov_len, nSent);
-
-            if (nSent > -1) {
-                size_t remaining = (size_t)toSend - (size_t)nSent;
-
-                /*Ns_Log(Notice, "WS: send buffered %d msgLength %d nbufs %d to send %d sent %" PRIdz
-                       " remaining %d errno %d %s (BYTES from %" PRIdz " to %" PRIdz ")",
-                        buffered, msgLen, nBufs, toSend, nSent, remaining,
-                        ns_sockerrno, ns_sockstrerror(ns_sockerrno),
-                        connChanPtr->wBytes, connChanPtr->wBytes + (size_t)MIN(0,nSent));*/
-
-                connChanPtr->wBytes += (size_t)nSent;
-                Tcl_SetObjResult(interp, Tcl_NewLongObj((long)nSent));
-
-                if (buffered && remaining > 0) {
-                    TCL_SIZE_T freshDataRemaining;
-
-                    RequireDsBuffer(&connChanPtr->sendBuffer);
-                    /*
-                     * Compact old data. How much of the (old) sendBuffer was sent?
-                     */
-                    if (nBufs == 2) {
-                        Ns_Log(Ns_LogConnchanDebug, "... two-buffer old buffer length %"
-                               PRITcl_Size " + new %" PRITcl_Size
-                               " = %" PRIdz " sent %ld (old not fully sent %d)",
-                               connChanPtr->sendBuffer->length, msgLen,
-                               (size_t)connChanPtr->sendBuffer->length + (size_t)msgLen,
-                               nSent,
-                               (connChanPtr->sendBuffer->length > (TCL_SIZE_T)nSent));
-                        if (connChanPtr->sendBuffer->length > (TCL_SIZE_T)nSent) {
-                            /*
-                             * The old send buffer was not completely
-                             * sent.
-                             *
-                             * bufs[0].len is the unsent length,
-                             * bufs[0].base points to the start of the
-                             * unset buffer.
-                             */
-                            assert(bufs[0].iov_len > 0);
-
-                            freshDataRemaining = msgLen;
-
-                            if (nSent > 0) {
-                                Ns_Log(Ns_LogConnchanDebug,
-                                       "... have sent part of old buffer %ld "
-                                       "(BYTES from %" PRIdz " to %" PRIdz ")",
-                                       nSent,
-                                       connChanPtr->wBytes - (size_t)nSent,
-                                       connChanPtr->wBytes);
-#ifdef WS_RECORD_OUTPUT
-                                write(FD, connChanPtr->sendBuffer->string, (size_t)nSent);
-                                //write(2, connChanPtr->sendBuffer->string, (size_t)nSent);
-                                fprintf(stderr, "\n");
-#endif
-                                memmove(connChanPtr->sendBuffer->string,
-                                        bufs[0].iov_base,
-                                        bufs[0].iov_len);
-                                Tcl_DStringSetLength(connChanPtr->sendBuffer, (TCL_SIZE_T)bufs[0].iov_len);
-                            }
-                        } else {
-                            /*
-                             * The old send buffer was fully sent, and
-                             * maybe some of the fresh data.
-                             */
-                            assert(bufs[0].iov_len == 0);
-                            Tcl_DStringSetLength(connChanPtr->sendBuffer, 0);
-
-                            freshDataRemaining = msgLen - ((TCL_SIZE_T)nSent - connChanPtr->sendBuffer->length);
-                            Ns_Log(Ns_LogConnchanDebug,
-                                   "... have sent all of old buffer %" PRITcl_Size
-                                   " and %" PRITcl_Size " of new buffer "
-                                   "(BYTES from %" PRIdz " to %" PRIdz ")",
-                                   connChanPtr->sendBuffer->length,
-                                   ((TCL_SIZE_T)nSent - connChanPtr->sendBuffer->length),
-                                   connChanPtr->wBytes - (size_t)nSent,
-                                   connChanPtr->wBytes);
-#ifdef WS_RECORD_OUTPUT
-                            write(FD, connChanPtr->sendBuffer->string, (size_t)connChanPtr->sendBuffer->length);
-                            write(FD, msgString, (size_t)(nSent - connChanPtr->sendBuffer->length));
-#endif
-                        }
-                    } else if (msgLen == 0) {
-                        /*
-                         * There was only some data from the sendBuffer, no new Data;
-                         */
-                        assert(bufs[0].iov_len > 0);
-
-                        freshDataRemaining = 0;
-                        Ns_Log(Ns_LogConnchanDebug,
-                               "... have sent from old buffer %" PRIdz " no new data "
-                               "(BYTES from %" PRIdz " to %" PRIdz ")",
-                               nSent,
-                               connChanPtr->wBytes - (size_t)nSent, connChanPtr->wBytes);
-#ifdef WS_RECORD_OUTPUT
-                        write(FD, connChanPtr->sendBuffer->string, (size_t)nSent);
-#endif
-                        memmove(connChanPtr->sendBuffer->string,
-                                bufs[0].iov_base,
-                                bufs[0].iov_len);
-                        Tcl_DStringSetLength(connChanPtr->sendBuffer, (TCL_SIZE_T)bufs[0].iov_len);
-                    } else {
-                        /*
-                         * There is only fresh data.
-                         */
-                        freshDataRemaining = msgLen - (TCL_SIZE_T)nSent;
-#ifdef WS_RECORD_OUTPUT
-                        if (nSent > 0) {
-                            write(FD, msgString, (size_t)nSent);
-                            Ns_Log(Ns_LogConnchanDebug, "... have sent only fresh data %" PRIdz
-                                   " (BYTES from %" PRIdz " to %" PRIdz ")",
-                                   nSent,
-                                   connChanPtr->wBytes - (size_t)nSent, connChanPtr->wBytes);
-                        }
-#endif
-                    }
-
-                    if (freshDataRemaining > 0) {
-                        Ns_Log(Ns_LogConnchanDebug, "... appending to sendbuffer old %" PRITcl_Size
-                               " + remaining %" PRITcl_Size
-                               " will be %" PRITcl_Size,
-                               connChanPtr->sendBuffer->length, freshDataRemaining,
-                               connChanPtr->sendBuffer->length + freshDataRemaining);
-                        Tcl_DStringAppend(connChanPtr->sendBuffer,
-                                          msgString + (msgLen - freshDataRemaining),
-                                          freshDataRemaining);
-                        Ns_Log(Ns_LogConnchanDebug, "... keep for later %" PRITcl_Size
-                               " bytes of %" PRITcl_Size
-                               " (buffered %" PRITcl_Size ") will be BYTES from %" PRIdz
-                               " to %" PRIdz,
-                               freshDataRemaining,
-                               msgLen,
-                               connChanPtr->sendBuffer->length,
-                               connChanPtr->wBytes,
-                               connChanPtr->wBytes + (size_t)connChanPtr->sendBuffer->length);
-                    }
-                } else {
-                    /*
-                     * not (buffered && remaining > 0)
-                     */
-                    if (buffered) {
-                        /*
-                         * Everything was sent
-                         */
-                        TCL_SIZE_T buffedLen = ConnChanBufferSize(connChanPtr, sendBuffer);
-
-                        Ns_Log(Ns_LogConnchanDebug, "... buffered %d buffedLen %" PRITcl_Size
-                               " msgLength %" PRITcl_Size
-                               " everything was sent, remaining %" PRIdz
-                               ", (BYTES from %" PRIdz " to %" PRIdz ")",
-                               buffered, buffedLen, msgLen, remaining,
-                               connChanPtr->wBytes - (size_t)nSent, connChanPtr->wBytes);
-                        assert(remaining == 0);
-
-                        if (buffedLen > 0) {
-#ifdef WS_RECORD_OUTPUT
-                            write(FD, connChanPtr->sendBuffer->string, (size_t)buffedLen);
-#endif
-                            Tcl_DStringSetLength(connChanPtr->sendBuffer, 0);
-                        }
-#ifdef WS_RECORD_OUTPUT
-                        if (msgLen > 0) {
-                            write(FD, msgString, (size_t)nSent);
-                        }
-#endif
-                    } else {
-                        /*
-                         * Non-buffered case, there might be a partial send operation
-                         */
-                        if (remaining != 0) {
-                            Ns_Log(Ns_LogConnchanDebug, "... partial write: to send %" PRIdz
-                                   " sent %" PRIdz " remaining %" PRIdz,
-                                   toSend, nSent, remaining);
-                        }
-                    }
-                }
-            } else {
-                result = TCL_ERROR;
-            }
-        }
+        result = NsConnChanWrite(interp, name, msgString, msgLength, buffered != 0, &nSent);
     }
-    Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan write returns %d", name, result);
-
+    Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan write returns %s", name, Ns_TclReturnCodeString(result));
     return result;
 }
 
