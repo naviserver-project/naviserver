@@ -140,7 +140,10 @@ Sends an HTTP or HTTPS request and waits for the result.  The command [cmd "ns_h
 is similar to [cmd "ns_http queue"] followed by [cmd "ns_http wait"].
 The HTTP request is run in the same thread as the caller.
 
-[para] The description of the available options is in the section [sectref {OPTIONS}] below.
+[para] The description of the available options is in the section
+[sectref {OPTIONS}] below.
+The result value is described in [sectref {RETURN VALUE}].
+
 
 [call [cmd "ns_http stats"] [opt [arg id]]]
 
@@ -188,19 +191,8 @@ Optional ID of the HTTP request to get statistics for.
 
 [para]
 Waits for the queued command specified by the [term id] returned from
-[cmd "ns_http queue"] to complete. Returns a Tcl dictionary with the
-following keys: [term status], [term time], [term headers].
-The [term status] contains HTTP/HTTPS status code (200, 201, 400, etc).
-The [term time] contains elapsed request ns_time.
-The [term headers] contains the name of the set with response headers.
-If the request body was given over a Tcl channel, it will add the key
-[term body_chan] to the result dictionary.
-If the response was not spooled in the file nor channel, it will return
-[term body] key with the response data. Otherwise it will return either
-[term file] if the response was spooled into the named (or temporary) file
-or [term outputchan] if the request was spooled into a Tcl channel.
-For HTTPS requests, it will add [term https] with some low-level TLS
-parameters in a Tcl dictionary format.
+[cmd "ns_http queue"] to complete.
+
 
 The specified [option -timeout] specified the maximum duration of
 the request to complete. The time can be specified
@@ -211,6 +203,9 @@ On success, [cmd "ns_http wait"] returns the same dictionary as the
 [cmd "ns_http run"]. On error, leaves a descriptive error message
 in the interpreter result. On timeout, sets the Tcl [variable ::errorCode]
 variable to NS_TIMEOUT in addition to leaving the error message.
+
+The result value is described in [sectref {RETURN VALUE}].
+
 
 [list_begin arguments]
 [arg_def "" id]
@@ -392,6 +387,40 @@ the verification failure. If no server certificate is sent, because an
 anonymous cipher is used, this option is ignored.
 
 [list_end]
+
+[section {RETURN VALUE}]
+
+The commands [cmd "ns_http run"] and [cmd "ns_http wait"] return
+a dictionary containing the following elements:
+
+[list_begin definitions]
+[def] [term status]
+[def] [term time]
+[def] [term headers]
+[def] [term body]
+[def] [term body_chan]
+[def] [term error]
+[def] [term file]
+[def] [term https]
+[def] [term outputchan]
+[list_end]
+
+The first three members are always returned, the other elements are conditional.
+The [term status] contains HTTP/HTTPS status code (200, 201, 400, etc).
+The [term time] contains elapsed request time.
+The [term headers] contains the name of the set with response headers.
+
+[para] When none of the output options are used, the result is
+received either in memory (member [term body]) or in a spool file
+(member [term file]). This decision depends on the value of
+[option -spoolsize]. Both members are missing in the result dictionary, when
+[term outputchan] was used.
+
+[para] For requests with a [term bodychan] or [term outputchan], these
+values are added as well to result dictionary.  For HTTPS requests,
+the result contains the member [term https] with some low-level TLS
+parameters in a Tcl dictionary format.
+
 
 [section EXAMPLES]
 
