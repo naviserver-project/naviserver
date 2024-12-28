@@ -241,7 +241,7 @@ test ns_set-2.1.2 {basic operation ns_set + updates - boundary case for reallocs
 
 test ns_set-2.1.3 {basic operation "ns_set create" with name and different argument options} -body {
     ns_set cleanup
-    lmap cmd {
+    lmap s [lmap cmd {
         {ns_set create s1 x 1}
         {ns_set create s2 x 1 y 2}
         {ns_set create -nocase s3 x 1}
@@ -251,15 +251,15 @@ test ns_set-2.1.3 {basic operation "ns_set create" with name and different argum
         {ns_set create -- s7 x 1}
         {ns_set create -- s8 x 1 x 2}
         {ns_set create -- s9}
-    } {{*}$cmd}
-} -result {d0 d1 d2 d3 d4 d5 d6 d7 d8} -cleanup {
+    } {{*}$cmd}] {string match d* $s}
+} -result {1 1 1 1 1 1 1 1 1} -cleanup {
     ns_set cleanup
     unset -nocomplain cmd
 }
 
 test ns_set-2.1.4 {basic operation "ns_set create" with NO name and different argument options} -body {
     ns_set cleanup
-    lmap cmd {
+    lmap s [lmap cmd {
         {ns_set create x 1}
         {ns_set create x 1 y 2}
         {ns_set create -nocase x 1}
@@ -269,8 +269,8 @@ test ns_set-2.1.4 {basic operation "ns_set create" with NO name and different ar
         {ns_set create -- x 1}
         {ns_set create -- x 1 x 2}
         {ns_set create -- }
-    } {{*}$cmd}
-} -result {d0 d1 d2 d3 d4 d5 d6 d7 d8} -cleanup {
+    } {{*}$cmd}] {string match d* $s}
+} -result {1 1 1 1 1 1 1 1 1} -cleanup {
     ns_set cleanup
     unset -nocomplain cmd
 }
@@ -453,8 +453,8 @@ test ns_set-2.19 {basic operation ns_set} -body {
     ns_set put $x content.encoding ba2
     ns_set put $x content.length ba3
     ns_set split $x "."
-    ns_set list
-} -result [list d0 d1] -cleanup {
+    lmap s [ns_set list] {string match d* $s}
+} -result {1 1} -cleanup {
     ns_set cleanup
 }
 
@@ -536,7 +536,7 @@ test ns_set-2.29 {basic operation ns_set} -body {
     set x [ns_set create firstset a 1]
     ns_set free $x
     ns_set get $x 0
-} -returnCodes error -result {no such set: 'd0'} -cleanup {
+} -returnCodes error -match glob -result {no such set: 'd*'} -cleanup {
     ns_set cleanup
 }
 
