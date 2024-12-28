@@ -1727,6 +1727,9 @@ NS_EXTERN void NsSetResize(Ns_Set *set, size_t newSize, int bufferSize)
 
 NS_EXTERN Ns_Set *NsHeaderSetGet(size_t size);
 
+NS_EXTERN const char *NsHttpStatusPhrase(int statusCode) \
+    NS_GNUC_PURE NS_GNUC_RETURNS_NONNULL;
+
 /*
  * limits.c
  */

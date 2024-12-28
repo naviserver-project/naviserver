@@ -103,11 +103,6 @@ static const struct {
     {511, "Network Authentication Required"}
 };
 
-/*
- * Static variables defined in this file.
- */
-
-static const size_t nreasons = (sizeof(reasons) / sizeof(reasons[0]));
 
 
 
@@ -442,29 +437,35 @@ Ns_ConnSetExpiresHeader(const Ns_Conn *conn, const char *expires)
  *----------------------------------------------------------------------
  */
 
+const char * NsHttpStatusPhrase(int statusCode)
+{
+    size_t              i;
+    static const size_t nreasons = (sizeof(reasons) / sizeof(reasons[0]));
+    const char         *reason = "Unknown Reason";
+
+    for (i = 0u; i < nreasons; i++) {
+        if (reasons[i].status == statusCode) {
+            reason = reasons[i].reason;
+            break;
+        }
+    }
+    return reason;
+}
+
 void
 Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
 {
     const Conn    *connPtr = (const Conn *) conn;
     size_t         i;
-    const char    *reason;
 
     /*
      * Construct the HTTP response status line.
      */
 
-    reason = "Unknown Reason";
-    for (i = 0u; i < nreasons; i++) {
-        if (reasons[i].status == connPtr->responseStatus) {
-            reason = reasons[i].reason;
-            break;
-        }
-    }
-
     Ns_DStringPrintf(dsPtr, "HTTP/%.1f %d %s\r\n",
                      MIN(connPtr->request.version, 1.1),
                      connPtr->responseStatus,
-                     reason);
+                     NsHttpStatusPhrase(connPtr->responseStatus));
 
     /*
      * Add the basic required headers if they.
