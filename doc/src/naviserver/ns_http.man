@@ -407,7 +407,8 @@ a dictionary containing the following elements:
 
 The first three members are always returned, the other elements are conditional.
 The [term status] contains HTTP/HTTPS status code (200, 201, 400, etc).
-The [term time] contains elapsed request time.
+The [term time] contains elapsed request time. The time value is in
+the [cmd ns_time] format.
 The [term headers] contains the name of the set with response headers.
 
 [para] When none of the output options are used, the result is
@@ -424,14 +425,21 @@ parameters in a Tcl dictionary format.
 
 [section EXAMPLES]
 
-First, a minimal GET example:
+First, a minimal example to retrieve a page with the HTTP GET method:
+[example_begin]
+ % http run http://www.google.com
+ status 200 time 0:174146 headers d0 body { ... }
+[example_end]
+
+Here is the same example, using separate [cmd "ns_http queue"] and [cmd "ns_http wait"] commands.
 [example_begin]
  % ns_http queue http://www.google.com
  http0
-
+ 
  % ns_http wait http0
- status 302 time 0:97095 headers d0 body { ... }
+ status 200 time 0:177653 headers d0 body { ... }
 [example_end]
+
 
 [para]
 The second example is a code snippet making a request via HTTPS
@@ -467,29 +475,31 @@ larger timeout on the request, provides requests headers and
 returns reply-headers.
 
 [example_begin]
- #######################
- # construct POST data
- #######################
+ ##################################################
+ # Construct POST data using
+ # query variable "q" with value "NaviServer"
+ ##################################################
  set post_data [lb]join [lb]lmap {key value} {
      q NaviServer
  } {
    set _ "[lb]ns_urlencode $key[rb]=[lb]ns_urlencode $value[rb]"
  }[rb] &[rb]
  
- #######################
- # submit POST request
- #######################
+ ##################################################
+ # Submit POST request with provided "content-type"
+ # to the "httpbin.org" site using HTTPS
+ ##################################################
  set requestHeaders [lb]ns_set create headers "content-type" "application/x-www-form-urlencoded"[rb]
  
- set r [lb]ns_http queue -method POST \
+ set r [lb]ns_http run -method POST \
    -headers $requestHeaders \
    -timeout 10.0 \
    -body $post_data \
    https://httpbin.org/anything[rb]
  
- #######################
- # output results
- #######################
+ ##################################################
+ # Output results from the result dict "r"
+ ##################################################
  ns_log notice "status [lb]dict get $r status[rb]"
  ns_log notice "reply [lb]dict get $r [rb]"
  ns_log notice "headers [lb]dict get $r headers[rb]"
@@ -538,7 +548,8 @@ otherwise stored in memory.
 The behavior of [cmd ns_http] can be influenced by optional settings in the
 NaviServer configuration file. The behavior can be tailored partially globally
 (for all servers) and per server definition. Globally, the number of
-threads ns_http threads can be configured.
+threads ns_http threads can be configured. These threads are used,
+when [cmd "ns_http queue"] or [option "-donecallback"] are used.
 
 [example_begin]
  #---------------------------------------------------------------------
@@ -588,7 +599,7 @@ module), but for HTTP client requests.
 [example_end]
 
 
-[see_also ns_httptime ns_set ns_urlencode nslog]
+[see_also ns_httptime ns_time ns_set ns_urlencode nslog]
 [keywords "global built-in" HTTP-client HTTP HTTPS nssock \
         spooling SNI configuration nslog TLS certificate]
 
