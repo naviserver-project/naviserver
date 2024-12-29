@@ -1692,10 +1692,10 @@ test http-6.5.2e2 {ns_getform and ns_getformfile + 16KB file multipart, explicit
     #
     set F [open [ns_server pagedir]/ns_http-6.5.2-multipart-mixed.request rb]; set C [read $F]; close $F
     #
-    #
-    #
-    set d [ns_parseurl  [ns_config test listenurl]]
+    set d [ns_parseurl [ns_config test listenurl]]
+    #ns_log warning "opening socket:" socket [dict get $d host] [dict get $d port]
     set S [socket [dict get $d host] [dict get $d port]]
+    #ns_log warning "opening socket: DONE"
     fconfigure $S -translation binary
     puts -nonewline $S $C
     flush $S
