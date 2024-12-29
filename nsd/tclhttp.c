@@ -253,6 +253,11 @@ static void HttpDoneCallback(
     NsHttpTask *httpPtr
 ) NS_GNUC_NONNULL(1);
 
+static void ResponseHeadersReceivedCallback(
+    NsHttpTask *httpPtr
+) NS_GNUC_NONNULL(1);
+
+
 static void HttpClientLogWrite(
     const NsHttpTask *httpPtr,
     const char       *causeString
@@ -447,6 +452,7 @@ DStringAppendHttpFlags(Tcl_DString *dsPtr, unsigned int flags)
         { NS_HTTP_KEEPALIVE,          "KEEPALIVE" },
         { NS_HTTP_VERSION_1_1,        "1.1" },
         { NS_HTTP_STREAMING,          "STREAMING" },
+        { NS_HTTP_CONNCHAN,           "CONNCHAN" },
         { NS_HTTP_HEADERS_PENDING,    "HDR_PENDING" }
     };
 
@@ -1470,7 +1476,7 @@ HttpWaitObjCmd(
             Ns_MutexUnlock(&httpPtr->lock);
         }
         /*
-         * Always decompress unless told differently. Here we do not have the
+         * Always decompress when necessary. Here we do not have the
          * "-raw" option, since we do not need backward compatibility.
          */
         httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
@@ -2244,6 +2250,7 @@ HttpQueue(
                *method = (char *)"GET",
                *url = NULL,
                *doneCallback = NULL,
+               *rhrCallback = NULL,
                *bodyChanName = NULL,
                *bodyFileName = NULL;
     Ns_Set     *requestHdrPtr = NULL;
@@ -2276,6 +2283,7 @@ HttpQueue(
         {"-partialresults",   Ns_ObjvBool,    &partialResults, INT2PTR(NS_TRUE)},
         {"-proxy",            Ns_ObjvObj,     &proxyObj,       NULL},
         {"-raw",              Ns_ObjvBool,    &raw,            INT2PTR(NS_TRUE)},
+        {"-response_header_callback",  Ns_ObjvString,  &rhrCallback,   NULL},
         {"-spoolsize",        Ns_ObjvMemUnit, &spoolLimit,     NULL},
         {"-timeout",          Ns_ObjvTime,    &timeoutPtr,     NULL},
         {"-unix_socket",      Ns_ObjvString,  &udsPath,        NULL},
@@ -2337,9 +2345,14 @@ HttpQueue(
         }
     }
 
+    /*
+     * When outputChanName os provided, it has to be either an nsconnchan or a
+     * Tcl channel.
+     */
     if (result == TCL_OK && outputChanName != NULL) {
-        if (Ns_TclGetOpenChannel(interp, outputChanName, /* write */ 1,
-                                 /* check */ 1, &spoolChan) != TCL_OK) {
+        if (NsConnChanGet(interp, itPtr->servPtr, outputChanName) == NULL
+           && (Ns_TclGetOpenChannel(interp, outputChanName, /* write */ 1,
+                                    /* check */ 1, &spoolChan) != TCL_OK)) {
             result = TCL_ERROR;
         }
     }
@@ -2366,6 +2379,12 @@ HttpQueue(
                              expirePtr,
                              keepAliveTimeoutPtr,
                              &httpPtr);
+    }
+    if (result == TCL_OK && outputChanName != NULL) {
+        httpPtr->outputChanName = ns_strdup(outputChanName);
+        if (NsConnChanGet(interp, itPtr->servPtr, outputChanName) != NULL) {
+            httpPtr->flags |= NS_HTTP_CONNCHAN;
+        }
     }
 
     if (result == TCL_OK && bodyChan != NULL) {
@@ -2403,6 +2422,9 @@ HttpQueue(
         if (doneCallback != NULL) {
             httpPtr->doneCallback = ns_strdup(doneCallback);
         }
+        if (rhrCallback != NULL) {
+            httpPtr->rhrCallback = ns_strdup(rhrCallback);
+        }
         if (likely(decompress != 0) && likely(raw == 0)) {
             httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
         } else {
@@ -2413,6 +2435,14 @@ HttpQueue(
         }
         if (partialResults != 0) {
             httpPtr->flags |= NS_HTTP_PARTIAL_RESULTS;
+        }
+
+        {
+            Tcl_DString dsHttpState;
+            Tcl_DStringInit(&dsHttpState);
+            Ns_Log(Notice, "ns_http flags after connect flags:%s",
+                   DStringAppendHttpFlags(&dsHttpState, httpPtr->flags));
+            Tcl_DStringFree(&dsHttpState);
         }
 
         httpPtr->servPtr = itPtr->servPtr;
@@ -2794,11 +2824,15 @@ HttpGetResult(
         Tcl_DictObjPut(interp, resultObj, Tcl_NewStringObj("body_chan", 9),
                        Tcl_NewStringObj(chanName, TCL_INDEX_NONE));
     }
+
     if (httpPtr->spoolChan != NULL) {
         const char *chanName = Tcl_GetChannelName(httpPtr->spoolChan);
 
         Tcl_DictObjPut(interp, resultObj, Tcl_NewStringObj("outputchan", 10),
                        Tcl_NewStringObj(chanName, TCL_INDEX_NONE));
+    } else if ((httpPtr->flags & NS_HTTP_CONNCHAN) != 0u) {
+        Tcl_DictObjPut(interp, resultObj, Tcl_NewStringObj("outputchan", 10),
+                       Tcl_NewStringObj(httpPtr->outputChanName, TCL_INDEX_NONE));
     }
 
     if (likely(errorObj == NULL)) {
@@ -2960,11 +2994,11 @@ HttpCheckSpool(
                             &major,
                             &minor,
                             &httpPtr->status,
-                            NULL) != NS_OK || httpPtr->status == 0) {
+                            NULL) != NS_OK
+        || httpPtr->status == 0) {
 
         Ns_Log(Warning, "ns_http: parsing reply failed");
         result = TCL_ERROR;
-
     } else {
         const char *header;
         Tcl_WideInt replyLength = 0;
@@ -2984,6 +3018,9 @@ HttpCheckSpool(
              * continue". We skip here the message without further
              * processing.
              */
+
+            ResponseHeadersReceivedCallback(httpPtr);
+
             SkipMessage(httpPtr);
             return TCL_CONTINUE;
 
@@ -3024,8 +3061,12 @@ HttpCheckSpool(
                 Ns_Log(Ns_LogTaskDebug, "HttpCheckSpool: %s: %s",
                        transferEncodingHeader, header);
                 /*
-                 * Why is this header field deleted here?
+                 * The "transfer-encoding" header is deleted here, since even
+                 * when "-raw" is specified, we do not sent the raw wire data,
+                 * but the unwrapped data after the chunked headers are
+                 * removed.
                  */
+                Ns_Log(Notice, "HttpCheckSpool deletes header field 'transfer-encoding'"); // CHANGE LEVEL
                 Ns_SetIDeleteKey(httpPtr->replyHeaders, transferEncodingHeader);
             } else if (httpPtr->status != 204) {
                 /*
@@ -3036,6 +3077,11 @@ HttpCheckSpool(
                 httpPtr->flags |= NS_HTTP_STREAMING;
             }
         }
+        /*
+         * ResponseHeadersReceivedCallback, similar to what we have in
+         * revproxy-ns-connchan.tcl
+         */
+        ResponseHeadersReceivedCallback(httpPtr);
 
         /*
          * See if we are handling compressed content.
@@ -3060,12 +3106,17 @@ HttpCheckSpool(
          * See if we need to spool the response content
          * to file/channel or leave it in the memory.
          */
-        if (httpPtr->spoolLimit > -1
-            && (replyLength == 0 || replyLength >= httpPtr->spoolLimit)) {
+        Ns_Log(Ns_LogTaskDebug, "HttpCheckSpool spoolLimit %ld replyLength %ld outputChanName <%s>",
+               httpPtr->spoolLimit,replyLength, httpPtr->outputChanName);
 
-            if (httpPtr->spoolChan != NULL) {
+        if (httpPtr->spoolLimit > -1
+                && (replyLength == 0 || replyLength >= httpPtr->spoolLimit)
+           ) {
+
+            if (httpPtr->outputChanName != NULL) {
                 httpPtr->spoolFd = NS_INVALID_FD;
                 httpPtr->recvSpoolMode = NS_TRUE;
+
             } else {
                 int fd;
 
@@ -3097,14 +3148,8 @@ HttpCheckSpool(
                 if (fd != NS_INVALID_FD) {
                     httpPtr->spoolFd = fd;
                     httpPtr->recvSpoolMode = NS_TRUE;
-                } else {
 
-                    /*
-                     * FIXME:
-                     *
-                     * The ns_mkstemp/ns_open on Unix are clear but
-                     * what happens with handling error on Windows?
-                     */
+                } else {
                     Ns_Log(Error, "ns_http: can't open spool file: %s:",
                            httpPtr->spoolFileName);
                     result = TCL_ERROR;
@@ -3811,6 +3856,8 @@ HttpConnect(
         || (keepAliveTimeoutPtr->sec == 0 && keepAliveTimeoutPtr->usec == 0)
        ) {
         Ns_DStringPrintf(dsPtr, "%s: close\r\n", connectionHeader);
+        Ns_Log(Notice, "HttpConnect: set request header 'connection: close'"); // CHANGE LEVEL
+
     }
 
     /*
@@ -4000,9 +4047,22 @@ HttpAppendRawBuffer(
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(buffer != NULL);
 
+    //fprintf(stderr, "============== HttpAppendRawBuffer %ld recvSpoolMode %d\n", size, httpPtr->recvSpoolMode);
     if (httpPtr->recvSpoolMode == NS_TRUE) {
         if (httpPtr->spoolFd != NS_INVALID_FD) {
             written = ns_write(httpPtr->spoolFd, buffer, size);
+        } else if ((httpPtr->flags & NS_HTTP_CONNCHAN) != 0u) {
+            Tcl_Interp *interp = NsTclAllocateInterp( httpPtr->servPtr);
+
+            //fprintf(stderr, "============== HttpAppendRawBuffer connchan write %s %ld bytes\n", httpPtr->outputChanName, size);
+
+            result = NsConnChanWrite(interp, httpPtr->outputChanName, buffer, (TCL_SIZE_T)size, NS_TRUE, &written);
+            Ns_TclDeAllocateInterp(interp);
+            if ((ssize_t)size != written) {
+                Ns_Log(Notice /*Ns_LogTaskDebug*/, "HttpAppendRawBuffer: connchan write %s %ld bytes written %ld",
+                       httpPtr->outputChanName, size, written); // CHANGE LEVEL
+            }
+
         } else if (httpPtr->spoolChan != NULL) {
             written = (ssize_t)Tcl_Write(httpPtr->spoolChan, buffer, (TCL_SIZE_T)size);
         } else {
@@ -4371,6 +4431,10 @@ HttpCleanupPerRequestData(
         ns_free((void *)httpPtr->doneCallback);
         httpPtr->doneCallback = NULL;
     }
+    if (httpPtr->rhrCallback != NULL) {
+        ns_free((void *)httpPtr->rhrCallback);
+        httpPtr->rhrCallback = NULL;
+    }
     if (httpPtr->spoolFd != NS_INVALID_FD) {
         (void)ns_close(httpPtr->spoolFd);
         httpPtr->spoolFd = NS_INVALID_SOCKET;
@@ -4520,6 +4584,9 @@ HttpClose(
     HttpCleanupPerRequestData(httpPtr, "HttpClose");
     if (httpPtr->host != NULL) {
         ns_free((void *)httpPtr->host);
+    }
+    if (httpPtr->outputChanName != NULL) {
+        ns_free((void *)httpPtr->outputChanName);
     }
 
     CkFree((void *)httpPtr, "finalising HttpClose");
@@ -4795,13 +4862,73 @@ HttpDoneCallback(
     result = Tcl_EvalEx(interp, script.string, script.length, 0);
 
     if (result != TCL_OK) {
-        (void) Ns_TclLogErrorInfo(interp, "\n(context: httptask)");
+        (void) Ns_TclLogErrorInfo(interp, "\n(context: http done callback)");
     }
 
     Tcl_DStringFree(&script);
     Ns_TclDeAllocateInterp(interp);
 
     HttpClose(httpPtr); /* This frees the httpPtr! */
+}
+
+static void
+ResponseHeadersReceivedCallback(
+    NsHttpTask *httpPtr
+) {
+    Tcl_Interp  *interp;
+    int          result;
+    Ns_Set      *replyHeaders;
+
+    LogDebug("ResponseHeadersReceivedCallback", httpPtr, "");
+
+    if (httpPtr->rhrCallback != NULL) {
+        interp = NsTclAllocateInterp(httpPtr->servPtr);
+        replyHeaders = Ns_SetCopy(httpPtr->replyHeaders);
+
+        result = Ns_TclEnterSet(interp, replyHeaders, NS_TCL_SET_DYNAMIC);
+
+        if (result == TCL_OK) {
+            Tcl_DString  script;
+            Tcl_Obj     *dictObj = Tcl_NewDictObj();
+            Tcl_Obj     *objv[2];
+
+            Tcl_DStringInit(&script);
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("status", 6),
+                           Tcl_NewIntObj(httpPtr->status));
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("phrase", 6),
+                           Tcl_NewStringObj(NsHttpStatusPhrase(httpPtr->status), TCL_INDEX_NONE));
+
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("headers", 7),
+                           Tcl_GetObjResult(interp));
+
+            if (httpPtr->outputChanName != NULL) {
+                Tcl_DictObjPut(NULL, dictObj,
+                               Tcl_NewStringObj("outputchan", 10),
+                               Tcl_NewStringObj(httpPtr->outputChanName, TCL_INDEX_NONE));
+            }
+
+            objv[0] = Tcl_NewStringObj(httpPtr->rhrCallback, TCL_INDEX_NONE);
+            objv[1] = dictObj;
+            Tcl_IncrRefCount(objv[0]);
+            Tcl_IncrRefCount(objv[1]);
+
+            //Tcl_DStringAppend(&script, httpPtr->headerReceivedCallback, TCL_INDEX_NONE);
+            //Ns_DStringPrintf(&script, "ns_log notice RECEIVED sets <[ns_set list]> status %d interp %p\n", httpPtr->status, (void*)interp);
+            //result = Tcl_EvalEx(interp, script.string, script.length, 0);
+            result = Tcl_EvalObjv(interp, 2, objv, 0);
+            Tcl_DecrRefCount(objv[0]);
+            Tcl_DecrRefCount(objv[1]);
+
+            Tcl_DStringFree(&script);
+        }
+        if (result != TCL_OK) {
+            (void) Ns_TclLogErrorInfo(interp, "\n(context: header received callback)");
+        }
+        Ns_TclDeAllocateInterp(interp);
+    }
 }
 
 

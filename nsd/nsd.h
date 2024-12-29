@@ -1151,6 +1151,7 @@ typedef struct {
     unsigned short     port;
     char              *spoolFileName;    /* filename of the spool file */
     Tcl_Channel        spoolChan;        /* channel where to spool */
+    const char        *outputChanName;   /* name of the output channel for introspection */
     Ns_Mutex           lock;             /* sync with task thread */
     unsigned int       flags;            /* */
     Ns_CompressStream *compress;         /* flag, toggle content decompression */
@@ -1166,6 +1167,7 @@ typedef struct {
     Ns_SockState       finalSockState;   /* state of the socket at completion */
     Tcl_Obj           *infoObj;          /* ancillary attr/value info */
     char              *doneCallback;     /* Tcl script run at task completion */
+    char              *rhrCallback;      /* Tcl script run when response headers were received */
     NsServer          *servPtr;          /* Server for doneCallback */
     NS_TLS_SSL_CTX    *ctx;              /* SSL context handle */
     NS_TLS_SSL        *ssl;              /* SSL connection handle */
@@ -1199,8 +1201,9 @@ typedef struct _NsHttpChunk {
 #define NS_HTTP_KEEPALIVE          (1u<<6)
 #define NS_HTTP_VERSION_1_1        (1u<<7)
 #define NS_HTTP_STREAMING          (1u<<8)
-#define NS_HTTP_HEADERS_PENDING    (1u<<9)
-#define NS_HTTP_PARTIAL_RESULTS    (1u<<10)
+#define NS_HTTP_CONNCHAN           (1u<<9)
+#define NS_HTTP_HEADERS_PENDING    (1u<<10)
+#define NS_HTTP_PARTIAL_RESULTS    (1u<<11)
 
 #define NS_HTTP_FLAG_GUNZIP (NS_HTTP_FLAG_DECOMPRESS|NS_HTTP_FLAG_GZIP_ENCODING)
 
