@@ -342,13 +342,13 @@ The specification using [term map-noinherit] corresponds
 to the [option "-noinherit"] as described above.
 
 [example_begin]
- ns_section "ns/server/${server}/pools" {
+ ns_section "ns/server/$server/pools" {
     ns_param fast "Fast lane pool"
     ns_param slow "Slow lane pool"
     ns_param bots "Bot pool"
  }
  
- ns_section "ns/server/${server}/pool/fast" {
+ ns_section "ns/server/$server/pool/fast" {
     ns_param minthreads 4
     ns_param maxthreads 4
     ns_param rejectoverrun true
@@ -359,14 +359,14 @@ to the [option "-noinherit"] as described above.
     ns_param map-noinherit "GET /dotlrn/mt"
  }
  
- ns_section "ns/server/${server}/pool/slow" {
+ ns_section "ns/server/$server/pool/slow" {
     ns_param minthreads 5
     ns_param maxthreads 15
     ns_param maxconnections 200
     ns_param rejectoverrun true
  }
 
-ns_section "ns/server/${server}/pool/bots" {
+ns_section "ns/server/$server/pool/bots" {
     ns_param   map "GET  /* {user-agent *bot*}"
     ns_param   map "GET  /* {user-agent *rawl*}"
     ns_param   map "GET  /* {user-agent *pider*}"
@@ -390,7 +390,7 @@ provided in the configuration file. We extend the example above by
 adding a bot pool.
 
 [example_begin]
- ns_section "ns/server/${server}/pools" {
+ ns_section "ns/server/$server/pools" {
     ns_param fast "Fast lane pool"
     ns_param slow "Slow lane pool"
     ns_param bots "Bot pool"
@@ -398,7 +398,7 @@ adding a bot pool.
  #
  # ...
  #
- ns_section "ns/server/${server}/pool/bots" {
+ ns_section "ns/server/$server/pool/bots" {
     ns_param map "GET  /* {user-agent *bot*}"
     ns_param map "GET  /* {user-agent *rawl*}"
     ns_param map "GET  /* {user-agent *pider*}"

@@ -545,11 +545,12 @@ otherwise stored in memory.
 
 [section CONFIGURATION]
 
-The behavior of [cmd ns_http] can be influenced by optional settings in the
-NaviServer configuration file. The behavior can be tailored partially globally
-(for all servers) and per server definition. Globally, the number of
-threads ns_http threads can be configured. These threads are used,
-when [cmd "ns_http queue"] or [option "-donecallback"] are used.
+The behavior of [cmd ns_http] can be influenced by optional settings
+in the NaviServer configuration file. The behavior can be tailored
+partially globally (for all servers) and per server
+definition. Globally, the number of threads ns_http threads can be
+configured. These threads are used, when the request is started with
+[cmd "ns_http queue"] or [option "-donecallback"] are used.
 
 [example_begin]
  #---------------------------------------------------------------------
@@ -579,7 +580,7 @@ module), but for HTTP client requests.
  #---------------------------------------------------------------------
  # HTTP client (ns_http) configuration
  #---------------------------------------------------------------------
- ns_section ns/server/server1/httpclient {
+ ns_section ns/server/$server/httpclient {
     #
     # Set default keep-alive timeout for outgoing ns_http requests
     #

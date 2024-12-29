@@ -441,7 +441,7 @@ The number of buckets to be used can be configured by setting the
 [const nsvbuckets] Tcl parameters, e.g.:
 
 [example_begin]
- ns_section  ns/server/${server}/tcl {
+ ns_section  ns/server/$server/tcl {
    # Number of buckets in Tcl hash table for nsv vars
    ns_param nsvbuckets 16
  }
@@ -468,7 +468,7 @@ so NaviServer allows the specify in the configuration file, whether
 mutex locks or rwlocks might be used.
 
 [example_begin]
- ns_section  ns/server/${server}/tcl {
+ ns_section  ns/server/$server/tcl {
    ns_param nsvrwlocks false   ;# default true
  }
 [example_end]

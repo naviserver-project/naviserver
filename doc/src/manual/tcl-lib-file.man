@@ -18,7 +18,7 @@ requested (Tcl pages).  Notice the entries in your sample-config.tcl
 configuration file:
 
 [example_begin]
- ns_section ns/server/${server}/adp {
+ ns_section ns/server/$server/adp {
    ns_param   enabletclpages  false         ;# Parse *.tcl files in pagedir.
  }
 [example_end]
