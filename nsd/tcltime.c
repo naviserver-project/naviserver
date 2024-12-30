@@ -97,7 +97,7 @@ NsTclInitTimeType(void)
 #ifndef _WIN32
     Tcl_Obj obj;
     if (sizeof(obj.internalRep) < sizeof(Ns_Time)) {
-        Tcl_Panic("NsTclInitObjs: sizeof(obj.internalRep) < sizeof(Ns_Time)");
+        Tcl_Panic("NsTclInitTimeType: sizeof(obj.internalRep) < sizeof(Ns_Time)");
     }
 #endif
     if (NS_intTypePtr == NULL) {
