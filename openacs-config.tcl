@@ -8,6 +8,10 @@
 ######################################################################
 ns_log notice "nsd.tcl: starting to read configuration file..."
 
+if {[info commands ::ns_configure_variables] eq ""} {
+    ns_log notice "backward compatibility hook (pre NaviServer 5): have to source init.tcl"
+    source [file normalize $home/tcl/init.tcl]
+}
 #---------------------------------------------------------------------
 # Port settings:
 #

@@ -2,6 +2,11 @@
 # Sample configuration file for NaviServer
 ########################################################################
 
+if {[info commands ::ns_configure_variables] eq ""} {
+    ns_log notice "backward compatibility hook (pre NaviServer 5): have to source init.tcl"
+    source [file normalize $home/tcl/init.tcl]
+}
+
 # All default variables in "defaultConfig" can be overloaded by:
 #
 # 1) Setting these variables explicitly in this file after
