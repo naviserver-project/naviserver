@@ -564,10 +564,17 @@ NsInitHttp(NsServer *servPtr)
             servPtr->httpclient.logFileName = ns_strdup(filename);
         } else {
             Tcl_DString ds;
+            Ns_Set     *set;
 
             Tcl_DStringInit(&ds);
             (void) Ns_HomePath(&ds, "logs", "/", filename, (char *)0L);
             servPtr->httpclient.logFileName = Ns_DStringExport(&ds);
+
+            /*
+             * The path was completed. Make the result queryable.
+             */
+            set = Ns_ConfigCreateSection(path);
+            Ns_SetIUpdateSz(set, "logfile", 7, servPtr->httpclient.logFileName, TCL_INDEX_NONE);
         }
         Tcl_DStringFree(&defaultLogFileName);
         servPtr->httpclient.logRollfmt = ns_strcopy(Ns_ConfigGetValue(path, "logrollfmt"));
