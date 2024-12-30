@@ -3107,7 +3107,7 @@ HttpCheckSpool(
          * to file/channel or leave it in the memory.
          */
         Ns_Log(Ns_LogTaskDebug, "HttpCheckSpool spoolLimit %ld replyLength %ld outputChanName <%s>",
-               httpPtr->spoolLimit,replyLength, httpPtr->outputChanName);
+               (long)httpPtr->spoolLimit, (long)replyLength, httpPtr->outputChanName);
 
         if (httpPtr->spoolLimit > -1
                 && (replyLength == 0 || replyLength >= httpPtr->spoolLimit)
