@@ -1921,7 +1921,7 @@ NS_EXTERN void NsWaitServer(NsServer *servPtr, const Ns_Time *toPtr) NS_GNUC_NON
  * set.c
  */
 #ifdef NS_SET_DSTRING
-NS_EXTERN void Ns_SetDataPrealloc(Ns_Set *set, TCL_SIZE_T size)
+NS_EXTERN void NsSetDataPrealloc(Ns_Set *set, TCL_SIZE_T size)
     NS_GNUC_NONNULL(1);
 #endif
 

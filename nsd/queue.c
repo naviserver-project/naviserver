@@ -2545,7 +2545,7 @@ Ns_Set *NsHeaderSetGet(size_t size)
     result = Ns_SetCreateSz(NS_SET_NAME_REQUEST, MAX(10, size));
     result->flags |= NS_SET_OPTION_NOCASE;
 #ifdef NS_SET_DSTRING
-    Ns_SetDataPrealloc(result, 4095);
+    NsSetDataPrealloc(result, 4095);
 #endif
 
     return result;

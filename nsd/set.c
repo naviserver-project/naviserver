@@ -358,7 +358,7 @@ NsSetResize(Ns_Set *set, size_t newSize, int bufferSize)
 #ifdef NS_SET_DSTRING
     if (bufferSize > TCL_DSTRING_STATIC_SIZE) {
         oldDataStart = set->data.string;
-        Ns_SetDataPrealloc(set, (TCL_SIZE_T)bufferSize);
+        NsSetDataPrealloc(set, (TCL_SIZE_T)bufferSize);
         ShiftData(set, oldDataStart);
     }
 #endif
@@ -1601,7 +1601,7 @@ Ns_SetIMerge(Ns_Set *high, const Ns_Set *low)
 /*
  *----------------------------------------------------------------------
  *
- * Ns_SetDataPrealloc --
+ * NsSetDataPrealloc --
  *
  *      Interface for sizing a (typically fresh) Ns_Set by specifying the
  *      number of allements and the Tcl_DString space.
@@ -1614,7 +1614,7 @@ Ns_SetIMerge(Ns_Set *high, const Ns_Set *low)
  *
  *----------------------------------------------------------------------
  */
-void Ns_SetDataPrealloc(Ns_Set *set, TCL_SIZE_T size)
+void NsSetDataPrealloc(Ns_Set *set, TCL_SIZE_T size)
 {
     TCL_SIZE_T oldStringSize = set->data.length;
 
@@ -1657,7 +1657,7 @@ Ns_SetCopy(const Ns_Set *old)
         new = SetCreate(old->name, old->size + 1); /* maybe maxSize? */
         new->flags = old->flags;
 #ifdef NS_SET_DSTRING
-        Ns_SetDataPrealloc(new, old->data.length + 1);
+        NsSetDataPrealloc(new, old->data.length + 1);
 #endif
         for (i = 0u; i < old->size; ++i) {
             (void)Ns_SetPut(new, old->fields[i].name, old->fields[i].value);
