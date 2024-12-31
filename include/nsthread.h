@@ -92,6 +92,7 @@
 #ifndef NS_NO_DEPRECATED
 # define NS_WITH_DEPRECATED
 #endif
+#define NS_WITH_RECENT_DEPRECATED
 
 /*
  * AFAICT, there is no reason to conditionalize NSTHREAD_EXPORTS

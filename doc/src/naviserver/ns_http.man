@@ -77,7 +77,7 @@ Optional ID of the HTTP request to list.
 	[opt [option "-cafile [arg value]"]] \
 	[opt [option "-capath [arg value]"]] \
 	[opt [option "-cert [arg value]"]] \
-	[opt [option "-donecallback [arg value]"]] \
+	[opt [option "-done_callback [arg value]"]] \
 	[opt [option "-expire [arg time]"]] \
 	[opt [option "-headers [arg setId]"]] \
 	[opt [option "-hostname [arg value ]"]] \
@@ -99,7 +99,7 @@ Optional ID of the HTTP request to list.
 
 [para]
 Opens a connection to the web server denoted in the [arg url] and
-returns (unless a [option -donecallback] is
+returns (unless a [option -done_callback] is
 specified) an [arg id], which might be used later in [cmd "ns_http wait"]
 or [cmd "ns_http cancel"] to refer to this request. The command supports
 both HTTP and HTTPS URIs.  The request is run in the default task queue
@@ -116,7 +116,7 @@ in a dedicated per-queue thread.
 	[opt [option "-cafile [arg value]"]] \
 	[opt [option "-capath [arg value]"]] \
 	[opt [option "-cert [arg value]"]] \
-	[opt [option "-donecallback [arg value]"]] \
+	[opt [option "-done_callback [arg value]"]] \
 	[opt [option "-expire [arg time]"]] \
 	[opt [option "-headers [arg setId]"]] \
 	[opt [option "-hostname [arg value ]"]] \
@@ -276,7 +276,7 @@ the subject's certificate (actual client or server certificate),
 followed by intermediate CA certificates if applicable, and ending at
 the highest level (root) CA.
 
-[opt_def -donecallback [arg value]]
+[opt_def -done_callback [arg value]]
 this callback argument will be executed as Tcl script when the request
 is completed.  The provided [arg call] is appended with two arguments,
 a flag indicating a Tcl error or not (integer value 1 or 0), and the
@@ -550,7 +550,7 @@ in the NaviServer configuration file. The behavior can be tailored
 partially globally (for all servers) and per server
 definition. Globally, the number of threads ns_http threads can be
 configured. These threads are used, when the request is started with
-[cmd "ns_http queue"] or [option "-donecallback"] are used.
+[cmd "ns_http queue"] or [option "-done_callback"] are used.
 
 [example_begin]
  #---------------------------------------------------------------------

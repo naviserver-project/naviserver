@@ -81,15 +81,15 @@ test ns_http-1.5 {syntax: ns_http list} -body {
 
 test ns_http-1.6 {syntax: ns_http queue} -body {
     ns_http queue
-} -returnCodes error -result {wrong # args: should be "ns_http queue ?-binary? ?-body /value/? ?-body_chan /value/? ?-body_file /value/? ?-body_size /integer[0,MAX]/? ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-decompress? ?-donecallback /value/? ?-expire /time/? ?-headers /setId/? ?-hostname /value/? ?-keep_host_header? ?-keepalive /time/? ?-method /value/? ?-outputchan /value/? ?-outputfile /value/? ?-partialresults? ?-proxy /value/? ?-raw? ?-response_header_callback /value/? ?-spoolsize /memory-size/? ?-timeout /time/? ?-unix_socket /value/? ?-verify? /url/"}
-# should be  -returnCodes error -result {wrong # args: should be "ns_http queue ?-binary? ?-body /value/? ?-body_chan /value/? ?-body_file /value/? ?-body_size /integer[0,MAX]/? ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-donecallback /value/? ?-expire /time/? ?-headers /setId/? ?-hostname /value/? ?-keep_host_header? ?-keepalive /time/? ?-method /value/? ?-outputchan /value/? ?-outputfile /value/? ?-partialresults? ?-proxy /value/? ?-raw? ?-response_header_callback /value/? ?-spoolsize /memory-size/? ?-timeout /time/? ?-unix_socket /value/? ?-verify? /url/"}
+} -returnCodes error -result {wrong # args: should be "ns_http queue ?-binary? ?-body /value/? ?-body_chan /value/? ?-body_file /value/? ?-body_size /integer[0,MAX]/? ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-decompress? ?-donecallback /value/? ?-done_callback /value/? ?-expire /time/? ?-headers /setId/? ?-hostname /value/? ?-keep_host_header? ?-keepalive /time/? ?-method /value/? ?-outputchan /value/? ?-outputfile /value/? ?-partialresults? ?-proxy /value/? ?-raw? ?-response_header_callback /value/? ?-spoolsize /memory-size/? ?-timeout /time/? ?-unix_socket /value/? ?-verify? /url/"}
+# should be  -returnCodes error -result {wrong # args: should be "ns_http queue ?-binary? ?-body /value/? ?-body_chan /value/? ?-body_file /value/? ?-body_size /integer[0,MAX]/? ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-done_callback /value/? ?-expire /time/? ?-headers /setId/? ?-hostname /value/? ?-keep_host_header? ?-keepalive /time/? ?-method /value/? ?-outputchan /value/? ?-outputfile /value/? ?-partialresults? ?-proxy /value/? ?-raw? ?-response_header_callback /value/? ?-spoolsize /memory-size/? ?-timeout /time/? ?-unix_socket /value/? ?-verify? /url/"}
 
 
 test ns_http-1.7 {syntax: ns_http run} -body {
     ns_http run
-} -returnCodes error -result {wrong # args: should be "ns_http run ?-binary? ?-body /value/? ?-body_chan /value/? ?-body_file /value/? ?-body_size /integer[0,MAX]/? ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-decompress? ?-donecallback /value/? ?-expire /time/? ?-headers /setId/? ?-hostname /value/? ?-keep_host_header? ?-keepalive /time/? ?-method /value/? ?-outputchan /value/? ?-outputfile /value/? ?-partialresults? ?-proxy /value/? ?-raw? ?-response_header_callback /value/? ?-spoolsize /memory-size/? ?-timeout /time/? ?-unix_socket /value/? ?-verify? /url/"}
+} -returnCodes error -result {wrong # args: should be "ns_http run ?-binary? ?-body /value/? ?-body_chan /value/? ?-body_file /value/? ?-body_size /integer[0,MAX]/? ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-decompress? ?-donecallback /value/? ?-done_callback /value/? ?-expire /time/? ?-headers /setId/? ?-hostname /value/? ?-keep_host_header? ?-keepalive /time/? ?-method /value/? ?-outputchan /value/? ?-outputfile /value/? ?-partialresults? ?-proxy /value/? ?-raw? ?-response_header_callback /value/? ?-spoolsize /memory-size/? ?-timeout /time/? ?-unix_socket /value/? ?-verify? /url/"}
 
-# should be {wrong # args: should be "ns_http run ?-binary? ?-body /value/? ?-body_chan /value/? ?-body_file /value/? ?-body_size /integer[0,MAX]/? ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-donecallback /value/? ?-expire /time/? ?-headers /setId/? ?-hostname /value/? ?-keep_host_header? ?-keepalive /time/? ?-method /value/? ?-outputchan /value/? ?-outputfile /value/? ?-partialresults? ?-proxy /value/? ?-raw? ?-response_header_callback /value/? ?-spoolsize /memory-size/? ?-timeout /time/? ?-unix_socket /value/? ?-verify? /url/"}
+# should be {wrong # args: should be "ns_http run ?-binary? ?-body /value/? ?-body_chan /value/? ?-body_file /value/? ?-body_size /integer[0,MAX]/? ?-cafile /value/? ?-capath /value/? ?-cert /value/? ?-done_callback /value/? ?-expire /time/? ?-headers /setId/? ?-hostname /value/? ?-keep_host_header? ?-keepalive /time/? ?-method /value/? ?-outputchan /value/? ?-outputfile /value/? ?-partialresults? ?-proxy /value/? ?-raw? ?-response_header_callback /value/? ?-spoolsize /memory-size/? ?-timeout /time/? ?-unix_socket /value/? ?-verify? /url/"}
 
 
 test ns_http-1.8 {syntax: ns_http stats} -body {
@@ -2440,12 +2440,12 @@ test http-8.4.7 {ns_http run + timeout, no timeout} -constraints {serverListen} 
 } -result {no timeout 200}
 
 
-test http-8.5.0 {ns_http queue + donecallback} -constraints {serverListen} -setup {
+test http-8.5.0 {ns_http queue + done_callback} -constraints {serverListen} -setup {
     ns_register_proc GET /get { ns_return 200 text/plain OK }
 } -body {
     nsv_set result . ""
     try {
-        ns_http queue -donecallback "nsv_lappend result . " [ns_config test listenurl]/get
+        ns_http queue -done_callback "nsv_lappend result . " [ns_config test listenurl]/get
     } on error {errorMsg} {
         set r $::errorCode
     } on ok {result} {
@@ -2463,11 +2463,11 @@ test http-8.5.0 {ns_http queue + donecallback} -constraints {serverListen} -setu
     nsv_unset result
 } -result {no timeout 200}
 
-test http-8.5.1 {ns_http queue + donecallback + timeout} -constraints {serverListen} -setup {
+test http-8.5.1 {ns_http queue + done_callback + timeout} -constraints {serverListen} -setup {
     ns_register_proc GET /slow { ns_sleep 2s; ns_return 200 text/plain OK }
 } -body {
     nsv_set result . ""
-    ns_http queue -timeout 1 -donecallback "nsv_lappend result . " [ns_config test listenurl]/slow
+    ns_http queue -timeout 1 -done_callback "nsv_lappend result . " [ns_config test listenurl]/slow
     #
     # Sleep a little to let done-callback finish (max after 1 sec).
     #

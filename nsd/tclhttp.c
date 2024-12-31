@@ -2251,7 +2251,7 @@ CloseWaitingDataPrettyState(CloseWaitingData *cwDataPtr)
  *      in the interp result. This taskID can be used by other
  *      commands to cancel or wait for the task to finish.
  *
- *      The taskID is not returned if the "-doneCallback" option
+ *      The taskID is not returned if the "-done_callback" option
  *      is specified. In that case, the task is handled and
  *      garbage collected by the thread executing the task.
  *
@@ -2285,6 +2285,9 @@ HttpQueue(
                *outputChanName = NULL,
                *method = (char *)"GET",
                *url = NULL,
+#ifdef NS_WITH_RECENT_DEPRECATED
+               *doneCallbackDeprec = NULL,
+#endif
                *doneCallback = NULL,
                *rhrCallback = NULL,
                *bodyChanName = NULL,
@@ -2307,7 +2310,10 @@ HttpQueue(
         {"-capath",           Ns_ObjvString,  &caPath,         NULL},
         {"-cert",             Ns_ObjvString,  &cert,           NULL},
         {"-decompress",       Ns_ObjvBool,    &decompress,     INT2PTR(NS_TRUE)},
-        {"-donecallback",     Ns_ObjvString,  &doneCallback,   NULL},
+#ifdef NS_WITH_RECENT_DEPRECATED
+        {"-donecallback",     Ns_ObjvString,  &doneCallbackDeprec,  NULL},
+#endif
+        {"-done_callback",    Ns_ObjvString,  &doneCallback,   NULL},
         {"-expire",           Ns_ObjvTime,    &expirePtr,      NULL},
         {"-headers",          Ns_ObjvSet,     &requestHdrPtr,  NULL},
         {"-hostname",         Ns_ObjvString,  &sniHostname,    NULL},
@@ -2336,8 +2342,8 @@ HttpQueue(
 
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
-    } else if (run == NS_TRUE && doneCallback != NULL) {
-        Ns_TclPrintfResult(interp, "option -doneCallback allowed only"
+    } else if (run == NS_TRUE && (doneCallback != NULL || doneCallbackDeprec != NULL)) {
+        Ns_TclPrintfResult(interp, "option -done_callback allowed only"
                            " for [ns_http_queue]");
         result = TCL_ERROR;
     } else if (outputFileName != NULL && outputChanName != NULL) {
@@ -2445,7 +2451,13 @@ HttpQueue(
             HttpClose(httpPtr);
         }
     } else {
-
+#ifdef NS_WITH_RECENT_DEPRECATED
+        if (doneCallbackDeprec != NULL) {
+            doneCallback = doneCallbackDeprec;
+            Ns_Log(Warning, "ns_http %s: -donecallback option is deprecated;"
+                   " use -done_callback instead", Tcl_GetString(objv[1]));
+        }
+#endif
         /*
          * All is fine. Fill in the rest of the task options
          */
