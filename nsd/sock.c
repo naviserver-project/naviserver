@@ -905,6 +905,7 @@ Ns_SockAccept(NS_SOCKET sock, struct sockaddr *saPtr, socklen_t *lenPtr)
     return sock;
 }
 
+#ifdef NS_WITH_DEPRECATED
 /*
  *----------------------------------------------------------------------
  *
@@ -927,6 +928,7 @@ Ns_BindSock(const struct sockaddr *saPtr)
 {
     return Ns_SockBind(saPtr, NS_FALSE);
 }
+#endif
 
 
 /*

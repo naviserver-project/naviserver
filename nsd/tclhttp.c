@@ -810,11 +810,48 @@ SkipDigits(char *chars)
 }
 
 
-
+#ifdef NS_WITH_DEPRECATED
 /*
  *----------------------------------------------------------------------
  *
- * Ns_HttpParseHost2, Ns_HttpParseHost --
+ * Ns_HttpParseHost --
+ *
+ *      Deprecated version of Ns_HttpParseHost2.
+ *
+ * Results:
+ *      Boolean value indicating success.
+ *
+ * Side effects:
+ *      May write NUL character '\0' into the passed hostString.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Ns_HttpParseHost(
+    char *hostString,
+    char **hostStart,
+    char **portStart
+) {
+    char *end;
+
+    NS_NONNULL_ASSERT(hostString != NULL);
+    NS_NONNULL_ASSERT(portStart != NULL);
+
+    (void) Ns_HttpParseHost2(hostString, NS_FALSE, hostStart, portStart, &end);
+    if (*portStart != NULL) {
+        /*
+         * The old version was returning in portStart the position of the
+         * character BEFORE the port (usually ':'). So, keep compatibility.
+         */
+        *portStart = *portStart-1;
+    }
+}
+#endif
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_HttpParseHost2 --
  *
  *      Obtain the hostname from a writable string
  *      using syntax as specified in RFC 3986 section 3.2.2.
@@ -849,27 +886,6 @@ SkipDigits(char *chars)
  *
  *----------------------------------------------------------------------
  */
-void
-Ns_HttpParseHost(
-    char *hostString,
-    char **hostStart,
-    char **portStart
-) {
-    char *end;
-
-    NS_NONNULL_ASSERT(hostString != NULL);
-    NS_NONNULL_ASSERT(portStart != NULL);
-
-    (void) Ns_HttpParseHost2(hostString, NS_FALSE, hostStart, portStart, &end);
-    if (*portStart != NULL) {
-        /*
-         * The old version was returning in portStart the position of the
-         * character BEFORE the port (usually ':'). So, keep compatibility.
-         */
-        *portStart = *portStart-1;
-    }
-}
-
 bool
 Ns_HttpParseHost2(
     char *hostString,

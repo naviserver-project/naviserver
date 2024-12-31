@@ -475,6 +475,17 @@ Ns_NextWord(const char *line)
     return line;
 }
 
+#ifdef NS_WITH_DEPRECATED
+const char *
+Ns_StrNStr(const char *chars, const char *subString)
+{
+    NS_NONNULL_ASSERT(chars != NULL);
+    NS_NONNULL_ASSERT(subString != NULL);
+
+    return Ns_StrCaseFind(chars, subString);
+}
+#endif
+
 
 /*
  *----------------------------------------------------------------------
@@ -491,15 +502,6 @@ Ns_NextWord(const char *line)
  *
  *----------------------------------------------------------------------
  */
-
-const char *
-Ns_StrNStr(const char *chars, const char *subString)
-{
-    NS_NONNULL_ASSERT(chars != NULL);
-    NS_NONNULL_ASSERT(subString != NULL);
-
-    return Ns_StrCaseFind(chars, subString);
-}
 
 const char *
 Ns_StrCaseFind(const char *chars, const char *subString)

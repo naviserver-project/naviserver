@@ -554,6 +554,7 @@ Ns_ConnCurrentPort(const Ns_Conn *conn)
     return result;
 }
 
+#ifdef NS_WITH_DEPRECATED
 /*
  *----------------------------------------------------------------------
  *
@@ -581,6 +582,7 @@ Ns_ConnPeer(const Ns_Conn *conn)
 
     return Ns_ConnPeerAddr(conn);
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -683,7 +685,7 @@ Ns_SetConnLocationProc(Ns_ConnLocationProc *proc, Ns_TclCallback *cbPtr)
     return status;
 }
 
-
+#ifdef NS_WITH_DEPRECATED
 /*
  *----------------------------------------------------------------------
  * Ns_SetLocationProc --
@@ -715,7 +717,6 @@ Ns_SetLocationProc(const char *server, Ns_LocationProc *proc)
     }
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -759,6 +760,7 @@ Ns_ConnLocation(Ns_Conn *conn)
 
     return location;
 }
+#endif
 
 
 /*

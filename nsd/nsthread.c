@@ -18,7 +18,7 @@
 
 #include "nsd.h"
 
-
+#ifdef NS_WITH_DEPRECATED
 /*
  *----------------------------------------------------------------------
  *
@@ -63,6 +63,7 @@ Ns_GetThreadServer(void)
 {
   return Ns_ThreadGetName();
 }
+#endif
 
 /*
  * Local Variables:

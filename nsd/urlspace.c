@@ -730,6 +730,7 @@ Ns_UrlSpecificGet(const char *server, const char *method, const char *url, int i
         : NULL;
 }
 
+#ifdef NS_WITH_DEPRECATED
 void *
 Ns_UrlSpecificGetFast(const char *server, const char *method, const char *url, int id)
 {
@@ -747,6 +748,7 @@ Ns_UrlSpecificGetFast(const char *server, const char *method, const char *url, i
         NsUrlSpecificGet(servPtr, method, url, id, 0u, NS_URLSPACE_FAST, NULL, NULL, NULL)
         : NULL;
 }
+#endif
 
 void *
 Ns_UrlSpecificGetExact(const char *server, const char *method, const char *url,

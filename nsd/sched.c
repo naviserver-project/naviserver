@@ -184,7 +184,7 @@ Ns_After(const Ns_Time *interval, Ns_SchedProc *proc, void *arg, ns_funcptr_t de
     return result;
 }
 
-
+#ifdef NS_WITH_DEPRECATED
 /*
  *----------------------------------------------------------------------
  *
@@ -213,6 +213,7 @@ Ns_ScheduleProc(Ns_SchedProc *proc, void *arg, int thread, int secs)
     return Ns_ScheduleProcEx(proc, arg, (thread != 0) ? NS_SCHED_THREAD : 0u,
                              &interval, NULL);
 }
+#endif
 
 
 /*

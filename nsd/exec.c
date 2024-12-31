@@ -84,6 +84,7 @@ Ns_ExecProc(const char *exec, char **argv)
     return Ns_ExecArgv(exec, NULL, 0, 1, argv, NULL);
 }
 
+#ifdef NS_WITH_DEPRECATED
 
 /*
  *----------------------------------------------------------------------
@@ -105,6 +106,7 @@ Ns_WaitProcess(pid_t pid)
 {
     return Ns_WaitForProcessStatus(pid, NULL, NULL);
 }
+#endif
 
 
 /*

@@ -286,7 +286,7 @@ NsUrlToFile(Ns_DString *dsPtr, NsServer *servPtr, const char *url)
     return status;
 }
 
-
+#ifdef NS_WITH_DEPRECATED
 /*
  *----------------------------------------------------------------------
  * Ns_SetUrlToFileProc --
@@ -314,6 +314,7 @@ Ns_SetUrlToFileProc(const char *server, Ns_UrlToFileProc *procPtr)
         servPtr->fastpath.url2file = procPtr;
     }
 }
+#endif
 
 
 /*

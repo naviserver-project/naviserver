@@ -199,6 +199,7 @@ Ns_TclLogErrorInfo(Tcl_Interp *interp, const char *extraInfo)
    return errorInfo;
 }
 
+#ifdef NS_WITH_DEPRECATED
 
 /*
  *----------------------------------------------------------------------
@@ -244,6 +245,7 @@ Ns_TclLogErrorRequest(Tcl_Interp *interp, Ns_Conn *UNUSED(conn))
 {
     return Ns_TclLogErrorInfo(interp, NULL);
 }
+#endif
 
 
 /*

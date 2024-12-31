@@ -357,12 +357,13 @@ Ns_RollFileCondFmt(Ns_LogCallbackProc openProc, Ns_LogCallbackProc closeProc,
  *
  *----------------------------------------------------------------------
  */
-
+#ifdef NS_WITH_DEPRECATED
 Ns_ReturnCode
 Ns_RollFileByDate(const char *fileName, TCL_SIZE_T max)
 {
     return Ns_PurgeFiles(fileName, max);
 }
+#endif
 
 Ns_ReturnCode
 Ns_PurgeFiles(const char *fileName, TCL_SIZE_T max)

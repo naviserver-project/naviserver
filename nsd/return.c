@@ -587,7 +587,7 @@ Ns_ConnConstructHeaders(const Ns_Conn *conn, Ns_DString *dsPtr)
     Ns_DStringNAppend(dsPtr, "\r\n", 2);
 }
 
-
+#ifdef NS_WITH_DEPRECATED
 /*
  *----------------------------------------------------------------------
  *
@@ -635,6 +635,7 @@ Ns_ConnSetRequiredHeaders(Ns_Conn *conn, const char *mimeType, size_t length)
     Ns_ConnSetTypeHeader(conn, mimeType);
     Ns_ConnSetLengthHeader(conn, length, NS_FALSE);
 }
+#endif
 
 
 /*

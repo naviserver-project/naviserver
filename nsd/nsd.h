@@ -1544,7 +1544,9 @@ NS_EXTERN Ns_ThreadProc NsConnThread NS_GNUC_NORETURN;
 NS_EXTERN Ns_ThreadProc NsTclThread NS_GNUC_NORETURN;
 NS_EXTERN Ns_Url2FileProc NsMountUrl2FileProc;
 NS_EXTERN Ns_Url2FileProc NsTclUrl2FileProc;
+#ifdef NS_WITH_DEPRECATED
 NS_EXTERN Ns_UrlToFileProc NsUrlToFileProc NS_GNUC_DEPRECATED_FOR(Ns_FastUrl2FileProc);
+#endif
 NS_EXTERN Tcl_AppInitProc NsTclAppInit;
 
 

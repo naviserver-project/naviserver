@@ -99,8 +99,10 @@ static void LogTrace(const NsInterp *itPtr, const TclTrace *tracePtr, Ns_TclTrac
 static void LogErrorInTrace(const NsInterp *itPtr, const char *context, Ns_TclTraceType why)
     NS_GNUC_NONNULL(1);
 
+#ifdef NS_WITH_DEPRECATED
 static Ns_ReturnCode RegisterAt(Ns_TclTraceProc *proc, const void *arg, Ns_TclTraceType when)
     NS_GNUC_NONNULL(1);
+#endif
 
 static const char *GetTraceLabel(unsigned int traceWhy);
 
@@ -610,7 +612,7 @@ Ns_GetConnInterp(Ns_Conn *conn)
     return connPtr->itPtr->interp;
 }
 
-
+#ifdef NS_WITH_DEPRECATED
 /*
  *----------------------------------------------------------------------
  *
@@ -632,6 +634,7 @@ Ns_FreeConnInterp(Ns_Conn *UNUSED(conn))
 {
     return;
 }
+#endif
 
 
 /*
@@ -834,7 +837,7 @@ Ns_TclRegisterTrace(const char *server, Ns_TclTraceProc *proc,
     return status;
 }
 
-
+#ifdef NS_WITH_DEPRECATED
 /*
  *----------------------------------------------------------------------
  *
@@ -893,7 +896,6 @@ RegisterAt(Ns_TclTraceProc *proc, const void *arg, Ns_TclTraceType when)
     return status;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -933,6 +935,7 @@ Ns_TclRegisterDeferred(Tcl_Interp *interp, Ns_TclDeferProc *proc, void *arg)
         *nextPtrPtr = deferPtr;
     }
 }
+#endif
 
 
 /*

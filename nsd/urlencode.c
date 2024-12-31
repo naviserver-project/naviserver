@@ -926,6 +926,8 @@ Ns_Oauth1Decode(Ns_DString *dsPtr, const char *cookie, Tcl_Encoding encoding)
     return UrlDecode(dsPtr, cookie, encoding, 'o', NULL);
 
 }
+
+#ifdef NS_WITH_DEPRECATED
 
 /*
  *----------------------------------------------------------------------
@@ -988,6 +990,7 @@ Ns_DecodeUrlCharset(Ns_DString *dsPtr, const char *urlSegment,
 
     return Ns_UrlQueryDecode(dsPtr, urlSegment, encoding, NULL);
 }
+#endif
 
 
 /*

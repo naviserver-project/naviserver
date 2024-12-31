@@ -821,7 +821,7 @@ Ns_ConnClose(Ns_Conn *conn)
     return NS_OK;
 }
 
-
+#ifdef NS_WITH_DEPRECATED
 /*
  *----------------------------------------------------------------------
  *
@@ -885,6 +885,7 @@ Ns_WriteCharConn(Ns_Conn *conn, const char *buf, size_t toWrite)
 
     return Ns_ConnWriteVChars(conn, &sbuf, 1, NS_CONN_STREAM);
 }
+#endif
 
 
 /*

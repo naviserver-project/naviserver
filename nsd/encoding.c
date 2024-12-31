@@ -432,12 +432,14 @@ Ns_GetCharsetEncodingEx(const char *charset, TCL_SIZE_T len)
     return encoding;
 }
 
+#ifdef NS_WITH_DEPRECATED
 Tcl_Encoding
 Ns_GetEncoding(const char *name)
 {
     /* Deprecated, use Ns_GetCharsetEncodingEx(). */
     return LoadEncoding(name);
 }
+#endif
 
 
 /*

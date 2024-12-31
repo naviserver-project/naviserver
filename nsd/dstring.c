@@ -315,7 +315,7 @@ Ns_DStringAppendArgv(Ns_DString *dsPtr)
     return argv;
 }
 
-
+#ifdef NS_WITH_DEPRECATED
 /*
  *----------------------------------------------------------------------
  * Ns_DStringPop --
@@ -364,7 +364,8 @@ Ns_DStringPush(Ns_DString *dsPtr)
     Ns_DStringFree(dsPtr);
     ns_free(dsPtr);
 }
-
+#endif
+ 
 /*----------------------------------------------------------------------
  *
  * Ns_DStringAppendPrintable --

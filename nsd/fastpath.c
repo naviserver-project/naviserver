@@ -489,8 +489,7 @@ UrlIs(const char *server, const char *url, bool isDir)
     return is;
 }
 
-
-
+#ifdef NS_WITH_DEPRECATED
 /*
  *----------------------------------------------------------------------
  *
@@ -523,6 +522,7 @@ Ns_PageRoot(const char *server)
 
     return pageRoot;
 }
+#endif
 
 
 /*

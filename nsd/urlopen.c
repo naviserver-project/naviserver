@@ -15,6 +15,8 @@
  *  Make outgoing HTTP requests.
  */
 
+#ifdef NS_WITH_DEPRECATED
+
 #include "nsd.h"
 
 #define BUFSIZE 2048u
@@ -27,6 +29,7 @@ typedef struct Stream {
     char      buf[BUFSIZE + 1u];
 } Stream;
 
+
 /*
  * Local functions defined in this file
  */
@@ -36,8 +39,6 @@ static bool GetLine(Stream *sPtr, Ns_DString *dsPtr)
 
 static bool FillBuf(Stream *sPtr)
      NS_GNUC_NONNULL(1);
-
-
 
 /*
  *----------------------------------------------------------------------
@@ -233,7 +234,6 @@ Ns_FetchURL(Ns_DString *dsPtr, const char *url, Ns_Set *headers)
     return status;
 }
 
-#ifdef NS_WITH_DEPRECATED
 /*
  *----------------------------------------------------------------------
  *
@@ -305,7 +305,6 @@ NsTclGetUrlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
 
     return code;
 }
-#endif
 
 
 /*
@@ -410,6 +409,12 @@ GetLine(Stream *sPtr, Ns_DString *dsPtr)
 
     return success;
 }
+#else
+/*
+ * Avoid empty translation unit
+ */
+   typedef void empty;
+#endif
 
 /*
  * Local Variables:
