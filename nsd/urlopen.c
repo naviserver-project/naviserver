@@ -15,9 +15,10 @@
  *  Make outgoing HTTP requests.
  */
 
-#ifdef NS_WITH_DEPRECATED
 
 #include "nsd.h"
+
+#ifdef NS_WITH_DEPRECATED
 
 #define BUFSIZE 2048u
 

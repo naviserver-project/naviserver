@@ -314,9 +314,7 @@ Ns_SetUrlToFileProc(const char *server, Ns_UrlToFileProc *procPtr)
         servPtr->fastpath.url2file = procPtr;
     }
 }
-#endif
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -346,6 +344,7 @@ NsUrlToFileProc(Ns_DString *dsPtr, const char *server, const char *url)
     }
     return result;
 }
+#endif
 
 
 /*
