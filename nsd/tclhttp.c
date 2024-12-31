@@ -1411,16 +1411,18 @@ HttpWaitObjCmd(
 ) {
     NsInterp   *itPtr = clientData;
     NsHttpTask *httpPtr = NULL;
-
-    char       *id = NULL, *outputFileName = NULL;
-    int         result = TCL_OK, decompress = 0, binary = 0;
+    char       *id = NULL;
+    int         result = TCL_OK;
+    Ns_Time    *timeoutPtr = NULL;
+#ifdef NS_WITH_DEPRECATED
     Tcl_WideInt spoolLimit = -1;
+    char       *outputFileName = NULL;
+    int         decompress = 0, binary = 0;
     Tcl_Obj    *elapsedVarObj = NULL,
                *resultVarObj = NULL,
                *statusVarObj = NULL,
                *fileVarObj = NULL;
     Ns_Set     *replyHeaders = NULL;
-    Ns_Time    *timeoutPtr = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-binary",     Ns_ObjvBool,    &binary,          INT2PTR(NS_TRUE)},
@@ -1435,6 +1437,12 @@ HttpWaitObjCmd(
         {"-timeout",    Ns_ObjvTime,    &timeoutPtr,      NULL},
         {NULL,          NULL,           NULL,             NULL}
     };
+#else
+    Ns_ObjvSpec opts[] = {
+        {"-timeout",    Ns_ObjvTime,    &timeoutPtr,      NULL},
+        {NULL,          NULL,           NULL,             NULL}
+    };
+#endif
     Ns_ObjvSpec args[] = {
         {"id", Ns_ObjvString, &id,  NULL},
         {NULL, NULL,          NULL, NULL}
@@ -1451,6 +1459,7 @@ HttpWaitObjCmd(
     } else {
         Ns_ReturnCode rc;
 
+#ifdef NS_WITH_DEPRECATED
         /*
          * All following options are not supposed to be present here.
          * The command API should be cleansed, but for now, lets play
@@ -1482,11 +1491,6 @@ HttpWaitObjCmd(
             }
             Ns_MutexUnlock(&httpPtr->lock);
         }
-        /*
-         * Always decompress when necessary. Here we do not have the
-         * "-raw" option, since we do not need backward compatibility.
-         */
-        httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
 
         if (elapsedVarObj != NULL) {
             Ns_Log(Warning, "ns_http_wait: -elapsed option is deprecated");
@@ -1500,9 +1504,16 @@ HttpWaitObjCmd(
         if (fileVarObj != NULL) {
             Ns_Log(Warning, "ns_http_wait: -file option is deprecated");
         }
+#endif
+
         if (timeoutPtr == NULL) {
             timeoutPtr = httpPtr->timeout;
         }
+        /*
+         * Always decompress when necessary. Here we do not have the
+         * "-raw" option, since we do not need backward compatibility.
+         */
+        httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
 
         rc = Ns_TaskWait(httpPtr->task, timeoutPtr);
         Ns_Log(Ns_LogTaskDebug, "Ns_TaskWait returns %d", rc);
@@ -1521,6 +1532,7 @@ HttpWaitObjCmd(
             result = TCL_ERROR;
         }
 
+#ifdef NS_WITH_DEPRECATED
         /*
          * This part is deprecated and can be removed
          * once we go up to a next major version
@@ -1574,6 +1586,7 @@ HttpWaitObjCmd(
                 Ns_SetMerge(replyHeaders, headers);
             }
         }
+#endif
     }
 
     if (httpPtr != NULL) {
@@ -2443,7 +2456,7 @@ HttpQueue(
         if (partialResults != 0) {
             httpPtr->flags |= NS_HTTP_PARTIAL_RESULTS;
         }
-
+#if 0
         {
             Tcl_DString dsHttpState;
             Tcl_DStringInit(&dsHttpState);
@@ -2451,7 +2464,7 @@ HttpQueue(
                    DStringAppendHttpFlags(&dsHttpState, httpPtr->flags));
             Tcl_DStringFree(&dsHttpState);
         }
-
+#endif
         httpPtr->servPtr = itPtr->servPtr;
 
         httpPtr->task = Ns_TaskTimedCreate(httpPtr->sock, HttpProc, httpPtr, expirePtr);

@@ -10,7 +10,6 @@
 # America Online, Inc. All Rights Reserved.
 #
 #
-
 package require tcltest 2.2
 namespace import -force ::tcltest::*
 
@@ -28,6 +27,7 @@ if {$::tcl_version >= 8.6} {
     package require throw
 }
 testConstraint http09 true
+testConstraint with_deprecated [dict get [ns_info buildinfo] with_deprecated]
 
 # testConstraint binaryMismatch true
 # testConstraint broken true
@@ -98,7 +98,11 @@ test ns_http-1.8 {syntax: ns_http stats} -body {
 
 test ns_http-1.9 {syntax: ns_http wait} -body {
     ns_http wait
-} -returnCodes error -result {wrong # args: should be "ns_http wait ?-binary? ?-decompress? ?-elapsed /value/? ?-file /value/? ?-headers /setId/? ?-outputfile /value/? ?-result /value/? ?-spoolsize /memory-size/? ?-status /value/? ?-timeout /time/? /id/"}
+} -returnCodes error \
+    -result [expr {[testConstraint with_deprecated]
+                   ? {wrong # args: should be "ns_http wait ?-binary? ?-decompress? ?-elapsed /value/? ?-file /value/? ?-headers /setId/? ?-outputfile /value/? ?-result /value/? ?-spoolsize /memory-size/? ?-status /value/? ?-timeout /time/? /id/"}
+                   : {wrong # args: should be "ns_http wait ?-timeout /time/? /id/"}
+               }]
 
 # should be  {wrong # args: should be "ns_http wait ?-timeout /time/? /id/"}
 
