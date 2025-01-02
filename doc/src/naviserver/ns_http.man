@@ -69,32 +69,33 @@ Optional ID of the HTTP request to list.
 
 
 [call [cmd "ns_http queue"] \
-	[opt [option "-binary"]] \
-	[opt [option "-body [arg value]"]] \
-	[opt [option "-body_chan [arg value]"]] \
-	[opt [option "-body_file [arg value]"]] \
-	[opt [option "-body_size [arg integer]"]] \
-	[opt [option "-cafile [arg value]"]] \
-	[opt [option "-capath [arg value]"]] \
-	[opt [option "-cert [arg value]"]] \
-	[opt [option "-done_callback [arg value]"]] \
-	[opt [option "-expire [arg time]"]] \
-	[opt [option "-headers [arg setId]"]] \
-	[opt [option "-hostname [arg value ]"]] \
-	[opt [option "-keep_host_header"]] \
-	[opt [option "-keepalive [arg time]"]] \
-	[opt [option "-method [arg value]"]] \
-	[opt [option "-outputchan [arg value]"]] \
-	[opt [option "-outputfile [arg value]"]] \
-	[opt [option "-partialresults"]] \
-	[opt [option "-proxy [arg value]"]] \
-	[opt [option "-raw"]] \
-	[opt [option "-spoolsize [arg memory-size]"]] \
-	[opt [option "-timeout [arg time]"]] \
-	[opt [option "-unix_socket [arg value]"]] \
-	[opt [option "-verify"]] \
-	[arg url] \
-	]
+    [opt [option "-binary"]] \
+    [opt [option "-body [arg value]"]] \
+    [opt [option "-body_chan [arg value]"]] \
+    [opt [option "-body_file [arg value]"]] \
+    [opt [option "-body_size [arg integer]"]] \
+    [opt [option "-cafile [arg value]"]] \
+    [opt [option "-capath [arg value]"]] \
+    [opt [option "-cert [arg value]"]] \
+    [opt [option "-done_callback [arg value]"]] \
+    [opt [option "-expire [arg time]"]] \
+    [opt [option "-headers [arg setId]"]] \
+    [opt [option "-hostname [arg value ]"]] \
+    [opt [option "-keep_host_header"]] \
+    [opt [option "-keepalive [arg time]"]] \
+    [opt [option "-method [arg value]"]] \
+    [opt [option "-outputchan [arg value]"]] \
+    [opt [option "-outputfile [arg value]"]] \
+    [opt [option "-partialresults"]] \
+    [opt [option "-proxy [arg value]"]] \
+    [opt [option "-raw"]] \
+    [opt [option "-response_header_callback [arg value]"]] \
+    [opt [option "-spoolsize [arg memory-size]"]] \
+    [opt [option "-timeout [arg time]"]] \
+    [opt [option "-unix_socket [arg value]"]] \
+    [opt [option "-verify"]] \
+    [arg url] \
+    ]
 
 
 [para]
@@ -108,32 +109,33 @@ in a dedicated per-queue thread.
 [para] The description of the available options is in the section [sectref {OPTIONS}] below.
 
 [call [cmd "ns_http run"] \
-	[opt [option "-binary"]] \
-	[opt [option "-body [arg value]"]] \
-	[opt [option "-body_chan [arg value]"]] \
-	[opt [option "-body_file [arg value]"]] \
-	[opt [option "-body_size [arg integer]"]] \
-	[opt [option "-cafile [arg value]"]] \
-	[opt [option "-capath [arg value]"]] \
-	[opt [option "-cert [arg value]"]] \
-	[opt [option "-done_callback [arg value]"]] \
-	[opt [option "-expire [arg time]"]] \
-	[opt [option "-headers [arg setId]"]] \
-	[opt [option "-hostname [arg value ]"]] \
-	[opt [option "-keep_host_header"]] \
-	[opt [option "-keepalive [arg time]"]] \
-	[opt [option "-method [arg value]"]] \
-	[opt [option "-outputchan [arg value]"]] \
-	[opt [option "-outputfile [arg value]"]] \
-	[opt [option "-partialresults"]] \
-	[opt [option "-proxy [arg value]"]] \
-	[opt [option "-raw"]] \
-	[opt [option "-spoolsize [arg memory-size]"]] \
-	[opt [option "-timeout [arg time]"]] \
-	[opt [option "-unix_socket [arg value]"]] \
-        [opt [option "-verify"]] \
-	[arg url] \
-	]
+    [opt [option "-binary"]] \
+    [opt [option "-body [arg value]"]] \
+    [opt [option "-body_chan [arg value]"]] \
+    [opt [option "-body_file [arg value]"]] \
+    [opt [option "-body_size [arg integer]"]] \
+    [opt [option "-cafile [arg value]"]] \
+    [opt [option "-capath [arg value]"]] \
+    [opt [option "-cert [arg value]"]] \
+    [opt [option "-done_callback [arg value]"]] \
+    [opt [option "-expire [arg time]"]] \
+    [opt [option "-headers [arg setId]"]] \
+    [opt [option "-hostname [arg value ]"]] \
+    [opt [option "-keep_host_header"]] \
+    [opt [option "-keepalive [arg time]"]] \
+    [opt [option "-method [arg value]"]] \
+    [opt [option "-outputchan [arg value]"]] \
+    [opt [option "-outputfile [arg value]"]] \
+    [opt [option "-partialresults"]] \
+    [opt [option "-proxy [arg value]"]] \
+    [opt [option "-raw"]] \
+    [opt [option "-response_header_callback [arg value]"]] \
+    [opt [option "-spoolsize [arg memory-size]"]] \
+    [opt [option "-timeout [arg time]"]] \
+    [opt [option "-unix_socket [arg value]"]] \
+    [opt [option "-verify"]] \
+    [arg url] \
+    ]
 
 [para]
 Sends an HTTP or HTTPS request and waits for the result.  The command [cmd "ns_http run"]
@@ -185,8 +187,8 @@ Optional ID of the HTTP request to get statistics for.
 
 
 [call [cmd "ns_http wait"] \
-	[opt [option "-timeout [arg time]"]] \
-	[arg id] \
+    [opt [option "-timeout [arg time]"]] \
+    [arg id] \
   ]
 
 [para]
@@ -277,7 +279,7 @@ followed by intermediate CA certificates if applicable, and ending at
 the highest level (root) CA.
 
 [opt_def -done_callback [arg value]]
-this callback argument will be executed as Tcl script when the request
+this callback will be executed as Tcl script when the request
 is completed.  The provided [arg call] is appended with two arguments,
 a flag indicating a Tcl error or not (integer value 1 or 0), and the
 dictionary as returned by [cmd "ns_http run"]. When this option is used,
@@ -312,9 +314,10 @@ specified in any supported ns_time format.
 Standard HTTP/HTTPS request method such as GET, POST, HEAD, PUT etc.
 
 [opt_def -outputchan [arg value]]
-receive the response content into the specified Tcl channel, which must be
-opened for writing. The channel must be in blocking mode.
-This option is mutually exclusive with [option -outputfile].
+receive the response content into the specified Tcl or [cmd ns_connchan]
+channel. When a Tcl channel is used, it must be opened for writing
+and mist be in blocking mode.
+The option [option -outputchan] is mutually exclusive with [option -outputfile].
 For [cmd "ns_http queue"] command, the [option -outputchan] channel will be
 dissociated from the current interpreter/thread and the ownership will be
 transferred to the thread that runs the request. Upon [cmd "ns_http wait"]
@@ -354,6 +357,31 @@ Currently, no proxy authentication is supported. This will be added later.
 delivers the content as-is (unmodified), regardless of the content
 encoding. This option is useful for tunneling modes.
 
+[opt_def -response_header_callback [arg value]] this callback will be
+executed when the response headers from the target of the
+[cmd ns_http] request are received. The [arg value] is a Tcl command,
+which is called with an additional argument containing response
+data. The argument has the form of a Tcl
+dictionary with the keys [term status], [term phrase],
+[term headers], and [term outputchan].
+For example, in a reverse proxy configuration, an [cmd ns_connchan]
+channel can be specified at the start of the request to a backend
+server via [option -outputchan], and when the response header fields from
+the backend server are received, these can be modified and sent via
+connchan back to the client.
+
+[example_begin]
+ proc my_responseheaders_callback {d} {
+   dict with d {
+     set response "HTTP/1.1 $status $phrase\r\n"
+     foreach {key value} [lb]ns_set array $headers[rb] {
+        append response "$key: $value\r\n"
+     }
+     append response \r\n
+     ns_connchan write $outputchan $response
+   }
+ }
+[example_end]
 
 [opt_def -spoolsize [arg memory-size]]
 In case the result is larger than the given value, it will be spooled to a
@@ -584,23 +612,23 @@ module), but for HTTP client requests.
     #
     # Set default keep-alive timeout for outgoing ns_http requests
     #
-    ns_param	keepalive       5s       ;# default: 0s
+    ns_param    keepalive       5s       ;# default: 0s
 
     #
     # Configure log file for outgoing ns_http requests
     #
-    ns_param	logging		on       ;# default: off
-    ns_param	logfile		${logroot}/httpclient.log
-    ns_param	logrollfmt	%Y-%m-%d ;# format appended to log filename
-    #ns_param	logmaxbackup	100      ;# 10, max number of backup log files
-    #ns_param	logroll		true     ;# true, should server log files automatically
-    #ns_param	logrollonsignal	true     ;# false, perform roll on a sighup
-    #ns_param	logrollhour	0        ;# 0, specify at which hour to roll
+    ns_param     logging          on       ;# default: off
+    ns_param     logfile          ${logroot}/httpclient.log
+    ns_param     logrollfmt       %Y-%m-%d ;# format appended to log filename
+    #ns_param    logmaxbackup     100      ;# 10, max number of backup log files
+    #ns_param    logroll          true     ;# true, should server log files automatically
+    #ns_param    logrollonsignal  true     ;# false, perform roll on a sighup
+    #ns_param    logrollhour      0        ;# 0, specify at which hour to roll
  }
 [example_end]
 
 
-[see_also ns_httptime ns_time ns_set ns_urlencode nslog]
+[see_also ns_httptime ns_connchan ns_time ns_set ns_urlencode nslog]
 [keywords "global built-in" HTTP-client HTTP HTTPS nssock \
         spooling SNI configuration nslog TLS certificate]
 
