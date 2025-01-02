@@ -1172,7 +1172,7 @@ Ns_SockBinderListen(char type, const char *address, unsigned short port, int opt
     }
 
     /*
-     * Revive reply.
+     * Receive reply.
      */
     iov[0].iov_base = (void*) &err;
     iov[0].iov_len = sizeof(int);
