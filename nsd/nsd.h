@@ -1153,15 +1153,15 @@ typedef struct {
     const char        *host;             /* hostname for persistent connections */
     char              *next;             /* write buffer */
     size_t             requestLength;    /* size of the complete request */
-    size_t             replyLength;      /* content-length of the reply */
-    size_t             requestHeaderSize;/* size of the request header */
-    TCL_SIZE_T         replyHeaderSize;  /* size of reply header */
+    size_t             responseLength;   /* content-length of the response */
+    size_t             requestHeaderSize;  /* size of the request header */
+    TCL_SIZE_T         responseHeaderSize; /* size of response header */
     size_t             sent;             /* total amount of data sent */
     size_t             received;         /* total amount data received */
     size_t             sendBodySize;     /* amount of request body sent */
-    size_t             replyBodySize;    /* amount of reply body received */
-    size_t             replySize;        /* amount of reply body received */
-    Ns_Set            *replyHeaders;     /* ns_set for response headers */
+    size_t             responseBodySize; /* amount of response body received */
+    size_t             responseSize;     /* amount of response body received */
+    Ns_Set            *responseHeaders;  /* ns_set for response headers */
     Tcl_WideInt        spoolLimit;       /* spool content above this limit */
     int                spoolFd;          /* fd of spool file */
     unsigned short     port;

@@ -1378,14 +1378,14 @@ HttpQueueObjCmd(
  *      The "problematic" options include:
  *
  *      -headers
- *          Every dispatched task stores reply headers in the
+ *          Every dispatched task stores response headers in the
  *          private ns_set and this set is provided as a part
  *          of the command result. Putting extra headers will
  *          only copy the internal set over, thus adding nothing
  *          more of a value than a waste of time.
  *
  *      -spoolsize
- *          This limits the size of the reply content that is
+ *          This limits the size of the response content that is
  *          being stored in memory during the task processing.
  *          However, the task may already handle the body at
  *          the time somebody calls [ns_http wait] so changing
@@ -1438,14 +1438,14 @@ HttpWaitObjCmd(
                *resultVarObj = NULL,
                *statusVarObj = NULL,
                *fileVarObj = NULL;
-    Ns_Set     *replyHeaders = NULL;
+    Ns_Set     *responseHeaders = NULL;
 
     Ns_ObjvSpec opts[] = {
         {"-binary",     Ns_ObjvBool,    &binary,          INT2PTR(NS_TRUE)},
         {"-decompress", Ns_ObjvBool,    &decompress,      INT2PTR(NS_TRUE)},
         {"-elapsed",    Ns_ObjvObj,     &elapsedVarObj,   NULL},
         {"-file",       Ns_ObjvObj,     &fileVarObj,      NULL},
-        {"-headers",    Ns_ObjvSet,     &replyHeaders,    NULL},
+        {"-headers",    Ns_ObjvSet,     &responseHeaders,    NULL},
         {"-outputfile", Ns_ObjvString,  &outputFileName,  NULL},
         {"-result",     Ns_ObjvObj,     &resultVarObj,    NULL},
         {"-spoolsize",  Ns_ObjvMemUnit, &spoolLimit,      NULL},
@@ -1481,7 +1481,7 @@ HttpWaitObjCmd(
          * The command API should be cleansed, but for now, lets play
          * backward compatibility...
          */
-        if (replyHeaders != NULL) {
+        if (responseHeaders != NULL) {
             Ns_Log(Warning, "ns_http_wait: -headers option is deprecated");
         }
         if (decompress != 0) {
@@ -1586,12 +1586,12 @@ HttpWaitObjCmd(
                 Tcl_DecrRefCount(oObj[ii]);
             }
 
-            if (replyHeaders != NULL) {
+            if (responseHeaders != NULL) {
                 Ns_Set  *headers;
                 Tcl_Obj *kObj;
 
                 /*
-                 * Merge reply headers into the user-passed set.
+                 * Merge respond headers into the user-passed set.
                  */
                 kObj = Tcl_NewStringObj("headers", 7);
                 Tcl_DictObjGet(interp, rObj, kObj, &vObj);
@@ -1599,7 +1599,7 @@ HttpWaitObjCmd(
                 NS_NONNULL_ASSERT(vObj != NULL);
                 headers = Ns_TclGetSet(interp, Tcl_GetString(vObj));
                 NS_NONNULL_ASSERT(headers != NULL);
-                Ns_SetMerge(replyHeaders, headers);
+                Ns_SetMerge(responseHeaders, headers);
             }
         }
 #endif
@@ -1959,7 +1959,7 @@ HttpStatsObjCmd(
                  */
                 (void) Tcl_DictObjPut
                     (interp, entryObj, Tcl_NewStringObj("replylength", 11),
-                     Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->replyLength));
+                     Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->responseLength));
 
                 /*
                  * Counter of bytes of the request sent so far.
@@ -1970,8 +1970,8 @@ HttpStatsObjCmd(
                      Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->sent));
 
                 /*
-                 * Counter of bytes of the reply received so far.
-                 * It includes all of the reply (status line, headers, body).
+                 * Counter of bytes of the response received so far.
+                 * It includes all of the response (status line, headers, body).
                  */
                 (void) Tcl_DictObjPut
                     (interp, entryObj, Tcl_NewStringObj("received", 8),
@@ -1986,21 +1986,21 @@ HttpStatsObjCmd(
 
                 /*
                  * Counter of processed (potentially deflated)
-                 * reply body received so far.
+                 * response body received so far.
                  */
                 (void) Tcl_DictObjPut
                     (interp, entryObj, Tcl_NewStringObj("replybodysize", 13),
-                     Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->replyBodySize));
+                     Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->responseBodySize));
 
                 /*
                  * Counter of the non-processed (potentially compressed)
-                 * reply body received so far.
-                 * For compressed but not deflated reply content
+                 * response body received so far.
+                 * For compressed but not deflated response content
                  * the replybodysize and replysize will be equal.
                  */
                 (void) Tcl_DictObjPut
                     (interp, entryObj, Tcl_NewStringObj("replysize", 9),
-                     Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->replySize));
+                     Tcl_NewWideIntObj((Tcl_WideInt)httpPtr->responseSize));
 
                 Ns_MutexUnlock(&httpPtr->lock);
 
@@ -2655,10 +2655,10 @@ HttpGetResult(
     int      result = TCL_OK;
     Ns_Time  diff;
     Tcl_Obj *statusObj       = NULL,
-            *replyBodyObj    = NULL,
+            *responseBodyObj = NULL,
             *fileNameObj     = NULL,
             *resultObj       = NULL,
-            *replyHeadersObj = NULL,
+            *responseHeadersObj = NULL,
             *errorObj        = NULL,
             *elapsedTimeObj;
 
@@ -2723,7 +2723,7 @@ HttpGetResult(
         if (binary == NS_FALSE) {
             const char *cType;
 
-            cType = Ns_SetIGet(httpPtr->replyHeaders, contentTypeHeader);
+            cType = Ns_SetIGet(httpPtr->responseHeaders, contentTypeHeader);
             if (cType != NULL) {
 
                 /*
@@ -2747,22 +2747,22 @@ HttpGetResult(
             }
         }
 
-        cData = httpPtr->ds.string + httpPtr->replyHeaderSize;
-        cSize = (TCL_SIZE_T)httpPtr->replyBodySize;
+        cData = httpPtr->ds.string + httpPtr->responseHeaderSize;
+        cSize = (TCL_SIZE_T)httpPtr->responseBodySize;
 
         if (binary == NS_TRUE)  {
-            //NsHexPrint("replybodyobj", (unsigned char *)cData, (size_t)cSize, 20, NS_TRUE);
-            replyBodyObj = Tcl_NewByteArrayObj((unsigned char *)cData, cSize);
+            //NsHexPrint("responsebodyobj", (unsigned char *)cData, (size_t)cSize, 20, NS_TRUE);
+            responseBodyObj = Tcl_NewByteArrayObj((unsigned char *)cData, cSize);
         } else {
 #if defined(TCLHTTP_USE_EXTERNALTOUTF)
             Tcl_DString ds;
 
             Tcl_DStringInit(&ds);
             (void)Tcl_ExternalToUtfDString(encoding, cData, cSize, &ds);
-            replyBodyObj = Tcl_NewStringObj(Tcl_DStringValue(&ds), TCL_INDEX_NONE);
+            responseBodyObj = Tcl_NewStringObj(Tcl_DStringValue(&ds), TCL_INDEX_NONE);
             Tcl_DStringFree(&ds);
 #else
-            replyBodyObj = Tcl_NewStringObj(cData, cSize);
+            responseBodyObj = Tcl_NewStringObj(cData, cSize);
 #endif
         }
     }
@@ -2774,7 +2774,7 @@ HttpGetResult(
     }
 
     /*
-     * Check, if "connection: keep-alive" was provided in the reply.
+     * Check, if "connection: keep-alive" was provided in the response.
      */
     {
         const char *field;
@@ -2790,7 +2790,7 @@ HttpGetResult(
             httpPtr->flags &= ~NS_HTTP_KEEPALIVE;
         }
 
-        field = Ns_SetIGet(httpPtr->replyHeaders, connectionHeader);
+        field = Ns_SetIGet(httpPtr->responseHeaders, connectionHeader);
         if (field != NULL) {
             if (strncasecmp(field, "close", 5) == 0) {
                 httpPtr->flags &= ~NS_HTTP_KEEPALIVE;
@@ -2821,20 +2821,20 @@ HttpGetResult(
         Ns_Log(Ns_LogTaskDebug, "HttpGetResult: connection: %s",
                (httpPtr->flags & NS_HTTP_KEEPALIVE) != 0u ? "keep-alive" : "close");
     }
-    /* Ns_Log(Notice, "replyHeaders");
-       Ns_SetPrint(NULL, httpPtr->replyHeaders); */
+    /* Ns_Log(Notice, "responseHeaders");
+       Ns_SetPrint(NULL, httpPtr->responseHeaders); */
 
     /*
-     * Add reply headers set into the interp
+     * Add response headers set into the interp
      */
-    result = Ns_TclEnterSet(interp, httpPtr->replyHeaders, NS_TCL_SET_DYNAMIC);
+    result = Ns_TclEnterSet(interp, httpPtr->responseHeaders, NS_TCL_SET_DYNAMIC);
     if (result != TCL_OK) {
         goto err;
     }
 
-    httpPtr->replyHeaders = NULL; /* Prevents Ns_SetFree() in HttpClose() */
-    replyHeadersObj = Tcl_GetObjResult(interp);
-    Tcl_IncrRefCount(replyHeadersObj);
+    httpPtr->responseHeaders = NULL; /* Prevents Ns_SetFree() in HttpClose() */
+    responseHeadersObj = Tcl_GetObjResult(interp);
+    Tcl_IncrRefCount(responseHeadersObj);
 
     /*
      * Assemble the resulting dictionary
@@ -2848,15 +2848,15 @@ HttpGetResult(
                    elapsedTimeObj);
 
     Tcl_DictObjPut(interp, resultObj, Tcl_NewStringObj("headers", 7),
-                   replyHeadersObj);
+                   responseHeadersObj);
 
     if (fileNameObj != NULL) {
         Tcl_DictObjPut(interp, resultObj, Tcl_NewStringObj("file", 4),
                        fileNameObj);
     }
-    if (replyBodyObj != NULL) {
+    if (responseBodyObj != NULL) {
         Tcl_DictObjPut(interp, resultObj, Tcl_NewStringObj("body", 4),
-                       replyBodyObj);
+                       responseBodyObj);
     }
     if (errorObj != NULL) {
         Tcl_DictObjPut(interp, resultObj, Tcl_NewStringObj("error", 5),
@@ -2913,7 +2913,7 @@ HttpGetResult(
         result = TCL_ERROR;
     }
 
-    Tcl_DecrRefCount(replyHeadersObj);
+    Tcl_DecrRefCount(responseHeadersObj);
 
  err:
     if (result != TCL_OK) {
@@ -2926,8 +2926,8 @@ HttpGetResult(
         if (elapsedTimeObj != NULL) {
             Tcl_DecrRefCount(elapsedTimeObj);
         }
-        if (replyBodyObj != NULL) {
-            Tcl_DecrRefCount(replyBodyObj);
+        if (responseBodyObj != NULL) {
+            Tcl_DecrRefCount(responseBodyObj);
         }
     }
 
@@ -2968,16 +2968,16 @@ HttpCheckHeader(
 
     eoh = strstr(httpPtr->ds.string, "\r\n\r\n");
     if (eoh != NULL) {
-        httpPtr->replyHeaderSize = (TCL_SIZE_T)(eoh - httpPtr->ds.string) + 4;
+        httpPtr->responseHeaderSize = (TCL_SIZE_T)(eoh - httpPtr->ds.string) + 4;
         *(eoh + 2) = '\0';
         httpPtr->flags &= ~NS_HTTP_HEADERS_PENDING;
         Ns_Log(Ns_LogTaskDebug, "HttpCheckHeader: headers complete");
     } else {
         eoh = strstr(httpPtr->ds.string, "\n\n");
         if (eoh != NULL) {
-            Ns_Log(Warning, "HttpCheckHeader: client reply contains"
+            Ns_Log(Warning, "HttpCheckHeader: client response contains"
                    " LF instead of CR/LF trailer which should not happen");
-            httpPtr->replyHeaderSize = (TCL_SIZE_T)(eoh - httpPtr->ds.string) + 2;
+            httpPtr->responseHeaderSize = (TCL_SIZE_T)(eoh - httpPtr->ds.string) + 2;
             *(eoh + 1) = '\0';
             httpPtr->flags &= ~NS_HTTP_HEADERS_PENDING;
         } else {
@@ -3030,7 +3030,7 @@ HttpCheckSpool(
      *     4. Lone \n character (see HttpCheckHeader())
      *     5. Content (or part of it) up to the end of the DString
      *
-     * The size of 1.-4. is stored in httpPtr->replyHeaderSize.
+     * The size of 1.-4. is stored in httpPtr->responseHeaderSize.
      * The 3. delimits the partial content from the response
      * status lines/headers. Note that we parse the size of
      * the response line/headers by explicitly taking the
@@ -3038,18 +3038,18 @@ HttpCheckSpool(
      * using the DString length element.
      */
     if (Ns_HttpMessageParse(httpPtr->ds.string, strlen(httpPtr->ds.string),
-                            httpPtr->replyHeaders,
+                            httpPtr->responseHeaders,
                             &major,
                             &minor,
                             &httpPtr->status,
                             NULL) != NS_OK
         || httpPtr->status == 0) {
 
-        Ns_Log(Warning, "ns_http: parsing reply failed");
+        Ns_Log(Warning, "ns_http: parsing response failed");
         result = TCL_ERROR;
     } else {
         const char *header;
-        Tcl_WideInt replyLength = 0;
+        Tcl_WideInt responseLength = 0;
 
         /*
          * We have received the message header and parsed the first
@@ -3083,26 +3083,26 @@ HttpCheckSpool(
         /*
          * Check the returned content-length
          */
-        header = Ns_SetIGet(httpPtr->replyHeaders, contentLengthHeader);
+        header = Ns_SetIGet(httpPtr->responseHeaders, contentLengthHeader);
         if (header != NULL) {
-            (void)Ns_StrToWideInt(header, &replyLength);
+            (void)Ns_StrToWideInt(header, &responseLength);
 
             /*
              * Don't get fooled by some invalid value!
              */
-            if (replyLength < 0) {
-                replyLength = 0;
+            if (responseLength < 0) {
+                responseLength = 0;
             }
 
             Ns_Log(Ns_LogTaskDebug, "HttpCheckSpool: %s: %" TCL_LL_MODIFIER "d",
-                   contentLengthHeader, replyLength);
+                   contentLengthHeader, responseLength);
         } else {
 
             /*
              * If none, see if we have transfer-encoding.
              * For now, we support "chunked" encoding only.
              */
-            header = Ns_SetIGet(httpPtr->replyHeaders, transferEncodingHeader);
+            header = Ns_SetIGet(httpPtr->responseHeaders, transferEncodingHeader);
             if (header != NULL && Ns_Match(header, "chunked") != NULL) {
                 httpPtr->flags |= NS_HTTP_FLAG_CHUNKED;
                 httpPtr->chunk->parsers = ChunkParsers;
@@ -3115,7 +3115,7 @@ HttpCheckSpool(
                  * removed.
                  */
                 Ns_Log(Notice, "HttpCheckSpool deletes header field 'transfer-encoding'"); // CHANGE LEVEL
-                Ns_SetIDeleteKey(httpPtr->replyHeaders, transferEncodingHeader);
+                Ns_SetIDeleteKey(httpPtr->responseHeaders, transferEncodingHeader);
             } else if (httpPtr->status != 204) {
                 /*
                  * No content-length provided and not chunked, assume
@@ -3135,7 +3135,7 @@ HttpCheckSpool(
          * See if we are handling compressed content.
          * Turn-on auto-decompress if requested.
          */
-        header = Ns_SetIGet(httpPtr->replyHeaders, contentEncodingHeader);
+        header = Ns_SetIGet(httpPtr->responseHeaders, contentEncodingHeader);
         if (header != NULL && Ns_Match(header, "gzip") != NULL) {
             httpPtr->flags |= NS_HTTP_FLAG_GZIP_ENCODING;
             if ((httpPtr->flags & NS_HTTP_FLAG_DECOMPRESS) != 0u) {
@@ -3147,18 +3147,18 @@ HttpCheckSpool(
         }
 
         Ns_MutexLock(&httpPtr->lock);
-        httpPtr->replyLength = (size_t)replyLength;
+        httpPtr->responseLength = (size_t)responseLength;
         Ns_MutexUnlock(&httpPtr->lock);
 
         /*
          * See if we need to spool the response content
          * to file/channel or leave it in the memory.
          */
-        Ns_Log(Ns_LogTaskDebug, "HttpCheckSpool spoolLimit %ld replyLength %ld outputChanName <%s>",
-               (long)httpPtr->spoolLimit, (long)replyLength, httpPtr->outputChanName);
+        Ns_Log(Ns_LogTaskDebug, "HttpCheckSpool spoolLimit %ld responseLength %ld outputChanName <%s>",
+               (long)httpPtr->spoolLimit, (long)responseLength, httpPtr->outputChanName);
 
         if (httpPtr->spoolLimit > -1
-                && (replyLength == 0 || replyLength >= httpPtr->spoolLimit)
+                && (responseLength == 0 || responseLength >= httpPtr->spoolLimit)
            ) {
 
             if (httpPtr->outputChanName != NULL) {
@@ -3209,7 +3209,7 @@ HttpCheckSpool(
     if (result == TCL_OK) {
         size_t cSize;
 
-        cSize = (size_t)(httpPtr->ds.length - httpPtr->replyHeaderSize);
+        cSize = (size_t)(httpPtr->ds.length - httpPtr->responseHeaderSize);
         if (cSize > 0) {
             char buf[CHUNK_SIZE], *cData;
 
@@ -3221,12 +3221,12 @@ HttpCheckSpool(
              * erase it from the memory and let the HttpAppendContent
              * do the "right thing".
              */
-            cData = httpPtr->ds.string + httpPtr->replyHeaderSize;
-            if (httpPtr->replyLength > 0 && cSize > httpPtr->replyLength) {
-                cSize = httpPtr->replyLength;
+            cData = httpPtr->ds.string + httpPtr->responseHeaderSize;
+            if (httpPtr->responseLength > 0 && cSize > httpPtr->responseLength) {
+                cSize = httpPtr->responseLength;
             }
             memcpy(buf, cData, cSize);
-            Ns_DStringSetLength(&httpPtr->ds, httpPtr->replyHeaderSize);
+            Ns_DStringSetLength(&httpPtr->ds, httpPtr->responseHeaderSize);
             if (HttpAppendContent(httpPtr, buf, cSize) != TCL_OK) {
                 result = TCL_ERROR;
             }
@@ -3419,8 +3419,8 @@ HttpConnect(
     httpPtr->method = ns_strdup(method);
     httpPtr->servPtr = itPtr->servPtr;
     httpPtr->flags = NS_HTTP_HEADERS_PENDING;
-    httpPtr->replyHeaders = Ns_SetCreate(NS_SET_NAME_CLIENT_RESPONSE);
-    httpPtr->replyHeaders->flags |= NS_SET_OPTION_NOCASE;
+    httpPtr->responseHeaders = Ns_SetCreate(NS_SET_NAME_CLIENT_RESPONSE);
+    httpPtr->responseHeaders->flags |= NS_SET_OPTION_NOCASE;
 
     if (timeoutPtr != NULL) {
         httpPtr->timeout = ns_calloc(1u, sizeof(Ns_Time));
@@ -4168,24 +4168,24 @@ SkipMessage(
         NsHexPrint("old buffer", (unsigned char*)httpPtr->ds.string, httpPtr->ds.length,
                    20, NS_TRUE);
         Ns_Log(Notice, "... old <%s>", httpPtr->ds.string);
-        Ns_Log(Notice, "... replyHeaderSize %d current Size %d",
-               httpPtr->replyHeaderSize, httpPtr->ds.length);
+        Ns_Log(Notice, "... responseHeaderSize %d current Size %d",
+               httpPtr->responseHeaderSize, httpPtr->ds.length);
         */
-        if (httpPtr->ds.length == httpPtr->replyHeaderSize) {
+        if (httpPtr->ds.length == httpPtr->responseHeaderSize) {
             /*
              * We have received just the header. Skip it.
              */
             Tcl_DStringSetLength(&httpPtr->ds, (TCL_SIZE_T)0);
 
-        } else if (httpPtr->ds.length > httpPtr->replyHeaderSize) {
+        } else if (httpPtr->ds.length > httpPtr->responseHeaderSize) {
             TCL_SIZE_T newSize;
             /*
              * We have received more than the header. Move remaining
              * content upfront in the buffer.
              */
-            newSize =  httpPtr->ds.length - httpPtr->replyHeaderSize;
+            newSize =  httpPtr->ds.length - httpPtr->responseHeaderSize;
             assert(newSize>=0);
-            memmove(httpPtr->ds.string, httpPtr->ds.string + httpPtr->replyHeaderSize, (size_t)newSize);
+            memmove(httpPtr->ds.string, httpPtr->ds.string + httpPtr->responseHeaderSize, (size_t)newSize);
             Tcl_DStringSetLength(&httpPtr->ds, newSize);
 
         } else {
@@ -4196,10 +4196,10 @@ SkipMessage(
         NsHexPrint("new buffer", (unsigned char*)httpPtr->ds.string, httpPtr->ds.length,
                    20, NS_TRUE);
         Ns_Log(Notice, "... new <%s>", httpPtr->ds.string);
-        Ns_Log(Notice, "... replyLength %zu replySize %zu",
-               httpPtr->replyLength, httpPtr->replySize);
+        Ns_Log(Notice, "... responseLength %zu responseSize %zu",
+               httpPtr->responseLength, httpPtr->responseSize);
         */
-        httpPtr->replyHeaderSize = 0;
+        httpPtr->responseHeaderSize = 0;
     }
     httpPtr->flags |= NS_HTTP_HEADERS_PENDING;
     httpPtr->status = 0;
@@ -4274,16 +4274,16 @@ HttpAppendBuffer(
     }
 
     if (result == TCL_OK) {
-        if (httpPtr->replyHeaderSize > 0 && httpPtr->status > 0) {
+        if (httpPtr->responseHeaderSize > 0 && httpPtr->status > 0) {
 
             /*
              * Headers and status have been parsed so all the
              * data coming from this point are counted up as
-             * being the (uncompressed, decoded) reply content.
+             * being the (uncompressed, decoded) response content.
              */
             Ns_MutexLock(&httpPtr->lock);
-            httpPtr->replyBodySize += bodySize;
-            httpPtr->replySize += size;
+            httpPtr->responseBodySize += bodySize;
+            httpPtr->responseSize += size;
             Ns_MutexUnlock(&httpPtr->lock);
         }
     }
@@ -4297,8 +4297,8 @@ HttpAppendBuffer(
  *
  * HttpAppendContent
  *
- *        Append reply content to where it belongs,
- *        potentially decoding the chunked reply format.
+ *        Append response content to where it belongs,
+ *        potentially decoding the chunked response format.
  *
  * Results:
  *        Tcl result code
@@ -4508,9 +4508,9 @@ HttpCleanupPerRequestData(
         Tcl_DecrRefCount(httpPtr->infoObj);
         httpPtr->infoObj = NULL;
     }
-    if (httpPtr->replyHeaders != NULL) {
-        Ns_SetFree(httpPtr->replyHeaders);
-        httpPtr->replyHeaders = NULL;
+    if (httpPtr->responseHeaders != NULL) {
+        Ns_SetFree(httpPtr->responseHeaders);
+        httpPtr->responseHeaders = NULL;
     }
     if (httpPtr->timeout != NULL) {
         ns_free((void *)httpPtr->timeout);
@@ -4925,15 +4925,15 @@ ResponseHeadersReceivedCallback(
 ) {
     Tcl_Interp  *interp;
     int          result;
-    Ns_Set      *replyHeaders;
+    Ns_Set      *responseHeaders;
 
     LogDebug("ResponseHeadersReceivedCallback", httpPtr, "");
 
     if (httpPtr->rhrCallback != NULL) {
         interp = NsTclAllocateInterp(httpPtr->servPtr);
-        replyHeaders = Ns_SetCopy(httpPtr->replyHeaders);
+        responseHeaders = Ns_SetCopy(httpPtr->responseHeaders);
 
-        result = Ns_TclEnterSet(interp, replyHeaders, NS_TCL_SET_DYNAMIC);
+        result = Ns_TclEnterSet(interp, responseHeaders, NS_TCL_SET_DYNAMIC);
 
         if (result == TCL_OK) {
             Tcl_DString  script;
@@ -5346,14 +5346,14 @@ HttpProc(
             /*
              * FIXME:
              *
-             * This part can be optimized to read the reply data
+             * This part can be optimized to read the response data
              * directly into DString instead in the stack buffer.
              */
 
-            if (httpPtr->replyLength > 0) {
+            if (httpPtr->responseLength > 0) {
                 size_t remain;
 
-                remain = httpPtr->replyLength - httpPtr->replySize;
+                remain = httpPtr->responseLength - httpPtr->responseSize;
                 if (len > remain)  {
                     len = remain;
                 }
@@ -5399,7 +5399,7 @@ HttpProc(
 
                   process_header:
 
-                    if (httpPtr->replyHeaderSize == 0) {
+                    if (httpPtr->responseHeaderSize == 0) {
 
                         /*
                          * Still not done receiving status/headers
@@ -5407,7 +5407,7 @@ HttpProc(
                         HttpCheckHeader(httpPtr);
                     }
 
-                    if (httpPtr->replyHeaderSize > 0 && httpPtr->status == 0) {
+                    if (httpPtr->responseHeaderSize > 0 && httpPtr->status == 0) {
                         /*
                          * Parses received status/headers,
                          * decides where to spool content.
@@ -5434,32 +5434,32 @@ HttpProc(
                          */
                         if (
                             ((httpPtr->flags & NS_HTTP_HEADERS_PENDING) != 0u)
-                            || (httpPtr->replyLength > 0
-                             && httpPtr->replySize < httpPtr->replyLength
+                            || (httpPtr->responseLength > 0
+                             && httpPtr->responseSize < httpPtr->responseLength
                              && (httpPtr->flags & NS_HTTP_FLAG_EMPTY) == 0u)
                             || (httpPtr->flags & NS_HTTP_STREAMING) != 0u /* we rely on connection-close */
                             || ((httpPtr->flags & NS_HTTP_FLAG_CHUNKED) != 0u
                                 && (httpPtr->flags & NS_HTTP_FLAG_CHUNKED_END) == 0u)
                             || ((httpPtr->flags & NS_HTTP_FLAG_CHUNKED) == 0u
-                                && httpPtr->replyLength == 0
-                                && httpPtr->replySize != 0
+                                && httpPtr->responseLength == 0
+                                && httpPtr->responseSize != 0
                                 && (httpPtr->flags & NS_HTTP_FLAG_EMPTY) == 0u)
                         ) {
                             taskDone = NS_FALSE;
                         }
                         LogDebug("read ok", httpPtr, "");
-                        Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_READ httpPtr->replyLength %ld"
-                               " httpPtr->replySize %ld flags %.6x %d %d %d %d -> done %d",
-                               httpPtr->replyLength, httpPtr->replySize, httpPtr->flags,
+                        Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_READ httpPtr->responseLength %ld"
+                               " httpPtr->responseSize %ld flags %.6x %d %d %d %d -> done %d",
+                               httpPtr->responseLength, httpPtr->responseSize, httpPtr->flags,
                                (httpPtr->flags & NS_HTTP_STREAMING) != 0u,
-                               (httpPtr->replyLength > 0
-                                && httpPtr->replySize < httpPtr->replyLength
+                               (httpPtr->responseLength > 0
+                                && httpPtr->responseSize < httpPtr->responseLength
                                 && (httpPtr->flags & NS_HTTP_FLAG_EMPTY) == 0u),
                                ((httpPtr->flags & NS_HTTP_FLAG_CHUNKED) != 0u
                                 && (httpPtr->flags & NS_HTTP_FLAG_CHUNKED_END) == 0u),
                                ((httpPtr->flags & NS_HTTP_FLAG_CHUNKED) == 0u
-                                && httpPtr->replyLength == 0
-                                && httpPtr->replySize != 0
+                                && httpPtr->responseLength == 0
+                                && httpPtr->responseSize != 0
                                 && (httpPtr->flags & NS_HTTP_FLAG_EMPTY) == 0u),
                                taskDone);
                     }
@@ -5473,7 +5473,7 @@ HttpProc(
                  */
                 taskDone = NS_FALSE;
 
-            } else if (len == 0 /* Consumed all of the replyLength bytes */
+            } else if (len == 0 /* Consumed all of the responseLength bytes */
                        || sockState == NS_SOCK_DONE /* EOD on read */
                        || ((httpPtr->flags & (NS_HTTP_FLAG_CHUNKED
                                               | NS_HTTP_FLAG_CHUNKED_END)) != 0u)) {
@@ -5777,8 +5777,8 @@ HttpTunnel(
     httpPtr->flags |= NS_HTTP_FLAG_EMPTY; /* Do not expect response content */
     httpPtr->method = ns_strdup(connectMethod);
     httpPtr->servPtr = itPtr->servPtr;
-    httpPtr->replyHeaders = Ns_SetCreate(NS_SET_NAME_CLIENT_RESPONSE); /* Ignored */
-    httpPtr->replyHeaders->flags |= NS_SET_OPTION_NOCASE;
+    httpPtr->responseHeaders = Ns_SetCreate(NS_SET_NAME_CLIENT_RESPONSE); /* Ignored */
+    httpPtr->responseHeaders->flags |= NS_SET_OPTION_NOCASE;
 
     if (timeout != NULL) {
         httpPtr->timeout = ns_calloc(1u, sizeof(Ns_Time));
@@ -6087,7 +6087,7 @@ ParseBodyProc(
          * We are on the last chunk. Check if we will get some
          * trailers and switch the state accordingly.
          */
-        headersPtr = httpPtr->replyHeaders;
+        headersPtr = httpPtr->responseHeaders;
         trailer = Ns_SetIGet(headersPtr, trailersHeader);
         if (trailer != NULL) {
             Ns_Log(Ns_LogTaskDebug, "... switch to trailer parsers");
@@ -6188,7 +6188,7 @@ ParseTrailerProc(
             chunkPtr->callx = 0;
             result = TCL_BREAK;
         } else {
-            Ns_Set     *headersPtr = httpPtr->replyHeaders;
+            Ns_Set     *headersPtr = httpPtr->responseHeaders;
             const char *trailer = dsPtr->string;
 
             if (Ns_ParseHeader(headersPtr, trailer, NULL, ToLower, NULL) != NS_OK) {
