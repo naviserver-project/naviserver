@@ -1377,6 +1377,7 @@ NS_EXTERN TCL_OBJCMDPROC_T
     NsTclParseHeaderObjCmd,
     NsTclParseHostportObjCmd,
     NsTclParseHttpTimeObjCmd,
+    NsTclParseMessageObjCmd,
     NsTclParseQueryObjCmd,
     NsTclParseUrlObjCmd,
     NsTclPauseObjCmd,

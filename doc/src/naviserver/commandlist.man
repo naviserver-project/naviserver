@@ -208,6 +208,7 @@ sections of related commands.
 [call [cmd ns_parsefieldvalue]]
 [call [cmd ns_parseheader]]
 [call [cmd ns_parsehostport]]
+[call [cmd ns_parsemessage]]
 [call [cmd ns_parsequery]]
 [call [cmd ns_parseurl]]
 [list_begin definitions]

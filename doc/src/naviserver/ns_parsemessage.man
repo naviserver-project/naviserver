@@ -1,0 +1,46 @@
+[include version_include.man]
+[manpage_begin ns_parsemessage n [vset version]]
+[moddesc {NaviServer Built-in Commands}]
+
+[titledesc {Parse an HTTP message}]
+
+[description] This function parses a full HTTP message (first line,
+headers, and body) into a Tcl dictionary and parses the header fields
+into a new case-insensitive [cmd ns_set]. The implementation cares
+about folded (multi-line) header fields.
+
+[section {COMMANDS}]
+
+[list_begin definitions]
+
+[call [cmd ns_parsemessage] \
+        [arg message] ]
+
+[para] The result of this command is a Tcl dictionary containing
+the following elements.
+
+[list_begin definitions]
+[def] [term firstline]
+[def] [term headers]
+[def] [term body]
+[list_end]
+
+[list_end]
+
+[section EXAMPLES]
+
+[example_begin]
+ % ns_parsemessage [join {{HTTP/1.1 200 OK} {content-length: 2} {} {OK}} \r\n]
+ firstline {HTTP/1.1 200 OK} headers d0 body OK
+ 
+ % ns_set format d0
+ headers:
+   content-length: 2
+[example_end]
+
+
+[see_also nsd ns_parseurl ns_parsefieldvalue ns_parseheader ns_set]
+[keywords "global built-in" NaviServer parse HTTP]
+[manpage_end]
+
+

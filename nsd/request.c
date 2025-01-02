@@ -844,6 +844,166 @@ Ns_ParseHeader(Ns_Set *set, const char *line, const char *prefix, Ns_HeaderCaseD
 /*
  *----------------------------------------------------------------------
  *
+ * Ns_HttpMessageParse --
+ *
+ *      Parse an HTTP message (first line, headers, body).
+ *      The headers are returned into the provided Ns_Set,
+ *      while the rest is returned via output args.
+ *
+ * Results:
+
+ *      Ns_ReturnCode and output variables "firstLineLength", "htrPtr", and
+ *      "payloadPtr".  "firstLineLength" contains the line end characters.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Ns_ReturnCode
+Ns_HttpMessageParse(
+    char *messageString,
+    size_t messageLength,
+    size_t *firstLineLengthPtr,
+    Ns_Set *hdrPtr,
+    char **payloadPtr
+) {
+    Ns_ReturnCode result = NS_OK;
+    char         *eol;
+
+    NS_NONNULL_ASSERT(messageString != NULL);
+    NS_NONNULL_ASSERT(firstLineLengthPtr != NULL);
+    NS_NONNULL_ASSERT(hdrPtr != NULL);
+
+    if (payloadPtr != NULL) {
+        *payloadPtr = NULL;
+    }
+    Ns_Log(Ns_LogTaskDebug, "Message Parse <%s>", messageString);
+
+    eol = strchr(messageString, INTCHAR('\n'));
+    if (eol == NULL || ((size_t)(eol + 1 - messageString) > messageLength)) {
+        Ns_Log(Ns_LogTaskDebug, "==== Ns_HttpMessageParse <%s> eol <%s> %ld> %ld  => ERR",
+               messageString, eol, (eol + 1 - messageString), messageLength);
+        result = NS_ERROR;
+
+    } else {
+        char   *p;
+        int     firsthdr = 1;
+        size_t  parsed;
+
+        p = eol+1;
+        if (*p == '\r') {
+            p++;
+        }
+        *firstLineLengthPtr = (size_t)(p - messageString);
+
+        while ((eol = strchr(p, INTCHAR('\n'))) != NULL) {
+            size_t len;
+
+            *eol++ = '\0';
+            len = (size_t)((eol-p)-1);
+
+            if (len > 0u && p[len - 1u] == '\r') {
+                p[len - 1u] = '\0';
+            }
+            if (firsthdr != 0) {
+                //ns_free((void *)hdrPtr->name);
+                //hdrPtr->name = ns_strdup(p);
+                firsthdr = 0;
+            }
+            if (len < 2 || Ns_ParseHeader(hdrPtr, p, NULL, ToLower, NULL) != NS_OK) {
+                break;
+            }
+            p = eol;
+        }
+        parsed = (size_t)(p - messageString);
+
+        if (payloadPtr != NULL && (messageLength - parsed) >= 2u) {
+            //fprintf(stderr, "BEFORE BODY 0 <%c> %d pos %ld\n", *p, *p, (p - messageString));
+            //fprintf(stderr, "BEFORE BODY ? <%c> %d pos %ld\n", *(p+1), *(p+1), ((p+1) - messageString));
+            /*
+             * CRLF means 2 NUL characters, LF alone just one.
+             */
+            if (*p == '\0') {
+                p++;
+            }
+            if (*p == '\0') {
+                p++;
+            }
+            //fprintf(stderr, "BEFORE BODY 3 <%c> %d pos %ld\n", *p, *p, (p - messageString));
+            //fprintf(stderr, "==== Ns_HttpMessageParse return messageLength %ld current %ld body <%s>\n",
+            //        messageLength, p-messageString, p);
+
+            *payloadPtr = p;
+        }
+    }
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_HttpResponseMessageParse --
+ *
+ *      Parse an HTTP response message (first line, headers, and body) and
+ *      perform response-specific processing of the first line.  The headers
+ *      are returned into the provided Ns_Set, while the rest is returned via
+ *      output args.
+ *
+ * Results:
+ *
+ *      Ns_ReturnCode and output variables "majorPtr", "minorPtr",
+ *      "statusPtr", and "payloadPtr".
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+Ns_ReturnCode
+Ns_HttpResponseMessageParse(
+    char *messageString,
+    size_t messageLength,
+    Ns_Set *hdrPtr,
+    int *majorPtr,
+    int *minorPtr,
+    int *statusPtr,
+    char **payloadPtr
+) {
+    Ns_ReturnCode result = NS_OK;
+    int           major, minor;
+    size_t        firstLineLength = 0u;
+
+    NS_NONNULL_ASSERT(hdrPtr != NULL);
+    NS_NONNULL_ASSERT(message != NULL);
+    NS_NONNULL_ASSERT(statusPtr != NULL);
+
+    if (majorPtr == NULL) {
+        majorPtr = &major;
+    }
+    if (minorPtr == NULL) {
+        minorPtr = &minor;
+    }
+    Ns_Log(Ns_LogTaskDebug, "HttpResponseMessageParse Parse <%s>", messageString);
+
+    result = Ns_HttpMessageParse(messageString, messageLength, &firstLineLength, hdrPtr, payloadPtr);
+    if (result == NS_OK && firstLineLength > 12) {
+        int items = sscanf(messageString, "HTTP/%2d.%2d %3d", majorPtr, minorPtr, statusPtr);
+
+        if (items != 3) {
+            result = NS_ERROR;
+        }
+    }
+
+    return result;
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * GetQvalue --
  *
  *      Return the next qvalue string from accept encodings
@@ -1097,6 +1257,7 @@ NsParseAcceptEncoding(double version, const char *hdr, bool *gzipAcceptPtr, bool
     *gzipAcceptPtr   = gzipAccept;
     *brotliAcceptPtr = brotliAccept;
 }
+
 
 /*
  * Local Variables:

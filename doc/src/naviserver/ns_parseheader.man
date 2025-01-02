@@ -51,8 +51,8 @@ When no [arg disposition] is provided, it defaults to [term tolower]
 [example_end]
 
 
-[see_also nsd ns_parseurl ns_parsefieldvalue]
-[keywords "global built-in" NaviServer parse]
+[see_also nsd ns_parseurl ns_parsefieldvalue ns_parsemessage]
+[keywords "global built-in" NaviServer parse HTTP]
 [manpage_end]
 
 

@@ -1162,97 +1162,163 @@ Ns_HttpLocationString(
     return dsPtr->string;
 }
 
+
 
 /*
  *----------------------------------------------------------------------
  *
- * Ns_HttpMessageParse --
+ * NsTclParseHeaderObjCmd --
  *
- *      Parse an HTTP message (response line and headers).
- *      The headers are returned into the provided Ns_Set,
- *      while the rest is returned via output args.
+ *      Implements "ns_parsemessage". Parse an HTTP message with first line,
+ *      headers, and body.
  *
  * Results:
- *      Ns_ReturnCode
+ *      Tcl result.
  *
  * Side effects:
- *      None.
+ *      Parse an HTTP header and add it to a new set.
  *
  *----------------------------------------------------------------------
  */
+int
+NsTclParseMessageObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int          result = TCL_OK;
+    Tcl_Obj     *messageObj;
+    Ns_ObjvSpec  args[] = {
+        {"message",      Ns_ObjvObj, &messageObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
 
-Ns_ReturnCode
-Ns_HttpMessageParse(
-    char *message,
-    size_t size,
-    Ns_Set *hdrPtr,
-    int *majorPtr,
-    int *minorPtr,
-    int *statusPtr,
-    char **payloadPtr
-) {
-    Ns_ReturnCode status = NS_OK;
-    int           items, major, minor;
+    assert(clientData != NULL);
 
-    NS_NONNULL_ASSERT(hdrPtr != NULL);
-    NS_NONNULL_ASSERT(message != NULL);
-    NS_NONNULL_ASSERT(statusPtr != NULL);
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
 
-    if (majorPtr == NULL) {
-        majorPtr = &major;
-    }
-    if (minorPtr == NULL) {
-        minorPtr = &minor;
-    }
-    /*
-     * If provided, set *payloadPtr always to a sensible value.
-     * And... risk the memory leak!
-     */
-    if (payloadPtr != NULL) {
-        *payloadPtr = NULL;
-    }
-    Ns_Log(Ns_LogTaskDebug, "Message Parse <%s>", message);
-
-    items = sscanf(message, "HTTP/%2d.%2d %3d", majorPtr, minorPtr, statusPtr);
-    if (items != 3) {
-        status = NS_ERROR;
     } else {
-        char   *p, *eol;
-        int     firsthdr = 1;
-        size_t  parsed;
+        size_t      firstLineLength = 0u;
+        TCL_SIZE_T  messageLength;
+        char       *bodyString = NULL, *messageString = Tcl_GetStringFromObj(messageObj, &messageLength);
+        Ns_Set     *headers = Ns_SetCreate("headers");
 
-        p = message;
-        while ((eol = strchr(p, INTCHAR('\n'))) != NULL) {
-            size_t len;
+        headers->flags |= NS_SET_OPTION_NOCASE;
+        if (Ns_TclEnterSet(interp, headers, NS_TCL_SET_DYNAMIC) != TCL_OK) {
+            Ns_TclPrintfResult(interp, "ns_parsemessage: new header set could not be passed to the interpreter");
+            result = TCL_ERROR;
+        } else {
+            Ns_ReturnCode status;
+            Tcl_Obj      *setObj = Tcl_GetObjResult(interp);
 
-            *eol++ = '\0';
-            len = (size_t)((eol-p)-1);
+            Tcl_IncrRefCount(setObj);
+            status = Ns_HttpMessageParse(messageString, (size_t)messageLength, &firstLineLength, headers, &bodyString);
+            if (status == TCL_OK) {
+                Tcl_Obj *resultObj = Tcl_NewDictObj();
 
-            if (len > 0u && p[len - 1u] == '\r') {
-                p[len - 1u] = '\0';
+                /*
+                 * The returned length includes CR and LF, strip it.
+                 */
+                firstLineLength--;
+                while (messageString[firstLineLength-1] == '\r'
+                       || messageString[firstLineLength-1] == '\n') {
+                    firstLineLength--;
+                }
+
+                (void) Tcl_DictObjPut(interp, resultObj, Tcl_NewStringObj("firstline", 9),
+                                      Tcl_NewStringObj(messageString, (TCL_SIZE_T)firstLineLength));
+                (void) Tcl_DictObjPut(interp, resultObj, Tcl_NewStringObj("headers", 7),
+                                      setObj);
+                (void) Tcl_DictObjPut(interp, resultObj, Tcl_NewStringObj("body", 4),
+                                      Tcl_NewStringObj(bodyString, TCL_INDEX_NONE));
+
+                Tcl_SetObjResult(interp, resultObj);
+
+            } else {
+                Ns_TclPrintfResult(interp, "ns_parsemessage: provided HTTP message is not well-formed");
+                result = TCL_ERROR;
             }
-            if (firsthdr != 0) {
-                ns_free((void *)hdrPtr->name);
-                hdrPtr->name = ns_strdup(p);
-                firsthdr = 0;
-            } else if (len < 2 || Ns_ParseHeader(hdrPtr, p, NULL, ToLower, NULL) != NS_OK) {
-                break;
-            }
-            p = eol;
-        }
-        parsed = (size_t)(p - message);
-
-        Ns_Log(Ns_LogRequestDebug, "Ns_ParseHeader <%s> len %" PRIuz " parsed %"
-               PRIuz, message, size, parsed);
-
-        if (payloadPtr != NULL && (size - parsed) >= 2u) {
-            p += 2;
-            *payloadPtr = p;
+            Tcl_DecrRefCount(setObj);
         }
     }
 
-    return status;
+    return result;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsTclParseHeaderObjCmd --
+ *
+ *      Implements "ns_parseheader". Consume a header line, handling header
+ *      continuation, placing results in given set.
+ *
+ * Results:
+ *      Tcl result.
+ *
+ * Side effects:
+ *      Parse an HTTP header and add it to an existing set; see
+ *      Ns_ParseHeader.
+ *
+ *----------------------------------------------------------------------
+ */
+int
+NsTclParseHeaderObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int          result = TCL_OK;
+    Ns_Set      *set;
+    Ns_HeaderCaseDisposition disp = Preserve;
+    char        *headerString = (char *)NS_EMPTY_STRING,
+                *dispositionString = NULL,
+                *prefix = NULL;
+    Ns_ObjvSpec opts[] = {
+        {"-prefix",  Ns_ObjvString,  &prefix,  NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    Ns_ObjvSpec  args[] = {
+        {"set",          Ns_ObjvSet,    &set, NULL},
+        {"headerline",   Ns_ObjvString, &headerString, NULL},
+        {"?disposition", Ns_ObjvString, &dispositionString, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    assert(clientData != NULL);
+
+    if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else if (objc < 4) {
+        disp = ToLower;
+    } else if (dispositionString != NULL) {
+        if (STREQ(dispositionString, "toupper")) {
+            disp = ToUpper;
+        } else if (STREQ(dispositionString, "tolower")) {
+            disp = ToLower;
+        } else if (STREQ(dispositionString, "preserve")) {
+            disp = Preserve;
+        } else {
+            Ns_TclPrintfResult(interp, "invalid disposition \"%s\": should be toupper, tolower, or preserve",
+                               dispositionString);
+            result = TCL_ERROR;
+        }
+    } else {
+        Ns_Fatal("error in argument parser: dispositionString should never be NULL");
+    }
+
+    if (result == TCL_OK) {
+        size_t fieldNumber;
+
+        assert(set != NULL);
+        if (Ns_ParseHeader(set, headerString, prefix, disp, &fieldNumber) != NS_OK) {
+            Ns_TclPrintfResult(interp, "invalid header: %s", headerString);
+            result = TCL_ERROR;
+        } else {
+            Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)fieldNumber));
+        }
+    }
+    return result;
+}
+
 
 
 /*
@@ -3037,12 +3103,12 @@ HttpCheckSpool(
      * length of the DString value (size of 1.-3.) and not
      * using the DString length element.
      */
-    if (Ns_HttpMessageParse(httpPtr->ds.string, strlen(httpPtr->ds.string),
-                            httpPtr->responseHeaders,
-                            &major,
-                            &minor,
-                            &httpPtr->status,
-                            NULL) != NS_OK
+    if (Ns_HttpResponseMessageParse(httpPtr->ds.string, strlen(httpPtr->ds.string),
+                                    httpPtr->responseHeaders,
+                                    &major,
+                                    &minor,
+                                    &httpPtr->status,
+                                    NULL) != NS_OK
         || httpPtr->status == 0) {
 
         Ns_Log(Warning, "ns_http: parsing response failed");

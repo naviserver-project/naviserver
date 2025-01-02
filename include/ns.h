@@ -2377,8 +2377,13 @@ Ns_ParseHeader(Ns_Set *set, const char *line, const char *prefix, Ns_HeaderCaseD
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 NS_EXTERN Ns_ReturnCode
-Ns_HttpMessageParse(char *message, size_t size,
-                    Ns_Set *hdrPtr, int *majorPtr, int *minorPtr, int *statusPtr, char **payloadPtr)
+Ns_HttpMessageParse(char *messageString, size_t messageLength, size_t *firstLineLengthPtr,
+                    Ns_Set *hdrPtr, char **payloadPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
+
+NS_EXTERN Ns_ReturnCode
+Ns_HttpResponseMessageParse(char *message, size_t size,
+                            Ns_Set *hdrPtr, int *majorPtr, int *minorPtr, int *statusPtr, char **payloadPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(6);
 
 /*

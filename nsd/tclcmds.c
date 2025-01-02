@@ -114,6 +114,7 @@ static const Cmd basicCmds[] = {
     {"ns_parseheader",           NULL, NsTclParseHeaderObjCmd},
     {"ns_parsehostport",         NULL, NsTclParseHostportObjCmd},
     {"ns_parsehttptime",         NULL, NsTclParseHttpTimeObjCmd},
+    {"ns_parsemessage",          NULL, NsTclParseMessageObjCmd},
     {"ns_parseurl",              NULL, NsTclParseUrlObjCmd},
     {"ns_pause",                 NULL, NsTclPauseObjCmd},
     {"ns_pngsize",               NULL, NsTclPngSizeObjCmd},
