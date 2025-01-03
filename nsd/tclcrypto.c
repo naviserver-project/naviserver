@@ -468,6 +468,40 @@ GetCurve(Tcl_Interp *interp, const char *curveName, int *nidPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * PEMOpenReadSteam --
+ *
+ *      Open an OpenSSL BIO stream based on either the provided
+ *      string, if it has the right signature, or a .pem-file.  In
+ *      both cases, the stream must be closed by the caller via
+ *      BIO_free().
+ *
+ * Results:
+ *      OpenSSP BIO*
+ *
+ * Side effects:
+ *      Potentially opening a file descriptor.
+ *
+ *----------------------------------------------------------------------
+ */
+static BIO *
+PEMOpenReadSteam(const char *fnOrData)
+{
+    BIO *result;
+
+    NS_NONNULL_ASSERT(fnOrData != NULL);
+
+    if (strstr(fnOrData, "-----BEGIN ") != NULL) {
+        result = BIO_new_mem_buf(fnOrData, (int)strlen(fnOrData));
+    } else {
+        result = BIO_new_file(fnOrData, "r");
+    }
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * GetPkeyFromPem, GetEckeyFromPem --
  *
  *      Helper function for reading .pem-files
@@ -487,7 +521,7 @@ GetPkeyFromPem(Tcl_Interp *interp, char *pemFileName, const char *passPhrase, bo
     BIO        *bio;
     EVP_PKEY   *result;
 
-    bio = BIO_new_file(pemFileName, "r");
+    bio = PEMOpenReadSteam(pemFileName);
     if (bio == NULL) {
         Ns_TclPrintfResult(interp, "could not open pem file '%s' for reading", pemFileName);
         result = NULL;
@@ -512,7 +546,7 @@ GetEckeyFromPem(Tcl_Interp *interp, char *pemFileName, const char *passPhrase, b
     BIO        *bio;
     EC_KEY     *result;
 
-    bio = BIO_new_file(pemFileName, "r");
+    bio = PEMOpenReadSteam(pemFileName);
     if (bio == NULL) {
         Ns_TclPrintfResult(interp, "could not open pem file '%s' for reading", pemFileName);
         result = NULL;

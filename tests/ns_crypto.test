@@ -93,9 +93,15 @@ test ns_crypto_sha2-2.4 {basic operation} -constraints crypto -body {
 #  Example from:
 #  https://medium.com/@bn121rajesh/rsa-sign-and-verify-using-openssl-behind-the-scene-bf3cac0aade2
 #######################################################################################
-test ns_crypto_sign-1.0 {basic operation} -constraints crypto -body {
+test ns_crypto_sign-1.0 {basic operation, reading .pem from a file} -constraints crypto -body {
     set path [ns_config "test" home]/testserver/etc/
     ::ns_crypto::md string -digest sha1 -sign $path/TESTKEY.pem "abcdefghijklmnopqrstuvwxyz\n"
+} -returnCodes {error ok} -result "9139be98f16cf53d22da63cb559bb06a93338da6a344e28a4285c2da33facb7080d26e7a09483779a016eebc207602fc3f90492c2f2fb8143f0fe30fd855593d"
+
+test ns_crypto_sign-1.1 {basic operation, providing .pem as a string} -constraints crypto -body {
+    set path [ns_config "test" home]/testserver/etc/
+    set F [open $path/TESTKEY.pem]; set content [read $F]; close $F
+    ::ns_crypto::md string -digest sha1 -sign $content "abcdefghijklmnopqrstuvwxyz\n"
 } -returnCodes {error ok} -result "9139be98f16cf53d22da63cb559bb06a93338da6a344e28a4285c2da33facb7080d26e7a09483779a016eebc207602fc3f90492c2f2fb8143f0fe30fd855593d"
 
 #######################################################################################
@@ -106,7 +112,7 @@ test ns_crypto_sign-1.0 {basic operation} -constraints crypto -body {
 #
 #######################################################################################
 
-test ns_crypto_signature_verify-1.0 {basic operation} -constraints crypto -body {
+test ns_crypto_signature_verify-1.0 {basic operation, reading .pem from a file} -constraints crypto -body {
     set path [ns_config "test" home]/testserver/etc/
     set sig [::ns_crypto::md string \
                  -digest sha1 \
@@ -122,6 +128,30 @@ test ns_crypto_signature_verify-1.0 {basic operation} -constraints crypto -body 
     set vfy_nok [::ns_crypto::md string \
                      -digest sha1 \
                      -verify $path/mypublic.pem \
+                     -signature $sig \
+                     "abcdefghijklmnopqrstuxvwxyz"]
+    return [list $vfy_ok $vfy_nok]
+} -returnCodes {error return} -result {1 0}
+
+test ns_crypto_signature_verify-1.1 {basic operation, providing .pem as a string} -constraints crypto -body {
+    set path [ns_config "test" home]/testserver/etc/
+    set F [open $path/myprivate.pem]; set privateKey [read $F]; close $F
+    set F [open $path/mypublic.pem]; set publicKey [read $F]; close $F
+
+    set sig [::ns_crypto::md string \
+                 -digest sha1 \
+                 -encoding binary \
+                 -sign $privateKey \
+                 "abcdefghijklmnopqrstuxvwxyz\n"]
+    set vfy_ok [::ns_crypto::md string \
+                    -digest sha1 \
+                    -encoding binary \
+                    -verify $publicKey \
+                    -signature $sig \
+                    "abcdefghijklmnopqrstuxvwxyz\n"]
+    set vfy_nok [::ns_crypto::md string \
+                     -digest sha1 \
+                     -verify $publicKey \
                      -signature $sig \
                      "abcdefghijklmnopqrstuxvwxyz"]
     return [list $vfy_ok $vfy_nok]

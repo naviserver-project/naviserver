@@ -237,7 +237,8 @@ This function requires OpenSSL compiled with EC support enabled.
      ]
 
 Obtain the private key in various encodings from an elliptic curve
-PEM file. When the .pem-file is secured by a passphrase, this has
+PEM file. It is possible to provide the file name of the PEM file or its
+content as a string. When the .pem-file is secured by a passphrase, this has
 to be provided via [option "-passphrase"].
 
 [para] This function requires OpenSSL compiled with EC support
@@ -253,8 +254,10 @@ enabled.
      [arg pubkey]]
 
 Generate a shared secret based on the private key from the .pem file
-and the provided public key. When the .pem file is secured by a
-passphrase, this has to be provided via [option "-passphrase"].
+and the provided public key. It is possible to provide the file name
+of the PEM file or its content as a string. When the .pem file is
+secured by a passphrase, this has to be provided via [option
+"-passphrase"].
 
 [para] When the option [option -binary] is specified, it applies to
 [arg pubkey].
@@ -270,7 +273,8 @@ support enabled.
     ]
 
 Obtain the public key in various encodings from an elliptic curves PEM
-file. When the .pem file is secured by a passphrase, this has to be
+file. It is possible to provide the file name of the PEM file or its
+content as a string. When the .pem file is secured by a passphrase, this has to be
 provided via [option "-passphrase"].
 
 [para] This function requires OpenSSL compiled with EC support enabled.
@@ -339,11 +343,14 @@ by a passphrase, the option [option "-passphrase [arg ...]"] has
 to be used to decipher the key.
 
 [para] The option [option "-sign [arg pemfile]"] is used to sign
-the given message.
+the given message. It is possible to provide the file name of the PEM file or its
+content as a string.
 
 [para] The options [option "-verify [arg pemfile]"] and
 [option "-signature [arg signatureString]"] can be used to
 verify a signature using the private key from provided PEM file.
+It is possible to provide the file name of the PEM file or its
+content as a string.
 The [arg signatureString] is required to be a binary string,
 therefore, produced with the output option [option "-encoding binary"]
 in the example below:
@@ -410,6 +417,8 @@ See also: Generic Event Delivery Using HTTP Push
 https://tools.ietf.org/html/rfc8030
 
 [para] The signing key is taken from the provided .pem file.
+It is possible to provide the file name of the PEM file or its
+content as a string.
 When the .pem file is secured by a passphrase, this has to be
 provided via [option "-passphrase"].
 
