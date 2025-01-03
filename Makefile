@@ -18,6 +18,8 @@ TCL =	revproxy-procs.tcl \
 	revproxy-ns-connchan-procs.tcl \
 	README.md
 
+INCLUDED_IN_NAVISERVER = 50000
+
 #
 # Get the common Makefile rules
 #
