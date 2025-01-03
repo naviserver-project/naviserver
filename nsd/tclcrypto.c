@@ -103,6 +103,9 @@ static int GetCipher(
 static void ListMDfunc(const EVP_MD *m, const char *from, const char *to, void *arg);
 # endif
 
+static BIO *PEMOpenReadSteam(const char *fnOrData)
+    NS_GNUC_NONNULL(1);
+
 static TCL_OBJCMDPROC_T CryptoHmacAddObjCmd;
 static TCL_OBJCMDPROC_T CryptoHmacFreeObjCmd;
 static TCL_OBJCMDPROC_T CryptoHmacGetObjCmd;
