@@ -61,18 +61,19 @@ adds new ns_ssl command.
    nsd.tcl
 
      ns_section    ns/server/${servername}/modules
-     ns_param      nsssl        		nsssl.so
+     ns_param      nsssl        	nsssl.so
 
      ns_section    ns/server/${servername}/module/nsssl
      ns_param	   certificate 		/usr/local/ns/modules/nsssl/server.pem
      ns_param      address    		0.0.0.0
      ns_param      port       		443
-     ns_param      ciphers              "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305"
-     ns_param      protocols            "!SSLv2:!SSLv3:!TLSv1.0:!TLSv1.1"
-     ns_param      verify                0
+     ns_param      ciphers          "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305"
+     #ns_param     ciphersuites     "TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256"
+     ns_param      protocols        "!SSLv2:!SSLv3:!TLSv1.0:!TLSv1.1"
+     ns_param      verify           0
 
      ns_param      extraheaders {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        Strict-Transport-Security "max-age=63072000; includeSubDomains"
         X-Frame-Options SAMEORIGIN
         X-Content-Type-Options nosniff
      }

@@ -139,7 +139,7 @@ set http_extraheaders {
 }
 
 set https_extraheaders {
-    strict-transport-security "max-age=31536000; includeSubDomains"
+    strict-transport-security "max-age=63072000; includeSubDomains"
 }
 append https_extraheaders $http_extraheaders
 
