@@ -5618,6 +5618,7 @@ New Features:
     - ns_http can handle now http and https URLs
     - Added backward_compatibility stub for ns_ssl
     - Added configure switch --with-openssl?=path?
+    - Previously, "nsssl" was kept as a separate module.
 
   * Improved crypto support (through OpenSSL)
     New commands:
@@ -6493,7 +6494,7 @@ Changes in Modules worth to be noted:
     as sasl interface for shibboleth.
 
  * nsssl:
-    - Ability to load the module without listening to socket by
+   - Ability to load the module without listening to socket by
      specifying 0 as port.  This is useful for e.g. just using the HTTPS
      client command ns_ssl.
    - Update configuration recommendations
