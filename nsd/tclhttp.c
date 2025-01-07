@@ -453,7 +453,8 @@ DStringAppendHttpFlags(Tcl_DString *dsPtr, unsigned int flags)
         { NS_HTTP_VERSION_1_1,        "1.1" },
         { NS_HTTP_STREAMING,          "STREAMING" },
         { NS_HTTP_CONNCHAN,           "CONNCHAN" },
-        { NS_HTTP_HEADERS_PENDING,    "HDR_PENDING" }
+        { NS_HTTP_HEADERS_PENDING,    "HDR_PENDING" },
+        { NS_HTTP_OUTPUT_ERROR,       "OUTPUT_ERROR" }
     };
 
     NS_NONNULL_ASSERT(dsPtr != NULL);
@@ -2949,6 +2950,16 @@ HttpGetResult(
                        Tcl_NewStringObj(httpPtr->outputChanName, TCL_INDEX_NONE));
     }
 
+    {
+        Tcl_DString dsHttpState;
+
+        Tcl_DStringInit(&dsHttpState);
+        DStringAppendHttpFlags(&dsHttpState, httpPtr->flags);
+        Tcl_DictObjPut(interp, resultObj, Tcl_NewStringObj("flags", 5),
+                       Tcl_NewStringObj(dsHttpState.string, dsHttpState.length));
+        Tcl_DStringFree(&dsHttpState);
+    }
+
     if (likely(errorObj == NULL)) {
         /*
          * There was no error.
@@ -4155,8 +4166,10 @@ HttpAppendRawBuffer(
     const char *buffer,
     size_t size
 ) {
-    int     result = TCL_OK;
-    ssize_t written;
+    int         result = TCL_OK;
+    ssize_t     written;
+    const char *reason = "unknown";
+    bool        silent = NS_FALSE;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(buffer != NULL);
@@ -4171,11 +4184,32 @@ HttpAppendRawBuffer(
             //fprintf(stderr, "============== HttpAppendRawBuffer connchan write %s %ld bytes\n", httpPtr->outputChanName, size);
 
             result = NsConnChanWrite(interp, httpPtr->outputChanName, buffer, (TCL_SIZE_T)size, NS_TRUE, &written);
-            Ns_TclDeAllocateInterp(interp);
             if ((ssize_t)size != written) {
-                Ns_Log(Notice /*Ns_LogTaskDebug*/, "HttpAppendRawBuffer: connchan write %s %ld bytes written %ld",
-                       httpPtr->outputChanName, size, written); // CHANGE LEVEL
+                NsConnChan *chan;
+
+                /*
+                 * We could not deliver the received content via connchan.  On
+                 * the receiving side, everything is ok, but on the sending
+                 * side, it is not.
+                 */
+                chan = NsConnChanGet(interp, httpPtr->servPtr, httpPtr->outputChanName);
+                if (chan != NULL && chan->sockPtr != NULL) {
+                    if (chan->sockPtr->sendErrno == ECONNRESET) {
+                        /*
+                         * ECONNRESET means "Connection reset by peer". This
+                         * is not really an error, but happens frequently.w
+                         */
+                        silent = NS_TRUE;
+                    } else {
+                        Ns_Log(Ns_LogTaskDebug, "HttpAppendRawBuffer: connchan write %s %ld bytes written %ld sendbuf %ld",
+                               httpPtr->outputChanName, size, written,
+                               chan->sendBuffer == NULL ? -1 : (long)chan->sendBuffer->length);
+                    }
+                    reason = ns_sockstrerror((int)chan->sockPtr->sendErrno);
+                    httpPtr->flags |= NS_HTTP_OUTPUT_ERROR;
+                }
             }
+            Ns_TclDeAllocateInterp(interp);
 
         } else if (httpPtr->spoolChan != NULL) {
             written = (ssize_t)Tcl_Write(httpPtr->spoolChan, buffer, (TCL_SIZE_T)size);
@@ -4190,7 +4224,9 @@ HttpAppendRawBuffer(
     if (written > -1) {
         result = TCL_OK;
     } else {
-        Ns_Log(Error, "HttpAppendRawBuffer: spooling of received content failed");
+        if (!silent) {
+            Ns_Log(Error, "HttpAppendRawBuffer: spooling of received content failed: %s", reason);
+        }
         result = TCL_ERROR;
     }
 
