@@ -20,5 +20,5 @@ TCL =	revproxy-procs.tcl \
 #
 # Get the common Makefile rules
 #
-include  $(NAVISERVER)/include/Makefile.module
+include  ../include/Makefile.module
 
