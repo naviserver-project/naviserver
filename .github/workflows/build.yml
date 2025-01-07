@@ -18,7 +18,7 @@ jobs:
         include:
           - os: ubuntu-latest
             compiler: gcc-12
-            tcltag: core-8-6-15
+            tcltag: core-8-6-16
             nsf_version: 2.3.0
             tdom_version: 0.9.1
             with_deprecated: 1
