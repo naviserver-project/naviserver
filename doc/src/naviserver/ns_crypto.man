@@ -256,8 +256,8 @@ enabled.
 Generate a shared secret based on the private key from the .pem file
 and the provided public key. It is possible to provide the file name
 of the PEM file or its content as a string. When the .pem file is
-secured by a passphrase, this has to be provided via [option
-"-passphrase"].
+secured by a passphrase, this has to be provided via
+[option "-passphrase"].
 
 [para] When the option [option -binary] is specified, it applies to
 [arg pubkey].
