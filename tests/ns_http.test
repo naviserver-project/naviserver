@@ -326,7 +326,7 @@ test http-3.3new {limits: too many headers} -constraints serverListen -setup {
 } -cleanup {
     ns_unregister_op GET /limits
 } -match glob  -returnCodes {error ok
-} -result {status 414 time * headers d* body {} error {http read failed (initial receive from server)}}
+} -result {status 414 time * headers d* body {} error {http read failed (initial receive from server)} flags *}
 
 
 

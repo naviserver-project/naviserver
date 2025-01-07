@@ -20,7 +20,7 @@ if {$::tcl_version eq "8.5"} {
 namespace eval ::revproxy {
     variable version
     variable verbose
-    variable filters
+    variable register_callbacks
 
     set version 0.21
     set verbose [ns_config ns/server/[ns_info server]/module/revproxy verbose 0]
@@ -43,6 +43,7 @@ namespace eval ::revproxy {
         {-regsubs:0..n ""}
         {-exception_callback "::revproxy::exception"}
         {-url_rewrite_callback "::revproxy::rewrite_url"}
+        {-backend_response_callback ""}
         {-backend_reply_callback ""}
         {-backendconnection ""}
     } {
@@ -53,10 +54,37 @@ namespace eval ::revproxy {
         #        a proc, the value will be "proc"
         #
 
+        if {$backend_reply_callback ne ""} {
+            ns_deprecated "... ns_http-backend_response_callback ..."
+            set $backend_response_callback $backend_reply_callback
+        }
         if {$backendconnection eq ""} {
             set backendconnection \
                 [ns_config ns/server/[ns_info server]/module/revproxy backendconnection ns_connchan]
         }
+        set extraArgs {}
+        set spoolResponse true
+        switch $backendconnection {
+            ns_connchan { }
+            ns_http     { set spoolResponse false }
+            ns_http+ns_connchan {
+                catch {ns_http run} errorMsg
+                if {[string match *response_header_callback* $errorMsg]} {
+                    set backendconnection ns_http
+                } else {
+                    set backendconnection ns_connchan
+                    ns_log warning "revproxy: used NaviServer binary does not support 'ns_http+ns_connchan';" \
+                        "fall back to $backendconnection"
+                }
+            }
+            default {
+                set backendconnection ns_connchan
+                ns_log warning "revproxy: unknown backend connection type '$backendconnection';" \
+                        "fall back to $backendconnection"
+            }
+        }
+        set extraArgs [list -spoolresponse $spoolResponse]
+
         if {[llength $target] > 0} {
             set md5 [ns_md5 $target]
             set count [nsv_incr module:revproxy:proxyset $md5]
@@ -64,9 +92,10 @@ namespace eval ::revproxy {
             set target [lindex $target [expr {$count % [llength $target]}]]
         }
         nsv_incr module:revproxy:target $target
-        log notice "===== starting upstream server [ns_info server] using $backendconnection connection ===== [ns_conn method] $target"
+        log notice "===== starting upstream server '[ns_info server]' using '$backendconnection $extraArgs' connection ===== [ns_conn method] $target"
 
-        if {[ns_set iget [ns_conn headers] upgrade] eq "websocket"} {
+        set requestHeaders [ns_conn headers]
+        if {[ns_set iget $requestHeaders upgrade] eq "websocket"} {
             #
             # We received a WebSocket upgrade response from the
             # server. WebSocket use long open connections, we can
@@ -75,7 +104,13 @@ namespace eval ::revproxy {
             # handler if necessary.
             #
             log notice "WebSocket upgrade, forcing long timeouts"
-            if {$backendconnection ne "ns_connchan"} {
+            #
+            # Using ns_connchan always should not be necessary, but
+            # for unknown reasons, we still need it. Probably, the
+            # answer is in ns_http.
+            #
+            set useConnchanAlways 1
+            if {$useConnchanAlways || !$spoolResponse} {
                 log notice "switch backend connection from '$backendconnection'" \
                     "to 'ns_connchan', since a WebSocket upgrade was received."
                 set backendconnection ns_connchan
@@ -132,21 +167,58 @@ namespace eval ::revproxy {
         if {$url eq ""} {
             return filter_return
         }
-        #
-        # Get header fields from request, add x-forwarded-for,
-        # x-forwarded-proto, and x-ssl-request (if appropriate).
-        #
-        set queryHeaders [ns_conn headers]
 
-        set XForwardedFor [split [ns_set iget $queryHeaders "x-forwarded-for" ""] " ,"]
+        #
+        # Add extra "forwarded" header fields, i.e. "x-forwarded-for",
+        # "x-forwarded-proto", and "x-ssl-request" (if appropriate).
+        #
+        set XForwardedFor [split [ns_set iget $requestHeaders "x-forwarded-for" ""] " ,"]
         set XForwardedFor [lmap e $XForwardedFor {if {$e eq ""} continue}]
         lappend XForwardedFor [ns_conn peeraddr]
-        ns_set iupdate $queryHeaders x-forwarded-for [join $XForwardedFor ","]
+        ns_set iupdate $requestHeaders x-forwarded-for [join $XForwardedFor ","]
 
-        set proto [dict get [ns_parseurl $url] proto]
-        ns_set iupdate $queryHeaders x-forwarded-proto $proto
+        set proto [ns_conn protocol]
+        ns_set iupdate $requestHeaders x-forwarded-proto $proto
         if {$proto eq "https"} {
-            ns_set iupdate $queryHeaders x-ssl-request 1
+            ns_set iupdate $requestHeaders x-ssl-request 1
+        }
+        log notice [ns_set format $requestHeaders]
+
+        #
+        # Build dictionary "request" containing the request data
+        #
+        dict set request headers $requestHeaders
+        dict set request method [ns_conn method]
+        dict set request version [ns_conn version]
+
+        set contentType   [ns_set iget $requestHeaders content-type]
+        set contentLength [ns_set iget $requestHeaders content-length ""]
+        set binary false
+
+        if {$contentType ne ""
+            && [ns_encodingfortype $contentType] eq "binary"} {
+            set binary true
+        }
+        dict set request binary $binary
+
+        set contentfile [ns_conn contentfile]
+        if {$contentfile ne ""} {
+            dict set request contentfile $contentfile
+            if {$contentLength eq ""} {
+                set computedContentLength [file size $contentfile]
+            }
+        } else {
+            if {$binary} {
+                dict set request content [ns_conn content -binary]
+            } else {
+                dict set request content [ns_conn content]
+            }
+            set computedContentLength [string length [dict get $request content]]
+        }
+
+        if {$contentLength eq "" && $contentLength > 0} {
+            log notice "adding missing content-length $computedContentLength"
+            ns_set iupdate $requestHeaders content-length $computedContentLength
         }
 
         #
@@ -160,7 +232,9 @@ namespace eval ::revproxy {
                     -receivetimeout $receivetimeout \
                     -validation_callback $validation_callback \
                     -exception_callback $exception_callback \
-                    -backend_reply_callback $backend_reply_callback \
+                    -backend_response_callback $backend_response_callback \
+                    -request $request \
+                    {*}$extraArgs
                    ]
     }
 
@@ -171,10 +245,15 @@ namespace eval ::revproxy {
         -backendChan
         -url
         {-exception_callback ""}
+        {-severity error}
     } {
-        ns_log error "revproxy::upstream: error during establishing connections to $url: $errorMsg"
+        #
+        # When a frontendChan or backendChan is provided, these are closed.
+        #
+        ns_log error "revproxy::upstream: send failed URL $url '$errorMsg'"
         if {$exception_callback ne ""} {
-            {*}$exception_callback -status $status -error $errorMsg -url $url
+            {*}$exception_callback -status $status -error $errorMsg -url $url \
+                -frontendChan [expr {[info exists frontendChan] ? $frontendChan : ""}]
         }
         foreach chan {frontendChan backendChan} {
             if {[info exists $chan]} {
@@ -192,12 +271,25 @@ namespace eval ::revproxy {
         {-msg ""}
         -error
         -url
+        {-frontendChan ""}
     } {
         if {$msg eq ""} {
-            ns_log warning "Opening connection to backend [ns_quotehtml $url] failed with status $status"
+            ns_log warning "revproxy exception backend with URL '$url' failed with status $status"
             set msg "Backend error: [ns_quotehtml $error]"
         }
-        ns_returnerror $status $msg
+        if {$frontendChan ne ""} {
+            switch $status {
+                502 {set phrase "Bad Gateway"}
+                503 {set phrase "Service Unavailable"}
+                504 {set phrase "Gateway Timeout"}
+                default {set phrase Error}
+            }
+            ns_connchan write $frontendChan "HTTP/1.0 $status $phrase\r\n\r\n$status $phrase: $url"
+        } elseif [ns_conn isconnected] {
+            ns_returnerror $status $msg
+        } else {
+            ns_log error "revproxy exception (no return channel open): $status '$msg'"
+        }
     }
 
     #

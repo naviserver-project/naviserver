@@ -16,7 +16,7 @@ HEADER_INC=header.inc
 NSBUILD=1
 include include/Makefile.global
 
-dirs   = nsthread nsd nssock nscgi nscp nslog nsperm nsdb nsdbtest nsssl
+dirs   = nsthread nsd nssock nscgi nscp nslog nsperm nsdb nsdbtest nsssl revproxy
 
 # Unix only modules
 ifeq (,$(findstring MINGW,$(uname)))
@@ -179,6 +179,7 @@ build-doc:
 		       nsperm \
 		       nssock \
 		       nsssl \
+		       revproxy \
 		       doc/src/manual \
 		       doc/src/naviserver \
 		       modules/nsexpat \

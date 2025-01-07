@@ -25,8 +25,17 @@ namespace eval ::revproxy::ns_connchan {
         {-regsubs:0..n ""}
         {-exception_callback "::revproxy::exception"}
         {-url_rewrite_callback "::revproxy::rewrite_url"}
-        {-backend_reply_callback ""}
+        {-backend_response_callback ""}
+        -request:required
+        {-spoolresponse true}
     } {
+        #
+        # @param spoolresponse dummy parameter just for interface compatibility
+        #        with ns_http variant
+        #
+
+        set requestHeaders [dict get $request headers]
+        set method         [dict get $request method]
         #
         # Inject a "connection close" instruction to avoid persistent
         # connections to the backend. Otherwise we would not be able
@@ -37,13 +46,28 @@ namespace eval ::revproxy::ns_connchan {
         #
         # We might have to take more precautions for WebSockets here.
         #
-        set queryHeaders [ns_conn headers]
-        ns_set iupdate $queryHeaders connection close
-
-        #ns_log notice queryHeaders=[ns_set array $queryHeaders]
+        ns_set iupdate $requestHeaders connection close
+        #ns_log notice requestHeaders=[ns_set array $requestHeaders]
 
         if {$validation_callback ne ""} {
-            {*}$validation_callback -url $url
+            try {
+                set request [{*}$validation_callback -url $url -request $request]
+                #
+                # When the callback returns the empty string, request
+                # processing ends here. In this case the callback is
+                # responsible for sending a response to the client.
+                #
+                if {$request eq ""} {
+                    return filter_return
+                }
+            } on error {errorMsg} {
+                #
+                # Try old-style invocation (cannot modify request data)
+                #
+                ns_log warning "revproxy: validation callback failed. Try old-style invocation"
+
+                {*}$validation_callback -url $url
+            }
         }
 
         #
@@ -63,46 +87,42 @@ namespace eval ::revproxy::ns_connchan {
             #
             set backendChan [ns_connchan open \
                                  {*}$unixSocketArg \
-                                 -method [ns_conn method] \
-                                 -headers $queryHeaders \
+                                 -method $method \
+                                 -headers $requestHeaders \
                                  -timeout $timeout \
-                                 -version [ns_conn version] \
+                                 -version [dict get $request version] \
                                  $url]
             #
-            # Check, if we have requests with a body
+            # Have with gotten the body as a string or file?
             #
-            set contentLength [ns_set iget $queryHeaders content-length {}]
-            if {$contentLength ne ""} {
-                set contentfile [ns_conn contentfile]
-                set chunk 16000
-                if {$contentfile eq ""} {
-                    #
-                    # string content
-                    #
-                    set data [ns_conn content -binary]
-                    set length [string length $data]
-                    set i 0
-                    set j [expr {$chunk -1}]
-                    while {$i < $length} {
-                        log notice "upstream: send max $chunk bytes from string to $backendChan " \
-                            "(length $contentLength)"
-                        ns_connchan write -buffered $backendChan [string range $data $i $j]
-                        incr i $chunk
-                        incr j $chunk
-                    }
-                } else {
-                    #
-                    # file content
-                    #
-                    set F [open $contentfile r]
-                    fconfigure $F -encoding binary -translation binary
-                    while {1} {
-                        log notice "upstream: send max $chunk bytes from file to $backendChan " \
-                            "(length $contentLength)"
-                        ns_connchan write -buffered $backendChan [read $F $chunk]
-                        if {[eof $F]} break
-                    }
-                    close $F
+            set chunk 16000
+            if {[dict exists $request contentfile]} {
+                #
+                # file content
+                #
+                set F [open [dict get $request contentfile] r]
+                fconfigure $F -translation binary
+                while {1} {
+                    log notice "upstream: send max $chunk bytes from file to $backendChan " \
+                        "(length $contentLength)"
+                    ns_connchan write -buffered $backendChan [read $F $chunk]
+                    if {[eof $F]} break
+                }
+                close $F
+            } else {
+                #
+                # string content
+                #
+                set data [dict get $request content]
+                set length [string length $data]
+                set i 0
+                set j [expr {$chunk -1}]
+                while {$i < $length} {
+                    log notice "upstream: send max $chunk bytes from string to $backendChan " \
+                        "(length $contentLength)"
+                    ns_connchan write -buffered $backendChan [string range $data $i $j]
+                    incr i $chunk
+                    incr j $chunk
                 }
             }
 
@@ -118,7 +138,7 @@ namespace eval ::revproxy::ns_connchan {
             #
             set frontendChan [ns_connchan detach]
             log notice "backendChan $backendChan frontendChan $frontendChan " \
-                "method [ns_conn method] version 1.0 $url"
+                "method $method version 1.0 $url"
             set done_cmd [list ::revproxy::ns_connchan::upstream_send_done \
                               -backendChan $backendChan \
                               -frontendChan $frontendChan \
@@ -126,7 +146,7 @@ namespace eval ::revproxy::ns_connchan {
                               -timeout $timeout \
                               -sendtimeout $sendtimeout \
                               -receivetimeout $receivetimeout \
-                              -backend_reply_callback $backend_reply_callback \
+                              -backend_response_callback $backend_response_callback \
                               -exception_callback $exception_callback]
 
             set status [ns_connchan status $backendChan]
@@ -186,7 +206,7 @@ namespace eval ::revproxy::ns_connchan {
         -timeout
         -sendtimeout
         -receivetimeout
-        -backend_reply_callback
+        -backend_response_callback
         -exception_callback
     } {
         #
@@ -208,7 +228,7 @@ namespace eval ::revproxy::ns_connchan {
                 $frontendChan [list ::revproxy::ns_connchan::spool $frontendChan $backendChan $url $timeouts ""] rex
             ns_connchan callback \
                 -timeout $timeout -sendtimeout $sendtimeout -receivetimeout $receivetimeout \
-                $backendChan [list ::revproxy::ns_connchan::backendReply -callback $backend_reply_callback \
+                $backendChan [list ::revproxy::ns_connchan::backendResponse -callback $backend_response_callback \
                                   $backendChan $frontendChan $url $timeouts ""] rex
 
         } on error {errorMsg} {
@@ -287,7 +307,7 @@ namespace eval ::revproxy::ns_connchan {
             set spooled 0
         }
         log notice "cleanup channel $chan, spooled $spooled bytes (to spool $tospool) $closeMsg"
-        unset -nocomplain ::revproxy::replyheaderSent($chan)
+        unset -nocomplain ::revproxy::responseheaderSent($chan)
     }
 
     #
@@ -318,10 +338,10 @@ namespace eval ::revproxy::ns_connchan {
 
         if {[ns_connchan exists $from]} {
 
-            if {$arg ne "" && ![info exists ::revproxy::replyheaderSent($to)]} {
+            if {$arg ne "" && ![info exists ::revproxy::responseheaderSent($to)]} {
                 {*}$arg
-                #log notice "sent reply header to $to"
-                set ::revproxy::replyheaderSent($to) 1
+                #log notice "sent response header to $to"
+                set ::revproxy::responseheaderSent($to) 1
             }
             channelSetup $from
 
@@ -468,7 +488,7 @@ namespace eval ::revproxy::ns_connchan {
                 #
                 # Everything was written.
                 #
-                log notice "... write: everything was written to '$to' continue reading from '$from'"
+                #log notice "... write: everything was written to '$to' continue reading from '$from'"
                 set result 1
             }
         }
@@ -585,24 +605,7 @@ namespace eval ::revproxy::ns_connchan {
         return $continue
     }
 
-    nsf::proc parseHeaderString {
-        headerString
-    } {
-        #
-        # Parse the header lines line by line. The current code is
-        # slightly over-optimistic, since it does not handle
-        # request header continuation lines.
-        #
-        set headers [ns_set create]
-        foreach line [split $headerString \n] {
-            set line [string trimright $line \r]
-            # log notice "backendReply: [list ns_parseheader $headers $line]"
-            ns_parseheader $headers $line preserve
-        }
-        return $headers
-    }
-
-    nsf::proc sendReplyHeader {
+    nsf::proc sendResponseHeader {
         -from
         -to
         -url
@@ -611,7 +614,7 @@ namespace eval ::revproxy::ns_connchan {
         -header_info
         -body
     } {
-        log notice "backendReply: status line <$status_line>"
+        log notice "revproxy::ns_connchan::sendResponseHeader: status line <$status_line>"
         set status [lindex $status_line 1]
         #
         # For most error codes, we want to make sure that the
@@ -624,63 +627,65 @@ namespace eval ::revproxy::ns_connchan {
         # close the connection (e.g. WebSockets).
         #
         if {$status >= 200} {
-            set replyHeaders [ns_set create {*}$header_info]
-            set received_connection     [ns_set iget $replyHeaders connection ""]
-            set received_content_length [ns_set iget $replyHeaders content-length ""]
+            set responseHeaders         [ns_set create {*}$header_info]
+            set received_connection     [ns_set iget $responseHeaders connection ""]
+            set received_content_length [ns_set iget $responseHeaders content-length ""]
 
             #
-            # In case, a backendReplyCallback is set, call it with
-            # "-status" and "-replyHeaders". The callback can modify
-            # the ns_set with the reply headers, maybe, stripping
+            # In case, a backendResponseCallback is set, call it with
+            # "-status" and "-responseHeaders". The callback can modify
+            # the ns_set with the response headers, maybe, stripping
             # upstream headers etc.
             #
             if {$callback ne ""} {
-                {*}$callback -url $url -replyHeaders $replyHeaders -status $status
+                {*}$callback -url $url -responseHeaders $responseHeaders -status $status
             }
 
             #
             # Make sure to close the connection
             #
-            ns_set iupdate $replyHeaders connection close
+            ns_set iupdate $responseHeaders connection close
 
             #
-            # Build the reply
+            # Build the response
             #
-            set reply $status_line\r\n
-            set size [ns_set size $replyHeaders]
+            set response $status_line\r\n
+            set size [ns_set size $responseHeaders]
             for {set i 0} {$i < $size} {incr i} {
-                append reply "[ns_set key $replyHeaders $i]: [ns_set value $replyHeaders $i]\r\n"
+                append response "[ns_set key $responseHeaders $i]: [ns_set value $responseHeaders $i]\r\n"
             }
-            log notice "backendReply: from $url\n$reply"
+            log notice "revproxy::ns_connchan::sendResponseHeader: from $url\n$response"
             if {$received_content_length ne ""} {
-                # log notice "backendReply: set tospool($to) -> $received_content_length"
+                # log notice "revproxy::ns_connchan::sendResponseHeader: set tospool($to) -> $received_content_length"
                 set ::revproxy::tospool($to) $received_content_length
             }
-            #log notice "===== backendReply content-length '$received_content_length' connection '$received_connection'"
-            set headerLength [string length $reply]
-            append reply \r\n$body
-            set toWrite [string length $reply]
+            #log notice "===== revproxy::ns_connchan::sendResponseHeader content-length '$received_content_length' connection '$received_connection'"
+            set headerLength [string length $response]
+            append response \r\n$body
+            set toWrite [string length $response]
 
-            set written [ns_connchan write $to $reply]
+            set written [ns_connchan write $to $response]
             incr ::revproxy::spooled($to) [expr {$written - ($headerLength + 2)}]
-            log notice "backendReply: from $from to $to towrite $toWrite written $written " \
+            log notice "revproxy::ns_connchan::sendResponseHeader: from $from to $to towrite $toWrite written $written " \
                 "spooled($to) $::revproxy::spooled($to)"
-            #record $to-rewritten $reply
+            #record $to-rewritten $response
 
         } else {
             #
             # e.g. HTTP/1.1 101 Switching Protocols
             #
+            set header [join [lmap {key value} $header_info {string cat $key: " " $value}] \r\n]
+            log notice SWITCH status_line $status_line $header
             ns_connchan write $to [string cat $status_line \r\n $header \r\n\r\n $body]
         }
     }
 
     #
     # Handle backend replies in order to be able to post-process the
-    # reply header fields. This is e.g. necessary to downgrade to
+    # response header fields. This is e.g. necessary to downgrade to
     # HTTP/1.0 requests.
     #
-    nsf::proc backendReply {
+    nsf::proc backendResponse {
         {-callback ""}
         -sendtimeout
         -receivetimeout
@@ -691,7 +696,7 @@ namespace eval ::revproxy::ns_connchan {
         arg
         condition
     } {
-        log notice "::revproxy::ns_connchan::backendReply from $from condition '$condition' server [ns_info server]"
+        log notice "::revproxy::ns_connchan::backendResponse from $from condition '$condition' server '[ns_info server]'"
         if { $condition eq "r" } {
             #
             # Read from backend
@@ -704,17 +709,17 @@ namespace eval ::revproxy::ns_connchan {
             #
             # Connection Timeout
             #
-            ::revproxy::ns_connchan::gateway_timeout $to $url "connection timeout occurred while waiting for backend reply $from to $to"
+            ::revproxy::ns_connchan::gateway_timeout $to $url "connection timeout occurred while waiting for backend response $from to $to"
             channelCleanup -close $to
             set msg ""
 
         } else {
-            log notice "::revproxy::ns_connchan::backendReply unexpected condition '$condition' while processing backend reply"
+            log notice "::revproxy::ns_connchan::backendResponse unexpected condition '$condition' while processing backend response"
             set msg ""
         }
 
         if {$msg eq ""} {
-            log notice "::revproxy::ns_connchan::backendReply: ... auto closing $from $url"
+            log notice "::revproxy::ns_connchan::backendResponse: ... auto closing $from $url"
             #
             # Close our end ...
             #
@@ -723,45 +728,72 @@ namespace eval ::revproxy::ns_connchan {
             # ... and close as well the other end.
             #
             channelCleanup -close $to
-            #ns_connchan close $to
         } else {
             #
-            # Receive reply from backend. We assume, that we can
-            # receive the header of the reply in one sweep, ... which
+            # Receive response from backend. We assume, that we can
+            # receive the header of the response in one sweep, ... which
             # seems to be the case on our tested systems.
             #
-            log notice "::revproxy::ns_connchan::backendReply: received reply [string length $msg] bytes from $from to $to ($url)"
+            log notice "::revproxy::ns_connchan::backendResponse: received response [string length $msg] bytes from $from to $to ($url)"
             #record $to $msg
 
-            if {[regexp {^([^\n]+)\r\n(.*?)\r\n\r\n(.*)$} $msg . status_line header_string body]} {
-                set replyHeaders [parseHeaderString $header_string]
-                #
-                # We cannot pass the ns_set directly, since the
-                # ns_sets are cleaned up after every event in the
-                # socks thread. Therefore, we pass it in a
-                # attribute-value structure via "header_info".
-                #
-                set cmd [list sendReplyHeader \
-                             -from $from -to $to -url $url \
-                             -callback $callback \
-                             -status_line $status_line \
-                             -header_info [ns_set array $replyHeaders] \
-                             -body $body]
-
-                set received_connection     [ns_set iget $replyHeaders connection ""]
-                set received_content_length [ns_set iget $replyHeaders content-length ""]
-
-                if {$received_content_length eq "" && $received_connection eq "close"} {
+            try {
+                ns_parsemessage $msg
+            } on error {errorMsg} {
+                log notice "::revproxy::ns_connchan::backendResponse: could not parse header <$msg>"
+                set result 0
+                channelCleanup -close $to
+            } on ok {d} {
+                dict with d {
                     #
-                    # Assume streaming HTML
+                    # We cannot pass the ns_set directly, since ns_sets
+                    # are cleaned up after every event in the socks
+                    # thread. Therefore, we pass it in a attribute-value
+                    # list via "header_info".
                     #
-                    set timeout [ns_config ns/server/[ns_info server]/module/revproxy streaminghtmltimeout 2m]
-                    log notice "Streaming HTML detected, changing poll timeout on frontend $to and backend $from to $timeout value"
+                    #log notice "::revproxy::ns_connchan::backendResponse: received headers [ns_set format $headers]"
+                    set cmd [list sendResponseHeader \
+                                 -from $from -to $to -url $url \
+                                 -callback $callback \
+                                 -status_line $firstline \
+                                 -header_info [ns_set array $headers] \
+                                 -body $body]
+
+                    set received_connection     [string tolower [ns_set iget $headers connection ""]]
+                    set received_content_length [ns_set iget $headers content-length ""]
+                }
+                if {$received_content_length eq "" || $received_content_length eq "0"} {
+                    #
+                    # In case there is (potentially) no content, send
+                    # the received upstream headers now, since the
+                    # read callback on this socket might not be
+                    # triggered anymore.
+                    #
+                    {*}$cmd
+                    set cmd ""
+                } else {
+                    #
+                    # Otherwise, delay cmd until we receive some data
+                    # via callback in revproxy::ns_connchan::spool.
+                    # We need to delay cmd to be able to report to the
+                    # client a potential timeout with the appropriate
+                    # status code. Otherwise, it would be too late.
+                    #
+                }
+
+                if {$received_content_length eq "" && $received_connection in {"close" "upgrade"}} {
+                    #
+                    # Assume streaming HTML or a websocket upgrade.
+                    #
+                    set timeout [expr {$received_connection eq "close"
+                                       ? [ns_config ns/server/[ns_info server]/module/revproxy streaminghtmltimeout 2m]
+                                       : "1y"}]
+                    log notice "Streaming response detected, changing poll timeout on frontend $to and backend $from to $timeout value"
 
                     dict set timeouts -timeout $timeout
 
                     #
-                    # get the old callback and rewrite just the timeout values
+                    # Get the old callback and rewrite just the timeout values
                     #
                     set callback_info [ns_connchan status $to]
                     set callback [dict get $callback_info callback]
@@ -772,6 +804,7 @@ namespace eval ::revproxy::ns_connchan {
                         -sendtimeout [dict get $timeouts -sendtimeout] \
                         -receivetimeout [dict get $timeouts -receivetimeout] \
                         $to $callback [dict get $callback_info condition]
+
                 }
 
                 #
@@ -785,10 +818,6 @@ namespace eval ::revproxy::ns_connchan {
                     $from [list ::revproxy::ns_connchan::spool $from $to $url $timeouts $cmd] rex
 
                 set result 1
-            } else {
-                log notice "::revproxy::ns_connchan::backendReply: could not parse header <$msg>"
-                set result 0
-                channelCleanup -close $to
             }
         }
 
