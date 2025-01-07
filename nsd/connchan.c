@@ -841,9 +841,18 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                    bufs->iov_len, partialToSend);
 
             partialResult = NsDriverSend(sockPtr, bufs, nbufs, flags);
-            Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend NsDriverSend returned result %"
-                   PRIdz " errorState %d --- %s",
-                   connChanPtr->channelName, partialResult, sockPtr->recvSockState, Tcl_ErrnoMsg(errno));
+
+
+            if (sockPtr->sendErrno != 0 && sockPtr->sendErrno != ECONNRESET) {
+                Ns_Log(Warning, "%s ConnchanDriverSend NsDriverSend tosend %" PRIdz " returned result %"
+                       PRIdz " errorState %lu --- %s",
+                       connChanPtr->channelName, bufs->iov_len,
+                       partialResult, sockPtr->sendErrno, ns_sockstrerror((int)sockPtr->sendErrno));
+            } else {
+                Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend NsDriverSend returned result %"
+                       PRIdz " errorState %lu --- %s",
+                       connChanPtr->channelName, partialResult, sockPtr->sendErrno, ns_sockstrerror((int)sockPtr->sendErrno));
+            }
 
             if (partialResult == 0) {
                 /*
@@ -1638,6 +1647,14 @@ ConnChanStatusObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
             Tcl_DictObjPut(NULL, dictObj,
                            Tcl_NewStringObj("fragments", 9),
                            Tcl_NewIntObj(ConnChanBufferSize(connChanPtr,fragmentsBuffer)));
+
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("senderror", 9),
+                           Tcl_NewStringObj(NsErrorCodeString((int)connChanPtr->sockPtr->sendErrno), TCL_INDEX_NONE));
+            Tcl_DictObjPut(NULL, dictObj,
+                           Tcl_NewStringObj("recverror", 9),
+                           Tcl_NewStringObj(NsErrorCodeString((int)connChanPtr->sockPtr->recvErrno), TCL_INDEX_NONE));
+
 
             if (connChanPtr->cbPtr != NULL) {
                 char whenBuffer[6];
