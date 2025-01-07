@@ -545,6 +545,7 @@ typedef struct Sock {
     char               *taddr;           /* mmap-ed temporary file */
     size_t              tsize;           /* Size of mmap region */
     char               *tfile;           /* Name of regular temporary file */
+    unsigned long       sendErrno;       /* Last error number in send operation (can fit OpenSSL errors) */
     unsigned long       recvErrno;       /* Last error number in read operation (can fit OpenSSL errors) */
     const char         *extractedHeaderFields[NS_EXTRACTED_NONE];
     Ns_SockState        recvSockState;   /* Results from the last recv operation */
@@ -1945,6 +1946,7 @@ NS_EXTERN void NsSlsCleanup(Sock *sockPtr) NS_GNUC_NONNULL(1);
 /*
  * sock.c
  */
+NS_EXTERN const char *NsErrorCodeString(int errorCode) NS_GNUC_PURE NS_GNUC_RETURNS_NONNULL;
 NS_EXTERN const char *NsSockSetRecvErrorCode(const Sock *sockPtr, Tcl_Interp *interp)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 

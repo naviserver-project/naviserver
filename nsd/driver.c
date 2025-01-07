@@ -2209,6 +2209,16 @@ NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int fl
          * to omit the timeout argument. Same with recvProc().
          */
         sent = (*drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs, NULL, flags);
+        if (unlikely(sent == -1)) {
+            int       sockErr;
+            socklen_t len = (socklen_t)sizeof(sockErr);
+
+            if (getsockopt(sockPtr->sock, SOL_SOCKET, SO_ERROR, (void *)&sockErr, &len) != -1) {
+                sockPtr->sendErrno = (unsigned long)sockErr;
+            }
+        } else {
+            sockPtr->sendErrno = 0;
+        }
     } else {
         Ns_Log(Warning, "no sendProc registered for driver %s", drvPtr->threadName);
     }
@@ -3447,6 +3457,7 @@ SockNew(Driver *drvPtr)
         sockPtr->poolPtr = NULL;
         sockPtr->recvSockState = NS_SOCK_NONE;
         sockPtr->recvErrno = 0u;
+        sockPtr->sendErrno = 0u;
     }
     return sockPtr;
 }

@@ -69,8 +69,6 @@ static NS_INLINE bool Retry(int errorCode) NS_GNUC_CONST;
 
 static Ns_SockProc CloseLater;
 
-static const char *ErrorCodeString(int errorCode) NS_GNUC_PURE;
-
 
 /*
  *----------------------------------------------------------------------
@@ -2292,7 +2290,7 @@ Ns_PosixSetErrorCode(Tcl_Interp *interp, int errorNum) {
 
     errorMsg = Tcl_ErrnoMsg(errorNum);
     Tcl_SetErrorCode(interp, "POSIX",
-                     ErrorCodeString(errorNum),
+                     NsErrorCodeString(errorNum),
                      Tcl_ErrnoMsg(errorNum),
                      (char *)0L);
     return errorMsg;
@@ -2333,7 +2331,7 @@ NsSockSetRecvErrorCode(const Sock *sockPtr, Tcl_Interp *interp) {
 /*
  *----------------------------------------------------------------------
  *
- * ErrorCodeString --
+ * NsErrorCodeString --
  *
  *      Map errorCode integer to a language independent string.  This
  *      function is practically a copy of the Tcl implementation, except
@@ -2348,8 +2346,8 @@ NsSockSetRecvErrorCode(const Sock *sockPtr, Tcl_Interp *interp) {
  *
  *----------------------------------------------------------------------
  */
-static const char *
-ErrorCodeString(int errorCode)
+const char *
+NsErrorCodeString(int errorCode)
 {
     switch (errorCode) {
 #if defined(E2BIG) && (!defined(EOVERFLOW) || (E2BIG != EOVERFLOW))
@@ -2781,6 +2779,7 @@ ErrorCodeString(int errorCode)
 #ifdef EXFULL
     case EXFULL: return "EXFULL";
 #endif
+    case 0: return "";
     }
     return "unknown error";
 }
