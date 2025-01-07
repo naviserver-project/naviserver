@@ -15,8 +15,7 @@ MODNAME = revproxy
 #
 TCL =	revproxy-procs.tcl \
 	revproxy-ns-http-procs.tcl \
-	revproxy-ns-connchan-procs.tcl \
-	README.md
+	revproxy-ns-connchan-procs.tcl
 
 #
 # Get the common Makefile rules
