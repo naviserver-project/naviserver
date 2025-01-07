@@ -81,6 +81,7 @@ namespace eval ::revproxy::ns_connchan {
             set unixSocketArg ""
         }
 
+        set contentLength [ns_set iget $requestHeaders content-length ""]
         if {[catch {
             #
             # Open backend channel, get frontend channel and connect these.
