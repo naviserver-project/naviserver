@@ -88,6 +88,7 @@ namespace eval ::revproxy::ns_http {
         set partialresultsFlag [expr {[ns_info version]>=5 ?  "-partialresults" : ""}]
 
         try {
+            set expire 1d
             log notice             ns_http run \
                 {*}$partialresultsFlag \
                 {*}$unixSocketArg \
@@ -95,7 +96,8 @@ namespace eval ::revproxy::ns_http {
                 -spoolsize 100kB \
                 -method $method \
                 -headers $requestHeaders \
-                -expire $timeout \
+                -timeout $timeout \
+                -expire $expire \
                 {*}$extraArgs \
                 $url
 
@@ -106,12 +108,13 @@ namespace eval ::revproxy::ns_http {
                 -spoolsize 100kB \
                 -method $method \
                 -headers $requestHeaders \
-                -expire $timeout \
+                -timeout $timeout \
+                -expire $expire \
                 {*}$extraArgs \
                 $url
 
         } trap {NS_TIMEOUT} {r} {
-            log notice "TIMEOUT during send to $url ($r) "
+            ns_log notice "TIMEOUT after timeout $timeout expire $expire during send to $url ($r) "
             if {$partialresultsFlag ne "" && [dict exists $r error]} {
                 #
                 # This request was sent with "-partialresults" enabled
@@ -120,7 +123,9 @@ namespace eval ::revproxy::ns_http {
                 set responseHeaders [dict get $r headers]
                 #log notice "RESULT contains error: '$errorMsg' /$::errorCode/\n$r"
 
-                if {[ns_set iget $responseHeaders content-length ""] eq ""} {
+                if {[ns_set size $responseHeaders] > 0
+                    && [ns_set iget $responseHeaders content-length ""] eq ""
+                } {
                     #
                     # We have a timeout, and not content length. This
                     # is potentially a streaming HTML request, which
@@ -129,7 +134,7 @@ namespace eval ::revproxy::ns_http {
                     # an error.
                     #
                     ns_log error "revproxy: streaming HTML attempt detected on ns_http for URL $url." \
-                        "Please switch for this request to the ns_connchan interface!"
+                        "Please switch for this request to the ns_connchan interface!" <[ns_set format $responseHeaders]>
                     set errorMsg "streaming HTML not supported on this interface"
                 }
             } else {
@@ -150,8 +155,14 @@ namespace eval ::revproxy::ns_http {
                 if {[dict get [ns_connchan status $connchan] sendbuffer] > 0} {
                     ns_log warning "revproxy ns_http+ns_connchan: final buffer is not empty:" \
                         [ns_connchan status $connchan]
+                    #
+                    # ::revproxy::ns_http::drain_sendbuf will automatically close $connchan
+                    #
+                    ns_connchan callback $connchan \
+                        [list ::revproxy::ns_http::drain_sendbuf $connchan -done_callback ""] wex
+                } else {
+                    ns_connchan close $connchan
                 }
-                ns_connchan close $connchan
             }
 
             set responseHeaders [dict get $r headers]
@@ -223,6 +234,33 @@ namespace eval ::revproxy::ns_http {
     }
 
     interp alias {} [namespace current]::log {} ::revproxy::log
+}
+
+
+nsf::proc ::revproxy::ns_http::drain_sendbuf {channel {-done_callback ""} when} {
+    set result [ns_connchan write -buffered $channel ""]
+    set status [ns_connchan status $channel]
+    log notice "::revproxy::ns_http::drain_sendbuf when '$when' sent $result status $status"
+    if {$result == 0 || [dict get $status sendbuffer] > 0} {
+        if {$result == 0} {
+            ns_log warning "::revproxy::ns_http::drain_sendbuf  was not successful draining the buffer " \
+                "(still [dict get $status sendbuffer])... trigger again. status: $status"
+        } else {
+            ns_log notice "::revproxy::ns_http::drain_sendbuf still [dict get $status sendbuffer] to drain"
+        }
+        set continue 1
+    } else {
+        #
+        # All was sent, close the channel, call the callback and
+        # deregister the callback
+        #
+        ns_connchan close $channel
+        log notice "::revproxy::ns_http::drain_sendbuf Could call callback <$done_callback>"
+        set continue 0
+    }
+
+    log notice "::revproxy::ns_http::drain_sendbuf returns $continue (channel $channel)"
+    return $continue
 }
 
 
