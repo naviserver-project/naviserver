@@ -977,7 +977,7 @@ Ns_HttpResponseMessageParse(
     size_t        firstLineLength = 0u;
 
     NS_NONNULL_ASSERT(hdrPtr != NULL);
-    NS_NONNULL_ASSERT(message != NULL);
+    NS_NONNULL_ASSERT(messageString != NULL);
     NS_NONNULL_ASSERT(statusPtr != NULL);
 
     if (majorPtr == NULL) {
