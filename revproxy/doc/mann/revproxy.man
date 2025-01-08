@@ -146,6 +146,7 @@ The core command for proxying is [cmd revproxy::upstream], which accepts seveal 
 	[opt [option "-backendconnection [arg value]"]] \
 	[opt [option "-exception_callback [arg value]"]] \
 	[opt [option "-regsubs [arg value]"]] \
+        [opt [option "-targethost [arg value]"]] \
 	[opt [option "-timeout [arg value]"]] \
 	[opt [option "-url_rewrite_callback [arg value]"]] \
 	[opt [option "-validation_callback [arg value]"]] \
@@ -197,6 +198,8 @@ Default implementation: [cmd ::revproxy::exception]
 [example_end]
 
 [para] The option [option "-regsubs"] can be use to provide a list of regsub patterns for rewriting incoming URLs.
+
+[para] The option [option "-targethost"] specifies the host header field for the requests to the backend server. If this parameter is not specified or set to the empty string, the host header field received from the client is also sent to the backend server.
 
 [para] The option [option "-timeout"] specifies the time limit for connection, read, or write operations (default: 10s)
 

@@ -47,7 +47,7 @@ namespace eval ::revproxy::ns_connchan {
         # We might have to take more precautions for WebSockets here.
         #
         ns_set iupdate $requestHeaders connection close
-        #ns_log notice requestHeaders=[ns_set array $requestHeaders]
+        log notice requestHeaders=[ns_set format $requestHeaders]
 
         if {$validation_callback ne ""} {
             try {

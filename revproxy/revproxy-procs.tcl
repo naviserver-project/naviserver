@@ -36,6 +36,7 @@ namespace eval ::revproxy {
     nsf::proc upstream {
         when
         -target
+        {-targethost ""}
         {-timeout 10.0s}
         {-sendtimeout 0.5s}
         {-receivetimeout 0.5s}
@@ -92,7 +93,7 @@ namespace eval ::revproxy {
             set target [lindex $target [expr {$count % [llength $target]}]]
         }
         nsv_incr module:revproxy:target $target
-        log notice "===== starting upstream server '[ns_info server]' using '$backendconnection $extraArgs' connection ===== [ns_conn method] $target"
+        log notice "request on server '[ns_info server]' using '$backendconnection $extraArgs' connection ===== [ns_conn method] $target"
 
         set requestHeaders [ns_conn headers]
         if {[ns_set iget $requestHeaders upgrade] eq "websocket"} {
@@ -181,6 +182,10 @@ namespace eval ::revproxy {
         ns_set iupdate $requestHeaders x-forwarded-proto $proto
         if {$proto eq "https"} {
             ns_set iupdate $requestHeaders x-ssl-request 1
+        }
+
+        if {$targethost ne ""} {
+            ns_set iupdate $requestHeaders host $targethost
         }
         log notice [ns_set format $requestHeaders]
 
