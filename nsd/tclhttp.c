@@ -1191,8 +1191,6 @@ NsTclParseMessageObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_S
         {NULL, NULL, NULL, NULL}
     };
 
-    assert(clientData != NULL);
-
     if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;
 
@@ -1282,8 +1280,6 @@ NsTclParseHeaderObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
         {"?disposition", Ns_ObjvString, &dispositionString, NULL},
         {NULL, NULL, NULL, NULL}
     };
-
-    assert(clientData != NULL);
 
     if (Ns_ParseObjv(opts, args, interp, 1, objc, objv) != NS_OK) {
         result = TCL_ERROR;

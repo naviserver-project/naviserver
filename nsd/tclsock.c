@@ -934,8 +934,6 @@ NsTclSockListenCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZ
         TCL_SIZE_T      scriptLength;
         const char     *scriptString = Tcl_GetStringFromObj(scriptObj, &scriptLength);
 
-        assert(script != NULL);
-
         if (STREQ(addr, "*")) {
             addr = (char *)NS_IP_UNSPECIFIED;
         }
