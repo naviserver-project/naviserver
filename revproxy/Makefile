@@ -1,11 +1,4 @@
 #
-# Support for multiple NaviServer installations on a single host
-#
-ifndef NAVISERVER
-    NAVISERVER  = ..
-endif
-
-#
 # Name of the modules
 #
 MODNAME = revproxy
@@ -20,5 +13,4 @@ TCL =	revproxy-procs.tcl \
 #
 # Get the common Makefile rules
 #
-include  $(NAVISERVER)/include/Makefile.module
-
+include ../include/Makefile.build
