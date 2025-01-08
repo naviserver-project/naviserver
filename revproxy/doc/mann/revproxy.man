@@ -1,0 +1,406 @@
+[include version_include.man]
+
+[manpage_begin revproxy n [vset version]]
+[moddesc {NaviServer Module}]
+
+[titledesc {Reverse Proxy Module for NaviServer (Version 0.23)}]
+
+[description]
+
+The [emph revproxy] module provides a reverse proxy solution for
+NaviServer. It allows you to forward incoming requests to one or more
+backend systems, via HTTP or HTTPS connections. The module also
+supports WebSockets (including secure WebSockets).
+
+[para]
+You can configure [emph revproxy] to selectively forward requests based
+on HTTP method and URL patterns. This enables a hybrid setup where part
+of the site is served locally by NaviServer, and another part is handled
+by external backend services. Additionally, you can invoke
+[cmd revproxy::upstream] directly in server-side pages (e.g., .vuh in
+OpenACS or ADP pages) to restrict backend access to authenticated or
+authorized users (e.g., admins).
+
+[para]
+The [emph revproxy] functionality integrates into NaviServer’s request
+handling workflow in three primary ways:
+
+[list_begin itemized]
+[item] As a filter ([cmd ns_register_filter]) — invoked early in the request lifecycle
+[item] As a request handler ([cmd ns_register_proc]) — runs after filters (typically after authentication and permission checks)
+[item] Directly in server-side code — for fine-grained or conditional invocation
+[list_end]
+
+Choose the approach (filter, request handler, or direct invocation) that
+best suits your site’s security and performance requirements, such as
+whether to proxy requests before or after user authentication.
+
+[section {Backend Connection Methods}]
+
+The [emph revproxy] module supports two backend connection methods:
+
+[list_begin enumerated]
+[enum] [emph ns_connchan] (Classical Method, Tcl based)
+[list_begin itemized]
+[item] Fully Event-driven approach suitable for streaming HTML and WebSockets
+[item] Proven stability and robustness
+[item] May be required for requests that cannot currently be handled by ns_http (e.g., certain WebSocket upgrade requests)
+[item] No persistent connections supported
+[item] Partial reads and writes and error conditions have to be handled on the Tcl level (complex)
+[list_end]
+
+[enum] [emph ns_http] (Experimental, C based)
+[list_begin itemized]
+[item] Partial read/write operations are handled in C for improved efficiency
+[item] Supports persistent connections (NaviServer 5.0+) for repeated requests to the same backend
+[item] Integrates with writer threads, scaling well under heavy load
+[item] Provides separate logging and statistics for backend connections
+[item] For certain types of requests (e.g., the websocket upgrade request), automatic fall back to [term ns_connchan] possible.
+[item] Does not work well for streaming requests, since request data is only available after the request has finished.
+[list_end]
+
+[enum] [emph ns_http+ns_connchan] (Experimental)
+[list_begin itemized]
+[item] Uses [term ns_http] for request data sending and [term ns_connchan] for response spooling
+[item] Supports persistent connections and request streaming
+[list_end]
+[list_end]
+
+[para]
+By default, you can set [option backendconnection] globally via the
+configuration file. It is also possible to override the connection
+method per handler instance by specifying the option [option -backendconnection]
+to [cmd revproxy::upstream].  
+
+[section CONFIGURATION]
+
+The reverse proxy module can be configured by extending a standard
+NaviServer configuration file. An overview:
+
+[list_begin itemized]
+[item] Load the revproxy module
+[example_begin]
+ ns_section "ns/server/$server/modules" {
+   ns_param revproxy tcl
+ }
+[example_end]       
+[item] Decide whether to register filters or request handlers
+[item] Optionally set global or per-handler parameters (such as connection method, timeouts, etc.)
+[list_end]
+
+[subsection {Example: Using Request Filters (Here: Pre-Authentication)}]
+
+Register a [term preauth] filter and remove the prefix [const /shiny]
+before forwarding requests to [const https://my.backend.com/]:
+
+[example_begin]
+ ns_section "ns/server/$server/module/revproxy" {
+   ns_param register {
+     ns_register_filter preauth GET  /shiny/* ::revproxy::upstream -target https://my.backend.com/ -regsubs {{/shiny ""}}
+     ns_register_filter preauth POST /shiny/* ::revproxy::upstream -target https://my.backend.com/ -regsubs {{/shiny ""}}
+   }
+ }
+[example_end]
+
+[subsection {Example: Using a Request Handler}]
+
+Forward [term "GET /doc/*"] requests to two backend servers with a
+20-second timeout:
+
+[example_begin]
+ ns_section ns/server/default/module/revproxy {
+   set target {http://server1.local:8080/ http://server2.local:8080/}
+   ns_param register [lb]subst {
+       ns_register_proc GET /doc {
+           ::revproxy::upstream proc -timeout 20s -target [lb]list ${target}[rb]
+       }
+   }[rb]
+ }
+[example_end]
+
+[para]
+This configuration uses simple load distribution across multiple
+backends (round-robin). Failover checks (health checks) are currently
+not performed.
+
+[subsection {Choosing the Backend Connection Method}]
+
+Specify a default backend connection type globally or override it in
+individual handlers:
+
+[example_begin]
+ ns_section ns/server/default/module/revproxy {
+   ns_param backendconnection ns_http ;# default is ns_connchan
+ }
+[example_end]
+
+[section {ADVANCED CUSTOMIZATION}]
+
+The core command for proxying is [cmd revproxy::upstream], which accepts seveal parameters to control behavior.  Note that multiple proxy handler instances can be defined, each with distinct parameters.
+
+[list_begin definitions]
+
+[call [cmd revproxy::upstream] \
+	[option "-target [arg value]"] \
+	[opt [option "-backend_response_callback [arg value]"]] \
+	[opt [option "-backendconnection [arg value]"]] \
+	[opt [option "-exception_callback [arg value]"]] \
+	[opt [option "-regsubs [arg value]"]] \
+	[opt [option "-timeout [arg value]"]] \
+	[opt [option "-url_rewrite_callback [arg value]"]] \
+	[opt [option "-validation_callback [arg value]"]] \
+        ]
+        
+Defines a proxying rule for [option -target]. The value of this required parameter is a list of one or more backend URLs. Without further definitions, the incoming URL path is appended to the specified target, but it can be altered via option [option -regsubs], Furthermore, the URL can also be rewritten more generally by the [option -url_rewrite_callback].
+
+[para] The option [option "-backend_response_callback"] can be used to modify backend response headers. This callback has no default value.  Example signature:
+
+[example_begin]
+ nsf::proc ::my_backend_response_callback {
+   -url
+   -responseHeaders
+   -status
+ } {
+   # Modify or remove header fields in "responseHeaders" as needed
+ }
+[example_end]
+
+[para] The option [option "-backendconnection"] can be used to define the per-handler connection method. It overrides the global [term backendconnection] setting.
+
+[para] The option [option "-exception_callback"] can be used to generate custom error pages on failures.
+Default implementation: [cmd ::revproxy::exception]
+
+[example_begin]
+ nsf::proc ::revproxy::exception {
+     {-status 503}
+     {-msg ""}
+     -error
+     -url
+     {-frontendChan ""}
+ } {
+   if {$msg eq ""} {
+     ns_log warning "revproxy exception backend with URL '$url' failed with status $status"
+     set msg "Backend error: [lb]ns_quotehtml $error[rb]"
+   }
+   if {$frontendChan ne ""} {
+     switch $status {
+       502 {set phrase "Bad Gateway"}
+       503 {set phrase "Service Unavailable"}
+       504 {set phrase "Gateway Timeout"}
+       default {set phrase Error}
+     }
+     ns_connchan write $frontendChan "HTTP/1.0 $status $phrase\r\n\r\n$status $phrase: $url"
+   } else {
+     ns_returnerror $status $msg
+   }
+ }
+[example_end]
+
+[para] The option [option "-regsubs"] can be use to provide a list of regsub patterns for rewriting incoming URLs.
+
+[para] The option [option "-timeout"] specifies the time limit for connection, read, or write operations (default: 10s)
+
+[para] The option [option "-url_rewrite_callback"] can be used to dynamically compute the final upstream URL. This can be used in cases, where the option [option "-regsubs"] is not sufficient.
+
+Default implementation: [cmd ::revproxy::rewrite_url]
+
+[example_begin]
+ nsf::proc ::revproxy::rewrite_url { -target -url {-query ""}} {
+   set newUrl [lb]string trimright $target /[rb]/[lb]string trimleft $url /.[rb]
+   if {$query ne ""} {append newUrl ?$query}
+   return $newUrl
+ }
+[example_end]
+
+[para] The option [option "-validation_callback"] can be used to perform a test on the final rewriting of the URL and request headers. This callback receives the [option -url] and [option -request], and has the complete control over the proxying request. It can still modify the headers, the HTTP method and the request data. The [arg request] dict contains keys like [const headers], [const binary],
+and either [const content] or [const contentfile] for uploaded request data.
+The callback has no default. Example signature:
+
+[example_begin]
+ nsf::proc ::my_validation_callback {
+   -url
+   -request
+ } {
+   # Check final URL and request data provided by the "request" dict.
+   # Return unmodified or updated dict, or "" to abort.
+   # ....
+   return $request
+ }
+[example_end]
+[list_end]
+
+
+
+[section {ENSURING NETWORK DRIVERS ARE LOADED}]
+
+To use HTTP or HTTPS in backend connections, ensure the appropriate
+drivers ([term nssock] for HTTP, [term nsssl] for HTTPS) are loaded. If
+you wish to disable a particular listening port (e.g., HTTPS) while
+still using HTTPS for backend requests, configure it to listen on port
+0:
+
+[example_begin]
+ ns_section ns/server/$server/modules {
+   ns_param revproxy tcl
+   ns_param nsssl https
+ }
+ 
+ ns_section ns/server/$server/module/https {
+   ns_param port 0
+ }
+[example_end]
+
+[section {FULL CONFIGURATION EXAMPLE}]
+
+Below is a sample configuration file illustrating a possible reverse
+proxy setup. Save this file (e.g.,
+[file /usr/local/ns/conf/nsd-config-revproxy.tcl]) and start NaviServer
+with the appropriate shell/environment variables:
+
+[example_begin]
+ ########################################################################
+ # Sample configuration file for NaviServer with reverse proxy setup.
+ ########################################################################
+ 
+ set home [lb]file dirname [lb]file dirname [lb]info nameofexecutable[rb][rb][rb]
+  
+ ########################################################################
+ # Per default, the reverse proxy server uses the following
+ # configuration variables. Their values can be overloaded on startup
+ # via environment variables with the "nsd_" prefix, when starting the
+ # server, e.g., setting a different "revproxy_target" via:
+ #
+ #    nsd_revproxy_target=https://localhost:8445 /usr/local/ns/bin/nsd -f ...
+ #
+ ########################################################################
+ 
+ dict set defaultConfig httpport                   48000
+ dict set defaultConfig httpsport                  48443
+ dict set defaultConfig revproxy_target            http://127.0.0.1:8080
+ dict set defaultConfig revproxy_backendconnection ns_connchan
+ dict set defaultConfig address                    0.0.0.0
+ 
+ ns_configure_variables "nsd_" $defaultConfig
+ 
+ ns_section ns/parameters {
+   ns_param home       $home
+   ns_param tcllibrary tcl
+   ns_param serverlog  error.log
+ }
+ 
+ ns_section ns/servers {
+   ns_param default "Reverse proxy"
+ }
+ 
+ ns_section ns/modules {
+   if {$httpsport ne ""} { ns_param https nsssl }
+   if {$httpport ne ""}  { ns_param http nssock }
+ }
+ 
+ ns_section ns/module/http {
+   ns_param port      $httpport
+   ns_param address   $address
+   ns_param maxupload 1MB
+   ns_param writerthreads 1
+ }
+ 
+ ns_section ns/module/https {
+   ns_param port         $httpsport
+   ns_param address      $address
+   ns_param maxupload    1MB
+   ns_param writerthreads 1
+   ns_param ciphers     "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!RC4"
+   ns_param protocols    "!SSLv2:!SSLv3"
+   ns_param certificate  /usr/local/ns/etc/server.pem
+ }
+ 
+ ns_section ns/module/http/servers {
+   ns_param default    localhost
+   ns_param default    [lb]ns_info hostname[rb]
+ }
+
+ ########################################################################
+ #  Settings for the "default" server
+ ########################################################################
+ 
+ ns_section ns/server/default {
+   ns_param connsperthread 1000
+   ns_param minthreads      5
+   ns_param maxthreads      100
+   ns_param maxconnections  100
+   ns_param rejectoverrun   true
+ }
+ 
+ ns_section ns/server/default/fastpath {
+   #
+   # From where to serve pages that are not proxied to a backend.
+   #
+   ns_param pagedir pages-revproxy
+ }
+ 
+ ns_section ns/server/default/modules {
+   ns_param nslog   nslog
+   ns_param revproxy tcl
+ }
+ 
+ ns_section ns/server/default/module/revproxy {
+   ns_param backendconnection $revproxy_backendconnection
+   ns_param verbose 1
+ 
+   set usefilter 0
+   if {$usefilter} {
+     ns_param register [lb]subst {
+       ns_register_filter postauth GET  /* ::revproxy::upstream -target [lb]list $revproxy_target[rb]
+       ns_register_filter postauth POST /* ::revproxy::upstream -target [lb]list $revproxy_target[rb]
+     }[rb]
+   } else {
+     #
+     # Here, we register additionally nsstats.tcl to the URL space to
+     # get statistics from the proxy-server itself. This assumes,
+     # that nsstats.{tcl,adp} has been installed into the pages
+     # directory of the proxy server. On public sites, you might wish to
+     # remove this handler or protect nsstats.tcl with a password.
+     #
+     ns_param register [lb]subst {
+       ns_register_tcl GET /nsstats.tcl
+       ns_register_proc GET  /* { ::revproxy::upstream proc -target [lb]list ${revproxy_target}[rb] }
+       ns_register_proc POST /* { ::revproxy::upstream proc -target [lb]list ${revproxy_target}[rb] }
+     }[rb]
+   }
+ }
+ 
+ ns_section ns/server/default/httpclient {
+   #
+   # Activate persistent connections for ns_http and request logging (with connection reuse statistics)
+   #
+   ns_param keepalive 5s
+   ns_param logging   on
+   ns_param logfile   httpclient-revproxy.log
+ }
+ 
+ set ::env(RANDFILE) $home/.rnd
+ set ::env(HOME)     $home
+ set ::env(LANG)     en_US.UTF-8
+ # ns_log notice "END OF CONFIG"
+[example_end]
+
+[para]
+Invoke NaviServer with this configuration file, for example:
+
+[example_begin]
+nsd_revproxy_target=https://localhost:8445 \
+    nsd_httpport=48000 \
+    /usr/local/ns/bin/nsd -f -u nsadmin -g nsadmin -t /usr/local/ns/conf/nsd-config-revproxy.tcl 2>&1
+[example_end]
+
+[section REQUIREMENTS]
+
+[list_begin itemized]
+[item] [cmd nsf] (Next Scripting Framework) from [uri http://next-scripting.org/]
+[list_end]
+
+
+[see_also ns_register ns_register_tcl ns_register_proc ns_register_filter ns_http ns_connchan]
+[keywords reverseproxy filter handler request HTTP-client logging module nsf configuration]
+
+[manpage_end]
