@@ -2,7 +2,7 @@
 # Support for multiple NaviServer installations on a single host
 #
 ifndef NAVISERVER
-    NAVISERVER  = /usr/local/ns
+    NAVISERVER  = ..
 endif
 
 #
@@ -20,5 +20,5 @@ TCL =	revproxy-procs.tcl \
 #
 # Get the common Makefile rules
 #
-include  ../include/Makefile.module
+include  $(NAVISERVER)/include/Makefile.module
 
