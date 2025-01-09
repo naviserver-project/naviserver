@@ -558,7 +558,29 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
         if (Ns_SetUser(uarg) == NS_ERROR) {
             Ns_Fatal("nsmain: failed to switch to user %s", uarg);
         }
+    } else {
+        if (uarg != NULL) {
+            Ns_Log(Warning, "nsmain: command line argument '-u %s' is ignored"
+                   " since not running as a priviledged user", uarg);
+        }
+        if (uarg != NULL) {
+            Ns_Log(Warning, "nsmain: command line argument '-g %s' is ignored"
+                   " since not running as a priviledged user", garg);
+        }
     }
+#ifndef _WIN32
+    {
+        Tcl_DString dsName, dsGroup;
+
+        Tcl_DStringInit(&dsName);
+        Tcl_DStringInit(&dsGroup);
+        Ns_GetNameForUid(&dsName, getuid());
+        Ns_GetNameForGid(&dsGroup, getgid());
+        Ns_Log(Notice, "Running nsd with user '%s' and group '%s'", dsName.string, dsGroup.string);
+        Tcl_DStringFree(&dsName);
+        Tcl_DStringFree(&dsGroup);
+    }
+#endif
 
 #ifdef __linux
 
