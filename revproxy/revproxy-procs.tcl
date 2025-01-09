@@ -37,6 +37,7 @@ namespace eval ::revproxy {
         when
         -target
         {-targethost ""}
+        {-connecttimeout 1s}
         {-timeout 10.0s}
         {-sendtimeout 0.5s}
         {-receivetimeout 0.5s}
@@ -233,6 +234,7 @@ namespace eval ::revproxy {
         return [::revproxy::${backendconnection}::upstream \
                     -url $url \
                     -timeout $timeout \
+                    -connecttimeout $connecttimeout \
                     -sendtimeout $sendtimeout \
                     -receivetimeout $receivetimeout \
                     -validation_callback $validation_callback \

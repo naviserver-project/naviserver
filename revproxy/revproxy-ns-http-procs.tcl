@@ -8,6 +8,7 @@ namespace eval ::revproxy::ns_http {
     nsf::proc upstream {
         -url
         {-timeout 105.0s}
+        {-connecttimeout 1s}
         {-sendtimeout 0.5s}
         {-receivetimeout 0.5s}
         {-validation_callback ""}
@@ -96,7 +97,7 @@ namespace eval ::revproxy::ns_http {
                 -spoolsize 100kB \
                 -method $method \
                 -headers $requestHeaders \
-                -timeout $timeout \
+                -timeout $connecttimeout \
                 -expire $expire \
                 {*}$extraArgs \
                 $url
@@ -108,7 +109,7 @@ namespace eval ::revproxy::ns_http {
                 -spoolsize 100kB \
                 -method $method \
                 -headers $requestHeaders \
-                -timeout $timeout \
+                -timeout $connecttimeout \
                 -expire $expire \
                 {*}$extraArgs \
                 $url

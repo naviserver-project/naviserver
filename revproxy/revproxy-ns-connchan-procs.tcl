@@ -19,6 +19,7 @@ namespace eval ::revproxy::ns_connchan {
     nsf::proc upstream {
         -url
         {-timeout 10.0s}
+        {-connecttimeout 1s}
         {-sendtimeout 0.5s}
         {-receivetimeout 0.5s}
         {-validation_callback ""}
@@ -90,7 +91,7 @@ namespace eval ::revproxy::ns_connchan {
                                  {*}$unixSocketArg \
                                  -method $method \
                                  -headers $requestHeaders \
-                                 -timeout $timeout \
+                                 -timeout $connecttimeout \
                                  -version [dict get $request version] \
                                  $url]
             #

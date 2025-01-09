@@ -105,14 +105,14 @@ before forwarding requests to [const https://my.backend.com/]:
 [subsection {Example: Using a Request Handler}]
 
 Forward [term "GET /doc/*"] requests to two backend servers with a
-20-second timeout:
+20-second connect timeout:
 
 [example_begin]
  ns_section ns/server/default/module/revproxy {
    set target {http://server1.local:8080/ http://server2.local:8080/}
    ns_param register [lb]subst {
        ns_register_proc GET /doc {
-           ::revproxy::upstream proc -timeout 20s -target [lb]list ${target}[rb]
+           ::revproxy::upstream proc -connecttimeout 2s -target [lb]list ${target}[rb]
        }
    }[rb]
  }
@@ -144,6 +144,7 @@ The core command for proxying is [cmd revproxy::upstream], which accepts seveal 
 	[option "-target [arg value]"] \
 	[opt [option "-backend_response_callback [arg value]"]] \
 	[opt [option "-backendconnection [arg value]"]] \
+	[opt [option "-connecttimeout [arg value]"]] \
 	[opt [option "-exception_callback [arg value]"]] \
 	[opt [option "-regsubs [arg value]"]] \
         [opt [option "-targethost [arg value]"]] \
@@ -201,7 +202,9 @@ Default implementation: [cmd ::revproxy::exception]
 
 [para] The option [option "-targethost"] specifies the host header field for the requests to the backend server. If this parameter is not specified or set to the empty string, the host header field received from the client is also sent to the backend server.
 
-[para] The option [option "-timeout"] specifies the time limit for connection, read, or write operations (default: 10s)
+[para] The option [option "-connecttimeout"] specifies the time limit for connection setup to the backend server. (default: 1s)
+
+[para] The option [option "-timeout"] specifies the time limit for read, or write operations (default: 10s)
 
 [para] The option [option "-url_rewrite_callback"] can be used to dynamically compute the final upstream URL. This can be used in cases, where the option [option "-regsubs"] is not sufficient.
 
