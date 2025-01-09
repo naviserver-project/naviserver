@@ -2204,11 +2204,7 @@ NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int fl
     NS_NONNULL_ASSERT(drvPtr != NULL);
 
     if (likely(drvPtr->sendProc != NULL)) {
-        /*
-         * TODO: The Ns_DriverSendProc signature should be modified
-         * to omit the timeout argument. Same with recvProc().
-         */
-        sent = (*drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs, NULL, flags);
+        sent = (*drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs, flags);
         if (unlikely(sent == -1)) {
             int       sockErr;
             socklen_t len = (socklen_t)sizeof(sockErr);
@@ -2259,11 +2255,7 @@ NsDriverSendFile(Sock *sockPtr, Ns_FileVec *bufs, int nbufs, unsigned int flags)
     NS_NONNULL_ASSERT(drvPtr != NULL);
 
     if (drvPtr->sendFileProc != NULL) {
-        /*
-         * TODO: The Ns_DriverSendFileProc signature should be modified
-         * to omit the timeout argument.
-         */
-        sent = (*drvPtr->sendFileProc)((Ns_Sock *)sockPtr, bufs, nbufs, NULL, flags);
+        sent = (*drvPtr->sendFileProc)((Ns_Sock *)sockPtr, bufs, nbufs, flags);
     } else {
         sent = Ns_SockSendFileBufs((Ns_Sock *)sockPtr, bufs, nbufs, flags);
     }

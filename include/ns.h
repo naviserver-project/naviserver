@@ -646,13 +646,11 @@ typedef ssize_t
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 typedef ssize_t
-(Ns_DriverSendProc)(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
-                    const Ns_Time *timeoutPtr, unsigned int flags)
+(Ns_DriverSendProc)(Ns_Sock *sock, const struct iovec *bufs, int nbufs, unsigned int flags)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 typedef ssize_t
-(Ns_DriverSendFileProc)(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs,
-                        Ns_Time *timeoutPtr, unsigned int flags)
+(Ns_DriverSendFileProc)(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs, unsigned int flags)
      NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 typedef Ns_ReturnCode

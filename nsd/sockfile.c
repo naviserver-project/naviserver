@@ -421,7 +421,7 @@ ns_sendfile(Ns_Sock *sock, int fd, off_t offset, size_t length)
         }
 
         (void) Ns_SetVec(&iov, 0, buf, (size_t)nread);
-        sent = (*sendProc)(sock, &iov, 1, NULL, 0);
+        sent = (*sendProc)(sock, &iov, 1, 0u);
 
         if (sent == -1) {
             nwrote = -1;
