@@ -384,8 +384,7 @@ Recv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
  */
 
 static ssize_t
-Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
-     const Ns_Time *UNUSED(timeoutPtr), unsigned int UNUSED(flags))
+Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs, unsigned int UNUSED(flags))
 {
     SSLContext *sslCtx = sock->arg;
     ssize_t     sent = 0;

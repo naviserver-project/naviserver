@@ -242,8 +242,7 @@ SockRecv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
  */
 
 static ssize_t
-SockSend(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
-         const Ns_Time *UNUSED(timeoutPtr), unsigned int flags)
+SockSend(Ns_Sock *sock, const struct iovec *bufs, int nbufs, unsigned int flags)
 {
     ssize_t   sent;
     bool      decork;
@@ -280,8 +279,7 @@ SockSend(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
  */
 
 static ssize_t
-SendFile(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs,
-         Ns_Time *UNUSED(timeoutPtr), unsigned int flags)
+SendFile(Ns_Sock *sock, Ns_FileVec *bufs, int nbufs, unsigned int flags)
 {
     return Ns_SockSendFileBufs(sock, bufs, nbufs, NS_DRIVER_CAN_USE_SENDFILE|flags);
 }
