@@ -3170,10 +3170,10 @@ HttpCheckSpool(
             Ns_Log(Ns_LogTaskDebug, "HttpCheckSpool: %s: %" TCL_LL_MODIFIER "d",
                    contentLengthHeader, responseLength);
         } else {
-
             /*
-             * If none, see if we have transfer-encoding.
-             * For now, we support "chunked" encoding only.
+             * If there is no content-length, see if we have
+             * transfer-encoding.  For now, we support "chunked" encoding
+             * only.
              */
             header = Ns_SetIGet(httpPtr->responseHeaders, transferEncodingHeader);
             if (header != NULL && Ns_Match(header, "chunked") != NULL) {
@@ -3194,7 +3194,7 @@ HttpCheckSpool(
                  * No content-length provided and not chunked, assume
                  * streaming HTML.
                  */
-                Ns_Log(Ns_LogTaskDebug, "ns_http: assume streaming HTML, status %d", httpPtr->status);
+                Ns_Log(Notice /*Ns_LogTaskDebug*/, "ns_http: assume streaming HTML, status %d", httpPtr->status); // CHANGE LEVEL
                 httpPtr->flags |= NS_HTTP_STREAMING;
             }
         }
