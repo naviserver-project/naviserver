@@ -321,10 +321,16 @@ with the appropriate shell/environment variables:
  }
  
  ns_section ns/module/http/servers {
-   ns_param default    localhost
-   ns_param default    [lb]ns_info hostname[rb]
+   ns_param defaultserver default
+   ns_param default       localhost
+   ns_param default       [lb]ns_info hostname[rb]
  }
-
+ ns_section ns/module/https/servers {
+   ns_param defaultserver default
+   ns_param default       [lb]ns_info hostname[rb]
+   ns_param default       localhost
+ }
+ 
  ########################################################################
  #  Settings for the "default" server
  ########################################################################
@@ -398,6 +404,49 @@ nsd_revproxy_target=https://localhost:8445 \
     nsd_httpport=48000 \
     /usr/local/ns/bin/nsd -f -u nsadmin -g nsadmin -t /usr/local/ns/conf/nsd-config-revproxy.tcl 2>&1
 [example_end]
+
+ In general, there are many way how to use the revproxy framework.
+ The following examples shows, how to define a virtual server
+ accepting requests with the host header field [term cvs.local] (e.g.,
+ add this domain name as alias to your host and use the name in the URL).
+
+ [para] Add this snippet e.g. to your NaviServer configuration and
+ adjust the URLs/ports/names according to your needs.
+
+[example_begin]
+ ########################################################################
+ # Virtual Server definition for e.g. handling CVS browser
+ ########################################################################
+ 
+ ns_section ns/servers {
+   ns_param cvs "Reverse proxy to CVS repository"
+ }
+ ns_section ns/module/http/servers {
+   ns_param cvs       cvs.local
+ }
+ ns_section ns/module/https/servers {
+   ns_param cvs       cvs.local
+ }
+ ns_section ns/server/cvs/httpclient {
+   ns_param keepalive 5s       ;# default: 0s
+ }
+ ns_section ns/server/cvs/modules {
+   ns_param revproxy  tcl
+ }
+ ns_section "ns/server/cvs/module/revproxy" {
+    ns_param backendconnection $revproxy_backendconnection
+    ns_param verbose 0
+
+    ns_param register {
+        ns_register_proc GET  /* {::revproxy::upstream proc -target http://127.0.0.1:8060/}
+        ns_register_proc POST /* {::revproxy::upstream proc -target http://127.0.0.1:8060/}
+  }
+}
+[example_end]
+
+# Configure separate virtual server named "cvs", when server is
+# addressed via http://cvs.org/ or https://cvs.org/
+
 
 [section REQUIREMENTS]
 
