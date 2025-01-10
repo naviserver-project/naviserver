@@ -108,8 +108,7 @@ namespace eval ::revproxy {
             log notice "WebSocket upgrade, forcing long timeouts"
             #
             # Using ns_connchan always should not be necessary, but
-            # for unknown reasons, we still need it. Probably, the
-            # answer is in ns_http.
+            # ns_http does not handle "101 Switching Protocols".
             #
             set useConnchanAlways 1
             if {$useConnchanAlways || !$spoolResponse} {
@@ -119,8 +118,8 @@ namespace eval ::revproxy {
             }
             #
             # WebSockets are long running requests, where no data
-            # might be received for a long time. Therefore, we force a
-            # long timeout.
+            # might be received for a long time with large
+            # intervals. Therefore, we force a really long timeout.
             #
             set timeout 1y
         }

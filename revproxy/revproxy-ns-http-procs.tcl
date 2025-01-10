@@ -115,7 +115,7 @@ namespace eval ::revproxy::ns_http {
                 $url
 
         } trap {NS_TIMEOUT} {r} {
-            ns_log notice "TIMEOUT after timeout $timeout expire $expire during send to $url ($r) "
+            ns_log notice "TIMEOUT after timeout $connecttimeout expire $expire during send to $url ($r) "
             if {$partialresultsFlag ne "" && [dict exists $r error]} {
                 #
                 # This request was sent with "-partialresults" enabled
