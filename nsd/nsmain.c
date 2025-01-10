@@ -561,11 +561,11 @@ Ns_Main(int argc, char *const* argv, Ns_ServerInitProc *initProc)
     } else {
         if (uarg != NULL) {
             Ns_Log(Warning, "nsmain: command line argument '-u %s' is ignored"
-                   " since not running as a priviledged user", uarg);
+                   " since not running as a privileged user", uarg);
         }
         if (uarg != NULL) {
             Ns_Log(Warning, "nsmain: command line argument '-g %s' is ignored"
-                   " since not running as a priviledged user", garg);
+                   " since not running as a privileged user", garg);
         }
     }
 #ifndef _WIN32
