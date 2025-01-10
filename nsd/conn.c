@@ -35,6 +35,10 @@ static Tcl_Channel MakeConnChannel(const NsInterp *itPtr, Ns_Conn *conn)
 static const Ns_Driver* ConnGetDriver(const Ns_Conn *conn) NS_GNUC_PURE
     NS_GNUC_NONNULL(1);
 
+static int ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr,
+                     NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+    NS_GNUC_NONNULL(4) NS_GNUC_NONNULL(6);
+
 
 /*
  *----------------------------------------------------------------------
@@ -1893,6 +1897,31 @@ ConnFormObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_O
  *
  *----------------------------------------------------------------------
  */
+
+enum ISubCmdIdx {
+    CAacceptedcompressionIdx, CAuthIdx, CAuthPasswordIdx, CAuthUserIdx,
+    CChannelIdx, CClientdataIdx, CCloseIdx, CCompressIdx, CContentIdx,
+    CContentFileIdx, CContentLengthIdx, CContentSentLenIdx, CCopyIdx,
+    CCurrentAddrIdx, CCurrentPortIdx,
+    CDetailsIdx, CDriverIdx,
+    CEncodingIdx,
+    CFileHdrIdx, CFileLenIdx, CFileOffIdx, CFilesIdx, CFlagsIdx, CFormIdx,
+    CHeaderLengthIdx, CHeadersIdx, CHostIdx,
+    CIdIdx, CIsConnectedIdx,
+    CKeepAliveIdx,
+    CLocationIdx,
+    CMethodIdx,
+    COutputHeadersIdx,
+    CPartialTimesIdx, CPeerAddrIdx, CPeerPortIdx, CPoolIdx, CPortIdx, CProtocolIdx,
+    CQueryIdx,
+    CRatelimitIdx, CRequestIdx,
+    CServerIdx, CSockIdx, CStartIdx, CStatusIdx,
+    CTargetIdx,CTimeoutIdx,
+    CUrlIdx, CUrlcIdx, CUrlEncodingIdx, CUrlvIdx,
+    CVersionIdx,
+    CZipacceptedIdx
+};
+
 int
 NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1901,12 +1930,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
     Ns_Conn             *conn;
     const Ns_Request    *request = NULL;
     Tcl_Encoding         encoding;
-    Tcl_Channel          chan;
     const Tcl_HashEntry *hPtr;
-    Tcl_HashSearch       search;
     int                  opt = 0, result = TCL_OK;
-    TCL_SIZE_T           setNameLength;
-    const char          *setName;
 
     static const char *const opts[] = {
         "acceptedcompression", "auth", "authpassword", "authuser",
@@ -1965,29 +1990,6 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         /* Z */ NS_CONN_REQUIRE_CONFIGURED,
         0u
     };
-    enum ISubCmdIdx {
-        CAacceptedcompressionIdx, CAuthIdx, CAuthPasswordIdx, CAuthUserIdx,
-        CChannelIdx, CClientdataIdx, CCloseIdx, CCompressIdx, CContentIdx,
-        CContentFileIdx, CContentLengthIdx, CContentSentLenIdx, CCopyIdx,
-        CCurrentAddrIdx, CCurrentPortIdx,
-        CDetailsIdx, CDriverIdx,
-        CEncodingIdx,
-        CFileHdrIdx, CFileLenIdx, CFileOffIdx, CFilesIdx, CFlagsIdx, CFormIdx,
-        CHeaderLengthIdx, CHeadersIdx, CHostIdx,
-        CIdIdx, CIsConnectedIdx,
-        CKeepAliveIdx,
-        CLocationIdx,
-        CMethodIdx,
-        COutputHeadersIdx,
-        CPartialTimesIdx, CPeerAddrIdx, CPeerPortIdx, CPoolIdx, CPortIdx, CProtocolIdx,
-        CQueryIdx,
-        CRatelimitIdx, CRequestIdx,
-        CServerIdx, CSockIdx, CStartIdx, CStatusIdx,
-        CTargetIdx,CTimeoutIdx,
-        CUrlIdx, CUrlcIdx, CUrlEncodingIdx, CUrlvIdx,
-        CVersionIdx,
-        CZipacceptedIdx
-    };
 
     assert(itPtr != NULL);
     conn = itPtr->conn;
@@ -2004,6 +2006,11 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
     }
 
     if (result != TCL_ERROR) {
+        /*
+         * The first group of commands handle NsConnRequire() explicitly after
+         * Ns_ParseObjv() to be able to provide syntax error messages also in
+         * cases, where no connection is required.
+         */
         switch (opt) {
         case CClientdataIdx: {
             char       *valueString = NULL;
@@ -2335,22 +2342,52 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
             /*
              * All other subcommands receive no arguments.
              */
-            if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
-                result = TCL_ERROR;
-            }
+            result = ConnNoArg(opt, required_flags[opt], connPtr, itPtr, objc, objv);
         }
     }
+    return result;
+}
 
-    if (result != TCL_ERROR) {
-        if (required_flags[opt] != 0u) {
+/*
+ *----------------------------------------------------------------------
+ *
+ * ConnNoArg --
+ *
+ *      Helper function of NsTclConnObjCmd. All of these subcommands of
+ *      "ns_conn" receive no arguments. When adding further arguments, the
+ *      subcommand must be moved to the calling witch statement.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ConnNoArg(int opt, unsigned int required_flags, Conn *connPtr, NsInterp *itPtr, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+{
+    int                  result = TCL_OK;
+    TCL_SIZE_T           setNameLength;
+    const char          *setName;
+    const Ns_Request    *request = NULL;
+    Ns_Conn             *conn = (Ns_Conn *)connPtr;
+    Tcl_Interp          *interp = itPtr->interp;
+
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+    } else {
+        if (required_flags != 0u) {
             /*
              * We have to check the connection requirements.
              */
-            if (NsConnRequire(interp, required_flags[opt], NULL, &result) == NS_OK) {
+            if (NsConnRequire(interp, required_flags, NULL, &result) == NS_OK) {
                 /*
                  * We know that connPtr can't be NULL.
                  */
-                assert(conn != NULL);
+                assert(connPtr != NULL);
                 request = &connPtr->request;
             } else {
                 result = TCL_ERROR;
@@ -2359,16 +2396,15 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
             request = connPtr != NULL ? &connPtr->request : NULL;
         }
     }
-
     if (result == TCL_ERROR) {
         return result;
     }
 
     /*
-     * Each time, when NsConnRequire was called and succeeded, the request
-     * must be not NULL.
+     * Each time, when NsConnRequire was called and succeeded, the "request"
+     * pointer must be not NULL.
      */
-    if (required_flags[opt] != 0u) {
+    if (required_flags != 0u) {
         assert(request != NULL);
     }
 
@@ -2398,7 +2434,6 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
             Tcl_SetObjResult(interp, Tcl_NewIntObj((int)port));
         }
         break;
-
 
     case CAuthIdx:
         if ((itPtr->nsconn.flags & CONN_TCLAUTH) != 0u) {
@@ -2443,7 +2478,6 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         }
         break;
 
-
     case CPeerPortIdx:
         Tcl_SetObjResult(interp, Tcl_NewIntObj((int)Ns_ConnPeerPort(conn)));
         break;
@@ -2484,7 +2518,9 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
 
     case CFilesIdx:
         {
-            Tcl_Obj *listObj = Tcl_NewListObj(0, NULL);
+            const Tcl_HashEntry *hPtr;
+            Tcl_HashSearch       search;
+            Tcl_Obj             *listObj = Tcl_NewListObj(0, NULL);
 
             for (hPtr = Tcl_FirstHashEntry(&connPtr->files, &search);
                  hPtr != NULL;
@@ -2638,8 +2674,8 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
         (void) Ns_ConnClose(conn);
         break;
 
-    case CChannelIdx:
-        chan = MakeConnChannel(itPtr, conn);
+    case CChannelIdx: {
+        Tcl_Channel chan = MakeConnChannel(itPtr, conn);
         if (chan == NULL) {
             result = TCL_ERROR;
         } else {
@@ -2647,6 +2683,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
             Tcl_SetObjResult(interp, Tcl_NewStringObj(Tcl_GetChannelName(chan),TCL_INDEX_NONE));
         }
         break;
+    }
 
     case CZipacceptedIdx:
         Tcl_SetObjResult(interp, Tcl_NewBooleanObj((connPtr->flags & NS_CONN_ZIPACCEPTED) != 0u));
@@ -2669,6 +2706,7 @@ NsTclConnObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_
 
     default:
         /* unexpected value */
+        fprintf(stderr, "OPT %d <%s>\n", opt, Tcl_GetString(objv[1]));
         assert(opt && 0);
         break;
 
