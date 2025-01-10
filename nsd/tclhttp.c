@@ -1595,7 +1595,8 @@ HttpWaitObjCmd(
         httpPtr->flags |= NS_HTTP_FLAG_DECOMPRESS;
 
         rc = Ns_TaskWait(httpPtr->task, timeoutPtr);
-        Ns_Log(Ns_LogTaskDebug, "Ns_TaskWait returns %d", rc);
+        Ns_Log(Ns_LogTaskDebug, "HttpWaitObjCmd: Ns_TaskWait returns %s",
+               Ns_ReturnCodeString(rc));
 
         if (likely(rc == NS_OK)) {
             result = HttpGetResult(interp, httpPtr);
@@ -2484,6 +2485,7 @@ HttpQueue(
                              expirePtr,
                              keepAliveTimeoutPtr,
                              &httpPtr);
+        Ns_Log(Ns_LogTaskDebug, "HttpConnect() ended with result %s", Ns_TclReturnCodeString(result));
     }
     if (result == TCL_OK && outputChanName != NULL) {
         httpPtr->outputChanName = ns_strdup(outputChanName);
@@ -3141,8 +3143,7 @@ HttpCheckSpool(
              */
 
             ResponseHeadersReceivedCallback(httpPtr);
-
-            SkipMessage(httpPtr);
+            Ns_Log(Ns_LogTaskDebug, "ns_http: informational status code %d", httpPtr->status);
             return TCL_CONTINUE;
 
         } else if (httpPtr->status == 204) {
@@ -3170,6 +3171,8 @@ HttpCheckSpool(
             Ns_Log(Ns_LogTaskDebug, "HttpCheckSpool: %s: %" TCL_LL_MODIFIER "d",
                    contentLengthHeader, responseLength);
         } else {
+            Ns_Log(Ns_LogTaskDebug, "ns_http: no content-length, HTTP status %d", httpPtr->status);
+
             /*
              * If there is no content-length, see if we have
              * transfer-encoding.  For now, we support "chunked" encoding
@@ -5511,8 +5514,27 @@ HttpProc(
                          * decides where to spool content.
                          */
                         result = HttpCheckSpool(httpPtr);
+                        Ns_Log(Ns_LogTaskDebug, "HttpProc: HttpCheckSpool returned %s", Ns_TclReturnCodeString(result));
+
                         if (result == TCL_CONTINUE) {
-                            goto process_header;
+                            if (httpPtr->status == 100) {
+                                SkipMessage(httpPtr);
+                                goto process_header;
+
+                            } else {
+                                Ns_Log(Warning, "HttpProc: unhandled HTTP status code %d received", httpPtr->status);
+                                result = TCL_OK;
+                                /*
+                                  httpPtr->flags |= NS_HTTP_STREAMING;
+                                  Ns_LogSeveritySetEnabled(Ns_LogTaskDebug, NS_TRUE);
+
+                                  if (httpPtr->timeout != NULL) {
+                                    ns_free((void *)httpPtr->timeout);
+                                    httpPtr->timeout = NULL;
+                                    }
+                                */
+
+                            }
                         }
                         rc = (result == TCL_OK ? NS_OK : NS_ERROR);
                     }
