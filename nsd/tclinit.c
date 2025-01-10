@@ -1446,10 +1446,11 @@ ICtlCleanupObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tc
         result = TCL_ERROR;
 
     } else if (itPtr->firstDeferPtr != NULL) {
-        Defer  *deferPtr;
+        Defer  *deferPtr, *nextPtr;
 
-        for (deferPtr = itPtr->firstDeferPtr; deferPtr != NULL; deferPtr = deferPtr->nextPtr) {
+        for (deferPtr = itPtr->firstDeferPtr; deferPtr != NULL; deferPtr = nextPtr) {
             (*deferPtr->proc)(interp, deferPtr->arg);
+            nextPtr = deferPtr->nextPtr;
             ns_free(deferPtr);
         }
         itPtr->firstDeferPtr = NULL;
