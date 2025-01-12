@@ -94,8 +94,9 @@ typedef struct {
     int            timeout;
     //char          *respin;     /* File to load OCSP Response from (or NULL if no file) */
     int            verbose;
-    OCSP_RESPONSE *resp;
-    Ns_Time        expire;
+    OCSP_RESPONSE *OCSPresp;
+    Ns_Time        OCSPexpire;
+    Ns_Time        OCSPcheckInterval;
 } SSLCertStatusArg;
 
 static SSLCertStatusArg sslCertStatusArg;
@@ -411,9 +412,9 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
      * If there is a in-memory changed OCSP response, validate this if
      * necessary.
      */
-    if (srctx->resp != NULL) {
+    if (srctx->OCSPresp != NULL) {
 
-        if (Ns_DiffTime(&srctx->expire, &now, &diff) < 0) {
+        if (Ns_DiffTime(&srctx->OCSPexpire, &now, &diff) < 0) {
             OCSP_CERTID *cert_id;
             bool         flush;
 
@@ -426,16 +427,15 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
                 flush = NS_TRUE;
             } else {
                 Ns_Log(Debug, "cert_status: CAN VALIDATE OCSP response");
-                flush = !OCSP_ResponseIsValid(srctx->resp, cert_id);
+                flush = !OCSP_ResponseIsValid(srctx->OCSPresp, cert_id);
             }
             if (flush) {
                 Ns_Log(Debug, "cert_status: flush OCSP response");
-                OCSP_RESPONSE_free(srctx->resp);
-                srctx->resp = NULL;
+                OCSP_RESPONSE_free(srctx->OCSPresp);
+                srctx->OCSPresp = NULL;
             } else {
-                /* TODO: provide a configurable re-check value */
-                now.sec += 300;
-                srctx->expire = now;
+                now.sec += srctx->OCSPcheckInterval.sec;
+                srctx->OCSPexpire = now;
             }
         } else {
             Ns_Log(Debug, "cert_status: RECENT OCSP response, recheck in " NS_TIME_FMT " sec",
@@ -453,8 +453,8 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
      * OCSP response based on the timeout.
      */
 
-    if (srctx->resp == NULL
-        && ((srctx->expire.sec == 0) || Ns_DiffTime(&srctx->expire, &now, &diff) < 0)
+    if (srctx->OCSPresp == NULL
+        && ((srctx->OCSPexpire.sec == 0) || Ns_DiffTime(&srctx->OCSPexpire, &now, &diff) < 0)
         ) {
 
         result = OCSP_computeResponse(ssl, srctx, &resp);
@@ -479,17 +479,16 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
             /*
              * Perform in-memory caching of the OCSP_RESPONSE.
              */
-            srctx->resp = resp;
+            srctx->OCSPresp = resp;
             /*
              * Avoid Ns_GetTime() on every invocation.
              */
         }
         Ns_GetTime(&now);
-        /* TODO: provide a configurable re-check value */
-        now.sec += 300;
-        srctx->expire = now;
+        now.sec +=  srctx->OCSPcheckInterval.sec;
+        srctx->OCSPexpire = now;
     } else {
-        resp = srctx->resp;
+        resp = srctx->OCSPresp;
     }
 
     if (resp != NULL) {
@@ -499,7 +498,7 @@ static int SSL_cert_statusCB(SSL *ssl, void *arg)
         if (rspderlen <= 0) {
             if (resp != NULL) {
                 OCSP_RESPONSE_free(resp);
-                srctx->resp = NULL;
+                srctx->OCSPresp = NULL;
             }
             goto err;
         }
@@ -1594,6 +1593,9 @@ Ns_TLS_CtxServerInit(const char *path, Tcl_Interp *interp,
                 memset(&sslCertStatusArg, 0, sizeof(sslCertStatusArg));
                 sslCertStatusArg.timeout = -1;
                 sslCertStatusArg.verbose = Ns_ConfigBool(path, "ocspstaplingverbose", NS_FALSE);
+                Ns_ConfigTimeUnitRange(path, "ocspcheckinterval",
+                                       "5m", 1, 0, LONG_MAX, 0,
+                                       &sslCertStatusArg.OCSPcheckInterval);
 
                 SSL_CTX_set_tlsext_status_cb(*ctxPtr, SSL_cert_statusCB);
                 SSL_CTX_set_tlsext_status_arg(*ctxPtr, &sslCertStatusArg);

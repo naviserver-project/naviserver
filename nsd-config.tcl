@@ -353,6 +353,7 @@ if {[info exists httpsport] && $httpsport ne ""} {
         ns_param extraheaders	$https_extraheaders
         ns_param OCSPstapling   on        ;# off; activate OCSP stapling
         # ns_param OCSPstaplingVerbose  on ;# off; make OCSP stapling more verbose
+        # ns_param OCSPcheckInterval 15m   ;# default 5m; OCSP (re)check intervale
     }
     #
     # Define, which "host" (as supplied by the "host:" header field)

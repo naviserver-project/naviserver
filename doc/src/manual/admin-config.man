@@ -497,17 +497,19 @@ server "s1" separately ([const foo.com.pem]).
  # Furthermore, activate for server "s1" also OCSP stapling.
  # 
  ns_section ns/server/s1/module/https {
-   ns_param certificate   /usr/local/ns/modules/https/foo.com.pem
-   ns_param OCSPstapling  on
+   ns_param certificate       /usr/local/ns/modules/https/foo.com.pem
+   ns_param OCSPstapling      on
+   ns_param OCSPcheckInterval 5m
  }
 [example_end]
 
 OCSP (abbreviation of Online Certificate Status Protocol, RFC 2560 and
 RFC 6066) is a protocol that checks the validity status of a
-certificate. The term "OCSP stapling" refers to the use of
+certificate. The term [term "OCSP stapling"] refers to the use of
 digitally-signed time-stamped OCSP responses in the web server for
 performance reasons. In the example above, OCSP stapling is defined
-for server "s1".
+for server "s1". The parameter [term OCSPcheckInterval] defines the
+interval for re-checking the validity of a certificate.
 
 
 [subsection {Single virtual server with mass virtual hosting (HTTP)}]
