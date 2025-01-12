@@ -863,7 +863,8 @@ Ns_SockWait(NS_SOCKET sock, unsigned int what, int timeout)
 NS_SOCKET
 Ns_SockListen(const char *address, unsigned short port)
 {
-    return Ns_SockListenEx(address, port, nsconf.listenbacklog, NS_FALSE);  // TODO: currently no parameter defined
+    // TODO: currently no parameter defined for "reuseport" similar to the global parameter nsconf.listenbacklog
+    return Ns_SockListenEx(address, port, nsconf.listenbacklog, NS_FALSE);
 }
 
 
