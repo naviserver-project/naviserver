@@ -87,42 +87,129 @@ namespace eval ::revproxy::ns_http {
         #ns_set print $requestHeaders
 
         set partialresultsFlag [expr {[ns_info version]>=5 ?  "-partialresults" : ""}]
+        set connchanArg [expr {[info exists connchan] ? [list -connchan $connchan] : ""}]
+        set expiretimeout 1d
+        set timeouts [list \
+                          -connecttimeout $connecttimeout \
+                          -sendtimeout $sendtimeout \
+                          -receivetimeout $receivetimeout \
+                          -expiretimeout $expiretimeout \
+                          -timeout $timeout \
+                         ]
 
-        try {
-            set expire 1d
-            log notice             ns_http run \
+        set doneArgs [list -url $url {*}$connchanArg {*}$partialresultsFlag \
+                          -backend_response_callback $backend_response_callback \
+                          -exception_callback $exception_callback \
+                          -timeouts $timeouts \
+                      ]
+
+        set queue 1
+        if {!$spoolresponse && $queue} {
+            log notice "cannot run ns_http in the background for now, since delivery requires to be connected"
+            set queue 0
+        }
+
+        if {$queue} {
+            set done_callbback [list ::revproxy::ns_http::done {*}$doneArgs]
+
+            log notice             ns_http queue \
                 {*}$partialresultsFlag \
                 {*}$unixSocketArg \
                 -keep_host_header \
                 -spoolsize 100kB \
                 -method $method \
                 -headers $requestHeaders \
-                -timeout $connecttimeout \
-                -expire $expire \
+                -connecttimeout $connecttimeout \
+                -timeout $timeout \
+                -expire $expiretimeout \
                 {*}$extraArgs \
+                -done_callback  $done_callbback \
                 $url
 
-            ns_http run \
+            ns_http queue \
                 {*}$partialresultsFlag \
                 {*}$unixSocketArg \
                 -keep_host_header \
                 -spoolsize 100kB \
                 -method $method \
                 -headers $requestHeaders \
-                -timeout $connecttimeout \
-                -expire $expire \
+                -connecttimeout $connecttimeout \
+                -timeout $timeout \
+                -expire $expiretimeout \
                 {*}$extraArgs \
+                -done_callback  $done_callbback \
                 $url
 
-        } trap {NS_TIMEOUT} {r} {
-            ns_log notice "TIMEOUT after timeout $connecttimeout expire $expire during send to $url ($r) "
-            if {$partialresultsFlag ne "" && [dict exists $r error]} {
+        } else {
+
+            try {
+                log notice             ns_http run \
+                    {*}$partialresultsFlag \
+                    {*}$unixSocketArg \
+                    -keep_host_header \
+                    -spoolsize 100kB \
+                    -method $method \
+                    -headers $requestHeaders \
+                    -connecttimeout $connecttimeout \
+                    -timeout $timeout \
+                    -expire $expiretimeout \
+                    {*}$extraArgs \
+                    $url
+
+                ns_http run \
+                    {*}$partialresultsFlag \
+                    {*}$unixSocketArg \
+                    -keep_host_header \
+                    -spoolsize 100kB \
+                    -method $method \
+                    -headers $requestHeaders \
+                    -connecttimeout $connecttimeout \
+                    -timeout $timeout \
+                    -expire $expiretimeout \
+                    {*}$extraArgs \
+                    $url
+
+            } trap {NS_TIMEOUT} {r} {
+                ::revproxy::ns_http::done {*}$doneArgs NS_TIMEOUT $r
+
+            } on ok {r} {
+                ::revproxy::ns_http::done {*}$doneArgs 1 $r
+
+            } on error {errorMsg} {
+                ::revproxy::ns_http::done {*}$doneArgs 0 $errorMsg
+
+            }
+        }
+        return filter_return
+    }
+
+}
+
+nsf::proc ::revproxy::ns_http::done {
+    -connchan
+    -url
+    -timeouts
+    -partialresults:switch
+    {-backend_response_callback ""}
+    {-exception_callback $exception_callback}
+    result
+    d
+} {
+    switch $result {
+        NS_TIMEOUT {
+            log notice ============================================ TIMEOUT (connchan [info exists connchan])
+
+            set connecttimeout [dict get $timeouts -connecttimeout]
+            set expiretimeout  [dict get $timeouts -expiretimeout]
+
+            ns_log notice "TIMEOUT after timeout $connecttimeout expire $expiretimeout during send to $url ($d) "
+            if {$partialresults && [dict exists $d error]} {
                 #
                 # This request was sent with "-partialresults" enabled
                 #
-                set errorMsg [dict get $r error]
-                set responseHeaders [dict get $r headers]
-                #log notice "RESULT contains error: '$errorMsg' /$::errorCode/\n$r"
+                set errorMsg [dict get $d error]
+                set responseHeaders [dict get $d headers]
+                #log notice "RESULT contains error: '$errorMsg' /$::errorCode/\n$d"
 
                 if {[ns_set size $responseHeaders] > 0
                     && [ns_set iget $responseHeaders content-length ""] eq ""
@@ -139,7 +226,7 @@ namespace eval ::revproxy::ns_http {
                     set errorMsg "streaming HTML not supported on this interface"
                 }
             } else {
-                set errorMsg $r
+                set errorMsg $d
             }
 
             log notice "TIMEOUT during send to $url ($errorMsg) "
@@ -149,34 +236,40 @@ namespace eval ::revproxy::ns_http {
                 -url $url \
                 -frontendChan [expr {[info exists connchan] ? $connchan : ""}] \
                 -exception_callback $exception_callback
+        }
+        0 {
+            #
+            # Success case
+            #
+            #log notice ============================================ SUCCESS (connchan [info exists connchan])
 
-        } on ok {r} {
             if {[info exists connchan]} {
-                #log notice ===== request ends OK ns_http $url STATUS [ns_connchan status $connchan]
-                if {[dict get [ns_connchan status $connchan] sendbuffer] > 0} {
-                    ns_log warning "revproxy ns_http+ns_connchan: final buffer is not empty:" \
-                        [ns_connchan status $connchan]
-                    #
-                    # ::revproxy::ns_http::drain_sendbuf will automatically close $connchan
-                    #
-                    ns_connchan callback $connchan \
-                        [list ::revproxy::ns_http::drain_sendbuf $connchan -done_callback ""] wex
-                } else {
-                    ns_connchan close $connchan
-                }
+                #
+                # In the connchan case (using outputchan), the data
+                # has already been transferred.
+                #
+                ::revproxy::ns_http::drain $connchan
             }
 
-            set responseHeaders [dict get $r headers]
-            set status          [dict get $r status]
-            set outputHeaders   [ns_conn outputheaders]
-            #ns_log notice "RESULT of query: $r"
+            set responseHeaders [dict get $d headers]
+            set status          [dict get $d status]
+            #ns_log notice "RESULT of request: $d"
             #ns_log notice "... response headers  <$responseHeaders> <[ns_set array $responseHeaders]>"
 
             if {$backend_response_callback ne ""} {
                 {*}$backend_response_callback -url $url -responseHeaders $responseHeaders -status $status
             }
-
+            log notice ============================================ SUCCESS (connected [ns_conn isconnected])
             if {[ns_conn isconnected]} {
+                #
+                # In the "connected" case, we have no connchan.
+                # The headers and the result has to be transferred to the client.
+                #
+                # We have no outputchan.
+                #
+                #log notice CONNECTED, keys of result dict: [lsort [dict keys $d]]
+
+                set outputHeaders [ns_conn outputheaders]
                 foreach {key value} [ns_set array $responseHeaders] {
                     if {[string tolower $key] ni {
                         connection date server
@@ -187,29 +280,36 @@ namespace eval ::revproxy::ns_http {
                     }
                 }
                 #ns_set iupdate $outputHeaders Connection close
+                log notice status code $status [ns_set format $outputHeaders]
 
                 #
                 # Pass the status code
                 #
-                log notice "backend status code $status"
                 ns_headers $status
 
                 #
                 # Get the content either as a string or from a spool
                 # file (to avoid memory bloats on huge files).
                 #
-                if {[dict exists $r body]} {
-                    log notice "submit string (length [string length [dict get $r body]])"
-                    ns_writer submit [dict get $r body]
-                } elseif {[dict exists $r file]} {
-                    log notice "submit file <[dict get $r file]>"
-                    ns_writer submitfile [dict get $r file]
-                    file delete [dict get $r file]
+                if {[dict exists $d body]} {
+                    log notice "submit string (length [string length [dict get $d body]])"
+                    ns_writer submit [dict get $d body]
+                } elseif {[dict exists $d file]} {
+                    log notice "submit file <[dict get $d file]>"
+                    ns_writer submitfile [dict get $d file]
+                    file delete [dict get $d file]
                 } else {
-                    error "REVERSE PROXY <$url>: invalid return dict with keys <[dict keys $r]"
+                    error "REVERSE PROXY <$url>: invalid return dict with keys <[dict keys $d]"
                 }
             }
-        } on error {errorMsg} {
+        }
+        1 {
+            #
+            # Error case
+            #
+            set errorMsg [expr {[dict exists $d error] ? [dict get $d error] : $d}]
+            log notice ============================================ ERROR (connchan [info exists connchan])
+
             set logmsg "::revproxy::ns_http::upstream: request to URL <$url> returned [list $errorMsg]"
             set silentFlag {}
             if {[info exists connchan]} {
@@ -231,14 +331,34 @@ namespace eval ::revproxy::ns_http {
                 {*}$silentFlag \
                 -exception_callback $exception_callback
         }
-        return filter_return
     }
+}
 
-    interp alias {} [namespace current]::log {} ::revproxy::log
+nsf::proc ::revproxy::ns_http::drain {channel {-done_callback ""}} {
+    #
+    # Drain and close the connchan channel. In case, there is some
+    # unsent data, send it before closing.
+    #
+    if {[dict get [ns_connchan status $channel] sendbuffer] > 0} {
+        ns_log warning "revproxy ns_http+ns_connchan: final buffer is not empty:" \
+            [ns_connchan status $channel]
+        #
+        # ::revproxy::ns_http::drain_sendbuf will automatically close $channel
+        #
+        ns_connchan callback $connchan \
+            [list ::revproxy::ns_http::drain_sendbuf $channel -done_callback ""] wex
+    } else {
+        ns_connchan close $channel
+    }
 }
 
 
 nsf::proc ::revproxy::ns_http::drain_sendbuf {channel {-done_callback ""} when} {
+    #
+    # This is a callback proc, which is called when the channel
+    # becomes writable to send the remaining data. When everything is
+    # sent, the callback is de-registered and the channel is closed.
+    #
     set result [ns_connchan write -buffered $channel ""]
     set status [ns_connchan status $channel]
     log notice "::revproxy::ns_http::drain_sendbuf when '$when' sent $result status $status"
@@ -305,6 +425,9 @@ proc ::revproxy::ns_http::responseheaders {dict} {
     }
 }
 
+namespace eval ::revproxy::ns_http {
+    interp alias {} [namespace current]::log {} ::revproxy::log
+}
 #
 # Local variables:
 #    mode: tcl
