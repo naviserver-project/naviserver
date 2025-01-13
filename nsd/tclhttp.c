@@ -191,8 +191,7 @@ static int HttpAppendRawBuffer(
     size_t size
 ) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static int
-SkipMessage(
+static int SkipMessage(
     NsHttpTask *httpPtr
 ) NS_GNUC_NONNULL(1);
 
@@ -228,6 +227,9 @@ static ssize_t HttpTaskRecv(
     size_t length,
     Ns_SockState *statePtr
 ) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+
+static void HttpTaskTimeoutSet(NsHttpTask *httpPtr, const Ns_Time *timeoutPtr)
+    NS_GNUC_NONNULL(1);
 
 static int HttpCutChannel(
     Tcl_Interp *interp,
@@ -1504,17 +1506,17 @@ HttpWaitObjCmd(
     Ns_Set     *responseHeaders = NULL;
 
     Ns_ObjvSpec opts[] = {
-        {"-binary",     Ns_ObjvBool,    &binary,          INT2PTR(NS_TRUE)},
-        {"-decompress", Ns_ObjvBool,    &decompress,      INT2PTR(NS_TRUE)},
-        {"-elapsed",    Ns_ObjvObj,     &elapsedVarObj,   NULL},
-        {"-file",       Ns_ObjvObj,     &fileVarObj,      NULL},
-        {"-headers",    Ns_ObjvSet,     &responseHeaders,    NULL},
-        {"-outputfile", Ns_ObjvString,  &outputFileName,  NULL},
-        {"-result",     Ns_ObjvObj,     &resultVarObj,    NULL},
-        {"-spoolsize",  Ns_ObjvMemUnit, &spoolLimit,      NULL},
-        {"-status",     Ns_ObjvObj,     &statusVarObj,    NULL},
-        {"-timeout",    Ns_ObjvTime,    &timeoutPtr,      NULL},
-        {NULL,          NULL,           NULL,             NULL}
+        {"-binary",         Ns_ObjvBool,    &binary,          INT2PTR(NS_TRUE)},
+        {"-decompress",     Ns_ObjvBool,    &decompress,      INT2PTR(NS_TRUE)},
+        {"-elapsed",        Ns_ObjvObj,     &elapsedVarObj,   NULL},
+        {"-file",           Ns_ObjvObj,     &fileVarObj,      NULL},
+        {"-headers",        Ns_ObjvSet,     &responseHeaders,    NULL},
+        {"-outputfile",     Ns_ObjvString,  &outputFileName,  NULL},
+        {"-result",         Ns_ObjvObj,     &resultVarObj,    NULL},
+        {"-spoolsize",      Ns_ObjvMemUnit, &spoolLimit,      NULL},
+        {"-status",         Ns_ObjvObj,     &statusVarObj,    NULL},
+        {"-timeout",        Ns_ObjvTime,    &timeoutPtr,      NULL},
+        {NULL,              NULL,           NULL,             NULL}
     };
 #else
     Ns_ObjvSpec opts[] = {
@@ -2309,6 +2311,43 @@ CloseWaitingDataPrettyState(CloseWaitingData *cwDataPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * HttpTaskTimeoutSet --
+ *
+ *       Reset the timeout of the NsHttpTask to the specified value.
+ *       If the timeout was not allocated before, it is allocated.
+ *       When the timeout is cleared (timeoutPtr is NULL), then
+ *       a previously allocated timeout structure is freed.
+ *
+ * Results:
+ *      None
+ *
+ * Side effects:
+ *      May some memory is allocated
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+HttpTaskTimeoutSet(NsHttpTask *httpPtr, const Ns_Time *timeoutPtr)
+{
+    /*
+     *
+     */
+    if (timeoutPtr != NULL) {
+        if (httpPtr->timeout == NULL) {
+            httpPtr->timeout = ns_calloc(1u, sizeof(Ns_Time));
+        }
+        *httpPtr->timeout = *timeoutPtr;
+
+    } else if (httpPtr->timeout != NULL) {
+        ns_free((void *)httpPtr->timeout);
+        httpPtr->timeout = NULL;
+    }
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * HttpQueue --
  *
  *      Enqueues the HTTP task and optionally returns the taskID
@@ -2358,42 +2397,46 @@ HttpQueue(
                *bodyFileName = NULL;
     Ns_Set     *requestHdrPtr = NULL;
     Tcl_Obj    *bodyObj = NULL, *proxyObj = NULL;
-    Ns_Time    *timeoutPtr = NULL, *expirePtr = NULL, *keepAliveTimeoutPtr = NULL;
+    Ns_Time    *timeoutPtr = NULL,
+               *expirePtr = NULL,
+               *keepAliveTimeoutPtr = NULL,
+               *connectTimeoutPtr = NULL;
     Tcl_WideInt bodySize = 0;
 
     Tcl_Channel bodyChan = NULL, spoolChan = NULL;
     Ns_ObjvValueRange sizeRange = {0, LLONG_MAX};
 
     Ns_ObjvSpec opts[] = {
-        {"-binary",           Ns_ObjvBool,    &binary,         INT2PTR(NS_TRUE)},
-        {"-body",             Ns_ObjvObj,     &bodyObj,        NULL},
-        {"-body_chan",        Ns_ObjvString,  &bodyChanName,   NULL},
-        {"-body_file",        Ns_ObjvString,  &bodyFileName,   NULL},
-        {"-body_size",        Ns_ObjvWideInt, &bodySize,       &sizeRange},
-        {"-cafile",           Ns_ObjvString,  &caFile,         NULL},
-        {"-capath",           Ns_ObjvString,  &caPath,         NULL},
-        {"-cert",             Ns_ObjvString,  &cert,           NULL},
-        {"-decompress",       Ns_ObjvBool,    &decompress,     INT2PTR(NS_TRUE)},
+        {"-binary",           Ns_ObjvBool,    &binary,               INT2PTR(NS_TRUE)},
+        {"-body",             Ns_ObjvObj,     &bodyObj,              NULL},
+        {"-body_chan",        Ns_ObjvString,  &bodyChanName,         NULL},
+        {"-body_file",        Ns_ObjvString,  &bodyFileName,         NULL},
+        {"-body_size",        Ns_ObjvWideInt, &bodySize,             &sizeRange},
+        {"-cafile",           Ns_ObjvString,  &caFile,               NULL},
+        {"-capath",           Ns_ObjvString,  &caPath,               NULL},
+        {"-cert",             Ns_ObjvString,  &cert      ,           NULL},
+        {"-connecttimeout",   Ns_ObjvTime,    &connectTimeoutPtr,    NULL},
+        {"-decompress",       Ns_ObjvBool,    &decompress,           INT2PTR(NS_TRUE)},
 #ifdef NS_WITH_RECENT_DEPRECATED
-        {"-donecallback",     Ns_ObjvString,  &doneCallbackDeprec,  NULL},
+        {"-donecallback",     Ns_ObjvString,  &doneCallbackDeprec,   NULL},
 #endif
-        {"-done_callback",    Ns_ObjvString,  &doneCallback,   NULL},
-        {"-expire",           Ns_ObjvTime,    &expirePtr,      NULL},
-        {"-headers",          Ns_ObjvSet,     &requestHdrPtr,  NULL},
-        {"-hostname",         Ns_ObjvString,  &sniHostname,    NULL},
-        {"-keep_host_header", Ns_ObjvBool,    &keepHostHdr,    INT2PTR(NS_TRUE)},
-        {"-keepalive",        Ns_ObjvTime,    &keepAliveTimeoutPtr, NULL},
-        {"-method",           Ns_ObjvString,  &method,         NULL},
-        {"-outputchan",       Ns_ObjvString,  &outputChanName, NULL},
-        {"-outputfile",       Ns_ObjvString,  &outputFileName, NULL},
-        {"-partialresults",   Ns_ObjvBool,    &partialResults, INT2PTR(NS_TRUE)},
-        {"-proxy",            Ns_ObjvObj,     &proxyObj,       NULL},
-        {"-raw",              Ns_ObjvBool,    &raw,            INT2PTR(NS_TRUE)},
-        {"-response_header_callback",  Ns_ObjvString,  &rhrCallback,   NULL},
-        {"-spoolsize",        Ns_ObjvMemUnit, &spoolLimit,     NULL},
-        {"-timeout",          Ns_ObjvTime,    &timeoutPtr,     NULL},
-        {"-unix_socket",      Ns_ObjvString,  &udsPath,        NULL},
-        {"-verify",           Ns_ObjvBool,    &verifyCert,     INT2PTR(NS_TRUE)},
+        {"-done_callback",    Ns_ObjvString,  &doneCallback,         NULL},
+        {"-expire",           Ns_ObjvTime,    &expirePtr,            NULL},
+        {"-headers",          Ns_ObjvSet,     &requestHdrPtr,        NULL},
+        {"-hostname",         Ns_ObjvString,  &sniHostname,          NULL},
+        {"-keep_host_header", Ns_ObjvBool,    &keepHostHdr,          INT2PTR(NS_TRUE)},
+        {"-keepalive",        Ns_ObjvTime,    &keepAliveTimeoutPtr,  NULL},
+        {"-method",           Ns_ObjvString,  &method,               NULL},
+        {"-outputchan",       Ns_ObjvString,  &outputChanName,       NULL},
+        {"-outputfile",       Ns_ObjvString,  &outputFileName,       NULL},
+        {"-partialresults",   Ns_ObjvBool,    &partialResults,       INT2PTR(NS_TRUE)},
+        {"-proxy",            Ns_ObjvObj,     &proxyObj,             NULL},
+        {"-raw",              Ns_ObjvBool,    &raw,                  INT2PTR(NS_TRUE)},
+        {"-response_header_callback",  Ns_ObjvString,  &rhrCallback, NULL},
+        {"-spoolsize",        Ns_ObjvMemUnit, &spoolLimit,           NULL},
+        {"-timeout",          Ns_ObjvTime,    &timeoutPtr,           NULL},
+        {"-unix_socket",      Ns_ObjvString,  &udsPath,              NULL},
+        {"-verify",           Ns_ObjvBool,    &verifyCert,           INT2PTR(NS_TRUE)},
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -2464,6 +2507,10 @@ HttpQueue(
     }
 
     if (result == TCL_OK) {
+
+        if (connectTimeoutPtr == NULL) {
+            connectTimeoutPtr = timeoutPtr;
+        }
         Ns_Log(Ns_LogTaskDebug, "HttpQueue calls HttpConnect with timeout:%p", (void*)timeoutPtr);
 
         result = HttpConnect(itPtr,
@@ -2481,12 +2528,18 @@ HttpQueue(
                              udsPath,
                              (verifyCert  == 1),
                              (keepHostHdr == 1),
-                             timeoutPtr,
+                             connectTimeoutPtr,
                              expirePtr,
                              keepAliveTimeoutPtr,
                              &httpPtr);
         Ns_Log(Ns_LogTaskDebug, "HttpConnect() ended with result %s", Ns_TclReturnCodeString(result));
+
+        /*
+         * Reset the timeout from the connectTimeoutPtr to the timeoutPtr.
+         */
+        HttpTaskTimeoutSet(httpPtr, timeoutPtr);
     }
+
     if (result == TCL_OK && outputChanName != NULL) {
         httpPtr->outputChanName = ns_strdup(outputChanName);
         if (NsConnChanGet(interp, itPtr->servPtr, outputChanName) != NULL) {
@@ -3498,10 +3551,7 @@ HttpConnect(
     httpPtr->responseHeaders = Ns_SetCreate(NS_SET_NAME_CLIENT_RESPONSE);
     httpPtr->responseHeaders->flags |= NS_SET_OPTION_NOCASE;
 
-    if (timeoutPtr != NULL) {
-        httpPtr->timeout = ns_calloc(1u, sizeof(Ns_Time));
-        *httpPtr->timeout = *timeoutPtr;
-    }
+    HttpTaskTimeoutSet(httpPtr, timeoutPtr);
 
     /*
      * Take keep-alive timeout either from provided flag, or from
@@ -4613,10 +4663,9 @@ HttpCleanupPerRequestData(
         Ns_SetFree(httpPtr->responseHeaders);
         httpPtr->responseHeaders = NULL;
     }
-    if (httpPtr->timeout != NULL) {
-        ns_free((void *)httpPtr->timeout);
-        httpPtr->timeout = NULL;
-    }
+
+    HttpTaskTimeoutSet(httpPtr, NULL);
+
     ns_free((void *)httpPtr->url);
     httpPtr->url = NULL;
 
@@ -5900,10 +5949,7 @@ HttpTunnel(
     httpPtr->responseHeaders = Ns_SetCreate(NS_SET_NAME_CLIENT_RESPONSE); /* Ignored */
     httpPtr->responseHeaders->flags |= NS_SET_OPTION_NOCASE;
 
-    if (timeout != NULL) {
-        httpPtr->timeout = ns_calloc(1u, sizeof(Ns_Time));
-        *httpPtr->timeout = *timeout;
-    }
+    HttpTaskTimeoutSet(httpPtr, timeout);
 
     Ns_GetTime(&httpPtr->stime);
 
@@ -5961,6 +6007,7 @@ HttpTunnel(
             goto fail;
         }
     }
+    HttpTaskTimeoutSet(httpPtr, timeout);
 
     /*
      * At this point we are connected.

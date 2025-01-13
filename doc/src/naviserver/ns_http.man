@@ -198,7 +198,7 @@ Waits for the queued command specified by the [term id] returned from
 
 The specified [option -timeout] specified the maximum duration of
 the request to complete. The time can be specified
-in any supported ns_time format.
+in any supported [cmd ns_time] format.
 
 [para]
 On success, [cmd "ns_http wait"] returns the same dictionary as the
@@ -278,6 +278,14 @@ the subject's certificate (actual client or server certificate),
 followed by intermediate CA certificates if applicable, and ending at
 the highest level (root) CA.
 
+[opt_def -connecttimeout [arg time]]
+time to wait for connection setup and socket readable/writable state.
+The time can be specified in any supported [cmd ns_time] format. When a
+domain name is resolved against several IP addresses, the provided
+timeout span is used for every IP address. When
+[option -connecttimeout] is not specified, the value of
+[option -timeout] is used.
+
 [opt_def -done_callback [arg value]]
 this callback will be executed as Tcl script when the request
 is completed.  The provided [arg call] is appended with two arguments,
@@ -290,7 +298,7 @@ dictionary as returned by [cmd "ns_http run"]. When this option is used,
 time to wait for the whole request to complete. Upon expiry of this timer,
 request processing is unconditionally stopped, regardless of whether the
 connection or some data to read/write is still pending. The time can be
-specified in any supported ns_time format.
+specified in any supported [cmd ns_time] format.
 
 [opt_def -headers [arg setId]]
 headers is the ns_set ID containing the additional headers to include
@@ -308,7 +316,7 @@ the [option -headers] argument, otherwise it is overwritten.
 
 [opt_def -keepalive [arg time]] when specified, set the keep-alive timeout
 of the connection to the specified duration. The time can be
-specified in any supported ns_time format.
+specified in any supported [cmd ns_time] format.
 
 [opt_def -method [arg value]]
 Standard HTTP/HTTPS request method such as GET, POST, HEAD, PUT etc.
@@ -390,8 +398,9 @@ channel (see [option -outputchan]).
 The value can be specified in memory units (kB, MB, GB, KiB, MiB, GiB).
 
 [opt_def -timeout [arg time]]
-time to wait for connection setup and socket readable/writable state.
-The time can be specified in any supported ns_time format. When a
+time to wait for socket interactions (read/write). The value is used
+as well as a default value for [option -connecttimeout].
+The time can be specified in any supported [cmd ns_time] format. When a
 domain name is resolved against several IP addresses, the provided
 timeout span is used for every IP address. The default timeout is 5s.
 
