@@ -2329,9 +2329,8 @@ CloseWaitingDataPrettyState(CloseWaitingData *cwDataPtr)
 static void
 HttpTaskTimeoutSet(NsHttpTask *httpPtr, const Ns_Time *timeoutPtr)
 {
-    /*
-     *
-     */
+    NS_NONNULL_ASSERT(httpPtr != NULL);
+
     if (timeoutPtr != NULL) {
         if (httpPtr->timeout == NULL) {
             httpPtr->timeout = ns_calloc(1u, sizeof(Ns_Time));
@@ -2533,25 +2532,27 @@ HttpQueue(
                              keepAliveTimeoutPtr,
                              &httpPtr);
         Ns_Log(Ns_LogTaskDebug, "HttpConnect() ended with result %s", Ns_TclReturnCodeString(result));
+    }
 
+    if (result == TCL_OK) {
         /*
          * Reset the timeout from the connectTimeoutPtr to the timeoutPtr.
          */
         HttpTaskTimeoutSet(httpPtr, timeoutPtr);
-    }
 
-    if (result == TCL_OK && outputChanName != NULL) {
-        httpPtr->outputChanName = ns_strdup(outputChanName);
-        if (NsConnChanGet(interp, itPtr->servPtr, outputChanName) != NULL) {
-            httpPtr->flags |= NS_HTTP_CONNCHAN;
+        if (outputChanName != NULL) {
+            httpPtr->outputChanName = ns_strdup(outputChanName);
+            if (NsConnChanGet(interp, itPtr->servPtr, outputChanName) != NULL) {
+                httpPtr->flags |= NS_HTTP_CONNCHAN;
+            }
         }
-    }
 
-    if (result == TCL_OK && bodyChan != NULL) {
-        if (HttpCutChannel(interp, bodyChan) != TCL_OK) {
-            result = TCL_ERROR;
-        } else {
-            httpPtr->bodyChan = bodyChan;
+        if (bodyChan != NULL) {
+            if (HttpCutChannel(interp, bodyChan) != TCL_OK) {
+                result = TCL_ERROR;
+            } else {
+                httpPtr->bodyChan = bodyChan;
+            }
         }
     }
 
