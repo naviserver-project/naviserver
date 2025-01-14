@@ -17,23 +17,25 @@ namespace eval ::revproxy::ns_connchan {
     #
 
     nsf::proc upstream {
-        -url
+        -url:required
+        -request:required
         {-timeout 10.0s}
         {-connecttimeout 1s}
-        {-sendtimeout 0.5s}
-        {-receivetimeout 0.5s}
+        {-sendtimeout ""}
+        {-receivetimeout ""}
         {-validation_callback ""}
         {-regsubs:0..n ""}
         {-exception_callback "::revproxy::exception"}
         {-url_rewrite_callback "::revproxy::rewrite_url"}
         {-backend_response_callback ""}
-        -request:required
         {-spoolresponse true}
     } {
         #
         # @param spoolresponse dummy parameter just for interface compatibility
         #        with ns_http variant
         #
+        if {$sendtimeout eq ""}    { set sendtimeout 0.5s }
+        if {$receivetimeout eq ""} { set receivetimeout 0.5s }
 
         set requestHeaders [dict get $request headers]
         set method         [dict get $request method]

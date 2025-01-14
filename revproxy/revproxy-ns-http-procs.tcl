@@ -9,8 +9,8 @@ namespace eval ::revproxy::ns_http {
         -url
         {-timeout 105.0s}
         {-connecttimeout 1s}
-        {-sendtimeout 0.5s}
-        {-receivetimeout 0.5s}
+        {-sendtimeout ""}
+        {-receivetimeout ""}
         {-validation_callback ""}
         {-exception_callback "::revproxy::exception"}
         {-backend_response_callback ""}
@@ -23,6 +23,12 @@ namespace eval ::revproxy::ns_http {
         # @param sendtimeout ignored
         #        (just for interface compatibility with the ns_connchan variant)
         #
+        if {$sendtimeout ne ""} {
+            ns_log warning "::revproxy::ns_http::upstream: sendtimeout '$sendtimeout' ignored"
+        }
+        if {$receivetimeout ne ""} {
+            ns_log warning "::revproxy::ns_http::upstream: receivetimeout '$receivetimeout' ignored"
+        }
 
         #
         # Perform the transmission via ns_connchan... but before this,
@@ -91,8 +97,6 @@ namespace eval ::revproxy::ns_http {
         set expiretimeout 1d
         set timeouts [list \
                           -connecttimeout $connecttimeout \
-                          -sendtimeout $sendtimeout \
-                          -receivetimeout $receivetimeout \
                           -expiretimeout $expiretimeout \
                           -timeout $timeout \
                          ]
@@ -416,6 +420,11 @@ nsf::proc ::revproxy::ns_http::drain_sendbuf {channel {-done_callback ""} when} 
 
 
 proc ::revproxy::ns_http::responseheaders {dict} {
+    #
+    # Send reponse headers from backend server to revproy client.
+    # This function is called by "response_header_callback".
+    #
+
     #ns_logctl severity Debug(task) on
     #ns_logctl severity Debug(connchan) on
 
@@ -450,7 +459,27 @@ proc ::revproxy::ns_http::responseheaders {dict} {
 
         log notice ::revproxy::ns_http::responseheaders \n$response
         set toWrite [string length $response]
-        set written [ns_connchan write $outputchan $response]
+        set written -1
+        try {
+            ns_connchan write $outputchan $response
+        } trap {NS_TIMEOUT} {} {
+            ns_log notice "::revproxy::ns_http::responseheaders: TIMEOUT during send to $outputchan"
+        } trap {POSIX EPIPE} {} {
+            ns_log notice "::revproxy::ns_http::responseheaders:  EPIPE during send to $outputchan"
+        } trap {POSIX ECONNRESET} {} {
+            ns_log notice "::revproxy::ns_http::responseheaders:  ECONNRESET during send to $outputchan"
+        } on error {errorMsg} {
+            ns_log warning "::revproxy::ns_http::responseheaders:  other error during send to $outputchan: $errorMsg"
+        } on ok {written} {
+        }
+        if {$written == -1} {
+            #
+            # Not sure, this is the best place, some new error cases
+            # might pop up, when the channel does not exist anymore
+            #
+            ns_log warning "::revproxy::ns_http::responseheaders:  forcing close of channel $outputchan"
+            ns_connchan close $outputchan
+        }
         log notice ::revproxy::ns_http::responseheaders towrite $toWrite written $written
     }
 }
