@@ -345,7 +345,7 @@ nsf::proc ::revproxy::ns_http::drain {channel {-done_callback ""}} {
         #
         # ::revproxy::ns_http::drain_sendbuf will automatically close $channel
         #
-        ns_connchan callback $connchan \
+        ns_connchan callback $channel \
             [list ::revproxy::ns_http::drain_sendbuf $channel -done_callback ""] wex
     } else {
         ns_connchan close $channel
