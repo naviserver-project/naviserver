@@ -231,6 +231,29 @@ Ns_SockSetReceiveState(Ns_Sock *sock, Ns_SockState sockState, unsigned long recv
     ((Sock *)sock)->recvErrno = recvErrno;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_SockSetSendErrno --
+ *
+ *      Set the errono send operation in the Sock structure.
+ *
+ * Results:
+ *      None.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Ns_SockSetSendErrno(Ns_Sock *sock, unsigned long sendErrno)
+{
+    ((Sock *)sock)->sendErrno = sendErrno;
+}
+
+
 /*
  *----------------------------------------------------------------------
  *

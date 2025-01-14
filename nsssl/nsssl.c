@@ -422,7 +422,9 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs, unsigned int UNUSED(fla
                     }
 
                     SSL_set_shutdown(sslCtx->ssl, SSL_RECEIVED_SHUTDOWN);
+
                     sent = -1;
+                    Ns_SockSetSendErrno(sock, (unsigned int)sslerr);
 
                     break; /* Any other error case is terminal */
                 }

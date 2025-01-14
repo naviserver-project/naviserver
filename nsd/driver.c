@@ -2205,15 +2205,13 @@ NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int fl
 
     if (likely(drvPtr->sendProc != NULL)) {
         sent = (*drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs, flags);
-        if (unlikely(sent == -1)) {
+        if (unlikely(sent == -1) && sockPtr->sendErrno == 0) {
             int       sockErr;
             socklen_t len = (socklen_t)sizeof(sockErr);
 
             if (getsockopt(sockPtr->sock, SOL_SOCKET, SO_ERROR, (void *)&sockErr, &len) != -1) {
                 sockPtr->sendErrno = (unsigned long)sockErr;
             }
-        } else {
-            sockPtr->sendErrno = 0;
         }
     } else {
         Ns_Log(Warning, "no sendProc registered for driver %s", drvPtr->threadName);
