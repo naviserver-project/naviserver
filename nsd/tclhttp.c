@@ -474,6 +474,41 @@ DStringAppendHttpFlags(Tcl_DString *dsPtr, unsigned int flags)
 }
 
 
+static char *
+DStringAppendHttpSockState(Tcl_DString *dsPtr, unsigned int flags)
+{
+    int    count = 0;
+    size_t i;
+    static const struct {
+        unsigned int state;
+        const char  *label;
+    } options[] = {
+        { NS_SOCK_NONE,      "NS_NONE" },
+        { NS_SOCK_READ,      "NS_READ" },
+        { NS_SOCK_WRITE,     "NS_WRITE" },
+        { NS_SOCK_EXCEPTION, "NS_EXCEPTION" },
+        { NS_SOCK_EXIT,      "NS_EXIT" },
+        { NS_SOCK_DONE,      "NS_DONE" },
+        { NS_SOCK_CANCEL,    "NS_CANCEL" },
+        { NS_SOCK_TIMEOUT,   "NS_TIMEOUT" },
+        { NS_SOCK_AGAIN,     "NS_AGAIN" },
+        { NS_SOCK_INIT,      "NS_INIT" }
+    };
+
+    NS_NONNULL_ASSERT(dsPtr != NULL);
+
+    for (i=0; i<sizeof(options)/sizeof(options[0]); i++) {
+        if ((options[i].state & flags) != 0u) {
+            if (count > 0) {
+                Tcl_DStringAppend(dsPtr, "|", 1);
+            }
+            Tcl_DStringAppend(dsPtr, options[i].label, TCL_INDEX_NONE);
+            count ++;
+        }
+    }
+    return dsPtr->string;
+}
+
 
 /*----------------------------------------------------------------------
  *
@@ -2780,10 +2815,12 @@ HttpGetResult(
             *responseHeadersObj = NULL,
             *errorObj        = NULL,
             *elapsedTimeObj;
+    Tcl_DString ds;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(httpPtr != NULL);
 
+    Tcl_DStringInit(&ds);
     /*
      * In some error conditions, the endtime is not set. make sure, take the
      * current time in these cases.
@@ -2874,12 +2911,9 @@ HttpGetResult(
             responseBodyObj = Tcl_NewByteArrayObj((unsigned char *)cData, cSize);
         } else {
 #if defined(TCLHTTP_USE_EXTERNALTOUTF)
-            Tcl_DString ds;
-
-            Tcl_DStringInit(&ds);
             (void)Tcl_ExternalToUtfDString(encoding, cData, cSize, &ds);
             responseBodyObj = Tcl_NewStringObj(Tcl_DStringValue(&ds), TCL_INDEX_NONE);
-            Tcl_DStringFree(&ds);
+            Tcl_DStringSetLength(&ds, 0);
 #else
             responseBodyObj = Tcl_NewStringObj(cData, cSize);
 #endif
@@ -2980,7 +3014,13 @@ HttpGetResult(
     if (errorObj != NULL) {
         Tcl_DictObjPut(interp, resultObj, Tcl_NewStringObj("error", 5),
                        errorObj);
+
+        DStringAppendHttpSockState(&ds, httpPtr->errorSockState);
+        Tcl_DictObjPut(interp, resultObj, Tcl_NewStringObj("state", 5),
+                       Tcl_NewStringObj(ds.string, ds.length));
+        Tcl_DStringSetLength(&ds, 0);
     }
+
     if (httpPtr->infoObj != NULL) {
         Tcl_DictObjPut(interp, resultObj, Tcl_NewStringObj("https", 5),
                        httpPtr->infoObj);
@@ -3002,15 +3042,10 @@ HttpGetResult(
                        Tcl_NewStringObj(httpPtr->outputChanName, TCL_INDEX_NONE));
     }
 
-    {
-        Tcl_DString dsHttpState;
-
-        Tcl_DStringInit(&dsHttpState);
-        DStringAppendHttpFlags(&dsHttpState, httpPtr->flags);
-        Tcl_DictObjPut(interp, resultObj, Tcl_NewStringObj("flags", 5),
-                       Tcl_NewStringObj(dsHttpState.string, dsHttpState.length));
-        Tcl_DStringFree(&dsHttpState);
-    }
+    DStringAppendHttpFlags(&ds, httpPtr->flags);
+    Tcl_DictObjPut(interp, resultObj, Tcl_NewStringObj("flags", 5),
+                   Tcl_NewStringObj(ds.string, ds.length));
+    Tcl_DStringSetLength(&ds, 0);
 
     if (likely(errorObj == NULL)) {
         /*
@@ -3045,6 +3080,8 @@ HttpGetResult(
     Tcl_DecrRefCount(responseHeadersObj);
 
  err:
+    Tcl_DStringFree(&ds);
+
     if (result != TCL_OK) {
         if (statusObj != NULL) {
             Tcl_DecrRefCount(statusObj);
@@ -5223,6 +5260,7 @@ HttpProc(
 
             if (n == -1) {
                 httpPtr->error = "http send failed (initial send request)";
+                httpPtr->errorSockState = why;
                 Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE send failed");
 
             } else {
@@ -5355,6 +5393,7 @@ HttpProc(
              */
 
             if (unlikely(n == -1)) {
+                httpPtr->errorSockState = why;
                 httpPtr->error = "http read failed (initial data to send)";
                 Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE read failed");
 
@@ -5369,6 +5408,7 @@ HttpProc(
                        " %" PRIdz " of %" PRIuz " bytes", sent, toSend);
 
                 if (unlikely(sent == -1)) {
+                    httpPtr->errorSockState = why;
                     httpPtr->error = "http send failed (send request)";
                     Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE send failed");
 
@@ -5457,6 +5497,7 @@ HttpProc(
                              * Or, we can trigger the error immediately.
                              * We opt for the latter.
                              */
+                            httpPtr->errorSockState = why;
                             httpPtr->error = "http read failed (chunk data to send)";
                             taskDone = NS_TRUE;
                             Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_WRITE"
@@ -5530,6 +5571,7 @@ HttpProc(
                  * what kind of error it was.
                  */
                 httpPtr->error = "http read failed (initial receive from server)";
+                httpPtr->errorSockState = why;
                 Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_READ receive failed");
 
             } else if (n > 0) {
@@ -5550,6 +5592,7 @@ HttpProc(
                 result = HttpAppendContent(httpPtr, buf, (size_t)n);
                 if (unlikely(result != TCL_OK)) {
                     httpPtr->error = "http read failed (chunk receive from server)";
+                    httpPtr->errorSockState = why;
                     Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_READ append failed");
                 } else {
                     Ns_ReturnCode rc = NS_OK;
@@ -5596,6 +5639,7 @@ HttpProc(
                     }
                     if (unlikely(rc != NS_OK)) {
                         httpPtr->error = "http read failed (check spool)";
+                        httpPtr->errorSockState = why;
                         Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_READ spool failed");
                     } else {
                         /*
@@ -5692,6 +5736,7 @@ HttpProc(
         taskDone = (httpPtr->doneCallback != NULL);
         LogDebug("HttpProc: NS_SOCK_TIMEOUT", httpPtr, "");
         httpPtr->error = "http request timeout";
+        httpPtr->errorSockState = why;
 
         break;
 
@@ -5699,6 +5744,7 @@ HttpProc(
 
         Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_EXIT");
         httpPtr->error = "http task queue shutdown";
+        httpPtr->errorSockState = why;
 
         break;
 
@@ -5706,6 +5752,7 @@ HttpProc(
 
         Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_CANCEL");
         httpPtr->error = "http request cancelled";
+        httpPtr->errorSockState = why;
 
         break;
 
@@ -5713,6 +5760,7 @@ HttpProc(
 
         Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_EXCEPTION");
         httpPtr->error = "unexpected http socket exception";
+        httpPtr->errorSockState = why;
 
         break;
 
@@ -5720,6 +5768,7 @@ HttpProc(
 
         Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_AGAIN");
         httpPtr->error = "unexpected http EOD";
+        httpPtr->errorSockState = why;
 
         break;
 
@@ -5745,6 +5794,7 @@ HttpProc(
 
         Ns_Log(Ns_LogTaskDebug, "HttpProc: NS_SOCK_NONE");
         httpPtr->error = "unexpected http socket state";
+        httpPtr->errorSockState = why;
 
         break;
     }

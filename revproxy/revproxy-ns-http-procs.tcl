@@ -195,9 +195,19 @@ nsf::proc ::revproxy::ns_http::done {
     result
     d
 } {
+    if {$result != 0} {
+        #
+        # The behaviour when called via "done_callback" is slightly
+        # different to a direct call without the callback. In the
+        # callback case we get there just "0" or "1" as result.
+        #
+        if {[dict exists $d state] && [dict get $d state] eq "NS_TIMEOUT"} {
+            set result NS_TIMEOUT
+        }
+    }
     switch $result {
         NS_TIMEOUT {
-            log notice ============================================ TIMEOUT (connchan [info exists connchan])
+            ns_log notice ============================================ TIMEOUT (connchan [info exists connchan])
 
             set connecttimeout [dict get $timeouts -connecttimeout]
             set expiretimeout  [dict get $timeouts -expiretimeout]

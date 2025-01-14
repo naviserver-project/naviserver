@@ -1151,6 +1151,7 @@ typedef struct {
     const char        *method;           /* request method */
     const char        *url;              /* request URL */
     const char        *error;            /* holds error string */
+    Ns_SockState       errorSockState;   /* holds the last sock state in an error condition */
     const char        *host;             /* hostname for persistent connections */
     char              *next;             /* write buffer */
     size_t             requestLength;    /* size of the complete request */
