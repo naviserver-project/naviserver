@@ -79,7 +79,7 @@ jobs:
           repository: naviserver-project/naviserver
           #token: ${{ secrets.PAT }}
       - name: Check IP
-        run: curl -k https://api.ipify.org
+        run: curl -ks https://api.ipify.org
       - name: Show what we have now
         run: |
           git clone https://github.com/gustafn/install-ns.git
