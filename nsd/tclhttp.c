@@ -4216,10 +4216,11 @@ HttpAppendRawBuffer(
     const char *buffer,
     size_t size
 ) {
-    int         result = TCL_OK;
-    ssize_t     written;
-    const char *reason = "unknown";
-    bool        silent = NS_FALSE;
+    int            result = TCL_OK;
+    ssize_t        written;
+    const char    *reason = "unknown";
+    bool           silent = NS_FALSE;
+    Ns_LogSeverity severity = Error;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(buffer != NULL);
@@ -4255,7 +4256,12 @@ HttpAppendRawBuffer(
                                httpPtr->outputChanName, size, written,
                                chan->sendBuffer == NULL ? -1 : (long)chan->sendBuffer->length);
                     }
-                    reason = ns_sockstrerror((int)chan->sockPtr->sendErrno);
+                    if (written > 0) {
+                        reason = "partial write";
+                        severity = Warning;
+                    } else {
+                        reason = ns_sockstrerror((int)chan->sockPtr->sendErrno);
+                    }
                     httpPtr->flags |= NS_HTTP_OUTPUT_ERROR;
                 }
             }
@@ -4275,7 +4281,7 @@ HttpAppendRawBuffer(
         result = TCL_OK;
     } else {
         if (!silent) {
-            Ns_Log(Error, "HttpAppendRawBuffer: spooling of received content failed: %s", reason);
+            Ns_Log(severity, "HttpAppendRawBuffer: spooling of received content failed: %s", reason);
         }
         result = TCL_ERROR;
     }

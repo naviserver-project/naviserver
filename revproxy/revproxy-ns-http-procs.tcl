@@ -340,7 +340,7 @@ nsf::proc ::revproxy::ns_http::drain {channel {-done_callback ""}} {
     # unsent data, send it before closing.
     #
     if {[dict get [ns_connchan status $channel] sendbuffer] > 0} {
-        ns_log warning "revproxy ns_http+ns_connchan: final buffer is not empty:" \
+        ns_log warning "revproxy ns_http+ns_connchan: final buffer of $channel is not empty:" \
             [ns_connchan status $channel]
         #
         # ::revproxy::ns_http::drain_sendbuf will automatically close $channel
