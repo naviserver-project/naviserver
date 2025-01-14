@@ -256,7 +256,7 @@ namespace eval ::revproxy {
         #
         # When a frontendChan or backendChan is provided, these are closed.
         #
-        ns_log error "revproxy::upstream: send failed URL $url '$errorMsg'"
+        log notice "revproxy::upstream: send failed URL $url '$errorMsg'"
         if {$exception_callback ne ""} {
             {*}$exception_callback -status $status -error $errorMsg -url $url \
                 -frontendChan [expr {[info exists frontendChan] ? $frontendChan : ""}]
@@ -280,7 +280,7 @@ namespace eval ::revproxy {
         {-frontendChan ""}
     } {
         if {$msg eq ""} {
-            ns_log warning "revproxy exception backend with URL '$url' failed with status $status"
+            ns_log notice "revproxy exception backend with URL '$url' failed with status $status"
             set msg "Backend error: [ns_quotehtml $error]"
         }
         if {$frontendChan ne ""} {
