@@ -359,10 +359,30 @@ nsf::proc ::revproxy::ns_http::drain_sendbuf {channel {-done_callback ""} when} 
     # becomes writable to send the remaining data. When everything is
     # sent, the callback is de-registered and the channel is closed.
     #
-    set result [ns_connchan write -buffered $channel ""]
+    set result -1
+    try {
+        ns_connchan write -buffered $channel ""
+    } trap {NS_TIMEOUT} {errorMsg} {
+        ns_log notice "::revproxy::ns_http::drain_sendbuf: TIMEOUT during send to $channel"
+    } trap {POSIX EPIPE} {} {
+        ns_log notice "::revproxy::ns_http::drain_sendbuf:  EPIPE during send to $channel"
+    } trap {POSIX ECONNRESET} {} {
+        ns_log notice "::revproxy::ns_http::drain_sendbuf:  ECONNRESET during send to $channel"
+    } on error {errorMsg} {
+        ns_log warning "::revproxy::ns_http::drain_sendbuf:  other error during send to $channel: $errorMsg"
+    } on ok {result} {
+    }
     set status [ns_connchan status $channel]
     log notice "::revproxy::ns_http::drain_sendbuf when '$when' sent $result status $status"
-    if {$result == 0 || [dict get $status sendbuffer] > 0} {
+    if {$result == -1} {
+        #
+        # An unrecoverable condition occured, close the cannel and
+        # deregister the callback.
+        #
+        ns_connchan close $channel
+        log notice "::revproxy::ns_http::drain_sendbuf Could call callback <$done_callback>"
+        set continue 0
+    } elseif {$result == 0 || [dict get $status sendbuffer] > 0} {
         if {$result == 0} {
             ns_log warning "::revproxy::ns_http::drain_sendbuf  was not successful draining the buffer " \
                 "(still [dict get $status sendbuffer])... trigger again. status: $status"
@@ -373,7 +393,7 @@ nsf::proc ::revproxy::ns_http::drain_sendbuf {channel {-done_callback ""} when} 
     } else {
         #
         # All was sent, close the channel, call the callback and
-        # deregister the callback
+        # deregister the callback.
         #
         ns_connchan close $channel
         log notice "::revproxy::ns_http::drain_sendbuf Could call callback <$done_callback>"
