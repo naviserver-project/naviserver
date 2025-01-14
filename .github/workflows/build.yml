@@ -78,10 +78,13 @@ jobs:
         with:
           repository: naviserver-project/naviserver
           #token: ${{ secrets.PAT }}
+      - name: Check IP
+        run: curl -k https://api.ipify.org
       - name: Show what we have now
         run: |
           git clone https://github.com/gustafn/install-ns.git
           echo GITHUB_REF=${GITHUB_REF} PWD=`pwd`
+          cat /etc/os-release
           ls -ltr
       - name: Compile all
         run: |
