@@ -390,7 +390,7 @@ nsf::proc ::revproxy::ns_http::drain_sendbuf {channel {-done_callback ""} when} 
     log notice "::revproxy::ns_http::drain_sendbuf when '$when' sent $result status $status"
     if {$result == -1} {
         #
-        # An unrecoverable condition occured, close the cannel and
+        # An unrecoverable condition occurred, close the channel and
         # deregister the callback.
         #
         ns_connchan close $channel
@@ -421,7 +421,7 @@ nsf::proc ::revproxy::ns_http::drain_sendbuf {channel {-done_callback ""} when} 
 
 proc ::revproxy::ns_http::responseheaders {dict} {
     #
-    # Send reponse headers from backend server to revproy client.
+    # Send response headers from backend server to revproy client.
     # This function is called by "response_header_callback".
     #
 

@@ -286,13 +286,17 @@ timeout span is used for every IP address. When
 [option -connecttimeout] is not specified, the value of
 [option -timeout] is used.
 
-[opt_def -done_callback [arg value]]
-this callback will be executed as Tcl script when the request
-is completed.  The provided [arg call] is appended with two arguments,
-a flag indicating a Tcl error or not (integer value 1 or 0), and the
-dictionary as returned by [cmd "ns_http run"]. When this option is used,
-[cmd "ns_http queue"] returns empty and the user has no further control
-(wait, cancel) on the task.
+[opt_def -done_callback [arg value]] this callback will be executed as
+Tcl script when the request is completed.  The provided [arg call] is
+appended with two arguments, a flag indicating a Tcl error and a data
+argument. When the flag has the value of 0, the call was successful,
+and the same dict as returned by [cmd "ns_http run"] is provided as
+data. When the flag is 1, something went wrong. When the call was
+started with the option [option -partialresults], the data argument is
+as well the result dict. Otherwise, an error message is provided as
+dict.  When [option -done_callback] is used, [cmd "ns_http queue"]
+returns empty and the user has no further control (wait, cancel) on
+the task.
 
 [opt_def -expire [arg time]]
 time to wait for the whole request to complete. Upon expiry of this timer,
