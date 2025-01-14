@@ -362,7 +362,7 @@ nsf::proc ::revproxy::ns_http::drain_sendbuf {channel {-done_callback ""} when} 
     set result -1
     try {
         ns_connchan write -buffered $channel ""
-    } trap {NS_TIMEOUT} {errorMsg} {
+    } trap {NS_TIMEOUT} {} {
         ns_log notice "::revproxy::ns_http::drain_sendbuf: TIMEOUT during send to $channel"
     } trap {POSIX EPIPE} {} {
         ns_log notice "::revproxy::ns_http::drain_sendbuf:  EPIPE during send to $channel"

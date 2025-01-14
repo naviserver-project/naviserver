@@ -290,7 +290,19 @@ namespace eval ::revproxy {
                 504 {set phrase "Gateway Timeout"}
                 default {set phrase Error}
             }
-            ns_connchan write $frontendChan "HTTP/1.0 $status $phrase\r\n\r\n$status $phrase: $url"
+            try {
+                ns_connchan write $frontendChan "HTTP/1.0 $status $phrase\r\n\r\n$status $phrase: $url"
+            } trap {NS_TIMEOUT} {} {
+                ns_log notice "::revproxy:exception: TIMEOUT during send to $frontendChan"
+            } trap {POSIX EPIPE} {} {
+                ns_log notice "::revproxy::exception:  EPIPE during send to $frontendChan"
+            } trap {POSIX ECONNRESET} {} {
+                ns_log notice "::revproxy::exception:  ECONNRESET during send to $frontendChan"
+            } on error {errorMsg} {
+                ns_log warning "::revproxy::exception:  other error during send to $frontendChan: $errorMsg"
+            } on ok {result} {
+            }
+
         } elseif [ns_conn isconnected] {
             ns_returnerror $status $msg
         } else {
