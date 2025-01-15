@@ -27,6 +27,7 @@ typedef struct TaskQueue {
     Ns_Thread          tid;               /* Service thread ID */
     Ns_Mutex           lock;              /* Queue list and signal lock */
     Ns_Cond            cond;              /* Task and queue signal condition */
+    intptr_t           count;             /* Usage count */
     bool               shutdown;          /* Shutdown flag */
     bool               stopped;           /* Stop flag */
     int                numTasks;          /* Number of tasks running on queue */
@@ -471,6 +472,7 @@ Ns_TaskEnqueue(Ns_Task *task, Ns_TaskQueue *queue)
     } else {
         Ns_MutexLock(&queuePtr->lock);
         queuePtr->numTasks++;
+        queuePtr->count++;
         Ns_MutexUnlock(&queuePtr->lock);
     }
     Ns_Log(Ns_LogTaskDebug, "Ns_TaskEnqueue: task:%p status:%d",
@@ -705,6 +707,40 @@ Ns_TaskCompleted(const Ns_Task *task)
     return completed;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TaskSetCompleted --
+ *
+ *      Mark a task to be completed. It actually decrements the number of
+ *      running tasks.
+ *
+ * Results:
+ *      None
+ *
+ * Side effects:
+ *      None
+ *
+ *----------------------------------------------------------------------
+ */
+void
+Ns_TaskSetCompleted(const Ns_Task *task)
+{
+    Task      *taskPtr;
+    TaskQueue *queuePtr;
+
+    NS_NONNULL_ASSERT(task != NULL);
+
+    taskPtr = (Task *)task;
+    queuePtr = taskPtr->queuePtr;
+
+    if (queuePtr != NULL) {
+        Ns_MutexLock(&queuePtr->lock);
+        queuePtr->numTasks--;
+        Ns_MutexUnlock(&queuePtr->lock);
+    }
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -889,6 +925,59 @@ Ns_TaskQueueLength(Ns_TaskQueue *queue)
     Ns_MutexUnlock(&queuePtr->lock);
 
     return numTasks;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TaskQueueName --
+ *
+ *      Returns the name of a task.
+ *
+ * Results:
+ *      String
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+const char *
+Ns_TaskQueueName(Ns_TaskQueue *queue)
+{
+    NS_NONNULL_ASSERT(queue != NULL);
+
+    return ((TaskQueue *)queue)->name;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Ns_TaskQueueRequests --
+ *
+ *      Returns the number of requests processed by this queue.
+ *
+ * Results:
+ *      String
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+intptr_t
+Ns_TaskQueueRequests(Ns_TaskQueue *queue)
+{
+    TaskQueue *queuePtr = (TaskQueue *)queue;
+    intptr_t result;
+
+    NS_NONNULL_ASSERT(queuePtr != NULL);
+
+    Ns_MutexLock(&queuePtr->lock);
+    result = queuePtr->count;
+    Ns_MutexUnlock(&queuePtr->lock);
+
+    return result;
 }
 
 
@@ -1262,6 +1351,7 @@ ReserveTask(Task *taskPtr)
 
     return;
 }
+
 
 
 /*

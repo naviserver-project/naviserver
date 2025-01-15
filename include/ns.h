@@ -1797,12 +1797,24 @@ NS_EXTERN void
 Ns_TaskWaitCompleted(Ns_Task *task)
     NS_GNUC_NONNULL(1);
 
+NS_EXTERN void
+Ns_TaskSetCompleted(const Ns_Task *task)
+    NS_GNUC_NONNULL(1);
+
 NS_EXTERN NS_SOCKET
 Ns_TaskFree(Ns_Task *task)
     NS_GNUC_NONNULL(1);
 
 NS_EXTERN int
 Ns_TaskQueueLength(Ns_TaskQueue *queue)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN const char *
+Ns_TaskQueueName(Ns_TaskQueue *queue)
+    NS_GNUC_NONNULL(1);
+
+NS_EXTERN intptr_t
+Ns_TaskQueueRequests(Ns_TaskQueue *queue)
     NS_GNUC_NONNULL(1);
 
 /*
