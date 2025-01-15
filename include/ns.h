@@ -2994,10 +2994,17 @@ Ns_SockSendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
                 const Ns_Time *timeoutPtr, unsigned int flags)
     NS_GNUC_NONNULL(1);
 
+//#ifdef NS_WITH_DEPRECATED
 NS_EXTERN ssize_t
 Ns_SockSendBufs2(NS_SOCKET sock, const struct iovec *bufs, int nbufs,
                  unsigned int flags)
-    NS_GNUC_NONNULL(2);
+    NS_GNUC_DEPRECATED_FOR(Ns_SockSendBufsEx);
+//#endif
+
+NS_EXTERN ssize_t
+Ns_SockSendBufsEx(NS_SOCKET sock, const struct iovec *bufs, int nbufs,
+                  unsigned int flags, unsigned long *errorCodePtr)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(5);
 
 #ifdef NS_WITH_DEPRECATED
 NS_EXTERN NS_SOCKET

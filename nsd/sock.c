@@ -620,20 +620,31 @@ Ns_SockSendBufs(Ns_Sock *sock, const struct iovec *bufs, int nbufs,
  *
  *----------------------------------------------------------------------
  */
-
+//#ifdef NS_WITH_DEPRECATED
 ssize_t
 Ns_SockSendBufs2(NS_SOCKET sock, const struct iovec *bufs, int nbufs,
                  unsigned int flags)
 {
-    ssize_t sent;
     unsigned long errorCode = 0;
 
     NS_NONNULL_ASSERT(bufs != NULL);
 
-    sent = SockSend(sock, bufs, nbufs, flags, &errorCode);
+    return Ns_SockSendBufsEx(sock, bufs, nbufs, flags, &errorCode);
+}
+//#endif
+
+ssize_t
+Ns_SockSendBufsEx(NS_SOCKET sock, const struct iovec *bufs, int nbufs,
+                   unsigned int flags, unsigned long *errorCodePtr)
+{
+    ssize_t sent;
+
+    NS_NONNULL_ASSERT(bufs != NULL);
+
+    sent = SockSend(sock, bufs, nbufs, flags, errorCodePtr);
 
     if (unlikely(sent == -1)) {
-        if (Retry((int)errorCode)) {
+        if (Retry((int)*errorCodePtr)) {
             /*
              * Resource is temporarily unavailable.
              */
@@ -2344,7 +2355,6 @@ NsSockSetRecvErrorCode(const Sock *sockPtr, Tcl_Interp *interp) {
     NS_NONNULL_ASSERT(sockPtr != NULL);
 
 #ifdef HAVE_OPENSSL_EVP_H
-
     if (STREQ(sockPtr->drvPtr->protocol, "https")) {
         return Ns_SSLSetErrorCode(interp, sockPtr->recvErrno);
     }
