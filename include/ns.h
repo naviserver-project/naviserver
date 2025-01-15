@@ -3275,6 +3275,10 @@ Ns_TclReturnCodeString(int code) NS_GNUC_PURE;
 NS_EXTERN const char *
 Ns_ReturnCodeString(Ns_ReturnCode code) NS_GNUC_PURE;
 
+NS_EXTERN const char *
+NsSockErrorCodeString(unsigned long errorCode, char *buffer, size_t bufferSize)
+    NS_GNUC_NONNULL(2);
+
 /*
  * tclcallbacks.c:
  */

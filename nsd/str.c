@@ -18,6 +18,12 @@
 
 #include "nsd.h"
 
+#ifdef HAVE_OPENSSL_EVP_H
+# include "nsopenssl.h"
+# include <openssl/ssl.h>
+# include <openssl/err.h>
+#endif
+
 static void
 InvalidUtf8ErrorMessage(Tcl_DString *dsPtr, const unsigned char *bytes, size_t nrBytes,
                  size_t index, TCL_SIZE_T nrMaxBytes, bool isTruncated);
@@ -1001,6 +1007,45 @@ const char *Ns_TclReturnCodeString(int code)
     }
     return result;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsSockErrorCodeString --
+ *
+ *      Return a human readable string from the generalized
+ *      "unsigned long" error code. This code is capable to
+ *      carry the OpenSSL error codes as well as the classical
+ *      POSIX codes. The OpenSSL function ERR_GET_LIB() decides
+ *      how to get the "reason" code.
+ *
+ * Results:
+ *      String.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+const char *
+NsSockErrorCodeString(unsigned long errorCode, char *buffer, size_t bufferSize)
+{
+    const char *result = NULL;
+
+#ifdef HAVE_OPENSSL_EVP_H
+    if (ERR_GET_LIB(errorCode) == ERR_LIB_SYS) {
+        result = ns_sockstrerror(ERR_GET_REASON(errorCode));
+    } else if (ERR_GET_LIB(errorCode) != 0) {
+        ERR_error_string_n(errorCode, buffer, bufferSize);
+        result = buffer;
+    }
+#endif
+    if (result == NULL) {
+        result = ns_sockstrerror((int)errorCode);
+    }
+    return result;
+}
+
 /*
  * Local Variables:
  * mode: c
