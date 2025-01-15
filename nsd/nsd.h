@@ -1951,6 +1951,7 @@ NS_EXTERN void NsSlsCleanup(Sock *sockPtr) NS_GNUC_NONNULL(1);
 NS_EXTERN const char *NsErrorCodeString(int errorCode) NS_GNUC_PURE NS_GNUC_RETURNS_NONNULL;
 NS_EXTERN const char *NsSockSetRecvErrorCode(const Sock *sockPtr, Tcl_Interp *interp)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
+NS_EXTERN bool NsSockRetryCode(int errorCode);
 
 NS_EXTERN int NsPoll(struct pollfd *pfds, NS_POLL_NFDS_TYPE nfds, const Ns_Time *timeoutPtr);
 

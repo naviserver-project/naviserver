@@ -73,7 +73,7 @@ static Ns_SockProc CloseLater;
 /*
  *----------------------------------------------------------------------
  *
- * Retry --
+ * Retry, NsSockRetryCode --
  *
  *      Boolean function to check whether the provided error code entails a
  *      retry. This is defined as an inline function rathen than a macro to
@@ -104,6 +104,11 @@ Retry(int errorCode)
             || errorCode == EPROTOTYPE
 #endif
             || errorCode == NS_EWOULDBLOCK);
+}
+
+bool NsSockRetryCode(int errorCode)
+{
+    return Retry(errorCode);
 }
 
 
