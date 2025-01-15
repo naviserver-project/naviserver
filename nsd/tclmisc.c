@@ -404,7 +404,7 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
              * prefix automatically makes little sense. When needed, the
              * prefix could be easily done on the client side.
              */
-            memcpy(dsPtr->string, prefixString, prefixLength);
+            memcpy(dsPtr->string, prefixString, (size_t)prefixLength);
             outputPos = (size_t)prefixLength;
             nrPrefixes = nrNewLines;
         } else {
@@ -439,7 +439,7 @@ NsTclReflowTextObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
                     outputPos++;
                     if ( textString[inputPos] == '\n') {
                         if (prefixLength > 0) {
-                            memcpy(&dsPtr->string[outputPos], prefixString, prefixLength);
+                            memcpy(&dsPtr->string[outputPos], prefixString, (size_t)prefixLength);
                             outputPos += (size_t)prefixLength;
                         }
                         currentWidth = 0u;
