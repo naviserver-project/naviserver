@@ -385,7 +385,6 @@ EvalThread(void *arg)
     Tcl_DString ds, unameDS;
     char        ipString[NS_IPADDR_SIZE];
     int         ncmd, stop;
-    TCL_SIZE_T  len;
     Sess       *sessPtr = arg;
     const char *server = sessPtr->modPtr->server;
 
@@ -423,6 +422,7 @@ EvalThread(void *arg)
 
     ncmd = 0;
     while (stop == 0) {
+        TCL_SIZE_T  len;
         const char *resultString;
         char        buf[64];
 
@@ -460,7 +460,7 @@ retry:
             if (sent <= 0) {
                 goto done;
             }
-            len -= sent;
+            len -= (TCL_SIZE_T)sent;
             resultString += sent;
         }
 
