@@ -244,12 +244,14 @@ SockRecv(Ns_Sock *sock, struct iovec *bufs, int nbufs,
 static ssize_t
 SockSend(Ns_Sock *sock, const struct iovec *bufs, int nbufs, unsigned int flags)
 {
-    ssize_t   sent;
-    bool      decork;
+    ssize_t       sent;
+    bool          decork;
+    unsigned long errorCode;
 
     decork = Ns_SockCork(sock, NS_TRUE);
 
-    sent = Ns_SockSendBufs2(sock->sock, bufs, nbufs, flags);
+    sent = Ns_SockSendBufsEx(sock->sock, bufs, nbufs, flags, &errorCode);
+    Ns_SockSetSendErrno(sock, errorCode);
 
     if (decork) {
         Ns_SockCork(sock, NS_FALSE);
