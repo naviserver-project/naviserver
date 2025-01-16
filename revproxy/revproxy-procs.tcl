@@ -38,7 +38,7 @@ namespace eval ::revproxy {
         -target
         {-targethost ""}
         {-connecttimeout 1s}
-        {-timeout 10.0s}
+        {-timeout 1m}
         {-sendtimeout ""}
         {-receivetimeout ""}
         {-validation_callback ""}

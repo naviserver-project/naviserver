@@ -202,8 +202,9 @@ nsf::proc ::revproxy::ns_http::done {
     if {$result != 0} {
         #
         # The behaviour when called via "done_callback" is slightly
-        # different to a direct call without the callback. In the
-        # callback case we get there just "0" or "1" as result.
+        # different to a direct call without the callback: In the
+        # callback case we see just "0" or "1" as result, we have to
+        # get the timeout from the result dict.
         #
         if {[dict exists $d state] && [dict get $d state] eq "NS_TIMEOUT"} {
             set result NS_TIMEOUT
@@ -211,29 +212,30 @@ nsf::proc ::revproxy::ns_http::done {
     }
     switch $result {
         NS_TIMEOUT {
-            ns_log notice ============================================ TIMEOUT (connchan [info exists connchan])
+            ns_log notice ::revproxy::ns_http::done =========================================== TIMEOUT (connchan [info exists connchan])
 
-            set connecttimeout [dict get $timeouts -connecttimeout]
-            set expiretimeout  [dict get $timeouts -expiretimeout]
-
-            ns_log notice "TIMEOUT after timeout $connecttimeout expire $expiretimeout during send to $url ($d) "
+            ns_log notice "::revproxy::ns_http::done timeouts $timeouts during send to $url ($d) "
             if {$partialresults && [dict exists $d error]} {
                 #
                 # This request was sent with "-partialresults" enabled
                 #
                 set errorMsg [dict get $d error]
                 set responseHeaders [dict get $d headers]
+                ns_log notice ".... timeout happened after [dict get $d time] seconds"
                 #log notice "RESULT contains error: '$errorMsg' /$::errorCode/\n$d"
 
-                if {[ns_set size $responseHeaders] > 0
+                if {![info exists connchan]
+                    && [ns_set size $responseHeaders] > 0
                     && [ns_set iget $responseHeaders content-length ""] eq ""
                 } {
                     #
-                    # We have a timeout, and not content length. This
-                    # is potentially a streaming HTML request, which
-                    # cannot be handled currently by ns_http. Diagnose
-                    # this condition in the log file, but still raise
-                    # an error.
+                    # We have a timeout, we are not using connhchan
+                    # (which supports streaming HTML), and we have no
+                    # content length. This is potentially a streaming
+                    # HTML request, which cannot be handled by ns_http
+                    # without the ns_connchan output channel. Diagnose
+                    # this condition in the log file, but still report
+                    # an error back to the client.
                     #
                     ns_log error "revproxy: streaming HTML attempt detected on ns_http for URL $url." \
                         "Please switch for this request to the ns_connchan interface!" <[ns_set format $responseHeaders]>
@@ -243,7 +245,7 @@ nsf::proc ::revproxy::ns_http::done {
                 set errorMsg $d
             }
 
-            log notice "TIMEOUT during send to $url ($errorMsg) "
+            #log notice "TIMEOUT during send to $url ($errorMsg) "
             ::revproxy::upstream_send_failed \
                 -status 504 \
                 -errorMsg $errorMsg \
@@ -255,7 +257,7 @@ nsf::proc ::revproxy::ns_http::done {
             #
             # Success case
             #
-            #log notice ============================================ SUCCESS (connchan [info exists connchan])
+            #log notice ::revproxy::ns_http::done =========================================== SUCCESS (connchan [info exists connchan])
 
             if {[info exists connchan]} {
                 #
@@ -273,7 +275,7 @@ nsf::proc ::revproxy::ns_http::done {
             if {$backend_response_callback ne ""} {
                 {*}$backend_response_callback -url $url -responseHeaders $responseHeaders -status $status
             }
-            log notice ============================================ SUCCESS (connected [ns_conn isconnected])
+            log notice ::revproxy::ns_http::done =========================================== SUCCESS (connected [ns_conn isconnected])
             if {[ns_conn isconnected]} {
                 #
                 # In the "connected" case, we have no connchan.
@@ -354,7 +356,7 @@ nsf::proc ::revproxy::ns_http::drain {channel {-done_callback ""}} {
     # unsent data, send it before closing.
     #
     if {[dict get [ns_connchan status $channel] sendbuffer] > 0} {
-        ns_log warning "revproxy ns_http+ns_connchan: final buffer of $channel is not empty:" \
+        ns_log notice "revproxy ns_http+ns_connchan: final buffer of $channel is not empty:" \
             [ns_connchan status $channel]
         #
         # ::revproxy::ns_http::drain_sendbuf will automatically close $channel
@@ -474,11 +476,11 @@ proc ::revproxy::ns_http::responseheaders {dict} {
         }
         if {$written == -1} {
             #
-            # Not sure, this is the best place, some new error cases
-            # might pop up, when the channel does not exist anymore
+            # Forcing a "connchan close" here might cause crashes.
+            # This still needs more investigations.
             #
-            ns_log warning "::revproxy::ns_http::responseheaders:  forcing close of channel $outputchan"
-            ns_connchan close $outputchan
+            ns_log warning "::revproxy::ns_http::responseheaders:  forcing close of channel $outputchan (NOT)"
+            #ns_connchan close $outputchan
         }
         log notice ::revproxy::ns_http::responseheaders towrite $toWrite written $written
     }

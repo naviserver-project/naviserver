@@ -68,7 +68,7 @@ The [emph revproxy] module supports two backend connection methods:
 
 [para]
 By default, you can set [option backendconnection] globally via the
-configuration file. It is also possible to override the connection
+configuration file. It is also possible to override the backend connection
 method per handler instance by specifying the option [option -backendconnection]
 to [cmd revproxy::upstream].  
 
@@ -409,9 +409,14 @@ nsd_revproxy_target=https://localhost:8445 \
  The following examples shows, how to define a virtual server
  accepting requests with the host header field [term cvs.local] (e.g.,
  add this domain name as alias to your host and use the name in the URL).
+ By defining the reverse proxy as a virtual server, one can
+ specify different resource limits (number of connection threads, upload limits),
+ different log files, different backend connection methods, etc.
 
- [para] Add this snippet e.g. to your NaviServer configuration and
- adjust the URLs/ports/names according to your needs.
+ [para] Add this snippet to your NaviServer configuration and
+ adjust the URLs/ports/names according to your needs. As it is, it will
+ use the reverse proxy for HTTP/HTTPS requests addressed to [term cvs.local]
+ to the backend server [term 127.0.0.1:8060].
 
 [example_begin]
  ########################################################################
@@ -444,8 +449,10 @@ nsd_revproxy_target=https://localhost:8445 \
 }
 [example_end]
 
-# Configure separate virtual server named "cvs", when server is
-# addressed via http://cvs.org/ or https://cvs.org/
+There are many configuration options possible. One could make the default server the reverse proxy,
+and use other servers for other purposes. One could also combine
+[uri ../../manual/files/admin-config.html "mass virtual hosting"] with the reverse proxy
+by defining appropriate mapping rules.
 
 
 [section REQUIREMENTS]
