@@ -321,6 +321,7 @@ static TCL_OBJCMDPROC_T HttpMeminfoObjCmd;
 static TCL_OBJCMDPROC_T HttpQueueObjCmd;
 static TCL_OBJCMDPROC_T HttpRunObjCmd;
 static TCL_OBJCMDPROC_T HttpStatsObjCmd;
+static TCL_OBJCMDPROC_T HttpTaskthreadsObjCmd;
 static TCL_OBJCMDPROC_T HttpWaitObjCmd;
 
 static NsHttpParseProc ChunkInitProc;
@@ -381,7 +382,7 @@ static NsHttpParseProc* EndParsers[] = {
  *
  *      Configure server-wide task queues for the [ns_http] command.
  *
- *      We configure the number of taskqueues, which corresponds to the number
+ *      We configure the number of task queues, which corresponds to the number
  *      of task threads.  For general Internet usage a single task queue
  *      suffices, as it is operating in event-loop mode. Where it becomes
  *      necessary to increase this is when running over very fast 10/100G
@@ -1380,18 +1381,19 @@ NsTclHttpObjCmd(
     Tcl_Obj *const* objv
 ) {
     const Ns_SubCmdSpec subcmds[] = {
-        {"cancel",     HttpCancelObjCmd},
-        {"cleanup",    HttpCleanupObjCmd},
-        {"keepalives", HttpKeepalivesObjCmd},
-        {"list",       HttpListObjCmd},
+        {"cancel",      HttpCancelObjCmd},
+        {"cleanup",     HttpCleanupObjCmd},
+        {"keepalives",  HttpKeepalivesObjCmd},
+        {"list",        HttpListObjCmd},
 #ifdef MEM_RECORD_DEBUG
-        {"meminfo",    HttpMeminfoObjCmd},
+        {"meminfo",     HttpMeminfoObjCmd},
 #endif
-        {"queue",      HttpQueueObjCmd},
-        {"run",        HttpRunObjCmd},
-        {"stats",      HttpStatsObjCmd},
-        {"wait",       HttpWaitObjCmd},
-        {NULL,         NULL}
+        {"queue",       HttpQueueObjCmd},
+        {"run",         HttpRunObjCmd},
+        {"stats",       HttpStatsObjCmd},
+        {"taskthreads", HttpTaskthreadsObjCmd},
+        {"wait",        HttpWaitObjCmd},
+        {NULL,          NULL}
     };
 
     return Ns_SubcmdObjv(subcmds, clientData, interp, objc, objv);
@@ -2123,6 +2125,60 @@ HttpStatsObjCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * HttpTaskthreadsObjCmd
+ *
+ *      Implements "ns_http taskthreads".
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+HttpTaskthreadsObjCmd(
+    ClientData  UNUSED(clientData),
+    Tcl_Interp *interp,
+    TCL_SIZE_T         objc,
+    Tcl_Obj    *const* objv
+) {
+    int result = TCL_OK;
+
+    if (Ns_ParseObjv(NULL, NULL, interp, 2, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        size_t   idx;
+        Tcl_Obj *resultObj = Tcl_NewListObj((TCL_SIZE_T)nsconf.tclhttptasks.numqueues, NULL);
+
+        for (idx = 0; idx < (size_t)nsconf.tclhttptasks.numqueues; idx++) {
+            Ns_TaskQueue *queue   = nsconf.tclhttptasks.queues[idx];
+            Tcl_Obj      *dictObj = Tcl_NewDictObj();
+            const char   *qName   = Ns_TaskQueueName(queue);
+
+            (void) Tcl_DictObjPut(NULL, dictObj,
+                                  Tcl_NewStringObj("name", 4),
+                                  Tcl_NewStringObj(qName, TCL_INDEX_NONE));
+            (void) Tcl_DictObjPut(NULL, dictObj,
+                                  Tcl_NewStringObj("running", 7),
+                                  Tcl_NewIntObj(Ns_TaskQueueLength(queue)));
+            (void) Tcl_DictObjPut(NULL, dictObj,
+                                  Tcl_NewStringObj("requests", 8),
+                                  Tcl_NewWideIntObj(Ns_TaskQueueRequests(queue)));
+
+            Tcl_ListObjAppendElement(interp, resultObj, dictObj);
+        }
+        Tcl_SetObjResult(interp, resultObj);
+
+    }
+    return result;
+}
+/*
+ *----------------------------------------------------------------------
+ *
  * HttpKeepalivesObjCmd
  *
  *      Implements "ns_http keepalives".
@@ -2608,7 +2664,7 @@ HttpQueue(
 #ifdef NS_WITH_RECENT_DEPRECATED
         if (doneCallbackDeprec != NULL) {
             doneCallback = doneCallbackDeprec;
-            Ns_Log(Warning, "ns_http %s: -donecallback option is deprecated;"
+            Ns_Log(Warning, "ns_http %s: -done_callback option is deprecated;"
                    " use -done_callback instead", Tcl_GetString(objv[1]));
         }
 #endif
@@ -4258,49 +4314,68 @@ HttpAppendRawBuffer(
     const char    *reason = "unknown";
     bool           silent = NS_FALSE;
     Ns_LogSeverity severity = Error;
+    char           errorBuffer[256];
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(buffer != NULL);
 
-    //fprintf(stderr, "============== HttpAppendRawBuffer %ld recvSpoolMode %d\n", size, httpPtr->recvSpoolMode);
+    /* fprintf(stderr, "============== HttpAppendRawBuffer %ld recvSpoolMode %d\n", size, httpPtr->recvSpoolMode);*/
+
     if (httpPtr->recvSpoolMode == NS_TRUE) {
         if (httpPtr->spoolFd != NS_INVALID_FD) {
             written = ns_write(httpPtr->spoolFd, buffer, size);
         } else if ((httpPtr->flags & NS_HTTP_CONNCHAN) != 0u) {
-            Tcl_Interp *interp = NsTclAllocateInterp( httpPtr->servPtr);
+            Tcl_Interp   *interp    = NsTclAllocateInterp( httpPtr->servPtr);
+            unsigned long sendErrno = NsConnChanGetSendErrno(interp, httpPtr->servPtr, httpPtr->outputChanName);
 
-            //fprintf(stderr, "============== HttpAppendRawBuffer connchan write %s %ld bytes\n", httpPtr->outputChanName, size);
+            if (sendErrno == 0 || NsSockRetryCode((int)sendErrno)) {
+                result = NsConnChanWrite(interp, httpPtr->outputChanName, buffer, (TCL_SIZE_T)size, NS_TRUE, &written);
 
-            result = NsConnChanWrite(interp, httpPtr->outputChanName, buffer, (TCL_SIZE_T)size, NS_TRUE, &written);
+                /*fprintf(stderr, ".... connchan %s write returns result %s written %ld sockPtr %p\n",
+                  httpPtr->outputChanName, Ns_TclReturnCodeString(result), written, (void*)sockPtr);*/
+
+                if (written > 100000) {
+                    fprintf(stderr, ".... connchan %s unreasonable written value: %ld\n",
+                           httpPtr->outputChanName, written);
+                }
+            } else {
+                /*
+                 * When the sockPtr to write to is already in an error state,
+                 * it does not make sense to append to it. Actually, there
+                 * should be some means to abort the fill request. Returning
+                 * TCL_ERROR does not seem sufficient, since we are called
+                 * multiple times.
+                 */
+                //sendErrno = sockPtr->sendErrno;
+                Ns_Log(Notice, ".... connchan %s already in error state errNo %ld",  httpPtr->outputChanName, sendErrno);
+                silent = NS_TRUE;
+                result = TCL_ERROR;
+                written = -1;
+            }
             if ((ssize_t)size != written) {
-                NsConnChan *chan;
 
                 /*
                  * We could not deliver the received content via connchan.  On
-                 * the receiving side, everything is ok, but on the sending
-                 * side, it is not.
+                 * the receiving side, everything is ok, but on the output
+                 * delivery side, it is not.
                  */
-                chan = NsConnChanGet(interp, httpPtr->servPtr, httpPtr->outputChanName);
-                if (chan != NULL && chan->sockPtr != NULL) {
-                    if (chan->sockPtr->sendErrno == ECONNRESET) {
-                        /*
-                         * ECONNRESET means "Connection reset by peer". This
-                         * is not really an error, but happens frequently.w
-                         */
-                        silent = NS_TRUE;
-                    } else {
-                        Ns_Log(Ns_LogTaskDebug, "HttpAppendRawBuffer: connchan write %s %ld bytes written %ld sendbuf %ld",
-                               httpPtr->outputChanName, size, written,
-                               chan->sendBuffer == NULL ? -1 : (long)chan->sendBuffer->length);
-                    }
-                    if (written > 0) {
-                        reason = "partial write";
-                        severity = Warning;
-                    } else {
-                        reason = ns_sockstrerror((int)chan->sockPtr->sendErrno);
-                    }
-                    httpPtr->flags |= NS_HTTP_OUTPUT_ERROR;
+                if (sendErrno == ECONNRESET) {
+                    /*
+                     * ECONNRESET means "Connection reset by peer". This
+                     * is not really an error, but happens frequently.
+                     */
+                    silent = NS_TRUE;
+                } else {
+                    Ns_Log(Ns_LogTaskDebug, "HttpAppendRawBuffer: connchan write %s %ld bytes written %ld",
+                           httpPtr->outputChanName, size, written);
                 }
+                if (written > 0) {
+                    reason = "partial write";
+                    severity = Warning;
+                } else {
+                    reason = NsSockErrorCodeString(sendErrno, errorBuffer, sizeof(errorBuffer));
+                }
+                httpPtr->flags |= NS_HTTP_OUTPUT_ERROR;
             }
             Ns_TclDeAllocateInterp(interp);
 
@@ -4976,10 +5051,11 @@ HttpTaskSend(
     const void *buffer,
     size_t length
 ) {
-    ssize_t sent;
-    struct  iovec iov;
+    struct       iovec iov;
     const struct iovec *bufs = &iov;
-    int     nbufs = 1;
+    ssize_t            sent;
+    int                nbufs = 1;
+    unsigned long      errorCode = 0;
 
     NS_NONNULL_ASSERT(httpPtr != NULL);
     NS_NONNULL_ASSERT(buffer != NULL);
@@ -4988,7 +5064,11 @@ HttpTaskSend(
     iov.iov_len = length;
 
     if (httpPtr->ssl == NULL) {
-        sent = Ns_SockSendBufs2(httpPtr->sock, bufs, nbufs, 0);
+        sent = Ns_SockSendBufsEx(httpPtr->sock, bufs, nbufs, 0, &errorCode);
+        /*
+         * Currently, we do not propagate the "errorCode", ... but we should.
+         * In the HTTPS case, we have no errorCode yet.
+         */
     } else {
 #ifndef HAVE_OPENSSL_EVP_H
         sent = -1;
@@ -5784,6 +5864,7 @@ HttpProc(
             HttpCutChannel(NULL, httpPtr->spoolChan);
         }
         if (httpPtr->doneCallback != NULL) {
+            Ns_TaskSetCompleted(httpPtr->task);
             HttpDoneCallback(httpPtr); /* Does free on the httpPtr */
             httpPtr = NULL;
         }

@@ -185,6 +185,26 @@ and [term replybodysize] will have the same value.
 Optional ID of the HTTP request to get statistics for.
 [list_end]
 
+[call [cmd "ns_http taskthreads"] \
+    [opt [option "-timeout [arg time]"]] \
+    [arg id] \
+  ]
+
+Returns a list of Tcl dictionaries containing information about the state of the
+ns_http task threads. Every dict in this list contains the keys
+[term name], [term running], and [term requests], where the
+[term name] is the name of the task thread, [term running] is the
+number of currently running ns_http tasks, and [term requests]
+is the total number of requests processed so far by this task thread.
+
+[para] In the example below, there are two task queues defined.
+[example_begin]
+ % ns_http taskthreads
+ {name tclhttp.0 running 42 requests 21925} {name tclhttp.1 running 37 requests 25739}
+[example_end]
+
+The total number of task threads can be tailored via the configuration
+parameter [term nshttptaskthreads] as shown below.
 
 [call [cmd "ns_http wait"] \
     [opt [option "-timeout [arg time]"]] \
