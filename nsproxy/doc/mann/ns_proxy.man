@@ -7,14 +7,22 @@
 [description]
 
 [cmd ns_proxy] provides a simple, robust proxy mechanism to evaluate
-Tcl scripts in a separate, pipe-connected process. This approach
-can be useful both to isolate potentially thread-unsafe code outside
-the address space of a multithreaded process such as NaviServer or
-to enable separation and timeout of potentially misbehaving, long
-running scripts.
+Tcl commands and scripts in a separate, pipe-connected process. This
+is not to be mixed up with a reverse proxy server or a forwarding
+proxy server, which both by receiving and forwarding HTPP
+requests. The [cmd ns_proxy] just forwards Tcl commands and scripts to a
+different process.
+
+[para] [cmd ns_proxy] isolates potentially thread-unsafe code outside
+the address space of the multithreaded NaviServer process and
+enables separation and timeout of potentially misbehaving, long
+running scripts. It is also useful, when fork time becomes large,
+since the nsproxy workers require typically less memory. This is
+relevant, e.g., for executing system commands, or performing pipe
+operations in the Tcl [cmd open] command.
 
 [para]
-The command is provided by the [emph nsproxy] dynamic library which
+The [cmd ns_proxy] command is provided by the [emph nsproxy] dynamic library which
 can be loaded into an interpreter via the Tcl [emph load] command,
 for example:
 
@@ -554,7 +562,7 @@ The following demonstrates using multiple proxies:
 
 
 
-[see_also ns_job]
+[see_also ns_job revproxy]
 [keywords module nsproxy "server built-in" proxy exec pools background]
 
 [manpage_end]

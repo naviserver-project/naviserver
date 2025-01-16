@@ -7,8 +7,11 @@
 
 [description]
 
-The [emph revproxy] module provides a reverse proxy solution for
-NaviServer. It allows you to forward incoming requests to one or more
+The [emph revproxy] module provides a reverse proxy solution for NaviServer.
+A reverse proxy server receives HTTP requests from outside and forwards
+these requests to some internal servers (backend servers), which are typically
+not reachable directly from the clients.
+The reverse proxy modules allows you to forward incoming requests to one or more
 backend systems, via HTTP or HTTPS connections. The module also
 supports WebSockets (including secure WebSockets).
 
@@ -71,6 +74,14 @@ By default, you can set [option backendconnection] globally via the
 configuration file. It is also possible to override the backend connection
 method per handler instance by specifying the option [option -backendconnection]
 to [cmd revproxy::upstream].  
+
+[para] Figure 1 shows the interaction between a client, the reverse proxy server and the backend server, in particular, when the [option backendconnection] is set to [term ns_http+ns_connchan]. The incoming request is always processed by the network driver of NaviServer ([term nssock] or [term nsssl]). After the request is processed, we have the request header in the form of an ns_set and the request body either as spool file or as string. At this time, the URL rewrite callbacj and later the validation callback is fired (see [sectref {ADVANCED CUSTOMIZATION}]) for more details). The [option backendconnection] defines then, how the request is sent to the backend, and how the results are received and delivered to the client. In the case of [emph ns_http+ns_connchan], the response headers from the backend server are sent the client before the response body is received.  Also, the response body is forwarded to the client incrementally.
+
+
+[para][image revproxy1 "Reverse Proxy Server with backendconnection ns_http+ns_connchan"]
+[para]Figure 1: Reverse Proxy Server with configuration ns_http+ns_connchan
+
+[para] On the contrary, when the [option backendconnection] is [emph ns_http], forwarding to the client happens after the full request has been received by the reverse proxy. When [emph ns_connchan] is used, the transfer is also incrementally, but with the drawbacks mentioned above.
 
 [section CONFIGURATION]
 
@@ -234,7 +245,6 @@ The callback has no default. Example signature:
  }
 [example_end]
 [list_end]
-
 
 
 [section {ENSURING NETWORK DRIVERS ARE LOADED}]
@@ -463,6 +473,6 @@ by defining appropriate mapping rules.
 
 
 [see_also ns_register ns_register_tcl ns_register_proc ns_register_filter ns_http ns_connchan]
-[keywords reverseproxy filter handler request HTTP-client logging module nsf configuration]
+[keywords "reverse proxy" proxy filter handler request HTTP-client logging module nsf configuration]
 
 [manpage_end]
