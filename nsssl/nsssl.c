@@ -403,10 +403,12 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs, unsigned int UNUSED(fla
                 ERR_clear_error();
                 rc = SSL_write(sslCtx->ssl, bufs->iov_base, (int)bufs->iov_len);
                 if (rc <= 0) {
-                    int sslerr = SSL_get_error(sslCtx->ssl, rc);
+                    int           sslerr    = SSL_get_error(sslCtx->ssl, rc);
+                    unsigned long errorCode = ERR_get_error();
 
                     /*fprintf(stderr,
-                      "### SSL_write %p len %d rc %d SSL_get_error => %d: %s\n",
+                      "### SSL_write sock(%s): %p len %d rc %d SSL_get_error => %d: %s\n",
+                      sock->sock,
                       (void*)bufs->iov_base, (int)bufs->iov_len,
                       rc, sslerr, ERR_error_string(ERR_get_error(), NULL));*/
 
@@ -421,10 +423,18 @@ Send(Ns_Sock *sock, const struct iovec *bufs, int nbufs, unsigned int UNUSED(fla
                         break;
                     }
 
-                    SSL_set_shutdown(sslCtx->ssl, SSL_RECEIVED_SHUTDOWN);
+                    Ns_Log(Debug, "... errorCode %.8lx ERR_GET_LIB %d ERR_LIB_SYS %d",
+                           errorCode, ERR_GET_LIB(errorCode), ERR_LIB_SYS);
 
+                    if (ERR_GET_LIB(errorCode) == ERR_LIB_SYS) {
+                         Ns_Log(Debug, "...... reason %d", ERR_GET_REASON(errorCode));
+                         Ns_SockSetSendErrno(sock, (unsigned long)ERR_GET_REASON(errorCode));
+                    } else {
+                        Ns_SockSetSendErrno(sock, errorCode);
+                    }
+
+                    SSL_set_shutdown(sslCtx->ssl, SSL_RECEIVED_SHUTDOWN);
                     sent = -1;
-                    Ns_SockSetSendErrno(sock, (unsigned int)sslerr);
 
                     break; /* Any other error case is terminal */
                 }
