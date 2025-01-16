@@ -1667,6 +1667,9 @@ NS_EXTERN Ns_ReturnCode NsConnRequire(Tcl_Interp *interp, unsigned int flags, Ns
 NS_EXTERN NsConnChan *NsConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name)
     NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
+NS_EXTERN unsigned long NsConnChanGetSendErrno(Tcl_Interp *interp, NsServer *servPtr, const char *name)
+    NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
+
 NS_EXTERN int NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgString,
                               TCL_SIZE_T msgLength, bool buffered, ssize_t *nSentPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(6);

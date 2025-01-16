@@ -425,7 +425,7 @@ ConnChanFree(NsConnChan *connChanPtr, NsServer *servPtr) {
 /*
  *----------------------------------------------------------------------
  *
- * ConnChanGet --
+ * ConnChanGet, NsConnChanGet --
  *
  *      Access an NsConnChan from the per-server table via its name.
  *
@@ -440,7 +440,7 @@ ConnChanFree(NsConnChan *connChanPtr, NsServer *servPtr) {
 static NsConnChan *
 ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name) {
     const Tcl_HashEntry *hPtr;
-    NsConnChan          *connChanPtr = NULL;
+    NsConnChan          *connChanPtr;
 
     NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(name != NULL);
@@ -448,9 +448,7 @@ ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name) {
 
     Ns_RWLockRdLock(&servPtr->connchans.lock);
     hPtr = Tcl_FindHashEntry(&servPtr->connchans.table, name);
-    if (hPtr != NULL) {
-        connChanPtr = (NsConnChan *)Tcl_GetHashValue(hPtr);
-    }
+    connChanPtr = hPtr != NULL ? (NsConnChan *)Tcl_GetHashValue(hPtr) : NULL;
     Ns_RWLockUnlock(&servPtr->connchans.lock);
 
     if (connChanPtr == NULL && interp != NULL) {
@@ -464,6 +462,44 @@ NsConnChan *NsConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *nam
 {
     return ConnChanGet(interp, servPtr, name);
 
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * NsConnChanGetSendErrno --
+ *
+ *      Return sendErrno from the sockPtr of a connchan
+ *
+ * Results:
+ *      generalized error code (can hold POSIX and OpenSSL errors)
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+unsigned long
+NsConnChanGetSendErrno(Tcl_Interp *UNUSED(interp), NsServer *servPtr, const char *name)
+{
+    const Tcl_HashEntry *hPtr;
+    unsigned long        result = 0;
+
+    NS_NONNULL_ASSERT(servPtr != NULL);
+    NS_NONNULL_ASSERT(name != NULL);
+    servPtr = NsGetServer(nsconf.defaultServer);
+
+    Ns_RWLockRdLock(&servPtr->connchans.lock);
+    hPtr = Tcl_FindHashEntry(&servPtr->connchans.table, name);
+    if (hPtr != NULL) {
+        NsConnChan *connChanPtr = (NsConnChan *)Tcl_GetHashValue(hPtr);
+        result = (connChanPtr != NULL && connChanPtr->sockPtr != NULL)
+            ? connChanPtr->sockPtr->sendErrno
+            : 0u;
+    }
+    Ns_RWLockUnlock(&servPtr->connchans.lock);
+
+    return result;
 }
 
 
@@ -833,7 +869,9 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
         ssize_t nSent = 0, toSend = (ssize_t)Ns_SumVec(bufs, nbufs), origLength = toSend, partialResult;
 
         do {
-            ssize_t partialToSend = (ssize_t)Ns_SumVec(bufs, nbufs);
+            ssize_t       partialToSend = (ssize_t)Ns_SumVec(bufs, nbufs);
+            char          errorBuffer[256];
+            unsigned long sendErrno;
 
             Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend try to send [0] %" PRIdz
                    " bytes (total %"  PRIdz ")",
@@ -841,17 +879,23 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
                    bufs->iov_len, partialToSend);
 
             partialResult = NsDriverSend(sockPtr, bufs, nbufs, flags);
+            sendErrno = sockPtr->sendErrno;
 
-
-            if (sockPtr->sendErrno != 0 && sockPtr->sendErrno != ECONNRESET) {
-                Ns_Log(Warning, "%s ConnchanDriverSend NsDriverSend tosend %" PRIdz " returned result %"
-                       PRIdz " errorState %lu --- %s",
+            if (sendErrno != 0
+                && sendErrno != ECONNRESET
+                && !NsSockRetryCode((int)sendErrno)
+                && (ssize_t)bufs->iov_len != partialResult
+                ) {
+                Ns_Log(Warning, "%s ConnchanDriverSend NsDriverSend tosend %" PRIdz " sent %"
+                       PRIdz " errorState %.8lx --- %s",
                        connChanPtr->channelName, bufs->iov_len,
-                       partialResult, sockPtr->sendErrno, ns_sockstrerror((int)sockPtr->sendErrno));
+                       partialResult, sockPtr->sendErrno,
+                       NsSockErrorCodeString(sockPtr->sendErrno, errorBuffer, sizeof(errorBuffer)));
             } else {
-                Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend NsDriverSend returned result %"
-                       PRIdz " errorState %lu --- %s",
-                       connChanPtr->channelName, partialResult, sockPtr->sendErrno, ns_sockstrerror((int)sockPtr->sendErrno));
+                Ns_Log(Ns_LogConnchanDebug, "%s ConnchanDriverSend NsDriverSend sent %"
+                       PRIdz " errorState %.8lx --- %s",
+                       connChanPtr->channelName, partialResult, sockPtr->sendErrno,
+                       NsSockErrorCodeString(sockPtr->sendErrno, errorBuffer, sizeof(errorBuffer)));
             }
 
             if (partialResult == 0) {
@@ -2418,6 +2462,12 @@ NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgStr
                ", len[1] %" PRIdz " sent %" PRIdz,
                connChanName, nBufs, bufs[0].iov_len, bufs[1].iov_len, nSent);
 
+        if (nSent == -1) {
+            Ns_Log(Warning, "%s after ConnchanDriverSend nbufs %d len[0] %" PRIdz
+                   ", len[1] %" PRIdz " sent %" PRIdz " errno %ld",
+                   connChanName, nBufs, bufs[0].iov_len, bufs[1].iov_len, nSent,
+                   connChanPtr->sockPtr->sendErrno);
+        }
         if (nSent > -1) {
             size_t remaining = (size_t)toSend - (size_t)nSent;
 
