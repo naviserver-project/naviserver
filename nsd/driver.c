@@ -2205,12 +2205,19 @@ NsDriverSend(Sock *sockPtr, const struct iovec *bufs, int nbufs, unsigned int fl
 
     if (likely(drvPtr->sendProc != NULL)) {
         sent = (*drvPtr->sendProc)((Ns_Sock *) sockPtr, bufs, nbufs, flags);
-        if (unlikely(sent == -1) && sockPtr->sendErrno == 0) {
-            int       sockErr;
-            socklen_t len = (socklen_t)sizeof(sockErr);
+        if (unlikely(sent == -1)) {
+            if (sockPtr->sendErrno == 0) {
+                int       sockErr;
+                socklen_t len = (socklen_t)sizeof(sockErr);
 
-            if (getsockopt(sockPtr->sock, SOL_SOCKET, SO_ERROR, (void *)&sockErr, &len) != -1) {
-                sockPtr->sendErrno = (unsigned long)sockErr;
+                if (getsockopt(sockPtr->sock, SOL_SOCKET, SO_ERROR, (void *)&sockErr, &len) != -1) {
+                    Ns_Log(Notice, "... NsDriverSend: sock(%d) getsockopt returns errno %d for driver %s",
+                           sockPtr->sock, sockErr, drvPtr->threadName);
+                    sockPtr->sendErrno = (unsigned long)sockErr;
+                }
+            } else {
+                Ns_Log(Notice, "... NsDriverSend: got error code via sendErrno %ld for driver %s",
+                       sockPtr->sendErrno, drvPtr->threadName);
             }
         }
     } else {
