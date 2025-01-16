@@ -4329,7 +4329,9 @@ HttpAppendRawBuffer(
             unsigned long sendErrno = NsConnChanGetSendErrno(interp, httpPtr->servPtr, httpPtr->outputChanName);
 
             if (sendErrno == 0 || NsSockRetryCode((int)sendErrno)) {
-                result = NsConnChanWrite(interp, httpPtr->outputChanName, buffer, (TCL_SIZE_T)size, NS_TRUE, &written);
+
+                result = NsConnChanWrite(interp, httpPtr->outputChanName, buffer, (TCL_SIZE_T)size, NS_TRUE,
+                                         &written, &sendErrno);
 
                 /*fprintf(stderr, ".... connchan %s write returns result %s written %ld sockPtr %p\n",
                   httpPtr->outputChanName, Ns_TclReturnCodeString(result), written, (void*)sockPtr);*/

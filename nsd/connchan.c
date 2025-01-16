@@ -2365,7 +2365,8 @@ ConnChanReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
  *----------------------------------------------------------------------
  */
 int
-NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgString, TCL_SIZE_T msgLength, bool buffered, ssize_t *nSentPtr)
+NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgString, TCL_SIZE_T msgLength, bool buffered,
+                ssize_t *nSentPtr, unsigned long *errnoPtr)
 {
     //const NsInterp *itPtr = clientData;
     NsServer    *servPtr;
@@ -2658,6 +2659,7 @@ NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgStr
     }
     Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan write returns %s", connChanName, Ns_TclReturnCodeString(result));
 
+    *errnoPtr = connChanPtr->sockPtr->sendErrno;
     *nSentPtr = nSent;
     return result;
 }
@@ -2683,11 +2685,12 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
         result = TCL_ERROR;
 
     } else {
-        ssize_t      nSent;
-        TCL_SIZE_T   msgLength;
-        const char  *msgString = (const char *)Tcl_GetByteArrayFromObj(msgObj, &msgLength);
+        ssize_t       nSent;
+        TCL_SIZE_T    msgLength;
+        unsigned long errorCode;
+        const char   *msgString = (const char *)Tcl_GetByteArrayFromObj(msgObj, &msgLength);
 
-        result = NsConnChanWrite(interp, name, msgString, msgLength, buffered != 0, &nSent);
+        result = NsConnChanWrite(interp, name, msgString, msgLength, buffered != 0, &nSent, &errorCode);
     }
     Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan write returns %s", name, Ns_TclReturnCodeString(result));
     return result;
