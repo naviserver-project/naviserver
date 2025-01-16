@@ -57,11 +57,11 @@ proc test_case_name {} {
 #
 test ns_http-1.0  {syntax: ns_http} -body {
     ns_http
-} -returnCodes error -result {wrong # args: should be "ns_http cancel|cleanup|keepalives|list|queue|run|stats|wait ?/arg .../"}
+} -returnCodes error -result {wrong # args: should be "ns_http cancel|cleanup|keepalives|list|queue|run|stats|taskthreads|wait ?/arg .../"}
 
 test ns_http-1.1  {syntax: ns_http subcommands} -body {
     ns_http ?
-} -returnCodes error -result {ns_http: bad subcommand "?": must be cancel, cleanup, keepalives, list, queue, run, stats, or wait}
+} -returnCodes error -result {ns_http: bad subcommand "?": must be cancel, cleanup, keepalives, list, queue, run, stats, taskthreads, or wait}
 
 test ns_http-1.2 {syntax: ns_http cancel} -body {
     ns_http cancel
