@@ -4328,7 +4328,7 @@ HttpAppendRawBuffer(
             Tcl_Interp   *interp    = NsTclAllocateInterp( httpPtr->servPtr);
             unsigned long sendErrno = NsConnChanGetSendErrno(interp, httpPtr->servPtr, httpPtr->outputChanName);
 
-            if (sendErrno == 0 || NsSockRetryCode((int)sendErrno)) {
+            if (sendErrno == 0 || NsSockRetryCode((int)sendErrno) || (sendErrno == ENOTTY)) {
 
                 result = NsConnChanWrite(interp, httpPtr->outputChanName, buffer, (TCL_SIZE_T)size, NS_TRUE,
                                          &written, &sendErrno);
@@ -4348,8 +4348,8 @@ HttpAppendRawBuffer(
                  * TCL_ERROR does not seem sufficient, since we are called
                  * multiple times.
                  */
-                //sendErrno = sockPtr->sendErrno;
-                Ns_Log(Notice, ".... connchan %s already in error state errNo %ld",  httpPtr->outputChanName, sendErrno);
+                reason = NsSockErrorCodeString(sendErrno, errorBuffer, sizeof(errorBuffer));
+                Ns_Log(Notice, ".... connchan %s already in error state errNo %ld reason %s",  httpPtr->outputChanName, sendErrno, reason);
                 silent = NS_TRUE;
                 result = TCL_ERROR;
                 written = -1;
