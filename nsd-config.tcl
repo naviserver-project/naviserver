@@ -46,6 +46,7 @@ dict set defaultConfig vhostcertificates {$home/etc/certificates}
 dict set defaultConfig serverprettyname "My NaviServer Instance"
 dict set defaultConfig reverseproxymode false
 dict set defaultConfig trustedservers ""
+dict set defaultConfig enablehttpproxy false
 
 #
 # For all potential variables defined by the dict "defaultConfig",
@@ -285,8 +286,6 @@ if {[info exists httpport] && $httpport ne ""} {
     }
 }
 
-ns_log notice "HTTPSPORT=[info exists httpsport]"
-
 if {[info exists httpsport] && $httpsport ne ""} {
     #
     # We have an "httpsport" configured, so configure this module.
@@ -391,6 +390,7 @@ ns_section ns/module/http/servers {
 ########################################################################
 
 ns_section ns/server/default {
+    ns_param    enablehttpproxy     $enablehttpproxy
     ns_param    enabletclpages      true  ;# default: false
     #ns_param   filterrwlocks       false ;# default: true
     ns_param    checkmodifiedsince  false ;# default: true, check modified-since before returning files from cache. Disable for speedup
@@ -413,6 +413,7 @@ ns_section ns/server/default/modules {
     if {$nscpport ne ""} {ns_param nscp nscp}
     ns_param    nslog               nslog
     ns_param    nscgi               nscgi
+    ns_param    revproxy            tcl
 }
 
 ns_section ns/server/default/fastpath {
@@ -491,6 +492,10 @@ ns_section ns/server/default/module/nscp {
 
 ns_section ns/server/default/module/nscp/users {
     ns_param user "::"
+}
+
+ns_section ns/server/default/module/revproxy {
+    ns_param verbose 1
 }
 
 set ::env(RANDFILE) $home/.rnd
