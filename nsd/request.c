@@ -418,18 +418,16 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
                 }
 
             } else if (request->requestType == NS_REQUEST_TYPE_PROXY) {
-                errorMsg = "invalid proxy request";
                 if (*url == '\0') {
-                    Ns_Log(Warning, "%s, path must not be empty"
-                           " setting host '%s' port %hu protocol '%s' path '%s' from line '%s'",
-                           errorMsg, request->host, request->port, request->protocol, url, line);
-                    goto error;
-                }
-                if (request->protocol == NULL) {
-                    Ns_Log(Warning, "%s, protocol must be specified"
-                           " setting host '%s' port %hu path '%s' from line '%s'",
-                           errorMsg, request->host, request->port,  url, line);
-                    goto error;
+                    url = (char*)"/";
+                } else {
+                    errorMsg = "invalid proxy request";
+                    if (request->protocol == NULL) {
+                        Ns_Log(Warning, "%s, protocol must be specified"
+                               " setting host '%s' port %hu path '%s' from line '%s'",
+                               errorMsg, request->host, request->port,  url, line);
+                        goto error;
+                    }
                 }
 
             } else if (request->requestType == NS_REQUEST_TYPE_CONNECT && *url != '\0') {

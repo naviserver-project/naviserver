@@ -34,7 +34,7 @@ if {[ns_config -bool -set ns/server/[ns_info server] enablehttpproxy off]} {
         if {$port == 0} {
             set port 80
         }
-        set url http://[ns_conn host]:$port[ns_conn url]?[ns_conn query]
+        set url [ns_conn proto]://[ns_conn host]:$port[ns_conn url]?[ns_conn query]
         # Note, that this simple handler works only up to 20mb
         # requests, where all data is spooled to memory.
         set d [ns_http run -method [ns_conn method] -spoolsize 20MB $url]
