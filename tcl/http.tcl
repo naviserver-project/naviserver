@@ -30,16 +30,28 @@ if {[ns_config -bool -set ns/server/[ns_info server] enablehttpproxy off]} {
     nsv_set ns:proxy allow [ns_config -set ns/server/[ns_info server] allowhttpproxy]
 
     proc ns_simple_proxy_handler { args } {
-        set port [ns_conn port]
-        if {$port == 0} {
-            set port 80
+        ns_log warning "======== ns_simple_proxy_handler is called" (server [ns_info server]) <[info commands ::revproxy::ns_http::upstream]>
+        #
+        # Get the full URL from request line
+        #
+        if {![regexp {^\S+\s(\S.+)\s\S+$} [ns_conn request] . URL]} {
+            ns_log warning "proxy: request line malformed: <[ns_conn request]>"
+            ns_return 400 text/plain "invalid proxy request"
+        } elseif {[info commands ::revproxy::ns_http::upstream] ne ""} {
+            ns_log notice ::revproxy::ns_http::upstream -url $URL
+            return [::revproxy::ns_http::upstream \
+                        -url $URL \
+                        -request [::revproxy::request] \
+                        -spoolresponse true \
+                       ]
+        } else {
+            # Note, that this simple fallback handler works only up to 20mb
+            # requests, where all data is spooled to memory.
+            ns_log warning ns_http run -method [ns_conn method] -spoolsize 20MB $URL
+            set d [ns_http run -method [ns_conn method] -spoolsize 20MB $URL]
+            set content_type [ns_set get -nocase [dict get $d headers] content-type]
+            ns_return [dict get $d status] $content_type [dict get $d body]
         }
-        set url [ns_conn proto]://[ns_conn host]:$port[ns_conn url]?[ns_conn query]
-        # Note, that this simple handler works only up to 20mb
-        # requests, where all data is spooled to memory.
-        set d [ns_http run -method [ns_conn method] -spoolsize 20MB $url]
-        set content_type [ns_set get -nocase [dict get $d headers] content-type]
-        ns_return [dict get $d status] $content_type [dict get $d body]
     }
 }
 

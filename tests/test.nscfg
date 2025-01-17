@@ -54,7 +54,7 @@ ns_section "test" {
 
     set loopback_host [expr {[string match *:* $loopback] ? "\[$loopback\]" : $loopback}]
     ns_param listenurl http://$loopback_host:[ns_config test listenport]
-    ns_param tls_listenurl http://$loopback_host:[ns_config test tls_listenport]
+    ns_param tls_listenurl https://$loopback_host:[ns_config test tls_listenport]
 }
 
 ns_log notice "configure LOOPBACK $loopback LISTENURL [ns_config test listenurl]"
@@ -225,6 +225,7 @@ ns_section "ns/servers" {
 #
 
 ns_section "ns/server/test" {
+    ns_param   enablehttpproxy yes
     ns_param   URLCharset      utf-8
     ns_param   OutputCharset   utf-8
 
@@ -264,7 +265,7 @@ ns_section "ns/server/test/tcl" {
         # testserver, so load it for being able to test the commands
         # defined by these files.
         #
-        foreach module {nsdb nsperm} {
+        foreach module {nsdb nsperm revproxy} {
             foreach file [glob [ns_config "test" home]/../$module/*.tcl] {
                 source $file
             }
@@ -359,6 +360,7 @@ ns_section "ns/server/test/modules" {
     if {$nscp_port ne ""} {
         ns_param nscp          [ns_config "test" home]/../nscp/nscp[sharedlibextension]
     }
+    ns_param   revproxy tcl
 }
 
 #
@@ -366,6 +368,7 @@ ns_section "ns/server/test/modules" {
 #
 
 ns_section "ns/server/testvhost" {
+    ns_param   enablehttpproxy yes
     ns_param   enabletclpages  true
     ns_param   minthreads 1
     ns_param   maxthreads 3
@@ -379,6 +382,7 @@ ns_section "ns/server/testvhost/redirects" {
 }
 ns_section "ns/server/testvhost/modules" {
     ns_param   nslog           [ns_config "test" home]/../nslog/nslog[sharedlibextension]
+    ns_param   revproxy        tcl
 }
 ns_section "ns/server/testvhost/module/nslog" {
     ns_param   file            [ns_config "test" home]/testserver/access.log

@@ -170,13 +170,42 @@ namespace eval ::revproxy {
         }
 
         #
-        # Add extra "forwarded" header fields, i.e. "x-forwarded-for",
+        # Finally, start the transmission to the backend via the
+        # configured means.
+        #
+        return [::revproxy::${backendconnection}::upstream \
+                    -url $url \
+                    -timeout $timeout \
+                    -connecttimeout $connecttimeout \
+                    -sendtimeout $sendtimeout \
+                    -receivetimeout $receivetimeout \
+                    -validation_callback $validation_callback \
+                    -exception_callback $exception_callback \
+                    -backend_response_callback $backend_response_callback \
+                    -request [::revproxy::request -targethost $targethost] \
+                    {*}$extraArgs
+                   ]
+    }
+
+    nsf::proc ::revproxy::request {{-targethost ""}} {
+        set requestHeaders [ns_conn headers]
+        #
+        # Add extra "forwarded" header fields, i.e. "x-forwarded-for", "via",
         # "x-forwarded-proto", and "x-ssl-request" (if appropriate).
         #
         set XForwardedFor [split [ns_set iget $requestHeaders "x-forwarded-for" ""] " ,"]
         set XForwardedFor [lmap e $XForwardedFor {if {$e eq ""} continue; set $e}]
         lappend XForwardedFor [ns_conn peeraddr]
         ns_set iupdate $requestHeaders x-forwarded-for [join $XForwardedFor ","]
+
+        #
+        # Use via pseudonym based on server name and pid (should be
+        # sufficient to detect loops)
+        #
+        set via [split [ns_set iget $requestHeaders "via" ""] ","]
+        set via [lmap e $via {if {$e eq ""} continue; string trim $e}]
+        lappend via "[ns_conn version] [ns_info server]-[pid]"
+        ns_set iupdate $requestHeaders via [join $via ","]
 
         set proto [ns_conn protocol]
         ns_set iupdate $requestHeaders x-forwarded-proto $proto
@@ -221,28 +250,14 @@ namespace eval ::revproxy {
             set computedContentLength [string length [dict get $request content]]
         }
 
-        if {$contentLength eq "" && $contentLength > 0} {
+        if {$contentLength eq "" && $computedContentLength > 0} {
             log notice "adding missing content-length $computedContentLength"
             ns_set iupdate $requestHeaders content-length $computedContentLength
         }
 
-        #
-        # Finally, start the transmission to the backend via the
-        # configured means.
-        #
-        return [::revproxy::${backendconnection}::upstream \
-                    -url $url \
-                    -timeout $timeout \
-                    -connecttimeout $connecttimeout \
-                    -sendtimeout $sendtimeout \
-                    -receivetimeout $receivetimeout \
-                    -validation_callback $validation_callback \
-                    -exception_callback $exception_callback \
-                    -backend_response_callback $backend_response_callback \
-                    -request $request \
-                    {*}$extraArgs
-                   ]
+        return $request
     }
+
 
     nsf::proc upstream_send_failed {
         {-status 503}

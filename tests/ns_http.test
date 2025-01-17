@@ -2727,6 +2727,34 @@ test http-11.2.2 {
     unset -nocomplain i r0 r1 r2
 } -returnCodes {error ok} -result {200 200 2000 10}
 
+
+test proxy-1.0 {Test forward proxy with via HTTP with HTTP request} -constraints {
+    curl serverListen
+} -body {
+    ns_log notice "PROXY [ns_config test listenurl] request [ns_config test listenurl]/10bytes"
+    exec curl -v -x [ns_config test listenurl] -H "Host: test" [ns_config test listenurl]/10bytes  2> $devnull
+} -result {0123456789}
+
+test proxy-1.1 {Test forward proxy with via HTTPS with HTTP request} -constraints {
+    curl serverListen
+} -body {
+    ns_log notice "PROXY [ns_config test tls_listenurl] request [ns_config test listenurl]/10bytes"
+    exec curl --proxy-insecure -v -x [ns_config test tls_listenurl] -H "Host: test" [ns_config test listenurl]/10bytes  2> $devnull
+} -result {0123456789}
+
+test proxy-1.2 {Test forward proxy with via HTTPS with HTTPS request} -constraints {
+    curl serverListen
+} -body {
+    #
+    # When the request is for an HTTPS URL, curl uses the CONNECT method, which is currently not supported.
+    #
+    ns_log notice "PROXY [ns_config test tls_listenurl] request [ns_config test tls_listenurl]/10bytes"
+    set cmd "curl -k --proxy-insecure -x [ns_config test tls_listenurl] -H \"Host: test\" [ns_config test tls_listenurl]/10bytes"
+    catch {exec {*}$cmd $devnull} errorMsg
+    set errorMsg
+} -returnCodes {error ok} -match glob -result {*CONNECT *failed*405*}
+
+
 cleanupTests
 
 # Local variables:
