@@ -821,6 +821,37 @@ will be served with the following extra response header fields.
 
 [para]
 
+[subsection {Forward and Reverse Proxy Server configuration}]
+
+NaviServer can be configured in addition to the other server
+operations as a classical "forward" HTTP proxy server, or as a reverse
+proxy server.  A forwarding proxy server handles outbound traffic on
+behalf of clients, shielding the client’s identity or controlling
+outbound traffic.  This is different from a reverse proxy server,
+which is managing traffic towards internal servers. A reverse proxy
+server receives HTTP requests from outside and forwards these requests
+to some internal servers (backend servers), which are typically not
+reachable directly from the clients.
+
+[para] For the configuration as a forwarding proxy server, the
+parameter [term enablehttpproxy] must be activated. It is also
+recommended to load the [term revproxy] module to since this contains
+a scaling infrastructure for proxy requests. If the module is not
+activated, a simple fallback is used.
+
+[example_begin]
+ ns_section ns/server/s1 {
+    ...
+    ns_param enablehttpproxy true
+    ...
+ }
+ ns_section ns/server/s1/modules {
+   ns_param revproxy tcl
+ }
+[example_end]
+
+For the activation and configuration of NaviServer as a reverse proxy
+server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuration.
 
 [para] More to come here...
 
@@ -885,7 +916,8 @@ tailored error messages depending on the HTTP status codes.
 	performance tuning configuration \
 	SO_REUSEPORT TCP TCP_FASTOPEN \
 	"connection thread pools" \
-	driver prebind pagedir reverseproxy \
+	driver prebind pagedir \
+        proxy "reverse proxy" "forwarding proxy" \
         certificate TLS HTTPS OCSP SNI initcmds letsencrypt redirect \
         ADP templates]
 [see_also tcl-libraries tcl-overview]
