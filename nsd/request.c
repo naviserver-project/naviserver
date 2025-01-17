@@ -430,12 +430,18 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
                     }
                 }
 
-            } else if (request->requestType == NS_REQUEST_TYPE_CONNECT && *url != '\0') {
-                errorMsg = "invalid CONNECT request";
-                Ns_Log(Warning, "%s, path must be empty"
-                       " setting host '%s' port %hu protocol '%s' path '%s' from line '%s'",
-                       errorMsg, request->host, request->port, request->protocol, url, line);
-                goto error;
+            } else if (request->requestType == NS_REQUEST_TYPE_CONNECT) {
+                if (*url != '\0') {
+                    errorMsg = "invalid CONNECT request";
+                    Ns_Log(Warning, "%s, path must be empty"
+                           " setting host '%s' port %hu protocol '%s' path '%s' from line '%s'",
+                           errorMsg, request->host, request->port, request->protocol, url, line);
+                    goto error;
+                }
+                /*
+                 * We need an URL in SetUrl(), without SetUrl, NsUrlSpecificGet() will crash
+                 */
+                url = (char*)"/";
 
             } else if (request->requestType == NS_REQUEST_TYPE_ASTERISK
                        && strcasecmp(request->method, "OPTIONS") != 0) {
