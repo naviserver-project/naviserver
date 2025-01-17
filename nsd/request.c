@@ -383,7 +383,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
              */
             p = strchr(p, INTCHAR('/'));
             if (p != NULL) {
-                //*p++ = '\0';
+                *p++ = '\0';
                 url = p;
             } else {
                 url = (char*)"";

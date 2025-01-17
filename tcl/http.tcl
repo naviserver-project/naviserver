@@ -21,21 +21,25 @@
 #
 
 if {[ns_config -bool -set ns/server/[ns_info server] enablehttpproxy off]} {
-    ns_register_proxy GET  http* ns_simple_proxy_handler
-    ns_register_proxy POST http* ns_simple_proxy_handler
+
+    foreach httpMethod {GET POST} {
+        foreach proto {http https} {
+            ns_register_proxy $httpMethod $proto ns_simple_proxy_handler
+        }
+    }
     nsv_set ns:proxy allow [ns_config -set ns/server/[ns_info server] allowhttpproxy]
 
     proc ns_simple_proxy_handler { args } {
-         set port [ns_conn port]
+        set port [ns_conn port]
         if {$port == 0} {
             set port 80
         }
         set url http://[ns_conn host]:$port[ns_conn url]?[ns_conn query]
         # Note, that this simple handler works only up to 20mb
         # requests, where all data is spooled to memory.
-        set d [ns_http run -method [ns_conn method] -spoolsize 20m $url]
+        set d [ns_http run -method [ns_conn method] -spoolsize 20MB $url]
         set content_type [ns_set get -nocase [dict get $d headers] content-type]
-        ns_return [[dict get $d status] $content_type [dict get $d body]]
+        ns_return [dict get $d status] $content_type [dict get $d body]
     }
 }
 
