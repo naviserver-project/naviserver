@@ -254,15 +254,20 @@ serve as a model for this forward proxy).
  ns_register_proxy GET http http_proxy_handler
  
  proc http_proxy_handler { args } {
- 
-     set port [lb]ns_conn port[rb]
-     if {$port == 0} {
-         set port 80
+     #
+     # Get the full URL from request line
+     #
+     if {![lb]regexp {^\S+\s(\S.+)\s\S+$} [lb]ns_conn request[rb] . URL[rb]} {
+         ns_log warning "proxy: request line malformed: <[lb]ns_conn request[rb]>"
+         ns_return 400 text/plain "invalid proxy request"
+     } else {
+         #
+         # Run the request
+         #
+         set d [lb]ns_http run $URL[rb]
+         set content_type [lb]ns_set get -nocase [lb]dict get $d headers[rb] content-type[rb]
+         ns_return [lb][lb]dict get $d status[rb] $content_type [lb]dict get $d body[rb][rb]
      }
-     set url http://[lb]ns_conn host[rb]:$port[lb]ns_conn url[rb]?[lb]ns_conn query[rb]
-     set d [lb]ns_http run $url[rb]
-     set content_type [lb]ns_set get -nocase [lb]dict get $d headers[rb] content-type[rb]
-     ns_return [lb][lb]dict get $d status[rb] $content_type [lb]dict get $d body[rb][rb]
  }
 [example_end]
 
