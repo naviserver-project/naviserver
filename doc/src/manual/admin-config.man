@@ -821,7 +821,7 @@ will be served with the following extra response header fields.
 
 [para]
 
-[subsection {Forward and Reverse Proxy Server configuration}]
+[subsection {Forward and Reverse Proxy Server Configuration}]
 
 NaviServer can be configured in addition to the other server
 operations as a classical "forward" HTTP proxy server, or as a reverse
