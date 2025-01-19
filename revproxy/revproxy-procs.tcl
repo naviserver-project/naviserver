@@ -194,7 +194,7 @@ namespace eval ::revproxy {
         # "x-forwarded-proto", and "x-ssl-request" (if appropriate).
         #
         set XForwardedFor [split [ns_set iget $requestHeaders "x-forwarded-for" ""] " ,"]
-        set XForwardedFor [lmap e $XForwardedFor {if {$e eq ""} continue; set $e}]
+        set XForwardedFor [lmap e $XForwardedFor {if {$e eq ""} continue; set e}]
         lappend XForwardedFor [ns_conn peeraddr]
         ns_set iupdate $requestHeaders x-forwarded-for [join $XForwardedFor ","]
 
