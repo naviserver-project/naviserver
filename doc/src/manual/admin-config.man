@@ -823,14 +823,20 @@ will be served with the following extra response header fields.
 
 [subsection {Forward and Reverse Proxy Server Configuration}]
 
-NaviServer can be configured in addition to the other server
-operations as a classical "forward" HTTP proxy server, or as a reverse
-proxy server.  A forwarding proxy server handles outbound traffic on
-behalf of clients, shielding the client’s identity or controlling
-outbound traffic.  This is different from a reverse proxy server,
-which is managing traffic towards internal servers. A reverse proxy
-server receives HTTP requests from outside and forwards these requests
-to some internal servers (backend servers), which are typically not
+NaviServer can be configured additionally as a classical "forward"
+HTTP proxy server, and/or as a reverse proxy server. As described
+above, NaviServer can be configured to run behind a reverse proxy
+server, which has consequences on determining, e.g., the client's peer
+IP address and logging. The configuration for running behind a reverse
+proxy server was described in the section
+[sectref {Server Network Configuration}].
+
+[para] A forwarding proxy server handles outbound traffic on behalf of
+clients, shielding the client’s identity or controlling outbound
+traffic.  This is different from a reverse proxy server, which is
+managing traffic towards internal servers. A reverse proxy server
+receives HTTP requests from outside and forwards these requests to
+some internal servers (backend servers), which are typically not
 reachable directly from the clients.
 
 [para] For the configuration as a forwarding proxy server, the
@@ -852,6 +858,7 @@ activated, a simple fallback is used.
 
 For the activation and configuration of NaviServer as a reverse proxy
 server, see the [uri ../../revproxy/files/revproxy.html "revproxy"] configuration.
+
 
 [para] More to come here...
 
