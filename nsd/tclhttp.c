@@ -4336,10 +4336,10 @@ HttpAppendRawBuffer(
                 /*fprintf(stderr, ".... connchan %s write returns result %s written %ld sockPtr %p\n",
                   httpPtr->outputChanName, Ns_TclReturnCodeString(result), written, (void*)sockPtr);*/
 
-                if (written > 100000) {
+                /*if (written > 100000) {
                     fprintf(stderr, ".... connchan %s unreasonable written value: %ld\n",
                            httpPtr->outputChanName, written);
-                }
+                           }*/
             } else {
                 /*
                  * When the sockPtr to write to is already in an error state,
