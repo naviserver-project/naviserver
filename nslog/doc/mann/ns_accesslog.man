@@ -284,6 +284,7 @@ log file.
 
 
 [see_also ns_log ns_rollfile]
-[keywords module nslog "server built-in" logging path ipaddress reverseproxy]
+[keywords module nslog "server built-in" logging path ipaddress \
+        "reverse proxy"]
 
 [manpage_end]
