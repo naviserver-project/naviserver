@@ -37,7 +37,7 @@ typedef struct {
 
 static Ns_ServerInitProc ConfigServerProxy;
 static void WalkCallback(Tcl_DString *dsPtr, const void *arg) NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
-static void FreeRegisteredProc(void *arg) NS_GNUC_NONNULL(1);
+static void RegisteredProcDecrRef(void *arg) NS_GNUC_NONNULL(1);
 
 /*
  * Static variables defined in this file.
@@ -177,7 +177,7 @@ Ns_RegisterRequest(const char *server, const char *method, const char *url,
     regPtr->flags = flags;
     regPtr->refcnt = 1;
     Ns_MutexLock(&ulock);
-    Ns_UrlSpecificSet(server, method, url, uid, regPtr, flags, FreeRegisteredProc);
+    Ns_UrlSpecificSet(server, method, url, uid, regPtr, flags, RegisteredProcDecrRef);
     Ns_MutexUnlock(&ulock);
 }
 
@@ -391,7 +391,7 @@ Ns_ConnRunRequest(Ns_Conn *conn)
                 status = (*regPtr->proc) (regPtr->arg, conn);
 
                 Ns_MutexLock(&ulock);
-                FreeRegisteredProc(regPtr);
+                RegisteredProcDecrRef(regPtr);
                 Ns_MutexUnlock(&ulock);
             }
         }
@@ -515,7 +515,7 @@ Ns_RegisterProxyRequest(const char *server, const char *method, const char *prot
         Ns_MutexLock(&servPtr->request.plock);
         hPtr = Tcl_CreateHashEntry(&servPtr->request.proxy, ds.string, &isNew);
         if (isNew == 0) {
-            FreeRegisteredProc(Tcl_GetHashValue(hPtr));
+            RegisteredProcDecrRef(Tcl_GetHashValue(hPtr));
         }
         Tcl_SetHashValue(hPtr, regPtr);
         Ns_MutexUnlock(&servPtr->request.plock);
@@ -561,7 +561,7 @@ Ns_UnRegisterProxyRequest(const char *server, const char *method,
         Ns_MutexLock(&servPtr->request.plock);
         hPtr = Tcl_FindHashEntry(&servPtr->request.proxy, ds.string);
         if (hPtr != NULL) {
-            FreeRegisteredProc(Tcl_GetHashValue(hPtr));
+            RegisteredProcDecrRef(Tcl_GetHashValue(hPtr));
             Tcl_DeleteHashEntry(hPtr);
         }
         Ns_MutexUnlock(&servPtr->request.plock);
@@ -614,7 +614,7 @@ NsConnRunProxyRequest(Ns_Conn *conn)
     } else {
         status = (*regPtr->proc) (regPtr->arg, conn);
         Ns_MutexLock(&servPtr->request.plock);
-        FreeRegisteredProc(regPtr);
+        RegisteredProcDecrRef(regPtr);
         Ns_MutexUnlock(&servPtr->request.plock);
     }
     Ns_DStringFree(&ds);
@@ -671,7 +671,7 @@ WalkCallback(Tcl_DString *dsPtr, const void *arg)
 /*
  *----------------------------------------------------------------------
  *
- * FreeRegisteredProc --
+ * RegisteredProcDecrRef --
  *
  *      URL space callback to delete a request structure.
  *
@@ -685,7 +685,7 @@ WalkCallback(Tcl_DString *dsPtr, const void *arg)
  */
 
 static void
-FreeRegisteredProc(void *arg)
+RegisteredProcDecrRef(void *arg)
 {
     RegisteredProc *regPtr = (RegisteredProc *) arg;
 
