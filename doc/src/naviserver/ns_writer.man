@@ -166,6 +166,6 @@ reduce the damage of slow-read attacks.
 [example_end]
 
 [see_also ns_returnfile ns_conn ns_write ns_headers]
-[keywords "server built-in" writer configuration reverseproxy]
+[keywords "server built-in" writer configuration "reverse proxy"]
 
 [manpage_end]

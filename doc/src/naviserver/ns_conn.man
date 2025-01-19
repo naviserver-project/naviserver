@@ -441,7 +441,7 @@ encoded response.
 
 [see_also ns_adp ns_locationproc ns_getform ns_set ns_queryget \
   ns_time ns_getcontent]
-[keywords "server built-in" IPv4 IPv6 gzip connection reverseproxy SNI \
+[keywords "server built-in" IPv4 IPv6 gzip connection "reverse proxy" SNI \
   "virtual host"]
 
 [manpage_end]

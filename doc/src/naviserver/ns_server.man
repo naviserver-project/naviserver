@@ -413,6 +413,6 @@ adding a bot pool.
 [see_also ns_conn ns_register ns_urlspace]
 [keywords \
 	"server built-in" configuration "connection thread pools" \
-	mapspec pools pagedir tuning reverseproxy "virtual host"]
+	mapspec pools pagedir tuning "reverse proxy" "virtual host"]
 
 [manpage_end]

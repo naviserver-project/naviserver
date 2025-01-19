@@ -304,6 +304,7 @@ to listen on an HTTPS port, specify in the configuration of HTTPS the
 [term port] with value [const 0].
 
 [see_also ns_conn ns_chan ns_sockcallback ns_write ns_time nssock nsssl]
-[keywords "server built-in" channels socket driver "network driver" reverseproxy websocket]
+[keywords "server built-in" channels socket driver "network driver" \
+        "reverse proxy" websocket]
 
 [manpage_end]
