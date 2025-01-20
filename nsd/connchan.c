@@ -444,7 +444,7 @@ ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name) {
 
     NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(name != NULL);
-    servPtr = NsGetServer(nsconf.defaultServer);
+    //servPtr = NsGetServer(nsconf.defaultServer);
 
     Ns_RWLockRdLock(&servPtr->connchans.lock);
     hPtr = Tcl_FindHashEntry(&servPtr->connchans.table, name);
@@ -487,7 +487,7 @@ NsConnChanGetSendErrno(Tcl_Interp *UNUSED(interp), NsServer *servPtr, const char
 
     NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(name != NULL);
-    servPtr = NsGetServer(nsconf.defaultServer);
+    //servPtr = NsGetServer(nsconf.defaultServer);
 
     Ns_RWLockRdLock(&servPtr->connchans.lock);
     hPtr = Tcl_FindHashEntry(&servPtr->connchans.table, name);
@@ -688,7 +688,7 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
             if (cbPtr->connChanPtr != NULL) {
                 Ns_Log(Ns_LogConnchanDebug, "%s NsTclConnChanProc free channel",
                        cbPtr->connChanPtr->channelName);
-                servPtr = NsGetServer(nsconf.defaultServer);  // temporarily added
+                //servPtr = NsGetServer(nsconf.defaultServer);  // temporarily added
                 ConnChanFree(cbPtr->connChanPtr, servPtr);
                 cbPtr->connChanPtr = NULL;
             }
