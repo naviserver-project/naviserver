@@ -143,7 +143,7 @@ namespace eval ::revproxy::ns_connchan {
             set frontendChan [ns_connchan detach]
             log notice "backendChan $backendChan frontendChan $frontendChan " \
                 "method $method version 1.0 $url"
-            set done_cmd [list ::revproxy::ns_connchan::upstream_send_done \
+            set done_cmd [list ::revproxy::ns_connchan::upstream_request_submitted \
                               -backendChan $backendChan \
                               -frontendChan $frontendChan \
                               -url $url \
@@ -203,7 +203,7 @@ namespace eval ::revproxy::ns_connchan {
         return $continue
     }
 
-    nsf::proc upstream_send_done {
+    nsf::proc upstream_request_submitted {
         -backendChan
         -frontendChan
         -url
@@ -217,7 +217,7 @@ namespace eval ::revproxy::ns_connchan {
         # Full request was received and transmitted upstream, now
         # setup for replies.
         #
-        #ns_log notice "=== upstream_send_done ==="
+        #ns_log notice "=== upstream_request_submitted ==="
         try {
             set timeouts [list -timeout $timeout -sendtimeout $sendtimeout -receivetimeout $receivetimeout]
             #log notice "===== Set callbacks [ns_info server] frontendChan $frontendChan backendChan $backendChan"
@@ -236,7 +236,7 @@ namespace eval ::revproxy::ns_connchan {
                                   $backendChan $frontendChan $url $timeouts ""] rex
 
         } on error {errorMsg} {
-            ns_log error "upstream_send_done: $errorMsg"
+            ns_log error "upstream_request_submitted: $errorMsg"
             ::revproxy::ns_connchan::upstream_send_failed \
                 -errorMsg $errorMsg \
                 -url $url \
@@ -475,9 +475,9 @@ namespace eval ::revproxy::ns_connchan {
                 log notice "spool to $to: PARTIAL WRITE ($nrBytesSent of $toSend) " \
                     "register write callback for $to with remaining [expr {$toSend - $nrBytesSent}] bytes " \
                     "(sofar $::revproxy::spooled($to)), setting callback to " \
-                    "::revproxy::ns_connchan::write_once timeout [dict get $timeouts -timeout]"
+                    "::revproxy::ns_connchan::drain_write_buffer timeout [dict get $timeouts -timeout]"
                 #
-                # On revproxy::ns_connchan::write_once, we do not want to set the
+                # On revproxy::ns_connchan::drain_write_buffer, we do not want to set the
                 # sendtimeout for the time being (it would block), the
                 # receivetimeout is not necessary; so set just the
                 # polltimeout (specified via "-timeout). This timeout
@@ -486,7 +486,7 @@ namespace eval ::revproxy::ns_connchan {
                 #
                 ns_connchan callback \
                     -timeout [dict get $timeouts -timeout] \
-                    $to [list ::revproxy::ns_connchan::write_once $from $to $url $timeouts] wex
+                    $to [list ::revproxy::ns_connchan::drain_write_buffer $from $to $url $timeouts] wex
                 set result 2
             } else {
                 #
@@ -501,33 +501,33 @@ namespace eval ::revproxy::ns_connchan {
     }
 
     #
-    # revproxy::ns_connchan::write_once
+    # revproxy::ns_connchan::drain_write_buffer
     #
-    nsf::proc write_once { from to url timeouts condition } {
+    nsf::proc drain_write_buffer { from to url timeouts condition } {
         #
         # Callback for writable: writing has blocked before, we
         # suspended reading and wait for flushing out buffer before we
         # continue reading.
         #
-        log notice "revproxy::ns_connchan::write_once: condition $condition"
+        log notice "revproxy::ns_connchan::drain_write_buffer: condition $condition"
 
         if {$condition eq "t"} {
             ::revproxy::ns_connchan::gateway_timeout $to $url "timeout occurred while writing once $from to $to"
-            log notice "revproxy::ns_connchan::write_once timeout (MANUAL cleanup on $from to $to needed?)"
+            log notice "revproxy::ns_connchan::drain_write_buffer timeout (MANUAL cleanup on $from to $to needed?)"
             channelCleanup -close $from
             # returning 0 means automatic cleanup on $to
             return 0
         } elseif {$condition ne "w"} {
-            log warning "revproxy::ns_connchan::write_once unexpected condition '$condition' while writing to $to ($url)"
+            log warning "revproxy::ns_connchan::drain_write_buffer unexpected condition '$condition' while writing to $to ($url)"
             return 0
         }
 
         set buffered_bytes [dict get [ns_connchan status $to] sendbuffer]
-        log notice "revproxy::ns_connchan::write_once: want to send $buffered_bytes buffered bytes" \
+        log notice "revproxy::ns_connchan::drain_write_buffer: want to send $buffered_bytes buffered bytes" \
             "from $from to $to (condition $condition)"
 
         if {$buffered_bytes == 0} {
-            ns_log warning "revproxy::ns_connchan::write_once: have no BUFFERED BYTES during send to $to ($url)" \
+            ns_log warning "revproxy::ns_connchan::drain_write_buffer: have no BUFFERED BYTES during send to $to ($url)" \
                 "condition $condition status [ns_connchan status $to]"
             set continue 0
         } else {
@@ -542,7 +542,7 @@ namespace eval ::revproxy::ns_connchan {
                 # the transfer is aborted by the client. Don't
                 # complain about it.
                 #
-                log notice "revproxy::ns_connchan::write_once: EPIPE during send to $to ($url) "
+                log notice "revproxy::ns_connchan::drain_write_buffer: EPIPE during send to $to ($url) "
                 set continue 0
 
             } trap {POSIX ECONNRESET} {} {
@@ -553,34 +553,34 @@ namespace eval ::revproxy::ns_connchan {
                 # some other page. Do not raise an error entry in such
                 # cases.
                 #
-                log notice "revproxy::ns_connchan::write_once: ECONNRESET during send to $to ($url) "
+                log notice "revproxy::ns_connchan::drain_write_buffer: ECONNRESET during send to $to ($url) "
                 set continue 0
 
             } on error {errorMsg} {
-                ns_log error "revproxy::ns_connchan::write_once: returned error: $errorMsg ($::errorCode)"
+                ns_log error "revproxy::ns_connchan::drain_write_buffer: returned error: $errorMsg ($::errorCode)"
                 set continue 0
 
             } on ok {nrBytesSent} {
                 set status [ns_connchan status $to]
-                log notice "revproxy::ns_connchan::write_once: write ok, nrBytesSent <$nrBytesSent> status $status"
+                log notice "revproxy::ns_connchan::drain_write_buffer: write ok, nrBytesSent <$nrBytesSent> status $status"
             }
         }
         if {$continue == 1} {
             if {$nrBytesSent == 0} {
-                ns_log warning "revproxy::ns_connchan::write_once: strangely, we could not write," \
+                ns_log warning "revproxy::ns_connchan::drain_write_buffer: strangely, we could not write," \
                     "although the socket was writable" \
                     "(still [dict get $status sendbuffer] to send)... trigger again. \nStatus: $status"
                 ns_sleep 1ms
 
             } elseif {[dict get $status sendbuffer] > 0} {
-                log notice "revproxy::ns_connchan::write_once was not successful flushing the buffer " \
+                log notice "revproxy::ns_connchan::drain_write_buffer was not successful flushing the buffer " \
                     "(still [dict get $status sendbuffer])... trigger again. \nStatus: $status"
 
             } else {
                 #
                 # All was sent, fall back to normal read-event driven handler
                 #
-                log notice "revproxy::ns_connchan::write_once all was written to '$to' resume reading from '$from'"
+                log notice "revproxy::ns_connchan::drain_write_buffer all was written to '$to' resume reading from '$from'"
                 #    "\nFROM Status: [ns_connchan status $from]" \
                 #    "\n... old callback [dict get [ns_connchan status $from] callback]" \
                 #    "\n... new callback [list ::revproxy::spool $from $to $url $timeouts 0]"
@@ -600,11 +600,11 @@ namespace eval ::revproxy::ns_connchan {
             # There was an error. We must cleanup the "$from" channel
             # manually, the "$to" channel is automaticalled freed.
             #
-            log notice "revproxy: write_once MANUAL cleanup of $from (to $to automatic)"
+            log notice "revproxy: drain_write_buffer MANUAL cleanup of $from (to $to automatic)"
             #ns_connchan close $from
             channelCleanup -close $from
         }
-        log notice "revproxy::ns_connchan::write_once returns $continue (from $from to $to)"
+        log notice "revproxy::ns_connchan::drain_write_buffer returns $continue (from $from to $to)"
 
         return $continue
     }
