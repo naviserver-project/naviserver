@@ -376,7 +376,7 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
          */
         if (*p != '\0' && *p != '/') {
             bool  hostParsedOk;
-            char *h = p, *end;
+            char *h = p, *end, *hostName;
 
             /*
              * Search for the next slash
@@ -392,16 +392,16 @@ Ns_ParseRequest(Ns_Request *request, const char *line, size_t len)
             /*
              * Parse actually host and port
              */
-            hostParsedOk = Ns_HttpParseHost2(h, NS_FALSE, NULL, &p, &end);
+            hostParsedOk = Ns_HttpParseHost2(h, NS_FALSE, &hostName, &p, &end);
             if (hostParsedOk) {
-                //Ns_Log(Notice, "Parse host+port <%s> -> %d p <%s> end <%s>", h, hostParsedOk, p, end);
+                Ns_Log(Notice, "Parse host+porthostName <%s> p <%s> end <%s>", hostName, p, end);
                 if (p != NULL) {
                     /*
                      * We know, the port string is terminated by a slash or NUL.
                      */
                     request->port = (unsigned short)strtol(p, NULL, 10);
                 }
-                request->host = ns_strdup(h);
+                request->host = ns_strdup(hostName);
             }
 
             /*
