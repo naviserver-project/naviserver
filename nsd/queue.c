@@ -2692,7 +2692,9 @@ ConnRun(Conn *connPtr)
         Ns_GetTime(&connPtr->filterDoneTime);
         status = (*sockPtr->drvPtr->requestProc)(sockPtr->drvPtr->arg, conn);
 
-    } else if (connPtr->request.requestType == NS_REQUEST_TYPE_PROXY) {
+    } else if (connPtr->request.requestType == NS_REQUEST_TYPE_PROXY
+               || connPtr->request.requestType == NS_REQUEST_TYPE_CONNECT
+               ) {
         /*
          * Run proxy request
          */

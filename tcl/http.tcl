@@ -22,15 +22,16 @@
 
 if {[ns_config -bool -set ns/server/[ns_info server] enablehttpproxy off]} {
 
-    foreach httpMethod {GET POST} {
-        foreach proto {http https} {
-            ns_register_proxy $httpMethod $proto ns_simple_proxy_handler
+    foreach proto {http https} {
+        foreach httpMethod {GET POST} {
+            ns_register_proxy $httpMethod $proto ns_proxy_request
         }
+        ns_register_proxy CONNECT "" ns_proxy_connect
     }
     nsv_set ns:proxy allow [ns_config -set ns/server/[ns_info server] allowhttpproxy]
 
-    proc ns_simple_proxy_handler { args } {
-        ns_log warning "======== ns_simple_proxy_handler is called" (server [ns_info server]) <[info commands ::revproxy::ns_http::upstream]>
+    proc ns_proxy_request { args } {
+        ns_log warning "======== ns_proxy_request is called" args <$args> (server [ns_info server])
         #
         # Get the full URL from request line
         #
@@ -45,14 +46,52 @@ if {[ns_config -bool -set ns/server/[ns_info server] enablehttpproxy off]} {
                         -spoolresponse true \
                        ]
         } else {
-            # Note, that this simple fallback handler works only up to 20mb
-            # requests, where all data is spooled to memory.
-            ns_log warning ns_http run -method [ns_conn method] -spoolsize 20MB $URL
-            set d [ns_http run -method [ns_conn method] -spoolsize 20MB $URL]
-            set content_type [ns_set get -nocase [dict get $d headers] content-type]
-            ns_return [dict get $d status] $content_type [dict get $d body]
+            # Simple fallback handler
+            ns_log warning ns_http run -method [ns_conn method] -spoolsize 0 $URL
+            set d [ns_http run -method [ns_conn method] -spoolsize 0 $URL]
+            #ns_log notice ... $d
+            ns_headers [dict get $d status] [ns_set get -nocase [dict get $d headers] content-type]
+            ns_writer submitfile [dict get $d file]
+            file delete [dict get $d file]
         }
     }
+    proc ns_proxy_connect { args } {
+        ns_log warning "======== ns_proxy_connect is called" args <$args> (server [ns_info server])
+        ns_log notice [ns_set format [ns_conn headers]]
+        set peeraddr   [ns_conn peeraddr]
+        #
+        # We could/should add Proxy-Authorization here.  For now, we
+        # reject all requests from public clients and trust internal
+        # ones.
+        #
+        if { [ns_ip public $peeraddr]} {
+            ns_return 405 text/plain "CONNECT Request Rejected"
+        } else {
+            try {
+                set targetHost [ns_conn host]
+                set targetPort [ns_conn port]
+                set frontendChan [ns_connchan detach]
+                set backendChan [ns_connchan connect -timeout 1s $targetHost $targetPort]
+                ns_connchan write $frontendChan "HTTP/1.1 200 Connection Established\r\n\r\n"
+
+                set identifier "CONNECT ${targetHost} ${targetPort}"
+                ns_log notice $identifier frontendChan $frontendChan backendChan $backendChan \
+                    peeraddr $peeraddr public [ns_ip public $peeraddr] trusted [ns_ip trusted $peeraddr]
+                set timeouts {-sendtimeout 1s -receivetimeout 1s -timeout 1m}
+                set timeoutArgs [list -timeout [dict get $timeouts -timeout] \
+                                     -sendtimeout [dict get $timeouts -sendtimeout] \
+                                     -receivetimeout [dict get $timeouts -receivetimeout]]
+                ns_connchan callback {*}$timeoutArgs \
+                    $frontendChan [list ::revproxy::ns_connchan::spool $frontendChan $backendChan $identifier $timeouts ""] rex
+                ns_connchan callback {*}$timeoutArgs \
+                    $backendChan  [list ::revproxy::ns_connchan::spool $backendChan $frontendChan $identifier $timeouts ""] rex
+            } on error {errorMsg} {
+                ns_log error ns_proxy_connect: $errorMsg
+                catch {ns_connchan write $frontendChan "HTTP/1.0 500 Interal server error\r\n\r\n"}
+            }
+        }
+    }
+
 }
 
 #######################################################################################
@@ -632,67 +671,67 @@ if {[dict get [ns_info buildinfo] with_deprecated]} {
     # All requests that start with http:// will be proxied.
     #
 
-    if {[ns_config -bool -set ns/server/[ns_info server] enablehttpproxy off]} {
-        ns_register_proxy GET  http ns_proxy_handler_http
-        ns_register_proxy POST http ns_proxy_handler_http
-        nsv_set ns:proxy allow [ns_config -set ns/server/[ns_info server] allowhttpproxy]
-    }
+    # if {[ns_config -bool -set ns/server/[ns_info server] enablehttpproxy off]} {
+    #     ns_register_proxy GET  http ns_proxy_handler_http
+    #     ns_register_proxy POST http ns_proxy_handler_http
+    #     nsv_set ns:proxy allow [ns_config -set ns/server/[ns_info server] allowhttpproxy]
+    # }
 
 
-    proc ns_proxy_handler_http {args} {
+    # proc ns_proxy_handler_http {args} {
 
-        set allow 0
-        set peeraddr [ns_conn peeraddr]
-        foreach ip [nsv_get ns:proxy allow] {
-            if { [string match $ip $peeraddr] } {
-                set allow 1
-                break
-            }
-        }
-        if { $allow != 1 } {
-            ns_log Error ns_proxy_handler_http: access denied for $peeraddr
-            ns_returnnotfound
-            return
-        }
+    #     set allow 0
+    #     set peeraddr [ns_conn peeraddr]
+    #     foreach ip [nsv_get ns:proxy allow] {
+    #         if { [string match $ip $peeraddr] } {
+    #             set allow 1
+    #             break
+    #         }
+    #     }
+    #     if { $allow != 1 } {
+    #         ns_log Error ns_proxy_handler_http: access denied for $peeraddr
+    #         ns_returnnotfound
+    #         return
+    #     }
 
-        set port [ns_conn port]
-        if {$port == 0} {
-            set port 80
-        }
-        set cont   [ns_conn content]
-        set prot   [ns_conn protocol]
-        set method [ns_conn method]
+    #     set port [ns_conn port]
+    #     if {$port == 0} {
+    #         set port 80
+    #     }
+    #     set cont   [ns_conn content]
+    #     set prot   [ns_conn protocol]
+    #     set method [ns_conn method]
 
-        set url $prot://[ns_conn host]:$port[ns_conn url]?[ns_conn query]
+    #     set url $prot://[ns_conn host]:$port[ns_conn url]?[ns_conn query]
 
-        set fds [ns_httpopen $method $url [ns_conn headers] 30 $cont]
-        set rfd [lindex $fds 0]
-        set wfd [lindex $fds 1]; close $wfd
+    #     set fds [ns_httpopen $method $url [ns_conn headers] 30 $cont]
+    #     set rfd [lindex $fds 0]
+    #     set wfd [lindex $fds 1]; close $wfd
 
-        set headers  [lindex $fds 2]
-        set response [ns_set name $headers]
-        set status   [lindex $response 1]
-        set length   [ns_set iget $headers "content-length"]
-        if {$length eq {}} {
-            set length -1
-        }
+    #     set headers  [lindex $fds 2]
+    #     set response [ns_set name $headers]
+    #     set status   [lindex $response 1]
+    #     set length   [ns_set iget $headers "content-length"]
+    #     if {$length eq {}} {
+    #         set length -1
+    #     }
 
-        if {[catch {
-            ns_write "$response\r\n"
-            for {set i 0} {$i < [ns_set size $headers]} {incr i} {
-                set key [ns_set key   $headers $i]
-                set val [ns_set value $headers $i]
-                ns_write "$key: $val\r\n"
-            }
-            ns_write "\r\n"
-            _ns_http_getcontent 30 $rfd $length 1
-        } err]} {
-            ns_log error $err
-        }
+    #     if {[catch {
+    #         ns_write "$response\r\n"
+    #         for {set i 0} {$i < [ns_set size $headers]} {incr i} {
+    #             set key [ns_set key   $headers $i]
+    #             set val [ns_set value $headers $i]
+    #             ns_write "$key: $val\r\n"
+    #         }
+    #         ns_write "\r\n"
+    #         _ns_http_getcontent 30 $rfd $length 1
+    #     } err]} {
+    #         ns_log error $err
+    #     }
 
-        ns_set free $headers
-        close $rfd
-    }
+    #     ns_set free $headers
+    #     close $rfd
+    # }
 
     proc ns_ssl {args} {
 
