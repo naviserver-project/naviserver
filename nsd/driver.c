@@ -9278,12 +9278,9 @@ NSDriverClientOpen(Tcl_Interp *interp, const char *driverName,
 
             sockPtr = SockNew(drvPtr);
             sockPtr->sock = sock;
-            sockPtr->servPtr  = drvPtr->servPtr;
-            if (sockPtr->servPtr == NULL) {
-                const NsInterp *itPtr = NsGetInterpData(interp);
-
-                sockPtr->servPtr = itPtr->servPtr;
-            }
+            sockPtr->servPtr  = drvPtr->servPtr != NULL
+                ? drvPtr->servPtr
+                : NsGetInterpData(interp)->servPtr;
 
             sockPtr->reqPtr = RequestNew();
 
@@ -9371,9 +9368,11 @@ NSDriverSockNew(Tcl_Interp *interp, NS_SOCKET sock,
         Request     *reqPtr;
 
         sockPtr = SockNew(drvPtr);
-        sockPtr->servPtr = drvPtr->servPtr;
-        sockPtr->sock = sock;
+        sockPtr->servPtr  = drvPtr->servPtr != NULL
+            ? drvPtr->servPtr
+            : NsGetInterpData(interp)->servPtr;
 
+        sockPtr->sock = sock;
         sockPtr->reqPtr = RequestNew();
 
         // peerAddr is missing
