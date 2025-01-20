@@ -43,9 +43,10 @@
 
 [call [cmd "ns_ip trusted"]  [arg ipaddr]]
 
- Tests if the provided [arg ipaddr] was defined as a
- trusted IP address in the used configuration file. This is important
- for dealing with reverse proxy servers.
+ Tests if the provided [arg ipaddr] was defined as a trusted IP
+ address for an upstream reverse proxy server in the used
+ configuration file. This is important for running behind a reverse
+ proxy server.
 
 [call [cmd "ns_ip valid"]\
         [opt [option "-type ipv4|ipv6"]] \
@@ -85,7 +86,29 @@
 
 [example_end]
 
-[keywords "global built-in" IPv4 IPv6 CIDR subnet]
+[section CONFIGURATION]
+
+
+[example_begin|
+ ns_section ns/parameters/reverseproxymode {
+    ns_param enabled 1
+    #
+    # Define some address ranges of cloudflare as trusted sources
+    # for the "x-forwarded-for" header field.
+    #
+    ns_param trustedservers {
+       103.21.244.0/22
+       104.24.0.0/14
+       2400:cb00::/32
+       2606:4700::/32
+    }
+    # ....
+ }
+[example_end]
+
+
+[keywords "global built-in" IPv4 IPv6 CIDR subnet \
+        "behind reverse proxy" "reverse proxy"]
 [see_also ns_conn]
 
 [manpage_end]

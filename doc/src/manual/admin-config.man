@@ -924,7 +924,7 @@ tailored error messages depending on the HTTP status codes.
 	SO_REUSEPORT TCP TCP_FASTOPEN \
 	"connection thread pools" \
 	driver prebind pagedir \
-        proxy "reverse proxy" "forwarding proxy" \
+        proxy "reverse proxy" "forwarding proxy" "behind reverse proxy" \
         certificate TLS HTTPS OCSP SNI initcmds letsencrypt redirect \
         ADP templates]
 [see_also tcl-libraries tcl-overview]

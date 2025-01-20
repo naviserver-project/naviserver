@@ -174,7 +174,7 @@ ns_section ns/parameters/reverseproxymode {
     # servers. The list of servers can be provided by using IP
     # addresses or CIDR masks. Additionally, the processing mode of
     # the contents of the x-forwarded-for contents switches to
-    # right-to-left, skipping trusted servers. So, the dangerof
+    # right-to-left, skipping trusted servers. So, the danger of
     # obtaining spoofed addresses can be reduced.
     #
     ns_param trustedservers $trustedservers
