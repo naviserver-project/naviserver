@@ -4325,7 +4325,7 @@ HttpAppendRawBuffer(
         if (httpPtr->spoolFd != NS_INVALID_FD) {
             written = ns_write(httpPtr->spoolFd, buffer, size);
         } else if ((httpPtr->flags & NS_HTTP_CONNCHAN) != 0u) {
-            Tcl_Interp   *interp    = NsTclAllocateInterp( httpPtr->servPtr);
+            Tcl_Interp   *interp    = NsTclAllocateInterp(httpPtr->servPtr);
             unsigned long sendErrno = NsConnChanGetSendErrno(interp, httpPtr->servPtr, httpPtr->outputChanName);
 
             if (sendErrno == 0 || NsSockRetryCode((int)sendErrno) || (sendErrno == ENOTTY)) {
