@@ -116,7 +116,7 @@ namespace eval ::revproxy::ns_http {
         if {$queue} {
             set done_callbback [list ::revproxy::ns_http::done {*}$doneArgs]
 
-            log notice             ns_http queue \
+            #log notice             ns_http queue \
                 {*}$partialresultsFlag \
                 {*}$unixSocketArg \
                 -keep_host_header \
@@ -147,7 +147,7 @@ namespace eval ::revproxy::ns_http {
         } else {
 
             try {
-                log notice             ns_http run \
+                #log notice             ns_http run \
                     {*}$partialresultsFlag \
                     {*}$unixSocketArg \
                     -keep_host_header \
@@ -275,7 +275,7 @@ nsf::proc ::revproxy::ns_http::done {
             if {$backend_response_callback ne ""} {
                 {*}$backend_response_callback -url $url -responseHeaders $responseHeaders -status $status
             }
-            log notice ::revproxy::ns_http::done =========================================== SUCCESS (connected [ns_conn isconnected])
+            #log notice ::revproxy::ns_http::done =========================================== SUCCESS (connected [ns_conn isconnected])
             if {[ns_conn isconnected]} {
                 #
                 # In the "connected" case, we have no connchan.
@@ -324,7 +324,7 @@ nsf::proc ::revproxy::ns_http::done {
             # Error case
             #
             set errorMsg [expr {[dict exists $d error] ? [dict get $d error] : $d}]
-            log notice ============================================ ERROR (connchan [info exists connchan])
+            #log notice ============================================ ERROR (connchan [info exists connchan])
 
             set logmsg "::revproxy::ns_http::upstream: request to URL <$url> returned [list $errorMsg]"
             set silentFlag {}
@@ -482,7 +482,9 @@ proc ::revproxy::ns_http::responseheaders {dict} {
             ns_log warning "::revproxy::ns_http::responseheaders:  forcing close of channel $outputchan (NOT)"
             #ns_connchan close $outputchan
         }
-        log notice ::revproxy::ns_http::responseheaders towrite $toWrite written $written
+        if {$toWrite != $written} {
+            log notice ::revproxy::ns_http::responseheaders towrite $toWrite written $written
+        }
     }
 }
 
