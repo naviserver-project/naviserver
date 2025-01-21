@@ -31,7 +31,7 @@ if {[ns_config -bool -set ns/server/[ns_info server] enablehttpproxy off]} {
     nsv_set ns:proxy allow [ns_config -set ns/server/[ns_info server] allowhttpproxy]
 
     proc ns_proxy_request { args } {
-        ns_log warning "======== ns_proxy_request is called" args <$args> (server [ns_info server])
+        ns_log notice "======== ns_proxy_request is called" args <$args> (server [ns_info server])
         #
         # Get the full URL from request line
         #
@@ -47,7 +47,7 @@ if {[ns_config -bool -set ns/server/[ns_info server] enablehttpproxy off]} {
                        ]
         } else {
             # Simple fallback handler
-            ns_log warning ns_http run -method [ns_conn method] -spoolsize 0 $URL
+            ns_log notice ns_http run -method [ns_conn method] -spoolsize 0 $URL
             set d [ns_http run -method [ns_conn method] -spoolsize 0 $URL]
             #ns_log notice ... $d
             ns_headers [dict get $d status] [ns_set get -nocase [dict get $d headers] content-type]
@@ -56,7 +56,7 @@ if {[ns_config -bool -set ns/server/[ns_info server] enablehttpproxy off]} {
         }
     }
     proc ns_proxy_connect { args } {
-        ns_log warning "======== ns_proxy_connect is called" args <$args> (server [ns_info server])
+        ns_log notice "======== ns_proxy_connect is called" args <$args> (server [ns_info server])
         ns_log notice [ns_set format [ns_conn headers]]
         set peeraddr [ns_conn peeraddr -source direct]
         #
@@ -87,7 +87,7 @@ if {[ns_config -bool -set ns/server/[ns_info server] enablehttpproxy off]} {
                     $backendChan  [list ::revproxy::ns_connchan::spool $backendChan $frontendChan $identifier $timeouts ""] rex
             } on error {errorMsg} {
                 ns_log error ns_proxy_connect: $errorMsg
-                catch {ns_connchan write $frontendChan "HTTP/1.0 500 Interal server error\r\n\r\n"}
+                catch {ns_connchan write $frontendChan "HTTP/1.0 500 Internal server error\r\n\r\n"}
             }
         }
     }
