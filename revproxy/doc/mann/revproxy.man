@@ -46,6 +46,7 @@ The [emph revproxy] module supports two backend connection methods:
 [enum] [emph ns_connchan] (Classical Method, Tcl based)
 [list_begin itemized]
 [item] Fully Event-driven approach suitable for streaming HTML and WebSockets
+[item] Supports background operation (does not block connection threads)
 [item] Proven stability and robustness
 [item] May be required for requests that cannot currently be handled by ns_http (e.g., certain WebSocket upgrade requests)
 [item] No persistent connections supported
@@ -66,6 +67,7 @@ The [emph revproxy] module supports two backend connection methods:
 [list_begin itemized]
 [item] Uses [term ns_http] for request data sending and [term ns_connchan] for response spooling
 [item] Supports persistent connections and request streaming
+[item] Supports background operation (does not block connection threads)
 [list_end]
 [list_end]
 
@@ -256,12 +258,11 @@ still using HTTPS for backend requests, configure it to listen on port
 0:
 
 [example_begin]
- ns_section ns/server/$server/modules {
-   ns_param revproxy tcl
+ ns_section ns/modules {
    ns_param nsssl https
  }
  
- ns_section ns/server/$server/module/https {
+ ns_section ns/module/https {
    ns_param port 0
  }
 [example_end]
@@ -473,6 +474,7 @@ by defining appropriate mapping rules.
 
 
 [see_also ns_register ns_register_tcl ns_register_proc ns_register_filter ns_http ns_connchan]
-[keywords "reverse proxy" proxy filter handler request HTTP-client logging module nsf configuration]
+[keywords "reverse proxy" proxy filter handler request HTTP-client \
+        HTTP HTTPS logging module nsf configuration ]
 
 [manpage_end]

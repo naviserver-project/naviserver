@@ -926,7 +926,7 @@ tailored error messages depending on the HTTP status codes.
 	driver prebind pagedir \
         proxy "reverse proxy" "forwarding proxy" "behind reverse proxy" \
         certificate TLS HTTPS OCSP SNI initcmds letsencrypt redirect \
-        ADP templates]
+        ADP templates reverseproxymode]
 [see_also tcl-libraries tcl-overview]
 [manpage_end]
 

@@ -89,7 +89,7 @@
 [section CONFIGURATION]
 
 
-[example_begin|
+[example_begin]
  ns_section ns/parameters/reverseproxymode {
     ns_param enabled 1
     #
@@ -108,6 +108,7 @@
 
 
 [keywords "global built-in" IPv4 IPv6 CIDR subnet \
+        trustedservers reverseproxymode \
         "behind reverse proxy" "reverse proxy"]
 [see_also ns_conn]
 
