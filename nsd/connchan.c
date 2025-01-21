@@ -112,6 +112,7 @@ static ssize_t ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChan
 static char *WhenToString(char *buffer, unsigned int when)
     NS_GNUC_NONNULL(1);
 
+static NsServer *GetServer(NsServer *servPtr) NS_GNUC_NONNULL(1) NS_GNUC_PURE;
 static bool SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why));
 static void RequireDsBuffer(Tcl_DString **dsPtr)  NS_GNUC_NONNULL(1);
 static void WebsocketFrameSetCommonMembers(Tcl_Obj *resultObj, ssize_t nRead, const NsConnChan *connChanPtr)
@@ -131,6 +132,34 @@ static TCL_OBJCMDPROC_T   ConnChanWriteObjCmd;
 static TCL_OBJCMDPROC_T   ConnChanWsencodeObjCmd;
 
 static Ns_SockProc CallbackFree;
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetServer --
+ *
+ *      Return the server containing the hash-table for connchans.  We
+ *      used for a while the default server for the hash tables. This
+ *      procs eases the switch different policies.
+ *
+ * Results:
+ *      NsServer * or NULL
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+static NsServer *
+GetServer(NsServer *servPtr) {
+    /* NsServer *result;
+
+    result = NsGetServer(nsconf.defaultServer);
+    fprintf(stderr, "========== GetServer defaultServer %s provided %s\n", result->server, servPtr->server);
+    */
+    return servPtr;
+}
 
 
 /*
@@ -444,7 +473,7 @@ ConnChanGet(Tcl_Interp *interp, NsServer *servPtr, const char *name) {
 
     NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(name != NULL);
-    servPtr = NsGetServer(nsconf.defaultServer);
+    servPtr = GetServer(servPtr);
 
     Ns_RWLockRdLock(&servPtr->connchans.lock);
     hPtr = Tcl_FindHashEntry(&servPtr->connchans.table, name);
@@ -487,7 +516,7 @@ NsConnChanGetSendErrno(Tcl_Interp *UNUSED(interp), NsServer *servPtr, const char
 
     NS_NONNULL_ASSERT(servPtr != NULL);
     NS_NONNULL_ASSERT(name != NULL);
-    servPtr = NsGetServer(nsconf.defaultServer);
+    servPtr = GetServer(servPtr);
 
     Ns_RWLockRdLock(&servPtr->connchans.lock);
     hPtr = Tcl_FindHashEntry(&servPtr->connchans.table, name);
@@ -688,7 +717,7 @@ NsTclConnChanProc(NS_SOCKET UNUSED(sock), void *arg, unsigned int why)
             if (cbPtr->connChanPtr != NULL) {
                 Ns_Log(Ns_LogConnchanDebug, "%s NsTclConnChanProc free channel",
                        cbPtr->connChanPtr->channelName);
-                servPtr = NsGetServer(nsconf.defaultServer);  // temporarily added
+                servPtr = GetServer(servPtr);  // temporarily added
                 ConnChanFree(cbPtr->connChanPtr, servPtr);
                 cbPtr->connChanPtr = NULL;
             }
@@ -1043,7 +1072,7 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
         result = TCL_ERROR;
 
     } else {
-        NsServer         *servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
+        NsServer         *servPtr = GetServer(itPtr->servPtr);
         const NsConnChan *connChanPtr;
 
         /*
@@ -1095,7 +1124,7 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
  *----------------------------------------------------------------------
  */
 static int
-ConnChanOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int           result;
     Sock         *sockPtr = NULL;
@@ -1121,8 +1150,8 @@ ConnChanOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     if (Ns_ParseObjv(lopts, largs, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        //const NsInterp *itPtr = clientData;
-        NsServer    *servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
+        const NsInterp *itPtr = clientData;
+        NsServer    *servPtr = GetServer(itPtr->servPtr);
         NsConnChan  *connChanPtr;
         Tcl_DString  ds;
         Ns_URL       parsedUrl;
@@ -1245,7 +1274,7 @@ ConnChanOpenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
  *----------------------------------------------------------------------
  */
 static int
-ConnChanConnectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+ConnChanConnectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int            result, doTLS = (int)NS_FALSE;
     unsigned short portNr = 0u;
@@ -1265,8 +1294,8 @@ ConnChanConnectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
     if (Ns_ParseObjv(lopts, largs, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        //const NsInterp *itPtr = clientData;
-        NsServer       *servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
+        const NsInterp *itPtr = clientData;
+        NsServer       *servPtr = GetServer(itPtr->servPtr);
         Sock           *sockPtr = NULL;
         NS_SOCKET       sock;
         Ns_ReturnCode   status;
@@ -1356,10 +1385,10 @@ ConnChanConnectObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZ
  */
 
 static int
-ConnChanListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    //const NsInterp *itPtr = clientData;
-    NsServer       *servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
+    const NsInterp *itPtr = clientData;
+    NsServer       *servPtr = GetServer(itPtr->servPtr);
     int             result, doBind = (int)NS_FALSE;
     unsigned short  port = 0u;
     char           *driverName = NULL, *addr = (char*)NS_EMPTY_STRING;
@@ -1425,7 +1454,7 @@ ConnChanListenObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
                 retVal = getsockname(sock, (struct sockaddr *) &sa, &len);
                 if (retVal == -1) {
                     Ns_TclPrintfResult(interp, "can't obtain socket info %s", ns_sockstrerror(ns_sockerrno));
-                    servPtr = NsGetServer(nsconf.defaultServer);  // temporarily added
+                    servPtr = GetServer(servPtr);  // temporarily added
                     ConnChanFree(connChanPtr, servPtr/*sockPtr->servPtr*/);
                     result = TCL_ERROR;
                 } else {
@@ -1550,10 +1579,10 @@ SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why))
  *----------------------------------------------------------------------
  */
 static int
-ConnChanListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+ConnChanListObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    //const NsInterp *itPtr = clientData;
-    NsServer       *servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
+    const NsInterp *itPtr = clientData;
+    NsServer       *servPtr = GetServer(itPtr->servPtr);
     int             result = TCL_OK;
     Ns_ObjvSpec     lopts[] = {
         {"-server", Ns_ObjvServer, &servPtr, NULL},
@@ -1638,10 +1667,10 @@ ConnChanListObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
  *----------------------------------------------------------------------
  */
 static int
-ConnChanStatusObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+ConnChanStatusObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    //const NsInterp *itPtr = clientData;
-    NsServer       *servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
+    const NsInterp *itPtr = clientData;
+    NsServer       *servPtr = GetServer(itPtr->servPtr);
     char           *name = (char*)NS_EMPTY_STRING;
     int             result = TCL_OK;
     Ns_ObjvSpec     lopts[] = {
@@ -1735,10 +1764,10 @@ ConnChanStatusObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
  *----------------------------------------------------------------------
  */
 static int
-ConnChanCloseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+ConnChanCloseObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    //const NsInterp *itPtr = clientData;
-    NsServer       *servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
+    const NsInterp *itPtr = clientData;
+    NsServer       *servPtr = GetServer(itPtr->servPtr);
     char           *name = (char*)NS_EMPTY_STRING;
     int             result = TCL_OK;
     Ns_ObjvSpec     lopts[] = {
@@ -1785,7 +1814,7 @@ ConnChanCloseObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
  *----------------------------------------------------------------------
  */
 static int
-ConnChanCallbackObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+ConnChanCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     int      result = TCL_OK;
     char    *name = (char*)NS_EMPTY_STRING;
@@ -1807,8 +1836,8 @@ ConnChanCallbackObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
     if (Ns_ParseObjv(lopts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        //const NsInterp *itPtr = clientData;
-        NsServer       *servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
+        const NsInterp *itPtr = clientData;
+        NsServer       *servPtr = GetServer(itPtr->servPtr);
         NsConnChan     *connChanPtr = ConnChanGet(interp, servPtr, name);
         TCL_SIZE_T      whenStrlen;
         char           *whenString = Tcl_GetStringFromObj(whenObj, &whenStrlen);
@@ -1873,7 +1902,7 @@ ConnChanCallbackObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
 
                 if (unlikely(status != NS_OK)) {
                     Ns_TclPrintfResult(interp, "could not register callback");
-                    servPtr = NsGetServer(nsconf.defaultServer);  // temporarily added
+                    servPtr = GetServer(servPtr);
                     ConnChanFree(connChanPtr, servPtr);
                     result = TCL_ERROR;
                 }
@@ -1901,7 +1930,7 @@ ConnChanCallbackObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SI
  *----------------------------------------------------------------------
  */
 static int
-ConnChanExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+ConnChanExistsObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     char         *name = (char*)NS_EMPTY_STRING;
     int           result = TCL_OK;
@@ -1913,8 +1942,8 @@ ConnChanExistsObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE
     if (Ns_ParseObjv(NULL, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        //const NsInterp   *itPtr = clientData;
-        NsServer         *servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
+        const NsInterp   *itPtr = clientData;
+        NsServer         *servPtr = GetServer(itPtr->servPtr);
         const NsConnChan *connChanPtr;
 
         connChanPtr = ConnChanGet(interp, servPtr, name);
@@ -2280,7 +2309,7 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
  *----------------------------------------------------------------------
  */
 static int
-ConnChanReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
+ConnChanReadObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
     char        *name = (char*)NS_EMPTY_STRING;
     int          result = TCL_OK, webSocketFrame = 0;
@@ -2295,8 +2324,8 @@ ConnChanReadObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        //const NsInterp *itPtr = clientData;
-        NsServer       *servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
+        const NsInterp *itPtr = clientData;
+        NsServer       *servPtr = GetServer(itPtr->servPtr);
         NsConnChan     *connChanPtr = ConnChanGet(interp, servPtr, name);
 
         if (unlikely(connChanPtr == NULL)) {
@@ -2368,13 +2397,13 @@ int
 NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgString, TCL_SIZE_T msgLength, bool buffered,
                 ssize_t *nSentPtr, unsigned long *errnoPtr)
 {
-    //const NsInterp *itPtr = clientData;
+    const NsInterp *itPtr = NsGetInterpData(interp);
     NsServer    *servPtr;
     NsConnChan  *connChanPtr;
     int          result = TCL_OK;
     ssize_t      nSent = 0;
 
-    servPtr = NsGetServer(nsconf.defaultServer); //itPtr->servPtr;
+    servPtr = GetServer(itPtr->servPtr);
     connChanPtr = ConnChanGet(interp, servPtr, connChanName);
 
     if (unlikely(connChanPtr == NULL)) {
