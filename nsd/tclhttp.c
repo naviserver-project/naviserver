@@ -2585,7 +2585,7 @@ HttpQueue(
     }
 
     /*
-     * When outputChanName os provided, it has to be either an nsconnchan or a
+     * When outputChanName is provided, it has to be either an nsconnchan or a
      * Tcl channel.
      */
     if (result == TCL_OK && outputChanName != NULL) {
