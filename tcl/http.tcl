@@ -666,73 +666,6 @@ if {[dict get [ns_info buildinfo] with_deprecated]} {
 
         return $content
     }
-    #
-    # Simple http proxy handler.
-    # All requests that start with http:// will be proxied.
-    #
-
-    # if {[ns_config -bool -set ns/server/[ns_info server] enablehttpproxy off]} {
-    #     ns_register_proxy GET  http ns_proxy_handler_http
-    #     ns_register_proxy POST http ns_proxy_handler_http
-    #     nsv_set ns:proxy allow [ns_config -set ns/server/[ns_info server] allowhttpproxy]
-    # }
-
-
-    # proc ns_proxy_handler_http {args} {
-
-    #     set allow 0
-    #     set peeraddr [ns_conn peeraddr]
-    #     foreach ip [nsv_get ns:proxy allow] {
-    #         if { [string match $ip $peeraddr] } {
-    #             set allow 1
-    #             break
-    #         }
-    #     }
-    #     if { $allow != 1 } {
-    #         ns_log Error ns_proxy_handler_http: access denied for $peeraddr
-    #         ns_returnnotfound
-    #         return
-    #     }
-
-    #     set port [ns_conn port]
-    #     if {$port == 0} {
-    #         set port 80
-    #     }
-    #     set cont   [ns_conn content]
-    #     set prot   [ns_conn protocol]
-    #     set method [ns_conn method]
-
-    #     set url $prot://[ns_conn host]:$port[ns_conn url]?[ns_conn query]
-
-    #     set fds [ns_httpopen $method $url [ns_conn headers] 30 $cont]
-    #     set rfd [lindex $fds 0]
-    #     set wfd [lindex $fds 1]; close $wfd
-
-    #     set headers  [lindex $fds 2]
-    #     set response [ns_set name $headers]
-    #     set status   [lindex $response 1]
-    #     set length   [ns_set iget $headers "content-length"]
-    #     if {$length eq {}} {
-    #         set length -1
-    #     }
-
-    #     if {[catch {
-    #         ns_write "$response\r\n"
-    #         for {set i 0} {$i < [ns_set size $headers]} {incr i} {
-    #             set key [ns_set key   $headers $i]
-    #             set val [ns_set value $headers $i]
-    #             ns_write "$key: $val\r\n"
-    #         }
-    #         ns_write "\r\n"
-    #         _ns_http_getcontent 30 $rfd $length 1
-    #     } err]} {
-    #         ns_log error $err
-    #     }
-
-    #     ns_set free $headers
-    #     close $rfd
-    # }
-
     proc ns_ssl {args} {
 
         ns_deprecated "ns_http"
@@ -740,5 +673,8 @@ if {[dict get [ns_info buildinfo] with_deprecated]} {
     }
 }
 
-
-# EOF
+# Local variables:
+#    mode: tcl
+#    tcl-indent-level: 4
+#    indent-tabs-mode: nil
+# End:
