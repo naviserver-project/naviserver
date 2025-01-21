@@ -58,7 +58,7 @@ if {[ns_config -bool -set ns/server/[ns_info server] enablehttpproxy off]} {
     proc ns_proxy_connect { args } {
         ns_log warning "======== ns_proxy_connect is called" args <$args> (server [ns_info server])
         ns_log notice [ns_set format [ns_conn headers]]
-        set peeraddr   [ns_conn peeraddr]
+        set peeraddr [ns_conn peeraddr -source direct]
         #
         # We could/should add Proxy-Authorization here.  For now, we
         # reject all requests from public clients and trust internal
