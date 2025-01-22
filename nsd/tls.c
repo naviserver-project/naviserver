@@ -1111,6 +1111,7 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
                        NS_TLS_SSL_CTX **ctxPtr)
 {
     NS_TLS_SSL_CTX *ctx;
+    char errorBuffer[256];
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(ctxPtr != NULL);
@@ -1118,24 +1119,33 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
     ctx = SSL_CTX_new(SSLv23_client_method());
     *ctxPtr = ctx;
     if (ctx == NULL) {
-        char errorBuffer[256];
-
         Ns_TclPrintfResult(interp, "ctx init failed: %s", ERR_error_string(ERR_get_error(), errorBuffer));
         return TCL_ERROR;
     }
 
     SSL_CTX_set_default_verify_paths(ctx);
     if (caFile != NULL || caPath != NULL) {
-        SSL_CTX_load_verify_locations(ctx, caFile, caPath);
+        int rc = SSL_CTX_load_verify_locations(ctx, caFile, caPath);
+
+        if (rc == 0) {
+            Ns_TclPrintfResult(interp, "cannot load cerfificates from CAfile %s and CApath %s: %s",
+                               caFile != NULL ? caFile : "none",
+                               caPath != NULL ? caPath : "none",
+                               ERR_error_string(ERR_get_error(), errorBuffer));
+            goto fail;
+        }
+        Ns_Log(Notice, "SSL_CTX_load_verify_locations ctx %p caFile <%s> caPath <%s> ",
+               (void*)ctx,
+               caFile != NULL ? caFile : "none",
+               caPath != NULL ? caPath : "none");
     }
+
     SSL_CTX_set_verify(ctx, verify ? SSL_VERIFY_PEER : SSL_VERIFY_NONE, NULL);
     SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
     SSL_CTX_set_mode(ctx, SSL_MODE_ENABLE_PARTIAL_WRITE|SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
     if (cert != NULL) {
         if (SSL_CTX_use_certificate_chain_file(ctx, cert) != 1) {
-            char errorBuffer[256];
-
             Ns_TclPrintfResult(interp, "certificate load error: %s",
                                ERR_error_string(ERR_get_error(), errorBuffer));
             goto fail;
@@ -1277,6 +1287,8 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
         result = NS_ERROR;
 
     } else {
+        int sslErr;
+
         if (sni_hostname != NULL) {
 # if HAVE_SSL_set_tlsext_host_name
             Ns_Log(Debug, "tls: setting SNI hostname '%s'", sni_hostname);
@@ -1291,15 +1303,15 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
         SSL_set_connect_state(ssl);
 
         for (;;) {
-            int           sslRc, err;
+            int           sslRc;
             Ns_Time       timeout, *partialTimeoutPtr = NULL;
 
             Ns_Log(Debug, "ssl connect on sock %d", sock);
-            sslRc = SSL_connect(ssl);
-            err   = SSL_get_error(ssl, sslRc);
-            //fprintf(stderr, "### ssl connect sock %d returned err %d\n", sock, err);
+            sslRc   = SSL_connect(ssl);
+            sslErr = SSL_get_error(ssl, sslRc);
+            //fprintf(stderr, "### ssl connect sock %d returned err %d\n", sock, sslErr);
 
-            if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
+            if (sslErr == SSL_ERROR_WANT_READ || sslErr == SSL_ERROR_WANT_WRITE) {
                 if (timeoutPtr != NULL) {
                     /*
                      * Since there might be many WANT_READ or
@@ -1313,7 +1325,7 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
                     }
                 }
                 (void) WaitFor(sock,
-                               (unsigned int)(err == SSL_ERROR_WANT_READ ? NS_SOCK_READ : NS_SOCK_WRITE),
+                               (unsigned int)(sslErr == SSL_ERROR_WANT_READ ? NS_SOCK_READ : NS_SOCK_WRITE),
                                partialTimeoutPtr);
                 continue;
             }
@@ -1321,7 +1333,24 @@ Ns_TLS_SSLConnect(Tcl_Interp *interp, NS_SOCKET sock, NS_TLS_SSL_CTX *ctx,
         }
 
         if (result == NS_OK && !SSL_is_init_finished(ssl)) {
-            Ns_TclPrintfResult(interp, "ssl connect failed: %s", ERR_error_string(ERR_get_error(), NULL));
+            long        verifyCode = X509_V_OK;
+
+            if (sslErr == SSL_ERROR_SSL) {
+                verifyCode = SSL_get_verify_result(ssl);
+                if (verifyCode != X509_V_OK) {
+                    /*
+                     * We have a specific error code for the certificate failure.
+                     */
+                    Ns_TclPrintfResult(interp, "ssl connect failed: %s (reason %ld: %s)",
+                                       ERR_error_string(ERR_get_error(), NULL),
+                                       verifyCode,  X509_verify_cert_error_string(verifyCode));
+                }
+            }
+            if (verifyCode == X509_V_OK) {
+                Ns_TclPrintfResult(interp, "ssl connect failed: %s", ERR_error_string(ERR_get_error(), NULL));
+            }
+            DrainErrorStack(Warning, "ssl connect", ERR_get_error());
+
             result = NS_ERROR;
         } else {
             //const char *verifyString = X509_verify_cert_error_string(SSL_get_verify_result(ssl));
