@@ -64,6 +64,8 @@ if {[ns_config -bool -set ns/server/[ns_info server] enablehttpproxy off]} {
         # reject all requests from public clients and trust internal
         # ones.
         #
+        # We can also add firewall-like policies for target hosts here.
+        #
         if { [ns_ip public $peeraddr]} {
             ns_return 405 text/plain "CONNECT Request Rejected"
         } else {
