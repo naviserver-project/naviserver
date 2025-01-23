@@ -1124,7 +1124,7 @@ Ns_TLS_CtxClientCreate(Tcl_Interp *interp,
     }
 
     SSL_CTX_set_default_verify_paths(ctx);
-    if (caFile != NULL || caPath != NULL) {
+    if (verify && (caFile != NULL || caPath != NULL)) {
         int rc = SSL_CTX_load_verify_locations(ctx, caFile, caPath);
 
         if (rc == 0) {
