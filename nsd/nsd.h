@@ -1022,8 +1022,11 @@ typedef struct NsServer {
         const char *logRollfmt;
         TCL_SIZE_T logMaxbackup;
         Ns_Time    keepaliveTimeout;
+        const char *caFile;
+        const char *caPath;
         int  fd;
         bool logging;
+        bool insecure;
     } httpclient;
 
     Tcl_HashTable hosts;

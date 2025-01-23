@@ -28,6 +28,8 @@ NS_PATCH_LEVEL   = @NS_PATCH_LEVEL@
 RM               = /bin/rm -Rf
 MKDIR            = /bin/mkdir -p
 CP               = /bin/cp -pR
+LN               = /bin/ln
+MV               = /bin/mv
 
 ifdef NSBUILD
     INSTALL_SH	 = $(srcdir)/install-sh -c

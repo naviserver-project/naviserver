@@ -16,7 +16,9 @@ HEADER_INC=header.inc
 NSBUILD=1
 include include/Makefile.global
 
-dirs   = nsthread nsd nssock nscgi nscp nslog nsperm nsdb nsdbtest nsssl revproxy
+dirs    = nsthread nsd nssock nscgi nscp nslog nsperm nsdb nsdbtest nsssl revproxy
+
+OPENSSL = openssl
 
 # Unix only modules
 ifeq (,$(findstring MINGW,$(uname)))
@@ -59,7 +61,7 @@ help:
 	@echo
 
 install: install-dirs install-include install-tcl install-modules \
-	install-config install-certificate install-doc install-examples install-notice
+	install-config install-certificates install-doc install-examples install-notice
 
 HAVE_NSADMIN := $(shell id -u nsadmin 2> /dev/null)
 
@@ -95,12 +97,12 @@ install-notice:
 	echo ""
 
 install-dirs: all
-	@for i in bin lib logs include tcl pages conf modules modules/tcl cgi-bin; do \
+	@for i in bin lib logs include tcl pages conf certificates modules modules/tcl cgi-bin; do \
 		$(MKDIR) $(DESTDIR)$(NAVISERVER)/$$i; \
 	done
 
 install-config: all
-	@mkdir -p $(DESTDIR)$(NAVISERVER)/conf $(DESTDIR)$(NAVISERVER)/pages/
+	@$(MKDIR) -p $(DESTDIR)$(NAVISERVER)/conf $(DESTDIR)$(NAVISERVER)/pages/
 	@for i in returnnotice.adp nsd-config.tcl sample-config.tcl simple-config.tcl openacs-config.tcl ; do \
 		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/conf/; \
 	done
@@ -109,11 +111,20 @@ install-config: all
 	done
 	$(INSTALL_SH) install-sh $(DESTDIR)$(INSTBIN)/
 
-install-certificate: $(PEM_FILE)
-	@mkdir -p $(DESTDIR)$(NAVISERVER)/etc
-	for i in $(PEM_FILE) ; do \
-		$(INSTALL_DATA) $(PEM_FILE) $(DESTDIR)$(NAVISERVER)/etc/; \
+install-certificates: $(PEM_FILE) ca-bundle.crt
+	@$(MKDIR) -p $(DESTDIR)$(NAVISERVER)/certificates
+	@if [ -f "$(DESTDIR)$(NAVISERVER)/etc" ]; then \
+		for i in `ls $(DESTDIR)$(NAVISERVER)/etc/*pem` ; do \
+			$(LN) -sf $$i $(DESTDIR)$(NAVISERVER)/certificates ; \
+		done; \
+	fi
+	for i in `ls ./certificates/*` ; do \
+		$(INSTALL_DATA) $$i $(DESTDIR)$(NAVISERVER)/certificates/; \
 	done
+	@if [ -n "$(OPENSSL_LIBS)" ]; then \
+		openssl rehash $(DESTDIR)$(NAVISERVER)/certificates ; \
+	fi
+	$(INSTALL_DATA) ca-bundle.crt $(DESTDIR)$(NAVISERVER)/
 
 install-modules: all
 	@for i in $(dirs); do \
@@ -229,24 +240,28 @@ NS_LD_LIBRARY_PATH	= \
 EXTRA_TEST_DIRS =
 ifneq ($(OPENSSL_LIBS),)
   #EXTRA_TEST_DIRS += nsssl
-  PEM_FILE        = tests/testserver/etc/server.pem
-  PEM_PRIVATE     = tests/testserver/etc/myprivate.pem
-  PEM_PUBLIC      = tests/testserver/etc/mypublic.pem
-  SSLCONFIG       = tests/testserver/etc/openssl.cnf
-  EXTRA_TEST_REQ  = $(PEM_FILE)
+  TEST_CERTIFCATES = tests/testserver/certificates
+  PEM_FILE         = $(TEST_CERTIFCATES)/server.pem
+  PEM_PRIVATE      = $(TEST_CERTIFCATES)/myprivate.pem
+  PEM_PUBLIC       = $(TEST_CERTIFCATES)/mypublic.pem
+  SSLCONFIG        = $(TEST_CERTIFCATES)/openssl.cnf
+  EXTRA_TEST_REQ   = $(PEM_FILE)
 endif
 
 $(PEM_FILE): $(PEM_PRIVATE)
-	openssl genrsa 2048 > host.key
-	openssl req -new -config $(SSLCONFIG) -x509 -nodes -sha1 -days 365 -key host.key > host.cert
+	$(OPENSSL) genrsa 2048 > host.key
+	$(OPENSSL) req -new -config $(SSLCONFIG) -x509 -nodes -sha1 -days 365 -key host.key > host.cert
 	cat host.cert host.key > server.pem
-	rm -rf host.cert host.key
-	openssl dhparam 1024 >> server.pem
-	mv server.pem $(PEM_FILE)
+	$(RM) -rf host.cert host.key
+	$(OPENSSL) dhparam 1024 >> server.pem
+	$(MKDIR) -p certificates
+	$(CP) server.pem certificates/
+	$(MV) server.pem $(PEM_FILE)
+	($(OPENSSL) rehash $(TEST_CERTIFCATES) 2>/dev/null || true)
 
 $(PEM_PRIVATE):
-	openssl genrsa -out $(PEM_PRIVATE) 512
-	openssl rsa -in $(PEM_PRIVATE) -pubout > $(PEM_PUBLIC)
+	$(OPENSSL) genrsa -out $(PEM_PRIVATE) 512
+	$(OPENSSL) rsa -in $(PEM_PRIVATE) -pubout > $(PEM_PUBLIC)
 	chmod 644 $(PEM_PRIVATE)
 
 check: test
@@ -264,7 +279,7 @@ gdbtest: all
 	$(NS_LD_LIBRARY_PATH) gdb -ex=run --args ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
 #	@echo set args $(NS_TEST_CFG) $(NS_TEST_ALL) > gdb.run
 #	$(NS_LD_LIBRARY_PATH) gdb -x gdb.run ./nsd/nsd
-#	rm gdb.run
+#	$(RM) gdb.run
 
 lldbtest: all
 	$(NS_LD_LIBRARY_PATH) lldb -- ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
@@ -276,7 +291,7 @@ lldb-sample: all
 gdbruntest: all
 	@echo set args $(NS_TEST_CFG) > gdb.run
 	$(NS_LD_LIBRARY_PATH) gdb -x gdb.run ./nsd/nsd
-	rm gdb.run
+	$(RM) gdb.run
 
 memcheck: all
 	$(NS_LD_LIBRARY_PATH) valgrind --tool=memcheck ./nsd/nsd $(NS_TEST_CFG) $(NS_TEST_ALL)
@@ -321,6 +336,8 @@ config.guess:
 	wget -O config.guess 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD'
 config.sub:
 	wget -O config.sub 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD'
+ca-bundle.crt:
+	wget -O ca-bundle.crt 'https://raw.githubusercontent.com/bagder/ca-bundle/refs/heads/master/ca-bundle.crt'
 
 dist: config.guess config.sub clean
 	$(RM) naviserver-$(NS_PATCH_LEVEL)
@@ -345,4 +362,4 @@ dist: config.guess config.sub clean
 
 .PHONY: all install clean distclean \
 	install-dirs install-include install-tcl install-modules \
-	install-config install-certificate install-doc install-examples install-notice
+	install-config install-certificates install-doc install-examples install-notice

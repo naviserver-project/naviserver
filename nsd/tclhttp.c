@@ -571,6 +571,8 @@ void
 NsInitHttp(NsServer *servPtr)
 {
     const char  *path;
+    struct stat  statInfo;
+    Tcl_DString  ds, *dsPtr = &ds;
 
     NS_NONNULL_ASSERT(servPtr != NULL);
 
@@ -584,8 +586,32 @@ NsInitHttp(NsServer *servPtr)
     Ns_ConfigTimeUnitRange(path, "keepalive",
                            "0s", 0, 0, INT_MAX, 0, &servPtr->httpclient.keepaliveTimeout);
 
-    servPtr->httpclient.logging = Ns_ConfigBool(path, "logging", NS_FALSE);
+    Tcl_DStringInit(dsPtr);
+    Ns_MakePath(dsPtr, Ns_InfoHomePath(), "ca-bundle.crt", (char *)0L);
+    servPtr->httpclient.caFile = ns_strcopy(Ns_ConfigString(path, "cafile", ds.string));
+    Tcl_DStringSetLength(dsPtr, 0);
+    Ns_MakePath(dsPtr, Ns_InfoHomePath(), "certificates", (char *)0L);
+    servPtr->httpclient.caPath = ns_strcopy(Ns_ConfigString(path, "capath", ds.string));
+    Tcl_DStringFree(dsPtr);
 
+    if (!Ns_Stat(servPtr->httpclient.caFile, &statInfo)) {
+        Ns_Log(Warning, "NsInitHttp: caFile '%s' does not exist", servPtr->httpclient.caFile);
+    }
+    if (!Ns_Stat(servPtr->httpclient.caPath, &statInfo)) {
+        Ns_Log(Warning, "NsInitHttp: caDir '%s' does not exist", servPtr->httpclient.caPath);
+    }
+
+    Ns_Log(Notice, "================================= caDir <%s> caFile <%s>", servPtr->httpclient.caPath, servPtr->httpclient.caFile);
+
+    servPtr->httpclient.insecure = Ns_ConfigBool(path, "insecure", NS_FALSE);
+    if (servPtr->httpclient.insecure) {
+        Ns_Log(Warning, "\n=============================================================================\n"
+               " Configuration sets HTTPS client requests are set per default to insecure !!!\n"
+               " Section: %s\n"
+               "=============================================================================\n", path);
+    }
+
+    servPtr->httpclient.logging = Ns_ConfigBool(path, "logging", NS_FALSE);
     if (servPtr->httpclient.logging) {
         const char  *filename;
         Tcl_DString  defaultLogFileName;
@@ -602,12 +628,11 @@ NsInitHttp(NsServer *servPtr)
         if (Ns_PathIsAbsolute(filename) == NS_TRUE) {
             servPtr->httpclient.logFileName = ns_strdup(filename);
         } else {
-            Tcl_DString ds;
             Ns_Set     *set;
 
-            Tcl_DStringInit(&ds);
-            (void) Ns_HomePath(&ds, "logs", "/", filename, (char *)0L);
-            servPtr->httpclient.logFileName = Ns_DStringExport(&ds);
+            Tcl_DStringInit(dsPtr);
+            (void) Ns_HomePath(dsPtr, "logs", "/", filename, (char *)0L);
+            servPtr->httpclient.logFileName = Ns_DStringExport(dsPtr);
 
             /*
              * The path was completed. Make the result queryable.
@@ -2465,9 +2490,12 @@ HttpQueue(
     bool run
 ) {
     Tcl_Interp *interp;
-    int         result = TCL_OK, decompress = 0, raw = 0, binary = 0, partialResults = 0;
-    Tcl_WideInt spoolLimit = -1;
-    int         verifyCert = 0, keepHostHdr = 0;
+    int         result = TCL_OK, decompress = 0, raw = 0, binary = 0, partialResults = 0, keepHostHdr = 0, insecureInt = 0;
+    Tcl_WideInt spoolLimit = -1, bodySize = 0;
+#ifdef NS_WITH_RECENT_DEPRECATED
+    int         verifyCertInt = 0;
+#endif
+    bool        verifyCert = NS_TRUE;
     NsHttpTask *httpPtr = NULL;
     char       *cert = NULL,
                *caFile = NULL,
@@ -2491,8 +2519,6 @@ HttpQueue(
                *expirePtr = NULL,
                *keepAliveTimeoutPtr = NULL,
                *connectTimeoutPtr = NULL;
-    Tcl_WideInt bodySize = 0;
-
     Tcl_Channel bodyChan = NULL, spoolChan = NULL;
     Ns_ObjvValueRange sizeRange = {0, LLONG_MAX};
 
@@ -2514,6 +2540,7 @@ HttpQueue(
         {"-expire",           Ns_ObjvTime,    &expirePtr,            NULL},
         {"-headers",          Ns_ObjvSet,     &requestHdrPtr,        NULL},
         {"-hostname",         Ns_ObjvString,  &sniHostname,          NULL},
+        {"-insecure",         Ns_ObjvBool,    &insecureInt,          INT2PTR(NS_TRUE)},
         {"-keep_host_header", Ns_ObjvBool,    &keepHostHdr,          INT2PTR(NS_TRUE)},
         {"-keepalive",        Ns_ObjvTime,    &keepAliveTimeoutPtr,  NULL},
         {"-method",           Ns_ObjvString,  &method,               NULL},
@@ -2526,7 +2553,9 @@ HttpQueue(
         {"-spoolsize",        Ns_ObjvMemUnit, &spoolLimit,           NULL},
         {"-timeout",          Ns_ObjvTime,    &timeoutPtr,           NULL},
         {"-unix_socket",      Ns_ObjvString,  &udsPath,              NULL},
-        {"-verify",           Ns_ObjvBool,    &verifyCert,           INT2PTR(NS_TRUE)},
+#ifdef NS_WITH_RECENT_DEPRECATED
+        {"-verify",           Ns_ObjvBool,    &verifyCertInt,        INT2PTR(NS_TRUE)},
+#endif
         {NULL, NULL,  NULL, NULL}
     };
     Ns_ObjvSpec args[] = {
@@ -2536,6 +2565,11 @@ HttpQueue(
 
     NS_NONNULL_ASSERT(itPtr != NULL);
     interp = itPtr->interp;
+
+    /*
+     * Set the default value of "insecureInt" from the configurations.
+     */
+    insecureInt = itPtr->servPtr->httpclient.insecure;
 
     if (Ns_ParseObjv(opts, args, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
@@ -2555,6 +2589,17 @@ HttpQueue(
         Ns_Log(Warning, "ignore obsolete flag -decompress");
     } else if (raw != 1) {
         decompress = 1;
+    }
+
+#ifdef NS_WITH_RECENT_DEPRECATED
+    if (result == TCL_OK && verifyCertInt != 0) {
+        Ns_Log(Warning, "ns_http %s: -verify option is deprecated;"
+               " activated by default", Tcl_GetString(objv[1]));
+    }
+#endif
+    if (insecureInt != 0) {
+        Ns_Log(Ns_LogTaskDebug, "ns_http %s: using an insecure connection to %s", Tcl_GetString(objv[1]), url);
+        verifyCert = NS_FALSE;
     }
 
     if (result == TCL_OK && bodyFileName != NULL) {
@@ -2616,7 +2661,7 @@ HttpQueue(
                              caPath,
                              sniHostname,
                              udsPath,
-                             (verifyCert  == 1),
+                             verifyCert,
                              (keepHostHdr == 1),
                              connectTimeoutPtr,
                              expirePtr,
@@ -3718,7 +3763,7 @@ HttpConnect(
         if (cert != NULL
             || caFile != NULL
             || caPath != NULL
-            || verifyCert == NS_TRUE) {
+           ) {
 
             Ns_TclPrintfResult(interp, "HTTPS options allowed for HTTPS only");
             goto fail;
@@ -3983,7 +4028,9 @@ HttpConnect(
                     NS_TLS_SSL_CTX *ctx = NULL;
                     int             result;
 
-                    result = Ns_TLS_CtxClientCreate(interp, cert, caFile, caPath,
+                    result = Ns_TLS_CtxClientCreate(interp, cert,
+                                                    caFile == NULL ? httpPtr->servPtr->httpclient.caFile : caFile,
+                                                    caPath == NULL ? httpPtr->servPtr->httpclient.caPath : caPath,
                                                     verifyCert, &ctx);
                     if (likely(result == TCL_OK)) {
                         NS_TLS_SSL *ssl = NULL;

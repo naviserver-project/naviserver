@@ -289,7 +289,7 @@ allows for HTTPS URIs to specify the locations, at which CA
 certificates for verification purposes are located. [term capath] points to a
 directory containing CA certificates in PEM format. The files each
 contain one CA certificate. For more details, see
-https://www.openssl.org/docs/manmaster/ssl/SSL_CTX_load_verify_locations.html
+[uri https://docs.openssl.org/master/man3/SSL_CTX_load_verify_locations/].
 
 [opt_def -cert [arg value]]
 used for HTTPS URIs to use the specified client certificate. The
@@ -333,6 +333,13 @@ used for HTTPS URIs to specify the hostname for the server
 certificate. This option has to be used, when the host supports
 virtual hosting, is configured with multiple certificates and supports
 the SNI (Server Name Indication) extension of TLS.
+
+[opt_def -insecure]
+used for HTTPS URIs to specify that the server certificate should NOT be
+verified. By default, the identity of the peer server is checked
+for all HTTPS requests. If the verification process fails, the TLS/SSL handshake is
+terminated with an alert message containing the reason for
+the verification failure.
 
 [opt_def -keep_host_header]
 allows the Host: header field for the request to be passed in via
@@ -439,13 +446,6 @@ request header field.
  % ns_http run -unix_socket /tmp/http.socket http://foo.org/
 [example_end]
 
-
-[opt_def -verify]
-used for HTTPS URIs to specify that the server certificate should be
-verified. If the verification process fails, the TLS/SSL handshake is
-immediately terminated with an alert message containing the reason for
-the verification failure. If no server certificate is sent, because an
-anonymous cipher is used, this option is ignored.
 
 [list_end]
 

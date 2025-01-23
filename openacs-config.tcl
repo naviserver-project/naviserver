@@ -10,8 +10,8 @@ ns_log notice "nsd.tcl: starting to read configuration file..."
 
 if {[info commands ::ns_configure_variables] eq ""} {
     ns_log notice "backward compatibility hook (pre NaviServer 5): have to source init.tcl"
-    source [file normalize $home/tcl/init.tcl]
-}
+    source [file normalize [file dirname [file dirname [ns_info nsd]]]/tcl/init.tcl]
+}}
 #---------------------------------------------------------------------
 # Port settings:
 #
@@ -783,6 +783,13 @@ ns_section ns/server/$server/httpclient {
     # Set default keep-alive timeout for outgoing ns_http requests
     #
     #ns_param	keepalive       5s       ;# default: 0s
+
+    #
+    # Default locations for certificate validation in ns_http requests.
+    # These locations can be overridden per ns_http request via parameters.
+    #
+    ns_param CApath $homedir/certificates/
+    ns_param CAfile $homedir/ca-bundle.crt
 
     #
     # Configure log file for outgoing ns_http requests

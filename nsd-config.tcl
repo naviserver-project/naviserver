@@ -4,7 +4,7 @@
 
 if {[info commands ::ns_configure_variables] eq ""} {
     ns_log notice "backward compatibility hook (pre NaviServer 5): have to source init.tcl"
-    source [file normalize $home/tcl/init.tcl]
+    source [file normalize [file dirname [file dirname [ns_info nsd]]]/tcl/init.tcl]
 }
 
 # All default variables in "defaultConfig" can be overloaded by:
@@ -444,6 +444,33 @@ ns_section ns/server/default/adp {
     #ns_param   cachesize           5MB
     #ns_param   bufsize             1MB
 }
+
+#---------------------------------------------------------------------
+# HTTP client (ns_http) configuration
+#---------------------------------------------------------------------
+ns_section ns/server/default/httpclient {
+    #ns_param	keepalive       5s       ;# default: 0s
+    #
+    # Default locations for certificate validation in ns_http requests.
+    # These locations can be overridden per ns_http request via parameters.
+    #
+    ns_param CApath $home/certificates/  ;# default: $home/certificates/
+    ns_param CAfile $home/ca-bundle.crt  ;# default: $home/ca-bundle.crt
+
+    # ns_param insecure true             ;# default: false
+
+    #
+    # Configure log file for outgoing ns_http requests
+    #
+    #ns_param	logging		on       ;# default: off
+    #ns_param	logfile		${logdir}/httpclient.log
+    #ns_param	logrollfmt	%Y-%m-%d ;# format appended to log filename
+    #ns_param	logmaxbackup	100      ;# 10, max number of backup log files
+    #ns_param	logroll		true     ;# true, should server log files automatically
+    #ns_param	logrollonsignal	true     ;# false, perform roll on a sighup
+    #ns_param	logrollhour	0        ;# 0, specify at which hour to roll
+}
+
 
 ns_section ns/server/default/tcl {
     ns_param    nsvbuckets          16       ;# default: 8
