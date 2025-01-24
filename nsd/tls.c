@@ -2493,10 +2493,10 @@ int NsTlsGetParameters(NsInterp *itPtr, bool tlsContext, int insecureInt,
     interp = itPtr->interp;
 
     if (tlsContext) {
-        if (caFile == NULL) {
+        if (caFile == NULL || *caFile == '\0') {
             caFile = servPtr->httpclient.caFile;
         }
-        if (caPath == NULL) {
+        if (caPath == NULL || *caPath == '\0') {
             caPath = servPtr->httpclient.caPath;
         }
         *caFilePtr = caFile;
