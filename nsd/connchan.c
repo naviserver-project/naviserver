@@ -1041,7 +1041,6 @@ ConnchanDriverSend(Tcl_Interp *interp, const NsConnChan *connChanPtr,
     return result;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -1107,7 +1106,7 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
     }
     return result;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1126,16 +1125,22 @@ ConnChanDetachObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
 static int
 ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int           result;
-    Sock         *sockPtr = NULL;
-    Ns_Set       *hdrPtr = NULL;
-    char         *url, *method = (char *)"GET", *version = (char *)"1.0",
-        *driverName = NULL, *sniHostname = NULL, *udsPath = NULL;
-    Ns_Time       timeout = {1, 0}, *timeoutPtr = &timeout;
-    Ns_ObjvSpec   lopts[] = {
+    NsInterp       *itPtr = clientData;
+    int             result, insecureInt;
+    Sock           *sockPtr = NULL;
+    Ns_Set         *hdrPtr = NULL;
+    char           *url, *method = (char *)"GET", *version = (char *)"1.0",
+                   *driverName = NULL, *udsPath = NULL,
+                   *sniHostname = NULL, *caFile = NULL, *caPath = NULL, *cert = NULL;
+    Ns_Time         timeout = {1, 0}, *timeoutPtr = &timeout;
+    Ns_ObjvSpec     lopts[] = {
+        {"-cafile",      Ns_ObjvString, &caFile,      NULL},
+        {"-capath",      Ns_ObjvString, &caPath,      NULL},
+        {"-cert",        Ns_ObjvString, &cert,       NULL},
         {"-driver",      Ns_ObjvString, &driverName,  NULL},
         {"-headers",     Ns_ObjvSet,    &hdrPtr,      NULL},
         {"-hostname",    Ns_ObjvString, &sniHostname, NULL},
+        {"-insecure",    Ns_ObjvBool,   &insecureInt, INT2PTR(NS_TRUE)},
         {"-method",      Ns_ObjvString, &method,      NULL},
         {"-timeout",     Ns_ObjvTime,   &timeoutPtr,  NULL},
         {"-unix_socket", Ns_ObjvString, &udsPath,     NULL},
@@ -1147,10 +1152,13 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
         {NULL, NULL, NULL, NULL}
     };
 
+    NS_NONNULL_ASSERT(itPtr != NULL);
+
+    insecureInt = itPtr->servPtr->httpclient.insecure;
+
     if (Ns_ParseObjv(lopts, largs, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
     } else {
-        const NsInterp *itPtr = clientData;
         NsServer    *servPtr = GetServer(itPtr->servPtr);
         NsConnChan  *connChanPtr;
         Tcl_DString  ds;
@@ -1167,15 +1175,16 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
 
                 assert(sockPtr->drvPtr->clientInitProc != NULL);
 
-                /*
-                 * For the time being, just pass NULL
-                 * structures. Probably, we could create the
-                 * SSLcontext.
-                 */
-                result = Ns_TLS_CtxClientCreate(interp,
-                                                NULL /*cert*/, NULL /*caFile*/,
-                                                NULL /* caPath*/, NS_FALSE /*verify*/,
-                                                &ctx);
+                result = NsTlsGetParameters(itPtr, NS_TRUE, insecureInt,
+                                            cert, caFile, caPath,
+                                            (const char **)&caFile, (const char **)&caPath);
+                if (result == TCL_OK) {
+                    result = Ns_TLS_CtxClientCreate(interp,
+                                                    cert, caFile,
+                                                    caPath, insecureInt == 0,
+                                                    &ctx);
+                }
+
                 if (likely(result == TCL_OK)) {
                     Ns_DriverClientInitArg params = {ctx, sniHostname};
 
@@ -1258,6 +1267,7 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
     }
     return result;
 }
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1276,13 +1286,19 @@ ConnChanOpenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, T
 static int
 ConnChanConnectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
-    int            result, doTLS = (int)NS_FALSE;
-    unsigned short portNr = 0u;
-    char         *host;
-    Ns_Time       timeout = {1, 0}, *timeoutPtr = &timeout;
-    Ns_ObjvSpec   lopts[] = {
-        {"-tls",      Ns_ObjvBool, &doTLS, INT2PTR(NS_TRUE)},
-        {"-timeout",  Ns_ObjvTime, &timeoutPtr,  NULL},
+    NsInterp       *itPtr = clientData;
+    int             result, doTLS = (int)NS_FALSE, insecureInt;
+    unsigned short  portNr = 0u;
+    char           *host, *sniHostname = NULL, *caFile = NULL, *caPath = NULL, *cert = NULL;
+    Ns_Time         timeout = {1, 0}, *timeoutPtr = &timeout;
+    Ns_ObjvSpec     lopts[] = {
+        {"-cafile",   Ns_ObjvString, &caFile,      NULL},
+        {"-capath",   Ns_ObjvString, &caPath,      NULL},
+        {"-cert",     Ns_ObjvString, &cert,        NULL},
+        {"-insecure", Ns_ObjvBool,   &insecureInt, INT2PTR(NS_TRUE)},
+        {"-hostname", Ns_ObjvString, &sniHostname, NULL},
+        {"-timeout",  Ns_ObjvTime,   &timeoutPtr,  NULL},
+        {"-tls",      Ns_ObjvBool,   &doTLS,       INT2PTR(NS_TRUE)},
         {NULL, NULL, NULL, NULL}
     };
     Ns_ObjvSpec   largs[] = {
@@ -1291,10 +1307,19 @@ ConnChanConnectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
         {NULL, NULL, NULL, NULL}
     };
 
+    NS_NONNULL_ASSERT(itPtr != NULL);
+
+    insecureInt = itPtr->servPtr->httpclient.insecure;
+
     if (Ns_ParseObjv(lopts, largs, interp, 2, objc, objv) != NS_OK) {
         result = TCL_ERROR;
+
+    } else if (NsTlsGetParameters(itPtr, doTLS ==(int)NS_TRUE, insecureInt,
+                                  cert, caFile, caPath,
+                                  (const char **)&caFile, (const char **)&caPath) != TCL_OK) {
+        result = TCL_ERROR;
+
     } else {
-        const NsInterp *itPtr = clientData;
         NsServer       *servPtr = GetServer(itPtr->servPtr);
         Sock           *sockPtr = NULL;
         NS_SOCKET       sock;
@@ -1328,6 +1353,11 @@ ConnChanConnectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
                                                 &ctx);
                 if (likely(result == TCL_OK)) {
                     Ns_DriverClientInitArg params = {ctx, host};
+
+                    if (sniHostname == NULL && !NsHostnameIsNumericIP(host)) {
+                        params.sniHostname = host;
+                        Ns_Log(Debug, "automatically use SNI <%s>", host);
+                    }
 
                     result = (*sockPtr->drvPtr->clientInitProc)(interp, (Ns_Sock *)sockPtr, &params);
 
@@ -1367,7 +1397,6 @@ ConnChanConnectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
     return result;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -1383,7 +1412,6 @@ ConnChanConnectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc
  *
  *----------------------------------------------------------------------
  */
-
 static int
 ConnChanListenObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -1562,7 +1590,6 @@ SockListenCallback(NS_SOCKET sock, void *arg, unsigned int UNUSED(why))
     return (result == TCL_OK);
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -1747,7 +1774,6 @@ ConnChanStatusObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc,
     return result;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -1797,7 +1823,7 @@ ConnChanCloseObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T objc, 
     Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan close returns %s", name, Ns_TclReturnCodeString(result));
     return result;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -1913,7 +1939,7 @@ ConnChanCallbackObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_SIZE_T obj
     Ns_Log(Ns_LogConnchanDebug, "%s ns_connchan callback returns %s", name, Ns_TclReturnCodeString(result));
     return result;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2292,7 +2318,6 @@ GetWebsocketFrame(NsConnChan *connChanPtr, char *buffer, ssize_t nRead)
     return resultObj;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -2693,7 +2718,6 @@ NsConnChanWrite(Tcl_Interp *interp, const char *connChanName, const char *msgStr
     return result;
 }
 
-
 static int
 ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {
@@ -2725,7 +2749,6 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
     return result;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -2742,7 +2765,6 @@ ConnChanWriteObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_
  *
  *----------------------------------------------------------------------
  */
-
 static int
 ConnChanWsencodeObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_SIZE_T objc, Tcl_Obj *const* objv)
 {

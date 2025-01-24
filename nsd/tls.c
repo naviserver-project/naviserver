@@ -2461,6 +2461,65 @@ Ns_TLS_CtxServerInit(const char *UNUSED(path), Tcl_Interp *UNUSED(interp),
 #endif
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * NsTlsGetParameters --
+ *
+ *      Check TLS specific parameters and return optionally the default values.
+ *      Furthermore, leave an error message in the interp, when called without
+ *      an TLS context.
+ *
+ * Results:
+ *      Standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *----------------------------------------------------------------------
+ */
+int NsTlsGetParameters(NsInterp *itPtr, bool tlsContext, int insecureInt,
+                       const char *cert, const char *caFile, const char *caPath,
+                       const char **caFilePtr, const char **caPathPtr)
+{
+    int         result = TCL_OK;
+    Tcl_Interp *interp;
+    NsServer   *servPtr;
+
+    NS_NONNULL_ASSERT(itPtr != NULL);
+    NS_NONNULL_ASSERT(caFilePtr != NULL);
+    NS_NONNULL_ASSERT(caPathPtr != NULL);
+
+    servPtr = itPtr->servPtr;
+    interp = itPtr->interp;
+
+    if (tlsContext) {
+        if (caFile == NULL) {
+            caFile = servPtr->httpclient.caFile;
+        }
+        if (caPath == NULL) {
+            caPath = servPtr->httpclient.caPath;
+        }
+        *caFilePtr = caFile;
+        *caPathPtr = caPath;
+    } else if (insecureInt != itPtr->servPtr->httpclient.insecure) {
+        Ns_TclPrintfResult(interp, "parameter '-insecure' only allowed on HTTPS connections");
+        result = TCL_ERROR;
+    } else if (caFile != NULL) {
+        Ns_TclPrintfResult(interp, "parameter '-caFile' only allowed on HTTPS connections");
+        result = TCL_ERROR;
+    } else if (caPath != NULL) {
+        Ns_TclPrintfResult(interp, "parameter '-caPath' only allowed on HTTPS connections");
+        result = TCL_ERROR;
+    } else if (cert != NULL) {
+        Ns_TclPrintfResult(interp, "parameter '-cert' only allowed on HTTPS connections");
+        result = TCL_ERROR;
+    }
+
+    return result;
+}
+
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

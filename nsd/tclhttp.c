@@ -601,7 +601,9 @@ NsInitHttp(NsServer *servPtr)
         Ns_Log(Warning, "NsInitHttp: caDir '%s' does not exist", servPtr->httpclient.caPath);
     }
 
-    Ns_Log(Notice, "================================= caDir <%s> caFile <%s>", servPtr->httpclient.caPath, servPtr->httpclient.caFile);
+    Ns_Log(Debug, "NsInitHttp: use caDir <%s> caFile <%s>",
+           servPtr->httpclient.caPath,
+           servPtr->httpclient.caFile);
 
     servPtr->httpclient.insecure = Ns_ConfigBool(path, "insecure", NS_FALSE);
     if (servPtr->httpclient.insecure) {
@@ -2481,7 +2483,6 @@ HttpTaskTimeoutSet(NsHttpTask *httpPtr, const Ns_Time *timeoutPtr)
  *
  *----------------------------------------------------------------------
  */
-
 static int
 HttpQueue(
     NsInterp *itPtr,
@@ -2490,7 +2491,7 @@ HttpQueue(
     bool run
 ) {
     Tcl_Interp *interp;
-    int         result = TCL_OK, decompress = 0, raw = 0, binary = 0, partialResults = 0, keepHostHdr = 0, insecureInt = 0;
+    int         result = TCL_OK, decompress = 0, raw = 0, binary = 0, partialResults = 0, keepHostHdr = 0, insecureInt;
     Tcl_WideInt spoolLimit = -1, bodySize = 0;
 #ifdef NS_WITH_RECENT_DEPRECATED
     int         verifyCertInt = 0;
@@ -2639,6 +2640,17 @@ HttpQueue(
                                     /* check */ 1, &spoolChan) != TCL_OK)) {
             result = TCL_ERROR;
         }
+    }
+
+    /*
+     * Check TLS specific parameters and return optionally the default values.
+     * Furthermore, leave an error message in the interp, when called without
+     * an TLS context.
+     */
+    if (result == TCL_OK) {
+        result = NsTlsGetParameters(itPtr, (strncmp(url, "https", 5u) == 0), insecureInt,
+                                    cert, caFile, caPath,
+                                    (const char **)&caFile, (const char **)&caPath);
     }
 
     if (result == TCL_OK) {
@@ -3760,14 +3772,6 @@ HttpConnect(
      * and determine the default port (80 for HTTP, 443 for HTTPS)
      */
     if (STREQ("http", u.protocol)) {
-        if (cert != NULL
-            || caFile != NULL
-            || caPath != NULL
-           ) {
-
-            Ns_TclPrintfResult(interp, "HTTPS options allowed for HTTPS only");
-            goto fail;
-        }
         defPortNr = 80u;
     }
 #ifdef HAVE_OPENSSL_EVP_H
@@ -4028,10 +4032,8 @@ HttpConnect(
                     NS_TLS_SSL_CTX *ctx = NULL;
                     int             result;
 
-                    result = Ns_TLS_CtxClientCreate(interp, cert,
-                                                    caFile == NULL ? httpPtr->servPtr->httpclient.caFile : caFile,
-                                                    caPath == NULL ? httpPtr->servPtr->httpclient.caPath : caPath,
-                                                    verifyCert, &ctx);
+                    result = Ns_TLS_CtxClientCreate(interp, cert, caFile, caPath, verifyCert,
+                                                    &ctx);
                     if (likely(result == TCL_OK)) {
                         NS_TLS_SSL *ssl = NULL;
                         Ns_Time now, remainingTime;

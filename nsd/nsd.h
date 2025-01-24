@@ -2068,6 +2068,15 @@ NS_EXTERN void NsTclInitKeylistType(void);
 #endif
 
 /*
+ * tls.c
+ */
+
+NS_EXTERN int NsTlsGetParameters(NsInterp *itPtr, bool tlsContext, int insecureInt,
+                                 const char *cert, const char *caFile, const char *caPath,
+                                 const char **caFilePtr, const char **caPathPtr)
+    NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(7) NS_GNUC_NONNULL(8);
+
+/*
  * unix.c
  */
 NS_EXTERN void NsBlockSignals(bool debug);
