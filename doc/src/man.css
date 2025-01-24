@@ -101,7 +101,7 @@ dl dt {
    max-width:    50em;
 }
 
-dd>dl.doctools_options {
+dd>dl.doctools_options, dd>dl.doctools_arguments {
     margin-left: 2em;
 }
 .sample {
