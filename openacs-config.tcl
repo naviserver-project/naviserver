@@ -785,11 +785,13 @@ ns_section ns/server/$server/httpclient {
     #ns_param	keepalive       5s       ;# default: 0s
 
     #
-    # Default locations for certificate validation in ns_http requests.
-    # These locations can be overridden per ns_http request via parameters.
+    # Default locations for certificate validation in ns_http or
+    # ns_connchan requests.  These locations can be overridden per
+    # request via parameters.
     #
-    ns_param CApath $homedir/certificates/
-    ns_param CAfile $homedir/ca-bundle.crt
+    #ns_param CApath $homedir/certificates/
+    #ns_param CAfile $homedir/ca-bundle.crt
+    #ns_param insecure true             ;# default: false
 
     #
     # Configure log file for outgoing ns_http requests
