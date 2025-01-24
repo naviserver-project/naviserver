@@ -566,13 +566,45 @@ LogDebug(const char *before, NsHttpTask *httpPtr, const char *after)
  *
  *----------------------------------------------------------------------
  */
+static const char *
+EnsureAbsolutePath(const char *parameterPath, const char* parameterName, TCL_SIZE_T parameterNameLength, const char *dir, const char* filename)
+{
+    const char *result;
+
+    if (Ns_PathIsAbsolute(filename)) {
+        result = ns_strdup(filename);
+    } else {
+        Ns_Set     *set;
+        Tcl_DString ds, *dsPtr = &ds;
+        TCL_SIZE_T  pathLength;
+
+        Tcl_DStringInit(dsPtr);
+
+        if (dir != NULL) {
+            Ns_MakePath(dsPtr, Ns_InfoHomePath(), dir, filename, (char *)0L);
+        } else {
+            Ns_MakePath(dsPtr, Ns_InfoHomePath(), filename, (char *)0L);
+        }
+
+        pathLength = dsPtr->length;
+
+        result = Ns_DStringExport(dsPtr);
+        /*
+         * The path was completed. Make the result queryable.
+         */
+        set = Ns_ConfigCreateSection(parameterPath);
+        Ns_SetIUpdateSz(set, parameterName, parameterNameLength, result, pathLength);
+    }
+    //fprintf(stderr, "================== %s %s: <%s>\n", parameterPath, parameterName, result);
+    return result;
+}
+
 
 void
 NsInitHttp(NsServer *servPtr)
 {
     const char  *path;
     struct stat  statInfo;
-    Tcl_DString  ds, *dsPtr = &ds;
 
     NS_NONNULL_ASSERT(servPtr != NULL);
 
@@ -586,13 +618,10 @@ NsInitHttp(NsServer *servPtr)
     Ns_ConfigTimeUnitRange(path, "keepalive",
                            "0s", 0, 0, INT_MAX, 0, &servPtr->httpclient.keepaliveTimeout);
 
-    Tcl_DStringInit(dsPtr);
-    Ns_MakePath(dsPtr, Ns_InfoHomePath(), "ca-bundle.crt", (char *)0L);
-    servPtr->httpclient.caFile = ns_strcopy(Ns_ConfigString(path, "cafile", ds.string));
-    Tcl_DStringSetLength(dsPtr, 0);
-    Ns_MakePath(dsPtr, Ns_InfoHomePath(), "certificates", (char *)0L);
-    servPtr->httpclient.caPath = ns_strcopy(Ns_ConfigString(path, "capath", ds.string));
-    Tcl_DStringFree(dsPtr);
+    servPtr->httpclient.caFile = EnsureAbsolutePath(path, "cafile", 6, NULL,
+                                                    Ns_ConfigString(path, "cafile", "ca-bundle.crt"));
+    servPtr->httpclient.caPath = EnsureAbsolutePath(path, "caPath", 6, NULL,
+                                                    Ns_ConfigString(path, "capath", "certificates"));
 
     if (!Ns_Stat(servPtr->httpclient.caFile, &statInfo)) {
         Ns_Log(Warning, "NsInitHttp: caFile '%s' does not exist", servPtr->httpclient.caFile);
@@ -627,21 +656,8 @@ NsInitHttp(NsServer *servPtr)
             filename = defaultLogFileName.string;
         }
 
-        if (Ns_PathIsAbsolute(filename) == NS_TRUE) {
-            servPtr->httpclient.logFileName = ns_strdup(filename);
-        } else {
-            Ns_Set     *set;
+        servPtr->httpclient.logFileName = EnsureAbsolutePath(path, "logfile", 7, "logs", filename);
 
-            Tcl_DStringInit(dsPtr);
-            (void) Ns_HomePath(dsPtr, "logs", "/", filename, (char *)0L);
-            servPtr->httpclient.logFileName = Ns_DStringExport(dsPtr);
-
-            /*
-             * The path was completed. Make the result queryable.
-             */
-            set = Ns_ConfigCreateSection(path);
-            Ns_SetIUpdateSz(set, "logfile", 7, servPtr->httpclient.logFileName, TCL_INDEX_NONE);
-        }
         Tcl_DStringFree(&defaultLogFileName);
         servPtr->httpclient.logRollfmt = ns_strcopy(Ns_ConfigGetValue(path, "logrollfmt"));
         servPtr->httpclient.logMaxbackup = (TCL_SIZE_T)Ns_ConfigIntRange(path, "logmaxbackup",
@@ -2751,15 +2767,6 @@ HttpQueue(
         if (partialResults != 0) {
             httpPtr->flags |= NS_HTTP_PARTIAL_RESULTS;
         }
-#if 0
-        {
-            Tcl_DString dsHttpState;
-            Tcl_DStringInit(&dsHttpState);
-            Ns_Log(Notice, "ns_http flags after connect flags:%s",
-                   DStringAppendHttpFlags(&dsHttpState, httpPtr->flags));
-            Tcl_DStringFree(&dsHttpState);
-        }
-#endif
         httpPtr->servPtr = itPtr->servPtr;
 
         httpPtr->task = Ns_TaskTimedCreate(httpPtr->sock, HttpProc, httpPtr, expirePtr);
