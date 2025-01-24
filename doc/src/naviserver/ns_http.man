@@ -278,18 +278,25 @@ channels, which are not capable of seeking. It is optional if sending
 body data from memory or from a named file.
 
 [opt_def -cafile [arg value]]
-used for HTTPS URIs to specify the locations, at which CA
-certificates for verification purposes are located. The certificates
-available via [term cafile] and [term capath] are trusted.
-The [term cafile] points to a file of CA certificates in PEM format.
-The file can contain several CA certificates.
+specifies for HTTPS requests a PEM file containing certificates to
+validate the peer server (unless the option [option -insecure] is used). All
+certificates in this file are trusted.  Typically, the file
+is named [term ca-bundle.crt] and contains the top-level certificates.
+The default for this parameter can be specified in the [sectref {CONFIGURATION}] file.
+For more details, see
+[uri https://docs.openssl.org/master/man3/SSL_CTX_load_verify_locations/ "SSL_CTX_load_verify_locations"]
+from the OpenSSL documentation.
 
 [opt_def -capath [arg value]]
-allows for HTTPS URIs to specify the locations, at which CA
-certificates for verification purposes are located. [term capath] points to a
-directory containing CA certificates in PEM format. The files each
-contain one CA certificate. For more details, see
-[uri https://docs.openssl.org/master/man3/SSL_CTX_load_verify_locations/].
+specifies for HTTPS requests a directory containing trusted certificates
+to validate the peer server (unless the option
+[option -insecure] is used).
+Each file in this directory must be in PEM format and must contain
+exactly one certificate.
+The default for this parameter can be specified in the [sectref {CONFIGURATION}] file.
+For more details, see
+[uri https://docs.openssl.org/master/man3/SSL_CTX_load_verify_locations/ "SSL_CTX_load_verify_locations"]
+from the OpenSSL documentation.
 
 [opt_def -cert [arg value]]
 used for HTTPS URIs to use the specified client certificate. The
@@ -340,6 +347,7 @@ verified. By default, the identity of the peer server is checked
 for all HTTPS requests. If the verification process fails, the TLS/SSL handshake is
 terminated with an alert message containing the reason for
 the verification failure.
+The default for this parameter can be specified in the [sectref {CONFIGURATION}] file.
 
 [opt_def -keep_host_header]
 allows the Host: header field for the request to be passed in via
@@ -632,10 +640,11 @@ configured. These threads are used, when the request is started with
 [example_end]
 
 On the per-server configuration level, one can specify the default
-keep-alive timeout for outgoing HTTP requests, and the logging
-behavior. When logging is activated, the log file will contain
-information similar to the access.log of NaviServer (see [cmd nslog]
-module), but for HTTP client requests.
+keep-alive timeout for outgoing HTTP requests, security default for
+peer sever certificate valudation, and the logging behavior. When
+logging is activated, the log file will contain information similar to
+the access.log of NaviServer (see [cmd nslog] module), but for HTTP
+client requests.
 
 [example_begin]
  #---------------------------------------------------------------------
@@ -646,7 +655,21 @@ module), but for HTTP client requests.
     # Set default keep-alive timeout for outgoing ns_http requests
     #
     ns_param    keepalive       5s       ;# default: 0s
-
+ 
+    #
+    # Security configuration:
+    # - Default locations for certificate validation in ns_http or
+    #   ns_connchan requests.
+    # - Optionally deactivate peer server certificate validation.
+    #   Setting "insecure" to true allows man-in-the-middle attacks.
+    # These security configuraton parameters can be overridden by per
+    # request via parameters.
+    #
+    ns_param CApath certificates   ;# default: $home/certificates/
+    ns_param CAfile ca-bundle.crt  ;# default: $home/ca-bundle.crt
+ 
+    # ns_param insecure true               ;# default: false
+ 
     #
     # Configure log file for outgoing ns_http requests
     #
@@ -663,6 +686,6 @@ module), but for HTTP client requests.
 
 [see_also ns_httptime ns_connchan ns_time ns_set ns_urlencode nslog]
 [keywords "global built-in" HTTP-client HTTP HTTPS nssock \
-        spooling SNI configuration nslog TLS certificate]
+        spooling SNI configuration nslog TLS certificate PEM]
 
 [manpage_end]
