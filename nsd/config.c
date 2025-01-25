@@ -696,7 +696,7 @@ Ns_ConfigGetBool(const char *section, const char *key, bool *valuePtr)
  *
  * Ns_ConfigFilename --
  *
- *      Retrieves a file name from the configuration file based on the
+ *      Retrieves a filename from the configuration file based on the
  *      specified "section" and "key" parameters. The "directory" argument
  *      is used to resolve the "defaultValue" if a relative path is provided.
  *
