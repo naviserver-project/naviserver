@@ -641,7 +641,7 @@ configured. These threads are used, when the request is started with
 
 On the per-server configuration level, one can specify the default
 keep-alive timeout for outgoing HTTP requests, security default for
-peer sever certificate valudation, and the logging behavior. When
+peer server certificate validation, and the logging behavior. When
 logging is activated, the log file will contain information similar to
 the access.log of NaviServer (see [cmd nslog] module), but for HTTP
 client requests.
@@ -662,7 +662,7 @@ client requests.
     #   ns_connchan requests.
     # - Optionally deactivate peer server certificate validation.
     #   Setting "insecure" to true allows man-in-the-middle attacks.
-    # These security configuraton parameters can be overridden by per
+    # These security configuration parameters can be overridden by per
     # request via parameters.
     #
     ns_param CApath certificates   ;# default: $home/certificates/
